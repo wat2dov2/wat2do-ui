@@ -2,7 +2,7 @@
  * Admin feature constants.
  */
 
-import { productControl } from "@/shared/config/productControl";
+import { controlBox } from "@/shared/config/controlBox";
 
 /** Page size for admin data tables. */
-export const ADMIN_ITEMS_PER_PAGE = productControl.admin.itemsPerPage;
+export const ADMIN_ITEMS_PER_PAGE = controlBox.admin.itemsPerPage;

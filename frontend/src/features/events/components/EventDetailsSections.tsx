@@ -43,7 +43,7 @@ import { GoingOccurrencePickerContent } from "@/features/events/components/Going
 import { fetchEventAttendees } from "@/features/events/api/events.api";
 import { useCurrentTime, useGoingEventSelection } from "@/features/events/hooks/useGoingEvents";
 import { useAuthState } from "@/features/auth/hooks/useAuthState";
-import { productControl } from "@/shared/config/productControl";
+import { controlBox } from "@/shared/config/controlBox";
 import { translateFood } from "@/shared/utils/foodTranslation";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import type { Event } from "@/shared/types";
@@ -411,7 +411,7 @@ function EventAttendeesSection({ eventId }: { eventId: number }) {
   const { data: attendees } = useQuery({
     queryKey: queryKeys.events.attendees(eventId),
     queryFn: () => fetchEventAttendees(eventId),
-    staleTime: productControl.clientCache.liveEventDataStaleMs,
+    staleTime: controlBox.clientCache.liveEventDataStaleMs,
   });
   if (!attendees || attendees.going_count <= 0) return null;
 

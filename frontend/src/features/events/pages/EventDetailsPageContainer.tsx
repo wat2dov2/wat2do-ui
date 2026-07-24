@@ -5,7 +5,7 @@ import { tracker } from "@/shared/services/trackingService";
 import { LoadingPage } from "@/shared/ui/loading-page";
 import { EventDetailsBody } from "@/features/events/components/EventDetailsSections";
 import { fetchEventById } from "@/features/events/api/events.api";
-import { productControl } from "@/shared/config/productControl";
+import { controlBox } from "@/shared/config/controlBox";
 import { queryKeys } from "@/shared/lib/queryKeys";
 
 interface EventDetailsPageContainerProps {
@@ -19,7 +19,7 @@ export function EventDetailsPageContainer({ eventId }: EventDetailsPageContainer
     queryKey: queryKeys.events.detail(eventId),
     queryFn: () => fetchEventById(eventId),
     enabled: Number.isFinite(eventId),
-    staleTime: productControl.clientCache.liveEventDataStaleMs,
+    staleTime: controlBox.clientCache.liveEventDataStaleMs,
   });
 
   useEffect(() => {

@@ -1,34 +1,10 @@
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Default origins allowed in local development only.
 _DEV_ORIGINS = [
     "http://localhost:3000",
 ]
-
-
-class InstagramPublishingAccountSettings(BaseModel):
-    model_config = ConfigDict(extra="forbid", frozen=True)
-
-    key: str = Field(min_length=1, max_length=100, pattern=r"^[a-z0-9][a-z0-9_-]*$")
-    school: str = Field(min_length=1, max_length=255)
-    instagram_user_id: str = Field(min_length=1, max_length=64, pattern=r"^[0-9]+$")
-    enabled: bool = True
-
-
-class InstagramPublishingSettings(BaseModel):
-    model_config = ConfigDict(extra="forbid", frozen=True)
-
-    graph_api_version: str = Field(pattern=r"^v[0-9]+\.[0-9]+$")
-    access_token: str = Field(min_length=20)
-    accounts: tuple[InstagramPublishingAccountSettings, ...] = Field(min_length=1)
-
-    @model_validator(mode="after")
-    def validate_unique_accounts(self) -> "InstagramPublishingSettings":
-        keys = [account.key for account in self.accounts]
-        if len(keys) != len(set(keys)):
-            raise ValueError("instagram publishing account keys must be unique")
-        return self
 
 
 class Settings(BaseSettings):
@@ -97,10 +73,9 @@ class Settings(BaseSettings):
     event_feed_revalidation_url: str = ""
     event_feed_revalidation_secret: str = ""
     event_feed_revalidation_timeout: float = 3.0
-    # One JSON object containing the shared token and the explicit account
-    # mapping. Locally this lives only in the ignored backend/.env file;
-    # production injects the same value from AWS Secrets Manager.
-    instagram_publishing_config: InstagramPublishingSettings | None = None
+    # Server-only Meta credential. Non-secret account IDs and feature controls
+    # live in backend/controlbox/instagram_publishing.json.
+    instagram_access_token: str = ""
 
     @model_validator(mode="after")
     def validate_database_region(self) -> "Settings":

@@ -1,0 +1,4 @@
+{
+  "feed_revalidate_seconds": 3600,
+  "server_feed_page_size": 100
+}

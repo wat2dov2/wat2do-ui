@@ -10,9 +10,9 @@ import httpx
 
 from core.config import settings
 from core.constants import NOTIFICATION_TYPE_MORNING_EMAIL
+from core.controlbox import controlbox
 from core.database import get_sb
 from core.pagination import fetch_all_pages
-from core.product_control import product_control
 from core.tables import EVENT_DATES, EVENTS, USER_GOING_EVENTS, USERS
 from recommender.service import get_stored_recommendations_for_users
 from services.email_service import EmailMessage, email_service
@@ -32,7 +32,7 @@ from services.school_context import resolve_user_timezone
 
 log = logging.getLogger(__name__)
 
-_CONTROL = product_control.morning_email
+_CONTROL = controlbox.morning_email
 _CONTENT_WINDOW = timedelta(hours=_CONTROL.new_event_window_hours)
 _MIN_RECOMMENDATION_SCORE = _CONTROL.minimum_recommendation_score
 _CHUNK_SIZE = 500

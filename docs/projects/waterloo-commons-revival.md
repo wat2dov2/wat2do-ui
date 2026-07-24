@@ -21,8 +21,8 @@ Publication uses the Instagram Graph API carousel flow and stores child containe
 
 ## Operating contract
 
-Instagram account IDs and the shared access token are server-only configuration.
-They are stored as one `INSTAGRAM_PUBLISHING_CONFIG` JSON value in the ignored local backend environment file and in AWS Secrets Manager for production.
+Instagram business account IDs are non-secret feature configuration stored in `backend/controlbox/instagram_publishing.json`.
+The shared access token is stored as `INSTAGRAM_ACCESS_TOKEN` in the ignored local backend environment file and in AWS Secrets Manager for production.
 There is intentionally no account-management UI.
 
 The first carousel image is a collage of every selected event with the heading `NEW EVENTS AT {UNIVERSITY}` and the subtitle `Added to Wat2Do in the last 24 hours`.

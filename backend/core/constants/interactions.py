@@ -1,8 +1,8 @@
 """Interaction event constants and abuse-prevention bounds."""
 
-from core.product_control import product_control
+from core.controlbox import controlbox
 
-_CONTROL = product_control.interaction_ingestion
+_CONTROL = controlbox.interaction_ingestion
 
 DEFAULT_INTERACTION_LIMIT = _CONTROL.default_query_limit
 MAX_INTERACTION_BATCH_SIZE = _CONTROL.maximum_batch_size

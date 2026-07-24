@@ -2,9 +2,9 @@
 
 from typing import Final
 
-from core.product_control import product_control
+from core.controlbox import controlbox
 
-_CONTROL = product_control.scraping
+_CONTROL = controlbox.scraping
 
 SCRAPING_APIFY_TIMEOUT_SECONDS = _CONTROL.apify_timeout_seconds
 SCRAPING_POLL_INTERVAL_SECONDS = _CONTROL.poll_interval_seconds

@@ -1,0 +1,8 @@
+{
+  "default_query_limit": 50,
+  "maximum_batch_size": 50,
+  "maximum_metadata_bytes": 2048,
+  "maximum_duplicates_per_window": 3,
+  "deduplication_window_minutes": 60,
+  "maximum_user_interactions_per_window": 100
+}

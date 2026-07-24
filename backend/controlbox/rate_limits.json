@@ -1,0 +1,40 @@
+{
+  "default": {
+    "maximum_requests": 10,
+    "window_seconds": 60
+  },
+  "authentication": {
+    "maximum_requests": 10,
+    "window_seconds": 60
+  },
+  "sensitive_authentication": {
+    "maximum_requests": 5,
+    "window_seconds": 60
+  },
+  "token_refresh": {
+    "maximum_requests": 30,
+    "window_seconds": 60
+  },
+  "anonymous_interactions": {
+    "maximum_requests": 60,
+    "window_seconds": 60
+  },
+  "qr_scans": {
+    "maximum_requests": 30,
+    "window_seconds": 60
+  },
+  "reports": {
+    "maximum_requests": 5,
+    "window_seconds": 60
+  },
+  "submissions": {
+    "maximum_requests": 5,
+    "window_seconds": 60
+  },
+  "calendar_feed": {
+    "maximum_requests": 60,
+    "window_seconds": 3600
+  },
+  "maximum_going_events_per_user": 10000,
+  "maximum_saved_organizations_per_user": 10000
+}

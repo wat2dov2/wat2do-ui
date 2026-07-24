@@ -1,3 +1,6 @@
+from datetime import datetime, timezone
+from unittest.mock import Mock
+
 from services.instagram_publishing import service
 
 
@@ -46,3 +49,39 @@ def test_select_events_filters_below_threshold():
     ]
 
     assert service._select_events(candidates, [{"event_id": 1, "overall_score": 2.0}]) == []
+
+
+def test_generate_due_batches_uses_enabled_controlbox_accounts(monkeypatch):
+    generated_accounts = []
+    monkeypatch.setattr(service, "_batch_exists", lambda *_: False)
+    monkeypatch.setattr(
+        service,
+        "_generate_account_batch",
+        lambda account, *_: generated_accounts.append(account) or "generated",
+    )
+
+    result = service.generate_due_batches(
+        datetime(2026, 7, 23, 13, tzinfo=timezone.utc),
+    )
+
+    assert result == {
+        "accounts": 1,
+        "generated": 1,
+        "empty": 0,
+        "skipped": 0,
+        "failed": 0,
+    }
+    assert generated_accounts[0].key == "wat2do"
+    assert generated_accounts[0].instagram_business_account_id == "17841476154506771"
+
+
+def test_generate_due_batches_ignores_non_matching_local_hour(monkeypatch):
+    generate = Mock(return_value="generated")
+    monkeypatch.setattr(service, "_generate_account_batch", generate)
+
+    result = service.generate_due_batches(
+        datetime(2026, 7, 23, 12, tzinfo=timezone.utc),
+    )
+
+    assert result["accounts"] == 0
+    generate.assert_not_called()

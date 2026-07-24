@@ -6,6 +6,7 @@ from uuid import UUID
 
 from postgrest.exceptions import APIError
 
+from core.controlbox import controlbox
 from core.database import get_sb
 from core.errors import (
     EVENT_NOT_FOUND,
@@ -15,7 +16,6 @@ from core.errors import (
 )
 from core.exceptions import NotFoundError, ValidationError
 from core.pagination import fetch_all_pages
-from core.product_control import product_control
 from core.tables import USER_GOING_EVENTS, USERS
 from schemas.going_event import (
     GoingEventSelection,
@@ -91,7 +91,7 @@ def set_going_occurrences(
 
 
 # Cap the public who's-going list; the count still reflects everyone.
-MAX_ATTENDEE_NAMES = product_control.public_attendance.maximum_display_names
+MAX_ATTENDEE_NAMES = controlbox.public_attendance.maximum_display_names
 
 
 def _abbreviate_full_name(full_name: str | None) -> str | None:

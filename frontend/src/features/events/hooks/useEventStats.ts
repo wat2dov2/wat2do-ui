@@ -4,7 +4,7 @@ import {
   fetchEventStatsFromBackend,
   type EventStats,
 } from "@/features/events/api/events.api";
-import { productControl } from "@/shared/config/productControl";
+import { controlBox } from "@/shared/config/controlBox";
 import { queryKeys } from "@/shared/lib/queryKeys";
 
 type EventStatsMap = Record<string, EventStats>;
@@ -21,7 +21,7 @@ export function useEventStats(school: string | null | undefined) {
     queryKey: queryKeys.events.stats(resolvedSchool),
     queryFn: () => fetchEventStatsFromBackend(resolvedSchool),
     enabled: Boolean(resolvedSchool),
-    staleTime: productControl.clientCache.liveEventDataStaleMs,
+    staleTime: controlBox.clientCache.liveEventDataStaleMs,
   });
 }
 

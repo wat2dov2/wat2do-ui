@@ -1,14 +1,14 @@
 import { QueryClient } from "@tanstack/react-query";
 
-import { productControl } from "@/shared/config/productControl";
+import { controlBox } from "@/shared/config/controlBox";
 
 function createAppQueryClient(): QueryClient {
   return new QueryClient({
     defaultOptions: {
       queries: {
         refetchOnWindowFocus: false,
-        staleTime: productControl.clientCache.defaultQueryStaleMs,
-        gcTime: productControl.clientCache.defaultQueryGarbageCollectionMs,
+        staleTime: controlBox.clientCache.defaultQueryStaleMs,
+        gcTime: controlBox.clientCache.defaultQueryGarbageCollectionMs,
       },
     },
   });

@@ -1,8 +1,8 @@
 """Rate limit and per-user cap constants."""
 
-from core.product_control import product_control
+from core.controlbox import controlbox
 
-_CONTROL = product_control.rate_limits
+_CONTROL = controlbox.rate_limits
 
 RATE_LIMIT_MAX_REQUESTS = _CONTROL.default.maximum_requests
 RATE_LIMIT_WINDOW_SECONDS = _CONTROL.default.window_seconds

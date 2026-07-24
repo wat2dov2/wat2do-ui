@@ -1,0 +1,11 @@
+{
+  "apify_timeout_seconds": 3600,
+  "poll_interval_seconds": 5,
+  "single_user_recent_post_minutes": 30,
+  "same_organization_title_threshold": 0.8,
+  "title_similarity_threshold": 0.7,
+  "location_similarity_threshold": 0.5,
+  "description_similarity_threshold": 0.3,
+  "maximum_candidates": 10,
+  "maximum_cross_organization_candidates": 3
+}

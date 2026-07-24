@@ -5,18 +5,18 @@ from typing import Any
 
 import httpx
 
-from core.config import InstagramPublishingSettings
-from core.product_control import product_control
+from core.controlbox import controlbox
 
 
 class MetaInstagramClient:
     """Small Graph API client for resumable carousel publishing."""
 
-    def __init__(self, config: InstagramPublishingSettings):
+    def __init__(self, access_token: str):
+        config = controlbox.instagram_publishing
         self._base_url = f"https://graph.facebook.com/{config.graph_api_version}"
-        self._headers = {"Authorization": f"Bearer {config.access_token}"}
-        self._poll_attempts = product_control.instagram_publishing.meta_poll_attempts
-        self._poll_interval = product_control.instagram_publishing.meta_poll_interval_seconds
+        self._headers = {"Authorization": f"Bearer {access_token}"}
+        self._poll_attempts = config.meta_poll_attempts
+        self._poll_interval = config.meta_poll_interval_seconds
 
     def create_image_container(self, instagram_user_id: str, image_url: str) -> str:
         payload = self._post(

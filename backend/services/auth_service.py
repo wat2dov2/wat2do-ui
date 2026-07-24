@@ -7,6 +7,7 @@ from supabase_auth.errors import AuthApiError
 
 from core.allowed_emails import get_school_for_email, is_email_allowed
 from core.config import settings
+from core.controlbox import controlbox
 from core.errors import (
     EMAIL_NOT_ALLOWED,
     FAILED_TO_GENERATE_TOKEN,
@@ -21,7 +22,6 @@ from core.exceptions import (
     ServiceError,
 )
 from core.logging import logger
-from core.product_control import product_control
 from core.tables import USERS, VERIFICATION_TOKENS
 from schemas.auth import (
     TokenResponse,
@@ -172,7 +172,7 @@ class AuthService:
 
         expires_at = (
             datetime.now(timezone.utc)
-            + timedelta(minutes=product_control.authentication.verification_token_minutes)
+            + timedelta(minutes=controlbox.authentication.verification_token_minutes)
         ).isoformat()
 
         hashed_token = link_res.properties.hashed_token

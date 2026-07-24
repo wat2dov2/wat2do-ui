@@ -1,0 +1,95 @@
+{
+  "snapshot": {
+    "recommendations_per_user": 20,
+    "candidate_events_per_school": 1000
+  },
+  "api": {
+    "maximum_results": 50
+  },
+  "personalization": {
+    "relevance_weight": 0.7,
+    "warm_interactions": 3,
+    "hot_interactions": 10,
+    "hot_blend": {
+      "content": 0.3,
+      "collaborative": 0.5,
+      "popularity": 0.2
+    },
+    "warm_blend": {
+      "content": 0.5,
+      "collaborative": 0.2,
+      "popularity": 0.3
+    },
+    "warm_without_collaborative_blend": {
+      "content": 0.7,
+      "collaborative": 0.0,
+      "popularity": 0.3
+    },
+    "cold_blend": {
+      "content": 0.0,
+      "collaborative": 0.0,
+      "popularity": 1.0
+    }
+  },
+  "collaborative_filtering": {
+    "minimum_interactions": 3,
+    "neighbor_count": 20,
+    "user_item_blend_weight": 0.5,
+    "going_weight": 5.0,
+    "maximum_user_event_score": 15.0
+  },
+  "content_scoring": {
+    "category_match": 0.4,
+    "category_without_profile": 0.2,
+    "school_match": 0.15,
+    "organization_affinity": 0.15,
+    "temporal_tiers": [
+      {
+        "within_hours": 24,
+        "score": 0.15
+      },
+      {
+        "within_hours": 72,
+        "score": 0.12
+      },
+      {
+        "within_hours": 168,
+        "score": 0.08
+      }
+    ],
+    "temporal_fallback": 0.04,
+    "free_event": 0.05,
+    "has_food": 0.05,
+    "first_year": 0.05,
+    "first_year_categories": [
+      "Arts & Culture",
+      "Games & Recreation",
+      "Media & Web",
+      "Business"
+    ],
+    "price_normalization_cap": 50.0,
+    "morning_end_hour": 12,
+    "afternoon_end_hour": 17
+  },
+  "popularity": {
+    "half_life_days": 7.0,
+    "fallback_score": 0.1,
+    "candidate_limit": 500,
+    "maximum_user_contribution": 15.0
+  },
+  "interactions": {
+    "lookback_days": 90,
+    "weights": {
+      "click": 2.0,
+      "detail_view": 3.0,
+      "going": 5.0,
+      "ungoing": -3.0,
+      "share": 3.0
+    }
+  },
+  "evaluation": {
+    "k": 10,
+    "minimum_interactions": 5,
+    "maximum_events": 2000
+  }
+}

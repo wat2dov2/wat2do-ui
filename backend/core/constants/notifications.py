@@ -2,7 +2,7 @@
 
 from typing import Final
 
-from core.product_control import product_control
+from core.controlbox import controlbox
 
 # Plain text values in notification_preferences.notification_type and
 # notifications_log.notification_type. Add a new type here, update the
@@ -16,8 +16,8 @@ NOTIFICATION_TYPES = (
 )
 
 NOTIFICATION_DEFAULT_ENABLED: dict[str, bool] = {
-    NOTIFICATION_TYPE_MORNING_EMAIL: product_control.notification_defaults.morning_email,
-    NOTIFICATION_TYPE_EVENT_CHANGE: product_control.notification_defaults.event_change,
+    NOTIFICATION_TYPE_MORNING_EMAIL: controlbox.notification_defaults.morning_email,
+    NOTIFICATION_TYPE_EVENT_CHANGE: controlbox.notification_defaults.event_change,
 }
 
 NOTIFICATION_STATUS_PENDING: Final = "pending"

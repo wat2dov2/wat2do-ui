@@ -51,11 +51,11 @@ npm install
 npm run dev
 ```
 
-## Product control box
+## Feature control boxes
 
-Non-secret feature and algorithm tuning lives in [`product-control.json`](product-control.json).
-This is the single editable source for event discovery and ISR, frontend cache policy, recommendations, morning-email selection, authentication lifetimes, organization invitations, notification defaults, credits and promotions, interaction behavior and abuse bounds, API rate limits, scraper behavior, email delivery, AI output size, admin pagination, and public attendee previews.
-The backend validates the complete file at startup, rejects unknown keys, and rejects invalid values or conflicting limits, while the frontend imports the same file at build time.
+Non-secret feature and algorithm tuning lives in one file per feature under [`backend/controlbox`](backend/controlbox).
+These files are the single editable sources for event discovery and ISR, frontend cache policy, recommendations, morning-email selection, authentication lifetimes, organization invitations, notification defaults, credits and promotions, interaction behavior and abuse bounds, API rate limits, scraper behavior, email delivery, AI output size, admin pagination, public attendee previews, and Instagram publishing accounts.
+The backend validates the complete directory at startup, rejects missing or unknown feature files, and rejects invalid values or conflicting limits, while the frontend imports only the feature files it needs at build time.
 Environment-specific credentials, infrastructure sizing, database constraints, and UI constants intentionally stay with their owning systems.
 Changes take effect after rebuilding the applications or restarting a scheduled Python job.
 

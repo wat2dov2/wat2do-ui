@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { loadProfile, saveProfile, type UserProfile } from "@/features/settings/api/settings.api";
 import { fetchProfileAPI, getLastProfileFetchAt, updateProfileAPI } from "@/features/auth";
-import { productControl } from "@/shared/config/productControl";
+import { controlBox } from "@/shared/config/controlBox";
 import { DEFAULT_SCHOOL } from "@/shared/constants/schools";
 
 /**
@@ -45,7 +45,7 @@ export function useProfile() {
     // initializeAuth + the silent-refresh hook already populate this on
     // startup, so most Settings mounts hit the cache.
     const stale =
-      Date.now() - getLastProfileFetchAt() > productControl.clientCache.profileStaleMs;
+      Date.now() - getLastProfileFetchAt() > controlBox.clientCache.profileStaleMs;
     if (!stale) return;
 
     let cancelled = false;

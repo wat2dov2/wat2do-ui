@@ -6,9 +6,9 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from core.client_ip import get_client_ip
 from core.config import settings
+from core.controlbox import controlbox
 from core.errors import INVALID_OR_EXPIRED_TOKEN, NO_REFRESH_TOKEN
 from core.exceptions import AuthenticationError, ServiceError
-from core.product_control import product_control
 from core.rate_limit import (
     auth_refresh_rate_limiter,
     send_otp_rate_limiter,
@@ -24,7 +24,7 @@ from services.auth_service import auth
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
-COOKIE_MAX_AGE = product_control.authentication.session_cookie_days * 24 * 3600
+COOKIE_MAX_AGE = controlbox.authentication.session_cookie_days * 24 * 3600
 
 
 # Fail fast in production without Secure cookies. The refresh token is a

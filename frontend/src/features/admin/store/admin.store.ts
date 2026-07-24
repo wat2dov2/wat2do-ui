@@ -20,7 +20,7 @@ import {
   SUBMISSION_APPROVED,
   SUBMISSION_REJECTED,
 } from "@/shared/constants/statuses";
-import { productControl } from "@/shared/config/productControl";
+import { controlBox } from "@/shared/config/controlBox";
 import type { EventSubmission } from "@/shared/types";
 
 interface LoadedAt {
@@ -48,7 +48,7 @@ interface AdminState {
 }
 
 const fresh = (ts: number | undefined): boolean =>
-  ts !== undefined && Date.now() - ts < productControl.clientCache.adminStaleMs;
+  ts !== undefined && Date.now() - ts < controlBox.clientCache.adminStaleMs;
 
 export const useAdminStore = create<AdminState>((set, get) => ({
   submissions: [],

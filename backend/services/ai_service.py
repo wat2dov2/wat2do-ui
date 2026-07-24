@@ -14,12 +14,12 @@ from openai import OpenAI
 
 from core.config import settings
 from core.constants import EVENT_CATEGORIES
-from core.product_control import product_control
+from core.controlbox import controlbox
 from schemas.event import normalize_category
 
 log = logging.getLogger(__name__)
 
-AI_MAX_TOKENS = product_control.ai_generation.maximum_output_tokens
+AI_MAX_TOKENS = controlbox.ai_generation.maximum_output_tokens
 
 # Domain lists shared across prompt templates (DRY - H9/H10)
 LOCATIONS = (

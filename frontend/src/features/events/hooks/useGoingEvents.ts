@@ -14,7 +14,7 @@ import type {
   ApiGoingEventStatusResponse,
 } from "@/shared/generated";
 import { toast } from "@/shared/hooks/use-toast";
-import { productControl } from "@/shared/config/productControl";
+import { controlBox } from "@/shared/config/controlBox";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import { tracker } from "@/shared/services/trackingService";
 import type { Event } from "@/shared/types";
@@ -34,7 +34,7 @@ export function useGoingEvents() {
     queryKey: queryKeys.goingEvents.byUser(userId ?? ""),
     queryFn: fetchGoingEvents,
     enabled: Boolean(userId),
-    staleTime: productControl.clientCache.liveEventDataStaleMs,
+    staleTime: controlBox.clientCache.liveEventDataStaleMs,
   });
 }
 

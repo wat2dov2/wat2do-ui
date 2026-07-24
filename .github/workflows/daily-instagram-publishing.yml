@@ -1,0 +1,75 @@
+name: Daily Instagram publishing drafts
+
+on:
+  schedule:
+    # Run at both possible 9 AM America/Toronto UTC offsets. The backend
+    # control box accepts only the invocation matching the current local hour.
+    - cron: '0 13,14 * * *'
+  workflow_dispatch:
+    inputs:
+      force:
+        description: 'Generate outside the configured local hour'
+        required: false
+        default: false
+        type: boolean
+
+concurrency:
+  group: daily-instagram-publishing
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      AWS_REGION: ca-central-1
+      AWS_DEPLOY_ROLE_ARN: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+      ECS_CLUSTER: wat2do-production
+      ECS_SERVICE: wat2do-production-app
+      ECS_JOBS_TASK_FAMILY: wat2do-production-jobs
+      FORCE: ${{ inputs.force || false }}
+
+    steps:
+      - name: Validate deployment configuration
+        run: test -n "$AWS_DEPLOY_ROLE_ARN"
+
+      - name: Configure AWS credentials with GitHub OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Run the private ECS generation task
+        run: |
+          network_configuration="$(aws ecs describe-services --cluster "$ECS_CLUSTER" --services "$ECS_SERVICE" --query 'services[0].networkConfiguration.awsvpcConfiguration' --output json)"
+          test "$network_configuration" != "null"
+          run_network_configuration="$(jq -n --argjson awsvpc_configuration "$network_configuration" '{awsvpcConfiguration: $awsvpc_configuration}')"
+          command='["python","jobs/generate_instagram_posts.py"]'
+          if [ "$FORCE" = "true" ]; then
+            command='["python","jobs/generate_instagram_posts.py","--force"]'
+          fi
+          overrides="$(jq -n --argjson command "$command" '{containerOverrides: [{name: "backend-jobs", command: $command}]}')"
+          task_arn="$(aws ecs run-task \
+            --cluster "$ECS_CLUSTER" \
+            --task-definition "$ECS_JOBS_TASK_FAMILY" \
+            --launch-type FARGATE \
+            --network-configuration "$run_network_configuration" \
+            --overrides "$overrides" \
+            --query 'tasks[0].taskArn' \
+            --output text)"
+          test -n "$task_arn"
+          test "$task_arn" != "None"
+          aws ecs wait tasks-stopped --cluster "$ECS_CLUSTER" --tasks "$task_arn"
+          task_json="$(aws ecs describe-tasks --cluster "$ECS_CLUSTER" --tasks "$task_arn" --output json)"
+          echo "$task_json" | jq '{stoppedReason: .tasks[0].stoppedReason, containers: [.tasks[0].containers[] | {name, exitCode, reason}]}'
+          exit_code="$(echo "$task_json" | jq -r '.tasks[0].containers[] | select(.name == "backend-jobs") | .exitCode // empty')"
+          task_id="${task_arn##*/}"
+          echo "CloudWatch log stream: ecs/backend-jobs/$task_id"
+          if [ "$exit_code" != "0" ]; then
+            echo "ECS job failed with exit code ${exit_code:-unknown}." >&2
+            exit 1
+          fi

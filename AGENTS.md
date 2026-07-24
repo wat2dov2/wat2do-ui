@@ -80,7 +80,7 @@ Before writing code, study how this codebase already solves the similar problem 
 follow that exact pattern. **Do not introduce a second way of doing something that
 already has an established approach** (e.g. a new cache/store/lib/util/hook for one
 feature when one already exists). If no clean existing pattern fits, **say so and
-propose one before implementing** — do not invent silently.
+propose one before implementing** - do not invent silently.
 
 ## 1. One path
 
@@ -101,7 +101,7 @@ Do not add:
 ## 2. No duplication
 
 If logic resembles code that already exists, **extract a single shared source of
-truth** and route both callers through it — do not rewrite a near-copy. Name it so
+truth** and route both callers through it - do not rewrite a near-copy. Name it so
 its intent is obvious.
 
 ## 3. Leave nothing stray
@@ -122,7 +122,7 @@ instead of intent, move the mechanics into the existing appropriate layer.
 
 ## 5. Coordinate both sides
 
-Frontend and backend — request params, response shape, and types — must agree
+Frontend and backend - request params, response shape, and types - must agree
 **exactly**. No client sending fields the server ignores; no server returning fields
 the client never types.
 
@@ -143,6 +143,27 @@ component, migration utility, type, or test fixture:
 
 Do not create new folders, libraries, abstractions, or naming schemes unless the
 repo already uses that pattern or the human explicitly approves it.
+
+## Feature control boxes
+
+Every feature that owns non-secret operational values, tuning parameters, account
+identifiers, limits, or other control-box-like configuration must keep those
+values in exactly one feature-named JSON file under `backend/controlbox/`.
+
+Do not place feature control values in a repository-wide aggregate file, duplicate
+them across frontend and backend constants, or hide them in unrelated modules.
+
+Backend consumers must read the validated `core.controlbox.controlbox` source.
+Frontend consumers may import only the specific feature control files they need.
+
+Secrets and environment-specific credentials never belong in control-box files.
+Keep secrets in ignored local `.env` files and the production secret manager, with
+only the corresponding typed runtime setting in source code.
+
+When adding a feature control file, extend the validated control-box schema and
+tests in the same change.
+When removing or replacing a control value, delete the old source in the same
+change.
 
 ## Frontend cleanup mandate
 

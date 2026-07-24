@@ -25,7 +25,7 @@ import { DrawerBody, FormGrid, Section, Stack } from "@/shared/layout";
 import { useEventsStore } from "@/features/events/store/events.store";
 import { useEventStats } from "@/features/events/hooks/useEventStats";
 import { fetchEventById } from "@/features/events/api/events.api";
-import { productControl } from "@/shared/config/productControl";
+import { controlBox } from "@/shared/config/controlBox";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import type { Event } from "@/shared/types";
 
@@ -87,7 +87,7 @@ export function EventDetailsModal({
     queryKey: queryKeys.events.detail(detailEventId ?? 0),
     queryFn: () => fetchEventById(detailEventId!),
     enabled: detailEventId != null,
-    staleTime: productControl.clientCache.liveEventDataStaleMs,
+    staleTime: controlBox.clientCache.liveEventDataStaleMs,
   });
 
   // Detail is authoritative and complete; org link fields it omits survive the

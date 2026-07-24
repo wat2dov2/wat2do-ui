@@ -10,7 +10,7 @@
 
 import { getAccessToken } from "@/shared/services/apiClient";
 import { API_BASE_URL } from "@/shared/config/api";
-import { productControl } from "@/shared/config/productControl";
+import { controlBox } from "@/shared/config/controlBox";
 import { STORAGE_KEYS } from "@/shared/constants/storageKeys";
 
 interface QueuedInteraction {
@@ -82,7 +82,7 @@ class Tracker {
     this.flushTimer = setTimeout(() => {
       this.flushTimer = null;
       this.flush();
-    }, productControl.interactionTracking.flushDebounceMs);
+    }, controlBox.interactionTracking.flushDebounceMs);
   }
 
   flush() {

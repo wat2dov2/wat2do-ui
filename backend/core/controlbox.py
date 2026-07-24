@@ -1,4 +1,4 @@
-"""Validated, non-secret product tuning loaded from ``product-control.json``."""
+"""Validated, non-secret feature controls loaded from ``backend/controlbox``."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-_CONTROL_PATH = Path(__file__).resolve().parents[2] / "product-control.json"
+_CONTROLBOX_DIRECTORY = Path(__file__).resolve().parents[1] / "controlbox"
 _INTERACTION_TYPES = {"click", "detail_view", "going", "ungoing", "share"}
 
 
@@ -258,7 +258,21 @@ class AdminControl(_ControlModel):
     items_per_page: int = Field(gt=0)
 
 
+class InstagramPublishingAccountControl(_ControlModel):
+    key: str = Field(min_length=1, max_length=100, pattern=r"^[a-z0-9][a-z0-9_-]*$")
+    name: str = Field(min_length=1, max_length=100)
+    school: str = Field(min_length=1, max_length=255)
+    instagram_business_account_id: str = Field(
+        min_length=1,
+        max_length=64,
+        pattern=r"^[0-9]+$",
+    )
+    enabled: bool = True
+
+
 class InstagramPublishingControl(_ControlModel):
+    graph_api_version: str = Field(pattern=r"^v[0-9]+\.[0-9]+$")
+    accounts: tuple[InstagramPublishingAccountControl, ...] = Field(min_length=1)
     generation_timezone: str = Field(min_length=1)
     generation_local_hour: int = Field(ge=0, le=23)
     fallback_window_hours: int = Field(gt=0)
@@ -270,8 +284,15 @@ class InstagramPublishingControl(_ControlModel):
     meta_poll_attempts: int = Field(gt=0, le=30)
     meta_poll_interval_seconds: float = Field(gt=0, le=30)
 
+    @model_validator(mode="after")
+    def validate_unique_accounts(self) -> "InstagramPublishingControl":
+        keys = [account.key for account in self.accounts]
+        if len(keys) != len(set(keys)):
+            raise ValueError("instagram publishing account keys must be unique")
+        return self
 
-class ProductControl(_ControlModel):
+
+class ControlBox(_ControlModel):
     event_discovery: EventDiscoveryControl
     client_cache: ClientCacheControl
     interaction_tracking: InteractionTrackingControl
@@ -291,15 +312,25 @@ class ProductControl(_ControlModel):
     instagram_publishing: InstagramPublishingControl
 
 
-def load_product_control(path: Path = _CONTROL_PATH) -> ProductControl:
-    """Load and validate the complete control box, rejecting unknown keys."""
-    try:
-        raw = json.loads(path.read_text(encoding="utf-8"))
-    except FileNotFoundError as exc:
-        raise RuntimeError(f"Product control file not found: {path}") from exc
-    except json.JSONDecodeError as exc:
-        raise RuntimeError(f"Product control file is invalid JSON: {path}: {exc}") from exc
-    return ProductControl.model_validate(raw)
+def load_controlbox(directory: Path = _CONTROLBOX_DIRECTORY) -> ControlBox:
+    """Load every feature control file and reject missing or unknown files."""
+    expected = set(ControlBox.model_fields)
+    actual = {path.stem for path in directory.glob("*.json")}
+    unexpected = actual - expected
+    if unexpected:
+        names = ", ".join(sorted(unexpected))
+        raise RuntimeError(f"Unknown feature control files: {names}")
+
+    raw = {}
+    for feature in sorted(expected):
+        path = directory / f"{feature}.json"
+        try:
+            raw[feature] = json.loads(path.read_text(encoding="utf-8"))
+        except FileNotFoundError as exc:
+            raise RuntimeError(f"Feature control file not found: {path}") from exc
+        except json.JSONDecodeError as exc:
+            raise RuntimeError(f"Feature control file is invalid JSON: {path}: {exc}") from exc
+    return ControlBox.model_validate(raw)
 
 
-product_control = load_product_control()
+controlbox = load_controlbox()

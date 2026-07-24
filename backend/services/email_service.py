@@ -20,7 +20,7 @@ from dataclasses import dataclass, field
 import httpx
 
 from core.config import settings
-from core.product_control import product_control
+from core.controlbox import controlbox
 
 log = logging.getLogger(__name__)
 
@@ -98,7 +98,7 @@ class EmailService:
                 "headers": msg.headers,
             },
             headers=headers,
-            timeout=product_control.email_delivery.provider_timeout_seconds,
+            timeout=controlbox.email_delivery.provider_timeout_seconds,
         )
         response.raise_for_status()
         return True

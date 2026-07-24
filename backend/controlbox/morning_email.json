@@ -1,0 +1,6 @@
+{
+  "local_send_hour": 9,
+  "new_event_window_hours": 24,
+  "minimum_recommendation_score": 0.3,
+  "provider_attempts": 3
+}

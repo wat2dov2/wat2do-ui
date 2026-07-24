@@ -25,7 +25,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && useradd --system --gid wat2do --create-home wat2do
 
 COPY --chown=wat2do:wat2do backend/ .
-COPY --chown=wat2do:wat2do product-control.json /product-control.json
 
 USER wat2do
 

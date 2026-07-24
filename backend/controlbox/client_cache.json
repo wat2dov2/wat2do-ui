@@ -1,0 +1,7 @@
+{
+  "default_query_stale_seconds": 300,
+  "default_query_garbage_collection_seconds": 1800,
+  "live_event_data_stale_seconds": 60,
+  "profile_stale_seconds": 60,
+  "admin_stale_seconds": 60
+}

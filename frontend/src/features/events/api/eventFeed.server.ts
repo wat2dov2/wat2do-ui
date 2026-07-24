@@ -1,6 +1,6 @@
 import type { Event } from "@/shared/types";
 import type { PaginatedEventsResponse } from "@/features/events/api/events.api";
-import { productControl } from "@/shared/config/productControl";
+import { controlBox } from "@/shared/config/controlBox";
 import { resolveSchool } from "@/shared/constants/schools";
 
 export interface SchoolBrowseSnapshot {
@@ -31,7 +31,7 @@ async function fetchEventsPage(
 ): Promise<PaginatedEventsResponse> {
   const params = new URLSearchParams({
     page: String(page),
-    page_size: String(productControl.eventDiscovery.serverFeedPageSize),
+    page_size: String(controlBox.eventDiscovery.serverFeedPageSize),
     school,
   });
   const response = await fetch(`${getServerApiBaseUrl()}/events/?${params.toString()}`, fetchOptions);
@@ -67,7 +67,7 @@ export async function getSchoolBrowseSnapshot(school: string): Promise<SchoolBro
       revalidate:
         process.env.NODE_ENV === "development"
           ? 0
-          : productControl.eventDiscovery.feedRevalidateSeconds,
+          : controlBox.eventDiscovery.feedRevalidateSeconds,
       tags: [eventFeedTag(resolvedSchool)],
     },
   };
@@ -84,7 +84,7 @@ export async function getSchoolBrowseSnapshot(school: string): Promise<SchoolBro
     items: allItems,
     total: firstPage.total,
     page: 1,
-    page_size: allItems.length || productControl.eventDiscovery.serverFeedPageSize,
+    page_size: allItems.length || controlBox.eventDiscovery.serverFeedPageSize,
     total_pages: 1,
     latest_added_event: firstPage.latest_added_event ?? null,
   };

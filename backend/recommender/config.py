@@ -1,8 +1,8 @@
-"""Recommendation constants projected from the validated product control box."""
+"""Recommendation constants projected from the validated feature control box."""
 
-from core.product_control import ScoreBlend, product_control
+from core.controlbox import ScoreBlend, controlbox
 
-_CONTROL = product_control.recommendations
+_CONTROL = controlbox.recommendations
 _PERSONALIZATION = _CONTROL.personalization
 _COLLABORATIVE = _CONTROL.collaborative_filtering
 _CONTENT = _CONTROL.content_scoring

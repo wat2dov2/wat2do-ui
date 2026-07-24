@@ -1,0 +1,22 @@
+{
+  "graph_api_version": "v25.0",
+  "accounts": [
+    {
+      "key": "wat2do",
+      "name": "Wat2Do",
+      "school": "uwaterloo",
+      "instagram_business_account_id": "17841476154506771",
+      "enabled": true
+    }
+  ],
+  "generation_timezone": "America/Toronto",
+  "generation_local_hour": 9,
+  "fallback_window_hours": 24,
+  "minimum_lead_hours": 6,
+  "maximum_lead_days": 21,
+  "maximum_ai_candidates": 30,
+  "maximum_event_slides": 9,
+  "minimum_ai_score": 5.5,
+  "meta_poll_attempts": 10,
+  "meta_poll_interval_seconds": 2
+}

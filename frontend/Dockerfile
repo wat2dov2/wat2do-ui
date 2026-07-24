@@ -14,7 +14,7 @@ WORKDIR /workspace/frontend
 COPY --from=dependencies /workspace/frontend/node_modules ./node_modules
 COPY frontend/package.json frontend/package-lock.json* ./
 COPY frontend/ .
-COPY product-control.json /workspace/product-control.json
+COPY backend/controlbox /workspace/backend/controlbox
 
 ARG NEXT_PUBLIC_API_URL=/api
 ARG API_REWRITE_URL=http://127.0.0.1:8000

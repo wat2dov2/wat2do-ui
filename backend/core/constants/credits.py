@@ -1,8 +1,8 @@
 """Credit and promotion package constants."""
 
-from core.product_control import product_control
+from core.controlbox import controlbox
 
-_CONTROL = product_control.credits
+_CONTROL = controlbox.credits
 
 DEFAULT_CREDIT_BALANCE = _CONTROL.new_user_balance
 MAX_CREDITS_PER_ADD = _CONTROL.maximum_admin_add

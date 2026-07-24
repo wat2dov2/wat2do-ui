@@ -1,9 +1,8 @@
 import type { NextConfig } from "next";
-import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const apiRewriteUrl = (process.env.API_REWRITE_URL || "http://127.0.0.1:8000").replace(/\/$/, "");
-const repositoryRoot = path.dirname(fileURLToPath(new URL("../product-control.json", import.meta.url)));
+const repositoryRoot = fileURLToPath(new URL("../", import.meta.url));
 const apiCollectionPaths = [
   "credits",
   "events",

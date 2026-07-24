@@ -10,9 +10,9 @@ from uuid import UUID
 from postgrest.exceptions import APIError
 
 from core.constants import DEFAULT_LIST_LIMIT
+from core.controlbox import controlbox
 from core.database import get_sb
 from core.exceptions import ConflictError, NotFoundError, ValidationError
-from core.product_control import product_control
 from core.sanitize import sanitize_postgrest_value
 from core.tables import (
     ORGANIZATION_INTEGRATIONS,
@@ -645,9 +645,7 @@ def create_invitation(organization_id: int, email: str, invited_by: UUID) -> dic
 
     token = uuid.uuid4()
     now = datetime.now(timezone.utc)
-    expires_at = now + timedelta(
-        days=product_control.organization_management.invite_expiration_days
-    )
+    expires_at = now + timedelta(days=controlbox.organization_management.invite_expiration_days)
 
     payload = {
         "organization_id": organization_id,

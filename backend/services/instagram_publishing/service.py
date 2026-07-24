@@ -7,7 +7,7 @@ from typing import Any
 from uuid import UUID
 from zoneinfo import ZoneInfo
 
-from core.config import InstagramPublishingAccountSettings, settings
+from core.config import settings
 from core.constants import (
     INSTAGRAM_BATCH_EMPTY,
     INSTAGRAM_BATCH_FAILED,
@@ -16,6 +16,7 @@ from core.constants import (
     INSTAGRAM_BATCH_PUBLISHING,
     INSTAGRAM_BATCH_READY_FOR_REVIEW,
 )
+from core.controlbox import InstagramPublishingAccountControl, controlbox
 from core.database import get_sb
 from core.errors import (
     INSTAGRAM_PUBLISH_BATCH_NOT_EDITABLE,
@@ -24,7 +25,6 @@ from core.errors import (
     INSTAGRAM_PUBLISHING_NOT_CONFIGURED,
 )
 from core.exceptions import ConflictError, NotFoundError, ValidationError
-from core.product_control import product_control
 from core.tables import (
     EVENT_DATES,
     EVENTS,
@@ -41,7 +41,7 @@ from services.instagram_publishing.meta import MetaInstagramClient
 from services.instagram_publishing.rendering import render_cover_asset, render_event_asset
 
 log = logging.getLogger(__name__)
-_CONTROL = product_control.instagram_publishing
+_CONTROL = controlbox.instagram_publishing
 _SUCCESSFUL_CUTOFF_STATUSES = (
     INSTAGRAM_BATCH_READY_FOR_REVIEW,
     INSTAGRAM_BATCH_PUBLISHED,
@@ -55,14 +55,13 @@ def generate_due_batches(
     force: bool = False,
 ) -> dict[str, int]:
     """Generate at most one daily review batch for each enabled account."""
-    config = _publishing_config()
     now = _aware_utc(now_utc or datetime.now(timezone.utc))
     generation_timezone = ZoneInfo(_CONTROL.generation_timezone)
     local_now = now.astimezone(generation_timezone)
     if not force and local_now.hour != _CONTROL.generation_local_hour:
         return {"accounts": 0, "generated": 0, "empty": 0, "skipped": 0, "failed": 0}
 
-    enabled = [account for account in config.accounts if account.enabled]
+    enabled = [account for account in _CONTROL.accounts if account.enabled]
     stats = {
         "accounts": len(enabled),
         "generated": 0,
@@ -163,7 +162,7 @@ def publish_batch(
     batch_id: UUID | str,
     data: InstagramPublishBatchPublish,
 ) -> dict[str, Any]:
-    config = _publishing_config()
+    access_token = _publishing_access_token()
     batch = get_batch(batch_id)
     _assert_version(batch, data.version)
     if batch["status"] not in {INSTAGRAM_BATCH_READY_FOR_REVIEW, INSTAGRAM_BATCH_FAILED}:
@@ -172,12 +171,12 @@ def publish_batch(
     account = next(
         (
             candidate
-            for candidate in config.accounts
+            for candidate in _CONTROL.accounts
             if candidate.enabled and candidate.key == batch["account_key"]
         ),
         None,
     )
-    if account is None or account.instagram_user_id != batch["instagram_user_id"]:
+    if account is None or account.instagram_business_account_id != batch["instagram_user_id"]:
         raise ValidationError("Instagram account configuration no longer matches this batch")
 
     included = _included_items(batch)
@@ -205,7 +204,7 @@ def publish_batch(
 
     batch.update(claimed.data[0])
     try:
-        _publish_claimed_batch(config, batch, included)
+        _publish_claimed_batch(access_token, batch, included)
     except Exception as exc:
         log.exception("Instagram batch %s failed to publish", batch_id)
         (
@@ -226,7 +225,7 @@ def publish_batch(
 
 
 def _generate_account_batch(
-    account: InstagramPublishingAccountSettings,
+    account: InstagramPublishingAccountControl,
     local_date: date,
     now: datetime,
 ) -> str:
@@ -239,7 +238,7 @@ def _generate_account_batch(
         .insert(
             {
                 "account_key": account.key,
-                "instagram_user_id": account.instagram_user_id,
+                "instagram_user_id": account.instagram_business_account_id,
                 "school": account.school,
                 "local_date": local_date.isoformat(),
                 "window_start": window_start.isoformat(),
@@ -441,8 +440,12 @@ def _select_events(
     return selected
 
 
-def _publish_claimed_batch(config, batch: dict[str, Any], items: list[dict[str, Any]]) -> None:
-    client = MetaInstagramClient(config)
+def _publish_claimed_batch(
+    access_token: str,
+    batch: dict[str, Any],
+    items: list[dict[str, Any]],
+) -> None:
+    client = MetaInstagramClient(access_token)
     user_id = batch["instagram_user_id"]
     batch_id = batch["id"]
 
@@ -591,10 +594,10 @@ def _raise_draft_update_error(exc: Exception) -> None:
     raise exc
 
 
-def _publishing_config():
-    if settings.instagram_publishing_config is None:
+def _publishing_access_token() -> str:
+    if not settings.instagram_access_token:
         raise ValidationError(INSTAGRAM_PUBLISHING_NOT_CONFIGURED)
-    return settings.instagram_publishing_config
+    return settings.instagram_access_token
 
 
 def _aware_utc(value: datetime) -> datetime:
