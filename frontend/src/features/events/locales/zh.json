@@ -70,7 +70,8 @@
     "promotedEvents": "热门推广活动",
     "dateSections": {
       "today": "今天",
-      "tomorrow": "明天"
+      "tomorrow": "明天",
+      "range": "{{start}} 至 {{end}}"
     },
     "reportDialog": {
       "title": "举报活动",

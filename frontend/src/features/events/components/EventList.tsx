@@ -154,7 +154,7 @@ export function EventList({
   const sectionLabel = (section: EventDateSection): string => {
     if (section.kind === "today") return t("events.dateSections.today");
     if (section.kind === "tomorrow") return t("events.dateSections.tomorrow");
-    return formatEventDateSectionRange(section.startMs, section.endMs, locale);
+    return formatEventDateSectionRange(section.startMs, section.endMs, t, locale);
   };
 
   // Early returns AFTER all hooks

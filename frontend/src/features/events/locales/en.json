@@ -70,7 +70,8 @@
     "promotedEvents": "Promoted Events",
     "dateSections": {
       "today": "Today",
-      "tomorrow": "Tomorrow"
+      "tomorrow": "Tomorrow",
+      "range": "{{start}} to {{end}}"
     },
     "reportDialog": {
       "title": "Report event",

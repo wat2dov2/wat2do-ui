@@ -207,6 +207,7 @@ export function eventDateSectionOrder(section: EventDateSection): number {
 export function formatEventDateSectionRange(
   startMs: number,
   endMs: number,
+  t: (key: string, opts?: Record<string, unknown>) => string,
   locale: string
 ): string {
   const formatter = new Intl.DateTimeFormat(locale, {
@@ -223,7 +224,7 @@ export function formatEventDateSectionRange(
 
   const start = formatDay(startMs);
   const end = formatDay(endMs);
-  return start === end ? start : `${start} - ${end}`;
+  return start === end ? start : t("events.dateSections.range", { start, end });
 }
 
 /**
