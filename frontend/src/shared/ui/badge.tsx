@@ -22,7 +22,7 @@ const badgeVariants = cva(
         soon:
           "border-0 bg-warning text-warning-foreground",
         new:
-          "border-badge-new bg-badge-new text-primary-foreground",
+          "border-badge-new bg-badge-new",
       },
       size: {
         sm: "px-1.5 py-px text-[9px] font-medium rounded-lg",
@@ -47,12 +47,13 @@ interface BadgeProps
 const Badge = React.forwardRef<
   HTMLDivElement,
   BadgeProps
->(({ className, variant, size, asChild = false, ...props }, ref) => {
+>(({ className, variant, size, asChild = false, style, ...props }, ref) => {
   const Comp = asChild ? Slot : "div"
   return (
     <Comp
       ref={ref}
       className={cn(badgeVariants({ variant, size }), className)}
+      style={variant === "new" ? { color: "var(--color-white)", ...style } : style}
       {...props}
     />
   )
