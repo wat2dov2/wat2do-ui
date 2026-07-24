@@ -14,6 +14,7 @@ from core.errors import (
     EVENT_NOT_FOUND,
     ORGANIZATION_EVENT_CREATION_REQUIRED,
     ORGANIZATION_NOT_FOUND,
+    ORGANIZATION_PENDING_REVIEW,
 )
 from core.exceptions import AuthorizationError, get_or_404
 from core.pagination import PaginationParams, paginated_response
@@ -26,6 +27,7 @@ from schemas.event import (
     EventSummaryResponse,
     EventUpdate,
 )
+from schemas.organization import ORGANIZATION_STATUS_APPROVED
 from schemas.user import UserResponse
 from services import event_service, organization_service
 from services.notifications import event_change
@@ -49,12 +51,17 @@ def _get_event_or_404_authorized(event_id: int, db_user: UserResponse) -> EventR
 def _authorize_event_organization(organization_id: int, db_user: UserResponse) -> None:
     """Require management-team membership (or admin) to publish under this organization.
 
-    Display fields are derived server-side; this only enforces who may post.
+    Membership alone is not enough: the organization itself must have cleared
+    admin review, so submitting an organization is never a route to publishing
+    events without moderation. Display fields are derived server-side; this only
+    enforces who may post.
     """
     organization = get_or_404(
         organization_service.get_organization(organization_id), ORGANIZATION_NOT_FOUND
     )
     if not is_admin(db_user):
+        if organization.status != ORGANIZATION_STATUS_APPROVED:
+            raise AuthorizationError(ORGANIZATION_PENDING_REVIEW)
         owned_organizations = organization_service.list_organizations_by_owner(str(db_user.id))
         if not any(c.id == organization.id for c in owned_organizations):
             raise AuthorizationError(ORGANIZATION_EVENT_CREATION_REQUIRED)

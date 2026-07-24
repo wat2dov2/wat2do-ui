@@ -11,7 +11,6 @@ import {
   User,
   Bell,
   Palette,
-  Shield,
   HelpCircle,
 } from "@/shared/ui/doodle-icons";
 import {
@@ -173,15 +172,6 @@ export function CommandPalette({
           >
             <Palette className="mr-2 size-4" />
             <span>{t("commands.themeAppearance")}</span>
-          </CommandItem>
-          <CommandItem
-            onSelect={() => {
-              router.push(settingsTabPath(SETTINGS_TABS.PRIVACY));
-              onOpenChange(false);
-            }}
-          >
-            <Shield className="mr-2 size-4" />
-            <span>{t("commands.privacySettings")}</span>
           </CommandItem>
           <CommandItem
             onSelect={() => {

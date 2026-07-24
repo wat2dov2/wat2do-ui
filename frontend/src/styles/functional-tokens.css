@@ -49,6 +49,12 @@
   --secondary-active: oklch(from var(--secondary) calc(l + 0.06) c h);
   --secondary-foreground: oklch(0.908 0 0);
 
+  /* Selected - persistent "on" state for toggleable controls */
+  --selected: oklch(from var(--primary) l c h / 0.12);
+  --selected-hover: oklch(from var(--primary) l c h / 0.18);
+  --selected-border: oklch(from var(--primary) l c h / 0.28);
+  --selected-foreground: var(--primary);
+
   /* Muted */
   --muted: oklch(0.280 0 0);
   --muted-hover: oklch(from var(--muted) calc(l + 0.04) c h);

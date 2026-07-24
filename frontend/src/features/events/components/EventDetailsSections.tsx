@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState } from "react";
+import { lazy, Suspense, useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { sanitizeHref } from "@/shared/utils/url";
@@ -8,14 +8,19 @@ import {
   formatCountdown,
   formatOccurrence,
   getPrimaryOccurrence,
+  isEventHappeningNow,
+  wasAddedWithinLast24Hours,
 } from "@/shared/utils/date";
 import {
   Calendar,
+  Check,
   Discord,
   DollarSign,
   ExternalLink,
+  Flag,
   ImageOff,
   Instagram,
+  Link as LinkIcon,
   LocationPin,
   Share2,
   Utensils,
@@ -38,7 +43,11 @@ import { LazyImage } from "@/shared/ui/lazy-image";
 import { FormGrid, Stack } from "@/shared/layout";
 import { EventCalendarDownloadMenu } from "@/features/events/components/EventCalendarDownloadMenu";
 import { EventLocationMap } from "@/features/events/components/EventLocationMap";
+import { buildEventShareUrl } from "@/features/events/lib/eventUrls";
+import { getEventCategory } from "@/shared/utils/event";
+import { OrganizationCategoryBadge } from "@/shared/components/OrganizationCategoryBadge";
 import { OrganizationTypeIcon } from "@/shared/components/OrganizationTypeIcon";
+import { toast } from "@/shared/hooks/use-toast";
 import { GoingOccurrencePickerContent } from "@/features/events/components/GoingOccurrencePickerContent";
 import { fetchEventAttendees } from "@/features/events/api/events.api";
 import { useCurrentTime, useGoingEventSelection } from "@/features/events/hooks/useGoingEvents";
@@ -51,6 +60,11 @@ import type { Event } from "@/shared/types";
 const EventShareDialog = lazy(() =>
   import("@/features/events/components/EventShareDialog").then((module) => ({
     default: module.EventShareDialog,
+  })),
+);
+const EventReportDialog = lazy(() =>
+  import("@/features/events/components/EventReportDialog").then((module) => ({
+    default: module.EventReportDialog,
   })),
 );
 
@@ -483,6 +497,66 @@ function EventContactHostSection({ event }: { event: Event }) {
 }
 
 /**
+ * Event status badges plus the copy-link / share / report actions. Shared by the
+ * drawer and the /events/[id] page so both expose the same set one way.
+ */
+function EventActionsSection({ event }: { event: Event }) {
+  const { t } = useTranslation();
+  const [linkCopied, setLinkCopied] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+
+  const handleCopyLink = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(buildEventShareUrl(event.id));
+      setLinkCopied(true);
+      window.setTimeout(() => setLinkCopied(false), 1600);
+    } catch {
+      toast({ description: t("events.shareDialog.copyFailed"), variant: "destructive" });
+    }
+  }, [event.id, t]);
+
+  return (
+    <Stack gap={3}>
+      <Stack direction="horizontal" gap={2} className="flex-wrap">
+        <OrganizationCategoryBadge type={getEventCategory(event)} />
+        {isEventHappeningNow(event) && <Badge variant="live">{t("common.live")}</Badge>}
+        {wasAddedWithinLast24Hours(event) && <Badge variant="new">{t("events.new")}</Badge>}
+      </Stack>
+      <Stack direction="horizontal" gap={2} className="flex-wrap">
+        <Button type="button" variant="secondary" size="sm" onClick={() => void handleCopyLink()}>
+          {linkCopied ? <Check className="size-4" /> : <LinkIcon className="size-4" />}
+          {linkCopied ? t("events.copied") : t("events.copyLink")}
+        </Button>
+        <Button type="button" variant="secondary" size="sm" onClick={() => setShareOpen(true)}>
+          <Share2 className="size-4" />
+          {t("common.share")}
+        </Button>
+        <Button type="button" variant="secondary" size="sm" onClick={() => setReportOpen(true)}>
+          <Flag className="size-4" />
+          {t("common.report")}
+        </Button>
+      </Stack>
+      {shareOpen && (
+        <Suspense fallback={null}>
+          <EventShareDialog event={event} open={shareOpen} onOpenChange={setShareOpen} />
+        </Suspense>
+      )}
+      {reportOpen && (
+        <Suspense fallback={null}>
+          <EventReportDialog
+            eventId={event.id}
+            eventTitle={event.title}
+            open={reportOpen}
+            onOpenChange={setReportOpen}
+          />
+        </Suspense>
+      )}
+    </Stack>
+  );
+}
+
+/**
  * Full event details layout shared by the drawer and the /events/[id] page:
  * single column on mobile, poster + hosts sidebar next to details on md+.
  * Mobile stacking order: poster, details (title through map), hosts/going.
@@ -524,8 +598,6 @@ export function EventDetailsBody({
         <EventRegistrationCard event={event} school={school} />
 
         <EventAboutSection event={event} />
-
-        <EventMapSection event={event} school={school} />
       </Stack>
 
       <Stack gap={6} className="md:col-start-1">
@@ -539,6 +611,10 @@ export function EventDetailsBody({
         <EventAttendeesSection eventId={event.id} />
 
         <EventContactHostSection event={event} />
+
+        <EventMapSection event={event} school={school} />
+
+        <EventActionsSection event={event} />
       </Stack>
     </div>
   );

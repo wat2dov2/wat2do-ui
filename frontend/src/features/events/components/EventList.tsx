@@ -3,7 +3,13 @@ import { Search } from "@/shared/ui/doodle-icons";
 import { useTranslation } from "react-i18next";
 import { EventCard } from "@/features/events/components/EventCard";
 import type { Event } from "@/shared/types";
-import { getEventDateCategory, type EventDateCategory } from "@/shared/utils/date";
+import {
+  eventDateSectionKey,
+  eventDateSectionOrder,
+  formatEventDateSectionRange,
+  getEventDateSection,
+  type EventDateSection,
+} from "@/shared/utils/date";
 import { DiaTextReveal } from "@/registry/magicui/dia-text-reveal";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { EventCardSkeleton } from "@/features/events/components/EventCardSkeleton";
@@ -24,17 +30,6 @@ interface EventListProps {
   isLoading?: boolean;
   groupByDateSections?: boolean;
 }
-
-const EVENT_DATE_SECTIONS: Array<{
-  category: EventDateCategory;
-  labelKey: string;
-}> = [
-  { category: "today", labelKey: "events.dateSections.today" },
-  { category: "tomorrow", labelKey: "events.dateSections.tomorrow" },
-  { category: "later this week", labelKey: "events.dateSections.laterThisWeek" },
-  { category: "later this month", labelKey: "events.dateSections.laterThisMonth" },
-  { category: "later", labelKey: "events.dateSections.later" },
-];
 
 interface EventCardListItemProps {
   children: ReactNode;
@@ -80,29 +75,39 @@ function EventCardsGrid({
   );
 }
 
+interface DateSectionGroup {
+  key: string;
+  section: EventDateSection;
+  events: Event[];
+}
+
 /**
- * Bucket events into the date sections, in section order.
+ * Bucket events into date sections, ordered Today, Tomorrow, then week by week.
  *
- * The server returns upcoming-only events, so there is no "past" section. A
- * timezone-skew straggler can still map to "past" (which has no bucket); those
- * are dropped from the grid here - the one place this list decides what's
- * shown, so callers can bucket unconditionally.
+ * Sections are derived from the events themselves, so only weeks that actually
+ * have events get a heading. The server returns upcoming-only events; a
+ * timezone-skew straggler can still land in the past and is dropped here - the
+ * one place this list decides what's shown, so callers bucket unconditionally.
  */
-function groupEventsByDateSection(events: Event[]): Record<EventDateCategory, Event[]> {
-  const groups = EVENT_DATE_SECTIONS.reduce(
-    (acc, { category }) => {
-      acc[category] = [];
-      return acc;
-    },
-    {} as Record<EventDateCategory, Event[]>,
-  );
+function groupEventsByDateSection(events: Event[]): DateSectionGroup[] {
+  const groups = new Map<string, DateSectionGroup>();
 
   events.forEach((event) => {
-    const bucket = groups[getEventDateCategory(event)];
-    if (bucket) bucket.push(event);
+    const section = getEventDateSection(event);
+    if (!section) return;
+
+    const key = eventDateSectionKey(section);
+    const existing = groups.get(key);
+    if (existing) {
+      existing.events.push(event);
+      return;
+    }
+    groups.set(key, { key, section, events: [event] });
   });
 
-  return groups;
+  return [...groups.values()].sort(
+    (a, b) => eventDateSectionOrder(a.section) - eventDateSectionOrder(b.section),
+  );
 }
 
 /**
@@ -123,7 +128,8 @@ export function EventList({
   isLoading = false,
   groupByDateSections = true,
 }: EventListProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const locale = i18n.language || "en-US";
 
   // Filter out promoted events from the main feed date sections so they don't duplicate
   const regularEvents = useMemo(() => {
@@ -131,17 +137,23 @@ export function EventList({
     return events.filter((e) => !promotedIds.has(e.id));
   }, [events, promotedEvents]);
 
-  const sectionOrderedEvents = useMemo(() => {
-    if (!groupByDateSections) {
-      return regularEvents;
-    }
-    const groups = groupEventsByDateSection(regularEvents);
-    return EVENT_DATE_SECTIONS.flatMap(({ category }) => groups[category]);
-  }, [groupByDateSections, regularEvents]);
-  const groupedVisibleEvents = useMemo(
-    () => groupEventsByDateSection(sectionOrderedEvents),
-    [sectionOrderedEvents],
+  const dateSectionGroups = useMemo(
+    () => groupEventsByDateSection(regularEvents),
+    [regularEvents],
   );
+  const sectionOrderedEvents = useMemo(
+    () =>
+      groupByDateSections
+        ? dateSectionGroups.flatMap((group) => group.events)
+        : regularEvents,
+    [dateSectionGroups, groupByDateSections, regularEvents],
+  );
+
+  const sectionLabel = (section: EventDateSection): string => {
+    if (section.kind === "today") return t("events.dateSections.today");
+    if (section.kind === "tomorrow") return t("events.dateSections.tomorrow");
+    return formatEventDateSectionRange(section.startMs, section.endMs, locale);
+  };
 
   // Early returns AFTER all hooks
   if (isLoading) {
@@ -223,17 +235,15 @@ export function EventList({
       )}
 
       {groupByDateSections ? (
-        EVENT_DATE_SECTIONS.map(({ category, labelKey }) => {
-          const sectionEvents = groupedVisibleEvents[category];
-          if (sectionEvents.length === 0) return null;
-
+        dateSectionGroups.map((group) => {
+          const label = sectionLabel(group.section);
           return (
-            <section key={category} className="space-y-2.5" aria-label={t(labelKey)}>
+            <section key={group.key} className="space-y-2.5" aria-label={label}>
               <h2 className="text-base font-normal tracking-normal text-foreground">
-                {t(labelKey)}
+                {label}
               </h2>
               <EventCardsGrid
-                events={sectionEvents}
+                events={group.events}
                 eventStats={eventStats}
                 onEventClick={onEventClick}
               />

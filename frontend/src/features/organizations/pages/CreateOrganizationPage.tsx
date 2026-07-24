@@ -1,6 +1,9 @@
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { ArrowLeft } from "@/shared/ui/doodle-icons";
+import { Button } from "@/shared/ui/button";
 import { fetchProfileAPI } from "@/features/auth/api/auth.api";
 import { OrganizationForm } from "@/features/organizations/components/AddOrganizationModal";
 import { createOrganizationAPI } from "@/features/organizations/api/organizations.api";
@@ -15,6 +18,7 @@ import {
   resolveSchool,
 } from "@/shared/constants/schools";
 import { Container, PageHeader, Section, Stack } from "@/shared/layout";
+import { toast } from "@/shared/hooks/use-toast";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import type { Organization } from "@/shared/types";
 
@@ -58,14 +62,24 @@ export function CreateOrganizationPage() {
           description={t("organizations.addOrganizationDescription", {
             school: schoolName,
           })}
+          actions={
+            <Button asChild variant="secondary" size="sm">
+              <Link href={ROUTES.ORGANIZATIONS}>
+                <ArrowLeft className="size-4" />
+                {t("organizations.backToAllOrganizations")}
+              </Link>
+            </Button>
+          }
         />
         <Section variant="surface">
           <OrganizationForm
             onSave={saveOrganization}
-            onCancel={() => router.push(ROUTES.ORGANIZATIONS)}
-            onSaved={(organization) =>
-              router.push(organizationPagePath(organization.id))
-            }
+            onSaved={(organization) => {
+              if (organization.status === "pending") {
+                toast({ description: t("organizations.submittedForReview") });
+              }
+              router.push(organizationPagePath(organization.id));
+            }}
             defaultSchool={school}
             allowSchoolSelection={false}
             showHeading={false}

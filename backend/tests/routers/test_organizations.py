@@ -456,3 +456,55 @@ def test_accept_invitation(authenticated_client, monkeypatch):
         "/organizations/invitations/22222222-2222-2222-2222-222222222222/accept"
     )
     assert resp.status_code == 204
+
+
+def test_create_organization_from_normal_user_requires_review(authenticated_client, monkeypatch):
+    """Non-admin submissions enter the review queue instead of going live."""
+    mock_create = MagicMock(return_value=_mock_organization(status="pending"))
+    monkeypatch.setattr(organization_service, "create_organization", mock_create)
+
+    resp = authenticated_client.post(
+        "/organizations/",
+        json={"organization_name": "Test Organization", "organization_type": "wusa"},
+    )
+
+    assert resp.status_code == 201
+    _, kwargs = mock_create.call_args
+    assert kwargs["auto_approve"] is False
+
+
+def test_create_organization_from_admin_is_auto_approved(admin_client, monkeypatch):
+    """Admins publish organizations directly."""
+    mock_create = MagicMock(return_value=_mock_organization(status="approved"))
+    monkeypatch.setattr(organization_service, "create_organization", mock_create)
+
+    resp = admin_client.post(
+        "/organizations/",
+        json={"organization_name": "Test Organization", "organization_type": "wusa"},
+    )
+
+    assert resp.status_code == 201
+    _, kwargs = mock_create.call_args
+    assert kwargs["auto_approve"] is True
+
+
+def test_review_organization_requires_admin(authenticated_client):
+    resp = authenticated_client.post(
+        "/organizations/1/review", params={"organization_status": "approved"}
+    )
+    assert resp.status_code == 403
+
+
+def test_review_organization_approves(admin_client, monkeypatch):
+    mock_set_status = MagicMock(return_value=_mock_organization(status="approved"))
+    monkeypatch.setattr(organization_service, "set_organization_status", mock_set_status)
+
+    resp = admin_client.post("/organizations/1/review", params={"organization_status": "approved"})
+
+    assert resp.status_code == 200
+    assert resp.json()["status"] == "approved"
+    mock_set_status.assert_called_once_with(1, "approved")
+
+
+def test_organization_review_queue_requires_admin(authenticated_client):
+    assert authenticated_client.get("/organizations/review").status_code == 403

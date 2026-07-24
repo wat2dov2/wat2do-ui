@@ -61,7 +61,8 @@
     "newlyAddedFilter": {
       "last24Hours": "Added in last {{hours}} hours",
       "sinceLastVisit": "Added since last visit",
-      "clear": "Clear newly added filter"
+      "clear": "Clear newly added filter",
+      "sinceLastVisitAt": "Added since last visit ({{time}})"
     },
     "clearAllFilters": "Clear all filters",
     "calendarViewComingSoon": "Calendar view coming soon...",
@@ -69,10 +70,7 @@
     "promotedEvents": "Promoted Events",
     "dateSections": {
       "today": "Today",
-      "tomorrow": "Tomorrow",
-      "laterThisWeek": "Later this week",
-      "laterThisMonth": "Later this month",
-      "later": "Later"
+      "tomorrow": "Tomorrow"
     },
     "reportDialog": {
       "title": "Report event",
@@ -88,7 +86,7 @@
       "unmarkFailed": "Couldn't unmark this event as going",
       "saveFailed": "Couldn't save your selected time",
       "chooseOccurrences": "Which time are you going?",
-      "chooseOccurrencesDescription": "Choose the occurrence you plan to attend."
+      "chooseOccurrencesDescription": "Choose every occurrence you plan to attend."
     },
     "calendar": {
       "googleCalendar": "Google Calendar",
@@ -134,6 +132,9 @@
     "moreDatesCount_other": "+{{count}} dates",
     "deleteEventTitle": "Delete Event",
     "deleteEventConfirm": "Are you sure you want to delete \"{{title}}\"? This action cannot be undone.",
-    "similarEvents": "Similar Events"
+    "similarEvents": "Similar Events",
+    "submitEvent": "Submit event",
+    "backToAllEvents": "Back to all events",
+    "going": "Going"
   }
 }

@@ -8,7 +8,7 @@ import {
   type MouseEvent,
   type ReactNode,
 } from "react";
-import { Check, ChevronsUpDown, Search } from "@/shared/ui/doodle-icons";
+import { Check, Search } from "@/shared/ui/doodle-icons";
 import { cn } from "@/shared/lib/utils";
 import { useEnterKeySubmit } from "@/shared/hooks";
 import {
@@ -271,7 +271,6 @@ export function SearchCombobox<T>({
           onKeyDown={handleTriggerKeyDown}
         >
           {labelNode}
-          <ChevronsUpDown className="size-3.5 text-muted-foreground shrink-0" />
         </button>
       </PopoverAnchor>
       <PopoverContent

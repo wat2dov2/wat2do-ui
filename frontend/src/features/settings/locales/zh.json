@@ -4,8 +4,7 @@
     "tabs": {
       "profile": "个人资料",
       "notifications": "通知设置",
-      "appearance": "界面外观",
-      "privacy": "隐私设置"
+      "appearance": "界面外观"
     },
     "profile": {
       "title": "个人信息",
@@ -51,16 +50,6 @@
       "json": "JSON",
       "language": "语言",
       "languageDescription": "选择您偏好的语言"
-    },
-    "privacy": {
-      "title": "隐私设置",
-      "description": "控制您的隐私和数据共享偏好",
-      "profileVisibility": "个人资料可见性",
-      "profileVisibilityDesc": "控制谁能看到您的个人资料信息",
-      "public": "公开",
-      "private": "私密",
-      "dataSharing": "数据共享",
-      "dataSharingDesc": "允许收集匿名使用数据以帮助改进平台"
     }
   }
 }

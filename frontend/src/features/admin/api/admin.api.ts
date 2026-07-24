@@ -8,6 +8,7 @@ import type {
   EventSubmission,
   ReportedEvent,
   Organization,
+  OrganizationStatus,
   SubmissionStatus,
 } from "@/shared/types";
 import type {
@@ -199,6 +200,28 @@ export async function getOrganizationClaims(status?: string, school?: string): P
   const qs = params.toString();
   const url = `/organizations/claims${qs ? `?${qs}` : ""}`;
   return api.get<OrganizationClaim[]>(url);
+}
+
+/** Organizations awaiting (or already through) admin review. */
+export async function getOrganizationsForReview(
+  status?: OrganizationStatus,
+  school?: string
+): Promise<Organization[]> {
+  const params = new URLSearchParams();
+  if (status) params.set("organization_status", status);
+  if (school) params.set("school", school);
+  const qs = params.toString();
+  return getPaginatedItems<Organization>(`/organizations/review${qs ? `?${qs}` : ""}`);
+}
+
+export async function resolveOrganizationReview(
+  organizationId: number,
+  status: OrganizationStatus
+): Promise<Organization> {
+  return api.post<Organization>(
+    `/organizations/${organizationId}/review?organization_status=${status}`,
+    {}
+  );
 }
 
 export async function resolveClaim(

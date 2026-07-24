@@ -1,11 +1,15 @@
 import { useEffect } from "react";
+import Link from "next/link";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { tracker } from "@/shared/services/trackingService";
+import { ArrowLeft } from "@/shared/ui/doodle-icons";
+import { Button } from "@/shared/ui/button";
 import { LoadingPage } from "@/shared/ui/loading-page";
 import { EventDetailsBody } from "@/features/events/components/EventDetailsSections";
 import { fetchEventById } from "@/features/events/api/events.api";
 import { controlBox } from "@/shared/config/controlBox";
+import { ROUTES } from "@/shared/constants/routes";
 import { queryKeys } from "@/shared/lib/queryKeys";
 
 interface EventDetailsPageContainerProps {
@@ -42,7 +46,21 @@ export function EventDetailsPageContainer({ eventId }: EventDetailsPageContainer
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 sm:py-8">
-      <EventDetailsBody event={event} school={event.school} />
+      <EventDetailsBody
+        event={event}
+        school={event.school}
+        renderTitle={(title) => (
+          <div className="flex items-start justify-between gap-3">
+            <h1 className="text-2xl font-bold leading-tight sm:text-3xl">{title}</h1>
+            <Button asChild variant="secondary" size="sm" className="shrink-0">
+              <Link href={ROUTES.HOME}>
+                <ArrowLeft className="size-4" />
+                {t("events.backToAllEvents")}
+              </Link>
+            </Button>
+          </div>
+        )}
+      />
     </div>
   );
 }

@@ -80,6 +80,13 @@ OrganizationTypeValue = Annotated[
     ),
 ]
 
+# Review state for an organization. Only approved organizations are listed
+# publicly and may publish events.
+ORGANIZATION_STATUS_PENDING = "pending"
+ORGANIZATION_STATUS_APPROVED = "approved"
+ORGANIZATION_STATUS_REJECTED = "rejected"
+OrganizationStatus = Literal["pending", "approved", "rejected"]
+
 
 def normalize_organization_category(raw: str) -> str | None:
     """Return the canonical organization category, or None if unrecognized."""
@@ -183,6 +190,7 @@ class OrganizationEventStats(BaseModel):
 class OrganizationResponse(BaseModel):
     id: int
     organization_name: str
+    status: OrganizationStatus = ORGANIZATION_STATUS_APPROVED
     categories: list[str] | None = None
     organization_page: str | None = None
     ig: str | None = None

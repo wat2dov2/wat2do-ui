@@ -36,10 +36,12 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
     return stale;
   });
 
+  // `refreshing` starts from a staleness check taken before auth bootstrap has
+  // populated the profile. Once it is set, only the fetch below may clear it -
+  // re-checking staleness here would strand the gate on a permanent loading
+  // screen whenever bootstrap refreshed the profile between mount and effect.
   useEffect(() => {
-    if (!authReady || !authed || !needsFreshRole) return;
-    const stale = Date.now() - getLastProfileFetchAt() > ADMIN_ROLE_FRESHNESS_TTL_MS;
-    if (!stale) return;
+    if (!authReady || !authed || !refreshing) return;
 
     let cancelled = false;
     fetchProfileAPI()
@@ -52,7 +54,7 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
     return () => {
       cancelled = true;
     };
-  }, [authReady, authed, needsFreshRole]);
+  }, [authReady, authed, refreshing]);
 
   const redirectTarget = !authReady
     ? null

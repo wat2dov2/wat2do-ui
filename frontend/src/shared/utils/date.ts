@@ -1,12 +1,15 @@
 import { controlBox } from "@/shared/config/controlBox";
 
-export type EventDateCategory =
-  | "today"
-  | "tomorrow"
-  | "later this week"
-  | "later this month"
-  | "later"
-  | "past";
+/**
+ * Where an event sits in the feed's date sections: the two named near-term
+ * sections, or a Monday-to-Sunday week range. Everything beyond tomorrow is a
+ * range, so the feed reads "Today, Tomorrow, <rest of this week>, then one
+ * section per following week".
+ */
+export type EventDateSection =
+  | { kind: "today" }
+  | { kind: "tomorrow" }
+  | { kind: "range"; startMs: number; endMs: number };
 
 export interface Occurrence {
   dtstart_utc: string;
@@ -123,21 +126,35 @@ export function formatCardTime(event: {
   return '';
 }
 
+const addDays = (date: Date, days: number): Date =>
+  toMidnight(new Date(date.getFullYear(), date.getMonth(), date.getDate() + days));
+
+/** Sunday that closes the Monday-to-Sunday week containing `date`. */
+function endOfWeek(date: Date): Date {
+  return addDays(date, (7 - date.getDay()) % 7);
+}
+
+/** Monday that opens the Monday-to-Sunday week containing `date`. */
+function startOfWeek(date: Date): Date {
+  return addDays(date, date.getDay() === 0 ? -6 : 1 - date.getDay());
+}
+
 /**
- * Categorize events for the event grid section headers.
+ * Place an event in the feed's date sections. Returns `null` for events that
+ * already ended, which the feed drops.
  */
-export function getEventDateCategory(
+export function getEventDateSection(
   event: {
     occurrences?: Occurrence[];
   },
   currentDate: Date = new Date()
-): EventDateCategory {
+): EventDateSection | null {
   const primary = getPrimaryOccurrence(event);
   const rawStart = primary?.dtstart_utc;
-  if (!rawStart) return "later";
+  if (!rawStart) return null;
 
   const parsedStart = new Date(rawStart);
-  if (Number.isNaN(parsedStart.getTime())) return "later";
+  if (Number.isNaN(parsedStart.getTime())) return null;
 
   const parsedEnd = primary?.dtend_utc ? new Date(primary.dtend_utc) : parsedStart;
   const startDate = toMidnight(parsedStart);
@@ -145,35 +162,68 @@ export function getEventDateCategory(
     ? startDate
     : toMidnight(parsedEnd);
   const todayDate = toMidnight(currentDate);
-  const tomorrowDate = toMidnight(
-    new Date(
-      todayDate.getFullYear(),
-      todayDate.getMonth(),
-      todayDate.getDate() + 1
-    )
-  );
-  const endOfWeek = toMidnight(
-    new Date(
-      todayDate.getFullYear(),
-      todayDate.getMonth(),
-      todayDate.getDate() + ((7 - todayDate.getDay()) % 7)
-    )
-  );
-  const endOfMonth = toMidnight(
-    new Date(todayDate.getFullYear(), todayDate.getMonth() + 1, 0)
-  );
+  const tomorrowDate = addDays(todayDate, 1);
 
-  if (todayDate >= startDate && todayDate <= endDate) return "today";
+  // Multi-day events surface in the earliest section they are still running in.
+  if (todayDate >= startDate && todayDate <= endDate) return { kind: "today" };
   if (
     (tomorrowDate >= startDate && tomorrowDate <= endDate) ||
     sameDay(startDate, tomorrowDate)
   ) {
-    return "tomorrow";
+    return { kind: "tomorrow" };
   }
-  if (endDate < todayDate) return "past";
-  if (startDate <= endOfWeek) return "later this week";
-  if (startDate <= endOfMonth) return "later this month";
-  return "later";
+  if (endDate < todayDate) return null;
+
+  // The current week's section starts the day after tomorrow so it never
+  // repeats what the Today and Tomorrow sections already show.
+  const thisWeekEnd = endOfWeek(todayDate);
+  const thisWeekStart = addDays(todayDate, 2);
+  if (startDate <= thisWeekEnd) {
+    return thisWeekStart > thisWeekEnd
+      ? null
+      : { kind: "range", startMs: thisWeekStart.getTime(), endMs: thisWeekEnd.getTime() };
+  }
+
+  return {
+    kind: "range",
+    startMs: startOfWeek(startDate).getTime(),
+    endMs: endOfWeek(startDate).getTime(),
+  };
+}
+
+/** Stable identity for a section, used to bucket and order events. */
+export function eventDateSectionKey(section: EventDateSection): string {
+  return section.kind === "range" ? `range:${section.startMs}` : section.kind;
+}
+
+/** Today and Tomorrow always lead; week ranges follow in chronological order. */
+export function eventDateSectionOrder(section: EventDateSection): number {
+  if (section.kind === "today") return -2;
+  if (section.kind === "tomorrow") return -1;
+  return section.startMs;
+}
+
+/** "Sun Jul 26 - Sun Aug 2" (single day collapses to one label). */
+export function formatEventDateSectionRange(
+  startMs: number,
+  endMs: number,
+  locale: string
+): string {
+  const formatter = new Intl.DateTimeFormat(locale, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  });
+  const formatDay = (ms: number): string => {
+    const parts = formatter.formatToParts(new Date(ms));
+    const partValue = (type: Intl.DateTimeFormatPartTypes): string =>
+      parts.find((part) => part.type === type)?.value ?? "";
+    return `${partValue("weekday")} ${partValue("month")} ${partValue("day")}`.trim();
+  };
+
+  const start = formatDay(startMs);
+  const end = formatDay(endMs);
+  return start === end ? start : `${start} - ${end}`;
 }
 
 /**

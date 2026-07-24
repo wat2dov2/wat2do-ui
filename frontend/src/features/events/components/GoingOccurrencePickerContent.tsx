@@ -1,4 +1,4 @@
-import { useId, useState } from "react";
+import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { Event } from "@/shared/types";
 import { Stack } from "@/shared/layout";
@@ -9,13 +9,7 @@ import {
   FieldError,
   FieldLabel,
 } from "@/shared/ui/field";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/shared/ui/select";
+import { MultiSelect } from "@/shared/ui/multi-select";
 
 type EventOccurrence = NonNullable<Event["occurrences"]>[number];
 
@@ -35,22 +29,43 @@ export function GoingOccurrencePickerContent({
   onCancel,
 }: GoingOccurrencePickerContentProps) {
   const { t, i18n } = useTranslation();
-  const selectId = useId();
-  const [draftId, setDraftId] = useState(
-    () =>
-      selectedIds.find((selectedId) =>
-        occurrences.some((occurrence) => occurrence.id === selectedId),
-      ) ??
-      occurrences[0]?.id ??
-      "",
+  const [draftIds, setDraftIds] = useState(() =>
+    selectedIds.filter((selectedId) =>
+      occurrences.some((occurrence) => occurrence.id === selectedId),
+    ),
   );
   const [saveFailed, setSaveFailed] = useState(false);
 
+  const occurrenceIds = occurrences.map((occurrence) => occurrence.id);
+
+  const getOccurrenceLabel = useCallback(
+    (occurrenceId: string) => {
+      const occurrence = occurrences.find((item) => item.id === occurrenceId);
+      if (!occurrence) return occurrenceId;
+      return new Intl.DateTimeFormat(i18n.language, {
+        weekday: "long",
+        month: "long",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+      }).format(new Date(occurrence.dtstart_utc));
+    },
+    [i18n.language, occurrences],
+  );
+
+  const toggleOccurrence = (occurrenceId: string) => {
+    setDraftIds((current) =>
+      current.includes(occurrenceId)
+        ? current.filter((id) => id !== occurrenceId)
+        : [...current, occurrenceId],
+    );
+  };
+
   const confirm = async () => {
-    if (!draftId) return;
+    if (draftIds.length === 0) return;
     setSaveFailed(false);
     try {
-      await onConfirm([draftId]);
+      await onConfirm(draftIds);
     } catch {
       setSaveFailed(true);
     }
@@ -59,40 +74,16 @@ export function GoingOccurrencePickerContent({
   return (
     <Stack gap={4}>
       <Field>
-        <FieldLabel htmlFor={selectId}>
-          {t("events.goingEvents.chooseOccurrences")}
-        </FieldLabel>
+        <FieldLabel>{t("events.goingEvents.chooseOccurrences")}</FieldLabel>
         <FieldDescription>
           {t("events.goingEvents.chooseOccurrencesDescription")}
         </FieldDescription>
-        <Select
-          value={draftId}
-          onValueChange={setDraftId}
-          disabled={isPending || occurrences.length === 0}
-        >
-          <SelectTrigger id={selectId} className="w-full">
-            <SelectValue
-              placeholder={t("events.goingEvents.chooseOccurrences")}
-            />
-          </SelectTrigger>
-          <SelectContent>
-            {occurrences.map((occurrence) => {
-              const date = new Date(occurrence.dtstart_utc);
-              const label = new Intl.DateTimeFormat(i18n.language, {
-                weekday: "long",
-                month: "long",
-                day: "numeric",
-                hour: "numeric",
-                minute: "2-digit",
-              }).format(date);
-              return (
-                <SelectItem key={occurrence.id} value={occurrence.id}>
-                  {label}
-                </SelectItem>
-              );
-            })}
-          </SelectContent>
-        </Select>
+        <MultiSelect
+          options={occurrenceIds}
+          selected={draftIds}
+          onToggle={toggleOccurrence}
+          getLabel={getOccurrenceLabel}
+        />
       </Field>
       <FieldError>
         {saveFailed ? t("events.goingEvents.saveFailed") : null}
@@ -110,7 +101,7 @@ export function GoingOccurrencePickerContent({
         <Button
           type="button"
           onClick={() => void confirm()}
-          disabled={isPending || !draftId}
+          disabled={isPending || draftIds.length === 0}
           className="flex-1"
         >
           {isPending ? t("common.saving") : t("common.confirm")}

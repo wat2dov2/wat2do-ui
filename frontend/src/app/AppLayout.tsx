@@ -4,7 +4,6 @@ import { useTranslation } from "react-i18next";
 import {
   Mail,
   Settings,
-  Plus,
   OrganizationChart,
   Ticket,
 } from "@/shared/ui/doodle-icons";
@@ -30,8 +29,6 @@ export function AppLayout({ children }: AppLayoutProps) {
     return pathname.startsWith(href);
   };
 
-  const isOrganizationPanel = pathname.startsWith(ROUTES.ORGANIZATION_PANEL);
-
   const dockItems: FloatingDockItem[] = [
     {
       title: t("navigation.events"),
@@ -39,27 +36,17 @@ export function AppLayout({ children }: AppLayoutProps) {
       href: ROUTES.HOME,
       isActive: isActive(ROUTES.HOME),
     },
-    ...(!isOrganizationPanel
-      ? [
-          {
-            title: t("navigation.create"),
-            icon: <Plus className="size-full" />,
-            href: ROUTES.EVENT_SUBMIT,
-            isActive: isActive(ROUTES.EVENT_SUBMIT),
-          },
-        ]
-      : []),
-    {
-      title: t("navigation.contact"),
-      icon: <Mail className="size-full" />,
-      href: ROUTES.CONTACT,
-      isActive: isActive(ROUTES.CONTACT),
-    },
     {
       title: t("navigation.organizations"),
       icon: <OrganizationChart className="size-full" />,
       href: ROUTES.ORGANIZATIONS,
       isActive: isActive(ROUTES.ORGANIZATIONS),
+    },
+    {
+      title: t("navigation.contact"),
+      icon: <Mail className="size-full" />,
+      href: ROUTES.CONTACT,
+      isActive: isActive(ROUTES.CONTACT),
     },
     ...(isAuthenticated
       ? [

@@ -3,7 +3,6 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/ui/tabs";
 import { ProfileTab } from "@/features/settings/components/ProfileTab";
 import { NotificationsTab } from "@/features/settings/components/NotificationsTab";
 import { AppearanceTab } from "@/features/settings/components/AppearanceTab";
-import { PrivacyTab } from "@/features/settings/components/PrivacyTab";
 import { useUserEmail } from "@/features/auth";
 import { QP } from "@/shared/constants/queryParams";
 import { useMutableSearchParams } from "@/shared/hooks/useMutableSearchParams";
@@ -41,7 +40,6 @@ export function SettingsPage() {
             <TabsTrigger value="appearance">
               {t("settings.tabs.appearance")}
             </TabsTrigger>
-            <TabsTrigger value="privacy">{t("settings.tabs.privacy")}</TabsTrigger>
           </TabsList>
           <TabsContent value="profile" className="mt-8">
             <ProfileTab userEmail={userEmail} />
@@ -51,9 +49,6 @@ export function SettingsPage() {
           </TabsContent>
           <TabsContent value="appearance" className="mt-8">
             <AppearanceTab />
-          </TabsContent>
-          <TabsContent value="privacy" className="mt-8">
-            <PrivacyTab />
           </TabsContent>
         </Tabs>
       </div>

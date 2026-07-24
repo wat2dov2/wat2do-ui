@@ -2,8 +2,13 @@ import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { cva, type VariantProps } from "class-variance-authority"
 
+import { Check } from "@/shared/ui/doodle-icons"
 import { cn } from "@/shared/lib/utils"
 
+/**
+ * `data-selected` marks a toggleable button that is currently "on". Selected
+ * styling is defined once per variant here so no call site hand-rolls it.
+ */
 const buttonVariants = cva(
   "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all cursor-pointer disabled:pointer-events-none disabled:opacity-50 disabled:cursor-not-allowed [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 aria-invalid:border-destructive",
   {
@@ -12,9 +17,9 @@ const buttonVariants = cva(
         primary:
           "bg-primary text-primary-foreground hover:bg-primary-hover active:bg-primary-active",
         secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary-hover active:bg-secondary-active",
+          "bg-secondary text-secondary-foreground hover:bg-secondary-hover active:bg-secondary-active data-[selected=true]:bg-selected data-[selected=true]:text-selected-foreground data-[selected=true]:shadow-[inset_0_0_0_1px_var(--selected-border)] data-[selected=true]:hover:bg-selected-hover",
         ghost:
-          "bg-transparent text-foreground hover:bg-surface-hover active:bg-surface-active",
+          "bg-transparent text-foreground hover:bg-surface-hover active:bg-surface-active data-[selected=true]:bg-selected data-[selected=true]:text-selected-foreground data-[selected=true]:hover:bg-selected-hover",
         destructive:
           "bg-destructive text-destructive-foreground hover:bg-destructive-hover active:bg-destructive-active focus-visible:ring-destructive/20",
       },
@@ -34,11 +39,20 @@ const buttonVariants = cva(
   }
 )
 
+/** Icon-only sizes have no room for the trailing check glyph. */
+const ICON_ONLY_SIZES = new Set(["icon", "icon-sm", "icon-lg"])
+
 const Button = React.forwardRef<
   HTMLButtonElement,
   React.ComponentProps<"button"> &
     VariantProps<typeof buttonVariants> & {
       asChild?: boolean
+      /**
+       * Marks a toggleable button as "on": applies the selected styling for the
+       * variant, exposes `aria-pressed`, and appends a check glyph on sizes that
+       * have room for one.
+       */
+      selected?: boolean
       "data-slot"?: string
     }
 >(
@@ -48,6 +62,8 @@ const Button = React.forwardRef<
       variant,
       size,
       asChild = false,
+      selected,
+      children,
       onClick,
       onMouseDown,
       onPointerDown,
@@ -59,12 +75,16 @@ const Button = React.forwardRef<
     ref,
   ) => {
     const Comp = asChild ? Slot : "button"
+    const showSelectedCheck =
+      Boolean(selected) && !asChild && !ICON_ONLY_SIZES.has(size ?? "default")
 
     return (
       <Comp
         ref={ref}
         data-slot={dataSlot}
         data-elevation="control"
+        data-selected={selected === undefined ? undefined : selected}
+        aria-pressed={selected}
         type={asChild ? undefined : type}
         disabled={disabled}
         className={cn(buttonVariants({ variant, size, className }))}
@@ -72,7 +92,16 @@ const Button = React.forwardRef<
         onMouseDown={onMouseDown}
         onPointerDown={onPointerDown}
         {...props}
-      />
+      >
+        {showSelectedCheck ? (
+          <>
+            {children}
+            <Check aria-hidden="true" />
+          </>
+        ) : (
+          children
+        )}
+      </Comp>
     )
   },
 )

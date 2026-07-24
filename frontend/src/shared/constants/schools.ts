@@ -122,6 +122,35 @@ export function getCurrentSchool(): string {
   return getHostnameSchoolStatus(window.location.hostname).school;
 }
 
+/**
+ * Resolve the school a request is scoped to from its Host header.
+ *
+ * Each school is served from its own subdomain, so the host is the only source
+ * of truth for scoping. Hosts carrying a port (local dev) are handled.
+ */
+export function getSchoolFromRequestHost(host: string | null | undefined): string {
+  const hostname = (host ?? "").split(":")[0];
+  const status = getHostnameSchoolStatus(hostname);
+  return status.isKnownSchool ? status.school : DEFAULT_SCHOOL;
+}
+
+/**
+ * Absolute origin serving a school, derived from the current location so it
+ * works across production subdomains and `*.localhost` dev hosts alike.
+ */
+export function getSchoolOrigin(school: string): string {
+  const slug = resolveSchool(school);
+  const { protocol, hostname, port } = window.location;
+  const labels = hostname.split(".");
+  const baseLabels = parseSchoolCandidateFromHostname(hostname)
+    ? labels.slice(1)
+    : labels[0] === "www"
+      ? labels.slice(1)
+      : labels;
+  const nextHost = [slug, ...baseLabels].join(".");
+  return `${protocol}//${nextHost}${port ? `:${port}` : ""}`;
+}
+
 export function getSchoolDisplayName(school: string): string {
   const slug = resolveSchool(school);
   return SCHOOL_LABELS[slug] ?? slug;

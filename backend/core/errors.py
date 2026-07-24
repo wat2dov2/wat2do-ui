@@ -49,6 +49,9 @@ EMAIL_NOT_ALLOWED = (
 ORGANIZATION_EVENT_CREATION_REQUIRED = (
     "Only approved organization owners can create events for their organization"
 )
+ORGANIZATION_PENDING_REVIEW = (
+    "This organization is still awaiting review. You can publish events once it is approved."
+)
 
 # ---------------------------------------------------------------------------
 # 400 / 409 – Validation & conflict

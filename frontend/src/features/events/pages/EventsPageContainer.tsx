@@ -1,4 +1,5 @@
 import { useMemo, useCallback, useState, useEffect } from "react";
+import Link from "next/link";
 import { useTranslation } from "react-i18next";
 import { EventList } from "../components/EventList";
 import { EventCount } from "../components/EventCount";
@@ -15,6 +16,7 @@ import {
   type NewlyAddedFilterValue,
 } from "@/features/events/components/NewlyAddedFilterSelect";
 import { QP } from "@/shared/constants/queryParams";
+import { ROUTES } from "@/shared/constants/routes";
 import { useMutableSearchParams } from "@/shared/hooks/useMutableSearchParams";
 import { controlBox } from "@/shared/config/controlBox";
 import type { ViewMode, Event } from "@/shared/types";
@@ -152,11 +154,16 @@ export function EventsPageContainer() {
     <>
       <div className="space-y-2">
         <div className="space-y-3 pb-2">
-          <EventCount
-            count={totalEvents}
-            latestAddedEvent={latestAddedEvent}
-            onLatestAddedEventSearch={handleLatestAddedEventSearch}
-          />
+          <div className="flex items-start justify-between gap-3">
+            <EventCount
+              count={totalEvents}
+              latestAddedEvent={latestAddedEvent}
+              onLatestAddedEventSearch={handleLatestAddedEventSearch}
+            />
+            <Button asChild variant="secondary" size="sm" className="shrink-0">
+              <Link href={ROUTES.EVENT_SUBMIT}>{t("events.submitEvent")}</Link>
+            </Button>
+          </div>
           <SearchBar
             searchQuery={filters.searchQuery}
             onSearchChange={(query) => {
@@ -179,6 +186,7 @@ export function EventsPageContainer() {
                 <NewlyAddedFilterSelect
                   value={newlyAddedFilterValue}
                   showSinceLastVisit={profileCompleted && lastVisitAt !== null}
+                  lastVisitAt={lastVisitAt}
                   onValueChange={handleNewlyAddedFilterChange}
                   onClear={handleNewlyAddedFilterClear}
                 />

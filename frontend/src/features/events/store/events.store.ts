@@ -166,8 +166,10 @@ function syncSchoolFilterFromProfile(): void {
 }
 
 function resetSchoolFilterOnLogout(): void {
-  if (useEventsStore.getState().schoolFilter !== DEFAULT_SCHOOL) {
-    useEventsStore.getState().setSchoolFilter(DEFAULT_SCHOOL);
+  // A school subdomain still scopes the feed once the profile is gone.
+  const nextSchool = getRouteSchool() ?? DEFAULT_SCHOOL;
+  if (useEventsStore.getState().schoolFilter !== nextSchool) {
+    useEventsStore.getState().setSchoolFilter(nextSchool);
   }
 }
 

@@ -1876,6 +1876,7 @@
           "organizations"
         ],
         "summary": "List Organizations",
+        "description": "Public directory. Only approved organizations are listed.",
         "operationId": "list_organizations_organizations__get",
         "parameters": [
           {
@@ -2026,6 +2027,7 @@
           "organizations"
         ],
         "summary": "Create Organization",
+        "description": "Anyone signed in may submit an organization; only admins publish directly.",
         "operationId": "create_organization_organizations__post",
         "security": [
           {
@@ -2049,6 +2051,111 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/OrganizationResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/organizations/review": {
+      "get": {
+        "tags": [
+          "organizations"
+        ],
+        "summary": "List Organizations For Review",
+        "description": "Admin review queue across every review state.",
+        "operationId": "list_organizations_for_review_organizations_review_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "organization_status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "pending",
+                    "approved",
+                    "rejected"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Organization Status"
+            }
+          },
+          {
+            "name": "school",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 255
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "School"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 1000,
+              "minimum": 1,
+              "description": "Page number (1-indexed)",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "Page number (1-indexed)"
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "Items per page (max 100)",
+              "default": 50,
+              "title": "Page Size"
+            },
+            "description": "Items per page (max 100)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponse_OrganizationResponse_"
                 }
               }
             }
@@ -2572,6 +2679,68 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/OrganizationIntegrationResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/organizations/{organization_id}/review": {
+      "post": {
+        "tags": [
+          "organizations"
+        ],
+        "summary": "Review Organization",
+        "description": "Approve or reject a submitted organization.",
+        "operationId": "review_organization_organizations__organization_id__review_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "organization_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Organization Id"
+            }
+          },
+          {
+            "name": "organization_status",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "enum": [
+                "pending",
+                "approved",
+                "rejected"
+              ],
+              "type": "string",
+              "title": "Organization Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationResponse"
                 }
               }
             }
@@ -5989,8 +6158,6 @@
             "anyOf": [
               {
                 "type": "string",
-                "maxLength": 100,
-                "minLength": 1,
                 "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
               },
               {
@@ -6169,8 +6336,6 @@
             "anyOf": [
               {
                 "type": "string",
-                "maxLength": 100,
-                "minLength": 1,
                 "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
               },
               {
@@ -6377,8 +6542,6 @@
             "anyOf": [
               {
                 "type": "string",
-                "maxLength": 100,
-                "minLength": 1,
                 "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
               },
               {
@@ -7722,7 +7885,6 @@
             "type": "string",
             "maxLength": 100,
             "minLength": 1,
-            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
             "title": "Organization Type",
             "default": "independent"
           },
@@ -8267,6 +8429,16 @@
             "type": "string",
             "title": "Organization Name"
           },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "approved",
+              "rejected"
+            ],
+            "title": "Status",
+            "default": "approved"
+          },
           "categories": {
             "anyOf": [
               {
@@ -8316,8 +8488,6 @@
           },
           "organization_type": {
             "type": "string",
-            "maxLength": 100,
-            "minLength": 1,
             "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
             "title": "Organization Type",
             "default": "independent"
@@ -8474,8 +8644,7 @@
               {
                 "type": "string",
                 "maxLength": 100,
-                "minLength": 1,
-                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                "minLength": 1
               },
               {
                 "type": "null"

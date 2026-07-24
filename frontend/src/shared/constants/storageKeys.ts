@@ -6,7 +6,7 @@
  *
  * Allowed per AGENTS.md localStorage policy:
  *   theme, userEmail, userProfile, viewMode, filterViewMode,
- *   i18n-language, notificationPreferences, privacyPreferences, event visits,
+ *   i18n-language, notificationPreferences, event visits,
  *   wat2do-app-prefs (composite of viewMode + filterViewMode via Zustand persist)
  */
 
@@ -21,7 +21,6 @@ export const STORAGE_KEYS = {
 
   // Settings
   NOTIFICATION_PREFS: "notificationPreferences",
-  PRIVACY_PREFS: "privacyPreferences",
 
   // Signed-in event discovery history
   EVENT_VISITS: "wat2do:event-visits",

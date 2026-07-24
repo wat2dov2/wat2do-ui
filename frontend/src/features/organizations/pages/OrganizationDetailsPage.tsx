@@ -13,7 +13,6 @@ import {
   HelpCircle,
   Instagram,
   Loader2,
-  Shield,
   UserPlus,
 } from "@/shared/ui/doodle-icons";
 import { Button } from "@/shared/ui/button";
@@ -159,7 +158,6 @@ function OrganizationDetailsContent({
     if (isUnowned) {
       return (
         <Button onClick={() => setShowClaimModal(true)} className="w-full">
-          <Shield className="size-4" />
           {t("organizations.claimOrganization")}
         </Button>
       );
@@ -305,6 +303,19 @@ function OrganizationDetailsContent({
             </Stack>
           </Section>
 
+          {organization.status !== "approved" ? (
+            <Section variant="surface">
+              <div className="flex items-center gap-2 rounded-lg border border-warning/20 bg-warning/10 px-3 py-2 text-sm text-warning">
+                <HelpCircle className="size-4 shrink-0" />
+                <span>
+                  {organization.status === "rejected"
+                    ? t("organizations.reviewRejected")
+                    : t("organizations.awaitingReview")}
+                </span>
+              </div>
+            </Section>
+          ) : null}
+
           <Section variant="surface">
             <Stack gap={3}>
               <div className="flex gap-3">
@@ -313,12 +324,8 @@ function OrganizationDetailsContent({
                     type="button"
                     variant="secondary"
                     size="icon"
+                    selected={isSaved}
                     onClick={() => toggleSave(organization.id)}
-                    className={
-                      isSaved
-                        ? "border-primary/25 bg-primary/10 text-primary"
-                        : undefined
-                    }
                     aria-label={
                       isSaved
                         ? t("organizations.saved")

@@ -5,6 +5,10 @@
 
 :root {
 
+  /* Scrim laid over event artwork so overlay text stays legible on any poster */
+  --image-scrim: oklch(0 0 0 / 0.55);
+  --image-scrim-foreground: oklch(1 0 0);
+
   /* Brand accent palette */
   --blue-400: hsl(214 95% 65%);
   --blue-500: hsl(217 91% 60%);
