@@ -1,8 +1,10 @@
 from unittest.mock import MagicMock, patch
 
+from core.exceptions import ValidationError
 from core.rate_limit import (
     ai_generate_event_rate_limiter,
     ai_generate_filters_rate_limiter,
+    ai_parse_event_image_rate_limiter,
 )
 
 # ---------------------------------------------------------------------------
@@ -245,17 +247,80 @@ def test_openai_timeout_error_returns_502(authenticated_client, monkeypatch):
 # ---------------------------------------------------------------------------
 
 
-def test_parse_event_image_requires_auth(client):
+def _mock_empty_image_parse(monkeypatch):
+    monkeypatch.setattr("routers.ai._get_openai_client", lambda: MagicMock())
+    monkeypatch.setattr(
+        "services.scraper.extractor.extract_events_from_post",
+        lambda **kwargs: [],
+    )
+    monkeypatch.setattr(
+        "services.storage_service.storage.validate_and_prepare",
+        lambda bucket, data, content_type: (data, content_type),
+    )
+    monkeypatch.setattr(
+        "services.storage_service.storage.upload_file",
+        lambda bucket, file_bytes, content_type: "https://example.com/public-flyer.png",
+    )
+
+
+def test_parse_event_image_anonymous(client, monkeypatch):
+    ai_parse_event_image_rate_limiter._requests.clear()
+    _mock_empty_image_parse(monkeypatch)
+
     resp = client.post(
         "/ai/parse-event-image", files={"file": ("flyer.jpg", b"fake_bytes", "image/jpeg")}
     )
-    assert resp.status_code == 401
+
+    assert resp.status_code == 200
+    assert resp.json()["source_image_url"] == "https://example.com/public-flyer.png"
+
+
+def test_parse_event_image_anonymous_rate_limit(client, monkeypatch):
+    ai_parse_event_image_rate_limiter._requests.clear()
+    _mock_empty_image_parse(monkeypatch)
+    original_max = ai_parse_event_image_rate_limiter.max_requests
+    ai_parse_event_image_rate_limiter.max_requests = 1
+    try:
+        first_resp = client.post(
+            "/ai/parse-event-image",
+            files={"file": ("flyer.jpg", b"fake_bytes", "image/jpeg")},
+        )
+        second_resp = client.post(
+            "/ai/parse-event-image",
+            files={"file": ("flyer.jpg", b"fake_bytes", "image/jpeg")},
+        )
+        assert first_resp.status_code == 200
+        assert second_resp.status_code == 429
+    finally:
+        ai_parse_event_image_rate_limiter.max_requests = original_max
+        ai_parse_event_image_rate_limiter._requests.clear()
+
+
+def test_parse_event_image_validates_before_ai(client, monkeypatch):
+    ai_parse_event_image_rate_limiter._requests.clear()
+    parse_mock = MagicMock()
+    monkeypatch.setattr("routers.ai.svc_parse_event_image", parse_mock)
+    monkeypatch.setattr(
+        "services.storage_service.storage.validate_and_prepare",
+        MagicMock(
+            side_effect=ValidationError(
+                "Invalid image file",
+                code="invalid_file_type",
+            )
+        ),
+    )
+
+    resp = client.post(
+        "/ai/parse-event-image",
+        files={"file": ("flyer.txt", b"not-an-image", "text/plain")},
+    )
+
+    assert resp.status_code == 400
+    parse_mock.assert_not_called()
 
 
 def test_parse_event_image_authenticated(authenticated_client, monkeypatch):
-    from core.rate_limit import ai_generate_event_rate_limiter
-
-    ai_generate_event_rate_limiter._requests.clear()
+    ai_parse_event_image_rate_limiter._requests.clear()
 
     monkeypatch.setattr("routers.ai._get_openai_client", lambda: MagicMock())
 

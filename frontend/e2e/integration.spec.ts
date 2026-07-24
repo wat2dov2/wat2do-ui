@@ -1101,6 +1101,52 @@ test.describe("Standalone submission pages", () => {
     ).toBeVisible();
   });
 
+  test("anonymous visitor can parse an event flyer without session auth", async ({
+    page,
+  }) => {
+    let parseAuthorization: string | null = null;
+    await page.route(
+      url => apiPath(url) === "/ai/parse-event-image",
+      async (route) => {
+        parseAuthorization =
+          route.request().headers()["authorization"] ?? null;
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            organization_id: null,
+            title: "Public Flyer Event",
+            description: "",
+            occurrences: [
+              {
+                dtstart_local: "2026-08-10T18:00",
+                dtend_local: "2026-08-10T20:00",
+              },
+            ],
+            location: "Student Life Centre",
+            category: "Technology",
+            price: 0,
+            food: [],
+            registration: false,
+            source_image_url: "/wat2do-logo.png",
+          }),
+        });
+      },
+    );
+
+    await page.goto(`${BASE}/events/submit`);
+    await page.locator('input[type="file"]').setInputFiles({
+      name: "public-event.png",
+      mimeType: "image/png",
+      buffer: Buffer.from("event-image"),
+    });
+
+    await expect(page.locator("#field-title")).toHaveValue(
+      "Public Flyer Event",
+    );
+    expect(parseAuthorization).toBeNull();
+  });
+
   test("UTM hostname owns event and organization submission context", async ({
     page,
   }) => {

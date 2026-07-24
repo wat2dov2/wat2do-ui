@@ -92,45 +92,11 @@ export async function parseEventImage(file: File): Promise<EventFormData> {
   const form = new FormData();
   form.append("file", file);
 
-  const headers: Record<string, string> = {};
-  const token = getAccessToken();
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
-  }
-
   const url = `${API_BASE_URL}/ai/parse-event-image`;
   const res = await fetch(url, {
     method: "POST",
-    headers,
     body: form,
   });
-
-  if (res.status === 401) {
-    const refreshed = await refreshAccessToken();
-    if (refreshed) {
-      const retryForm = new FormData();
-      retryForm.append("file", file);
-
-      const retryHeaders: Record<string, string> = {
-        Authorization: `Bearer ${getAccessToken()}`,
-      };
-      const retryRes = await fetch(url, {
-        method: "POST",
-        headers: retryHeaders,
-        body: retryForm,
-      });
-
-      if (!retryRes.ok) {
-        const body = await retryRes.json().catch((err) => { console.error("Failed to parse upload retry error response:", err); return {}; });
-        throw new Error(body.detail || `AI parsing failed (${retryRes.status})`);
-      }
-
-      return await retryRes.json();
-    }
-
-    handleAuthFailure();
-    throw new Error("AI parsing failed: session expired");
-  }
 
   if (!res.ok) {
     const body = await res.json().catch((err) => { console.error("Failed to parse upload error response:", err); return {}; });

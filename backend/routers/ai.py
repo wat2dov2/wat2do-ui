@@ -1,11 +1,15 @@
+import asyncio
 import logging
 
-from fastapi import APIRouter, Depends, File, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 
 from core.auth import get_current_user
+from core.constants import BUCKET_EVENT_IMAGES
+from core.exceptions import ValidationError
 from core.rate_limit import (
     ai_generate_event_rate_limiter,
     ai_generate_filters_rate_limiter,
+    ai_parse_event_image_rate_limiter,
 )
 
 
@@ -26,7 +30,7 @@ from services.ai_service import (
 from services.ai_service import (
     parse_event_image as svc_parse_event_image,
 )
-from services.school_context import school_for_user
+from services.storage_service import storage
 
 log = logging.getLogger(__name__)
 
@@ -63,30 +67,14 @@ def generate_event(
 @router.post("/parse-event-image", response_model=EventFormDataResponse)
 async def parse_event_image(
     file: UploadFile = File(...),
-    user: dict = Depends(get_current_user),
-    _rl: None = Depends(ai_generate_event_rate_limiter.dependency(key_func=_user_id_key)),
+    _rl: None = Depends(ai_parse_event_image_rate_limiter.ip_dependency()),
 ):
-    client = _get_openai_client()
     contents = await file.read()
-    school = school_for_user(user)
-    result = svc_parse_event_image(
-        contents,
-        file.content_type or "image/jpeg",
-        client=client,
-        user_school=school,
-    )
-
-    import asyncio
-
-    from fastapi import HTTPException, status
-
-    from core.constants import BUCKET_EVENT_IMAGES
-    from core.exceptions import ValidationError
-    from services.storage_service import storage
-
     try:
         validated_bytes, final_content_type = storage.validate_and_prepare(
-            BUCKET_EVENT_IMAGES, contents, file.content_type or "image/jpeg"
+            BUCKET_EVENT_IMAGES,
+            contents,
+            file.content_type or "image/jpeg",
         )
     except ValidationError as exc:
         http_status = (
@@ -95,6 +83,13 @@ async def parse_event_image(
             else status.HTTP_400_BAD_REQUEST
         )
         raise HTTPException(status_code=http_status, detail=exc.detail) from exc
+
+    client = _get_openai_client()
+    result = svc_parse_event_image(
+        validated_bytes,
+        final_content_type,
+        client=client,
+    )
 
     url = await asyncio.to_thread(
         storage.upload_file,
