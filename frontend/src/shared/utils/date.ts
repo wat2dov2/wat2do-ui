@@ -1,3 +1,5 @@
+import { controlBox } from "@/shared/config/controlBox";
+
 export type EventDateCategory =
   | "today"
   | "tomorrow"
@@ -71,7 +73,7 @@ export function wasAddedWithinLast24Hours(
   if (Number.isNaN(addedAt.getTime())) return false;
 
   const ageMs = currentDate.getTime() - addedAt.getTime();
-  return ageMs >= 0 && ageMs <= 24 * 60 * 60 * 1000;
+  return ageMs >= 0 && ageMs <= controlBox.eventDiscovery.newEventWindowMs;
 }
 
 /**

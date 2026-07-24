@@ -4,6 +4,7 @@ import { useSearch } from "@/features/search";
 import { useEventsStore } from "@/features/events/store/events.store";
 import { useEventStats } from "@/features/events/hooks/useEventStats";
 import { useGoingEvents } from "@/features/events/hooks/useGoingEvents";
+import { useLastEventsVisit } from "@/features/events/hooks/useLastEventsVisit";
 import { useCreditsStore } from "@/features/credits/store/credits.store";
 import { getUniqueEvents } from "@/shared/utils/event";
 import type { Event } from "@/shared/types";
@@ -11,6 +12,7 @@ import type { ViewMode } from "@/shared/types";
 
 interface UseEventsPageDataOptions {
   profileCompleted: boolean;
+  userEmail: string | null;
   viewMode: ViewMode;
 }
 
@@ -41,9 +43,14 @@ function derivePromotedEvents(
  * embedded browse snapshot, going events, client-side counts overlay,
  * search/filters, and derived ordered events.
  */
-export function useEventsPageData({ profileCompleted, viewMode }: UseEventsPageDataOptions) {
+export function useEventsPageData({
+  profileCompleted,
+  userEmail,
+  viewMode,
+}: UseEventsPageDataOptions) {
   const router = useRouter();
   const schoolFilter = useEventsStore((s) => s.schoolFilter);
+  const lastVisitAt = useLastEventsVisit(userEmail, schoolFilter);
   const { data: goingSelections = [] } = useGoingEvents();
   const goingEventIds = useMemo(
     () => goingSelections.map((selection) => selection.event_id),
@@ -90,6 +97,7 @@ export function useEventsPageData({ profileCompleted, viewMode }: UseEventsPageD
     goingEventIds,
     eventStats,
     schoolFilter,
+    lastVisitAt,
     latestAddedEvent,
     promotedEvents,
     filters,

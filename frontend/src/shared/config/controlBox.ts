@@ -4,10 +4,15 @@ import eventDiscovery from "../../../../backend/controlbox/event_discovery.json"
 import interactionTracking from "../../../../backend/controlbox/interaction_tracking.json";
 
 const secondsToMilliseconds = (seconds: number): number => seconds * 1000;
+const hoursToMilliseconds = (hours: number): number => hours * 60 * 60 * 1000;
 
 export const controlBox = {
   eventDiscovery: {
     feedRevalidateSeconds: eventDiscovery.feed_revalidate_seconds,
+    newEventWindowHours: eventDiscovery.new_event_window_hours,
+    newEventWindowMs: hoursToMilliseconds(
+      eventDiscovery.new_event_window_hours,
+    ),
     serverFeedPageSize: eventDiscovery.server_feed_page_size,
   },
   clientCache: {

@@ -24,6 +24,7 @@ def test_checked_in_controlbox_is_valid() -> None:
     assert controlbox.recommendations.snapshot.candidate_events_per_school == 1000
     assert controlbox.morning_email.new_event_window_hours == 24
     assert controlbox.event_discovery.feed_revalidate_seconds == 3600
+    assert controlbox.event_discovery.new_event_window_hours == 24
     assert (
         controlbox.instagram_publishing.accounts[0].instagram_business_account_id
         == "17841476154506771"

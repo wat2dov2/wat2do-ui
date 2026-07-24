@@ -92,7 +92,7 @@ export function useFilterState(profileCompleted: boolean) {
     goingFilter,
     sortBy,
     sortOrder,
-    addedWithin24h,
+    addedSince,
   } = useSearchStore(
     useShallow((s) => ({
       searchQuery: s.searchQuery,
@@ -107,7 +107,7 @@ export function useFilterState(profileCompleted: boolean) {
       goingFilter: s.goingFilter,
       sortBy: s.sortBy,
       sortOrder: s.sortOrder,
-      addedWithin24h: s.addedWithin24h,
+      addedSince: s.addedSince,
     })),
   );
   const {
@@ -158,9 +158,18 @@ export function useFilterState(profileCompleted: boolean) {
     (value: boolean) => updateFilterState({ going: value }),
     [updateFilterState],
   );
-  const setAddedWithin24h = useCallback(
-    (value: boolean) => updateFilterState({ addedWithin24h: value }),
-    [updateFilterState],
+  const setAddedSince = useCallback(
+    (value: string) => {
+      setFilterState((current) =>
+        normalizeFilterState({
+          ...current,
+          addedSince: value,
+          sortBy: value ? "added_at" : DEFAULT_FILTER_SORT_BY,
+          sortOrder: value ? "desc" : DEFAULT_FILTER_SORT_ORDER,
+        }),
+      );
+    },
+    [setFilterState],
   );
   const setSortBy = useCallback(
     (value: string) => updateFilterState({ sortBy: value }),
@@ -175,26 +184,6 @@ export function useFilterState(profileCompleted: boolean) {
       updateFilterState({ sortBy, sortOrder }),
     [updateFilterState],
   );
-  const toggleAddedWithin24h = useCallback(() => {
-    setFilterState((current) => {
-      if (current.addedWithin24h) {
-        return normalizeFilterState({
-          ...current,
-          addedWithin24h: false,
-          sortBy: DEFAULT_FILTER_SORT_BY,
-          sortOrder: DEFAULT_FILTER_SORT_ORDER,
-        });
-      }
-
-      return normalizeFilterState({
-        ...current,
-        addedWithin24h: true,
-        sortBy: "added_at",
-        sortOrder: "desc",
-      });
-    });
-  }, [setFilterState]);
-
   const toggleCategory = useCallback(
     (cat: string) => toggleFilterValue("categories", cat),
     [toggleFilterValue],
@@ -232,7 +221,7 @@ export function useFilterState(profileCompleted: boolean) {
           goingFilter,
           sortBy,
           sortOrder,
-          addedWithin24h,
+          addedSince,
         }),
       ),
     [
@@ -248,7 +237,7 @@ export function useFilterState(profileCompleted: boolean) {
       goingFilter,
       sortBy,
       sortOrder,
-      addedWithin24h,
+      addedSince,
     ],
   );
 
@@ -278,7 +267,7 @@ export function useFilterState(profileCompleted: boolean) {
         going: filters.going || false,
         sortBy: filters.sortBy,
         sortOrder: filters.sortOrder,
-        addedWithin24h: filters.addedWithin24h || false,
+        addedSince: filters.addedSince || "",
       });
     },
     [setFilterState],
@@ -352,9 +341,8 @@ export function useFilterState(profileCompleted: boolean) {
     setFreeFoodFilter,
     goingFilter,
     setGoingFilter,
-    addedWithin24h,
-    setAddedWithin24h,
-    toggleAddedWithin24h,
+    addedSince,
+    setAddedSince,
     toggleCategory,
     toggleLocation,
     toggleDay,

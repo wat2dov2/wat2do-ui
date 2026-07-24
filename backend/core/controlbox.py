@@ -134,6 +134,7 @@ class RecommendationControl(_ControlModel):
 
 class EventDiscoveryControl(_ControlModel):
     feed_revalidate_seconds: int = Field(gt=0)
+    new_event_window_hours: int = Field(gt=0)
     server_feed_page_size: int = Field(gt=0, le=100)
 
 

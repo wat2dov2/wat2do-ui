@@ -4,15 +4,27 @@ import { EventList } from "../components/EventList";
 import { EventCount } from "../components/EventCount";
 import { SearchBar, MoreFiltersButton, FilterDropdown } from "@/features/search";
 import { useUIStore } from "@/shared/store/ui.store";
-import { useProfileCompleted } from "@/features/auth";
+import { useAuthState } from "@/features/auth";
 import { useDarkMode, useHorizontalScrollFade } from "@/shared/hooks";
 import { HorizontalScrollFadeEdge } from "@/shared/ui/horizontal-scroll-fade-edge";
 import { Button } from "@/shared/ui/button";
 import { useEventsPageData } from "@/features/events/hooks/useEventsPageData";
 import { EventDetailsModal } from "@/features/events/components/EventDetailsModal";
+import {
+  NewlyAddedFilterSelect,
+  type NewlyAddedFilterValue,
+} from "@/features/events/components/NewlyAddedFilterSelect";
 import { QP } from "@/shared/constants/queryParams";
 import { useMutableSearchParams } from "@/shared/hooks/useMutableSearchParams";
-import type { ViewMode, QuickFilterConfig, Event } from "@/shared/types";
+import { controlBox } from "@/shared/config/controlBox";
+import type { ViewMode, Event } from "@/shared/types";
+
+interface QuickFilterButtonConfig {
+  id: string;
+  labelKey: string;
+  active: boolean;
+  onClick: () => void;
+}
 
 export function EventsPageContainer() {
   const viewMode = useUIStore((s) => s.viewMode);
@@ -22,7 +34,7 @@ export function EventsPageContainer() {
   const showFilterDropdown = useUIStore((s) => s.showFilterDropdown);
   const setShowFilterDropdown = useUIStore((s) => s.setShowFilterDropdown);
   const { isDarkMode } = useDarkMode();
-  const profileCompleted = useProfileCompleted();
+  const { profileCompleted, userEmail } = useAuthState();
   const { t } = useTranslation();
   const [searchParams] = useMutableSearchParams();
 
@@ -34,10 +46,15 @@ export function EventsPageContainer() {
     eventStats,
     latestAddedEvent,
     promotedEvents,
+    lastVisitAt,
     filters,
     orderedEvents,
     allEvents,
-  } = useEventsPageData({ profileCompleted, viewMode });
+  } = useEventsPageData({
+    profileCompleted,
+    userEmail: profileCompleted ? userEmail : null,
+    viewMode,
+  });
 
   const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
   const urlEventId = useMemo(() => {
@@ -68,9 +85,28 @@ export function EventsPageContainer() {
     setViewMode(mode);
   }, [setViewMode]);
 
-  const isNewlyAddedActive = filters.addedWithin24h;
-  const handleNewlyAddedToggle = useCallback(() => {
-    filters.toggleAddedWithin24h();
+  const newlyAddedFilterValue: NewlyAddedFilterValue | null =
+    filters.addedSince === ""
+      ? null
+      : filters.addedSince === lastVisitAt
+        ? "sinceLastVisit"
+        : "last24Hours";
+
+  const handleNewlyAddedFilterChange = useCallback(
+    (value: NewlyAddedFilterValue) => {
+      const cutoff =
+        value === "sinceLastVisit" && lastVisitAt
+          ? lastVisitAt
+          : new Date(
+              Date.now() - controlBox.eventDiscovery.newEventWindowMs,
+            ).toISOString();
+      filters.setAddedSince(cutoff);
+    },
+    [filters, lastVisitAt],
+  );
+
+  const handleNewlyAddedFilterClear = useCallback(() => {
+    filters.setAddedSince("");
   }, [filters]);
 
   const handleLatestAddedEventSearch = useCallback(() => {
@@ -81,33 +117,24 @@ export function EventsPageContainer() {
     filters.setSearchQuery(latestAddedEvent.title);
   }, [filters, latestAddedEvent]);
 
-  const filterConfigs: QuickFilterConfig[] = useMemo(
+  const filterConfigs: QuickFilterButtonConfig[] = useMemo(
     () =>
       [
         {
           id: "going",
-          icon: null,
           labelKey: "filters.going",
           active: filters.goingFilter,
           onClick: () => filters.setGoingFilter(!filters.goingFilter),
           visible: profileCompleted,
         },
         {
-          id: "newlyAdded",
-          icon: null,
-          labelKey: "events.newlyAdded",
-          active: isNewlyAddedActive,
-          onClick: handleNewlyAddedToggle,
-        },
-        {
           id: "freeFood",
-          icon: null,
           labelKey: "common.freeFood",
           active: filters.freeFoodFilter,
           onClick: () => filters.setFreeFoodFilter(!filters.freeFoodFilter),
         },
       ].filter((config) => config.visible !== false),
-    [filters, handleNewlyAddedToggle, isNewlyAddedActive, profileCompleted]
+    [filters, profileCompleted],
   );
 
   const {
@@ -118,7 +145,7 @@ export function EventsPageContainer() {
     syncScrollFadeAfterWheel: syncFilterScrollFadeAfterWheel,
     dragScrollProps: filterDragScrollProps,
   } = useHorizontalScrollFade<HTMLDivElement>({
-    refreshKey: `${filterConfigs.length}:${filters.categoryOptions.length}`,
+    refreshKey: `${filterConfigs.length + 1}:${filters.categoryOptions.length}`,
   });
 
   return (
@@ -149,6 +176,12 @@ export function EventsPageContainer() {
                 onTouchEnd={syncFilterScrollFade}
                 className="no-visible-scrollbar flex min-w-0 cursor-grab flex-nowrap items-center gap-2 overflow-x-auto pb-1 active:cursor-grabbing"
               >
+                <NewlyAddedFilterSelect
+                  value={newlyAddedFilterValue}
+                  showSinceLastVisit={profileCompleted && lastVisitAt !== null}
+                  onValueChange={handleNewlyAddedFilterChange}
+                  onClear={handleNewlyAddedFilterClear}
+                />
                 {filterConfigs.map((config) => (
                   <Button
                     key={config.id}
@@ -157,7 +190,6 @@ export function EventsPageContainer() {
                     onClick={config.onClick}
                     aria-pressed={config.active}
                   >
-                    {config.icon}
                     {t(config.labelKey)}
                   </Button>
                 ))}

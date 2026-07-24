@@ -58,7 +58,11 @@
     "noEventsFoundDesc": "找不到符合您当前筛选条件的活动。请尝试调整搜索或清除某些筛选条件。",
     "noEventsScheduled": "暂无活动安排",
     "noEventsScheduledDesc": "当前没有任何活动安排，请稍后再来看看！",
-    "newlyAdded": "最新添加",
+    "newlyAddedFilter": {
+      "last24Hours": "过去 {{hours}} 小时内添加",
+      "sinceLastVisit": "自上次访问后添加",
+      "clear": "清除最新添加筛选"
+    },
     "clearAllFilters": "清除所有筛选",
     "calendarViewComingSoon": "日历视图即将推出...",
     "mapViewComingSoon": "地图视图即将推出...",

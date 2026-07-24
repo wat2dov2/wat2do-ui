@@ -893,9 +893,100 @@ test.describe("Events Page", () => {
     await expect(strip.locator('button[aria-pressed="true"]')).toHaveCount(0);
   });
 
+  test("uses a clearable select for newly added events", async ({ page }) => {
+    await page.goto(BASE);
+
+    const newlyAddedSelect = page.getByRole("combobox", {
+      name: "Added in last 24 hours",
+    });
+    await expect(newlyAddedSelect).toHaveAttribute("data-slot", "select-trigger");
+
+    await newlyAddedSelect.click();
+    await expect(
+      page.getByRole("option", { name: "Added in last 24 hours" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("option", { name: "Added since last visit" }),
+    ).toHaveCount(0);
+
+    await page
+      .getByRole("option", { name: "Added in last 24 hours" })
+      .click();
+
+    const clearNewlyAddedFilter = page.getByRole("button", {
+      name: "Clear newly added filter",
+    });
+    await expect(clearNewlyAddedFilter).toHaveAttribute(
+      "data-slot",
+      "filter-clear-button",
+    );
+    await expect(clearNewlyAddedFilter).toHaveClass(/h-5/);
+    await expect(clearNewlyAddedFilter).toContainText("1");
+
+    const newBadges = page.getByText("NEW", { exact: true });
+    await expect.poll(() => newBadges.count()).toBeGreaterThan(0);
+    const newBadge = newBadges.first();
+    await expect(newBadge).toBeVisible();
+    await expect
+      .poll(() =>
+        newBadge.evaluate((element) => ({
+          backgroundColor: getComputedStyle(element).backgroundColor,
+          color: getComputedStyle(element).color,
+        })),
+      )
+      .toEqual({
+        backgroundColor: "rgb(91, 155, 255)",
+        color: "rgb(255, 255, 255)",
+      });
+
+    await clearNewlyAddedFilter.click();
+    await expect(clearNewlyAddedFilter).toHaveCount(0);
+  });
+
+  test("offers events added since the last visit only when signed in", async ({
+    page,
+  }) => {
+    await seedAuthenticatedSession(page);
+    const previousVisitAt = new Date(
+      Date.now() - 7 * 86_400_000,
+    ).toISOString();
+    await page.addInitScript(
+      ({ storageKey, visitKey, timestamp }) => {
+        window.localStorage.setItem(
+          storageKey,
+          JSON.stringify({ [visitKey]: timestamp }),
+        );
+      },
+      {
+        storageKey: STORAGE_KEYS.EVENT_VISITS,
+        visitKey: `${TEST_EMAIL}:uwaterloo`,
+        timestamp: previousVisitAt,
+      },
+    );
+
+    await page.goto(BASE);
+
+    const newlyAddedSelect = page.getByRole("combobox", {
+      name: "Added in last 24 hours",
+    });
+    await newlyAddedSelect.click();
+    await page
+      .getByRole("option", { name: "Added since last visit" })
+      .click();
+
+    await expect(
+      page.getByRole("combobox", { name: "Added since last visit" }),
+    ).toBeVisible();
+    await expect
+      .poll(() => page.locator("article[data-event-id]").count())
+      .toBeGreaterThan(0);
+  });
+
   test("keeps the filter count inside the trigger and matches view button variants", async ({ page }) => {
     await page.goto(BASE);
-    await expect(page.getByRole("button", { name: "Career", exact: true })).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Arts & Culture", exact: true }),
+    ).toBeVisible();
 
     const extraFiltersButton = page.getByRole("button", { name: "Extra filters" });
     await extraFiltersButton.click();
@@ -903,23 +994,28 @@ test.describe("Events Page", () => {
     const drawer = page.getByRole("dialog", { name: "Extra filters" });
     const gridButton = drawer.getByRole("button", { name: "Grid" });
     const calendarButton = drawer.getByRole("button", { name: "Calendar" });
-    const categoryButton = drawer.getByRole("button", { name: "Career" });
+    const categoryButton = drawer.getByRole("button", {
+      name: "Arts & Culture",
+    });
 
     await expect(calendarButton).toHaveClass(/bg-secondary/);
     await expect(categoryButton).toHaveClass(/bg-secondary/);
     await categoryButton.click();
-    await expect(gridButton).toHaveClass(/bg-slate-600/);
-    await expect(categoryButton).toHaveClass(/bg-slate-600/);
+    await expect(gridButton).toHaveClass(/bg-primary/);
+    await expect(categoryButton).toHaveClass(/bg-primary/);
 
     await page.keyboard.press("Escape");
-    const activeExtraFiltersButton = page.getByRole("button", { name: /Extra filters/ });
-    const clearFiltersButton = activeExtraFiltersButton.getByRole("button", {
+    const clearFiltersButton = page.getByRole("button", {
       name: "Clear filters",
     });
+    await expect(clearFiltersButton).toHaveAttribute(
+      "data-slot",
+      "filter-clear-button",
+    );
+    await expect(clearFiltersButton).toHaveClass(/h-5/);
     await expect(clearFiltersButton).toContainText("1");
-    await expect(activeExtraFiltersButton.locator("svg")).toHaveCount(1);
     await clearFiltersButton.click();
-    await expect(page.getByRole("button", { name: "Extra filters", exact: true })).not.toContainText("1");
+    await expect(clearFiltersButton).toHaveCount(0);
   });
 
   test("app API proxy returns events", async ({ request }) => {

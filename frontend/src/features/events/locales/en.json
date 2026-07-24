@@ -58,7 +58,11 @@
     "noEventsFoundDesc": "Couldn't find any events matching your current filters. Try adjusting your search or clearing some filters.",
     "noEventsScheduled": "No events scheduled",
     "noEventsScheduledDesc": "No events are currently scheduled. Check back later!",
-    "newlyAdded": "Newly added",
+    "newlyAddedFilter": {
+      "last24Hours": "Added in last {{hours}} hours",
+      "sinceLastVisit": "Added since last visit",
+      "clear": "Clear newly added filter"
+    },
     "clearAllFilters": "Clear all filters",
     "calendarViewComingSoon": "Calendar view coming soon...",
     "mapViewComingSoon": "Map view coming soon...",
@@ -106,7 +110,7 @@
       }
     },
     "promoted": "Promoted",
-    "new": "New",
+    "new": "NEW",
     "goingRequiresLogin": "You need to be logged in",
     "register": "Register",
     "registrationWelcome": "Welcome, {{name}}! To join the event, please register below.",

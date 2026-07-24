@@ -23,7 +23,7 @@ export const EMPTY_FILTER_STATE: FilterState = {
   going: false,
   sortBy: DEFAULT_FILTER_SORT_BY,
   sortOrder: DEFAULT_FILTER_SORT_ORDER,
-  addedWithin24h: false,
+  addedSince: "",
 };
 
 /**
@@ -44,7 +44,7 @@ export interface SearchStoreFilterValues {
   goingFilter: boolean;
   sortBy: string;
   sortOrder: "asc" | "desc";
-  addedWithin24h: boolean;
+  addedSince: string;
 }
 
 type GeneratedFilterStateInput = Partial<ApiFilterStateResponse> & {
@@ -53,7 +53,6 @@ type GeneratedFilterStateInput = Partial<ApiFilterStateResponse> & {
   going?: unknown;
   sortBy?: unknown;
   sortOrder?: unknown;
-  addedWithin24h?: unknown;
 };
 
 function stringArray(value: unknown): string[] {
@@ -74,6 +73,12 @@ function sortOrderFrom(value: unknown): FilterState["sortOrder"] {
   return value === "desc" ? "desc" : DEFAULT_FILTER_SORT_ORDER;
 }
 
+function isoTimestampFrom(value: unknown): string {
+  return typeof value === "string" && !Number.isNaN(Date.parse(value))
+    ? value
+    : "";
+}
+
 export function normalizeFilterState(filters: Partial<FilterState>): FilterState {
   return {
     searchQuery: typeof filters.searchQuery === "string" ? filters.searchQuery : "",
@@ -88,7 +93,7 @@ export function normalizeFilterState(filters: Partial<FilterState>): FilterState
     going: filters.going === true,
     sortBy: typeof filters.sortBy === "string" && filters.sortBy ? filters.sortBy : DEFAULT_FILTER_SORT_BY,
     sortOrder: sortOrderFrom(filters.sortOrder),
-    addedWithin24h: filters.addedWithin24h === true,
+    addedSince: isoTimestampFrom(filters.addedSince),
   };
 }
 
@@ -116,7 +121,7 @@ export function storeStatesToFilterState(
     going: values.goingFilter,
     sortBy: values.sortBy,
     sortOrder: values.sortOrder,
-    addedWithin24h: values.addedWithin24h,
+    addedSince: values.addedSince,
   };
 }
 
@@ -140,7 +145,7 @@ export function generatedFilterStateToFilterState(
     going: filters.going === true,
     sortBy: typeof filters.sortBy === "string" ? filters.sortBy : DEFAULT_FILTER_SORT_BY,
     sortOrder: sortOrderFrom(filters.sortOrder),
-    addedWithin24h: filters.addedWithin24h === true,
+    addedSince: isoTimestampFrom(filters.addedSince),
   });
 }
 

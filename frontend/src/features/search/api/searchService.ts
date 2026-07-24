@@ -19,7 +19,7 @@ export interface SearchFilters {
   profileCompleted: boolean;
   goingEventIds: number[];
   selectedOrganizations: string[];
-  addedWithin24h: boolean;
+  addedSince: string;
 }
 
 export interface SortOptions {
@@ -39,6 +39,9 @@ export function filterEvents(
   // Set lookup is O(1); .includes on an array is O(n). When goingFilter is
   // active this is run per-event, so hoist and wrap once.
   const goingSet = filters.goingFilter ? new Set(filters.goingEventIds) : null;
+  const addedSinceTime = filters.addedSince
+    ? Date.parse(filters.addedSince)
+    : Number.NaN;
 
   return events.filter((event) => {
     const food = event.food ?? [];
@@ -59,10 +62,9 @@ export function filterEvents(
       return false;
     }
 
-    if (filters.addedWithin24h) {
+    if (!Number.isNaN(addedSinceTime)) {
       const addedTime = new Date(event.added_at).getTime();
-      const cutoff = Date.now() - 24 * 60 * 60 * 1000;
-      if (addedTime < cutoff) {
+      if (Number.isNaN(addedTime) || addedTime < addedSinceTime) {
         return false;
       }
     }

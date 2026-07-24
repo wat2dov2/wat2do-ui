@@ -34,7 +34,7 @@ interface FilterValues {
   selectedOrganizations: string[];
   sortBy: string;
   sortOrder: "asc" | "desc";
-  addedWithin24h: boolean;
+  addedSince: string;
 }
 
 interface SearchStoreState extends FilterValues {
@@ -56,7 +56,7 @@ const emptyFilters: FilterValues = {
   selectedOrganizations: [],
   sortBy: DEFAULT_FILTER_SORT_BY,
   sortOrder: DEFAULT_FILTER_SORT_ORDER,
-  addedWithin24h: false,
+  addedSince: "",
 };
 
 export const useSearchStore = create<SearchStoreState>((set) => ({
@@ -78,7 +78,7 @@ export const useSearchStore = create<SearchStoreState>((set) => ({
       goingFilter: normalized.going,
       sortBy: normalized.sortBy,
       sortOrder: normalized.sortOrder,
-      addedWithin24h: normalized.addedWithin24h,
+      addedSince: normalized.addedSince,
     });
   },
   // startTransition keeps the UI responsive when clearing - both
