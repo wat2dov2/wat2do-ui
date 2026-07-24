@@ -1286,6 +1286,9 @@ test.describe("Standalone submission pages", () => {
   test("anonymous visitor can parse an event flyer without session auth", async ({
     page,
   }) => {
+    const portraitFlyerDataUrl = `data:image/svg+xml,${encodeURIComponent(
+      '<svg xmlns="http://www.w3.org/2000/svg" width="600" height="900"><rect width="600" height="900" fill="#5b9bff"/></svg>',
+    )}`;
     let parseAuthorization: string | null = null;
     let parseRequestCount = 0;
     await page.route(
@@ -1312,7 +1315,7 @@ test.describe("Standalone submission pages", () => {
             price: 0,
             food: [],
             registration: false,
-            source_image_url: "/wat2do-logo.png",
+            source_image_url: portraitFlyerDataUrl,
           }),
         });
       },
@@ -1338,6 +1341,36 @@ test.describe("Standalone submission pages", () => {
     await expect(page.locator("#field-title")).toHaveValue(
       "Public Flyer Event",
     );
+    const posterPreview = page.getByRole("img", {
+      name: "Poster Preview",
+    });
+    await expect(posterPreview).toBeVisible();
+    const previewGeometry = await posterPreview.evaluate((image) => {
+      const previewImage = image as HTMLImageElement;
+      const bounds = previewImage.getBoundingClientRect();
+      const containerBounds = previewImage.parentElement?.getBoundingClientRect();
+      const styles = getComputedStyle(previewImage);
+      return {
+        containerWidth: containerBounds?.width ?? 0,
+        height: bounds.height,
+        maxHeight: styles.maxHeight,
+        naturalAspectRatio:
+          previewImage.naturalWidth / previewImage.naturalHeight,
+        objectFit: styles.objectFit,
+        renderedAspectRatio: bounds.width / bounds.height,
+        width: bounds.width,
+      };
+    });
+    expect(previewGeometry.objectFit).toBe("contain");
+    expect(previewGeometry.maxHeight).toBe("672px");
+    expect(previewGeometry.renderedAspectRatio).toBeCloseTo(
+      previewGeometry.naturalAspectRatio,
+      2,
+    );
+    expect(previewGeometry.width).toBeLessThanOrEqual(
+      previewGeometry.containerWidth,
+    );
+    expect(previewGeometry.height).toBeLessThanOrEqual(672);
     expect(parseAuthorization).toBeNull();
     expect(parseRequestCount).toBe(1);
   });

@@ -215,6 +215,7 @@ export function EventFormFields() {
             imagePreview={imagePreview}
             onImageUpload={onImageUpload}
             onRemoveImage={onRemoveImage}
+            previewVariant="poster"
             error={!imagePreview ? t("qrCode.posterImageRequired") : undefined}
           />
         </FieldGroup>

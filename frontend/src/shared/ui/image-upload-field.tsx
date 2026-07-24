@@ -3,6 +3,19 @@ import { useTranslation } from "react-i18next";
 import { X, ImagePlus } from "@/shared/ui/doodle-icons";
 import { Button } from "@/shared/ui/button";
 import { Field, FieldLabel, FieldError } from "@/shared/ui/field";
+import { cn } from "@/shared/lib/utils";
+
+const PREVIEW_STYLES = {
+  thumbnail: {
+    container: "h-48",
+    image: "size-full object-cover",
+  },
+  poster: {
+    container:
+      "flex max-h-(--container-2xl) items-center justify-center bg-secondary/30",
+    image: "block max-h-(--container-2xl) max-w-full object-contain",
+  },
+} as const;
 
 interface ImageUploadFieldProps {
   label: string;
@@ -14,6 +27,7 @@ interface ImageUploadFieldProps {
   fileInputRef?: React.RefObject<HTMLInputElement>;
   className?: string;
   multiple?: boolean;
+  previewVariant?: keyof typeof PREVIEW_STYLES;
 }
 
 export function ImageUploadField({
@@ -26,10 +40,12 @@ export function ImageUploadField({
   fileInputRef: externalRef,
   className = "",
   multiple = false,
+  previewVariant = "thumbnail",
 }: ImageUploadFieldProps) {
   const { t } = useTranslation();
   const internalRef = useRef<HTMLInputElement>(null);
   const fileInputRef = externalRef || internalRef;
+  const previewStyles = PREVIEW_STYLES[previewVariant];
 
   return (
     <Field className={className}>
@@ -46,11 +62,16 @@ export function ImageUploadField({
       />
       {imagePreview ? (
         <div className="relative">
-          <div className="relative w-full h-48 rounded-xl overflow-hidden border border-border">
+          <div
+            className={cn(
+              "relative w-full overflow-hidden rounded-xl border border-border",
+              previewStyles.container,
+            )}
+          >
             <img
               src={imagePreview}
               alt={t("qrCode.posterPreview")}
-              className="w-full h-full object-cover"
+              className={previewStyles.image}
             />
           </div>
           <Button
