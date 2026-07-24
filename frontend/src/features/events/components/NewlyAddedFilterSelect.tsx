@@ -1,5 +1,4 @@
 import { useTranslation } from "react-i18next";
-import { cn } from "@/shared/lib/utils";
 import { controlBox } from "@/shared/config/controlBox";
 import { FilterClearButton } from "@/shared/ui/filter-clear-button";
 import {
@@ -45,11 +44,9 @@ export function NewlyAddedFilterSelect({
       >
         <SelectTrigger
           size="sm"
+          variant={active ? "primary" : "secondary"}
           aria-label={label}
-          className={cn(
-            active &&
-              "bg-primary pr-16 text-primary-foreground hover:bg-primary-hover [&_svg:not([class*='text-'])]:text-primary-foreground",
-          )}
+          className={active ? "pr-11" : undefined}
         >
           <SelectValue placeholder={last24HoursLabel} />
         </SelectTrigger>
@@ -69,7 +66,7 @@ export function NewlyAddedFilterSelect({
           count={1}
           label={t("events.newlyAddedFilter.clear")}
           onClick={onClear}
-          className="absolute top-1/2 right-7 -translate-y-1/2"
+          className="absolute top-1/2 right-1 -translate-y-1/2"
         />
       ) : null}
     </div>

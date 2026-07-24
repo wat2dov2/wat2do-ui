@@ -23,7 +23,7 @@ const FilterClearButton = React.forwardRef<
       onClick?.(event);
     }}
     className={cn(
-      "flex h-5 min-w-5 items-center justify-center gap-1 rounded-full bg-primary-foreground/18 px-1.5 text-xs leading-none text-primary-foreground transition-colors hover:bg-surface-hover",
+      "flex h-5 min-w-5 items-center justify-center gap-1 rounded-full bg-primary-foreground/18 px-1.5 text-xs leading-none text-primary-foreground transition-colors hover:bg-primary-foreground/28",
       className,
     )}
   >

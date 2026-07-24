@@ -900,6 +900,29 @@ test.describe("Events Page", () => {
       name: "Added in last 24 hours",
     });
     await expect(newlyAddedSelect).toHaveAttribute("data-slot", "select-trigger");
+    const freeFoodFilter = page.getByRole("button", {
+      name: "Free food",
+      exact: true,
+    });
+    const [selectStyles, buttonStyles] = await Promise.all(
+      [newlyAddedSelect, freeFoodFilter].map((control) =>
+        control.evaluate((element) => {
+          const styles = getComputedStyle(element);
+          const bounds = element.getBoundingClientRect();
+          return {
+            backgroundColor: styles.backgroundColor,
+            borderRadius: styles.borderRadius,
+            color: styles.color,
+            fontSize: styles.fontSize,
+            fontWeight: styles.fontWeight,
+            height: bounds.height,
+            paddingLeft: styles.paddingLeft,
+            paddingRight: styles.paddingRight,
+          };
+        }),
+      ),
+    );
+    expect(selectStyles).toEqual(buttonStyles);
 
     await newlyAddedSelect.click();
     await expect(
@@ -922,6 +945,35 @@ test.describe("Events Page", () => {
     );
     await expect(clearNewlyAddedFilter).toHaveClass(/h-5/);
     await expect(clearNewlyAddedFilter).toContainText("1");
+    const [selectBounds, clearBounds] = await Promise.all([
+      newlyAddedSelect.boundingBox(),
+      clearNewlyAddedFilter.boundingBox(),
+    ]);
+    expect(selectBounds).not.toBeNull();
+    expect(clearBounds).not.toBeNull();
+    if (selectBounds && clearBounds) {
+      expect(
+        selectBounds.x +
+          selectBounds.width -
+          (clearBounds.x + clearBounds.width),
+      ).toBe(4);
+    }
+
+    await clearNewlyAddedFilter.hover();
+    await expect
+      .poll(() =>
+        clearNewlyAddedFilter.evaluate((element) => {
+          const backgroundColor = getComputedStyle(element).backgroundColor;
+          const functionalAlpha = backgroundColor.match(
+            /\/\s*([\d.]+)\s*\)$/,
+          )?.[1];
+          const rgbaAlpha = backgroundColor.match(
+            /^rgba\(.*,\s*([\d.]+)\)$/,
+          )?.[1];
+          return Number(functionalAlpha ?? rgbaAlpha ?? 1);
+        }),
+      )
+      .toBeCloseTo(0.28, 2);
 
     const newBadges = page.getByText("NEW", { exact: true });
     await expect.poll(() => newBadges.count()).toBeGreaterThan(0);

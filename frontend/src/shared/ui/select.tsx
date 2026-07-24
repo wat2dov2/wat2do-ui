@@ -3,6 +3,7 @@ import * as SelectPrimitive from "@radix-ui/react-select"
 import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from "@/shared/ui/doodle-icons"
 
 import { cn } from "@/shared/lib/utils"
+import { buttonVariants } from "@/shared/ui/button"
 import { useExclusiveDisclosure } from "@/shared/hooks/useExclusiveDisclosure"
 
 function Select({
@@ -37,10 +38,12 @@ function SelectValue({
 function SelectTrigger({
   className,
   size = "default",
+  variant = "default",
   children,
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Trigger> & {
   size?: "sm" | "default"
+  variant?: "default" | "primary" | "secondary"
 }) {
   return (
     <SelectPrimitive.Trigger
@@ -48,7 +51,12 @@ function SelectTrigger({
       data-elevation="control"
       data-size={size}
       className={cn(
-        "data-placeholder:text-muted-foreground [&_svg:not([class*='text-'])]:text-muted-foreground focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 disabled:bg-muted flex w-fit min-w-0 items-center justify-between gap-2 rounded-xl bg-secondary px-3 py-2 text-base text-secondary-foreground md:text-sm whitespace-nowrap shadow-xs transition-[color,box-shadow] outline-none hover:bg-secondary-hover focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 data-[size=default]:h-9 data-[size=sm]:h-8 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        variant === "default"
+          ? "data-placeholder:text-muted-foreground [&_svg:not([class*='text-'])]:text-muted-foreground focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 disabled:bg-muted flex w-fit min-w-0 items-center justify-between gap-2 rounded-xl bg-secondary px-3 py-2 text-base text-secondary-foreground md:text-sm whitespace-nowrap shadow-xs transition-[color,box-shadow] outline-none hover:bg-secondary-hover focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 data-[size=default]:h-9 data-[size=sm]:h-8 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+          : cn(
+              buttonVariants({ variant, size }),
+              "w-fit min-w-0 justify-between *:data-[slot=select-value]:line-clamp-1",
+            ),
         className
       )}
       {...props}
