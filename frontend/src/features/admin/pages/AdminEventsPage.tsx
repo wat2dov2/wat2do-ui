@@ -250,7 +250,8 @@ export function AdminEventsPage({
                   <TableRow
                     key={event.id}
                     id={`event-${event.id}`}
-                    className={`cursor-pointer hover:bg-surface-hover ${isHighlighted ? "bg-primary/10" : ""}`}
+                    interactive
+                    className={isHighlighted ? "bg-primary/10" : undefined}
                     onClick={() => {
                       const newParams = new URLSearchParams(searchParams.toString());
                       newParams.set(QP.EVENT_ID, event.id.toString());
@@ -409,7 +410,8 @@ export function AdminEventsPage({
                 <TableRow
                   key={submission.id}
                   id={`submission-${submission.id}`}
-                  className={`cursor-pointer hover:bg-surface-hover ${submissionIdParam === submission.id ? "bg-primary/10" : ""}`}
+                  interactive
+                  className={submissionIdParam === submission.id ? "bg-primary/10" : undefined}
                   onClick={() => {
                     const newParams = new URLSearchParams(searchParams.toString());
                     newParams.set(QP.SUBMISSION_ID, submission.id);

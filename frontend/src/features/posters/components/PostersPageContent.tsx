@@ -210,8 +210,7 @@ export function PostersPageContent({
           </div>
 
           <div className="space-y-3">
-            <div className="border border-border rounded-lg overflow-hidden">
-              <Table>
+            <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>{t("admin.timestamp")}</TableHead>
@@ -257,8 +256,7 @@ export function PostersPageContent({
                     </TableRow>
                   )}
                 </TableBody>
-              </Table>
-            </div>
+            </Table>
 
             {sortedScans.length > 0 && (
               <Pagination
