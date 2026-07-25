@@ -44,7 +44,7 @@ export function OrganizationTypeIcon({
         WebkitMaskImage: `url(${assetPath})`,
       }}
       className={cn(
-        "inline-block h-3 w-10 shrink-0 bg-current text-foreground",
+        "inline-block h-3 w-8 max-w-8 shrink-0 bg-current text-foreground",
         "[mask-size:contain] [mask-repeat:no-repeat] [mask-position:left_center]",
         "[-webkit-mask-size:contain] [-webkit-mask-repeat:no-repeat] [-webkit-mask-position:left_center]",
         className,

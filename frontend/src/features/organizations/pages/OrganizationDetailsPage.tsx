@@ -242,17 +242,16 @@ function OrganizationDetailsContent({
     <>
       <Container size="sm" className="py-4 sm:py-6">
         <Stack gap={6}>
+          <Button asChild variant="secondary" size="sm" className="self-start">
+            <Link href={ROUTES.ORGANIZATIONS}>
+              <ArrowLeft className="size-4" />
+              {t("organizations.backToAllOrganizations")}
+            </Link>
+          </Button>
+
           <PageHeader
             title={organization.organization_name}
             description={getSchoolDisplayName(organization.school)}
-            actions={
-              <Button asChild variant="secondary">
-                <Link href={ROUTES.ORGANIZATIONS}>
-                  <ArrowLeft className="size-4" />
-                  {t("common.back")}
-                </Link>
-              </Button>
-            }
           />
 
           <OrganizationCategoryBadges

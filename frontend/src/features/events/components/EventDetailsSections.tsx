@@ -1,4 +1,5 @@
-import { lazy, Suspense, useCallback, useState } from "react";
+import { lazy, Suspense, useState } from "react";
+import Link from "next/link";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { sanitizeHref } from "@/shared/utils/url";
@@ -13,14 +14,12 @@ import {
 } from "@/shared/utils/date";
 import {
   Calendar,
-  Check,
   Discord,
   DollarSign,
   ExternalLink,
   Flag,
   ImageOff,
   Instagram,
-  Link as LinkIcon,
   LocationPin,
   Share2,
   Utensils,
@@ -43,11 +42,9 @@ import { LazyImage } from "@/shared/ui/lazy-image";
 import { FormGrid, Stack } from "@/shared/layout";
 import { EventCalendarDownloadMenu } from "@/features/events/components/EventCalendarDownloadMenu";
 import { EventLocationMap } from "@/features/events/components/EventLocationMap";
-import { buildEventShareUrl } from "@/features/events/lib/eventUrls";
 import { getEventCategory } from "@/shared/utils/event";
 import { OrganizationCategoryBadge } from "@/shared/components/OrganizationCategoryBadge";
 import { OrganizationTypeIcon } from "@/shared/components/OrganizationTypeIcon";
-import { toast } from "@/shared/hooks/use-toast";
 import { GoingOccurrencePickerContent } from "@/features/events/components/GoingOccurrencePickerContent";
 import { fetchEventAttendees } from "@/features/events/api/events.api";
 import { useCurrentTime, useGoingEventSelection } from "@/features/events/hooks/useGoingEvents";
@@ -55,6 +52,7 @@ import { useAuthState } from "@/features/auth/hooks/useAuthState";
 import { controlBox } from "@/shared/config/controlBox";
 import { translateFood } from "@/shared/utils/foodTranslation";
 import { queryKeys } from "@/shared/lib/queryKeys";
+import { organizationPagePath } from "@/shared/constants/routes";
 import type { Event } from "@/shared/types";
 
 const EventShareDialog = lazy(() =>
@@ -106,36 +104,53 @@ function EventSectionHeader({ children }: { children: React.ReactNode }) {
 
 /** Organization name with its mapped organization-type icon. */
 function EventHostName({ event }: { event: Event }) {
-  return (
-    <span className="inline-flex items-center gap-1.5">
+  const content = (
+    <>
       <span>{event.organization}</span>
       <OrganizationTypeIcon
         school={event.school}
         organizationType={event.organization_type}
       />
+    </>
+  );
+
+  if (event.organization_id != null) {
+    return (
+      <Link
+        href={organizationPagePath(event.organization_id)}
+        className="inline-flex items-center gap-1.5 text-foreground transition-colors hover:text-primary"
+      >
+        {content}
+      </Link>
+    );
+  }
+
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      {content}
     </span>
   );
 }
 
-/** Luma-style calendar square showing the primary occurrence's month and day. */
+/** Compact calendar square showing the primary occurrence's month and day. */
 function EventDateTile({ dtstartUtc, locale }: { dtstartUtc: string; locale: string }) {
   const start = new Date(dtstartUtc);
   if (Number.isNaN(start.getTime())) return null;
   return (
-    <Card className="size-12 shrink-0 items-center justify-center gap-0.5 py-0">
+    <Card className="size-10 shrink-0 items-center justify-center gap-0.5 py-0">
       <span className="text-[9px] font-semibold text-muted-foreground">
         {start.toLocaleDateString(locale, { month: "short" })}
       </span>
-      <span className="text-lg font-bold leading-none text-foreground">{start.getDate()}</span>
+      <span className="text-base font-bold leading-none text-foreground">{start.getDate()}</span>
     </Card>
   );
 }
 
-/** Bordered squircle tile holding an icon, matching EventDateTile's footprint. */
+/** Compact bordered squircle tile holding an icon, matching EventDateTile's footprint. */
 function EventInfoTile({ icon: Icon }: { icon: LucideIcon }) {
   return (
-    <Card className="size-12 shrink-0 items-center justify-center py-0">
-      <Icon className="size-5 text-muted-foreground" />
+    <Card className="size-10 shrink-0 items-center justify-center py-0">
+      <Icon className="size-4 text-muted-foreground" />
     </Card>
   );
 }
@@ -501,21 +516,20 @@ function EventContactHostSection({ event }: { event: Event }) {
  * drawer and the /events/[id] page so both expose the same set one way.
  */
 /**
- * Category, live, and new badges. `size="xl"` matches the height of a small
- * Button so badges and actions sit on one line together.
+ * Compact category, live, and new badges displayed above the event title.
  */
 export function EventStatusBadges({ event }: { event: Event }) {
   const { t } = useTranslation();
   return (
     <Stack direction="horizontal" gap={2} wrap>
-      <OrganizationCategoryBadge type={getEventCategory(event)} size="xl" />
+      <OrganizationCategoryBadge type={getEventCategory(event)} size="md" />
       {isEventHappeningNow(event) && (
-        <Badge variant="live" size="xl">
+        <Badge variant="live" size="md">
           {t("common.live")}
         </Badge>
       )}
       {wasAddedWithinLast24Hours(event) && (
-        <Badge variant="new" size="xl">
+        <Badge variant="new" size="md">
           {t("events.new")}
         </Badge>
       )}
@@ -523,29 +537,14 @@ export function EventStatusBadges({ event }: { event: Event }) {
   );
 }
 
-/** Copy link, share, and report, owning their own dialogs. */
+/** Share and report actions, owning their own dialogs. */
 export function EventActions({ event }: { event: Event }) {
   const { t } = useTranslation();
-  const [linkCopied, setLinkCopied] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
 
-  const handleCopyLink = useCallback(async () => {
-    try {
-      await navigator.clipboard.writeText(buildEventShareUrl(event.id));
-      setLinkCopied(true);
-      window.setTimeout(() => setLinkCopied(false), 1600);
-    } catch {
-      toast({ description: t("events.shareDialog.copyFailed"), variant: "destructive" });
-    }
-  }, [event.id, t]);
-
   return (
     <Stack direction="horizontal" gap={2} wrap>
-      <Button type="button" variant="secondary" size="sm" onClick={() => void handleCopyLink()}>
-        {linkCopied ? <Check className="size-4" /> : <LinkIcon className="size-4" />}
-        {linkCopied ? t("events.copied") : t("events.copyLink")}
-      </Button>
       <Button type="button" variant="secondary" size="sm" onClick={() => setShareOpen(true)}>
         <Share2 className="size-4" />
         {t("common.share")}
@@ -576,7 +575,7 @@ export function EventActions({ event }: { event: Event }) {
 /**
  * Full event details layout shared by the drawer and the /events/[id] page:
  * single column on mobile, poster + hosts sidebar next to details on md+.
- * Mobile stacking order: poster, details (title through map), hosts/going.
+ * Mobile stacking order: poster, title, hosts/going, then event details.
  */
 export function EventDetailsBody({
   event,
@@ -601,26 +600,33 @@ export function EventDetailsBody({
         <EventPosterImage event={event} />
       </div>
 
-      <Stack gap={6} className="md:col-start-2 md:row-span-2 md:row-start-1">
-        {renderTitle ? (
-          renderTitle(event.title)
-        ) : (
-          <h1 className="text-2xl font-bold leading-tight sm:text-3xl">{event.title}</h1>
-        )}
+      <div className="contents md:col-start-2 md:row-span-2 md:row-start-1 md:flex md:flex-col md:gap-6">
+        <div className="order-1">
+          {renderTitle ? (
+            renderTitle(event.title)
+          ) : (
+            <Stack gap={2}>
+              <EventStatusBadges event={event} />
+              <h1 className="text-2xl font-bold leading-tight sm:text-3xl">{event.title}</h1>
+            </Stack>
+          )}
+        </div>
 
-        <FormGrid columns={2}>
-          <EventDateCell event={event} />
-          <EventLocationCell event={event} />
-          <EventFoodCell event={event} />
-          <EventCostCell event={event} />
-        </FormGrid>
+        <Stack gap={6} className="order-3">
+          <FormGrid columns={2}>
+            <EventDateCell event={event} />
+            <EventLocationCell event={event} />
+            <EventFoodCell event={event} />
+            <EventCostCell event={event} />
+          </FormGrid>
 
-        <EventRegistrationCard event={event} school={school} />
+          <EventRegistrationCard event={event} school={school} />
 
-        <EventAboutSection event={event} />
-      </Stack>
+          <EventAboutSection event={event} />
+        </Stack>
+      </div>
 
-      <Stack gap={6} className="md:col-start-1">
+      <Stack gap={6} className="order-2 md:col-start-1">
         <Stack gap={3}>
           <EventSectionHeader>{t("events.hostedBy")}</EventSectionHeader>
           <p className="text-sm text-muted-foreground">
@@ -629,16 +635,15 @@ export function EventDetailsBody({
         </Stack>
 
         <EventAttendeesSection eventId={event.id} />
+      </Stack>
 
+      <Stack gap={6} className="order-4 md:col-start-1">
         <EventContactHostSection event={event} />
 
         <EventMapSection event={event} school={school} />
 
         {showActions ? (
-          <Stack gap={3}>
-            <EventStatusBadges event={event} />
-            <EventActions event={event} />
-          </Stack>
+          <EventActions event={event} />
         ) : null}
       </Stack>
     </div>

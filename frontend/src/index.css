@@ -172,6 +172,73 @@
   );
 }
 
+/* Event-page LightRays. All visual and motion values come from decorative tokens. */
+.event-light-rays {
+  position: absolute;
+  inset: 0;
+  isolation: isolate;
+  overflow: hidden;
+  contain: paint;
+}
+
+.event-light-rays__ambient {
+  position: absolute;
+  inset: 0;
+  opacity: var(--event-light-rays-ambient-opacity);
+}
+
+.event-light-rays__ambient--left {
+  background: radial-gradient(
+    circle at 20% 15%,
+    color-mix(in srgb, var(--event-light-rays-color) var(--event-light-rays-ambient-left-strength), transparent),
+    transparent 70%
+  );
+}
+
+.event-light-rays__ambient--right {
+  background: radial-gradient(
+    circle at 80% 10%,
+    color-mix(in srgb, var(--event-light-rays-color) var(--event-light-rays-ambient-right-strength), transparent),
+    transparent 75%
+  );
+}
+
+.event-light-rays__ray {
+  position: absolute;
+  top: -12%;
+  left: var(--event-light-ray-left);
+  width: var(--event-light-ray-width);
+  height: var(--event-light-rays-length);
+  transform-origin: top;
+  filter: blur(var(--event-light-rays-blur));
+  mix-blend-mode: var(--event-light-rays-blend-mode);
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--event-light-rays-color) var(--event-light-rays-gradient-strength), transparent),
+    transparent
+  );
+  animation: event-light-rays-sway var(--event-light-rays-cycle) var(--event-light-rays-easing) infinite;
+  animation-delay: calc(var(--event-light-rays-delay-step) * var(--event-light-ray-delay-index));
+}
+
+@keyframes event-light-rays-sway {
+  0%,
+  100% {
+    opacity: var(--event-light-rays-opacity-rest);
+    transform: translateX(-50%) rotate(calc(var(--event-light-ray-rotation) - var(--event-light-ray-swing)));
+  }
+
+  50% {
+    opacity: var(--event-light-rays-opacity-peak);
+    transform: translateX(-50%) rotate(calc(var(--event-light-ray-rotation) + var(--event-light-ray-swing)));
+  }
+
+  80% {
+    opacity: var(--event-light-rays-opacity-trough);
+    transform: translateX(-50%) rotate(var(--event-light-ray-rotation));
+  }
+}
+
 @layer base {
   *:not(.animate-pulse-live) {
     @apply border-border outline-ring/50;

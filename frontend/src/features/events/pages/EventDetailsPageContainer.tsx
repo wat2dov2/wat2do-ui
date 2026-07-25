@@ -6,11 +6,16 @@ import { tracker } from "@/shared/services/trackingService";
 import { ArrowLeft } from "@/shared/ui/doodle-icons";
 import { Button } from "@/shared/ui/button";
 import { LoadingPage } from "@/shared/ui/loading-page";
-import { EventDetailsBody } from "@/features/events/components/EventDetailsSections";
+import {
+  EventActions,
+  EventDetailsBody,
+  EventStatusBadges,
+} from "@/features/events/components/EventDetailsSections";
 import { fetchEventById } from "@/features/events/api/events.api";
 import { controlBox } from "@/shared/config/controlBox";
 import { ROUTES } from "@/shared/constants/routes";
 import { queryKeys } from "@/shared/lib/queryKeys";
+import { Stack } from "@/shared/layout";
 
 interface EventDetailsPageContainerProps {
   eventId: number;
@@ -46,19 +51,24 @@ export function EventDetailsPageContainer({ eventId }: EventDetailsPageContainer
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 sm:py-8">
+      <Stack direction="horizontal" justify="between" align="start" gap={3} wrap className="mb-6">
+        <Button asChild variant="secondary" size="sm">
+          <Link href={ROUTES.HOME}>
+            <ArrowLeft className="size-4" />
+            {t("events.backToAllEvents")}
+          </Link>
+        </Button>
+        <EventActions event={event} />
+      </Stack>
       <EventDetailsBody
         event={event}
         school={event.school}
+        showActions={false}
         renderTitle={(title) => (
-          <div className="flex items-start justify-between gap-3">
+          <Stack gap={2}>
+            <EventStatusBadges event={event} />
             <h1 className="text-2xl font-bold leading-tight sm:text-3xl">{title}</h1>
-            <Button asChild variant="secondary" size="sm" className="shrink-0">
-              <Link href={ROUTES.HOME}>
-                <ArrowLeft className="size-4" />
-                {t("events.backToAllEvents")}
-              </Link>
-            </Button>
-          </div>
+          </Stack>
         )}
       />
     </div>

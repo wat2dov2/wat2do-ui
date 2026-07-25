@@ -76,4 +76,22 @@
   /* Neutral white glow: chroma 0 so it tints nothing, only lifts brightness. */
   --page-glow-inner: oklch(1.0 0 0 / 0.16);
   --page-glow-middle: oklch(1.0 0 0 / 0.07);
+
+  /* Event-page LightRays - the overlay component consumes no visual props. */
+  --event-light-rays-color: var(--foreground);
+  --event-light-rays-z-index: 45;
+  --event-light-rays-mask: linear-gradient(to bottom, black 0%, black 72%, transparent 100%);
+  --event-light-rays-length: 110dvh;
+  --event-light-rays-blur: 36px;
+  --event-light-rays-blend-mode: screen;
+  --event-light-rays-cycle: 14s;
+  --event-light-rays-delay-step: -0.9s;
+  --event-light-rays-easing: ease-in-out;
+  --event-light-rays-opacity-rest: 0.018;
+  --event-light-rays-opacity-peak: 0.06;
+  --event-light-rays-opacity-trough: 0.007;
+  --event-light-rays-gradient-strength: 70%;
+  --event-light-rays-ambient-opacity: 0.6;
+  --event-light-rays-ambient-left-strength: 45%;
+  --event-light-rays-ambient-right-strength: 35%;
 }

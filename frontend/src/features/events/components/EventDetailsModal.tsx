@@ -136,12 +136,11 @@ export function EventDetailsModal({
               <DrawerHeader className="text-left">
                 <Stack
                   direction="horizontal"
-                  justify="between"
+                  justify="end"
                   align="center"
                   gap={3}
                   wrap
                 >
-                  <EventStatusBadges event={displayedEvent} />
                   <Stack direction="horizontal" gap={2} wrap>
                     <Button asChild variant="secondary" size="sm">
                       <a
@@ -170,9 +169,12 @@ export function EventDetailsModal({
                   school={schoolFilter}
                   showActions={false}
                   renderTitle={(title) => (
-                    <DrawerTitle className="text-left text-2xl font-bold leading-tight sm:text-3xl">
-                      {title}
-                    </DrawerTitle>
+                    <Stack gap={2}>
+                      <EventStatusBadges event={displayedEvent} />
+                      <DrawerTitle className="text-left text-2xl font-bold leading-tight sm:text-3xl">
+                        {title}
+                      </DrawerTitle>
+                    </Stack>
                   )}
                 />
 
