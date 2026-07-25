@@ -2,16 +2,8 @@ name: Daily Instagram publishing drafts
 
 on:
   schedule:
-    # Run at both possible 9 AM America/Toronto UTC offsets. The backend
-    # control box accepts only the invocation matching the current local hour.
-    - cron: '0 13,14 * * *'
-  workflow_dispatch:
-    inputs:
-      force:
-        description: 'Generate outside the configured local hour'
-        required: false
-        default: false
-        type: boolean
+    - cron: '0 9 * * *'
+      timezone: 'America/Toronto'
 
 concurrency:
   group: daily-instagram-publishing
@@ -31,7 +23,6 @@ jobs:
       ECS_CLUSTER: wat2do-production
       ECS_SERVICE: wat2do-production-app
       ECS_JOBS_TASK_FAMILY: wat2do-production-jobs
-      FORCE: ${{ inputs.force || false }}
 
     steps:
       - name: Validate deployment configuration
@@ -49,9 +40,6 @@ jobs:
           test "$network_configuration" != "null"
           run_network_configuration="$(jq -n --argjson awsvpc_configuration "$network_configuration" '{awsvpcConfiguration: $awsvpc_configuration}')"
           command='["python","jobs/generate_instagram_posts.py"]'
-          if [ "$FORCE" = "true" ]; then
-            command='["python","jobs/generate_instagram_posts.py","--force"]'
-          fi
           overrides="$(jq -n --argjson command "$command" '{containerOverrides: [{name: "backend-jobs", command: $command}]}')"
           task_arn="$(aws ecs run-task \
             --cluster "$ECS_CLUSTER" \

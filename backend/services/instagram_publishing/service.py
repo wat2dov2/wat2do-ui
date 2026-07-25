@@ -51,15 +51,11 @@ _SUCCESSFUL_CUTOFF_STATUSES = (
 
 def generate_due_batches(
     now_utc: datetime | None = None,
-    *,
-    force: bool = False,
 ) -> dict[str, int]:
     """Generate at most one daily review batch for each enabled account."""
     now = _aware_utc(now_utc or datetime.now(timezone.utc))
     generation_timezone = ZoneInfo(_CONTROL.generation_timezone)
     local_now = now.astimezone(generation_timezone)
-    if not force and local_now.hour != _CONTROL.generation_local_hour:
-        return {"accounts": 0, "generated": 0, "empty": 0, "skipped": 0, "failed": 0}
 
     enabled = [account for account in _CONTROL.accounts if account.enabled]
     stats = {

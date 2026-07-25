@@ -10,7 +10,6 @@
     }
   ],
   "generation_timezone": "America/Toronto",
-  "generation_local_hour": 9,
   "fallback_window_hours": 24,
   "minimum_lead_hours": 6,
   "maximum_lead_days": 21,

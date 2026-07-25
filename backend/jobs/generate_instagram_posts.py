@@ -3,7 +3,6 @@
 
 from __future__ import annotations
 
-import argparse
 import json
 import logging
 import sys
@@ -21,14 +20,7 @@ logging.basicConfig(
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "--force",
-        action="store_true",
-        help="Generate outside the configured local hour.",
-    )
-    args = parser.parse_args()
-    stats = generate_due_batches(datetime.now(timezone.utc), force=args.force)
+    stats = generate_due_batches(datetime.now(timezone.utc))
     print(json.dumps(stats, sort_keys=True))
     return 1 if stats["failed"] else 0
 

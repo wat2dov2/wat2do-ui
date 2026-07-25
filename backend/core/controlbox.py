@@ -275,7 +275,6 @@ class InstagramPublishingControl(_ControlModel):
     graph_api_version: str = Field(pattern=r"^v[0-9]+\.[0-9]+$")
     accounts: tuple[InstagramPublishingAccountControl, ...] = Field(min_length=1)
     generation_timezone: str = Field(min_length=1)
-    generation_local_hour: int = Field(ge=0, le=23)
     fallback_window_hours: int = Field(gt=0)
     minimum_lead_hours: int = Field(ge=0)
     maximum_lead_days: int = Field(gt=0)

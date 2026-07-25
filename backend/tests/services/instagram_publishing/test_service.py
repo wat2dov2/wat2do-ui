@@ -75,13 +75,14 @@ def test_generate_due_batches_uses_enabled_controlbox_accounts(monkeypatch):
     assert generated_accounts[0].instagram_business_account_id == "17841476154506771"
 
 
-def test_generate_due_batches_ignores_non_matching_local_hour(monkeypatch):
+def test_generate_due_batches_runs_when_the_scheduler_starts_late(monkeypatch):
     generate = Mock(return_value="generated")
     monkeypatch.setattr(service, "_generate_account_batch", generate)
+    monkeypatch.setattr(service, "_batch_exists", lambda *_: False)
 
     result = service.generate_due_batches(
-        datetime(2026, 7, 23, 12, tzinfo=timezone.utc),
+        datetime(2026, 7, 23, 14, 48, tzinfo=timezone.utc),
     )
 
-    assert result["accounts"] == 0
-    generate.assert_not_called()
+    assert result["accounts"] == 1
+    generate.assert_called_once()
