@@ -55,7 +55,7 @@ export function EventDetailsPageContainer({ eventId }: EventDetailsPageContainer
         <Button asChild variant="secondary" size="sm">
           <Link href={ROUTES.HOME}>
             <ArrowLeft className="size-4" />
-            {t("events.backToAllEvents")}
+            {t("events.allEvents")}
           </Link>
         </Button>
         <EventActions event={event} />

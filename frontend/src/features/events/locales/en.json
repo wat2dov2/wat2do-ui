@@ -133,7 +133,7 @@
     "deleteEventConfirm": "Are you sure you want to delete \"{{title}}\"? This action cannot be undone.",
     "similarEvents": "Similar Events",
     "submitEvent": "Add an event",
-    "backToAllEvents": "Back to all events",
+    "allEvents": "All events",
     "going": "Going"
   }
 }

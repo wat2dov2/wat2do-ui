@@ -199,6 +199,31 @@ async function seedAuthenticatedSession(page: Parameters<typeof test>[0]["page"]
     });
   });
 
+  // Mock GET /events/ (the organization page lists its host's upcoming events)
+  await page.route(url => apiPath(url) === "/events", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        items: [],
+        total: 0,
+        page: 1,
+        page_size: 50,
+        total_pages: 0,
+        latest_added_event: null,
+      }),
+    });
+  });
+
+  // Mock GET /events/stats
+  await page.route(url => apiPath(url) === "/events/stats", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({}),
+    });
+  });
+
   // Seed localStorage hint
   await page.addInitScript(({ key, email }) => {
     window.localStorage.setItem(key, JSON.stringify(email));
@@ -322,7 +347,7 @@ test.describe("Followed Organizations Flow", () => {
     await expect(firstFollowBtn).toBeVisible();
     await firstFollowBtn.click();
 
-    await page.getByRole("link", { name: "Back" }).click();
+    await page.getByRole("link", { name: "All organizations" }).click();
 
     // Wait a brief moment for optimistic update/backend sync
     await page.waitForTimeout(500);
@@ -340,7 +365,7 @@ test.describe("Followed Organizations Flow", () => {
     await expect(unfollowBtn).toBeVisible();
     await unfollowBtn.click();
 
-    await page.getByRole("link", { name: "Back" }).click();
+    await page.getByRole("link", { name: "All organizations" }).click();
 
     // Wait a brief moment
     await page.waitForTimeout(500);

@@ -1,38 +1,29 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import {
-  AlertCircle,
   ArrowLeft,
   Bookmark,
-  CheckCircle2,
   Discord,
   ExternalLink,
   HelpCircle,
   Instagram,
-  Loader2,
-  UserPlus,
 } from "@/shared/ui/doodle-icons";
 import { Button } from "@/shared/ui/button";
 import { LoadingPage } from "@/shared/ui/loading-page";
-import { toast } from "@/shared/hooks/use-toast";
+import { Separator } from "@/shared/ui/separator";
 import { useAuthState } from "@/features/auth";
+import { OrganizationEventsGrid } from "@/features/events";
 import { ClaimOrganizationModal } from "@/features/organizations/components/ClaimOrganizationModal";
-import { JoinOrganizationModal } from "@/features/organizations/components/JoinOrganizationModal";
 import { OrganizationCategoryBadges } from "@/features/organizations/components/OrganizationCategoryBadges";
+import { OrganizationLogo } from "@/features/organizations/components/OrganizationLogo";
+import { OrganizationMembershipActions } from "@/features/organizations/components/OrganizationMembershipActions";
 import { getOrganizationById } from "@/features/organizations/api/organizations.api";
 import { useSavedOrganizationsStore } from "@/features/organizations/store/savedOrganizations.store";
-import {
-  getMyMembershipStatus,
-  requestToJoinOrganization,
-  leaveOrganizationOrCancelRequest,
-  type OrganizationMembership,
-} from "@/features/organization-panel/api/memberships.api";
 import { ROUTES } from "@/shared/constants/routes";
 import { getSchoolDisplayName } from "@/shared/constants/schools";
-import { Container, PageHeader, Section, Stack } from "@/shared/layout";
+import { Container, PageHeader, Stack } from "@/shared/layout";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import { sanitizeHref } from "@/shared/utils/url";
 import type { Organization } from "@/shared/types";
@@ -45,18 +36,15 @@ interface OrganizationDetailsContentProps {
   organization: Organization;
 }
 
+const ORGANIZATION_LINK_CLASS =
+  "flex items-center gap-2 text-sm text-foreground transition-colors hover:text-primary";
+
 function OrganizationDetailsContent({
   organization,
 }: OrganizationDetailsContentProps) {
   const { t } = useTranslation();
-  const router = useRouter();
   const { isAuthenticated } = useAuthState();
-  const [membership, setMembership] =
-    useState<OrganizationMembership | null>(null);
-  const [loadingMembership, setLoadingMembership] = useState(false);
-  const [actionLoading, setActionLoading] = useState(false);
   const [showClaimModal, setShowClaimModal] = useState(false);
-  const [showJoinModal, setShowJoinModal] = useState(false);
   const toggleSave = useSavedOrganizationsStore(
     (state) => state.toggleSaveOrganization,
   );
@@ -68,208 +56,61 @@ function OrganizationDetailsContent({
   const organizationPageHref = sanitizeHref(organization.organization_page);
   const discordHref = sanitizeHref(organization.discord ?? "");
 
-  useEffect(() => {
-    if (!isAuthenticated) {
-      setMembership(null);
-      return;
-    }
-
-    let cancelled = false;
-    setLoadingMembership(true);
-    getMyMembershipStatus(organization.id)
-      .then((status) => {
-        if (!cancelled) setMembership(status);
-      })
-      .catch((error) => {
-        console.error("Failed to load membership status:", error);
-      })
-      .finally(() => {
-        if (!cancelled) setLoadingMembership(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [isAuthenticated, organization.id]);
-
-  const handleJoin = async () => {
-    setActionLoading(true);
-    try {
-      const newMembership = await requestToJoinOrganization(organization.id);
-      setMembership(newMembership);
-      toast({
-        description: t("organizationPanel.joinSuccess"),
-        variant: "success",
-      });
-    } catch (error) {
-      console.error("Failed to join organization:", error);
-      toast({
-        description: t("integrations.errors.connectFailed", {
-          platform: organization.organization_name,
-        }),
-        variant: "destructive",
-      });
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const handleLeaveOrCancel = async () => {
-    const isPending = membership?.status === "pending";
-    setActionLoading(true);
-    try {
-      await leaveOrganizationOrCancelRequest(organization.id);
-      setMembership(null);
-      toast({
-        description: isPending
-          ? t("organizationPanel.cancelSuccess")
-          : t("organizationPanel.leaveSuccess"),
-        variant: "success",
-      });
-    } catch (error) {
-      console.error("Failed to leave or cancel organization request:", error);
-      toast({
-        description: t("organizations.savedClubs.unsaveFailed"),
-        variant: "destructive",
-      });
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const renderMembershipAction = () => {
-    if (!isAuthenticated) {
-      return (
-        <Button onClick={() => router.push(ROUTES.LOGIN)} className="w-full">
-          {t("organizationPanel.signInToJoin")}
-        </Button>
-      );
-    }
-
-    if (loadingMembership) {
-      return (
-        <div className="flex items-center justify-center py-2 text-sm text-muted-foreground">
-          <Loader2 className="mr-2 size-4 animate-spin" />
-          <span>{t("organizationPanel.loadingMembership")}</span>
-        </div>
-      );
-    }
-
-    if (isUnowned) {
-      return (
-        <Button onClick={() => setShowClaimModal(true)} className="w-full">
-          {t("organizations.claimOrganization")}
-        </Button>
-      );
-    }
-
-    if (!membership) {
-      return (
-        <Button
-          onClick={handleJoin}
-          disabled={actionLoading}
-          className="w-full"
-        >
-          {actionLoading ? (
-            <Loader2 className="size-4 animate-spin" />
-          ) : null}
-          {t("organizationPanel.requestToJoin")}
-        </Button>
-      );
-    }
-
-    if (membership.status === "pending") {
-      return (
-        <Stack gap={3}>
-          <div className="flex items-center gap-2 rounded-lg border border-warning/20 bg-warning/10 px-3 py-2 text-sm text-warning">
-            <HelpCircle className="size-4 shrink-0" />
-            <span>{t("organizationPanel.requestPending")}</span>
-          </div>
-          <Button
-            variant="secondary"
-            onClick={handleLeaveOrCancel}
-            disabled={actionLoading}
-            className="w-full border-destructive/30 text-destructive"
-          >
-            {actionLoading ? (
-              <Loader2 className="size-4 animate-spin" />
-            ) : null}
-            {t("organizationPanel.cancelRequest")}
-          </Button>
-        </Stack>
-      );
-    }
-
-    if (membership.status === "approved") {
-      return (
-        <Stack gap={3}>
-          <div className="flex items-center gap-2 rounded-lg border border-success/20 bg-success/10 px-3 py-2 text-sm text-success">
-            <CheckCircle2 className="size-4 shrink-0" />
-            <span>{t("organizationPanel.memberBadge")}</span>
-          </div>
-          <Button
-            variant="secondary"
-            onClick={handleLeaveOrCancel}
-            disabled={actionLoading}
-            className="w-full border-destructive/30 text-destructive"
-          >
-            {actionLoading ? (
-              <Loader2 className="size-4 animate-spin" />
-            ) : null}
-            {t("organizationPanel.leaveClub")}
-          </Button>
-        </Stack>
-      );
-    }
-
-    return (
-      <Stack gap={3}>
-        <div className="flex items-center gap-2 rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-          <AlertCircle className="size-4 shrink-0" />
-          <span>{t("organizationPanel.requestDeclined")}</span>
-        </div>
-        <Button onClick={handleJoin} disabled={actionLoading} className="w-full">
-          {actionLoading ? (
-            <Loader2 className="size-4 animate-spin" />
-          ) : null}
-          {t("organizationPanel.reapply")}
-        </Button>
-      </Stack>
-    );
-  };
-
   return (
     <>
-      <Container size="sm" className="py-4 sm:py-6">
+      <Container size="lg" className="py-4 sm:py-6">
         <Stack gap={6}>
           <Button asChild variant="secondary" size="sm" className="self-start">
             <Link href={ROUTES.ORGANIZATIONS}>
               <ArrowLeft className="size-4" />
-              {t("organizations.backToAllOrganizations")}
+              {t("organizations.allOrganizations")}
             </Link>
           </Button>
 
-          <PageHeader
-            title={organization.organization_name}
-            description={getSchoolDisplayName(organization.school)}
-          />
+          <Stack gap={4}>
+            <Stack direction="horizontal" justify="between" align="start" gap={4} wrap>
+              <OrganizationLogo organization={organization} />
+              <Stack direction="horizontal" gap={2} align="center" wrap justify="end">
+                {isAuthenticated ? (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    selected={isSaved}
+                    onClick={() => toggleSave(organization.id)}
+                  >
+                    <Bookmark
+                      className={isSaved ? "size-4 fill-current" : "size-4"}
+                    />
+                    {isSaved ? t("organizations.saved") : t("organizations.save")}
+                  </Button>
+                ) : null}
+                {isAuthenticated && isUnowned ? (
+                  <Button type="button" onClick={() => setShowClaimModal(true)}>
+                    {t("organizations.claimOrganization")}
+                  </Button>
+                ) : null}
+              </Stack>
+            </Stack>
 
-          <OrganizationCategoryBadges
-            categories={organization.categories}
-            badgeClassName="text-xs px-2.5"
-          />
+            <OrganizationMembershipActions organization={organization} />
 
-          <Section
-            variant="surface"
-            title={t("organizationPanel.linksAndSocials")}
-          >
-            <Stack gap={2}>
+            <OrganizationCategoryBadges
+              categories={organization.categories}
+              badgeClassName="text-xs px-2.5"
+            />
+
+            <PageHeader
+              title={organization.organization_name}
+              description={getSchoolDisplayName(organization.school)}
+            />
+
+            <Stack direction="horizontal" gap={4} align="center" wrap>
               {organizationPageHref ? (
                 <a
                   href={organizationPageHref}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-sm text-foreground transition-colors hover:text-primary"
+                  className={ORGANIZATION_LINK_CLASS}
                 >
                   <ExternalLink className="size-4 text-muted-foreground" />
                   <span className="truncate">
@@ -282,7 +123,7 @@ function OrganizationDetailsContent({
                   href={`https://instagram.com/${organization.ig}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-sm text-foreground transition-colors hover:text-primary"
+                  className={ORGANIZATION_LINK_CLASS}
                 >
                   <Instagram className="size-4 text-muted-foreground" />
                   <span>@{organization.ig}</span>
@@ -293,17 +134,15 @@ function OrganizationDetailsContent({
                   href={discordHref}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-sm text-foreground transition-colors hover:text-primary"
+                  className={ORGANIZATION_LINK_CLASS}
                 >
                   <Discord className="size-4 text-muted-foreground" />
                   <span>{t("organizationPanel.joinDiscord")}</span>
                 </a>
               ) : null}
             </Stack>
-          </Section>
 
-          {organization.status !== "approved" ? (
-            <Section variant="surface">
+            {organization.status !== "approved" ? (
               <div className="flex items-center gap-2 rounded-lg border border-warning/20 bg-warning/10 px-3 py-2 text-sm text-warning">
                 <HelpCircle className="size-4 shrink-0" />
                 <span>
@@ -312,56 +151,21 @@ function OrganizationDetailsContent({
                     : t("organizations.awaitingReview")}
                 </span>
               </div>
-            </Section>
-          ) : null}
+            ) : null}
+          </Stack>
 
-          <Section variant="surface">
-            <Stack gap={3}>
-              <div className="flex gap-3">
-                {isAuthenticated ? (
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="icon"
-                    selected={isSaved}
-                    onClick={() => toggleSave(organization.id)}
-                    aria-label={
-                      isSaved
-                        ? t("organizations.saved")
-                        : t("organizations.save")
-                    }
-                  >
-                    <Bookmark
-                      className={isSaved ? "size-4 fill-current" : "size-4"}
-                    />
-                  </Button>
-                ) : null}
-                <div className="flex-1">{renderMembershipAction()}</div>
-              </div>
+          <Separator />
 
-              {isAuthenticated && !isUnowned ? (
-                <Button
-                  variant="ghost"
-                  onClick={() => setShowJoinModal(true)}
-                  className="w-full text-muted-foreground hover:text-primary"
-                >
-                  <UserPlus className="size-4" />
-                  {t("organizations.applyToJoin")}
-                </Button>
-              ) : null}
-            </Stack>
-          </Section>
+          <OrganizationEventsGrid
+            organizationName={organization.organization_name}
+            school={organization.school}
+          />
         </Stack>
       </Container>
 
       <ClaimOrganizationModal
         isOpen={showClaimModal}
         onClose={() => setShowClaimModal(false)}
-        organization={organization}
-      />
-      <JoinOrganizationModal
-        isOpen={showJoinModal}
-        onClose={() => setShowJoinModal(false)}
         organization={organization}
       />
     </>

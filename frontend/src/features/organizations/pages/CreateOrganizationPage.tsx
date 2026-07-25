@@ -66,7 +66,7 @@ export function CreateOrganizationPage() {
             <Button asChild variant="secondary" size="sm">
               <Link href={ROUTES.ORGANIZATIONS}>
                 <ArrowLeft className="size-4" />
-                {t("organizations.backToAllOrganizations")}
+                {t("organizations.allOrganizations")}
               </Link>
             </Button>
           }

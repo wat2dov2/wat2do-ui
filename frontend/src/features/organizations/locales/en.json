@@ -70,7 +70,7 @@
     },
     "filterBy": "See more events by {{name}}",
     "visitWebsite": "Visit Website",
-    "backToAllOrganizations": "Back to all organizations",
+    "allOrganizations": "All organizations",
     "submittedForReview": "Submitted for review. Your organization goes live once an admin approves it.",
     "awaitingReview": "This organization is awaiting admin review. It is not listed publicly yet, and events cannot be published until it is approved.",
     "reviewRejected": "This organization was not approved. Contact the Wat2Do team if you think this is a mistake."

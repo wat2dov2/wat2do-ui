@@ -17,7 +17,7 @@ import {
   buildEventPayload,
   buildEventUpdatePayload,
 } from "@/shared/api/eventPayload";
-import { api } from "@/shared/services/apiClient";
+import { api, getPaginatedItems } from "@/shared/services/apiClient";
 
 export type LatestAddedEvent = {
   title: string;
@@ -38,6 +38,25 @@ export type PaginatedEventsResponse = {
  */
 export async function fetchEventById(id: number): Promise<Event> {
   return api.get<ApiEventPublicResponse>(`/events/${id}`);
+}
+
+/**
+ * Every upcoming event hosted by one organization, soonest first.
+ *
+ * The public feed endpoint already scopes to upcoming occurrences and orders by
+ * start date, so an organization page is just that feed narrowed to one host.
+ */
+export async function fetchOrganizationEvents(
+  organizationName: string,
+  school: string,
+): Promise<Event[]> {
+  const params = new URLSearchParams({
+    school,
+    sort_by: "date",
+    sort_order: "asc",
+  });
+  params.append("organizations", organizationName);
+  return getPaginatedItems<Event>(`/events/?${params.toString()}`);
 }
 
 export async function createEventAPI(eventData: EventFormData): Promise<Event> {
