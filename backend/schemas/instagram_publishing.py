@@ -59,6 +59,7 @@ class InstagramPublishBatchResponse(BaseModel):
     window_end: datetime
     status: InstagramPublishBatchStatus
     caption: str
+    cover_body: str = ""
     cover_image_url: str | None = None
     ai_model: str | None = None
     version: int
@@ -77,7 +78,11 @@ class InstagramPublishBatchUpdate(BaseModel):
 
     version: int = Field(gt=0)
     caption: str = Field(min_length=1, max_length=2200)
-    item_ids: list[UUID] = Field(min_length=1, max_length=9)
+    cover_body: str = Field(default="", max_length=280)
+    # Carousel order, by event. The editor owns which events are on the
+    # carousel - including ones an admin added by hand - so the batch reconciles
+    # its slides against this list instead of the generator's original items.
+    event_ids: list[int] = Field(min_length=1, max_length=9)
 
 
 class InstagramPublishBatchPublish(BaseModel):

@@ -7020,6 +7020,11 @@
             "type": "string",
             "title": "Caption"
           },
+          "cover_body": {
+            "type": "string",
+            "title": "Cover Body",
+            "default": ""
+          },
           "cover_image_url": {
             "anyOf": [
               {
@@ -7151,15 +7156,20 @@
             "minLength": 1,
             "title": "Caption"
           },
-          "item_ids": {
+          "cover_body": {
+            "type": "string",
+            "maxLength": 280,
+            "title": "Cover Body",
+            "default": ""
+          },
+          "event_ids": {
             "items": {
-              "type": "string",
-              "format": "uuid"
+              "type": "integer"
             },
             "type": "array",
             "maxItems": 9,
             "minItems": 1,
-            "title": "Item Ids"
+            "title": "Event Ids"
           }
         },
         "additionalProperties": false,
@@ -7167,7 +7177,7 @@
         "required": [
           "version",
           "caption",
-          "item_ids"
+          "event_ids"
         ],
         "title": "InstagramPublishBatchUpdate"
       },

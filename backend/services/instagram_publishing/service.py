@@ -39,6 +39,7 @@ from services.instagram_publishing.captions import build_caption
 from services.instagram_publishing.curation import rank_candidates
 from services.instagram_publishing.meta import MetaInstagramClient
 from services.instagram_publishing.rendering import render_cover_asset, render_event_asset
+from services.school_context import resolve_school_timezone
 
 log = logging.getLogger(__name__)
 _CONTROL = controlbox.instagram_publishing
@@ -47,6 +48,21 @@ _SUCCESSFUL_CUTOFF_STATUSES = (
     INSTAGRAM_BATCH_PUBLISHED,
     INSTAGRAM_BATCH_EMPTY,
 )
+_EVENT_COLUMNS = (
+    "id,title,description,location,price,food,registration,"
+    "source_image_url,source_url,category,organization,ig_handle,school,added_at"
+)
+# Slides an admin adds by hand never went through AI curation, so they carry
+# neutral scores rather than a fabricated ranking.
+_MANUAL_ITEM_SCORES = {
+    "visual_score": 0,
+    "excitement_score": 0,
+    "audience_score": 0,
+    "timing_score": 0,
+    "overall_score": 0,
+    "ai_reason": "Added to the carousel by an admin",
+    "cover_candidate": False,
+}
 
 
 def generate_due_batches(
@@ -117,20 +133,51 @@ def update_batch(
     batch_id: UUID | str,
     data: InstagramPublishBatchUpdate,
 ) -> dict[str, Any]:
+    """Save the carousel the editor is holding: slides, cover copy, caption.
+
+    Slide images are re-rendered here rather than while the admin types - a
+    saved draft is the point at which the stored PNGs must match the event data
+    again. An unchanged event keeps its asset because the template is
+    deterministic, so re-rendering it would produce the same image.
+    """
     batch = get_batch(batch_id)
     _assert_version(batch, data.version)
     if batch["status"] not in {INSTAGRAM_BATCH_READY_FOR_REVIEW, INSTAGRAM_BATCH_FAILED}:
         raise ValidationError(INSTAGRAM_PUBLISH_BATCH_NOT_EDITABLE)
 
-    items_by_id = {str(item["id"]): item for item in batch["items"]}
-    selected_ids = [str(item_id) for item_id in data.item_ids]
-    if len(selected_ids) != len(set(selected_ids)) or any(
-        item_id not in items_by_id for item_id in selected_ids
-    ):
-        raise ValidationError("Every selected Instagram item must belong to the batch")
+    event_ids = list(data.event_ids)
+    if len(event_ids) != len(set(event_ids)):
+        raise ValidationError("Every carousel slide must be a different event")
 
-    selected_events = [items_by_id[item_id]["event_snapshot"] for item_id in selected_ids]
-    cover_url = render_cover_asset(selected_events, batch["school"])
+    snapshots = _load_event_snapshots(event_ids)
+    if any(event_id not in snapshots for event_id in event_ids):
+        raise ValidationError("Every carousel slide must be a dated, existing event")
+
+    items_by_event = {int(item["event_id"]): item for item in batch["items"]}
+    ordered_item_ids: list[str] = []
+    for event_id in event_ids:
+        snapshot = snapshots[event_id]
+        item = items_by_event.get(event_id)
+        if item is None:
+            ordered_item_ids.append(_create_item(batch, snapshot))
+            continue
+        if item["event_snapshot"] != snapshot:
+            _update_item_fields(
+                item["id"],
+                {
+                    "event_snapshot": snapshot,
+                    "asset_url": render_event_asset(snapshot),
+                    # The old Meta container points at the previous image.
+                    "meta_container_id": None,
+                },
+            )
+        ordered_item_ids.append(str(item["id"]))
+
+    cover_url = render_cover_asset(
+        [snapshots[event_id] for event_id in event_ids],
+        batch["school"],
+        data.cover_body,
+    )
     try:
         response = (
             get_sb()
@@ -140,7 +187,8 @@ def update_batch(
                     "p_batch_id": str(batch_id),
                     "p_expected_version": data.version,
                     "p_caption": data.caption,
-                    "p_item_ids": selected_ids,
+                    "p_cover_body": data.cover_body,
+                    "p_item_ids": ordered_item_ids,
                     "p_cover_image_url": cover_url,
                 },
             )
@@ -341,10 +389,7 @@ def _load_candidates(
     events_response = (
         get_sb()
         .table(EVENTS)
-        .select(
-            "id,title,description,location,price,food,registration,"
-            "source_image_url,source_url,category,organization,ig_handle,school,added_at"
-        )
+        .select(_EVENT_COLUMNS)
         .eq("school", school)
         .eq("ingestion_source", "instagram_scraper")
         .eq("cancelled", False)
@@ -399,11 +444,92 @@ def _load_candidates(
                 "id": event_id,
                 "dtstart_utc": occurrence["dtstart_utc"],
                 "dtend_utc": occurrence.get("dtend_utc"),
-                "tz": occurrence.get("tz"),
+                "tz": occurrence.get("tz") or resolve_school_timezone(school),
             }
         )
     candidates.sort(key=lambda event: (event["dtstart_utc"], -event["id"]))
     return candidates[: _CONTROL.maximum_ai_candidates]
+
+
+def _load_event_snapshots(event_ids: list[int]) -> dict[int, dict[str, Any]]:
+    """Current event data for the requested slides, keyed by event id.
+
+    Slides render from live events, so an event edited in the drawer produces a
+    new snapshot here on the next save. Events without any occurrence are
+    omitted: a slide has nowhere to print a date.
+    """
+    if not event_ids:
+        return {}
+
+    events = (
+        get_sb().table(EVENTS).select(_EVENT_COLUMNS).in_("id", event_ids).execute()
+    ).data or []
+    occurrences = (
+        get_sb()
+        .table(EVENT_DATES)
+        .select("event_id,dtstart_utc,dtend_utc,tz")
+        .in_("event_id", event_ids)
+        .order("dtstart_utc")
+        .execute()
+    ).data or []
+
+    # A recurring event advertises its first occurrence, which is also the one
+    # the editor previews (`occurrences[0]`, same ascending order).
+    chosen: dict[int, dict[str, Any]] = {}
+    for occurrence in occurrences:
+        chosen.setdefault(int(occurrence["event_id"]), occurrence)
+
+    snapshots: dict[int, dict[str, Any]] = {}
+    for event in events:
+        event_id = int(event["id"])
+        occurrence = chosen.get(event_id)
+        if occurrence is None:
+            continue
+        snapshots[event_id] = {
+            **event,
+            "id": event_id,
+            "dtstart_utc": occurrence["dtstart_utc"],
+            "dtend_utc": occurrence.get("dtend_utc"),
+            # Slides print local times, and the renderer only ever sees the
+            # snapshot - so resolve the zone here instead of teaching the
+            # frontend the school-to-timezone map.
+            "tz": occurrence.get("tz") or resolve_school_timezone(event.get("school")),
+        }
+    return snapshots
+
+
+def _create_item(batch: dict[str, Any], snapshot: dict[str, Any]) -> str:
+    """Add one admin-chosen event to the batch, excluded until the RPC orders it."""
+    response = (
+        get_sb()
+        .table(INSTAGRAM_PUBLISH_ITEMS)
+        .insert(
+            {
+                "batch_id": batch["id"],
+                "account_key": batch["account_key"],
+                "event_id": int(snapshot["id"]),
+                "position": None,
+                "included": False,
+                "event_snapshot": snapshot,
+                **_MANUAL_ITEM_SCORES,
+                "asset_url": render_event_asset(snapshot),
+            }
+        )
+        .execute()
+    )
+    if not response.data:
+        raise RuntimeError(f"Could not add event {snapshot['id']} to Instagram batch")
+    return str(response.data[0]["id"])
+
+
+def _update_item_fields(item_id: str, fields: dict[str, Any]) -> None:
+    (
+        get_sb()
+        .table(INSTAGRAM_PUBLISH_ITEMS)
+        .update({**fields, "updated_at": _iso_now()})
+        .eq("id", item_id)
+        .execute()
+    )
 
 
 def _select_events(

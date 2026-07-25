@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { InstagramBatchReview } from "@/features/admin/components/instagram/InstagramBatchReview";
+import { InstagramCarouselDrawer } from "@/features/admin/components/instagram/InstagramCarouselDrawer";
+import { InstagramRunsTable } from "@/features/admin/components/instagram/InstagramRunsTable";
 import { AdminPageHeader } from "@/features/admin/components/shared/AdminPageHeader";
 import { useInstagramPublishing } from "@/features/admin/hooks/useInstagramPublishing";
-import { Container, Stack } from "@/shared/layout";
+import { Container, Section, Stack } from "@/shared/layout";
 import { getApiErrorMessage } from "@/shared/services/apiClient";
 import { Button } from "@/shared/ui/button";
 import { Instagram } from "@/shared/ui/doodle-icons";
@@ -25,6 +27,9 @@ export function AdminInstagramPage({ onBack }: AdminInstagramPageProps) {
     updatingBatchId,
     publishingBatchId,
   } = useInstagramPublishing();
+  const [openBatchId, setOpenBatchId] = useState<string | null>(null);
+
+  const openBatch = batches.find((batch) => batch.id === openBatchId) ?? null;
 
   return (
     <Container size="lg" className="px-0">
@@ -39,76 +44,53 @@ export function AdminInstagramPage({ onBack }: AdminInstagramPageProps) {
         {isLoading ? (
           <LoadingPage className="min-h-[360px]" />
         ) : error ? (
-          <div className="rounded-xl border border-destructive/40 bg-destructive/10 p-6 text-center">
-            <p className="mb-4 text-sm text-destructive">
-              {getApiErrorMessage(error, t("admin.instagramPublishing.loadError"))}
-            </p>
-            <Button variant="secondary" onClick={() => retry()}>
-              {t("admin.instagramPublishing.retry")}
-            </Button>
-          </div>
+          <Section variant="surface" className="text-center">
+            <Stack gap={4} align="center">
+              <p className="text-sm text-destructive">
+                {getApiErrorMessage(error, t("admin.instagramPublishing.loadError"))}
+              </p>
+              <Button variant="secondary" onClick={() => retry()}>
+                {t("admin.instagramPublishing.retry")}
+              </Button>
+            </Stack>
+          </Section>
         ) : batches.length === 0 ? (
-          <div className="rounded-xl border border-border bg-surface p-10 text-center">
+          <Section variant="surface" className="text-center">
             <p className="text-sm text-muted-foreground">
               {t("admin.instagramPublishing.noBatches")}
             </p>
-          </div>
+          </Section>
         ) : (
-          <Stack gap={6}>
-            {batches.map((batch) => (
-              <InstagramBatchReview
-                key={batch.id}
-                batch={batch}
-                isSaving={updatingBatchId === batch.id}
-                isPublishing={publishingBatchId === batch.id}
-                onSave={async (caption, itemIds) => {
-                  try {
-                    const updated = await updateBatch({
-                      id: batch.id,
-                      data: {
-                        version: batch.version,
-                        caption,
-                        item_ids: itemIds,
-                      },
-                    });
-                    toast({
-                      title: t("admin.instagramPublishing.saved"),
-                      variant: "success",
-                    });
-                    return updated;
-                  } catch (saveError) {
-                    toast({
-                      title: t("admin.instagramPublishing.saveError"),
-                      description: getApiErrorMessage(saveError),
-                      variant: "destructive",
-                    });
-                    throw saveError;
-                  }
-                }}
-                onPublish={async (version) => {
-                  try {
-                    await publishBatch({
-                      id: batch.id,
-                      data: { version },
-                    });
-                    toast({
-                      title: t("admin.instagramPublishing.published"),
-                      variant: "success",
-                    });
-                  } catch (publishError) {
-                    toast({
-                      title: t("admin.instagramPublishing.publishError"),
-                      description: getApiErrorMessage(publishError),
-                      variant: "destructive",
-                    });
-                    throw publishError;
-                  }
-                }}
-              />
-            ))}
-          </Stack>
+          <InstagramRunsTable batches={batches} onOpenRun={(batch) => setOpenBatchId(batch.id)} />
         )}
       </Stack>
+
+      {openBatch ? (
+        <InstagramCarouselDrawer
+          key={openBatch.id}
+          batch={openBatch}
+          isSaving={updatingBatchId === openBatch.id}
+          isPublishing={publishingBatchId === openBatch.id}
+          onClose={() => setOpenBatchId(null)}
+          onSaveDraft={async ({ caption, coverBody, eventIds }) => {
+            const saved = await updateBatch({
+              id: openBatch.id,
+              data: {
+                version: openBatch.version,
+                caption,
+                cover_body: coverBody,
+                event_ids: eventIds,
+              },
+            });
+            toast({ title: t("admin.instagramPublishing.saved"), variant: "success" });
+            return saved;
+          }}
+          onPublish={async (version) => {
+            await publishBatch({ id: openBatch.id, data: { version } });
+            toast({ title: t("admin.instagramPublishing.published"), variant: "success" });
+          }}
+        />
+      ) : null}
     </Container>
   );
 }

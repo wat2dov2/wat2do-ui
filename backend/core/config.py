@@ -76,6 +76,12 @@ class Settings(BaseSettings):
     # Server-only Meta credential. Non-secret account IDs and feature controls
     # live in backend/controlbox/instagram_publishing.json.
     instagram_access_token: str = ""
+    # Next.js slide renderer. The carousel slide templates live in the frontend
+    # so the admin preview and the published PNG come from one source; this is
+    # the route that rasterizes them.
+    instagram_slide_render_url: str = ""
+    instagram_slide_render_secret: str = ""
+    instagram_slide_render_timeout: float = 30.0
 
     @model_validator(mode="after")
     def validate_database_region(self) -> "Settings":

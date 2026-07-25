@@ -1957,6 +1957,11 @@ export interface components {
             status: "generating" | "ready_for_review" | "publishing" | "published" | "empty" | "failed";
             /** Caption */
             caption: string;
+            /**
+             * Cover Body
+             * @default
+             */
+            cover_body: string;
             /** Cover Image Url */
             cover_image_url?: string | null;
             /** Ai Model */
@@ -1992,8 +1997,13 @@ export interface components {
             version: number;
             /** Caption */
             caption: string;
-            /** Item Ids */
-            item_ids: string[];
+            /**
+             * Cover Body
+             * @default
+             */
+            cover_body: string;
+            /** Event Ids */
+            event_ids: number[];
         };
         /** InstagramPublishItemResponse */
         InstagramPublishItemResponse: {
