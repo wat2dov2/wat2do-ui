@@ -320,7 +320,7 @@ export function SubmitEventFlow({
             <div className="flex aspect-video w-full flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border bg-secondary/30 py-8">
               <div className="size-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
               <p className="text-sm font-medium text-foreground">
-                {t("events.readingFlyerDetails")}
+                {t("events.processingEventImage")}
               </p>
             </div>
           ) : (

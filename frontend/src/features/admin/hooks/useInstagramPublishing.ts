@@ -6,6 +6,7 @@ import {
 } from "@/features/admin/api/admin.api";
 import type {
   ApiInstagramPublishBatchPublish,
+  ApiInstagramPublishBatchResponse,
   ApiInstagramPublishBatchUpdate,
 } from "@/shared/generated";
 import { queryKeys } from "@/shared/lib/queryKeys";
@@ -31,7 +32,12 @@ export function useInstagramPublishing() {
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: UpdateVariables) =>
       updateInstagramPublishBatch(id, data),
-    onSuccess: refresh,
+    // A save returns the batch it wrote, so the editor picks up its new slides
+    // and version straight away instead of waiting on a refetch.
+    onSuccess: (saved) =>
+      queryClient.setQueryData<ApiInstagramPublishBatchResponse[]>(queryKey, (current) =>
+        (current ?? []).map((batch) => (batch.id === saved.id ? saved : batch)),
+      ),
   });
   const publishMutation = useMutation({
     mutationFn: ({ id, data }: PublishVariables) =>

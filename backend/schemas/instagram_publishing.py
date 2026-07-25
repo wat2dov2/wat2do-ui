@@ -12,6 +12,7 @@ from core.constants import (
     INSTAGRAM_BATCH_PUBLISHING,
     INSTAGRAM_BATCH_READY_FOR_REVIEW,
 )
+from schemas.event import EventSummaryResponse
 
 InstagramPublishBatchStatus = Literal[
     INSTAGRAM_BATCH_GENERATING,
@@ -23,32 +24,6 @@ InstagramPublishBatchStatus = Literal[
 ]
 
 
-class InstagramCarouselEvent(BaseModel):
-    """Live event data a slide reads, joined onto the carousel for display.
-
-    Nothing here is stored on the batch: it is read from the events table every
-    time the carousel is loaded or published, so an edited event changes its
-    slide with no further bookkeeping.
-    """
-
-    model_config = ConfigDict(extra="ignore")
-
-    id: int
-    title: str | None = None
-    category: str | None = None
-    location: str | None = None
-    organization: str | None = None
-    ig_handle: str | None = None
-    school: str | None = None
-    source_image_url: str | None = None
-    dtstart_utc: datetime | None = None
-    """IANA zone resolved server-side; slides print local times."""
-    tz: str | None = None
-    price: float | None = None
-    food: list[str] | None = None
-    cancelled: bool | None = None
-
-
 class InstagramPublishItemResponse(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
@@ -57,7 +32,10 @@ class InstagramPublishItemResponse(BaseModel):
     account_key: str
     event_id: int
     position: int
-    event: InstagramCarouselEvent
+    # The slide's live event, hydrated like any other card payload. Nothing
+    # about it is stored on the batch: the events table is the source of truth
+    # for everything a slide shows.
+    event: EventSummaryResponse
     published_at: datetime | None = None
     created_at: datetime
     updated_at: datetime

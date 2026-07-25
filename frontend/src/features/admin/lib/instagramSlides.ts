@@ -1,10 +1,11 @@
 /**
- * Slide view models.
+ * Slide view models for the published carousel image.
  *
- * A carousel slide is a deterministic function of event data: the same snapshot
- * always produces the same slide. This module is that function, shared by the
- * admin preview and the PNG render route so the image an admin approves is the
- * image Instagram receives.
+ * A carousel slide is a deterministic function of event data: the same event
+ * always produces the same slide. This module is that function, and it runs in
+ * the PNG render route (`/api/render-instagram-slide`) - plus the cover, which
+ * previews in the admin editor because it has no in-app equivalent. Event
+ * slides preview as the app's own event card instead.
  */
 
 import { getOrganizationCategoryConfig } from "@/shared/data/organizationCategoryStyles";
@@ -52,7 +53,7 @@ export interface CoverSlideModel {
   tiles: string[];
 }
 
-export const COVER_DEFAULT_BODY = "Added to Wat2Do in the last 24 hours";
+const COVER_DEFAULT_BODY = "Added to Wat2Do in the last 24 hours";
 const FALLBACK_TITLE = "Untitled event";
 const FALLBACK_LOCATION = "See Wat2Do for location";
 const FALLBACK_ORGANIZATION = "Campus organization";
@@ -68,7 +69,7 @@ function text(value: string | null | undefined, fallback: string): string {
  * Formatted with an explicit zone so the browser preview and the server render
  * agree regardless of where either one runs.
  */
-export function formatSlideDate(event: SlideEvent): { dateLine: string; timeLine: string } {
+function formatSlideDate(event: SlideEvent): { dateLine: string; timeLine: string } {
   const start = event.dtstart_utc ? new Date(event.dtstart_utc) : null;
   if (!start || Number.isNaN(start.getTime())) {
     return { dateLine: "Date to be announced", timeLine: "" };

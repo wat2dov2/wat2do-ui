@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { ChevronLeft, ChevronRight, Plus, Trash2 } from "@/shared/ui/doodle-icons";
+import { ChevronLeft, ChevronRight, Plus, X } from "@/shared/ui/doodle-icons";
 import { Button } from "@/shared/ui/button";
 import { LoadingButton } from "@/shared/ui/loading-button";
 import { Textarea } from "@/shared/ui/textarea";
@@ -99,6 +99,13 @@ export function InstagramCarouselDrawer({
     [currentEvent, currentEventId],
   );
 
+  /** Saves the carousel the editor is holding, with the given slides on it. */
+  const persistDraft = useCallback(
+    (slideEventIds: number[]) =>
+      onSaveDraft({ caption: caption.trim(), coverBody, eventIds: slideEventIds }),
+    [caption, coverBody, onSaveDraft],
+  );
+
   const handleUpdateEvent = useCallback(
     async (eventId: number, data: EventFormData) => {
       await updateEventAPI(eventId, data);
@@ -108,17 +115,27 @@ export function InstagramCarouselDrawer({
     [queryClient, t],
   );
 
+  /**
+   * Submitting an event puts it on this carousel for good.
+   *
+   * The slide is saved with the event rather than waiting for a separate save,
+   * so the run survives a refresh and the new slide previews from the batch the
+   * server just returned instead of an id with no event behind it.
+   */
   const handleCreateEvent = useCallback(
     async (data: EventFormData) => {
       const created = await createEventAPI(data);
-      setEventIds((current) => [...current, created.id]);
-      setSlideIndex(eventIds.length + 1);
+      const saved = await persistDraft([...eventIds, created.id]);
+      const savedEventIds = carouselEventIds(saved);
+      setEventIds(savedEventIds);
+      setSlideIndex(savedEventIds.indexOf(created.id) + 1);
       setAddingEvent(false);
       return { type: "event" as const, eventId: created.id };
     },
-    [eventIds.length],
+    [eventIds, persistDraft],
   );
 
+  /** Takes the event off this carousel. The event itself is untouched. */
   const handleRemoveSlide = useCallback(() => {
     if (currentEventId == null) return;
     setEventIds((current) => current.filter((eventId) => eventId !== currentEventId));
@@ -126,10 +143,10 @@ export function InstagramCarouselDrawer({
   }, [currentEventId]);
 
   const handleSaveDraft = useCallback(async () => {
-    const saved = await onSaveDraft({ caption: caption.trim(), coverBody, eventIds });
+    const saved = await persistDraft(eventIds);
     setEventIds(carouselEventIds(saved));
     return saved;
-  }, [caption, coverBody, eventIds, onSaveDraft]);
+  }, [eventIds, persistDraft]);
 
   const saveDraft = useCallback(() => {
     handleSaveDraft().catch((error) => {
@@ -267,10 +284,10 @@ export function InstagramCarouselDrawer({
                     type="button"
                     variant="secondary"
                     disabled={!editable || busy || eventIds.length <= 1}
-                    className="self-start text-destructive"
+                    className="self-start"
                     onClick={handleRemoveSlide}
                   >
-                    <Trash2 className="size-4" />
+                    <X className="size-4" />
                     {t("admin.instagramPublishing.removeSlide")}
                   </Button>
                 </Stack>

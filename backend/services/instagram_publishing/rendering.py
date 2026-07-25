@@ -1,10 +1,11 @@
 """Carousel slide rasterization.
 
 Slides are HTML templates that live in the frontend
-(``src/features/admin/components/instagram/slides``) so the admin preview and
-the published image are the same markup rendered from the same event data.
-This module is the thin backend side of that contract: it posts slide data to
-the Next.js render route and stores the PNG it returns.
+(``src/features/admin/components/instagram/slides``) and are rasterized by
+satori. This module is the thin backend side of that contract: it posts live
+event data to the Next.js render route at publish time and stores the PNG it
+returns. Nothing is rendered before then - the admin editor previews the app's
+own event card, not the poster.
 """
 
 from __future__ import annotations

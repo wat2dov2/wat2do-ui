@@ -1,10 +1,7 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { EventCardBody } from "@/features/events/components/EventCard";
-import { EventCardImage } from "@/features/events/components/EventCardImage";
+import { EventCard } from "@/features/events/components/EventCard";
 import { useEventFormContext } from "@/features/events/components/EventForm/EventForm/EventFormContext";
-import { useEventBadges } from "@/features/events/hooks/useEventBadges";
-import { formatCardDate, formatCardTime } from "@/shared/utils/date";
 import { cn } from "@/shared/lib/utils";
 import type { Event } from "@/shared/types";
 
@@ -18,11 +15,11 @@ const PREVIEW_EVENT_ID = -1;
 /**
  * Live preview of the grid card the event will become.
  *
- * It renders the real card's own image and body components against an event
- * assembled from the form, so the preview cannot drift from the feed.
+ * It renders the real card against an event assembled from the form, so the
+ * preview cannot drift from the feed.
  */
 export function EventFormPreview({ className }: EventFormPreviewProps) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { formData, imagePreview, selectedOrganizationName } = useEventFormContext();
 
   const previewEvent = useMemo<Event>(() => {
@@ -49,15 +46,6 @@ export function EventFormPreview({ className }: EventFormPreviewProps) {
     };
   }, [formData, imagePreview, selectedOrganizationName, t]);
 
-  const badges = useEventBadges(previewEvent);
-
-  const cardDate = useMemo(
-    () => formatCardDate(previewEvent, i18n.language || "en-US"),
-    [previewEvent, i18n.language],
-  );
-
-  const cardTime = useMemo(() => formatCardTime(previewEvent), [previewEvent]);
-
   return (
     <div
       className={cn(
@@ -71,16 +59,7 @@ export function EventFormPreview({ className }: EventFormPreviewProps) {
         </span>
       </div>
 
-      <article className="mx-auto flex w-full max-w-[16.5rem] flex-col rounded-xl">
-        <EventCardImage event={previewEvent} variant="card" interactive={false} />
-        <EventCardBody
-          event={previewEvent}
-          date={cardDate}
-          time={cardTime}
-          badges={badges}
-          t={t}
-        />
-      </article>
+      <EventCard event={previewEvent} interactive={false} className="mx-auto max-w-[16.5rem]" />
     </div>
   );
 }

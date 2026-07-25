@@ -4,7 +4,8 @@
  * These are the only components in the app written with inline style objects
  * instead of design-system primitives: they are rasterized by satori in
  * `/api/render-instagram-slide`, which supports flexbox and inline styles only.
- * Everything the admin screen wraps around them uses the normal primitives.
+ * That constraint - no hooks, no measurement, no CSS variables - is why the
+ * event slide restates the event card instead of rendering it.
  */
 
 import {
@@ -55,6 +56,9 @@ const CARD_IMAGE_HEIGHT = 840;
  * organization badge bottom-left, then a surface body holding the title, the
  * date/time/location column, and the price / free-food chips. Click and going
  * counts are deliberately absent - a published slide is not a live card.
+ *
+ * The admin editor previews the real card, not this, so a change to EventCard's
+ * anatomy will not show up here on its own. Keep the two in step by hand.
  */
 export function EventSlideTemplate({ model }: { model: EventSlideModel }) {
   return (

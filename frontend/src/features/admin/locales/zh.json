@@ -165,7 +165,7 @@
       "characterCount": "{{count}} / 2200",
       "saveDraft": "保存草稿",
       "publish": "发布到 Instagram",
-      "removeSlide": "移除该活动",
+      "removeSlide": "从轮播中移除",
       "saved": "Instagram 草稿已保存",
       "saveError": "无法保存 Instagram 草稿",
       "published": "轮播已发布到 Instagram",
@@ -187,6 +187,7 @@
         "timeRan": "运行时间",
         "events": "活动数"
       },
+      "slideEventUnavailable": "该幻灯片的活动已无法发布",
       "addEvent": "添加活动",
       "coverSlide": "封面",
       "coverBody": "封面正文",

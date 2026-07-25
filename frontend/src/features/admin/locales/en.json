@@ -165,7 +165,7 @@
       "characterCount": "{{count}} / 2200",
       "saveDraft": "Save draft",
       "publish": "Publish to Instagram",
-      "removeSlide": "Remove this event",
+      "removeSlide": "Remove from carousel",
       "saved": "Instagram draft saved",
       "saveError": "Could not save the Instagram draft",
       "published": "Carousel published to Instagram",
@@ -187,6 +187,7 @@
         "timeRan": "Time ran",
         "events": "Events"
       },
+      "slideEventUnavailable": "This slide's event is no longer publishable",
       "addEvent": "Add event",
       "coverSlide": "Cover slide",
       "coverBody": "Cover body text",

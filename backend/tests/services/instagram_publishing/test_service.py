@@ -1,9 +1,12 @@
 from datetime import datetime, timezone
 from types import SimpleNamespace
 from unittest.mock import Mock
+from uuid import uuid4
 
 import pytest
 
+from schemas.event import EventSummaryResponse
+from schemas.event_date import OccurrenceResponse
 from schemas.instagram_publishing import (
     InstagramPublishBatchPublish,
     InstagramPublishBatchUpdate,
@@ -113,8 +116,24 @@ class _FakeQuery:
         return SimpleNamespace(data=self._data, count=len(self._data))
 
 
-def _event(event_id: int, title: str = "Event") -> dict:
-    return {"id": event_id, "title": title, "school": "uwaterloo"}
+def _event(event_id: int, title: str = "Event") -> EventSummaryResponse:
+    """A slide's event, hydrated exactly as the carousel response carries it."""
+    start = datetime(2026, 7, 27, 22, tzinfo=timezone.utc)
+    return EventSummaryResponse(
+        id=event_id,
+        title=title,
+        school="uwaterloo",
+        added_at=start,
+        occurrences=[
+            OccurrenceResponse(
+                id=uuid4(),
+                event_id=event_id,
+                dtstart_utc=start,
+                tz="America/Toronto",
+                created_at=start,
+            )
+        ],
+    )
 
 
 def _batch(event_ids: list[int], **overrides) -> dict:
@@ -266,3 +285,20 @@ def test_publish_batch_renders_the_slides_from_live_event_data(monkeypatch):
     assert containers == ["https://a/cover.png", "https://a/7.png", "https://a/8.png"]
     published = [call for call in table_calls if call[0] == "update"]
     assert any(fields.get("meta_media_id") == "media-1" for _, (fields,), _ in published)
+
+
+def test_slide_payload_flattens_the_first_occurrence_for_the_renderer():
+    payload = service._slide_payload(_event(7))
+
+    assert payload["id"] == 7
+    assert payload["dtstart_utc"] == "2026-07-27T22:00:00+00:00"
+    assert payload["tz"] == "America/Toronto"
+    # The renderer reads a flat dict; the occurrence list never reaches it.
+    assert "occurrences" not in payload
+
+
+def test_slide_payload_falls_back_to_the_school_timezone():
+    event = _event(8)
+    event.occurrences[0].tz = None
+
+    assert service._slide_payload(event)["tz"] == "America/Toronto"

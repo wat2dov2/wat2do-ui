@@ -1917,42 +1917,6 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
-        /**
-         * InstagramCarouselEvent
-         * @description Live event data a slide reads, joined onto the carousel for display.
-         *
-         *     Nothing here is stored on the batch: it is read from the events table every
-         *     time the carousel is loaded or published, so an edited event changes its
-         *     slide with no further bookkeeping.
-         */
-        InstagramCarouselEvent: {
-            /** Id */
-            id: number;
-            /** Title */
-            title?: string | null;
-            /** Category */
-            category?: string | null;
-            /** Location */
-            location?: string | null;
-            /** Organization */
-            organization?: string | null;
-            /** Ig Handle */
-            ig_handle?: string | null;
-            /** School */
-            school?: string | null;
-            /** Source Image Url */
-            source_image_url?: string | null;
-            /** Dtstart Utc */
-            dtstart_utc?: string | null;
-            /** Tz */
-            tz?: string | null;
-            /** Price */
-            price?: number | null;
-            /** Food */
-            food?: string[] | null;
-            /** Cancelled */
-            cancelled?: boolean | null;
-        };
         /** InstagramPublishBatchPublish */
         InstagramPublishBatchPublish: {
             /** Version */
@@ -2053,7 +2017,7 @@ export interface components {
             event_id: number;
             /** Position */
             position: number;
-            event: components["schemas"]["InstagramCarouselEvent"];
+            event: components["schemas"]["EventSummaryResponse"];
             /** Published At */
             published_at?: string | null;
             /**

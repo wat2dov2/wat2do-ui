@@ -15,7 +15,7 @@
     "submitForReview": "Submit for Review",
     "uploadEventFlyer": "Upload Event Flyer",
     "uploadEventFlyerDescription": "Upload or paste an image flyer, and AI will automatically prefill the details.",
-    "readingFlyerDetails": "AI is reading your flyer details...",
+    "processingEventImage": "Processing event image",
     "clickToUploadOrPasteImage": "Click to upload image or paste",
     "imagePasteShortcutHint": "{{formats}} (e.g. Cmd+V / Ctrl+V)",
     "flyerExtracted": "Flyer details extracted successfully.",

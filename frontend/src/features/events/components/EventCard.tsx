@@ -9,6 +9,7 @@ import { useEventsStore } from "@/features/events/store/events.store";
 import { formatCardDate, formatCardTime } from "@/shared/utils/date";
 import { useEventBadges } from "@/features/events/hooks/useEventBadges";
 import { useMouseDownAction, useMobileGridClickActivation } from "@/shared/hooks";
+import { cn } from "@/shared/lib/utils";
 import type { Event } from "@/shared/types";
 import type { EventStats } from "@/features/events/api/events.api";
 
@@ -19,6 +20,13 @@ interface EventCardProps {
   onEventClick?: (event: Event) => void;
   /** Grid cards: open details on click below the sm breakpoint or on touch. */
   mobileClickActivation?: boolean;
+  /**
+   * Renders the card inert: no navigation, no click tracking, no badge menu.
+   * Preview surfaces - the submit form's live preview, the Instagram carousel
+   * editor - show the card an event will appear as, and nothing more.
+   */
+  interactive?: boolean;
+  className?: string;
 }
 
 function buildEventStatsLabel(
@@ -48,8 +56,8 @@ interface EventCardBodyProps {
   t: TFunction;
 }
 
-/** Text half of the grid card, shared with the submit form's live preview. */
-export function EventCardBody({
+/** Text half of the grid card. */
+function EventCardBody({
   event,
   date,
   time,
@@ -103,6 +111,8 @@ function EventCardComponent({
   stats,
   onEventClick,
   mobileClickActivation = true,
+  interactive = true,
+  className,
 }: EventCardProps) {
   const [isHoveringBadge, setIsHoveringBadge] = useState(false);
 
@@ -154,29 +164,41 @@ function EventCardComponent({
     [handleCardActivate, preferClickPress],
   );
 
+  const activationProps = interactive
+    ? {
+        "data-event-card": true,
+        "data-event-id": event.id,
+        role: "button",
+        tabIndex: 0,
+        "aria-label": `Event: ${event.title}`,
+        onMouseDown: handleCardMouseDown,
+        onClick: handleCardClick,
+        onKeyDown: (e: React.KeyboardEvent<HTMLElement>) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            handleCardActivate();
+          }
+        },
+      }
+    : {};
+
   return (
     <article
-      data-event-card
-      data-event-id={event.id}
-      role="button"
-      tabIndex={0}
-      aria-label={`Event: ${event.title}`}
-      onMouseDown={handleCardMouseDown}
-      onClick={handleCardClick}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          handleCardActivate();
-        }
-      }}
-      className={`rounded-xl cursor-pointer transition-all duration-300 group flex flex-col h-full ${
-        isHoveringBadge ? "" : "hover:opacity-90 hover:shadow-lg"
-      }`}
+      {...activationProps}
+      className={cn(
+        "flex w-full flex-col rounded-xl",
+        // Grid cards fill their cell so a row shares one height; a preview card
+        // stands alone and sits at its natural height.
+        interactive && "h-full group cursor-pointer transition-all duration-300",
+        interactive && !isHoveringBadge && "hover:opacity-90 hover:shadow-lg",
+        className,
+      )}
     >
       <EventCardImage
         event={event}
         variant="card"
-        onBadgeHoverChange={setIsHoveringBadge}
+        interactive={interactive}
+        onBadgeHoverChange={interactive ? setIsHoveringBadge : undefined}
       />
 
       <EventCardBody

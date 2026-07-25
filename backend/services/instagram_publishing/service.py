@@ -40,10 +40,12 @@ from core.tables import (
     INSTAGRAM_PUBLISH_BATCHES,
     INSTAGRAM_PUBLISH_ITEMS,
 )
+from schemas.event import EventSummaryResponse
 from schemas.instagram_publishing import (
     InstagramPublishBatchPublish,
     InstagramPublishBatchUpdate,
 )
+from services import event_query
 from services.instagram_publishing.captions import build_caption
 from services.instagram_publishing.curation import rank_candidates
 from services.instagram_publishing.meta import MetaInstagramClient
@@ -384,42 +386,33 @@ def _load_candidates(
     return candidates[: _CONTROL.maximum_ai_candidates]
 
 
-def _load_slide_events(event_ids: list[int]) -> dict[int, dict[str, Any]]:
+def _load_slide_events(event_ids: list[int]) -> dict[int, EventSummaryResponse]:
     """Current event data for the given slides, keyed by event id.
 
     A slide is a function of its event, so this is read fresh every time the
-    carousel is shown or published. Events without any occurrence are omitted:
-    a slide has nowhere to print a date.
+    carousel is shown or published, through the same hydration the browse list
+    uses. Events without any occurrence are omitted: a slide has nowhere to
+    print a date.
     """
-    if not event_ids:
-        return {}
+    events = event_query.load_events_by_ids(event_ids, model=EventSummaryResponse)
+    return {event_id: event for event_id, event in events.items() if event.occurrences}
 
-    events = (
-        get_sb().table(EVENTS).select(_EVENT_COLUMNS).in_("id", event_ids).execute()
-    ).data or []
-    occurrences = (
-        get_sb()
-        .table(EVENT_DATES)
-        .select("event_id,dtstart_utc,dtend_utc,tz")
-        .in_("event_id", event_ids)
-        .order("dtstart_utc")
-        .execute()
-    ).data or []
 
-    # A recurring event advertises its first occurrence, which is also the one
-    # the editor previews (`occurrences[0]`, same ascending order).
-    chosen: dict[int, dict[str, Any]] = {}
-    for occurrence in occurrences:
-        chosen.setdefault(int(occurrence["event_id"]), occurrence)
+def _slide_payload(event: EventSummaryResponse) -> dict[str, Any]:
+    """Flatten a hydrated event into the dict the slide renderer reads.
 
-    slide_events: dict[int, dict[str, Any]] = {}
-    for event in events:
-        event_id = int(event["id"])
-        occurrence = chosen.get(event_id)
-        if occurrence is None:
-            continue
-        slide_events[event_id] = _with_occurrence(event, occurrence, event.get("school"))
-    return slide_events
+    A recurring event advertises its first occurrence - the same one the editor
+    previews, since both read the server's ascending occurrence order. Slides
+    print local times and the renderer only ever sees this dict, so the zone is
+    resolved here rather than teaching the renderer the school-to-timezone map.
+    """
+    occurrence = event.occurrences[0]
+    return {
+        **event.model_dump(exclude={"occurrences"}),
+        "dtstart_utc": occurrence.dtstart_utc.isoformat(),
+        "dtend_utc": occurrence.dtend_utc.isoformat() if occurrence.dtend_utc else None,
+        "tz": occurrence.tz or resolve_school_timezone(event.school),
+    }
 
 
 def _with_occurrence(
@@ -483,7 +476,7 @@ def _publish_claimed_batch(
     client = MetaInstagramClient(access_token)
     user_id = batch["instagram_user_id"]
     batch_id = batch["id"]
-    events = [item["event"] for item in items]
+    events = [_slide_payload(item["event"]) for item in items]
 
     cover_container_id = client.create_image_container(
         user_id,

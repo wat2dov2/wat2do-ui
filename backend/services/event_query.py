@@ -105,6 +105,37 @@ def _int_or_none(value: object) -> int | None:
 
 
 @supabase_retry
+def load_events_by_ids(event_ids: list[int], *, model: type[T]) -> dict[int, T]:
+    """Hydrated events for an explicit id list, keyed by id.
+
+    For callers that already know which events they want - the Instagram
+    carousel names its slides by event id - so they get the same hydrated
+    shape the browse list serves rather than a hand-rolled select.
+    """
+    if not event_ids:
+        return {}
+
+    columns = _SUMMARY_COLUMNS if model is EventSummaryResponse else "*"
+    rows: list[dict] = []
+    for start in range(0, len(event_ids), 500):
+        chunk = event_ids[start : start + 500]
+        rows.extend(
+            get_sb()
+            .table(EVENTS)
+            .select(f"{columns},{ORGANIZATION_EMBED}")
+            .in_("id", chunk)
+            .execute()
+            .data
+            or []
+        )
+
+    occ_by_event = event_date_service.list_for_events([int(row["id"]) for row in rows])
+    return {
+        int(row["id"]): hydrate_event(row, occ_by_event.get(row["id"], []), model) for row in rows
+    }
+
+
+@supabase_retry
 def load_upcoming_events(
     *, since: datetime, school: str | None, cap: int, model: type[T]
 ) -> list[T]:

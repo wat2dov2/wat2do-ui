@@ -7,7 +7,7 @@
  */
 
 import type { ApiInstagramPublishBatchResponse } from "@/shared/generated";
-import type { SlideEvent } from "@/features/admin/lib/instagramSlides";
+import type { Event } from "@/shared/types";
 
 type Batch = ApiInstagramPublishBatchResponse;
 
@@ -22,8 +22,8 @@ export function carouselEventIds(batch: Batch): number[] {
   return carouselItems(batch).map((item) => Number(item.event_id));
 }
 
-/** Slide data by event id: live event data the backend joined onto the batch. */
-export function carouselSlideEvents(batch: Batch): Record<number, SlideEvent> {
+/** Slide events by event id, as the backend hydrated them onto the batch. */
+export function carouselSlideEvents(batch: Batch): Record<number, Event> {
   return Object.fromEntries(
     carouselItems(batch).map((item) => [Number(item.event_id), item.event]),
   );
