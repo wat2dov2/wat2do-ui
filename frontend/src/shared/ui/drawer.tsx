@@ -162,7 +162,9 @@ const DrawerContent = React.forwardRef<
         // `bg-page-dots` layers the dotted grid over `bg-background`, matching the
         // page backdrop. Driven by the same --page-dot-* tokens, so the drawer
         // re-themes with everything else.
-        "group/drawer-content bg-page-dots fixed z-modal flex h-auto flex-col bg-background [animation-duration:280ms] data-[state=closed]:pointer-events-none",
+        // `overflow-hidden` keeps a scrolling DrawerBody inside the rounded
+        // edges instead of painting over them.
+        "group/drawer-content bg-page-dots fixed z-modal flex h-auto flex-col overflow-hidden bg-background [animation-duration:280ms] data-[state=closed]:pointer-events-none",
         "data-[vaul-drawer-direction=top]:inset-x-0 data-[vaul-drawer-direction=top]:top-0 data-[vaul-drawer-direction=top]:mb-24 data-[vaul-drawer-direction=top]:max-h-[80vh] data-[vaul-drawer-direction=top]:rounded-b-xl data-[vaul-drawer-direction=top]:border-b",
         "data-[vaul-drawer-direction=bottom]:bottom-0 data-[vaul-drawer-direction=bottom]:left-1/2 data-[vaul-drawer-direction=bottom]:w-full data-[vaul-drawer-direction=bottom]:max-w-screen-md data-[vaul-drawer-direction=bottom]:-translate-x-1/2 data-[vaul-drawer-direction=bottom]:mt-16 data-[vaul-drawer-direction=bottom]:max-h-[92dvh] data-[vaul-drawer-direction=bottom]:rounded-t-xl data-[vaul-drawer-direction=bottom]:border-t",
         "data-[vaul-drawer-direction=right]:inset-y-0 data-[vaul-drawer-direction=right]:right-0 data-[vaul-drawer-direction=right]:w-3/4 data-[vaul-drawer-direction=right]:border-l data-[vaul-drawer-direction=right]:sm:max-w-sm",

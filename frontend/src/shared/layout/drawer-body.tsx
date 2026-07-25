@@ -4,11 +4,23 @@ import { cn } from "@/shared/lib/utils"
 
 type DrawerBodyProps = React.ComponentProps<"div">
 
+/**
+ * Scrollable region between a drawer's header and footer.
+ *
+ * DrawerContent is a height-capped flex column, so the body owns the overflow:
+ * `min-h-0` lets it shrink below its content inside that column, `flex-1` gives
+ * it the space the header and footer do not take, and the scroll stays inside
+ * the drawer instead of chaining to the page behind it. Short drawers are
+ * unaffected - the column is auto-height until the content exceeds the cap.
+ */
 function DrawerBody({ className, ...props }: DrawerBodyProps) {
   return (
     <div
       data-slot="drawer-body"
-      className={cn("flex flex-col gap-6 p-4 sm:p-6", className)}
+      className={cn(
+        "flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto overscroll-contain p-4 sm:p-6",
+        className
+      )}
       {...props}
     />
   )
