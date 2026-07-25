@@ -70,6 +70,8 @@ interface EventFormStepProps {
   onCancel: () => void;
   onBack?: () => void;
   showHeading?: boolean;
+  /** The live event-card preview beside the fields. */
+  showPreview?: boolean;
 }
 
 export function EventFormStep({
@@ -85,6 +87,7 @@ export function EventFormStep({
   onCancel,
   onBack,
   showHeading = true,
+  showPreview = true,
 }: EventFormStepProps) {
   const { t } = useTranslation();
   const profileCompleted = useProfileCompleted();
@@ -242,7 +245,7 @@ export function EventFormStep({
           )}
         </div>
 
-        <EventFormPreview className="hidden lg:flex" />
+        {showPreview ? <EventFormPreview className="hidden lg:flex" /> : null}
       </div>
     </EventFormProvider>
   );

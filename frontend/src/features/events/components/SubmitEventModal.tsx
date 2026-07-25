@@ -57,6 +57,7 @@ interface SubmitEventFlowProps extends SubmitEventSharedProps {
   isEditMode?: boolean;
   embedded?: boolean;
   showHeading?: boolean;
+  showPreview?: boolean;
 }
 
 interface SubmitEventModalProps extends SubmitEventSharedProps {
@@ -93,6 +94,7 @@ export function SubmitEventFlow({
   isEditMode = false,
   embedded = false,
   showHeading = true,
+  showPreview = true,
 }: SubmitEventFlowProps) {
   const { t } = useTranslation();
   const { isDarkMode } = useDarkMode();
@@ -370,6 +372,7 @@ export function SubmitEventFlow({
         onCancel={onClose}
         onBack={onBack}
         showHeading={showHeading}
+        showPreview={showPreview}
       />
     </Section>
   );
