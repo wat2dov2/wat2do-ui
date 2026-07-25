@@ -1324,7 +1324,7 @@ test.describe("Standalone submission pages", () => {
     await expect(page).toHaveURL(`${BASE}/events/submit`);
     await expect(
       page.getByRole("heading", {
-        name: "Submit Event for University of Waterloo",
+        name: "Submit Event",
       }),
     ).toBeVisible();
     await expect(
@@ -1487,8 +1487,14 @@ test.describe("Standalone submission pages", () => {
 
     await expect(
       page.getByRole("heading", {
-        name: "Submit Event for University of Toronto Mississauga",
+        name: "Submit Event",
       }),
+    ).toBeVisible();
+    await expect(
+      page.getByText(
+        "Only organizations from University of Toronto Mississauga are shown",
+        { exact: false },
+      ),
     ).toBeVisible();
     await expect(page.getByRole("dialog")).toHaveCount(0);
 
@@ -1517,8 +1523,13 @@ test.describe("Standalone submission pages", () => {
     await page.goto(`${utmBase}/organizations/new`);
     await expect(
       page.getByRole("heading", {
-        name: "Add an Organization for University of Toronto Mississauga",
+        name: "Submit Organization",
       }),
+    ).toBeVisible();
+    await expect(
+      page.getByText(
+        "This organization will be listed for University of Toronto Mississauga.",
+      ),
     ).toBeVisible();
     await expect(page.getByRole("dialog")).toHaveCount(0);
     await expect(page.locator("#club-school")).toHaveCount(0);

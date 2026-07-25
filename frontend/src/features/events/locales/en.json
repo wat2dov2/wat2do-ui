@@ -10,8 +10,6 @@
     "status": "Status",
     "dayOfWeek": "Day of Week",
     "createEvent": "Submit Event",
-    "submitEventFor": "Submit Event for",
-    "submitEventForSchool": "Submit Event for {{school}}",
     "submitEventSchoolDescription": "Only organizations from {{school}} are shown, so your event is submitted to the right campus.",
     "submitEventForReview": "Submit Event for Review",
     "submitForReview": "Submit for Review",

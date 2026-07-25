@@ -2,28 +2,15 @@ import { memo, useCallback, useMemo, useState } from "react";
 import type { TFunction } from "i18next";
 import { tracker } from "@/shared/services/trackingService";
 import { useTranslation } from "react-i18next";
-import { Check, ImageOff } from "@/shared/ui/doodle-icons";
-import { BadgeMask } from "@/shared/ui/badge-mask";
-import { EventImageCutout, useEventImageCutouts } from "@/shared/ui/event-image-cutout";
-import { Badge } from "@/shared/ui/badge";
 import { EventCardContent } from "@/shared/ui/event-card-content";
-import { OrganizationBadgeDropdown } from "@/features/organizations";
+import { EventCardImage } from "@/features/events/components/EventCardImage";
 import { useEventStatsActions } from "@/features/events/hooks/useEventStats";
-import { useGoingEvents } from "@/features/events/hooks/useGoingEvents";
 import { useEventsStore } from "@/features/events/store/events.store";
-import { getEventCategory } from "@/shared/utils/event";
-import { OrganizationCategoryBadge } from "@/shared/components/OrganizationCategoryBadge";
-import {
-  formatCardDate,
-  formatCardTime,
-  isEventHappeningNow,
-  wasAddedWithinLast24Hours,
-} from "@/shared/utils/date";
+import { formatCardDate, formatCardTime } from "@/shared/utils/date";
 import { useEventBadges } from "@/features/events/hooks/useEventBadges";
 import { useMouseDownAction, useMobileGridClickActivation } from "@/shared/hooks";
 import type { Event } from "@/shared/types";
 import type { EventStats } from "@/features/events/api/events.api";
-import { EVENT_CARD_IMAGE_HEIGHT } from "@/shared/constants/ui";
 
 interface EventCardProps {
   event: Event;
@@ -51,144 +38,18 @@ function buildEventStatsLabel(
 const CARD_ACTIVATE_IGNORE_SELECTOR =
   "button, a, [role='menuitem'], input, textarea, select, [data-no-card-activate]";
 
-interface EventImageBadgesProps {
-  event: Event;
-  eventCategory: string;
-  isLive: boolean;
-  isNew: boolean;
-  badgeHoverProps: {
-    onMouseEnter: () => void;
-    onMouseLeave: () => void;
-  };
-  registerCorner: ReturnType<typeof useEventImageCutouts>["registerCorner"];
-  t: TFunction;
-}
-
-function EventImageBadges({
-  event,
-  eventCategory,
-  isLive,
-  isNew,
-  badgeHoverProps,
-  registerCorner,
-  t,
-}: EventImageBadgesProps) {
-
-  return (
-    <>
-      <BadgeMask variant="top-left" cutout containerRef={registerCorner("top-left")}>
-        <OrganizationCategoryBadge type={eventCategory} className="opacity-90" />
-      </BadgeMask>
-
-      {isLive && (
-        <BadgeMask variant="top-right" cutout containerRef={registerCorner("top-right")}>
-          <Badge variant="live" size="md" className="flex items-center">
-            {t("common.live")}
-          </Badge>
-        </BadgeMask>
-      )}
-
-      {isNew && (
-        <BadgeMask variant="bottom-right" cutout containerRef={registerCorner("bottom-right")}>
-          <Badge variant="new" size="md" className="flex items-center">
-            {t("events.new")}
-          </Badge>
-        </BadgeMask>
-      )}
-
-      {event.organization && (
-        <BadgeMask variant="bottom-left" cutout containerRef={registerCorner("bottom-left")}>
-          <OrganizationBadgeDropdown
-            organizationName={event.organization}
-            organizationType={event.organization_type}
-            school={event.school}
-            organizationPage={event.organization_page}
-            organizationIg={event.organization_ig}
-            organizationDiscord={event.organization_discord}
-            badgeHoverProps={badgeHoverProps}
-            onMouseDown={(e) => e.stopPropagation()}
-            onClick={(e) => e.stopPropagation()}
-          />
-        </BadgeMask>
-      )}
-    </>
-  );
-}
-
-interface EventCardImageProps {
-  event: Event;
-  eventCategory: string;
-  isLive: boolean;
-  isNew: boolean;
-  isGoing: boolean;
-  badgeHoverProps: EventImageBadgesProps["badgeHoverProps"];
-  t: TFunction;
-}
-
-function EventCardImage({
-  event,
-  eventCategory,
-  isLive,
-  isNew,
-  isGoing,
-  badgeHoverProps,
-  t,
-}: EventCardImageProps) {
-  const { surfaceRef, registerCorner: register, cutouts, box } = useEventImageCutouts();
-
-  return (
-    <div
-      ref={surfaceRef}
-      className="relative shrink-0 overflow-hidden rounded-t-xl"
-      style={{ height: EVENT_CARD_IMAGE_HEIGHT }}
-    >
-      {/* Masked face: notches are real holes, so the page backdrop shows through. */}
-      <EventImageCutout
-        backgroundColor="var(--surface-elevated)"
-        imageSrc={event.source_image_url}
-        imageAlt={event.title}
-        cutouts={cutouts}
-        width={box.width}
-        height={box.height}
-        className="absolute inset-0"
-      >
-        {!event.source_image_url && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <ImageOff className="size-8 text-muted-foreground opacity-60" />
-          </div>
-        )}
-      </EventImageCutout>
-      {isGoing && (
-        <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-image-scrim">
-          <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-image-scrim-foreground">
-            {t("events.going")}
-            <Check className="size-4" />
-          </span>
-        </div>
-      )}
-      <EventImageBadges
-        event={event}
-        eventCategory={eventCategory}
-        isLive={isLive}
-        isNew={isNew}
-        badgeHoverProps={badgeHoverProps}
-        registerCorner={register}
-        t={t}
-      />
-    </div>
-  );
-}
-
 interface EventCardBodyProps {
   event: Event;
   date: string;
   time: string;
   badges: ReturnType<typeof useEventBadges>;
-  stats: EventStats | undefined;
+  /** Omitted where there are no stats to show, such as the submit-form preview. */
+  stats?: EventStats;
   t: TFunction;
 }
 
-function EventCardBody({
+/** Text half of the grid card, shared with the submit form's live preview. */
+export function EventCardBody({
   event,
   date,
   time,
@@ -245,39 +106,18 @@ function EventCardComponent({
 }: EventCardProps) {
   const [isHoveringBadge, setIsHoveringBadge] = useState(false);
 
-  const handleBadgeMouseEnter = useCallback(() => setIsHoveringBadge(true), []);
-  const handleBadgeMouseLeave = useCallback(() => setIsHoveringBadge(false), []);
-  const badgeHoverProps = useMemo(
-    () => ({
-      onMouseEnter: handleBadgeMouseEnter,
-      onMouseLeave: handleBadgeMouseLeave,
-    }),
-    [handleBadgeMouseEnter, handleBadgeMouseLeave],
-  );
-
   const { t, i18n } = useTranslation();
 
   const schoolFilter = useEventsStore((s) => s.schoolFilter);
   const { incrementClickCount } = useEventStatsActions(schoolFilter);
 
   const badges = useEventBadges(event);
-  const eventCategory = useMemo(() => getEventCategory(event), [event]);
-  const { data: goingSelections } = useGoingEvents();
-  const isGoing = useMemo(
-    () => (goingSelections ?? []).some((selection) => selection.event_id === event.id),
-    [goingSelections, event.id],
-  );
 
   const cardDate = useMemo(
     () => formatCardDate(event, i18n.language || "en-US"),
     [event, i18n.language],
   );
   const cardTime = useMemo(() => formatCardTime(event), [event]);
-  const isLive = useMemo(() => isEventHappeningNow(event), [event]);
-  const isNew = useMemo(
-    () => wasAddedWithinLast24Hours(event),
-    [event],
-  );
 
   const { handleCardActivate } = useEventCardNavigation({
     event,
@@ -335,12 +175,8 @@ function EventCardComponent({
     >
       <EventCardImage
         event={event}
-        eventCategory={eventCategory}
-        isLive={isLive}
-        isNew={isNew}
-        isGoing={isGoing}
-        badgeHoverProps={badgeHoverProps}
-        t={t}
+        variant="card"
+        onBadgeHoverChange={setIsHoveringBadge}
       />
 
       <EventCardBody

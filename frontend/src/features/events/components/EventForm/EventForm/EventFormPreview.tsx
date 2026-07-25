@@ -1,49 +1,62 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { Bookmark, Calendar, ImageOff, MoreHorizontal } from "@/shared/ui/doodle-icons";
-import { BadgeMask } from "@/shared/ui/badge-mask";
-import { LazyImage } from "@/shared/ui/lazy-image";
-import { EventCardContent } from "@/shared/ui/event-card-content";
-import { formatCardDate, formatCardTime } from "@/shared/utils/date";
-import { OrganizationCategoryBadge } from "@/shared/components/OrganizationCategoryBadge";
+import { EventCardBody } from "@/features/events/components/EventCard";
+import { EventCardImage } from "@/features/events/components/EventCardImage";
 import { useEventFormContext } from "@/features/events/components/EventForm/EventForm/EventFormContext";
-import { computeEventBadges } from "@/features/events/hooks/useEventBadges";
-import { EVENT_CARD_IMAGE_HEIGHT } from "@/shared/constants/ui";
+import { useEventBadges } from "@/features/events/hooks/useEventBadges";
+import { formatCardDate, formatCardTime } from "@/shared/utils/date";
 import { cn } from "@/shared/lib/utils";
-import { OrganizationBadgeDropdown } from "@/features/organizations";
+import type { Event } from "@/shared/types";
 
 interface EventFormPreviewProps {
   className?: string;
 }
 
+/** Stands in for the not-yet-saved event's id on the preview's occurrences. */
+const PREVIEW_EVENT_ID = -1;
+
+/**
+ * Live preview of the grid card the event will become.
+ *
+ * It renders the real card's own image and body components against an event
+ * assembled from the form, so the preview cannot drift from the feed.
+ */
 export function EventFormPreview({ className }: EventFormPreviewProps) {
   const { t, i18n } = useTranslation();
   const { formData, imagePreview, selectedOrganizationName } = useEventFormContext();
 
-  const badges = useMemo(
-    () => computeEventBadges(formData, t),
-    [formData, t],
-  );
-
-  const previewEvent = useMemo(
-    () => ({
-      occurrences: formData.occurrences.map((o) => ({
-        dtstart_utc: o.dtstart_local,
-        dtend_utc: o.dtend_local || null,
+  const previewEvent = useMemo<Event>(() => {
+    const now = new Date().toISOString();
+    return {
+      id: PREVIEW_EVENT_ID,
+      title: formData.title || t("events.eventTitle"),
+      location: formData.location,
+      occurrences: formData.occurrences.map((occurrence, index) => ({
+        id: occurrence.id ?? `preview-${index}`,
+        event_id: PREVIEW_EVENT_ID,
+        dtstart_utc: occurrence.dtstart_local,
+        dtend_utc: occurrence.dtend_local || undefined,
+        created_at: now,
       })),
-    }),
-    [formData.occurrences],
-  );
+      price: formData.price,
+      food: formData.food,
+      registration: formData.registration,
+      source_image_url: imagePreview || null,
+      category: formData.category || null,
+      organization: selectedOrganizationName || null,
+      cancelled: false,
+      added_at: now,
+    };
+  }, [formData, imagePreview, selectedOrganizationName, t]);
+
+  const badges = useEventBadges(previewEvent);
 
   const cardDate = useMemo(
-    () => formatCardDate(previewEvent, i18n.language || 'en-US'),
+    () => formatCardDate(previewEvent, i18n.language || "en-US"),
     [previewEvent, i18n.language],
   );
 
-  const cardTime = useMemo(
-    () => formatCardTime(previewEvent),
-    [previewEvent],
-  );
+  const cardTime = useMemo(() => formatCardTime(previewEvent), [previewEvent]);
 
   return (
     <div
@@ -58,67 +71,15 @@ export function EventFormPreview({ className }: EventFormPreviewProps) {
         </span>
       </div>
 
-      <article
-        className="mx-auto flex w-full max-w-[16.5rem] flex-col overflow-hidden rounded-xl bg-surface shadow-sm ring-1 ring-border/80"
-        >
-        <div
-          className="relative shrink-0 overflow-hidden rounded-t-xl"
-          style={{ height: EVENT_CARD_IMAGE_HEIGHT }}
-        >
-          <LazyImage
-            src={imagePreview || undefined}
-            alt={formData.title || t("events.eventTitle")}
-            className="absolute inset-0 w-full h-full"
-            fallback={
-              <div className={`absolute inset-0 bg-surface-elevated flex items-center justify-center`}>
-                <ImageOff className={`size-8 text-muted-foreground opacity-60`} />
-              </div>
-            }
-            placeholder={
-              <div className={`absolute inset-0 bg-surface-elevated animate-pulse`} />
-            }
-          />
-          
-          {formData.category && (
-            <BadgeMask variant="top-left">
-              <OrganizationCategoryBadge type={formData.category} className="opacity-90" />
-            </BadgeMask>
-          )}
-
-          <BadgeMask variant="bottom-left">
-            <OrganizationBadgeDropdown
-              organizationName={selectedOrganizationName}
-              disabled={true}
-            />
-          </BadgeMask>
-        </div>
-
-        <div
-          className={`flex flex-col flex-1 border-l border-r border-b rounded-tl-xl rounded-b-xl overflow-hidden relative z-20 bg-surface text-foreground border-border`}
-        >
-          <EventCardContent
-            title={formData.title || t("events.eventTitle")}
-            date={cardDate || undefined}
-            time={cardTime || undefined}
-            location={formData.location || undefined}
-            badges={badges}
-            textClassName="text-muted-foreground"
-            secondaryTextClassName="text-muted-foreground"
-            badgeClassName="border-border text-muted-foreground"
-          />
-
-          <div className={`grid grid-cols-3 border-t border-border`}>
-            <div className={`flex min-h-10 w-full items-center justify-center px-2 opacity-75 transition-colors text-muted-foreground`}>
-              <Bookmark className="size-4" />
-            </div>
-            <div className={`flex min-h-10 w-full items-center justify-center border-l px-2 opacity-75 transition-colors border-border text-muted-foreground`}>
-              <Calendar className="size-4" />
-            </div>
-            <div className={`flex min-h-10 w-full items-center justify-center border-l px-2 opacity-75 transition-colors border-border text-muted-foreground`}>
-              <MoreHorizontal className="size-4" />
-            </div>
-          </div>
-        </div>
+      <article className="mx-auto flex w-full max-w-[16.5rem] flex-col rounded-xl">
+        <EventCardImage event={previewEvent} variant="card" interactive={false} />
+        <EventCardBody
+          event={previewEvent}
+          date={cardDate}
+          time={cardTime}
+          badges={badges}
+          t={t}
+        />
       </article>
     </div>
   );

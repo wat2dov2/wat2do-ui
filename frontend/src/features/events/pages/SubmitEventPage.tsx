@@ -66,7 +66,7 @@ export function SubmitEventPage() {
       <Container size="lg" className="py-4 sm:py-6">
         <Stack gap={6}>
           <PageHeader
-            title={t("events.submitEventForSchool", { school: schoolName })}
+            title={t("events.createEvent")}
             description={t("events.submitEventSchoolDescription", {
               school: schoolName,
             })}

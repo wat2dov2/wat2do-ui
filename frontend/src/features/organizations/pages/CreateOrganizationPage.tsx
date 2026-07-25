@@ -56,9 +56,7 @@ export function CreateOrganizationPage() {
     <Container size="md" className="py-4 sm:py-6">
       <Stack gap={6}>
         <PageHeader
-          title={t("organizations.addOrganizationForSchool", {
-            school: schoolName,
-          })}
+          title={t("organizations.submitOrganization")}
           description={t("organizations.addOrganizationDescription", {
             school: schoolName,
           })}

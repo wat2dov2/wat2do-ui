@@ -9,7 +9,6 @@ import { LoadingPage } from "@/shared/ui/loading-page";
 import {
   EventActions,
   EventDetailsBody,
-  EventStatusBadges,
 } from "@/features/events/components/EventDetailsSections";
 import { fetchEventById } from "@/features/events/api/events.api";
 import { controlBox } from "@/shared/config/controlBox";
@@ -60,17 +59,7 @@ export function EventDetailsPageContainer({ eventId }: EventDetailsPageContainer
         </Button>
         <EventActions event={event} />
       </Stack>
-      <EventDetailsBody
-        event={event}
-        school={event.school}
-        showActions={false}
-        renderTitle={(title) => (
-          <Stack gap={2}>
-            <EventStatusBadges event={event} />
-            <h1 className="text-2xl font-bold leading-tight sm:text-3xl">{title}</h1>
-          </Stack>
-        )}
-      />
+      <EventDetailsBody event={event} school={event.school} showActions={false} />
     </div>
   );
 }

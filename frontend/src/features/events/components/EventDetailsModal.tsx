@@ -17,7 +17,6 @@ import { EventCard } from "@/features/events/components/EventCard";
 import {
   EventActions,
   EventDetailsBody,
-  EventStatusBadges,
 } from "@/features/events/components/EventDetailsSections";
 import { eventPagePath } from "@/features/events/lib/eventUrls";
 import { DrawerBody, FormGrid, Section, Stack } from "@/shared/layout";
@@ -169,12 +168,9 @@ export function EventDetailsModal({
                   school={schoolFilter}
                   showActions={false}
                   renderTitle={(title) => (
-                    <Stack gap={2}>
-                      <EventStatusBadges event={displayedEvent} />
-                      <DrawerTitle className="text-left text-2xl font-bold leading-tight sm:text-3xl">
-                        {title}
-                      </DrawerTitle>
-                    </Stack>
+                    <DrawerTitle className="text-left text-2xl font-bold leading-tight sm:text-3xl">
+                      {title}
+                    </DrawerTitle>
                   )}
                 />
 

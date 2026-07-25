@@ -23,7 +23,7 @@ import { getOrganizationById } from "@/features/organizations/api/organizations.
 import { useSavedOrganizationsStore } from "@/features/organizations/store/savedOrganizations.store";
 import { ROUTES } from "@/shared/constants/routes";
 import { getSchoolDisplayName } from "@/shared/constants/schools";
-import { Container, PageHeader, Stack } from "@/shared/layout";
+import { Container, PageHeader, Section, Stack } from "@/shared/layout";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import { sanitizeHref } from "@/shared/utils/url";
 import type { Organization } from "@/shared/types";
@@ -156,10 +156,12 @@ function OrganizationDetailsContent({
 
           <Separator />
 
-          <OrganizationEventsGrid
-            organizationName={organization.organization_name}
-            school={organization.school}
-          />
+          <Section title={t("navigation.events")}>
+            <OrganizationEventsGrid
+              organizationName={organization.organization_name}
+              school={organization.school}
+            />
+          </Section>
         </Stack>
       </Container>
 

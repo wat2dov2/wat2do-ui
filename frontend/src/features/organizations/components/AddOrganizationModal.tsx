@@ -28,6 +28,7 @@ import {
   FormGrid,
   FormLayout,
   FormSection,
+  Stack,
 } from "@/shared/layout";
 import { MultiSelect } from "@/shared/ui/multi-select";
 import { SchoolCombobox } from "@/shared/ui/school-combobox";
@@ -223,7 +224,7 @@ export function OrganizationForm({
         </h2>
       ) : null}
 
-      <FormSection title={t("organizations.organizationDetails")}>
+      <Stack gap={5}>
         <FormGrid>
           <Field>
             <FieldLabel htmlFor="club-name">
@@ -276,7 +277,7 @@ export function OrganizationForm({
             <FieldError>{form.errors.categories}</FieldError>
           ) : null}
         </Field>
-      </FormSection>
+      </Stack>
 
       <FormSection
         title={t("forms.optionalDetails")}

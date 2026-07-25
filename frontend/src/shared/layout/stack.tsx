@@ -7,6 +7,8 @@ const gapClasses = {
   2: "gap-2",
   3: "gap-3",
   4: "gap-4",
+  /** Matches the in-form field rhythm used by FormGrid and FormSection. */
+  5: "gap-5",
   6: "gap-6",
   8: "gap-8",
   12: "gap-12",

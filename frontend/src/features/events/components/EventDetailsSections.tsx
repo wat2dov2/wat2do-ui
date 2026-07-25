@@ -9,8 +9,6 @@ import {
   formatCountdown,
   formatOccurrence,
   getPrimaryOccurrence,
-  isEventHappeningNow,
-  wasAddedWithinLast24Hours,
 } from "@/shared/utils/date";
 import {
   Calendar,
@@ -18,7 +16,6 @@ import {
   DollarSign,
   ExternalLink,
   Flag,
-  ImageOff,
   Instagram,
   LocationPin,
   Share2,
@@ -38,12 +35,10 @@ import {
 } from "@/shared/ui/card";
 import { Separator } from "@/shared/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/ui/tooltip";
-import { LazyImage } from "@/shared/ui/lazy-image";
 import { FormGrid, Stack } from "@/shared/layout";
 import { EventCalendarDownloadMenu } from "@/features/events/components/EventCalendarDownloadMenu";
+import { EventCardImage } from "@/features/events/components/EventCardImage";
 import { EventLocationMap } from "@/features/events/components/EventLocationMap";
-import { getEventCategory } from "@/shared/utils/event";
-import { OrganizationCategoryBadge } from "@/shared/components/OrganizationCategoryBadge";
 import { OrganizationTypeIcon } from "@/shared/components/OrganizationTypeIcon";
 import { GoingOccurrencePickerContent } from "@/features/events/components/GoingOccurrencePickerContent";
 import { fetchEventAttendees } from "@/features/events/api/events.api";
@@ -70,25 +65,6 @@ const EventReportDialog = lazy(() =>
  * Sections shared between the event details drawer and the dedicated
  * /events/[id] page so both surfaces render event data one way.
  */
-
-/** Poster artwork with shared fallback/placeholder; the wrapper provides sizing. */
-function EventPosterImage({ event }: { event: Event }) {
-  return (
-    <LazyImage
-      src={event.source_image_url ?? undefined}
-      alt={event.title}
-      className="absolute inset-0 w-full h-full object-cover"
-      fallback={
-        <div className="absolute inset-0 bg-linear-to-br from-muted to-muted/80 flex items-center justify-center">
-          <ImageOff className="size-12 text-muted-foreground/40" />
-        </div>
-      }
-      placeholder={
-        <div className="absolute inset-0 bg-linear-to-br from-muted to-muted/80 animate-pulse" />
-      }
-    />
-  );
-}
 
 /**
  * Section heading with divider.
@@ -511,32 +487,6 @@ function EventContactHostSection({ event }: { event: Event }) {
   );
 }
 
-/**
- * Event status badges plus the copy-link / share / report actions. Shared by the
- * drawer and the /events/[id] page so both expose the same set one way.
- */
-/**
- * Compact category, live, and new badges displayed above the event title.
- */
-export function EventStatusBadges({ event }: { event: Event }) {
-  const { t } = useTranslation();
-  return (
-    <Stack direction="horizontal" gap={2} wrap>
-      <OrganizationCategoryBadge type={getEventCategory(event)} size="md" />
-      {isEventHappeningNow(event) && (
-        <Badge variant="live" size="md">
-          {t("common.live")}
-        </Badge>
-      )}
-      {wasAddedWithinLast24Hours(event) && (
-        <Badge variant="new" size="md">
-          {t("events.new")}
-        </Badge>
-      )}
-    </Stack>
-  );
-}
-
 /** Share and report actions, owning their own dialogs. */
 export function EventActions({ event }: { event: Event }) {
   const { t } = useTranslation();
@@ -594,10 +544,10 @@ export function EventDetailsBody({
   return (
     <div className="grid grid-cols-1 gap-6 md:grid-cols-[320px_minmax(0,1fr)] md:grid-rows-[auto_1fr] md:items-start md:gap-x-8">
       <div
-        className="relative mx-auto aspect-square w-full max-w-sm select-none overflow-hidden rounded-xl md:col-start-1 md:mx-0"
+        className="mx-auto w-full max-w-sm select-none md:col-start-1 md:mx-0"
         onDragStart={(dragEvent) => dragEvent.preventDefault()}
       >
-        <EventPosterImage event={event} />
+        <EventCardImage event={event} variant="detail" />
       </div>
 
       <div className="contents md:col-start-2 md:row-span-2 md:row-start-1 md:flex md:flex-col md:gap-6">
@@ -605,10 +555,7 @@ export function EventDetailsBody({
           {renderTitle ? (
             renderTitle(event.title)
           ) : (
-            <Stack gap={2}>
-              <EventStatusBadges event={event} />
-              <h1 className="text-2xl font-bold leading-tight sm:text-3xl">{event.title}</h1>
-            </Stack>
+            <h1 className="text-2xl font-bold leading-tight sm:text-3xl">{event.title}</h1>
           )}
         </div>
 
