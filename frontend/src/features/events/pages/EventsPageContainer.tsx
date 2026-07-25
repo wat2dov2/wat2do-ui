@@ -168,7 +168,7 @@ export function EventsPageContainer() {
         aria-hidden="true"
         className="pointer-events-none fixed top-0 right-2.5 left-0 z-[var(--event-light-rays-z-index)] hidden h-dvh overflow-hidden [mask-image:var(--event-light-rays-mask)] sm:block"
       >
-        <LightRays />
+        {isDarkMode && <LightRays />}
       </div>
       <div className="space-y-2">
         <div className="space-y-3 pb-2">

@@ -8,6 +8,8 @@ type LightRay = {
   rotate: number;
   width: number;
   swing: number;
+  delayFactor: number;
+  durationFactor: number;
 };
 
 /** Deterministic values keep the server and client ray layouts identical. */
@@ -22,6 +24,8 @@ const rays: LightRay[] = Array.from({ length: 7 }, (_, index) => ({
   rotate: -28 + pseudoRandom(index * 2.3 + 0.4) * 56,
   width: 160 + pseudoRandom(index * 3.7 + 0.6) * 160,
   swing: 0.8 + pseudoRandom(index * 4.9 + 0.8) * 1.8,
+  delayFactor: (index / 7) * 0.45,
+  durationFactor: 0.75 + pseudoRandom(index * 5.1 + 1) * 0.5,
 }));
 
 /**
@@ -45,6 +49,8 @@ export function LightRays({ className, ...props }: HTMLAttributes<HTMLDivElement
               "--event-light-ray-rotation": `${ray.rotate}deg`,
               "--event-light-ray-swing": `${ray.swing}deg`,
               "--event-light-ray-width": `${ray.width}px`,
+              "--event-light-ray-delay-factor": ray.delayFactor,
+              "--event-light-ray-duration-factor": ray.durationFactor,
             } as CSSProperties
           }
         />

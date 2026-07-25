@@ -217,8 +217,11 @@
     color-mix(in srgb, var(--event-light-rays-color) var(--event-light-rays-gradient-strength), transparent),
     transparent
   );
-  animation: event-light-rays-sway var(--event-light-rays-cycle) var(--event-light-rays-easing) infinite;
-  animation-delay: calc(var(--event-light-rays-delay-step) * var(--event-light-ray-delay-index));
+  animation: event-light-rays-sway
+    calc(var(--event-light-rays-cycle) * var(--event-light-ray-duration-factor))
+    var(--event-light-rays-easing)
+    infinite;
+  animation-delay: calc(var(--event-light-rays-cycle) * var(--event-light-ray-delay-factor));
 }
 
 @keyframes event-light-rays-sway {
