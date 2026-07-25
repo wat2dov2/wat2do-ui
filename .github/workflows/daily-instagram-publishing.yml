@@ -4,6 +4,7 @@ on:
   schedule:
     - cron: '0 9 * * *'
       timezone: 'America/Toronto'
+  workflow_dispatch:
 
 concurrency:
   group: daily-instagram-publishing
