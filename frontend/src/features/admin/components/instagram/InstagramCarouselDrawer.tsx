@@ -75,6 +75,9 @@ function toSlideEvent(event: Event): SlideEvent {
     source_image_url: event.source_image_url ?? null,
     dtstart_utc: occurrence?.dtstart_utc ?? null,
     tz: occurrence?.tz ?? null,
+    price: event.price,
+    food: event.food,
+    cancelled: event.cancelled,
   };
 }
 
@@ -259,6 +262,7 @@ export function InstagramCarouselDrawer({
                   canCreateEvents
                   embedded
                   showHeading={false}
+                  showPreview={false}
                   onSubmit={handleCreateEvent}
                   onClose={() => setAddingEvent(false)}
                   onBack={() => setAddingEvent(false)}
@@ -297,6 +301,7 @@ export function InstagramCarouselDrawer({
                       embedded
                       isEditMode
                       showHeading={false}
+                      showPreview={false}
                       editEventId={currentEventId}
                       initialData={editForm}
                       onUpdate={handleUpdateEvent}

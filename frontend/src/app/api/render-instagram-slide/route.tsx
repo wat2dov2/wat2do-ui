@@ -34,13 +34,21 @@ interface CoverSlideRequest {
 type SlideRequest = EventSlideRequest | CoverSlideRequest;
 
 const MAX_SOURCE_IMAGE_BYTES = 15 * 1024 * 1024;
+// The slide templates mirror the event card's type scale, which uses regular,
+// medium, semibold, and bold. satori substitutes the nearest weight it has, so
+// every weight the templates ask for is loaded here.
 const FONT_FILES = [
   { file: "inter-latin-400-normal.woff", weight: 400 as const },
+  { file: "inter-latin-500-normal.woff", weight: 500 as const },
+  { file: "inter-latin-600-normal.woff", weight: 600 as const },
   { file: "inter-latin-700-normal.woff", weight: 700 as const },
 ];
 
-let fontsPromise: Promise<{ name: string; data: Buffer; weight: 400 | 700; style: "normal" }[]> | null =
-  null;
+type SlideFontWeight = (typeof FONT_FILES)[number]["weight"];
+
+let fontsPromise: Promise<
+  { name: string; data: Buffer; weight: SlideFontWeight; style: "normal" }[]
+> | null = null;
 let wasmPromise: Promise<void> | null = null;
 
 function loadFonts() {

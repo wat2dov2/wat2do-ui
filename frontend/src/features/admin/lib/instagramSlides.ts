@@ -7,6 +7,8 @@
  * image Instagram receives.
  */
 
+import { getOrganizationCategoryConfig } from "@/shared/data/organizationCategoryStyles";
+
 export const SLIDE_WIDTH = 1080;
 export const SLIDE_HEIGHT = 1350;
 
@@ -23,15 +25,23 @@ export interface SlideEvent {
   dtstart_utc?: string | null;
   /** IANA zone resolved server-side; slides print local times. */
   tz?: string | null;
+  price?: number | null;
+  food?: string[] | null;
+  cancelled?: boolean | null;
 }
 
 export interface EventSlideModel {
   eventId: number;
-  category: string;
+  /** Category chip, coloured from the shared category registry. */
+  category: { label: string; color: string };
   title: string;
   dateLine: string;
+  timeLine: string;
   location: string;
+  /** Full organization name - a slide has room, so it is never truncated. */
   organizationLine: string;
+  /** Price / free-food chips, mirroring the event card's badge column. */
+  badges: string[];
   imageSrc: string;
 }
 
@@ -43,7 +53,6 @@ export interface CoverSlideModel {
 }
 
 export const COVER_DEFAULT_BODY = "Added to Wat2Do in the last 24 hours";
-const FALLBACK_CATEGORY = "Campus event";
 const FALLBACK_TITLE = "Untitled event";
 const FALLBACK_LOCATION = "See Wat2Do for location";
 const FALLBACK_ORGANIZATION = "Campus organization";
@@ -54,45 +63,57 @@ function text(value: string | null | undefined, fallback: string): string {
 }
 
 /**
- * The event's start in its own timezone, e.g. "Friday, July 25 at 7:30 PM".
+ * The event's start in its own timezone, split the way an event card shows it.
  *
  * Formatted with an explicit zone so the browser preview and the server render
  * agree regardless of where either one runs.
  */
-export function formatSlideDate(event: SlideEvent): string {
-  if (!event.dtstart_utc) return "Date to be announced";
-  const start = new Date(event.dtstart_utc);
-  if (Number.isNaN(start.getTime())) return "Date to be announced";
+export function formatSlideDate(event: SlideEvent): { dateLine: string; timeLine: string } {
+  const start = event.dtstart_utc ? new Date(event.dtstart_utc) : null;
+  if (!start || Number.isNaN(start.getTime())) {
+    return { dateLine: "Date to be announced", timeLine: "" };
+  }
 
   const timeZone = event.tz || "UTC";
-  const day = new Intl.DateTimeFormat("en-US", {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-    timeZone,
-  }).format(start);
-  const time = new Intl.DateTimeFormat("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-    timeZone,
-  }).format(start);
-  return `${day} at ${time}`;
+  return {
+    dateLine: new Intl.DateTimeFormat("en-US", {
+      weekday: "long",
+      month: "long",
+      day: "numeric",
+      timeZone,
+    }).format(start),
+    timeLine: new Intl.DateTimeFormat("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      timeZone,
+    }).format(start),
+  };
+}
+
+/** Price and free-food chips, matching `computeEventBadges` on the event card. */
+function slideBadges(event: SlideEvent): string[] {
+  const badges: string[] = [];
+  if (event.cancelled) badges.push("Cancelled");
+  if (event.price != null && event.price > 0) badges.push(`$${event.price}`);
+  if ((event.food ?? []).length > 0) badges.push("Free food");
+  return badges;
 }
 
 export function buildEventSlideModel(
   event: SlideEvent,
   imageSrc = event.source_image_url ?? "",
 ): EventSlideModel {
-  const handle = (event.ig_handle ?? "").trim().replace(/^@/, "");
+  const { dateLine, timeLine } = formatSlideDate(event);
+  const category = getOrganizationCategoryConfig(event.category);
   return {
     eventId: event.id,
-    category: text(event.category, FALLBACK_CATEGORY),
+    category: { label: text(event.category, category.label), color: category.color },
     title: text(event.title, FALLBACK_TITLE),
-    dateLine: formatSlideDate(event),
+    dateLine,
+    timeLine,
     location: text(event.location, FALLBACK_LOCATION),
-    organizationLine: handle
-      ? `@${handle}`
-      : text(event.organization, FALLBACK_ORGANIZATION),
+    organizationLine: text(event.organization, FALLBACK_ORGANIZATION),
+    badges: slideBadges(event),
     imageSrc,
   };
 }
