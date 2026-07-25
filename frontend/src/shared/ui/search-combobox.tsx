@@ -18,14 +18,15 @@ import {
 } from "@/shared/ui/popover";
 
 export type SearchComboboxVariant = "nav" | "field";
+type SearchComboboxKey = string | number;
 
 export interface SearchComboboxProps<T> {
   /** Key of the currently selected item, compared against getKey for the check mark. */
-  selectedKey: string;
+  selectedKey: SearchComboboxKey;
   onSelect: (item: T) => void;
   /** Resolve results for a query. May be sync (client filter) or async (server search). */
   fetcher: (query: string) => T[] | Promise<T[]>;
-  getKey: (item: T) => string;
+  getKey: (item: T) => SearchComboboxKey;
   getLabel: (item: T) => string;
   /** Text shown on the trigger button (selected label or placeholder). */
   displayValue: string;

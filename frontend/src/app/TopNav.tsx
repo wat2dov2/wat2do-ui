@@ -1,7 +1,7 @@
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
-import { Check, ChevronsUpDown, LogOut, Search, Shield } from "@/shared/ui/doodle-icons";
+import { LogOut, Shield } from "@/shared/ui/doodle-icons";
 import {
   Tooltip,
   TooltipTrigger,
@@ -9,15 +9,14 @@ import {
 } from "@/shared/ui/tooltip";
 import { Button } from "@/shared/ui/button";
 import { SchoolCombobox } from "@/shared/ui/school-combobox";
+import { SearchCombobox } from "@/shared/ui/search-combobox";
 import { AnimatedThemeToggler } from "@/shared/components/AnimatedThemeToggler";
 import { LanguageSelector } from "@/shared/ui/language-selector";
-import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
 import { useAuthState, type AuthState } from "@/features/auth/hooks/useAuthState";
 import { getUserProfile, logoutAPI, updateUserProfile } from "@/features/auth/api/auth.api";
 import { useEventsStore } from "@/features/events/store/events.store";
 import { ROUTES } from "@/shared/constants/routes";
 import { getSchoolOrigin } from "@/shared/constants/schools";
-import { cn } from "@/shared/lib/utils";
 import imgImage1 from "@/assets/38e8096a28295e8dcc0e5020d0a5f3dd85d5f019.png";
 
 type NavOrganization = AuthState["clubs"][number];
@@ -28,13 +27,8 @@ export function TopNav() {
   const { profileCompleted, isAdmin, clubs, organizationId } = useAuthState();
   const { t } = useTranslation();
   const router = useRouter();
-  const [orgMenuOpen, setOrgMenuOpen] = useState(false);
-  const [orgSearch, setOrgSearch] = useState("");
   const activeOrganization = clubs.find((club) => club.id === organizationId) ?? clubs[0];
   const canOpenOrganizationPanel = profileCompleted && Boolean(activeOrganization);
-  const filteredOrganizations = clubs.filter((club) =>
-    club.organization_name.toLowerCase().includes(orgSearch.toLowerCase())
-  );
 
   const handleLogoClick = useCallback(() => {
     router.push(ROUTES.HOME);
@@ -81,6 +75,16 @@ export function TopNav() {
     [setSchoolFilter],
   );
 
+  const findOrganizations = useCallback(
+    (query: string) => {
+      const normalizedQuery = query.trim().toLowerCase();
+      return normalizedQuery
+        ? clubs.filter((club) => club.organization_name.toLowerCase().includes(normalizedQuery))
+        : clubs;
+    },
+    [clubs],
+  );
+
   return (
     <header className="fixed top-0 left-0 right-0 z-nav flex h-12 items-center justify-between gap-1.5 border-b border-border bg-surface px-2 sm:gap-2 sm:px-4">
       <div className="flex min-w-0 flex-1 items-center gap-1.5 sm:gap-2.5">
@@ -125,68 +129,21 @@ export function TopNav() {
         )}
 
         {canOpenOrganizationPanel && (
-          <Popover open={orgMenuOpen} onOpenChange={setOrgMenuOpen}>
-            <PopoverTrigger asChild>
-              <button
-                className="flex h-8 max-w-[24vw] items-center gap-1 overflow-hidden rounded-xl bg-transparent px-2 text-sm text-foreground transition-colors hover:bg-secondary-hover sm:max-w-[180px] sm:px-3 md:max-w-[240px]"
-                aria-expanded={orgMenuOpen}
-                type="button"
-              >
-                <span className="truncate">{activeOrganization.organization_name}</span>
-                <ChevronsUpDown className="size-3.5 text-muted-foreground shrink-0" />
-              </button>
-            </PopoverTrigger>
-            <PopoverContent
-              className="w-[280px] p-0 bg-surface-elevated border-border"
-              align="end"
-              aria-label={t("navigation.clubPanelTooltip")}
-            >
-              <div className="flex items-center border-b border-border px-3">
-                <Search className="size-4 text-muted-foreground shrink-0" />
-                <input
-                  type="text"
-                  placeholder={t("organizations.searchPlaceholder")}
-                  value={orgSearch}
-                  onChange={(e) => setOrgSearch(e.target.value)}
-                  className="flex-1 px-2 py-2.5 text-sm bg-transparent focus:outline-none text-foreground placeholder:text-muted-foreground"
-                />
-              </div>
-
-              <div className="max-h-[200px] overflow-y-auto p-1">
-                {filteredOrganizations.length === 0 ? (
-                  <div className="py-6 text-center text-sm text-muted-foreground">
-                    {t("organizations.noClubsFound")}
-                  </div>
-                ) : (
-                  filteredOrganizations.map((org) => (
-                    <button
-                      key={org.id}
-                      onMouseDown={() => {
-                        handleOrganizationSelect(org);
-                        setOrgMenuOpen(false);
-                        setOrgSearch("");
-                      }}
-                      className={cn(
-                        "w-full flex items-center gap-2 px-2 py-2 text-sm rounded-xl text-left transition-colors",
-                        activeOrganization.id === org.id
-                          ? "bg-primary text-primary-foreground"
-                          : "hover:bg-secondary-hover text-foreground"
-                      )}
-                      type="button"
-                    >
-                      <Check
-                        className={cn(
-                          "w-4 h-4 shrink-0",
-                          activeOrganization.id === org.id ? "opacity-100" : "opacity-0"
-                        )}
-                      />
-                      <span className="truncate">{org.organization_name}</span>
-                    </button>
-                  ))
-                )}
-              </div>
-            </PopoverContent>
-          </Popover>
+          <SearchCombobox
+            selectedKey={activeOrganization.id}
+            onSelect={handleOrganizationSelect}
+            fetcher={findOrganizations}
+            getKey={(organization) => organization.id}
+            getLabel={(organization) => organization.organization_name}
+            displayValue={activeOrganization.organization_name}
+            searchOnEmpty
+            variant="nav"
+            align="end"
+            searchPlaceholder={t("organizations.searchPlaceholder")}
+            emptyLabel={t("organizations.noClubsFound")}
+            loadingLabel={t("common.loading")}
+            triggerClassName="max-w-[24vw] sm:max-w-[180px] md:max-w-[240px]"
+          />
         )}
 
         <LanguageSelector />
