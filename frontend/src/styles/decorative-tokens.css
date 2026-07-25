@@ -70,7 +70,7 @@
    * bg-page-glow utilities in index.css and mounted once via <PageBackground />.
    * Tune the whole app's backdrop from here; nothing else should hardcode it.
    */
-  --page-dot-color: oklch(0.970 0 0 / 0.055);
+  --page-dot-color: oklch(0.970 0 0 / 0.08);
   --page-dot-size: 1px;
   --page-dot-spacing: 24px;
   /* Neutral white glow: chroma 0 so it tints nothing, only lifts brightness. */
