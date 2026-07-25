@@ -1,9 +1,13 @@
 from datetime import datetime, timezone
+from types import SimpleNamespace
 from unittest.mock import Mock
 
 import pytest
 
-from schemas.instagram_publishing import InstagramPublishBatchUpdate
+from schemas.instagram_publishing import (
+    InstagramPublishBatchPublish,
+    InstagramPublishBatchUpdate,
+)
 from services.instagram_publishing import service
 
 
@@ -39,7 +43,7 @@ def test_select_events_orders_by_ai_score_and_limits_each_organization():
 
     selected = service._select_events(candidates, scores)
 
-    assert [event["id"] for event, _ in selected] == [1, 2, 4]
+    assert [event["id"] for event in selected] == [1, 2, 4]
 
 
 def test_select_events_filters_below_threshold():
@@ -91,25 +95,55 @@ def test_generate_due_batches_runs_when_the_scheduler_starts_late(monkeypatch):
     generate.assert_called_once()
 
 
-def _batch(items: list[dict]) -> dict:
+class _FakeQuery:
+    """Supabase query builder stub: every call chains, `execute` ends it."""
+
+    def __init__(self, data: list[dict], calls: list[tuple]):
+        self._data = data
+        self._calls = calls
+
+    def __getattr__(self, name):
+        def chain(*args, **kwargs):
+            self._calls.append((name, args, kwargs))
+            return self
+
+        return chain
+
+    def execute(self):
+        return SimpleNamespace(data=self._data, count=len(self._data))
+
+
+def _event(event_id: int, title: str = "Event") -> dict:
+    return {"id": event_id, "title": title, "school": "uwaterloo"}
+
+
+def _batch(event_ids: list[int], **overrides) -> dict:
     return {
         "id": "batch-1",
         "account_key": "wat2do",
+        "instagram_user_id": "17841476154506771",
         "school": "uwaterloo",
         "status": "ready_for_review",
+        "caption": "Caption",
+        "cover_body": "Body",
         "version": 3,
-        "items": items,
+        "items": [
+            {
+                "id": f"item-{event_id}",
+                "event_id": event_id,
+                "position": position,
+                "event": _event(event_id),
+            }
+            for position, event_id in enumerate(event_ids, start=1)
+        ],
+        **overrides,
     }
-
-
-def _item(item_id: str, event_id: int, snapshot: dict) -> dict:
-    return {"id": item_id, "event_id": event_id, "event_snapshot": snapshot}
 
 
 @pytest.fixture
 def draft_editor(monkeypatch):
     """Stub every I/O edge of ``update_batch`` and record what it did."""
-    calls = {"event_renders": [], "cover_renders": [], "created": [], "updated": [], "rpc": []}
+    calls = {"renders": [], "rpc": [], "table": []}
 
     class _Rpc:
         def __init__(self, name, params):
@@ -118,40 +152,30 @@ def draft_editor(monkeypatch):
         def execute(self):
             return Mock(data=[{"id": "batch-1"}])
 
-    monkeypatch.setattr(service, "get_sb", lambda: Mock(rpc=_Rpc))
+    monkeypatch.setattr(
+        service,
+        "get_sb",
+        lambda: SimpleNamespace(
+            rpc=_Rpc,
+            table=lambda name: _FakeQuery([{}], calls["table"]),
+        ),
+    )
     monkeypatch.setattr(
         service,
         "render_event_asset",
-        lambda snapshot: calls["event_renders"].append(int(snapshot["id"])) or "https://a/e.png",
+        lambda event: calls["renders"].append(int(event["id"])) or "https://a/e.png",
     )
     monkeypatch.setattr(
         service,
         "render_cover_asset",
-        lambda events, school, body: (
-            calls["cover_renders"].append(([int(e["id"]) for e in events], school, body))
-            or "https://a/cover.png"
-        ),
-    )
-    monkeypatch.setattr(
-        service,
-        "_create_item",
-        lambda _batch, snapshot: (
-            calls["created"].append(int(snapshot["id"])) or f"item-new-{snapshot['id']}"
-        ),
-    )
-    monkeypatch.setattr(
-        service,
-        "_update_item_fields",
-        lambda item_id, fields: calls["updated"].append((item_id, sorted(fields))),
+        lambda events, school, body: calls["renders"].append("cover") or "https://a/cover.png",
     )
     return calls
 
 
-def test_update_batch_reorders_without_re_rendering_unchanged_slides(monkeypatch, draft_editor):
-    snapshots = {1: {"id": 1, "title": "One"}, 2: {"id": 2, "title": "Two"}}
-    batch = _batch([_item("item-1", 1, snapshots[1]), _item("item-2", 2, snapshots[2])])
-    monkeypatch.setattr(service, "get_batch", lambda _id: batch)
-    monkeypatch.setattr(service, "_load_event_snapshots", lambda _ids: snapshots)
+def test_update_batch_saves_the_carousel_order_without_rendering(monkeypatch, draft_editor):
+    monkeypatch.setattr(service, "get_batch", lambda _id: _batch([1, 2]))
+    monkeypatch.setattr(service, "_load_slide_events", lambda _ids: {1: _event(1), 2: _event(2)})
 
     service.update_batch(
         "batch-1",
@@ -160,44 +184,85 @@ def test_update_batch_reorders_without_re_rendering_unchanged_slides(monkeypatch
         ),
     )
 
-    assert draft_editor["event_renders"] == []
-    assert draft_editor["created"] == []
-    # The cover always recompiles from the slides the editor is holding.
-    assert draft_editor["cover_renders"] == [([2, 1], "uwaterloo", "Body")]
+    # Images belong to publishing, not to saving a draft.
+    assert draft_editor["renders"] == []
     _, params = draft_editor["rpc"][0]
-    assert params["p_item_ids"] == ["item-2", "item-1"]
+    assert params["p_event_ids"] == [2, 1]
     assert params["p_cover_body"] == "Body"
-
-
-def test_update_batch_re_renders_edited_events_and_appends_new_ones(monkeypatch, draft_editor):
-    stored = {"id": 1, "title": "Old title"}
-    snapshots = {1: {"id": 1, "title": "New title"}, 5: {"id": 5, "title": "Added"}}
-    batch = _batch([_item("item-1", 1, stored)])
-    monkeypatch.setattr(service, "get_batch", lambda _id: batch)
-    monkeypatch.setattr(service, "_load_event_snapshots", lambda _ids: snapshots)
-
-    service.update_batch(
-        "batch-1",
-        InstagramPublishBatchUpdate(version=3, caption="Caption", event_ids=[1, 5]),
-    )
-
-    assert draft_editor["event_renders"] == [1]
-    assert draft_editor["created"] == [5]
-    # A re-rendered slide must drop the Meta container built from the old image.
-    assert draft_editor["updated"] == [
-        ("item-1", ["asset_url", "event_snapshot", "meta_container_id"])
-    ]
-    _, params = draft_editor["rpc"][0]
-    assert params["p_item_ids"] == ["item-1", "item-new-5"]
+    assert params["p_caption"] == "Caption"
 
 
 def test_update_batch_rejects_events_without_a_date(monkeypatch, draft_editor):
-    batch = _batch([])
-    monkeypatch.setattr(service, "get_batch", lambda _id: batch)
-    monkeypatch.setattr(service, "_load_event_snapshots", lambda _ids: {})
+    monkeypatch.setattr(service, "get_batch", lambda _id: _batch([]))
+    monkeypatch.setattr(service, "_load_slide_events", lambda _ids: {})
 
     with pytest.raises(Exception, match="dated, existing event"):
         service.update_batch(
             "batch-1",
             InstagramPublishBatchUpdate(version=3, caption="Caption", event_ids=[9]),
         )
+
+
+def test_update_batch_rejects_a_repeated_event(monkeypatch, draft_editor):
+    monkeypatch.setattr(service, "get_batch", lambda _id: _batch([1]))
+    monkeypatch.setattr(service, "_load_slide_events", lambda _ids: {1: _event(1)})
+
+    with pytest.raises(Exception, match="different event"):
+        service.update_batch(
+            "batch-1",
+            InstagramPublishBatchUpdate(version=3, caption="Caption", event_ids=[1, 1]),
+        )
+
+
+def test_publish_batch_renders_the_slides_from_live_event_data(monkeypatch):
+    rendered: list = []
+    containers: list[str] = []
+    table_calls: list[tuple] = []
+
+    monkeypatch.setattr(service.settings, "instagram_access_token", "token")
+    monkeypatch.setattr(service, "get_batch", lambda _id: _batch([7, 8]))
+    monkeypatch.setattr(
+        service,
+        "get_sb",
+        lambda: SimpleNamespace(table=lambda name: _FakeQuery([{}], table_calls)),
+    )
+    monkeypatch.setattr(
+        service,
+        "render_event_asset",
+        lambda event: rendered.append(int(event["id"])) or f"https://a/{event['id']}.png",
+    )
+    monkeypatch.setattr(
+        service,
+        "render_cover_asset",
+        lambda events, school, body: (
+            rendered.append(("cover", [int(e["id"]) for e in events], school, body))
+            or "https://a/cover.png"
+        ),
+    )
+
+    class _FakeClient:
+        def __init__(self, access_token):
+            assert access_token == "token"
+
+        def create_image_container(self, user_id, image_url):
+            containers.append(image_url)
+            return f"container-{len(containers)}"
+
+        def wait_until_ready(self, container_id):
+            return None
+
+        def create_carousel_container(self, user_id, *, child_ids, caption):
+            self.child_ids = child_ids
+            return "carousel-1"
+
+        def publish(self, user_id, carousel_id):
+            return "media-1"
+
+    monkeypatch.setattr(service, "MetaInstagramClient", _FakeClient)
+
+    service.publish_batch("batch-1", InstagramPublishBatchPublish(version=3))
+
+    assert rendered == [("cover", [7, 8], "uwaterloo", "Body"), 7, 8]
+    assert containers == ["https://a/cover.png", "https://a/7.png", "https://a/8.png"]
+    published = [call for call in table_calls if call[0] == "update"]
+    assert any(fields.get("meta_media_id") == "media-1" for _, (fields,), _ in published)

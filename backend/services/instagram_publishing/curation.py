@@ -20,8 +20,6 @@ class _CurationScore(BaseModel):
     excitement_score: float = Field(ge=0, le=10)
     audience_score: float = Field(ge=0, le=10)
     timing_score: float = Field(ge=0, le=10)
-    reason: str = Field(max_length=500)
-    cover_candidate: bool = False
 
 
 class _CurationResponse(BaseModel):
@@ -39,13 +37,16 @@ Score each event from 0 to 10 on:
 - timing_score: usefulness of promoting it now, with nearer events favored unless too imminent
 Return every supplied event exactly once.
 Do not invent event IDs, handles, dates, locations, or facts.
-Mark at most one event as cover_candidate.
 Return only JSON in this exact shape:
-{"events":[{"event_id":123,"visual_score":8.5,"excitement_score":8.0,"audience_score":7.5,"timing_score":7.0,"reason":"Short editorial reason","cover_candidate":true}]}"""
+{"events":[{"event_id":123,"visual_score":8.5,"excitement_score":8.0,"audience_score":7.5,"timing_score":7.0}]}"""
 
 
 def rank_candidates(candidates: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Return validated vision scores, with a deterministic fallback."""
+    """Rank candidates as ``{event_id, overall_score}``, with a deterministic fallback.
+
+    The four scored dimensions are how the model reasons about a slide; only the
+    weighted result survives, because picking the lineup is all a score is for.
+    """
     fallback = _fallback_scores(candidates)
     if not candidates or not settings.openai_api_key:
         return fallback
@@ -122,36 +123,35 @@ def _validate_scores(
 
     candidate_ids = {int(candidate["id"]) for candidate in candidates}
     scored: dict[int, dict[str, Any]] = {}
-    cover_claimed = False
     for row in rows:
         if not isinstance(row, dict):
             continue
         event_id = int(row.get("event_id"))
         if event_id not in candidate_ids or event_id in scored:
             continue
-        cover_candidate = bool(row.get("cover_candidate")) and not cover_claimed
-        cover_claimed = cover_claimed or cover_candidate
-        visual = _score(row.get("visual_score"))
-        excitement = _score(row.get("excitement_score"))
-        audience = _score(row.get("audience_score"))
-        timing = _score(row.get("timing_score"))
         scored[event_id] = {
             "event_id": event_id,
-            "visual_score": visual,
-            "excitement_score": excitement,
-            "audience_score": audience,
-            "timing_score": timing,
-            "overall_score": round(
-                visual * 0.4 + excitement * 0.3 + audience * 0.2 + timing * 0.1,
-                2,
+            "overall_score": _weighted_score(
+                visual=_score(row.get("visual_score")),
+                excitement=_score(row.get("excitement_score")),
+                audience=_score(row.get("audience_score")),
+                timing=_score(row.get("timing_score")),
             ),
-            "ai_reason": str(row.get("reason") or "Ranked by visual appeal.")[:500],
-            "cover_candidate": cover_candidate,
         }
 
     if set(scored) != candidate_ids:
         raise ValueError("curation response did not include every candidate")
     return list(scored.values())
+
+
+def _weighted_score(
+    *,
+    visual: float,
+    excitement: float,
+    audience: float,
+    timing: float,
+) -> float:
+    return round(visual * 0.4 + excitement * 0.3 + audience * 0.2 + timing * 0.1, 2)
 
 
 def _score(value: Any) -> float:
@@ -165,23 +165,15 @@ def _fallback_scores(candidates: list[dict[str, Any]]) -> list[dict[str, Any]]:
     total = max(len(candidates), 1)
     rows = []
     for index, candidate in enumerate(candidates):
-        timing = max(5.0, 8.0 - (index / total) * 3.0)
-        visual = 6.0
-        excitement = 6.0
-        audience = 6.0
         rows.append(
             {
                 "event_id": int(candidate["id"]),
-                "visual_score": visual,
-                "excitement_score": excitement,
-                "audience_score": audience,
-                "timing_score": round(timing, 2),
-                "overall_score": round(
-                    visual * 0.4 + excitement * 0.3 + audience * 0.2 + timing * 0.1,
-                    2,
+                "overall_score": _weighted_score(
+                    visual=6.0,
+                    excitement=6.0,
+                    audience=6.0,
+                    timing=max(5.0, 8.0 - (index / total) * 3.0),
                 ),
-                "ai_reason": "Deterministic fallback ranking by event timing.",
-                "cover_candidate": index == 0,
             }
         )
     return rows

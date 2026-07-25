@@ -14,7 +14,8 @@ interface UseSubmitEventOptions {
   editEventId?: number;
   onSubmit?: (event: EventFormData) => SubmitEventResult | Promise<SubmitEventResult>;
   onUpdate?: (eventId: number, event: EventFormData) => void | Promise<void>;
-  onClose: () => void;
+  /** Absent when the form is an always-present panel with nothing to dismiss. */
+  onClose?: () => void;
   showPromotion: boolean;
   onSubmitted: (eventId: number | null) => void;
 }
@@ -60,7 +61,7 @@ export function useSubmitEvent({
             description: t("events.eventUpdatedMessage", { title: formData.title }),
             variant: "success",
           });
-          onClose();
+          onClose?.();
           return;
         }
         if (!onSubmit) {

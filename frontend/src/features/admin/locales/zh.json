@@ -185,8 +185,7 @@
         "school": "学校",
         "dateRan": "运行日期",
         "timeRan": "运行时间",
-        "events": "活动数",
-        "images": "图片"
+        "events": "活动数"
       },
       "addEvent": "添加活动",
       "coverSlide": "封面",

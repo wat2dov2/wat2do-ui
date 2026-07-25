@@ -12,12 +12,15 @@ import {
 } from "@/features/admin/lib/instagramSlides";
 
 interface CarouselSlidePreviewProps {
+  /** Slide 0 is the cover; the rest are event slides in carousel order. */
   slideIndex: number;
   slideCount: number;
-  /** `null` on the cover slide. */
+  /** The slide's event, or `null` on the cover and on a slide not yet saved. */
   event: SlideEvent | null;
   cover: { schoolName: string; body: string; tiles: string[] };
 }
+
+const COVER_INDEX = 0;
 
 /** On-screen width of the 1080x1350 slide; the template itself is unscaled. */
 const PREVIEW_WIDTH = 288;
@@ -30,6 +33,7 @@ export function CarouselSlidePreview({
   cover,
 }: CarouselSlidePreviewProps) {
   const { t } = useTranslation();
+  const isCover = slideIndex === COVER_INDEX;
 
   return (
     <figure className="flex flex-col items-center gap-2">
@@ -45,17 +49,17 @@ export function CarouselSlidePreview({
             transformOrigin: "top left",
           }}
         >
-          {event ? (
-            <EventSlideTemplate model={buildEventSlideModel(event)} />
-          ) : (
+          {isCover ? (
             <CoverSlideTemplate model={buildCoverSlideModel(cover)} />
+          ) : (
+            <EventSlideTemplate model={buildEventSlideModel(event ?? { id: 0 })} />
           )}
         </div>
       </div>
       <figcaption className="text-xs text-muted-foreground">
-        {event
-          ? t("admin.instagramPublishing.slideOf", { index: slideIndex, count: slideCount - 1 })
-          : t("admin.instagramPublishing.coverSlide")}
+        {isCover
+          ? t("admin.instagramPublishing.coverSlide")
+          : t("admin.instagramPublishing.slideOf", { index: slideIndex, count: slideCount - 1 })}
       </figcaption>
     </figure>
   );

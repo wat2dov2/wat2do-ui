@@ -36,7 +36,8 @@ import { cn } from "@/shared/lib/utils";
 import type { EventFormData } from "@/shared/types";
 
 interface SubmitEventSharedProps {
-  onClose: () => void;
+  /** Absent when the form is an always-present panel with nothing to dismiss. */
+  onClose?: () => void;
   onSubmit?: (
     event: EventFormData,
   ) => SubmitEventResult | Promise<SubmitEventResult>;
@@ -61,6 +62,8 @@ interface SubmitEventFlowProps extends SubmitEventSharedProps {
 }
 
 interface SubmitEventModalProps extends SubmitEventSharedProps {
+  /** The modal owns a dismissable surface, so closing is never optional here. */
+  onClose: () => void;
   isOpen: boolean;
   userCredits?: number;
   initialData?: EventFormData;
@@ -265,7 +268,7 @@ export function SubmitEventFlow({
   if (currentStep === "promotion-success") {
     return (
       <EventFormProvider value={successContext}>
-        <PromotionSuccessScreen onClose={onClose} />
+        <PromotionSuccessScreen onClose={onClose ?? NOOP} />
       </EventFormProvider>
     );
   }
@@ -274,7 +277,7 @@ export function SubmitEventFlow({
     return (
       <EventFormProvider value={successContext}>
         <PromotionUpsell
-          onClose={onClose}
+          onClose={onClose ?? NOOP}
           onPromote={eventFormPromotion.handlePromote}
           onBuyCredits={onBuyCredits ?? NOOP}
           userCredits={userCredits}
@@ -287,7 +290,7 @@ export function SubmitEventFlow({
     return (
       <EventFormProvider value={successContext}>
         <SubmitSuccessStep
-          onClose={onClose}
+          onClose={onClose ?? NOOP}
           onPromote={
             onPromote && submitResult?.createdEventId != null
               ? () => eventFormPromotion.setShowPromotion(true)

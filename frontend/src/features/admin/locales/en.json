@@ -185,8 +185,7 @@
         "school": "School",
         "dateRan": "Date ran",
         "timeRan": "Time ran",
-        "events": "Events",
-        "images": "Images"
+        "events": "Events"
       },
       "addEvent": "Add event",
       "coverSlide": "Cover slide",

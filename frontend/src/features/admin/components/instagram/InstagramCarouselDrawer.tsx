@@ -24,14 +24,12 @@ import { SubmitEventFlow } from "@/features/events/components/SubmitEventModal";
 import { createEventAPI, fetchEventById, updateEventAPI } from "@/features/events/api/events.api";
 import { eventToFormData, getEventCategory } from "@/shared/utils/event";
 import type { ApiInstagramPublishBatchResponse } from "@/shared/generated";
-import type { Event, EventFormData } from "@/shared/types";
+import type { EventFormData } from "@/shared/types";
 import {
   carouselEventIds,
-  includedSlides,
+  carouselSlideEvents,
   isBatchEditable,
-  slideEvent,
 } from "@/features/admin/lib/instagramCarousel";
-import type { SlideEvent } from "@/features/admin/lib/instagramSlides";
 import { CarouselSlidePreview } from "@/features/admin/components/instagram/CarouselSlidePreview";
 
 type Batch = ApiInstagramPublishBatchResponse;
@@ -54,33 +52,6 @@ interface InstagramCarouselDrawerProps {
 const COVER_INDEX = 0;
 const MAX_EVENT_SLIDES = 9;
 
-/**
- * Slide data for an event the admin just edited.
- *
- * The stored PNG only catches up on save, but the preview is HTML rendered from
- * event data, so it shows the edit immediately. A recurring event shows its
- * first occurrence - the same one the backend snapshots for the published
- * slide, since both read the server's ascending occurrence order.
- */
-function toSlideEvent(event: Event): SlideEvent {
-  const occurrence = event.occurrences?.[0];
-  return {
-    id: event.id,
-    title: event.title,
-    category: getEventCategory(event),
-    location: event.location,
-    organization: event.organization,
-    ig_handle: event.ig_handle ?? null,
-    school: event.school,
-    source_image_url: event.source_image_url ?? null,
-    dtstart_utc: occurrence?.dtstart_utc ?? null,
-    tz: occurrence?.tz ?? null,
-    price: event.price,
-    food: event.food,
-    cancelled: event.cancelled,
-  };
-}
-
 export function InstagramCarouselDrawer({
   batch,
   isSaving,
@@ -92,11 +63,6 @@ export function InstagramCarouselDrawer({
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [eventIds, setEventIds] = useState<number[]>(() => carouselEventIds(batch));
-  const [slideEvents, setSlideEvents] = useState<Record<number, SlideEvent>>(() =>
-    Object.fromEntries(
-      includedSlides(batch).map((item) => [Number(item.event_id), slideEvent(item)]),
-    ),
-  );
   const [caption, setCaption] = useState(batch.caption);
   const [coverBody, setCoverBody] = useState(batch.cover_body);
   const [slideIndex, setSlideIndex] = useState(COVER_INDEX);
@@ -107,6 +73,9 @@ export function InstagramCarouselDrawer({
   const currentEventId = slideIndex === COVER_INDEX ? null : (eventIds[slideIndex - 1] ?? null);
   const busy = isSaving || isPublishing;
 
+  // Slides render from the saved carousel, so an event edited here shows up in
+  // the preview once the draft is saved and the batch comes back.
+  const slideEvents = useMemo(() => carouselSlideEvents(batch), [batch]);
   const coverTiles = useMemo(
     () =>
       eventIds
@@ -130,37 +99,24 @@ export function InstagramCarouselDrawer({
     [currentEvent, currentEventId],
   );
 
-  const rememberEvent = useCallback(
-    async (eventId: number) => {
-      const event = await queryClient.fetchQuery({
-        queryKey: queryKeys.events.detail(eventId),
-        queryFn: () => fetchEventById(eventId),
-        staleTime: 0,
-      });
-      setSlideEvents((current) => ({ ...current, [eventId]: toSlideEvent(event) }));
-    },
-    [queryClient],
-  );
-
   const handleUpdateEvent = useCallback(
     async (eventId: number, data: EventFormData) => {
       await updateEventAPI(eventId, data);
-      await rememberEvent(eventId);
+      await queryClient.invalidateQueries({ queryKey: queryKeys.events.detail(eventId) });
       toast({ title: t("admin.instagramPublishing.slideUpdated"), variant: "success" });
     },
-    [rememberEvent, t],
+    [queryClient, t],
   );
 
   const handleCreateEvent = useCallback(
     async (data: EventFormData) => {
       const created = await createEventAPI(data);
-      await rememberEvent(created.id);
       setEventIds((current) => [...current, created.id]);
       setSlideIndex(eventIds.length + 1);
       setAddingEvent(false);
       return { type: "event" as const, eventId: created.id };
     },
-    [eventIds.length, rememberEvent],
+    [eventIds.length],
   );
 
   const handleRemoveSlide = useCallback(() => {
@@ -305,7 +261,6 @@ export function InstagramCarouselDrawer({
                       editEventId={currentEventId}
                       initialData={editForm}
                       onUpdate={handleUpdateEvent}
-                      onClose={() => undefined}
                     />
                   ) : null}
                   <Button

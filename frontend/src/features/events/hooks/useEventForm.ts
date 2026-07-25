@@ -99,7 +99,11 @@ export function useEventForm(options: UseEventFormOptions) {
     [form],
   );
 
-  const [imagePreview, setImagePreview] = useState("");
+  // Editing an existing event starts from its current poster: it is the event's
+  // image until someone uploads a replacement, and the form requires one.
+  const [imagePreview, setImagePreview] = useState(
+    () => initialData?.source_image_url ?? "",
+  );
   const [imageFile, setImageFile] = useState<File | null>(null);
 
   const onImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -125,7 +129,7 @@ export function useEventForm(options: UseEventFormOptions) {
       setJsonValue("");
       setJsonError("");
       foodTag.reset();
-      setImagePreview("");
+      setImagePreview(initialData?.source_image_url ?? "");
       setImageFile(null);
       prevInitialDataRef.current = initialData;
     }
@@ -147,6 +151,8 @@ export function useEventForm(options: UseEventFormOptions) {
     if (shouldReseed && initialData) {
       const resetState = getInitialState(initialData, isEditMode);
       form.setFormData(resetState.formData);
+      setImagePreview(initialData.source_image_url ?? "");
+      setImageFile(null);
       prevInitialDataRef.current = initialData;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

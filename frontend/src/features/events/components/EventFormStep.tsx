@@ -67,7 +67,8 @@ interface EventFormStepProps {
     handleAiGenerate: () => Promise<void>;
   };
   isDarkMode: boolean;
-  onCancel: () => void;
+  /** Absent when the form is an always-present panel with nothing to dismiss. */
+  onCancel?: () => void;
   onBack?: () => void;
   showHeading?: boolean;
   /** The live event-card preview beside the fields. */
@@ -221,9 +222,11 @@ export function EventFormStep({
               <form>
                 <EventFormFields />
                 <Field orientation="horizontal" className="mt-6">
-                  <Button variant="secondary" type="button" onClick={onCancel}>
-                    {t("common.cancel")}
-                  </Button>
+                  {onCancel ? (
+                    <Button variant="secondary" type="button" onClick={onCancel}>
+                      {t("common.cancel")}
+                    </Button>
+                  ) : null}
                   <LoadingButton
                     type="button"
                     onMouseDown={onSubmit}

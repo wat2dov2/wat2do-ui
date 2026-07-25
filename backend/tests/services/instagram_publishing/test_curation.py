@@ -21,8 +21,6 @@ def test_validate_scores_recomputes_weighted_overall_score():
                     "excitement_score": 8,
                     "audience_score": 6,
                     "timing_score": 4,
-                    "reason": "Strong poster.",
-                    "cover_candidate": True,
                 },
                 {
                     "event_id": 11,
@@ -30,17 +28,16 @@ def test_validate_scores_recomputes_weighted_overall_score():
                     "excitement_score": 5,
                     "audience_score": 5,
                     "timing_score": 5,
-                    "reason": "Average.",
-                    "cover_candidate": False,
                 },
             ]
         },
         _candidates(),
     )
 
-    assert result[0]["overall_score"] == 8.0
-    assert result[0]["cover_candidate"] is True
-    assert result[1]["overall_score"] == 5.0
+    assert result == [
+        {"event_id": 10, "overall_score": 8.0},
+        {"event_id": 11, "overall_score": 5.0},
+    ]
 
 
 def test_validate_scores_rejects_missing_candidate():
@@ -79,10 +76,8 @@ def test_rank_candidates_uses_responses_structured_output_and_high_detail(monkey
                                 excitement_score=7,
                                 audience_score=6,
                                 timing_score=5,
-                                reason="Strong poster.",
-                                cover_candidate=index == 0,
                             )
-                            for index, candidate in enumerate(_candidates())
+                            for candidate in _candidates()
                         ]
                     )
                 },

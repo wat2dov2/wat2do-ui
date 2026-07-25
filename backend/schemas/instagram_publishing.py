@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from typing import Any, Literal
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -23,6 +23,32 @@ InstagramPublishBatchStatus = Literal[
 ]
 
 
+class InstagramCarouselEvent(BaseModel):
+    """Live event data a slide reads, joined onto the carousel for display.
+
+    Nothing here is stored on the batch: it is read from the events table every
+    time the carousel is loaded or published, so an edited event changes its
+    slide with no further bookkeeping.
+    """
+
+    model_config = ConfigDict(extra="ignore")
+
+    id: int
+    title: str | None = None
+    category: str | None = None
+    location: str | None = None
+    organization: str | None = None
+    ig_handle: str | None = None
+    school: str | None = None
+    source_image_url: str | None = None
+    dtstart_utc: datetime | None = None
+    """IANA zone resolved server-side; slides print local times."""
+    tz: str | None = None
+    price: float | None = None
+    food: list[str] | None = None
+    cancelled: bool | None = None
+
+
 class InstagramPublishItemResponse(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
@@ -30,18 +56,8 @@ class InstagramPublishItemResponse(BaseModel):
     batch_id: UUID
     account_key: str
     event_id: int
-    position: int | None
-    included: bool
-    event_snapshot: dict[str, Any]
-    visual_score: float
-    excitement_score: float
-    audience_score: float
-    timing_score: float
-    overall_score: float
-    ai_reason: str
-    cover_candidate: bool
-    asset_url: str
-    meta_container_id: str | None = None
+    position: int
+    event: InstagramCarouselEvent
     published_at: datetime | None = None
     created_at: datetime
     updated_at: datetime
@@ -60,12 +76,9 @@ class InstagramPublishBatchResponse(BaseModel):
     status: InstagramPublishBatchStatus
     caption: str
     cover_body: str = ""
-    cover_image_url: str | None = None
     ai_model: str | None = None
     version: int
     error_message: str | None = None
-    meta_cover_container_id: str | None = None
-    meta_carousel_container_id: str | None = None
     meta_media_id: str | None = None
     created_at: datetime
     updated_at: datetime
@@ -80,8 +93,8 @@ class InstagramPublishBatchUpdate(BaseModel):
     caption: str = Field(min_length=1, max_length=2200)
     cover_body: str = Field(default="", max_length=280)
     # Carousel order, by event. The editor owns which events are on the
-    # carousel - including ones an admin added by hand - so the batch reconciles
-    # its slides against this list instead of the generator's original items.
+    # carousel - including ones an admin added by hand - so the batch stores
+    # exactly this list.
     event_ids: list[int] = Field(min_length=1, max_length=9)
 
 

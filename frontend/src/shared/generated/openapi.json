@@ -6955,6 +6955,156 @@
         "type": "object",
         "title": "HTTPValidationError"
       },
+      "InstagramCarouselEvent": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "organization": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Organization"
+          },
+          "ig_handle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ig Handle"
+          },
+          "school": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "School"
+          },
+          "source_image_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Image Url"
+          },
+          "dtstart_utc": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dtstart Utc"
+          },
+          "tz": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tz"
+          },
+          "price": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price"
+          },
+          "food": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Food"
+          },
+          "cancelled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cancelled"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "title": "InstagramCarouselEvent",
+        "description": "Live event data a slide reads, joined onto the carousel for display.\n\nNothing here is stored on the batch: it is read from the events table every\ntime the carousel is loaded or published, so an edited event changes its\nslide with no further bookkeeping."
+      },
       "InstagramPublishBatchPublish": {
         "properties": {
           "version": {
@@ -7025,17 +7175,6 @@
             "title": "Cover Body",
             "default": ""
           },
-          "cover_image_url": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Cover Image Url"
-          },
           "ai_model": {
             "anyOf": [
               {
@@ -7061,28 +7200,6 @@
               }
             ],
             "title": "Error Message"
-          },
-          "meta_cover_container_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Meta Cover Container Id"
-          },
-          "meta_carousel_container_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Meta Carousel Container Id"
           },
           "meta_media_id": {
             "anyOf": [
@@ -7202,67 +7319,11 @@
             "title": "Event Id"
           },
           "position": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "integer",
             "title": "Position"
           },
-          "included": {
-            "type": "boolean",
-            "title": "Included"
-          },
-          "event_snapshot": {
-            "additionalProperties": true,
-            "type": "object",
-            "title": "Event Snapshot"
-          },
-          "visual_score": {
-            "type": "number",
-            "title": "Visual Score"
-          },
-          "excitement_score": {
-            "type": "number",
-            "title": "Excitement Score"
-          },
-          "audience_score": {
-            "type": "number",
-            "title": "Audience Score"
-          },
-          "timing_score": {
-            "type": "number",
-            "title": "Timing Score"
-          },
-          "overall_score": {
-            "type": "number",
-            "title": "Overall Score"
-          },
-          "ai_reason": {
-            "type": "string",
-            "title": "Ai Reason"
-          },
-          "cover_candidate": {
-            "type": "boolean",
-            "title": "Cover Candidate"
-          },
-          "asset_url": {
-            "type": "string",
-            "title": "Asset Url"
-          },
-          "meta_container_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Meta Container Id"
+          "event": {
+            "$ref": "#/components/schemas/InstagramCarouselEvent"
           },
           "published_at": {
             "anyOf": [
@@ -7294,16 +7355,7 @@
           "account_key",
           "event_id",
           "position",
-          "included",
-          "event_snapshot",
-          "visual_score",
-          "excitement_score",
-          "audience_score",
-          "timing_score",
-          "overall_score",
-          "ai_reason",
-          "cover_candidate",
-          "asset_url",
+          "event",
           "created_at",
           "updated_at"
         ],

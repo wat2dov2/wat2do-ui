@@ -14,10 +14,13 @@ Each eligible event must have `ingestion_source = 'instagram_scraper'`, a Supaba
 
 At 9 AM America/Toronto, the private backend job creates one batch per configured Instagram account.
 The job uses a vision-capable model to score visual quality, event excitement, audience appeal, and timing.
-It selects up to nine event slides, renders immutable portrait assets and a collage cover, creates a factual caption, and stores the review batch in Supabase.
+It selects up to nine events, writes a factual caption, and stores the review batch in Supabase.
 
-An administrator can remove or restore slides, reorder them, edit the caption, save the draft, and explicitly approve publication.
-Publication uses the Instagram Graph API carousel flow and stores child container, carousel container, and published media IDs so safe retries can resume completed steps.
+A batch stores only its scrape run, its copy, and the events on the carousel in order.
+Slide images are not stored: they are generated from live event data at publish time, so the events table is the single source of truth for everything a slide shows.
+
+An administrator can add, remove, and reorder slides, edit an event's own details, edit the cover copy and caption, save the draft, and explicitly approve publication.
+Publication renders the carousel, uploads it through the Instagram Graph API carousel flow, and stores the published media ID.
 
 ## Operating contract
 

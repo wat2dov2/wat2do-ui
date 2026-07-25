@@ -1917,6 +1917,42 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /**
+         * InstagramCarouselEvent
+         * @description Live event data a slide reads, joined onto the carousel for display.
+         *
+         *     Nothing here is stored on the batch: it is read from the events table every
+         *     time the carousel is loaded or published, so an edited event changes its
+         *     slide with no further bookkeeping.
+         */
+        InstagramCarouselEvent: {
+            /** Id */
+            id: number;
+            /** Title */
+            title?: string | null;
+            /** Category */
+            category?: string | null;
+            /** Location */
+            location?: string | null;
+            /** Organization */
+            organization?: string | null;
+            /** Ig Handle */
+            ig_handle?: string | null;
+            /** School */
+            school?: string | null;
+            /** Source Image Url */
+            source_image_url?: string | null;
+            /** Dtstart Utc */
+            dtstart_utc?: string | null;
+            /** Tz */
+            tz?: string | null;
+            /** Price */
+            price?: number | null;
+            /** Food */
+            food?: string[] | null;
+            /** Cancelled */
+            cancelled?: boolean | null;
+        };
         /** InstagramPublishBatchPublish */
         InstagramPublishBatchPublish: {
             /** Version */
@@ -1962,18 +1998,12 @@ export interface components {
              * @default
              */
             cover_body: string;
-            /** Cover Image Url */
-            cover_image_url?: string | null;
             /** Ai Model */
             ai_model?: string | null;
             /** Version */
             version: number;
             /** Error Message */
             error_message?: string | null;
-            /** Meta Cover Container Id */
-            meta_cover_container_id?: string | null;
-            /** Meta Carousel Container Id */
-            meta_carousel_container_id?: string | null;
             /** Meta Media Id */
             meta_media_id?: string | null;
             /**
@@ -2022,31 +2052,8 @@ export interface components {
             /** Event Id */
             event_id: number;
             /** Position */
-            position: number | null;
-            /** Included */
-            included: boolean;
-            /** Event Snapshot */
-            event_snapshot: {
-                [key: string]: unknown;
-            };
-            /** Visual Score */
-            visual_score: number;
-            /** Excitement Score */
-            excitement_score: number;
-            /** Audience Score */
-            audience_score: number;
-            /** Timing Score */
-            timing_score: number;
-            /** Overall Score */
-            overall_score: number;
-            /** Ai Reason */
-            ai_reason: string;
-            /** Cover Candidate */
-            cover_candidate: boolean;
-            /** Asset Url */
-            asset_url: string;
-            /** Meta Container Id */
-            meta_container_id?: string | null;
+            position: number;
+            event: components["schemas"]["InstagramCarouselEvent"];
             /** Published At */
             published_at?: string | null;
             /**
