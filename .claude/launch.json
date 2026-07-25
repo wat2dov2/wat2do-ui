@@ -12,12 +12,6 @@
       "runtimeExecutable": "bash",
       "runtimeArgs": ["-c", "cd backend && .venv/bin/python -m uvicorn main:app --port 8000"],
       "port": 8000
-    },
-    {
-      "name": "waterloo-commons",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev", "--prefix", "waterloo-commons"],
-      "port": 3002
     }
   ]
 }

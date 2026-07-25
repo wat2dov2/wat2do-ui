@@ -88,8 +88,8 @@ Run `tflint` in each root when it is installed locally or rely on the Terraform 
 ## 5. Database migrations
 
 **The production Supabase project is `vgfwgjwahedyieaknkcd`.**
-It is *displayed* as `test` in the Supabase dashboard, which is a trap: the project named `waterloo-commons` is a different product.
-Never select the production database by name.
+It is displayed as `wat2do-v2` in the Supabase dashboard.
+Match on the ref rather than the display name, since names can change.
 Confirm the ref against the deployed configuration before running anything destructive:
 
 ```bash

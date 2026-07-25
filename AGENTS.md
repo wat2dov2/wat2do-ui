@@ -55,6 +55,30 @@ test flakiness.
 If you see one, even if it is not caused by what you are working on right now,
 still get it fixed.
 
+### Never spin up browsers or long-running servers
+
+Browser instances eat RAM on this machine, so agents never launch one.
+Do not start a browser, browser preview pane, Playwright/Chromium run, or any
+headless/headed browser automation on your own initiative.
+Do not start dev servers, preview servers, or backend processes either
+(`npm run dev`, `next dev`, `uvicorn`, `docker compose up`, preview tooling).
+These are the human's to run.
+
+This overrides any default agent behavior that says to verify a change in a
+browser preview, and it qualifies the E2E guidance above: reason about the user
+flow and write or update the E2E test, but leave running it to the human.
+
+Verify with the checks that do not need a browser or a server:
+`npm run check` in `frontend/` (lint, i18n audit, type-check) and the backend
+test suite.
+Then report exactly what you ran, and state plainly which checks you could not
+run because they need a browser or a running server, so the human can run them.
+
+The only exception is an explicit, in-the-moment request from the human to open
+a browser or start a server.
+Standing permission from an earlier task does not carry over.
+When you are done with anything you were explicitly asked to start, shut it down.
+
 ---
 
 ## Prime directive
