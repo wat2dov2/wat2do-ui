@@ -19,6 +19,16 @@ const apiCollectionPaths = [
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  // The slide renderer reads its fonts and the resvg wasm binary from disk at
+  // request time, so dependency tracing cannot see them and the standalone
+  // image would ship without them.
+  outputFileTracingIncludes: {
+    "/api/render-instagram-slide": [
+      "./node_modules/@fontsource/inter/files/inter-latin-400-normal.woff",
+      "./node_modules/@fontsource/inter/files/inter-latin-700-normal.woff",
+      "./node_modules/@resvg/resvg-wasm/index_bg.wasm",
+    ],
+  },
   reactStrictMode: true,
   skipTrailingSlashRedirect: true,
   turbopack: {

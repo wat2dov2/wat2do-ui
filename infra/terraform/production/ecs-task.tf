@@ -131,6 +131,16 @@ resource "aws_ecs_task_definition" "application" {
           name      = "EVENT_FEED_REVALIDATION_SECRET"
           valueFrom = "${var.runtime_secret_arn}:EVENT_FEED_REVALIDATION_SECRET::"
         },
+        {
+          name      = "INSTAGRAM_SLIDE_RENDER_SECRET"
+          valueFrom = "${var.runtime_secret_arn}:INSTAGRAM_SLIDE_RENDER_SECRET::"
+        },
+        # Not a credential: the slide renderer only inlines posters served by
+        # this storage origin, so it needs to know what that origin is.
+        {
+          name      = "SUPABASE_URL"
+          valueFrom = "${var.runtime_secret_arn}:SUPABASE_URL::"
+        },
       ]
       mountPoints = [
         {

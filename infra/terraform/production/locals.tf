@@ -25,6 +25,7 @@ locals {
     FRONTEND_URL                    = "https://${var.domain_name}"
     EVENT_FEED_REVALIDATION_URL     = "http://127.0.0.1:3000/api/revalidate-events"
     EVENT_FEED_REVALIDATION_TIMEOUT = "3"
+    INSTAGRAM_SLIDE_RENDER_URL      = "http://127.0.0.1:3000/api/render-instagram-slide"
     EMAIL_PROVIDER                  = "resend"
     EMAIL_FROM                      = var.email_from
   }
@@ -34,6 +35,7 @@ locals {
   # forwards without caching.
   backend_jobs_environment = merge(local.backend_runtime_environment, {
     EVENT_FEED_REVALIDATION_URL = "https://${var.domain_name}/api/revalidate-events"
+    INSTAGRAM_SLIDE_RENDER_URL  = "https://${var.domain_name}/api/render-instagram-slide"
   })
 
   runtime_secret_keys = [
@@ -46,6 +48,7 @@ locals {
     "INSTAGRAM_ACCESS_TOKEN",
     "EMAIL_PROVIDER_API_KEY",
     "EVENT_FEED_REVALIDATION_SECRET",
+    "INSTAGRAM_SLIDE_RENDER_SECRET",
   ]
 
   runtime_secret_references = [
