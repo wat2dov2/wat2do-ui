@@ -113,7 +113,11 @@ jobs:
       ECS_JOBS_TASK_FAMILY: wat2do-production-jobs
 
     steps:
+      # Full history: the migration guard below diffs against the previous
+      # commit, which a shallow checkout does not have.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Verify AWS deployment configuration
         run: |
@@ -255,9 +259,18 @@ jobs:
           SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
         run: |
           set -euo pipefail
+
+          # Detection must never fail quietly: a diff that errors out and gets
+          # swallowed reads as "this push adds no migrations", which is exactly
+          # how unapplied schema once reached production. Force pushes and the
+          # first push to a branch have no usable before-sha, so fall back to
+          # this commit's parent rather than to silence.
+          before="${{ github.event.before }}"
+          if [ -z "$before" ] || ! git cat-file -e "${before}^{commit}" 2>/dev/null; then
+            before="$(git rev-parse "${{ github.sha }}^")"
+          fi
           added_migrations="$(git diff --name-only --diff-filter=A \
-            "${{ github.event.before }}" "${{ github.sha }}" -- \
-            backend/supabase/migrations/ 2>/dev/null || true)"
+            "$before" "${{ github.sha }}" -- backend/supabase/migrations/)"
 
           if [ -z "${SUPABASE_ACCESS_TOKEN:-}" ] || [ -z "${SUPABASE_PROJECT_REF:-}" ]; then
             if [ -n "$added_migrations" ]; then
