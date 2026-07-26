@@ -1,50 +1,21 @@
-import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { EventCard } from "@/features/events/components/EventCard";
 import { useEventFormContext } from "@/features/events/components/EventForm/EventForm/EventFormContext";
 import { cn } from "@/shared/lib/utils";
-import type { Event } from "@/shared/types";
 
 interface EventFormPreviewProps {
   className?: string;
 }
 
-/** Stands in for the not-yet-saved event's id on the preview's occurrences. */
-const PREVIEW_EVENT_ID = -1;
-
 /**
  * Live preview of the grid card the event will become.
  *
- * It renders the real card against an event assembled from the form, so the
- * preview cannot drift from the feed.
+ * It renders the real card against the event the form currently describes, so
+ * the preview cannot drift from the feed.
  */
 export function EventFormPreview({ className }: EventFormPreviewProps) {
   const { t } = useTranslation();
-  const { formData, imagePreview, selectedOrganizationName } = useEventFormContext();
-
-  const previewEvent = useMemo<Event>(() => {
-    const now = new Date().toISOString();
-    return {
-      id: PREVIEW_EVENT_ID,
-      title: formData.title || t("events.eventTitle"),
-      location: formData.location,
-      occurrences: formData.occurrences.map((occurrence, index) => ({
-        id: occurrence.id ?? `preview-${index}`,
-        event_id: PREVIEW_EVENT_ID,
-        dtstart_utc: occurrence.dtstart_local,
-        dtend_utc: occurrence.dtend_local || undefined,
-        created_at: now,
-      })),
-      price: formData.price,
-      food: formData.food,
-      registration: formData.registration,
-      source_image_url: imagePreview || null,
-      category: formData.category || null,
-      organization: selectedOrganizationName || null,
-      cancelled: false,
-      added_at: now,
-    };
-  }, [formData, imagePreview, selectedOrganizationName, t]);
+  const { previewEvent } = useEventFormContext();
 
   return (
     <div

@@ -33,7 +33,7 @@ import {
 } from "@/features/events/components/EventForm/EventForm/EventFormContext";
 import { Section, Stack } from "@/shared/layout";
 import { cn } from "@/shared/lib/utils";
-import type { EventFormData } from "@/shared/types";
+import type { Event, EventFormData } from "@/shared/types";
 
 interface SubmitEventSharedProps {
   /** Absent when the form is an always-present panel with nothing to dismiss. */
@@ -59,6 +59,10 @@ interface SubmitEventFlowProps extends SubmitEventSharedProps {
   embedded?: boolean;
   showHeading?: boolean;
   showPreview?: boolean;
+  /** The saved event being edited; fields the form does not own carry over. */
+  previewBase?: Event | null;
+  /** Lets a host render its own preview of what the form currently describes. */
+  onPreviewEventChange?: (event: Event) => void;
 }
 
 interface SubmitEventModalProps extends SubmitEventSharedProps {
@@ -98,6 +102,8 @@ export function SubmitEventFlow({
   embedded = false,
   showHeading = true,
   showPreview = true,
+  previewBase,
+  onPreviewEventChange,
 }: SubmitEventFlowProps) {
   const { t } = useTranslation();
   const { isDarkMode } = useDarkMode();
@@ -377,6 +383,8 @@ export function SubmitEventFlow({
         onBack={onBack}
         showHeading={showHeading}
         showPreview={showPreview}
+        previewBase={previewBase}
+        onPreviewEventChange={onPreviewEventChange}
       />
     </Section>
   );

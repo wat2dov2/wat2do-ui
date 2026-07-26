@@ -1,6 +1,7 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import type { Organization } from "@/shared/types";
+import type { Event, Organization } from "@/shared/types";
+import { buildPreviewEvent } from "@/features/events/lib/previewEvent";
 import { getAllOrganizations } from "@/features/organizations";
 import { useQuery } from "@tanstack/react-query";
 import { queryKeys } from "@/shared/lib/queryKeys";
@@ -73,6 +74,10 @@ interface EventFormStepProps {
   showHeading?: boolean;
   /** The live event-card preview beside the fields. */
   showPreview?: boolean;
+  /** The saved event being edited; fields the form does not own carry over. */
+  previewBase?: Event | null;
+  /** Lets a host render its own preview of what the form currently describes. */
+  onPreviewEventChange?: (event: Event) => void;
 }
 
 export function EventFormStep({
@@ -89,6 +94,8 @@ export function EventFormStep({
   onBack,
   showHeading = true,
   showPreview = true,
+  previewBase,
+  onPreviewEventChange,
 }: EventFormStepProps) {
   const { t } = useTranslation();
   const profileCompleted = useProfileCompleted();
@@ -114,11 +121,36 @@ export function EventFormStep({
     [onViewModeChange]
   );
 
+  // One event, rebuilt as the form changes: the preview column and any host
+  // drawing its own preview show the same card, keystroke for keystroke.
+  const previewEvent = useMemo(
+    () =>
+      buildPreviewEvent({
+        formData: eventForm.formData,
+        imagePreview: eventForm.imagePreview,
+        organizationName: selectedOrganizationName,
+        fallbackTitle: t("events.eventTitle"),
+        base: previewBase,
+      }),
+    [
+      eventForm.formData,
+      eventForm.imagePreview,
+      selectedOrganizationName,
+      previewBase,
+      t,
+    ],
+  );
+
+  useEffect(() => {
+    onPreviewEventChange?.(previewEvent);
+  }, [previewEvent, onPreviewEventChange]);
+
   // Memoize the context value so consumers (6 components) only re-render when
   // form state actually changes, not on every parent render.
   const formContextValue = useMemo(
     () => ({
       formData: eventForm.formData,
+      previewEvent,
       updateField: eventForm.updateField,
       errors: eventForm.errors,
       touched: eventForm.touched,
@@ -146,7 +178,7 @@ export function EventFormStep({
       handleAiGenerate: eventFormAI.handleAiGenerate,
       isDarkMode,
     }),
-    [eventForm, eventFormAI, isDarkMode, organizations, selectedOrganizationName]
+    [eventForm, eventFormAI, isDarkMode, organizations, previewEvent, selectedOrganizationName]
   );
 
   return (

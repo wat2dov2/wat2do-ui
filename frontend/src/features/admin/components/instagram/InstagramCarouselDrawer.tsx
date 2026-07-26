@@ -24,7 +24,7 @@ import { SubmitEventFlow } from "@/features/events/components/SubmitEventModal";
 import { createEventAPI, fetchEventById, updateEventAPI } from "@/features/events/api/events.api";
 import { eventToFormData, getEventCategory } from "@/shared/utils/event";
 import type { ApiInstagramPublishBatchResponse } from "@/shared/generated";
-import type { EventFormData } from "@/shared/types";
+import type { Event, EventFormData } from "@/shared/types";
 import {
   carouselEventIds,
   carouselSlideEvents,
@@ -99,6 +99,23 @@ export function InstagramCarouselDrawer({
     [currentEvent, currentEventId],
   );
 
+  // The slide is whatever the open form currently says, keystroke for
+  // keystroke - it is the same card either way, just fed from the form instead
+  // of the server until the edit is saved. Tagged with its event so a slide
+  // never shows the one before it.
+  const [liveSlide, setLiveSlide] = useState<{ eventId: number; event: Event } | null>(null);
+  const handlePreviewEventChange = useCallback(
+    (event: Event) => {
+      if (currentEventId == null) return;
+      setLiveSlide({ eventId: currentEventId, event });
+    },
+    [currentEventId],
+  );
+
+  const savedSlideEvent = currentEventId == null ? null : (slideEvents[currentEventId] ?? null);
+  const previewedSlideEvent =
+    liveSlide && liveSlide.eventId === currentEventId ? liveSlide.event : savedSlideEvent;
+
   /** Saves the carousel the editor is holding, with the given slides on it. */
   const persistDraft = useCallback(
     (slideEventIds: number[]) =>
@@ -109,7 +126,12 @@ export function InstagramCarouselDrawer({
   const handleUpdateEvent = useCallback(
     async (eventId: number, data: EventFormData) => {
       await updateEventAPI(eventId, data);
-      await queryClient.invalidateQueries({ queryKey: queryKeys.events.detail(eventId) });
+      // The batch carries its slides' event data, so an edited slide is stale
+      // there too until the run is refetched.
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.events.detail(eventId) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.instagramPublishing.batches() }),
+      ]);
       toast({ title: t("admin.instagramPublishing.slideUpdated"), variant: "success" });
     },
     [queryClient, t],
@@ -209,7 +231,7 @@ export function InstagramCarouselDrawer({
               <CarouselSlidePreview
                 slideIndex={slideIndex}
                 slideCount={slideCount}
-                event={currentEventId == null ? null : (slideEvents[currentEventId] ?? null)}
+                event={previewedSlideEvent}
                 cover={{
                   schoolName: getSchoolDisplayName(batch.school),
                   body: coverBody,
@@ -278,6 +300,8 @@ export function InstagramCarouselDrawer({
                       editEventId={currentEventId}
                       initialData={editForm}
                       onUpdate={handleUpdateEvent}
+                      previewBase={savedSlideEvent}
+                      onPreviewEventChange={handlePreviewEventChange}
                     />
                   ) : null}
                   <Button

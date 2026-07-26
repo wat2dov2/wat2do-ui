@@ -1,8 +1,16 @@
 import React, { createContext, useContext } from "react";
-import type { Organization, EventFormData, EventFormOccurrence, ValidationErrors } from "@/shared/types";
+import type {
+  Event,
+  Organization,
+  EventFormData,
+  EventFormOccurrence,
+  ValidationErrors,
+} from "@/shared/types";
 
 export interface EventFormContextValue {
   formData: EventFormData;
+  /** The event the form currently describes, rebuilt on every edit. */
+  previewEvent: Event;
   updateField: <K extends keyof EventFormData>(
     field: K,
     value: EventFormData[K]

@@ -12,6 +12,21 @@ const VALIDATION_MESSAGE_KEYS = {
 
 export type ValidationMessageOverrides = Partial<Record<keyof typeof VALIDATION_MESSAGE_KEYS, string>>;
 
+export interface EventFormRules {
+  /**
+   * Whether the event must be linked to an organization row.
+   *
+   * A scraped event carries its host's name but no link to an organization,
+   * and the Instagram carousel editor exists to correct exactly those events.
+   * Demanding a link there would make every one of them unsaveable, so an
+   * event that never had one may be edited without gaining one. Creating an
+   * event always requires it.
+   */
+  requireOrganization: boolean;
+}
+
+const DEFAULT_RULES: EventFormRules = { requireOrganization: true };
+
 function getValidationMessages(): Record<keyof typeof VALIDATION_MESSAGE_KEYS, string> {
   return Object.fromEntries(
     Object.entries(VALIDATION_MESSAGE_KEYS).map(([key, translationKey]) => [
@@ -28,6 +43,7 @@ export function validateEventForm(
   formData: EventFormData,
   touched: Record<string, boolean>,
   messages?: ValidationMessageOverrides,
+  rules: EventFormRules = DEFAULT_RULES,
 ): ValidationErrors {
   const m = { ...getValidationMessages(), ...messages };
   const errors: ValidationErrors = {};
@@ -36,7 +52,7 @@ export function validateEventForm(
     errors.title = m.titleRequired;
   }
 
-  if (touched.organization_id && formData.organization_id == null) {
+  if (rules.requireOrganization && touched.organization_id && formData.organization_id == null) {
     errors.organization_id = m.clubRequired;
   }
 
@@ -56,11 +72,12 @@ export function validateEventForm(
  */
 export function isEventFormValid(
   formData: EventFormData,
-  errors: ValidationErrors
+  errors: ValidationErrors,
+  rules: EventFormRules = DEFAULT_RULES,
 ): boolean {
   return (
     formData.title.trim() !== "" &&
-    formData.organization_id != null &&
+    (!rules.requireOrganization || formData.organization_id != null) &&
     formData.occurrences.some((occurrence) => occurrence.dtstart_local !== "") &&
     formData.location !== "" &&
     Object.keys(errors).length === 0

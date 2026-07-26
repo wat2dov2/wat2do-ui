@@ -33,6 +33,9 @@ export function buildEventUpdatePayload(
 ): components["schemas"]["EventUpdate"] {
   return {
     ...buildEventPayload(eventData),
+    // An event scraped without an organization stays that way: send nothing
+    // rather than a null the server would read as "clear the link".
+    organization_id: eventData.organization_id ?? undefined,
     occurrences: eventData.occurrences
       .filter((occurrence) => occurrence.dtstart_local)
       .map((occurrence) => ({

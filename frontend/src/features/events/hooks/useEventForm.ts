@@ -5,6 +5,7 @@ import {
   validateEventForm,
   isEventFormValid,
   markAllFieldsTouched as markAllFieldsTouchedFn,
+  type EventFormRules,
 } from "@/shared/services/validationService";
 import { useForm } from "@/shared/hooks/useForm";
 import { useTagInput } from "@/shared/hooks/useTagInput";
@@ -30,16 +31,28 @@ export function useEventForm(options: UseEventFormOptions) {
     initialData,
     isEditMode,
   ]);
+  // A scraped event names its host but is linked to no organization row, and
+  // the carousel editor is where those get corrected. Editing one must not
+  // demand a link it never had; creating an event still does.
+  const rules = useMemo<EventFormRules>(
+    () => ({ requireOrganization: !isEditMode || initialData?.organization_id != null }),
+    [isEditMode, initialData?.organization_id],
+  );
   const validate = useCallback(
     (data: EventFormData, touched: Record<string, boolean>) =>
-      validateEventForm(data, touched, {
-        titleRequired: t("forms.titleRequired"),
-        clubRequired: t("forms.organizationRequired"),
-        occurrenceRequired: t("forms.occurrenceRequired"),
-        locationRequired: t("forms.locationRequired"),
-        jsonInvalid: t("forms.invalidJsonFormat"),
-      }) as Record<string, string>,
-    [t]
+      validateEventForm(
+        data,
+        touched,
+        {
+          titleRequired: t("forms.titleRequired"),
+          clubRequired: t("forms.organizationRequired"),
+          occurrenceRequired: t("forms.occurrenceRequired"),
+          locationRequired: t("forms.locationRequired"),
+          jsonInvalid: t("forms.invalidJsonFormat"),
+        },
+        rules,
+      ) as Record<string, string>,
+    [t, rules]
   );
   const form = useForm<EventFormData>({
     initialData,
@@ -198,8 +211,8 @@ export function useEventForm(options: UseEventFormOptions) {
   }, [form.formData]);
 
   const isValid = useMemo(
-    () => isEventFormValid(form.formData, errors) && Boolean(imagePreview),
-    [form.formData, errors, imagePreview],
+    () => isEventFormValid(form.formData, errors, rules) && Boolean(imagePreview),
+    [form.formData, errors, imagePreview, rules],
   );
 
   const markAllFieldsTouched = useCallback(() => {
