@@ -250,7 +250,7 @@ jobs:
         if: ${{ vars.SUPABASE_PROJECT_REF != '' }}
         uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.109.1
 
       - name: Apply database migrations
         env:
