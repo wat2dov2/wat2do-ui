@@ -48,6 +48,17 @@ export function NotificationsTab() {
         />
         <Separator />
         <PreferenceToggle
+          id="event-reminder"
+          label={t("settings.notifications.eventReminder")}
+          description={t("settings.notifications.eventReminderDesc")}
+          checked={preferences?.eventReminder ?? false}
+          disabled={disabled}
+          onCheckedChange={(checked) =>
+            updatePreference("eventReminder", checked)
+          }
+        />
+        <Separator />
+        <PreferenceToggle
           id="event-change"
           label={t("settings.notifications.eventChange")}
           description={t("settings.notifications.eventChangeDesc")}

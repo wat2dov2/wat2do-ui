@@ -165,15 +165,41 @@ class OrganizationManagementControl(_ControlModel):
     invite_expiration_days: int = Field(gt=0)
 
 
+class LootTierControl(_ControlModel):
+    grey: int = Field(ge=0, le=100)
+    bronze: int = Field(ge=0, le=100)
+    silver: int = Field(ge=0, le=100)
+    gold: int = Field(ge=0, le=100)
+    diamond: int = Field(ge=0, le=100)
+
+    @model_validator(mode="after")
+    def validate_ordering(self) -> "LootTierControl":
+        thresholds = [self.grey, self.bronze, self.silver, self.gold, self.diamond]
+        if thresholds != sorted(set(thresholds)):
+            raise ValueError("loot tier thresholds must be unique and ascending")
+        if self.grey != 0:
+            raise ValueError("grey loot tier must start at zero")
+        return self
+
+
 class MorningEmailControl(_ControlModel):
     local_send_hour: int = Field(ge=0, le=23)
     new_event_window_hours: int = Field(gt=0)
     minimum_recommendation_score: float = Field(ge=0, le=1)
     provider_attempts: int = Field(gt=0, le=10)
+    loot_tiers: LootTierControl
+
+
+class EventReminderControl(_ControlModel):
+    lead_minutes: int = Field(gt=0)
+    early_tolerance_minutes: int = Field(ge=0)
+    late_tolerance_minutes: int = Field(ge=0)
+    provider_attempts: int = Field(gt=0, le=10)
 
 
 class NotificationDefaultsControl(_ControlModel):
     morning_email: bool
+    event_reminder: bool
     event_change: bool
 
 
@@ -315,6 +341,7 @@ class ControlBox(_ControlModel):
     organization_management: OrganizationManagementControl
     recommendations: RecommendationControl
     morning_email: MorningEmailControl
+    event_reminder: EventReminderControl
     notification_defaults: NotificationDefaultsControl
     credits: CreditsControl
     interaction_ingestion: InteractionIngestionControl

@@ -3,6 +3,7 @@ import type { components } from "@/shared/generated/api-types";
 
 export interface NotificationPreferences {
   morningEmail: boolean;
+  eventReminder: boolean;
   eventChange: boolean;
 }
 
@@ -19,6 +20,7 @@ const NOTIFICATION_TYPE_BY_KEY: Record<
   ApiNotificationPreferenceUpdate["notification_type"]
 > = {
   morningEmail: "morning_email",
+  eventReminder: "event_reminder",
   eventChange: "event_change",
 };
 
@@ -30,6 +32,10 @@ export async function fetchNotificationPreferences(): Promise<NotificationPrefer
     morningEmail:
       response.preferences.find(
         (preference) => preference.notification_type === "morning_email",
+      )?.enabled ?? true,
+    eventReminder:
+      response.preferences.find(
+        (preference) => preference.notification_type === "event_reminder",
       )?.enabled ?? true,
     eventChange:
       response.preferences.find(

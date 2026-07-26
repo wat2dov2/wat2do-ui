@@ -6,35 +6,51 @@ from zoneinfo import ZoneInfo
 
 from core.config import settings
 
+# Email clients do not reliably support CSS custom properties or OKLCH.
+# These resolved sRGB values preserve the app's semantic dark-theme roles.
+_EMAIL_THEME = {
+    "background": "#121212",
+    "surface": "#1a1a1a",
+    "surface_elevated": "#222222",
+    "foreground": "#f7f7f7",
+    "muted_foreground": "#a3a3a3",
+    "border": "#3a3a3a",
+}
+# Loot colors are decorative accents and never replace functional email colors.
+_LOOT_COLORS = {
+    "grey": "#a3a3a3",
+    "bronze": "#f97316",
+    "silver": "#d4d4d8",
+    "gold": "#fbbf24",
+    "diamond": "#60a5fa",
+}
 
-def morning_email_subject(today_count: int, picks_count: int) -> str:
-    today_label = f"{today_count} {'event' if today_count == 1 else 'events'} today"
+
+def morning_email_subject(picks_count: int) -> str:
     picks_label = f"{picks_count} new {'pick' if picks_count == 1 else 'picks'}"
-    if today_count and picks_count:
-        return f"{today_label} + {picks_label}"
-    if today_count:
-        return today_label
     return f"{picks_label} for you"
 
 
 def render_morning_email_text(
     *,
     subject: str,
-    today: list[dict],
     picks: list[dict],
+    daily_score: int,
+    loot_tier: str,
     tz: ZoneInfo,
     preferences_url: str,
     unsubscribe_url: str,
 ) -> str:
-    lines = [subject, ""]
-    if today:
-        lines.extend(["Your events today", ""])
-        lines.extend(_morning_text_event(event, tz) for event in today)
-        lines.append("")
-    if picks:
-        lines.extend(["New picks for you", ""])
-        lines.extend(_morning_text_event(event, tz) for event in picks)
-        lines.append("")
+    lines = [
+        subject,
+        "",
+        f"Today's drop: {daily_score}/100 - {_loot_label(loot_tier)}",
+        "",
+        "New picks for you",
+        "",
+    ]
+    lines.extend(_text_event(event, tz) for event in picks)
+    lines.append("")
     lines.extend(
         [
             f"Manage email preferences: {preferences_url}",
@@ -49,60 +65,149 @@ def render_morning_email_text(
 def render_morning_email_html(
     *,
     subject: str,
-    today: list[dict],
     picks: list[dict],
+    daily_score: int,
+    loot_tier: str,
     tz: ZoneInfo,
     preferences_url: str,
     unsubscribe_url: str,
 ) -> str:
-    sections: list[str] = []
-    if today:
-        sections.append(_morning_section("Your events today", today, tz))
-    if picks:
-        sections.append(_morning_section("New picks for you", picks, tz))
+    content = _loot_score_card(daily_score, loot_tier) + _event_section(
+        "New picks for you", picks, tz
+    )
+    return _email_shell(
+        subject=subject,
+        content=content,
+        preferences_url=preferences_url,
+        unsubscribe_url=unsubscribe_url,
+    )
+
+
+def event_reminder_subject(event: dict) -> str:
+    return f"Starts in about 1 hour: {event.get('title') or 'Your event'}"
+
+
+def render_event_reminder_text(
+    *,
+    subject: str,
+    event: dict,
+    tz: ZoneInfo,
+    preferences_url: str,
+    unsubscribe_url: str,
+) -> str:
+    return "\n".join(
+        [
+            subject,
+            "",
+            _text_event(event, tz),
+            "",
+            f"Manage email preferences: {preferences_url}",
+            f"Unsubscribe from event reminders: {unsubscribe_url}",
+            "",
+            "wat2do helps students discover campus events.",
+        ]
+    )
+
+
+def render_event_reminder_html(
+    *,
+    subject: str,
+    event: dict,
+    tz: ZoneInfo,
+    preferences_url: str,
+    unsubscribe_url: str,
+) -> str:
+    content = (
+        f'<p style="margin:0 0 18px;color:{_EMAIL_THEME["muted_foreground"]};'
+        'font:15px/1.6 sans-serif;">You marked this event as Going.</p>'
+        + _event_section("Coming up", [event], tz)
+    )
+    return _email_shell(
+        subject=subject,
+        content=content,
+        preferences_url=preferences_url,
+        unsubscribe_url=unsubscribe_url,
+    )
+
+
+def _email_shell(
+    *,
+    subject: str,
+    content: str,
+    preferences_url: str,
+    unsubscribe_url: str,
+) -> str:
     return (
-        '<div style="margin:0;background:#f7f7f8;padding:28px 16px;">'
-        '<div style="max-width:640px;margin:0 auto;background:#fff;'
-        'border-radius:16px;padding:24px;">'
-        '<p style="margin:0 0 8px;color:#71717a;font:700 12px sans-serif;'
-        'letter-spacing:.08em;text-transform:uppercase;">wat2do</p>'
-        f'<h1 style="margin:0 0 24px;color:#18181b;font:800 28px sans-serif;">'
-        f"{escape(subject)}</h1>"
-        f"{''.join(sections)}"
-        '<p style="margin:24px 0 0;color:#71717a;font:12px/1.6 sans-serif;">'
-        f'<a href="{escape(preferences_url, quote=True)}">Manage email preferences</a>'
+        f'<div style="margin:0;background:{_EMAIL_THEME["background"]};padding:28px 16px;">'
+        f'<div style="max-width:640px;margin:0 auto;background:{_EMAIL_THEME["surface"]};'
+        f'border:1px solid {_EMAIL_THEME["border"]};border-radius:16px;padding:24px;">'
+        f'<p style="margin:0 0 8px;color:{_EMAIL_THEME["muted_foreground"]};'
+        'font:700 12px sans-serif;letter-spacing:.08em;text-transform:uppercase;">wat2do</p>'
+        f'<h1 style="margin:0 0 24px;color:{_EMAIL_THEME["foreground"]};'
+        f'font:800 28px sans-serif;">{escape(subject)}</h1>'
+        f"{content}"
+        f'<p style="margin:24px 0 0;color:{_EMAIL_THEME["muted_foreground"]};'
+        'font:12px/1.6 sans-serif;">'
+        f'<a style="color:{_EMAIL_THEME["foreground"]};" '
+        f'href="{escape(preferences_url, quote=True)}">Manage email preferences</a>'
         " &middot; "
-        f'<a href="{escape(unsubscribe_url, quote=True)}">Unsubscribe</a><br>'
+        f'<a style="color:{_EMAIL_THEME["foreground"]};" '
+        f'href="{escape(unsubscribe_url, quote=True)}">Unsubscribe</a><br>'
         "wat2do helps students discover campus events."
         "</p></div></div>"
     )
 
 
-def _morning_section(title: str, events: list[dict], tz: ZoneInfo) -> str:
-    cards = "".join(_morning_event_card(event, tz) for event in events)
+def _loot_score_card(score: int, tier: str) -> str:
+    tier_color = _LOOT_COLORS[tier]
     return (
-        f'<h2 style="margin:24px 0 12px;color:#18181b;font:700 19px sans-serif;">'
+        f'<div style="margin:0 0 24px;padding:16px;background:{_EMAIL_THEME["surface_elevated"]};'
+        f'border:1px solid {_EMAIL_THEME["border"]};border-radius:12px;">'
+        f'<p style="margin:0 0 6px;color:{_EMAIL_THEME["muted_foreground"]};'
+        'font:700 12px sans-serif;letter-spacing:.06em;text-transform:uppercase;">'
+        "Today's drop</p>"
+        f'<p style="margin:0 0 12px;color:{_EMAIL_THEME["foreground"]};'
+        f'font:800 24px sans-serif;">{score}/100 '
+        f'<span style="color:{tier_color};font-size:15px;">{_loot_label(tier)}</span></p>'
+        f'<div style="height:8px;background:{_EMAIL_THEME["border"]};border-radius:999px;'
+        'overflow:hidden;">'
+        f'<div style="width:{score}%;height:8px;background:{tier_color};'
+        'border-radius:999px;"></div></div></div>'
+    )
+
+
+def _loot_label(tier: str) -> str:
+    return f"{tier.title()} loot"
+
+
+def _event_section(title: str, events: list[dict], tz: ZoneInfo) -> str:
+    cards = "".join(_event_card(event, tz) for event in events)
+    return (
+        f'<h2 style="margin:24px 0 12px;color:{_EMAIL_THEME["foreground"]};'
+        'font:700 19px sans-serif;">'
         f"{escape(title)}</h2>{cards}"
     )
 
 
-def _morning_event_card(event: dict, tz: ZoneInfo) -> str:
+def _event_card(event: dict, tz: ZoneInfo) -> str:
     event_id = int(event["id"])
     event_url = f"{settings.frontend_url.rstrip('/')}/?eventId={event_id}"
     title = escape(str(event.get("title") or "Untitled event"))
     location = escape(str(event.get("location") or "Location TBA"))
     date_label, time_label = _format_event_date_time(event, tz)
     return (
-        '<a style="display:block;margin:0 0 10px;padding:14px;border:1px solid #e4e4e7;'
-        'border-radius:12px;color:#18181b;text-decoration:none;" '
+        f'<a style="display:block;margin:0 0 10px;padding:14px;'
+        f"background:{_EMAIL_THEME['surface_elevated']};"
+        f"border:1px solid {_EMAIL_THEME['border']};border-radius:12px;"
+        f'color:{_EMAIL_THEME["foreground"]};text-decoration:none;" '
         f'href="{escape(event_url, quote=True)}">'
         f'<strong style="font:700 16px sans-serif;">{title}</strong><br>'
-        f'<span style="color:#52525b;font:13px/1.5 sans-serif;">'
+        f'<span style="color:{_EMAIL_THEME["muted_foreground"]};font:13px/1.5 sans-serif;">'
         f"{escape(date_label)} at {escape(time_label)} &middot; {location}</span></a>"
     )
 
 
-def _morning_text_event(event: dict, tz: ZoneInfo) -> str:
+def _text_event(event: dict, tz: ZoneInfo) -> str:
     date_label, time_label = _format_event_date_time(event, tz)
     event_url = f"{settings.frontend_url.rstrip('/')}/?eventId={int(event['id'])}"
     return (

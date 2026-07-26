@@ -7959,6 +7959,7 @@
             "type": "string",
             "enum": [
               "morning_email",
+              "event_reminder",
               "event_change"
             ],
             "title": "Notification Type"
@@ -7993,6 +7994,7 @@
             "type": "string",
             "enum": [
               "morning_email",
+              "event_reminder",
               "event_change"
             ],
             "title": "Notification Type"

@@ -45,13 +45,13 @@ def update_my_preferences(
 def confirm_unsubscribe(token: str = Query(...)) -> HTMLResponse:
     valid = unsubscribe.verify_unsubscribe_token(token) is not None
     message = (
-        "Confirm that you want to stop the wat2do morning email."
+        "Confirm that you want to stop these wat2do emails."
         if valid
         else "This unsubscribe link is invalid."
     )
     action = (
-        f'<form method="post"><input type="hidden" name="token" '
-        f'value="{escape(token, quote=True)}"><button type="submit">Unsubscribe</button></form>'
+        f'<form method="post" action="?token={escape(token, quote=True)}">'
+        '<button type="submit">Unsubscribe</button></form>'
         if valid
         else ""
     )
@@ -67,6 +67,6 @@ def apply_unsubscribe(token: str = Query(...)) -> HTMLResponse:
     unsubscribe.unsubscribe(token)
     return HTMLResponse(
         "<!doctype html><html><body><h1>Email preference updated</h1>"
-        "<p>If the link was valid, the morning email has been turned off.</p>"
+        "<p>If the link was valid, this email notification has been turned off.</p>"
         "</body></html>"
     )

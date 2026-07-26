@@ -1,0 +1,6 @@
+{
+  "lead_minutes": 60,
+  "early_tolerance_minutes": 5,
+  "late_tolerance_minutes": 15,
+  "provider_attempts": 3
+}

@@ -1,7 +1,10 @@
 """Retryable notification delivery claims and terminal status updates."""
 
+import logging
 from datetime import datetime, timezone
 from typing import Any
+
+import httpx
 
 from core.constants import (
     NOTIFICATION_STATUS_FAILED,
@@ -9,6 +12,9 @@ from core.constants import (
 )
 from core.database import get_sb
 from core.tables import NOTIFICATIONS_LOG
+from services.email_service import EmailMessage, email_service
+
+log = logging.getLogger(__name__)
 
 
 def claim_delivery(
@@ -66,3 +72,35 @@ def _mark_log_failed(row_id: str, failure_category: str = "provider_error") -> N
         .eq("id", row_id)
         .execute()
     )
+
+
+def deliver_claimed_email(
+    *,
+    row_id: str,
+    message: EmailMessage,
+    provider_attempts: int,
+    log_context: str,
+) -> bool:
+    """Send one claimed notification and commit its terminal delivery status."""
+    failure_category = "provider_error"
+    for _attempt in range(provider_attempts):
+        try:
+            email_service.send(message)
+            _mark_log_sent(row_id)
+            return True
+        except httpx.HTTPStatusError as exc:
+            failure_category = f"provider_http_{exc.response.status_code}"
+            if 400 <= exc.response.status_code < 500 and exc.response.status_code != 429:
+                break
+        except httpx.TimeoutException:
+            failure_category = "provider_timeout"
+        except Exception:
+            log.warning(
+                "Notification provider failure %s",
+                log_context,
+                exc_info=True,
+            )
+            break
+
+    _mark_log_failed(row_id, failure_category)
+    return False

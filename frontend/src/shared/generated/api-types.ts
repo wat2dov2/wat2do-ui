@@ -2242,7 +2242,7 @@ export interface components {
              * Notification Type
              * @enum {string}
              */
-            notification_type: "morning_email" | "event_change";
+            notification_type: "morning_email" | "event_reminder" | "event_change";
             /** Enabled */
             enabled: boolean;
             /** Updated At */
@@ -2257,7 +2257,7 @@ export interface components {
              * Notification Type
              * @enum {string}
              */
-            notification_type: "morning_email" | "event_change";
+            notification_type: "morning_email" | "event_reminder" | "event_change";
             /** Enabled */
             enabled: boolean;
         };

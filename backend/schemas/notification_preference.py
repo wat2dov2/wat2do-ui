@@ -12,6 +12,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from core.constants import (
     NOTIFICATION_TYPE_EVENT_CHANGE,
+    NOTIFICATION_TYPE_EVENT_REMINDER,
     NOTIFICATION_TYPE_MORNING_EMAIL,
 )
 
@@ -21,6 +22,7 @@ from core.constants import (
 # column stays plain text so adding a type is a code change only.
 NotificationType = Literal[
     NOTIFICATION_TYPE_MORNING_EMAIL,
+    NOTIFICATION_TYPE_EVENT_REMINDER,
     NOTIFICATION_TYPE_EVENT_CHANGE,
 ]
 

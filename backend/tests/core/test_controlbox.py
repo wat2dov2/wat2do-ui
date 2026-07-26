@@ -23,6 +23,8 @@ def _write_control(tmp_path: Path, feature: str, mutate) -> Path:
 def test_checked_in_controlbox_is_valid() -> None:
     assert controlbox.recommendations.snapshot.candidate_events_per_school == 1000
     assert controlbox.morning_email.new_event_window_hours == 24
+    assert controlbox.morning_email.loot_tiers.diamond == 90
+    assert controlbox.event_reminder.lead_minutes == 60
     assert controlbox.event_discovery.feed_revalidate_seconds == 3600
     assert controlbox.event_discovery.new_event_window_hours == 24
     assert (
@@ -52,6 +54,17 @@ def test_invalid_recommendation_blend_is_rejected(tmp_path: Path) -> None:
     )
 
     with pytest.raises(ValidationError, match="blend weights must total 1"):
+        load_controlbox(path)
+
+
+def test_invalid_loot_tier_order_is_rejected(tmp_path: Path) -> None:
+    path = _write_control(
+        tmp_path,
+        "morning_email",
+        lambda payload: payload["loot_tiers"].update({"silver": 40}),
+    )
+
+    with pytest.raises(ValidationError, match="loot tier thresholds"):
         load_controlbox(path)
 
 

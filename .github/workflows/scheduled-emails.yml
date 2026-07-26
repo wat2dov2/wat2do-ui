@@ -1,17 +1,22 @@
-name: Nightly recommendation compute
+name: Scheduled notification emails
 
 on:
   schedule:
-    # Run after the 08:00 UTC directory scrape has had time to finish.
-    - cron: '0 10 * * *'
+    - cron: '0 * * * *'
+    - cron: '2-57/5 * * * *'
   workflow_dispatch:
+    inputs:
+      now:
+        description: 'Optional ISO-8601 UTC timestamp for deterministic testing'
+        required: false
+        type: string
 
 concurrency:
-  group: nightly-recommendation-compute
+  group: scheduled-notification-emails-${{ github.event.schedule == '0 * * * *' && 'morning' || github.event_name }}
   cancel-in-progress: false
 
 jobs:
-  compute:
+  dispatch:
     runs-on: ubuntu-latest
     environment: production
     timeout-minutes: 30
@@ -23,14 +28,19 @@ jobs:
       AWS_DEPLOY_ROLE_ARN: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
       AWS_RUNTIME_SECRET_ARN: ${{ vars.AWS_RUNTIME_SECRET_ARN }}
       ENVIRONMENT: production
+      FRONTEND_URL: ${{ vars.FRONTEND_URL }}
+      EMAIL_PROVIDER: resend
+      EMAIL_FROM: ${{ vars.AWS_EMAIL_FROM }}
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Verify recommendation configuration
+      - name: Verify notification configuration
         run: |
           test -n "$AWS_DEPLOY_ROLE_ARN"
           test -n "$AWS_RUNTIME_SECRET_ARN"
+          test -n "$FRONTEND_URL"
+          test -n "$EMAIL_FROM"
 
       - name: Configure AWS credentials with GitHub OIDC
         uses: aws-actions/configure-aws-credentials@v4
@@ -38,13 +48,13 @@ jobs:
           role-to-assume: ${{ env.AWS_DEPLOY_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Read recommendation configuration
+      - name: Read notification configuration
         run: |
           secret_json="$(aws secretsmanager get-secret-value \
             --secret-id "$AWS_RUNTIME_SECRET_ARN" \
             --query SecretString \
             --output text)"
-          for secret_key in SUPABASE_URL SUPABASE_KEY SUPABASE_SECRET_KEY DATABASE_URL; do
+          for secret_key in SUPABASE_URL SUPABASE_KEY SUPABASE_SECRET_KEY EMAIL_PROVIDER_API_KEY EMAIL_UNSUBSCRIBE_SECRET; do
             secret_value="$(jq -er --arg key "$secret_key" '.[$key]' <<< "$secret_json")"
             echo "::add-mask::$secret_value"
             echo "$secret_key=$secret_value" >> "$GITHUB_ENV"
@@ -62,6 +72,21 @@ jobs:
         working-directory: backend
         run: pip install --prefer-binary -r requirements.txt
 
-      - name: Compute recommendation snapshot
+      - name: Dispatch scheduled emails
         working-directory: backend
-        run: python -m recommender.job
+        env:
+          NOW: ${{ inputs.now }}
+          SCHEDULE: ${{ github.event.schedule }}
+        run: |
+          args=()
+          if [[ -n "$NOW" ]]; then
+            args+=(--now "$NOW")
+          fi
+          notification=all
+          if [[ "$SCHEDULE" == "0 * * * *" ]]; then
+            notification=morning_email
+          elif [[ -n "$SCHEDULE" ]]; then
+            notification=event_reminder
+          fi
+          args+=(--notification "$notification")
+          python jobs/send_notifications.py "${args[@]}"

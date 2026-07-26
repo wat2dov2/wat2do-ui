@@ -8,15 +8,18 @@ from core.controlbox import controlbox
 # notifications_log.notification_type. Add a new type here, update the
 # Literal alias in schemas/notification_preference.py, and include a default.
 NOTIFICATION_TYPE_MORNING_EMAIL: Final = "morning_email"
+NOTIFICATION_TYPE_EVENT_REMINDER: Final = "event_reminder"
 NOTIFICATION_TYPE_EVENT_CHANGE: Final = "event_change"
 
 NOTIFICATION_TYPES = (
     NOTIFICATION_TYPE_MORNING_EMAIL,
+    NOTIFICATION_TYPE_EVENT_REMINDER,
     NOTIFICATION_TYPE_EVENT_CHANGE,
 )
 
 NOTIFICATION_DEFAULT_ENABLED: dict[str, bool] = {
     NOTIFICATION_TYPE_MORNING_EMAIL: controlbox.notification_defaults.morning_email,
+    NOTIFICATION_TYPE_EVENT_REMINDER: controlbox.notification_defaults.event_reminder,
     NOTIFICATION_TYPE_EVENT_CHANGE: controlbox.notification_defaults.event_change,
 }
 

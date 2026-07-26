@@ -2,7 +2,6 @@
 
 import hashlib
 import json
-import logging
 from typing import Any
 from uuid import UUID
 
@@ -10,19 +9,16 @@ from core.constants import NOTIFICATION_TYPE_EVENT_CHANGE
 from core.database import get_sb
 from core.tables import USERS
 from schemas.event import EventResponse
-from services.email_service import EmailMessage, email_service
+from services.email_service import EmailMessage
 from services.notifications.delivery_log import (
-    _mark_log_failed,
-    _mark_log_sent,
     claim_delivery,
+    deliver_claimed_email,
 )
 from services.notifications.preferences import get_enabled_user_ids
 from services.notifications.rendering import (
     _render_event_change_html,
     _render_event_change_text,
 )
-
-log = logging.getLogger(__name__)
 
 
 def _compute_change_hash(diff: dict[str, dict[str, Any]]) -> str:
@@ -108,19 +104,15 @@ def _send_event_change(
         return False
     title = event_summary.get("title") or "an event you're going to"
     subject = f"Update: {title}"
-    try:
-        email_service.send(
-            EmailMessage(
-                to=email,
-                subject=subject,
-                body_html=_render_event_change_html(event_summary, diff),
-                body_text=_render_event_change_text(event_summary, diff),
-                idempotency_key=f"{NOTIFICATION_TYPE_EVENT_CHANGE}:{user_id}:{target_id}",
-            )
-        )
-    except Exception as e:
-        log.warning("event_change send failed user=%s event=%s: %s", user_id, event_id, e)
-        _mark_log_failed(row_id)
-        return False
-    _mark_log_sent(row_id)
-    return True
+    return deliver_claimed_email(
+        row_id=row_id,
+        message=EmailMessage(
+            to=email,
+            subject=subject,
+            body_html=_render_event_change_html(event_summary, diff),
+            body_text=_render_event_change_text(event_summary, diff),
+            idempotency_key=f"{NOTIFICATION_TYPE_EVENT_CHANGE}:{user_id}:{target_id}",
+        ),
+        provider_attempts=1,
+        log_context=f"notification=event_change user={user_id} event={event_id}",
+    )

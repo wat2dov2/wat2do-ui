@@ -5,14 +5,13 @@ Owner: Tony.
 
 ## 1. Goal
 
-Replace `morning_digest`, `weekly_digest`, and `daily_new_events` with one `morning_email` sent around 9:00 AM in the user's school timezone.
+Replace `morning_digest`, `weekly_digest`, and `daily_new_events` with one recommendation-only `morning_email` sent around 9:00 AM in the user's school timezone.
 
-The email contains:
+The morning email contains events added in the previous 24 hours whose stored nightly recommendation score is at least `0.30`.
+It also presents the average relevance of those picks as a `0-100` daily score with Grey, Bronze, Silver, Gold, or Diamond loot.
 
-1. `Your events today`: only the event occurrences the user explicitly selected as Going.
-2. `New events picked for you`: events added in the previous 24 hours whose stored nightly recommendation score is at least `0.30`.
-
-The project also makes Going occurrence-aware because a reminder cannot be correct until the system knows which occurrence the user intends to attend.
+`event_reminder` is a separate email sent about one hour before an occurrence the user explicitly selected as Going.
+Going is occurrence-aware so the reminder targets the showing the user intends to attend.
 
 `event_change` remains a separate immediate notification.
 
@@ -21,9 +20,10 @@ The project also makes Going occurrence-aware because a reminder cannot be corre
 - Delete the three old digest types and their code, settings, locales, workflows, and tests.
 - Keep old `notifications_log` rows as inert history.
 - Use `morning_email` as the new type.
+- Use `event_reminder` as the one-hour Going reminder type.
 - Default `morning_email` to enabled.
-- Send one email when either section has content.
-- Send nothing when both sections are empty.
+- Default `event_reminder` to enabled.
+- Send a morning email only when at least one recommendation qualifies.
 - Use the user's school timezone.
 - Use the selected occurrence for reminders, calendar entries, and Going state.
 - Keep public Going counts at the event level using distinct users.
@@ -31,8 +31,10 @@ The project also makes Going occurrence-aware because a reminder cannot be corre
 - Never run the recommendation pipeline while composing email.
 - Require a stored recommendation score of at least `0.30`.
 - Use a fixed 24-hour recent-event window.
+- Average the sent picks' scores into one clamped `0-100` daily score.
+- Resolve the daily score through validated loot-tier thresholds.
 - Do not apply a separate email item cap.
-- Keep one preference shared by settings and unsubscribe.
+- Keep one preference per active notification type, shared by settings and unsubscribe.
 - Keep one canonical write path for Going selections.
 - Do not add compatibility shims or parallel APIs.
 
@@ -396,7 +398,7 @@ Patch `going_count` from the mutation response.
 
 Keep `useNotifications`, but make it one user-scoped TanStack query and one mutation.
 
-- One GET loads both remaining preferences.
+- One GET loads all active preferences.
 - Render loading or disabled controls until preferences resolve.
 - Show a retryable error instead of misleading default-on switches after a load failure.
 - Optimistically patch one changed preference and roll back on failure.
@@ -405,6 +407,7 @@ Keep `useNotifications`, but make it one user-scoped TanStack query and one muta
 The settings UI contains:
 
 - Morning email.
+- Event reminders.
 - Event-change alerts.
 
 Delete the generic email, new-event, daily digest, and weekly digest settings.
@@ -425,14 +428,13 @@ Reduce onboarding from six steps to five.
 
 The user loader must not silently stop at PostgREST's 1,000-row limit.
 
-Users with a missing school may receive Going reminders using the UTC fallback, but receive no cross-school recommendations.
+Users with a missing school receive no cross-school recommendations.
 
 ### Batch loaders
 
 For all eligible users, load:
 
 - Explicit `morning_email` preference rows in user-ID chunks.
-- Going-today rows by timezone boundary and user-ID chunk.
 - Stored recommendation rows by user-ID chunk.
 
 For each eligible school, load once:
@@ -444,7 +446,7 @@ After candidate IDs are known, load once per chunk:
 
 - Going exclusions only for those candidate event IDs and eligible users.
 
-Build per-user sections in memory from these maps.
+Build each user's recommendation list in memory from these maps.
 
 ### Query-count invariant
 
@@ -461,21 +463,6 @@ eligible users x query families
 ```
 
 Add a service test that composes one user and many same-school users and proves query calls grow only when a configured chunk boundary is crossed.
-
-### Going-today query
-
-For each eligible timezone:
-
-1. Create local midnight for the current local date.
-2. Create local midnight for the next local date.
-3. Convert both to UTC.
-4. Join Going rows to their selected occurrence and event.
-5. Filter selected start `>= start_utc` and `< next_start_utc`.
-6. Exclude cancelled events.
-7. Order by selected start and event ID.
-8. Group rows by user in memory.
-
-Use half-open boundaries.
 
 ### New-event candidates
 
@@ -510,7 +497,20 @@ For each user:
 4. Return every match without a separate email cap.
 
 The stored nightly snapshot currently has a natural upper bound of 20 rows per user.
-If stored recommendations are absent or stale, the recommendation section is empty while Going reminders still send.
+If stored recommendations are absent or stale, no morning email is sent.
+Event reminders remain independent of the recommendation snapshot.
+
+### Daily score and loot tier
+
+For each prepared morning email:
+
+1. Average the stored predicted scores of the qualifying picks.
+2. Multiply by 100, round to an integer, and clamp to `0-100`.
+3. Resolve the score through the validated thresholds in `morning_email.json`.
+4. Render the score and tier in HTML and plain text.
+
+Email colors use semantic roles matching the application's dark design tokens.
+Decorative loot colors stay separate from functional surface, text, and border colors.
 
 ### Sending
 
@@ -528,18 +528,15 @@ Do not add Resend batch sending unless measured runtime approaches the workflow 
 
 ## 4.4 Morning-email rendering
 
-### Subject matrix
+### Subject
 
-- Both sections: `2 events today + 4 new picks`
-- Today only: `2 events today`
-- Picks only: `4 new picks for you`
+- `4 new picks for you`
 - Use correct singular forms.
 
 ### Body requirements
 
 - HTML and plain text.
-- `Your events today` before recommendations.
-- Omit empty sections.
+- Display the daily score and loot tier before recommendations.
 - Display local occurrence time.
 - Link events to `/?eventId={id}`.
 - Escape every event-controlled HTML value.
@@ -556,6 +553,7 @@ Create one morning-email orchestration module and delete the old digest module w
 Keep only these active types:
 
 - `morning_email`
+- `event_reminder`
 - `event_change`
 
 Delete stale preference rows for old types in a new migration.
@@ -581,7 +579,7 @@ Requirements:
 Endpoints:
 
 - GET displays a confirmation page and does not mutate state.
-- POST verifies the token and upserts `morning_email = false` idempotently.
+- POST verifies the token and disables the notification type carried by the token idempotently.
 - Invalid tokens return a generic response without exposing account existence.
 
 Add provider headers:
@@ -595,16 +593,19 @@ Extend `EmailMessage` with custom headers and pass them through the Resend paylo
 
 ## 4.6 Workflow ordering
 
-Replace `.github/workflows/daily-new-events-email.yml` with one hourly morning-email workflow.
+Use one scheduled-email workflow with separate triggers for morning email and event reminders.
 
 Use:
 
 ```yaml
 schedule:
   - cron: "0 * * * *"
+  - cron: "2-57/5 * * * *"
 ```
 
 The backend checks local hour, not exact minute.
+The reminder dispatcher uses an overlapping window around one hour before start.
+The occurrence-and-start delivery key prevents duplicate sends across overlapping ticks.
 Keep manual `now` input for deterministic testing.
 Set `FRONTEND_URL`, email provider variables, and the unsubscribe secret explicitly.
 
@@ -614,8 +615,8 @@ Retain manual recommendation dispatch.
 
 Email must degrade safely when recommendations are stale:
 
-- Going reminders still render.
-- The recommendation section may be thin or empty.
+- Event reminders still render.
+- The morning email may be thin or omitted.
 - Freshness is logged and monitored.
 
 Do not make reminder delivery depend on a successful recommendation run.
@@ -644,11 +645,18 @@ The following invariants are release requirements.
 
 - Users load with pagination.
 - Preferences load by chunks.
-- Going-today loads by timezone and user chunks.
 - Candidate events load by school.
 - Recommendation rows load by user chunks.
 - Going exclusions load only for candidate events.
 - No database read is issued from the per-user composition loop.
+
+### Event reminders
+
+- Due Going selections load by occurrence window.
+- Users and preferences load by ID chunks.
+- Cancelled events are excluded.
+- Delivery deduplicates by user, occurrence, and scheduled start.
+- No database read is issued from the per-reminder delivery loop.
 
 ### Intentional per-recipient work
 
@@ -712,9 +720,9 @@ Gate: selecting two of three occurrences produces one PUT and one distinct atten
 
 - Add the retry-claim migration.
 - Add the batch preference loader.
-- Add batch Going-today, candidate-event, recommendation, and exclusion loaders.
+- Add batch candidate-event, recommendation, and exclusion loaders.
 - Add precomputed-only recommendation reads.
-- Build per-user sections in memory.
+- Build per-user recommendation lists in memory.
 - Add the morning-email send flow and rendering.
 - Add stateless unsubscribe and custom email headers.
 
@@ -724,15 +732,15 @@ Gate: database read-call count does not grow per eligible user.
 
 - Replace notification constants and schema literals.
 - Delete old timing helpers, rendering functions, dispatcher branches, preferences, locales, onboarding state, tests, and workflow.
-- Add morning-email and event-change settings backed by a user-scoped query.
+- Add morning-email, event-reminder, and event-change settings backed by a user-scoped query.
 - Regenerate API types once contracts are final.
 - Search the executable repository for deleted names.
 
-Gate: only `morning_email` and `event_change` remain active.
+Gate: only `morning_email`, `event_reminder`, and `event_change` remain active.
 
 ## Phase 7: Workflow, staging, and deliverability
 
-- Add the hourly workflow and scrape-to-recommendation trigger.
+- Add the hourly morning trigger, five-minute reminder trigger, and scrape-to-recommendation trigger.
 - Run a simulated 24-hour dispatcher day.
 - Verify daylight-saving boundaries.
 - Send real Gmail and Outlook messages.
@@ -751,7 +759,7 @@ Use a short announced Going-write maintenance window rather than compatibility c
 4. Deploy the backend and frontend contract release.
 5. Run Going, count, calendar, and event-change smoke tests.
 6. Re-enable Going mutations.
-7. Deploy morning-email code and workflow replacement.
+7. Deploy scheduled-email code and workflow replacement.
 8. Run dry-run and send-to-self checks.
 9. Enable production sending.
 10. Monitor three consecutive mornings.
@@ -874,7 +882,7 @@ Do not deploy a nullable compatibility period or dual Going API.
 ### Workflows and configuration
 
 - Delete `.github/workflows/daily-new-events-email.yml`.
-- Add one hourly morning-email workflow.
+- Add one scheduled-email workflow for hourly morning checks and five-minute reminder checks.
 - Update `.github/workflows/nightly-recs.yml` to follow successful scrape completion.
 - Add production `EMAIL_UNSUBSCRIBE_SECRET` and explicit `FRONTEND_URL`.
 - Configure and verify the Resend sending domain.
@@ -911,7 +919,7 @@ Also run:
 
 ## 10. Definition of complete
 
-- `morning_email` and `event_change` are the only active notification types.
+- `morning_email`, `event_reminder`, and `event_change` are the only active notification types.
 - Every Going row references a valid occurrence.
 - Event and occurrence updates are transactional.
 - No inferred scraper identity can transfer a selection incorrectly.
@@ -923,6 +931,10 @@ Also run:
 - Cards and occurrences do not create N+1 requests.
 - Morning-email reads are batched and bounded.
 - Morning-email candidates use one fixed previous-24-hour window.
+- Morning email contains recommendations only.
+- Daily recommendation scores and loot tiers resolve from validated controls.
+- Event reminders target selected occurrences about one hour before start.
+- Reminder delivery is idempotent per user, occurrence, and scheduled start.
 - Failed and stale claims can retry safely.
 - No email is sent twice for one user and local date.
 - Settings and unsubscribe control the same preference.

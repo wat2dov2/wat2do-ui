@@ -2,11 +2,8 @@
 
 import logging
 from collections import defaultdict
-from datetime import datetime, time, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any
-from zoneinfo import ZoneInfo
-
-import httpx
 
 from core.config import settings
 from core.constants import NOTIFICATION_TYPE_MORNING_EMAIL
@@ -15,11 +12,10 @@ from core.database import get_sb
 from core.pagination import fetch_all_pages
 from core.tables import EVENT_DATES, EVENTS, USER_GOING_EVENTS, USERS
 from recommender.service import get_stored_recommendations_for_users
-from services.email_service import EmailMessage, email_service
+from services.email_service import EmailMessage
 from services.notifications.delivery_log import (
-    _mark_log_failed,
-    _mark_log_sent,
     claim_delivery,
+    deliver_claimed_email,
 )
 from services.notifications.preferences import get_enabled_user_ids
 from services.notifications.rendering import (
@@ -52,7 +48,6 @@ def dispatch_morning_emails(now_utc: datetime) -> dict[str, int]:
         return {"eligible": 0, "prepared": 0, "sent": 0, "failed": 0, "skipped": 0}
 
     user_ids = [str(user["id"]) for user in users]
-    today_by_user = _load_going_today(users, window_end)
     candidates_by_school = _load_candidates_by_school(users, window_end)
     stored_by_user = get_stored_recommendations_for_users(user_ids)
     candidate_ids = sorted(
@@ -66,20 +61,18 @@ def dispatch_morning_emails(now_utc: datetime) -> dict[str, int]:
     skipped = 0
     for user in users:
         user_id = str(user["id"])
-        today = today_by_user.get(user_id, [])
         picks = _select_picks(
             user=user,
             candidates_by_school=candidates_by_school,
             stored=stored_by_user.get(user_id, []),
             excluded_event_ids=exclusions.get(user_id, set()),
         )
-        if not today and not picks:
+        if not picks:
             continue
 
         prepared += 1
         delivery_result = _send_prepared_email(
             user=user,
-            today=today,
             picks=picks,
             window_end=window_end,
         )
@@ -124,55 +117,6 @@ def _eligible_users(users: list[dict], now_utc: datetime) -> list[dict]:
         for user in users
         if now_utc.astimezone(resolve_user_timezone(user)).hour == _CONTROL.local_send_hour
     ]
-
-
-def _load_going_today(
-    users: list[dict],
-    now_utc: datetime,
-) -> dict[str, list[dict]]:
-    users_by_timezone: dict[str, list[str]] = defaultdict(list)
-    for user in users:
-        users_by_timezone[resolve_user_timezone(user).key].append(str(user["id"]))
-
-    grouped: dict[str, list[dict]] = defaultdict(list)
-    for timezone_name, timezone_user_ids in users_by_timezone.items():
-        tz = ZoneInfo(timezone_name)
-        local_date = now_utc.astimezone(tz).date()
-        start_utc = datetime.combine(local_date, time.min, tzinfo=tz).astimezone(timezone.utc)
-        next_start_utc = datetime.combine(
-            local_date + timedelta(days=1),
-            time.min,
-            tzinfo=tz,
-        ).astimezone(timezone.utc)
-
-        for user_chunk in _chunks(timezone_user_ids):
-            rows = (
-                get_sb()
-                .table(USER_GOING_EVENTS)
-                .select(
-                    "user_id,event_id,"
-                    "occurrence:event_dates!user_going_events_event_occurrence_fkey!inner"
-                    "(id,dtstart_utc,dtend_utc),"
-                    "event:events!fk_user_going_events_event_id!inner"
-                    "(id,title,location,source_image_url,organization,category,cancelled)"
-                )
-                .in_("user_id", user_chunk)
-                .gte("occurrence.dtstart_utc", start_utc.isoformat())
-                .lt("occurrence.dtstart_utc", next_start_utc.isoformat())
-                .eq("event.cancelled", False)
-                .order("event_id")
-                .execute()
-            ).data or []
-            for row in rows:
-                event = dict(row.get("event") or {})
-                occurrence = row.get("occurrence") or {}
-                event["dtstart_utc"] = occurrence.get("dtstart_utc")
-                event["dtend_utc"] = occurrence.get("dtend_utc")
-                grouped[str(row["user_id"])].append(event)
-
-    for events in grouped.values():
-        events.sort(key=lambda event: (event.get("dtstart_utc") or "", event["id"]))
-    return grouped
 
 
 def _load_candidates_by_school(
@@ -274,18 +218,17 @@ def _select_picks(
     selected: list[dict] = []
     for recommendation in stored:
         event_id = int(recommendation["event_id"])
-        if (
-            float(recommendation["predicted_score"]) >= _MIN_RECOMMENDATION_SCORE
-            and event_id in by_id
-        ):
-            selected.append(by_id[event_id])
+        score = float(recommendation["predicted_score"])
+        if score >= _MIN_RECOMMENDATION_SCORE and event_id in by_id:
+            event = dict(by_id[event_id])
+            event["recommendation_score"] = score
+            selected.append(event)
     return selected
 
 
 def _send_prepared_email(
     *,
     user: dict,
-    today: list[dict],
     picks: list[dict],
     window_end: datetime,
 ) -> bool | None:
@@ -300,24 +243,27 @@ def _send_prepared_email(
     if row_id is None:
         return None
 
-    unsubscribe = unsubscribe_url(user_id)
+    daily_score, loot_tier = _daily_loot(picks)
+    unsubscribe = unsubscribe_url(user_id, NOTIFICATION_TYPE_MORNING_EMAIL)
     preferences_url = f"{settings.frontend_url.rstrip('/')}/settings?tab=notifications"
-    subject = morning_email_subject(len(today), len(picks))
+    subject = morning_email_subject(len(picks))
     message = EmailMessage(
         to=str(user["email"]),
         subject=subject,
         body_html=render_morning_email_html(
             subject=subject,
-            today=today,
             picks=picks,
+            daily_score=daily_score,
+            loot_tier=loot_tier,
             tz=tz,
             preferences_url=preferences_url,
             unsubscribe_url=unsubscribe,
         ),
         body_text=render_morning_email_text(
             subject=subject,
-            today=today,
             picks=picks,
+            daily_score=daily_score,
+            loot_tier=loot_tier,
             tz=tz,
             preferences_url=preferences_url,
             unsubscribe_url=unsubscribe,
@@ -328,26 +274,27 @@ def _send_prepared_email(
             "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
         },
     )
+    return deliver_claimed_email(
+        row_id=row_id,
+        message=message,
+        provider_attempts=_CONTROL.provider_attempts,
+        log_context=f"notification=morning_email user={user_id}",
+    )
 
-    failure_category = "provider_error"
-    for _attempt in range(_CONTROL.provider_attempts):
-        try:
-            email_service.send(message)
-            _mark_log_sent(row_id)
-            return True
-        except httpx.HTTPStatusError as exc:
-            failure_category = f"provider_http_{exc.response.status_code}"
-            if 400 <= exc.response.status_code < 500 and exc.response.status_code != 429:
-                break
-        except httpx.TimeoutException:
-            failure_category = "provider_timeout"
-        except Exception:
-            log.warning("Morning email provider failure user=%s", user_id, exc_info=True)
-            failure_category = "provider_error"
-            break
 
-    _mark_log_failed(row_id, failure_category)
-    return False
+def _daily_loot(picks: list[dict]) -> tuple[int, str]:
+    average = sum(float(pick["recommendation_score"]) for pick in picks) / len(picks)
+    score = min(100, max(0, round(average * 100)))
+    tiers = _CONTROL.loot_tiers
+    thresholds = (
+        ("diamond", tiers.diamond),
+        ("gold", tiers.gold),
+        ("silver", tiers.silver),
+        ("bronze", tiers.bronze),
+        ("grey", tiers.grey),
+    )
+    tier = next(name for name, minimum in thresholds if score >= minimum)
+    return score, tier
 
 
 def _chunks(values: list[Any]) -> list[list[Any]]:

@@ -1,20 +1,28 @@
-"""Stateless signed morning-email unsubscribe links."""
+"""Stateless signed unsubscribe links for user-configurable email types."""
 
 import base64
 import hashlib
 import hmac
+from dataclasses import dataclass
+from typing import cast
 from uuid import UUID
 
 from core.config import settings
-from core.constants import NOTIFICATION_TYPE_MORNING_EMAIL
-from schemas.notification_preference import NotificationPreferenceUpdate
+from core.constants import NOTIFICATION_TYPES
+from schemas.notification_preference import NotificationPreferenceUpdate, NotificationType
 from services.notifications.preferences import set_preferences
 
 _TOKEN_VERSION = "1"
 
 
-def create_unsubscribe_token(user_id: str) -> str:
-    payload = f"{_TOKEN_VERSION}:{UUID(user_id)}:{NOTIFICATION_TYPE_MORNING_EMAIL}"
+@dataclass(frozen=True)
+class UnsubscribeTarget:
+    user_id: str
+    notification_type: NotificationType
+
+
+def create_unsubscribe_token(user_id: str, notification_type: NotificationType) -> str:
+    payload = f"{_TOKEN_VERSION}:{UUID(user_id)}:{notification_type}"
     signature = hmac.new(
         _secret(),
         payload.encode(),
@@ -23,7 +31,7 @@ def create_unsubscribe_token(user_id: str) -> str:
     return _encode(payload.encode() + b"." + signature)
 
 
-def verify_unsubscribe_token(token: str) -> str | None:
+def verify_unsubscribe_token(token: str) -> UnsubscribeTarget | None:
     try:
         decoded = _decode(token)
         payload_bytes, supplied_signature = decoded.rsplit(b".", 1)
@@ -38,22 +46,25 @@ def verify_unsubscribe_token(token: str) -> str | None:
             ":",
             2,
         )
-        if version != _TOKEN_VERSION or notification_type != NOTIFICATION_TYPE_MORNING_EMAIL:
+        if version != _TOKEN_VERSION or notification_type not in NOTIFICATION_TYPES:
             return None
-        return str(UUID(raw_user_id))
+        return UnsubscribeTarget(
+            user_id=str(UUID(raw_user_id)),
+            notification_type=cast(NotificationType, notification_type),
+        )
     except (ValueError, UnicodeDecodeError):
         return None
 
 
 def unsubscribe(token: str) -> bool:
-    user_id = verify_unsubscribe_token(token)
-    if user_id is None:
+    target = verify_unsubscribe_token(token)
+    if target is None:
         return False
     set_preferences(
-        user_id,
+        target.user_id,
         [
             NotificationPreferenceUpdate(
-                notification_type=NOTIFICATION_TYPE_MORNING_EMAIL,
+                notification_type=target.notification_type,
                 enabled=False,
             )
         ],
@@ -61,11 +72,11 @@ def unsubscribe(token: str) -> bool:
     return True
 
 
-def unsubscribe_url(user_id: str) -> str:
+def unsubscribe_url(user_id: str, notification_type: NotificationType) -> str:
     base_url = settings.frontend_url.rstrip("/")
     return (
         f"{base_url}/api/notification-preferences/unsubscribe"
-        f"?token={create_unsubscribe_token(user_id)}"
+        f"?token={create_unsubscribe_token(user_id, notification_type)}"
     )
 
 
