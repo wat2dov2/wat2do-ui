@@ -137,6 +137,7 @@ export function SubmitEventFlow({
             parsedData as unknown as Record<string, unknown>,
             {
               occurrences: previous.occurrences,
+              source_image_url: previous.source_image_url,
             },
           ),
         );

@@ -42,6 +42,7 @@ export function useEventFormAI({
       setFormData(
         mapAiResponseToFormData(newEvent as Record<string, unknown>, {
           occurrences: formData.occurrences,
+          source_image_url: formData.source_image_url,
         }),
       );
     } catch (error) {

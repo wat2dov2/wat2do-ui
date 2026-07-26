@@ -165,8 +165,12 @@ export function useEventForm(options: UseEventFormOptions) {
         const parsed = JSON.parse(value);
         setJsonError("");
 
-        const smartDefaults = getSmartDefaults();
-        form.setFormData(mapAiResponseToFormData(parsed, smartDefaults));
+        form.setFormData((previous) =>
+          mapAiResponseToFormData(parsed, {
+            occurrences: getSmartDefaults().occurrences,
+            source_image_url: previous.source_image_url,
+          }),
+        );
       } catch (err) {
         console.error("Failed to parse event form JSON:", err);
         setJsonError(t("forms.invalidJsonFormat"));

@@ -52,7 +52,9 @@ export function useInstagramPublishing() {
     retry: query.refetch,
     updateBatch: updateMutation.mutateAsync,
     publishBatch: publishMutation.mutateAsync,
-    updatingBatchId: updateMutation.variables?.id ?? null,
-    publishingBatchId: publishMutation.variables?.id ?? null,
+    // A mutation keeps its variables after it settles, so the batch being
+    // worked on is only meaningful while the request is still in flight.
+    updatingBatchId: updateMutation.isPending ? (updateMutation.variables?.id ?? null) : null,
+    publishingBatchId: publishMutation.isPending ? (publishMutation.variables?.id ?? null) : null,
   };
 }
