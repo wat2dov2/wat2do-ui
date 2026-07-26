@@ -23,9 +23,13 @@ export function normalizeBackendScan(b: QrCodeScanBackend): QRCodeScan {
     id: b.id,
     qrCodeId: b.qr_code_id,
     scannedAt: b.scanned_at,
-    userId: b.user_id ?? undefined,
-    sessionId: b.session_id,
-    conversionActions: b.conversion_actions,
-    userAgent: b.user_agent ?? undefined,
+    visitorReference: b.visitor_reference,
+    browserFamily: b.browser_family ?? undefined,
+    osFamily: b.os_family ?? undefined,
+    asn: b.asn ?? undefined,
+    country: b.country ?? undefined,
+    landingConfirmedAt: b.landing_confirmed_at ?? undefined,
+    riskScore: b.risk_score,
+    riskFlags: b.risk_flags,
   };
 }

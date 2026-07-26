@@ -1,19 +1,27 @@
 """Tests for QR resolve + scan recording + ownership + rate limiting. Use mocks so no DB required."""
 
 from datetime import datetime, timezone
+from types import SimpleNamespace
 from unittest.mock import MagicMock
+from uuid import uuid4
 
 import pytest
 from fastapi.testclient import TestClient
 
+from core.config import settings
 from core.constants import ROLE_ADMIN
 from core.rate_limit import qr_scan_rate_limiter
 from main import app
 from schemas.organization import OrganizationResponse
-from schemas.qr_code import QrCodeRedirect, QrCodeResponse
+from schemas.qr_code import (
+    PromoterEarningsResponse,
+    QrCodeRedirect,
+    QrCodeResponse,
+    QrScanConfirmResponse,
+)
 from schemas.user import UserResponse
-from services import organization_service, qr_code_service
-from tests.conftest import ADMIN_USER, FAKE_USER, OTHER_USER
+from services import organization_service, poster_payout_service, qr_code_service, user_service
+from tests.conftest import ADMIN_USER, FAKE_USER, OTHER_USER, make_db_user
 
 
 @pytest.fixture(autouse=True)
@@ -53,6 +61,8 @@ def _mock_qr(**overrides) -> QrCodeResponse:
         "created_at": datetime.now(timezone.utc),
         "created_by": FAKE_USER["id"],
         "is_active": True,
+        "program": "standard",
+        "latest_scan": datetime.now(timezone.utc),
         "image_url": None,
         "latitude": 0.0,
         "longitude": 0.0,
@@ -82,6 +92,16 @@ def _clear_qr_rate_limiter():
     qr_scan_rate_limiter._requests.clear()
     yield
     qr_scan_rate_limiter._requests.clear()
+
+
+@pytest.fixture(autouse=True)
+def _poster_scan_secrets(monkeypatch):
+    monkeypatch.setattr(settings, "poster_hash_secret", "test-poster-hash-secret")
+    monkeypatch.setattr(
+        settings,
+        "poster_confirmation_secret",
+        "test-poster-confirmation-secret",
+    )
 
 
 def test_resolve_qr_404(client):
@@ -120,57 +140,101 @@ def test_resolve_qr_records_scan_and_returns_config(client):
         qr_code_service.record_scan = original_record
 
 
-def test_resolve_inactive_qr_requires_location(client):
-    """First scan on an inactive poster returns 400 until lat/lon is provided."""
+def test_resolve_new_standard_qr_requires_location(client):
+    """A never-scanned standard poster still requires first-scan location."""
     mock_qr = _mock_qr(
-        id="inactive-1", destination_type="event", destination_id="42", is_active=False
+        id="new-standard",
+        destination_type="event",
+        destination_id="42",
+        latest_scan=None,
     )
 
     def mock_get(qr_code_id):
-        return mock_qr if qr_code_id == "inactive-1" else None
+        return mock_qr if qr_code_id == "new-standard" else None
 
     original_get = qr_code_service.get_qr_code_by_id
     qr_code_service.get_qr_code_by_id = MagicMock(side_effect=mock_get)
     try:
-        resp = client.get("/qr/inactive-1")
+        resp = client.get("/qr/new-standard")
         assert resp.status_code == 400
         assert resp.json()["detail"] == "requires_location"
     finally:
         qr_code_service.get_qr_code_by_id = original_get
 
 
-def test_resolve_inactive_qr_with_location_activates_and_returns_config(client):
-    """First scan with lat/lon activates poster and returns redirect config."""
+def test_resolve_archived_qr_redirects_without_recording(client):
+    """Archived posters remain useful links but do not create scans."""
     mock_qr = _mock_qr(
-        id="inactive-2", destination_type="event", destination_id="99", is_active=False
-    )
-    redirect = QrCodeRedirect(
+        id="archived",
         destination_type="event",
-        destination_id=99,
-        filters=None,
+        destination_id="99",
+        is_active=False,
     )
 
     def mock_get(qr_code_id):
-        return mock_qr if qr_code_id == "inactive-2" else None
+        return mock_qr if qr_code_id == "archived" else None
 
     original_get = qr_code_service.get_qr_code_by_id
-    original_activate = qr_code_service.activate_poster_and_record_scan
+    original_record = qr_code_service.record_scan
     qr_code_service.get_qr_code_by_id = MagicMock(side_effect=mock_get)
-    qr_code_service.activate_poster_and_record_scan = MagicMock(return_value=redirect)
+    qr_code_service.record_scan = MagicMock()
     try:
-        resp = client.get("/qr/inactive-2", params={"lat": 43.47, "lon": -80.54})
+        resp = client.get("/qr/archived")
         assert resp.status_code == 200
         data = resp.json()
         assert data["destination_type"] == "event"
         assert data["destination_id"] == 99
-        assert qr_code_service.activate_poster_and_record_scan.call_count == 1
-        call_kw = qr_code_service.activate_poster_and_record_scan.call_args
-        assert call_kw[0][0] == "inactive-2"
-        assert call_kw[0][1] == pytest.approx(43.47)
-        assert call_kw[0][2] == pytest.approx(-80.54)
+        qr_code_service.record_scan.assert_not_called()
     finally:
         qr_code_service.get_qr_code_by_id = original_get
-        qr_code_service.activate_poster_and_record_scan = original_activate
+        qr_code_service.record_scan = original_record
+
+
+def test_promoter_scan_returns_attribution_and_confirmation_token(client, monkeypatch):
+    promoter = _mock_qr(
+        id="promoter-scan",
+        program="promoter",
+        destination_type="events-list",
+    )
+    monkeypatch.setattr(
+        qr_code_service,
+        "get_qr_code_by_id",
+        MagicMock(return_value=promoter),
+    )
+    monkeypatch.setattr(
+        qr_code_service,
+        "record_scan",
+        MagicMock(return_value=SimpleNamespace(id=uuid4())),
+    )
+
+    response = client.get("/qr/promoter-scan")
+
+    assert response.status_code == 200
+    assert response.json()["query_params"] == {
+        "utm_source": "poster",
+        "poster_id": "promoter-scan",
+    }
+    assert response.json()["scan_confirmation_token"]
+    assert qr_code_service.POSTER_VISITOR_COOKIE in response.cookies
+
+
+def test_scan_confirmation_requires_matching_visitor_cookie(client, monkeypatch):
+    confirm = MagicMock(
+        return_value=QrScanConfirmResponse(
+            confirmed=True,
+            landing_confirmed_at=datetime.now(timezone.utc),
+        )
+    )
+    monkeypatch.setattr(qr_code_service, "confirm_scan", confirm)
+
+    missing_cookie = client.post("/qr/scans/confirm", json={"token": "signed-token"})
+    assert missing_cookie.status_code == 400
+
+    client.cookies.set(qr_code_service.POSTER_VISITOR_COOKIE, "visitor-token", path="/qr")
+    confirmed = client.post("/qr/scans/confirm", json={"token": "signed-token"})
+    assert confirmed.status_code == 200
+    assert confirmed.json()["confirmed"] is True
+    assert confirm.call_args.kwargs["visitor_token"] == "visitor-token"
 
 
 # ── Ownership tests ─────────────────────────────────────────────────────
@@ -192,7 +256,7 @@ def test_create_poster_sets_created_by(admin_client, monkeypatch):
     )
     assert resp.status_code == 201
     _, kwargs = mock_create.call_args
-    assert kwargs["created_by"] == ADMIN_USER["id"]
+    assert str(kwargs["creator"].id) == ADMIN_USER["id"]
 
 
 @pytest.mark.parametrize("field,value", [("created_by", "attacker-id"), ("is_active", True)])
@@ -393,6 +457,71 @@ def test_create_poster_non_admin_rejected(authenticated_client):
     assert resp.status_code == 403
 
 
+def test_enrolled_promoter_can_create_promoter_poster(authenticated_client, monkeypatch):
+    enrolled = make_db_user(
+        FAKE_USER,
+        school="University of Waterloo",
+        payout_email="promoter@example.com",
+        promoter_tos_accepted_at=datetime.now(timezone.utc),
+        promoter_tos_version="2026-01",
+    )
+    monkeypatch.setattr(
+        user_service,
+        "get_user_by_supabase_id",
+        MagicMock(return_value=enrolled),
+    )
+    created = _mock_qr(
+        id="promoter-qr",
+        program="promoter",
+        created_by=FAKE_USER["id"],
+        destination_type="events-list",
+    )
+    create = MagicMock(return_value=created)
+    monkeypatch.setattr(qr_code_service, "create_qr_code", create)
+
+    response = authenticated_client.post(
+        "/qr/",
+        json={
+            "id": "promoter-qr",
+            "name": "Promoter QR",
+            "destination_type": "events-list",
+            "program": "promoter",
+        },
+    )
+
+    assert response.status_code == 201
+    assert response.json()["program"] == "promoter"
+    assert create.call_args.kwargs["creator"] == enrolled
+
+
+def test_promoter_create_rejects_non_feed_destination(authenticated_client, monkeypatch):
+    enrolled = make_db_user(
+        FAKE_USER,
+        school="University of Waterloo",
+        payout_email="promoter@example.com",
+        promoter_tos_accepted_at=datetime.now(timezone.utc),
+        promoter_tos_version="2026-01",
+    )
+    monkeypatch.setattr(
+        user_service,
+        "get_user_by_supabase_id",
+        MagicMock(return_value=enrolled),
+    )
+
+    response = authenticated_client.post(
+        "/qr/",
+        json={
+            "id": "promoter-qr",
+            "name": "Promoter QR",
+            "destination_type": "custom-url",
+            "destination_id": "https://example.com",
+            "program": "promoter",
+        },
+    )
+
+    assert response.status_code == 422
+
+
 def test_update_poster_non_admin_rejected(authenticated_client, monkeypatch):
     """PATCH /qr/{id} from a non-admin returns 403, even on their own QR.
 
@@ -427,6 +556,24 @@ def test_delete_poster_admin_allowed(admin_client, monkeypatch):
 
     resp = admin_client.delete("/qr/test-qr")
     assert resp.status_code == 204
+
+
+def test_owner_can_archive_promoter_poster(authenticated_client, monkeypatch):
+    existing = _mock_qr(program="promoter", created_by=FAKE_USER["id"])
+    archived = _mock_qr(
+        program="promoter",
+        created_by=FAKE_USER["id"],
+        is_active=False,
+    )
+    monkeypatch.setattr(qr_code_service, "get_qr_code_by_id", MagicMock(return_value=existing))
+    archive = MagicMock(return_value=archived)
+    monkeypatch.setattr(qr_code_service, "archive_qr_code", archive)
+
+    response = authenticated_client.post("/qr/test-qr/archive")
+
+    assert response.status_code == 200
+    assert response.json()["is_active"] is False
+    archive.assert_called_once_with("test-qr")
 
 
 # ── 401 without auth ────────────────────────────────────────────────────
@@ -519,6 +666,27 @@ def test_list_scans_admin_sees_all(admin_client, monkeypatch):
     assert resp.status_code == 200
     _, kwargs = mock_list.call_args
     assert kwargs["owned_by"] is None
+
+
+def test_get_promoter_earnings_delegates_to_service(authenticated_client, monkeypatch):
+    earnings = PromoterEarningsResponse(
+        period="2026-07",
+        posters=[],
+        period_creditable_scans=0,
+        pending_cents=0,
+        lifetime_paid_cents=0,
+        active_slots_used=0,
+        active_slots_limit=50,
+        program_enabled=True,
+    )
+    get_earnings = MagicMock(return_value=earnings)
+    monkeypatch.setattr(poster_payout_service, "get_promoter_earnings", get_earnings)
+
+    response = authenticated_client.get("/qr/earnings")
+
+    assert response.status_code == 200
+    assert response.json()["active_slots_limit"] == 50
+    get_earnings.assert_called_once()
 
 
 # ── Owner can update (success) ──────────────────────────────────────────
@@ -685,7 +853,7 @@ def test_organization_owner_can_create_poster(organization_owner_client, monkeyp
     )
     assert resp.status_code == 201
     _, kwargs = mock_create.call_args
-    assert kwargs["created_by"] == FAKE_USER["id"]
+    assert str(kwargs["creator"].id) == FAKE_USER["id"]
 
 
 def test_organization_owner_can_update_own_poster(organization_owner_client, monkeypatch):

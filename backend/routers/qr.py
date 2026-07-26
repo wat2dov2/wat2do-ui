@@ -1,27 +1,46 @@
-"""QR code redirect and scan recording. Public GET /qr/{qr_code_id} records a scan and returns redirect config."""
+"""QR code creation, redirect resolution, scan confirmation, and earnings."""
 
-import logging
-import uuid
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 
-from core.auth import get_authorized_resource, get_organization_owner_or_admin, is_admin
-from core.constants import MAX_SCHOOL_LENGTH, MAX_SESSION_ID_LENGTH, MAX_USER_AGENT_LENGTH
-from core.errors import ID_MISMATCH, POSTER_NOT_FOUND
+from core.auth import (
+    get_authorized_resource,
+    get_db_user,
+    get_organization_owner_or_admin,
+    is_admin,
+)
+from core.client_ip import get_client_ip
+from core.config import settings
+from core.constants import MAX_SCHOOL_LENGTH, MAX_USER_AGENT_LENGTH
+from core.errors import ID_MISMATCH, INVALID_SCAN_CONFIRMATION, POSTER_NOT_FOUND
+from core.exceptions import ValidationError
 from core.pagination import PaginatedResponse, PaginationParams, paginated_response
 from core.rate_limit import qr_scan_rate_limiter
-from schemas.qr_code import QrCodeCreate, QrCodeRedirect, QrCodeResponse, QrCodeScanResponse
+from schemas.qr_code import (
+    PromoterEarningsResponse,
+    QrCodeCreate,
+    QrCodeRedirect,
+    QrCodeResponse,
+    QrCodeScanResponse,
+    QrCodeUpdate,
+    QrProgram,
+    QrScanConfirmRequest,
+    QrScanConfirmResponse,
+)
 from schemas.user import UserResponse
-from services import qr_code_service
-
-log = logging.getLogger(__name__)
+from services import poster_payout_service, qr_code_service
 
 router = APIRouter(prefix="/qr", tags=["qr"])
 
+_VISITOR_COOKIE_MAX_AGE = 60 * 60 * 24 * 365 * 2
+_MAX_VISITOR_TOKEN_LENGTH = 256
 
-def _get_poster_or_404_authorized(qr_code_id: str, db_user: UserResponse) -> QrCodeResponse:
-    """Fetch QR code by ID (404 if missing); require creator or admin."""
+
+def _get_poster_or_404_authorized(
+    qr_code_id: str,
+    db_user: UserResponse,
+) -> QrCodeResponse:
     return get_authorized_resource(
         lambda: qr_code_service.get_qr_code_by_id(qr_code_id),
         POSTER_NOT_FOUND,
@@ -29,43 +48,65 @@ def _get_poster_or_404_authorized(qr_code_id: str, db_user: UserResponse) -> QrC
     )
 
 
+def _get_or_create_visitor_token(request: Request, response: Response) -> str:
+    token = request.cookies.get(qr_code_service.POSTER_VISITOR_COOKIE)
+    if not token or len(token) > _MAX_VISITOR_TOKEN_LENGTH:
+        token = qr_code_service.new_visitor_token()
+        response.set_cookie(
+            key=qr_code_service.POSTER_VISITOR_COOKIE,
+            value=token,
+            httponly=True,
+            samesite="lax",
+            secure=settings.cookie_secure or settings.is_production,
+            path="/qr",
+            max_age=_VISITOR_COOKIE_MAX_AGE,
+            domain=settings.cookie_domain or None,
+        )
+    return token
+
+
 @router.get("/", response_model=PaginatedResponse[QrCodeResponse])
 def list_qr_codes(
     school: str | None = Query(default=None, max_length=MAX_SCHOOL_LENGTH),
+    program: QrProgram | None = None,
+    is_active: bool | None = None,
+    latest_scan_before: datetime | None = None,
+    latest_scan_after: datetime | None = None,
+    never_scanned: bool | None = None,
     pagination: PaginationParams = Depends(),
-    db_user: UserResponse = Depends(get_organization_owner_or_admin),
+    db_user: UserResponse = Depends(get_db_user),
 ):
-    """List QR codes.
-
-    Admins see all. Non-admins (org management members via
-    ``get_organization_owner_or_admin``) see only QR codes they created.
-    """
+    """List manageable QR codes with explicit archive and recency filters."""
+    if not is_admin(db_user):
+        enrolled = db_user.promoter_tos_accepted_at is not None
+        if not enrolled:
+            get_organization_owner_or_admin(db_user)
     if school == "all":
         school = None
-    list_kwargs = {
+    kwargs = {
         "offset": pagination.offset,
         "limit": pagination.page_size,
         "school": school,
+        "program": program,
+        "is_active": is_active,
+        "latest_scan_before": latest_scan_before,
+        "latest_scan_after": latest_scan_after,
+        "never_scanned": never_scanned,
     }
     if not is_admin(db_user):
-        list_kwargs["created_by"] = str(db_user.id)
-    items, total = qr_code_service.list_qr_codes(**list_kwargs)
+        kwargs["created_by"] = str(db_user.id)
+    items, total = qr_code_service.list_qr_codes(**kwargs)
     return paginated_response(items, total, pagination)
 
 
 @router.get("/scans", response_model=PaginatedResponse[QrCodeScanResponse])
 def list_scans(
-    qr_code_id: str | None = Query(None, max_length=128, description="Filter by QR code id"),
-    from_time: datetime | None = Query(None, description="Scans from this time (inclusive)"),
-    to_time: datetime | None = Query(None, description="Scans until this time (inclusive)"),
+    qr_code_id: str | None = Query(None, max_length=128),
+    from_time: datetime | None = None,
+    to_time: datetime | None = None,
     pagination: PaginationParams = Depends(),
     db_user: UserResponse = Depends(get_organization_owner_or_admin),
 ):
-    """List QR-code scan analytics.
-
-    Admins see all scans. Non-admins (org management members via
-    ``get_organization_owner_or_admin``) see only scans of QR codes they created.
-    """
     owned_by = None if is_admin(db_user) else str(db_user.id)
     items, total = qr_code_service.list_scans(
         qr_code_id=qr_code_id,
@@ -78,61 +119,72 @@ def list_scans(
     return paginated_response(items, total, pagination)
 
 
+@router.get("/earnings", response_model=PromoterEarningsResponse)
+def get_promoter_earnings(db_user: UserResponse = Depends(get_db_user)):
+    return poster_payout_service.get_promoter_earnings(db_user)
+
+
+@router.post("/scans/confirm", response_model=QrScanConfirmResponse)
+def confirm_scan(
+    data: QrScanConfirmRequest,
+    request: Request,
+):
+    visitor_token = request.cookies.get(qr_code_service.POSTER_VISITOR_COOKIE)
+    if not visitor_token or len(visitor_token) > _MAX_VISITOR_TOKEN_LENGTH:
+        raise ValidationError(INVALID_SCAN_CONFIRMATION)
+    return qr_code_service.confirm_scan(data.token, visitor_token=visitor_token)
+
+
 @router.get("/{qr_code_id}", response_model=QrCodeRedirect)
 def resolve_qr_and_record_scan(
     qr_code_id: str,
     request: Request,
-    lat: float | None = Query(
-        None,
-        ge=-90,
-        le=90,
-        description="Scanner latitude (required for first scan to activate poster)",
-    ),
-    lon: float | None = Query(
-        None,
-        ge=-180,
-        le=180,
-        description="Scanner longitude (required for first scan to activate poster)",
-    ),
+    response: Response,
+    lat: float | None = Query(None, ge=-90, le=90),
+    lon: float | None = Query(None, ge=-180, le=180),
     _rl: None = Depends(qr_scan_rate_limiter.ip_dependency()),
 ):
-    session_id_raw = request.headers.get("x-session-id")
-    if session_id_raw and len(session_id_raw) > MAX_SESSION_ID_LENGTH:
-        session_id_raw = session_id_raw[:MAX_SESSION_ID_LENGTH]
-    session_id = session_id_raw or str(uuid.uuid4())
+    visitor_token = _get_or_create_visitor_token(request, response)
     user_agent = request.headers.get("user-agent")
-    user_agent_trunc = user_agent[:MAX_USER_AGENT_LENGTH] if user_agent else None
-
     return qr_code_service.handle_scan(
         qr_code_id,
         lat=lat,
         lon=lon,
-        session_id=session_id,
-        user_agent=user_agent_trunc,
+        visitor_token=visitor_token,
+        client_ip=get_client_ip(request),
+        user_agent=user_agent[:MAX_USER_AGENT_LENGTH] if user_agent else None,
     )
 
 
 @router.post("/", response_model=QrCodeResponse, status_code=status.HTTP_201_CREATED)
 def create_poster(
     data: QrCodeCreate,
-    db_user: UserResponse = Depends(get_organization_owner_or_admin),
+    db_user: UserResponse = Depends(get_db_user),
 ):
-    """Create a QR code. INSERT-only: duplicate id raises ConflictError -> 409."""
-    return qr_code_service.create_qr_code(data, created_by=str(db_user.id))
+    if data.program == "standard":
+        get_organization_owner_or_admin(db_user)
+    return qr_code_service.create_qr_code(data, creator=db_user)
 
 
 @router.patch("/{qr_code_id}", response_model=QrCodeResponse)
 def update_poster(
     qr_code_id: str,
-    data: QrCodeCreate,
+    data: QrCodeUpdate,
     db_user: UserResponse = Depends(get_organization_owner_or_admin),
 ):
     if data.id != qr_code_id:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=ID_MISMATCH)
     existing = _get_poster_or_404_authorized(qr_code_id, db_user)
-    # Pass the trusted original created_by so a PATCH body cannot
-    # transfer ownership to a different user.
-    return qr_code_service.update_qr_code(data, created_by=existing.created_by)
+    return qr_code_service.update_qr_code(data, existing=existing)
+
+
+@router.post("/{qr_code_id}/archive", response_model=QrCodeResponse)
+def archive_poster(
+    qr_code_id: str,
+    db_user: UserResponse = Depends(get_db_user),
+):
+    _get_poster_or_404_authorized(qr_code_id, db_user)
+    return qr_code_service.archive_qr_code(qr_code_id)
 
 
 @router.delete("/{qr_code_id}", status_code=status.HTTP_204_NO_CONTENT)

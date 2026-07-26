@@ -17,8 +17,8 @@ import { generatedFilterStateToFilterState } from "@/features/search/api/filterS
 type QrCodePosterBackend = ApiQrCodeResponse;
 
 export type CreatePosterPayload =
-  Omit<ApiQrCodeCreate, "latitude" | "longitude"> &
-  Partial<Pick<ApiQrCodeCreate, "latitude" | "longitude">>;
+  Omit<ApiQrCodeCreate, "latitude" | "longitude" | "program"> &
+  Partial<Pick<ApiQrCodeCreate, "latitude" | "longitude" | "program">>;
 
 function normalizePosterFilters(
   destinationType: QRCode["destinationType"],
@@ -43,6 +43,8 @@ function normalizeBackendPoster(b: QrCodePosterBackend): QRCode {
     createdAt: b.created_at,
     createdBy: b.created_by,
     isActive: b.is_active,
+    program: b.program,
+    latestScan: b.latest_scan ?? undefined,
     imageUrl: b.image_url ?? undefined,
     latitude: b.latitude,
     longitude: b.longitude,
@@ -56,7 +58,7 @@ export async function listPostersFromBackend(school?: string): Promise<QRCode[]>
   return (list ?? []).map(normalizeBackendPoster);
 }
 
-/** Create poster (auth). New poster is inactive until first scan provides location. */
+/** Create a standard or promoter poster. New rows are immediately unarchived. */
 export async function createPosterToBackend(payload: CreatePosterPayload): Promise<QRCode> {
   const body = {
     ...payload,

@@ -49,6 +49,8 @@ locals {
     "EMAIL_PROVIDER_API_KEY",
     "EVENT_FEED_REVALIDATION_SECRET",
     "INSTAGRAM_SLIDE_RENDER_SECRET",
+    "POSTER_HASH_SECRET",
+    "POSTER_CONFIRMATION_SECRET",
   ]
 
   runtime_secret_references = [

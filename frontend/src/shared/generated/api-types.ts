@@ -283,7 +283,7 @@ export interface paths {
         };
         /**
          * Get Event Stats
-         * @description Public uncached card stats for one school.
+         * @description Public uncached card stats for one school, or for all of them.
          */
         get: operations["get_event_stats_events_stats_get"];
         put?: never;
@@ -959,6 +959,91 @@ export interface paths {
         patch: operations["update_join_request_organizations__organization_id__join_requests__request_id__patch"];
         trace?: never;
     };
+    "/payouts/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Own Payouts */
+        get: operations["list_own_payouts_payouts__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/payouts/admin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Admin Payouts */
+        get: operations["list_admin_payouts_payouts_admin_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/payouts/admin/{payout_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Admin Payout Detail */
+        get: operations["get_admin_payout_detail_payouts_admin__payout_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/payouts/admin/{payout_id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Transition Payout */
+        patch: operations["transition_payout_payouts_admin__payout_id__status_patch"];
+        trace?: never;
+    };
+    "/payouts/admin/mark-paid": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Bulk Mark Paid */
+        post: operations["bulk_mark_paid_payouts_admin_mark_paid_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/qr/": {
         parameters: {
             query?: never;
@@ -968,17 +1053,11 @@ export interface paths {
         };
         /**
          * List Qr Codes
-         * @description List QR codes.
-         *
-         *     Admins see all. Non-admins (org management members via
-         *     ``get_organization_owner_or_admin``) see only QR codes they created.
+         * @description List manageable QR codes with explicit archive and recency filters.
          */
         get: operations["list_qr_codes_qr__get"];
         put?: never;
-        /**
-         * Create Poster
-         * @description Create a QR code. INSERT-only: duplicate id raises ConflictError -> 409.
-         */
+        /** Create Poster */
         post: operations["create_poster_qr__post"];
         delete?: never;
         options?: never;
@@ -993,16 +1072,44 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * List Scans
-         * @description List QR-code scan analytics.
-         *
-         *     Admins see all scans. Non-admins (org management members via
-         *     ``get_organization_owner_or_admin``) see only scans of QR codes they created.
-         */
+        /** List Scans */
         get: operations["list_scans_qr_scans_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/qr/earnings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Promoter Earnings */
+        get: operations["get_promoter_earnings_qr_earnings_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/qr/scans/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Confirm Scan */
+        post: operations["confirm_scan_qr_scans_confirm_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1026,6 +1133,23 @@ export interface paths {
         head?: never;
         /** Update Poster */
         patch: operations["update_poster_qr__qr_code_id__patch"];
+        trace?: never;
+    };
+    "/qr/{qr_code_id}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Archive Poster */
+        post: operations["archive_poster_qr__qr_code_id__archive_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/reports/": {
@@ -1295,6 +1419,23 @@ export interface paths {
         patch: operations["update_profile_users_me_profile_patch"];
         trace?: never;
     };
+    "/users/me/promoter-enrollment": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Update Promoter Enrollment */
+        put: operations["update_promoter_enrollment_users_me_promoter_enrollment_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/users/": {
         parameters: {
             query?: never;
@@ -1401,6 +1542,12 @@ export interface components {
             /** Amount */
             amount: number;
         };
+        /** AdminPayoutDetail */
+        AdminPayoutDetail: {
+            payout: components["schemas"]["PosterPayoutResponse"];
+            /** Fraud Reasons */
+            fraud_reasons: components["schemas"]["PayoutFraudReason"][];
+        };
         /**
          * AppConstantsResponse
          * @description Shared domain constants that the frontend must stay in sync with.
@@ -1456,6 +1603,11 @@ export interface components {
         Body_upload_qr_asset_uploads_qr_asset_post: {
             /** File */
             file: string;
+        };
+        /** BulkMarkPaidRequest */
+        BulkMarkPaidRequest: {
+            /** Payout Ids */
+            payout_ids: string[];
         };
         /**
          * CalendarTokenResponse
@@ -2606,6 +2758,19 @@ export interface components {
             /** Total Pages */
             total_pages: number;
         };
+        /** PaginatedResponse[PosterPayoutResponse] */
+        PaginatedResponse_PosterPayoutResponse_: {
+            /** Items */
+            items: components["schemas"]["PosterPayoutResponse"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+            /** Total Pages */
+            total_pages: number;
+        };
         /** PaginatedResponse[QrCodeResponse] */
         PaginatedResponse_QrCodeResponse_: {
             /** Items */
@@ -2658,6 +2823,42 @@ export interface components {
             /** Total Pages */
             total_pages: number;
         };
+        /** PaginatedResponse[UserPosterPayoutResponse] */
+        PaginatedResponse_UserPosterPayoutResponse_: {
+            /** Items */
+            items: components["schemas"]["UserPosterPayoutResponse"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+            /** Total Pages */
+            total_pages: number;
+        };
+        /** PayoutFraudReason */
+        PayoutFraudReason: {
+            /** Code */
+            code: string;
+            /** Points */
+            points: number;
+            /** Affected Scan Count */
+            affected_scan_count: number;
+            /** Evidence */
+            evidence: {
+                [key: string]: unknown;
+            };
+        };
+        /** PayoutStatusUpdate */
+        PayoutStatusUpdate: {
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "held" | "paid" | "voided";
+            /** Notes */
+            notes?: string | null;
+        };
         /**
          * PlatformIntegrationOptionsResponse
          * @description Generic options for any integration platform.
@@ -2676,6 +2877,107 @@ export interface components {
              * @default []
              */
             servers: components["schemas"]["DiscordServerOption"][];
+        };
+        /** PosterEarningsItem */
+        PosterEarningsItem: {
+            /** Qr Code Id */
+            qr_code_id: string;
+            /** Name */
+            name: string;
+            /** Is Active */
+            is_active: boolean;
+            /** Latest Scan */
+            latest_scan: string | null;
+            /** Lifetime Unique Scans */
+            lifetime_unique_scans: number;
+            /** Period Unique Scans */
+            period_unique_scans: number;
+            /** Period Creditable Scans */
+            period_creditable_scans: number;
+            /** Pending Cents */
+            pending_cents: number;
+        };
+        /** PosterPayoutResponse */
+        PosterPayoutResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+            /**
+             * Period
+             * Format: date
+             */
+            period: string;
+            /**
+             * Payout Email
+             * Format: email
+             */
+            payout_email: string;
+            /** Rate Cents */
+            rate_cents: number;
+            /** Amount Cents */
+            amount_cents: number;
+            /** Scan Count */
+            scan_count: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "held" | "paid" | "voided";
+            /** Paid At */
+            paid_at: string | null;
+            /** Notes */
+            notes: string | null;
+            /** Reviewed By */
+            reviewed_by: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** PromoterEarningsResponse */
+        PromoterEarningsResponse: {
+            /** Period */
+            period: string;
+            /** Posters */
+            posters: components["schemas"]["PosterEarningsItem"][];
+            /** Period Creditable Scans */
+            period_creditable_scans: number;
+            /** Pending Cents */
+            pending_cents: number;
+            /** Lifetime Paid Cents */
+            lifetime_paid_cents: number;
+            /** Active Slots Used */
+            active_slots_used: number;
+            /** Active Slots Limit */
+            active_slots_limit: number;
+            /** Program Enabled */
+            program_enabled: boolean;
+        };
+        /** PromoterEnrollmentUpdate */
+        PromoterEnrollmentUpdate: {
+            /**
+             * Payout Email
+             * Format: email
+             */
+            payout_email: string;
+            /**
+             * Accept Tos
+             * @default false
+             */
+            accept_tos: boolean;
         };
         /** PromotionCreate */
         PromotionCreate: {
@@ -2712,15 +3014,9 @@ export interface components {
         };
         /**
          * QrCodeCreate
-         * @description Create/update a QR code.
-         *
-         *     Server-owned fields such as ``created_by`` and ``is_active`` are not
-         *     accepted from clients. New QR codes always start inactive and are activated
-         *     by their first scan.
+         * @description Create a QR code with an immutable program marker.
          */
         QrCodeCreate: {
-            /** Id */
-            id: string;
             /** Name */
             name: string;
             /** Description */
@@ -2748,6 +3044,14 @@ export interface components {
              * @default 0
              */
             longitude: number;
+            /** Id */
+            id: string;
+            /**
+             * Program
+             * @default standard
+             * @enum {string}
+             */
+            program: "standard" | "promoter";
         };
         /**
          * QrCodeRedirect
@@ -2765,6 +3069,12 @@ export interface components {
             filters?: {
                 [key: string]: unknown;
             } | unknown[] | null;
+            /** Query Params */
+            query_params?: {
+                [key: string]: string;
+            } | null;
+            /** Scan Confirmation Token */
+            scan_confirmation_token?: string | null;
         };
         /** QrCodeResponse */
         QrCodeResponse: {
@@ -2794,6 +3104,13 @@ export interface components {
             created_by: string;
             /** Is Active */
             is_active: boolean;
+            /**
+             * Program
+             * @enum {string}
+             */
+            program: "standard" | "promoter";
+            /** Latest Scan */
+            latest_scan?: string | null;
             /** Image Url */
             image_url: string | null;
             /** Latitude */
@@ -2815,14 +3132,78 @@ export interface components {
              * Format: date-time
              */
             scanned_at: string;
-            /** User Id */
-            user_id: string | null;
-            /** Session Id */
-            session_id: string;
-            /** Conversion Actions */
-            conversion_actions: unknown[];
-            /** User Agent */
-            user_agent: string | null;
+            /** Visitor Reference */
+            visitor_reference: string;
+            /** Browser Family */
+            browser_family: string | null;
+            /** Os Family */
+            os_family: string | null;
+            /** Asn */
+            asn: number | null;
+            /** Country */
+            country: string | null;
+            /** Landing Confirmed At */
+            landing_confirmed_at: string | null;
+            /** Risk Score */
+            risk_score: number;
+            /** Risk Flags */
+            risk_flags: {
+                [key: string]: unknown;
+            }[];
+            /** Risk Evaluated At */
+            risk_evaluated_at: string | null;
+            /** Risk Rules Version */
+            risk_rules_version: string | null;
+        };
+        /**
+         * QrCodeUpdate
+         * @description Update editable QR content without accepting lifecycle or program fields.
+         */
+        QrCodeUpdate: {
+            /** Name */
+            name: string;
+            /** Description */
+            description?: string | null;
+            /**
+             * Destination Type
+             * @enum {string}
+             */
+            destination_type: "event" | "events-list" | "custom-url";
+            /** Destination Id */
+            destination_id?: string | number | null;
+            /** Filters */
+            filters?: {
+                [key: string]: unknown;
+            } | unknown[] | null;
+            /** Image Url */
+            image_url?: string | null;
+            /**
+             * Latitude
+             * @default 0
+             */
+            latitude: number;
+            /**
+             * Longitude
+             * @default 0
+             */
+            longitude: number;
+            /** Id */
+            id: string;
+        };
+        /** QrScanConfirmRequest */
+        QrScanConfirmRequest: {
+            /** Token */
+            token: string;
+        };
+        /** QrScanConfirmResponse */
+        QrScanConfirmResponse: {
+            /** Confirmed */
+            confirmed: boolean;
+            /**
+             * Landing Confirmed At
+             * Format: date-time
+             */
+            landing_confirmed_at: string;
         };
         /**
          * RecordInteractionsResponse
@@ -2982,6 +3363,42 @@ export interface components {
             /** Avatar Url */
             avatar_url?: string | null;
         };
+        /** UserPosterPayoutResponse */
+        UserPosterPayoutResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Period
+             * Format: date
+             */
+            period: string;
+            /**
+             * Payout Email
+             * Format: email
+             */
+            payout_email: string;
+            /** Rate Cents */
+            rate_cents: number;
+            /** Amount Cents */
+            amount_cents: number;
+            /** Scan Count */
+            scan_count: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "held" | "paid" | "voided";
+            /** Paid At */
+            paid_at: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
         /** UserProfileUpdate */
         UserProfileUpdate: {
             /** Faculty */
@@ -3023,6 +3440,12 @@ export interface components {
              * @enum {string}
              */
             role: "user" | "admin";
+            /** Payout Email */
+            payout_email?: string | null;
+            /** Promoter Tos Accepted At */
+            promoter_tos_accepted_at?: string | null;
+            /** Promoter Tos Version */
+            promoter_tos_version?: string | null;
             /**
              * Created At
              * Format: date-time
@@ -5226,10 +5649,186 @@ export interface operations {
             };
         };
     };
+    list_own_payouts_payouts__get: {
+        parameters: {
+            query?: {
+                payout_status?: ("pending" | "held" | "paid" | "voided") | null;
+                /** @description Page number (1-indexed) */
+                page?: number;
+                /** @description Items per page (max 100) */
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_UserPosterPayoutResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_admin_payouts_payouts_admin_get: {
+        parameters: {
+            query?: {
+                user_id?: string | null;
+                payout_status?: ("pending" | "held" | "paid" | "voided") | null;
+                period?: string | null;
+                /** @description Page number (1-indexed) */
+                page?: number;
+                /** @description Items per page (max 100) */
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_PosterPayoutResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_admin_payout_detail_payouts_admin__payout_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                payout_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminPayoutDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    transition_payout_payouts_admin__payout_id__status_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                payout_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PayoutStatusUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PosterPayoutResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    bulk_mark_paid_payouts_admin_mark_paid_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkMarkPaidRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PosterPayoutResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_qr_codes_qr__get: {
         parameters: {
             query?: {
                 school?: string | null;
+                program?: ("standard" | "promoter") | null;
+                is_active?: boolean | null;
+                latest_scan_before?: string | null;
+                latest_scan_after?: string | null;
+                never_scanned?: boolean | null;
                 /** @description Page number (1-indexed) */
                 page?: number;
                 /** @description Items per page (max 100) */
@@ -5297,11 +5896,8 @@ export interface operations {
     list_scans_qr_scans_get: {
         parameters: {
             query?: {
-                /** @description Filter by QR code id */
                 qr_code_id?: string | null;
-                /** @description Scans from this time (inclusive) */
                 from_time?: string | null;
-                /** @description Scans until this time (inclusive) */
                 to_time?: string | null;
                 /** @description Page number (1-indexed) */
                 page?: number;
@@ -5334,12 +5930,63 @@ export interface operations {
             };
         };
     };
+    get_promoter_earnings_qr_earnings_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PromoterEarningsResponse"];
+                };
+            };
+        };
+    };
+    confirm_scan_qr_scans_confirm_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QrScanConfirmRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QrScanConfirmResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     resolve_qr_and_record_scan_qr__qr_code_id__get: {
         parameters: {
             query?: {
-                /** @description Scanner latitude (required for first scan to activate poster) */
                 lat?: number | null;
-                /** @description Scanner longitude (required for first scan to activate poster) */
                 lon?: number | null;
             };
             header?: never;
@@ -5410,9 +6057,40 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["QrCodeCreate"];
+                "application/json": components["schemas"]["QrCodeUpdate"];
             };
         };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QrCodeResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    archive_poster_qr__qr_code_id__archive_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                qr_code_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {
@@ -6080,6 +6758,39 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["UserProfileUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_promoter_enrollment_users_me_promoter_enrollment_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PromoterEnrollmentUpdate"];
             };
         };
         responses: {

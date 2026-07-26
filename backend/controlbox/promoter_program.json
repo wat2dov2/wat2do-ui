@@ -1,0 +1,14 @@
+{
+  "enabled": true,
+  "rate_cents": 25,
+  "maximum_active_posters": 50,
+  "landing_confirmation_seconds": 5,
+  "confirmation_token_minutes": 15,
+  "payout_close_delay_hours": 24,
+  "risk_rules_version": "poster-risk-v1",
+  "rapid_distinct_visitors": 20,
+  "rapid_window_seconds": 60,
+  "rapid_rule_points": 60,
+  "hold_score_threshold": 60,
+  "tos_version": "2026-01"
+}

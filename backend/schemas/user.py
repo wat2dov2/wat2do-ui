@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Annotated, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 from core.constants import (
     MAX_AVATAR_URL_LENGTH,
@@ -60,6 +60,13 @@ class UserRoleUpdate(BaseModel):
     role: UserRole
 
 
+class PromoterEnrollmentUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    payout_email: EmailStr
+    accept_tos: bool = False
+
+
 class UserResponse(UserBase):
     id: UUID
     faculty: str | None = None
@@ -67,6 +74,9 @@ class UserResponse(UserBase):
     interests: list[str] | None = None
     is_first_year: bool = False
     role: UserRole = ROLE_USER
+    payout_email: EmailStr | None = None
+    promoter_tos_accepted_at: datetime | None = None
+    promoter_tos_version: str | None = None
     created_at: datetime
     updated_at: datetime
 

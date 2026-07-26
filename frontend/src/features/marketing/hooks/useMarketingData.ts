@@ -32,7 +32,7 @@ export function useMarketingData() {
   const qrCodesWithStats = useMemo(() => {
     return qrCodes.map((qr) => {
       const qrScans = scans.filter((s) => s.qrCodeId === qr.id);
-      const uniqueScans = new Set(qrScans.map((s) => s.sessionId || s.userId || s.id)).size;
+      const uniqueScans = new Set(qrScans.map((s) => s.visitorReference)).size;
       return {
         ...qr,
         totalScans: qrScans.length,

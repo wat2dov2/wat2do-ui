@@ -54,12 +54,27 @@ export async function fetchQrRedirectWithLocation(
   return api.get<QrRedirectConfig>(`/qr/${encodeURIComponent(qrCodeId)}?${params}`);
 }
 
+function appendRedirectQueryParams(
+  destination: string,
+  queryParams: QrRedirectConfig["query_params"],
+): string {
+  if (!queryParams) return destination;
+  const url = new URL(destination, window.location.origin);
+  Object.entries(queryParams).forEach(([key, value]) => url.searchParams.set(key, value));
+  return url.origin === window.location.origin
+    ? `${url.pathname}${url.search}${url.hash}`
+    : url.toString();
+}
+
 /** Redirect the browser using backend config (after scan was recorded). */
 export function redirectFromConfig(config: QrRedirectConfig): void {
   switch (config.destination_type) {
     case "event":
       if (config.destination_id != null)
-        window.location.href = `${ROUTES.HOME}?eventId=${config.destination_id}`;
+        window.location.href = appendRedirectQueryParams(
+          `${ROUTES.HOME}?eventId=${config.destination_id}`,
+          config.query_params,
+        );
       break;
     case "events-list":
       if (config.filters && typeof config.filters === "object" && !Array.isArray(config.filters)) {
@@ -69,12 +84,15 @@ export function redirectFromConfig(config: QrRedirectConfig): void {
           ),
         );
       }
-      window.location.href = ROUTES.HOME;
+      window.location.href = appendRedirectQueryParams(ROUTES.HOME, config.query_params);
       break;
     case "custom-url":
       if (config.destination_id != null && typeof config.destination_id === "string") {
         if (isSafeUrl(config.destination_id)) {
-          window.location.href = config.destination_id;
+          window.location.href = appendRedirectQueryParams(
+            config.destination_id,
+            config.query_params,
+          );
         } else {
           console.error("Blocked unsafe redirect URL:", config.destination_id);
           window.location.href = ROUTES.HOME;

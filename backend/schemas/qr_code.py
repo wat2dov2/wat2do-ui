@@ -11,6 +11,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 from core.constants import MAX_URL_LENGTH
 
 QrDestinationType = Literal["event", "events-list", "custom-url"]
+QrProgram = Literal["standard", "promoter"]
 
 # ---------------------------------------------------------------------------
 # Per-field caps on QrCodeCreate.  Prevents a single authenticated user from
@@ -49,28 +50,15 @@ class QrCodeRedirect(BaseModel):
     destination_type: QrDestinationType
     destination_id: str | int | None = None
     filters: dict | list | None = None
+    query_params: dict[str, str] | None = None
+    scan_confirmation_token: str | None = None
 
 
-class QrCodeCreate(BaseModel):
-    """Create/update a QR code.
-
-    Server-owned fields such as ``created_by`` and ``is_active`` are not
-    accepted from clients. New QR codes always start inactive and are activated
-    by their first scan.
-    """
+class _QrCodeMutation(BaseModel):
+    """Shared editable QR fields for create and update requests."""
 
     model_config = ConfigDict(extra="forbid")
 
-    # ``id`` is an opaque slug used as both the DB primary key and the URL
-    # path segment in ``GET /qr/{id}``.  Restricting to URL-safe characters
-    # prevents path traversal / control-character injection at the
-    # boundary.  Hyphens and underscores cover most slugify
-    # outputs; dots/slashes/question-marks are rejected.
-    id: str = Field(
-        min_length=1,
-        max_length=_MAX_QR_ID_LENGTH,
-        pattern=r"^[a-zA-Z0-9_-]+$",
-    )
     name: str = Field(min_length=1, max_length=_MAX_QR_NAME_LENGTH)
     description: str | None = Field(default=None, max_length=_MAX_QR_DESCRIPTION_LENGTH)
     destination_type: QrDestinationType
@@ -136,6 +124,40 @@ class QrCodeCreate(BaseModel):
         return v
 
 
+class QrCodeCreate(_QrCodeMutation):
+    """Create a QR code with an immutable program marker."""
+
+    id: str = Field(
+        min_length=1,
+        max_length=_MAX_QR_ID_LENGTH,
+        pattern=r"^[a-zA-Z0-9_-]+$",
+    )
+    program: QrProgram = "standard"
+
+    @model_validator(mode="after")
+    def validate_promoter_destination(self):
+        """Keep promoter posters on the server-defined school events feed."""
+        if self.program != "promoter":
+            return self
+        if self.destination_type != "events-list" or self.destination_id is not None:
+            raise ValueError("promoter posters must use the school events feed")
+        if self.latitude != 0 or self.longitude != 0:
+            raise ValueError("promoter poster coordinates are set by scan activity")
+        if self.filters is not None and not isinstance(self.filters, dict):
+            raise ValueError("promoter poster filters must be an object")
+        return self
+
+
+class QrCodeUpdate(_QrCodeMutation):
+    """Update editable QR content without accepting lifecycle or program fields."""
+
+    id: str = Field(
+        min_length=1,
+        max_length=_MAX_QR_ID_LENGTH,
+        pattern=r"^[a-zA-Z0-9_-]+$",
+    )
+
+
 class QrCodeResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -148,6 +170,8 @@ class QrCodeResponse(BaseModel):
     created_at: datetime
     created_by: str
     is_active: bool
+    program: QrProgram
+    latest_scan: datetime | None = None
     image_url: str | None
     latitude: float
     longitude: float
@@ -159,7 +183,46 @@ class QrCodeScanResponse(BaseModel):
     id: UUID
     qr_code_id: str
     scanned_at: datetime
-    user_id: str | None
-    session_id: str
-    conversion_actions: list
-    user_agent: str | None
+    visitor_reference: str
+    browser_family: str | None
+    os_family: str | None
+    asn: int | None
+    country: str | None
+    landing_confirmed_at: datetime | None
+    risk_score: int
+    risk_flags: list[dict]
+    risk_evaluated_at: datetime | None
+    risk_rules_version: str | None
+
+
+class QrScanConfirmRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    token: str = Field(min_length=1, max_length=2048)
+
+
+class QrScanConfirmResponse(BaseModel):
+    confirmed: bool
+    landing_confirmed_at: datetime
+
+
+class PosterEarningsItem(BaseModel):
+    qr_code_id: str
+    name: str
+    is_active: bool
+    latest_scan: datetime | None
+    lifetime_unique_scans: int
+    period_unique_scans: int
+    period_creditable_scans: int
+    pending_cents: int
+
+
+class PromoterEarningsResponse(BaseModel):
+    period: str
+    posters: list[PosterEarningsItem]
+    period_creditable_scans: int
+    pending_cents: int
+    lifetime_paid_cents: int
+    active_slots_used: int
+    active_slots_limit: int
+    program_enabled: bool

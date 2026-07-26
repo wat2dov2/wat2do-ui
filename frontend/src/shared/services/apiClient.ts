@@ -220,7 +220,7 @@ async function request<T>(
   // and logout/reset-password need it for the Set-Cookie that clears it.
   // The cookie's path=/auth/refresh scope still prevents it from being
   // attached to any of these other endpoints.
-  if (AUTH_CREDENTIAL_PATHS.has(path)) {
+  if (AUTH_CREDENTIAL_PATHS.has(path) || path.startsWith("/qr/")) {
     fetchOptions.credentials = "include";
   }
 

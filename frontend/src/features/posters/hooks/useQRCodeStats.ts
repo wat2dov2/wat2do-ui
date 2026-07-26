@@ -25,10 +25,10 @@ export function useQRCodeStats({ scans, timeRange }: UseQRCodeStatsOptions) {
   const stats = useMemo(() => {
     const totalScans = filteredScans.length;
     const uniqueScansSet = new Set(
-      filteredScans.map((s) => s.sessionId || s.userId || s.id)
+      filteredScans.map((s) => s.visitorReference)
     );
     const uniqueScans = uniqueScansSet.size;
-    const conversions = filteredScans.filter((s) => s.conversionActions.length > 0)
+    const conversions = filteredScans.filter((s) => s.landingConfirmedAt != null)
       .length;
     const conversionRate =
       totalScans > 0 ? ((conversions / totalScans) * 100).toFixed(1) : "0.0";
@@ -54,8 +54,8 @@ export function useQRCodeStats({ scans, timeRange }: UseQRCodeStatsOptions) {
         };
       }
       acc[dateKey].total += 1;
-      acc[dateKey].unique.add(scan.sessionId || scan.userId || scan.id);
-      if (scan.conversionActions.length > 0) {
+      acc[dateKey].unique.add(scan.visitorReference);
+      if (scan.landingConfirmedAt != null) {
         acc[dateKey].conversions += 1;
       }
       return acc;

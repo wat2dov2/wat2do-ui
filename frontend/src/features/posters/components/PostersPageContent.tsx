@@ -215,8 +215,8 @@ export function PostersPageContent({
                   <TableRow>
                     <TableHead>{t("admin.timestamp")}</TableHead>
                     <TableHead>{t("admin.qrCode")}</TableHead>
-                    <TableHead>{t("admin.userId")}</TableHead>
-                    <TableHead>{t("admin.sessionId")}</TableHead>
+                    <TableHead>{t("admin.browserFamily")}</TableHead>
+                    <TableHead>{t("admin.osFamily")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -239,12 +239,14 @@ export function PostersPageContent({
                           {filters.qrCodeMap.get(scan.qrCodeId) || t("admin.unknown")}
                         </TableCell>
                         <TableCell className="text-sm">
-                          {scan.userId || (
+                          {scan.browserFamily || (
                             <span className="text-muted-foreground">&mdash;</span>
                           )}
                         </TableCell>
-                        <TableCell className="font-mono text-xs">
-                          {scan.sessionId.substring(0, 20)}...
+                        <TableCell className="text-sm">
+                          {scan.osFamily || (
+                            <span className="text-muted-foreground">&mdash;</span>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))

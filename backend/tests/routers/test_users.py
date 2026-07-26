@@ -75,6 +75,45 @@ def test_update_profile_succeeds(authenticated_client, monkeypatch):
     assert resp.status_code == 200
 
 
+# ── PUT /users/me/promoter-enrollment ──────────────────────────────
+
+
+def test_promoter_enrollment_requires_auth(client):
+    response = client.put(
+        "/users/me/promoter-enrollment",
+        json={"payout_email": "promoter@example.com", "accept_tos": True},
+    )
+    assert response.status_code == 401
+
+
+def test_promoter_enrollment_succeeds(authenticated_client, monkeypatch):
+    enrolled = _mock_user(
+        payout_email="promoter@example.com",
+        promoter_tos_accepted_at=datetime.now(timezone.utc),
+        promoter_tos_version="2026-01",
+    )
+    update = MagicMock(return_value=enrolled)
+    monkeypatch.setattr(user_service, "update_promoter_enrollment", update)
+
+    response = authenticated_client.put(
+        "/users/me/promoter-enrollment",
+        json={"payout_email": "promoter@example.com", "accept_tos": True},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["payout_email"] == "promoter@example.com"
+    assert response.json()["promoter_tos_version"] == "2026-01"
+    update.assert_called_once()
+
+
+def test_promoter_enrollment_rejects_invalid_email(authenticated_client):
+    response = authenticated_client.put(
+        "/users/me/promoter-enrollment",
+        json={"payout_email": "not-an-email", "accept_tos": True},
+    )
+    assert response.status_code == 422
+
+
 # ── GET /users/ (admin-only) ────────────────────────────────────────
 
 

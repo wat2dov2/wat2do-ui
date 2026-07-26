@@ -11,7 +11,13 @@ from core.errors import (
     USER_PROFILE_NOT_FOUND,
 )
 from core.exceptions import AuthorizationError, ValidationError, get_or_404
-from schemas.user import UserProfileUpdate, UserResponse, UserRoleUpdate, UserUpdate
+from schemas.user import (
+    PromoterEnrollmentUpdate,
+    UserProfileUpdate,
+    UserResponse,
+    UserRoleUpdate,
+    UserUpdate,
+)
 from services import user_service
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -42,6 +48,17 @@ def update_profile(
     update_data = UserUpdate(**data.model_dump(exclude_unset=True))
     updated = user_service.update_user(user.id, update_data)
     return updated
+
+
+@router.put("/me/promoter-enrollment", response_model=UserResponse)
+def update_promoter_enrollment(
+    data: PromoterEnrollmentUpdate,
+    user: UserResponse = Depends(get_db_user),
+):
+    return get_or_404(
+        user_service.update_promoter_enrollment(user.id, data),
+        USER_NOT_FOUND,
+    )
 
 
 @router.get("/", response_model=list[UserResponse])

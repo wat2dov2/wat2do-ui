@@ -1,21 +1,50 @@
-"""QR codes and scans via Supabase. Sync."""
+"""QR codes, privacy-preserving scans, confirmation, and archive lifecycle."""
 
+from __future__ import annotations
+
+import base64
+import binascii
+import hashlib
+import hmac
 import logging
+import math
+import secrets
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 from postgrest.exceptions import APIError
 
+from core.config import settings
 from core.constants import DEFAULT_LIST_LIMIT, PG_UNIQUE_VIOLATION
+from core.controlbox import controlbox
 from core.database import get_sb
+from core.errors import (
+    INVALID_SCAN_CONFIRMATION,
+    POSTER_NOT_FOUND,
+    PROMOTER_ENROLLMENT_REQUIRED,
+    PROMOTER_POSTER_LIMIT_REACHED,
+    PROMOTER_POSTERS_CANNOT_BE_DELETED,
+    PROMOTER_PROGRAM_PAUSED,
+    PROMOTER_SCHOOL_REQUIRED,
+    REQUIRES_LOCATION,
+)
 from core.exceptions import ConflictError, NotFoundError, ValidationError
+from core.tables import QR_CODE_SCANS, QR_CODES
+from schemas.qr_code import (
+    QrCodeCreate,
+    QrCodeRedirect,
+    QrCodeResponse,
+    QrCodeScanResponse,
+    QrCodeUpdate,
+    QrScanConfirmResponse,
+)
+from schemas.user import UserResponse
 
 log = logging.getLogger(__name__)
-from core.errors import POSTER_NOT_FOUND, REQUIRES_LOCATION
-from core.tables import QR_CODE_SCANS, QR_CODES
-from schemas.qr_code import QrCodeCreate, QrCodeRedirect, QrCodeResponse, QrCodeScanResponse
 
 POSTER_ALREADY_EXISTS = "Poster with this ID already exists"
+POSTER_VISITOR_COOKIE = "wat2do_poster_visitor"
+_CONFIRMATION_TOKEN_VERSION = "1"
 
 
 def _coerce_destination_id(
@@ -23,149 +52,130 @@ def _coerce_destination_id(
     destination_id: str | None,
     qr_code_id: str,
 ) -> str | int | None:
-    """Cast destination_id to int for event-type QR codes.
-
-    Returns the original value for non-event types.  Logs a warning
-    (instead of raising) when the cast fails so callers always get a
-    usable redirect.
-    """
     if destination_type == "event" and destination_id is not None:
         try:
             return int(destination_id)
-        except (TypeError, ValueError) as e:
-            log.warning("QR %s has non-integer destination_id for event type: %s", qr_code_id, e)
+        except (TypeError, ValueError) as exc:
+            log.warning(
+                "QR %s has non-integer destination_id for event type: %s",
+                qr_code_id,
+                exc,
+            )
     return destination_id
 
 
 def get_qr_code_by_id(qr_code_id: str) -> QrCodeResponse | None:
-    r = get_sb().table(QR_CODES).select("*").eq("id", qr_code_id).execute()
-    if not r.data or len(r.data) == 0:
+    response = get_sb().table(QR_CODES).select("*").eq("id", qr_code_id).execute()
+    if not response.data:
         return None
-    return QrCodeResponse.model_validate(r.data[0])
+    return QrCodeResponse.model_validate(response.data[0])
+
+
+def create_qr_code(data: QrCodeCreate, *, creator: UserResponse) -> QrCodeResponse:
+    """Create a standard QR directly or a promoter QR through the cap RPC."""
+    if get_qr_code_by_id(data.id) is not None:
+        raise ConflictError(POSTER_ALREADY_EXISTS)
+
+    if data.program == "promoter":
+        return _create_promoter_qr_code(data, creator)
+
+    payload = _build_qr_payload(
+        data,
+        created_by=str(creator.id),
+        program="standard",
+        is_active=True,
+    )
+    try:
+        response = get_sb().table(QR_CODES).insert(payload).execute()
+    except APIError as exc:
+        if exc.code == PG_UNIQUE_VIOLATION:
+            raise ConflictError(POSTER_ALREADY_EXISTS) from exc
+        raise
+    return QrCodeResponse.model_validate(response.data[0])
+
+
+def _create_promoter_qr_code(data: QrCodeCreate, creator: UserResponse) -> QrCodeResponse:
+    promoter_control = controlbox.promoter_program
+    if not promoter_control.enabled:
+        raise ValidationError(PROMOTER_PROGRAM_PAUSED)
+    if (
+        creator.payout_email is None
+        or creator.promoter_tos_accepted_at is None
+        or creator.promoter_tos_version != promoter_control.tos_version
+    ):
+        raise ValidationError(PROMOTER_ENROLLMENT_REQUIRED)
+    if not creator.school or not creator.school.strip():
+        raise ValidationError(PROMOTER_SCHOOL_REQUIRED)
+
+    try:
+        response = (
+            get_sb()
+            .rpc(
+                "create_promoter_qr_code",
+                {
+                    "p_id": data.id,
+                    "p_name": data.name,
+                    "p_description": data.description,
+                    "p_filters": data.filters if isinstance(data.filters, dict) else {},
+                    "p_created_by": str(creator.id),
+                    "p_image_url": data.image_url,
+                    "p_maximum_active_posters": promoter_control.maximum_active_posters,
+                },
+            )
+            .execute()
+        )
+    except APIError as exc:
+        message = str(exc)
+        if exc.code == PG_UNIQUE_VIOLATION:
+            raise ConflictError(POSTER_ALREADY_EXISTS) from exc
+        if "promoter_poster_limit_reached" in message:
+            raise ValidationError(PROMOTER_POSTER_LIMIT_REACHED) from exc
+        if "promoter_enrollment_required" in message:
+            raise ValidationError(PROMOTER_ENROLLMENT_REQUIRED) from exc
+        if "promoter_school_required" in message:
+            raise ValidationError(PROMOTER_SCHOOL_REQUIRED) from exc
+        raise
+
+    if not response.data:
+        raise RuntimeError("create_promoter_qr_code returned no row")
+    return QrCodeResponse.model_validate(response.data[0])
 
 
 def _build_qr_payload(
-    data: QrCodeCreate,
+    data: QrCodeCreate | QrCodeUpdate,
     *,
     created_by: str,
+    program: str,
     is_active: bool,
 ) -> dict:
-    """Assemble the PostgREST payload for a QR row.
-
-    ``is_active`` is passed in explicitly: inserts always start
-    inactive, updates preserve the existing value (see
-    ``update_qr_code``).
-    """
-    dest_id = str(data.destination_id) if data.destination_id is not None else None
     return {
         "id": data.id,
         "name": data.name,
         "description": data.description,
         "destination_type": data.destination_type,
-        "destination_id": dest_id,
+        "destination_id": str(data.destination_id) if data.destination_id is not None else None,
         "filters": data.filters,
         "created_by": created_by,
         "is_active": is_active,
+        "program": program,
         "image_url": data.image_url,
         "latitude": data.latitude,
         "longitude": data.longitude,
     }
 
 
-def create_qr_code(data: QrCodeCreate, *, created_by: str) -> QrCodeResponse:
-    """Insert a new QR code row.
-
-    Raises ``ConflictError`` (mapped to 409) if *data.id* already exists.
-
-    D18: the explicit pre-check + INSERT is TOCTOU-vulnerable - two
-    parallel POSTs with the same client-supplied ``id`` both see no
-    existing row and both proceed to INSERT.  The second insert raises
-    ``APIError`` with ``PG_UNIQUE_VIOLATION``.  We catch that and map it
-    to ``ConflictError`` with the POSTER_ALREADY_EXISTS message so the
-    race surfaces as a clean 409 with the poster-specific detail
-    instead of the generic "Resource already exists" from the global
-    PostgREST error handler.
-    """
-    existing = get_qr_code_by_id(data.id)
-    if existing is not None:
-        raise ConflictError(POSTER_ALREADY_EXISTS)
-    payload = _build_qr_payload(data, created_by=created_by, is_active=False)
-    try:
-        get_sb().table(QR_CODES).insert(payload).execute()
-    except APIError as e:
-        if e.code == PG_UNIQUE_VIOLATION:
-            log.warning(
-                "QR code insert raced with concurrent create for id=%s: %s",
-                data.id,
-                e,
-            )
-            raise ConflictError(POSTER_ALREADY_EXISTS) from e
-        raise
-    return get_qr_code_by_id(data.id)
-
-
-def update_qr_code(data: QrCodeCreate, *, created_by: str) -> QrCodeResponse:
-    """Update an existing QR code row.
-
-    Caller MUST have verified ownership (or admin status) before calling
-    this.  *created_by* is the trusted value that will be written to the
-    row - the PATCH router passes ``existing.created_by`` so the
-    original owner cannot be overwritten.  Raises ``NotFoundError`` if
-    the row does not exist.
-    """
-    existing = get_qr_code_by_id(data.id)
-    if existing is None:
-        raise NotFoundError(POSTER_NOT_FOUND)
-    payload = _build_qr_payload(data, created_by=created_by, is_active=existing.is_active)
+def update_qr_code(data: QrCodeUpdate, *, existing: QrCodeResponse) -> QrCodeResponse:
+    payload = _build_qr_payload(
+        data,
+        created_by=existing.created_by,
+        program=existing.program,
+        is_active=existing.is_active,
+    )
     get_sb().table(QR_CODES).update(payload).eq("id", data.id).execute()
-    return get_qr_code_by_id(data.id)
-
-
-def activate_poster_and_record_scan(
-    qr_code_id: str,
-    latitude: float,
-    longitude: float,
-    *,
-    session_id: str,
-    user_agent: str | None = None,
-) -> QrCodeRedirect | None:
-    qr = get_qr_code_by_id(qr_code_id)
-    if not qr or qr.is_active:
-        return None
-    sb = get_sb()
-    # Conditional update: only succeeds if is_active is still False,
-    # preventing the TOCTOU race when multiple first-scans arrive concurrently.
-    r = (
-        sb.table(QR_CODES)
-        .update(
-            {
-                "latitude": latitude,
-                "longitude": longitude,
-                "is_active": True,
-            }
-        )
-        .eq("id", qr_code_id)
-        .eq("is_active", False)
-        .execute()
-    )
-    if not r.data:
-        # Another request won the race - this poster was already activated.
-        return None
-    sb.table(QR_CODE_SCANS).insert(
-        {
-            "id": str(uuid.uuid4()),
-            "qr_code_id": qr_code_id,
-            "session_id": session_id,
-            "user_agent": user_agent,
-            "conversion_actions": [],
-        }
-    ).execute()
-    qr = get_qr_code_by_id(qr_code_id)
-    return QrCodeRedirect(
-        destination_type=qr.destination_type,
-        destination_id=_coerce_destination_id(qr.destination_type, qr.destination_id, qr_code_id),
-        filters=qr.filters,
-    )
+    updated = get_qr_code_by_id(data.id)
+    if updated is None:
+        raise NotFoundError(POSTER_NOT_FOUND)
+    return updated
 
 
 def handle_scan(
@@ -173,99 +183,220 @@ def handle_scan(
     *,
     lat: float | None,
     lon: float | None,
-    session_id: str,
-    user_agent: str | None = None,
+    visitor_token: str,
+    client_ip: str,
+    user_agent: str | None,
 ) -> QrCodeRedirect:
-    """Orchestrate a QR scan: activate if inactive (with coordinates), otherwise record and redirect.
-
-    Raises ``NotFoundError`` when the QR code does not exist.
-    Raises ``ValidationError`` when the poster is inactive and no coordinates
-    were provided (the client must supply lat/lon to activate the poster).
-    """
-    qr = get_qr_code_by_id(qr_code_id)
-    if not qr:
+    """Record one accepted scan and return its redirect configuration."""
+    qr_code = get_qr_code_by_id(qr_code_id)
+    if qr_code is None:
         raise NotFoundError(POSTER_NOT_FOUND)
 
-    if not qr.is_active:
-        if lat is not None and lon is not None:
-            redirect_config = activate_poster_and_record_scan(
-                qr_code_id, lat, lon, session_id=session_id, user_agent=user_agent
-            )
-            if redirect_config:
-                return redirect_config
-        raise ValidationError(REQUIRES_LOCATION)
+    if not qr_code.is_active:
+        return build_redirect(qr_code)
 
-    record_scan(qr_code_id, session_id=session_id, user_agent=user_agent)
-    return build_redirect(qr)
+    if qr_code.program == "standard" and qr_code.latest_scan is None:
+        if lat is None or lon is None:
+            raise ValidationError(REQUIRES_LOCATION)
 
-
-def build_redirect(qr: QrCodeResponse) -> QrCodeRedirect:
-    """Build a QrCodeRedirect from a QrCodeResponse, coercing destination_id."""
-    return QrCodeRedirect(
-        destination_type=qr.destination_type,
-        destination_id=_coerce_destination_id(qr.destination_type, qr.destination_id, qr.id),
-        filters=qr.filters,
+    browser_family, os_family = parse_user_agent(user_agent)
+    scan = record_scan(
+        qr_code.id,
+        dedupe_hash=hash_visitor_token(visitor_token),
+        ip_hash=hash_client_ip(client_ip),
+        browser_family=browser_family,
+        os_family=os_family,
+        latitude=lat,
+        longitude=lon,
     )
+    if scan is None:
+        return build_redirect(qr_code)
+    confirmation_token = (
+        create_scan_confirmation_token(scan.id) if qr_code.program == "promoter" else None
+    )
+    return build_redirect(qr_code, confirmation_token=confirmation_token)
 
 
 def record_scan(
     qr_code_id: str,
     *,
-    user_id: str | None = None,
-    session_id: str,
-    user_agent: str | None = None,
-) -> QrCodeScanResponse:
-    r = (
+    dedupe_hash: str,
+    ip_hash: str,
+    browser_family: str | None,
+    os_family: str | None,
+    asn: int | None = None,
+    country: str | None = None,
+    latitude: float | None = None,
+    longitude: float | None = None,
+) -> QrCodeScanResponse | None:
+    try:
+        response = (
+            get_sb()
+            .rpc(
+                "record_qr_scan",
+                {
+                    "p_scan_id": str(uuid.uuid4()),
+                    "p_qr_code_id": qr_code_id,
+                    "p_dedupe_hash": dedupe_hash,
+                    "p_ip_hash": ip_hash,
+                    "p_browser_family": browser_family,
+                    "p_os_family": os_family,
+                    "p_asn": asn,
+                    "p_country": country,
+                    "p_latitude": latitude,
+                    "p_longitude": longitude,
+                },
+            )
+            .execute()
+        )
+    except APIError as exc:
+        message = str(exc)
+        if "qr_code_archived" in message:
+            return None
+        if "qr_code_not_found" in message:
+            raise NotFoundError(POSTER_NOT_FOUND) from exc
+        if "requires_location" in message:
+            raise ValidationError(REQUIRES_LOCATION) from exc
+        raise
+    if not response.data:
+        raise RuntimeError("record_qr_scan returned no row")
+    return _to_scan_response(response.data[0])
+
+
+def confirm_scan(token: str, *, visitor_token: str) -> QrScanConfirmResponse:
+    scan_id = verify_scan_confirmation_token(token)
+    if scan_id is None:
+        raise ValidationError(INVALID_SCAN_CONFIRMATION)
+
+    dedupe_hash = hash_visitor_token(visitor_token)
+    response = (
         get_sb()
         .table(QR_CODE_SCANS)
-        .insert(
-            {
-                "id": str(uuid.uuid4()),
-                "qr_code_id": qr_code_id,
-                "user_id": user_id,
-                "session_id": session_id,
-                "user_agent": user_agent,
-                "conversion_actions": [],
-            }
-        )
+        .select("id, dedupe_hash, landing_confirmed_at")
+        .eq("id", scan_id)
+        .eq("dedupe_hash", dedupe_hash)
         .execute()
     )
-    return QrCodeScanResponse.model_validate(r.data[0])
+    if not response.data:
+        raise ValidationError(INVALID_SCAN_CONFIRMATION)
+
+    existing = response.data[0]
+    confirmed_at = existing.get("landing_confirmed_at")
+    if confirmed_at is None:
+        confirmed_at = datetime.now(timezone.utc).isoformat()
+        update_response = (
+            get_sb()
+            .table(QR_CODE_SCANS)
+            .update({"landing_confirmed_at": confirmed_at})
+            .eq("id", scan_id)
+            .is_("landing_confirmed_at", "null")
+            .execute()
+        )
+        if update_response.data:
+            confirmed_at = update_response.data[0]["landing_confirmed_at"]
+        else:
+            refreshed = (
+                get_sb()
+                .table(QR_CODE_SCANS)
+                .select("landing_confirmed_at")
+                .eq("id", scan_id)
+                .execute()
+            )
+            if not refreshed.data or refreshed.data[0].get("landing_confirmed_at") is None:
+                raise ValidationError(INVALID_SCAN_CONFIRMATION)
+            confirmed_at = refreshed.data[0]["landing_confirmed_at"]
+
+    return QrScanConfirmResponse(
+        confirmed=True,
+        landing_confirmed_at=confirmed_at,
+    )
+
+
+def archive_qr_code(qr_code_id: str) -> QrCodeResponse:
+    response = (
+        get_sb()
+        .table(QR_CODES)
+        .update({"is_active": False})
+        .eq("id", qr_code_id)
+        .eq("is_active", True)
+        .execute()
+    )
+    if response.data:
+        return QrCodeResponse.model_validate(response.data[0])
+    existing = get_qr_code_by_id(qr_code_id)
+    if existing is None:
+        raise NotFoundError(POSTER_NOT_FOUND)
+    return existing
 
 
 def delete_qr_code(qr_code_id: str) -> None:
-    if not get_qr_code_by_id(qr_code_id):
+    qr_code = get_qr_code_by_id(qr_code_id)
+    if qr_code is None:
         raise NotFoundError(POSTER_NOT_FOUND)
+    if qr_code.program == "promoter":
+        raise ValidationError(PROMOTER_POSTERS_CANNOT_BE_DELETED)
     get_sb().table(QR_CODES).delete().eq("id", qr_code_id).execute()
+
+
+def build_redirect(
+    qr_code: QrCodeResponse,
+    *,
+    confirmation_token: str | None = None,
+) -> QrCodeRedirect:
+    query_params = None
+    if qr_code.program == "promoter":
+        query_params = {"utm_source": "poster", "poster_id": qr_code.id}
+    return QrCodeRedirect(
+        destination_type=qr_code.destination_type,
+        destination_id=_coerce_destination_id(
+            qr_code.destination_type,
+            qr_code.destination_id,
+            qr_code.id,
+        ),
+        filters=qr_code.filters,
+        query_params=query_params,
+        scan_confirmation_token=confirmation_token,
+    )
 
 
 def list_qr_codes(
     *,
     created_by: str | None = None,
     school: str | None = None,
+    program: str | None = None,
+    is_active: bool | None = None,
+    latest_scan_before: datetime | None = None,
+    latest_scan_after: datetime | None = None,
+    never_scanned: bool | None = None,
     offset: int = 0,
     limit: int | None = DEFAULT_LIST_LIMIT,
 ) -> tuple[list[QrCodeResponse], int]:
-    """Return QR codes, newest first.
-
-    Returns (items, total_count). Pass ``limit=None`` only for trusted internal
-    maintenance callers that intentionally need all rows.
-    """
-    q = get_sb().table(QR_CODES).select("*", count="exact").order("created_at", desc=True)
+    query = get_sb().table(QR_CODES).select("*", count="exact").order("created_at", desc=True)
     if created_by:
-        q = q.eq("created_by", created_by)
+        query = query.eq("created_by", created_by)
     if school:
         user_rows = get_sb().table("users").select("id").eq("school", school).execute()
         user_ids = [str(row["id"]) for row in user_rows.data or []]
-        if user_ids:
-            q = q.in_("created_by", user_ids)
-        else:
+        if not user_ids:
             return [], 0
+        query = query.in_("created_by", user_ids)
+    if program:
+        query = query.eq("program", program)
+    if is_active is not None:
+        query = query.eq("is_active", is_active)
+    if latest_scan_before:
+        query = query.lt("latest_scan", latest_scan_before.isoformat())
+    if latest_scan_after:
+        query = query.gte("latest_scan", latest_scan_after.isoformat())
+    if never_scanned is True:
+        query = query.is_("latest_scan", "null")
+    elif never_scanned is False:
+        query = query.not_.is_("latest_scan", "null")
     if limit is not None:
-        q = q.range(offset, offset + limit - 1)
-    r = q.execute()
-    items = [QrCodeResponse.model_validate(qr) for qr in (r.data or [])]
-    return items, r.count or len(items)
+        query = query.range(offset, offset + limit - 1)
+    response = query.execute()
+    items = [QrCodeResponse.model_validate(row) for row in response.data or []]
+    return items, response.count or len(items)
 
 
 def list_scans(
@@ -277,31 +408,157 @@ def list_scans(
     offset: int = 0,
     limit: int | None = DEFAULT_LIST_LIMIT,
 ) -> tuple[list[QrCodeScanResponse], int]:
-    """Return scans, newest first.
-
-    Returns (items, total_count). Pass ``limit=None`` only for trusted internal
-    maintenance callers that intentionally need all rows.
-    """
-    # When owned_by is set, restrict results to QR codes created by that user.
     if owned_by is not None:
         owned_items, _ = list_qr_codes(created_by=owned_by, limit=None)
-        owned_ids = [qr.id for qr in owned_items]
+        # Promoters receive aggregate earnings only. Raw promoter scan and
+        # risk details remain admin-only so fraud controls are not exposed.
+        owned_ids = [qr_code.id for qr_code in owned_items if qr_code.program == "standard"]
         if not owned_ids:
             return [], 0
         if qr_code_id and qr_code_id not in owned_ids:
             return [], 0
 
-    q = get_sb().table(QR_CODE_SCANS).select("*", count="exact").order("scanned_at", desc=True)
+    public_columns = (
+        "id, qr_code_id, scanned_at, dedupe_hash, browser_family, os_family, asn, country, "
+        "landing_confirmed_at, risk_score, risk_flags, risk_evaluated_at, "
+        "risk_rules_version"
+    )
+    query = (
+        get_sb()
+        .table(QR_CODE_SCANS)
+        .select(public_columns, count="exact")
+        .order("scanned_at", desc=True)
+    )
     if qr_code_id:
-        q = q.eq("qr_code_id", qr_code_id)
+        query = query.eq("qr_code_id", qr_code_id)
     elif owned_by is not None:
-        q = q.in_("qr_code_id", owned_ids)
+        query = query.in_("qr_code_id", owned_ids)
     if from_time:
-        q = q.gte("scanned_at", from_time.isoformat())
+        query = query.gte("scanned_at", from_time.isoformat())
     if to_time:
-        q = q.lte("scanned_at", to_time.isoformat())
+        query = query.lte("scanned_at", to_time.isoformat())
     if limit is not None:
-        q = q.range(offset, offset + limit - 1)
-    r = q.execute()
-    items = [QrCodeScanResponse.model_validate(s) for s in (r.data or [])]
-    return items, r.count or len(items)
+        query = query.range(offset, offset + limit - 1)
+    response = query.execute()
+    items = [_to_scan_response(row) for row in response.data or []]
+    return items, response.count or len(items)
+
+
+def _to_scan_response(row: dict) -> QrCodeScanResponse:
+    public_row = {
+        **row,
+        "visitor_reference": str(row["dedupe_hash"])[:16],
+    }
+    public_row.pop("dedupe_hash", None)
+    return QrCodeScanResponse.model_validate(public_row)
+
+
+def new_visitor_token() -> str:
+    return secrets.token_urlsafe(32)
+
+
+def hash_visitor_token(visitor_token: str) -> str:
+    return _keyed_hash("visitor:v1", visitor_token, settings.poster_hash_secret)
+
+
+def hash_client_ip(client_ip: str) -> str:
+    return _keyed_hash("ip:v1", client_ip, settings.poster_hash_secret)
+
+
+def _keyed_hash(domain: str, value: str, secret: str) -> str:
+    if not secret:
+        raise RuntimeError("POSTER_HASH_SECRET is required for QR scan recording")
+    return hmac.new(
+        secret.encode(),
+        f"{domain}:{value}".encode(),
+        hashlib.sha256,
+    ).hexdigest()
+
+
+def create_scan_confirmation_token(scan_id: uuid.UUID) -> str:
+    secret = settings.poster_confirmation_secret
+    if not secret:
+        raise RuntimeError("POSTER_CONFIRMATION_SECRET is required for promoter scans")
+    issued_at = datetime.now(timezone.utc)
+    not_before = issued_at + timedelta(
+        seconds=controlbox.promoter_program.landing_confirmation_seconds
+    )
+    expires_at = issued_at + timedelta(
+        minutes=controlbox.promoter_program.confirmation_token_minutes
+    )
+    payload = (
+        f"{_CONFIRMATION_TOKEN_VERSION}:{scan_id}:"
+        f"{math.ceil(not_before.timestamp())}:{math.floor(expires_at.timestamp())}"
+    )
+    signature = hmac.new(secret.encode(), payload.encode(), hashlib.sha256).digest()
+    return f"{_encode_token(payload.encode())}.{_encode_token(signature)}"
+
+
+def verify_scan_confirmation_token(token: str) -> str | None:
+    secret = settings.poster_confirmation_secret
+    if not secret:
+        raise RuntimeError("POSTER_CONFIRMATION_SECRET is required for scan confirmation")
+    try:
+        encoded_payload, encoded_signature = token.split(".", 1)
+        payload_bytes = _decode_token(encoded_payload)
+        supplied_signature = _decode_token(encoded_signature)
+        expected_signature = hmac.new(
+            secret.encode(),
+            payload_bytes,
+            hashlib.sha256,
+        ).digest()
+        if not hmac.compare_digest(supplied_signature, expected_signature):
+            return None
+        version, raw_scan_id, raw_not_before, raw_expiry = payload_bytes.decode().split(":", 3)
+        if version != _CONFIRMATION_TOKEN_VERSION:
+            return None
+        scan_id = str(uuid.UUID(raw_scan_id))
+        now_timestamp = datetime.now(timezone.utc).timestamp()
+        if now_timestamp < int(raw_not_before) or now_timestamp > int(raw_expiry):
+            return None
+        return scan_id
+    except (binascii.Error, ValueError, UnicodeDecodeError):
+        return None
+
+
+def parse_user_agent(user_agent: str | None) -> tuple[str | None, str | None]:
+    """Return broad client families without retaining the detailed header."""
+    if not user_agent:
+        return None, None
+
+    normalized = user_agent.lower()
+    if "edg/" in normalized:
+        browser = "Edge"
+    elif "opr/" in normalized or "opera" in normalized:
+        browser = "Opera"
+    elif "chrome/" in normalized or "crios/" in normalized:
+        browser = "Chrome"
+    elif "firefox/" in normalized or "fxios/" in normalized:
+        browser = "Firefox"
+    elif "safari/" in normalized:
+        browser = "Safari"
+    else:
+        browser = "Other"
+
+    if "android" in normalized:
+        operating_system = "Android"
+    elif "iphone" in normalized or "ipad" in normalized or "ios" in normalized:
+        operating_system = "iOS"
+    elif "windows" in normalized:
+        operating_system = "Windows"
+    elif "mac os" in normalized or "macintosh" in normalized:
+        operating_system = "macOS"
+    elif "linux" in normalized:
+        operating_system = "Linux"
+    else:
+        operating_system = "Other"
+    return browser, operating_system
+
+
+def _encode_token(value: bytes) -> str:
+    return base64.urlsafe_b64encode(value).rstrip(b"=").decode()
+
+
+def _decode_token(value: str) -> bytes:
+    padding = "=" * (-len(value) % 4)
+    return base64.urlsafe_b64decode(value + padding)

@@ -1,11 +1,15 @@
 """Users (profile table) via Supabase. Sync."""
 
+from datetime import datetime, timezone
 from uuid import UUID
 
 from core.constants import DEFAULT_LIST_LIMIT
+from core.controlbox import controlbox
 from core.database import get_sb
-from core.tables import USERS
-from schemas.user import UserResponse, UserUpdate
+from core.errors import PROMOTER_TOS_REQUIRED, USER_HAS_PAYOUTS
+from core.exceptions import ValidationError
+from core.tables import POSTER_PAYOUTS, USERS
+from schemas.user import PromoterEnrollmentUpdate, UserResponse, UserUpdate
 
 
 def get_user(user_id: UUID) -> UserResponse | None:
@@ -78,6 +82,40 @@ def update_user(user_id: UUID, data: UserUpdate) -> UserResponse | None:
     return UserResponse.model_validate(r.data[0]) if r.data else None
 
 
+def update_promoter_enrollment(
+    user_id: UUID,
+    data: PromoterEnrollmentUpdate,
+) -> UserResponse | None:
+    """Enroll a user or update an existing promoter payout email.
+
+    The acceptance timestamp is server-owned and is only changed when the
+    current ToS version has not yet been accepted.
+    """
+    existing = get_user(user_id)
+    if existing is None:
+        return None
+
+    current_version = controlbox.promoter_program.tos_version
+    must_accept = (
+        existing.promoter_tos_accepted_at is None
+        or existing.promoter_tos_version != current_version
+    )
+    if must_accept and not data.accept_tos:
+        raise ValidationError(PROMOTER_TOS_REQUIRED)
+
+    payload: dict[str, object] = {"payout_email": str(data.payout_email)}
+    if must_accept:
+        payload.update(
+            {
+                "promoter_tos_accepted_at": datetime.now(timezone.utc).isoformat(),
+                "promoter_tos_version": current_version,
+            }
+        )
+
+    r = get_sb().table(USERS).update(payload).eq("id", str(user_id)).execute()
+    return UserResponse.model_validate(r.data[0]) if r.data else None
+
+
 def set_role(user_id: UUID, role: str) -> UserResponse | None:
     """Admin-only role rotation.
 
@@ -105,5 +143,15 @@ def count_admins() -> int:
 
 
 def delete_user(user_id: UUID) -> bool:
+    payout_response = (
+        get_sb()
+        .table(POSTER_PAYOUTS)
+        .select("id", count="exact")
+        .eq("user_id", str(user_id))
+        .limit(1)
+        .execute()
+    )
+    if payout_response.count or payout_response.data:
+        raise ValidationError(USER_HAS_PAYOUTS)
     r = get_sb().table(USERS).delete().eq("id", str(user_id)).execute()
     return bool(r.data)

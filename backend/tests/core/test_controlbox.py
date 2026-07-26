@@ -29,6 +29,8 @@ def test_checked_in_controlbox_is_valid() -> None:
         controlbox.instagram_publishing.accounts[0].instagram_business_account_id
         == "17841476154506771"
     )
+    assert controlbox.promoter_program.rate_cents == 25
+    assert controlbox.promoter_program.maximum_active_posters == 50
 
 
 def test_unknown_control_is_rejected(tmp_path: Path) -> None:

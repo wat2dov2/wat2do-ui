@@ -14,6 +14,8 @@ export interface QRCode {
   createdAt: string;
   createdBy: string;
   isActive: boolean;
+  program: "standard" | "promoter";
+  latestScan?: string;
   imageUrl?: string; // Uploaded poster image URL
   latitude: number; // Poster location latitude
   longitude: number; // Poster location longitude
@@ -23,8 +25,12 @@ export interface QRCodeScan {
   id: string;
   qrCodeId: string;
   scannedAt: string;
-  userId?: string;
-  sessionId: string;
-  conversionActions: unknown[];
-  userAgent?: string;
+  visitorReference: string;
+  browserFamily?: string;
+  osFamily?: string;
+  asn?: number;
+  country?: string;
+  landingConfirmedAt?: string;
+  riskScore: number;
+  riskFlags: Array<Record<string, unknown>>;
 }

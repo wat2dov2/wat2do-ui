@@ -69,7 +69,7 @@ export function usePostersFilters({
   const qrCodesWithStats = useMemo(() => {
     return qrCodes.map((qr) => {
       const scans = allScans.filter((s) => s.qrCodeId === qr.id);
-      const uniqueScans = new Set(scans.map((s) => s.sessionId || s.userId || s.id)).size;
+      const uniqueScans = new Set(scans.map((s) => s.visitorReference)).size;
       return {
         ...qr,
         totalScans: scans.length,

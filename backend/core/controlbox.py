@@ -292,6 +292,21 @@ class InstagramPublishingControl(_ControlModel):
         return self
 
 
+class PromoterProgramControl(_ControlModel):
+    enabled: bool
+    rate_cents: int = Field(gt=0)
+    maximum_active_posters: int = Field(gt=0)
+    landing_confirmation_seconds: int = Field(gt=0)
+    confirmation_token_minutes: int = Field(gt=0)
+    payout_close_delay_hours: int = Field(ge=0)
+    risk_rules_version: str = Field(min_length=1, max_length=64)
+    rapid_distinct_visitors: int = Field(gt=1)
+    rapid_window_seconds: int = Field(gt=0)
+    rapid_rule_points: int = Field(gt=0)
+    hold_score_threshold: int = Field(gt=0)
+    tos_version: str = Field(min_length=1, max_length=64)
+
+
 class ControlBox(_ControlModel):
     event_discovery: EventDiscoveryControl
     client_cache: ClientCacheControl
@@ -310,6 +325,7 @@ class ControlBox(_ControlModel):
     admin: AdminControl
     public_attendance: PublicAttendanceControl
     instagram_publishing: InstagramPublishingControl
+    promoter_program: PromoterProgramControl
 
 
 def load_controlbox(directory: Path = _CONTROLBOX_DIRECTORY) -> ControlBox:
