@@ -98,6 +98,7 @@ USER_HAS_PAYOUTS = "Users with payout records cannot be deleted"
 INSTAGRAM_PUBLISH_BATCH_VERSION_CONFLICT = "Instagram publishing batch was changed"
 INSTAGRAM_PUBLISH_BATCH_NOT_EDITABLE = "Instagram publishing batch is not editable"
 INSTAGRAM_PUBLISHING_NOT_CONFIGURED = "Instagram publishing is not configured"
+INSTAGRAM_REAUTHORIZATION_REQUIRED = "Instagram account requires reauthorization"
 
 # ---------------------------------------------------------------------------
 # 502 / 503 – Upstream / AI errors

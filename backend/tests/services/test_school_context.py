@@ -14,6 +14,8 @@ def test_canonical_school_key_normalizes_slug():
 def test_resolve_school_timezone_uses_slug_only():
     assert school_context.resolve_school_timezone("uwaterloo") == "America/Toronto"
     assert school_context.resolve_school_timezone("upenn") == "America/New_York"
+    assert school_context.resolve_school_timezone("dalhousie") == "America/Halifax"
+    assert school_context.resolve_school_timezone("ualberta") == "America/Edmonton"
     assert school_context.resolve_school_timezone("University of Waterloo") == "UTC"
     assert school_context.resolve_school_timezone("Unknown") == "UTC"
     assert school_context.resolve_school_timezone(None) == "UTC"
@@ -69,4 +71,5 @@ def test_current_semester_end_uses_waterloo_only():
 def test_school_display_name_resolves_slug():
     assert school_context.school_display_name("uwaterloo") == "University of Waterloo"
     assert school_context.school_display_name("utm") == "University of Toronto Mississauga"
+    assert school_context.school_display_name("dalhousie") == "Dalhousie University"
     assert school_context.school_display_name("  Unknown  ") == "unknown"

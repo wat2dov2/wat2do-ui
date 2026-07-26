@@ -73,6 +73,66 @@ SCHOOLS: dict[str, dict[str, Any]] = {
         "display_name": "OCAD University",
         "timezone": "America/Toronto",
     },
+    "ualberta": {
+        "display_name": "University of Alberta",
+        "timezone": "America/Edmonton",
+    },
+    "laval": {
+        "display_name": "Université Laval",
+        "timezone": "America/Toronto",
+    },
+    "memorial": {
+        "display_name": "Memorial University",
+        "timezone": "America/St_Johns",
+    },
+    "sfu": {
+        "display_name": "Simon Fraser University",
+        "timezone": "America/Vancouver",
+    },
+    "udem": {
+        "display_name": "Université de Montréal",
+        "timezone": "America/Toronto",
+    },
+    "umanitoba": {
+        "display_name": "University of Manitoba",
+        "timezone": "America/Winnipeg",
+    },
+    "concordia": {
+        "display_name": "Concordia University",
+        "timezone": "America/Toronto",
+    },
+    "dalhousie": {
+        "display_name": "Dalhousie University",
+        "timezone": "America/Halifax",
+    },
+    "guelph": {
+        "display_name": "University of Guelph",
+        "timezone": "America/Toronto",
+    },
+    "ucalgary": {
+        "display_name": "University of Calgary",
+        "timezone": "America/Edmonton",
+    },
+    "usask": {
+        "display_name": "University of Saskatchewan",
+        "timezone": "America/Regina",
+    },
+    "uvic": {
+        "display_name": "University of Victoria",
+        "timezone": "America/Vancouver",
+    },
+    "windsor": {
+        "display_name": "University of Windsor",
+        "timezone": "America/Toronto",
+    },
+    "uqam": {
+        "display_name": "Université du Québec à Montréal",
+        "timezone": "America/Toronto",
+    },
+    "ontariotech": {
+        "display_name": "Ontario Tech University",
+        "timezone": "America/Toronto",
+    },
     "cornell": {
         "display_name": "Cornell University",
         "timezone": "America/New_York",

@@ -289,10 +289,10 @@ class InstagramPublishingAccountControl(_ControlModel):
     key: str = Field(min_length=1, max_length=100, pattern=r"^[a-z0-9][a-z0-9_-]*$")
     name: str = Field(min_length=1, max_length=100)
     school: str = Field(min_length=1, max_length=255)
-    instagram_business_account_id: str = Field(
+    instagram_username: str = Field(
         min_length=1,
-        max_length=64,
-        pattern=r"^[0-9]+$",
+        max_length=100,
+        pattern=r"^[A-Za-z0-9._]+$",
     )
     enabled: bool = True
 
@@ -309,12 +309,23 @@ class InstagramPublishingControl(_ControlModel):
     minimum_ai_score: float = Field(ge=0, le=10)
     meta_poll_attempts: int = Field(gt=0, le=30)
     meta_poll_interval_seconds: float = Field(gt=0, le=30)
+    meta_request_timeout_seconds: float = Field(gt=0, le=120)
+    token_lifetime_days: int = Field(gt=0, le=90)
+    token_refresh_lead_days: int = Field(gt=0, le=30)
 
     @model_validator(mode="after")
     def validate_unique_accounts(self) -> "InstagramPublishingControl":
         keys = [account.key for account in self.accounts]
         if len(keys) != len(set(keys)):
             raise ValueError("instagram publishing account keys must be unique")
+        schools = [account.school for account in self.accounts]
+        if len(schools) != len(set(schools)):
+            raise ValueError("instagram publishing account schools must be unique")
+        usernames = [account.instagram_username.casefold() for account in self.accounts]
+        if len(usernames) != len(set(usernames)):
+            raise ValueError("instagram publishing account usernames must be unique")
+        if self.token_refresh_lead_days >= self.token_lifetime_days:
+            raise ValueError("instagram token refresh lead must be shorter than token lifetime")
         return self
 
 

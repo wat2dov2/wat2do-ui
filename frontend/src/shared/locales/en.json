@@ -400,10 +400,10 @@
     "footerCopyright": "© 2025 Wat2Do · Built by Tony & Erica"
   },
   "contact": {
-    "heroAlt": "Meet Wat2Do Workspace",
+    "heroAlt": "Tony and Erica cheering in a campus hallway",
     "hero": {
-      "meet": "Meet",
-      "wat2do": "Wat2Do"
+      "line1": "Hey",
+      "line2": "interested user!"
     },
     "about": {
       "title": "About Wat2Do",

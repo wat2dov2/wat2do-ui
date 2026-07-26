@@ -31,7 +31,6 @@ from core.errors import (
     INSTAGRAM_PUBLISH_BATCH_NOT_EDITABLE,
     INSTAGRAM_PUBLISH_BATCH_NOT_FOUND,
     INSTAGRAM_PUBLISH_BATCH_VERSION_CONFLICT,
-    INSTAGRAM_PUBLISHING_NOT_CONFIGURED,
 )
 from core.exceptions import ConflictError, NotFoundError, ValidationError
 from core.tables import (
@@ -47,6 +46,7 @@ from schemas.instagram_publishing import (
 )
 from services import event_query
 from services.instagram_publishing.captions import build_caption
+from services.instagram_publishing.credentials import load_account_credentials
 from services.instagram_publishing.curation import rank_candidates
 from services.instagram_publishing.meta import MetaInstagramClient
 from services.instagram_publishing.rendering import render_cover_asset, render_event_asset
@@ -85,7 +85,15 @@ def generate_due_batches(
         if _batch_exists(account.key, local_now.date()):
             stats["skipped"] += 1
             continue
-        outcome = _generate_account_batch(account, local_now.date(), now)
+        try:
+            outcome = _generate_account_batch(account, local_now.date(), now)
+        except Exception:
+            log.exception(
+                "Instagram batch generation could not start account=%s",
+                account.key,
+            )
+            stats["failed"] += 1
+            continue
         stats[outcome] += 1
     return stats
 
@@ -173,7 +181,6 @@ def publish_batch(
     batch_id: UUID | str,
     data: InstagramPublishBatchPublish,
 ) -> dict[str, Any]:
-    access_token = _publishing_access_token()
     batch = get_batch(batch_id)
     _assert_version(batch, data.version)
     _assert_editable(batch)
@@ -186,8 +193,11 @@ def publish_batch(
         ),
         None,
     )
-    if account is None or account.instagram_business_account_id != batch["instagram_user_id"]:
+    if account is None:
         raise ValidationError("Instagram account configuration no longer matches this batch")
+    credentials = load_account_credentials(account)
+    if credentials.instagram_user_id != batch["instagram_user_id"]:
+        raise ValidationError("Instagram account credentials no longer match this batch")
 
     items = _ordered_items(batch)
     if not items:
@@ -214,7 +224,7 @@ def publish_batch(
 
     batch.update(claimed.data[0])
     try:
-        _publish_claimed_batch(access_token, batch, items)
+        _publish_claimed_batch(credentials.access_token, batch, items)
     except Exception as exc:
         log.exception("Instagram batch %s failed to publish", batch_id)
         (
@@ -239,6 +249,7 @@ def _generate_account_batch(
     local_date: date,
     now: datetime,
 ) -> str:
+    credentials = load_account_credentials(account, now_utc=now)
     window_start = _last_successful_cutoff(account.key) or (
         now - timedelta(hours=_CONTROL.fallback_window_hours)
     )
@@ -248,7 +259,7 @@ def _generate_account_batch(
         .insert(
             {
                 "account_key": account.key,
-                "instagram_user_id": account.instagram_business_account_id,
+                "instagram_user_id": credentials.instagram_user_id,
                 "school": account.school,
                 "local_date": local_date.isoformat(),
                 "window_start": window_start.isoformat(),
@@ -614,12 +625,6 @@ def _raise_draft_update_error(exc: Exception) -> None:
     if "not editable" in message:
         raise ValidationError(INSTAGRAM_PUBLISH_BATCH_NOT_EDITABLE) from exc
     raise exc
-
-
-def _publishing_access_token() -> str:
-    if not settings.instagram_access_token:
-        raise ValidationError(INSTAGRAM_PUBLISHING_NOT_CONFIGURED)
-    return settings.instagram_access_token
 
 
 def _aware_utc(value: datetime) -> datetime:

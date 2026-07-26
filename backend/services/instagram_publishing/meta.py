@@ -13,10 +13,35 @@ class MetaInstagramClient:
 
     def __init__(self, access_token: str):
         config = controlbox.instagram_publishing
-        self._base_url = f"https://graph.facebook.com/{config.graph_api_version}"
+        self._base_url = f"https://graph.instagram.com/{config.graph_api_version}"
         self._headers = {"Authorization": f"Bearer {access_token}"}
+        self._access_token = access_token
         self._poll_attempts = config.meta_poll_attempts
         self._poll_interval = config.meta_poll_interval_seconds
+        self._timeout = config.meta_request_timeout_seconds
+
+    def get_identity(self) -> dict[str, str]:
+        payload = self._get("/me", {"fields": "id,username"})
+        return {
+            "id": _required_string(payload, "id"),
+            "username": _required_string(payload, "username"),
+        }
+
+    def refresh_access_token(self) -> dict[str, Any]:
+        with httpx.Client(timeout=self._timeout) as client:
+            response = client.get(
+                "https://graph.instagram.com/refresh_access_token",
+                params={
+                    "grant_type": "ig_refresh_token",
+                    "access_token": self._access_token,
+                },
+            )
+        payload = _response_json(response)
+        _required_string(payload, "access_token")
+        expires_in = payload.get("expires_in")
+        if not isinstance(expires_in, int) or expires_in <= 0:
+            raise RuntimeError("Instagram token refresh did not include a valid expiry")
+        return payload
 
     def create_image_container(self, instagram_user_id: str, image_url: str) -> str:
         payload = self._post(
@@ -65,12 +90,12 @@ class MetaInstagramClient:
         raise RuntimeError("Meta media container did not become ready before the timeout")
 
     def _get(self, path: str, params: dict[str, str]) -> dict[str, Any]:
-        with httpx.Client(timeout=30, headers=self._headers) as client:
+        with httpx.Client(timeout=self._timeout, headers=self._headers) as client:
             response = client.get(f"{self._base_url}{path}", params=params)
         return _response_json(response)
 
     def _post(self, path: str, data: dict[str, str]) -> dict[str, Any]:
-        with httpx.Client(timeout=30, headers=self._headers) as client:
+        with httpx.Client(timeout=self._timeout, headers=self._headers) as client:
             response = client.post(f"{self._base_url}{path}", data=data)
         return _response_json(response)
 
@@ -90,7 +115,11 @@ def _response_json(response: httpx.Response) -> dict[str, Any]:
 
 
 def _required_id(payload: dict[str, Any]) -> str:
-    value = payload.get("id")
+    return _required_string(payload, "id")
+
+
+def _required_string(payload: dict[str, Any], field: str) -> str:
+    value = payload.get(field)
     if not value:
-        raise RuntimeError("Meta Graph API response did not include an ID")
+        raise RuntimeError(f"Instagram API response did not include {field}")
     return str(value)

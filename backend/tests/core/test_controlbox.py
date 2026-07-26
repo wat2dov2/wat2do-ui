@@ -27,10 +27,9 @@ def test_checked_in_controlbox_is_valid() -> None:
     assert controlbox.event_reminder.lead_minutes == 60
     assert controlbox.event_discovery.feed_revalidate_seconds == 3600
     assert controlbox.event_discovery.new_event_window_hours == 24
-    assert (
-        controlbox.instagram_publishing.accounts[0].instagram_business_account_id
-        == "17841476154506771"
-    )
+    assert controlbox.instagram_publishing.accounts[0].instagram_username == "wat2do.ca"
+    assert len(controlbox.instagram_publishing.accounts) == 24
+    assert controlbox.instagram_publishing.token_refresh_lead_days == 14
     assert controlbox.promoter_program.rate_cents == 25
     assert controlbox.promoter_program.maximum_active_posters == 50
 

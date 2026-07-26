@@ -1,4 +1,4 @@
-name: Daily Instagram publishing drafts
+name: Daily Instagram maintenance and publishing drafts
 
 on:
   schedule:
@@ -35,7 +35,7 @@ jobs:
           role-to-assume: ${{ env.AWS_DEPLOY_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Run the private ECS generation task
+      - name: Run the private ECS Instagram task
         run: |
           network_configuration="$(aws ecs describe-services --cluster "$ECS_CLUSTER" --services "$ECS_SERVICE" --query 'services[0].networkConfiguration.awsvpcConfiguration' --output json)"
           test "$network_configuration" != "null"

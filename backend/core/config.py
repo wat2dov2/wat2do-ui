@@ -78,9 +78,9 @@ class Settings(BaseSettings):
     poster_hash_secret: str = ""
     poster_confirmation_secret: str = ""
     poster_visitor_cookie_path: str = "/qr"
-    # Server-only Meta credential. Non-secret account IDs and feature controls
-    # live in backend/controlbox/instagram_publishing.json.
-    instagram_access_token: str = ""
+    # Server-only key for encrypting per-account Instagram access tokens before
+    # they are stored in Supabase. Generate with Fernet.generate_key().
+    instagram_token_encryption_key: str = ""
     # Next.js slide renderer. The carousel slide templates live in the frontend
     # so the admin preview and the published PNG come from one source; this is
     # the route that rasterizes them.

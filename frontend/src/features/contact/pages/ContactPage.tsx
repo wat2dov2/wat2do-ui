@@ -17,7 +17,7 @@ import { Link } from "@/shared/ui/link";
 import { Separator } from "@/shared/ui/separator";
 import { useTranslation } from "react-i18next";
 import imgSlefLogo from "@/assets/slef_logo.png";
-import imgMeetHero from "@/assets/meet_wat2do_hero.png";
+import imgContactHero from "@/assets/contact_hero.png";
 
 const CornerMask = ({ className }: { className?: string }) => (
   <svg
@@ -72,9 +72,9 @@ export function ContactPage() {
             className="relative h-[280px] w-full overflow-hidden rounded-3xl bg-muted sm:h-[360px] md:h-[440px]"
           >
             <img
-              src={imgMeetHero.src}
+              src={imgContactHero.src}
               alt={t("contact.heroAlt")}
-              className="pointer-events-none h-full w-full select-none object-cover"
+              className="pointer-events-none h-full w-full select-none object-cover object-[center_20%]"
             />
 
             <div className="absolute bottom-0 left-0 z-10 flex select-none flex-col items-start">
@@ -82,7 +82,7 @@ export function ContactPage() {
                 <CornerMask className="pointer-events-none absolute bottom-full left-0 size-4 text-background md:size-6" />
 
                 <h1 className="font-sans text-3xl font-bold leading-none tracking-tight text-foreground sm:text-5xl">
-                  {t("contact.hero.meet")}
+                  {t("contact.hero.line1")}
                 </h1>
 
                 <CornerMask className="pointer-events-none absolute bottom-0 left-full size-4 text-background md:size-6" />
@@ -90,7 +90,7 @@ export function ContactPage() {
 
               <div className="relative w-fit rounded-tr-[16px] bg-background pb-4 pl-4 pr-6 pt-2 md:rounded-tr-[24px] md:pb-6 md:pl-6 md:pr-10 md:pt-3">
                 <h1 className="font-sans text-3xl font-bold leading-none tracking-tight text-foreground sm:text-5xl">
-                  {t("contact.hero.wat2do")}
+                  {t("contact.hero.line2")}
                 </h1>
 
                 <CornerMask className="pointer-events-none absolute bottom-0 left-full size-4 text-background md:size-6" />

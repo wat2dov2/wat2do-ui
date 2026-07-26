@@ -75,14 +75,15 @@ def test_generate_due_batches_uses_enabled_controlbox_accounts(monkeypatch):
     )
 
     assert result == {
-        "accounts": 1,
-        "generated": 1,
+        "accounts": 24,
+        "generated": 24,
         "empty": 0,
         "skipped": 0,
         "failed": 0,
     }
     assert generated_accounts[0].key == "wat2do"
-    assert generated_accounts[0].instagram_business_account_id == "17841476154506771"
+    assert generated_accounts[0].instagram_username == "wat2do.ca"
+    assert any(account.key == "dalhousie" for account in generated_accounts)
 
 
 def test_generate_due_batches_runs_when_the_scheduler_starts_late(monkeypatch):
@@ -94,8 +95,8 @@ def test_generate_due_batches_runs_when_the_scheduler_starts_late(monkeypatch):
         datetime(2026, 7, 23, 14, 48, tzinfo=timezone.utc),
     )
 
-    assert result["accounts"] == 1
-    generate.assert_called_once()
+    assert result["accounts"] == 24
+    assert generate.call_count == 24
 
 
 class _FakeQuery:
@@ -238,8 +239,23 @@ def test_publish_batch_renders_the_slides_from_live_event_data(monkeypatch):
     containers: list[str] = []
     table_calls: list[tuple] = []
 
-    monkeypatch.setattr(service.settings, "instagram_access_token", "token")
-    monkeypatch.setattr(service, "get_batch", lambda _id: _batch([7, 8]))
+    load_credentials = Mock(
+        return_value=SimpleNamespace(
+            access_token="dalhousie-token",
+            instagram_user_id="37640733598873542",
+        )
+    )
+    monkeypatch.setattr(service, "load_account_credentials", load_credentials)
+    monkeypatch.setattr(
+        service,
+        "get_batch",
+        lambda _id: _batch(
+            [7, 8],
+            account_key="dalhousie",
+            instagram_user_id="37640733598873542",
+            school="dalhousie",
+        ),
+    )
     monkeypatch.setattr(
         service,
         "get_sb",
@@ -261,7 +277,7 @@ def test_publish_batch_renders_the_slides_from_live_event_data(monkeypatch):
 
     class _FakeClient:
         def __init__(self, access_token):
-            assert access_token == "token"
+            assert access_token == "dalhousie-token"
 
         def create_image_container(self, user_id, image_url):
             containers.append(image_url)
@@ -281,7 +297,8 @@ def test_publish_batch_renders_the_slides_from_live_event_data(monkeypatch):
 
     service.publish_batch("batch-1", InstagramPublishBatchPublish(version=3))
 
-    assert rendered == [("cover", [7, 8], "uwaterloo", "Body"), 7, 8]
+    assert load_credentials.call_args.args[0].key == "dalhousie"
+    assert rendered == [("cover", [7, 8], "dalhousie", "Body"), 7, 8]
     assert containers == ["https://a/cover.png", "https://a/7.png", "https://a/8.png"]
     published = [call for call in table_calls if call[0] == "update"]
     assert any(fields.get("meta_media_id") == "media-1" for _, (fields,), _ in published)

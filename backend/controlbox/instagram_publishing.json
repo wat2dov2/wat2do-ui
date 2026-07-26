@@ -5,7 +5,168 @@
       "key": "wat2do",
       "name": "Wat2Do",
       "school": "uwaterloo",
-      "instagram_business_account_id": "17841476154506771",
+      "instagram_username": "wat2do.ca",
+      "enabled": true
+    },
+    {
+      "key": "utsc",
+      "name": "Wat2Do UTSC",
+      "school": "utsc",
+      "instagram_username": "utsc.wat2do.io",
+      "enabled": true
+    },
+    {
+      "key": "laval",
+      "name": "Wat2Do Laval",
+      "school": "laval",
+      "instagram_username": "ulaval.wat2do.io",
+      "enabled": true
+    },
+    {
+      "key": "ualberta",
+      "name": "Wat2Do Alberta",
+      "school": "ualberta",
+      "instagram_username": "ualberta.wat2do.io",
+      "enabled": true
+    },
+    {
+      "key": "tmu",
+      "name": "Wat2Do TMU",
+      "school": "tmu",
+      "instagram_username": "tmu.wat2do.io",
+      "enabled": true
+    },
+    {
+      "key": "memorial",
+      "name": "Wat2Do Memorial",
+      "school": "memorial",
+      "instagram_username": "mun.wat2do.io",
+      "enabled": true
+    },
+    {
+      "key": "udem",
+      "name": "Wat2Do UdeM",
+      "school": "udem",
+      "instagram_username": "udem.wat2do.io",
+      "enabled": true
+    },
+    {
+      "key": "ubc",
+      "name": "Wat2Do UBC",
+      "school": "ubc",
+      "instagram_username": "ubc.wat2do.io",
+      "enabled": true
+    },
+    {
+      "key": "sfu",
+      "name": "Wat2Do SFU",
+      "school": "sfu",
+      "instagram_username": "sfu.wat2do.io",
+      "enabled": true
+    },
+    {
+      "key": "carleton",
+      "name": "Wat2Do Carleton",
+      "school": "carleton",
+      "instagram_username": "carleton.wat2do.io",
+      "enabled": true
+    },
+    {
+      "key": "dalhousie",
+      "name": "Wat2Do Dalhousie",
+      "school": "dalhousie",
+      "instagram_username": "dalhousie.wat2do.io",
+      "enabled": true
+    },
+    {
+      "key": "mcmaster",
+      "name": "Wat2Do McMaster",
+      "school": "mcmaster",
+      "instagram_username": "mcmaster.wat2do.io",
+      "enabled": true
+    },
+    {
+      "key": "ocad",
+      "name": "Wat2Do OCAD",
+      "school": "ocad",
+      "instagram_username": "ocadu.wat2do.io",
+      "enabled": true
+    },
+    {
+      "key": "ucalgary",
+      "name": "Wat2Do Calgary",
+      "school": "ucalgary",
+      "instagram_username": "ucalgary.wat2do.io",
+      "enabled": true
+    },
+    {
+      "key": "uottawa",
+      "name": "Wat2Do Ottawa",
+      "school": "uottawa",
+      "instagram_username": "ottawa.wat2do.io",
+      "enabled": true
+    },
+    {
+      "key": "usask",
+      "name": "Wat2Do Saskatchewan",
+      "school": "usask",
+      "instagram_username": "usask.wat2do.io",
+      "enabled": true
+    },
+    {
+      "key": "utoronto",
+      "name": "Wat2Do UTSG",
+      "school": "utoronto",
+      "instagram_username": "utsg.wat2do.io",
+      "enabled": true
+    },
+    {
+      "key": "western",
+      "name": "Wat2Do Western",
+      "school": "western",
+      "instagram_username": "uwo.wat2do.io",
+      "enabled": true
+    },
+    {
+      "key": "windsor",
+      "name": "Wat2Do Windsor",
+      "school": "windsor",
+      "instagram_username": "uwindsor.wat2do.io",
+      "enabled": true
+    },
+    {
+      "key": "concordia",
+      "name": "Wat2Do Concordia",
+      "school": "concordia",
+      "instagram_username": "concordia.wat2do.io",
+      "enabled": true
+    },
+    {
+      "key": "york",
+      "name": "Wat2Do York",
+      "school": "york",
+      "instagram_username": "yorku.wat2do.io",
+      "enabled": true
+    },
+    {
+      "key": "queens",
+      "name": "Wat2Do Queen's",
+      "school": "queens",
+      "instagram_username": "queensu.wat2do.io",
+      "enabled": true
+    },
+    {
+      "key": "mcgill",
+      "name": "Wat2Do McGill",
+      "school": "mcgill",
+      "instagram_username": "mcgill.wat2do.io",
+      "enabled": true
+    },
+    {
+      "key": "wlu",
+      "name": "Wat2Do Laurier",
+      "school": "wlu",
+      "instagram_username": "wlu.wat2do.io",
       "enabled": true
     }
   ],
@@ -17,5 +178,8 @@
   "maximum_event_slides": 9,
   "minimum_ai_score": 5.5,
   "meta_poll_attempts": 10,
-  "meta_poll_interval_seconds": 2
+  "meta_poll_interval_seconds": 2,
+  "meta_request_timeout_seconds": 30,
+  "token_lifetime_days": 60,
+  "token_refresh_lead_days": 14
 }
