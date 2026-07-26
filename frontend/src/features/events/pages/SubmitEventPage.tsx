@@ -11,8 +11,9 @@ import { ROUTES } from "@/shared/constants/routes";
 import {
   getCurrentSchool,
   getSchoolDisplayName,
-  resolveSchool,
+  resolveWritableSchool,
 } from "@/shared/constants/schools";
+import { loadUserProfile } from "@/features/auth/api/userRepository";
 import { Container, PageHeader, Stack } from "@/shared/layout";
 import type { EventFormData } from "@/shared/types";
 
@@ -23,7 +24,11 @@ export function SubmitEventPage() {
   const canCreateEvents = hasOrganization || isAdmin;
   const addEvent = useEventsStore((state) => state.addEvent);
   const schoolFilter = useEventsStore((state) => state.schoolFilter);
-  const school = resolveSchool(schoolFilter || getCurrentSchool());
+  const school = resolveWritableSchool(
+    schoolFilter,
+    getCurrentSchool(),
+    loadUserProfile()?.school,
+  );
   const schoolName = getSchoolDisplayName(school);
   const userCredits = useCreditsStore((state) => state.userCredits);
   const addCredits = useCreditsStore((state) => state.addCredits);

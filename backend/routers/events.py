@@ -79,8 +79,8 @@ def list_promoted_events(
 
 @router.get("/stats", response_model=dict[str, EventStatsResponse])
 def get_event_stats(school: str = Query(..., min_length=1, max_length=MAX_EVENT_SCHOOL_LENGTH)):
-    """Public uncached card stats for one school."""
-    return event_service.get_event_stats_for_school(school)
+    """Public uncached card stats for one school, or for all of them."""
+    return event_service.get_event_stats_for_school(None if school == "all" else school)
 
 
 @router.get("/", response_model=EventFeedResponse)

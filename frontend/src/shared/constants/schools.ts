@@ -1,6 +1,14 @@
 /** Default school slug used as a fallback throughout the app. */
 export const DEFAULT_SCHOOL = "uwaterloo";
 
+/**
+ * The all-schools scope, served from its own origin like any school.
+ *
+ * It is a viewing lens for admins, never a school an event or a user belongs
+ * to - so it is a servable host but not a known school.
+ */
+export const ALL_SCHOOLS = "all";
+
 const SCHOOL_LABELS: Record<string, string> = {
   all: "All Schools",
   uwaterloo: "University of Waterloo",
@@ -47,7 +55,28 @@ function normalizeSchoolSlug(value: string): string {
 }
 
 function hasSchoolLabel(school: string): boolean {
-  return Object.hasOwn(SCHOOL_LABELS, school) && school !== "all";
+  return Object.hasOwn(SCHOOL_LABELS, school) && school !== ALL_SCHOOLS;
+}
+
+export function isAllSchools(value: string | null | undefined): boolean {
+  return resolveSchool(value) === ALL_SCHOOLS;
+}
+
+/**
+ * The school a newly created record belongs to.
+ *
+ * The all-schools view is a lens, never an owner: an event or organization
+ * created while looking through it belongs to the first real school in
+ * ``candidates`` - typically the viewer's own.
+ */
+export function resolveWritableSchool(
+  ...candidates: (string | null | undefined)[]
+): string {
+  for (const candidate of candidates) {
+    const slug = candidate ? resolveSchool(candidate) : "";
+    if (slug && slug !== ALL_SCHOOLS) return slug;
+  }
+  return DEFAULT_SCHOOL;
 }
 
 /** Normalize a school slug. Empty input falls back to the default school. */
@@ -96,7 +125,8 @@ export function isKnownSchool(value: string | null | undefined): boolean {
 export interface HostnameSchoolStatus {
   school: string;
   candidate: string | null;
-  isKnownSchool: boolean;
+  /** Whether the app serves this host: a real school, or the all-schools view. */
+  isServable: boolean;
 }
 
 export function getHostnameSchoolStatus(hostname: string): HostnameSchoolStatus {
@@ -105,7 +135,7 @@ export function getHostnameSchoolStatus(hostname: string): HostnameSchoolStatus 
     return {
       school: DEFAULT_SCHOOL,
       candidate: null,
-      isKnownSchool: true,
+      isServable: true,
     };
   }
 
@@ -113,7 +143,7 @@ export function getHostnameSchoolStatus(hostname: string): HostnameSchoolStatus 
   return {
     school,
     candidate,
-    isKnownSchool: isKnownSchool(school),
+    isServable: isKnownSchool(school) || school === ALL_SCHOOLS,
   };
 }
 
@@ -131,7 +161,7 @@ export function getCurrentSchool(): string {
 export function getSchoolFromRequestHost(host: string | null | undefined): string {
   const hostname = (host ?? "").split(":")[0];
   const status = getHostnameSchoolStatus(hostname);
-  return status.isKnownSchool ? status.school : DEFAULT_SCHOOL;
+  return status.isServable ? status.school : DEFAULT_SCHOOL;
 }
 
 /**

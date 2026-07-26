@@ -9,13 +9,20 @@ import { ProtectedRoute } from "@/app/ProtectedRoute";
 import { UnknownSchoolPage } from "@/app/UnknownSchoolPage";
 import { useAppNavigation } from "@/app/hooks/useAppNavigation";
 import { useAppReady } from "@/app/client-providers";
-import { useUserEmail } from "@/features/auth/hooks/useAuthState";
+import { loadUserProfile } from "@/features/auth/api/userRepository";
+import { useAuthState, useUserEmail } from "@/features/auth/hooks/useAuthState";
 import { useCreditsStore } from "@/features/credits/store/credits.store";
 import { useEventsStore } from "@/features/events/store/events.store";
 import { useSavedOrganizationsStore } from "@/features/organizations/store/savedOrganizations.store";
 import { getRouteDocumentTitle } from "@/shared/constants/routes";
 import type { Role } from "@/shared/constants/roles";
-import { getHostnameSchoolStatus } from "@/shared/constants/schools";
+import {
+  DEFAULT_SCHOOL,
+  getHostnameSchoolStatus,
+  getSchoolOrigin,
+  isAllSchools,
+  type HostnameSchoolStatus,
+} from "@/shared/constants/schools";
 import { LoadingPage } from "@/shared/ui/loading-page";
 import { Toaster } from "@/shared/ui/sonner";
 
@@ -69,12 +76,13 @@ function AppPageContent({
   const ready = useAppReady();
   const pathname = usePathname();
   const userEmail = useUserEmail();
+  const { isAdmin } = useAuthState();
   const events = useEventsStore((s) => s.events);
   const setSchoolFilter = useEventsStore((s) => s.setSchoolFilter);
 
-  const hostnameSchoolStatus = useMemo(() => {
+  const hostnameSchoolStatus = useMemo<HostnameSchoolStatus>(() => {
     if (typeof window === "undefined" || skipSchoolCheck) {
-      return { candidate: null, isKnownSchool: true };
+      return { school: DEFAULT_SCHOOL, candidate: null, isServable: true };
     }
     return getHostnameSchoolStatus(window.location.hostname);
   }, [skipSchoolCheck]);
@@ -82,6 +90,18 @@ function AppPageContent({
   useEffect(() => {
     document.title = getRouteDocumentTitle(pathname);
   }, [pathname]);
+
+  // The all-schools origin is an admin lens over every school at once. Anyone
+  // else belongs on their own school's origin, so send them there rather than
+  // showing a feed they cannot have. Auth flows are exempt: signing in is how
+  // an admin gets a session on this host in the first place.
+  const bounceFromAllSchools =
+    ready && !authFlow && !skipSchoolCheck && !isAdmin && isAllSchools(hostnameSchoolStatus.school);
+
+  useEffect(() => {
+    if (!bounceFromAllSchools) return;
+    window.location.assign(getSchoolOrigin(loadUserProfile()?.school || DEFAULT_SCHOOL));
+  }, [bounceFromAllSchools]);
 
   useEffect(() => {
     if (!ready || authFlow) return;
@@ -99,8 +119,12 @@ function AppPageContent({
     return null;
   }
 
-  if (!hostnameSchoolStatus.isKnownSchool && hostnameSchoolStatus.candidate) {
+  if (!hostnameSchoolStatus.isServable && hostnameSchoolStatus.candidate) {
     return <UnknownSchoolPage requestedSchool={hostnameSchoolStatus.candidate} />;
+  }
+
+  if (bounceFromAllSchools) {
+    return <LoadingPage className="min-h-dvh" />;
   }
 
   const protectedContent = requiresAuth || requiredRole ? (

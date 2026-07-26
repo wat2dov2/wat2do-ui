@@ -1,7 +1,7 @@
 import { revalidateTag } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 import { eventFeedTag } from "@/features/events/api/eventFeed.server";
-import { isKnownSchool, resolveSchool } from "@/shared/constants/schools";
+import { ALL_SCHOOLS, isKnownSchool, resolveSchool } from "@/shared/constants/schools";
 
 interface RevalidateEventsRequest {
   school?: string;
@@ -44,8 +44,11 @@ export async function POST(request: NextRequest) {
   }
 
   // The feed renders per-host at "/", so the tagged fetch cache is the only
-  // thing to invalidate - there is no per-school path to revalidate.
+  // thing to invalidate - there is no per-school path to revalidate. The
+  // all-schools view contains this school's events, so it goes stale too, and
+  // nothing else will ever revalidate it: no event belongs to "all".
   revalidateTag(eventFeedTag(school), "max");
+  revalidateTag(eventFeedTag(ALL_SCHOOLS), "max");
 
   return NextResponse.json({ revalidated: true, school });
 }

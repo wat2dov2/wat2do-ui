@@ -23,7 +23,6 @@ type NavOrganization = AuthState["clubs"][number];
 
 export function TopNav() {
   const schoolFilter = useEventsStore((s) => s.schoolFilter);
-  const setSchoolFilter = useEventsStore((s) => s.setSchoolFilter);
   const { profileCompleted, isAdmin, clubs, organizationId } = useAuthState();
   const { t } = useTranslation();
   const router = useRouter();
@@ -65,14 +64,11 @@ export function TopNav() {
 
   const handleSchoolChange = useCallback(
     (school: string) => {
-      if (school === "all") {
-        setSchoolFilter(school);
-        return;
-      }
-      // Each school lives on its own origin, so switching is a cross-origin navigation.
+      // Every school lives on its own origin - including the admin-only
+      // all-schools view - so switching is a cross-origin navigation.
       window.location.assign(getSchoolOrigin(school));
     },
-    [setSchoolFilter],
+    [],
   );
 
   const findOrganizations = useCallback(

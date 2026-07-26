@@ -15,8 +15,9 @@ import {
 import {
   getCurrentSchool,
   getSchoolDisplayName,
-  resolveSchool,
+  resolveWritableSchool,
 } from "@/shared/constants/schools";
+import { loadUserProfile } from "@/features/auth/api/userRepository";
 import { Container, PageHeader, Section, Stack } from "@/shared/layout";
 import { toast } from "@/shared/hooks/use-toast";
 import { queryKeys } from "@/shared/lib/queryKeys";
@@ -27,7 +28,11 @@ export function CreateOrganizationPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const schoolFilter = useEventsStore((state) => state.schoolFilter);
-  const school = resolveSchool(schoolFilter || getCurrentSchool());
+  const school = resolveWritableSchool(
+    schoolFilter,
+    getCurrentSchool(),
+    loadUserProfile()?.school,
+  );
   const schoolName = getSchoolDisplayName(school);
 
   const saveOrganization = async (

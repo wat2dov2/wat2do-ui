@@ -156,21 +156,19 @@ def get_event(event_id: int) -> EventResponse | None:
     return event_query.hydrate_event(r.data[0], occurrences, EventResponse)
 
 
-def get_event_stats_for_school(school: str) -> dict[str, EventStatsResponse]:
-    """Return uncached click and going counts for cards at one school."""
-    event_rows = fetch_all_pages(
-        lambda offset, page_size: (
-            (
-                get_sb()
-                .table(EVENTS)
-                .select("id")
-                .eq("school", school)
-                .range(offset, offset + page_size - 1)
-                .execute()
-            ).data
-            or []
-        ),
-    )
+def get_event_stats_for_school(school: str | None) -> dict[str, EventStatsResponse]:
+    """Return uncached click and going counts for cards at one school.
+
+    ``school`` of ``None`` is the all-schools view: every card, unfiltered.
+    """
+
+    def _page(offset: int, page_size: int) -> list[dict]:
+        q = get_sb().table(EVENTS).select("id")
+        if school:
+            q = q.eq("school", school)
+        return q.range(offset, offset + page_size - 1).execute().data or []
+
+    event_rows = fetch_all_pages(_page)
     event_ids = [int(row["id"]) for row in event_rows]
     click_counts = interaction_service.get_click_counts_for_events(event_ids)
     try:
