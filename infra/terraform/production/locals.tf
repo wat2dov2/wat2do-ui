@@ -22,6 +22,7 @@ locals {
     COOKIE_DOMAIN                   = ".${var.domain_name}"
     COOKIE_SECURE                   = "true"
     REFRESH_COOKIE_PATH             = "/api/auth/refresh"
+    POSTER_VISITOR_COOKIE_PATH      = "/api/qr"
     FRONTEND_URL                    = "https://${var.domain_name}"
     EVENT_FEED_REVALIDATION_URL     = "http://127.0.0.1:3000/api/revalidate-events"
     EVENT_FEED_REVALIDATION_TIMEOUT = "3"

@@ -191,6 +191,7 @@ def test_resolve_archived_qr_redirects_without_recording(client):
 
 
 def test_promoter_scan_returns_attribution_and_confirmation_token(client, monkeypatch):
+    monkeypatch.setattr(settings, "poster_visitor_cookie_path", "/api/qr")
     promoter = _mock_qr(
         id="promoter-scan",
         program="promoter",
@@ -216,6 +217,7 @@ def test_promoter_scan_returns_attribution_and_confirmation_token(client, monkey
     }
     assert response.json()["scan_confirmation_token"]
     assert qr_code_service.POSTER_VISITOR_COOKIE in response.cookies
+    assert "Path=/api/qr" in response.headers["set-cookie"]
 
 
 def test_scan_confirmation_requires_matching_visitor_cookie(client, monkeypatch):

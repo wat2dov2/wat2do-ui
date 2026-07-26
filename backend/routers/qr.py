@@ -58,7 +58,7 @@ def _get_or_create_visitor_token(request: Request, response: Response) -> str:
             httponly=True,
             samesite="lax",
             secure=settings.cookie_secure or settings.is_production,
-            path="/qr",
+            path=settings.poster_visitor_cookie_path,
             max_age=_VISITOR_COOKIE_MAX_AGE,
             domain=settings.cookie_domain or None,
         )

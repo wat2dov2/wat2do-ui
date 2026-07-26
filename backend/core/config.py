@@ -77,6 +77,7 @@ class Settings(BaseSettings):
     # short-lived scan confirmation tokens.
     poster_hash_secret: str = ""
     poster_confirmation_secret: str = ""
+    poster_visitor_cookie_path: str = "/qr"
     # Server-only Meta credential. Non-secret account IDs and feature controls
     # live in backend/controlbox/instagram_publishing.json.
     instagram_access_token: str = ""
