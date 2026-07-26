@@ -78,6 +78,8 @@ interface EventFormStepProps {
   previewBase?: Event | null;
   /** Lets a host render its own preview of what the form currently describes. */
   onPreviewEventChange?: (event: Event) => void;
+  /** Off where the host saves the form, so there is one save button, not two. */
+  showSubmit?: boolean;
 }
 
 export function EventFormStep({
@@ -96,6 +98,7 @@ export function EventFormStep({
   showPreview = true,
   previewBase,
   onPreviewEventChange,
+  showSubmit = true,
 }: EventFormStepProps) {
   const { t } = useTranslation();
   const profileCompleted = useProfileCompleted();
@@ -253,26 +256,28 @@ export function EventFormStep({
               <FieldSeparator />
               <form>
                 <EventFormFields />
-                <Field orientation="horizontal" className="mt-6">
-                  {onCancel ? (
-                    <Button variant="secondary" type="button" onClick={onCancel}>
-                      {t("common.cancel")}
-                    </Button>
-                  ) : null}
-                  <LoadingButton
-                    type="button"
-                    onMouseDown={onSubmit}
-                    disabled={!eventForm.isValid}
-                    isLoading={isSubmitting}
-                    loadingText={t("common.pleaseWait")}
-                  >
-                    {isEditMode
-                      ? t("events.updateEvent")
-                      : canCreateEvents
-                        ? t("events.createEvent")
-                        : t("events.submitForReview")}
-                  </LoadingButton>
-                </Field>
+                {showSubmit ? (
+                  <Field orientation="horizontal" className="mt-6">
+                    {onCancel ? (
+                      <Button variant="secondary" type="button" onClick={onCancel}>
+                        {t("common.cancel")}
+                      </Button>
+                    ) : null}
+                    <LoadingButton
+                      type="button"
+                      onMouseDown={onSubmit}
+                      disabled={!eventForm.isValid}
+                      isLoading={isSubmitting}
+                      loadingText={t("common.pleaseWait")}
+                    >
+                      {isEditMode
+                        ? t("events.updateEvent")
+                        : canCreateEvents
+                          ? t("events.createEvent")
+                          : t("events.submitForReview")}
+                    </LoadingButton>
+                  </Field>
+                ) : null}
               </form>
             </FieldGroup>
           ) : (

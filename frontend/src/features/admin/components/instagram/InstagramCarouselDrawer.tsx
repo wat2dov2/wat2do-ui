@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { ChevronLeft, ChevronRight, Plus, X } from "@/shared/ui/doodle-icons";
@@ -67,11 +67,13 @@ export function InstagramCarouselDrawer({
   const [coverBody, setCoverBody] = useState(batch.cover_body);
   const [slideIndex, setSlideIndex] = useState(COVER_INDEX);
   const [addingEvent, setAddingEvent] = useState(false);
+  /** The open slide's event is saved before the run, and takes its own moment. */
+  const [isSavingSlide, setIsSavingSlide] = useState(false);
 
   const editable = isBatchEditable(batch);
   const slideCount = eventIds.length + 1;
   const currentEventId = slideIndex === COVER_INDEX ? null : (eventIds[slideIndex - 1] ?? null);
-  const busy = isSaving || isPublishing;
+  const busy = isSaving || isPublishing || isSavingSlide;
 
   // Slides render from the saved carousel, so an event edited here shows up in
   // the preview once the draft is saved and the batch comes back.
@@ -104,6 +106,8 @@ export function InstagramCarouselDrawer({
   // of the server until the edit is saved. Tagged with its event so a slide
   // never shows the one before it.
   const [liveSlide, setLiveSlide] = useState<{ eventId: number; event: Event } | null>(null);
+  /** The open slide form's save, so this drawer's save covers it too. */
+  const slideSaveRef = useRef<(() => Promise<boolean>) | null>(null);
   const handlePreviewEventChange = useCallback(
     (event: Event) => {
       if (currentEventId == null) return;
@@ -132,9 +136,9 @@ export function InstagramCarouselDrawer({
         queryClient.invalidateQueries({ queryKey: queryKeys.events.detail(eventId) }),
         queryClient.invalidateQueries({ queryKey: queryKeys.instagramPublishing.batches() }),
       ]);
-      toast({ title: t("admin.instagramPublishing.slideUpdated"), variant: "success" });
+      // The form reports the event it saved; this drawer reports the run.
     },
-    [queryClient, t],
+    [queryClient],
   );
 
   /**
@@ -164,7 +168,26 @@ export function InstagramCarouselDrawer({
     setSlideIndex((current) => Math.max(COVER_INDEX, current - 1));
   }, [currentEventId]);
 
+  /**
+   * Saves everything the editor is holding: the open slide's event, then the
+   * carousel itself.
+   *
+   * The event form has no save button of its own here - one screen, one save -
+   * so a slide edited and left on screen is part of this draft. A form that
+   * refuses to save (missing a required field) stops the whole save, with its
+   * own errors already on screen.
+   */
   const handleSaveDraft = useCallback(async () => {
+    const saveSlideEdit = slideSaveRef.current;
+    if (saveSlideEdit) {
+      setIsSavingSlide(true);
+      try {
+        if (!(await saveSlideEdit())) return null;
+      } finally {
+        setIsSavingSlide(false);
+      }
+    }
+
     const saved = await persistDraft(eventIds);
     setEventIds(carouselEventIds(saved));
     return saved;
@@ -182,7 +205,7 @@ export function InstagramCarouselDrawer({
 
   const publish = useCallback(() => {
     handleSaveDraft()
-      .then((saved) => onPublish(saved.version))
+      .then((saved) => (saved ? onPublish(saved.version) : undefined))
       .catch((error) => {
         toast({
           title: t("admin.instagramPublishing.publishError"),
@@ -198,19 +221,9 @@ export function InstagramCarouselDrawer({
     <Drawer open onOpenChange={(open) => !open && !busy && onClose()}>
       <DrawerContent>
         <DrawerHeader>
-          <Stack direction="horizontal" justify="between" align="center" gap={3} wrap>
-            <Stack gap={1}>
-              <DrawerTitle>{getSchoolDisplayName(batch.school)}</DrawerTitle>
-              <DrawerDescription>{batch.local_date}</DrawerDescription>
-            </Stack>
-            <Button
-              type="button"
-              disabled={!editable || busy || eventIds.length >= MAX_EVENT_SLIDES}
-              onClick={() => setAddingEvent(true)}
-            >
-              <Plus className="size-4" />
-              {t("admin.instagramPublishing.addEvent")}
-            </Button>
+          <Stack gap={1}>
+            <DrawerTitle>{getSchoolDisplayName(batch.school)}</DrawerTitle>
+            <DrawerDescription>{batch.local_date}</DrawerDescription>
           </Stack>
         </DrawerHeader>
 
@@ -302,6 +315,8 @@ export function InstagramCarouselDrawer({
                       onUpdate={handleUpdateEvent}
                       previewBase={savedSlideEvent}
                       onPreviewEventChange={handlePreviewEventChange}
+                      saveRef={slideSaveRef}
+                      showSubmit={false}
                     />
                   ) : null}
                   <Button
@@ -342,9 +357,18 @@ export function InstagramCarouselDrawer({
             <Button type="button" variant="secondary" disabled={busy} onClick={onClose}>
               {t("common.close")}
             </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={!editable || busy || eventIds.length >= MAX_EVENT_SLIDES}
+              onClick={() => setAddingEvent(true)}
+            >
+              <Plus className="size-4" />
+              {t("admin.instagramPublishing.addEvent")}
+            </Button>
             <LoadingButton
               variant="secondary"
-              isLoading={isSaving}
+              isLoading={isSaving || isSavingSlide}
               disabled={!canSave}
               onClick={saveDraft}
             >

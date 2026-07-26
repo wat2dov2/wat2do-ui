@@ -38,9 +38,14 @@ export function useSubmitEvent({
   const { trigger: triggerConfetti } = useConfetti();
 
   const handleSubmit = useCallback(
-    async (formData: EventFormData, imageFile: File | null, markAllFieldsTouched: () => void, isValid: boolean) => {
+    async (
+      formData: EventFormData,
+      imageFile: File | null,
+      markAllFieldsTouched: () => void,
+      isValid: boolean,
+    ): Promise<boolean> => {
       markAllFieldsTouched();
-      if (!isValid) return;
+      if (!isValid) return false;
       setIsSubmitting(true);
       try {
         let finalImageUrl = formData.source_image_url;
@@ -62,7 +67,7 @@ export function useSubmitEvent({
             variant: "success",
           });
           onClose?.();
-          return;
+          return true;
         }
         if (!onSubmit) {
           throw new Error("Event submission handler is not configured");
@@ -73,6 +78,7 @@ export function useSubmitEvent({
         if (!showPromotion) {
           triggerConfetti();
         }
+        return true;
       } catch (err) {
         console.error("Failed to submit event:", err);
         // Surface backend error to the user as a toast, falling back to a
@@ -83,6 +89,7 @@ export function useSubmitEvent({
           description: message,
           variant: "destructive",
         });
+        return false;
       } finally {
         setIsSubmitting(false);
       }

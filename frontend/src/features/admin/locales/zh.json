@@ -194,8 +194,7 @@
       "coverBodyPlaceholder": "过去 24 小时内添加到 Wat2Do",
       "slideOf": "第 {{index}} 张，共 {{count}} 张",
       "previousSlide": "上一张",
-      "nextSlide": "下一张",
-      "slideUpdated": "活动已更新"
+      "nextSlide": "下一张"
     },
     "organizationReviews": "组织审核",
     "noOrganizationReviews": "没有待审核的组织",

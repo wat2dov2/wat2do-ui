@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type MutableRefObject,
+} from "react";
 import { useTranslation } from "react-i18next";
 import {
   Drawer,
@@ -63,6 +69,13 @@ interface SubmitEventFlowProps extends SubmitEventSharedProps {
   previewBase?: Event | null;
   /** Lets a host render its own preview of what the form currently describes. */
   onPreviewEventChange?: (event: Event) => void;
+  /**
+   * Filled with the form's save, for a host that owns the save button itself.
+   * Resolves false when the form refused to save, so the host can stop.
+   */
+  saveRef?: MutableRefObject<(() => Promise<boolean>) | null>;
+  /** Off where the host saves the form, so there is one save button, not two. */
+  showSubmit?: boolean;
 }
 
 interface SubmitEventModalProps extends SubmitEventSharedProps {
@@ -104,6 +117,8 @@ export function SubmitEventFlow({
   showPreview = true,
   previewBase,
   onPreviewEventChange,
+  saveRef,
+  showSubmit = true,
 }: SubmitEventFlowProps) {
   const { t } = useTranslation();
   const { isDarkMode } = useDarkMode();
@@ -257,6 +272,17 @@ export function SubmitEventFlow({
     ],
   );
 
+  // A host that owns the save button (the carousel drawer's Save draft) needs
+  // to run the form's own submit, so the image upload, validation, and error
+  // reporting stay in one place.
+  useEffect(() => {
+    if (!saveRef) return;
+    saveRef.current = handleSubmit;
+    return () => {
+      saveRef.current = null;
+    };
+  }, [saveRef, handleSubmit]);
+
   const currentStep: SubmitEventStep = eventFormPromotion.promotionSuccess
     ? "promotion-success"
     : eventFormPromotion.showPromotion
@@ -385,6 +411,7 @@ export function SubmitEventFlow({
         showPreview={showPreview}
         previewBase={previewBase}
         onPreviewEventChange={onPreviewEventChange}
+        showSubmit={showSubmit}
       />
     </Section>
   );

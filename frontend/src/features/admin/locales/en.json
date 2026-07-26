@@ -194,8 +194,7 @@
       "coverBodyPlaceholder": "Added to Wat2Do in the last 24 hours",
       "slideOf": "Slide {{index}} of {{count}}",
       "previousSlide": "Previous slide",
-      "nextSlide": "Next slide",
-      "slideUpdated": "Event updated"
+      "nextSlide": "Next slide"
     },
     "organizationReviews": "Organization Reviews",
     "noOrganizationReviews": "No organizations awaiting review",
