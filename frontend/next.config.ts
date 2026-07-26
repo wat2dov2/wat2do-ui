@@ -8,6 +8,7 @@ const apiCollectionPaths = [
   "events",
   "instagram-publishing/batches",
   "organizations",
+  "payouts",
   "promotions",
   "qr",
   "reports",
