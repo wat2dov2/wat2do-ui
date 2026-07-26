@@ -74,7 +74,7 @@ export function ContactPage() {
             <img
               src={imgContactHero.src}
               alt={t("contact.heroAlt")}
-              className="pointer-events-none h-full w-full select-none object-cover object-[center_20%]"
+              className="pointer-events-none h-full w-full select-none object-cover"
             />
 
             <div className="absolute bottom-0 left-0 z-10 flex select-none flex-col items-start">
