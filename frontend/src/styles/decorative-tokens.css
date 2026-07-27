@@ -78,7 +78,7 @@
   --page-glow-middle: color-mix(in srgb, var(--page-school-secondary) 9%, transparent);
 
   /* Event-page LightRays, overridden with the active school's primary colour. */
-  --event-light-rays-color-strength: 10%;
+  --event-light-rays-color-strength: 8%;
   --event-light-rays-color: color-mix(in srgb, var(--page-school-primary) var(--event-light-rays-color-strength), transparent);
   --event-light-rays-z-index: 45;
   --event-light-rays-mask: linear-gradient(to bottom, black 0%, black 72%, transparent 100%);

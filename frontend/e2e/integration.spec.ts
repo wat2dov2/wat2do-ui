@@ -702,12 +702,29 @@ test.describe("Events Page", () => {
       .toBeGreaterThan(0);
   });
 
-  test("closes event details opened from a direct eventId link", async ({ page }) => {
+  test("scrolls and closes event details opened from a direct eventId link", async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 320 });
     await page.goto(`${BASE}/?eventId=1`);
     await page.waitForTimeout(3000);
 
     await expect(page).toHaveURL(/eventId=1/);
-    await expect(page.getByRole("dialog")).toBeVisible();
+    const drawer = page.getByRole("dialog");
+    const drawerBody = drawer.locator('[data-slot="drawer-body"]');
+    await expect(drawer).toBeVisible();
+    await expect(drawerBody).toHaveCount(1);
+    await expect
+      .poll(() =>
+        drawerBody.evaluate(
+          element => element.scrollHeight > element.clientHeight,
+        ),
+      )
+      .toBe(true);
+
+    await drawerBody.hover();
+    await page.mouse.wheel(0, 300);
+    await expect
+      .poll(() => drawerBody.evaluate(element => element.scrollTop))
+      .toBeGreaterThan(0);
 
     await page.getByRole("button", { name: "Close" }).click();
 

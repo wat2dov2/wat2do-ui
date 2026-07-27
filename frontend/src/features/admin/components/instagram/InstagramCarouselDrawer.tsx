@@ -223,7 +223,7 @@ export function InstagramCarouselDrawer({
 
   return (
     <Drawer open onOpenChange={(open) => !open && !busy && onClose()}>
-      <DrawerContent>
+      <DrawerContent className="h-[92dvh]">
         <DrawerHeader>
           <Stack gap={1}>
             <DrawerTitle>{getSchoolDisplayName(batch.school)}</DrawerTitle>

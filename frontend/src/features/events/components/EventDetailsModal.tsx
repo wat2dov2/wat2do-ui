@@ -106,7 +106,9 @@ export function EventDetailsModal({
   const handleSimilarEventClick = useCallback((clickedEvent: Event) => {
     setOverrideEvent(clickedEvent);
     setOverrideForEventId(resolvedEventId);
-    contentRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+    contentRef.current
+      ?.querySelector<HTMLElement>("[data-slot='drawer-body']")
+      ?.scrollTo({ top: 0, behavior: "smooth" });
   }, [resolvedEventId]);
 
   const handleDrawerOpenChange = useCallback(
@@ -120,10 +122,10 @@ export function EventDetailsModal({
 
   return (
     <Drawer open={drawerOpen} onOpenChange={handleDrawerOpenChange}>
-      <DrawerContent className="overflow-hidden p-0 [&_[data-slot=drawer-handle]]:hidden data-[vaul-drawer-direction=bottom]:max-w-screen-lg">
+      <DrawerContent className="h-[92dvh] overflow-hidden p-0 [&_[data-slot=drawer-handle]]:hidden data-[vaul-drawer-direction=bottom]:max-w-screen-lg">
         <div
           ref={contentRef}
-          className="max-h-[inherit] overflow-y-auto"
+          className="flex min-h-0 flex-1 flex-col"
         >
           {showSkeleton ? (
             <>
