@@ -682,12 +682,6 @@ test.describe("Events Page", () => {
     const drawerBody = drawer.locator('[data-slot="drawer-body"]');
     await expect(drawerBody).toBeVisible();
     await expect(drawer.locator('[data-slot="drawer-doodle-field"]')).toBeVisible();
-    await expect(drawerBody).toHaveAttribute("data-vaul-no-drag", "");
-    await expect
-      .poll(() =>
-        drawerBody.evaluate(element => getComputedStyle(element).touchAction),
-      )
-      .toBe("pan-y");
     await expect
       .poll(() =>
         drawerBody.evaluate(

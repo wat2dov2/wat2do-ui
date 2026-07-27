@@ -11,16 +11,14 @@ type DrawerBodyProps = React.ComponentProps<"div">
  * `min-h-0` lets it shrink below its content inside that column, `flex-auto`
  * lets its content establish the drawer's natural height before shrinking, and
  * the scroll stays inside the drawer instead of chaining to the page behind it.
- * Short drawers are unaffected - the column is auto-height until the content
- * exceeds the cap.
+ * Vaul owns touch gesture arbitration and detects this scrollable ancestor.
  */
 function DrawerBody({ className, ...props }: DrawerBodyProps) {
   return (
     <div
       data-slot="drawer-body"
-      data-vaul-no-drag
       className={cn(
-        "flex min-h-0 flex-auto touch-pan-y flex-col gap-6 overflow-y-auto overscroll-contain p-4 sm:p-6",
+        "flex min-h-0 flex-auto flex-col gap-6 overflow-y-auto overscroll-contain p-4 sm:p-6",
         className
       )}
       {...props}

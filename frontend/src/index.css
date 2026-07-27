@@ -340,28 +340,6 @@
   }
 }
 
-[data-vaul-drawer],
-[data-vaul-overlay] {
-  animation-duration: 280ms !important;
-  transition-duration: 280ms !important;
-}
-
-html[data-drawer-scroll-release] [data-vaul-drawer],
-html[data-drawer-scroll-release] [data-vaul-overlay],
-[data-vaul-drawer][data-state="closed"],
-[data-vaul-overlay][data-state="closed"] {
-  pointer-events: none !important;
-  touch-action: pan-y !important;
-}
-
-html[data-drawer-scroll-release] [data-slot="drawer-close"],
-html[data-drawer-scroll-release] [data-slot="drawer-close"] button,
-[data-vaul-drawer][data-state="open"] [data-slot="drawer-close"],
-[data-vaul-drawer][data-state="open"] [data-slot="drawer-close"] button {
-  pointer-events: auto !important;
-  touch-action: manipulation !important;
-}
-
 [data-sonner-toaster] {
   z-index: var(--z-index-toast);
 }

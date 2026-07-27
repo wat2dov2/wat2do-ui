@@ -24,6 +24,7 @@ import {
   FieldLabel,
 } from "@/shared/ui/field";
 import {
+  DrawerBody,
   FormActions,
   FormGrid,
   FormLayout,
@@ -417,7 +418,7 @@ export function AddOrganizationModal({
               : t("organizations.addClub")}
           </DrawerTitle>
         </DrawerHeader>
-        <div className="max-h-[92dvh] overflow-y-auto px-4 pb-4 pt-5 sm:px-6 sm:pb-6 sm:pt-6">
+        <DrawerBody className="gap-0 px-4 pb-4 pt-5 sm:px-6 sm:pb-6 sm:pt-6">
           <OrganizationForm
             onSave={onSave}
             onCancel={onClose}
@@ -425,7 +426,7 @@ export function AddOrganizationModal({
             initialData={initialData}
             active={isOpen}
           />
-        </div>
+        </DrawerBody>
       </DrawerContent>
     </Drawer>
   );

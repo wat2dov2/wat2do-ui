@@ -2,6 +2,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/shared/ui/button";
 import { FilterClearButton } from "@/shared/ui/filter-clear-button";
+import { DrawerBody } from "@/shared/layout";
 import {
   Drawer,
   DrawerContent,
@@ -52,9 +53,9 @@ export function MoreFiltersButton({
           <DrawerTitle>{t("common.extraFilters")}</DrawerTitle>
           <DrawerDescription>{t("filters.filtersHeader")}</DrawerDescription>
         </DrawerHeader>
-        <div className="max-h-[calc(85dvh-1.5rem)] overflow-y-auto p-4">
+        <DrawerBody className="gap-0 p-4 sm:p-4">
           {children}
-        </div>
+        </DrawerBody>
       </DrawerContent>
     </Drawer>
   );
