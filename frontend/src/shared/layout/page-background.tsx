@@ -12,13 +12,28 @@ import {
   getSchoolColors,
 } from "@/shared/constants/schools"
 
-const PAGE_DOODLE_ICONS = Array.from({ length: 72 }, (_, index) =>
-  getOrganizationCategoryConfig(
-    ORGANIZATION_CATEGORY_STYLE_SLUGS[
-      index % ORGANIZATION_CATEGORY_STYLE_SLUGS.length
-    ],
-  ).icon,
+const PAGE_DOODLE_ICON_OPTIONS = ORGANIZATION_CATEGORY_STYLE_SLUGS.map(
+  (slug) => getOrganizationCategoryConfig(slug).icon,
 )
+
+const PAGE_DOODLE_ICONS = (() => {
+  const icons = Array.from(
+    { length: 72 },
+    (_, index) => PAGE_DOODLE_ICON_OPTIONS[index % PAGE_DOODLE_ICON_OPTIONS.length],
+  )
+
+  // A stable shuffle looks random without changing between server and client.
+  let seed = 853
+  for (let index = icons.length - 1; index > 0; index -= 1) {
+    seed = (Math.imul(seed, 1_664_525) + 1_013_904_223) >>> 0
+    const randomIndex = seed % (index + 1)
+    const currentIcon = icons[index]
+    icons[index] = icons[randomIndex]
+    icons[randomIndex] = currentIcon
+  }
+
+  return icons
+})()
 
 const DEFAULT_SCHOOL_COLORS = getSchoolColors(DEFAULT_SCHOOL)
 
