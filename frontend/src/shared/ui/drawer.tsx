@@ -1,9 +1,11 @@
 import * as React from "react"
 import { Drawer as DrawerPrimitive } from "vaul"
 
+import { getOrganizationCategoryDoodleIcons } from "@/shared/data/organizationCategoryStyles"
 import { cn } from "@/shared/lib/utils"
 
 const DRAWER_CLOSE_ANIMATION_MS = 280
+const DRAWER_DOODLE_ICONS = getOrganizationCategoryDoodleIcons(42)
 
 /** Let the page receive touches while the drawer exit animation finishes. */
 function releaseDrawerTouchCapture() {
@@ -148,6 +150,24 @@ const DrawerOverlay = React.forwardRef<
 ))
 DrawerOverlay.displayName = "DrawerOverlay"
 
+function DrawerDoodleField() {
+  return (
+    <div
+      data-slot="drawer-doodle-field"
+      aria-hidden="true"
+      className="drawer-doodle-grid"
+    >
+      {DRAWER_DOODLE_ICONS.map((icon, index) => (
+        <span
+          key={`${icon}-${index}`}
+          className="drawer-doodle-icon"
+          style={{ "--doodle-icon": `url("${icon}")` } as React.CSSProperties}
+        />
+      ))}
+    </div>
+  )
+}
+
 const DrawerContent = React.forwardRef<
   React.ElementRef<typeof DrawerPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Content>
@@ -159,12 +179,11 @@ const DrawerContent = React.forwardRef<
       ref={ref}
       data-slot="drawer-content"
       className={cn(
-        // `bg-page-dots` layers the dotted grid over `bg-background`, matching the
-        // page backdrop. Driven by the same --page-dot-* tokens, so the drawer
-        // re-themes with everything else.
+        // The isolated stacking context keeps DrawerDoodleField above the
+        // background while its negative z-index leaves all content interactive.
         // `overflow-hidden` keeps a scrolling DrawerBody inside the rounded
         // edges instead of painting over them.
-        "group/drawer-content bg-page-dots fixed z-modal flex h-auto flex-col overflow-hidden bg-background [animation-duration:280ms] data-[state=closed]:pointer-events-none",
+        "group/drawer-content fixed z-modal isolate flex h-auto flex-col overflow-hidden bg-background [animation-duration:280ms] data-[state=closed]:pointer-events-none",
         "data-[vaul-drawer-direction=top]:inset-x-0 data-[vaul-drawer-direction=top]:top-0 data-[vaul-drawer-direction=top]:mb-24 data-[vaul-drawer-direction=top]:max-h-[80vh] data-[vaul-drawer-direction=top]:rounded-b-xl data-[vaul-drawer-direction=top]:border-b",
         "data-[vaul-drawer-direction=bottom]:bottom-0 data-[vaul-drawer-direction=bottom]:left-1/2 data-[vaul-drawer-direction=bottom]:w-full data-[vaul-drawer-direction=bottom]:max-w-screen-md data-[vaul-drawer-direction=bottom]:-translate-x-1/2 data-[vaul-drawer-direction=bottom]:mt-16 data-[vaul-drawer-direction=bottom]:max-h-[92dvh] data-[vaul-drawer-direction=bottom]:rounded-t-xl data-[vaul-drawer-direction=bottom]:border-t",
         "data-[vaul-drawer-direction=right]:inset-y-0 data-[vaul-drawer-direction=right]:right-0 data-[vaul-drawer-direction=right]:w-3/4 data-[vaul-drawer-direction=right]:border-l data-[vaul-drawer-direction=right]:sm:max-w-sm",
@@ -188,6 +207,7 @@ const DrawerContent = React.forwardRef<
       }}
       {...props}
     >
+      <DrawerDoodleField />
       {children}
     </DrawerPrimitive.Content>
   </DrawerPortal>

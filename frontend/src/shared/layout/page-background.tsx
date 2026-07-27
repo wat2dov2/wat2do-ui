@@ -1,10 +1,9 @@
 "use client"
 
-import { useSyncExternalStore, type CSSProperties } from "react"
+import { useEffect, useSyncExternalStore, type CSSProperties } from "react"
 
 import {
-  ORGANIZATION_CATEGORY_STYLE_SLUGS,
-  getOrganizationCategoryConfig,
+  getOrganizationCategoryDoodleIcons,
 } from "@/shared/data/organizationCategoryStyles"
 import {
   DEFAULT_SCHOOL,
@@ -12,28 +11,7 @@ import {
   getSchoolColors,
 } from "@/shared/constants/schools"
 
-const PAGE_DOODLE_ICON_OPTIONS = ORGANIZATION_CATEGORY_STYLE_SLUGS.map(
-  (slug) => getOrganizationCategoryConfig(slug).icon,
-)
-
-const PAGE_DOODLE_ICONS = (() => {
-  const icons = Array.from(
-    { length: 72 },
-    (_, index) => PAGE_DOODLE_ICON_OPTIONS[index % PAGE_DOODLE_ICON_OPTIONS.length],
-  )
-
-  // A stable shuffle looks random without changing between server and client.
-  let seed = 853
-  for (let index = icons.length - 1; index > 0; index -= 1) {
-    seed = (Math.imul(seed, 1_664_525) + 1_013_904_223) >>> 0
-    const randomIndex = seed % (index + 1)
-    const currentIcon = icons[index]
-    icons[index] = icons[randomIndex]
-    icons[randomIndex] = currentIcon
-  }
-
-  return icons
-})()
+const PAGE_DOODLE_ICONS = getOrganizationCategoryDoodleIcons(72)
 
 const DEFAULT_SCHOOL_COLORS = getSchoolColors(DEFAULT_SCHOOL)
 
@@ -57,6 +35,17 @@ function PageBackground() {
     () => DEFAULT_SCHOOL_COLORS,
   )
 
+  useEffect(() => {
+    const root = document.documentElement
+    root.style.setProperty("--page-school-primary", schoolColors.primary)
+    root.style.setProperty("--page-school-secondary", schoolColors.ink)
+
+    return () => {
+      root.style.removeProperty("--page-school-primary")
+      root.style.removeProperty("--page-school-secondary")
+    }
+  }, [schoolColors])
+
   return (
     <div
       data-slot="page-background"
@@ -74,7 +63,7 @@ function PageBackground() {
           <span
             key={`${icon}-${index}`}
             className="page-doodle-icon"
-            style={{ "--page-doodle-icon": `url("${icon}")` } as CSSProperties}
+            style={{ "--doodle-icon": `url("${icon}")` } as CSSProperties}
           />
         ))}
       </div>

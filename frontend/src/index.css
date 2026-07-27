@@ -151,16 +151,6 @@
   }
 }
 
-/* Drawer dot texture. The global page uses the category-doodle field below. */
-@utility bg-page-dots {
-  background-image: radial-gradient(
-    circle,
-    var(--page-dot-color) var(--page-dot-size),
-    transparent calc(var(--page-dot-size) + 0.5px)
-  );
-  background-size: var(--page-dot-spacing) var(--page-dot-spacing);
-}
-
 .page-doodle-grid {
   position: absolute;
   inset: -18vmax;
@@ -172,15 +162,32 @@
   transform-origin: center;
 }
 
-.page-doodle-icon {
+.page-doodle-icon,
+.drawer-doodle-icon {
   width: var(--page-doodle-size);
   aspect-ratio: 1;
   place-self: center;
   background: var(--page-school-primary);
-  mask-image: var(--page-doodle-icon);
+  mask-image: var(--doodle-icon);
   mask-position: center;
   mask-repeat: no-repeat;
   mask-size: contain;
+}
+
+.drawer-doodle-grid {
+  position: absolute;
+  inset: -9rem;
+  z-index: -1;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  grid-template-rows: repeat(6, minmax(0, 1fr));
+  opacity: var(--drawer-doodle-opacity);
+  transform: rotate(-11deg) scale(1.08);
+  transform-origin: center;
+}
+
+.drawer-doodle-icon {
+  width: var(--drawer-doodle-size);
 }
 
 @utility bg-page-glow {

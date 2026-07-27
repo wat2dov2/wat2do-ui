@@ -8,7 +8,10 @@
  * slides preview as the app's own event card instead.
  */
 
-import { getOrganizationCategoryConfig } from "@/shared/data/organizationCategoryStyles";
+import {
+  getOrganizationCategoryConfig,
+  getOrganizationCategoryDoodleDataUris,
+} from "@/shared/data/organizationCategoryStyles";
 import {
   getSchoolColors,
   getSchoolPublicUrl,
@@ -57,6 +60,8 @@ export interface CoverSlideModel {
   colors: SchoolColors;
   /** The canonical Wat2Do mark recoloured from the same school pair. */
   logoSrc: string;
+  /** Stable category doodles recoloured with the school's contrasting ink. */
+  doodleIcons: string[];
   /** "SUN JUL 26 · EVENT SHOWCASE" */
   eyebrow: string;
   /** Events added to this school in the batch's scrape window. */
@@ -74,7 +79,7 @@ export interface CoverSlideModel {
 // account, not app UI, so it never passes through i18n.
 const COVER_HEADLINE = "NEW EVENTS ADDED TODAY";
 const COVER_EYEBROW_SUFFIX = "EVENT SHOWCASE";
-const COVER_SWIPE_LINE = "Swipe to see our picks →";
+const COVER_SWIPE_LINE = "Swipe to see our picks >";
 const FALLBACK_TITLE = "Untitled event";
 const FALLBACK_LOCATION = "See Wat2Do for location";
 const FALLBACK_ORGANIZATION = "Campus organization";
@@ -166,6 +171,7 @@ export function buildCoverSlideModel({
   return {
     colors,
     logoSrc: buildInstagramCoverLogo(colors),
+    doodleIcons: getOrganizationCategoryDoodleDataUris(colors.ink, 42),
     eyebrow: [formatCoverDate(localDate), COVER_EYEBROW_SUFFIX].filter(Boolean).join(" · "),
     newEventCount,
     headline: COVER_HEADLINE,

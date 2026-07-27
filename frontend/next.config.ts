@@ -1,5 +1,5 @@
 import type { NextConfig } from "next";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 const apiRewriteUrl = (process.env.API_REWRITE_URL || "http://127.0.0.1:8000").replace(/\/$/, "");
@@ -9,6 +9,25 @@ const instagramCoverLogoSvg = readFileSync(
     new URL("./public/instagram-cover-logo.svg", import.meta.url),
   ),
   "utf8",
+);
+const organizationCategoryDoodleDirectory = fileURLToPath(
+  new URL("./public/icons/organization-categories/", import.meta.url),
+);
+const organizationCategoryDoodleSvgs = Object.fromEntries(
+  readdirSync(organizationCategoryDoodleDirectory)
+    .filter((file) => file.endsWith(".svg"))
+    .map((file) => [
+      `/icons/organization-categories/${file}`,
+      readFileSync(
+        fileURLToPath(
+          new URL(
+            `./public/icons/organization-categories/${file}`,
+            import.meta.url,
+          ),
+        ),
+        "utf8",
+      ),
+    ]),
 );
 const rawPromoterProgram = JSON.parse(
   readFileSync(
@@ -82,6 +101,9 @@ const nextConfig: NextConfig = {
   output: "standalone",
   env: {
     NEXT_PUBLIC_INSTAGRAM_COVER_LOGO_SVG: instagramCoverLogoSvg,
+    NEXT_PUBLIC_ORGANIZATION_CATEGORY_DOODLE_SVGS: JSON.stringify(
+      organizationCategoryDoodleSvgs,
+    ),
     NEXT_PUBLIC_PROMOTER_PROGRAM: JSON.stringify(publicPromoterProgram),
   },
   // The slide renderer reads its fonts and the resvg wasm binary from disk at

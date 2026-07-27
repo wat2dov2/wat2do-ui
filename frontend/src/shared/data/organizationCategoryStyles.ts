@@ -117,3 +117,67 @@ export function getOrganizationCategoryConfig(
 export const ORGANIZATION_CATEGORY_STYLE_SLUGS = Object.keys(
   organizationCategoryStyles,
 ) as OrganizationCategoryStyle[];
+
+const rawDoodleSvgs = JSON.parse(
+  process.env.NEXT_PUBLIC_ORGANIZATION_CATEGORY_DOODLE_SVGS ?? "{}",
+) as Record<string, string>;
+const doodleIconSequenceCache = new Map<number, string[]>();
+const doodleIconDataUriCache = new Map<string, string[]>();
+
+/**
+ * A balanced, stable shuffle of the category icons for decorative fields.
+ *
+ * The same count always produces the same arrangement on server and client,
+ * and every icon is used evenly before any icon is repeated again.
+ */
+export function getOrganizationCategoryDoodleIcons(count: number): string[] {
+  const cachedIcons = doodleIconSequenceCache.get(count);
+  if (cachedIcons) return cachedIcons;
+
+  const options = ORGANIZATION_CATEGORY_STYLE_SLUGS.map(
+    (slug) => organizationCategoryStyles[slug].icon,
+  );
+  const icons = Array.from(
+    { length: count },
+    (_, index) => options[index % options.length],
+  );
+
+  let seed = 853;
+  for (let index = icons.length - 1; index > 0; index -= 1) {
+    seed = (Math.imul(seed, 1_664_525) + 1_013_904_223) >>> 0;
+    const randomIndex = seed % (index + 1);
+    const currentIcon = icons[index];
+    icons[index] = icons[randomIndex];
+    icons[randomIndex] = currentIcon;
+  }
+
+  doodleIconSequenceCache.set(count, icons);
+  return icons;
+}
+
+/**
+ * The same decorative sequence as inline SVGs recoloured for generated art.
+ *
+ * Satori rejects relative image paths, so the cover model embeds the canonical
+ * public SVG assets as data URIs instead of maintaining a second icon set.
+ */
+export function getOrganizationCategoryDoodleDataUris(
+  color: string,
+  count: number,
+): string[] {
+  const cacheKey = `${color}:${count}`;
+  const cachedIcons = doodleIconDataUriCache.get(cacheKey);
+  if (cachedIcons) return cachedIcons;
+
+  const icons = getOrganizationCategoryDoodleIcons(count).map((iconPath) => {
+    const sourceSvg = rawDoodleSvgs[iconPath];
+    if (!sourceSvg) {
+      throw new Error(`Organization category doodle is unavailable: ${iconPath}`);
+    }
+    const colorizedSvg = sourceSvg.replaceAll("#1A1A1A", color);
+    return `data:image/svg+xml;base64,${btoa(colorizedSvg)}`;
+  });
+
+  doodleIconDataUriCache.set(cacheKey, icons);
+  return icons;
+}

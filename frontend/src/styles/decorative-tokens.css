@@ -70,10 +70,8 @@
   --page-school-secondary: #111111;
   --page-doodle-opacity: 0.055;
   --page-doodle-size: clamp(1.75rem, 3vw, 3.25rem);
-  /* The dot tokens remain the single source for the matching drawer texture. */
-  --page-dot-color: oklch(0.970 0 0 / 0.08);
-  --page-dot-size: 1px;
-  --page-dot-spacing: 24px;
+  --drawer-doodle-opacity: 0.045;
+  --drawer-doodle-size: clamp(1.5rem, 4vw, 2.75rem);
   --page-glow-inner: color-mix(in srgb, var(--page-school-secondary) 22%, transparent);
   --page-glow-middle: color-mix(in srgb, var(--page-school-secondary) 9%, transparent);
 

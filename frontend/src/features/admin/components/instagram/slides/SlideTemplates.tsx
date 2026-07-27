@@ -200,6 +200,9 @@ export function EventSlideTemplate({ model }: { model: EventSlideModel }) {
 
 const COVER_MARGIN = 72;
 const COVER_CONTENT_WIDTH = SLIDE_WIDTH - COVER_MARGIN * 2;
+const COVER_DOODLE_COLUMNS = 6;
+const COVER_DOODLE_CELL_SIZE = 210;
+const COVER_DOODLE_ICON_SIZE = 72;
 /** The poster fan sits on a fixed baseline so the copy above it never reflows. */
 const FAN_TOP = 930;
 const FAN_CARD_WIDTH = 186;
@@ -286,6 +289,48 @@ function CoverLogo({ src }: { src: string }) {
   );
 }
 
+/** A tilted, low-opacity field matching the app and drawer decoration. */
+function CoverDoodleField({ icons }: { icons: string[] }) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        position: "absolute",
+        flexWrap: "wrap",
+        left: -90,
+        top: -70,
+        width: COVER_DOODLE_COLUMNS * COVER_DOODLE_CELL_SIZE,
+        opacity: 0.08,
+        transform: "rotate(-9deg)",
+      }}
+    >
+      {icons.map((icon, index) => (
+        <div
+          key={`${icon}-${index}`}
+          style={{
+            display: "flex",
+            width: COVER_DOODLE_CELL_SIZE,
+            height: COVER_DOODLE_CELL_SIZE,
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <img
+            src={icon}
+            width={COVER_DOODLE_ICON_SIZE}
+            height={COVER_DOODLE_ICON_SIZE}
+            alt=""
+            style={{
+              width: COVER_DOODLE_ICON_SIZE,
+              height: COVER_DOODLE_ICON_SIZE,
+            }}
+          />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 /**
  * The carousel cover.
  *
@@ -298,7 +343,9 @@ export function CoverSlideTemplate({ model }: { model: CoverSlideModel }) {
   const { primary, ink } = model.colors;
 
   return (
-    <div style={{ ...slideFrame, backgroundColor: primary, color: ink }}>
+    <div style={{ ...slideFrame, backgroundColor: primary, color: ink, overflow: "hidden" }}>
+      <CoverDoodleField icons={model.doodleIcons} />
+
       <div
         style={{
           display: "flex",

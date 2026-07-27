@@ -681,6 +681,7 @@ test.describe("Events Page", () => {
     const drawer = page.getByRole("dialog", { name: /Report event/i });
     const drawerBody = drawer.locator('[data-slot="drawer-body"]');
     await expect(drawerBody).toBeVisible();
+    await expect(drawer.locator('[data-slot="drawer-doodle-field"]')).toBeVisible();
     await expect(drawerBody).toHaveAttribute("data-vaul-no-drag", "");
     await expect
       .poll(() =>
@@ -1608,6 +1609,31 @@ test.describe("Navigation", () => {
   test("Instagram admin route is present in the Next build", async ({ request }) => {
     const response = await request.get(`${BASE}/admin/instagram`);
     expect(response.status()).toBe(200);
+  });
+
+  test("renders the school-coloured Instagram cover decoration", async ({ request }) => {
+    const renderSecret = process.env.INSTAGRAM_SLIDE_RENDER_SECRET?.trim();
+    const response = await request.post(`${BASE}/api/render-instagram-slide`, {
+      headers: renderSecret
+        ? { authorization: `Bearer ${renderSecret}` }
+        : undefined,
+      data: {
+        kind: "cover",
+        school: "utoronto",
+        local_date: "2026-07-27",
+        new_event_count: 18,
+        body: "Here are the events we like the most",
+        events: [{ id: 1, school: "utoronto", title: "Campus Event" }],
+      },
+    });
+
+    expect(response.status()).toBe(200);
+    expect(response.headers()["content-type"]).toContain("image/png");
+    const png = await response.body();
+    expect(png.subarray(0, 8)).toEqual(
+      Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]),
+    );
+    expect(png.byteLength).toBeGreaterThan(50_000);
   });
 
   test("main pages load without errors", async ({ page }) => {
