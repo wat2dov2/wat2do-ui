@@ -74,7 +74,7 @@
   --page-dot-color: oklch(0.970 0 0 / 0.08);
   --page-dot-size: 1px;
   --page-dot-spacing: 24px;
-  --page-glow-inner: color-mix(in srgb, var(--page-school-primary) 22%, transparent);
+  --page-glow-inner: color-mix(in srgb, var(--page-school-secondary) 22%, transparent);
   --page-glow-middle: color-mix(in srgb, var(--page-school-secondary) 9%, transparent);
 
   /* Event-page LightRays, overridden with the active school's primary colour. */
