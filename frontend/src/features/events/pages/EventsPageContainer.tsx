@@ -186,7 +186,7 @@ export function EventsPageContainer() {
         className="pointer-events-none fixed top-0 right-2.5 left-0 z-[var(--event-light-rays-z-index)] hidden h-dvh overflow-hidden [mask-image:var(--event-light-rays-mask)] sm:block"
         style={
           {
-            "--event-light-rays-color": `color-mix(in srgb, ${schoolColors.primary} 12%, transparent)`,
+            "--event-light-rays-color": `color-mix(in srgb, ${schoolColors.primary} var(--event-light-rays-color-strength), transparent)`,
           } as CSSProperties
         }
       >
