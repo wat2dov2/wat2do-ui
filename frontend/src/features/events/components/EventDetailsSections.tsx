@@ -43,11 +43,12 @@ import { OrganizationTypeIcon } from "@/shared/components/OrganizationTypeIcon";
 import { GoingOccurrencePickerContent } from "@/features/events/components/GoingOccurrencePickerContent";
 import { fetchEventAttendees } from "@/features/events/api/events.api";
 import { useCurrentTime, useGoingEventSelection } from "@/features/events/hooks/useGoingEvents";
-import { useAuthState } from "@/features/auth/hooks/useAuthState";
+import { eventPagePath } from "@/features/events/lib/eventUrls";
+import { appendSafeReturnTo, useAuthState } from "@/features/auth";
 import { controlBox } from "@/shared/config/controlBox";
 import { translateFood } from "@/shared/utils/foodTranslation";
 import { queryKeys } from "@/shared/lib/queryKeys";
-import { organizationPagePath } from "@/shared/constants/routes";
+import { organizationPagePath, ROUTES } from "@/shared/constants/routes";
 import type { Event } from "@/shared/types";
 
 const EventShareDialog = lazy(() =>
@@ -224,7 +225,6 @@ function EventRegistrationCard({
   const { profileCompleted, userEmail, userFullName, userAvatarUrl } = useAuthState();
   const going = useGoingEventSelection(event, school);
   const now = useCurrentTime();
-  const [goingLoginHintOpen, setGoingLoginHintOpen] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const isGoingActive = profileCompleted && going.isActive;
@@ -358,23 +358,22 @@ function EventRegistrationCard({
               {t("events.register")}
             </Button>
           ) : (
-            <Tooltip open={goingLoginHintOpen} onOpenChange={setGoingLoginHintOpen}>
-              <TooltipTrigger asChild>
-                <Button
-                  type="button"
-                  variant="primary"
-                  className="w-full"
-                  onClick={() => setGoingLoginHintOpen(true)}
-                  aria-label={t("events.register")}
-                  title={t("events.goingRequiresLogin")}
-                >
-                  {t("events.register")}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>{t("events.goingRequiresLogin")}</p>
-              </TooltipContent>
-            </Tooltip>
+            <Button
+              asChild
+              variant="primary"
+              className="w-full"
+              aria-label={t("events.signInToRegister")}
+              title={t("events.signInToRegister")}
+            >
+              <Link
+                href={appendSafeReturnTo(
+                  ROUTES.LOGIN,
+                  eventPagePath(event.id),
+                )}
+              >
+                {t("events.signInToRegister")}
+              </Link>
+            </Button>
           )}
         </CardFooter>
       ) : null}

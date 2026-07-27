@@ -727,6 +727,60 @@ test.describe("Events Page", () => {
     await expect(page.getByRole("dialog")).not.toBeVisible();
   });
 
+  test("signed-out registration links to login from the drawer and event page", async ({
+    page,
+  }) => {
+    const now = new Date();
+    const startsAt = new Date(now.getTime() + 86_400_000).toISOString();
+    await page.route(url => apiPath(url) === "/events/1", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          id: 1,
+          organization_id: 1,
+          title: "Tech Career Fair",
+          description: "Full detail loaded",
+          location: "SLC",
+          occurrences: [{ id: 1, event_id: 1, dtstart_utc: startsAt, dtend_utc: null }],
+          price: 0,
+          food: [],
+          registration: true,
+          source_image_url: null,
+          organization_type: "independent",
+          school: "uwaterloo",
+          source_url: null,
+          category: "Career",
+          organization: "UW Tech Club",
+          ig_handle: null,
+          cancelled: false,
+          added_at: now.toISOString(),
+        }),
+      });
+    });
+
+    const assertSignInRegistration = async () => {
+      const signInLink = page.getByRole("link", {
+        name: "Sign in to register",
+        exact: true,
+      });
+      await expect(signInLink).toBeVisible();
+      await expect(signInLink).toHaveAttribute(
+        "href",
+        "/login?returnTo=%2Fevents%2F1",
+      );
+      await signInLink.click();
+      await expect(page).toHaveURL(/\/login\?/);
+      expect(new URL(page.url()).searchParams.get("returnTo")).toBe("/events/1");
+    };
+
+    await page.goto(`${BASE}/?eventId=1`);
+    await assertSignInRegistration();
+
+    await page.goto(`${BASE}/events/1`);
+    await assertSignInRegistration();
+  });
+
   test("shows the default category badge when event details have no category", async ({ page }) => {
     const now = new Date();
     const startsAt = new Date(now.getTime() + 86_400_000).toISOString();
