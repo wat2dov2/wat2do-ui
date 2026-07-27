@@ -681,6 +681,12 @@ test.describe("Events Page", () => {
     const drawer = page.getByRole("dialog", { name: /Report event/i });
     const drawerBody = drawer.locator('[data-slot="drawer-body"]');
     await expect(drawerBody).toBeVisible();
+    await expect(drawerBody).toHaveAttribute("data-vaul-no-drag", "");
+    await expect
+      .poll(() =>
+        drawerBody.evaluate(element => getComputedStyle(element).touchAction),
+      )
+      .toBe("pan-y");
     await expect
       .poll(() =>
         drawerBody.evaluate(
