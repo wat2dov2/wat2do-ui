@@ -1,5 +1,6 @@
 {
   "admin": {
+    "backToDashboard": "返回管理后台",
     "panelDescription": "管理活动、组织、海报和营销推广",
     "manageEvents": "活动管理",
     "manageEventsDesc": "查看、编辑和删除活动",

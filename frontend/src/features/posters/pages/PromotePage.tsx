@@ -14,10 +14,11 @@ import {
   resolveWritableSchool,
 } from "@/shared/constants/schools";
 import { ROUTES } from "@/shared/constants/routes";
-import { Container, PageHeader, Section, Stack } from "@/shared/layout";
+import { Container, FormGrid, PageHeader, Section, Stack } from "@/shared/layout";
 import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert";
 import {
   Card,
+  CardAction,
   CardDescription,
   CardHeader,
   CardTitle,
@@ -53,21 +54,21 @@ export function PromotePage() {
             })}
           />
 
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start">
-            <Stack gap={6} className="order-3 lg:order-1">
+          <FormGrid columns="sidebar">
+            <Stack gap={6}>
               <Section
                 title={t("posters.promote.stepsTitle")}
                 description={t("posters.promote.stepsDescription")}
               >
-                <div className="grid gap-4 sm:grid-cols-3">
+                <FormGrid columns={3}>
                   {[1, 2, 3].map((step, index) => {
                     const Icon = STEP_ICONS[index];
                     return (
                       <Card key={step}>
                         <CardHeader>
-                          <div className="flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+                          <CardAction>
                             <Icon className="size-5" />
-                          </div>
+                          </CardAction>
                           <CardTitle>
                             {t(`posters.promote.step${step}Title`)}
                           </CardTitle>
@@ -83,7 +84,7 @@ export function PromotePage() {
                       </Card>
                     );
                   })}
-                </div>
+                </FormGrid>
               </Section>
 
               <Section
@@ -108,13 +109,13 @@ export function PromotePage() {
               </Section>
             </Stack>
 
-            <div className="order-2 lg:sticky lg:top-20">
+            <Stack className="lg:sticky lg:top-20">
               <PromoterEnrollmentCard
                 mode="recruitment"
                 onEnrolled={() => router.push(ROUTES.POSTERS)}
               />
-            </div>
-          </div>
+            </Stack>
+          </FormGrid>
         </Stack>
       </Container>
     </main>

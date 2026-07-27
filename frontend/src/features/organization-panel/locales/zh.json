@@ -1,5 +1,6 @@
 {
   "organizationPanel": {
+    "backToPanel": "返回组织面板",
     "title": "组织面板",
     "description": "管理您组织的二维码海报、第三方集成和成员",
     "posters": "二维码海报",

@@ -15,6 +15,7 @@ import {
 } from "@/features/posters/utils/generateAssetPdf";
 import { getPosterLifecycle } from "@/features/posters/utils/posterLifecycle";
 import { promoterProgram } from "@/shared/config/promoterProgram";
+import { FormGrid, Stack } from "@/shared/layout";
 import { formatRelativeTimeCompact } from "@/shared/utils/relativeTime";
 import { formatCadCents } from "@/shared/utils/currency";
 import { toast } from "@/shared/hooks/use-toast";
@@ -157,10 +158,7 @@ export function PromoterPosterInventory({
 
   return (
     <>
-      <div
-        className="grid gap-4 md:grid-cols-2"
-        data-testid="poster-inventory"
-      >
+      <FormGrid columns={2} data-testid="poster-inventory">
         {sortedPosters.map((poster) => {
           const lifecycle = getPosterLifecycle(
             poster,
@@ -175,7 +173,7 @@ export function PromoterPosterInventory({
               className="scroll-mt-24"
             >
               <CardHeader>
-                <div className="flex items-start gap-4">
+                <Stack direction="horizontal" align="start" gap={4}>
                   <div className="aspect-[8.5/11] w-20 shrink-0 overflow-hidden rounded-lg border border-border bg-secondary">
                     {poster.templatePreviewUrl || template?.assetPath ? (
                       <img
@@ -184,12 +182,12 @@ export function PromoterPosterInventory({
                         className="h-full w-full object-cover"
                       />
                     ) : (
-                      <div className="flex h-full items-center justify-center">
+                      <Stack align="center" justify="center" className="h-full">
                         <QrCode className="size-8 text-muted-foreground" />
-                      </div>
+                      </Stack>
                     )}
                   </div>
-                  <div className="min-w-0 flex-1 space-y-2">
+                  <Stack gap={2} grow className="min-w-0">
                     <CardTitle className="truncate">{poster.name}</CardTitle>
                     <Badge variant={LIFECYCLE_BADGE_VARIANTS[lifecycle]}>
                       {t(`posters.lifecycle.${lifecycle}`)}
@@ -204,67 +202,76 @@ export function PromoterPosterInventory({
                           })
                         : t("posters.inventory.neverScanned")}
                     </CardDescription>
-                  </div>
-                </div>
+                  </Stack>
+                </Stack>
               </CardHeader>
               <CardContent>
-                <dl className="grid grid-cols-3 gap-3 text-sm">
-                  <div>
-                    <dt className="text-xs text-muted-foreground">
-                      {t("posters.inventory.totalVisitors")}
-                    </dt>
-                    <dd className="font-semibold text-foreground">
-                      {poster.lifetimeUniqueVisitors}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-xs text-muted-foreground">
-                      {t("posters.inventory.periodVisitors")}
-                    </dt>
-                    <dd className="font-semibold text-foreground">
-                      {poster.periodCreditableVisitors}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-xs text-muted-foreground">
-                      {t("posters.inventory.periodEarnings")}
-                    </dt>
-                    <dd className="font-semibold text-foreground">
-                      {formatCadCents(poster.pendingCents, i18n.language)}
-                    </dd>
-                  </div>
-                </dl>
-                {lifecycle === "not-placed" && (
-                  <p className="mt-4 text-xs text-muted-foreground">
-                    {t("posters.inventory.activationInstruction")}
-                  </p>
-                )}
-              </CardContent>
-              <CardFooter className="flex-wrap gap-2">
-                <PosterDownloadMenu
-                  variant="secondary"
-                  size="sm"
-                  isLoading={downloadingPosterId === poster.id}
-                  disabled={!template}
-                  onDownload={(format) => void downloadPoster(poster, format)}
-                  testId={`poster-download-${poster.id}`}
-                />
-                {poster.isActive && (
-                  <Button
-                    type="button"
-                    variant="warning"
-                    size="sm"
-                    onClick={() => setPosterToArchive(poster)}
-                    data-testid={`poster-archive-${poster.id}`}
+                <Stack gap={4}>
+                  <FormGrid
+                    as="dl"
+                    columns={3}
+                    collapse={false}
+                    className="text-sm"
                   >
-                    {t("posters.inventory.archive")}
-                  </Button>
-                )}
+                    <Stack gap={1}>
+                      <dt className="text-xs text-muted-foreground">
+                        {t("posters.inventory.totalVisitors")}
+                      </dt>
+                      <dd className="font-semibold text-foreground">
+                        {poster.lifetimeUniqueVisitors}
+                      </dd>
+                    </Stack>
+                    <Stack gap={1}>
+                      <dt className="text-xs text-muted-foreground">
+                        {t("posters.inventory.periodVisitors")}
+                      </dt>
+                      <dd className="font-semibold text-foreground">
+                        {poster.periodCreditableVisitors}
+                      </dd>
+                    </Stack>
+                    <Stack gap={1}>
+                      <dt className="text-xs text-muted-foreground">
+                        {t("posters.inventory.periodEarnings")}
+                      </dt>
+                      <dd className="font-semibold text-foreground">
+                        {formatCadCents(poster.pendingCents, i18n.language)}
+                      </dd>
+                    </Stack>
+                  </FormGrid>
+                  {lifecycle === "not-placed" && (
+                    <p className="text-xs text-muted-foreground">
+                      {t("posters.inventory.activationInstruction")}
+                    </p>
+                  )}
+                </Stack>
+              </CardContent>
+              <CardFooter>
+                <Stack direction="horizontal" wrap gap={2}>
+                  <PosterDownloadMenu
+                    variant="secondary"
+                    size="sm"
+                    isLoading={downloadingPosterId === poster.id}
+                    disabled={!template}
+                    onDownload={(format) => void downloadPoster(poster, format)}
+                    testId={`poster-download-${poster.id}`}
+                  />
+                  {poster.isActive && (
+                    <Button
+                      type="button"
+                      variant="warning"
+                      size="sm"
+                      onClick={() => setPosterToArchive(poster)}
+                      data-testid={`poster-archive-${poster.id}`}
+                    >
+                      {t("posters.inventory.archive")}
+                    </Button>
+                  )}
+                </Stack>
               </CardFooter>
             </Card>
           );
         })}
-      </div>
+      </FormGrid>
 
       <Dialog
         open={posterToArchive !== null}

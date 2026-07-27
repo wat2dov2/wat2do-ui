@@ -1,9 +1,6 @@
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft } from "@/shared/ui/doodle-icons";
-import { Button } from "@/shared/ui/button";
 import { fetchProfileAPI } from "@/features/auth/api/auth.api";
 import { OrganizationForm } from "@/features/organizations/components/AddOrganizationModal";
 import { createOrganizationAPI } from "@/features/organizations/api/organizations.api";
@@ -61,18 +58,14 @@ export function CreateOrganizationPage() {
     <Container size="md" className="py-4 sm:py-6">
       <Stack gap={6}>
         <PageHeader
+          back={{
+            href: ROUTES.ORGANIZATIONS,
+            label: t("organizations.allOrganizations"),
+          }}
           title={t("organizations.submitOrganization")}
           description={t("organizations.addOrganizationDescription", {
             school: schoolName,
           })}
-          actions={
-            <Button asChild variant="secondary" size="sm">
-              <Link href={ROUTES.ORGANIZATIONS}>
-                <ArrowLeft className="size-4" />
-                {t("organizations.allOrganizations")}
-              </Link>
-            </Button>
-          }
         />
         <Section variant="surface">
           <OrganizationForm

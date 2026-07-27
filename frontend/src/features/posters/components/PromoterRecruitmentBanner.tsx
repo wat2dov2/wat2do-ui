@@ -4,23 +4,36 @@ import {
   usePromoterBannerDismissal,
   usePromoterState,
 } from "@/features/posters/hooks/usePromoterState";
-import { getSchoolDisplayName } from "@/shared/constants/schools";
+import {
+  getSchoolDisplayName,
+  resolveWritableSchool,
+} from "@/shared/constants/schools";
 import { ROUTES } from "@/shared/constants/routes";
-import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert";
+import {
+  Alert,
+  AlertAction,
+  AlertDescription,
+  AlertTitle,
+} from "@/shared/ui/alert";
 import { Button } from "@/shared/ui/button";
 import { Megaphone, X } from "@/shared/ui/doodle-icons";
 import { Link } from "@/shared/ui/link";
 import { promoterProgram } from "@/shared/config/promoterProgram";
 import { formatCadCents } from "@/shared/utils/currency";
 
-export function PromoterRecruitmentBanner() {
+interface PromoterRecruitmentBannerProps {
+  school: string | null | undefined;
+}
+
+export function PromoterRecruitmentBanner({
+  school,
+}: PromoterRecruitmentBannerProps) {
   const { t, i18n } = useTranslation();
   const promoter = usePromoterState();
   const dismissal = usePromoterBannerDismissal();
+  const viewedSchool = resolveWritableSchool(promoter.school, school);
 
   if (
-    !promoter.isAuthenticated ||
-    !promoter.school ||
     promoter.isEnrolled ||
     !promoter.isProgramEnabled ||
     dismissal.isDismissed
@@ -31,7 +44,6 @@ export function PromoterRecruitmentBanner() {
   return (
     <Alert
       variant="info"
-      className="grid-cols-[auto_1fr_auto]"
       data-testid="promoter-recruitment-banner"
     >
       <Link
@@ -42,7 +54,7 @@ export function PromoterRecruitmentBanner() {
       <Megaphone />
       <AlertTitle className="relative pointer-events-none">
         {t("posters.recruitment.title", {
-          school: getSchoolDisplayName(promoter.school),
+          school: getSchoolDisplayName(viewedSchool),
         })}
       </AlertTitle>
       <AlertDescription className="relative pointer-events-none">
@@ -55,18 +67,20 @@ export function PromoterRecruitmentBanner() {
           {t("posters.recruitment.seeHowItWorks")}
         </span>
       </AlertDescription>
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon-sm"
-        className="relative z-10 col-start-3 row-span-2 row-start-1"
-        onClick={dismissal.dismiss}
-        aria-label={t("posters.recruitment.dismiss", {
-          days: promoterProgram.bannerDismissalDays,
-        })}
-      >
-        <X />
-      </Button>
+      <AlertAction>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          className="relative z-10"
+          onClick={dismissal.dismiss}
+          aria-label={t("posters.recruitment.dismiss", {
+            days: promoterProgram.bannerDismissalDays,
+          })}
+        >
+          <X />
+        </Button>
+      </AlertAction>
     </Alert>
   );
 }

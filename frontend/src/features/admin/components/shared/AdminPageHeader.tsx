@@ -1,6 +1,7 @@
-import { ArrowLeft } from "@/shared/ui/doodle-icons";
 import type { LucideIcon } from "@/shared/ui/doodle-icons";
 import { Button } from "@/shared/ui/button";
+import { PageHeader } from "@/shared/layout";
+import { useTranslation } from "react-i18next";
 
 interface AdminPageHeaderProps {
   icon: LucideIcon;
@@ -21,28 +22,29 @@ export function AdminPageHeader({
   onBack,
   action,
 }: AdminPageHeaderProps) {
+  const { t } = useTranslation();
+
   return (
-    <div className="flex items-center justify-between">
-      <div className="flex items-center gap-3">
-        {onBack && (
-          <Button variant="secondary" size="icon" onClick={onBack}>
-            <ArrowLeft className="size-4" />
+    <PageHeader
+      icon={Icon}
+      title={title}
+      description={description}
+      back={
+        onBack
+          ? {
+              label: t("admin.backToDashboard"),
+              onClick: onBack,
+            }
+          : undefined
+      }
+      actions={
+        action ? (
+          <Button size="sm" onClick={action.onClick}>
+            {action.icon && <action.icon />}
+            {action.label}
           </Button>
-        )}
-        <div className="size-12 rounded-full bg-primary/20 flex items-center justify-center">
-          <Icon className="size-6 text-primary" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-semibold text-foreground">{title}</h1>
-          <p className="text-sm text-muted-foreground">{description}</p>
-        </div>
-      </div>
-      {action && (
-        <Button size="sm" onClick={action.onClick}>
-          {action.icon && <action.icon className="size-4 mr-2" />}
-          {action.label}
-        </Button>
-      )}
-    </div>
+        ) : undefined
+      }
+    />
   );
 }

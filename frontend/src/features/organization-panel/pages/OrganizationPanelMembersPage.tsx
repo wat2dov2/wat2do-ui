@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useRouter } from "next/navigation";
 import {
-  ArrowLeft,
   Users,
   Check,
   X,
@@ -16,6 +15,7 @@ import {
 import { Button } from "@/shared/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { ROUTES } from "@/shared/constants/routes";
+import { PageHeader } from "@/shared/layout";
 import { useAuthState } from "@/features/auth";
 import { toast } from "@/shared/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
@@ -384,23 +384,15 @@ export function OrganizationPanelMembersPage() {
       onValueChange={(value) => setMainTab(value as "roster" | "management")}
       className="space-y-5"
     >
-      <div className="flex items-center gap-3">
-        <Button
-          variant="secondary"
-          size="icon"
-          onMouseDown={() => router.push(ROUTES.ORGANIZATION_PANEL)}
-          className="shrink-0"
-        >
-          <ArrowLeft className="size-5" />
-        </Button>
-        <div className="size-12 rounded-full bg-primary/20 flex items-center justify-center">
-          <Users className="size-6 text-primary" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-semibold text-foreground">{t("organizationPanel.members")}</h1>
-          <p className="text-sm text-muted-foreground">{t("organizationPanel.membersDesc")}</p>
-        </div>
-      </div>
+      <PageHeader
+        back={{
+          label: t("organizationPanel.backToPanel"),
+          onClick: () => router.push(ROUTES.ORGANIZATION_PANEL),
+        }}
+        icon={Users}
+        title={t("organizationPanel.members")}
+        description={t("organizationPanel.membersDesc")}
+      />
 
       <TabsList>
         <TabsTrigger value="roster">

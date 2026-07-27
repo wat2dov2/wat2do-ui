@@ -1,5 +1,6 @@
 {
   "admin": {
+    "backToDashboard": "Back to admin dashboard",
     "panelDescription": "Manage events, organizations, posters, and marketing",
     "manageEvents": "Manage Events",
     "manageEventsDesc": "View, edit, and delete events",

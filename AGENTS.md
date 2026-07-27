@@ -218,6 +218,11 @@ When cleaning frontend code:
 - Install shadcn/ui components as a starting point, but treat them as our own source code: customize them, remove unused variants, and evolve them instead of leaving them untouched.
 - Organize components into three layers: UI primitives (Button, Input, Card), layout primitives (Container, Stack, FormGrid), and feature components (EventCard, ClubCard).
 - Pages and feature components must compose existing UI and layout primitives, selecting or extending their semantic variants before writing Tailwind classes. Do not hand-roll bespoke visual styles with long `className` strings when a primitive, layout helper, or component variant can express the intent. If the needed variant does not exist, add it to the owning component and use that single variant everywhere rather than duplicating Tailwind styling at call sites.
+- Use layout primitives for page and feature structure, including flex direction, grid columns, alignment, wrapping, spacing, sections, and form actions.
+  Reserve call-site `className` values for visual styling, positioning, or a documented layout exception that no existing primitive can express.
+- Render page-level back and all navigation through the `PageHeader` `back` prop as the first control at the top-left of the page.
+  Do not hand-roll page-level arrow buttons at call sites.
+  Workflow-internal previous and back controls are excluded.
 - Create small layout helpers like Container, Stack, FormSection, FormGrid, and FormActions so building pages and forms feels like assembling LEGO rather than rewriting spacing and grid classes.
 - Keep component APIs intentionally small by exposing meaningful variants (primary, secondary, ghost) instead of dozens of styling props that try to cover every visual possibility.
 - Define interaction tokens such as `surface-hover`, `primary-hover`, and `destructive-hover`; derive them from the base colors (typically by slightly reducing lightness) instead of choosing unrelated hover colors.

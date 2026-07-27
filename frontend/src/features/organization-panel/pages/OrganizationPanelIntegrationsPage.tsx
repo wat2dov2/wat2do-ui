@@ -1,8 +1,8 @@
 import { useTranslation } from "react-i18next";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Link, MessageCircle, Discord } from "@/shared/ui/doodle-icons";
-import { Button } from "@/shared/ui/button";
+import { Link, MessageCircle, Discord } from "@/shared/ui/doodle-icons";
 import { ROUTES } from "@/shared/constants/routes";
+import { PageHeader, Stack } from "@/shared/layout";
 import { InstagramIcon, SlackIcon, TelegramIcon, LinkedInIcon, FacebookIcon } from "@/shared/ui/platform-icons";
 import { useIntegrations } from "@/features/organization-panel/hooks/useIntegrations";
 import { IntegrationCard } from "@/features/organization-panel/components/IntegrationCard";
@@ -22,30 +22,20 @@ export function OrganizationPanelIntegrationsPage() {
   const actionDisabled = integrations.loading || integrations.saving || !integrations.selectedClubId;
 
   return (
-    <div className="space-y-5">
-      <div className="flex items-center gap-3">
-        <Button
-          variant="secondary"
-          size="icon"
-          onMouseDown={() => router.push(ROUTES.ORGANIZATION_PANEL)}
-          className="shrink-0"
-        >
-          <ArrowLeft className="size-5" />
-        </Button>
-        <div className="size-12 rounded-full bg-primary/20 flex items-center justify-center">
-          <Link className="size-6 text-primary" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-semibold text-foreground">{t("organizationPanel.integrations")}</h1>
-          <p className="text-sm text-muted-foreground">
-            {t("integrations.pageDescription")}
-          </p>
-        </div>
-      </div>
+    <Stack gap={5}>
+      <PageHeader
+        back={{
+          label: t("organizationPanel.backToPanel"),
+          onClick: () => router.push(ROUTES.ORGANIZATION_PANEL),
+        }}
+        icon={Link}
+        title={t("organizationPanel.integrations")}
+        description={t("integrations.pageDescription")}
+      />
 
       {integrations.error && <p className="text-xs text-destructive">{integrations.error}</p>}
 
-      <div className="space-y-4">
+      <Stack gap={4}>
         <IntegrationCard
           integration={integrations.getIntegration("whatsapp")}
           platform="whatsapp"
@@ -129,7 +119,7 @@ export function OrganizationPanelIntegrationsPage() {
           onDisconnect={() => integrations.handleDisconnect("facebook")}
           disabled={actionDisabled}
         />
-      </div>
+      </Stack>
 
       <DiscordConnectSection
         discord={integrations.discord}
@@ -187,6 +177,6 @@ export function OrganizationPanelIntegrationsPage() {
           />
         );
       })}
-    </div>
+    </Stack>
   );
 }

@@ -1,5 +1,6 @@
 {
   "organizationPanel": {
+    "backToPanel": "Back to organization panel",
     "title": "Organization Panel",
     "description": "Manage your organization's posters, integrations, and members",
     "posters": "Posters",

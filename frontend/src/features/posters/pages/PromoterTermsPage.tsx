@@ -3,9 +3,6 @@ import { useTranslation } from "react-i18next";
 import { promoterProgram } from "@/shared/config/promoterProgram";
 import { ROUTES } from "@/shared/constants/routes";
 import { Container, PageHeader, Section, Stack } from "@/shared/layout";
-import { Button } from "@/shared/ui/button";
-import { ArrowLeft } from "@/shared/ui/doodle-icons";
-import { Link } from "@/shared/ui/link";
 
 export function PromoterTermsPage() {
   const { t } = useTranslation();
@@ -24,18 +21,14 @@ export function PromoterTermsPage() {
       <Container size="md">
         <Stack gap={8}>
           <PageHeader
+            back={{
+              href: ROUTES.PROMOTE,
+              label: t("posters.terms.back"),
+            }}
             title={t("posters.terms.title")}
             description={t("posters.terms.description", {
               version: promoterProgram.tosVersion,
             })}
-            actions={
-              <Button asChild variant="secondary">
-                <Link href={ROUTES.PROMOTE}>
-                  <ArrowLeft />
-                  {t("posters.terms.back")}
-                </Link>
-              </Button>
-            }
           />
           {sections.map((section) => (
             <Section

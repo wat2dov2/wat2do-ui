@@ -1,10 +1,7 @@
 import { useEffect } from "react";
-import Link from "next/link";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { tracker } from "@/shared/services/trackingService";
-import { ArrowLeft } from "@/shared/ui/doodle-icons";
-import { Button } from "@/shared/ui/button";
 import { LoadingPage } from "@/shared/ui/loading-page";
 import {
   EventActions,
@@ -14,7 +11,7 @@ import { fetchEventById } from "@/features/events/api/events.api";
 import { controlBox } from "@/shared/config/controlBox";
 import { ROUTES } from "@/shared/constants/routes";
 import { queryKeys } from "@/shared/lib/queryKeys";
-import { Stack } from "@/shared/layout";
+import { Container, PageHeader, Stack } from "@/shared/layout";
 
 interface EventDetailsPageContainerProps {
   eventId: number;
@@ -49,17 +46,21 @@ export function EventDetailsPageContainer({ eventId }: EventDetailsPageContainer
   }
 
   return (
-    <div className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 sm:py-8">
-      <Stack direction="horizontal" justify="between" align="start" gap={3} wrap className="mb-6">
-        <Button asChild variant="secondary" size="sm">
-          <Link href={ROUTES.HOME}>
-            <ArrowLeft className="size-4" />
-            {t("events.allEvents")}
-          </Link>
-        </Button>
-        <EventActions event={event} />
+    <Container size="lg" className="max-w-5xl py-6 sm:py-8">
+      <Stack gap={6}>
+        <PageHeader
+          back={{
+            href: ROUTES.HOME,
+            label: t("events.allEvents"),
+          }}
+          actions={<EventActions event={event} />}
+        />
+        <EventDetailsBody
+          event={event}
+          school={event.school}
+          showActions={false}
+        />
       </Stack>
-      <EventDetailsBody event={event} school={event.school} showActions={false} />
-    </div>
+    </Container>
   );
 }

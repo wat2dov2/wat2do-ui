@@ -6,7 +6,6 @@ import { ROUTES } from "@/shared/constants/routes";
 import { QP } from "@/shared/constants/queryParams";
 import { DEFAULT_SCHOOL } from "@/shared/constants/schools";
 import { AuthPageLayout } from "@/features/auth/components/AuthPageLayout";
-import { Button } from "@/shared/ui/button";
 import { LoadingButton } from "@/shared/ui/loading-button";
 import { appendSafeReturnTo, getSafeReturnTo } from "@/features/auth/utils/returnTo";
 
@@ -69,6 +68,14 @@ export function AuthCallbackPage() {
   return (
     <AuthPageLayout
       heading={t("auth.heading")}
+      back={
+        error || !hasValidParams
+          ? {
+              label: t("auth.backToLogin"),
+              onClick: () => router.replace(ROUTES.LOGIN),
+            }
+          : undefined
+      }
       description={
         error
           ? t("auth.genericError")
@@ -79,24 +86,9 @@ export function AuthCallbackPage() {
     >
       <div className="w-full flex flex-col items-center justify-center py-8 space-y-4">
         {error || !hasValidParams ? (
-          <>
-            <p className="text-sm text-destructive text-center max-w-xs">
-              {error || t("auth.resetPasswordInvalidLink")}
-            </p>
-            <Button
-              type="button"
-              onMouseDown={() => router.replace(ROUTES.LOGIN)}
-              onKeyDown={(e) => {
-                if (e.key !== "Enter" && e.key !== " ") return;
-
-                e.preventDefault();
-                router.replace(ROUTES.LOGIN);
-              }}
-              className="w-full mt-4"
-            >
-              {t("auth.backToLogin")}
-            </Button>
-          </>
+          <p className="text-sm text-destructive text-center max-w-xs">
+            {error || t("auth.resetPasswordInvalidLink")}
+          </p>
         ) : (
           <LoadingButton
             type="button"

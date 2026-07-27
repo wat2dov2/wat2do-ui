@@ -14,6 +14,13 @@ import {
   sanitizeFilename,
 } from "@/features/posters/utils/generateAssetPdf";
 import { promoterProgram } from "@/shared/config/promoterProgram";
+import {
+  FormActions,
+  FormGrid,
+  FormLayout,
+  FormSection,
+  Stack,
+} from "@/shared/layout";
 import { getApiErrorMessage } from "@/shared/services/apiClient";
 import { generateQRCodeUrl } from "@/shared/utils/qrGenerator";
 import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert";
@@ -33,8 +40,12 @@ import {
   DialogTitle,
 } from "@/shared/ui/dialog";
 import { ExternalLink, Plus, QrCode } from "@/shared/ui/doodle-icons";
+import {
+  Field,
+  FieldDescription,
+  FieldLabel,
+} from "@/shared/ui/field";
 import { Input } from "@/shared/ui/input";
-import { Label } from "@/shared/ui/label";
 import { LoadingButton } from "@/shared/ui/loading-button";
 import { toast } from "@/shared/hooks/use-toast";
 
@@ -63,15 +74,17 @@ function PosterPreview({
 }) {
   const placement = template.qrPlacement;
   return (
-    <div className="space-y-2">
+    <Stack gap={2}>
       <div className="relative aspect-[8.5/11] overflow-hidden rounded-lg border border-border bg-secondary">
         <img
           src={template.assetPath}
           alt={template.name}
           className="h-full w-full object-contain"
         />
-        <div
-          className="absolute flex items-center justify-center bg-background"
+        <Stack
+          align="center"
+          justify="center"
+          className="absolute bg-background"
           style={{
             left: `${placement.x * 100}%`,
             top: `${placement.y * 100}%`,
@@ -84,10 +97,10 @@ function PosterPreview({
             className="h-full w-full"
             marginSize={4}
           />
-        </div>
+        </Stack>
       </div>
       <p className="truncate text-xs font-medium text-foreground">{poster.name}</p>
-    </div>
+    </Stack>
   );
 }
 
@@ -245,7 +258,7 @@ export function PromoterPosterCreator({
           </DialogHeader>
 
           {createdPosters.length > 0 && selectedTemplate ? (
-            <div className="space-y-6" data-testid="poster-created-previews">
+            <Stack gap={6} data-testid="poster-created-previews">
               <Alert variant="success">
                 <QrCode />
                 <AlertTitle>{t("posters.create.createdTitle")}</AlertTitle>
@@ -255,7 +268,7 @@ export function PromoterPosterCreator({
                   })}
                 </AlertDescription>
               </Alert>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <FormGrid columns={3}>
                 {createdPosters.map((poster) => (
                   <PosterPreview
                     key={poster.id}
@@ -263,8 +276,8 @@ export function PromoterPosterCreator({
                     template={selectedTemplate}
                   />
                 ))}
-              </div>
-              <div className="flex flex-wrap justify-end gap-2">
+              </FormGrid>
+              <Stack direction="horizontal" justify="end" wrap gap={2}>
                 <PosterDownloadMenu
                   isLoading={isDownloading}
                   onDownload={(format) => {
@@ -272,21 +285,16 @@ export function PromoterPosterCreator({
                   }}
                   testId="poster-batch-download"
                 />
-              </div>
-            </div>
+              </Stack>
+            </Stack>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="space-y-3">
-                <div>
-                  <h3 className="font-semibold text-foreground">
-                    {t("posters.create.chooseTemplate")}
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    {t("posters.create.chooseTemplateDescription")}
-                  </p>
-                </div>
-                <div
-                  className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+            <FormLayout onSubmit={handleSubmit}>
+              <FormSection
+                title={t("posters.create.chooseTemplate")}
+                description={t("posters.create.chooseTemplateDescription")}
+              >
+                <FormGrid
+                  columns={3}
                   data-testid="poster-template-gallery"
                 >
                   {eligibleTemplates.map((template) => (
@@ -339,13 +347,13 @@ export function PromoterPosterCreator({
                       </Button>
                     </CardFooter>
                   </Card>
-                </div>
-              </div>
+                </FormGrid>
+              </FormSection>
 
-              <div className="max-w-sm space-y-2">
-                <Label htmlFor="poster-copy-count">
+              <Field className="max-w-sm">
+                <FieldLabel htmlFor="poster-copy-count">
                   {t("posters.create.copies")}
-                </Label>
+                </FieldLabel>
                 <Input
                   id="poster-copy-count"
                   data-testid="poster-copy-count"
@@ -367,12 +375,12 @@ export function PromoterPosterCreator({
                   }}
                   required
                 />
-                <p className="text-xs text-muted-foreground">
+                <FieldDescription>
                   {t("posters.create.slotsRemaining", {
                     count: remainingSlots,
                   })}
-                </p>
-              </div>
+                </FieldDescription>
+              </Field>
 
               {createPosters.error && (
                 <p className="text-sm text-destructive" role="status">
@@ -383,7 +391,7 @@ export function PromoterPosterCreator({
                 </p>
               )}
 
-              <div className="flex justify-end">
+              <FormActions>
                 <LoadingButton
                   type="submit"
                   isLoading={createPosters.isPending}
@@ -397,8 +405,8 @@ export function PromoterPosterCreator({
                   <QrCode />
                   {t("posters.create.submit")}
                 </LoadingButton>
-              </div>
-            </form>
+              </FormActions>
+            </FormLayout>
           )}
         </DialogContent>
       </Dialog>

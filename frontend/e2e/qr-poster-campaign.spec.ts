@@ -664,8 +664,16 @@ test.describe("Promoter poster campaign", () => {
       (route) => fulfillJson(route, { detail: "Not authenticated" }, 401),
     );
 
-    await page.goto(`${BASE_URL}/promote`);
+    await page.goto(`${BASE_URL}/`);
+    await expect(
+      page.getByTestId("promoter-recruitment-banner"),
+    ).toBeVisible();
+    await page
+      .getByTestId("promoter-recruitment-banner")
+      .getByRole("link")
+      .click();
 
+    await expect(page).toHaveURL(/\/promote$/);
     await expect(page.getByTestId("promote-page")).toBeVisible();
     await expect(
       page.getByTestId("promoter-enrollment-signed-out"),
@@ -1013,6 +1021,9 @@ test.describe("Administrator poster payouts", () => {
     const payoutApi = await installAdminPayoutMocks(page);
 
     await page.goto(`${BASE_URL}/admin/posters`);
+    await expect(page.locator('[data-slot="page-back"]')).toContainText(
+      "Back to admin dashboard",
+    );
     await page.getByTestId("admin-payouts-tab").click();
     await expect(
       page.getByRole("heading", { name: "Poster payouts" }),

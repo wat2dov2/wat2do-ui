@@ -10,7 +10,6 @@ import {
 } from "@/shared/ui/field";
 import { Checkbox } from "@/shared/ui/checkbox";
 import { Input } from "@/shared/ui/input";
-import { Label } from "@/shared/ui/label";
 import {
   Select,
   SelectContent,
@@ -58,29 +57,29 @@ export function FormControlsSection() {
         </ShowcaseBlock>
 
         <ShowcaseBlock label="Checkbox">
-          <div className="flex items-center gap-3">
+          <Field orientation="horizontal-start">
             <Checkbox
               id="design-system-checkbox"
               checked={termsAccepted}
               onCheckedChange={(checked) => setTermsAccepted(checked === true)}
             />
-            <Label htmlFor="design-system-checkbox">
+            <FieldLabel htmlFor="design-system-checkbox">
               I agree to the campus event guidelines
-            </Label>
-          </div>
+            </FieldLabel>
+          </Field>
         </ShowcaseBlock>
 
         <ShowcaseBlock label="Switch">
-          <div className="flex items-center gap-3">
+          <Field orientation="horizontal">
             <Switch
               id="design-system-switch"
               checked={notificationsEnabled}
               onCheckedChange={setNotificationsEnabled}
             />
-            <Label htmlFor="design-system-switch">
+            <FieldLabel htmlFor="design-system-switch">
               {notificationsEnabled ? "Notifications on" : "Notifications off"}
-            </Label>
-          </div>
+            </FieldLabel>
+          </Field>
         </ShowcaseBlock>
 
         <ShowcaseBlock label="Tabs">

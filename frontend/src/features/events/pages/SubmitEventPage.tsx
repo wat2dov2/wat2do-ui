@@ -71,6 +71,7 @@ export function SubmitEventPage() {
       <Container size="lg" className="py-4 sm:py-6">
         <Stack gap={6}>
           <PageHeader
+            back={{ href: ROUTES.HOME, label: t("events.allEvents") }}
             title={t("events.createEvent")}
             description={t("events.submitEventSchoolDescription", {
               school: schoolName,

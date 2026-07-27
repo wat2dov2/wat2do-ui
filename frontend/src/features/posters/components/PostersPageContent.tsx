@@ -8,9 +8,10 @@
 import { Suspense, useMemo } from "react";
 import type { ComponentType } from "react";
 import { useTranslation } from "react-i18next";
-import { Megaphone, ArrowLeft, MapPin } from "@/shared/ui/doodle-icons";
-import { Button } from "@/shared/ui/button";
+import { MapPin } from "@/shared/ui/doodle-icons";
 import { Spinner } from "@/shared/ui/spinner";
+import { FormGrid, Stack } from "@/shared/layout";
+import { Card, CardContent } from "@/shared/ui/card";
 import {
   Select,
   SelectContent,
@@ -67,7 +68,6 @@ interface AssetWizardProps {
 
 interface PostersPageContentProps {
   events: Event[];
-  onBack: () => void;
   userEmail: string;
   /** Lazy-loaded scan map component. */
   ScanMapComponent: ComponentType<ScanMapProps>;
@@ -79,7 +79,6 @@ interface PostersPageContentProps {
 
 export function PostersPageContent({
   events,
-  onBack,
   userEmail,
   ScanMapComponent,
   DetailsModalComponent,
@@ -129,7 +128,8 @@ export function PostersPageContent({
     : null;
   const showDetailsModal = selectedQRCode !== null;
 
-  const formatScanTimestamp = (timestamp: string) => formatRelativeTimeCompact(timestamp, t);
+  const formatScanTimestamp = (timestamp: string) =>
+    formatRelativeTimeCompact(timestamp, t);
 
   const handleViewDetails = (qrCode: QRCode) => {
     const newParams = new URLSearchParams(searchParams.toString());
@@ -138,25 +138,12 @@ export function PostersPageContent({
   };
 
   return (
-    <div className="space-y-5">
-      <div className="flex items-center gap-3">
-        <Button variant="secondary" size="icon" onMouseDown={onBack}>
-          <ArrowLeft className="size-4" />
-        </Button>
-        <div className="size-12 rounded-full bg-primary/20 flex items-center justify-center">
-          <Megaphone className="size-6 text-primary" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-semibold text-foreground">{t("admin.qrAssets.title")}</h1>
-          <p className="text-sm text-muted-foreground">
-            {t("admin.qrAssets.description")}
-          </p>
-        </div>
-      </div>
-
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-foreground">{t("admin.scanLocations")}</h2>
+    <Stack gap={5}>
+      <Stack gap={3}>
+        <Stack direction="horizontal" align="center" justify="between">
+          <h2 className="text-lg font-semibold text-foreground">
+            {t("admin.scanLocations")}
+          </h2>
           <Select
             value={filters.timeFilter}
             onValueChange={(value) => {
@@ -175,96 +162,134 @@ export function PostersPageContent({
               <SelectItem value="alltime">{t("admin.allTime")}</SelectItem>
             </SelectContent>
           </Select>
-        </div>
-        <div className="grid grid-cols-2 gap-5">
-          <div ref={mapContainerRef} className="space-y-3">
-            {hasIntersected ? (
-              <Suspense
-                fallback={
-                  <div
-                    className="w-full rounded-lg border border-border bg-secondary flex items-center justify-center"
-                    style={{ height: POSTER_MAP_HEIGHT }}
+        </Stack>
+        <FormGrid columns={2}>
+          <div ref={mapContainerRef}>
+            <Stack gap={3}>
+              {hasIntersected ? (
+                <Suspense
+                  fallback={
+                    <Stack
+                      align="center"
+                      justify="center"
+                      className="w-full rounded-lg border border-border bg-secondary"
+                      style={{ height: POSTER_MAP_HEIGHT }}
+                    >
+                      <Stack
+                        direction="horizontal"
+                        align="center"
+                        justify="center"
+                        gap={2}
+                        className="p-8"
+                      >
+                        <Spinner className="size-4" />
+                        <p className="text-sm text-muted-foreground">
+                          {t("common.loadingMap")}
+                        </p>
+                      </Stack>
+                    </Stack>
+                  }
+                >
+                  <ScanMapComponent
+                    markers={mapMarkers}
+                    height={POSTER_MAP_HEIGHT}
+                    onMarkerClick={(qrCodeId) => {
+                      const qrCode = filters.qrCodes.find(
+                        (candidate) => candidate.id === qrCodeId,
+                      );
+                      if (qrCode) {
+                        handleViewDetails(qrCode);
+                      }
+                    }}
+                  />
+                </Suspense>
+              ) : (
+                <Stack
+                  align="center"
+                  justify="center"
+                  className="w-full rounded-lg border border-border bg-secondary"
+                  style={{ height: POSTER_MAP_HEIGHT }}
+                >
+                  <Stack
+                    align="center"
+                    gap={2}
+                    className="p-8 text-center"
                   >
-                    <div className="flex items-center justify-center gap-2 p-8">
-                      <Spinner className="size-4" />
-                      <p className="text-sm text-muted-foreground">{t("common.loadingMap")}</p>
-                    </div>
-                  </div>
-                }
-              >
-                <ScanMapComponent
-                  markers={mapMarkers}
-                  height={POSTER_MAP_HEIGHT}
-                  onMarkerClick={(qrCodeId) => {
-                    const qrCode = filters.qrCodes.find(qr => qr.id === qrCodeId);
-                    if (qrCode) {
-                      handleViewDetails(qrCode);
-                    }
-                  }}
-                />
-              </Suspense>
-            ) : (
-              <div
-                className="w-full rounded-lg border border-border bg-secondary flex items-center justify-center"
-                style={{ height: POSTER_MAP_HEIGHT }}
-              >
-                <div className="text-center p-8">
-                  <MapPin className="size-12 text-muted-foreground/30 mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">{t("admin.mapWillLoadWhenVisible")}</p>
-                </div>
-              </div>
-            )}
+                    <MapPin className="size-12 text-muted-foreground/30" />
+                    <p className="text-sm text-muted-foreground">
+                      {t("admin.mapWillLoadWhenVisible")}
+                    </p>
+                  </Stack>
+                </Stack>
+              )}
+            </Stack>
           </div>
 
-          <div className="space-y-3">
+          <Stack gap={3}>
             <Table>
-                <TableHeader>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{t("admin.timestamp")}</TableHead>
+                  <TableHead>{t("admin.qrCode")}</TableHead>
+                  <TableHead>{t("admin.browserFamily")}</TableHead>
+                  <TableHead>{t("admin.osFamily")}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
                   <TableRow>
-                    <TableHead>{t("admin.timestamp")}</TableHead>
-                    <TableHead>{t("admin.qrCode")}</TableHead>
-                    <TableHead>{t("admin.browserFamily")}</TableHead>
-                    <TableHead>{t("admin.osFamily")}</TableHead>
+                    <TableCell
+                      colSpan={4}
+                      className="text-center py-8 text-muted-foreground"
+                    >
+                      <Stack
+                        direction="horizontal"
+                        align="center"
+                        justify="center"
+                        gap={2}
+                      >
+                        <Spinner className="size-4" />
+                        <span>{t("common.loading")}</span>
+                      </Stack>
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {isLoading ? (
-                    <TableRow>
-                      <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
-                        <div className="flex items-center justify-center gap-2">
-                          <Spinner className="size-4" />
-                          <span>{t("common.loading")}</span>
-                        </div>
+                ) : scansPagination.paginatedItems.length > 0 ? (
+                  scansPagination.paginatedItems.map((scan) => (
+                    <TableRow key={scan.id}>
+                      <TableCell className="text-sm">
+                        {formatScanTimestamp(scan.scannedAt)}
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {filters.qrCodeMap.get(scan.qrCodeId) ||
+                          t("admin.unknown")}
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {scan.browserFamily || (
+                          <span className="text-muted-foreground">
+                            &mdash;
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {scan.osFamily || (
+                          <span className="text-muted-foreground">
+                            &mdash;
+                          </span>
+                        )}
                       </TableCell>
                     </TableRow>
-                  ) : scansPagination.paginatedItems.length > 0 ? (
-                    scansPagination.paginatedItems.map((scan) => (
-                      <TableRow key={scan.id}>
-                        <TableCell className="text-sm">
-                          {formatScanTimestamp(scan.scannedAt)}
-                        </TableCell>
-                        <TableCell className="text-sm">
-                          {filters.qrCodeMap.get(scan.qrCodeId) || t("admin.unknown")}
-                        </TableCell>
-                        <TableCell className="text-sm">
-                          {scan.browserFamily || (
-                            <span className="text-muted-foreground">&mdash;</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-sm">
-                          {scan.osFamily || (
-                            <span className="text-muted-foreground">&mdash;</span>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
-                        {t("admin.noScansFound")}
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell
+                      colSpan={4}
+                      className="text-center py-8 text-muted-foreground"
+                    >
+                      {t("admin.noScansFound")}
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
             </Table>
 
             {sortedScans.length > 0 && (
@@ -274,13 +299,15 @@ export function PostersPageContent({
                 onPageChange={scansPagination.setCurrentPage}
               />
             )}
-          </div>
-        </div>
-      </div>
+          </Stack>
+        </FormGrid>
+      </Stack>
 
-      <div className="border border-border rounded-xl p-4 bg-surface">
-        <AssetWizardComponent userEmail={userEmail} />
-      </div>
+      <Card>
+        <CardContent>
+          <AssetWizardComponent userEmail={userEmail} />
+        </CardContent>
+      </Card>
 
       {selectedQRCode && (
         <DetailsModalComponent
@@ -294,7 +321,6 @@ export function PostersPageContent({
           events={events}
         />
       )}
-
-    </div>
+    </Stack>
   );
 }

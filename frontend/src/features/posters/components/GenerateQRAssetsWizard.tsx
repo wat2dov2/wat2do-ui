@@ -1,7 +1,16 @@
 import React, { useCallback, useMemo, useRef, useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { QrCode, ArrowLeft, ArrowRight, Download } from "@/shared/ui/doodle-icons";
+import { FormActions, FormGrid, Stack } from "@/shared/layout";
 import { Button } from "@/shared/ui/button";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/shared/ui/card";
 import { Input } from "@/shared/ui/input";
 import { ImageUploadField } from "@/shared/ui/image-upload-field";
 import { QRPlacementOverlay } from "./QRPlacementOverlay";
@@ -363,22 +372,27 @@ export function GenerateQRAssetsWizard({ onClose, userEmail: userEmailProp }: Ge
       : t("admin.qrAssets.step3Description");
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-start gap-3">
-        <div className="size-12 rounded-full bg-primary/20 flex items-center justify-center">
+    <Stack gap={6}>
+      <Stack direction="horizontal" align="start" gap={3}>
+        <Stack
+          direction="horizontal"
+          align="center"
+          justify="center"
+          className="size-12 shrink-0 rounded-full bg-primary/20"
+        >
           <QrCode className="size-6 text-primary" />
-        </div>
-        <div className="flex-1">
+        </Stack>
+        <Stack gap={1} grow>
           <h2 className="text-xl font-semibold text-foreground">{headerTitle}</h2>
           <p className="text-sm text-muted-foreground">{headerDescription}</p>
-        </div>
-      </div>
+        </Stack>
+      </Stack>
 
       {step === 1 && (
-        <div className="space-y-5">
+        <Stack gap={5}>
           <FieldGroup>
             <FieldSet>
-              <div className="mt-3 grid gap-3">
+              <Stack gap={3}>
                 <div className="border border-dashed border-border rounded-xl p-4 bg-secondary/40">
                   <ImageUploadField
                     label={t("admin.qrAssets.uploadFieldLabel")}
@@ -391,85 +405,96 @@ export function GenerateQRAssetsWizard({ onClose, userEmail: userEmailProp }: Ge
                 <p className="text-xs text-muted-foreground">
                   {t("admin.qrAssets.uniqueAssetsHelper")}
                 </p>
-              </div>
+              </Stack>
             </FieldSet>
           </FieldGroup>
 
-          <div className="border border-border rounded-xl p-4 bg-surface space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-medium text-foreground">
-                {t("admin.qrAssets.assetsGridTitle")}
-              </h3>
-              <span className="text-xs text-muted-foreground">
-                {t("admin.qrAssets.assetsCount", { count: assets.length })}
-              </span>
-            </div>
-            {assets.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                {t("admin.qrAssets.noAssetsYet")}
-              </p>
-            ) : (
-              <div className="grid gap-3 md:grid-cols-2">
-                {assets.map((asset) => (
-                  <div
-                    key={asset.id}
-                    className="flex items-center gap-3 rounded-lg border border-border bg-secondary/40 p-3"
-                  >
-                    <div className="size-20 rounded-md overflow-hidden bg-secondary flex items-center justify-center">
-                      <img
-                        src={asset.imagePreview}
-                        alt={asset.name}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <div className="flex-1 min-w-0 space-y-1">
-                      <p className="text-xs font-medium text-foreground truncate">
-                        {asset.name}
-                      </p>
-                      <Field>
-                        <FieldLabel className="text-[11px] text-muted-foreground">
-                          {t("admin.qrAssets.quantityLabel")}
-                        </FieldLabel>
-                        <Input
-                          type="number"
-                          min={0}
-                          max={999}
-                          value={asset.quantity.toString()}
-                          onChange={(e) =>
-                            handleQuantityChange(asset.id, e.target.value)
-                          }
-                          className="h-8 text-xs"
-                        />
-                      </Field>
-                    </div>
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="icon"
-                      onMouseDown={() => handleRemoveAsset(asset.id)}
+          <Card>
+            <CardHeader>
+              <CardTitle>{t("admin.qrAssets.assetsGridTitle")}</CardTitle>
+              <CardAction>
+                <CardDescription>
+                  {t("admin.qrAssets.assetsCount", { count: assets.length })}
+                </CardDescription>
+              </CardAction>
+            </CardHeader>
+            <CardContent>
+              {assets.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  {t("admin.qrAssets.noAssetsYet")}
+                </p>
+              ) : (
+                <FormGrid columns={2}>
+                  {assets.map((asset) => (
+                    <Stack
+                      key={asset.id}
+                      direction="horizontal"
+                      align="center"
+                      gap={3}
+                      className="rounded-lg border border-border bg-secondary/40 p-3"
                     >
-                      <span className="sr-only">{t("common.delete")}</span>
-                      ×
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            )}
-            {errors.assets && (
-              <FieldError className="text-xs mt-2">{errors.assets}</FieldError>
-            )}
-          </div>
-        </div>
+                      <Stack
+                        align="center"
+                        justify="center"
+                        className="size-20 shrink-0 overflow-hidden rounded-md bg-secondary"
+                      >
+                        <img
+                          src={asset.imagePreview}
+                          alt={asset.name}
+                          className="w-full h-full object-cover"
+                        />
+                      </Stack>
+                    <Stack gap={1} grow className="min-w-0">
+                        <p className="text-xs font-medium text-foreground truncate">
+                          {asset.name}
+                        </p>
+                        <Field>
+                          <FieldLabel className="text-[11px] text-muted-foreground">
+                            {t("admin.qrAssets.quantityLabel")}
+                          </FieldLabel>
+                          <Input
+                            type="number"
+                            min={0}
+                            max={999}
+                            value={asset.quantity.toString()}
+                            onChange={(e) =>
+                              handleQuantityChange(asset.id, e.target.value)
+                            }
+                            className="h-8 text-xs"
+                          />
+                        </Field>
+                      </Stack>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="icon"
+                        onClick={() => handleRemoveAsset(asset.id)}
+                      >
+                        <span className="sr-only">{t("common.delete")}</span>
+                        ×
+                      </Button>
+                    </Stack>
+                  ))}
+                </FormGrid>
+              )}
+              {errors.assets && (
+                <FieldError className="text-xs mt-2">
+                  {errors.assets}
+                </FieldError>
+              )}
+            </CardContent>
+          </Card>
+        </Stack>
       )}
 
       {step === 2 && (
-        <div className="space-y-4">
-          <div className="flex gap-3 overflow-x-auto pb-1">
+        <Stack gap={4}>
+          <Stack direction="horizontal" gap={3} className="overflow-x-auto pb-1">
             {assets.map((asset) => (
               <button
                 key={asset.id}
                 type="button"
-                onMouseDown={() => selectAsset(asset.id)}
+                onClick={() => selectAsset(asset.id)}
                 className={`rounded-lg border px-2 py-1 text-xs shrink-0 ${
                   selectedAsset?.id === asset.id
                     ? "border-primary bg-primary/10 text-primary-foreground"
@@ -479,124 +504,151 @@ export function GenerateQRAssetsWizard({ onClose, userEmail: userEmailProp }: Ge
                 {asset.name}
               </button>
             ))}
-          </div>
-          <div className="border border-border rounded-xl p-4 bg-surface">
-            {selectedAsset ? (
-              <div className="space-y-3">
-                <p className="text-xs text-muted-foreground">
-                  {t("admin.qrAssets.drawPlacementHelper")}
-                </p>
-                <div
-                  ref={imageContainerRef}
-                  className="relative w-full max-w-md mx-auto aspect-3/4 rounded-lg overflow-hidden border border-border bg-secondary select-none"
-                >
-                  <img
-                    src={selectedAsset.imagePreview}
-                    alt={selectedAsset.name}
-                    className="w-full h-full object-contain"
-                    draggable={false}
-                    onLoad={(e) => {
-                      const img = e.currentTarget;
-                      setImageNaturalSize({
-                        width: img.naturalWidth,
-                        height: img.naturalHeight,
-                      });
-                    }}
-                  />
-                  {containerDimensions.width > 0 && containerDimensions.height > 0 && (
-                    <QRPlacementOverlay
-                      placement={displayPlacement}
-                      onPlacementChange={handlePlacementChange}
-                      containerRef={imageContainerRef}
-                      imageWidth={containerDimensions.width}
-                      imageHeight={containerDimensions.height}
+          </Stack>
+          <Card>
+            <CardContent>
+              {selectedAsset ? (
+                <Stack gap={3}>
+                  <p className="text-xs text-muted-foreground">
+                    {t("admin.qrAssets.drawPlacementHelper")}
+                  </p>
+                  <div
+                    ref={imageContainerRef}
+                    className="relative w-full max-w-md mx-auto aspect-3/4 rounded-lg overflow-hidden border border-border bg-secondary select-none"
+                  >
+                    <img
+                      src={selectedAsset.imagePreview}
+                      alt={selectedAsset.name}
+                      className="w-full h-full object-contain"
+                      draggable={false}
+                      onLoad={(e) => {
+                        const img = e.currentTarget;
+                        setImageNaturalSize({
+                          width: img.naturalWidth,
+                          height: img.naturalHeight,
+                        });
+                      }}
                     />
+                    {containerDimensions.width > 0 &&
+                      containerDimensions.height > 0 && (
+                        <QRPlacementOverlay
+                          placement={displayPlacement}
+                          onPlacementChange={handlePlacementChange}
+                          containerRef={imageContainerRef}
+                          imageWidth={containerDimensions.width}
+                          imageHeight={containerDimensions.height}
+                        />
+                      )}
+                  </div>
+                  {errors.placement && (
+                    <FieldError className="text-xs mt-2">
+                      {errors.placement}
+                    </FieldError>
                   )}
-                </div>
-                {errors.placement && (
-                  <FieldError className="text-xs mt-2">
-                    {errors.placement}
-                  </FieldError>
-                )}
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                {t("admin.qrAssets.noSelectedAsset")}
-              </p>
-            )}
-          </div>
-        </div>
+                </Stack>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  {t("admin.qrAssets.noSelectedAsset")}
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        </Stack>
       )}
 
       {step === 3 && (
-        <div className="space-y-4">
-          <div className="border border-border rounded-xl p-4 bg-surface space-y-3">
-            <p className="text-sm text-muted-foreground">
-              {t("admin.qrAssets.reviewSummary")}
-            </p>
-            <div className="space-y-2">
-              {assets.map((asset) => (
-                <div
-                  key={asset.id}
-                  className="flex items-center justify-between rounded-lg border border-border bg-secondary/40 px-3 py-2"
-                >
-                  <div className="flex items-center gap-2 min-w-0">
-                    <div className="size-8 rounded-md overflow-hidden bg-secondary flex items-center justify-center">
-                      <img
-                        src={asset.imagePreview}
-                        alt={asset.name}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-xs font-medium text-foreground truncate">
-                        {asset.name}
-                      </p>
-                      <p className="text-[11px] text-muted-foreground">
-                        {t("admin.qrAssets.summaryPerAsset", {
+        <Card>
+          <CardContent>
+            <Stack gap={3}>
+              <p className="text-sm text-muted-foreground">
+                {t("admin.qrAssets.reviewSummary")}
+              </p>
+              <Stack gap={2}>
+                {assets.map((asset) => (
+                  <Stack
+                    key={asset.id}
+                    direction="horizontal"
+                    align="center"
+                    justify="between"
+                    gap={3}
+                    className="rounded-lg border border-border bg-secondary/40 px-3 py-2"
+                  >
+                    <Stack
+                      direction="horizontal"
+                      align="center"
+                      gap={2}
+                      className="min-w-0"
+                    >
+                      <Stack
+                        align="center"
+                        justify="center"
+                        className="size-8 shrink-0 overflow-hidden rounded-md bg-secondary"
+                      >
+                        <img
+                          src={asset.imagePreview}
+                          alt={asset.name}
+                          className="w-full h-full object-cover"
+                        />
+                      </Stack>
+                      <Stack gap={1} className="min-w-0">
+                        <p className="text-xs font-medium text-foreground truncate">
+                          {asset.name}
+                        </p>
+                        <p className="text-[11px] text-muted-foreground">
+                          {t("admin.qrAssets.summaryPerAsset", {
+                            count: asset.quantity,
+                          })}
+                        </p>
+                      </Stack>
+                    </Stack>
+                    <span className="text-[11px] text-muted-foreground">
+                      {t("admin.qrAssets.summaryPagesLabel", {
                           count: asset.quantity,
                         })}
-                      </p>
-                    </div>
-                  </div>
-                  <span className="text-[11px] text-muted-foreground">
-                    {t("admin.qrAssets.summaryPagesLabel", {
-                      count: asset.quantity,
-                    })}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+                    </span>
+                  </Stack>
+                ))}
+              </Stack>
+            </Stack>
+          </CardContent>
+        </Card>
       )}
 
-      <div className="flex items-center justify-between pt-2 border-t border-border">
-        <div className="flex items-center gap-2">
+      <FormActions align="between">
+        <Stack direction="horizontal" align="center" gap={2}>
           {step > 1 ? (
             <Button
               type="button"
               variant="secondary"
               size="sm"
-              onMouseDown={() => setStep((prev) => (prev === 1 ? 1 : ((prev - 1) as WizardStep)))}
+              onClick={() =>
+                setStep((prev) =>
+                  prev === 1 ? 1 : ((prev - 1) as WizardStep),
+                )
+              }
             >
               <ArrowLeft className="size-3 mr-1" />
               {t("common.back")}
             </Button>
           ) : (
             onClose && (
-              <Button type="button" variant="secondary" size="sm" onMouseDown={onClose}>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={onClose}
+              >
                 {t("common.cancel")}
               </Button>
             )
           )}
-        </div>
-        <div className="flex items-center gap-2">
+        </Stack>
+        <Stack direction="horizontal" align="center" gap={2}>
           {step < 3 && (
             <Button
               type="button"
               size="sm"
-              onMouseDown={() => {
+              onClick={() => {
                 if (step === 1) {
                   goToStep2();
                 } else if (step === 2) {
@@ -616,7 +668,7 @@ export function GenerateQRAssetsWizard({ onClose, userEmail: userEmailProp }: Ge
               <Button
                 type="button"
                 size="sm"
-                onMouseDown={handleGenerateAndDownload}
+                onClick={handleGenerateAndDownload}
                 disabled={pdfGenerating}
               >
                 {pdfGenerating ? (
@@ -633,8 +685,8 @@ export function GenerateQRAssetsWizard({ onClose, userEmail: userEmailProp }: Ge
               </Button>
             </>
           )}
-        </div>
-      </div>
-    </div>
+        </Stack>
+      </FormActions>
+    </Stack>
   );
 }

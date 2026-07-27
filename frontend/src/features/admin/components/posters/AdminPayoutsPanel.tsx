@@ -8,7 +8,6 @@ import type {
 } from "@/features/admin/api/admin.api";
 import { PayoutDetailDialog } from "@/features/admin/components/posters/PayoutDetailDialog";
 import { PosterPayoutStatusBadge } from "@/features/admin/components/posters/PosterPayoutStatusBadge";
-import { AdminPageHeader } from "@/features/admin/components/shared/AdminPageHeader";
 import { AdminTable } from "@/features/admin/components/shared/AdminTable";
 import { useAdminPosterPayouts } from "@/features/admin/hooks/useAdminPosterPayouts";
 import { FormGrid, Section, Stack } from "@/shared/layout";
@@ -27,7 +26,6 @@ import {
   DialogTitle,
 } from "@/shared/ui/dialog";
 import {
-  Coins,
   Download,
   ShieldAlert,
 } from "@/shared/ui/doodle-icons";
@@ -74,10 +72,6 @@ const initialDraftFilters: DraftPayoutFilters = {
   fraudStatus: "all",
 };
 
-interface AdminPayoutsPanelProps {
-  onBack: () => void;
-}
-
 function monthToPeriod(value: string): string | undefined {
   return value ? `${value}-01` : undefined;
 }
@@ -102,7 +96,7 @@ function downloadServerCsv(filename: string, content: string): void {
   URL.revokeObjectURL(url);
 }
 
-export function AdminPayoutsPanel({ onBack }: AdminPayoutsPanelProps) {
+export function AdminPayoutsPanel() {
   const { t, i18n } = useTranslation();
   const [draftFilters, setDraftFilters] =
     useState<DraftPayoutFilters>(initialDraftFilters);
@@ -331,13 +325,6 @@ export function AdminPayoutsPanel({ onBack }: AdminPayoutsPanelProps) {
 
   return (
     <Stack gap={5}>
-      <AdminPageHeader
-        icon={Coins}
-        title={t("admin.posterPayouts.title")}
-        description={t("admin.posterPayouts.description")}
-        onBack={onBack}
-      />
-
       <Section
         variant="surface"
         title={t("admin.posterPayouts.filters.title")}

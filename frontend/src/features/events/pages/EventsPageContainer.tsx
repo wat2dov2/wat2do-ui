@@ -193,7 +193,7 @@ export function EventsPageContainer() {
         {isDarkMode && <LightRays />}
       </div>
       <div className="space-y-2">
-        <PromoterRecruitmentBanner />
+        <PromoterRecruitmentBanner school={schoolFilter} />
         <div className="space-y-3 pb-2">
           <div className="flex items-center justify-between gap-3">
             <EventCount

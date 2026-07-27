@@ -6,12 +6,14 @@ import { usePromoterState } from "@/features/posters/hooks/usePromoterState";
 import { appendSafeReturnTo } from "@/features/auth";
 import { promoterProgram } from "@/shared/config/promoterProgram";
 import { ROUTES, SETTINGS_TABS, settingsTabPath } from "@/shared/constants/routes";
+import { Stack } from "@/shared/layout";
 import { getApiErrorMessage } from "@/shared/services/apiClient";
 import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import {
   Card,
+  CardAction,
   CardContent,
   CardDescription,
   CardFooter,
@@ -20,8 +22,12 @@ import {
 } from "@/shared/ui/card";
 import { Checkbox } from "@/shared/ui/checkbox";
 import { ExternalLink, QrCode } from "@/shared/ui/doodle-icons";
+import {
+  Field,
+  FieldDescription,
+  FieldLabel,
+} from "@/shared/ui/field";
 import { Input } from "@/shared/ui/input";
-import { Label } from "@/shared/ui/label";
 import { Link } from "@/shared/ui/link";
 import { LoadingButton } from "@/shared/ui/loading-button";
 
@@ -104,10 +110,10 @@ export function PromoterEnrollmentCard({
     return (
       <Card data-testid="promoter-enrollment-complete">
         <CardHeader>
-          <div className="flex items-center justify-between gap-3">
-            <CardTitle>{t("posters.enrollment.enrolledTitle")}</CardTitle>
+          <CardTitle>{t("posters.enrollment.enrolledTitle")}</CardTitle>
+          <CardAction>
             <Badge variant="secondary">{t("posters.enrollment.enrolled")}</Badge>
-          </div>
+          </CardAction>
           <CardDescription>
             {promoter.hasCurrentTerms
               ? t("posters.enrollment.enrolledDescription")
@@ -145,16 +151,18 @@ export function PromoterEnrollmentCard({
   return (
     <Card data-testid="promoter-enrollment-form">
       <CardHeader>
-        <div className="flex items-center justify-between gap-3">
-          <CardTitle>
-            {promoter.isEnrolled
-              ? t("posters.enrollment.settingsTitle")
-              : t("posters.enrollment.joinTitle")}
-          </CardTitle>
-          {promoter.isEnrolled && (
-            <Badge variant="secondary">{t("posters.enrollment.enrolled")}</Badge>
-          )}
-        </div>
+        <CardTitle>
+          {promoter.isEnrolled
+            ? t("posters.enrollment.settingsTitle")
+            : t("posters.enrollment.joinTitle")}
+        </CardTitle>
+        {promoter.isEnrolled && (
+          <CardAction>
+            <Badge variant="secondary">
+              {t("posters.enrollment.enrolled")}
+            </Badge>
+          </CardAction>
+        )}
         <CardDescription>
           {promoter.isEnrolled
             ? t("posters.enrollment.settingsDescription")
@@ -162,118 +170,124 @@ export function PromoterEnrollmentCard({
         </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>
-        <CardContent className="space-y-5">
-          {!promoter.isProgramEnabled && promoter.isEnrolled && (
-            <Alert variant="info">
-              <QrCode />
-              <AlertTitle>{t("posters.enrollment.pausedTitle")}</AlertTitle>
-              <AlertDescription>
-                {t("posters.enrollment.pausedMaintenanceDescription")}
-              </AlertDescription>
-            </Alert>
-          )}
+        <CardContent>
+          <Stack gap={5}>
+            {!promoter.isProgramEnabled && promoter.isEnrolled && (
+              <Alert variant="info">
+                <QrCode />
+                <AlertTitle>{t("posters.enrollment.pausedTitle")}</AlertTitle>
+                <AlertDescription>
+                  {t("posters.enrollment.pausedMaintenanceDescription")}
+                </AlertDescription>
+              </Alert>
+            )}
 
-          {!promoter.hasCurrentTerms && promoter.isEnrolled && (
-            <Alert variant="warning">
-              <QrCode />
-              <AlertTitle>{t("posters.enrollment.termsUpdateTitle")}</AlertTitle>
-              <AlertDescription>
-                {t("posters.enrollment.termsUpdateDescription")}
-              </AlertDescription>
-            </Alert>
-          )}
+            {!promoter.hasCurrentTerms && promoter.isEnrolled && (
+              <Alert variant="warning">
+                <QrCode />
+                <AlertTitle>
+                  {t("posters.enrollment.termsUpdateTitle")}
+                </AlertTitle>
+                <AlertDescription>
+                  {t("posters.enrollment.termsUpdateDescription")}
+                </AlertDescription>
+              </Alert>
+            )}
 
-          <div className="space-y-2">
-            <Label htmlFor="promoter-payout-email">
-              {t("posters.enrollment.payoutEmail")}
-            </Label>
-            <Input
-              id="promoter-payout-email"
-              data-testid="promoter-payout-email"
-              type="email"
-              value={payoutEmail}
-              onChange={(event) => setPayoutEmail(event.target.value)}
-              placeholder={t("posters.enrollment.payoutEmailPlaceholder")}
-              autoComplete="email"
-              required
-            />
-            <p className="text-xs text-muted-foreground">
-              {t("posters.enrollment.payoutEmailDescription")}
-            </p>
-          </div>
-
-          {requiresTermsAcceptance && (
-            <div className="flex items-start gap-3">
-              <Checkbox
-                id="promoter-terms"
-                data-testid="promoter-terms-checkbox"
-                checked={acceptTerms}
-                onCheckedChange={(checked) => setAcceptTerms(checked === true)}
+            <Field>
+              <FieldLabel htmlFor="promoter-payout-email">
+                {t("posters.enrollment.payoutEmail")}
+              </FieldLabel>
+              <Input
+                id="promoter-payout-email"
+                data-testid="promoter-payout-email"
+                type="email"
+                value={payoutEmail}
+                onChange={(event) => setPayoutEmail(event.target.value)}
+                placeholder={t("posters.enrollment.payoutEmailPlaceholder")}
+                autoComplete="email"
+                required
               />
-              <Label
-                htmlFor="promoter-terms"
-                className="block text-sm leading-relaxed"
-              >
-                {t("posters.enrollment.acceptTermsPrefix")}{" "}
-                <Link href={ROUTES.PROMOTER_TERMS}>
-                  {t("posters.enrollment.termsLink", {
-                    version: promoterProgram.tosVersion,
-                  })}
-                </Link>
-              </Label>
-            </div>
-          )}
+              <FieldDescription>
+                {t("posters.enrollment.payoutEmailDescription")}
+              </FieldDescription>
+            </Field>
 
-          {enrollment.error && (
-            <p className="text-sm text-destructive" role="status">
-              {getApiErrorMessage(
-                enrollment.error,
-                t("posters.enrollment.error"),
-              )}
-            </p>
-          )}
+            {requiresTermsAcceptance && (
+              <Field orientation="horizontal-start">
+                <Checkbox
+                  id="promoter-terms"
+                  data-testid="promoter-terms-checkbox"
+                  checked={acceptTerms}
+                  onCheckedChange={(checked) => setAcceptTerms(checked === true)}
+                />
+                <FieldLabel
+                  htmlFor="promoter-terms"
+                  className="block text-sm leading-relaxed"
+                >
+                  {t("posters.enrollment.acceptTermsPrefix")}{" "}
+                  <Link href={ROUTES.PROMOTER_TERMS}>
+                    {t("posters.enrollment.termsLink", {
+                      version: promoterProgram.tosVersion,
+                    })}
+                  </Link>
+                </FieldLabel>
+              </Field>
+            )}
 
-          {mode === "recruitment" && (
-            <ul className="space-y-2 text-sm text-muted-foreground">
-              <li>{t("posters.enrollment.trustMonthly")}</li>
-              <li>{t("posters.enrollment.trustActivation")}</li>
-              <li>{t("posters.enrollment.trustTraffic")}</li>
-              <li>{t("posters.enrollment.trustPrivacy")}</li>
-            </ul>
-          )}
+            {enrollment.error && (
+              <p className="text-sm text-destructive" role="status">
+                {getApiErrorMessage(
+                  enrollment.error,
+                  t("posters.enrollment.error"),
+                )}
+              </p>
+            )}
+
+            {mode === "recruitment" && (
+              <Stack as="ul" gap={2} className="text-sm text-muted-foreground">
+                <li>{t("posters.enrollment.trustMonthly")}</li>
+                <li>{t("posters.enrollment.trustActivation")}</li>
+                <li>{t("posters.enrollment.trustTraffic")}</li>
+                <li>{t("posters.enrollment.trustPrivacy")}</li>
+              </Stack>
+            )}
+          </Stack>
         </CardContent>
-        <CardFooter className="flex-col items-stretch gap-3">
-          <LoadingButton
-            type="submit"
-            data-testid="promoter-enrollment-submit"
-            isLoading={enrollment.isPending}
-            disabled={
-              !payoutEmail.trim() ||
-              (requiresTermsAcceptance && !acceptTerms)
-            }
-            className="w-full"
-          >
-            {promoter.isEnrolled
-              ? t("posters.enrollment.save")
-              : t("posters.enrollment.join")}
-          </LoadingButton>
-          <Button asChild variant="secondary" className="w-full">
-            <a
-              href={promoterProgram.discordInviteUrl}
-              target="_blank"
-              rel="noopener noreferrer"
+        <CardFooter>
+          <Stack gap={3} className="w-full">
+            <LoadingButton
+              type="submit"
+              data-testid="promoter-enrollment-submit"
+              isLoading={enrollment.isPending}
+              disabled={
+                !payoutEmail.trim() ||
+                (requiresTermsAcceptance && !acceptTerms)
+              }
+              className="w-full"
             >
-              <ExternalLink />
-              {t("posters.enrollment.discord")}
-            </a>
-          </Button>
-          {promoter.isEnrolled && (
-            <Button asChild variant="ghost" className="w-full">
-              <Link href={ROUTES.POSTERS}>
-                {t("posters.enrollment.openPosters")}
-              </Link>
+              {promoter.isEnrolled
+                ? t("posters.enrollment.save")
+                : t("posters.enrollment.join")}
+            </LoadingButton>
+            <Button asChild variant="secondary" className="w-full">
+              <a
+                href={promoterProgram.discordInviteUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <ExternalLink />
+                {t("posters.enrollment.discord")}
+              </a>
             </Button>
-          )}
+            {promoter.isEnrolled && (
+              <Button asChild variant="ghost" className="w-full">
+                <Link href={ROUTES.POSTERS}>
+                  {t("posters.enrollment.openPosters")}
+                </Link>
+              </Button>
+            )}
+          </Stack>
         </CardFooter>
       </form>
     </Card>

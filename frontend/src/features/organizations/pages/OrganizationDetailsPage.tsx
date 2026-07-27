@@ -1,9 +1,7 @@
 import { useState } from "react";
-import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import {
-  ArrowLeft,
   Bookmark,
   Discord,
   ExternalLink,
@@ -60,17 +58,21 @@ function OrganizationDetailsContent({
     <>
       <Container size="lg" className="py-4 sm:py-6">
         <Stack gap={6}>
-          <Button asChild variant="secondary" size="sm" className="self-start">
-            <Link href={ROUTES.ORGANIZATIONS}>
-              <ArrowLeft className="size-4" />
-              {t("organizations.allOrganizations")}
-            </Link>
-          </Button>
-
-          <Stack gap={4}>
-            <Stack direction="horizontal" justify="between" align="start" gap={4} wrap>
-              <OrganizationLogo organization={organization} />
-              <Stack direction="horizontal" gap={2} align="center" wrap justify="end">
+          <PageHeader
+            back={{
+              href: ROUTES.ORGANIZATIONS,
+              label: t("organizations.allOrganizations"),
+            }}
+            title={organization.organization_name}
+            description={getSchoolDisplayName(organization.school)}
+            actions={
+              <Stack
+                direction="horizontal"
+                gap={2}
+                align="center"
+                wrap
+                justify="end"
+              >
                 {isAuthenticated ? (
                   <Button
                     type="button"
@@ -81,7 +83,9 @@ function OrganizationDetailsContent({
                     <Bookmark
                       className={isSaved ? "size-4 fill-current" : "size-4"}
                     />
-                    {isSaved ? t("organizations.saved") : t("organizations.save")}
+                    {isSaved
+                      ? t("organizations.saved")
+                      : t("organizations.save")}
                   </Button>
                 ) : null}
                 {isAuthenticated && isUnowned ? (
@@ -90,18 +94,17 @@ function OrganizationDetailsContent({
                   </Button>
                 ) : null}
               </Stack>
-            </Stack>
+            }
+          />
+
+          <Stack gap={4}>
+            <OrganizationLogo organization={organization} />
 
             <OrganizationMembershipActions organization={organization} />
 
             <OrganizationCategoryBadges
               categories={organization.categories}
               badgeClassName="text-xs px-2.5"
-            />
-
-            <PageHeader
-              title={organization.organization_name}
-              description={getSchoolDisplayName(organization.school)}
             />
 
             <Stack direction="horizontal" gap={4} align="center" wrap>

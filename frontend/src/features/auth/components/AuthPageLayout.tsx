@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import imgLogo from "@/assets/38e8096a28295e8dcc0e5020d0a5f3dd85d5f019.png";
 import { AuthHeroPanel } from "@/features/auth/components/AuthHeroPanel";
 import { Card, CardContent } from "@/shared/ui/card";
+import { PageHeader, type PageHeaderBack } from "@/shared/layout";
 import { ShineBorder } from "@/registry/magicui/shine-border";
 import type { Event } from "@/shared/types";
 
@@ -10,6 +11,7 @@ interface AuthPageLayoutProps {
   heading: string;
   description: string;
   previewEvents?: Event[];
+  back?: PageHeaderBack;
   children: ReactNode;
 }
 
@@ -17,6 +19,7 @@ export function AuthPageLayout({
   heading,
   description,
   previewEvents = [],
+  back,
   children,
 }: AuthPageLayoutProps) {
   const { t } = useTranslation();
@@ -28,6 +31,8 @@ export function AuthPageLayout({
           <Card className="relative w-full max-w-[440px] overflow-hidden gap-0">
             <ShineBorder shineColor="var(--primary)" />
             <CardContent className="space-y-6 p-8">
+              {back ? <PageHeader back={back} /> : null}
+
               <img
                 alt={t("common.logo")}
                 className="h-7 w-[40px] object-contain"

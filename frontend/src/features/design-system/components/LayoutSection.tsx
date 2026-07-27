@@ -26,7 +26,7 @@ export function LayoutSection() {
         </ShowcaseBlock>
 
         <ShowcaseBlock label="Stack gaps">
-          <Stack direction="horizontal" gap={4} className="flex-wrap">
+          <Stack direction="horizontal" gap={4} wrap>
             {STACK_GAPS.map((gap) => (
               <Stack key={gap} gap={gap} className="rounded-xl border border-border bg-surface p-3">
                 <div className="h-3 w-12 rounded-lg bg-primary" />
@@ -40,8 +40,9 @@ export function LayoutSection() {
         <ShowcaseBlock label="PageHeader">
           <div className="rounded-xl border border-border bg-surface p-6">
             <PageHeader
+              back={{ label: "Back to examples", onClick: () => undefined }}
               title="Example page"
-              description="PageHeader composes a title, description, and optional actions."
+              description="PageHeader owns top-left page navigation, the heading, and optional actions."
               actions={
                 <span className="rounded-xl bg-secondary px-3 py-1.5 text-xs text-secondary-foreground">
                   Action slot
@@ -60,6 +61,14 @@ export function LayoutSection() {
               <FormGrid>
                 <div className="h-10 rounded-xl bg-secondary" />
                 <div className="h-10 rounded-xl bg-secondary" />
+              </FormGrid>
+              <FormGrid columns={4} className="mt-5">
+                {Array.from({ length: 4 }, (_, index) => (
+                  <div
+                    key={index}
+                    className="h-10 rounded-xl bg-secondary"
+                  />
+                ))}
               </FormGrid>
             </FormSection>
             <FormActions className="mt-5 border-t-0 pt-0">

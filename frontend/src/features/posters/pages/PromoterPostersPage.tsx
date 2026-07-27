@@ -17,12 +17,13 @@ import { PromoterPosterCreator } from "@/features/posters/components/PromoterPos
 import { PromoterPosterInventory } from "@/features/posters/components/PromoterPosterInventory";
 import { promoterProgram } from "@/shared/config/promoterProgram";
 import { SETTINGS_TABS, settingsTabPath } from "@/shared/constants/routes";
-import { Container, PageHeader, Section, Stack } from "@/shared/layout";
+import { Container, FormGrid, PageHeader, Section, Stack } from "@/shared/layout";
 import { EmptyState, LoadingState } from "@/shared/feedback";
 import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert";
 import { Button } from "@/shared/ui/button";
 import {
   Card,
+  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
@@ -179,24 +180,30 @@ export function PromoterPostersPage() {
             </Alert>
           )}
 
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <FormGrid columns={4}>
             {summary.map(({ key, icon: Icon, label, value }) => (
               <Card key={key}>
-                <CardHeader className="grid-cols-[1fr_auto]">
+                <CardHeader>
                   <CardDescription>{label}</CardDescription>
-                  <Icon className="size-5 text-primary" />
+                  <CardAction>
+                    <Icon className="size-5 text-primary" />
+                  </CardAction>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-2xl font-semibold text-foreground">{value}</p>
-                  {key !== "slots" && (
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {t("posters.dashboard.updatedDaily")}
+                  <Stack gap={1}>
+                    <p className="text-2xl font-semibold text-foreground">
+                      {value}
                     </p>
-                  )}
+                    {key !== "slots" && (
+                      <p className="text-xs text-muted-foreground">
+                        {t("posters.dashboard.updatedDaily")}
+                      </p>
+                    )}
+                  </Stack>
                 </CardContent>
               </Card>
             ))}
-          </div>
+          </FormGrid>
 
           <Section
             title={t("posters.dashboard.mapTitle")}
