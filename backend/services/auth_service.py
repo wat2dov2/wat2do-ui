@@ -2,6 +2,7 @@
 
 import hashlib
 from typing import NoReturn
+from urllib.parse import urlencode
 
 from supabase_auth.errors import AuthApiError
 
@@ -105,7 +106,12 @@ class AuthService:
         logger.warning("%s: %s", log_message, exc.message)
         raise domain_error_cls(error_detail)
 
-    def send_otp(self, email: str, invitation_token: str | None = None) -> None:
+    def send_otp(
+        self,
+        email: str,
+        invitation_token: str | None = None,
+        return_to: str | None = None,
+    ) -> None:
         email_clean = email.strip().lower()
         has_valid_invite = False
         if invitation_token:
@@ -192,7 +198,13 @@ class AuthService:
         from services.email_service import EmailMessage, email_service
 
         base_url = settings.frontend_url.rstrip("/") or "http://localhost:3000"
-        callback_url = f"{base_url}/auth/callback?token={hashed_token}&email={email_clean}"
+        callback_params = {
+            "token": hashed_token,
+            "email": email_clean,
+        }
+        if return_to is not None:
+            callback_params["returnTo"] = return_to
+        callback_url = f"{base_url}/auth/callback?{urlencode(callback_params)}"
 
         subject = "Your Wat2Do login code and link"
         body_html = f"""

@@ -18,7 +18,10 @@ from core.exceptions import ValidationError
 from core.pagination import PaginatedResponse, PaginationParams, paginated_response
 from core.rate_limit import qr_scan_rate_limiter
 from schemas.qr_code import (
+    CampusCoverageResponse,
     PromoterEarningsResponse,
+    PromoterPosterBatchCreate,
+    PromoterPosterBatchResponse,
     QrCodeCreate,
     QrCodeRedirect,
     QrCodeResponse,
@@ -35,6 +38,11 @@ router = APIRouter(prefix="/qr", tags=["qr"])
 
 _VISITOR_COOKIE_MAX_AGE = 60 * 60 * 24 * 365 * 2
 _MAX_VISITOR_TOKEN_LENGTH = 256
+
+
+def _qr_scan_rate_limit_key(request: Request) -> str:
+    """Keep raw viewer IPs out of rate-limit warning logs."""
+    return qr_code_service.hash_client_ip(get_client_ip(request))
 
 
 def _get_poster_or_404_authorized(
@@ -135,6 +143,13 @@ def confirm_scan(
     return qr_code_service.confirm_scan(data.token, visitor_token=visitor_token)
 
 
+@router.get("/map", response_model=CampusCoverageResponse)
+def get_campus_coverage(
+    school: str = Query(min_length=1, max_length=MAX_SCHOOL_LENGTH),
+):
+    return qr_code_service.get_campus_coverage(school)
+
+
 @router.get("/{qr_code_id}", response_model=QrCodeRedirect)
 def resolve_qr_and_record_scan(
     qr_code_id: str,
@@ -142,7 +157,7 @@ def resolve_qr_and_record_scan(
     response: Response,
     lat: float | None = Query(None, ge=-90, le=90),
     lon: float | None = Query(None, ge=-180, le=180),
-    _rl: None = Depends(qr_scan_rate_limiter.ip_dependency()),
+    _rl: None = Depends(qr_scan_rate_limiter.dependency(key_func=_qr_scan_rate_limit_key)),
 ):
     visitor_token = _get_or_create_visitor_token(request, response)
     user_agent = request.headers.get("user-agent")
@@ -156,14 +171,21 @@ def resolve_qr_and_record_scan(
     )
 
 
-@router.post("/", response_model=QrCodeResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/",
+    response_model=QrCodeResponse | PromoterPosterBatchResponse,
+    status_code=status.HTTP_201_CREATED,
+)
 def create_poster(
-    data: QrCodeCreate,
+    data: QrCodeCreate | PromoterPosterBatchCreate,
     db_user: UserResponse = Depends(get_db_user),
 ):
-    if data.program == "standard":
+    if isinstance(data, QrCodeCreate):
         get_organization_owner_or_admin(db_user)
-    return qr_code_service.create_qr_code(data, creator=db_user)
+        return qr_code_service.create_qr_code(data, creator=db_user)
+    return PromoterPosterBatchResponse(
+        posters=qr_code_service.create_promoter_qr_codes(data, creator=db_user)
+    )
 
 
 @router.patch("/{qr_code_id}", response_model=QrCodeResponse)

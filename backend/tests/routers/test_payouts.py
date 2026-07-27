@@ -2,7 +2,12 @@ from datetime import date, datetime, timezone
 from unittest.mock import MagicMock
 from uuid import UUID
 
-from schemas.payout import AdminPayoutDetail, PosterPayoutResponse
+from schemas.payout import (
+    AdminPayoutDetail,
+    PayoutReviewEvent,
+    PosterPayoutContribution,
+    PosterPayoutResponse,
+)
 from services import poster_payout_service
 from tests.conftest import FAKE_USER
 
@@ -67,6 +72,31 @@ def test_admin_can_list_and_filter_payouts(admin_client, monkeypatch):
     assert listing.call_args.kwargs["status"] == "pending"
 
 
+def test_admin_can_use_extended_payout_filters(admin_client, monkeypatch):
+    listing = MagicMock(return_value=([], 0))
+    monkeypatch.setattr(poster_payout_service, "list_admin_payouts", listing)
+
+    response = admin_client.get(
+        "/payouts/admin",
+        params={
+            "payout_email": "waterloo",
+            "period_from": "2026-05-01",
+            "period_to": "2026-07-01",
+            "min_amount_cents": 25,
+            "max_amount_cents": 500,
+            "fraud_status": "flagged",
+        },
+    )
+
+    assert response.status_code == 200
+    assert listing.call_args.kwargs["payout_email"] == "waterloo"
+    assert listing.call_args.kwargs["period_from"] == date(2026, 5, 1)
+    assert listing.call_args.kwargs["period_to"] == date(2026, 7, 1)
+    assert listing.call_args.kwargs["minimum_amount_cents"] == 25
+    assert listing.call_args.kwargs["maximum_amount_cents"] == 500
+    assert listing.call_args.kwargs["fraud_status"] == "flagged"
+
+
 def test_admin_transition_delegates_validated_action(admin_client, monkeypatch):
     transition = MagicMock(return_value=_payout(status="held", notes="Review required"))
     monkeypatch.setattr(poster_payout_service, "transition_payout", transition)
@@ -95,8 +125,59 @@ def test_admin_can_bulk_mark_paid(admin_client, monkeypatch):
     assert response.json()[0]["status"] == "paid"
 
 
+def test_admin_can_export_selected_pending_payouts(admin_client, monkeypatch):
+    selected = MagicMock(return_value=[_payout()])
+    serializer = MagicMock(return_value="recipient_email,amount\npromoter@example.com,2.50\n")
+    monkeypatch.setattr(
+        poster_payout_service,
+        "get_pending_payouts_for_export",
+        selected,
+    )
+    monkeypatch.setattr(
+        poster_payout_service,
+        "serialize_interac_csv",
+        serializer,
+    )
+
+    response = admin_client.post(
+        "/payouts/admin/export",
+        json={"payout_ids": [str(PAYOUT_ID)]},
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "filename": "poster-payouts-2026-06.csv",
+        "content": "recipient_email,amount\npromoter@example.com,2.50\n",
+    }
+    selected.assert_called_once_with([PAYOUT_ID])
+
+
 def test_admin_detail_returns_fraud_summary(admin_client, monkeypatch):
-    detail = AdminPayoutDetail(payout=_payout(), fraud_reasons=[])
+    detail = AdminPayoutDetail(
+        payout=_payout(),
+        fraud_reasons=[],
+        contributions=[
+            PosterPayoutContribution(
+                qr_code_id="poster-1",
+                name="SLC second floor",
+                poster_template_id="campus-colour",
+                scan_count=10,
+                amount_cents=250,
+            )
+        ],
+        period_start=datetime(2026, 6, 1, tzinfo=timezone.utc),
+        period_end=datetime(2026, 7, 1, tzinfo=timezone.utc),
+        review_history=[
+            PayoutReviewEvent(
+                id=UUID("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"),
+                from_status="pending",
+                to_status="held",
+                notes="Review",
+                reviewed_by=UUID(FAKE_USER["id"]),
+                reviewed_at=datetime(2026, 7, 1, tzinfo=timezone.utc),
+            )
+        ],
+    )
     get_detail = MagicMock(return_value=detail)
     monkeypatch.setattr(poster_payout_service, "get_admin_payout_detail", get_detail)
 
@@ -104,3 +185,6 @@ def test_admin_detail_returns_fraud_summary(admin_client, monkeypatch):
 
     assert response.status_code == 200
     assert response.json()["payout"]["id"] == str(PAYOUT_ID)
+    assert response.json()["contributions"][0]["poster_template_id"] == "campus-colour"
+    assert response.json()["review_history"][0]["to_status"] == "held"
+    assert "current_review" not in response.json()

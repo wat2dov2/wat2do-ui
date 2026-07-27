@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Annotated, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from core.constants import (
     MAX_AVATAR_URL_LENGTH,
@@ -14,6 +14,7 @@ from core.constants import (
     ROLE_ADMIN,
     ROLE_USER,
 )
+from schemas.payout import PayoutEmail
 
 UserRole = Literal[ROLE_USER, ROLE_ADMIN]
 
@@ -63,7 +64,7 @@ class UserRoleUpdate(BaseModel):
 class PromoterEnrollmentUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    payout_email: EmailStr
+    payout_email: PayoutEmail
     accept_tos: bool = False
 
 
@@ -74,7 +75,7 @@ class UserResponse(UserBase):
     interests: list[str] | None = None
     is_first_year: bool = False
     role: UserRole = ROLE_USER
-    payout_email: EmailStr | None = None
+    payout_email: PayoutEmail | None = None
     promoter_tos_accepted_at: datetime | None = None
     promoter_tos_version: str | None = None
     created_at: datetime

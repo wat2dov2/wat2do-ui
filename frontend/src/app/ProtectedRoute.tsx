@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useAuthReady } from "@/app/client-providers";
 import {
   fetchProfileAPI,
   getLastProfileFetchAt,
   useAuthState,
+  appendSafeReturnTo,
 } from "@/features/auth";
 import { ROLE_ADMIN, ROLE_ORGANIZATION, type Role } from "@/shared/constants/roles";
 import { ROUTES } from "@/shared/constants/routes";
@@ -26,6 +27,8 @@ const ADMIN_ROLE_FRESHNESS_TTL_MS = 5 * 60 * 1000;
 
 export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const authReady = useAuthReady();
   const { isAuthenticated: authed, role, hasOrganization } = useAuthState();
 
@@ -59,7 +62,10 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
   const redirectTarget = !authReady
     ? null
     : !authed
-    ? ROUTES.LOGIN
+    ? appendSafeReturnTo(
+        ROUTES.LOGIN,
+        `${pathname}${searchParams.size > 0 ? `?${searchParams.toString()}` : ""}`,
+      )
     : requiredRole === ROLE_ADMIN && role !== "admin"
       ? ROUTES.HOME
       : requiredRole === ROLE_ORGANIZATION && !hasOrganization && role !== "admin"

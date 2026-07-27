@@ -9,6 +9,11 @@
  */
 
 import { getOrganizationCategoryConfig } from "@/shared/data/organizationCategoryStyles";
+import {
+  getSchoolColors,
+  getSchoolPublicUrl,
+  type SchoolColors,
+} from "@/shared/constants/schools";
 
 export const SLIDE_WIDTH = 1080;
 export const SLIDE_HEIGHT = 1350;
@@ -47,13 +52,26 @@ export interface EventSlideModel {
 }
 
 export interface CoverSlideModel {
+  /** The school's brand pair; the whole cover is drawn from these two colours. */
+  colors: SchoolColors;
+  /** "SUN JUL 26 · EVENT SHOWCASE" */
+  eyebrow: string;
+  /** Events added to this school in the batch's scrape window. */
+  newEventCount: number;
   headline: string;
-  schoolName: string;
   body: string;
+  /** Footer copy: the swipe prompt, and the school's own origin. */
+  swipeLine: string;
+  siteLine: string;
+  /** Posters of the events on the carousel, fanned along the lower edge. */
   tiles: string[];
 }
 
-const COVER_DEFAULT_BODY = "Added to Wat2Do in the last 24 hours";
+// Slide copy is English-only: a slide is artwork posted to one Instagram
+// account, not app UI, so it never passes through i18n.
+const COVER_HEADLINE = "NEW EVENTS ADDED TODAY";
+const COVER_EYEBROW_SUFFIX = "EVENT SHOWCASE";
+const COVER_SWIPE_LINE = "Swipe to see our picks →";
 const FALLBACK_TITLE = "Untitled event";
 const FALLBACK_LOCATION = "See Wat2Do for location";
 const FALLBACK_ORGANIZATION = "Campus organization";
@@ -119,19 +137,62 @@ export function buildEventSlideModel(
   };
 }
 
+/**
+ * The cover, compiled from the batch it belongs to.
+ *
+ * Everything on it is derived: the school decides the colours and the link, the
+ * batch's local date is the eyebrow, the scrape window supplies the headline
+ * number, and the carousel's events supply the fanned posters. `body` is the
+ * one line an admin writes; left empty it states how many events were picked.
+ */
 export function buildCoverSlideModel({
-  schoolName,
+  school,
+  localDate,
+  newEventCount,
   body,
   tiles,
 }: {
-  schoolName: string;
+  school: string;
+  /** The batch's `local_date`, as `YYYY-MM-DD`. */
+  localDate: string;
+  newEventCount: number;
   body: string;
   tiles: string[];
 }): CoverSlideModel {
   return {
-    headline: "New events at",
-    schoolName,
-    body: text(body, COVER_DEFAULT_BODY),
+    colors: getSchoolColors(school),
+    eyebrow: [formatCoverDate(localDate), COVER_EYEBROW_SUFFIX].filter(Boolean).join(" · "),
+    newEventCount,
+    headline: COVER_HEADLINE,
+    body: text(body, defaultCoverBody(tiles.length)),
+    swipeLine: COVER_SWIPE_LINE,
+    siteLine: `More info on ${getSchoolPublicUrl(school)}`,
     tiles,
   };
+}
+
+function defaultCoverBody(pickCount: number): string {
+  return pickCount === 1
+    ? "Here is the one we like the most"
+    : `Here are the ${pickCount} we like the most`;
+}
+
+/**
+ * "SUN JUL 26" from a `YYYY-MM-DD` local date.
+ *
+ * Formatted in UTC because the date is already local to the school: parsing it
+ * gives UTC midnight, and any other zone would slide it a day.
+ */
+function formatCoverDate(localDate: string): string {
+  const parsed = new Date(`${localDate}T00:00:00Z`);
+  if (Number.isNaN(parsed.getTime())) return "";
+  return new Intl.DateTimeFormat("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    timeZone: "UTC",
+  })
+    .format(parsed)
+    .replace(",", "")
+    .toUpperCase();
 }

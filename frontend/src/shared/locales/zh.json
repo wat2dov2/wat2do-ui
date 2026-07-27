@@ -86,7 +86,8 @@
     "clubPanelTooltip": "管理您的组织",
     "mission": "使命",
     "contact": "联系我们",
-    "goToEvents": "前往活动"
+    "goToEvents": "前往活动",
+    "posters": "海报"
   },
   "modals": {
     "welcome": {

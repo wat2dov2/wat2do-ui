@@ -78,8 +78,30 @@ export type ApiQrCodeCreate = components["schemas"]["QrCodeCreate"];
 export type ApiQrCodeResponse = components["schemas"]["QrCodeResponse"];
 export type ApiQrCodeRedirect = components["schemas"]["QrCodeRedirect"];
 export type ApiQrCodeScanResponse = components["schemas"]["QrCodeScanResponse"];
+export type ApiPromoterPosterBatchCreate =
+  components["schemas"]["PromoterPosterBatchCreate"];
+export type ApiPromoterPosterBatchResponse =
+  components["schemas"]["PromoterPosterBatchResponse"];
+export type ApiPromoterEarningsResponse =
+  components["schemas"]["PromoterEarningsResponse"];
+export type ApiCampusCoverageResponse =
+  components["schemas"]["CampusCoverageResponse"];
 // export type ApiPaginatedQrCodeResponse = components["schemas"]["PaginatedResponse_QrCodeResponse_"];
 // export type ApiPaginatedQrCodeScanResponse = components["schemas"]["PaginatedResponse_QrCodeScanResponse_"];
+
+// ── Poster Payouts ──────────────────────────────────────────────────
+export type ApiUserPosterPayoutResponse =
+  components["schemas"]["UserPosterPayoutResponse"];
+export type ApiPosterPayoutResponse =
+  components["schemas"]["PosterPayoutResponse"];
+export type ApiAdminPayoutDetail =
+  components["schemas"]["AdminPayoutDetail"];
+export type ApiPayoutCsvExportResponse =
+  components["schemas"]["PayoutCsvExportResponse"];
+export type ApiPayoutStatusUpdate =
+  components["schemas"]["PayoutStatusUpdate"];
+export type ApiPaginatedPosterPayoutResponse =
+  components["schemas"]["PaginatedResponse_PosterPayoutResponse_"];
 
 // ── AI ──────────────────────────────────────────────────────────────
 export type ApiFilterStateResponse = components["schemas"]["FilterStateResponse"];

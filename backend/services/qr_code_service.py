@@ -16,7 +16,8 @@ from postgrest.exceptions import APIError
 
 from core.config import settings
 from core.constants import DEFAULT_LIST_LIMIT, PG_UNIQUE_VIOLATION
-from core.controlbox import controlbox
+from core.constants.school_mappings import SCHOOLS
+from core.controlbox import PromoterTemplateControl, controlbox
 from core.database import get_sb
 from core.errors import (
     INVALID_SCAN_CONFIRMATION,
@@ -24,13 +25,21 @@ from core.errors import (
     PROMOTER_ENROLLMENT_REQUIRED,
     PROMOTER_POSTER_LIMIT_REACHED,
     PROMOTER_POSTERS_CANNOT_BE_DELETED,
+    PROMOTER_POSTERS_CANNOT_BE_UPDATED,
     PROMOTER_PROGRAM_PAUSED,
     PROMOTER_SCHOOL_REQUIRED,
+    PROMOTER_TEMPLATE_NOT_FOUND,
+    PROMOTER_TEMPLATE_SCHOOL_MISMATCH,
+    PROMOTER_TEMPLATE_UNAVAILABLE,
     REQUIRES_LOCATION,
 )
 from core.exceptions import ConflictError, NotFoundError, ValidationError
 from core.tables import QR_CODE_SCANS, QR_CODES
 from schemas.qr_code import (
+    CampusCoverageCell,
+    CampusCoverageResponse,
+    ConfirmedVisitorBucket,
+    PromoterPosterBatchCreate,
     QrCodeCreate,
     QrCodeRedirect,
     QrCodeResponse,
@@ -39,6 +48,7 @@ from schemas.qr_code import (
     QrScanConfirmResponse,
 )
 from schemas.user import UserResponse
+from services.school_context import canonical_school_key
 
 log = logging.getLogger(__name__)
 
@@ -72,12 +82,9 @@ def get_qr_code_by_id(qr_code_id: str) -> QrCodeResponse | None:
 
 
 def create_qr_code(data: QrCodeCreate, *, creator: UserResponse) -> QrCodeResponse:
-    """Create a standard QR directly or a promoter QR through the cap RPC."""
+    """Create one standard organization or administrator QR code."""
     if get_qr_code_by_id(data.id) is not None:
         raise ConflictError(POSTER_ALREADY_EXISTS)
-
-    if data.program == "promoter":
-        return _create_promoter_qr_code(data, creator)
 
     payload = _build_qr_payload(
         data,
@@ -94,7 +101,12 @@ def create_qr_code(data: QrCodeCreate, *, creator: UserResponse) -> QrCodeRespon
     return QrCodeResponse.model_validate(response.data[0])
 
 
-def _create_promoter_qr_code(data: QrCodeCreate, creator: UserResponse) -> QrCodeResponse:
+def create_promoter_qr_codes(
+    data: PromoterPosterBatchCreate,
+    *,
+    creator: UserResponse,
+) -> list[QrCodeResponse]:
+    """Create a complete promoter batch through one transactional RPC."""
     promoter_control = controlbox.promoter_program
     if not promoter_control.enabled:
         raise ValidationError(PROMOTER_PROGRAM_PAUSED)
@@ -104,21 +116,27 @@ def _create_promoter_qr_code(data: QrCodeCreate, creator: UserResponse) -> QrCod
         or creator.promoter_tos_version != promoter_control.tos_version
     ):
         raise ValidationError(PROMOTER_ENROLLMENT_REQUIRED)
-    if not creator.school or not creator.school.strip():
+    school = canonical_school_key(creator.school)
+    if not school or school not in SCHOOLS:
         raise ValidationError(PROMOTER_SCHOOL_REQUIRED)
+    if data.copies > promoter_control.maximum_active_posters:
+        raise ValidationError(PROMOTER_POSTER_LIMIT_REACHED)
 
+    template = _get_creation_template(data.poster_template_id, school=school)
+    ids = [str(uuid.uuid4()) for _ in range(data.copies)]
+    names = _promoter_copy_names(data.name, data.copies)
     try:
         response = (
             get_sb()
             .rpc(
-                "create_promoter_qr_code",
+                "create_promoter_qr_codes",
                 {
-                    "p_id": data.id,
-                    "p_name": data.name,
-                    "p_description": data.description,
-                    "p_filters": data.filters if isinstance(data.filters, dict) else {},
+                    "p_ids": ids,
+                    "p_names": names,
                     "p_created_by": str(creator.id),
-                    "p_image_url": data.image_url,
+                    "p_school": school,
+                    "p_image_url": _template_preview_url(template),
+                    "p_poster_template_id": template.id,
                     "p_maximum_active_posters": promoter_control.maximum_active_posters,
                 },
             )
@@ -137,8 +155,45 @@ def _create_promoter_qr_code(data: QrCodeCreate, creator: UserResponse) -> QrCod
         raise
 
     if not response.data:
-        raise RuntimeError("create_promoter_qr_code returned no row")
-    return QrCodeResponse.model_validate(response.data[0])
+        raise RuntimeError("create_promoter_qr_codes returned no rows")
+    rows_by_id = {str(row["id"]): row for row in response.data}
+    return [QrCodeResponse.model_validate(rows_by_id[qr_code_id]) for qr_code_id in ids]
+
+
+def _get_creation_template(
+    template_id: str,
+    *,
+    school: str,
+) -> PromoterTemplateControl:
+    template = next(
+        (
+            candidate
+            for candidate in controlbox.promoter_program.approved_templates
+            if candidate.id == template_id
+        ),
+        None,
+    )
+    if template is None:
+        raise ValidationError(PROMOTER_TEMPLATE_NOT_FOUND)
+    if not template.available_for_creation:
+        raise ValidationError(PROMOTER_TEMPLATE_UNAVAILABLE)
+    if template.eligible_school not in {"global", school}:
+        raise ValidationError(PROMOTER_TEMPLATE_SCHOOL_MISMATCH)
+    return template
+
+
+def _template_preview_url(template: PromoterTemplateControl) -> str:
+    return f"{settings.frontend_url.rstrip('/')}{template.asset_path}"
+
+
+def _promoter_copy_names(name: str, copies: int) -> list[str]:
+    if copies == 1:
+        return [name]
+    names: list[str] = []
+    for index in range(1, copies + 1):
+        suffix = f" - {index} of {copies}"
+        names.append(f"{name[: 200 - len(suffix)]}{suffix}")
+    return names
 
 
 def _build_qr_payload(
@@ -165,6 +220,8 @@ def _build_qr_payload(
 
 
 def update_qr_code(data: QrCodeUpdate, *, existing: QrCodeResponse) -> QrCodeResponse:
+    if existing.program == "promoter":
+        raise ValidationError(PROMOTER_POSTERS_CANNOT_BE_UPDATED)
     payload = _build_qr_payload(
         data,
         created_by=existing.created_by,
@@ -195,9 +252,20 @@ def handle_scan(
     if not qr_code.is_active:
         return build_redirect(qr_code)
 
-    if qr_code.program == "standard" and qr_code.latest_scan is None:
-        if lat is None or lon is None:
-            raise ValidationError(REQUIRES_LOCATION)
+    promoter_is_unplaced = (
+        qr_code.program == "promoter" and qr_code.latitude == 0 and qr_code.longitude == 0
+    )
+    needs_initial_location = (
+        qr_code.program == "standard" and qr_code.latest_scan is None
+    ) or promoter_is_unplaced
+    if needs_initial_location and (lat is None or lon is None):
+        raise ValidationError(REQUIRES_LOCATION)
+
+    scan_latitude = lat
+    scan_longitude = lon
+    if qr_code.program == "promoter" and not promoter_is_unplaced:
+        scan_latitude = None
+        scan_longitude = None
 
     browser_family, os_family = parse_user_agent(user_agent)
     scan = record_scan(
@@ -206,8 +274,8 @@ def handle_scan(
         ip_hash=hash_client_ip(client_ip),
         browser_family=browser_family,
         os_family=os_family,
-        latitude=lat,
-        longitude=lon,
+        latitude=scan_latitude,
+        longitude=scan_longitude,
     )
     if scan is None:
         return build_redirect(qr_code)
@@ -442,6 +510,65 @@ def list_scans(
     response = query.execute()
     items = [_to_scan_response(row) for row in response.data or []]
     return items, response.count or len(items)
+
+
+def get_campus_coverage(school: str) -> CampusCoverageResponse:
+    """Return public campus coverage without exact posters or owner identifiers."""
+    school_slug = canonical_school_key(school)
+    quiet_days = controlbox.promoter_program.quiet_poster_days
+    if not school_slug or school_slug not in SCHOOLS:
+        return CampusCoverageResponse(
+            school=school_slug,
+            quiet_after_days=quiet_days,
+            cells=[],
+        )
+
+    quiet_cutoff = datetime.now(timezone.utc) - timedelta(days=quiet_days)
+    response = (
+        get_sb()
+        .rpc(
+            "get_promoter_campus_coverage",
+            {
+                "p_school": school_slug,
+                "p_quiet_cutoff": quiet_cutoff.isoformat(),
+                "p_coordinate_decimal_places": (
+                    controlbox.promoter_program.map_coordinate_decimal_places
+                ),
+            },
+        )
+        .execute()
+    )
+    cells = [
+        CampusCoverageCell(
+            latitude=float(row["latitude"]),
+            longitude=float(row["longitude"]),
+            poster_count=int(row["poster_count"]),
+            recent_poster_count=int(row["recent_poster_count"]),
+            quiet_poster_count=int(row["quiet_poster_count"]),
+            confirmed_visitor_bucket=_confirmed_visitor_bucket(
+                int(row["confirmed_unique_visitors"])
+            ),
+        )
+        for row in response.data or []
+    ]
+    return CampusCoverageResponse(
+        school=school_slug,
+        quiet_after_days=quiet_days,
+        cells=cells,
+    )
+
+
+def _confirmed_visitor_bucket(visitor_count: int) -> ConfirmedVisitorBucket:
+    none_maximum, low_maximum, medium_maximum = (
+        controlbox.promoter_program.map_visitor_bucket_maximums
+    )
+    if visitor_count <= none_maximum:
+        return "none"
+    if visitor_count <= low_maximum:
+        return "low"
+    if visitor_count <= medium_maximum:
+        return "medium"
+    return "high"
 
 
 def _to_scan_response(row: dict) -> QrCodeScanResponse:

@@ -15,11 +15,7 @@ import {
   type EventSlideModel,
 } from "@/features/admin/lib/instagramSlides";
 
-const BRAND = "#2B7FFF";
-const INK = "#071120";
-const SURFACE = "#F7F9FC";
-const COVER_TINT = "rgba(7, 17, 32, 0.72)";
-const WORDMARK = "wat2do.io";
+const WORDMARK = "WAT2DO?";
 
 // Dark-theme functional tokens, resolved from styles/functional-tokens.css.
 // satori has no CSS variables, so the event slide carries the same values the
@@ -34,14 +30,13 @@ const DARK = {
   categoryInk: "#1A1A1A",
 } as const;
 
+/** Both slides fill the frame and set their own colours on top of it. */
 const slideFrame: React.CSSProperties = {
   display: "flex",
   flexDirection: "column",
   width: SLIDE_WIDTH,
   height: SLIDE_HEIGHT,
-  backgroundColor: SURFACE,
   fontFamily: "Inter",
-  color: INK,
   position: "relative",
 };
 
@@ -205,77 +200,183 @@ export function EventSlideTemplate({ model }: { model: EventSlideModel }) {
   );
 }
 
-export function CoverSlideTemplate({ model }: { model: CoverSlideModel }) {
-  const columns = Math.min(3, Math.max(1, Math.ceil(Math.sqrt(model.tiles.length || 1))));
-  const rows = Math.max(1, Math.ceil((model.tiles.length || 1) / columns));
-  const tileWidth = Math.ceil(SLIDE_WIDTH / columns);
-  const tileHeight = Math.ceil(SLIDE_HEIGHT / rows);
+const COVER_MARGIN = 72;
+const COVER_CONTENT_WIDTH = SLIDE_WIDTH - COVER_MARGIN * 2;
+/** The poster fan sits on a fixed baseline so the copy above it never reflows. */
+const FAN_TOP = 930;
+const FAN_CARD_WIDTH = 186;
+const FAN_CARD_HEIGHT = 260;
+/** How far the outer cards may dip below the baseline as the fan curves. */
+const FAN_MAX_DIP = 26;
+/** Tilt of the outermost card; the rest interpolate towards flat at the centre. */
+const FAN_MAX_TILT = 9;
+/** Cards always bite into each other, however few of them there are. */
+const FAN_MIN_OVERLAP = 40;
+
+/**
+ * The fanned poster row, laid out by hand.
+ *
+ * satori has no transform-origin and no negative margins, so each card is
+ * absolutely placed. The step between cards is whatever makes the row fill the
+ * content width - so nine posters tuck in tightly and two sit loosely - and the
+ * tilt runs from `-FAN_MAX_TILT` on the left to `+FAN_MAX_TILT` on the right so
+ * the middle of the fan stays upright. The row is centred, and its lowest card
+ * clears the footer by design: `FAN_TOP + FAN_CARD_HEIGHT + FAN_MAX_DIP` must
+ * stay above `SLIDE_HEIGHT - COVER_MARGIN`.
+ */
+function CoverPosterFan({ tiles, ink }: { tiles: string[]; ink: string }) {
+  if (tiles.length === 0) return null;
+
+  const step =
+    tiles.length > 1
+      ? Math.min(
+          FAN_CARD_WIDTH - FAN_MIN_OVERLAP,
+          (COVER_CONTENT_WIDTH - FAN_CARD_WIDTH) / (tiles.length - 1),
+        )
+      : 0;
+  const rowWidth = FAN_CARD_WIDTH + step * (tiles.length - 1);
+  const rowLeft = Math.round((SLIDE_WIDTH - rowWidth) / 2);
+  const middle = (tiles.length - 1) / 2;
 
   return (
-    <div style={{ ...slideFrame, backgroundColor: BRAND }}>
-      <div style={{ display: "flex", flexWrap: "wrap", width: SLIDE_WIDTH, height: SLIDE_HEIGHT }}>
-        {model.tiles.map((tile, index) => (
-          <img
+    <div style={{ display: "flex" }}>
+      {tiles.map((tile, index) => {
+        const offset = middle === 0 ? 0 : (index - middle) / middle;
+        return (
+          <div
             key={`${tile}-${index}`}
-            src={tile}
-            width={tileWidth}
-            height={tileHeight}
-            style={{ width: tileWidth, height: tileHeight, objectFit: "cover" }}
-            alt=""
-          />
-        ))}
+            style={{
+              display: "flex",
+              position: "absolute",
+              left: Math.round(rowLeft + step * index),
+              top: FAN_TOP + Math.round(Math.abs(offset) * FAN_MAX_DIP),
+              width: FAN_CARD_WIDTH,
+              height: FAN_CARD_HEIGHT,
+              borderRadius: 18,
+              border: `3px solid ${ink}`,
+              overflow: "hidden",
+              transform: `rotate(${(offset * FAN_MAX_TILT).toFixed(2)}deg)`,
+            }}
+          >
+            <img
+              src={tile}
+              width={FAN_CARD_WIDTH}
+              height={FAN_CARD_HEIGHT}
+              style={{ width: FAN_CARD_WIDTH, height: FAN_CARD_HEIGHT, objectFit: "cover" }}
+              alt=""
+            />
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/** The wordmark badge, drawn rather than loaded - the logo SVG is 560KB. */
+function CoverWordmark({ primary, ink }: { primary: string; ink: string }) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        width: 132,
+        height: 132,
+        borderRadius: 32,
+        backgroundColor: ink,
+        color: primary,
+        fontSize: 34,
+        fontWeight: 700,
+        letterSpacing: 1,
+      }}
+    >
+      {WORDMARK}
+    </div>
+  );
+}
+
+/**
+ * The carousel cover.
+ *
+ * Every value on it comes from the batch - the school's colours, its local
+ * date, how many events the scrape found, and the posters of the events on the
+ * carousel - so the same batch always draws the same cover and nothing about it
+ * is stored. The admin editor renders this exact component, scaled down.
+ */
+export function CoverSlideTemplate({ model }: { model: CoverSlideModel }) {
+  const { primary, ink } = model.colors;
+
+  return (
+    <div style={{ ...slideFrame, backgroundColor: primary, color: ink }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "flex-start",
+          justifyContent: "space-between",
+          padding: `${COVER_MARGIN}px ${COVER_MARGIN}px 0 ${COVER_MARGIN}px`,
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            backgroundColor: ink,
+            color: primary,
+            borderRadius: 999,
+            padding: "18px 34px",
+            fontSize: 30,
+            fontWeight: 700,
+            letterSpacing: 1,
+          }}
+        >
+          {model.eyebrow}
+        </div>
+        <CoverWordmark primary={primary} ink={ink} />
       </div>
 
       <div
         style={{
           display: "flex",
-          position: "absolute",
-          top: 0,
-          left: 0,
-          width: SLIDE_WIDTH,
-          height: SLIDE_HEIGHT,
-          backgroundColor: "rgba(7, 17, 32, 0.3)",
-        }}
-      />
-
-      <div
-        style={{
-          display: "flex",
           flexDirection: "column",
-          position: "absolute",
-          left: 54,
-          top: 820,
-          width: SLIDE_WIDTH - 108,
-          height: SLIDE_HEIGHT - 888,
-          backgroundColor: COVER_TINT,
-          border: `6px solid ${BRAND}`,
-          borderRadius: 34,
-          padding: "56px 46px",
+          padding: `0 ${COVER_MARGIN}px`,
+          marginTop: 84,
         }}
       >
-        <div style={{ display: "flex", fontSize: 48, fontWeight: 700, color: BRAND, letterSpacing: 1 }}>
-          {model.headline}
+        <div style={{ display: "flex", fontSize: 300, fontWeight: 700, lineHeight: 1 }}>
+          {String(model.newEventCount)}
         </div>
         <div
           style={{
             display: "flex",
-            marginTop: 18,
-            fontSize: 69,
+            marginTop: 12,
+            fontSize: 96,
             fontWeight: 700,
-            lineHeight: 1.1,
-            color: "white",
-            maxHeight: 160,
-            overflow: "hidden",
+            lineHeight: 1.05,
+            maxWidth: COVER_CONTENT_WIDTH,
           }}
         >
-          {model.schoolName}
+          {model.headline}
         </div>
-        <div style={{ display: "flex", marginTop: "auto", fontSize: 31, color: "#D7E5FF" }}>
+        <div style={{ display: "flex", marginTop: 28, fontSize: 38, fontWeight: 500 }}>
           {model.body}
         </div>
-        <div style={{ display: "flex", marginTop: 18, fontSize: 34, fontWeight: 700, color: "white" }}>
-          {WORDMARK}
-        </div>
+      </div>
+
+      <CoverPosterFan tiles={model.tiles} ink={ink} />
+
+      <div
+        style={{
+          display: "flex",
+          position: "absolute",
+          left: COVER_MARGIN,
+          bottom: COVER_MARGIN,
+          width: COVER_CONTENT_WIDTH,
+          justifyContent: "space-between",
+          fontSize: 30,
+          fontWeight: 700,
+        }}
+      >
+        <div style={{ display: "flex" }}>{model.swipeLine}</div>
+        <div style={{ display: "flex" }}>{model.siteLine}</div>
       </div>
     </div>
   );

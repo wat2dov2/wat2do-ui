@@ -117,7 +117,7 @@ def list_batches(
         .execute()
     )
     batches = response.data or []
-    _attach_items(batches)
+    _hydrate_batches(batches)
     return batches, response.count or len(batches)
 
 
@@ -133,7 +133,7 @@ def get_batch(batch_id: UUID | str) -> dict[str, Any]:
     if not response.data:
         raise NotFoundError(INSTAGRAM_PUBLISH_BATCH_NOT_FOUND)
     batch = response.data[0]
-    _attach_items([batch])
+    _hydrate_batches([batch])
     return batch
 
 
@@ -489,15 +489,22 @@ def _publish_claimed_batch(
     batch_id = batch["id"]
     events = [_slide_payload(item["event"]) for item in items]
 
-    cover_container_id = client.create_image_container(
-        user_id,
-        render_cover_asset(events, batch["school"], batch["cover_body"]),
+    cover_url = render_cover_asset(
+        events,
+        batch["school"],
+        batch["cover_body"],
+        local_date=str(batch["local_date"]),
+        new_event_count=int(batch.get("new_event_count") or 0),
     )
+    cover_container_id = client.create_image_container(user_id, cover_url)
     client.wait_until_ready(cover_container_id)
 
     child_ids = [cover_container_id]
+    asset_urls: dict[int, str] = {}
     for event in events:
-        child_id = client.create_image_container(user_id, render_event_asset(event))
+        asset_url = render_event_asset(event)
+        asset_urls[int(event["id"])] = asset_url
+        child_id = client.create_image_container(user_id, asset_url)
         client.wait_until_ready(child_id)
         child_ids.append(child_id)
 
@@ -509,23 +516,61 @@ def _publish_claimed_batch(
     client.wait_until_ready(carousel_id)
     media_id = client.publish(user_id, carousel_id)
     published_at = _iso_now()
-    (
-        get_sb()
-        .table(INSTAGRAM_PUBLISH_ITEMS)
-        .update({"published_at": published_at, "updated_at": published_at})
-        .eq("batch_id", batch_id)
-        .execute()
-    )
+    # The slides are now history: the events behind them keep changing, so a
+    # published batch shows the PNGs that were posted rather than re-rendering.
+    for item in items:
+        (
+            get_sb()
+            .table(INSTAGRAM_PUBLISH_ITEMS)
+            .update(
+                {
+                    "published_at": published_at,
+                    "published_asset_url": asset_urls.get(int(item["event_id"])),
+                    "updated_at": published_at,
+                }
+            )
+            .eq("id", str(item["id"]))
+            .execute()
+        )
     _update_batch_fields(
         batch_id,
         {
             "status": INSTAGRAM_BATCH_PUBLISHED,
             "meta_media_id": media_id,
+            "published_cover_url": cover_url,
             "published_at": published_at,
             "updated_at": published_at,
             "error_message": None,
         },
     )
+
+
+def _hydrate_batches(batches: list[dict[str, Any]]) -> None:
+    """Fill in everything a batch response carries beyond its own row."""
+    _attach_items(batches)
+    for batch in batches:
+        batch["new_event_count"] = _count_new_events(batch)
+
+
+def _count_new_events(batch: dict[str, Any]) -> int:
+    """How many events the school gained inside this batch's scrape window.
+
+    This is the number the cover leads with. It is counted rather than stored
+    because the window and the events table already say it, and a stored copy
+    would be one more thing that can disagree with them.
+    """
+    response = (
+        get_sb()
+        .table(EVENTS)
+        .select("id", count="exact")
+        .eq("school", batch["school"])
+        .eq("cancelled", False)
+        .gte("added_at", _parse_datetime(batch["window_start"]).isoformat())
+        .lt("added_at", _parse_datetime(batch["window_end"]).isoformat())
+        .limit(1)
+        .execute()
+    )
+    return response.count or 0
 
 
 def _attach_items(batches: list[dict[str, Any]]) -> None:

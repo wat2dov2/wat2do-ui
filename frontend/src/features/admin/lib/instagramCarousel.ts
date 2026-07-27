@@ -32,3 +32,18 @@ export function carouselSlideEvents(batch: Batch): Record<number, Event> {
 export function isBatchEditable(batch: Batch): boolean {
   return batch.status === "ready_for_review" || batch.status === "failed";
 }
+
+/**
+ * The images a published run posted, indexed by slide: 0 is the cover, then the
+ * event slides in carousel order.
+ *
+ * Empty until the run publishes, which is what makes the editor fall back to
+ * rendering the templates from live event data.
+ */
+export function publishedCarouselAssets(batch: Batch): (string | null)[] {
+  if (!batch.published_cover_url) return [];
+  return [
+    batch.published_cover_url,
+    ...carouselItems(batch).map((item) => item.published_asset_url ?? null),
+  ];
+}

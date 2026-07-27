@@ -101,6 +101,8 @@ export function ClientProviders({ children }: { children: ReactNode }) {
       queryClient.removeQueries({
         queryKey: queryKeys.notificationPreferences.all,
       });
+      queryClient.removeQueries({ queryKey: queryKeys.posters.all });
+      queryClient.removeQueries({ queryKey: queryKeys.posterPayouts.all });
       resetPostHogUser();
     };
     window.addEventListener("auth-user-login", handleLogin);

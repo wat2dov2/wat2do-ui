@@ -1,0 +1,198 @@
+{
+  "posters": {
+    "recruitment": {
+      "title": "Help more students discover events at {{school}}.",
+      "description": "Put up official Wat2Do posters and earn {{rate}} for every qualifying new visitor.",
+      "seeHowItWorks": "See how it works",
+      "dismiss": "Hide this message for {{days}} days"
+    },
+    "promote": {
+      "title": "Bring Wat2Do to {{school}}",
+      "description": "Place official posters around campus and earn {{rate}} for every qualifying new visitor they bring.",
+      "stepsTitle": "How it works",
+      "stepsDescription": "Start in minutes with an official, print-ready design.",
+      "step1Title": "Choose an official poster",
+      "step1Description": "Pick from Wat2Do's approved designs.",
+      "step2Title": "Place and activate it",
+      "step2Description": "Put each copy in one campus location, then scan it to establish that placement.",
+      "step3Title": "Earn for new visitors",
+      "step3Description": "Earn {{rate}} when a confirmed, qualifying new visitor arrives.",
+      "coverageTitle": "Campus coverage at {{school}}",
+      "coverageDescription": "Approximate cells show where active posters are helping students discover events without exposing any promoter."
+    },
+    "enrollment": {
+      "pausedTitle": "The promoter program is paused",
+      "pausedDescription": "Existing posters and earnings remain available, but new enrollment and poster creation are temporarily paused.",
+      "pausedMaintenanceDescription": "New poster creation is paused, but you can still update your payout email and accept current terms.",
+      "readyTitle": "Ready to help your campus?",
+      "readyDescription": "Sign in to join instantly with your school account.",
+      "signInToJoin": "Sign in to join",
+      "schoolRequiredTitle": "Add your school first",
+      "schoolRequiredDescription": "A school on your profile is required so your posters lead to the right campus event feed.",
+      "completeProfile": "Complete my profile",
+      "enrolledTitle": "You're in the program",
+      "enrolled": "Enrolled",
+      "enrolledDescription": "Your promoter dashboard is ready.",
+      "openPosters": "Open my posters",
+      "settingsTitle": "Promoter program",
+      "settingsDescription": "Review your status and keep your Interac e-Transfer email current.",
+      "joinTitle": "Join the promoter program",
+      "joinDescription": "Enrollment is instant. You only need a payout email and acceptance of the current terms.",
+      "termsUpdateTitle": "Review the updated terms",
+      "termsUpdateDescription": "Accept the current promoter Terms of Service before creating another poster.",
+      "payoutEmail": "Payout email",
+      "payoutEmailPlaceholder": "you@example.com",
+      "payoutEmailDescription": "Monthly Interac e-Transfers will be sent to this address.",
+      "acceptTermsPrefix": "I accept the",
+      "termsLink": "Promoter Terms of Service, version {{version}}",
+      "error": "We could not update your promoter enrollment.",
+      "trustMonthly": "Payments are sent monthly by Interac e-Transfer.",
+      "trustActivation": "The first activation visitor earns $0.",
+      "trustTraffic": "Duplicate, unconfirmed, automated, and fraudulent traffic is excluded.",
+      "trustPrivacy": "Wat2Do does not store raw IP addresses.",
+      "join": "Join the program",
+      "save": "Save payout settings",
+      "discord": "Get help on Discord"
+    },
+    "dashboard": {
+      "title": "My posters",
+      "description": "Create, place, and track your official Wat2Do posters.",
+      "enrollmentRequired": "Join the promoter program to create and manage official posters.",
+      "loading": "Loading your poster dashboard...",
+      "loadErrorTitle": "Your dashboard could not be loaded",
+      "loadErrorDescription": "Try again in a moment. Your posters and earnings have not been changed.",
+      "pendingEarnings": "Pending this month",
+      "creditableVisitors": "Qualifying visitors this month",
+      "lifetimePaid": "Lifetime paid",
+      "activeSlots": "Active poster slots",
+      "slotValue": "{{used}} of {{limit}}",
+      "updatedDaily": "Updated daily",
+      "mapTitle": "Campus poster map",
+      "mapDescription": "Your placed posters are precise and selectable. Other campus coverage is approximate and private.",
+      "pausedTitle": "Poster creation is paused",
+      "pausedDescription": "Your dashboard, downloads, earnings, payouts, and archive actions remain available.",
+      "termsTitle": "Accept the current terms to create posters",
+      "termsDescription": "Your existing posters keep working while you review the latest terms.",
+      "reviewTerms": "Review promoter settings"
+    },
+    "create": {
+      "open": "Create posters",
+      "title": "Create official posters",
+      "description": "Choose one approved design and create a separately tracked QR for each physical copy.",
+      "chooseTemplate": "Choose a poster design",
+      "chooseTemplateDescription": "The selected template owns its fixed QR placement and print format.",
+      "selectTemplate": "Select design",
+      "customTitle": "Have your own poster design?",
+      "customDescription": "Join our Discord and share it with us. We review submissions and add approved designs to the official collection.",
+      "discord": "Share it on Discord",
+      "placementName": "Placement name",
+      "placementPlaceholder": "SLC second floor",
+      "copies": "Copies",
+      "slotsRemaining": "{{count}} active slots remaining",
+      "oneLocationTitle": "One QR for one physical location",
+      "oneLocationDescription": "Each copy gets a unique QR so Wat2Do can measure and map that poster accurately.",
+      "submit": "Create posters",
+      "error": "The poster batch could not be created.",
+      "createdTitle": "Your unique posters are ready",
+      "createdDescription": "{{count}} separately tracked copies were created. Download them before placing each copy.",
+      "downloadPdf": "Download Letter PDF",
+      "downloadPng": "Download PNG files",
+      "downloadError": "The poster files could not be generated. Please try again."
+    },
+    "inventory": {
+      "title": "Poster inventory",
+      "description": "Placed posters become quiet after {{days}} days without an accepted scan. Quiet posters are still active until archived.",
+      "emptyTitle": "Create your first official Wat2Do poster",
+      "emptyDescription": "Download it, place it on campus, and scan it yourself to activate the placement. The activation visitor earns $0.",
+      "latestScan": "Latest accepted scan {{time}}",
+      "neverScanned": "No accepted scan yet",
+      "totalVisitors": "Total confirmed visitors",
+      "periodVisitors": "Qualifying this month",
+      "periodEarnings": "Pending this month",
+      "activationInstruction": "Place this copy, scan its QR, and allow location access to establish the placement.",
+      "downloadPdf": "Download PDF",
+      "downloadPng": "Download PNG",
+      "downloadError": "This poster could not be generated for download.",
+      "templateUnavailable": "This legacy poster does not have a regeneratable template.",
+      "archive": "Archive poster",
+      "archiveTitle": "Archive this physical placement?",
+      "archiveDescription": "{{name}} will keep redirecting, but it will stop recording payable visits and free one active slot.",
+      "archiveSuccess": "The poster was archived."
+    },
+    "lifecycle": {
+      "not-placed": "Not placed",
+      "recently-scanned": "Recently scanned",
+      "quiet": "Quiet",
+      "archived": "Archived"
+    },
+    "map": {
+      "loading": "Loading campus coverage...",
+      "loadErrorTitle": "Coverage is unavailable",
+      "loadErrorDescription": "The opportunity is still open. Try the map again later.",
+      "coverageMarker": "Approximate campus cell with {{count}} posters",
+      "campusCoverage": "Approximate campus coverage",
+      "coverageSummary": "{{count}} posters, {{recent}} recently scanned",
+      "ownedMarker": "Your poster: {{name}}",
+      "managedMarker": "Managed poster: {{name}}",
+      "visitorCount": "{{count}} confirmed visitors",
+      "yourPosters": "Your posters",
+      "managedPosters": "Managed posters",
+      "otherCoverage": "Other campus coverage",
+      "noCoverageTitle": "No placed posters here yet",
+      "noCoverageDescription": "Be one of the first promoters to add campus coverage."
+    },
+    "payouts": {
+      "title": "Payout history",
+      "description": "Monthly Interac e-Transfer records. Held payouts are reviewed rather than removed.",
+      "loading": "Loading payout history...",
+      "loadErrorTitle": "Payout history is unavailable",
+      "loadErrorDescription": "Try again later. Your payout records have not been changed.",
+      "empty": "No completed payout periods yet.",
+      "period": "Period",
+      "visitors": "Qualifying visitors",
+      "rate": "Rate",
+      "amount": "Amount",
+      "status": "Status",
+      "paidDate": "Paid date",
+      "statuses": {
+        "pending": "Pending",
+        "held": "Held for review",
+        "paid": "Paid",
+        "voided": "Voided"
+      }
+    },
+    "terms": {
+      "title": "Promoter Terms of Service",
+      "description": "Current program terms, version {{version}}.",
+      "back": "Back to promoter program",
+      "eligibility": {
+        "title": "Eligibility and enrollment",
+        "body": "You must use your own Wat2Do account, keep a school on your profile, provide an email that can receive Interac e-Transfers, and accept the current terms. Enrollment does not guarantee future poster availability."
+      },
+      "posters": {
+        "title": "Official posters and placements",
+        "body": "Use only the approved files generated by Wat2Do. Each unique QR belongs to one physical placement. Do not duplicate a QR across locations. Archive a poster before moving or retiring its physical placement."
+      },
+      "visitors": {
+        "title": "Qualifying visitors",
+        "body": "The activation visitor is not payable. Earnings exclude duplicate, unconfirmed, automated, manipulated, and fraudulent traffic. Wat2Do may review unusual traffic before releasing a payout."
+      },
+      "payments": {
+        "title": "Payments",
+        "body": "Eligible amounts are calculated for UTC calendar months at the program rate active for that period and are paid manually by Interac e-Transfer. Held amounts remain under review. Taxes and accurate payout details remain your responsibility."
+      },
+      "conduct": {
+        "title": "Safe and respectful placement",
+        "body": "Place posters only where you have permission. Do not cover required notices, damage property, misrepresent Wat2Do, or place materials where campus or local rules prohibit them."
+      },
+      "privacy": {
+        "title": "Privacy and measurement",
+        "body": "Wat2Do uses privacy-preserving visitor identifiers and approximate public coverage cells. Raw IP addresses are not stored. Your payout details and exact placements are not made public."
+      },
+      "changes": {
+        "title": "Program changes and suspension",
+        "body": "Wat2Do may pause new enrollment or poster creation, retire designs, update these terms, or suspend participation for abuse. Existing QR redirects and earned payout records remain available according to the program rules."
+      }
+    }
+  }
+}

@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl, model_validator
 
 _CONTROLBOX_DIRECTORY = Path(__file__).resolve().parents[1] / "controlbox"
 _INTERACTION_TYPES = {"click", "detail_view", "going", "ungoing", "share"}
@@ -329,6 +330,43 @@ class InstagramPublishingControl(_ControlModel):
         return self
 
 
+class PromoterQrPlacementControl(_ControlModel):
+    x: float = Field(ge=0, le=1)
+    y: float = Field(ge=0, le=1)
+    width: float = Field(gt=0, le=1)
+    height: float = Field(gt=0, le=1)
+
+    @model_validator(mode="after")
+    def validate_bounds(self) -> "PromoterQrPlacementControl":
+        if self.x + self.width > 1 or self.y + self.height > 1:
+            raise ValueError("promoter template QR placement must fit inside the asset")
+        return self
+
+
+class PromoterTemplateControl(_ControlModel):
+    id: str = Field(
+        min_length=1,
+        max_length=100,
+        pattern=r"^[a-z0-9][a-z0-9-]*$",
+    )
+    name: str = Field(min_length=1, max_length=100)
+    asset_path: str = Field(
+        min_length=1,
+        max_length=255,
+        pattern=r"^/poster-templates/[a-z0-9][a-z0-9-]*-v[0-9]+[.]png$",
+    )
+    eligible_school: str = Field(
+        min_length=1,
+        max_length=255,
+        pattern=r"^(global|[a-z0-9][a-z0-9-]*)$",
+    )
+    print_size: Literal["us-letter"]
+    orientation: Literal["portrait"]
+    qr_placement: PromoterQrPlacementControl
+    preview_description: str = Field(min_length=1, max_length=500)
+    available_for_creation: bool
+
+
 class PromoterProgramControl(_ControlModel):
     enabled: bool
     rate_cents: int = Field(gt=0)
@@ -336,12 +374,33 @@ class PromoterProgramControl(_ControlModel):
     landing_confirmation_seconds: int = Field(gt=0)
     confirmation_token_minutes: int = Field(gt=0)
     payout_close_delay_hours: int = Field(ge=0)
+    quiet_poster_days: int = Field(gt=0)
+    banner_dismissal_days: int = Field(gt=0)
+    discord_invite_url: HttpUrl
+    map_coordinate_decimal_places: int = Field(ge=1, le=5)
+    map_visitor_bucket_maximums: tuple[int, int, int]
     risk_rules_version: str = Field(min_length=1, max_length=64)
     rapid_distinct_visitors: int = Field(gt=1)
     rapid_window_seconds: int = Field(gt=0)
     rapid_rule_points: int = Field(gt=0)
     hold_score_threshold: int = Field(gt=0)
     tos_version: str = Field(min_length=1, max_length=64)
+    approved_templates: tuple[PromoterTemplateControl, ...] = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def validate_promoter_controls(self) -> "PromoterProgramControl":
+        maxima = self.map_visitor_bucket_maximums
+        if maxima[0] != 0 or list(maxima) != sorted(set(maxima)):
+            raise ValueError(
+                "map visitor bucket maximums must start at zero and be unique and ascending"
+            )
+        template_ids = [template.id for template in self.approved_templates]
+        if len(template_ids) != len(set(template_ids)):
+            raise ValueError("promoter template IDs must be unique")
+        asset_paths = [template.asset_path for template in self.approved_templates]
+        if len(asset_paths) != len(set(asset_paths)):
+            raise ValueError("promoter template asset paths must be unique")
+        return self
 
 
 class ControlBox(_ControlModel):

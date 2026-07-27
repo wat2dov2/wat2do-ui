@@ -1,322 +1,823 @@
-# Project: QR Code Poster Campaign
+# Project: Wat2Do Promoter Poster Program
 
-Status: planned (Jul 14 to Sep 3, 2026).
+Status: backend foundation implemented; promoter and administrator product surfaces planned.
 Owner: Tony.
+Last updated: July 26, 2026.
+
+## One-line architecture
+
+Promoters are ordinary Wat2Do users with enrollment fields, promoter posters are marked rows in the existing `qr_codes` table, scans use privacy-preserving visitor identifiers, earnings are derived from confirmed scans, monthly money movements are recorded only in `poster_payouts`, and the product surface is a recruitment page, a promoter dashboard, and administrator payout operations.
+
+## Product outcome
 
-## Brief
-
-Launch a distributed QR poster program where students put up physical Wat2Do posters on campus, scans are tracked, and promoters earn $0.25 per unique scan per poster, paid monthly via Interac e-Transfer.
-Live pilot at UWaterloo by Aug 25, first payout run Sep 1, repeatable multi-school playbook by Sep 3.
-
-### Architecture decisions (locked)
-
-1. Extend the existing QR system (`qr_codes`, `qr_code_scans`, `backend/routers/qr.py`, `backend/services/qr_code_service.py`, `frontend/src/features/posters`).
-   Promoter posters are `qr_codes` rows with a `program` marker.
-   No parallel tables or pipelines.
-2. Scans are the source of truth; earnings are derived.
-   A salted `dedupe_hash = sha256(salt, ip, ua_family)` is stored per scan.
-   Pending earnings = `$0.25 x (distinct dedupe_hash per poster - 1)` computed by query.
-   No live crediting ledger.
-   Raw IPs are never stored.
-3. Cash is separate from the in-app `credits` system.
-   One new money table: `poster_payouts` (user, period, amount_cents, scan_count, status: `pending|held|paid|voided`).
-4. Payouts are a job, not a product.
-   `jobs/run_poster_payouts.py` computes earnings, applies fraud flags to holds, and emits a CSV for manual Interac e-Transfers.
-   Admin marks rows paid.
-5. Enrollment lives on the user: `payout_email` plus `promoter_tos_accepted_at` columns.
-   No separate promoter entity.
-   50 active posters per account, enforced at creation.
+Wat2Do recruits students to place official Wat2Do posters around their campus.
+An eligible student enrolls instantly, chooses an approved poster design, generates one uniquely attributed QR poster per physical placement, activates it after placement, and earns $0.25 for each qualifying new visitor after the activation scan.
 
-### Program rules (locked)
+The product must make three facts immediately clear:
 
-- $0.25 per unique scan per poster.
-- The first (activation) scan pays $0.
-- 50 active posters per account.
-- Paid monthly on the 1st, any balance of $0.25 or more.
-- No geo exclusivity (same board is fine).
-- Flagged accounts get payouts held, not silently voided.
-- Monthly program budget cap with a kill switch.
+1. Wat2Do supplies the approved designs.
+2. Each physical poster has its own QR code and measurable location.
+3. Payments are based on qualifying visitors, not every raw scan request.
 
-### Success criteria
+## Goals
 
-Posters live at UW before frosh move-in weekend.
-Scans attributed with dedupe working behind the deploy proxy.
-Sep 1 payout run completes.
-Support has one home.
-Abuse can be paused without building fraud tooling.
+- Make it possible for an eligible student to enroll and create a poster without administrator assistance.
+- Keep the promoter program inside the existing QR code system.
+- Provide official, reliable, print-ready poster designs.
+- Attribute confirmed visitors without storing raw IP addresses.
+- Show promoters understandable poster performance and payout history.
+- Give administrators a safe monthly review and payment workflow.
+- Allow the program to be paused without breaking existing QR redirects.
+- Support multiple schools without creating a campaign entity for every campus.
 
-### Dependency spine
+## Explicit non-goals
 
-1.1 to 1.2, then everything in categories 1-4.
-Categories 5-9 are parallel from day one.
-Category 10 gates on all.
+- No separate promoter entity.
+- No `poster_campaigns` table.
+- No parallel promoter QR tables or scan pipeline.
+- No live earnings ledger.
+- No points, levels, missions, badges, or public leaderboard.
+- No live scan feed for promoters.
+- No promoter-uploaded creative.
+- No automated Interac payment integration.
+- No public owner names, payout details, fraud details, or raw scan history.
+- No multiple physical placements sharing one QR code.
 
-## Category 1: Scan Attribution & Tracking (backend core)
+## Locked product decisions
 
-### 1.1 Verify real client IP and audit `session_id` on the scan path
+### Enrollment
 
-Confirm `GET /qr/{id}` sees the true client IP behind the deploy proxy (`X-Forwarded-For` handling in FastAPI/uvicorn config).
-Document what `session_id` on `qr_code_scans` currently is (client-generated? cookie?).
-Produce a short written finding: exactly which request fields are trustworthy inputs for the dedupe hash.
-Done when: a note states the verified IP source and `session_id` semantics, with a curl test against staging proving the forwarded IP is captured.
-Blocks 1.2.
-Do first: every scan recorded without this is uncreditable.
+- Enrollment is instant for an authenticated user with a school.
+- Enrollment requires a payout email and acceptance of the current promoter Terms of Service.
+- Wat2Do does not ask for an application essay, graduation year, social profiles, or a second account.
+- Discord is strongly encouraged for support but is not required for enrollment.
+- A user whose accepted Terms of Service version is stale must accept the current version before creating another promoter poster.
 
-### 1.2 Add `dedupe_hash` to scan recording
+### Compensation
 
-Migration adding `dedupe_hash` (text, indexed) to `qr_code_scans`.
-In `record_scan`/`handle_scan`, compute `sha256(SERVER_SALT, client_ip, ua_family)` where `ua_family` is a coarse UA normalization (browser family plus OS, not the full string).
-Salt comes from env.
-Never store raw IP.
-Done when: same device/IP yields identical hashes across requests, different devices differ, unit tests cover both, and no raw IP appears in any table or log line.
-Depends: 1.1.
+- The rate is $0.25 per creditable visitor.
+- The first confirmed unique visitor for each poster is the activation visitor and earns $0.
+- A visitor can earn credit only once per poster.
+- Earnings are calculated from confirmed scan rows and are not written to a live ledger.
+- Payout periods are UTC calendar months.
+- Payouts are prepared after a 24-hour close delay.
+- Every positive pilot balance is payable, with no minimum payout threshold.
+- Held payouts are reviewed rather than silently removed.
+- The pilot uses manual Interac e-Transfers.
 
-### 1.3 Add `program` marker to `qr_codes` plus activation-scan semantics
+### Poster ownership and physical placement
 
-Migration adding `program` to `qr_codes` (promoter vs existing default).
-Confirm the existing activation flow (`activate_poster_and_record_scan`) records the activation scan so it is identifiable (first scan per poster); earnings queries must exclude it.
-Done when: promoter QRs are distinguishable and a test proves the first scan is excludable from earnings counts.
-Depends: 1.2.
+- One QR code represents one physical poster placement.
+- A user who wants five physical posters creates five poster rows and receives five unique QR codes.
+- A multi-copy generation action may create several posters at once, but every output page must contain a different QR code.
+- Moving a poster to a materially different location requires archiving it and creating a new poster.
+- Archiving frees one of the user's 50 active-poster slots.
+- Promoter posters cannot be permanently deleted through the product.
 
-### 1.4 Earnings query plus `GET /qr/earnings` endpoint
+### Creative
 
-New service function plus endpoint returning, for the authenticated user: per-poster `unique_scans` (distinct `dedupe_hash`), `creditable_scans` (uniques minus 1, floor 0), `pending_cents`, plus totals for the current open period.
-Derived purely from `qr_code_scans`, no ledger.
-Follows existing router/service/schema patterns.
-Done when: correct values against seeded scan fixtures (duplicate hashes, activation exclusion, multi-poster), typed schema, added to generated API types.
-Depends: 1.3.
+- Promoters choose only from a curated library of approved Wat2Do poster images.
+- Every approved image contains a reserved blank QR area.
+- Wat2Do overlays the poster-specific QR into that area during generation.
+- Promoters cannot upload or position their own creative.
+- A promoter who wants to suggest a custom design is directed to the Wat2Do Discord.
+- Tony manually reviews submitted designs and adds approved designs to the official library through a normal code and deployment change.
+- There is no asset-submission table, moderation queue, or administrator template editor.
 
-### 1.5 Program config constants plus kill switch
+### Map and privacy
 
-Central constants in `core/constants` matching existing style: `RATE_PER_SCAN_CENTS=25`, `MAX_ACTIVE_POSTERS=50`, `MONTHLY_BUDGET_CAP_CENTS` (value from 8.3), and a `PROMOTER_PROGRAM_ENABLED` flag checked at QR creation.
-Existing posters keep redirecting when off; new creation is blocked; UI shows a paused notice.
-Done when: flipping the flag blocks new promoter QR creation with a clear error and the scan/redirect path is unaffected.
-Depends: 1.3.
-Parallel with 1.4.
+- The recruitment page may show approximate campus coverage without authentication.
+- The promoter dashboard shows the user's own placements precisely and other campus coverage in a muted, approximate form.
+- Other promoters' names, poster identifiers, exact coordinates, and exact earnings are never exposed.
+- Promoters see aggregate poster performance, not raw promoter scan rows or fraud signals.
+- Administrators retain access to the scan and risk information required for payout review.
 
-## Category 2: Promoter Enrollment & Poster Management
+## Product terminology
 
-### 2.1 Enrollment fields on user plus enroll endpoint
+`is_active` has one backend meaning: the QR code has not been archived.
+The UI must not call a poster inactive merely because it has not received a recent scan.
 
-Migration adding `payout_email` and `promoter_tos_accepted_at` to users.
-Endpoint (extend `routers/users.py` per existing pattern) to enroll: accepts payout email plus ToS acceptance, stamps timestamp.
-Done when: enrolled state is queryable and re-acceptance overwrites with the latest timestamp.
-Parallel with Category 1.
-ToS text itself is 8.1; the endpoint can land first.
+The promoter UI derives these labels:
 
-### 2.2 Open promoter QR creation to enrolled users plus 50-cap
+| Label | Derivation | Meaning |
+| --- | --- | --- |
+| Not placed | Active poster without a usable map location | The poster was generated but its placement has not been located |
+| Recently scanned | Active, placed poster with `latest_scan` within 30 days | The poster has received accepted traffic recently |
+| Quiet | Active, placed poster with no accepted scan in 30 days | The poster still redirects but may no longer be visible |
+| Archived | `is_active = false` | The owner intentionally retired the physical placement |
 
-In `qr.py`/`qr_code_service`, allow any enrolled user (not just org-managers/admins) to create QRs with `program=promoter`.
-Enforce: user enrolled, program flag on (1.5), active promoter poster count under 50.
-Support archiving a poster to free a slot, reusing the existing status/active field (do not add a new one).
-Done when: the 51st create returns a clear 4xx, archive frees a slot, non-enrolled users are blocked, and org/admin QR flows are unchanged (regression tests).
-Depends: 1.3, 1.5, 2.1.
+The 30-day quiet threshold belongs in the promoter program control box.
 
-### 2.3 Promoter QR destination
+## Approved poster template system
 
-Promoter QRs redirect to the school events feed with attribution params (`utm_source=poster&poster_id=...`), using the existing redirect-config mechanism.
-School is inferred from the creating user's school context.
-Done when: a scan lands on the correct school feed with no signup wall and attribution params present.
-Depends: 2.2.
+### Template source of truth
 
-## Category 3: Payouts & Money Ops (backend)
+Approved template metadata belongs in the existing `backend/controlbox/promoter_program.json` feature control file.
+The implementation must not create a second template registry in the frontend.
 
-### 3.1 `poster_payouts` table plus service
+Each template entry contains:
 
-Migration: `poster_payouts(id, user_id, period, amount_cents, scan_count, status pending|held|paid|voided, paid_at, notes, created_at)`, unique `(user_id, period)`.
-New `services/payout_service.py` plus `routers/payouts.py` following repo conventions: user lists own payouts; admin lists/filters all and transitions status (`held->pending`, `pending->paid`, `held->voided`) with notes required on hold/void.
-Done when: CRUD paths are tested, invalid transitions are rejected (no `paid->pending`), and a non-admin cannot see others' rows.
-Depends: none for the table; 1.4 for amounts to mean anything.
+- A stable template ID.
+- A user-facing name.
+- A stable version-controlled asset path.
+- Its eligible school or a global marker.
+- Print size and orientation.
+- Normalized QR placement coordinates.
+- A preview description.
+- Whether it is available for new poster creation.
 
-### 3.2 Monthly payout job
+The frontend may import the specific promoter program control file as allowed by the repository control-box policy.
+The backend validates that the selected template exists, is enabled for creation, and is eligible for the user's school.
 
-`jobs/run_poster_payouts.py` (mirror `jobs/send_notifications.py` structure).
-For a closed period: compute per-user creditable earnings from `qr_code_scans` (shared function with 1.4, not a copy), apply flag queries from 6.1 and write `poster_payouts` rows as `pending` or `held`, respect the budget cap (if exceeded: write rows but mark the run for manual review, never silently prorate), and emit CSV `(user_email, payout_email, amount_cents, scan_count, status)`.
-Idempotent per period (re-run updates non-paid rows only).
-Done when: dry-run mode works, re-run safety is tested, the CSV is correct against fixtures, and held users are excluded from the CSV.
-Depends: 1.4, 3.1, 6.1.
+Retired templates remain in the registry with creation disabled.
+This allows an existing poster to be regenerated after its template is removed from the new-poster gallery.
 
-### 3.3 Manual payout runbook (non-code)
+### Template requirements
 
-One page: run job, review held rows (link the 6.2 checklist), send Interac e-Transfers from the business account using the CSV, mark rows paid in the admin UI, post a payout-complete announcement (7.1).
-Include reconciliation (bank total = CSV total) and bounced-transfer handling.
-Done when: committed to docs and the 10.3 rehearsal executes it without improvisation.
-Depends: 3.2, 4.3.
+- Initial formats are US Letter portrait PDF and high-resolution PNG.
+- Every design includes an obvious blank QR zone with a white background.
+- The rendered QR includes its required quiet zone and high contrast.
+- The template includes a short scan call to action.
+- The template uses evergreen copy and does not contain event dates.
+- Printed acceptance samples must scan reliably from at least 1.5 metres under ordinary indoor lighting.
+- The initial library includes at least one colour design, one black-and-white design, and one low-ink design.
 
-## Category 4: Frontend
+### Custom design requests
 
-### 4.1 Enrollment UI in settings
+The template gallery ends with a small secondary card:
 
-Extend `features/settings`: a "Promoter program" section with explainer, payout email field, ToS checkbox (text from 8.1), and enroll CTA.
-Enrolled state shows the payout email (editable) and a dashboard link.
-i18n via the existing locale pattern.
-Done when: the full enroll flow works against 2.1; unenrolled users see the pitch and enrolled users see status.
-Depends: 2.1; 8.1 text can be stubbed.
+> Have your own poster design?
+> Join our Discord and share it with us.
+> We will review it and add approved designs to the official collection.
 
-### 4.2 Promoter poster dashboard
+The CTA links to `https://discord.gg/uVcZcp4q8R`.
 
-Extend `features/posters`: list my promoter posters with per-poster unique scans plus pending earnings (from 1.4), a totals header ("Pending this month: $X, Lifetime paid: $Y"), a create-poster flow (template picker from 5.1, renders poster PDF/PNG with the QR baked in), an archive action, an "X of 50 slots used" indicator, and a payout history table (from 3.1).
-The empty state explains: your first scan activates the poster and pays $0, that is you testing it.
-Done when: a pilot promoter does everything self-serve: create, download, see counts, see history.
-Depends: 1.4, 2.2, 3.1, 5.1.
+Manual review checks:
 
-### 4.3 Admin payout review UI
+- Wat2Do branding and truthful messaging.
+- Copyright and asset ownership.
+- School appropriateness.
+- Print resolution.
+- QR contrast, size, and quiet zone.
+- Whether the design is global or school-specific.
 
-Extend `features/admin`: payouts table filtered by period/status; row detail shows flag reasons (6.1 output); actions: release hold, void (reason required), mark paid (bulk, post-CSV run).
-Done when: the Sep 1 run is fully executable from this screen plus the CSV, no DB console needed.
-Depends: 3.1, 3.2.
+## End-to-end promoter journey
 
-## Category 5: Assets & Creative
+### 1. Recruitment banner
 
-### 5.1 Official poster template kit (UW v1)
+The authenticated event feed uses a shadcn Alert primitive as the recruitment banner.
+The primitive is extended through the existing design system rather than implemented as a bespoke page-level style.
 
-3-5 letter-size templates: at least one B&W-print-optimized, one colour, one minimal/cheap-ink.
-Evergreen copy (no dates): headline ("Every campus event. One feed."), QR zone, short value prop, wat2do.io.
-Deliver as parameterizable assets the dashboard renders with a per-poster QR (coordinate format with the 4.2 owner).
-Done when: printed samples scan reliably from 1.5m or more on a phone, with the QR error-correction level chosen accordingly.
-Start immediately.
-Candidate design ask for Brayden (see the Waterloo Commons Revival project).
+Recommended copy:
 
-### 5.2 Custom creative rules (policy doc)
+> Help more students discover events at [School].
+> Put up official Wat2Do posters and earn 25 cents for every qualifying new visitor.
 
-One-pager: must use the assigned QR unmodified; no third-party brands; no misleading claims; must comply with campus posting policy; Wat2Do may request a photo of any posted poster; violations deactivate the poster and repeats remove the account.
-Post-hoc spot checks, no pre-approval queue.
-Done when: linked from onboarding (7.2) and ToS (8.1).
+The CTA is `See how it works`.
 
-### 5.3 School-branded template variants (multi-school, later tier)
+Banner behavior:
 
-Parameterize 5.1 by school (name, colours) so a new campus needs config, not design work.
-Done when: a second school's kit is produced in under 1 hour from config.
-Depends: 5.1.
+- The entire banner links to `/promote`.
+- Eligible unenrolled users may dismiss it for 30 days.
+- Enrolled promoters do not see it.
+- The banner is not shown when the promoter program is paused.
+- The copy uses `qualifying new visitor`, not `scan`.
 
-## Category 6: Trust & Abuse Ops
+### 2. Public recruitment page
 
-### 6.1 Fraud flag queries
+Route: `/promote`.
 
-Functions callable by the payout job and ad-hoc:
-(a) burst velocity (N unique hashes on one poster within M minutes);
-(b) datacenter/VPN ASN share above threshold (pick a free IP-to-ASN dataset and document the choice);
-(c) same dedupe_hash crediting more than K posters of one account;
-(d) IP-geo country mismatch for the poster's school;
-(e) earnings outliers (top 5% $ per poster flagged for eyeball review).
-Thresholds live as constants with rationale.
-Output: per-user flag list with reasons.
-Note: (b) and (d) need ASN plus country code stored per scan at record time (still no raw IP); decide and document.
-Done when: fixture-based tests exist per signal and the job integration writes reasons onto held payout rows.
-Depends: 1.2.
+The page is public so a visitor can understand the opportunity before signing in.
 
-### 6.2 Hold-review checklist plus enforcement ladder (policy doc)
+Desktop composition:
 
-Per flag type: what to check, what evidence to request (photos of posters up), response templates, resolution paths (release / void / ban), and the escalation ladder (first offense voids the month, second bans).
-Target: any held account resolved in under 15 minutes of admin time.
-Done when: the doc exists and is used in the 10.3 rehearsal on a synthetic flagged account.
-Depends: 6.1.
+- School-specific value proposition and three-step explanation.
+- Campus coverage map on the left.
+- Sticky enrollment card on the right.
 
-## Category 7: Comms, Support & Onboarding
+Mobile composition:
 
-### 7.1 Discord server setup
+- Value proposition first.
+- Enrollment card second.
+- Coverage map third.
 
-Wat2Do Promoters Discord: `#announcements` (locked), `#ask-questions`, `#uwaterloo`, `#wins` (screenshot flex channel, retention fuel).
-Basic moderation, stable invite link.
-`support@wat2do.io` is reserved for payout disputes only, with an auto-reply pointing to Discord.
-Done when: the server is live and the invite is linked from the dashboard (4.2) and the onboarding doc.
-Start immediately.
+The three steps are:
 
-### 7.2 Promoter onboarding one-pager
+1. Choose an official poster.
+2. Place and activate it on campus.
+3. Earn 25 cents when it brings a qualifying visitor.
 
-Covers: how money works (rate, activation scan pays $0, monthly payout, $0.25 minimum), the 50-cap, where and how to post legally at UW (from 9.1), print guidance (a B&W poster pays for itself after 1 scan), creative rules (5.2), payout schedule, and Discord and ToS links.
-Include a pre-answer for "why isn't my scan count going up" with dedupe explained in plain words; this will be 80% of support volume.
-Done when: a stranger goes from zero to poster-on-wall using only this doc; linked from the enrollment UI.
-Depends: 5.2, 8.1, 9.1.
+Enrollment-card states:
 
-### 7.3 Recruiting funnel
+| State | Primary behavior |
+| --- | --- |
+| Logged out | Active `Sign in to join` CTA that returns to `/promote` |
+| Logged in and unenrolled | Payout email, Terms of Service checkbox, and `Join the program` CTA |
+| Enrolled | Confirmation and `Open my posters` CTA |
+| Program paused | Paused notice without enrollment or creation controls |
+| Missing school | Explanation and link to complete the user's school profile |
 
-An "Earn money postering" entry point: app footer/nav link to enrollment; outreach templates for UW club execs (clubs already on Wat2Do first, they have double incentive); a frosh-group-chat blurb; simple tracking of who was contacted.
-Done when: 10 or more pilot promoters are recruited for Jul 28 (gate for 10.2) and the templates are reusable per school.
-Depends: 4.1 live (or a waitlist form as a stopgap).
+A logged-out visitor receives an active sign-in action rather than a disabled enrollment button.
 
-## Category 8: Legal & Policy
+Trust copy appears beside the enrollment form:
 
-### 8.1 Promoter Terms of Service
+- Payments are sent monthly by Interac e-Transfer.
+- The activation scan earns $0.
+- Duplicate, unconfirmed, automated, and fraudulent traffic is excluded.
+- Wat2Do does not store raw IP addresses.
+- Discord is available for program help.
 
-One page: rewards program not employment; payouts discretionary pending fraud review; fraud voids balance and terminates the account; promoter responsible for campus posting compliance; program may be paused or ended anytime; rate and cap changeable prospectively with notice; privacy note (hashed scan data, no raw IP or geolocation stored).
-Checkbox target for 2.1/4.1.
-Done when: text is finalized and versioned, rendered at enrollment.
-Start immediately: this blocks any real-money pilot.
+### 3. Enrollment
 
-### 8.2 Privacy review of scan data
+The existing user enrollment endpoint updates the user's payout email and stamps the current Terms of Service version.
+Successful enrollment takes the user directly to `/posters`.
 
-Written check that the scan pipeline matches 8.1 and the app's privacy policy: salted hash non-reversible in practice, salt storage policy (must not rotate mid-period, since rotation resets uniqueness), ASN/country storage covered, retention period for scan rows stated.
-Done when: a findings doc exists and gaps are filed as issues.
-Depends: 1.2, 6.1 decision.
+The Settings page retains a `Promoter program` section for:
 
-### 8.3 Monthly budget cap decision (founder)
+- Reviewing enrollment status.
+- Editing the payout email.
+- Accepting a newly published Terms of Service version.
+- Opening the promoter dashboard.
+- Opening the Discord support channel.
 
-Set `MONTHLY_BUDGET_CAP_CENTS` and the over-cap behavior.
-Recommendation: $3,000/mo for fall; on approach, pause new QR issuance, never already-earned payouts.
-Done when: the number is committed into the 1.5 constants with rationale.
+### 4. Poster dashboard
 
-## Category 9: Campus Ops & Multi-School Playbook
+Route: `/posters`.
 
-### 9.1 UW posting-rules one-pager (ops research)
+The floating dock contains a poster icon for authenticated users.
+An unenrolled user selecting it goes to `/promote`.
+An enrolled user selecting it goes to `/posters`.
 
-Where posting is allowed at UW (SLC/Turnkey stamp process, WUSA boards, plaza kiosks, res boards), the approval process, turnaround, and what gets torn down.
-Half a page, link-heavy, verified against current policy (not memory).
-Done when: the verified doc feeds 7.2.
-Start immediately.
+The dashboard summary contains:
 
-### 9.2 New-school launch checklist (playbook doc)
+- Pending earnings for the current month.
+- Creditable visitors for the current month.
+- Lifetime paid amount.
+- Active poster slots used out of 50.
 
-The repeatable per-campus column:
-(1) event feed seeded (hard gate, never enable promoters on an empty feed);
-(2) posting-rules one-pager;
-(3) campus lead recruited;
-(4) branded template variant (5.3);
-(5) Discord channel;
-(6) program flag enabled for that school.
-Include a per-item owner and time estimate.
-Done when: executable by a campus lead with under 2 hours of central support.
-Depends: learnings from 10.2; finalize Aug 11-24.
+The dashboard labels its scan-derived values as updated daily.
+It does not present a real-time scan feed.
 
-### 9.3 Campus lead role definition (later tier)
+Desktop layout:
 
-Responsibilities (posting-rules doc, local recruiting, first-line Discord answers), compensation (fixed monthly stipend via the same payout rail, not equity or employment, preserving the 8.1 posture), and selection criteria (top promoter, responsive).
-Done when: a one-pager plus an offer-message template exist.
-Depends: 8.1.
+- Campus map as the main visual.
+- Owned-poster inventory beside or immediately below the map.
+- Payout history below the poster inventory.
 
-## Category 10: Launch Execution (sequential gates)
+Map behavior:
 
-### 10.1 Pilot readiness gate (target Jul 28)
+- Owned posters use solid, high-contrast markers.
+- Other campus coverage uses muted aggregate markers at approximately 20 to 30 percent opacity.
+- Owned markers open the corresponding poster summary.
+- Other promoters' markers are not individually clickable.
+- The map does not expose another user's exact scan count or earnings.
 
-Verify end-to-end on staging/prod: enroll, create poster, print, physically scan (activation), second device scans, dashboard count increments, earnings correct.
-Explicitly verify the dedupe hash differs across devices on campus eduroam and on cellular; this is the field test of the NAT/CGNAT design.
-Done when: the written checklist is all green and the eduroam finding is documented.
-Depends: 1.x, 2.x, 4.1, 4.2, 5.1, 7.1, 8.1.
+Every poster card or row shows:
 
-### 10.2 Closed pilot (Jul 28 to Aug 10)
+- Poster name.
+- Template preview.
+- Placement state.
+- Total confirmed unique visitors.
+- Current-period creditable visitors.
+- Current-period earnings.
+- Latest accepted scan date.
+- Download action.
+- Archive action.
 
-5-10 hand-picked UW promoters (club execs first).
-Weekly Discord check-in; track scan counts vs promoter-reported reality (dedupe sanity), scan-to-signup conversion, poster survival time, and support questions (fed back into 7.2).
-Done when: a pilot report exists with the dedupe verdict, a CAC estimate, and the top 3 fixes filed.
-Depends: 10.1, 7.3.
+The dashboard empty state says:
 
-### 10.3 Payout rehearsal (by Aug 20)
+> Create your first official Wat2Do poster.
+> Download it, place it on campus, and scan it yourself to activate the placement.
+> The activation scan earns $0.
 
-Run 3.2 for the pilot period with real (tiny) balances, execute the 3.3 runbook end-to-end including one synthetic flagged account through the 6.2 checklist, send real e-transfers, and mark paid in 4.3.
-Done when: real money is delivered, runbook gaps are fixed, and admin time is measured.
-Depends: 3.2, 3.3, 4.3, 6.2, 10.2.
+The payout history table shows:
 
-### 10.4 Open launch plus frosh blitz (Aug 25 to Sep 3)
+- Period.
+- Creditable visitors.
+- Rate.
+- Amount.
+- Status.
+- Paid date.
 
-Open UW enrollment; announce via clubs and frosh channels; posters up before move-in weekend; monitor the budget cap and flag queries every 2-3 days.
-Sep 1: first public payout run plus an announcement in `#announcements` ("we paid N promoters $X on time"), which is the program's strongest recruiting asset.
-Done when: posters are live before move-in, the Sep 1 run happens on schedule, and the recruiting post is published.
-Depends: everything above.
+### 5. Poster creation
 
-## Parallelization map
+The promoter creation flow replaces the current user-upload and draggable-placement experience for promoter posters.
+The existing flexible asset wizard remains available only where organization and administrator QR workflows require it.
 
-- Fully parallel from day one: 1.1, 2.1, 3.1, 5.1, 5.2, 7.1, 8.1, 8.3, 9.1.
-- Wave 2 (after 1.2/1.3): 1.4, 1.5, 2.2 then 2.3, 6.1.
-- Wave 3: 3.2, 4.1-4.3, 6.2, 7.2, 8.2.
-- Gates: 10.1 to 10.2 to 10.3 to 10.4; 9.2/9.3/5.3 ride alongside during August.
-- Single hard blocker for all real-money activity: 8.1 (ToS) plus 1.1/1.2 (attribution integrity).
+Promoter steps:
+
+1. Choose an approved poster design from the school-eligible gallery.
+2. Enter a recognizable placement name, such as `SLC second floor`.
+3. Choose the number of independently tracked physical copies.
+4. Preview each design with its real unique QR code.
+5. Generate and download PDF or PNG output.
+6. Place each poster and scan it to establish its location.
+
+The template determines the QR placement.
+The promoter cannot drag, resize, replace, or remove the QR area.
+
+If the user chooses multiple copies:
+
+- The backend creates one promoter `qr_codes` row per copy.
+- Every row consumes one active slot.
+- Every PDF page receives the QR for its corresponding row.
+- Filenames or printed footers make the copies distinguishable.
+- The entire operation fails cleanly if it would exceed the 50-poster cap.
+
+The creation screen states:
+
+> Each QR is for one physical location so Wat2Do can measure and map that poster accurately.
+
+### 6. Placement activation
+
+After a promoter places a poster, the dashboard instructs them to scan the printed QR and allow location access.
+This deliberate owner scan verifies the printed asset and supplies the placement coordinates through the existing scan route.
+
+The scan route follows these rules:
+
+- An archived QR still resolves to its configured destination but does not record another payable scan.
+- The poster's first confirmed unique visitor is the non-creditable activation visitor.
+- The first accepted scan with usable coordinates sets the poster location when the poster is not yet placed.
+- A scan without coordinates still redirects successfully.
+- A later accepted scan may set the location if the poster still has no usable coordinates.
+- Once set, ordinary scans do not move the poster.
+- Moving the physical poster requires archiving it and creating a new poster.
+
+### 7. Visitor scan
+
+A public visitor scans `/qr/{id}`.
+The backend records an accepted scan, creates a short-lived landing confirmation token, and redirects to the creating user's school event feed.
+
+The redirect adds:
+
+- `utm_source=poster`.
+- `poster_id={qr_code_id}`.
+
+The destination surface confirms the scan only after the configured landing delay.
+Only confirmed visits participate in earnings.
+The visitor is never required to create an account.
+
+## Earnings definition
+
+The stable visitor identifier is an HMAC of a long-lived anonymous first-party visitor cookie.
+The client IP is separately HMAC-hashed for fraud analysis.
+The detailed user-agent header is discarded after coarse browser and operating-system families are derived.
+Raw IP addresses and raw user-agent strings are never stored.
+
+For each poster:
+
+1. Consider only scans with `landing_confirmed_at`.
+2. Group by `dedupe_hash`.
+3. Treat the first confirmed occurrence of each hash as that visitor's unique visit to the poster.
+4. Count a visitor in a payout period only when that first confirmed occurrence falls inside the period.
+5. Subtract one if the poster's first confirmed unique visitor falls inside that period.
+6. Floor the result at zero.
+7. Multiply the creditable visitor count by the configured rate in integer cents.
+
+The poster's `latest_scan` timestamp updates for every accepted scan, including a repeat visitor that is not creditable.
+This keeps recency independent from earnings eligibility.
+
+## Final data model
+
+Existing scan rows are intentionally discarded when the privacy-preserving scan schema is introduced.
+There is no backfill or compatibility path for legacy scan rows.
+
+### `qr_code_scans`
+
+Removed columns:
+
+- `user_id`.
+- `session_id`.
+- `conversion_actions`.
+- Raw `user_agent`.
+
+Final promoter-relevant columns:
+
+| Column | Purpose |
+| --- | --- |
+| `id` | Scan UUID |
+| `qr_code_id` | Existing QR code foreign key |
+| `scanned_at` | Accepted scan timestamp |
+| `dedupe_hash` | HMAC visitor identifier used for uniqueness |
+| `ip_hash` | Separate HMAC IP signal used only for risk analysis |
+| `browser_family` | Coarse browser family |
+| `os_family` | Coarse operating-system family |
+| `asn` | Optional network ASN captured at record time |
+| `country` | Optional two-letter country code captured at record time |
+| `landing_confirmed_at` | Proof that the visitor remained through the landing delay |
+| `risk_score` | Deterministic risk score |
+| `risk_flags` | Structured risk reasons |
+| `risk_evaluated_at` | Risk evaluation timestamp |
+| `risk_rules_version` | Version of the rules used |
+
+Required indexes cover:
+
+- QR code plus descending scan time.
+- QR code plus dedupe hash.
+- Dedupe hash plus scan time.
+- IP hash plus scan time.
+- Confirmed earnings scans by QR code, dedupe hash, and scan time.
+
+### `qr_codes`
+
+Promoter extensions:
+
+| Column | Purpose |
+| --- | --- |
+| `program` | `standard` or `promoter` |
+| `latest_scan` | Automatically updated timestamp for the latest accepted scan |
+| `poster_template_id` | Stable approved template selection for promoter posters |
+
+Existing fields retain these meanings:
+
+- `created_by` owns the promoter poster.
+- `is_active` means not archived.
+- `latitude` and `longitude` hold the physical placement when known.
+- `filters.school` selects the school event feed.
+- `image_url` may expose the approved template preview resolved by the server.
+
+`poster_template_id` is nullable for standard QR codes and required for newly created promoter posters.
+It is validated against the promoter program control box rather than a separate database table.
+
+### `users`
+
+Promoter enrollment fields:
+
+- `payout_email`.
+- `promoter_tos_accepted_at`.
+- `promoter_tos_version`.
+
+The three fields are either all populated or all null.
+
+### `poster_payouts`
+
+| Column | Purpose |
+| --- | --- |
+| `id` | Payout UUID |
+| `user_id` | Promoter receiving the payout |
+| `period` | First day of the closed UTC month |
+| `payout_email` | Historical email snapshot used for this payout |
+| `rate_cents` | Historical rate snapshot |
+| `amount_cents` | Integer payout amount |
+| `scan_count` | Creditable visitor count |
+| `status` | `pending`, `held`, `paid`, or `voided` |
+| `paid_at` | External payment timestamp |
+| `notes` | Hold, void, or review explanation |
+| `reviewed_by` | Administrator who performed the review action |
+| `created_at` | Creation timestamp |
+| `updated_at` | Last update timestamp |
+
+The table has a unique constraint on `(user_id, period)`.
+The amount must equal `rate_cents * scan_count`.
+Held and voided rows require non-empty notes.
+Paid rows require `paid_at`.
+
+## API contract
+
+### Existing and extended QR routes
+
+| Route | Contract |
+| --- | --- |
+| `GET /qr/{id}` | Record an accepted scan, update `latest_scan`, capture first usable placement coordinates, issue a landing confirmation token for promoter scans, and return redirect configuration |
+| `POST /qr/scans/confirm` | Confirm the landing after the configured delay using the visitor cookie and signed token |
+| `GET /qr/` | List manageable QR codes with program, archive, recency, and never-scanned filters |
+| `POST /qr/` | Preserve organization and administrator creation while allowing enrolled users to create `program=promoter` posters |
+| `PATCH /qr/{id}` | Preserve existing standard QR editing rules and prevent promoter ownership or program mutation |
+| `POST /qr/{id}/archive` | Archive an owned promoter poster and free a slot |
+| `GET /qr/earnings` | Return the authenticated promoter's per-poster and period aggregates |
+
+Promoter creation requires:
+
+- Current enrollment.
+- A school on the user account.
+- Program enabled.
+- An enabled, school-compatible approved template.
+- Fewer than 50 active promoter posters after the complete batch.
+- The server-defined school event-feed destination.
+
+The promoter client supplies `program=promoter` and `poster_template_id`.
+It does not supply an arbitrary destination, school, QR placement, or promoter asset URL.
+
+`GET /qr/earnings` returns:
+
+- Current period.
+- Owned poster rows.
+- Exact owned placement coordinates.
+- Template ID and preview.
+- Lifetime confirmed unique visitors per poster.
+- Current-period confirmed unique visitors per poster.
+- Current-period creditable visitors per poster.
+- Pending cents per poster.
+- Total current-period creditable visitors.
+- Total pending cents.
+- Lifetime paid cents.
+- Active slots used and limit.
+- Program-enabled state.
+
+### Campus coverage map
+
+New route: `GET /qr/map?school={school}`.
+
+The public response contains only aggregated map cells:
+
+- Rounded or clustered latitude and longitude.
+- Poster count.
+- Recent versus quiet poster count.
+- A broad confirmed-visitor bucket.
+
+The public response does not contain:
+
+- QR code IDs.
+- Owner IDs.
+- Exact coordinates.
+- Exact scan counts.
+- Earnings.
+- Fraud information.
+
+The authenticated dashboard combines the public aggregate response with the exact owned-poster rows returned by `GET /qr/earnings`.
+
+### User enrollment
+
+| Route | Contract |
+| --- | --- |
+| `PUT /users/me/promoter-enrollment` | Validate payout email, require Terms acceptance when needed, and stamp the server-owned acceptance timestamp and version |
+
+### Payout routes
+
+| Route | Contract |
+| --- | --- |
+| `GET /payouts/` | Authenticated user lists only their own payout history |
+| `GET /payouts/admin` | Administrator lists and filters payouts by user, period, and status |
+| `GET /payouts/admin/{id}` | Administrator views payout details and fraud reasons |
+| `PATCH /payouts/admin/{id}/status` | Administrator performs a valid reviewed status transition |
+| `POST /payouts/admin/mark-paid` | Administrator marks selected pending payouts paid after external transfer |
+
+Valid administrator transitions:
+
+- `pending` to `held`, with notes.
+- `pending` to `paid`.
+- `held` to `pending`.
+- `held` to `voided`, with notes.
+
+No transition out of `paid` or `voided` is allowed.
+
+## Monthly payout job
+
+Job: `backend/jobs/run_poster_payouts.py`.
+
+For a closed period, the job:
+
+1. Reuses the shared earnings calculation.
+2. Evaluates versioned fraud rules.
+3. Creates or updates one non-paid `poster_payouts` row per user and period.
+4. Sets safe rows to `pending`.
+5. Sets flagged rows to `held` with structured reasons.
+6. Excludes held and zero-value rows from the Interac CSV.
+7. Emits payout email, amount, scan count, and status.
+8. Leaves already paid rows unchanged on rerun.
+
+The job records money that is ready for external settlement.
+It does not send Interac transfers.
+
+## Administrator experience
+
+The existing Admin Posters route receives two explicit tabs:
+
+- Posters.
+- Payouts.
+
+The payout table contains:
+
+- Promoter.
+- Payout email.
+- Period.
+- Creditable visitors.
+- Rate.
+- Amount.
+- Status.
+- Fraud indicator.
+- Actions.
+
+Selecting a row opens a detail drawer or dialog containing:
+
+- Poster contribution breakdown.
+- Fraud reason codes and evidence.
+- Notes.
+- Review history.
+- Payout email.
+- Period boundaries.
+- Relevant timestamps.
+
+Actions use explicit language:
+
+- Hold payout.
+- Release hold.
+- Void payout.
+- Mark as paid.
+
+Before marking a payout paid, the UI states:
+
+> Marking this payout as paid records an external Interac payment.
+> Wat2Do will not send money automatically.
+
+Bulk payment flow:
+
+1. Filter to pending payouts.
+2. Select the rows to pay.
+3. Export the Interac CSV.
+4. Send the transfers externally.
+5. Mark the selected rows paid.
+
+Held payouts must be resolved before they can be included in a bulk paid action.
+
+## Program kill switch
+
+When the promoter program control-box `enabled` value is false:
+
+- Existing QR codes continue redirecting.
+- Existing accepted scans may still be recorded.
+- Earnings and payout history remain readable.
+- New enrollment is blocked.
+- New promoter poster creation is blocked.
+- Existing promoter posters may be archived.
+- The recruitment banner is hidden.
+- Enrolled users see a calm paused notice in their dashboard.
+
+The paused state is not presented as a generic application error.
+
+## Configuration and secrets
+
+Non-secret promoter controls live only in `backend/controlbox/promoter_program.json`.
+
+The control box owns:
+
+- Program enabled state.
+- Rate in cents.
+- Maximum active posters.
+- Landing confirmation delay.
+- Confirmation token lifetime.
+- Payout close delay.
+- Quiet-poster threshold.
+- Terms of Service version.
+- Discord invite URL.
+- Fraud-rule version and thresholds.
+- Approved poster template metadata.
+
+Runtime secrets include:
+
+- `POSTER_HASH_SECRET`.
+- `POSTER_CONFIRMATION_SECRET`.
+
+Production infrastructure must also provide:
+
+- Correct trusted-proxy handling for the real client IP.
+- A production Mapbox token.
+- Scheduled monthly execution of the payout job.
+- Secure handling of generated Interac CSV files.
+- A published and versioned promoter Terms of Service page.
+
+Secrets never appear in control-box files, client bundles, logs, payout notes, or generated CSV output.
+
+## Fraud and privacy controls
+
+- Raw IP addresses are never stored.
+- Raw user-agent strings are never stored.
+- The anonymous visitor cookie is first-party, HTTP-only, secure in production, and scoped to the QR redirect path.
+- Dedupe and IP hashes use domain-separated HMAC inputs.
+- Landing confirmation prevents an immediate redirect request from becoming payable by itself.
+- Risk rules are deterministic and versioned.
+- Promoters do not receive raw promoter scan rows or fraud-rule details.
+- Administrators can review structured fraud reasons before releasing or voiding a payout.
+- A suspicious account is held before any void decision.
+
+## Design principles
+
+The interface follows the strongest recurring patterns from ambassador and QR-management products:
+
+- Explain the value before presenting enrollment.
+- Make compensation concrete and qualification rules visible.
+- Show the next physical action clearly.
+- Keep poster inventory primary and use the map as supporting context.
+- Keep participant and administrator operations separate.
+- Provide support where the physical work happens.
+- Avoid points and gamification when cash is already understandable.
+- Avoid long applications when fraud can be reviewed at payout time.
+
+All new UI composes existing semantic tokens, UI primitives, and layout primitives.
+The implementation adds or extends a shadcn primitive only when the design system lacks the required state.
+Pages remain orchestration surfaces and do not own fetching, caching, asset generation, or payout-transition logic.
+
+## Implementation sequence
+
+### Phase 0: Backend foundation
+
+Status: implemented.
+
+- Privacy-preserving scan migration.
+- Legacy scan-row wipe and removal of `user_id`.
+- Promoter program marker and `latest_scan`.
+- Enrollment fields and endpoint.
+- Promoter QR creation authorization and 50-poster cap.
+- Confirmed-scan earnings calculation.
+- Payout table, services, routes, risk evaluation, and monthly job.
+- Promoter program control box and backend tests.
+
+### Phase 1: Approved template foundation
+
+- Extend the promoter control box with approved template metadata.
+- Add `poster_template_id` to `qr_codes` and API schemas.
+- Add the initial version-controlled poster assets.
+- Make template retirement preserve existing regeneration.
+- Replace promoter upload and draggable placement with template selection.
+- Keep existing organization and administrator asset flows unchanged.
+- Generate one QR row and one unique output page per physical copy.
+
+### Phase 2: Recruitment and enrollment
+
+- Add the shadcn-based feed recruitment banner.
+- Add the public `/promote` page.
+- Add logged-out, unenrolled, enrolled, missing-school, and paused states.
+- Extend Settings with the promoter enrollment section.
+- Add Terms of Service and Discord links.
+- Add the poster item to the authenticated floating dock.
+
+### Phase 3: Promoter dashboard and map
+
+- Add the `/posters` promoter route and page container.
+- Add earnings and payout-history queries using shared TanStack Query ownership.
+- Add summary cards, poster inventory, lifecycle labels, downloads, and archive.
+- Add the safe public school coverage endpoint.
+- Extend the existing map implementation through one shared marker source of truth.
+- Render owned markers precisely and public aggregate coverage approximately.
+- Add deliberate placement instructions and coordinate capture.
+
+### Phase 4: Administrator payout operations
+
+- Add Posters and Payouts tabs to the administrator poster surface.
+- Add payout list filters, statuses, row detail, and fraud reasons.
+- Add hold, release, void, and mark-paid actions.
+- Add pending-only bulk selection and CSV workflow.
+- Add explicit external-payment confirmation copy.
+
+### Phase 5: Production readiness
+
+- Publish and version promoter Terms of Service.
+- Verify production proxy IP handling without storing raw IP.
+- Configure production secrets.
+- Configure Mapbox.
+- Schedule the monthly payout job.
+- Print and test every initial template.
+- Rehearse one normal payout and one held payout.
+- Verify kill-switch behavior.
+- Recruit a small closed pilot before public campus promotion.
+
+## Acceptance criteria
+
+### Promoter
+
+- A public visitor can understand the offer without signing in.
+- An eligible authenticated user can enroll with only payout email and Terms acceptance.
+- An enrolled user can choose only an approved template.
+- A custom-design request leads to Discord and never uploads a file to Wat2Do.
+- Every physical copy receives a unique QR code.
+- A generated poster can be downloaded as PDF or PNG.
+- The placement scan records the first accepted visit and can establish map coordinates.
+- The activation visitor earns $0.
+- A later confirmed unique visitor adds exactly 25 cents.
+- A duplicate visitor does not add another credit for the same poster.
+- The dashboard shows owned poster totals, current pending earnings, slot usage, and payout history.
+- Archiving frees a slot and does not break the QR redirect.
+
+### Privacy and map
+
+- No raw IP or raw user-agent value is persisted or logged.
+- A public map response cannot identify a promoter or exact poster location.
+- A promoter sees exact information only for their own posters.
+- Another promoter's coverage is visually muted and aggregated.
+- Raw promoter scan and fraud details remain administrator-only.
+
+### Administrator
+
+- An administrator can filter payouts by period and status.
+- A held payout displays structured reasons.
+- Holding and voiding require notes.
+- Invalid payout transitions are rejected.
+- Pending payouts can be exported and bulk-marked paid.
+- The UI makes clear that marking paid does not send money.
+- A monthly job rerun cannot overwrite an already paid payout.
+
+### Kill switch
+
+- Pausing the program blocks new enrollment and creation.
+- Existing QR redirects continue working.
+- Existing dashboards and payout history remain readable.
+- Promoters receive an intentional paused message.
+
+## Required verification during implementation
+
+Backend changes require the complete backend test suite.
+Frontend changes require `npm run check` in `frontend/` for lint, i18n audit, and type-checking.
+Generated API types must be refreshed whenever an API contract changes.
+Tests must cover the frontend and backend agreement for every promoter request and response field.
+End-to-end tests must cover enrollment, multi-copy creation, activation, dedupe, archive, payout review, and kill-switch behavior.
+The human runs browser-dependent tests and the production physical-print scan test, in accordance with the repository browser and server policy.

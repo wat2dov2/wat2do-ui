@@ -7,6 +7,9 @@ import type { ApiQrCodeRedirect } from "@/shared/generated";
 import { api, isApiError } from "@/shared/services/apiClient";
 import { isSafeUrl } from "@/shared/utils/url";
 import { ROUTES } from "@/shared/constants/routes";
+import { QP } from "@/shared/constants/queryParams";
+import { STORAGE_KEYS } from "@/shared/constants/storageKeys";
+import { StorageService } from "@/shared/services/storageService";
 import {
   generatedFilterStateToFilterState,
   stagePendingFilterState,
@@ -15,10 +18,15 @@ import {
 /** Response from GET /qr/{id}: backend records the scan and returns redirect config. */
 export type QrRedirectConfig = ApiQrCodeRedirect;
 
-/** Result of fetchQrRedirectFromBackend: config to redirect, requires_location for first scan, or null if not found. */
+/** Resolve to redirect config, an unplaced-poster location retry, or not found. */
 export type QrRedirectResult = QrRedirectConfig | { requires_location: true } | null;
 
-/** Fetch redirect config from backend; backend records the scan. Returns requires_location when poster is inactive and needs lat/lon. */
+export interface PosterScanConfirmation {
+  token: string;
+  posterId: string;
+}
+
+/** Fetch redirect config and record the scan, retrying when an unplaced poster needs location. */
 export async function fetchQrRedirectFromBackend(qrCodeId: string): Promise<QrRedirectResult> {
   try {
     const data = await api.get<QrRedirectConfig>(`/qr/${encodeURIComponent(qrCodeId)}`);
@@ -26,7 +34,7 @@ export async function fetchQrRedirectFromBackend(qrCodeId: string): Promise<QrRe
   } catch (err) {
     if (isApiError(err)) {
       // Backend returns 400 {"detail": "requires_location"} when the poster
-      // is inactive and needs geolocation to activate. Match this precisely
+      // is unplaced and needs a geolocation attempt. Match this precisely
       // so unrelated 400s still bubble up as errors.
       if (
         err.status === 400 &&
@@ -44,7 +52,7 @@ export async function fetchQrRedirectFromBackend(qrCodeId: string): Promise<QrRe
   }
 }
 
-/** First scan: send location so backend can activate poster and record scan. Returns redirect config. */
+/** Retry an unplaced poster scan with coordinates and return its redirect config. */
 export async function fetchQrRedirectWithLocation(
   qrCodeId: string,
   latitude: number,
@@ -66,13 +74,64 @@ function appendRedirectQueryParams(
     : url.toString();
 }
 
+function eventsListDestination(filters: QrRedirectConfig["filters"]): string {
+  if (!filters || typeof filters !== "object" || Array.isArray(filters)) {
+    return ROUTES.HOME;
+  }
+
+  const school = (filters as Record<string, unknown>).school;
+  if (typeof school !== "string" || !school.trim()) {
+    return ROUTES.HOME;
+  }
+
+  return `${ROUTES.HOME}?${new URLSearchParams({
+    [QP.SCHOOL]: school.trim(),
+  })}`;
+}
+
+function stagePosterScanConfirmation(config: QrRedirectConfig): void {
+  const token = config.scan_confirmation_token;
+  const posterId = config.query_params?.[QP.POSTER_ID];
+  if (!token || !posterId) {
+    return;
+  }
+
+  StorageService.setSessionItem<PosterScanConfirmation>(
+    STORAGE_KEYS.POSTER_SCAN_CONFIRMATION,
+    {
+      token,
+      posterId,
+    },
+  );
+}
+
+export function loadPosterScanConfirmation(): PosterScanConfirmation | null {
+  return StorageService.getSessionItem<PosterScanConfirmation | null>(
+    STORAGE_KEYS.POSTER_SCAN_CONFIRMATION,
+    null,
+  );
+}
+
+export function clearPosterScanConfirmation(token: string): void {
+  const staged = loadPosterScanConfirmation();
+  if (staged?.token === token) {
+    StorageService.removeSessionItem(STORAGE_KEYS.POSTER_SCAN_CONFIRMATION);
+  }
+}
+
+export async function confirmPosterLanding(token: string): Promise<void> {
+  await api.post("/qr/scans/confirm", { token });
+}
+
 /** Redirect the browser using backend config (after scan was recorded). */
 export function redirectFromConfig(config: QrRedirectConfig): void {
+  stagePosterScanConfirmation(config);
+
   switch (config.destination_type) {
     case "event":
       if (config.destination_id != null)
         window.location.href = appendRedirectQueryParams(
-          `${ROUTES.HOME}?eventId=${config.destination_id}`,
+          `${ROUTES.HOME}?${QP.EVENT_ID}=${config.destination_id}`,
           config.query_params,
         );
       break;
@@ -84,7 +143,10 @@ export function redirectFromConfig(config: QrRedirectConfig): void {
           ),
         );
       }
-      window.location.href = appendRedirectQueryParams(ROUTES.HOME, config.query_params);
+      window.location.href = appendRedirectQueryParams(
+        eventsListDestination(config.filters),
+        config.query_params,
+      );
       break;
     case "custom-url":
       if (config.destination_id != null && typeof config.destination_id === "string") {

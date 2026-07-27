@@ -77,6 +77,7 @@ jobs:
       TF_VAR_frontend_image: ${{ vars.AWS_BOOTSTRAP_FRONTEND_IMAGE }}
       TF_VAR_backend_image: ${{ vars.AWS_BOOTSTRAP_BACKEND_IMAGE }}
       TF_VAR_email_from: ${{ vars.AWS_EMAIL_FROM }}
+      TF_VAR_cloudfront_origin_secret: ${{ secrets.AWS_CLOUDFRONT_ORIGIN_SECRET }}
 
     steps:
       - uses: actions/checkout@v4
@@ -172,6 +173,7 @@ jobs:
       TF_VAR_frontend_image: ${{ vars.AWS_BOOTSTRAP_FRONTEND_IMAGE }}
       TF_VAR_backend_image: ${{ vars.AWS_BOOTSTRAP_BACKEND_IMAGE }}
       TF_VAR_email_from: ${{ vars.AWS_EMAIL_FROM }}
+      TF_VAR_cloudfront_origin_secret: ${{ secrets.AWS_CLOUDFRONT_ORIGIN_SECRET }}
 
     steps:
       - uses: actions/checkout@v4

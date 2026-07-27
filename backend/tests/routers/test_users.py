@@ -114,6 +114,14 @@ def test_promoter_enrollment_rejects_invalid_email(authenticated_client):
     assert response.status_code == 422
 
 
+def test_promoter_enrollment_rejects_csv_formula_email(authenticated_client):
+    response = authenticated_client.put(
+        "/users/me/promoter-enrollment",
+        json={"payout_email": "=cmd@example.com", "accept_tos": True},
+    )
+    assert response.status_code == 422
+
+
 # ── GET /users/ (admin-only) ────────────────────────────────────────
 
 

@@ -3,7 +3,6 @@ name: Scheduled notification emails
 on:
   schedule:
     - cron: '0 * * * *'
-    - cron: '2-57/5 * * * *'
   workflow_dispatch:
     inputs:
       now:
@@ -85,8 +84,6 @@ jobs:
           notification=all
           if [[ "$SCHEDULE" == "0 * * * *" ]]; then
             notification=morning_email
-          elif [[ -n "$SCHEDULE" ]]; then
-            notification=event_reminder
           fi
           args+=(--notification "$notification")
           python jobs/send_notifications.py "${args[@]}"

@@ -14,7 +14,6 @@ import {
   buildEventSlideModel,
   type SlideEvent,
 } from "@/features/admin/lib/instagramSlides";
-import { getSchoolDisplayName } from "@/shared/constants/schools";
 
 export const runtime = "nodejs";
 
@@ -28,6 +27,10 @@ interface CoverSlideRequest {
   kind: "cover";
   events: SlideEvent[];
   school?: string | null;
+  /** The batch's `local_date`, as `YYYY-MM-DD`. */
+  local_date?: string | null;
+  /** Events added to the school in the batch's scrape window. */
+  new_event_count?: number | null;
   body?: string | null;
 }
 
@@ -125,7 +128,11 @@ async function buildSlide(slide: SlideRequest): Promise<React.ReactElement> {
   return (
     <CoverSlideTemplate
       model={buildCoverSlideModel({
-        schoolName: getSchoolDisplayName(school),
+        school,
+        localDate: slide.local_date ?? "",
+        // A cover always has at least one event, so the carousel size is the
+        // honest floor when the caller cannot say what the scrape found.
+        newEventCount: slide.new_event_count ?? slide.events.length,
         body: slide.body ?? "",
         tiles,
       })}

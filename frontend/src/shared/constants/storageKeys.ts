@@ -25,6 +25,10 @@ export const STORAGE_KEYS = {
   // Signed-in event discovery history
   EVENT_VISITS: "wat2do:event-visits",
 
+  // Promoter campaign UI preference
+  PROMOTER_BANNER_DISMISSED_UNTIL: "wat2do:promoter-banner-dismissed-until",
+
   // Session (sessionStorage, not localStorage)
   SESSION_ID: "wat2do_session_id",
+  POSTER_SCAN_CONFIRMATION: "wat2do:poster-scan-confirmation",
 } as const;

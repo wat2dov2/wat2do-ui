@@ -1,6 +1,9 @@
-from pydantic import BaseModel, EmailStr, Field
+from unicodedata import category
+from urllib.parse import unquote, urlsplit
 
-from core.constants import MAX_SCHOOL_LENGTH
+from pydantic import BaseModel, EmailStr, Field, field_validator
+
+from core.constants import MAX_SCHOOL_LENGTH, MAX_URL_LENGTH
 
 # Password constraints protect the backend even when the frontend
 # validation is bypassed (e.g. direct API calls).  Supabase enforces its own
@@ -13,6 +16,30 @@ _PASSWORD_MAX_LENGTH = 128
 class SendOtpRequest(BaseModel):
     email: EmailStr
     token: str | None = Field(default=None, description="Optional invitation token")
+    return_to: str | None = Field(default=None, max_length=MAX_URL_LENGTH)
+
+    @field_validator("return_to")
+    @classmethod
+    def validate_return_to(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        decoded = value
+        while True:
+            next_value = unquote(decoded)
+            if next_value == decoded:
+                break
+            decoded = next_value
+        parsed = urlsplit(decoded)
+        if (
+            not decoded.startswith("/")
+            or decoded.startswith("//")
+            or parsed.scheme
+            or parsed.netloc
+            or "\\" in decoded
+            or any(category(character) == "Cc" for character in decoded)
+        ):
+            raise ValueError("return_to must be a safe relative application path")
+        return decoded
 
 
 class VerifyOtpRequest(BaseModel):

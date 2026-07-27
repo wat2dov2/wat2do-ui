@@ -40,4 +40,44 @@ export class StorageService {
     }
   }
 
+  static getSessionItem<T>(key: string, defaultValue: T): T {
+    if (typeof document === "undefined") {
+      return defaultValue;
+    }
+
+    try {
+      const item = window.sessionStorage.getItem(key);
+      if (item === null) {
+        return defaultValue;
+      }
+      return JSON.parse(item) as T;
+    } catch (error) {
+      console.error(`Failed to read sessionStorage key "${key}":`, error);
+      return defaultValue;
+    }
+  }
+
+  static setSessionItem<T>(key: string, value: T): void {
+    if (typeof document === "undefined") {
+      return;
+    }
+
+    try {
+      window.sessionStorage.setItem(key, JSON.stringify(value));
+    } catch (error) {
+      console.error(`Failed to write sessionStorage key "${key}":`, error);
+    }
+  }
+
+  static removeSessionItem(key: string): void {
+    if (typeof document === "undefined") {
+      return;
+    }
+
+    try {
+      window.sessionStorage.removeItem(key);
+    } catch (error) {
+      console.error(`Failed to remove sessionStorage key "${key}":`, error);
+    }
+  }
 }

@@ -125,27 +125,29 @@ class _QrCodeMutation(BaseModel):
 
 
 class QrCodeCreate(_QrCodeMutation):
-    """Create a QR code with an immutable program marker."""
+    """Create one standard organization or administrator QR code."""
 
     id: str = Field(
         min_length=1,
         max_length=_MAX_QR_ID_LENGTH,
         pattern=r"^[a-zA-Z0-9_-]+$",
     )
-    program: QrProgram = "standard"
+    program: Literal["standard"] = "standard"
 
-    @model_validator(mode="after")
-    def validate_promoter_destination(self):
-        """Keep promoter posters on the server-defined school events feed."""
-        if self.program != "promoter":
-            return self
-        if self.destination_type != "events-list" or self.destination_id is not None:
-            raise ValueError("promoter posters must use the school events feed")
-        if self.latitude != 0 or self.longitude != 0:
-            raise ValueError("promoter poster coordinates are set by scan activity")
-        if self.filters is not None and not isinstance(self.filters, dict):
-            raise ValueError("promoter poster filters must be an object")
-        return self
+
+class PromoterPosterBatchCreate(BaseModel):
+    """Create one or more independently tracked posters in one transaction."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    program: Literal["promoter"]
+    poster_template_id: str = Field(
+        min_length=1,
+        max_length=100,
+        pattern=r"^[a-z0-9][a-z0-9-]*$",
+    )
+    name: str = Field(min_length=1, max_length=_MAX_QR_NAME_LENGTH)
+    copies: int = Field(default=1, ge=1, le=1000)
 
 
 class QrCodeUpdate(_QrCodeMutation):
@@ -172,6 +174,7 @@ class QrCodeResponse(BaseModel):
     is_active: bool
     program: QrProgram
     latest_scan: datetime | None = None
+    poster_template_id: str | None = None
     image_url: str | None
     latitude: float
     longitude: float
@@ -211,10 +214,18 @@ class PosterEarningsItem(BaseModel):
     name: str
     is_active: bool
     latest_scan: datetime | None
+    latitude: float
+    longitude: float
+    poster_template_id: str | None
+    template_preview_url: str | None
     lifetime_unique_scans: int
     period_unique_scans: int
     period_creditable_scans: int
     pending_cents: int
+
+
+class PromoterPosterBatchResponse(BaseModel):
+    posters: list[QrCodeResponse]
 
 
 class PromoterEarningsResponse(BaseModel):
@@ -226,3 +237,21 @@ class PromoterEarningsResponse(BaseModel):
     active_slots_used: int
     active_slots_limit: int
     program_enabled: bool
+
+
+ConfirmedVisitorBucket = Literal["none", "low", "medium", "high"]
+
+
+class CampusCoverageCell(BaseModel):
+    latitude: float
+    longitude: float
+    poster_count: int
+    recent_poster_count: int
+    quiet_poster_count: int
+    confirmed_visitor_bucket: ConfirmedVisitorBucket
+
+
+class CampusCoverageResponse(BaseModel):
+    school: str
+    quiet_after_days: int
+    cells: list[CampusCoverageCell]

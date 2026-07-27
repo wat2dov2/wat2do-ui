@@ -115,7 +115,11 @@ def send_otp(
     data: SendOtpRequest,
     _rl: None = Depends(send_otp_rate_limiter.ip_dependency()),
 ):
-    auth.send_otp(data.email, data.token)
+    auth.send_otp(
+        data.email,
+        invitation_token=data.token,
+        return_to=data.return_to,
+    )
     return MessageResponse(message="Verification link and code sent successfully")
 
 

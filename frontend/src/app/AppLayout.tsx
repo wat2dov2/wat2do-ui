@@ -6,13 +6,14 @@ import {
   Settings,
   OrganizationChart,
   Ticket,
+  QrCode,
 } from "@/shared/ui/doodle-icons";
 import { TopNav } from "@/app/TopNav";
 import { FloatingDock } from "@/shared/ui/floating-dock";
 import type { FloatingDockItem } from "@/shared/ui/floating-dock";
 import { BackToTopButton } from "@/shared/ui/back-to-top-button";
-import { useAuthState } from "@/features/auth";
 import { ROUTES } from "@/shared/constants/routes";
+import { usePromoterState } from "@/features/posters";
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -21,7 +22,7 @@ interface AppLayoutProps {
 export function AppLayout({ children }: AppLayoutProps) {
   const { t } = useTranslation();
   const pathname = usePathname();
-  const { isAuthenticated } = useAuthState();
+  const promoter = usePromoterState();
 
   const isActive = (href?: string) => {
     if (!href) return false;
@@ -48,8 +49,15 @@ export function AppLayout({ children }: AppLayoutProps) {
       href: ROUTES.CONTACT,
       isActive: isActive(ROUTES.CONTACT),
     },
-    ...(isAuthenticated
+    ...(promoter.isAuthenticated
       ? [
+          {
+            title: t("navigation.posters"),
+            icon: <QrCode className="size-full" />,
+            href: promoter.isEnrolled ? ROUTES.POSTERS : ROUTES.PROMOTE,
+            isActive:
+              isActive(ROUTES.POSTERS) || isActive(ROUTES.PROMOTE),
+          },
           {
             title: t("navigation.settings"),
             icon: <Settings className="size-full" />,

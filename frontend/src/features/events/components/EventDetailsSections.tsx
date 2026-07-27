@@ -134,6 +134,7 @@ function EventInfoTile({ icon: Icon }: { icon: LucideIcon }) {
 /** Date cell: primary occurrence plus a "+N dates" chip listing the rest. */
 function EventDateCell({ event }: { event: Event }) {
   const { t, i18n } = useTranslation();
+  const [extraDatesOpen, setExtraDatesOpen] = useState(false);
   const locale = i18n.language || "en-US";
   const primaryOccurrence = getPrimaryOccurrence(event);
   if (!primaryOccurrence) return null;
@@ -146,11 +147,15 @@ function EventDateCell({ event }: { event: Event }) {
         <p className="text-sm font-semibold text-foreground">{formatCardDate(event, locale)}</p>
         <p className="text-sm text-muted-foreground">{formatCardTime(event)}</p>
         {extraOccurrences.length > 0 && (
-          <Tooltip>
+          <Tooltip open={extraDatesOpen} onOpenChange={setExtraDatesOpen}>
             <TooltipTrigger asChild>
               <button
                 type="button"
                 className="mt-1 inline-flex items-center text-xs font-semibold px-2 py-0.5 bg-secondary text-secondary-foreground border border-border/80 rounded-full"
+                onClick={(clickEvent) => {
+                  clickEvent.preventDefault();
+                  setExtraDatesOpen(true);
+                }}
               >
                 {t("events.moreDatesCount", { count: extraOccurrences.length })}
               </button>
@@ -582,11 +587,11 @@ export function EventDetailsBody({
         </Stack>
 
         <EventAttendeesSection eventId={event.id} />
+
+        <EventContactHostSection event={event} />
       </Stack>
 
       <Stack gap={6} className="order-4 md:col-start-1">
-        <EventContactHostSection event={event} />
-
         <EventMapSection event={event} school={school} />
 
         {showActions ? (

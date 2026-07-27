@@ -4,12 +4,21 @@ from datetime import datetime, timezone
 from uuid import UUID
 
 from core.constants import DEFAULT_LIST_LIMIT
+from core.constants.school_mappings import SCHOOLS
 from core.controlbox import controlbox
 from core.database import get_sb
-from core.errors import PROMOTER_TOS_REQUIRED, USER_HAS_PAYOUTS
+from core.errors import (
+    PROMOTER_PROGRAM_PAUSED,
+    PROMOTER_SCHOOL_REQUIRED,
+    PROMOTER_TOS_REQUIRED,
+    USER_HAS_PAYOUT_REVIEWS,
+    USER_HAS_PAYOUTS,
+    USER_HAS_PROMOTER_POSTERS,
+)
 from core.exceptions import ValidationError
-from core.tables import POSTER_PAYOUTS, USERS
+from core.tables import POSTER_PAYOUT_REVIEWS, POSTER_PAYOUTS, QR_CODES, USERS
 from schemas.user import PromoterEnrollmentUpdate, UserResponse, UserUpdate
+from services.school_context import canonical_school_key
 
 
 def get_user(user_id: UUID) -> UserResponse | None:
@@ -95,6 +104,18 @@ def update_promoter_enrollment(
     if existing is None:
         return None
 
+    is_enrolled = (
+        existing.payout_email is not None
+        and existing.promoter_tos_accepted_at is not None
+        and existing.promoter_tos_version is not None
+    )
+    if not is_enrolled:
+        school = canonical_school_key(existing.school)
+        if not school or school not in SCHOOLS:
+            raise ValidationError(PROMOTER_SCHOOL_REQUIRED)
+        if not controlbox.promoter_program.enabled:
+            raise ValidationError(PROMOTER_PROGRAM_PAUSED)
+
     current_version = controlbox.promoter_program.tos_version
     must_accept = (
         existing.promoter_tos_accepted_at is None
@@ -153,5 +174,26 @@ def delete_user(user_id: UUID) -> bool:
     )
     if payout_response.count or payout_response.data:
         raise ValidationError(USER_HAS_PAYOUTS)
+    poster_response = (
+        get_sb()
+        .table(QR_CODES)
+        .select("id", count="exact")
+        .eq("created_by", str(user_id))
+        .eq("program", "promoter")
+        .limit(1)
+        .execute()
+    )
+    if poster_response.count or poster_response.data:
+        raise ValidationError(USER_HAS_PROMOTER_POSTERS)
+    review_response = (
+        get_sb()
+        .table(POSTER_PAYOUT_REVIEWS)
+        .select("id", count="exact")
+        .eq("reviewed_by", str(user_id))
+        .limit(1)
+        .execute()
+    )
+    if review_response.count or review_response.data:
+        raise ValidationError(USER_HAS_PAYOUT_REVIEWS)
     r = get_sb().table(USERS).delete().eq("id", str(user_id)).execute()
     return bool(r.data)

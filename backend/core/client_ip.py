@@ -46,6 +46,16 @@ def _is_trusted(addr: str) -> bool:
     return any(ip in net for net in _trusted_networks())
 
 
+def _trusted_viewer_ip(value: str | None) -> str | None:
+    """Validate the viewer IP supplied by the CloudFront request function."""
+    if not value:
+        return None
+    try:
+        return str(ipaddress.ip_address(value.strip()))
+    except ValueError:
+        return None
+
+
 def get_client_ip(request: Request) -> str:
     """Return the best-effort real client IP for *request*.
 
@@ -53,19 +63,25 @@ def get_client_ip(request: Request) -> str:
 
     1. If the direct peer (``request.client.host``) is **not** a trusted
        proxy, return it directly - the headers cannot be trusted.
-    2. ``X-Forwarded-For``: walk the comma-separated list from right to
+    2. ``X-Wat2Do-Viewer-IP``: prefer the viewer address overwritten by the
+       production CloudFront request function.
+    3. ``X-Forwarded-For``: walk the comma-separated list from right to
        left and return the first (rightmost) IP that is not a trusted
        proxy.  This is the address appended by the outermost trusted
        proxy and is the most reliable.
-    3. ``X-Real-IP``: if ``X-Forwarded-For`` is absent or yields
+    4. ``X-Real-IP``: if ``X-Forwarded-For`` is absent or yields
        nothing, fall back to this single-value header.
-    4. ``request.client.host`` as a last resort.
+    5. ``request.client.host`` as a last resort.
     """
     peer = request.client.host if request.client else None
 
     # If the direct peer is not a trusted proxy, headers may be forged.
     if not peer or not _is_trusted(peer):
         return peer or "unknown"
+
+    viewer_ip = _trusted_viewer_ip(request.headers.get("x-wat2do-viewer-ip"))
+    if viewer_ip:
+        return viewer_ip
 
     # X-Forwarded-For: rightmost untrusted entry.
     xff = request.headers.get("x-forwarded-for")

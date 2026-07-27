@@ -86,7 +86,8 @@
     "clubPanelTooltip": "Manage your organization",
     "mission": "Mission",
     "contact": "Contact",
-    "goToEvents": "Go to events"
+    "goToEvents": "Go to events",
+    "posters": "Posters"
   },
   "modals": {
     "welcome": {

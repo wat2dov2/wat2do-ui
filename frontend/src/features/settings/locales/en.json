@@ -4,7 +4,8 @@
     "tabs": {
       "profile": "Profile",
       "notifications": "Notifications",
-      "appearance": "Appearance"
+      "appearance": "Appearance",
+      "promoter": "Promoter program"
     },
     "profile": {
       "title": "Profile Information",

@@ -50,6 +50,12 @@ export interface UserProfile {
   /** Currently selected associated organization, if any. */
   organizationId: number | null;
   organizationName: string | null;
+  /** Interac e-Transfer destination for the promoter program. */
+  payoutEmail: string | null;
+  /** Server-owned time at which promoter Terms were accepted. */
+  promoterTosAcceptedAt: string | null;
+  /** Accepted promoter Terms version. */
+  promoterTosVersion: string | null;
 }
 
 // ── In-memory caches ────────────────────────────────────────────────

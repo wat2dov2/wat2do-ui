@@ -105,7 +105,61 @@ class TestSendOtp:
         assert resp.status_code == 200
         body = resp.json()
         assert "message" in body
-        mock_send.assert_called_once_with("student@uwaterloo.ca", None)
+        mock_send.assert_called_once_with(
+            "student@uwaterloo.ca",
+            invitation_token=None,
+            return_to=None,
+        )
+
+    def test_send_otp_forwards_safe_relative_return_path(self, client, monkeypatch):
+        mock_send = MagicMock()
+        monkeypatch.setattr(auth, "send_otp", mock_send)
+
+        response = client.post(
+            "/auth/send-otp",
+            json={
+                **VALID_SEND_OTP,
+                "return_to": "/promote?school=uwaterloo",
+            },
+        )
+
+        assert response.status_code == 200
+        mock_send.assert_called_once_with(
+            "student@uwaterloo.ca",
+            invitation_token=None,
+            return_to="/promote?school=uwaterloo",
+        )
+
+    @pytest.mark.parametrize(
+        "return_to",
+        [
+            "https://evil.example",
+            "//evil.example",
+            r"/safe\evil",
+            "/safe%0AHeader:value",
+            "/safe\u0085Header:value",
+            "%252F%252Fevil.example",
+        ],
+    )
+    def test_send_otp_rejects_unsafe_return_path(
+        self,
+        client,
+        monkeypatch,
+        return_to,
+    ):
+        mock_send = MagicMock()
+        monkeypatch.setattr(auth, "send_otp", mock_send)
+
+        response = client.post(
+            "/auth/send-otp",
+            json={
+                **VALID_SEND_OTP,
+                "return_to": return_to,
+            },
+        )
+
+        assert response.status_code == 422
+        mock_send.assert_not_called()
 
     def test_send_otp_rejects_plain_non_email_string(self, client):
         resp = client.post("/auth/send-otp", json={"email": "not-an-email"})

@@ -10,6 +10,21 @@ variable "domain_name" {
   default     = "wat2do.io"
 }
 
+variable "cloudfront_origin_secret" {
+  description = "Random secret sent by CloudFront and required by the origin ALB."
+  type        = string
+  sensitive   = true
+
+  validation {
+    condition = (
+      length(var.cloudfront_origin_secret) >= 32
+      && length(var.cloudfront_origin_secret) <= 128
+      && can(regex("^[A-Za-z0-9_-]+$", var.cloudfront_origin_secret))
+    )
+    error_message = "cloudfront_origin_secret must be 32 to 128 URL-safe characters."
+  }
+}
+
 variable "frontend_image" {
   description = "Initial immutable frontend ECR image URI with a digest."
   type        = string

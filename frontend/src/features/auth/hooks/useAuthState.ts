@@ -20,11 +20,13 @@ import {
 import { ROLE_ADMIN } from "@/shared/constants/roles";
 
 export interface AuthState {
+  userId: string | null;
   userEmail: string | null;
   /** Cached ``users.full_name``; null when unset or signed out. */
   userFullName: string | null;
   /** Cached ``users.avatar_url``; null when unset or signed out. */
   userAvatarUrl: string | null;
+  school: string | null;
   /** Mirrors `isAuthenticated()`: has access token AND cached email. */
   isAuthenticated: boolean;
   /** Same as `isAuthenticated`; UI gates treat a valid session as "profile ready". */
@@ -34,14 +36,19 @@ export interface AuthState {
   clubs: UserOrganizationSummary[];
   organizationId: number | null;
   organizationName: string | null;
+  payoutEmail: string | null;
+  promoterTosAcceptedAt: string | null;
+  promoterTosVersion: string | null;
   /** Role from the cached profile; defaults to `"user"`. */
   role: "user" | "admin";
 }
 
 const SERVER_AUTH_STATE: AuthState = Object.freeze({
+  userId: null,
   userEmail: null,
   userFullName: null,
   userAvatarUrl: null,
+  school: null,
   isAuthenticated: false,
   profileCompleted: false,
   isAdmin: false,
@@ -49,6 +56,9 @@ const SERVER_AUTH_STATE: AuthState = Object.freeze({
   clubs: [],
   organizationId: null,
   organizationName: null,
+  payoutEmail: null,
+  promoterTosAcceptedAt: null,
+  promoterTosVersion: null,
   role: "user",
 });
 
@@ -67,9 +77,11 @@ function computeSnapshot(): AuthState {
   const role = profile?.role ?? "user";
   const clubs = authed ? profile?.clubs ?? [] : [];
   return Object.freeze({
+    userId: authed ? profile?.id ?? null : null,
     userEmail: email,
     userFullName: authed ? profile?.fullName ?? null : null,
     userAvatarUrl: authed ? profile?.avatarUrl ?? null : null,
+    school: authed ? profile?.school || null : null,
     isAuthenticated: authed,
     profileCompleted,
     isAdmin: authed && role === ROLE_ADMIN,
@@ -77,6 +89,9 @@ function computeSnapshot(): AuthState {
     clubs,
     organizationId: authed ? profile?.organizationId ?? null : null,
     organizationName: authed ? profile?.organizationName ?? null : null,
+    payoutEmail: authed ? profile?.payoutEmail ?? null : null,
+    promoterTosAcceptedAt: authed ? profile?.promoterTosAcceptedAt ?? null : null,
+    promoterTosVersion: authed ? profile?.promoterTosVersion ?? null : null,
     role,
   });
 }

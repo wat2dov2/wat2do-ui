@@ -50,6 +50,78 @@ const SCHOOL_LABELS: Record<string, string> = {
   berkeley: "UC Berkeley",
 };
 
+/**
+ * Each school's brand pair, used to theme generated artwork.
+ *
+ * `primary` is the field the artwork sits on and `ink` is what reads on top of
+ * it, so the two must always clear WCAG AA against each other. Slugs missing
+ * here fall back to the Wat2Do pair, which is why this map only needs a row
+ * once a school's own colours are known.
+ *
+ * This lives beside the display names rather than in Supabase on purpose:
+ * migration 20260629160000 moved school metadata out of the DB, and the only
+ * readers - the carousel cover preview and the satori render route - are both
+ * frontend, so a column would buy a round trip and nothing else.
+ */
+const WAT2DO_COLORS: SchoolColors = { primary: "#FFC629", ink: "#111111" };
+
+export interface SchoolColors {
+  /** Field colour: large flat areas and the accent rules on top of ink. */
+  primary: string;
+  /** Everything that has to read against `primary`. */
+  ink: string;
+}
+
+const SCHOOL_COLORS: Record<string, SchoolColors> = {
+  uwaterloo: { primary: "#FFD54F", ink: "#111111" },
+  utoronto: { primary: "#002A5C", ink: "#FFFFFF" },
+  utsc: { primary: "#00A189", ink: "#0B231E" },
+  utm: { primary: "#0F4D92", ink: "#FFFFFF" },
+  mcgill: { primary: "#ED1B2F", ink: "#FFFFFF" },
+  mcmaster: { primary: "#7A003C", ink: "#FDBF57" },
+  western: { primary: "#4F2683", ink: "#FFFFFF" },
+  queens: { primary: "#B90E31", ink: "#FFFFFF" },
+  carleton: { primary: "#C8102E", ink: "#FFFFFF" },
+  brock: { primary: "#CC0000", ink: "#FFFFFF" },
+  wlu: { primary: "#4B2E39", ink: "#FFC72C" },
+  york: { primary: "#E31837", ink: "#FFFFFF" },
+  tmu: { primary: "#004C9B", ink: "#FFFFFF" },
+  uottawa: { primary: "#8A1538", ink: "#FFFFFF" },
+  ocad: { primary: "#000000", ink: "#FFFFFF" },
+  ualberta: { primary: "#007C41", ink: "#FFDB05" },
+  laval: { primary: "#DA291C", ink: "#FFFFFF" },
+  memorial: { primary: "#8C2332", ink: "#FFFFFF" },
+  sfu: { primary: "#A6192E", ink: "#FFFFFF" },
+  udem: { primary: "#0057B8", ink: "#FFFFFF" },
+  umanitoba: { primary: "#7A003C", ink: "#FFFFFF" },
+  concordia: { primary: "#912338", ink: "#FFFFFF" },
+  dalhousie: { primary: "#000000", ink: "#FFCC00" },
+  guelph: { primary: "#C20430", ink: "#FFFFFF" },
+  ucalgary: { primary: "#D6001C", ink: "#FFFFFF" },
+  usask: { primary: "#006F3C", ink: "#FFFFFF" },
+  uvic: { primary: "#005493", ink: "#F5AA1C" },
+  windsor: { primary: "#0057B7", ink: "#FFFFFF" },
+  uqam: { primary: "#009A44", ink: "#FFFFFF" },
+  ontariotech: { primary: "#003C71", ink: "#FFFFFF" },
+  cornell: { primary: "#B31B1B", ink: "#FFFFFF" },
+  nyu: { primary: "#57068C", ink: "#FFFFFF" },
+  upenn: { primary: "#011F5B", ink: "#FFFFFF" },
+  columbia: { primary: "#B9D9EB", ink: "#0B2B3C" },
+  mit: { primary: "#A31F34", ink: "#FFFFFF" },
+  ubc: { primary: "#002145", ink: "#FFFFFF" },
+  berkeley: { primary: "#003262", ink: "#FDB515" },
+};
+
+/** The brand pair generated artwork should use for a school. */
+export function getSchoolColors(school: string | null | undefined): SchoolColors {
+  return SCHOOL_COLORS[resolveSchool(school)] ?? WAT2DO_COLORS;
+}
+
+/** The canonical public origin for a school, matching the backend's captions. */
+export function getSchoolPublicUrl(school: string | null | undefined): string {
+  return `${resolveSchool(school)}.wat2do.io`;
+}
+
 function normalizeSchoolSlug(value: string): string {
   return value.trim().toLowerCase().replace(/_/g, "-");
 }

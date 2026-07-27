@@ -993,6 +993,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/payouts/admin/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Export Pending Payouts */
+        post: operations["export_pending_payouts_payouts_admin_export_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/payouts/admin/{payout_id}": {
         parameters: {
             query?: never;
@@ -1110,6 +1127,23 @@ export interface paths {
         put?: never;
         /** Confirm Scan */
         post: operations["confirm_scan_qr_scans_confirm_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/qr/map": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Campus Coverage */
+        get: operations["get_campus_coverage_qr_map_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1547,6 +1581,20 @@ export interface components {
             payout: components["schemas"]["PosterPayoutResponse"];
             /** Fraud Reasons */
             fraud_reasons: components["schemas"]["PayoutFraudReason"][];
+            /** Contributions */
+            contributions: components["schemas"]["PosterPayoutContribution"][];
+            /**
+             * Period Start
+             * Format: date-time
+             */
+            period_start: string;
+            /**
+             * Period End
+             * Format: date-time
+             */
+            period_end: string;
+            /** Review History */
+            review_history: components["schemas"]["PayoutReviewEvent"][];
         };
         /**
          * AppConstantsResponse
@@ -1604,11 +1652,6 @@ export interface components {
             /** File */
             file: string;
         };
-        /** BulkMarkPaidRequest */
-        BulkMarkPaidRequest: {
-            /** Payout Ids */
-            payout_ids: string[];
-        };
         /**
          * CalendarTokenResponse
          * @description Returned by GET /calendar/token and POST /calendar/token/regenerate.
@@ -1618,6 +1661,33 @@ export interface components {
             token: string;
             /** Feed Url */
             feed_url: string;
+        };
+        /** CampusCoverageCell */
+        CampusCoverageCell: {
+            /** Latitude */
+            latitude: number;
+            /** Longitude */
+            longitude: number;
+            /** Poster Count */
+            poster_count: number;
+            /** Recent Poster Count */
+            recent_poster_count: number;
+            /** Quiet Poster Count */
+            quiet_poster_count: number;
+            /**
+             * Confirmed Visitor Bucket
+             * @enum {string}
+             */
+            confirmed_visitor_bucket: "none" | "low" | "medium" | "high";
+        };
+        /** CampusCoverageResponse */
+        CampusCoverageResponse: {
+            /** School */
+            school: string;
+            /** Quiet After Days */
+            quiet_after_days: number;
+            /** Cells */
+            cells: components["schemas"]["CampusCoverageCell"][];
         };
         /** CreditBalanceResponse */
         CreditBalanceResponse: {
@@ -2114,6 +2184,11 @@ export interface components {
              * @default
              */
             cover_body: string;
+            /**
+             * New Event Count
+             * @default 0
+             */
+            new_event_count: number;
             /** Ai Model */
             ai_model?: string | null;
             /** Version */
@@ -2122,6 +2197,8 @@ export interface components {
             error_message?: string | null;
             /** Meta Media Id */
             meta_media_id?: string | null;
+            /** Published Cover Url */
+            published_cover_url?: string | null;
             /**
              * Created At
              * Format: date-time
@@ -2170,6 +2247,8 @@ export interface components {
             /** Position */
             position: number;
             event: components["schemas"]["EventSummaryResponse"];
+            /** Published Asset Url */
+            published_asset_url?: string | null;
             /** Published At */
             published_at?: string | null;
             /**
@@ -2836,6 +2915,13 @@ export interface components {
             /** Total Pages */
             total_pages: number;
         };
+        /** PayoutCsvExportResponse */
+        PayoutCsvExportResponse: {
+            /** Filename */
+            filename: string;
+            /** Content */
+            content: string;
+        };
         /** PayoutFraudReason */
         PayoutFraudReason: {
             /** Code */
@@ -2848,6 +2934,41 @@ export interface components {
             evidence: {
                 [key: string]: unknown;
             };
+        };
+        /** PayoutReviewEvent */
+        PayoutReviewEvent: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * From Status
+             * @enum {string}
+             */
+            from_status: "pending" | "held" | "paid" | "voided";
+            /**
+             * To Status
+             * @enum {string}
+             */
+            to_status: "pending" | "held" | "paid" | "voided";
+            /** Notes */
+            notes: string | null;
+            /**
+             * Reviewed By
+             * Format: uuid
+             */
+            reviewed_by: string;
+            /**
+             * Reviewed At
+             * Format: date-time
+             */
+            reviewed_at: string;
+        };
+        /** PayoutSelectionRequest */
+        PayoutSelectionRequest: {
+            /** Payout Ids */
+            payout_ids: string[];
         };
         /** PayoutStatusUpdate */
         PayoutStatusUpdate: {
@@ -2888,6 +3009,14 @@ export interface components {
             is_active: boolean;
             /** Latest Scan */
             latest_scan: string | null;
+            /** Latitude */
+            latitude: number;
+            /** Longitude */
+            longitude: number;
+            /** Poster Template Id */
+            poster_template_id: string | null;
+            /** Template Preview Url */
+            template_preview_url: string | null;
             /** Lifetime Unique Scans */
             lifetime_unique_scans: number;
             /** Period Unique Scans */
@@ -2896,6 +3025,19 @@ export interface components {
             period_creditable_scans: number;
             /** Pending Cents */
             pending_cents: number;
+        };
+        /** PosterPayoutContribution */
+        PosterPayoutContribution: {
+            /** Qr Code Id */
+            qr_code_id: string;
+            /** Name */
+            name: string;
+            /** Poster Template Id */
+            poster_template_id: string | null;
+            /** Scan Count */
+            scan_count: number;
+            /** Amount Cents */
+            amount_cents: number;
         };
         /** PosterPayoutResponse */
         PosterPayoutResponse: {
@@ -2930,6 +3072,12 @@ export interface components {
              * @enum {string}
              */
             status: "pending" | "held" | "paid" | "voided";
+            /**
+             * Fraud Status
+             * @default clear
+             * @enum {string}
+             */
+            fraud_status: "flagged" | "clear";
             /** Paid At */
             paid_at: string | null;
             /** Notes */
@@ -2979,6 +3127,31 @@ export interface components {
              */
             accept_tos: boolean;
         };
+        /**
+         * PromoterPosterBatchCreate
+         * @description Create one or more independently tracked posters in one transaction.
+         */
+        PromoterPosterBatchCreate: {
+            /**
+             * Program
+             * @constant
+             */
+            program: "promoter";
+            /** Poster Template Id */
+            poster_template_id: string;
+            /** Name */
+            name: string;
+            /**
+             * Copies
+             * @default 1
+             */
+            copies: number;
+        };
+        /** PromoterPosterBatchResponse */
+        PromoterPosterBatchResponse: {
+            /** Posters */
+            posters: components["schemas"]["QrCodeResponse"][];
+        };
         /** PromotionCreate */
         PromotionCreate: {
             /** Event Id */
@@ -3014,7 +3187,7 @@ export interface components {
         };
         /**
          * QrCodeCreate
-         * @description Create a QR code with an immutable program marker.
+         * @description Create one standard organization or administrator QR code.
          */
         QrCodeCreate: {
             /** Name */
@@ -3049,9 +3222,9 @@ export interface components {
             /**
              * Program
              * @default standard
-             * @enum {string}
+             * @constant
              */
-            program: "standard" | "promoter";
+            program: "standard";
         };
         /**
          * QrCodeRedirect
@@ -3111,6 +3284,8 @@ export interface components {
             program: "standard" | "promoter";
             /** Latest Scan */
             latest_scan?: string | null;
+            /** Poster Template Id */
+            poster_template_id?: string | null;
             /** Image Url */
             image_url: string | null;
             /** Latitude */
@@ -3274,6 +3449,8 @@ export interface components {
              * @description Optional invitation token
              */
             token?: string | null;
+            /** Return To */
+            return_to?: string | null;
         };
         /**
          * SubmissionCreate
@@ -5690,6 +5867,12 @@ export interface operations {
                 user_id?: string | null;
                 payout_status?: ("pending" | "held" | "paid" | "voided") | null;
                 period?: string | null;
+                payout_email?: string | null;
+                period_from?: string | null;
+                period_to?: string | null;
+                min_amount_cents?: number | null;
+                max_amount_cents?: number | null;
+                fraud_status?: ("flagged" | "clear") | null;
                 /** @description Page number (1-indexed) */
                 page?: number;
                 /** @description Items per page (max 100) */
@@ -5708,6 +5891,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PaginatedResponse_PosterPayoutResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_pending_payouts_payouts_admin_export_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PayoutSelectionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PayoutCsvExportResponse"];
                 };
             };
             /** @description Validation Error */
@@ -5796,7 +6012,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["BulkMarkPaidRequest"];
+                "application/json": components["schemas"]["PayoutSelectionRequest"];
             };
         };
         responses: {
@@ -5869,7 +6085,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["QrCodeCreate"];
+                "application/json": components["schemas"]["QrCodeCreate"] | components["schemas"]["PromoterPosterBatchCreate"];
             };
         };
         responses: {
@@ -5879,7 +6095,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["QrCodeResponse"];
+                    "application/json": components["schemas"]["QrCodeResponse"] | components["schemas"]["PromoterPosterBatchResponse"];
                 };
             };
             /** @description Validation Error */
@@ -5970,6 +6186,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["QrScanConfirmResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_campus_coverage_qr_map_get: {
+        parameters: {
+            query: {
+                school: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CampusCoverageResponse"];
                 };
             };
             /** @description Validation Error */

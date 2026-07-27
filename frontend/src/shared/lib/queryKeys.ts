@@ -12,6 +12,20 @@ export const queryKeys = {
     all: ["posters"] as const,
     list: (school: string | null | undefined, refreshKey?: number) =>
       [...queryKeys.posters.all, "list", school ?? "", refreshKey ?? 0] as const,
+    earnings: (userId: string | null | undefined) =>
+      [...queryKeys.posters.all, "earnings", userId ?? ""] as const,
+    coverage: (school: string | null | undefined) =>
+      [...queryKeys.posters.all, "coverage", school ?? ""] as const,
+    payouts: (userId: string | null | undefined) =>
+      [...queryKeys.posters.all, "payouts", userId ?? ""] as const,
+  },
+  posterPayouts: {
+    all: ["poster-payouts"] as const,
+    admin: () => [...queryKeys.posterPayouts.all, "admin"] as const,
+    list: (filters: Record<string, unknown>) =>
+      [...queryKeys.posterPayouts.admin(), "list", filters] as const,
+    detail: (payoutId: string) =>
+      [...queryKeys.posterPayouts.admin(), "detail", payoutId] as const,
   },
   scans: {
     all: ["scans"] as const,

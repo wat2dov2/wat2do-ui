@@ -26,11 +26,29 @@ def render_event_asset(event: dict[str, Any]) -> str:
     return _upload_png(_render({"kind": "event", "event": event, "school": event.get("school")}))
 
 
-def render_cover_asset(events: list[dict[str, Any]], school: str, body: str = "") -> str:
+def render_cover_asset(
+    events: list[dict[str, Any]],
+    school: str,
+    body: str = "",
+    *,
+    local_date: str = "",
+    new_event_count: int = 0,
+) -> str:
     """Render and upload the cover slide compiled from the selected events."""
     if not events:
         raise ValueError("at least one event is required to render a cover")
-    return _upload_png(_render({"kind": "cover", "events": events, "school": school, "body": body}))
+    return _upload_png(
+        _render(
+            {
+                "kind": "cover",
+                "events": events,
+                "school": school,
+                "body": body,
+                "local_date": local_date,
+                "new_event_count": new_event_count,
+            }
+        )
+    )
 
 
 def _render(slide: dict[str, Any]) -> bytes:

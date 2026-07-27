@@ -6,6 +6,8 @@ import { sendOtpAPI, verifyOtpAPI } from "@/features/auth/api/auth.api";
 
 import { ApiError, isApiError } from "@/shared/services/apiClient";
 import { DEFAULT_SCHOOL } from "@/shared/constants/schools";
+import { QP } from "@/shared/constants/queryParams";
+import { getSafeReturnTo } from "@/features/auth/utils/returnTo";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -37,6 +39,7 @@ export function useAuthEntryFlow({
   const searchParams = useSearchParams();
   const tokenParam = searchParams.get("token");
   const emailParam = searchParams.get("email");
+  const returnTo = getSafeReturnTo(searchParams.get(QP.RETURN_TO));
 
   const [email, setEmail] = useState(emailParam || "");
   const [otpToken, setOtpToken] = useState("");
@@ -73,7 +76,7 @@ export function useAuthEntryFlow({
     setError(null);
 
     try {
-      await sendOtpAPI(trimmed, tokenParam || undefined);
+      await sendOtpAPI(trimmed, tokenParam || undefined, returnTo || undefined);
     } catch (err) {
       console.error("Resend OTP failed:", err);
       if (isApiError(err)) {
@@ -85,7 +88,7 @@ export function useAuthEntryFlow({
       authRequestInFlightRef.current = false;
       setIsLoading(false);
     }
-  }, [email, tokenParam, isLoading, t]);
+  }, [email, tokenParam, returnTo, isLoading, t]);
 
   const handleContinue = useCallback(async () => {
     if (!isFormValid || isLoading || authRequestInFlightRef.current) return;
@@ -97,7 +100,7 @@ export function useAuthEntryFlow({
 
     try {
       if (!emailSent) {
-        await sendOtpAPI(trimmed, tokenParam || undefined);
+        await sendOtpAPI(trimmed, tokenParam || undefined, returnTo || undefined);
         setEmailSent(true);
       } else {
         const result = await verifyOtpAPI(trimmed, otpToken.trim());
@@ -118,7 +121,7 @@ export function useAuthEntryFlow({
       authRequestInFlightRef.current = false;
       setIsLoading(false);
     }
-  }, [isFormValid, isLoading, email, emailSent, otpToken, onContinueToOnboarding, onContinueToHome, t, tokenParam]);
+  }, [isFormValid, isLoading, email, emailSent, otpToken, onContinueToOnboarding, onContinueToHome, t, tokenParam, returnTo]);
 
   return {
     email,

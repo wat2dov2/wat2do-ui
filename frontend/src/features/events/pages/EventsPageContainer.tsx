@@ -22,6 +22,8 @@ import { useMutableSearchParams } from "@/shared/hooks/useMutableSearchParams";
 import { controlBox } from "@/shared/config/controlBox";
 import { LightRays } from "@/registry/magicui/light-rays";
 import type { ViewMode, Event } from "@/shared/types";
+import { usePosterLandingConfirmation } from "@/features/qrcode";
+import { PromoterRecruitmentBanner } from "@/features/posters";
 
 interface QuickFilterButtonConfig {
   id: string;
@@ -31,6 +33,8 @@ interface QuickFilterButtonConfig {
 }
 
 export function EventsPageContainer() {
+  usePosterLandingConfirmation();
+
   const viewMode = useUIStore((s) => s.viewMode);
   const setViewMode = useUIStore((s) => s.setViewMode);
   const filterViewMode = useUIStore((s) => s.filterViewMode);
@@ -171,6 +175,7 @@ export function EventsPageContainer() {
         {isDarkMode && <LightRays />}
       </div>
       <div className="space-y-2">
+        <PromoterRecruitmentBanner />
         <div className="space-y-3 pb-2">
           <div className="flex items-center justify-between gap-3">
             <EventCount

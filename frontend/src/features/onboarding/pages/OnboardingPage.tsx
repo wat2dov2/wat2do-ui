@@ -17,6 +17,7 @@ import { MultiSelect } from "@/shared/ui/multi-select";
 import { getEventCategories } from "@/shared/data/eventCategories";
 import { AnimatedThemeToggler } from "@/shared/components/AnimatedThemeToggler";
 import { translateSchool } from "@/shared/utils/schoolTranslation";
+import { getSafeReturnTo } from "@/features/auth/utils/returnTo";
 
 const stepVariants = {
   enter: { opacity: 0, y: 20 },
@@ -42,6 +43,10 @@ export function OnboardingPage() {
   const initialSchool = useMemo(() => {
     return searchParams.get(QP.SCHOOL) ?? "";
   }, [searchParams]);
+  const returnTo = useMemo(
+    () => getSafeReturnTo(searchParams.get(QP.RETURN_TO)),
+    [searchParams],
+  );
 
   const handleComplete = useCallback(
     (data: {
@@ -63,6 +68,7 @@ export function OnboardingPage() {
       }
 
       const profile = {
+        ...getUserProfile(),
         id: userId,
         fullName: getUserProfile()?.fullName ?? null,
         avatarUrl: getUserProfile()?.avatarUrl ?? null,
@@ -75,14 +81,17 @@ export function OnboardingPage() {
         clubs: [],
         organizationId: null,
         organizationName: null,
+        payoutEmail: getUserProfile()?.payoutEmail ?? null,
+        promoterTosAcceptedAt: getUserProfile()?.promoterTosAcceptedAt ?? null,
+        promoterTosVersion: getUserProfile()?.promoterTosVersion ?? null,
       };
 
       // Persist to localStorage before navigate so `useAuthState` sees
       // `profileCompleted` (mirrors authenticated session) on the next render.
       persistProfile(profile);
-      router.push(homeWithSchool);
+      router.push(returnTo ?? homeWithSchool);
     },
-    [router, persistProfile]
+    [router, persistProfile, returnTo]
   );
 
   const flow = useOnboardingFlow({ onComplete: handleComplete, initialSchool });

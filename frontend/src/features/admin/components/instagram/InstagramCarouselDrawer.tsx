@@ -29,6 +29,7 @@ import {
   carouselEventIds,
   carouselSlideEvents,
   isBatchEditable,
+  publishedCarouselAssets,
 } from "@/features/admin/lib/instagramCarousel";
 import { CarouselSlidePreview } from "@/features/admin/components/instagram/CarouselSlidePreview";
 
@@ -78,6 +79,9 @@ export function InstagramCarouselDrawer({
   // Slides render from the saved carousel, so an event edited here shows up in
   // the preview once the draft is saved and the batch comes back.
   const slideEvents = useMemo(() => carouselSlideEvents(batch), [batch]);
+  // A published run shows the PNGs Instagram was given, not a fresh render of
+  // events that have moved on since. Slide 0 is the cover.
+  const publishedAssets = useMemo(() => publishedCarouselAssets(batch), [batch]);
   const coverTiles = useMemo(
     () =>
       eventIds
@@ -246,10 +250,13 @@ export function InstagramCarouselDrawer({
                 slideCount={slideCount}
                 event={previewedSlideEvent}
                 cover={{
-                  schoolName: getSchoolDisplayName(batch.school),
+                  school: batch.school,
+                  localDate: batch.local_date,
+                  newEventCount: batch.new_event_count,
                   body: coverBody,
                   tiles: coverTiles,
                 }}
+                publishedAssetUrl={publishedAssets[slideIndex] ?? null}
               />
 
               <Button
@@ -264,7 +271,12 @@ export function InstagramCarouselDrawer({
               </Button>
             </Stack>
 
-            {addingEvent ? (
+            {/*
+              A published run is a record, so it has no editing surface at all -
+              the slides above are the images that were posted, and the caption
+              below reads back what went with them.
+            */}
+            {!editable ? null : addingEvent ? (
               <Section variant="surface" title={t("admin.instagramPublishing.addEvent")}>
                 <SubmitEventFlow
                   canCreateEvents

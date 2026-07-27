@@ -34,10 +34,11 @@ import { usePagination } from "@/shared/hooks";
 import { usePostersFilters } from "@/features/posters/hooks/usePostersFilters";
 import { formatRelativeTimeCompact } from "@/shared/utils/relativeTime";
 import type { Event } from "@/shared/types";
-import type { QRCode, QRCodeScan } from "@/features/posters/types";
+import type { PosterMapMarker, QRCode } from "@/features/posters/types";
 import { POSTER_MAP_HEIGHT } from "@/shared/constants/ui";
 import { QP } from "@/shared/constants/queryParams";
 import { useMutableSearchParams } from "@/shared/hooks/useMutableSearchParams";
+import { buildManagedPosterMapMarkers } from "@/features/posters/utils/posterMapMarkers";
 
 type TimeFilter = "today" | "yesterday" | "last7days" | "last30days" | "alltime";
 
@@ -46,8 +47,7 @@ type TimeFilter = "today" | "yesterday" | "last7days" | "last30days" | "alltime"
 
 /** Props for the lazy-loaded scan map component. */
 interface ScanMapProps {
-  scans: QRCodeScan[];
-  posters: QRCode[];
+  markers: PosterMapMarker[];
   height: string;
   onMarkerClick: (qrCodeId: string) => void;
 }
@@ -109,6 +109,14 @@ export function PostersPageContent({
       (a, b) => new Date(b.scannedAt).getTime() - new Date(a.scannedAt).getTime()
     );
   }, [filters.scansMatchingPosterSearch]);
+  const mapMarkers = useMemo(
+    () =>
+      buildManagedPosterMapMarkers(
+        filters.qrCodes,
+        filters.scansMatchingPosterSearch,
+      ),
+    [filters.qrCodes, filters.scansMatchingPosterSearch],
+  );
 
   const scansPagination = usePagination({
     items: sortedScans,
@@ -185,8 +193,7 @@ export function PostersPageContent({
                 }
               >
                 <ScanMapComponent
-                  scans={filters.scansMatchingPosterSearch}
-                  posters={filters.qrCodes}
+                  markers={mapMarkers}
                   height={POSTER_MAP_HEIGHT}
                   onMarkerClick={(qrCodeId) => {
                     const qrCode = filters.qrCodes.find(qr => qr.id === qrCodeId);

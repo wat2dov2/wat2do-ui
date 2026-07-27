@@ -32,6 +32,18 @@ def test_checked_in_controlbox_is_valid() -> None:
     assert controlbox.instagram_publishing.token_refresh_lead_days == 14
     assert controlbox.promoter_program.rate_cents == 25
     assert controlbox.promoter_program.maximum_active_posters == 50
+    assert controlbox.promoter_program.quiet_poster_days == 30
+    assert controlbox.promoter_program.banner_dismissal_days == 30
+    assert str(controlbox.promoter_program.discord_invite_url) == ("https://discord.gg/uVcZcp4q8R")
+    assert [template.id for template in controlbox.promoter_program.approved_templates] == [
+        "campus-colour",
+        "campus-black-white",
+        "campus-low-ink",
+    ]
+    assert all(
+        template.qr_placement.width == pytest.approx(0.470588)
+        for template in controlbox.promoter_program.approved_templates
+    )
 
 
 def test_unknown_control_is_rejected(tmp_path: Path) -> None:
@@ -83,4 +95,41 @@ def test_missing_feature_control_is_rejected(tmp_path: Path) -> None:
     (path / "admin.json").unlink()
 
     with pytest.raises(RuntimeError, match="Feature control file not found"):
+        load_controlbox(path)
+
+
+def test_promoter_template_qr_must_fit_inside_asset(tmp_path: Path) -> None:
+    path = _write_control(
+        tmp_path,
+        "promoter_program",
+        lambda payload: payload["approved_templates"][0]["qr_placement"].update(
+            {"x": 0.8, "width": 0.4}
+        ),
+    )
+
+    with pytest.raises(ValidationError, match="must fit inside the asset"):
+        load_controlbox(path)
+
+
+def test_promoter_template_ids_must_be_unique(tmp_path: Path) -> None:
+    path = _write_control(
+        tmp_path,
+        "promoter_program",
+        lambda payload: payload["approved_templates"][1].update(
+            {"id": payload["approved_templates"][0]["id"]}
+        ),
+    )
+
+    with pytest.raises(ValidationError, match="template IDs must be unique"):
+        load_controlbox(path)
+
+
+def test_promoter_map_buckets_must_be_unique_and_ascending(tmp_path: Path) -> None:
+    path = _write_control(
+        tmp_path,
+        "promoter_program",
+        lambda payload: payload.update({"map_visitor_bucket_maximums": [0, 49, 9]}),
+    )
+
+    with pytest.raises(ValidationError, match="visitor bucket maximums"):
         load_controlbox(path)

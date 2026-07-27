@@ -143,9 +143,12 @@ def _batch(event_ids: list[int], **overrides) -> dict:
         "account_key": "wat2do",
         "instagram_user_id": "17841476154506771",
         "school": "uwaterloo",
+        "local_date": "2026-07-26",
         "status": "ready_for_review",
         "caption": "Caption",
         "cover_body": "Body",
+        # Counted on read from the batch's window; the cover leads with it.
+        "new_event_count": 20,
         "version": 3,
         "items": [
             {
@@ -269,8 +272,10 @@ def test_publish_batch_renders_the_slides_from_live_event_data(monkeypatch):
     monkeypatch.setattr(
         service,
         "render_cover_asset",
-        lambda events, school, body: (
-            rendered.append(("cover", [int(e["id"]) for e in events], school, body))
+        lambda events, school, body, *, local_date, new_event_count: (
+            rendered.append(
+                ("cover", [int(e["id"]) for e in events], school, body, local_date, new_event_count)
+            )
             or "https://a/cover.png"
         ),
     )
@@ -298,10 +303,19 @@ def test_publish_batch_renders_the_slides_from_live_event_data(monkeypatch):
     service.publish_batch("batch-1", InstagramPublishBatchPublish(version=3))
 
     assert load_credentials.call_args.args[0].key == "dalhousie"
-    assert rendered == [("cover", [7, 8], "dalhousie", "Body"), 7, 8]
+    assert rendered == [("cover", [7, 8], "dalhousie", "Body", "2026-07-26", 20), 7, 8]
     assert containers == ["https://a/cover.png", "https://a/7.png", "https://a/8.png"]
     published = [call for call in table_calls if call[0] == "update"]
     assert any(fields.get("meta_media_id") == "media-1" for _, (fields,), _ in published)
+    # A published run keeps the images it posted; the events behind them move on.
+    assert any(
+        fields.get("published_cover_url") == "https://a/cover.png" for _, (fields,), _ in published
+    )
+    assert {
+        fields["published_asset_url"]
+        for _, (fields,), _ in published
+        if "published_asset_url" in fields
+    } == {"https://a/7.png", "https://a/8.png"}
 
 
 def test_slide_payload_flattens_the_first_occurrence_for_the_renderer():

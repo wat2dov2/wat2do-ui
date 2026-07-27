@@ -31,6 +31,9 @@ import { OrganizationsPage } from "@/features/organizations/pages/OrganizationsP
 import { InviteLandingPage } from "@/features/organizations/pages/InviteLandingPage";
 import { QRRedirectPage } from "@/features/qrcode/pages/QRRedirectPage";
 import { SettingsPage } from "@/features/settings/pages/SettingsPage";
+import { PromotePage } from "@/features/posters/pages/PromotePage";
+import { PromoterTermsPage } from "@/features/posters/pages/PromoterTermsPage";
+import { PromoterPostersPage } from "@/features/posters/pages/PromoterPostersPage";
 import { ROLE_ADMIN, ROLE_ORGANIZATION } from "@/shared/constants/roles";
 import type { Event } from "@/shared/types";
 
@@ -122,6 +125,30 @@ export function SettingsRoute() {
   return (
     <AppPage requiresAuth>
       <SettingsPage />
+    </AppPage>
+  );
+}
+
+export function PromoteRoute() {
+  return (
+    <AppPage>
+      <PromotePage />
+    </AppPage>
+  );
+}
+
+export function PromoterTermsRoute() {
+  return (
+    <AppPage>
+      <PromoterTermsPage />
+    </AppPage>
+  );
+}
+
+export function PostersRoute() {
+  return (
+    <AppPage requiresAuth>
+      <PromoterPostersPage />
     </AppPage>
   );
 }

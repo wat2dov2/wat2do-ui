@@ -8,6 +8,7 @@ import { DEFAULT_SCHOOL } from "@/shared/constants/schools";
 import { AuthPageLayout } from "@/features/auth/components/AuthPageLayout";
 import { Button } from "@/shared/ui/button";
 import { LoadingButton } from "@/shared/ui/loading-button";
+import { appendSafeReturnTo, getSafeReturnTo } from "@/features/auth/utils/returnTo";
 
 /**
  * Module-level guard so a token is only verified once per page session.
@@ -25,6 +26,7 @@ export function AuthCallbackPage() {
 
   const token = searchParams.get("token");
   const email = searchParams.get("email");
+  const returnTo = getSafeReturnTo(searchParams.get(QP.RETURN_TO));
   const hasValidParams = Boolean(token && email);
 
   async function handleConfirm() {
@@ -43,12 +45,16 @@ export function AuthCallbackPage() {
       const school = result.school || DEFAULT_SCHOOL;
 
       if (result.onboardingRequired) {
-        router.replace(`${ROUTES.ONBOARDING}?${new URLSearchParams({ [QP.SCHOOL]: school })}`);
+        const onboardingPath = `${ROUTES.ONBOARDING}?${new URLSearchParams({
+          [QP.SCHOOL]: school,
+        })}`;
+        router.replace(appendSafeReturnTo(onboardingPath, returnTo));
       } else {
         router.replace(
-          school
+          returnTo ??
+          (school
             ? `${ROUTES.HOME}?${new URLSearchParams({ [QP.SCHOOL]: school })}`
-            : ROUTES.HOME,
+            : ROUTES.HOME),
         );
       }
     } catch (err) {

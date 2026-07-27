@@ -5,10 +5,65 @@
   "landing_confirmation_seconds": 5,
   "confirmation_token_minutes": 15,
   "payout_close_delay_hours": 24,
+  "quiet_poster_days": 30,
+  "banner_dismissal_days": 30,
+  "discord_invite_url": "https://discord.gg/uVcZcp4q8R",
+  "map_coordinate_decimal_places": 3,
+  "map_visitor_bucket_maximums": [0, 9, 49],
   "risk_rules_version": "poster-risk-v1",
   "rapid_distinct_visitors": 20,
   "rapid_window_seconds": 60,
   "rapid_rule_points": 60,
   "hold_score_threshold": 60,
-  "tos_version": "2026-01"
+  "tos_version": "2026-01",
+  "approved_templates": [
+    {
+      "id": "campus-colour",
+      "name": "Campus Colour",
+      "asset_path": "/poster-templates/campus-colour-v1.png",
+      "eligible_school": "global",
+      "print_size": "us-letter",
+      "orientation": "portrait",
+      "qr_placement": {
+        "x": 0.264706,
+        "y": 0.58,
+        "width": 0.470588,
+        "height": 0.363636
+      },
+      "preview_description": "A colourful, high-energy campus poster.",
+      "available_for_creation": true
+    },
+    {
+      "id": "campus-black-white",
+      "name": "Campus Black and White",
+      "asset_path": "/poster-templates/campus-black-white-v1.png",
+      "eligible_school": "global",
+      "print_size": "us-letter",
+      "orientation": "portrait",
+      "qr_placement": {
+        "x": 0.264706,
+        "y": 0.58,
+        "width": 0.470588,
+        "height": 0.363636
+      },
+      "preview_description": "A high-contrast black-and-white campus poster.",
+      "available_for_creation": true
+    },
+    {
+      "id": "campus-low-ink",
+      "name": "Campus Low Ink",
+      "asset_path": "/poster-templates/campus-low-ink-v1.png",
+      "eligible_school": "global",
+      "print_size": "us-letter",
+      "orientation": "portrait",
+      "qr_placement": {
+        "x": 0.264706,
+        "y": 0.58,
+        "width": 0.470588,
+        "height": 0.363636
+      },
+      "preview_description": "A clean campus poster designed to use less ink.",
+      "available_for_creation": true
+    }
+  ]
 }

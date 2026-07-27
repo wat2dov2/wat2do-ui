@@ -1,8 +1,62 @@
 import type { NextConfig } from "next";
+import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 const apiRewriteUrl = (process.env.API_REWRITE_URL || "http://127.0.0.1:8000").replace(/\/$/, "");
 const repositoryRoot = fileURLToPath(new URL("../", import.meta.url));
+const rawPromoterProgram = JSON.parse(
+  readFileSync(
+    fileURLToPath(
+      new URL("../backend/controlbox/promoter_program.json", import.meta.url),
+    ),
+    "utf8",
+  ),
+) as {
+  enabled: boolean;
+  rate_cents: number;
+  landing_confirmation_seconds: number;
+  quiet_poster_days: number;
+  banner_dismissal_days: number;
+  tos_version: string;
+  discord_invite_url: string;
+  approved_templates: Array<{
+    id: string;
+    name: string;
+    asset_path: string;
+    eligible_school: string;
+    print_size: "us-letter";
+    orientation: "portrait";
+    qr_placement: {
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+    };
+    preview_description: string;
+    available_for_creation: boolean;
+  }>;
+};
+const publicPromoterProgram = {
+  enabled: rawPromoterProgram.enabled,
+  rateCents: rawPromoterProgram.rate_cents,
+  landingConfirmationSeconds:
+    rawPromoterProgram.landing_confirmation_seconds,
+  quietPosterDays: rawPromoterProgram.quiet_poster_days,
+  bannerDismissalDays: rawPromoterProgram.banner_dismissal_days,
+  tosVersion: rawPromoterProgram.tos_version,
+  discordInviteUrl: rawPromoterProgram.discord_invite_url,
+  approvedTemplates: rawPromoterProgram.approved_templates.map((template) => ({
+    id: template.id,
+    name: template.name,
+    assetPath: template.asset_path,
+    eligibleSchool: template.eligible_school,
+    printSize: template.print_size,
+    orientation: template.orientation,
+    qrPlacement: template.qr_placement,
+    previewDescription: template.preview_description,
+    availableForCreation: template.available_for_creation,
+  })),
+};
 const apiCollectionPaths = [
   "credits",
   "events",
@@ -20,6 +74,9 @@ const apiCollectionPaths = [
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  env: {
+    NEXT_PUBLIC_PROMOTER_PROGRAM: JSON.stringify(publicPromoterProgram),
+  },
   // The slide renderer reads its fonts and the resvg wasm binary from disk at
   // request time, so dependency tracing cannot see them and the standalone
   // image would ship without them.

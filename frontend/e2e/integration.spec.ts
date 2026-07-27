@@ -666,6 +666,33 @@ test.describe("Events Page", () => {
     await expect(page).not.toHaveURL(/eventId=1/);
   });
 
+  test("scrolls drawer content that exceeds the mobile viewport", async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 320 });
+    await page.goto(BASE);
+
+    const card = page.locator('article[data-event-id="1"]').first();
+    await card.scrollIntoViewIfNeeded();
+    await card.getByRole("button", { name: "Actions" }).click();
+    await page.getByRole("menuitem", { name: "Report" }).click();
+
+    const drawer = page.getByRole("dialog", { name: /Report event/i });
+    const drawerBody = drawer.locator('[data-slot="drawer-body"]');
+    await expect(drawerBody).toBeVisible();
+    await expect
+      .poll(() =>
+        drawerBody.evaluate(
+          element => element.scrollHeight > element.clientHeight,
+        ),
+      )
+      .toBe(true);
+
+    await drawerBody.hover();
+    await page.mouse.wheel(0, 300);
+    await expect
+      .poll(() => drawerBody.evaluate(element => element.scrollTop))
+      .toBeGreaterThan(0);
+  });
+
   test("closes event details opened from a direct eventId link", async ({ page }) => {
     await page.goto(`${BASE}/?eventId=1`);
     await page.waitForTimeout(3000);
@@ -811,6 +838,19 @@ test.describe("Events Page", () => {
     expect(tooltipZIndex).toBeGreaterThan(drawerZIndex);
 
     await page.mouse.move(0, 0);
+    await expect(tooltip).toBeHidden();
+    await extraDatesButton.dispatchEvent("pointerdown", {
+      pointerType: "touch",
+      isPrimary: true,
+    });
+    await extraDatesButton.dispatchEvent("pointerup", {
+      pointerType: "touch",
+      isPrimary: true,
+    });
+    await extraDatesButton.dispatchEvent("click");
+    await expect(tooltip).toBeVisible();
+    await page.keyboard.press("Escape");
+
     await drawer.getByRole("button", { name: "Register", exact: true }).click();
 
     const occurrenceSelect = drawer.getByRole("combobox", {

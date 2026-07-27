@@ -22,6 +22,9 @@ const DEFAULT_PROFILE: UserProfile = {
   clubs: [],
   organizationId: null,
   organizationName: null,
+  payoutEmail: null,
+  promoterTosAcceptedAt: null,
+  promoterTosVersion: null,
 };
 
 export function useProfile() {

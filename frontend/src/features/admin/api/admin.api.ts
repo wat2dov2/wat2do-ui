@@ -12,9 +12,14 @@ import type {
   SubmissionStatus,
 } from "@/shared/types";
 import type {
+  ApiAdminPayoutDetail,
   ApiInstagramPublishBatchPublish,
   ApiInstagramPublishBatchResponse,
   ApiInstagramPublishBatchUpdate,
+  ApiPaginatedPosterPayoutResponse,
+  ApiPayoutCsvExportResponse,
+  ApiPayoutStatusUpdate,
+  ApiPosterPayoutResponse,
 } from "@/shared/generated";
 import { getDefaultEventCategory } from "@/shared/data/eventCategories";
 import {
@@ -232,5 +237,90 @@ export async function resolveClaim(
   return api.patch<OrganizationClaim>(`/organizations/claims/${claimId}`, {
     status,
     rejection_reason: rejectionReason || null,
+  });
+}
+
+// ── Poster Payouts API ─────────────────────────────────────────────
+
+export type PosterPayoutStatus = ApiPayoutStatusUpdate["status"];
+export type PosterPayoutFraudStatus =
+  ApiPosterPayoutResponse["fraud_status"];
+export type AdminPosterPayout = ApiPosterPayoutResponse;
+
+export interface AdminPosterPayoutFilters {
+  userId?: string;
+  payoutStatus?: PosterPayoutStatus;
+  payoutEmail?: string;
+  periodFrom?: string;
+  periodTo?: string;
+  minAmountCents?: number;
+  maxAmountCents?: number;
+  fraudStatus?: PosterPayoutFraudStatus;
+  page: number;
+  pageSize: number;
+}
+
+export type AdminPosterPayoutDetail = ApiAdminPayoutDetail;
+export type AdminPosterPayoutPage = ApiPaginatedPosterPayoutResponse;
+export type AdminPosterPayoutCsv = ApiPayoutCsvExportResponse;
+
+function addOptionalParam(
+  params: URLSearchParams,
+  name: string,
+  value: string | number | undefined,
+): void {
+  if (value !== undefined && value !== "") {
+    params.set(name, String(value));
+  }
+}
+
+export async function getAdminPosterPayouts(
+  filters: AdminPosterPayoutFilters,
+): Promise<AdminPosterPayoutPage> {
+  const params = new URLSearchParams({
+    page: String(filters.page),
+    page_size: String(filters.pageSize),
+  });
+  addOptionalParam(params, "user_id", filters.userId);
+  addOptionalParam(params, "payout_status", filters.payoutStatus);
+  addOptionalParam(params, "payout_email", filters.payoutEmail);
+  addOptionalParam(params, "period_from", filters.periodFrom);
+  addOptionalParam(params, "period_to", filters.periodTo);
+  addOptionalParam(params, "min_amount_cents", filters.minAmountCents);
+  addOptionalParam(params, "max_amount_cents", filters.maxAmountCents);
+  addOptionalParam(params, "fraud_status", filters.fraudStatus);
+  return api.get<AdminPosterPayoutPage>(`/payouts/admin?${params.toString()}`);
+}
+
+export async function getAdminPosterPayoutDetail(
+  payoutId: string,
+): Promise<AdminPosterPayoutDetail> {
+  return api.get<AdminPosterPayoutDetail>(`/payouts/admin/${payoutId}`);
+}
+
+export async function transitionAdminPosterPayout(
+  payoutId: string,
+  status: PosterPayoutStatus,
+  notes?: string,
+): Promise<AdminPosterPayout> {
+  return api.patch<AdminPosterPayout>(`/payouts/admin/${payoutId}/status`, {
+    status,
+    notes: notes?.trim() || null,
+  });
+}
+
+export async function markAdminPosterPayoutsPaid(
+  payoutIds: string[],
+): Promise<AdminPosterPayout[]> {
+  return api.post<AdminPosterPayout[]>("/payouts/admin/mark-paid", {
+    payout_ids: payoutIds,
+  });
+}
+
+export async function exportAdminPosterPayouts(
+  payoutIds: string[],
+): Promise<AdminPosterPayoutCsv> {
+  return api.post<AdminPosterPayoutCsv>("/payouts/admin/export", {
+    payout_ids: payoutIds,
   });
 }

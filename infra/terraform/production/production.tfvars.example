@@ -2,6 +2,10 @@
 route53_zone_id   = "Z0123456789EXAMPLE"
 runtime_secret_arn = "arn:aws:secretsmanager:ca-central-1:058264255918:secret:wat2do/production/runtime-EXAMPLE"
 
+# Generate once with `openssl rand -hex 32`. CloudFront sends it to the ALB,
+# whose listener rejects traffic from any distribution that does not know it.
+cloudfront_origin_secret = "replace-with-a-random-64-character-hexadecimal-value"
+
 # Build and push both ARM64 images first. The initial production apply creates
 # the ECS service from these immutable digests; subsequent releases are owned
 # by the GitHub application deployment workflow.

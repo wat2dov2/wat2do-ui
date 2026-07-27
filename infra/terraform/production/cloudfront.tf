@@ -3,12 +3,13 @@ data "aws_cloudfront_cache_policy" "caching_disabled" {
 }
 
 // Each school is served from its own subdomain, and the app resolves that school
-// from X-Forwarded-Host. CloudFront replaces the viewer Host with the origin
-// domain, so this function preserves the school subdomain the viewer asked for.
+// from X-Forwarded-Host. The backend also needs one trusted viewer IP for
+// privacy-preserving scan hashing. CloudFront overwrites both headers before the
+// request reaches the origin.
 resource "aws_cloudfront_function" "forward_viewer_host" {
   name    = "wat2do-production-forward-viewer-host"
   runtime = "cloudfront-js-2.0"
-  comment = "Preserve the viewer host so per-school subdomains reach the origin."
+  comment = "Preserve viewer host and pass the CloudFront viewer IP to the origin."
   publish = true
 
   code = <<-EOT
@@ -17,30 +18,16 @@ resource "aws_cloudfront_function" "forward_viewer_host" {
       if (request.headers.host) {
         request.headers['x-forwarded-host'] = { value: request.headers.host.value };
       }
+      request.headers['x-wat2do-viewer-ip'] = { value: event.viewer.ip };
       return request;
     }
   EOT
 }
 
-resource "aws_cloudfront_origin_request_policy" "all_viewer_except_host" {
-  name    = "wat2do-production-all-viewer-except-host"
-  comment = "Forward dynamic requests without forwarding the viewer Host header."
-
-  cookies_config {
-    cookie_behavior = "all"
-  }
-
-  headers_config {
-    header_behavior = "allExcept"
-
-    headers {
-      items = ["host"]
-    }
-  }
-
-  query_strings_config {
-    query_string_behavior = "all"
-  }
+// AWS's managed policy removes the viewer Host while forwarding dynamic viewer
+// request data, including the function-owned Wat2Do viewer IP header.
+data "aws_cloudfront_origin_request_policy" "all_viewer_except_host" {
+  name = "Managed-AllViewerExceptHostHeader"
 }
 
 resource "aws_cloudfront_origin_request_policy" "none" {
@@ -127,6 +114,11 @@ resource "aws_cloudfront_distribution" "main" {
     domain_name = "origin.${var.domain_name}"
     origin_id   = "wat2do-production-alb"
 
+    custom_header {
+      name  = "X-Wat2Do-Origin-Verify"
+      value = var.cloudfront_origin_secret
+    }
+
     custom_origin_config {
       http_port              = 80
       https_port             = 443
@@ -141,7 +133,7 @@ resource "aws_cloudfront_distribution" "main" {
     allowed_methods          = ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
     cached_methods           = ["GET", "HEAD", "OPTIONS"]
     cache_policy_id          = data.aws_cloudfront_cache_policy.caching_disabled.id
-    origin_request_policy_id = aws_cloudfront_origin_request_policy.all_viewer_except_host.id
+    origin_request_policy_id = data.aws_cloudfront_origin_request_policy.all_viewer_except_host.id
     compress                 = true
 
     function_association {
@@ -157,8 +149,13 @@ resource "aws_cloudfront_distribution" "main" {
     allowed_methods          = ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
     cached_methods           = ["GET", "HEAD", "OPTIONS"]
     cache_policy_id          = data.aws_cloudfront_cache_policy.caching_disabled.id
-    origin_request_policy_id = aws_cloudfront_origin_request_policy.all_viewer_except_host.id
+    origin_request_policy_id = data.aws_cloudfront_origin_request_policy.all_viewer_except_host.id
     compress                 = true
+
+    function_association {
+      event_type   = "viewer-request"
+      function_arn = aws_cloudfront_function.forward_viewer_host.arn
+    }
   }
 
   ordered_cache_behavior {

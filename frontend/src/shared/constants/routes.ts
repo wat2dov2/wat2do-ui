@@ -24,7 +24,9 @@ export const ROUTES = {
   MARKETING: "/marketing",
   INVITE: "/invite",
   EVENT_SUBMIT: "/events/submit",
-
+  PROMOTE: "/promote",
+  PROMOTER_TERMS: "/promote/terms",
+  POSTERS: "/posters",
 
   // Admin
   ADMIN: "/admin",
@@ -58,6 +60,9 @@ const ROUTE_PAGE_TITLES: Partial<Record<(typeof ROUTES)[keyof typeof ROUTES], st
   [ROUTES.SETTINGS]: "Settings",
   [ROUTES.MARKETING]: "Marketing",
   [ROUTES.EVENT_SUBMIT]: "Submit an Event",
+  [ROUTES.PROMOTE]: "Promote Events",
+  [ROUTES.PROMOTER_TERMS]: "Promoter Terms",
+  [ROUTES.POSTERS]: "My Posters",
   [ROUTES.ADMIN]: "Admin",
   [ROUTES.ADMIN_EVENTS]: "Admin Events",
   [ROUTES.ADMIN_ORGANIZATIONS]: "Admin Organizations",
@@ -99,6 +104,7 @@ export const SETTINGS_TABS = {
   PROFILE: "profile",
   NOTIFICATIONS: "notifications",
   APPEARANCE: "appearance",
+  PROMOTER: "promoter",
 } as const;
 
 /** Build a settings URL with a specific tab selected. */

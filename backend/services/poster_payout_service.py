@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import csv
+import io
 import json
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
+from typing import NoReturn
 from uuid import UUID
 
 from postgrest.exceptions import APIError
@@ -13,17 +15,27 @@ from postgrest.exceptions import APIError
 from core.controlbox import controlbox
 from core.database import get_sb
 from core.errors import (
+    ADMIN_ACCESS_REQUIRED,
+    INVALID_PAYOUT_FILTERS,
     INVALID_STATUS_TRANSITION,
+    PAYOUT_EXPORT_PENDING_ONLY,
     PAYOUT_NOT_FOUND,
     PAYOUT_NOTES_REQUIRED,
     PROMOTER_ENROLLMENT_REQUIRED,
 )
-from core.exceptions import ConflictError, NotFoundError, ValidationError
+from core.exceptions import (
+    AuthorizationError,
+    ConflictError,
+    NotFoundError,
+    ValidationError,
+)
 from core.pagination import fetch_all_pages
-from core.tables import POSTER_PAYOUTS, QR_CODE_SCANS, QR_CODES
+from core.tables import POSTER_PAYOUT_REVIEWS, POSTER_PAYOUTS, QR_CODE_SCANS, QR_CODES
 from schemas.payout import (
     AdminPayoutDetail,
     PayoutFraudReason,
+    PayoutReviewEvent,
+    PosterPayoutContribution,
     PosterPayoutResponse,
 )
 from schemas.qr_code import (
@@ -34,20 +46,9 @@ from schemas.user import UserResponse
 from services import user_service
 from services.poster_risk import RiskEvaluation, evaluate_period_scans
 
-_ALLOWED_TRANSITIONS = {
-    ("pending", "held"),
-    ("held", "pending"),
-    ("pending", "paid"),
-    ("held", "voided"),
-}
-
 
 def get_promoter_earnings(user: UserResponse) -> PromoterEarningsResponse:
-    if (
-        user.payout_email is None
-        or user.promoter_tos_accepted_at is None
-        or user.promoter_tos_version != controlbox.promoter_program.tos_version
-    ):
+    if user.payout_email is None or user.promoter_tos_accepted_at is None:
         raise ValidationError(PROMOTER_ENROLLMENT_REQUIRED)
 
     now = datetime.now(timezone.utc)
@@ -60,6 +61,10 @@ def get_promoter_earnings(user: UserResponse) -> PromoterEarningsResponse:
             name=row["name"],
             is_active=row["is_active"],
             latest_scan=row.get("latest_scan"),
+            latitude=float(row["latitude"]),
+            longitude=float(row["longitude"]),
+            poster_template_id=row.get("poster_template_id"),
+            template_preview_url=row.get("image_url"),
             lifetime_unique_scans=int(row["lifetime_unique_scans"]),
             period_unique_scans=int(row["period_unique_scans"]),
             period_creditable_scans=int(row["period_creditable_scans"]),
@@ -91,6 +96,12 @@ def list_user_payouts(
         user_id=user_id,
         status=status,
         period=None,
+        payout_email=None,
+        period_from=None,
+        period_to=None,
+        minimum_amount_cents=None,
+        maximum_amount_cents=None,
+        fraud_status=None,
         offset=offset,
         limit=limit,
     )
@@ -101,6 +112,12 @@ def list_admin_payouts(
     user_id: str | None = None,
     status: str | None = None,
     period: date | None = None,
+    payout_email: str | None = None,
+    period_from: date | None = None,
+    period_to: date | None = None,
+    minimum_amount_cents: int | None = None,
+    maximum_amount_cents: int | None = None,
+    fraud_status: str | None = None,
     offset: int = 0,
     limit: int = 50,
 ) -> tuple[list[PosterPayoutResponse], int]:
@@ -108,6 +125,12 @@ def list_admin_payouts(
         user_id=user_id,
         status=status,
         period=period,
+        payout_email=payout_email,
+        period_from=period_from,
+        period_to=period_to,
+        minimum_amount_cents=minimum_amount_cents,
+        maximum_amount_cents=maximum_amount_cents,
+        fraud_status=fraud_status,
         offset=offset,
         limit=limit,
     )
@@ -118,9 +141,24 @@ def _list_payouts(
     user_id: str | None,
     status: str | None,
     period: date | None,
+    payout_email: str | None,
+    period_from: date | None,
+    period_to: date | None,
+    minimum_amount_cents: int | None,
+    maximum_amount_cents: int | None,
+    fraud_status: str | None,
     offset: int,
     limit: int,
 ) -> tuple[list[PosterPayoutResponse], int]:
+    if period_from and period_to and period_from > period_to:
+        raise ValidationError(INVALID_PAYOUT_FILTERS)
+    if (
+        minimum_amount_cents is not None
+        and maximum_amount_cents is not None
+        and minimum_amount_cents > maximum_amount_cents
+    ):
+        raise ValidationError(INVALID_PAYOUT_FILTERS)
+
     query = (
         get_sb()
         .table(POSTER_PAYOUTS)
@@ -134,6 +172,20 @@ def _list_payouts(
         query = query.eq("status", status)
     if period:
         query = query.eq("period", period.isoformat())
+    if payout_email:
+        query = query.ilike("payout_email", f"%{payout_email}%")
+    if period_from:
+        query = query.gte("period", period_from.isoformat())
+    if period_to:
+        query = query.lte("period", period_to.isoformat())
+    if minimum_amount_cents is not None:
+        query = query.gte("amount_cents", minimum_amount_cents)
+    if maximum_amount_cents is not None:
+        query = query.lte("amount_cents", maximum_amount_cents)
+    if fraud_status == "flagged":
+        query = query.in_("status", ["held", "voided"])
+    elif fraud_status == "clear":
+        query = query.neq("status", "held").neq("status", "voided")
     response = query.range(offset, offset + limit - 1).execute()
     items = [PosterPayoutResponse.model_validate(row) for row in response.data or []]
     return items, response.count or len(items)
@@ -144,6 +196,19 @@ def get_payout(payout_id: UUID) -> PosterPayoutResponse | None:
     if not response.data:
         return None
     return PosterPayoutResponse.model_validate(response.data[0])
+
+
+def _get_payout_review_history(payout_id: UUID) -> list[PayoutReviewEvent]:
+    response = (
+        get_sb()
+        .table(POSTER_PAYOUT_REVIEWS)
+        .select("id, from_status, to_status, notes, reviewed_by, reviewed_at")
+        .eq("payout_id", str(payout_id))
+        .order("reviewed_at")
+        .order("id")
+        .execute()
+    )
+    return [PayoutReviewEvent.model_validate(row) for row in response.data or []]
 
 
 def get_admin_payout_detail(payout_id: UUID) -> AdminPayoutDetail:
@@ -175,11 +240,39 @@ def get_admin_payout_detail(payout_id: UUID) -> AdminPayoutDetail:
             )
             entry["affected_scan_count"] += 1
 
+    if not reasons_by_key and payout.status in {"held", "voided"}:
+        reasons_by_key["manual-review"] = {
+            "code": "MANUAL_REVIEW",
+            "points": 0,
+            "affected_scan_count": 0,
+            "evidence": {"review_notes": payout.notes or ""},
+        }
+
+    contribution_rows = _get_earnings_rows(
+        str(payout.user_id),
+        period_start,
+        period_end,
+    )
+    contributions = [
+        PosterPayoutContribution(
+            qr_code_id=str(row["qr_code_id"]),
+            name=str(row["name"]),
+            poster_template_id=row.get("poster_template_id"),
+            scan_count=int(row["period_creditable_scans"]),
+            amount_cents=int(row["period_creditable_scans"]) * payout.rate_cents,
+        )
+        for row in contribution_rows
+        if int(row["period_creditable_scans"]) > 0
+    ]
     return AdminPayoutDetail(
         payout=payout,
         fraud_reasons=[
             PayoutFraudReason.model_validate(reason) for reason in reasons_by_key.values()
         ],
+        contributions=contributions,
+        period_start=period_start,
+        period_end=period_end,
+        review_history=_get_payout_review_history(payout.id),
     )
 
 
@@ -190,31 +283,22 @@ def transition_payout(
     notes: str | None,
     reviewed_by: UUID,
 ) -> PosterPayoutResponse:
-    payout = get_payout(payout_id)
-    if payout is None:
-        raise NotFoundError(PAYOUT_NOT_FOUND)
-    if (payout.status, target_status) not in _ALLOWED_TRANSITIONS:
-        raise ValidationError(INVALID_STATUS_TRANSITION)
-    if target_status in {"held", "voided"} and not notes:
-        raise ValidationError(PAYOUT_NOTES_REQUIRED)
-
-    payload: dict[str, object] = {
-        "status": target_status,
-        "reviewed_by": str(reviewed_by),
-    }
-    if notes is not None:
-        payload["notes"] = notes
-    if target_status == "paid":
-        payload["paid_at"] = datetime.now(timezone.utc).isoformat()
-
-    response = (
-        get_sb()
-        .table(POSTER_PAYOUTS)
-        .update(payload)
-        .eq("id", str(payout_id))
-        .eq("status", payout.status)
-        .execute()
-    )
+    try:
+        response = (
+            get_sb()
+            .rpc(
+                "transition_poster_payout_status",
+                {
+                    "p_payout_id": str(payout_id),
+                    "p_target_status": target_status,
+                    "p_notes": notes,
+                    "p_reviewed_by": str(reviewed_by),
+                },
+            )
+            .execute()
+        )
+    except APIError as exc:
+        _raise_payout_rpc_error(exc)
     if not response.data:
         raise ConflictError(INVALID_STATUS_TRANSITION)
     return PosterPayoutResponse.model_validate(response.data[0])
@@ -233,16 +317,78 @@ def bulk_mark_paid(
                 {
                     "p_ids": [str(payout_id) for payout_id in dict.fromkeys(payout_ids)],
                     "p_reviewed_by": str(reviewed_by),
-                    "p_paid_at": datetime.now(timezone.utc).isoformat(),
                 },
             )
             .execute()
         )
     except APIError as exc:
-        if "invalid_payout_status_transition" in str(exc):
-            raise ValidationError(INVALID_STATUS_TRANSITION) from exc
-        raise
+        _raise_payout_rpc_error(exc)
     return [PosterPayoutResponse.model_validate(row) for row in response.data or []]
+
+
+def _raise_payout_rpc_error(exc: APIError) -> NoReturn:
+    message = str(exc)
+    if "payout_not_found" in message:
+        raise NotFoundError(PAYOUT_NOT_FOUND) from exc
+    if "payout_notes_required" in message:
+        raise ValidationError(PAYOUT_NOTES_REQUIRED) from exc
+    if "invalid_payout_status_transition" in message:
+        raise ValidationError(INVALID_STATUS_TRANSITION) from exc
+    if "admin_access_required" in message:
+        raise AuthorizationError(ADMIN_ACCESS_REQUIRED) from exc
+    raise exc
+
+
+def get_pending_payouts_for_export(
+    payout_ids: list[UUID],
+) -> list[PosterPayoutResponse]:
+    unique_ids = list(dict.fromkeys(payout_ids))
+    response = (
+        get_sb()
+        .table(POSTER_PAYOUTS)
+        .select("*")
+        .in_("id", [str(payout_id) for payout_id in unique_ids])
+        .execute()
+    )
+    payouts_by_id = {
+        payout.id: payout
+        for payout in (PosterPayoutResponse.model_validate(row) for row in response.data or [])
+    }
+    if len(payouts_by_id) != len(unique_ids):
+        raise NotFoundError(PAYOUT_NOT_FOUND)
+    payouts = [payouts_by_id[payout_id] for payout_id in unique_ids]
+    if any(payout.status != "pending" for payout in payouts):
+        raise ValidationError(PAYOUT_EXPORT_PENDING_ONLY)
+    return payouts
+
+
+def serialize_interac_csv(payouts: list[PosterPayoutResponse]) -> str:
+    """Serialize reviewed pending payouts for the job and admin download."""
+    csv_file = io.StringIO(newline="")
+    writer = csv.DictWriter(
+        csv_file,
+        fieldnames=[
+            "recipient_email",
+            "amount",
+            "scan_count",
+            "status",
+            "reference",
+            "notes",
+        ],
+    )
+    writer.writeheader()
+    for payout in payouts:
+        writer.writerow(
+            {
+                "recipient_email": str(payout.payout_email),
+                "amount": f"{payout.amount_cents // 100}.{payout.amount_cents % 100:02d}",
+                "scan_count": payout.scan_count,
+                "status": payout.status,
+                "reference": str(payout.id),
+                "notes": f"Wat2Do poster payout {payout.period:%Y-%m}",
+            }
+        )
+    return csv_file.getvalue()
 
 
 def run_period_payouts(
@@ -277,13 +423,16 @@ def run_period_payouts(
 
         scans = _load_period_scans(owner_id, period_start, period_end)
         evaluation = evaluate_period_scans(scans, controlbox.promoter_program)
-        _store_scan_risk(scans, evaluation)
         payout = _upsert_period_payout(
             user=user,
             period=period_start.date(),
             scan_count=scan_count,
             evaluation=evaluation,
         )
+        if payout.status in {"paid", "voided"}:
+            continue
+
+        _store_scan_risk(scans, evaluation)
         created_or_updated += 1
         if payout.status == "held":
             held += 1
@@ -452,8 +601,14 @@ def _upsert_period_payout(
     should_hold = evaluation.score >= controlbox.promoter_program.hold_score_threshold
     status = "held" if should_hold or (existing and existing.status == "held") else "pending"
     notes = existing.notes if existing else None
-    if should_hold:
+    reviewed_by = existing.reviewed_by if existing else None
+    manually_held = (
+        existing is not None and existing.status == "held" and existing.reviewed_by is not None
+    )
+    if should_hold and not manually_held:
         notes = _risk_notes(evaluation)
+        if existing is None or existing.status != "held":
+            reviewed_by = None
     rate_cents = existing.rate_cents if existing else controlbox.promoter_program.rate_cents
     payout_email = str(existing.payout_email) if existing else str(user.payout_email)
     payload = {
@@ -466,7 +621,23 @@ def _upsert_period_payout(
         "status": status,
         "paid_at": None,
         "notes": notes,
+        "reviewed_by": str(reviewed_by) if reviewed_by else None,
     }
+    if existing and all(
+        getattr(existing, key) == value
+        for key, value in {
+            "payout_email": payout_email,
+            "rate_cents": rate_cents,
+            "scan_count": scan_count,
+            "amount_cents": scan_count * rate_cents,
+            "status": status,
+            "paid_at": None,
+            "notes": notes,
+            "reviewed_by": reviewed_by,
+        }.items()
+    ):
+        return existing
+
     if existing:
         write_response = (
             get_sb()
@@ -493,18 +664,5 @@ def _risk_notes(evaluation: RiskEvaluation) -> str:
 
 def _write_interac_csv(payouts: list[PosterPayoutResponse], output_path: Path) -> None:
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    with output_path.open("w", newline="", encoding="utf-8") as csv_file:
-        writer = csv.DictWriter(
-            csv_file,
-            fieldnames=["recipient_email", "amount", "reference", "notes"],
-        )
-        writer.writeheader()
-        for payout in payouts:
-            writer.writerow(
-                {
-                    "recipient_email": str(payout.payout_email),
-                    "amount": (f"{payout.amount_cents // 100}.{payout.amount_cents % 100:02d}"),
-                    "reference": str(payout.id),
-                    "notes": f"Wat2Do poster payout {payout.period:%Y-%m}",
-                }
-            )
+    output_path.write_text(serialize_interac_csv(payouts), encoding="utf-8")
+    output_path.chmod(0o600)

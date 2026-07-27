@@ -36,6 +36,9 @@ class InstagramPublishItemResponse(BaseModel):
     # about it is stored on the batch: the events table is the source of truth
     # for everything a slide shows.
     event: EventSummaryResponse
+    # The PNG this slide published as, kept once the carousel is live so the
+    # run keeps showing what Instagram got rather than re-rendering the event.
+    published_asset_url: str | None = None
     published_at: datetime | None = None
     created_at: datetime
     updated_at: datetime
@@ -54,10 +57,15 @@ class InstagramPublishBatchResponse(BaseModel):
     status: InstagramPublishBatchStatus
     caption: str
     cover_body: str = ""
+    # Events added to this school inside the batch's window. The cover states
+    # it, so it is counted from the events table on read rather than stored -
+    # the window and the events are already the source of truth.
+    new_event_count: int = 0
     ai_model: str | None = None
     version: int
     error_message: str | None = None
     meta_media_id: str | None = None
+    published_cover_url: str | None = None
     created_at: datetime
     updated_at: datetime
     published_at: datetime | None = None

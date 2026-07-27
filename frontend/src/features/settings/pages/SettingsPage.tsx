@@ -3,15 +3,17 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/ui/tabs";
 import { ProfileTab } from "@/features/settings/components/ProfileTab";
 import { NotificationsTab } from "@/features/settings/components/NotificationsTab";
 import { AppearanceTab } from "@/features/settings/components/AppearanceTab";
+import { PromoterProgramTab } from "@/features/settings/components/PromoterProgramTab";
 import { useUserEmail } from "@/features/auth";
 import { QP } from "@/shared/constants/queryParams";
 import { useMutableSearchParams } from "@/shared/hooks/useMutableSearchParams";
+import { SETTINGS_TABS } from "@/shared/constants/routes";
 
 export function SettingsPage() {
   const userEmail = useUserEmail();
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useMutableSearchParams();
-  const tabParam = searchParams.get(QP.TAB) || "profile";
+  const tabParam = searchParams.get(QP.TAB) || SETTINGS_TABS.PROFILE;
 
   const handleTabChange = (value: string) => {
     setSearchParams({ [QP.TAB]: value });
@@ -32,23 +34,34 @@ export function SettingsPage() {
 
         {/* Tabs */}
         <Tabs value={tabParam} onValueChange={handleTabChange} className="mt-8">
-          <TabsList className="h-8">
-            <TabsTrigger value="profile">{t("settings.tabs.profile")}</TabsTrigger>
-            <TabsTrigger value="notifications">
+          <TabsList className="h-auto flex-wrap">
+            <TabsTrigger value={SETTINGS_TABS.PROFILE}>
+              {t("settings.tabs.profile")}
+            </TabsTrigger>
+            <TabsTrigger value={SETTINGS_TABS.NOTIFICATIONS}>
               {t("settings.tabs.notifications")}
             </TabsTrigger>
-            <TabsTrigger value="appearance">
+            <TabsTrigger value={SETTINGS_TABS.APPEARANCE}>
               {t("settings.tabs.appearance")}
             </TabsTrigger>
+            <TabsTrigger
+              value={SETTINGS_TABS.PROMOTER}
+              data-testid="settings-promoter-tab"
+            >
+              {t("settings.tabs.promoter")}
+            </TabsTrigger>
           </TabsList>
-          <TabsContent value="profile" className="mt-8">
+          <TabsContent value={SETTINGS_TABS.PROFILE} className="mt-8">
             <ProfileTab userEmail={userEmail} />
           </TabsContent>
-          <TabsContent value="notifications" className="mt-8">
+          <TabsContent value={SETTINGS_TABS.NOTIFICATIONS} className="mt-8">
             <NotificationsTab />
           </TabsContent>
-          <TabsContent value="appearance" className="mt-8">
+          <TabsContent value={SETTINGS_TABS.APPEARANCE} className="mt-8">
             <AppearanceTab />
+          </TabsContent>
+          <TabsContent value={SETTINGS_TABS.PROMOTER} className="mt-8">
+            <PromoterProgramTab />
           </TabsContent>
         </Tabs>
       </div>

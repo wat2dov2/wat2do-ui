@@ -3929,6 +3929,111 @@
             }
           },
           {
+            "name": "payout_email",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 320
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Payout Email"
+            }
+          },
+          {
+            "name": "period_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Period From"
+            }
+          },
+          {
+            "name": "period_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Period To"
+            }
+          },
+          {
+            "name": "min_amount_cents",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Min Amount Cents"
+            }
+          },
+          {
+            "name": "max_amount_cents",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Max Amount Cents"
+            }
+          },
+          {
+            "name": "fraud_status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "flagged",
+                    "clear"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Fraud Status"
+            }
+          },
+          {
             "name": "page",
             "in": "query",
             "required": false,
@@ -3979,6 +4084,52 @@
             }
           }
         }
+      }
+    },
+    "/payouts/admin/export": {
+      "post": {
+        "tags": [
+          "payouts"
+        ],
+        "summary": "Export Pending Payouts",
+        "operationId": "export_pending_payouts_payouts_admin_export_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PayoutSelectionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PayoutCsvExportResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
       }
     },
     "/payouts/admin/{payout_id}": {
@@ -4098,7 +4249,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/BulkMarkPaidRequest"
+                "$ref": "#/components/schemas/PayoutSelectionRequest"
               }
             }
           },
@@ -4322,7 +4473,15 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/QrCodeCreate"
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/QrCodeCreate"
+                  },
+                  {
+                    "$ref": "#/components/schemas/PromoterPosterBatchCreate"
+                  }
+                ],
+                "title": "Data"
               }
             }
           }
@@ -4333,7 +4492,15 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/QrCodeResponse"
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/QrCodeResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/PromoterPosterBatchResponse"
+                    }
+                  ],
+                  "title": "Response Create Poster Qr  Post"
                 }
               }
             }
@@ -4518,6 +4685,50 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/QrScanConfirmResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/qr/map": {
+      "get": {
+        "tags": [
+          "qr"
+        ],
+        "summary": "Get Campus Coverage",
+        "operationId": "get_campus_coverage_qr_map_get",
+        "parameters": [
+          {
+            "name": "school",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 255,
+              "title": "School"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CampusCoverageResponse"
                 }
               }
             }
@@ -6143,12 +6354,40 @@
             },
             "type": "array",
             "title": "Fraud Reasons"
+          },
+          "contributions": {
+            "items": {
+              "$ref": "#/components/schemas/PosterPayoutContribution"
+            },
+            "type": "array",
+            "title": "Contributions"
+          },
+          "period_start": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Period Start"
+          },
+          "period_end": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Period End"
+          },
+          "review_history": {
+            "items": {
+              "$ref": "#/components/schemas/PayoutReviewEvent"
+            },
+            "type": "array",
+            "title": "Review History"
           }
         },
         "type": "object",
         "required": [
           "payout",
-          "fraud_reasons"
+          "fraud_reasons",
+          "contributions",
+          "period_start",
+          "period_end",
+          "review_history"
         ],
         "title": "AdminPayoutDetail"
       },
@@ -6302,26 +6541,6 @@
         ],
         "title": "Body_upload_qr_asset_uploads_qr_asset_post"
       },
-      "BulkMarkPaidRequest": {
-        "properties": {
-          "payout_ids": {
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "type": "array",
-            "maxItems": 1000,
-            "minItems": 1,
-            "title": "Payout Ids"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "payout_ids"
-        ],
-        "title": "BulkMarkPaidRequest"
-      },
       "CalendarTokenResponse": {
         "properties": {
           "token": {
@@ -6340,6 +6559,76 @@
         ],
         "title": "CalendarTokenResponse",
         "description": "Returned by GET /calendar/token and POST /calendar/token/regenerate."
+      },
+      "CampusCoverageCell": {
+        "properties": {
+          "latitude": {
+            "type": "number",
+            "title": "Latitude"
+          },
+          "longitude": {
+            "type": "number",
+            "title": "Longitude"
+          },
+          "poster_count": {
+            "type": "integer",
+            "title": "Poster Count"
+          },
+          "recent_poster_count": {
+            "type": "integer",
+            "title": "Recent Poster Count"
+          },
+          "quiet_poster_count": {
+            "type": "integer",
+            "title": "Quiet Poster Count"
+          },
+          "confirmed_visitor_bucket": {
+            "type": "string",
+            "enum": [
+              "none",
+              "low",
+              "medium",
+              "high"
+            ],
+            "title": "Confirmed Visitor Bucket"
+          }
+        },
+        "type": "object",
+        "required": [
+          "latitude",
+          "longitude",
+          "poster_count",
+          "recent_poster_count",
+          "quiet_poster_count",
+          "confirmed_visitor_bucket"
+        ],
+        "title": "CampusCoverageCell"
+      },
+      "CampusCoverageResponse": {
+        "properties": {
+          "school": {
+            "type": "string",
+            "title": "School"
+          },
+          "quiet_after_days": {
+            "type": "integer",
+            "title": "Quiet After Days"
+          },
+          "cells": {
+            "items": {
+              "$ref": "#/components/schemas/CampusCoverageCell"
+            },
+            "type": "array",
+            "title": "Cells"
+          }
+        },
+        "type": "object",
+        "required": [
+          "school",
+          "quiet_after_days",
+          "cells"
+        ],
+        "title": "CampusCoverageResponse"
       },
       "CreditBalanceResponse": {
         "properties": {
@@ -7665,6 +7954,11 @@
             "title": "Cover Body",
             "default": ""
           },
+          "new_event_count": {
+            "type": "integer",
+            "title": "New Event Count",
+            "default": 0
+          },
           "ai_model": {
             "anyOf": [
               {
@@ -7701,6 +7995,17 @@
               }
             ],
             "title": "Meta Media Id"
+          },
+          "published_cover_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published Cover Url"
           },
           "created_at": {
             "type": "string",
@@ -7814,6 +8119,17 @@
           },
           "event": {
             "$ref": "#/components/schemas/EventSummaryResponse"
+          },
+          "published_asset_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published Asset Url"
           },
           "published_at": {
             "anyOf": [
@@ -9523,6 +9839,24 @@
         ],
         "title": "PaginatedResponse[UserPosterPayoutResponse]"
       },
+      "PayoutCsvExportResponse": {
+        "properties": {
+          "filename": {
+            "type": "string",
+            "title": "Filename"
+          },
+          "content": {
+            "type": "string",
+            "title": "Content"
+          }
+        },
+        "type": "object",
+        "required": [
+          "filename",
+          "content"
+        ],
+        "title": "PayoutCsvExportResponse"
+      },
       "PayoutFraudReason": {
         "properties": {
           "code": {
@@ -9551,6 +9885,86 @@
           "evidence"
         ],
         "title": "PayoutFraudReason"
+      },
+      "PayoutReviewEvent": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "from_status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "held",
+              "paid",
+              "voided"
+            ],
+            "title": "From Status"
+          },
+          "to_status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "held",
+              "paid",
+              "voided"
+            ],
+            "title": "To Status"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "reviewed_by": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Reviewed By"
+          },
+          "reviewed_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Reviewed At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "from_status",
+          "to_status",
+          "notes",
+          "reviewed_by",
+          "reviewed_at"
+        ],
+        "title": "PayoutReviewEvent"
+      },
+      "PayoutSelectionRequest": {
+        "properties": {
+          "payout_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "maxItems": 1000,
+            "minItems": 1,
+            "title": "Payout Ids"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "payout_ids"
+        ],
+        "title": "PayoutSelectionRequest"
       },
       "PayoutStatusUpdate": {
         "properties": {
@@ -9636,6 +10050,36 @@
             ],
             "title": "Latest Scan"
           },
+          "latitude": {
+            "type": "number",
+            "title": "Latitude"
+          },
+          "longitude": {
+            "type": "number",
+            "title": "Longitude"
+          },
+          "poster_template_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Poster Template Id"
+          },
+          "template_preview_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Preview Url"
+          },
           "lifetime_unique_scans": {
             "type": "integer",
             "title": "Lifetime Unique Scans"
@@ -9659,12 +10103,56 @@
           "name",
           "is_active",
           "latest_scan",
+          "latitude",
+          "longitude",
+          "poster_template_id",
+          "template_preview_url",
           "lifetime_unique_scans",
           "period_unique_scans",
           "period_creditable_scans",
           "pending_cents"
         ],
         "title": "PosterEarningsItem"
+      },
+      "PosterPayoutContribution": {
+        "properties": {
+          "qr_code_id": {
+            "type": "string",
+            "title": "Qr Code Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "poster_template_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Poster Template Id"
+          },
+          "scan_count": {
+            "type": "integer",
+            "title": "Scan Count"
+          },
+          "amount_cents": {
+            "type": "integer",
+            "title": "Amount Cents"
+          }
+        },
+        "type": "object",
+        "required": [
+          "qr_code_id",
+          "name",
+          "poster_template_id",
+          "scan_count",
+          "amount_cents"
+        ],
+        "title": "PosterPayoutContribution"
       },
       "PosterPayoutResponse": {
         "properties": {
@@ -9709,6 +10197,15 @@
               "voided"
             ],
             "title": "Status"
+          },
+          "fraud_status": {
+            "type": "string",
+            "enum": [
+              "flagged",
+              "clear"
+            ],
+            "title": "Fraud Status",
+            "default": "clear"
           },
           "paid_at": {
             "anyOf": [
@@ -9844,6 +10341,60 @@
           "payout_email"
         ],
         "title": "PromoterEnrollmentUpdate"
+      },
+      "PromoterPosterBatchCreate": {
+        "properties": {
+          "program": {
+            "type": "string",
+            "const": "promoter",
+            "title": "Program"
+          },
+          "poster_template_id": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "pattern": "^[a-z0-9][a-z0-9-]*$",
+            "title": "Poster Template Id"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "copies": {
+            "type": "integer",
+            "maximum": 1000.0,
+            "minimum": 1.0,
+            "title": "Copies",
+            "default": 1
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "program",
+          "poster_template_id",
+          "name"
+        ],
+        "title": "PromoterPosterBatchCreate",
+        "description": "Create one or more independently tracked posters in one transaction."
+      },
+      "PromoterPosterBatchResponse": {
+        "properties": {
+          "posters": {
+            "items": {
+              "$ref": "#/components/schemas/QrCodeResponse"
+            },
+            "type": "array",
+            "title": "Posters"
+          }
+        },
+        "type": "object",
+        "required": [
+          "posters"
+        ],
+        "title": "PromoterPosterBatchResponse"
       },
       "PromotionCreate": {
         "properties": {
@@ -10004,10 +10555,7 @@
           },
           "program": {
             "type": "string",
-            "enum": [
-              "standard",
-              "promoter"
-            ],
+            "const": "standard",
             "title": "Program",
             "default": "standard"
           }
@@ -10020,7 +10568,7 @@
           "id"
         ],
         "title": "QrCodeCreate",
-        "description": "Create a QR code with an immutable program marker."
+        "description": "Create one standard organization or administrator QR code."
       },
       "QrCodeRedirect": {
         "properties": {
@@ -10185,6 +10733,17 @@
               }
             ],
             "title": "Latest Scan"
+          },
+          "poster_template_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Poster Template Id"
           },
           "image_url": {
             "anyOf": [
@@ -10638,6 +11197,18 @@
             ],
             "title": "Token",
             "description": "Optional invitation token"
+          },
+          "return_to": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2048
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Return To"
           }
         },
         "type": "object",

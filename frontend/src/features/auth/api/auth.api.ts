@@ -69,10 +69,12 @@ export function updateUserProfile(profile: UserProfile): void {
 export async function sendOtpAPI(
   email: string,
   token?: string,
+  returnTo?: string,
 ): Promise<void> {
   await api.post("/auth/send-otp", {
     email,
     token: token ?? undefined,
+    return_to: returnTo ?? undefined,
   });
 }
 
@@ -202,6 +204,9 @@ export async function fetchProfileAPI(): Promise<UserProfile | null> {
       })),
       organizationId: associatedClub?.id ?? null,
       organizationName: associatedClub?.organization_name ?? null,
+      payoutEmail: data.payout_email ?? null,
+      promoterTosAcceptedAt: data.promoter_tos_accepted_at ?? null,
+      promoterTosVersion: data.promoter_tos_version ?? null,
     };
     saveUserProfile(profile);
     if (data.email) saveUserEmail(data.email);
@@ -228,6 +233,4 @@ export async function updateProfileAPI(profile: UserProfile): Promise<void> {
   // to reconcile here - re-saving would just fire another redundant
   // auth-state-refresh event.
 }
-
-
 

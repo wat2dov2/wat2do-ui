@@ -4,7 +4,8 @@
     "tabs": {
       "profile": "个人资料",
       "notifications": "通知设置",
-      "appearance": "界面外观"
+      "appearance": "界面外观",
+      "promoter": "推广计划"
     },
     "profile": {
       "title": "个人信息",

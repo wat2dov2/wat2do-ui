@@ -129,7 +129,7 @@
       "step3Title": "下载打印就绪的 PDF",
       "step3Description": "我们将为每个资产创建一个 PDF，根据您选择的位置，每页包含一个唯一的二维码。",
       "info": {
-        "uniqueAssets": "仅上传每个唯一资产的一个副本——请勿上传重复的图样。",
+        "uniqueAssets": "仅上传每个唯一资产的一个副本，请勿上传重复的图样。",
         "activationAndMap": "哪个二维码放在哪里并不重要。只要有任何一个代码被扫描，它就会激活并在地图上显示。",
         "generateMoreLater": "如果您丢失了海报或需要更多，您以后随时可以生成更多二维码。"
       },
@@ -155,6 +155,127 @@
         "noAssetsOrQuantities": "继续前，请至少上传一个资产并设置大于 0 的数量。",
         "missingPlacement": "继续前，请为每个资产设置二维码的放置区域。",
         "loginRequired": "请登录以生成 PDF。"
+      }
+    },
+    "posterPayouts": {
+      "title": "海报付款",
+      "description": "审核推广员收入并记录外部付款。",
+      "tabs": {
+        "label": "海报管理",
+        "posters": "海报",
+        "payouts": "付款"
+      },
+      "notAvailable": "不可用",
+      "loadError": "无法加载海报付款。",
+      "retry": "重试",
+      "empty": "没有符合这些筛选条件的付款。",
+      "refreshing": "正在刷新付款...",
+      "results": "{{count}} 笔付款",
+      "status": {
+        "pending": "待付款",
+        "held": "已暂停",
+        "paid": "已付款",
+        "voided": "已作废"
+      },
+      "columns": {
+        "promoter": "推广员",
+        "email": "付款邮箱",
+        "period": "结算期",
+        "visitors": "可计费访客",
+        "rate": "费率",
+        "amount": "金额",
+        "status": "状态",
+        "fraud": "欺诈提示",
+        "actions": "操作"
+      },
+      "filters": {
+        "title": "筛选付款",
+        "description": "按推广员、付款状态、结算期、金额或欺诈状态缩小审核范围。",
+        "user": "推广员 ID",
+        "userPlaceholder": "用户 UUID",
+        "status": "状态",
+        "allStatuses": "所有状态",
+        "email": "付款邮箱",
+        "emailPlaceholder": "promoter@example.com",
+        "fraud": "欺诈状态",
+        "allFraudStates": "所有欺诈状态",
+        "flagged": "已标记",
+        "clear": "无异常",
+        "periodFrom": "起始结算期",
+        "periodTo": "结束结算期",
+        "minAmount": "最低金额",
+        "maxAmount": "最高金额",
+        "invalidAmountRange": "最高金额必须大于或等于最低金额。",
+        "reset": "重置",
+        "apply": "应用筛选"
+      },
+      "fraudClear": "无异常",
+      "fraudFlagged": "已标记",
+      "actions": {
+        "review": "审核",
+        "hold": "暂停付款",
+        "release": "解除暂停",
+        "void": "作废付款",
+        "paid": "标记为已付款"
+      },
+      "bulk": {
+        "selected": "已选择 {{count}} 笔待付款项目",
+        "pendingOnly": "暂停的付款必须先解决才能支付。",
+        "exportCsv": "导出 Interac CSV",
+        "markPaid": "将所选项目标为已付款",
+        "selectAll": "选择本页所有待付款项目",
+        "selectPayout": "选择 {{email}} 的付款",
+        "exported": "Interac CSV 已下载",
+        "exportError": "无法导出所选付款",
+        "markedPaid": "所选付款已标记为已付款",
+        "markPaidError": "无法将所选付款标记为已付款",
+        "confirmPaidTitle": "记录外部付款？",
+        "confirmPaidDescription": "将 {{count}} 笔所选付款标记为已付款。",
+        "confirmMarkPaid": "记录为已付款"
+      },
+      "externalPaymentWarning": "将此付款标记为已付款只会记录一笔外部 Interac 付款。Wat2Do 不会自动汇款。",
+      "detail": {
+        "title": "付款审核",
+        "description": "审核海报贡献、风险证据和当前付款状态。",
+        "loadError": "无法加载此付款。",
+        "createdAt": "创建时间",
+        "updatedAt": "最后更新",
+        "paidAt": "付款时间",
+        "contributions": "海报贡献明细",
+        "contributionsDescription": "每张海报带来的可计费访客和收入。",
+        "noContributions": "此结算期没有记录海报贡献。",
+        "poster": "海报",
+        "template": "模板",
+        "unknownTemplate": "旧版模板",
+        "fraudReview": "欺诈审核",
+        "noFraudReasons": "没有记录结构化欺诈原因。",
+        "riskSummary": "{{count}} 次扫码共 {{points}} 分",
+        "reviewHistory": "审核记录",
+        "noReviewHistory": "尚未记录管理员审核操作。",
+        "reviewEvents": {
+          "pending_held": "已暂停付款",
+          "held_pending": "已解除暂停",
+          "held_voided": "已作废付款",
+          "pending_paid": "已标记为已付款"
+        },
+        "notes": "审核备注",
+        "noNotes": "无备注",
+        "reviewedBy": "审核人",
+        "reviewedAt": "审核时间",
+        "actions": "审核操作",
+        "notesPlaceholder": "说明暂停或作废此付款的原因。",
+        "updated": "付款审核已更新",
+        "updateError": "无法更新付款"
+      },
+      "confirm": {
+        "holdTitle": "暂停此付款？",
+        "holdDescription": "在管理员解除暂停或将其作废前，此付款不会进入付款批次。",
+        "releaseTitle": "解除暂停？",
+        "releaseDescription": "此付款将恢复为待付款状态，并可导出和支付。",
+        "voidTitle": "作废此付款？",
+        "voidDescription": "此付款将成为终止状态，以后无法支付。",
+        "paidTitle": "记录此付款为已付款？",
+        "paidDescription": "将此付款标记为已付款只会记录一笔外部 Interac 付款。Wat2Do 不会自动汇款。"
       }
     },
     "instagramPublishing": {

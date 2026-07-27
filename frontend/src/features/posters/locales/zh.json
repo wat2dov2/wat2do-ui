@@ -1,0 +1,198 @@
+{
+  "posters": {
+    "recruitment": {
+      "title": "帮助更多学生发现 {{school}} 的活动。",
+      "description": "张贴 Wat2Do 官方海报，每带来一位符合条件的新访客即可获得 {{rate}}。",
+      "seeHowItWorks": "了解运作方式",
+      "dismiss": "{{days}} 天内隐藏此消息"
+    },
+    "promote": {
+      "title": "把 Wat2Do 带到 {{school}}",
+      "description": "在校园张贴官方海报，每带来一位符合条件的新访客即可获得 {{rate}}。",
+      "stepsTitle": "运作方式",
+      "stepsDescription": "使用官方可打印设计，几分钟即可开始。",
+      "step1Title": "选择官方海报",
+      "step1Description": "从 Wat2Do 审核通过的设计中选择。",
+      "step2Title": "张贴并激活",
+      "step2Description": "每份海报只放在一个校园地点，然后扫码确认该位置。",
+      "step3Title": "通过新访客获得报酬",
+      "step3Description": "每位确认且符合条件的新访客可带来 {{rate}}。",
+      "coverageTitle": "{{school}} 的校园覆盖",
+      "coverageDescription": "近似区域显示活跃海报的覆盖情况，同时不会暴露任何推广者。"
+    },
+    "enrollment": {
+      "pausedTitle": "推广计划已暂停",
+      "pausedDescription": "现有海报和收益仍可查看，但新加入和新建海报暂时暂停。",
+      "pausedMaintenanceDescription": "新海报创建已暂停，但你仍可更新收款邮箱并接受当前条款。",
+      "readyTitle": "准备帮助你的校园了吗？",
+      "readyDescription": "登录后即可使用学校账户立即加入。",
+      "signInToJoin": "登录并加入",
+      "schoolRequiredTitle": "请先添加学校",
+      "schoolRequiredDescription": "个人资料中必须有学校，海报才能链接到正确的校园活动页面。",
+      "completeProfile": "完善个人资料",
+      "enrolledTitle": "你已加入计划",
+      "enrolled": "已加入",
+      "enrolledDescription": "你的推广者仪表板已准备好。",
+      "openPosters": "打开我的海报",
+      "settingsTitle": "推广计划",
+      "settingsDescription": "查看加入状态，并保持 Interac 电子转账邮箱为最新。",
+      "joinTitle": "加入推广计划",
+      "joinDescription": "加入立即生效，只需提供收款邮箱并接受当前条款。",
+      "termsUpdateTitle": "查看更新后的条款",
+      "termsUpdateDescription": "创建下一张海报前，请接受当前推广者服务条款。",
+      "payoutEmail": "收款邮箱",
+      "payoutEmailPlaceholder": "you@example.com",
+      "payoutEmailDescription": "每月 Interac 电子转账将发送到此邮箱。",
+      "acceptTermsPrefix": "我接受",
+      "termsLink": "推广者服务条款，版本 {{version}}",
+      "error": "无法更新你的推广计划加入信息。",
+      "trustMonthly": "款项每月通过 Interac 电子转账发送。",
+      "trustActivation": "首次激活访客不产生收益。",
+      "trustTraffic": "重复、未确认、自动化及欺诈流量不计入收益。",
+      "trustPrivacy": "Wat2Do 不存储原始 IP 地址。",
+      "join": "加入推广计划",
+      "save": "保存收款设置",
+      "discord": "在 Discord 获取帮助"
+    },
+    "dashboard": {
+      "title": "我的海报",
+      "description": "创建、张贴并跟踪 Wat2Do 官方海报。",
+      "enrollmentRequired": "加入推广计划后即可创建和管理官方海报。",
+      "loading": "正在加载海报仪表板……",
+      "loadErrorTitle": "无法加载仪表板",
+      "loadErrorDescription": "请稍后重试。你的海报和收益未被更改。",
+      "pendingEarnings": "本月待结算",
+      "creditableVisitors": "本月符合条件的访客",
+      "lifetimePaid": "累计已支付",
+      "activeSlots": "活跃海报名额",
+      "slotValue": "已用 {{used}}，共 {{limit}}",
+      "updatedDaily": "每日更新",
+      "mapTitle": "校园海报地图",
+      "mapDescription": "你的已放置海报位置精确且可选择，其他校园覆盖仅显示隐私保护后的近似位置。",
+      "pausedTitle": "海报创建已暂停",
+      "pausedDescription": "仪表板、下载、收益、付款记录和归档功能仍可使用。",
+      "termsTitle": "接受当前条款后才能创建海报",
+      "termsDescription": "查看最新条款期间，现有海报仍会正常工作。",
+      "reviewTerms": "查看推广者设置"
+    },
+    "create": {
+      "open": "创建海报",
+      "title": "创建官方海报",
+      "description": "选择一款审核通过的设计，并为每份实体海报创建独立跟踪的二维码。",
+      "chooseTemplate": "选择海报设计",
+      "chooseTemplateDescription": "所选模板决定固定二维码位置和打印格式。",
+      "selectTemplate": "选择设计",
+      "customTitle": "有自己的海报设计？",
+      "customDescription": "加入 Discord 与我们分享。我们会审核投稿，并将通过的设计加入官方合集。",
+      "discord": "在 Discord 分享",
+      "placementName": "放置位置名称",
+      "placementPlaceholder": "SLC 二楼",
+      "copies": "份数",
+      "slotsRemaining": "剩余 {{count}} 个活跃名额",
+      "oneLocationTitle": "一个二维码对应一个实体位置",
+      "oneLocationDescription": "每份海报都有唯一二维码，便于 Wat2Do 准确统计并标记该海报。",
+      "submit": "创建海报",
+      "error": "无法创建这批海报。",
+      "createdTitle": "你的唯一海报已准备好",
+      "createdDescription": "已创建 {{count}} 份独立跟踪的海报。请下载后分别张贴。",
+      "downloadPdf": "下载 Letter PDF",
+      "downloadPng": "下载 PNG 文件",
+      "downloadError": "无法生成海报文件，请重试。"
+    },
+    "inventory": {
+      "title": "海报清单",
+      "description": "已放置海报在 {{days}} 天没有有效扫码后会标记为安静。安静海报在归档前仍保持活跃。",
+      "emptyTitle": "创建你的第一张 Wat2Do 官方海报",
+      "emptyDescription": "下载并张贴到校园，然后亲自扫码激活位置。激活访客不产生收益。",
+      "latestScan": "最近有效扫码：{{time}}",
+      "neverScanned": "尚无有效扫码",
+      "totalVisitors": "累计确认访客",
+      "periodVisitors": "本月符合条件",
+      "periodEarnings": "本月待结算",
+      "activationInstruction": "张贴此海报，扫描二维码并允许位置访问，以确认放置地点。",
+      "downloadPdf": "下载 PDF",
+      "downloadPng": "下载 PNG",
+      "downloadError": "无法生成此海报的下载文件。",
+      "templateUnavailable": "此旧版海报没有可重新生成的模板。",
+      "archive": "归档海报",
+      "archiveTitle": "归档此实体位置？",
+      "archiveDescription": "{{name}} 仍会跳转，但将停止记录可结算访问，并释放一个活跃名额。",
+      "archiveSuccess": "海报已归档。"
+    },
+    "lifecycle": {
+      "not-placed": "未放置",
+      "recently-scanned": "近期有扫码",
+      "quiet": "安静",
+      "archived": "已归档"
+    },
+    "map": {
+      "loading": "正在加载校园覆盖……",
+      "loadErrorTitle": "覆盖地图暂不可用",
+      "loadErrorDescription": "推广机会仍然开放，请稍后再查看地图。",
+      "coverageMarker": "约有 {{count}} 张海报的校园区域",
+      "campusCoverage": "校园近似覆盖",
+      "coverageSummary": "{{count}} 张海报，其中 {{recent}} 张近期有扫码",
+      "ownedMarker": "你的海报：{{name}}",
+      "managedMarker": "管理的海报：{{name}}",
+      "visitorCount": "{{count}} 位确认访客",
+      "yourPosters": "你的海报",
+      "managedPosters": "管理的海报",
+      "otherCoverage": "其他校园覆盖",
+      "noCoverageTitle": "这里尚无已放置海报",
+      "noCoverageDescription": "成为首批增加校园覆盖的推广者。"
+    },
+    "payouts": {
+      "title": "付款记录",
+      "description": "每月 Interac 电子转账记录。被暂缓的款项会接受审核，而不会被移除。",
+      "loading": "正在加载付款记录……",
+      "loadErrorTitle": "付款记录暂不可用",
+      "loadErrorDescription": "请稍后重试。你的付款记录未被更改。",
+      "empty": "尚无已完成的付款周期。",
+      "period": "周期",
+      "visitors": "符合条件的访客",
+      "rate": "费率",
+      "amount": "金额",
+      "status": "状态",
+      "paidDate": "付款日期",
+      "statuses": {
+        "pending": "待处理",
+        "held": "暂缓审核",
+        "paid": "已支付",
+        "voided": "已作废"
+      }
+    },
+    "terms": {
+      "title": "推广者服务条款",
+      "description": "当前计划条款，版本 {{version}}。",
+      "back": "返回推广计划",
+      "eligibility": {
+        "title": "资格与加入",
+        "body": "你必须使用自己的 Wat2Do 账户，在个人资料中保留学校信息，提供可接收 Interac 电子转账的邮箱，并接受当前条款。加入计划不保证未来始终有海报可创建。"
+      },
+      "posters": {
+        "title": "官方海报与放置位置",
+        "body": "只能使用 Wat2Do 生成的审核通过文件。每个唯一二维码只对应一个实体位置，不得在多个位置复制使用同一二维码。移动或撤下实体海报前请先归档。"
+      },
+      "visitors": {
+        "title": "符合条件的访客",
+        "body": "激活访客不产生收益。重复、未确认、自动化、操纵及欺诈流量不计入收益。Wat2Do 可在发放款项前审核异常流量。"
+      },
+      "payments": {
+        "title": "付款",
+        "body": "符合条件的金额按 UTC 自然月及该周期生效的计划费率计算，并通过 Interac 电子转账手动支付。暂缓金额会继续接受审核。税务义务和准确的收款信息由你负责。"
+      },
+      "conduct": {
+        "title": "安全且尊重规定的放置",
+        "body": "只在获得许可的地方张贴海报。不得遮挡必要通知、损坏财物、歪曲 Wat2Do，也不得在校园或当地规则禁止的地点张贴。"
+      },
+      "privacy": {
+        "title": "隐私与统计",
+        "body": "Wat2Do 使用隐私保护的访客标识和近似公共覆盖区域，不存储原始 IP 地址。你的收款信息和精确放置位置不会公开。"
+      },
+      "changes": {
+        "title": "计划变更与暂停",
+        "body": "Wat2Do 可暂停新加入或海报创建、停用设计、更新条款，或因滥用暂停参与资格。现有二维码跳转和已记录付款仍依照计划规则保留。"
+      }
+    }
+  }
+}

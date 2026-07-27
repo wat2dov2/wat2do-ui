@@ -50,6 +50,10 @@ const featureTranslationLoaders: Array<Record<SupportedLanguage, TranslationLoad
     en: () => import('@/features/onboarding-demo/locales/en.json'),
     zh: () => import('@/features/onboarding-demo/locales/zh.json'),
   },
+  {
+    en: () => import('@/features/posters/locales/en.json'),
+    zh: () => import('@/features/posters/locales/zh.json'),
+  },
 ];
 
 async function loadTranslations(lang: SupportedLanguage): Promise<TranslationModule> {

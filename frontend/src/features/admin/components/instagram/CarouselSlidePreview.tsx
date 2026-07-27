@@ -14,19 +14,27 @@ interface CarouselSlidePreviewProps {
   slideCount: number;
   /** The slide's event, or `null` on the cover and on an unloadable slide. */
   event: Event | null;
-  cover: { schoolName: string; body: string; tiles: string[] };
+  cover: Parameters<typeof buildCoverSlideModel>[0];
+  /**
+   * The PNG this slide published as, once the run is live.
+   *
+   * A published slide is history, so it shows the image Instagram was given
+   * instead of re-rendering an event that has since moved on.
+   */
+  publishedAssetUrl?: string | null;
 }
 
 const COVER_INDEX = 0;
 /** On-screen width of the preview column, matching a feed card. */
 const PREVIEW_WIDTH = 288;
-/** The cover has no card equivalent, so it previews as the scaled slide. */
-const COVER_SCALE = PREVIEW_WIDTH / SLIDE_WIDTH;
+/** A full 1080x1350 slide, scaled to the preview column. */
+const PREVIEW_SCALE = PREVIEW_WIDTH / SLIDE_WIDTH;
 
 /**
  * What the admin is looking at on a given slide.
  *
- * An event slide previews as the app's own grid card, rendered inert: the point
+ * Once the run is live this is simply the image that was posted. Until then an
+ * event slide previews as the app's own grid card, rendered inert: the point
  * of this screen is checking which events are on the carousel and whether their
  * details are right, and the card is the maintained way to show one. The published
  * 1080x1350 image is rendered from the same event data at publish time by
@@ -37,22 +45,30 @@ export function CarouselSlidePreview({
   slideCount,
   event,
   cover,
+  publishedAssetUrl,
 }: CarouselSlidePreviewProps) {
   const { t } = useTranslation();
   const isCover = slideIndex === COVER_INDEX;
 
   return (
     <figure className="flex flex-col items-center gap-2" style={{ width: PREVIEW_WIDTH }}>
-      {isCover ? (
+      {publishedAssetUrl ? (
+        <img
+          src={publishedAssetUrl}
+          alt=""
+          className="rounded-xl border border-border"
+          style={{ width: PREVIEW_WIDTH, height: SLIDE_HEIGHT * PREVIEW_SCALE }}
+        />
+      ) : isCover ? (
         <div
           className="overflow-hidden rounded-xl border border-border bg-surface"
-          style={{ width: PREVIEW_WIDTH, height: SLIDE_HEIGHT * COVER_SCALE }}
+          style={{ width: PREVIEW_WIDTH, height: SLIDE_HEIGHT * PREVIEW_SCALE }}
         >
           <div
             style={{
               width: SLIDE_WIDTH,
               height: SLIDE_HEIGHT,
-              transform: `scale(${COVER_SCALE})`,
+              transform: `scale(${PREVIEW_SCALE})`,
               transformOrigin: "top left",
             }}
           >
