@@ -19,12 +19,14 @@ import {
   SelectValue,
 } from "@/shared/ui/select";
 import { Switch } from "@/shared/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { Textarea } from "@/shared/ui/textarea";
 import { ShowcaseBlock } from "./ShowcaseBlock";
 
 export function FormControlsSection() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [activeTab, setActiveTab] = useState("events");
 
   return (
     <Section
@@ -79,6 +81,21 @@ export function FormControlsSection() {
               {notificationsEnabled ? "Notifications on" : "Notifications off"}
             </Label>
           </div>
+        </ShowcaseBlock>
+
+        <ShowcaseBlock label="Tabs">
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList>
+              <TabsTrigger value="events">Events</TabsTrigger>
+              <TabsTrigger value="submissions">Submissions</TabsTrigger>
+            </TabsList>
+            <TabsContent value="events" className="mt-3 text-sm text-muted-foreground">
+              Browse and manage published events.
+            </TabsContent>
+            <TabsContent value="submissions" className="mt-3 text-sm text-muted-foreground">
+              Review events submitted for approval.
+            </TabsContent>
+          </Tabs>
         </ShowcaseBlock>
 
         <ShowcaseBlock label="Field composition">

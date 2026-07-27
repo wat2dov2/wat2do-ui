@@ -22,6 +22,8 @@ const buttonVariants = cva(
           "bg-transparent text-foreground hover:bg-surface-hover active:bg-surface-active data-[selected=true]:bg-selected data-[selected=true]:text-selected-foreground data-[selected=true]:hover:bg-selected-hover",
         destructive:
           "bg-destructive text-destructive-foreground hover:bg-destructive-hover active:bg-destructive-active focus-visible:ring-destructive/20",
+        warning:
+          "bg-warning text-warning-foreground hover:bg-warning-hover active:bg-warning-active focus-visible:ring-warning/20",
       },
       size: {
         default: "h-9 px-4 py-2 has-[>svg]:px-3",

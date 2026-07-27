@@ -217,17 +217,11 @@ export function EventFormStep({
                 onValueChange={handleViewModeTabChange}
                 className="w-fit"
               >
-                <TabsList variant="default" className="h-9 sm:h-8">
-                  <TabsTrigger
-                    value="visual"
-                    className="px-3 py-1 text-[11px] font-medium"
-                  >
+                <TabsList>
+                  <TabsTrigger value="visual">
                     {t("settings.appearance.visual")}
                   </TabsTrigger>
-                  <TabsTrigger
-                    value="json"
-                    className="px-3 py-1 text-[11px] font-medium"
-                  >
+                  <TabsTrigger value="json">
                     {t("settings.appearance.json")}
                   </TabsTrigger>
                 </TabsList>

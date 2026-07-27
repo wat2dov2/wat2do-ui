@@ -83,17 +83,11 @@ export function FilterDropdown({
             }
             className="w-fit"
           >
-            <TabsList variant="default" className="h-8">
-              <TabsTrigger
-                value="visual"
-                className="text-[11px] font-medium px-3 py-1"
-              >
+            <TabsList>
+              <TabsTrigger value="visual">
                 {t("settings.appearance.visual")}
               </TabsTrigger>
-              <TabsTrigger
-                value="json"
-                className="text-[11px] font-medium px-3 py-1"
-              >
+              <TabsTrigger value="json">
                 {t("settings.appearance.json")}
               </TabsTrigger>
             </TabsList>

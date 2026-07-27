@@ -7,6 +7,7 @@ const BUTTON_VARIANTS = [
   { label: "Primary", variant: "primary" as const },
   { label: "Secondary", variant: "secondary" as const },
   { label: "Ghost", variant: "ghost" as const },
+  { label: "Warning", variant: "warning" as const },
   { label: "Destructive", variant: "destructive" as const },
 ];
 

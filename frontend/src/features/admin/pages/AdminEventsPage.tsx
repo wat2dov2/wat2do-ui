@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Calendar, AlertTriangle, FileText } from "@/shared/ui/doodle-icons";
 import { Button } from "@/shared/ui/button";
+import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import {
   Select,
   SelectContent,
@@ -146,7 +147,11 @@ export function AdminEventsPage({
   const fmtTime = (dateStr: string) => formatRelativeTime(dateStr, t);
 
   return (
-    <div className="space-y-5">
+    <Tabs
+      value={activeTab}
+      onValueChange={(value) => setActiveTab(value as "events" | "submissions")}
+      className="space-y-5"
+    >
       <AdminPageHeader
         icon={Calendar}
         title={t("admin.manageEvents")}
@@ -154,35 +159,19 @@ export function AdminEventsPage({
         onBack={onBack}
       />
 
-      <div className="flex gap-2 border-b border-border pb-3">
-        <button
-          onClick={() => setActiveTab("events")}
-          data-elevation="control"
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer ${
-            activeTab === "events"
-              ? "bg-primary/80 text-primary-foreground font-semibold"
-              : "bg-secondary text-muted-foreground hover:bg-muted-hover"
-          }`}
-        >
+      <TabsList>
+        <TabsTrigger value="events">
           {t("admin.eventsList")}
-        </button>
-        <button
-          onClick={() => setActiveTab("submissions")}
-          data-elevation="control"
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer relative ${
-            activeTab === "submissions"
-              ? "bg-primary/80 text-primary-foreground font-semibold"
-              : "bg-secondary text-muted-foreground hover:bg-muted-hover"
-          }`}
-        >
+        </TabsTrigger>
+        <TabsTrigger value="submissions">
           {t("admin.eventSubmissions")}
           {pendingSubmissionsCount > 0 && (
-            <span className="ml-1.5 px-1.5 py-0.5 text-[10px] bg-foreground/30 text-primary-foreground rounded-full font-bold">
+            <span className="ml-1.5 rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-bold text-primary">
               {pendingSubmissionsCount}
             </span>
           )}
-        </button>
-      </div>
+        </TabsTrigger>
+      </TabsList>
 
       {activeTab === "events" ? (
         <>
@@ -518,6 +507,6 @@ export function AdminEventsPage({
           />
         </>
       )}
-    </div>
+    </Tabs>
   );
 }

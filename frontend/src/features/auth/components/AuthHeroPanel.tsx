@@ -42,7 +42,10 @@ export function AuthHeroPanel({ events = [] }: AuthHeroPanelProps) {
               </h2>
               <p className="text-sm text-muted-foreground">{t("auth.heroSubtitle")}</p>
             </header>
-            <div className="grid grid-cols-2 gap-4">
+            <div
+              className="grid grid-cols-2 gap-4"
+              data-testid="auth-preview-events"
+            >
               {previewEvents.map(({ id, preview }) => (
                 <PreviewStyleEventCard key={id} event={preview} />
               ))}

@@ -77,6 +77,8 @@
   --success: oklch(0.690 0.170 150.7);
   --success-foreground: oklch(0.985 0 0);
   --warning: oklch(0.745 0.153 73.2);
+  --warning-hover: oklch(from var(--warning) calc(l - 0.05) c h);
+  --warning-active: oklch(from var(--warning) calc(l - 0.08) c h);
   --warning-foreground: oklch(0.193 0 0);
   --info: oklch(0.781 0 0);
   --info-foreground: oklch(0.193 0 0);

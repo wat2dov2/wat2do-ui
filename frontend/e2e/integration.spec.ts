@@ -456,6 +456,9 @@ test.describe("Auth Page", () => {
     await expect(page.locator('input[type="email"]')).toBeVisible();
     await expect(page.getByRole("button", { name: /continue/i })).toBeVisible();
     await expect(page.getByText(/platform terms/i)).toBeVisible();
+    await expect(
+      page.getByTestId("auth-preview-events").locator(":scope > *"),
+    ).toHaveCount(4);
   });
 
   test("continues from email to verification code entry", async ({ page }) => {

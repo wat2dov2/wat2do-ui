@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { useArchivePromoterPoster } from "@/features/posters/hooks/usePromoterDashboard";
+import { PosterDownloadMenu } from "@/features/posters/components/PosterDownloadMenu";
 import type {
   ApprovedPosterTemplate,
   PosterLifecycle,
@@ -35,7 +36,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/shared/ui/dialog";
-import { Download, QrCode } from "@/shared/ui/doodle-icons";
+import { QrCode } from "@/shared/ui/doodle-icons";
 import { LoadingButton } from "@/shared/ui/loading-button";
 
 interface PromoterPosterInventoryProps {
@@ -240,34 +241,18 @@ export function PromoterPosterInventory({
                 )}
               </CardContent>
               <CardFooter className="flex-wrap gap-2">
-                <LoadingButton
-                  type="button"
+                <PosterDownloadMenu
                   variant="secondary"
                   size="sm"
                   isLoading={downloadingPosterId === poster.id}
                   disabled={!template}
-                  onClick={() => void downloadPoster(poster, "pdf")}
-                  data-testid={`poster-download-pdf-${poster.id}`}
-                >
-                  <Download />
-                  {t("posters.inventory.downloadPdf")}
-                </LoadingButton>
-                <LoadingButton
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  isLoading={downloadingPosterId === poster.id}
-                  disabled={!template}
-                  onClick={() => void downloadPoster(poster, "png")}
-                  data-testid={`poster-download-png-${poster.id}`}
-                >
-                  <Download />
-                  {t("posters.inventory.downloadPng")}
-                </LoadingButton>
+                  onDownload={(format) => void downloadPoster(poster, format)}
+                  testId={`poster-download-${poster.id}`}
+                />
                 {poster.isActive && (
                   <Button
                     type="button"
-                    variant="destructive"
+                    variant="warning"
                     size="sm"
                     onClick={() => setPosterToArchive(poster)}
                     data-testid={`poster-archive-${poster.id}`}
@@ -308,7 +293,7 @@ export function PromoterPosterInventory({
             </Button>
             <LoadingButton
               type="button"
-              variant="destructive"
+              variant="warning"
               isLoading={archivePoster.isPending}
               onClick={confirmArchive}
               data-testid="poster-archive-confirm"

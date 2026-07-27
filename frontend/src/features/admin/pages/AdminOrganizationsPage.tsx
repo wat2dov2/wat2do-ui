@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { Building2, Plus, ExternalLink, ShieldAlert } from "@/shared/ui/doodle-icons";
 import { Button } from "@/shared/ui/button";
+import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import {
   Select,
   SelectContent,
@@ -261,7 +262,13 @@ export function AdminOrganizationsPage({
   };
 
   return (
-    <div className="space-y-5">
+    <Tabs
+      value={activeTab}
+      onValueChange={(value) =>
+        setActiveTab(value as "organizations" | "claims" | "review")
+      }
+      className="space-y-5"
+    >
       <AdminPageHeader
         icon={Building2}
         title={t("admin.manageClubs")}
@@ -279,51 +286,27 @@ export function AdminOrganizationsPage({
       />
 
       <div className="space-y-5 pb-2">
-        <div className="flex gap-2 border-b border-border pb-3">
-          <button
-            onClick={() => setActiveTab("organizations")}
-            data-elevation="control"
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer ${
-              activeTab === "organizations"
-                ? "bg-primary/80 text-primary-foreground font-semibold"
-                : "bg-secondary text-muted-foreground hover:bg-muted-hover"
-            }`}
-          >
+        <TabsList>
+          <TabsTrigger value="organizations">
             {t("admin.clubsList")}
-          </button>
-          <button
-            onClick={() => setActiveTab("claims")}
-            data-elevation="control"
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer relative ${
-              activeTab === "claims"
-                ? "bg-primary/80 text-primary-foreground font-semibold"
-                : "bg-secondary text-muted-foreground hover:bg-muted-hover"
-            }`}
-          >
+          </TabsTrigger>
+          <TabsTrigger value="claims">
             {t("admin.claimRequests")}
             {pendingClaimsCount > 0 && (
-              <span className="ml-1.5 px-1.5 py-0.5 text-[10px] bg-foreground/30 text-primary-foreground rounded-full font-bold">
+              <span className="ml-1.5 rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-bold text-primary">
                 {pendingClaimsCount}
               </span>
             )}
-          </button>
-          <button
-            onClick={() => setActiveTab("review")}
-            data-elevation="control"
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer relative ${
-              activeTab === "review"
-                ? "bg-primary/80 text-primary-foreground font-semibold"
-                : "bg-secondary text-muted-foreground hover:bg-muted-hover"
-            }`}
-          >
+          </TabsTrigger>
+          <TabsTrigger value="review">
             {t("admin.organizationReviews")}
             {pendingReviewCount > 0 && (
-              <span className="ml-1.5 px-1.5 py-0.5 text-[10px] bg-foreground/30 text-primary-foreground rounded-full font-bold">
+              <span className="ml-1.5 rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-bold text-primary">
                 {pendingReviewCount}
               </span>
             )}
-          </button>
-        </div>
+          </TabsTrigger>
+        </TabsList>
 
         {activeTab === "organizations" ? (
           <>
@@ -742,6 +725,6 @@ export function AdminOrganizationsPage({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </Tabs>
   );
 }

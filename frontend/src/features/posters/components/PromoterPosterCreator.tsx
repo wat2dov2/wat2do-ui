@@ -3,6 +3,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { useTranslation } from "react-i18next";
 
 import { useCreatePromoterPosters } from "@/features/posters/hooks/usePromoterDashboard";
+import { PosterDownloadMenu } from "@/features/posters/components/PosterDownloadMenu";
 import type {
   ApprovedPosterTemplate,
   QRCode,
@@ -31,7 +32,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/shared/ui/dialog";
-import { Download, ExternalLink, Plus, QrCode } from "@/shared/ui/doodle-icons";
+import { ExternalLink, Plus, QrCode } from "@/shared/ui/doodle-icons";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { LoadingButton } from "@/shared/ui/loading-button";
@@ -112,7 +113,6 @@ export function PromoterPosterCreator({
   const [selectedTemplateId, setSelectedTemplateId] = useState(
     eligibleTemplates[0]?.id ?? "",
   );
-  const [placementName, setPlacementName] = useState("");
   const [copies, setCopies] = useState(1);
   const [createdPosters, setCreatedPosters] = useState<QRCode[]>([]);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -124,7 +124,6 @@ export function PromoterPosterCreator({
   const reset = () => {
     createPosters.reset();
     setCreatedPosters([]);
-    setPlacementName("");
     setCopies(1);
   };
 
@@ -143,7 +142,7 @@ export function PromoterPosterCreator({
     try {
       const result = await createPosters.mutateAsync({
         posterTemplateId: selectedTemplate.id,
-        name: placementName,
+        name: selectedTemplate.name,
         copies,
       });
       setCreatedPosters(result.posters);
@@ -163,7 +162,7 @@ export function PromoterPosterCreator({
       const blob = await generateAssetPdf(
         {
           imagePreview: selectedTemplate.assetPath,
-          name: placementName,
+          name: selectedTemplate.name,
           quantity: createdPosters.length,
           placement: selectedTemplate.qrPlacement,
         },
@@ -175,7 +174,7 @@ export function PromoterPosterCreator({
           pageLabels: labels,
         },
       );
-      downloadBlob(blob, `${sanitizeFilename(placementName)}.pdf`);
+      downloadBlob(blob, `${sanitizeFilename(selectedTemplate.name)}.pdf`);
     } catch (error) {
       console.error("Poster PDF download failed:", error);
       toast({
@@ -196,7 +195,7 @@ export function PromoterPosterCreator({
       await generateAssetPngs(
         {
           imagePreview: selectedTemplate.assetPath,
-          name: placementName,
+          name: selectedTemplate.name,
           quantity: createdPosters.length,
           placement: selectedTemplate.qrPlacement,
         },
@@ -210,7 +209,7 @@ export function PromoterPosterCreator({
         (blob, index) => {
           downloadBlob(
             blob,
-            `${sanitizeFilename(placementName)}-copy-${index + 1}.png`,
+            `${sanitizeFilename(selectedTemplate.name)}-copy-${index + 1}.png`,
           );
         },
       );
@@ -266,25 +265,13 @@ export function PromoterPosterCreator({
                 ))}
               </div>
               <div className="flex flex-wrap justify-end gap-2">
-                <LoadingButton
-                  type="button"
-                  variant="secondary"
+                <PosterDownloadMenu
                   isLoading={isDownloading}
-                  onClick={() => void downloadPngs()}
-                  data-testid="poster-batch-download-png"
-                >
-                  <Download />
-                  {t("posters.create.downloadPng")}
-                </LoadingButton>
-                <LoadingButton
-                  type="button"
-                  isLoading={isDownloading}
-                  onClick={() => void downloadPdf()}
-                  data-testid="poster-batch-download-pdf"
-                >
-                  <Download />
-                  {t("posters.create.downloadPdf")}
-                </LoadingButton>
+                  onDownload={(format) => {
+                    void (format === "pdf" ? downloadPdf() : downloadPngs());
+                  }}
+                  testId="poster-batch-download"
+                />
               </div>
             </div>
           ) : (
@@ -355,61 +342,37 @@ export function PromoterPosterCreator({
                 </div>
               </div>
 
-              <div className="grid gap-5 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="poster-placement-name">
-                    {t("posters.create.placementName")}
-                  </Label>
-                  <Input
-                    id="poster-placement-name"
-                    data-testid="poster-placement-name"
-                    value={placementName}
-                    onChange={(event) => setPlacementName(event.target.value)}
-                    placeholder={t("posters.create.placementPlaceholder")}
-                    maxLength={120}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="poster-copy-count">
-                    {t("posters.create.copies")}
-                  </Label>
-                  <Input
-                    id="poster-copy-count"
-                    data-testid="poster-copy-count"
-                    type="number"
-                    min={1}
-                    max={remainingSlots}
-                    value={copies}
-                    onChange={(event) => {
-                      const nextCopies = Number.parseInt(
-                        event.target.value || "1",
-                        10,
-                      );
-                      if (Number.isNaN(nextCopies)) {
-                        return;
-                      }
-                      setCopies(
-                        Math.max(1, Math.min(remainingSlots, nextCopies)),
-                      );
-                    }}
-                    required
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    {t("posters.create.slotsRemaining", {
-                      count: remainingSlots,
-                    })}
-                  </p>
-                </div>
+              <div className="max-w-sm space-y-2">
+                <Label htmlFor="poster-copy-count">
+                  {t("posters.create.copies")}
+                </Label>
+                <Input
+                  id="poster-copy-count"
+                  data-testid="poster-copy-count"
+                  type="number"
+                  min={1}
+                  max={remainingSlots}
+                  value={copies}
+                  onChange={(event) => {
+                    const nextCopies = Number.parseInt(
+                      event.target.value || "1",
+                      10,
+                    );
+                    if (Number.isNaN(nextCopies)) {
+                      return;
+                    }
+                    setCopies(
+                      Math.max(1, Math.min(remainingSlots, nextCopies)),
+                    );
+                  }}
+                  required
+                />
+                <p className="text-xs text-muted-foreground">
+                  {t("posters.create.slotsRemaining", {
+                    count: remainingSlots,
+                  })}
+                </p>
               </div>
-
-              <Alert variant="info">
-                <QrCode />
-                <AlertTitle>{t("posters.create.oneLocationTitle")}</AlertTitle>
-                <AlertDescription>
-                  {t("posters.create.oneLocationDescription")}
-                </AlertDescription>
-              </Alert>
 
               {createPosters.error && (
                 <p className="text-sm text-destructive" role="status">
@@ -426,7 +389,6 @@ export function PromoterPosterCreator({
                   isLoading={createPosters.isPending}
                   disabled={
                     !selectedTemplate ||
-                    !placementName.trim() ||
                     copies < 1 ||
                     copies > remainingSlots
                   }

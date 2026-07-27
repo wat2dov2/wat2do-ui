@@ -34,7 +34,7 @@ export function SettingsPage() {
 
         {/* Tabs */}
         <Tabs value={tabParam} onValueChange={handleTabChange} className="mt-8">
-          <TabsList className="h-auto flex-wrap">
+          <TabsList>
             <TabsTrigger value={SETTINGS_TABS.PROFILE}>
               {t("settings.tabs.profile")}
             </TabsTrigger>

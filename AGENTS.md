@@ -221,6 +221,8 @@ When cleaning frontend code:
 - Create small layout helpers like Container, Stack, FormSection, FormGrid, and FormActions so building pages and forms feels like assembling LEGO rather than rewriting spacing and grid classes.
 - Keep component APIs intentionally small by exposing meaningful variants (primary, secondary, ghost) instead of dozens of styling props that try to cover every visual possibility.
 - Define interaction tokens such as `surface-hover`, `primary-hover`, and `destructive-hover`; derive them from the base colors (typically by slightly reducing lightness) instead of choosing unrelated hover colors.
+- Use `frontend/src/shared/ui/tabs.tsx` for every tabbed content-navigation surface, with the User Settings tab bar as the canonical appearance.
+- Do not add tab appearance variants, hand-style tab buttons, or override `TabsList` and `TabsTrigger` visuals at call sites.
 - Use a dedicated design system showcase page (or Storybook) to preview every component and variant in one place, making it easy to maintain visual consistency as the system evolves.
 - Follow one guiding principle: design decisions should live in tokens and reusable components, while pages focus only on composing layouts and business logic, resulting in a codebase that is easy to maintain, extend, and rebrand.
 

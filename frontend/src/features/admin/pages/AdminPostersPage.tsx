@@ -34,11 +34,7 @@ export function AdminPostersPage() {
       value={activeTab}
       onValueChange={(value) => setActiveTab(value as "posters" | "payouts")}
     >
-      <TabsList
-        variant="line"
-        aria-label={t("admin.posterPayouts.tabs.label")}
-        className="w-full justify-start"
-      >
+      <TabsList aria-label={t("admin.posterPayouts.tabs.label")}>
         <TabsTrigger value="posters" data-testid="admin-posters-tab">
           {t("admin.posterPayouts.tabs.posters")}
         </TabsTrigger>

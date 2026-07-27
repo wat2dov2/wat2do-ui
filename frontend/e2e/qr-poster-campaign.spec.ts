@@ -608,9 +608,6 @@ test.describe("Promoter poster campaign", () => {
       .getByTestId("poster-template-campus-low-ink")
       .getByRole("button")
       .click();
-    await page
-      .getByTestId("poster-placement-name")
-      .fill("Student Life Centre second floor");
     await page.getByTestId("poster-copy-count").fill("3");
     await page.getByTestId("poster-create-submit").click();
 
@@ -619,26 +616,25 @@ test.describe("Promoter poster campaign", () => {
       .toEqual({
         program: "promoter",
         poster_template_id: "campus-low-ink",
-        name: "Student Life Centre second floor",
+        name: "Campus Low Ink",
         copies: 3,
       });
     await expect(page.getByTestId("poster-created-previews")).toBeVisible();
 
     const pdfDownloadPromise = page.waitForEvent("download");
+    await page.getByTestId("poster-batch-download").click();
     await page.getByTestId("poster-batch-download-pdf").click();
     const pdfDownload = await pdfDownloadPromise;
-    expect(pdfDownload.suggestedFilename()).toBe(
-      "Student Life Centre second floor.pdf",
-    );
+    expect(pdfDownload.suggestedFilename()).toBe("Campus Low Ink.pdf");
 
-    const pngButton = page.getByTestId("poster-batch-download-png");
     const pngDownloadPromise = page.waitForEvent("download");
-    await pngButton.click();
+    await page.getByTestId("poster-batch-download").click();
+    await page.getByTestId("poster-batch-download-png").click();
     const pngDownload = await pngDownloadPromise;
-    expect(pngDownload.suggestedFilename()).toBe(
-      "Student Life Centre second floor-copy-1.png",
-    );
-    await expect(pngButton).toBeEnabled({ timeout: 30_000 });
+    expect(pngDownload.suggestedFilename()).toBe("Campus Low Ink-copy-1.png");
+    await expect(page.getByTestId("poster-batch-download")).toBeEnabled({
+      timeout: 30_000,
+    });
 
     await page.getByRole("button", { name: "Close" }).click();
     await expect(page.getByTestId("poster-inventory")).toBeVisible();

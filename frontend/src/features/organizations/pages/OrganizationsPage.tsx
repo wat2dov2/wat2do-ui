@@ -4,6 +4,7 @@ import { useShallow } from "zustand/react/shallow";
 import {
   Bookmark,
   Building2,
+  Plus,
   Search,
 } from "@/shared/ui/doodle-icons";
 import { Button } from "@/shared/ui/button";
@@ -105,6 +106,7 @@ export function OrganizationsPage() {
               router.push(ROUTES.ORGANIZATION_CREATE);
             }}
           >
+            <Plus />
             {t("organizations.addClub")}
           </Button>
         </div>

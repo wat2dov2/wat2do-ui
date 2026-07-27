@@ -1,5 +1,8 @@
 {
   "posters": {
+    "download": "Download",
+    "downloadPdf": "PDF",
+    "downloadPng": "PNG",
     "recruitment": {
       "title": "Help more students discover events at {{school}}.",
       "description": "Put up official Wat2Do posters and earn {{rate}} for every qualifying new visitor.",
@@ -85,18 +88,12 @@
       "customTitle": "Have your own poster design?",
       "customDescription": "Join our Discord and share it with us. We review submissions and add approved designs to the official collection.",
       "discord": "Share it on Discord",
-      "placementName": "Placement name",
-      "placementPlaceholder": "SLC second floor",
       "copies": "Copies",
       "slotsRemaining": "{{count}} active slots remaining",
-      "oneLocationTitle": "One QR for one physical location",
-      "oneLocationDescription": "Each copy gets a unique QR so Wat2Do can measure and map that poster accurately.",
       "submit": "Create posters",
       "error": "The poster batch could not be created.",
       "createdTitle": "Your unique posters are ready",
       "createdDescription": "{{count}} separately tracked copies were created. Download them before placing each copy.",
-      "downloadPdf": "Download Letter PDF",
-      "downloadPng": "Download PNG files",
       "downloadError": "The poster files could not be generated. Please try again."
     },
     "inventory": {
@@ -110,8 +107,6 @@
       "periodVisitors": "Qualifying this month",
       "periodEarnings": "Pending this month",
       "activationInstruction": "Place this copy, scan its QR, and allow location access to establish the placement.",
-      "downloadPdf": "Download PDF",
-      "downloadPng": "Download PNG",
       "downloadError": "This poster could not be generated for download.",
       "templateUnavailable": "This legacy poster does not have a regeneratable template.",
       "archive": "Archive poster",

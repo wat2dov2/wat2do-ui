@@ -443,11 +443,11 @@ test.describe("Organization Membership Join & Admin Approval Flow", () => {
     await expect(page).toHaveURL(`${BASE}/organization-panel/members`);
 
     // Verify we see "Active Members (1)" initially
-    await expect(page.getByRole("button", { name: "Active Members (1)" })).toBeVisible();
+    await expect(page.getByRole("tab", { name: "Active Members (1)" })).toBeVisible();
     await expect(page.getByText("Club Owner")).toBeVisible();
 
     // Go to "Pending Requests" tab
-    const requestsTab = page.getByRole("button", { name: "Pending Requests (1)" });
+    const requestsTab = page.getByRole("tab", { name: "Pending Requests (1)" });
     await expect(requestsTab).toBeVisible();
     await requestsTab.click();
 
@@ -461,8 +461,8 @@ test.describe("Organization Membership Join & Admin Approval Flow", () => {
     await page.waitForTimeout(500);
 
     // Verify roster has refreshed and "Pending Requests" becomes 0, "Active Members" becomes 2
-    await expect(page.getByRole("button", { name: "Pending Requests (0)" })).toBeVisible();
-    const membersTab = page.getByRole("button", { name: "Active Members (2)" });
+    await expect(page.getByRole("tab", { name: "Pending Requests (0)" })).toBeVisible();
+    const membersTab = page.getByRole("tab", { name: "Active Members (2)" });
     await expect(membersTab).toBeVisible();
 
     // Go back to members tab and verify "Test Student" is now listed
@@ -479,7 +479,7 @@ test.describe("Organization Membership Join & Admin Approval Flow", () => {
     await page.waitForTimeout(500);
 
     // Verify Active Members becomes 1 again
-    await expect(page.getByRole("button", { name: "Active Members (1)" })).toBeVisible();
+    await expect(page.getByRole("tab", { name: "Active Members (1)" })).toBeVisible();
     await expect(page.getByText("Test Student")).not.toBeVisible();
   });
 });

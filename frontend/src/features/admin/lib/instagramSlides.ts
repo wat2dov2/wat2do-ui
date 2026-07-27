@@ -14,6 +14,7 @@ import {
   getSchoolPublicUrl,
   type SchoolColors,
 } from "@/shared/constants/schools";
+import { buildInstagramCoverLogo } from "@/features/admin/lib/instagramCoverLogo";
 
 export const SLIDE_WIDTH = 1080;
 export const SLIDE_HEIGHT = 1350;
@@ -54,6 +55,8 @@ export interface EventSlideModel {
 export interface CoverSlideModel {
   /** The school's brand pair; the whole cover is drawn from these two colours. */
   colors: SchoolColors;
+  /** The canonical Wat2Do mark recoloured from the same school pair. */
+  logoSrc: string;
   /** "SUN JUL 26 · EVENT SHOWCASE" */
   eyebrow: string;
   /** Events added to this school in the batch's scrape window. */
@@ -159,8 +162,10 @@ export function buildCoverSlideModel({
   body: string;
   tiles: string[];
 }): CoverSlideModel {
+  const colors = getSchoolColors(school);
   return {
-    colors: getSchoolColors(school),
+    colors,
+    logoSrc: buildInstagramCoverLogo(colors),
     eyebrow: [formatCoverDate(localDate), COVER_EYEBROW_SUFFIX].filter(Boolean).join(" · "),
     newEventCount,
     headline: COVER_HEADLINE,

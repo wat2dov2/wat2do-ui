@@ -41,6 +41,8 @@
   --color-success: var(--success);
   --color-success-foreground: var(--success-foreground);
   --color-warning: var(--warning);
+  --color-warning-hover: var(--warning-hover);
+  --color-warning-active: var(--warning-active);
   --color-warning-foreground: var(--warning-foreground);
   --color-info: var(--info);
   --color-info-foreground: var(--info-foreground);
@@ -149,11 +151,7 @@
   }
 }
 
-/*
- * Page background decoration. Colours, spacing, and size come from the
- * --page-* tokens in styles/decorative-tokens.css - never hardcode them here
- * or in components.
- */
+/* Drawer dot texture. The global page uses the category-doodle field below. */
 @utility bg-page-dots {
   background-image: radial-gradient(
     circle,
@@ -161,6 +159,28 @@
     transparent calc(var(--page-dot-size) + 0.5px)
   );
   background-size: var(--page-dot-spacing) var(--page-dot-spacing);
+}
+
+.page-doodle-grid {
+  position: absolute;
+  inset: -18vmax;
+  display: grid;
+  grid-template-columns: repeat(9, minmax(0, 1fr));
+  grid-template-rows: repeat(8, minmax(0, 1fr));
+  opacity: var(--page-doodle-opacity);
+  transform: rotate(-11deg) scale(1.08);
+  transform-origin: center;
+}
+
+.page-doodle-icon {
+  width: var(--page-doodle-size);
+  aspect-ratio: 1;
+  place-self: center;
+  background: var(--page-school-primary);
+  mask-image: var(--page-doodle-icon);
+  mask-position: center;
+  mask-repeat: no-repeat;
+  mask-size: contain;
 }
 
 @utility bg-page-glow {

@@ -65,20 +65,20 @@
   --gradient-accent: linear-gradient(135deg, hsl(217 91% 60%), hsl(258 90% 66%));
   --glow-primary: 0 0 24px hsl(0 0% 96% / 0.08);
 
-  /*
-   * Global page background decoration - consumed by the bg-page-dots and
-   * bg-page-glow utilities in index.css and mounted once via <PageBackground />.
-   * Tune the whole app's backdrop from here; nothing else should hardcode it.
-   */
+  /* Global page background decoration, mounted once via <PageBackground />. */
+  --page-school-primary: #FFD54F;
+  --page-school-secondary: #111111;
+  --page-doodle-opacity: 0.055;
+  --page-doodle-size: clamp(1.75rem, 3vw, 3.25rem);
+  /* The dot tokens remain the single source for the matching drawer texture. */
   --page-dot-color: oklch(0.970 0 0 / 0.08);
   --page-dot-size: 1px;
   --page-dot-spacing: 24px;
-  /* Neutral white glow: chroma 0 so it tints nothing, only lifts brightness. */
-  --page-glow-inner: oklch(1.0 0 0 / 0.16);
-  --page-glow-middle: oklch(1.0 0 0 / 0.07);
+  --page-glow-inner: color-mix(in srgb, var(--page-school-primary) 22%, transparent);
+  --page-glow-middle: color-mix(in srgb, var(--page-school-secondary) 9%, transparent);
 
-  /* Event-page LightRays - the overlay component consumes no visual props. */
-  --event-light-rays-color: oklch(1 0 0 / 0.06);
+  /* Event-page LightRays, overridden with the active school's primary colour. */
+  --event-light-rays-color: color-mix(in srgb, var(--page-school-primary) 12%, transparent);
   --event-light-rays-z-index: 45;
   --event-light-rays-mask: linear-gradient(to bottom, black 0%, black 72%, transparent 100%);
   --event-light-rays-length: 110dvh;

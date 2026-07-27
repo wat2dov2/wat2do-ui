@@ -1,5 +1,8 @@
 {
   "posters": {
+    "download": "下载",
+    "downloadPdf": "PDF",
+    "downloadPng": "PNG",
     "recruitment": {
       "title": "帮助更多学生发现 {{school}} 的活动。",
       "description": "张贴 Wat2Do 官方海报，每带来一位符合条件的新访客即可获得 {{rate}}。",
@@ -85,18 +88,12 @@
       "customTitle": "有自己的海报设计？",
       "customDescription": "加入 Discord 与我们分享。我们会审核投稿，并将通过的设计加入官方合集。",
       "discord": "在 Discord 分享",
-      "placementName": "放置位置名称",
-      "placementPlaceholder": "SLC 二楼",
       "copies": "份数",
       "slotsRemaining": "剩余 {{count}} 个活跃名额",
-      "oneLocationTitle": "一个二维码对应一个实体位置",
-      "oneLocationDescription": "每份海报都有唯一二维码，便于 Wat2Do 准确统计并标记该海报。",
       "submit": "创建海报",
       "error": "无法创建这批海报。",
       "createdTitle": "你的唯一海报已准备好",
       "createdDescription": "已创建 {{count}} 份独立跟踪的海报。请下载后分别张贴。",
-      "downloadPdf": "下载 Letter PDF",
-      "downloadPng": "下载 PNG 文件",
       "downloadError": "无法生成海报文件，请重试。"
     },
     "inventory": {
@@ -110,8 +107,6 @@
       "periodVisitors": "本月符合条件",
       "periodEarnings": "本月待结算",
       "activationInstruction": "张贴此海报，扫描二维码并允许位置访问，以确认放置地点。",
-      "downloadPdf": "下载 PDF",
-      "downloadPng": "下载 PNG",
       "downloadError": "无法生成此海报的下载文件。",
       "templateUnavailable": "此旧版海报没有可重新生成的模板。",
       "archive": "归档海报",

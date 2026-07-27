@@ -15,8 +15,6 @@ import {
   type EventSlideModel,
 } from "@/features/admin/lib/instagramSlides";
 
-const WORDMARK = "WAT2DO?";
-
 // Dark-theme functional tokens, resolved from styles/functional-tokens.css.
 // satori has no CSS variables, so the event slide carries the same values the
 // app's dark mode computes.
@@ -272,26 +270,19 @@ function CoverPosterFan({ tiles, ink }: { tiles: string[]; ink: string }) {
   );
 }
 
-/** The wordmark badge, drawn rather than loaded - the logo SVG is 560KB. */
-function CoverWordmark({ primary, ink }: { primary: string; ink: string }) {
+/** The canonical Wat2Do cover mark, recoloured by the cover model. */
+function CoverLogo({ src }: { src: string }) {
   return (
-    <div
+    <img
+      src={src}
+      width={132}
+      height={132}
+      alt=""
       style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
         width: 132,
         height: 132,
-        borderRadius: 32,
-        backgroundColor: ink,
-        color: primary,
-        fontSize: 34,
-        fontWeight: 700,
-        letterSpacing: 1,
       }}
-    >
-      {WORDMARK}
-    </div>
+    />
   );
 }
 
@@ -330,7 +321,7 @@ export function CoverSlideTemplate({ model }: { model: CoverSlideModel }) {
         >
           {model.eyebrow}
         </div>
-        <CoverWordmark primary={primary} ink={ink} />
+        <CoverLogo src={model.logoSrc} />
       </div>
 
       <div

@@ -14,6 +14,7 @@ import {
   MailOpen,
 } from "@/shared/ui/doodle-icons";
 import { Button } from "@/shared/ui/button";
+import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { ROUTES } from "@/shared/constants/routes";
 import { useAuthState } from "@/features/auth";
 import { toast } from "@/shared/hooks/use-toast";
@@ -378,7 +379,11 @@ export function OrganizationPanelMembersPage() {
   }
 
   return (
-    <div className="space-y-5">
+    <Tabs
+      value={mainTab}
+      onValueChange={(value) => setMainTab(value as "roster" | "management")}
+      className="space-y-5"
+    >
       <div className="flex items-center gap-3">
         <Button
           variant="secondary"
@@ -397,53 +402,31 @@ export function OrganizationPanelMembersPage() {
         </div>
       </div>
 
-      <div className="flex border-b border-border">
-        <button
-          onMouseDown={() => setMainTab("roster")}
-          className={`px-4 py-2 text-sm font-bold border-b-2 transition-colors ${
-            mainTab === "roster"
-              ? "border-primary text-primary"
-              : "border-transparent text-muted-foreground hover:text-foreground"
-          }`}
-        >
+      <TabsList>
+        <TabsTrigger value="roster">
           {t("organizationPanel.rosterTab")}
-        </button>
-        <button
-          onMouseDown={() => setMainTab("management")}
-          className={`px-4 py-2 text-sm font-bold border-b-2 transition-colors ${
-            mainTab === "management"
-              ? "border-primary text-primary"
-              : "border-transparent text-muted-foreground hover:text-foreground"
-          }`}
-        >
+        </TabsTrigger>
+        <TabsTrigger value="management">
           {t("organizationPanel.managementTab")}
-        </button>
-      </div>
+        </TabsTrigger>
+      </TabsList>
 
       {mainTab === "roster" ? (
-        <div className="space-y-5">
-          <div className="flex border-b border-border/60">
-            <button
-              onMouseDown={() => setActiveTab("members")}
-              className={`px-4 py-2 text-xs font-semibold border-b-2 transition-colors ${
-                activeTab === "members"
-                  ? "border-primary text-primary"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
-              }`}
-            >
+        <Tabs
+          value={activeTab}
+          onValueChange={(value) =>
+            setActiveTab(value as "members" | "requests")
+          }
+          className="space-y-5"
+        >
+          <TabsList>
+            <TabsTrigger value="members">
               {t("organizationPanel.activeMembers")} ({activeMembers.length})
-            </button>
-            <button
-              onMouseDown={() => setActiveTab("requests")}
-              className={`px-4 py-2 text-xs font-semibold border-b-2 transition-colors ${
-                activeTab === "requests"
-                  ? "border-primary text-primary"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
-              }`}
-            >
+            </TabsTrigger>
+            <TabsTrigger value="requests">
               {t("organizationPanel.pendingRequests")} ({pendingRequests.length})
-            </button>
-          </div>
+            </TabsTrigger>
+          </TabsList>
 
           {rosterLoading ? (
             <div className="flex flex-col items-center justify-center py-16">
@@ -606,7 +589,7 @@ export function OrganizationPanelMembersPage() {
               )}
             </div>
           )}
-        </div>
+        </Tabs>
       ) : (
         <div className="space-y-6">
           <Card className="bg-surface border border-border shadow-sm">
@@ -904,6 +887,6 @@ export function OrganizationPanelMembersPage() {
           )}
         </div>
       )}
-    </div>
+    </Tabs>
   );
 }
