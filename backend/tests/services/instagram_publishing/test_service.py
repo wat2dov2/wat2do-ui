@@ -63,6 +63,7 @@ def test_select_events_filters_below_threshold():
 
 def test_generate_due_batches_uses_enabled_controlbox_accounts(monkeypatch):
     generated_accounts = []
+    enabled_accounts = [account for account in service._CONTROL.accounts if account.enabled]
     monkeypatch.setattr(service, "_batch_exists", lambda *_: False)
     monkeypatch.setattr(
         service,
@@ -75,14 +76,14 @@ def test_generate_due_batches_uses_enabled_controlbox_accounts(monkeypatch):
     )
 
     assert result == {
-        "accounts": 24,
-        "generated": 24,
+        "accounts": len(enabled_accounts),
+        "generated": len(enabled_accounts),
         "empty": 0,
         "skipped": 0,
         "failed": 0,
     }
-    assert generated_accounts[0].key == "wat2do"
-    assert generated_accounts[0].instagram_username == "wat2do.ca"
+    assert generated_accounts == enabled_accounts
+    assert all(account.key != "wat2do" for account in generated_accounts)
     assert any(account.key == "dalhousie" for account in generated_accounts)
 
 
@@ -95,8 +96,9 @@ def test_generate_due_batches_runs_when_the_scheduler_starts_late(monkeypatch):
         datetime(2026, 7, 23, 14, 48, tzinfo=timezone.utc),
     )
 
-    assert result["accounts"] == 24
-    assert generate.call_count == 24
+    enabled_account_count = sum(account.enabled for account in service._CONTROL.accounts)
+    assert result["accounts"] == enabled_account_count
+    assert generate.call_count == enabled_account_count
 
 
 class _FakeQuery:
