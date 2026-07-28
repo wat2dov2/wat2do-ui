@@ -2,6 +2,7 @@ import { useTranslation } from "react-i18next";
 import type { ApiInstagramPublishBatchResponse } from "@/shared/generated";
 import { getSchoolDisplayName } from "@/shared/constants/schools";
 import { AdminTable } from "@/features/admin/components/shared/AdminTable";
+import { Badge } from "@/shared/ui/badge";
 import { TableCell, TableRow } from "@/shared/ui/table";
 
 type Batch = ApiInstagramPublishBatchResponse;
@@ -9,6 +10,22 @@ type Batch = ApiInstagramPublishBatchResponse;
 interface InstagramRunsTableProps {
   batches: Batch[];
   onOpenRun: (batch: Batch) => void;
+}
+
+function statusBadgeVariant(status: Batch["status"]) {
+  switch (status) {
+    case "published":
+      return "success" as const;
+    case "failed":
+      return "destructive" as const;
+    case "generating":
+    case "publishing":
+      return "warning" as const;
+    case "empty":
+      return "muted" as const;
+    case "ready_for_review":
+      return "secondary" as const;
+  }
 }
 
 export function InstagramRunsTable({ batches, onOpenRun }: InstagramRunsTableProps) {
@@ -22,6 +39,7 @@ export function InstagramRunsTable({ batches, onOpenRun }: InstagramRunsTablePro
         { label: t("admin.instagramPublishing.columns.dateRan") },
         { label: t("admin.instagramPublishing.columns.timeRan") },
         { label: t("admin.instagramPublishing.columns.events") },
+        { label: t("admin.instagramPublishing.columns.status") },
       ]}
     >
       {batches.map((batch) => {
@@ -48,6 +66,11 @@ export function InstagramRunsTable({ batches, onOpenRun }: InstagramRunsTablePro
               {ran.toLocaleTimeString(locale, { hour: "numeric", minute: "2-digit" })}
             </TableCell>
             <TableCell>{batch.items.length}</TableCell>
+            <TableCell>
+              <Badge variant={statusBadgeVariant(batch.status)}>
+                {t(`admin.instagramPublishing.status.${batch.status}`)}
+              </Badge>
+            </TableCell>
           </TableRow>
         );
       })}

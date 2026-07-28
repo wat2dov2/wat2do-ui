@@ -25,7 +25,7 @@ export function AuthPageLayout({
   const { t } = useTranslation();
 
   return (
-    <main className="min-h-screen bg-background">
+    <main className="min-h-screen">
       <div className="min-h-screen flex">
         <section className="w-full lg:w-[52%] px-6 py-10 flex justify-center items-center">
           <Card className="relative w-full max-w-[440px] overflow-hidden gap-0">

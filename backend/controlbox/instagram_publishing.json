@@ -172,6 +172,7 @@
   ],
   "generation_timezone": "America/Toronto",
   "fallback_window_hours": 24,
+  "new_event_window_hours": 24,
   "minimum_lead_hours": 6,
   "maximum_lead_days": 21,
   "maximum_ai_candidates": 30,

@@ -989,6 +989,7 @@ test.describe("Administrator poster payouts", () => {
   test("filters, reviews, exports, and records pending external payments", async ({
     page,
   }) => {
+    await page.clock.setFixedTime(new Date("2026-07-28T12:00:00Z"));
     await installCommonApiMocks(page);
     await installSessionMock(page, { role: "admin", enrolled: true });
     const payoutApi = await installAdminPayoutMocks(page);
@@ -1010,8 +1011,17 @@ test.describe("Administrator poster payouts", () => {
     await page.getByLabel("Payout email").fill("held@uwaterloo.ca");
     await page.locator("#payout-filter-fraud").click();
     await page.getByRole("option", { name: "Flagged" }).click();
-    await page.getByLabel("Period from").fill("2026-06");
-    await page.getByLabel("Period to").fill("2026-07");
+    await page.getByLabel("Period from").click();
+    await page
+      .getByRole("button", { name: "Go to the Previous Month" })
+      .click();
+    await page
+      .locator('[role="gridcell"][data-day="2026-06-01"] button')
+      .click();
+    await page.getByLabel("Period to").click();
+    await page
+      .locator('[role="gridcell"][data-day="2026-07-01"] button')
+      .click();
     await page.getByLabel("Minimum amount").fill("50");
     await page.getByLabel("Maximum amount").fill("100");
     await page.getByRole("button", { name: "Apply filters" }).click();

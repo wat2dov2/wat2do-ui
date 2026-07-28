@@ -17,6 +17,7 @@ import { formatCadCents } from "@/shared/utils/currency";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Checkbox } from "@/shared/ui/checkbox";
+import { DatePicker } from "@/shared/ui/date-picker";
 import {
   Dialog,
   DialogContent,
@@ -71,10 +72,6 @@ const initialDraftFilters: DraftPayoutFilters = {
   maxAmount: "",
   fraudStatus: "all",
 };
-
-function monthToPeriod(value: string): string | undefined {
-  return value ? `${value}-01` : undefined;
-}
 
 function dollarsToCents(value: string): number | undefined {
   if (!value.trim()) return undefined;
@@ -213,8 +210,8 @@ export function AdminPayoutsPanel() {
           ? undefined
           : draftFilters.payoutStatus,
       payoutEmail: draftFilters.payoutEmail.trim() || undefined,
-      periodFrom: monthToPeriod(draftFilters.periodFrom),
-      periodTo: monthToPeriod(draftFilters.periodTo),
+      periodFrom: draftFilters.periodFrom || undefined,
+      periodTo: draftFilters.periodTo || undefined,
       minAmountCents: dollarsToCents(draftFilters.minAmount),
       maxAmountCents: dollarsToCents(draftFilters.maxAmount),
       fraudStatus:
@@ -431,16 +428,16 @@ export function AdminPayoutsPanel() {
             htmlFor="payout-filter-period-from"
             label={t("admin.posterPayouts.filters.periodFrom")}
           >
-            <Input
+            <DatePicker
               id="payout-filter-period-from"
-              type="month"
               value={draftFilters.periodFrom}
-              onChange={(event) =>
+              onChange={(periodFrom) =>
                 setDraftFilters((current) => ({
                   ...current,
-                  periodFrom: event.target.value,
+                  periodFrom,
                 }))
               }
+              placeholder={t("forms.pickDate")}
             />
           </FilterField>
 
@@ -448,16 +445,16 @@ export function AdminPayoutsPanel() {
             htmlFor="payout-filter-period-to"
             label={t("admin.posterPayouts.filters.periodTo")}
           >
-            <Input
+            <DatePicker
               id="payout-filter-period-to"
-              type="month"
               value={draftFilters.periodTo}
-              onChange={(event) =>
+              onChange={(periodTo) =>
                 setDraftFilters((current) => ({
                   ...current,
-                  periodTo: event.target.value,
+                  periodTo,
                 }))
               }
+              placeholder={t("forms.pickDate")}
             />
           </FilterField>
 

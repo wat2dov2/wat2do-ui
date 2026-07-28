@@ -303,6 +303,7 @@ class InstagramPublishingControl(_ControlModel):
     accounts: tuple[InstagramPublishingAccountControl, ...] = Field(min_length=1)
     generation_timezone: str = Field(min_length=1)
     fallback_window_hours: int = Field(gt=0)
+    new_event_window_hours: int = Field(gt=0)
     minimum_lead_hours: int = Field(ge=0)
     maximum_lead_days: int = Field(gt=0)
     maximum_ai_candidates: int = Field(gt=0, le=100)

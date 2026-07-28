@@ -104,9 +104,10 @@ def test_generate_due_batches_runs_when_the_scheduler_starts_late(monkeypatch):
 class _FakeQuery:
     """Supabase query builder stub: every call chains, `execute` ends it."""
 
-    def __init__(self, data: list[dict], calls: list[tuple]):
+    def __init__(self, data: list[dict], calls: list[tuple], *, count: int | None = None):
         self._data = data
         self._calls = calls
+        self._count = len(data) if count is None else count
 
     def __getattr__(self, name):
         def chain(*args, **kwargs):
@@ -116,7 +117,7 @@ class _FakeQuery:
         return chain
 
     def execute(self):
-        return SimpleNamespace(data=self._data, count=len(self._data))
+        return SimpleNamespace(data=self._data, count=self._count)
 
 
 def _event(event_id: int, title: str = "Event") -> EventSummaryResponse:
@@ -146,10 +147,12 @@ def _batch(event_ids: list[int], **overrides) -> dict:
         "instagram_user_id": "17841476154506771",
         "school": "uwaterloo",
         "local_date": "2026-07-26",
+        "window_start": "2026-07-25T12:30:00+00:00",
+        "window_end": "2026-07-27T12:30:00+00:00",
         "status": "ready_for_review",
         "caption": "Caption",
         "cover_body": "Body",
-        # Counted on read from the batch's window; the cover leads with it.
+        # Counted on read from the recent-event/carousel union.
         "new_event_count": 20,
         "version": 3,
         "items": [
@@ -237,6 +240,46 @@ def test_update_batch_rejects_a_repeated_event(monkeypatch, draft_editor):
             "batch-1",
             InstagramPublishBatchUpdate(version=3, caption="Caption", event_ids=[1, 1]),
         )
+
+
+def test_count_new_events_unions_the_carousel_with_the_anchored_recent_window(monkeypatch):
+    calls: list[tuple] = []
+    queries = iter(
+        [
+            _FakeQuery([], calls, count=8),
+            _FakeQuery([], calls, count=2),
+        ]
+    )
+    monkeypatch.setattr(
+        service,
+        "get_sb",
+        lambda: SimpleNamespace(table=lambda _name: next(queries)),
+    )
+
+    result = service._count_new_events(_batch([7, 8, 9]))
+
+    # Eight recent events plus three carousel events, with two ids overlapping.
+    assert result == 9
+    assert calls.count(("gte", ("added_at", "2026-07-26T12:30:00+00:00"), {})) == 2
+    assert calls.count(("lt", ("added_at", "2026-07-27T12:30:00+00:00"), {})) == 2
+    assert calls.count(("eq", ("school", "uwaterloo"), {})) == 2
+    assert calls.count(("eq", ("cancelled", False), {})) == 2
+    assert ("in_", ("id", [7, 8, 9]), {}) in calls
+
+
+def test_count_new_events_without_a_carousel_returns_only_the_recent_count(monkeypatch):
+    calls: list[tuple] = []
+    tables: list[str] = []
+
+    def table(name: str):
+        tables.append(name)
+        return _FakeQuery([], calls, count=4)
+
+    monkeypatch.setattr(service, "get_sb", lambda: SimpleNamespace(table=table))
+
+    assert service._count_new_events(_batch([])) == 4
+    assert tables == ["events"]
+    assert not any(name == "in_" for name, _args, _kwargs in calls)
 
 
 def test_publish_batch_renders_the_slides_from_live_event_data(monkeypatch):

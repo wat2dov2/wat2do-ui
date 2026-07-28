@@ -57,9 +57,8 @@ class InstagramPublishBatchResponse(BaseModel):
     status: InstagramPublishBatchStatus
     caption: str
     cover_body: str = ""
-    # Events added to this school inside the batch's window. The cover states
-    # it, so it is counted from the events table on read rather than stored -
-    # the window and the events are already the source of truth.
+    # Unique events from the school's configured lookback ending at window_end,
+    # plus every event currently selected for the carousel.
     new_event_count: int = 0
     ai_model: str | None = None
     version: int

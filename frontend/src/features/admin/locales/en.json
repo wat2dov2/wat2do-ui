@@ -307,7 +307,8 @@
         "school": "School",
         "dateRan": "Date ran",
         "timeRan": "Time ran",
-        "events": "Events"
+        "events": "Events",
+        "status": "Publishing status"
       },
       "slideEventUnavailable": "This slide's event is no longer publishable",
       "addEvent": "Add event",

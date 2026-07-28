@@ -307,7 +307,8 @@
         "school": "学校",
         "dateRan": "运行日期",
         "timeRan": "运行时间",
-        "events": "活动数"
+        "events": "活动数",
+        "status": "发布状态"
       },
       "slideEventUnavailable": "该幻灯片的活动已无法发布",
       "addEvent": "添加活动",

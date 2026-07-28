@@ -553,23 +553,53 @@ def _hydrate_batches(batches: list[dict[str, Any]]) -> None:
 
 
 def _count_new_events(batch: dict[str, Any]) -> int:
-    """How many events the school gained inside this batch's scrape window.
+    """Count recent school events plus the current carousel, without duplicates.
 
-    This is the number the cover leads with. It is counted rather than stored
-    because the window and the events table already say it, and a stored copy
-    would be one more thing that can disagree with them.
+    The recent window ends at the batch's immutable ``window_end`` so its time
+    boundary does not drift while the batch waits for review. Carousel events
+    are included even when they were added before that window because the
+    cover must never claim fewer events than the carousel contains.
     """
-    response = (
+    window_end = _parse_datetime(batch["window_end"])
+    window_start = window_end - timedelta(hours=_CONTROL.new_event_window_hours)
+    carousel_event_ids = {int(item["event_id"]) for item in batch.get("items", [])}
+
+    recent_count = _count_active_events_added_between(
+        school=batch["school"],
+        window_start=window_start,
+        window_end=window_end,
+    )
+    if not carousel_event_ids:
+        return recent_count
+
+    carousel_overlap_count = _count_active_events_added_between(
+        school=batch["school"],
+        window_start=window_start,
+        window_end=window_end,
+        event_ids=carousel_event_ids,
+    )
+    return recent_count + len(carousel_event_ids) - carousel_overlap_count
+
+
+def _count_active_events_added_between(
+    *,
+    school: str,
+    window_start: datetime,
+    window_end: datetime,
+    event_ids: set[int] | None = None,
+) -> int:
+    query = (
         get_sb()
         .table(EVENTS)
         .select("id", count="exact")
-        .eq("school", batch["school"])
+        .eq("school", school)
         .eq("cancelled", False)
-        .gte("added_at", _parse_datetime(batch["window_start"]).isoformat())
-        .lt("added_at", _parse_datetime(batch["window_end"]).isoformat())
-        .limit(1)
-        .execute()
+        .gte("added_at", window_start.isoformat())
+        .lt("added_at", window_end.isoformat())
     )
+    if event_ids is not None:
+        query = query.in_("id", sorted(event_ids))
+    response = query.limit(1).execute()
     return response.count or 0
 
 

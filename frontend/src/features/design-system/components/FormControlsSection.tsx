@@ -9,6 +9,7 @@ import {
   FieldLabel,
 } from "@/shared/ui/field";
 import { Checkbox } from "@/shared/ui/checkbox";
+import { DatePicker } from "@/shared/ui/date-picker";
 import { Input } from "@/shared/ui/input";
 import {
   Select,
@@ -26,6 +27,7 @@ export function FormControlsSection() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [activeTab, setActiveTab] = useState("events");
+  const [selectedDate, setSelectedDate] = useState("");
 
   return (
     <Section
@@ -37,6 +39,18 @@ export function FormControlsSection() {
       <Stack gap={6}>
         <ShowcaseBlock label="Input">
           <Input placeholder="Search events..." />
+        </ShowcaseBlock>
+
+        <ShowcaseBlock label="Date picker">
+          <Field>
+            <FieldLabel htmlFor="design-system-date">Event date</FieldLabel>
+            <DatePicker
+              id="design-system-date"
+              value={selectedDate}
+              onChange={setSelectedDate}
+              placeholder="Pick a date"
+            />
+          </Field>
         </ShowcaseBlock>
 
         <ShowcaseBlock label="Textarea">
