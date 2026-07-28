@@ -80,7 +80,6 @@ export function FilterDropdown({
             onValueChange={(value) =>
               onFilterViewModeChange(value as FilterViewMode)
             }
-            className="w-fit"
           >
             <TabsList>
               <TabsTrigger value="visual">

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { useTranslation } from "react-i18next";
 
 import {
@@ -17,7 +18,6 @@ import {
 } from "@/shared/ui/alert";
 import { Button } from "@/shared/ui/button";
 import { Megaphone, X } from "@/shared/ui/doodle-icons";
-import { Link } from "@/shared/ui/link";
 import { promoterProgram } from "@/shared/config/promoterProgram";
 import { formatCadCents } from "@/shared/utils/currency";
 

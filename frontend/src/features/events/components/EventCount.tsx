@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { PageCountHeading } from "@/shared/ui/page-count-heading";
+import { Button } from "@/shared/ui/button";
 import { useMouseDownAction } from "@/shared/hooks";
 import { formatRelativeTime } from "@/shared/utils/relativeTime";
 import type { LatestAddedEvent } from "@/features/events/api/events.api";
@@ -25,16 +26,21 @@ export function EventCount({
         label={t("events.upcomingEventCount", { count })}
       />
       {latestAddedEvent ? (
-        <button
+        // Event titles are unbounded, so this compact action must wrap on narrow screens.
+        <Button
           type="button"
+          variant="ghost"
+          size="sm"
           onMouseDown={handleLatestAddedMouseDown}
-          className="cursor-pointer text-left text-sm font-medium text-muted-foreground opacity-80 underline-offset-4 transition-[color,opacity] hover:text-foreground hover:opacity-100 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          className="h-auto min-h-8 min-w-0 shrink whitespace-normal text-left"
         >
           {t("events.latestAddedEvent", {
             title: latestAddedEvent.title,
-            time: formatRelativeTime(latestAddedEvent.added_at, t, { alwaysAgo: true }),
+            time: formatRelativeTime(latestAddedEvent.added_at, t, {
+              alwaysAgo: true,
+            }),
           })}
-        </button>
+        </Button>
       ) : null}
     </span>
   );

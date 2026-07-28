@@ -79,6 +79,29 @@ a browser or start a server.
 Standing permission from an earlier task does not carry over.
 When you are done with anything you were explicitly asked to start, shut it down.
 
+### Production API profiling
+
+Use `backend/scripts/profile_production_api.py` for production endpoint profiling.
+Do not create an ad hoc profiler or manually maintain a second endpoint inventory.
+The script authenticates through OTP, profiles only classified safe GET routes,
+and writes every successful run to a UTC-timestamped directory under `/tmp`.
+Each run directory contains `profile.json` and `latency-distributions.svg`.
+The script prints the run-directory path when it completes.
+
+The profiler calls FastAPI's `app.openapi()` from the local checkout at runtime.
+That schema includes every GET route registered on the application in that checkout.
+It does not prove that production is running the same commit, so confirm deployment
+alignment before treating route coverage as production-complete.
+Any unclassified or stale GET route reported by the profiler must be resolved before
+using the run as a complete baseline.
+
+Read `docs/production_api_profiling_runbook.md` before profiling.
+Keep the default one warm-up and ten measured requests for the regression
+baseline unless the human requests another mode.
+Use zero warm-ups when the goal is first-observed-request behavior.
+Every successful endpoint result must report mean, median, p95, minimum, and maximum
+latency regardless of the configured sample count.
+
 ---
 
 ## Prime directive

@@ -522,6 +522,70 @@ async function installActivationDedupeMocks(page: Page) {
 }
 
 test.describe("Promoter poster campaign", () => {
+  test("keeps settings tabs content-hugging without narrow-screen overflow", async ({
+    page,
+  }) => {
+    await installCommonApiMocks(page);
+    await installSessionMock(page, { enrolled: true });
+    await installPromoterApiMocks(page);
+
+    await page.goto(`${BASE_URL}/settings?tab=promoter`);
+
+    const tabs = page.locator('[data-slot="tabs"]');
+    const tabsList = page.locator('[data-slot="tabs-list"]');
+    const tabTriggers = tabsList.getByRole("tab");
+    await expect(tabTriggers).toHaveCount(4);
+
+    const desktopMetrics = await tabsList.evaluate((list) => {
+      const tabsRoot = list.closest<HTMLElement>('[data-slot="tabs"]');
+      const lastTab = list.querySelector<HTMLElement>(
+        '[role="tab"]:last-of-type',
+      );
+      if (!tabsRoot || !lastTab) {
+        return null;
+      }
+
+      const tabsRootBox = tabsRoot.getBoundingClientRect();
+      const listBox = list.getBoundingClientRect();
+      const lastTabBox = lastTab.getBoundingClientRect();
+      const styles = window.getComputedStyle(list);
+      return {
+        listWidth: listBox.width,
+        rootWidth: tabsRootBox.width,
+        trailingSpace: listBox.right - lastTabBox.right,
+        paddingRight: Number.parseFloat(styles.paddingRight),
+      };
+    });
+    expect(desktopMetrics).not.toBeNull();
+    if (!desktopMetrics) {
+      throw new Error("Settings tabs did not render");
+    }
+    expect(desktopMetrics.listWidth).toBeLessThan(desktopMetrics.rootWidth);
+    expect(
+      Math.abs(desktopMetrics.trailingSpace - desktopMetrics.paddingRight),
+    ).toBeLessThan(1);
+
+    await page.setViewportSize({ width: 320, height: 800 });
+    await expect
+      .poll(async () =>
+        tabsList.evaluate((list) => {
+          const parent = list.parentElement;
+          return (
+            parent !== null &&
+            list.scrollWidth <= list.clientWidth &&
+            list.getBoundingClientRect().width <=
+              parent.getBoundingClientRect().width
+          );
+        }),
+      )
+      .toBe(true);
+
+    for (let index = 0; index < 4; index += 1) {
+      await expect(tabTriggers.nth(index)).toBeVisible();
+    }
+    await expect(tabs).toBeVisible();
+  });
+
   test("recruits, enrolls, and creates independently tracked copies", async ({
     page,
   }) => {

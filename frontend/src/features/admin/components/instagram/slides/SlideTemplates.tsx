@@ -204,9 +204,9 @@ const COVER_DOODLE_COLUMNS = 6;
 const COVER_DOODLE_CELL_SIZE = 210;
 const COVER_DOODLE_ICON_SIZE = 72;
 /** The poster fan sits on a fixed baseline so the copy above it never reflows. */
-const FAN_TOP = 930;
-const FAN_CARD_WIDTH = 186;
-const FAN_CARD_HEIGHT = 260;
+const FAN_TOP = 850;
+const FAN_CARD_WIDTH = 230;
+const FAN_CARD_HEIGHT = 322;
 /** How far the outer cards may dip below the baseline as the fan curves. */
 const FAN_MAX_DIP = 26;
 /** Tilt of the outermost card; the rest interpolate towards flat at the centre. */
@@ -240,7 +240,16 @@ function CoverPosterFan({ tiles, ink }: { tiles: string[]; ink: string }) {
   const middle = (tiles.length - 1) / 2;
 
   return (
-    <div style={{ display: "flex" }}>
+    <div
+      style={{
+        display: "flex",
+        position: "absolute",
+        left: 0,
+        top: 0,
+        width: SLIDE_WIDTH,
+        height: SLIDE_HEIGHT,
+      }}
+    >
       {tiles.map((tile, index) => {
         const offset = middle === 0 ? 0 : (index - middle) / middle;
         return (
@@ -357,16 +366,13 @@ export function CoverSlideTemplate({ model }: { model: CoverSlideModel }) {
         <div
           style={{
             display: "flex",
-            backgroundColor: ink,
-            color: primary,
-            borderRadius: 999,
-            padding: "18px 34px",
-            fontSize: 30,
+            fontSize: 56,
             fontWeight: 700,
-            letterSpacing: 1,
+            letterSpacing: 1.5,
+            lineHeight: 1,
           }}
         >
-          {model.eyebrow}
+          {model.dateLine}
         </div>
         <CoverLogo src={model.logoSrc} />
       </div>
@@ -376,7 +382,7 @@ export function CoverSlideTemplate({ model }: { model: CoverSlideModel }) {
           display: "flex",
           flexDirection: "column",
           padding: `0 ${COVER_MARGIN}px`,
-          marginTop: 84,
+          marginTop: 24,
         }}
       >
         <div style={{ display: "flex", fontSize: 300, fontWeight: 700, lineHeight: 1 }}>

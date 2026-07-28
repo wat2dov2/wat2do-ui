@@ -215,7 +215,6 @@ export function EventFormStep({
               <Tabs
                 value={viewMode}
                 onValueChange={handleViewModeTabChange}
-                className="w-fit"
               >
                 <TabsList>
                   <TabsTrigger value="visual">

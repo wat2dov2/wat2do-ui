@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import NextLink from "next/link";
 import { m } from "framer-motion";
 import { EMPTY_FILTER_STATE } from "@/features/search";
 import { useSearchStore } from "@/features/search/store/search.store";
@@ -281,12 +282,14 @@ export function ContactPage() {
 
         <Stack direction="horizontal" gap={4}>
           <Button asChild variant="secondary">
-            <Link href={ROUTES.HOME}>{t("contact.actions.browse")}</Link>
+            <NextLink href={ROUTES.HOME}>
+              {t("contact.actions.browse")}
+            </NextLink>
           </Button>
           <Button asChild variant="secondary">
-            <Link href={ROUTES.ORGANIZATIONS}>
+            <NextLink href={ROUTES.ORGANIZATIONS}>
               {t("contact.actions.explore")}
-            </Link>
+            </NextLink>
           </Button>
         </Stack>
 

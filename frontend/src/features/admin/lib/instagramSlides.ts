@@ -62,8 +62,8 @@ export interface CoverSlideModel {
   logoSrc: string;
   /** Stable category doodles recoloured with the school's contrasting ink. */
   doodleIcons: string[];
-  /** "SUN JUL 26 · EVENT SHOWCASE" */
-  eyebrow: string;
+  /** The batch date, for example "SUN JUL 26". */
+  dateLine: string;
   /** Events added to this school in the batch's scrape window. */
   newEventCount: number;
   headline: string;
@@ -78,7 +78,6 @@ export interface CoverSlideModel {
 // Slide copy is English-only: a slide is artwork posted to one Instagram
 // account, not app UI, so it never passes through i18n.
 const COVER_HEADLINE = "NEW EVENTS ADDED TODAY";
-const COVER_EYEBROW_SUFFIX = "EVENT SHOWCASE";
 const COVER_SWIPE_LINE = "Swipe to see our picks >";
 const FALLBACK_TITLE = "Untitled event";
 const FALLBACK_LOCATION = "See Wat2Do for location";
@@ -149,9 +148,10 @@ export function buildEventSlideModel(
  * The cover, compiled from the batch it belongs to.
  *
  * Everything on it is derived: the school decides the colours and the link, the
- * batch's local date is the eyebrow, the scrape window supplies the headline
- * number, and the carousel's events supply the fanned posters. `body` is the
- * one line an admin writes; left empty it states how many events were picked.
+ * batch's local date supplies the date line, the scrape window supplies the
+ * headline number, and the carousel's events supply the fanned posters. `body`
+ * is the one line an admin writes; left empty it states how many events were
+ * picked.
  */
 export function buildCoverSlideModel({
   school,
@@ -172,7 +172,7 @@ export function buildCoverSlideModel({
     colors,
     logoSrc: buildInstagramCoverLogo(colors),
     doodleIcons: getOrganizationCategoryDoodleDataUris(colors.ink, 42),
-    eyebrow: [formatCoverDate(localDate), COVER_EYEBROW_SUFFIX].filter(Boolean).join(" · "),
+    dateLine: formatCoverDate(localDate),
     newEventCount,
     headline: COVER_HEADLINE,
     body: text(body, defaultCoverBody(tiles.length)),

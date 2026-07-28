@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import Link from "next/link";
 import { useTranslation } from "react-i18next";
 
 import { PromoterEnrollmentCard } from "@/features/posters/components/PromoterEnrollmentCard";
@@ -42,7 +43,6 @@ import {
   ShieldAlert,
   Users,
 } from "@/shared/ui/doodle-icons";
-import { Link } from "@/shared/ui/link";
 import { formatCadCents } from "@/shared/utils/currency";
 
 export function PromoterPostersPage() {

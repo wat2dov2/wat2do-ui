@@ -182,12 +182,14 @@ export function InviteLandingPage() {
                     </Button>
                     <div className="text-xs text-muted-foreground text-center">
                       {t("inviteLanding.alreadyHaveAccount")}{" "}
-                      <button
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
                         onMouseDown={() => handleAuthRedirect("login")}
-                        className="text-primary hover:underline font-semibold bg-transparent border-none p-0 inline-block align-baseline"
                       >
                         {t("inviteLanding.logIn")}
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 )}

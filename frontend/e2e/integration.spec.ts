@@ -1772,7 +1772,7 @@ test.describe("Navigation", () => {
     expect(response.status()).toBe(200);
   });
 
-  test("renders the school-coloured Instagram cover decoration", async ({ request }) => {
+  test("renders the redesigned date-only Instagram cover", async ({ request }) => {
     const renderSecret = process.env.INSTAGRAM_SLIDE_RENDER_SECRET?.trim();
     const response = await request.post(`${BASE}/api/render-instagram-slide`, {
       headers: renderSecret
@@ -1782,8 +1782,8 @@ test.describe("Navigation", () => {
         kind: "cover",
         school: "utoronto",
         local_date: "2026-07-27",
-        new_event_count: 18,
-        body: "Here are the events we like the most",
+        new_event_count: 4,
+        body: "Here is the one we like the most",
         events: [{ id: 1, school: "utoronto", title: "Campus Event" }],
       },
     });

@@ -27,7 +27,7 @@ function TabsList({
       data-slot="tabs-list"
       data-elevation="control"
       className={cn(
-        "inline-flex min-h-9 flex-wrap items-center justify-center rounded-xl bg-surface p-1 text-muted-foreground",
+        "inline-flex min-h-9 w-fit max-w-full flex-wrap items-center justify-center rounded-xl bg-surface p-1 text-muted-foreground",
         className
       )}
       {...props}

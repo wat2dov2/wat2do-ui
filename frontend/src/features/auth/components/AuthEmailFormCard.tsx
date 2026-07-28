@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { Stack } from "@/shared/layout";
 import { Button } from "@/shared/ui/button";
 import { LoadingButton } from "@/shared/ui/loading-button";
 import { Input } from "@/shared/ui/input";
@@ -126,22 +127,17 @@ export function AuthEmailFormCard({
             {t("auth.verifyOtp") || "Verify code"}
           </LoadingButton>
 
-          <div className="flex flex-col items-center space-y-2 pt-2">
-            <button
+          <Stack align="center" gap={2}>
+            <Button
               type="button"
+              variant="ghost"
+              size="sm"
               onClick={onResend}
-              onKeyDown={(e) => {
-                if (e.key !== "Enter" && e.key !== " ") return;
-
-                e.preventDefault();
-                onResend();
-              }}
               disabled={isLoading}
-              className="text-xs text-muted-foreground hover:text-foreground underline transition-colors"
             >
               {t("auth.resendOtp") || "Resend code"}
-            </button>
-          </div>
+            </Button>
+          </Stack>
         </>
       )}
 
