@@ -7,6 +7,7 @@ import type { PosterMapMarker } from "@/features/posters/types";
 import { MapPin } from "@/shared/ui/doodle-icons";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/shared/lib/utils";
+import { Stack } from "@/shared/layout";
 
 export interface QRScanMapProps {
   markers: PosterMapMarker[];
@@ -36,7 +37,9 @@ function CoverageMarker({
   return (
     <div
       className="group relative"
-      aria-label={t("posters.map.coverageMarker", { count: marker.posterCount })}
+      aria-label={t("posters.map.coverageMarker", {
+        count: marker.posterCount,
+      })}
       role="img"
     >
       <div
@@ -44,7 +47,8 @@ function CoverageMarker({
         style={{
           width: size,
           height: size,
-          backgroundColor: COVERAGE_BUCKET_COLORS[marker.confirmedVisitorBucket],
+          backgroundColor:
+            COVERAGE_BUCKET_COLORS[marker.confirmedVisitorBucket],
         }}
       />
       <div className="pointer-events-none absolute bottom-full left-1/2 z-dropdown mb-2 hidden min-w-44 -translate-x-1/2 rounded-lg border border-border bg-surface p-2 text-xs shadow-xl group-hover:block">
@@ -104,10 +108,25 @@ function ExactMarker({
       <div className="relative size-6 rounded-full border-2 border-surface bg-primary shadow-lg transition-transform group-hover:scale-110" />
       {isHovered && (
         <div className="pointer-events-none absolute bottom-full left-1/2 z-dropdown mb-2 min-w-44 -translate-x-1/2 rounded-lg border border-border bg-surface p-2 text-xs shadow-xl">
-          <p className="truncate font-semibold text-foreground">{marker.name}</p>
-          <p className="text-muted-foreground">
-            {t("posters.map.visitorCount", { count: marker.visitorCount })}
-          </p>
+          <Stack gap={2}>
+            {marker.imageUrl && (
+              <img
+                src={marker.imageUrl}
+                alt={marker.name}
+                className="aspect-[8.5/11] max-h-48 w-full rounded-md object-cover"
+              />
+            )}
+            <Stack gap={1}>
+              <p className="truncate font-semibold text-foreground">
+                {marker.name}
+              </p>
+              <p className="text-muted-foreground">
+                {t("posters.map.visitorCount", {
+                  count: marker.visitorCount,
+                })}
+              </p>
+            </Stack>
+          </Stack>
         </div>
       )}
     </div>
@@ -141,9 +160,11 @@ export function QRScanMap({
     }
     return {
       latitude:
-        markers.reduce((sum, marker) => sum + marker.latitude, 0) / markers.length,
+        markers.reduce((sum, marker) => sum + marker.latitude, 0) /
+        markers.length,
       longitude:
-        markers.reduce((sum, marker) => sum + marker.longitude, 0) / markers.length,
+        markers.reduce((sum, marker) => sum + marker.longitude, 0) /
+        markers.length,
     };
   }, [markers]);
 

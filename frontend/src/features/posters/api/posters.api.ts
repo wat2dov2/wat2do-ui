@@ -29,8 +29,10 @@ import { generatedFilterStateToFilterState } from "@/features/search/api/filterS
 /** Poster row from GET /qr/ or POST /qr/. */
 type QrCodePosterBackend = ApiQrCodeResponse;
 
-export type CreatePosterPayload =
-  Omit<ApiQrCodeCreate, "latitude" | "longitude" | "program"> &
+export type CreatePosterPayload = Omit<
+  ApiQrCodeCreate,
+  "latitude" | "longitude" | "program"
+> &
   Partial<Pick<ApiQrCodeCreate, "latitude" | "longitude" | "program">>;
 
 function normalizePosterFilters(
@@ -40,7 +42,9 @@ function normalizePosterFilters(
   if (destinationType !== "events-list" || !filters || Array.isArray(filters)) {
     return undefined;
   }
-  return generatedFilterStateToFilterState(filters as Partial<ApiFilterStateResponse>);
+  return generatedFilterStateToFilterState(
+    filters as Partial<ApiFilterStateResponse>,
+  );
 }
 
 /** Map backend poster to frontend QRCode. */
@@ -51,7 +55,12 @@ function normalizeBackendPoster(b: QrCodePosterBackend): QRCode {
     name: b.name,
     description: b.description ?? undefined,
     destinationType,
-    destinationId: b.destination_id != null ? (Number.isNaN(Number(b.destination_id)) ? b.destination_id : Number(b.destination_id)) : undefined,
+    destinationId:
+      b.destination_id != null
+        ? Number.isNaN(Number(b.destination_id))
+          ? b.destination_id
+          : Number(b.destination_id)
+        : undefined,
     filters: normalizePosterFilters(destinationType, b.filters),
     createdAt: b.created_at,
     createdBy: b.created_by,
@@ -66,7 +75,9 @@ function normalizeBackendPoster(b: QrCodePosterBackend): QRCode {
 }
 
 /** List all posters (auth). */
-export async function listPostersFromBackend(school?: string): Promise<QRCode[]> {
+export async function listPostersFromBackend(
+  school?: string,
+): Promise<QRCode[]> {
   const url = school
     ? `/qr/?${new URLSearchParams({ school }).toString()}`
     : "/qr/";
@@ -97,7 +108,6 @@ export async function getPromoterEarnings(): Promise<PromoterEarnings> {
     posters: response.posters.map((poster) => ({
       id: poster.qr_code_id,
       name: poster.name,
-      isActive: poster.is_active,
       latestScan: poster.latest_scan,
       latitude: poster.latitude,
       longitude: poster.longitude,
@@ -109,6 +119,7 @@ export async function getPromoterEarnings(): Promise<PromoterEarnings> {
       pendingCents: poster.pending_cents,
     })),
     periodCreditableVisitors: response.period_creditable_scans,
+    periodUnqualifiedScans: response.period_unqualified_scans,
     pendingCents: response.pending_cents,
     lifetimePaidCents: response.lifetime_paid_cents,
     activeSlotsUsed: response.active_slots_used,
@@ -117,9 +128,13 @@ export async function getPromoterEarnings(): Promise<PromoterEarnings> {
   };
 }
 
-export async function getCampusCoverage(school: string): Promise<CampusCoverage> {
+export async function getCampusCoverage(
+  school: string,
+): Promise<CampusCoverage> {
   const params = new URLSearchParams({ school });
-  const response = await api.get<ApiCampusCoverageResponse>(`/qr/map?${params}`);
+  const response = await api.get<ApiCampusCoverageResponse>(
+    `/qr/map?${params}`,
+  );
   return {
     school: response.school,
     quietAfterDays: response.quiet_after_days,
@@ -150,13 +165,6 @@ export async function listPromoterPayouts(): Promise<PromoterPayout[]> {
   }));
 }
 
-export async function archivePromoterPoster(posterId: string): Promise<QRCode> {
-  const response = await api.post<QrCodePosterBackend>(
-    `/qr/${encodeURIComponent(posterId)}/archive`,
-  );
-  return normalizeBackendPoster(response);
-}
-
 export async function updatePromoterEnrollment(
   payoutEmail: string,
   acceptTos: boolean,
@@ -168,7 +176,9 @@ export async function updatePromoterEnrollment(
 }
 
 /** Create a standard poster. Promoter batches use createPromoterPosters. */
-export async function createPosterToBackend(payload: CreatePosterPayload): Promise<QRCode> {
+export async function createPosterToBackend(
+  payload: CreatePosterPayload,
+): Promise<QRCode> {
   const body = {
     ...payload,
     description: payload.description ?? null,

@@ -32,7 +32,7 @@ export function AdminInstagramPage({ onBack }: AdminInstagramPageProps) {
   const openBatch = batches.find((batch) => batch.id === openBatchId) ?? null;
 
   return (
-    <Container size="lg" className="px-0">
+    <Container size="lg">
       <Stack gap={6}>
         <AdminPageHeader
           icon={Instagram}

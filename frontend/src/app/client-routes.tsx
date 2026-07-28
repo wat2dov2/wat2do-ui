@@ -32,12 +32,15 @@ import { InviteLandingPage } from "@/features/organizations/pages/InviteLandingP
 import { QRRedirectPage } from "@/features/qrcode/pages/QRRedirectPage";
 import { SettingsPage } from "@/features/settings/pages/SettingsPage";
 import { PromotePage } from "@/features/posters/pages/PromotePage";
-import { PromoterTermsPage } from "@/features/posters/pages/PromoterTermsPage";
 import { PromoterPostersPage } from "@/features/posters/pages/PromoterPostersPage";
 import { ROLE_ADMIN, ROLE_ORGANIZATION } from "@/shared/constants/roles";
 import type { Event } from "@/shared/types";
 
-export function LoginRoute({ previewEvents = [] }: { previewEvents?: Event[] }) {
+export function LoginRoute({
+  previewEvents = [],
+}: {
+  previewEvents?: Event[];
+}) {
   return (
     <AppPage authFlow chrome={false}>
       <AuthEntryPage previewEvents={previewEvents} />
@@ -133,14 +136,6 @@ export function PromoteRoute() {
   return (
     <AppPage>
       <PromotePage />
-    </AppPage>
-  );
-}
-
-export function PromoterTermsRoute() {
-  return (
-    <AppPage>
-      <PromoterTermsPage />
     </AppPage>
   );
 }

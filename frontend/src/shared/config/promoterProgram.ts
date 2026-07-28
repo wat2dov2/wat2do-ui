@@ -19,6 +19,7 @@ interface PublicPromoterProgram {
   enabled: boolean;
   rateCents: number;
   landingConfirmationSeconds: number;
+  payoutDayOfMonth: number;
   quietPosterDays: number;
   bannerDismissalDays: number;
   tosVersion: string;

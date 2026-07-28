@@ -1,4 +1,4 @@
-"""QR codes, privacy-preserving scans, confirmation, and archive lifecycle."""
+"""QR code creation, privacy-preserving scans, and landing confirmation."""
 
 from __future__ import annotations
 
@@ -378,23 +378,6 @@ def confirm_scan(token: str, *, visitor_token: str) -> QrScanConfirmResponse:
         confirmed=True,
         landing_confirmed_at=confirmed_at,
     )
-
-
-def archive_qr_code(qr_code_id: str) -> QrCodeResponse:
-    response = (
-        get_sb()
-        .table(QR_CODES)
-        .update({"is_active": False})
-        .eq("id", qr_code_id)
-        .eq("is_active", True)
-        .execute()
-    )
-    if response.data:
-        return QrCodeResponse.model_validate(response.data[0])
-    existing = get_qr_code_by_id(qr_code_id)
-    if existing is None:
-        raise NotFoundError(POSTER_NOT_FOUND)
-    return existing
 
 
 def delete_qr_code(qr_code_id: str) -> None:

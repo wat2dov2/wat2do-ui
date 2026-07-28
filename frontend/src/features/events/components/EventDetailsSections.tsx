@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState } from "react";
+import { lazy, Suspense, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
@@ -49,6 +49,7 @@ import { controlBox } from "@/shared/config/controlBox";
 import { translateFood } from "@/shared/utils/foodTranslation";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import { organizationPagePath, ROUTES } from "@/shared/constants/routes";
+import { getSchoolColors } from "@/shared/constants/schools";
 import type { Event } from "@/shared/types";
 
 const EventShareDialog = lazy(() =>
@@ -110,24 +111,53 @@ function EventHostName({ event }: { event: Event }) {
 }
 
 /** Compact calendar square showing the primary occurrence's month and day. */
-function EventDateTile({ dtstartUtc, locale }: { dtstartUtc: string; locale: string }) {
+function getEventTileStyle(school: string | null | undefined): CSSProperties {
+  const colors = getSchoolColors(school);
+  return {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+    color: colors.ink,
+  };
+}
+
+function EventDateTile({
+  dtstartUtc,
+  locale,
+  school,
+}: {
+  dtstartUtc: string;
+  locale: string;
+  school: string | null | undefined;
+}) {
   const start = new Date(dtstartUtc);
   if (Number.isNaN(start.getTime())) return null;
   return (
-    <Card className="size-10 shrink-0 items-center justify-center gap-0.5 py-0">
-      <span className="text-[9px] font-semibold text-muted-foreground">
+    <Card
+      className="size-10 shrink-0 items-center justify-center gap-0.5 py-0"
+      style={getEventTileStyle(school)}
+    >
+      <span className="text-[9px] font-semibold">
         {start.toLocaleDateString(locale, { month: "short" })}
       </span>
-      <span className="text-base font-bold leading-none text-foreground">{start.getDate()}</span>
+      <span className="text-base font-bold leading-none">{start.getDate()}</span>
     </Card>
   );
 }
 
 /** Compact bordered squircle tile holding an icon, matching EventDateTile's footprint. */
-function EventInfoTile({ icon: Icon }: { icon: LucideIcon }) {
+function EventInfoTile({
+  icon: Icon,
+  school,
+}: {
+  icon: LucideIcon;
+  school: string | null | undefined;
+}) {
   return (
-    <Card className="size-10 shrink-0 items-center justify-center py-0">
-      <Icon className="size-4 text-muted-foreground" />
+    <Card
+      className="size-10 shrink-0 items-center justify-center py-0"
+      style={getEventTileStyle(school)}
+    >
+      <Icon className="size-4" />
     </Card>
   );
 }
@@ -143,7 +173,11 @@ function EventDateCell({ event }: { event: Event }) {
 
   return (
     <Stack direction="horizontal" gap={3} align="center">
-      <EventDateTile dtstartUtc={primaryOccurrence.dtstart_utc} locale={locale} />
+      <EventDateTile
+        dtstartUtc={primaryOccurrence.dtstart_utc}
+        locale={locale}
+        school={event.school}
+      />
       <div className="min-w-0">
         <p className="text-sm font-semibold text-foreground">{formatCardDate(event, locale)}</p>
         <p className="text-sm text-muted-foreground">{formatCardTime(event)}</p>
@@ -181,7 +215,7 @@ function EventLocationCell({ event }: { event: Event }) {
   if (!event.location) return null;
   return (
     <Stack direction="horizontal" gap={3} align="center">
-      <EventInfoTile icon={LocationPin} />
+      <EventInfoTile icon={LocationPin} school={event.school} />
       <p className="min-w-0 text-sm font-semibold text-foreground">{event.location}</p>
     </Stack>
   );
@@ -192,7 +226,7 @@ function EventFoodCell({ event }: { event: Event }) {
   if (!event.food || event.food.length === 0) return null;
   return (
     <Stack direction="horizontal" gap={3} align="center">
-      <EventInfoTile icon={Utensils} />
+      <EventInfoTile icon={Utensils} school={event.school} />
       <p className="min-w-0 text-sm font-semibold text-foreground">
         {event.food.map((food) => translateFood(food, t)).join(", ")}
       </p>
@@ -205,7 +239,7 @@ function EventCostCell({ event }: { event: Event }) {
   if (event.price == null) return null;
   return (
     <Stack direction="horizontal" gap={3} align="center">
-      <EventInfoTile icon={DollarSign} />
+      <EventInfoTile icon={DollarSign} school={event.school} />
       <p className="text-sm font-semibold text-foreground">
         {event.price === 0 ? t("common.free") : `$${event.price}`}
       </p>
@@ -261,7 +295,6 @@ function EventRegistrationCard({
               <EventCalendarDownloadMenu event={event}>
                 <Button
                   type="button"
-                  variant="secondary"
                   data-slot="dropdown-menu-trigger"
                 >
                   <Calendar className="size-4" />
@@ -406,7 +439,7 @@ function EventAboutSection({ event }: { event: Event }) {
   );
 }
 
-/** Full-width embedded map for the event location, falling back to the school. */
+/** Full-width embedded map for a physical event location. */
 function EventMapSection({
   event,
   school,
@@ -414,7 +447,7 @@ function EventMapSection({
   event: Event;
   school: string | null | undefined;
 }) {
-  return <EventLocationMap location={event.location} school={school ?? event.school} />;
+  return <EventLocationMap location={event.location} school={event.school ?? school} />;
 }
 
 /** "N going" heading, divider, and abbreviated attendee names. */
@@ -535,14 +568,11 @@ export function EventDetailsBody({
   event,
   school,
   renderTitle,
-  showActions = true,
 }: {
   event: Event;
   school: string | null | undefined;
   /** Override the title element (the drawer supplies its DrawerTitle). */
   renderTitle?: (title: string) => React.ReactNode;
-  /** Set false when the surface renders badges and actions in its own header. */
-  showActions?: boolean;
 }) {
   const { t } = useTranslation();
   return (
@@ -564,7 +594,7 @@ export function EventDetailsBody({
         </div>
 
         <Stack gap={6} className="order-3">
-          <FormGrid columns={2}>
+          <FormGrid columns={2} collapse={false}>
             <EventDateCell event={event} />
             <EventLocationCell event={event} />
             <EventFoodCell event={event} />
@@ -574,6 +604,8 @@ export function EventDetailsBody({
           <EventRegistrationCard event={event} school={school} />
 
           <EventAboutSection event={event} />
+
+          <EventMapSection event={event} school={school} />
         </Stack>
       </div>
 
@@ -590,13 +622,6 @@ export function EventDetailsBody({
         <EventContactHostSection event={event} />
       </Stack>
 
-      <Stack gap={6} className="order-4 md:col-start-1">
-        <EventMapSection event={event} school={school} />
-
-        {showActions ? (
-          <EventActions event={event} />
-        ) : null}
-      </Stack>
     </div>
   );
 }

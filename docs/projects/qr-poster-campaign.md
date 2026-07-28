@@ -2,7 +2,7 @@
 
 Status: backend foundation implemented; promoter and administrator product surfaces planned.
 Owner: Tony.
-Last updated: July 26, 2026.
+Last updated: July 28, 2026.
 
 ## One-line architecture
 
@@ -56,11 +56,12 @@ The product must make three facts immediately clear:
 ### Compensation
 
 - The rate is $0.25 per creditable visitor.
-- The first confirmed unique visitor for each poster is the activation visitor and earns $0.
+- The first confirmed unique visitor for each poster is the activation scan and earns $0.
 - A visitor can earn credit only once per poster.
 - Earnings are calculated from confirmed scan rows and are not written to a live ledger.
 - Payout periods are UTC calendar months.
-- Payouts are prepared after a 24-hour close delay.
+- The stated payment day is the first day of each month.
+- Payouts are prepared on the first day of the following month without an additional close delay.
 - Every positive pilot balance is payable, with no minimum payout threshold.
 - Held payouts are reviewed rather than silently removed.
 - The pilot uses manual Interac e-Transfers.
@@ -70,9 +71,8 @@ The product must make three facts immediately clear:
 - One QR code represents one physical poster placement.
 - A user who wants five physical posters creates five poster rows and receives five unique QR codes.
 - A multi-copy generation action may create several posters at once, but every output page must contain a different QR code.
-- Moving a poster to a materially different location requires archiving it and creating a new poster.
-- Archiving frees one of the user's 50 active-poster slots.
 - Promoter posters cannot be permanently deleted through the product.
+- Promoters do not receive a self-service active-state or retirement action.
 
 ### Creative
 
@@ -94,17 +94,18 @@ The product must make three facts immediately clear:
 
 ## Product terminology
 
-`is_active` has one backend meaning: the QR code has not been archived.
-The UI must not call a poster inactive merely because it has not received a recent scan.
+`is_active` remains the generic QR lifecycle field shared by standard and promoter QR codes.
+New promoter posters are active, and the promoter earnings response contains active rows only.
+Historical inactive promoter rows still resolve to their destination but do not record another scan.
+The promoter UI must not call a poster inactive merely because it has not received a recent scan.
 
 The promoter UI derives these labels:
 
 | Label | Derivation | Meaning |
 | --- | --- | --- |
-| Not placed | Active poster without a usable map location | The poster was generated but its placement has not been located |
-| Recently scanned | Active, placed poster with `latest_scan` within 30 days | The poster has received accepted traffic recently |
-| Quiet | Active, placed poster with no accepted scan in 30 days | The poster still redirects but may no longer be visible |
-| Archived | `is_active = false` | The owner intentionally retired the physical placement |
+| Not placed | Poster without a usable map location | The poster was generated but its placement has not been located |
+| Recently scanned | Placed poster with `latest_scan` within 30 days | The poster has received accepted traffic recently |
+| Quiet | Placed poster with no accepted scan in 30 days | The poster still redirects but may no longer be visible |
 
 The 30-day quiet threshold belongs in the promoter program control box.
 
@@ -212,7 +213,7 @@ Enrollment-card states:
 | State | Primary behavior |
 | --- | --- |
 | Logged out | Active `Sign in to join` CTA that returns to `/promote` |
-| Logged in and unenrolled | Payout email, Terms of Service checkbox, and `Join the program` CTA |
+| Logged in and unenrolled | Payout email, scroll-gated Terms dialog, and `Join the program` CTA |
 | Enrolled | Confirmation and `Open my posters` CTA |
 | Program paused | Paused notice without enrollment or creation controls |
 | Missing school | Explanation and link to complete the user's school profile |
@@ -221,7 +222,7 @@ A logged-out visitor receives an active sign-in action rather than a disabled en
 
 Trust copy appears beside the enrollment form:
 
-- Payments are sent monthly by Interac e-Transfer.
+- Payments are sent by Interac e-Transfer on the first day of each month.
 - The activation scan earns $0.
 - Duplicate, unconfirmed, automated, and fraudulent traffic is excluded.
 - Wat2Do does not store raw IP addresses.
@@ -231,6 +232,10 @@ Trust copy appears beside the enrollment form:
 
 The existing user enrollment endpoint updates the user's payout email and stamps the current Terms of Service version.
 Successful enrollment takes the user directly to `/posters`.
+
+The current `2026-07` Terms are shown in a dialog rather than a standalone page.
+The accept action remains disabled until the user scrolls to the end.
+The Terms state the explicit program rate, the first-day payment date, the five-second landing requirement for a valid scan, the dispute process, and the privacy protections used to measure poster areas.
 
 The Settings page retains a `Promoter program` section for:
 
@@ -244,25 +249,28 @@ The Settings page retains a `Promoter program` section for:
 
 Route: `/posters`.
 
-The floating dock contains a poster icon for authenticated users.
-An unenrolled user selecting it goes to `/promote`.
+The floating dock contains a poster icon for every visitor.
+A signed-out or unenrolled user selecting it goes to `/promote`.
 An enrolled user selecting it goes to `/posters`.
+The icon is active on both promoter routes.
 
 The dashboard summary contains:
 
 - Pending earnings for the current month.
 - Creditable visitors for the current month.
+- Unqualified scan attempts for the current month.
 - Lifetime paid amount.
 - Active poster slots used out of 50.
 
+The dashboard summary uses a fixed two-column grid at every breakpoint.
 The dashboard labels its scan-derived values as updated daily.
 It does not present a real-time scan feed.
 
 Desktop layout:
 
-- Campus map as the main visual.
-- Owned-poster inventory beside or immediately below the map.
-- Payout history below the poster inventory.
+- Owned-poster inventory first.
+- Campus map below the poster inventory.
+- Payout history below the map.
 
 Map behavior:
 
@@ -280,15 +288,14 @@ Every poster card or row shows:
 - Total confirmed unique visitors.
 - Current-period creditable visitors.
 - Current-period earnings.
-- Latest accepted scan date.
+- Last scanned time.
 - Download action.
-- Archive action.
 
 The dashboard empty state says:
 
 > Create your first official Wat2Do poster.
 > Download it, place it on campus, and scan it yourself to activate the placement.
-> The activation scan earns $0.
+> The Activation scan earns $0.
 
 The payout history table shows:
 
@@ -335,13 +342,12 @@ This deliberate owner scan verifies the printed asset and supplies the placement
 
 The scan route follows these rules:
 
-- An archived QR still resolves to its configured destination but does not record another payable scan.
-- The poster's first confirmed unique visitor is the non-creditable activation visitor.
+- A historical inactive QR still resolves to its configured destination but does not record another scan.
+- The poster's first confirmed unique visitor is the non-creditable activation scan.
 - The first accepted scan with usable coordinates sets the poster location when the poster is not yet placed.
 - A scan without coordinates still redirects successfully.
 - A later accepted scan may set the location if the poster still has no usable coordinates.
 - Once set, ordinary scans do not move the poster.
-- Moving the physical poster requires archiving it and creating a new poster.
 
 ### 7. Visitor scan
 
@@ -373,6 +379,11 @@ For each poster:
 5. Subtract one if the poster's first confirmed unique visitor falls inside that period.
 6. Floor the result at zero.
 7. Multiply the creditable visitor count by the configured rate in integer cents.
+
+Monthly scan attempts count every accepted scan row recorded for currently active promoter posters during the UTC payout period.
+Current-period unqualified scans equal those attempts minus current-period creditable unique scans, floored at zero.
+This makes activation, duplicate, and unconfirmed scan attempts visible without making them payable.
+The dashboard exposes active promoter rows only.
 
 The poster's `latest_scan` timestamp updates for every accepted scan, including a repeat visitor that is not creditable.
 This keeps recency independent from earnings eligibility.
@@ -431,7 +442,7 @@ Promoter extensions:
 Existing fields retain these meanings:
 
 - `created_by` owns the promoter poster.
-- `is_active` means not archived.
+- `is_active` is the shared QR lifecycle state used by standard QR management and retained historical rows.
 - `latitude` and `longitude` hold the physical placement when known.
 - `filters.school` selects the school event feed.
 - `image_url` may expose the approved template preview resolved by the server.
@@ -480,10 +491,9 @@ Paid rows require `paid_at`.
 | --- | --- |
 | `GET /qr/{id}` | Record an accepted scan, update `latest_scan`, capture first usable placement coordinates, issue a landing confirmation token for promoter scans, and return redirect configuration |
 | `POST /qr/scans/confirm` | Confirm the landing after the configured delay using the visitor cookie and signed token |
-| `GET /qr/` | List manageable QR codes with program, archive, recency, and never-scanned filters |
+| `GET /qr/` | List manageable QR codes with program, active-state, recency, and never-scanned filters |
 | `POST /qr/` | Preserve organization and administrator creation while allowing enrolled users to create `program=promoter` posters |
 | `PATCH /qr/{id}` | Preserve existing standard QR editing rules and prevent promoter ownership or program mutation |
-| `POST /qr/{id}/archive` | Archive an owned promoter poster and free a slot |
 | `GET /qr/earnings` | Return the authenticated promoter's per-poster and period aggregates |
 
 Promoter creation requires:
@@ -509,6 +519,7 @@ It does not supply an arbitrary destination, school, QR placement, or promoter a
 - Current-period creditable visitors per poster.
 - Pending cents per poster.
 - Total current-period creditable visitors.
+- Total current-period unqualified scan attempts.
 - Total pending cents.
 - Lifetime paid cents.
 - Active slots used and limit.
@@ -639,7 +650,6 @@ When the promoter program control-box `enabled` value is false:
 - Earnings and payout history remain readable.
 - New enrollment is blocked.
 - New promoter poster creation is blocked.
-- Existing promoter posters may be archived.
 - The recruitment banner is hidden.
 - Enrolled users see a calm paused notice in their dashboard.
 
@@ -656,7 +666,7 @@ The control box owns:
 - Maximum active posters.
 - Landing confirmation delay.
 - Confirmation token lifetime.
-- Payout close delay.
+- Payment day of month.
 - Quiet-poster threshold.
 - Terms of Service version.
 - Discord invite URL.
@@ -674,7 +684,7 @@ Production infrastructure must also provide:
 - A production Mapbox token.
 - Scheduled monthly execution of the payout job.
 - Secure handling of generated Interac CSV files.
-- A published and versioned promoter Terms of Service page.
+- Published and versioned promoter Terms content for the scroll-gated acceptance dialog.
 
 Secrets never appear in control-box files, client bundles, logs, payout notes, or generated CSV output.
 
@@ -739,13 +749,13 @@ Status: implemented.
 - Add logged-out, unenrolled, enrolled, missing-school, and paused states.
 - Extend Settings with the promoter enrollment section.
 - Add Terms of Service and Discord links.
-- Add the poster item to the authenticated floating dock.
+- Add the poster item to the public floating dock.
 
 ### Phase 3: Promoter dashboard and map
 
 - Add the `/posters` promoter route and page container.
 - Add earnings and payout-history queries using shared TanStack Query ownership.
-- Add summary cards, poster inventory, lifecycle labels, downloads, and archive.
+- Add summary cards, poster inventory, lifecycle labels, downloads, and unqualified scan totals.
 - Add the safe public school coverage endpoint.
 - Extend the existing map implementation through one shared marker source of truth.
 - Render owned markers precisely and public aggregate coverage approximately.
@@ -782,11 +792,11 @@ Status: implemented.
 - Every physical copy receives a unique QR code.
 - A generated poster can be downloaded as PDF or PNG.
 - The placement scan records the first accepted visit and can establish map coordinates.
-- The activation visitor earns $0.
+- The activation scan earns $0.
 - A later confirmed unique visitor adds exactly 25 cents.
 - A duplicate visitor does not add another credit for the same poster.
 - The dashboard shows owned poster totals, current pending earnings, slot usage, and payout history.
-- Archiving frees a slot and does not break the QR redirect.
+- The promoter product exposes no poster retirement or deletion action.
 
 ### Privacy and map
 
@@ -819,5 +829,5 @@ Backend changes require the complete backend test suite.
 Frontend changes require `npm run check` in `frontend/` for lint, i18n audit, and type-checking.
 Generated API types must be refreshed whenever an API contract changes.
 Tests must cover the frontend and backend agreement for every promoter request and response field.
-End-to-end tests must cover enrollment, multi-copy creation, activation, dedupe, archive, payout review, and kill-switch behavior.
+End-to-end tests must cover enrollment, multi-copy creation, activation, dedupe, unqualified scan totals, payout review, and kill-switch behavior.
 The human runs browser-dependent tests and the production physical-print scan test, in accordance with the repository browser and server policy.

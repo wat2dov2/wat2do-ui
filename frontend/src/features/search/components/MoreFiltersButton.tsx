@@ -48,7 +48,7 @@ export function MoreFiltersButton({
           />
         )}
       </div>
-      <DrawerContent className="max-h-[85dvh] max-w-sm! overflow-hidden p-0">
+      <DrawerContent className="max-w-sm!">
         <DrawerHeader className="sr-only">
           <DrawerTitle>{t("common.extraFilters")}</DrawerTitle>
           <DrawerDescription>{t("filters.filtersHeader")}</DrawerDescription>

@@ -4,16 +4,10 @@ import type {
 } from "@/features/posters/types";
 
 export function getPosterLifecycle(
-  poster: Pick<
-    PromoterPosterEarnings,
-    "isActive" | "latestScan" | "latitude" | "longitude"
-  >,
+  poster: Pick<PromoterPosterEarnings, "latestScan" | "latitude" | "longitude">,
   quietAfterDays: number,
   now = Date.now(),
 ): PosterLifecycle {
-  if (!poster.isActive) {
-    return "archived";
-  }
   if (
     poster.latitude == null ||
     poster.longitude == null ||

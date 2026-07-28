@@ -212,7 +212,6 @@ class QrScanConfirmResponse(BaseModel):
 class PosterEarningsItem(BaseModel):
     qr_code_id: str
     name: str
-    is_active: bool
     latest_scan: datetime | None
     latitude: float
     longitude: float
@@ -232,6 +231,7 @@ class PromoterEarningsResponse(BaseModel):
     period: str
     posters: list[PosterEarningsItem]
     period_creditable_scans: int
+    period_unqualified_scans: int
     pending_cents: int
     lifetime_paid_cents: int
     active_slots_used: int

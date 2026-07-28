@@ -727,9 +727,10 @@ test.describe("Events Page", () => {
     await expect(page.getByRole("dialog")).not.toBeVisible();
   });
 
-  test("signed-out registration links to login from the drawer and event page", async ({
+  test("renders event facts and maps consistently with signed-out registration", async ({
     page,
   }) => {
+    await page.setViewportSize({ width: 375, height: 844 });
     const now = new Date();
     const startsAt = new Date(now.getTime() + 86_400_000).toISOString();
     await page.route(url => apiPath(url) === "/events/1", async (route) => {
@@ -759,6 +760,32 @@ test.describe("Events Page", () => {
       });
     });
 
+    const assertEventDetails = async () => {
+      const facts = page.locator('[data-slot="form-grid"]').first();
+      await expect
+        .poll(() =>
+          facts.evaluate(
+            (element) =>
+              getComputedStyle(element).gridTemplateColumns.split(" ").length,
+          ),
+        )
+        .toBe(2);
+
+      const map = page.locator('iframe[title="SLC"]');
+      await expect(map).toBeVisible();
+      const mapSrc = await map.getAttribute("src");
+      expect(mapSrc).not.toBeNull();
+      expect(new URL(mapSrc!).searchParams.get("q")).toBe(
+        "SLC, University of Waterloo",
+      );
+      expect(
+        await map.evaluate(
+          (element) =>
+            element.previousElementSibling?.querySelector("h3")?.textContent,
+        ),
+      ).toBe("About Event");
+    };
+
     const assertSignInRegistration = async () => {
       const signInLink = page.getByRole("link", {
         name: "Sign in to register",
@@ -775,9 +802,11 @@ test.describe("Events Page", () => {
     };
 
     await page.goto(`${BASE}/?eventId=1`);
+    await assertEventDetails();
     await assertSignInRegistration();
 
     await page.goto(`${BASE}/events/1`);
+    await assertEventDetails();
     await assertSignInRegistration();
   });
 
@@ -1263,6 +1292,90 @@ test.describe("Events Page", () => {
     await expect(clearFiltersButton).toContainText("1");
     await clearFiltersButton.click();
     await expect(clearFiltersButton).toHaveCount(0);
+  });
+
+  test("selects one food and restores all events through the shared All option", async ({
+    page,
+  }) => {
+    const now = new Date();
+    const startsAt = new Date(now.getTime() + 86_400_000).toISOString();
+    const eventBase = {
+      location: "SLC",
+      occurrences: [
+        {
+          id: 1,
+          event_id: 1,
+          dtstart_utc: startsAt,
+          dtend_utc: null,
+        },
+      ],
+      price: 0,
+      registration: false,
+      source_image_url: null,
+      category: "Career",
+      organization: "UW Tech Club",
+      organization_type: "wusa",
+      school: "uwaterloo",
+      added_at: now.toISOString(),
+    };
+
+    await page.route(url => apiPath(url) === "/events", async (route) => {
+      const items = [
+        {
+          ...eventBase,
+          id: 1,
+          title: "Tech Career Fair",
+          food: [],
+        },
+        {
+          ...eventBase,
+          id: 2,
+          title: "Pizza Social",
+          food: ["Pizza"],
+          occurrences: [
+            {
+              id: 2,
+              event_id: 2,
+              dtstart_utc: startsAt,
+              dtend_utc: null,
+            },
+          ],
+        },
+      ];
+
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          items,
+          total: items.length,
+          page: 1,
+          page_size: 20,
+          total_pages: 1,
+          latest_added_event: {
+            title: "Pizza Social",
+            added_at: now.toISOString(),
+          },
+        }),
+      });
+    });
+
+    await page.goto(BASE);
+    await expect(page.locator("article[data-event-id]")).toHaveCount(2);
+
+    await page.getByRole("button", { name: "Extra filters" }).click();
+    const drawer = page.getByRole("dialog", { name: "Extra filters" });
+    await drawer.getByRole("button", { name: "All", exact: true }).click();
+    await page.getByRole("button", { name: "Pizza", exact: true }).click();
+
+    await expect(page.locator("article[data-event-id]")).toHaveCount(1);
+    await expect(
+      page.locator('article[data-event-id="2"]'),
+    ).toBeVisible();
+
+    await drawer.getByRole("button", { name: "Pizza", exact: true }).click();
+    await page.getByRole("button", { name: "All", exact: true }).click();
+    await expect(page.locator("article[data-event-id]")).toHaveCount(2);
   });
 
   test("app API proxy returns events", async ({ request }) => {

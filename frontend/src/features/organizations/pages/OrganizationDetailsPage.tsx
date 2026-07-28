@@ -56,7 +56,7 @@ function OrganizationDetailsContent({
 
   return (
     <>
-      <Container size="lg" className="py-4 sm:py-6">
+      <Container size="lg">
         <Stack gap={6}>
           <PageHeader
             back={{
@@ -193,7 +193,7 @@ export function OrganizationDetailsPage({
 
   if (isError || !organization) {
     return (
-      <Container size="sm" className="py-16 text-center">
+      <Container size="sm" className="text-center">
         <p className="text-sm text-muted-foreground">
           {t("organizations.loadFailed")}
         </p>

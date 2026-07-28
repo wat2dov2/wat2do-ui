@@ -50,7 +50,6 @@ interface VisualFiltersProps {
     selectedFoods: string[];
     setSelectedFoods: (foods: string[]) => void;
     foodOptions: Array<{ id: string; label: string }>;
-    toggleFood: (id: string) => void;
     selectedDays: string[];
     setSelectedDays: (days: string[]) => void;
     dayOptions: Array<{ id: string; label: string }>;
@@ -70,6 +69,7 @@ interface VisualFiltersProps {
 
 export function VisualFilters({ filters, viewMode, onViewModeChange }: VisualFiltersProps) {
   const { t } = useTranslation();
+  const { setSelectedFoods } = filters;
 
   const categoryValues = useMemo(
     () => filters.categoryOptions.map((o) => o.id),
@@ -79,14 +79,23 @@ export function VisualFilters({ filters, viewMode, onViewModeChange }: VisualFil
     () => new Map(filters.categoryOptions.map((o) => [o.id, o.label])),
     [filters.categoryOptions],
   );
-  const foodValues = useMemo(
-    () => filters.foodOptions.map((o) => o.id),
-    [filters.foodOptions],
+  const allFoodOption = useMemo(
+    () => ({ id: "", label: t("common.all") }),
+    [t],
   );
-  const foodLabels = useMemo(
-    () => new Map(filters.foodOptions.map((o) => [o.id, o.label])),
-    [filters.foodOptions],
-  );
+  const selectedFoodOption = useMemo(() => {
+    const selectedFoodId = filters.selectedFoods[0];
+    if (!selectedFoodId) {
+      return allFoodOption;
+    }
+
+    return (
+      filters.foodOptions.find((option) => option.id === selectedFoodId) ?? {
+        id: selectedFoodId,
+        label: selectedFoodId,
+      }
+    );
+  }, [allFoodOption, filters.foodOptions, filters.selectedFoods]);
   const dayValues = useMemo(
     () => filters.dayOptions.map((o) => o.id),
     [filters.dayOptions],
@@ -122,6 +131,29 @@ export function VisualFilters({ filters, viewMode, onViewModeChange }: VisualFil
       );
     },
     [filters.availableOrganizations],
+  );
+
+  const foodFetcher = useCallback(
+    (query: string) => {
+      const normalizedQuery = query.trim().toLocaleLowerCase();
+      if (!normalizedQuery) {
+        return filters.foodOptions;
+      }
+
+      return filters.foodOptions.filter(
+        (option) =>
+          option.id.toLocaleLowerCase().includes(normalizedQuery) ||
+          option.label.toLocaleLowerCase().includes(normalizedQuery),
+      );
+    },
+    [filters.foodOptions],
+  );
+
+  const handleSelectFood = useCallback(
+    (option: { id: string; label: string }) => {
+      setSelectedFoods(option.id ? [option.id] : []);
+    },
+    [setSelectedFoods],
   );
 
   return (
@@ -200,11 +232,19 @@ export function VisualFilters({ filters, viewMode, onViewModeChange }: VisualFil
         }
         onClear={() => filters.setSelectedFoods([])}
       >
-        <MultiSelect
-          options={foodValues}
-          selected={filters.selectedFoods}
-          onToggle={filters.toggleFood}
-          getLabel={(id) => foodLabels.get(id) ?? id}
+        <SearchCombobox
+          selectedKey={selectedFoodOption.id}
+          onSelect={handleSelectFood}
+          fetcher={foodFetcher}
+          getKey={(option) => option.id}
+          getLabel={(option) => option.label}
+          displayValue={selectedFoodOption.label}
+          allOption={allFoodOption}
+          searchOnEmpty
+          variant="field"
+          searchPlaceholder={t("filters.searchFood")}
+          emptyLabel={t("filters.noFoodFound")}
+          loadingLabel={t("common.loading")}
         />
       </FilterSection>
 

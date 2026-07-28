@@ -13,6 +13,7 @@ import { FloatingDock } from "@/shared/ui/floating-dock";
 import type { FloatingDockItem } from "@/shared/ui/floating-dock";
 import { BackToTopButton } from "@/shared/ui/back-to-top-button";
 import { ROUTES } from "@/shared/constants/routes";
+import { PageFrame } from "@/shared/layout";
 import { usePromoterState } from "@/features/posters";
 
 interface AppLayoutProps {
@@ -49,15 +50,14 @@ export function AppLayout({ children }: AppLayoutProps) {
       href: ROUTES.CONTACT,
       isActive: isActive(ROUTES.CONTACT),
     },
+    {
+      title: t("navigation.posters"),
+      icon: <QrCode className="size-full" />,
+      href: promoter.isEnrolled ? ROUTES.POSTERS : ROUTES.PROMOTE,
+      isActive: isActive(ROUTES.POSTERS) || isActive(ROUTES.PROMOTE),
+    },
     ...(promoter.isAuthenticated
       ? [
-          {
-            title: t("navigation.posters"),
-            icon: <QrCode className="size-full" />,
-            href: promoter.isEnrolled ? ROUTES.POSTERS : ROUTES.PROMOTE,
-            isActive:
-              isActive(ROUTES.POSTERS) || isActive(ROUTES.PROMOTE),
-          },
           {
             title: t("navigation.settings"),
             icon: <Settings className="size-full" />,
@@ -72,14 +72,14 @@ export function AppLayout({ children }: AppLayoutProps) {
     <div className="h-dvh flex flex-col">
       <TopNav />
 
-      <div
-        className="main-content-grid mt-12 flex-1 overflow-auto px-2 pt-4 pb-20 sm:p-4 sm:pb-16"
+      <PageFrame
+        className="main-content-grid mt-12 flex-1 overflow-auto"
         style={{
           minHeight: "calc(100vh - 48px)",
         }}
       >
         {children}
-      </div>
+      </PageFrame>
 
       {/* Shared bottom chrome: dock centered, back-to-top on the right, same icon baseline. */}
       <div className="pointer-events-none fixed inset-x-0 bottom-4 z-50 flex h-16 items-end justify-center px-2 pb-3 sm:px-4">

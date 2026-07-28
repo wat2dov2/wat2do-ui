@@ -1,4 +1,4 @@
-import { DrawerBody, Stack } from "@/shared/layout";
+import { DrawerBody, FormGrid, Stack } from "@/shared/layout";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { Separator } from "@/shared/ui/separator";
 import { DrawerHeader } from "@/shared/ui/drawer";
@@ -27,10 +27,10 @@ export function EventDetailsDrawerSkeleton() {
           <Stack gap={6}>
             <Skeleton className="h-8 w-4/5 rounded-lg" />
 
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <FormGrid columns={2} collapse={false}>
               <Skeleton className="h-24 w-full rounded-xl" />
               <Skeleton className="h-24 w-full rounded-xl" />
-            </div>
+            </FormGrid>
 
             <Skeleton className="h-32 w-full rounded-xl" />
 

@@ -182,24 +182,24 @@ def test_resolve_new_standard_qr_requires_location(client):
         qr_code_service.get_qr_code_by_id = original_get
 
 
-def test_resolve_archived_qr_redirects_without_recording(client):
-    """Archived posters remain useful links but do not create scans."""
+def test_resolve_historical_inactive_qr_redirects_without_recording(client):
+    """Historical inactive posters remain useful links but do not create scans."""
     mock_qr = _mock_qr(
-        id="archived",
+        id="inactive",
         destination_type="event",
         destination_id="99",
         is_active=False,
     )
 
     def mock_get(qr_code_id):
-        return mock_qr if qr_code_id == "archived" else None
+        return mock_qr if qr_code_id == "inactive" else None
 
     original_get = qr_code_service.get_qr_code_by_id
     original_record = qr_code_service.record_scan
     qr_code_service.get_qr_code_by_id = MagicMock(side_effect=mock_get)
     qr_code_service.record_scan = MagicMock()
     try:
-        resp = client.get("/qr/archived")
+        resp = client.get("/qr/inactive")
         assert resp.status_code == 200
         data = resp.json()
         assert data["destination_type"] == "event"
@@ -568,7 +568,7 @@ def test_enrolled_promoter_can_create_promoter_poster(authenticated_client, monk
         school="uwaterloo",
         payout_email="promoter@example.com",
         promoter_tos_accepted_at=datetime.now(timezone.utc),
-        promoter_tos_version="2026-01",
+        promoter_tos_version="2026-07",
     )
     monkeypatch.setattr(
         user_service,
@@ -621,7 +621,7 @@ def test_promoter_create_rejects_non_contract_fields(
         school="uwaterloo",
         payout_email="promoter@example.com",
         promoter_tos_accepted_at=datetime.now(timezone.utc),
-        promoter_tos_version="2026-01",
+        promoter_tos_version="2026-07",
     )
     monkeypatch.setattr(
         user_service,
@@ -703,24 +703,6 @@ def test_delete_poster_admin_allowed(admin_client, monkeypatch):
 
     resp = admin_client.delete("/qr/test-qr")
     assert resp.status_code == 204
-
-
-def test_owner_can_archive_promoter_poster(authenticated_client, monkeypatch):
-    existing = _mock_qr(program="promoter", created_by=FAKE_USER["id"])
-    archived = _mock_qr(
-        program="promoter",
-        created_by=FAKE_USER["id"],
-        is_active=False,
-    )
-    monkeypatch.setattr(qr_code_service, "get_qr_code_by_id", MagicMock(return_value=existing))
-    archive = MagicMock(return_value=archived)
-    monkeypatch.setattr(qr_code_service, "archive_qr_code", archive)
-
-    response = authenticated_client.post("/qr/test-qr/archive")
-
-    assert response.status_code == 200
-    assert response.json()["is_active"] is False
-    archive.assert_called_once_with("test-qr")
 
 
 # ── 401 without auth ────────────────────────────────────────────────────
@@ -820,6 +802,7 @@ def test_get_promoter_earnings_delegates_to_service(authenticated_client, monkey
         period="2026-07",
         posters=[],
         period_creditable_scans=0,
+        period_unqualified_scans=0,
         pending_cents=0,
         lifetime_paid_cents=0,
         active_slots_used=0,

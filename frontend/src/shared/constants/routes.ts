@@ -25,7 +25,6 @@ export const ROUTES = {
   INVITE: "/invite",
   EVENT_SUBMIT: "/events/submit",
   PROMOTE: "/promote",
-  PROMOTER_TERMS: "/promote/terms",
   POSTERS: "/posters",
 
   // Admin
@@ -48,7 +47,9 @@ export function organizationPagePath(organizationId: number): string {
 
 const APP_NAME = "Wat2Do";
 
-const ROUTE_PAGE_TITLES: Partial<Record<(typeof ROUTES)[keyof typeof ROUTES], string>> = {
+const ROUTE_PAGE_TITLES: Partial<
+  Record<(typeof ROUTES)[keyof typeof ROUTES], string>
+> = {
   [ROUTES.HOME]: "Campus Events",
   [ROUTES.LOGIN]: "Sign In",
   [ROUTES.AUTH_CALLBACK]: "Signing In",
@@ -61,7 +62,6 @@ const ROUTE_PAGE_TITLES: Partial<Record<(typeof ROUTES)[keyof typeof ROUTES], st
   [ROUTES.MARKETING]: "Marketing",
   [ROUTES.EVENT_SUBMIT]: "Submit an Event",
   [ROUTES.PROMOTE]: "Promote Events",
-  [ROUTES.PROMOTER_TERMS]: "Promoter Terms",
   [ROUTES.POSTERS]: "My Posters",
   [ROUTES.ADMIN]: "Admin",
   [ROUTES.ADMIN_EVENTS]: "Admin Events",
@@ -96,7 +96,9 @@ export function getRouteDocumentTitle(pathname: string): string {
     return buildDocumentTitle("QR Redirect");
   }
 
-  return buildDocumentTitle(ROUTE_PAGE_TITLES[normalizedPathname as keyof typeof ROUTE_PAGE_TITLES]);
+  return buildDocumentTitle(
+    ROUTE_PAGE_TITLES[normalizedPathname as keyof typeof ROUTE_PAGE_TITLES],
+  );
 }
 
 // ── Settings sub-tabs (used as query params: /settings?tab=<tab>) ──
@@ -108,7 +110,9 @@ export const SETTINGS_TABS = {
 } as const;
 
 /** Build a settings URL with a specific tab selected. */
-export function settingsTabPath(tab: (typeof SETTINGS_TABS)[keyof typeof SETTINGS_TABS]): string {
+export function settingsTabPath(
+  tab: (typeof SETTINGS_TABS)[keyof typeof SETTINGS_TABS],
+): string {
   return `${ROUTES.SETTINGS}?${QP.TAB}=${tab}`;
 }
 
@@ -129,4 +133,5 @@ export const ORGANIZATION_PANEL_ROUTE_MAP = {
   "organization-panel-members": ROUTES.ORGANIZATION_PANEL_MEMBERS,
 } as const;
 
-export type OrganizationPanelRouteKey = keyof typeof ORGANIZATION_PANEL_ROUTE_MAP;
+export type OrganizationPanelRouteKey =
+  keyof typeof ORGANIZATION_PANEL_ROUTE_MAP;

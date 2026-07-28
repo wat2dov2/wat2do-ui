@@ -37,16 +37,11 @@ export interface QRCodeScan {
   riskFlags: Array<Record<string, unknown>>;
 }
 
-export type PosterLifecycle =
-  | "not-placed"
-  | "recently-scanned"
-  | "quiet"
-  | "archived";
+export type PosterLifecycle = "not-placed" | "recently-scanned" | "quiet";
 
 export interface PromoterPosterEarnings {
   id: string;
   name: string;
-  isActive: boolean;
   latestScan: string | null;
   latitude: number;
   longitude: number;
@@ -62,6 +57,7 @@ export interface PromoterEarnings {
   period: string;
   posters: PromoterPosterEarnings[];
   periodCreditableVisitors: number;
+  periodUnqualifiedScans: number;
   pendingCents: number;
   lifetimePaidCents: number;
   activeSlotsUsed: number;
@@ -95,6 +91,7 @@ export type PosterMapMarker =
       latitude: number;
       longitude: number;
       visitorCount: number;
+      imageUrl: string | null;
     }
   | {
       kind: "coverage";

@@ -44,7 +44,7 @@ export function MarketingPage({ events, userEmail }: MarketingPageProps) {
   };
 
   if (loading) {
-    return <LoadingPage className="min-h-[200px] py-12" />;
+    return <LoadingPage className="min-h-[200px]" />;
   }
 
   return (

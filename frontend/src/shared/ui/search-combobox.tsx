@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
   type CSSProperties,
@@ -30,6 +31,8 @@ export interface SearchComboboxProps<T> {
   getLabel: (item: T) => string;
   /** Text shown on the trigger button (selected label or placeholder). */
   displayValue: string;
+  /** Optional catch-all choice pinned before fetched results when it matches the query. */
+  allOption?: T;
   /** Style the trigger text as a placeholder. */
   isPlaceholder?: boolean;
   /** Wrap the trigger label (e.g. with a highlighter). Defaults to a plain truncating span. */
@@ -71,6 +74,7 @@ export function SearchCombobox<T>({
   getKey,
   getLabel,
   displayValue,
+  allOption,
   isPlaceholder = false,
   renderTriggerLabel,
   searchOnEmpty = false,
@@ -91,6 +95,28 @@ export function SearchCombobox<T>({
   const [triggerWidth, setTriggerWidth] = useState(280);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const openRef = useRef(false);
+
+  const displayedResults = useMemo(() => {
+    if (allOption === undefined) {
+      return results;
+    }
+
+    const normalizedQuery = search.trim().toLocaleLowerCase();
+    const allKey = getKey(allOption);
+    const matchesQuery =
+      !normalizedQuery ||
+      getLabel(allOption).toLocaleLowerCase().includes(normalizedQuery) ||
+      String(allKey).toLocaleLowerCase().includes(normalizedQuery);
+
+    if (!matchesQuery) {
+      return results;
+    }
+
+    return [
+      allOption,
+      ...results.filter((item) => getKey(item) !== allKey),
+    ];
+  }, [allOption, getKey, getLabel, results, search]);
 
   const resetSearchState = useCallback(() => {
     setSearch("");
@@ -177,8 +203,8 @@ export function SearchCombobox<T>({
   }, [handleOpenChange, onSelect]);
 
   const handleSelectFirstResult = useCallback(async () => {
-    const firstResult = results[0];
-    if (firstResult) {
+    const firstResult = displayedResults[0];
+    if (firstResult !== undefined) {
       handleSelect(firstResult);
       return;
     }
@@ -189,12 +215,12 @@ export function SearchCombobox<T>({
     setIsLoading(true);
     const items = await fetchResults(query);
     setResults(items);
-    if (items[0]) {
+    if (items[0] !== undefined) {
       handleSelect(items[0]);
     } else {
       setIsLoading(false);
     }
-  }, [fetchResults, handleSelect, results, search, willFetch]);
+  }, [displayedResults, fetchResults, handleSelect, search, willFetch]);
 
   const handleSearchKeyDown = useEnterKeySubmit<HTMLInputElement>({
     onSubmit: handleSelectFirstResult,
@@ -232,7 +258,10 @@ export function SearchCombobox<T>({
   };
 
   const hasQuery = search.trim().length > 0;
-  const showEmpty = !isLoading && results.length === 0 && (hasQuery || searchOnEmpty);
+  const showEmpty =
+    !isLoading &&
+    displayedResults.length === 0 &&
+    (hasQuery || searchOnEmpty);
 
   const triggerClasses = cn(VARIANT_TRIGGER_STYLES[variant], triggerClassName);
   const contentStyles = cn(
@@ -311,7 +340,7 @@ export function SearchCombobox<T>({
               {emptyLabel}
             </div>
           ) : (
-            results.map((item) => {
+            displayedResults.map((item) => {
               const key = getKey(item);
               const selected = key === selectedKey;
               return (

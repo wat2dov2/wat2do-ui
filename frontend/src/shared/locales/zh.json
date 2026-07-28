@@ -66,7 +66,8 @@
     "imageLoadErrorAlt": "图片加载失败",
     "logo": "图标",
     "loadingMap": "地图加载中...",
-    "clearFilters": "清除筛选"
+    "clearFilters": "清除筛选",
+    "all": "全部"
   },
   "errorBoundary": {
     "title": "出错了",
@@ -140,6 +141,8 @@
     "added_at": "最新添加",
     "category": "类别",
     "food": "食物",
+    "searchFood": "搜索食物...",
+    "noFoodFound": "未找到食物。",
     "addedSince": "添加时间",
     "sort": "排序",
     "min": "最小",

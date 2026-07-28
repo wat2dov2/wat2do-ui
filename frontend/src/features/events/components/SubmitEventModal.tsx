@@ -472,10 +472,7 @@ function SubmitEventModalContent({
 
   return (
     <Drawer open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DrawerContent
-        className="flex h-[92dvh] overflow-hidden p-0"
-        aria-describedby={undefined}
-      >
+      <DrawerContent aria-describedby={undefined}>
         <DrawerClose asChild>
           <button
             type="button"

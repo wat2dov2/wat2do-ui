@@ -56,7 +56,7 @@ def _enrolled_user() -> UserResponse:
         school="uwaterloo",
         payout_email="promoter@example.com",
         promoter_tos_accepted_at=now,
-        promoter_tos_version="2026-01",
+        promoter_tos_version="2026-07",
         created_at=now,
         updated_at=now,
     )

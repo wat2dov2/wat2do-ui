@@ -1,11 +1,11 @@
-import { useCallback, useMemo } from "react";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import {
   SearchCombobox,
   type SearchComboboxVariant,
 } from "@/shared/ui/search-combobox";
 import { Highlighter } from "@/shared/ui/highlighter";
-import { DEFAULT_SCHOOL } from "@/shared/constants/schools";
+import { ALL_SCHOOLS, DEFAULT_SCHOOL } from "@/shared/constants/schools";
 import { translateSchool } from "@/shared/utils/schoolTranslation";
 import { searchSchools } from "@/shared/api/schools.api";
 
@@ -42,23 +42,6 @@ export function SchoolCombobox({
     return translateSchool(DEFAULT_SCHOOL);
   }, [placeholder, value]);
 
-  const fetcher = useCallback(
-    async (query: string) => {
-      const results = await searchSchools(query);
-      if (isAdmin) {
-        const normQuery = query.trim().toLowerCase();
-        const allLabel = translateSchool("all").toLowerCase();
-        if (!normQuery || allLabel.includes(normQuery) || "all".includes(normQuery)) {
-          if (!results.includes("all")) {
-            return ["all", ...results];
-          }
-        }
-      }
-      return results;
-    },
-    [isAdmin]
-  );
-
   const renderTriggerLabel =
     variant === "nav" && showHighlight
       ? (label: string) => (
@@ -76,10 +59,11 @@ export function SchoolCombobox({
     <SearchCombobox<string>
       selectedKey={value}
       onSelect={onChange}
-      fetcher={fetcher}
+      fetcher={searchSchools}
       getKey={(school) => school}
       getLabel={(school) => translateSchool(school)}
       displayValue={displayValue}
+      allOption={isAdmin ? ALL_SCHOOLS : undefined}
       isPlaceholder={!value && Boolean(placeholder)}
       renderTriggerLabel={renderTriggerLabel}
       debounceMs={220}

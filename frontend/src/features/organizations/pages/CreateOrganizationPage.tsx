@@ -55,7 +55,7 @@ export function CreateOrganizationPage() {
   };
 
   return (
-    <Container size="md" className="py-4 sm:py-6">
+    <Container size="md">
       <Stack gap={6}>
         <PageHeader
           back={{

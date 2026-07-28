@@ -6,7 +6,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/shared/ui/dropdown-menu";
-import { ChevronDown, Download } from "@/shared/ui/doodle-icons";
+import { Download } from "@/shared/ui/doodle-icons";
 import { LoadingButton } from "@/shared/ui/loading-button";
 
 interface PosterDownloadMenuProps {
@@ -41,7 +41,6 @@ export function PosterDownloadMenu({
         >
           <Download />
           {t("posters.download")}
-          <ChevronDown />
         </LoadingButton>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">

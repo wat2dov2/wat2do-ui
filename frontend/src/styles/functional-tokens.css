@@ -50,10 +50,10 @@
   --secondary-foreground: oklch(0.908 0 0);
 
   /* Selected - persistent "on" state for toggleable controls */
-  --selected: oklch(from var(--primary) l c h / 0.12);
-  --selected-hover: oklch(from var(--primary) l c h / 0.18);
-  --selected-border: oklch(from var(--primary) l c h / 0.28);
-  --selected-foreground: var(--primary);
+  --selected: var(--primary);
+  --selected-hover: var(--primary-hover);
+  --selected-border: var(--primary);
+  --selected-foreground: var(--primary-foreground);
 
   /* Muted */
   --muted: oklch(0.280 0 0);

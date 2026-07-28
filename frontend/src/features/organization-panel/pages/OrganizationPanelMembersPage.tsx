@@ -16,6 +16,7 @@ import { Button } from "@/shared/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { ROUTES } from "@/shared/constants/routes";
 import { PageHeader } from "@/shared/layout";
+import { EmptyState } from "@/shared/feedback";
 import { useAuthState } from "@/features/auth";
 import { toast } from "@/shared/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
@@ -366,15 +367,11 @@ export function OrganizationPanelMembersPage() {
 
   if (!organizationId) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 text-center">
-        <ShieldAlert className="size-12 text-muted-foreground/45 mb-4" />
-        <h3 className="font-semibold text-foreground mb-1">
-          {t("organizationPanel.noActiveClubSelected")}
-        </h3>
-        <p className="text-sm text-muted-foreground max-w-sm">
-          {t("organizationPanel.noActiveClubSelectedDesc")}
-        </p>
-      </div>
+      <EmptyState
+        icon={<ShieldAlert />}
+        title={t("organizationPanel.noActiveClubSelected")}
+        description={t("organizationPanel.noActiveClubSelectedDesc")}
+      />
     );
   }
 

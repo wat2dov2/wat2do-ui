@@ -90,7 +90,7 @@ def test_promoter_enrollment_succeeds(authenticated_client, monkeypatch):
     enrolled = _mock_user(
         payout_email="promoter@example.com",
         promoter_tos_accepted_at=datetime.now(timezone.utc),
-        promoter_tos_version="2026-01",
+        promoter_tos_version="2026-07",
     )
     update = MagicMock(return_value=enrolled)
     monkeypatch.setattr(user_service, "update_promoter_enrollment", update)
@@ -102,7 +102,7 @@ def test_promoter_enrollment_succeeds(authenticated_client, monkeypatch):
 
     assert response.status_code == 200
     assert response.json()["payout_email"] == "promoter@example.com"
-    assert response.json()["promoter_tos_version"] == "2026-01"
+    assert response.json()["promoter_tos_version"] == "2026-07"
     update.assert_called_once()
 
 

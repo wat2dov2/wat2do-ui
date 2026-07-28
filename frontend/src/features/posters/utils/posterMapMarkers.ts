@@ -5,6 +5,7 @@ import type {
   QRCode,
   QRCodeScan,
 } from "@/features/posters/types";
+import { getQRImageUrl } from "@/features/posters/api/posters.api";
 
 function hasUsableLocation(
   latitude: number | null | undefined,
@@ -25,22 +26,28 @@ export function buildManagedPosterMapMarkers(
 ): PosterMapMarker[] {
   const visitorCounts = new Map<string, number>();
   for (const scan of scans) {
-    visitorCounts.set(scan.qrCodeId, (visitorCounts.get(scan.qrCodeId) ?? 0) + 1);
+    visitorCounts.set(
+      scan.qrCodeId,
+      (visitorCounts.get(scan.qrCodeId) ?? 0) + 1,
+    );
   }
 
   return posters.flatMap((poster) => {
     if (!hasUsableLocation(poster.latitude, poster.longitude)) {
       return [];
     }
-    return [{
-      kind: "managed" as const,
-      key: `managed:${poster.id}`,
-      posterId: poster.id,
-      name: poster.name,
-      latitude: poster.latitude,
-      longitude: poster.longitude,
-      visitorCount: visitorCounts.get(poster.id) ?? 0,
-    }];
+    return [
+      {
+        kind: "managed" as const,
+        key: `managed:${poster.id}`,
+        posterId: poster.id,
+        name: poster.name,
+        latitude: poster.latitude,
+        longitude: poster.longitude,
+        visitorCount: visitorCounts.get(poster.id) ?? 0,
+        imageUrl: poster.imageUrl ? getQRImageUrl(poster.imageUrl) : null,
+      },
+    ];
   });
 }
 
@@ -48,21 +55,21 @@ export function buildOwnedPosterMapMarkers(
   posters: PromoterPosterEarnings[],
 ): PosterMapMarker[] {
   return posters.flatMap((poster) => {
-    if (
-      !poster.isActive ||
-      !hasUsableLocation(poster.latitude, poster.longitude)
-    ) {
+    if (!hasUsableLocation(poster.latitude, poster.longitude)) {
       return [];
     }
-    return [{
-      kind: "owned" as const,
-      key: `owned:${poster.id}`,
-      posterId: poster.id,
-      name: poster.name,
-      latitude: poster.latitude,
-      longitude: poster.longitude,
-      visitorCount: poster.lifetimeUniqueVisitors,
-    }];
+    return [
+      {
+        kind: "owned" as const,
+        key: `owned:${poster.id}`,
+        posterId: poster.id,
+        name: poster.name,
+        latitude: poster.latitude,
+        longitude: poster.longitude,
+        visitorCount: poster.lifetimeUniqueVisitors,
+        imageUrl: poster.templatePreviewUrl,
+      },
+    ];
   });
 }
 

@@ -39,14 +39,16 @@ export function EventDetailsPageContainer({ eventId }: EventDetailsPageContainer
 
   if (isError || !event) {
     return (
-      <div className="px-4 py-16 text-center text-sm text-muted-foreground">
-        <p>{t("common.error")}</p>
-      </div>
+      <Container size="lg">
+        <p className="text-center text-sm text-muted-foreground">
+          {t("common.error")}
+        </p>
+      </Container>
     );
   }
 
   return (
-    <Container size="lg" className="max-w-5xl py-6 sm:py-8">
+    <Container size="lg">
       <Stack gap={6}>
         <PageHeader
           back={{
@@ -55,11 +57,7 @@ export function EventDetailsPageContainer({ eventId }: EventDetailsPageContainer
           }}
           actions={<EventActions event={event} />}
         />
-        <EventDetailsBody
-          event={event}
-          school={event.school}
-          showActions={false}
-        />
+        <EventDetailsBody event={event} school={event.school} />
       </Stack>
     </Container>
   );

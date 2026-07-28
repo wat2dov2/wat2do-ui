@@ -192,10 +192,6 @@ export function useFilterState(profileCompleted: boolean) {
     (loc: string) => toggleFilterValue("locations", loc),
     [toggleFilterValue],
   );
-  const toggleFood = useCallback(
-    (food: string) => toggleFilterValue("foods", food),
-    [toggleFilterValue],
-  );
   const toggleDay = useCallback(
     (day: string) => toggleFilterValue("days", day),
     [toggleFilterValue],
@@ -346,7 +342,6 @@ export function useFilterState(profileCompleted: boolean) {
     toggleCategory,
     toggleLocation,
     toggleDay,
-    toggleFood,
     toggleOrganization,
     jsonValue,
     jsonError,

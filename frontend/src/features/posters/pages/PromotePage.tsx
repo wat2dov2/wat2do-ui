@@ -14,7 +14,13 @@ import {
   resolveWritableSchool,
 } from "@/shared/constants/schools";
 import { ROUTES } from "@/shared/constants/routes";
-import { Container, FormGrid, PageHeader, Section, Stack } from "@/shared/layout";
+import {
+  Container,
+  FormGrid,
+  PageHeader,
+  Section,
+  Stack,
+} from "@/shared/layout";
 import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert";
 import {
   Card,
@@ -42,82 +48,80 @@ export function PromotePage() {
   );
 
   return (
-    <main className="min-h-screen py-6 sm:py-10" data-testid="promote-page">
-      <Container>
-        <Stack gap={8}>
-          <PageHeader
-            title={t("posters.promote.title", {
-              school: getSchoolDisplayName(school),
-            })}
-            description={t("posters.promote.description", {
-              rate: formatCadCents(promoterProgram.rateCents, i18n.language),
-            })}
-          />
+    <Container data-testid="promote-page">
+      <Stack gap={8}>
+        <PageHeader
+          title={t("posters.promote.title", {
+            school: getSchoolDisplayName(school),
+          })}
+          description={t("posters.promote.description", {
+            rate: formatCadCents(promoterProgram.rateCents, i18n.language),
+          })}
+        />
 
-          <FormGrid columns="sidebar">
-            <Stack gap={6}>
-              <Section
-                title={t("posters.promote.stepsTitle")}
-                description={t("posters.promote.stepsDescription")}
-              >
-                <FormGrid columns={3}>
-                  {[1, 2, 3].map((step, index) => {
-                    const Icon = STEP_ICONS[index];
-                    return (
-                      <Card key={step}>
-                        <CardHeader>
-                          <CardAction>
-                            <Icon className="size-5" />
-                          </CardAction>
-                          <CardTitle>
-                            {t(`posters.promote.step${step}Title`)}
-                          </CardTitle>
-                          <CardDescription>
-                            {t(`posters.promote.step${step}Description`, {
-                              rate: formatCadCents(
-                                promoterProgram.rateCents,
-                                i18n.language,
-                              ),
-                            })}
-                          </CardDescription>
-                        </CardHeader>
-                      </Card>
-                    );
-                  })}
-                </FormGrid>
-              </Section>
-
-              <Section
-                title={t("posters.promote.coverageTitle", {
-                  school: getSchoolDisplayName(school),
+        <FormGrid columns="sidebar">
+          <Stack gap={6}>
+            <Section
+              title={t("posters.promote.stepsTitle")}
+              description={t("posters.promote.stepsDescription")}
+            >
+              <FormGrid columns={3}>
+                {[1, 2, 3].map((step, index) => {
+                  const Icon = STEP_ICONS[index];
+                  return (
+                    <Card key={step}>
+                      <CardHeader>
+                        <CardAction>
+                          <Icon className="size-5" />
+                        </CardAction>
+                        <CardTitle>
+                          {t(`posters.promote.step${step}Title`)}
+                        </CardTitle>
+                        <CardDescription>
+                          {t(`posters.promote.step${step}Description`, {
+                            rate: formatCadCents(
+                              promoterProgram.rateCents,
+                              i18n.language,
+                            ),
+                          })}
+                        </CardDescription>
+                      </CardHeader>
+                    </Card>
+                  );
                 })}
-                description={t("posters.promote.coverageDescription")}
-              >
-                {coverage.isLoading ? (
-                  <LoadingState label={t("posters.map.loading")} />
-                ) : coverage.isError ? (
-                  <Alert variant="warning">
-                    <MapPin />
-                    <AlertTitle>{t("posters.map.loadErrorTitle")}</AlertTitle>
-                    <AlertDescription>
-                      {t("posters.map.loadErrorDescription")}
-                    </AlertDescription>
-                  </Alert>
-                ) : (
-                  <QRScanMap markers={mapMarkers} height="440px" />
-                )}
-              </Section>
-            </Stack>
+              </FormGrid>
+            </Section>
 
-            <Stack className="lg:sticky lg:top-20">
-              <PromoterEnrollmentCard
-                mode="recruitment"
-                onEnrolled={() => router.push(ROUTES.POSTERS)}
-              />
-            </Stack>
-          </FormGrid>
-        </Stack>
-      </Container>
-    </main>
+            <Section
+              title={t("posters.promote.coverageTitle", {
+                school: getSchoolDisplayName(school),
+              })}
+              description={t("posters.promote.coverageDescription")}
+            >
+              {coverage.isLoading ? (
+                <LoadingState label={t("posters.map.loading")} />
+              ) : coverage.isError ? (
+                <Alert variant="warning">
+                  <MapPin />
+                  <AlertTitle>{t("posters.map.loadErrorTitle")}</AlertTitle>
+                  <AlertDescription>
+                    {t("posters.map.loadErrorDescription")}
+                  </AlertDescription>
+                </Alert>
+              ) : (
+                <QRScanMap markers={mapMarkers} height="440px" />
+              )}
+            </Section>
+          </Stack>
+
+          <Stack>
+            <PromoterEnrollmentCard
+              mode="recruitment"
+              onEnrolled={() => router.push(ROUTES.POSTERS)}
+            />
+          </Stack>
+        </FormGrid>
+      </Stack>
+    </Container>
   );
 }

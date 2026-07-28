@@ -73,7 +73,6 @@ export function EventFormFields() {
               </FieldLabel>
               <Button
                 type="button"
-                variant="secondary"
                 onMouseDown={addOccurrence}
               >
                 <Plus className="size-4" />

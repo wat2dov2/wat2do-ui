@@ -62,6 +62,9 @@ export function ButtonsSection() {
         <ShowcaseBlock label="States">
           <Stack direction="horizontal" gap={2} align="center" className="flex-wrap">
             <Button>Enabled</Button>
+            <Button variant="secondary" selected>
+              Selected
+            </Button>
             <Button disabled>Disabled</Button>
           </Stack>
         </ShowcaseBlock>

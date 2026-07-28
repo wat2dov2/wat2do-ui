@@ -35,7 +35,7 @@ def _user() -> UserResponse:
         school="University of Waterloo",
         payout_email="promoter@example.com",
         promoter_tos_accepted_at=now,
-        promoter_tos_version="2026-01",
+        promoter_tos_version="2026-07",
         created_at=now,
         updated_at=now,
     )
@@ -80,6 +80,25 @@ def test_month_bounds_are_utc_and_cross_year():
     assert end == datetime(2027, 1, 1, tzinfo=timezone.utc)
 
 
+def test_period_scan_attempt_count_is_scoped_to_posters_and_month(fake_sb, patch_sb):
+    patch_sb("services.poster_payout_service")
+    fake_sb.set_response(count=6)
+    period_start, period_end = poster_payout_service.month_bounds(date(2026, 7, 1))
+
+    result = poster_payout_service._count_period_scan_attempts(
+        ["poster-1", "poster-2"],
+        period_start,
+        period_end,
+    )
+
+    assert result == 6
+    fake_sb.table.assert_called_once_with("qr_code_scans")
+    fake_sb.select.assert_called_once_with("id", count="exact")
+    fake_sb.in_.assert_called_once_with("qr_code_id", ["poster-1", "poster-2"])
+    fake_sb.gte.assert_called_once_with("scanned_at", period_start.isoformat())
+    fake_sb.lt.assert_called_once_with("scanned_at", period_end.isoformat())
+
+
 def test_promoter_earnings_calculates_integer_cents(monkeypatch):
     monkeypatch.setattr(
         poster_payout_service,
@@ -107,14 +126,23 @@ def test_promoter_earnings_calculates_integer_cents(monkeypatch):
         "_lifetime_paid_cents",
         MagicMock(return_value=1000),
     )
+    count_attempts = MagicMock(return_value=6)
+    monkeypatch.setattr(
+        poster_payout_service,
+        "_count_period_scan_attempts",
+        count_attempts,
+    )
 
     result = poster_payout_service.get_promoter_earnings(_user())
 
     assert result.period_creditable_scans == 2
+    assert result.period_unqualified_scans == 4
     assert result.pending_cents == 50
     assert result.lifetime_paid_cents == 1000
+    assert result.active_slots_used == 1
     assert result.posters[0].latitude == 43.4723
     assert result.posters[0].poster_template_id == "campus-colour"
+    count_attempts.assert_called_once()
 
 
 def test_promoter_earnings_remain_readable_with_stale_tos(monkeypatch):
@@ -521,7 +549,7 @@ def test_closed_period_job_exports_pending_and_skips_held_zero_and_paid(
     result = poster_payout_service.run_period_payouts(
         date(2026, 6, 1),
         output_path=output_path,
-        now=datetime(2026, 7, 3, tzinfo=timezone.utc),
+        now=datetime(2026, 7, 1, 1, 15, tzinfo=timezone.utc),
     )
 
     assert result["payouts_written"] == 2

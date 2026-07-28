@@ -223,7 +223,7 @@ export function InstagramCarouselDrawer({
 
   return (
     <Drawer open onOpenChange={(open) => !open && !busy && onClose()}>
-      <DrawerContent className="h-[92dvh]">
+      <DrawerContent>
         <DrawerHeader>
           <Stack gap={1}>
             <DrawerTitle>{getSchoolDisplayName(batch.school)}</DrawerTitle>
@@ -371,7 +371,6 @@ export function InstagramCarouselDrawer({
             </Button>
             <Button
               type="button"
-              variant="secondary"
               disabled={!editable || busy || eventIds.length >= MAX_EVENT_SLIDES}
               onClick={() => setAddingEvent(true)}
             >

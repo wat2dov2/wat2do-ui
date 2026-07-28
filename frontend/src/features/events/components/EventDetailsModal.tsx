@@ -122,7 +122,7 @@ export function EventDetailsModal({
 
   return (
     <Drawer open={drawerOpen} onOpenChange={handleDrawerOpenChange}>
-      <DrawerContent className="h-[92dvh] overflow-hidden p-0 [&_[data-slot=drawer-handle]]:hidden data-[vaul-drawer-direction=bottom]:max-w-screen-lg">
+      <DrawerContent className="overflow-hidden p-0 [&_[data-slot=drawer-handle]]:hidden data-[vaul-drawer-direction=bottom]:max-w-screen-lg">
         <div
           ref={contentRef}
           className="flex min-h-0 flex-1 flex-col"
@@ -168,7 +168,6 @@ export function EventDetailsModal({
                 <EventDetailsBody
                   event={displayedEvent}
                   school={schoolFilter}
-                  showActions={false}
                   renderTitle={(title) => (
                     <DrawerTitle className="text-left text-2xl font-bold leading-tight sm:text-3xl">
                       {title}

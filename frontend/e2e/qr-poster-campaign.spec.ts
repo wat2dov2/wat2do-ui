@@ -11,7 +11,7 @@ const HELD_PAYOUT_ID = "55555555-5555-4555-8555-555555555555";
 const HELD_REVIEW_ID = "66666666-6666-4666-8666-666666666661";
 const VOIDED_REVIEW_ID = "66666666-6666-4666-8666-666666666662";
 const PAID_REVIEW_ID = "66666666-6666-4666-8666-666666666663";
-const CURRENT_TOS_VERSION = "2026-01";
+const CURRENT_TOS_VERSION = "2026-07";
 
 function apiPath(url: URL): string | null {
   if (!url.pathname.startsWith("/api/")) return null;
@@ -135,7 +135,8 @@ async function installSessionMock(
   const now = new Date().toISOString();
   let enrollmentBody: unknown;
   const userId = role === "admin" ? ADMIN_ID : USER_ID;
-  const email = role === "admin" ? "admin@uwaterloo.ca" : "promoter@uwaterloo.ca";
+  const email =
+    role === "admin" ? "admin@uwaterloo.ca" : "promoter@uwaterloo.ca";
   const user = {
     id: userId,
     email,
@@ -222,7 +223,6 @@ interface MockPromoterPoster {
   id: string;
   name: string;
   templateId: string;
-  isActive: boolean;
 }
 
 async function installPromoterApiMocks(
@@ -231,7 +231,6 @@ async function installPromoterApiMocks(
 ) {
   const posters: MockPromoterPoster[] = [];
   let createBody: unknown;
-  let archivedPosterId: string | null = null;
 
   await page.route(
     (url) => apiPath(url) === "/qr/map",
@@ -262,7 +261,6 @@ async function installPromoterApiMocks(
         posters: posters.map((poster, index) => ({
           qr_code_id: poster.id,
           name: poster.name,
-          is_active: poster.isActive,
           latest_scan: index === 0 ? new Date().toISOString() : null,
           latitude: index === 0 ? 43.4719 : 0,
           longitude: index === 0 ? -80.5448 : 0,
@@ -274,9 +272,10 @@ async function installPromoterApiMocks(
           pending_cents: index === 0 ? 125 : 0,
         })),
         period_creditable_scans: posters.length > 0 ? 5 : 0,
+        period_unqualified_scans: posters.length > 0 ? 1 : 0,
         pending_cents: posters.length > 0 ? 125 : 0,
         lifetime_paid_cents: 500,
-        active_slots_used: posters.filter((poster) => poster.isActive).length,
+        active_slots_used: posters.length,
         active_slots_limit: 50,
         program_enabled: programEnabled,
       }),
@@ -331,7 +330,6 @@ async function installPromoterApiMocks(
           id: `promoter-poster-${index + 1}`,
           name: `${body.name} ${index + 1}`,
           templateId: body.poster_template_id,
-          isActive: true,
         };
         posters.push(poster);
         return {
@@ -356,38 +354,8 @@ async function installPromoterApiMocks(
     },
   );
 
-  await page.route(
-    (url) =>
-      apiPath(url)?.startsWith("/qr/promoter-poster-") === true &&
-      apiPath(url)?.endsWith("/archive") === true,
-    async (route) => {
-      const path = apiPath(new URL(route.request().url())) as string;
-      archivedPosterId = path.split("/")[2];
-      const poster = posters.find((item) => item.id === archivedPosterId);
-      if (poster) poster.isActive = false;
-      await fulfillJson(route, {
-        id: poster?.id,
-        name: poster?.name,
-        description: null,
-        destination_type: "events-list",
-        destination_id: null,
-        filters: {},
-        created_at: new Date().toISOString(),
-        created_by: "promoter@uwaterloo.ca",
-        is_active: false,
-        program: "promoter",
-        latest_scan: new Date().toISOString(),
-        poster_template_id: poster?.templateId,
-        image_url: "/poster-templates/campus-colour-v1.png",
-        latitude: 43.4719,
-        longitude: -80.5448,
-      });
-    },
-  );
-
   return {
     createBody: () => createBody,
-    archivedPosterId: () => archivedPosterId,
   };
 }
 
@@ -502,30 +470,20 @@ async function installActivationDedupeMocks(page: Page) {
           {
             qr_code_id: posterId,
             name: "Student Life Centre activation poster",
-            is_active: true,
-            latest_scan:
-              acceptedScans > 0 ? new Date().toISOString() : null,
+            latest_scan: acceptedScans > 0 ? new Date().toISOString() : null,
             latitude: placed ? 43.4723 : 0,
             longitude: placed ? -80.5449 : 0,
             poster_template_id: "campus-colour",
-            template_preview_url:
-              "/poster-templates/campus-colour-v1.png",
+            template_preview_url: "/poster-templates/campus-colour-v1.png",
             lifetime_unique_scans: confirmedVisitors.size,
             period_unique_scans: confirmedVisitors.size,
-            period_creditable_scans: Math.max(
-              0,
-              confirmedVisitors.size - 1,
-            ),
-            pending_cents:
-              Math.max(0, confirmedVisitors.size - 1) * 25,
+            period_creditable_scans: Math.max(0, confirmedVisitors.size - 1),
+            pending_cents: Math.max(0, confirmedVisitors.size - 1) * 25,
           },
         ],
-        period_creditable_scans: Math.max(
-          0,
-          confirmedVisitors.size - 1,
-        ),
-        pending_cents:
-          Math.max(0, confirmedVisitors.size - 1) * 25,
+        period_creditable_scans: Math.max(0, confirmedVisitors.size - 1),
+        period_unqualified_scans: confirmedVisitors.size > 0 ? 1 : 0,
+        pending_cents: Math.max(0, confirmedVisitors.size - 1) * 25,
         lifetime_paid_cents: 0,
         active_slots_used: 1,
         active_slots_limit: 50,
@@ -564,7 +522,7 @@ async function installActivationDedupeMocks(page: Page) {
 }
 
 test.describe("Promoter poster campaign", () => {
-  test("recruits, enrolls, creates independently tracked copies, and archives safely", async ({
+  test("recruits, enrolls, and creates independently tracked copies", async ({
     page,
   }) => {
     await installCommonApiMocks(page);
@@ -572,9 +530,7 @@ test.describe("Promoter poster campaign", () => {
     const promoterApi = await installPromoterApiMocks(page);
 
     await page.goto(`${BASE_URL}/`);
-    await expect(
-      page.getByTestId("promoter-recruitment-banner"),
-    ).toBeVisible();
+    await expect(page.getByTestId("promoter-recruitment-banner")).toBeVisible();
     await page
       .getByTestId("promoter-recruitment-banner")
       .getByRole("link")
@@ -582,6 +538,10 @@ test.describe("Promoter poster campaign", () => {
 
     await expect(page).toHaveURL(/\/promote$/);
     await expect(page.getByTestId("promote-page")).toBeVisible();
+    await expect(page.getByRole("link", { name: "Posters" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
     await expect(page.getByTestId("promoter-enrollment-form")).toBeVisible();
     await expect(page.getByTestId("poster-map-fallback")).toBeVisible();
     await expect(page.getByText("PRIVATE PROMOTER NAME")).toHaveCount(0);
@@ -590,7 +550,21 @@ test.describe("Promoter poster campaign", () => {
     await page
       .getByTestId("promoter-payout-email")
       .fill("payouts@uwaterloo.ca");
-    await page.getByTestId("promoter-terms-checkbox").click();
+    await page.getByTestId("promoter-terms-open").click();
+    const termsDialog = page.getByTestId("promoter-terms-dialog");
+    const acceptTerms = page.getByTestId("promoter-terms-accept");
+    await expect(termsDialog).toContainText("at least 5 seconds");
+    await expect(termsDialog).toContainText(/\$0\.25/);
+    await expect(termsDialog).toContainText(
+      "on the 1st of the following month",
+    );
+    await expect(acceptTerms).toBeDisabled();
+    await page.getByTestId("promoter-terms-body").evaluate((element) => {
+      element.scrollTop = element.scrollHeight;
+      element.dispatchEvent(new Event("scroll"));
+    });
+    await expect(acceptTerms).toBeEnabled();
+    await acceptTerms.click();
 
     await Promise.all([
       page.waitForURL(/\/posters$/),
@@ -602,6 +576,7 @@ test.describe("Promoter poster campaign", () => {
     });
 
     await expect(page.getByTestId("promoter-dashboard")).toBeVisible();
+    await expect(page.getByText("Unqualified scans this month")).toBeVisible();
     await page.getByTestId("poster-create-open").click();
     await expect(page.getByTestId("poster-template-gallery")).toBeVisible();
     await page
@@ -638,20 +613,13 @@ test.describe("Promoter poster campaign", () => {
 
     await page.getByRole("button", { name: "Close" }).click();
     await expect(page.getByTestId("poster-inventory")).toBeVisible();
-    await expect(page.locator('[data-testid^="poster-card-promoter-poster-"]')).toHaveCount(3);
+    await expect(
+      page.locator('[data-testid^="poster-card-promoter-poster-"]'),
+    ).toHaveCount(3);
     await expect(page.getByTestId("payout-history")).toContainText(
       "2026-06-01",
     );
     await expect(page.getByText("PRIVATE PROMOTER NAME")).toHaveCount(0);
-
-    await page.getByTestId("poster-archive-promoter-poster-1").click();
-    await page.getByTestId("poster-archive-confirm").click();
-    await expect
-      .poll(() => promoterApi.archivedPosterId())
-      .toBe("promoter-poster-1");
-    await expect(
-      page.getByTestId("poster-card-promoter-poster-1"),
-    ).toContainText(/archived/i);
   });
 
   test("keeps the public recruitment map aggregated for signed-out visitors", async ({
@@ -665,9 +633,7 @@ test.describe("Promoter poster campaign", () => {
     );
 
     await page.goto(`${BASE_URL}/`);
-    await expect(
-      page.getByTestId("promoter-recruitment-banner"),
-    ).toBeVisible();
+    await expect(page.getByTestId("promoter-recruitment-banner")).toBeVisible();
     await page
       .getByTestId("promoter-recruitment-banner")
       .getByRole("link")
@@ -675,6 +641,10 @@ test.describe("Promoter poster campaign", () => {
 
     await expect(page).toHaveURL(/\/promote$/);
     await expect(page.getByTestId("promote-page")).toBeVisible();
+    const publicPosterDockLink = page.getByRole("link", { name: "Posters" });
+    await expect(publicPosterDockLink).toBeVisible();
+    await expect(publicPosterDockLink).toHaveAttribute("href", "/promote");
+    await expect(publicPosterDockLink).toHaveAttribute("aria-current", "page");
     await expect(
       page.getByTestId("promoter-enrollment-signed-out"),
     ).toBeVisible();
@@ -714,9 +684,7 @@ test.describe("Promoter poster campaign", () => {
     expect(scanApi.confirmedUniqueVisitors()).toBe(1);
 
     await page.goto(`${BASE_URL}/posters`);
-    let posterCard = page.getByTestId(
-      `poster-card-${scanApi.posterId}`,
-    );
+    let posterCard = page.getByTestId(`poster-card-${scanApi.posterId}`);
     await expect(posterCard).toBeVisible();
     await expect(posterCard).toContainText("$0.00");
     await expect(posterCard).toContainText("1");
@@ -749,6 +717,11 @@ test.describe("Promoter poster campaign", () => {
     await expect(page.getByTestId("payout-history")).toContainText(
       "2026-06-01",
     );
+
+    await page.goto(`${BASE_URL}/settings?tab=promoter`);
+    await expect(page.getByTestId("promoter-terms-open")).toBeVisible();
+    await page.getByTestId("promoter-terms-open").click();
+    await expect(page.getByTestId("promoter-terms-dialog")).toBeVisible();
   });
 });
 
@@ -908,9 +881,9 @@ async function installAdminPayoutMocks(page: Page) {
       );
     },
     (route) => {
-      const payoutId = (apiPath(new URL(route.request().url())) as string).split(
-        "/",
-      )[3];
+      const payoutId = (
+        apiPath(new URL(route.request().url())) as string
+      ).split("/")[3];
       const payout = payouts.find((item) => item.id === payoutId);
       return fulfillJson(route, {
         payout,
@@ -948,9 +921,9 @@ async function installAdminPayoutMocks(page: Page) {
     (url) => apiPath(url)?.endsWith("/status") === true,
     async (route) => {
       statusUpdateBody = route.request().postDataJSON();
-      const payoutId = (apiPath(new URL(route.request().url())) as string).split(
-        "/",
-      )[3];
+      const payoutId = (
+        apiPath(new URL(route.request().url())) as string
+      ).split("/")[3];
       const payout = payouts.find((item) => item.id === payoutId);
       const update = statusUpdateBody as {
         status: MockPayoutStatus;
@@ -1031,9 +1004,9 @@ test.describe("Administrator poster payouts", () => {
 
     await page.locator("#payout-filter-status").click();
     await page.getByRole("option", { name: "Held" }).click();
-    await page.getByLabel("Promoter ID").fill(
-      "77777777-7777-4777-8777-777777777777",
-    );
+    await page
+      .getByLabel("Promoter ID")
+      .fill("77777777-7777-4777-8777-777777777777");
     await page.getByLabel("Payout email").fill("held@uwaterloo.ca");
     await page.locator("#payout-filter-fraud").click();
     await page.getByRole("option", { name: "Flagged" }).click();
@@ -1068,10 +1041,7 @@ test.describe("Administrator poster payouts", () => {
       }),
     ).toBeDisabled();
 
-    await page
-      .getByRole("button", { name: "Review" })
-      .nth(1)
-      .click();
+    await page.getByRole("button", { name: "Review" }).nth(1).click();
     const detail = page.getByRole("dialog", { name: "Payout review" });
     await expect(detail.getByText("RAPID_DISTINCT_VISITORS")).toBeVisible();
     await expect(detail.getByText("Student Life Centre")).toBeVisible();
@@ -1081,11 +1051,11 @@ test.describe("Administrator poster payouts", () => {
     );
     await expect(heldReview).toContainText("Payout held");
     await expect(heldReview).toContainText(REVIEWER_ID);
-    await expect(heldReview).toContainText(
-      "Rapid visitor burst needs review.",
-    );
+    await expect(heldReview).toContainText("Rapid visitor burst needs review.");
     await detail.getByRole("button", { name: "Void payout" }).click();
-    const confirmVoid = detail.getByRole("button", { name: "Void payout" }).last();
+    const confirmVoid = detail
+      .getByRole("button", { name: "Void payout" })
+      .last();
     await expect(confirmVoid).toBeDisabled();
     await detail
       .getByLabel("Review notes")
@@ -1131,25 +1101,19 @@ test.describe("Administrator poster payouts", () => {
       throw new Error("Expected the Interac CSV download to have a local path");
     }
     const exportedCsv = await readFile(downloadPath, "utf8");
-    expect(exportedCsv).toContain(
-      `pending,${PENDING_PAYOUT_ID}`,
-    );
+    expect(exportedCsv).toContain(`pending,${PENDING_PAYOUT_ID}`);
     expect(payoutApi.exportBody()).toEqual({
       payout_ids: [PENDING_PAYOUT_ID],
     });
 
-    await page
-      .getByRole("button", { name: "Mark selected paid" })
-      .click();
+    await page.getByRole("button", { name: "Mark selected paid" }).click();
     const confirmation = page.getByRole("dialog", {
       name: "Record external payments?",
     });
     await expect(confirmation).toContainText(
       "Wat2Do will not send money automatically.",
     );
-    await confirmation
-      .getByRole("button", { name: "Record as paid" })
-      .click();
+    await confirmation.getByRole("button", { name: "Record as paid" }).click();
     await expect
       .poll(() => payoutApi.bulkPaidBody())
       .toEqual({

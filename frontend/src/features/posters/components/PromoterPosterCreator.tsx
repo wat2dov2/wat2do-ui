@@ -4,10 +4,7 @@ import { useTranslation } from "react-i18next";
 
 import { useCreatePromoterPosters } from "@/features/posters/hooks/usePromoterDashboard";
 import { PosterDownloadMenu } from "@/features/posters/components/PosterDownloadMenu";
-import type {
-  ApprovedPosterTemplate,
-  QRCode,
-} from "@/features/posters/types";
+import type { ApprovedPosterTemplate, QRCode } from "@/features/posters/types";
 import {
   generateAssetPdf,
   generateAssetPngs,
@@ -16,6 +13,7 @@ import {
 import { promoterProgram } from "@/shared/config/promoterProgram";
 import {
   FormActions,
+  DialogBody,
   FormGrid,
   FormLayout,
   FormSection,
@@ -43,6 +41,7 @@ import { ExternalLink, Plus, QrCode } from "@/shared/ui/doodle-icons";
 import {
   Field,
   FieldDescription,
+  FieldError,
   FieldLabel,
 } from "@/shared/ui/field";
 import { Input } from "@/shared/ui/input";
@@ -99,7 +98,9 @@ function PosterPreview({
           />
         </Stack>
       </div>
-      <p className="truncate text-xs font-medium text-foreground">{poster.name}</p>
+      <p className="truncate text-xs font-medium text-foreground">
+        {poster.name}
+      </p>
     </Stack>
   );
 }
@@ -249,7 +250,7 @@ export function PromoterPosterCreator({
         {t("posters.create.open")}
       </Button>
       <Dialog open={open} onOpenChange={handleOpenChange}>
-        <DialogContent className="max-h-[90dvh] max-w-5xl overflow-y-auto">
+        <DialogContent size="xl" scrollable>
           <DialogHeader>
             <DialogTitle>{t("posters.create.title")}</DialogTitle>
             <DialogDescription>
@@ -257,157 +258,156 @@ export function PromoterPosterCreator({
             </DialogDescription>
           </DialogHeader>
 
-          {createdPosters.length > 0 && selectedTemplate ? (
-            <Stack gap={6} data-testid="poster-created-previews">
-              <Alert variant="success">
-                <QrCode />
-                <AlertTitle>{t("posters.create.createdTitle")}</AlertTitle>
-                <AlertDescription>
-                  {t("posters.create.createdDescription", {
-                    count: createdPosters.length,
-                  })}
-                </AlertDescription>
-              </Alert>
-              <FormGrid columns={3}>
-                {createdPosters.map((poster) => (
-                  <PosterPreview
-                    key={poster.id}
-                    poster={poster}
-                    template={selectedTemplate}
+          <DialogBody>
+            {createdPosters.length > 0 && selectedTemplate ? (
+              <Stack gap={6} data-testid="poster-created-previews">
+                <Alert variant="success">
+                  <QrCode />
+                  <AlertTitle>{t("posters.create.createdTitle")}</AlertTitle>
+                  <AlertDescription>
+                    {t("posters.create.createdDescription", {
+                      count: createdPosters.length,
+                    })}
+                  </AlertDescription>
+                </Alert>
+                <FormGrid columns={3}>
+                  {createdPosters.map((poster) => (
+                    <PosterPreview
+                      key={poster.id}
+                      poster={poster}
+                      template={selectedTemplate}
+                    />
+                  ))}
+                </FormGrid>
+                <Stack direction="horizontal" justify="end" wrap gap={2}>
+                  <PosterDownloadMenu
+                    isLoading={isDownloading}
+                    onDownload={(format) => {
+                      void (format === "pdf" ? downloadPdf() : downloadPngs());
+                    }}
+                    testId="poster-batch-download"
                   />
-                ))}
-              </FormGrid>
-              <Stack direction="horizontal" justify="end" wrap gap={2}>
-                <PosterDownloadMenu
-                  isLoading={isDownloading}
-                  onDownload={(format) => {
-                    void (format === "pdf" ? downloadPdf() : downloadPngs());
-                  }}
-                  testId="poster-batch-download"
-                />
+                </Stack>
               </Stack>
-            </Stack>
-          ) : (
-            <FormLayout onSubmit={handleSubmit}>
-              <FormSection
-                title={t("posters.create.chooseTemplate")}
-                description={t("posters.create.chooseTemplateDescription")}
-              >
-                <FormGrid
-                  columns={3}
-                  data-testid="poster-template-gallery"
+            ) : (
+              <FormLayout onSubmit={handleSubmit}>
+                <FormSection
+                  title={t("posters.create.chooseTemplate")}
+                  description={t("posters.create.chooseTemplateDescription")}
                 >
-                  {eligibleTemplates.map((template) => (
-                    <Card
-                      key={template.id}
-                      className="overflow-hidden py-0"
-                      data-testid={`poster-template-${template.id}`}
-                    >
-                      <img
-                        src={template.assetPath}
-                        alt={template.name}
-                        className="aspect-[8.5/11] w-full bg-secondary object-cover"
-                      />
+                  <FormGrid columns={3} data-testid="poster-template-gallery">
+                    {eligibleTemplates.map((template) => (
+                      <Card
+                        key={template.id}
+                        className="overflow-hidden py-0"
+                        data-testid={`poster-template-${template.id}`}
+                      >
+                        <img
+                          src={template.assetPath}
+                          alt={template.name}
+                          className="aspect-[8.5/11] w-full bg-secondary object-cover"
+                        />
+                        <CardHeader>
+                          <CardTitle>{template.name}</CardTitle>
+                          <CardDescription>
+                            {template.previewDescription}
+                          </CardDescription>
+                        </CardHeader>
+                        <CardFooter className="pb-5">
+                          <Stack grow>
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              selected={selectedTemplate?.id === template.id}
+                              onClick={() => setSelectedTemplateId(template.id)}
+                            >
+                              {t("posters.create.selectTemplate")}
+                            </Button>
+                          </Stack>
+                        </CardFooter>
+                      </Card>
+                    ))}
+                    <Card>
                       <CardHeader>
-                        <CardTitle>{template.name}</CardTitle>
+                        <CardTitle>{t("posters.create.customTitle")}</CardTitle>
                         <CardDescription>
-                          {template.previewDescription}
+                          {t("posters.create.customDescription")}
                         </CardDescription>
                       </CardHeader>
-                      <CardFooter className="pb-5">
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          selected={selectedTemplate?.id === template.id}
-                          onClick={() => setSelectedTemplateId(template.id)}
-                          className="w-full"
-                        >
-                          {t("posters.create.selectTemplate")}
-                        </Button>
+                      <CardFooter>
+                        <Stack grow>
+                          <Button asChild variant="secondary">
+                            <a
+                              href={promoterProgram.discordInviteUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <ExternalLink />
+                              {t("posters.create.discord")}
+                            </a>
+                          </Button>
+                        </Stack>
                       </CardFooter>
                     </Card>
-                  ))}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>{t("posters.create.customTitle")}</CardTitle>
-                      <CardDescription>
-                        {t("posters.create.customDescription")}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardFooter>
-                      <Button asChild variant="secondary" className="w-full">
-                        <a
-                          href={promoterProgram.discordInviteUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          <ExternalLink />
-                          {t("posters.create.discord")}
-                        </a>
-                      </Button>
-                    </CardFooter>
-                  </Card>
-                </FormGrid>
-              </FormSection>
+                  </FormGrid>
+                </FormSection>
 
-              <Field className="max-w-sm">
-                <FieldLabel htmlFor="poster-copy-count">
-                  {t("posters.create.copies")}
-                </FieldLabel>
-                <Input
-                  id="poster-copy-count"
-                  data-testid="poster-copy-count"
-                  type="number"
-                  min={1}
-                  max={remainingSlots}
-                  value={copies}
-                  onChange={(event) => {
-                    const nextCopies = Number.parseInt(
-                      event.target.value || "1",
-                      10,
-                    );
-                    if (Number.isNaN(nextCopies)) {
-                      return;
+                <Field>
+                  <FieldLabel htmlFor="poster-copy-count">
+                    {t("posters.create.copies")}
+                  </FieldLabel>
+                  <Input
+                    id="poster-copy-count"
+                    data-testid="poster-copy-count"
+                    type="number"
+                    min={1}
+                    max={remainingSlots}
+                    value={copies}
+                    onChange={(event) => {
+                      const nextCopies = Number.parseInt(
+                        event.target.value || "1",
+                        10,
+                      );
+                      if (Number.isNaN(nextCopies)) {
+                        return;
+                      }
+                      setCopies(
+                        Math.max(1, Math.min(remainingSlots, nextCopies)),
+                      );
+                    }}
+                    required
+                  />
+                  <FieldDescription>
+                    {t("posters.create.slotsRemaining", {
+                      count: remainingSlots,
+                    })}
+                  </FieldDescription>
+                </Field>
+
+                {createPosters.error && (
+                  <FieldError role="status">
+                    {getApiErrorMessage(
+                      createPosters.error,
+                      t("posters.create.error"),
+                    )}
+                  </FieldError>
+                )}
+
+                <FormActions>
+                  <LoadingButton
+                    type="submit"
+                    isLoading={createPosters.isPending}
+                    disabled={
+                      !selectedTemplate || copies < 1 || copies > remainingSlots
                     }
-                    setCopies(
-                      Math.max(1, Math.min(remainingSlots, nextCopies)),
-                    );
-                  }}
-                  required
-                />
-                <FieldDescription>
-                  {t("posters.create.slotsRemaining", {
-                    count: remainingSlots,
-                  })}
-                </FieldDescription>
-              </Field>
-
-              {createPosters.error && (
-                <p className="text-sm text-destructive" role="status">
-                  {getApiErrorMessage(
-                    createPosters.error,
-                    t("posters.create.error"),
-                  )}
-                </p>
-              )}
-
-              <FormActions>
-                <LoadingButton
-                  type="submit"
-                  isLoading={createPosters.isPending}
-                  disabled={
-                    !selectedTemplate ||
-                    copies < 1 ||
-                    copies > remainingSlots
-                  }
-                  data-testid="poster-create-submit"
-                >
-                  <QrCode />
-                  {t("posters.create.submit")}
-                </LoadingButton>
-              </FormActions>
-            </FormLayout>
-          )}
+                    data-testid="poster-create-submit"
+                  >
+                    {t("posters.create.submit")}
+                  </LoadingButton>
+                </FormActions>
+              </FormLayout>
+            )}
+          </DialogBody>
         </DialogContent>
       </Dialog>
     </>

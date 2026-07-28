@@ -4294,7 +4294,7 @@
           "qr"
         ],
         "summary": "List Qr Codes",
-        "description": "List manageable QR codes with explicit archive and recency filters.",
+        "description": "List manageable QR codes with explicit active-state and recency filters.",
         "operationId": "list_qr_codes_qr__get",
         "security": [
           {
@@ -4903,53 +4903,6 @@
         "responses": {
           "204": {
             "description": "Successful Response"
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/qr/{qr_code_id}/archive": {
-      "post": {
-        "tags": [
-          "qr"
-        ],
-        "summary": "Archive Poster",
-        "operationId": "archive_poster_qr__qr_code_id__archive_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "qr_code_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Qr Code Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/QrCodeResponse"
-                }
-              }
-            }
           },
           "422": {
             "description": "Validation Error",
@@ -10034,10 +9987,6 @@
             "type": "string",
             "title": "Name"
           },
-          "is_active": {
-            "type": "boolean",
-            "title": "Is Active"
-          },
           "latest_scan": {
             "anyOf": [
               {
@@ -10101,7 +10050,6 @@
         "required": [
           "qr_code_id",
           "name",
-          "is_active",
           "latest_scan",
           "latitude",
           "longitude",
@@ -10288,6 +10236,10 @@
             "type": "integer",
             "title": "Period Creditable Scans"
           },
+          "period_unqualified_scans": {
+            "type": "integer",
+            "title": "Period Unqualified Scans"
+          },
           "pending_cents": {
             "type": "integer",
             "title": "Pending Cents"
@@ -10314,6 +10266,7 @@
           "period",
           "posters",
           "period_creditable_scans",
+          "period_unqualified_scans",
           "pending_cents",
           "lifetime_paid_cents",
           "active_slots_used",

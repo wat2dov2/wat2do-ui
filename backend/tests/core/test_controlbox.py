@@ -32,8 +32,10 @@ def test_checked_in_controlbox_is_valid() -> None:
     assert controlbox.instagram_publishing.token_refresh_lead_days == 14
     assert controlbox.promoter_program.rate_cents == 25
     assert controlbox.promoter_program.maximum_active_posters == 50
+    assert controlbox.promoter_program.payout_day_of_month == 1
     assert controlbox.promoter_program.quiet_poster_days == 30
     assert controlbox.promoter_program.banner_dismissal_days == 30
+    assert controlbox.promoter_program.tos_version == "2026-07"
     assert str(controlbox.promoter_program.discord_invite_url) == ("https://discord.gg/uVcZcp4q8R")
     assert [template.id for template in controlbox.promoter_program.approved_templates] == [
         "campus-colour",
@@ -132,4 +134,15 @@ def test_promoter_map_buckets_must_be_unique_and_ascending(tmp_path: Path) -> No
     )
 
     with pytest.raises(ValidationError, match="visitor bucket maximums"):
+        load_controlbox(path)
+
+
+def test_promoter_payout_day_must_exist_in_every_month(tmp_path: Path) -> None:
+    path = _write_control(
+        tmp_path,
+        "promoter_program",
+        lambda payload: payload.update({"payout_day_of_month": 29}),
+    )
+
+    with pytest.raises(ValidationError, match="payout_day_of_month"):
         load_controlbox(path)

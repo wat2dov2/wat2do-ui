@@ -1,7 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
-  archivePromoterPoster,
   createPromoterPosters,
   getCampusCoverage,
   getPromoterEarnings,
@@ -29,17 +28,6 @@ export function usePromoterDashboard(userId: string | null | undefined) {
     enabled: Boolean(userId),
   });
   return { earnings, payouts };
-}
-
-export function useArchivePromoterPoster() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: archivePromoterPoster,
-    onSuccess: () =>
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.posters.all,
-      }),
-  });
 }
 
 export function useCreatePromoterPosters() {

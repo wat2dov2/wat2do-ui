@@ -4,7 +4,7 @@
   "maximum_active_posters": 50,
   "landing_confirmation_seconds": 5,
   "confirmation_token_minutes": 15,
-  "payout_close_delay_hours": 24,
+  "payout_day_of_month": 1,
   "quiet_poster_days": 30,
   "banner_dismissal_days": 30,
   "discord_invite_url": "https://discord.gg/uVcZcp4q8R",
@@ -15,7 +15,7 @@
   "rapid_window_seconds": 60,
   "rapid_rule_points": 60,
   "hold_score_threshold": 60,
-  "tos_version": "2026-01",
+  "tos_version": "2026-07",
   "approved_templates": [
     {
       "id": "campus-colour",

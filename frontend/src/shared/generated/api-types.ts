@@ -1070,7 +1070,7 @@ export interface paths {
         };
         /**
          * List Qr Codes
-         * @description List manageable QR codes with explicit archive and recency filters.
+         * @description List manageable QR codes with explicit active-state and recency filters.
          */
         get: operations["list_qr_codes_qr__get"];
         put?: never;
@@ -1167,23 +1167,6 @@ export interface paths {
         head?: never;
         /** Update Poster */
         patch: operations["update_poster_qr__qr_code_id__patch"];
-        trace?: never;
-    };
-    "/qr/{qr_code_id}/archive": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Archive Poster */
-        post: operations["archive_poster_qr__qr_code_id__archive_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
         trace?: never;
     };
     "/reports/": {
@@ -3005,8 +2988,6 @@ export interface components {
             qr_code_id: string;
             /** Name */
             name: string;
-            /** Is Active */
-            is_active: boolean;
             /** Latest Scan */
             latest_scan: string | null;
             /** Latitude */
@@ -3103,6 +3084,8 @@ export interface components {
             posters: components["schemas"]["PosterEarningsItem"][];
             /** Period Creditable Scans */
             period_creditable_scans: number;
+            /** Period Unqualified Scans */
+            period_unqualified_scans: number;
             /** Pending Cents */
             pending_cents: number;
             /** Lifetime Paid Cents */
@@ -6307,37 +6290,6 @@ export interface operations {
                 "application/json": components["schemas"]["QrCodeUpdate"];
             };
         };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["QrCodeResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    archive_poster_qr__qr_code_id__archive_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                qr_code_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {

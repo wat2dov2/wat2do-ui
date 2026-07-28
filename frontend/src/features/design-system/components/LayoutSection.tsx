@@ -1,4 +1,13 @@
-import { Container, FormActions, FormGrid, FormSection, PageHeader, Section, Stack } from "@/shared/layout";
+import {
+  Container,
+  FormActions,
+  FormGrid,
+  FormSection,
+  PageFrame,
+  PageHeader,
+  Section,
+  Stack,
+} from "@/shared/layout";
 import { ShowcaseBlock } from "./ShowcaseBlock";
 
 const STACK_GAPS = [1, 2, 4, 6, 8, 12] as const;
@@ -8,9 +17,15 @@ export function LayoutSection() {
     <Section
       id="layout"
       title="Layout"
-      description="Container, Stack, PageHeader, Section, and form layout primitives."
+      description="PageFrame, Container, Stack, PageHeader, Section, and form layout primitives."
     >
       <Stack gap={6}>
+        <ShowcaseBlock label="PageFrame">
+          <PageFrame className="rounded-xl border border-border bg-surface text-sm text-muted-foreground">
+            Canonical outer page gutter
+          </PageFrame>
+        </ShowcaseBlock>
+
         <ShowcaseBlock label="Container sizes">
           <Stack gap={2}>
             {(["sm", "md", "lg"] as const).map((size) => (

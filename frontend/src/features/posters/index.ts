@@ -12,7 +12,6 @@ export {
   usePromoterState,
 } from "./hooks/usePromoterState";
 export {
-  useArchivePromoterPoster,
   useCampusCoverage,
   useCreatePromoterPosters,
   usePromoterDashboard,

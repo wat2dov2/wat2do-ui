@@ -40,6 +40,7 @@ const rawPromoterProgram = JSON.parse(
   enabled: boolean;
   rate_cents: number;
   landing_confirmation_seconds: number;
+  payout_day_of_month: number;
   quiet_poster_days: number;
   banner_dismissal_days: number;
   tos_version: string;
@@ -66,6 +67,7 @@ const publicPromoterProgram = {
   rateCents: rawPromoterProgram.rate_cents,
   landingConfirmationSeconds:
     rawPromoterProgram.landing_confirmation_seconds,
+  payoutDayOfMonth: rawPromoterProgram.payout_day_of_month,
   quietPosterDays: rawPromoterProgram.quiet_poster_days,
   bannerDismissalDays: rawPromoterProgram.banner_dismissal_days,
   tosVersion: rawPromoterProgram.tos_version,

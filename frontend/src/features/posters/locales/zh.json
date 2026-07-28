@@ -46,11 +46,12 @@
       "payoutEmail": "收款邮箱",
       "payoutEmailPlaceholder": "you@example.com",
       "payoutEmailDescription": "每月 Interac 电子转账将发送到此邮箱。",
-      "acceptTermsPrefix": "我接受",
+      "acceptTermsPrefix": "接受前请阅读完整条款。",
+      "termsAccepted": "当前条款已接受。",
       "termsLink": "推广者服务条款，版本 {{version}}",
       "error": "无法更新你的推广计划加入信息。",
-      "trustMonthly": "款项每月通过 Interac 电子转账发送。",
-      "trustActivation": "首次激活访客不产生收益。",
+      "trustMonthly": "款项将在每月第一天通过 Interac 电子转账发送。",
+      "trustActivation": "激活扫码用于确认放置位置，不产生收益。",
       "trustTraffic": "重复、未确认、自动化及欺诈流量不计入收益。",
       "trustPrivacy": "Wat2Do 不存储原始 IP 地址。",
       "join": "加入推广计划",
@@ -66,6 +67,7 @@
       "loadErrorDescription": "请稍后重试。你的海报和收益未被更改。",
       "pendingEarnings": "本月待结算",
       "creditableVisitors": "本月符合条件的访客",
+      "unqualifiedScans": "本月不符合条件的扫码",
       "lifetimePaid": "累计已支付",
       "activeSlots": "活跃海报名额",
       "slotValue": "已用 {{used}}，共 {{limit}}",
@@ -73,7 +75,7 @@
       "mapTitle": "校园海报地图",
       "mapDescription": "你的已放置海报位置精确且可选择，其他校园覆盖仅显示隐私保护后的近似位置。",
       "pausedTitle": "海报创建已暂停",
-      "pausedDescription": "仪表板、下载、收益、付款记录和归档功能仍可使用。",
+      "pausedDescription": "仪表板、下载、收益和付款记录仍可使用。",
       "termsTitle": "接受当前条款后才能创建海报",
       "termsDescription": "查看最新条款期间，现有海报仍会正常工作。",
       "reviewTerms": "查看推广者设置"
@@ -98,27 +100,20 @@
     },
     "inventory": {
       "title": "海报清单",
-      "description": "已放置海报在 {{days}} 天没有有效扫码后会标记为安静。安静海报在归档前仍保持活跃。",
+      "description": "已放置海报在 {{days}} 天没有有效扫码后会标记为安静。",
       "emptyTitle": "创建你的第一张 Wat2Do 官方海报",
-      "emptyDescription": "下载并张贴到校园，然后亲自扫码激活位置。激活访客不产生收益。",
-      "latestScan": "最近有效扫码：{{time}}",
-      "neverScanned": "尚无有效扫码",
+      "emptyDescription": "下载并张贴到校园，然后亲自扫码激活位置。激活扫码不产生收益。",
+      "lastScanned": "最近扫码：{{time}}",
       "totalVisitors": "累计确认访客",
       "periodVisitors": "本月符合条件",
       "periodEarnings": "本月待结算",
       "activationInstruction": "张贴此海报，扫描二维码并允许位置访问，以确认放置地点。",
       "downloadError": "无法生成此海报的下载文件。",
-      "templateUnavailable": "此旧版海报没有可重新生成的模板。",
-      "archive": "归档海报",
-      "archiveTitle": "归档此实体位置？",
-      "archiveDescription": "{{name}} 仍会跳转，但将停止记录可结算访问，并释放一个活跃名额。",
-      "archiveSuccess": "海报已归档。"
+      "templateUnavailable": "此旧版海报没有可重新生成的模板。"
     },
     "lifecycle": {
       "not-placed": "未放置",
-      "recently-scanned": "近期有扫码",
-      "quiet": "安静",
-      "archived": "已归档"
+      "quiet": "安静"
     },
     "map": {
       "loading": "正在加载校园覆盖……",
@@ -159,22 +154,28 @@
     "terms": {
       "title": "推广者服务条款",
       "description": "当前计划条款，版本 {{version}}。",
-      "back": "返回推广计划",
+      "scrollToAccept": "请滚动阅读全部条款后再接受。",
+      "accept": "接受条款",
       "eligibility": {
         "title": "资格与加入",
         "body": "你必须使用自己的 Wat2Do 账户，在个人资料中保留学校信息，提供可接收 Interac 电子转账的邮箱，并接受当前条款。加入计划不保证未来始终有海报可创建。"
       },
       "posters": {
         "title": "官方海报与放置位置",
-        "body": "只能使用 Wat2Do 生成的审核通过文件。每个唯一二维码只对应一个实体位置，不得在多个位置复制使用同一二维码。移动或撤下实体海报前请先归档。"
+        "body": "只能使用 Wat2Do 生成的审核通过文件。每个唯一二维码只对应一个实体位置，不得在多个位置复制、移动到其他位置，或用于另一张海报。"
       },
-      "visitors": {
-        "title": "符合条件的访客",
-        "body": "激活访客不产生收益。重复、未确认、自动化、操纵及欺诈流量不计入收益。Wat2Do 可在发放款项前审核异常流量。"
+      "scans": {
+        "title": "激活扫码与符合条件的扫码",
+        "body": "第一次扫码用于确认海报位置，称为激活扫码，不产生收益。访客必须在 Wat2Do 停留至少 {{seconds}} 秒，扫码才可能符合条件。重复、未确认、自动化、操纵及欺诈扫码不符合条件。Wat2Do 可在发放款项前审核异常流量。"
       },
       "payments": {
         "title": "付款",
-        "body": "符合条件的金额按 UTC 自然月及该周期生效的计划费率计算，并通过 Interac 电子转账手动支付。暂缓金额会继续接受审核。税务义务和准确的收款信息由你负责。"
+        "body": "每次符合条件的扫码可获得 {{rate}}。上一个 UTC 自然月的合格余额将在下个月第 {{payoutDay}} 天通过 Interac 电子转账支付。暂缓金额会继续接受审核。税务义务和准确的收款信息由你负责。"
+      },
+      "disputes": {
+        "title": "付款与扫码争议",
+        "body": "如果你认为扫码或付款统计有误，请通过推广者 Discord 联系 Wat2Do，并提供相关海报、付款周期及详细信息。Wat2Do 会审核计划记录并说明结果。",
+        "contact": "联系推广者支持"
       },
       "conduct": {
         "title": "安全且尊重规定的放置",
@@ -182,7 +183,7 @@
       },
       "privacy": {
         "title": "隐私与统计",
-        "body": "Wat2Do 使用隐私保护的访客标识和近似公共覆盖区域，不存储原始 IP 地址。你的收款信息和精确放置位置不会公开。"
+        "body": "公开的海报区域只会显示为近似地图网格。Wat2Do 使用哈希访客标识，不存储原始 IP 地址，并保护推广者身份、收款信息及精确位置。统计仅用于确认唯一有效访问及防止计划滥用。"
       },
       "changes": {
         "title": "计划变更与暂停",

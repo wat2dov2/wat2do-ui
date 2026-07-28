@@ -75,7 +75,7 @@ def test_promoter_enrollment_stamps_server_owned_fields(fake_sb, patch_sb, monke
         **user.model_dump(mode="json"),
         "payout_email": "promoter@example.com",
         "promoter_tos_accepted_at": datetime.now(timezone.utc).isoformat(),
-        "promoter_tos_version": "2026-01",
+        "promoter_tos_version": "2026-07",
     }
     fake_sb.set_response(data=[updated])
 
@@ -89,7 +89,7 @@ def test_promoter_enrollment_stamps_server_owned_fields(fake_sb, patch_sb, monke
 
     payload = fake_sb.update.call_args.args[0]
     assert payload["payout_email"] == "promoter@example.com"
-    assert payload["promoter_tos_version"] == "2026-01"
+    assert payload["promoter_tos_version"] == "2026-07"
     assert "promoter_tos_accepted_at" in payload
     assert result is not None
 
@@ -129,7 +129,7 @@ def test_first_promoter_enrollment_is_blocked_while_program_paused(monkeypatch):
         SimpleNamespace(
             promoter_program=SimpleNamespace(
                 enabled=False,
-                tos_version="2026-01",
+                tos_version="2026-07",
             )
         ),
     )
@@ -157,7 +157,7 @@ def test_enrolled_promoter_can_update_email_while_program_paused(
         school="uwaterloo",
         payout_email="old@example.com",
         promoter_tos_accepted_at=accepted_at,
-        promoter_tos_version="2026-01",
+        promoter_tos_version="2026-07",
         created_at=accepted_at,
         updated_at=accepted_at,
     )
@@ -168,7 +168,7 @@ def test_enrolled_promoter_can_update_email_while_program_paused(
         SimpleNamespace(
             promoter_program=SimpleNamespace(
                 enabled=False,
-                tos_version="2026-01",
+                tos_version="2026-07",
             )
         ),
     )

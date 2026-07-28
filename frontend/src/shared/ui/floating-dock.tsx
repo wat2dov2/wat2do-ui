@@ -201,7 +201,12 @@ function IconContainer({
 
   if (href) {
     return (
-      <Link href={href} aria-label={title} className={hitboxClassName}>
+      <Link
+        href={href}
+        aria-label={title}
+        aria-current={isActive ? "page" : undefined}
+        className={hitboxClassName}
+      >
         {content}
       </Link>
     );

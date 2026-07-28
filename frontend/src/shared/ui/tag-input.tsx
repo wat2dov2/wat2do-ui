@@ -82,7 +82,6 @@ export function TagInput({
         />
         <Button
           type="button"
-          variant="secondary"
           size="icon"
           onMouseDown={onAdd}
           className="shrink-0"

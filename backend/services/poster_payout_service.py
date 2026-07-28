@@ -5,7 +5,7 @@ from __future__ import annotations
 import csv
 import io
 import json
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import NoReturn
 from uuid import UUID
@@ -54,12 +54,12 @@ def get_promoter_earnings(user: UserResponse) -> PromoterEarningsResponse:
     now = datetime.now(timezone.utc)
     period_start, period_end = month_bounds(now.date())
     rows = _get_earnings_rows(str(user.id), period_start, period_end)
+    active_rows = [row for row in rows if bool(row["is_active"])]
     rate_cents = controlbox.promoter_program.rate_cents
     posters = [
         PosterEarningsItem(
             qr_code_id=row["qr_code_id"],
             name=row["name"],
-            is_active=row["is_active"],
             latest_scan=row.get("latest_scan"),
             latitude=float(row["latitude"]),
             longitude=float(row["longitude"]),
@@ -70,16 +70,23 @@ def get_promoter_earnings(user: UserResponse) -> PromoterEarningsResponse:
             period_creditable_scans=int(row["period_creditable_scans"]),
             pending_cents=int(row["period_creditable_scans"]) * rate_cents,
         )
-        for row in rows
+        for row in active_rows
     ]
     creditable = sum(item.period_creditable_scans for item in posters)
+    scan_attempts = _count_period_scan_attempts(
+        [item.qr_code_id for item in posters],
+        period_start,
+        period_end,
+    )
+    unqualified = max(scan_attempts - creditable, 0)
     return PromoterEarningsResponse(
         period=period_start.strftime("%Y-%m"),
         posters=posters,
         period_creditable_scans=creditable,
+        period_unqualified_scans=unqualified,
         pending_cents=creditable * rate_cents,
         lifetime_paid_cents=_lifetime_paid_cents(str(user.id)),
-        active_slots_used=sum(item.is_active for item in posters),
+        active_slots_used=len(posters),
         active_slots_limit=controlbox.promoter_program.maximum_active_posters,
         program_enabled=controlbox.promoter_program.enabled,
     )
@@ -400,10 +407,7 @@ def run_period_payouts(
     """Freeze one closed UTC period and export pending Interac transfers."""
     period_start, period_end = month_bounds(period)
     current_time = now or datetime.now(timezone.utc)
-    available_at = period_end + timedelta(
-        hours=controlbox.promoter_program.payout_close_delay_hours
-    )
-    if current_time < available_at:
+    if current_time < period_end:
         raise ValueError("Payout period has not closed")
 
     owner_ids = _load_promoter_owner_ids()
@@ -477,6 +481,25 @@ def _get_earnings_rows(
         .execute()
     )
     return response.data or []
+
+
+def _count_period_scan_attempts(
+    qr_code_ids: list[str],
+    period_start: datetime,
+    period_end: datetime,
+) -> int:
+    if not qr_code_ids:
+        return 0
+    response = (
+        get_sb()
+        .table(QR_CODE_SCANS)
+        .select("id", count="exact")
+        .in_("qr_code_id", qr_code_ids)
+        .gte("scanned_at", period_start.isoformat())
+        .lt("scanned_at", period_end.isoformat())
+        .execute()
+    )
+    return int(response.count or len(response.data or []))
 
 
 def _lifetime_paid_cents(user_id: str) -> int:

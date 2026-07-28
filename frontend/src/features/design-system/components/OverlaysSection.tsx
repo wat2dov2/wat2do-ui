@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Section, Stack } from "@/shared/layout";
+import { DialogBody, Section, Stack } from "@/shared/layout";
 import { Button } from "@/shared/ui/button";
 import {
   Dialog,
@@ -43,7 +43,7 @@ export function OverlaysSection() {
               Open dialog
             </Button>
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-              <DialogContent>
+              <DialogContent size="md" scrollable>
                 <DialogHeader>
                   <DialogTitle>Confirm action</DialogTitle>
                   <DialogDescription>
@@ -51,6 +51,12 @@ export function OverlaysSection() {
                     border tokens.
                   </DialogDescription>
                 </DialogHeader>
+                <DialogBody>
+                  <p className="text-sm text-muted-foreground">
+                    DialogBody owns scrolling when content exceeds the canonical
+                    overlay height.
+                  </p>
+                </DialogBody>
                 <DialogFooter>
                   <Button variant="ghost" onClick={() => setDialogOpen(false)}>
                     Cancel

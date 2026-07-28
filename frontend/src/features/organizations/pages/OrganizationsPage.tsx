@@ -95,7 +95,6 @@ export function OrganizationsPage() {
           />
           <Button
             type="button"
-            variant="secondary"
             size="sm"
             className="shrink-0"
             onMouseDown={() => {

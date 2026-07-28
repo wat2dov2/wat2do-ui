@@ -373,7 +373,7 @@ class PromoterProgramControl(_ControlModel):
     maximum_active_posters: int = Field(gt=0)
     landing_confirmation_seconds: int = Field(gt=0)
     confirmation_token_minutes: int = Field(gt=0)
-    payout_close_delay_hours: int = Field(ge=0)
+    payout_day_of_month: int = Field(ge=1, le=28)
     quiet_poster_days: int = Field(gt=0)
     banner_dismissal_days: int = Field(gt=0)
     discord_invite_url: HttpUrl

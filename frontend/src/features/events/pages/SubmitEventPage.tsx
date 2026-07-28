@@ -68,7 +68,7 @@ export function SubmitEventPage() {
 
   return (
     <>
-      <Container size="lg" className="py-4 sm:py-6">
+      <Container size="lg">
         <Stack gap={6}>
           <PageHeader
             back={{ href: ROUTES.HOME, label: t("events.allEvents") }}

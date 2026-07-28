@@ -84,7 +84,7 @@ def list_qr_codes(
     pagination: PaginationParams = Depends(),
     db_user: UserResponse = Depends(get_db_user),
 ):
-    """List manageable QR codes with explicit archive and recency filters."""
+    """List manageable QR codes with explicit active-state and recency filters."""
     if not is_admin(db_user):
         enrolled = db_user.promoter_tos_accepted_at is not None
         if not enrolled:
@@ -198,15 +198,6 @@ def update_poster(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=ID_MISMATCH)
     existing = _get_poster_or_404_authorized(qr_code_id, db_user)
     return qr_code_service.update_qr_code(data, existing=existing)
-
-
-@router.post("/{qr_code_id}/archive", response_model=QrCodeResponse)
-def archive_poster(
-    qr_code_id: str,
-    db_user: UserResponse = Depends(get_db_user),
-):
-    _get_poster_or_404_authorized(qr_code_id, db_user)
-    return qr_code_service.archive_qr_code(qr_code_id)
 
 
 @router.delete("/{qr_code_id}", status_code=status.HTTP_204_NO_CONTENT)
