@@ -1,5 +1,5 @@
 name: Process Single User
-run-name: Process @${{ github.event.client_payload.poster_id || inputs.poster_id }}
+run-name: Process @${{ github.event.client_payload.username || github.event.client_payload.poster_id || inputs.poster_id }}
 
 # One-off scrape of a single Instagram handle.
 # Triggered either manually (workflow_dispatch) or by an external service
@@ -17,10 +17,11 @@ on:
         description: 'Instagram username to process'
         required: true
         type: string
-      intended_recipient_id:
-        description: 'Instagram profile ID that received the post (maps to school via Supabase)'
-        required: true
+      school:
+        description: 'School name'
+        required: false
         type: string
+        default: 'University of Waterloo'
 
 jobs:
   process-post:
@@ -41,8 +42,9 @@ jobs:
       AWS_RUNTIME_SECRET_ARN: ${{ vars.AWS_RUNTIME_SECRET_ARN }}
       ENVIRONMENT: production
       FRONTEND_URL: ${{ vars.FRONTEND_URL }}
-      POSTER_ID: ${{ github.event.client_payload.poster_id || inputs.poster_id }}
-      INTENDED_RECIPIENT_ID: ${{ github.event.client_payload.intended_recipient_id || inputs.intended_recipient_id }}
+      POSTER_ID: ${{ github.event.client_payload.username || github.event.client_payload.poster_id || inputs.poster_id }}
+      INTENDED_RECIPIENT_ID: ${{ github.event.client_payload.intended_recipient_id }}
+      TARGET_SCHOOL: ${{ github.event.client_payload.school || inputs.school || 'University of Waterloo' }}
       CUTOFF_DAYS: ${{ github.event_name == 'workflow_dispatch' && '1825' || '1' }}
 
     steps:
@@ -57,8 +59,12 @@ jobs:
             echo "Invalid poster ID." >&2
             exit 1
           fi
-          if ! [[ "$INTENDED_RECIPIENT_ID" =~ ^[0-9]{1,32}$ ]]; then
-            echo "Invalid intended recipient ID." >&2
+          if [[ -z "$INTENDED_RECIPIENT_ID" && -z "$TARGET_SCHOOL" ]]; then
+            echo "Either intended_recipient_id or school must be provided." >&2
+            exit 1
+          fi
+          if [[ -n "$INTENDED_RECIPIENT_ID" ]] && ! [[ "$INTENDED_RECIPIENT_ID" =~ ^[0-9]{1,32}$ ]]; then
+            echo "Invalid intended recipient ID format." >&2
             exit 1
           fi
           if ! [[ "$CUTOFF_DAYS" =~ ^(1|1825)$ ]]; then

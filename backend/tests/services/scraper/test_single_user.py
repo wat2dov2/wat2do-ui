@@ -47,9 +47,12 @@ def test_resolve_single_user_scrape_school_utm(monkeypatch):
     assert resolve_single_user_scrape_school() == "utm"
 
 
-def test_resolve_single_user_scrape_school_requires_recipient_id(monkeypatch):
+def test_resolve_single_user_scrape_school_requires_recipient_id_or_target_school(monkeypatch):
     monkeypatch.delenv("INTENDED_RECIPIENT_ID", raising=False)
-    with pytest.raises(SchoolResolutionError, match="INTENDED_RECIPIENT_ID is required"):
+    monkeypatch.delenv("TARGET_SCHOOL", raising=False)
+    with pytest.raises(
+        SchoolResolutionError, match="Either INTENDED_RECIPIENT_ID or TARGET_SCHOOL is required"
+    ):
         resolve_single_user_scrape_school()
 
 
@@ -60,19 +63,73 @@ def test_resolve_single_user_scrape_school_rejects_unknown_recipient_id(monkeypa
         "get_school_by_recipient_id",
         MagicMock(return_value=None),
     )
-    with pytest.raises(SchoolResolutionError, match="No school mapping"):
+    with pytest.raises(SchoolResolutionError, match="No school mapping in DB"):
         resolve_single_user_scrape_school()
 
 
-def test_resolve_single_user_scrape_school_ignores_school_env(monkeypatch):
-    monkeypatch.setenv("SCHOOL", "McGill University")
+def test_resolve_single_user_scrape_school_prefers_recipient_id_over_target_school(monkeypatch):
+    monkeypatch.setenv("TARGET_SCHOOL", "McGill University")
     monkeypatch.setenv("INTENDED_RECIPIENT_ID", "76214170483")
     monkeypatch.setattr(
         single_user.school_service,
         "get_school_by_recipient_id",
         MagicMock(return_value=_school("uwaterloo")),
     )
+    # Ensure get_school is not called when recipient_id is present
+    mock_get_school = MagicMock()
+    monkeypatch.setattr(single_user.school_service, "get_school", mock_get_school)
     assert resolve_single_user_scrape_school() == "uwaterloo"
+    assert not mock_get_school.called
+
+
+def test_resolve_single_user_scrape_school_falls_back_to_target_school_name(monkeypatch):
+    monkeypatch.delenv("INTENDED_RECIPIENT_ID", raising=False)
+    monkeypatch.setenv("TARGET_SCHOOL", "University of Waterloo")
+    monkeypatch.setattr(
+        single_user.school_service,
+        "get_school",
+        MagicMock(return_value=None),
+    )
+    monkeypatch.setattr(
+        single_user.school_service,
+        "get_school_by_name",
+        MagicMock(return_value=_school("uwaterloo")),
+    )
+    assert resolve_single_user_scrape_school() == "uwaterloo"
+
+
+def test_resolve_single_user_scrape_school_falls_back_to_target_school_slug(monkeypatch):
+    monkeypatch.delenv("INTENDED_RECIPIENT_ID", raising=False)
+    monkeypatch.setenv("TARGET_SCHOOL", "utm")
+    monkeypatch.setattr(
+        single_user.school_service,
+        "get_school",
+        MagicMock(return_value=_school("utm")),
+    )
+    # Ensure get_school_by_name is not called when found by slug
+    mock_get_school_by_name = MagicMock()
+    monkeypatch.setattr(single_user.school_service, "get_school_by_name", mock_get_school_by_name)
+    assert resolve_single_user_scrape_school() == "utm"
+    assert not mock_get_school_by_name.called
+
+
+def test_resolve_single_user_scrape_school_rejects_unknown_target_school(monkeypatch):
+    monkeypatch.delenv("INTENDED_RECIPIENT_ID", raising=False)
+    monkeypatch.setenv("TARGET_SCHOOL", "Unknown School")
+    monkeypatch.setattr(
+        single_user.school_service,
+        "get_school",
+        MagicMock(return_value=None),
+    )
+    monkeypatch.setattr(
+        single_user.school_service,
+        "get_school_by_name",
+        MagicMock(return_value=None),
+    )
+    with pytest.raises(
+        SchoolResolutionError, match="Could not resolve school slug from target_school"
+    ):
+        resolve_single_user_scrape_school()
 
 
 def test_is_post_url_target():

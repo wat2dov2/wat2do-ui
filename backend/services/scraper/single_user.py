@@ -20,25 +20,48 @@ class SchoolResolutionError(ValueError):
 
 
 def resolve_single_user_scrape_school() -> str:
-    """Resolve school from ``INTENDED_RECIPIENT_ID`` only."""
+    """Resolve school from ``INTENDED_RECIPIENT_ID`` or ``TARGET_SCHOOL`` using school_service."""
     recipient_id = (os.getenv("INTENDED_RECIPIENT_ID") or "").strip()
-    if not recipient_id:
+    if recipient_id:
+        school = school_service.get_school_by_recipient_id(recipient_id)
+        if school is None:
+            raise SchoolResolutionError(
+                f"No school mapping in DB for intended_recipient_id={recipient_id!r}",
+            )
+        log.info(
+            "Resolved school slug=%r from intended_recipient_id=%s via DB",
+            school.slug,
+            recipient_id,
+        )
+        return school.slug
+
+    target_school = (os.getenv("TARGET_SCHOOL") or "").strip()
+    if target_school:
+        school = school_service.get_school(target_school)
+        if school:
+            log.info(
+                "Resolved school slug=%r from target_school slug=%r via DB",
+                school.slug,
+                target_school,
+            )
+            return school.slug
+
+        school = school_service.get_school_by_name(target_school)
+        if school:
+            log.info(
+                "Resolved school slug=%r from target_school name=%r via DB",
+                school.slug,
+                target_school,
+            )
+            return school.slug
+
         raise SchoolResolutionError(
-            "INTENDED_RECIPIENT_ID is required for single-user scrapes",
+            f"Could not resolve school slug from target_school={target_school!r} via DB",
         )
 
-    school = school_service.get_school_by_recipient_id(recipient_id)
-    if school is None:
-        raise SchoolResolutionError(
-            f"No school mapping for intended_recipient_id={recipient_id!r}",
-        )
-
-    log.info(
-        "Resolved school slug=%r from intended_recipient_id=%s",
-        school.slug,
-        recipient_id,
+    raise SchoolResolutionError(
+        "Either INTENDED_RECIPIENT_ID or TARGET_SCHOOL is required for single-user scrapes",
     )
-    return school.slug
 
 
 def is_post_url_target(target: str) -> bool:
@@ -53,7 +76,7 @@ def filter_valid_posts(posts: list[dict]) -> list[dict]:
         if not post.get("error")
         and not post.get("errorDescription")
         and post.get("url")
-        and "/p/" in post.get("url")
+        and "/p/" in (post.get("url") or "")
     ]
 
 

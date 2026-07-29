@@ -122,10 +122,28 @@ def search_schools(query: str, limit: int = DEFAULT_SEARCH_LIMIT) -> list[School
     return [school for _, school in ranked[:limit]]
 
 
+def get_school_by_name(name: str | None) -> School | None:
+    normalized_name = (name or "").strip()
+    if not normalized_name:
+        return None
+    response = (
+        get_sb()
+        .table(SCHOOLS)
+        .select("slug, name, timezone, recipient_id, semester_start, semester_end")
+        .ilike("name", normalized_name)
+        .limit(1)
+        .execute()
+    )
+    if not response.data:
+        return None
+    return School.model_validate(response.data[0])
+
+
 __all__ = [
     "DEFAULT_SEARCH_LIMIT",
     "get_school",
     "get_school_by_recipient_id",
+    "get_school_by_name",
     "normalize_school_slug",
     "school_exists",
     "search_schools",
