@@ -9,7 +9,7 @@
  * Standard image-area height (px) for full-size event cards
  * (EventCard, EventFormPreview, EventCardSkeleton).
  */
-export const EVENT_CARD_IMAGE_HEIGHT = 176;
+export const EVENT_CARD_IMAGE_HEIGHT = 208;
 
 /** Standard responsive grid for event and organization card lists. */
 export const CARD_GRID_CLASS =

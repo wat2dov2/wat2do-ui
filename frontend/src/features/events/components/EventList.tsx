@@ -41,8 +41,8 @@ interface EventCardsGridProps {
   onEventClick?: (event: Event) => void;
 }
 
-// Minimum track is a little wider than the 176px card image is tall, so cards
-// never collapse into a narrow portrait sliver on mid-width viewports.
+// Match the minimum track to the card image height so cards never collapse into
+// a narrow portrait sliver on mid-width viewports.
 const EVENT_CARD_GRID_CLASS =
   "grid grid-cols-2 gap-2 sm:gap-2.5 min-[480px]:grid-cols-[repeat(auto-fill,minmax(13rem,1fr))]";
 
