@@ -34,13 +34,15 @@ jobs:
       cancel-in-progress: false
     permissions:
       contents: read
-      id-token: write
     env:
-      AWS_REGION: ca-central-1
-      AWS_DEPLOY_ROLE_ARN: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
-      AWS_RUNTIME_SECRET_ARN: ${{ vars.AWS_RUNTIME_SECRET_ARN }}
       ENVIRONMENT: production
       FRONTEND_URL: ${{ vars.FRONTEND_URL }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+      SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      APIFY_API_TOKEN: ${{ secrets.APIFY_API_TOKEN }}
+      EVENT_FEED_REVALIDATION_SECRET: ${{ secrets.EVENT_FEED_REVALIDATION_SECRET }}
       POSTER_ID: ${{ github.event.client_payload.poster_id || inputs.poster_id }}
       INTENDED_RECIPIENT_ID: ${{ github.event.client_payload.intended_recipient_id || inputs.intended_recipient_id }}
       CUTOFF_DAYS: ${{ github.event_name == 'workflow_dispatch' && '1825' || '1' }}
@@ -50,9 +52,13 @@ jobs:
 
       - name: Validate job inputs
         run: |
-          test -n "$AWS_DEPLOY_ROLE_ARN"
-          test -n "$AWS_RUNTIME_SECRET_ARN"
           test -n "$FRONTEND_URL"
+          test -n "$SUPABASE_URL"
+          test -n "$SUPABASE_KEY"
+          test -n "$SUPABASE_SECRET_KEY"
+          test -n "$OPENAI_API_KEY"
+          test -n "$APIFY_API_TOKEN"
+          test -n "$EVENT_FEED_REVALIDATION_SECRET"
           if ! [[ "$POSTER_ID" =~ ^[A-Za-z0-9._]{1,30}$ ]]; then
             echo "Invalid poster ID." >&2
             exit 1
@@ -65,25 +71,6 @@ jobs:
             echo "Invalid cutoff days." >&2
             exit 1
           fi
-
-      - name: Configure AWS credentials with GitHub OIDC
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ env.AWS_DEPLOY_ROLE_ARN }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Read scraper configuration
-        run: |
-          secret_json="$(aws secretsmanager get-secret-value \
-            --secret-id "$AWS_RUNTIME_SECRET_ARN" \
-            --query SecretString \
-            --output text)"
-          for secret_key in SUPABASE_URL SUPABASE_KEY SUPABASE_SECRET_KEY OPENAI_API_KEY APIFY_API_TOKEN EVENT_FEED_REVALIDATION_SECRET; do
-            secret_value="$(jq -er --arg key "$secret_key" '.[$key]' <<< "$secret_json")"
-            echo "::add-mask::$secret_value"
-            echo "$secret_key=$secret_value" >> "$GITHUB_ENV"
-          done
-          unset secret_json
 
       - name: Set up Python
         uses: actions/setup-python@v5
