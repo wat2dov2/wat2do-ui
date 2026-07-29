@@ -44,7 +44,7 @@ XLSX_PATH = Path(__file__).resolve().parent.parent / "services" / "scraper" / "w
 # account"); we match against the part before the pipe.
 HIGH_QUALITY_IG_SOURCES = frozenset({"found", "confirmed", "profile_page"})
 
-# The xlsx School column holds canonical schools.name slug values directly
+# The xlsx School column holds canonical schools.slug values directly
 # (e.g. "wlu", "utsc", "utoronto"); rows whose slug is not registered in the
 # hosted schools table are skipped with a warning so the sheet can contain
 # schools that have not launched yet.
@@ -267,8 +267,8 @@ def main() -> int:
     try:
         from core.tables import SCHOOLS
 
-        res_schools = sb.table(SCHOOLS).select("name").execute()
-        db_schools = {row["name"] for row in res_schools.data or []}
+        res_schools = sb.table(SCHOOLS).select("slug").execute()
+        db_schools = {row["slug"] for row in res_schools.data or []}
     except Exception as e:
         log.error("Failed to fetch canonical schools from Supabase: %s", e)
         return 2

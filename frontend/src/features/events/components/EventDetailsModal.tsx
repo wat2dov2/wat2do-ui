@@ -13,15 +13,14 @@ import {
 import { Button } from "@/shared/ui/button";
 import { Separator } from "@/shared/ui/separator";
 import { EventDetailsDrawerSkeleton } from "@/features/events/components/EventDetailsDrawerSkeleton";
-import { EventCard } from "@/features/events/components/EventCard";
 import {
   EventActions,
   EventDetailsBody,
+  EventDetailsSimilarEvents,
 } from "@/features/events/components/EventDetailsSections";
 import { eventPagePath } from "@/features/events/lib/eventUrls";
-import { DrawerBody, FormGrid, Section, Stack } from "@/shared/layout";
+import { DrawerBody, Stack } from "@/shared/layout";
 import { useEventsStore } from "@/features/events/store/events.store";
-import { useEventStats } from "@/features/events/hooks/useEventStats";
 import { fetchEventById } from "@/features/events/api/events.api";
 import { controlBox } from "@/shared/config/controlBox";
 import { queryKeys } from "@/shared/lib/queryKeys";
@@ -46,8 +45,6 @@ export function EventDetailsModal({
   const { t } = useTranslation();
   const storeEvents = useEventsStore((s) => s.events);
   const schoolFilter = useEventsStore((s) => s.schoolFilter);
-  const { data: eventStatsData, isSuccess: eventStatsReady } = useEventStats(schoolFilter);
-  const eventStats = eventStatsReady ? (eventStatsData ?? {}) : null;
   const [overrideEvent, setOverrideEvent] = useState<Event | null>(null);
   const [overrideForEventId, setOverrideForEventId] = useState<number | null>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -89,19 +86,6 @@ export function EventDetailsModal({
       tracker.track(displayedEvent.id, "detail_view");
     }
   }, [displayedEvent]);
-
-  const similarEvents = useMemo(() => {
-    if (!displayedEvent) return [];
-    const eventsList = allEvents ?? storeEvents;
-    const otherEvents = eventsList.filter((e) => e.id !== displayedEvent.id);
-    const seed = displayedEvent.id;
-    const shuffled = otherEvents.toSorted((a, b) => {
-      const hashA = ((seed * a.id) % 1000) / 1000;
-      const hashB = ((seed * b.id) % 1000) / 1000;
-      return hashA - hashB;
-    });
-    return shuffled.slice(0, 4);
-  }, [displayedEvent, allEvents, storeEvents]);
 
   const handleSimilarEventClick = useCallback((clickedEvent: Event) => {
     setOverrideEvent(clickedEvent);
@@ -175,22 +159,12 @@ export function EventDetailsModal({
                   )}
                 />
 
-                {!hideSimilarEvents && similarEvents.length > 0 && (
-                  <>
-                    <Separator />
-                    <Section title={t("events.similarEvents")}>
-                      <FormGrid columns={2} className="md:grid-cols-4">
-                        {similarEvents.map((similarEvent) => (
-                          <EventCard
-                            key={similarEvent.id}
-                            event={similarEvent}
-                            stats={eventStats?.[String(similarEvent.id)]}
-                            onEventClick={handleSimilarEventClick}
-                          />
-                        ))}
-                      </FormGrid>
-                    </Section>
-                  </>
+                {!hideSimilarEvents && (
+                  <EventDetailsSimilarEvents
+                    event={displayedEvent}
+                    events={allEvents ?? storeEvents}
+                    onEventClick={handleSimilarEventClick}
+                  />
                 )}
               </DrawerBody>
             </>

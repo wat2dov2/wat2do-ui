@@ -22,7 +22,6 @@ interface PublicPromoterProgram {
   payoutDayOfMonth: number;
   quietPosterDays: number;
   bannerDismissalDays: number;
-  tosVersion: string;
   discordInviteUrl: string;
   approvedTemplates: ApprovedPosterTemplate[];
 }

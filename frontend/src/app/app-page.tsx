@@ -17,12 +17,14 @@ import { useSavedOrganizationsStore } from "@/features/organizations/store/saved
 import { getRouteDocumentTitle } from "@/shared/constants/routes";
 import type { Role } from "@/shared/constants/roles";
 import {
+  ALL_SCHOOLS,
   DEFAULT_SCHOOL,
   getHostnameSchoolStatus,
   getSchoolOrigin,
   isAllSchools,
   type HostnameSchoolStatus,
 } from "@/shared/constants/schools";
+import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 import { LoadingPage } from "@/shared/ui/loading-page";
 import { Toaster } from "@/shared/ui/sonner";
 
@@ -79,10 +81,15 @@ function AppPageContent({
   const { isAdmin } = useAuthState();
   const events = useEventsStore((s) => s.events);
   const setSchoolFilter = useEventsStore((s) => s.setSchoolFilter);
+  const {
+    schoolBySlug,
+    isPending: isSchoolDirectoryPending,
+    isError: isSchoolDirectoryError,
+  } = useSchoolDirectory();
 
   const hostnameSchoolStatus = useMemo<HostnameSchoolStatus>(() => {
     if (typeof window === "undefined" || skipSchoolCheck) {
-      return { school: DEFAULT_SCHOOL, candidate: null, isServable: true };
+      return { school: DEFAULT_SCHOOL, candidate: null };
     }
     return getHostnameSchoolStatus(window.location.hostname);
   }, [skipSchoolCheck]);
@@ -119,7 +126,20 @@ function AppPageContent({
     return null;
   }
 
-  if (!hostnameSchoolStatus.isServable && hostnameSchoolStatus.candidate) {
+  const needsSchoolValidation =
+    !skipSchoolCheck &&
+    hostnameSchoolStatus.candidate !== null &&
+    hostnameSchoolStatus.school !== ALL_SCHOOLS;
+
+  if (needsSchoolValidation && isSchoolDirectoryPending) {
+    return <LoadingPage className="min-h-dvh" />;
+  }
+
+  if (
+    needsSchoolValidation &&
+    !isSchoolDirectoryError &&
+    !schoolBySlug.has(hostnameSchoolStatus.school)
+  ) {
     return <UnknownSchoolPage requestedSchool={hostnameSchoolStatus.candidate} />;
   }
 

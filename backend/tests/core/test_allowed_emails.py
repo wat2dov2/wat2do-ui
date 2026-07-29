@@ -105,8 +105,8 @@ class TestLoadDomainsFromDatabase:
         from core import allowed_emails as ae
 
         mock_domains_data = [
-            {"domain": "uwaterloo.ca", "schools": {"name": "uwaterloo"}},
-            {"domain": "testu.edu", "schools": {"name": "testu"}},
+            {"domain": "uwaterloo.ca", "schools": {"slug": "uwaterloo"}},
+            {"domain": "testu.edu", "schools": {"slug": "testu"}},
         ]
 
         mock_domains_res = MagicMock(data=mock_domains_data)
@@ -123,3 +123,4 @@ class TestLoadDomainsFromDatabase:
         assert ae.ALLOWED_EMAIL_DOMAINS["uwaterloo.ca"] == "uwaterloo"
         assert ae.ALLOWED_EMAIL_DOMAINS["testu.edu"] == "testu"
         mock_sb.table.assert_called_once()
+        mock_domains_chain.select.assert_called_once_with("domain, schools(slug)")

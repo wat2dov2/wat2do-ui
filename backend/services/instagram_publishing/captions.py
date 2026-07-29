@@ -7,7 +7,6 @@ from zoneinfo import ZoneInfo
 from services.school_context import (
     canonical_school_key,
     resolve_school_timezone,
-    school_display_name,
 )
 
 _INSTAGRAM_CAPTION_LIMIT = 2200
@@ -19,7 +18,7 @@ def build_caption(events: list[dict[str, Any]], school: str) -> str:
     school_slug = canonical_school_key(school)
     school_url = f"https://{school_slug}.wat2do.io"
     lines = [
-        f"Fresh events at {school_display_name(school)}, added to Wat2Do in the last 24 hours 👀",
+        f"Fresh events at {school_slug}, added to Wat2Do in the last 24 hours 👀",
         "",
     ]
     for index, event in enumerate(events, start=1):

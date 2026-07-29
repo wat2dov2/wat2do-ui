@@ -32,7 +32,7 @@ def _user() -> UserResponse:
     return UserResponse(
         id=USER_ID,
         email="person@example.com",
-        school="University of Waterloo",
+        school="uwaterloo",
         payout_email="promoter@example.com",
         promoter_tos_accepted_at=now,
         promoter_tos_version="2026-07",
@@ -145,7 +145,9 @@ def test_promoter_earnings_calculates_integer_cents(monkeypatch):
     count_attempts.assert_called_once()
 
 
-def test_promoter_earnings_remain_readable_with_stale_tos(monkeypatch):
+def test_promoter_earnings_remain_readable_with_earlier_acceptance_metadata(
+    monkeypatch,
+):
     monkeypatch.setattr(
         poster_payout_service,
         "_get_earnings_rows",

@@ -1,6 +1,10 @@
 {
   "settings": {
     "description": "Manage your account preferences and settings",
+    "unsavedChanges": "Unsaved changes",
+    "unsavedChangesDescription": "Save or cancel your settings changes.",
+    "saveSuccess": "Your settings were saved.",
+    "saveError": "We couldn't save your settings. Your changes are still here.",
     "tabs": {
       "profile": "Profile",
       "notifications": "Notifications",
@@ -23,7 +27,8 @@
       "firstYearStudent": "First Year Student",
       "interests": "Interests",
       "selectInterests": "Select your interests",
-      "avatarAlt": "Avatar"
+      "avatarAlt": "Avatar",
+      "changeAvatar": "Choose a new avatar"
     },
     "notifications": {
       "title": "Notification Preferences",

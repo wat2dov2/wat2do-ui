@@ -11,7 +11,6 @@ import {
 } from "@/shared/constants/routes";
 import {
   getCurrentSchool,
-  getSchoolDisplayName,
   resolveWritableSchool,
 } from "@/shared/constants/schools";
 import { loadUserProfile } from "@/features/auth/api/userRepository";
@@ -30,8 +29,6 @@ export function CreateOrganizationPage() {
     getCurrentSchool(),
     loadUserProfile()?.school,
   );
-  const schoolName = getSchoolDisplayName(school);
-
   const saveOrganization = async (
     organization: Organization,
   ): Promise<Organization> => {
@@ -64,7 +61,7 @@ export function CreateOrganizationPage() {
           }}
           title={t("organizations.submitOrganization")}
           description={t("organizations.addOrganizationDescription", {
-            school: schoolName,
+            school,
           })}
         />
         <Section variant="surface">

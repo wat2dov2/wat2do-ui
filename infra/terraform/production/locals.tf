@@ -31,14 +31,6 @@ locals {
     EMAIL_FROM                      = var.email_from
   }
 
-  # A standalone job task has no colocated frontend container. Its authenticated
-  # invalidations intentionally use the public API behavior, which CloudFront
-  # forwards without caching.
-  backend_jobs_environment = merge(local.backend_runtime_environment, {
-    EVENT_FEED_REVALIDATION_URL = "https://${var.domain_name}/api/revalidate-events"
-    INSTAGRAM_SLIDE_RENDER_URL  = "https://${var.domain_name}/api/render-instagram-slide"
-  })
-
   runtime_secret_keys = [
     "SUPABASE_URL",
     "SUPABASE_KEY",

@@ -70,7 +70,6 @@ const publicPromoterProgram = {
   payoutDayOfMonth: rawPromoterProgram.payout_day_of_month,
   quietPosterDays: rawPromoterProgram.quiet_poster_days,
   bannerDismissalDays: rawPromoterProgram.banner_dismissal_days,
-  tosVersion: rawPromoterProgram.tos_version,
   discordInviteUrl: rawPromoterProgram.discord_invite_url,
   approvedTemplates: rawPromoterProgram.approved_templates.map((template) => ({
     id: template.id,

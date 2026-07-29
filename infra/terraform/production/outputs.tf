@@ -10,10 +10,6 @@ output "application_task_definition_family" {
   value = aws_ecs_task_definition.application.family
 }
 
-output "jobs_task_definition_arn" {
-  value = aws_ecs_task_definition.jobs.arn
-}
-
 output "private_subnet_ids" {
   value = [for subnet in aws_subnet.private : subnet.id]
 }

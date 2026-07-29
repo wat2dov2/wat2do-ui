@@ -133,6 +133,7 @@ async function buildSlide(slide: SlideRequest): Promise<React.ReactElement> {
         // A cover always has at least one event, so the carousel size is the
         // honest floor when the caller cannot say what the scrape found.
         newEventCount: slide.new_event_count ?? slide.events.length,
+        eventCount: slide.events.length,
         body: slide.body ?? "",
         tiles,
       })}

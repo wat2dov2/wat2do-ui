@@ -26,7 +26,7 @@
     "enrollment": {
       "pausedTitle": "The promoter program is paused",
       "pausedDescription": "Existing posters and earnings remain available, but new enrollment and poster creation are temporarily paused.",
-      "pausedMaintenanceDescription": "New poster creation is paused, but you can still update your payout email and accept current terms.",
+      "pausedMaintenanceDescription": "New poster creation is paused, but you can still update your payout email.",
       "readyTitle": "Ready to help your campus?",
       "readyDescription": "Sign in to join instantly with your school account.",
       "signInToJoin": "Sign in to join",
@@ -36,19 +36,16 @@
       "enrolledTitle": "You're in the program",
       "enrolled": "Enrolled",
       "enrolledDescription": "Your promoter dashboard is ready.",
-      "openPosters": "Open my posters",
       "settingsTitle": "Promoter program",
       "settingsDescription": "Review your status and keep your Interac e-Transfer email current.",
       "joinTitle": "Join the promoter program",
-      "joinDescription": "Enrollment is instant. You only need a payout email and acceptance of the current terms.",
-      "termsUpdateTitle": "Review the updated terms",
-      "termsUpdateDescription": "Accept the current promoter Terms of Service before creating another poster.",
+      "joinDescription": "Enrollment is instant. You only need a payout email and acceptance of the promoter terms.",
       "payoutEmail": "Payout email",
       "payoutEmailPlaceholder": "you@example.com",
       "payoutEmailDescription": "Monthly Interac e-Transfers will be sent to this address.",
       "acceptTermsPrefix": "Read the complete terms before accepting.",
-      "termsAccepted": "The current terms are accepted.",
-      "termsLink": "Promoter Terms of Service, version {{version}}",
+      "termsAccepted": "You accepted the promoter terms when you enrolled.",
+      "termsLink": "Promoter Terms of Service",
       "error": "We could not update your promoter enrollment.",
       "trustMonthly": "Payments are sent on the first of each month by Interac e-Transfer.",
       "trustActivation": "The Activation scan establishes placement and earns $0.",
@@ -61,8 +58,8 @@
     "dashboard": {
       "title": "My posters",
       "description": "Create, place, and track your official Wat2Do posters.",
+      "discordHelp": "Need help? Join the Discord.",
       "enrollmentRequired": "Join the promoter program to create and manage official posters.",
-      "loading": "Loading your poster dashboard...",
       "loadErrorTitle": "Your dashboard could not be loaded",
       "loadErrorDescription": "Try again in a moment. Your posters and earnings have not been changed.",
       "pendingEarnings": "Pending this month",
@@ -75,10 +72,7 @@
       "mapTitle": "Campus poster map",
       "mapDescription": "Your placed posters are precise and selectable. Other campus coverage is approximate and private.",
       "pausedTitle": "Poster creation is paused",
-      "pausedDescription": "Your dashboard, downloads, earnings, and payouts remain available.",
-      "termsTitle": "Accept the current terms to create posters",
-      "termsDescription": "Your existing posters keep working while you review the latest terms.",
-      "reviewTerms": "Review promoter settings"
+      "pausedDescription": "Your dashboard, downloads, earnings, and payouts remain available."
     },
     "create": {
       "open": "Create posters",
@@ -153,12 +147,12 @@
     },
     "terms": {
       "title": "Promoter Terms of Service",
-      "description": "Current program terms, version {{version}}.",
+      "description": "Please review the promoter program terms.",
       "scrollToAccept": "Scroll through all terms to enable acceptance.",
       "accept": "Accept terms",
       "eligibility": {
         "title": "Eligibility and enrollment",
-        "body": "You must use your own Wat2Do account, keep a school on your profile, provide an email that can receive Interac e-Transfers, and accept the current terms. Enrollment does not guarantee future poster availability."
+        "body": "You must use your own Wat2Do account, keep a school on your profile, provide an email that can receive Interac e-Transfers, and accept the promoter terms when you enroll. Enrollment does not guarantee future poster availability."
       },
       "posters": {
         "title": "Official posters and placements",

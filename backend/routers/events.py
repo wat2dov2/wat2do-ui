@@ -1,4 +1,5 @@
 import logging
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from typing import Literal
 
@@ -107,30 +108,34 @@ def list_events(
     """Public school feed; optional ``start_utc``/``end_utc`` window. Omits ``created_by``."""
     if school == "all":
         school = None
-    items, total = event_service.list_events(
-        school=school,
-        skip=pagination.offset,
-        limit=pagination.page_size,
-        start_utc=start_utc,
-        end_utc=end_utc,
-        search=search,
-        categories=categories,
-        locations=locations,
-        foods=foods,
-        days=days,
-        min_price=min_price,
-        max_price=max_price,
-        registration=registration,
-        organizations=organizations,
-        free_food=free_food,
-        ids=ids,
-        sort_by=sort_by,
-        sort_order=sort_order,
-        added_within_24h=added_within_24h,
-    )
+    with ThreadPoolExecutor(max_workers=1) as pool:
+        latest_event_future = pool.submit(event_service.get_latest_added_event, school)
+        items, total = event_service.list_events(
+            school=school,
+            skip=pagination.offset,
+            limit=pagination.page_size,
+            start_utc=start_utc,
+            end_utc=end_utc,
+            search=search,
+            categories=categories,
+            locations=locations,
+            foods=foods,
+            days=days,
+            min_price=min_price,
+            max_price=max_price,
+            registration=registration,
+            organizations=organizations,
+            free_food=free_food,
+            ids=ids,
+            sort_by=sort_by,
+            sort_order=sort_order,
+            added_within_24h=added_within_24h,
+        )
+        latest_event = latest_event_future.result()
+
     return {
         **paginated_response(items, total, pagination),
-        "latest_added_event": event_service.get_latest_added_event(school),
+        "latest_added_event": latest_event,
     }
 
 

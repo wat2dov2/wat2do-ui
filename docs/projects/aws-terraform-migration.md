@@ -13,9 +13,7 @@ Run the Next.js frontend and FastAPI backend together in one Amazon ECS Fargate 
 
 Build both application containers in GitHub Actions, push immutable images to Amazon ECR, and deploy one coherent ECS task-definition revision for each successful commit to `main`.
 
-Keep recurring backend compute on GitHub-hosted runners.
-
-Run only the single-user scrape as a one-off ECS task.
+Keep all scheduled and triggered backend compute on GitHub-hosted runners.
 
 Move authoritative DNS for `wat2do.io` from Vercel DNS to Route 53.
 
@@ -51,8 +49,7 @@ There is no staging environment, canary deployment, blue-green deployment, paral
 - Use Secrets Manager for runtime secret values.
 - Do not store secret values in Terraform state.
 - Use CloudWatch for application logs and basic service alarms.
-- Keep scheduled directory scraping, notifications, and recommendation compute on GitHub-hosted runners.
-- Use a one-off ECS task only for the single-user scrape.
+- Keep all scheduled and triggered application jobs on GitHub-hosted runners.
 - Delete the nightly redeployment workflow.
 - Delete Railway and Vercel deployment logic when AWS production is working.
 - Do not retain compatibility branches that deploy the same application to multiple providers.
@@ -302,7 +299,7 @@ The deployment role needs only:
 - ECR authorization-token access.
 - ECR image upload and pull actions for the two wat2do repositories so each pushed image can be smoke-tested before deployment.
 - Read access to the frontend-build secret.
-- Read access to the runtime secret for recurring GitHub-hosted jobs.
+- Read access to the runtime secret for scheduled and triggered GitHub-hosted jobs.
 - ECS task-definition read and registration actions.
 - ECS service update and describe actions for the wat2do cluster and service.
 - `iam:PassRole` for the exact ECS execution and task roles.
@@ -375,7 +372,7 @@ Route `0.0.0.0/0` through the NAT gateway.
 
 Associate both private subnets with the private route table.
 
-The ECS service and one-off ECS jobs task run only in private subnets.
+The ECS service runs only in private subnets.
 
 Do not assign public IP addresses to ECS tasks.
 
@@ -694,14 +691,6 @@ The initial application task does not need broad AWS API access because applicat
 
 Grant no S3, DynamoDB, ECS, IAM, or Secrets Manager read permissions to application code unless a verified runtime call requires them.
 
-### 14.3 Job task role
-
-Create one jobs task role.
-
-Keep it empty unless a job directly calls an AWS API.
-
-Supabase and external API credentials are injected by ECS rather than fetched by application code.
-
 ## 15. Runtime configuration contract
 
 ### 15.1 Backend environment
@@ -843,7 +832,6 @@ Create separate log groups:
 
 - `/wat2do/production/frontend`
 - `/wat2do/production/backend`
-- `/wat2do/production/jobs`
 
 Use a 30-day retention period.
 
@@ -881,22 +869,13 @@ Create one small CloudWatch dashboard containing:
 
 ## 18. Scheduled and triggered jobs
 
-### 18.1 One-off jobs task definition
+### 18.1 GitHub-hosted job execution
 
-Create one ARM64 Fargate jobs task definition using the backend image.
+Run every scheduled and triggered application job directly on a GitHub-hosted runner.
 
-Initial sizing:
+Each workflow authenticates through GitHub OIDC, reads only its required values from the runtime secret, installs the backend dependencies, and invokes its Python entry point.
 
-- CPU: 1024 units.
-- Memory: 2048 MiB.
-
-Use the same runtime secret and non-secret backend configuration as the service backend.
-
-Send logs to `/wat2do/production/jobs`.
-
-Do not run Uvicorn in the jobs task.
-
-The single-user scrape invocation overrides the container command.
+Do not provision a separate ECS jobs task definition, task role, or CloudWatch log group.
 
 ### 18.2 Daily directory scrape
 
@@ -944,19 +923,13 @@ Keep the existing nightly schedule.
 
 ### 18.5 Single-user scrape
 
-Keep the GitHub workflow only as an authenticated event and manual trigger.
+Keep the GitHub workflow as the authenticated event and manual trigger.
 
-Replace local Python installation and execution with `aws ecs run-task`.
+Validate the username, recipient ID, and cutoff days before running the scraper.
 
-Pass the username, recipient ID, and cutoff days as a command override.
+Install the backend dependencies and run `python jobs/scrape.py` directly on the GitHub-hosted runner.
 
-Validate the username and recipient ID before constructing the ECS override JSON.
-
-Wait for the ECS task to stop.
-
-Fail the GitHub workflow when the container exit code is nonzero.
-
-Link or print the CloudWatch log-stream name without printing secrets.
+Fail the workflow when the scraper exits nonzero.
 
 ### 18.6 Nightly redeployment
 
@@ -1149,7 +1122,7 @@ Expected deletions:
 - `.github/workflows/nightly-redeploy.yml`
 - `infra/terraform/production/scheduler.tf`
 
-Other workflow files should be deleted only when their behavior is fully represented by another active workflow or the single-user ECS trigger.
+Other workflow files should be deleted only when their behavior is fully represented by another active workflow.
 
 ### 21.4 Files expected to remain behaviorally unchanged
 
@@ -1247,16 +1220,15 @@ Done when:
 ### 22.5 Job migration
 
 1. Keep one GitHub-hosted schedule for each recurring application job.
-2. Add the one-off jobs task definition.
-3. Convert the single-user workflow to `ecs:RunTask`.
+2. Run triggered application jobs on GitHub-hosted runners as well.
+3. Remove the ECS jobs task definition, task role, log group, and deployment permissions.
 4. Remove the EventBridge directory schedule and its supporting resources.
 
 Done when:
 
 - Each recurring job has exactly one GitHub Actions schedule.
-- Recurring job logs are available as workflow logs and artifacts.
-- Single-user scrape compute executes on Fargate.
-- Single-user scrape logs appear in CloudWatch.
+- Scheduled and triggered job logs are available as workflow logs and artifacts where configured.
+- Single-user scrape compute executes on a GitHub-hosted runner.
 - A failed job produces a failed workflow.
 
 ### 22.6 Final cleanup
@@ -1367,7 +1339,7 @@ Verify:
 
 Manually dispatch the single-user scrape with a known test input.
 
-Verify that its ECS task starts in a private subnet, obtains its secrets, exits successfully, and writes to the jobs log group.
+Verify that its GitHub-hosted runner obtains its secrets without printing them, runs the scraper, and exits successfully.
 
 ## 24. Failure handling during implementation
 
@@ -1429,9 +1401,8 @@ The project is complete only when all of the following are true:
 - Frontend and backend images are immutable and commit-addressed.
 - ECR lifecycle policies own image cleanup.
 - A push to `main` runs checks and deploys one coherent application revision.
-- Recurring backend compute runs on GitHub-hosted runners.
-- Single-user scrape compute runs on ECS.
-- CloudWatch contains frontend, backend, and jobs logs.
+- Scheduled and triggered backend compute runs on GitHub-hosted runners.
+- CloudWatch contains frontend and backend logs.
 - Basic service alarms exist.
 - Railway deployment code and secrets are removed.
 - Vercel deployment code, projects, and secrets are removed.

@@ -4,26 +4,13 @@ Only emails from these domains can sign up.
 
 The {domain -> school slug} mapping is stored in the Supabase
 ``school_email_domains`` table (joined to ``schools``) and is loaded
-lazily on first lookup.  Falls back to a hardcoded UWaterloo entry if
-Supabase is unreachable so the app still boots.
-
-School display names, aliases, and timezones live in
-``core.constants.school_mappings`` - not loaded here.
+lazily on first lookup.
 """
 
 import logging
 import unicodedata
 
 log = logging.getLogger(__name__)
-
-# Hardcoded safety net so the app still resolves UWaterloo emails if
-# Supabase is unreachable at first-lookup time.  The seed migration
-# 20260610180000 writes the same entries to ``school_email_domains`` so
-# the values match.
-FALLBACK_DOMAINS: dict[str, str] = {
-    "uwaterloo.ca": "uwaterloo",
-    "edu.uwaterloo.ca": "uwaterloo",
-}
 
 # Dynamic mapping of domain -> school slug.  Lazily populated on first
 # lookup from the ``school_email_domains`` table.  Tests can monkeypatch
@@ -58,7 +45,7 @@ def _normalize_domain(domain: str) -> str | None:
 
 
 def load_allowed_domains() -> None:
-    """Populate ``ALLOWED_EMAIL_DOMAINS`` from Supabase, merging fallback entries.
+    """Populate ``ALLOWED_EMAIL_DOMAINS`` from Supabase.
 
     Idempotent - sets ``_loaded`` so subsequent calls are no-ops.  Imported
     lazily inside the function so module import doesn't trigger a Supabase
@@ -66,17 +53,16 @@ def load_allowed_domains() -> None:
     """
     global _loaded
     ALLOWED_EMAIL_DOMAINS.clear()
-    ALLOWED_EMAIL_DOMAINS.update(FALLBACK_DOMAINS)
 
     try:
         from core.database import get_sb
         from core.tables import SCHOOL_EMAIL_DOMAINS
 
         sb = get_sb()
-        res_domains = sb.table(SCHOOL_EMAIL_DOMAINS).select("domain, schools(name)").execute()
+        res_domains = sb.table(SCHOOL_EMAIL_DOMAINS).select("domain, schools(slug)").execute()
         for row in res_domains.data or []:
             domain = row.get("domain")
-            school = (row.get("schools") or {}).get("name")
+            school = (row.get("schools") or {}).get("slug")
             if not domain or not school:
                 continue
             canonical = _normalize_domain(domain)

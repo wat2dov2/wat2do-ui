@@ -5264,7 +5264,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "type": "string"
+                    "$ref": "#/components/schemas/SchoolSummary"
                   },
                   "title": "Response Search Schools Endpoint Schools Get"
                 }
@@ -11131,6 +11131,24 @@
         ],
         "title": "SaveOrganizationStatusResponse",
         "description": "Locks the save/unsave status contract at the OpenAPI boundary."
+      },
+      "SchoolSummary": {
+        "properties": {
+          "slug": {
+            "type": "string",
+            "title": "Slug"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "slug",
+          "name"
+        ],
+        "title": "SchoolSummary"
       },
       "SendOtpRequest": {
         "properties": {

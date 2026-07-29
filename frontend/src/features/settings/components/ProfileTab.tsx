@@ -1,9 +1,10 @@
-import React, { useState, useCallback, useRef } from "react";
+import { useRef } from "react";
 import { useTranslation } from "react-i18next";
+import type { UserProfile } from "@/features/auth";
 import { Mail, Camera } from "@/shared/ui/doodle-icons";
+import { Button } from "@/shared/ui/button";
 import { Card, CardContent } from "@/shared/ui/card";
 import { Label } from "@/shared/ui/label";
-import { LoadingButton } from "@/shared/ui/loading-button";
 import { Switch } from "@/shared/ui/switch";
 import { Separator } from "@/shared/ui/separator";
 import {
@@ -15,36 +16,30 @@ import {
 } from "@/shared/ui/select";
 import { MultiSelect } from "@/shared/ui/multi-select";
 import { SchoolCombobox } from "@/shared/ui/school-combobox";
-import { useProfile } from "@/features/settings/hooks/useProfile";
 import { getAvailableInterests } from "@/shared/data/interests";
 import { toFacultyTranslationKey } from "@/shared/utils/string";
 import { FACULTY_OPTIONS } from "@/features/onboarding";
 
 interface ProfileTabProps {
   userEmail: string | null;
+  profile: UserProfile;
+  avatarPreviewUrl: string | null;
+  disabled: boolean;
+  onProfileChange: (updates: Partial<UserProfile>) => void;
+  onAvatarChange: (file: File) => void;
 }
 
-export function ProfileTab({ userEmail }: ProfileTabProps) {
+export function ProfileTab({
+  userEmail,
+  profile,
+  avatarPreviewUrl,
+  disabled,
+  onProfileChange,
+  onAvatarChange,
+}: ProfileTabProps) {
   const { t } = useTranslation();
-  const { profile, updateProfile } = useProfile();
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
-
-  const handleAvatarChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploading(true);
-    try {
-      const { uploadAvatar } = await import("@/shared/services/uploadService");
-      const url = await uploadAvatar(file);
-      setAvatarUrl(url);
-    } catch (err) {
-      console.error("Failed to upload avatar:", err);
-    } finally {
-      setUploading(false);
-    }
-  }, []);
+  const avatarUrl = avatarPreviewUrl ?? profile.avatarUrl;
 
   return (
     <div className="space-y-6">
@@ -62,26 +57,36 @@ export function ProfileTab({ userEmail }: ProfileTabProps) {
                     </span>
                   )}
                 </div>
-                <LoadingButton
+                <Button
                   type="button"
                   size="sm"
                   variant="secondary"
                   className="absolute -bottom-1 -right-1 rounded-full size-7 p-0"
-                  onMouseDown={() => fileRef.current?.click()}
-                  disabled={uploading}
-                  isLoading={uploading}
-                  loadingText=""
+                  onClick={() => fileRef.current?.click()}
+                  disabled={disabled}
+                  aria-label={t("settings.profile.changeAvatar")}
                 >
                   <Camera className="size-3.5" />
-                </LoadingButton>
-                <input ref={fileRef} type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
+                </Button>
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    if (file) {
+                      onAvatarChange(file);
+                    }
+                    event.target.value = "";
+                  }}
+                  className="hidden"
+                />
               </div>
               <div>
                 <div className="flex items-center gap-2">
                   <Mail className="size-4 text-muted-foreground" />
                   <span className="text-sm text-foreground">{userEmail}</span>
                 </div>
-                {uploading && <p className="text-xs text-muted-foreground mt-1">{t("common.uploading")}</p>}
               </div>
             </div>
           </CardContent>
@@ -97,7 +102,7 @@ export function ProfileTab({ userEmail }: ProfileTabProps) {
             <SchoolCombobox
               id="school"
               value={profile.school || ""}
-              onChange={(value) => updateProfile({ school: value })}
+              onChange={(value) => onProfileChange({ school: value })}
               variant="field"
               placeholder={t("settings.profile.selectSchool")}
             />
@@ -109,7 +114,8 @@ export function ProfileTab({ userEmail }: ProfileTabProps) {
             </Label>
             <Select
               value={profile.faculty}
-              onValueChange={(value) => updateProfile({ faculty: value })}
+              onValueChange={(value) => onProfileChange({ faculty: value })}
+              disabled={disabled}
             >
               <SelectTrigger id="faculty" className="w-full">
                 <SelectValue placeholder={t("settings.profile.selectFaculty")} />
@@ -138,8 +144,9 @@ export function ProfileTab({ userEmail }: ProfileTabProps) {
               </p>
               <Switch
                 checked={profile.isFirstYear}
+                disabled={disabled}
                 onCheckedChange={(checked) =>
-                  updateProfile({ isFirstYear: checked })
+                  onProfileChange({ isFirstYear: checked })
                 }
               />
             </div>
@@ -159,7 +166,7 @@ export function ProfileTab({ userEmail }: ProfileTabProps) {
                 const next = profile.interests.includes(interest)
                   ? profile.interests.filter((value) => value !== interest)
                   : [...profile.interests, interest];
-                updateProfile({ interests: next });
+                onProfileChange({ interests: next });
               }}
               translationKeyPrefix="categories"
             />

@@ -15,6 +15,12 @@ type ApiNotificationPreferencesListResponse =
   components["schemas"]["NotificationPreferencesListResponse"];
 export type NotificationPreferenceKey = keyof NotificationPreferences;
 
+const NOTIFICATION_PREFERENCE_KEYS = [
+  "morningEmail",
+  "eventReminder",
+  "eventChange",
+] as const satisfies readonly NotificationPreferenceKey[];
+
 const NOTIFICATION_TYPE_BY_KEY: Record<
   NotificationPreferenceKey,
   ApiNotificationPreferenceUpdate["notification_type"]
@@ -44,17 +50,14 @@ export async function fetchNotificationPreferences(): Promise<NotificationPrefer
   };
 }
 
-export async function saveNotificationPreference(
-  key: NotificationPreferenceKey,
-  enabled: boolean,
+export async function saveNotificationPreferences(
+  preferences: NotificationPreferences,
 ): Promise<void> {
   const payload: ApiNotificationPreferencesBulkUpdate = {
-    preferences: [
-      {
+    preferences: NOTIFICATION_PREFERENCE_KEYS.map((key) => ({
         notification_type: NOTIFICATION_TYPE_BY_KEY[key],
-        enabled,
-      },
-    ],
+        enabled: preferences[key],
+      })),
   };
   await api.patch("/notification-preferences", payload);
 }

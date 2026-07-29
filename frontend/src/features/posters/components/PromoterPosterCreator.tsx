@@ -52,7 +52,6 @@ interface PromoterPosterCreatorProps {
   school: string;
   activeSlotsUsed: number;
   activeSlotsLimit: number;
-  disabled?: boolean;
 }
 
 function downloadBlob(blob: Blob, filename: string): void {
@@ -109,7 +108,6 @@ export function PromoterPosterCreator({
   school,
   activeSlotsUsed,
   activeSlotsLimit,
-  disabled = false,
 }: PromoterPosterCreatorProps) {
   const { t } = useTranslation();
   const createPosters = useCreatePromoterPosters();
@@ -243,7 +241,6 @@ export function PromoterPosterCreator({
       <Button
         type="button"
         onClick={() => setOpen(true)}
-        disabled={disabled || remainingSlots === 0}
         data-testid="poster-create-open"
       >
         <Plus />

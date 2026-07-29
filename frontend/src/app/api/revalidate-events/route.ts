@@ -1,7 +1,7 @@
 import { revalidateTag } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 import { eventFeedTag } from "@/features/events/api/eventFeed.server";
-import { ALL_SCHOOLS, isKnownSchool, resolveSchool } from "@/shared/constants/schools";
+import { ALL_SCHOOLS, resolveSchool } from "@/shared/constants/schools";
 
 interface RevalidateEventsRequest {
   school?: string;
@@ -39,9 +39,6 @@ export async function POST(request: NextRequest) {
   }
 
   const school = resolveSchool(body.school ?? request.nextUrl.searchParams.get("school"));
-  if (!isKnownSchool(school)) {
-    return NextResponse.json({ error: "Unknown school" }, { status: 400 });
-  }
 
   // The feed renders per-host at "/", so the tagged fetch cache is the only
   // thing to invalidate - there is no per-school path to revalidate. The

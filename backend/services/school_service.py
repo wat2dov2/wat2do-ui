@@ -1,4 +1,4 @@
-"""School directory helpers for search."""
+"""Database-backed school directory and identity lookups."""
 
 from __future__ import annotations
 
@@ -6,8 +6,9 @@ import re
 import unicodedata
 from typing import Final
 
-from core.allowed_emails import ALLOWED_EMAIL_DOMAINS, _ensure_loaded
-from core.constants.school_mappings import SCHOOLS
+from core.database import get_sb
+from core.tables import SCHOOLS
+from schemas.school import School, SchoolSummary
 
 DEFAULT_SEARCH_LIMIT: Final[int] = 10
 
@@ -20,23 +21,46 @@ def _compact(text: str | None) -> str:
     return re.sub(r"[^a-z0-9]", "", _normalize(text))
 
 
-def _search_index() -> dict[str, tuple[str, ...]]:
-    _ensure_loaded()
-    index: dict[str, set[str]] = {}
+def normalize_school_slug(value: str | None) -> str:
+    return (value or "").strip().lower()
 
-    for slug, school in SCHOOLS.items():
-        terms = {_normalize(slug), _compact(slug), _normalize(school["display_name"])}
-        terms.add(_compact(school["display_name"]))
-        index[slug] = terms
 
-    for domain, slug in ALLOWED_EMAIL_DOMAINS.items():
-        if slug in index:
-            index[slug].add(_normalize(domain))
-            index[slug].add(_compact(domain))
+def get_school(slug: str | None) -> School | None:
+    normalized_slug = normalize_school_slug(slug)
+    if not normalized_slug:
+        return None
+    response = (
+        get_sb()
+        .table(SCHOOLS)
+        .select("slug, name, timezone, recipient_id, semester_start, semester_end")
+        .eq("slug", normalized_slug)
+        .limit(1)
+        .execute()
+    )
+    if not response.data:
+        return None
+    return School.model_validate(response.data[0])
 
-    return {
-        school: tuple(sorted(term for term in terms if term)) for school, terms in index.items()
-    }
+
+def get_school_by_recipient_id(recipient_id: str | None) -> School | None:
+    normalized_recipient_id = (recipient_id or "").strip()
+    if not normalized_recipient_id:
+        return None
+    response = (
+        get_sb()
+        .table(SCHOOLS)
+        .select("slug, name, timezone, recipient_id, semester_start, semester_end")
+        .eq("recipient_id", normalized_recipient_id)
+        .limit(1)
+        .execute()
+    )
+    if not response.data:
+        return None
+    return School.model_validate(response.data[0])
+
+
+def school_exists(slug: str | None) -> bool:
+    return get_school(slug) is not None
 
 
 def _score_term(term: str, query: str, query_compact: str) -> tuple[int, int] | None:
@@ -53,24 +77,42 @@ def _score_term(term: str, query: str, query_compact: str) -> tuple[int, int] | 
     return None
 
 
-def search_schools(query: str, limit: int = DEFAULT_SEARCH_LIMIT) -> list[str]:
+def search_schools(query: str, limit: int = DEFAULT_SEARCH_LIMIT) -> list[SchoolSummary]:
     """Search the school directory using a fuzzy, prefix-friendly match."""
     normalized_query = _normalize(query)
-    if not normalized_query:
-        return []
-
     query_compact = _compact(normalized_query)
-    if not query_compact:
-        return []
+    response = (
+        get_sb()
+        .table(SCHOOLS)
+        .select("slug, name, school_email_domains(domain)")
+        .order("name")
+        .execute()
+    )
 
-    ranked: list[tuple[tuple[int, int, str], str]] = []
-    for school, terms in _search_index().items():
+    ranked: list[tuple[tuple[int, int, str], SchoolSummary]] = []
+    for row in response.data or []:
+        school = SchoolSummary.model_validate(row)
+        if not normalized_query:
+            ranked.append(((0, 0, school.name.casefold()), school))
+            continue
+
+        terms = {
+            _normalize(school.slug),
+            _compact(school.slug),
+            _normalize(school.name),
+            _compact(school.name),
+        }
+        for domain_row in row.get("school_email_domains") or []:
+            domain = domain_row.get("domain")
+            if domain:
+                terms.add(_normalize(domain))
+                terms.add(_compact(domain))
         best_rank: tuple[int, int, str] | None = None
         for term in terms:
             score = _score_term(term, normalized_query, query_compact)
             if score is None:
                 continue
-            candidate = (score[0], score[1], school.casefold())
+            candidate = (score[0], score[1], school.name.casefold())
             if best_rank is None or candidate < best_rank:
                 best_rank = candidate
         if best_rank is not None:
@@ -80,4 +122,11 @@ def search_schools(query: str, limit: int = DEFAULT_SEARCH_LIMIT) -> list[str]:
     return [school for _, school in ranked[:limit]]
 
 
-__all__ = ["DEFAULT_SEARCH_LIMIT", "search_schools"]
+__all__ = [
+    "DEFAULT_SEARCH_LIMIT",
+    "get_school",
+    "get_school_by_recipient_id",
+    "normalize_school_slug",
+    "school_exists",
+    "search_schools",
+]

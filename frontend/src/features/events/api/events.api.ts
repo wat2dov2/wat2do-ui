@@ -40,6 +40,26 @@ export async function fetchEventById(id: number): Promise<Event> {
   return api.get<ApiEventPublicResponse>(`/events/${id}`);
 }
 
+async function fetchUpcomingEvents(
+  school: string,
+  organizationName?: string,
+): Promise<Event[]> {
+  const params = new URLSearchParams({
+    school,
+    sort_by: "date",
+    sort_order: "asc",
+  });
+  if (organizationName) {
+    params.append("organizations", organizationName);
+  }
+  return getPaginatedItems<Event>(`/events/?${params.toString()}`);
+}
+
+/** Every upcoming event for one school, soonest first. */
+export async function fetchSchoolEvents(school: string): Promise<Event[]> {
+  return fetchUpcomingEvents(school);
+}
+
 /**
  * Every upcoming event hosted by one organization, soonest first.
  *
@@ -50,13 +70,7 @@ export async function fetchOrganizationEvents(
   organizationName: string,
   school: string,
 ): Promise<Event[]> {
-  const params = new URLSearchParams({
-    school,
-    sort_by: "date",
-    sort_order: "asc",
-  });
-  params.append("organizations", organizationName);
-  return getPaginatedItems<Event>(`/events/?${params.toString()}`);
+  return fetchUpcomingEvents(school, organizationName);
 }
 
 export async function createEventAPI(eventData: EventFormData): Promise<Event> {

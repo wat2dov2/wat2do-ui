@@ -1,7 +1,11 @@
 from services.instagram_publishing.captions import build_caption
 
 
-def test_build_caption_uses_canonical_handle_time_location_and_cta():
+def test_build_caption_uses_canonical_handle_time_location_and_cta(monkeypatch):
+    monkeypatch.setattr(
+        "services.instagram_publishing.captions.resolve_school_timezone",
+        lambda _school: "America/Toronto",
+    )
     caption = build_caption(
         [
             {
@@ -18,11 +22,17 @@ def test_build_caption_uses_canonical_handle_time_location_and_cta():
     assert "Midnight Breakfast - @verifiedclub" in caption
     assert "Fri, Jul 24 · 7:30 PM" in caption
     assert "Student Life Centre" in caption
+    assert "Fresh events at utm" in caption
+    assert "University of Toronto Mississauga" not in caption
     assert "final, up-to-date" in caption
     assert "https://utm.wat2do.io" in caption
 
 
-def test_build_caption_preserves_school_url_within_instagram_limit():
+def test_build_caption_preserves_school_url_within_instagram_limit(monkeypatch):
+    monkeypatch.setattr(
+        "services.instagram_publishing.captions.resolve_school_timezone",
+        lambda _school: "America/Toronto",
+    )
     event = {
         "title": "Long event title " * 20,
         "organization": "Organization " * 20,

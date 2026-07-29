@@ -11,15 +11,21 @@ import {
 } from "@/shared/ui/select";
 import { AnimatedThemeToggler } from "@/shared/components/AnimatedThemeToggler";
 import { LanguageSelector } from "@/shared/ui/language-selector";
-import { useUIStore } from "@/shared/store/ui.store";
+import type { AppearanceSettingsDraft } from "@/features/settings/hooks/useSettingsForm";
 import type { ViewMode } from "@/shared/types";
 
-export function AppearanceTab() {
+interface AppearanceTabProps {
+  appearance: AppearanceSettingsDraft;
+  disabled: boolean;
+  onAppearanceChange: (updates: Partial<AppearanceSettingsDraft>) => void;
+}
+
+export function AppearanceTab({
+  appearance,
+  disabled,
+  onAppearanceChange,
+}: AppearanceTabProps) {
   const { t } = useTranslation();
-  // Subscribe directly to avoid a middleman prop-drill through SettingsPage.
-  // Each selector is narrow so only the consuming slot re-renders.
-  const viewMode = useUIStore((s) => s.viewMode);
-  const setViewMode = useUIStore((s) => s.setViewMode);
 
   return (
     <div className="space-y-6">
@@ -34,7 +40,11 @@ export function AppearanceTab() {
                 {t("settings.appearance.colorThemeDesc")}
               </p>
             </div>
-            <AnimatedThemeToggler />
+            <AnimatedThemeToggler
+              checked={appearance.isDark}
+              disabled={disabled}
+              onCheckedChange={(isDark) => onAppearanceChange({ isDark })}
+            />
           </div>
         </CardContent>
       </Card>
@@ -50,7 +60,13 @@ export function AppearanceTab() {
                 {t("settings.appearance.languageDescription")}
               </p>
             </div>
-            <LanguageSelector />
+            <LanguageSelector
+              value={appearance.language}
+              disabled={disabled}
+              onValueChange={(language) =>
+                onAppearanceChange({ language })
+              }
+            />
           </div>
         </CardContent>
       </Card>
@@ -65,8 +81,11 @@ export function AppearanceTab() {
               {t("settings.appearance.defaultViewModeDesc")}
             </p>
             <Select
-              value={viewMode}
-              onValueChange={(value) => setViewMode(value as ViewMode)}
+              value={appearance.viewMode}
+              disabled={disabled}
+              onValueChange={(value) =>
+                onAppearanceChange({ viewMode: value as ViewMode })
+              }
             >
               <SelectTrigger id="view-mode" className="w-full">
                 <SelectValue />

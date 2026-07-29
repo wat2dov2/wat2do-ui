@@ -1,64 +1,44 @@
 import pytest
 
 from services.instagram_publishing import curation
-from services.instagram_publishing.curation import _validate_scores
+from services.instagram_publishing.curation import _validate_selected_ids
 
 
 def _candidates():
     return [
-        {"id": 10, "source_image_url": "https://example.com/10.jpg"},
-        {"id": 11, "source_image_url": "https://example.com/11.jpg"},
+        {"id": 10, "title": "Study Jam", "source_image_url": None},
+        {"id": 11, "title": "Arts Night", "source_image_url": "https://example.com/11.jpg"},
     ]
 
 
-def test_validate_scores_recomputes_weighted_overall_score():
-    result = _validate_scores(
-        {
-            "events": [
-                {
-                    "event_id": 10,
-                    "visual_score": 10,
-                    "excitement_score": 8,
-                    "audience_score": 6,
-                    "timing_score": 4,
-                },
-                {
-                    "event_id": 11,
-                    "visual_score": 5,
-                    "excitement_score": 5,
-                    "audience_score": 5,
-                    "timing_score": 5,
-                },
-            ]
-        },
+def test_validate_selected_ids_preserves_the_models_order():
+    result = _validate_selected_ids(
+        {"event_ids": [11, 10]},
         _candidates(),
+        maximum_count=2,
     )
 
-    assert result == [
-        {"event_id": 10, "overall_score": 8.0},
-        {"event_id": 11, "overall_score": 5.0},
-    ]
+    assert result == [11, 10]
 
 
-def test_validate_scores_rejects_missing_candidate():
-    with pytest.raises(ValueError, match="every candidate"):
-        _validate_scores(
-            {
-                "events": [
-                    {
-                        "event_id": 10,
-                        "visual_score": 8,
-                        "excitement_score": 8,
-                        "audience_score": 8,
-                        "timing_score": 8,
-                    }
-                ]
-            },
+@pytest.mark.parametrize(
+    ("payload", "maximum_count", "message"),
+    [
+        ({"event_ids": [10, 10]}, 2, "repeated"),
+        ({"event_ids": [12]}, 2, "unknown"),
+        ({"event_ids": [10, 11]}, 1, "too many"),
+    ],
+)
+def test_validate_selected_ids_rejects_invalid_selections(payload, maximum_count, message):
+    with pytest.raises(ValueError, match=message):
+        _validate_selected_ids(
+            payload,
             _candidates(),
+            maximum_count=maximum_count,
         )
 
 
-def test_rank_candidates_uses_responses_structured_output_and_high_detail(monkeypatch):
+def test_select_candidate_ids_uses_text_only_structured_output(monkeypatch):
     calls = []
 
     class FakeResponses:
@@ -69,16 +49,7 @@ def test_rank_candidates_uses_responses_structured_output_and_high_detail(monkey
                 (),
                 {
                     "output_parsed": curation._CurationResponse(
-                        events=[
-                            curation._CurationScore(
-                                event_id=candidate["id"],
-                                visual_score=8,
-                                excitement_score=7,
-                                audience_score=6,
-                                timing_score=5,
-                            )
-                            for candidate in _candidates()
-                        ]
+                        event_ids=[11, 10],
                     )
                 },
             )()
@@ -90,12 +61,13 @@ def test_rank_candidates_uses_responses_structured_output_and_high_detail(monkey
     monkeypatch.setattr(curation, "OpenAI", FakeOpenAI)
     monkeypatch.setattr(curation.settings, "openai_api_key", "test-key")
 
-    result = curation.rank_candidates(_candidates())
+    result = curation.select_candidate_ids(_candidates(), maximum_count=2)
 
-    assert [row["event_id"] for row in result] == [10, 11]
+    assert result == [11, 10]
     assert calls[0]["text_format"] is curation._CurationResponse
     assert calls[0]["store"] is False
     assert calls[0]["reasoning"] == {"effort": "low"}
-    images = [part for part in calls[0]["input"][0]["content"] if part["type"] == "input_image"]
-    assert len(images) == 2
-    assert all(image["detail"] == "high" for image in images)
+    content = calls[0]["input"][0]["content"]
+    assert [part["type"] for part in content] == ["input_text"]
+    assert '"event_id": 10' in content[0]["text"]
+    assert "source_image_url" not in content[0]["text"]

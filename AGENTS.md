@@ -102,6 +102,13 @@ Use zero warm-ups when the goal is first-observed-request behavior.
 Every successful endpoint result must report mean, median, p95, minimum, and maximum
 latency regardless of the configured sample count.
 
+### Database schema and seed maintenance
+
+Treat `backend/supabase/seed.sql` as part of every database schema change.
+Audit it and update it in the same change whenever tables, columns, constraints,
+or required relationships used by seeded data change.
+Verify the migration and seed together with `cd backend && supabase db reset`.
+
 ---
 
 ## Prime directive

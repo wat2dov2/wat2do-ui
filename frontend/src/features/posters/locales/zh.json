@@ -26,7 +26,7 @@
     "enrollment": {
       "pausedTitle": "推广计划已暂停",
       "pausedDescription": "现有海报和收益仍可查看，但新加入和新建海报暂时暂停。",
-      "pausedMaintenanceDescription": "新海报创建已暂停，但你仍可更新收款邮箱并接受当前条款。",
+      "pausedMaintenanceDescription": "新海报创建已暂停，但你仍可更新收款邮箱。",
       "readyTitle": "准备帮助你的校园了吗？",
       "readyDescription": "登录后即可使用学校账户立即加入。",
       "signInToJoin": "登录并加入",
@@ -36,19 +36,16 @@
       "enrolledTitle": "你已加入计划",
       "enrolled": "已加入",
       "enrolledDescription": "你的推广者仪表板已准备好。",
-      "openPosters": "打开我的海报",
       "settingsTitle": "推广计划",
       "settingsDescription": "查看加入状态，并保持 Interac 电子转账邮箱为最新。",
       "joinTitle": "加入推广计划",
-      "joinDescription": "加入立即生效，只需提供收款邮箱并接受当前条款。",
-      "termsUpdateTitle": "查看更新后的条款",
-      "termsUpdateDescription": "创建下一张海报前，请接受当前推广者服务条款。",
+      "joinDescription": "加入立即生效，只需提供收款邮箱并接受推广者条款。",
       "payoutEmail": "收款邮箱",
       "payoutEmailPlaceholder": "you@example.com",
       "payoutEmailDescription": "每月 Interac 电子转账将发送到此邮箱。",
       "acceptTermsPrefix": "接受前请阅读完整条款。",
-      "termsAccepted": "当前条款已接受。",
-      "termsLink": "推广者服务条款，版本 {{version}}",
+      "termsAccepted": "你在加入推广计划时已接受推广者条款。",
+      "termsLink": "推广者服务条款",
       "error": "无法更新你的推广计划加入信息。",
       "trustMonthly": "款项将在每月第一天通过 Interac 电子转账发送。",
       "trustActivation": "激活扫码用于确认放置位置，不产生收益。",
@@ -61,8 +58,8 @@
     "dashboard": {
       "title": "我的海报",
       "description": "创建、张贴并跟踪 Wat2Do 官方海报。",
+      "discordHelp": "需要帮助？加入 Discord。",
       "enrollmentRequired": "加入推广计划后即可创建和管理官方海报。",
-      "loading": "正在加载海报仪表板……",
       "loadErrorTitle": "无法加载仪表板",
       "loadErrorDescription": "请稍后重试。你的海报和收益未被更改。",
       "pendingEarnings": "本月待结算",
@@ -75,10 +72,7 @@
       "mapTitle": "校园海报地图",
       "mapDescription": "你的已放置海报位置精确且可选择，其他校园覆盖仅显示隐私保护后的近似位置。",
       "pausedTitle": "海报创建已暂停",
-      "pausedDescription": "仪表板、下载、收益和付款记录仍可使用。",
-      "termsTitle": "接受当前条款后才能创建海报",
-      "termsDescription": "查看最新条款期间，现有海报仍会正常工作。",
-      "reviewTerms": "查看推广者设置"
+      "pausedDescription": "仪表板、下载、收益和付款记录仍可使用。"
     },
     "create": {
       "open": "创建海报",
@@ -153,12 +147,12 @@
     },
     "terms": {
       "title": "推广者服务条款",
-      "description": "当前计划条款，版本 {{version}}。",
+      "description": "请查看推广计划条款。",
       "scrollToAccept": "请滚动阅读全部条款后再接受。",
       "accept": "接受条款",
       "eligibility": {
         "title": "资格与加入",
-        "body": "你必须使用自己的 Wat2Do 账户，在个人资料中保留学校信息，提供可接收 Interac 电子转账的邮箱，并接受当前条款。加入计划不保证未来始终有海报可创建。"
+        "body": "你必须使用自己的 Wat2Do 账户，在个人资料中保留学校信息，提供可接收 Interac 电子转账的邮箱，并在加入时接受推广者条款。加入计划不保证未来始终有海报可创建。"
       },
       "posters": {
         "title": "官方海报与放置位置",

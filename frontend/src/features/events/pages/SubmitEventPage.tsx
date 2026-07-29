@@ -10,7 +10,6 @@ import { submitEventForReview } from "@/shared/api/submissions.api";
 import { ROUTES } from "@/shared/constants/routes";
 import {
   getCurrentSchool,
-  getSchoolDisplayName,
   resolveWritableSchool,
 } from "@/shared/constants/schools";
 import { loadUserProfile } from "@/features/auth/api/userRepository";
@@ -29,7 +28,6 @@ export function SubmitEventPage() {
     getCurrentSchool(),
     loadUserProfile()?.school,
   );
-  const schoolName = getSchoolDisplayName(school);
   const userCredits = useCreditsStore((state) => state.userCredits);
   const addCredits = useCreditsStore((state) => state.addCredits);
   const promoteEvent = useCreditsStore((state) => state.promoteEvent);
@@ -74,7 +72,7 @@ export function SubmitEventPage() {
             back={{ href: ROUTES.HOME, label: t("events.allEvents") }}
             title={t("events.createEvent")}
             description={t("events.submitEventSchoolDescription", {
-              school: schoolName,
+              school,
             })}
           />
           <SubmitEventFlow

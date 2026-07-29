@@ -47,7 +47,7 @@ from schemas.instagram_publishing import (
 from services import event_query
 from services.instagram_publishing.captions import build_caption
 from services.instagram_publishing.credentials import load_account_credentials
-from services.instagram_publishing.curation import rank_candidates
+from services.instagram_publishing.curation import select_candidate_ids
 from services.instagram_publishing.meta import MetaInstagramClient
 from services.instagram_publishing.rendering import render_cover_asset, render_event_asset
 from services.school_context import resolve_school_timezone
@@ -59,10 +59,7 @@ _SUCCESSFUL_CUTOFF_STATUSES = (
     INSTAGRAM_BATCH_PUBLISHED,
     INSTAGRAM_BATCH_EMPTY,
 )
-_EVENT_COLUMNS = (
-    "id,title,description,location,price,food,registration,"
-    "source_image_url,source_url,category,organization,ig_handle,school,added_at"
-)
+_EVENT_COLUMNS = "id,title,description,location,organization,ig_handle"
 
 
 def generate_due_batches(
@@ -285,7 +282,12 @@ def _generate_account_batch(
             _complete_empty_batch(batch["id"])
             return "empty"
 
-        selected = _select_events(candidates, rank_candidates(candidates))
+        candidate_ids = select_candidate_ids(
+            candidates,
+            maximum_count=_CONTROL.maximum_event_slides,
+        )
+        candidates_by_id = {int(candidate["id"]): candidate for candidate in candidates}
+        selected = [candidates_by_id[event_id] for event_id in candidate_ids]
         if not selected:
             _complete_empty_batch(batch["id"])
             return "empty"
@@ -345,9 +347,7 @@ def _load_candidates(
         .table(EVENTS)
         .select(_EVENT_COLUMNS)
         .eq("school", school)
-        .eq("ingestion_source", "instagram_scraper")
         .eq("cancelled", False)
-        .not_.is_("source_image_url", "null")
         .gte("added_at", window_start.isoformat())
         .lt("added_at", window_end.isoformat())
         .order("added_at", desc=True)
@@ -442,36 +442,6 @@ def _with_occurrence(
         # school-to-timezone map.
         "tz": occurrence.get("tz") or resolve_school_timezone(school),
     }
-
-
-def _select_events(
-    candidates: list[dict[str, Any]],
-    scores: list[dict[str, Any]],
-) -> list[dict[str, Any]]:
-    candidates_by_id = {int(candidate["id"]): candidate for candidate in candidates}
-    ranked = sorted(
-        scores,
-        key=lambda score: (
-            -float(score["overall_score"]),
-            candidates_by_id[int(score["event_id"])]["dtstart_utc"],
-        ),
-    )
-    selected = []
-    per_organization: dict[str, int] = defaultdict(int)
-    for score in ranked:
-        if float(score["overall_score"]) < _CONTROL.minimum_ai_score:
-            continue
-        candidate = candidates_by_id[int(score["event_id"])]
-        organization_key = str(
-            candidate.get("organization") or candidate.get("ig_handle") or candidate["id"]
-        ).casefold()
-        if per_organization[organization_key] >= 2:
-            continue
-        per_organization[organization_key] += 1
-        selected.append(candidate)
-        if len(selected) >= _CONTROL.maximum_event_slides:
-            break
-    return selected
 
 
 def _publish_claimed_batch(

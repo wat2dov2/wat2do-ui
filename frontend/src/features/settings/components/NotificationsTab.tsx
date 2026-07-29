@@ -1,21 +1,35 @@
 import { useTranslation } from "react-i18next";
-import { useNotifications } from "@/features/settings/hooks/useNotifications";
+import type {
+  NotificationPreferenceKey,
+  NotificationPreferences,
+} from "@/features/settings/api/notificationPreferences.api";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent } from "@/shared/ui/card";
 import { Label } from "@/shared/ui/label";
 import { Separator } from "@/shared/ui/separator";
 import { Switch } from "@/shared/ui/switch";
 
-export function NotificationsTab() {
+interface NotificationsTabProps {
+  preferences: NotificationPreferences;
+  isLoading: boolean;
+  isError: boolean;
+  disabled: boolean;
+  onRetry: () => void;
+  onPreferenceChange: (
+    key: NotificationPreferenceKey,
+    enabled: boolean,
+  ) => void;
+}
+
+export function NotificationsTab({
+  preferences,
+  isLoading,
+  isError,
+  disabled,
+  onRetry,
+  onPreferenceChange,
+}: NotificationsTabProps) {
   const { t } = useTranslation();
-  const {
-    preferences,
-    isLoading,
-    isError,
-    isSaving,
-    retry,
-    updatePreference,
-  } = useNotifications();
 
   if (isError) {
     return (
@@ -24,7 +38,7 @@ export function NotificationsTab() {
           <p className="text-sm text-destructive">
             {t("settings.notifications.loadFailed")}
           </p>
-          <Button type="button" variant="secondary" onClick={() => void retry()}>
+          <Button type="button" variant="secondary" onClick={onRetry}>
             {t("settings.notifications.retry")}
           </Button>
         </CardContent>
@@ -32,7 +46,7 @@ export function NotificationsTab() {
     );
   }
 
-  const disabled = isLoading || isSaving || !preferences;
+  const controlsDisabled = isLoading || disabled;
   return (
     <Card>
       <CardContent className="space-y-6">
@@ -40,10 +54,10 @@ export function NotificationsTab() {
           id="morning-email"
           label={t("settings.notifications.morningEmail")}
           description={t("settings.notifications.morningEmailDesc")}
-          checked={preferences?.morningEmail ?? false}
-          disabled={disabled}
+          checked={preferences.morningEmail}
+          disabled={controlsDisabled}
           onCheckedChange={(checked) =>
-            updatePreference("morningEmail", checked)
+            onPreferenceChange("morningEmail", checked)
           }
         />
         <Separator />
@@ -51,10 +65,10 @@ export function NotificationsTab() {
           id="event-reminder"
           label={t("settings.notifications.eventReminder")}
           description={t("settings.notifications.eventReminderDesc")}
-          checked={preferences?.eventReminder ?? false}
-          disabled={disabled}
+          checked={preferences.eventReminder}
+          disabled={controlsDisabled}
           onCheckedChange={(checked) =>
-            updatePreference("eventReminder", checked)
+            onPreferenceChange("eventReminder", checked)
           }
         />
         <Separator />
@@ -62,9 +76,11 @@ export function NotificationsTab() {
           id="event-change"
           label={t("settings.notifications.eventChange")}
           description={t("settings.notifications.eventChangeDesc")}
-          checked={preferences?.eventChange ?? false}
-          disabled={disabled}
-          onCheckedChange={(checked) => updatePreference("eventChange", checked)}
+          checked={preferences.eventChange}
+          disabled={controlsDisabled}
+          onCheckedChange={(checked) =>
+            onPreferenceChange("eventChange", checked)
+          }
         />
       </CardContent>
     </Card>

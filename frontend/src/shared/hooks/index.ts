@@ -12,3 +12,4 @@ export * from "./useMutableSearchParams";
 export * from "./useMouseDownPress";
 export * from "./useDebouncedCallback";
 export * from "./useNewItemAnimationIndexes";
+export * from "./useSchoolDirectory";

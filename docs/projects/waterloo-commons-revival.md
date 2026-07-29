@@ -9,12 +9,12 @@ The standalone `waterloo-commons` application has been retired.
 Its public event submission path now lives at `wat2do.io/events/submit`.
 Its human review workflow now lives in the role-protected Wat2Do admin panel at `wat2do.io/admin/instagram`.
 
-The production workflow uses events written by the Instagram scraper as its only input.
-Each eligible event must have `ingestion_source = 'instagram_scraper'`, a Supabase-hosted source image, and an upcoming occurrence within the configured lead-time window.
+The production workflow considers every active event added for the account's school.
+Each eligible event must be added during the batch window and have an upcoming occurrence within the configured lead-time window.
 
 At 9 AM America/Toronto, the private backend job refreshes expiring Instagram tokens and creates one batch per configured Instagram account.
-The job uses a vision-capable model to score visual quality, event excitement, audience appeal, and timing.
-It selects up to nine events, writes a factual caption, and stores the review batch in Supabase.
+The job sends event metadata to a text model, which returns the ordered IDs of up to nine interesting events.
+It writes a factual caption and stores those event IDs in the review batch.
 
 A batch stores only its scrape run, its copy, and the events on the carousel in order.
 Slide images are not stored: they are generated from live event data at publish time, so the events table is the single source of truth for everything a slide shows.

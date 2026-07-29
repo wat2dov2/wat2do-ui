@@ -2,7 +2,48 @@
 
 from datetime import datetime
 
+import pytest
+
+from schemas.school import School
 from services import school_context
+
+
+@pytest.fixture(autouse=True)
+def _school_directory(monkeypatch):
+    schools = {
+        "uwaterloo": School(
+            slug="uwaterloo",
+            name="University of Waterloo",
+            timezone="America/Toronto",
+            semester_start="2026-01-01",
+            semester_end="2026-04-30",
+        ),
+        "upenn": School(
+            slug="upenn",
+            name="University of Pennsylvania",
+            timezone="America/New_York",
+        ),
+        "dalhousie": School(
+            slug="dalhousie",
+            name="Dalhousie University",
+            timezone="America/Halifax",
+        ),
+        "ualberta": School(
+            slug="ualberta",
+            name="University of Alberta",
+            timezone="America/Edmonton",
+        ),
+        "nyu": School(
+            slug="nyu",
+            name="New York University",
+            timezone="America/New_York",
+        ),
+    }
+    monkeypatch.setattr(
+        school_context.school_service,
+        "get_school",
+        lambda slug: schools.get(slug),
+    )
 
 
 def test_canonical_school_key_normalizes_slug():
@@ -66,10 +107,3 @@ def test_current_semester_end_uses_waterloo_only():
     )
     assert school_context.current_semester_end("upenn", now=datetime(2026, 3, 15)) is None
     assert school_context.current_semester_end("Unknown", now=datetime(2026, 5, 1)) is None
-
-
-def test_school_display_name_resolves_slug():
-    assert school_context.school_display_name("uwaterloo") == "University of Waterloo"
-    assert school_context.school_display_name("utm") == "University of Toronto Mississauga"
-    assert school_context.school_display_name("dalhousie") == "Dalhousie University"
-    assert school_context.school_display_name("  Unknown  ") == "unknown"

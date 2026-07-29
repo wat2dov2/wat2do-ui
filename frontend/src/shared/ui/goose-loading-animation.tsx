@@ -18,6 +18,7 @@ export function GooseLoadingAnimation({ className }: GooseLoadingAnimationProps)
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 1000 700"
       className={cn("h-36 w-52 sm:h-44 sm:w-64", className)}
+      data-slot="goose-loading-animation"
       aria-hidden="true"
       focusable="false"
     >

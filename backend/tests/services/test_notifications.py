@@ -3,6 +3,7 @@ from unittest.mock import MagicMock
 from zoneinfo import ZoneInfo
 
 import httpx
+import pytest
 
 from core.config import settings
 from core.constants import (
@@ -23,6 +24,15 @@ from services.notifications import (
 )
 
 USER_ID = "11111111-1111-1111-1111-111111111111"
+
+
+@pytest.fixture(autouse=True)
+def _school_timezone(monkeypatch):
+    def resolve_timezone(_user):
+        return ZoneInfo("America/Toronto")
+
+    monkeypatch.setattr(morning_email, "resolve_user_timezone", resolve_timezone)
+    monkeypatch.setattr(event_reminder, "resolve_user_timezone", resolve_timezone)
 
 
 def _user(**overrides) -> dict:

@@ -36,7 +36,9 @@ END $$;
 CREATE INDEX IF NOT EXISTS idx_events_club_id
     ON public.events (club_id);
 
-CREATE OR REPLACE VIEW public.events_listing
+DROP VIEW IF EXISTS public.events_listing;
+
+CREATE VIEW public.events_listing
 WITH (security_invoker = true) AS
 SELECT
     events.*,

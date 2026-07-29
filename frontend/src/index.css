@@ -167,7 +167,7 @@
   width: var(--page-doodle-size);
   aspect-ratio: 1;
   place-self: center;
-  background: var(--page-school-primary);
+  background: var(--doodle-color, var(--page-school-primary));
   mask-image: var(--doodle-icon);
   mask-position: center;
   mask-repeat: no-repeat;

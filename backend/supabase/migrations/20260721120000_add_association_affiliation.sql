@@ -3,10 +3,8 @@
 -- `organization_type` held {WUSA, Independent, Other, Social}: a Waterloo-specific
 -- string that conflated "which student association" with "affiliated at all".
 -- Every school has ~1 association clubs can affiliate with, so affiliation is a
--- boolean scoped by the row's existing `school` slug.  Which association a slug
--- maps to (short name, wordmark asset) is static per-school metadata and lives in
--- core.constants.school_mappings, matching 20260629160000 which moved school
--- metadata out of the DB.
+-- boolean scoped by the row's existing `school` slug. Which association a slug
+-- maps to remains a frontend presentation concern.
 --
 -- `organization_type` is dropped in a follow-up migration once this has baked.
 --

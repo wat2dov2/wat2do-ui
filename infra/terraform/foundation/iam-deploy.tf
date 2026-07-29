@@ -47,7 +47,6 @@ data "aws_iam_policy_document" "github_deploy" {
       "ecs:DescribeTasks",
       "ecs:ListTasks",
       "ecs:RegisterTaskDefinition",
-      "ecs:RunTask",
       "ecs:UpdateService",
     ]
     resources = ["*"]
@@ -60,7 +59,6 @@ data "aws_iam_policy_document" "github_deploy" {
     resources = [
       "arn:${data.aws_partition.current.partition}:iam::${data.aws_caller_identity.current.account_id}:role/wat2do-production-ecs-execution",
       "arn:${data.aws_partition.current.partition}:iam::${data.aws_caller_identity.current.account_id}:role/wat2do-production-ecs-task",
-      "arn:${data.aws_partition.current.partition}:iam::${data.aws_caller_identity.current.account_id}:role/wat2do-production-jobs-task",
     ]
   }
 

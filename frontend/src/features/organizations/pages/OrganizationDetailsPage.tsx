@@ -20,7 +20,7 @@ import { OrganizationMembershipActions } from "@/features/organizations/componen
 import { getOrganizationById } from "@/features/organizations/api/organizations.api";
 import { useSavedOrganizationsStore } from "@/features/organizations/store/savedOrganizations.store";
 import { ROUTES } from "@/shared/constants/routes";
-import { getSchoolDisplayName } from "@/shared/constants/schools";
+import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 import { Container, PageHeader, Section, Stack } from "@/shared/layout";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import { sanitizeHref } from "@/shared/utils/url";
@@ -42,6 +42,7 @@ function OrganizationDetailsContent({
 }: OrganizationDetailsContentProps) {
   const { t } = useTranslation();
   const { isAuthenticated } = useAuthState();
+  const { getSchoolName } = useSchoolDirectory();
   const [showClaimModal, setShowClaimModal] = useState(false);
   const toggleSave = useSavedOrganizationsStore(
     (state) => state.toggleSaveOrganization,
@@ -64,7 +65,7 @@ function OrganizationDetailsContent({
               label: t("organizations.allOrganizations"),
             }}
             title={organization.organization_name}
-            description={getSchoolDisplayName(organization.school)}
+            description={getSchoolName(organization.school)}
             actions={
               <Stack
                 direction="horizontal"

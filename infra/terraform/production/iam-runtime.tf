@@ -38,8 +38,3 @@ resource "aws_iam_role" "ecs_task" {
   name               = "wat2do-production-ecs-task"
   assume_role_policy = data.aws_iam_policy_document.ecs_execution_assume_role.json
 }
-
-resource "aws_iam_role" "jobs_task" {
-  name               = "wat2do-production-jobs-task"
-  assume_role_policy = data.aws_iam_policy_document.ecs_execution_assume_role.json
-}

@@ -341,6 +341,7 @@
   },
   "schools": {
     "school": "School",
+    "allSchools": "All Schools",
     "selectSchool": "Select school",
     "searchPlaceholder": "Search schools...",
     "noSchoolFound": "No school found.",

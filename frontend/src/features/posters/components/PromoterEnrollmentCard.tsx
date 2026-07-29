@@ -53,8 +53,7 @@ export function PromoterEnrollmentCard({
   );
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [termsOpen, setTermsOpen] = useState(false);
-  const requiresTermsAcceptance =
-    !promoter.isEnrolled || !promoter.hasCurrentTerms;
+  const requiresTermsAcceptance = !promoter.isEnrolled;
 
   if (
     !promoter.isProgramEnabled &&
@@ -118,24 +117,14 @@ export function PromoterEnrollmentCard({
         <CardHeader>
           <CardTitle>{t("posters.enrollment.enrolledTitle")}</CardTitle>
           <CardAction>
-            <Badge variant="secondary">
+            <Badge variant="success">
               {t("posters.enrollment.enrolled")}
             </Badge>
           </CardAction>
           <CardDescription>
-            {promoter.hasCurrentTerms
-              ? t("posters.enrollment.enrolledDescription")
-              : t("posters.enrollment.termsUpdateDescription")}
+            {t("posters.enrollment.enrolledDescription")}
           </CardDescription>
         </CardHeader>
-        <CardFooter>
-          <Button asChild>
-            <Link href={ROUTES.POSTERS}>
-              <QrCode />
-              {t("posters.enrollment.openPosters")}
-            </Link>
-          </Button>
-        </CardFooter>
       </Card>
     );
   }
@@ -168,7 +157,7 @@ export function PromoterEnrollmentCard({
             </CardTitle>
             {promoter.isEnrolled && (
               <CardAction>
-                <Badge variant="secondary">
+                <Badge variant="success">
                   {t("posters.enrollment.enrolled")}
                 </Badge>
               </CardAction>
@@ -187,18 +176,6 @@ export function PromoterEnrollmentCard({
                   <AlertTitle>{t("posters.enrollment.pausedTitle")}</AlertTitle>
                   <AlertDescription>
                     {t("posters.enrollment.pausedMaintenanceDescription")}
-                  </AlertDescription>
-                </Alert>
-              )}
-
-              {!promoter.hasCurrentTerms && promoter.isEnrolled && (
-                <Alert variant="warning">
-                  <QrCode />
-                  <AlertTitle>
-                    {t("posters.enrollment.termsUpdateTitle")}
-                  </AlertTitle>
-                  <AlertDescription>
-                    {t("posters.enrollment.termsUpdateDescription")}
                   </AlertDescription>
                 </Alert>
               )}
@@ -235,9 +212,7 @@ export function PromoterEnrollmentCard({
                   onClick={() => setTermsOpen(true)}
                   data-testid="promoter-terms-open"
                 >
-                  {t("posters.enrollment.termsLink", {
-                    version: promoterProgram.tosVersion,
-                  })}
+                  {t("posters.enrollment.termsLink")}
                 </Button>
               </Field>
 
@@ -287,13 +262,6 @@ export function PromoterEnrollmentCard({
                   {t("posters.enrollment.discord")}
                 </a>
               </Button>
-              {promoter.isEnrolled && (
-                <Button asChild variant="ghost">
-                  <Link href={ROUTES.POSTERS}>
-                    {t("posters.enrollment.openPosters")}
-                  </Link>
-                </Button>
-              )}
             </Stack>
           </CardFooter>
         </Card>
@@ -301,7 +269,11 @@ export function PromoterEnrollmentCard({
       <PromoterTermsDialog
         open={termsOpen}
         onOpenChange={setTermsOpen}
-        onAccept={() => setAcceptTerms(true)}
+        onAccept={
+          requiresTermsAcceptance
+            ? () => setAcceptTerms(true)
+            : undefined
+        }
       />
     </>
   );

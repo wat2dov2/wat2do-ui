@@ -3420,6 +3420,13 @@ export interface components {
              */
             status: "saved" | "unsaved";
         };
+        /** SchoolSummary */
+        SchoolSummary: {
+            /** Slug */
+            slug: string;
+            /** Name */
+            name: string;
+        };
         /** SendOtpRequest */
         SendOtpRequest: {
             /**
@@ -6514,7 +6521,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": string[];
+                    "application/json": components["schemas"]["SchoolSummary"][];
                 };
             };
             /** @description Validation Error */

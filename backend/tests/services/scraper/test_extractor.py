@@ -9,6 +9,7 @@ the model returns unexpected shapes.
 
 import pytest
 
+from services.scraper import extractor
 from services.scraper.extractor import _clean_event, _parse_model_json
 
 # ── _parse_model_json ────────────────────────────────────────────────
@@ -48,6 +49,50 @@ def test_parse_model_json_handles_null_response():
     """The prompt says ``return null`` when no event is in the post -
     json.loads("null") returns None, and the caller drops it."""
     assert _parse_model_json("null") is None
+
+
+def test_extraction_prompt_uses_school_slug(monkeypatch):
+    calls = []
+    monkeypatch.setattr(
+        extractor,
+        "resolve_school_timezone",
+        lambda _school: "America/Vancouver",
+    )
+    monkeypatch.setattr(extractor, "current_semester_end", lambda *_args, **_kwargs: None)
+
+    class FakeCompletions:
+        def create(self, **kwargs):
+            calls.append(kwargs)
+            message = type("Message", (), {"content": "null"})()
+            choice = type("Choice", (), {"message": message})()
+            return type("Response", (), {"choices": [choice]})()
+
+    fake_client = type(
+        "Client",
+        (),
+        {
+            "chat": type(
+                "Chat",
+                (),
+                {"completions": FakeCompletions()},
+            )()
+        },
+    )()
+    monkeypatch.setattr(extractor, "_client", lambda: fake_client)
+
+    assert (
+        extractor.extract_events_from_post(
+            caption_text="Campus event",
+            image_urls=[],
+            post_created_at=None,
+            school=" UBC ",
+        )
+        == []
+    )
+
+    prompt = calls[0]["messages"][1]["content"][0]["text"]
+    assert "This post is from ubc." in prompt
+    assert "University of British Columbia" not in prompt
 
 
 # ── _clean_event ──────────────────────────────────────────────────────

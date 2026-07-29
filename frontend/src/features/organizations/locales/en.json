@@ -22,7 +22,6 @@
     "joinRequestSubmittedDesc": "Your request to join \"{{name}}\" has been sent to the organization management team.",
     "claimOrganization": "Join Organization",
     "applyToJoin": "Apply to Join",
-    "description": "Discover student organizations at University of Waterloo",
     "loadFailed": "We could not load this organization. Please try again.",
     "saveFailed": "We could not save this organization. Please try again.",
     "searchPlaceholder": "Search organizations...",

@@ -15,7 +15,6 @@ import {
   TableRow,
 } from "@/shared/ui/table";
 import type { Organization, OrganizationStatus, SubmissionStatus } from "@/shared/types";
-import { getSchoolDisplayName } from "@/shared/constants/schools";
 import { AddOrganizationModal } from "@/features/organizations";
 import { useAdminOrganizationsPage } from "@/features/admin/hooks/useAdminOrganizationsPage";
 import {
@@ -44,6 +43,7 @@ import {
   getOrganizationTypeFilterOptions,
   INDEPENDENT_ORGANIZATION_TYPE,
 } from "@/shared/data/organizationTypeAssets";
+import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 
 const ITEMS_PER_PAGE = ADMIN_ITEMS_PER_PAGE;
 const ALL_ORGANIZATION_TYPES_VALUE = "__all_organization_types__";
@@ -56,6 +56,7 @@ export function AdminOrganizationsPage({
   onBack,
 }: AdminOrganizationsPageProps) {
   const { t } = useTranslation();
+  const { getSchoolName } = useSchoolDirectory();
   const {
     searchQuery,
     organizationType,
@@ -428,7 +429,7 @@ export function AdminOrganizationsPage({
                       {organization.organization_name}
                     </div>
                     <div className="text-xs text-muted-foreground">
-                      {getSchoolDisplayName(organization.school)}
+                      {getSchoolName(organization.school)}
                     </div>
                   </TableCell>
                   <TableCell>

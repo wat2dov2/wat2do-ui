@@ -110,7 +110,6 @@ jobs:
       ECS_CLUSTER: wat2do-production
       ECS_SERVICE: wat2do-production-app
       ECS_TASK_FAMILY: wat2do-production-app
-      ECS_JOBS_TASK_FAMILY: wat2do-production-jobs
 
     steps:
       # Full history: the migration guard below diffs against the previous
@@ -228,19 +227,6 @@ jobs:
           ' task-definition.json > rendered-task-definition.json
           task_definition_arn="$(aws ecs register-task-definition --cli-input-json file://rendered-task-definition.json --query 'taskDefinition.taskDefinitionArn' --output text)"
           echo "TASK_DEFINITION_ARN=$task_definition_arn" >> "$GITHUB_ENV"
-
-          aws ecs describe-task-definition --task-definition "$ECS_JOBS_TASK_FAMILY" --query taskDefinition --output json > jobs-task-definition.json
-          jq --arg backend_image "$backend_image" '
-            del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy, .deregisteredAt)
-            | .containerDefinitions |= map(
-              if .name == "backend-jobs" then .image = $backend_image
-              else . end
-            )
-          ' jobs-task-definition.json > rendered-jobs-task-definition.json
-          aws ecs register-task-definition \
-            --cli-input-json file://rendered-jobs-task-definition.json \
-            --query 'taskDefinition.taskDefinitionArn' \
-            --output text
 
       # Schema must land before the code that queries it. Without this, a commit
       # adding a migration deploys code against a database that lacks the column.

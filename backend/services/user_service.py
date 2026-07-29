@@ -4,7 +4,6 @@ from datetime import datetime, timezone
 from uuid import UUID
 
 from core.constants import DEFAULT_LIST_LIMIT
-from core.constants.school_mappings import SCHOOLS
 from core.controlbox import controlbox
 from core.database import get_sb
 from core.errors import (
@@ -18,6 +17,7 @@ from core.errors import (
 from core.exceptions import ValidationError
 from core.tables import POSTER_PAYOUT_REVIEWS, POSTER_PAYOUTS, QR_CODES, USERS
 from schemas.user import PromoterEnrollmentUpdate, UserResponse, UserUpdate
+from services import school_service
 from services.school_context import canonical_school_key
 
 
@@ -97,8 +97,7 @@ def update_promoter_enrollment(
 ) -> UserResponse | None:
     """Enroll a user or update an existing promoter payout email.
 
-    The acceptance timestamp is server-owned and is only changed when the
-    current ToS version has not yet been accepted.
+    The acceptance metadata is server-owned and is only set during enrollment.
     """
     existing = get_user(user_id)
     if existing is None:
@@ -111,16 +110,12 @@ def update_promoter_enrollment(
     )
     if not is_enrolled:
         school = canonical_school_key(existing.school)
-        if not school or school not in SCHOOLS:
+        if not school_service.school_exists(school):
             raise ValidationError(PROMOTER_SCHOOL_REQUIRED)
         if not controlbox.promoter_program.enabled:
             raise ValidationError(PROMOTER_PROGRAM_PAUSED)
 
-    current_version = controlbox.promoter_program.tos_version
-    must_accept = (
-        existing.promoter_tos_accepted_at is None
-        or existing.promoter_tos_version != current_version
-    )
+    must_accept = not is_enrolled
     if must_accept and not data.accept_tos:
         raise ValidationError(PROMOTER_TOS_REQUIRED)
 
@@ -129,7 +124,7 @@ def update_promoter_enrollment(
         payload.update(
             {
                 "promoter_tos_accepted_at": datetime.now(timezone.utc).isoformat(),
-                "promoter_tos_version": current_version,
+                "promoter_tos_version": controlbox.promoter_program.tos_version,
             }
         )
 

@@ -1,7 +1,6 @@
 import { Section, Stack } from "@/shared/layout";
 import { Badge } from "@/shared/ui/badge";
 import { OrganizationTypeIcon } from "@/shared/components/OrganizationTypeIcon";
-import { getSchoolDisplayName } from "@/shared/constants/schools";
 import { OrganizationCategoryBadge } from "@/shared/components/OrganizationCategoryBadge";
 import { ORGANIZATION_CATEGORY_STYLE_SLUGS } from "@/shared/data/organizationCategoryStyles";
 import { ORGANIZATION_TYPE_SIGNATURES } from "@/shared/data/organizationTypeAssets";
@@ -67,7 +66,7 @@ export function BadgesSection() {
                   organizationType={organizationType}
                 />
                 <span className="truncate text-xs text-muted-foreground">
-                  {organizationType.toUpperCase()} - {getSchoolDisplayName(school)}
+                  {organizationType.toUpperCase()} - {school}
                 </span>
               </div>
               );

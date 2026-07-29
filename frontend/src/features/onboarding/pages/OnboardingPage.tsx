@@ -16,8 +16,8 @@ import { LanguageSelector } from "@/shared/ui/language-selector";
 import { MultiSelect } from "@/shared/ui/multi-select";
 import { getEventCategories } from "@/shared/data/eventCategories";
 import { AnimatedThemeToggler } from "@/shared/components/AnimatedThemeToggler";
-import { translateSchool } from "@/shared/utils/schoolTranslation";
 import { getSafeReturnTo } from "@/features/auth/utils/returnTo";
+import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 
 const stepVariants = {
   enter: { opacity: 0, y: 20 },
@@ -37,6 +37,7 @@ export function OnboardingPage() {
   const searchParams = useSearchParams();
   const { t } = useTranslation();
   const { persistProfile } = useUpdateProfile();
+  const { getSchoolName } = useSchoolDirectory();
 
   // Signup flow hands the school over via the URL so a refresh preserves the
   // institution-specific onboarding greeting.
@@ -132,12 +133,12 @@ export function OnboardingPage() {
   const gooseMessage = useMemo(() => {
     if (flow.currentStep === 3) {
       return flow.school
-        ? t("onboarding.gooseStep3WithSchool", { school: translateSchool(flow.school) })
+        ? t("onboarding.gooseStep3WithSchool", { school: getSchoolName(flow.school) })
         : t("onboarding.gooseStep3Default");
     }
     const key = GOOSE_MESSAGE_KEYS[flow.currentStep];
     return key ? t(key) : "";
-  }, [flow.currentStep, flow.school, t]);
+  }, [flow.currentStep, flow.school, getSchoolName, t]);
 
   return (
     <main className="h-dvh bg-background flex flex-col overflow-hidden">

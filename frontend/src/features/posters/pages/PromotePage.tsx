@@ -9,10 +9,7 @@ import { useCampusCoverage } from "@/features/posters/hooks/usePromoterDashboard
 import { usePromoterState } from "@/features/posters/hooks/usePromoterState";
 import { buildCoverageMapMarkers } from "@/features/posters/utils/posterMapMarkers";
 import { promoterProgram } from "@/shared/config/promoterProgram";
-import {
-  getSchoolDisplayName,
-  resolveWritableSchool,
-} from "@/shared/constants/schools";
+import { resolveWritableSchool } from "@/shared/constants/schools";
 import { ROUTES } from "@/shared/constants/routes";
 import {
   Container,
@@ -52,7 +49,7 @@ export function PromotePage() {
       <Stack gap={8}>
         <PageHeader
           title={t("posters.promote.title", {
-            school: getSchoolDisplayName(school),
+            school,
           })}
           description={t("posters.promote.description", {
             rate: formatCadCents(promoterProgram.rateCents, i18n.language),
@@ -94,7 +91,7 @@ export function PromotePage() {
 
             <Section
               title={t("posters.promote.coverageTitle", {
-                school: getSchoolDisplayName(school),
+                school,
               })}
               description={t("posters.promote.coverageDescription")}
             >

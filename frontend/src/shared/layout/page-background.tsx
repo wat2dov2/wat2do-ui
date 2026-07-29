@@ -3,7 +3,7 @@
 import { useEffect, useSyncExternalStore, type CSSProperties } from "react"
 
 import {
-  getOrganizationCategoryDoodleIcons,
+  getOrganizationCategoryDoodleDecorations,
 } from "@/shared/data/organizationCategoryStyles"
 import {
   DEFAULT_SCHOOL,
@@ -11,7 +11,7 @@ import {
   getSchoolColors,
 } from "@/shared/constants/schools"
 
-const PAGE_DOODLE_ICONS = getOrganizationCategoryDoodleIcons(72)
+const PAGE_DOODLES = getOrganizationCategoryDoodleDecorations(72)
 
 const DEFAULT_SCHOOL_COLORS = getSchoolColors(DEFAULT_SCHOOL)
 
@@ -59,11 +59,16 @@ function PageBackground() {
       }
     >
       <div className="page-doodle-grid">
-        {PAGE_DOODLE_ICONS.map((icon, index) => (
+        {PAGE_DOODLES.map((doodle, index) => (
           <span
-            key={`${icon}-${index}`}
+            key={`${doodle.icon}-${index}`}
             className="page-doodle-icon"
-            style={{ "--doodle-icon": `url("${icon}")` } as CSSProperties}
+            style={
+              {
+                "--doodle-icon": `url("${doodle.icon}")`,
+                "--doodle-color": `var(--page-school-${doodle.color})`,
+              } as CSSProperties
+            }
           />
         ))}
       </div>

@@ -9,47 +9,6 @@ export const DEFAULT_SCHOOL = "uwaterloo";
  */
 export const ALL_SCHOOLS = "all";
 
-const SCHOOL_LABELS: Record<string, string> = {
-  all: "All Schools",
-  uwaterloo: "University of Waterloo",
-  utoronto: "University of Toronto",
-  utsc: "University of Toronto Scarborough",
-  utm: "University of Toronto Mississauga",
-  mcgill: "McGill University",
-  mcmaster: "McMaster University",
-  western: "Western University",
-  queens: "Queen's University",
-  carleton: "Carleton University",
-  brock: "Brock University",
-  wlu: "Wilfrid Laurier University",
-  york: "York University",
-  tmu: "Toronto Metropolitan University",
-  uottawa: "University of Ottawa",
-  ocad: "OCAD University",
-  ualberta: "University of Alberta",
-  laval: "Université Laval",
-  memorial: "Memorial University",
-  sfu: "Simon Fraser University",
-  udem: "Université de Montréal",
-  umanitoba: "University of Manitoba",
-  concordia: "Concordia University",
-  dalhousie: "Dalhousie University",
-  guelph: "University of Guelph",
-  ucalgary: "University of Calgary",
-  usask: "University of Saskatchewan",
-  uvic: "University of Victoria",
-  windsor: "University of Windsor",
-  uqam: "Université du Québec à Montréal",
-  ontariotech: "Ontario Tech University",
-  cornell: "Cornell University",
-  nyu: "New York University",
-  upenn: "University of Pennsylvania",
-  columbia: "Columbia University",
-  mit: "MIT",
-  ubc: "University of British Columbia",
-  berkeley: "UC Berkeley",
-};
-
 /**
  * Each school's brand pair, used to theme generated artwork.
  *
@@ -58,10 +17,8 @@ const SCHOOL_LABELS: Record<string, string> = {
  * here fall back to the Wat2Do pair, which is why this map only needs a row
  * once a school's own colours are known.
  *
- * This lives beside the display names rather than in Supabase on purpose:
- * migration 20260629160000 moved school metadata out of the DB, and the only
- * readers - the carousel cover preview and the satori render route - are both
- * frontend, so a column would buy a round trip and nothing else.
+ * These decorative colors are presentation data, not school identity metadata.
+ * Slugs are the database contract, and missing color rows use the Wat2Do pair.
  */
 const WAT2DO_COLORS: SchoolColors = { primary: "#FFC629", ink: "#111111" };
 
@@ -126,10 +83,6 @@ function normalizeSchoolSlug(value: string): string {
   return value.trim().toLowerCase().replace(/_/g, "-");
 }
 
-function hasSchoolLabel(school: string): boolean {
-  return Object.hasOwn(SCHOOL_LABELS, school) && school !== ALL_SCHOOLS;
-}
-
 export function isAllSchools(value: string | null | undefined): boolean {
   return resolveSchool(value) === ALL_SCHOOLS;
 }
@@ -190,15 +143,9 @@ function parseSchoolCandidateFromHostname(hostname: string): string | null {
   return candidate;
 }
 
-export function isKnownSchool(value: string | null | undefined): boolean {
-  return hasSchoolLabel(resolveSchool(value));
-}
-
 export interface HostnameSchoolStatus {
   school: string;
   candidate: string | null;
-  /** Whether the app serves this host: a real school, or the all-schools view. */
-  isServable: boolean;
 }
 
 export function getHostnameSchoolStatus(hostname: string): HostnameSchoolStatus {
@@ -207,7 +154,6 @@ export function getHostnameSchoolStatus(hostname: string): HostnameSchoolStatus 
     return {
       school: DEFAULT_SCHOOL,
       candidate: null,
-      isServable: true,
     };
   }
 
@@ -215,7 +161,6 @@ export function getHostnameSchoolStatus(hostname: string): HostnameSchoolStatus 
   return {
     school,
     candidate,
-    isServable: isKnownSchool(school) || school === ALL_SCHOOLS,
   };
 }
 
@@ -232,8 +177,7 @@ export function getCurrentSchool(): string {
  */
 export function getSchoolFromRequestHost(host: string | null | undefined): string {
   const hostname = (host ?? "").split(":")[0];
-  const status = getHostnameSchoolStatus(hostname);
-  return status.isServable ? status.school : DEFAULT_SCHOOL;
+  return getHostnameSchoolStatus(hostname).school;
 }
 
 /**
@@ -251,9 +195,4 @@ export function getSchoolOrigin(school: string): string {
       : labels;
   const nextHost = [slug, ...baseLabels].join(".");
   return `${protocol}//${nextHost}${port ? `:${port}` : ""}`;
-}
-
-export function getSchoolDisplayName(school: string): string {
-  const slug = resolveSchool(school);
-  return SCHOOL_LABELS[slug] ?? slug;
 }

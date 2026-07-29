@@ -149,14 +149,15 @@ export function buildEventSlideModel(
  *
  * Everything on it is derived: the school decides the colours and the link, the
  * batch's local date supplies the date line, the scrape window supplies the
- * headline number, and the carousel's events supply the fanned posters. `body`
- * is the one line an admin writes; left empty it states how many events were
- * picked.
+ * headline number, and the carousel's events supply the selection count and
+ * fanned posters. `body` is the one line an admin writes; left empty it states
+ * how many events were picked.
  */
 export function buildCoverSlideModel({
   school,
   localDate,
   newEventCount,
+  eventCount,
   body,
   tiles,
 }: {
@@ -164,6 +165,8 @@ export function buildCoverSlideModel({
   /** The batch's `local_date`, as `YYYY-MM-DD`. */
   localDate: string;
   newEventCount: number;
+  /** Number of event IDs in the batch, including events without poster images. */
+  eventCount: number;
   body: string;
   tiles: string[];
 }): CoverSlideModel {
@@ -175,17 +178,15 @@ export function buildCoverSlideModel({
     dateLine: formatCoverDate(localDate),
     newEventCount,
     headline: COVER_HEADLINE,
-    body: text(body, defaultCoverBody(tiles.length)),
+    body: text(body, defaultCoverBody(eventCount)),
     swipeLine: COVER_SWIPE_LINE,
     siteLine: `More info on ${getSchoolPublicUrl(school)}`,
     tiles,
   };
 }
 
-function defaultCoverBody(pickCount: number): string {
-  return pickCount === 1
-    ? "Here is the one we like the most"
-    : `Here are the ${pickCount} we like the most`;
+function defaultCoverBody(eventCount: number): string {
+  return `Here are the ${eventCount} we like the most`;
 }
 
 /**

@@ -1,3 +1,4 @@
+import threading
 from datetime import datetime, timezone
 from unittest.mock import MagicMock
 from uuid import UUID
@@ -358,6 +359,27 @@ def test_list_events_forwards_school_and_pagination(client, monkeypatch):
         added_within_24h=False,
     )
     mock_latest.assert_called_once_with("uwaterloo")
+
+
+def test_list_events_overlaps_feed_and_latest_event_queries(client, monkeypatch):
+    barrier = threading.Barrier(2, timeout=2)
+
+    def list_events(**_kwargs):
+        barrier.wait()
+        return [], 0
+
+    def get_latest_added_event(_school):
+        barrier.wait()
+        return None
+
+    monkeypatch.setattr(event_service, "list_events", list_events)
+    monkeypatch.setattr(event_service, "get_latest_added_event", get_latest_added_event)
+
+    response = client.get("/events/", params={"school": "uwaterloo"})
+
+    assert response.status_code == 200
+    assert response.json()["items"] == []
+    assert response.json()["latest_added_event"] is None
 
 
 def test_list_events_forwards_date_window(client, monkeypatch):

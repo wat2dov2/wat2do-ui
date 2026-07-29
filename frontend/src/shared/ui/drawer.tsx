@@ -1,10 +1,10 @@
 import * as React from "react"
 import { Drawer as DrawerPrimitive } from "vaul"
 
-import { getOrganizationCategoryDoodleIcons } from "@/shared/data/organizationCategoryStyles"
+import { getOrganizationCategoryDoodleDecorations } from "@/shared/data/organizationCategoryStyles"
 import { cn } from "@/shared/lib/utils"
 
-const DRAWER_DOODLE_ICONS = getOrganizationCategoryDoodleIcons(42)
+const DRAWER_DOODLES = getOrganizationCategoryDoodleDecorations(42)
 
 function Drawer({
   ...props
@@ -47,11 +47,16 @@ function DrawerDoodleField() {
       aria-hidden="true"
       className="drawer-doodle-grid"
     >
-      {DRAWER_DOODLE_ICONS.map((icon, index) => (
+      {DRAWER_DOODLES.map((doodle, index) => (
         <span
-          key={`${icon}-${index}`}
+          key={`${doodle.icon}-${index}`}
           className="drawer-doodle-icon"
-          style={{ "--doodle-icon": `url("${icon}")` } as React.CSSProperties}
+          style={
+            {
+              "--doodle-icon": `url("${doodle.icon}")`,
+              "--doodle-color": `var(--page-school-${doodle.color})`,
+            } as React.CSSProperties
+          }
         />
       ))}
     </div>

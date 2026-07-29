@@ -7,16 +7,21 @@ import { saveTheme } from "@/shared/services/preferencesStorage"
 
 interface AnimatedThemeTogglerProps extends React.ComponentPropsWithoutRef<"button"> {
   duration?: number
+  checked?: boolean
+  onCheckedChange?: (checked: boolean) => void
 }
 
 export const AnimatedThemeToggler = ({
   className,
   duration = 400,
+  checked,
+  onCheckedChange,
   ...props
 }: AnimatedThemeTogglerProps) => {
   const { t } = useTranslation()
   const [isDark, setIsDark] = useState(false)
   const buttonRef = useRef<HTMLButtonElement>(null)
+  const displayedIsDark = checked ?? isDark
 
   useEffect(() => {
     const updateTheme = () => {
@@ -36,20 +41,25 @@ export const AnimatedThemeToggler = ({
   const toggleTheme = useCallback(async () => {
     if (!buttonRef.current) return
 
-    if (!document.startViewTransition) {
-      const newTheme = !isDark
+    const newTheme = !displayedIsDark
+    const applyNewTheme = () => {
+      if (onCheckedChange) {
+        onCheckedChange(newTheme)
+        return
+      }
       setIsDark(newTheme)
-      document.documentElement.classList.toggle("dark")
+      document.documentElement.classList.toggle("dark", newTheme)
       saveTheme(newTheme ? "dark" : "light")
+    }
+
+    if (!document.startViewTransition) {
+      applyNewTheme()
       return
     }
 
     await document.startViewTransition(() => {
       flushSync(() => {
-        const newTheme = !isDark
-        setIsDark(newTheme)
-        document.documentElement.classList.toggle("dark")
-        saveTheme(newTheme ? "dark" : "light")
+        applyNewTheme()
       })
     }).ready
 
@@ -74,7 +84,7 @@ export const AnimatedThemeToggler = ({
         pseudoElement: "::view-transition-new(root)",
       }
     )
-  }, [isDark, duration])
+  }, [displayedIsDark, duration, onCheckedChange])
 
   return (
     <button
@@ -86,7 +96,7 @@ export const AnimatedThemeToggler = ({
       )}
       {...props}
     >
-      {isDark ? <Sun size={16} /> : <Moon size={16} />}
+      {displayedIsDark ? <Sun size={16} /> : <Moon size={16} />}
       <span className="sr-only">{t("theme.toggleTheme")}</span>
     </button>
   )

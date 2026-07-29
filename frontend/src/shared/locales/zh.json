@@ -341,6 +341,7 @@
   },
   "schools": {
     "school": "学校",
+    "allSchools": "所有学校",
     "selectSchool": "选择学校",
     "searchPlaceholder": "搜索学校...",
     "noSchoolFound": "未找到学校。",

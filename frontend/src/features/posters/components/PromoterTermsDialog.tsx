@@ -6,6 +6,7 @@ import { DialogBody, Section, Stack } from "@/shared/layout";
 import { Button } from "@/shared/ui/button";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -18,7 +19,7 @@ import { formatCadCents } from "@/shared/utils/currency";
 interface PromoterTermsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onAccept: () => void;
+  onAccept?: () => void;
 }
 
 const TERMS_SECTIONS = [
@@ -95,9 +96,7 @@ export function PromoterTermsDialog({
         <DialogHeader>
           <DialogTitle>{t("posters.terms.title")}</DialogTitle>
           <DialogDescription>
-            {t("posters.terms.description", {
-              version: promoterProgram.tosVersion,
-            })}
+            {t("posters.terms.description")}
           </DialogDescription>
         </DialogHeader>
 
@@ -131,23 +130,33 @@ export function PromoterTermsDialog({
           </Stack>
         </DialogBody>
 
-        <DialogFooter>
-          {!hasReachedEnd && (
-            <DialogDescription>
-              {t("posters.terms.scrollToAccept")}
-            </DialogDescription>
+        <DialogFooter className="sm:items-center">
+          {onAccept ? (
+            <>
+              {!hasReachedEnd && (
+                <DialogDescription className="text-left sm:mr-auto">
+                  {t("posters.terms.scrollToAccept")}
+                </DialogDescription>
+              )}
+              <Button
+                type="button"
+                disabled={!hasReachedEnd}
+                onClick={() => {
+                  onAccept();
+                  handleOpenChange(false);
+                }}
+                data-testid="promoter-terms-accept"
+              >
+                {t("posters.terms.accept")}
+              </Button>
+            </>
+          ) : (
+            <DialogClose asChild>
+              <Button type="button" variant="secondary">
+                {t("common.close")}
+              </Button>
+            </DialogClose>
           )}
-          <Button
-            type="button"
-            disabled={!hasReachedEnd}
-            onClick={() => {
-              onAccept();
-              handleOpenChange(false);
-            }}
-            data-testid="promoter-terms-accept"
-          >
-            {t("posters.terms.accept")}
-          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

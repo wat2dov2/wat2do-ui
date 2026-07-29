@@ -12,8 +12,6 @@ export interface PromoterState {
   school: string | null;
   payoutEmail: string | null;
   isEnrolled: boolean;
-  hasCurrentTerms: boolean;
-  canCreate: boolean;
   isProgramEnabled: boolean;
 }
 
@@ -24,8 +22,6 @@ export function usePromoterState(): PromoterState {
       auth.promoterTosAcceptedAt &&
       auth.promoterTosVersion,
   );
-  const hasCurrentTerms =
-    isEnrolled && auth.promoterTosVersion === promoterProgram.tosVersion;
 
   return {
     userId: auth.userId,
@@ -34,8 +30,6 @@ export function usePromoterState(): PromoterState {
     school: auth.school,
     payoutEmail: auth.payoutEmail,
     isEnrolled,
-    hasCurrentTerms,
-    canCreate: promoterProgram.enabled && hasCurrentTerms && Boolean(auth.school),
     isProgramEnabled: promoterProgram.enabled,
   };
 }

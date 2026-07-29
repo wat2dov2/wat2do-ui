@@ -20,9 +20,9 @@ from pydantic import BaseModel, BeforeValidator, Field, model_validator
 from core.config import settings
 from core.constants import EVENT_CATEGORIES
 from services.school_context import (
+    canonical_school_key,
     current_semester_end,
     resolve_school_timezone,
-    school_display_name,
 )
 
 log = logging.getLogger(__name__)
@@ -102,7 +102,7 @@ def extract_events_from_post(
     prompt = _build_prompt(
         caption_text=caption_text,
         image_urls=image_urls or [],
-        school=school_display_name(school),
+        school=canonical_school_key(school),
         local_tz_key=local_tz.key,
         current_date=now_local.strftime("%Y-%m-%d"),
         current_day=now_local.strftime("%A"),

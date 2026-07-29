@@ -4,7 +4,7 @@ import { cn } from "@/shared/lib/utils";
 
 export interface LoadingPageProps {
   className?: string;
-  /** Override the label (default: "Loading...") */
+  /** Override the accessible label (default: "Loading...") */
   label?: string;
 }
 
@@ -30,7 +30,6 @@ export function LoadingPage({
       aria-label={text}
     >
       <GooseLoadingAnimation />
-      <p className="text-sm text-muted-foreground">{text}</p>
     </div>
   );
 }

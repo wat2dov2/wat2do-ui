@@ -24,6 +24,11 @@ from services import qr_code_service
 def poster_secrets(monkeypatch):
     monkeypatch.setattr(settings, "poster_hash_secret", "hash-secret")
     monkeypatch.setattr(settings, "poster_confirmation_secret", "confirmation-secret")
+    monkeypatch.setattr(
+        qr_code_service.school_service,
+        "school_exists",
+        lambda slug: slug == "uwaterloo",
+    )
 
 
 def _qr(**overrides) -> QrCodeResponse:
@@ -209,7 +214,7 @@ def test_create_promoter_batch_uses_template_and_one_row_per_copy(
             name="SLC second floor",
             copies=2,
         ),
-        creator=_enrolled_user(),
+        creator=_enrolled_user().model_copy(update={"promoter_tos_version": "previous"}),
     )
 
     assert [poster.id for poster in result] == generated_ids

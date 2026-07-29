@@ -14,9 +14,34 @@ Covers:
 from unittest.mock import MagicMock
 from uuid import UUID, uuid4
 
+import pytest
+
 from core.tables import EVENTS, USERS
 from schemas.going_event import GoingEventSelection
-from services import calendar_service, going_event_service
+from schemas.school import School
+from services import calendar_service, going_event_service, school_context
+
+
+@pytest.fixture(autouse=True)
+def _school_directory(monkeypatch):
+    schools = {
+        "uwaterloo": School(
+            slug="uwaterloo",
+            name="University of Waterloo",
+            timezone="America/Toronto",
+        ),
+        "wlu": School(
+            slug="wlu",
+            name="Wilfrid Laurier University",
+            timezone="America/Toronto",
+        ),
+    }
+    monkeypatch.setattr(
+        school_context.school_service,
+        "get_school",
+        lambda slug: schools.get(slug),
+    )
+
 
 # ── resolve_school_timezone ─────────────────────────────────────────
 

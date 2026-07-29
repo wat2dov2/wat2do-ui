@@ -14,53 +14,6 @@ from schemas.instagram_publishing import (
 from services.instagram_publishing import service
 
 
-def test_select_events_orders_by_ai_score_and_limits_each_organization():
-    candidates = [
-        {
-            "id": 1,
-            "organization": "Same Club",
-            "dtstart_utc": "2026-07-25T10:00:00+00:00",
-        },
-        {
-            "id": 2,
-            "organization": "Same Club",
-            "dtstart_utc": "2026-07-26T10:00:00+00:00",
-        },
-        {
-            "id": 3,
-            "organization": "Same Club",
-            "dtstart_utc": "2026-07-27T10:00:00+00:00",
-        },
-        {
-            "id": 4,
-            "organization": "Another Club",
-            "dtstart_utc": "2026-07-28T10:00:00+00:00",
-        },
-    ]
-    scores = [
-        {"event_id": 1, "overall_score": 9.0},
-        {"event_id": 2, "overall_score": 8.0},
-        {"event_id": 3, "overall_score": 7.0},
-        {"event_id": 4, "overall_score": 6.0},
-    ]
-
-    selected = service._select_events(candidates, scores)
-
-    assert [event["id"] for event in selected] == [1, 2, 4]
-
-
-def test_select_events_filters_below_threshold():
-    candidates = [
-        {
-            "id": 1,
-            "organization": "Club",
-            "dtstart_utc": "2026-07-25T10:00:00+00:00",
-        }
-    ]
-
-    assert service._select_events(candidates, [{"event_id": 1, "overall_score": 2.0}]) == []
-
-
 def test_generate_due_batches_uses_enabled_controlbox_accounts(monkeypatch):
     generated_accounts = []
     enabled_accounts = [account for account in service._CONTROL.accounts if account.enabled]
@@ -116,8 +69,71 @@ class _FakeQuery:
 
         return chain
 
+    @property
+    def not_(self):
+        return self
+
     def execute(self):
         return SimpleNamespace(data=self._data, count=self._count)
+
+
+def test_load_candidates_includes_added_events_from_any_source_without_images(monkeypatch):
+    event_calls: list[tuple] = []
+    published_calls: list[tuple] = []
+    occurrence_calls: list[tuple] = []
+    events = [
+        {
+            "id": 301,
+            "title": "Golden Hawk Welcome Social",
+            "school": "wlu",
+            "ingestion_source": "seed",
+        },
+        {
+            "id": 302,
+            "title": "Purple and Gold Study Jam",
+            "school": "wlu",
+            "ingestion_source": "manual",
+        },
+    ]
+    occurrences = [
+        {
+            "event_id": 301,
+            "dtstart_utc": "2026-08-07T21:00:00+00:00",
+            "dtend_utc": None,
+            "tz": "America/Toronto",
+        },
+        {
+            "event_id": 302,
+            "dtstart_utc": "2026-08-11T22:00:00+00:00",
+            "dtend_utc": None,
+            "tz": "America/Toronto",
+        },
+    ]
+
+    def table(name: str):
+        if name == service.EVENTS:
+            return _FakeQuery(events, event_calls)
+        if name == service.INSTAGRAM_PUBLISH_ITEMS:
+            return _FakeQuery([{"event_id": 302}], published_calls)
+        if name == service.EVENT_DATES:
+            return _FakeQuery(occurrences, occurrence_calls)
+        raise AssertionError(f"Unexpected table {name}")
+
+    monkeypatch.setattr(service, "get_sb", lambda: SimpleNamespace(table=table))
+
+    result = service._load_candidates(
+        account_key="wlu",
+        school="wlu",
+        window_start=datetime(2026, 7, 28, 4, tzinfo=timezone.utc),
+        window_end=datetime(2026, 7, 28, 15, tzinfo=timezone.utc),
+    )
+
+    assert [event["id"] for event in result] == [301]
+    assert "source_image_url" not in result[0]
+    assert ("eq", ("school", "wlu"), {}) in event_calls
+    assert ("eq", ("cancelled", False), {}) in event_calls
+    assert not any(args and args[0] == "ingestion_source" for _, args, _ in event_calls)
+    assert not any(args and args[0] == "source_image_url" for _, args, _ in event_calls)
 
 
 def _event(event_id: int, title: str = "Event") -> EventSummaryResponse:
@@ -373,7 +389,12 @@ def test_slide_payload_flattens_the_first_occurrence_for_the_renderer():
     assert "occurrences" not in payload
 
 
-def test_slide_payload_falls_back_to_the_school_timezone():
+def test_slide_payload_falls_back_to_the_school_timezone(monkeypatch):
+    monkeypatch.setattr(
+        service,
+        "resolve_school_timezone",
+        lambda _school: "America/Toronto",
+    )
     event = _event(8)
     event.occurrences[0].tz = None
 

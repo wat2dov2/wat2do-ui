@@ -13,9 +13,10 @@ the response model.
 """
 
 import logging
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
-from typing import TypeVar
+from typing import SupportsInt, TypeVar, cast
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from pydantic import BaseModel
@@ -99,9 +100,49 @@ def hydrate_event(row: dict, occurrences: list[OccurrenceResponse], model: type[
 
 def _int_or_none(value: object) -> int | None:
     try:
-        return int(value) if value is not None else None
+        return int(cast(SupportsInt, value)) if value is not None else None
     except (TypeError, ValueError):
         return None
+
+
+def _load_event_rows_by_ids(event_ids: list[int], *, columns: str) -> list[dict]:
+    """Load event rows in caller order, chunking PostgREST ``in`` filters."""
+    rows_by_id: dict[int, dict] = {}
+    for start in range(0, len(event_ids), 500):
+        chunk = event_ids[start : start + 500]
+        rows = (
+            get_sb()
+            .table(EVENTS)
+            .select(f"{columns},{ORGANIZATION_EMBED}")
+            .in_("id", chunk)
+            .execute()
+            .data
+            or []
+        )
+        rows_by_id.update({int(row["id"]): row for row in rows})
+    return [rows_by_id[event_id] for event_id in event_ids if event_id in rows_by_id]
+
+
+def _load_hydrated_events_by_ids(event_ids: list[int], *, model: type[T]) -> dict[int, T]:
+    """Load event rows and occurrences concurrently, then hydrate by ID."""
+    if not event_ids:
+        return {}
+
+    columns = _SUMMARY_COLUMNS if model is EventSummaryResponse else "*"
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        rows_future = pool.submit(_load_event_rows_by_ids, event_ids, columns=columns)
+        occurrences_future = pool.submit(event_date_service.list_for_events, event_ids)
+        rows = rows_future.result()
+        occurrences_by_event = occurrences_future.result()
+
+    return {
+        int(row["id"]): hydrate_event(
+            row,
+            occurrences_by_event.get(row["id"], []),
+            model,
+        )
+        for row in rows
+    }
 
 
 @supabase_retry
@@ -112,27 +153,7 @@ def load_events_by_ids(event_ids: list[int], *, model: type[T]) -> dict[int, T]:
     carousel names its slides by event id - so they get the same hydrated
     shape the browse list serves rather than a hand-rolled select.
     """
-    if not event_ids:
-        return {}
-
-    columns = _SUMMARY_COLUMNS if model is EventSummaryResponse else "*"
-    rows: list[dict] = []
-    for start in range(0, len(event_ids), 500):
-        chunk = event_ids[start : start + 500]
-        rows.extend(
-            get_sb()
-            .table(EVENTS)
-            .select(f"{columns},{ORGANIZATION_EMBED}")
-            .in_("id", chunk)
-            .execute()
-            .data
-            or []
-        )
-
-    occ_by_event = event_date_service.list_for_events([int(row["id"]) for row in rows])
-    return {
-        int(row["id"]): hydrate_event(row, occ_by_event.get(row["id"], []), model) for row in rows
-    }
+    return _load_hydrated_events_by_ids(event_ids, model=model)
 
 
 @supabase_retry
@@ -168,7 +189,6 @@ def load_events_in_window(
     ``None`` bounds are open-ended. Results are deduped to one row per event,
     keeping the earliest matching occurrence for ordering and capping.
     """
-    columns = _SUMMARY_COLUMNS if model is EventSummaryResponse else "*"
     event_ids = _load_lightweight_date_page_ids(
         start_utc=start_utc,
         end_utc=end_utc,
@@ -176,28 +196,12 @@ def load_events_in_window(
         offset=0,
         limit=cap,
         cap=cap,
-        total=cap,
     )
     if not event_ids:
         return []
 
-    rows_by_id: dict[int, dict] = {}
-    for start in range(0, len(event_ids), 500):
-        chunk = event_ids[start : start + 500]
-        rows = (
-            get_sb()
-            .table(EVENTS)
-            .select(f"{columns},{ORGANIZATION_EMBED}")
-            .in_("id", chunk)
-            .execute()
-            .data
-            or []
-        )
-        rows_by_id.update({int(row["id"]): row for row in rows})
-
-    ordered_rows = [rows_by_id[event_id] for event_id in event_ids if event_id in rows_by_id]
-    occ_by_event = event_date_service.list_for_events(event_ids)
-    return [hydrate_event(row, occ_by_event.get(row["id"], []), model) for row in ordered_rows]
+    events_by_id = _load_hydrated_events_by_ids(event_ids, model=model)
+    return [events_by_id[event_id] for event_id in event_ids if event_id in events_by_id]
 
 
 @supabase_retry
@@ -381,33 +385,33 @@ def _load_lightweight_date_page(
     sliced page only.
     """
 
-    total = _count_lightweight_date_events(start_utc=start_utc, end_utc=end_utc, school=school)
-    page_ids = _load_lightweight_date_page_ids(
-        start_utc=start_utc,
-        end_utc=end_utc,
-        school=school,
-        offset=offset,
-        limit=limit,
-        cap=cap,
-        total=total,
-    )
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        total_future = pool.submit(
+            _count_lightweight_date_events,
+            start_utc=start_utc,
+            end_utc=end_utc,
+            school=school,
+        )
+        page_ids_future = pool.submit(
+            _load_lightweight_date_page_ids,
+            start_utc=start_utc,
+            end_utc=end_utc,
+            school=school,
+            offset=offset,
+            limit=limit,
+            cap=cap,
+        )
+        total = total_future.result()
+        page_ids = page_ids_future.result()
+
     if not page_ids:
         return [], total
 
-    columns = _SUMMARY_COLUMNS if model is EventSummaryResponse else "*"
-    event_rows = (
-        get_sb()
-        .table(EVENTS)
-        .select(f"{columns},{ORGANIZATION_EMBED}")
-        .in_("id", page_ids)
-        .execute()
-        .data
-        or []
+    events_by_id = _load_hydrated_events_by_ids(page_ids, model=model)
+    return (
+        [events_by_id[event_id] for event_id in page_ids if event_id in events_by_id],
+        total,
     )
-    row_by_id = {row.get("id"): row for row in event_rows}
-    page_rows = [row_by_id[event_id] for event_id in page_ids if event_id in row_by_id]
-    occ_by_event = event_date_service.list_for_events([row["id"] for row in page_rows])
-    return [hydrate_event(row, occ_by_event.get(row["id"], []), model) for row in page_rows], total
 
 
 def _count_lightweight_date_events(
@@ -438,11 +442,10 @@ def _load_lightweight_date_page_ids(
     offset: int,
     limit: int,
     cap: int,
-    total: int,
 ) -> list[int]:
     """Load only enough ordered event IDs to cover the requested page."""
 
-    required_distinct = min(total, offset + limit)
+    required_distinct = min(cap, offset + limit)
     if required_distinct <= offset:
         return []
 

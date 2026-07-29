@@ -2,7 +2,7 @@
 """Single-user Instagram scrape job.
 
 Used by ``.github/workflows/process-single-user.yml``. School is resolved from
-``INTENDED_RECIPIENT_ID`` via ``school_mappings.py``.
+``INTENDED_RECIPIENT_ID`` via the Supabase school directory.
 
 Usage:
     cd backend

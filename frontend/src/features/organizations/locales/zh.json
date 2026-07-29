@@ -22,7 +22,6 @@
     "joinRequestSubmittedDesc": "您加入“{{name}}”的请求已发送至组织管理团队。",
     "claimOrganization": "加入组织",
     "applyToJoin": "申请加入",
-    "description": "探索滑铁卢大学的学生组织",
     "loadFailed": "无法加载此组织，请重试。",
     "saveFailed": "无法保存此组织，请重试。",
     "searchPlaceholder": "搜索组织...",

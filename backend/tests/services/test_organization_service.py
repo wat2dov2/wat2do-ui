@@ -13,6 +13,7 @@ def test_create_invitation_enforces_school_matching_for_non_admins(monkeypatch, 
 
     import pytest
 
+    from core import allowed_emails
     from core.exceptions import ValidationError
     from schemas.user import UserResponse
     from services import user_service
@@ -36,6 +37,17 @@ def test_create_invitation_enforces_school_matching_for_non_admins(monkeypatch, 
     )
     monkeypatch.setattr(user_service, "get_user", MagicMock(return_value=mock_inviter))
     monkeypatch.setattr(user_service, "get_user_by_email", MagicMock(return_value=None))
+    monkeypatch.setattr(
+        allowed_emails,
+        "get_school_for_email",
+        lambda email: (
+            "uwaterloo"
+            if email.endswith("@uwaterloo.ca")
+            else "wlu"
+            if email.endswith("@wlu.ca")
+            else None
+        ),
+    )
 
     # Inviting an email from the same school should proceed (we fake the upsert/insert DB responses)
     fake_sb.queue_responses(

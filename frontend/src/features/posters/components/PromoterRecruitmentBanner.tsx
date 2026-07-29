@@ -5,10 +5,7 @@ import {
   usePromoterBannerDismissal,
   usePromoterState,
 } from "@/features/posters/hooks/usePromoterState";
-import {
-  getSchoolDisplayName,
-  resolveWritableSchool,
-} from "@/shared/constants/schools";
+import { resolveWritableSchool } from "@/shared/constants/schools";
 import { ROUTES } from "@/shared/constants/routes";
 import {
   Alert,
@@ -54,7 +51,7 @@ export function PromoterRecruitmentBanner({
       <Megaphone />
       <AlertTitle className="relative pointer-events-none">
         {t("posters.recruitment.title", {
-          school: getSchoolDisplayName(viewedSchool),
+          school: viewedSchool,
         })}
       </AlertTitle>
       <AlertDescription className="relative pointer-events-none">

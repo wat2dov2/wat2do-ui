@@ -1,6 +1,10 @@
 {
   "settings": {
     "description": "管理您的账户偏好和设置",
+    "unsavedChanges": "有未保存的更改",
+    "unsavedChangesDescription": "保存或取消你的设置更改。",
+    "saveSuccess": "你的设置已保存。",
+    "saveError": "无法保存设置。你的更改仍保留在此处。",
     "tabs": {
       "profile": "个人资料",
       "notifications": "通知设置",
@@ -23,7 +27,8 @@
       "firstYearStudent": "大一新生",
       "interests": "兴趣爱好",
       "selectInterests": "选择您的兴趣",
-      "avatarAlt": "头像"
+      "avatarAlt": "头像",
+      "changeAvatar": "选择新头像"
     },
     "notifications": {
       "title": "通知偏好",

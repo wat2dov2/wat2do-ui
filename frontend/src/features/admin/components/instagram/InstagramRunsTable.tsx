@@ -1,6 +1,5 @@
 import { useTranslation } from "react-i18next";
 import type { ApiInstagramPublishBatchResponse } from "@/shared/generated";
-import { getSchoolDisplayName } from "@/shared/constants/schools";
 import { AdminTable } from "@/features/admin/components/shared/AdminTable";
 import { Badge } from "@/shared/ui/badge";
 import { TableCell, TableRow } from "@/shared/ui/table";
@@ -60,7 +59,7 @@ export function InstagramRunsTable({ batches, onOpenRun }: InstagramRunsTablePro
               }
             }}
           >
-            <TableCell>{getSchoolDisplayName(batch.school)}</TableCell>
+            <TableCell>{batch.school}</TableCell>
             <TableCell>{batch.local_date}</TableCell>
             <TableCell>
               {ran.toLocaleTimeString(locale, { hour: "numeric", minute: "2-digit" })}

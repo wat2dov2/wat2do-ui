@@ -16,7 +16,6 @@ from postgrest.exceptions import APIError
 
 from core.config import settings
 from core.constants import DEFAULT_LIST_LIMIT, PG_UNIQUE_VIOLATION
-from core.constants.school_mappings import SCHOOLS
 from core.controlbox import PromoterTemplateControl, controlbox
 from core.database import get_sb
 from core.errors import (
@@ -48,6 +47,7 @@ from schemas.qr_code import (
     QrScanConfirmResponse,
 )
 from schemas.user import UserResponse
+from services import school_service
 from services.school_context import canonical_school_key
 
 log = logging.getLogger(__name__)
@@ -113,11 +113,11 @@ def create_promoter_qr_codes(
     if (
         creator.payout_email is None
         or creator.promoter_tos_accepted_at is None
-        or creator.promoter_tos_version != promoter_control.tos_version
+        or creator.promoter_tos_version is None
     ):
         raise ValidationError(PROMOTER_ENROLLMENT_REQUIRED)
     school = canonical_school_key(creator.school)
-    if not school or school not in SCHOOLS:
+    if not school_service.school_exists(school):
         raise ValidationError(PROMOTER_SCHOOL_REQUIRED)
     if data.copies > promoter_control.maximum_active_posters:
         raise ValidationError(PROMOTER_POSTER_LIMIT_REACHED)
@@ -499,7 +499,7 @@ def get_campus_coverage(school: str) -> CampusCoverageResponse:
     """Return public campus coverage without exact posters or owner identifiers."""
     school_slug = canonical_school_key(school)
     quiet_days = controlbox.promoter_program.quiet_poster_days
-    if not school_slug or school_slug not in SCHOOLS:
+    if not school_service.school_exists(school_slug):
         return CampusCoverageResponse(
             school=school_slug,
             quiet_after_days=quiet_days,

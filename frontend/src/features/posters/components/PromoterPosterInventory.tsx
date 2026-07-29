@@ -36,7 +36,7 @@ const LIFECYCLE_BADGE_VARIANTS: Record<
   PosterLifecycle,
   "secondary" | "success" | "warning"
 > = {
-  "not-placed": "secondary",
+  "not-placed": "warning",
   "recently-scanned": "success",
   quiet: "warning",
 };

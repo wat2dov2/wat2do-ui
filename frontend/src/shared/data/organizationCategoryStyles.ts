@@ -122,7 +122,16 @@ const rawDoodleSvgs = JSON.parse(
   process.env.NEXT_PUBLIC_ORGANIZATION_CATEGORY_DOODLE_SVGS ?? "{}",
 ) as Record<string, string>;
 const doodleIconSequenceCache = new Map<number, string[]>();
+const doodleDecorationSequenceCache = new Map<
+  number,
+  OrganizationCategoryDoodleDecoration[]
+>();
 const doodleIconDataUriCache = new Map<string, string[]>();
+
+export interface OrganizationCategoryDoodleDecoration {
+  icon: string;
+  color: "primary" | "secondary";
+}
 
 /**
  * A balanced, stable shuffle of the category icons for decorative fields.
@@ -153,6 +162,31 @@ export function getOrganizationCategoryDoodleIcons(count: number): string[] {
 
   doodleIconSequenceCache.set(count, icons);
   return icons;
+}
+
+/**
+ * The stable icon shuffle with an independently seeded school-colour choice.
+ *
+ * The deterministic sequence avoids server/client hydration differences while
+ * still giving the background field a random-looking primary/secondary mix.
+ */
+export function getOrganizationCategoryDoodleDecorations(
+  count: number,
+): OrganizationCategoryDoodleDecoration[] {
+  const cachedDecorations = doodleDecorationSequenceCache.get(count);
+  if (cachedDecorations) return cachedDecorations;
+
+  let seed = 2_027;
+  const decorations = getOrganizationCategoryDoodleIcons(count).map((icon) => {
+    seed = (Math.imul(seed, 1_664_525) + 1_013_904_223) >>> 0;
+    return {
+      icon,
+      color: ((seed >>> 16) & 1) === 0 ? "primary" : "secondary",
+    } satisfies OrganizationCategoryDoodleDecoration;
+  });
+
+  doodleDecorationSequenceCache.set(count, decorations);
+  return decorations;
 }
 
 /**

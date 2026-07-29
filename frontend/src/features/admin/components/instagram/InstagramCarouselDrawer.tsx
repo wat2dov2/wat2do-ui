@@ -16,7 +16,6 @@ import {
 } from "@/shared/ui/drawer";
 import { DrawerBody, Section, Stack } from "@/shared/layout";
 import { toast } from "@/shared/hooks/use-toast";
-import { getSchoolDisplayName } from "@/shared/constants/schools";
 import { getApiErrorMessage } from "@/shared/services/apiClient";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import { controlBox } from "@/shared/config/controlBox";
@@ -226,7 +225,7 @@ export function InstagramCarouselDrawer({
       <DrawerContent>
         <DrawerHeader>
           <Stack gap={1}>
-            <DrawerTitle>{getSchoolDisplayName(batch.school)}</DrawerTitle>
+            <DrawerTitle>{batch.school}</DrawerTitle>
             <DrawerDescription>{batch.local_date}</DrawerDescription>
           </Stack>
         </DrawerHeader>
@@ -253,6 +252,7 @@ export function InstagramCarouselDrawer({
                   school: batch.school,
                   localDate: batch.local_date,
                   newEventCount: batch.new_event_count,
+                  eventCount: eventIds.length,
                   body: coverBody,
                   tiles: coverTiles,
                 }}

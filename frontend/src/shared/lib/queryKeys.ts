@@ -1,4 +1,8 @@
 export const queryKeys = {
+  schools: {
+    all: ["schools"] as const,
+    directory: () => [...queryKeys.schools.all, "directory"] as const,
+  },
   organizations: {
     all: ["organizations"] as const,
     detail: (organizationId: number) =>
@@ -39,6 +43,8 @@ export const queryKeys = {
     detail: (eventId: number) => [...queryKeys.events.all, "detail", eventId] as const,
     attendees: (eventId: number) => [...queryKeys.events.all, "attendees", eventId] as const,
     stats: (school: string) => [...queryKeys.events.all, "stats", school] as const,
+    bySchool: (school: string) =>
+      [...queryKeys.events.all, "by-school", school] as const,
     byOrganization: (organizationName: string, school: string) =>
       [...queryKeys.events.all, "by-organization", organizationName, school] as const,
   },

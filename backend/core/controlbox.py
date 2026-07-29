@@ -308,7 +308,6 @@ class InstagramPublishingControl(_ControlModel):
     maximum_lead_days: int = Field(gt=0)
     maximum_ai_candidates: int = Field(gt=0, le=100)
     maximum_event_slides: int = Field(gt=0, le=9)
-    minimum_ai_score: float = Field(ge=0, le=10)
     meta_poll_attempts: int = Field(gt=0, le=30)
     meta_poll_interval_seconds: float = Field(gt=0, le=30)
     meta_request_timeout_seconds: float = Field(gt=0, le=120)

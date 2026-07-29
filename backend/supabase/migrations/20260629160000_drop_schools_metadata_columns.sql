@@ -1,7 +1,7 @@
 -- Drop unused school metadata columns.
 --
--- Timezone, aliases, and semester_ends live in core.constants.school_mappings.
--- schools.name (slug) and school_email_domains remain the DB contract.
+-- This historical migration reduced schools to its slug and email-domain
+-- contract. A later migration restores authoritative school metadata.
 
 BEGIN;
 

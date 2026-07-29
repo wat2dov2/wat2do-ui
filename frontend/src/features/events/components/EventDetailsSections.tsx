@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState } from "react";
+import { lazy, Suspense, useMemo, useState } from "react";
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
@@ -35,13 +35,15 @@ import {
 } from "@/shared/ui/card";
 import { Separator } from "@/shared/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/ui/tooltip";
-import { FormGrid, Stack } from "@/shared/layout";
+import { FormGrid, Section, Stack } from "@/shared/layout";
 import { EventCalendarDownloadMenu } from "@/features/events/components/EventCalendarDownloadMenu";
+import { EventCard } from "@/features/events/components/EventCard";
 import { EventCardImage } from "@/features/events/components/EventCardImage";
 import { EventLocationMap } from "@/features/events/components/EventLocationMap";
 import { OrganizationTypeIcon } from "@/shared/components/OrganizationTypeIcon";
 import { GoingOccurrencePickerContent } from "@/features/events/components/GoingOccurrencePickerContent";
 import { fetchEventAttendees } from "@/features/events/api/events.api";
+import { useEventStats } from "@/features/events/hooks/useEventStats";
 import { useCurrentTime, useGoingEventSelection } from "@/features/events/hooks/useGoingEvents";
 import { eventPagePath } from "@/features/events/lib/eventUrls";
 import { appendSafeReturnTo, useAuthState } from "@/features/auth";
@@ -601,5 +603,54 @@ export function EventDetailsBody({
       </Stack>
 
     </div>
+  );
+}
+
+export function EventDetailsSimilarEvents({
+  event,
+  events,
+  onEventClick,
+}: {
+  event: Event;
+  events: Event[];
+  onEventClick: (event: Event) => void;
+}) {
+  const { t } = useTranslation();
+  const { data: eventStatsData, isSuccess: eventStatsReady } = useEventStats(
+    event.school,
+  );
+  const eventStats = eventStatsReady ? (eventStatsData ?? {}) : null;
+  const similarEvents = useMemo(() => {
+    const seed = event.id;
+    return events
+      .filter((candidate) => candidate.id !== event.id)
+      .toSorted((a, b) => {
+        const hashA = ((seed * a.id) % 1000) / 1000;
+        const hashB = ((seed * b.id) % 1000) / 1000;
+        return hashA - hashB;
+      })
+      .slice(0, 4);
+  }, [event.id, events]);
+
+  if (similarEvents.length === 0) {
+    return null;
+  }
+
+  return (
+    <>
+      <Separator />
+      <Section title={t("events.similarEvents")}>
+        <FormGrid columns={2} className="md:grid-cols-4">
+          {similarEvents.map((similarEvent) => (
+            <EventCard
+              key={similarEvent.id}
+              event={similarEvent}
+              stats={eventStats?.[String(similarEvent.id)]}
+              onEventClick={onEventClick}
+            />
+          ))}
+        </FormGrid>
+      </Section>
+    </>
   );
 }

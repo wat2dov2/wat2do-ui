@@ -6,8 +6,8 @@ import logging
 import os
 from datetime import datetime, timedelta, timezone
 
-from core.constants.school_mappings import RECIPIENT_ID_TO_SCHOOL_SLUG
 from core.controlbox import controlbox
+from services import school_service
 from services.scraper.pipeline import parse_post_timestamp
 
 log = logging.getLogger(__name__)
@@ -27,18 +27,18 @@ def resolve_single_user_scrape_school() -> str:
             "INTENDED_RECIPIENT_ID is required for single-user scrapes",
         )
 
-    slug = RECIPIENT_ID_TO_SCHOOL_SLUG.get(recipient_id)
-    if not slug:
+    school = school_service.get_school_by_recipient_id(recipient_id)
+    if school is None:
         raise SchoolResolutionError(
             f"No school mapping for intended_recipient_id={recipient_id!r}",
         )
 
     log.info(
         "Resolved school slug=%r from intended_recipient_id=%s",
-        slug,
+        school.slug,
         recipient_id,
     )
-    return slug
+    return school.slug
 
 
 def is_post_url_target(target: str) -> bool:

@@ -727,6 +727,112 @@ test.describe("Events Page", () => {
     await expect(page.getByRole("dialog")).not.toBeVisible();
   });
 
+  test("shows similar events below a dedicated event page", async ({ page }) => {
+    const now = new Date();
+    const startsAt = new Date(now.getTime() + 86_400_000).toISOString();
+    const eventDetails = [
+      {
+        id: 1,
+        organization_id: 1,
+        title: "Tech Career Fair",
+        description: "Meet campus employers.",
+        location: "SLC",
+        occurrences: [
+          {
+            id: 1,
+            event_id: 1,
+            dtstart_utc: startsAt,
+            dtend_utc: null,
+          },
+        ],
+        price: 0,
+        food: [],
+        registration: false,
+        source_image_url: null,
+        organization_type: "independent",
+        school: "uwaterloo",
+        source_url: null,
+        category: "Career",
+        organization: "UW Tech Club",
+        ig_handle: null,
+        cancelled: false,
+        added_at: now.toISOString(),
+      },
+      {
+        id: 2,
+        organization_id: 2,
+        title: "Board Game Night",
+        description: "Play board games with other students.",
+        location: "MC",
+        occurrences: [
+          {
+            id: 2,
+            event_id: 2,
+            dtstart_utc: startsAt,
+            dtend_utc: null,
+          },
+        ],
+        price: 0,
+        food: [],
+        registration: false,
+        source_image_url: null,
+        organization_type: "independent",
+        school: "uwaterloo",
+        source_url: null,
+        category: "Social",
+        organization: "UW Board Games Club",
+        ig_handle: null,
+        cancelled: false,
+        added_at: now.toISOString(),
+      },
+    ];
+
+    await page.route(
+      (url) => ["/events/1", "/events/2"].includes(apiPath(url) ?? ""),
+      async (route) => {
+        const id = Number(apiPath(new URL(route.request().url()))?.split("/").pop());
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify(eventDetails.find((event) => event.id === id)),
+        });
+      },
+    );
+    await page.route(
+      (url) => apiPath(url) === "/events",
+      async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            items: eventDetails,
+            total: eventDetails.length,
+            page: 1,
+            page_size: 100,
+            total_pages: 1,
+            latest_added_event: null,
+          }),
+        });
+      },
+    );
+
+    await page.goto(`${BASE}/events/1`);
+
+    await expect(
+      page.getByRole("heading", { name: "Similar Events" }),
+    ).toBeVisible();
+    const similarEvent = page.getByRole("button", {
+      name: "Event: Board Game Night",
+    });
+    await expect(similarEvent).toBeVisible();
+    await similarEvent.click();
+
+    await expect(page).toHaveURL(`${BASE}/events/2`);
+    await expect(
+      page.getByRole("heading", { name: "Board Game Night", level: 1 }),
+    ).toBeVisible();
+  });
+
   test("renders event facts and maps consistently with signed-out registration", async ({
     page,
   }) => {
@@ -1783,7 +1889,7 @@ test.describe("Navigation", () => {
         school: "utoronto",
         local_date: "2026-07-27",
         new_event_count: 4,
-        body: "Here is the one we like the most",
+        body: "Here are the 1 we like the most",
         events: [{ id: 1, school: "utoronto", title: "Campus Event" }],
       },
     });

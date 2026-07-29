@@ -116,7 +116,8 @@ async function installCommonApiMocks(page: Page): Promise<void> {
 
 interface SessionOptions {
   role?: "user" | "admin";
-  enrolled?: boolean;
+  hasPromoterProfile?: boolean;
+  acceptedTermsVersion?: string;
   school?: string | null;
 }
 
@@ -128,7 +129,8 @@ async function installSessionMock(
   page: Page,
   {
     role = "user",
-    enrolled = false,
+    hasPromoterProfile = false,
+    acceptedTermsVersion = CURRENT_TOS_VERSION,
     school = "uwaterloo",
   }: SessionOptions = {},
 ): Promise<SessionMock> {
@@ -147,9 +149,9 @@ async function installSessionMock(
     interests: ["Technology"],
     is_first_year: false,
     role,
-    payout_email: enrolled ? "payouts@uwaterloo.ca" : null,
-    promoter_tos_accepted_at: enrolled ? now : null,
-    promoter_tos_version: enrolled ? CURRENT_TOS_VERSION : null,
+    payout_email: hasPromoterProfile ? "payouts@uwaterloo.ca" : null,
+    promoter_tos_accepted_at: hasPromoterProfile ? now : null,
+    promoter_tos_version: hasPromoterProfile ? acceptedTermsVersion : null,
     created_at: now,
     updated_at: now,
   };
@@ -522,11 +524,46 @@ async function installActivationDedupeMocks(page: Page) {
 }
 
 test.describe("Promoter poster campaign", () => {
+  test("shows only the standard goose while the poster dashboard loads", async ({
+    page,
+  }) => {
+    await installCommonApiMocks(page);
+    await installSessionMock(page, { hasPromoterProfile: true });
+    await installPromoterApiMocks(page);
+
+    let releaseEarnings: (() => void) | undefined;
+    const earningsPending = new Promise<void>((resolve) => {
+      releaseEarnings = resolve;
+    });
+    await page.route(
+      (url) => apiPath(url) === "/qr/earnings",
+      async (route) => {
+        await earningsPending;
+        await route.fallback();
+      },
+    );
+
+    await page.goto(`${BASE_URL}/posters`);
+    await expect.poll(() => releaseEarnings !== undefined).toBe(true);
+
+    const loadingStatus = page.getByRole("status", { name: "Loading..." });
+    await expect(loadingStatus).toBeVisible();
+    await expect(
+      loadingStatus.locator('[data-slot="goose-loading-animation"]'),
+    ).toBeVisible();
+    await expect(
+      page.getByText("Loading your poster dashboard..."),
+    ).toHaveCount(0);
+
+    releaseEarnings?.();
+    await expect(page.getByTestId("promoter-dashboard")).toBeVisible();
+  });
+
   test("keeps settings tabs content-hugging without narrow-screen overflow", async ({
     page,
   }) => {
     await installCommonApiMocks(page);
-    await installSessionMock(page, { enrolled: true });
+    await installSessionMock(page, { hasPromoterProfile: true });
     await installPromoterApiMocks(page);
 
     await page.goto(`${BASE_URL}/settings?tab=promoter`);
@@ -534,7 +571,42 @@ test.describe("Promoter poster campaign", () => {
     const tabs = page.locator('[data-slot="tabs"]');
     const tabsList = page.locator('[data-slot="tabs-list"]');
     const tabTriggers = tabsList.getByRole("tab");
+    const promoterTab = page.getByTestId("settings-promoter-tab");
     await expect(tabTriggers).toHaveCount(4);
+    await expect(promoterTab).toHaveAttribute("aria-selected", "true");
+    await expect(page.getByText("Enrolled", { exact: true })).toHaveClass(
+      /text-success/,
+    );
+    await expect(
+      page.getByRole("link", { name: "Open my posters" }),
+    ).toHaveCount(0);
+    await expect(page.getByTestId("promoter-terms-open")).toBeVisible();
+    await page.getByTestId("promoter-terms-open").click();
+    const acceptedTermsDialog = page.getByTestId("promoter-terms-dialog");
+    await expect(
+      acceptedTermsDialog.getByTestId("promoter-terms-accept"),
+    ).toHaveCount(0);
+    await expect(
+      acceptedTermsDialog.getByText(
+        "Scroll through all terms to enable acceptance.",
+      ),
+    ).toHaveCount(0);
+    const closeTerms = acceptedTermsDialog
+      .getByRole("button", { name: "Close" })
+      .last();
+    await expect(closeTerms).toBeVisible();
+    await closeTerms.click();
+
+    await page.evaluate(() => {
+      window.history.pushState(null, "", "/settings?tab=profile");
+    });
+    await expect(
+      tabsList.getByRole("tab", { name: "Profile" }),
+    ).toHaveAttribute("aria-selected", "true");
+
+    await page.goBack();
+    await expect(page).toHaveURL(`${BASE_URL}/settings?tab=promoter`);
+    await expect(promoterTab).toHaveAttribute("aria-selected", "true");
 
     const desktopMetrics = await tabsList.evaluate((list) => {
       const tabsRoot = list.closest<HTMLElement>('[data-slot="tabs"]');
@@ -584,6 +656,23 @@ test.describe("Promoter poster campaign", () => {
       await expect(tabTriggers.nth(index)).toBeVisible();
     }
     await expect(tabs).toBeVisible();
+  });
+
+  test("hides promoter settings from users who are not enrolled", async ({
+    page,
+  }) => {
+    await installCommonApiMocks(page);
+    await installSessionMock(page);
+
+    await page.goto(`${BASE_URL}/settings?tab=promoter`);
+
+    await expect(page).toHaveURL(`${BASE_URL}/settings?tab=profile`);
+    const tabsList = page.locator('[data-slot="tabs-list"]');
+    await expect(tabsList.getByRole("tab")).toHaveCount(3);
+    await expect(page.getByTestId("settings-promoter-tab")).toHaveCount(0);
+    await expect(
+      tabsList.getByRole("tab", { name: "Profile" }),
+    ).toHaveAttribute("aria-selected", "true");
   });
 
   test("recruits, enrolls, and creates independently tracked copies", async ({
@@ -641,7 +730,14 @@ test.describe("Promoter poster campaign", () => {
 
     await expect(page.getByTestId("promoter-dashboard")).toBeVisible();
     await expect(page.getByText("Unqualified scans this month")).toBeVisible();
-    await page.getByTestId("poster-create-open").click();
+    const createPosters = page.getByTestId("poster-create-open");
+    await expect(createPosters).toBeEnabled();
+    await expect(
+      page.getByRole("link", {
+        name: "Need help? Join the Discord.",
+      }),
+    ).toHaveAttribute("href", "https://discord.gg/uVcZcp4q8R");
+    await createPosters.click();
     await expect(page.getByTestId("poster-template-gallery")).toBeVisible();
     await page
       .getByTestId("poster-template-campus-low-ink")
@@ -724,7 +820,7 @@ test.describe("Promoter poster campaign", () => {
     page,
   }) => {
     await installCommonApiMocks(page);
-    await installSessionMock(page, { enrolled: true });
+    await installSessionMock(page, { hasPromoterProfile: true });
     const scanApi = await installActivationDedupeMocks(page);
 
     await page.goto(`${BASE_URL}/qr/${scanApi.posterId}`);
@@ -770,14 +866,14 @@ test.describe("Promoter poster campaign", () => {
     page,
   }) => {
     await installCommonApiMocks(page);
-    await installSessionMock(page, { enrolled: true });
+    await installSessionMock(page, { hasPromoterProfile: true });
     await installPromoterApiMocks(page, { programEnabled: false });
 
     await page.goto(`${BASE_URL}/posters`);
 
     await expect(page.getByTestId("promoter-dashboard")).toBeVisible();
     await expect(page.getByTestId("promoter-program-paused")).toBeVisible();
-    await expect(page.getByTestId("poster-create-open")).toBeDisabled();
+    await expect(page.getByTestId("poster-create-open")).toHaveCount(0);
     await expect(page.getByTestId("payout-history")).toContainText(
       "2026-06-01",
     );
@@ -786,6 +882,27 @@ test.describe("Promoter poster campaign", () => {
     await expect(page.getByTestId("promoter-terms-open")).toBeVisible();
     await page.getByTestId("promoter-terms-open").click();
     await expect(page.getByTestId("promoter-terms-dialog")).toBeVisible();
+  });
+
+  test("keeps enrolled promoter access with earlier acceptance metadata", async ({
+    page,
+  }) => {
+    await installCommonApiMocks(page);
+    await installSessionMock(page, {
+      hasPromoterProfile: true,
+      acceptedTermsVersion: "previous",
+    });
+    await installPromoterApiMocks(page);
+
+    await page.goto(`${BASE_URL}/posters`);
+
+    await expect(page.getByTestId("promoter-enrollment-form")).toHaveCount(0);
+    await expect(page.getByTestId("poster-create-open")).toBeVisible();
+
+    await page.goto(`${BASE_URL}/settings?tab=promoter`);
+    await expect(page).toHaveURL(/\/settings\?tab=promoter$/);
+    await expect(page.getByTestId("settings-promoter-tab")).toBeVisible();
+    await expect(page.getByText("Enrolled", { exact: true })).toBeVisible();
   });
 });
 
@@ -1055,7 +1172,10 @@ test.describe("Administrator poster payouts", () => {
   }) => {
     await page.clock.setFixedTime(new Date("2026-07-28T12:00:00Z"));
     await installCommonApiMocks(page);
-    await installSessionMock(page, { role: "admin", enrolled: true });
+    await installSessionMock(page, {
+      role: "admin",
+      hasPromoterProfile: true,
+    });
     const payoutApi = await installAdminPayoutMocks(page);
 
     await page.goto(`${BASE_URL}/admin/posters`);

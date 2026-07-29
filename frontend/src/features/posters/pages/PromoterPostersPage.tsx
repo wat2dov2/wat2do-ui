@@ -1,5 +1,4 @@
 import { useMemo } from "react";
-import Link from "next/link";
 import { useTranslation } from "react-i18next";
 
 import { PromoterEnrollmentCard } from "@/features/posters/components/PromoterEnrollmentCard";
@@ -17,7 +16,6 @@ import { PromoterPayoutHistory } from "@/features/posters/components/PromoterPay
 import { PromoterPosterCreator } from "@/features/posters/components/PromoterPosterCreator";
 import { PromoterPosterInventory } from "@/features/posters/components/PromoterPosterInventory";
 import { promoterProgram } from "@/shared/config/promoterProgram";
-import { SETTINGS_TABS, settingsTabPath } from "@/shared/constants/routes";
 import {
   Container,
   FormGrid,
@@ -28,6 +26,8 @@ import {
 import { EmptyState, LoadingState } from "@/shared/feedback";
 import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert";
 import { Button } from "@/shared/ui/button";
+import { Link } from "@/shared/ui/link";
+import { LoadingPage } from "@/shared/ui/loading-page";
 import {
   Card,
   CardAction,
@@ -76,12 +76,7 @@ export function PromoterPostersPage() {
   }
 
   if (dashboard.earnings.isLoading) {
-    return (
-      <LoadingState
-        className="min-h-[60dvh]"
-        label={t("posters.dashboard.loading")}
-      />
-    );
+    return <LoadingPage className="min-h-[60dvh]" />;
   }
 
   if (dashboard.earnings.isError || !dashboard.earnings.data) {
@@ -108,6 +103,10 @@ export function PromoterPostersPage() {
 
   const earnings = dashboard.earnings.data;
   const programEnabled = promoter.isProgramEnabled && earnings.programEnabled;
+  const canCreatePosters =
+    programEnabled &&
+    Boolean(promoter.school) &&
+    earnings.activeSlotsUsed < earnings.activeSlotsLimit;
   const summary = [
     {
       key: "pending",
@@ -156,14 +155,24 @@ export function PromoterPostersPage() {
       <Stack gap={8}>
         <PageHeader
           title={t("posters.dashboard.title")}
-          description={t("posters.dashboard.description")}
+          description={
+            <>
+              {t("posters.dashboard.description")}{" "}
+              <Link
+                href={promoterProgram.discordInviteUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {t("posters.dashboard.discordHelp")}
+              </Link>
+            </>
+          }
           actions={
-            earnings.posters.length > 0 ? (
+            earnings.posters.length > 0 && canCreatePosters ? (
               <PromoterPosterCreator
                 school={promoter.school ?? ""}
                 activeSlotsUsed={earnings.activeSlotsUsed}
                 activeSlotsLimit={earnings.activeSlotsLimit}
-                disabled={!promoter.canCreate || !programEnabled}
               />
             ) : undefined
           }
@@ -175,21 +184,6 @@ export function PromoterPostersPage() {
             <AlertTitle>{t("posters.dashboard.pausedTitle")}</AlertTitle>
             <AlertDescription>
               {t("posters.dashboard.pausedDescription")}
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {!promoter.hasCurrentTerms && programEnabled && (
-          <Alert variant="warning" data-testid="promoter-terms-stale">
-            <QrCode />
-            <AlertTitle>{t("posters.dashboard.termsTitle")}</AlertTitle>
-            <AlertDescription>
-              <p>{t("posters.dashboard.termsDescription")}</p>
-              <Button asChild variant="secondary" size="sm">
-                <Link href={settingsTabPath(SETTINGS_TABS.PROMOTER)}>
-                  {t("posters.dashboard.reviewTerms")}
-                </Link>
-              </Button>
             </AlertDescription>
           </Alert>
         )}
@@ -231,12 +225,13 @@ export function PromoterPostersPage() {
               title={t("posters.inventory.emptyTitle")}
               description={t("posters.inventory.emptyDescription")}
               action={
-                <PromoterPosterCreator
-                  school={promoter.school ?? ""}
-                  activeSlotsUsed={earnings.activeSlotsUsed}
-                  activeSlotsLimit={earnings.activeSlotsLimit}
-                  disabled={!promoter.canCreate || !programEnabled}
-                />
+                canCreatePosters ? (
+                  <PromoterPosterCreator
+                    school={promoter.school ?? ""}
+                    activeSlotsUsed={earnings.activeSlotsUsed}
+                    activeSlotsLimit={earnings.activeSlotsLimit}
+                  />
+                ) : undefined
               }
             />
           ) : (

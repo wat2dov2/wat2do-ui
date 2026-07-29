@@ -5,9 +5,15 @@ import {
   type SearchComboboxVariant,
 } from "@/shared/ui/search-combobox";
 import { Highlighter } from "@/shared/ui/highlighter";
-import { ALL_SCHOOLS, DEFAULT_SCHOOL } from "@/shared/constants/schools";
-import { translateSchool } from "@/shared/utils/schoolTranslation";
-import { searchSchools } from "@/shared/api/schools.api";
+import {
+  ALL_SCHOOLS,
+  DEFAULT_SCHOOL,
+} from "@/shared/constants/schools";
+import {
+  searchSchools,
+  type SchoolSummary,
+} from "@/shared/api/schools.api";
+import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 
 interface SchoolComboboxProps {
   value: string;
@@ -35,12 +41,22 @@ export function SchoolCombobox({
   isAdmin = false,
 }: SchoolComboboxProps) {
   const { t } = useTranslation();
+  const { getSchoolName } = useSchoolDirectory();
 
   const displayValue = useMemo(() => {
-    if (value) return translateSchool(value);
+    if (value === ALL_SCHOOLS) return t("schools.allSchools");
+    if (value) return getSchoolName(value);
     if (placeholder) return placeholder;
-    return translateSchool(DEFAULT_SCHOOL);
-  }, [placeholder, value]);
+    return getSchoolName(DEFAULT_SCHOOL);
+  }, [getSchoolName, placeholder, t, value]);
+
+  const allSchoolsOption = useMemo<SchoolSummary>(
+    () => ({
+      slug: ALL_SCHOOLS,
+      name: t("schools.allSchools"),
+    }),
+    [t],
+  );
 
   const renderTriggerLabel =
     variant === "nav" && showHighlight
@@ -56,14 +72,14 @@ export function SchoolCombobox({
       : undefined;
 
   return (
-    <SearchCombobox<string>
+    <SearchCombobox<SchoolSummary>
       selectedKey={value}
-      onSelect={onChange}
+      onSelect={(school) => onChange(school.slug)}
       fetcher={searchSchools}
-      getKey={(school) => school}
-      getLabel={(school) => translateSchool(school)}
+      getKey={(school) => school.slug}
+      getLabel={(school) => school.name}
       displayValue={displayValue}
-      allOption={isAdmin ? ALL_SCHOOLS : undefined}
+      allOption={isAdmin ? allSchoolsOption : undefined}
       isPlaceholder={!value && Boolean(placeholder)}
       renderTriggerLabel={renderTriggerLabel}
       debounceMs={220}

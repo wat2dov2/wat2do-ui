@@ -20,6 +20,15 @@ from services import user_service
 from services.user_service import get_user
 
 
+@pytest.fixture(autouse=True)
+def _school_directory(monkeypatch):
+    monkeypatch.setattr(
+        user_service.school_service,
+        "school_exists",
+        lambda slug: slug == "uwaterloo",
+    )
+
+
 def test_get_user_returns_none_when_no_row(fake_sb, patch_sb):
     """No rows back from Supabase → service returns ``None`` (not an error)."""
     patch_sb("services.user_service")
@@ -144,7 +153,7 @@ def test_first_promoter_enrollment_is_blocked_while_program_paused(monkeypatch):
         )
 
 
-def test_enrolled_promoter_can_update_email_while_program_paused(
+def test_enrolled_promoter_with_earlier_terms_can_update_email_while_program_paused(
     fake_sb,
     patch_sb,
     monkeypatch,
@@ -157,7 +166,7 @@ def test_enrolled_promoter_can_update_email_while_program_paused(
         school="uwaterloo",
         payout_email="old@example.com",
         promoter_tos_accepted_at=accepted_at,
-        promoter_tos_version="2026-07",
+        promoter_tos_version="previous",
         created_at=accepted_at,
         updated_at=accepted_at,
     )

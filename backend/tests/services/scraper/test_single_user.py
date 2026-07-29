@@ -7,6 +7,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from schemas.school import School
+from services.scraper import single_user
 from services.scraper.single_user import (
     SchoolResolutionError,
     fetch_posts_for_single_user,
@@ -17,13 +19,31 @@ from services.scraper.single_user import (
 )
 
 
+def _school(slug: str) -> School:
+    return School(
+        slug=slug,
+        name=slug,
+        timezone="America/Toronto",
+    )
+
+
 def test_resolve_single_user_scrape_school_waterloo(monkeypatch):
     monkeypatch.setenv("INTENDED_RECIPIENT_ID", "76214170483")
+    monkeypatch.setattr(
+        single_user.school_service,
+        "get_school_by_recipient_id",
+        MagicMock(return_value=_school("uwaterloo")),
+    )
     assert resolve_single_user_scrape_school() == "uwaterloo"
 
 
 def test_resolve_single_user_scrape_school_utm(monkeypatch):
     monkeypatch.setenv("INTENDED_RECIPIENT_ID", "78383689040")
+    monkeypatch.setattr(
+        single_user.school_service,
+        "get_school_by_recipient_id",
+        MagicMock(return_value=_school("utm")),
+    )
     assert resolve_single_user_scrape_school() == "utm"
 
 
@@ -35,6 +55,11 @@ def test_resolve_single_user_scrape_school_requires_recipient_id(monkeypatch):
 
 def test_resolve_single_user_scrape_school_rejects_unknown_recipient_id(monkeypatch):
     monkeypatch.setenv("INTENDED_RECIPIENT_ID", "99999999999")
+    monkeypatch.setattr(
+        single_user.school_service,
+        "get_school_by_recipient_id",
+        MagicMock(return_value=None),
+    )
     with pytest.raises(SchoolResolutionError, match="No school mapping"):
         resolve_single_user_scrape_school()
 
@@ -42,6 +67,11 @@ def test_resolve_single_user_scrape_school_rejects_unknown_recipient_id(monkeypa
 def test_resolve_single_user_scrape_school_ignores_school_env(monkeypatch):
     monkeypatch.setenv("SCHOOL", "McGill University")
     monkeypatch.setenv("INTENDED_RECIPIENT_ID", "76214170483")
+    monkeypatch.setattr(
+        single_user.school_service,
+        "get_school_by_recipient_id",
+        MagicMock(return_value=_school("uwaterloo")),
+    )
     assert resolve_single_user_scrape_school() == "uwaterloo"
 
 

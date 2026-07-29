@@ -545,7 +545,7 @@ def render_latency_distribution_svg(
         f'<rect width="{width}" height="{height}" fill="#0b1020"/>',
         (
             '<text x="24" y="36" fill="#f8fafc" font-size="24" font-weight="700">'
-            "Wat2Do production endpoint latency distributions</text>"
+            "Wat2Do endpoint latency distributions</text>"
         ),
         (
             '<text x="24" y="62" fill="#94a3b8" font-size="13">'

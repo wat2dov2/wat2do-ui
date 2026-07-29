@@ -4,16 +4,46 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/shared/ui/select';
-import { useLanguage } from '@/shared/hooks/useLanguage';
-import { SUPPORTED_LANGUAGES } from '@/shared/constants/languages';
+} from "@/shared/ui/select";
+import { useLanguage } from "@/shared/hooks/useLanguage";
+import {
+  getDefaultLanguage,
+  getLanguageByCode,
+  SUPPORTED_LANGUAGES,
+  type SupportedLanguage,
+} from "@/shared/constants/languages";
 
 /** Language picker: a stock small Select listing the supported languages. */
-export function LanguageSelector() {
-  const { currentLanguage, currentLanguageCode, changeLanguage } = useLanguage();
+interface LanguageSelectorProps {
+  value?: SupportedLanguage;
+  disabled?: boolean;
+  onValueChange?: (language: SupportedLanguage) => void;
+}
+
+export function LanguageSelector({
+  value,
+  disabled = false,
+  onValueChange,
+}: LanguageSelectorProps = {}) {
+  const language = useLanguage();
+  const currentLanguageCode = value ?? language.currentLanguageCode;
+  const currentLanguage =
+    getLanguageByCode(currentLanguageCode) ?? getDefaultLanguage();
+
+  const handleValueChange = (nextLanguage: string) => {
+    if (onValueChange) {
+      onValueChange(nextLanguage as SupportedLanguage);
+      return;
+    }
+    void language.changeLanguage(nextLanguage);
+  };
 
   return (
-    <Select value={currentLanguageCode} onValueChange={changeLanguage}>
+    <Select
+      value={currentLanguageCode}
+      disabled={disabled}
+      onValueChange={handleValueChange}
+    >
       <SelectTrigger size="sm">
         <SelectValue>
           <span className="sm:hidden">{currentLanguage.shortLabel}</span>
