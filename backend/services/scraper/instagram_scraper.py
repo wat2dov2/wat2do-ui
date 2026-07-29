@@ -90,11 +90,12 @@ class InstagramScraper:
             log.error("Apify actor call failed: %s", e)
             return [], False
 
-        run_id = run["id"]
+        run_id = run.id
         log.info("Apify run started (run_id=%s); polling for completion", run_id)
 
         deadline = time.time() + timeout_seconds
         status = "RUNNING"
+        completed_run = None
         try:
             while True:
                 if time.time() > deadline:
@@ -105,8 +106,8 @@ class InstagramScraper:
                         log.warning("Apify abort failed for %s: %s", run_id, e)
                     return [], False
 
-                run = self._client.run(run_id).get()
-                status = (run or {}).get("status") or "UNKNOWN"
+                completed_run = self._client.run(run_id).get()
+                status = completed_run.status if completed_run else "UNKNOWN"
                 if status in _TERMINAL_STATUSES:
                     break
                 time.sleep(SCRAPING_POLL_INTERVAL_SECONDS)
@@ -114,12 +115,14 @@ class InstagramScraper:
             log.error("Apify polling failed for %s: %s", run_id, e)
             return [], False
 
-        if status != "SUCCEEDED":
+        if completed_run is None or status != "SUCCEEDED":
             log.error("Apify run %s ended with status=%s", run_id, status)
             return [], False
 
         try:
-            dataset_items = list(self._client.dataset(run["defaultDatasetId"]).list_items().items)
+            dataset_items = list(
+                self._client.dataset(completed_run.default_dataset_id).list_items().items
+            )
         except Exception as e:
             log.error("Failed to fetch Apify dataset for %s: %s", run_id, e)
             return [], False
