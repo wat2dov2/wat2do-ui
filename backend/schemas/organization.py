@@ -189,6 +189,7 @@ class OrganizationEventStats(BaseModel):
 
 class OrganizationResponse(BaseModel):
     id: int
+    school_id: int | None = Field(default=None, exclude=True)
     organization_name: str
     status: OrganizationStatus = ORGANIZATION_STATUS_APPROVED
     categories: list[str] | None = None

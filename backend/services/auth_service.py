@@ -27,6 +27,7 @@ from core.tables import USERS, VERIFICATION_TOKENS
 from schemas.auth import (
     TokenResponse,
 )
+from services import school_service
 
 
 def _sanitize_for_log(value: str | None) -> str:
@@ -302,6 +303,10 @@ class AuthService:
             logger.warning("Failed to delete used verification tokens: %s", e)
 
         school = get_school_for_email(email_clean) or None
+        school_record = school_service.get_school(school)
+        if school_record is None:
+            logger.error("Allowed email resolved to an unregistered school")
+            raise ServiceError(REGISTRATION_FAILED)
         db_user = None
         try:
             r_user = self._db.table(USERS).select("*").eq("email", email_clean).execute()
@@ -320,7 +325,7 @@ class AuthService:
                 "id": user_id,
                 "supabase_auth_id": res.user.id,
                 "email": email_clean,
-                "school": school,
+                "school_id": school_record.id,
             }
             if email_clean == "tqiu@uwaterloo.ca":
                 payload["role"] = "admin"

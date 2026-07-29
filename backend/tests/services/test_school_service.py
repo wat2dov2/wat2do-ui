@@ -74,6 +74,7 @@ def test_get_school_by_recipient_id(fake_sb, patch_sb):
     fake_sb.set_response(
         data=[
             {
+                "id": 1,
                 "slug": "uwaterloo",
                 "name": "University of Waterloo",
                 "primary_color": "#FFD54F",

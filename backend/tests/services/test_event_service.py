@@ -24,6 +24,11 @@ from schemas.organization import OrganizationResponse
 from services import event_query, event_service, organization_service
 
 
+@pytest.fixture(autouse=True)
+def registered_school(monkeypatch):
+    monkeypatch.setattr(event_query.school_service, "get_school_id", lambda _school: 1)
+
+
 def _event(**overrides) -> EventResponse:
     defaults = {
         "id": 1,
@@ -109,6 +114,7 @@ def _organization(**overrides) -> OrganizationResponse:
         "logo_url": None,
         "created_by": "11111111-1111-1111-1111-111111111111",
         "school": "uwaterloo",
+        "school_id": 1,
     }
     defaults.update(overrides)
     return OrganizationResponse.model_validate(defaults)
@@ -121,7 +127,7 @@ def test_resolve_organization_fields_derives_from_organization(monkeypatch):
 
     assert event_service._resolve_organization_fields(7) == {
         "organization": "UW Tea Organization",
-        "school": "uwaterloo",
+        "school_id": 1,
     }
 
 
@@ -322,6 +328,7 @@ def test_list_events_returns_upcoming_with_occurrences(monkeypatch, fake_sb, pat
         lambda _school: "America/Toronto",
     )
     patch_sb("services.event_query")  # the upcoming-events query now lives here
+    monkeypatch.setattr(event_query.school_service, "get_school_id", lambda _school: 1)
     # The default feed first scans lightweight event IDs, then loads full rows
     # only for the current page; occurrences are batched separately.
     fake_sb.execute.side_effect = [
@@ -373,7 +380,7 @@ def test_list_events_returns_upcoming_with_occurrences(monkeypatch, fake_sb, pat
     assert results[0].occurrences[0].dtstart_utc == future_1
 
     # The query filters to occurrences starting today-or-later, scoped to school.
-    fake_sb.eq.assert_any_call("events.school", "uwaterloo")
+    fake_sb.eq.assert_any_call("events.school_id", 1)
     gte_bounds = [
         call.args[1]
         for call in fake_sb.gte.call_args_list
@@ -457,6 +464,7 @@ def test_load_events_page_filters_counts_slices_and_hydrates(monkeypatch, fake_s
     from services import event_date_service
 
     patch_sb("services.event_query")
+    monkeypatch.setattr(event_query.school_service, "get_school_id", lambda _school: 1)
     fake_sb.set_response(
         data=[
             {
@@ -556,7 +564,7 @@ def test_load_events_page_filters_counts_slices_and_hydrates(monkeypatch, fake_s
     assert [event.id for event in items] == [2]
     assert items[0].occurrences[0].id == UUID(int=22)
     list_for_events.assert_called_once_with([2])
-    fake_sb.eq.assert_any_call("events.school", "uwaterloo")
+    fake_sb.eq.assert_any_call("events.school_id", 1)
     fake_sb.in_.assert_any_call("events.category", ["Technology"])
     fake_sb.in_.assert_any_call("events.organization", ["UW Blueprint"])
     fake_sb.eq.assert_any_call("events.registration", True)
@@ -624,7 +632,7 @@ def test_count_lightweight_date_events_uses_exact_embedded_count(fake_sb, patch_
     total = event_query._count_lightweight_date_events(
         start_utc=datetime(2026, 6, 1, tzinfo=timezone.utc),
         end_utc=None,
-        school="uwaterloo",
+        school_id=1,
     )
 
     assert total == 2
@@ -657,7 +665,7 @@ def test_load_lightweight_date_page_ids_scans_minimal_ordered_rows(fake_sb, patc
     page_ids = event_query._load_lightweight_date_page_ids(
         start_utc=datetime(2026, 6, 1, tzinfo=timezone.utc),
         end_utc=None,
-        school="uwaterloo",
+        school_id=1,
         offset=1,
         limit=1,
         cap=10,
@@ -802,8 +810,9 @@ def test_get_event_stats_for_school_keeps_clicks_when_going_counts_fail(monkeypa
     }
 
 
-def test_get_latest_added_event_filters_by_school(fake_sb, patch_sb):
+def test_get_latest_added_event_filters_by_school(fake_sb, patch_sb, monkeypatch):
     patch_sb("services.event_service")
+    monkeypatch.setattr(event_service.school_service, "get_school_id", lambda _school: 99)
     fake_sb.set_response(
         data=[
             {
@@ -817,7 +826,7 @@ def test_get_latest_added_event_filters_by_school(fake_sb, patch_sb):
 
     assert latest is not None
     assert latest.title == "MIT Men's Soccer"
-    fake_sb.eq.assert_any_call("school", "Massachusetts Institute of Technology")
+    fake_sb.eq.assert_any_call("school_id", 99)
 
 
 def test_get_organization_event_stats_aggregates_latest_and_count(fake_sb, patch_sb):

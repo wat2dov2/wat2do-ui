@@ -20,7 +20,7 @@ def _stub_domain_table(monkeypatch):
             "uwaterloo.ca": "uwaterloo",
             "edu.uwaterloo.ca": "uwaterloo",
             "wlu.ca": "wlu",
-            "utoronto.ca": "utoronto",
+            "utoronto.ca": "utsg",
             "scar.utoronto.ca": "utsc",
             "cornell.edu": "cornell",
             "nyu.edu": "nyu",
@@ -75,7 +75,7 @@ class TestGetSchoolForEmail:
         assert get_school_for_email("c@mit.edu") == "mit"
 
     def test_uoft_domain_routes_to_st_george(self):
-        assert get_school_for_email("d@utoronto.ca") == "utoronto"
+        assert get_school_for_email("d@utoronto.ca") == "utsg"
 
     def test_uoft_scarborough_subdomain(self):
         assert get_school_for_email("e@scar.utoronto.ca") == "utsc"

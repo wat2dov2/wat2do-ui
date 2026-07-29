@@ -163,24 +163,9 @@ class AuthenticationControl(_ControlModel):
 
 
 class OrganizationManagementControl(_ControlModel):
+    directory_page_size: int = Field(gt=0, le=100)
+    directory_revalidate_seconds: int = Field(gt=0)
     invite_expiration_days: int = Field(gt=0)
-
-
-class LootTierControl(_ControlModel):
-    grey: int = Field(ge=0, le=100)
-    bronze: int = Field(ge=0, le=100)
-    silver: int = Field(ge=0, le=100)
-    gold: int = Field(ge=0, le=100)
-    diamond: int = Field(ge=0, le=100)
-
-    @model_validator(mode="after")
-    def validate_ordering(self) -> "LootTierControl":
-        thresholds = [self.grey, self.bronze, self.silver, self.gold, self.diamond]
-        if thresholds != sorted(set(thresholds)):
-            raise ValueError("loot tier thresholds must be unique and ascending")
-        if self.grey != 0:
-            raise ValueError("grey loot tier must start at zero")
-        return self
 
 
 class MorningEmailControl(_ControlModel):
@@ -188,7 +173,6 @@ class MorningEmailControl(_ControlModel):
     new_event_window_hours: int = Field(gt=0)
     minimum_recommendation_score: float = Field(ge=0, le=1)
     provider_attempts: int = Field(gt=0, le=10)
-    loot_tiers: LootTierControl
 
 
 class EventReminderControl(_ControlModel):

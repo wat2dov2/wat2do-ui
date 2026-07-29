@@ -159,15 +159,7 @@ export function VisualFilters({ filters, viewMode, onViewModeChange }: VisualFil
   return (
     <div className="-space-y-px">
       {/* View Mode */}
-      <FilterSection
-        title={t("common.view")}
-        indicator={
-          viewMode === "calendar"
-            ? t("settings.appearance.calendar")
-            : undefined
-        }
-        onClear={() => onViewModeChange("grid")}
-      >
+      <FilterSection title={t("common.view")}>
         <div className="grid grid-cols-2 gap-2">
           {viewModeOptions.map((option) => {
             const ViewIcon = option.icon;

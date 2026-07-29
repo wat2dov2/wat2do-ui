@@ -418,9 +418,7 @@ def update_workbook(xlsx_path: Path, matches: list[Match]) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--xlsx", type=Path, default=XLSX_PATH)
-    parser.add_argument(
-        "--schools", nargs="*", help="School slugs to include (e.g. ubc utoronto wlu)"
-    )
+    parser.add_argument("--schools", nargs="*", help="School slugs to include (e.g. ubc utsg wlu)")
     parser.add_argument("--limit", type=int, default=None)
     parser.add_argument("--delay", type=float, default=0.35)
     parser.add_argument("--timeout", type=int, default=20)

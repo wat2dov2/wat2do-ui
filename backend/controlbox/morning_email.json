@@ -2,12 +2,5 @@
   "local_send_hour": 9,
   "new_event_window_hours": 24,
   "minimum_recommendation_score": 0.3,
-  "provider_attempts": 3,
-  "loot_tiers": {
-    "grey": 0,
-    "bronze": 45,
-    "silver": 60,
-    "gold": 75,
-    "diamond": 90
-  }
+  "provider_attempts": 3
 }

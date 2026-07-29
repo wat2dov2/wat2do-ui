@@ -1,0 +1,184 @@
+import {
+  useId,
+  useState,
+  type ComponentProps,
+  type FormEvent,
+  type ReactNode,
+} from "react";
+import { useTranslation } from "react-i18next";
+
+import {
+  useEmailOtpFlow,
+  type VerifiedOtpSession,
+} from "@/features/auth/hooks/useEmailOtpFlow";
+import { Stack } from "@/shared/layout";
+import { Button } from "@/shared/ui/button";
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldLabel,
+  FieldSet,
+} from "@/shared/ui/field";
+import { Input } from "@/shared/ui/input";
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSlot,
+} from "@/shared/ui/input-otp";
+import { LoadingButton } from "@/shared/ui/loading-button";
+import { cn } from "@/shared/lib/utils";
+
+interface EmailOtpFormProps
+  extends Omit<ComponentProps<"form">, "onSubmit"> {
+  actionLabel?: string;
+  requestCodeLabel?: string;
+  initialEmail?: string;
+  invitationToken?: string;
+  returnTo?: string;
+  isEmailLocked?: boolean;
+  isVerificationDisabled?: boolean;
+  requestFooter?: ReactNode;
+  footer?: ReactNode;
+  onAuthenticated: (
+    session: VerifiedOtpSession,
+    email: string,
+  ) => void | Promise<void>;
+}
+
+export function EmailOtpForm({
+  actionLabel,
+  requestCodeLabel,
+  initialEmail,
+  invitationToken,
+  returnTo,
+  isEmailLocked = false,
+  isVerificationDisabled = false,
+  requestFooter,
+  footer,
+  onAuthenticated,
+  className,
+  children,
+  ...props
+}: EmailOtpFormProps) {
+  const { t } = useTranslation();
+  const fieldId = useId();
+  const [isCompletingAction, setIsCompletingAction] = useState(false);
+  const flow = useEmailOtpFlow({
+    initialEmail,
+    invitationToken,
+    returnTo,
+  });
+  const emailId = `${fieldId}-email`;
+  const otpId = `${fieldId}-otp`;
+  const isBusy = flow.isLoading || isCompletingAction;
+  const resolvedRequestCodeLabel = requestCodeLabel ?? t("auth.continue");
+  const resolvedActionLabel = actionLabel ?? t("auth.verifyOtp");
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (isBusy) {
+      return;
+    }
+
+    const session = await flow.onSubmit();
+    if (!session) {
+      return;
+    }
+
+    setIsCompletingAction(true);
+    try {
+      await onAuthenticated(session, flow.email.trim());
+    } finally {
+      setIsCompletingAction(false);
+    }
+  };
+
+  return (
+    <form
+      data-slot="email-otp-form"
+      className={cn("w-full", className)}
+      onSubmit={(event) => void handleSubmit(event)}
+      {...props}
+    >
+      <FieldSet disabled={isBusy} className="gap-4">
+        {!flow.emailSent ? (
+          <Field>
+            <FieldLabel htmlFor={emailId}>{t("auth.emailLabel")}</FieldLabel>
+            <Input
+              id={emailId}
+              type="email"
+              value={flow.email}
+              onChange={(event) => flow.onEmailChange(event.target.value)}
+              placeholder={t("auth.emailPlaceholder")}
+              disabled={isEmailLocked || isBusy}
+              autoComplete="email"
+              autoFocus
+              required
+            />
+          </Field>
+        ) : (
+          <Field>
+            <FieldLabel htmlFor={otpId}>{t("auth.otpLabel")}</FieldLabel>
+            <FieldDescription>
+              {t("auth.otpDescription", { email: flow.email.trim() })}
+            </FieldDescription>
+            <Stack align="center">
+              <InputOTP
+                id={otpId}
+                maxLength={6}
+                value={flow.otpToken}
+                onChange={flow.onOtpChange}
+                disabled={isBusy}
+                autoComplete="one-time-code"
+                aria-label={t("auth.otpLabel")}
+                autoFocus
+              >
+                <InputOTPGroup>
+                  {Array.from({ length: 6 }, (_, index) => (
+                    <InputOTPSlot key={index} index={index} />
+                  ))}
+                </InputOTPGroup>
+              </InputOTP>
+            </Stack>
+          </Field>
+        )}
+
+        {children}
+
+        <FieldError>{flow.error}</FieldError>
+
+        <LoadingButton
+          type="submit"
+          disabled={
+            !flow.isFormValid ||
+            (flow.emailSent && isVerificationDisabled)
+          }
+          isLoading={isBusy}
+          className="w-full"
+        >
+          {flow.emailSent
+            ? resolvedActionLabel
+            : resolvedRequestCodeLabel}
+        </LoadingButton>
+
+        {flow.emailSent ? (
+          <Stack align="center" gap={2}>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => void flow.onResend()}
+              disabled={isBusy}
+            >
+              {t("auth.resendOtp")}
+            </Button>
+          </Stack>
+        ) : null}
+
+        {!flow.emailSent ? requestFooter : null}
+        {footer}
+      </FieldSet>
+    </form>
+  );
+}

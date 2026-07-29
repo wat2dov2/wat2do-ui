@@ -8,7 +8,6 @@ Owner: Tony.
 Replace `morning_digest`, `weekly_digest`, and `daily_new_events` with one recommendation-only `morning_email` sent around 9:00 AM in the user's school timezone.
 
 The morning email contains events added in the previous 24 hours whose stored nightly recommendation score is at least `0.30`.
-It also presents the average relevance of those picks as a `0-100` daily score with Grey, Bronze, Silver, Gold, or Diamond loot.
 
 `event_reminder` is a separate email sent about one hour before an occurrence the user explicitly selected as Going.
 Going is occurrence-aware so the reminder targets the showing the user intends to attend.
@@ -31,8 +30,6 @@ Going is occurrence-aware so the reminder targets the showing the user intends t
 - Never run the recommendation pipeline while composing email.
 - Require a stored recommendation score of at least `0.30`.
 - Use a fixed 24-hour recent-event window.
-- Average the sent picks' scores into one clamped `0-100` daily score.
-- Resolve the daily score through validated loot-tier thresholds.
 - Do not apply a separate email item cap.
 - Keep one preference per active notification type, shared by settings and unsubscribe.
 - Keep one canonical write path for Going selections.
@@ -500,17 +497,7 @@ The stored nightly snapshot currently has a natural upper bound of 20 rows per u
 If stored recommendations are absent or stale, no morning email is sent.
 Event reminders remain independent of the recommendation snapshot.
 
-### Daily score and loot tier
-
-For each prepared morning email:
-
-1. Average the stored predicted scores of the qualifying picks.
-2. Multiply by 100, round to an integer, and clamp to `0-100`.
-3. Resolve the score through the validated thresholds in `morning_email.json`.
-4. Render the score and tier in HTML and plain text.
-
 Email colors use semantic roles matching the application's dark design tokens.
-Decorative loot colors stay separate from functional surface, text, and border colors.
 
 ### Sending
 
@@ -536,7 +523,6 @@ Do not add Resend batch sending unless measured runtime approaches the workflow 
 ### Body requirements
 
 - HTML and plain text.
-- Display the daily score and loot tier before recommendations.
 - Display local occurrence time.
 - Link events to `/?eventId={id}`.
 - Escape every event-controlled HTML value.
@@ -932,7 +918,6 @@ Also run:
 - Morning-email reads are batched and bounded.
 - Morning-email candidates use one fixed previous-24-hour window.
 - Morning email contains recommendations only.
-- Daily recommendation scores and loot tiers resolve from validated controls.
 - Event reminders target selected occurrences about one hour before start.
 - Reminder delivery is idempotent per user, occurrence, and scheduled start.
 - Failed and stale claims can retry safely.

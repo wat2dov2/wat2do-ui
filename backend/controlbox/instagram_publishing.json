@@ -2,11 +2,11 @@
   "graph_api_version": "v25.0",
   "accounts": [
     {
-      "key": "wat2do",
-      "name": "Wat2Do",
+      "key": "uwaterloo",
+      "name": "Wat2Do Waterloo",
       "school": "uwaterloo",
-      "instagram_username": "wat2do.ca",
-      "enabled": false
+      "instagram_username": "uwaterloo.wat2do.io",
+      "enabled": true
     },
     {
       "key": "utsc",
@@ -16,9 +16,9 @@
       "enabled": true
     },
     {
-      "key": "laval",
+      "key": "ulaval",
       "name": "Wat2Do Laval",
-      "school": "laval",
+      "school": "ulaval",
       "instagram_username": "ulaval.wat2do.io",
       "enabled": true
     },
@@ -37,9 +37,9 @@
       "enabled": true
     },
     {
-      "key": "memorial",
+      "key": "mun",
       "name": "Wat2Do Memorial",
-      "school": "memorial",
+      "school": "mun",
       "instagram_username": "mun.wat2do.io",
       "enabled": true
     },
@@ -86,9 +86,9 @@
       "enabled": true
     },
     {
-      "key": "ocad",
+      "key": "ocadu",
       "name": "Wat2Do OCAD",
-      "school": "ocad",
+      "school": "ocadu",
       "instagram_username": "ocadu.wat2do.io",
       "enabled": true
     },
@@ -100,9 +100,9 @@
       "enabled": true
     },
     {
-      "key": "uottawa",
+      "key": "ottawa",
       "name": "Wat2Do Ottawa",
-      "school": "uottawa",
+      "school": "ottawa",
       "instagram_username": "ottawa.wat2do.io",
       "enabled": true
     },
@@ -114,23 +114,23 @@
       "enabled": true
     },
     {
-      "key": "utoronto",
+      "key": "utsg",
       "name": "Wat2Do UTSG",
-      "school": "utoronto",
+      "school": "utsg",
       "instagram_username": "utsg.wat2do.io",
       "enabled": true
     },
     {
-      "key": "western",
+      "key": "uwo",
       "name": "Wat2Do Western",
-      "school": "western",
+      "school": "uwo",
       "instagram_username": "uwo.wat2do.io",
       "enabled": true
     },
     {
-      "key": "windsor",
+      "key": "uwindsor",
       "name": "Wat2Do Windsor",
-      "school": "windsor",
+      "school": "uwindsor",
       "instagram_username": "uwindsor.wat2do.io",
       "enabled": true
     },
@@ -142,16 +142,16 @@
       "enabled": true
     },
     {
-      "key": "york",
+      "key": "yorku",
       "name": "Wat2Do York",
-      "school": "york",
+      "school": "yorku",
       "instagram_username": "yorku.wat2do.io",
       "enabled": true
     },
     {
-      "key": "queens",
+      "key": "queensu",
       "name": "Wat2Do Queen's",
-      "school": "queens",
+      "school": "queensu",
       "instagram_username": "queensu.wat2do.io",
       "enabled": true
     },
@@ -173,7 +173,7 @@
   "generation_timezone": "America/Toronto",
   "fallback_window_hours": 24,
   "new_event_window_hours": 24,
-  "minimum_lead_hours": 6,
+  "minimum_lead_hours": 4,
   "maximum_lead_days": 21,
   "maximum_ai_candidates": 30,
   "maximum_event_slides": 9,

@@ -32,10 +32,19 @@ import {
   organizationPagePath,
   ROUTES,
 } from "@/shared/constants/routes";
+import type { PaginatedOrganizationsResponse } from "@/features/organizations/api/organizations.api";
 
 type OrganizationScope = "all" | "followed" | "claimed";
 
-export function OrganizationsPage() {
+interface OrganizationsPageProps {
+  initialDirectory: PaginatedOrganizationsResponse | null;
+  initialSchool: string;
+}
+
+export function OrganizationsPage({
+  initialDirectory,
+  initialSchool,
+}: OrganizationsPageProps) {
   const { t } = useTranslation();
   const router = useRouter();
   const { isAuthenticated: authed } = useAuthState();
@@ -56,7 +65,7 @@ export function OrganizationsPage() {
     totalItems,
     activeTab,
     setActiveTab,
-  } = useOrganizationsPage();
+  } = useOrganizationsPage({ initialDirectory, initialSchool });
 
   const savedOrganizationIds = useSavedOrganizationsStore(useShallow((state) => state.savedOrganizationIds));
   const tabOptions = [

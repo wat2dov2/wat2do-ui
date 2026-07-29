@@ -20,9 +20,11 @@ Mocks installed:
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
+from types import SimpleNamespace
 from unittest.mock import MagicMock
 from uuid import UUID
 
+from services.scraper import event_writer
 from services.scraper import pipeline as pipeline_module
 
 
@@ -91,6 +93,11 @@ def test_pipeline_produces_one_event_row_per_logical_event(monkeypatch, fake_sb,
     patch_sb("services.scraper.dedup")
 
     monkeypatch.setattr(pipeline_module, "upload_post_images", lambda urls: list(urls))
+    monkeypatch.setattr(
+        event_writer.school_service,
+        "get_school",
+        lambda slug: SimpleNamespace(id=1, slug=slug),
+    )
     monkeypatch.setattr(
         pipeline_module,
         "extract_events_from_post",
@@ -204,7 +211,8 @@ def test_pipeline_produces_one_event_row_per_logical_event(monkeypatch, fake_sb,
     # exactly ONE events-shaped dict insert.
     events_inserts = [c for c in dict_inserts if c[0][0].get("title") == "Tea Tasting Series"]
     assert len(events_inserts) == 1
-    assert events_inserts[0][0][0]["school"] == "uwaterloo"
+    assert events_inserts[0][0][0]["school_id"] == 1
+    assert "school" not in events_inserts[0][0][0]
 
     occurrence_inserts = [
         c

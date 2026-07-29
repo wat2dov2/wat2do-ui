@@ -26,19 +26,22 @@ from core.constants import (
 from core.database import get_sb
 from core.pagination import fetch_all_pages
 from core.tables import EVENT_DATES, EVENTS
+from services import school_service
 from services.organization_service import _normalize_organization_name
 
 log = logging.getLogger(__name__)
 
 _CANDIDATE_EVENT_SELECT = (
     "id,title,description,location,price,food,registration,category,"
-    "organization,organization_id,ig_handle,school,cancelled,source_url,source_image_url,"
+    "organization,organization_id,ig_handle,school_id,cancelled,source_url,source_image_url,"
+    f"{school_service.SCHOOL_SLUG_EMBED},"
     "event_dates(dtstart_utc,dtend_utc,duration,tz)"
 )
 
 _SAME_DAY_EVENT_EMBED = (
     "id,title,description,location,price,food,registration,category,"
-    "organization,organization_id,ig_handle,school,cancelled,source_url,source_image_url,"
+    "organization,organization_id,ig_handle,school_id,cancelled,source_url,source_image_url,"
+    f"{school_service.SCHOOL_SLUG_EMBED},"
     "event_dates(dtstart_utc,dtend_utc,duration,tz)"
 )
 
@@ -238,6 +241,7 @@ def _same_organization_candidates(
     now = datetime.now(timezone.utc)
     out: list[dict] = []
     for row in rows:
+        row = school_service.with_school_slug(row)
         occurrences = row.get("event_dates") or []
         if not occurrences:
             continue
@@ -288,6 +292,7 @@ def _same_day_candidates(
         event = date_row.get("events")
         if not event:
             continue
+        event = school_service.with_school_slug(event)
         eid = event.get("id")
         if eid in seen_event_ids:
             continue

@@ -8,13 +8,14 @@ from typing import Final
 
 from core.database import get_sb
 from core.tables import SCHOOLS
-from schemas.school import School, SchoolSummary
+from schemas.school import SchoolRecord, SchoolSummary
 
 DEFAULT_SEARCH_LIMIT: Final[int] = 10
 SCHOOL_COLUMNS: Final[str] = (
-    "slug, name, primary_color, secondary_color, timezone, "
+    "id, slug, name, primary_color, secondary_color, timezone, "
     "recipient_id, semester_start, semester_end"
 )
+SCHOOL_SLUG_EMBED: Final[str] = "school_record:schools(slug)"
 
 
 def _normalize(text: str | None) -> str:
@@ -29,7 +30,7 @@ def normalize_school_slug(value: str | None) -> str:
     return (value or "").strip().lower()
 
 
-def get_school(slug: str | None) -> School | None:
+def get_school(slug: str | None) -> SchoolRecord | None:
     normalized_slug = normalize_school_slug(slug)
     if not normalized_slug:
         return None
@@ -43,10 +44,10 @@ def get_school(slug: str | None) -> School | None:
     )
     if not response.data:
         return None
-    return School.model_validate(response.data[0])
+    return SchoolRecord.model_validate(response.data[0])
 
 
-def get_school_by_recipient_id(recipient_id: str | None) -> School | None:
+def get_school_by_recipient_id(recipient_id: str | None) -> SchoolRecord | None:
     normalized_recipient_id = (recipient_id or "").strip()
     if not normalized_recipient_id:
         return None
@@ -60,7 +61,26 @@ def get_school_by_recipient_id(recipient_id: str | None) -> School | None:
     )
     if not response.data:
         return None
-    return School.model_validate(response.data[0])
+    return SchoolRecord.model_validate(response.data[0])
+
+
+def get_school_id(slug_or_name: str | None) -> int | None:
+    school = get_school(slug_or_name) or get_school_by_name(slug_or_name)
+    return school.id if school is not None else None
+
+
+def with_school_slug(row: dict, *, relation: str = "school_record") -> dict:
+    """Flatten an embedded schools row into the public ``school`` slug."""
+    normalized = dict(row)
+    if relation not in normalized:
+        return normalized
+    school_record = normalized.pop(relation, None)
+    normalized["school"] = (
+        str(school_record["slug"])
+        if isinstance(school_record, dict) and school_record.get("slug")
+        else None
+    )
+    return normalized
 
 
 def school_exists(slug: str | None) -> bool:
@@ -126,7 +146,7 @@ def search_schools(query: str, limit: int = DEFAULT_SEARCH_LIMIT) -> list[School
     return [school for _, school in ranked[:limit]]
 
 
-def get_school_by_name(name: str | None) -> School | None:
+def get_school_by_name(name: str | None) -> SchoolRecord | None:
     normalized_name = (name or "").strip()
     if not normalized_name:
         return None
@@ -140,7 +160,7 @@ def get_school_by_name(name: str | None) -> School | None:
     )
     if not response.data:
         return None
-    return School.model_validate(response.data[0])
+    return SchoolRecord.model_validate(response.data[0])
 
 
 __all__ = [
@@ -148,7 +168,10 @@ __all__ = [
     "get_school",
     "get_school_by_recipient_id",
     "get_school_by_name",
+    "get_school_id",
     "normalize_school_slug",
+    "SCHOOL_SLUG_EMBED",
     "school_exists",
     "search_schools",
+    "with_school_slug",
 ]

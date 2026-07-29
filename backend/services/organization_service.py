@@ -31,8 +31,19 @@ from schemas.organization import (
     OrganizationStatus,
     OrganizationUpdate,
 )
-from services import event_service
+from services import event_service, school_service
 from services.event_feed_revalidation import event_feed_revalidation_service
+
+_ORGANIZATION_SELECT = f"*,{school_service.SCHOOL_SLUG_EMBED}"
+
+
+def _organization_response(row: dict, *, owner_email: str | None = None) -> OrganizationResponse:
+    return OrganizationResponse.model_validate(
+        {
+            **school_service.with_school_slug(row),
+            "owner_email": owner_email,
+        }
+    )
 
 
 def _normalize_organization_name(name: str | None) -> str:
@@ -50,12 +61,15 @@ def lookup_organization_by_school_and_name(school: str, name: str) -> dict | Non
     target = _normalize_organization_name(name)
     if not school_slug or not target:
         return None
+    school_record = school_service.get_school(school_slug)
+    if school_record is None:
+        return None
 
     rows = (
         get_sb()
         .table(ORGANIZATIONS)
-        .select("id,organization_name,organization_type,ig,school")
-        .eq("school", school_slug)
+        .select(f"id,organization_name,organization_type,ig,{school_service.SCHOOL_SLUG_EMBED}")
+        .eq("school_id", school_record.id)
         .order("id", desc=False)
         .execute()
     ).data or []
@@ -65,7 +79,7 @@ def lookup_organization_by_school_and_name(school: str, name: str) -> dict | Non
     ]
     if not matches:
         return None
-    return matches[0]
+    return school_service.with_school_slug(matches[0])
 
 
 def _fetch_owner_email(user_id: str | None) -> str | None:
@@ -92,7 +106,7 @@ def list_organizations_by_owner(owner_id: str) -> list[OrganizationResponse]:
         r_members = (
             get_sb()
             .table(ORGANIZATION_MEMBERS)
-            .select("organizations(*)")
+            .select(f"organizations(*,{school_service.SCHOOL_SLUG_EMBED})")
             .eq("user_id", owner_id)
             .execute()
         )
@@ -100,9 +114,7 @@ def list_organizations_by_owner(owner_id: str) -> list[OrganizationResponse]:
             if row.get("organizations"):
                 organization_data = row["organizations"]
                 email = _fetch_owner_email(organization_data.get("created_by"))
-                organization = OrganizationResponse.model_validate(
-                    {**organization_data, "owner_email": email}
-                )
+                organization = _organization_response(organization_data, owner_email=email)
                 organizations_dict[organization.id] = organization
     except Exception as e:
         log.warning("Failed to query organization_members for owner_id %s: %s", owner_id, e)
@@ -213,11 +225,17 @@ def remove_organization_member(organization_id: int, user_id: UUID) -> bool:
 
 
 def get_organization(organization_id: int) -> OrganizationResponse | None:
-    r = get_sb().table(ORGANIZATIONS).select("*").eq("id", organization_id).execute()
+    r = (
+        get_sb()
+        .table(ORGANIZATIONS)
+        .select(_ORGANIZATION_SELECT)
+        .eq("id", organization_id)
+        .execute()
+    )
     if not r.data or len(r.data) == 0:
         return None
     email = _fetch_owner_email(r.data[0].get("created_by"))
-    return OrganizationResponse.model_validate({**r.data[0], "owner_email": email})
+    return _organization_response(r.data[0], owner_email=email)
 
 
 def list_organizations(
@@ -232,7 +250,7 @@ def list_organizations(
 ) -> tuple[list[OrganizationResponse], int]:
     """List organizations. Defaults to approved only; pass ``status=None`` for
     every review state (admin review queues)."""
-    q = get_sb().table(ORGANIZATIONS).select("*", count="exact")
+    q = get_sb().table(ORGANIZATIONS).select(_ORGANIZATION_SELECT, count="exact")
     if status is not None:
         q = q.eq("status", status)
     if ids is not None:
@@ -242,7 +260,10 @@ def list_organizations(
     if organization_type is not None:
         q = q.eq("organization_type", organization_type)
     if school:
-        q = q.eq("school", school)
+        school_record = school_service.get_school(school)
+        if school_record is None:
+            return [], 0
+        q = q.eq("school_id", school_record.id)
     if search:
         term = sanitize_postgrest_value(search)
         if term:
@@ -260,7 +281,7 @@ def list_organizations(
     items = []
     for row in r.data or []:
         email = _fetch_owner_email(row.get("created_by"))
-        items.append(OrganizationResponse.model_validate({**row, "owner_email": email}))
+        items.append(_organization_response(row, owner_email=email))
 
     if items:
         stats = event_service.get_organization_event_stats([item.id for item in items])
@@ -281,13 +302,18 @@ def create_organization(
 ) -> OrganizationResponse:
     """Create an organization. Non-admin submissions land in the review queue."""
     payload = data.model_dump()
+    school_record = school_service.get_school(payload.pop("school"))
+    if school_record is None:
+        raise ValidationError("School is not registered")
+    payload["school_id"] = school_record.id
     payload["created_by"] = created_by
     payload["status"] = (
         ORGANIZATION_STATUS_APPROVED if auto_approve else ORGANIZATION_STATUS_PENDING
     )
     r = get_sb().table(ORGANIZATIONS).insert(payload).execute()
-    email = _fetch_owner_email(created_by)
-    organization = OrganizationResponse.model_validate({**r.data[0], "owner_email": email})
+    organization = get_organization(int(r.data[0]["id"]))
+    if organization is None:
+        raise RuntimeError("Created organization could not be reloaded")
     try:
         add_organization_member(organization.id, UUID(created_by))
     except Exception as e:
@@ -308,8 +334,7 @@ def set_organization_status(
     if not r.data:
         return None
 
-    email = _fetch_owner_email(r.data[0].get("created_by"))
-    updated = OrganizationResponse.model_validate({**r.data[0], "owner_email": email})
+    updated = _organization_response({**r.data[0], "school": existing.school})
     if existing.status != updated.status:
         event_feed_revalidation_service.revalidate_schools([updated.school])
     return updated
@@ -324,10 +349,17 @@ def update_organization(
     payload = data.model_dump(exclude_unset=True)
     if not payload:
         return existing
+    if "school" in payload:
+        updated_school = payload.pop("school")
+        school_record = school_service.get_school(updated_school)
+        if school_record is None:
+            raise ValidationError("School is not registered")
+        payload["school_id"] = school_record.id
+    else:
+        updated_school = existing.school
     r = get_sb().table(ORGANIZATIONS).update(payload).eq("id", organization_id).execute()
     if r.data:
-        email = _fetch_owner_email(r.data[0].get("created_by"))
-        updated = OrganizationResponse.model_validate({**r.data[0], "owner_email": email})
+        updated = _organization_response({**r.data[0], "school": updated_school})
         if updated.organization_type != existing.organization_type:
             event_feed_revalidation_service.revalidate_schools([existing.school, updated.school])
         return updated
@@ -847,15 +879,25 @@ def create_claim(organization_id: int, user_id: UUID, role: str, proof_url: str 
 
 def list_claims(status: str | None = None, school: str | None = None) -> list[dict]:
     select_str = (
-        "*, organizations!inner(*), users(*)" if school else "*, organizations(*), users(*)"
+        f"*, organizations!inner(*,{school_service.SCHOOL_SLUG_EMBED}), users(*)"
+        if school
+        else f"*, organizations(*,{school_service.SCHOOL_SLUG_EMBED}), users(*)"
     )
     query = get_sb().table("organization_claims").select(select_str).order("created_at", desc=True)
     if status is not None:
         query = query.eq("status", status)
     if school is not None:
-        query = query.eq("organizations.school", school)
+        school_record = school_service.get_school(school)
+        if school_record is None:
+            return []
+        query = query.eq("organizations.school_id", school_record.id)
     r = query.execute()
-    return r.data or []
+    rows = r.data or []
+    for row in rows:
+        organization = row.get("organizations")
+        if isinstance(organization, dict):
+            row["organizations"] = school_service.with_school_slug(organization)
+    return rows
 
 
 def update_claim(claim_id: UUID, status: str, rejection_reason: str | None = None) -> dict:

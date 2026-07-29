@@ -13,11 +13,6 @@ SET
     secondary_color = '#111111'
 WHERE slug = 'uwaterloo';
 
-UPDATE public.schools
-SET
-    semester_start = '2026-05-01',
-    semester_end = '2026-08-31';
-
 WITH organization_seed AS (
     SELECT
         ordinal,
@@ -44,7 +39,7 @@ INSERT INTO public.organizations (
     organization_page,
     ig,
     logo_url,
-    school,
+    school_id,
     organization_type,
     status
 )
@@ -74,14 +69,16 @@ SELECT
         'https://picsum.photos/seed/wat2do-local-org-%s/512/512',
         organization_seed.ordinal
     ),
-    'uwaterloo',
+    (SELECT id FROM public.schools WHERE slug = 'uwaterloo'),
     organization_seed.organization_type,
     'approved'
 FROM organization_seed
 WHERE NOT EXISTS (
     SELECT 1
     FROM public.organizations existing
-    WHERE existing.school = 'uwaterloo'
+    WHERE existing.school_id = (
+        SELECT id FROM public.schools WHERE slug = 'uwaterloo'
+    )
       AND existing.organization_name = organization_seed.organization_name
 );
 
@@ -94,9 +91,13 @@ SET
     ),
     ingestion_source = 'seed'
 FROM public.organizations AS organization
-WHERE event.school = 'uwaterloo'
+WHERE event.school_id = (
+        SELECT id FROM public.schools WHERE slug = 'uwaterloo'
+    )
   AND event.source_url LIKE 'https://wat2do.io/mock-events/%'
-  AND organization.school = 'uwaterloo'
+  AND organization.school_id = (
+        SELECT id FROM public.schools WHERE slug = 'uwaterloo'
+    )
   AND organization.organization_name = event.organization;
 
 UPDATE public.event_dates AS event_date
@@ -169,7 +170,9 @@ resolved_seed AS (
         organization.organization_name
     FROM historical_seed
     JOIN public.organizations AS organization
-      ON organization.school = 'uwaterloo'
+      ON organization.school_id = (
+          SELECT id FROM public.schools WHERE slug = 'uwaterloo'
+      )
      AND organization.organization_name = format(
          'Waterloo Student Organization %s',
          lpad((((historical_seed.ordinal - 1) % 393) + 6)::text, 3, '0')
@@ -184,7 +187,7 @@ inserted_events AS (
         food,
         registration,
         source_image_url,
-        school,
+        school_id,
         source_url,
         category,
         organization,
@@ -210,7 +213,7 @@ inserted_events AS (
             'https://picsum.photos/seed/wat2do-local-history-%s/1200/630',
             resolved_seed.ordinal
         ),
-        'uwaterloo',
+        (SELECT id FROM public.schools WHERE slug = 'uwaterloo'),
         resolved_seed.source_url,
         resolved_seed.category,
         resolved_seed.organization_name,

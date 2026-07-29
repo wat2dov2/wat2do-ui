@@ -16,10 +16,8 @@ export function getFilterCounts(filters: {
   freeFoodFilter: boolean;
   goingFilter: boolean;
   addedSince?: string;
-  viewMode?: "grid" | "calendar" | "map";
 }): number {
   const hasSearchQuery = Boolean(filters.searchQuery?.trim());
-  const hasActiveViewMode = filters.viewMode != null && filters.viewMode !== "grid";
 
   return (
     (hasSearchQuery ? 1 : 0) +
@@ -32,7 +30,6 @@ export function getFilterCounts(filters: {
     (filters.selectedOrganizations?.length ?? 0) +
     (filters.freeFoodFilter ? 1 : 0) +
     (filters.goingFilter ? 1 : 0) +
-    (filters.addedSince ? 1 : 0) +
-    (hasActiveViewMode ? 1 : 0)
+    (filters.addedSince ? 1 : 0)
   );
 }

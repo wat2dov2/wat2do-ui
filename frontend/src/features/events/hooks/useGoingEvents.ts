@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { getUserId } from "@/features/auth/api/auth.api";
-import { useAuthState } from "@/features/auth/hooks/useAuthState";
+import { getUserId, useAuthState } from "@/features/auth";
 import {
   clearGoingEvent,
   fetchGoingEvents,
@@ -24,6 +23,7 @@ type EventStatsMap = Record<string, EventStats>;
 interface GoingMutationVariables {
   eventId: number;
   occurrenceIds: string[];
+  userId: string | undefined;
 }
 
 export function useGoingEvents() {
@@ -44,9 +44,6 @@ export function useGoingEventSelection(
 ) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  const { isAuthenticated } = useAuthState();
-  const userId = isAuthenticated ? getUserId() : undefined;
-  const queryKey = queryKeys.goingEvents.byUser(userId ?? "");
   const { data: selections = [] } = useGoingEvents();
   const now = useCurrentTime();
   const selectedIds = useMemo(
@@ -79,7 +76,8 @@ export function useGoingEventSelection(
       occurrenceIds.length > 0
         ? setGoingEventOccurrences(eventId, occurrenceIds)
         : clearGoingEvent(eventId),
-    onMutate: async ({ eventId, occurrenceIds }) => {
+    onMutate: async ({ eventId, occurrenceIds, userId: mutationUserId }) => {
+      const queryKey = queryKeys.goingEvents.byUser(mutationUserId ?? "");
       await queryClient.cancelQueries({ queryKey });
       const previous =
         queryClient.getQueryData<ApiGoingEventSelection[]>(queryKey) ?? [];
@@ -91,11 +89,11 @@ export function useGoingEventSelection(
           ? [...withoutEvent, { event_id: eventId, occurrence_ids: occurrenceIds }]
           : withoutEvent;
       });
-      return { previous };
+      return { previous, queryKey };
     },
     onError: (_error, _variables, context) => {
       if (context?.previous) {
-        queryClient.setQueryData(queryKey, context.previous);
+        queryClient.setQueryData(context.queryKey, context.previous);
       }
       toast({
         description: t("events.goingEvents.saveFailed"),
@@ -103,7 +101,7 @@ export function useGoingEventSelection(
       });
     },
     onSuccess: (response, variables, context) => {
-      patchAuthoritativeSelection(queryClient, queryKey, response);
+      patchAuthoritativeSelection(queryClient, context.queryKey, response);
       if (school) {
         queryClient.setQueryData<EventStatsMap>(
           queryKeys.events.stats(school),
@@ -137,7 +135,11 @@ export function useGoingEventSelection(
     isActive: selectedSelectableIds.length > 0,
     isPending: mutation.isPending,
     saveSelection: (occurrenceIds: string[]) =>
-      mutation.mutateAsync({ eventId: event.id, occurrenceIds }),
+      mutation.mutateAsync({
+        eventId: event.id,
+        occurrenceIds,
+        userId: getUserId(),
+      }),
   };
 }
 

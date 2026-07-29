@@ -11,7 +11,7 @@ from core.exceptions import ValidationError
 from core.tables import EVENT_SUBMISSIONS
 from schemas.event import EventCreate
 from schemas.submission import SubmissionResponse
-from services import event_service
+from services import event_service, organization_service, school_service
 
 log = logging.getLogger(__name__)
 
@@ -44,10 +44,19 @@ def create_submission(user_id: str | None, event_data: EventCreate | dict) -> Su
         if isinstance(event_data, EventCreate)
         else event_data
     )
+    organization_id = event_dict.get("organization_id")
+    organization = (
+        organization_service.get_organization(int(organization_id))
+        if organization_id is not None
+        else None
+    )
+    if organization is None or organization.school_id is None:
+        raise ValidationError("Submission organization school is not registered")
     payload = {
         "id": str(uuid.uuid4()),
         "user_id": user_id,
         "event_data": event_dict,
+        "school_id": organization.school_id,
         "status": SUBMISSION_PENDING,
     }
     r = get_sb().table(EVENT_SUBMISSIONS).insert(payload).execute()
@@ -69,12 +78,10 @@ def get_submissions(
     if status:
         q = q.eq("status", status)
     if school:
-        org_rows = get_sb().table("organizations").select("id").eq("school", school).execute()
-        org_ids = [row["id"] for row in org_rows.data or []]
-        if org_ids:
-            q = q.in_("event_data->organization_id", org_ids)
-        else:
+        school_id = school_service.get_school_id(school)
+        if school_id is None:
             return [], 0
+        q = q.eq("school_id", school_id)
     q = q.order("submitted_at", desc=True)
     if limit is not None:
         q = q.range(offset, offset + limit - 1)

@@ -1,3 +1,4 @@
+from types import SimpleNamespace
 from unittest.mock import MagicMock
 
 import pytest
@@ -5,7 +6,17 @@ from supabase_auth.errors import AuthApiError
 
 from core.errors import INVALID_OR_EXPIRED_TOKEN
 from core.exceptions import AuthenticationError
+from services import auth_service
 from services.auth_service import AuthResult, AuthService
+
+
+@pytest.fixture(autouse=True)
+def registered_school(monkeypatch):
+    monkeypatch.setattr(
+        auth_service.school_service,
+        "get_school",
+        lambda _school: SimpleNamespace(id=1),
+    )
 
 
 def test_send_otp_magic_link_preserves_safe_return_path(monkeypatch):

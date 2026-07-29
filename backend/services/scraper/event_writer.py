@@ -18,7 +18,6 @@ from core.constants import (
     MAX_EVENT_HANDLE_LENGTH,
     MAX_EVENT_LOCATION_LENGTH,
     MAX_EVENT_ORGANIZATION_LENGTH,
-    MAX_EVENT_SCHOOL_LENGTH,
     MAX_EVENT_TITLE_LENGTH,
     MAX_ORGANIZATION_NAME_LENGTH,
 )
@@ -26,7 +25,7 @@ from core.database import get_sb
 from core.tables import EVENTS, ORGANIZATIONS
 from schemas.event import normalize_category
 from schemas.event_date import OccurrenceCreate, OccurrenceResponse, OccurrenceUpdate
-from services import event_date_service, event_service
+from services import event_date_service, event_service, school_service
 from services.event_feed_revalidation import event_feed_revalidation_service
 from services.notifications.event_change import enqueue_event_change
 
@@ -86,6 +85,11 @@ def write_event(
         organization_name=resolved_org.organization_name,
     )
     category = normalize_category(event.get("category")) if event.get("category") else None
+    school_slug = (event.get("school") or "").strip()
+    school = school_service.get_school(school_slug)
+    if school is None:
+        log.warning("[%s] dropping event %r - school is not registered", ig_handle, title)
+        return "skipped"
 
     future_occurrences = _coerce_future_occurrences(
         occurrences, allow_past_events=allow_past_events
@@ -111,7 +115,7 @@ def write_event(
         "source_image_url": (event.get("source_image_url") or None),
         "source_url": source_url or None,
         "organization_id": resolved_org.organization_id,
-        "school": (event.get("school") or "")[:MAX_EVENT_SCHOOL_LENGTH] or None,
+        "school_id": school.id,
         "category": category,
         "organization": organization_name[:MAX_EVENT_ORGANIZATION_LENGTH],
         "ig_handle": effective_ig[:MAX_EVENT_HANDLE_LENGTH] if effective_ig else None,
@@ -126,6 +130,7 @@ def write_event(
             event_row,
             future_occurrences,
             ig_handle=ig_handle,
+            school_slug=school.slug,
             title=title,
         )
 
@@ -147,7 +152,7 @@ def write_event(
         len(future_occurrences),
         title,
     )
-    event_feed_revalidation_service.revalidate_school(event_row.get("school"))
+    event_feed_revalidation_service.revalidate_school(school.slug)
     return "inserted"
 
 
@@ -157,6 +162,7 @@ def _overwrite_event(
     future_occurrences: list[OccurrenceCreate],
     *,
     ig_handle: str | None,
+    school_slug: str,
     title: str,
 ) -> str:
     """Overwrite an existing event and notify savers on material changes."""
@@ -177,7 +183,7 @@ def _overwrite_event(
         except Exception:
             get_sb().table(EVENTS).delete().eq("id", new_id).execute()
             raise
-        event_feed_revalidation_service.revalidate_school(event_row.get("school"))
+        event_feed_revalidation_service.revalidate_school(school_slug)
         return "inserted"
 
     incoming_org_id = event_row.get("organization_id")
@@ -205,7 +211,7 @@ def _overwrite_event(
         except Exception:
             get_sb().table(EVENTS).delete().eq("id", new_id).execute()
             raise
-        event_feed_revalidation_service.revalidate_school(insert_row.get("school"))
+        event_feed_revalidation_service.revalidate_school(school_slug)
         return "inserted"
 
     merged = _merge_overwrite_payload(event_row, old_event)
@@ -225,7 +231,7 @@ def _overwrite_event(
         merged,
         stable_occurrences,
     )
-    event_feed_revalidation_service.revalidate_school(merged.get("school"))
+    event_feed_revalidation_service.revalidate_school(school_slug)
 
     updated = event_service.get_event(existing_id)
     if updated is not None:
@@ -328,6 +334,10 @@ def _ensure_organization_by_ig(
     if not school_slug:
         log.warning("[%s] skipping organization auto-create - school slug is required", cleaned)
         return None
+    school_record = school_service.get_school(school_slug)
+    if school_record is None:
+        log.warning("[%s] skipping organization auto-create - school is not registered", cleaned)
+        return None
 
     organization_name = ((preferred_name or "").strip() or f"@{cleaned}")[
         :MAX_ORGANIZATION_NAME_LENGTH
@@ -339,7 +349,7 @@ def _ensure_organization_by_ig(
             {
                 "organization_name": organization_name,
                 "ig": cleaned,
-                "school": school_slug,
+                "school_id": school_record.id,
             }
         )
         .execute()

@@ -18,6 +18,7 @@ from core.errors import (
 )
 from core.exceptions import ValidationError
 from core.tables import INSTAGRAM_PUBLISHING_ACCOUNTS
+from services import school_service
 from services.instagram_publishing.meta import MetaInstagramClient
 
 log = logging.getLogger(__name__)
@@ -32,6 +33,7 @@ class InstagramAccountCredentials:
     instagram_username: str
     access_token: str = field(repr=False)
     expires_at: datetime
+    school_id: int | None = None
 
 
 def import_access_token(
@@ -51,11 +53,14 @@ def import_access_token(
         raise ValidationError(
             "Instagram token belongs to an account that is not configured for publishing"
         )
+    school = school_service.get_school(account.school)
+    if school is None:
+        raise ValidationError("Instagram publishing school is not registered")
 
     expires_at = now + timedelta(days=_CONTROL.token_lifetime_days)
     row = {
         "account_key": account.key,
-        "school": account.school,
+        "school_id": school.id,
         "instagram_user_id": identity["id"],
         "instagram_username": identity["username"],
         "encrypted_access_token": _encrypt(token),
@@ -75,7 +80,10 @@ def import_access_token(
     )
     if not response.data:
         raise RuntimeError(f"Could not store Instagram credentials for {account.key}")
-    return _credentials_from_row(response.data[0], token=token)
+    return _credentials_from_row(
+        {**response.data[0], "school": account.school},
+        token=token,
+    )
 
 
 def load_account_credentials(
@@ -87,7 +95,7 @@ def load_account_credentials(
     response = (
         get_sb()
         .table(INSTAGRAM_PUBLISHING_ACCOUNTS)
-        .select("*")
+        .select(f"*,{school_service.SCHOOL_SLUG_EMBED}")
         .eq("account_key", account.key)
         .limit(1)
         .execute()
@@ -122,7 +130,7 @@ def refresh_expiring_tokens(
     rows = (
         get_sb()
         .table(INSTAGRAM_PUBLISHING_ACCOUNTS)
-        .select("*")
+        .select(f"*,{school_service.SCHOOL_SLUG_EMBED}")
         .eq("requires_reauthorization", False)
         .lte("expires_at", refresh_before.isoformat())
         .order("expires_at")
@@ -199,8 +207,10 @@ def _credentials_from_row(
     *,
     token: str,
 ) -> InstagramAccountCredentials:
+    row = school_service.with_school_slug(row)
     return InstagramAccountCredentials(
         account_key=str(row["account_key"]),
+        school_id=int(row["school_id"]) if row.get("school_id") is not None else None,
         school=str(row["school"]),
         instagram_user_id=str(row["instagram_user_id"]),
         instagram_username=str(row["instagram_username"]),
@@ -213,6 +223,7 @@ def _assert_row_matches_account(
     row: dict[str, Any],
     account: InstagramPublishingAccountControl,
 ) -> None:
+    row = school_service.with_school_slug(row)
     if (
         row.get("school") != account.school
         or str(row.get("instagram_username") or "").casefold()

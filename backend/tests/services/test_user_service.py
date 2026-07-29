@@ -46,7 +46,7 @@ def test_get_user_queries_users_table_by_id(fake_sb, patch_sb):
     get_user(user_id)
 
     fake_sb.table.assert_called_once_with(USERS)
-    fake_sb.select.assert_called_once_with("*")
+    fake_sb.select.assert_called_once_with("*,school_record:schools(slug)")
     fake_sb.eq.assert_called_once_with("id", str(user_id))
 
 

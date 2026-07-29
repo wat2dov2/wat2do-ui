@@ -16,14 +16,6 @@ _EMAIL_THEME = {
     "muted_foreground": "#a3a3a3",
     "border": "#3a3a3a",
 }
-# Loot colors are decorative accents and never replace functional email colors.
-_LOOT_COLORS = {
-    "grey": "#a3a3a3",
-    "bronze": "#f97316",
-    "silver": "#d4d4d8",
-    "gold": "#fbbf24",
-    "diamond": "#60a5fa",
-}
 
 
 def morning_email_subject(picks_count: int) -> str:
@@ -35,16 +27,12 @@ def render_morning_email_text(
     *,
     subject: str,
     picks: list[dict],
-    daily_score: int,
-    loot_tier: str,
     tz: ZoneInfo,
     preferences_url: str,
     unsubscribe_url: str,
 ) -> str:
     lines = [
         subject,
-        "",
-        f"Today's drop: {daily_score}/100 - {_loot_label(loot_tier)}",
         "",
         "New picks for you",
         "",
@@ -66,15 +54,11 @@ def render_morning_email_html(
     *,
     subject: str,
     picks: list[dict],
-    daily_score: int,
-    loot_tier: str,
     tz: ZoneInfo,
     preferences_url: str,
     unsubscribe_url: str,
 ) -> str:
-    content = _loot_score_card(daily_score, loot_tier) + _event_section(
-        "New picks for you", picks, tz
-    )
+    content = _event_section("New picks for you", picks, tz)
     return _email_shell(
         subject=subject,
         content=content,
@@ -156,28 +140,6 @@ def _email_shell(
         "wat2do helps students discover campus events."
         "</p></div></div>"
     )
-
-
-def _loot_score_card(score: int, tier: str) -> str:
-    tier_color = _LOOT_COLORS[tier]
-    return (
-        f'<div style="margin:0 0 24px;padding:16px;background:{_EMAIL_THEME["surface_elevated"]};'
-        f'border:1px solid {_EMAIL_THEME["border"]};border-radius:12px;">'
-        f'<p style="margin:0 0 6px;color:{_EMAIL_THEME["muted_foreground"]};'
-        'font:700 12px sans-serif;letter-spacing:.06em;text-transform:uppercase;">'
-        "Today's drop</p>"
-        f'<p style="margin:0 0 12px;color:{_EMAIL_THEME["foreground"]};'
-        f'font:800 24px sans-serif;">{score}/100 '
-        f'<span style="color:{tier_color};font-size:15px;">{_loot_label(tier)}</span></p>'
-        f'<div style="height:8px;background:{_EMAIL_THEME["border"]};border-radius:999px;'
-        'overflow:hidden;">'
-        f'<div style="width:{score}%;height:8px;background:{tier_color};'
-        'border-radius:999px;"></div></div></div>'
-    )
-
-
-def _loot_label(tier: str) -> str:
-    return f"{tier.title()} loot"
 
 
 def _event_section(title: str, events: list[dict], tz: ZoneInfo) -> str:

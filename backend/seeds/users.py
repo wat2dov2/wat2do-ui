@@ -1,5 +1,6 @@
 from core.database import get_sb
 from core.tables import USERS
+from services import school_service
 
 SEED_USERS = [
     {
@@ -34,11 +35,16 @@ SEED_USERS = [
 
 def seed():
     sb = get_sb()
+    school = school_service.get_school("uwaterloo")
+    if school is None:
+        raise RuntimeError("Waterloo school seed is missing")
     created = 0
     for data in SEED_USERS:
         r = sb.table(USERS).select("id").eq("email", data["email"]).execute()
         if r.data and len(r.data) > 0:
             continue
-        sb.table(USERS).insert(data).execute()
+        payload = {**data, "school_id": school.id}
+        payload.pop("school", None)
+        sb.table(USERS).insert(payload).execute()
         created += 1
     print(f"Seeded {created} new users ({len(SEED_USERS)} total in seed list)")

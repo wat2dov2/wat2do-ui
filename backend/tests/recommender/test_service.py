@@ -59,7 +59,7 @@ def test_build_snapshot_rejects_foreign_school_candidates(monkeypatch):
     monkeypatch.setattr(
         engine,
         "_load_candidate_events",
-        MagicMock(return_value=[_event(1, school="utoronto")]),
+        MagicMock(return_value=[_event(1, school="utsg")]),
     )
 
     with pytest.raises(RuntimeError, match="foreign events"):
@@ -92,7 +92,7 @@ def test_batch_runner_shares_one_snapshot_per_school(monkeypatch):
         collaborative_model=collaborative_model,
     )
     toronto_snapshot = RecommendationSnapshot(
-        candidates=(_event(2, school="utoronto"),),
+        candidates=(_event(2, school="utsg"),),
         popularity_scores={},
         collaborative_model=collaborative_model,
     )
@@ -101,7 +101,7 @@ def test_batch_runner_shares_one_snapshot_per_school(monkeypatch):
     engine.build_shared_popularity_model.return_value = popularity_model
     engine.build_snapshot.side_effect = lambda school, _collaborative, _popularity: {
         "uwaterloo": waterloo_snapshot,
-        "utoronto": toronto_snapshot,
+        "utsg": toronto_snapshot,
     }[school]
     engine.make_executor.side_effect = lambda max_workers: ThreadPoolExecutor(
         max_workers=max_workers
@@ -114,7 +114,7 @@ def test_batch_runner_shares_one_snapshot_per_school(monkeypatch):
         "_iter_all_users",
         lambda: iter(
             [
-                {"id": "u1", "school": "utoronto"},
+                {"id": "u1", "school": "utsg"},
                 {"id": "u2", "school": "uwaterloo"},
                 {"id": "u3", "school": "uwaterloo"},
             ]
@@ -132,7 +132,7 @@ def test_batch_runner_shares_one_snapshot_per_school(monkeypatch):
     engine.build_shared_collaborative_model.assert_called_once_with()
     engine.build_shared_popularity_model.assert_called_once_with()
     assert engine.build_snapshot.call_args_list == [
-        call("utoronto", collaborative_model, popularity_model),
+        call("utsg", collaborative_model, popularity_model),
         call("uwaterloo", collaborative_model, popularity_model),
     ]
     assert engine.compute_and_store.call_count == 3

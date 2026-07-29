@@ -1,5 +1,6 @@
 import { isVirtualLocation } from "@/features/events/lib/isVirtualLocation";
-import { isAllSchools, resolveSchool } from "@/shared/constants/schools";
+import { isAllSchools } from "@/shared/constants/schools";
+import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 
 interface EventLocationMapProps {
   location?: string | null;
@@ -9,17 +10,18 @@ interface EventLocationMapProps {
 export function EventLocationMap({ location, school }: EventLocationMapProps) {
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
   const physicalLocation = location?.trim();
+  const { getSchoolName } = useSchoolDirectory();
 
   if (!physicalLocation || isVirtualLocation(physicalLocation) || !apiKey) {
     return null;
   }
 
-  const schoolSlug =
+  const schoolName =
     school?.trim() && !isAllSchools(school)
-      ? resolveSchool(school)
+      ? getSchoolName(school)
       : null;
-  const query = schoolSlug
-    ? `${physicalLocation}, ${schoolSlug}`
+  const query = schoolName
+    ? `${physicalLocation}, ${schoolName}`
     : physicalLocation;
   const src = `https://www.google.com/maps/embed/v1/place?key=${apiKey}&q=${encodeURIComponent(query)}`;
 

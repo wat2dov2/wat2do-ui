@@ -10,6 +10,7 @@ from core.controlbox import controlbox
 from core.database import get_sb
 from core.pagination import fetch_all_pages
 from core.tables import USER_GOING_EVENTS, USERS
+from services import school_service
 from services.email_service import EmailMessage
 from services.notifications.delivery_log import claim_delivery, deliver_claimed_email
 from services.notifications.preferences import get_enabled_user_ids
@@ -124,9 +125,13 @@ def _load_users(user_ids: list[str]) -> dict[str, dict]:
     users: dict[str, dict] = {}
     for user_chunk in _chunks(user_ids):
         rows = (
-            get_sb().table(USERS).select("id,email,school").in_("id", user_chunk).execute()
+            get_sb()
+            .table(USERS)
+            .select(f"id,email,school_id,{school_service.SCHOOL_SLUG_EMBED}")
+            .in_("id", user_chunk)
+            .execute()
         ).data or []
-        users.update({str(row["id"]): row for row in rows})
+        users.update({str(row["id"]): school_service.with_school_slug(row) for row in rows})
     return users
 
 

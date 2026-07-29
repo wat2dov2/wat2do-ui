@@ -16,6 +16,10 @@ class School(BaseModel):
     semester_end: date | None = None
 
 
+class SchoolRecord(School):
+    id: int
+
+
 class SchoolSummary(BaseModel):
     model_config = ConfigDict(extra="ignore")
 

@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from "react";
 import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Organization } from "@/shared/types";
 import { getOrganizationsPaginated } from "@/features/organizations/api/organizations.api";
+import type { PaginatedOrganizationsResponse } from "@/features/organizations/api/organizations.api";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import { stableOrganizationsFilters } from "@/features/organizations/lib/organizationsQuery";
 
@@ -18,6 +19,8 @@ interface UseOrganizationsListOptions {
   isAuthenticated?: boolean;
   activeTab?: "all" | "followed" | "claimed";
   isSavedLoaded?: boolean;
+  initialDirectory?: PaginatedOrganizationsResponse | null;
+  initialSchool?: string;
 }
 
 function getUniqueOrganizations(organizations: Organization[]): Organization[] {
@@ -107,6 +110,15 @@ export function useOrganizationsList(options: UseOrganizationsListOptions) {
   const listQueryKeyString = JSON.stringify(listQueryKey);
   const [pageState, setPageState] = useState({ key: "", page: 1 });
   const currentPage = pageState.key === listQueryKeyString ? pageState.page : 1;
+  const canUseInitialDirectory =
+    mode === "infinite" &&
+    filters.activeTab === "all" &&
+    filters.school === options.initialSchool &&
+    !filters.search &&
+    !filters.organizationType &&
+    (!filters.categories || filters.categories.length === 0) &&
+    (!filters.ids || filters.ids.length === 0) &&
+    options.initialDirectory != null;
   const setCurrentPage = useCallback((page: number) => {
     setPageState({ key: listQueryKeyString, page });
   }, [listQueryKeyString]);
@@ -130,6 +142,12 @@ export function useOrganizationsList(options: UseOrganizationsListOptions) {
     getNextPageParam: (lastPage) =>
       lastPage.page < lastPage.total_pages ? lastPage.page + 1 : undefined,
     enabled: enabled && mode === "infinite",
+    initialData: canUseInitialDirectory
+      ? {
+          pages: [options.initialDirectory],
+          pageParams: [1],
+        }
+      : undefined,
   });
 
   const pageQuery = useQuery({

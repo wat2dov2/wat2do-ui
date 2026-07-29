@@ -12,6 +12,7 @@ from core.database import get_sb
 from core.pagination import fetch_all_pages
 from core.tables import EVENT_DATES, EVENTS, USER_GOING_EVENTS, USERS
 from recommender.service import get_stored_recommendations_for_users
+from services import school_service
 from services.email_service import EmailMessage
 from services.notifications.delivery_log import (
     claim_delivery,
@@ -95,12 +96,12 @@ def dispatch_morning_emails(now_utc: datetime) -> dict[str, int]:
 
 
 def _fetch_users() -> list[dict]:
-    return fetch_all_pages(
+    rows = fetch_all_pages(
         lambda offset, page_size: (
             (
                 get_sb()
                 .table(USERS)
-                .select("id,email,school")
+                .select(f"id,email,school_id,{school_service.SCHOOL_SLUG_EMBED}")
                 .not_.is_("email", "null")
                 .order("id")
                 .range(offset, offset + page_size - 1)
@@ -109,6 +110,7 @@ def _fetch_users() -> list[dict]:
             or []
         )
     )
+    return [school_service.with_school_slug(row) for row in rows]
 
 
 def _eligible_users(users: list[dict], now_utc: datetime) -> list[dict]:
@@ -127,16 +129,20 @@ def _load_candidates_by_school(
     earliest_start = window_end - _CONTENT_WINDOW
     candidates: dict[str, list[dict]] = {}
     for school in schools:
+        school_id = school_service.get_school_id(school)
+        if school_id is None:
+            candidates[school] = []
+            continue
         rows = fetch_all_pages(
-            lambda offset, page_size, school_slug=school: (
+            lambda offset, page_size: (
                 (
                     get_sb()
                     .table(EVENTS)
                     .select(
                         "id,title,location,source_image_url,organization,"
-                        "category,school,added_at,cancelled"
+                        "category,added_at,cancelled"
                     )
-                    .eq("school", school_slug)
+                    .eq("school_id", school_id)
                     .eq("cancelled", False)
                     .gt("added_at", earliest_start.isoformat())
                     .lte("added_at", window_end.isoformat())
@@ -148,6 +154,8 @@ def _load_candidates_by_school(
                 or []
             )
         )
+        for row in rows:
+            row["school"] = school
         by_id = {int(row["id"]): row for row in rows}
         if not by_id:
             candidates[school] = []
@@ -220,9 +228,7 @@ def _select_picks(
         event_id = int(recommendation["event_id"])
         score = float(recommendation["predicted_score"])
         if score >= _MIN_RECOMMENDATION_SCORE and event_id in by_id:
-            event = dict(by_id[event_id])
-            event["recommendation_score"] = score
-            selected.append(event)
+            selected.append(by_id[event_id])
     return selected
 
 
@@ -243,7 +249,6 @@ def _send_prepared_email(
     if row_id is None:
         return None
 
-    daily_score, loot_tier = _daily_loot(picks)
     unsubscribe = unsubscribe_url(user_id, NOTIFICATION_TYPE_MORNING_EMAIL)
     preferences_url = f"{settings.frontend_url.rstrip('/')}/settings?tab=notifications"
     subject = morning_email_subject(len(picks))
@@ -253,8 +258,6 @@ def _send_prepared_email(
         body_html=render_morning_email_html(
             subject=subject,
             picks=picks,
-            daily_score=daily_score,
-            loot_tier=loot_tier,
             tz=tz,
             preferences_url=preferences_url,
             unsubscribe_url=unsubscribe,
@@ -262,8 +265,6 @@ def _send_prepared_email(
         body_text=render_morning_email_text(
             subject=subject,
             picks=picks,
-            daily_score=daily_score,
-            loot_tier=loot_tier,
             tz=tz,
             preferences_url=preferences_url,
             unsubscribe_url=unsubscribe,
@@ -280,21 +281,6 @@ def _send_prepared_email(
         provider_attempts=_CONTROL.provider_attempts,
         log_context=f"notification=morning_email user={user_id}",
     )
-
-
-def _daily_loot(picks: list[dict]) -> tuple[int, str]:
-    average = sum(float(pick["recommendation_score"]) for pick in picks) / len(picks)
-    score = min(100, max(0, round(average * 100)))
-    tiers = _CONTROL.loot_tiers
-    thresholds = (
-        ("diamond", tiers.diamond),
-        ("gold", tiers.gold),
-        ("silver", tiers.silver),
-        ("bronze", tiers.bronze),
-        ("grey", tiers.grey),
-    )
-    tier = next(name for name, minimum in thresholds if score >= minimum)
-    return score, tier
 
 
 def _chunks(values: list[Any]) -> list[list[Any]]:

@@ -25,7 +25,6 @@ import { QP } from "@/shared/constants/queryParams";
 import { ROUTES } from "@/shared/constants/routes";
 import { useMutableSearchParams } from "@/shared/hooks/useMutableSearchParams";
 import { controlBox } from "@/shared/config/controlBox";
-import { LightRays } from "@/registry/magicui/light-rays";
 import type { ViewMode, Event } from "@/shared/types";
 import { usePosterLandingConfirmation } from "@/features/qrcode";
 import { PromoterRecruitmentBanner } from "@/features/posters";
@@ -69,7 +68,6 @@ export function EventsPageContainer() {
   } = useEventsPageData({
     profileCompleted,
     userEmail: profileCompleted ? userEmail : null,
-    viewMode,
   });
   const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
   const urlEventId = useMemo(() => {
@@ -174,12 +172,6 @@ export function EventsPageContainer() {
 
   return (
     <>
-      <div
-        aria-hidden="true"
-        className="pointer-events-none fixed top-0 right-2.5 left-0 z-[var(--event-light-rays-z-index)] hidden h-dvh overflow-hidden [mask-image:var(--event-light-rays-mask)] sm:block"
-      >
-        {isDarkMode && <LightRays />}
-      </div>
       <div className="space-y-2">
         <PromoterRecruitmentBanner school={schoolFilter} />
         <div className="space-y-3 pb-2">

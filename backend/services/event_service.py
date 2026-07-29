@@ -30,7 +30,13 @@ from schemas.event import (
 )
 from schemas.event_date import OccurrenceResponse, OccurrenceUpdate
 from schemas.organization import OrganizationEventStats
-from services import event_date_service, event_query, going_event_service, interaction_service
+from services import (
+    event_date_service,
+    event_query,
+    going_event_service,
+    interaction_service,
+    school_service,
+)
 from services.event_feed_revalidation import event_feed_revalidation_service
 from services.school_context import resolve_school_timezone
 
@@ -69,7 +75,7 @@ def _to_utc(dt: datetime | None) -> datetime:
     return dt.astimezone(timezone.utc)
 
 
-def _resolve_organization_fields(organization_id: int) -> dict[str, str | None]:
+def _resolve_organization_fields(organization_id: int) -> dict[str, str | int | None]:
     """Derive the event's denormalized fields from its owning organization.
 
     The organization is the single source of truth for an event's display name
@@ -81,9 +87,12 @@ def _resolve_organization_fields(organization_id: int) -> dict[str, str | None]:
     organization = organization_service.get_organization(organization_id)
     if organization is None:
         raise NotFoundError(ORGANIZATION_NOT_FOUND)
+    school_id = organization.school_id or school_service.get_school_id(organization.school)
+    if school_id is None:
+        raise ValidationError("Organization school is not registered")
     return {
         "organization": organization.organization_name,
-        "school": organization.school,
+        "school_id": school_id,
     }
 
 
@@ -95,7 +104,10 @@ def get_latest_added_event(school: str | None = None) -> LatestEventResponse | N
     """Return the most recently added event (by added_at desc), or None if no events."""
     q = get_sb().table(EVENTS).select("title,added_at")
     if school:
-        q = q.eq("school", school)
+        school_id = school_service.get_school_id(school)
+        if school_id is None:
+            return None
+        q = q.eq("school_id", school_id)
     r = q.order("added_at", desc=True).limit(1).execute()
     if not r.data or len(r.data) == 0:
         return None
@@ -146,7 +158,7 @@ def get_event(event_id: int) -> EventResponse | None:
     r = (
         get_sb()
         .table(EVENTS)
-        .select(f"*,{event_query.ORGANIZATION_EMBED}")
+        .select(f"*,{event_query.ORGANIZATION_EMBED},{event_query.SCHOOL_EMBED}")
         .eq("id", event_id)
         .execute()
     )
@@ -165,7 +177,10 @@ def get_event_stats_for_school(school: str | None) -> dict[str, EventStatsRespon
     def _page(offset: int, page_size: int) -> list[dict]:
         q = get_sb().table(EVENTS).select("id")
         if school:
-            q = q.eq("school", school)
+            school_id = school_service.get_school_id(school)
+            if school_id is None:
+                return []
+            q = q.eq("school_id", school_id)
         return q.range(offset, offset + page_size - 1).execute().data or []
 
     event_rows = fetch_all_pages(_page)
@@ -282,10 +297,10 @@ def create_event(data: EventCreate, *, created_by: str) -> EventResponse:
         get_sb().table(EVENTS).delete().eq("id", new_id).execute()
         raise
 
-    event_feed_revalidation_service.revalidate_school(new_row.get("school"))
     created = get_event(new_id)
     if created is None:
         raise APIError("Failed to read created event")
+    event_feed_revalidation_service.revalidate_school(created.school)
     return created
 
 
@@ -390,10 +405,12 @@ def delete_event(event_id: int) -> bool:
             e,
         )
 
+    existing = get_event(event_id)
     r = get_sb().table(EVENTS).delete().eq("id", event_id).execute()
     if r.data:
-        deleted = r.data[0] if isinstance(r.data[0], dict) else {}
-        event_feed_revalidation_service.revalidate_school(deleted.get("school"))
+        event_feed_revalidation_service.revalidate_school(
+            existing.school if existing is not None else None
+        )
     return bool(r.data)
 
 

@@ -5,6 +5,7 @@ The tests assert on both layers via the fake_sb fixture.
 """
 
 from datetime import datetime, timedelta, timezone
+from types import SimpleNamespace
 from unittest.mock import MagicMock
 from uuid import UUID
 
@@ -25,6 +26,11 @@ _REAL_ENSURE_ORGANIZATION_BY_IG = event_writer._ensure_organization_by_ig
 def disable_organization_auto_create(monkeypatch):
     """Existing write_event tests focus on event persistence, not org creation."""
     monkeypatch.setattr(event_writer, "_ensure_organization_by_ig", lambda *args, **kwargs: None)
+    monkeypatch.setattr(
+        event_writer.school_service,
+        "get_school",
+        lambda slug: SimpleNamespace(id=1, slug=slug),
+    )
 
 
 # ── _clean_food ───────────────────────────────────────────────────────
@@ -170,8 +176,13 @@ def test_ensure_organization_by_ig_returns_existing_without_insert(fake_sb, patc
     assert fake_sb.insert.call_count == 0
 
 
-def test_ensure_organization_by_ig_creates_stub_when_missing(fake_sb, patch_sb):
+def test_ensure_organization_by_ig_creates_stub_when_missing(fake_sb, patch_sb, monkeypatch):
     patch_sb("services.scraper.event_writer")
+    monkeypatch.setattr(
+        event_writer.school_service,
+        "get_school",
+        lambda _slug: SimpleNamespace(id=1),
+    )
     fake_sb.queue_responses(
         [
             [],
@@ -195,7 +206,7 @@ def test_ensure_organization_by_ig_creates_stub_when_missing(fake_sb, patch_sb):
     assert insert_payload == {
         "organization_name": "UW Tea Organization",
         "ig": "uwteaorganization",
-        "school": "uwaterloo",
+        "school_id": 1,
     }
 
 

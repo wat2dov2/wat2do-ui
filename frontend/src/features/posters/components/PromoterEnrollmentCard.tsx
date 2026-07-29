@@ -2,13 +2,12 @@ import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
 
+import { EmailOtpForm } from "@/features/auth";
 import { PromoterTermsDialog } from "@/features/posters/components/PromoterTermsDialog";
 import { usePromoterEnrollment } from "@/features/posters/hooks/usePromoterEnrollment";
 import { usePromoterState } from "@/features/posters/hooks/usePromoterState";
-import { appendSafeReturnTo } from "@/features/auth";
 import { promoterProgram } from "@/shared/config/promoterProgram";
 import {
-  ROUTES,
   SETTINGS_TABS,
   settingsTabPath,
 } from "@/shared/constants/routes";
@@ -41,6 +40,35 @@ interface PromoterEnrollmentCardProps {
   onEnrolled?: () => void;
 }
 
+function PromoterTermsField({
+  accepted,
+  onOpen,
+}: {
+  accepted: boolean;
+  onOpen: () => void;
+}) {
+  const { t } = useTranslation();
+
+  return (
+    <Field>
+      <FieldDescription>
+        {accepted
+          ? t("posters.enrollment.termsAccepted")
+          : t("posters.enrollment.acceptTermsPrefix")}
+      </FieldDescription>
+      <Button
+        type="button"
+        variant="secondary"
+        selected={accepted}
+        onClick={onOpen}
+        data-testid="promoter-terms-open"
+      >
+        {t("posters.enrollment.termsLink")}
+      </Button>
+    </Field>
+  );
+}
+
 export function PromoterEnrollmentCard({
   mode,
   onEnrolled,
@@ -54,6 +82,17 @@ export function PromoterEnrollmentCard({
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [termsOpen, setTermsOpen] = useState(false);
   const requiresTermsAcceptance = !promoter.isEnrolled;
+  const termsDialog = (
+    <PromoterTermsDialog
+      open={termsOpen}
+      onOpenChange={setTermsOpen}
+      onAccept={
+        requiresTermsAcceptance
+          ? () => setAcceptTerms(true)
+          : undefined
+      }
+    />
+  );
 
   if (
     !promoter.isProgramEnabled &&
@@ -73,21 +112,43 @@ export function PromoterEnrollmentCard({
 
   if (!promoter.isAuthenticated) {
     return (
-      <Card data-testid="promoter-enrollment-signed-out">
-        <CardHeader>
-          <CardTitle>{t("posters.enrollment.readyTitle")}</CardTitle>
-          <CardDescription>
-            {t("posters.enrollment.readyDescription")}
-          </CardDescription>
-        </CardHeader>
-        <CardFooter>
-          <Button asChild>
-            <Link href={appendSafeReturnTo(ROUTES.LOGIN, ROUTES.PROMOTE)}>
-              {t("posters.enrollment.signInToJoin")}
-            </Link>
-          </Button>
-        </CardFooter>
-      </Card>
+      <>
+        <Card data-testid="promoter-enrollment-signed-out">
+          <CardHeader>
+            <CardTitle>{t("posters.enrollment.readyTitle")}</CardTitle>
+            <CardDescription>
+              {t("posters.enrollment.readyDescription")}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <EmailOtpForm
+              data-testid="promoter-enrollment-auth"
+              requestCodeLabel={t("posters.enrollment.join")}
+              actionLabel={t("posters.enrollment.join")}
+              isVerificationDisabled={!acceptTerms}
+              onAuthenticated={async (_session, email) => {
+                setPayoutEmail(email);
+                try {
+                  await enrollment.mutateAsync({
+                    payoutEmail: email,
+                    acceptTos: true,
+                  });
+                  setAcceptTerms(false);
+                  onEnrolled?.();
+                } catch {
+                  // The authenticated enrollment form renders the mutation error.
+                }
+              }}
+            >
+              <PromoterTermsField
+                accepted={acceptTerms}
+                onOpen={() => setTermsOpen(true)}
+              />
+            </EmailOtpForm>
+          </CardContent>
+        </Card>
+        {termsDialog}
+      </>
     );
   }
 
@@ -199,22 +260,10 @@ export function PromoterEnrollmentCard({
                 </FieldDescription>
               </Field>
 
-              <Field>
-                <FieldDescription>
-                  {acceptTerms || !requiresTermsAcceptance
-                    ? t("posters.enrollment.termsAccepted")
-                    : t("posters.enrollment.acceptTermsPrefix")}
-                </FieldDescription>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  selected={acceptTerms || !requiresTermsAcceptance}
-                  onClick={() => setTermsOpen(true)}
-                  data-testid="promoter-terms-open"
-                >
-                  {t("posters.enrollment.termsLink")}
-                </Button>
-              </Field>
+              <PromoterTermsField
+                accepted={acceptTerms || !requiresTermsAcceptance}
+                onOpen={() => setTermsOpen(true)}
+              />
 
               {enrollment.error && (
                 <FieldError role="status">
@@ -266,15 +315,7 @@ export function PromoterEnrollmentCard({
           </CardFooter>
         </Card>
       </form>
-      <PromoterTermsDialog
-        open={termsOpen}
-        onOpenChange={setTermsOpen}
-        onAccept={
-          requiresTermsAcceptance
-            ? () => setAcceptTerms(true)
-            : undefined
-        }
-      />
+      {termsDialog}
     </>
   );
 }

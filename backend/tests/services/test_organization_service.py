@@ -1,7 +1,20 @@
+from types import SimpleNamespace
 from unittest.mock import MagicMock
+
+import pytest
 
 from schemas.organization import OrganizationResponse, OrganizationUpdate
 from services import organization_service
+
+
+@pytest.fixture(autouse=True)
+def registered_school(monkeypatch):
+    monkeypatch.setattr(
+        organization_service.school_service,
+        "get_school",
+        lambda _school: SimpleNamespace(id=1),
+    )
+
 
 # --- Invitation Service Tests ---
 

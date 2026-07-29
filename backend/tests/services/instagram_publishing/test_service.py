@@ -14,6 +14,11 @@ from schemas.instagram_publishing import (
 from services.instagram_publishing import service
 
 
+@pytest.fixture(autouse=True)
+def registered_school(monkeypatch):
+    monkeypatch.setattr(service.school_service, "get_school_id", lambda _school: 1)
+
+
 def test_generate_due_batches_uses_enabled_controlbox_accounts(monkeypatch):
     generated_accounts = []
     enabled_accounts = [account for account in service._CONTROL.accounts if account.enabled]
@@ -120,6 +125,7 @@ def test_load_candidates_includes_added_events_from_any_source_without_images(mo
         raise AssertionError(f"Unexpected table {name}")
 
     monkeypatch.setattr(service, "get_sb", lambda: SimpleNamespace(table=table))
+    monkeypatch.setattr(service.school_service, "get_school_id", lambda _school: 10)
 
     result = service._load_candidates(
         account_key="wlu",
@@ -130,7 +136,7 @@ def test_load_candidates_includes_added_events_from_any_source_without_images(mo
 
     assert [event["id"] for event in result] == [301]
     assert "source_image_url" not in result[0]
-    assert ("eq", ("school", "wlu"), {}) in event_calls
+    assert ("eq", ("school_id", 10), {}) in event_calls
     assert ("eq", ("cancelled", False), {}) in event_calls
     assert not any(args and args[0] == "ingestion_source" for _, args, _ in event_calls)
     assert not any(args and args[0] == "source_image_url" for _, args, _ in event_calls)
@@ -159,7 +165,7 @@ def _event(event_id: int, title: str = "Event") -> EventSummaryResponse:
 def _batch(event_ids: list[int], **overrides) -> dict:
     return {
         "id": "batch-1",
-        "account_key": "wat2do",
+        "account_key": "uwaterloo",
         "instagram_user_id": "17841476154506771",
         "school": "uwaterloo",
         "local_date": "2026-07-26",
@@ -271,6 +277,7 @@ def test_count_new_events_unions_the_carousel_with_the_anchored_recent_window(mo
         "get_sb",
         lambda: SimpleNamespace(table=lambda _name: next(queries)),
     )
+    monkeypatch.setattr(service.school_service, "get_school_id", lambda _school: 1)
 
     result = service._count_new_events(_batch([7, 8, 9]))
 
@@ -278,7 +285,7 @@ def test_count_new_events_unions_the_carousel_with_the_anchored_recent_window(mo
     assert result == 9
     assert calls.count(("gte", ("added_at", "2026-07-26T12:30:00+00:00"), {})) == 2
     assert calls.count(("lt", ("added_at", "2026-07-27T12:30:00+00:00"), {})) == 2
-    assert calls.count(("eq", ("school", "uwaterloo"), {})) == 2
+    assert calls.count(("eq", ("school_id", 1), {})) == 2
     assert calls.count(("eq", ("cancelled", False), {})) == 2
     assert ("in_", ("id", [7, 8, 9]), {}) in calls
 

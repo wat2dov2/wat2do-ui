@@ -8,12 +8,10 @@ import { useLastEventsVisit } from "@/features/events/hooks/useLastEventsVisit";
 import { useCreditsStore } from "@/features/credits/store/credits.store";
 import { getUniqueEvents } from "@/shared/utils/event";
 import type { Event } from "@/shared/types";
-import type { ViewMode } from "@/shared/types";
 
 interface UseEventsPageDataOptions {
   profileCompleted: boolean;
   userEmail: string | null;
-  viewMode: ViewMode;
 }
 
 function derivePromotedEvents(
@@ -46,7 +44,6 @@ function derivePromotedEvents(
 export function useEventsPageData({
   profileCompleted,
   userEmail,
-  viewMode,
 }: UseEventsPageDataOptions) {
   const router = useRouter();
   const schoolFilter = useEventsStore((s) => s.schoolFilter);
@@ -70,7 +67,6 @@ export function useEventsPageData({
     events,
     profileCompleted,
     goingEventIds,
-    viewMode,
   });
 
   const orderedEvents = useMemo(

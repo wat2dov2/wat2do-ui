@@ -2,6 +2,7 @@ import admin from "../../../../backend/controlbox/admin.json";
 import clientCache from "../../../../backend/controlbox/client_cache.json";
 import eventDiscovery from "../../../../backend/controlbox/event_discovery.json";
 import interactionTracking from "../../../../backend/controlbox/interaction_tracking.json";
+import organizationManagement from "../../../../backend/controlbox/organization_management.json";
 
 const secondsToMilliseconds = (seconds: number): number => seconds * 1000;
 const hoursToMilliseconds = (hours: number): number => hours * 60 * 60 * 1000;
@@ -14,6 +15,11 @@ export const controlBox = {
       eventDiscovery.new_event_window_hours,
     ),
     serverFeedPageSize: eventDiscovery.server_feed_page_size,
+  },
+  organizationManagement: {
+    directoryPageSize: organizationManagement.directory_page_size,
+    directoryRevalidateSeconds:
+      organizationManagement.directory_revalidate_seconds,
   },
   clientCache: {
     defaultQueryStaleMs: secondsToMilliseconds(

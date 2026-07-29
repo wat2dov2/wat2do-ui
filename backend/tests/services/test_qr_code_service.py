@@ -26,8 +26,8 @@ def poster_secrets(monkeypatch):
     monkeypatch.setattr(settings, "poster_confirmation_secret", "confirmation-secret")
     monkeypatch.setattr(
         qr_code_service.school_service,
-        "school_exists",
-        lambda slug: slug == "uwaterloo",
+        "get_school",
+        lambda slug: SimpleNamespace(id=1, slug=slug) if slug == "uwaterloo" else None,
     )
 
 
@@ -225,7 +225,8 @@ def test_create_promoter_batch_uses_template_and_one_row_per_copy(
         "SLC second floor - 1 of 2",
         "SLC second floor - 2 of 2",
     ]
-    assert rpc_payload["p_school"] == "uwaterloo"
+    assert rpc_payload["p_school_id"] == 1
+    assert "p_school" not in rpc_payload
     assert rpc_payload["p_poster_template_id"] == "campus-colour"
     assert rpc_payload["p_image_url"].endswith("/poster-templates/campus-colour-v1.png")
     assert "p_description" not in rpc_payload
@@ -260,8 +261,8 @@ def test_create_promoter_batch_rejects_unknown_template(fake_sb, patch_sb):
         ),
         (
             {
-                "id": "utoronto-template",
-                "eligible_school": "utoronto",
+                "id": "utsg-template",
+                "eligible_school": "utsg",
             },
             PROMOTER_TEMPLATE_SCHOOL_MISMATCH,
         ),

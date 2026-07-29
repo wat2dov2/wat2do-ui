@@ -44,7 +44,7 @@ from schemas.instagram_publishing import (
     InstagramPublishBatchPublish,
     InstagramPublishBatchUpdate,
 )
-from services import event_query
+from services import event_query, school_service
 from services.instagram_publishing.captions import build_caption
 from services.instagram_publishing.credentials import load_account_credentials
 from services.instagram_publishing.curation import select_candidate_ids
@@ -60,6 +60,11 @@ _SUCCESSFUL_CUTOFF_STATUSES = (
     INSTAGRAM_BATCH_EMPTY,
 )
 _EVENT_COLUMNS = "id,title,description,location,organization,ig_handle"
+_BATCH_SELECT = f"*,{school_service.SCHOOL_SLUG_EMBED}"
+
+
+def _with_batch_school(row: dict[str, Any]) -> dict[str, Any]:
+    return school_service.with_school_slug(row)
 
 
 def generate_due_batches(
@@ -102,7 +107,7 @@ def list_batches(
     offset: int,
     limit: int,
 ) -> tuple[list[dict[str, Any]], int]:
-    query = get_sb().table(INSTAGRAM_PUBLISH_BATCHES).select("*", count="exact")
+    query = get_sb().table(INSTAGRAM_PUBLISH_BATCHES).select(_BATCH_SELECT, count="exact")
     if batch_status:
         query = query.eq("status", batch_status)
     if local_date:
@@ -113,7 +118,7 @@ def list_batches(
         .range(offset, offset + limit - 1)
         .execute()
     )
-    batches = response.data or []
+    batches = [_with_batch_school(row) for row in response.data or []]
     _hydrate_batches(batches)
     return batches, response.count or len(batches)
 
@@ -122,14 +127,14 @@ def get_batch(batch_id: UUID | str) -> dict[str, Any]:
     response = (
         get_sb()
         .table(INSTAGRAM_PUBLISH_BATCHES)
-        .select("*")
+        .select(_BATCH_SELECT)
         .eq("id", str(batch_id))
         .limit(1)
         .execute()
     )
     if not response.data:
         raise NotFoundError(INSTAGRAM_PUBLISH_BATCH_NOT_FOUND)
-    batch = response.data[0]
+    batch = _with_batch_school(response.data[0])
     _hydrate_batches([batch])
     return batch
 
@@ -247,6 +252,8 @@ def _generate_account_batch(
     now: datetime,
 ) -> str:
     credentials = load_account_credentials(account, now_utc=now)
+    if credentials.school_id is None:
+        raise ValidationError("Instagram publishing school is not registered")
     window_start = _last_successful_cutoff(account.key) or (
         now - timedelta(hours=_CONTROL.fallback_window_hours)
     )
@@ -257,7 +264,7 @@ def _generate_account_batch(
             {
                 "account_key": account.key,
                 "instagram_user_id": credentials.instagram_user_id,
-                "school": account.school,
+                "school_id": credentials.school_id,
                 "local_date": local_date.isoformat(),
                 "window_start": window_start.isoformat(),
                 "window_end": now.isoformat(),
@@ -342,11 +349,14 @@ def _load_candidates(
     window_start: datetime,
     window_end: datetime,
 ) -> list[dict[str, Any]]:
+    school_id = school_service.get_school_id(school)
+    if school_id is None:
+        return []
     events_response = (
         get_sb()
         .table(EVENTS)
         .select(_EVENT_COLUMNS)
-        .eq("school", school)
+        .eq("school_id", school_id)
         .eq("cancelled", False)
         .gte("added_at", window_start.isoformat())
         .lt("added_at", window_end.isoformat())
@@ -558,11 +568,14 @@ def _count_active_events_added_between(
     window_end: datetime,
     event_ids: set[int] | None = None,
 ) -> int:
+    school_id = school_service.get_school_id(school)
+    if school_id is None:
+        return 0
     query = (
         get_sb()
         .table(EVENTS)
         .select("id", count="exact")
-        .eq("school", school)
+        .eq("school_id", school_id)
         .eq("cancelled", False)
         .gte("added_at", window_start.isoformat())
         .lt("added_at", window_end.isoformat())

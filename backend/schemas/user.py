@@ -70,6 +70,7 @@ class PromoterEnrollmentUpdate(BaseModel):
 
 class UserResponse(UserBase):
     id: UUID
+    school_id: int | None = Field(default=None, exclude=True)
     faculty: str | None = None
     school: str | None = None
     interests: list[str] | None = None

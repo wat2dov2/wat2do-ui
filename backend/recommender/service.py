@@ -43,7 +43,7 @@ from recommender.reranker import mmr_rerank
 from recommender.schemas import RecommendationItem
 from recommender.scoring import blend_scores, select_weights
 from schemas.event import EventResponse
-from services import event_query, interaction_service, user_service
+from services import event_query, interaction_service, school_service, user_service
 
 log = logging.getLogger(__name__)
 
@@ -672,13 +672,13 @@ class BatchRecommendationRunner:
         Uses the existing `iter_all_pages` streaming helper from core.pagination
         so we never materialise the full user table at once.
         """
-        return iter_all_pages(
+        rows = iter_all_pages(
             lambda offset, ps: (
                 (
                     get_sb()
                     .table(USERS)
-                    .select("id,school")
-                    .order("school")
+                    .select(f"id,school_id,{school_service.SCHOOL_SLUG_EMBED}")
+                    .order("school_id")
                     .order("id")
                     .range(offset, offset + ps - 1)
                     .execute()
@@ -686,6 +686,7 @@ class BatchRecommendationRunner:
                 or []
             ),
         )
+        return (school_service.with_school_slug(row) for row in rows)
 
     @staticmethod
     def _user_school(user: dict) -> str | None:

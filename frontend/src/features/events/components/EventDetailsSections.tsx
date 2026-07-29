@@ -45,12 +45,11 @@ import { GoingOccurrencePickerContent } from "@/features/events/components/Going
 import { fetchEventAttendees } from "@/features/events/api/events.api";
 import { useEventStats } from "@/features/events/hooks/useEventStats";
 import { useCurrentTime, useGoingEventSelection } from "@/features/events/hooks/useGoingEvents";
-import { eventPagePath } from "@/features/events/lib/eventUrls";
-import { appendSafeReturnTo, useAuthState } from "@/features/auth";
+import { EmailOtpForm, useAuthState } from "@/features/auth";
 import { controlBox } from "@/shared/config/controlBox";
 import { translateFood } from "@/shared/utils/foodTranslation";
 import { queryKeys } from "@/shared/lib/queryKeys";
-import { organizationPagePath, ROUTES } from "@/shared/constants/routes";
+import { organizationPagePath } from "@/shared/constants/routes";
 import type { Event } from "@/shared/types";
 
 const EventShareDialog = lazy(() =>
@@ -253,6 +252,24 @@ function EventRegistrationCard({
       ? formatCountdown(new Date(nextSelectedOccurrence.dtstart_utc).getTime(), now)
       : null;
 
+  const startRegistration = async () => {
+    if (going.selectableOccurrences.length > 1) {
+      setPickerOpen(true);
+      return;
+    }
+
+    const occurrence = going.selectableOccurrences[0];
+    if (!occurrence) {
+      return;
+    }
+
+    try {
+      await going.saveSelection([occurrence.id]);
+    } catch {
+      // The going-events hook owns the user-facing failure toast.
+    }
+  };
+
   if (isGoingActive && !pickerOpen) {
     return (
       <Card>
@@ -344,50 +361,33 @@ function EventRegistrationCard({
                   <CardDescription>{userEmail}</CardDescription>
                 </Stack>
               </Stack>
-            ) : null}
+            ) : (
+              <EmailOtpForm
+                data-testid="event-registration-auth"
+                requestCodeLabel={t("events.register")}
+                actionLabel={t("events.register")}
+                isVerificationDisabled={
+                  going.selectableOccurrences.length === 0
+                }
+                onAuthenticated={startRegistration}
+              />
+            )}
           </Stack>
         )}
       </CardContent>
-      {!pickerOpen ? (
+      {!pickerOpen && profileCompleted ? (
         <CardFooter className="w-full">
-          {profileCompleted ? (
-            <Button
-              type="button"
-              variant="primary"
-              className="w-full"
-              disabled={going.isPending || going.selectableOccurrences.length === 0}
-              onClick={() => {
-                if (going.selectableOccurrences.length > 1) {
-                  setPickerOpen(true);
-                  return;
-                }
-                const occurrence = going.selectableOccurrences[0];
-                if (!occurrence) return;
-                void going.saveSelection([occurrence.id]);
-              }}
-              aria-label={t("events.register")}
-              title={t("events.register")}
-            >
-              {t("events.register")}
-            </Button>
-          ) : (
-            <Button
-              asChild
-              variant="primary"
-              className="w-full"
-              aria-label={t("events.signInToRegister")}
-              title={t("events.signInToRegister")}
-            >
-              <Link
-                href={appendSafeReturnTo(
-                  ROUTES.LOGIN,
-                  eventPagePath(event.id),
-                )}
-              >
-                {t("events.signInToRegister")}
-              </Link>
-            </Button>
-          )}
+          <Button
+            type="button"
+            variant="primary"
+            className="w-full"
+            disabled={going.isPending || going.selectableOccurrences.length === 0}
+            onClick={() => void startRegistration()}
+            aria-label={t("events.register")}
+            title={t("events.register")}
+          >
+            {t("events.register")}
+          </Button>
         </CardFooter>
       ) : null}
     </Card>
@@ -409,9 +409,9 @@ function EventAboutSection({ event }: { event: Event }) {
           href={sourceHref}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-sm text-primary hover:underline flex items-center gap-1.5"
+          className="inline-flex w-fit max-w-full items-center gap-1.5 text-sm text-primary hover:underline"
         >
-          <ExternalLink className="size-3.5" />
+          <span className="shrink-0">{t("events.sourceLabel")}</span>
           <span className="truncate">{event.source_url}</span>
         </a>
       )}

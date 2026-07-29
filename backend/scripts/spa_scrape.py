@@ -485,13 +485,13 @@ async def scrape_concordia(ctx: BrowserContext, with_details: bool) -> list[dict
 
 async def scrape_memorial(ctx: BrowserContext, with_details: bool) -> list[dict]:
     """Refresh Memorial groups from existing per-club and shared directory URLs."""
-    clubs = _load_seed_rows_from_xlsx("Memorial")
-    print(f"[memorial] loaded {len(clubs)} clubs from master xlsx", flush=True)
+    clubs = _load_seed_rows_from_xlsx("mun")
+    print(f"[mun] loaded {len(clubs)} clubs from master xlsx", flush=True)
     if with_details:
-        return await _refresh_seeded_rows(ctx, clubs, school="Memorial", parallelism=6)
+        return await _refresh_seeded_rows(ctx, clubs, school="mun", parallelism=6)
     return [
         {
-            "School": "memorial",
+            "School": "mun",
             "Name": c["name"],
             "Category": c.get("category"),
             "Campus": c.get("campus"),
@@ -786,7 +786,7 @@ async def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--school",
-        choices=["concordia", "memorial", "sfu", "ubc", "ucalgary", "ualberta", "umanitoba", "all"],
+        choices=["concordia", "mun", "sfu", "ubc", "ucalgary", "ualberta", "umanitoba", "all"],
         default="all",
     )
     parser.add_argument(
@@ -805,7 +805,7 @@ async def main():
 
         handlers = {
             "concordia": scrape_concordia,
-            "memorial": scrape_memorial,
+            "mun": scrape_memorial,
             "sfu": scrape_sfu,
             "ubc": scrape_ubc,
             "ucalgary": scrape_ucalgary,

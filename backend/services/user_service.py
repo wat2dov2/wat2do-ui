@@ -20,26 +20,38 @@ from schemas.user import PromoterEnrollmentUpdate, UserResponse, UserUpdate
 from services import school_service
 from services.school_context import canonical_school_key
 
+_USER_SELECT = f"*,{school_service.SCHOOL_SLUG_EMBED}"
+
+
+def _user_response(row: dict) -> UserResponse:
+    return UserResponse.model_validate(school_service.with_school_slug(row))
+
 
 def get_user(user_id: UUID) -> UserResponse | None:
-    r = get_sb().table(USERS).select("*").eq("id", str(user_id)).execute()
+    r = get_sb().table(USERS).select(_USER_SELECT).eq("id", str(user_id)).execute()
     if not r.data or len(r.data) == 0:
         return None
-    return UserResponse.model_validate(r.data[0])
+    return _user_response(r.data[0])
 
 
 def get_user_by_email(email: str) -> UserResponse | None:
-    r = get_sb().table(USERS).select("*").eq("email", email).execute()
+    r = get_sb().table(USERS).select(_USER_SELECT).eq("email", email).execute()
     if not r.data or len(r.data) == 0:
         return None
-    return UserResponse.model_validate(r.data[0])
+    return _user_response(r.data[0])
 
 
 def get_user_by_supabase_id(supabase_auth_id: str) -> UserResponse | None:
-    r = get_sb().table(USERS).select("*").eq("supabase_auth_id", supabase_auth_id).execute()
+    r = (
+        get_sb()
+        .table(USERS)
+        .select(_USER_SELECT)
+        .eq("supabase_auth_id", supabase_auth_id)
+        .execute()
+    )
     if not r.data or len(r.data) == 0:
         return None
-    return UserResponse.model_validate(r.data[0])
+    return _user_response(r.data[0])
 
 
 _LOAD_PAGE_SIZE = 1000
@@ -60,9 +72,9 @@ def get_users_by_ids(user_ids: list[str]) -> dict[str, UserResponse]:
     # PostgREST IN-clause has practical limits, so chunk the IDs.
     for chunk_start in range(0, len(user_ids), _LOAD_PAGE_SIZE):
         chunk = user_ids[chunk_start : chunk_start + _LOAD_PAGE_SIZE]
-        r = get_sb().table(USERS).select("*").in_("id", chunk).execute()
+        r = get_sb().table(USERS).select(_USER_SELECT).in_("id", chunk).execute()
         for row in r.data or []:
-            user = UserResponse.model_validate(row)
+            user = _user_response(row)
             result[str(user.id)] = user
 
     return result
@@ -72,12 +84,12 @@ def list_users(skip: int = 0, limit: int = DEFAULT_LIST_LIMIT) -> list[UserRespo
     r = (
         get_sb()
         .table(USERS)
-        .select("*")
+        .select(_USER_SELECT)
         .order("created_at", desc=True)
         .range(skip, skip + limit - 1)
         .execute()
     )
-    return [UserResponse.model_validate(u) for u in (r.data or [])]
+    return [_user_response(u) for u in (r.data or [])]
 
 
 def update_user(user_id: UUID, data: UserUpdate) -> UserResponse | None:
@@ -87,8 +99,15 @@ def update_user(user_id: UUID, data: UserUpdate) -> UserResponse | None:
     payload = data.model_dump(exclude_unset=True)
     if not payload:
         return existing
+    if "school" in payload:
+        school = school_service.get_school(canonical_school_key(payload.pop("school")))
+        if school is None:
+            raise ValidationError("School is not registered")
+        payload["school_id"] = school.id
     r = get_sb().table(USERS).update(payload).eq("id", str(user_id)).execute()
-    return UserResponse.model_validate(r.data[0]) if r.data else None
+    if not r.data:
+        return None
+    return _user_response({**r.data[0], "school": data.school or existing.school})
 
 
 def update_promoter_enrollment(
@@ -129,7 +148,7 @@ def update_promoter_enrollment(
         )
 
     r = get_sb().table(USERS).update(payload).eq("id", str(user_id)).execute()
-    return UserResponse.model_validate(r.data[0]) if r.data else None
+    return _user_response({**r.data[0], "school": existing.school}) if r.data else None
 
 
 def set_role(user_id: UUID, role: str) -> UserResponse | None:
@@ -142,7 +161,7 @@ def set_role(user_id: UUID, role: str) -> UserResponse | None:
     if existing is None:
         return None
     r = get_sb().table(USERS).update({"role": role}).eq("id", str(user_id)).execute()
-    return UserResponse.model_validate(r.data[0]) if r.data else None
+    return get_user(user_id) if r.data else None
 
 
 def count_admins() -> int:

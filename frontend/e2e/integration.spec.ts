@@ -91,6 +91,21 @@ test.beforeEach(async ({ page }) => {
     });
   });
 
+  await page.route(url => apiPath(url) === "/schools", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify([
+        {
+          slug: "uwaterloo",
+          name: "University of Waterloo",
+          primary_color: "#6b238e",
+          secondary_color: "#ffd54f",
+        },
+      ]),
+    });
+  });
+
   await page.route(url => apiPath(url) === "/going-events", async (route) => {
     await route.fulfill({
       status: 200,
@@ -833,12 +848,77 @@ test.describe("Events Page", () => {
     ).toBeVisible();
   });
 
-  test("renders event facts and maps consistently with signed-out registration", async ({
+  test("renders event facts and completes signed-out registration inline", async ({
     page,
   }) => {
     await page.setViewportSize({ width: 375, height: 844 });
     const now = new Date();
     const startsAt = new Date(now.getTime() + 86_400_000).toISOString();
+    let registrationBody: { occurrence_ids: string[] } | null = null;
+
+    await page.route(url => apiPath(url) === "/auth/send-otp", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ message: "sent" }),
+      });
+    });
+    await page.route(url => apiPath(url) === "/auth/verify-otp", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          access_token: "inline-registration-token",
+          token_type: "bearer",
+          expires_in: 3600,
+          user_id: "inline-registration-user",
+          school: "uwaterloo",
+          onboarding_required: false,
+        }),
+      });
+    });
+    await page.route(url => apiPath(url) === "/users/me", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          id: "inline-registration-user",
+          email: TEST_EMAIL,
+          full_name: "Inline Student",
+          avatar_url: null,
+          faculty: null,
+          school: "uwaterloo",
+          interests: [],
+          is_first_year: false,
+          role: "user",
+          payout_email: null,
+          promoter_tos_accepted_at: null,
+          promoter_tos_version: null,
+        }),
+      });
+    });
+    await page.route(url => apiPath(url) === "/organizations/mine", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify([]),
+      });
+    });
+    await page.route(url => apiPath(url) === "/going-events/1", async (route) => {
+      registrationBody = route.request().postDataJSON() as {
+        occurrence_ids: string[];
+      };
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          status: "going",
+          event_id: 1,
+          occurrence_ids: registrationBody.occurrence_ids,
+          going_count: 1,
+        }),
+      });
+    });
     await page.route(url => apiPath(url) === "/events/1", async (route) => {
       await route.fulfill({
         status: 200,
@@ -849,7 +929,12 @@ test.describe("Events Page", () => {
           title: "Tech Career Fair",
           description: "Full detail loaded",
           location: "SLC",
-          occurrences: [{ id: 1, event_id: 1, dtstart_utc: startsAt, dtend_utc: null }],
+          occurrences: [{
+            id: "occurrence-1",
+            event_id: 1,
+            dtstart_utc: startsAt,
+            dtend_utc: null,
+          }],
           price: 0,
           food: [],
           registration: true,
@@ -892,28 +977,41 @@ test.describe("Events Page", () => {
       ).toBe("About Event");
     };
 
-    const assertSignInRegistration = async () => {
-      const signInLink = page.getByRole("link", {
-        name: "Sign in to register",
-        exact: true,
-      });
-      await expect(signInLink).toBeVisible();
-      await expect(signInLink).toHaveAttribute(
-        "href",
-        "/login?returnTo=%2Fevents%2F1",
-      );
-      await signInLink.click();
-      await expect(page).toHaveURL(/\/login\?/);
-      expect(new URL(page.url()).searchParams.get("returnTo")).toBe("/events/1");
+    const assertInlineRegistration = async () => {
+      const authForm = page.getByTestId("event-registration-auth");
+      await expect(authForm.getByLabel("Email address")).toBeVisible();
+      await expect(
+        authForm.getByRole("button", { name: "Register", exact: true }),
+      ).toBeDisabled();
     };
 
     await page.goto(`${BASE}/?eventId=1`);
     await assertEventDetails();
-    await assertSignInRegistration();
+    await assertInlineRegistration();
 
     await page.goto(`${BASE}/events/1`);
     await assertEventDetails();
-    await assertSignInRegistration();
+    await assertInlineRegistration();
+
+    const authForm = page.getByTestId("event-registration-auth");
+    const registerButton = authForm.getByRole("button", {
+      name: "Register",
+      exact: true,
+    });
+    await authForm.getByLabel("Email address").fill(TEST_EMAIL);
+    await expect(registerButton).toBeEnabled();
+    await registerButton.click();
+
+    await expect(authForm.getByLabel("Verification code")).toBeVisible();
+    await expect(registerButton).toBeDisabled();
+    await authForm.getByLabel("Verification code").fill("123456");
+    await expect(registerButton).toBeEnabled();
+    await registerButton.click();
+
+    await expect.poll(() => registrationBody).toEqual({
+      occurrence_ids: ["occurrence-1"],
+    });
+    await expect(page.getByText("You're In")).toBeVisible();
   });
 
   test("shows the default category badge when event details have no category", async ({ page }) => {
@@ -1364,7 +1462,7 @@ test.describe("Events Page", () => {
       .toBeGreaterThan(0);
   });
 
-  test("keeps the filter count inside the trigger and matches view button variants", async ({ page }) => {
+  test("keeps view mode separate from active filters", async ({ page }) => {
     await page.goto(BASE);
     await expect(
       page.getByRole("button", { name: "Arts & Culture", exact: true }),
@@ -1382,8 +1480,22 @@ test.describe("Events Page", () => {
 
     await expect(calendarButton).toHaveClass(/bg-secondary/);
     await expect(categoryButton).toHaveClass(/bg-secondary/);
-    await categoryButton.click();
     await expect(gridButton).toHaveClass(/bg-primary/);
+
+    await calendarButton.click();
+    await expect(calendarButton).toHaveClass(/bg-primary/);
+    await expect(gridButton).toHaveClass(/bg-secondary/);
+    await expect(
+      drawer.getByRole("button", { name: "Clear View" }),
+    ).toHaveCount(0);
+
+    await page.keyboard.press("Escape");
+    await expect(
+      page.getByRole("button", { name: "Clear filters" }),
+    ).toHaveCount(0);
+
+    await extraFiltersButton.click();
+    await categoryButton.click();
     await expect(categoryButton).toHaveClass(/bg-primary/);
 
     await page.keyboard.press("Escape");
@@ -1886,11 +1998,11 @@ test.describe("Navigation", () => {
         : undefined,
       data: {
         kind: "cover",
-        school: "utoronto",
+        school: "utsg",
         local_date: "2026-07-27",
         new_event_count: 4,
         body: "Here are the 1 we like the most",
-        events: [{ id: 1, school: "utoronto", title: "Campus Event" }],
+        events: [{ id: 1, school: "utsg", title: "Campus Event" }],
       },
     });
 
@@ -1928,7 +2040,7 @@ test.describe("Navigation", () => {
   test("default and alternate school routes load without event feed errors", async ({ page }) => {
     const routes = [
       { url: BASE, schoolName: "University of Waterloo" },
-      { url: `${BASE}/school/utoronto`, schoolName: "University of Toronto" },
+      { url: `${BASE}/school/utsg`, schoolName: "University of Toronto" },
     ];
 
     for (const { url, schoolName } of routes) {

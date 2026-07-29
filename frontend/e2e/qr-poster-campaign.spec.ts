@@ -119,6 +119,7 @@ interface SessionOptions {
   hasPromoterProfile?: boolean;
   acceptedTermsVersion?: string;
   school?: string | null;
+  seedBrowserSession?: boolean;
 }
 
 interface SessionMock {
@@ -132,6 +133,7 @@ async function installSessionMock(
     hasPromoterProfile = false,
     acceptedTermsVersion = CURRENT_TOS_VERSION,
     school = "uwaterloo",
+    seedBrowserSession = true,
   }: SessionOptions = {},
 ): Promise<SessionMock> {
   const now = new Date().toISOString();
@@ -168,6 +170,24 @@ async function installSessionMock(
         onboarding_required: false,
       }),
   );
+  if (!seedBrowserSession) {
+    await page.route(
+      (url) => apiPath(url) === "/auth/send-otp",
+      (route) => fulfillJson(route, { message: "sent" }),
+    );
+    await page.route(
+      (url) => apiPath(url) === "/auth/verify-otp",
+      (route) =>
+        fulfillJson(route, {
+          access_token: "mock-access-token",
+          token_type: "bearer",
+          expires_in: 3600,
+          user_id: userId,
+          school,
+          onboarding_required: false,
+        }),
+    );
+  }
   await page.route(
     (url) => apiPath(url) === "/users/me",
     (route) => fulfillJson(route, user),
@@ -203,18 +223,20 @@ async function installSessionMock(
     promoterTosVersion: user.promoter_tos_version,
   };
 
-  await page.addInitScript(
-    ({ emailKey, profileKey, cachedEmail, profile }) => {
-      window.localStorage.setItem(emailKey, JSON.stringify(cachedEmail));
-      window.localStorage.setItem(profileKey, JSON.stringify(profile));
-    },
-    {
-      emailKey: STORAGE_KEYS.USER_EMAIL,
-      profileKey: STORAGE_KEYS.USER_PROFILE,
-      cachedEmail: email,
-      profile: cachedProfile,
-    },
-  );
+  if (seedBrowserSession) {
+    await page.addInitScript(
+      ({ emailKey, profileKey, cachedEmail, profile }) => {
+        window.localStorage.setItem(emailKey, JSON.stringify(cachedEmail));
+        window.localStorage.setItem(profileKey, JSON.stringify(profile));
+      },
+      {
+        emailKey: STORAGE_KEYS.USER_EMAIL,
+        profileKey: STORAGE_KEYS.USER_PROFILE,
+        cachedEmail: email,
+        profile: cachedProfile,
+      },
+    );
+  }
 
   return {
     enrollmentBody: () => enrollmentBody,
@@ -782,15 +804,14 @@ test.describe("Promoter poster campaign", () => {
     await expect(page.getByText("PRIVATE PROMOTER NAME")).toHaveCount(0);
   });
 
-  test("keeps the public recruitment map aggregated for signed-out visitors", async ({
+  test("keeps the public map aggregated and completes signed-out enrollment inline", async ({
     page,
   }) => {
     await installCommonApiMocks(page);
+    const session = await installSessionMock(page, {
+      seedBrowserSession: false,
+    });
     await installPromoterApiMocks(page);
-    await page.route(
-      (url) => apiPath(url) === "/auth/refresh",
-      (route) => fulfillJson(route, { detail: "Not authenticated" }, 401),
-    );
 
     await page.goto(`${BASE_URL}/`);
     await expect(page.getByTestId("promoter-recruitment-banner")).toBeVisible();
@@ -814,6 +835,41 @@ test.describe("Promoter poster campaign", () => {
     await expect(
       page.getByRole("button", { name: /private poster/i }),
     ).toHaveCount(0);
+
+    const authForm = page.getByTestId("promoter-enrollment-auth");
+    const joinButton = authForm.getByRole("button", {
+      name: "Join the program",
+      exact: true,
+    });
+    await expect(joinButton).toBeDisabled();
+    await authForm
+      .getByLabel("Email address")
+      .fill("promoter@uwaterloo.ca");
+    await expect(joinButton).toBeEnabled();
+    await joinButton.click();
+
+    await expect(authForm.getByLabel("Verification code")).toBeVisible();
+    await authForm.getByLabel("Verification code").fill("123456");
+    await expect(joinButton).toBeDisabled();
+
+    await page.getByTestId("promoter-terms-open").click();
+    await page.getByTestId("promoter-terms-body").evaluate((element) => {
+      element.scrollTop = element.scrollHeight;
+      element.dispatchEvent(new Event("scroll"));
+    });
+    const acceptTerms = page.getByTestId("promoter-terms-accept");
+    await expect(acceptTerms).toBeEnabled();
+    await acceptTerms.click();
+    await expect(joinButton).toBeEnabled();
+
+    await Promise.all([
+      page.waitForURL(/\/posters$/),
+      joinButton.click(),
+    ]);
+    expect(session.enrollmentBody()).toEqual({
+      payout_email: "promoter@uwaterloo.ca",
+      accept_tos: true,
+    });
   });
 
   test("activates placement and keeps a repeat visitor deduplicated", async ({

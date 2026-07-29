@@ -39,7 +39,7 @@ COLUMNS = [
 
 SPA_FILES = {
     "concordia": "spa-concordia.json",
-    "memorial": "spa-memorial.json",
+    "mun": "spa-mun.json",
     "sfu": "spa-sfu.json",
     "ubc": "spa-ubc.json",
     "ucalgary": "spa-ucalgary.json",

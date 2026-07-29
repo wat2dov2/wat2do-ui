@@ -55,6 +55,20 @@ log = logging.getLogger(__name__)
 POSTER_ALREADY_EXISTS = "Poster with this ID already exists"
 POSTER_VISITOR_COOKIE = "wat2do_poster_visitor"
 _CONFIRMATION_TOKEN_VERSION = "1"
+_QR_CODE_SELECT = f"*,{school_service.SCHOOL_SLUG_EMBED}"
+
+
+def _qr_code_response(row: dict) -> QrCodeResponse:
+    normalized = school_service.with_school_slug(row)
+    school = normalized.pop("school", None)
+    filters = normalized.get("filters")
+    if isinstance(filters, dict):
+        filters = dict(filters)
+        filters.pop("school", None)
+        if school:
+            filters["school"] = school
+        normalized["filters"] = filters
+    return QrCodeResponse.model_validate(normalized)
 
 
 def _coerce_destination_id(
@@ -75,10 +89,10 @@ def _coerce_destination_id(
 
 
 def get_qr_code_by_id(qr_code_id: str) -> QrCodeResponse | None:
-    response = get_sb().table(QR_CODES).select("*").eq("id", qr_code_id).execute()
+    response = get_sb().table(QR_CODES).select(_QR_CODE_SELECT).eq("id", qr_code_id).execute()
     if not response.data:
         return None
-    return QrCodeResponse.model_validate(response.data[0])
+    return _qr_code_response(response.data[0])
 
 
 def create_qr_code(data: QrCodeCreate, *, creator: UserResponse) -> QrCodeResponse:
@@ -98,7 +112,10 @@ def create_qr_code(data: QrCodeCreate, *, creator: UserResponse) -> QrCodeRespon
         if exc.code == PG_UNIQUE_VIOLATION:
             raise ConflictError(POSTER_ALREADY_EXISTS) from exc
         raise
-    return QrCodeResponse.model_validate(response.data[0])
+    created = get_qr_code_by_id(str(response.data[0]["id"]))
+    if created is None:
+        raise RuntimeError("Created QR code could not be reloaded")
+    return created
 
 
 def create_promoter_qr_codes(
@@ -117,7 +134,8 @@ def create_promoter_qr_codes(
     ):
         raise ValidationError(PROMOTER_ENROLLMENT_REQUIRED)
     school = canonical_school_key(creator.school)
-    if not school_service.school_exists(school):
+    school_record = school_service.get_school(school)
+    if school_record is None:
         raise ValidationError(PROMOTER_SCHOOL_REQUIRED)
     if data.copies > promoter_control.maximum_active_posters:
         raise ValidationError(PROMOTER_POSTER_LIMIT_REACHED)
@@ -134,7 +152,7 @@ def create_promoter_qr_codes(
                     "p_ids": ids,
                     "p_names": names,
                     "p_created_by": str(creator.id),
-                    "p_school": school,
+                    "p_school_id": school_record.id,
                     "p_image_url": _template_preview_url(template),
                     "p_poster_template_id": template.id,
                     "p_maximum_active_posters": promoter_control.maximum_active_posters,
@@ -157,7 +175,17 @@ def create_promoter_qr_codes(
     if not response.data:
         raise RuntimeError("create_promoter_qr_codes returned no rows")
     rows_by_id = {str(row["id"]): row for row in response.data}
-    return [QrCodeResponse.model_validate(rows_by_id[qr_code_id]) for qr_code_id in ids]
+    if any(qr_code_id not in rows_by_id for qr_code_id in ids):
+        raise RuntimeError("create_promoter_qr_codes returned incomplete rows")
+    return [
+        _qr_code_response(
+            {
+                **rows_by_id[qr_code_id],
+                "school_record": {"slug": school},
+            }
+        )
+        for qr_code_id in ids
+    ]
 
 
 def _get_creation_template(
@@ -203,13 +231,22 @@ def _build_qr_payload(
     program: str,
     is_active: bool,
 ) -> dict:
+    filters: dict | list | None = data.filters
+    school_slug = ""
+    if isinstance(filters, dict):
+        filters = dict(filters)
+        school_slug = canonical_school_key(filters.pop("school", None))
+    school_id = school_service.get_school_id(school_slug) if school_slug else None
+    if school_slug and school_id is None:
+        raise ValidationError("School is not registered")
     return {
         "id": data.id,
         "name": data.name,
         "description": data.description,
         "destination_type": data.destination_type,
         "destination_id": str(data.destination_id) if data.destination_id is not None else None,
-        "filters": data.filters,
+        "filters": filters,
+        "school_id": school_id,
         "created_by": created_by,
         "is_active": is_active,
         "program": program,
@@ -422,15 +459,19 @@ def list_qr_codes(
     offset: int = 0,
     limit: int | None = DEFAULT_LIST_LIMIT,
 ) -> tuple[list[QrCodeResponse], int]:
-    query = get_sb().table(QR_CODES).select("*", count="exact").order("created_at", desc=True)
+    query = (
+        get_sb()
+        .table(QR_CODES)
+        .select(_QR_CODE_SELECT, count="exact")
+        .order("created_at", desc=True)
+    )
     if created_by:
         query = query.eq("created_by", created_by)
     if school:
-        user_rows = get_sb().table("users").select("id").eq("school", school).execute()
-        user_ids = [str(row["id"]) for row in user_rows.data or []]
-        if not user_ids:
+        school_id = school_service.get_school_id(school)
+        if school_id is None:
             return [], 0
-        query = query.in_("created_by", user_ids)
+        query = query.eq("school_id", school_id)
     if program:
         query = query.eq("program", program)
     if is_active is not None:
@@ -446,7 +487,7 @@ def list_qr_codes(
     if limit is not None:
         query = query.range(offset, offset + limit - 1)
     response = query.execute()
-    items = [QrCodeResponse.model_validate(row) for row in response.data or []]
+    items = [_qr_code_response(row) for row in response.data or []]
     return items, response.count or len(items)
 
 
@@ -499,7 +540,8 @@ def get_campus_coverage(school: str) -> CampusCoverageResponse:
     """Return public campus coverage without exact posters or owner identifiers."""
     school_slug = canonical_school_key(school)
     quiet_days = controlbox.promoter_program.quiet_poster_days
-    if not school_service.school_exists(school_slug):
+    school_record = school_service.get_school(school_slug)
+    if school_record is None:
         return CampusCoverageResponse(
             school=school_slug,
             quiet_after_days=quiet_days,
@@ -512,7 +554,7 @@ def get_campus_coverage(school: str) -> CampusCoverageResponse:
         .rpc(
             "get_promoter_campus_coverage",
             {
-                "p_school": school_slug,
+                "p_school_id": school_record.id,
                 "p_quiet_cutoff": quiet_cutoff.isoformat(),
                 "p_coordinate_decimal_places": (
                     controlbox.promoter_program.map_coordinate_decimal_places

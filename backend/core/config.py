@@ -35,7 +35,7 @@ class Settings(BaseSettings):
     # OpenAI model used for vision-based event extraction in services/scraper.
     # Kept separate from ``openai_model`` so we can swap the extraction model
     # (vision-capable) without affecting non-vision call sites.
-    openai_extraction_model: str = "gpt-4o-mini"
+    openai_extraction_model: str = "gpt-5-nano"
     # Set CORS_ORIGINS env var as a JSON list for production,
     # e.g. CORS_ORIGINS=["https://wat2do.app","https://www.wat2do.app"]
     cors_origins: list[str] = _DEV_ORIGINS

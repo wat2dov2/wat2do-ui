@@ -29,6 +29,7 @@ import { CreateOrganizationPage } from "@/features/organizations/pages/CreateOrg
 import { OrganizationDetailsPage } from "@/features/organizations/pages/OrganizationDetailsPage";
 import { OrganizationsPage } from "@/features/organizations/pages/OrganizationsPage";
 import { InviteLandingPage } from "@/features/organizations/pages/InviteLandingPage";
+import type { PaginatedOrganizationsResponse } from "@/features/organizations/api/organizations.api";
 import { QRRedirectPage } from "@/features/qrcode/pages/QRRedirectPage";
 import { SettingsPage } from "@/features/settings/pages/SettingsPage";
 import { PromotePage } from "@/features/posters/pages/PromotePage";
@@ -88,10 +89,19 @@ export function ContactRoute() {
   );
 }
 
-export function OrganizationsRoute() {
+export function OrganizationsRoute({
+  initialDirectory,
+  initialSchool,
+}: {
+  initialDirectory: PaginatedOrganizationsResponse | null;
+  initialSchool: string;
+}) {
   return (
     <AppPage>
-      <OrganizationsPage />
+      <OrganizationsPage
+        initialDirectory={initialDirectory}
+        initialSchool={initialSchool}
+      />
     </AppPage>
   );
 }

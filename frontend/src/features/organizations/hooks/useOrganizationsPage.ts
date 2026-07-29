@@ -11,10 +11,18 @@ import { resolveSchool } from "@/shared/constants/schools";
 import { useSavedOrganizationsStore } from "@/features/organizations/store/savedOrganizations.store";
 import { useAuthState } from "@/features/auth";
 import { useOrganizationsList } from "@/features/organizations/hooks/useOrganizationsList";
+import type { PaginatedOrganizationsResponse } from "@/features/organizations/api/organizations.api";
+import { controlBox } from "@/shared/config/controlBox";
 
-const ITEMS_PER_PAGE = 40;
+interface UseOrganizationsPageOptions {
+  initialDirectory: PaginatedOrganizationsResponse | null;
+  initialSchool: string;
+}
 
-export function useOrganizationsPage() {
+export function useOrganizationsPage({
+  initialDirectory,
+  initialSchool,
+}: UseOrganizationsPageOptions) {
   const { isAuthenticated, clubs: claimedClubs } = useAuthState();
   const claimedOrganizationIds = useMemo(() => claimedClubs.map((c) => c.id), [claimedClubs]);
   const savedOrganizationIds = useSavedOrganizationsStore(useShallow((s) => s.savedOrganizationIds));
@@ -40,7 +48,7 @@ export function useOrganizationsPage() {
     refresh: refreshOrganizations,
   } = useOrganizationsList({
     mode: "infinite",
-    limit: ITEMS_PER_PAGE,
+    limit: controlBox.organizationManagement.directoryPageSize,
     school: resolvedSchoolFilter,
     search: submittedSearchQuery,
     categories: selectedCategories,
@@ -48,6 +56,8 @@ export function useOrganizationsPage() {
     isAuthenticated,
     activeTab,
     isSavedLoaded: activeTab === "followed" ? isSavedLoaded : true,
+    initialDirectory,
+    initialSchool,
   });
 
   const setSearchQuery = useCallback((query: string) => {

@@ -27,7 +27,7 @@ from core.sanitize import sanitize_postgrest_value
 from core.tables import EVENT_DATES, EVENTS
 from schemas.event import EventSummaryResponse
 from schemas.event_date import OccurrenceResponse
-from services import event_date_service
+from services import event_date_service, school_service
 
 log = logging.getLogger(__name__)
 
@@ -39,6 +39,7 @@ T = TypeVar("T", bound=BaseModel)
 # ``organizations`` row (see ``ORGANIZATION_EMBED``), not real events columns.
 _SUMMARY_COMPUTED_FIELDS = {
     "occurrences",
+    "school",
     "organization_type",
     "organization_page",
     "organization_ig",
@@ -50,6 +51,7 @@ _SUMMARY_COLUMNS = ",".join(
 # Read-time embed of the owning organization's link/social fields via the
 # ``events.organization_id`` FK, flattened onto the event in ``hydrate_event``.
 ORGANIZATION_EMBED = "organizations(organization_type,organization_page,ig,discord)"
+SCHOOL_EMBED = school_service.SCHOOL_SLUG_EMBED
 _LIGHTWEIGHT_DATE_COLUMNS = "id,event_id,dtstart_utc,events!inner(id)"
 _LIGHTWEIGHT_DATE_SCAN_CHUNK_SIZE = 250
 
@@ -84,6 +86,7 @@ def hydrate_event(row: dict, occurrences: list[OccurrenceResponse], model: type[
     event so the card badge can render them without a second fetch. Rows without
     the embed (e.g. the single-event ``select("*")`` path) are left unchanged.
     """
+    row = school_service.with_school_slug(row)
     org = row.pop("organizations", None)
     org_fields = (
         {
@@ -113,7 +116,7 @@ def _load_event_rows_by_ids(event_ids: list[int], *, columns: str) -> list[dict]
         rows = (
             get_sb()
             .table(EVENTS)
-            .select(f"{columns},{ORGANIZATION_EMBED}")
+            .select(f"{columns},{ORGANIZATION_EMBED},{SCHOOL_EMBED}")
             .in_("id", chunk)
             .execute()
             .data
@@ -189,10 +192,13 @@ def load_events_in_window(
     ``None`` bounds are open-ended. Results are deduped to one row per event,
     keeping the earliest matching occurrence for ordering and capping.
     """
+    school_id = school_service.get_school_id(school) if school else None
+    if school and school_id is None:
+        return []
     event_ids = _load_lightweight_date_page_ids(
         start_utc=start_utc,
         end_utc=end_utc,
-        school=school,
+        school_id=school_id,
         offset=0,
         limit=cap,
         cap=cap,
@@ -269,14 +275,20 @@ def load_events_page(
     q = (
         get_sb()
         .table(EVENT_DATES)
-        .select(f"event_id,dtstart_utc,dtend_utc,tz,events!inner({columns},{ORGANIZATION_EMBED})")
+        .select(
+            "event_id,dtstart_utc,dtend_utc,tz,"
+            f"events!inner({columns},{ORGANIZATION_EMBED},{SCHOOL_EMBED})"
+        )
     )
     if start_utc is not None:
         q = q.gte("dtstart_utc", start_utc.isoformat())
     if end_utc is not None:
         q = q.lte("dtstart_utc", end_utc.isoformat())
     if school:
-        q = q.eq("events.school", school)
+        school_id = school_service.get_school_id(school)
+        if school_id is None:
+            return [], 0
+        q = q.eq("events.school_id", school_id)
     if added_within_24h:
         cutoff = (datetime.now(timezone.utc) - timedelta(hours=24)).isoformat()
         q = q.gte("events.added_at", cutoff)
@@ -385,18 +397,22 @@ def _load_lightweight_date_page(
     sliced page only.
     """
 
+    school_id = school_service.get_school_id(school) if school else None
+    if school and school_id is None:
+        return [], 0
+
     with ThreadPoolExecutor(max_workers=2) as pool:
         total_future = pool.submit(
             _count_lightweight_date_events,
             start_utc=start_utc,
             end_utc=end_utc,
-            school=school,
+            school_id=school_id,
         )
         page_ids_future = pool.submit(
             _load_lightweight_date_page_ids,
             start_utc=start_utc,
             end_utc=end_utc,
-            school=school,
+            school_id=school_id,
             offset=offset,
             limit=limit,
             cap=cap,
@@ -418,7 +434,7 @@ def _count_lightweight_date_events(
     *,
     start_utc: datetime | None,
     end_utc: datetime | None,
-    school: str | None,
+    school_id: int | None,
 ) -> int:
     """Exact top-level event count for the default date-ordered feed."""
 
@@ -428,8 +444,8 @@ def _count_lightweight_date_events(
         q = q.gte(f"{EVENT_DATES}.dtstart_utc", start_utc.isoformat())
     if end_utc is not None:
         q = q.lte(f"{EVENT_DATES}.dtstart_utc", end_utc.isoformat())
-    if school:
-        q = q.eq("school", school)
+    if school_id is not None:
+        q = q.eq("school_id", school_id)
     response = q.limit(0).execute()
     return int(response.count or 0)
 
@@ -438,7 +454,7 @@ def _load_lightweight_date_page_ids(
     *,
     start_utc: datetime | None,
     end_utc: datetime | None,
-    school: str | None,
+    school_id: int | None,
     offset: int,
     limit: int,
     cap: int,
@@ -458,7 +474,7 @@ def _load_lightweight_date_page_ids(
         rows = _query_lightweight_date_rows(
             start_utc=start_utc,
             end_utc=end_utc,
-            school=school,
+            school_id=school_id,
             range_start=scan_start,
             range_end=scan_end,
         )
@@ -474,7 +490,7 @@ def _query_lightweight_date_rows(
     *,
     start_utc: datetime | None,
     end_utc: datetime | None,
-    school: str | None,
+    school_id: int | None,
     range_start: int,
     range_end: int,
 ) -> list[dict]:
@@ -483,8 +499,8 @@ def _query_lightweight_date_rows(
         q = q.gte("dtstart_utc", start_utc.isoformat())
     if end_utc is not None:
         q = q.lte("dtstart_utc", end_utc.isoformat())
-    if school:
-        q = q.eq("events.school", school)
+    if school_id is not None:
+        q = q.eq("events.school_id", school_id)
     return _order_event_date_rows(q).range(range_start, range_end).execute().data or []
 
 

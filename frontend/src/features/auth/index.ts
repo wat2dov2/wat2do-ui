@@ -7,6 +7,7 @@
  */
 
 // Components
+export { EmailOtpForm } from "./components/EmailOtpForm";
 export { PreviewStyleEventCard } from "./components/PreviewStyleEventCard";
 
 // Hooks

@@ -33,6 +33,7 @@ def _school_timezone(monkeypatch):
 
     monkeypatch.setattr(morning_email, "resolve_user_timezone", resolve_timezone)
     monkeypatch.setattr(event_reminder, "resolve_user_timezone", resolve_timezone)
+    monkeypatch.setattr(morning_email.school_service, "get_school_id", lambda _school: 1)
 
 
 def _user(**overrides) -> dict:
@@ -136,8 +137,6 @@ def test_morning_html_escapes_event_values(monkeypatch):
     html = rendering.render_morning_email_html(
         subject="1 new pick for you",
         picks=[_event(title="<script>alert(1)</script>", location="SLC & DC")],
-        daily_score=72,
-        loot_tier="silver",
         tz=ZoneInfo("America/Toronto"),
         preferences_url="https://wat2do.app/settings",
         unsubscribe_url="https://wat2do.app/unsubscribe",
@@ -147,8 +146,8 @@ def test_morning_html_escapes_event_values(monkeypatch):
     assert "&lt;script&gt;alert(1)&lt;/script&gt;" in html
     assert "SLC &amp; DC" in html
     assert "/?eventId=42" in html
-    assert "72/100" in html
-    assert "Silver loot" in html
+    assert "Today's drop" not in html
+    assert "/100" not in html
     assert "background:#121212" in html
 
 
@@ -423,23 +422,10 @@ def test_select_picks_uses_threshold_without_email_cap():
     )
 
     assert [event["id"] for event in result] == [12, 11, 10, 9, 8, 7, 6, 5, 4, 1]
-    assert all(event["recommendation_score"] == 0.31 for event in result)
+    assert all("recommendation_score" not in event for event in result)
 
 
-def test_daily_loot_uses_average_recommendation_score():
-    assert morning_email._daily_loot(
-        [
-            _event(recommendation_score=0.6),
-            _event(recommendation_score=0.9),
-        ]
-    ) == (75, "gold")
-    assert morning_email._daily_loot([_event(recommendation_score=1.5)]) == (
-        100,
-        "diamond",
-    )
-
-
-def test_send_prepared_email_adds_unsubscribe_headers(monkeypatch):
+def test_send_prepared_email_adds_unsubscribe_headers_without_rankings(monkeypatch):
     monkeypatch.setattr(settings, "frontend_url", "https://wat2do.app")
     monkeypatch.setattr(settings, "email_unsubscribe_secret", "test-secret")
     monkeypatch.setattr(morning_email, "claim_delivery", lambda **_kwargs: "row-1")
@@ -448,7 +434,7 @@ def test_send_prepared_email_adds_unsubscribe_headers(monkeypatch):
 
     result = morning_email._send_prepared_email(
         user=_user(),
-        picks=[_event(recommendation_score=0.72)],
+        picks=[_event()],
         window_end=datetime(2026, 5, 1, 13, tzinfo=timezone.utc),
     )
 
@@ -456,7 +442,10 @@ def test_send_prepared_email_adds_unsubscribe_headers(monkeypatch):
     message = deliver.call_args.kwargs["message"]
     assert message.headers["List-Unsubscribe"].startswith("<https://wat2do.app/")
     assert message.headers["List-Unsubscribe-Post"] == "List-Unsubscribe=One-Click"
-    assert "72/100" in message.body_html
+    assert "Today's drop" not in message.body_html
+    assert "Today's drop" not in message.body_text
+    assert "/100" not in message.body_html
+    assert "/100" not in message.body_text
 
 
 def test_send_prepared_email_skips_when_delivery_is_already_claimed(monkeypatch):
@@ -466,7 +455,7 @@ def test_send_prepared_email_skips_when_delivery_is_already_claimed(monkeypatch)
 
     result = morning_email._send_prepared_email(
         user=_user(),
-        picks=[_event(recommendation_score=0.72)],
+        picks=[_event()],
         window_end=datetime(2026, 5, 1, 13, tzinfo=timezone.utc),
     )
 

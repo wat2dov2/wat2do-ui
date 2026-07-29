@@ -80,7 +80,7 @@ def test_create_submission_authenticated(authenticated_client, monkeypatch):
     assert args[0] == str(FAKE_DB_USER.id)
 
 
-def test_create_submission_optional_auth_user_uses_profile_school(client, monkeypatch):
+def test_create_submission_optional_auth_user_keeps_school_out_of_event_data(client, monkeypatch):
     submission = _mock_submission()
     mock_create = MagicMock(return_value=submission)
     monkeypatch.setattr(
@@ -99,7 +99,8 @@ def test_create_submission_optional_auth_user_uses_profile_school(client, monkey
     assert resp.status_code == 201
     args, _ = mock_create.call_args
     assert args[0] == str(FAKE_DB_USER.id)
-    assert args[1].school == FAKE_DB_USER.school
+    assert args[1].organization_id == _VALID_EVENT_DATA["organization_id"]
+    assert "school" not in args[1].model_dump()
 
 
 def test_list_submissions_forbidden_for_non_admin(authenticated_client):

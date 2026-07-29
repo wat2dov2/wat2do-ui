@@ -107,7 +107,13 @@ def _fetch_selected_events(
     rows_by_id: dict[int, dict] = {}
     for start in range(0, len(event_ids), chunk_size):
         batch = event_ids[start : start + chunk_size]
-        r = get_sb().table(EVENTS).select("*").in_("id", batch).execute()
+        r = (
+            get_sb()
+            .table(EVENTS)
+            .select(f"*,{event_query.SCHOOL_EMBED}")
+            .in_("id", batch)
+            .execute()
+        )
         for row in r.data or []:
             rows_by_id[row["id"]] = row
 

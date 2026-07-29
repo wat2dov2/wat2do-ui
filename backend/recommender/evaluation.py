@@ -8,7 +8,7 @@ from recommender.interaction_scores import (
     get_interaction_matrix,
     get_user_event_scores,
 )
-from services import interaction_service, user_service
+from services import event_query, interaction_service, user_service
 
 log = logging.getLogger(__name__)
 from core.database import get_sb
@@ -227,7 +227,7 @@ def _load_all_events(max_events: int = EVAL_MAX_EVENTS) -> list[EventResponse]:
         r = (
             get_sb()
             .table(EVENTS)
-            .select("*")
+            .select(f"*,{event_query.SCHOOL_EMBED}")
             .order("id")
             .range(offset, offset + max_events - 1)
             .execute()
@@ -239,7 +239,7 @@ def _load_all_events(max_events: int = EVAL_MAX_EVENTS) -> list[EventResponse]:
                 (
                     get_sb()
                     .table(EVENTS)
-                    .select("*")
+                    .select(f"*,{event_query.SCHOOL_EMBED}")
                     .order("id")
                     .range(offset, offset + ps - 1)
                     .execute()
@@ -248,12 +248,18 @@ def _load_all_events(max_events: int = EVAL_MAX_EVENTS) -> list[EventResponse]:
             ),
         )
 
-    return [EventResponse.model_validate(row) for row in rows]
+    return [event_query.hydrate_event(row, [], EventResponse) for row in rows]
 
 
 def _load_events(event_ids: list[int]) -> list[EventResponse]:
     """Load full event data for specific IDs."""
     if not event_ids:
         return []
-    r = get_sb().table(EVENTS).select("*").in_("id", event_ids).execute()
-    return [EventResponse.model_validate(row) for row in (r.data or [])]
+    r = (
+        get_sb()
+        .table(EVENTS)
+        .select(f"*,{event_query.SCHOOL_EMBED}")
+        .in_("id", event_ids)
+        .execute()
+    )
+    return [event_query.hydrate_event(row, [], EventResponse) for row in (r.data or [])]

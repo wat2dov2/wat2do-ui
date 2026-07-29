@@ -53,20 +53,26 @@ def test_import_validates_identity_and_stores_only_ciphertext(monkeypatch, encry
         def get_identity(self):
             return {
                 "id": "17841476154506771",
-                "username": "wat2do.ca",
+                "username": "uwaterloo.wat2do.io",
             }
 
     monkeypatch.setattr(credentials, "MetaInstagramClient", _MetaClient)
     monkeypatch.setattr(credentials, "get_sb", lambda: database)
+    monkeypatch.setattr(
+        credentials.school_service,
+        "get_school",
+        lambda _slug: SimpleNamespace(id=1),
+    )
     now = datetime(2026, 7, 26, 12, tzinfo=timezone.utc)
 
     result = credentials.import_access_token("plaintext-token", now_utc=now)
 
     upsert = next(call for call in database.calls if call[0] == "upsert")
     stored = upsert[1][0]
-    assert stored["account_key"] == "wat2do"
-    assert stored["school"] == "uwaterloo"
-    assert stored["instagram_username"] == "wat2do.ca"
+    assert stored["account_key"] == "uwaterloo"
+    assert stored["school_id"] == 1
+    assert "school" not in stored
+    assert stored["instagram_username"] == "uwaterloo.wat2do.io"
     assert stored["encrypted_access_token"] != "plaintext-token"
     assert credentials._decrypt(stored["encrypted_access_token"]) == "plaintext-token"
     assert stored["expires_at"] == (now + timedelta(days=60)).isoformat()

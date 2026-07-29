@@ -5,7 +5,7 @@ import { filterEvents, sortEvents, getFilterCounts } from "@/features/search/api
 import { getEventCategories } from "@/shared/data/eventCategories";
 import { availableDays, availableFoods } from "@/shared/constants/eventFilters";
 import { translateCategory } from "@/shared/utils/event";
-import type { Event, ViewMode } from "@/shared/types";
+import type { Event } from "@/shared/types";
 
 /**
  * Search/filter orchestration: useFilterState for store state, searchService for logic.
@@ -15,14 +15,12 @@ export interface UseSearchOptions {
   events: Event[];
   profileCompleted: boolean;
   goingEventIds: number[];
-  viewMode: ViewMode;
 }
 
 export function useSearch({
   events,
   profileCompleted,
   goingEventIds,
-  viewMode,
 }: UseSearchOptions) {
   const { t } = useTranslation();
 
@@ -91,7 +89,6 @@ export function useSearch({
         freeFoodFilter: filterState.freeFoodFilter,
         goingFilter: filterState.goingFilter,
         addedSince: filterState.addedSince,
-        viewMode,
       }),
     [
       filterState.searchQuery,
@@ -105,7 +102,6 @@ export function useSearch({
       filterState.freeFoodFilter,
       filterState.goingFilter,
       filterState.addedSince,
-      viewMode,
     ],
   );
 

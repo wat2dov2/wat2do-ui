@@ -45,7 +45,7 @@ XLSX_PATH = Path(__file__).resolve().parent.parent / "services" / "scraper" / "w
 HIGH_QUALITY_IG_SOURCES = frozenset({"found", "confirmed", "profile_page"})
 
 # The xlsx School column holds canonical schools.slug values directly
-# (e.g. "wlu", "utsc", "utoronto"); rows whose slug is not registered in the
+# (e.g. "wlu", "utsc", "utsg"); rows whose slug is not registered in the
 # hosted schools table are skipped with a warning so the sheet can contain
 # schools that have not launched yet.
 
@@ -143,7 +143,7 @@ def _read_xlsx_rows() -> list[dict]:
 
 
 def _validate_rows(
-    rows: list[dict], db_schools: set[str]
+    rows: list[dict], db_schools: dict[str, int]
 ) -> tuple[list[dict], dict[str, int], list[str]]:
     """Filter, validate, and canonicalize rows.  Returns (kept, skipped, errors)."""
     kept: list[dict] = []
@@ -190,6 +190,7 @@ def _validate_rows(
                 "row_idx": idx,
                 "organization_name": organization_name,
                 "school": canonical_school,
+                "school_id": db_schools[canonical_school],
                 "categories": valid_categories,
                 "organization_page": row["directory"],
                 "ig": row["ig_handle"],
@@ -211,7 +212,7 @@ def _validate_rows(
     return kept, dict(skipped), errors
 
 
-def _fetch_existing(sb, schools: set[str]) -> dict[tuple[str, str], dict]:
+def _fetch_existing(sb, schools: dict[str, int]) -> dict[tuple[str, str], dict]:
     """Return all organizations whose school is in *schools*, keyed on (school, organization_name)."""
     if not schools:
         return {}
@@ -222,14 +223,19 @@ def _fetch_existing(sb, schools: set[str]) -> dict[tuple[str, str], dict]:
     while True:
         res = (
             sb.table(ORGANIZATIONS)
-            .select("id, organization_name, school, categories, organization_page, ig, discord")
-            .in_("school", list(schools))
+            .select(
+                "id, organization_name, school_id, school_record:schools(slug), "
+                "categories, organization_page, ig, discord"
+            )
+            .in_("school_id", list(schools.values()))
             .range(offset, offset + page_size - 1)
             .execute()
         )
         batch = res.data or []
         for row in batch:
-            existing[(row["school"], row["organization_name"])] = row
+            school = (row.pop("school_record", None) or {}).get("slug")
+            if school:
+                existing[(school, row["organization_name"])] = row
         if len(batch) < page_size:
             break
         offset += page_size
@@ -267,8 +273,8 @@ def main() -> int:
     try:
         from core.tables import SCHOOLS
 
-        res_schools = sb.table(SCHOOLS).select("slug").execute()
-        db_schools = {row["slug"] for row in res_schools.data or []}
+        res_schools = sb.table(SCHOOLS).select("id,slug").execute()
+        db_schools = {row["slug"]: int(row["id"]) for row in res_schools.data or []}
     except Exception as e:
         log.error("Failed to fetch canonical schools from Supabase: %s", e)
         return 2
@@ -287,7 +293,7 @@ def main() -> int:
     for reason, count in sorted(skipped.items(), key=lambda x: -x[1]):
         log.info("  skipped (%s): %s", reason, count)
 
-    schools_in_play = {row["school"] for row in kept}
+    schools_in_play = {row["school"]: row["school_id"] for row in kept}
     existing = _fetch_existing(sb, schools_in_play)
     log.info("existing rows in Supabase for those schools: %s", len(existing))
 
@@ -338,7 +344,7 @@ def main() -> int:
         payload = [
             {
                 "organization_name": row["organization_name"],
-                "school": row["school"],
+                "school_id": row["school_id"],
                 "categories": row["categories"],
                 "organization_page": row["organization_page"],
                 "ig": row["ig"],

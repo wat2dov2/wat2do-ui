@@ -12,8 +12,11 @@ from __future__ import annotations
 
 import json
 from datetime import datetime, timedelta, timezone
+from types import SimpleNamespace
 from unittest.mock import MagicMock
 from uuid import UUID
+
+import pytest
 
 from schemas.event import EventResponse
 from services.scraper import event_writer
@@ -23,6 +26,15 @@ from services.scraper.reconciler import reconcile_events
 
 _FUTURE = (datetime.now(timezone.utc) + timedelta(days=3)).replace(microsecond=0)
 _FUTURE_ISO = _FUTURE.isoformat().replace("+00:00", "Z")
+
+
+@pytest.fixture(autouse=True)
+def registered_school(monkeypatch):
+    monkeypatch.setattr(
+        event_writer.school_service,
+        "get_school",
+        lambda slug: SimpleNamespace(id=1, slug=slug),
+    )
 
 
 def _extracted(**overrides) -> dict:
