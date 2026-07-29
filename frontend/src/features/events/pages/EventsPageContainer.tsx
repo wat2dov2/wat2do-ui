@@ -3,7 +3,6 @@ import {
   useCallback,
   useState,
   useEffect,
-  type CSSProperties,
 } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
@@ -31,7 +30,6 @@ import type { ViewMode, Event } from "@/shared/types";
 import { usePosterLandingConfirmation } from "@/features/qrcode";
 import { PromoterRecruitmentBanner } from "@/features/posters";
 import { Plus } from "@/shared/ui/doodle-icons";
-import { getSchoolColors } from "@/shared/constants/schools";
 
 interface QuickFilterButtonConfig {
   id: string;
@@ -73,11 +71,6 @@ export function EventsPageContainer() {
     userEmail: profileCompleted ? userEmail : null,
     viewMode,
   });
-  const schoolColors = useMemo(
-    () => getSchoolColors(schoolFilter),
-    [schoolFilter],
-  );
-
   const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
   const urlEventId = useMemo(() => {
     const eventIdParam = searchParams.get(QP.EVENT_ID);
@@ -184,11 +177,6 @@ export function EventsPageContainer() {
       <div
         aria-hidden="true"
         className="pointer-events-none fixed top-0 right-2.5 left-0 z-[var(--event-light-rays-z-index)] hidden h-dvh overflow-hidden [mask-image:var(--event-light-rays-mask)] sm:block"
-        style={
-          {
-            "--event-light-rays-color": `color-mix(in srgb, ${schoolColors.primary} var(--event-light-rays-color-strength), transparent)`,
-          } as CSSProperties
-        }
       >
         {isDarkMode && <LightRays />}
       </div>

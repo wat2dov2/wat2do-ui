@@ -7,6 +7,7 @@ import {
 } from "@/features/admin/lib/instagramSlides";
 import { EventCard } from "@/features/events/components/EventCard";
 import type { Event } from "@/shared/types";
+import type { SchoolColors } from "@/shared/lib/schoolBranding";
 
 interface CarouselSlidePreviewProps {
   /** Slide 0 is the cover; the rest are event slides in carousel order. */
@@ -14,7 +15,8 @@ interface CarouselSlidePreviewProps {
   slideCount: number;
   /** The slide's event, or `null` on the cover and on an unloadable slide. */
   event: Event | null;
-  cover: Parameters<typeof buildCoverSlideModel>[0];
+  cover: Omit<Parameters<typeof buildCoverSlideModel>[0], "colors">;
+  coverColors: SchoolColors | null;
   /**
    * The PNG this slide published as, once the run is live.
    *
@@ -45,6 +47,7 @@ export function CarouselSlidePreview({
   slideCount,
   event,
   cover,
+  coverColors,
   publishedAssetUrl,
 }: CarouselSlidePreviewProps) {
   const { t } = useTranslation();
@@ -59,7 +62,7 @@ export function CarouselSlidePreview({
           className="rounded-xl border border-border"
           style={{ width: PREVIEW_WIDTH, height: SLIDE_HEIGHT * PREVIEW_SCALE }}
         />
-      ) : isCover ? (
+      ) : isCover && coverColors ? (
         <div
           className="overflow-hidden rounded-xl border border-border bg-surface"
           style={{ width: PREVIEW_WIDTH, height: SLIDE_HEIGHT * PREVIEW_SCALE }}
@@ -72,14 +75,16 @@ export function CarouselSlidePreview({
               transformOrigin: "top left",
             }}
           >
-            <CoverSlideTemplate model={buildCoverSlideModel(cover)} />
+            <CoverSlideTemplate model={buildCoverSlideModel({ ...cover, colors: coverColors })} />
           </div>
         </div>
-      ) : event ? (
+      ) : !isCover && event ? (
         <EventCard event={event} interactive={false} />
       ) : (
         <p className="py-12 text-center text-sm text-muted-foreground">
-          {t("admin.instagramPublishing.slideEventUnavailable")}
+          {isCover
+            ? t("common.loading")
+            : t("admin.instagramPublishing.slideEventUnavailable")}
         </p>
       )}
       <figcaption className="text-xs text-muted-foreground">

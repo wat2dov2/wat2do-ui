@@ -55,7 +55,14 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
-    <html lang="en" className={`dark no-transitions ${inter.variable}`} suppressHydrationWarning>
+    <html
+      lang="en"
+      className={`dark no-transitions ${inter.variable}`}
+      suppressHydrationWarning
+    >
+      <head>
+        <link rel="stylesheet" href="/api/school-theme" />
+      </head>
       <body>
         <script
           id="theme-init"

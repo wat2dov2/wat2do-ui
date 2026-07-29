@@ -8,7 +8,9 @@ UPDATE public.schools
 SET
     name = 'University of Waterloo',
     timezone = 'America/Toronto',
-    recipient_id = '76214170483'
+    recipient_id = '76214170483',
+    primary_color = '#FFD54F',
+    secondary_color = '#111111'
 WHERE slug = 'uwaterloo';
 
 UPDATE public.schools

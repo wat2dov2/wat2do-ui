@@ -2,22 +2,11 @@ import type { Event } from "@/shared/types";
 import type { PaginatedEventsResponse } from "@/features/events/api/events.api";
 import { controlBox } from "@/shared/config/controlBox";
 import { resolveSchool } from "@/shared/constants/schools";
+import { getServerApiBaseUrl } from "@/shared/services/serverApi";
 
 export interface SchoolBrowseSnapshot {
   feed: PaginatedEventsResponse;
   promotedEvents: Event[];
-}
-
-function getServerApiBaseUrl(): string {
-  const configuredBackendApiUrl = process.env.BACKEND_API_URL?.trim();
-  if (configuredBackendApiUrl) return configuredBackendApiUrl.replace(/\/$/, "");
-
-  const configuredPublicApiUrl = process.env.NEXT_PUBLIC_API_URL?.trim();
-  if (configuredPublicApiUrl?.startsWith("http://") || configuredPublicApiUrl?.startsWith("https://")) {
-    return configuredPublicApiUrl.replace(/\/$/, "");
-  }
-
-  return "http://127.0.0.1:8000";
 }
 
 export function eventFeedTag(school: string): string {

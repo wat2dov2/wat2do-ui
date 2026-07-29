@@ -28,11 +28,15 @@ def _school_directory(monkeypatch):
         "uwaterloo": School(
             slug="uwaterloo",
             name="University of Waterloo",
+            primary_color="#FFD54F",
+            secondary_color="#111111",
             timezone="America/Toronto",
         ),
         "wlu": School(
             slug="wlu",
             name="Wilfrid Laurier University",
+            primary_color="#4B2E39",
+            secondary_color="#FFC72C",
             timezone="America/Toronto",
         ),
     }

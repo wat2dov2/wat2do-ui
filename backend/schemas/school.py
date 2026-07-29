@@ -8,6 +8,8 @@ class School(BaseModel):
 
     slug: str
     name: str
+    primary_color: str
+    secondary_color: str
     timezone: str
     recipient_id: str | None = None
     semester_start: date | None = None
@@ -19,3 +21,5 @@ class SchoolSummary(BaseModel):
 
     slug: str
     name: str
+    primary_color: str
+    secondary_color: str

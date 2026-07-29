@@ -14,6 +14,8 @@ import {
   buildEventSlideModel,
   type SlideEvent,
 } from "@/features/admin/lib/instagramSlides";
+import { getSchool } from "@/shared/api/schools.server";
+import { getSchoolColors } from "@/shared/lib/schoolBranding";
 
 export const runtime = "nodejs";
 
@@ -125,10 +127,15 @@ async function buildSlide(slide: SlideRequest): Promise<React.ReactElement> {
   const tiles = (await Promise.all(slide.events.map((event) => inlineImage(event.source_image_url))))
     .filter((tile) => tile.length > 0);
   const school = slide.school ?? slide.events[0]?.school ?? "";
+  const schoolRecord = await getSchool(school);
+  if (!schoolRecord) {
+    throw new Error(`School not found for slide rendering: ${school}`);
+  }
   return (
     <CoverSlideTemplate
       model={buildCoverSlideModel({
         school,
+        colors: getSchoolColors(schoolRecord),
         localDate: slide.local_date ?? "",
         // A cover always has at least one event, so the carousel size is the
         // honest floor when the caller cannot say what the scrape found.

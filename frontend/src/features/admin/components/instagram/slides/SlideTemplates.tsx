@@ -225,7 +225,7 @@ const FAN_MIN_OVERLAP = 40;
  * clears the footer by design: `FAN_TOP + FAN_CARD_HEIGHT + FAN_MAX_DIP` must
  * stay above `SLIDE_HEIGHT - COVER_MARGIN`.
  */
-function CoverPosterFan({ tiles, ink }: { tiles: string[]; ink: string }) {
+function CoverPosterFan({ tiles, secondary }: { tiles: string[]; secondary: string }) {
   if (tiles.length === 0) return null;
 
   const step =
@@ -263,7 +263,7 @@ function CoverPosterFan({ tiles, ink }: { tiles: string[]; ink: string }) {
               width: FAN_CARD_WIDTH,
               height: FAN_CARD_HEIGHT,
               borderRadius: 18,
-              border: `3px solid ${ink}`,
+              border: `3px solid ${secondary}`,
               overflow: "hidden",
               transform: `rotate(${(offset * FAN_MAX_TILT).toFixed(2)}deg)`,
             }}
@@ -349,10 +349,10 @@ function CoverDoodleField({ icons }: { icons: string[] }) {
  * is stored. The admin editor renders this exact component, scaled down.
  */
 export function CoverSlideTemplate({ model }: { model: CoverSlideModel }) {
-  const { primary, ink } = model.colors;
+  const { primary, secondary } = model.colors;
 
   return (
-    <div style={{ ...slideFrame, backgroundColor: primary, color: ink, overflow: "hidden" }}>
+    <div style={{ ...slideFrame, backgroundColor: primary, color: secondary, overflow: "hidden" }}>
       <CoverDoodleField icons={model.doodleIcons} />
 
       <div
@@ -405,7 +405,7 @@ export function CoverSlideTemplate({ model }: { model: CoverSlideModel }) {
         </div>
       </div>
 
-      <CoverPosterFan tiles={model.tiles} ink={ink} />
+      <CoverPosterFan tiles={model.tiles} secondary={secondary} />
 
       <div
         style={{

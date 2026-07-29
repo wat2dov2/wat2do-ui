@@ -12,11 +12,8 @@ import {
   getOrganizationCategoryConfig,
   getOrganizationCategoryDoodleDataUris,
 } from "@/shared/data/organizationCategoryStyles";
-import {
-  getSchoolColors,
-  getSchoolPublicUrl,
-  type SchoolColors,
-} from "@/shared/constants/schools";
+import { getSchoolPublicUrl } from "@/shared/constants/schools";
+import type { SchoolColors } from "@/shared/lib/schoolBranding";
 import { buildInstagramCoverLogo } from "@/features/admin/lib/instagramCoverLogo";
 
 export const SLIDE_WIDTH = 1080;
@@ -60,7 +57,7 @@ export interface CoverSlideModel {
   colors: SchoolColors;
   /** The canonical Wat2Do mark recoloured from the same school pair. */
   logoSrc: string;
-  /** Stable category doodles recoloured with the school's contrasting ink. */
+  /** Stable category doodles recoloured with the school's secondary color. */
   doodleIcons: string[];
   /** The batch date, for example "SUN JUL 26". */
   dateLine: string;
@@ -155,6 +152,7 @@ export function buildEventSlideModel(
  */
 export function buildCoverSlideModel({
   school,
+  colors,
   localDate,
   newEventCount,
   eventCount,
@@ -162,6 +160,7 @@ export function buildCoverSlideModel({
   tiles,
 }: {
   school: string;
+  colors: SchoolColors;
   /** The batch's `local_date`, as `YYYY-MM-DD`. */
   localDate: string;
   newEventCount: number;
@@ -170,11 +169,10 @@ export function buildCoverSlideModel({
   body: string;
   tiles: string[];
 }): CoverSlideModel {
-  const colors = getSchoolColors(school);
   return {
     colors,
     logoSrc: buildInstagramCoverLogo(colors),
-    doodleIcons: getOrganizationCategoryDoodleDataUris(colors.ink, 42),
+    doodleIcons: getOrganizationCategoryDoodleDataUris(colors.secondary, 42),
     dateLine: formatCoverDate(localDate),
     newEventCount,
     headline: COVER_HEADLINE,

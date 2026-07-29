@@ -11,6 +11,10 @@ from core.tables import SCHOOLS
 from schemas.school import School, SchoolSummary
 
 DEFAULT_SEARCH_LIMIT: Final[int] = 10
+SCHOOL_COLUMNS: Final[str] = (
+    "slug, name, primary_color, secondary_color, timezone, "
+    "recipient_id, semester_start, semester_end"
+)
 
 
 def _normalize(text: str | None) -> str:
@@ -32,7 +36,7 @@ def get_school(slug: str | None) -> School | None:
     response = (
         get_sb()
         .table(SCHOOLS)
-        .select("slug, name, timezone, recipient_id, semester_start, semester_end")
+        .select(SCHOOL_COLUMNS)
         .eq("slug", normalized_slug)
         .limit(1)
         .execute()
@@ -49,7 +53,7 @@ def get_school_by_recipient_id(recipient_id: str | None) -> School | None:
     response = (
         get_sb()
         .table(SCHOOLS)
-        .select("slug, name, timezone, recipient_id, semester_start, semester_end")
+        .select(SCHOOL_COLUMNS)
         .eq("recipient_id", normalized_recipient_id)
         .limit(1)
         .execute()
@@ -84,7 +88,7 @@ def search_schools(query: str, limit: int = DEFAULT_SEARCH_LIMIT) -> list[School
     response = (
         get_sb()
         .table(SCHOOLS)
-        .select("slug, name, school_email_domains(domain)")
+        .select("slug, name, primary_color, secondary_color, school_email_domains(domain)")
         .order("name")
         .execute()
     )
@@ -129,7 +133,7 @@ def get_school_by_name(name: str | None) -> School | None:
     response = (
         get_sb()
         .table(SCHOOLS)
-        .select("slug, name, timezone, recipient_id, semester_start, semester_end")
+        .select(SCHOOL_COLUMNS)
         .ilike("name", normalized_name)
         .limit(1)
         .execute()

@@ -23,6 +23,8 @@ def _school(slug: str) -> School:
     return School(
         slug=slug,
         name=slug,
+        primary_color="#FFD54F",
+        secondary_color="#111111",
         timezone="America/Toronto",
     )
 

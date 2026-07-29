@@ -5284,6 +5284,48 @@
         }
       }
     },
+    "/schools/{slug}": {
+      "get": {
+        "tags": [
+          "schools"
+        ],
+        "summary": "Get School Endpoint",
+        "operationId": "get_school_endpoint_schools__slug__get",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Slug"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/School"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/submissions/": {
       "post": {
         "tags": [
@@ -11132,6 +11174,74 @@
         "title": "SaveOrganizationStatusResponse",
         "description": "Locks the save/unsave status contract at the OpenAPI boundary."
       },
+      "School": {
+        "properties": {
+          "slug": {
+            "type": "string",
+            "title": "Slug"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "primary_color": {
+            "type": "string",
+            "title": "Primary Color"
+          },
+          "secondary_color": {
+            "type": "string",
+            "title": "Secondary Color"
+          },
+          "timezone": {
+            "type": "string",
+            "title": "Timezone"
+          },
+          "recipient_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recipient Id"
+          },
+          "semester_start": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Semester Start"
+          },
+          "semester_end": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Semester End"
+          }
+        },
+        "type": "object",
+        "required": [
+          "slug",
+          "name",
+          "primary_color",
+          "secondary_color",
+          "timezone"
+        ],
+        "title": "School"
+      },
       "SchoolSummary": {
         "properties": {
           "slug": {
@@ -11141,12 +11251,22 @@
           "name": {
             "type": "string",
             "title": "Name"
+          },
+          "primary_color": {
+            "type": "string",
+            "title": "Primary Color"
+          },
+          "secondary_color": {
+            "type": "string",
+            "title": "Secondary Color"
           }
         },
         "type": "object",
         "required": [
           "slug",
-          "name"
+          "name",
+          "primary_color",
+          "secondary_color"
         ],
         "title": "SchoolSummary"
       },

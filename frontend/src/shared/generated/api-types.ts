@@ -1262,6 +1262,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/schools/{slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get School Endpoint */
+        get: operations["get_school_endpoint_schools__slug__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/submissions/": {
         parameters: {
             query?: never;
@@ -3420,12 +3437,35 @@ export interface components {
              */
             status: "saved" | "unsaved";
         };
+        /** School */
+        School: {
+            /** Slug */
+            slug: string;
+            /** Name */
+            name: string;
+            /** Primary Color */
+            primary_color: string;
+            /** Secondary Color */
+            secondary_color: string;
+            /** Timezone */
+            timezone: string;
+            /** Recipient Id */
+            recipient_id?: string | null;
+            /** Semester Start */
+            semester_start?: string | null;
+            /** Semester End */
+            semester_end?: string | null;
+        };
         /** SchoolSummary */
         SchoolSummary: {
             /** Slug */
             slug: string;
             /** Name */
             name: string;
+            /** Primary Color */
+            primary_color: string;
+            /** Secondary Color */
+            secondary_color: string;
         };
         /** SendOtpRequest */
         SendOtpRequest: {
@@ -6522,6 +6562,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SchoolSummary"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_school_endpoint_schools__slug__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["School"];
                 };
             };
             /** @description Validation Error */

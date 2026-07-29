@@ -28,6 +28,8 @@ interface SchoolComboboxProps {
   isAdmin?: boolean;
 }
 
+type SchoolOption = Pick<SchoolSummary, "slug" | "name">;
+
 export function SchoolCombobox({
   value,
   onChange,
@@ -50,7 +52,7 @@ export function SchoolCombobox({
     return getSchoolName(DEFAULT_SCHOOL);
   }, [getSchoolName, placeholder, t, value]);
 
-  const allSchoolsOption = useMemo<SchoolSummary>(
+  const allSchoolsOption = useMemo<SchoolOption>(
     () => ({
       slug: ALL_SCHOOLS,
       name: t("schools.allSchools"),
@@ -72,7 +74,7 @@ export function SchoolCombobox({
       : undefined;
 
   return (
-    <SearchCombobox<SchoolSummary>
+    <SearchCombobox<SchoolOption>
       selectedKey={value}
       onSelect={(school) => onChange(school.slug)}
       fetcher={searchSchools}

@@ -66,7 +66,8 @@
   --glow-primary: 0 0 24px hsl(0 0% 96% / 0.08);
 
   /* Global page background decoration, mounted once via <PageBackground />. */
-  --page-school-primary: #FFD54F;
+  /* Wat2Do defaults. Real school hosts override these from the school directory. */
+  --page-school-primary: #FFC629;
   --page-school-secondary: #111111;
   --page-doodle-opacity: 0.1;
   --page-doodle-size: clamp(1.75rem, 3vw, 3.25rem);

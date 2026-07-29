@@ -1,6 +1,7 @@
 import { revalidateTag } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 import { eventFeedTag } from "@/features/events/api/eventFeed.server";
+import { schoolBrandingTag } from "@/shared/api/schools.server";
 import { ALL_SCHOOLS, resolveSchool } from "@/shared/constants/schools";
 
 interface RevalidateEventsRequest {
@@ -46,6 +47,7 @@ export async function POST(request: NextRequest) {
   // nothing else will ever revalidate it: no event belongs to "all".
   revalidateTag(eventFeedTag(school), "max");
   revalidateTag(eventFeedTag(ALL_SCHOOLS), "max");
+  revalidateTag(schoolBrandingTag(school), "max");
 
   return NextResponse.json({ revalidated: true, school });
 }

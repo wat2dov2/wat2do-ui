@@ -14,6 +14,8 @@ def _school_directory(monkeypatch):
         "uwaterloo": School(
             slug="uwaterloo",
             name="University of Waterloo",
+            primary_color="#FFD54F",
+            secondary_color="#111111",
             timezone="America/Toronto",
             semester_start="2026-01-01",
             semester_end="2026-04-30",
@@ -21,21 +23,29 @@ def _school_directory(monkeypatch):
         "upenn": School(
             slug="upenn",
             name="University of Pennsylvania",
+            primary_color="#011F5B",
+            secondary_color="#FFFFFF",
             timezone="America/New_York",
         ),
         "dalhousie": School(
             slug="dalhousie",
             name="Dalhousie University",
+            primary_color="#000000",
+            secondary_color="#FFCC00",
             timezone="America/Halifax",
         ),
         "ualberta": School(
             slug="ualberta",
             name="University of Alberta",
+            primary_color="#007C41",
+            secondary_color="#FFDB05",
             timezone="America/Edmonton",
         ),
         "nyu": School(
             slug="nyu",
             name="New York University",
+            primary_color="#57068C",
+            secondary_color="#FFFFFF",
             timezone="America/New_York",
         ),
     }

@@ -1,6 +1,7 @@
 import { api } from "@/shared/services/apiClient";
 import type { components } from "@/shared/generated/api-types";
 
+export type School = components["schemas"]["School"];
 export type SchoolSummary = components["schemas"]["SchoolSummary"];
 
 export async function searchSchools(query: string, limit = 10): Promise<SchoolSummary[]> {
