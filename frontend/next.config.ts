@@ -96,6 +96,7 @@ const apiCollectionPaths = [
   "saved-organizations",
   "submissions",
   "users",
+  "v1/saved-events",
 ];
 
 const nextConfig: NextConfig = {

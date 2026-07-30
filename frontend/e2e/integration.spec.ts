@@ -1648,6 +1648,15 @@ test.describe("Events Page", () => {
     expect(res.status()).toBe(401);
     expect(res.headers().location).toBeUndefined();
   });
+
+  test("V1 saved-event collection stays on the app API origin", async ({ request }) => {
+    const res = await request.get(`${APP_API}/v1/saved-events/`, {
+      maxRedirects: 0,
+    });
+
+    expect(res.status()).toBe(401);
+    expect(res.headers().location).toBeUndefined();
+  });
 });
 
 // ── Workflow 3: Organizations Page ────────────────────────────────────
