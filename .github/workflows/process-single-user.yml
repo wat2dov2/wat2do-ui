@@ -61,10 +61,6 @@ jobs:
           test -n "$OPENAI_API_KEY"
           test -n "$APIFY_API_TOKEN"
           test -n "$EVENT_FEED_REVALIDATION_SECRET"
-          if ! [[ "$POSTER_ID" =~ ^[A-Za-z0-9._]{1,30}$ ]]; then
-            echo "Invalid poster ID." >&2
-            exit 1
-          fi
           if [[ -z "$INTENDED_RECIPIENT_ID" && -z "$TARGET_SCHOOL" ]]; then
             echo "Either intended_recipient_id or school must be provided." >&2
             exit 1
