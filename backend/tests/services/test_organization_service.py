@@ -37,7 +37,13 @@ def test_create_invitation_enforces_school_matching_for_non_admins(monkeypatch, 
     monkeypatch.setattr(
         organization_service,
         "get_organization",
-        MagicMock(return_value=MagicMock(id=1, organization_name="UW Organization")),
+        MagicMock(
+            return_value=MagicMock(
+                id=1,
+                organization_name="UW Organization",
+                school="uwaterloo",
+            )
+        ),
     )
     # Mock inviter (non-admin from Waterloo)
     mock_inviter = UserResponse(
@@ -50,6 +56,12 @@ def test_create_invitation_enforces_school_matching_for_non_admins(monkeypatch, 
     )
     monkeypatch.setattr(user_service, "get_user", MagicMock(return_value=mock_inviter))
     monkeypatch.setattr(user_service, "get_user_by_email", MagicMock(return_value=None))
+    send = MagicMock(return_value=True)
+    monkeypatch.setattr("services.email_service.email_service.send", send)
+    monkeypatch.setattr(
+        "services.school_context.settings.frontend_url",
+        "https://wat2do.io",
+    )
     monkeypatch.setattr(
         allowed_emails,
         "get_school_for_email",
@@ -68,6 +80,9 @@ def test_create_invitation_enforces_school_matching_for_non_admins(monkeypatch, 
     )
     res = organization_service.create_invitation(1, "invitee@uwaterloo.ca", mock_inviter.id)
     assert res is not None
+    message = send.call_args.args[0]
+    assert "https://uwaterloo.wat2do.io/invite/" in message.body_html
+    assert "https://uwaterloo.wat2do.io/invite/" in message.body_text
 
     # Inviting an email from a different school should raise ValidationError
     with pytest.raises(ValidationError) as excinfo:
@@ -94,7 +109,13 @@ def test_create_invitation_allows_admins_to_invite_any_domain(monkeypatch, fake_
     monkeypatch.setattr(
         organization_service,
         "get_organization",
-        MagicMock(return_value=MagicMock(id=1, organization_name="UW Organization")),
+        MagicMock(
+            return_value=MagicMock(
+                id=1,
+                organization_name="UW Organization",
+                school="uwaterloo",
+            )
+        ),
     )
     # Mock admin inviter (no school)
     mock_admin = UserResponse(
@@ -107,6 +128,10 @@ def test_create_invitation_allows_admins_to_invite_any_domain(monkeypatch, fake_
     )
     monkeypatch.setattr(user_service, "get_user", MagicMock(return_value=mock_admin))
     monkeypatch.setattr(user_service, "get_user_by_email", MagicMock(return_value=None))
+    monkeypatch.setattr(
+        "services.email_service.email_service.send",
+        MagicMock(return_value=True),
+    )
 
     # Admins should be allowed to invite ANY domain
     fake_sb.queue_responses([[{"id": "inv-2", "organization_id": 1, "email": "invitee@wlu.ca"}]])

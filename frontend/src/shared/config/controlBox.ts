@@ -5,6 +5,7 @@ import interactionTracking from "../../../../backend/controlbox/interaction_trac
 import organizationManagement from "../../../../backend/controlbox/organization_management.json";
 
 const secondsToMilliseconds = (seconds: number): number => seconds * 1000;
+const minutesToMilliseconds = (minutes: number): number => minutes * 60 * 1000;
 const hoursToMilliseconds = (hours: number): number => hours * 60 * 60 * 1000;
 
 export const controlBox = {
@@ -13,6 +14,9 @@ export const controlBox = {
     newEventWindowHours: eventDiscovery.new_event_window_hours,
     newEventWindowMs: hoursToMilliseconds(
       eventDiscovery.new_event_window_hours,
+    ),
+    eventWithoutEndVisibilityMs: minutesToMilliseconds(
+      eventDiscovery.event_without_end_visibility_minutes,
     ),
     serverFeedPageSize: eventDiscovery.server_feed_page_size,
   },

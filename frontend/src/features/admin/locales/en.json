@@ -2,6 +2,21 @@
   "admin": {
     "backToDashboard": "Back to admin dashboard",
     "panelDescription": "Manage events, organizations, posters, and marketing",
+    "diagnostics": {
+      "title": "App Diagnostics",
+      "cardDescription": "Inspect endpoints and scraping workflows",
+      "description": "Inspect application endpoints and scraping workflows.",
+      "tabs": {
+        "label": "App diagnostic categories",
+        "endpoints": "Endpoints",
+        "scraping": "Scraping"
+      },
+      "automateLogs": {
+        "title": "Automate Logs",
+        "description": "Text output from the Android Automate app for the process-single-user workflow.",
+        "placeholder": "Automate log output will appear here."
+      }
+    },
     "manageEvents": "Manage Events",
     "manageEventsDesc": "View, edit, and delete events",
     "manageClubs": "Manage Organizations",

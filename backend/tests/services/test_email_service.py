@@ -36,7 +36,7 @@ def test_resend_dispatch_posts_email(monkeypatch):
     monkeypatch.setattr(
         email_module.settings,
         "email_from",
-        "wat2do <notifications@wat2do.app>",
+        "wat2do <notifications@wat2do.io>",
     )
     captured = {}
 
@@ -61,7 +61,7 @@ def test_resend_dispatch_posts_email(monkeypatch):
 
     assert captured["url"] == "https://api.resend.com/emails"
     assert captured["json"] == {
-        "from": "wat2do <notifications@wat2do.app>",
+        "from": "wat2do <notifications@wat2do.io>",
         "to": "student@uwaterloo.ca",
         "subject": "Wat2do update",
         "html": "<p>Hello</p>",
@@ -114,3 +114,34 @@ def test_resend_http_error_bubbles_to_caller(monkeypatch):
 
     with pytest.raises(httpx.HTTPStatusError):
         EmailService().send(_message())
+
+
+def test_send_rejects_legacy_sender_before_dry_run(monkeypatch):
+    monkeypatch.setattr(email_module.settings, "email_provider", "")
+    monkeypatch.setattr(
+        email_module.settings,
+        "email_from",
+        "wat2do <notifications@wat2do.ca>",
+    )
+
+    with pytest.raises(RuntimeError, match="EMAIL_FROM must use wat2do.io"):
+        EmailService().send(_message())
+
+
+@pytest.mark.parametrize(
+    ("field", "body"),
+    [
+        ("body_html", '<a href="https://uwaterloo.wat2do.ca/events/42">View</a>'),
+        ("body_text", "View: https://wat2do.ca/events/42"),
+    ],
+)
+def test_send_rejects_legacy_links_before_dry_run(monkeypatch, field, body):
+    monkeypatch.setattr(email_module.settings, "email_provider", "")
+    monkeypatch.setattr(
+        email_module.settings,
+        "email_from",
+        "wat2do <notifications@wat2do.io>",
+    )
+
+    with pytest.raises(RuntimeError, match="Outbound email links must use wat2do.io"):
+        EmailService().send(_message(**{field: body}))

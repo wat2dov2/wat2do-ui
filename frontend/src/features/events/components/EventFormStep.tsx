@@ -13,10 +13,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import {
   Field,
   FieldGroup,
-  FieldSeparator,
 } from "@/shared/ui/field";
-import { AIGenerationInput } from "@/shared/ui/ai-generation-input";
-import { useProfileCompleted } from "@/features/auth";
 import { EventFormPreview } from "@/features/events/components/EventForm/EventForm/EventFormPreview";
 import { EventFormJSON } from "@/features/events/components/EventForm/EventFormJSON";
 import { EventFormFields } from "@/features/events/components/EventForm/EventForm/EventFormFields";
@@ -61,12 +58,6 @@ interface EventFormStepProps {
     | "onRemoveImage"
     | "isValid"
   >;
-  eventFormAI: {
-    aiPrompt: string;
-    setAiPrompt: (value: string) => void;
-    aiGenerating: boolean;
-    handleAiGenerate: () => Promise<void>;
-  };
   isDarkMode: boolean;
   /** Absent when the form is an always-present panel with nothing to dismiss. */
   onCancel?: () => void;
@@ -90,7 +81,6 @@ export function EventFormStep({
   isSubmitting,
   onSubmit,
   eventForm,
-  eventFormAI,
   isDarkMode,
   onCancel,
   onBack,
@@ -101,7 +91,6 @@ export function EventFormStep({
   showSubmit = true,
 }: EventFormStepProps) {
   const { t } = useTranslation();
-  const profileCompleted = useProfileCompleted();
   const schoolFilter = useEventsStore((s) => s.schoolFilter);
 
   const fetchOrganizations = useCallback(
@@ -175,13 +164,9 @@ export function EventFormStep({
       imageFile: eventForm.imageFile,
       onImageUpload: eventForm.onImageUpload,
       onRemoveImage: eventForm.onRemoveImage,
-      aiPrompt: eventFormAI.aiPrompt,
-      setAiPrompt: eventFormAI.setAiPrompt,
-      aiGenerating: eventFormAI.aiGenerating,
-      handleAiGenerate: eventFormAI.handleAiGenerate,
       isDarkMode,
     }),
-    [eventForm, eventFormAI, isDarkMode, organizations, previewEvent, selectedOrganizationName]
+    [eventForm, isDarkMode, organizations, previewEvent, selectedOrganizationName]
   );
 
   return (
@@ -230,23 +215,6 @@ export function EventFormStep({
 
           {viewMode === "visual" ? (
             <FieldGroup>
-              <Field>
-                <AIGenerationInput
-                  aiPrompt={eventFormAI.aiPrompt}
-                  onAiPromptChange={eventFormAI.setAiPrompt}
-                  onAiPromptClear={() => eventFormAI.setAiPrompt("")}
-                  aiGenerating={eventFormAI.aiGenerating}
-                  onAiGenerate={eventFormAI.handleAiGenerate}
-                  error={eventForm.jsonError}
-                  title={t("forms.aiEventGeneration")}
-                  placeholder={!profileCompleted ? t("forms.aiPromptPlaceholderDisabled") : t("forms.aiPromptPlaceholder")}
-                  generatingText={t("common.generating")}
-                  className="space-y-2"
-                  titleClassName="text-sm"
-                  disabled={!profileCompleted}
-                />
-              </Field>
-              <FieldSeparator />
               <form>
                 <EventFormFields />
                 {showSubmit ? (

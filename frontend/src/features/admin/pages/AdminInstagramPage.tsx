@@ -9,27 +9,34 @@ import { getApiErrorMessage } from "@/shared/services/apiClient";
 import { Button } from "@/shared/ui/button";
 import { Instagram } from "@/shared/ui/doodle-icons";
 import { LoadingPage } from "@/shared/ui/loading-page";
+import { Pagination } from "@/shared/ui/Pagination";
 import { toast } from "@/shared/hooks/use-toast";
 
 interface AdminInstagramPageProps {
   onBack: () => void;
 }
 
+const BATCHES_PER_PAGE = 25;
+
 export function AdminInstagramPage({ onBack }: AdminInstagramPageProps) {
   const { t } = useTranslation();
+  const [pageNumber, setPageNumber] = useState(1);
+  const [openBatchId, setOpenBatchId] = useState<string | null>(null);
   const {
-    batches,
+    page,
     isLoading,
     error,
     retry,
+    batch: openBatch,
+    isDetailLoading,
+    detailError,
+    retryDetail,
     updateBatch,
     publishBatch,
     updatingBatchId,
     publishingBatchId,
-  } = useInstagramPublishing();
-  const [openBatchId, setOpenBatchId] = useState<string | null>(null);
-
-  const openBatch = batches.find((batch) => batch.id === openBatchId) ?? null;
+  } = useInstagramPublishing(pageNumber, BATCHES_PER_PAGE, openBatchId);
+  const batches = page?.items ?? [];
 
   return (
     <Container size="lg">
@@ -61,8 +68,33 @@ export function AdminInstagramPage({ onBack }: AdminInstagramPageProps) {
             </p>
           </Section>
         ) : (
-          <InstagramRunsTable batches={batches} onOpenRun={(batch) => setOpenBatchId(batch.id)} />
+          <Stack gap={4}>
+            <InstagramRunsTable batches={batches} onOpenRun={setOpenBatchId} />
+            <Pagination
+              currentPage={page?.page ?? 1}
+              totalPages={page?.total_pages ?? 1}
+              onPageChange={(nextPage) => {
+                setOpenBatchId(null);
+                setPageNumber(nextPage);
+              }}
+            />
+          </Stack>
         )}
+
+        {openBatchId && isDetailLoading ? (
+          <LoadingPage className="min-h-[240px]" />
+        ) : openBatchId && detailError ? (
+          <Section variant="surface" className="text-center">
+            <Stack gap={4} align="center">
+              <p className="text-sm text-destructive">
+                {getApiErrorMessage(detailError, t("admin.instagramPublishing.loadError"))}
+              </p>
+              <Button variant="secondary" onClick={() => retryDetail()}>
+                {t("admin.instagramPublishing.retry")}
+              </Button>
+            </Stack>
+          </Section>
+        ) : null}
       </Stack>
 
       {openBatch ? (

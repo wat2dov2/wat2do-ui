@@ -136,6 +136,7 @@ class RecommendationControl(_ControlModel):
 class EventDiscoveryControl(_ControlModel):
     feed_revalidate_seconds: int = Field(gt=0)
     new_event_window_hours: int = Field(gt=0)
+    event_without_end_visibility_minutes: int = Field(gt=0)
     server_feed_page_size: int = Field(gt=0, le=100)
 
 
@@ -253,10 +254,6 @@ class ScrapingControl(_ControlModel):
                 "maximum_cross_organization_candidates cannot exceed maximum_candidates"
             )
         return self
-
-
-class AiGenerationControl(_ControlModel):
-    maximum_output_tokens: int = Field(gt=0)
 
 
 class PublicAttendanceControl(_ControlModel):
@@ -402,7 +399,6 @@ class ControlBox(_ControlModel):
     interaction_ingestion: InteractionIngestionControl
     rate_limits: RateLimitsControl
     scraping: ScrapingControl
-    ai_generation: AiGenerationControl
     email_delivery: EmailDeliveryControl
     admin: AdminControl
     public_attendance: PublicAttendanceControl

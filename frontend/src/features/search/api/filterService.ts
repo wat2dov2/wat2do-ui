@@ -1,10 +1,8 @@
 import type { FilterState } from "@/shared/types";
-import type { ApiFilterStateResponse } from "@/shared/generated";
-import i18n from "@/shared/lib/i18n";
 
 /**
  * Filter Service
- * Serializer/parser used by the JSON editor and one-shot QR filter handoff.
+ * Normalization used by visual filters and one-shot QR filter handoff.
  */
 
 export const DEFAULT_FILTER_SORT_BY = "date";
@@ -47,13 +45,7 @@ export interface SearchStoreFilterValues {
   addedSince: string;
 }
 
-type GeneratedFilterStateInput = Partial<ApiFilterStateResponse> & {
-  organizations?: unknown;
-  freeFood?: unknown;
-  going?: unknown;
-  sortBy?: unknown;
-  sortOrder?: unknown;
-};
+type FilterStateInput = Partial<Record<keyof FilterState, unknown>>;
 
 function stringArray(value: unknown): string[] {
   return Array.isArray(value)
@@ -99,11 +91,11 @@ export function normalizeFilterState(filters: Partial<FilterState>): FilterState
 
 /**
  * Map Zustand search-store filter values to the shared `FilterState`
- * shape used by the JSON editor.
+ * shape used by filter consumers.
  *
  * Key rename: the store uses `selectedCategories`/`selectedLocations`/
  * `selectedFoods`/`selectedDays` (UI-oriented naming), while `FilterState`
- * uses shorter `categories`/`locations`/`foods`/`days` keys (JSON friendly).
+ * uses shorter `categories`/`locations`/`foods`/`days` keys.
  */
 export function storeStatesToFilterState(
   values: SearchStoreFilterValues,
@@ -126,10 +118,10 @@ export function storeStatesToFilterState(
 }
 
 /**
- * Normalize the generated AI FilterStateResponse to the UI FilterState.
+ * Normalize untrusted JSON or API filter input to the UI FilterState.
  */
-export function generatedFilterStateToFilterState(
-  filters: GeneratedFilterStateInput,
+export function filterStateFromInput(
+  filters: FilterStateInput,
 ): FilterState {
   return normalizeFilterState({
     searchQuery: typeof filters.searchQuery === "string" ? filters.searchQuery : "",
@@ -164,7 +156,7 @@ export function stagePendingFilterState(filters: Partial<FilterState>) {
   if (typeof window === "undefined") return;
   sessionStorage.setItem(
     PENDING_FILTERS_SESSION_KEY,
-    serializeFiltersToJSON(normalizeFilterState(filters)),
+    JSON.stringify(normalizeFilterState(filters)),
   );
 }
 
@@ -174,32 +166,9 @@ export function consumePendingFilterState(): FilterState | null {
   const raw = sessionStorage.getItem(PENDING_FILTERS_SESSION_KEY);
   if (!raw) return null;
   sessionStorage.removeItem(PENDING_FILTERS_SESSION_KEY);
-  const { filters, error } = parseFiltersFromJSON(raw);
-  return error ? null : filters;
-}
-
-/**
- * Serialize filter state to JSON string
- */
-export function serializeFiltersToJSON(filters: FilterState): string {
-  return JSON.stringify(filters, null, 2);
-}
-
-/**
- * Parse filter state from JSON string
- */
-export function parseFiltersFromJSON(
-  jsonString: string,
-): { filters: FilterState; error: string | null } {
   try {
-    const parsed = JSON.parse(jsonString);
-    const filters = generatedFilterStateToFilterState(parsed as GeneratedFilterStateInput);
-    return { filters, error: null };
-  } catch (err) {
-    console.error("Failed to parse filters from JSON:", err);
-    return {
-      filters: { ...EMPTY_FILTER_STATE },
-      error: i18n.t("forms.invalidJsonFormat"),
-    };
+    return filterStateFromInput(JSON.parse(raw) as FilterStateInput);
+  } catch {
+    return null;
   }
 }

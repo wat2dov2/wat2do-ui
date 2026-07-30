@@ -10,7 +10,6 @@ import {
 import { Button } from "@/shared/ui/button";
 import { SchoolCombobox } from "@/shared/ui/school-combobox";
 import { SearchCombobox } from "@/shared/ui/search-combobox";
-import { AnimatedThemeToggler } from "@/shared/components/AnimatedThemeToggler";
 import { LanguageSelector } from "@/shared/ui/language-selector";
 import { useAuthState, type AuthState } from "@/features/auth/hooks/useAuthState";
 import { getUserProfile, logoutAPI, updateUserProfile } from "@/features/auth/api/auth.api";
@@ -143,8 +142,6 @@ export function TopNav() {
         )}
 
         <LanguageSelector />
-
-        <AnimatedThemeToggler />
 
         {profileCompleted ? (
           <Tooltip>

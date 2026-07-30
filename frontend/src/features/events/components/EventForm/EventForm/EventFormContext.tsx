@@ -37,10 +37,6 @@ export interface EventFormContextValue {
   imageFile: File | null;
   onImageUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onRemoveImage: () => void;
-  aiPrompt: string;
-  setAiPrompt: (prompt: string) => void;
-  aiGenerating: boolean;
-  handleAiGenerate: () => Promise<void>;
   isDarkMode?: boolean;
 }
 

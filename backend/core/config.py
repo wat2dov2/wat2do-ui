@@ -22,10 +22,6 @@ class Settings(BaseSettings):
     supabase_secret_key: str = ""
     database_url: str = ""
     openai_api_key: str = ""
-    openai_model: str = "gpt-4o-mini"
-    openai_timeout: int = 15
-    openai_temperature_precise: float = 0.3
-    openai_temperature_creative: float = 0.7
     openai_instagram_curation_model: str = "gpt-5.6-sol"
     openai_instagram_curation_timeout: int = 60
     # Apify token for the Instagram scraper (services/scraper).
@@ -33,8 +29,7 @@ class Settings(BaseSettings):
     # GitHub repo secrets for the process-single-user workflow.
     apify_api_token: str = ""
     # OpenAI model used for vision-based event extraction in services/scraper.
-    # Kept separate from ``openai_model`` so we can swap the extraction model
-    # (vision-capable) without affecting non-vision call sites.
+    # Vision-capable model used by event extraction.
     openai_extraction_model: str = "gpt-5-nano"
     # Set CORS_ORIGINS env var as a JSON list for production,
     # e.g. CORS_ORIGINS=["https://wat2do.app","https://www.wat2do.app"]

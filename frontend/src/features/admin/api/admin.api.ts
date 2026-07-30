@@ -16,6 +16,7 @@ import type {
   ApiInstagramPublishBatchPublish,
   ApiInstagramPublishBatchResponse,
   ApiInstagramPublishBatchUpdate,
+  ApiPaginatedInstagramPublishBatchSummaryResponse,
   ApiPaginatedPosterPayoutResponse,
   ApiPayoutCsvExportResponse,
   ApiPayoutStatusUpdate,
@@ -148,11 +149,24 @@ export async function updateEventSubmission(
 
 // ── Instagram Publishing API ───────────────────────────────────────
 
-export async function getInstagramPublishBatches(): Promise<
-  ApiInstagramPublishBatchResponse[]
-> {
-  return getPaginatedItems<ApiInstagramPublishBatchResponse>(
-    "/instagram-publishing/batches/",
+export async function getInstagramPublishBatches(
+  page: number,
+  pageSize: number,
+): Promise<ApiPaginatedInstagramPublishBatchSummaryResponse> {
+  const params = new URLSearchParams({
+    page: String(page),
+    page_size: String(pageSize),
+  });
+  return api.get<ApiPaginatedInstagramPublishBatchSummaryResponse>(
+    `/instagram-publishing/batches/?${params.toString()}`,
+  );
+}
+
+export async function getInstagramPublishBatch(
+  id: string,
+): Promise<ApiInstagramPublishBatchResponse> {
+  return api.get<ApiInstagramPublishBatchResponse>(
+    `/instagram-publishing/batches/${id}`,
   );
 }
 

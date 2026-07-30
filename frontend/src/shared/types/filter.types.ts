@@ -13,5 +13,3 @@ export interface FilterState {
   sortOrder: "asc" | "desc";
   addedSince: string;
 }
-
-export type FilterViewMode = "visual" | "json";

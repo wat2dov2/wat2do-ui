@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { Check, ImageOff } from "@/shared/ui/doodle-icons";
+import { Check } from "@/shared/ui/doodle-icons";
 import { BadgeMask } from "@/shared/ui/badge-mask";
 import { EventImageCutout, useEventImageCutouts } from "@/shared/ui/event-image-cutout";
 import { Badge } from "@/shared/ui/badge";
@@ -81,7 +81,11 @@ export function EventCardImage({
       >
         {!event.source_image_url && (
           <div className="absolute inset-0 flex items-center justify-center">
-            <ImageOff className="size-8 text-muted-foreground opacity-60" />
+            <img
+              src="/wat2do-logo.svg"
+              alt=""
+              className="h-2/5 w-2/5 object-contain opacity-80"
+            />
           </div>
         )}
       </EventImageCutout>

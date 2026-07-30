@@ -82,6 +82,46 @@ class _FakeQuery:
         return SimpleNamespace(data=self._data, count=self._count)
 
 
+def test_list_batches_attaches_item_counts_without_hydrating_details(monkeypatch):
+    batch_calls: list[tuple] = []
+    item_calls: list[tuple] = []
+    batches = [
+        {"id": "batch-1", "school_record": {"slug": "uwaterloo"}},
+        {"id": "batch-2", "school_record": {"slug": "wlu"}},
+    ]
+    items = [
+        {"batch_id": "batch-1"},
+        {"batch_id": "batch-1"},
+        {"batch_id": "batch-2"},
+    ]
+
+    def table(name: str):
+        if name == service.INSTAGRAM_PUBLISH_BATCHES:
+            return _FakeQuery(batches, batch_calls, count=12)
+        if name == service.INSTAGRAM_PUBLISH_ITEMS:
+            return _FakeQuery(items, item_calls)
+        raise AssertionError(f"Unexpected table {name}")
+
+    monkeypatch.setattr(service, "get_sb", lambda: SimpleNamespace(table=table))
+    monkeypatch.setattr(
+        service,
+        "_hydrate_batches",
+        Mock(side_effect=AssertionError("list should not hydrate batch details")),
+    )
+
+    result, total = service.list_batches(
+        batch_status=None,
+        local_date=None,
+        offset=0,
+        limit=25,
+    )
+
+    assert total == 12
+    assert [batch["item_count"] for batch in result] == [2, 1]
+    assert ("select", ("batch_id",), {}) in item_calls
+    assert ("range", (0, 24), {}) in batch_calls
+
+
 def test_load_candidates_includes_added_events_from_any_source_without_images(monkeypatch):
     event_calls: list[tuple] = []
     published_calls: list[tuple] = []

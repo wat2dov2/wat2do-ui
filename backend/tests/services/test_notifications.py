@@ -133,13 +133,13 @@ def test_morning_subject_uses_recommendation_count():
 
 
 def test_morning_html_escapes_event_values(monkeypatch):
-    monkeypatch.setattr(settings, "frontend_url", "https://wat2do.app")
     html = rendering.render_morning_email_html(
         subject="1 new pick for you",
         picks=[_event(title="<script>alert(1)</script>", location="SLC & DC")],
         tz=ZoneInfo("America/Toronto"),
-        preferences_url="https://wat2do.app/settings",
-        unsubscribe_url="https://wat2do.app/unsubscribe",
+        frontend_url="https://uwaterloo.wat2do.io",
+        preferences_url="https://uwaterloo.wat2do.io/settings",
+        unsubscribe_url="https://uwaterloo.wat2do.io/unsubscribe",
     )
 
     assert "<script>" not in html
@@ -149,6 +149,7 @@ def test_morning_html_escapes_event_values(monkeypatch):
     assert "Today's drop" not in html
     assert "/100" not in html
     assert "background:#121212" in html
+    assert 'href="https://uwaterloo.wat2do.io/?eventId=42"' in html
 
 
 def test_unsubscribe_token_round_trip_and_tamper(monkeypatch):
@@ -379,7 +380,7 @@ def test_event_reminder_dispatch_uses_preferences_and_selected_occurrences(monke
 
 
 def test_event_reminder_send_is_idempotent_per_occurrence_start(monkeypatch):
-    monkeypatch.setattr(settings, "frontend_url", "https://wat2do.app")
+    monkeypatch.setattr(settings, "frontend_url", "https://wat2do.io")
     monkeypatch.setattr(settings, "email_unsubscribe_secret", "test-secret")
     claim = MagicMock(return_value="row-1")
     monkeypatch.setattr(event_reminder, "claim_delivery", claim)
@@ -401,6 +402,7 @@ def test_event_reminder_send_is_idempotent_per_occurrence_start(monkeypatch):
     message = deliver.call_args.kwargs["message"]
     assert message.subject == "Starts in about 1 hour: <Tea>"
     assert "&lt;Tea&gt;" in message.body_html
+    assert "https://uwaterloo.wat2do.io/?eventId=42" in message.body_html
     assert message.headers["List-Unsubscribe-Post"] == "List-Unsubscribe=One-Click"
 
 
@@ -426,7 +428,7 @@ def test_select_picks_uses_threshold_without_email_cap():
 
 
 def test_send_prepared_email_adds_unsubscribe_headers_without_rankings(monkeypatch):
-    monkeypatch.setattr(settings, "frontend_url", "https://wat2do.app")
+    monkeypatch.setattr(settings, "frontend_url", "https://wat2do.io")
     monkeypatch.setattr(settings, "email_unsubscribe_secret", "test-secret")
     monkeypatch.setattr(morning_email, "claim_delivery", lambda **_kwargs: "row-1")
     deliver = MagicMock(return_value=True)
@@ -440,8 +442,9 @@ def test_send_prepared_email_adds_unsubscribe_headers_without_rankings(monkeypat
 
     assert result is True
     message = deliver.call_args.kwargs["message"]
-    assert message.headers["List-Unsubscribe"].startswith("<https://wat2do.app/")
+    assert message.headers["List-Unsubscribe"].startswith("<https://uwaterloo.wat2do.io/")
     assert message.headers["List-Unsubscribe-Post"] == "List-Unsubscribe=One-Click"
+    assert "https://uwaterloo.wat2do.io/?eventId=42" in message.body_html
     assert "Today's drop" not in message.body_html
     assert "Today's drop" not in message.body_text
     assert "/100" not in message.body_html

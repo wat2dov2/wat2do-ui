@@ -229,6 +229,7 @@ def load_events_page(
     max_price: float | None = None,
     registration: bool | None = None,
     organizations: list[str] | None = None,
+    organization_ids: list[int] | None = None,
     free_food: bool = False,
     ids: list[int] | None = None,
     sort_by: str = "date",
@@ -255,6 +256,7 @@ def load_events_page(
         max_price=max_price,
         registration=registration,
         organizations=organizations,
+        organization_ids=organization_ids,
         free_food=free_food,
         ids=ids,
         sort_by=sort_by,
@@ -298,6 +300,8 @@ def load_events_page(
         q = q.in_("events.category", categories)
     if organizations:
         q = q.in_("events.organization", organizations)
+    if organization_ids:
+        q = q.in_("events.organization_id", organization_ids)
     if registration is not None:
         q = q.eq("events.registration", registration)
     if min_price is not None:
@@ -347,6 +351,7 @@ def _can_use_lightweight_date_page(
     max_price: float | None,
     registration: bool | None,
     organizations: list[str] | None,
+    organization_ids: list[int] | None,
     free_food: bool,
     ids: list[int] | None,
     sort_by: str,
@@ -372,6 +377,7 @@ def _can_use_lightweight_date_page(
         and max_price is None
         and registration is None
         and not organizations
+        and not organization_ids
         and not free_food
         and ids is None
         and sort_by == "date"

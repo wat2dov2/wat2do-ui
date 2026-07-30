@@ -24,7 +24,7 @@ export function useSearch({
 }: UseSearchOptions) {
   const { t } = useTranslation();
 
-  const filterState = useFilterState(profileCompleted);
+  const filterState = useFilterState();
 
   const handleClearAllFilters = filterState.clearAllFilters;
 

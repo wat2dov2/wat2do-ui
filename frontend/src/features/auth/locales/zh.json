@@ -3,7 +3,7 @@
     "heading": "发现校园里正在发生的事情。",
     "description": "登录或创建账号以保存活动、个性化您的订阅源，并探索校园里正在发生的事情。",
     "emailLabel": "电子邮箱",
-    "emailPlaceholder": "you@uwaterloo.ca",
+    "emailPlaceholder": "you@{{domain}}",
     "continue": "继续",
     "skipToOnboarding": "跳过登录，先体验",
     "verifyOtp": "验证验证码",

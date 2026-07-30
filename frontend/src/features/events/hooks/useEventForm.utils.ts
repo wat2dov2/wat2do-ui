@@ -21,23 +21,23 @@ function normalizeOccurrences(
 }
 
 /** What the form already holds for fields a payload may simply not carry. */
-interface AiResponseFallbacks {
+interface EventInputFallbacks {
   occurrences: EventFormOccurrence[];
   /**
-   * The poster the form is already showing. Text generation returns no image,
-   * and dropping to null there would silently submit a posterless event: the
-   * image preview is separate state, so the form still looks right.
+   * The poster the form is already showing. JSON input may omit the image, and
+   * dropping to null there would silently submit a posterless event while the
+   * separate image-preview state still looks right.
    */
   source_image_url: string | null;
 }
 
 /**
- * Map an AI-generated (or JSON-parsed) event object to EventFormData,
- * applying fallback defaults for missing fields.
+ * Map a parsed event object to EventFormData, applying fallback defaults for
+ * missing fields.
  */
-export function mapAiResponseToFormData(
+export function mapEventInputToFormData(
   parsed: Record<string, unknown>,
-  fallbackDefaults: AiResponseFallbacks,
+  fallbackDefaults: EventInputFallbacks,
 ): EventFormData {
   return {
     organization_id: typeof parsed.organization_id === "number" ? parsed.organization_id : null,

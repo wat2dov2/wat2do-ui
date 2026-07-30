@@ -9,7 +9,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/ui/select";
-import { AnimatedThemeToggler } from "@/shared/components/AnimatedThemeToggler";
 import { LanguageSelector } from "@/shared/ui/language-selector";
 import type { AppearanceSettingsDraft } from "@/features/settings/hooks/useSettingsForm";
 import type { ViewMode } from "@/shared/types";
@@ -29,26 +28,6 @@ export function AppearanceTab({
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="space-y-1 flex-1">
-              <Label className="text-base font-medium">
-                {t("settings.appearance.colorTheme")}
-              </Label>
-              <p className="text-sm text-muted-foreground">
-                {t("settings.appearance.colorThemeDesc")}
-              </p>
-            </div>
-            <AnimatedThemeToggler
-              checked={appearance.isDark}
-              disabled={disabled}
-              onCheckedChange={(isDark) => onAppearanceChange({ isDark })}
-            />
-          </div>
-        </CardContent>
-      </Card>
-
       <Card>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">

@@ -1,14 +1,14 @@
 import { useTranslation } from "react-i18next";
-import type { ApiInstagramPublishBatchResponse } from "@/shared/generated";
+import type { ApiInstagramPublishBatchSummaryResponse } from "@/shared/generated";
 import { AdminTable } from "@/features/admin/components/shared/AdminTable";
 import { Badge } from "@/shared/ui/badge";
 import { TableCell, TableRow } from "@/shared/ui/table";
 
-type Batch = ApiInstagramPublishBatchResponse;
+type Batch = ApiInstagramPublishBatchSummaryResponse;
 
 interface InstagramRunsTableProps {
   batches: Batch[];
-  onOpenRun: (batch: Batch) => void;
+  onOpenRun: (batchId: string) => void;
 }
 
 function statusBadgeVariant(status: Batch["status"]) {
@@ -51,11 +51,11 @@ export function InstagramRunsTable({ batches, onOpenRun }: InstagramRunsTablePro
             role="button"
             tabIndex={0}
             aria-label={batch.account_key}
-            onClick={() => onOpenRun(batch)}
+            onClick={() => onOpenRun(batch.id)}
             onKeyDown={(event) => {
               if (event.key === "Enter" || event.key === " ") {
                 event.preventDefault();
-                onOpenRun(batch);
+                onOpenRun(batch.id);
               }
             }}
           >
@@ -64,7 +64,7 @@ export function InstagramRunsTable({ batches, onOpenRun }: InstagramRunsTablePro
             <TableCell>
               {ran.toLocaleTimeString(locale, { hour: "numeric", minute: "2-digit" })}
             </TableCell>
-            <TableCell>{batch.items.length}</TableCell>
+            <TableCell>{batch.item_count}</TableCell>
             <TableCell>
               <Badge variant={statusBadgeVariant(batch.status)}>
                 {t(`admin.instagramPublishing.status.${batch.status}`)}

@@ -1,10 +1,6 @@
 import { useTranslation } from "react-i18next";
-import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
-import { AIGenerationInput } from "@/shared/ui/ai-generation-input";
 import { VisualFilters } from "@/features/search/components/VisualFilters";
-import { JSONFilterEditor } from "@/features/search/components/JSONFilterEditor";
-import { useProfileCompleted } from "@/features/auth";
-import type { FilterViewMode, ViewMode } from "@/shared/types";
+import type { ViewMode } from "@/shared/types";
 
 interface FilterOption {
   id: string;
@@ -12,15 +8,6 @@ interface FilterOption {
 }
 
 interface FilterDropdownFilters {
-  // AI generation
-  aiPrompt: string;
-  setAiPrompt: (prompt: string) => void;
-  aiGenerating: boolean;
-  handleAiGenerate: () => void;
-  // JSON editor
-  jsonError: string;
-  jsonValue: string;
-  handleJsonChange: (value: string | undefined) => void;
   // Category filters
   selectedCategories: string[];
   setSelectedCategories: (categories: string[]) => void;
@@ -51,74 +38,29 @@ interface FilterDropdownFilters {
 }
 
 interface FilterDropdownProps {
-  filterViewMode: FilterViewMode;
-  onFilterViewModeChange: (mode: FilterViewMode) => void;
   viewMode: ViewMode;
   onViewModeChange: (mode: ViewMode) => void;
   filters: FilterDropdownFilters;
-  isDarkMode: boolean;
 }
 
 export function FilterDropdown({
-  filterViewMode,
-  onFilterViewModeChange,
   viewMode,
   onViewModeChange,
   filters,
-  isDarkMode,
 }: FilterDropdownProps) {
   const { t } = useTranslation();
-  const profileCompleted = useProfileCompleted();
 
   return (
     <>
-      <div className="flex items-center justify-between mb-3">
+      <div className="mb-3">
         <h2 className="font-semibold text-base text-foreground">{t("filters.filtersHeader")}</h2>
-        <div className="shrink-0">
-          <Tabs
-            value={filterViewMode}
-            onValueChange={(value) =>
-              onFilterViewModeChange(value as FilterViewMode)
-            }
-          >
-            <TabsList>
-              <TabsTrigger value="visual">
-                {t("settings.appearance.visual")}
-              </TabsTrigger>
-              <TabsTrigger value="json">
-                {t("settings.appearance.json")}
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </div>
       </div>
 
-      <AIGenerationInput
-        aiPrompt={filters.aiPrompt}
-        onAiPromptChange={filters.setAiPrompt}
-        onAiPromptClear={() => filters.setAiPrompt("")}
-        aiGenerating={filters.aiGenerating}
-        onAiGenerate={filters.handleAiGenerate}
-        error={filters.jsonError}
-        title={t("filters.aiFilterGeneration")}
-        placeholder={!profileCompleted ? t("filters.aiFilterPlaceholderDisabled") : t("filters.aiFilterPlaceholder")}
-        generatingText={t("common.generating")}
-        disabled={!profileCompleted}
+      <VisualFilters
+        filters={filters}
+        viewMode={viewMode}
+        onViewModeChange={onViewModeChange}
       />
-
-      {filterViewMode === "visual" ? (
-        <VisualFilters
-          filters={filters}
-          viewMode={viewMode}
-          onViewModeChange={onViewModeChange}
-        />
-      ) : (
-        <JSONFilterEditor
-          jsonValue={filters.jsonValue}
-          onJsonChange={filters.handleJsonChange}
-          isDarkMode={isDarkMode}
-        />
-      )}
     </>
   );
 }

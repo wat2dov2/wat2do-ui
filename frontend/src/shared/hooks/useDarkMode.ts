@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useSyncExternalStore } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import { loadTheme, saveTheme } from "@/shared/services/preferencesStorage";
 
 function getDarkModeSnapshot(): boolean {
@@ -52,17 +52,5 @@ export function useDarkMode() {
     return () => cancelAnimationFrame(raf);
   }, []);
 
-  const handleThemeChange = useCallback((isDark: boolean) => {
-    if (isDark) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-    saveTheme(isDark ? "dark" : "light");
-  }, []);
-
-  return {
-    isDarkMode,
-    handleThemeChange,
-  };
+  return { isDarkMode };
 }

@@ -62,6 +62,44 @@ def test_canonical_school_key_normalizes_slug():
     assert school_context.canonical_school_key("   ") == ""
 
 
+def test_school_frontend_url_scopes_wat2do_io_to_school(monkeypatch):
+    monkeypatch.setattr(school_context.settings, "frontend_url", "https://wat2do.io")
+
+    assert school_context.school_frontend_url("uwaterloo") == "https://uwaterloo.wat2do.io"
+    assert school_context.school_frontend_url(None) == "https://wat2do.io"
+
+
+def test_school_frontend_url_replaces_existing_school_subdomain(monkeypatch):
+    monkeypatch.setattr(
+        school_context.settings,
+        "frontend_url",
+        "https://uwaterloo.wat2do.io",
+    )
+
+    assert school_context.school_frontend_url("mit") == "https://mit.wat2do.io"
+
+
+def test_school_frontend_url_scopes_localhost_and_preserves_port(monkeypatch):
+    monkeypatch.setattr(
+        school_context.settings,
+        "frontend_url",
+        "http://localhost:3000",
+    )
+
+    assert school_context.school_frontend_url("uwaterloo") == "http://uwaterloo.localhost:3000"
+
+
+def test_school_frontend_url_rejects_legacy_domain(monkeypatch):
+    monkeypatch.setattr(
+        school_context.settings,
+        "frontend_url",
+        "https://uwaterloo.wat2do.ca",
+    )
+
+    with pytest.raises(RuntimeError, match="must use wat2do.io"):
+        school_context.school_frontend_url("uwaterloo")
+
+
 def test_resolve_school_timezone_uses_slug_only():
     assert school_context.resolve_school_timezone("uwaterloo") == "America/Toronto"
     assert school_context.resolve_school_timezone("upenn") == "America/New_York"

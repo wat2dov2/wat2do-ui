@@ -1,19 +1,12 @@
-import { useCallback, useMemo, useState, startTransition } from "react";
-import { useTranslation } from "react-i18next";
+import { useCallback, startTransition } from "react";
 import { useShallow } from "zustand/react/shallow";
 import {
-  serializeFiltersToJSON,
-  parseFiltersFromJSON,
   storeStatesToFilterState,
-  generatedFilterStateToFilterState,
   normalizeFilterState,
   clearNarrowingFilterState,
   DEFAULT_FILTER_SORT_BY,
   DEFAULT_FILTER_SORT_ORDER,
 } from "@/features/search/api/filterService";
-import { generateFiltersWithAI, isApiKeyConfigured } from "@/shared/lib/openai";
-import { useDebouncedCallback } from "@/shared/hooks/useDebouncedCallback";
-import { JSON_EDITOR_DEBOUNCE_MS } from "@/shared/constants/ui";
 import { useSearchStore } from "@/features/search/store/search.store";
 import type { FilterState } from "@/shared/types";
 
@@ -72,12 +65,9 @@ export function useFilterActions() {
  *
  * Backed by the shared Zustand search store so that every call site
  * (App Router pages, EventsPageContainer, CommandPalette) reads and writes
- * the same filter values. Derived/UI-only state (JSON editor, AI
- * prompt) stays local to this hook.
+ * the same filter values.
  */
-export function useFilterState(profileCompleted: boolean) {
-  const { t } = useTranslation();
-
+export function useFilterState() {
   // ── Shared filter values from the store (single shallow subscription) ──
   const {
     searchQuery,
@@ -201,121 +191,6 @@ export function useFilterState(profileCompleted: boolean) {
     [toggleFilterValue],
   );
 
-  const jsonValue = useMemo(
-    () =>
-      serializeFiltersToJSON(
-        storeStatesToFilterState({
-          searchQuery,
-          selectedCategories,
-          selectedLocations,
-          selectedFoods,
-          selectedDays,
-          priceRange,
-          registration,
-          selectedOrganizations,
-          freeFoodFilter,
-          goingFilter,
-          sortBy,
-          sortOrder,
-          addedSince,
-        }),
-      ),
-    [
-      searchQuery,
-      selectedCategories,
-      selectedLocations,
-      selectedFoods,
-      selectedDays,
-      priceRange,
-      registration,
-      selectedOrganizations,
-      freeFoodFilter,
-      goingFilter,
-      sortBy,
-      sortOrder,
-      addedSince,
-    ],
-  );
-
-  const [jsonError, setJsonError] = useState("");
-  const [aiPrompt, setAiPrompt] = useState("");
-  const [aiGenerating, setAiGenerating] = useState(false);
-
-  const applyJsonFilters = useCallback(
-    (value: string) => {
-      const { filters, error } = parseFiltersFromJSON(value);
-      if (error) {
-        setJsonError(error);
-        return;
-      }
-
-      setJsonError("");
-      setFilterState({
-        searchQuery: filters.searchQuery || "",
-        categories: filters.categories || [],
-        locations: filters.locations || [],
-        foods: filters.foods || [],
-        days: filters.days || [],
-        priceRange: filters.priceRange || { min: "", max: "" },
-        registration: filters.registration || false,
-        organizations: filters.organizations || [],
-        freeFood: filters.freeFood || false,
-        going: filters.going || false,
-        sortBy: filters.sortBy,
-        sortOrder: filters.sortOrder,
-        addedSince: filters.addedSince || "",
-      });
-    },
-    [setFilterState],
-  );
-
-  const debouncedApplyJsonFilters = useDebouncedCallback(
-    applyJsonFilters,
-    JSON_EDITOR_DEBOUNCE_MS,
-  );
-
-  const handleJsonChange = useCallback(
-    (value: string | undefined) => {
-      if (!value) return;
-      debouncedApplyJsonFilters(value);
-    },
-    [debouncedApplyJsonFilters],
-  );
-
-  const handleAiGenerate = useCallback(async () => {
-    if (!aiPrompt.trim()) return;
-
-    if (!profileCompleted) {
-      setJsonError(t("filters.aiSignInRequired"));
-      return;
-    }
-
-    if (!isApiKeyConfigured()) {
-      setJsonError(t("filters.aiNotAvailable"));
-      return;
-    }
-
-    setAiGenerating(true);
-    setJsonError("");
-
-    try {
-      const newFilters = await generateFiltersWithAI(aiPrompt, () => {
-        // Partial updates handled by the streaming callback
-      });
-      const generatedJson = serializeFiltersToJSON(
-        generatedFilterStateToFilterState(newFilters),
-      );
-      handleJsonChange(generatedJson);
-    } catch (error) {
-      console.error("AI filter generation failed:", error);
-      setJsonError(
-        error instanceof Error ? error.message : t("filters.aiGenerateFailed"),
-      );
-    } finally {
-      setAiGenerating(false);
-    }
-  }, [aiPrompt, profileCompleted, handleJsonChange, t]);
-
   return {
     searchQuery,
     setSearchQuery,
@@ -343,13 +218,6 @@ export function useFilterState(profileCompleted: boolean) {
     toggleLocation,
     toggleDay,
     toggleOrganization,
-    jsonValue,
-    jsonError,
-    handleJsonChange,
-    aiPrompt,
-    setAiPrompt,
-    aiGenerating,
-    handleAiGenerate,
     clearAllFilters,
     sortBy,
     setSortBy,

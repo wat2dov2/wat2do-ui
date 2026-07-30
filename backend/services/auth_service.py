@@ -6,8 +6,7 @@ from urllib.parse import urlencode
 
 from supabase_auth.errors import AuthApiError
 
-from core.allowed_emails import get_school_for_email, is_email_allowed
-from core.config import settings
+from core.allowed_emails import get_school_for_email
 from core.controlbox import controlbox
 from core.errors import (
     EMAIL_NOT_ALLOWED,
@@ -28,6 +27,7 @@ from schemas.auth import (
     TokenResponse,
 )
 from services import school_service
+from services.school_context import school_frontend_url
 
 
 def _sanitize_for_log(value: str | None) -> str:
@@ -43,11 +43,6 @@ def _sanitize_for_log(value: str | None) -> str:
     if value is None:
         return ""
     return value.replace("\r", "\\r").replace("\n", "\\n")
-
-
-def _password_reset_redirect_url() -> str:
-    base_url = settings.frontend_url.rstrip("/") or "http://localhost:3000"
-    return f"{base_url}/reset-password"
 
 
 class AuthResult:
@@ -115,6 +110,7 @@ class AuthService:
     ) -> None:
         email_clean = email.strip().lower()
         has_valid_invite = False
+        recipient_school: str | None = None
         if invitation_token:
             from datetime import datetime, timezone
 
@@ -131,18 +127,36 @@ class AuthService:
                 )
                 if r_invite.data:
                     has_valid_invite = True
+                    organization_id = r_invite.data[0].get("organization_id")
+                    if organization_id is not None:
+                        from services import organization_service
+
+                        organization = organization_service.get_organization(int(organization_id))
+                        recipient_school = organization.school if organization else None
             except Exception as e:
                 logger.warning("Failed to check invitation token: %s", e)
 
         try:
-            r_user = self._db.table(USERS).select("id").eq("email", email_clean).execute()
+            r_user = (
+                self._db.table(USERS)
+                .select(f"id,{school_service.SCHOOL_SLUG_EMBED}")
+                .eq("email", email_clean)
+                .execute()
+            )
             exists = bool(r_user.data)
+            if exists:
+                recipient_school = (
+                    school_service.with_school_slug(r_user.data[0]).get("school")
+                    or recipient_school
+                )
         except Exception as e:
             logger.warning("Failed to check if user exists: %s", e)
             exists = False
 
         if not exists:
-            if not has_valid_invite and not is_email_allowed(email_clean):
+            email_school = get_school_for_email(email_clean)
+            recipient_school = recipient_school or email_school
+            if not has_valid_invite and email_school is None:
                 raise AuthorizationError(EMAIL_NOT_ALLOWED)
 
         safe_email = _sanitize_for_log(email_clean)
@@ -198,7 +212,7 @@ class AuthService:
 
         from services.email_service import EmailMessage, email_service
 
-        base_url = settings.frontend_url.rstrip("/") or "http://localhost:3000"
+        base_url = school_frontend_url(recipient_school)
         callback_params = {
             "token": hashed_token,
             "email": email_clean,

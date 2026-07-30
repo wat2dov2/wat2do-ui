@@ -38,6 +38,10 @@ export type ApiGoingEventStatusResponse =
 // ── Instagram Publishing ───────────────────────────────────────────
 export type ApiInstagramPublishBatchResponse =
   components["schemas"]["InstagramPublishBatchResponse"];
+export type ApiInstagramPublishBatchSummaryResponse =
+  components["schemas"]["InstagramPublishBatchSummaryResponse"];
+export type ApiPaginatedInstagramPublishBatchSummaryResponse =
+  components["schemas"]["PaginatedResponse_InstagramPublishBatchSummaryResponse_"];
 export type ApiInstagramPublishBatchUpdate =
   components["schemas"]["InstagramPublishBatchUpdate"];
 export type ApiInstagramPublishBatchPublish =
@@ -103,7 +107,5 @@ export type ApiPayoutStatusUpdate =
 export type ApiPaginatedPosterPayoutResponse =
   components["schemas"]["PaginatedResponse_PosterPayoutResponse_"];
 
-// ── AI ──────────────────────────────────────────────────────────────
-export type ApiFilterStateResponse = components["schemas"]["FilterStateResponse"];
+// ── Event Image Extraction ──────────────────────────────────────────
 export type ApiEventFormDataResponse = components["schemas"]["EventFormDataResponse"];
-// export type ApiAIPromptRequest = components["schemas"]["AIPromptRequest"];

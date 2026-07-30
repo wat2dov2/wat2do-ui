@@ -29,7 +29,6 @@ import {
 import { toast } from "@/shared/hooks/use-toast";
 import { loadLanguage } from "@/shared/lib/loadLanguage";
 import { queryKeys } from "@/shared/lib/queryKeys";
-import { saveTheme } from "@/shared/services/preferencesStorage";
 import { uploadAvatar } from "@/shared/services/uploadService";
 import { useUIStore } from "@/shared/store/ui.store";
 import type { ViewMode } from "@/shared/types";
@@ -59,7 +58,6 @@ const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
 };
 
 export interface AppearanceSettingsDraft {
-  isDark: boolean;
   language: SupportedLanguage;
   viewMode: ViewMode;
 }
@@ -83,10 +81,6 @@ function resolveLanguage(language: string): SupportedLanguage {
     : "en";
 }
 
-function applyTheme(isDark: boolean): void {
-  document.documentElement.classList.toggle("dark", isDark);
-}
-
 export function useSettingsForm() {
   const { i18n, t } = useTranslation();
   const auth = useAuthState();
@@ -95,9 +89,6 @@ export function useSettingsForm() {
   const setPersistedViewMode = useUIStore((state) => state.setViewMode);
   const [cachedProfile] = useState(() => loadProfile());
   const [initialAppearance] = useState<AppearanceSettingsDraft>(() => ({
-    isDark:
-      typeof document !== "undefined" &&
-      document.documentElement.classList.contains("dark"),
     language: resolveLanguage(i18n.resolvedLanguage ?? i18n.language),
     viewMode: persistedViewMode,
   }));
@@ -206,7 +197,6 @@ export function useSettingsForm() {
       await Promise.all(requests);
 
       if (appearanceChanged) {
-        saveTheme(nextValues.appearance.isDark ? "dark" : "light");
         await loadLanguage(nextValues.appearance.language);
         await i18n.changeLanguage(nextValues.appearance.language);
         setPersistedViewMode(nextValues.appearance.viewMode);
@@ -276,9 +266,6 @@ export function useSettingsForm() {
         ...form.getValues("appearance"),
         ...updates,
       };
-      if (updates.isDark !== undefined) {
-        applyTheme(updates.isDark);
-      }
       form.setValue("appearance", nextAppearance, { shouldDirty: true });
     },
     [form],
@@ -298,7 +285,6 @@ export function useSettingsForm() {
   );
 
   const cancel = useCallback(() => {
-    applyTheme(initialValuesRef.current.appearance.isDark);
     form.reset(initialValuesRef.current);
     clearAvatarPreview();
   }, [clearAvatarPreview, form]);

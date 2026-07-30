@@ -21,16 +21,12 @@ from postgrest.exceptions import APIError
 from supabase_auth.errors import AuthApiError
 
 from core.errors import (
-    AI_EMPTY_RESPONSE,
-    AI_INVALID_JSON,
-    AI_NOT_CONFIGURED,
     AUTHENTICATION_ERROR,
     DB_OPERATION_FAILED,
     INTERNAL_SERVER_ERROR,
     PG_CODE_TO_HTTP,
 )
 from core.exceptions import (
-    AIServiceError,
     AuthenticationError,
     AuthorizationError,
     ConflictError,
@@ -164,30 +160,6 @@ def register_error_handlers(app: FastAPI) -> None:
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             content={"detail": exc.detail},
             headers={"Retry-After": str(exc.retry_after)},
-        )
-
-    @app.exception_handler(AIServiceError)
-    async def handle_ai_service_error(request: Request, exc: AIServiceError) -> JSONResponse:
-        logger.warning(
-            "AIServiceError on %s %s [kind=%s]: %s",
-            request.method,
-            request.url.path,
-            _safe(exc.error_kind),
-            _safe(exc),
-        )
-        if exc.error_kind == "config":
-            return JSONResponse(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                content={"detail": AI_NOT_CONFIGURED},
-            )
-        if exc.error_kind == "parse":
-            return JSONResponse(
-                status_code=status.HTTP_502_BAD_GATEWAY,
-                content={"detail": AI_INVALID_JSON},
-            )
-        return JSONResponse(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            content={"detail": AI_EMPTY_RESPONSE},
         )
 
     @app.exception_handler(Exception)

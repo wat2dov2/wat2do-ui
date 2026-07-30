@@ -14,7 +14,7 @@ import { JSON_EDITOR_DEBOUNCE_MS } from "@/shared/constants/ui";
 import {
   getInitialState,
   getSmartDefaults,
-  mapAiResponseToFormData,
+  mapEventInputToFormData,
 } from "@/features/events/hooks/useEventForm.utils";
 
 interface UseEventFormOptions {
@@ -179,7 +179,7 @@ export function useEventForm(options: UseEventFormOptions) {
         setJsonError("");
 
         form.setFormData((previous) =>
-          mapAiResponseToFormData(parsed, {
+          mapEventInputToFormData(parsed, {
             occurrences: getSmartDefaults().occurrences,
             source_image_url: previous.source_image_url,
           }),

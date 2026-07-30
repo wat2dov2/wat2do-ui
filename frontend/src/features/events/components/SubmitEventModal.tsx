@@ -17,8 +17,7 @@ import { X, ImagePlus } from "@/shared/ui/doodle-icons";
 import { parseEventImage } from "@/shared/services/uploadService";
 import { toast } from "@/shared/hooks/use-toast";
 import { useEventForm } from "@/features/events/hooks/useEventForm";
-import { mapAiResponseToFormData } from "@/features/events/hooks/useEventForm.utils";
-import { useEventFormAI } from "@/features/events/hooks/useEventFormAI";
+import { mapEventInputToFormData } from "@/features/events/hooks/useEventForm.utils";
 import { useEventFormPromotion } from "@/features/events/hooks/useEventFormPromotion";
 import {
   useSubmitEvent,
@@ -154,7 +153,7 @@ export function SubmitEventFlow({
       try {
         const parsedData = await parseEventImage(file);
         eventForm.setFormData((previous) =>
-          mapAiResponseToFormData(
+          mapEventInputToFormData(
             parsedData as unknown as Record<string, unknown>,
             {
               occurrences: previous.occurrences,
@@ -218,13 +217,6 @@ export function SubmitEventFlow({
     window.addEventListener("paste", handlePaste);
     return () => window.removeEventListener("paste", handlePaste);
   }, [isParsingImage, handleImageFileParse]);
-
-  const eventFormAI = useEventFormAI({
-    formData: eventForm.formData,
-    setFormData: eventForm.setFormData,
-    setJsonValue: eventForm.setJsonValue,
-    setJsonError: eventForm.setJsonError,
-  });
 
   const eventFormPromotion = useEventFormPromotion({
     createdEventId: submitResult?.createdEventId ?? null,
@@ -403,7 +395,6 @@ export function SubmitEventFlow({
         isSubmitting={isSubmitting}
         onSubmit={handleSubmit}
         eventForm={eventForm}
-        eventFormAI={eventFormAI}
         isDarkMode={isDarkMode}
         onCancel={onClose}
         onBack={onBack}

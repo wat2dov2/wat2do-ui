@@ -12,4 +12,4 @@ cloudfront_origin_secret = "replace-with-a-random-64-character-hexadecimal-value
 frontend_image = "058264255918.dkr.ecr.ca-central-1.amazonaws.com/wat2do/frontend@sha256:replace-with-first-release-digest"
 backend_image  = "058264255918.dkr.ecr.ca-central-1.amazonaws.com/wat2do/backend@sha256:replace-with-first-release-digest"
 
-email_from = "wat2do <newsletter@wat2do.ca>"
+email_from = "wat2do <newsletter@wat2do.io>"

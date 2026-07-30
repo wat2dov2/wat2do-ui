@@ -3,7 +3,7 @@
     "heading": "Discover what's happening on campus.",
     "description": "Sign in or create an account to save events, personalize your feed, and discover what's happening on campus.",
     "emailLabel": "Email address",
-    "emailPlaceholder": "you@uwaterloo.ca",
+    "emailPlaceholder": "you@{{domain}}",
     "continue": "Continue",
     "skipToOnboarding": "Continue without signing in",
     "verifyOtp": "Verify code",

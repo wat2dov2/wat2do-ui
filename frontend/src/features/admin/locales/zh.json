@@ -2,6 +2,21 @@
   "admin": {
     "backToDashboard": "返回管理后台",
     "panelDescription": "管理活动、组织、海报和营销推广",
+    "diagnostics": {
+      "title": "应用诊断",
+      "cardDescription": "检查端点和抓取工作流程",
+      "description": "检查应用端点和抓取工作流程。",
+      "tabs": {
+        "label": "应用诊断类别",
+        "endpoints": "端点",
+        "scraping": "抓取"
+      },
+      "automateLogs": {
+        "title": "Automate 日志",
+        "description": "Android Automate 应用中 process-single-user 工作流程的文本输出。",
+        "placeholder": "Automate 日志输出将显示在此处。"
+      }
+    },
     "manageEvents": "活动管理",
     "manageEventsDesc": "查看、编辑和删除活动",
     "manageClubs": "组织管理",

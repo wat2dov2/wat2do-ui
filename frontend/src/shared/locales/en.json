@@ -163,14 +163,7 @@
     "descending": "Descending",
     "organization": "Organization",
     "searchOrganization": "Search organization...",
-    "noOrganizations": "No organizations available",
-    "aiFilterGeneration": "AI Filter Generation",
-    "aiFilterPlaceholder": "Describe filters (e.g. 'free food events this week')...",
-    "aiFilterPlaceholderDisabled": "Log in to use AI filters",
-    "aiSignInRequired": "Sign in to use AI filter generation.",
-    "aiNotAvailable": "AI generation is not available. Please check server configuration.",
-    "aiGenerateFailed": "Failed to generate filters. Please try again.",
-    "editJsonDirectly": "Edit JSON directly. Changes apply automatically."
+    "noOrganizations": "No organizations available"
   },
   "commands": {
     "commands": "Commands",
@@ -205,9 +198,6 @@
     "friday": "Friday",
     "saturday": "Saturday"
   },
-  "theme": {
-    "toggleTheme": "Toggle theme"
-  },
   "forms": {
     "eventImage": "Event Image",
     "selectCategory": "Select category",
@@ -225,8 +215,6 @@
     "searchOrganizationPlaceholder": "Search organizations...",
     "noOrganizationFound": "No organization found",
     "descriptionPlaceholder": "Tell people what your event is about...",
-    "aiPromptPlaceholder": "Describe your event (e.g. 'tech talk about AI next Friday')...",
-    "aiPromptPlaceholderDisabled": "Log in to use AI event generation",
     "pricePlaceholder": "0",
     "foodPlaceholder": "e.g., Pizza, Snacks",
     "posterNamePlaceholder": "e.g., Main Campus Poster #1",
@@ -255,7 +243,6 @@
     "organizationPageUrlPlaceholder": "e.g., https://example.com or 123",
     "instagramHandle": "Instagram Handle",
     "discordLink": "Discord Link",
-    "aiEventGeneration": "AI Event Generation",
     "titleRequired": "Title is required",
     "organizationRequired": "Organization is required",
     "occurrenceRequired": "At least one date is required",
@@ -274,8 +261,7 @@
     "coverImage": "Cover Image",
     "jsonEditor": "JSON Editor",
     "loadingEditor": "Loading editor...",
-    "invalidJsonFormat": "Invalid JSON format",
-    "aiGenerationFailed": "Failed to generate event"
+    "invalidJsonFormat": "Invalid JSON format"
   },
   "categories": {
     "artsAndCulture": "Arts & Culture",
@@ -357,7 +343,7 @@
     "subscribe": "Subscribe",
     "subscribeSuccess": "Thanks for subscribing!",
     "subscribeError": "Something went wrong. Please try again.",
-    "emailPlaceholder": "your.email@uwaterloo.ca",
+    "emailPlaceholder": "you@{{domain}}",
     "openingDate": "SOMEWHERE ON UW CAMPUS · JUNE 2025",
     "openingTitle": "Stumbling Upon the Underrated",
     "openingParagraph1": "We were the students who kept missing out.",

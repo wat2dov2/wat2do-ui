@@ -4,8 +4,6 @@ from datetime import datetime, timezone
 from html import escape
 from zoneinfo import ZoneInfo
 
-from core.config import settings
-
 # Email clients do not reliably support CSS custom properties or OKLCH.
 # These resolved sRGB values preserve the app's semantic dark-theme roles.
 _EMAIL_THEME = {
@@ -28,6 +26,7 @@ def render_morning_email_text(
     subject: str,
     picks: list[dict],
     tz: ZoneInfo,
+    frontend_url: str,
     preferences_url: str,
     unsubscribe_url: str,
 ) -> str:
@@ -37,7 +36,7 @@ def render_morning_email_text(
         "New picks for you",
         "",
     ]
-    lines.extend(_text_event(event, tz) for event in picks)
+    lines.extend(_text_event(event, tz, frontend_url) for event in picks)
     lines.append("")
     lines.extend(
         [
@@ -55,10 +54,11 @@ def render_morning_email_html(
     subject: str,
     picks: list[dict],
     tz: ZoneInfo,
+    frontend_url: str,
     preferences_url: str,
     unsubscribe_url: str,
 ) -> str:
-    content = _event_section("New picks for you", picks, tz)
+    content = _event_section("New picks for you", picks, tz, frontend_url)
     return _email_shell(
         subject=subject,
         content=content,
@@ -76,6 +76,7 @@ def render_event_reminder_text(
     subject: str,
     event: dict,
     tz: ZoneInfo,
+    frontend_url: str,
     preferences_url: str,
     unsubscribe_url: str,
 ) -> str:
@@ -83,7 +84,7 @@ def render_event_reminder_text(
         [
             subject,
             "",
-            _text_event(event, tz),
+            _text_event(event, tz, frontend_url),
             "",
             f"Manage email preferences: {preferences_url}",
             f"Unsubscribe from event reminders: {unsubscribe_url}",
@@ -98,13 +99,14 @@ def render_event_reminder_html(
     subject: str,
     event: dict,
     tz: ZoneInfo,
+    frontend_url: str,
     preferences_url: str,
     unsubscribe_url: str,
 ) -> str:
     content = (
         f'<p style="margin:0 0 18px;color:{_EMAIL_THEME["muted_foreground"]};'
         'font:15px/1.6 sans-serif;">You marked this event as Going.</p>'
-        + _event_section("Coming up", [event], tz)
+        + _event_section("Coming up", [event], tz, frontend_url)
     )
     return _email_shell(
         subject=subject,
@@ -142,8 +144,13 @@ def _email_shell(
     )
 
 
-def _event_section(title: str, events: list[dict], tz: ZoneInfo) -> str:
-    cards = "".join(_event_card(event, tz) for event in events)
+def _event_section(
+    title: str,
+    events: list[dict],
+    tz: ZoneInfo,
+    frontend_url: str,
+) -> str:
+    cards = "".join(_event_card(event, tz, frontend_url) for event in events)
     return (
         f'<h2 style="margin:24px 0 12px;color:{_EMAIL_THEME["foreground"]};'
         'font:700 19px sans-serif;">'
@@ -151,9 +158,9 @@ def _event_section(title: str, events: list[dict], tz: ZoneInfo) -> str:
     )
 
 
-def _event_card(event: dict, tz: ZoneInfo) -> str:
+def _event_card(event: dict, tz: ZoneInfo, frontend_url: str) -> str:
     event_id = int(event["id"])
-    event_url = f"{settings.frontend_url.rstrip('/')}/?eventId={event_id}"
+    event_url = f"{frontend_url}/?eventId={event_id}"
     title = escape(str(event.get("title") or "Untitled event"))
     location = escape(str(event.get("location") or "Location TBA"))
     date_label, time_label = _format_event_date_time(event, tz)
@@ -169,9 +176,9 @@ def _event_card(event: dict, tz: ZoneInfo) -> str:
     )
 
 
-def _text_event(event: dict, tz: ZoneInfo) -> str:
+def _text_event(event: dict, tz: ZoneInfo, frontend_url: str) -> str:
     date_label, time_label = _format_event_date_time(event, tz)
-    event_url = f"{settings.frontend_url.rstrip('/')}/?eventId={int(event['id'])}"
+    event_url = f"{frontend_url}/?eventId={int(event['id'])}"
     return (
         f"- {event.get('title') or 'Untitled event'} | {date_label} {time_label} | "
         f"{event.get('location') or 'Location TBA'} | {event_url}"

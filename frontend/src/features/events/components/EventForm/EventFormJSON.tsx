@@ -2,13 +2,11 @@ import { Suspense, lazy } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Field,
+  FieldError,
   FieldGroup,
   FieldLabel,
-  FieldSeparator,
 } from "@/shared/ui/field";
-import { AIGenerationInput } from "@/shared/ui/ai-generation-input";
 import { useEventFormContext } from "@/features/events/components/EventForm/EventForm/EventFormContext";
-import { useProfileCompleted } from "@/features/auth";
 import { JSON_EDITOR_FONT_SIZE } from "@/shared/constants/ui";
 
 // Monaco is heavy; load only when the JSON tab mounts.
@@ -16,39 +14,15 @@ const Editor = lazy(() => import("@monaco-editor/react"));
 
 export function EventFormJSON() {
   const { t } = useTranslation();
-  const profileCompleted = useProfileCompleted();
   const {
     jsonValue,
     jsonError,
-    aiPrompt,
-    setAiPrompt,
-    aiGenerating,
-    handleAiGenerate,
     handleJsonChange,
     isDarkMode,
   } = useEventFormContext();
 
   return (
     <FieldGroup>
-      <Field>
-        <AIGenerationInput
-          aiPrompt={aiPrompt}
-          onAiPromptChange={setAiPrompt}
-          onAiPromptClear={() => setAiPrompt("")}
-          aiGenerating={aiGenerating}
-          onAiGenerate={handleAiGenerate}
-          error={jsonError}
-          title={t("forms.aiEventGeneration")}
-          placeholder={!profileCompleted ? t("forms.aiPromptPlaceholderDisabled") : t("forms.aiPromptPlaceholder")}
-          generatingText={t("common.generating")}
-          className="space-y-2"
-          titleClassName="text-sm"
-          disabled={!profileCompleted}
-        />
-      </Field>
-
-      <FieldSeparator />
-
       <Field>
         <FieldLabel className="text-sm font-medium text-foreground">
           {t("forms.jsonEditor")}
@@ -85,6 +59,7 @@ export function EventFormJSON() {
             />
           </Suspense>
         </div>
+        <FieldError>{jsonError || null}</FieldError>
       </Field>
     </FieldGroup>
   );

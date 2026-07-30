@@ -33,6 +33,7 @@ export const ROUTES = {
   ADMIN_ORGANIZATIONS: "/admin/organizations",
   ADMIN_POSTERS: "/admin/posters",
   ADMIN_INSTAGRAM: "/admin/instagram",
+  ADMIN_DIAGNOSTICS: "/admin/diagnostics",
 
   // Organization Panel
   ORGANIZATION_PANEL: "/organization-panel",
@@ -68,6 +69,7 @@ const ROUTE_PAGE_TITLES: Partial<
   [ROUTES.ADMIN_ORGANIZATIONS]: "Admin Organizations",
   [ROUTES.ADMIN_POSTERS]: "Admin Posters",
   [ROUTES.ADMIN_INSTAGRAM]: "Instagram Publishing",
+  [ROUTES.ADMIN_DIAGNOSTICS]: "App Diagnostics",
   [ROUTES.ORGANIZATION_PANEL]: "Organization Panel",
   [ROUTES.ORGANIZATION_PANEL_POSTERS]: "Posters",
   [ROUTES.ORGANIZATION_PANEL_INTEGRATIONS]: "Integrations",
@@ -122,6 +124,7 @@ export const ADMIN_ROUTE_MAP = {
   "admin-organizations": ROUTES.ADMIN_ORGANIZATIONS,
   "admin-posters": ROUTES.ADMIN_POSTERS,
   "admin-instagram": ROUTES.ADMIN_INSTAGRAM,
+  "admin-diagnostics": ROUTES.ADMIN_DIAGNOSTICS,
 } as const;
 
 export type AdminRouteKey = keyof typeof ADMIN_ROUTE_MAP;

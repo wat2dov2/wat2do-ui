@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  getInstagramPublishBatch,
   getInstagramPublishBatches,
   publishInstagramBatch,
   updateInstagramPublishBatch,
@@ -21,35 +22,61 @@ interface PublishVariables {
   data: ApiInstagramPublishBatchPublish;
 }
 
-export function useInstagramPublishing() {
+export function useInstagramPublishing(
+  pageNumber: number,
+  pageSize: number,
+  selectedBatchId: string | null,
+) {
   const queryClient = useQueryClient();
-  const queryKey = queryKeys.instagramPublishing.batches();
-  const query = useQuery({
-    queryKey,
-    queryFn: getInstagramPublishBatches,
+  const listQuery = useQuery({
+    queryKey: queryKeys.instagramPublishing.batchPage(pageNumber, pageSize),
+    queryFn: () => getInstagramPublishBatches(pageNumber, pageSize),
+    placeholderData: (previous) => previous,
   });
-  const refresh = () => queryClient.invalidateQueries({ queryKey });
+  const detailQuery = useQuery({
+    queryKey: queryKeys.instagramPublishing.batch(selectedBatchId ?? ""),
+    queryFn: () => getInstagramPublishBatch(selectedBatchId as string),
+    enabled: selectedBatchId !== null,
+  });
+  const refresh = () =>
+    queryClient.invalidateQueries({
+      queryKey: queryKeys.instagramPublishing.batches(),
+    });
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: UpdateVariables) =>
       updateInstagramPublishBatch(id, data),
     // A save returns the batch it wrote, so the editor picks up its new slides
     // and version straight away instead of waiting on a refetch.
-    onSuccess: (saved) =>
-      queryClient.setQueryData<ApiInstagramPublishBatchResponse[]>(queryKey, (current) =>
-        (current ?? []).map((batch) => (batch.id === saved.id ? saved : batch)),
-      ),
+    onSuccess: (saved) => {
+      queryClient.setQueryData<ApiInstagramPublishBatchResponse>(
+        queryKeys.instagramPublishing.batch(saved.id),
+        saved,
+      );
+      return refresh();
+    },
   });
   const publishMutation = useMutation({
     mutationFn: ({ id, data }: PublishVariables) =>
       publishInstagramBatch(id, data),
-    onSuccess: refresh,
+    onSuccess: (saved) => {
+      queryClient.setQueryData<ApiInstagramPublishBatchResponse>(
+        queryKeys.instagramPublishing.batch(saved.id),
+        saved,
+      );
+      return refresh();
+    },
   });
 
   return {
-    batches: query.data ?? [],
-    isLoading: query.isLoading,
-    error: query.error,
-    retry: query.refetch,
+    page: listQuery.data,
+    isLoading: listQuery.isLoading,
+    isFetching: listQuery.isFetching,
+    error: listQuery.error,
+    retry: listQuery.refetch,
+    batch: detailQuery.data,
+    isDetailLoading: detailQuery.isLoading,
+    detailError: detailQuery.error,
+    retryDetail: detailQuery.refetch,
     updateBatch: updateMutation.mutateAsync,
     publishBatch: publishMutation.mutateAsync,
     // A mutation keeps its variables after it settles, so the batch being

@@ -44,7 +44,7 @@ class InstagramPublishItemResponse(BaseModel):
     updated_at: datetime
 
 
-class InstagramPublishBatchResponse(BaseModel):
+class InstagramPublishBatchBaseResponse(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     id: UUID
@@ -57,9 +57,6 @@ class InstagramPublishBatchResponse(BaseModel):
     status: InstagramPublishBatchStatus
     caption: str
     cover_body: str = ""
-    # Unique events from the school's configured lookback ending at window_end,
-    # plus every event currently selected for the carousel.
-    new_event_count: int = 0
     ai_model: str | None = None
     version: int
     error_message: str | None = None
@@ -68,6 +65,16 @@ class InstagramPublishBatchResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     published_at: datetime | None = None
+
+
+class InstagramPublishBatchSummaryResponse(InstagramPublishBatchBaseResponse):
+    item_count: int = 0
+
+
+class InstagramPublishBatchResponse(InstagramPublishBatchBaseResponse):
+    # Unique events from the school's configured lookback ending at window_end,
+    # plus every event currently selected for the carousel.
+    new_event_count: int = 0
     items: list[InstagramPublishItemResponse]
 
 

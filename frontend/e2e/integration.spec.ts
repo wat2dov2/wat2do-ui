@@ -101,6 +101,7 @@ test.beforeEach(async ({ page }) => {
           name: "University of Waterloo",
           primary_color: "#6b238e",
           secondary_color: "#ffd54f",
+          email_domains: ["uwaterloo.ca"],
         },
       ]),
     });
@@ -546,6 +547,53 @@ test.describe("Posters & QR Analytics", () => {
   });
 });
 
+test.describe("Admin diagnostics", () => {
+  test("opens from the admin dashboard and shows Automate logs under scraping", async ({
+    page,
+  }) => {
+    await seedAuthenticatedSession(page);
+    await seedQrData(page);
+    await page.route(url => apiPath(url) === "/submissions", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          items: [],
+          total: 0,
+          page: 1,
+          page_size: 20,
+          total_pages: 0,
+        }),
+      });
+    });
+
+    await page.goto(`${BASE}/admin`);
+    await page.getByRole("button", { name: /App Diagnostics/ }).click();
+
+    await expect(page).toHaveURL(`${BASE}/admin/diagnostics`);
+    await expect(
+      page.getByRole("heading", { name: "App Diagnostics" }),
+    ).toBeVisible();
+
+    const endpointsTab = page.getByRole("tab", { name: "Endpoints" });
+    const scrapingTab = page.getByRole("tab", { name: "Scraping" });
+    const automateLogs = page.getByRole("heading", { name: "Automate Logs" });
+
+    await expect(endpointsTab).toBeVisible();
+    await expect(scrapingTab).toHaveAttribute("data-state", "active");
+    await expect(automateLogs).toBeVisible();
+    await expect(
+      page.getByText("Automate log output will appear here."),
+    ).toBeVisible();
+
+    await endpointsTab.click();
+    await expect(automateLogs).toBeHidden();
+
+    await scrapingTab.click();
+    await expect(automateLogs).toBeVisible();
+  });
+});
+
 // ── Workflow 8: Organization Integrations ─────────────────────────────
 
 test.describe("Organization Integrations", () => {
@@ -658,6 +706,75 @@ test.describe("Events Page", () => {
     expect(body).toBeTruthy();
 
     await page.screenshot({ path: "e2e/screenshots/events-page.png", fullPage: true });
+  });
+
+  test("permanently filters events after their effective end", async ({ page }) => {
+    const nowMs = Date.now();
+    const eventBase = {
+      location: "SLC",
+      price: 0,
+      food: [],
+      registration: false,
+      source_image_url: null,
+      category: "Career",
+      organization: "UW Tech Club",
+      organization_type: "wusa",
+      school: "uwaterloo",
+      added_at: new Date(nowMs).toISOString(),
+    };
+    const event = (
+      id: number,
+      title: string,
+      startOffsetMinutes: number,
+      endOffsetMinutes: number | null,
+    ) => ({
+      ...eventBase,
+      id,
+      title,
+      occurrences: [
+        {
+          id,
+          event_id: id,
+          dtstart_utc: new Date(
+            nowMs + startOffsetMinutes * 60_000,
+          ).toISOString(),
+          dtend_utc:
+            endOffsetMinutes === null
+              ? null
+              : new Date(nowMs + endOffsetMinutes * 60_000).toISOString(),
+        },
+      ],
+    });
+    const items = [
+      event(1, "Future Event", 60, null),
+      event(2, "Within Ninety Minutes", -89, null),
+      event(3, "Past Ninety Minutes", -91, null),
+      event(4, "Already Ended", -120, -1),
+      event(5, "Still Running", -120, 60),
+    ];
+
+    await page.route(url => apiPath(url) === "/events", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          items,
+          total: items.length,
+          page: 1,
+          page_size: 100,
+          total_pages: 1,
+          latest_added_event: null,
+        }),
+      });
+    });
+
+    await page.goto(BASE);
+
+    await expect(page.locator('article[data-event-id="1"]')).toBeVisible();
+    await expect(page.locator('article[data-event-id="2"]')).toBeVisible();
+    await expect(page.locator('article[data-event-id="5"]')).toBeVisible();
+    await expect(page.locator('article[data-event-id="3"]')).toHaveCount(0);
+    await expect(page.locator('article[data-event-id="4"]')).toHaveCount(0);
   });
 
   test("share and report overflow actions do not open event details", async ({ page }) => {
@@ -979,7 +1096,12 @@ test.describe("Events Page", () => {
 
     const assertInlineRegistration = async () => {
       const authForm = page.getByTestId("event-registration-auth");
-      await expect(authForm.getByLabel("Email address")).toBeVisible();
+      const emailInput = authForm.getByLabel("Email address");
+      await expect(emailInput).toBeVisible();
+      await expect(emailInput).toHaveAttribute(
+        "placeholder",
+        "you@uwaterloo.ca",
+      );
       await expect(
         authForm.getByRole("button", { name: "Register", exact: true }),
       ).toBeDisabled();

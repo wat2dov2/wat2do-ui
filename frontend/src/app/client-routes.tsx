@@ -2,6 +2,7 @@
 
 import { AppPage } from "@/app/app-page";
 import {
+  AdminDiagnosticsRoute,
   AdminEventsRoute,
   AdminInstagramRoute,
   AdminOrganizationsRoute,
@@ -194,6 +195,14 @@ export function AdminInstagramPageRoute() {
   return (
     <AppPage requiredRole={ROLE_ADMIN}>
       <AdminInstagramRoute />
+    </AppPage>
+  );
+}
+
+export function AdminDiagnosticsPageRoute() {
+  return (
+    <AppPage requiredRole={ROLE_ADMIN}>
+      <AdminDiagnosticsRoute />
     </AppPage>
   );
 }

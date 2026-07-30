@@ -201,15 +201,46 @@ async function seedAuthenticatedSession(page: Parameters<typeof test>[0]["page"]
 
   // Mock GET /events/ (the organization page lists its host's upcoming events)
   await page.route(url => apiPath(url) === "/events", async (route) => {
+    const requestUrl = new URL(route.request().url());
+    const matchesOrganizationId =
+      requestUrl.searchParams.get("organization_ids") === "1";
+    const startsAt = new Date(Date.now() + 86_400_000).toISOString();
+    const items = matchesOrganizationId
+      ? [
+          {
+            id: 41,
+            title: "Tech Career Fair",
+            location: "SLC",
+            occurrences: [
+              {
+                id: "11111111-1111-1111-1111-111111111111",
+                event_id: 41,
+                dtstart_utc: startsAt,
+                dtend_utc: null,
+              },
+            ],
+            price: 0,
+            food: [],
+            registration: false,
+            source_image_url: null,
+            category: "Career",
+            organization: "legacy-wloo-tech-handle",
+            organization_type: "independent",
+            organization_id: 1,
+            school: "uwaterloo",
+            added_at: new Date().toISOString(),
+          },
+        ]
+      : [];
     await route.fulfill({
       status: 200,
       contentType: "application/json",
       body: JSON.stringify({
-        items: [],
-        total: 0,
+        items,
+        total: items.length,
         page: 1,
         page_size: 50,
-        total_pages: 0,
+        total_pages: items.length ? 1 : 0,
         latest_added_event: null,
       }),
     });
@@ -342,6 +373,7 @@ test.describe("Followed Organizations Flow", () => {
     // Open the dedicated details page for the first club.
     await page.getByText("UW Tech Club").click();
     await expect(page).toHaveURL(`${BASE}/organizations/1`);
+    await expect(page.getByText("Tech Career Fair")).toBeVisible();
 
     const firstFollowBtn = page.getByRole("button", { name: "Follow organization" });
     await expect(firstFollowBtn).toBeVisible();

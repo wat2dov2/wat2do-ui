@@ -64,24 +64,3 @@ def get_or_404(result: T | None, detail: str) -> T:
     if not result:
         raise NotFoundError(detail)
     return result
-
-
-class AIServiceError(Exception):
-    """Raised when AI service encounters an error.
-
-    *error_kind* classifies the failure so the global error handler can
-    map it to the right HTTP status without substring-matching the message:
-    - ``"config"`` - missing API key / misconfiguration  (503)
-    - ``"parse"``  - AI returned unparseable JSON        (502)
-    - ``"api"``    - empty/bad response from upstream API (502)
-    """
-
-    def __init__(
-        self,
-        message: str,
-        *,
-        error_kind: str = "api",
-    ):
-        super().__init__(message)
-        self.error_kind = error_kind
-        self.is_config_error = self.error_kind == "config"

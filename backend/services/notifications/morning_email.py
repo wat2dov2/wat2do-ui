@@ -5,7 +5,6 @@ from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-from core.config import settings
 from core.constants import NOTIFICATION_TYPE_MORNING_EMAIL
 from core.controlbox import controlbox
 from core.database import get_sb
@@ -25,7 +24,7 @@ from services.notifications.rendering import (
     render_morning_email_text,
 )
 from services.notifications.unsubscribe import unsubscribe_url
-from services.school_context import resolve_user_timezone
+from services.school_context import resolve_user_timezone, school_frontend_url
 
 log = logging.getLogger(__name__)
 
@@ -249,8 +248,13 @@ def _send_prepared_email(
     if row_id is None:
         return None
 
-    unsubscribe = unsubscribe_url(user_id, NOTIFICATION_TYPE_MORNING_EMAIL)
-    preferences_url = f"{settings.frontend_url.rstrip('/')}/settings?tab=notifications"
+    frontend_url = school_frontend_url(user.get("school"))
+    unsubscribe = unsubscribe_url(
+        user_id,
+        NOTIFICATION_TYPE_MORNING_EMAIL,
+        user.get("school"),
+    )
+    preferences_url = f"{frontend_url}/settings?tab=notifications"
     subject = morning_email_subject(len(picks))
     message = EmailMessage(
         to=str(user["email"]),
@@ -259,6 +263,7 @@ def _send_prepared_email(
             subject=subject,
             picks=picks,
             tz=tz,
+            frontend_url=frontend_url,
             preferences_url=preferences_url,
             unsubscribe_url=unsubscribe,
         ),
@@ -266,6 +271,7 @@ def _send_prepared_email(
             subject=subject,
             picks=picks,
             tz=tz,
+            frontend_url=frontend_url,
             preferences_url=preferences_url,
             unsubscribe_url=unsubscribe,
         ),

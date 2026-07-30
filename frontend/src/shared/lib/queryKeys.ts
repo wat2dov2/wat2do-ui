@@ -45,8 +45,8 @@ export const queryKeys = {
     stats: (school: string) => [...queryKeys.events.all, "stats", school] as const,
     bySchool: (school: string) =>
       [...queryKeys.events.all, "by-school", school] as const,
-    byOrganization: (organizationName: string, school: string) =>
-      [...queryKeys.events.all, "by-organization", organizationName, school] as const,
+    byOrganization: (organizationId: number, school: string) =>
+      [...queryKeys.events.all, "by-organization", organizationId, school] as const,
   },
   goingEvents: {
     all: ["going-events"] as const,
@@ -60,5 +60,9 @@ export const queryKeys = {
   instagramPublishing: {
     all: ["instagram-publishing"] as const,
     batches: () => [...queryKeys.instagramPublishing.all, "batches"] as const,
+    batchPage: (page: number, pageSize: number) =>
+      [...queryKeys.instagramPublishing.batches(), page, pageSize] as const,
+    batch: (batchId: string) =>
+      [...queryKeys.instagramPublishing.all, "batch", batchId] as const,
   },
 } as const;

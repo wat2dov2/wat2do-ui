@@ -111,9 +111,6 @@ INSTAGRAM_REAUTHORIZATION_REQUIRED = "Instagram account requires reauthorization
 # ---------------------------------------------------------------------------
 # 502 / 503 – Upstream / AI errors
 # ---------------------------------------------------------------------------
-AI_EMPTY_RESPONSE = "Empty response from AI. Please try a different prompt."
-AI_INVALID_JSON = "AI returned invalid JSON. Please try again."
-AI_NOT_CONFIGURED = "OpenAI API key not configured on the server."
 
 # ---------------------------------------------------------------------------
 # 429 – Rate limiting

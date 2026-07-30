@@ -162,7 +162,7 @@ function OrganizationDetailsContent({
 
           <Section title={t("navigation.events")}>
             <OrganizationEventsGrid
-              organizationName={organization.organization_name}
+              organizationId={organization.id}
               school={organization.school}
             />
           </Section>

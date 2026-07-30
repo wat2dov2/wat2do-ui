@@ -12,7 +12,6 @@ import type {
 } from "@/features/posters/types";
 import type {
   ApiCampusCoverageResponse,
-  ApiFilterStateResponse,
   ApiPromoterEarningsResponse,
   ApiPromoterPosterBatchCreate,
   ApiPromoterPosterBatchResponse,
@@ -24,7 +23,7 @@ import type {
 import { api, getPaginatedItems } from "@/shared/services/apiClient";
 import { API_BASE_URL } from "@/shared/config/api";
 import { stripTrailingSlash } from "@/shared/utils/string";
-import { generatedFilterStateToFilterState } from "@/features/search/api/filterService";
+import { filterStateFromInput } from "@/features/search/api/filterService";
 
 /** Poster row from GET /qr/ or POST /qr/. */
 type QrCodePosterBackend = ApiQrCodeResponse;
@@ -42,8 +41,8 @@ function normalizePosterFilters(
   if (destinationType !== "events-list" || !filters || Array.isArray(filters)) {
     return undefined;
   }
-  return generatedFilterStateToFilterState(
-    filters as Partial<ApiFilterStateResponse>,
+  return filterStateFromInput(
+    filters as Record<string, unknown>,
   );
 }
 

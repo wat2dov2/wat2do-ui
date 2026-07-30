@@ -66,7 +66,7 @@ variable "private_subnet_cidrs" {
 variable "email_from" {
   description = "Sender identity used by the Resend notification provider."
   type        = string
-  default     = "wat2do <newsletter@wat2do.ca>"
+  default     = "wat2do <newsletter@wat2do.io>"
 }
 
 variable "alarm_sns_topic_arn" {

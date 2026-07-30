@@ -9,6 +9,7 @@ import {
   formatCountdown,
   formatOccurrence,
   getPrimaryOccurrence,
+  hasActiveEventOccurrence,
 } from "@/shared/utils/date";
 import {
   Calendar,
@@ -364,6 +365,7 @@ function EventRegistrationCard({
             ) : (
               <EmailOtpForm
                 data-testid="event-registration-auth"
+                school={event.school ?? school}
                 requestCodeLabel={t("events.register")}
                 actionLabel={t("events.register")}
                 isVerificationDisabled={
@@ -395,14 +397,21 @@ function EventRegistrationCard({
 }
 
 /** "About Event" heading, divider, description, and source link when present. */
-function EventAboutSection({ event }: { event: Event }) {
+function EventAboutSection({
+  event,
+  isFetchingDetails,
+}: {
+  event: Event;
+  isFetchingDetails: boolean;
+}) {
   const { t } = useTranslation();
   const sourceHref = event.source_url ? sanitizeHref(event.source_url) : undefined;
   return (
     <Stack gap={3}>
       <EventSectionHeader>{t("events.aboutEvent")}</EventSectionHeader>
       <p className="whitespace-pre-line text-sm text-muted-foreground">
-        {event.description || t("common.noDescription")}
+        {event.description ||
+          t(isFetchingDetails ? "events.fetchingDetails" : "common.noDescription")}
       </p>
       {sourceHref && (
         <a
@@ -547,10 +556,12 @@ export function EventActions({ event }: { event: Event }) {
 export function EventDetailsBody({
   event,
   school,
+  isFetchingDetails = false,
   renderTitle,
 }: {
   event: Event;
   school: string | null | undefined;
+  isFetchingDetails?: boolean;
   /** Override the title element (the drawer supplies its DrawerTitle). */
   renderTitle?: (title: string) => React.ReactNode;
 }) {
@@ -583,7 +594,7 @@ export function EventDetailsBody({
 
           <EventRegistrationCard event={event} school={school} />
 
-          <EventAboutSection event={event} />
+          <EventAboutSection event={event} isFetchingDetails={isFetchingDetails} />
 
           <EventMapSection event={event} school={school} />
         </Stack>
@@ -620,17 +631,23 @@ export function EventDetailsSimilarEvents({
     event.school,
   );
   const eventStats = eventStatsReady ? (eventStatsData ?? {}) : null;
+  const currentTimeMs = useCurrentTime();
   const similarEvents = useMemo(() => {
     const seed = event.id;
     return events
-      .filter((candidate) => candidate.id !== event.id)
+      .filter(
+        (candidate) =>
+          candidate.id !== event.id &&
+          (currentTimeMs === null ||
+            hasActiveEventOccurrence(candidate, currentTimeMs)),
+      )
       .toSorted((a, b) => {
         const hashA = ((seed * a.id) % 1000) / 1000;
         const hashB = ((seed * b.id) % 1000) / 1000;
         return hashA - hashB;
       })
       .slice(0, 4);
-  }, [event.id, events]);
+  }, [currentTimeMs, event.id, events]);
 
   if (similarEvents.length === 0) {
     return null;

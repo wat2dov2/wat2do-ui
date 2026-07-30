@@ -4,40 +4,6 @@
  */
 
 export interface paths {
-    "/ai/generate-filters": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Generate Filters */
-        post: operations["generate_filters_ai_generate_filters_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/ai/generate-event": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Generate Event */
-        post: operations["generate_event_ai_generate_event_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/ai/parse-event-image": {
         parameters: {
             query?: never;
@@ -1539,6 +1505,41 @@ export interface paths {
         patch: operations["update_user_role_users__user_id__role_patch"];
         trace?: never;
     };
+    "/v1/saved-events/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Saved Events */
+        get: operations["list_saved_events_v1_saved_events__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/saved-events/{event_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Save Event */
+        put: operations["save_event_v1_saved_events__event_id__put"];
+        post?: never;
+        /** Unsave Event */
+        delete: operations["unsave_event_v1_saved_events__event_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -1560,11 +1561,6 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        /** AIPromptRequest */
-        AIPromptRequest: {
-            /** Prompt */
-            prompt: string;
-        };
         /** AddCreditsRequest */
         AddCreditsRequest: {
             /**
@@ -1996,6 +1992,8 @@ export interface components {
             registration: boolean;
             /** Source Image Url */
             source_image_url?: string | null;
+            /** Source Url */
+            source_url?: string | null;
             /** Category */
             category?: string | null;
             /** Organization */
@@ -2051,59 +2049,6 @@ export interface components {
             ig_handle?: string | null;
             /** Cancelled */
             cancelled?: boolean | null;
-        };
-        /** FilterStateResponse */
-        FilterStateResponse: {
-            /**
-             * Searchquery
-             * @default
-             */
-            searchQuery: string;
-            /**
-             * Categories
-             * @default []
-             */
-            categories: string[];
-            /**
-             * Locations
-             * @default []
-             */
-            locations: string[];
-            /**
-             * Foods
-             * @default []
-             */
-            foods: string[];
-            /**
-             * Days
-             * @default []
-             */
-            days: string[];
-            /**
-             * Pricerange
-             * @default {
-             *       "min": "",
-             *       "max": ""
-             *     }
-             */
-            priceRange: {
-                [key: string]: string;
-            };
-            /**
-             * Daterange
-             * @default
-             */
-            dateRange: string;
-            /**
-             * Addedsince
-             * @default
-             */
-            addedSince: string;
-            /**
-             * Registration
-             * @default false
-             */
-            registration: boolean;
         };
         /** GoingEventSelection */
         GoingEventSelection: {
@@ -2184,11 +2129,6 @@ export interface components {
              * @default
              */
             cover_body: string;
-            /**
-             * New Event Count
-             * @default 0
-             */
-            new_event_count: number;
             /** Ai Model */
             ai_model?: string | null;
             /** Version */
@@ -2211,8 +2151,81 @@ export interface components {
             updated_at: string;
             /** Published At */
             published_at?: string | null;
+            /**
+             * New Event Count
+             * @default 0
+             */
+            new_event_count: number;
             /** Items */
             items: components["schemas"]["InstagramPublishItemResponse"][];
+        };
+        /** InstagramPublishBatchSummaryResponse */
+        InstagramPublishBatchSummaryResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Account Key */
+            account_key: string;
+            /** Instagram User Id */
+            instagram_user_id: string;
+            /** School */
+            school: string;
+            /**
+             * Local Date
+             * Format: date
+             */
+            local_date: string;
+            /**
+             * Window Start
+             * Format: date-time
+             */
+            window_start: string;
+            /**
+             * Window End
+             * Format: date-time
+             */
+            window_end: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "generating" | "ready_for_review" | "publishing" | "published" | "empty" | "failed";
+            /** Caption */
+            caption: string;
+            /**
+             * Cover Body
+             * @default
+             */
+            cover_body: string;
+            /** Ai Model */
+            ai_model?: string | null;
+            /** Version */
+            version: number;
+            /** Error Message */
+            error_message?: string | null;
+            /** Meta Media Id */
+            meta_media_id?: string | null;
+            /** Published Cover Url */
+            published_cover_url?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Published At */
+            published_at?: string | null;
+            /**
+             * Item Count
+             * @default 0
+             */
+            item_count: number;
         };
         /** InstagramPublishBatchUpdate */
         InstagramPublishBatchUpdate: {
@@ -2811,10 +2824,10 @@ export interface components {
             /** School */
             school?: string | null;
         };
-        /** PaginatedResponse[InstagramPublishBatchResponse] */
-        PaginatedResponse_InstagramPublishBatchResponse_: {
+        /** PaginatedResponse[InstagramPublishBatchSummaryResponse] */
+        PaginatedResponse_InstagramPublishBatchSummaryResponse_: {
             /** Items */
-            items: components["schemas"]["InstagramPublishBatchResponse"][];
+            items: components["schemas"]["InstagramPublishBatchSummaryResponse"][];
             /** Total */
             total: number;
             /** Page */
@@ -3466,6 +3479,8 @@ export interface components {
             primary_color: string;
             /** Secondary Color */
             secondary_color: string;
+            /** Email Domains */
+            email_domains?: string[];
         };
         /** SendOtpRequest */
         SendOtpRequest: {
@@ -3694,6 +3709,14 @@ export interface components {
             /** Is First Year */
             is_first_year?: boolean | null;
         };
+        /** V1SavedEventStatusResponse */
+        V1SavedEventStatusResponse: {
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "saved" | "unsaved";
+        };
         /** ValidationError */
         ValidationError: {
             /** Location */
@@ -3726,72 +3749,6 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    generate_filters_ai_generate_filters_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AIPromptRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FilterStateResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    generate_event_ai_generate_event_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AIPromptRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["EventFormDataResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     parse_event_image_ai_parse_event_image_post: {
         parameters: {
             query?: never;
@@ -4217,6 +4174,7 @@ export interface operations {
                 max_price?: number | null;
                 registration?: boolean | null;
                 organizations?: string[] | null;
+                organization_ids?: number[] | null;
                 free_food?: boolean;
                 added_within_24h?: boolean;
                 ids?: number[] | null;
@@ -4522,7 +4480,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PaginatedResponse_InstagramPublishBatchResponse_"];
+                    "application/json": components["schemas"]["PaginatedResponse_InstagramPublishBatchSummaryResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -7205,6 +7163,88 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UserResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_saved_events_v1_saved_events__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": number[];
+                };
+            };
+        };
+    };
+    save_event_v1_saved_events__event_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V1SavedEventStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    unsave_event_v1_saved_events__event_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V1SavedEventStatusResponse"];
                 };
             };
             /** @description Validation Error */

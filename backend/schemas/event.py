@@ -226,6 +226,7 @@ class EventSummaryResponse(BaseModel):
     food: list[str] | None = None
     registration: bool = False
     source_image_url: str | None = None
+    source_url: str | None = None
     category: str | None = None
     organization: str | None = None
     organization_type: OrganizationTypeValue | None = None

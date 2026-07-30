@@ -118,6 +118,7 @@
     "andOthersCount_other": "and {{count}} others",
     "hostedBy": "Hosted by",
     "aboutEvent": "About Event",
+    "fetchingDetails": "Fetching details...",
     "sourceLabel": "Source:",
     "youreIn": "You're In",
     "startingIn": "Starting in",

@@ -433,6 +433,7 @@ def test_list_events_pushes_filters_into_event_query(monkeypatch):
         max_price=20,
         registration=True,
         organizations=["UW Blueprint"],
+        organization_ids=[7, 8],
         free_food=True,
         ids=[1, 2],
         sort_by="title",
@@ -453,6 +454,7 @@ def test_list_events_pushes_filters_into_event_query(monkeypatch):
     assert kwargs["max_price"] == 20
     assert kwargs["registration"] is True
     assert kwargs["organizations"] == ["UW Blueprint"]
+    assert kwargs["organization_ids"] == [7, 8]
     assert kwargs["free_food"] is True
     assert kwargs["ids"] == [1, 2]
     assert kwargs["sort_by"] == "title"
@@ -555,6 +557,7 @@ def test_load_events_page_filters_counts_slices_and_hydrates(monkeypatch, fake_s
         max_price=0,
         registration=True,
         organizations=["UW Blueprint"],
+        organization_ids=[7],
         free_food=True,
         sort_by="title",
         sort_order="asc",
@@ -567,6 +570,7 @@ def test_load_events_page_filters_counts_slices_and_hydrates(monkeypatch, fake_s
     fake_sb.eq.assert_any_call("events.school_id", 1)
     fake_sb.in_.assert_any_call("events.category", ["Technology"])
     fake_sb.in_.assert_any_call("events.organization", ["UW Blueprint"])
+    fake_sb.in_.assert_any_call("events.organization_id", [7])
     fake_sb.eq.assert_any_call("events.registration", True)
     fake_sb.gte.assert_any_call("events.price", 0)
     fake_sb.lte.assert_any_call("events.price", 0)
@@ -717,6 +721,7 @@ def test_load_hydrated_events_overlaps_rows_and_occurrences(monkeypatch):
 
     def load_rows(_event_ids, *, columns):
         assert "source_image_url" in columns
+        assert "source_url" in columns
         barrier.wait()
         return [
             {
@@ -730,6 +735,7 @@ def test_load_hydrated_events_overlaps_rows_and_occurrences(monkeypatch):
                 "food": ["Pizza"],
                 "registration": True,
                 "source_image_url": "https://example.com/poster.webp",
+                "source_url": "https://example.com/events/beta-hack-night",
                 "added_at": "2026-05-02T12:00:00+00:00",
             }
         ]
@@ -753,6 +759,7 @@ def test_load_hydrated_events_overlaps_rows_and_occurrences(monkeypatch):
     events = event_query._load_hydrated_events_by_ids([2], model=EventSummaryResponse)
 
     assert events[2].occurrences[0].id == UUID(int=22)
+    assert events[2].source_url == "https://example.com/events/beta-hack-night"
 
 
 def test_get_event_stats_for_school_combines_positive_counts(monkeypatch):

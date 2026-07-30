@@ -1,4 +1,5 @@
 import {
+  useEffect,
   useId,
   useState,
   type ComponentProps,
@@ -28,12 +29,18 @@ import {
 } from "@/shared/ui/input-otp";
 import { LoadingButton } from "@/shared/ui/loading-button";
 import { cn } from "@/shared/lib/utils";
+import {
+  getCurrentSchool,
+  resolveSchool,
+} from "@/shared/constants/schools";
+import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 
 interface EmailOtpFormProps
   extends Omit<ComponentProps<"form">, "onSubmit"> {
   actionLabel?: string;
   requestCodeLabel?: string;
   initialEmail?: string;
+  school?: string | null;
   invitationToken?: string;
   returnTo?: string;
   isEmailLocked?: boolean;
@@ -50,6 +57,7 @@ export function EmailOtpForm({
   actionLabel,
   requestCodeLabel,
   initialEmail,
+  school,
   invitationToken,
   returnTo,
   isEmailLocked = false,
@@ -63,7 +71,9 @@ export function EmailOtpForm({
 }: EmailOtpFormProps) {
   const { t } = useTranslation();
   const fieldId = useId();
+  const [hostnameSchool, setHostnameSchool] = useState<string | null>(null);
   const [isCompletingAction, setIsCompletingAction] = useState(false);
+  const { schoolBySlug } = useSchoolDirectory();
   const flow = useEmailOtpFlow({
     initialEmail,
     invitationToken,
@@ -74,6 +84,14 @@ export function EmailOtpForm({
   const isBusy = flow.isLoading || isCompletingAction;
   const resolvedRequestCodeLabel = requestCodeLabel ?? t("auth.continue");
   const resolvedActionLabel = actionLabel ?? t("auth.verifyOtp");
+  const schoolSlug =
+    school || hostnameSchool ? resolveSchool(school ?? hostnameSchool) : "";
+  const emailDomain =
+    schoolBySlug.get(schoolSlug)?.email_domains?.[0] ?? "school.edu";
+
+  useEffect(() => {
+    setHostnameSchool(getCurrentSchool());
+  }, []);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -110,7 +128,9 @@ export function EmailOtpForm({
               type="email"
               value={flow.email}
               onChange={(event) => flow.onEmailChange(event.target.value)}
-              placeholder={t("auth.emailPlaceholder")}
+              placeholder={t("auth.emailPlaceholder", {
+                domain: emailDomain,
+              })}
               disabled={isEmailLocked || isBusy}
               autoComplete="email"
               autoFocus

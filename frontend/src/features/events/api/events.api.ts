@@ -42,15 +42,15 @@ export async function fetchEventById(id: number): Promise<Event> {
 
 async function fetchUpcomingEvents(
   school: string,
-  organizationName?: string,
+  organizationId?: number,
 ): Promise<Event[]> {
   const params = new URLSearchParams({
     school,
     sort_by: "date",
     sort_order: "asc",
   });
-  if (organizationName) {
-    params.append("organizations", organizationName);
+  if (organizationId != null) {
+    params.append("organization_ids", String(organizationId));
   }
   return getPaginatedItems<Event>(`/events/?${params.toString()}`);
 }
@@ -67,10 +67,10 @@ export async function fetchSchoolEvents(school: string): Promise<Event[]> {
  * start date, so an organization page is just that feed narrowed to one host.
  */
 export async function fetchOrganizationEvents(
-  organizationName: string,
+  organizationId: number,
   school: string,
 ): Promise<Event[]> {
-  return fetchUpcomingEvents(school, organizationName);
+  return fetchUpcomingEvents(school, organizationId);
 }
 
 export async function createEventAPI(eventData: EventFormData): Promise<Event> {

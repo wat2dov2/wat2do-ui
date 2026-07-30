@@ -5,98 +5,6 @@
     "version": "0.1.0"
   },
   "paths": {
-    "/ai/generate-filters": {
-      "post": {
-        "tags": [
-          "ai"
-        ],
-        "summary": "Generate Filters",
-        "operationId": "generate_filters_ai_generate_filters_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AIPromptRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/FilterStateResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
-    "/ai/generate-event": {
-      "post": {
-        "tags": [
-          "ai"
-        ],
-        "summary": "Generate Event",
-        "operationId": "generate_event_ai_generate_event_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AIPromptRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EventFormDataResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
     "/ai/parse-event-image": {
       "post": {
         "tags": [
@@ -875,6 +783,25 @@
             }
           },
           {
+            "name": "organization_ids",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "integer"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Organization Ids"
+            }
+          },
+          {
             "name": "free_food",
             "in": "query",
             "required": false,
@@ -1475,7 +1402,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PaginatedResponse_InstagramPublishBatchResponse_"
+                  "$ref": "#/components/schemas/PaginatedResponse_InstagramPublishBatchSummaryResponse_"
                 }
               }
             }
@@ -6282,6 +6209,128 @@
         }
       }
     },
+    "/v1/saved-events/": {
+      "get": {
+        "tags": [
+          "v1-saved-events"
+        ],
+        "summary": "List Saved Events",
+        "operationId": "list_saved_events_v1_saved_events__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "type": "integer"
+                  },
+                  "type": "array",
+                  "title": "Response List Saved Events V1 Saved Events  Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/saved-events/{event_id}": {
+      "put": {
+        "tags": [
+          "v1-saved-events"
+        ],
+        "summary": "Save Event",
+        "operationId": "save_event_v1_saved_events__event_id__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "event_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Event Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V1SavedEventStatusResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "v1-saved-events"
+        ],
+        "summary": "Unsave Event",
+        "operationId": "unsave_event_v1_saved_events__event_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "event_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Event Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V1SavedEventStatusResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/health": {
       "get": {
         "summary": "Health",
@@ -6301,21 +6350,6 @@
   },
   "components": {
     "schemas": {
-      "AIPromptRequest": {
-        "properties": {
-          "prompt": {
-            "type": "string",
-            "maxLength": 2000,
-            "minLength": 1,
-            "title": "Prompt"
-          }
-        },
-        "type": "object",
-        "required": [
-          "prompt"
-        ],
-        "title": "AIPromptRequest"
-      },
       "AddCreditsRequest": {
         "properties": {
           "user_id": {
@@ -7440,6 +7474,17 @@
             ],
             "title": "Source Image Url"
           },
+          "source_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Url"
+          },
           "category": {
             "anyOf": [
               {
@@ -7719,75 +7764,6 @@
         "type": "object",
         "title": "EventUpdate"
       },
-      "FilterStateResponse": {
-        "properties": {
-          "searchQuery": {
-            "type": "string",
-            "title": "Searchquery",
-            "default": ""
-          },
-          "categories": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Categories",
-            "default": []
-          },
-          "locations": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Locations",
-            "default": []
-          },
-          "foods": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Foods",
-            "default": []
-          },
-          "days": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Days",
-            "default": []
-          },
-          "priceRange": {
-            "additionalProperties": {
-              "type": "string"
-            },
-            "type": "object",
-            "title": "Pricerange",
-            "default": {
-              "min": "",
-              "max": ""
-            }
-          },
-          "dateRange": {
-            "type": "string",
-            "title": "Daterange",
-            "default": ""
-          },
-          "addedSince": {
-            "type": "string",
-            "title": "Addedsince",
-            "default": ""
-          },
-          "registration": {
-            "type": "boolean",
-            "title": "Registration",
-            "default": false
-          }
-        },
-        "type": "object",
-        "title": "FilterStateResponse"
-      },
       "GoingEventSelection": {
         "properties": {
           "event_id": {
@@ -7949,10 +7925,161 @@
             "title": "Cover Body",
             "default": ""
           },
+          "ai_model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ai Model"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "error_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Message"
+          },
+          "meta_media_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta Media Id"
+          },
+          "published_cover_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published Cover Url"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "published_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published At"
+          },
           "new_event_count": {
             "type": "integer",
             "title": "New Event Count",
             "default": 0
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/InstagramPublishItemResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "account_key",
+          "instagram_user_id",
+          "school",
+          "local_date",
+          "window_start",
+          "window_end",
+          "status",
+          "caption",
+          "version",
+          "created_at",
+          "updated_at",
+          "items"
+        ],
+        "title": "InstagramPublishBatchResponse"
+      },
+      "InstagramPublishBatchSummaryResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "account_key": {
+            "type": "string",
+            "title": "Account Key"
+          },
+          "instagram_user_id": {
+            "type": "string",
+            "title": "Instagram User Id"
+          },
+          "school": {
+            "type": "string",
+            "title": "School"
+          },
+          "local_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Local Date"
+          },
+          "window_start": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Window Start"
+          },
+          "window_end": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Window End"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "generating",
+              "ready_for_review",
+              "publishing",
+              "published",
+              "empty",
+              "failed"
+            ],
+            "title": "Status"
+          },
+          "caption": {
+            "type": "string",
+            "title": "Caption"
+          },
+          "cover_body": {
+            "type": "string",
+            "title": "Cover Body",
+            "default": ""
           },
           "ai_model": {
             "anyOf": [
@@ -8024,12 +8151,10 @@
             ],
             "title": "Published At"
           },
-          "items": {
-            "items": {
-              "$ref": "#/components/schemas/InstagramPublishItemResponse"
-            },
-            "type": "array",
-            "title": "Items"
+          "item_count": {
+            "type": "integer",
+            "title": "Item Count",
+            "default": 0
           }
         },
         "type": "object",
@@ -8045,10 +8170,9 @@
           "caption",
           "version",
           "created_at",
-          "updated_at",
-          "items"
+          "updated_at"
         ],
-        "title": "InstagramPublishBatchResponse"
+        "title": "InstagramPublishBatchSummaryResponse"
       },
       "InstagramPublishBatchUpdate": {
         "properties": {
@@ -9546,11 +9670,11 @@
         "type": "object",
         "title": "OrganizationUpdate"
       },
-      "PaginatedResponse_InstagramPublishBatchResponse_": {
+      "PaginatedResponse_InstagramPublishBatchSummaryResponse_": {
         "properties": {
           "items": {
             "items": {
-              "$ref": "#/components/schemas/InstagramPublishBatchResponse"
+              "$ref": "#/components/schemas/InstagramPublishBatchSummaryResponse"
             },
             "type": "array",
             "title": "Items"
@@ -9580,7 +9704,7 @@
           "page_size",
           "total_pages"
         ],
-        "title": "PaginatedResponse[InstagramPublishBatchResponse]"
+        "title": "PaginatedResponse[InstagramPublishBatchSummaryResponse]"
       },
       "PaginatedResponse_OrganizationResponse_": {
         "properties": {
@@ -11259,6 +11383,13 @@
           "secondary_color": {
             "type": "string",
             "title": "Secondary Color"
+          },
+          "email_domains": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Email Domains"
           }
         },
         "type": "object",
@@ -11904,6 +12035,23 @@
         "additionalProperties": false,
         "type": "object",
         "title": "UserUpdate"
+      },
+      "V1SavedEventStatusResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "saved",
+              "unsaved"
+            ],
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "V1SavedEventStatusResponse"
       },
       "ValidationError": {
         "properties": {

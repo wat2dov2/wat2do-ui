@@ -352,6 +352,7 @@ def test_list_events_forwards_school_and_pagination(client, monkeypatch):
         max_price=None,
         registration=None,
         organizations=None,
+        organization_ids=None,
         free_food=False,
         ids=None,
         sort_by="date",
@@ -414,6 +415,7 @@ def test_list_events_forwards_date_window(client, monkeypatch):
         max_price=None,
         registration=None,
         organizations=None,
+        organization_ids=None,
         free_food=False,
         ids=None,
         sort_by="date",
@@ -443,6 +445,8 @@ def test_list_events_forwards_filters_and_sort(client, monkeypatch):
             ("max_price", "20"),
             ("registration", "true"),
             ("organizations", "UW Blueprint"),
+            ("organization_ids", "7"),
+            ("organization_ids", "8"),
             ("free_food", "true"),
             ("ids", "1"),
             ("ids", "2"),
@@ -467,6 +471,7 @@ def test_list_events_forwards_filters_and_sort(client, monkeypatch):
         max_price=20,
         registration=True,
         organizations=["UW Blueprint"],
+        organization_ids=[7, 8],
         free_food=True,
         ids=[1, 2],
         sort_by="added_at",
@@ -506,6 +511,7 @@ def test_list_events_forwards_added_within_24h(client, monkeypatch):
         max_price=None,
         registration=None,
         organizations=None,
+        organization_ids=None,
         free_food=False,
         ids=None,
         sort_by="date",
@@ -555,7 +561,12 @@ def test_get_event_public_hides_created_by(client, monkeypatch):
 
 def test_list_events_public_hides_created_by(client, monkeypatch):
     """GET /events/ must not include created_by in any item."""
-    events = [_mock_event(created_by="secret-uid-1234")]
+    events = [
+        _mock_event(
+            created_by="secret-uid-1234",
+            source_url="https://example.com/events/test-event",
+        )
+    ]
     monkeypatch.setattr(event_service, "list_events", MagicMock(return_value=(events, 1)))
     monkeypatch.setattr(event_service, "get_latest_added_event", MagicMock(return_value=None))
 
@@ -563,6 +574,7 @@ def test_list_events_public_hides_created_by(client, monkeypatch):
     assert resp.status_code == 200
     body = resp.json()
     assert all("created_by" not in item for item in body["items"])
+    assert body["items"][0]["source_url"] == "https://example.com/events/test-event"
 
 
 # ---------------------------------------------------------------------------

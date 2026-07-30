@@ -9,6 +9,7 @@ from schemas.instagram_publishing import (
     InstagramPublishBatchPublish,
     InstagramPublishBatchResponse,
     InstagramPublishBatchStatus,
+    InstagramPublishBatchSummaryResponse,
     InstagramPublishBatchUpdate,
 )
 from schemas.user import UserResponse
@@ -17,7 +18,10 @@ from services import instagram_publishing
 router = APIRouter(prefix="/instagram-publishing", tags=["instagram-publishing"])
 
 
-@router.get("/batches/", response_model=PaginatedResponse[InstagramPublishBatchResponse])
+@router.get(
+    "/batches/",
+    response_model=PaginatedResponse[InstagramPublishBatchSummaryResponse],
+)
 def list_instagram_publish_batches(
     batch_status: InstagramPublishBatchStatus | None = Query(default=None, alias="status"),
     local_date: date | None = None,

@@ -5,9 +5,9 @@
  * to audit what the app persists on the device.
  *
  * Allowed per AGENTS.md localStorage policy:
- *   theme, userEmail, userProfile, viewMode, filterViewMode,
+ *   theme, userEmail, userProfile, viewMode,
  *   i18n-language, notificationPreferences, event visits,
- *   wat2do-app-prefs (composite of viewMode + filterViewMode via Zustand persist)
+ *   wat2do-app-prefs (viewMode via Zustand persist)
  */
 
 export const STORAGE_KEYS = {

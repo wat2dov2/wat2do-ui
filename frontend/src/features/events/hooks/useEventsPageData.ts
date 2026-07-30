@@ -3,10 +3,14 @@ import { useRouter } from "next/navigation";
 import { useSearch } from "@/features/search";
 import { useEventsStore } from "@/features/events/store/events.store";
 import { useEventStats } from "@/features/events/hooks/useEventStats";
-import { useGoingEvents } from "@/features/events/hooks/useGoingEvents";
+import {
+  useCurrentTime,
+  useGoingEvents,
+} from "@/features/events/hooks/useGoingEvents";
 import { useLastEventsVisit } from "@/features/events/hooks/useLastEventsVisit";
 import { useCreditsStore } from "@/features/credits/store/credits.store";
 import { getUniqueEvents } from "@/shared/utils/event";
+import { hasActiveEventOccurrence } from "@/shared/utils/date";
 import type { Event } from "@/shared/types";
 
 interface UseEventsPageDataOptions {
@@ -49,6 +53,7 @@ export function useEventsPageData({
   const schoolFilter = useEventsStore((s) => s.schoolFilter);
   const lastVisitAt = useLastEventsVisit(userEmail, schoolFilter);
   const { data: goingSelections = [] } = useGoingEvents();
+  const currentTimeMs = useCurrentTime();
   const goingEventIds = useMemo(
     () => goingSelections.map((selection) => selection.event_id),
     [goingSelections],
@@ -62,9 +67,27 @@ export function useEventsPageData({
   const latestAddedEvent = useEventsStore((s) => s.latestAddedEvent);
   const isLoading = useEventsStore((s) => s.isLoading);
   const error = useEventsStore((s) => s.error);
+  const visibleEvents = useMemo(
+    () =>
+      currentTimeMs === null
+        ? events
+        : events.filter((event) =>
+            hasActiveEventOccurrence(event, currentTimeMs),
+          ),
+    [currentTimeMs, events],
+  );
+  const visibleSnapshotPromotedEvents = useMemo(
+    () =>
+      currentTimeMs === null
+        ? snapshotPromotedEvents
+        : snapshotPromotedEvents.filter((event) =>
+            hasActiveEventOccurrence(event, currentTimeMs),
+          ),
+    [currentTimeMs, snapshotPromotedEvents],
+  );
 
   const filters = useSearch({
-    events,
+    events: visibleEvents,
     profileCompleted,
     goingEventIds,
   });
@@ -75,8 +98,17 @@ export function useEventsPageData({
   );
 
   const promotedEvents = useMemo(
-    () => derivePromotedEvents(snapshotPromotedEvents, events, activePromotedEventIds),
-    [snapshotPromotedEvents, events, activePromotedEventIds],
+    () =>
+      derivePromotedEvents(
+        visibleSnapshotPromotedEvents,
+        visibleEvents,
+        activePromotedEventIds,
+      ),
+    [
+      visibleSnapshotPromotedEvents,
+      visibleEvents,
+      activePromotedEventIds,
+    ],
   );
 
   const totalEvents = filters.filteredEvents.length;
@@ -98,6 +130,6 @@ export function useEventsPageData({
     promotedEvents,
     filters,
     orderedEvents,
-    allEvents: events,
+    allEvents: visibleEvents,
   };
 }

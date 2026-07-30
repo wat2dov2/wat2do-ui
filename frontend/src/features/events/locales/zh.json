@@ -118,6 +118,7 @@
     "andOthersCount_other": "以及另外 {{count}} 人",
     "hostedBy": "主办方",
     "aboutEvent": "关于活动",
+    "fetchingDetails": "正在获取详情...",
     "sourceLabel": "来源：",
     "youreIn": "报名成功",
     "startingIn": "距开始",

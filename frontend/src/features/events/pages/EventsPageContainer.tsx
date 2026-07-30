@@ -12,7 +12,7 @@ import { EventCount } from "../components/EventCount";
 import { SearchBar, MoreFiltersButton, FilterDropdown } from "@/features/search";
 import { useUIStore } from "@/shared/store/ui.store";
 import { useAuthState } from "@/features/auth";
-import { useDarkMode, useHorizontalScrollFade } from "@/shared/hooks";
+import { useHorizontalScrollFade } from "@/shared/hooks";
 import { HorizontalScrollFadeEdge } from "@/shared/ui/horizontal-scroll-fade-edge";
 import { Button } from "@/shared/ui/button";
 import { useEventsPageData } from "@/features/events/hooks/useEventsPageData";
@@ -42,11 +42,8 @@ export function EventsPageContainer() {
 
   const viewMode = useUIStore((s) => s.viewMode);
   const setViewMode = useUIStore((s) => s.setViewMode);
-  const filterViewMode = useUIStore((s) => s.filterViewMode);
-  const setFilterViewMode = useUIStore((s) => s.setFilterViewMode);
   const showFilterDropdown = useUIStore((s) => s.showFilterDropdown);
   const setShowFilterDropdown = useUIStore((s) => s.setShowFilterDropdown);
-  const { isDarkMode } = useDarkMode();
   const { profileCompleted, userEmail } = useAuthState();
   const { t } = useTranslation();
   const router = useRouter();
@@ -260,12 +257,9 @@ export function EventsPageContainer() {
               >
                 {showFilterDropdown ? (
                   <FilterDropdown
-                    filterViewMode={filterViewMode}
-                    onFilterViewModeChange={setFilterViewMode}
                     viewMode={viewMode}
                     onViewModeChange={handleViewModeChange}
                     filters={filters}
-                    isDarkMode={isDarkMode}
                   />
                 ) : null}
               </MoreFiltersButton>

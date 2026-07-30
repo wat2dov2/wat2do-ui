@@ -115,7 +115,19 @@ def search_schools(query: str, limit: int = DEFAULT_SEARCH_LIMIT) -> list[School
 
     ranked: list[tuple[tuple[int, int, str], SchoolSummary]] = []
     for row in response.data or []:
-        school = SchoolSummary.model_validate(row)
+        email_domains = sorted(
+            {
+                str(domain_row["domain"]).strip().lower()
+                for domain_row in row.get("school_email_domains") or []
+                if domain_row.get("domain")
+            }
+        )
+        school = SchoolSummary.model_validate(
+            {
+                **row,
+                "email_domains": email_domains,
+            }
+        )
         if not normalized_query:
             ranked.append(((0, 0, school.name.casefold()), school))
             continue

@@ -1,11 +1,11 @@
 /**
  * Global UI preferences and ephemeral modal/dropdown state.
- * Persist partialize keeps only viewMode/filterViewMode in localStorage.
+ * Persist partialize keeps only viewMode in localStorage.
  */
 
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import type { ViewMode, FilterViewMode, Event } from "@/shared/types";
+import type { ViewMode, Event } from "@/shared/types";
 
 const noopStorage = {
   getItem: () => null,
@@ -19,9 +19,7 @@ function getPreferenceStorage() {
 
 interface UIState {
   viewMode: ViewMode;
-  filterViewMode: FilterViewMode;
   setViewMode: (mode: ViewMode) => void;
-  setFilterViewMode: (mode: FilterViewMode) => void;
 
   showCommandPalette: boolean;
   showFilterDropdown: boolean;
@@ -37,9 +35,7 @@ export const useUIStore = create<UIState>()(
   persist(
     (set) => ({
       viewMode: "grid",
-      filterViewMode: "visual",
       setViewMode: (mode) => set({ viewMode: mode }),
-      setFilterViewMode: (mode) => set({ filterViewMode: mode }),
 
       showCommandPalette: false,
       showFilterDropdown: false,
@@ -56,7 +52,6 @@ export const useUIStore = create<UIState>()(
       version: 1,
       partialize: (state) => ({
         viewMode: state.viewMode,
-        filterViewMode: state.filterViewMode,
       }),
     }
   )

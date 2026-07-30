@@ -43,10 +43,6 @@
       "retry": "Retry"
     },
     "appearance": {
-      "theme": "Theme",
-      "themeDescription": "Customize the appearance of the application",
-      "colorTheme": "Color Theme",
-      "colorThemeDesc": "Switch between light and dark mode",
       "viewPreferences": "View Preferences",
       "viewPreferencesDesc": "Customize how events are displayed",
       "defaultViewMode": "Default View Mode",

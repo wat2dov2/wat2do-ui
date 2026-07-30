@@ -8,7 +8,7 @@ const PAGE_DOODLES = getOrganizationCategoryDoodleDecorations(72)
 
 /**
  * Global page background decoration: a tilted field of category doodles plus
- * a school-colour glow whose centre sits on the bottom-left viewport corner.
+ * mirrored school-colour glows on the top-right and bottom-left corners.
  */
 function PageBackground() {
   return (

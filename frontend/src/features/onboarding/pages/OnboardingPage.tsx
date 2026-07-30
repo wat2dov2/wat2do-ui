@@ -15,7 +15,6 @@ import { OnboardingYearStep } from "../components/OnboardingYearStep";
 import { LanguageSelector } from "@/shared/ui/language-selector";
 import { MultiSelect } from "@/shared/ui/multi-select";
 import { getEventCategories } from "@/shared/data/eventCategories";
-import { AnimatedThemeToggler } from "@/shared/components/AnimatedThemeToggler";
 import { getSafeReturnTo } from "@/features/auth/utils/returnTo";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 
@@ -149,7 +148,6 @@ export function OnboardingPage() {
         />
         <div className="flex items-center gap-2">
           <LanguageSelector />
-          <AnimatedThemeToggler />
         </div>
       </div>
 

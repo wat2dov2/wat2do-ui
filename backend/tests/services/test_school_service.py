@@ -30,6 +30,7 @@ def test_search_schools_matches_domain_fragment(fake_sb, patch_sb):
             name="Massachusetts Institute of Technology",
             primary_color="#A31F34",
             secondary_color="#FFFFFF",
+            email_domains=["mit.edu"],
         )
     ]
     fake_sb.table.assert_called_once_with(SCHOOLS)
@@ -45,6 +46,7 @@ def test_search_schools_matches_display_name_fragment(fake_sb, patch_sb):
             name="University of Waterloo",
             primary_color="#FFD54F",
             secondary_color="#111111",
+            email_domains=["uwaterloo.ca"],
         )
     ]
 
@@ -59,12 +61,14 @@ def test_search_schools_returns_directory_for_blank_query(fake_sb, patch_sb):
             name="Massachusetts Institute of Technology",
             primary_color="#A31F34",
             secondary_color="#FFFFFF",
+            email_domains=["mit.edu"],
         ),
         SchoolSummary(
             slug="uwaterloo",
             name="University of Waterloo",
             primary_color="#FFD54F",
             secondary_color="#111111",
+            email_domains=["uwaterloo.ca"],
         ),
     ]
 

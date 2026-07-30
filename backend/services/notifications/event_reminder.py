@@ -4,7 +4,6 @@ import logging
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-from core.config import settings
 from core.constants import NOTIFICATION_TYPE_EVENT_REMINDER
 from core.controlbox import controlbox
 from core.database import get_sb
@@ -20,7 +19,7 @@ from services.notifications.rendering import (
     render_event_reminder_text,
 )
 from services.notifications.unsubscribe import unsubscribe_url
-from services.school_context import resolve_user_timezone
+from services.school_context import resolve_user_timezone, school_frontend_url
 
 log = logging.getLogger(__name__)
 
@@ -149,8 +148,13 @@ def _send_event_reminder(*, user: dict, reminder: dict) -> bool | None:
         return None
 
     tz = resolve_user_timezone(user)
-    unsubscribe = unsubscribe_url(user_id, NOTIFICATION_TYPE_EVENT_REMINDER)
-    preferences_url = f"{settings.frontend_url.rstrip('/')}/settings?tab=notifications"
+    frontend_url = school_frontend_url(user.get("school"))
+    unsubscribe = unsubscribe_url(
+        user_id,
+        NOTIFICATION_TYPE_EVENT_REMINDER,
+        user.get("school"),
+    )
+    preferences_url = f"{frontend_url}/settings?tab=notifications"
     subject = event_reminder_subject(event)
     message = EmailMessage(
         to=str(user["email"]),
@@ -159,6 +163,7 @@ def _send_event_reminder(*, user: dict, reminder: dict) -> bool | None:
             subject=subject,
             event=event,
             tz=tz,
+            frontend_url=frontend_url,
             preferences_url=preferences_url,
             unsubscribe_url=unsubscribe,
         ),
@@ -166,6 +171,7 @@ def _send_event_reminder(*, user: dict, reminder: dict) -> bool | None:
             subject=subject,
             event=event,
             tz=tz,
+            frontend_url=frontend_url,
             preferences_url=preferences_url,
             unsubscribe_url=unsubscribe,
         ),

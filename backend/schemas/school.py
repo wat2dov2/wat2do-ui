@@ -1,6 +1,6 @@
 from datetime import date
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class School(BaseModel):
@@ -27,3 +27,4 @@ class SchoolSummary(BaseModel):
     name: str
     primary_color: str
     secondary_color: str
+    email_domains: list[str] = Field(default_factory=list)

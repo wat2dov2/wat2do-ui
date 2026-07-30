@@ -191,12 +191,19 @@
 }
 
 @utility bg-page-glow {
-  background-image: radial-gradient(
-    circle at bottom left,
-    var(--page-glow-inner) 0%,
-    var(--page-glow-middle) 28%,
-    transparent 68%
-  );
+  background-image:
+    radial-gradient(
+      circle at top right,
+      var(--page-glow-primary-inner) 0%,
+      var(--page-glow-primary-middle) 28%,
+      transparent 68%
+    ),
+    radial-gradient(
+      circle at bottom left,
+      var(--page-glow-secondary-inner) 0%,
+      var(--page-glow-secondary-middle) 28%,
+      transparent 68%
+    );
 }
 
 @layer base {

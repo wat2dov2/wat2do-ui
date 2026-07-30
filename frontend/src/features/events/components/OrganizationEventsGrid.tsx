@@ -4,12 +4,14 @@ import { EventList } from "@/features/events/components/EventList";
 import { EventDetailsModal } from "@/features/events/components/EventDetailsModal";
 import { fetchOrganizationEvents } from "@/features/events/api/events.api";
 import { useEventStats } from "@/features/events/hooks/useEventStats";
+import { useCurrentTime } from "@/features/events/hooks/useGoingEvents";
 import { controlBox } from "@/shared/config/controlBox";
 import { queryKeys } from "@/shared/lib/queryKeys";
+import { hasActiveEventOccurrence } from "@/shared/utils/date";
 import type { Event } from "@/shared/types";
 
 interface OrganizationEventsGridProps {
-  organizationName: string;
+  organizationId: number;
   school: string;
 }
 
@@ -21,19 +23,28 @@ interface OrganizationEventsGridProps {
  * returns (soonest first).
  */
 export function OrganizationEventsGrid({
-  organizationName,
+  organizationId,
   school,
 }: OrganizationEventsGridProps) {
   const { data: events, isPending } = useQuery({
-    queryKey: queryKeys.events.byOrganization(organizationName, school),
-    queryFn: () => fetchOrganizationEvents(organizationName, school),
-    enabled: Boolean(organizationName && school),
+    queryKey: queryKeys.events.byOrganization(organizationId, school),
+    queryFn: () => fetchOrganizationEvents(organizationId, school),
+    enabled: organizationId > 0 && Boolean(school),
     staleTime: controlBox.clientCache.liveEventDataStaleMs,
   });
   const { data: eventStatsData, isSuccess: eventStatsReady } = useEventStats(school);
+  const currentTimeMs = useCurrentTime();
   const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
 
-  const organizationEvents = useMemo(() => events ?? [], [events]);
+  const organizationEvents = useMemo(
+    () =>
+      currentTimeMs === null
+        ? (events ?? [])
+        : (events ?? []).filter((event) =>
+            hasActiveEventOccurrence(event, currentTimeMs),
+          ),
+    [currentTimeMs, events],
+  );
   const selectedEvent = useMemo(
     () => organizationEvents.find((event) => event.id === selectedEventId) ?? null,
     [organizationEvents, selectedEventId],

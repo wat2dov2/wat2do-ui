@@ -22,13 +22,24 @@ def registered_school(monkeypatch):
 def test_send_otp_magic_link_preserves_safe_return_path(monkeypatch):
     mock_auth = MagicMock()
     mock_db = MagicMock()
-    mock_db.table().select().eq().execute.return_value = MagicMock(data=[{"id": "user-id-123"}])
+    mock_db.table().select().eq().execute.return_value = MagicMock(
+        data=[
+            {
+                "id": "user-id-123",
+                "school_record": {"slug": "uwaterloo"},
+            }
+        ]
+    )
     link_result = MagicMock()
     link_result.properties.hashed_token = "hashed-token"
     link_result.properties.email_otp = "123456"
     mock_auth.admin.generate_link.return_value = link_result
     send = MagicMock(return_value=True)
     monkeypatch.setattr("services.email_service.email_service.send", send)
+    monkeypatch.setattr(
+        "services.school_context.settings.frontend_url",
+        "https://wat2do.io",
+    )
     service = AuthService(auth_client=mock_auth, db_client=mock_db)
 
     service.send_otp(
@@ -37,6 +48,7 @@ def test_send_otp_magic_link_preserves_safe_return_path(monkeypatch):
     )
 
     message = send.call_args.args[0]
+    assert "https://uwaterloo.wat2do.io/auth/callback" in message.body_html
     assert "returnTo=%2Fpromote%3Fschool%3Duwaterloo" in message.body_html
     assert "email=student%40uwaterloo.ca" in message.body_text
 

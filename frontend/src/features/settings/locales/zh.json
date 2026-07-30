@@ -43,10 +43,6 @@
       "retry": "重试"
     },
     "appearance": {
-      "theme": "主题",
-      "themeDescription": "自定义应用程序的外观界面",
-      "colorTheme": "颜色主题",
-      "colorThemeDesc": "在浅色和深色模式之间切换",
       "viewPreferences": "视图偏好",
       "viewPreferencesDesc": "自定义活动的显示方式",
       "defaultViewMode": "默认视图模式",

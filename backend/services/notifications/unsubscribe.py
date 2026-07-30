@@ -11,6 +11,7 @@ from core.config import settings
 from core.constants import NOTIFICATION_TYPES
 from schemas.notification_preference import NotificationPreferenceUpdate, NotificationType
 from services.notifications.preferences import set_preferences
+from services.school_context import school_frontend_url
 
 _TOKEN_VERSION = "1"
 
@@ -72,8 +73,12 @@ def unsubscribe(token: str) -> bool:
     return True
 
 
-def unsubscribe_url(user_id: str, notification_type: NotificationType) -> str:
-    base_url = settings.frontend_url.rstrip("/")
+def unsubscribe_url(
+    user_id: str,
+    notification_type: NotificationType,
+    school: str | None,
+) -> str:
+    base_url = school_frontend_url(school)
     return (
         f"{base_url}/api/notification-preferences/unsubscribe"
         f"?token={create_unsubscribe_token(user_id, notification_type)}"

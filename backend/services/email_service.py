@@ -15,6 +15,7 @@ API key.
 from __future__ import annotations
 
 import logging
+import re
 from dataclasses import dataclass, field
 
 import httpx
@@ -25,6 +26,10 @@ from core.controlbox import controlbox
 log = logging.getLogger(__name__)
 
 RESEND_EMAILS_URL = "https://api.resend.com/emails"
+_LEGACY_WAT2DO_URL = re.compile(
+    r"https?://(?:[a-z0-9-]+\.)*wat2do\.ca(?=[:/?#\s\"'<]|$)",
+    re.IGNORECASE,
+)
 
 
 @dataclass
@@ -58,6 +63,7 @@ class EmailService:
         return True. Callers treat True as "provider accepted" - actual
         delivery is the provider's responsibility.
         """
+        self._validate_v2_identity(msg)
         provider = (settings.email_provider or "").strip().lower()
         if not provider:
             log.info(
@@ -74,6 +80,14 @@ class EmailService:
         raise NotImplementedError(
             f"email provider {provider!r} configured but dispatch is not wired yet"
         )
+
+    @staticmethod
+    def _validate_v2_identity(msg: EmailMessage) -> None:
+        sender = settings.email_from.casefold()
+        if "@wat2do.ca" in sender:
+            raise RuntimeError("EMAIL_FROM must use wat2do.io, not wat2do.ca")
+        if _LEGACY_WAT2DO_URL.search(msg.body_html) or _LEGACY_WAT2DO_URL.search(msg.body_text):
+            raise RuntimeError("Outbound email links must use wat2do.io, not wat2do.ca")
 
     def _dispatch_resend(self, msg: EmailMessage) -> bool:
         api_key = settings.email_provider_api_key.strip()

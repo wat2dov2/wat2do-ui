@@ -1,5 +1,6 @@
 {
   "feed_revalidate_seconds": 3600,
   "new_event_window_hours": 24,
+  "event_without_end_visibility_minutes": 90,
   "server_feed_page_size": 100
 }

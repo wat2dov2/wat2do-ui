@@ -16,6 +16,28 @@ export interface Occurrence {
   dtend_utc?: string | null;
 }
 
+export function hasActiveEventOccurrence(
+  event: { occurrences?: Occurrence[] },
+  currentTimeMs: number,
+): boolean {
+  return (event.occurrences ?? []).some((occurrence) => {
+    const startTimeMs = new Date(occurrence.dtstart_utc).getTime();
+    if (Number.isNaN(startTimeMs)) return false;
+
+    if (occurrence.dtend_utc) {
+      const endTimeMs = new Date(occurrence.dtend_utc).getTime();
+      if (!Number.isNaN(endTimeMs)) {
+        return endTimeMs > currentTimeMs;
+      }
+    }
+
+    return (
+      startTimeMs + controlBox.eventDiscovery.eventWithoutEndVisibilityMs >=
+      currentTimeMs
+    );
+  });
+}
+
 const toMidnight = (date: Date): Date =>
   new Date(date.getFullYear(), date.getMonth(), date.getDate());
 
@@ -149,6 +171,8 @@ export function getEventDateSection(
   },
   currentDate: Date = new Date()
 ): EventDateSection | null {
+  if (!hasActiveEventOccurrence(event, currentDate.getTime())) return null;
+
   const primary = getPrimaryOccurrence(event);
   const rawStart = primary?.dtstart_utc;
   if (!rawStart) return null;

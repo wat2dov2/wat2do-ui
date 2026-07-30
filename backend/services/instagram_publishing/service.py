@@ -119,7 +119,7 @@ def list_batches(
         .execute()
     )
     batches = [_with_batch_school(row) for row in response.data or []]
-    _hydrate_batches(batches)
+    _attach_item_counts(batches)
     return batches, response.count or len(batches)
 
 
@@ -609,6 +609,26 @@ def _attach_items(batches: list[dict[str, Any]]) -> None:
         grouped[str(item["batch_id"])].append({**item, "event": event})
     for batch in batches:
         batch["items"] = grouped.get(str(batch["id"]), [])
+
+
+def _attach_item_counts(batches: list[dict[str, Any]]) -> None:
+    """Attach the only item data needed by the paginated batch list."""
+    if not batches:
+        return
+    batch_ids = [str(batch["id"]) for batch in batches]
+    items = (
+        get_sb()
+        .table(INSTAGRAM_PUBLISH_ITEMS)
+        .select("batch_id")
+        .in_("batch_id", batch_ids)
+        .execute()
+    ).data or []
+
+    counts: dict[str, int] = defaultdict(int)
+    for item in items:
+        counts[str(item["batch_id"])] += 1
+    for batch in batches:
+        batch["item_count"] = counts[str(batch["id"])]
 
 
 def _ordered_items(batch: dict[str, Any]) -> list[dict[str, Any]]:

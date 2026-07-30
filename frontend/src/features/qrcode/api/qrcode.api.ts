@@ -11,7 +11,7 @@ import { QP } from "@/shared/constants/queryParams";
 import { STORAGE_KEYS } from "@/shared/constants/storageKeys";
 import { StorageService } from "@/shared/services/storageService";
 import {
-  generatedFilterStateToFilterState,
+  filterStateFromInput,
   stagePendingFilterState,
 } from "@/features/search/api/filterService";
 
@@ -138,7 +138,7 @@ export function redirectFromConfig(config: QrRedirectConfig): void {
     case "events-list":
       if (config.filters && typeof config.filters === "object" && !Array.isArray(config.filters)) {
         stagePendingFilterState(
-          generatedFilterStateToFilterState(
+          filterStateFromInput(
             config.filters as Record<string, unknown>,
           ),
         );

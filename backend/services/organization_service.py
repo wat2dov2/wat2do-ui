@@ -33,6 +33,7 @@ from schemas.organization import (
 )
 from services import event_service, school_service
 from services.event_feed_revalidation import event_feed_revalidation_service
+from services.school_context import school_frontend_url
 
 _ORGANIZATION_SELECT = f"*,{school_service.SCHOOL_SLUG_EMBED}"
 
@@ -743,10 +744,9 @@ def create_invitation(organization_id: int, email: str, invited_by: UUID) -> dic
         raise
 
     try:
-        from core.config import settings
         from services.email_service import EmailMessage, email_service
 
-        invite_url = f"{settings.frontend_url}/invite/{token}"
+        invite_url = f"{school_frontend_url(organization.school)}/invite/{token}"
         subject = f"Invitation to manage {organization.organization_name} on Wat2Do"
         body_html = f"""
         <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px;">

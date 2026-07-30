@@ -289,8 +289,6 @@ class RateLimiter:
 # blocked across unrelated endpoints: a signup brute-force from another user
 # behind the same NAT would lock out login too.  Separating the buckets keeps
 # each endpoint's budget independent.
-ai_generate_filters_rate_limiter = RateLimiter()
-ai_generate_event_rate_limiter = RateLimiter()
 ai_parse_event_image_rate_limiter = RateLimiter()
 # Auth endpoints: stricter limits to prevent credential stuffing / brute force.
 # send-otp & verify-otp: strict to prevent email-bomb and brute-force abuse.

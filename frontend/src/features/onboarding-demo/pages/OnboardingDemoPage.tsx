@@ -2,7 +2,6 @@ import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { AnimatePresence, m } from "framer-motion";
 import { LanguageSelector } from "@/shared/ui/language-selector";
-import { AnimatedThemeToggler } from "@/shared/components/AnimatedThemeToggler";
 import { Button } from "@/shared/ui/button";
 import { OnboardingDemoProgress } from "../components/OnboardingDemoProgress";
 import { OnboardingDemoFooter } from "../components/OnboardingDemoFooter";
@@ -78,7 +77,6 @@ export function OnboardingDemoPage() {
               {t("onboardingDemo.chrome.demo")}
             </span>
             <LanguageSelector />
-            <AnimatedThemeToggler />
           </div>
         </div>
       </header>
