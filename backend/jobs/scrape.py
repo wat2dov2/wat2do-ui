@@ -71,6 +71,18 @@ def _print_summary(school: str, result: ScrapeResult) -> None:
     )
 
 
+def _create_github_annotation(school: str, username: str | None, url: str | None) -> None:
+    """Emit a GitHub Actions notice annotation summarising the processed post."""
+    if not school or school == "Not Waterloo":
+        message = "Not Waterloo"
+    elif url:
+        message = f"{school}\n@{username}\n{url}"
+    else:
+        message = f"{school}\n@{username}"
+    escaped = message.replace("\n", "%0A")
+    print(f"::notice::{escaped}", flush=True)
+
+
 def run(
     *,
     username: str,
@@ -124,6 +136,11 @@ def run(
         allow_past_events=allow_past_events,
     )
     _print_summary(school, result)
+
+    resolved_username = posts[0].get("ownerUsername") or posts[0].get("username")
+    resolved_url = posts[0].get("url")
+    _create_github_annotation(school, resolved_username, resolved_url)
+
     return 0 if result.status != WORKFLOW_RUN_ERROR else 1
 
 
