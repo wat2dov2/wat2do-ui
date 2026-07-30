@@ -160,6 +160,7 @@ class InteractionTrackingControl(_ControlModel):
 class AuthenticationControl(_ControlModel):
     session_cookie_days: int = Field(gt=0)
     verification_token_minutes: int = Field(gt=0)
+    legacy_frontend_origins: tuple[HttpUrl, ...]
 
 
 class OrganizationManagementControl(_ControlModel):

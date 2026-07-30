@@ -50,7 +50,19 @@ _optional_bearer = HTTPBearer(auto_error=False)
 REFRESH_COOKIE_PATH = settings.refresh_cookie_path
 
 
-def _set_refresh_cookie(response: Response, refresh_token: str) -> None:
+def _refresh_cookie_domain(request: Request) -> str | None:
+    """Use a host-only cookie when auth is proxied through the legacy frontend."""
+    origin = request.headers.get("origin", "").rstrip("/")
+    legacy_origins = {
+        str(legacy_origin).rstrip("/")
+        for legacy_origin in controlbox.authentication.legacy_frontend_origins
+    }
+    if origin in legacy_origins:
+        return None
+    return settings.cookie_domain or None
+
+
+def _set_refresh_cookie(response: Response, refresh_token: str, request: Request) -> None:
     """Set the refresh token as an httpOnly cookie.
 
     ``secure`` is ``settings.cookie_secure`` OR ``is_production`` so a
@@ -69,16 +81,16 @@ def _set_refresh_cookie(response: Response, refresh_token: str) -> None:
         secure=settings.cookie_secure or settings.is_production,
         path=REFRESH_COOKIE_PATH,
         max_age=COOKIE_MAX_AGE,
-        domain=settings.cookie_domain or None,
+        domain=_refresh_cookie_domain(request),
     )
 
 
-def _clear_refresh_cookie(response: Response) -> None:
+def _clear_refresh_cookie(response: Response, request: Request) -> None:
     """Clear the refresh token cookie (must match the Set-Cookie path)."""
     response.delete_cookie(
         key="refresh_token",
         path=REFRESH_COOKIE_PATH,
-        domain=settings.cookie_domain or None,
+        domain=_refresh_cookie_domain(request),
     )
 
 
@@ -126,12 +138,13 @@ def send_otp(
 @router.post("/verify-otp", response_model=TokenResponse)
 def verify_otp(
     data: VerifyOtpRequest,
+    request: Request,
     response: Response,
     _rl: None = Depends(verify_otp_rate_limiter.ip_dependency()),
 ):
     result = auth.verify_otp(data.email, data.token)
     if result.refresh_token:
-        _set_refresh_cookie(response, result.refresh_token)
+        _set_refresh_cookie(response, result.refresh_token, request)
     return result.body
 
 
@@ -156,13 +169,14 @@ def refresh(
     auth_refresh_rate_limiter.check(get_client_ip(request))
     result = auth.refresh(refresh_token)
     if result.refresh_token:
-        _set_refresh_cookie(response, result.refresh_token)
+        _set_refresh_cookie(response, result.refresh_token, request)
     return result.body
 
 
 def _error_response_with_cleared_cookie(
     status_code: int,
     detail: str,
+    request: Request,
 ) -> JSONResponse:
     """Build a JSONResponse that clears the refresh cookie.
 
@@ -174,13 +188,14 @@ def _error_response_with_cleared_cookie(
     resp.delete_cookie(
         key="refresh_token",
         path=REFRESH_COOKIE_PATH,
-        domain=settings.cookie_domain or None,
+        domain=_refresh_cookie_domain(request),
     )
     return resp
 
 
 @router.post("/logout", response_model=MessageResponse)
 def logout(
+    request: Request,
     response: Response,
     token: HTTPAuthorizationCredentials | None = Depends(_optional_bearer),
 ):
@@ -198,11 +213,13 @@ def logout(
             return _error_response_with_cleared_cookie(
                 status_code=e.status_code,
                 detail=str(e.detail) if e.detail is not None else INVALID_OR_EXPIRED_TOKEN,
+                request=request,
             )
         except (AuthenticationError, ServiceError) as e:
             return _error_response_with_cleared_cookie(
                 status_code=401 if isinstance(e, AuthenticationError) else 400,
                 detail=e.detail,
+                request=request,
             )
-    _clear_refresh_cookie(response)
+    _clear_refresh_cookie(response, request)
     return MessageResponse(message="Logged out successfully")

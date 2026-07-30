@@ -26,6 +26,7 @@ def test_checked_in_controlbox_is_valid() -> None:
     assert controlbox.event_reminder.lead_minutes == 60
     assert controlbox.event_discovery.feed_revalidate_seconds == 3600
     assert controlbox.event_discovery.new_event_window_hours == 24
+    assert str(controlbox.authentication.legacy_frontend_origins[0]) == "https://wat2do.ca/"
     assert controlbox.organization_management.directory_page_size == 40
     assert controlbox.organization_management.directory_revalidate_seconds == 3600
     assert controlbox.instagram_publishing.accounts[0].instagram_username == "uwaterloo.wat2do.io"

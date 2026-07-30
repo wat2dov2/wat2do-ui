@@ -346,3 +346,31 @@ class TestCookieBehavior:
 
         set_cookie = resp.headers.get("set-cookie", "")
         assert "samesite=lax" in set_cookie.lower()
+
+    def test_legacy_frontend_receives_host_only_refresh_cookie(self, client, monkeypatch):
+        result = _verify_result()
+        monkeypatch.setattr(auth, "verify_otp", MagicMock(return_value=result))
+        monkeypatch.setattr(settings, "cookie_domain", ".wat2do.io")
+
+        response = client.post(
+            "/auth/verify-otp",
+            json=VALID_VERIFY_OTP,
+            headers={"Origin": "https://wat2do.ca"},
+        )
+
+        set_cookie = response.headers.get("set-cookie", "").lower()
+        assert "refresh_token=" in set_cookie
+        assert "domain=" not in set_cookie
+
+    def test_v2_frontend_retains_shared_cookie_domain(self, client, monkeypatch):
+        result = _verify_result()
+        monkeypatch.setattr(auth, "verify_otp", MagicMock(return_value=result))
+        monkeypatch.setattr(settings, "cookie_domain", ".wat2do.io")
+
+        response = client.post(
+            "/auth/verify-otp",
+            json=VALID_VERIFY_OTP,
+            headers={"Origin": "https://wat2do.io"},
+        )
+
+        assert "domain=.wat2do.io" in response.headers.get("set-cookie", "").lower()

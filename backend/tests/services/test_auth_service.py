@@ -62,7 +62,14 @@ class TestAuthServiceVerifyOtp:
         mock_auth.verify_otp.return_value = mock_session_res
 
         # Mock public.users lookup
-        mock_db.table().select().eq().execute.return_value = MagicMock(data=[{"id": "db-user-id"}])
+        mock_db.table().select().eq().execute.return_value = MagicMock(
+            data=[
+                {
+                    "id": "db-user-id",
+                    "school_record": {"slug": "uwaterloo"},
+                }
+            ]
+        )
 
         service = AuthService(auth_client=mock_auth, db_client=mock_db)
 
@@ -98,7 +105,14 @@ class TestAuthServiceVerifyOtp:
         mock_auth.verify_otp.return_value = mock_session_res
 
         # Mock public.users lookup
-        mock_db.table().select().eq().execute.return_value = MagicMock(data=[{"id": "db-user-id"}])
+        mock_db.table().select().eq().execute.return_value = MagicMock(
+            data=[
+                {
+                    "id": "db-user-id",
+                    "school_record": {"slug": "uwaterloo"},
+                }
+            ]
+        )
 
         service = AuthService(auth_client=mock_auth, db_client=mock_db)
 
@@ -183,3 +197,34 @@ class TestAuthServiceVerifyOtp:
         insert_args = mock_db.table().insert.call_args[0][0]
         assert insert_args["email"] == "tqiu@uwaterloo.ca"
         assert insert_args["role"] == "admin"
+
+    def test_verify_otp_uses_existing_users_assigned_school(self, monkeypatch):
+        mock_auth = MagicMock()
+        mock_db = MagicMock()
+        mock_db.table().select().eq().eq().gt().execute.return_value = MagicMock(
+            data=[{"identifier": "legacy@gmail.com", "token": "hashed_val"}]
+        )
+        mock_db.table().select().eq().execute.return_value = MagicMock(
+            data=[
+                {
+                    "id": "db-user-id",
+                    "school_record": {"slug": "uwaterloo"},
+                }
+            ]
+        )
+
+        session = MagicMock()
+        session.session.access_token = "access-token-xyz"
+        session.session.refresh_token = "refresh-token-abc"
+        session.session.expires_in = 3600
+        session.user.id = "auth-user-id"
+        mock_auth.verify_otp.return_value = session
+        monkeypatch.setattr(auth_service, "get_school_for_email", MagicMock(return_value=None))
+
+        result = AuthService(auth_client=mock_auth, db_client=mock_db).verify_otp(
+            "legacy@gmail.com",
+            "84928696",
+        )
+
+        assert result.body.school == "uwaterloo"
+        assert result.body.onboarding_required is False

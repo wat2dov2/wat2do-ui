@@ -302,21 +302,34 @@ class AuthService:
         except Exception as e:
             logger.warning("Failed to delete used verification tokens: %s", e)
 
-        school = get_school_for_email(email_clean) or None
-        school_record = school_service.get_school(school)
-        if school_record is None:
-            logger.error("Allowed email resolved to an unregistered school")
-            raise ServiceError(REGISTRATION_FAILED)
         db_user = None
         try:
-            r_user = self._db.table(USERS).select("*").eq("email", email_clean).execute()
+            r_user = (
+                self._db.table(USERS)
+                .select("*,school_record:schools(slug)")
+                .eq("email", email_clean)
+                .execute()
+            )
             if r_user.data:
                 db_user = r_user.data[0]
         except Exception as e:
             logger.warning("Failed to look up DB user: %s", e)
 
         onboarding_required = False
-        if not db_user:
+        if db_user:
+            normalized_user = school_service.with_school_slug(db_user)
+            school = normalized_user.get("school")
+            if school_service.get_school(school) is None:
+                logger.error("Existing user is not assigned to a registered school")
+                raise ServiceError(REGISTRATION_FAILED)
+            user_id = db_user["id"]
+        else:
+            school = get_school_for_email(email_clean) or None
+            school_record = school_service.get_school(school)
+            if school_record is None:
+                logger.error("Allowed email resolved to an unregistered school")
+                raise ServiceError(REGISTRATION_FAILED)
+
             onboarding_required = True
             import uuid
 
@@ -364,8 +377,6 @@ class AuthService:
                     ).execute()
             except Exception as e:
                 logger.warning("Failed to process auto-join for user %s: %s", user_id, e)
-        else:
-            user_id = db_user["id"]
 
         return AuthResult(
             body=TokenResponse(
