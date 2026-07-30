@@ -26,6 +26,7 @@ import {
 import { useUIStore } from "@/shared/store/ui.store";
 import { toast } from "@/shared/hooks/use-toast";
 import { settingsTabPath, SETTINGS_TABS, ROUTES } from "@/shared/constants/routes";
+import { focusSearchInput } from "@/shared/utils/searchInput";
 
 interface CommandPaletteProps {
   isOpen: boolean;
@@ -60,10 +61,7 @@ export function CommandPalette({
           <CommandItem
             onSelect={() => {
               onOpenChange(false);
-              const searchInput = document.querySelector(
-                `input[placeholder="${t("search.placeholder")}"]`
-              ) as HTMLInputElement;
-              searchInput?.focus();
+              focusSearchInput();
             }}
           >
             <Search className="mr-2 size-4" />

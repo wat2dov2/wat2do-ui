@@ -34,6 +34,7 @@ import {
   resolveSchool,
 } from "@/shared/constants/schools";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
+import { useCoarsePointer } from "@/shared/hooks/useCoarsePointer";
 
 interface EmailOtpFormProps
   extends Omit<ComponentProps<"form">, "onSubmit"> {
@@ -93,6 +94,11 @@ export function EmailOtpForm({
     setHostnameSchool(getCurrentSchool());
   }, []);
 
+  // On touch devices autofocus pops the keyboard and scrolls/scales the page
+  // into the field the moment the drawer opens, before the user has decided to
+  // type. Desktop keeps it so the form is usable straight from the keyboard.
+  const autoFocusFields = !useCoarsePointer();
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (isBusy) {
@@ -133,7 +139,7 @@ export function EmailOtpForm({
               })}
               disabled={isEmailLocked || isBusy}
               autoComplete="email"
-              autoFocus
+              autoFocus={autoFocusFields}
               required
             />
           </Field>

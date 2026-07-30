@@ -28,6 +28,9 @@ export const SCROLL_INTO_VIEW_DELAY_MS = 100;
 /** AppLayout main content scroller used by BackToTopButton and scroll helpers. */
 export const MAIN_CONTENT_SCROLL_ROOT_SELECTOR = ".main-content-grid";
 
+/** The page's search input, focused by the "/" hotkey and the command palette. */
+export const SEARCH_INPUT_SELECTOR = "[data-search-input]";
+
 
 /** Height of the scan-locations map on the posters page. Used by admin and organization-panel. */
 export const POSTER_MAP_HEIGHT = "600px";

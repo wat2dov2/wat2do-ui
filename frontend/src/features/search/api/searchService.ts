@@ -28,14 +28,45 @@ export interface SortOptions {
 }
 
 /**
+ * Fields a free-text query is matched against.
+ *
+ * Events are discovered by club as often as by title ("animusic" should find
+ * events posted by @uw_animusic), so the owning organization's name and its
+ * Instagram handles are part of the haystack. All of these ship on the list
+ * summary payload, so matching stays client-side.
+ */
+function eventSearchHaystack(event: Event): string[] {
+  return [
+    event.title,
+    event.organization,
+    event.ig_handle,
+    event.organization_ig,
+  ].filter((field): field is string => Boolean(field));
+}
+
+/**
+ * Normalize a query for comparison. Handles are displayed as "@uw_animusic",
+ * so a leading "@" is dropped to keep pasted handles matching.
+ */
+function normalizeSearchQuery(query: string): string {
+  return query.trim().toLowerCase().replace(/^@+/, "");
+}
+
+function matchesSearchQuery(event: Event, normalizedQuery: string): boolean {
+  return eventSearchHaystack(event).some((field) =>
+    field.toLowerCase().replace(/^@+/, "").includes(normalizedQuery),
+  );
+}
+
+/**
  * Filter events based on search and filter criteria
  */
 export function filterEvents(
   events: Event[],
   filters: SearchFilters,
 ): Event[] {
-  // Lowercase query once (loop-invariant) instead of recomputing per event.
-  const q = filters.searchQuery ? filters.searchQuery.toLowerCase() : "";
+  // Normalize the query once (loop-invariant) instead of recomputing per event.
+  const q = filters.searchQuery ? normalizeSearchQuery(filters.searchQuery) : "";
   // Set lookup is O(1); .includes on an array is O(n). When goingFilter is
   // active this is run per-event, so hoist and wrap once.
   const goingSet = filters.goingFilter ? new Set(filters.goingEventIds) : null;
@@ -50,7 +81,7 @@ export function filterEvents(
     const dayOfWeek = getEventDayOfWeek(event);
     const needsRegistration = event.registration ?? false;
 
-    if (q && !event.title.toLowerCase().includes(q)) {
+    if (q && !matchesSearchQuery(event, q)) {
       return false;
     }
 

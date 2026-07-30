@@ -137,7 +137,7 @@ export function EventDetailsModal({
                         <ArrowRight className="size-4 -rotate-45" />
                       </a>
                     </Button>
-                    <EventActions event={displayedEvent} />
+                    <EventActions event={displayedEvent} onBeforeEdit={onClose} />
                   </Stack>
                 </Stack>
               </DrawerHeader>

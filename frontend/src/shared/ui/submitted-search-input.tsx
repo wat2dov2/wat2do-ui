@@ -40,6 +40,7 @@ export function SubmittedSearchInput({
     >
       <input
         type="text"
+        data-search-input=""
         placeholder={placeholder}
         value={value}
         onChange={(event) => onChange(event.target.value)}

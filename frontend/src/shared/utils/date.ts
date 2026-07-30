@@ -16,25 +16,34 @@ export interface Occurrence {
   dtend_utc?: string | null;
 }
 
+/**
+ * The moment an occurrence stops being visible in the feed.
+ *
+ * An occurrence with no end time stays visible for a fixed window after it
+ * starts. This is the single definition of "still visible" - both the filter
+ * that decides which events are counted and the date sectioning that decides
+ * where they render read it, so the header count can never disagree with the
+ * list. Returns `null` when the occurrence has no usable start.
+ */
+function occurrenceVisibleUntilMs(occurrence: Occurrence): number | null {
+  const startTimeMs = new Date(occurrence.dtstart_utc).getTime();
+  if (Number.isNaN(startTimeMs)) return null;
+
+  if (occurrence.dtend_utc) {
+    const endTimeMs = new Date(occurrence.dtend_utc).getTime();
+    if (!Number.isNaN(endTimeMs)) return endTimeMs;
+  }
+
+  return startTimeMs + controlBox.eventDiscovery.eventWithoutEndVisibilityMs;
+}
+
 export function hasActiveEventOccurrence(
   event: { occurrences?: Occurrence[] },
   currentTimeMs: number,
 ): boolean {
   return (event.occurrences ?? []).some((occurrence) => {
-    const startTimeMs = new Date(occurrence.dtstart_utc).getTime();
-    if (Number.isNaN(startTimeMs)) return false;
-
-    if (occurrence.dtend_utc) {
-      const endTimeMs = new Date(occurrence.dtend_utc).getTime();
-      if (!Number.isNaN(endTimeMs)) {
-        return endTimeMs > currentTimeMs;
-      }
-    }
-
-    return (
-      startTimeMs + controlBox.eventDiscovery.eventWithoutEndVisibilityMs >=
-      currentTimeMs
-    );
+    const visibleUntilMs = occurrenceVisibleUntilMs(occurrence);
+    return visibleUntilMs !== null && visibleUntilMs >= currentTimeMs;
   });
 }
 
@@ -180,11 +189,14 @@ export function getEventDateSection(
   const parsedStart = new Date(rawStart);
   if (Number.isNaN(parsedStart.getTime())) return null;
 
-  const parsedEnd = primary?.dtend_utc ? new Date(primary.dtend_utc) : parsedStart;
+  // Read the same visibility rule the filter uses: an occurrence with no end
+  // time runs until its visibility window closes. Deriving the end any other
+  // way lets an event be counted as upcoming but land in no section, which
+  // renders an empty feed under a non-zero count.
+  const visibleUntilMs = occurrenceVisibleUntilMs(primary);
   const startDate = toMidnight(parsedStart);
-  const endDate = Number.isNaN(parsedEnd.getTime())
-    ? startDate
-    : toMidnight(parsedEnd);
+  const endDate =
+    visibleUntilMs === null ? startDate : toMidnight(new Date(visibleUntilMs));
   const todayDate = toMidnight(currentDate);
   const tomorrowDate = addDays(todayDate, 1);
 

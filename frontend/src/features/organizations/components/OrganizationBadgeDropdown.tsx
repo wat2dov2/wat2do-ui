@@ -10,6 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/shared/ui/dropdown-menu";
 import { Badge } from "@/shared/ui/badge";
+import { TruncatedText } from "@/shared/ui/truncated-text";
 
 interface OrganizationBadgeDropdownProps {
   organizationName: string;
@@ -28,7 +29,7 @@ interface OrganizationBadgeDropdownProps {
   onClick?: React.MouseEventHandler;
 }
 
-const ORGANIZATION_NAME_CLASS = "min-w-0 max-w-24 truncate font-bold";
+const ORGANIZATION_NAME_CLASS = "max-w-24 font-bold";
 
 export function OrganizationBadgeDropdown({
   organizationName,
@@ -74,9 +75,10 @@ export function OrganizationBadgeDropdown({
         onClick={onClick}
       >
         <span>
-          <span className={ORGANIZATION_NAME_CLASS}>
-            {organizationName || t("events.organization")}
-          </span>
+          <TruncatedText
+            text={organizationName || t("events.organization")}
+            className={ORGANIZATION_NAME_CLASS}
+          />
           {organizationName && organizationName !== t("events.organization") && (
             <OrganizationTypeIcon school={school} organizationType={organizationType} />
           )}
@@ -101,9 +103,10 @@ export function OrganizationBadgeDropdown({
             onMouseEnter={badgeHoverProps?.onMouseEnter}
             onMouseLeave={badgeHoverProps?.onMouseLeave}
           >
-            <span className={ORGANIZATION_NAME_CLASS}>
-              {organizationName}
-            </span>
+            <TruncatedText
+              text={organizationName}
+              className={ORGANIZATION_NAME_CLASS}
+            />
             <OrganizationTypeIcon school={school} organizationType={organizationType} />
           </button>
         </Badge>

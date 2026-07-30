@@ -1,4 +1,4 @@
-import { lazy, Suspense, useMemo, useState } from "react";
+import { lazy, Suspense, useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
@@ -15,6 +15,7 @@ import {
   Calendar,
   Discord,
   DollarSign,
+  Edit,
   ExternalLink,
   Flag,
   Instagram,
@@ -47,6 +48,7 @@ import { fetchEventAttendees } from "@/features/events/api/events.api";
 import { useEventStats } from "@/features/events/hooks/useEventStats";
 import { useCurrentTime, useGoingEventSelection } from "@/features/events/hooks/useGoingEvents";
 import { EmailOtpForm, useAuthState } from "@/features/auth";
+import { useUIStore } from "@/shared/store/ui.store";
 import { controlBox } from "@/shared/config/controlBox";
 import { translateFood } from "@/shared/utils/foodTranslation";
 import { queryKeys } from "@/shared/lib/queryKeys";
@@ -514,13 +516,37 @@ function EventContactHostSection({ event }: { event: Event }) {
 }
 
 /** Share and report actions, owning their own dialogs. */
-export function EventActions({ event }: { event: Event }) {
+export function EventActions({
+  event,
+  onBeforeEdit,
+}: {
+  event: Event;
+  /**
+   * Dismiss the surface holding these actions before the editor opens. The
+   * drawer passes its close so the edit dialog does not stack on top of it;
+   * the standalone event page has nothing to dismiss and omits it.
+   */
+  onBeforeEdit?: () => void;
+}) {
   const { t } = useTranslation();
   const [shareOpen, setShareOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
+  const { isAdmin } = useAuthState();
+  const setEditingEvent = useUIStore((s) => s.setEditingEvent);
+
+  const handleEdit = useCallback(() => {
+    onBeforeEdit?.();
+    setEditingEvent(event);
+  }, [event, onBeforeEdit, setEditingEvent]);
 
   return (
     <Stack direction="horizontal" gap={2} wrap>
+      {isAdmin && (
+        <Button type="button" variant="secondary" size="sm" onClick={handleEdit}>
+          <Edit className="size-4" />
+          {t("common.edit")}
+        </Button>
+      )}
       <Button type="button" variant="secondary" size="sm" onClick={() => setShareOpen(true)}>
         <Share2 className="size-4" />
         {t("common.share")}
@@ -593,7 +619,9 @@ export function EventDetailsBody({
           </FormGrid>
 
           <EventRegistrationCard event={event} school={school} />
+        </Stack>
 
+        <Stack gap={6} className="order-5">
           <EventAboutSection event={event} isFetchingDetails={isFetchingDetails} />
 
           <EventMapSection event={event} school={school} />
@@ -609,9 +637,16 @@ export function EventDetailsBody({
         </Stack>
 
         <EventAttendeesSection eventId={event.id} />
-
-        <EventContactHostSection event={event} />
       </Stack>
+
+      {/*
+        Single-column: contact details sit between the registration card and
+        the description, where the reader is deciding how to get in touch.
+        Two-column: they return to the host sidebar under the attendee list.
+      */}
+      <div className="order-4 md:col-start-1">
+        <EventContactHostSection event={event} />
+      </div>
 
     </div>
   );

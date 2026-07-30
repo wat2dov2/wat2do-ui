@@ -189,7 +189,10 @@ export function EventList({
     );
   }
 
-  if (events.length === 0) {
+  // Guard on what will actually render, not on the raw input: date sectioning
+  // can drop events, and checking `events.length` here would render a feed of
+  // zero cards with no empty state at all.
+  if (promotedEvents.length === 0 && sectionOrderedEvents.length === 0) {
     return (
       <EmptyState
         icon={<Search />}
