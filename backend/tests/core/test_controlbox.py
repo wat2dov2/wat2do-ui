@@ -65,9 +65,8 @@ def test_upload_contract_matches_event_image_bucket() -> None:
         "image/gif",
     ]
     assert storage.get_file_size_limit(BUCKET_EVENT_IMAGES) == 5 * 1024 * 1024
-    assert (
-        controlbox.uploads.event_image_allowed_mime_types
-        == storage.get_allowed_mime_types(BUCKET_EVENT_IMAGES)
+    assert controlbox.uploads.event_image_allowed_mime_types == storage.get_allowed_mime_types(
+        BUCKET_EVENT_IMAGES
     )
 
 
