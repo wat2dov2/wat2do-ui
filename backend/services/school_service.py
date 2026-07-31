@@ -101,6 +101,28 @@ def _score_term(term: str, query: str, query_compact: str) -> tuple[int, int] | 
     return None
 
 
+def _ordered_email_domains(domain_rows: list[dict] | None) -> list[str]:
+    """School domains with the primary one first, then the rest alphabetically.
+
+    Consumers read the head of this list as *the* domain for a school - the
+    sign-in placeholder, for one - so a school that also accepts a subdomain
+    must not lead with it. Alphabetical order alone puts "edu.uwaterloo.ca"
+    ahead of "uwaterloo.ca", which is why the primary flag decides.
+    """
+    primary: list[str] = []
+    secondary: set[str] = set()
+    for domain_row in domain_rows or []:
+        domain = str(domain_row.get("domain") or "").strip().lower()
+        if not domain:
+            continue
+        if domain_row.get("is_primary"):
+            primary.append(domain)
+        else:
+            secondary.add(domain)
+    primary.sort()
+    return [*primary, *sorted(secondary - set(primary))]
+
+
 def search_schools(query: str, limit: int = DEFAULT_SEARCH_LIMIT) -> list[SchoolSummary]:
     """Search the school directory using a fuzzy, prefix-friendly match."""
     normalized_query = _normalize(query)
@@ -108,20 +130,16 @@ def search_schools(query: str, limit: int = DEFAULT_SEARCH_LIMIT) -> list[School
     response = (
         get_sb()
         .table(SCHOOLS)
-        .select("slug, name, primary_color, secondary_color, school_email_domains(domain)")
+        .select(
+            "slug, name, primary_color, secondary_color, school_email_domains(domain, is_primary)"
+        )
         .order("name")
         .execute()
     )
 
     ranked: list[tuple[tuple[int, int, str], SchoolSummary]] = []
     for row in response.data or []:
-        email_domains = sorted(
-            {
-                str(domain_row["domain"]).strip().lower()
-                for domain_row in row.get("school_email_domains") or []
-                if domain_row.get("domain")
-            }
-        )
+        email_domains = _ordered_email_domains(row.get("school_email_domains"))
         school = SchoolSummary.model_validate(
             {
                 **row,

@@ -20,6 +20,29 @@ SCHOOL_ROWS = [
 ]
 
 
+def test_search_schools_leads_with_the_primary_domain(fake_sb, patch_sb):
+    """Consumers read the head of the list, so a subdomain must never lead."""
+    patch_sb("services.school_service")
+    fake_sb.set_response(
+        data=[
+            {
+                "slug": "uwaterloo",
+                "name": "University of Waterloo",
+                "primary_color": "#FFD54F",
+                "secondary_color": "#111111",
+                "school_email_domains": [
+                    {"domain": "edu.uwaterloo.ca", "is_primary": False},
+                    {"domain": "uwaterloo.ca", "is_primary": True},
+                ],
+            }
+        ]
+    )
+
+    [school] = school_service.search_schools("")
+
+    assert school.email_domains == ["uwaterloo.ca", "edu.uwaterloo.ca"]
+
+
 def test_search_schools_matches_domain_fragment(fake_sb, patch_sb):
     patch_sb("services.school_service")
     fake_sb.set_response(data=SCHOOL_ROWS)
