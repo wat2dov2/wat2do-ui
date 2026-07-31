@@ -235,14 +235,25 @@ def list_events(
     sort_by: str = "date",
     sort_order: str = "asc",
     added_within_24h: bool = False,
+    include_past: bool = False,
 ) -> tuple[list[EventSummaryResponse], int]:
     """Public browse list for a school.
 
     Returns a paged result plus total count. The default date lower bound is
     the school's local start-of-today, matching the historical upcoming list.
+    ``include_past`` drops that lower bound entirely, for callers that want a
+    host's full history rather than what is still to come. An explicit
+    ``start_utc`` always wins over both.
     """
+    if start_utc is not None:
+        lower_bound = start_utc
+    elif include_past:
+        lower_bound = None
+    else:
+        lower_bound = _today_start_utc(school)
+
     return event_query.load_events_page(
-        start_utc=start_utc if start_utc is not None else _today_start_utc(school),
+        start_utc=lower_bound,
         end_utc=end_utc,
         school=school,
         offset=skip,

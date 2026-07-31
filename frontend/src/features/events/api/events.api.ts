@@ -40,9 +40,9 @@ export async function fetchEventById(id: number): Promise<Event> {
   return api.get<ApiEventPublicResponse>(`/events/${id}`);
 }
 
-async function fetchUpcomingEvents(
+async function fetchEventFeed(
   school: string,
-  organizationId?: number,
+  { organizationId, includePast = false }: EventFeedOptions = {},
 ): Promise<Event[]> {
   const params = new URLSearchParams({
     school,
@@ -52,25 +52,34 @@ async function fetchUpcomingEvents(
   if (organizationId != null) {
     params.append("organization_ids", String(organizationId));
   }
+  if (includePast) {
+    params.append("include_past", "true");
+  }
   return getPaginatedItems<Event>(`/events/?${params.toString()}`);
+}
+
+interface EventFeedOptions {
+  organizationId?: number;
+  /** Drop the server's start-of-today lower bound and return past events too. */
+  includePast?: boolean;
 }
 
 /** Every upcoming event for one school, soonest first. */
 export async function fetchSchoolEvents(school: string): Promise<Event[]> {
-  return fetchUpcomingEvents(school);
+  return fetchEventFeed(school);
 }
 
 /**
- * Every upcoming event hosted by one organization, soonest first.
+ * Every event a host has ever run, past included.
  *
- * The public feed endpoint already scopes to upcoming occurrences and orders by
- * start date, so an organization page is just that feed narrowed to one host.
+ * The organization page is the host's whole record, not just what is still to
+ * come, so it opts out of the feed's default start-of-today lower bound.
  */
 export async function fetchOrganizationEvents(
   organizationId: number,
   school: string,
 ): Promise<Event[]> {
-  return fetchUpcomingEvents(school, organizationId);
+  return fetchEventFeed(school, { organizationId, includePast: true });
 }
 
 export async function createEventAPI(eventData: EventFormData): Promise<Event> {

@@ -16,11 +16,12 @@ interface OrganizationEventsGridProps {
 }
 
 /**
- * Upcoming events for one organization, as a flat grid.
+ * Every event one organization has run, past included, as a flat grid.
  *
- * The organization page shows the host's whole upcoming lineup, so there are no
- * filters and no date-section headings - just the feed order the backend
- * returns (soonest first).
+ * The organization page is the host's whole record, so there are no filters and
+ * no date-section headings. The backend returns one flat date-ascending list,
+ * which would open the page on the host's oldest event; ordering here puts what
+ * is still to come first (soonest first), then history (most recent first).
  */
 export function OrganizationEventsGrid({
   organizationId,
@@ -36,15 +37,17 @@ export function OrganizationEventsGrid({
   const currentTimeMs = useCurrentTime();
   const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
 
-  const organizationEvents = useMemo(
-    () =>
-      currentTimeMs === null
-        ? (events ?? [])
-        : (events ?? []).filter((event) =>
-            hasActiveEventOccurrence(event, currentTimeMs),
-          ),
-    [currentTimeMs, events],
-  );
+  const organizationEvents = useMemo(() => {
+    const all = events ?? [];
+    if (currentTimeMs === null) return all;
+
+    const upcoming: Event[] = [];
+    const past: Event[] = [];
+    all.forEach((event) => {
+      (hasActiveEventOccurrence(event, currentTimeMs) ? upcoming : past).push(event);
+    });
+    return [...upcoming, ...past.reverse()];
+  }, [currentTimeMs, events]);
   const selectedEvent = useMemo(
     () => organizationEvents.find((event) => event.id === selectedEventId) ?? null,
     [organizationEvents, selectedEventId],

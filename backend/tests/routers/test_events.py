@@ -358,6 +358,7 @@ def test_list_events_forwards_school_and_pagination(client, monkeypatch):
         sort_by="date",
         sort_order="asc",
         added_within_24h=False,
+        include_past=False,
     )
     mock_latest.assert_called_once_with("uwaterloo")
 
@@ -421,6 +422,7 @@ def test_list_events_forwards_date_window(client, monkeypatch):
         sort_by="date",
         sort_order="asc",
         added_within_24h=False,
+        include_past=False,
     )
     mock_latest.assert_called_once_with("uwaterloo")
 
@@ -477,6 +479,7 @@ def test_list_events_forwards_filters_and_sort(client, monkeypatch):
         sort_by="added_at",
         sort_order="desc",
         added_within_24h=False,
+        include_past=False,
     )
     mock_latest.assert_called_once_with("uwaterloo")
 
@@ -517,6 +520,7 @@ def test_list_events_forwards_added_within_24h(client, monkeypatch):
         sort_by="date",
         sort_order="asc",
         added_within_24h=True,
+        include_past=False,
     )
     mock_latest.assert_called_once_with("uwaterloo")
 

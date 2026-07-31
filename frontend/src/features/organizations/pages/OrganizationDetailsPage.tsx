@@ -160,7 +160,7 @@ function OrganizationDetailsContent({
 
           <Separator />
 
-          <Section title={t("navigation.events")}>
+          <Section title={t("events.allEvents")}>
             <OrganizationEventsGrid
               organizationId={organization.id}
               school={organization.school}

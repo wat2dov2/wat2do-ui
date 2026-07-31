@@ -104,9 +104,14 @@ def list_events(
     sort_order: EventSortOrder = Query(default="asc"),
     start_utc: datetime | None = Query(default=None),
     end_utc: datetime | None = Query(default=None),
+    include_past: bool = Query(default=False),
     pagination: PaginationParams = Depends(),
 ):
-    """Public school feed; optional ``start_utc``/``end_utc`` window. Omits ``created_by``."""
+    """Public school feed; optional ``start_utc``/``end_utc`` window.
+
+    ``include_past`` drops the default start-of-today lower bound, so a caller
+    can ask for a host's full history. Omits ``created_by``.
+    """
     if school == "all":
         school = None
     with ThreadPoolExecutor(max_workers=1) as pool:
@@ -132,6 +137,7 @@ def list_events(
             sort_by=sort_by,
             sort_order=sort_order,
             added_within_24h=added_within_24h,
+            include_past=include_past,
         )
         latest_event = latest_event_future.result()
 

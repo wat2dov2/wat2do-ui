@@ -15,6 +15,7 @@ import {
   CardTitle,
 } from "@/shared/ui/card";
 import { Link } from "@/shared/ui/link";
+import { eventPagePath } from "@/features/events/lib/eventUrls";
 import { Separator } from "@/shared/ui/separator";
 import { useTranslation } from "react-i18next";
 import imgSlefLogo from "@/assets/slef_logo.png";
@@ -30,6 +31,21 @@ const CornerMask = ({ className }: { className?: string }) => (
     <path d="M0 0C0 35.35 28.65 64 64 64H0V0Z" fill="currentColor" />
   </svg>
 );
+
+/**
+ * Link to the event being described. These are specific past events from the
+ * founder's own story, so they point at the event page rather than a search
+ * that may stop matching. Anything with no event of its own stays plain text.
+ */
+function ContactEventLink({
+  eventId,
+  children,
+}: {
+  eventId: number;
+  children: ReactNode;
+}) {
+  return <Link href={eventPagePath(eventId)}>{children}</Link>;
+}
 
 function ContactSearchLink({
   query,
@@ -106,38 +122,34 @@ export function ContactPage() {
             <Stack gap={4}>
               <CardDescription>
                 {t("contact.about.welcome")}
-                <ContactSearchLink query="hip-hop">
+                <ContactEventLink eventId={13576}>
                   {t("contact.about.hipHop")}
-                </ContactSearchLink>
+                </ContactEventLink>
                 {t("contact.about.remoteCarPrefix")}
-                <ContactSearchLink query="remote-controlled">
-                  {t("contact.about.remoteCar")}
-                </ContactSearchLink>
+                {t("contact.about.remoteCar")}
                 , 🍽️{" "}
-                <ContactSearchLink query="cooking">
+                <ContactEventLink eventId={11159}>
                   {t("contact.about.cooking")}
-                </ContactSearchLink>
+                </ContactEventLink>
                 {t("contact.about.cookingSuffix")}
-                <ContactSearchLink query="curling">
+                <ContactEventLink eventId={12431}>
                   {t("contact.about.curling")}
-                </ContactSearchLink>
+                </ContactEventLink>
                 {t("contact.about.boatCruisePrefix")}
-                <ContactSearchLink query="harbour boat">
-                  {t("contact.about.boatCruise")}
-                </ContactSearchLink>
+                {t("contact.about.boatCruise")}
                 {t("contact.about.stratfordPrefix")}
-                <ContactSearchLink query="Stratford">
+                <ContactEventLink eventId={11678}>
                   {t("contact.about.stratford")}
-                </ContactSearchLink>
+                </ContactEventLink>
                 {t("contact.about.anniePrefix")}
                 <em>{t("contact.about.annie")}</em>, 🎢{" "}
-                <ContactSearchLink query="Wonderland">
+                <ContactEventLink eventId={17881}>
                   {t("contact.about.wonderland")}
-                </ContactSearchLink>
+                </ContactEventLink>
                 {t("contact.about.networkingPrefix")}
-                <ContactSearchLink query="networking">
+                <ContactEventLink eventId={10866}>
                   {t("contact.about.networking")}
-                </ContactSearchLink>
+                </ContactEventLink>
                 {t("contact.about.builtPrefix")}
                 <ContactSearchLink query="August 2025">
                   {t("contact.about.builtDate")}
@@ -222,13 +234,13 @@ export function ContactPage() {
                     {t("contact.tips.random.repair")}
                   </ContactSearchLink>
                   {t("contact.tips.random.repairSuffix")}
-                  <ContactSearchLink query="Zumba">
+                  <ContactEventLink eventId={13204}>
                     {t("contact.tips.random.zumba")}
-                  </ContactSearchLink>
+                  </ContactEventLink>
                   {t("contact.tips.random.zumbaSuffix")}
-                  <ContactSearchLink query="Barbells">
+                  <ContactEventLink eventId={11009}>
                     {t("contact.tips.random.barbells")}
-                  </ContactSearchLink>
+                  </ContactEventLink>
                   .
                 </CardDescription>
               </CardContent>
@@ -245,17 +257,17 @@ export function ContactPage() {
                   </CardDescription>
                   <CardDescription>
                     {t("contact.tips.search.friendsIntro")}
-                    <ContactSearchLink query="Pho Night">
+                    <ContactEventLink eventId={11216}>
                       {t("contact.tips.search.pho")}
-                    </ContactSearchLink>
+                    </ContactEventLink>
                     ,{" "}
-                    <ContactSearchLink query="Campfire Jam">
+                    <ContactEventLink eventId={11590}>
                       {t("contact.tips.search.campfire")}
-                    </ContactSearchLink>
+                    </ContactEventLink>
                     {t("contact.tips.search.or")}
-                    <ContactSearchLink query="Global Games Night">
+                    <ContactEventLink eventId={11535}>
                       {t("contact.tips.search.global")}
-                    </ContactSearchLink>
+                    </ContactEventLink>
                     .
                   </CardDescription>
                 </Stack>
