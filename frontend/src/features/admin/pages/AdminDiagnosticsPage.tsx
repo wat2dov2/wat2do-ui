@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { format } from "date-fns";
 import { AdminPageHeader } from "@/features/admin/components/shared/AdminPageHeader";
 import { Container, Stack } from "@/shared/layout";
 import {
@@ -15,6 +16,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/shared/ui/tabs";
+import { useAutomateLogs } from "../api/automateLogsApi";
 
 interface AdminDiagnosticsPageProps {
   onBack: () => void;
@@ -22,6 +24,7 @@ interface AdminDiagnosticsPageProps {
 
 export function AdminDiagnosticsPage({ onBack }: AdminDiagnosticsPageProps) {
   const { t } = useTranslation();
+  const { data: logs = [], isLoading } = useAutomateLogs();
 
   return (
     <Container size="lg">
@@ -57,9 +60,30 @@ export function AdminDiagnosticsPage({ onBack }: AdminDiagnosticsPageProps) {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <pre className="whitespace-pre-wrap break-words rounded-xl border border-border bg-background p-4 font-mono text-sm text-muted-foreground">
-                    {t("admin.diagnostics.automateLogs.placeholder")}
-                  </pre>
+                  {isLoading ? (
+                    <p className="text-sm text-muted-foreground">
+                      {t("admin.diagnostics.automateLogs.loading")}
+                    </p>
+                  ) : logs.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">
+                      {t("admin.diagnostics.automateLogs.placeholder")}
+                    </p>
+                  ) : (
+                    <pre className="whitespace-pre-wrap break-words rounded-xl border border-border bg-background p-4 font-mono text-sm text-muted-foreground">
+                      {logs.map((log) => {
+                        const timestamp = format(new Date(log.created_at), "MM-dd HH:mm:ss");
+                        const sender = log.sender_id ? `<${log.sender_id}>` : "<system>";
+                        const meta = [
+                          log.school && `School: ${log.school}`,
+                          log.ig_account && `IG: @${log.ig_account}`,
+                          log.post_url && `URL: ${log.post_url}`,
+                        ]
+                          .filter(Boolean)
+                          .join(" | ");
+                        return `[${timestamp}] ${sender} ${log.event}${meta ? ` | ${meta}` : ""}\n`;
+                      })}
+                    </pre>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>

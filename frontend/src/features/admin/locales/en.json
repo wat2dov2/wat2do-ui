@@ -14,6 +14,7 @@
       "automateLogs": {
         "title": "Automate Logs",
         "description": "Text output from the Android Automate app for the process-single-user workflow.",
+        "loading": "Loading logs...",
         "placeholder": "Automate log output will appear here."
       }
     },

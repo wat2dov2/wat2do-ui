@@ -27,12 +27,7 @@ jobs:
   process-post:
     runs-on: ubuntu-latest
     environment: production
-    # Serialize Apify runs across this repo so we don't hit concurrent
-    # rate limits when an external dispatcher fires several times in
-    # quick succession.
-    concurrency:
-      group: apify-scrape-group
-      cancel-in-progress: false
+
     permissions:
       contents: read
     env:

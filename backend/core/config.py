@@ -82,6 +82,7 @@ class Settings(BaseSettings):
     instagram_slide_render_url: str = ""
     instagram_slide_render_secret: str = ""
     instagram_slide_render_timeout: float = 30.0
+    automate_webhook_key: str = ""
 
     @model_validator(mode="after")
     def validate_database_region(self) -> "Settings":

@@ -65,4 +65,8 @@ export const queryKeys = {
     batch: (batchId: string) =>
       [...queryKeys.instagramPublishing.all, "batch", batchId] as const,
   },
+  automateLogs: {
+    all: ["automateLogs"] as const,
+    list: () => [...queryKeys.automateLogs.all, "list"] as const,
+  },
 } as const;
