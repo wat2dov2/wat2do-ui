@@ -45,7 +45,12 @@ interface EmailOtpFormProps
   invitationToken?: string;
   returnTo?: string;
   isEmailLocked?: boolean;
-  isVerificationDisabled?: boolean;
+  /**
+   * An extra requirement the host owns (terms accepted, a time selected). It
+   * gates both steps: a code should not be sent for a sign-in the user cannot
+   * complete, and the emailed code would otherwise be a dead end.
+   */
+  isSubmitDisabled?: boolean;
   requestFooter?: ReactNode;
   footer?: ReactNode;
   onAuthenticated: (
@@ -62,7 +67,7 @@ export function EmailOtpForm({
   invitationToken,
   returnTo,
   isEmailLocked = false,
-  isVerificationDisabled = false,
+  isSubmitDisabled = false,
   requestFooter,
   footer,
   onAuthenticated,
@@ -178,10 +183,7 @@ export function EmailOtpForm({
 
         <LoadingButton
           type="submit"
-          disabled={
-            !flow.isFormValid ||
-            (flow.emailSent && isVerificationDisabled)
-          }
+          disabled={!flow.isFormValid || isSubmitDisabled}
           isLoading={isBusy}
           className="w-full"
         >

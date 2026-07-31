@@ -215,6 +215,8 @@
     "searchOrganizationPlaceholder": "Search organizations...",
     "noOrganizationFound": "No organization found",
     "descriptionPlaceholder": "Tell people what your event is about...",
+    "sourceUrl": "Source link",
+    "sourceUrlPlaceholder": "https://instagram.com/p/...",
     "pricePlaceholder": "0",
     "foodPlaceholder": "e.g., Pizza, Snacks",
     "posterNamePlaceholder": "e.g., Main Campus Poster #1",
@@ -248,7 +250,6 @@
     "occurrenceRequired": "At least one date is required",
     "locationRequired": "Location is required",
     "schoolRequired": "School is required",
-    "jsonEmpty": "JSON cannot be empty",
     "pickDate": "Pick a date",
     "time": "Time",
     "occurrences": "Dates",
@@ -260,8 +261,7 @@
     "registration": "Requires registration",
     "coverImage": "Cover Image",
     "jsonEditor": "JSON Editor",
-    "loadingEditor": "Loading editor...",
-    "invalidJsonFormat": "Invalid JSON format"
+    "loadingEditor": "Loading editor..."
   },
   "categories": {
     "artsAndCulture": "Arts & Culture",

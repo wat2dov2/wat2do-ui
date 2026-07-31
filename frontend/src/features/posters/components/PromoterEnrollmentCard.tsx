@@ -125,7 +125,7 @@ export function PromoterEnrollmentCard({
               data-testid="promoter-enrollment-auth"
               requestCodeLabel={t("posters.enrollment.join")}
               actionLabel={t("posters.enrollment.join")}
-              isVerificationDisabled={!acceptTerms}
+              isSubmitDisabled={!acceptTerms}
               onAuthenticated={async (_session, email) => {
                 setPayoutEmail(email);
                 try {

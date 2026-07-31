@@ -9,18 +9,14 @@ import { useEventsStore } from "@/features/events/store/events.store";
 import { ArrowLeft } from "@/shared/ui/doodle-icons";
 import { Button } from "@/shared/ui/button";
 import { LoadingButton } from "@/shared/ui/loading-button";
-import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import {
   Field,
   FieldGroup,
 } from "@/shared/ui/field";
 import { EventFormPreview } from "@/features/events/components/EventForm/EventForm/EventFormPreview";
-import { EventFormJSON } from "@/features/events/components/EventForm/EventFormJSON";
 import { EventFormFields } from "@/features/events/components/EventForm/EventForm/EventFormFields";
 import { EventFormProvider } from "@/features/events/components/EventForm/EventForm/EventFormContext";
 import type { useEventForm } from "@/features/events/hooks/useEventForm";
-
-export type ViewMode = "visual" | "json";
 
 const NO_ORGANIZATIONS: Organization[] = [];
 
@@ -30,8 +26,6 @@ type EventFormHookReturn = ReturnType<typeof useEventForm>;
 interface EventFormStepProps {
   isEditMode: boolean;
   canCreateEvents: boolean;
-  viewMode: ViewMode;
-  onViewModeChange: (value: ViewMode) => void;
   isSubmitting: boolean;
   onSubmit: () => void;
   eventForm: Pick<
@@ -48,10 +42,6 @@ interface EventFormStepProps {
     | "setFoodInput"
     | "addFood"
     | "removeFood"
-    | "jsonValue"
-    | "jsonError"
-    | "handleJsonChange"
-    | "syncToJSON"
     | "imagePreview"
     | "imageFile"
     | "onImageUpload"
@@ -76,8 +66,6 @@ interface EventFormStepProps {
 export function EventFormStep({
   isEditMode,
   canCreateEvents,
-  viewMode,
-  onViewModeChange,
   isSubmitting,
   onSubmit,
   eventForm,
@@ -107,11 +95,6 @@ export function EventFormStep({
     const id = eventForm.formData.organization_id;
     return id != null ? organizations.find((org) => org.id === id)?.organization_name ?? "" : "";
   }, [organizations, eventForm.formData.organization_id]);
-
-  const handleViewModeTabChange = useCallback(
-    (value: string) => onViewModeChange(value as ViewMode),
-    [onViewModeChange]
-  );
 
   // One event, rebuilt as the form changes: the preview column and any host
   // drawing its own preview show the same card, keystroke for keystroke.
@@ -156,10 +139,6 @@ export function EventFormStep({
       setFoodInput: eventForm.setFoodInput,
       addFood: eventForm.addFood,
       removeFood: eventForm.removeFood,
-      jsonValue: eventForm.jsonValue,
-      jsonError: eventForm.jsonError,
-      handleJsonChange: eventForm.handleJsonChange,
-      syncToJSON: eventForm.syncToJSON,
       imagePreview: eventForm.imagePreview,
       imageFile: eventForm.imageFile,
       onImageUpload: eventForm.onImageUpload,
@@ -197,53 +176,36 @@ export function EventFormStep({
                   </h2>
                 </div>
               ) : null}
-              <Tabs
-                value={viewMode}
-                onValueChange={handleViewModeTabChange}
-              >
-                <TabsList>
-                  <TabsTrigger value="visual">
-                    {t("settings.appearance.visual")}
-                  </TabsTrigger>
-                  <TabsTrigger value="json">
-                    {t("settings.appearance.json")}
-                  </TabsTrigger>
-                </TabsList>
-              </Tabs>
             </div>
           </div>
 
-          {viewMode === "visual" ? (
-            <FieldGroup>
-              <form>
-                <EventFormFields />
-                {showSubmit ? (
-                  <Field orientation="horizontal" className="mt-6">
-                    {onCancel ? (
-                      <Button variant="secondary" type="button" onClick={onCancel}>
-                        {t("common.cancel")}
-                      </Button>
-                    ) : null}
-                    <LoadingButton
-                      type="button"
-                      onMouseDown={onSubmit}
-                      disabled={!eventForm.isValid}
-                      isLoading={isSubmitting}
-                      loadingText={t("common.pleaseWait")}
-                    >
-                      {isEditMode
-                        ? t("events.updateEvent")
-                        : canCreateEvents
-                          ? t("events.createEvent")
-                          : t("events.submitForReview")}
-                    </LoadingButton>
-                  </Field>
-                ) : null}
-              </form>
-            </FieldGroup>
-          ) : (
-            <EventFormJSON />
-          )}
+          <FieldGroup>
+            <form>
+              <EventFormFields />
+              {showSubmit ? (
+                <Field orientation="horizontal" className="mt-6">
+                  {onCancel ? (
+                    <Button variant="secondary" type="button" onClick={onCancel}>
+                      {t("common.cancel")}
+                    </Button>
+                  ) : null}
+                  <LoadingButton
+                    type="button"
+                    onMouseDown={onSubmit}
+                    disabled={!eventForm.isValid}
+                    isLoading={isSubmitting}
+                    loadingText={t("common.pleaseWait")}
+                  >
+                    {isEditMode
+                      ? t("events.updateEvent")
+                      : canCreateEvents
+                        ? t("events.createEvent")
+                        : t("events.submitForReview")}
+                  </LoadingButton>
+                </Field>
+              ) : null}
+            </form>
+          </FieldGroup>
         </div>
 
         {showPreview ? <EventFormPreview className="hidden lg:flex" /> : null}

@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { MapPin, DollarSign, Utensils, Plus, Trash2 } from "@/shared/ui/doodle-icons";
+import { MapPin, DollarSign, Utensils, Plus, Trash2, ExternalLink } from "@/shared/ui/doodle-icons";
 import {
   Field,
   FieldGroup,
@@ -143,6 +143,15 @@ export function EventFormFields() {
             onChange={(value) => updateField("description", value)}
             placeholder={t("forms.descriptionPlaceholder")}
             rows={2}
+          />
+
+          <FormInput
+            name="source_url"
+            label={t("forms.sourceUrl")}
+            value={formData.source_url ?? ""}
+            onChange={(value) => updateField("source_url", (value as string) || null)}
+            placeholder={t("forms.sourceUrlPlaceholder")}
+            labelIcon={<ExternalLink className="size-4" />}
           />
 
           <FieldGroup className="grid grid-cols-1 sm:grid-cols-2">

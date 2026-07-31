@@ -24,9 +24,9 @@ function normalizeOccurrences(
 interface EventInputFallbacks {
   occurrences: EventFormOccurrence[];
   /**
-   * The poster the form is already showing. JSON input may omit the image, and
-   * dropping to null there would silently submit a posterless event while the
-   * separate image-preview state still looks right.
+   * The poster the form is already showing. A parsed flyer may omit the image,
+   * and dropping to null there would silently submit a posterless event while
+   * the separate image-preview state still looks right.
    */
   source_image_url: string | null;
 }
@@ -52,6 +52,7 @@ export function mapEventInputToFormData(
       typeof parsed.registration === "boolean"
         ? parsed.registration
         : false,
+    source_url: (parsed.source_url as string) || null,
     source_image_url:
       (parsed.source_image_url as string) || fallbackDefaults.source_image_url,
   };
@@ -86,6 +87,7 @@ export function getInitialState(initialData?: EventFormData, isEditMode = false)
         price: 0,
         food: [],
         registration: false,
+        source_url: null,
         source_image_url: null,
       };
 

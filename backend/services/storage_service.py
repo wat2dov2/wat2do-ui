@@ -14,6 +14,7 @@ from core.constants import (
     MAX_AVATAR_SIZE_BYTES,
     MAX_IMAGE_SIZE_BYTES,
 )
+from core.controlbox import controlbox
 from core.database import supabase_admin
 from core.exceptions import ValidationError
 from core.logging import logger
@@ -36,10 +37,12 @@ _EXIF_STRIP_MIMES = frozenset(
 
 
 _DEFAULT_BUCKETS: dict[str, dict] = {
+    # The event image contract is shared verbatim with the frontend file picker,
+    # so it lives in the control box rather than being restated here.
     BUCKET_EVENT_IMAGES: {
         "public": True,
-        "file_size_limit": MAX_IMAGE_SIZE_BYTES,
-        "allowed_mime_types": ["image/jpeg", "image/png", "image/webp", "image/gif"],
+        "file_size_limit": controlbox.uploads.event_image_max_size_bytes,
+        "allowed_mime_types": list(controlbox.uploads.event_image_allowed_mime_types),
     },
     BUCKET_AVATARS: {
         "public": True,

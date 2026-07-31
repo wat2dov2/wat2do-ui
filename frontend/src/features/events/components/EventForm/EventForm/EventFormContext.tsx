@@ -29,10 +29,6 @@ export interface EventFormContextValue {
   setFoodInput: (value: string) => void;
   addFood: () => void;
   removeFood: (index: number) => void;
-  jsonValue: string;
-  jsonError: string;
-  handleJsonChange: (value: string | undefined) => void;
-  syncToJSON: () => void;
   imagePreview: string;
   imageFile: File | null;
   onImageUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;

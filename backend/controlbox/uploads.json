@@ -1,0 +1,9 @@
+{
+  "event_image_allowed_mime_types": [
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "image/gif"
+  ],
+  "event_image_max_size_bytes": 5242880
+}

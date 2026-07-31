@@ -53,6 +53,48 @@ def test_checked_in_controlbox_is_valid() -> None:
     )
 
 
+def test_upload_contract_matches_event_image_bucket() -> None:
+    """The frontend picker reads this control, so it must be the bucket's own rule."""
+    from core.constants import BUCKET_EVENT_IMAGES
+    from services.storage_service import storage
+
+    assert storage.get_allowed_mime_types(BUCKET_EVENT_IMAGES) == [
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+        "image/gif",
+    ]
+    assert storage.get_file_size_limit(BUCKET_EVENT_IMAGES) == 5 * 1024 * 1024
+    assert (
+        controlbox.uploads.event_image_allowed_mime_types
+        == storage.get_allowed_mime_types(BUCKET_EVENT_IMAGES)
+    )
+
+
+def test_non_image_upload_mime_type_is_rejected(tmp_path: Path) -> None:
+    path = _write_control(
+        tmp_path,
+        "uploads",
+        lambda payload: payload.update({"event_image_allowed_mime_types": ["application/pdf"]}),
+    )
+
+    with pytest.raises(ValidationError, match="must be image/\\* types"):
+        load_controlbox(path)
+
+
+def test_duplicate_upload_mime_types_are_rejected(tmp_path: Path) -> None:
+    path = _write_control(
+        tmp_path,
+        "uploads",
+        lambda payload: payload.update(
+            {"event_image_allowed_mime_types": ["image/png", "image/png"]}
+        ),
+    )
+
+    with pytest.raises(ValidationError, match="must be unique"):
+        load_controlbox(path)
+
+
 def test_unknown_control_is_rejected(tmp_path: Path) -> None:
     path = _write_control(
         tmp_path,

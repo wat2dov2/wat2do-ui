@@ -215,6 +215,8 @@
     "searchOrganizationPlaceholder": "搜索组织...",
     "noOrganizationFound": "未找到组织",
     "descriptionPlaceholder": "向大家介绍您的活动内容...",
+    "sourceUrl": "来源链接",
+    "sourceUrlPlaceholder": "https://instagram.com/p/...",
     "pricePlaceholder": "0",
     "foodPlaceholder": "例如：比萨、小吃",
     "posterNamePlaceholder": "例如：主校区海报 #1",
@@ -248,7 +250,6 @@
     "occurrenceRequired": "至少需要选择一个日期",
     "locationRequired": "地点为必填项",
     "schoolRequired": "学校为必填项",
-    "jsonEmpty": "JSON 不能为空",
     "pickDate": "选择日期",
     "time": "时间",
     "occurrences": "日期",
@@ -260,8 +261,7 @@
     "registration": "需要报名",
     "coverImage": "封面图片",
     "jsonEditor": "JSON 编辑器",
-    "loadingEditor": "加载编辑器中...",
-    "invalidJsonFormat": "JSON 格式无效"
+    "loadingEditor": "加载编辑器中..."
   },
   "categories": {
     "artsAndCulture": "艺术与文化",

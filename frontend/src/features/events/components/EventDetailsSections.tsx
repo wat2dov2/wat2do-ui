@@ -245,7 +245,6 @@ function EventRegistrationCard({
   const [shareOpen, setShareOpen] = useState(false);
   const isGoingActive = profileCompleted && going.isActive;
   const displayName = userFullName || userEmail?.split("@")[0] || "";
-  const firstName = displayName.split(" ")[0];
 
   const nextSelectedOccurrence = going.selectableOccurrences.find((occurrence) =>
     going.selectedSelectableIds.includes(occurrence.id),
@@ -307,7 +306,7 @@ function EventRegistrationCard({
               </Button>
             </Stack>
             <CardDescription>
-              {t("events.cancelRegistrationPrompt")}{" "}
+              {t("events.cancelGoingPrompt")}{" "}
               <Button
                 type="button"
                 variant="ghost"
@@ -315,7 +314,7 @@ function EventRegistrationCard({
                 disabled={going.isPending}
                 onClick={() => void going.saveSelection([])}
               >
-                {t("events.cancelYourRegistration")}
+                {t("events.cancelGoing")}
               </Button>
             </CardDescription>
           </Stack>
@@ -331,9 +330,6 @@ function EventRegistrationCard({
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>{t("common.registration")}</CardTitle>
-      </CardHeader>
       <CardContent>
         {pickerOpen ? (
           <GoingOccurrencePickerContent
@@ -349,11 +345,6 @@ function EventRegistrationCard({
           />
         ) : (
           <Stack gap={3}>
-            <CardDescription>
-              {profileCompleted
-                ? t("events.registrationWelcome", { name: firstName })
-                : t("events.registrationWelcomeGuest")}
-            </CardDescription>
             {profileCompleted ? (
               <Stack direction="horizontal" gap={2} align="center">
                 {userAvatarUrl ? (
@@ -368,9 +359,9 @@ function EventRegistrationCard({
               <EmailOtpForm
                 data-testid="event-registration-auth"
                 school={event.school ?? school}
-                requestCodeLabel={t("events.register")}
-                actionLabel={t("events.register")}
-                isVerificationDisabled={
+                requestCodeLabel={t("events.going")}
+                actionLabel={t("events.going")}
+                isSubmitDisabled={
                   going.selectableOccurrences.length === 0
                 }
                 onAuthenticated={startRegistration}
@@ -387,10 +378,10 @@ function EventRegistrationCard({
             className="w-full"
             disabled={going.isPending || going.selectableOccurrences.length === 0}
             onClick={() => void startRegistration()}
-            aria-label={t("events.register")}
-            title={t("events.register")}
+            aria-label={t("events.going")}
+            title={t("events.going")}
           >
-            {t("events.register")}
+            {t("events.going")}
           </Button>
         </CardFooter>
       ) : null}
@@ -621,7 +612,7 @@ export function EventDetailsBody({
           <EventRegistrationCard event={event} school={school} />
         </Stack>
 
-        <Stack gap={6} className="order-5">
+        <Stack gap={6} className="order-4">
           <EventAboutSection event={event} isFetchingDetails={isFetchingDetails} />
 
           <EventMapSection event={event} school={school} />
@@ -637,17 +628,14 @@ export function EventDetailsBody({
         </Stack>
 
         <EventAttendeesSection eventId={event.id} />
-      </Stack>
 
-      {/*
-        Single-column: contact details sit between the registration card and
-        the description, where the reader is deciding how to get in touch.
-        Two-column: they return to the host sidebar under the attendee list.
-      */}
-      <div className="order-4 md:col-start-1">
+        {/*
+          Contact details follow the attendee list in both layouts: whoever is
+          reading who else is going is the same reader deciding how to ask about
+          it, so the host block stays one uninterrupted unit.
+        */}
         <EventContactHostSection event={event} />
-      </div>
-
+      </Stack>
     </div>
   );
 }

@@ -46,11 +46,21 @@ interface EventCardsGridProps {
 const EVENT_CARD_GRID_CLASS =
   "grid grid-cols-2 gap-2 sm:gap-2.5 min-[480px]:grid-cols-[repeat(auto-fill,minmax(13rem,1fr))]";
 
+// Offscreen cards skip style, layout, and paint entirely. The feed renders every
+// upcoming event at once, and each card measures itself and masks an SVG image,
+// so on a low-end phone that work dominates. `contain-intrinsic-size` supplies a
+// placeholder box for skipped cards, keeping the scrollbar honest; the value is
+// the card image height plus its text block, so it must track EVENT_CARD_*.
+const EVENT_CARD_SKIP_OFFSCREEN_STYLE = {
+  contentVisibility: "auto",
+  containIntrinsicSize: "auto 20rem",
+} satisfies React.CSSProperties;
+
 function EventCardListItem({
   children,
 }: EventCardListItemProps) {
   return (
-    <div role="listitem" className="min-w-0">
+    <div role="listitem" className="min-w-0" style={EVENT_CARD_SKIP_OFFSCREEN_STYLE}>
       {children}
     </div>
   );

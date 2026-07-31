@@ -24,11 +24,8 @@ import {
   type SubmitEventResult,
 } from "@/features/events/hooks/useSubmitEvent";
 import { useDarkMode } from "@/shared/hooks/useDarkMode";
-import { MAX_IMAGE_UPLOAD_SIZE_BYTES } from "@/shared/constants/uploads";
-import {
-  EventFormStep,
-  type ViewMode,
-} from "@/features/events/components/EventFormStep";
+import { controlBox } from "@/shared/config/controlBox";
+import { EventFormStep } from "@/features/events/components/EventFormStep";
 import { SubmitSuccessStep } from "@/features/events/components/SubmitSuccessStep";
 import { PromotionUpsell } from "@/features/events/components/EventForm/EventForm/PromotionUpsell";
 import { PromotionSuccessScreen } from "@/features/events/components/EventForm/EventForm/PromotionSuccessScreen";
@@ -39,6 +36,16 @@ import {
 import { Section, Stack } from "@/shared/layout";
 import { cn } from "@/shared/lib/utils";
 import type { Event, EventFormData } from "@/shared/types";
+
+// The picker, the paste handler, and the server all read the same control-box
+// contract, so a file the browser lets through is one the server will accept.
+const EVENT_IMAGE_ALLOWED_MIME_TYPES =
+  controlBox.uploads.eventImageAllowedMimeTypes;
+const EVENT_IMAGE_MAX_SIZE_BYTES = controlBox.uploads.eventImageMaxSizeBytes;
+const EVENT_IMAGE_ACCEPT = EVENT_IMAGE_ALLOWED_MIME_TYPES.join(",");
+
+const isAllowedEventImageType = (type: string): boolean =>
+  (EVENT_IMAGE_ALLOWED_MIME_TYPES as readonly string[]).includes(type);
 
 interface SubmitEventSharedProps {
   /** Absent when the form is an always-present panel with nothing to dismiss. */
@@ -121,7 +128,6 @@ export function SubmitEventFlow({
 }: SubmitEventFlowProps) {
   const { t } = useTranslation();
   const { isDarkMode } = useDarkMode();
-  const [viewMode, setViewMode] = useState<ViewMode>("visual");
   const [submitResult, setSubmitResult] = useState<{
     createdEventId: number | null;
   } | null>(null);
@@ -137,7 +143,19 @@ export function SubmitEventFlow({
 
   const handleImageFileParse = useCallback(
     async (file: File) => {
-      if (file.size > MAX_IMAGE_UPLOAD_SIZE_BYTES) {
+      if (!isAllowedEventImageType(file.type)) {
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
+        toast({
+          title: t("events.flyerParseFailed"),
+          description: t("events.flyerTypeError"),
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (file.size > EVENT_IMAGE_MAX_SIZE_BYTES) {
         if (fileInputRef.current) {
           fileInputRef.current.value = "";
         }
@@ -205,7 +223,7 @@ export function SubmitEventFlow({
       if (!items) return;
 
       for (const item of Array.from(items)) {
-        if (!item.type.startsWith("image/")) continue;
+        if (!isAllowedEventImageType(item.type)) continue;
         const file = item.getAsFile();
         if (!file) continue;
         event.preventDefault();
@@ -236,16 +254,6 @@ export function SubmitEventFlow({
     showPromotion: eventFormPromotion.showPromotion,
     onSubmitted: handleSubmitted,
   });
-
-  const handleViewModeChange = useCallback(
-    (value: ViewMode) => {
-      setViewMode(value);
-      if (value === "json") {
-        eventForm.syncToJSON();
-      }
-    },
-    [eventForm],
-  );
 
   const handleSubmit = useCallback(
     () =>
@@ -353,7 +361,7 @@ export function SubmitEventFlow({
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/*"
+                accept={EVENT_IMAGE_ACCEPT}
                 onChange={handleImageParseSelect}
                 className="hidden"
               />
@@ -390,8 +398,6 @@ export function SubmitEventFlow({
       <EventFormStep
         isEditMode={isEditMode}
         canCreateEvents={canCreateEvents}
-        viewMode={viewMode}
-        onViewModeChange={handleViewModeChange}
         isSubmitting={isSubmitting}
         onSubmit={handleSubmit}
         eventForm={eventForm}

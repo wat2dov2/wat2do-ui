@@ -268,6 +268,24 @@ class AdminControl(_ControlModel):
     items_per_page: int = Field(gt=0)
 
 
+class UploadsControl(_ControlModel):
+    """Client-facing upload contract, shared verbatim with the frontend picker."""
+
+    event_image_allowed_mime_types: list[str] = Field(min_length=1)
+    event_image_max_size_bytes: int = Field(gt=0)
+
+    @model_validator(mode="after")
+    def _validate_mime_types(self) -> "UploadsControl":
+        for mime_type in self.event_image_allowed_mime_types:
+            if not mime_type.startswith("image/"):
+                raise ValueError("event image MIME types must be image/* types")
+        if len(self.event_image_allowed_mime_types) != len(
+            set(self.event_image_allowed_mime_types)
+        ):
+            raise ValueError("event image MIME types must be unique")
+        return self
+
+
 class InstagramPublishingAccountControl(_ControlModel):
     key: str = Field(min_length=1, max_length=100, pattern=r"^[a-z0-9][a-z0-9_-]*$")
     name: str = Field(min_length=1, max_length=100)
@@ -401,6 +419,7 @@ class ControlBox(_ControlModel):
     scraping: ScrapingControl
     email_delivery: EmailDeliveryControl
     admin: AdminControl
+    uploads: UploadsControl
     public_attendance: PublicAttendanceControl
     instagram_publishing: InstagramPublishingControl
     promoter_program: PromoterProgramControl

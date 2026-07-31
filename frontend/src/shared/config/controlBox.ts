@@ -3,6 +3,7 @@ import clientCache from "../../../../backend/controlbox/client_cache.json";
 import eventDiscovery from "../../../../backend/controlbox/event_discovery.json";
 import interactionTracking from "../../../../backend/controlbox/interaction_tracking.json";
 import organizationManagement from "../../../../backend/controlbox/organization_management.json";
+import uploads from "../../../../backend/controlbox/uploads.json";
 
 const secondsToMilliseconds = (seconds: number): number => seconds * 1000;
 const minutesToMilliseconds = (minutes: number): number => minutes * 60 * 1000;
@@ -47,5 +48,9 @@ export const controlBox = {
   },
   admin: {
     itemsPerPage: admin.items_per_page,
+  },
+  uploads: {
+    eventImageAllowedMimeTypes: uploads.event_image_allowed_mime_types,
+    eventImageMaxSizeBytes: uploads.event_image_max_size_bytes,
   },
 } as const;

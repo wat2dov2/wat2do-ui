@@ -50,8 +50,6 @@
       "grid": "Grid",
       "calendar": "Calendar",
       "map": "Map",
-      "visual": "Visual",
-      "json": "JSON",
       "language": "Language",
       "languageDescription": "Choose your preferred language"
     }

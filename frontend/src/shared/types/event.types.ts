@@ -57,6 +57,8 @@ export interface EventFormData {
   price: number;
   food: string[];
   registration: boolean;
+  /** Optional link to where the event was announced. */
+  source_url?: string | null;
   source_image_url?: string | null;
 }
 

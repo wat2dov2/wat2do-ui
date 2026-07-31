@@ -9,13 +9,7 @@ import {
 } from "@/shared/services/validationService";
 import { useForm } from "@/shared/hooks/useForm";
 import { useTagInput } from "@/shared/hooks/useTagInput";
-import { useDebouncedCallback } from "@/shared/hooks/useDebouncedCallback";
-import { JSON_EDITOR_DEBOUNCE_MS } from "@/shared/constants/ui";
-import {
-  getInitialState,
-  getSmartDefaults,
-  mapEventInputToFormData,
-} from "@/features/events/hooks/useEventForm.utils";
+import { getInitialState } from "@/features/events/hooks/useEventForm.utils";
 
 interface UseEventFormOptions {
   initialData?: EventFormData;
@@ -48,7 +42,6 @@ export function useEventForm(options: UseEventFormOptions) {
           clubRequired: t("forms.organizationRequired"),
           occurrenceRequired: t("forms.occurrenceRequired"),
           locationRequired: t("forms.locationRequired"),
-          jsonInvalid: t("forms.invalidJsonFormat"),
         },
         rules,
       ) as Record<string, string>,
@@ -64,8 +57,6 @@ export function useEventForm(options: UseEventFormOptions) {
 
   const errors = form.errors as import("@/shared/types").ValidationErrors;
 
-  const [jsonValue, setJsonValue] = useState("");
-  const [jsonError, setJsonError] = useState("");
 
   const foodTag = useTagInput({
     onAdd: (value) => {
@@ -133,14 +124,12 @@ export function useEventForm(options: UseEventFormOptions) {
     setImageFile(null);
   }, []);
 
-  // Reset extras (json/food/image) on modal open; useForm owns formData/touched.
+  // Reset extras (food/image) on modal open; useForm owns formData/touched.
   const prevIsOpenRef = useRef(isOpen);
   const prevInitialDataRef = useRef<EventFormData | undefined>(undefined);
 
   useEffect(() => {
     if (isOpen && !prevIsOpenRef.current) {
-      setJsonValue("");
-      setJsonError("");
       foodTag.reset();
       setImagePreview(initialData?.source_image_url ?? "");
       setImageFile(null);
@@ -172,44 +161,6 @@ export function useEventForm(options: UseEventFormOptions) {
   }, [isOpen, isEditMode, initialData]);
 
   // Update the editor immediately; parse after debounce.
-  const applyJsonParse = useCallback(
-    (value: string) => {
-      try {
-        const parsed = JSON.parse(value);
-        setJsonError("");
-
-        form.setFormData((previous) =>
-          mapEventInputToFormData(parsed, {
-            occurrences: getSmartDefaults().occurrences,
-            source_image_url: previous.source_image_url,
-          }),
-        );
-      } catch (err) {
-        console.error("Failed to parse event form JSON:", err);
-        setJsonError(t("forms.invalidJsonFormat"));
-      }
-    },
-    [form, t],
-  );
-
-  const debouncedApplyJsonParse = useDebouncedCallback(
-    applyJsonParse,
-    JSON_EDITOR_DEBOUNCE_MS,
-  );
-
-  const handleJsonChange = useCallback(
-    (value: string | undefined) => {
-      if (!value) return;
-      setJsonValue(value);
-      debouncedApplyJsonParse(value);
-    },
-    [debouncedApplyJsonParse],
-  );
-
-  const syncToJSON = useCallback(() => {
-    setJsonValue(JSON.stringify(form.formData, null, 2));
-  }, [form.formData]);
-
   const isValid = useMemo(
     () => isEventFormValid(form.formData, errors, rules) && Boolean(imagePreview),
     [form.formData, errors, imagePreview, rules],
@@ -239,13 +190,6 @@ export function useEventForm(options: UseEventFormOptions) {
     touched: form.touched,
     handleBlur: form.handleBlur,
     isValid,
-
-    jsonValue,
-    setJsonValue,
-    jsonError,
-    setJsonError,
-    handleJsonChange,
-    syncToJSON,
 
     imagePreview,
     imageFile,

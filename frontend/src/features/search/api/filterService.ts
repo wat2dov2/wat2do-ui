@@ -149,6 +149,15 @@ export function clearNarrowingFilterState(current: FilterState): FilterState {
   });
 }
 
+/**
+ * Whether two filter states are equivalent. Both sides come from
+ * `normalizeFilterState`, so key order and value shapes are already canonical
+ * and a structural comparison is exact.
+ */
+export function isSameFilterState(a: FilterState, b: FilterState): boolean {
+  return JSON.stringify(normalizeFilterState(a)) === JSON.stringify(normalizeFilterState(b));
+}
+
 const PENDING_FILTERS_SESSION_KEY = "wat2do:pending-filters";
 
 /** Stage filters for a full-page redirect (e.g. QR poster events-list). */

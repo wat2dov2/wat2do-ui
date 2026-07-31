@@ -15,12 +15,6 @@ export const EVENT_CARD_IMAGE_HEIGHT = 208;
 export const CARD_GRID_CLASS =
   "grid grid-cols-2 gap-2 sm:gap-2.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6";
 
-/** Font size (px) for Monaco JSON editors across the app. */
-export const JSON_EDITOR_FONT_SIZE = 12;
-
-/** Debounce window (ms) before parsing JSON editor input into app state. */
-export const JSON_EDITOR_DEBOUNCE_MS = 300;
-
 
 /** Small delay (ms) to allow DOM updates before scrolling to an element. */
 export const SCROLL_INTO_VIEW_DELAY_MS = 100;

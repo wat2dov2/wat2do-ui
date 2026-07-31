@@ -4,7 +4,7 @@
  * Registers the app's global keyboard shortcuts:
  *   Cmd/Ctrl+K  toggle the command palette
  *   /           focus the search input
- *   Escape      clear the search query
+ *   Escape      clear all narrowing filters
  *
  * Kept as a tiny sibling component (rather than inside a context provider) so
  * toggling the palette does not re-render any unrelated subtree. This is the
@@ -15,7 +15,11 @@
 import { useEffect } from "react";
 import { useUIStore } from "@/shared/store/ui.store";
 import { useSearchStore } from "@/features/search/store/search.store";
-import { storeStatesToFilterState } from "@/features/search/api/filterService";
+import {
+  clearNarrowingFilterState,
+  isSameFilterState,
+  storeStatesToFilterState,
+} from "@/features/search/api/filterService";
 import { focusSearchInput } from "@/shared/utils/searchInput";
 
 /**
@@ -53,19 +57,20 @@ export function CommandPaletteHotkeys() {
         return;
       }
 
-      // Escape clears the query from anywhere on the page, including the
-      // search field itself, so it doubles as "get me out of this search".
-      // An open overlay owns Escape first - clearing the feed behind a drawer
-      // the user is only dismissing would be invisible and destructive.
+      // Escape clears every narrowing filter from anywhere on the page,
+      // including the search field itself, so it doubles as "get me back to the
+      // whole feed". An open overlay owns Escape first - resetting the feed
+      // behind a drawer the user is only dismissing would be invisible and
+      // destructive. Sort order survives: it is how the feed is read, not a
+      // narrowing of it.
       if (e.key === "Escape") {
         if (useUIStore.getState().showCommandPalette || hasOpenOverlay()) return;
 
         const state = useSearchStore.getState();
-        if (!state.searchQuery) return;
-        state.setFilterState({
-          ...storeStatesToFilterState(state),
-          searchQuery: "",
-        });
+        const current = storeStatesToFilterState(state);
+        const cleared = clearNarrowingFilterState(current);
+        if (isSameFilterState(current, cleared)) return;
+        state.setFilterState(cleared);
         return;
       }
 

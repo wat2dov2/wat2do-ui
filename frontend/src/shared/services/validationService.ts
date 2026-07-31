@@ -6,8 +6,6 @@ const VALIDATION_MESSAGE_KEYS = {
   clubRequired: "forms.clubRequired",
   occurrenceRequired: "forms.occurrenceRequired",
   locationRequired: "forms.locationRequired",
-  jsonEmpty: "forms.jsonEmpty",
-  jsonInvalid: "forms.invalidJsonFormat",
 } as const;
 
 export type ValidationMessageOverrides = Partial<Record<keyof typeof VALIDATION_MESSAGE_KEYS, string>>;

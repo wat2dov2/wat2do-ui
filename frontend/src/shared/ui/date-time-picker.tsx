@@ -107,8 +107,8 @@ export function DateTimePicker({
           </span>
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="max-w-[calc(100vw-16px)] overflow-x-auto p-0" align="start">
-        <div className="w-max sm:flex">
+      <PopoverContent className="max-w-[calc(100vw-16px)] p-0" align="start">
+        <div className="flex max-w-full flex-col sm:flex-row">
           <Calendar
             mode="single"
             selected={date}
@@ -116,8 +116,8 @@ export function DateTimePicker({
             defaultMonth={date}
             autoFocus
           />
-          <div className="flex flex-col sm:flex-row sm:h-[300px] divide-y sm:divide-y-0 sm:divide-x divide-border">
-            <div className="w-64 sm:w-auto overflow-x-auto sm:overflow-x-hidden sm:overflow-y-auto">
+          <div className="flex min-w-0 flex-col divide-y divide-border sm:h-[300px] sm:flex-row sm:divide-x sm:divide-y-0">
+            <div className="min-w-0 overflow-x-auto sm:h-full sm:w-auto sm:overflow-x-hidden sm:overflow-y-auto">
               <div className="flex sm:flex-col p-2">
                 {HOURS.map((hour) => (
                   <Button
@@ -133,7 +133,7 @@ export function DateTimePicker({
                 ))}
               </div>
             </div>
-            <div className="w-64 sm:w-auto overflow-x-auto sm:overflow-x-hidden sm:overflow-y-auto">
+            <div className="min-w-0 overflow-x-auto sm:h-full sm:w-auto sm:overflow-x-hidden sm:overflow-y-auto">
               <div className="flex sm:flex-col p-2">
                 {MINUTES.map((minute) => (
                   <Button
@@ -149,7 +149,7 @@ export function DateTimePicker({
                 ))}
               </div>
             </div>
-            <div className="overflow-x-auto sm:overflow-x-hidden sm:overflow-y-auto">
+            <div className="min-w-0 overflow-x-auto sm:h-full sm:overflow-x-hidden sm:overflow-y-auto">
               <div className="flex sm:flex-col p-2">
                 {PERIODS.map((period) => (
                   <Button
