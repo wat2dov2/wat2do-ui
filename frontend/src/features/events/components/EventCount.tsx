@@ -34,26 +34,31 @@ export function EventCount({
         label={t("events.upcomingEventCount", { count })}
       />
       {latestAddedEvent || action ? (
-        <Stack direction="horizontal" align="center" gap={3} wrap>
+        <Stack direction="horizontal" align="center" justify="between" gap={3}>
           {latestAddedEvent ? (
-            // Event titles are unbounded, so this compact action must wrap on narrow screens.
+            // Event titles are unbounded. The note gives up width to the action
+            // and truncates rather than wrapping, so the row stays one line.
             <Button
               type="button"
               variant="ghost"
               size="sm"
               onMouseDown={handleLatestAddedMouseDown}
-              className="h-auto min-h-8 min-w-0 shrink whitespace-normal text-left"
+              className="min-w-0 shrink text-left"
             >
-              {t("events.latestAddedEvent", {
-                title: latestAddedEvent.title,
-                time: formatRelativeTime(latestAddedEvent.added_at, t, {
-                  alwaysAgo: true,
-                }),
-              })}
+              {/* Button is a flex container, where text-overflow does not
+                  apply; the ellipsis has to live on a block child. */}
+              <span className="truncate">
+                {t("events.latestAddedEvent", {
+                  title: latestAddedEvent.title,
+                  time: formatRelativeTime(latestAddedEvent.added_at, t, {
+                    alwaysAgo: true,
+                  }),
+                })}
+              </span>
             </Button>
           ) : null}
-          {/* Pinned to the end so the action holds its place whether or not
-              the newest-event note is present. */}
+          {/* ms-auto keeps the action at the end even when the note is absent
+              and space-between would otherwise pull it left. */}
           {action ? <div className="ms-auto shrink-0">{action}</div> : null}
         </Stack>
       ) : null}
