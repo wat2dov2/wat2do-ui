@@ -95,8 +95,10 @@ export function EmailOtpForm({
   }, []);
 
   // On touch devices autofocus pops the keyboard and scrolls/scales the page
-  // into the field the moment the drawer opens, before the user has decided to
-  // type. Desktop keeps it so the form is usable straight from the keyboard.
+  // into the field, both when this form first mounts and when it swaps to the
+  // code step. Desktop keeps it so the form is usable straight from the
+  // keyboard. Resolved on the first render, since autoFocus is applied at
+  // mount and a value arriving later would be too late to suppress it.
   const autoFocusFields = !useCoarsePointer();
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -158,7 +160,7 @@ export function EmailOtpForm({
                 disabled={isBusy}
                 autoComplete="one-time-code"
                 aria-label={t("auth.otpLabel")}
-                autoFocus
+                autoFocus={autoFocusFields}
               >
                 <InputOTPGroup>
                   {Array.from({ length: 6 }, (_, index) => (

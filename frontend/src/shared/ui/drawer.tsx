@@ -2,6 +2,7 @@ import * as React from "react"
 import { Drawer as DrawerPrimitive } from "vaul"
 
 import { getOrganizationCategoryDoodleDecorations } from "@/shared/data/organizationCategoryStyles"
+import { COARSE_POINTER_MEDIA } from "@/shared/hooks/useCoarsePointer"
 import { cn } from "@/shared/lib/utils"
 
 const DRAWER_DOODLES = getOrganizationCategoryDoodleDecorations(42)
@@ -67,12 +68,23 @@ const DrawerContent = React.forwardRef<
   React.ElementRef<typeof DrawerPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Content>
 >(({ className, children, ...props }, ref) => {
+  // Opening a drawer moves focus to the first focusable child. When that is a
+  // text field on a touch device, the keyboard opens and the browser scales the
+  // page into the field before the user has chosen to type. Hold focus outside
+  // on coarse pointers; the drawer stays modal either way, and a caller that
+  // genuinely wants a field focused can pass its own handler through props.
+  const handleOpenAutoFocus = React.useCallback((event: Event) => {
+    if (!window.matchMedia(COARSE_POINTER_MEDIA).matches) return
+    event.preventDefault()
+  }, [])
+
   return (
       <DrawerPortal data-slot="drawer-portal">
         <DrawerOverlay />
         <DrawerPrimitive.Content
           ref={ref}
           data-slot="drawer-content"
+          onOpenAutoFocus={handleOpenAutoFocus}
           className={cn(
             // The isolated stacking context keeps DrawerDoodleField above the
             // background while its negative z-index leaves all content interactive.
