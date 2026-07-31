@@ -237,7 +237,6 @@ export function SearchCombobox<T>({
 
     if (nextOpen && willFetch(search)) {
       setIsLoading(true);
-      setResults([]);
     }
 
     e.preventDefault();
@@ -331,7 +330,7 @@ export function SearchCombobox<T>({
         </div>
 
         <div className="max-h-[220px] overflow-y-auto p-1 empty:hidden">
-          {isLoading ? (
+          {isLoading && displayedResults.length === 0 ? (
             <div className="py-6 text-center text-sm text-muted-foreground">
               {loadingLabel}
             </div>
