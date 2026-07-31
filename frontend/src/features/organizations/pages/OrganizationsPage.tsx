@@ -23,7 +23,7 @@ import { useOrganizationsPage } from "@/features/organizations/hooks/useOrganiza
 import { translateCategory } from "@/shared/utils/event";
 import { useAuthState } from "@/features/auth";
 import { useHorizontalScrollFade } from "@/shared/hooks";
-import { HorizontalScrollFadeEdge } from "@/shared/ui/horizontal-scroll-fade-edge";
+import { HorizontalScrollFade } from "@/shared/ui/horizontal-scroll-fade";
 import { PageCountHeading } from "@/shared/ui/page-count-heading";
 import { useSavedOrganizationsStore } from "@/features/organizations/store/savedOrganizations.store";
 import { SubmittedSearchInput } from "@/shared/ui/submitted-search-input";
@@ -131,8 +131,9 @@ export function OrganizationsPage({
 
         <div className="flex items-center gap-2">
           <div className="relative min-w-0 flex-1">
-            <div
+            <HorizontalScrollFade
               ref={categoryScrollRef}
+              visible={showCategoryScrollFade}
               {...categoryDragScrollProps}
               data-testid="organization-category-filter-scroll"
               onScroll={syncCategoryScrollFade}
@@ -156,8 +157,7 @@ export function OrganizationsPage({
                 aria-hidden="true"
                 className="h-px w-px shrink-0"
               />
-            </div>
-            <HorizontalScrollFadeEdge visible={showCategoryScrollFade} />
+            </HorizontalScrollFade>
           </div>
 
           <div className="relative flex shrink-0 items-center gap-2 pb-1">

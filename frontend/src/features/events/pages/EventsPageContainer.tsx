@@ -13,7 +13,7 @@ import { SearchBar, MoreFiltersButton, FilterDropdown } from "@/features/search"
 import { useUIStore } from "@/shared/store/ui.store";
 import { useAuthState } from "@/features/auth";
 import { useHorizontalScrollFade } from "@/shared/hooks";
-import { HorizontalScrollFadeEdge } from "@/shared/ui/horizontal-scroll-fade-edge";
+import { HorizontalScrollFade } from "@/shared/ui/horizontal-scroll-fade";
 import { Button } from "@/shared/ui/button";
 import { useEventsPageData } from "@/features/events/hooks/useEventsPageData";
 import { EventDetailsModal } from "@/features/events/components/EventDetailsModal";
@@ -172,22 +172,17 @@ export function EventsPageContainer() {
       <div className="space-y-2">
         <PromoterRecruitmentBanner school={schoolFilter} />
         <div className="space-y-3 pb-2">
-          <div className="flex items-center justify-between gap-3">
-            <EventCount
-              count={totalEvents}
-              latestAddedEvent={latestAddedEvent}
-              onLatestAddedEventSearch={handleLatestAddedEventSearch}
-            />
-            <Button
-              type="button"
-              size="sm"
-              className="shrink-0"
-              onMouseDown={handleSubmitEventClick}
-            >
-              <Plus />
-              {t("events.submitEvent")}
-            </Button>
-          </div>
+          <EventCount
+            count={totalEvents}
+            latestAddedEvent={latestAddedEvent}
+            onLatestAddedEventSearch={handleLatestAddedEventSearch}
+            action={
+              <Button type="button" size="sm" onMouseDown={handleSubmitEventClick}>
+                <Plus />
+                {t("events.submitEvent")}
+              </Button>
+            }
+          />
           <SearchBar
             searchQuery={filters.searchQuery}
             onSearchChange={(query) => {
@@ -198,8 +193,9 @@ export function EventsPageContainer() {
 
           <div className="flex items-center gap-2">
             <div className="relative min-w-0 flex-1">
-              <div
+              <HorizontalScrollFade
                 ref={filterScrollRef}
+                visible={showFilterScrollFade}
                 {...filterDragScrollProps}
                 data-testid="event-quick-filter-scroll"
                 onScroll={syncFilterScrollFade}
@@ -245,8 +241,7 @@ export function EventsPageContainer() {
                   aria-hidden="true"
                   className="h-px w-px shrink-0"
                 />
-              </div>
-              <HorizontalScrollFadeEdge visible={showFilterScrollFade} />
+              </HorizontalScrollFade>
             </div>
             <div className="relative shrink-0 pb-1">
               <MoreFiltersButton
