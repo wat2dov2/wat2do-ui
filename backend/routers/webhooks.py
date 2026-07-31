@@ -7,8 +7,9 @@ from pydantic import BaseModel
 
 from core.auth import get_admin_user
 from core.config import settings
-from services.automate_log_service import create_automate_log, get_automate_logs as fetch_logs
 from services import school_service
+from services.automate_log_service import create_automate_log
+from services.automate_log_service import get_automate_logs as fetch_logs
 
 log = logging.getLogger(__name__)
 
@@ -18,6 +19,7 @@ router = APIRouter(
 )
 
 security = HTTPBearer()
+
 
 def verify_automate_token(credentials: HTTPAuthorizationCredentials = Depends(security)) -> str:
     if not settings.automate_webhook_key:
@@ -69,4 +71,3 @@ async def get_automate_logs(
     except Exception as e:
         log.error("Failed to fetch automate logs: %s", e)
         raise HTTPException(status_code=500, detail="Failed to fetch logs")
-

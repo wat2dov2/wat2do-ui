@@ -84,6 +84,7 @@ def _create_github_annotation(school: str, username: str | None, url: str | None
 def _log_automate_event(school: str, username: str | None, url: str | None) -> None:
     """Log the scrape event to the database for the live dashboard."""
     from services.automate_log_service import create_automate_log
+
     create_automate_log(
         event="SCRAPE_COMPLETED",
         sender_id=os.getenv("INTENDED_RECIPIENT_ID"),

@@ -32,5 +32,11 @@ def create_automate_log(
 
 def get_automate_logs(limit: int = 50) -> list[dict[str, Any]]:
     supabase = get_sb()
-    response = supabase.table("automate_logs").select("*").order("created_at", desc=True).limit(limit).execute()
+    response = (
+        supabase.table("automate_logs")
+        .select("*")
+        .order("created_at", desc=True)
+        .limit(limit)
+        .execute()
+    )
     return response.data
