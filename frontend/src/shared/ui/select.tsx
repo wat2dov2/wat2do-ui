@@ -2,6 +2,7 @@ import * as React from "react"
 import * as SelectPrimitive from "@radix-ui/react-select"
 import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from "@/shared/ui/doodle-icons"
 
+import { useDrawerPortalContainer } from "@/shared/ui/drawer"
 import { cn } from "@/shared/lib/utils"
 import { buttonVariants } from "@/shared/ui/button"
 import { useExclusiveDisclosure } from "@/shared/hooks/useExclusiveDisclosure"
@@ -73,8 +74,12 @@ function SelectContent({
   align = "center",
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Content>) {
+  // See useDrawerPortalContainer: body-portalled content is unscrollable inside
+  // a drawer's scroll lock.
+  const container = useDrawerPortalContainer();
+
   return (
-    <SelectPrimitive.Portal>
+    <SelectPrimitive.Portal container={container ?? undefined}>
       <SelectPrimitive.Content
         data-slot="select-content"
         className={cn(

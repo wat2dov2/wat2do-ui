@@ -1,6 +1,7 @@
 import * as React from "react";
 import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu";
 
+import { useDrawerPortalContainer } from "@/shared/ui/drawer"
 import { cn } from "@/shared/lib/utils";
 import { useExclusiveDisclosure } from "@/shared/hooks/useExclusiveDisclosure";
 import { useMouseSelectDedup, useMobileGridClickActivation } from "@/shared/hooks/useMouseDownPress";
@@ -126,8 +127,12 @@ function DropdownMenuContent({
     [onPointerDown, stopPropagation],
   );
 
+  // See useDrawerPortalContainer: body-portalled content is unscrollable inside
+  // a drawer's scroll lock.
+  const container = useDrawerPortalContainer();
+
   return (
-    <DropdownMenuPrimitive.Portal>
+    <DropdownMenuPrimitive.Portal container={container ?? undefined}>
       <DropdownMenuPrimitive.Content
         data-slot="dropdown-menu-content"
         sideOffset={sideOffset}

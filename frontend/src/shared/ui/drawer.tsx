@@ -7,6 +7,20 @@ import { cn } from "@/shared/lib/utils"
 
 const DRAWER_DOODLES = getOrganizationCategoryDoodleDecorations(42)
 
+/**
+ * The open drawer's content element, or null outside a drawer.
+ *
+ * A drawer locks scrolling to its own subtree, so any overlay that portals to
+ * `document.body` lands outside the lock and stops scrolling entirely. Overlays
+ * portal into this node instead when there is one, which also lets the drawer's
+ * drag handler recognise them as scrollable rather than as a dismiss gesture.
+ */
+const DrawerContentNodeContext = React.createContext<HTMLElement | null>(null)
+
+export function useDrawerPortalContainer(): HTMLElement | null {
+  return React.useContext(DrawerContentNodeContext)
+}
+
 function Drawer({
   ...props
 }: React.ComponentProps<typeof DrawerPrimitive.Root>) {
@@ -78,11 +92,23 @@ const DrawerContent = React.forwardRef<
     event.preventDefault()
   }, [])
 
+  // State, not a ref: descendants must re-render once the node exists so their
+  // portals mount inside it rather than falling back to the document body.
+  const [contentNode, setContentNode] = React.useState<HTMLElement | null>(null)
+  const setRefs = React.useCallback(
+    (node: HTMLDivElement | null) => {
+      setContentNode(node)
+      if (typeof ref === "function") ref(node)
+      else if (ref) ref.current = node
+    },
+    [ref]
+  )
+
   return (
       <DrawerPortal data-slot="drawer-portal">
         <DrawerOverlay />
         <DrawerPrimitive.Content
-          ref={ref}
+          ref={setRefs}
           data-slot="drawer-content"
           onOpenAutoFocus={handleOpenAutoFocus}
           className={cn(
@@ -102,7 +128,9 @@ const DrawerContent = React.forwardRef<
             data-slot="drawer-handle"
             className="mx-auto mt-4 hidden h-2 w-24 shrink-0 rounded-full bg-muted group-data-[vaul-drawer-direction=bottom]/drawer-content:block"
           />
-          {children}
+          <DrawerContentNodeContext.Provider value={contentNode}>
+            {children}
+          </DrawerContentNodeContext.Provider>
         </DrawerPrimitive.Content>
       </DrawerPortal>
   )
