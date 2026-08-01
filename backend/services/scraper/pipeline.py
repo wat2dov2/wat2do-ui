@@ -25,7 +25,7 @@ from core.constants import (
 from schemas.workflow_run import WorkflowRunCreate
 from services import workflow_run_service
 from services.scraper.dedup import _extract_shortcode, existing_shortcodes, find_candidates
-from services.scraper.event_writer import write_event
+from services.scraper.event_writer import _lookup_organization_by_ig, write_event
 from services.scraper.extractor import extract_events_from_post
 from services.scraper.image_uploader import upload_post_images
 from services.scraper.org_resolve import resolve_organization_for_scrape
@@ -148,16 +148,16 @@ def _filter_new_posts(
 def _get_candidate_handles(post: dict, fallback_handle: str) -> list[str]:
     """Extract all relevant IG handles from an Apify post payload."""
     handles = []
-    
+
     # 1. Target handle
     if fallback_handle:
         handles.append(fallback_handle)
-        
+
     # 2. ownerUsername
     owner = post.get("ownerUsername")
     if owner and isinstance(owner, str):
         handles.append(owner)
-        
+
     # 3. coauthors
     coauthors = post.get("coauthors")
     if isinstance(coauthors, list):
@@ -166,7 +166,7 @@ def _get_candidate_handles(post: dict, fallback_handle: str) -> list[str]:
                 handles.append(c["username"])
             elif isinstance(c, str):
                 handles.append(c)
-                
+
     # Keep unique, preserve order
     seen = set()
     result = []
@@ -175,7 +175,7 @@ def _get_candidate_handles(post: dict, fallback_handle: str) -> list[str]:
         if h_clean and h_clean not in seen:
             seen.add(h_clean)
             result.append(h_clean)
-            
+
     return result
 
 
@@ -228,63 +228,82 @@ def _process_one_post(
 
     candidate_handles = _get_candidate_handles(post, handle)
 
-    resolved_orgs = [
-        resolve_organization_for_scrape(
-            ig_handle=candidate_handles,
-            school=school,
-            organization_name=(event.get("organization") or "").strip() or None,
-            create_stub_if_missing=True,
-        )
-        for event in events
-    ]
-    candidates_by_index = [
-        find_candidates(
-            title=event.get("title") or "",
-            location=event.get("location") or "",
-            description=event.get("description") or "",
-            occurrences=event.get("occurrences") or [],
-            ig_handle=resolved.ig_handle or handle,
-            organization_id=resolved.organization_id,
-            organization_name=resolved.organization_name
-            or ((event.get("organization") or "").strip() or None),
-        )
-        for event, resolved in zip(events, resolved_orgs, strict=True)
-    ]
-    reconciled = reconcile_events(
-        extracted_events=events,
-        candidates_by_index=candidates_by_index,
-        caption_text=caption,
-        school=school,
-        resolved_organization_ids=[r.organization_id for r in resolved_orgs],
-        resolved_ig_handles=[r.ig_handle or handle for r in resolved_orgs],
-    )
-    # Pass 2 failure → insert-only Pass 1 events (strip any accidental ids).
-    to_write = reconciled if reconciled is not None else [{**e, "id": None} for e in events]
-    if reconciled is None:
-        log.warning("[%s] Pass 2 failed; falling back to insert-only Pass 1 events", handle)
+    target_schools = {school}
+    for c in candidate_handles:
+        org = _lookup_organization_by_ig(c)
+        if org and isinstance(org.get("schools"), dict) and org["schools"].get("slug"):
+            target_schools.add(org["schools"]["slug"])
 
-    for i, event in enumerate(to_write):
-        if len(to_write) == len(resolved_orgs):
-            resolved = resolved_orgs[i]
-        else:
-            resolved = resolve_organization_for_scrape(
+    # Pass 2: Reconcile extracted events vs existing rows, then write for each target school
+    for target_school in target_schools:
+        resolved_orgs = [
+            resolve_organization_for_scrape(
                 ig_handle=candidate_handles,
-                school=school,
+                school=target_school,
                 organization_name=(event.get("organization") or "").strip() or None,
-                create_stub_if_missing=True,
+                create_stub_if_missing=(target_school == school),
             )
-        outcome = write_event(
-            event,
-            ig_handle=handle,
-            source_url=source_url,
-            allow_past_events=allow_past_events,
-            resolved_org=resolved,
+            for event in events
+        ]
+
+        events_copy = [dict(e) for e in events]
+        for e in events_copy:
+            e["school"] = target_school
+
+        candidates_by_index = [
+            find_candidates(
+                title=event.get("title") or "",
+                location=event.get("location") or "",
+                description=event.get("description") or "",
+                occurrences=event.get("occurrences") or [],
+                ig_handle=resolved.ig_handle,
+                organization_id=resolved.organization_id,
+                organization_name=resolved.organization_name
+                or ((event.get("organization") or "").strip() or None),
+            )
+            for event, resolved in zip(events_copy, resolved_orgs, strict=True)
+        ]
+        reconciled = reconcile_events(
+            extracted_events=events_copy,
+            candidates_by_index=candidates_by_index,
+            caption_text=caption,
+            school=target_school,
+            resolved_organization_ids=[r.organization_id for r in resolved_orgs],
+            resolved_ig_handles=[r.ig_handle for r in resolved_orgs],
         )
-        if outcome == "inserted":
-            result.events_saved += 1
-        elif outcome == "updated":
-            result.events_updated += 1
-            result.events_saved += 1
+
+        to_write = (
+            reconciled if reconciled is not None else [{**e, "id": None} for e in events_copy]
+        )
+        if reconciled is None:
+            log.warning(
+                "[%s] Pass 2 failed for %s; falling back to insert-only Pass 1 events",
+                handle,
+                target_school,
+            )
+
+        for i, event in enumerate(to_write):
+            if len(to_write) == len(resolved_orgs):
+                resolved = resolved_orgs[i]
+            else:
+                resolved = resolve_organization_for_scrape(
+                    ig_handle=candidate_handles,
+                    school=target_school,
+                    organization_name=(event.get("organization") or "").strip() or None,
+                    create_stub_if_missing=(target_school == school),
+                )
+            outcome = write_event(
+                event,
+                ig_handle=handle,
+                source_url=source_url,
+                allow_past_events=allow_past_events,
+                resolved_org=resolved,
+            )
+            if outcome == "inserted":
+                result.events_saved += 1
+            elif outcome == "updated":
+                result.events_updated += 1
+                result.events_saved += 1
 
 
 def _finalize(result: ScrapeResult) -> None:
