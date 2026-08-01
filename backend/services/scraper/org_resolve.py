@@ -52,7 +52,7 @@ def resolve_organization_for_scrape(
     for cleaned in cleaned_handles:
         org = event_writer_mod._lookup_organization_by_ig(cleaned)
         org_cache[cleaned] = org
-        
+
         if org is not None:
             # Check if this org actually belongs to our target school
             org_school = org.get("schools")

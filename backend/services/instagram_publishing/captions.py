@@ -27,10 +27,13 @@ def build_caption(events: list[dict[str, Any]], school: str) -> str:
         organization = f"@{handle}" if handle else str(event.get("organization") or "")
         title = _truncate(str(event.get("title") or "Untitled event"), 90)
         location = _truncate(str(event.get("location") or "See Wat2Do for location"), 90)
+        hour_str = start.strftime("%I").lstrip("0")
+        time_str = f"{hour_str}:{start.strftime('%M %p')}"
+        date_str = f"{start.strftime('%a, %b')} {start.day}"
         lines.extend(
             [
                 f"{index}. {title}" + (f" - {organization}" if organization else ""),
-                f"   🗓 {start.strftime('%a, %b %-d')} · {start.strftime('%-I:%M %p')}",
+                f"   🗓 {date_str} · {time_str}",
                 f"   📍 {location}",
                 "",
             ]

@@ -276,7 +276,10 @@ def test_interac_csv_uses_frozen_payout_email_and_reference(tmp_path):
     assert "promoter@example.com" in contents
     assert "2.50" in contents
     assert str(PAYOUT_ID) in contents
-    assert output.stat().st_mode & 0o777 == 0o600
+    
+    import os
+    if os.name != "nt":
+        assert output.stat().st_mode & 0o777 == 0o600
 
 
 def test_admin_payout_filters_reject_inverted_ranges(fake_sb, patch_sb):
