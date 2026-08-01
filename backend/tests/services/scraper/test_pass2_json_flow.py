@@ -35,6 +35,11 @@ def registered_school(monkeypatch):
         "get_school",
         lambda slug: SimpleNamespace(id=1, slug=slug),
     )
+    monkeypatch.setattr(
+        pipeline_module,
+        "_lookup_organization_by_ig",
+        lambda handle: None,
+    )
 
 
 def _extracted(**overrides) -> dict:

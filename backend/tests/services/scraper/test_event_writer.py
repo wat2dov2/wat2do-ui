@@ -226,7 +226,8 @@ def test_write_event_links_auto_created_organization(fake_sb, patch_sb, monkeypa
     occ_now = datetime.now(timezone.utc).isoformat()
     fake_sb.queue_responses(
         [
-            [],  # organization lookup miss
+            [],  # org_resolve loop 1 lookup miss
+            [],  # _ensure_organization_by_ig lookup miss
             [
                 {
                     "id": 5,
@@ -274,6 +275,7 @@ def test_write_event_inserts_one_event_row_plus_occurrences(fake_sb, patch_sb, m
     occ_now = datetime.now(timezone.utc).isoformat()
     fake_sb.queue_responses(
         [
+            [],  # org_resolve loop 1 lookup miss (since we didn't disable org resolution completely)
             [{"id": 7}],  # events insert
             # occurrences insert - return shape must satisfy OccurrenceResponse
             [
@@ -344,6 +346,7 @@ def test_write_event_drops_past_occurrences(fake_sb, patch_sb, monkeypatch):
     occ_now = datetime.now(timezone.utc).isoformat()
     fake_sb.queue_responses(
         [
+            [],  # org_resolve loop 1 lookup miss
             [{"id": 11}],  # events insert
             # occurrences insert - only one survives the past-event filter
             [
@@ -405,6 +408,7 @@ def test_write_event_keeps_past_occurrences_when_flag_set(fake_sb, patch_sb, mon
     past = (datetime.now(timezone.utc) - timedelta(days=2)).isoformat()
     fake_sb.queue_responses(
         [
+            [],  # org_resolve loop 1 lookup miss
             [{"id": 12}],  # events insert
             # occurrences insert - past occurrence survives due to flag
             [
