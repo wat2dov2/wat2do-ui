@@ -145,6 +145,40 @@ def _filter_new_posts(
     return fresh
 
 
+def _get_candidate_handles(post: dict, fallback_handle: str) -> list[str]:
+    """Extract all relevant IG handles from an Apify post payload."""
+    handles = []
+    
+    # 1. Target handle
+    if fallback_handle:
+        handles.append(fallback_handle)
+        
+    # 2. ownerUsername
+    owner = post.get("ownerUsername")
+    if owner and isinstance(owner, str):
+        handles.append(owner)
+        
+    # 3. coauthors
+    coauthors = post.get("coauthors")
+    if isinstance(coauthors, list):
+        for c in coauthors:
+            if isinstance(c, dict) and c.get("username"):
+                handles.append(c["username"])
+            elif isinstance(c, str):
+                handles.append(c)
+                
+    # Keep unique, preserve order
+    seen = set()
+    result = []
+    for h in handles:
+        h_clean = h.strip().lstrip("@")
+        if h_clean and h_clean not in seen:
+            seen.add(h_clean)
+            result.append(h_clean)
+            
+    return result
+
+
 def _process_one_post(
     post: dict,
     *,
@@ -192,9 +226,11 @@ def _process_one_post(
             result.events_saved += 1
         return
 
+    candidate_handles = _get_candidate_handles(post, handle)
+
     resolved_orgs = [
         resolve_organization_for_scrape(
-            ig_handle=handle,
+            ig_handle=candidate_handles,
             school=school,
             organization_name=(event.get("organization") or "").strip() or None,
             create_stub_if_missing=True,
@@ -232,7 +268,7 @@ def _process_one_post(
             resolved = resolved_orgs[i]
         else:
             resolved = resolve_organization_for_scrape(
-                ig_handle=handle,
+                ig_handle=candidate_handles,
                 school=school,
                 organization_name=(event.get("organization") or "").strip() or None,
                 create_stub_if_missing=True,

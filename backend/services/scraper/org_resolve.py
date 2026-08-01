@@ -23,7 +23,7 @@ class ResolvedOrganization:
 
 def resolve_organization_for_scrape(
     *,
-    ig_handle: str | None,
+    ig_handle: str | list[str] | None = None,
     school: str | None,
     organization_name: str | None,
     create_stub_if_missing: bool = True,
@@ -31,32 +31,57 @@ def resolve_organization_for_scrape(
     """Resolve org before ``find_candidates`` / ``write_event``.
 
     Order:
-      1. IG handle → lookup (and optionally auto-create stub when school set).
-      2. Else school + normalized display name → exact match only.
+      1. IG handles → lookup all. If any matches `school`, use it.
+      2. If none match `school`, use the fallback handle (and optionally auto-create stub).
+      3. Else school + normalized display name → exact match only.
     """
-    cleaned_handle = (ig_handle or "").strip().lstrip("@") or None
     school_slug = (school or "").strip() or None
     preferred_name = (organization_name or "").strip() or None
+    
+    raw_handles = [ig_handle] if isinstance(ig_handle, str) else (ig_handle or [])
+    
+    cleaned_handles = []
+    for h in raw_handles:
+        c = (h or "").strip().lstrip("@")
+        if c and c not in cleaned_handles:
+            cleaned_handles.append(c)
+            
+    # 1. Try to find an existing org that matches the target school
+    for cleaned in cleaned_handles:
+        org = event_writer_mod._lookup_organization_by_ig(cleaned)
+        if org is not None:
+            # Check if this org actually belongs to our target school
+            org_school = org.get("schools")
+            if isinstance(org_school, dict) and org_school.get("slug") == school_slug:
+                return ResolvedOrganization(
+                    organization_id=org.get("id"),
+                    organization_name=(org.get("organization_name") or "").strip() or preferred_name,
+                    ig_handle=cleaned,
+                )
 
-    if cleaned_handle:
+    # 2. Fallback to the primary handle (the target we were scraping or the first candidate)
+    fallback_handle = cleaned_handles[0] if cleaned_handles else None
+    
+    if fallback_handle:
         if create_stub_if_missing:
             org = event_writer_mod._ensure_organization_by_ig(
-                cleaned_handle,
+                fallback_handle,
                 school=school_slug,
                 preferred_name=preferred_name,
             )
         else:
-            org = event_writer_mod._lookup_organization_by_ig(cleaned_handle)
+            org = event_writer_mod._lookup_organization_by_ig(fallback_handle)
+            
         if org is not None:
             return ResolvedOrganization(
                 organization_id=org.get("id"),
                 organization_name=(org.get("organization_name") or "").strip() or preferred_name,
-                ig_handle=cleaned_handle,
+                ig_handle=fallback_handle,
             )
         return ResolvedOrganization(
             organization_id=None,
             organization_name=preferred_name,
-            ig_handle=cleaned_handle,
+            ig_handle=fallback_handle,
         )
 
     if school_slug and preferred_name:

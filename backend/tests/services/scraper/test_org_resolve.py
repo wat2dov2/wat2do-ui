@@ -7,6 +7,11 @@ from services.scraper.org_resolve import ResolvedOrganization, resolve_organizat
 def test_resolve_by_ig_uses_ensure(monkeypatch):
     monkeypatch.setattr(
         org_resolve.event_writer_mod,
+        "_lookup_organization_by_ig",
+        lambda handle: None,
+    )
+    monkeypatch.setattr(
+        org_resolve.event_writer_mod,
         "_ensure_organization_by_ig",
         lambda handle, school=None, preferred_name=None: {
             "id": 7,

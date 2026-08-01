@@ -307,7 +307,7 @@ def _lookup_organization_by_ig(ig_handle: str) -> dict | None:
     rows = (
         get_sb()
         .table(ORGANIZATIONS)
-        .select("id,organization_name")
+        .select("id,organization_name,schools(slug)")
         .eq("ig", ig_handle)
         .limit(1)
         .execute()
