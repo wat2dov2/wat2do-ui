@@ -430,9 +430,8 @@ def test_pass2_insert_json_creates_row(fake_sb, patch_sb, monkeypatch):
         source_url="https://instagram.com/p/NEW",
     )
     assert outcome == "inserted"
-    insert_payload = [c[0][0] for c in fake_sb.insert.call_args_list if isinstance(c[0][0], dict)][
-        0
-    ]
+    insert_payloads = [c[0][0] for c in fake_sb.insert.call_args_list if isinstance(c[0][0], dict)]
+    insert_payload = next(p for p in insert_payloads if "title" in p)
     assert insert_payload["title"] == "Tea Tasting Night"
     assert insert_payload["cancelled"] is False
     assert "id" not in insert_payload

@@ -282,6 +282,9 @@ def _process_one_post(
                 target_school,
             )
 
+        for event in to_write:
+            event["school"] = target_school
+
         for i, event in enumerate(to_write):
             if len(to_write) == len(resolved_orgs):
                 resolved = resolved_orgs[i]

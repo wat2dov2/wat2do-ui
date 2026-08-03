@@ -9,10 +9,10 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import Annotated
+from typing import Annotated, Any
 
 from openai import OpenAI
-from pydantic import BaseModel, BeforeValidator, Field, model_validator
+from pydantic import BaseModel, BeforeValidator, Field, field_validator, model_validator
 
 from core.config import settings
 from core.constants import EVENT_CATEGORIES
@@ -42,6 +42,12 @@ class ReconciledEvent(BaseModel):
     organization: str = Field(default="")
     price: float | None = None
     food: list[str] = Field(default_factory=list)
+
+    @field_validator("food", mode="before")
+    @classmethod
+    def _coerce_null_food(cls, v: Any) -> list[str]:
+        return v if v is not None else []
+
     registration: bool = False
     image_index: int = 0
     occurrences: list[ExtractedOccurrence] = Field(default_factory=list)
