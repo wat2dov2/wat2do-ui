@@ -22,6 +22,7 @@ import {
   Instagram,
   LocationPin,
   Share2,
+  Trash2,
   Utensils,
 } from "@/shared/ui/doodle-icons";
 import type { LucideIcon } from "@/shared/ui/doodle-icons";
@@ -46,6 +47,7 @@ import { EventLocationMap } from "@/features/events/components/EventLocationMap"
 import { OrganizationTypeIcon } from "@/shared/components/OrganizationTypeIcon";
 import { GoingOccurrencePickerContent } from "@/features/events/components/GoingOccurrencePickerContent";
 import { fetchEventAttendees } from "@/features/events/api/events.api";
+import { useEventsStore } from "@/features/events/store/events.store";
 import { useEventStats } from "@/features/events/hooks/useEventStats";
 import { useCurrentTime, useGoingEventSelection } from "@/features/events/hooks/useGoingEvents";
 import {
@@ -59,6 +61,7 @@ import { translateFood } from "@/shared/utils/foodTranslation";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import { organizationPagePath, ROUTES } from "@/shared/constants/routes";
 import { eventPagePath } from "@/features/events/lib/eventUrls";
+import { toast } from "@/shared/hooks/use-toast";
 import type { Event } from "@/shared/types";
 
 const EventShareDialog = lazy(() =>
@@ -69,6 +72,11 @@ const EventShareDialog = lazy(() =>
 const EventReportDialog = lazy(() =>
   import("@/features/events/components/EventReportDialog").then((module) => ({
     default: module.EventReportDialog,
+  })),
+);
+const AdminDeleteDialog = lazy(() =>
+  import("@/features/admin/components/shared/AdminDeleteDialog").then((module) => ({
+    default: module.AdminDeleteDialog,
   })),
 );
 
@@ -518,6 +526,7 @@ function EventHostLinks({ event }: { event: Event }) {
 export function EventActions({
   event,
   onBeforeEdit,
+  onDeleted,
 }: {
   event: Event;
   /**
@@ -526,13 +535,18 @@ export function EventActions({
    * the standalone event page has nothing to dismiss and omits it.
    */
   onBeforeEdit?: () => void;
+  /** Close the containing surface after deletion; dedicated pages navigate home. */
+  onDeleted?: () => void;
 }) {
   const { t } = useTranslation();
   const router = useRouter();
   const [shareOpen, setShareOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const { isAdmin, isAuthenticated } = useAuthState();
   const setEditingEvent = useUIStore((s) => s.setEditingEvent);
+  const deleteEvent = useEventsStore((s) => s.deleteEvent);
 
   const handleEdit = useCallback(() => {
     onBeforeEdit?.();
@@ -549,13 +563,44 @@ export function EventActions({
     setReportOpen(true);
   }, [event.id, isAuthenticated, router]);
 
+  const handleDelete = useCallback(async () => {
+    setIsDeleting(true);
+    try {
+      await deleteEvent(event.id);
+      setDeleteOpen(false);
+      if (onDeleted) {
+        onDeleted();
+      } else {
+        router.replace(ROUTES.HOME);
+      }
+    } catch {
+      toast({
+        description: t("events.deleteFailed"),
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  }, [deleteEvent, event.id, onDeleted, router, t]);
+
   return (
-    <Stack direction="horizontal" gap={2} wrap>
+    <Stack direction="horizontal" gap={2} wrap data-slot="event-actions">
       {isAdmin && (
-        <Button type="button" variant="secondary" size="sm" onClick={handleEdit}>
-          <Edit className="size-4" />
-          {t("common.edit")}
-        </Button>
+        <>
+          <Button type="button" variant="secondary" size="sm" onClick={handleEdit}>
+            <Edit className="size-4" />
+            {t("common.edit")}
+          </Button>
+          <Button
+            type="button"
+            variant="destructive"
+            size="sm"
+            onClick={() => setDeleteOpen(true)}
+          >
+            <Trash2 className="size-4" />
+            {t("common.delete")}
+          </Button>
+        </>
       )}
       <Button type="button" variant="secondary" size="sm" onClick={() => setShareOpen(true)}>
         <Share2 className="size-4" />
@@ -577,6 +622,18 @@ export function EventActions({
             eventTitle={event.title}
             open={reportOpen}
             onOpenChange={setReportOpen}
+          />
+        </Suspense>
+      )}
+      {isAdmin && deleteOpen && (
+        <Suspense fallback={null}>
+          <AdminDeleteDialog
+            isOpen={deleteOpen}
+            onClose={() => setDeleteOpen(false)}
+            onConfirm={handleDelete}
+            title={t("events.deleteEventTitle")}
+            description={t("events.deleteEventConfirm", { title: event.title })}
+            isLoading={isDeleting}
           />
         </Suspense>
       )}

@@ -798,6 +798,7 @@ test.describe("Events Page", () => {
     await expect(page.getByRole("heading", { name: "Share" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Share on LINE" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Share on WeChat" })).toBeVisible();
+    await expect(eventDrawer.getByRole("button", { name: "Delete" })).toHaveCount(0);
     await expect(page).toHaveURL(/eventId=1/);
 
     await page.evaluate(() => {
@@ -859,6 +860,79 @@ test.describe("Events Page", () => {
 
     await eventDrawer.getByRole("button", { name: "Report" }).click();
     await expect(page).toHaveURL(/\/login\?returnTo=%2Fevents%2F1/);
+  });
+
+  test("lets admins delete events from the drawer and dedicated page", async ({ page }) => {
+    await seedAuthenticatedSession(page);
+    const startsAt = new Date(Date.now() + 86_400_000).toISOString();
+    let deleteRequests = 0;
+
+    await page.route(url => apiPath(url) === "/events/1", async (route) => {
+      if (route.request().method() === "DELETE") {
+        deleteRequests += 1;
+        await route.fulfill({ status: 204, body: "" });
+        return;
+      }
+
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          id: 1,
+          organization_id: 1,
+          title: "Tech Career Fair",
+          description: "Meet campus employers.",
+          location: "SLC",
+          occurrences: [
+            {
+              id: 1,
+              event_id: 1,
+              dtstart_utc: startsAt,
+              dtend_utc: null,
+            },
+          ],
+          price: 0,
+          food: [],
+          registration: false,
+          source_image_url: null,
+          category: "Career",
+          organization: "UW Tech Club",
+          organization_type: "wusa",
+          school: "uwaterloo",
+          cancelled: false,
+          added_at: new Date().toISOString(),
+        }),
+      });
+    });
+
+    await page.goto(BASE);
+    await page.locator('article[data-event-id="1"]').click();
+
+    const eventDrawer = page.getByRole("dialog", { name: "Tech Career Fair" });
+    const drawerActions = eventDrawer.locator('[data-slot="event-actions"]');
+    await expect(drawerActions.getByRole("button").nth(0)).toHaveText("Edit");
+    await expect(drawerActions.getByRole("button").nth(1)).toHaveText("Delete");
+
+    await drawerActions.getByRole("button", { name: "Delete" }).click();
+    const drawerDeleteDialog = page.getByRole("dialog", { name: "Delete Event" });
+    await expect(drawerDeleteDialog).toContainText(
+      'Are you sure you want to delete "Tech Career Fair"?',
+    );
+    await drawerDeleteDialog.getByRole("button", { name: "Cancel" }).click();
+    await page.keyboard.press("Escape");
+    await expect(eventDrawer).not.toBeVisible();
+
+    await page.goto(`${BASE}/events/1`);
+    const pageActions = page.locator('[data-slot="event-actions"]');
+    await expect(pageActions.getByRole("button").nth(0)).toHaveText("Edit");
+    await expect(pageActions.getByRole("button").nth(1)).toHaveText("Delete");
+
+    await pageActions.getByRole("button", { name: "Delete" }).click();
+    const pageDeleteDialog = page.getByRole("dialog", { name: "Delete Event" });
+    await pageDeleteDialog.getByRole("button", { name: "Delete" }).click();
+
+    await expect.poll(() => deleteRequests).toBe(1);
+    await expect(page).toHaveURL(`${BASE}/`);
   });
 
   test("scrolls drawer content that exceeds the mobile viewport", async ({ page }) => {

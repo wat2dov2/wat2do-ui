@@ -123,7 +123,11 @@ export function EventDetailsModal({
                   gap={3}
                   wrap
                 >
-                  <EventActions event={displayedEvent} onBeforeEdit={onClose} />
+                  <EventActions
+                    event={displayedEvent}
+                    onBeforeEdit={onClose}
+                    onDeleted={onClose}
+                  />
                 </Stack>
               </DrawerHeader>
 
