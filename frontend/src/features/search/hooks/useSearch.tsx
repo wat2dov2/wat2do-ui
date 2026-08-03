@@ -3,9 +3,8 @@ import { useTranslation } from "react-i18next";
 import { useFilterState } from "@/features/search/hooks/useFilterState";
 import { filterEvents, sortEvents, getFilterCounts } from "@/features/search/api/searchService";
 import { getEventCategories } from "@/shared/data/eventCategories";
-import { availableDays, availableFoods } from "@/shared/constants/eventFilters";
+import { availableDays } from "@/shared/constants/eventFilters";
 import { translateCategory } from "@/shared/utils/event";
-import { translateFood } from "@/shared/utils/foodTranslation";
 import type { Event } from "@/shared/types";
 
 /**
@@ -115,23 +114,6 @@ export function useSearch({
     [t],
   );
 
-  const foodOptions = useMemo(
-    () => {
-      const foods = new Set(availableFoods);
-      events.forEach((event) => {
-        event.food?.forEach((food) => {
-          const value = food.trim();
-          if (value) foods.add(value);
-        });
-      });
-      return Array.from(foods).map((food) => ({
-        id: food,
-        label: translateFood(food, t),
-      }));
-    },
-    [events, t],
-  );
-
   const dayOptions = useMemo(
     () =>
       availableDays.map((day) => {
@@ -148,7 +130,6 @@ export function useSearch({
   return {
     ...filterState,
     categoryOptions,
-    foodOptions,
     dayOptions,
     filteredEvents,
     filterCount,

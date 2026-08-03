@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import Image from "next/image";
 import { useTranslation } from "react-i18next";
 import imgLogo from "@/assets/38e8096a28295e8dcc0e5020d0a5f3dd85d5f019.png";
@@ -6,6 +6,12 @@ import { Check } from "@/shared/ui/doodle-icons";
 import { BadgeMask } from "@/shared/ui/badge-mask";
 import { EventImageCutout, useEventImageCutouts } from "@/shared/ui/event-image-cutout";
 import { Badge } from "@/shared/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from "@/shared/ui/dialog";
 import { OrganizationBadgeDropdown } from "@/features/organizations/components/OrganizationBadgeDropdown";
 import { useGoingEvents } from "@/features/events/hooks/useGoingEvents";
 import { getEventCategory } from "@/shared/utils/event";
@@ -28,6 +34,8 @@ interface EventCardImageProps {
   interactive?: boolean;
   /** Gives the true above-the-fold poster high network priority. */
   priority?: boolean;
+  /** Runs after the organization badge applies its feed filter. */
+  onOrganizationFilterSelect?: () => void;
 }
 
 const EVENT_CARD_IMAGE_SIZES =
@@ -47,8 +55,10 @@ export function EventCardImage({
   onBadgeHoverChange,
   interactive = true,
   priority = variant === "detail",
+  onOrganizationFilterSelect,
 }: EventCardImageProps) {
   const { t } = useTranslation();
+  const [imageOpen, setImageOpen] = useState(false);
   const { surfaceRef, registerCorner, cutouts, box } = useEventImageCutouts();
 
   const eventCategory = useMemo(() => getEventCategory(event), [event]);
@@ -70,95 +80,117 @@ export function EventCardImage({
   );
 
   return (
-    <div
-      ref={surfaceRef}
-      className={cn(
-        "relative shrink-0 overflow-hidden",
-        variant === "card" ? "rounded-t-xl" : "aspect-square w-full rounded-xl",
-      )}
-      style={variant === "card" ? { height: EVENT_CARD_IMAGE_HEIGHT } : undefined}
-    >
-      {/* Masked face: notches are real holes, so the page backdrop shows through. */}
-      <EventImageCutout
-        backgroundColor="var(--surface-elevated)"
-        imageSrc={event.source_image_url}
-        imageAlt={event.title}
-        imageSizes={
-          variant === "card" ? EVENT_CARD_IMAGE_SIZES : EVENT_DETAIL_IMAGE_SIZES
-        }
-        imagePriority={priority}
-        cutouts={cutouts}
-        width={box.width}
-        height={box.height}
-        className="absolute inset-0"
+    <>
+      <div
+        ref={surfaceRef}
+        className={cn(
+          "relative shrink-0 overflow-hidden",
+          variant === "card" ? "rounded-t-xl" : "aspect-square w-full rounded-xl",
+        )}
+        style={variant === "card" ? { height: EVENT_CARD_IMAGE_HEIGHT } : undefined}
       >
-        {variant === "detail" && event.source_image_url ? (
-          <a
-            href={event.source_image_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="absolute inset-0 cursor-zoom-in"
-            aria-label={t("events.viewFullImage")}
-          />
-        ) : null}
-        {!event.source_image_url && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <Image
-              src={imgLogo}
-              alt=""
-              width={136}
-              height={96}
-              className="h-2/5 w-2/5 object-contain opacity-80"
+        {/* Masked face: notches are real holes, so the page backdrop shows through. */}
+        <EventImageCutout
+          backgroundColor="var(--surface-elevated)"
+          imageSrc={event.source_image_url}
+          imageAlt={event.title}
+          imageSizes={
+            variant === "card" ? EVENT_CARD_IMAGE_SIZES : EVENT_DETAIL_IMAGE_SIZES
+          }
+          imagePriority={priority}
+          cutouts={cutouts}
+          width={box.width}
+          height={box.height}
+          className="absolute inset-0"
+        >
+          {variant === "detail" && event.source_image_url ? (
+            <button
+              type="button"
+              className="absolute inset-0 cursor-zoom-in"
+              aria-label={t("events.viewFullImage")}
+              onMouseDown={(mouseEvent) => mouseEvent.stopPropagation()}
+              onClick={(mouseEvent) => {
+                mouseEvent.stopPropagation();
+                setImageOpen(true);
+              }}
             />
+          ) : null}
+          {!event.source_image_url && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Image
+                src={imgLogo}
+                alt=""
+                width={136}
+                height={96}
+                className="h-2/5 w-2/5 object-contain opacity-80"
+              />
+            </div>
+          )}
+        </EventImageCutout>
+
+        {isGoing && (
+          <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-image-scrim">
+            <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-image-scrim-foreground">
+              {t("events.going")}
+              <Check className="size-4" />
+            </span>
           </div>
         )}
-      </EventImageCutout>
 
-      {isGoing && (
-        <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-image-scrim">
-          <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-image-scrim-foreground">
-            {t("events.going")}
-            <Check className="size-4" />
-          </span>
-        </div>
-      )}
-
-      <BadgeMask variant="top-left" cutout containerRef={registerCorner("top-left")}>
-        <OrganizationCategoryBadge type={eventCategory} className="opacity-90" />
-      </BadgeMask>
-
-      {isLive && (
-        <BadgeMask variant="top-right" cutout containerRef={registerCorner("top-right")}>
-          <Badge variant="live" size="md" className="flex items-center">
-            {t("common.live")}
-          </Badge>
+        <BadgeMask variant="top-left" cutout containerRef={registerCorner("top-left")}>
+          <OrganizationCategoryBadge type={eventCategory} className="opacity-90" />
         </BadgeMask>
-      )}
 
-      {isNew && (
-        <BadgeMask variant="bottom-right" cutout containerRef={registerCorner("bottom-right")}>
-          <Badge variant="new" size="md" className="flex items-center">
-            {t("events.new")}
-          </Badge>
-        </BadgeMask>
-      )}
+        {isLive && (
+          <BadgeMask variant="top-right" cutout containerRef={registerCorner("top-right")}>
+            <Badge variant="live" size="md" className="flex items-center">
+              {t("common.live")}
+            </Badge>
+          </BadgeMask>
+        )}
 
-      {event.organization && (
-        <BadgeMask variant="bottom-left" cutout containerRef={registerCorner("bottom-left")}>
-          <OrganizationBadgeDropdown
-            organizationName={event.organization}
-            organizationType={event.organization_type}
-            school={event.school}
-            organizationPage={event.organization_page}
-            organizationIg={event.organization_ig}
-            organizationDiscord={event.organization_discord}
-            disabled={!interactive}
-            badgeHoverProps={badgeHoverProps}
-            onMouseDown={(e) => e.stopPropagation()}
-            onClick={(e) => e.stopPropagation()}
-          />
-        </BadgeMask>
-      )}
-    </div>
+        {isNew && (
+          <BadgeMask variant="bottom-right" cutout containerRef={registerCorner("bottom-right")}>
+            <Badge variant="new" size="md" className="flex items-center">
+              {t("events.new")}
+            </Badge>
+          </BadgeMask>
+        )}
+
+        {event.organization && (
+          <BadgeMask variant="bottom-left" cutout containerRef={registerCorner("bottom-left")}>
+            <OrganizationBadgeDropdown
+              organizationName={event.organization}
+              organizationType={event.organization_type}
+              school={event.school}
+              organizationPage={event.organization_page}
+              organizationIg={event.organization_ig}
+              organizationDiscord={event.organization_discord}
+              disabled={!interactive}
+              onFilterSelect={onOrganizationFilterSelect}
+              badgeHoverProps={badgeHoverProps}
+              onMouseDown={(e) => e.stopPropagation()}
+              onClick={(e) => e.stopPropagation()}
+            />
+          </BadgeMask>
+        )}
+      </div>
+
+      {variant === "detail" && event.source_image_url ? (
+        <Dialog open={imageOpen} onOpenChange={setImageOpen}>
+          <DialogContent size="xl" className="p-2">
+            <DialogTitle className="sr-only">{t("events.viewFullImage")}</DialogTitle>
+            <DialogDescription className="sr-only">
+              {t("events.fullImageDescription", { title: event.title })}
+            </DialogDescription>
+            <img
+              src={event.source_image_url}
+              alt={event.title}
+              className="max-h-[85dvh] w-full rounded-lg object-contain"
+            />
+          </DialogContent>
+        </Dialog>
+      ) : null}
+    </>
   );
 }

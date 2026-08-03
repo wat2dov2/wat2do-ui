@@ -3,7 +3,6 @@ import { useTranslation } from "react-i18next";
 import { useRouter } from "next/navigation";
 import {
   Bookmark,
-  MoreHorizontal,
   Instagram,
 } from "@/shared/ui/doodle-icons";
 import { EventCardContent } from "@/shared/ui/event-card-content";
@@ -96,8 +95,6 @@ function OrganizationFooterActions({
       ? `https://instagram.com/${organization.ig.replace(/^@/, "")}`
       : null,
   );
-  const hasOverflowLinks = Boolean(organization.organization_page || (organization.discord && sanitizeHref(organization.discord)));
-
   return (
     <div
       data-organization-card-footer
@@ -128,17 +125,7 @@ function OrganizationFooterActions({
         </span>
       )}
 
-      <OrganizationOverflowMenu organization={organization} stopPropagation>
-        <button
-          type="button"
-          aria-label={t("common.moreOptions")}
-          title={t("common.moreOptions")}
-          disabled={!hasOverflowLinks}
-          className="flex min-h-12 w-full items-center justify-center rounded-br-xl border-l border-border px-2 text-muted-foreground transition-colors hover:bg-surface-hover"
-        >
-          <MoreHorizontal className="size-5" />
-        </button>
-      </OrganizationOverflowMenu>
+      <OrganizationOverflowMenu organization={organization} stopPropagation />
     </div>
   );
 }

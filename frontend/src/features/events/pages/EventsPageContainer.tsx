@@ -30,7 +30,6 @@ import { controlBox } from "@/shared/config/controlBox";
 import type { ViewMode, Event } from "@/shared/types";
 import { usePosterLandingConfirmation } from "@/features/qrcode/hooks/usePosterLandingConfirmation";
 import { PromoterRecruitmentBanner } from "@/features/posters/components/PromoterRecruitmentBanner";
-import { Plus } from "@/shared/ui/doodle-icons";
 import { PageHeader } from "@/shared/layout";
 
 interface QuickFilterButtonConfig {
@@ -196,7 +195,6 @@ export function EventsPageContainer({ schoolName }: { schoolName: string }) {
               onLatestAddedEventSearch={handleLatestAddedEventSearch}
               action={
                 <Button type="button" size="sm" onMouseDown={handleSubmitEventClick}>
-                  <Plus />
                   {t("events.submitEvent")}
                 </Button>
               }

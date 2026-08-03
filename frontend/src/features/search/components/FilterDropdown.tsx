@@ -19,7 +19,6 @@ interface FilterDropdownFilters {
   // Food filters
   selectedFoods: string[];
   setSelectedFoods: (foods: string[]) => void;
-  foodOptions: FilterOption[];
   // Day of week filters
   selectedDays: string[];
   setSelectedDays: (days: string[]) => void;

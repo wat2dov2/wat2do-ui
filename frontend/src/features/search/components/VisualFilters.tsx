@@ -9,13 +9,13 @@ import { Input } from "@/shared/ui/input";
 import { Button } from "@/shared/ui/button";
 import type { ViewMode } from "@/shared/types";
 
-interface LocationFilterInputProps {
+interface SingleValueFilterInputProps {
   value: string;
   onChange: (value: string[]) => void;
   placeholder: string;
 }
 
-function LocationFilterInput({ value, onChange, placeholder }: LocationFilterInputProps) {
+function SingleValueFilterInput({ value, onChange, placeholder }: SingleValueFilterInputProps) {
   const [localValue, setLocalValue] = useState(value);
 
   // Sync with external updates (like clear all filters)
@@ -49,7 +49,6 @@ interface VisualFiltersProps {
     setSelectedLocations: (locations: string[]) => void;
     selectedFoods: string[];
     setSelectedFoods: (foods: string[]) => void;
-    foodOptions: Array<{ id: string; label: string }>;
     selectedDays: string[];
     setSelectedDays: (days: string[]) => void;
     dayOptions: Array<{ id: string; label: string }>;
@@ -69,7 +68,6 @@ interface VisualFiltersProps {
 
 export function VisualFilters({ filters, viewMode, onViewModeChange }: VisualFiltersProps) {
   const { t } = useTranslation();
-  const { setSelectedFoods } = filters;
 
   const categoryValues = useMemo(
     () => filters.categoryOptions.map((o) => o.id),
@@ -79,23 +77,6 @@ export function VisualFilters({ filters, viewMode, onViewModeChange }: VisualFil
     () => new Map(filters.categoryOptions.map((o) => [o.id, o.label])),
     [filters.categoryOptions],
   );
-  const allFoodOption = useMemo(
-    () => ({ id: "", label: t("common.all") }),
-    [t],
-  );
-  const selectedFoodOption = useMemo(() => {
-    const selectedFoodId = filters.selectedFoods[0];
-    if (!selectedFoodId) {
-      return allFoodOption;
-    }
-
-    return (
-      filters.foodOptions.find((option) => option.id === selectedFoodId) ?? {
-        id: selectedFoodId,
-        label: selectedFoodId,
-      }
-    );
-  }, [allFoodOption, filters.foodOptions, filters.selectedFoods]);
   const dayValues = useMemo(
     () => filters.dayOptions.map((o) => o.id),
     [filters.dayOptions],
@@ -131,29 +112,6 @@ export function VisualFilters({ filters, viewMode, onViewModeChange }: VisualFil
       );
     },
     [filters.availableOrganizations],
-  );
-
-  const foodFetcher = useCallback(
-    (query: string) => {
-      const normalizedQuery = query.trim().toLocaleLowerCase();
-      if (!normalizedQuery) {
-        return filters.foodOptions;
-      }
-
-      return filters.foodOptions.filter(
-        (option) =>
-          option.id.toLocaleLowerCase().includes(normalizedQuery) ||
-          option.label.toLocaleLowerCase().includes(normalizedQuery),
-      );
-    },
-    [filters.foodOptions],
-  );
-
-  const handleSelectFood = useCallback(
-    (option: { id: string; label: string }) => {
-      setSelectedFoods(option.id ? [option.id] : []);
-    },
-    [setSelectedFoods],
   );
 
   return (
@@ -207,7 +165,7 @@ export function VisualFilters({ filters, viewMode, onViewModeChange }: VisualFil
         }
         onClear={() => filters.setSelectedLocations([])}
       >
-        <LocationFilterInput
+        <SingleValueFilterInput
           value={filters.selectedLocations[0] ?? ""}
           onChange={filters.setSelectedLocations}
           placeholder={t("forms.locationPlaceholder")}
@@ -224,19 +182,10 @@ export function VisualFilters({ filters, viewMode, onViewModeChange }: VisualFil
         }
         onClear={() => filters.setSelectedFoods([])}
       >
-        <SearchCombobox
-          selectedKey={selectedFoodOption.id}
-          onSelect={handleSelectFood}
-          fetcher={foodFetcher}
-          getKey={(option) => option.id}
-          getLabel={(option) => option.label}
-          displayValue={selectedFoodOption.label}
-          allOption={allFoodOption}
-          searchOnEmpty
-          variant="field"
-          searchPlaceholder={t("filters.searchFood")}
-          emptyLabel={t("filters.noFoodFound")}
-          loadingLabel={t("common.loading")}
+        <SingleValueFilterInput
+          value={filters.selectedFoods[0] ?? ""}
+          onChange={filters.setSelectedFoods}
+          placeholder={t("filters.searchFood")}
         />
       </FilterSection>
 

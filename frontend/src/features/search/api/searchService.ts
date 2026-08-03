@@ -125,7 +125,12 @@ export function filterEvents(
 
     if (
       filters.selectedFoods.length > 0 &&
-      !food.some((f) => filters.selectedFoods.includes(f))
+      !filters.selectedFoods.some((query) => {
+        const normalizedQuery = query.trim().toLocaleLowerCase();
+        return normalizedQuery
+          ? food.some((item) => item.toLocaleLowerCase().includes(normalizedQuery))
+          : true;
+      })
     ) {
       return false;
     }

@@ -142,6 +142,7 @@ export function EventDetailsModal({
                   event={displayedEvent}
                   school={schoolFilter}
                   isFetchingDetails={isFetchingEvent}
+                  onOrganizationFilterSelect={onClose}
                   renderTitle={(title) => (
                     <DrawerTitle className="text-left text-2xl font-bold leading-tight sm:text-3xl">
                       {title}

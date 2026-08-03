@@ -60,7 +60,7 @@
     "noEventsScheduled": "No events scheduled",
     "noEventsScheduledDesc": "No events are currently scheduled. Check back later!",
     "newlyAddedFilter": {
-      "last24Hours": "Newly added",
+      "last24Hours": "New",
       "sinceLastVisit": "Added since last visit",
       "clear": "Clear newly added filter",
       "sinceLastVisitAt": "Added since last visit ({{time}})"
@@ -130,6 +130,7 @@
     "cancelGoingPrompt": "No longer able to attend? Notify the host by",
     "cancelGoing": "marking yourself not going.",
     "viewFullImage": "View full event image",
+    "fullImageDescription": "Enlarged event poster for {{title}}",
     "moreDatesCount": "+{{count}} date",
     "moreDatesCount_other": "+{{count}} dates",
     "deleteEventTitle": "Delete Event",

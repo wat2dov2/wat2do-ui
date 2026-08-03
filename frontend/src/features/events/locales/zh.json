@@ -60,7 +60,7 @@
     "noEventsScheduled": "暂无活动安排",
     "noEventsScheduledDesc": "当前没有任何活动安排，请稍后再来看看！",
     "newlyAddedFilter": {
-      "last24Hours": "最新添加",
+      "last24Hours": "新增",
       "sinceLastVisit": "自上次访问后添加",
       "clear": "清除最新添加筛选",
       "sinceLastVisitAt": "自上次访问后新增（{{time}}）"
@@ -130,6 +130,7 @@
     "cancelGoingPrompt": "无法参加？你可以",
     "cancelGoing": "标记为不参加。",
     "viewFullImage": "查看完整活动图片",
+    "fullImageDescription": "{{title}} 的放大活动海报",
     "moreDatesCount": "+{{count}} 个日期",
     "moreDatesCount_other": "+{{count}} 个日期",
     "deleteEventTitle": "删除活动",

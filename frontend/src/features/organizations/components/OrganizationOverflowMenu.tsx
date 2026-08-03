@@ -1,6 +1,5 @@
-import type { ReactElement } from "react";
 import { useTranslation } from "react-i18next";
-import { ExternalLink, Discord } from "@/shared/ui/doodle-icons";
+import { ExternalLink, Discord, MoreHorizontal } from "@/shared/ui/doodle-icons";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,13 +11,14 @@ import type { Organization } from "@/shared/types";
 
 interface OrganizationOverflowMenuProps {
   organization: Organization;
-  children: ReactElement;
   stopPropagation?: boolean;
 }
 
+const ACTION_CLASS =
+  "flex min-h-12 w-full items-center justify-center rounded-br-xl border-l border-border px-2 text-muted-foreground transition-colors hover:bg-surface-hover";
+
 export function OrganizationOverflowMenu({
   organization,
-  children,
   stopPropagation = false,
 }: OrganizationOverflowMenuProps) {
   const { t } = useTranslation();
@@ -50,12 +50,41 @@ export function OrganizationOverflowMenu({
   }>;
 
   if (items.length === 0) {
-    return children;
+    return (
+      <span aria-hidden="true" className={`${ACTION_CLASS} opacity-35`}>
+        <MoreHorizontal className="size-5" />
+      </span>
+    );
+  }
+
+  if (items.length === 1) {
+    const [{ href, label, icon: Icon }] = items;
+    return (
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label={label}
+        title={label}
+        className={ACTION_CLASS}
+      >
+        <Icon className="size-5" />
+      </a>
+    );
   }
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>{children}</DropdownMenuTrigger>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          aria-label={t("common.moreOptions")}
+          title={t("common.moreOptions")}
+          className={ACTION_CLASS}
+        >
+          <MoreHorizontal className="size-5" />
+        </button>
+      </DropdownMenuTrigger>
       <DropdownMenuContent className="w-44" align="end" stopPropagation={stopPropagation}>
         {items.map(({ key, href, label, icon: Icon }) => (
           <DropdownMenuItem

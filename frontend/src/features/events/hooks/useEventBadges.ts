@@ -33,7 +33,8 @@ export interface BadgeStyleOverrides {
  * Pure function: compute badges for an event-like object.
  * Accepts optional style overrides for contexts that use different badge colors.
  * Free events do not get a price badge; only positive prices show `$N`.
- * Registration is not shown as a card badge.
+ * Registration is not shown as a card badge. Food uses the first listed item
+ * so cards stay concise even when an event provides several foods.
  */
 export function computeEventBadges(
   event: BadgeInput,
@@ -62,7 +63,7 @@ export function computeEventBadges(
   const food = event.food || [];
   if (food.length > 0) {
     badges.push({
-      text: food.map((item) => translateFood(item, t)).join(", "),
+      text: translateFood(food[0], t),
       bgClass: overrides?.foodBg ?? "bg-secondary",
       textClass: overrides?.foodText ?? "text-primary",
     });

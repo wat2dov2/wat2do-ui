@@ -649,12 +649,15 @@ export function EventDetailsBody({
   school,
   isFetchingDetails = false,
   renderTitle,
+  onOrganizationFilterSelect,
 }: {
   event: Event;
   school: string | null | undefined;
   isFetchingDetails?: boolean;
   /** Override the title element (the drawer supplies its DrawerTitle). */
   renderTitle?: (title: string) => React.ReactNode;
+  /** Lets drawer composition close after its organization filter is applied. */
+  onOrganizationFilterSelect?: () => void;
 }) {
   const { t } = useTranslation();
   return (
@@ -663,7 +666,11 @@ export function EventDetailsBody({
         className="mx-auto w-full max-w-sm select-none md:col-start-1 md:mx-0"
         onDragStart={(dragEvent) => dragEvent.preventDefault()}
       >
-        <EventCardImage event={event} variant="detail" />
+        <EventCardImage
+          event={event}
+          variant="detail"
+          onOrganizationFilterSelect={onOrganizationFilterSelect}
+        />
       </div>
 
       <div className="contents md:col-start-2 md:row-span-2 md:row-start-1 md:flex md:flex-col md:gap-6">

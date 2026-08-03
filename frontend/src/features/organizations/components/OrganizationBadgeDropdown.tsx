@@ -26,6 +26,7 @@ interface OrganizationBadgeDropdownProps {
     onMouseLeave: () => void;
   };
   disabled?: boolean;
+  onFilterSelect?: () => void;
   onMouseDown?: React.MouseEventHandler;
   onClick?: React.MouseEventHandler;
 }
@@ -41,6 +42,7 @@ export function OrganizationBadgeDropdown({
   organizationDiscord,
   badgeHoverProps,
   disabled = false,
+  onFilterSelect,
   onMouseDown,
   onClick,
 }: OrganizationBadgeDropdownProps) {
@@ -54,11 +56,12 @@ export function OrganizationBadgeDropdown({
     setIsOpen(false);
     if (organizationName) {
       filterActions.updateFilterState({ organizations: [organizationName] });
+      onFilterSelect?.();
       if (pathname !== "/") {
         router.push("/");
       }
     }
-  }, [organizationName, filterActions, pathname, router]);
+  }, [organizationName, filterActions, onFilterSelect, pathname, router]);
 
   const websiteHref = sanitizeHref(organizationPage);
   const instagramHref = sanitizeHref(

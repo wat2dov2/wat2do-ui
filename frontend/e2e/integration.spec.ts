@@ -850,6 +850,19 @@ test.describe("Events Page", () => {
 
     const body = await page.textContent("body");
     expect(body).toBeTruthy();
+    const eventCount = page.getByText("upcoming event", { exact: true }).locator("..");
+    const addEventButton = page.getByRole("button", { name: "Add an event" });
+    await expect(addEventButton.locator("svg")).toHaveCount(0);
+    await expect
+      .poll(async () =>
+        eventCount.evaluate(
+          (countElement) =>
+            countElement.parentElement
+              ?.querySelector("button")
+              ?.textContent?.includes("Add an event") ?? false,
+        ),
+      )
+      .toBe(true);
 
     await page.screenshot({ path: "e2e/screenshots/events-page.png", fullPage: true });
   });
@@ -1008,6 +1021,83 @@ test.describe("Events Page", () => {
 
     await eventDrawer.getByRole("button", { name: "Report" }).click();
     await expect(page).toHaveURL(/\/login\?returnTo=%2Fevents%2F1/);
+  });
+
+  test("opens the event poster in-app and closes the drawer after filtering by host", async ({
+    page,
+  }) => {
+    const now = new Date();
+    const startsAt = new Date(now.getTime() + 86_400_000).toISOString();
+    const event = {
+      id: 1,
+      organization_id: 1,
+      title: "Poster Dialog Event",
+      description: "Poster dialog details",
+      location: "SLC",
+      occurrences: [
+        {
+          id: 1,
+          event_id: 1,
+          dtstart_utc: startsAt,
+          dtend_utc: null,
+        },
+      ],
+      price: 0,
+      food: [],
+      registration: false,
+      source_image_url: "/wat2do-logo.png",
+      source_url: null,
+      category: "Career",
+      organization: "UW Tech Club",
+      organization_type: "wusa",
+      organization_page: "https://example.com/tech",
+      organization_ig: "uwtechclub",
+      organization_discord: "https://discord.gg/uwtechclub",
+      school: "uwaterloo",
+      cancelled: false,
+      added_at: now.toISOString(),
+    };
+
+    await page.route(url => apiPath(url) === "/events", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          items: [event],
+          total: 1,
+          page: 1,
+          page_size: 20,
+          total_pages: 1,
+          latest_added_event: null,
+        }),
+      });
+    });
+    await page.route(url => apiPath(url) === "/events/1", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(event),
+      });
+    });
+
+    await page.goto(BASE);
+    await page.locator('article[data-event-id="1"]').click();
+
+    const eventDrawer = page.getByRole("dialog", { name: "Poster Dialog Event" });
+    await eventDrawer.getByRole("button", { name: "View full event image" }).click();
+
+    const imageDialog = page.getByRole("dialog", { name: "View full event image" });
+    await expect(imageDialog.getByRole("img", { name: "Poster Dialog Event" })).toBeVisible();
+    await imageDialog.getByRole("button", { name: "Close" }).click();
+
+    await eventDrawer.getByRole("button", { name: "UW Tech Club" }).click();
+    await page
+      .getByRole("menuitem", { name: "See more events by UW Tech Club" })
+      .click();
+
+    await expect(eventDrawer).not.toBeVisible();
+    await expect(page).toHaveURL(BASE + "/");
+    await expect(page.locator('article[data-event-id="1"]')).toBeVisible();
   });
 
   test("lets admins delete events from the drawer and dedicated page", async ({ page }) => {
@@ -1726,7 +1816,7 @@ test.describe("Events Page", () => {
     await page.goto(BASE);
 
     const newlyAddedSelect = page.getByRole("combobox", {
-      name: "Newly added",
+      name: "New",
     });
     await expect(newlyAddedSelect).toHaveAttribute("data-slot", "select-trigger");
     const freeFoodFilter = page.getByRole("button", {
@@ -1755,14 +1845,14 @@ test.describe("Events Page", () => {
 
     await newlyAddedSelect.click();
     await expect(
-      page.getByRole("option", { name: "Newly added" }),
+      page.getByRole("option", { name: "New" }),
     ).toBeVisible();
     await expect(
       page.getByRole("option", { name: "Added since last visit" }),
     ).toHaveCount(0);
 
     await page
-      .getByRole("option", { name: "Newly added" })
+      .getByRole("option", { name: "New" })
       .click();
 
     const clearNewlyAddedFilter = page.getByRole("button", {
@@ -1881,7 +1971,7 @@ test.describe("Events Page", () => {
     await page.goto(BASE);
 
     const newlyAddedSelect = page.getByRole("combobox", {
-      name: "Newly added",
+      name: "New",
     });
     await newlyAddedSelect.click();
     await page
@@ -1946,7 +2036,7 @@ test.describe("Events Page", () => {
     await expect(clearFiltersButton).toHaveCount(0);
   });
 
-  test("selects one food and restores all events through the shared All option", async ({
+  test("filters food with free text and restores all events when cleared", async ({
     page,
   }) => {
     const now = new Date();
@@ -1983,7 +2073,7 @@ test.describe("Events Page", () => {
           ...eventBase,
           id: 2,
           title: "Pizza Social",
-          food: ["Pizza"],
+          food: ["Pizza", "Cookies"],
           occurrences: [
             {
               id: 2,
@@ -2014,19 +2104,19 @@ test.describe("Events Page", () => {
 
     await page.goto(BASE);
     await expect(page.locator("article[data-event-id]")).toHaveCount(2);
+    const pizzaCard = page.locator('article[data-event-id="2"]');
+    await expect(pizzaCard).toContainText("Pizza");
+    await expect(pizzaCard).not.toContainText("Cookies");
 
     await page.getByRole("button", { name: "Extra filters" }).click();
     const drawer = page.getByRole("dialog", { name: "Extra filters" });
-    await drawer.getByRole("button", { name: "All", exact: true }).click();
-    await page.getByRole("button", { name: "Pizza", exact: true }).click();
+    const foodInput = drawer.getByPlaceholder("Search food...");
+    await foodInput.fill("piz");
 
     await expect(page.locator("article[data-event-id]")).toHaveCount(1);
-    await expect(
-      page.locator('article[data-event-id="2"]'),
-    ).toBeVisible();
+    await expect(pizzaCard).toBeVisible();
 
-    await drawer.getByRole("button", { name: "Pizza", exact: true }).click();
-    await page.getByRole("button", { name: "All", exact: true }).click();
+    await foodInput.clear();
     await expect(page.locator("article[data-event-id]")).toHaveCount(2);
   });
 
@@ -2102,6 +2192,13 @@ test.describe("Organizations Page", () => {
 
     const body = await page.textContent("body");
     expect(body).toBeTruthy();
+    const organizationCard = page.locator('[data-organization-id="1"]');
+    await expect(
+      organizationCard.getByRole("link", { name: "View Organization Page" }),
+    ).toBeVisible();
+    await expect(
+      organizationCard.getByRole("button", { name: "More options" }),
+    ).toHaveCount(0);
 
     await page.screenshot({ path: "e2e/screenshots/organizations-page.png", fullPage: true });
   });
