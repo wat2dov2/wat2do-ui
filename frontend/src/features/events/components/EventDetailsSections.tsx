@@ -1,5 +1,6 @@
 import { lazy, Suspense, useCallback, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { sanitizeHref } from "@/shared/utils/url";
@@ -47,12 +48,17 @@ import { GoingOccurrencePickerContent } from "@/features/events/components/Going
 import { fetchEventAttendees } from "@/features/events/api/events.api";
 import { useEventStats } from "@/features/events/hooks/useEventStats";
 import { useCurrentTime, useGoingEventSelection } from "@/features/events/hooks/useGoingEvents";
-import { EmailOtpForm, useAuthState } from "@/features/auth";
+import {
+  appendSafeReturnTo,
+  EmailOtpForm,
+  useAuthState,
+} from "@/features/auth";
 import { useUIStore } from "@/shared/store/ui.store";
 import { controlBox } from "@/shared/config/controlBox";
 import { translateFood } from "@/shared/utils/foodTranslation";
 import { queryKeys } from "@/shared/lib/queryKeys";
-import { organizationPagePath } from "@/shared/constants/routes";
+import { organizationPagePath, ROUTES } from "@/shared/constants/routes";
+import { eventPagePath } from "@/features/events/lib/eventUrls";
 import type { Event } from "@/shared/types";
 
 const EventShareDialog = lazy(() =>
@@ -520,15 +526,26 @@ export function EventActions({
   onBeforeEdit?: () => void;
 }) {
   const { t } = useTranslation();
+  const router = useRouter();
   const [shareOpen, setShareOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
-  const { isAdmin } = useAuthState();
+  const { isAdmin, isAuthenticated } = useAuthState();
   const setEditingEvent = useUIStore((s) => s.setEditingEvent);
 
   const handleEdit = useCallback(() => {
     onBeforeEdit?.();
     setEditingEvent(event);
   }, [event, onBeforeEdit, setEditingEvent]);
+
+  const handleReport = useCallback(() => {
+    if (!isAuthenticated) {
+      router.push(
+        appendSafeReturnTo(ROUTES.LOGIN, eventPagePath(event.id)),
+      );
+      return;
+    }
+    setReportOpen(true);
+  }, [event.id, isAuthenticated, router]);
 
   return (
     <Stack direction="horizontal" gap={2} wrap>
@@ -542,7 +559,7 @@ export function EventActions({
         <Share2 className="size-4" />
         {t("common.share")}
       </Button>
-      <Button type="button" variant="secondary" size="sm" onClick={() => setReportOpen(true)}>
+      <Button type="button" variant="secondary" size="sm" onClick={handleReport}>
         <Flag className="size-4" />
         {t("common.report")}
       </Button>

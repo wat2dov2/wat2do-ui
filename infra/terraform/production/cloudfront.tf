@@ -2,6 +2,10 @@ data "aws_cloudfront_cache_policy" "caching_disabled" {
   name = "Managed-CachingDisabled"
 }
 
+data "aws_cloudfront_cache_policy" "caching_optimized" {
+  name = "Managed-CachingOptimized"
+}
+
 // Each school is served from its own subdomain, and the app resolves that school
 // from X-Forwarded-Host. The backend also needs one trusted viewer IP for
 // privacy-preserving scan hashing. CloudFront overwrites both headers before the
@@ -127,6 +131,12 @@ resource "aws_cloudfront_distribution" "main" {
     }
   }
 
+  origin {
+    domain_name              = aws_s3_bucket.assets.bucket_regional_domain_name
+    origin_id                = "wat2do-production-assets"
+    origin_access_control_id = aws_cloudfront_origin_access_control.assets.id
+  }
+
   default_cache_behavior {
     target_origin_id         = "wat2do-production-alb"
     viewer_protocol_policy   = "redirect-to-https"
@@ -140,6 +150,17 @@ resource "aws_cloudfront_distribution" "main" {
       event_type   = "viewer-request"
       function_arn = aws_cloudfront_function.forward_viewer_host.arn
     }
+  }
+
+  ordered_cache_behavior {
+    path_pattern             = "/media/*"
+    target_origin_id         = "wat2do-production-assets"
+    viewer_protocol_policy   = "redirect-to-https"
+    allowed_methods          = ["GET", "HEAD", "OPTIONS"]
+    cached_methods           = ["GET", "HEAD", "OPTIONS"]
+    cache_policy_id          = data.aws_cloudfront_cache_policy.caching_optimized.id
+    origin_request_policy_id = aws_cloudfront_origin_request_policy.none.id
+    compress                 = true
   }
 
   ordered_cache_behavior {

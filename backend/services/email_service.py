@@ -38,6 +38,7 @@ class EmailMessage:
     subject: str
     body_html: str
     body_text: str
+    reply_to: str | None = None
     # Stable per-send key - the provider (when configured) uses it for
     # its own idempotency; inside our own log the (user, type, target, channel)
     # UNIQUE constraint already protects us, so this is purely belt-and-
@@ -81,6 +82,14 @@ class EmailService:
             f"email provider {provider!r} configured but dispatch is not wired yet"
         )
 
+    def send_safely(self, msg: EmailMessage) -> bool:
+        """Dispatch a background email and log provider failures."""
+        try:
+            return self.send(msg)
+        except Exception:
+            log.exception("Background email dispatch failed for subject=%r", msg.subject)
+            return False
+
     @staticmethod
     def _validate_v2_identity(msg: EmailMessage) -> None:
         sender = settings.email_from.casefold()
@@ -101,16 +110,20 @@ class EmailService:
         if msg.idempotency_key:
             headers["Idempotency-Key"] = msg.idempotency_key
 
+        payload = {
+            "from": settings.email_from,
+            "to": msg.to,
+            "subject": msg.subject,
+            "html": msg.body_html,
+            "text": msg.body_text,
+            "headers": msg.headers,
+        }
+        if msg.reply_to:
+            payload["reply_to"] = msg.reply_to
+
         response = httpx.post(
             RESEND_EMAILS_URL,
-            json={
-                "from": settings.email_from,
-                "to": msg.to,
-                "subject": msg.subject,
-                "html": msg.body_html,
-                "text": msg.body_text,
-                "headers": msg.headers,
-            },
+            json=payload,
             headers=headers,
             timeout=controlbox.email_delivery.provider_timeout_seconds,
         )

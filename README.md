@@ -59,6 +59,10 @@ The backend validates the complete directory at startup, rejects missing or unkn
 Environment-specific credentials, infrastructure sizing, database constraints, and UI constants intentionally stay with their owning systems.
 Changes take effect after rebuilding the applications or restarting a scheduled Python job.
 
+## Operating playbooks
+
+- [`docs/seo_playbook.md`](docs/seo_playbook.md) is the maintained source of truth for SEO rules, page-quality gates, prioritization, measurement, and implementation TODOs.
+
 ## Production deployment
 
 Wat2Do runs as one private AWS ECS Fargate task in `ca-central-1`.

@@ -151,6 +151,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/contact/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Submit Contact Message */
+        post: operations["submit_contact_message_contact__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/credits/": {
         parameters: {
             query?: never;
@@ -269,7 +286,10 @@ export interface paths {
         };
         /**
          * List Events
-         * @description Public school feed; optional ``start_utc``/``end_utc`` window. Omits ``created_by``.
+         * @description Public school feed; optional ``start_utc``/``end_utc`` window.
+         *
+         *     ``include_past`` drops the default start-of-today lower bound, so a caller
+         *     can ask for a host's full history. Omits ``created_by``.
          */
         get: operations["list_events_events__get"];
         put?: never;
@@ -1685,6 +1705,20 @@ export interface components {
             /** Cells */
             cells: components["schemas"]["CampusCoverageCell"][];
         };
+        /** ContactCreate */
+        ContactCreate: {
+            /** Name */
+            name: string;
+            /**
+             * Email
+             * Format: email
+             */
+            email: string;
+            /** Subject */
+            subject: string;
+            /** Message */
+            message: string;
+        };
         /** CreditBalanceResponse */
         CreditBalanceResponse: {
             /** Balance */
@@ -1958,9 +1992,10 @@ export interface components {
         };
         /**
          * EventSummaryResponse
-         * @description Lightweight payload for list/card views - omits large text fields
-         *     (description) that are only needed in detail views.
-         *     Keeps the payload ~60-70 % smaller than EventResponse for typical events.
+         * @description Payload for list/card views.
+         *
+         *     Description is included because the feed search matches event copy as well
+         *     as titles, hosts, locations, and food.
          *
          *     The owning organization's type/link/social fields (``organization_type``,
          *     ``organization_page``, ``organization_ig``, ``organization_discord``) are
@@ -1977,6 +2012,8 @@ export interface components {
             id: number;
             /** Title */
             title: string;
+            /** Description */
+            description?: string | null;
             /** Location */
             location?: string | null;
             /** Occurrences */
@@ -2800,10 +2837,6 @@ export interface components {
              * @default 0
              */
             event_count: number;
-            /** Latest Event Title */
-            latest_event_title?: string | null;
-            /** Latest Event Added At */
-            latest_event_added_at?: string | null;
         };
         /** OrganizationUpdate */
         OrganizationUpdate: {
@@ -3957,6 +3990,39 @@ export interface operations {
             };
         };
     };
+    submit_contact_message_contact__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ContactCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_credits_credits__get: {
         parameters: {
             query?: never;
@@ -4182,6 +4248,7 @@ export interface operations {
                 sort_order?: "asc" | "desc";
                 start_utc?: string | null;
                 end_utc?: string | null;
+                include_past?: boolean;
                 /** @description Page number (1-indexed) */
                 page?: number;
                 /** @description Items per page (max 100) */

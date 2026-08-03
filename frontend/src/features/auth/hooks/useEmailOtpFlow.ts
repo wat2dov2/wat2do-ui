@@ -15,7 +15,7 @@ function sanitizeAuthError(err: ApiError, t: TFunction): string {
   }
 
   if (err.status === 401) {
-    return t("auth.resetPasswordInvalidLink");
+    return t("auth.invalidOtp");
   }
 
   return err.message;

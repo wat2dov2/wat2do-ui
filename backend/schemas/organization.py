@@ -179,14 +179,6 @@ class OrganizationUpdate(BaseModel):
         return _validate_organization_categories(v)
 
 
-class OrganizationEventStats(BaseModel):
-    """Aggregated event activity for organization list cards."""
-
-    event_count: int = 0
-    latest_event_title: str | None = None
-    latest_event_added_at: datetime | None = None
-
-
 class OrganizationResponse(BaseModel):
     id: int
     school_id: int | None = Field(default=None, exclude=True)
@@ -202,8 +194,6 @@ class OrganizationResponse(BaseModel):
     school: str | None = None
     owner_email: str | None = None
     event_count: int = 0
-    latest_event_title: str | None = None
-    latest_event_added_at: datetime | None = None
 
     model_config = {"from_attributes": True}
 

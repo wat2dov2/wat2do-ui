@@ -19,8 +19,6 @@ const MOCK_ORGANIZATIONS = [
     school: "uwaterloo",
     categories: ["Technology"],
     event_count: 1,
-    latest_event_title: "Tech Career Fair",
-    latest_event_added_at: new Date().toISOString(),
   },
   {
     id: 2,
@@ -35,8 +33,6 @@ const MOCK_ORGANIZATIONS = [
     school: "uwaterloo",
     categories: ["Social"],
     event_count: 1,
-    latest_event_title: "Board Game Night",
-    latest_event_added_at: new Date().toISOString(),
   },
 ];
 

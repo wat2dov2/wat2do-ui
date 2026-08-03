@@ -1,32 +1,14 @@
-resource "aws_cloudwatch_metric_alarm" "service_running_tasks" {
-  alarm_name          = "wat2do-production-service-running-task-count"
-  alarm_description   = "The wat2do ECS service has fewer than one running task."
+resource "aws_cloudwatch_metric_alarm" "healthy_targets" {
+  alarm_name          = "wat2do-production-healthy-targets"
+  alarm_description   = "The wat2do target group has fewer than one healthy target."
   comparison_operator = "LessThanThreshold"
   evaluation_periods  = 1
-  metric_name         = "RunningTaskCount"
-  namespace           = "ECS/ContainerInsights"
+  metric_name         = "HealthyHostCount"
+  namespace           = "AWS/ApplicationELB"
   period              = 60
   statistic           = "Minimum"
   threshold           = 1
   treat_missing_data  = "breaching"
-  alarm_actions       = var.alarm_sns_topic_arn == null ? [] : [var.alarm_sns_topic_arn]
-
-  dimensions = {
-    ClusterName = aws_ecs_cluster.main.name
-    ServiceName = aws_ecs_service.application.name
-  }
-}
-
-resource "aws_cloudwatch_metric_alarm" "unhealthy_targets" {
-  alarm_name          = "wat2do-production-unhealthy-targets"
-  comparison_operator = "GreaterThanThreshold"
-  evaluation_periods  = 1
-  metric_name         = "UnHealthyHostCount"
-  namespace           = "AWS/ApplicationELB"
-  period              = 60
-  statistic           = "Maximum"
-  threshold           = 0
-  treat_missing_data  = "notBreaching"
   alarm_actions       = var.alarm_sns_topic_arn == null ? [] : [var.alarm_sns_topic_arn]
 
   dimensions = {
@@ -56,18 +38,17 @@ resource "aws_cloudwatch_metric_alarm" "frontend_cpu" {
   alarm_name          = "wat2do-production-frontend-cpu"
   comparison_operator = "GreaterThanThreshold"
   evaluation_periods  = 3
-  metric_name         = "CpuUtilized"
-  namespace           = "ECS/ContainerInsights"
+  metric_name         = "CPUUtilization"
+  namespace           = "AWS/ECS"
   period              = 300
   statistic           = "Average"
-  threshold           = 435
+  threshold           = 80
   treat_missing_data  = "notBreaching"
   alarm_actions       = var.alarm_sns_topic_arn == null ? [] : [var.alarm_sns_topic_arn]
 
   dimensions = {
-    ClusterName   = aws_ecs_cluster.main.name
-    ServiceName   = aws_ecs_service.application.name
-    ContainerName = "frontend"
+    ClusterName = aws_ecs_cluster.main.name
+    ServiceName = aws_ecs_service.application.name
   }
 }
 
@@ -75,11 +56,11 @@ resource "aws_cloudwatch_metric_alarm" "task_memory" {
   alarm_name          = "wat2do-production-task-memory"
   comparison_operator = "GreaterThanThreshold"
   evaluation_periods  = 3
-  metric_name         = "MemoryUtilized"
-  namespace           = "ECS/ContainerInsights"
+  metric_name         = "MemoryUtilization"
+  namespace           = "AWS/ECS"
   period              = 300
   statistic           = "Average"
-  threshold           = 1741
+  threshold           = 85
   treat_missing_data  = "notBreaching"
   alarm_actions       = var.alarm_sns_topic_arn == null ? [] : [var.alarm_sns_topic_arn]
 
@@ -103,9 +84,8 @@ resource "aws_cloudwatch_dashboard" "main" {
           stat   = "Average"
           period = 300
           metrics = [
-            ["ECS/ContainerInsights", "CpuUtilized", "ClusterName", aws_ecs_cluster.main.name, "ServiceName", aws_ecs_service.application.name],
-            [".", "MemoryUtilized", ".", ".", ".", "."],
-            [".", "RunningTaskCount", ".", ".", ".", ".", { stat = "Minimum" }],
+            ["AWS/ECS", "CPUUtilization", "ClusterName", aws_ecs_cluster.main.name, "ServiceName", aws_ecs_service.application.name],
+            [".", "MemoryUtilization", ".", ".", ".", "."],
           ]
         }
       },

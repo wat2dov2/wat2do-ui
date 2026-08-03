@@ -18,8 +18,6 @@ const MOCK_ORGANIZATIONS = [
     school: "uwaterloo",
     categories: ["Technology"],
     event_count: 1,
-    latest_event_title: "Tech Career Fair",
-    latest_event_added_at: new Date().toISOString(),
   },
   {
     id: 2,
@@ -30,8 +28,6 @@ const MOCK_ORGANIZATIONS = [
     school: "uwaterloo",
     categories: ["Social"],
     event_count: 1,
-    latest_event_title: "Board Game Night",
-    latest_event_added_at: new Date().toISOString(),
   },
   {
     id: 3,
@@ -42,8 +38,6 @@ const MOCK_ORGANIZATIONS = [
     school: "uwaterloo",
     categories: ["Technology"],
     event_count: 0,
-    latest_event_title: null,
-    latest_event_added_at: null,
   },
 ];
 
@@ -777,38 +771,38 @@ test.describe("Events Page", () => {
     await expect(page.locator('article[data-event-id="4"]')).toHaveCount(0);
   });
 
-  test("share and report overflow actions do not open event details", async ({ page }) => {
+  test("shares from event details and gates anonymous reports", async ({ page }) => {
     await page.goto(BASE);
-    await page.waitForTimeout(3000);
 
     const card = page.locator('article[data-event-id="1"]').first();
     await expect(card).toBeVisible();
+    await card.click();
+    await expect(page).toHaveURL(/eventId=1/);
 
-    const overflowButton = card.getByRole("button", { name: "Actions" });
-    await overflowButton.click();
-    await page.getByRole("menuitem", { name: "Share" }).click();
+    const eventDrawer = page.getByRole("dialog", { name: "Tech Career Fair" });
+    await eventDrawer.getByRole("button", { name: "Share" }).click();
 
     await expect(page.getByRole("heading", { name: "Share" })).toBeVisible();
-    await expect(page).not.toHaveURL(/eventId=1/);
+    await expect(page).toHaveURL(/eventId=1/);
 
     await page.keyboard.press("Escape");
     await expect(page.getByRole("heading", { name: "Share" })).not.toBeVisible();
 
-    await overflowButton.click();
-    await page.getByRole("menuitem", { name: "Report" }).click();
-
-    await expect(page.getByRole("heading", { name: /Report event/i })).toBeVisible();
-    await expect(page).not.toHaveURL(/eventId=1/);
+    await eventDrawer.getByRole("button", { name: "Report" }).click();
+    await expect(page).toHaveURL(/\/login\?returnTo=%2Fevents%2F1/);
   });
 
   test("scrolls drawer content that exceeds the mobile viewport", async ({ page }) => {
+    await seedAuthenticatedSession(page);
     await page.setViewportSize({ width: 375, height: 320 });
     await page.goto(BASE);
 
     const card = page.locator('article[data-event-id="1"]').first();
     await card.scrollIntoViewIfNeeded();
-    await card.getByRole("button", { name: "Actions" }).click();
-    await page.getByRole("menuitem", { name: "Report" }).click();
+    await card.click();
+    await page.getByRole("dialog", { name: "Tech Career Fair" })
+      .getByRole("button", { name: "Report" })
+      .click();
 
     const drawer = page.getByRole("dialog", { name: /Report event/i });
     const drawerBody = drawer.locator('[data-slot="drawer-body"]');
@@ -857,6 +851,19 @@ test.describe("Events Page", () => {
 
     await expect(page).not.toHaveURL(/eventId=1/);
     await expect(page.getByRole("dialog")).not.toBeVisible();
+  });
+
+  test("browser back closes event details opened from a card", async ({ page }) => {
+    await page.goto(BASE);
+
+    await page.locator('article[data-event-id="1"]').click();
+    await expect(page).toHaveURL(/eventId=1/);
+    await expect(page.getByRole("dialog", { name: "Tech Career Fair" })).toBeVisible();
+
+    await page.goBack();
+
+    await expect(page).not.toHaveURL(/eventId=/);
+    await expect(page.getByRole("dialog", { name: "Tech Career Fair" })).toHaveCount(0);
   });
 
   test("shows similar events below a dedicated event page", async ({ page }) => {
@@ -1390,13 +1397,17 @@ test.describe("Events Page", () => {
     await expect(refreshedCard).toContainText("1 click · 1 going");
   });
 
-  test("drag-scrolls quick filters without selecting one", async ({ page }) => {
+  test("cuts out and drag-scrolls overflowing quick filters", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(BASE);
 
     const strip = page.getByTestId("event-quick-filter-scroll");
     await expect(strip).toBeVisible();
     await expect(strip.getByRole("button", { name: "Career", exact: true })).toBeVisible();
+    await expect.poll(() =>
+      strip.evaluate((element) => getComputedStyle(element).maskImage)
+    ).toContain("linear-gradient");
+    await expect(strip).toHaveCSS("background-image", "none");
     const box = await strip.boundingBox();
     expect(box).not.toBeNull();
     if (!box) return;
@@ -1408,13 +1419,21 @@ test.describe("Events Page", () => {
 
     await expect.poll(() => strip.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
     await expect(strip.locator('button[aria-pressed="true"]')).toHaveCount(0);
+
+    await strip.evaluate((element) => {
+      element.scrollLeft = element.scrollWidth;
+      element.dispatchEvent(new Event("scroll"));
+    });
+    await expect.poll(() =>
+      strip.evaluate((element) => getComputedStyle(element).maskImage)
+    ).toBe("none");
   });
 
   test("uses a clearable select for newly added events", async ({ page }) => {
     await page.goto(BASE);
 
     const newlyAddedSelect = page.getByRole("combobox", {
-      name: "Added in last 24 hours",
+      name: "Newly added",
     });
     await expect(newlyAddedSelect).toHaveAttribute("data-slot", "select-trigger");
     const freeFoodFilter = page.getByRole("button", {
@@ -1443,14 +1462,14 @@ test.describe("Events Page", () => {
 
     await newlyAddedSelect.click();
     await expect(
-      page.getByRole("option", { name: "Added in last 24 hours" }),
+      page.getByRole("option", { name: "Newly added" }),
     ).toBeVisible();
     await expect(
       page.getByRole("option", { name: "Added since last visit" }),
     ).toHaveCount(0);
 
     await page
-      .getByRole("option", { name: "Added in last 24 hours" })
+      .getByRole("option", { name: "Newly added" })
       .click();
 
     const clearNewlyAddedFilter = page.getByRole("button", {
@@ -1569,7 +1588,7 @@ test.describe("Events Page", () => {
     await page.goto(BASE);
 
     const newlyAddedSelect = page.getByRole("combobox", {
-      name: "Added in last 24 hours",
+      name: "Newly added",
     });
     await newlyAddedSelect.click();
     await page

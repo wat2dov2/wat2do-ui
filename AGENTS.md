@@ -243,13 +243,31 @@ When cleaning frontend code:
 
 ## Design system mandate
 
+- **Every UI change must be implemented at the lowest-level reusable owner of that appearance or behavior.**
+  A request that names one page or one component instance does not make that call site the owner of the design decision.
+  Trace the rendered element down through feature components, layout primitives, UI primitives, variants, and tokens, then change the lowest shared layer that semantically owns the requested result.
+- **Never fix a UI detail by styling the individual instance on a page.**
+  Pages and feature call sites may select semantic props or variants, provide content, and express business state, but they must not patch a shared component with local Tailwind classes, inline styles, arbitrary selector overrides, or one-off hover, focus, spacing, color, typography, radius, border, or shadow rules.
+- If a Contact page button should no longer underline on hover, change the appropriate `Button` or `Link` variant in `frontend/src/shared/ui/`.
+  Do not remove the underline by adding or overriding a class on the Contact page instance.
+  If the existing variant's semantic contract should keep its current appearance, add or refine the smallest meaningful semantic variant in the owning UI primitive and have the page select it.
+- Apply the same ownership rule at every layer.
+  Theme-wide values belong in semantic tokens, primitive behavior belongs in `frontend/src/shared/ui/`, reusable structure belongs in layout primitives, and feature-specific composed appearance belongs in the lowest shared feature component that owns it.
+  Page-level code owns composition and business intent, not the visual implementation of its children.
+- Before editing any UI call site, inspect the rendered component's source, its selected variant, and the tokens used by that variant.
+  A UI change is incomplete if the final design decision still lives in a page-level `className` or inline style when a lower reusable owner exists.
+- Do not create a page-specific wrapper, duplicate variant, or narrowly named prop merely to hide a local style override.
+  The resulting API must describe a reusable semantic distinction, and there must remain one obvious source of truth for the appearance.
 - Build the design system around semantic tokens (`surface`, `primary`, `foreground`) instead of raw Tailwind colors like `bg-white` or `text-gray-500`, so the UI can be re-themed from one place.
 - Separate functional tokens (backgrounds, text, borders, buttons) from decorative tokens (gradients, glows, colorful badges, background orbs) so branding does not leak into core UI code.
 - Install shadcn/ui components as a starting point, but treat them as our own source code: customize them, remove unused variants, and evolve them instead of leaving them untouched.
 - Organize components into three layers: UI primitives (Button, Input, Card), layout primitives (Container, Stack, FormGrid), and feature components (EventCard, ClubCard).
-- Pages and feature components must compose existing UI and layout primitives, selecting or extending their semantic variants before writing Tailwind classes. Do not hand-roll bespoke visual styles with long `className` strings when a primitive, layout helper, or component variant can express the intent. If the needed variant does not exist, add it to the owning component and use that single variant everywhere rather than duplicating Tailwind styling at call sites.
+- Pages and feature components must compose existing UI and layout primitives by selecting semantic variants.
+  They must not hand-roll visual styles in `className` when a token, primitive, layout helper, feature component, or component variant owns the design decision.
+  If the needed semantic distinction does not exist, add it to the lowest owning component and use that single variant instead of styling call sites.
 - Use layout primitives for page and feature structure, including flex direction, grid columns, alignment, wrapping, spacing, sections, and form actions.
-  Reserve call-site `className` values for visual styling, positioning, or a documented layout exception that no existing primitive can express.
+  A genuine one-off positioning constraint may remain at a call site only when it describes that instance's relationship to its parent, no reusable owner can express it, and the reason is documented beside the class.
+  It must not encode the child component's visual design or interactive states.
 - Render page-level back and all navigation through the `PageHeader` `back` prop as the first control at the top-left of the page.
   Do not hand-roll page-level arrow buttons at call sites.
   Workflow-internal previous and back controls are excluded.

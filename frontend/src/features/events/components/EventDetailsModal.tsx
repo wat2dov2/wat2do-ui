@@ -2,7 +2,6 @@ import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { tracker } from "@/shared/services/trackingService";
-import { ArrowRight } from "@/shared/ui/doodle-icons";
 import {
   Drawer,
   DrawerContent,
@@ -10,7 +9,6 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/shared/ui/drawer";
-import { Button } from "@/shared/ui/button";
 import { Separator } from "@/shared/ui/separator";
 import { EventDetailsDrawerSkeleton } from "@/features/events/components/EventDetailsDrawerSkeleton";
 import {
@@ -18,7 +16,6 @@ import {
   EventDetailsBody,
   EventDetailsSimilarEvents,
 } from "@/features/events/components/EventDetailsSections";
-import { eventPagePath } from "@/features/events/lib/eventUrls";
 import { DrawerBody, Stack } from "@/shared/layout";
 import { useEventsStore } from "@/features/events/store/events.store";
 import { fetchEventById } from "@/features/events/api/events.api";
@@ -126,19 +123,7 @@ export function EventDetailsModal({
                   gap={3}
                   wrap
                 >
-                  <Stack direction="horizontal" gap={2} wrap>
-                    <Button asChild variant="secondary" size="sm">
-                      <a
-                        href={eventPagePath(displayedEvent.id)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        {t("events.eventPage")}
-                        <ArrowRight className="size-4 -rotate-45" />
-                      </a>
-                    </Button>
-                    <EventActions event={displayedEvent} onBeforeEdit={onClose} />
-                  </Stack>
+                  <EventActions event={displayedEvent} onBeforeEdit={onClose} />
                 </Stack>
               </DrawerHeader>
 

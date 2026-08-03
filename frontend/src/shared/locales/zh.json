@@ -151,11 +151,9 @@
     "forYou": "为你推荐",
     "going": "参加中",
     "dateRange": "日期范围",
-    "priceRange": "价格范围",
     "dayOfWeek": "星期",
     "registration": "需要报名",
     "onlyShowEventsRequiringRegistration": "仅显示需要报名的活动",
-    "minPrice": "最低价格",
     "maxPrice": "最高价格",
     "asc": "升序",
     "desc": "降序",
@@ -417,7 +415,20 @@
       "builtPrefix": "中结识了许多优秀的朋友。为了让全校同学不再错过这些精彩活动，我们在 ",
       "builtDate": "2025年8月",
       "builtSuffix": " 搭建了此平台的首个版本。经过几个月的打磨，现在我们非常高兴能将它分享给你们！",
-      "signature": "— Tony & Erica"
+      "signature": "- Tony & Erica"
+    },
+    "form": {
+      "title": "联系我们",
+      "description": "将问题、建议、更正或合作想法直接发送给 Wat2Do 团队。",
+      "name": "姓名",
+      "email": "电子邮箱",
+      "subject": "主题",
+      "message": "留言",
+      "submit": "发送留言",
+      "sending": "正在发送...",
+      "success": "感谢您的联系，留言已发送。",
+      "sendAnother": "再发一条留言",
+      "error": "无法发送留言，请重试。"
     },
     "funding": {
       "text": "我们由衷地感谢来自滑铁卢本科生协会（WUSA）的 ",

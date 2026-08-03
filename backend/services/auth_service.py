@@ -27,6 +27,7 @@ from schemas.auth import (
     TokenResponse,
 )
 from services import school_service
+from services.email_service import EmailMessage
 from services.school_context import school_frontend_url
 
 
@@ -102,12 +103,12 @@ class AuthService:
         logger.warning("%s: %s", log_message, exc.message)
         raise domain_error_cls(error_detail)
 
-    def send_otp(
+    def prepare_otp_email(
         self,
         email: str,
         invitation_token: str | None = None,
         return_to: str | None = None,
-    ) -> None:
+    ) -> EmailMessage:
         email_clean = email.strip().lower()
         has_valid_invite = False
         recipient_school: str | None = None
@@ -210,8 +211,6 @@ class AuthService:
             logger.error("Failed to insert verification tokens: %s", e)
             raise ServiceError(FAILED_TO_SAVE_TOKEN)
 
-        from services.email_service import EmailMessage, email_service
-
         base_url = school_frontend_url(recipient_school)
         callback_params = {
             "token": hashed_token,
@@ -249,10 +248,9 @@ class AuthService:
         This code and link will expire in 15 minutes. If you did not request this, you can safely ignore this email.
         """
 
-        msg = EmailMessage(
+        return EmailMessage(
             to=email_clean, subject=subject, body_html=body_html, body_text=body_text
         )
-        email_service.send(msg)
 
     def verify_otp(self, email: str, token: str) -> AuthResult:
         email_clean = email.strip().lower()

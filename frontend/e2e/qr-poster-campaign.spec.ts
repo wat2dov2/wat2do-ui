@@ -680,6 +680,26 @@ test.describe("Promoter poster campaign", () => {
     await expect(tabs).toBeVisible();
   });
 
+  test("switches between every standard settings tab", async ({ page }) => {
+    await installCommonApiMocks(page);
+    await installSessionMock(page, { hasPromoterProfile: false });
+
+    await page.goto(`${BASE_URL}/settings`);
+
+    const notificationsTab = page.getByRole("tab", { name: "Notifications" });
+    const appearanceTab = page.getByRole("tab", { name: "Appearance" });
+    await expect(notificationsTab).toBeEnabled();
+    await expect(appearanceTab).toBeEnabled();
+
+    await notificationsTab.click();
+    await expect(page).toHaveURL(/\/settings\?tab=notifications$/);
+    await expect(page.getByText("Notification Preferences", { exact: true })).toBeVisible();
+
+    await appearanceTab.click();
+    await expect(page).toHaveURL(/\/settings\?tab=appearance$/);
+    await expect(page.getByText("View Preferences", { exact: true })).toBeVisible();
+  });
+
   test("hides promoter settings from users who are not enrolled", async ({
     page,
   }) => {

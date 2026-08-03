@@ -29,7 +29,6 @@ from schemas.event import (
     LatestEventResponse,
 )
 from schemas.event_date import OccurrenceResponse, OccurrenceUpdate
-from schemas.organization import OrganizationEventStats
 from services import (
     event_date_service,
     event_query,
@@ -115,42 +114,30 @@ def get_latest_added_event(school: str | None = None) -> LatestEventResponse | N
 
 
 @supabase_retry
-def get_organization_event_stats(
+def get_organization_event_counts(
     organization_ids: list[int],
-) -> dict[int, OrganizationEventStats]:
-    """Return per-organization event totals and most recently added event."""
+) -> dict[int, int]:
+    """Return per-organization event totals."""
     if not organization_ids:
         return {}
 
-    stats = {organization_id: OrganizationEventStats() for organization_id in organization_ids}
+    counts = {organization_id: 0 for organization_id in organization_ids}
 
     r = (
         get_sb()
         .table(EVENTS)
-        .select("organization_id,title,added_at")
+        .select("organization_id")
         .in_("organization_id", organization_ids)
-        .order("added_at", desc=True)
         .execute()
     )
 
     for row in r.data or []:
         organization_id = row.get("organization_id")
-        if organization_id not in stats:
+        if organization_id not in counts:
             continue
+        counts[organization_id] += 1
 
-        current = stats[organization_id]
-        current.event_count += 1
-        if current.latest_event_title is None:
-            current.latest_event_title = row.get("title")
-            added_at = row.get("added_at")
-            if added_at is not None:
-                current.latest_event_added_at = (
-                    added_at
-                    if isinstance(added_at, datetime)
-                    else datetime.fromisoformat(str(added_at).replace("Z", "+00:00"))
-                )
-
-    return stats
+    return counts
 
 
 @supabase_retry

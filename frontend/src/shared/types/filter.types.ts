@@ -4,7 +4,7 @@ export interface FilterState {
   locations: string[];
   foods: string[];
   days: string[];
-  priceRange: { min: string; max: string };
+  maxPrice: string;
   registration: boolean;
   organizations: string[];
   freeFood: boolean;

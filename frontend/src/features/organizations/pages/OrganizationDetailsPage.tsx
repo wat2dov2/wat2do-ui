@@ -15,7 +15,6 @@ import { useAuthState } from "@/features/auth";
 import { OrganizationEventsGrid } from "@/features/events";
 import { ClaimOrganizationModal } from "@/features/organizations/components/ClaimOrganizationModal";
 import { OrganizationCategoryBadges } from "@/features/organizations/components/OrganizationCategoryBadges";
-import { OrganizationLogo } from "@/features/organizations/components/OrganizationLogo";
 import { OrganizationMembershipActions } from "@/features/organizations/components/OrganizationMembershipActions";
 import { getOrganizationById } from "@/features/organizations/api/organizations.api";
 import { useSavedOrganizationsStore } from "@/features/organizations/store/savedOrganizations.store";
@@ -98,9 +97,7 @@ function OrganizationDetailsContent({
             }
           />
 
-          <Stack gap={4}>
-            <OrganizationLogo organization={organization} />
-
+          <Stack gap={3}>
             <OrganizationMembershipActions organization={organization} />
 
             <OrganizationCategoryBadges

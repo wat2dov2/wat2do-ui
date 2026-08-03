@@ -285,14 +285,9 @@ def list_organizations(
         items.append(_organization_response(row, owner_email=email))
 
     if items:
-        stats = event_service.get_organization_event_stats([item.id for item in items])
+        event_counts = event_service.get_organization_event_counts([item.id for item in items])
         items = [
-            item.model_copy(
-                update=stats[item.id].model_dump()
-                if item.id in stats
-                else {"event_count": 0, "latest_event_title": None, "latest_event_added_at": None}
-            )
-            for item in items
+            item.model_copy(update={"event_count": event_counts.get(item.id, 0)}) for item in items
         ]
 
     return items, r.count or len(items)

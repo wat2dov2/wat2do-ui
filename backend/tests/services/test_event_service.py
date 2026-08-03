@@ -574,11 +574,21 @@ def test_load_events_page_filters_counts_slices_and_hydrates(monkeypatch, fake_s
     fake_sb.eq.assert_any_call("events.registration", True)
     fake_sb.gte.assert_any_call("events.price", 0)
     fake_sb.lte.assert_any_call("events.price", 0)
-    fake_sb.or_.assert_any_call(
-        'title.ilike."%hack%",location.ilike."%hack%",organization.ilike."%hack%"',
-        reference_table="events",
-    )
     fake_sb.range.assert_any_call(0, 49)
+
+
+def test_event_search_matches_description_and_food():
+    row = {
+        "title": "Campus Social",
+        "description": "Bring your own board game",
+        "location": "SLC",
+        "organization": "Student Club",
+        "food": ["Custom dumplings"],
+    }
+
+    assert event_query._matches_search(row, "board game") is True
+    assert event_query._matches_search(row, "custom dumplings") is True
+    assert event_query._matches_search(row, "concert") is False
 
 
 def test_load_events_page_default_date_uses_lightweight_candidate_scan(monkeypatch):
@@ -836,36 +846,25 @@ def test_get_latest_added_event_filters_by_school(fake_sb, patch_sb, monkeypatch
     fake_sb.eq.assert_any_call("school_id", 99)
 
 
-def test_get_organization_event_stats_aggregates_latest_and_count(fake_sb, patch_sb):
+def test_get_organization_event_counts_aggregates_count(fake_sb, patch_sb):
     patch_sb("services.event_service")
     fake_sb.set_response(
         data=[
             {
                 "organization_id": 1,
-                "title": "Newest Event",
-                "added_at": "2026-05-03T12:00:00+00:00",
             },
             {
                 "organization_id": 1,
-                "title": "Older Event",
-                "added_at": "2026-05-01T12:00:00+00:00",
             },
             {
                 "organization_id": 2,
-                "title": "Only Event",
-                "added_at": "2026-05-02T12:00:00+00:00",
             },
         ]
     )
 
-    stats = event_service.get_organization_event_stats([1, 2, 99])
+    counts = event_service.get_organization_event_counts([1, 2, 99])
 
-    assert stats[1].event_count == 2
-    assert stats[1].latest_event_title == "Newest Event"
-    assert stats[2].event_count == 1
-    assert stats[2].latest_event_title == "Only Event"
-    assert stats[99].event_count == 0
-    assert stats[99].latest_event_title is None
+    assert counts == {1: 2, 2: 1, 99: 0}
 
 
 def _occ_response(dtstart, dtend=None, occ_id=1, event_id=42):

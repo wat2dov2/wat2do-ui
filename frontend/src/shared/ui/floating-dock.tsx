@@ -19,11 +19,11 @@ export interface FloatingDockItem {
   isActive?: boolean;
 }
 
-/** Resting icon circle matches BackToTopButton (`size-9` / 36px). */
-const DOCK_ICON_SIZE = 36;
-const DOCK_ICON_SIZE_ZOOMED = 72;
-const DOCK_GLYPH_SIZE = 18;
-const DOCK_GLYPH_SIZE_ZOOMED = 36;
+/** Resting icon circle matches BackToTopButton (`size-11` / 44px). */
+const DOCK_ICON_SIZE = 44;
+const DOCK_ICON_SIZE_ZOOMED = 76;
+const DOCK_GLYPH_SIZE = 22;
+const DOCK_GLYPH_SIZE_ZOOMED = 38;
 
 /**
  * Aceternity Floating Dock magnification pattern:
@@ -155,10 +155,10 @@ function IconContainer({
       onMouseLeave={() => setHovered(false)}
       className={cn(
         "relative flex aspect-square items-center justify-center rounded-full",
-        !canMagnify && "size-9",
+        !canMagnify && "size-11",
         isActive
-          ? "bg-primary text-primary-foreground"
-          : "border border-border bg-secondary text-foreground/80 hover:text-foreground hover:bg-secondary-hover",
+          ? "border border-primary bg-primary text-primary-foreground shadow-md"
+          : "border border-border bg-secondary text-foreground/80 shadow-md hover:bg-secondary-hover hover:text-foreground",
       )}
     >
       <AnimatePresence>
@@ -175,7 +175,7 @@ function IconContainer({
       </AnimatePresence>
       <m.div
         style={canMagnify ? { width: widthIcon, height: heightIcon } : undefined}
-        className="flex size-[18px] items-center justify-center [&_svg]:h-full [&_svg]:w-full"
+        className="flex size-[22px] items-center justify-center [&_svg]:h-full [&_svg]:w-full"
       >
         {icon}
       </m.div>

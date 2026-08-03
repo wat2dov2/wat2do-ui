@@ -59,7 +59,7 @@ export function AuthCallbackPage() {
     } catch (err) {
       console.error("Auth callback verification failed:", err);
       verifyingTokens.delete(key);
-      setError(t("auth.resetPasswordInvalidLink"));
+      setError(t("auth.invalidLoginLink"));
       setIsLoading(false);
       inFlightRef.current = false;
     }
@@ -81,13 +81,13 @@ export function AuthCallbackPage() {
           ? t("auth.genericError")
           : hasValidParams
             ? t("auth.callbackDescription", { email })
-            : t("auth.resetPasswordInvalidLink")
+            : t("auth.invalidLoginLink")
       }
     >
       <div className="w-full flex flex-col items-center justify-center py-8 space-y-4">
         {error || !hasValidParams ? (
           <p className="text-sm text-destructive text-center max-w-xs">
-            {error || t("auth.resetPasswordInvalidLink")}
+            {error || t("auth.invalidLoginLink")}
           </p>
         ) : (
           <LoadingButton

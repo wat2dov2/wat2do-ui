@@ -11,7 +11,7 @@ export interface SearchFilters {
   goingFilter: boolean;
   freeFoodFilter: boolean;
   selectedDays: string[];
-  priceRange: { min: string; max: string };
+  maxPrice: string;
   selectedLocations: string[];
   selectedFoods: string[];
   selectedCategories: string[];
@@ -41,6 +41,9 @@ function eventSearchHaystack(event: Event): string[] {
     event.organization,
     event.ig_handle,
     event.organization_ig,
+    event.description,
+    event.location,
+    ...(event.food ?? []),
   ].filter((field): field is string => Boolean(field));
 }
 
@@ -104,19 +107,18 @@ export function filterEvents(
       return false;
     }
 
-    // Price range only applies when the freeFood quick filter is off.
+    // Maximum price only applies when the freeFood quick filter is off.
     if (!filters.freeFoodFilter) {
-      if (filters.priceRange.min && price < parseFloat(filters.priceRange.min)) {
-        return false;
-      }
-      if (filters.priceRange.max && price > parseFloat(filters.priceRange.max)) {
+      if (filters.maxPrice && price > parseFloat(filters.maxPrice)) {
         return false;
       }
     }
 
     if (
       filters.selectedLocations.length > 0 &&
-      !filters.selectedLocations.some((loc) => (event.location ?? "").includes(loc))
+      !filters.selectedLocations.some((loc) =>
+        (event.location ?? "").toLocaleLowerCase().includes(loc.toLocaleLowerCase()),
+      )
     ) {
       return false;
     }

@@ -20,6 +20,7 @@ import { Separator } from "@/shared/ui/separator";
 import { useTranslation } from "react-i18next";
 import imgSlefLogo from "@/assets/slef_logo.png";
 import imgContactHero from "@/assets/contact_hero.png";
+import { ContactForm } from "@/features/contact/components/ContactForm";
 
 const CornerMask = ({ className }: { className?: string }) => (
   <svg
@@ -113,6 +114,8 @@ export function ContactPage() {
             </div>
           </div>
         </m.div>
+
+        <ContactForm />
 
         <Card>
           <CardHeader>

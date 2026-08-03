@@ -27,7 +27,7 @@ interface FilterValues {
   selectedLocations: string[];
   selectedFoods: string[];
   selectedDays: string[];
-  priceRange: { min: string; max: string };
+  maxPrice: string;
   registration: boolean;
   freeFoodFilter: boolean;
   goingFilter: boolean;
@@ -49,7 +49,7 @@ const emptyFilters: FilterValues = {
   selectedLocations: [],
   selectedFoods: [],
   selectedDays: [],
-  priceRange: { min: "", max: "" },
+  maxPrice: "",
   registration: false,
   freeFoodFilter: false,
   goingFilter: false,
@@ -72,7 +72,7 @@ export const useSearchStore = create<SearchStoreState>((set) => ({
       selectedFoods: normalized.foods,
       selectedDays: normalized.days,
       selectedOrganizations: normalized.organizations,
-      priceRange: normalized.priceRange,
+      maxPrice: normalized.maxPrice,
       registration: normalized.registration,
       freeFoodFilter: normalized.freeFood,
       goingFilter: normalized.going,

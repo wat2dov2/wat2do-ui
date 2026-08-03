@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, HttpUrl, model_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, HttpUrl, model_validator
 
 _CONTROLBOX_DIRECTORY = Path(__file__).resolve().parents[1] / "controlbox"
 _INTERACTION_TYPES = {"click", "detail_view", "going", "ungoing", "share"}
@@ -264,6 +264,14 @@ class EmailDeliveryControl(_ControlModel):
     provider_timeout_seconds: float = Field(gt=0)
 
 
+class ContactControl(_ControlModel):
+    recipient_email: EmailStr
+    maximum_name_length: int = Field(gt=0, le=255)
+    maximum_subject_length: int = Field(gt=0, le=255)
+    maximum_message_length: int = Field(gt=0, le=20_000)
+    rate_limit: RateLimitControl
+
+
 class AdminControl(_ControlModel):
     items_per_page: int = Field(gt=0)
 
@@ -418,6 +426,7 @@ class ControlBox(_ControlModel):
     rate_limits: RateLimitsControl
     scraping: ScrapingControl
     email_delivery: EmailDeliveryControl
+    contact: ContactControl
     admin: AdminControl
     uploads: UploadsControl
     public_attendance: PublicAttendanceControl

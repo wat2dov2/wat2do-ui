@@ -13,7 +13,7 @@ export const EVENT_CARD_IMAGE_HEIGHT = 208;
 
 /** Standard responsive grid for event and organization card lists. */
 export const CARD_GRID_CLASS =
-  "grid grid-cols-2 gap-2 sm:gap-2.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6";
+  "grid grid-cols-2 gap-2 sm:gap-2.5 min-[480px]:grid-cols-[repeat(auto-fill,minmax(13rem,1fr))]";
 
 
 /** Small delay (ms) to allow DOM updates before scrolling to an element. */

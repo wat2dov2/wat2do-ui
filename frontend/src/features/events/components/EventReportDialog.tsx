@@ -16,6 +16,7 @@ import { Field, FieldLabel } from "@/shared/ui/field";
 import { toast } from "@/shared/hooks/use-toast";
 import { DrawerBody } from "@/shared/layout";
 import { reportEventToBackend } from "@/features/events/api/events.api";
+import { getApiErrorMessage } from "@/shared/services/apiClient";
 
 interface EventReportDialogProps {
   eventId: number;
@@ -42,17 +43,14 @@ export function EventReportDialog({
     setIsSubmitting(true);
     try {
       await reportEventToBackend(eventId, trimmedReason);
-      toast({
-        title: t("events.reportDialog.submittedTitle"),
-        description: t("events.reportDialog.submittedDescription", { title: eventTitle }),
-        variant: "success",
-      });
       setIsSubmitted(true);
     } catch (err) {
       console.error("Failed to report event:", err);
       toast({
-        title: t("events.reportDialog.submitFailed"),
-        description: t("events.reportDialog.submitFailed"),
+        description: getApiErrorMessage(
+          err,
+          t("events.reportDialog.submitFailed"),
+        ),
         variant: "destructive",
       });
     } finally {
@@ -100,7 +98,6 @@ export function EventReportDialog({
                   id="event-report-reason"
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
-                  placeholder={t("events.reportDialog.placeholder")}
                   maxLength={500}
                   className="min-h-28"
                   disabled={isSubmitting}

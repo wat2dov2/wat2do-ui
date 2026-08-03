@@ -17,6 +17,7 @@ import { controlBox } from "@/shared/config/controlBox";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import { tracker } from "@/shared/services/trackingService";
 import type { Event } from "@/shared/types";
+import { isActiveOrUpcomingOccurrence } from "@/shared/utils/date";
 
 type EventStatsMap = Record<string, EventStats>;
 
@@ -55,7 +56,7 @@ export function useGoingEventSelection(
   const selectableOccurrences = useMemo(() => {
     if (event.cancelled || now === null) return [];
     return [...(event.occurrences ?? [])]
-      .filter((occurrence) => new Date(occurrence.dtstart_utc).getTime() >= now)
+      .filter((occurrence) => isActiveOrUpcomingOccurrence(occurrence, now))
       .sort(
         (left, right) =>
           new Date(left.dtstart_utc).getTime() -

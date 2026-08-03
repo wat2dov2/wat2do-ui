@@ -12,7 +12,6 @@ import { AuthPageLayout } from "@/features/auth/components/AuthPageLayout";
 import { ROUTES } from "@/shared/constants/routes";
 import { QP } from "@/shared/constants/queryParams";
 import { Button } from "@/shared/ui/button";
-import { FieldDescription } from "@/shared/ui/field";
 import type { Event } from "@/shared/types";
 
 interface AuthEntryPageProps {
@@ -75,11 +74,6 @@ export function AuthEntryPage({ previewEvents = [] }: AuthEntryPageProps) {
           >
             {t("auth.skipToOnboarding")}
           </Button>
-        }
-        footer={
-          <FieldDescription className="text-center text-xs">
-            {t("auth.termsNotice")}
-          </FieldDescription>
         }
       />
     </AuthPageLayout>

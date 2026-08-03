@@ -6,6 +6,7 @@
 import { useTranslation } from "react-i18next";
 import type { Event } from "@/shared/types";
 import type { TFunction } from "i18next";
+import { translateFood } from "@/shared/utils/foodTranslation";
 
 export interface EventBadge {
   text: string;
@@ -61,7 +62,7 @@ export function computeEventBadges(
   const food = event.food || [];
   if (food.length > 0) {
     badges.push({
-      text: t("common.freeFood"),
+      text: food.map((item) => translateFood(item, t)).join(", "),
       bgClass: overrides?.foodBg ?? "bg-secondary",
       textClass: overrides?.foodText ?? "text-primary",
     });

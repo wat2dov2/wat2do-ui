@@ -38,3 +38,29 @@ resource "aws_iam_role" "ecs_task" {
   name               = "wat2do-production-ecs-task"
   assume_role_policy = data.aws_iam_policy_document.ecs_execution_assume_role.json
 }
+
+data "aws_iam_policy_document" "ecs_task_assets" {
+  statement {
+    sid    = "ManageApplicationAssets"
+    effect = "Allow"
+    actions = [
+      "s3:DeleteObject",
+      "s3:GetObject",
+      "s3:PutObject",
+    ]
+    resources = ["${aws_s3_bucket.assets.arn}/media/*"]
+  }
+
+  statement {
+    sid       = "ListApplicationAssets"
+    effect    = "Allow"
+    actions   = ["s3:ListBucket"]
+    resources = [aws_s3_bucket.assets.arn]
+  }
+}
+
+resource "aws_iam_role_policy" "ecs_task_assets" {
+  name   = "manage-wat2do-assets"
+  role   = aws_iam_role.ecs_task.id
+  policy = data.aws_iam_policy_document.ecs_task_assets.json
+}

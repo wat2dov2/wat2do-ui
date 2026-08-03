@@ -8,7 +8,7 @@ from PIL import Image
 from schemas.event import EventResponse
 from schemas.organization import OrganizationResponse
 from services import event_service, organization_service
-from services.storage_service import storage
+from services.storage_service import StorageService, storage
 from tests.conftest import FAKE_USER, OTHER_USER
 
 
@@ -402,28 +402,19 @@ def test_upload_ignores_user_supplied_filename_extension(authenticated_client, m
     matches the validated content-type, never the user-supplied filename.
     A PNG uploaded as ``evil.html`` becomes ``<uuid>.png``, not ``.html``.
     """
-    # Capture the path that upload_file would have created.
-    captured_paths: list[str] = []
-
-    class _FakeUploader:
-        def upload(self, path, file_bytes, file_options):
-            captured_paths.append(path)
-
-        def get_public_url(self, path):
-            return f"https://example.com/qr-assets/{path}"
-
-    fake_storage_client = MagicMock()
-    fake_storage_client.from_.return_value = _FakeUploader()
-    monkeypatch.setattr(storage, "_storage", fake_storage_client)
+    fake_s3 = MagicMock()
+    monkeypatch.setattr(storage, "_s3", fake_s3)
+    monkeypatch.setattr(storage, "_bucket_name", "wat2do-test-assets")
+    monkeypatch.setattr(storage, "_public_base_url", "https://wat2do.io/media")
 
     png = _real_png()
     files = _make_file("evil.html", png, "image/png")
     resp = authenticated_client.post("/uploads/qr-asset", files=files)
 
     assert resp.status_code == 200
-    assert len(captured_paths) == 1
-    assert captured_paths[0].endswith(".png")
-    assert not captured_paths[0].endswith(".html")
+    stored_key = fake_s3.put_object.call_args.kwargs["Key"]
+    assert stored_key.endswith(".png")
+    assert not stored_key.endswith(".html")
 
 
 # ── Regression: audit U8 — SVGs uploaded with Content-Disposition: attachment ──
@@ -433,54 +424,36 @@ def test_upload_svg_sets_content_disposition_attachment(authenticated_client, mo
     """Audit U8: storage uploads for SVG must set Content-Disposition:
     attachment so browsers download rather than inline-render on
     navigation (the latter would execute any surviving script in the
-    Supabase origin).
+    storage origin).
     """
-    recorded_options: dict | None = None
-
-    class _FakeUploader:
-        def upload(self, path, file_bytes, file_options):
-            nonlocal recorded_options
-            recorded_options = file_options
-
-        def get_public_url(self, path):
-            return "https://example.com/qr-assets/x.svg"
-
-    fake_storage_client = MagicMock()
-    fake_storage_client.from_.return_value = _FakeUploader()
-    monkeypatch.setattr(storage, "_storage", fake_storage_client)
+    fake_s3 = MagicMock()
+    monkeypatch.setattr(storage, "_s3", fake_s3)
+    monkeypatch.setattr(storage, "_bucket_name", "wat2do-test-assets")
+    monkeypatch.setattr(storage, "_public_base_url", "https://wat2do.io/media")
 
     clean_svg = b'<svg xmlns="http://www.w3.org/2000/svg"><rect width="4" height="4"/></svg>'
     files = _make_file("ok.svg", clean_svg, "image/svg+xml")
     resp = authenticated_client.post("/uploads/qr-asset", files=files)
 
     assert resp.status_code == 200
-    assert recorded_options is not None
-    assert recorded_options.get("content-type") == "image/svg+xml"
-    assert recorded_options.get("content-disposition") == "attachment"
+    stored_options = fake_s3.put_object.call_args.kwargs
+    assert stored_options["ContentType"] == "image/svg+xml"
+    assert stored_options["ContentDisposition"] == "attachment"
 
 
 def test_upload_png_does_not_set_content_disposition(authenticated_client, monkeypatch):
     """Raster uploads don't set content-disposition — they're safe to render inline."""
-    recorded_options: dict | None = None
-
-    class _FakeUploader:
-        def upload(self, path, file_bytes, file_options):
-            nonlocal recorded_options
-            recorded_options = file_options
-
-        def get_public_url(self, path):
-            return "https://example.com/qr-assets/x.png"
-
-    fake_storage_client = MagicMock()
-    fake_storage_client.from_.return_value = _FakeUploader()
-    monkeypatch.setattr(storage, "_storage", fake_storage_client)
+    fake_s3 = MagicMock()
+    monkeypatch.setattr(storage, "_s3", fake_s3)
+    monkeypatch.setattr(storage, "_bucket_name", "wat2do-test-assets")
+    monkeypatch.setattr(storage, "_public_base_url", "https://wat2do.io/media")
 
     files = _make_file("ok.png", _real_png(), "image/png")
     resp = authenticated_client.post("/uploads/qr-asset", files=files)
 
     assert resp.status_code == 200
-    assert recorded_options is not None
-    assert "content-disposition" not in recorded_options
+    stored_options = fake_s3.put_object.call_args.kwargs
+    assert "ContentDisposition" not in stored_options
 
 
 # ── Regression: audit U9 — EXIF metadata stripped from uploads ─────────
@@ -580,22 +553,64 @@ def test_path_from_url_rejects_traversal():
     an unrelated object to be deleted when they next upload (audit U10).
     """
     # Legitimate URL passes through.
-    ok = storage.path_from_url(
-        "https://supabase.co/storage/v1/object/public/event-images/abc123.png",
+    service = StorageService(
+        MagicMock(),
+        bucket_name="wat2do-test-assets",
+        public_base_url="https://wat2do.io/media",
+    )
+
+    ok = service.path_from_url(
+        "https://wat2do.io/media/event-images/abc123.png",
         "event-images",
     )
     assert ok == "abc123.png"
 
     # Traversal is refused.
-    bad = storage.path_from_url(
-        "https://supabase.co/storage/v1/object/public/event-images/../shared.png",
+    bad = service.path_from_url(
+        "https://wat2do.io/media/event-images/../shared.png",
         "event-images",
     )
     assert bad is None
 
     # Absolute path is refused.
-    bad_abs = storage.path_from_url(
-        "https://supabase.co/storage/v1/object/public/event-images//etc/passwd",
+    bad_abs = service.path_from_url(
+        "https://wat2do.io/media/event-images//etc/passwd",
         "event-images",
     )
     assert bad_abs is None
+
+
+def test_upload_file_writes_private_s3_object_and_returns_cloudfront_url():
+    s3 = MagicMock()
+    service = StorageService(
+        s3,
+        bucket_name="wat2do-test-assets",
+        public_base_url="https://wat2do.io/media",
+    )
+
+    url = service.upload_file("event-images", b"image-bytes", "image/png")
+
+    assert url.startswith("https://wat2do.io/media/event-images/")
+    assert url.endswith(".png")
+    put = s3.put_object.call_args.kwargs
+    assert put["Bucket"] == "wat2do-test-assets"
+    assert put["Key"].startswith("media/event-images/")
+    assert put["Body"] == b"image-bytes"
+    assert put["ContentType"] == "image/png"
+    assert put["ServerSideEncryption"] == "AES256"
+
+
+def test_delete_file_deletes_only_the_expected_s3_key():
+    s3 = MagicMock()
+    service = StorageService(
+        s3,
+        bucket_name="wat2do-test-assets",
+        public_base_url="https://wat2do.io/media",
+    )
+
+    service.delete_file("avatars", "abc123.jpg")
+
+    s3.delete_object.assert_called_once_with(
+        Bucket="wat2do-test-assets",
+        Key="media/avatars/abc123.jpg",
+    )

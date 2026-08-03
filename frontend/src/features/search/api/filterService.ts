@@ -14,7 +14,7 @@ export const EMPTY_FILTER_STATE: FilterState = {
   locations: [],
   foods: [],
   days: [],
-  priceRange: { min: "", max: "" },
+  maxPrice: "",
   registration: false,
   organizations: [],
   freeFood: false,
@@ -35,7 +35,7 @@ export interface SearchStoreFilterValues {
   selectedLocations: string[];
   selectedFoods: string[];
   selectedDays: string[];
-  priceRange: { min: string; max: string };
+  maxPrice: string;
   registration: boolean;
   selectedOrganizations: string[];
   freeFoodFilter: boolean;
@@ -53,12 +53,8 @@ function stringArray(value: unknown): string[] {
     : [];
 }
 
-function priceRangeFrom(value: unknown): FilterState["priceRange"] {
-  const priceRaw = typeof value === "object" && value ? (value as Record<string, unknown>) : null;
-  return {
-    min: priceRaw && typeof priceRaw.min === "string" ? priceRaw.min : "",
-    max: priceRaw && typeof priceRaw.max === "string" ? priceRaw.max : "",
-  };
+function maxPriceFrom(value: unknown): string {
+  return typeof value === "string" ? value : "";
 }
 
 function sortOrderFrom(value: unknown): FilterState["sortOrder"] {
@@ -78,7 +74,7 @@ export function normalizeFilterState(filters: Partial<FilterState>): FilterState
     locations: stringArray(filters.locations),
     foods: stringArray(filters.foods),
     days: stringArray(filters.days),
-    priceRange: priceRangeFrom(filters.priceRange),
+    maxPrice: maxPriceFrom(filters.maxPrice),
     registration: filters.registration === true,
     organizations: stringArray(filters.organizations),
     freeFood: filters.freeFood === true,
@@ -106,7 +102,7 @@ export function storeStatesToFilterState(
     locations: values.selectedLocations,
     foods: values.selectedFoods,
     days: values.selectedDays,
-    priceRange: values.priceRange,
+    maxPrice: values.maxPrice,
     registration: values.registration,
     organizations: values.selectedOrganizations,
     freeFood: values.freeFoodFilter,
@@ -129,7 +125,7 @@ export function filterStateFromInput(
     locations: stringArray(filters.locations),
     foods: stringArray(filters.foods),
     days: stringArray(filters.days),
-    priceRange: priceRangeFrom(filters.priceRange),
+    maxPrice: maxPriceFrom(filters.maxPrice),
     registration:
       typeof filters.registration === "boolean" ? filters.registration : false,
     organizations: stringArray(filters.organizations),

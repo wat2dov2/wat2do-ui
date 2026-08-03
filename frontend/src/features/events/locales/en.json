@@ -58,7 +58,7 @@
     "noEventsScheduled": "No events scheduled",
     "noEventsScheduledDesc": "No events are currently scheduled. Check back later!",
     "newlyAddedFilter": {
-      "last24Hours": "Added in last {{hours}} hours",
+      "last24Hours": "Newly added",
       "sinceLastVisit": "Added since last visit",
       "clear": "Clear newly added filter",
       "sinceLastVisitAt": "Added since last visit ({{time}})"
@@ -122,7 +122,7 @@
     "startingIn": "Starting in",
     "cancelGoingPrompt": "No longer able to attend? Notify the host by",
     "cancelGoing": "marking yourself not going.",
-    "eventPage": "Event Page",
+    "viewFullImage": "View full event image",
     "contactHost": "Contact the Host",
     "moreDatesCount": "+{{count}} date",
     "moreDatesCount_other": "+{{count}} dates",

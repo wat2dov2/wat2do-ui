@@ -264,6 +264,47 @@
         }
       }
     },
+    "/contact/": {
+      "post": {
+        "tags": [
+          "contact"
+        ],
+        "summary": "Submit Contact Message",
+        "operationId": "submit_contact_message_contact__post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContactCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/credits/": {
       "get": {
         "tags": [
@@ -598,7 +639,7 @@
           "events"
         ],
         "summary": "List Events",
-        "description": "Public school feed; optional ``start_utc``/``end_utc`` window. Omits ``created_by``.",
+        "description": "Public school feed; optional ``start_utc``/``end_utc`` window.\n\n``include_past`` drops the default start-of-today lower bound, so a caller\ncan ask for a host's full history. Omits ``created_by``.",
         "operationId": "list_events_events__get",
         "parameters": [
           {
@@ -903,6 +944,16 @@
                 }
               ],
               "title": "End Utc"
+            }
+          },
+          {
+            "name": "include_past",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Include Past"
             }
           },
           {
@@ -6659,6 +6710,42 @@
         ],
         "title": "CampusCoverageResponse"
       },
+      "ContactCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          },
+          "subject": {
+            "type": "string",
+            "maxLength": 160,
+            "minLength": 1,
+            "title": "Subject"
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 5000,
+            "minLength": 1,
+            "title": "Message"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name",
+          "email",
+          "subject",
+          "message"
+        ],
+        "title": "ContactCreate"
+      },
       "CreditBalanceResponse": {
         "properties": {
           "balance": {
@@ -7415,6 +7502,17 @@
             "type": "string",
             "title": "Title"
           },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
           "location": {
             "anyOf": [
               {
@@ -7592,7 +7690,7 @@
           "added_at"
         ],
         "title": "EventSummaryResponse",
-        "description": "Lightweight payload for list/card views - omits large text fields\n(description) that are only needed in detail views.\nKeeps the payload ~60-70 % smaller than EventResponse for typical events.\n\nThe owning organization's type/link/social fields (``organization_type``,\n``organization_page``, ``organization_ig``, ``organization_discord``) are\nembedded read-time from the ``organizations`` row via the\n``events.organization_id`` FK so the event card can render without a second\nfetch.\n\n``created_by`` is intentionally omitted - this response is returned on\npublic GET /events/ and would otherwise leak the creator's Supabase\nauth UID to anonymous callers."
+        "description": "Payload for list/card views.\n\nDescription is included because the feed search matches event copy as well\nas titles, hosts, locations, and food.\n\nThe owning organization's type/link/social fields (``organization_type``,\n``organization_page``, ``organization_ig``, ``organization_discord``) are\nembedded read-time from the ``organizations`` row via the\n``events.organization_id`` FK so the event card can render without a second\nfetch.\n\n``created_by`` is intentionally omitted - this response is returned on\npublic GET /events/ and would otherwise leak the creator's Supabase\nauth UID to anonymous callers."
       },
       "EventUpdate": {
         "properties": {
@@ -9529,29 +9627,6 @@
             "type": "integer",
             "title": "Event Count",
             "default": 0
-          },
-          "latest_event_title": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Latest Event Title"
-          },
-          "latest_event_added_at": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Latest Event Added At"
           }
         },
         "type": "object",

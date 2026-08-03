@@ -35,7 +35,6 @@
     "viewClubPage": "查看组织页面",
     "discord": "Discord",
     "instagram": "Instagram",
-    "lastPostedSummary": "{{time}} 发布了 {{title}}",
     "eventCount": "{{count}} 个活动",
     "eventCount_other": "{{count}} 个活动",
     "clubCreated": "组织已创建！",
@@ -62,6 +61,7 @@
     "emptyClaimedClubsDesc": "您尚未认领任何组织。",
     "save": "关注组织",
     "saved": "已关注组织",
+    "signInToFollow": "登录后即可关注组织。",
     "savedClubs": {
       "saveFailed": "无法关注此组织",
       "unsaveFailed": "无法取消关注此组织"

@@ -310,18 +310,6 @@ def load_events_page(
         q = q.lte("events.price", max_price)
 
     search_term = sanitize_postgrest_value(search or "")
-    if search_term:
-        quoted = f'"%{search_term}%"'
-        q = q.or_(
-            ",".join(
-                [
-                    f"title.ilike.{quoted}",
-                    f"location.ilike.{quoted}",
-                    f"organization.ilike.{quoted}",
-                ]
-            ),
-            reference_table="events",
-        )
 
     rows = _order_event_date_rows(q).range(0, cap * 5 - 1).execute().data or []
     candidates = _filter_candidates(
@@ -586,10 +574,14 @@ def _filter_candidates(
 def _matches_search(row: dict, search: str) -> bool:
     if not search:
         return True
+    food = row.get("food") or []
+    food_values = [food] if isinstance(food, str) else food
     haystacks = [
         row.get("title") or "",
+        row.get("description") or "",
         row.get("location") or "",
         row.get("organization") or "",
+        *food_values,
     ]
     return any(search in str(value).casefold() for value in haystacks)
 

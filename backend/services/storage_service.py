@@ -1,10 +1,15 @@
-"""Storage via Supabase. Sync."""
+"""Validated file storage backed by Amazon S3 and served through CloudFront."""
 
 import logging
 import os
 import uuid
 from io import BytesIO
+from urllib.parse import urlparse
 
+import boto3  # type: ignore[import-untyped]
+from botocore.config import Config  # type: ignore[import-untyped]
+
+from core.config import settings
 from core.constants import (
     BUCKET_AVATARS,
     BUCKET_CLAIM_PROOFS,
@@ -15,10 +20,8 @@ from core.constants import (
     MAX_IMAGE_SIZE_BYTES,
 )
 from core.controlbox import controlbox
-from core.database import supabase_admin
 from core.exceptions import ValidationError
 from core.logging import logger
-from core.retry import supabase_retry
 from core.svg_sanitize import looks_like_svg, sanitize_svg
 
 log = logging.getLogger(__name__)
@@ -40,27 +43,22 @@ _DEFAULT_BUCKETS: dict[str, dict] = {
     # The event image contract is shared verbatim with the frontend file picker,
     # so it lives in the control box rather than being restated here.
     BUCKET_EVENT_IMAGES: {
-        "public": True,
         "file_size_limit": controlbox.uploads.event_image_max_size_bytes,
         "allowed_mime_types": list(controlbox.uploads.event_image_allowed_mime_types),
     },
     BUCKET_AVATARS: {
-        "public": True,
         "file_size_limit": MAX_AVATAR_SIZE_BYTES,
         "allowed_mime_types": ["image/jpeg", "image/png", "image/webp"],
     },
     BUCKET_ORGANIZATION_LOGOS: {
-        "public": True,
         "file_size_limit": MAX_AVATAR_SIZE_BYTES,
         "allowed_mime_types": ["image/jpeg", "image/png", "image/webp", "image/svg+xml"],
     },
     BUCKET_QR_ASSETS: {
-        "public": True,
         "file_size_limit": MAX_IMAGE_SIZE_BYTES,
         "allowed_mime_types": ["image/jpeg", "image/png", "image/webp", "image/svg+xml"],
     },
     BUCKET_CLAIM_PROOFS: {
-        "public": True,
         "file_size_limit": MAX_IMAGE_SIZE_BYTES,
         "allowed_mime_types": ["image/jpeg", "image/png", "image/webp"],
     },
@@ -76,9 +74,36 @@ _MIME_TO_EXT = {
 
 
 class StorageService:
-    def __init__(self, storage_client, buckets: dict[str, dict] | None = None):
-        self._storage = storage_client
+    def __init__(
+        self,
+        s3_client=None,
+        *,
+        bucket_name: str | None = None,
+        public_base_url: str | None = None,
+        buckets: dict[str, dict] | None = None,
+    ):
+        self._s3 = s3_client
+        self._bucket_name = bucket_name if bucket_name is not None else settings.storage_bucket_name
+        configured_base_url = (
+            public_base_url if public_base_url is not None else settings.storage_public_base_url
+        )
+        self._public_base_url = configured_base_url.rstrip("/")
         self.BUCKETS = buckets if buckets is not None else _DEFAULT_BUCKETS
+
+    def _get_s3_client(self):
+        if self._s3 is None:
+            self._s3 = boto3.client(
+                "s3",
+                region_name=settings.aws_region,
+                config=Config(retries={"max_attempts": 4, "mode": "standard"}),
+            )
+        return self._s3
+
+    def _require_configuration(self) -> None:
+        if not self._bucket_name or not self._public_base_url:
+            raise RuntimeError(
+                "S3 storage is not configured. Set STORAGE_BUCKET_NAME and STORAGE_PUBLIC_BASE_URL."
+            )
 
     def get_allowed_mime_types(self, bucket: str) -> list[str]:
         """Return the allowed MIME types for *bucket*, or an empty list."""
@@ -149,27 +174,6 @@ class StorageService:
 
         return data, content_type
 
-    def ensure_buckets(self) -> dict[str, bool]:
-        """Create all required storage buckets if they don't exist."""
-        existing = {b.id for b in self._storage.list_buckets()}
-        results: dict[str, bool] = {}
-
-        for bucket_id, opts in self.BUCKETS.items():
-            if bucket_id in existing:
-                logger.info("Bucket '%s' already exists", bucket_id)
-                results[bucket_id] = True
-                continue
-            try:
-                self._storage.create_bucket(bucket_id, options=opts)
-                logger.info("Created bucket '%s'", bucket_id)
-                results[bucket_id] = True
-            except Exception as e:
-                logger.error("Failed to create bucket '%s': %s", bucket_id, e)
-                results[bucket_id] = False
-
-        return results
-
-    @supabase_retry
     def upload_file(self, bucket: str, file_bytes: bytes, content_type: str) -> str:
         """Upload a file and return its public URL.
 
@@ -179,20 +183,29 @@ class StorageService:
         in ``.html`` even though our MIME sniffer accepted the bytes (audit U7).
         """
         ext = _MIME_TO_EXT.get(content_type, ".bin")
+        self._require_configuration()
         path = f"{uuid.uuid4().hex}{ext}"
+        key = self._object_key(bucket, path)
 
-        file_options: dict[str, str] = {"content-type": content_type}
+        put_options: dict[str, object] = {
+            "Bucket": self._bucket_name,
+            "Key": key,
+            "Body": file_bytes,
+            "ContentType": content_type,
+            "CacheControl": "public, max-age=31536000, immutable",
+            "ServerSideEncryption": "AES256",
+        }
         # For SVGs, force ``Content-Disposition: attachment`` so the
         # browser downloads the file instead of rendering it inline on a
         # top-level navigation.  Combined with the sanitizer this is
         # defense-in-depth - even if a bypass is found later, the file
-        # won't execute scripts in the Supabase origin (audit U8).
+        # won't execute scripts in the storage origin (audit U8).
         if content_type == "image/svg+xml":
-            file_options["content-disposition"] = "attachment"
+            put_options["ContentDisposition"] = "attachment"
 
-        self._storage.from_(bucket).upload(path, file_bytes, file_options=file_options)
+        self._get_s3_client().put_object(**put_options)
 
-        return self._storage.from_(bucket).get_public_url(path)
+        return f"{self._public_base_url}/{bucket}/{path}"
 
     def delete_file(self, bucket: str, path: str) -> None:
         """Delete a file by its path within a bucket.
@@ -206,13 +219,16 @@ class StorageService:
         if not _is_safe_storage_path(path):
             logger.warning("Refusing to delete suspicious path %s/%s", bucket, path)
             return
+        self._require_configuration()
         try:
-            self._storage.from_(bucket).remove([path])
+            self._get_s3_client().delete_object(
+                Bucket=self._bucket_name,
+                Key=self._object_key(bucket, path),
+            )
         except Exception as e:
             logger.warning("Failed to delete %s/%s: %s", bucket, path, e)
 
-    @staticmethod
-    def path_from_url(url: str, bucket: str) -> str | None:
+    def path_from_url(self, url: str, bucket: str) -> str | None:
         """Extract the storage path from a public URL for deletion.
 
         Returns ``None`` for URLs that either (a) don't live under the
@@ -220,14 +236,26 @@ class StorageService:
         sequences.  The caller is expected to treat ``None`` as "leave
         the old object alone".
         """
-        marker = f"/object/public/{bucket}/"
-        idx = url.find(marker)
-        if idx == -1:
+        if not self._public_base_url:
             return None
-        path = url[idx + len(marker) :]
+        try:
+            parsed = urlparse(url)
+            base = urlparse(self._public_base_url)
+        except ValueError:
+            return None
+        if parsed.scheme != base.scheme or parsed.netloc != base.netloc:
+            return None
+        marker = f"{base.path.rstrip('/')}/{bucket}/"
+        if not parsed.path.startswith(marker):
+            return None
+        path = parsed.path[len(marker) :]
         if not _is_safe_storage_path(path):
             return None
         return path
+
+    @staticmethod
+    def _object_key(bucket: str, path: str) -> str:
+        return f"media/{bucket}/{path}"
 
 
 def _is_safe_storage_path(path: str) -> bool:
@@ -313,4 +341,4 @@ def _strip_image_metadata(data: bytes, content_type: str) -> bytes:
         raise ValidationError("Uploaded file could not be decoded as a valid image.") from exc
 
 
-storage = StorageService(supabase_admin.storage)
+storage = StorageService()

@@ -86,19 +86,19 @@ function getBearerSecret(request: NextRequest): string | null {
 /**
  * Inline a poster as a data URI.
  *
- * Slide images are only ever our own Supabase Storage objects; anything else is
+ * Slide images are only ever our own CloudFront storage objects; anything else is
  * dropped rather than fetched, so this route can never be pointed at an
  * internal host.
  */
 async function inlineImage(sourceUrl: string | null | undefined): Promise<string> {
-  const allowedHost = (() => {
+  const storageBase = (() => {
     try {
-      return new URL(process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL ?? "").hostname;
+      return new URL(process.env.STORAGE_PUBLIC_BASE_URL ?? "");
     } catch {
-      return "";
+      return null;
     }
   })();
-  if (!sourceUrl || !allowedHost) return "";
+  if (!sourceUrl || !storageBase) return "";
 
   let parsed: URL;
   try {
@@ -106,7 +106,14 @@ async function inlineImage(sourceUrl: string | null | undefined): Promise<string
   } catch {
     return "";
   }
-  if (parsed.protocol !== "https:" || parsed.hostname !== allowedHost) return "";
+  const storagePathPrefix = `${storageBase.pathname.replace(/\/$/, "")}/`;
+  if (
+    parsed.protocol !== "https:" ||
+    parsed.origin !== storageBase.origin ||
+    !parsed.pathname.startsWith(storagePathPrefix)
+  ) {
+    return "";
+  }
 
   const response = await fetch(parsed, { redirect: "error" });
   if (!response.ok) return "";

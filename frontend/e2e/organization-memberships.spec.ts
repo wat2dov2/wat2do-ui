@@ -18,8 +18,6 @@ const MOCK_ORGANIZATION = {
   created_by: "owner-user-id",
   school: "uwaterloo",
   event_count: 0,
-  latest_event_title: null,
-  latest_event_added_at: null,
 };
 
 function apiPath(url: URL): string | null {

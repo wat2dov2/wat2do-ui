@@ -97,23 +97,27 @@ class TestSendOtp:
 
     def test_send_otp_success(self, client, monkeypatch):
         """Successful send-otp returns 200 message."""
-        mock_send = MagicMock()
-        monkeypatch.setattr(auth, "send_otp", mock_send)
+        mock_prepare = MagicMock()
+        mock_dispatch = MagicMock(return_value=True)
+        monkeypatch.setattr(auth, "prepare_otp_email", mock_prepare)
+        monkeypatch.setattr("routers.auth.email_service.send_safely", mock_dispatch)
 
         resp = client.post("/auth/send-otp", json=VALID_SEND_OTP)
 
         assert resp.status_code == 200
         body = resp.json()
         assert "message" in body
-        mock_send.assert_called_once_with(
+        mock_prepare.assert_called_once_with(
             "student@uwaterloo.ca",
             invitation_token=None,
             return_to=None,
         )
+        mock_dispatch.assert_called_once_with(mock_prepare.return_value)
 
     def test_send_otp_forwards_safe_relative_return_path(self, client, monkeypatch):
-        mock_send = MagicMock()
-        monkeypatch.setattr(auth, "send_otp", mock_send)
+        mock_prepare = MagicMock()
+        monkeypatch.setattr(auth, "prepare_otp_email", mock_prepare)
+        monkeypatch.setattr("routers.auth.email_service.send_safely", MagicMock())
 
         response = client.post(
             "/auth/send-otp",
@@ -124,7 +128,7 @@ class TestSendOtp:
         )
 
         assert response.status_code == 200
-        mock_send.assert_called_once_with(
+        mock_prepare.assert_called_once_with(
             "student@uwaterloo.ca",
             invitation_token=None,
             return_to="/promote?school=uwaterloo",
@@ -147,8 +151,8 @@ class TestSendOtp:
         monkeypatch,
         return_to,
     ):
-        mock_send = MagicMock()
-        monkeypatch.setattr(auth, "send_otp", mock_send)
+        mock_prepare = MagicMock()
+        monkeypatch.setattr(auth, "prepare_otp_email", mock_prepare)
 
         response = client.post(
             "/auth/send-otp",
@@ -159,7 +163,7 @@ class TestSendOtp:
         )
 
         assert response.status_code == 422
-        mock_send.assert_not_called()
+        mock_prepare.assert_not_called()
 
     def test_send_otp_rejects_plain_non_email_string(self, client):
         resp = client.post("/auth/send-otp", json={"email": "not-an-email"})

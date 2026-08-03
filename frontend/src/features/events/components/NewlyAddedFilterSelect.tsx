@@ -1,5 +1,4 @@
 import { useTranslation } from "react-i18next";
-import { controlBox } from "@/shared/config/controlBox";
 import { formatRelativeTime } from "@/shared/utils/relativeTime";
 import { Button } from "@/shared/ui/button";
 import { FilterClearButton } from "@/shared/ui/filter-clear-button";
@@ -31,9 +30,7 @@ export function NewlyAddedFilterSelect({
 }: NewlyAddedFilterSelectProps) {
   const { t } = useTranslation();
   const active = value !== null;
-  const last24HoursLabel = t("events.newlyAddedFilter.last24Hours", {
-    hours: controlBox.eventDiscovery.newEventWindowHours,
-  });
+  const last24HoursLabel = t("events.newlyAddedFilter.last24Hours");
   const sinceLastVisitLabel = lastVisitAt
     ? t("events.newlyAddedFilter.sinceLastVisitAt", {
         time: formatRelativeTime(lastVisitAt, t, { alwaysAgo: true }),

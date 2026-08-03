@@ -11,6 +11,7 @@ import {
 } from "@/shared/ui/dropdown-menu";
 import { Badge } from "@/shared/ui/badge";
 import { TruncatedText } from "@/shared/ui/truncated-text";
+import { sanitizeHref } from "@/shared/utils/url";
 
 interface OrganizationBadgeDropdownProps {
   organizationName: string;
@@ -52,17 +53,22 @@ export function OrganizationBadgeDropdown({
   const handleFilterSelect = useCallback(() => {
     setIsOpen(false);
     if (organizationName) {
-      filterActions.toggleFilterValue("organizations", organizationName);
+      filterActions.updateFilterState({ organizations: [organizationName] });
       if (pathname !== "/") {
         router.push("/");
       }
     }
   }, [organizationName, filterActions, pathname, router]);
 
-  const handleLinkSelect = useCallback((url: string) => {
-    setIsOpen(false);
-    window.open(url, "_blank", "noopener,noreferrer");
-  }, []);
+  const websiteHref = sanitizeHref(organizationPage);
+  const instagramHref = sanitizeHref(
+    organizationIg
+      ? organizationIg.startsWith("http")
+        ? organizationIg
+        : `https://instagram.com/${organizationIg.replace(/^@/, "")}`
+      : null,
+  );
+  const discordHref = sanitizeHref(organizationDiscord);
 
   if (disabled || !organizationName) {
     return (
@@ -116,26 +122,25 @@ export function OrganizationBadgeDropdown({
           {t("organizations.filterBy", { name: organizationName })}
         </DropdownMenuItem>
 
-        {organizationPage && (
-          <DropdownMenuItem onSelect={() => handleLinkSelect(organizationPage)}>
-            {t("organizations.visitWebsite")}
+        {websiteHref && (
+          <DropdownMenuItem asChild>
+            <a href={websiteHref} target="_blank" rel="noopener noreferrer">
+              {t("organizations.visitWebsite")}
+            </a>
           </DropdownMenuItem>
         )}
-        {organizationIg && (
-          <DropdownMenuItem
-            onSelect={() => {
-              const igUrl = organizationIg.startsWith("http")
-                ? organizationIg
-                : `https://instagram.com/${organizationIg}`;
-              handleLinkSelect(igUrl);
-            }}
-          >
-            {t("organizations.instagram")}
+        {instagramHref && (
+          <DropdownMenuItem asChild>
+            <a href={instagramHref} target="_blank" rel="noopener noreferrer">
+              {t("organizations.instagram")}
+            </a>
           </DropdownMenuItem>
         )}
-        {organizationDiscord && (
-          <DropdownMenuItem onSelect={() => handleLinkSelect(organizationDiscord)}>
-            {t("organizations.discord")}
+        {discordHref && (
+          <DropdownMenuItem asChild>
+            <a href={discordHref} target="_blank" rel="noopener noreferrer">
+              {t("organizations.discord")}
+            </a>
           </DropdownMenuItem>
         )}
       </DropdownMenuContent>

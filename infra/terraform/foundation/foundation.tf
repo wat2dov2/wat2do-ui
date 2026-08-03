@@ -3,22 +3,22 @@ locals {
     rules = [
       {
         rulePriority = 1
-        description  = "Expire untagged image layers after seven days"
+        description  = "Expire untagged image layers after one day"
         selection = {
           tagStatus   = "untagged"
           countType   = "sinceImagePushed"
           countUnit   = "days"
-          countNumber = 7
+          countNumber = 1
         }
         action = { type = "expire" }
       },
       {
         rulePriority = 2
-        description  = "Retain the 20 newest release images"
+        description  = "Retain the five newest release images"
         selection = {
           tagStatus   = "any"
           countType   = "imageCountMoreThan"
-          countNumber = 20
+          countNumber = 5
         }
         action = { type = "expire" }
       },

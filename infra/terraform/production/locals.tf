@@ -9,10 +9,11 @@ locals {
   availability_zones = slice(data.aws_availability_zones.available.names, 0, 2)
 
   frontend_runtime_environment = {
-    NODE_ENV        = "production"
-    PORT            = "3000"
-    HOSTNAME        = "0.0.0.0"
-    BACKEND_API_URL = "http://127.0.0.1:8000"
+    NODE_ENV                = "production"
+    PORT                    = "3000"
+    HOSTNAME                = "0.0.0.0"
+    BACKEND_API_URL         = "http://127.0.0.1:8000"
+    STORAGE_PUBLIC_BASE_URL = "https://${var.domain_name}/media"
   }
 
   backend_runtime_environment = {
@@ -29,6 +30,9 @@ locals {
     INSTAGRAM_SLIDE_RENDER_URL      = "http://127.0.0.1:3000/api/render-instagram-slide"
     EMAIL_PROVIDER                  = "resend"
     EMAIL_FROM                      = var.email_from
+    AWS_REGION                      = var.aws_region
+    STORAGE_BUCKET_NAME             = aws_s3_bucket.assets.id
+    STORAGE_PUBLIC_BASE_URL         = "https://${var.domain_name}/media"
   }
 
   runtime_secret_keys = [

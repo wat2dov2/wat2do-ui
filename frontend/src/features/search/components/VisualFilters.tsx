@@ -54,8 +54,8 @@ interface VisualFiltersProps {
     setSelectedDays: (days: string[]) => void;
     dayOptions: Array<{ id: string; label: string }>;
     toggleDay: (id: string) => void;
-    priceRange: { min: string; max: string };
-    setPriceRange: (range: { min: string; max: string }) => void;
+    maxPrice: string;
+    setMaxPrice: (value: string) => void;
     registration: boolean;
     setRegistration: (value: boolean) => void;
     selectedOrganizations: string[];
@@ -292,41 +292,19 @@ export function VisualFilters({ filters, viewMode, onViewModeChange }: VisualFil
         </div>
       </FilterSection>
 
-      {/* Price Range Filter */}
+      {/* Maximum Price Filter */}
       <FilterSection
-        title={t("filters.priceRange")}
-        indicator={
-          filters.priceRange.min || filters.priceRange.max ? "1" : undefined
-        }
-        onClear={() => filters.setPriceRange({ min: "", max: "" })}
+        title={t("filters.maxPrice")}
+        indicator={filters.maxPrice ? "1" : undefined}
+        onClear={() => filters.setMaxPrice("")}
       >
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <Input
-              type="number"
-              placeholder={t("filters.minPrice")}
-              value={filters.priceRange.min}
-              onChange={(e) =>
-                filters.setPriceRange({
-                  ...filters.priceRange,
-                  min: e.target.value,
-                })
-              }
-            />
-            <span className="text-muted-foreground text-xs">-</span>
-            <Input
-              type="number"
-              placeholder={t("filters.maxPrice")}
-              value={filters.priceRange.max}
-              onChange={(e) =>
-                filters.setPriceRange({
-                  ...filters.priceRange,
-                  max: e.target.value,
-                })
-              }
-            />
-          </div>
-        </div>
+        <Input
+          type="number"
+          min="0"
+          placeholder={t("filters.maxPrice")}
+          value={filters.maxPrice}
+          onChange={(event) => filters.setMaxPrice(event.target.value)}
+        />
       </FilterSection>
 
       {/* Requires Registration Filter */}

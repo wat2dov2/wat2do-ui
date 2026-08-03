@@ -112,7 +112,13 @@ export function CommandPalette({
           <CommandItem
             onSelect={() => {
               if (!canSubmitEvents) {
-                toast({ description: t("navigation.loginRequiredToSubmit") });
+                toast({
+                  description: t("navigation.loginRequiredToSubmit"),
+                  action: {
+                    label: t("events.signIn"),
+                    onClick: () => router.push(ROUTES.LOGIN),
+                  },
+                });
                 onOpenChange(false);
                 return;
               }

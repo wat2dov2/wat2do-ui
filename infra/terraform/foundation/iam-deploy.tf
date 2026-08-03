@@ -39,6 +39,28 @@ data "aws_iam_policy_document" "github_deploy" {
   }
 
   statement {
+    sid    = "ManageWat2doAssets"
+    effect = "Allow"
+    actions = [
+      "s3:DeleteObject",
+      "s3:GetObject",
+      "s3:PutObject",
+    ]
+    resources = [
+      "arn:${data.aws_partition.current.partition}:s3:::wat2do-production-assets-${data.aws_caller_identity.current.account_id}/media/*",
+    ]
+  }
+
+  statement {
+    sid     = "ListWat2doAssets"
+    effect  = "Allow"
+    actions = ["s3:ListBucket"]
+    resources = [
+      "arn:${data.aws_partition.current.partition}:s3:::wat2do-production-assets-${data.aws_caller_identity.current.account_id}",
+    ]
+  }
+
+  statement {
     sid    = "DeployWat2doEcsTasks"
     effect = "Allow"
     actions = [

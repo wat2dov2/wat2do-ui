@@ -155,6 +155,7 @@ function DropdownMenuItem({
   onMouseDown,
   onSelect,
   variant = "default",
+  asChild = false,
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Item> & {
   inset?: boolean;
@@ -165,7 +166,7 @@ function DropdownMenuItem({
   const handleMouseDown = React.useCallback(
     (event: React.MouseEvent<React.ElementRef<typeof DropdownMenuPrimitive.Item>>) => {
       onMouseDown?.(event);
-      if (disabled || event.button !== 0 || event.defaultPrevented) {
+      if (asChild || disabled || event.button !== 0 || event.defaultPrevented) {
         return;
       }
 
@@ -183,25 +184,31 @@ function DropdownMenuItem({
       });
       event.currentTarget.dispatchEvent(escEvent);
     },
-    [disabled, markMouseSelect, onMouseDown, onSelect],
+    [asChild, disabled, markMouseSelect, onMouseDown, onSelect],
   );
 
   const handleSelect = React.useCallback(
     (event: Event) => {
+      if (asChild) {
+        onSelect?.(event);
+        return;
+      }
       if (shouldSkipSelect()) {
         return;
       }
       onSelect?.(event);
       registerTrailingClickSwallow();
     },
-    [onSelect, shouldSkipSelect],
+    [asChild, onSelect, shouldSkipSelect],
   );
 
   const handleClick = React.useCallback(
     (event: React.MouseEvent<React.ElementRef<typeof DropdownMenuPrimitive.Item>>) => {
-      event.preventDefault();
+      if (!asChild) {
+        event.preventDefault();
+      }
     },
-    [],
+    [asChild],
   );
 
   return (
@@ -210,6 +217,7 @@ function DropdownMenuItem({
       disabled={disabled}
       data-inset={inset}
       data-variant={variant}
+      asChild={asChild}
       onMouseDown={handleMouseDown}
       onClick={handleClick}
       onSelect={handleSelect}

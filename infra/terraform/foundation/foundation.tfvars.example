@@ -14,7 +14,33 @@ application_region = "ca-central-1"
 # Add every MX, SPF, DKIM, DMARC, Resend, verification, Supabase custom-domain,
 # and unrelated record found in the current DNS inventory before changing the
 # registrar nameservers. Use fully qualified names.
-additional_dns_records = []
+additional_dns_records = [
+  # Resend sending identity for the transactional/login email domain.
+  {
+    name    = "resend._domainkey.wat2do.io"
+    type    = "TXT"
+    ttl     = 300
+    records = ["p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC5gGWJ8AWb94PaN6IVwPduE5PGMRlvSVFEUuoV/IoT+rQamG5q5sTEWn9W5P2h/U7T40+CvkhKlOYSBRgsDoSsWYojoctzbouzRH+osLAcEU/vi8jXcmsyJD7iSUsDoGimotHqSim0TrE9stzQBATCY5HylRQSZDm+0dH8TcZkRQIDAQAB"]
+  },
+  {
+    name    = "send.wat2do.io"
+    type    = "MX"
+    ttl     = 300
+    records = ["10 feedback-smtp.us-east-1.amazonses.com"]
+  },
+  {
+    name    = "send.wat2do.io"
+    type    = "TXT"
+    ttl     = 300
+    records = ["v=spf1 include:amazonses.com ~all"]
+  },
+  {
+    name    = "_dmarc.wat2do.io"
+    type    = "TXT"
+    ttl     = 300
+    records = ["v=DMARC1; p=none;"]
+  },
+]
 
 # Optional local administrator principals that may assume the infrastructure role.
 local_administrator_principal_arns = []

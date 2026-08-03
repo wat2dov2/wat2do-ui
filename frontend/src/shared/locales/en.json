@@ -151,11 +151,9 @@
     "forYou": "For You",
     "going": "Going",
     "dateRange": "Date range",
-    "priceRange": "Price range",
     "dayOfWeek": "Day of the week",
     "registration": "Requires Registration",
     "onlyShowEventsRequiringRegistration": "Only show events requiring registration",
-    "minPrice": "Min Price",
     "maxPrice": "Max Price",
     "asc": "Asc",
     "desc": "Desc",
@@ -417,7 +415,20 @@
       "builtPrefix": ". We didn't want to miss other cool things happening on campus, so we built this for ourselves in ",
       "builtDate": "August 2025",
       "builtSuffix": ". Two months later, and we're extraordinarily excited to be sharing it with the rest of you!",
-      "signature": "— Tony & Erica"
+      "signature": "- Tony & Erica"
+    },
+    "form": {
+      "title": "Get in touch",
+      "description": "Send questions, suggestions, corrections, or partnership ideas directly to the Wat2Do team.",
+      "name": "Name",
+      "email": "Email address",
+      "subject": "Subject",
+      "message": "Message",
+      "submit": "Send message",
+      "sending": "Sending message...",
+      "success": "Thanks for reaching out. Your message has been sent.",
+      "sendAnother": "Send another message",
+      "error": "We couldn't send your message. Please try again."
     },
     "funding": {
       "text": "We are extremely grateful for funding support from the ",

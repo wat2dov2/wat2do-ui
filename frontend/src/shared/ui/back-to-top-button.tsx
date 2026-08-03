@@ -33,7 +33,7 @@ export function BackToTopButton() {
   return (
     <Button
       type="button"
-      size="icon"
+      size="icon-lg"
       variant="primary"
       aria-label={t("common.backToTop")}
       onMouseDown={scrollToTop}
@@ -43,7 +43,7 @@ export function BackToTopButton() {
           : "pointer-events-none translate-y-3 opacity-0"
       }`}
     >
-      <ChevronUp className="size-[18px]" />
+      <ChevronUp className="size-[22px]" />
     </Button>
   );
 }

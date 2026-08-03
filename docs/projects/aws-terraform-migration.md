@@ -7,7 +7,8 @@ Owner: Tony.
 
 Replace the wat2do Vercel frontend and Railway backend with one Terraform-managed AWS deployment.
 
-Keep Supabase as the database, authentication provider, and object-storage provider.
+Keep Supabase as the database and authentication provider.
+Store application files in a versioned private S3 bucket served through the existing CloudFront distribution.
 
 Run the Next.js frontend and FastAPI backend together in one Amazon ECS Fargate task.
 
@@ -58,7 +59,6 @@ There is no staging environment, canary deployment, blue-green deployment, paral
 
 - Migrating Supabase PostgreSQL to RDS or Aurora.
 - Migrating Supabase authentication to Cognito.
-- Migrating Supabase Storage to S3.
 - Changing the Supabase schema or historical migrations.
 - Rewriting application API contracts.
 - Replacing OpenAI, Apify, Resend, PostHog, or Mapbox.
@@ -126,7 +126,7 @@ Internet
   -> Route 53
   -> CloudFront
   -> public Application Load Balancer
-  -> private ECS Fargate task
+  -> public-subnet ECS Fargate task
        -> Next.js frontend on port 3000
        -> FastAPI backend on port 8000
        -> frontend calls backend through 127.0.0.1:8000
@@ -134,19 +134,19 @@ Internet
   -> Supabase in us-west-2
 ```
 
-The Fargate task runs in private subnets.
+The Fargate task runs in public subnets with a public IP for outbound access.
 
 The Application Load Balancer runs in public subnets.
 
-The private subnets use one NAT gateway for Supabase, ECR, OpenAI, Apify, Resend, and other outbound HTTPS traffic.
+The task security group accepts inbound traffic only from the Application Load Balancer and uses the internet gateway for Supabase, ECR, OpenAI, Apify, Resend, and other outbound HTTPS traffic.
 
 The ECS service keeps one task running.
 
-The ECS deployment configuration uses `minimumHealthyPercent = 0` and `maximumPercent = 100`.
+The ECS deployment configuration uses `minimumHealthyPercent = 100` and `maximumPercent = 200`.
 
-This stop-before-start deployment strategy deliberately prevents two Next.js instances from running at once.
+This start-before-stop deployment strategy keeps one healthy task available during releases.
 
-Short deployment downtime is acceptable for this project.
+The single steady-state task remains the only long-running application task.
 
 ## 6. Proposed Terraform layout
 
@@ -341,8 +341,6 @@ Recommended allocation:
 VPC: 10.20.0.0/16
 Public subnet A: 10.20.0.0/24
 Public subnet B: 10.20.1.0/24
-Private subnet A: 10.20.10.0/24
-Private subnet B: 10.20.11.0/24
 ```
 
 Enable DNS support and DNS hostnames.
@@ -359,30 +357,22 @@ Create:
 - One public route table.
 - One default route through the internet gateway.
 - Two public route-table associations.
-- One Elastic IP.
-- One NAT gateway in public subnet A.
 
-The Application Load Balancer and NAT gateway live in public subnets.
+The Application Load Balancer and ECS task live in public subnets.
 
-### 8.3 Private networking
+### 8.3 ECS networking
 
-Create one private route table.
+Assign a public IP to each ECS task.
 
-Route `0.0.0.0/0` through the NAT gateway.
+Allow inbound frontend traffic only from the Application Load Balancer security group.
 
-Associate both private subnets with the private route table.
-
-The ECS service runs only in private subnets.
-
-Do not assign public IP addresses to ECS tasks.
+Do not create private subnets, a private route table, a NAT gateway, or a NAT Elastic IP.
 
 ### 8.4 VPC endpoints
 
-Do not add VPC endpoints initially.
+Do not add VPC endpoints.
 
-The tasks already require general internet egress for Supabase and external APIs, so the NAT gateway remains necessary.
-
-Adding ECR, S3, Logs, Secrets Manager, or STS endpoints would add infrastructure without eliminating the NAT dependency.
+The task already has general internet egress through its public IP, so interface endpoints would add cost without removing another dependency.
 
 ## 9. Security groups
 
@@ -567,7 +557,7 @@ ISR verification must account for that stale-while-revalidate behavior.
 
 Create one ECS cluster named consistently with `wat2do-production`.
 
-Enable Container Insights.
+Use standard ECS service metrics.
 
 Use the Fargate capacity provider.
 
@@ -579,8 +569,8 @@ Create one ARM64 Linux Fargate task definition.
 
 Initial task sizing:
 
-- Task CPU: 1024 units.
-- Task memory: 2048 MiB.
+- Task CPU: 256 units.
+- Task memory: 512 MiB.
 - Ephemeral storage: default 20 GiB.
 
 Define two essential containers:
@@ -588,7 +578,9 @@ Define two essential containers:
 - `frontend`
 - `backend`
 
-Allocate 512 CPU units and 1024 MiB memory to each container initially.
+Allocate 128 CPU units to each long-running container.
+
+Allocate 224 MiB to the backend and 256 MiB to the frontend, leaving 32 MiB for the one-time cache initialization container.
 
 Use `awsvpc` network mode.
 
@@ -687,9 +679,9 @@ Do not grant application-level AWS permissions to the execution role.
 
 Create one application task role.
 
-The initial application task does not need broad AWS API access because application state remains in Supabase.
-
-Grant no S3, DynamoDB, ECS, IAM, or Secrets Manager read permissions to application code unless a verified runtime call requires them.
+Grant the application task role object-level read, write, and delete access only under the production asset bucket's `media/` prefix.
+Keep the bucket private and grant public reads exclusively through the existing CloudFront distribution's origin access control.
+Do not grant DynamoDB, ECS, IAM, or Secrets Manager read permissions to application code unless a verified runtime call requires them.
 
 ## 15. Runtime configuration contract
 
@@ -707,6 +699,9 @@ The expected non-secret backend environment includes:
 - `FRONTEND_URL=https://wat2do.io`
 - `EVENT_FEED_REVALIDATION_URL=http://127.0.0.1:3000/api/revalidate-events`
 - `EVENT_FEED_REVALIDATION_TIMEOUT=3`
+- `AWS_REGION=ca-central-1`
+- `STORAGE_BUCKET_NAME=wat2do-production-assets-<account-id>`
+- `STORAGE_PUBLIC_BASE_URL=https://wat2do.io/media`
 
 The expected secret-backed backend environment includes:
 
@@ -1314,7 +1309,7 @@ Verify directly on `https://wat2do.io`:
 8. Token refresh succeeds through `/api/auth/refresh`.
 9. Logout clears the refresh cookie.
 10. Authenticated profile loading succeeds.
-11. An image upload reaches Supabase Storage.
+11. An image upload reaches the private S3 asset bucket and resolves through `/media/*` on CloudFront.
 12. A backend event mutation succeeds.
 13. The backend calls the frontend revalidation route.
 14. The first post-invalidation school-page request is allowed to be stale.
@@ -1396,7 +1391,8 @@ The project is complete only when all of the following are true:
 - The backend is reachable from the frontend over loopback.
 - The backend can invalidate the frontend event-feed cache over loopback.
 - On-demand ISR works with the existing application implementation.
-- Supabase database, authentication, and storage continue working.
+- Supabase database and authentication continue working.
+- Application file uploads, reads, and replacement deletes use the versioned S3 asset bucket.
 - GitHub uses OIDC for AWS deployment.
 - Frontend and backend images are immutable and commit-addressed.
 - ECR lifecycle policies own image cleanup.

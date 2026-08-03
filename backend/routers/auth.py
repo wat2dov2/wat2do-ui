@@ -1,6 +1,6 @@
 from urllib.parse import urlparse
 
-from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, Response, status
 from fastapi.responses import JSONResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
@@ -21,6 +21,7 @@ from schemas.auth import (
     VerifyOtpRequest,
 )
 from services.auth_service import auth
+from services.email_service import email_service
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -125,13 +126,15 @@ def _origin_allowed(request: Request) -> bool:
 @router.post("/send-otp", response_model=MessageResponse)
 def send_otp(
     data: SendOtpRequest,
+    background_tasks: BackgroundTasks,
     _rl: None = Depends(send_otp_rate_limiter.ip_dependency()),
 ):
-    auth.send_otp(
+    message = auth.prepare_otp_email(
         data.email,
         invitation_token=data.token,
         return_to=data.return_to,
     )
+    background_tasks.add_task(email_service.send_safely, message)
     return MessageResponse(message="Verification link and code sent successfully")
 
 

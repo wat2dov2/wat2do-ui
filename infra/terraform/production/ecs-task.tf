@@ -3,14 +3,14 @@ resource "aws_ecs_cluster" "main" {
 
   setting {
     name  = "containerInsights"
-    value = "enabled"
+    value = "disabled"
   }
 }
 
 resource "aws_ecs_task_definition" "application" {
   family                   = "wat2do-production-app"
-  cpu                      = "1024"
-  memory                   = "2048"
+  cpu                      = "256"
+  memory                   = "512"
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
   execution_role_arn       = aws_iam_role.ecs_execution.arn
@@ -42,8 +42,8 @@ resource "aws_ecs_task_definition" "application" {
       name                   = "backend"
       image                  = var.backend_image
       essential              = true
-      cpu                    = 512
-      memory                 = 1024
+      cpu                    = 128
+      memory                 = 224
       readonlyRootFilesystem = true
       portMappings = [{
         containerPort = 8000
@@ -107,8 +107,8 @@ resource "aws_ecs_task_definition" "application" {
       name                   = "frontend"
       image                  = var.frontend_image
       essential              = true
-      cpu                    = 512
-      memory                 = 1024
+      cpu                    = 128
+      memory                 = 256
       readonlyRootFilesystem = true
       dependsOn = [
         {
@@ -134,12 +134,6 @@ resource "aws_ecs_task_definition" "application" {
         {
           name      = "INSTAGRAM_SLIDE_RENDER_SECRET"
           valueFrom = "${var.runtime_secret_arn}:INSTAGRAM_SLIDE_RENDER_SECRET::"
-        },
-        # Not a credential: the slide renderer only inlines posters served by
-        # this storage origin, so it needs to know what that origin is.
-        {
-          name      = "SUPABASE_URL"
-          valueFrom = "${var.runtime_secret_arn}:SUPABASE_URL::"
         },
       ]
       mountPoints = [

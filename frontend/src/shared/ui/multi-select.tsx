@@ -25,7 +25,7 @@ export function MultiSelect({
 
   return (
     <div className={className}>
-      <div className="flex flex-wrap gap-2 justify-center">
+      <div className="flex flex-wrap justify-start gap-2">
         {labeledOptions.map(({ value, label }) => {
           const isSelected = selected.includes(value);
           return (
@@ -35,7 +35,7 @@ export function MultiSelect({
               size="sm"
               onClick={() => onToggle(value)}
               variant={isSelected ? "primary" : "secondary"}
-              selected={isSelected}
+              aria-pressed={isSelected}
             >
               {label}
             </Button>

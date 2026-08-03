@@ -203,9 +203,10 @@ class EventTimeMeta(BaseModel):
 
 
 class EventSummaryResponse(BaseModel):
-    """Lightweight payload for list/card views - omits large text fields
-    (description) that are only needed in detail views.
-    Keeps the payload ~60-70 % smaller than EventResponse for typical events.
+    """Payload for list/card views.
+
+    Description is included because the feed search matches event copy as well
+    as titles, hosts, locations, and food.
 
     The owning organization's type/link/social fields (``organization_type``,
     ``organization_page``, ``organization_ig``, ``organization_discord``) are
@@ -220,6 +221,7 @@ class EventSummaryResponse(BaseModel):
 
     id: int
     title: str
+    description: str | None = None
     location: str | None = None
     occurrences: list[OccurrenceResponse] = Field(default_factory=list)
     price: float | None = None

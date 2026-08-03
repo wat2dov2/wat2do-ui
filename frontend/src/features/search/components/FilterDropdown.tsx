@@ -26,8 +26,8 @@ interface FilterDropdownFilters {
   dayOptions: FilterOption[];
   toggleDay: (id: string) => void;
   // Price & registration
-  priceRange: { min: string; max: string };
-  setPriceRange: (range: { min: string; max: string }) => void;
+  maxPrice: string;
+  setMaxPrice: (value: string) => void;
   registration: boolean;
   setRegistration: (value: boolean) => void;
   // Organization

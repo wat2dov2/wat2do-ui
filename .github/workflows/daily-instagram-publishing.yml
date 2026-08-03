@@ -38,6 +38,12 @@ jobs:
           role-to-assume: ${{ env.AWS_DEPLOY_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
+      - name: Configure application storage
+        run: |
+          account_id="$(aws sts get-caller-identity --query Account --output text)"
+          echo "STORAGE_BUCKET_NAME=wat2do-production-assets-$account_id" >> "$GITHUB_ENV"
+          echo "STORAGE_PUBLIC_BASE_URL=https://wat2do.io/media" >> "$GITHUB_ENV"
+
       - name: Read publishing configuration
         run: |
           secret_json="$(aws secretsmanager get-secret-value \

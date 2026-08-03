@@ -37,14 +37,22 @@ function occurrenceVisibleUntilMs(occurrence: Occurrence): number | null {
   return startTimeMs + controlBox.eventDiscovery.eventWithoutEndVisibilityMs;
 }
 
+/** Whether an occurrence is still in progress or starts in the future. */
+export function isActiveOrUpcomingOccurrence(
+  occurrence: Occurrence,
+  currentTimeMs: number,
+): boolean {
+  const visibleUntilMs = occurrenceVisibleUntilMs(occurrence);
+  return visibleUntilMs !== null && visibleUntilMs >= currentTimeMs;
+}
+
 export function hasActiveEventOccurrence(
   event: { occurrences?: Occurrence[] },
   currentTimeMs: number,
 ): boolean {
-  return (event.occurrences ?? []).some((occurrence) => {
-    const visibleUntilMs = occurrenceVisibleUntilMs(occurrence);
-    return visibleUntilMs !== null && visibleUntilMs >= currentTimeMs;
-  });
+  return (event.occurrences ?? []).some((occurrence) =>
+    isActiveOrUpcomingOccurrence(occurrence, currentTimeMs),
+  );
 }
 
 const toMidnight = (date: Date): Date =>

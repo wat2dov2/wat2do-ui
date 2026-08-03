@@ -35,7 +35,6 @@
     "viewClubPage": "View Organization Page",
     "discord": "Discord",
     "instagram": "Instagram",
-    "lastPostedSummary": "{{time}} posted {{title}}",
     "eventCount": "{{count}} event",
     "eventCount_other": "{{count}} events",
     "clubCreated": "Organization Created!",
@@ -62,6 +61,7 @@
     "emptyClaimedClubsDesc": "You haven't claimed any organizations yet.",
     "save": "Follow organization",
     "saved": "Followed organization",
+    "signInToFollow": "Sign in to follow organizations.",
     "savedClubs": {
       "saveFailed": "Couldn't follow this organization",
       "unsaveFailed": "Couldn't unfollow this organization"

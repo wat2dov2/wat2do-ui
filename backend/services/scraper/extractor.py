@@ -56,7 +56,7 @@ def extract_events_from_post(
 
     Args:
         caption_text: post caption (may be empty/None for image-only posts).
-        image_urls: ordered list of public image URLs (Supabase Storage
+        image_urls: ordered list of public image URLs (application storage
             after ``image_uploader.upload_post_images``). The list order
             corresponds to the carousel order; ``image_index`` on the
             returned events refers to this list.

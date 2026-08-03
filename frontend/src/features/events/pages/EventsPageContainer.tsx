@@ -47,7 +47,7 @@ export function EventsPageContainer() {
   const { profileCompleted, userEmail } = useAuthState();
   const { t } = useTranslation();
   const router = useRouter();
-  const [searchParams] = useMutableSearchParams();
+  const [searchParams, setSearchParams] = useMutableSearchParams();
 
   const {
     isLoading,
@@ -84,12 +84,16 @@ export function EventsPageContainer() {
   }, [selectedEventId, allEvents]);
 
   const handleEventClick = useCallback((event: Event) => {
-    setSelectedEventId(event.id);
-  }, []);
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set(QP.EVENT_ID, String(event.id));
+    setSearchParams(nextParams);
+  }, [searchParams, setSearchParams]);
 
   const handleCloseEventDetails = useCallback(() => {
-    setSelectedEventId(null);
-  }, []);
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete(QP.EVENT_ID);
+    setSearchParams(nextParams, { replace: true });
+  }, [searchParams, setSearchParams]);
 
   const handleViewModeChange = useCallback((mode: ViewMode) => {
     setViewMode(mode);
@@ -150,7 +154,13 @@ export function EventsPageContainer() {
   // Submitting an event requires an account, so gate before navigating.
   const handleSubmitEventClick = useCallback(() => {
     if (!profileCompleted) {
-      toast({ description: t("navigation.loginRequiredToSubmit") });
+      toast({
+        description: t("navigation.loginRequiredToSubmit"),
+        action: {
+          label: t("events.signIn"),
+          onClick: () => router.push(ROUTES.LOGIN),
+        },
+      });
       return;
     }
     router.push(ROUTES.EVENT_SUBMIT);
@@ -183,13 +193,31 @@ export function EventsPageContainer() {
               </Button>
             }
           />
-          <SearchBar
-            searchQuery={filters.searchQuery}
-            onSearchChange={(query) => {
-              filters.setSearchQuery(query);
-            }}
-            onSearchClear={() => filters.setSearchQuery("")}
-          />
+          <div className="flex items-center gap-2">
+            <div className="min-w-0 flex-1">
+              <SearchBar
+                searchQuery={filters.searchQuery}
+                onSearchChange={(query) => {
+                  filters.setSearchQuery(query);
+                }}
+                onSearchClear={() => filters.setSearchQuery("")}
+              />
+            </div>
+            <MoreFiltersButton
+              open={showFilterDropdown}
+              onOpenChange={setShowFilterDropdown}
+              filterCount={filters.filterCount}
+              onClearFilters={filters.handleClearAllFilters}
+            >
+              {showFilterDropdown ? (
+                <FilterDropdown
+                  viewMode={viewMode}
+                  onViewModeChange={handleViewModeChange}
+                  filters={filters}
+                />
+              ) : null}
+            </MoreFiltersButton>
+          </div>
 
           <div className="flex items-center gap-2">
             <div className="relative min-w-0 flex-1">
@@ -242,22 +270,6 @@ export function EventsPageContainer() {
                   className="h-px w-px shrink-0"
                 />
               </HorizontalScrollFade>
-            </div>
-            <div className="relative shrink-0 pb-1">
-              <MoreFiltersButton
-                open={showFilterDropdown}
-                onOpenChange={setShowFilterDropdown}
-                filterCount={filters.filterCount}
-                onClearFilters={filters.handleClearAllFilters}
-              >
-                {showFilterDropdown ? (
-                  <FilterDropdown
-                    viewMode={viewMode}
-                    onViewModeChange={handleViewModeChange}
-                    filters={filters}
-                  />
-                ) : null}
-              </MoreFiltersButton>
             </div>
           </div>
         </div>

@@ -21,6 +21,9 @@ class Settings(BaseSettings):
     supabase_key: str
     supabase_secret_key: str = ""
     database_url: str = ""
+    aws_region: str = "ca-central-1"
+    storage_bucket_name: str = ""
+    storage_public_base_url: str = ""
     openai_api_key: str = ""
     openai_instagram_curation_model: str = "gpt-5.6-sol"
     openai_instagram_curation_timeout: int = 60

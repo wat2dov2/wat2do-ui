@@ -57,12 +57,6 @@ variable "public_subnet_cidrs" {
   default     = ["10.20.0.0/24", "10.20.1.0/24"]
 }
 
-variable "private_subnet_cidrs" {
-  description = "Two private subnet CIDRs, one per selected availability zone."
-  type        = list(string)
-  default     = ["10.20.10.0/24", "10.20.11.0/24"]
-}
-
 variable "email_from" {
   description = "Sender identity used by the Resend notification provider."
   type        = string

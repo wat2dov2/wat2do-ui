@@ -2,7 +2,7 @@
 
 Focus on the SSRF allowlist (``_is_safe_image_url``). The download +
 upload path is intentionally not exercised here - that wires through
-real httpx + Supabase Storage and is covered by the pipeline integration
+real httpx + S3 storage and is covered by the pipeline integration
 test instead.
 """
 

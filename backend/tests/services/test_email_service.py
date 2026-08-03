@@ -91,6 +91,28 @@ def test_resend_dispatch_omits_empty_idempotency_key(monkeypatch):
     assert "Idempotency-Key" not in captured["headers"]
 
 
+def test_resend_dispatch_includes_reply_to(monkeypatch):
+    monkeypatch.setattr(email_module.settings, "email_provider", "resend")
+    monkeypatch.setattr(email_module.settings, "email_provider_api_key", "re_test")
+    captured = {}
+
+    def fake_post(url, *, json, headers, timeout):
+        captured["json"] = json
+        return httpx.Response(200, request=httpx.Request("POST", url))
+
+    monkeypatch.setattr(email_module.httpx, "post", fake_post)
+
+    assert EmailService().send(_message(reply_to="sender@example.com")) is True
+    assert captured["json"]["reply_to"] == "sender@example.com"
+
+
+def test_send_safely_logs_and_returns_false(monkeypatch):
+    service = EmailService()
+    monkeypatch.setattr(service, "send", MagicMock(side_effect=RuntimeError("provider down")))
+
+    assert service.send_safely(_message()) is False
+
+
 def test_resend_requires_api_key(monkeypatch):
     monkeypatch.setattr(email_module.settings, "email_provider", "resend")
     monkeypatch.setattr(email_module.settings, "email_provider_api_key", "")

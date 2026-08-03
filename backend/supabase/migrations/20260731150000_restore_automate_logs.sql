@@ -9,7 +9,6 @@ CREATE TABLE public.automate_logs (
     post_url text,
     payload jsonb
 );
-
 -- Enable RLS
 ALTER TABLE public.automate_logs ENABLE ROW LEVEL SECURITY;
 
@@ -18,7 +17,6 @@ CREATE POLICY "Enable insert for service_role only" ON public.automate_logs
     FOR INSERT
     TO service_role
     WITH CHECK (true);
-
 -- Allow select for admins only
 CREATE POLICY "Enable read access for admins only" ON public.automate_logs
     FOR SELECT
@@ -29,7 +27,6 @@ CREATE POLICY "Enable read access for admins only" ON public.automate_logs
             WHERE u.supabase_auth_id = auth.uid()::text AND u.role = 'admin'
         )
     );
-
 -- Enable Replica Identity for Realtime subscriptions
 ALTER TABLE public.automate_logs REPLICA IDENTITY FULL;
 
@@ -41,7 +38,6 @@ BEGIN
   END IF;
 END
 $$;
-
 -- Set up pg_cron to prune logs older than 7 days
 CREATE EXTENSION IF NOT EXISTS pg_cron;
 

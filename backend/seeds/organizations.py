@@ -1,14 +1,5 @@
-from core.config import settings
 from core.database import get_sb
 from core.tables import ORGANIZATIONS
-
-
-def _public_url(bucket: str, path: str) -> str | None:
-    base = settings.supabase_url
-    if not base:
-        return None
-    return f"{base}/storage/v1/object/public/{bucket}/{path}"
-
 
 _ACADEMIC = "Politics & Advocacy"
 _GAMES = "Games & Recreation"

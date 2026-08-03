@@ -60,12 +60,12 @@ export function OrganizationOverflowMenu({
         {items.map(({ key, href, label, icon: Icon }) => (
           <DropdownMenuItem
             key={key}
-            onSelect={() => {
-              window.open(href, "_blank", "noopener,noreferrer");
-            }}
+            asChild
           >
-            <Icon className="size-3.5 shrink-0" />
-            {label}
+            <a href={href} target="_blank" rel="noopener noreferrer">
+              <Icon className="size-3.5 shrink-0" />
+              {label}
+            </a>
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>

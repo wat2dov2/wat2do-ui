@@ -44,8 +44,8 @@ const TabsTrigger = React.forwardRef<
     data-slot="tabs-trigger"
     data-elevation="control-active"
     className={cn(
-      "inline-flex items-center justify-center whitespace-nowrap rounded-xl px-3 py-1 text-sm font-medium ring-offset-background transition-all disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-      "data-[state=active]:bg-surface-elevated data-[state=active]:text-foreground hover:bg-surface-hover",
+      "inline-flex cursor-pointer items-center justify-center whitespace-nowrap rounded-xl px-3 py-1 text-sm font-medium text-foreground/75 ring-offset-background transition-all disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+      "data-[state=active]:bg-surface-elevated data-[state=active]:text-foreground hover:bg-surface-hover hover:text-foreground",
       className
     )}
     {...props}

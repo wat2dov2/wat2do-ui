@@ -10,10 +10,6 @@ output "application_task_definition_family" {
   value = aws_ecs_task_definition.application.family
 }
 
-output "private_subnet_ids" {
-  value = [for subnet in aws_subnet.private : subnet.id]
-}
-
 output "task_security_group_id" {
   value = aws_security_group.task.id
 }
@@ -28,4 +24,12 @@ output "cloudfront_domain_name" {
 
 output "load_balancer_dns_name" {
   value = aws_lb.main.dns_name
+}
+
+output "assets_bucket_name" {
+  value = aws_s3_bucket.assets.id
+}
+
+output "assets_public_base_url" {
+  value = "https://${var.domain_name}/media"
 }

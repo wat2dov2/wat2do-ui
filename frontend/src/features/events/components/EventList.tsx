@@ -16,6 +16,7 @@ import { EventCardSkeleton } from "@/features/events/components/EventCardSkeleto
 import type { EventStats } from "@/features/events/api/events.api";
 import { EmptyState } from "@/shared/feedback";
 import { Button } from "@/shared/ui/button";
+import { CARD_GRID_CLASS } from "@/shared/constants/ui";
 
 interface EventListProps {
   events: Event[];
@@ -40,11 +41,6 @@ interface EventCardsGridProps {
   eventStats: Record<string, EventStats> | null;
   onEventClick?: (event: Event) => void;
 }
-
-// Match the minimum track to the card image height so cards never collapse into
-// a narrow portrait sliver on mid-width viewports.
-const EVENT_CARD_GRID_CLASS =
-  "grid grid-cols-2 gap-2 sm:gap-2.5 min-[480px]:grid-cols-[repeat(auto-fill,minmax(13rem,1fr))]";
 
 // Offscreen cards skip style, layout, and paint entirely. The feed renders every
 // upcoming event at once, and each card measures itself and masks an SVG image,
@@ -72,7 +68,7 @@ function EventCardsGrid({
   onEventClick,
 }: EventCardsGridProps) {
   return (
-    <div className={EVENT_CARD_GRID_CLASS}>
+    <div className={CARD_GRID_CLASS}>
       {events.map((event) => (
         <EventCardListItem key={event.id}>
           <EventCard
@@ -173,7 +169,7 @@ export function EventList({
       <div className="space-y-5">
         <section className="space-y-2.5">
           <Skeleton className="h-5 w-28 rounded-lg" />
-          <div className={EVENT_CARD_GRID_CLASS}>
+          <div className={CARD_GRID_CLASS}>
             {Array.from({ length: 12 }).map((_, i) => (
               <EventCardSkeleton key={i} />
             ))}

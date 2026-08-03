@@ -79,6 +79,15 @@ export function EventCardImage({
         height={box.height}
         className="absolute inset-0"
       >
+        {variant === "detail" && event.source_image_url ? (
+          <a
+            href={event.source_image_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="absolute inset-0 cursor-zoom-in"
+            aria-label={t("events.viewFullImage")}
+          />
+        ) : null}
         {!event.source_image_url && (
           <div className="absolute inset-0 flex items-center justify-center">
             <img

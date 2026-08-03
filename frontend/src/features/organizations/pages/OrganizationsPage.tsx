@@ -108,7 +108,13 @@ export function OrganizationsPage({
             className="shrink-0"
             onMouseDown={() => {
               if (!authed) {
-                toast({ description: t("navigation.loginRequiredToSubmit") });
+                toast({
+                  description: t("navigation.loginRequiredToSubmit"),
+                  action: {
+                    label: t("events.signIn"),
+                    onClick: () => router.push(ROUTES.LOGIN),
+                  },
+                });
                 return;
               }
               router.push(ROUTES.ORGANIZATION_CREATE);

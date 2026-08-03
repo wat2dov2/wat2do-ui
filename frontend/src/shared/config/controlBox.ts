@@ -1,5 +1,6 @@
 import admin from "../../../../backend/controlbox/admin.json";
 import clientCache from "../../../../backend/controlbox/client_cache.json";
+import contact from "../../../../backend/controlbox/contact.json";
 import eventDiscovery from "../../../../backend/controlbox/event_discovery.json";
 import interactionTracking from "../../../../backend/controlbox/interaction_tracking.json";
 import organizationManagement from "../../../../backend/controlbox/organization_management.json";
@@ -10,6 +11,11 @@ const minutesToMilliseconds = (minutes: number): number => minutes * 60 * 1000;
 const hoursToMilliseconds = (hours: number): number => hours * 60 * 60 * 1000;
 
 export const controlBox = {
+  contact: {
+    maximumNameLength: contact.maximum_name_length,
+    maximumSubjectLength: contact.maximum_subject_length,
+    maximumMessageLength: contact.maximum_message_length,
+  },
   eventDiscovery: {
     feedRevalidateSeconds: eventDiscovery.feed_revalidate_seconds,
     newEventWindowHours: eventDiscovery.new_event_window_hours,

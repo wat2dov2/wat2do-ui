@@ -5,6 +5,7 @@ import { filterEvents, sortEvents, getFilterCounts } from "@/features/search/api
 import { getEventCategories } from "@/shared/data/eventCategories";
 import { availableDays, availableFoods } from "@/shared/constants/eventFilters";
 import { translateCategory } from "@/shared/utils/event";
+import { translateFood } from "@/shared/utils/foodTranslation";
 import type { Event } from "@/shared/types";
 
 /**
@@ -45,7 +46,7 @@ export function useSearch({
       goingFilter: filterState.goingFilter,
       freeFoodFilter: filterState.freeFoodFilter,
       selectedDays: filterState.selectedDays,
-      priceRange: filterState.priceRange,
+      maxPrice: filterState.maxPrice,
       selectedLocations: filterState.selectedLocations,
       selectedFoods: filterState.selectedFoods,
       selectedCategories: filterState.selectedCategories,
@@ -61,7 +62,7 @@ export function useSearch({
     filterState.searchQuery,
     filterState.freeFoodFilter,
     filterState.selectedDays,
-    filterState.priceRange,
+    filterState.maxPrice,
     filterState.selectedLocations,
     filterState.selectedFoods,
     filterState.selectedCategories,
@@ -83,7 +84,7 @@ export function useSearch({
         selectedLocations: filterState.selectedLocations,
         selectedFoods: filterState.selectedFoods,
         selectedDays: filterState.selectedDays,
-        priceRange: filterState.priceRange,
+        maxPrice: filterState.maxPrice,
         registration: filterState.registration,
         selectedOrganizations: filterState.selectedOrganizations,
         freeFoodFilter: filterState.freeFoodFilter,
@@ -96,7 +97,7 @@ export function useSearch({
       filterState.selectedLocations,
       filterState.selectedFoods,
       filterState.selectedDays,
-      filterState.priceRange,
+      filterState.maxPrice,
       filterState.registration,
       filterState.selectedOrganizations,
       filterState.freeFoodFilter,
@@ -115,17 +116,20 @@ export function useSearch({
   );
 
   const foodOptions = useMemo(
-    () =>
-      availableFoods.map((food) => {
-        const translation = t(`foods.${food}`);
-        // If translation returns the key itself (missing translation), use the food value
-        const label = translation.startsWith("foods.") ? food : translation;
-        return {
-          id: food,
-          label,
-        };
-      }),
-    [t],
+    () => {
+      const foods = new Set(availableFoods);
+      events.forEach((event) => {
+        event.food?.forEach((food) => {
+          const value = food.trim();
+          if (value) foods.add(value);
+        });
+      });
+      return Array.from(foods).map((food) => ({
+        id: food,
+        label: translateFood(food, t),
+      }));
+    },
+    [events, t],
   );
 
   const dayOptions = useMemo(

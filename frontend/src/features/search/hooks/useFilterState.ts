@@ -75,7 +75,7 @@ export function useFilterState() {
     selectedLocations,
     selectedFoods,
     selectedDays,
-    priceRange,
+    maxPrice,
     registration,
     freeFoodFilter,
     selectedOrganizations,
@@ -90,7 +90,7 @@ export function useFilterState() {
       selectedLocations: s.selectedLocations,
       selectedFoods: s.selectedFoods,
       selectedDays: s.selectedDays,
-      priceRange: s.priceRange,
+      maxPrice: s.maxPrice,
       registration: s.registration,
       freeFoodFilter: s.freeFoodFilter,
       selectedOrganizations: s.selectedOrganizations,
@@ -131,9 +131,8 @@ export function useFilterState() {
     (value: string[]) => updateFilterState({ organizations: value }),
     [updateFilterState],
   );
-  const setPriceRange = useCallback(
-    (value: { min: string; max: string }) =>
-      updateFilterState({ priceRange: value }),
+  const setMaxPrice = useCallback(
+    (value: string) => updateFilterState({ maxPrice: value }),
     [updateFilterState],
   );
   const setRegistration = useCallback(
@@ -202,8 +201,8 @@ export function useFilterState() {
     setSelectedFoods,
     selectedDays,
     setSelectedDays,
-    priceRange,
-    setPriceRange,
+    maxPrice,
+    setMaxPrice,
     registration,
     setRegistration,
     selectedOrganizations,

@@ -2,7 +2,7 @@
 
 Stages:
     1. Filter - drop posts already in the DB (skipped in dry-run).
-    2. Upload - push each post's images to Supabase Storage.
+    2. Upload - push each post's images to application storage.
     3. Extract - run vision-based extraction per post.
     4. Reconcile - Pass 2 match/update against existing candidates.
     5. Save - insert or update events and their event_dates rows.
