@@ -30,15 +30,9 @@ interface EventCardImageProps {
    * the badge but must not let its menu filter the feed and leave the form.
    */
   interactive?: boolean;
-  /** Gives the true above-the-fold poster high network priority. */
-  priority?: boolean;
   /** Runs after the organization badge applies its feed filter. */
   onOrganizationFilterSelect?: () => void;
 }
-
-const EVENT_CARD_IMAGE_SIZES =
-  "(max-width: 479px) 50vw, (max-width: 1023px) 33vw, 25vw";
-const EVENT_DETAIL_IMAGE_SIZES = "(max-width: 767px) 100vw, 320px";
 
 /**
  * Event poster with its corner badges: new, live, and organization.
@@ -52,7 +46,6 @@ export function EventCardImage({
   variant,
   onBadgeHoverChange,
   interactive = true,
-  priority = variant === "detail",
   onOrganizationFilterSelect,
 }: EventCardImageProps) {
   const { t } = useTranslation();
@@ -91,10 +84,6 @@ export function EventCardImage({
           backgroundColor="var(--surface-elevated)"
           imageSrc={event.source_image_url}
           imageAlt={event.title}
-          imageSizes={
-            variant === "card" ? EVENT_CARD_IMAGE_SIZES : EVENT_DETAIL_IMAGE_SIZES
-          }
-          imagePriority={priority}
           cutouts={cutouts}
           width={box.width}
           height={box.height}

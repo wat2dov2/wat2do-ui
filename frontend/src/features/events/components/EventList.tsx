@@ -37,14 +37,12 @@ interface EventCardsGridProps {
   events: Event[];
   eventStats: Record<string, EventStats> | null;
   onEventClick?: (event: Event) => void;
-  priorityEventIds: ReadonlySet<number>;
 }
 
 function EventCardsGrid({
   events,
   eventStats,
   onEventClick,
-  priorityEventIds,
 }: EventCardsGridProps) {
   return (
     <div className={CARD_GRID_CLASS}>
@@ -54,7 +52,6 @@ function EventCardsGrid({
             event={event}
             stats={eventStats?.[String(event.id)]}
             onEventClick={onEventClick}
-            imagePriority={priorityEventIds.has(event.id)}
             mobileClickActivation
           />
         </div>
@@ -148,16 +145,6 @@ export function EventList({
     [visibleRegularEvents],
   );
   const hasMoreEvents = visibleRegularEvents.length < sectionOrderedEvents.length;
-  const priorityEventIds = useMemo(
-    () =>
-      new Set(
-        [...promotedEvents, ...visibleRegularEvents]
-          .slice(0, 4)
-          .map((event) => event.id),
-      ),
-    [promotedEvents, visibleRegularEvents],
-  );
-
   const sectionLabel = (section: EventDateSection): string => {
     if (section.kind === "today") return t("events.dateSections.today");
     if (section.kind === "tomorrow") return t("events.dateSections.tomorrow");
@@ -242,7 +229,6 @@ export function EventList({
             events={promotedEvents}
             eventStats={eventStats}
             onEventClick={onEventClick}
-            priorityEventIds={priorityEventIds}
           />
         </section>
       )}
@@ -259,7 +245,6 @@ export function EventList({
                 events={group.events}
                 eventStats={eventStats}
                 onEventClick={onEventClick}
-                priorityEventIds={priorityEventIds}
               />
             </section>
           );
@@ -270,7 +255,6 @@ export function EventList({
             events={visibleRegularEvents}
             eventStats={eventStats}
             onEventClick={onEventClick}
-            priorityEventIds={priorityEventIds}
           />
         </section>
       )}

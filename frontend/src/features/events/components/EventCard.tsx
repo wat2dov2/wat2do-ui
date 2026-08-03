@@ -29,8 +29,6 @@ interface EventCardProps {
   interactive?: boolean;
   /** Crawlable detail destination for surfaces that intentionally render a link. */
   titleHref?: string;
-  /** Prioritize this card's poster when it is initially above the fold. */
-  imagePriority?: boolean;
   className?: string;
 }
 
@@ -121,7 +119,6 @@ function EventCardComponent({
   mobileClickActivation = true,
   interactive = true,
   titleHref = interactive ? eventPagePath(event.id) : undefined,
-  imagePriority = false,
   className,
 }: EventCardProps) {
   const [isHoveringBadge, setIsHoveringBadge] = useState(false);
@@ -214,7 +211,6 @@ function EventCardComponent({
         event={event}
         variant="card"
         interactive={interactive}
-        priority={imagePriority}
         onBadgeHoverChange={interactive ? setIsHoveringBadge : undefined}
       />
 

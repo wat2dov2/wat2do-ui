@@ -1,7 +1,5 @@
 {
   "events": {
-    "discoveryTitle": "{{school}}的活动和值得体验的事",
-    "discoveryDescription": "发现{{school}}当前的校园活动、学生体验与社群项目，并按日期、类别、费用等条件浏览。",
     "eventTitle": "活动标题",
     "loadFailed": "加载活动失败。请重试。",
     "deleteFailed": "删除活动失败。请重试。",

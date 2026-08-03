@@ -14,7 +14,9 @@ import {
 
 export const revalidate = 0;
 
-async function loadInitialSnapshot(school: string): Promise<SchoolBrowseSnapshot | null> {
+async function loadInitialSnapshot(
+  school: string,
+): Promise<SchoolBrowseSnapshot | null> {
   try {
     return await getSchoolBrowseSnapshot(school);
   } catch (err) {
@@ -40,9 +42,9 @@ export async function generateMetadata(): Promise<Metadata> {
   const schoolName = schoolRecord?.name ?? school;
   const title = `${schoolName} Events and Things to Do | Wat2Do`;
   const description = `Discover current events, activities, and things to do for students at ${schoolName}. Explore campus events by date, category, cost, and more.`;
-  const featuredEvent = snapshot?.promotedEvents.find(
-    (event) => event.source_image_url,
-  ) ?? snapshot?.feed.items.find((event) => event.source_image_url);
+  const featuredEvent =
+    snapshot?.promotedEvents.find((event) => event.source_image_url) ??
+    snapshot?.feed.items.find((event) => event.source_image_url);
   const image = selectSeoImage(
     featuredEvent?.source_image_url,
     featuredEvent ? `${featuredEvent.title} event poster` : "",
@@ -66,16 +68,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function HomePage() {
   const school = await resolveRequestSchool();
-  const [snapshot, schoolRecord] = await Promise.all([
-    loadInitialSnapshot(school),
-    getSchool(school),
-  ]);
+  const snapshot = await loadInitialSnapshot(school);
 
-  return (
-    <EventRoutePage
-      initialSnapshot={snapshot}
-      initialSchool={school}
-      schoolName={schoolRecord?.name ?? school}
-    />
-  );
+  return <EventRoutePage initialSnapshot={snapshot} initialSchool={school} />;
 }

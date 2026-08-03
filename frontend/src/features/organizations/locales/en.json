@@ -1,7 +1,5 @@
 {
   "organizations": {
-    "discoveryTitle": "{{school}} clubs and student organizations",
-    "discoveryDescription": "Explore student communities at {{school}}, discover their events, and find verified ways to get involved.",
     "organizationType": "Organization type: {{type}}",
     "claimOwnership": "Claim Organization Ownership",
     "claimOwnershipDesc": "Request to become the primary administrator and creator of",
@@ -41,7 +39,7 @@
     "eventCount_other": "{{count}} events",
     "clubCreated": "Organization Created!",
     "clubUpdated": "Organization Updated!",
-    "addClub": "Add a club",
+    "addClub": "Add club",
     "submitOrganization": "Submit Organization",
     "addOrganizationDescription": "This organization will be listed for {{school}}.",
     "optionalDetailsDescription": "Add links and organization type details that help students recognize the organization.",

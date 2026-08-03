@@ -852,26 +852,51 @@ test.describe("Events Page", () => {
     const body = await page.textContent("body");
     expect(body).toBeTruthy();
     const eventCount = page.getByText("upcoming event", { exact: true }).locator("..");
-    const addEventButton = page.getByRole("button", { name: "Add an event" });
+    const addEventButton = page.getByRole("button", { name: "Add event" });
     const eventSearch = page.getByPlaceholder("Search events").locator("..");
-    const extraFiltersButton = page.getByRole("button", { name: "Extra filters" });
+    await expect(
+      page.getByRole("heading", { name: /events and things to do/i }),
+    ).toHaveCount(0);
+    await expect(page.getByText(/Find current campus events/i)).toHaveCount(0);
     await expect(addEventButton.locator("svg")).toHaveCount(0);
     await expect
       .poll(async () => {
-        const [searchBox, filterBox] = await Promise.all([
+        const [searchBox, addEventBox, sharesSearchRow, filtersBesideStrip] = await Promise.all([
           eventSearch.boundingBox(),
-          extraFiltersButton.boundingBox(),
+          addEventButton.boundingBox(),
+          eventSearch.evaluate((searchElement) =>
+            Boolean(
+              searchElement.parentElement
+                ?.querySelector("button")
+                ?.textContent?.includes("Add event"),
+            ),
+          ),
+          page.getByTestId("event-quick-filter-scroll").evaluate((strip) =>
+            Boolean(
+              strip.parentElement?.parentElement?.querySelector(
+                "button",
+              )?.textContent?.includes("Extra filters"),
+            ),
+          ),
         ]);
-        return { searchHeight: searchBox?.height, filterHeight: filterBox?.height };
+        return {
+          searchHeight: searchBox?.height,
+          addEventHeight: addEventBox?.height,
+          sharesSearchRow,
+          filtersBesideStrip,
+        };
       })
-      .toEqual({ searchHeight: 44, filterHeight: 44 });
+      .toEqual({
+        searchHeight: 44,
+        addEventHeight: 44,
+        sharesSearchRow: true,
+        filtersBesideStrip: true,
+      });
     await expect
       .poll(async () =>
         eventCount.evaluate(
           (countElement) =>
-            countElement.parentElement
-              ?.querySelector("button")
-              ?.textContent?.includes("Add an event") ?? false,
+            countElement.parentElement?.querySelector("button") === null,
         ),
       )
       .toBe(true);
@@ -1093,7 +1118,12 @@ test.describe("Events Page", () => {
     });
 
     await page.goto(BASE);
-    await page.locator('article[data-event-id="1"]').click();
+    const eventCard = page.locator('article[data-event-id="1"]');
+    await expect(eventCard.locator("foreignObject")).toHaveCount(0);
+    await expect(
+      eventCard.locator('svg > g > image[href="/wat2do-logo.png"]'),
+    ).toHaveCount(1);
+    await eventCard.click();
 
     const eventDrawer = page.getByRole("dialog", { name: "Poster Dialog Event" });
     await eventDrawer.getByRole("button", { name: "View full event image" }).click();
@@ -2208,8 +2238,17 @@ test.describe("Organizations Page", () => {
     const body = await page.textContent("body");
     expect(body).toBeTruthy();
     const organizationCard = page.locator('[data-organization-id="1"]');
+    const addClubButton = page.getByRole("button", {
+      name: "Add club",
+      exact: true,
+    });
     const organizationSearch = page.getByPlaceholder("Search organizations...").locator("..");
     const organizationScope = page.getByRole("combobox", { name: "All", exact: true });
+    await expect(
+      page.getByRole("heading", { name: /clubs and student organizations/i }),
+    ).toHaveCount(0);
+    await expect(page.getByText(/Explore student communities/i)).toHaveCount(0);
+    await expect(addClubButton.locator("svg")).toHaveCount(0);
     await expect(
       organizationCard.getByRole("link", { name: "View Organization Page" }),
     ).toBeVisible();
@@ -2218,21 +2257,33 @@ test.describe("Organizations Page", () => {
     ).toHaveCount(0);
     await expect
       .poll(async () => {
-        const [searchBox, scopeBox, shareParent] = await Promise.all([
+        const [searchBox, scopeBox, addClubBox, shareParent] = await Promise.all([
           organizationSearch.boundingBox(),
           organizationScope.boundingBox(),
+          addClubButton.boundingBox(),
           organizationSearch.evaluate(
             (searchElement) =>
-              Boolean(searchElement.parentElement?.querySelector('[role="combobox"]')),
+              Boolean(
+                searchElement.parentElement?.querySelector('[role="combobox"]') &&
+                  searchElement.parentElement?.querySelector("button")?.textContent?.includes(
+                    "Add club",
+                  ),
+              ),
           ),
         ]);
         return {
           searchHeight: searchBox?.height,
           scopeHeight: scopeBox?.height,
+          addClubHeight: addClubBox?.height,
           shareParent,
         };
       })
-      .toEqual({ searchHeight: 44, scopeHeight: 44, shareParent: true });
+      .toEqual({
+        searchHeight: 44,
+        scopeHeight: 44,
+        addClubHeight: 44,
+        shareParent: true,
+      });
 
     await page.screenshot({ path: "e2e/screenshots/organizations-page.png", fullPage: true });
   });

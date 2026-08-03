@@ -10,7 +10,7 @@ import { EventsPageContainer } from "@/features/events/pages/EventsPageContainer
 import { useEventsStore } from "@/features/events/store/events.store";
 import { resolveSchool } from "@/shared/constants/schools";
 import { CARD_GRID_CLASS } from "@/shared/constants/ui";
-import { PageHeader, Stack } from "@/shared/layout";
+import { Stack } from "@/shared/layout";
 import { controlBox } from "@/shared/config/controlBox";
 import i18n from "@/shared/lib/i18n";
 import type { SchoolBrowseSnapshot } from "@/features/events/api/eventFeed.server";
@@ -18,13 +18,11 @@ import type { SchoolBrowseSnapshot } from "@/features/events/api/eventFeed.serve
 interface EventRoutePageProps {
   initialSnapshot: SchoolBrowseSnapshot | null;
   initialSchool: string;
-  schoolName: string;
 }
 
 function InitialEventFeed({
   initialSnapshot,
-  schoolName,
-}: Pick<EventRoutePageProps, "initialSnapshot" | "schoolName">) {
+}: Pick<EventRoutePageProps, "initialSnapshot">) {
   const { t } = useTranslation();
   const events = (initialSnapshot?.feed.items ?? []).slice(
     0,
@@ -33,19 +31,14 @@ function InitialEventFeed({
 
   return (
     <Stack gap={6}>
-      <PageHeader
-        title={t("events.discoveryTitle", { school: schoolName })}
-        description={t("events.discoveryDescription", { school: schoolName })}
-      />
       <main aria-label={t("search.ariaLabel")}>
         {events.length > 0 ? (
           <div className={CARD_GRID_CLASS}>
-            {events.map((event, index) => (
+            {events.map((event) => (
               <EventCard
                 key={event.id}
                 event={event}
                 interactive={false}
-                imagePriority={index < 4}
                 titleHref={eventPagePath(event.id)}
               />
             ))}
@@ -63,7 +56,6 @@ function InitialEventFeed({
 export function EventRoutePage({
   initialSnapshot,
   initialSchool,
-  schoolName,
 }: EventRoutePageProps) {
   const ready = useAppReady();
 
@@ -91,17 +83,14 @@ export function EventRoutePage({
   if (!ready) {
     return (
       <AppPage renderBeforeReady>
-        <InitialEventFeed
-          initialSnapshot={initialSnapshot}
-          schoolName={schoolName}
-        />
+        <InitialEventFeed initialSnapshot={initialSnapshot} />
       </AppPage>
     );
   }
 
   return (
     <AppPage>
-      <EventsPageContainer schoolName={schoolName} />
+      <EventsPageContainer />
     </AppPage>
   );
 }

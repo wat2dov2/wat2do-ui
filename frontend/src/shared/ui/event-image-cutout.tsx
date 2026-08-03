@@ -9,7 +9,6 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import Image from "next/image";
 
 import { cn } from "@/shared/lib/utils";
 import { BadgeMaskShape } from "@/shared/ui/badge-mask";
@@ -21,6 +20,8 @@ const useSafeLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : us
 const FILLET = 8;
 /** Inner-corner radius of the notch, matching BadgeMask's `rounded-*-xl`. */
 const INNER_RADIUS = 12;
+/** Stable coordinate space so the server and hydrated SVG keep identical geometry. */
+const MASK_VIEWBOX_SIZE = 100;
 
 interface MeasuredCutout {
   corner: BadgeMaskVariant;
@@ -98,39 +99,66 @@ export function useEventImageCutouts() {
 }
 
 /** Notch rect plus its two fillet glyphs, placed for a given corner. */
-function cornerPieces(cutout: MeasuredCutout, w: number, h: number) {
+function cornerPieces(
+  cutout: MeasuredCutout,
+  surfaceWidth: number,
+  surfaceHeight: number,
+) {
   // The measured element already includes BadgeMask's own padding, which is the
   // visual gap - adding more here double-counts it and leaves a dead band.
-  const nw = cutout.width;
-  const nh = cutout.height;
-  const r = INNER_RADIUS;
+  const scaleX = MASK_VIEWBOX_SIZE / surfaceWidth;
+  const scaleY = MASK_VIEWBOX_SIZE / surfaceHeight;
+  const nw = cutout.width * scaleX;
+  const nh = cutout.height * scaleY;
+  const rx = INNER_RADIUS * scaleX;
+  const ry = INNER_RADIUS * scaleY;
+  const filletWidth = FILLET * scaleX;
+  const filletHeight = FILLET * scaleY;
+  const w = MASK_VIEWBOX_SIZE;
+  const h = MASK_VIEWBOX_SIZE;
 
   /*
-   * The knockout rect is overhung by `r` on its two outward sides. `rx` rounds
-   * all four corners, but only the inner one lands inside the card - the other
-   * three curve off-canvas - so the notch gets the rounded inner corner that
-   * BadgeMask draws with `rounded-*-xl`, and no square corner remains.
+   * The knockout rect is overhung on its two outward sides. The separate x/y
+   * radii preserve the intended pixel radius even when a rectangular card maps
+   * into the square coordinate system.
    */
   switch (cutout.corner) {
     case "top-left":
       return {
-        rect: { x: -r, y: -r, width: nw + r, height: nh + r, rx: r },
+        rect: { x: -rx, y: -ry, width: nw + rx, height: nh + ry, rx, ry },
         fillets: [{ x: nw, y: 0 }, { x: 0, y: nh }],
+        filletWidth,
+        filletHeight,
       };
     case "top-right":
       return {
-        rect: { x: w - nw, y: -r, width: nw + r, height: nh + r, rx: r },
-        fillets: [{ x: w - nw - FILLET, y: 0 }, { x: w - FILLET, y: nh }],
+        rect: { x: w - nw, y: -ry, width: nw + rx, height: nh + ry, rx, ry },
+        fillets: [
+          { x: w - nw - filletWidth, y: 0 },
+          { x: w - filletWidth, y: nh },
+        ],
+        filletWidth,
+        filletHeight,
       };
     case "bottom-left":
       return {
-        rect: { x: -r, y: h - nh, width: nw + r, height: nh + r, rx: r },
-        fillets: [{ x: nw, y: h - FILLET }, { x: 0, y: h - nh - FILLET }],
+        rect: { x: -rx, y: h - nh, width: nw + rx, height: nh + ry, rx, ry },
+        fillets: [
+          { x: nw, y: h - filletHeight },
+          { x: 0, y: h - nh - filletHeight },
+        ],
+        filletWidth,
+        filletHeight,
       };
     case "bottom-right":
       return {
-        rect: { x: w - nw, y: h - nh, width: nw + r, height: nh + r, rx: r },
-        fillets: [{ x: w - nw - FILLET, y: h - FILLET }, { x: w - FILLET, y: h - nh - FILLET }],
+        rect: { x: w - nw, y: h - nh, width: nw + rx, height: nh + ry, rx, ry },
+        fillets: [
+          { x: w - nw - filletWidth, y: h - filletHeight },
+          { x: w - filletWidth, y: h - nh - filletHeight },
+        ],
+        filletWidth,
+        filletHeight,
       };
   }
 }
@@ -141,8 +169,6 @@ interface EventImageCutoutProps {
   /** Optional photo, drawn inside the mask so it is cut by the notches too. */
   imageSrc?: string | null;
   imageAlt?: string;
-  imageSizes: string;
-  imagePriority?: boolean;
   /** Measured badge sizes from `useEventImageCutouts`. */
   cutouts: MeasuredCutout[];
   width: number;
@@ -168,8 +194,6 @@ export function EventImageCutout({
   backgroundColor,
   imageSrc,
   imageAlt = "",
-  imageSizes,
-  imagePriority = false,
   cutouts,
   width,
   height,
@@ -178,63 +202,46 @@ export function EventImageCutout({
 }: EventImageCutoutProps) {
   const maskId = useId();
   const ready = width > 0 && height > 0;
-  const optimized = (() => {
-    if (!imageSrc || imageSrc.startsWith("/")) return true;
-    try {
-      const url = new URL(imageSrc);
-      return (
-        url.protocol === "https:" &&
-        url.hostname === "wat2do.io" &&
-        url.pathname.startsWith("/media/")
-      );
-    } catch {
-      return false;
-    }
-  })();
-
-  const image = imageSrc ? (
-    <Image
-      src={imageSrc}
-      alt={imageAlt}
-      fill
-      sizes={imageSizes}
-      loading={imagePriority ? "eager" : "lazy"}
-      fetchPriority={imagePriority ? "high" : "auto"}
-      decoding="async"
-      unoptimized={!optimized}
-      className="object-cover"
-    />
-  ) : null;
 
   return (
     <div className={cn("relative", className)}>
       {/*
-       * Server render and first paint happen before the badges can be measured,
-       * so fall back to an unmasked face. Without it the image area would flash
-       * blank until the layout effect lands; the holes appear on measurement.
+       * The same SVG and image stay mounted before and after
+       * measurement. Its fixed coordinate space renders the unmasked face on
+       * the server; measurement only adds scaled notch geometry, so hydration
+       * cannot repaint the poster as a new LCP candidate.
        */}
-      {!ready && (
-        <div
-          className="pointer-events-none absolute inset-0 overflow-hidden"
-          style={{ backgroundColor }}
-        >
-          {image}
-        </div>
-      )}
-      {ready && (
-        <svg
-          aria-hidden="true"
-          focusable="false"
-          className="pointer-events-none absolute inset-0 size-full"
-          viewBox={`0 0 ${width} ${height}`}
-          preserveAspectRatio="none"
-        >
+      <svg
+        aria-hidden="true"
+        focusable="false"
+        className="pointer-events-none absolute inset-0 size-full"
+        viewBox={`0 0 ${MASK_VIEWBOX_SIZE} ${MASK_VIEWBOX_SIZE}`}
+        preserveAspectRatio="none"
+      >
+        {ready ? (
           <defs>
-            <mask id={maskId} maskUnits="userSpaceOnUse" x={0} y={0} width={width} height={height}>
+            <mask
+              id={maskId}
+              maskUnits="userSpaceOnUse"
+              x={0}
+              y={0}
+              width={MASK_VIEWBOX_SIZE}
+              height={MASK_VIEWBOX_SIZE}
+            >
               {/* White keeps the face visible; black removes it. */}
-              <rect x={0} y={0} width={width} height={height} fill="white" />
+              <rect
+                x={0}
+                y={0}
+                width={MASK_VIEWBOX_SIZE}
+                height={MASK_VIEWBOX_SIZE}
+                fill="white"
+              />
               {cutouts.map((cutout) => {
-                const { rect, fillets } = cornerPieces(cutout, width, height);
+                const { rect, fillets, filletWidth, filletHeight } = cornerPieces(
+                  cutout,
+                  width,
+                  height,
+                );
                 return (
                   <g key={cutout.corner}>
                     <rect {...rect} fill="black" />
@@ -245,8 +252,8 @@ export function EventImageCutout({
                         key={i}
                         x={f.x}
                         y={f.y}
-                        width={FILLET}
-                        height={FILLET}
+                        width={filletWidth}
+                        height={filletHeight}
                         viewBox="0 0 64 64"
                         preserveAspectRatio="xMidYMid meet"
                       >
@@ -258,17 +265,30 @@ export function EventImageCutout({
               })}
             </mask>
           </defs>
+        ) : null}
 
-          <g mask={`url(#${maskId})`}>
-            <rect x={0} y={0} width={width} height={height} fill={backgroundColor} />
-            {imageSrc ? (
-              <foreignObject x={0} y={0} width={width} height={height}>
-                <div className="relative size-full overflow-hidden">{image}</div>
-              </foreignObject>
-            ) : null}
-          </g>
-        </svg>
-      )}
+        <g mask={ready ? `url(#${maskId})` : undefined}>
+          <rect
+            x={0}
+            y={0}
+            width={MASK_VIEWBOX_SIZE}
+            height={MASK_VIEWBOX_SIZE}
+            fill={backgroundColor}
+          />
+          {imageSrc ? (
+            <image
+              href={imageSrc}
+              x={0}
+              y={0}
+              width={MASK_VIEWBOX_SIZE}
+              height={MASK_VIEWBOX_SIZE}
+              preserveAspectRatio="xMidYMid slice"
+            >
+              <title>{imageAlt}</title>
+            </image>
+          ) : null}
+        </g>
+      </svg>
 
       <div className="relative z-10 size-full">{children}</div>
     </div>

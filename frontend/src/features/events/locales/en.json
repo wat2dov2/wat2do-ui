@@ -1,7 +1,5 @@
 {
   "events": {
-    "discoveryTitle": "{{school}} events and things to do",
-    "discoveryDescription": "Find current campus events, activities, and student experiences at {{school}}. Browse by date, category, cost, and more.",
     "eventTitle": "Event Title",
     "loadFailed": "Failed to load events. Please try again.",
     "deleteFailed": "Failed to delete event. Please try again.",
@@ -136,7 +134,7 @@
     "deleteEventTitle": "Delete Event",
     "deleteEventConfirm": "Are you sure you want to delete \"{{title}}\"? This action cannot be undone.",
     "similarEvents": "Similar Events",
-    "submitEvent": "Add an event",
+    "submitEvent": "Add event",
     "allEvents": "All events",
     "going": "Going"
   }

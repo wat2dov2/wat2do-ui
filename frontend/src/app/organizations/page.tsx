@@ -67,17 +67,13 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function OrganizationsPage() {
   const school = await resolveRequestSchool();
-  const [initialDirectory, schoolRecord] = await Promise.all([
-    loadInitialDirectory(school),
-    getSchool(school),
-  ]);
+  const initialDirectory = await loadInitialDirectory(school);
 
   return (
     <AppPage renderBeforeReady>
       <OrganizationsPageContent
         initialDirectory={initialDirectory}
         initialSchool={school}
-        schoolName={schoolRecord?.name ?? school}
       />
     </AppPage>
   );
