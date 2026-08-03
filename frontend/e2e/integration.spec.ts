@@ -837,10 +837,11 @@ test.describe("Events Page", () => {
       .poll(() =>
         organizationName.evaluate(element => ({
           maxWidth: getComputedStyle(element).maxWidth,
-          isOverflowing: element.scrollWidth > element.clientWidth,
+          overflow: getComputedStyle(element).overflow,
+          textOverflow: getComputedStyle(element).textOverflow,
         })),
       )
-      .toEqual({ maxWidth: "96px", isOverflowing: true });
+      .toEqual({ maxWidth: "none", overflow: "visible", textOverflow: "clip" });
     await assetResponse;
   });
 
@@ -852,7 +853,18 @@ test.describe("Events Page", () => {
     expect(body).toBeTruthy();
     const eventCount = page.getByText("upcoming event", { exact: true }).locator("..");
     const addEventButton = page.getByRole("button", { name: "Add an event" });
+    const eventSearch = page.getByPlaceholder("Search events").locator("..");
+    const extraFiltersButton = page.getByRole("button", { name: "Extra filters" });
     await expect(addEventButton.locator("svg")).toHaveCount(0);
+    await expect
+      .poll(async () => {
+        const [searchBox, filterBox] = await Promise.all([
+          eventSearch.boundingBox(),
+          extraFiltersButton.boundingBox(),
+        ]);
+        return { searchHeight: searchBox?.height, filterHeight: filterBox?.height };
+      })
+      .toEqual({ searchHeight: 44, filterHeight: 44 });
     await expect
       .poll(async () =>
         eventCount.evaluate(
@@ -1526,7 +1538,7 @@ test.describe("Events Page", () => {
     await expect(page.getByText("You're In")).toBeVisible();
   });
 
-  test("shows the default category badge when event details have no category", async ({ page }) => {
+  test("shows New in the top-left without an event category badge", async ({ page }) => {
     const now = new Date();
     const startsAt = new Date(now.getTime() + 86_400_000).toISOString();
     await page.route(url => apiPath(url) === "/meta/constants", async (route) => {
@@ -1573,9 +1585,12 @@ test.describe("Events Page", () => {
 
     const drawer = page.getByRole("dialog", { name: "Tech Career Fair" });
     await expect(drawer.getByText("Full detail loaded", { exact: true })).toBeVisible();
+    await expect(drawer.getByText("Arts & Culture", { exact: true })).toHaveCount(0);
+    const newBadge = drawer.getByText("New", { exact: true });
+    await expect(newBadge).toBeVisible();
     await expect(
-      drawer.locator('[data-slot="drawer-header"]').getByText("Arts & Culture", { exact: true }),
-    ).toBeVisible();
+      newBadge.locator("xpath=ancestor::div[contains(@class, 'absolute')][1]"),
+    ).toHaveClass(/top-0.*left-0/);
   });
 
   test("uses recurring-event controls above the event drawer", async ({ page }) => {
@@ -2193,12 +2208,31 @@ test.describe("Organizations Page", () => {
     const body = await page.textContent("body");
     expect(body).toBeTruthy();
     const organizationCard = page.locator('[data-organization-id="1"]');
+    const organizationSearch = page.getByPlaceholder("Search organizations...").locator("..");
+    const organizationScope = page.getByRole("combobox", { name: "All", exact: true });
     await expect(
       organizationCard.getByRole("link", { name: "View Organization Page" }),
     ).toBeVisible();
     await expect(
       organizationCard.getByRole("button", { name: "More options" }),
     ).toHaveCount(0);
+    await expect
+      .poll(async () => {
+        const [searchBox, scopeBox, shareParent] = await Promise.all([
+          organizationSearch.boundingBox(),
+          organizationScope.boundingBox(),
+          organizationSearch.evaluate(
+            (searchElement) =>
+              Boolean(searchElement.parentElement?.querySelector('[role="combobox"]')),
+          ),
+        ]);
+        return {
+          searchHeight: searchBox?.height,
+          scopeHeight: scopeBox?.height,
+          shareParent,
+        };
+      })
+      .toEqual({ searchHeight: 44, scopeHeight: 44, shareParent: true });
 
     await page.screenshot({ path: "e2e/screenshots/organizations-page.png", fullPage: true });
   });

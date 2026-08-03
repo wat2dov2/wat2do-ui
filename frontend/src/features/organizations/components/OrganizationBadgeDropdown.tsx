@@ -10,7 +10,6 @@ import {
   DropdownMenuTrigger,
 } from "@/shared/ui/dropdown-menu";
 import { Badge } from "@/shared/ui/badge";
-import { TruncatedText } from "@/shared/ui/truncated-text";
 import { sanitizeHref } from "@/shared/utils/url";
 
 interface OrganizationBadgeDropdownProps {
@@ -30,8 +29,6 @@ interface OrganizationBadgeDropdownProps {
   onMouseDown?: React.MouseEventHandler;
   onClick?: React.MouseEventHandler;
 }
-
-const ORGANIZATION_NAME_CLASS = "max-w-24 font-bold";
 
 export function OrganizationBadgeDropdown({
   organizationName,
@@ -79,15 +76,14 @@ export function OrganizationBadgeDropdown({
         asChild
         variant="outline"
         size="md"
-        className="tracking-normal bg-background border-foreground text-foreground flex max-w-full items-center gap-1.5 opacity-70"
+        className="tracking-normal bg-background border-foreground text-foreground flex items-center gap-1.5 whitespace-nowrap opacity-70"
         onMouseDown={onMouseDown}
         onClick={onClick}
       >
         <span>
-          <TruncatedText
-            text={organizationName || t("events.organization")}
-            className={ORGANIZATION_NAME_CLASS}
-          />
+          <span className="font-bold">
+            {organizationName || t("events.organization")}
+          </span>
           {organizationName && organizationName !== t("events.organization") && (
             <OrganizationTypeIcon school={school} organizationType={organizationType} />
           )}
@@ -103,7 +99,7 @@ export function OrganizationBadgeDropdown({
           asChild
           variant="outline"
           size="md"
-          className="tracking-normal bg-background border-foreground text-foreground flex max-w-full items-center gap-1.5 transition-[background-color,opacity] opacity-70 hover:bg-surface-hover hover:opacity-100 active:scale-95 cursor-pointer"
+          className="tracking-normal bg-background border-foreground text-foreground flex items-center gap-1.5 whitespace-nowrap transition-[background-color,opacity] opacity-70 hover:bg-surface-hover hover:opacity-100 active:scale-95 cursor-pointer"
           onMouseDown={onMouseDown}
           onClick={onClick}
         >
@@ -112,10 +108,7 @@ export function OrganizationBadgeDropdown({
             onMouseEnter={badgeHoverProps?.onMouseEnter}
             onMouseLeave={badgeHoverProps?.onMouseLeave}
           >
-            <TruncatedText
-              text={organizationName}
-              className={ORGANIZATION_NAME_CLASS}
-            />
+            <span className="font-bold">{organizationName}</span>
             <OrganizationTypeIcon school={school} organizationType={organizationType} />
           </button>
         </Badge>

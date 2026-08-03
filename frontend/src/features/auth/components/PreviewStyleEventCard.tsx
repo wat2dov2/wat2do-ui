@@ -7,7 +7,6 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { ImageOff } from "@/shared/ui/doodle-icons";
 import { cn } from "@/shared/lib/utils";
-import { OrganizationCategoryBadge } from "@/shared/components/OrganizationCategoryBadge";
 import { LazyImage } from "@/shared/ui/lazy-image";
 import { BadgeMask } from "@/shared/ui/badge-mask";
 import { Badge } from "@/shared/ui/badge";
@@ -88,22 +87,18 @@ export function PreviewStyleEventCard({
           }
         />
 
-        <BadgeMask variant="top-left">
-          <OrganizationCategoryBadge type={event.category} className="opacity-90" />
-        </BadgeMask>
+        {event.isNew && (
+          <BadgeMask variant="top-left">
+            <Badge variant="new" size="md" className="flex items-center">
+              {t("events.new")}
+            </Badge>
+          </BadgeMask>
+        )}
 
         {event.isLive && (
           <BadgeMask variant="top-right">
             <Badge variant="live" size="md" className="flex items-center">
               {t("common.live")}
-            </Badge>
-          </BadgeMask>
-        )}
-
-        {event.isNew && (
-          <BadgeMask variant="bottom-right">
-            <Badge variant="new" size="md" className="flex items-center">
-              {t("events.new")}
             </Badge>
           </BadgeMask>
         )}

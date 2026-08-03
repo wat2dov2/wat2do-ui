@@ -11,6 +11,7 @@ interface SubmittedSearchInputProps {
   placeholder: string;
   submitLabel: string;
   clearLabel: string;
+  size?: "default" | "lg";
   className?: string;
   onKeyDown?: (event: KeyboardEvent<HTMLInputElement>) => void;
 }
@@ -23,6 +24,7 @@ export function SubmittedSearchInput({
   placeholder,
   submitLabel,
   clearLabel,
+  size = "lg",
   className,
   onKeyDown,
 }: SubmittedSearchInputProps) {
@@ -33,10 +35,12 @@ export function SubmittedSearchInput({
   return (
     <div
       className={cn(
-        "relative h-11 min-w-0 flex-1 overflow-hidden rounded-xl bg-secondary shadow-xs transition-[color,box-shadow] focus-within:ring-[3px] focus-within:ring-ring/50",
+        "relative min-w-0 flex-1 overflow-hidden rounded-xl bg-secondary shadow-xs transition-[color,box-shadow] focus-within:ring-[3px] focus-within:ring-ring/50",
+        size === "lg" ? "h-11" : "h-9",
         className,
       )}
       data-elevation="control"
+      data-size={size}
     >
       <input
         type="text"
@@ -49,7 +53,8 @@ export function SubmittedSearchInput({
           onKeyDown?.(event);
         }}
         className={cn(
-          "block h-full w-full min-w-0 rounded-none bg-transparent px-3 py-2 text-base leading-7 text-secondary-foreground outline-none placeholder:text-muted-foreground",
+          "block h-full w-full min-w-0 rounded-none bg-transparent px-3 py-2 text-secondary-foreground outline-none placeholder:text-muted-foreground",
+          size === "lg" ? "text-base leading-7" : "text-sm",
           value ? "pr-[5.5rem]" : "pr-14",
         )}
       />

@@ -14,8 +14,6 @@ import {
 } from "@/shared/ui/dialog";
 import { OrganizationBadgeDropdown } from "@/features/organizations/components/OrganizationBadgeDropdown";
 import { useGoingEvents } from "@/features/events/hooks/useGoingEvents";
-import { getEventCategory } from "@/shared/utils/event";
-import { OrganizationCategoryBadge } from "@/shared/components/OrganizationCategoryBadge";
 import { isEventHappeningNow, wasAddedWithinLast24Hours } from "@/shared/utils/date";
 import { cn } from "@/shared/lib/utils";
 import type { Event } from "@/shared/types";
@@ -43,7 +41,7 @@ const EVENT_CARD_IMAGE_SIZES =
 const EVENT_DETAIL_IMAGE_SIZES = "(max-width: 767px) 100vw, 320px";
 
 /**
- * Event poster with its corner badges: category, live, new, and organization.
+ * Event poster with its corner badges: new, live, and organization.
  *
  * Every surface that shows an event's artwork shows the same badges in the same
  * corners, so the grid card, the details drawer, and the event page all render
@@ -61,7 +59,6 @@ export function EventCardImage({
   const [imageOpen, setImageOpen] = useState(false);
   const { surfaceRef, registerCorner, cutouts, box } = useEventImageCutouts();
 
-  const eventCategory = useMemo(() => getEventCategory(event), [event]);
   const isLive = useMemo(() => isEventHappeningNow(event), [event]);
   const isNew = useMemo(() => wasAddedWithinLast24Hours(event), [event]);
 
@@ -137,22 +134,18 @@ export function EventCardImage({
           </div>
         )}
 
-        <BadgeMask variant="top-left" cutout containerRef={registerCorner("top-left")}>
-          <OrganizationCategoryBadge type={eventCategory} className="opacity-90" />
-        </BadgeMask>
+        {isNew && (
+          <BadgeMask variant="top-left" cutout containerRef={registerCorner("top-left")}>
+            <Badge variant="new" size="md" className="flex items-center">
+              {t("events.new")}
+            </Badge>
+          </BadgeMask>
+        )}
 
         {isLive && (
           <BadgeMask variant="top-right" cutout containerRef={registerCorner("top-right")}>
             <Badge variant="live" size="md" className="flex items-center">
               {t("common.live")}
-            </Badge>
-          </BadgeMask>
-        )}
-
-        {isNew && (
-          <BadgeMask variant="bottom-right" cutout containerRef={registerCorner("bottom-right")}>
-            <Badge variant="new" size="md" className="flex items-center">
-              {t("events.new")}
             </Badge>
           </BadgeMask>
         )}

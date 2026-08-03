@@ -32,7 +32,7 @@ export function MoreFiltersButton({
       <div className="relative w-fit">
         <Button
           variant={open || filterCount > 0 ? "primary" : "secondary"}
-          size="sm"
+          size="lg"
           onClick={() => onOpenChange(!open)}
           aria-expanded={open}
           className={filterCount > 0 ? "pr-11" : undefined}

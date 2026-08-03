@@ -195,7 +195,7 @@ jobs:
           published_port="${published_port##*:}"
 
           for _ in $(seq 1 30); do
-            if curl --fail --silent "http://127.0.0.1:$published_port/" >/dev/null; then
+            if curl --fail --silent "http://127.0.0.1:$published_port/healthz" >/dev/null; then
               exit 0
             fi
             if [ "$(docker inspect --format '{{.State.Running}}' "$container_id")" != 'true' ]; then

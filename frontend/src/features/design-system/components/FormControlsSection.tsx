@@ -37,8 +37,11 @@ export function FormControlsSection() {
       variant="surface"
     >
       <Stack gap={6}>
-        <ShowcaseBlock label="Input">
-          <Input placeholder="Search events..." />
+        <ShowcaseBlock label="Input sizes">
+          <Stack gap={2} className="max-w-md">
+            <Input placeholder="Default input" />
+            <Input size="lg" placeholder="Large search input" />
+          </Stack>
         </ShowcaseBlock>
 
         <ShowcaseBlock label="Date picker">
@@ -57,17 +60,29 @@ export function FormControlsSection() {
           <Textarea placeholder="Add event details..." rows={3} />
         </ShowcaseBlock>
 
-        <ShowcaseBlock label="Select">
-          <Select defaultValue="events">
-            <SelectTrigger className="w-full max-w-xs">
-              <SelectValue placeholder="Choose category" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="events">Events</SelectItem>
-              <SelectItem value="clubs">Clubs</SelectItem>
-              <SelectItem value="career">Career</SelectItem>
-            </SelectContent>
-          </Select>
+        <ShowcaseBlock label="Select sizes">
+          <Stack direction="horizontal" gap={2} align="center" wrap>
+            <Select defaultValue="events">
+              <SelectTrigger className="w-full max-w-xs">
+                <SelectValue placeholder="Choose category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="events">Events</SelectItem>
+                <SelectItem value="clubs">Clubs</SelectItem>
+                <SelectItem value="career">Career</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select defaultValue="events">
+              <SelectTrigger size="lg" className="w-full max-w-xs">
+                <SelectValue placeholder="Choose category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="events">Events</SelectItem>
+                <SelectItem value="clubs">Clubs</SelectItem>
+                <SelectItem value="career">Career</SelectItem>
+              </SelectContent>
+            </Select>
+          </Stack>
         </ShowcaseBlock>
 
         <ShowcaseBlock label="Checkbox">

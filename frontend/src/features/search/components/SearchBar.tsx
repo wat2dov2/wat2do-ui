@@ -34,6 +34,7 @@ export function SearchBar({
 
   return (
     <SubmittedSearchInput
+      size="lg"
       value={localQuery}
       onChange={setLocalQuery}
       onSubmit={handleSubmit}
