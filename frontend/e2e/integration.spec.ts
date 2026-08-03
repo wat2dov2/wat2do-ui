@@ -168,8 +168,12 @@ test.beforeEach(async ({ page }) => {
             registration: false,
             source_image_url: null,
             category: "Career",
+            organization_id: 1,
             organization: "UW Tech Club",
             organization_type: "wusa",
+            organization_page: "https://example.com/tech",
+            organization_ig: "uwtechclub",
+            organization_discord: "https://discord.gg/uwtechclub",
             school: "uwaterloo",
             added_at: now.toISOString(),
           },
@@ -741,8 +745,8 @@ test.describe("Events Page", () => {
     });
     const items = [
       event(1, "Future Event", 60, null),
-      event(2, "Within Ninety Minutes", -89, null),
-      event(3, "Past Ninety Minutes", -91, null),
+      event(2, "Within Sixty Minutes", -59, null),
+      event(3, "Past Sixty Minutes", -61, null),
       event(4, "Already Ended", -120, -1),
       event(5, "Still Running", -120, 60),
     ];
@@ -780,6 +784,15 @@ test.describe("Events Page", () => {
     await expect(page).toHaveURL(/eventId=1/);
 
     const eventDrawer = page.getByRole("dialog", { name: "Tech Career Fair" });
+    const hostSection = eventDrawer.locator('[data-slot="event-host"]');
+    const hostLinks = hostSection.locator(':scope > [data-slot="event-host-links"]');
+    await expect(hostSection.getByText("UW Tech Club")).toBeVisible();
+    await expect(hostLinks.getByRole("link", { name: "Visit Website" })).toBeVisible();
+    await expect(hostLinks.getByRole("link", { name: "Instagram" })).toBeVisible();
+    await expect(hostLinks.getByRole("link", { name: "Discord" })).toBeVisible();
+    await expect(
+      eventDrawer.getByRole("heading", { name: "Contact the Host" }),
+    ).toHaveCount(0);
     await eventDrawer.getByRole("button", { name: "Share" }).click();
 
     await expect(page.getByRole("heading", { name: "Share" })).toBeVisible();
@@ -808,10 +821,13 @@ test.describe("Events Page", () => {
       sessionStorage.getItem("e2e-line-share-url"),
     );
     expect(lineShareUrl).not.toBeNull();
-    const lineShareText = new URL(lineShareUrl!).searchParams.get("text");
+    const parsedLineShareUrl = new URL(lineShareUrl!);
+    expect(parsedLineShareUrl.origin).toBe("https://social-plugins.line.me");
+    expect(parsedLineShareUrl.pathname).toBe("/lineit/share");
+    expect(parsedLineShareUrl.searchParams.get("url")).toBe(`${BASE}/events/1`);
+    const lineShareText = parsedLineShareUrl.searchParams.get("text");
     expect(lineShareText).toContain("Tech Career Fair");
     expect(lineShareText).toContain("SLC");
-    expect(lineShareText).toContain(`${BASE}/events/1`);
 
     await page.getByRole("button", { name: "Share on WeChat" }).click();
     await expect
@@ -825,6 +841,18 @@ test.describe("Events Page", () => {
       text: expect.stringContaining("SLC"),
       url: `${BASE}/events/1`,
     });
+
+    await page.evaluate(() => {
+      Object.defineProperty(navigator, "share", {
+        configurable: true,
+        value: undefined,
+      });
+    });
+    await page.getByRole("button", { name: "Share on WeChat" }).click();
+    await expect(page.getByRole("heading", { name: "Scan with WeChat" })).toBeVisible();
+    await expect(page.locator('[data-slot="wechat-share-qr"] svg')).toBeVisible();
+    await page.getByRole("button", { name: "Back" }).click();
+    await expect(page.getByRole("button", { name: "Share on WeChat" })).toBeVisible();
 
     await page.keyboard.press("Escape");
     await expect(page.getByRole("heading", { name: "Share" })).not.toBeVisible();
