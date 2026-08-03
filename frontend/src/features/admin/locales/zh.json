@@ -327,7 +327,10 @@
         "status": "发布状态"
       },
       "slideEventUnavailable": "该幻灯片的活动已无法发布",
-      "addEvent": "添加活动",
+      "addEventId": "添加活动 ID",
+      "addEventError": "无法将活动添加到轮播",
+      "eventId": "活动 ID",
+      "eventIdPlaceholder": "输入活动 ID",
       "coverSlide": "封面",
       "coverBody": "封面正文",
       "coverBodyPlaceholder": "过去 24 小时内添加到 Wat2Do",

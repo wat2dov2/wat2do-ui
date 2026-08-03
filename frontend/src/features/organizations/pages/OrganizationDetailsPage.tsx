@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -11,26 +13,30 @@ import {
 import { Button } from "@/shared/ui/button";
 import { LoadingPage } from "@/shared/ui/loading-page";
 import { Separator } from "@/shared/ui/separator";
-import { useAuthState } from "@/features/auth";
-import { OrganizationEventsGrid } from "@/features/events";
+import { useAuthState } from "@/features/auth/hooks/useAuthState";
+import { OrganizationEventsGrid } from "@/features/events/components/OrganizationEventsGrid";
 import { ClaimOrganizationModal } from "@/features/organizations/components/ClaimOrganizationModal";
 import { OrganizationCategoryBadges } from "@/features/organizations/components/OrganizationCategoryBadges";
 import { OrganizationMembershipActions } from "@/features/organizations/components/OrganizationMembershipActions";
 import { getOrganizationById } from "@/features/organizations/api/organizations.api";
 import { useSavedOrganizationsStore } from "@/features/organizations/store/savedOrganizations.store";
 import { ROUTES } from "@/shared/constants/routes";
-import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 import { Container, PageHeader, Section, Stack } from "@/shared/layout";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import { sanitizeHref } from "@/shared/utils/url";
-import type { Organization } from "@/shared/types";
+import type { Event, Organization } from "@/shared/types";
 
 interface OrganizationDetailsPageProps {
   organizationId: number;
+  initialOrganization: Organization;
+  initialEvents: Event[];
+  schoolName: string;
 }
 
 interface OrganizationDetailsContentProps {
   organization: Organization;
+  initialEvents: Event[];
+  schoolName: string;
 }
 
 const ORGANIZATION_LINK_CLASS =
@@ -38,10 +44,11 @@ const ORGANIZATION_LINK_CLASS =
 
 function OrganizationDetailsContent({
   organization,
+  initialEvents,
+  schoolName,
 }: OrganizationDetailsContentProps) {
   const { t } = useTranslation();
   const { isAuthenticated } = useAuthState();
-  const { getSchoolName } = useSchoolDirectory();
   const [showClaimModal, setShowClaimModal] = useState(false);
   const toggleSave = useSavedOrganizationsStore(
     (state) => state.toggleSaveOrganization,
@@ -64,7 +71,7 @@ function OrganizationDetailsContent({
               label: t("organizations.allOrganizations"),
             }}
             title={organization.organization_name}
-            description={getSchoolName(organization.school)}
+            description={schoolName}
             actions={
               <Stack
                 direction="horizontal"
@@ -161,6 +168,7 @@ function OrganizationDetailsContent({
             <OrganizationEventsGrid
               organizationId={organization.id}
               school={organization.school}
+              initialEvents={initialEvents}
             />
           </Section>
         </Stack>
@@ -177,12 +185,16 @@ function OrganizationDetailsContent({
 
 export function OrganizationDetailsPage({
   organizationId,
+  initialOrganization,
+  initialEvents,
+  schoolName,
 }: OrganizationDetailsPageProps) {
   const { t } = useTranslation();
   const { data: organization, isPending, isError } = useQuery({
     queryKey: queryKeys.organizations.detail(organizationId),
     queryFn: () => getOrganizationById(organizationId),
     enabled: Number.isInteger(organizationId) && organizationId > 0,
+    initialData: initialOrganization,
   });
 
   if (isPending && !isError) {
@@ -199,5 +211,11 @@ export function OrganizationDetailsPage({
     );
   }
 
-  return <OrganizationDetailsContent organization={organization} />;
+  return (
+    <OrganizationDetailsContent
+      organization={organization}
+      initialEvents={initialEvents}
+      schoolName={schoolName}
+    />
+  );
 }

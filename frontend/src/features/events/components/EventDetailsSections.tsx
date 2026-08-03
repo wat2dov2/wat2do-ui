@@ -50,11 +50,9 @@ import { fetchEventAttendees } from "@/features/events/api/events.api";
 import { useEventsStore } from "@/features/events/store/events.store";
 import { useEventStats } from "@/features/events/hooks/useEventStats";
 import { useCurrentTime, useGoingEventSelection } from "@/features/events/hooks/useGoingEvents";
-import {
-  appendSafeReturnTo,
-  EmailOtpForm,
-  useAuthState,
-} from "@/features/auth";
+import { EmailOtpForm } from "@/features/auth/components/EmailOtpForm";
+import { useAuthState } from "@/features/auth/hooks/useAuthState";
+import { appendSafeReturnTo } from "@/features/auth/utils/returnTo";
 import { useUIStore } from "@/shared/store/ui.store";
 import { controlBox } from "@/shared/config/controlBox";
 import { translateFood } from "@/shared/utils/foodTranslation";

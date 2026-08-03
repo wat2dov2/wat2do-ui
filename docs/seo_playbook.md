@@ -2,7 +2,7 @@
 
 Status: active operating playbook.
 Owner: Tony.
-Last updated: August 2, 2026.
+Last updated: August 3, 2026.
 Review cadence: monthly, and after any search-indexing incident or major public-route change.
 
 ## Purpose
@@ -181,6 +181,22 @@ It is not a substitute for Search Console data.
 - Share actions and subsequent event engagement by outbound share channel.
 - Google Search Console image-search impressions, clicks, pages, and queries.
 
+### Implementation update: August 3, 2026
+
+The first scoped SEO foundation now covers the school event feed, event detail, school organization directory, organization detail, contact, and login routes.
+
+- The four public discovery templates reuse server-fetched entities for metadata, visible initial HTML, and client hydration.
+- School and entity pages now own page-specific titles, descriptions, robots directives, canonicals, Open Graph URLs, and large-image Twitter previews.
+- Event posters and organization logos are preferred for previews when valid public image URLs exist, with an existing Wat2Do asset as the fallback.
+- Public directories expose descriptive crawlable links to their detail pages, and organization detail pages expose crawlable links to current events.
+- Missing or non-public event and organization records return a real 404 response.
+- Requests for an event or organization on the wrong production school host permanently redirect to the owning school host.
+- Empty or insufficient public records use `noindex, follow` instead of being promoted as useful search results.
+- Contact is canonical to the root brand host, while login is explicitly `noindex, follow`.
+- Event structured data remains deferred until the public-attendance, address, and duplicate-record eligibility gates are defined.
+
+This update does not complete robots files, sitemaps, Search Console verification, generated social-image renditions, social-client testing, or structured-data rollout.
+
 ## ROI scoring heuristic
 
 Score every SEO proposal before it enters the committed backlog.
@@ -228,7 +244,6 @@ Priority bands:
 - Do not use `robots.txt` as a substitute for `noindex` or canonicalization.
 - Do not place a `noindex` URL, redirect, error URL, or non-canonical duplicate in a sitemap.
 - Do not index empty directories, invalid school hosts, empty search results, or filter combinations with no independent search value.
-- Do not index the `all` host because it is an administrative lens, not a public school destination.
 - Do not index URL parameters by default.
 - Promote a parameter combination to a dedicated landing page only when Search Console shows repeatable demand and the page can provide unique, maintained value.
 
@@ -470,7 +485,7 @@ This matrix is the intended default policy and must be finalized before implemen
 
 | Surface | Default policy | Canonical policy | Required quality gate |
 | --- | --- | --- | --- |
-| Root `/` | Decision required | Unique global brand page, or permanent redirect to the default school | Must not duplicate a school feed |
+| Root `/` | Index as the resolved school feed when inventory is useful | Canonical to the resolved school host, with the bare root defaulting to Waterloo | Must not compete with the owning school URL |
 | School home `/` | Index | Self on the owning school host | Server-rendered heading, intro, current event links, unique school metadata |
 | `/events/{id}` | Conditional index | Self on the event's school host | Valid event, unique record, useful visible data, correct 200 or 404 behavior |
 | `/organizations` | Index | Self on the owning school host | Server-rendered directory, crawlable pagination, unique school metadata |
@@ -559,10 +574,11 @@ Measurement and URL ownership decisions come before expansion.
 - [ ] Export a 16-month baseline of clicks, impressions, click-through rate, queries, pages, countries, devices, and search appearance.
 - [ ] Segment the baseline into brand, school home, event detail, organization directory, organization detail, and other routes.
 - [ ] Record indexed and non-indexed counts plus the top exclusion reasons.
-- [ ] Decide the one canonical role of `wat2do.io` versus `uwaterloo.wat2do.io`.
-- [ ] Confirm whether an event or organization is currently reachable on multiple school hosts and choose the owning-host redirect rule.
+- [x] Decide the one canonical role of `wat2do.io` versus `uwaterloo.wat2do.io` for the scoped event feed.
+- [x] Confirm that event and organization detail records use an owning-school permanent redirect on other production school hosts.
 - [ ] Implement the indexation matrix for public, private, utility, invalid-host, and administrative routes.
-- [ ] Return real HTTP 404 or 410 statuses for missing events, missing organizations, and invalid public resources.
+- [x] Return real HTTP 404 statuses for missing or non-public event and organization detail records.
+- [ ] Finalize correct status behavior for other invalid public resources and unknown school hosts.
 - [ ] Serve `robots.txt` and a canonical sitemap from each public host.
 
 Definition of done:
@@ -574,10 +590,10 @@ Definition of done:
 
 ### P0: make the valuable inventory fully renderable
 
-- [ ] Server-render the primary visible content for school feeds, event details, organization directories, and organization details.
-- [ ] Reuse the same server-fetched entities for metadata, visible content, and client hydration.
-- [ ] Ensure public content does not wait on authentication, personalization, browser storage, or general application-ready state.
-- [ ] Expose crawlable links from school feeds to event details and from directories to organization details.
+- [x] Server-render the primary visible content for school feeds, event details, organization directories, and organization details.
+- [x] Reuse the same server-fetched entities for metadata, visible content, and client hydration.
+- [x] Ensure public content does not wait on authentication, personalization, browser storage, or general application-ready state.
+- [x] Expose crawlable links from school feeds to event details and from directories to organization details.
 - [ ] Verify representative initial HTML with JavaScript disabled at the request level and with Search Console URL Inspection.
 
 Definition of done:
@@ -588,13 +604,13 @@ Definition of done:
 
 ### P0: make every search result page-specific
 
-- [ ] Define one server-side metadata builder or existing shared owner for canonical URL, title, description, Open Graph, Twitter, and robots fields.
-- [ ] Generate school-specific metadata for the event feed and organization directory.
-- [ ] Generate entity-specific metadata for event and organization details.
-- [ ] Remove the client-side document-title path as an SEO source of truth once route metadata owns the behavior.
-- [ ] Add self-referencing canonicals to every indexable page.
-- [ ] Ensure Open Graph URLs match canonical URLs.
-- [ ] Add a useful default social image and page-specific images where data quality permits.
+- [x] Define one server-side metadata builder for canonical URL, title, description, Open Graph, Twitter, and robots fields.
+- [x] Generate school-specific metadata for the event feed and organization directory.
+- [x] Generate entity-specific metadata for event and organization details.
+- [x] Prevent the client-side document-title path from overriding metadata on the scoped server-owned routes.
+- [x] Add self-referencing canonicals to the scoped indexable pages.
+- [x] Ensure Open Graph URLs match canonical URLs on the scoped public routes.
+- [x] Add a useful default social image and page-specific images where data quality permits.
 
 Definition of done:
 
@@ -604,13 +620,13 @@ Definition of done:
 
 ### P0: make every shared link visually useful
 
-- [ ] Define one preferred-image selector for events, organizations, school feeds, and fallbacks.
+- [x] Define one preferred-image selector for events, organizations, school feeds, and fallbacks.
 - [ ] Define one social-image rendition policy derived from the existing entity image source.
 - [ ] Add complete page-specific Open Graph image metadata, including alt text and dimensions.
-- [ ] Add a large-image Twitter card and ensure the image matches the canonical page.
+- [x] Add a large-image Twitter card and ensure the image matches the canonical page.
 - [ ] Ensure images are fetchable by HTML-limited social crawlers without authentication or JavaScript.
 - [ ] Version materially changed social images so cached previews can refresh.
-- [ ] Add `max-image-preview:large` to eligible indexable pages.
+- [x] Add `max-image-preview:large` to eligible indexable pages.
 - [ ] Test representative links in Reddit, Discord, Facebook, LinkedIn, X, iMessage, and another common group-chat client used by students.
 
 Definition of done:
@@ -640,7 +656,7 @@ Definition of done:
 
 ### P1: improve content value and internal authority
 
-- [ ] Add a short school-specific introduction to the event feed and organization directory.
+- [x] Add a short school-specific introduction to the event feed and organization directory.
 - [ ] Ensure every indexable event explains enough for a student to decide whether to attend.
 - [ ] Ensure every indexable organization explains what it is, where it belongs, and how to engage.
 - [ ] Link events to organizers, organizers to current events, and details to genuinely related pages.
@@ -904,7 +920,9 @@ Result and follow-up:
 | 2026-08-02 | Keep one version-controlled SEO playbook under `docs/` and link it from the repository README. | SEO rules and implementation TODOs need one maintainable source of truth. | Tony | The operating-document convention changes. |
 | 2026-08-02 | Treat transparent community participation, social sharing, and image discovery as part of the organic-discovery loop. | Waterloo Reddit discussions repeatedly express the event-discovery problem in conversational language, and Wat2Do already supports share actions and entity images. | Tony | Community behavior or product acquisition data changes materially. |
 | 2026-08-02 | Compete for Waterloo event-calendar demand through student-focused utility, not competitor-brand stuffing. | Luma and the City of Waterloo serve adjacent calendar and city-event intents, while Wat2Do's strongest differentiation is current student and campus coverage. | Tony | Wat2Do's inventory expands beyond the student audience. |
-| Unresolved | Choose whether the root host is a unique brand page or redirects to the default school. | The current root and Waterloo host can serve the same default-school experience. | Tony | Before canonical and sitemap implementation. |
+| 2026-08-03 | Treat the root event feed as school-owned and canonicalize the bare-root default feed to the Waterloo school host. | The root and Waterloo host can serve the same default-school experience, so only the school URL should compete in Search. | Tony | The bare root becomes a unique brand or school-selection experience. |
+| 2026-08-03 | Ship server-rendered content, page-specific metadata, owning-school canonicals, conditional indexing, and entity-first share images for the scoped public routes. | The production baseline showed generic metadata, client-dependent detail content, soft 404s, and missing social previews. | Tony | Search Console, production previews, or data-quality monitoring shows a different policy is needed. |
+| 2026-08-03 | Keep login out of the index and keep contact canonical to the root brand host. | Login is a utility workflow, while contact provides unique brand and support information. | Tony | The authentication or brand-host architecture changes. |
 | Unresolved | Define the event indexability and Event structured-data eligibility gate. | Current event records vary in public eligibility, location detail, descriptions, images, and duplication. | Tony | Before event sitemap or JSON-LD rollout. |
 | Unresolved | Decide whether `things to do in Waterloo for students` belongs on the existing school feed or a dedicated maintained landing page. | The query is valuable but broader than the current campus-event promise. | Tony | After Search Console query data and inventory-depth review. |
 

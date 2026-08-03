@@ -1,9 +1,6 @@
 import { headers } from "next/headers";
 import { getSchool } from "@/shared/api/schools.server";
-import {
-  ALL_SCHOOLS,
-  getSchoolFromRequestHost,
-} from "@/shared/constants/schools";
+import { getSchoolFromRequestHost } from "@/shared/constants/schools";
 
 export const dynamic = "force-dynamic";
 
@@ -18,18 +15,16 @@ export async function GET() {
   );
 
   let stylesheet = "";
-  if (school !== ALL_SCHOOLS) {
-    try {
-      const schoolRecord = await getSchool(school);
-      if (schoolRecord) {
-        stylesheet = themeStyles(
-          schoolRecord.primary_color,
-          schoolRecord.secondary_color,
-        );
-      }
-    } catch (error) {
-      console.error("School theme fetch failed:", error);
+  try {
+    const schoolRecord = await getSchool(school);
+    if (schoolRecord) {
+      stylesheet = themeStyles(
+        schoolRecord.primary_color,
+        schoolRecord.secondary_color,
+      );
     }
+  } catch (error) {
+    console.error("School theme fetch failed:", error);
   }
 
   return new Response(stylesheet, {

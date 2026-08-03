@@ -10,7 +10,7 @@ import {
 } from "@/shared/ui/doodle-icons";
 import { Button } from "@/shared/ui/button";
 import { toast } from "@/shared/hooks/use-toast";
-import { useAuthState } from "@/features/auth";
+import { useAuthState } from "@/features/auth/hooks/useAuthState";
 import { JoinOrganizationModal } from "@/features/organizations/components/JoinOrganizationModal";
 import {
   getMyMembershipStatus,

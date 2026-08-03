@@ -10,6 +10,7 @@ import { formatCardDate, formatCardTime } from "@/shared/utils/date";
 import { useEventBadges } from "@/features/events/hooks/useEventBadges";
 import { useMouseDownAction, useMobileGridClickActivation } from "@/shared/hooks";
 import { cn } from "@/shared/lib/utils";
+import { eventPagePath } from "@/features/events/lib/eventUrls";
 import type { Event } from "@/shared/types";
 import type { EventStats } from "@/features/events/api/events.api";
 
@@ -26,6 +27,10 @@ interface EventCardProps {
    * editor - show the card an event will appear as, and nothing more.
    */
   interactive?: boolean;
+  /** Crawlable detail destination for surfaces that intentionally render a link. */
+  titleHref?: string;
+  /** Prioritize this card's poster when it is initially above the fold. */
+  imagePriority?: boolean;
   className?: string;
 }
 
@@ -54,6 +59,7 @@ interface EventCardBodyProps {
   /** Omitted where there are no stats to show, such as the submit-form preview. */
   stats?: EventStats;
   t: TFunction;
+  titleHref?: string;
 }
 
 /** Text half of the grid card. */
@@ -64,6 +70,7 @@ function EventCardBody({
   badges,
   stats,
   t,
+  titleHref,
 }: EventCardBodyProps) {
   return (
     <div
@@ -71,6 +78,7 @@ function EventCardBody({
     >
       <EventCardContent
         title={event.title}
+        titleHref={titleHref}
         date={date}
         time={time}
         location={event.location}
@@ -112,6 +120,8 @@ function EventCardComponent({
   onEventClick,
   mobileClickActivation = true,
   interactive = true,
+  titleHref = interactive ? eventPagePath(event.id) : undefined,
+  imagePriority = false,
   className,
 }: EventCardProps) {
   const [isHoveringBadge, setIsHoveringBadge] = useState(false);
@@ -159,6 +169,12 @@ function EventCardComponent({
         handleCardActivate();
         return;
       }
+      if (
+        mouseEvent.target instanceof Element &&
+        mouseEvent.target.closest("a")
+      ) {
+        return;
+      }
       mouseEvent.preventDefault();
     },
     [handleCardActivate, preferClickPress],
@@ -198,6 +214,7 @@ function EventCardComponent({
         event={event}
         variant="card"
         interactive={interactive}
+        priority={imagePriority}
         onBadgeHoverChange={interactive ? setIsHoveringBadge : undefined}
       />
 
@@ -208,6 +225,7 @@ function EventCardComponent({
         badges={badges}
         stats={stats}
         t={t}
+        titleHref={titleHref}
       />
     </article>
   );

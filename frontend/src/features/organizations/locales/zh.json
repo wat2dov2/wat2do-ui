@@ -1,5 +1,7 @@
 {
   "organizations": {
+    "discoveryTitle": "{{school}}的社团和学生组织",
+    "discoveryDescription": "探索{{school}}的学生社群、发现他们的活动，并查找经过验证的参与方式。",
     "organizationType": "组织类型：{{type}}",
     "claimOwnership": "认领组织所有权",
     "claimOwnershipDesc": "请求成为该组织的主要管理员和创建者：",

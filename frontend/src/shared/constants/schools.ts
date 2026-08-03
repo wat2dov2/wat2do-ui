@@ -1,14 +1,6 @@
 /** Default school slug used as a fallback throughout the app. */
 export const DEFAULT_SCHOOL = "uwaterloo";
 
-/**
- * The all-schools scope, served from its own origin like any school.
- *
- * It is a viewing lens for admins, never a school an event or a user belongs
- * to - so it is a servable host but not a known school.
- */
-export const ALL_SCHOOLS = "all";
-
 /** The canonical public origin for a school, matching the backend's captions. */
 export function getSchoolPublicUrl(school: string | null | undefined): string {
   return `${resolveSchool(school)}.wat2do.io`;
@@ -18,23 +10,12 @@ function normalizeSchoolSlug(value: string): string {
   return value.trim().toLowerCase().replace(/_/g, "-");
 }
 
-export function isAllSchools(value: string | null | undefined): boolean {
-  return resolveSchool(value) === ALL_SCHOOLS;
-}
-
-/**
- * The school a newly created record belongs to.
- *
- * The all-schools view is a lens, never an owner: an event or organization
- * created while looking through it belongs to the first real school in
- * ``candidates`` - typically the viewer's own.
- */
+/** The first available school a newly created record belongs to. */
 export function resolveWritableSchool(
   ...candidates: (string | null | undefined)[]
 ): string {
   for (const candidate of candidates) {
-    const slug = candidate ? resolveSchool(candidate) : "";
-    if (slug && slug !== ALL_SCHOOLS) return slug;
+    if (candidate?.trim()) return resolveSchool(candidate);
   }
   return DEFAULT_SCHOOL;
 }

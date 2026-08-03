@@ -1,4 +1,4 @@
-import { useMemo, type ReactNode } from "react";
+import { useMemo, useState } from "react";
 import { Search } from "@/shared/ui/doodle-icons";
 import { useTranslation } from "react-i18next";
 import { EventCard } from "@/features/events/components/EventCard";
@@ -17,6 +17,7 @@ import type { EventStats } from "@/features/events/api/events.api";
 import { EmptyState } from "@/shared/feedback";
 import { Button } from "@/shared/ui/button";
 import { CARD_GRID_CLASS } from "@/shared/constants/ui";
+import { controlBox } from "@/shared/config/controlBox";
 
 interface EventListProps {
   events: Event[];
@@ -32,52 +33,31 @@ interface EventListProps {
   groupByDateSections?: boolean;
 }
 
-interface EventCardListItemProps {
-  children: ReactNode;
-}
-
 interface EventCardsGridProps {
   events: Event[];
   eventStats: Record<string, EventStats> | null;
   onEventClick?: (event: Event) => void;
-}
-
-// Offscreen cards skip style, layout, and paint entirely. The feed renders every
-// upcoming event at once, and each card measures itself and masks an SVG image,
-// so on a low-end phone that work dominates. `contain-intrinsic-size` supplies a
-// placeholder box for skipped cards, keeping the scrollbar honest; the value is
-// the card image height plus its text block, so it must track EVENT_CARD_*.
-const EVENT_CARD_SKIP_OFFSCREEN_STYLE = {
-  contentVisibility: "auto",
-  containIntrinsicSize: "auto 20rem",
-} satisfies React.CSSProperties;
-
-function EventCardListItem({
-  children,
-}: EventCardListItemProps) {
-  return (
-    <div role="listitem" className="min-w-0" style={EVENT_CARD_SKIP_OFFSCREEN_STYLE}>
-      {children}
-    </div>
-  );
+  priorityEventIds: ReadonlySet<number>;
 }
 
 function EventCardsGrid({
   events,
   eventStats,
   onEventClick,
+  priorityEventIds,
 }: EventCardsGridProps) {
   return (
     <div className={CARD_GRID_CLASS}>
       {events.map((event) => (
-        <EventCardListItem key={event.id}>
+        <div key={event.id} role="listitem" className="min-w-0">
           <EventCard
             event={event}
             stats={eventStats?.[String(event.id)]}
             onEventClick={onEventClick}
+            imagePriority={priorityEventIds.has(event.id)}
             mobileClickActivation
           />
-        </EventCardListItem>
+        </div>
       ))}
     </div>
   );
@@ -138,6 +118,9 @@ export function EventList({
 }: EventListProps) {
   const { t, i18n } = useTranslation();
   const locale = i18n.language || "en-US";
+  const [visibleEventCount, setVisibleEventCount] = useState(
+    controlBox.eventDiscovery.initialRenderCount,
+  );
 
   // Filter out promoted events from the main feed date sections so they don't duplicate
   const regularEvents = useMemo(() => {
@@ -155,6 +138,24 @@ export function EventList({
         ? dateSectionGroups.flatMap((group) => group.events)
         : regularEvents,
     [dateSectionGroups, groupByDateSections, regularEvents],
+  );
+  const visibleRegularEvents = useMemo(
+    () => sectionOrderedEvents.slice(0, visibleEventCount),
+    [sectionOrderedEvents, visibleEventCount],
+  );
+  const visibleDateSectionGroups = useMemo(
+    () => groupEventsByDateSection(visibleRegularEvents),
+    [visibleRegularEvents],
+  );
+  const hasMoreEvents = visibleRegularEvents.length < sectionOrderedEvents.length;
+  const priorityEventIds = useMemo(
+    () =>
+      new Set(
+        [...promotedEvents, ...visibleRegularEvents]
+          .slice(0, 4)
+          .map((event) => event.id),
+      ),
+    [promotedEvents, visibleRegularEvents],
   );
 
   const sectionLabel = (section: EventDateSection): string => {
@@ -241,12 +242,13 @@ export function EventList({
             events={promotedEvents}
             eventStats={eventStats}
             onEventClick={onEventClick}
+            priorityEventIds={priorityEventIds}
           />
         </section>
       )}
 
       {groupByDateSections ? (
-        dateSectionGroups.map((group) => {
+        visibleDateSectionGroups.map((group) => {
           const label = sectionLabel(group.section);
           return (
             <section key={group.key} className="space-y-2.5" aria-label={label}>
@@ -257,6 +259,7 @@ export function EventList({
                 events={group.events}
                 eventStats={eventStats}
                 onEventClick={onEventClick}
+                priorityEventIds={priorityEventIds}
               />
             </section>
           );
@@ -264,12 +267,29 @@ export function EventList({
       ) : (
         <section className="space-y-2.5" aria-label={t("events.upcoming")}>
           <EventCardsGrid
-            events={sectionOrderedEvents}
+            events={visibleRegularEvents}
             eventStats={eventStats}
             onEventClick={onEventClick}
+            priorityEventIds={priorityEventIds}
           />
         </section>
       )}
+      {hasMoreEvents ? (
+        <div className="flex justify-center pt-2">
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() =>
+              setVisibleEventCount(
+                (count) =>
+                  count + controlBox.eventDiscovery.initialRenderCount,
+              )
+            }
+          >
+            {t("events.viewMore")}
+          </Button>
+        </div>
+      ) : null}
     </div>
   );
 }

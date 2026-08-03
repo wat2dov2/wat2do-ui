@@ -14,7 +14,7 @@ import type { FloatingDockItem } from "@/shared/ui/floating-dock";
 import { BackToTopButton } from "@/shared/ui/back-to-top-button";
 import { ROUTES } from "@/shared/constants/routes";
 import { PageFrame } from "@/shared/layout";
-import { usePromoterState } from "@/features/posters";
+import { usePromoterState } from "@/features/posters/hooks/usePromoterState";
 
 interface AppLayoutProps {
   children: ReactNode;

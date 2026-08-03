@@ -1,4 +1,5 @@
 import { useCallback } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { LogOut, Shield } from "@/shared/ui/doodle-icons";
@@ -63,8 +64,7 @@ export function TopNav() {
 
   const handleSchoolChange = useCallback(
     (school: string) => {
-      // Every school lives on its own origin - including the admin-only
-      // all-schools view - so switching is a cross-origin navigation.
+      // Every school lives on its own origin, so switching is a cross-origin navigation.
       window.location.assign(getSchoolOrigin(school));
     },
     [],
@@ -88,17 +88,18 @@ export function TopNav() {
           className="flex h-8 w-10 shrink-0 cursor-pointer items-center justify-center transition-opacity hover:opacity-80"
           aria-label={t("navigation.goToEvents")}
         >
-          <img
+          <Image
             alt={t("common.logo")}
+            width={34}
+            height={24}
             className="h-6 w-[34px] object-contain"
-            src={imgImage1.src}
+            src={imgImage1}
           />
         </button>
         <span className="hidden text-muted-foreground text-lg font-light sm:inline">/</span>
         <SchoolCombobox
           value={schoolFilter ?? ""}
           onChange={handleSchoolChange}
-          isAdmin={isAdmin}
           triggerClassName="pl-1 pr-2 sm:pl-1.5 sm:pr-3"
         />
       </div>

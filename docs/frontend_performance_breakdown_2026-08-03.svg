@@ -1,0 +1,162 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1200" viewBox="0 0 1600 1200" role="img" aria-labelledby="title desc">
+  <title id="title">Wat2Do frontend performance breakdown</title>
+  <desc id="desc">A visual summary of mobile Lighthouse results, event feed transfer cost, shared JavaScript cost, layout instability, and the prioritized remediation sequence measured on August 3, 2026.</desc>
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#111827" />
+      <stop offset="1" stop-color="#0b1020" />
+    </linearGradient>
+    <linearGradient id="imageBar" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#fb7185" />
+      <stop offset="1" stop-color="#f97316" />
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="14" flood-color="#020617" flood-opacity="0.5" />
+    </filter>
+    <style>
+      .title { font: 700 42px Inter, ui-sans-serif, system-ui, sans-serif; fill: #f8fafc; }
+      .subtitle { font: 400 18px Inter, ui-sans-serif, system-ui, sans-serif; fill: #94a3b8; }
+      .section { font: 700 23px Inter, ui-sans-serif, system-ui, sans-serif; fill: #f8fafc; }
+      .label { font: 600 17px Inter, ui-sans-serif, system-ui, sans-serif; fill: #e2e8f0; }
+      .small { font: 400 14px Inter, ui-sans-serif, system-ui, sans-serif; fill: #94a3b8; }
+      .tiny { font: 400 12px Inter, ui-sans-serif, system-ui, sans-serif; fill: #64748b; }
+      .value { font: 700 31px Inter, ui-sans-serif, system-ui, sans-serif; fill: #f8fafc; }
+      .barvalue { font: 700 15px Inter, ui-sans-serif, system-ui, sans-serif; fill: #f8fafc; }
+      .panel { fill: #111a2e; stroke: #24324a; stroke-width: 1; }
+      .grid { stroke: #334155; stroke-width: 1; }
+    </style>
+  </defs>
+
+  <rect width="1600" height="1200" fill="url(#background)" />
+  <circle cx="1490" cy="80" r="180" fill="#7c3aed" opacity="0.12" />
+  <circle cx="80" cy="1140" r="220" fill="#0ea5e9" opacity="0.08" />
+
+  <text x="64" y="70" class="title">Wat2Do frontend performance audit</text>
+  <text x="64" y="104" class="subtitle">Local optimized Next.js build, three-run mobile medians, August 3, 2026</text>
+
+  <g filter="url(#shadow)">
+    <rect x="64" y="140" width="350" height="118" rx="18" class="panel" />
+    <rect x="438" y="140" width="350" height="118" rx="18" class="panel" />
+    <rect x="812" y="140" width="350" height="118" rx="18" class="panel" />
+    <rect x="1186" y="140" width="350" height="118" rx="18" class="panel" />
+  </g>
+  <text x="88" y="175" class="small">Worst mobile score</text>
+  <text x="88" y="220" class="value" fill="#fb7185">61</text>
+  <text x="152" y="219" class="label">event feed</text>
+  <text x="462" y="175" class="small">Feed transfer</text>
+  <text x="462" y="220" class="value" fill="#fb7185">19.5 MiB</text>
+  <text x="836" y="175" class="small">Shared route JavaScript</text>
+  <text x="836" y="220" class="value" fill="#fbbf24">3.10 MB</text>
+  <text x="1210" y="175" class="small">Organization detail CLS</text>
+  <text x="1210" y="220" class="value" fill="#fb7185">0.157</text>
+
+  <rect x="64" y="286" width="1472" height="400" rx="20" class="panel" />
+  <text x="92" y="328" class="section">Mobile Largest Contentful Paint</text>
+  <text x="92" y="355" class="small">Every route is above the 2.5 s good threshold. Bars use a 12 s scale.</text>
+
+  <g transform="translate(310 386)">
+    <rect x="0" y="0" width="200" height="264" fill="#22c55e" opacity="0.07" />
+    <rect x="200" y="0" width="120" height="264" fill="#fbbf24" opacity="0.08" />
+    <rect x="320" y="0" width="640" height="264" fill="#fb7185" opacity="0.06" />
+    <line x1="0" y1="0" x2="0" y2="270" class="grid" />
+    <line x1="200" y1="0" x2="200" y2="270" stroke="#22c55e" stroke-width="2" stroke-dasharray="5 5" />
+    <line x1="320" y1="0" x2="320" y2="270" stroke="#fbbf24" stroke-width="2" stroke-dasharray="5 5" />
+    <line x1="480" y1="0" x2="480" y2="270" class="grid" />
+    <line x1="640" y1="0" x2="640" y2="270" class="grid" />
+    <line x1="800" y1="0" x2="800" y2="270" class="grid" />
+    <line x1="960" y1="0" x2="960" y2="270" class="grid" />
+    <text x="0" y="288" class="tiny" text-anchor="middle">0 s</text>
+    <text x="200" y="288" class="tiny" text-anchor="middle">2.5 s</text>
+    <text x="320" y="288" class="tiny" text-anchor="middle">4 s</text>
+    <text x="480" y="288" class="tiny" text-anchor="middle">6 s</text>
+    <text x="640" y="288" class="tiny" text-anchor="middle">8 s</text>
+    <text x="800" y="288" class="tiny" text-anchor="middle">10 s</text>
+    <text x="960" y="288" class="tiny" text-anchor="middle">12 s</text>
+
+    <text x="-24" y="24" class="label" text-anchor="end">Event feed</text>
+    <rect x="0" y="7" width="898" height="24" rx="8" fill="#fb7185" />
+    <text x="908" y="25" class="barvalue">11.23 s</text>
+
+    <text x="-24" y="68" class="label" text-anchor="end">Event detail</text>
+    <rect x="0" y="51" width="688" height="24" rx="8" fill="#f97316" />
+    <text x="698" y="69" class="barvalue">8.60 s</text>
+
+    <text x="-24" y="112" class="label" text-anchor="end">Organizations</text>
+    <rect x="0" y="95" width="399" height="24" rx="8" fill="#fbbf24" />
+    <text x="409" y="113" class="barvalue">4.98 s</text>
+
+    <text x="-24" y="156" class="label" text-anchor="end">Organization detail</text>
+    <rect x="0" y="139" width="874" height="24" rx="8" fill="#fb7185" />
+    <text x="884" y="157" class="barvalue">10.92 s</text>
+
+    <text x="-24" y="200" class="label" text-anchor="end">Contact</text>
+    <rect x="0" y="183" width="393" height="24" rx="8" fill="#fbbf24" />
+    <text x="403" y="201" class="barvalue">4.91 s</text>
+
+    <text x="-24" y="244" class="label" text-anchor="end">Login</text>
+    <rect x="0" y="227" width="332" height="24" rx="8" fill="#fbbf24" />
+    <text x="342" y="245" class="barvalue">4.15 s</text>
+  </g>
+
+  <rect x="64" y="714" width="720" height="220" rx="20" class="panel" />
+  <text x="92" y="756" class="section">Event feed transfer composition</text>
+  <text x="92" y="784" class="small">Images dominate the page before any interaction.</text>
+  <rect x="92" y="814" width="640" height="44" rx="10" fill="#1e293b" />
+  <rect x="92" y="814" width="603" height="44" rx="10" fill="url(#imageBar)" />
+  <rect x="695" y="814" width="32" height="44" fill="#8b5cf6" />
+  <rect x="727" y="814" width="5" height="44" rx="2" fill="#38bdf8" />
+  <text x="104" y="842" class="barvalue">Images 18.38 MiB, 94%</text>
+  <circle cx="104" cy="890" r="6" fill="#fb7185" />
+  <text x="120" y="896" class="small">68 image requests</text>
+  <circle cx="314" cy="890" r="6" fill="#8b5cf6" />
+  <text x="330" y="896" class="small">974 KiB scripts</text>
+  <circle cx="525" cy="890" r="6" fill="#38bdf8" />
+  <text x="541" y="896" class="small">151 KiB other</text>
+
+  <rect x="816" y="714" width="720" height="220" rx="20" class="panel" />
+  <text x="844" y="756" class="section">Shared client cost</text>
+  <text x="844" y="784" class="small">Simple public routes inherit unrelated feature code.</text>
+  <rect x="844" y="816" width="640" height="34" rx="8" fill="#1e293b" />
+  <rect x="844" y="816" width="640" height="34" rx="8" fill="#8b5cf6" opacity="0.78" />
+  <text x="860" y="839" class="barvalue">3.10 MB uncompressed first-load route graph</text>
+  <rect x="844" y="866" width="640" height="34" rx="8" fill="#1e293b" />
+  <rect x="844" y="866" width="98" height="34" rx="8" fill="#fbbf24" />
+  <text x="956" y="889" class="label">435 to 475 KiB compressed JavaScript estimated unused</text>
+
+  <rect x="64" y="962" width="1472" height="182" rx="20" class="panel" />
+  <text x="92" y="1004" class="section">Highest-ROI reduction path</text>
+
+  <g transform="translate(92 1030)">
+    <rect x="0" y="0" width="312" height="82" rx="14" fill="#172554" stroke="#3b82f6" />
+    <text x="18" y="28" class="label">1. Responsive posters</text>
+    <text x="18" y="53" class="small">Lazy below fold, first LCP high priority</text>
+    <text x="18" y="72" class="tiny">Target: feed at or below 2 MiB</text>
+
+    <path d="M324 41 H354" stroke="#64748b" stroke-width="3" />
+    <path d="M348 34 L358 41 L348 48" fill="none" stroke="#64748b" stroke-width="3" />
+
+    <rect x="370" y="0" width="312" height="82" rx="14" fill="#2e1065" stroke="#8b5cf6" />
+    <text x="388" y="28" class="label">2. Split route bundles</text>
+    <text x="388" y="53" class="small">Remove admin and heavy feature imports</text>
+    <text x="388" y="72" class="tiny">Target: below 500 KiB compressed JS</text>
+
+    <path d="M694 41 H724" stroke="#64748b" stroke-width="3" />
+    <path d="M718 34 L728 41 L718 48" fill="none" stroke="#64748b" stroke-width="3" />
+
+    <rect x="740" y="0" width="312" height="82" rx="14" fill="#3f1d0b" stroke="#f59e0b" />
+    <text x="758" y="28" class="label">3. Paginate and simplify</text>
+    <text x="758" y="53" class="small">Bound cards, DOM, SVGs, and observers</text>
+    <text x="758" y="72" class="tiny">Target: below 1,000 initial nodes</text>
+
+    <path d="M1064 41 H1094" stroke="#64748b" stroke-width="3" />
+    <path d="M1088 34 L1098 41 L1088 48" fill="none" stroke="#64748b" stroke-width="3" />
+
+    <rect x="1110" y="0" width="312" height="82" rx="14" fill="#3f101d" stroke="#fb7185" />
+    <text x="1128" y="28" class="label">4. Defer maps and fix CLS</text>
+    <text x="1128" y="53" class="small">Remove 33 map requests, reserve card size</text>
+    <text x="1128" y="72" class="tiny">Target: CLS below 0.02</text>
+  </g>
+
+  <text x="64" y="1176" class="tiny">Laboratory baseline only. Validate with production field LCP, INP, and CLS after implementation.</text>
+  <text x="1536" y="1176" class="tiny" text-anchor="end">Full evidence and TODOs: frontend_performance_audit_2026-08-03.md</text>
+</svg>

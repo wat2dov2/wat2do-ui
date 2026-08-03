@@ -13,7 +13,6 @@ const hoursToMilliseconds = (hours: number): number => hours * 60 * 60 * 1000;
 export const controlBox = {
   contact: {
     maximumNameLength: contact.maximum_name_length,
-    maximumSubjectLength: contact.maximum_subject_length,
     maximumMessageLength: contact.maximum_message_length,
   },
   eventDiscovery: {
@@ -25,6 +24,7 @@ export const controlBox = {
     eventWithoutEndVisibilityMs: minutesToMilliseconds(
       eventDiscovery.event_without_end_visibility_minutes,
     ),
+    initialRenderCount: eventDiscovery.initial_render_count,
     serverFeedPageSize: eventDiscovery.server_feed_page_size,
   },
   organizationManagement: {

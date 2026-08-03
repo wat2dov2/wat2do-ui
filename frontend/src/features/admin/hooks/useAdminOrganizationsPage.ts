@@ -25,8 +25,7 @@ export function useAdminOrganizationsPage({ itemsPerPage = 20 }: UseAdminOrganiz
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
   const [organizationModal, setOrganizationModal] = useState<OrganizationModalState>(null);
   const schoolFilter = useEventsStore((s) => s.schoolFilter);
-  const organizationTypeSchool =
-    schoolFilter && schoolFilter !== "all" ? schoolFilter : undefined;
+  const organizationTypeSchool = schoolFilter ?? undefined;
   const organizationType =
     organizationTypeFilter?.school === organizationTypeSchool
       ? organizationTypeFilter.value

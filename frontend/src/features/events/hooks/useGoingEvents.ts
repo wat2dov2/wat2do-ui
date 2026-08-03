@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { getUserId, useAuthState } from "@/features/auth";
+import { getUserId } from "@/features/auth/api/auth.api";
+import { useAuthState } from "@/features/auth/hooks/useAuthState";
 import {
   clearGoingEvent,
   fetchGoingEvents,

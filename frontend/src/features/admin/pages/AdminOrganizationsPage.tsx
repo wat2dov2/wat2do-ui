@@ -100,10 +100,7 @@ export function AdminOrganizationsPage({
   const [isDeleting, setIsDeleting] = useState(false);
   const schoolFilter = useEventsStore((s) => s.schoolFilter);
   const organizationTypeOptions = useMemo(
-    () =>
-      getOrganizationTypeFilterOptions(
-        schoolFilter && schoolFilter !== "all" ? schoolFilter : undefined,
-      ),
+    () => getOrganizationTypeFilterOptions(schoolFilter ?? undefined),
     [schoolFilter],
   );
 

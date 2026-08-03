@@ -155,19 +155,15 @@ def get_event(event_id: int) -> EventResponse | None:
     return event_query.hydrate_event(r.data[0], occurrences, EventResponse)
 
 
-def get_event_stats_for_school(school: str | None) -> dict[str, EventStatsResponse]:
-    """Return uncached click and going counts for cards at one school.
-
-    ``school`` of ``None`` is the all-schools view: every card, unfiltered.
-    """
+def get_event_stats_for_school(school: str) -> dict[str, EventStatsResponse]:
+    """Return uncached click and going counts for cards at one school."""
 
     def _page(offset: int, page_size: int) -> list[dict]:
         q = get_sb().table(EVENTS).select("id")
-        if school:
-            school_id = school_service.get_school_id(school)
-            if school_id is None:
-                return []
-            q = q.eq("school_id", school_id)
+        school_id = school_service.get_school_id(school)
+        if school_id is None:
+            return []
+        q = q.eq("school_id", school_id)
         return q.range(offset, offset + page_size - 1).execute().data or []
 
     event_rows = fetch_all_pages(_page)

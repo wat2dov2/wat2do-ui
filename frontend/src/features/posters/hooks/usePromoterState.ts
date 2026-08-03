@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 
-import { useAuthState } from "@/features/auth";
+import { useAuthState } from "@/features/auth/hooks/useAuthState";
 import { promoterProgram } from "@/shared/config/promoterProgram";
 import { STORAGE_KEYS } from "@/shared/constants/storageKeys";
 import { StorageService } from "@/shared/services/storageService";

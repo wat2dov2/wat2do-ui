@@ -592,6 +592,154 @@ test.describe("Admin diagnostics", () => {
   });
 });
 
+test.describe("Admin Instagram publishing", () => {
+  test("adds an existing event by ID without opening event creation", async ({
+    page,
+  }) => {
+    await seedAuthenticatedSession(page);
+
+    const startsAt = new Date(Date.now() + 86_400_000).toISOString();
+    const eventSummary = (id: number, title: string) => ({
+      id,
+      title,
+      description: `${title} description`,
+      location: "SLC",
+      occurrences: [
+        {
+          id: `00000000-0000-4000-8000-${String(id).padStart(12, "0")}`,
+          event_id: id,
+          dtstart_utc: startsAt,
+          dtend_utc: null,
+        },
+      ],
+      price: 0,
+      food: [],
+      registration: false,
+      source_image_url: null,
+      source_url: null,
+      category: "Technology",
+      organization: "UW Tech Club",
+      organization_type: "independent",
+      organization_page: "https://example.com/tech",
+      organization_ig: "uwtechclub",
+      organization_discord: null,
+      ig_handle: "uwtechclub",
+      school: "uwaterloo",
+      cancelled: false,
+      added_at: new Date().toISOString(),
+    });
+    const firstEvent = eventSummary(1, "First Carousel Event");
+    const secondEvent = eventSummary(2, "Second Carousel Event");
+    const batchItem = (event: ReturnType<typeof eventSummary>, position: number) => ({
+      id: `00000000-0000-4000-9000-${String(event.id).padStart(12, "0")}`,
+      batch_id: "00000000-0000-4000-8000-000000000001",
+      account_key: "uwaterloo",
+      event_id: event.id,
+      position,
+      event,
+      published_asset_url: null,
+      published_at: null,
+      created_at: "2026-08-03T12:00:00Z",
+      updated_at: "2026-08-03T12:00:00Z",
+    });
+    const batchBase = {
+      id: "00000000-0000-4000-8000-000000000001",
+      account_key: "uwaterloo",
+      instagram_user_id: "17841476154506771",
+      school: "uwaterloo",
+      local_date: "2026-08-03",
+      window_start: "2026-08-02T12:00:00Z",
+      window_end: "2026-08-03T12:00:00Z",
+      status: "ready_for_review",
+      caption: "Campus events",
+      cover_body: "Our latest picks",
+      ai_model: null,
+      error_message: null,
+      meta_media_id: null,
+      published_cover_url: null,
+      created_at: "2026-08-03T12:00:00Z",
+      updated_at: "2026-08-03T12:00:00Z",
+      published_at: null,
+    } as const;
+    const initialBatch = {
+      ...batchBase,
+      version: 1,
+      new_event_count: 2,
+      items: [batchItem(firstEvent, 1)],
+    };
+    const savedBatch = {
+      ...initialBatch,
+      version: 2,
+      items: [batchItem(firstEvent, 1), batchItem(secondEvent, 2)],
+    };
+    let savedEventIds: number[] | null = null;
+
+    await page.route(url => apiPath(url) === "/instagram-publishing/batches", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          items: [{ ...batchBase, version: 1, item_count: 1 }],
+          total: 1,
+          page: 1,
+          page_size: 25,
+          total_pages: 1,
+        }),
+      });
+    });
+    await page.route(
+      url => apiPath(url) === `/instagram-publishing/batches/${batchBase.id}`,
+      async (route) => {
+        if (route.request().method() === "PATCH") {
+          const requestBody = route.request().postDataJSON() as { event_ids: number[] };
+          savedEventIds = requestBody.event_ids;
+          await route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify(savedBatch),
+          });
+          return;
+        }
+
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify(initialBatch),
+        });
+      },
+    );
+    await page.route(url => apiPath(url) === "/events/2", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ ...secondEvent, organization_id: 1 }),
+      });
+    });
+
+    await page.goto(`${BASE}/admin/instagram`);
+    await page.getByRole("button", { name: "uwaterloo" }).click();
+
+    const drawer = page.getByRole("dialog", { name: "uwaterloo" });
+    await drawer.getByRole("button", { name: "Add event ID" }).click();
+
+    const eventIdInput = drawer.getByRole("spinbutton", { name: "Event ID" });
+    const addEventForm = eventIdInput.locator("xpath=ancestor::form");
+    const submitEventId = addEventForm.getByRole("button", { name: "Add event ID" });
+    await expect(eventIdInput).toBeVisible();
+    await expect(drawer.getByText("Create Event", { exact: true })).toHaveCount(0);
+
+    await eventIdInput.fill("1");
+    await expect(submitEventId).toBeDisabled();
+    await eventIdInput.fill("2");
+    await expect(submitEventId).toBeEnabled();
+    await submitEventId.click();
+
+    await expect.poll(() => savedEventIds).toEqual([1, 2]);
+    await expect(drawer.getByText("Slide 2 of 2").first()).toBeVisible();
+    await expect(drawer.getByText("Second Carousel Event").first()).toBeVisible();
+  });
+});
+
 // ── Workflow 8: Organization Integrations ─────────────────────────────
 
 test.describe("Organization Integrations", () => {
@@ -1230,6 +1378,8 @@ test.describe("Events Page", () => {
         .toBe(2);
 
       const map = page.locator('iframe[title="SLC"]');
+      await expect(map).toHaveCount(0);
+      await page.getByTestId("event-map-load").click();
       await expect(map).toBeVisible();
       const mapSrc = await map.getAttribute("src");
       expect(mapSrc).not.toBeNull();

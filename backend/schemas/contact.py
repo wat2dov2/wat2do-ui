@@ -10,10 +10,9 @@ class ContactCreate(BaseModel):
 
     name: str = Field(min_length=1, max_length=_CONTACT.maximum_name_length)
     email: EmailStr
-    subject: str = Field(min_length=1, max_length=_CONTACT.maximum_subject_length)
     message: str = Field(min_length=1, max_length=_CONTACT.maximum_message_length)
 
-    @field_validator("name", "subject", "message")
+    @field_validator("name", "message")
     @classmethod
     def _strip_non_blank(cls, value: str) -> str:
         stripped = value.strip()
@@ -21,7 +20,7 @@ class ContactCreate(BaseModel):
             raise ValueError("value cannot be blank")
         return stripped
 
-    @field_validator("name", "subject")
+    @field_validator("name")
     @classmethod
     def _single_line(cls, value: str) -> str:
         if "\r" in value or "\n" in value:

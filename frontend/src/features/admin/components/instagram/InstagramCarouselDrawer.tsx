@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { ChevronLeft, ChevronRight, Plus, X } from "@/shared/ui/doodle-icons";
 import { Button } from "@/shared/ui/button";
+import { Input } from "@/shared/ui/input";
 import { LoadingButton } from "@/shared/ui/loading-button";
 import { Textarea } from "@/shared/ui/textarea";
 import { Label } from "@/shared/ui/label";
@@ -22,7 +23,7 @@ import { controlBox } from "@/shared/config/controlBox";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 import { getSchoolColors } from "@/shared/lib/schoolBranding";
 import { SubmitEventFlow } from "@/features/events/components/SubmitEventModal";
-import { createEventAPI, fetchEventById, updateEventAPI } from "@/features/events/api/events.api";
+import { fetchEventById, updateEventAPI } from "@/features/events/api/events.api";
 import { eventToFormData, getEventCategory } from "@/shared/utils/event";
 import type { ApiInstagramPublishBatchResponse } from "@/shared/generated";
 import type { Event, EventFormData } from "@/shared/types";
@@ -70,6 +71,7 @@ export function InstagramCarouselDrawer({
   const [coverBody, setCoverBody] = useState(batch.cover_body);
   const [slideIndex, setSlideIndex] = useState(COVER_INDEX);
   const [addingEvent, setAddingEvent] = useState(false);
+  const [eventIdInput, setEventIdInput] = useState("");
   /** The open slide's event is saved before the run, and takes its own moment. */
   const [isSavingSlide, setIsSavingSlide] = useState(false);
 
@@ -149,25 +151,37 @@ export function InstagramCarouselDrawer({
     [queryClient],
   );
 
-  /**
-   * Submitting an event puts it on this carousel for good.
-   *
-   * The slide is saved with the event rather than waiting for a separate save,
-   * so the run survives a refresh and the new slide previews from the batch the
-   * server just returned instead of an id with no event behind it.
-   */
-  const handleCreateEvent = useCallback(
-    async (data: EventFormData) => {
-      const created = await createEventAPI(data);
-      const saved = await persistDraft([...eventIds, created.id]);
+  const parsedEventId = Number(eventIdInput);
+  const canAddEventId =
+    Number.isSafeInteger(parsedEventId) &&
+    parsedEventId > 0 &&
+    !eventIds.includes(parsedEventId) &&
+    eventIds.length < MAX_EVENT_SLIDES;
+
+  /** Adds an existing event to this carousel and saves the new order immediately. */
+  const handleAddEventId = useCallback(
+    async () => {
+      if (!canAddEventId) return;
+
+      const saved = await persistDraft([...eventIds, parsedEventId]);
       const savedEventIds = carouselEventIds(saved);
       setEventIds(savedEventIds);
-      setSlideIndex(savedEventIds.indexOf(created.id) + 1);
+      setSlideIndex(savedEventIds.indexOf(parsedEventId) + 1);
       setAddingEvent(false);
-      return { type: "event" as const, eventId: created.id };
+      setEventIdInput("");
     },
-    [eventIds, persistDraft],
+    [canAddEventId, eventIds, parsedEventId, persistDraft],
   );
+
+  const addEventId = useCallback(() => {
+    handleAddEventId().catch((error) => {
+      toast({
+        title: t("admin.instagramPublishing.addEventError"),
+        description: getApiErrorMessage(error),
+        variant: "destructive",
+      });
+    });
+  }, [handleAddEventId, t]);
 
   /** Takes the event off this carousel. The event itself is untouched. */
   const handleRemoveSlide = useCallback(() => {
@@ -283,16 +297,49 @@ export function InstagramCarouselDrawer({
               below reads back what went with them.
             */}
             {!editable ? null : addingEvent ? (
-              <Section variant="surface" title={t("admin.instagramPublishing.addEvent")}>
-                <SubmitEventFlow
-                  canCreateEvents
-                  embedded
-                  showHeading={false}
-                  showPreview={false}
-                  onSubmit={handleCreateEvent}
-                  onClose={() => setAddingEvent(false)}
-                  onBack={() => setAddingEvent(false)}
-                />
+              <Section variant="surface" title={t("admin.instagramPublishing.addEventId")}>
+                <form
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    addEventId();
+                  }}
+                >
+                  <Stack gap={4}>
+                    <Stack gap={2}>
+                      <Label htmlFor="instagram-event-id">
+                        {t("admin.instagramPublishing.eventId")}
+                      </Label>
+                      <Input
+                        id="instagram-event-id"
+                        type="number"
+                        min={1}
+                        step={1}
+                        inputMode="numeric"
+                        autoFocus
+                        value={eventIdInput}
+                        disabled={busy}
+                        placeholder={t("admin.instagramPublishing.eventIdPlaceholder")}
+                        onChange={(event) => setEventIdInput(event.target.value)}
+                      />
+                    </Stack>
+                    <Stack direction="horizontal" justify="end" gap={2}>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        disabled={busy}
+                        onClick={() => {
+                          setAddingEvent(false);
+                          setEventIdInput("");
+                        }}
+                      >
+                        {t("common.cancel")}
+                      </Button>
+                      <LoadingButton type="submit" isLoading={isSaving} disabled={!canAddEventId}>
+                        {t("admin.instagramPublishing.addEventId")}
+                      </LoadingButton>
+                    </Stack>
+                  </Stack>
+                </form>
               </Section>
             ) : currentEventId == null ? (
               <Section variant="surface" title={t("admin.instagramPublishing.coverSlide")}>
@@ -381,7 +428,7 @@ export function InstagramCarouselDrawer({
               onClick={() => setAddingEvent(true)}
             >
               <Plus className="size-4" />
-              {t("admin.instagramPublishing.addEvent")}
+              {t("admin.instagramPublishing.addEventId")}
             </Button>
             <LoadingButton
               variant="secondary"

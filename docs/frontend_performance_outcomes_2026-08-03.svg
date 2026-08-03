@@ -1,0 +1,147 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1200" viewBox="0 0 1600 1200" role="img" aria-labelledby="title desc">
+  <title id="title">Wat2Do frontend performance outcomes</title>
+  <desc id="desc">Verified August 3, 2026 outcomes from the Wat2Do performance remediation, including route bundle reductions, smaller initial result sets, deferred maps, responsive images, and remaining browser validation.</desc>
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#111827" />
+      <stop offset="1" stop-color="#0b1020" />
+    </linearGradient>
+    <linearGradient id="success" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#22c55e" />
+      <stop offset="1" stop-color="#14b8a6" />
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="14" flood-color="#020617" flood-opacity="0.5" />
+    </filter>
+    <style>
+      .title { font: 700 42px Inter, ui-sans-serif, system-ui, sans-serif; fill: #f8fafc; }
+      .subtitle { font: 400 18px Inter, ui-sans-serif, system-ui, sans-serif; fill: #94a3b8; }
+      .section { font: 700 23px Inter, ui-sans-serif, system-ui, sans-serif; fill: #f8fafc; }
+      .label { font: 600 17px Inter, ui-sans-serif, system-ui, sans-serif; fill: #e2e8f0; }
+      .small { font: 400 14px Inter, ui-sans-serif, system-ui, sans-serif; fill: #94a3b8; }
+      .tiny { font: 400 12px Inter, ui-sans-serif, system-ui, sans-serif; fill: #64748b; }
+      .value { font: 700 31px Inter, ui-sans-serif, system-ui, sans-serif; fill: #f8fafc; }
+      .delta { font: 700 18px Inter, ui-sans-serif, system-ui, sans-serif; fill: #4ade80; }
+      .barvalue { font: 700 14px Inter, ui-sans-serif, system-ui, sans-serif; fill: #f8fafc; }
+      .panel { fill: #111a2e; stroke: #24324a; stroke-width: 1; }
+      .baseline { fill: #475569; }
+      .after { fill: url(#success); }
+    </style>
+  </defs>
+
+  <rect width="1600" height="1200" fill="url(#background)" />
+  <circle cx="1490" cy="80" r="180" fill="#22c55e" opacity="0.09" />
+  <circle cx="90" cy="1140" r="220" fill="#0ea5e9" opacity="0.07" />
+
+  <text x="64" y="70" class="title">Wat2Do frontend performance outcomes</text>
+  <text x="64" y="104" class="subtitle">Verified production-build and structural results, August 3, 2026</text>
+
+  <g filter="url(#shadow)">
+    <rect x="64" y="140" width="350" height="118" rx="18" class="panel" />
+    <rect x="438" y="140" width="350" height="118" rx="18" class="panel" />
+    <rect x="812" y="140" width="350" height="118" rx="18" class="panel" />
+    <rect x="1186" y="140" width="350" height="118" rx="18" class="panel" />
+  </g>
+  <text x="88" y="175" class="small">Public-route JavaScript</text>
+  <text x="88" y="220" class="value">33-50%</text>
+  <text x="230" y="219" class="delta">lower</text>
+  <text x="462" y="175" class="small">Initial event cards</text>
+  <text x="462" y="220" class="value">52 → 24</text>
+  <text x="614" y="219" class="delta">-54%</text>
+  <text x="836" y="175" class="small">Organization page size</text>
+  <text x="836" y="220" class="value">40 → 20</text>
+  <text x="988" y="219" class="delta">-50%</text>
+  <text x="1210" y="175" class="small">Map requests before click</text>
+  <text x="1210" y="220" class="value">33 → 0</text>
+  <text x="1338" y="219" class="delta">-100%</text>
+
+  <rect x="64" y="286" width="1472" height="482" rx="20" class="panel" />
+  <text x="92" y="328" class="section">First-load route graph</text>
+  <text x="92" y="355" class="small">Uncompressed JavaScript bytes from the optimized Next.js build. Gray is baseline, green is after.</text>
+
+  <g transform="translate(325 390)">
+    <text x="0" y="0" class="tiny">0</text>
+    <text x="300" y="0" class="tiny" text-anchor="middle">1 MB</text>
+    <text x="600" y="0" class="tiny" text-anchor="middle">2 MB</text>
+    <text x="900" y="0" class="tiny" text-anchor="middle">3 MB</text>
+    <line x1="0" y1="10" x2="0" y2="338" stroke="#334155" />
+    <line x1="300" y1="10" x2="300" y2="338" stroke="#334155" />
+    <line x1="600" y1="10" x2="600" y2="338" stroke="#334155" />
+    <line x1="900" y1="10" x2="900" y2="338" stroke="#334155" />
+
+    <text x="-24" y="48" class="label" text-anchor="end">Event feed</text>
+    <rect x="0" y="25" width="750" height="14" rx="7" class="baseline" />
+    <rect x="0" y="45" width="502" height="20" rx="8" class="after" />
+    <text x="516" y="61" class="barvalue">2.50 → 1.67 MB</text>
+    <text x="930" y="55" class="delta">-33%</text>
+
+    <text x="-24" y="104" class="label" text-anchor="end">Event detail</text>
+    <rect x="0" y="81" width="931" height="14" rx="7" class="baseline" />
+    <rect x="0" y="101" width="480" height="20" rx="8" class="after" />
+    <text x="494" y="117" class="barvalue">3.10 → 1.60 MB</text>
+    <text x="930" y="111" class="delta">-48%</text>
+
+    <text x="-24" y="160" class="label" text-anchor="end">Organizations</text>
+    <rect x="0" y="137" width="931" height="14" rx="7" class="baseline" />
+    <rect x="0" y="157" width="478" height="20" rx="8" class="after" />
+    <text x="492" y="173" class="barvalue">3.10 → 1.59 MB</text>
+    <text x="930" y="167" class="delta">-49%</text>
+
+    <text x="-24" y="216" class="label" text-anchor="end">Organization detail</text>
+    <rect x="0" y="193" width="931" height="14" rx="7" class="baseline" />
+    <rect x="0" y="213" width="493" height="20" rx="8" class="after" />
+    <text x="507" y="229" class="barvalue">3.10 → 1.64 MB</text>
+    <text x="930" y="223" class="delta">-47%</text>
+
+    <text x="-24" y="272" class="label" text-anchor="end">Contact</text>
+    <rect x="0" y="249" width="931" height="14" rx="7" class="baseline" />
+    <rect x="0" y="269" width="470" height="20" rx="8" class="after" />
+    <text x="484" y="285" class="barvalue">3.10 → 1.57 MB</text>
+    <text x="930" y="279" class="delta">-50%</text>
+
+    <text x="-24" y="328" class="label" text-anchor="end">Login</text>
+    <rect x="0" y="305" width="931" height="14" rx="7" class="baseline" />
+    <rect x="0" y="325" width="468" height="20" rx="8" class="after" />
+    <text x="482" y="341" class="barvalue">3.10 → 1.56 MB</text>
+    <text x="930" y="335" class="delta">-50%</text>
+  </g>
+
+  <rect x="64" y="796" width="952" height="326" rx="20" class="panel" />
+  <text x="92" y="838" class="section">Implemented high-ROI changes</text>
+
+  <g transform="translate(92 866)">
+    <circle cx="12" cy="12" r="12" fill="#22c55e" />
+    <path d="M6 12 L10 16 L18 7" fill="none" stroke="#052e16" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+    <text x="38" y="17" class="label">Responsive event posters with bounded priority and lazy loading</text>
+
+    <circle cx="12" cy="62" r="12" fill="#22c55e" />
+    <path d="M6 62 L10 66 L18 57" fill="none" stroke="#052e16" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+    <text x="38" y="67" class="label">Direct public-route imports and deferred noncritical client work</text>
+
+    <circle cx="12" cy="112" r="12" fill="#22c55e" />
+    <path d="M6 112 L10 116 L18 107" fill="none" stroke="#052e16" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+    <text x="38" y="117" class="label">Bounded initial discovery lists controlled by validated configuration</text>
+
+    <circle cx="12" cy="162" r="12" fill="#22c55e" />
+    <path d="M6 162 L10 166 L18 157" fill="none" stroke="#052e16" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+    <text x="38" y="167" class="label">Click-to-load event map and removal of organization-card layout shift</text>
+
+    <circle cx="12" cy="212" r="12" fill="#22c55e" />
+    <path d="M6 212 L10 216 L18 207" fill="none" stroke="#052e16" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+    <text x="38" y="217" class="label">Optimized navigation, contact, and login imagery plus lighter motion features</text>
+  </g>
+
+  <rect x="1044" y="796" width="492" height="326" rx="20" fill="#1c1729" stroke="#6d5b8c" />
+  <text x="1072" y="838" class="section">Next validation gate</text>
+  <text x="1072" y="876" class="label">Fresh mobile browser profile</text>
+  <text x="1072" y="905" class="small">Re-measure LCP, transfer, request count,</text>
+  <text x="1072" y="927" class="small">CLS, INP, and image decoding after deployment.</text>
+  <line x1="1072" y1="954" x2="1508" y2="954" stroke="#3b3251" />
+  <text x="1072" y="991" class="small">Performance targets</text>
+  <text x="1072" y="1026" class="value" fill="#c4b5fd">LCP &lt; 2.5 s</text>
+  <text x="1072" y="1063" class="value" fill="#c4b5fd">Feed ≤ 2 MiB</text>
+  <text x="1072" y="1095" class="tiny">Not yet claimed as post-change measurements.</text>
+
+  <text x="64" y="1172" class="tiny">Verified: optimized build, bundle graph, implementation structure, frontend checks, and backend tests.</text>
+  <text x="1536" y="1172" class="tiny" text-anchor="end">Evidence: frontend_performance_audit_2026-08-03.md</text>
+</svg>

@@ -266,7 +266,7 @@ export interface paths {
         };
         /**
          * Get Event Stats
-         * @description Public uncached card stats for one school, or for all of them.
+         * @description Public uncached card stats for one school.
          */
         get: operations["get_event_stats_events_stats_get"];
         put?: never;
@@ -1560,6 +1560,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/webhooks/automate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Receive Automate Log */
+        post: operations["receive_automate_log_webhooks_automate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/webhooks/automate/logs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Automate Logs */
+        get: operations["get_automate_logs_webhooks_automate_logs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -1632,6 +1666,23 @@ export interface components {
             };
             /** Report Statuses */
             report_statuses: string[];
+        };
+        /** AutomateLogPayload */
+        AutomateLogPayload: {
+            /** Event */
+            event: string;
+            /** Sender */
+            sender?: string | null;
+            /** School */
+            school?: string | null;
+            /** Ig Account */
+            ig_account?: string | null;
+            /** Post Url */
+            post_url?: string | null;
+            /** Payload */
+            payload?: {
+                [key: string]: unknown;
+            } | null;
         };
         /** Body_parse_event_image_ai_parse_event_image_post */
         Body_parse_event_image_ai_parse_event_image_post: {
@@ -1714,8 +1765,6 @@ export interface components {
              * Format: email
              */
             email: string;
-            /** Subject */
-            subject: string;
             /** Message */
             message: string;
         };
@@ -7312,6 +7361,70 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["V1SavedEventStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    receive_automate_log_webhooks_automate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AutomateLogPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_automate_logs_webhooks_automate_logs_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */

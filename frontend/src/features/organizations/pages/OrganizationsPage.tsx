@@ -1,3 +1,5 @@
+"use client";
+
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { useShallow } from "zustand/react/shallow";
@@ -21,7 +23,7 @@ import {
 } from "@/shared/ui/select";
 import { useOrganizationsPage } from "@/features/organizations/hooks/useOrganizationsPage";
 import { translateCategory } from "@/shared/utils/event";
-import { useAuthState } from "@/features/auth";
+import { useAuthState } from "@/features/auth/hooks/useAuthState";
 import { useHorizontalScrollFade } from "@/shared/hooks";
 import { HorizontalScrollFade } from "@/shared/ui/horizontal-scroll-fade";
 import { PageCountHeading } from "@/shared/ui/page-count-heading";
@@ -33,17 +35,20 @@ import {
   ROUTES,
 } from "@/shared/constants/routes";
 import type { PaginatedOrganizationsResponse } from "@/features/organizations/api/organizations.api";
+import { PageHeader, Stack } from "@/shared/layout";
 
 type OrganizationScope = "all" | "followed" | "claimed";
 
 interface OrganizationsPageProps {
   initialDirectory: PaginatedOrganizationsResponse | null;
   initialSchool: string;
+  schoolName: string;
 }
 
 export function OrganizationsPage({
   initialDirectory,
   initialSchool,
+  schoolName,
 }: OrganizationsPageProps) {
   const { t } = useTranslation();
   const router = useRouter();
@@ -91,7 +96,14 @@ export function OrganizationsPage({
   const showEmptyState = !showSignInPrompt && !isLoading && organizations.length === 0;
 
   return (
-    <div className="space-y-2">
+    <Stack gap={6}>
+      <PageHeader
+        title={t("organizations.discoveryTitle", { school: schoolName })}
+        description={t("organizations.discoveryDescription", {
+          school: schoolName,
+        })}
+      />
+      <div className="space-y-2">
       <div className="space-y-3 pb-2">
         <div className="flex items-center justify-between gap-3">
           <PageCountHeading
@@ -249,7 +261,7 @@ export function OrganizationsPage({
           }
         />
       )}
-
-    </div>
+      </div>
+    </Stack>
   );
 }

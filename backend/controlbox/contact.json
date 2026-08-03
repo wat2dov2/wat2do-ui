@@ -1,7 +1,6 @@
 {
   "recipient_email": "contact@wat2do.io",
   "maximum_name_length": 100,
-  "maximum_subject_length": 160,
   "maximum_message_length": 5000,
   "rate_limit": {
     "maximum_requests": 5,

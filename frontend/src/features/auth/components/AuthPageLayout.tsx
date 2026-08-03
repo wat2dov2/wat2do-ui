@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import Image from "next/image";
 import { useTranslation } from "react-i18next";
 import imgLogo from "@/assets/38e8096a28295e8dcc0e5020d0a5f3dd85d5f019.png";
 import { AuthHeroPanel } from "@/features/auth/components/AuthHeroPanel";
@@ -33,10 +34,12 @@ export function AuthPageLayout({
             <CardContent className="space-y-6 p-8">
               {back ? <PageHeader back={back} /> : null}
 
-              <img
+              <Image
                 alt={t("common.logo")}
+                width={40}
+                height={28}
                 className="h-7 w-[40px] object-contain"
-                src={imgLogo.src}
+                src={imgLogo}
               />
 
               <div className="space-y-2">

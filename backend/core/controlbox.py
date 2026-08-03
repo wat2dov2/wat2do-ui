@@ -137,6 +137,7 @@ class EventDiscoveryControl(_ControlModel):
     feed_revalidate_seconds: int = Field(gt=0)
     new_event_window_hours: int = Field(gt=0)
     event_without_end_visibility_minutes: int = Field(gt=0)
+    initial_render_count: int = Field(gt=0, le=100)
     server_feed_page_size: int = Field(gt=0, le=100)
 
 
@@ -267,7 +268,6 @@ class EmailDeliveryControl(_ControlModel):
 class ContactControl(_ControlModel):
     recipient_email: EmailStr
     maximum_name_length: int = Field(gt=0, le=255)
-    maximum_subject_length: int = Field(gt=0, le=255)
     maximum_message_length: int = Field(gt=0, le=20_000)
     rate_limit: RateLimitControl
 

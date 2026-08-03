@@ -1,10 +1,8 @@
 import type { ReactNode } from "react";
 import { useEffect, useRef } from "react";
-import { m } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { Spinner } from "@/shared/ui/spinner";
 import { CARD_GRID_CLASS } from "@/shared/constants/ui";
-import { useNewItemAnimationIndexes } from "@/shared/hooks";
 import { OrganizationCard } from "@/features/organizations/components/OrganizationCard";
 import { OrganizationCardSkeleton } from "@/features/organizations/components/OrganizationCardSkeleton";
 import type { Organization } from "@/shared/types";
@@ -20,38 +18,6 @@ interface OrganizationListProps {
   onCategoryClick?: (category: string) => void;
 }
 
-interface OrganizationCardListItemProps {
-  animationIndex: number;
-  children: ReactNode;
-}
-
-const ORG_CARD_ANIMATION_STAGGER_MS = 50;
-
-function OrganizationCardListItem({
-  animationIndex,
-  children,
-}: OrganizationCardListItemProps) {
-  // Cap the stagger animation index to 15 to keep it performant
-  const cappedIndex = Math.min(animationIndex, 15);
-
-  return (
-    <m.div
-      role="listitem"
-      className="min-w-0"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{
-        duration: 0.5,
-        delay: cappedIndex * (ORG_CARD_ANIMATION_STAGGER_MS / 1000),
-        ease: [0.18, 0.39, 0.14, 0.9],
-      }}
-      style={{ pointerEvents: "auto" }}
-    >
-      {children}
-    </m.div>
-  );
-}
-
 export function OrganizationList({
   organizations,
   savedOrganizationIds,
@@ -65,7 +31,6 @@ export function OrganizationList({
   const { t } = useTranslation();
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const savedSet = new Set(savedOrganizationIds);
-  const animationIndexByOrgId = useNewItemAnimationIndexes(organizations);
 
   useEffect(() => {
     if (!onLoadMore || !hasMore || isLoadingMore) return;
@@ -114,17 +79,14 @@ export function OrganizationList({
         aria-label={`${organizations.length} organizations found`}
       >
         {organizations.map((organization) => (
-          <OrganizationCardListItem
-            key={organization.id}
-            animationIndex={animationIndexByOrgId.get(organization.id) ?? 0}
-          >
+          <div key={organization.id} role="listitem" className="min-w-0">
             <OrganizationCard
               organization={organization}
               isSaved={savedSet.has(organization.id)}
               onOrganizationClick={onOrganizationClick}
               onCategoryClick={onCategoryClick}
             />
-          </OrganizationCardListItem>
+          </div>
         ))}
       </div>
       {hasMore && (

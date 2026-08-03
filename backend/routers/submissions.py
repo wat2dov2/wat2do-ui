@@ -43,8 +43,6 @@ def list_submissions(
     pagination: PaginationParams = Depends(),
     _: UserResponse = Depends(get_admin_user),
 ):
-    if school == "all":
-        school = None
     items, total = submission_service.get_submissions(
         status=submission_status,
         school=school,

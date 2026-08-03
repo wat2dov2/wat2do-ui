@@ -9,7 +9,7 @@ import { useEventsStore } from "@/features/events/store/events.store";
 import { getOrganizationCategories } from "@/shared/data/organizationCategories";
 import { resolveSchool } from "@/shared/constants/schools";
 import { useSavedOrganizationsStore } from "@/features/organizations/store/savedOrganizations.store";
-import { useAuthState } from "@/features/auth";
+import { useAuthState } from "@/features/auth/hooks/useAuthState";
 import { useOrganizationsList } from "@/features/organizations/hooks/useOrganizationsList";
 import type { PaginatedOrganizationsResponse } from "@/features/organizations/api/organizations.api";
 import { controlBox } from "@/shared/config/controlBox";
@@ -32,7 +32,12 @@ export function useOrganizationsPage({
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
 
   const schoolFilter = useEventsStore((s) => s.schoolFilter);
-  const resolvedSchoolFilter = schoolFilter ? resolveSchool(schoolFilter) : undefined;
+  const resolvedSchoolFilter =
+    typeof window === "undefined"
+      ? resolveSchool(initialSchool)
+      : schoolFilter
+        ? resolveSchool(schoolFilter)
+        : undefined;
 
   const allCategories = getOrganizationCategories();
 

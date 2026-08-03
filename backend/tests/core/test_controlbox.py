@@ -27,8 +27,9 @@ def test_checked_in_controlbox_is_valid() -> None:
     assert controlbox.event_discovery.feed_revalidate_seconds == 3600
     assert controlbox.event_discovery.new_event_window_hours == 24
     assert controlbox.event_discovery.event_without_end_visibility_minutes == 60
+    assert controlbox.event_discovery.initial_render_count == 24
     assert str(controlbox.authentication.legacy_frontend_origins[0]) == "https://wat2do.ca/"
-    assert controlbox.organization_management.directory_page_size == 40
+    assert controlbox.organization_management.directory_page_size == 20
     assert controlbox.organization_management.directory_revalidate_seconds == 3600
     assert str(controlbox.contact.recipient_email) == "contact@wat2do.io"
     assert controlbox.contact.rate_limit.maximum_requests == 5

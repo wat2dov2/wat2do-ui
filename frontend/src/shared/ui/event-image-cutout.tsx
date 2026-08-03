@@ -9,6 +9,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import Image from "next/image";
 
 import { cn } from "@/shared/lib/utils";
 import { BadgeMaskShape } from "@/shared/ui/badge-mask";
@@ -140,6 +141,8 @@ interface EventImageCutoutProps {
   /** Optional photo, drawn inside the mask so it is cut by the notches too. */
   imageSrc?: string | null;
   imageAlt?: string;
+  imageSizes: string;
+  imagePriority?: boolean;
   /** Measured badge sizes from `useEventImageCutouts`. */
   cutouts: MeasuredCutout[];
   width: number;
@@ -165,6 +168,8 @@ export function EventImageCutout({
   backgroundColor,
   imageSrc,
   imageAlt = "",
+  imageSizes,
+  imagePriority = false,
   cutouts,
   width,
   height,
@@ -173,6 +178,33 @@ export function EventImageCutout({
 }: EventImageCutoutProps) {
   const maskId = useId();
   const ready = width > 0 && height > 0;
+  const optimized = (() => {
+    if (!imageSrc || imageSrc.startsWith("/")) return true;
+    try {
+      const url = new URL(imageSrc);
+      return (
+        url.protocol === "https:" &&
+        url.hostname === "wat2do.io" &&
+        url.pathname.startsWith("/media/")
+      );
+    } catch {
+      return false;
+    }
+  })();
+
+  const image = imageSrc ? (
+    <Image
+      src={imageSrc}
+      alt={imageAlt}
+      fill
+      sizes={imageSizes}
+      loading={imagePriority ? "eager" : "lazy"}
+      fetchPriority={imagePriority ? "high" : "auto"}
+      decoding="async"
+      unoptimized={!optimized}
+      className="object-cover"
+    />
+  ) : null;
 
   return (
     <div className={cn("relative", className)}>
@@ -183,13 +215,11 @@ export function EventImageCutout({
        */}
       {!ready && (
         <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 bg-cover bg-center"
-          style={{
-            backgroundColor,
-            backgroundImage: imageSrc ? `url(${imageSrc})` : undefined,
-          }}
-        />
+          className="pointer-events-none absolute inset-0 overflow-hidden"
+          style={{ backgroundColor }}
+        >
+          {image}
+        </div>
       )}
       {ready && (
         <svg
@@ -231,18 +261,11 @@ export function EventImageCutout({
 
           <g mask={`url(#${maskId})`}>
             <rect x={0} y={0} width={width} height={height} fill={backgroundColor} />
-            {imageSrc && (
-              <image
-                href={imageSrc}
-                x={0}
-                y={0}
-                width={width}
-                height={height}
-                preserveAspectRatio="xMidYMid slice"
-              >
-                <title>{imageAlt}</title>
-              </image>
-            )}
+            {imageSrc ? (
+              <foreignObject x={0} y={0} width={width} height={height}>
+                <div className="relative size-full overflow-hidden">{image}</div>
+              </foreignObject>
+            ) : null}
           </g>
         </svg>
       )}

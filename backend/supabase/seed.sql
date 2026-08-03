@@ -9,8 +9,8 @@ SET
     name = 'University of Waterloo',
     timezone = 'America/Toronto',
     recipient_id = '76214170483',
-    primary_color = '#FFD54F',
-    secondary_color = '#111111'
+    primary_color = '#000000',
+    secondary_color = '#FED34C'
 WHERE slug = 'uwaterloo';
 
 WITH organization_seed AS (

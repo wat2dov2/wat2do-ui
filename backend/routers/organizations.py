@@ -91,8 +91,6 @@ def list_organizations(
     pagination: PaginationParams = Depends(),
 ):
     """Public directory. Only approved organizations are listed."""
-    if school == "all":
-        school = None
     items, total = organization_service.list_organizations(
         skip=pagination.offset,
         limit=pagination.page_size,
@@ -113,8 +111,6 @@ def list_organizations_for_review(
     _: UserResponse = Depends(get_admin_user),
 ):
     """Admin review queue across every review state."""
-    if school == "all":
-        school = None
     items, total = organization_service.list_organizations(
         skip=pagination.offset,
         limit=pagination.page_size,
@@ -154,8 +150,6 @@ def list_claims(
     school: str | None = Query(default=None, max_length=MAX_SCHOOL_LENGTH),
     _: UserResponse = Depends(get_admin_user),
 ):
-    if school == "all":
-        school = None
     return organization_service.list_claims(status=status, school=school)
 
 

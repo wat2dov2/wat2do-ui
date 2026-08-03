@@ -12,7 +12,7 @@ import { LazyImage } from "@/shared/ui/lazy-image";
 import { BadgeMask } from "@/shared/ui/badge-mask";
 import { Badge } from "@/shared/ui/badge";
 import { EventCardContent } from "@/shared/ui/event-card-content";
-import { OrganizationBadgeDropdown } from "@/features/organizations";
+import { OrganizationBadgeDropdown } from "@/features/organizations/components/OrganizationBadgeDropdown";
 import { EVENT_CARD_IMAGE_HEIGHT } from "@/shared/constants/ui";
 
 export interface PreviewEventData {

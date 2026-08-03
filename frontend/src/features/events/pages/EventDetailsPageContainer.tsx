@@ -1,3 +1,5 @@
+"use client";
+
 import { useCallback, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
@@ -23,10 +25,14 @@ import type { Event } from "@/shared/types";
 
 interface EventDetailsPageContainerProps {
   eventId: number;
+  initialEvent: Event;
 }
 
 /** Dedicated /events/[id] page: poster + hosts on the left, details on the right. */
-export function EventDetailsPageContainer({ eventId }: EventDetailsPageContainerProps) {
+export function EventDetailsPageContainer({
+  eventId,
+  initialEvent,
+}: EventDetailsPageContainerProps) {
   const { t } = useTranslation();
   const router = useRouter();
   const storeEvents = useEventsStore((state) => state.events);
@@ -34,6 +40,7 @@ export function EventDetailsPageContainer({ eventId }: EventDetailsPageContainer
     queryKey: queryKeys.events.detail(eventId),
     queryFn: () => fetchEventById(eventId),
     enabled: Number.isFinite(eventId),
+    initialData: initialEvent,
     staleTime: controlBox.clientCache.liveEventDataStaleMs,
   });
   const storeEventsForSchool = useMemo(

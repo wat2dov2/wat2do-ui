@@ -8,7 +8,7 @@ def _message() -> EmailMessage:
     return EmailMessage(
         to="contact@wat2do.io",
         reply_to="student@uwaterloo.ca",
-        subject="[Wat2Do contact] Feedback",
+        subject="[Wat2Do contact] New message",
         body_html="<p>Hello</p>",
         body_text="Hello",
     )
@@ -26,7 +26,6 @@ def test_submit_contact_message_queues_email(client, monkeypatch):
         json={
             "name": "Student",
             "email": "student@uwaterloo.ca",
-            "subject": "Feedback",
             "message": "Hello",
         },
     )
@@ -42,7 +41,6 @@ def test_submit_contact_message_rejects_invalid_input(client):
         json={
             "name": "Student\nInjected",
             "email": "not-an-email",
-            "subject": "",
             "message": "   ",
         },
     )
@@ -57,7 +55,6 @@ def test_build_contact_email_escapes_html():
         ContactCreate(
             name="<Student>",
             email="student@uwaterloo.ca",
-            subject="Question <script>",
             message="Hello <strong>team</strong>",
         )
     )

@@ -12,7 +12,7 @@ import {
   saveOrganizationToBackend,
   unsaveOrganizationToBackend,
 } from "@/features/organizations/api/organizations.api";
-import { isAuthenticated } from "@/features/auth";
+import { isAuthenticated } from "@/features/auth/api/auth.api";
 import { toast } from "@/shared/hooks/use-toast";
 
 interface SavedOrganizationsState {

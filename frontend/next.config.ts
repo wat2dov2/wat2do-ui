@@ -101,6 +101,15 @@ const apiCollectionPaths = [
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "wat2do.io",
+        pathname: "/media/**",
+      },
+    ],
+  },
   env: {
     NEXT_PUBLIC_INSTAGRAM_COVER_LOGO_SVG: instagramCoverLogoSvg,
     NEXT_PUBLIC_ORGANIZATION_CATEGORY_DOODLE_SVGS: JSON.stringify(

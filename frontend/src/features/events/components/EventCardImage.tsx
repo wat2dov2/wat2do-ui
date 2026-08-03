@@ -1,10 +1,12 @@
 import { useMemo } from "react";
+import Image from "next/image";
 import { useTranslation } from "react-i18next";
+import imgLogo from "@/assets/38e8096a28295e8dcc0e5020d0a5f3dd85d5f019.png";
 import { Check } from "@/shared/ui/doodle-icons";
 import { BadgeMask } from "@/shared/ui/badge-mask";
 import { EventImageCutout, useEventImageCutouts } from "@/shared/ui/event-image-cutout";
 import { Badge } from "@/shared/ui/badge";
-import { OrganizationBadgeDropdown } from "@/features/organizations";
+import { OrganizationBadgeDropdown } from "@/features/organizations/components/OrganizationBadgeDropdown";
 import { useGoingEvents } from "@/features/events/hooks/useGoingEvents";
 import { getEventCategory } from "@/shared/utils/event";
 import { OrganizationCategoryBadge } from "@/shared/components/OrganizationCategoryBadge";
@@ -24,7 +26,13 @@ interface EventCardImageProps {
    * the badge but must not let its menu filter the feed and leave the form.
    */
   interactive?: boolean;
+  /** Gives the true above-the-fold poster high network priority. */
+  priority?: boolean;
 }
+
+const EVENT_CARD_IMAGE_SIZES =
+  "(max-width: 479px) 50vw, (max-width: 1023px) 33vw, 25vw";
+const EVENT_DETAIL_IMAGE_SIZES = "(max-width: 767px) 100vw, 320px";
 
 /**
  * Event poster with its corner badges: category, live, new, and organization.
@@ -38,6 +46,7 @@ export function EventCardImage({
   variant,
   onBadgeHoverChange,
   interactive = true,
+  priority = variant === "detail",
 }: EventCardImageProps) {
   const { t } = useTranslation();
   const { surfaceRef, registerCorner, cutouts, box } = useEventImageCutouts();
@@ -74,6 +83,10 @@ export function EventCardImage({
         backgroundColor="var(--surface-elevated)"
         imageSrc={event.source_image_url}
         imageAlt={event.title}
+        imageSizes={
+          variant === "card" ? EVENT_CARD_IMAGE_SIZES : EVENT_DETAIL_IMAGE_SIZES
+        }
+        imagePriority={priority}
         cutouts={cutouts}
         width={box.width}
         height={box.height}
@@ -90,9 +103,11 @@ export function EventCardImage({
         ) : null}
         {!event.source_image_url && (
           <div className="absolute inset-0 flex items-center justify-center">
-            <img
-              src="/wat2do-logo.svg"
+            <Image
+              src={imgLogo}
               alt=""
+              width={136}
+              height={96}
               className="h-2/5 w-2/5 object-contain opacity-80"
             />
           </div>

@@ -1,4 +1,3 @@
-import React from "react";
 import { useTranslation } from "react-i18next";
 import { useRouter } from "next/navigation";
 import {
@@ -10,6 +9,8 @@ import {
   X,
   User,
   Bell,
+  Heart,
+  LogIn,
   Palette,
   HelpCircle,
 } from "@/shared/ui/doodle-icons";
@@ -34,8 +35,6 @@ interface CommandPaletteProps {
   setShowFilterDropdown: (show: boolean) => void;
   onClearAllFilters: () => void;
   canSubmitEvents: boolean;
-  personalItems: React.ReactNode;
-  profileLabel: string;
 }
 
 export function CommandPalette({
@@ -44,8 +43,6 @@ export function CommandPalette({
   setShowFilterDropdown,
   onClearAllFilters,
   canSubmitEvents,
-  personalItems,
-  profileLabel,
 }: CommandPaletteProps) {
   const { t } = useTranslation();
   const router = useRouter();
@@ -144,7 +141,22 @@ export function CommandPalette({
         <CommandSeparator />
 
         <CommandGroup heading={t("commands.personal")}>
-          {personalItems}
+          {canSubmitEvents ? (
+            <CommandItem onSelect={() => onOpenChange(false)}>
+              <Heart className="mr-2 size-4" />
+              <span>{t("commands.goingEvents")}</span>
+            </CommandItem>
+          ) : (
+            <CommandItem
+              onSelect={() => {
+                router.push(ROUTES.ONBOARDING);
+                onOpenChange(false);
+              }}
+            >
+              <LogIn className="mr-2 size-4" />
+              <span>{t("commands.signInToUnlockFeatures")}</span>
+            </CommandItem>
+          )}
         </CommandGroup>
 
         <CommandSeparator />
@@ -157,7 +169,11 @@ export function CommandPalette({
             }}
           >
             <User className="mr-2 size-4" />
-            <span>{profileLabel}</span>
+            <span>
+              {canSubmitEvents
+                ? t("commands.editProfile")
+                : t("commands.createProfile")}
+            </span>
           </CommandItem>
           <CommandItem
             onSelect={() => {

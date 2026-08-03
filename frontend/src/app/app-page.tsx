@@ -9,19 +9,15 @@ import { ProtectedRoute } from "@/app/ProtectedRoute";
 import { UnknownSchoolPage } from "@/app/UnknownSchoolPage";
 import { useAppNavigation } from "@/app/hooks/useAppNavigation";
 import { useAppReady } from "@/app/client-providers";
-import { loadUserProfile } from "@/features/auth/api/userRepository";
-import { useAuthState, useUserEmail } from "@/features/auth/hooks/useAuthState";
+import { useUserEmail } from "@/features/auth/hooks/useAuthState";
 import { useCreditsStore } from "@/features/credits/store/credits.store";
 import { useEventsStore } from "@/features/events/store/events.store";
 import { useSavedOrganizationsStore } from "@/features/organizations/store/savedOrganizations.store";
-import { getRouteDocumentTitle } from "@/shared/constants/routes";
+import { getRouteDocumentTitle, ROUTES } from "@/shared/constants/routes";
 import type { Role } from "@/shared/constants/roles";
 import {
-  ALL_SCHOOLS,
   DEFAULT_SCHOOL,
   getHostnameSchoolStatus,
-  getSchoolOrigin,
-  isAllSchools,
   type HostnameSchoolStatus,
 } from "@/shared/constants/schools";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
@@ -34,6 +30,7 @@ interface AppPageProps {
   chrome?: boolean;
   requiresAuth?: boolean;
   requiredRole?: Role;
+  renderBeforeReady?: boolean;
   skipSchoolCheck?: boolean;
 }
 
@@ -44,14 +41,32 @@ interface AppPageContentProps extends AppPageProps {
   skipSchoolCheck: boolean;
 }
 
+function routeOwnsServerMetadata(pathname: string): boolean {
+  return (
+    pathname === ROUTES.HOME ||
+    pathname === ROUTES.LOGIN ||
+    pathname === ROUTES.CONTACT ||
+    pathname === ROUTES.ORGANIZATIONS ||
+    /^\/events\/\d+\/?$/.test(pathname) ||
+    /^\/organizations\/\d+\/?$/.test(pathname)
+  );
+}
+
 export function AppPage({
   children,
   authFlow = false,
   chrome = true,
   requiresAuth = false,
   requiredRole,
+  renderBeforeReady = false,
   skipSchoolCheck = false,
 }: AppPageProps) {
+  const ready = useAppReady();
+
+  if (!ready && renderBeforeReady) {
+    return chrome ? <AppLayout>{children}</AppLayout> : children;
+  }
+
   return (
     <Suspense fallback={<LoadingPage className="min-h-dvh" />}>
       <AppPageContent
@@ -78,7 +93,6 @@ function AppPageContent({
   const ready = useAppReady();
   const pathname = usePathname();
   const userEmail = useUserEmail();
-  const { isAdmin } = useAuthState();
   const events = useEventsStore((s) => s.events);
   const setSchoolFilter = useEventsStore((s) => s.setSchoolFilter);
   const {
@@ -95,20 +109,9 @@ function AppPageContent({
   }, [skipSchoolCheck]);
 
   useEffect(() => {
+    if (routeOwnsServerMetadata(pathname)) return;
     document.title = getRouteDocumentTitle(pathname);
   }, [pathname]);
-
-  // The all-schools origin is an admin lens over every school at once. Anyone
-  // else belongs on their own school's origin, so send them there rather than
-  // showing a feed they cannot have. Auth flows are exempt: signing in is how
-  // an admin gets a session on this host in the first place.
-  const bounceFromAllSchools =
-    ready && !authFlow && !skipSchoolCheck && !isAdmin && isAllSchools(hostnameSchoolStatus.school);
-
-  useEffect(() => {
-    if (!bounceFromAllSchools) return;
-    window.location.assign(getSchoolOrigin(loadUserProfile()?.school || DEFAULT_SCHOOL));
-  }, [bounceFromAllSchools]);
 
   useEffect(() => {
     if (!ready || authFlow) return;
@@ -128,8 +131,7 @@ function AppPageContent({
 
   const needsSchoolValidation =
     !skipSchoolCheck &&
-    hostnameSchoolStatus.candidate !== null &&
-    hostnameSchoolStatus.school !== ALL_SCHOOLS;
+    hostnameSchoolStatus.candidate !== null;
 
   if (needsSchoolValidation && isSchoolDirectoryPending) {
     return <LoadingPage className="min-h-dvh" />;
@@ -141,10 +143,6 @@ function AppPageContent({
     !schoolBySlug.has(hostnameSchoolStatus.school)
   ) {
     return <UnknownSchoolPage requestedSchool={hostnameSchoolStatus.candidate} />;
-  }
-
-  if (bounceFromAllSchools) {
-    return <LoadingPage className="min-h-dvh" />;
   }
 
   const protectedContent = requiresAuth || requiredRole ? (

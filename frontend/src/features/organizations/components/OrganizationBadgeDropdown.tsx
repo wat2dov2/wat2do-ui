@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { usePathname, useRouter } from "next/navigation";
-import { useFilterActions } from "@/features/search";
+import { useFilterActions } from "@/features/search/hooks/useFilterState";
 import { OrganizationTypeIcon } from "@/shared/components/OrganizationTypeIcon";
 import {
   DropdownMenu,

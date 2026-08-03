@@ -73,15 +73,13 @@ def list_promoted_events(
     school: str | None = Query(default=None, max_length=MAX_EVENT_SCHOOL_LENGTH),
 ):
     """Public list of promoted events for a school."""
-    if school == "all":
-        school = None
     return event_service.list_promoted_events(school=school)
 
 
 @router.get("/stats", response_model=dict[str, EventStatsResponse])
 def get_event_stats(school: str = Query(..., min_length=1, max_length=MAX_EVENT_SCHOOL_LENGTH)):
-    """Public uncached card stats for one school, or for all of them."""
-    return event_service.get_event_stats_for_school(None if school == "all" else school)
+    """Public uncached card stats for one school."""
+    return event_service.get_event_stats_for_school(school)
 
 
 @router.get("/", response_model=EventFeedResponse)
@@ -112,8 +110,6 @@ def list_events(
     ``include_past`` drops the default start-of-today lower bound, so a caller
     can ask for a host's full history. Omits ``created_by``.
     """
-    if school == "all":
-        school = None
     with ThreadPoolExecutor(max_workers=1) as pool:
         latest_event_future = pool.submit(event_service.get_latest_added_event, school)
         items, total = event_service.list_events(

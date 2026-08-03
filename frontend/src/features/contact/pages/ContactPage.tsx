@@ -1,7 +1,9 @@
+"use client";
+
 import type { ReactNode } from "react";
+import Image from "next/image";
 import NextLink from "next/link";
-import { m } from "framer-motion";
-import { EMPTY_FILTER_STATE } from "@/features/search";
+import { EMPTY_FILTER_STATE } from "@/features/search/api/filterService";
 import { useSearchStore } from "@/features/search/store/search.store";
 import { ROUTES } from "@/shared/constants/routes";
 import { EXTERNAL_LINKS } from "@/shared/constants/links";
@@ -82,38 +84,36 @@ export function ContactPage() {
   return (
     <Container size="sm">
       <Stack gap={12}>
-        <m.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="relative h-[280px] w-full overflow-hidden rounded-3xl bg-muted sm:h-[360px] md:h-[440px]"
-        >
-          <img
-            src={imgContactHero.src}
+        <div className="relative h-[280px] w-full overflow-hidden rounded-3xl bg-muted sm:h-[360px] md:h-[440px]">
+          <Image
+            src={imgContactHero}
             alt={t("contact.heroAlt")}
-            className="pointer-events-none h-full w-full select-none object-cover"
+            fill
+            priority
+            sizes="(max-width: 640px) 100vw, 640px"
+            className="pointer-events-none select-none object-cover"
           />
 
-          <div className="absolute bottom-0 left-0 z-10 flex select-none flex-col items-start">
+          <h1 className="absolute bottom-0 left-0 z-10 flex select-none flex-col items-start">
             <div className="relative w-fit rounded-tr-[16px] bg-background pb-1 pl-4 pr-5 pt-3 md:rounded-tr-[24px] md:pb-1 md:pl-6 md:pr-8 md:pt-4">
               <CornerMask className="pointer-events-none absolute bottom-full left-0 size-4 text-background md:size-6" />
 
-              <h1 className="font-sans text-3xl font-bold leading-none tracking-tight text-foreground sm:text-5xl">
+              <span className="font-sans text-3xl font-bold leading-none tracking-tight text-foreground sm:text-5xl">
                 {t("contact.hero.line1")}
-              </h1>
+              </span>
 
               <CornerMask className="pointer-events-none absolute bottom-0 left-full size-4 text-background md:size-6" />
             </div>
 
             <div className="relative w-fit rounded-tr-[16px] bg-background pb-4 pl-4 pr-6 pt-2 md:rounded-tr-[24px] md:pb-6 md:pl-6 md:pr-10 md:pt-3">
-              <h1 className="font-sans text-3xl font-bold leading-none tracking-tight text-foreground sm:text-5xl">
+              <span className="font-sans text-3xl font-bold leading-none tracking-tight text-foreground sm:text-5xl">
                 {t("contact.hero.line2")}
-              </h1>
+              </span>
 
               <CornerMask className="pointer-events-none absolute bottom-0 left-full size-4 text-background md:size-6" />
             </div>
-          </div>
-        </m.div>
+          </h1>
+        </div>
 
         <ContactForm />
 
@@ -178,9 +178,11 @@ export function ContactPage() {
                 </Link>
                 {t("contact.funding.wusa")}
               </CardDescription>
-              <img
-                src={imgSlefLogo.src}
+              <Image
+                src={imgSlefLogo}
                 alt={t("contact.funding.logoAlt")}
+                width={228}
+                height={128}
                 className="h-28 select-none object-contain sm:h-32"
               />
             </Stack>

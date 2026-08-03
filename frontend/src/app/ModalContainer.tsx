@@ -4,29 +4,20 @@
  * submit close, onboarding open, clear filters) live here.
  */
 
-import { useCallback, lazy, Suspense } from "react";
-import { useRouter } from "next/navigation";
-import { useTranslation } from "react-i18next";
-import { Heart, LogIn } from "@/shared/ui/doodle-icons";
+import { useCallback, useEffect, useState } from "react";
 import { useEventsStore } from "@/features/events/store/events.store";
-import { CommandPalette } from "@/shared/components/CommandPalette";
-import { CommandItem } from "@/shared/ui/command";
 import { useUIStore } from "@/shared/store/ui.store";
-import { useFilterActions } from "@/features/search";
+import { useFilterActions } from "@/features/search/hooks/useFilterState";
 import { useAuthState } from "@/features/auth/hooks/useAuthState";
 import { eventToFormData, getEventCategory } from "@/shared/utils/event";
-import { ROUTES } from "@/shared/constants/routes";
 import type { EventFormData } from "@/shared/types";
 
-const SubmitEventModal = lazy(() =>
-  import("@/features/events/components/SubmitEventModal").then((m) => ({
-    default: m.SubmitEventModal,
-  }))
-);
+type SubmitEventModalComponent =
+  typeof import("@/features/events/components/SubmitEventModal").SubmitEventModal;
+type CommandPaletteComponent =
+  typeof import("@/shared/components/CommandPalette").CommandPalette;
 
 export function ModalContainer() {
-  const { t } = useTranslation();
-  const router = useRouter();
   const { profileCompleted } = useAuthState();
 
   const showCommandPalette = useUIStore((s) => s.showCommandPalette);
@@ -34,10 +25,36 @@ export function ModalContainer() {
   const setShowFilterDropdown = useUIStore((s) => s.setShowFilterDropdown);
   const editingEvent = useUIStore((s) => s.editingEvent);
   const clearEditingEvent = useUIStore((s) => s.clearEditingEvent);
+  const [SubmitEventModal, setSubmitEventModal] =
+    useState<SubmitEventModalComponent | null>(null);
+  const [CommandPalette, setCommandPalette] =
+    useState<CommandPaletteComponent | null>(null);
 
   const updateEvent = useEventsStore((s) => s.updateEvent);
 
   const { clearAllFilters } = useFilterActions();
+
+  useEffect(() => {
+    if (!editingEvent || SubmitEventModal) return;
+    let cancelled = false;
+    void import("@/features/events/components/SubmitEventModal").then((module) => {
+      if (!cancelled) setSubmitEventModal(() => module.SubmitEventModal);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [SubmitEventModal, editingEvent]);
+
+  useEffect(() => {
+    if (!showCommandPalette || CommandPalette) return;
+    let cancelled = false;
+    void import("@/shared/components/CommandPalette").then((module) => {
+      if (!cancelled) setCommandPalette(() => module.CommandPalette);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [CommandPalette, showCommandPalette]);
 
   const handleSubmitEventClose = useCallback(() => {
     clearEditingEvent();
@@ -53,57 +70,32 @@ export function ModalContainer() {
     [],
   );
 
-  const handleOpenOnboardingRoute = useCallback(() => {
-    router.push(ROUTES.ONBOARDING);
-  }, [router]);
-
   return (
     <>
-      <Suspense fallback={null}>
+      {editingEvent && SubmitEventModal ? (
         <SubmitEventModal
-          isOpen={editingEvent !== null}
+          isOpen
           onClose={handleSubmitEventClose}
           canCreateEvents
-          editEventId={editingEvent?.id}
-          initialData={editingEvent && "title" in editingEvent ? eventToFormData(editingEvent) : undefined}
+          editEventId={editingEvent.id}
+          initialData={"title" in editingEvent ? eventToFormData(editingEvent) : undefined}
           loadEventForEdit={loadEventForEdit}
           onUpdate={async (eventId, eventData) => {
             await updateEvent(eventId, eventData);
             handleSubmitEventClose();
           }}
         />
-      </Suspense>
+      ) : null}
 
-      <CommandPalette
-        isOpen={showCommandPalette}
-        onOpenChange={setShowCommandPalette}
-        setShowFilterDropdown={setShowFilterDropdown}
-        onClearAllFilters={clearAllFilters}
-        canSubmitEvents={profileCompleted}
-        personalItems={
-          profileCompleted ? (
-            <CommandItem
-              onSelect={() => {
-                setShowCommandPalette(false);
-              }}
-            >
-              <Heart className="mr-2 size-4" />
-              <span>{t("commands.goingEvents")}</span>
-            </CommandItem>
-          ) : (
-            <CommandItem
-              onSelect={() => {
-                handleOpenOnboardingRoute();
-                setShowCommandPalette(false);
-              }}
-            >
-              <LogIn className="mr-2 size-4" />
-              <span>{t("commands.signInToUnlockFeatures")}</span>
-            </CommandItem>
-          )
-        }
-        profileLabel={profileCompleted ? t("commands.editProfile") : t("commands.createProfile")}
-      />
+      {showCommandPalette && CommandPalette ? (
+        <CommandPalette
+          isOpen
+          onOpenChange={setShowCommandPalette}
+          setShowFilterDropdown={setShowFilterDropdown}
+          onClearAllFilters={clearAllFilters}
+          canSubmitEvents={profileCompleted}
+        />
+      ) : null}
     </>
   );
 }

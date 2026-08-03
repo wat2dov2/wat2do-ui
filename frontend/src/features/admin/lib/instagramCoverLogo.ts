@@ -8,7 +8,7 @@ const logoCache = new Map<string, string>();
 
 /**
  * Recolour the canonical Wat2Do cover logo without maintaining school-specific
- * copies. The square and eye use the secondary color while the mark uses primary.
+ * copies. The square and eye use the primary color while the mark uses secondary.
  */
 export function buildInstagramCoverLogo(
   colors: SchoolColors,
@@ -26,9 +26,9 @@ export function buildInstagramCoverLogo(
   }
 
   const colorizedSvg = sourceSvg
-    .replace(SOURCE_BACKGROUND, `fill="${colors.secondary}"`)
-    .replaceAll(SOURCE_MARK, `stroke="${colors.primary}"`)
-    .replace(SOURCE_EYE, `stroke="${colors.secondary}"`);
+    .replace(SOURCE_BACKGROUND, `fill="${colors.primary}"`)
+    .replaceAll(SOURCE_MARK, `stroke="${colors.secondary}"`)
+    .replace(SOURCE_EYE, `stroke="${colors.primary}"`);
   const logo = `data:image/svg+xml;base64,${btoa(colorizedSvg)}`;
 
   logoCache.set(cacheKey, logo);

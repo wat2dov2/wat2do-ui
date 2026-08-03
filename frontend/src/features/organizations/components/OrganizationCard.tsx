@@ -9,7 +9,7 @@ import {
 import { EventCardContent } from "@/shared/ui/event-card-content";
 import { sanitizeHref } from "@/shared/utils/url";
 import { useSavedOrganizationsStore } from "@/features/organizations/store/savedOrganizations.store";
-import { useProfileCompleted } from "@/features/auth";
+import { useProfileCompleted } from "@/features/auth/hooks/useAuthState";
 import { OrganizationCategoryBadge } from "@/shared/components/OrganizationCategoryBadge";
 import { useCardMouseDownActivate, useMobileGridClickActivation, createAdaptivePressHandlers } from "@/shared/hooks";
 import { OrganizationOverflowMenu } from "@/features/organizations/components/OrganizationOverflowMenu";
@@ -20,7 +20,7 @@ import {
 import { useOrganizationCardFrame } from "@/features/organizations/hooks/useOrganizationCardFrame";
 import type { Organization } from "@/shared/types";
 import { toast } from "@/shared/hooks/use-toast";
-import { ROUTES } from "@/shared/constants/routes";
+import { organizationPagePath, ROUTES } from "@/shared/constants/routes";
 
 interface OrganizationCardProps {
   organization: Organization;
@@ -219,6 +219,12 @@ function OrganizationCardComponent({
         handleCardActivate();
         return;
       }
+      if (
+        mouseEvent.target instanceof Element &&
+        mouseEvent.target.closest("a")
+      ) {
+        return;
+      }
       mouseEvent.preventDefault();
     },
     [handleCardActivate, preferClickPress],
@@ -321,6 +327,7 @@ function OrganizationCardComponent({
       <div className="relative z-10 flex flex-col flex-1">
         <EventCardContent
           title={organization.organization_name}
+          titleHref={organizationPagePath(organization.id)}
           location={socialHandle}
           badges={eventCountBadges}
           className="pt-8 sm:pt-9"

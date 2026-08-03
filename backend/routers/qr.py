@@ -89,8 +89,6 @@ def list_qr_codes(
         enrolled = db_user.promoter_tos_accepted_at is not None
         if not enrolled:
             get_organization_owner_or_admin(db_user)
-    if school == "all":
-        school = None
     kwargs = {
         "offset": pagination.offset,
         "limit": pagination.page_size,

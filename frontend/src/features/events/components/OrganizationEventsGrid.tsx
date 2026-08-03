@@ -13,6 +13,7 @@ import type { Event } from "@/shared/types";
 interface OrganizationEventsGridProps {
   organizationId: number;
   school: string;
+  initialEvents: Event[];
 }
 
 /**
@@ -26,11 +27,13 @@ interface OrganizationEventsGridProps {
 export function OrganizationEventsGrid({
   organizationId,
   school,
+  initialEvents,
 }: OrganizationEventsGridProps) {
   const { data: events, isPending } = useQuery({
     queryKey: queryKeys.events.byOrganization(organizationId, school),
     queryFn: () => fetchOrganizationEvents(organizationId, school),
     enabled: organizationId > 0 && Boolean(school),
+    initialData: initialEvents,
     staleTime: controlBox.clientCache.liveEventDataStaleMs,
   });
   const { data: eventStatsData, isSuccess: eventStatsReady } = useEventStats(school);

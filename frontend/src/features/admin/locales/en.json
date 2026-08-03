@@ -327,7 +327,10 @@
         "status": "Publishing status"
       },
       "slideEventUnavailable": "This slide's event is no longer publishable",
-      "addEvent": "Add event",
+      "addEventId": "Add event ID",
+      "addEventError": "Could not add the event to the carousel",
+      "eventId": "Event ID",
+      "eventIdPlaceholder": "Enter an event ID",
       "coverSlide": "Cover slide",
       "coverBody": "Cover body text",
       "coverBodyPlaceholder": "Added to Wat2Do in the last 24 hours",

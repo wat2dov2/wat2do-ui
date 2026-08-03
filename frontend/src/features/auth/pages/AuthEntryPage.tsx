@@ -1,13 +1,15 @@
+"use client";
+
 import { useEffect, useMemo } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 
+import { EmailOtpForm } from "@/features/auth/components/EmailOtpForm";
+import { useAuthState } from "@/features/auth/hooks/useAuthState";
 import {
   appendSafeReturnTo,
-  EmailOtpForm,
   getSafeReturnTo,
-  useAuthState,
-} from "@/features/auth";
+} from "@/features/auth/utils/returnTo";
 import { AuthPageLayout } from "@/features/auth/components/AuthPageLayout";
 import { ROUTES } from "@/shared/constants/routes";
 import { QP } from "@/shared/constants/queryParams";
@@ -16,18 +18,23 @@ import type { Event } from "@/shared/types";
 
 interface AuthEntryPageProps {
   previewEvents?: Event[];
+  initialEmail?: string;
+  invitationToken?: string;
+  initialReturnTo?: string;
 }
 
-export function AuthEntryPage({ previewEvents = [] }: AuthEntryPageProps) {
+export function AuthEntryPage({
+  previewEvents = [],
+  initialEmail,
+  invitationToken,
+  initialReturnTo,
+}: AuthEntryPageProps) {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { t } = useTranslation();
   const { isAuthenticated } = useAuthState();
-  const invitationToken = searchParams.get("token") ?? undefined;
-  const initialEmail = searchParams.get("email") ?? undefined;
   const returnTo = useMemo(
-    () => getSafeReturnTo(searchParams.get(QP.RETURN_TO)),
-    [searchParams],
+    () => getSafeReturnTo(initialReturnTo),
+    [initialReturnTo],
   );
 
   useEffect(() => {

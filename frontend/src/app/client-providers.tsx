@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, lazy, Suspense, useContext, useEffect, useState, type ReactNode } from "react";
-import { LazyMotion, domMax } from "framer-motion";
+import { LazyMotion, domAnimation } from "framer-motion";
 import "@/shared/lib/i18n";
 import i18n, { getStoredLanguage } from "@/shared/lib/i18n";
 import { loadLanguage } from "@/shared/lib/loadLanguage";
@@ -161,7 +161,7 @@ export function ClientProviders({ children }: { children: ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <ErrorBoundary>
-        <LazyMotion features={domMax} strict>
+        <LazyMotion features={domAnimation} strict>
           <TooltipProvider delayDuration={0}>
             <AppReadyContext.Provider value={{ appReady: ready, authReady }}>
               {DevClickToComponent ? (

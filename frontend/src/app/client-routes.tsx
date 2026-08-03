@@ -16,39 +16,20 @@ import {
   OrganizationPanelRoute,
 } from "@/app/routes/organizationPanelRoutes";
 import { AuthCallbackPage } from "@/features/auth/pages/AuthCallbackPage";
-import { AuthEntryPage } from "@/features/auth/pages/AuthEntryPage";
-import { useUserEmail } from "@/features/auth";
-import { ContactPage } from "@/features/contact/pages/ContactPage";
-import { useEventsStore } from "@/features/events";
-import { EventDetailsPageContainer } from "@/features/events/pages/EventDetailsPageContainer";
+import { useUserEmail } from "@/features/auth/hooks/useAuthState";
+import { useEventsStore } from "@/features/events/store/events.store";
 import { SubmitEventPage } from "@/features/events/pages/SubmitEventPage";
 import { MarketingPage } from "@/features/marketing/pages/MarketingPage";
 import { DesignSystemPage } from "@/features/design-system";
 import { OnboardingDemoPage } from "@/features/onboarding-demo";
 import { OnboardingPage } from "@/features/onboarding/pages/OnboardingPage";
 import { CreateOrganizationPage } from "@/features/organizations/pages/CreateOrganizationPage";
-import { OrganizationDetailsPage } from "@/features/organizations/pages/OrganizationDetailsPage";
-import { OrganizationsPage } from "@/features/organizations/pages/OrganizationsPage";
 import { InviteLandingPage } from "@/features/organizations/pages/InviteLandingPage";
-import type { PaginatedOrganizationsResponse } from "@/features/organizations/api/organizations.api";
 import { QRRedirectPage } from "@/features/qrcode/pages/QRRedirectPage";
 import { SettingsPage } from "@/features/settings/pages/SettingsPage";
 import { PromotePage } from "@/features/posters/pages/PromotePage";
 import { PromoterPostersPage } from "@/features/posters/pages/PromoterPostersPage";
 import { ROLE_ADMIN, ROLE_ORGANIZATION } from "@/shared/constants/roles";
-import type { Event } from "@/shared/types";
-
-export function LoginRoute({
-  previewEvents = [],
-}: {
-  previewEvents?: Event[];
-}) {
-  return (
-    <AppPage authFlow chrome={false}>
-      <AuthEntryPage previewEvents={previewEvents} />
-    </AppPage>
-  );
-}
 
 export function AuthCallbackRoute() {
   return (
@@ -82,47 +63,10 @@ export function DesignSystemRoute() {
   );
 }
 
-export function ContactRoute() {
-  return (
-    <AppPage>
-      <ContactPage />
-    </AppPage>
-  );
-}
-
-export function OrganizationsRoute({
-  initialDirectory,
-  initialSchool,
-}: {
-  initialDirectory: PaginatedOrganizationsResponse | null;
-  initialSchool: string;
-}) {
-  return (
-    <AppPage>
-      <OrganizationsPage
-        initialDirectory={initialDirectory}
-        initialSchool={initialSchool}
-      />
-    </AppPage>
-  );
-}
-
 export function CreateOrganizationRoute() {
   return (
     <AppPage requiresAuth>
       <CreateOrganizationPage />
-    </AppPage>
-  );
-}
-
-export function OrganizationDetailsRoute({
-  organizationId,
-}: {
-  organizationId: number;
-}) {
-  return (
-    <AppPage>
-      <OrganizationDetailsPage organizationId={organizationId} />
     </AppPage>
   );
 }
@@ -246,14 +190,6 @@ export function OrganizationPanelMembersPageRoute() {
   return (
     <AppPage requiredRole={ROLE_ORGANIZATION}>
       <OrganizationPanelMembersRoute />
-    </AppPage>
-  );
-}
-
-export function EventDetailsPageRoute({ eventId }: { eventId: number }) {
-  return (
-    <AppPage>
-      <EventDetailsPageContainer eventId={eventId} />
     </AppPage>
   );
 }

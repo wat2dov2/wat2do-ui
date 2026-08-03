@@ -4,6 +4,7 @@
  */
 
 import { Badge } from "@/shared/ui/badge";
+import Link from "next/link";
 
 interface CardBadge {
   text: string;
@@ -13,6 +14,7 @@ const EMPTY_BADGES: readonly CardBadge[] = [];
 
 interface EventCardContentProps {
   title: string;
+  titleHref?: string;
   date?: string;
   time?: string;
   location?: string;
@@ -27,6 +29,7 @@ interface EventCardContentProps {
 
 export function EventCardContent({
   title,
+  titleHref,
   date,
   time,
   location,
@@ -42,7 +45,13 @@ export function EventCardContent({
       <div className="flex flex-col gap-3 h-full flex-1">
         <div className="min-w-0">
           <h3 className={`font-semibold text-base leading-[1.1] line-clamp-2 ${textClassName}`}>
-            {title}
+            {titleHref ? (
+              <Link href={titleHref} prefetch={false}>
+                {title}
+              </Link>
+            ) : (
+              title
+            )}
           </h3>
           {statsLabel ? (
             <span

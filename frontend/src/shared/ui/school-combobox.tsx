@@ -5,10 +5,7 @@ import {
   type SearchComboboxVariant,
 } from "@/shared/ui/search-combobox";
 import { Highlighter } from "@/shared/ui/highlighter";
-import {
-  ALL_SCHOOLS,
-  DEFAULT_SCHOOL,
-} from "@/shared/constants/schools";
+import { DEFAULT_SCHOOL } from "@/shared/constants/schools";
 import {
   searchSchools,
   type SchoolSummary,
@@ -25,7 +22,6 @@ interface SchoolComboboxProps {
   contentClassName?: string;
   triggerClassName?: string;
   showHighlight?: boolean;
-  isAdmin?: boolean;
 }
 
 type SchoolOption = Pick<SchoolSummary, "slug" | "name">;
@@ -40,25 +36,15 @@ export function SchoolCombobox({
   contentClassName,
   triggerClassName,
   showHighlight = true,
-  isAdmin = false,
 }: SchoolComboboxProps) {
   const { t } = useTranslation();
   const { getSchoolName } = useSchoolDirectory();
 
   const displayValue = useMemo(() => {
-    if (value === ALL_SCHOOLS) return t("schools.allSchools");
     if (value) return getSchoolName(value);
     if (placeholder) return placeholder;
     return getSchoolName(DEFAULT_SCHOOL);
-  }, [getSchoolName, placeholder, t, value]);
-
-  const allSchoolsOption = useMemo<SchoolOption>(
-    () => ({
-      slug: ALL_SCHOOLS,
-      name: t("schools.allSchools"),
-    }),
-    [t],
-  );
+  }, [getSchoolName, placeholder, value]);
 
   const renderTriggerLabel =
     variant === "nav" && showHighlight
@@ -81,7 +67,6 @@ export function SchoolCombobox({
       getKey={(school) => school.slug}
       getLabel={(school) => school.name}
       displayValue={displayValue}
-      allOption={isAdmin ? allSchoolsOption : undefined}
       isPlaceholder={!value && Boolean(placeholder)}
       renderTriggerLabel={renderTriggerLabel}
       debounceMs={220}
@@ -93,7 +78,6 @@ export function SchoolCombobox({
       loadingLabel={t("common.loading")}
       contentClassName={contentClassName}
       triggerClassName={triggerClassName}
-      searchOnEmpty={isAdmin}
     />
   );
 }

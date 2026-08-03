@@ -24,7 +24,6 @@ import { Textarea } from "@/shared/ui/textarea";
 const EMPTY_MESSAGE: ContactMessage = {
   name: "",
   email: "",
-  subject: "",
   message: "",
 };
 
@@ -47,7 +46,6 @@ export function ContactForm() {
       await submitContactMessage({
         name: form.name.trim(),
         email: form.email.trim(),
-        subject: form.subject.trim(),
         message: form.message.trim(),
       });
       setForm(EMPTY_MESSAGE);
@@ -94,6 +92,7 @@ export function ContactForm() {
                   value={form.name}
                   onChange={(event) => setField("name", event.target.value)}
                   maxLength={controlBox.contact.maximumNameLength}
+                  placeholder={t("contact.form.namePlaceholder")}
                   autoComplete="name"
                   required
                 />
@@ -107,19 +106,8 @@ export function ContactForm() {
                   type="email"
                   value={form.email}
                   onChange={(event) => setField("email", event.target.value)}
+                  placeholder={t("contact.form.emailPlaceholder")}
                   autoComplete="email"
-                  required
-                />
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="contact-subject">
-                  {t("contact.form.subject")}
-                </FieldLabel>
-                <Input
-                  id="contact-subject"
-                  value={form.subject}
-                  onChange={(event) => setField("subject", event.target.value)}
-                  maxLength={controlBox.contact.maximumSubjectLength}
                   required
                 />
               </Field>
@@ -132,6 +120,7 @@ export function ContactForm() {
                   value={form.message}
                   onChange={(event) => setField("message", event.target.value)}
                   maxLength={controlBox.contact.maximumMessageLength}
+                  placeholder={t("contact.form.messagePlaceholder")}
                   className="min-h-36"
                   required
                 />

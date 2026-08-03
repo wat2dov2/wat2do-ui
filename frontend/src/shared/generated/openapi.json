@@ -590,7 +590,7 @@
           "events"
         ],
         "summary": "Get Event Stats",
-        "description": "Public uncached card stats for one school, or for all of them.",
+        "description": "Public uncached card stats for one school.",
         "operationId": "get_event_stats_events_stats_get",
         "parameters": [
           {
@@ -6382,6 +6382,96 @@
         }
       }
     },
+    "/webhooks/automate": {
+      "post": {
+        "tags": [
+          "webhooks"
+        ],
+        "summary": "Receive Automate Log",
+        "operationId": "receive_automate_log_webhooks_automate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AutomateLogPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/webhooks/automate/logs": {
+      "get": {
+        "tags": [
+          "webhooks"
+        ],
+        "summary": "Get Automate Logs",
+        "operationId": "get_automate_logs_webhooks_automate_logs_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/health": {
       "get": {
         "summary": "Health",
@@ -6522,6 +6612,75 @@
         ],
         "title": "AppConstantsResponse",
         "description": "Shared domain constants that the frontend must stay in sync with.\n\nThe frontend fetches this once on app init so both layers\nalways agree on categories, interest mappings, and status enums."
+      },
+      "AutomateLogPayload": {
+        "properties": {
+          "event": {
+            "type": "string",
+            "title": "Event"
+          },
+          "sender": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sender"
+          },
+          "school": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "School"
+          },
+          "ig_account": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ig Account"
+          },
+          "post_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Post Url"
+          },
+          "payload": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payload"
+          }
+        },
+        "type": "object",
+        "required": [
+          "event"
+        ],
+        "title": "AutomateLogPayload"
       },
       "Body_parse_event_image_ai_parse_event_image_post": {
         "properties": {
@@ -6723,12 +6882,6 @@
             "format": "email",
             "title": "Email"
           },
-          "subject": {
-            "type": "string",
-            "maxLength": 160,
-            "minLength": 1,
-            "title": "Subject"
-          },
           "message": {
             "type": "string",
             "maxLength": 5000,
@@ -6741,7 +6894,6 @@
         "required": [
           "name",
           "email",
-          "subject",
           "message"
         ],
         "title": "ContactCreate"

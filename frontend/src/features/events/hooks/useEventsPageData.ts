@@ -1,6 +1,6 @@
 import { useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { useSearch } from "@/features/search";
+import { useSearch } from "@/features/search/hooks/useSearch";
 import { useEventsStore } from "@/features/events/store/events.store";
 import { useEventStats } from "@/features/events/hooks/useEventStats";
 import {

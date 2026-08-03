@@ -9,9 +9,11 @@ import { useTranslation } from "react-i18next";
 import { toast } from "@/shared/hooks/use-toast";
 import { EventList } from "../components/EventList";
 import { EventCount } from "../components/EventCount";
-import { SearchBar, MoreFiltersButton, FilterDropdown } from "@/features/search";
+import { SearchBar } from "@/features/search/components/SearchBar";
+import { MoreFiltersButton } from "@/features/search/components/MoreFiltersButton";
+import { FilterDropdown } from "@/features/search/components/FilterDropdown";
 import { useUIStore } from "@/shared/store/ui.store";
-import { useAuthState } from "@/features/auth";
+import { useAuthState } from "@/features/auth/hooks/useAuthState";
 import { useHorizontalScrollFade } from "@/shared/hooks";
 import { HorizontalScrollFade } from "@/shared/ui/horizontal-scroll-fade";
 import { Button } from "@/shared/ui/button";
@@ -26,9 +28,10 @@ import { ROUTES } from "@/shared/constants/routes";
 import { useMutableSearchParams } from "@/shared/hooks/useMutableSearchParams";
 import { controlBox } from "@/shared/config/controlBox";
 import type { ViewMode, Event } from "@/shared/types";
-import { usePosterLandingConfirmation } from "@/features/qrcode";
-import { PromoterRecruitmentBanner } from "@/features/posters";
+import { usePosterLandingConfirmation } from "@/features/qrcode/hooks/usePosterLandingConfirmation";
+import { PromoterRecruitmentBanner } from "@/features/posters/components/PromoterRecruitmentBanner";
 import { Plus } from "@/shared/ui/doodle-icons";
+import { PageHeader } from "@/shared/layout";
 
 interface QuickFilterButtonConfig {
   id: string;
@@ -37,7 +40,7 @@ interface QuickFilterButtonConfig {
   onClick: () => void;
 }
 
-export function EventsPageContainer() {
+export function EventsPageContainer({ schoolName }: { schoolName: string }) {
   usePosterLandingConfirmation();
 
   const viewMode = useUIStore((s) => s.viewMode);
@@ -179,127 +182,133 @@ export function EventsPageContainer() {
 
   return (
     <>
-      <div className="space-y-2">
-        <PromoterRecruitmentBanner school={schoolFilter} />
-        <div className="space-y-3 pb-2">
-          <EventCount
-            count={totalEvents}
-            latestAddedEvent={latestAddedEvent}
-            onLatestAddedEventSearch={handleLatestAddedEventSearch}
-            action={
-              <Button type="button" size="sm" onMouseDown={handleSubmitEventClick}>
-                <Plus />
-                {t("events.submitEvent")}
-              </Button>
-            }
-          />
-          <div className="flex items-center gap-2">
-            <div className="min-w-0 flex-1">
-              <SearchBar
-                searchQuery={filters.searchQuery}
-                onSearchChange={(query) => {
-                  filters.setSearchQuery(query);
-                }}
-                onSearchClear={() => filters.setSearchQuery("")}
-              />
-            </div>
-            <MoreFiltersButton
-              open={showFilterDropdown}
-              onOpenChange={setShowFilterDropdown}
-              filterCount={filters.filterCount}
-              onClearFilters={filters.handleClearAllFilters}
-            >
-              {showFilterDropdown ? (
-                <FilterDropdown
-                  viewMode={viewMode}
-                  onViewModeChange={handleViewModeChange}
-                  filters={filters}
-                />
-              ) : null}
-            </MoreFiltersButton>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <div className="relative min-w-0 flex-1">
-              <HorizontalScrollFade
-                ref={filterScrollRef}
-                visible={showFilterScrollFade}
-                {...filterDragScrollProps}
-                data-testid="event-quick-filter-scroll"
-                onScroll={syncFilterScrollFade}
-                onWheel={syncFilterScrollFadeAfterWheel}
-                onTouchEnd={syncFilterScrollFade}
-                className="no-visible-scrollbar flex min-w-0 cursor-grab flex-nowrap items-center gap-2 overflow-x-auto pb-1 active:cursor-grabbing"
-              >
-                <NewlyAddedFilterSelect
-                  value={newlyAddedFilterValue}
-                  showSinceLastVisit={profileCompleted && lastVisitAt !== null}
-                  lastVisitAt={lastVisitAt}
-                  onValueChange={handleNewlyAddedFilterChange}
-                  onClear={handleNewlyAddedFilterClear}
-                />
-                {filterConfigs.map((config) => (
-                  <Button
-                    key={config.id}
-                    variant={config.active ? "primary" : "secondary"}
-                    size="sm"
-                    onClick={config.onClick}
-                    aria-pressed={config.active}
-                  >
-                    {t(config.labelKey)}
-                  </Button>
-                ))}
-                {filters.categoryOptions.map((category) => (
-                  <Button
-                    key={category.id}
-                    variant={
-                      filters.selectedCategories.includes(category.id)
-                        ? "primary"
-                        : "secondary"
-                    }
-                    size="sm"
-                    onClick={() => filters.toggleCategory(category.id)}
-                    aria-pressed={filters.selectedCategories.includes(category.id)}
-                  >
-                    {category.label}
-                  </Button>
-                ))}
-                <span
-                  ref={filterScrollEndRef}
-                  aria-hidden="true"
-                  className="h-px w-px shrink-0"
-                />
-              </HorizontalScrollFade>
-            </div>
-          </div>
-        </div>
-
-        <main className="relative z-10 w-full" role="main" aria-label={t("search.ariaLabel")}>
-          {error ? (
-            <div className="flex flex-col items-center justify-center py-16 gap-4">
-              <p className="text-destructive text-sm text-center max-w-md">{error}</p>
-              <button
-                type="button"
-                onMouseDown={() => refreshEvents()}
-                className="px-4 py-2 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary-hover transition-colors"
-              >
-                {t("common.tryAgain")}
-              </button>
-            </div>
-          ) : (
-            <EventList
-              events={orderedEvents}
-              promotedEvents={promotedEvents}
-              viewMode={viewMode}
-              onEventClick={handleEventClick}
-              onClearFilters={filters.handleClearAllFilters}
-              hasActiveFilters={filters.filterCount > 0}
-              eventStats={eventStats}
-              isLoading={isLoading}
-              groupByDateSections={filters.sortBy === "date" && filters.sortOrder === "asc"}
+      <div className="space-y-6">
+        <PageHeader
+          title={t("events.discoveryTitle", { school: schoolName })}
+          description={t("events.discoveryDescription", { school: schoolName })}
+        />
+        <div className="space-y-2">
+          <PromoterRecruitmentBanner school={schoolFilter} />
+          <div className="space-y-3 pb-2">
+            <EventCount
+              count={totalEvents}
+              latestAddedEvent={latestAddedEvent}
+              onLatestAddedEventSearch={handleLatestAddedEventSearch}
+              action={
+                <Button type="button" size="sm" onMouseDown={handleSubmitEventClick}>
+                  <Plus />
+                  {t("events.submitEvent")}
+                </Button>
+              }
             />
-          )}
-        </main>
+            <div className="flex items-center gap-2">
+              <div className="min-w-0 flex-1">
+                <SearchBar
+                  searchQuery={filters.searchQuery}
+                  onSearchChange={(query) => {
+                    filters.setSearchQuery(query);
+                  }}
+                  onSearchClear={() => filters.setSearchQuery("")}
+                />
+              </div>
+              <MoreFiltersButton
+                open={showFilterDropdown}
+                onOpenChange={setShowFilterDropdown}
+                filterCount={filters.filterCount}
+                onClearFilters={filters.handleClearAllFilters}
+              >
+                {showFilterDropdown ? (
+                  <FilterDropdown
+                    viewMode={viewMode}
+                    onViewModeChange={handleViewModeChange}
+                    filters={filters}
+                  />
+                ) : null}
+              </MoreFiltersButton>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <div className="relative min-w-0 flex-1">
+                <HorizontalScrollFade
+                  ref={filterScrollRef}
+                  visible={showFilterScrollFade}
+                  {...filterDragScrollProps}
+                  data-testid="event-quick-filter-scroll"
+                  onScroll={syncFilterScrollFade}
+                  onWheel={syncFilterScrollFadeAfterWheel}
+                  onTouchEnd={syncFilterScrollFade}
+                  className="no-visible-scrollbar flex min-w-0 cursor-grab flex-nowrap items-center gap-2 overflow-x-auto pb-1 active:cursor-grabbing"
+                >
+                  <NewlyAddedFilterSelect
+                    value={newlyAddedFilterValue}
+                    showSinceLastVisit={profileCompleted && lastVisitAt !== null}
+                    lastVisitAt={lastVisitAt}
+                    onValueChange={handleNewlyAddedFilterChange}
+                    onClear={handleNewlyAddedFilterClear}
+                  />
+                  {filterConfigs.map((config) => (
+                    <Button
+                      key={config.id}
+                      variant={config.active ? "primary" : "secondary"}
+                      size="sm"
+                      onClick={config.onClick}
+                      aria-pressed={config.active}
+                    >
+                      {t(config.labelKey)}
+                    </Button>
+                  ))}
+                  {filters.categoryOptions.map((category) => (
+                    <Button
+                      key={category.id}
+                      variant={
+                        filters.selectedCategories.includes(category.id)
+                          ? "primary"
+                          : "secondary"
+                      }
+                      size="sm"
+                      onClick={() => filters.toggleCategory(category.id)}
+                      aria-pressed={filters.selectedCategories.includes(category.id)}
+                    >
+                      {category.label}
+                    </Button>
+                  ))}
+                  <span
+                    ref={filterScrollEndRef}
+                    aria-hidden="true"
+                    className="h-px w-px shrink-0"
+                  />
+                </HorizontalScrollFade>
+              </div>
+            </div>
+          </div>
+
+          <main className="relative z-10 w-full" role="main" aria-label={t("search.ariaLabel")}>
+            {error ? (
+              <div className="flex flex-col items-center justify-center py-16 gap-4">
+                <p className="text-destructive text-sm text-center max-w-md">{error}</p>
+                <button
+                  type="button"
+                  onMouseDown={() => refreshEvents()}
+                  className="px-4 py-2 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary-hover transition-colors"
+                >
+                  {t("common.tryAgain")}
+                </button>
+              </div>
+            ) : (
+              <EventList
+                events={orderedEvents}
+                promotedEvents={promotedEvents}
+                viewMode={viewMode}
+                onEventClick={handleEventClick}
+                onClearFilters={filters.handleClearAllFilters}
+                hasActiveFilters={filters.filterCount > 0}
+                eventStats={eventStats}
+                isLoading={isLoading}
+                groupByDateSections={filters.sortBy === "date" && filters.sortOrder === "asc"}
+              />
+            )}
+          </main>
+        </div>
       </div>
       <EventDetailsModal
         eventId={selectedEventId}
