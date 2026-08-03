@@ -464,8 +464,8 @@ function EventAttendeesSection({ eventId }: { eventId: number }) {
   );
 }
 
-/** "Contact the Host" links from the owning organization's socials. */
-function EventContactHostSection({ event }: { event: Event }) {
+/** Website and social links belonging to the event's host. */
+function EventHostLinks({ event }: { event: Event }) {
   const { t } = useTranslation();
   const igHandle = event.organization_ig ?? event.ig_handle;
   const igHref = igHandle
@@ -492,22 +492,24 @@ function EventContactHostSection({ event }: { event: Event }) {
   if (links.length === 0) return null;
 
   return (
-    <Stack gap={3}>
-      <EventSectionHeader>{t("events.contactHost")}</EventSectionHeader>
-      <Stack direction="horizontal" gap={4} className="flex-wrap">
-        {links.map((link) => (
-          <a
-            key={link.label}
-            href={link.href}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm text-primary hover:underline flex items-center gap-1.5"
-          >
-            <link.Icon className="size-3.5" />
-            {link.label}
-          </a>
-        ))}
-      </Stack>
+    <Stack
+      direction="horizontal"
+      gap={4}
+      wrap
+      data-slot="event-host-links"
+    >
+      {links.map((link) => (
+        <a
+          key={link.label}
+          href={link.href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-sm text-primary hover:underline flex items-center gap-1.5"
+        >
+          <link.Icon className="size-3.5" />
+          {link.label}
+        </a>
+      ))}
     </Stack>
   );
 }
@@ -637,21 +639,15 @@ export function EventDetailsBody({
       </div>
 
       <Stack gap={6} className="order-2 md:col-start-1">
-        <Stack gap={3}>
+        <Stack gap={3} data-slot="event-host">
           <EventSectionHeader>{t("events.hostedBy")}</EventSectionHeader>
           <p className="text-sm text-muted-foreground">
             <EventHostName event={event} />
           </p>
+          <EventHostLinks event={event} />
         </Stack>
 
         <EventAttendeesSection eventId={event.id} />
-
-        {/*
-          Contact details follow the attendee list in both layouts: whoever is
-          reading who else is going is the same reader deciding how to ask about
-          it, so the host block stays one uninterrupted unit.
-        */}
-        <EventContactHostSection event={event} />
       </Stack>
     </div>
   );

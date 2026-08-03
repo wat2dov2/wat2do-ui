@@ -1,5 +1,6 @@
 import { useMemo, useState, type ComponentType } from "react";
 import { useTranslation } from "react-i18next";
+import { QRCodeSVG } from "qrcode.react";
 import {
   Check,
   Facebook,
@@ -22,7 +23,7 @@ import {
 } from "@/shared/ui/drawer";
 import { Button } from "@/shared/ui/button";
 import { toast } from "@/shared/hooks/use-toast";
-import { DrawerBody } from "@/shared/layout";
+import { DrawerBody, Stack } from "@/shared/layout";
 import { tracker } from "@/shared/services/trackingService";
 import { formatCardDate, formatCardTime } from "@/shared/utils/date";
 import { buildEventShareUrl } from "@/features/events/lib/eventUrls";
@@ -83,6 +84,7 @@ export function EventShareDialog({
 }: EventShareDialogProps) {
   const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
+  const [wechatQrVisible, setWechatQrVisible] = useState(false);
   const shareUrl = useMemo(() => buildEventShareUrl(event.id), [event.id]);
   const cardDate = formatCardDate(event);
   const cardTime = formatCardTime(event);
@@ -116,14 +118,9 @@ export function EventShareDialog({
     void copyLink();
   }
 
-  function openWechatWithCopiedLink() {
-    void copyLink(t("events.shareDialog.linkCopiedForWechat"));
-    window.location.assign("weixin://dl/chat");
-  }
-
   async function shareWithWechat() {
     if (typeof navigator.share !== "function") {
-      openWechatWithCopiedLink();
+      setWechatQrVisible(true);
       return;
     }
 
@@ -139,8 +136,15 @@ export function EventShareDialog({
       }
 
       console.error("Failed to share event through WeChat:", err);
-      openWechatWithCopiedLink();
+      setWechatQrVisible(true);
     }
+  }
+
+  function handleOpenChange(nextOpen: boolean) {
+    if (!nextOpen) {
+      setWechatQrVisible(false);
+    }
+    onOpenChange(nextOpen);
   }
 
   function handleShare(channel: ShareChannelId) {
@@ -159,7 +163,9 @@ export function EventShareDialog({
       return;
     }
     if (channel === "line") {
-      openExternalShare(`https://line.me/R/share?text=${encode(shareBody)}`);
+      openExternalShare(
+        `https://social-plugins.line.me/lineit/share?url=${encode(shareUrl)}&text=${encode(shareText)}`,
+      );
       return;
     }
     if (channel === "wechat") {
@@ -176,7 +182,7 @@ export function EventShareDialog({
   }
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
+    <Drawer open={open} onOpenChange={handleOpenChange}>
       <DrawerContent className="overflow-hidden p-0">
         <DrawerClose asChild>
           <button
@@ -211,29 +217,56 @@ export function EventShareDialog({
             </Button>
           </div>
 
-          <div className="grid grid-cols-4 gap-1">
-            {CHANNELS.map(({ id, labelKey, Icon, bgClass }) => {
-              const label = t(labelKey);
-              return (
-                <button
-                  key={id}
-                  type="button"
-                  onMouseDown={() => handleShare(id)}
-                  className="flex flex-col items-center gap-1.5 rounded-xl p-2 transition-colors hover:bg-secondary-hover"
-                  aria-label={t("events.shareDialog.shareOn", { channel: label })}
-                >
-                  <span
-                    className={`flex h-11 w-11 items-center justify-center rounded-full text-white ${bgClass}`}
+          {wechatQrVisible ? (
+            <Stack align="center" gap={4} className="py-2 text-center">
+              <div
+                data-slot="wechat-share-qr"
+                className="rounded-xl border border-border bg-background p-3"
+              >
+                <QRCodeSVG value={shareUrl} size={176} level="M" />
+              </div>
+              <Stack align="center" gap={1}>
+                <h3 className="text-sm font-semibold text-foreground">
+                  {t("events.shareDialog.wechatQrTitle")}
+                </h3>
+                <p className="max-w-xs text-xs text-muted-foreground">
+                  {t("events.shareDialog.wechatQrDescription")}
+                </p>
+              </Stack>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onMouseDown={() => setWechatQrVisible(false)}
+              >
+                {t("common.back")}
+              </Button>
+            </Stack>
+          ) : (
+            <div className="grid grid-cols-4 gap-1">
+              {CHANNELS.map(({ id, labelKey, Icon, bgClass }) => {
+                const label = t(labelKey);
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    onMouseDown={() => handleShare(id)}
+                    className="flex flex-col items-center gap-1.5 rounded-xl p-2 transition-colors hover:bg-secondary-hover"
+                    aria-label={t("events.shareDialog.shareOn", { channel: label })}
                   >
-                    <Icon className="h-5 w-5" strokeWidth={2} />
-                  </span>
-                  <span className="text-[11px] font-medium text-foreground">
-                    {label}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
+                    <span
+                      className={`flex h-11 w-11 items-center justify-center rounded-full text-white ${bgClass}`}
+                    >
+                      <Icon className="h-5 w-5" strokeWidth={2} />
+                    </span>
+                    <span className="text-[11px] font-medium text-foreground">
+                      {label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </DrawerBody>
       </DrawerContent>
     </Drawer>
