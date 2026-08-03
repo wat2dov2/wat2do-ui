@@ -33,3 +33,10 @@ def sanitize_postgrest_value(value: str) -> str:
     cleaned = _SAFE_PATTERN.sub("", value)
     cleaned = _MULTI_SPACE.sub(" ", cleaned)
     return cleaned.strip()
+
+
+def remove_surrogates(text: str | None) -> str | None:
+    """Remove lone surrogate characters that cause utf-8 encoding errors."""
+    if not isinstance(text, str):
+        return text
+    return text.encode("utf-8", "ignore").decode("utf-8")

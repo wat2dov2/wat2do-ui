@@ -22,6 +22,7 @@ from core.constants import (
     MAX_ORGANIZATION_NAME_LENGTH,
 )
 from core.database import get_sb
+from core.sanitize import remove_surrogates
 from core.tables import EVENTS, ORGANIZATIONS
 from schemas.event import normalize_category
 from schemas.event_date import OccurrenceCreate, OccurrenceResponse, OccurrenceUpdate
@@ -122,6 +123,7 @@ def write_event(
         "cancelled": bool(event.get("cancelled", False)),
         "ingestion_source": "instagram_scraper",
     }
+    event_row = {k: remove_surrogates(v) for k, v in event_row.items()}
 
     existing_id = event.get("id")
     if isinstance(existing_id, int):
@@ -407,7 +409,9 @@ def _clean_food(value: object) -> list | None:
         if key in seen:
             continue
         seen.add(key)
-        deduped.append(item[:MAX_EVENT_FOOD_ITEM_LENGTH])
+        clean_item = remove_surrogates(item[:MAX_EVENT_FOOD_ITEM_LENGTH])
+        if clean_item:
+            deduped.append(clean_item)
         if len(deduped) >= MAX_EVENT_FOOD_COUNT:
             break
     return deduped or None
