@@ -34,7 +34,7 @@
     "minuteAgoCompact": "{{count}}m ago",
     "hourAgoCompact": "{{count}}h ago",
     "dayAgoCompact": "{{count}}d ago",
-    "extraFilters": "Extra filters",
+    "moreFilters": "More filters",
     "event": "event",
     "events": "events",
     "generating": "Generating...",

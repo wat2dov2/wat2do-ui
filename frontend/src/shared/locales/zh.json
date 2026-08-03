@@ -34,7 +34,7 @@
     "minuteAgoCompact": "{{count}} 分钟前",
     "hourAgoCompact": "{{count}} 小时前",
     "dayAgoCompact": "{{count}} 天前",
-    "extraFilters": "额外筛选",
+    "moreFilters": "更多筛选",
     "event": "活动",
     "events": "活动",
     "generating": "生成中...",

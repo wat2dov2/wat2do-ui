@@ -22,8 +22,6 @@ const useSafeLayoutEffect =
 const FILLET = 8;
 /** Inner-corner radius of the notch, matching BadgeMask's `rounded-*-xl`. */
 const INNER_RADIUS = 12;
-/** Aligns the top-left fillets optically with the corner-badge padding. */
-const TOP_LEFT_INNER_CORNER_OFFSET = 2;
 /** Stable coordinate space so the server and hydrated SVG keep identical geometry. */
 const MASK_VIEWBOX_SIZE = 100;
 const DEFAULT_POSTER_WIDTH = 640;
@@ -139,26 +137,13 @@ function cornerPieces(
    * into the square coordinate system.
    */
   switch (cutout.corner) {
-    case "top-left": {
-      const adjustedWidth = nw + TOP_LEFT_INNER_CORNER_OFFSET * scaleX;
-      const adjustedHeight = nh - TOP_LEFT_INNER_CORNER_OFFSET * scaleY;
+    case "top-left":
       return {
-        rect: {
-          x: -rx,
-          y: -ry,
-          width: adjustedWidth + rx,
-          height: adjustedHeight + ry,
-          rx,
-          ry,
-        },
-        fillets: [
-          { x: adjustedWidth, y: 0 },
-          { x: 0, y: adjustedHeight },
-        ],
+        rect: { x: -rx, y: -ry, width: nw + rx, height: nh + ry, rx, ry },
+        fillets: [{ x: nw, y: 0 }, { x: 0, y: nh }],
         filletWidth,
         filletHeight,
       };
-    }
     case "top-right":
       return {
         rect: { x: w - nw, y: -ry, width: nw + rx, height: nh + ry, rx, ry },

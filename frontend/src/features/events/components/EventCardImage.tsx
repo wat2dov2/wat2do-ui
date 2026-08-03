@@ -19,6 +19,8 @@ import { cn } from "@/shared/lib/utils";
 import type { Event } from "@/shared/types";
 import { EVENT_CARD_IMAGE_HEIGHT } from "@/shared/constants/ui";
 
+const CACHED_EVENT_POSTER_WIDTH = 384;
+
 interface EventCardImageProps {
   event: Event;
   /** `card` is the grid card's fixed-height header; `detail` is the square poster. */
@@ -89,7 +91,7 @@ export function EventCardImage({
           imageSrc={event.source_image_url}
           imageAlt={event.title}
           imageLoading={eagerImage ? "eager" : "lazy"}
-          imageWidth={variant === "detail" ? 1200 : 384}
+          imageWidth={CACHED_EVENT_POSTER_WIDTH}
           cutouts={cutouts}
           width={box.width}
           height={box.height}

@@ -913,8 +913,8 @@ test.describe("Events Page", () => {
     expect(body).toBeTruthy();
     const eventCount = page.getByText("upcoming event", { exact: true }).locator("..");
     const addEventButton = page.getByRole("button", { name: "Add event" });
-    const extraFiltersButton = page.getByRole("button", {
-      name: "Extra filters",
+    const moreFiltersButton = page.getByRole("button", {
+      name: "More filters",
     });
     const eventSearch = page.getByPlaceholder("Search events").locator("..");
     await expect(
@@ -927,13 +927,13 @@ test.describe("Events Page", () => {
         const [
           searchBox,
           addEventBox,
-          extraFiltersBox,
+          moreFiltersBox,
           sharesSearchRow,
           filtersBesideStrip,
         ] = await Promise.all([
           eventSearch.boundingBox(),
           addEventButton.boundingBox(),
-          extraFiltersButton.boundingBox(),
+          moreFiltersButton.boundingBox(),
           eventSearch.evaluate((searchElement) =>
             Boolean(
               searchElement.parentElement
@@ -947,14 +947,14 @@ test.describe("Events Page", () => {
               Boolean(
                 strip.parentElement?.parentElement
                   ?.querySelector("button")
-                  ?.textContent?.includes("Extra filters"),
+                  ?.textContent?.includes("More filters"),
               ),
             ),
         ]);
         return {
           searchHeight: searchBox?.height,
           addEventHeight: addEventBox?.height,
-          extraFiltersHeight: extraFiltersBox?.height,
+          moreFiltersHeight: moreFiltersBox?.height,
           sharesSearchRow,
           filtersBesideStrip,
         };
@@ -962,7 +962,7 @@ test.describe("Events Page", () => {
       .toEqual({
         searchHeight: 44,
         addEventHeight: 44,
-        extraFiltersHeight: 32,
+        moreFiltersHeight: 32,
         sharesSearchRow: true,
         filtersBesideStrip: true,
       });
@@ -1171,6 +1171,13 @@ test.describe("Events Page", () => {
   }) => {
     const now = new Date();
     const startsAt = new Date(now.getTime() + 86_400_000).toISOString();
+    const posterUrl = "https://wat2do.io/media/e2e-event-poster.png";
+    const optimizedPosterUrl = `/_next/image?url=${encodeURIComponent(posterUrl)}&w=384&q=75`;
+    const optimizedPosterWidths: string[] = [];
+    const posterBytes = Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+      "base64",
+    );
     const event = {
       id: 1,
       organization_id: 1,
@@ -1188,7 +1195,7 @@ test.describe("Events Page", () => {
       price: 0,
       food: [],
       registration: false,
-      source_image_url: "/wat2do-logo.png",
+      source_image_url: posterUrl,
       source_url: null,
       category: "Career",
       organization: "UW Tech Club",
@@ -1200,6 +1207,27 @@ test.describe("Events Page", () => {
       cancelled: false,
       added_at: now.toISOString(),
     };
+
+    await page.route(
+      url =>
+        url.pathname === "/_next/image" &&
+        url.searchParams.get("url") === posterUrl,
+      async (route) => {
+        optimizedPosterWidths.push(new URL(route.request().url()).searchParams.get("w") ?? "");
+        await route.fulfill({
+          status: 200,
+          contentType: "image/png",
+          body: posterBytes,
+        });
+      },
+    );
+    await page.route(posterUrl, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "image/png",
+        body: posterBytes,
+      });
+    });
 
     await page.route(url => apiPath(url) === "/events", async (route) => {
       await route.fulfill({
@@ -1226,12 +1254,22 @@ test.describe("Events Page", () => {
     await page.goto(BASE);
     const eventCard = page.locator('article[data-event-id="1"]');
     await expect(eventCard.locator("foreignObject")).toHaveCount(0);
-    await expect(
-      eventCard.locator('svg > g > image[href="/wat2do-logo.png"]'),
-    ).toHaveCount(1);
+    await expect(eventCard.locator("svg > g > image")).toHaveAttribute(
+      "href",
+      optimizedPosterUrl,
+    );
     await eventCard.click();
 
     const eventDrawer = page.getByRole("dialog", { name: "Poster Dialog Event" });
+    await expect(eventDrawer.locator("svg > g > image").first()).toHaveAttribute(
+      "href",
+      optimizedPosterUrl,
+    );
+    await expect.poll(() => optimizedPosterWidths.length).toBeGreaterThan(0);
+    expect(optimizedPosterWidths).toEqual(
+      expect.arrayContaining(["384"]),
+    );
+    expect(optimizedPosterWidths).not.toContain("1200");
     await eventDrawer.getByRole("button", { name: "View full event image" }).click();
 
     const imageDialog = page.getByRole("dialog", { name: "View full event image" });
@@ -2173,10 +2211,10 @@ test.describe("Events Page", () => {
       page.getByRole("button", { name: "Arts & Culture", exact: true }),
     ).toBeVisible();
 
-    const extraFiltersButton = page.getByRole("button", { name: "Extra filters" });
-    await extraFiltersButton.click();
+    const moreFiltersButton = page.getByRole("button", { name: "More filters" });
+    await moreFiltersButton.click();
 
-    const drawer = page.getByRole("dialog", { name: "Extra filters" });
+    const drawer = page.getByRole("dialog", { name: "More filters" });
     const gridButton = drawer.getByRole("button", { name: "Grid" });
     const calendarButton = drawer.getByRole("button", { name: "Calendar" });
     const categoryButton = drawer.getByRole("button", {
@@ -2199,7 +2237,7 @@ test.describe("Events Page", () => {
       page.getByRole("button", { name: "Clear filters" }),
     ).toHaveCount(0);
 
-    await extraFiltersButton.click();
+    await moreFiltersButton.click();
     await categoryButton.click();
     await expect(categoryButton).toHaveClass(/bg-primary/);
 
@@ -2289,8 +2327,8 @@ test.describe("Events Page", () => {
     await expect(pizzaCard).toContainText("Pizza");
     await expect(pizzaCard).not.toContainText("Cookies");
 
-    await page.getByRole("button", { name: "Extra filters" }).click();
-    const drawer = page.getByRole("dialog", { name: "Extra filters" });
+    await page.getByRole("button", { name: "More filters" }).click();
+    const drawer = page.getByRole("dialog", { name: "More filters" });
     const foodInput = drawer.getByPlaceholder("Search food...");
     await foodInput.fill("piz");
 

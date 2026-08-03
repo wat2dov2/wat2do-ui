@@ -794,6 +794,14 @@ Select the JPG and verify the circular crop before saving.
 
 ### 13.2 Set the display name and bio
 
+Treat profile editing as a rate-sensitive manual workflow.
+
+Enter the display name, bio, link title, and other editable profile text one character at a time at a deliberate human pace, using variable pauses of 180 to 320 milliseconds between characters and pauses of 1 to 3 seconds between fields.
+
+Do not paste a complete field, use an instantaneous set-text operation, or inject a full bio through ADB or another automation interface.
+
+Stop if Instagram displays a rate-limit warning, security challenge, unusual-login prompt, or other anti-abuse signal.
+
 Set the display name to:
 
 ```text

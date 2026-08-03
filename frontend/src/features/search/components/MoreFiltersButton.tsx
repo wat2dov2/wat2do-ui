@@ -37,7 +37,7 @@ export function MoreFiltersButton({
           aria-expanded={open}
           className={filterCount > 0 ? "pr-11" : undefined}
         >
-          {t("common.extraFilters")}
+          {t("common.moreFilters")}
         </Button>
         {filterCount > 0 && (
           <FilterClearButton
@@ -50,7 +50,7 @@ export function MoreFiltersButton({
       </div>
       <DrawerContent className="max-w-sm!">
         <DrawerHeader className="sr-only">
-          <DrawerTitle>{t("common.extraFilters")}</DrawerTitle>
+          <DrawerTitle>{t("common.moreFilters")}</DrawerTitle>
           <DrawerDescription>{t("filters.filtersHeader")}</DrawerDescription>
         </DrawerHeader>
         <DrawerBody className="gap-0 p-4 sm:p-4">{children}</DrawerBody>
