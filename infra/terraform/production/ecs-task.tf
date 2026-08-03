@@ -9,8 +9,8 @@ resource "aws_ecs_cluster" "main" {
 
 resource "aws_ecs_task_definition" "application" {
   family                   = "wat2do-production-app"
-  cpu                      = "256"
-  memory                   = "512"
+  cpu                      = "512"
+  memory                   = "1024"
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
   execution_role_arn       = aws_iam_role.ecs_execution.arn
@@ -42,8 +42,8 @@ resource "aws_ecs_task_definition" "application" {
       name                   = "backend"
       image                  = var.backend_image
       essential              = true
-      cpu                    = 128
-      memory                 = 224
+      cpu                    = 256
+      memoryReservation      = 256
       readonlyRootFilesystem = true
       portMappings = [{
         containerPort = 8000
@@ -107,8 +107,8 @@ resource "aws_ecs_task_definition" "application" {
       name                   = "frontend"
       image                  = var.frontend_image
       essential              = true
-      cpu                    = 128
-      memory                 = 256
+      cpu                    = 256
+      memoryReservation      = 512
       readonlyRootFilesystem = true
       dependsOn = [
         {

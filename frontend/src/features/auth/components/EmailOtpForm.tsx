@@ -45,6 +45,8 @@ interface EmailOtpFormProps
   invitationToken?: string;
   returnTo?: string;
   isEmailLocked?: boolean;
+  /** Whether a keyboard-oriented surface should focus its first field on mount. */
+  focusOnMount?: boolean;
   /**
    * An extra requirement the host owns (terms accepted, a time selected). It
    * gates both steps: a code should not be sent for a sign-in the user cannot
@@ -67,6 +69,7 @@ export function EmailOtpForm({
   invitationToken,
   returnTo,
   isEmailLocked = false,
+  focusOnMount = true,
   isSubmitDisabled = false,
   requestFooter,
   footer,
@@ -104,7 +107,8 @@ export function EmailOtpForm({
   // code step. Desktop keeps it so the form is usable straight from the
   // keyboard. Resolved on the first render, since autoFocus is applied at
   // mount and a value arriving later would be too late to suppress it.
-  const autoFocusFields = !useCoarsePointer();
+  const isCoarsePointer = useCoarsePointer();
+  const autoFocusFields = focusOnMount && !isCoarsePointer;
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();

@@ -567,10 +567,10 @@ Do not configure Fargate Spot for the continuously running application task.
 
 Create one ARM64 Linux Fargate task definition.
 
-Initial task sizing:
+Production task sizing:
 
-- Task CPU: 256 units.
-- Task memory: 512 MiB.
+- Task CPU: 512 units.
+- Task memory: 1,024 MiB.
 - Ephemeral storage: default 20 GiB.
 
 Define two essential containers:
@@ -578,9 +578,13 @@ Define two essential containers:
 - `frontend`
 - `backend`
 
-Allocate 128 CPU units to each long-running container.
+Allocate 256 CPU units to each long-running container.
 
-Allocate 224 MiB to the backend and 256 MiB to the frontend, leaving 32 MiB for the one-time cache initialization container.
+Reserve 256 MiB for the backend and 512 MiB for the frontend without container-level hard memory limits.
+
+This leaves 256 MiB of task memory available as shared burst headroom while both long-running containers are active.
+
+Reserve 32 MiB for the one-time cache initialization container, which finishes before the frontend starts.
 
 Use `awsvpc` network mode.
 

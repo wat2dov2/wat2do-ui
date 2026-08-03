@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Search } from "@/shared/ui/doodle-icons";
 import { useTranslation } from "react-i18next";
 import { EventCard } from "@/features/events/components/EventCard";
@@ -10,12 +10,12 @@ import {
   getEventDateSection,
   type EventDateSection,
 } from "@/shared/utils/date";
-import { DiaTextReveal } from "@/registry/magicui/dia-text-reveal";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { EventCardSkeleton } from "@/features/events/components/EventCardSkeleton";
 import type { EventStats } from "@/features/events/api/events.api";
 import { EmptyState } from "@/shared/feedback";
 import { Button } from "@/shared/ui/button";
+import { Spinner } from "@/shared/ui/spinner";
 import { CARD_GRID_CLASS } from "@/shared/constants/ui";
 import { controlBox } from "@/shared/config/controlBox";
 
@@ -36,12 +36,14 @@ interface EventListProps {
 interface EventCardsGridProps {
   events: Event[];
   eventStats: Record<string, EventStats> | null;
+  priorityImageIds: ReadonlySet<number>;
   onEventClick?: (event: Event) => void;
 }
 
 function EventCardsGrid({
   events,
   eventStats,
+  priorityImageIds,
   onEventClick,
 }: EventCardsGridProps) {
   return (
@@ -51,6 +53,7 @@ function EventCardsGrid({
           <EventCard
             event={event}
             stats={eventStats?.[String(event.id)]}
+            imagePriority={priorityImageIds.has(event.id)}
             onEventClick={onEventClick}
             mobileClickActivation
           />
@@ -118,6 +121,7 @@ export function EventList({
   const [visibleEventCount, setVisibleEventCount] = useState(
     controlBox.eventDiscovery.initialRenderCount,
   );
+  const loadMoreRef = useRef<HTMLDivElement>(null);
 
   // Filter out promoted events from the main feed date sections so they don't duplicate
   const regularEvents = useMemo(() => {
@@ -144,7 +148,43 @@ export function EventList({
     () => groupEventsByDateSection(visibleRegularEvents),
     [visibleRegularEvents],
   );
+  const priorityImageIds = useMemo(
+    () =>
+      new Set(
+        [...promotedEvents, ...visibleRegularEvents]
+          .slice(0, 2)
+          .map((event) => event.id),
+      ),
+    [promotedEvents, visibleRegularEvents],
+  );
   const hasMoreEvents = visibleRegularEvents.length < sectionOrderedEvents.length;
+  const loadMoreEvents = useCallback(() => {
+    setVisibleEventCount((count) =>
+      Math.min(
+        count + controlBox.eventDiscovery.initialRenderCount,
+        sectionOrderedEvents.length,
+      ),
+    );
+  }, [sectionOrderedEvents.length]);
+
+  useEffect(() => {
+    if (!hasMoreEvents) return;
+
+    const sentinel = loadMoreRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          loadMoreEvents();
+        }
+      },
+      { rootMargin: "400px", threshold: 0.1 },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [hasMoreEvents, loadMoreEvents]);
+
   const sectionLabel = (section: EventDateSection): string => {
     if (section.kind === "today") return t("events.dateSections.today");
     if (section.kind === "tomorrow") return t("events.dateSections.tomorrow");
@@ -218,16 +258,12 @@ export function EventList({
       {promotedEvents && promotedEvents.length > 0 && (
         <section className="space-y-2.5" aria-label={t("events.promotedEvents")}>
           <h2 className="text-base font-normal tracking-normal text-foreground">
-            <DiaTextReveal
-              text={t("events.promotedEvents")}
-              className="text-base font-normal tracking-normal text-foreground"
-              textColor="var(--foreground)"
-              colors={["#A97CF8", "#F38CB8", "#FDCC92"]}
-            />
+            {t("events.promotedEvents")}
           </h2>
           <EventCardsGrid
             events={promotedEvents}
             eventStats={eventStats}
+            priorityImageIds={priorityImageIds}
             onEventClick={onEventClick}
           />
         </section>
@@ -244,6 +280,7 @@ export function EventList({
               <EventCardsGrid
                 events={group.events}
                 eventStats={eventStats}
+                priorityImageIds={priorityImageIds}
                 onEventClick={onEventClick}
               />
             </section>
@@ -254,24 +291,23 @@ export function EventList({
           <EventCardsGrid
             events={visibleRegularEvents}
             eventStats={eventStats}
+            priorityImageIds={priorityImageIds}
             onEventClick={onEventClick}
           />
         </section>
       )}
       {hasMoreEvents ? (
-        <div className="flex justify-center pt-2">
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() =>
-              setVisibleEventCount(
-                (count) =>
-                  count + controlBox.eventDiscovery.initialRenderCount,
-              )
-            }
-          >
-            {t("events.viewMore")}
-          </Button>
+        <div
+          ref={loadMoreRef}
+          data-testid="event-list-sentinel"
+          className="flex justify-center py-8"
+          role="status"
+          aria-live="polite"
+        >
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Spinner className="size-5" />
+            <span>{t("common.loading")}</span>
+          </div>
         </div>
       ) : null}
     </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import { lazy, Suspense } from "react";
 import { AppPage } from "@/app/app-page";
 import {
   AdminDiagnosticsRoute,
@@ -21,8 +22,6 @@ import { useEventsStore } from "@/features/events/store/events.store";
 import { SubmitEventPage } from "@/features/events/pages/SubmitEventPage";
 import { MarketingPage } from "@/features/marketing/pages/MarketingPage";
 import { DesignSystemPage } from "@/features/design-system";
-import { OnboardingDemoPage } from "@/features/onboarding-demo";
-import { OnboardingPage } from "@/features/onboarding/pages/OnboardingPage";
 import { CreateOrganizationPage } from "@/features/organizations/pages/CreateOrganizationPage";
 import { InviteLandingPage } from "@/features/organizations/pages/InviteLandingPage";
 import { QRRedirectPage } from "@/features/qrcode/pages/QRRedirectPage";
@@ -30,6 +29,18 @@ import { SettingsPage } from "@/features/settings/pages/SettingsPage";
 import { PromotePage } from "@/features/posters/pages/PromotePage";
 import { PromoterPostersPage } from "@/features/posters/pages/PromoterPostersPage";
 import { ROLE_ADMIN, ROLE_ORGANIZATION } from "@/shared/constants/roles";
+import { LoadingPage } from "@/shared/ui/loading-page";
+
+const OnboardingPage = lazy(() =>
+  import("@/features/onboarding/pages/OnboardingPage").then((module) => ({
+    default: module.OnboardingPage,
+  })),
+);
+const OnboardingDemoPage = lazy(() =>
+  import("@/features/onboarding-demo/pages/OnboardingDemoPage").then((module) => ({
+    default: module.OnboardingDemoPage,
+  })),
+);
 
 export function AuthCallbackRoute() {
   return (
@@ -42,7 +53,9 @@ export function AuthCallbackRoute() {
 export function OnboardingRoute() {
   return (
     <AppPage authFlow chrome={false}>
-      <OnboardingPage />
+      <Suspense fallback={<LoadingPage className="min-h-dvh" />}>
+        <OnboardingPage />
+      </Suspense>
     </AppPage>
   );
 }
@@ -50,7 +63,9 @@ export function OnboardingRoute() {
 export function OnboardingDemoRoute() {
   return (
     <AppPage authFlow chrome={false}>
-      <OnboardingDemoPage />
+      <Suspense fallback={<LoadingPage className="min-h-dvh" />}>
+        <OnboardingDemoPage />
+      </Suspense>
     </AppPage>
   );
 }

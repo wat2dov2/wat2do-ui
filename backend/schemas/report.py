@@ -49,7 +49,7 @@ class ReportUpdate(BaseModel):
 class ReportResponse(BaseModel):
     id: str
     event_id: int
-    user_id: str
+    user_id: str | None
     reason: str
     status: ReportStatus
     # Datetimes parsed via Pydantic v2 so OpenAPI emits

@@ -464,6 +464,47 @@ async function seedQrData(
 // ── Workflow 1: Auth Page ─────────────────────────────────────────────
 
 test.describe("Auth Page", () => {
+  test("keeps the server-rendered headline mounted through app readiness", async ({
+    page,
+  }) => {
+    await page.addInitScript(() => {
+      let heading: Element | null = null;
+      let removed = false;
+      const readHeading = () => {
+        heading ??= document.querySelector("h1");
+        if (heading && !heading.isConnected) {
+          removed = true;
+        }
+      };
+      const observer = new MutationObserver(readHeading);
+      observer.observe(document, { childList: true, subtree: true });
+      Object.defineProperty(window, "__readHydrationHeadingProbe", {
+        configurable: true,
+        value: () => ({ captured: heading !== null, removed }),
+      });
+    });
+
+    await page.goto(`${BASE}/login`);
+    await expect(page.locator("h1")).toContainText("Discover");
+    await expect
+      .poll(() =>
+        page.evaluate(() => document.documentElement.dataset.clientReady),
+      )
+      .toBe("true");
+
+    const probe = await page.evaluate(() =>
+      (
+        window as typeof window & {
+          __readHydrationHeadingProbe: () => {
+            captured: boolean;
+            removed: boolean;
+          };
+        }
+      ).__readHydrationHeadingProbe(),
+    );
+    expect(probe).toEqual({ captured: true, removed: false });
+  });
+
   test("renders signup form by default", async ({ page }) => {
     await page.goto(`${BASE}/login`);
     await expect(page.locator("h1")).toContainText("Discover");
@@ -839,9 +880,28 @@ test.describe("Events Page", () => {
           maxWidth: getComputedStyle(element).maxWidth,
           overflow: getComputedStyle(element).overflow,
           textOverflow: getComputedStyle(element).textOverflow,
+          isTruncated: element.scrollWidth > element.clientWidth,
+          staysInsideCard:
+            (element.closest("button")?.getBoundingClientRect().right ??
+              Infinity) <=
+            (element.closest("article")?.getBoundingClientRect().right ??
+              -Infinity) + 0.5,
+          wordmarkStaysInsideCard:
+            (element.parentElement
+              ?.querySelector('[role="img"]')
+              ?.getBoundingClientRect().right ?? Infinity) <=
+            (element.closest("article")?.getBoundingClientRect().right ??
+              -Infinity) + 0.5,
         })),
       )
-      .toEqual({ maxWidth: "none", overflow: "visible", textOverflow: "clip" });
+      .toEqual({
+        maxWidth: "224px",
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        isTruncated: true,
+        staysInsideCard: true,
+        wordmarkStaysInsideCard: true,
+      });
     await assetResponse;
   });
 
@@ -853,6 +913,9 @@ test.describe("Events Page", () => {
     expect(body).toBeTruthy();
     const eventCount = page.getByText("upcoming event", { exact: true }).locator("..");
     const addEventButton = page.getByRole("button", { name: "Add event" });
+    const extraFiltersButton = page.getByRole("button", {
+      name: "Extra filters",
+    });
     const eventSearch = page.getByPlaceholder("Search events").locator("..");
     await expect(
       page.getByRole("heading", { name: /events and things to do/i }),
@@ -861,9 +924,16 @@ test.describe("Events Page", () => {
     await expect(addEventButton.locator("svg")).toHaveCount(0);
     await expect
       .poll(async () => {
-        const [searchBox, addEventBox, sharesSearchRow, filtersBesideStrip] = await Promise.all([
+        const [
+          searchBox,
+          addEventBox,
+          extraFiltersBox,
+          sharesSearchRow,
+          filtersBesideStrip,
+        ] = await Promise.all([
           eventSearch.boundingBox(),
           addEventButton.boundingBox(),
+          extraFiltersButton.boundingBox(),
           eventSearch.evaluate((searchElement) =>
             Boolean(
               searchElement.parentElement
@@ -871,17 +941,20 @@ test.describe("Events Page", () => {
                 ?.textContent?.includes("Add event"),
             ),
           ),
-          page.getByTestId("event-quick-filter-scroll").evaluate((strip) =>
-            Boolean(
-              strip.parentElement?.parentElement?.querySelector(
-                "button",
-              )?.textContent?.includes("Extra filters"),
+          page
+            .getByTestId("event-quick-filter-scroll")
+            .evaluate((strip) =>
+              Boolean(
+                strip.parentElement?.parentElement
+                  ?.querySelector("button")
+                  ?.textContent?.includes("Extra filters"),
+              ),
             ),
-          ),
         ]);
         return {
           searchHeight: searchBox?.height,
           addEventHeight: addEventBox?.height,
+          extraFiltersHeight: extraFiltersBox?.height,
           sharesSearchRow,
           filtersBesideStrip,
         };
@@ -889,6 +962,7 @@ test.describe("Events Page", () => {
       .toEqual({
         searchHeight: 44,
         addEventHeight: 44,
+        extraFiltersHeight: 32,
         sharesSearchRow: true,
         filtersBesideStrip: true,
       });
@@ -973,7 +1047,25 @@ test.describe("Events Page", () => {
     await expect(page.locator('article[data-event-id="4"]')).toHaveCount(0);
   });
 
-  test("shares from event details and gates anonymous reports", async ({ page }) => {
+  test("shares and reports from event details while logged out", async ({ page }) => {
+    let submittedReport: Record<string, unknown> | null = null;
+    await page.route(url => apiPath(url) === "/reports", async (route) => {
+      submittedReport = route.request().postDataJSON();
+      await route.fulfill({
+        status: 201,
+        contentType: "application/json",
+        body: JSON.stringify({
+          id: "report-1",
+          event_id: 1,
+          user_id: null,
+          reason: "Incorrect event details",
+          status: "pending",
+          reported_at: new Date().toISOString(),
+          resolved_at: null,
+        }),
+      });
+    });
+
     await page.goto(BASE);
 
     const card = page.locator('article[data-event-id="1"]').first();
@@ -1057,7 +1149,21 @@ test.describe("Events Page", () => {
     await expect(page.getByRole("heading", { name: "Share" })).not.toBeVisible();
 
     await eventDrawer.getByRole("button", { name: "Report" }).click();
-    await expect(page).toHaveURL(/\/login\?returnTo=%2Fevents%2F1/);
+    await expect(page).toHaveURL(/eventId=1/);
+
+    const reportDialog = page.getByRole("dialog", { name: "Report event" });
+    await reportDialog
+      .getByLabel("Share the reason for this report")
+      .fill("Incorrect event details");
+    await reportDialog.getByRole("button", { name: "Submit report" }).click();
+
+    await expect(
+      reportDialog.getByRole("heading", { name: "Report submitted" }),
+    ).toBeVisible();
+    expect(submittedReport).toEqual({
+      event_id: 1,
+      reason: "Incorrect event details",
+    });
   });
 
   test("opens the event poster in-app and closes the drawer after filtering by host", async ({
@@ -1510,8 +1616,6 @@ test.describe("Events Page", () => {
         .toBe(2);
 
       const map = page.locator('iframe[title="SLC"]');
-      await expect(map).toHaveCount(0);
-      await page.getByTestId("event-map-load").click();
       await expect(map).toBeVisible();
       const mapSrc = await map.getAttribute("src");
       expect(mapSrc).not.toBeNull();
@@ -1959,7 +2063,9 @@ test.describe("Events Page", () => {
     await expect(clearNewlyAddedFilter).toHaveCount(0);
   });
 
-  test("anchors bottom badge mask fillets to the image edge", async ({ page }) => {
+  test("anchors badge mask fillets to the intended image offsets", async ({
+    page,
+  }) => {
     await page.goto(BASE);
 
     const newBadges = page.getByText("NEW", { exact: true });
@@ -1968,10 +2074,33 @@ test.describe("Events Page", () => {
     const geometry = await newBadge.evaluate((element) => {
       const card = element.closest("article[data-event-card]");
       const mask = card?.querySelector("mask");
-      const imageHeight = mask?.ownerSVGElement?.viewBox.baseVal.height ?? 0;
-      const bottomFillets = Array.from(
-        mask?.querySelectorAll(":scope > g") ?? [],
-      )
+      const svg = mask?.ownerSVGElement;
+      const viewBox = svg?.viewBox.baseVal;
+      const svgBounds = svg?.getBoundingClientRect();
+      const badgeBounds = element.getBoundingClientRect();
+      const groups = Array.from(mask?.querySelectorAll(":scope > g") ?? []);
+      const topLeftGroup = groups.find((group) => {
+        const rect = group.querySelector(":scope > rect");
+        return (
+          Number(rect?.getAttribute("x")) < 0 &&
+          Number(rect?.getAttribute("y")) < 0
+        );
+      });
+      const topLeftRect = topLeftGroup?.querySelector(":scope > rect");
+      const scaleX = svgBounds && viewBox ? svgBounds.width / viewBox.width : 0;
+      const scaleY =
+        svgBounds && viewBox ? svgBounds.height / viewBox.height : 0;
+      const cutoutRight =
+        (svgBounds?.left ?? 0) +
+        (Number(topLeftRect?.getAttribute("x")) +
+          Number(topLeftRect?.getAttribute("width"))) *
+          scaleX;
+      const cutoutBottom =
+        (svgBounds?.top ?? 0) +
+        (Number(topLeftRect?.getAttribute("y")) +
+          Number(topLeftRect?.getAttribute("height"))) *
+          scaleY;
+      const bottomFilletEdgeOffsets = groups
         .map((group) => ({
           rectY: Number(group.querySelector(":scope > rect")?.getAttribute("y")),
           filletYs: Array.from(group.querySelectorAll(":scope > svg")).map(
@@ -1979,16 +2108,23 @@ test.describe("Events Page", () => {
           ),
         }))
         .filter(({ rectY }) => rectY > 0)
-        .map(({ filletYs }) => filletYs);
+        .map(
+          ({ filletYs }) =>
+            ((viewBox?.height ?? 0) - Math.max(...filletYs)) * scaleY,
+        );
 
-      return { imageHeight, bottomFillets };
+      return {
+        topLeftRightGap: cutoutRight - badgeBounds.right,
+        topLeftBottomGap: cutoutBottom - badgeBounds.bottom,
+        bottomFilletEdgeOffsets,
+      };
     });
 
-    expect(geometry.imageHeight).toBeGreaterThan(0);
-    expect(geometry.bottomFillets).toHaveLength(2);
-    for (const filletYs of geometry.bottomFillets) {
-      expect(filletYs).toHaveLength(2);
-      expect(Math.max(...filletYs)).toBe(geometry.imageHeight - 8);
+    expect(geometry.topLeftRightGap).toBeCloseTo(6, 0);
+    expect(geometry.topLeftBottomGap).toBeCloseTo(2, 0);
+    expect(geometry.bottomFilletEdgeOffsets).toHaveLength(1);
+    for (const edgeOffset of geometry.bottomFilletEdgeOffsets) {
+      expect(edgeOffset).toBeCloseTo(8, 0);
     }
   });
 
@@ -2257,32 +2393,50 @@ test.describe("Organizations Page", () => {
     ).toHaveCount(0);
     await expect
       .poll(async () => {
-        const [searchBox, scopeBox, addClubBox, shareParent] = await Promise.all([
+        const [
+          searchBox,
+          scopeBox,
+          addClubBox,
+          sharesSearchRow,
+          scopeBesideCategoryStrip,
+        ] = await Promise.all([
           organizationSearch.boundingBox(),
           organizationScope.boundingBox(),
           addClubButton.boundingBox(),
-          organizationSearch.evaluate(
-            (searchElement) =>
-              Boolean(
-                searchElement.parentElement?.querySelector('[role="combobox"]') &&
-                  searchElement.parentElement?.querySelector("button")?.textContent?.includes(
-                    "Add club",
-                  ),
-              ),
+          organizationSearch.evaluate((searchElement) =>
+            Boolean(
+              !searchElement.parentElement?.querySelector(
+                '[role="combobox"]',
+              ) &&
+              searchElement.parentElement
+                ?.querySelector("button")
+                ?.textContent?.includes("Add club"),
+            ),
           ),
+          page
+            .getByTestId("organization-category-filter-scroll")
+            .evaluate((strip) =>
+              Boolean(
+                strip.parentElement?.parentElement?.querySelector(
+                  '[role="combobox"]',
+                ),
+              ),
+            ),
         ]);
         return {
           searchHeight: searchBox?.height,
           scopeHeight: scopeBox?.height,
           addClubHeight: addClubBox?.height,
-          shareParent,
+          sharesSearchRow,
+          scopeBesideCategoryStrip,
         };
       })
       .toEqual({
         searchHeight: 44,
-        scopeHeight: 44,
+        scopeHeight: 32,
         addClubHeight: 44,
-        shareParent: true,
+        sharesSearchRow: true,
+        scopeBesideCategoryStrip: true,
       });
 
     await page.screenshot({ path: "e2e/screenshots/organizations-page.png", fullPage: true });

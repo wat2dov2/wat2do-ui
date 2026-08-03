@@ -13,7 +13,7 @@ export type ReportStatus = (typeof REPORT_STATUSES)[number];
 export interface ReportedEvent {
   id: string;
   eventId: number;
-  reportedBy: string;
+  reportedBy: string | null;
   reportedAt: string;
   reason: string;
   status: ReportStatus;

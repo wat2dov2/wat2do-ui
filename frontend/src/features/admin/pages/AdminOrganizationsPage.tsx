@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { Building2, Plus, ExternalLink, ShieldAlert } from "@/shared/ui/doodle-icons";
+import { Building2, ExternalLink, ShieldAlert } from "@/shared/ui/doodle-icons";
 import { Button } from "@/shared/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import {
@@ -277,7 +277,6 @@ export function AdminOrganizationsPage({
             ? {
                 label: t("organizations.addClub"),
                 onClick: openAddModal,
-                icon: Plus,
               }
             : undefined
         }

@@ -23,6 +23,7 @@ type PageHeaderProps = React.ComponentProps<"header"> & {
   title?: React.ReactNode
   description?: React.ReactNode
   actions?: React.ReactNode
+  actionsPlacement?: "back" | "heading"
   back?: PageHeaderBack
   icon?: LucideIcon
 }
@@ -31,6 +32,7 @@ function PageHeader({
   title,
   description,
   actions,
+  actionsPlacement = "back",
   back,
   icon: Icon,
   className,
@@ -102,6 +104,7 @@ function PageHeader({
       {actions}
     </Stack>
   ) : null
+  const actionsBesideBack = Boolean(back && actionsPlacement === "back")
 
   return (
     <header data-slot="page-header" className={cn(className)} {...props}>
@@ -115,10 +118,10 @@ function PageHeader({
             wrap
           >
             {backButton}
-            {actionGroup}
+            {actionsBesideBack ? actionGroup : null}
           </Stack>
         ) : null}
-        {heading || (!back && actionGroup) ? (
+        {heading || (!actionsBesideBack && actionGroup) ? (
           <Stack
             direction="horizontal"
             gap={4}
@@ -127,7 +130,7 @@ function PageHeader({
             wrap
           >
             {heading}
-            {!back ? actionGroup : null}
+            {!actionsBesideBack ? actionGroup : null}
           </Stack>
         ) : null}
       </Stack>

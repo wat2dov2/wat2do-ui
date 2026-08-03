@@ -3,7 +3,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { ROUTES } from "@/shared/constants/routes";
 import { QP } from "@/shared/constants/queryParams";
-import { AnimatePresence, m } from "framer-motion";
+import { AnimatePresence, LazyMotion, domAnimation, m } from "framer-motion";
 import { useOnboardingFlow } from "../hooks/useOnboardingFlow";
 import { useUpdateProfile } from "../hooks/useUpdateProfile";
 import { getUserId, getUserProfile } from "@/features/auth";
@@ -140,7 +140,8 @@ export function OnboardingPage() {
   }, [flow.currentStep, flow.school, getSchoolName, t]);
 
   return (
-    <main className="h-dvh bg-background flex flex-col overflow-hidden">
+    <LazyMotion features={domAnimation} strict>
+      <main className="h-dvh bg-background flex flex-col overflow-hidden">
       <div className="fixed top-0 left-0 right-0 z-30 w-full px-6 pt-4 pb-4 bg-background flex items-center justify-between">
         <OnboardingProgressDots
           currentStep={flow.currentStep}
@@ -184,6 +185,7 @@ export function OnboardingPage() {
           />
         </div>
       </div>
-    </main>
+      </main>
+    </LazyMotion>
   );
 }

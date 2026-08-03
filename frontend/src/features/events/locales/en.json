@@ -50,7 +50,6 @@
     "latestAddedEvent": "{{title}} added {{time}}",
     "thisWeek": "This Week",
     "discoverEvents": "Discover Events",
-    "viewMore": "View More",
     "clickCount": "{{count}} click",
     "clickCount_other": "{{count}} clicks",
     "noEventsFound": "No events found",
@@ -66,7 +65,6 @@
     "clearAllFilters": "Clear all filters",
     "calendarViewComingSoon": "Calendar view coming soon...",
     "mapViewComingSoon": "Map view coming soon...",
-    "loadLocationMap": "Load location map",
     "promotedEvents": "Promoted Events",
     "dateSections": {
       "today": "Today",

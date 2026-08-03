@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react"
 import type React from "react"
-import { useInView } from "framer-motion"
+import { useIntersectionObserver } from "@/shared/hooks/useIntersectionObserver"
 import { cn } from "@/shared/lib/utils"
 
 type AnnotationAction =
@@ -39,15 +39,12 @@ export function Highlighter({
   isView = false,
   className,
 }: HighlighterProps) {
-  const elementRef = useRef<HTMLSpanElement>(null)
   const annotationRef = useRef<import("rough-notation/lib/model").RoughAnnotation | null>(null)
-
-  const isInView = useInView(elementRef, {
-    once: true,
-    margin: "-10%",
+  const { ref: elementRef, hasIntersected } = useIntersectionObserver<HTMLSpanElement>({
+    rootMargin: "-10%",
+    enabled: isView,
   })
-
-  const shouldShow = !isView || isInView
+  const shouldShow = !isView || hasIntersected
 
   useEffect(() => {
     if (!shouldShow) return
@@ -101,6 +98,7 @@ export function Highlighter({
     }
   }, [
     shouldShow,
+    elementRef,
     action,
     color,
     strokeWidth,

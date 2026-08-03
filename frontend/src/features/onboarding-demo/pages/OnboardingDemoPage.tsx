@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { AnimatePresence, m } from "framer-motion";
+import { AnimatePresence, LazyMotion, domAnimation, m } from "framer-motion";
 import { LanguageSelector } from "@/shared/ui/language-selector";
 import { Button } from "@/shared/ui/button";
 import { OnboardingDemoProgress } from "../components/OnboardingDemoProgress";
@@ -68,7 +68,8 @@ export function OnboardingDemoPage() {
   }, [flow]);
 
   return (
-    <main className="min-h-screen bg-background flex flex-col">
+    <LazyMotion features={domAnimation} strict>
+      <main className="min-h-screen bg-background flex flex-col">
       <header className="sticky top-0 z-10 w-full px-4 sm:px-6 pt-4 pb-3 bg-background border-b border-border">
         <div className="flex items-center justify-between gap-4 max-w-6xl mx-auto">
           <OnboardingDemoProgress currentStep={flow.currentStep} />
@@ -120,6 +121,7 @@ export function OnboardingDemoPage() {
           </div>
         </footer>
       )}
-    </main>
+      </main>
+    </LazyMotion>
   );
 }

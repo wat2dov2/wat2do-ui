@@ -61,12 +61,6 @@ export function AppPage({
   renderBeforeReady = false,
   skipSchoolCheck = false,
 }: AppPageProps) {
-  const ready = useAppReady();
-
-  if (!ready && renderBeforeReady) {
-    return chrome ? <AppLayout>{children}</AppLayout> : children;
-  }
-
   return (
     <Suspense fallback={<LoadingPage className="min-h-dvh" />}>
       <AppPageContent
@@ -74,6 +68,7 @@ export function AppPage({
         chrome={chrome}
         requiresAuth={requiresAuth}
         requiredRole={requiredRole}
+        renderBeforeReady={renderBeforeReady}
         skipSchoolCheck={skipSchoolCheck}
       >
         {children}
@@ -88,6 +83,7 @@ function AppPageContent({
   chrome,
   requiresAuth,
   requiredRole,
+  renderBeforeReady = false,
   skipSchoolCheck,
 }: AppPageContentProps) {
   const ready = useAppReady();
@@ -125,7 +121,7 @@ function AppPageContent({
     setSchoolFilter,
   });
 
-  if (!ready) {
+  if (!ready && !renderBeforeReady) {
     return null;
   }
 
@@ -133,11 +129,12 @@ function AppPageContent({
     !skipSchoolCheck &&
     hostnameSchoolStatus.candidate !== null;
 
-  if (needsSchoolValidation && isSchoolDirectoryPending) {
+  if (ready && needsSchoolValidation && isSchoolDirectoryPending) {
     return <LoadingPage className="min-h-dvh" />;
   }
 
   if (
+    ready &&
     needsSchoolValidation &&
     !isSchoolDirectoryError &&
     !schoolBySlug.has(hostnameSchoolStatus.school)
@@ -145,28 +142,34 @@ function AppPageContent({
     return <UnknownSchoolPage requestedSchool={hostnameSchoolStatus.candidate} />;
   }
 
-  const protectedContent = requiresAuth || requiredRole ? (
+  const protectedContent = ready && (requiresAuth || requiredRole) ? (
     <ProtectedRoute requiredRole={requiredRole}>{children}</ProtectedRoute>
   ) : (
     children
   );
 
-  const content = (
-    <>
-      <CommandPaletteHotkeys />
-      <ModalContainer />
-      <Toaster />
-      <Suspense
-        fallback={
-          <div className="flex min-h-[400px] items-center justify-center">
-            <LoadingPage className="min-h-[400px]" />
-          </div>
-        }
-      >
-        {chrome ? <AppLayout>{protectedContent}</AppLayout> : protectedContent}
-      </Suspense>
-    </>
+  const page = (
+    <Suspense
+      fallback={
+        <div className="flex min-h-[400px] items-center justify-center">
+          <LoadingPage className="min-h-[400px]" />
+        </div>
+      }
+    >
+      {chrome ? <AppLayout>{protectedContent}</AppLayout> : protectedContent}
+    </Suspense>
   );
 
-  return content;
+  return (
+    <>
+      {page}
+      {ready ? (
+        <>
+          <CommandPaletteHotkeys />
+          <ModalContainer />
+          <Toaster />
+        </>
+      ) : null}
+    </>
+  );
 }

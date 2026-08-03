@@ -11,17 +11,27 @@ import {
 } from "react";
 
 import { cn } from "@/shared/lib/utils";
+import { useIntersectionObserver } from "@/shared/hooks/useIntersectionObserver";
 import { BadgeMaskShape } from "@/shared/ui/badge-mask";
 import type { BadgeMaskVariant } from "@/shared/ui/badge-mask-paths";
 
-const useSafeLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
+const useSafeLayoutEffect =
+  typeof window !== "undefined" ? useLayoutEffect : useEffect;
 
 /** Size of the corner fillet glyph, matching the `size-2` used by BadgeMask. */
 const FILLET = 8;
 /** Inner-corner radius of the notch, matching BadgeMask's `rounded-*-xl`. */
 const INNER_RADIUS = 12;
+/** Aligns the top-left fillets optically with the corner-badge padding. */
+const TOP_LEFT_INNER_CORNER_OFFSET = 2;
 /** Stable coordinate space so the server and hydrated SVG keep identical geometry. */
 const MASK_VIEWBOX_SIZE = 100;
+const DEFAULT_POSTER_WIDTH = 640;
+
+function getOptimizedPosterUrl(src: string, width: number): string {
+  if (!src.startsWith("https://wat2do.io/media/")) return src;
+  return `/_next/image?url=${encodeURIComponent(src)}&w=${width}&q=75`;
+}
 
 interface MeasuredCutout {
   corner: BadgeMaskVariant;
@@ -39,7 +49,9 @@ interface MeasuredCutout {
 export function useEventImageCutouts() {
   const surfaceRef = useRef<HTMLDivElement>(null);
   const nodes = useRef(new Map<BadgeMaskVariant, HTMLElement>());
-  const callbacks = useRef(new Map<BadgeMaskVariant, (node: HTMLElement | null) => void>());
+  const callbacks = useRef(
+    new Map<BadgeMaskVariant, (node: HTMLElement | null) => void>(),
+  );
   const [box, setBox] = useState({ width: 0, height: 0 });
   const [cutouts, setCutouts] = useState<MeasuredCutout[]>([]);
 
@@ -53,7 +65,9 @@ export function useEventImageCutouts() {
     if (!surface) return;
 
     const next = { width: surface.offsetWidth, height: surface.offsetHeight };
-    setBox((prev) => (prev.width === next.width && prev.height === next.height ? prev : next));
+    setBox((prev) =>
+      prev.width === next.width && prev.height === next.height ? prev : next,
+    );
 
     const measured = [...nodes.current.entries()].map(([corner, node]) => ({
       corner,
@@ -64,12 +78,14 @@ export function useEventImageCutouts() {
       prev.length === measured.length &&
       prev.every((p, i) => {
         const m = measured[i]!;
-        return p.corner === m.corner && p.width === m.width && p.height === m.height;
+        return (
+          p.corner === m.corner && p.width === m.width && p.height === m.height
+        );
       })
         ? prev
         : measured,
     );
-  }, []);
+  }, [surfaceRef]);
 
   const registerCorner = useCallback(
     (corner: BadgeMaskVariant) => {
@@ -123,13 +139,26 @@ function cornerPieces(
    * into the square coordinate system.
    */
   switch (cutout.corner) {
-    case "top-left":
+    case "top-left": {
+      const adjustedWidth = nw + TOP_LEFT_INNER_CORNER_OFFSET * scaleX;
+      const adjustedHeight = nh - TOP_LEFT_INNER_CORNER_OFFSET * scaleY;
       return {
-        rect: { x: -rx, y: -ry, width: nw + rx, height: nh + ry, rx, ry },
-        fillets: [{ x: nw, y: 0 }, { x: 0, y: nh }],
+        rect: {
+          x: -rx,
+          y: -ry,
+          width: adjustedWidth + rx,
+          height: adjustedHeight + ry,
+          rx,
+          ry,
+        },
+        fillets: [
+          { x: adjustedWidth, y: 0 },
+          { x: 0, y: adjustedHeight },
+        ],
         filletWidth,
         filletHeight,
       };
+    }
     case "top-right":
       return {
         rect: { x: w - nw, y: -ry, width: nw + rx, height: nh + ry, rx, ry },
@@ -169,6 +198,10 @@ interface EventImageCutoutProps {
   /** Optional photo, drawn inside the mask so it is cut by the notches too. */
   imageSrc?: string | null;
   imageAlt?: string;
+  /** Load the poster immediately for LCP candidates; defer off-screen cards. */
+  imageLoading?: "eager" | "lazy";
+  /** Render width sent to Next's image optimizer. */
+  imageWidth?: number;
   /** Measured badge sizes from `useEventImageCutouts`. */
   cutouts: MeasuredCutout[];
   width: number;
@@ -194,6 +227,8 @@ export function EventImageCutout({
   backgroundColor,
   imageSrc,
   imageAlt = "",
+  imageLoading = "eager",
+  imageWidth = DEFAULT_POSTER_WIDTH,
   cutouts,
   width,
   height,
@@ -202,9 +237,20 @@ export function EventImageCutout({
 }: EventImageCutoutProps) {
   const maskId = useId();
   const ready = width > 0 && height > 0;
+  const { ref: imageRef, hasIntersected } =
+    useIntersectionObserver<HTMLDivElement>({
+      rootMargin: "200px",
+      enabled: Boolean(imageSrc) && imageLoading === "lazy",
+    });
+  const shouldLoadImage = imageLoading === "eager" || hasIntersected;
+  const displayedImageSrc = imageSrc
+    ? getOptimizedPosterUrl(imageSrc, imageWidth)
+    : null;
+  const priorityAttributes =
+    imageLoading === "eager" ? { fetchpriority: "high" } : {};
 
   return (
-    <div className={cn("relative", className)}>
+    <div ref={imageRef} className={cn("relative", className)}>
       {/*
        * The same SVG and image stay mounted before and after
        * measurement. Its fixed coordinate space renders the unmasked face on
@@ -237,11 +283,8 @@ export function EventImageCutout({
                 fill="white"
               />
               {cutouts.map((cutout) => {
-                const { rect, fillets, filletWidth, filletHeight } = cornerPieces(
-                  cutout,
-                  width,
-                  height,
-                );
+                const { rect, fillets, filletWidth, filletHeight } =
+                  cornerPieces(cutout, width, height);
                 return (
                   <g key={cutout.corner}>
                     <rect {...rect} fill="black" />
@@ -275,9 +318,10 @@ export function EventImageCutout({
             height={MASK_VIEWBOX_SIZE}
             fill={backgroundColor}
           />
-          {imageSrc ? (
+          {displayedImageSrc && shouldLoadImage ? (
             <image
-              href={imageSrc}
+              href={displayedImageSrc}
+              {...priorityAttributes}
               x={0}
               y={0}
               width={MASK_VIEWBOX_SIZE}

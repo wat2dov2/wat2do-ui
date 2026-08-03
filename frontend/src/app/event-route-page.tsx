@@ -34,12 +34,13 @@ function InitialEventFeed({
       <main aria-label={t("search.ariaLabel")}>
         {events.length > 0 ? (
           <div className={CARD_GRID_CLASS}>
-            {events.map((event) => (
+            {events.map((event, index) => (
               <EventCard
                 key={event.id}
                 event={event}
                 interactive={false}
                 titleHref={eventPagePath(event.id)}
+                imagePriority={index < 2}
               />
             ))}
           </div>

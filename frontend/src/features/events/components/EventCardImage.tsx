@@ -32,6 +32,8 @@ interface EventCardImageProps {
   interactive?: boolean;
   /** Runs after the organization badge applies its feed filter. */
   onOrganizationFilterSelect?: () => void;
+  /** Load this poster immediately because it can be an initial LCP candidate. */
+  priority?: boolean;
 }
 
 /**
@@ -47,9 +49,11 @@ export function EventCardImage({
   onBadgeHoverChange,
   interactive = true,
   onOrganizationFilterSelect,
+  priority = false,
 }: EventCardImageProps) {
   const { t } = useTranslation();
   const [imageOpen, setImageOpen] = useState(false);
+  const eagerImage = variant === "detail" || priority;
   const { surfaceRef, registerCorner, cutouts, box } = useEventImageCutouts();
 
   const isLive = useMemo(() => isEventHappeningNow(event), [event]);
@@ -84,6 +88,8 @@ export function EventCardImage({
           backgroundColor="var(--surface-elevated)"
           imageSrc={event.source_image_url}
           imageAlt={event.title}
+          imageLoading={eagerImage ? "eager" : "lazy"}
+          imageWidth={variant === "detail" ? 1200 : 384}
           cutouts={cutouts}
           width={box.width}
           height={box.height}

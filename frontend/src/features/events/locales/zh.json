@@ -50,7 +50,6 @@
     "latestAddedEvent": "{{title}} 添加于 {{time}}",
     "thisWeek": "本周",
     "discoverEvents": "发现活动",
-    "viewMore": "查看更多",
     "clickCount": "{{count}} 次点击",
     "clickCount_other": "{{count}} 次点击",
     "noEventsFound": "未找到活动",
@@ -66,7 +65,6 @@
     "clearAllFilters": "清除所有筛选",
     "calendarViewComingSoon": "日历视图即将推出...",
     "mapViewComingSoon": "地图视图即将推出...",
-    "loadLocationMap": "加载位置地图",
     "promotedEvents": "热门推广活动",
     "dateSections": {
       "today": "今天",

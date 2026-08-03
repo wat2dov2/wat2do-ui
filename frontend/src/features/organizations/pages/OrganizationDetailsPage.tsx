@@ -72,6 +72,7 @@ function OrganizationDetailsContent({
             }}
             title={organization.organization_name}
             description={schoolName}
+            actionsPlacement="heading"
             actions={
               <Stack
                 direction="horizontal"
@@ -80,6 +81,9 @@ function OrganizationDetailsContent({
                 wrap
                 justify="end"
               >
+                {!isAuthenticated ? (
+                  <OrganizationMembershipActions organization={organization} />
+                ) : null}
                 {isAuthenticated ? (
                   <Button
                     type="button"
@@ -105,7 +109,9 @@ function OrganizationDetailsContent({
           />
 
           <Stack gap={3}>
-            <OrganizationMembershipActions organization={organization} />
+            {isAuthenticated ? (
+              <OrganizationMembershipActions organization={organization} />
+            ) : null}
 
             <OrganizationCategoryBadges
               categories={organization.categories}

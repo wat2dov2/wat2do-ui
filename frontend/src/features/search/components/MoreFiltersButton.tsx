@@ -32,7 +32,7 @@ export function MoreFiltersButton({
       <div className="relative w-fit">
         <Button
           variant={open || filterCount > 0 ? "primary" : "secondary"}
-          size="lg"
+          size="sm"
           onClick={() => onOpenChange(!open)}
           aria-expanded={open}
           className={filterCount > 0 ? "pr-11" : undefined}
@@ -53,9 +53,7 @@ export function MoreFiltersButton({
           <DrawerTitle>{t("common.extraFilters")}</DrawerTitle>
           <DrawerDescription>{t("filters.filtersHeader")}</DrawerDescription>
         </DrawerHeader>
-        <DrawerBody className="gap-0 p-4 sm:p-4">
-          {children}
-        </DrawerBody>
+        <DrawerBody className="gap-0 p-4 sm:p-4">{children}</DrawerBody>
       </DrawerContent>
     </Drawer>
   );

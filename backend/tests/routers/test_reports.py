@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 from unittest.mock import MagicMock
 
+from core.auth import get_optional_user
 from schemas.report import ReportResponse
 from schemas.user import UserResponse
 from services import report_service, user_service
@@ -30,27 +31,45 @@ def _mock_report(**overrides) -> ReportResponse:
 
 
 # ---------------------------------------------------------------------------
-# POST /reports/ -- requires get_current_user (any authenticated user)
+# POST /reports/ - accepts anonymous and authenticated users
 # ---------------------------------------------------------------------------
 
 
-def test_create_report_requires_auth(client):
-    """POST /reports/ without auth returns 401."""
+def test_create_report_anonymous(client, monkeypatch):
+    """POST /reports/ without auth records no user and returns 201."""
+    report = _mock_report(user_id=None)
+    mock_create = MagicMock(return_value=report)
+    monkeypatch.setattr(report_service, "create_report", mock_create)
+
     resp = client.post("/reports/", json={"event_id": 42, "reason": "Spam"})
-    assert resp.status_code == 401
+
+    assert resp.status_code == 201
+    assert resp.json()["id"] == "rpt-001"
+    args, _ = mock_create.call_args
+    assert args[0] is None
 
 
 def test_create_report_authenticated(authenticated_client, monkeypatch):
     """POST /reports/ with auth returns 201."""
     report = _mock_report()
+    mock_create = MagicMock(return_value=report)
     monkeypatch.setattr(
         user_service, "get_user_by_supabase_id", MagicMock(return_value=FAKE_DB_USER)
     )
-    monkeypatch.setattr(report_service, "create_report", MagicMock(return_value=report))
+    monkeypatch.setattr(report_service, "create_report", mock_create)
 
-    resp = authenticated_client.post("/reports/", json={"event_id": 42, "reason": "Spam"})
+    from main import app
+
+    app.dependency_overrides[get_optional_user] = lambda: FAKE_USER
+    try:
+        resp = authenticated_client.post("/reports/", json={"event_id": 42, "reason": "Spam"})
+    finally:
+        app.dependency_overrides.pop(get_optional_user, None)
+
     assert resp.status_code == 201
     assert resp.json()["id"] == "rpt-001"
+    args, _ = mock_create.call_args
+    assert args[0] == str(FAKE_DB_USER.id)
 
 
 # ---------------------------------------------------------------------------
@@ -134,20 +153,17 @@ def test_update_report_admin(admin_client, monkeypatch):
 
 
 # ---------------------------------------------------------------------------
-# POST /reports/ — event existence check (audit I2)
+# POST /reports/ - event existence check (audit I2)
 # ---------------------------------------------------------------------------
 
 
-def test_create_report_rejects_nonexistent_event(authenticated_client, monkeypatch):
+def test_create_report_rejects_nonexistent_event(client, monkeypatch):
     """POST /reports/ returns 404 when event_id references a missing event."""
     from services import event_service
 
-    monkeypatch.setattr(
-        user_service, "get_user_by_supabase_id", MagicMock(return_value=FAKE_DB_USER)
-    )
     monkeypatch.setattr(event_service, "get_event", MagicMock(return_value=None))
 
-    resp = authenticated_client.post("/reports/", json={"event_id": 99999, "reason": "Spam"})
+    resp = client.post("/reports/", json={"event_id": 99999, "reason": "Spam"})
     assert resp.status_code == 404
 
 

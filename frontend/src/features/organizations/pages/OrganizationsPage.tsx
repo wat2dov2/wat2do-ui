@@ -114,25 +114,6 @@ export function OrganizationsPage({
             submitLabel={t("common.search")}
             clearLabel={t("organizations.clearSearch")}
           />
-          <Select
-            value={activeTab}
-            onValueChange={(value) => setActiveTab(value as OrganizationScope)}
-          >
-            <SelectTrigger
-              size="lg"
-              aria-label={activeTabOption.label}
-              className="shrink-0"
-            >
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent align="end">
-              {tabOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
           <Button
             type="button"
             size="lg"
@@ -155,39 +136,60 @@ export function OrganizationsPage({
           </Button>
         </Stack>
 
-        <div className="relative min-w-0">
-          <HorizontalScrollFade
-            ref={categoryScrollRef}
-            visible={showCategoryScrollFade}
-            {...categoryDragScrollProps}
-            data-testid="organization-category-filter-scroll"
-            onScroll={syncCategoryScrollFade}
-            onWheel={syncCategoryScrollFadeAfterWheel}
-            onTouchEnd={syncCategoryScrollFade}
-            className="no-visible-scrollbar flex min-w-0 cursor-grab flex-nowrap items-center gap-2 overflow-x-auto pb-1 active:cursor-grabbing"
-          >
-            {allCategories.map((category) => (
-              <Button
-                key={category}
-                variant={
-                  selectedCategories.includes(category)
-                    ? "primary"
-                    : "secondary"
-                }
-                size="sm"
-                onClick={() => toggleCategory(category)}
-                aria-pressed={selectedCategories.includes(category)}
-              >
-                {translateCategory(category, t)}
-              </Button>
-            ))}
-            <span
-              ref={categoryScrollEndRef}
-              aria-hidden="true"
-              className="h-px w-px shrink-0"
-            />
-          </HorizontalScrollFade>
-        </div>
+        <Stack direction="horizontal" align="center" gap={2}>
+          <div className="relative min-w-0 flex-1">
+            <HorizontalScrollFade
+              ref={categoryScrollRef}
+              visible={showCategoryScrollFade}
+              {...categoryDragScrollProps}
+              data-testid="organization-category-filter-scroll"
+              onScroll={syncCategoryScrollFade}
+              onWheel={syncCategoryScrollFadeAfterWheel}
+              onTouchEnd={syncCategoryScrollFade}
+              className="no-visible-scrollbar flex min-w-0 cursor-grab flex-nowrap items-center gap-2 overflow-x-auto pb-1 active:cursor-grabbing"
+            >
+              {allCategories.map((category) => (
+                <Button
+                  key={category}
+                  variant={
+                    selectedCategories.includes(category)
+                      ? "primary"
+                      : "secondary"
+                  }
+                  size="sm"
+                  onClick={() => toggleCategory(category)}
+                  aria-pressed={selectedCategories.includes(category)}
+                >
+                  {translateCategory(category, t)}
+                </Button>
+              ))}
+              <span
+                ref={categoryScrollEndRef}
+                aria-hidden="true"
+                className="h-px w-px shrink-0"
+              />
+            </HorizontalScrollFade>
+          </div>
+          <div className="shrink-0 pb-1">
+            <Select
+              value={activeTab}
+              onValueChange={(value) =>
+                setActiveTab(value as OrganizationScope)
+              }
+            >
+              <SelectTrigger size="sm" aria-label={activeTabOption.label}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent align="end">
+                {tabOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </Stack>
       </Stack>
 
       {showSignInPrompt ? (

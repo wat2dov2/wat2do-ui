@@ -1,7 +1,6 @@
 "use client";
 
 import { createContext, lazy, Suspense, useContext, useEffect, useState, type ReactNode } from "react";
-import { LazyMotion, domAnimation } from "framer-motion";
 import "@/shared/lib/i18n";
 import i18n, { getStoredLanguage } from "@/shared/lib/i18n";
 import { loadLanguage } from "@/shared/lib/loadLanguage";
@@ -161,18 +160,16 @@ export function ClientProviders({ children }: { children: ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <ErrorBoundary>
-        <LazyMotion features={domAnimation} strict>
-          <TooltipProvider delayDuration={0}>
-            <AppReadyContext.Provider value={{ appReady: ready, authReady }}>
-              {DevClickToComponent ? (
-                <Suspense fallback={null}>
-                  <DevClickToComponent />
-                </Suspense>
-              ) : null}
-              {children}
-            </AppReadyContext.Provider>
-          </TooltipProvider>
-        </LazyMotion>
+        <TooltipProvider delayDuration={0}>
+          <AppReadyContext.Provider value={{ appReady: ready, authReady }}>
+            {DevClickToComponent ? (
+              <Suspense fallback={null}>
+                <DevClickToComponent />
+              </Suspense>
+            ) : null}
+            {children}
+          </AppReadyContext.Provider>
+        </TooltipProvider>
       </ErrorBoundary>
     </QueryClientProvider>
   );

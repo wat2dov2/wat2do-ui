@@ -37,7 +37,7 @@ def _event_exists(event_id: int) -> bool:
     return event_service.get_event(event_id) is not None
 
 
-def create_report(user_id: str, event_id: int, reason: str) -> ReportResponse:
+def create_report(user_id: str | None, event_id: int, reason: str) -> ReportResponse:
     """Create a new event report.
 
     Verifies the referenced event exists before inserting - stops the

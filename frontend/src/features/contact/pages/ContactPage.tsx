@@ -89,7 +89,7 @@ export function ContactPage() {
             src={imgContactHero}
             alt={t("contact.heroAlt")}
             fill
-            priority
+            preload
             sizes="(max-width: 640px) 100vw, 640px"
             className="pointer-events-none select-none object-cover"
           />

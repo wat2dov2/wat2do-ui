@@ -351,6 +351,62 @@ test.describe("Followed Organizations Flow", () => {
     await expect(page.locator("#claimed-clubs-sign-in")).toBeVisible();
   });
 
+  test("places the signed-out join action beside the organization title", async ({
+    page,
+  }) => {
+    await page.route(
+      url => apiPath(url) === "/organizations/1",
+      async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify(MOCK_ORGANIZATIONS[0]),
+        });
+      },
+    );
+    await page.route(url => apiPath(url) === "/events", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          items: [],
+          total: 0,
+          page: 1,
+          page_size: 50,
+          total_pages: 0,
+          latest_added_event: null,
+        }),
+      });
+    });
+
+    await page.goto(`${BASE}/organizations`);
+    await page.getByText("UW Tech Club", { exact: true }).click();
+
+    const title = page.locator('[data-slot="page-header-title"]');
+    const signInToJoin = page.getByRole("button", {
+      name: "Sign In to Join",
+    });
+    await expect(title).toHaveText("UW Tech Club");
+    await expect(signInToJoin).toBeVisible();
+    await expect
+      .poll(() =>
+        title.evaluate((titleElement) => {
+          const header = titleElement.closest('[data-slot="page-header"]');
+          const actions = header?.querySelector(
+            '[data-slot="page-header-actions"]',
+          );
+          const headingRow = actions?.parentElement;
+          return {
+            sameRow: Boolean(headingRow?.contains(titleElement)),
+            justification: headingRow
+              ? getComputedStyle(headingRow).justifyContent
+              : null,
+          };
+        }),
+      )
+      .toEqual({ sameRow: true, justification: "space-between" });
+  });
+
   test("authenticated user toggles club follow status", async ({ page }) => {
     await seedAuthenticatedSession(page);
     await page.goto(`${BASE}/organizations`);

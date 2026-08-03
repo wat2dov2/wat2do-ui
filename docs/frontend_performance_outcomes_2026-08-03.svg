@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1200" viewBox="0 0 1600 1200" role="img" aria-labelledby="title desc">
   <title id="title">Wat2Do frontend performance outcomes</title>
-  <desc id="desc">Verified August 3, 2026 outcomes from the Wat2Do performance remediation, including route bundle reductions, smaller initial result sets, deferred maps, responsive images, and remaining browser validation.</desc>
+  <desc id="desc">Verified August 3, 2026 outcomes from the Wat2Do performance remediation and browser validation, including route bundle reductions, smaller initial result sets, deferred maps, responsive images, and the remaining performance-budget failures.</desc>
   <defs>
     <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#111827" />
@@ -124,7 +124,7 @@
 
     <circle cx="12" cy="162" r="12" fill="#22c55e" />
     <path d="M6 162 L10 166 L18 157" fill="none" stroke="#052e16" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
-    <text x="38" y="167" class="label">Click-to-load event map and removal of organization-card layout shift</text>
+    <text x="38" y="167" class="label">Click-to-load event map and reduced organization-card animation work</text>
 
     <circle cx="12" cy="212" r="12" fill="#22c55e" />
     <path d="M6 212 L10 216 L18 207" fill="none" stroke="#052e16" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
@@ -132,16 +132,16 @@
   </g>
 
   <rect x="1044" y="796" width="492" height="326" rx="20" fill="#1c1729" stroke="#6d5b8c" />
-  <text x="1072" y="838" class="section">Next validation gate</text>
-  <text x="1072" y="876" class="label">Fresh mobile browser profile</text>
-  <text x="1072" y="905" class="small">Re-measure LCP, transfer, request count,</text>
-  <text x="1072" y="927" class="small">CLS, INP, and image decoding after deployment.</text>
+  <text x="1072" y="838" class="section">Browser validation</text>
+  <text x="1072" y="876" class="label" fill="#fbbf24">Partial pass</text>
+  <text x="1072" y="905" class="small">Transfer, TBT, maps, and TTFB passed.</text>
+  <text x="1072" y="927" class="small">LCP, CLS, DOM, JS, images, and prefetch remain.</text>
   <line x1="1072" y1="954" x2="1508" y2="954" stroke="#3b3251" />
-  <text x="1072" y="991" class="small">Performance targets</text>
-  <text x="1072" y="1026" class="value" fill="#c4b5fd">LCP &lt; 2.5 s</text>
-  <text x="1072" y="1063" class="value" fill="#c4b5fd">Feed ≤ 2 MiB</text>
-  <text x="1072" y="1095" class="tiny">Not yet claimed as post-change measurements.</text>
+  <text x="1072" y="991" class="small">Verified mobile medians</text>
+  <text x="1072" y="1026" class="value" fill="#4ade80">Feed 1.74 MiB</text>
+  <text x="1072" y="1063" class="value" fill="#4ade80">TBT 42-155 ms</text>
+  <text x="1072" y="1095" class="tiny">0 of 6 routes meet the mobile LCP budget.</text>
 
-  <text x="64" y="1172" class="tiny">Verified: optimized build, bundle graph, implementation structure, frontend checks, and backend tests.</text>
-  <text x="1536" y="1172" class="tiny" text-anchor="end">Evidence: frontend_performance_audit_2026-08-03.md</text>
+  <text x="64" y="1172" class="tiny">Verified: optimized build, route graph, 24 Lighthouse reports, browser behavior, and server latency.</text>
+  <text x="1536" y="1172" class="tiny" text-anchor="end">Evidence: frontend_performance_validation_2026-08-03.md</text>
 </svg>

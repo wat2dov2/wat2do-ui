@@ -52,13 +52,11 @@ import { useEventStats } from "@/features/events/hooks/useEventStats";
 import { useCurrentTime, useGoingEventSelection } from "@/features/events/hooks/useGoingEvents";
 import { EmailOtpForm } from "@/features/auth/components/EmailOtpForm";
 import { useAuthState } from "@/features/auth/hooks/useAuthState";
-import { appendSafeReturnTo } from "@/features/auth/utils/returnTo";
 import { useUIStore } from "@/shared/store/ui.store";
 import { controlBox } from "@/shared/config/controlBox";
 import { translateFood } from "@/shared/utils/foodTranslation";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import { organizationPagePath, ROUTES } from "@/shared/constants/routes";
-import { eventPagePath } from "@/features/events/lib/eventUrls";
 import { toast } from "@/shared/hooks/use-toast";
 import type { Event } from "@/shared/types";
 
@@ -373,6 +371,7 @@ function EventRegistrationCard({
                 school={event.school ?? school}
                 requestCodeLabel={t("events.going")}
                 actionLabel={t("events.going")}
+                focusOnMount={false}
                 isSubmitDisabled={
                   going.selectableOccurrences.length === 0
                 }
@@ -542,7 +541,7 @@ export function EventActions({
   const [reportOpen, setReportOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const { isAdmin, isAuthenticated } = useAuthState();
+  const { isAdmin } = useAuthState();
   const setEditingEvent = useUIStore((s) => s.setEditingEvent);
   const deleteEvent = useEventsStore((s) => s.deleteEvent);
 
@@ -550,16 +549,6 @@ export function EventActions({
     onBeforeEdit?.();
     setEditingEvent(event);
   }, [event, onBeforeEdit, setEditingEvent]);
-
-  const handleReport = useCallback(() => {
-    if (!isAuthenticated) {
-      router.push(
-        appendSafeReturnTo(ROUTES.LOGIN, eventPagePath(event.id)),
-      );
-      return;
-    }
-    setReportOpen(true);
-  }, [event.id, isAuthenticated, router]);
 
   const handleDelete = useCallback(async () => {
     setIsDeleting(true);
@@ -604,7 +593,7 @@ export function EventActions({
         <Share2 className="size-4" />
         {t("common.share")}
       </Button>
-      <Button type="button" variant="secondary" size="sm" onClick={handleReport}>
+      <Button type="button" variant="secondary" size="sm" onClick={() => setReportOpen(true)}>
         <Flag className="size-4" />
         {t("common.report")}
       </Button>

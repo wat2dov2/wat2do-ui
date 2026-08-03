@@ -3497,7 +3497,7 @@ export interface components {
             /** Event Id */
             event_id: number;
             /** User Id */
-            user_id: string;
+            user_id: string | null;
             /** Reason */
             reason: string;
             /**
