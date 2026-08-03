@@ -7,7 +7,11 @@ import {
   Mail,
   X,
 } from "@/shared/ui/doodle-icons";
-import { DiscordIcon } from "@/shared/ui/platform-icons";
+import {
+  DiscordIcon,
+  LineIcon,
+  WeChatIcon,
+} from "@/shared/ui/platform-icons";
 import {
   Drawer,
   DrawerClose,
@@ -30,7 +34,14 @@ interface EventShareDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-type ShareChannelId = "facebook" | "linkedin" | "x" | "discord" | "email";
+type ShareChannelId =
+  | "facebook"
+  | "linkedin"
+  | "x"
+  | "line"
+  | "wechat"
+  | "discord"
+  | "email";
 
 interface ShareChannel {
   id: ShareChannelId;
@@ -43,6 +54,8 @@ const CHANNELS: ShareChannel[] = [
   { id: "facebook", labelKey: "events.shareDialog.channels.facebook", Icon: Facebook, bgClass: "bg-[#1877F2]" },
   { id: "linkedin", labelKey: "events.shareDialog.channels.linkedin", Icon: Linkedin, bgClass: "bg-[#0A66C2]" },
   { id: "x", labelKey: "events.shareDialog.channels.x", Icon: XLogo, bgClass: "bg-black" },
+  { id: "line", labelKey: "events.shareDialog.channels.line", Icon: LineIcon, bgClass: "bg-[#06C755]" },
+  { id: "wechat", labelKey: "events.shareDialog.channels.wechat", Icon: WeChatIcon, bgClass: "bg-[#07C160]" },
   { id: "discord", labelKey: "events.shareDialog.channels.discord", Icon: DiscordIcon, bgClass: "bg-[#5865F2]" },
   { id: "email", labelKey: "events.shareDialog.channels.email", Icon: Mail, bgClass: "bg-zinc-600" },
 ];
@@ -73,12 +86,12 @@ export function EventShareDialog({
   const shareUrl = useMemo(() => buildEventShareUrl(event.id), [event.id]);
   const cardDate = formatCardDate(event);
   const cardTime = formatCardTime(event);
-  const shareBody = [
+  const shareText = [
     event.title,
     [cardDate, cardTime].filter(Boolean).join(` ${t("common.at")} `),
     event.location,
-    shareUrl,
   ].filter(Boolean).join("\n");
+  const shareBody = `${shareText}\n${shareUrl}`;
 
   async function copyLink(message?: string) {
     try {
@@ -103,6 +116,33 @@ export function EventShareDialog({
     void copyLink();
   }
 
+  function openWechatWithCopiedLink() {
+    void copyLink(t("events.shareDialog.linkCopiedForWechat"));
+    window.location.assign("weixin://dl/chat");
+  }
+
+  async function shareWithWechat() {
+    if (typeof navigator.share !== "function") {
+      openWechatWithCopiedLink();
+      return;
+    }
+
+    try {
+      await navigator.share({
+        title: event.title,
+        text: shareText,
+        url: shareUrl,
+      });
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") {
+        return;
+      }
+
+      console.error("Failed to share event through WeChat:", err);
+      openWechatWithCopiedLink();
+    }
+  }
+
   function handleShare(channel: ShareChannelId) {
     tracker.track(event.id, "share", { channel });
 
@@ -116,6 +156,14 @@ export function EventShareDialog({
     }
     if (channel === "x") {
       openExternalShare(`https://x.com/intent/post?text=${encode(event.title)}&url=${encode(shareUrl)}`);
+      return;
+    }
+    if (channel === "line") {
+      openExternalShare(`https://line.me/R/share?text=${encode(shareBody)}`);
+      return;
+    }
+    if (channel === "wechat") {
+      void shareWithWechat();
       return;
     }
     if (channel === "discord") {
@@ -163,7 +211,7 @@ export function EventShareDialog({
             </Button>
           </div>
 
-          <div className="grid grid-cols-5 gap-1">
+          <div className="grid grid-cols-4 gap-1">
             {CHANNELS.map(({ id, labelKey, Icon, bgClass }) => {
               const label = t(labelKey);
               return (

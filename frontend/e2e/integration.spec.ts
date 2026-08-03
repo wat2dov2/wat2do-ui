@@ -783,7 +783,48 @@ test.describe("Events Page", () => {
     await eventDrawer.getByRole("button", { name: "Share" }).click();
 
     await expect(page.getByRole("heading", { name: "Share" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Share on LINE" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Share on WeChat" })).toBeVisible();
     await expect(page).toHaveURL(/eventId=1/);
+
+    await page.evaluate(() => {
+      Object.defineProperty(window, "open", {
+        configurable: true,
+        value: (url: string | URL) => {
+          sessionStorage.setItem("e2e-line-share-url", String(url));
+          return null;
+        },
+      });
+      Object.defineProperty(navigator, "share", {
+        configurable: true,
+        value: async (data: ShareData) => {
+          sessionStorage.setItem("e2e-native-share-data", JSON.stringify(data));
+        },
+      });
+    });
+
+    await page.getByRole("button", { name: "Share on LINE" }).click();
+    const lineShareUrl = await page.evaluate(() =>
+      sessionStorage.getItem("e2e-line-share-url"),
+    );
+    expect(lineShareUrl).not.toBeNull();
+    const lineShareText = new URL(lineShareUrl!).searchParams.get("text");
+    expect(lineShareText).toContain("Tech Career Fair");
+    expect(lineShareText).toContain("SLC");
+    expect(lineShareText).toContain(`${BASE}/events/1`);
+
+    await page.getByRole("button", { name: "Share on WeChat" }).click();
+    await expect
+      .poll(() => page.evaluate(() => sessionStorage.getItem("e2e-native-share-data")))
+      .not.toBeNull();
+    const nativeShareData = await page.evaluate(() =>
+      JSON.parse(sessionStorage.getItem("e2e-native-share-data") ?? "null"),
+    );
+    expect(nativeShareData).toMatchObject({
+      title: "Tech Career Fair",
+      text: expect.stringContaining("SLC"),
+      url: `${BASE}/events/1`,
+    });
 
     await page.keyboard.press("Escape");
     await expect(page.getByRole("heading", { name: "Share" })).not.toBeVisible();

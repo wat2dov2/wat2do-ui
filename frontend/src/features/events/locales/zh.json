@@ -97,12 +97,15 @@
       "copy": "复制",
       "linkCopied": "链接已复制",
       "linkCopiedForDiscord": "Discord 链接已复制",
+      "linkCopiedForWechat": "微信链接已复制",
       "copyFailed": "无法复制链接",
       "shareOn": "分享到 {{channel}}",
       "channels": {
         "facebook": "Facebook",
         "linkedin": "LinkedIn",
         "x": "X",
+        "line": "LINE",
+        "wechat": "微信",
         "discord": "Discord",
         "email": "电子邮件"
       }

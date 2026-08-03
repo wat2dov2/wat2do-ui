@@ -97,12 +97,15 @@
       "copy": "Copy",
       "linkCopied": "Link copied",
       "linkCopiedForDiscord": "Link copied for Discord",
+      "linkCopiedForWechat": "Link copied for WeChat",
       "copyFailed": "Could not copy link",
       "shareOn": "Share on {{channel}}",
       "channels": {
         "facebook": "Facebook",
         "linkedin": "LinkedIn",
         "x": "X",
+        "line": "LINE",
+        "wechat": "WeChat",
         "discord": "Discord",
         "email": "Email"
       }
