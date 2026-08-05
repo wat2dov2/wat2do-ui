@@ -283,16 +283,31 @@ function CoverPosterFan({ tiles, secondary }: { tiles: string[]; secondary: stri
 }
 
 /** The canonical Wat2Do cover mark, recoloured by the cover model. */
+const COVER_LOGO_SIZE = 132;
+
+/*
+ * The mark sits centred in a 1080 square with 195 units of padding either side
+ * and 297 above and below. That square is filled with the school colour, which
+ * on the cover matches the background - so only the goose reads, and it looks
+ * pushed down and left of every other edge on the slide by exactly that
+ * padding. Pulling the box out by it puts the goose's own edges on the margin
+ * the rest of the content uses.
+ */
+const COVER_LOGO_INK_INSET_X = Math.round((195 / 1080) * COVER_LOGO_SIZE);
+const COVER_LOGO_INK_INSET_Y = Math.round((297 / 1080) * COVER_LOGO_SIZE);
+
 function CoverLogo({ src }: { src: string }) {
   return (
     <img
       src={src}
-      width={132}
-      height={132}
+      width={COVER_LOGO_SIZE}
+      height={COVER_LOGO_SIZE}
       alt=""
       style={{
-        width: 132,
-        height: 132,
+        width: COVER_LOGO_SIZE,
+        height: COVER_LOGO_SIZE,
+        marginTop: -COVER_LOGO_INK_INSET_Y,
+        marginRight: -COVER_LOGO_INK_INSET_X,
       }}
     />
   );

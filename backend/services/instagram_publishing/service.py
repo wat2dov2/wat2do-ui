@@ -429,7 +429,10 @@ def _slide_payload(event: EventSummaryResponse) -> dict[str, Any]:
     """
     occurrence = event.occurrences[0]
     return {
-        **event.model_dump(exclude={"occurrences"}),
+        # mode="json" so datetime fields such as added_at come out as strings.
+        # The default python mode leaves them as datetime objects, which the
+        # renderer request cannot serialise - that failed every publish.
+        **event.model_dump(mode="json", exclude={"occurrences"}),
         "dtstart_utc": occurrence.dtstart_utc.isoformat(),
         "dtend_utc": occurrence.dtend_utc.isoformat() if occurrence.dtend_utc else None,
         "tz": occurrence.tz or resolve_school_timezone(event.school),
