@@ -744,7 +744,7 @@ export function EventDetailsSimilarEvents({
     <>
       <Separator />
       <Section title={t("events.similarEvents")}>
-        <FormGrid columns={2} className="md:grid-cols-4">
+        <FormGrid columns={2} collapse={false} className="md:grid-cols-4">
           {similarEvents.map((similarEvent) => (
             <EventCard
               key={similarEvent.id}

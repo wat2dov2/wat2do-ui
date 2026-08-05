@@ -95,14 +95,23 @@ export function isEventHappeningNow(
   currentDate: Date = new Date()
 ): boolean {
   const primary = getPrimaryOccurrence(event);
-  if (!primary?.dtstart_utc || !primary.dtend_utc) return false;
+  if (!primary?.dtstart_utc) return false;
 
   const start = new Date(primary.dtstart_utc);
-  const end = new Date(primary.dtend_utc);
-  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return false;
+  if (Number.isNaN(start.getTime())) return false;
 
   const now = currentDate.getTime();
-  return start.getTime() <= now && now <= end.getTime();
+  if (now < start.getTime()) return false;
+
+  // An event with no end time is treated as running for the same window the
+  // feed already keeps it visible for, rather than never counting as live.
+  if (!primary.dtend_utc) {
+    return now - start.getTime() <= controlBox.eventDiscovery.eventWithoutEndVisibilityMs;
+  }
+
+  const end = new Date(primary.dtend_utc);
+  if (Number.isNaN(end.getTime())) return false;
+  return now <= end.getTime();
 }
 
 export function wasAddedWithinLast24Hours(

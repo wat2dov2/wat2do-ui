@@ -62,16 +62,19 @@ export function useEventImageCutouts() {
     const surface = surfaceRef.current;
     if (!surface) return;
 
-    const next = { width: surface.offsetWidth, height: surface.offsetHeight };
+    // getBoundingClientRect, not offsetWidth: the latter rounds to whole
+    // pixels, so a 241.6px face reported 242 and the notches were cut from a
+    // space fractionally wider than the one they were drawn into.
+    const surfaceRect = surface.getBoundingClientRect();
+    const next = { width: surfaceRect.width, height: surfaceRect.height };
     setBox((prev) =>
       prev.width === next.width && prev.height === next.height ? prev : next,
     );
 
-    const measured = [...nodes.current.entries()].map(([corner, node]) => ({
-      corner,
-      width: node.offsetWidth,
-      height: node.offsetHeight,
-    }));
+    const measured = [...nodes.current.entries()].map(([corner, node]) => {
+      const rect = node.getBoundingClientRect();
+      return { corner, width: rect.width, height: rect.height };
+    });
     setCutouts((prev) =>
       prev.length === measured.length &&
       prev.every((p, i) => {
@@ -120,21 +123,24 @@ function cornerPieces(
 ) {
   // The measured element already includes BadgeMask's own padding, which is the
   // visual gap - adding more here double-counts it and leaves a dead band.
-  const scaleX = MASK_VIEWBOX_SIZE / surfaceWidth;
-  const scaleY = MASK_VIEWBOX_SIZE / surfaceHeight;
-  const nw = cutout.width * scaleX;
-  const nh = cutout.height * scaleY;
-  const rx = INNER_RADIUS * scaleX;
-  const ry = INNER_RADIUS * scaleY;
-  const filletWidth = FILLET * scaleX;
-  const filletHeight = FILLET * scaleY;
-  const w = MASK_VIEWBOX_SIZE;
-  const h = MASK_VIEWBOX_SIZE;
+  const nw = cutout.width;
+  const nh = cutout.height;
+  const rx = INNER_RADIUS;
+  const ry = INNER_RADIUS;
+  const filletWidth = FILLET;
+  const filletHeight = FILLET;
+  const w = surfaceWidth;
+  const h = surfaceHeight;
 
   /*
-   * The knockout rect is overhung on its two outward sides. The separate x/y
-   * radii preserve the intended pixel radius even when a rectangular card maps
-   * into the square coordinate system.
+   * Everything here is in CSS pixels, the same units the badges were measured
+   * in, so a notch lands exactly on its badge. Scaling the measurements into a
+   * fixed square space and letting the browser scale them back left the hole
+   * up to a pixel out of step with the badge it was cut for, which showed as a
+   * hairline of card edge along one side. One radius, not separate x/y ones:
+   * in an unscaled space a corner is round rather than elliptical.
+   *
+   * The knockout rect is overhung on its two outward sides.
    */
   switch (cutout.corner) {
     case "top-left":
@@ -222,6 +228,10 @@ export function EventImageCutout({
 }: EventImageCutoutProps) {
   const maskId = useId();
   const ready = width > 0 && height > 0;
+  // Before measurement there are no pixels to draw in, so the square stands in
+  // and renders the unmasked face; the same element stays mounted either way.
+  const faceWidth = ready ? width : MASK_VIEWBOX_SIZE;
+  const faceHeight = ready ? height : MASK_VIEWBOX_SIZE;
   const { ref: imageRef, hasIntersected } =
     useIntersectionObserver<HTMLDivElement>({
       rootMargin: "200px",
@@ -246,7 +256,7 @@ export function EventImageCutout({
         aria-hidden="true"
         focusable="false"
         className="pointer-events-none absolute inset-0 size-full"
-        viewBox={`0 0 ${MASK_VIEWBOX_SIZE} ${MASK_VIEWBOX_SIZE}`}
+        viewBox={`0 0 ${faceWidth} ${faceHeight}`}
         preserveAspectRatio="none"
       >
         {ready ? (
@@ -256,15 +266,15 @@ export function EventImageCutout({
               maskUnits="userSpaceOnUse"
               x={0}
               y={0}
-              width={MASK_VIEWBOX_SIZE}
-              height={MASK_VIEWBOX_SIZE}
+              width={faceWidth}
+              height={faceHeight}
             >
               {/* White keeps the face visible; black removes it. */}
               <rect
                 x={0}
                 y={0}
-                width={MASK_VIEWBOX_SIZE}
-                height={MASK_VIEWBOX_SIZE}
+                width={faceWidth}
+                height={faceHeight}
                 fill="white"
               />
               {cutouts.map((cutout) => {
@@ -299,46 +309,27 @@ export function EventImageCutout({
           <rect
             x={0}
             y={0}
-            width={MASK_VIEWBOX_SIZE}
-            height={MASK_VIEWBOX_SIZE}
+            width={faceWidth}
+            height={faceHeight}
             fill={backgroundColor}
           />
           {displayedImageSrc && shouldLoadImage ? (
             /*
-             * Nested <svg> for the same reason the fillets use one: the face's
-             * square 100x100 space is stretched onto a card that is not square,
-             * and a child's own preserveAspectRatio cannot undo a parent's
-             * non-uniform scale - it just re-fits inside an already-stretched
-             * box. So the poster was covering a square and then being pulled to
-             * the card's width, roughly 20% horizontally on a grid card.
-             *
-             * Giving this viewport a viewBox in real pixels with "none" inverts
-             * the outer stretch exactly, leaving an unscaled pixel space for
-             * the image to do an honest "slice" cover in. Before measurement
-             * there are no real dimensions to invert, so the square face stands
-             * in - the same element stays mounted either way, so the poster is
-             * never repainted as a fresh LCP candidate.
+             * The face now draws in unscaled pixels, so the poster can cover
+             * honestly here: no parent stretch to undo, and "slice" crops to
+             * the card without altering the poster's proportions.
              */
-            <svg
+            <image
+              href={displayedImageSrc}
+              {...priorityAttributes}
               x={0}
               y={0}
-              width={MASK_VIEWBOX_SIZE}
-              height={MASK_VIEWBOX_SIZE}
-              viewBox={ready ? `0 0 ${width} ${height}` : undefined}
-              preserveAspectRatio="none"
+              width={faceWidth}
+              height={faceHeight}
+              preserveAspectRatio="xMidYMid slice"
             >
-              <image
-                href={displayedImageSrc}
-                {...priorityAttributes}
-                x={0}
-                y={0}
-                width={ready ? width : MASK_VIEWBOX_SIZE}
-                height={ready ? height : MASK_VIEWBOX_SIZE}
-                preserveAspectRatio="xMidYMid slice"
-              >
-                <title>{imageAlt}</title>
-              </image>
-            </svg>
+              <title>{imageAlt}</title>
+            </image>
           ) : null}
         </g>
       </svg>
