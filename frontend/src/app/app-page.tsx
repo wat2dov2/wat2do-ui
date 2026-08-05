@@ -129,7 +129,13 @@ function AppPageContent({
     !skipSchoolCheck &&
     hostnameSchoolStatus.candidate !== null;
 
-  if (ready && needsSchoolValidation && isSchoolDirectoryPending) {
+  // Only cover the page while the directory loads if nothing is on screen yet.
+  // `renderBeforeReady` means the server already painted this route's real
+  // content, and the server resolved the school to render it - so swapping that
+  // for a spinner is a step backwards the user sees as a stutter: content, then
+  // loading, then the same content. The unknown-school check below still runs
+  // once the directory resolves, so a bad subdomain is caught either way.
+  if (ready && needsSchoolValidation && isSchoolDirectoryPending && !renderBeforeReady) {
     return <LoadingPage className="min-h-dvh" />;
   }
 
