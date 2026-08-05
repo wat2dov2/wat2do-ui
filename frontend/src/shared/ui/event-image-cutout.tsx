@@ -304,17 +304,41 @@ export function EventImageCutout({
             fill={backgroundColor}
           />
           {displayedImageSrc && shouldLoadImage ? (
-            <image
-              href={displayedImageSrc}
-              {...priorityAttributes}
+            /*
+             * Nested <svg> for the same reason the fillets use one: the face's
+             * square 100x100 space is stretched onto a card that is not square,
+             * and a child's own preserveAspectRatio cannot undo a parent's
+             * non-uniform scale - it just re-fits inside an already-stretched
+             * box. So the poster was covering a square and then being pulled to
+             * the card's width, roughly 20% horizontally on a grid card.
+             *
+             * Giving this viewport a viewBox in real pixels with "none" inverts
+             * the outer stretch exactly, leaving an unscaled pixel space for
+             * the image to do an honest "slice" cover in. Before measurement
+             * there are no real dimensions to invert, so the square face stands
+             * in - the same element stays mounted either way, so the poster is
+             * never repainted as a fresh LCP candidate.
+             */
+            <svg
               x={0}
               y={0}
               width={MASK_VIEWBOX_SIZE}
               height={MASK_VIEWBOX_SIZE}
-              preserveAspectRatio="xMidYMid slice"
+              viewBox={ready ? `0 0 ${width} ${height}` : undefined}
+              preserveAspectRatio="none"
             >
-              <title>{imageAlt}</title>
-            </image>
+              <image
+                href={displayedImageSrc}
+                {...priorityAttributes}
+                x={0}
+                y={0}
+                width={ready ? width : MASK_VIEWBOX_SIZE}
+                height={ready ? height : MASK_VIEWBOX_SIZE}
+                preserveAspectRatio="xMidYMid slice"
+              >
+                <title>{imageAlt}</title>
+              </image>
+            </svg>
           ) : null}
         </g>
       </svg>
