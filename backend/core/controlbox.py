@@ -298,11 +298,6 @@ class InstagramPublishingAccountControl(_ControlModel):
     key: str = Field(min_length=1, max_length=100, pattern=r"^[a-z0-9][a-z0-9_-]*$")
     name: str = Field(min_length=1, max_length=100)
     school: str = Field(min_length=1, max_length=255)
-    instagram_username: str = Field(
-        min_length=1,
-        max_length=100,
-        pattern=r"^[A-Za-z0-9._]+$",
-    )
     enabled: bool = True
 
 
@@ -330,9 +325,6 @@ class InstagramPublishingControl(_ControlModel):
         schools = [account.school for account in self.accounts]
         if len(schools) != len(set(schools)):
             raise ValueError("instagram publishing account schools must be unique")
-        usernames = [account.instagram_username.casefold() for account in self.accounts]
-        if len(usernames) != len(set(usernames)):
-            raise ValueError("instagram publishing account usernames must be unique")
         if self.token_refresh_lead_days >= self.token_lifetime_days:
             raise ValueError("instagram token refresh lead must be shorter than token lifetime")
         return self

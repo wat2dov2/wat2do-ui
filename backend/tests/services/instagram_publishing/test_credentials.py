@@ -65,7 +65,7 @@ def test_import_validates_identity_and_stores_only_ciphertext(monkeypatch, encry
     )
     now = datetime(2026, 7, 26, 12, tzinfo=timezone.utc)
 
-    result = credentials.import_access_token("plaintext-token", now_utc=now)
+    result = credentials.import_access_token("plaintext-token", "uwaterloo", now_utc=now)
 
     upsert = next(call for call in database.calls if call[0] == "upsert")
     stored = upsert[1][0]
@@ -79,21 +79,48 @@ def test_import_validates_identity_and_stores_only_ciphertext(monkeypatch, encry
     assert "plaintext-token" not in repr(result)
 
 
-def test_import_rejects_an_identity_outside_the_configured_accounts(
+def test_import_rejects_an_account_key_outside_the_configured_accounts(
     monkeypatch,
     encryption_key,
 ):
     class _MetaClient:
         def __init__(self, _access_token):
-            pass
-
-        def get_identity(self):
-            return {"id": "999999999", "username": "wrong.account"}
+            raise AssertionError("Instagram must not be called for an unknown account")
 
     monkeypatch.setattr(credentials, "MetaInstagramClient", _MetaClient)
 
-    with pytest.raises(ValidationError, match="not configured"):
-        credentials.import_access_token("wrong-token")
+    with pytest.raises(ValidationError, match="No Instagram publishing account"):
+        credentials.import_access_token("wrong-token", "not-a-school")
+
+
+def test_import_records_a_renamed_handle_without_complaint(
+    monkeypatch,
+    encryption_key,
+):
+    """The handle is observed, not asserted - only the account key routes."""
+    database = _Database()
+
+    class _MetaClient:
+        def __init__(self, _access_token):
+            pass
+
+        def get_identity(self):
+            return {"id": "28288284760757940", "username": "wat2do.ca"}
+
+    monkeypatch.setattr(credentials, "MetaInstagramClient", _MetaClient)
+    monkeypatch.setattr(credentials, "get_sb", lambda: database)
+    monkeypatch.setattr(
+        credentials.school_service,
+        "get_school",
+        lambda _slug: SimpleNamespace(id=1),
+    )
+
+    credentials.import_access_token("plaintext-token", "uwaterloo")
+
+    stored = next(call for call in database.calls if call[0] == "upsert")[1][0]
+    assert stored["account_key"] == "uwaterloo"
+    assert stored["instagram_username"] == "wat2do.ca"
+    assert stored["instagram_user_id"] == "28288284760757940"
 
 
 def test_load_credentials_decrypts_only_the_requested_account(

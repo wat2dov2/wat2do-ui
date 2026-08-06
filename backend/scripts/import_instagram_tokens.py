@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
-"""Validate and securely import manually generated Instagram access tokens."""
+"""Validate and securely import manually generated Instagram access tokens.
+
+Each line is ``account_key=token``, where the key names a configured publishing
+account. The account is named rather than inferred from the token's Instagram
+handle, because a handle can be renamed at any time while the account it
+publishes for cannot.
+"""
 
 from __future__ import annotations
 
@@ -13,9 +19,9 @@ from services.instagram_publishing.credentials import import_access_token  # noq
 
 
 def parse_token_file(path: Path) -> list[tuple[str, str]]:
-    """Read the leading ``label=token`` block without logging token values."""
+    """Read the leading ``account_key=token`` block without logging token values."""
     tokens: list[tuple[str, str]] = []
-    labels: set[str] = set()
+    account_keys: set[str] = set()
     for line_number, raw_line in enumerate(
         path.read_text(encoding="utf-8").splitlines(),
         start=1,
@@ -26,16 +32,16 @@ def parse_token_file(path: Path) -> list[tuple[str, str]]:
                 break
             continue
         if "=" not in line:
-            raise ValueError(f"Expected label=token on line {line_number}")
-        label, token = (part.strip() for part in line.split("=", 1))
-        if not label or not token:
-            raise ValueError(f"Expected non-empty label and token on line {line_number}")
-        if label in labels:
-            raise ValueError(f"Duplicate token label {label!r} on line {line_number}")
-        labels.add(label)
-        tokens.append((label, token))
+            raise ValueError(f"Expected account_key=token on line {line_number}")
+        account_key, token = (part.strip() for part in line.split("=", 1))
+        if not account_key or not token:
+            raise ValueError(f"Expected non-empty account_key and token on line {line_number}")
+        if account_key in account_keys:
+            raise ValueError(f"Duplicate account key {account_key!r} on line {line_number}")
+        account_keys.add(account_key)
+        tokens.append((account_key, token))
     if not tokens:
-        raise ValueError("Token file did not contain any label=token entries")
+        raise ValueError("Token file did not contain any account_key=token entries")
     return tokens
 
 
@@ -44,21 +50,21 @@ def main() -> int:
     parser.add_argument(
         "token_file",
         type=Path,
-        help="Path to a private file whose leading lines are label=token entries",
+        help="Path to a private file whose leading lines are account_key=token entries",
     )
     args = parser.parse_args()
 
     imported_account_keys: set[str] = set()
-    for label, token in parse_token_file(args.token_file):
-        credentials = import_access_token(token)
+    for account_key, token in parse_token_file(args.token_file):
+        credentials = import_access_token(token, account_key)
         if credentials.account_key in imported_account_keys:
             raise RuntimeError(
                 f"More than one supplied token resolved to {credentials.account_key}"
             )
         imported_account_keys.add(credentials.account_key)
         print(
-            f"{label} -> {credentials.account_key} "
-            f"(@{credentials.instagram_username}, {credentials.instagram_user_id})"
+            f"{credentials.account_key} -> "
+            f"@{credentials.instagram_username} ({credentials.instagram_user_id})"
         )
     print(f"Imported {len(imported_account_keys)} Instagram account token(s)")
     return 0

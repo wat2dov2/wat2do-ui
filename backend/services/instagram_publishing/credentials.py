@@ -38,21 +38,26 @@ class InstagramAccountCredentials:
 
 def import_access_token(
     access_token: str,
+    account_key: str,
     *,
     now_utc: datetime | None = None,
 ) -> InstagramAccountCredentials:
-    """Validate, identify, encrypt, and store one manually generated token."""
+    """Validate, encrypt, and store one manually generated token for *account_key*.
+
+    The caller names the account. The Instagram handle is recorded as observed
+    rather than asserted against config: a handle can be renamed at any time,
+    while the numeric user id behind it cannot, so the id is what later refreshes
+    verify against.
+    """
     token = access_token.strip()
     if not token:
         raise ValidationError("Instagram access token cannot be empty")
 
     now = _aware_utc(now_utc or datetime.now(timezone.utc))
-    identity = MetaInstagramClient(token).get_identity()
-    account = _configured_account_by_username(identity["username"])
+    account = _configured_account_by_key(account_key)
     if account is None:
-        raise ValidationError(
-            "Instagram token belongs to an account that is not configured for publishing"
-        )
+        raise ValidationError(f"No Instagram publishing account is configured for {account_key!r}")
+    identity = MetaInstagramClient(token).get_identity()
     school = school_service.get_school(account.school)
     if school is None:
         raise ValidationError("Instagram publishing school is not registered")
@@ -162,10 +167,9 @@ def refresh_expiring_tokens(
             refreshed = MetaInstagramClient(current_token).refresh_access_token()
             refreshed_token = str(refreshed["access_token"])
             identity = MetaInstagramClient(refreshed_token).get_identity()
-            if (
-                identity["id"] != str(row["instagram_user_id"])
-                or identity["username"].casefold() != account.instagram_username.casefold()
-            ):
+            # The numeric id is the account's stable identity; the handle is
+            # free to change and is simply recorded below.
+            if identity["id"] != str(row["instagram_user_id"]):
                 raise RuntimeError("Refreshed Instagram token identity does not match account")
 
             expires_at = now + timedelta(seconds=int(refreshed["expires_in"]))
@@ -224,29 +228,18 @@ def _assert_row_matches_account(
     account: InstagramPublishingAccountControl,
 ) -> None:
     row = school_service.with_school_slug(row)
-    if (
-        row.get("school") != account.school
-        or str(row.get("instagram_username") or "").casefold()
-        != account.instagram_username.casefold()
-    ):
+    if row.get("school") != account.school:
         raise ValidationError(
             f"Stored Instagram credentials do not match configured account {account.key}"
         )
 
 
-def _configured_account_by_key(key: str) -> InstagramPublishingAccountControl | None:
-    return next((account for account in _CONTROL.accounts if account.key == key), None)
-
-
-def _configured_account_by_username(
-    instagram_username: str,
+def _configured_account_by_key(
+    account_key: str,
 ) -> InstagramPublishingAccountControl | None:
+    key = account_key.strip().casefold()
     return next(
-        (
-            account
-            for account in _CONTROL.accounts
-            if account.instagram_username.casefold() == instagram_username.casefold()
-        ),
+        (account for account in _CONTROL.accounts if account.key.casefold() == key),
         None,
     )
 

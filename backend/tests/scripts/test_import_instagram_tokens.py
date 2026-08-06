@@ -18,9 +18,9 @@ def test_parse_token_file_reads_only_the_leading_private_token_block(tmp_path: P
     ]
 
 
-def test_parse_token_file_rejects_duplicate_labels(tmp_path: Path):
+def test_parse_token_file_rejects_duplicate_account_keys(tmp_path: Path):
     path = tmp_path / "tokens.txt"
     path.write_text("mcgill=first\nmcgill=second\n", encoding="utf-8")
 
-    with pytest.raises(ValueError, match="Duplicate token label"):
+    with pytest.raises(ValueError, match="Duplicate account key"):
         parse_token_file(path)

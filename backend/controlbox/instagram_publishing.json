@@ -5,168 +5,144 @@
       "key": "uwaterloo",
       "name": "Wat2Do Waterloo",
       "school": "uwaterloo",
-      "instagram_username": "uwaterloo.wat2do.io",
       "enabled": true
     },
     {
       "key": "utsc",
       "name": "Wat2Do UTSC",
       "school": "utsc",
-      "instagram_username": "utsc.wat2do.io",
       "enabled": true
     },
     {
       "key": "ulaval",
       "name": "Wat2Do Laval",
       "school": "ulaval",
-      "instagram_username": "ulaval.wat2do.io",
       "enabled": true
     },
     {
       "key": "ualberta",
       "name": "Wat2Do Alberta",
       "school": "ualberta",
-      "instagram_username": "ualberta.wat2do.io",
       "enabled": true
     },
     {
       "key": "tmu",
       "name": "Wat2Do TMU",
       "school": "tmu",
-      "instagram_username": "tmu.wat2do.io",
       "enabled": true
     },
     {
       "key": "mun",
       "name": "Wat2Do Memorial",
       "school": "mun",
-      "instagram_username": "mun.wat2do.io",
       "enabled": true
     },
     {
       "key": "udem",
       "name": "Wat2Do UdeM",
       "school": "udem",
-      "instagram_username": "udem.wat2do.io",
       "enabled": true
     },
     {
       "key": "ubc",
       "name": "Wat2Do UBC",
       "school": "ubc",
-      "instagram_username": "ubc.wat2do.io",
       "enabled": true
     },
     {
       "key": "sfu",
       "name": "Wat2Do SFU",
       "school": "sfu",
-      "instagram_username": "sfu.wat2do.io",
       "enabled": true
     },
     {
       "key": "carleton",
       "name": "Wat2Do Carleton",
       "school": "carleton",
-      "instagram_username": "carleton.wat2do.io",
       "enabled": true
     },
     {
       "key": "dalhousie",
       "name": "Wat2Do Dalhousie",
       "school": "dalhousie",
-      "instagram_username": "dalhousie.wat2do.io",
       "enabled": true
     },
     {
       "key": "mcmaster",
       "name": "Wat2Do McMaster",
       "school": "mcmaster",
-      "instagram_username": "mcmaster.wat2do.io",
       "enabled": true
     },
     {
       "key": "ocadu",
       "name": "Wat2Do OCAD",
       "school": "ocadu",
-      "instagram_username": "ocadu.wat2do.io",
       "enabled": true
     },
     {
       "key": "ucalgary",
       "name": "Wat2Do Calgary",
       "school": "ucalgary",
-      "instagram_username": "ucalgary.wat2do.io",
       "enabled": true
     },
     {
       "key": "ottawa",
       "name": "Wat2Do Ottawa",
       "school": "ottawa",
-      "instagram_username": "ottawa.wat2do.io",
       "enabled": true
     },
     {
       "key": "usask",
       "name": "Wat2Do Saskatchewan",
       "school": "usask",
-      "instagram_username": "usask.wat2do.io",
       "enabled": true
     },
     {
       "key": "utsg",
       "name": "Wat2Do UTSG",
       "school": "utsg",
-      "instagram_username": "utsg.wat2do.io",
       "enabled": true
     },
     {
       "key": "uwo",
       "name": "Wat2Do Western",
       "school": "uwo",
-      "instagram_username": "uwo.wat2do.io",
       "enabled": true
     },
     {
       "key": "uwindsor",
       "name": "Wat2Do Windsor",
       "school": "uwindsor",
-      "instagram_username": "uwindsor.wat2do.io",
       "enabled": true
     },
     {
       "key": "concordia",
       "name": "Wat2Do Concordia",
       "school": "concordia",
-      "instagram_username": "concordia.wat2do.io",
       "enabled": true
     },
     {
       "key": "yorku",
       "name": "Wat2Do York",
       "school": "yorku",
-      "instagram_username": "yorku.wat2do.io",
       "enabled": true
     },
     {
       "key": "queensu",
       "name": "Wat2Do Queen's",
       "school": "queensu",
-      "instagram_username": "queensu.wat2do.io",
       "enabled": true
     },
     {
       "key": "mcgill",
       "name": "Wat2Do McGill",
       "school": "mcgill",
-      "instagram_username": "mcgill.wat2do.io",
       "enabled": true
     },
     {
       "key": "wlu",
       "name": "Wat2Do Laurier",
       "school": "wlu",
-      "instagram_username": "wlu.wat2do.io",
       "enabled": true
     }
   ],

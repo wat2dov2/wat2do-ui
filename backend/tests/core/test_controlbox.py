@@ -33,7 +33,7 @@ def test_checked_in_controlbox_is_valid() -> None:
     assert controlbox.organization_management.directory_revalidate_seconds == 3600
     assert str(controlbox.contact.recipient_email) == "contact@wat2do.io"
     assert controlbox.contact.rate_limit.maximum_requests == 5
-    assert controlbox.instagram_publishing.accounts[0].instagram_username == "uwaterloo.wat2do.io"
+    assert controlbox.instagram_publishing.accounts[0].key == "uwaterloo"
     assert len(controlbox.instagram_publishing.accounts) == 24
     assert controlbox.instagram_publishing.new_event_window_hours == 24
     assert controlbox.instagram_publishing.maximum_event_slides == 9
