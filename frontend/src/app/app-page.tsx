@@ -8,7 +8,7 @@ import { ModalContainer } from "@/app/ModalContainer";
 import { ProtectedRoute } from "@/app/ProtectedRoute";
 import { UnknownSchoolPage } from "@/app/UnknownSchoolPage";
 import { useAppNavigation } from "@/app/hooks/useAppNavigation";
-import { useAppReady } from "@/app/client-providers";
+import { useAppReady, useAuthReady } from "@/app/client-providers";
 import { useUserEmail } from "@/features/auth/hooks/useAuthState";
 import { useCreditsStore } from "@/features/credits/store/credits.store";
 import { useEventsStore } from "@/features/events/store/events.store";
@@ -87,6 +87,7 @@ function AppPageContent({
   skipSchoolCheck,
 }: AppPageContentProps) {
   const ready = useAppReady();
+  const authReady = useAuthReady();
   const pathname = usePathname();
   const userEmail = useUserEmail();
   const events = useEventsStore((s) => s.events);
@@ -109,12 +110,14 @@ function AppPageContent({
     document.title = getRouteDocumentTitle(pathname);
   }, [pathname]);
 
+  // These read the signed-in account, so they wait on the auth bootstrap - not
+  // on the language load, which is all `ready` ever meant.
   useEffect(() => {
-    if (!ready || authFlow) return;
+    if (!authReady || authFlow) return;
     useSavedOrganizationsStore.getState().fetchSavedOrganizations();
     useCreditsStore.getState().fetchBalance();
     useCreditsStore.getState().fetchActivePromotedEventIds();
-  }, [authFlow, ready, userEmail]);
+  }, [authFlow, authReady, userEmail]);
 
   useAppNavigation({
     events,
@@ -135,12 +138,11 @@ function AppPageContent({
   // for a spinner is a step backwards the user sees as a stutter: content, then
   // loading, then the same content. The unknown-school check below still runs
   // once the directory resolves, so a bad subdomain is caught either way.
-  if (ready && needsSchoolValidation && isSchoolDirectoryPending && !renderBeforeReady) {
+  if (needsSchoolValidation && isSchoolDirectoryPending && !renderBeforeReady) {
     return <LoadingPage className="min-h-dvh" />;
   }
 
   if (
-    ready &&
     needsSchoolValidation &&
     !isSchoolDirectoryError &&
     !schoolBySlug.has(hostnameSchoolStatus.school)
