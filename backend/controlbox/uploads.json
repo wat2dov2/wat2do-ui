@@ -5,5 +5,7 @@
     "image/webp",
     "image/gif"
   ],
-  "event_image_max_size_bytes": 5242880
+  "event_image_max_size_bytes": 5242880,
+  "event_image_rendition_width_pixels": 1080,
+  "event_image_rendition_quality": 85
 }

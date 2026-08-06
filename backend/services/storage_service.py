@@ -170,7 +170,16 @@ class StorageService:
         # upload is rejected as invalid - a legitimate image always
         # round-trips through Pillow.
         if content_type in _EXIF_STRIP_MIMES:
-            data = _strip_image_metadata(data, content_type)
+            # Event posters are also sized here. They are the only images this
+            # app serves at scale, and resizing them once on the way in means
+            # the request path can hand back a stored file instead of decoding
+            # and resampling a full-size original for every viewer.
+            max_width = (
+                controlbox.uploads.event_image_rendition_width_pixels
+                if bucket == BUCKET_EVENT_IMAGES
+                else None
+            )
+            data = _strip_image_metadata(data, content_type, max_width=max_width)
 
         return data, content_type
 
@@ -291,8 +300,17 @@ def _is_safe_storage_path(path: str) -> bool:
     return True
 
 
-def _strip_image_metadata(data: bytes, content_type: str) -> bytes:
-    """Re-encode *data* through Pillow to drop EXIF, XMP, and other side-channel metadata.
+def _strip_image_metadata(
+    data: bytes,
+    content_type: str,
+    *,
+    max_width: int | None = None,
+) -> bytes:
+    """Re-encode *data* through Pillow to drop EXIF, XMP, and other metadata.
+
+    When *max_width* is given, an image wider than it is scaled down to it in
+    the same decode, preserving aspect ratio. Narrower images are left alone -
+    enlarging one adds bytes without adding detail.
 
     Raises ``ValidationError`` if the bytes cannot be decoded as an
     image of *content_type*.
@@ -312,6 +330,13 @@ def _strip_image_metadata(data: bytes, content_type: str) -> bytes:
             # Build a fresh image from pixel data only - this discards
             # ``info`` (APP1/EXIF, XMP, iTXt/tEXt) without risking
             # metadata being re-attached by the encoder.
+            # Animation is resized frame by frame or not at all; a single
+            # resample would flatten it, so animated images keep their size.
+            is_animated = getattr(im, "is_animated", False)
+            if max_width and not is_animated and im.width > max_width:
+                height = round(im.height * (max_width / im.width))
+                im = im.resize((max_width, max(height, 1)), Image.LANCZOS)
+
             pil_format = im.format
             if pil_format is None:
                 # Fall back to the MIME-derived extension.
@@ -330,6 +355,7 @@ def _strip_image_metadata(data: bytes, content_type: str) -> bytes:
             if pil_format == "JPEG":
                 save_kwargs["exif"] = b""
                 save_kwargs["optimize"] = True
+                save_kwargs["quality"] = controlbox.uploads.event_image_rendition_quality
             elif pil_format == "GIF":
                 # Preserve animation frames if present.
                 if getattr(im, "is_animated", False):

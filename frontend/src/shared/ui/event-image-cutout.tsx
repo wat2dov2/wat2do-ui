@@ -24,12 +24,6 @@ const FILLET = 8;
 const INNER_RADIUS = 12;
 /** Stable coordinate space so the server and hydrated SVG keep identical geometry. */
 const MASK_VIEWBOX_SIZE = 100;
-const DEFAULT_POSTER_WIDTH = 640;
-
-function getOptimizedPosterUrl(src: string, width: number): string {
-  if (!src.startsWith("https://wat2do.io/media/")) return src;
-  return `/_next/image?url=${encodeURIComponent(src)}&w=${width}&q=75`;
-}
 
 interface MeasuredCutout {
   corner: BadgeMaskVariant;
@@ -191,8 +185,6 @@ interface EventImageCutoutProps {
   imageAlt?: string;
   /** Load the poster immediately for LCP candidates; defer off-screen cards. */
   imageLoading?: "eager" | "lazy";
-  /** Render width sent to Next's image optimizer. */
-  imageWidth?: number;
   /** Measured badge sizes from `useEventImageCutouts`. */
   cutouts: MeasuredCutout[];
   width: number;
@@ -219,7 +211,6 @@ export function EventImageCutout({
   imageSrc,
   imageAlt = "",
   imageLoading = "eager",
-  imageWidth = DEFAULT_POSTER_WIDTH,
   cutouts,
   width,
   height,
@@ -239,7 +230,7 @@ export function EventImageCutout({
     });
   const shouldLoadImage = imageLoading === "eager" || hasIntersected;
   const displayedImageSrc = imageSrc
-    ? getOptimizedPosterUrl(imageSrc, imageWidth)
+    ? imageSrc
     : null;
   const priorityAttributes =
     imageLoading === "eager" ? { fetchpriority: "high" } : {};

@@ -287,6 +287,11 @@ class UploadsControl(_ControlModel):
 
     event_image_allowed_mime_types: list[str] = Field(min_length=1)
     event_image_max_size_bytes: int = Field(gt=0)
+    # Posters are stored at this width, so it is the width every viewer gets.
+    # 1080 is where the Instagram sources top out; asking for more would store
+    # upscaled pixels, and the detail view is the widest place one is shown.
+    event_image_rendition_width_pixels: int = Field(ge=640, le=2400)
+    event_image_rendition_quality: int = Field(ge=1, le=100)
 
     @model_validator(mode="after")
     def _validate_mime_types(self) -> "UploadsControl":
