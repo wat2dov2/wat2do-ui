@@ -31,13 +31,13 @@ export function EventCount({
         <Button
           type="button"
           variant="secondary"
-          size="lg"
+          size="sm"
           onMouseDown={handleLatestAddedMouseDown}
           className="min-w-0 max-w-full self-start gap-2 text-left"
         >
           {/* The pulsing badge carries "recent"; the text only has to say what. */}
-          <Badge variant="live" size="sm" className="shrink-0">
-            {t("common.live")}
+          <Badge variant="new" size="sm" className="shrink-0">
+            {t("events.new")}
           </Badge>
           <span className="truncate">
             {t("events.latestAddedEvent", {

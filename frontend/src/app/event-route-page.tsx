@@ -60,9 +60,12 @@ export function EventRoutePage({
 }: EventRoutePageProps) {
   const ready = useAppReady();
 
+  // Hydrate on mount rather than when the app turns ready: those are different
+  // renders, and the ready one is exactly when this route swaps InitialEventFeed
+  // for EventsPageContainer. Gating on it meant the container's first render read
+  // a store that was still empty and still isLoading, so it painted skeletons
+  // between the server's grid and the same grid again.
   useLayoutEffect(() => {
-    if (!ready) return;
-
     if (initialSnapshot) {
       useEventsStore
         .getState()
@@ -79,7 +82,7 @@ export function EventRoutePage({
       isLoading: false,
       error: i18n.t("events.loadFailed"),
     });
-  }, [initialSnapshot, initialSchool, ready]);
+  }, [initialSnapshot, initialSchool]);
 
   if (!ready) {
     return (

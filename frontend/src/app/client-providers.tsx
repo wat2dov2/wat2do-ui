@@ -1,5 +1,6 @@
 "use client";
 
+import "@/app/english-locale";
 import { createContext, lazy, Suspense, useContext, useEffect, useState, type ReactNode } from "react";
 import "@/shared/lib/i18n";
 import i18n, { getStoredLanguage } from "@/shared/lib/i18n";
