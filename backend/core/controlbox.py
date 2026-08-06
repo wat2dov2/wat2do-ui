@@ -294,22 +294,8 @@ class UploadsControl(_ControlModel):
         return self
 
 
-class InstagramPublishingAccountControl(_ControlModel):
-    """Which publishing accounts exist, and whether each one runs.
-
-    The key is the slug of the school the account publishes for - one account
-    per school - so it needs no separate school field. Everything else about an
-    account (its Instagram id, handle, token, and the school row it points at)
-    is established when the account is connected and lives in the database.
-    """
-
-    key: str = Field(min_length=1, max_length=100, pattern=r"^[a-z0-9][a-z0-9_-]*$")
-    enabled: bool = True
-
-
 class InstagramPublishingControl(_ControlModel):
     graph_api_version: str = Field(pattern=r"^v[0-9]+\.[0-9]+$")
-    accounts: tuple[InstagramPublishingAccountControl, ...] = Field(min_length=1)
     generation_timezone: str = Field(min_length=1)
     fallback_window_hours: int = Field(gt=0)
     new_event_window_hours: int = Field(gt=0)
@@ -324,10 +310,7 @@ class InstagramPublishingControl(_ControlModel):
     token_refresh_lead_days: int = Field(gt=0, le=30)
 
     @model_validator(mode="after")
-    def validate_unique_accounts(self) -> "InstagramPublishingControl":
-        keys = [account.key for account in self.accounts]
-        if len(keys) != len(set(keys)):
-            raise ValueError("instagram publishing account keys must be unique")
+    def validate_token_windows(self) -> "InstagramPublishingControl":
         if self.token_refresh_lead_days >= self.token_lifetime_days:
             raise ValueError("instagram token refresh lead must be shorter than token lifetime")
         return self

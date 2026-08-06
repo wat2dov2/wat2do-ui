@@ -79,17 +79,18 @@ def test_import_validates_identity_and_stores_only_ciphertext(monkeypatch, encry
     assert "plaintext-token" not in repr(result)
 
 
-def test_import_rejects_an_account_key_outside_the_configured_accounts(
+def test_import_rejects_an_account_key_that_is_not_a_registered_school(
     monkeypatch,
     encryption_key,
 ):
     class _MetaClient:
         def __init__(self, _access_token):
-            raise AssertionError("Instagram must not be called for an unknown account")
+            raise AssertionError("Instagram must not be called for an unknown school")
 
     monkeypatch.setattr(credentials, "MetaInstagramClient", _MetaClient)
+    monkeypatch.setattr(credentials.school_service, "get_school", lambda _slug: None)
 
-    with pytest.raises(ValidationError, match="No Instagram publishing account"):
+    with pytest.raises(ValidationError, match="No registered school"):
         credentials.import_access_token("wrong-token", "not-a-school")
 
 
@@ -139,11 +140,7 @@ def test_load_credentials_decrypts_only_the_requested_account(
     }
     database = _Database([row])
     monkeypatch.setattr(credentials, "get_sb", lambda: database)
-    account = next(
-        account for account in credentials._CONTROL.accounts if account.key == "dalhousie"
-    )
-
-    result = credentials.load_account_credentials(account, now_utc=now)
+    result = credentials.load_account_credentials("dalhousie", now_utc=now)
 
     assert result.account_key == "dalhousie"
     assert result.access_token == "dalhousie-token"

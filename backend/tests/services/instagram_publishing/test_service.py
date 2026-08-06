@@ -19,9 +19,10 @@ def registered_school(monkeypatch):
     monkeypatch.setattr(service.school_service, "get_school_id", lambda _school: 1)
 
 
-def test_generate_due_batches_uses_enabled_controlbox_accounts(monkeypatch):
+def test_generate_due_batches_uses_enabled_connected_accounts(monkeypatch):
     generated_accounts = []
-    enabled_accounts = [account for account in service._CONTROL.accounts if account.enabled]
+    enabled_accounts = ["dalhousie", "uwaterloo"]
+    monkeypatch.setattr(service, "_enabled_account_keys", lambda: enabled_accounts)
     monkeypatch.setattr(service, "_batch_exists", lambda *_: False)
     monkeypatch.setattr(
         service,
@@ -41,20 +42,20 @@ def test_generate_due_batches_uses_enabled_controlbox_accounts(monkeypatch):
         "failed": 0,
     }
     assert generated_accounts == enabled_accounts
-    assert all(account.key != "wat2do" for account in generated_accounts)
-    assert any(account.key == "dalhousie" for account in generated_accounts)
+    assert "dalhousie" in generated_accounts
 
 
 def test_generate_due_batches_runs_when_the_scheduler_starts_late(monkeypatch):
     generate = Mock(return_value="generated")
     monkeypatch.setattr(service, "_generate_account_batch", generate)
     monkeypatch.setattr(service, "_batch_exists", lambda *_: False)
+    enabled_account_count = 2
+    monkeypatch.setattr(service, "_enabled_account_keys", lambda: ["dalhousie", "uwaterloo"])
 
     result = service.generate_due_batches(
         datetime(2026, 7, 23, 14, 48, tzinfo=timezone.utc),
     )
 
-    enabled_account_count = sum(account.enabled for account in service._CONTROL.accounts)
     assert result["accounts"] == enabled_account_count
     assert generate.call_count == enabled_account_count
 
@@ -350,6 +351,7 @@ def test_publish_batch_renders_the_slides_from_live_event_data(monkeypatch):
     containers: list[str] = []
     table_calls: list[tuple] = []
 
+    monkeypatch.setattr(service, "_enabled_account_keys", lambda: ["dalhousie"])
     load_credentials = Mock(
         return_value=SimpleNamespace(
             access_token="dalhousie-token",
@@ -410,7 +412,7 @@ def test_publish_batch_renders_the_slides_from_live_event_data(monkeypatch):
 
     service.publish_batch("batch-1", InstagramPublishBatchPublish(version=3))
 
-    assert load_credentials.call_args.args[0].key == "dalhousie"
+    assert load_credentials.call_args.args[0] == "dalhousie"
     assert rendered == [("cover", [7, 8], "dalhousie", "Body", "2026-07-26", 20), 7, 8]
     assert containers == ["https://a/cover.png", "https://a/7.png", "https://a/8.png"]
     published = [call for call in table_calls if call[0] == "update"]

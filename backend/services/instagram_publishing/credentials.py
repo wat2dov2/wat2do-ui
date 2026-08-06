@@ -10,7 +10,7 @@ from typing import Any
 from cryptography.fernet import Fernet, InvalidToken
 
 from core.config import settings
-from core.controlbox import InstagramPublishingAccountControl, controlbox
+from core.controlbox import controlbox
 from core.database import get_sb
 from core.errors import (
     INSTAGRAM_PUBLISHING_NOT_CONFIGURED,
@@ -54,17 +54,17 @@ def import_access_token(
         raise ValidationError("Instagram access token cannot be empty")
 
     now = _aware_utc(now_utc or datetime.now(timezone.utc))
-    account = _configured_account_by_key(account_key)
-    if account is None:
-        raise ValidationError(f"No Instagram publishing account is configured for {account_key!r}")
-    identity = MetaInstagramClient(token).get_identity()
-    school = school_service.get_school(account.key)
+    key = account_key.strip()
+    # The key is the slug of the school the account publishes for, so an
+    # unregistered school is the one thing worth rejecting before calling out.
+    school = school_service.get_school(key)
     if school is None:
-        raise ValidationError("Instagram publishing school is not registered")
+        raise ValidationError(f"No registered school matches account key {key!r}")
+    identity = MetaInstagramClient(token).get_identity()
 
     expires_at = now + timedelta(days=_CONTROL.token_lifetime_days)
     row = {
-        "account_key": account.key,
+        "account_key": key,
         "school_id": school.id,
         "instagram_user_id": identity["id"],
         "instagram_username": identity["username"],
@@ -84,24 +84,24 @@ def import_access_token(
         .execute()
     )
     if not response.data:
-        raise RuntimeError(f"Could not store Instagram credentials for {account.key}")
+        raise RuntimeError(f"Could not store Instagram credentials for {key}")
     return _credentials_from_row(
-        {**response.data[0], "school": account.key},
+        {**response.data[0], "school": key},
         token=token,
     )
 
 
 def load_account_credentials(
-    account: InstagramPublishingAccountControl,
+    account_key: str,
     *,
     now_utc: datetime | None = None,
 ) -> InstagramAccountCredentials:
-    """Load and decrypt the credential belonging to one configured account."""
+    """Load and decrypt the credential belonging to one connected account."""
     response = (
         get_sb()
         .table(INSTAGRAM_PUBLISHING_ACCOUNTS)
         .select(f"*,{school_service.SCHOOL_SLUG_EMBED}")
-        .eq("account_key", account.key)
+        .eq("account_key", account_key)
         .limit(1)
         .execute()
     )
@@ -109,7 +109,6 @@ def load_account_credentials(
         raise ValidationError(INSTAGRAM_PUBLISHING_NOT_CONFIGURED)
 
     row = response.data[0]
-    _assert_row_matches_account(row, account)
     if row.get("requires_reauthorization"):
         raise ValidationError(INSTAGRAM_REAUTHORIZATION_REQUIRED)
 
@@ -117,7 +116,7 @@ def load_account_credentials(
     now = _aware_utc(now_utc or datetime.now(timezone.utc))
     if expires_at <= now:
         _mark_reauthorization_required(
-            account.key,
+            account_key,
             "Instagram access token expired before it could be refreshed",
             now,
         )
@@ -144,21 +143,13 @@ def refresh_expiring_tokens(
     stats = {"due": len(rows), "refreshed": 0, "failed": 0}
 
     for row in rows:
-        account = _configured_account_by_key(str(row.get("account_key") or ""))
-        if account is None:
-            log.error(
-                "Instagram token refresh skipped unknown account_key=%s",
-                row.get("account_key"),
-            )
-            stats["failed"] += 1
-            continue
+        account_key = str(row.get("account_key") or "")
         try:
-            _assert_row_matches_account(row, account)
             current_token = _decrypt(row["encrypted_access_token"])
         except Exception:
             log.exception(
                 "Instagram token refresh configuration failed account_key=%s",
-                account.key,
+                account_key,
             )
             stats["failed"] += 1
             continue
@@ -190,16 +181,16 @@ def refresh_expiring_tokens(
                         "updated_at": now.isoformat(),
                     }
                 )
-                .eq("account_key", account.key)
+                .eq("account_key", account_key)
                 .execute()
             )
             stats["refreshed"] += 1
         except Exception as exc:
             error = _safe_error(exc, current_token)
-            _mark_reauthorization_required(account.key, error, now)
+            _mark_reauthorization_required(account_key, error, now)
             log.error(
                 "Instagram token refresh failed account_key=%s: %s",
-                account.key,
+                account_key,
                 error,
             )
             stats["failed"] += 1
@@ -220,27 +211,6 @@ def _credentials_from_row(
         instagram_username=str(row["instagram_username"]),
         access_token=token,
         expires_at=_parse_datetime(row["expires_at"]),
-    )
-
-
-def _assert_row_matches_account(
-    row: dict[str, Any],
-    account: InstagramPublishingAccountControl,
-) -> None:
-    row = school_service.with_school_slug(row)
-    if row.get("school") != account.key:
-        raise ValidationError(
-            f"Stored Instagram credentials do not match configured account {account.key}"
-        )
-
-
-def _configured_account_by_key(
-    account_key: str,
-) -> InstagramPublishingAccountControl | None:
-    key = account_key.strip().casefold()
-    return next(
-        (account for account in _CONTROL.accounts if account.key.casefold() == key),
-        None,
     )
 
 

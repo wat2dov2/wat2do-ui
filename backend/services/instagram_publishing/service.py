@@ -25,7 +25,7 @@ from core.constants import (
     INSTAGRAM_BATCH_PUBLISHING,
     INSTAGRAM_BATCH_READY_FOR_REVIEW,
 )
-from core.controlbox import InstagramPublishingAccountControl, controlbox
+from core.controlbox import controlbox
 from core.database import get_sb
 from core.errors import (
     INSTAGRAM_PUBLISH_BATCH_NOT_EDITABLE,
@@ -38,6 +38,7 @@ from core.tables import (
     EVENTS,
     INSTAGRAM_PUBLISH_BATCHES,
     INSTAGRAM_PUBLISH_ITEMS,
+    INSTAGRAM_PUBLISHING_ACCOUNTS,
 )
 from schemas.event import EventSummaryResponse
 from schemas.instagram_publishing import (
@@ -75,7 +76,7 @@ def generate_due_batches(
     generation_timezone = ZoneInfo(_CONTROL.generation_timezone)
     local_now = now.astimezone(generation_timezone)
 
-    enabled = [account for account in _CONTROL.accounts if account.enabled]
+    enabled = _enabled_account_keys()
     stats = {
         "accounts": len(enabled),
         "generated": 0,
@@ -83,16 +84,16 @@ def generate_due_batches(
         "skipped": 0,
         "failed": 0,
     }
-    for account in enabled:
-        if _batch_exists(account.key, local_now.date()):
+    for account_key in enabled:
+        if _batch_exists(account_key, local_now.date()):
             stats["skipped"] += 1
             continue
         try:
-            outcome = _generate_account_batch(account, local_now.date(), now)
+            outcome = _generate_account_batch(account_key, local_now.date(), now)
         except Exception:
             log.exception(
                 "Instagram batch generation could not start account=%s",
-                account.key,
+                account_key,
             )
             stats["failed"] += 1
             continue
@@ -187,17 +188,10 @@ def publish_batch(
     _assert_version(batch, data.version)
     _assert_editable(batch)
 
-    account = next(
-        (
-            candidate
-            for candidate in _CONTROL.accounts
-            if candidate.enabled and candidate.key == batch["account_key"]
-        ),
-        None,
-    )
-    if account is None:
-        raise ValidationError("Instagram account configuration no longer matches this batch")
-    credentials = load_account_credentials(account)
+    account_key = str(batch["account_key"])
+    if account_key not in _enabled_account_keys():
+        raise ValidationError("Instagram publishing is disabled for this account")
+    credentials = load_account_credentials(account_key)
     if credentials.instagram_user_id != batch["instagram_user_id"]:
         raise ValidationError("Instagram account credentials no longer match this batch")
 
@@ -246,15 +240,33 @@ def publish_batch(
     return get_batch(batch_id)
 
 
+def _enabled_account_keys() -> list[str]:
+    """Account keys the daily job runs, straight from the connected accounts.
+
+    An account exists once it has been connected, and its row says whether it
+    publishes - so an account that was never connected simply has no batches
+    generated for it, rather than generating batches nothing can publish.
+    """
+    response = (
+        get_sb()
+        .table(INSTAGRAM_PUBLISHING_ACCOUNTS)
+        .select("account_key")
+        .eq("enabled", True)
+        .order("account_key")
+        .execute()
+    )
+    return [str(row["account_key"]) for row in response.data or []]
+
+
 def _generate_account_batch(
-    account: InstagramPublishingAccountControl,
+    account_key: str,
     local_date: date,
     now: datetime,
 ) -> str:
-    credentials = load_account_credentials(account, now_utc=now)
+    credentials = load_account_credentials(account_key, now_utc=now)
     if credentials.school_id is None:
         raise ValidationError("Instagram publishing school is not registered")
-    window_start = _last_successful_cutoff(account.key) or (
+    window_start = _last_successful_cutoff(account_key) or (
         now - timedelta(hours=_CONTROL.fallback_window_hours)
     )
     batch_response = (
@@ -262,7 +274,7 @@ def _generate_account_batch(
         .table(INSTAGRAM_PUBLISH_BATCHES)
         .insert(
             {
-                "account_key": account.key,
+                "account_key": account_key,
                 "instagram_user_id": credentials.instagram_user_id,
                 "school_id": credentials.school_id,
                 "local_date": local_date.isoformat(),
@@ -275,13 +287,13 @@ def _generate_account_batch(
         .execute()
     )
     if not batch_response.data:
-        raise RuntimeError(f"Could not create Instagram batch for {account.key}")
+        raise RuntimeError(f"Could not create Instagram batch for {account_key}")
     batch = batch_response.data[0]
 
     try:
         candidates = _load_candidates(
-            account_key=account.key,
-            school=account.key,
+            account_key=account_key,
+            school=account_key,
             window_start=window_start,
             window_end=now,
         )
@@ -302,7 +314,7 @@ def _generate_account_batch(
         item_rows = [
             {
                 "batch_id": batch["id"],
-                "account_key": account.key,
+                "account_key": account_key,
                 "event_id": candidate["id"],
                 "position": position,
             }
@@ -315,7 +327,7 @@ def _generate_account_batch(
             .update(
                 {
                     "status": INSTAGRAM_BATCH_READY_FOR_REVIEW,
-                    "caption": build_caption(selected, account.key),
+                    "caption": build_caption(selected, account_key),
                     "error_message": None,
                     "updated_at": _iso_now(),
                 }
@@ -325,7 +337,7 @@ def _generate_account_batch(
         )
         return "generated"
     except Exception as exc:
-        log.exception("Instagram batch generation failed for account=%s", account.key)
+        log.exception("Instagram batch generation failed for account=%s", account_key)
         (
             get_sb()
             .table(INSTAGRAM_PUBLISH_BATCHES)

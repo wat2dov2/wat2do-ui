@@ -33,15 +33,10 @@ def test_checked_in_controlbox_is_valid() -> None:
     assert controlbox.organization_management.directory_revalidate_seconds == 3600
     assert str(controlbox.contact.recipient_email) == "contact@wat2do.io"
     assert controlbox.contact.rate_limit.maximum_requests == 5
-    assert controlbox.instagram_publishing.accounts[0].key == "uwaterloo"
-    # An account entry carries only what the database cannot: which accounts
-    # exist and whether each runs. Identity, handle, token and school all come
-    # from the connected row, so nothing here may duplicate them.
-    assert set(controlbox.instagram_publishing.accounts[0].model_dump()) == {
-        "key",
-        "enabled",
-    }
-    assert len(controlbox.instagram_publishing.accounts) == 24
+    # Publishing accounts are not configured here at all: which accounts exist,
+    # which school each serves, and whether each runs all come from the row
+    # written when the account is connected.
+    assert not hasattr(controlbox.instagram_publishing, "accounts")
     assert controlbox.instagram_publishing.new_event_window_hours == 24
     assert controlbox.instagram_publishing.maximum_event_slides == 9
     assert controlbox.instagram_publishing.token_refresh_lead_days == 14
