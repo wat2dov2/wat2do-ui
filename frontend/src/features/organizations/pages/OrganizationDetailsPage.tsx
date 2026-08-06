@@ -12,6 +12,7 @@ import {
 } from "@/shared/ui/doodle-icons";
 import { Button } from "@/shared/ui/button";
 import { LoadingPage } from "@/shared/ui/loading-page";
+import { Link } from "@/shared/ui/link";
 import { Separator } from "@/shared/ui/separator";
 import { useAuthState } from "@/features/auth/hooks/useAuthState";
 import { OrganizationEventsGrid } from "@/features/events/components/OrganizationEventsGrid";
@@ -39,8 +40,9 @@ interface OrganizationDetailsContentProps {
   schoolName: string;
 }
 
-const ORGANIZATION_LINK_CLASS =
-  "flex items-center gap-2 text-sm text-foreground transition-colors hover:text-primary";
+// Layout only: how the icon sits beside the label. The link's own appearance -
+// colour, underline on hover - belongs to the Link primitive, not to this page.
+const ORGANIZATION_LINK_CLASS = "flex items-center gap-2 text-sm";
 
 function OrganizationDetailsContent({
   organization,
@@ -120,7 +122,7 @@ function OrganizationDetailsContent({
 
             <Stack direction="horizontal" gap={4} align="center" wrap>
               {organizationPageHref ? (
-                <a
+                <Link
                   href={organizationPageHref}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -130,10 +132,10 @@ function OrganizationDetailsContent({
                   <span className="truncate">
                     {organization.organization_page}
                   </span>
-                </a>
+                </Link>
               ) : null}
               {organization.ig ? (
-                <a
+                <Link
                   href={`https://instagram.com/${organization.ig}`}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -141,10 +143,10 @@ function OrganizationDetailsContent({
                 >
                   <Instagram className="size-4 text-muted-foreground" />
                   <span>@{organization.ig}</span>
-                </a>
+                </Link>
               ) : null}
               {discordHref ? (
-                <a
+                <Link
                   href={discordHref}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -152,7 +154,7 @@ function OrganizationDetailsContent({
                 >
                   <Discord className="size-4 text-muted-foreground" />
                   <span>{t("organizationPanel.joinDiscord")}</span>
-                </a>
+                </Link>
               ) : null}
             </Stack>
 

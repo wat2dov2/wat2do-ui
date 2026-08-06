@@ -1,13 +1,27 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import localFont from "next/font/local";
 import type { ReactNode } from "react";
 import { ClientProviders } from "@/app/client-providers";
 import { PageBackground } from "@/shared/layout";
 import "../index.css";
 
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
+// Satoshi ships as a single variable file per style, so one declaration covers
+// every weight the UI asks for. Self-hosted rather than fetched: the licence
+// requires it, and it removes a third-party request from the critical path.
+const satoshi = localFont({
+  src: [
+    {
+      path: "../../public/fonts/WEB/fonts/Satoshi-Variable.woff2",
+      weight: "300 900",
+      style: "normal",
+    },
+    {
+      path: "../../public/fonts/WEB/fonts/Satoshi-VariableItalic.woff2",
+      weight: "300 900",
+      style: "italic",
+    },
+  ],
+  variable: "--font-satoshi",
   display: "swap",
 });
 
@@ -57,7 +71,7 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
   return (
     <html
       lang="en"
-      className={`dark no-transitions ${inter.variable}`}
+      className={`dark no-transitions ${satoshi.variable}`}
       suppressHydrationWarning
     >
       <head>

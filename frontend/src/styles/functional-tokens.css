@@ -87,7 +87,7 @@
   --scrollbar-thumb: oklch(0.399 0 0);
   --scrollbar-track: oklch(0.216 0 0);
 
-  /* Typography - Inter loaded via next/font in layout.tsx */
-  --font-family-sans: var(--font-inter), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  /* Typography - Satoshi loaded via next/font/local in layout.tsx */
+  --font-family-sans: var(--font-satoshi), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-family-mono: "JetBrains Mono", "Fira Code", "Consolas", monospace;
 }

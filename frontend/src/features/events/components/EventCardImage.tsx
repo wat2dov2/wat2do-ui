@@ -19,7 +19,16 @@ import { cn } from "@/shared/lib/utils";
 import type { Event } from "@/shared/types";
 import { EVENT_CARD_IMAGE_HEIGHT } from "@/shared/constants/ui";
 
-const CACHED_EVENT_POSTER_WIDTH = 384;
+// Widths must be values Next will actually serve - the union of its default
+// imageSizes and deviceSizes. 384 is the top of imageSizes, which is sized for
+// icons, so a card asked for roughly its CSS width and got a third of the
+// pixels a retina screen paints it at. These come from deviceSizes instead: a
+// grid card is ~190-250 CSS px (570-750 device px at 3x), and the detail poster
+// is full width, where 1080 also matches the Instagram source ceiling.
+const EVENT_POSTER_WIDTHS = {
+  card: 750,
+  detail: 1080,
+} as const;
 
 interface EventCardImageProps {
   event: Event;
@@ -91,7 +100,7 @@ export function EventCardImage({
           imageSrc={event.source_image_url}
           imageAlt={event.title}
           imageLoading={eagerImage ? "eager" : "lazy"}
-          imageWidth={CACHED_EVENT_POSTER_WIDTH}
+          imageWidth={EVENT_POSTER_WIDTHS[variant]}
           cutouts={cutouts}
           width={box.width}
           height={box.height}

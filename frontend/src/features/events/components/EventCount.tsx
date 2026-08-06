@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { PageCountHeading } from "@/shared/ui/page-count-heading";
+import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Stack } from "@/shared/layout";
 import { useMouseDownAction } from "@/shared/hooks";
@@ -29,11 +30,15 @@ export function EventCount({
       {latestAddedEvent ? (
         <Button
           type="button"
-          variant="ghost"
-          size="sm"
+          variant="secondary"
+          size="lg"
           onMouseDown={handleLatestAddedMouseDown}
-          className="min-w-0 self-start text-left"
+          className="min-w-0 max-w-full self-start gap-2 text-left"
         >
+          {/* The pulsing badge carries "recent"; the text only has to say what. */}
+          <Badge variant="live" size="sm" className="shrink-0">
+            {t("common.live")}
+          </Badge>
           <span className="truncate">
             {t("events.latestAddedEvent", {
               title: latestAddedEvent.title,

@@ -18,7 +18,11 @@ function DrawerBody({ className, ...props }: DrawerBodyProps) {
     <div
       data-slot="drawer-body"
       className={cn(
-        "flex min-h-0 flex-auto flex-col gap-6 overflow-y-auto overscroll-contain p-4 sm:p-6",
+        // min-w-0 lets wide children shrink instead of forcing the body wider, and
+        // overflow-x-hidden makes the no-sideways-scroll rule explicit: setting
+        // overflow-y alone computes overflow-x to auto, which is how a stray wide
+        // child produced a horizontal scrollbar.
+        "flex min-h-0 min-w-0 flex-auto flex-col gap-6 overflow-y-auto overflow-x-hidden overscroll-contain p-4 sm:p-6",
         className
       )}
       {...props}
