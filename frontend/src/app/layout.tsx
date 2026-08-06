@@ -84,8 +84,12 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
           dangerouslySetInnerHTML={{ __html: themeInitScript }}
         />
         <PageBackground />
-        <SiteBanner />
-        <ClientProviders>{children}</ClientProviders>
+        {/* Inside the providers so the strip's own controls can be translated;
+            it is still a server component, rendered on the server as a child. */}
+        <ClientProviders>
+          <SiteBanner />
+          {children}
+        </ClientProviders>
       </body>
     </html>
   );

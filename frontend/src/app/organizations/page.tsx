@@ -70,7 +70,7 @@ export default async function OrganizationsPage() {
   const initialDirectory = await loadInitialDirectory(school);
 
   return (
-    <AppPage renderBeforeReady>
+    <AppPage>
       <OrganizationsPageContent
         initialDirectory={initialDirectory}
         initialSchool={school}

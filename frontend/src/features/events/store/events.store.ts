@@ -32,6 +32,15 @@ interface EventsState {
   isLoading: boolean;
   error: string | null;
   schoolFilter: string | null;
+  /**
+   * Whether the server's browse snapshot has been handed to this store.
+   *
+   * Zustand is client-only, so the store is still empty during the server
+   * render and on the first client render. Consumers read the snapshot
+   * directly until this turns true, which keeps both of those renders
+   * identical to every render after it.
+   */
+  hasHydratedInitialFeed: boolean;
 
   hydrateInitialFeed: (
     feed: PaginatedEventsResponse,
@@ -76,6 +85,7 @@ export const useEventsStore = create<EventsState>((set, get) => ({
   isLoading: true,
   error: null,
   schoolFilter: getInitialSchoolFilter(),
+  hasHydratedInitialFeed: false,
 
   hydrateInitialFeed: (feed, school, promotedEvents = []) => {
     const nextSchool = school ? resolveSchool(school) : get().schoolFilter;
@@ -87,6 +97,7 @@ export const useEventsStore = create<EventsState>((set, get) => ({
       isLoading: false,
       error: null,
       schoolFilter: nextSchool,
+      hasHydratedInitialFeed: true,
     });
   },
 

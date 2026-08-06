@@ -1,5 +1,8 @@
-import { headers } from "next/headers";
-import Link from "next/link";
+import { cookies, headers } from "next/headers";
+import {
+  SITE_BANNER_DISMISSED_COOKIE,
+  SiteBannerStrip,
+} from "@/app/SiteBannerStrip";
 import { getSchool } from "@/shared/api/schools.server";
 import { getSiteBanner } from "@/shared/api/siteBanner.server";
 import { getHostnameSchoolStatus } from "@/shared/constants/schools";
@@ -22,8 +25,9 @@ function resolveCtaHref(href: string): string {
  * The site-wide announcement strip, pinned above the navigation on every page.
  *
  * A server component, so the copy is part of the first paint rather than
- * appearing after hydration. `{{school}}` in the message becomes the name of
- * the school whose subdomain the visitor is on.
+ * appearing after hydration, and so a visitor who has already dismissed it is
+ * simply never sent it. `{{school}}` in the message becomes the name of the
+ * school whose subdomain the visitor is on.
  *
  * The navigation is fixed to the top, so this is too, and `index.css` offsets
  * the nav and the page below it whenever this strip is present.
@@ -34,6 +38,9 @@ export async function SiteBanner() {
 
   const href = resolveCtaHref(banner.cta_href);
   if (!href) return null;
+
+  const cookieStore = await cookies();
+  if (cookieStore.has(SITE_BANNER_DISMISSED_COOKIE)) return null;
 
   const requestHeaders = await headers();
   const hostname =
@@ -46,17 +53,10 @@ export async function SiteBanner() {
   );
 
   return (
-    <div
-      data-slot="site-banner"
-      className="fixed inset-x-0 top-0 z-nav flex h-9 items-center justify-center gap-2 bg-primary px-4 text-xs text-primary-foreground sm:text-sm"
-    >
-      <span className="min-w-0 truncate">{message}</span>
-      <Link
-        href={href}
-        className="shrink-0 font-semibold underline underline-offset-4"
-      >
-        {banner.cta_label}
-      </Link>
-    </div>
+    <SiteBannerStrip
+      message={message}
+      ctaHref={href}
+      ctaLabel={banner.cta_label}
+    />
   );
 }

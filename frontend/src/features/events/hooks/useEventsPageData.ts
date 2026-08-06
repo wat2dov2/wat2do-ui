@@ -9,13 +9,85 @@ import {
 } from "@/features/events/hooks/useGoingEvents";
 import { useLastEventsVisit } from "@/features/events/hooks/useLastEventsVisit";
 import { useCreditsStore } from "@/features/credits/store/credits.store";
+import { resolveSchool } from "@/shared/constants/schools";
 import { getUniqueEvents } from "@/shared/utils/event";
 import { hasActiveEventOccurrence } from "@/shared/utils/date";
+import i18n from "@/shared/lib/i18n";
+import type { LatestAddedEvent } from "@/features/events/api/events.api";
+import type { SchoolBrowseSnapshot } from "@/features/events/api/eventFeed.server";
 import type { Event } from "@/shared/types";
 
 interface UseEventsPageDataOptions {
   profileCompleted: boolean;
   userEmail: string | null;
+  /** The server's browse snapshot, or null when that fetch failed. */
+  initialSnapshot: SchoolBrowseSnapshot | null;
+  initialSchool: string;
+}
+
+interface EventFeedSource {
+  events: Event[];
+  promotedEvents: Event[];
+  latestAddedEvent: LatestAddedEvent;
+  isLoading: boolean;
+  error: string | null;
+  schoolFilter: string;
+}
+
+/**
+ * The feed to render: the store once it holds the server snapshot, and the
+ * snapshot itself until then.
+ *
+ * Zustand never runs during the server render, so reading the store alone would
+ * paint an empty, still-loading page on the server and again on hydration
+ * before the real feed appeared - the skeleton flash between two identical
+ * screens. Both branches describe the same feed, so the handover is invisible.
+ */
+function useEventFeedSource(
+  initialSnapshot: SchoolBrowseSnapshot | null,
+  initialSchool: string,
+): EventFeedSource {
+  const hasHydrated = useEventsStore((s) => s.hasHydratedInitialFeed);
+  const storeEvents = useEventsStore((s) => s.events);
+  const storePromotedEvents = useEventsStore((s) => s.promotedEvents);
+  const storeLatestAddedEvent = useEventsStore((s) => s.latestAddedEvent);
+  const storeIsLoading = useEventsStore((s) => s.isLoading);
+  const storeError = useEventsStore((s) => s.error);
+  const storeSchoolFilter = useEventsStore((s) => s.schoolFilter);
+
+  return useMemo(() => {
+    if (hasHydrated) {
+      return {
+        events: storeEvents,
+        promotedEvents: storePromotedEvents,
+        latestAddedEvent: storeLatestAddedEvent,
+        isLoading: storeIsLoading,
+        error: storeError,
+        schoolFilter: resolveSchool(storeSchoolFilter),
+      };
+    }
+
+    return {
+      events: initialSnapshot?.feed.items ?? [],
+      promotedEvents: initialSnapshot?.promotedEvents ?? [],
+      latestAddedEvent: initialSnapshot?.feed.latest_added_event ?? null,
+      // The snapshot is the data, so nothing is pending; a missing snapshot
+      // means the server's fetch failed and there is nothing more coming.
+      isLoading: false,
+      error: initialSnapshot ? null : i18n.t("events.loadFailed"),
+      schoolFilter: resolveSchool(initialSchool),
+    };
+  }, [
+    hasHydrated,
+    initialSchool,
+    initialSnapshot,
+    storeError,
+    storeEvents,
+    storeIsLoading,
+    storeLatestAddedEvent,
+    storePromotedEvents,
+    storeSchoolFilter,
+  ]);
 }
 
 function derivePromotedEvents(
@@ -48,9 +120,18 @@ function derivePromotedEvents(
 export function useEventsPageData({
   profileCompleted,
   userEmail,
+  initialSnapshot,
+  initialSchool,
 }: UseEventsPageDataOptions) {
   const router = useRouter();
-  const schoolFilter = useEventsStore((s) => s.schoolFilter);
+  const {
+    events,
+    promotedEvents: snapshotPromotedEvents,
+    latestAddedEvent,
+    isLoading,
+    error,
+    schoolFilter,
+  } = useEventFeedSource(initialSnapshot, initialSchool);
   const lastVisitAt = useLastEventsVisit(userEmail, schoolFilter);
   const { data: goingSelections = [] } = useGoingEvents();
   const currentTimeMs = useCurrentTime();
@@ -62,11 +143,6 @@ export function useEventsPageData({
   const eventStats = eventStatsReady ? (eventStatsData ?? {}) : null;
   const activePromotedEventIds = useCreditsStore((s) => s.activePromotedEventIds);
 
-  const events = useEventsStore((s) => s.events);
-  const snapshotPromotedEvents = useEventsStore((s) => s.promotedEvents);
-  const latestAddedEvent = useEventsStore((s) => s.latestAddedEvent);
-  const isLoading = useEventsStore((s) => s.isLoading);
-  const error = useEventsStore((s) => s.error);
   const visibleEvents = useMemo(
     () =>
       currentTimeMs === null

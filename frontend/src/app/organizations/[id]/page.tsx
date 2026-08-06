@@ -126,7 +126,7 @@ export default async function OrganizationDetailsPage({
     getOrganizationEventsSnapshot(organization.id, organization.school),
   ]);
   return (
-    <AppPage renderBeforeReady>
+    <AppPage>
       <OrganizationDetailsPageContent
         organizationId={organization.id}
         initialOrganization={organization}

@@ -4,6 +4,7 @@ import contact from "../../../../backend/controlbox/contact.json";
 import eventDiscovery from "../../../../backend/controlbox/event_discovery.json";
 import interactionTracking from "../../../../backend/controlbox/interaction_tracking.json";
 import organizationManagement from "../../../../backend/controlbox/organization_management.json";
+import siteBanner from "../../../../backend/controlbox/site_banner.json";
 import uploads from "../../../../backend/controlbox/uploads.json";
 
 const secondsToMilliseconds = (seconds: number): number => seconds * 1000;
@@ -51,6 +52,9 @@ export const controlBox = {
   },
   interactionTracking: {
     flushDebounceMs: interactionTracking.flush_debounce_milliseconds,
+  },
+  siteBanner: {
+    dismissalDays: siteBanner.dismissal_days,
   },
   admin: {
     itemsPerPage: admin.items_per_page,

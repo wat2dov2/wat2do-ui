@@ -8,7 +8,7 @@ import { ModalContainer } from "@/app/ModalContainer";
 import { ProtectedRoute } from "@/app/ProtectedRoute";
 import { UnknownSchoolPage } from "@/app/UnknownSchoolPage";
 import { useAppNavigation } from "@/app/hooks/useAppNavigation";
-import { useAppReady, useAuthReady } from "@/app/client-providers";
+import { useAuthReady } from "@/app/client-providers";
 import { useUserEmail } from "@/features/auth/hooks/useAuthState";
 import { useCreditsStore } from "@/features/credits/store/credits.store";
 import { useEventsStore } from "@/features/events/store/events.store";
@@ -30,7 +30,6 @@ interface AppPageProps {
   chrome?: boolean;
   requiresAuth?: boolean;
   requiredRole?: Role;
-  renderBeforeReady?: boolean;
   skipSchoolCheck?: boolean;
 }
 
@@ -58,7 +57,6 @@ export function AppPage({
   chrome = true,
   requiresAuth = false,
   requiredRole,
-  renderBeforeReady = false,
   skipSchoolCheck = false,
 }: AppPageProps) {
   return (
@@ -68,7 +66,6 @@ export function AppPage({
         chrome={chrome}
         requiresAuth={requiresAuth}
         requiredRole={requiredRole}
-        renderBeforeReady={renderBeforeReady}
         skipSchoolCheck={skipSchoolCheck}
       >
         {children}
@@ -83,10 +80,8 @@ function AppPageContent({
   chrome,
   requiresAuth,
   requiredRole,
-  renderBeforeReady = false,
   skipSchoolCheck,
 }: AppPageContentProps) {
-  const ready = useAppReady();
   const authReady = useAuthReady();
   const pathname = usePathname();
   const userEmail = useUserEmail();
@@ -124,33 +119,26 @@ function AppPageContent({
     setSchoolFilter,
   });
 
-  if (!ready && !renderBeforeReady) {
-    return null;
-  }
-
   const needsSchoolValidation =
     !skipSchoolCheck &&
     hostnameSchoolStatus.candidate !== null;
 
-  // Only cover the page while the directory loads if nothing is on screen yet.
-  // `renderBeforeReady` means the server already painted this route's real
-  // content, and the server resolved the school to render it - so swapping that
-  // for a spinner is a step backwards the user sees as a stutter: content, then
-  // loading, then the same content. The unknown-school check below still runs
-  // once the directory resolves, so a bad subdomain is caught either way.
-  if (needsSchoolValidation && isSchoolDirectoryPending && !renderBeforeReady) {
-    return <LoadingPage className="min-h-dvh" />;
-  }
-
+  // Only reject a subdomain once the directory can actually answer. While the
+  // query is pending `schoolBySlug` is empty, so asking it then says "unknown"
+  // about every school - the page would paint, flip to the unknown-school
+  // screen, and flip back a round trip later. Waiting costs nothing: the
+  // subdomain is either real, in which case this never fires, or it is not, in
+  // which case the visitor sees the message a moment later.
   if (
     needsSchoolValidation &&
+    !isSchoolDirectoryPending &&
     !isSchoolDirectoryError &&
     !schoolBySlug.has(hostnameSchoolStatus.school)
   ) {
     return <UnknownSchoolPage requestedSchool={hostnameSchoolStatus.candidate} />;
   }
 
-  const protectedContent = ready && (requiresAuth || requiredRole) ? (
+  const protectedContent = requiresAuth || requiredRole ? (
     <ProtectedRoute requiredRole={requiredRole}>{children}</ProtectedRoute>
   ) : (
     children
@@ -171,13 +159,9 @@ function AppPageContent({
   return (
     <>
       {page}
-      {ready ? (
-        <>
-          <CommandPaletteHotkeys />
-          <ModalContainer />
-          <Toaster />
-        </>
-      ) : null}
+      <CommandPaletteHotkeys />
+      <ModalContainer />
+      <Toaster />
     </>
   );
 }

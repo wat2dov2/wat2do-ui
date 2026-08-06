@@ -25,6 +25,7 @@ import { controlBox } from "@/shared/config/controlBox";
 import type { ViewMode, Event } from "@/shared/types";
 import { usePosterLandingConfirmation } from "@/features/qrcode/hooks/usePosterLandingConfirmation";
 import { Stack } from "@/shared/layout";
+import type { SchoolBrowseSnapshot } from "@/features/events/api/eventFeed.server";
 
 interface QuickFilterButtonConfig {
   id: string;
@@ -33,7 +34,16 @@ interface QuickFilterButtonConfig {
   onClick: () => void;
 }
 
-export function EventsPageContainer() {
+interface EventsPageContainerProps {
+  /** The server's browse snapshot, or null when that fetch failed. */
+  initialSnapshot: SchoolBrowseSnapshot | null;
+  initialSchool: string;
+}
+
+export function EventsPageContainer({
+  initialSnapshot,
+  initialSchool,
+}: EventsPageContainerProps) {
   usePosterLandingConfirmation();
 
   const viewMode = useUIStore((s) => s.viewMode);
@@ -60,6 +70,8 @@ export function EventsPageContainer() {
   } = useEventsPageData({
     profileCompleted,
     userEmail: profileCompleted ? userEmail : null,
+    initialSnapshot,
+    initialSchool,
   });
   const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
   const urlEventId = useMemo(() => {
@@ -199,6 +211,7 @@ export function EventsPageContainer() {
             </div>
             <Button
               type="button"
+              variant="secondary"
               size="lg"
               className="shrink-0"
               onMouseDown={handleSubmitEventClick}

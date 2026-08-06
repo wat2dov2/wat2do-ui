@@ -15,7 +15,6 @@ import {
   saveUserProfile,
   saveAccessToken,
   clearAllAuthData,
-  hasAccessToken,
   type UserProfile,
 } from "@/features/auth/api/userRepository";
 import type {
@@ -47,8 +46,16 @@ export function getSessionEmail(): string | null {
   return loadUserEmail();
 }
 
+/**
+ * Whether a signed-in session is cached, matching `useAuthState().isAuthenticated`.
+ *
+ * Deliberately not "is there an access token": the token is in memory only and
+ * is absent until `/auth/refresh` returns, so gating on it would answer "no" for
+ * a signed-in user on every page load. Callers that fetch are unaffected -
+ * `apiClient` refreshes and retries a 401 by itself.
+ */
 export function isAuthenticated(): boolean {
-  return hasAccessToken() && loadUserEmail() !== null;
+  return loadUserEmail() !== null;
 }
 
 export function getUserProfile(): UserProfile | null {

@@ -119,7 +119,7 @@ export default async function EventDetailsPage({ params }: EventDetailsPageProps
   }
 
   return (
-    <AppPage renderBeforeReady>
+    <AppPage>
       <EventDetailsPageContainer eventId={event.id} initialEvent={event} />
     </AppPage>
   );

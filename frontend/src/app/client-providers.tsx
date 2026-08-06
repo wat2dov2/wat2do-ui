@@ -35,15 +35,14 @@ const DevClickToComponent =
       )
     : null;
 
-interface AppReadiness {
-  appReady: boolean;
-  authReady: boolean;
-}
-
-const AppReadyContext = createContext<AppReadiness>({
-  appReady: false,
-  authReady: false,
-});
+/**
+ * Whether the auth bootstrap has finished.
+ *
+ * Nothing waits on the language load any more: English is registered
+ * synchronously by `english-locale.ts`, so pages render their real content on
+ * the first paint and other languages swap in over it.
+ */
+const AuthReadyContext = createContext(false);
 
 setOnAfterRefresh(() => {
   fetchProfileAPI().catch((err) =>
@@ -77,16 +76,11 @@ async function bootstrapAuth(): Promise<boolean> {
   }
 }
 
-export function useAppReady() {
-  return useContext(AppReadyContext).appReady;
-}
-
 export function useAuthReady() {
-  return useContext(AppReadyContext).authReady;
+  return useContext(AuthReadyContext);
 }
 
 export function ClientProviders({ children }: { children: ReactNode }) {
-  const [ready, setReady] = useState(false);
   const [authReady, setAuthReady] = useState(false);
   const [queryClient] = useState(() => getQueryClient());
 
@@ -126,7 +120,7 @@ export function ClientProviders({ children }: { children: ReactNode }) {
       }
 
       if (!cancelled) {
-        setReady(true);
+        document.documentElement.dataset.clientReady = "true";
       }
     }
 
@@ -134,13 +128,14 @@ export function ClientProviders({ children }: { children: ReactNode }) {
 
     return () => {
       cancelled = true;
+      delete document.documentElement.dataset.clientReady;
     };
   }, []);
 
+  // Not chained behind the language load: restoring the session is a network
+  // round trip, and every millisecond it waits is a millisecond the UI is
+  // guessing about the signed-in state. They are unrelated, so they race.
   useEffect(() => {
-    if (!ready) return;
-
-    document.documentElement.dataset.clientReady = "true";
     void bootstrapConstants();
     let cancelled = false;
     void bootstrapAuth().then((ok) => {
@@ -154,22 +149,21 @@ export function ClientProviders({ children }: { children: ReactNode }) {
 
     return () => {
       cancelled = true;
-      delete document.documentElement.dataset.clientReady;
     };
-  }, [ready]);
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
       <ErrorBoundary>
         <TooltipProvider delayDuration={0}>
-          <AppReadyContext.Provider value={{ appReady: ready, authReady }}>
+          <AuthReadyContext.Provider value={authReady}>
             {DevClickToComponent ? (
               <Suspense fallback={null}>
                 <DevClickToComponent />
               </Suspense>
             ) : null}
             {children}
-          </AppReadyContext.Provider>
+          </AuthReadyContext.Provider>
         </TooltipProvider>
       </ErrorBoundary>
     </QueryClientProvider>

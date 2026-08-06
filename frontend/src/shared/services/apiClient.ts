@@ -22,10 +22,6 @@ export function clearAccessToken(): void {
   accessToken = null;
 }
 
-export function hasAccessToken(): boolean {
-  return accessToken !== null;
-}
-
 class ApiError extends Error {
   status: number;
   body: unknown;

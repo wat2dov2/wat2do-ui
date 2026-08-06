@@ -88,7 +88,8 @@
     "mission": "使命",
     "contact": "联系我们",
     "goToEvents": "前往活动",
-    "posters": "海报"
+    "posters": "海报",
+    "dismissAnnouncement": "关闭公告"
   },
   "modals": {
     "welcome": {

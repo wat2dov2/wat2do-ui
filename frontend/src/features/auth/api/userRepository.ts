@@ -6,11 +6,7 @@
 
 import { StorageService } from "@/shared/services/storageService";
 import { STORAGE_KEYS } from "@/shared/constants/storageKeys";
-import {
-  setAccessToken,
-  clearAccessToken,
-  hasAccessToken,
-} from "@/shared/services/apiClient";
+import { setAccessToken, clearAccessToken } from "@/shared/services/apiClient";
 
 /** Same-tab notification event for cached auth/profile updates. */
 export const AUTH_STATE_REFRESH_EVENT = "auth-state-refresh";
@@ -120,8 +116,6 @@ function clearUserProfile(notify = true): void {
 }
 
 // --- Tokens (in-memory via apiClient) ---
-
-export { hasAccessToken };
 
 export function saveAccessToken(token: string): void {
   setAccessToken(token);

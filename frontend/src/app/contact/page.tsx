@@ -26,7 +26,7 @@ export const metadata: Metadata = buildPublicPageMetadata({
 
 export default function ContactPage() {
   return (
-    <AppPage renderBeforeReady>
+    <AppPage>
       <ContactPageContent />
     </AppPage>
   );

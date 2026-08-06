@@ -82,7 +82,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   ]);
 
   return (
-    <AppPage authFlow chrome={false} renderBeforeReady>
+    <AppPage authFlow chrome={false}>
       <AuthEntryPage
         previewEvents={previewEvents}
         initialEmail={firstSearchParam(query.email)}

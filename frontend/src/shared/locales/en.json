@@ -88,7 +88,8 @@
     "mission": "Mission",
     "contact": "Contact",
     "goToEvents": "Go to events",
-    "posters": "Posters"
+    "posters": "Posters",
+    "dismissAnnouncement": "Dismiss announcement"
   },
   "modals": {
     "welcome": {

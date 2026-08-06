@@ -33,6 +33,7 @@ def test_checked_in_controlbox_is_valid() -> None:
     assert controlbox.organization_management.directory_revalidate_seconds == 3600
     assert str(controlbox.contact.recipient_email) == "contact@wat2do.io"
     assert controlbox.contact.rate_limit.maximum_requests == 5
+    assert controlbox.site_banner.dismissal_days == 30
     # Publishing accounts are not configured here at all: which accounts exist,
     # which school each serves, and whether each runs all come from the row
     # written when the account is connected.
@@ -129,6 +130,17 @@ def test_invalid_cross_field_limits_are_rejected(tmp_path: Path) -> None:
     )
 
     with pytest.raises(ValidationError, match="cannot exceed maximum_results"):
+        load_controlbox(path)
+
+
+def test_site_banner_dismissal_must_be_a_positive_number_of_days(tmp_path: Path) -> None:
+    path = _write_control(
+        tmp_path,
+        "site_banner",
+        lambda payload: payload.update({"dismissal_days": 0}),
+    )
+
+    with pytest.raises(ValidationError, match="dismissal_days"):
         load_controlbox(path)
 
 

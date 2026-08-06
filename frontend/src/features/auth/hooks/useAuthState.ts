@@ -13,7 +13,6 @@ import { useSyncExternalStore } from "react";
 import {
   loadUserEmail,
   loadUserProfile,
-  hasAccessToken,
   AUTH_STATE_REFRESH_EVENT,
   type UserOrganizationSummary,
 } from "@/features/auth/api/userRepository";
@@ -27,7 +26,7 @@ export interface AuthState {
   /** Cached ``users.avatar_url``; null when unset or signed out. */
   userAvatarUrl: string | null;
   school: string | null;
-  /** Mirrors `isAuthenticated()`: has access token AND cached email. */
+  /** Mirrors `isAuthenticated()`: a signed-in session is cached. */
   isAuthenticated: boolean;
   /** Same as `isAuthenticated`; UI gates treat a valid session as "profile ready". */
   profileCompleted: boolean;
@@ -65,14 +64,29 @@ const SERVER_AUTH_STATE: AuthState = Object.freeze({
 /**
  * Live snapshot from the auth caches.
  *
- * `profileCompleted` mirrors `isAuthenticated` (access token + cached email).
- * Preference fields from onboarding are optional, so UI gates (LogOut, save-event,
- * saved-filter visibility) key off session validity, not filled preferences.
+ * Signed-in means "a session is cached", not "an access token is in memory".
+ * The token lives in memory only, so it is absent on every page load until the
+ * `/auth/refresh` round trip lands - a whole network hop after first paint.
+ * Keying this on the token therefore rendered every page signed-out first and
+ * signed-in a moment later, which is the layout jump users see on organization
+ * and event pages: header actions swap, membership controls appear, the page
+ * reflows around them.
+ *
+ * The cached email survives reloads and is cleared by `clearAllAuthData()`, so
+ * it is the durable fact about the session. Restoring optimistically from it
+ * makes the first paint match the settled page. If the refresh token has since
+ * expired, `initializeAuth` clears the cache and the UI corrects itself - a
+ * rare correction rather than one on every single load. Requests are unaffected
+ * either way: `apiClient` refreshes and retries a 401 on its own.
+ *
+ * `profileCompleted` mirrors `isAuthenticated`. Preference fields from
+ * onboarding are optional, so UI gates (LogOut, save-event, saved-filter
+ * visibility) key off session validity, not filled preferences.
  */
 function computeSnapshot(): AuthState {
   const email = loadUserEmail();
   const profile = loadUserProfile();
-  const authed = hasAccessToken() && email !== null;
+  const authed = email !== null;
   const profileCompleted = authed;
   const role = profile?.role ?? "user";
   const clubs = authed ? profile?.clubs ?? [] : [];
@@ -116,11 +130,10 @@ function markDirty(): void {
 }
 
 // Module-level listeners so auth events fired BEFORE any component subscribes
-// (e.g. during initializeAuth() in client-providers.tsx, which awaits the /auth/refresh
-// round-trip and saveUserProfile() before React mounts) still invalidate the
-// cached snapshot. Without this, the first render reads the stale snapshot
-// that was computed at module load time with no access token → UI flashes
-// "signed-out" even though the session was successfully restored.
+// (e.g. during initializeAuth() in client-providers.tsx, which awaits the
+// /auth/refresh round-trip and saveUserProfile() before React mounts) still
+// invalidate the cached snapshot. Without this, a profile refreshed between
+// module load and mount would be read from a stale snapshot.
 if (typeof window !== "undefined") {
   window.addEventListener("storage", markDirty);
   window.addEventListener(AUTH_STATE_REFRESH_EVENT, markDirty);

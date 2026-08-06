@@ -272,6 +272,12 @@ class ContactControl(_ControlModel):
     rate_limit: RateLimitControl
 
 
+class SiteBannerControl(_ControlModel):
+    """How long dismissing the site-wide banner keeps it hidden."""
+
+    dismissal_days: int = Field(gt=0, le=365)
+
+
 class AdminControl(_ControlModel):
     items_per_page: int = Field(gt=0)
 
@@ -405,6 +411,7 @@ class ControlBox(_ControlModel):
     scraping: ScrapingControl
     email_delivery: EmailDeliveryControl
     contact: ContactControl
+    site_banner: SiteBannerControl
     admin: AdminControl
     uploads: UploadsControl
     public_attendance: PublicAttendanceControl
