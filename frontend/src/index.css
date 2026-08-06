@@ -295,3 +295,21 @@
   animation: pulse-live 4s ease-in-out infinite;
   box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.89);
 }
+
+/*
+ * The announcement strip and the navigation are both pinned to the top, so when
+ * the strip is present the nav and the page it sits above move down by its
+ * height. Driven by :has() so no component has to know whether the strip is
+ * enabled - it either rendered or it did not.
+ */
+body:has([data-slot="site-banner"]) header {
+  top: var(--site-banner-height);
+}
+
+body:has([data-slot="site-banner"]) .main-content-grid {
+  margin-top: calc(3rem + var(--site-banner-height));
+}
+
+:root {
+  --site-banner-height: 2.25rem;
+}

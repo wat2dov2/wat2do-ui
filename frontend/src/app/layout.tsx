@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import type { ReactNode } from "react";
 import { ClientProviders } from "@/app/client-providers";
+import { SiteBanner } from "@/app/SiteBanner";
 import { PageBackground } from "@/shared/layout";
 import "../index.css";
 
@@ -83,6 +84,7 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
           dangerouslySetInnerHTML={{ __html: themeInitScript }}
         />
         <PageBackground />
+        <SiteBanner />
         <ClientProviders>{children}</ClientProviders>
       </body>
     </html>

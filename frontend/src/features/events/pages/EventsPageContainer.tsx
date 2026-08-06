@@ -24,7 +24,6 @@ import { useMutableSearchParams } from "@/shared/hooks/useMutableSearchParams";
 import { controlBox } from "@/shared/config/controlBox";
 import type { ViewMode, Event } from "@/shared/types";
 import { usePosterLandingConfirmation } from "@/features/qrcode/hooks/usePosterLandingConfirmation";
-import { PromoterRecruitmentBanner } from "@/features/posters/components/PromoterRecruitmentBanner";
 import { Stack } from "@/shared/layout";
 
 interface QuickFilterButtonConfig {
@@ -52,7 +51,6 @@ export function EventsPageContainer() {
     refreshEvents,
     totalEvents,
     eventStats,
-    schoolFilter,
     latestAddedEvent,
     promotedEvents,
     lastVisitAt,
@@ -183,7 +181,6 @@ export function EventsPageContainer() {
   return (
     <>
       <div className="space-y-2">
-        <PromoterRecruitmentBanner school={schoolFilter} />
         <div className="space-y-3 pb-2">
           <EventCount
             count={totalEvents}
