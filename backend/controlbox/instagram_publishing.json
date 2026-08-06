@@ -3,146 +3,98 @@
   "accounts": [
     {
       "key": "uwaterloo",
-      "name": "Wat2Do Waterloo",
-      "school": "uwaterloo",
       "enabled": true
     },
     {
       "key": "utsc",
-      "name": "Wat2Do UTSC",
-      "school": "utsc",
       "enabled": true
     },
     {
       "key": "ulaval",
-      "name": "Wat2Do Laval",
-      "school": "ulaval",
       "enabled": true
     },
     {
       "key": "ualberta",
-      "name": "Wat2Do Alberta",
-      "school": "ualberta",
       "enabled": true
     },
     {
       "key": "tmu",
-      "name": "Wat2Do TMU",
-      "school": "tmu",
       "enabled": true
     },
     {
       "key": "mun",
-      "name": "Wat2Do Memorial",
-      "school": "mun",
       "enabled": true
     },
     {
       "key": "udem",
-      "name": "Wat2Do UdeM",
-      "school": "udem",
       "enabled": true
     },
     {
       "key": "ubc",
-      "name": "Wat2Do UBC",
-      "school": "ubc",
       "enabled": true
     },
     {
       "key": "sfu",
-      "name": "Wat2Do SFU",
-      "school": "sfu",
       "enabled": true
     },
     {
       "key": "carleton",
-      "name": "Wat2Do Carleton",
-      "school": "carleton",
       "enabled": true
     },
     {
       "key": "dalhousie",
-      "name": "Wat2Do Dalhousie",
-      "school": "dalhousie",
       "enabled": true
     },
     {
       "key": "mcmaster",
-      "name": "Wat2Do McMaster",
-      "school": "mcmaster",
       "enabled": true
     },
     {
       "key": "ocadu",
-      "name": "Wat2Do OCAD",
-      "school": "ocadu",
       "enabled": true
     },
     {
       "key": "ucalgary",
-      "name": "Wat2Do Calgary",
-      "school": "ucalgary",
       "enabled": true
     },
     {
       "key": "ottawa",
-      "name": "Wat2Do Ottawa",
-      "school": "ottawa",
       "enabled": true
     },
     {
       "key": "usask",
-      "name": "Wat2Do Saskatchewan",
-      "school": "usask",
       "enabled": true
     },
     {
       "key": "utsg",
-      "name": "Wat2Do UTSG",
-      "school": "utsg",
       "enabled": true
     },
     {
       "key": "uwo",
-      "name": "Wat2Do Western",
-      "school": "uwo",
       "enabled": true
     },
     {
       "key": "uwindsor",
-      "name": "Wat2Do Windsor",
-      "school": "uwindsor",
       "enabled": true
     },
     {
       "key": "concordia",
-      "name": "Wat2Do Concordia",
-      "school": "concordia",
       "enabled": true
     },
     {
       "key": "yorku",
-      "name": "Wat2Do York",
-      "school": "yorku",
       "enabled": true
     },
     {
       "key": "queensu",
-      "name": "Wat2Do Queen's",
-      "school": "queensu",
       "enabled": true
     },
     {
       "key": "mcgill",
-      "name": "Wat2Do McGill",
-      "school": "mcgill",
       "enabled": true
     },
     {
       "key": "wlu",
-      "name": "Wat2Do Laurier",
-      "school": "wlu",
       "enabled": true
     }
   ],

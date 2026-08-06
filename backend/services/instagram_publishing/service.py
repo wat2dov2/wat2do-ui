@@ -281,7 +281,7 @@ def _generate_account_batch(
     try:
         candidates = _load_candidates(
             account_key=account.key,
-            school=account.school,
+            school=account.key,
             window_start=window_start,
             window_end=now,
         )
@@ -315,7 +315,7 @@ def _generate_account_batch(
             .update(
                 {
                     "status": INSTAGRAM_BATCH_READY_FOR_REVIEW,
-                    "caption": build_caption(selected, account.school),
+                    "caption": build_caption(selected, account.key),
                     "error_message": None,
                     "updated_at": _iso_now(),
                 }

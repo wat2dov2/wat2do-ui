@@ -58,7 +58,7 @@ def import_access_token(
     if account is None:
         raise ValidationError(f"No Instagram publishing account is configured for {account_key!r}")
     identity = MetaInstagramClient(token).get_identity()
-    school = school_service.get_school(account.school)
+    school = school_service.get_school(account.key)
     if school is None:
         raise ValidationError("Instagram publishing school is not registered")
 
@@ -86,7 +86,7 @@ def import_access_token(
     if not response.data:
         raise RuntimeError(f"Could not store Instagram credentials for {account.key}")
     return _credentials_from_row(
-        {**response.data[0], "school": account.school},
+        {**response.data[0], "school": account.key},
         token=token,
     )
 
@@ -228,7 +228,7 @@ def _assert_row_matches_account(
     account: InstagramPublishingAccountControl,
 ) -> None:
     row = school_service.with_school_slug(row)
-    if row.get("school") != account.school:
+    if row.get("school") != account.key:
         raise ValidationError(
             f"Stored Instagram credentials do not match configured account {account.key}"
         )

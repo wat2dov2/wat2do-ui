@@ -295,9 +295,15 @@ class UploadsControl(_ControlModel):
 
 
 class InstagramPublishingAccountControl(_ControlModel):
+    """Which publishing accounts exist, and whether each one runs.
+
+    The key is the slug of the school the account publishes for - one account
+    per school - so it needs no separate school field. Everything else about an
+    account (its Instagram id, handle, token, and the school row it points at)
+    is established when the account is connected and lives in the database.
+    """
+
     key: str = Field(min_length=1, max_length=100, pattern=r"^[a-z0-9][a-z0-9_-]*$")
-    name: str = Field(min_length=1, max_length=100)
-    school: str = Field(min_length=1, max_length=255)
     enabled: bool = True
 
 
@@ -322,9 +328,6 @@ class InstagramPublishingControl(_ControlModel):
         keys = [account.key for account in self.accounts]
         if len(keys) != len(set(keys)):
             raise ValueError("instagram publishing account keys must be unique")
-        schools = [account.school for account in self.accounts]
-        if len(schools) != len(set(schools)):
-            raise ValueError("instagram publishing account schools must be unique")
         if self.token_refresh_lead_days >= self.token_lifetime_days:
             raise ValueError("instagram token refresh lead must be shorter than token lifetime")
         return self
