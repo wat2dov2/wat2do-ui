@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+import re
 import sys
 from collections import Counter
 from pathlib import Path
@@ -49,10 +50,11 @@ HIGH_QUALITY_IG_SOURCES = frozenset({"found", "confirmed", "profile_page"})
 # hosted schools table are skipped with a warning so the sheet can contain
 # schools that have not launched yet.
 
-# The sheet carries no organization-type column, so imports never touch
-# `organization_type`; new rows use the database default (`independent`) and
-# admins set a school-specific type. Managing it here would clobber that choice
-# on re-import.
+# The sheet's Organization Type column holds the student-association slug that
+# owns the club (e.g. "msu" for McMaster).  A blank cell means "no opinion": the
+# insert omits the field so the database default (`independent`) applies, and the
+# update leaves whatever an admin already chose.  Only a non-blank cell writes.
+ORGANIZATION_TYPE_PATTERN = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 
 ORGANIZATION_NAME_MAX = 500
 
@@ -95,6 +97,13 @@ def _normalize_categories(raw: object) -> list[str]:
     return matched + leftovers
 
 
+def _normalize_organization_type(value: object) -> str | None:
+    """Lowercase the Organization Type cell.  Blank means None; validation is later."""
+    if value is None:
+        return None
+    return str(value).strip().lower() or None
+
+
 def _normalize_str(value: object) -> str | None:
     if value is None:
         return None
@@ -117,6 +126,7 @@ def _read_xlsx_rows() -> list[dict]:
         "IG Source",
         "Discord URL",
         "Discord Source",
+        "Organization Type",
     ]
     if header != expected:
         raise RuntimeError(f"Unexpected xlsx header.  Expected {expected!r}, got {header!r}")
@@ -136,6 +146,9 @@ def _read_xlsx_rows() -> list[dict]:
                 "ig_handle": _normalize_handle(raw_row[6]),
                 "ig_source": _normalize_ig_source(raw_row[7]),
                 "discord": _normalize_str(raw_row[8]) if len(raw_row) > 8 else None,
+                "organization_type": _normalize_organization_type(
+                    raw_row[10] if len(raw_row) > 10 else None
+                ),
             }
         )
     wb.close()
@@ -151,6 +164,7 @@ def _validate_rows(
     errors: list[str] = []
     unknown_schools: set[str] = set()
     bad_categories: set[str] = set()
+    bad_organization_types: set[str] = set()
     seen: dict[tuple[str, str], int] = {}
 
     for idx, row in enumerate(rows, start=3):
@@ -172,6 +186,11 @@ def _validate_rows(
                 valid_categories.append(category)
             else:
                 bad_categories.add(category)
+
+        organization_type = row["organization_type"]
+        if organization_type and not ORGANIZATION_TYPE_PATTERN.match(organization_type):
+            bad_organization_types.add(organization_type)
+            organization_type = None
 
         organization_name = row["name"][:ORGANIZATION_NAME_MAX]
         if len(row["name"]) > ORGANIZATION_NAME_MAX:
@@ -195,6 +214,7 @@ def _validate_rows(
                 "organization_page": row["directory"],
                 "ig": row["ig_handle"],
                 "discord": row["discord"],
+                "organization_type": organization_type,
             }
         )
 
@@ -207,6 +227,11 @@ def _validate_rows(
         log.warning(
             "xlsx Category values not in ORGANIZATION_CATEGORIES skipped: "
             + ", ".join(sorted(bad_categories))
+        )
+    if bad_organization_types:
+        log.warning(
+            "xlsx Organization Type values rejected (must be lowercase kebab-case): "
+            + ", ".join(sorted(bad_organization_types))
         )
 
     return kept, dict(skipped), errors
@@ -225,7 +250,7 @@ def _fetch_existing(sb, schools: dict[str, int]) -> dict[tuple[str, str], dict]:
             sb.table(ORGANIZATIONS)
             .select(
                 "id, organization_name, school_id, school_record:schools(slug), "
-                "categories, organization_page, ig, discord"
+                "categories, organization_page, ig, discord, organization_type"
             )
             .in_("school_id", list(schools.values()))
             .range(offset, offset + page_size - 1)
@@ -244,11 +269,14 @@ def _fetch_existing(sb, schools: dict[str, int]) -> dict[tuple[str, str], dict]:
 
 def _diff(planned: dict, existing: dict) -> dict | None:
     """Return a dict of {field: (old, new)} for fields that differ, or None."""
-    fields = ("categories", "organization_page", "ig", "discord")
+    fields = ("categories", "organization_page", "ig", "discord", "organization_type")
     diff: dict[str, tuple] = {}
     for field in fields:
         old = existing.get(field)
         new = planned[field]
+        if field == "organization_type" and new is None:
+            # A blank cell is "no opinion", so never clear an admin's choice.
+            continue
         if field == "categories":
             old_set = set(old or [])
             new_set = set(new or [])
@@ -348,6 +376,12 @@ def main() -> int:
                 "categories": row["categories"],
                 "organization_page": row["organization_page"],
                 "ig": row["ig"],
+                # Omitted when blank so the database default (`independent`) applies.
+                **(
+                    {"organization_type": row["organization_type"]}
+                    if row["organization_type"]
+                    else {}
+                ),
             }
             for row in to_insert
         ]
@@ -365,6 +399,12 @@ def main() -> int:
                 "organization_page": planned["organization_page"],
                 "ig": planned["ig"],
                 "discord": planned["discord"],
+                # Omitted when blank so an admin's existing choice survives re-import.
+                **(
+                    {"organization_type": planned["organization_type"]}
+                    if planned["organization_type"]
+                    else {}
+                ),
             }
         ).eq("id", cid).execute()
         updated += 1
