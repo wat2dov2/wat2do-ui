@@ -2,10 +2,9 @@
 """Bulk-import organizations from wat2do-clubs.xlsx into the
 Supabase ``organizations`` table.
 
-Only rows whose ``IG Source`` is one of ``{found, confirmed, profile_page}``
-(prefix-matched against ``|``-separated annotations) are imported - the rest
-are speculative matches and will be re-imported once their handles are
-verified.
+Every row with a name and a registered school slug is imported.  The sheet's
+``IG Source`` column records how a handle was discovered and gates overwrites in
+the SPA merge pipeline; it does not affect what lands in the database.
 
 Usage (from backend/):
   python scripts/import_master_clubs_xlsx.py            # dry-run, prints diff
@@ -40,11 +39,6 @@ log = logging.getLogger(__name__)
 
 XLSX_PATH = Path(__file__).resolve().parent.parent / "services" / "scraper" / "wat2do-clubs.xlsx"
 
-# Only rows with one of these IG Source values land in the DB.  The xlsx
-# sometimes annotates the source with a pipe ("found|main organization
-# account"); we match against the part before the pipe.
-HIGH_QUALITY_IG_SOURCES = frozenset({"found", "confirmed", "profile_page"})
-
 # The xlsx School column holds canonical schools.slug values directly
 # (e.g. "wlu", "utsc", "utsg"); rows whose slug is not registered in the
 # hosted schools table are skipped with a warning so the sheet can contain
@@ -57,11 +51,6 @@ HIGH_QUALITY_IG_SOURCES = frozenset({"found", "confirmed", "profile_page"})
 ORGANIZATION_TYPE_PATTERN = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 
 ORGANIZATION_NAME_MAX = 500
-
-
-def _normalize_ig_source(value: object) -> str:
-    text = "" if value is None else str(value).strip().lower()
-    return text.split("|", 1)[0].strip()
 
 
 def _normalize_handle(value: object) -> str | None:
@@ -144,7 +133,6 @@ def _read_xlsx_rows() -> list[dict]:
                 "directory": _normalize_str(raw_row[4]),
                 "ig_url": _normalize_str(raw_row[5]),
                 "ig_handle": _normalize_handle(raw_row[6]),
-                "ig_source": _normalize_ig_source(raw_row[7]),
                 "discord": _normalize_str(raw_row[8]) if len(raw_row) > 8 else None,
                 "organization_type": _normalize_organization_type(
                     raw_row[10] if len(raw_row) > 10 else None
