@@ -129,9 +129,7 @@ def _read_xlsx_rows() -> list[dict]:
                 "school_slug": _normalize_str(raw_row[0]),
                 "name": _normalize_str(raw_row[1]),
                 "categories": _normalize_categories(raw_row[2]),
-                "campus": _normalize_str(raw_row[3]),
                 "directory": _normalize_str(raw_row[4]),
-                "ig_url": _normalize_str(raw_row[5]),
                 "ig_handle": _normalize_handle(raw_row[6]),
                 "discord": _normalize_str(raw_row[8]) if len(raw_row) > 8 else None,
                 "organization_type": _normalize_organization_type(
@@ -145,11 +143,10 @@ def _read_xlsx_rows() -> list[dict]:
 
 def _validate_rows(
     rows: list[dict], db_schools: dict[str, int]
-) -> tuple[list[dict], dict[str, int], list[str]]:
-    """Filter, validate, and canonicalize rows.  Returns (kept, skipped, errors)."""
+) -> tuple[list[dict], dict[str, int]]:
+    """Filter, validate, and canonicalize rows.  Returns (kept, skipped)."""
     kept: list[dict] = []
     skipped: Counter[str] = Counter()
-    errors: list[str] = []
     unknown_schools: set[str] = set()
     bad_categories: set[str] = set()
     bad_organization_types: set[str] = set()
@@ -194,7 +191,6 @@ def _validate_rows(
 
         kept.append(
             {
-                "row_idx": idx,
                 "organization_name": organization_name,
                 "school": canonical_school,
                 "school_id": db_schools[canonical_school],
@@ -222,7 +218,7 @@ def _validate_rows(
             + ", ".join(sorted(bad_organization_types))
         )
 
-    return kept, dict(skipped), errors
+    return kept, dict(skipped)
 
 
 def _fetch_existing(sb, schools: dict[str, int]) -> dict[tuple[str, str], dict]:
@@ -283,6 +279,15 @@ def main() -> int:
         action="store_true",
         help="Write inserts and updates to Supabase.  Without this flag, prints the diff and exits.",
     )
+    parser.add_argument(
+        "--school",
+        help="Only import rows for this school slug (e.g. mcmaster).  Default: every school.",
+    )
+    parser.add_argument(
+        "--limit",
+        type=int,
+        help="Only import the first N rows that would change.  Use to rehearse on one club.",
+    )
     args = parser.parse_args()
 
     sb = get_sb()
@@ -298,14 +303,15 @@ def main() -> int:
     rows = _read_xlsx_rows()
     log.info("xlsx rows scanned: %s", len(rows))
 
-    kept, skipped, errors = _validate_rows(rows, db_schools)
-    if errors:
-        for err in errors:
-            log.error(err)
-        log.error("Aborting - fix the xlsx (or the schools migration) and re-run.")
-        return 2
+    if args.school:
+        if args.school not in db_schools:
+            log.error("--school %r is not a slug in the Supabase 'schools' table.", args.school)
+            return 2
+        rows = [row for row in rows if row["school_slug"] == args.school]
+        log.info("xlsx rows for school %r: %s", args.school, len(rows))
 
-    log.info("xlsx rows kept after IG-source filter: %s", len(kept))
+    kept, skipped = _validate_rows(rows, db_schools)
+    log.info("xlsx rows kept: %s", len(kept))
     for reason, count in sorted(skipped.items(), key=lambda x: -x[1]):
         log.info("  skipped (%s): %s", reason, count)
 
@@ -327,6 +333,16 @@ def main() -> int:
                 unchanged += 1
         else:
             to_insert.append(row)
+
+    if args.limit is not None:
+        to_insert = to_insert[: args.limit]
+        to_update = to_update[: max(0, args.limit - len(to_insert))]
+        log.info(
+            "--limit %s: capped to %s insert(s) and %s update(s)",
+            args.limit,
+            len(to_insert),
+            len(to_update),
+        )
 
     log.info("to insert: %s", len(to_insert))
     log.info("to update: %s", len(to_update))
