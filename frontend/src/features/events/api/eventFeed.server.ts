@@ -1,5 +1,6 @@
 import type { Event } from "@/shared/types";
 import type { PaginatedEventsResponse } from "@/features/events/api/events.api";
+import { orderOrganizationEvents } from "@/features/events/lib/organizationEventOrder";
 import { controlBox } from "@/shared/config/controlBox";
 import { resolveSchool } from "@/shared/constants/schools";
 import { getServerApiBaseUrl } from "@/shared/services/serverApi";
@@ -96,7 +97,10 @@ export async function getOrganizationEventsSnapshot(
     ),
   );
 
-  return [firstPage, ...remainingPages].flatMap((page) => page.items);
+  return orderOrganizationEvents(
+    [firstPage, ...remainingPages].flatMap((page) => page.items),
+    Date.now(),
+  );
 }
 
 async function fetchPromotedEvents(

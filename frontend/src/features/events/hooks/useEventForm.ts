@@ -161,9 +161,17 @@ export function useEventForm(options: UseEventFormOptions) {
   }, [isOpen, isEditMode, initialData]);
 
   // Update the editor immediately; parse after debounce.
+  //
+  // A poster is required to submit a new event, because a listing without one
+  // is the weakest thing in the feed. It is not required to edit an existing
+  // one: an event that is already published has whatever poster it has, and
+  // demanding a fresh upload blocked every unrelated correction - a moved room,
+  // a changed time - behind an image the editor may not even have.
   const isValid = useMemo(
-    () => isEventFormValid(form.formData, errors, rules) && Boolean(imagePreview),
-    [form.formData, errors, imagePreview, rules],
+    () =>
+      isEventFormValid(form.formData, errors, rules) &&
+      (isEditMode || Boolean(imagePreview)),
+    [form.formData, errors, imagePreview, isEditMode, rules],
   );
 
   const markAllFieldsTouched = useCallback(() => {

@@ -5,9 +5,9 @@ import { EventDetailsModal } from "@/features/events/components/EventDetailsModa
 import { fetchOrganizationEvents } from "@/features/events/api/events.api";
 import { useEventStats } from "@/features/events/hooks/useEventStats";
 import { useCurrentTime } from "@/features/events/hooks/useGoingEvents";
+import { orderOrganizationEvents } from "@/features/events/lib/organizationEventOrder";
 import { controlBox } from "@/shared/config/controlBox";
 import { queryKeys } from "@/shared/lib/queryKeys";
-import { hasActiveEventOccurrence } from "@/shared/utils/date";
 import type { Event } from "@/shared/types";
 
 interface OrganizationEventsGridProps {
@@ -40,16 +40,14 @@ export function OrganizationEventsGrid({
   const currentTimeMs = useCurrentTime();
   const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
 
+  // `initialEvents` arrives from the server already in this order, so the
+  // no-clock case is a pass-through rather than a different order the page
+  // would visibly rearrange itself out of once the clock arrived.
   const organizationEvents = useMemo(() => {
     const all = events ?? [];
-    if (currentTimeMs === null) return all;
-
-    const upcoming: Event[] = [];
-    const past: Event[] = [];
-    all.forEach((event) => {
-      (hasActiveEventOccurrence(event, currentTimeMs) ? upcoming : past).push(event);
-    });
-    return [...upcoming, ...past.reverse()];
+    return currentTimeMs === null
+      ? all
+      : orderOrganizationEvents(all, currentTimeMs);
   }, [currentTimeMs, events]);
   const selectedEvent = useMemo(
     () => organizationEvents.find((event) => event.id === selectedEventId) ?? null,

@@ -4,8 +4,14 @@
  * Counts fields that narrow the event result set. Sort is an ordering
  * preference and is excluded from this badge.
  */
+/**
+ * How many filters are active.
+ *
+ * The search query is deliberately not one of them. It has its own field in
+ * plain sight, so counting it made the "More filters" badge claim a filter the
+ * panel does not contain and cannot clear.
+ */
 export function getFilterCounts(filters: {
-  searchQuery?: string;
   selectedCategories: string[];
   selectedLocations: string[];
   selectedFoods: string[];
@@ -17,10 +23,7 @@ export function getFilterCounts(filters: {
   goingFilter: boolean;
   addedSince?: string;
 }): number {
-  const hasSearchQuery = Boolean(filters.searchQuery?.trim());
-
   return (
-    (hasSearchQuery ? 1 : 0) +
     filters.selectedCategories.length +
     filters.selectedLocations.length +
     filters.selectedFoods.length +

@@ -8,6 +8,7 @@
  * event slide restates the event card instead of rendering it.
  */
 
+import { SlideBadgeMask } from "@/features/admin/components/instagram/slides/SlideBadgeMask";
 import {
   SLIDE_HEIGHT,
   SLIDE_WIDTH,
@@ -34,7 +35,7 @@ const slideFrame: React.CSSProperties = {
   flexDirection: "column",
   width: SLIDE_WIDTH,
   height: SLIDE_HEIGHT,
-  fontFamily: "Inter",
+  fontFamily: "Satoshi",
   position: "relative",
 };
 
@@ -96,41 +97,43 @@ export function EventSlideTemplate({ model }: { model: EventSlideModel }) {
             />
           )}
 
-          <div
-            style={{
-              display: "flex",
-              position: "absolute",
-              top: 28,
-              left: 28,
-              backgroundColor: model.category.color,
-              color: DARK.categoryInk,
-              borderRadius: 20,
-              padding: "10px 22px",
-              fontSize: 30,
-              fontWeight: 700,
-            }}
-          >
-            {model.category.label}
-          </div>
+          {/*
+           * Corner-notched like the card, rather than pills floating on the
+           * poster: the badge sits in a bite taken out of the artwork.
+           */}
+          <SlideBadgeMask variant="top-left" color={DARK.background}>
+            <div
+              style={{
+                display: "flex",
+                backgroundColor: model.category.color,
+                color: DARK.categoryInk,
+                borderRadius: 20,
+                padding: "10px 22px",
+                fontSize: 30,
+                fontWeight: 700,
+              }}
+            >
+              {model.category.label}
+            </div>
+          </SlideBadgeMask>
 
-          <div
-            style={{
-              display: "flex",
-              position: "absolute",
-              bottom: 28,
-              left: 28,
-              maxWidth: CARD_WIDTH - 56,
-              backgroundColor: DARK.background,
-              border: `2px solid ${DARK.foreground}`,
-              color: DARK.foreground,
-              borderRadius: 20,
-              padding: "10px 22px",
-              fontSize: 30,
-              fontWeight: 700,
-            }}
-          >
-            {model.organizationLine}
-          </div>
+          <SlideBadgeMask variant="bottom-left" color={DARK.background}>
+            <div
+              style={{
+                display: "flex",
+                maxWidth: CARD_WIDTH - 120,
+                backgroundColor: DARK.background,
+                border: `2px solid ${DARK.foreground}`,
+                color: DARK.foreground,
+                borderRadius: 20,
+                padding: "10px 22px",
+                fontSize: 30,
+                fontWeight: 700,
+              }}
+            >
+              {model.organizationLine}
+            </div>
+          </SlideBadgeMask>
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", padding: "36px 40px 40px 40px" }}>

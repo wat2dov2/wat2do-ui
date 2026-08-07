@@ -78,13 +78,20 @@ export function EventCardContent({
           </div>
 
           {badges.length > 0 && (
-            <div className="flex flex-col gap-1.5 items-end shrink-0">
+            /*
+             * Capped rather than `shrink-0`: a food badge carries whatever the
+             * host typed, so an unbounded one ("Free pizza, samosas and bubble
+             * tea") ate the row and squeezed the date, time and location
+             * beside it down to a few characters each. Half the row is the
+             * most this column may claim; past that the label ellipsises.
+             */
+            <div className="flex min-w-0 max-w-[50%] shrink flex-col items-end gap-1.5">
               {badges.map((badge) => (
                 <Badge
                   key={badge.text}
                   variant="outline"
                   size="sm"
-                  className={`whitespace-nowrap ${badgeClassName}`}
+                  className={`block max-w-full truncate ${badgeClassName}`}
                 >
                   {badge.text}
                 </Badge>

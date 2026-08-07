@@ -31,6 +31,12 @@ export interface EventFormContextValue {
   removeFood: (index: number) => void;
   imagePreview: string;
   imageFile: File | null;
+  /**
+   * Whether a poster must be present to submit. True for a new event, false
+   * when editing one that is already published and already has whatever poster
+   * it has.
+   */
+  isImageRequired: boolean;
   onImageUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onRemoveImage: () => void;
   isDarkMode?: boolean;

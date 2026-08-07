@@ -17,7 +17,6 @@
     "generate-types": "cd ../backend && .venv/bin/python scripts/export_openapi.py && cd ../frontend && npx openapi-typescript src/shared/generated/openapi.json -o src/shared/generated/api-types.ts"
   },
   "dependencies": {
-    "@fontsource/inter": "^5.3.0",
     "@hookform/resolvers": "^5.4.0",
     "@monaco-editor/react": "^4.7.0",
     "@number-flow/react": "^0.6.0",

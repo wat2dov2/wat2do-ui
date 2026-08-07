@@ -35,6 +35,7 @@ export function EventFormFields() {
     addFood,
     removeFood,
     imagePreview,
+    isImageRequired,
     onImageUpload,
     onRemoveImage,
   } = useEventFormContext();
@@ -208,12 +209,16 @@ export function EventFormFields() {
 
           <ImageUploadField
             label={t("forms.eventImage")}
-            required
+            required={isImageRequired}
             imagePreview={imagePreview}
             onImageUpload={onImageUpload}
             onRemoveImage={onRemoveImage}
             previewVariant="poster"
-            error={!imagePreview ? t("qrCode.posterImageRequired") : undefined}
+            error={
+              isImageRequired && !imagePreview
+                ? t("qrCode.posterImageRequired")
+                : undefined
+            }
           />
         </FieldGroup>
       </FieldSet>

@@ -141,11 +141,19 @@ export function EventFormStep({
       removeFood: eventForm.removeFood,
       imagePreview: eventForm.imagePreview,
       imageFile: eventForm.imageFile,
+      isImageRequired: !isEditMode,
       onImageUpload: eventForm.onImageUpload,
       onRemoveImage: eventForm.onRemoveImage,
       isDarkMode,
     }),
-    [eventForm, isDarkMode, organizations, previewEvent, selectedOrganizationName]
+    [
+      eventForm,
+      isDarkMode,
+      isEditMode,
+      organizations,
+      previewEvent,
+      selectedOrganizationName,
+    ]
   );
 
   return (

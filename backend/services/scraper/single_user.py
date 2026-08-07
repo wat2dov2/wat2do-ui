@@ -68,6 +68,17 @@ def is_post_url_target(target: str) -> bool:
     return target.startswith("http")
 
 
+def is_numeric_id_target(target: str) -> bool:
+    """Whether the target is an Instagram user id rather than a handle.
+
+    The dispatch payload carries ``username`` when it has one and ``poster_id``
+    when it does not, and the workflow falls back to the second. A handle is
+    never all digits in practice, so a target that is tells us we were handed an
+    id and have to look the handle up.
+    """
+    return target.isdigit()
+
+
 def filter_valid_posts(posts: list[dict]) -> list[dict]:
     """Keep Apify items that look like real Instagram post URLs."""
     return [
@@ -81,12 +92,23 @@ def filter_valid_posts(posts: list[dict]) -> list[dict]:
 
 
 def resolve_single_user_handle(*, target: str, posts: list[dict]) -> str:
-    """Return the Instagram handle to use for pipeline grouping and DB writes."""
+    """Return the Instagram handle to use for pipeline grouping and DB writes.
+
+    This value is stored as ``events.ig_handle`` and is what the published
+    caption credits as ``@handle``, so a target that is not already a handle -
+    a post URL, or a numeric user id from a dispatch payload without a
+    ``username`` - is resolved against the scraped post's owner. Writing the id
+    through verbatim is what put ``@79731783885`` in front of readers.
+    """
     cleaned = target.strip().lstrip("@")
-    if is_post_url_target(cleaned) and posts:
+    if (is_post_url_target(cleaned) or is_numeric_id_target(cleaned)) and posts:
         owner = (posts[0].get("ownerUsername") or posts[0].get("username") or "").strip()
         if owner:
             return owner.lstrip("@")
+        log.warning(
+            "Could not resolve a handle for target=%r; storing it as-is",
+            cleaned,
+        )
     return cleaned
 
 

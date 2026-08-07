@@ -164,6 +164,18 @@ def test_resolve_single_user_handle_keeps_username():
     assert resolve_single_user_handle(target="uwteaorganization", posts=[]) == "uwteaorganization"
 
 
+def test_resolve_single_user_handle_resolves_numeric_user_id():
+    """A dispatch without a username sends the numeric id; the caption needs the handle."""
+    posts = [{"ownerUsername": "utsgsplatoon", "url": "https://www.instagram.com/p/X/"}]
+    assert resolve_single_user_handle(target="79731783885", posts=posts) == "utsgsplatoon"
+
+
+def test_resolve_single_user_handle_keeps_numeric_id_when_owner_is_unknown():
+    """Nothing better to store: keep the id rather than dropping the grouping key."""
+    posts = [{"url": "https://www.instagram.com/p/X/"}]
+    assert resolve_single_user_handle(target="79731783885", posts=posts) == "79731783885"
+
+
 def test_fetch_posts_for_single_user_uses_recent_post_without_refetch():
     scraper = MagicMock()
     recent = datetime.now(timezone.utc) - timedelta(minutes=5)

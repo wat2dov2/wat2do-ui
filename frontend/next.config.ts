@@ -122,10 +122,10 @@ const nextConfig: NextConfig = {
   // image would ship without them.
   outputFileTracingIncludes: {
     "/api/render-instagram-slide": [
-      "./node_modules/@fontsource/inter/files/inter-latin-400-normal.woff",
-      "./node_modules/@fontsource/inter/files/inter-latin-500-normal.woff",
-      "./node_modules/@fontsource/inter/files/inter-latin-600-normal.woff",
-      "./node_modules/@fontsource/inter/files/inter-latin-700-normal.woff",
+      "./public/fonts/slides/Satoshi-400.ttf",
+      "./public/fonts/slides/Satoshi-500.ttf",
+      "./public/fonts/slides/Satoshi-600.ttf",
+      "./public/fonts/slides/Satoshi-700.ttf",
       "./node_modules/@resvg/resvg-wasm/index_bg.wasm",
     ],
   },
