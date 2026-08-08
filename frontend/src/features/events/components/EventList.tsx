@@ -17,6 +17,7 @@ import { EmptyState } from "@/shared/feedback";
 import { Button } from "@/shared/ui/button";
 import { Spinner } from "@/shared/ui/spinner";
 import { CARD_GRID_CLASS } from "@/shared/constants/ui";
+import { CardEntrance } from "@/shared/ui/card-entrance";
 import { controlBox } from "@/shared/config/controlBox";
 
 interface EventListProps {
@@ -48,16 +49,18 @@ function EventCardsGrid({
 }: EventCardsGridProps) {
   return (
     <div className={CARD_GRID_CLASS}>
-      {events.map((event) => (
-        <div key={event.id} role="listitem" className="min-w-0">
-          <EventCard
-            event={event}
-            stats={eventStats?.[String(event.id)]}
-            imagePriority={priorityImageIds.has(event.id)}
-            onEventClick={onEventClick}
-            mobileClickActivation
-          />
-        </div>
+      {events.map((event, index) => (
+        <CardEntrance key={event.id} index={index} className="min-w-0">
+          <div role="listitem" className="min-w-0">
+            <EventCard
+              event={event}
+              stats={eventStats?.[String(event.id)]}
+              imagePriority={priorityImageIds.has(event.id)}
+              onEventClick={onEventClick}
+              mobileClickActivation
+            />
+          </div>
+        </CardEntrance>
       ))}
     </div>
   );

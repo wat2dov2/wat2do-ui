@@ -3,6 +3,7 @@ import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Spinner } from "@/shared/ui/spinner";
 import { CARD_GRID_CLASS } from "@/shared/constants/ui";
+import { CardEntrance } from "@/shared/ui/card-entrance";
 import { OrganizationCard } from "@/features/organizations/components/OrganizationCard";
 import { OrganizationCardSkeleton } from "@/features/organizations/components/OrganizationCardSkeleton";
 import type { Organization } from "@/shared/types";
@@ -78,15 +79,21 @@ export function OrganizationList({
         role="list"
         aria-label={`${organizations.length} organizations found`}
       >
-        {organizations.map((organization) => (
-          <div key={organization.id} role="listitem" className="min-w-0">
-            <OrganizationCard
-              organization={organization}
-              isSaved={savedSet.has(organization.id)}
-              onOrganizationClick={onOrganizationClick}
-              onCategoryClick={onCategoryClick}
-            />
-          </div>
+        {organizations.map((organization, index) => (
+          <CardEntrance
+            key={organization.id}
+            index={index}
+            className="min-w-0"
+          >
+            <div role="listitem" className="min-w-0">
+              <OrganizationCard
+                organization={organization}
+                isSaved={savedSet.has(organization.id)}
+                onOrganizationClick={onOrganizationClick}
+                onCategoryClick={onCategoryClick}
+              />
+            </div>
+          </CardEntrance>
         ))}
       </div>
       {hasMore && (

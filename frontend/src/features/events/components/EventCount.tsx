@@ -30,7 +30,7 @@ export function EventCount({
       {latestAddedEvent ? (
         <Button
           type="button"
-          variant="secondary"
+          variant="ghost"
           size="sm"
           onMouseDown={handleLatestAddedMouseDown}
           className="min-w-0 max-w-full self-start gap-2 text-left"

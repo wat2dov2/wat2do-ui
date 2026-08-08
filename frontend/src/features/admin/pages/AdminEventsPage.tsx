@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { Calendar, AlertTriangle, FileText } from "@/shared/ui/doodle-icons";
 import { Button } from "@/shared/ui/button";
@@ -15,6 +16,9 @@ import {
   TableRow,
 } from "@/shared/ui/table";
 import { EventDetailsModal, useEventsStore } from "@/features/events";
+import { fetchSchoolEvents } from "@/features/events/api/events.api";
+import { controlBox } from "@/shared/config/controlBox";
+import { queryKeys } from "@/shared/lib/queryKeys";
 import { useAdminEventsPage } from "@/features/admin/hooks/useAdminEventsPage";
 import type { Event, SubmissionStatus } from "@/shared/types";
 import { AdminPageHeader } from "@/features/admin/components/shared/AdminPageHeader";
@@ -22,6 +26,7 @@ import { AdminSearchBar } from "@/features/admin/components/shared/AdminSearchBa
 import { AdminResultsCount } from "@/features/admin/components/shared/AdminResultsCount";
 import { Pagination } from "@/shared/ui/Pagination";
 import { AdminEmptyState } from "@/features/admin/components/shared/AdminEmptyState";
+import { LoadingState } from "@/shared/feedback";
 import { AdminDeleteDialog } from "@/features/admin/components/shared/AdminDeleteDialog";
 import { AdminTable } from "@/features/admin/components/shared/AdminTable";
 import { cn } from "@/shared/lib/utils";
@@ -63,9 +68,21 @@ export function AdminEventsPage({
   const initialTab = (searchParams.get("tab") === "submissions" || submissionIdParam) ? "submissions" : "events";
   const [activeTab, setActiveTab] = useState<"events" | "submissions">(initialTab);
 
-  const events = useEventsStore((s) => s.events);
+  const schoolFilter = useEventsStore((s) => s.schoolFilter);
   const deleteEvent = useEventsStore((s) => s.deleteEvent);
   const setEditingEvent = useUIStore((s) => s.setEditingEvent);
+  const queryClient = useQueryClient();
+
+  // This page fetches its own feed. It used to read the browse route's store,
+  // which nothing fills unless the visitor happened to load `/` first and click
+  // through - so opening or refreshing the admin table showed an empty list and
+  // no reason for it. Scoped to the same school the submissions tab below uses.
+  const { data: events = [], isPending: isLoadingEvents } = useQuery({
+    queryKey: queryKeys.events.bySchool(schoolFilter ?? ""),
+    queryFn: () => fetchSchoolEvents(schoolFilter ?? ""),
+    enabled: Boolean(schoolFilter),
+    staleTime: controlBox.clientCache.adminStaleMs,
+  });
 
   const onEditEvent = (event: Event) => {
     setEditingEvent(event);
@@ -97,6 +114,11 @@ export function AdminEventsPage({
     setIsDeleting(true);
     try {
       await Promise.resolve(deleteEvent(eventId));
+      // The table reads the query, not the store the delete updates, so the
+      // deleted row only leaves the page once the feed is refetched.
+      await queryClient.invalidateQueries({
+        queryKey: queryKeys.events.bySchool(schoolFilter ?? ""),
+      });
       setDeleteConfirmId(null);
     } finally {
       setIsDeleting(false);
@@ -105,8 +127,6 @@ export function AdminEventsPage({
 
   const fetchSubmissions = useAdminStore((s) => s.fetchSubmissions);
   const allSubmissions = useAdminStore((s) => s.submissions);
-
-  const schoolFilter = useEventsStore((s) => s.schoolFilter);
 
   useEffect(() => {
     fetchSubmissions(schoolFilter ?? undefined).catch((err) =>
@@ -308,6 +328,10 @@ export function AdminEventsPage({
                 );
               })}
             </AdminTable>
+          ) : isLoadingEvents ? (
+            // "No events found" is a claim about the data; say it only once the
+            // feed has actually arrived.
+            <LoadingState label={t("common.loading")} />
           ) : (
             <AdminEmptyState
               icon={Calendar}

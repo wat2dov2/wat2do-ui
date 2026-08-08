@@ -40,6 +40,7 @@ import {
 import { Separator } from "@/shared/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/ui/tooltip";
 import { FormGrid, Section, Stack } from "@/shared/layout";
+import { CARD_GRID_CLASS } from "@/shared/constants/ui";
 import { EventCalendarDownloadMenu } from "@/features/events/components/EventCalendarDownloadMenu";
 import { EventCard } from "@/features/events/components/EventCard";
 import { EventCardImage } from "@/features/events/components/EventCardImage";
@@ -744,7 +745,13 @@ export function EventDetailsSimilarEvents({
     <>
       <Separator />
       <Section title={t("events.similarEvents")}>
-        <FormGrid columns={2} collapse={false} className="md:grid-cols-4">
+        {/*
+         * The same grid the feed uses. These are event cards, so they get the
+         * card grid rather than FormGrid, whose wider `gap-5` is meant for form
+         * fields and made the same cards sit further apart here than on the
+         * page the reader just came from.
+         */}
+        <div className={CARD_GRID_CLASS}>
           {similarEvents.map((similarEvent) => (
             <EventCard
               key={similarEvent.id}
@@ -753,7 +760,7 @@ export function EventDetailsSimilarEvents({
               onEventClick={onEventClick}
             />
           ))}
-        </FormGrid>
+        </div>
       </Section>
     </>
   );
