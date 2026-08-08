@@ -50,6 +50,20 @@
   --color-image-scrim: var(--image-scrim);
   --color-image-scrim-foreground: var(--image-scrim-foreground);
 
+  /*
+   * The visited school's own pair, swapped in per host by /api/school-theme,
+   * for marking something on the app's own dark surface.
+   *
+   * Inverted from the logo contract, where primary is the background and
+   * secondary the mark. That holds when the school's colour fills the frame -
+   * a cover slide, a logo lockup - but here the school colour is a patch laid
+   * on our near-black page, so the mark has to be the lighter half of the pair
+   * or it disappears: Waterloo's primary is #000000, which is 1.1:1 against
+   * this background, and Toronto's is barely better at 1.4:1.
+   */
+  --color-school-marker: var(--page-school-secondary);
+  --color-school-marker-foreground: var(--page-school-primary);
+
   /* Brand / decorative colors - resting only, never *-hover */
   --color-blue-400: var(--blue-400);
   --color-blue-500: var(--blue-500);

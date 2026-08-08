@@ -46,13 +46,16 @@ export function SchoolCombobox({
     return getSchoolName(DEFAULT_SCHOOL);
   }, [getSchoolName, placeholder, value]);
 
+  // The school's own pair, not the app's: this is the one place in the nav that
+  // names where you are, so it is marked in that school's colour and inked in
+  // the colour that school pairs with it.
   const renderTriggerLabel =
     variant === "nav" && showHighlight
       ? (label: string) => (
           <Highlighter
             action="highlight"
-            color="var(--primary)"
-            className="block min-w-0 flex-1 truncate text-primary-foreground"
+            color="var(--page-school-secondary)"
+            className="block min-w-0 flex-1 truncate text-school-marker-foreground"
           >
             {label}
           </Highlighter>
