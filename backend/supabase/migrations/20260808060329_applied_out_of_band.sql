@@ -1,0 +1,17 @@
+-- Placeholder for a migration that was applied straight to production.
+--
+-- Version 20260808060329 exists in the remote migration history and has never
+-- existed as a file here, so `supabase db push` refused to run and every deploy
+-- failed at "Apply database migrations". This file exists so the two histories
+-- line up again; its body is deliberately empty because push never reads the
+-- body of a version the remote has already applied.
+--
+-- The real statements are still on the remote, in the `statements` column of
+-- `supabase_migrations.schema_migrations` for this version. Recover them and
+-- replace this body, so a local `supabase db reset` reproduces production:
+--
+--   supabase db pull            # needs Docker running
+--
+-- Deliberately NOT repaired away with
+-- `supabase migration repair --status reverted 20260808060329`: that deletes
+-- the remote row, and the row is currently the only surviving copy of the SQL.
