@@ -79,12 +79,16 @@ const Button = React.forwardRef<
     const Comp = asChild ? Slot : "button"
     const showSelectedCheck =
       Boolean(selected) && !asChild && !ICON_ONLY_SIZES.has(size ?? "default")
+    // A ghost button has no fill, so it has nothing to raise off the page and
+    // the control shadow reads as a shadow cast by nothing. Every other variant
+    // paints a surface and keeps it.
+    const elevation = variant === "ghost" ? undefined : "control"
 
     return (
       <Comp
         ref={ref}
         data-slot={dataSlot}
-        data-elevation="control"
+        data-elevation={elevation}
         data-selected={selected === undefined ? undefined : selected}
         aria-pressed={selected}
         type={asChild ? undefined : type}

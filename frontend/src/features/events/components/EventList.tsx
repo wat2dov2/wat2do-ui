@@ -50,16 +50,19 @@ function EventCardsGrid({
   return (
     <div className={CARD_GRID_CLASS}>
       {events.map((event, index) => (
-        <CardEntrance key={event.id} index={index} className="min-w-0">
-          <div role="listitem" className="min-w-0">
-            <EventCard
-              event={event}
-              stats={eventStats?.[String(event.id)]}
-              imagePriority={priorityImageIds.has(event.id)}
-              onEventClick={onEventClick}
-              mobileClickActivation
-            />
-          </div>
+        <CardEntrance
+          key={event.id}
+          index={index}
+          role="listitem"
+          className="h-full min-w-0"
+        >
+          <EventCard
+            event={event}
+            stats={eventStats?.[String(event.id)]}
+            imagePriority={priorityImageIds.has(event.id)}
+            onEventClick={onEventClick}
+            mobileClickActivation
+          />
         </CardEntrance>
       ))}
     </div>

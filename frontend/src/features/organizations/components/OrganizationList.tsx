@@ -83,16 +83,15 @@ export function OrganizationList({
           <CardEntrance
             key={organization.id}
             index={index}
-            className="min-w-0"
+            role="listitem"
+            className="h-full min-w-0"
           >
-            <div role="listitem" className="min-w-0">
-              <OrganizationCard
-                organization={organization}
-                isSaved={savedSet.has(organization.id)}
-                onOrganizationClick={onOrganizationClick}
-                onCategoryClick={onCategoryClick}
-              />
-            </div>
+            <OrganizationCard
+              organization={organization}
+              isSaved={savedSet.has(organization.id)}
+              onOrganizationClick={onOrganizationClick}
+              onCategoryClick={onCategoryClick}
+            />
           </CardEntrance>
         ))}
       </div>
