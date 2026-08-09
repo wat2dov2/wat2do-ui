@@ -4,6 +4,11 @@ import { notFound, permanentRedirect } from "next/navigation";
 import { AppPage } from "@/app/app-page";
 import imgContactHero from "@/assets/contact_hero.png";
 import { getEventDetailSnapshot } from "@/features/events/api/eventFeed.server";
+import {
+  buildEventDescription,
+  buildEventStructuredData,
+  isEventIndexable,
+} from "@/features/events/lib/eventSeo";
 import { eventPagePath } from "@/features/events/lib/eventUrls";
 import { EventDetailsPageContainer } from "@/features/events/pages/EventDetailsPageContainer";
 import { getSchool } from "@/shared/api/schools.server";
@@ -15,6 +20,7 @@ import {
   selectSeoImage,
 } from "@/shared/lib/seo";
 import type { Event } from "@/shared/types";
+import { StructuredData } from "@/shared/ui/structured-data";
 
 interface EventDetailsPageProps {
   params: Promise<{
@@ -25,28 +31,6 @@ interface EventDetailsPageProps {
 function parseEventId(value: string): number | null {
   const eventId = Number(value);
   return Number.isInteger(eventId) && eventId > 0 ? eventId : null;
-}
-
-function isEventIndexable(event: Event): boolean {
-  const hasOccurrence = (event.occurrences ?? []).some((occurrence) =>
-    Number.isFinite(new Date(occurrence.dtstart_utc).getTime()),
-  );
-  const hasUsefulContext = Boolean(
-    event.location?.trim() ||
-      event.organization?.trim() ||
-      event.description?.trim(),
-  );
-  return Boolean(event.title.trim() && event.school?.trim() && hasOccurrence && hasUsefulContext);
-}
-
-function buildEventDescription(event: Event, schoolName: string): string {
-  const description = event.description?.replace(/\s+/g, " ").trim();
-  if (description) return description;
-
-  const details = [event.location, event.organization]
-    .map((value) => value?.trim())
-    .filter((value): value is string => Boolean(value));
-  return `${event.title} at ${schoolName}${details.length > 0 ? `. ${details.join(" - ")}.` : "."} View dates, times, location, cost, and attendance details on Wat2Do.`;
 }
 
 async function loadEvent(eventId: number): Promise<Event | null> {
@@ -118,9 +102,18 @@ export default async function EventDetailsPage({ params }: EventDetailsPageProps
     permanentRedirect(canonicalUrl);
   }
 
+  const schoolRecord = await getSchool(event.school ?? "uwaterloo");
+  const structuredData = buildEventStructuredData(
+    event,
+    schoolRecord?.name ?? event.school ?? "Wat2Do",
+  );
+
   return (
-    <AppPage>
-      <EventDetailsPageContainer eventId={event.id} initialEvent={event} />
-    </AppPage>
+    <>
+      {structuredData ? <StructuredData data={structuredData} /> : null}
+      <AppPage>
+        <EventDetailsPageContainer eventId={event.id} initialEvent={event} />
+      </AppPage>
+    </>
   );
 }

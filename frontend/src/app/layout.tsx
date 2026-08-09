@@ -41,7 +41,10 @@ export const metadata: Metadata = {
   title: "Wat2Do | Campus Events",
   description: APP_DESCRIPTION,
   authors: [{ name: "Wat2Do" }],
-  robots: "index, follow",
+  robots: {
+    index: false,
+    follow: true,
+  },
   applicationName: "Wat2Do",
   manifest: "/manifest.json",
   icons: {

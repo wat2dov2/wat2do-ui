@@ -54,13 +54,14 @@ export function selectSeoImage(
   candidateUrl: string | null | undefined,
   candidateAlt: string,
   fallback: SeoImage,
+  candidateProperties: Omit<SeoImage, "url" | "alt"> = {},
 ): SeoImage {
   if (!candidateUrl) return fallback;
 
   try {
     const url = new URL(candidateUrl);
     if (url.protocol !== "http:" && url.protocol !== "https:") return fallback;
-    return { url: url.toString(), alt: candidateAlt };
+    return { url: url.toString(), alt: candidateAlt, ...candidateProperties };
   } catch {
     return fallback;
   }

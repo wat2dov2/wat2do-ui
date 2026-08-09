@@ -50,10 +50,17 @@ export async function getOrganizationDirectorySnapshot(
   school: string,
 ): Promise<PaginatedOrganizationsResponse> {
   const resolvedSchool = resolveSchool(school);
+  return fetchOrganizationDirectoryPage(resolvedSchool, 1);
+}
+
+async function fetchOrganizationDirectoryPage(
+  school: string,
+  page: number,
+): Promise<PaginatedOrganizationsResponse> {
   const params = new URLSearchParams({
-    page: "1",
+    page: String(page),
     page_size: String(controlBox.organizationManagement.directoryPageSize),
-    school: resolvedSchool,
+    school,
   });
   const response = await fetch(
     `${getServerApiBaseUrl()}/organizations/?${params.toString()}`,
@@ -63,7 +70,7 @@ export async function getOrganizationDirectorySnapshot(
           process.env.NODE_ENV === "development"
             ? 0
             : controlBox.organizationManagement.directoryRevalidateSeconds,
-        tags: [organizationDirectoryTag(resolvedSchool)],
+        tags: [organizationDirectoryTag(school)],
       },
     },
   );
@@ -79,4 +86,18 @@ export async function getOrganizationDirectorySnapshot(
     ...directory,
     items: directory.items.map(normalizeOrganization),
   };
+}
+
+/** Every approved organization for server-rendered public discovery surfaces. */
+export async function getAllOrganizationDirectorySnapshot(
+  school: string,
+): Promise<Organization[]> {
+  const resolvedSchool = resolveSchool(school);
+  const firstPage = await fetchOrganizationDirectoryPage(resolvedSchool, 1);
+  const remainingPages = await Promise.all(
+    Array.from({ length: Math.max(firstPage.total_pages - 1, 0) }, (_, index) =>
+      fetchOrganizationDirectoryPage(resolvedSchool, index + 2),
+    ),
+  );
+  return [firstPage, ...remainingPages].flatMap((page) => page.items);
 }

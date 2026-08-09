@@ -65,14 +65,15 @@ Changes take effect after rebuilding the applications or restarting a scheduled 
 
 ## Production deployment
 
-Wat2Do runs as one private AWS ECS Fargate task in `ca-central-1`.
+Wat2Do serves the application from one private AWS ECS Fargate task in `ca-central-1`.
 The task contains the Next.js frontend on port 3000 and the FastAPI backend on port 8000.
 CloudFront is the public edge, an Application Load Balancer is the HTTPS origin, and Supabase remains the database, authentication, and object-storage provider.
+An isolated, concurrency-limited Lambda captures each school event feed as a social-preview image every six hours, then stores the immutable JPEG in the existing S3 and CloudFront asset path.
 The encrypted Terraform state bucket and DynamoDB lock table remain in `us-west-2`; they do not affect Canadian application traffic.
 
 Terraform is split into `infra/terraform/foundation` and `infra/terraform/production`.
-Foundation creates the encrypted, versioned S3 state bucket, Route 53 zone, ECR repositories, secret containers, and GitHub OIDC roles.
-Production creates the VPC, private Fargate workload, CloudFront, certificates, logging, and alarms.
+Foundation creates the encrypted, versioned S3 state bucket, Route 53 zone, three ECR repositories, secret containers, and GitHub OIDC roles.
+Production creates the VPC, private Fargate workload, social-preview Lambda and queues, CloudFront, certificates, logging, and alarms.
 
 The first foundation apply intentionally starts with local state because the state bucket does not yet exist.
 Temporarily move `infra/terraform/foundation/backend.tf` outside that directory for this one local apply, then restore it before state migration.
@@ -80,8 +81,8 @@ After it creates the bucket, immediately migrate state to S3 using the `foundati
 Populate the two Secrets Manager secret values from protected local files, not from Terraform variables or committed `.tfvars` files.
 Before switching registrar nameservers, inventory every current Vercel DNS record and add all non-application records to `foundation.tfvars`.
 
-The first ARM64 frontend and backend images must be pushed to ECR by digest before the initial production apply.
-Once production exists, pushes to `main` use GitHub OIDC to build both images, tag them with the full commit SHA, register one ECS task-definition revision, and update the service.
+The first ARM64 frontend and backend images, plus the x86-64 social-preview image, must be pushed to ECR by digest before the initial production apply.
+Once production exists, pushes to `main` use GitHub OIDC to build all three images, tag them with the full commit SHA, update the ECS task definition, and update the Lambda image.
 Scheduled directory scraping, notifications, and recommendation compute run on GitHub-hosted runners.
 The single-user scrape workflow remains an authenticated GitHub trigger but runs its compute in ECS.
 

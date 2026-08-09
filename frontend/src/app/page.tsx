@@ -5,6 +5,7 @@ import imgContactHero from "@/assets/contact_hero.png";
 import { getSchoolBrowseSnapshot } from "@/features/events/api/eventFeed.server";
 import type { SchoolBrowseSnapshot } from "@/features/events/api/eventFeed.server";
 import { getSchool } from "@/shared/api/schools.server";
+import { controlBox } from "@/shared/config/controlBox";
 import { getSchoolFromRequestHost } from "@/shared/constants/schools";
 import {
   buildPublicPageMetadata,
@@ -45,7 +46,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const featuredEvent =
     snapshot?.promotedEvents.find((event) => event.source_image_url) ??
     snapshot?.feed.items.find((event) => event.source_image_url);
-  const image = selectSeoImage(
+  const fallbackImage = selectSeoImage(
     featuredEvent?.source_image_url,
     featuredEvent ? `${featuredEvent.title} event poster` : "",
     {
@@ -54,6 +55,16 @@ export async function generateMetadata(): Promise<Metadata> {
       width: imgContactHero.width,
       height: imgContactHero.height,
       type: "image/png",
+    },
+  );
+  const image = selectSeoImage(
+    schoolRecord?.social_preview_image_url,
+    `Upcoming events at ${schoolName} on Wat2Do`,
+    fallbackImage,
+    {
+      width: controlBox.socialPreviews.outputWidth,
+      height: controlBox.socialPreviews.outputHeight,
+      type: "image/jpeg",
     },
   );
 

@@ -5,6 +5,7 @@ import eventDiscovery from "../../../../backend/controlbox/event_discovery.json"
 import interactionTracking from "../../../../backend/controlbox/interaction_tracking.json";
 import organizationManagement from "../../../../backend/controlbox/organization_management.json";
 import siteBanner from "../../../../backend/controlbox/site_banner.json";
+import socialPreviews from "../../../../backend/controlbox/social_previews.json";
 import uploads from "../../../../backend/controlbox/uploads.json";
 
 const secondsToMilliseconds = (seconds: number): number => seconds * 1000;
@@ -62,5 +63,11 @@ export const controlBox = {
   uploads: {
     eventImageAllowedMimeTypes: uploads.event_image_allowed_mime_types,
     eventImageMaxSizeBytes: uploads.event_image_max_size_bytes,
+  },
+  socialPreviews: {
+    outputWidth:
+      socialPreviews.viewport_width * socialPreviews.device_scale_factor,
+    outputHeight:
+      socialPreviews.viewport_height * socialPreviews.device_scale_factor,
   },
 } as const;

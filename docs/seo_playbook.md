@@ -181,7 +181,7 @@ It is not a substitute for Search Console data.
 - Share actions and subsequent event engagement by outbound share channel.
 - Google Search Console image-search impressions, clicks, pages, and queries.
 
-### Implementation update: August 3, 2026
+### Implementation update: August 9, 2026
 
 The first scoped SEO foundation now covers the school event feed, event detail, school organization directory, organization detail, contact, and login routes.
 
@@ -193,9 +193,13 @@ The first scoped SEO foundation now covers the school event feed, event detail, 
 - Requests for an event or organization on the wrong production school host permanently redirect to the owning school host.
 - Empty or insufficient public records use `noindex, follow` instead of being promoted as useful search results.
 - Contact is canonical to the root brand host, while login is explicitly `noindex, follow`.
-- Event structured data remains deferred until the public-attendance, address, and duplicate-record eligibility gates are defined.
+- Each school host now serves a crawl policy and a school-scoped sitemap containing only non-empty public directories and indexable event and organization detail URLs.
+- Event structured data is emitted only when the record passes conservative public-attendance, single-occurrence, future-date, organizer, source-image, source-link, and structured-address gates.
+- Structured data uses the same canonical URL, visible event description, organizer relationship, image, occurrence, and cancellation state as the public page.
+- Every six hours, a bounded screenshot worker captures each school's canonical event feed at 1200 by 630 pixels and publishes the newest successful image as that feed's Open Graph and Twitter preview.
+- Event and occurrence writes advance a school revision so the next scheduled render cannot silently miss changed content; failed jobs retry through a dead-lettered queue without replacing the last good preview.
 
-This update does not complete robots files, sitemaps, Search Console verification, generated social-image renditions, social-client testing, or structured-data rollout.
+Search Console verification and social-client preview testing remain operational follow-up work.
 
 ## ROI scoring heuristic
 

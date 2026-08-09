@@ -33,3 +33,11 @@ output "assets_bucket_name" {
 output "assets_public_base_url" {
   value = "https://${var.domain_name}/media"
 }
+
+output "social_preview_function_name" {
+  value = aws_lambda_function.social_preview.function_name
+}
+
+output "social_preview_queue_url" {
+  value = aws_sqs_queue.social_preview.url
+}

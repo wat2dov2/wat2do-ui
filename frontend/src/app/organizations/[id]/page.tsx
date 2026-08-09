@@ -6,6 +6,7 @@ import imgContactHero from "@/assets/contact_hero.png";
 import { getOrganizationEventsSnapshot } from "@/features/events/api/eventFeed.server";
 import { getOrganizationPositionsSnapshot } from "@/features/positions/api/positionDirectory.server";
 import { getOrganizationDetailSnapshot } from "@/features/organizations/api/organizationDirectory.server";
+import { isOrganizationIndexable } from "@/features/organizations/lib/organizationSeo";
 import { OrganizationDetailsPage as OrganizationDetailsPageContent } from "@/features/organizations/pages/OrganizationDetailsPage";
 import { getSchool } from "@/shared/api/schools.server";
 import { organizationPagePath } from "@/shared/constants/routes";
@@ -29,20 +30,6 @@ function parseOrganizationId(value: string): number | null {
   return Number.isInteger(organizationId) && organizationId > 0
     ? organizationId
     : null;
-}
-
-function isOrganizationIndexable(organization: Organization): boolean {
-  return Boolean(
-    organization.status === "approved" &&
-    organization.organization_name.trim() &&
-    organization.school.trim() &&
-    (organization.categories.length > 0 ||
-      organization.organization_page.trim() ||
-      organization.ig ||
-      organization.discord ||
-      (organization.event_count ?? 0) > 0 ||
-      (organization.position_count ?? 0) > 0),
-  );
 }
 
 async function loadOrganization(

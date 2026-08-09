@@ -28,6 +28,14 @@ def test_checked_in_controlbox_is_valid() -> None:
     assert controlbox.event_discovery.new_event_window_hours == 24
     assert controlbox.event_discovery.event_without_end_visibility_minutes == 60
     assert controlbox.event_discovery.initial_render_count == 24
+    assert controlbox.social_previews.refresh_interval_hours == 6
+    assert controlbox.social_previews.capture_path == "/"
+    assert controlbox.social_previews.viewport_width == 1200
+    assert controlbox.social_previews.viewport_height == 630
+    assert controlbox.social_previews.device_scale_factor == 1
+    assert controlbox.social_previews.jpeg_quality == 90
+    assert controlbox.social_previews.reserved_concurrency == 2
+    assert controlbox.social_previews.asset_retention_days == 30
     assert str(controlbox.authentication.legacy_frontend_origins[0]) == "https://wat2do.ca/"
     assert controlbox.organization_management.directory_page_size == 20
     assert controlbox.organization_management.directory_revalidate_seconds == 3600
@@ -99,6 +107,44 @@ def test_duplicate_upload_mime_types_are_rejected(tmp_path: Path) -> None:
     )
 
     with pytest.raises(ValidationError, match="must be unique"):
+        load_controlbox(path)
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("device_scale_factor", 4),
+        ("asset_retention_days", 6),
+        ("capture_path", "/events"),
+    ],
+)
+def test_invalid_social_preview_control_is_rejected(
+    tmp_path: Path,
+    field: str,
+    value: int | str,
+) -> None:
+    path = _write_control(
+        tmp_path,
+        "social_previews",
+        lambda payload: payload.update({field: value}),
+    )
+
+    with pytest.raises(ValidationError, match=field):
+        load_controlbox(path)
+
+
+def test_social_preview_navigation_must_fit_inside_function_timeout(
+    tmp_path: Path,
+) -> None:
+    path = _write_control(
+        tmp_path,
+        "social_previews",
+        lambda payload: payload.update(
+            {"navigation_timeout_seconds": payload["function_timeout_seconds"]}
+        ),
+    )
+
+    with pytest.raises(ValidationError, match="navigation timeout"):
         load_controlbox(path)
 
 

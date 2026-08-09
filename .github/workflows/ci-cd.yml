@@ -92,12 +92,35 @@ jobs:
           BACKEND_API_URL: http://localhost:8000
         run: npm run build
 
+  social-preview:
+    name: Social-preview checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.17.0'
+          cache: npm
+          cache-dependency-path: social-preview/package-lock.json
+
+      - name: Install dependencies
+        working-directory: social-preview
+        run: npm ci
+
+      - name: Run tests
+        working-directory: social-preview
+        run: npm test
+
   deploy-wat2do:
     name: Deploy Wat2Do to AWS
     runs-on: ubuntu-24.04-arm
     needs:
       - backend
       - frontend
+      - social-preview
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     environment: production
     permissions:
@@ -110,6 +133,7 @@ jobs:
       ECS_CLUSTER: wat2do-production
       ECS_SERVICE: wat2do-production-app
       ECS_TASK_FAMILY: wat2do-production-app
+      SOCIAL_PREVIEW_FUNCTION: wat2do-production-social-preview
 
     steps:
       # Full history: the migration guard below diffs against the previous
@@ -180,6 +204,29 @@ jobs:
             NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN=${{ env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN }}
             NEXT_PUBLIC_POSTHOG_HOST=${{ env.NEXT_PUBLIC_POSTHOG_HOST }}
             APP_VERSION=${{ github.sha }}
+
+      - name: Wait for social-preview ECR repository
+        run: |
+          for _ in $(seq 1 60); do
+            if aws ecr describe-repositories --repository-names wat2do/social-preview >/dev/null 2>&1; then
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "::error::The wat2do/social-preview ECR repository was not created by the foundation deployment."
+          exit 1
+
+      - name: Build and push social-preview image
+        id: social-preview-image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: social-preview/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.login-ecr.outputs.registry }}/wat2do/social-preview:${{ github.sha }}
+          cache-from: type=gha,scope=social-preview
+          cache-to: type=gha,mode=max,scope=social-preview,ignore-error=true
 
       - name: Smoke test frontend image
         env:
@@ -278,6 +325,23 @@ jobs:
         run: |
           aws ecs update-service --cluster "$ECS_CLUSTER" --service "$ECS_SERVICE" --task-definition "$TASK_DEFINITION_ARN"
           aws ecs wait services-stable --cluster "$ECS_CLUSTER" --services "$ECS_SERVICE"
+
+      - name: Deploy social-preview Lambda image when provisioned
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          SOCIAL_PREVIEW_DIGEST: ${{ steps.social-preview-image.outputs.digest }}
+        run: |
+          if ! aws lambda get-function --function-name "$SOCIAL_PREVIEW_FUNCTION" >/dev/null 2>&1; then
+            echo "Social-preview Lambda is not provisioned yet; Terraform will create it from this release image."
+            exit 0
+          fi
+
+          image="$ECR_REGISTRY/wat2do/social-preview@$SOCIAL_PREVIEW_DIGEST"
+          aws lambda update-function-code \
+            --function-name "$SOCIAL_PREVIEW_FUNCTION" \
+            --image-uri "$image" \
+            >/dev/null
+          aws lambda wait function-updated-v2 --function-name "$SOCIAL_PREVIEW_FUNCTION"
 
       - name: Smoke test school subdomain scoping
         run: ./scripts/smoke-subdomains.sh

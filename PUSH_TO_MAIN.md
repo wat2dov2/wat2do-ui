@@ -83,6 +83,12 @@ terraform fmt -check -recursive infra/terraform
 
 Run `tflint` in each root when it is installed locally or rely on the Terraform workflow's dedicated TFLint job.
 
+When `social-preview/` changes, also run its dependency and unit-test gate:
+
+```bash
+(cd social-preview && npm ci && npm test)
+```
+
 ---
 
 ## 5. Database migrations
@@ -138,8 +144,8 @@ git push origin main
 ```
 
 After push, CI/CD runs the backend and frontend checks.
-The deploy job then applies pending database migrations, rolls out ECS, and finishes with `scripts/smoke-subdomains.sh`, which asserts a school subdomain never serves another school's feed.
-The primary Wat2Do frontend and backend then deploy together to ECS through GitHub OIDC, ECR, and immutable task-definition images.
+The deploy job then applies pending database migrations, rolls out ECS, updates the social-preview Lambda when it already exists, and finishes with `scripts/smoke-subdomains.sh`, which asserts a school subdomain never serves another school's feed.
+The primary Wat2Do frontend and backend deploy together to ECS, while the isolated screenshot worker deploys to Lambda through the same GitHub OIDC and immutable ECR release flow.
 A green local run means those check jobs should pass; the AWS deployment requires the repository variables and Secrets Manager values documented in the Terraform roots.
 
 Agent handoff after a successful push:
@@ -170,6 +176,9 @@ Agent handoff after a successful push:
   npm run audit:i18n && \
   npm run type-check && \
   NEXT_PUBLIC_API_URL=/api npm run build)
+
+# Social-preview worker
+(cd social-preview && npm ci && npm test)
 
 ```
 

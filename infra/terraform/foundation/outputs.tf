@@ -18,6 +18,10 @@ output "backend_ecr_repository_url" {
   value = aws_ecr_repository.backend.repository_url
 }
 
+output "social_preview_ecr_repository_url" {
+  value = aws_ecr_repository.social_preview.repository_url
+}
+
 output "runtime_secret_arn" {
   value = aws_secretsmanager_secret.runtime.arn
 }

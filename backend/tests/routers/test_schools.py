@@ -56,6 +56,7 @@ def test_get_school_route_is_public_and_delegates(client, monkeypatch):
         "recipient_id": None,
         "semester_start": None,
         "semester_end": None,
+        "social_preview_image_url": None,
     }
     mock.assert_called_once_with("mit")
 

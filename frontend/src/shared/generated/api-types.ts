@@ -3687,6 +3687,8 @@ export interface components {
             semester_start?: string | null;
             /** Semester End */
             semester_end?: string | null;
+            /** Social Preview Image Url */
+            social_preview_image_url?: string | null;
         };
         /** SchoolSummary */
         SchoolSummary: {

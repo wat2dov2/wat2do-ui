@@ -36,10 +36,12 @@ resolve_image() {
 
 backend_image="$(resolve_image 'wat2do/backend')"
 frontend_image="$(resolve_image 'wat2do/frontend')"
+social_preview_image="$(resolve_image 'wat2do/social-preview')"
 
 {
   printf 'TF_VAR_backend_image=%s\n' "$backend_image"
   printf 'TF_VAR_frontend_image=%s\n' "$frontend_image"
+  printf 'TF_VAR_social_preview_image=%s\n' "$social_preview_image"
 } >> "$github_env_file"
 
-echo "Resolved backend and frontend images for release $release_sha."
+echo "Resolved backend, frontend, and social-preview images for release $release_sha."

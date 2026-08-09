@@ -35,6 +35,11 @@ variable "backend_image" {
   type        = string
 }
 
+variable "social_preview_image" {
+  description = "Immutable social-preview Lambda ECR image URI with a digest."
+  type        = string
+}
+
 variable "runtime_secret_arn" {
   description = "ARN of the Secrets Manager secret containing runtime values."
   type        = string

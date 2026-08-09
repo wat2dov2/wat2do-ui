@@ -13,6 +13,7 @@ data "aws_iam_policy_document" "github_deploy" {
       "ecr:BatchCheckLayerAvailability",
       "ecr:BatchGetImage",
       "ecr:CompleteLayerUpload",
+      "ecr:DescribeRepositories",
       "ecr:GetDownloadUrlForLayer",
       "ecr:InitiateLayerUpload",
       "ecr:PutImage",
@@ -21,6 +22,7 @@ data "aws_iam_policy_document" "github_deploy" {
     resources = [
       aws_ecr_repository.frontend.arn,
       aws_ecr_repository.backend.arn,
+      aws_ecr_repository.social_preview.arn,
     ]
   }
 
@@ -72,6 +74,19 @@ data "aws_iam_policy_document" "github_deploy" {
       "ecs:UpdateService",
     ]
     resources = ["*"]
+  }
+
+  statement {
+    sid    = "DeployWat2doSocialPreview"
+    effect = "Allow"
+    actions = [
+      "lambda:GetFunction",
+      "lambda:GetFunctionConfiguration",
+      "lambda:UpdateFunctionCode",
+    ]
+    resources = [
+      "arn:${data.aws_partition.current.partition}:lambda:${var.application_region}:${data.aws_caller_identity.current.account_id}:function:wat2do-production-social-preview",
+    ]
   }
 
   statement {

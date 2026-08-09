@@ -1,0 +1,19 @@
+{
+  "name": "wat2do-social-preview",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "engines": {
+    "node": ">=22.17.0"
+  },
+  "scripts": {
+    "test": "node --test"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "3.1102.0",
+    "@aws-sdk/client-secrets-manager": "3.1102.0",
+    "@aws-sdk/client-sqs": "3.1102.0",
+    "@sparticuz/chromium": "149.0.0",
+    "puppeteer-core": "25.4.0"
+  }
+}

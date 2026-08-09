@@ -13,7 +13,8 @@ from schemas.school import SchoolRecord, SchoolSummary
 DEFAULT_SEARCH_LIMIT: Final[int] = 10
 SCHOOL_COLUMNS: Final[str] = (
     "id, slug, name, primary_color, secondary_color, timezone, "
-    "recipient_id, semester_start, semester_end"
+    "recipient_id, semester_start, semester_end, social_preview_image_url, "
+    "social_preview_revision, social_preview_rendered_revision, social_preview_rendered_at"
 )
 SCHOOL_SLUG_EMBED: Final[str] = "school_record:schools(slug)"
 

@@ -5,11 +5,13 @@ on:
     branches: [main]
     paths:
       - 'infra/terraform/**'
+      - 'backend/controlbox/social_previews.json'
       - '.github/workflows/terraform.yml'
   push:
     branches: [main]
     paths:
       - 'infra/terraform/**'
+      - 'backend/controlbox/social_previews.json'
       - '.github/workflows/terraform.yml'
   workflow_dispatch:
 
@@ -225,3 +227,14 @@ jobs:
             -backend-config='dynamodb_table=wat2do-terraform-state-lock'
           terraform plan -input=false -out=tfplan
           terraform apply -input=false tfplan
+
+      - name: Queue the first social previews
+        run: |
+          aws lambda invoke \
+            --function-name wat2do-production-social-preview \
+            --cli-binary-format raw-in-base64-out \
+            --payload '{"source":"aws.events"}' \
+            /tmp/wat2do-social-preview-bootstrap.json \
+            > /tmp/wat2do-social-preview-bootstrap-result.json
+          test "$(jq -r '.StatusCode' /tmp/wat2do-social-preview-bootstrap-result.json)" = "200"
+          test "$(jq -r '.FunctionError // empty' /tmp/wat2do-social-preview-bootstrap-result.json)" = ""

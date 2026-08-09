@@ -261,6 +261,29 @@ class PublicAttendanceControl(_ControlModel):
     maximum_display_names: int = Field(gt=0)
 
 
+class SocialPreviewsControl(_ControlModel):
+    refresh_interval_hours: int = Field(gt=0, le=24)
+    capture_path: Literal["/"]
+    viewport_width: int = Field(ge=600, le=2400)
+    viewport_height: int = Field(ge=315, le=1260)
+    device_scale_factor: int = Field(ge=1, le=3)
+    jpeg_quality: int = Field(ge=1, le=100)
+    navigation_timeout_seconds: int = Field(gt=0, le=120)
+    function_timeout_seconds: int = Field(gt=0, le=900)
+    memory_megabytes: int = Field(ge=1024, le=10_240)
+    reserved_concurrency: int = Field(ge=2, le=10)
+    maximum_receive_count: int = Field(ge=1, le=10)
+    asset_retention_days: int = Field(ge=7, le=365)
+
+    @model_validator(mode="after")
+    def validate_timeout(self) -> "SocialPreviewsControl":
+        if self.navigation_timeout_seconds >= self.function_timeout_seconds:
+            raise ValueError(
+                "social preview navigation timeout must be shorter than function timeout"
+            )
+        return self
+
+
 class EmailDeliveryControl(_ControlModel):
     provider_timeout_seconds: float = Field(gt=0)
 
@@ -420,6 +443,7 @@ class ControlBox(_ControlModel):
     admin: AdminControl
     uploads: UploadsControl
     public_attendance: PublicAttendanceControl
+    social_previews: SocialPreviewsControl
     instagram_publishing: InstagramPublishingControl
     promoter_program: PromoterProgramControl
 

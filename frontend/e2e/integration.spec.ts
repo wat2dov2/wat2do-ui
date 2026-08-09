@@ -219,6 +219,23 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
+test.describe("SEO discovery routes", () => {
+  test("publishes crawl rules and the school sitemap location", async ({
+    request,
+  }) => {
+    const response = await request.get(`${BASE}/robots.txt`);
+
+    expect(response.ok()).toBe(true);
+    expect(response.headers()["content-type"]).toContain("text/plain");
+    const body = await response.text();
+    expect(body).toContain("Allow: /");
+    expect(body).toContain("Disallow: /admin/");
+    expect(body).toContain(
+      "Sitemap: https://uwaterloo.wat2do.io/sitemap.xml",
+    );
+  });
+});
+
 async function seedAuthenticatedSession(page: Parameters<typeof test>[0]["page"]) {
   // Mock auth refresh
   await page.route(url => apiPath(url) === "/auth/refresh", async (route) => {

@@ -1,0 +1,14 @@
+{
+  "refresh_interval_hours": 6,
+  "capture_path": "/",
+  "viewport_width": 1200,
+  "viewport_height": 630,
+  "device_scale_factor": 1,
+  "jpeg_quality": 90,
+  "navigation_timeout_seconds": 30,
+  "function_timeout_seconds": 60,
+  "memory_megabytes": 2048,
+  "reserved_concurrency": 2,
+  "maximum_receive_count": 3,
+  "asset_retention_days": 30
+}

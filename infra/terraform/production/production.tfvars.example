@@ -6,10 +6,11 @@ runtime_secret_arn = "arn:aws:secretsmanager:ca-central-1:058264255918:secret:wa
 # whose listener rejects traffic from any distribution that does not know it.
 cloudfront_origin_secret = "replace-with-a-random-64-character-hexadecimal-value"
 
-# Build and push both ARM64 images first. The initial production apply creates
-# the ECS service from these immutable digests; subsequent releases are owned
-# by the GitHub application deployment workflow.
+# Build and push the two ARM64 application images and the x86-64 preview image
+# first. The initial production apply creates the ECS service and Lambda from
+# these immutable digests; subsequent releases are owned by GitHub Actions.
 frontend_image = "058264255918.dkr.ecr.ca-central-1.amazonaws.com/wat2do/frontend@sha256:replace-with-first-release-digest"
 backend_image  = "058264255918.dkr.ecr.ca-central-1.amazonaws.com/wat2do/backend@sha256:replace-with-first-release-digest"
+social_preview_image = "058264255918.dkr.ecr.ca-central-1.amazonaws.com/wat2do/social-preview@sha256:replace-with-first-release-digest"
 
 email_from = "wat2do <newsletter@wat2do.io>"

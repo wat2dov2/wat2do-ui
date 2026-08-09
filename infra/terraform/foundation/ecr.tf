@@ -28,6 +28,21 @@ resource "aws_ecr_repository" "backend" {
   }
 }
 
+resource "aws_ecr_repository" "social_preview" {
+  provider             = aws.application
+  name                 = "wat2do/social-preview"
+  force_delete         = true
+  image_tag_mutability = "IMMUTABLE"
+
+  image_scanning_configuration {
+    scan_on_push = true
+  }
+
+  encryption_configuration {
+    encryption_type = "AES256"
+  }
+}
+
 resource "aws_ecr_lifecycle_policy" "frontend" {
   provider   = aws.application
   repository = aws_ecr_repository.frontend.name
@@ -37,5 +52,11 @@ resource "aws_ecr_lifecycle_policy" "frontend" {
 resource "aws_ecr_lifecycle_policy" "backend" {
   provider   = aws.application
   repository = aws_ecr_repository.backend.name
+  policy     = local.ecr_lifecycle_policy
+}
+
+resource "aws_ecr_lifecycle_policy" "social_preview" {
+  provider   = aws.application
+  repository = aws_ecr_repository.social_preview.name
   policy     = local.ecr_lifecycle_policy
 }
