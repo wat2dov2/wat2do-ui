@@ -12,10 +12,29 @@ export const queryKeys = {
     allForSchool: (school: string | null | undefined) =>
       [...queryKeys.organizations.all, "all", school ?? ""] as const,
   },
+  positions: {
+    all: ["positions"] as const,
+    list: (filters: Record<string, unknown>) =>
+      [...queryKeys.positions.all, "list", filters] as const,
+    detail: (positionId: number) =>
+      [...queryKeys.positions.all, "detail", positionId] as const,
+    byOrganization: (organizationId: number, school: string) =>
+      [
+        ...queryKeys.positions.all,
+        "by-organization",
+        organizationId,
+        school,
+      ] as const,
+  },
   posters: {
     all: ["posters"] as const,
     list: (school: string | null | undefined, refreshKey?: number) =>
-      [...queryKeys.posters.all, "list", school ?? "", refreshKey ?? 0] as const,
+      [
+        ...queryKeys.posters.all,
+        "list",
+        school ?? "",
+        refreshKey ?? 0,
+      ] as const,
     earnings: (userId: string | null | undefined) =>
       [...queryKeys.posters.all, "earnings", userId ?? ""] as const,
     coverage: (school: string | null | undefined) =>
@@ -33,20 +52,29 @@ export const queryKeys = {
   },
   scans: {
     all: ["scans"] as const,
-    list: (refreshKey?: number) => [...queryKeys.scans.all, "list", refreshKey ?? 0] as const,
+    list: (refreshKey?: number) =>
+      [...queryKeys.scans.all, "list", refreshKey ?? 0] as const,
   },
   user: {
     all: ["user"] as const,
   },
   events: {
     all: ["events"] as const,
-    detail: (eventId: number) => [...queryKeys.events.all, "detail", eventId] as const,
-    attendees: (eventId: number) => [...queryKeys.events.all, "attendees", eventId] as const,
-    stats: (school: string) => [...queryKeys.events.all, "stats", school] as const,
+    detail: (eventId: number) =>
+      [...queryKeys.events.all, "detail", eventId] as const,
+    attendees: (eventId: number) =>
+      [...queryKeys.events.all, "attendees", eventId] as const,
+    stats: (school: string) =>
+      [...queryKeys.events.all, "stats", school] as const,
     bySchool: (school: string) =>
       [...queryKeys.events.all, "by-school", school] as const,
     byOrganization: (organizationId: number, school: string) =>
-      [...queryKeys.events.all, "by-organization", organizationId, school] as const,
+      [
+        ...queryKeys.events.all,
+        "by-organization",
+        organizationId,
+        school,
+      ] as const,
   },
   goingEvents: {
     all: ["going-events"] as const,

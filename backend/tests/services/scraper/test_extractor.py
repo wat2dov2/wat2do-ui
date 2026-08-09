@@ -1,16 +1,20 @@
 """Unit tests for the parts of services/scraper/extractor that don't
 need the OpenAI client.
 
-The full ``extract_events_from_post`` round-trip is exercised by the
-pipeline integration test with a mocked extractor; these tests pin the
-JSON-parsing tolerance and ``_clean_event`` defaults that matter when
-the model returns unexpected shapes.
+The full extraction round-trip is exercised by the pipeline integration
+test with a mocked extractor; these tests pin JSON parsing, triage, and
+the validated defaults that matter when the model returns unexpected shapes.
 """
 
 import pytest
 
 from services.scraper import extractor
-from services.scraper.extractor import _clean_event, _parse_model_json
+from services.scraper.extractor import (
+    _clean_event,
+    _clean_extracted_content,
+    _clean_position,
+    _parse_model_json,
+)
 
 # ── _parse_model_json ────────────────────────────────────────────────
 
@@ -93,6 +97,52 @@ def test_extraction_prompt_uses_school_slug(monkeypatch):
     prompt = calls[0]["messages"][1]["content"][0]["text"]
     assert "This post is from ubc." in prompt
     assert "University of British Columbia" not in prompt
+    assert '"content_type": "event" | "hiring"' in prompt
+    assert '"positions": [' in prompt
+
+
+def test_clean_extracted_content_triages_hiring_positions():
+    result = _clean_extracted_content(
+        {
+            "content_type": "hiring",
+            "events": [],
+            "positions": [
+                {
+                    "title": "Design Lead",
+                    "description": "Lead the club's visual design work.",
+                    "organization": "UW Design Club",
+                    "position_type": "committee",
+                    "requirements": ["Portfolio"],
+                    "deadline_date": "2026-08-31",
+                    "deadline_at": None,
+                    "image_index": 1,
+                }
+            ],
+        }
+    )
+
+    assert result.content_type == "hiring"
+    assert result.events == []
+    assert result.positions[0]["title"] == "Design Lead"
+    assert result.positions[0]["deadline_date"] == "2026-08-31"
+
+
+def test_clean_extracted_content_ignores_payloads_that_conflict_with_triage():
+    result = _clean_extracted_content(
+        {
+            "content_type": "event",
+            "events": [],
+            "positions": [
+                {
+                    "title": "Design Lead",
+                    "description": "Lead design.",
+                    "position_type": "committee",
+                }
+            ],
+        }
+    )
+
+    assert result.positions == []
 
 
 # ── _clean_event ──────────────────────────────────────────────────────
@@ -154,3 +204,21 @@ def test_clean_event_occurrences_sorted_and_normalized():
     )
     starts = [o["dtstart_utc"] for o in cleaned["occurrences"]]
     assert starts == ["2026-05-01T18:00:00Z", "2026-06-01T18:00:00Z"]
+
+
+def test_clean_position_normalizes_optional_fields():
+    cleaned = _clean_position(
+        {
+            "title": "Volunteer Coordinator",
+            "description": "Coordinate weekly volunteers.",
+            "position_type": "volunteer",
+            "requirements": ["Reliable communication"],
+            "commitment": "",
+            "deadline_date": "2026-09-01",
+            "deadline_at": "",
+        }
+    )
+
+    assert cleaned["commitment"] is None
+    assert cleaned["deadline_at"] is None
+    assert cleaned["deadline_date"] == "2026-09-01"

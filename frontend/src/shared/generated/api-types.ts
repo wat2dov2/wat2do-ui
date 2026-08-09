@@ -1047,6 +1047,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/positions/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Positions */
+        get: operations["list_positions_positions__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/positions/{position_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Position */
+        get: operations["get_position_positions__position_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/qr/": {
         parameters: {
             query?: never;
@@ -1257,6 +1291,26 @@ export interface paths {
         };
         /** Get School Endpoint */
         get: operations["get_school_endpoint_schools__slug__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/site-banner": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Site Banner Endpoint
+         * @description Public: the banner shown above the navigation, or nothing when disabled.
+         */
+        get: operations["get_site_banner_endpoint_site_banner_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2886,6 +2940,11 @@ export interface components {
              * @default 0
              */
             event_count: number;
+            /**
+             * Position Count
+             * @default 0
+             */
+            position_count: number;
         };
         /** OrganizationUpdate */
         OrganizationUpdate: {
@@ -2923,6 +2982,19 @@ export interface components {
         PaginatedResponse_OrganizationResponse_: {
             /** Items */
             items: components["schemas"]["OrganizationResponse"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+            /** Total Pages */
+            total_pages: number;
+        };
+        /** PaginatedResponse[PositionResponse] */
+        PaginatedResponse_PositionResponse_: {
+            /** Items */
+            items: components["schemas"]["PositionResponse"][];
             /** Total */
             total: number;
             /** Page */
@@ -3093,6 +3165,71 @@ export interface components {
              * @default []
              */
             servers: components["schemas"]["DiscordServerOption"][];
+        };
+        /** PositionResponse */
+        PositionResponse: {
+            /** Id */
+            id: number;
+            /** Organization Id */
+            organization_id: number;
+            /** Title */
+            title: string;
+            /** Description */
+            description: string;
+            /**
+             * Position Type
+             * @enum {string}
+             */
+            position_type: "executive" | "committee" | "volunteer" | "staff" | "internship" | "general";
+            /** Requirements */
+            requirements?: string[];
+            /** Commitment */
+            commitment?: string | null;
+            /** Compensation */
+            compensation?: string | null;
+            /** Location */
+            location?: string | null;
+            /** Contact Email */
+            contact_email?: string | null;
+            /** Deadline Date */
+            deadline_date?: string | null;
+            /** Deadline At */
+            deadline_at?: string | null;
+            /** Source Url */
+            source_url: string;
+            /** Source Image Url */
+            source_image_url?: string | null;
+            /**
+             * Ingestion Source
+             * @enum {string}
+             */
+            ingestion_source: "manual" | "instagram_scraper" | "seed";
+            /** Is Active */
+            is_active: boolean;
+            /**
+             * Added At
+             * Format: date-time
+             */
+            added_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Organization Name */
+            organization_name: string;
+            /** Organization Logo Url */
+            organization_logo_url?: string | null;
+            /** Organization Type */
+            organization_type?: string | null;
+            /** Organization Page */
+            organization_page?: string | null;
+            /** Organization Ig */
+            organization_ig?: string | null;
+            /** Organization Discord */
+            organization_discord?: string | null;
+            /** School */
+            school: string;
         };
         /** PosterEarningsItem */
         PosterEarningsItem: {
@@ -3578,6 +3715,18 @@ export interface components {
             token?: string | null;
             /** Return To */
             return_to?: string | null;
+        };
+        /**
+         * SiteBannerResponse
+         * @description The single site-wide banner, as shown above the navigation.
+         */
+        SiteBannerResponse: {
+            /** Message */
+            message: string;
+            /** Cta Label */
+            cta_label: string;
+            /** Cta Href */
+            cta_href: string;
         };
         /**
          * SubmissionCreate
@@ -6140,6 +6289,76 @@ export interface operations {
             };
         };
     };
+    list_positions_positions__get: {
+        parameters: {
+            query?: {
+                school?: string | null;
+                search?: string | null;
+                position_type?: ("executive" | "committee" | "volunteer" | "staff" | "internship" | "general") | null;
+                organization_id?: number | null;
+                include_closed?: boolean;
+                /** @description Page number (1-indexed) */
+                page?: number;
+                /** @description Items per page (max 100) */
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_PositionResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_position_positions__position_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                position_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PositionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_qr_codes_qr__get: {
         parameters: {
             query?: {
@@ -6676,6 +6895,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_site_banner_endpoint_site_banner_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SiteBannerResponse"] | null;
                 };
             };
         };

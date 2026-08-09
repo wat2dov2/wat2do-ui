@@ -19,19 +19,23 @@ export function normalizeOrganization(
     created_by: raw.created_by ?? null,
     school: raw.school ?? "",
     event_count: raw.event_count ?? 0,
+    position_count: raw.position_count ?? 0,
   };
 }
 
 /**
  * Filter organizations by search query
  */
-export function filterOrganizationsBySearch(organizations: Organization[], searchQuery: string): Organization[] {
+export function filterOrganizationsBySearch(
+  organizations: Organization[],
+  searchQuery: string,
+): Organization[] {
   if (!searchQuery.trim()) {
     return organizations;
   }
   const query = searchQuery.toLowerCase();
   return organizations.filter((org) =>
-    org.organization_name.toLowerCase().includes(query)
+    org.organization_name.toLowerCase().includes(query),
   );
 }
 
@@ -40,13 +44,13 @@ export function filterOrganizationsBySearch(organizations: Organization[], searc
  */
 export function filterOrganizationsByCategory(
   organizations: Organization[],
-  categories: string[]
+  categories: string[],
 ): Organization[] {
   if (categories.length === 0) {
     return organizations;
   }
   return organizations.filter((org) =>
-    org.categories.some((cat) => categories.includes(cat))
+    org.categories.some((cat) => categories.includes(cat)),
   );
 }
 
@@ -57,5 +61,7 @@ export function filterOrganizationsByType(
   organizations: Organization[],
   organizationType: string,
 ): Organization[] {
-  return organizations.filter((org) => org.organization_type === organizationType);
+  return organizations.filter(
+    (org) => org.organization_type === organizationType,
+  );
 }

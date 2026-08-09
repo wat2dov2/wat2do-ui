@@ -27,6 +27,7 @@ CALENDAR_FEED_NOT_FOUND = "Calendar feed not found"
 NOTIFICATION_PREFERENCE_NOT_FOUND = "Notification preference not found"
 UNKNOWN_NOTIFICATION_TYPE = "Unknown notification type"
 INSTAGRAM_PUBLISH_BATCH_NOT_FOUND = "Instagram publishing batch not found"
+POSITION_NOT_FOUND = "Position not found"
 
 # ---------------------------------------------------------------------------
 # 401 – Authentication

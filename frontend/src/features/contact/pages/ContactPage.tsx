@@ -115,54 +115,22 @@ export function ContactPage() {
           </h1>
         </div>
 
-        <ContactForm />
-
         <Card>
           <CardHeader>
             <CardTitle>{t("contact.about.title")}</CardTitle>
           </CardHeader>
           <CardContent>
             <Stack gap={4}>
-              <CardDescription>
-                {t("contact.about.welcome")}
-                <ContactEventLink eventId={13576}>
-                  {t("contact.about.hipHop")}
-                </ContactEventLink>
-                {t("contact.about.remoteCarPrefix")}
-                {t("contact.about.remoteCar")}
-                , 🍽️{" "}
-                <ContactEventLink eventId={11159}>
-                  {t("contact.about.cooking")}
-                </ContactEventLink>
-                {t("contact.about.cookingSuffix")}
-                <ContactEventLink eventId={12431}>
-                  {t("contact.about.curling")}
-                </ContactEventLink>
-                {t("contact.about.boatCruisePrefix")}
-                {t("contact.about.boatCruise")}
-                {t("contact.about.stratfordPrefix")}
-                <ContactEventLink eventId={11678}>
-                  {t("contact.about.stratford")}
-                </ContactEventLink>
-                {t("contact.about.anniePrefix")}
-                <em>{t("contact.about.annie")}</em>, 🎢{" "}
-                <ContactEventLink eventId={17881}>
-                  {t("contact.about.wonderland")}
-                </ContactEventLink>
-                {t("contact.about.networkingPrefix")}
-                <ContactEventLink eventId={10866}>
-                  {t("contact.about.networking")}
-                </ContactEventLink>
-                {t("contact.about.builtPrefix")}
-                <ContactSearchLink query="August 2025">
-                  {t("contact.about.builtDate")}
-                </ContactSearchLink>
-                {t("contact.about.builtSuffix")}
-              </CardDescription>
+              <CardDescription>{t("contact.about.origin")}</CardDescription>
+              <CardDescription>{t("contact.about.belief")}</CardDescription>
+              <CardDescription>{t("contact.about.scale")}</CardDescription>
+              <CardDescription>{t("contact.about.mission")}</CardDescription>
               <CardDescription>{t("contact.about.signature")}</CardDescription>
             </Stack>
           </CardContent>
         </Card>
+
+        <ContactForm />
 
         <Card>
           <CardContent>

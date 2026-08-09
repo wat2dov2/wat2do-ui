@@ -67,7 +67,9 @@ def _print_summary(school: str, result: ScrapeResult) -> None:
         f"{prefix}{school}: 1 handle(s), "
         f"{result.posts_fetched} post(s) fetched, "
         f"{result.events_extracted} event(s) extracted, "
-        f"{result.events_saved} event(s) {saved}saved"
+        f"{result.events_saved} event(s) {saved}saved, "
+        f"{result.positions_extracted} position(s) extracted, "
+        f"{result.positions_saved} position(s) {saved}saved"
     )
 
 

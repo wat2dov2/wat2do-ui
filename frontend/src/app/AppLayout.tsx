@@ -7,6 +7,7 @@ import {
   OrganizationChart,
   Ticket,
   QrCode,
+  Users,
 } from "@/shared/ui/doodle-icons";
 import { TopNav } from "@/app/TopNav";
 import { FloatingDock } from "@/shared/ui/floating-dock";
@@ -43,6 +44,12 @@ export function AppLayout({ children }: AppLayoutProps) {
       icon: <OrganizationChart className="size-full" />,
       href: ROUTES.ORGANIZATIONS,
       isActive: isActive(ROUTES.ORGANIZATIONS),
+    },
+    {
+      title: t("navigation.positions"),
+      icon: <Users className="size-full" />,
+      href: ROUTES.POSITIONS,
+      isActive: isActive(ROUTES.POSITIONS),
     },
     {
       title: t("navigation.contact"),

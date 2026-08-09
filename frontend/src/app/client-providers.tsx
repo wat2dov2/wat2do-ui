@@ -23,6 +23,7 @@ import { installBundledLocales } from "@/app/localeResources";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { getQueryClient } from "@/shared/lib/queryClient";
 import { queryKeys } from "@/shared/lib/queryKeys";
+import type { SchoolSummary } from "@/shared/api/schools.api";
 
 installBundledLocales();
 
@@ -80,9 +81,20 @@ export function useAuthReady() {
   return useContext(AuthReadyContext);
 }
 
-export function ClientProviders({ children }: { children: ReactNode }) {
+interface ClientProvidersProps {
+  children: ReactNode;
+  initialSchools?: SchoolSummary[];
+}
+
+export function ClientProviders({ children, initialSchools }: ClientProvidersProps) {
   const [authReady, setAuthReady] = useState(false);
-  const [queryClient] = useState(() => getQueryClient());
+  const [queryClient] = useState(() => {
+    const client = getQueryClient();
+    if (initialSchools && !client.getQueryData(queryKeys.schools.directory())) {
+      client.setQueryData(queryKeys.schools.directory(), initialSchools);
+    }
+    return client;
+  });
 
   useEffect(() => {
     const handleLogin = () => {

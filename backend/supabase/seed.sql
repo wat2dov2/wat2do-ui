@@ -264,5 +264,6 @@ WHERE NOT EXISTS (
 ANALYZE public.organizations;
 ANALYZE public.events;
 ANALYZE public.event_dates;
+ANALYZE public.positions;
 
 COMMIT;

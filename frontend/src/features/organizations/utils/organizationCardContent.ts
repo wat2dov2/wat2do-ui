@@ -1,19 +1,26 @@
 import type { TFunction } from "i18next";
 import type { Organization } from "@/shared/types";
 
-export function getOrganizationEventCountBadge(
+export function getOrganizationCountBadges(
   organization: Organization,
   t: TFunction,
 ): Array<{ text: string }> {
-  const count = organization.event_count ?? 0;
-  if (count <= 0) {
-    return [];
-  }
+  const eventCount = organization.event_count ?? 0;
+  const positionCount = organization.position_count ?? 0;
 
-  return [{ text: t("organizations.eventCount", { count }) }];
+  return [
+    ...(eventCount > 0
+      ? [{ text: t("organizations.eventCount", { count: eventCount }) }]
+      : []),
+    ...(positionCount > 0
+      ? [{ text: t("organizations.positionCount", { count: positionCount }) }]
+      : []),
+  ];
 }
 
-export function getOrganizationSocialHandle(organization: Organization): string | undefined {
+export function getOrganizationSocialHandle(
+  organization: Organization,
+): string | undefined {
   if (organization.ig) {
     return `@${organization.ig}`;
   }

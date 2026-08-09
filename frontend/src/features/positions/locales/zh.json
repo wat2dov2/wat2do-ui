@@ -1,0 +1,34 @@
+{
+  "positions": {
+    "position": "个职位",
+    "position_other": "个职位",
+    "searchPlaceholder": "搜索职位、技能或地点...",
+    "clearSearch": "清除职位搜索",
+    "filterByType": "按职位类型筛选",
+    "allTypes": "所有职位类型",
+    "openDetails": "查看 {{title}} 职位详情",
+    "drawerDescription": "{{organization}} 的 {{title}} 职位详情",
+    "deadlineLabel": "申请截止日期",
+    "due": "截止 {{date}}",
+    "commitmentLabel": "时间投入",
+    "locationLabel": "地点",
+    "compensationLabel": "薪酬",
+    "contactLabel": "联系方式",
+    "aboutPosition": "职位介绍",
+    "requirements": "要求",
+    "viewSource": "查看 Instagram 原帖",
+    "emptyTitle": "未找到开放职位",
+    "emptyDescription": "请尝试其他搜索条件或职位类型。学生组织发布的新机会将显示在这里。",
+    "organizationEmptyTitle": "暂无开放职位",
+    "organizationEmptyDescription": "该组织目前没有开放职位。",
+    "resultsLabel": "找到 {{count}} 个职位",
+    "types": {
+      "executive": "执行团队",
+      "committee": "委员会",
+      "volunteer": "志愿者",
+      "staff": "带薪职位",
+      "internship": "实习",
+      "general": "综合招募"
+    }
+  }
+}

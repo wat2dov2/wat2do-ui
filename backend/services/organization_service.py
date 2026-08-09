@@ -31,7 +31,7 @@ from schemas.organization import (
     OrganizationStatus,
     OrganizationUpdate,
 )
-from services import event_service, school_service
+from services import event_service, position_service, school_service
 from services.event_feed_revalidation import event_feed_revalidation_service
 from services.school_context import school_frontend_url
 
@@ -285,9 +285,17 @@ def list_organizations(
         items.append(_organization_response(row, owner_email=email))
 
     if items:
-        event_counts = event_service.get_organization_event_counts([item.id for item in items])
+        organization_ids = [item.id for item in items]
+        event_counts = event_service.get_organization_event_counts(organization_ids)
+        position_counts = position_service.get_organization_position_counts(organization_ids)
         items = [
-            item.model_copy(update={"event_count": event_counts.get(item.id, 0)}) for item in items
+            item.model_copy(
+                update={
+                    "event_count": event_counts.get(item.id, 0),
+                    "position_count": position_counts.get(item.id, 0),
+                }
+            )
+            for item in items
         ]
 
     return items, r.count or len(items)

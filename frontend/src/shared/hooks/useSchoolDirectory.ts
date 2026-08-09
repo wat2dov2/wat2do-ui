@@ -1,6 +1,7 @@
 import { useCallback, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
+  SCHOOL_DIRECTORY_LIMIT,
   searchSchools,
   type SchoolSummary,
 } from "@/shared/api/schools.api";
@@ -12,7 +13,7 @@ const EMPTY_SCHOOLS: SchoolSummary[] = [];
 export function useSchoolDirectory() {
   const query = useQuery({
     queryKey: queryKeys.schools.directory(),
-    queryFn: () => searchSchools("", 50),
+    queryFn: () => searchSchools("", SCHOOL_DIRECTORY_LIMIT),
   });
   const schools = query.data ?? EMPTY_SCHOOLS;
   const schoolBySlug = useMemo(

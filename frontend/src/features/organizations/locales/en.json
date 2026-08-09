@@ -37,6 +37,8 @@
     "instagram": "Instagram",
     "eventCount": "{{count}} event",
     "eventCount_other": "{{count}} events",
+    "positionCount": "{{count}} position",
+    "positionCount_other": "{{count}} positions",
     "clubCreated": "Organization Created!",
     "clubUpdated": "Organization Updated!",
     "addClub": "Add club",
@@ -69,6 +71,7 @@
     "filterBy": "See more events by {{name}}",
     "visitWebsite": "Visit Website",
     "allOrganizations": "All organizations",
+    "activityTabsLabel": "Organization activity",
     "submittedForReview": "Submitted for review. Your organization goes live once an admin approves it.",
     "awaitingReview": "This organization is awaiting admin review. It is not listed publicly yet, and events cannot be published until it is approved.",
     "reviewRejected": "This organization was not approved. Contact the Wat2Do team if you think this is a mistake."

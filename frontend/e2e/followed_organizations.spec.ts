@@ -45,92 +45,116 @@ function apiPath(url: URL): string | null {
   return path.endsWith("/") && path !== "/" ? path.slice(0, -1) : path;
 }
 
-async function selectOrganizationScope(page: Parameters<typeof test>[0]["page"], label: string) {
+async function selectOrganizationScope(
+  page: Parameters<typeof test>[0]["page"],
+  label: string,
+) {
   await page.getByRole("combobox", { name: /all|followed|claimed/i }).click();
   await page.getByRole("option", { name: label }).click();
 }
 
-async function seedAuthenticatedSession(page: Parameters<typeof test>[0]["page"]) {
+async function seedAuthenticatedSession(
+  page: Parameters<typeof test>[0]["page"],
+) {
   // In-memory array to track mock saved organization IDs across mock routes
   let savedIds: number[] = [];
 
   // Mock auth refresh
-  await page.route(url => apiPath(url) === "/auth/refresh", async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({
-        access_token: "mock-access-token",
-        token_type: "bearer",
-        expires_in: 3600,
-        user_id: "mock-user-id",
-      }),
-    });
-  });
+  await page.route(
+    (url) => apiPath(url) === "/auth/refresh",
+    async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          access_token: "mock-access-token",
+          token_type: "bearer",
+          expires_in: 3600,
+          user_id: "mock-user-id",
+        }),
+      });
+    },
+  );
 
   // Mock users/me
-  await page.route(url => apiPath(url) === "/users/me", async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({
-        id: "mock-user-id",
-        email: TEST_EMAIL,
-        school: "uwaterloo",
-        faculty: "Mathematics",
-        interests: [],
-        is_first_year: false,
-        role: "user",
-      }),
-    });
-  });
+  await page.route(
+    (url) => apiPath(url) === "/users/me",
+    async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          id: "mock-user-id",
+          email: TEST_EMAIL,
+          school: "uwaterloo",
+          faculty: "Mathematics",
+          interests: [],
+          is_first_year: false,
+          role: "user",
+        }),
+      });
+    },
+  );
 
   // Mock organizations/mine (empty)
-  await page.route(url => apiPath(url) === "/organizations/mine", async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify([]),
-    });
-  });
-
-  await page.route(url => apiPath(url) === "/organizations/1/membership", async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify(null),
-    });
-  });
-
-  // Mock GET /organizations/ list
-  await page.route(url => apiPath(url) === "/organizations", async (route) => {
-    const requestUrl = new URL(route.request().url());
-    const idsParam = requestUrl.searchParams.getAll("ids");
-
-    let items = MOCK_ORGANIZATIONS;
-    if (requestUrl.searchParams.has("ids")) {
-      const ids = idsParam.map(Number);
-      items = MOCK_ORGANIZATIONS.filter(item => ids.includes(item.id));
-    }
-
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({
-        items,
-        total: items.length,
-        page: 1,
-        page_size: 20,
-        total_pages: 1
-      }),
-    });
-  });
+  await page.route(
+    (url) => apiPath(url) === "/organizations/mine",
+    async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify([]),
+      });
+    },
+  );
 
   await page.route(
-    url => /^\/organizations\/\d+$/.test(apiPath(url) ?? ""),
+    (url) => apiPath(url) === "/organizations/1/membership",
     async (route) => {
-      const organizationId = Number(apiPath(new URL(route.request().url()))?.split("/").pop());
-      const organization = MOCK_ORGANIZATIONS.find((item) => item.id === organizationId);
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(null),
+      });
+    },
+  );
+
+  // Mock GET /organizations/ list
+  await page.route(
+    (url) => apiPath(url) === "/organizations",
+    async (route) => {
+      const requestUrl = new URL(route.request().url());
+      const idsParam = requestUrl.searchParams.getAll("ids");
+
+      let items = MOCK_ORGANIZATIONS;
+      if (requestUrl.searchParams.has("ids")) {
+        const ids = idsParam.map(Number);
+        items = MOCK_ORGANIZATIONS.filter((item) => ids.includes(item.id));
+      }
+
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          items,
+          total: items.length,
+          page: 1,
+          page_size: 20,
+          total_pages: 1,
+        }),
+      });
+    },
+  );
+
+  await page.route(
+    (url) => /^\/organizations\/\d+$/.test(apiPath(url) ?? ""),
+    async (route) => {
+      const organizationId = Number(
+        apiPath(new URL(route.request().url()))?.split("/").pop(),
+      );
+      const organization = MOCK_ORGANIZATIONS.find(
+        (item) => item.id === organizationId,
+      );
       await route.fulfill({
         status: organization ? 200 : 404,
         contentType: "application/json",
@@ -140,121 +164,139 @@ async function seedAuthenticatedSession(page: Parameters<typeof test>[0]["page"]
   );
 
   // Mock GET/PUT/DELETE /saved-organizations/
-  await page.route(url => apiPath(url)?.startsWith("/saved-organizations") === true, async (route) => {
-    const requestUrl = new URL(route.request().url());
-    const method = route.request().method();
-    const pathname = requestUrl.pathname;
-    const match = pathname.match(/\/saved-organizations\/(\d+)/);
+  await page.route(
+    (url) => apiPath(url)?.startsWith("/saved-organizations") === true,
+    async (route) => {
+      const requestUrl = new URL(route.request().url());
+      const method = route.request().method();
+      const pathname = requestUrl.pathname;
+      const match = pathname.match(/\/saved-organizations\/(\d+)/);
 
-    if (match) {
-      const orgId = parseInt(match[1]);
-      if (method === "PUT") {
-        if (!savedIds.includes(orgId)) {
-          savedIds.push(orgId);
+      if (match) {
+        const orgId = parseInt(match[1]);
+        if (method === "PUT") {
+          if (!savedIds.includes(orgId)) {
+            savedIds.push(orgId);
+          }
+          await route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify({ status: "saved" }),
+          });
+        } else if (method === "DELETE") {
+          savedIds = savedIds.filter((id) => id !== orgId);
+          await route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify({ status: "unsaved" }),
+          });
+        } else {
+          await route.continue();
         }
-        await route.fulfill({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify({ status: "saved" }),
-        });
-      } else if (method === "DELETE") {
-        savedIds = savedIds.filter(id => id !== orgId);
-        await route.fulfill({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify({ status: "unsaved" }),
-        });
       } else {
-        await route.continue();
+        // GET list
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify(savedIds),
+        });
       }
-    } else {
-      // GET list
+    },
+  );
+
+  // Mock GET /credits/
+  await page.route(
+    (url) => apiPath(url) === "/credits",
+    async (route) => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
-        body: JSON.stringify(savedIds),
+        body: JSON.stringify({ balance: 0 }),
       });
-    }
-  });
-
-  // Mock GET /credits/
-  await page.route(url => apiPath(url) === "/credits", async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({ balance: 0 }),
-    });
-  });
+    },
+  );
 
   // Mock GET /going-events/
-  await page.route(url => apiPath(url) === "/going-events", async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify([]),
-    });
-  });
+  await page.route(
+    (url) => apiPath(url) === "/going-events",
+    async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify([]),
+      });
+    },
+  );
 
   // Mock GET /events/ (the organization page lists its host's upcoming events)
-  await page.route(url => apiPath(url) === "/events", async (route) => {
-    const requestUrl = new URL(route.request().url());
-    const matchesOrganizationId =
-      requestUrl.searchParams.get("organization_ids") === "1";
-    const startsAt = new Date(Date.now() + 86_400_000).toISOString();
-    const items = matchesOrganizationId
-      ? [
-          {
-            id: 41,
-            title: "Tech Career Fair",
-            location: "SLC",
-            occurrences: [
-              {
-                id: "11111111-1111-1111-1111-111111111111",
-                event_id: 41,
-                dtstart_utc: startsAt,
-                dtend_utc: null,
-              },
-            ],
-            price: 0,
-            food: [],
-            registration: false,
-            source_image_url: null,
-            category: "Career",
-            organization: "legacy-wloo-tech-handle",
-            organization_type: "independent",
-            organization_id: 1,
-            school: "uwaterloo",
-            added_at: new Date().toISOString(),
-          },
-        ]
-      : [];
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({
-        items,
-        total: items.length,
-        page: 1,
-        page_size: 50,
-        total_pages: items.length ? 1 : 0,
-        latest_added_event: null,
-      }),
-    });
-  });
+  await page.route(
+    (url) => apiPath(url) === "/events",
+    async (route) => {
+      const requestUrl = new URL(route.request().url());
+      const matchesOrganizationId =
+        requestUrl.searchParams.get("organization_ids") === "1";
+      const startsAt = new Date(Date.now() + 86_400_000).toISOString();
+      const items = matchesOrganizationId
+        ? [
+            {
+              id: 41,
+              title: "Tech Career Fair",
+              location: "SLC",
+              occurrences: [
+                {
+                  id: "11111111-1111-1111-1111-111111111111",
+                  event_id: 41,
+                  dtstart_utc: startsAt,
+                  dtend_utc: null,
+                },
+              ],
+              price: 0,
+              food: [],
+              registration: false,
+              source_image_url: null,
+              category: "Career",
+              organization: "legacy-wloo-tech-handle",
+              organization_type: "independent",
+              organization_id: 1,
+              school: "uwaterloo",
+              added_at: new Date().toISOString(),
+            },
+          ]
+        : [];
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          items,
+          total: items.length,
+          page: 1,
+          page_size: 50,
+          total_pages: items.length ? 1 : 0,
+          latest_added_event: null,
+        }),
+      });
+    },
+  );
 
   // Mock GET /events/stats
-  await page.route(url => apiPath(url) === "/events/stats", async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({}),
-    });
-  });
+  await page.route(
+    (url) => apiPath(url) === "/events/stats",
+    async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({}),
+      });
+    },
+  );
 
   // Seed localStorage hint
-  await page.addInitScript(({ key, email }) => {
-    window.localStorage.setItem(key, JSON.stringify(email));
-  }, { key: STORAGE_KEYS.USER_EMAIL, email: TEST_EMAIL });
+  await page.addInitScript(
+    ({ key, email }) => {
+      window.localStorage.setItem(key, JSON.stringify(email));
+    },
+    { key: STORAGE_KEYS.USER_EMAIL, email: TEST_EMAIL },
+  );
 }
 
 test.describe("Followed Organizations Flow", () => {
@@ -263,71 +305,91 @@ test.describe("Followed Organizations Flow", () => {
       console.log(`[BROWSER CONSOLE] [${msg.type()}] ${msg.text()}`);
     });
 
-    await page.route(url => apiPath(url) === "/meta/constants", async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({
-          event_categories: ["Career", "Technology"],
-          organization_categories: ["Technology", "Social"],
-          interests: ["Career", "Technology"],
-          interest_to_categories: {
-            Career: ["Career"],
-            Technology: ["Technology"],
-          },
-          report_statuses: ["pending", "resolved", "dismissed"],
-        }),
-      });
-    });
+    await page.route(
+      (url) => apiPath(url) === "/meta/constants",
+      async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            event_categories: ["Career", "Technology"],
+            organization_categories: ["Technology", "Social"],
+            interests: ["Career", "Technology"],
+            interest_to_categories: {
+              Career: ["Career"],
+              Technology: ["Technology"],
+            },
+            report_statuses: ["pending", "resolved", "dismissed"],
+          }),
+        });
+      },
+    );
 
-    await page.route(url => apiPath(url) === "/promotions/active-ids", async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify([]),
-      });
-    });
+    await page.route(
+      (url) => apiPath(url) === "/promotions/active-ids",
+      async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify([]),
+        });
+      },
+    );
 
-    await page.route(url => apiPath(url) === "/going-events", async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify([]),
-      });
-    });
+    await page.route(
+      (url) => apiPath(url) === "/going-events",
+      async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify([]),
+        });
+      },
+    );
 
-    await page.route(url => apiPath(url) === "/saved-organizations", async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify([]),
-      });
-    });
+    await page.route(
+      (url) => apiPath(url) === "/saved-organizations",
+      async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify([]),
+        });
+      },
+    );
 
-    await page.route(url => apiPath(url) === "/credits", async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({ balance: 0 }),
-      });
-    });
+    await page.route(
+      (url) => apiPath(url) === "/credits",
+      async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({ balance: 0 }),
+        });
+      },
+    );
 
-    await page.route(url => apiPath(url) === "/organizations", async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({
-          items: MOCK_ORGANIZATIONS,
-          total: MOCK_ORGANIZATIONS.length,
-          page: 1,
-          page_size: 20,
-          total_pages: 1,
-        }),
-      });
-    });
+    await page.route(
+      (url) => apiPath(url) === "/organizations",
+      async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            items: MOCK_ORGANIZATIONS,
+            total: MOCK_ORGANIZATIONS.length,
+            page: 1,
+            page_size: 20,
+            total_pages: 1,
+          }),
+        });
+      },
+    );
   });
 
-  test("unauthenticated user sees Sign In CTA on followed tab", async ({ page }) => {
+  test("unauthenticated user sees Sign In CTA on followed tab", async ({
+    page,
+  }) => {
     await page.goto(`${BASE}/organizations`);
     await page.waitForTimeout(1000);
 
@@ -335,11 +397,17 @@ test.describe("Followed Organizations Flow", () => {
     await selectOrganizationScope(page, "Followed");
 
     // Assert that the Sign In CTA is displayed
-    await expect(page.getByRole("heading", { name: "Sign in to view followed organizations" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", {
+        name: "Sign in to view followed organizations",
+      }),
+    ).toBeVisible();
     await expect(page.locator("#followed-clubs-sign-in")).toBeVisible();
   });
 
-  test("unauthenticated user sees Sign In CTA on claimed tab", async ({ page }) => {
+  test("unauthenticated user sees Sign In CTA on claimed tab", async ({
+    page,
+  }) => {
     await page.goto(`${BASE}/organizations`);
     await page.waitForTimeout(1000);
 
@@ -347,15 +415,17 @@ test.describe("Followed Organizations Flow", () => {
     await selectOrganizationScope(page, "Claimed");
 
     // Assert that the Sign In CTA is displayed
-    await expect(page.getByRole("heading", { name: "Sign in to view claimed organizations" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", {
+        name: "Sign in to view claimed organizations",
+      }),
+    ).toBeVisible();
     await expect(page.locator("#claimed-clubs-sign-in")).toBeVisible();
   });
 
-  test("places the signed-out join action beside the organization title", async ({
-    page,
-  }) => {
+  test("shows organization events and positions in tabs", async ({ page }) => {
     await page.route(
-      url => apiPath(url) === "/organizations/1",
+      (url) => apiPath(url) === "/organizations/1",
       async (route) => {
         await route.fulfill({
           status: 200,
@@ -364,20 +434,72 @@ test.describe("Followed Organizations Flow", () => {
         });
       },
     );
-    await page.route(url => apiPath(url) === "/events", async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({
-          items: [],
-          total: 0,
-          page: 1,
-          page_size: 50,
-          total_pages: 0,
-          latest_added_event: null,
-        }),
-      });
-    });
+    await page.route(
+      (url) => apiPath(url) === "/events",
+      async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            items: [],
+            total: 0,
+            page: 1,
+            page_size: 50,
+            total_pages: 0,
+            latest_added_event: null,
+          }),
+        });
+      },
+    );
+    await page.route(
+      (url) => apiPath(url) === "/positions",
+      async (route) => {
+        const requestUrl = new URL(route.request().url());
+        const items =
+          requestUrl.searchParams.get("organization_id") === "1"
+            ? [
+                {
+                  id: 91,
+                  organization_id: 1,
+                  title: "Design Lead",
+                  description: "Lead the visual direction for club campaigns.",
+                  position_type: "committee",
+                  requirements: ["Portfolio"],
+                  commitment: "3 hours per week",
+                  compensation: "Volunteer",
+                  location: "Hybrid",
+                  contact_email: "design@example.com",
+                  deadline_date: "2026-08-21",
+                  deadline_at: null,
+                  source_url: "https://instagram.com/p/design/",
+                  source_image_url: null,
+                  ingestion_source: "seed",
+                  is_active: true,
+                  added_at: "2026-08-01T12:00:00Z",
+                  updated_at: "2026-08-01T12:00:00Z",
+                  organization_name: "UW Tech Club",
+                  organization_logo_url: null,
+                  organization_type: "independent",
+                  organization_page: "https://example.com/tech",
+                  organization_ig: null,
+                  organization_discord: null,
+                  school: "uwaterloo",
+                },
+              ]
+            : [];
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            items,
+            total: items.length,
+            page: 1,
+            page_size: 50,
+            total_pages: items.length ? 1 : 0,
+          }),
+        });
+      },
+    );
 
     await page.goto(`${BASE}/organizations`);
     await page.getByText("UW Tech Club", { exact: true }).click();
@@ -388,6 +510,13 @@ test.describe("Followed Organizations Flow", () => {
     });
     await expect(title).toHaveText("UW Tech Club");
     await expect(signInToJoin).toBeVisible();
+    await expect(page.getByRole("tab", { name: "Events" })).toHaveAttribute(
+      "data-state",
+      "active",
+    );
+    await page.getByRole("tab", { name: "Positions" }).click();
+    await expect(page.getByText("Design Lead", { exact: true })).toBeVisible();
+    await expect(page.getByText("Due Aug 21", { exact: true })).toBeVisible();
     await expect
       .poll(() =>
         title.evaluate((titleElement) => {
@@ -414,7 +543,7 @@ test.describe("Followed Organizations Flow", () => {
 
     // Assert that we are on All Clubs tab and cards are loaded
     await expect(page.getByRole("combobox", { name: "All" })).toBeVisible();
-    
+
     // Switch to Followed Clubs tab, should show empty state
     await selectOrganizationScope(page, "Followed");
     await expect(page.getByText("No followed organizations")).toBeVisible();
@@ -427,7 +556,9 @@ test.describe("Followed Organizations Flow", () => {
     await expect(page).toHaveURL(`${BASE}/organizations/1`);
     await expect(page.getByText("Tech Career Fair")).toBeVisible();
 
-    const firstFollowBtn = page.getByRole("button", { name: "Follow organization" });
+    const firstFollowBtn = page.getByRole("button", {
+      name: "Follow organization",
+    });
     await expect(firstFollowBtn).toBeVisible();
     await firstFollowBtn.click();
 
@@ -444,8 +575,10 @@ test.describe("Followed Organizations Flow", () => {
     // Unfollow from the followed tab
     await page.getByText("UW Tech Club").click();
     await expect(page).toHaveURL(`${BASE}/organizations/1`);
-    
-    const unfollowBtn = page.getByRole("button", { name: "Followed organization" });
+
+    const unfollowBtn = page.getByRole("button", {
+      name: "Followed organization",
+    });
     await expect(unfollowBtn).toBeVisible();
     await unfollowBtn.click();
 

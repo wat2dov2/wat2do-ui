@@ -1,4 +1,4 @@
-"""OpenAI vision-based event extraction for scraped posts and directory pages.
+"""OpenAI vision-based event and hiring extraction for scraped content.
 
 Each ``image_url`` block in the user-message content is preceded by an
 ``{"type": "text", "text": "Image N:"}`` marker. The vision model keys off
@@ -10,8 +10,8 @@ from __future__ import annotations
 
 import json
 import logging
-from datetime import datetime
-from typing import Annotated
+from datetime import date, datetime
+from typing import Annotated, Literal
 from zoneinfo import ZoneInfo
 
 from openai import OpenAI
@@ -19,6 +19,14 @@ from pydantic import BaseModel, BeforeValidator, Field, model_validator
 
 from core.config import settings
 from core.constants import EVENT_CATEGORIES
+from core.constants.positions import (
+    MAX_POSITION_DESCRIPTION_LENGTH,
+    MAX_POSITION_DETAIL_LENGTH,
+    MAX_POSITION_REQUIREMENT_COUNT,
+    MAX_POSITION_REQUIREMENT_LENGTH,
+    MAX_POSITION_TITLE_LENGTH,
+)
+from schemas.position import PositionType
 from services.school_context import (
     canonical_school_key,
     current_semester_end,
@@ -28,15 +36,15 @@ from services.school_context import (
 log = logging.getLogger(__name__)
 
 _SYSTEM_MESSAGE = (
-    "You are a helpful assistant that extracts event information from social "
-    "media posts. Always return valid JSON with the exact structure requested."
+    "You triage social media posts and extract campus event and hiring information. "
+    "Always return valid JSON with the exact structure requested."
 )
 
 
 def _client() -> OpenAI | None:
     """Return a configured OpenAI client, or None if ``OPENAI_API_KEY`` is unset.
 
-    A None return causes ``extract_events_from_post`` to log and return ``[]``.
+    A None return causes extraction to log and return an empty result.
     Dry-run does not bypass extraction; it still needs a key to call the model.
     """
     if not settings.openai_api_key:
@@ -44,15 +52,15 @@ def _client() -> OpenAI | None:
     return OpenAI(api_key=settings.openai_api_key)
 
 
-def extract_events_from_post(
+def extract_post_content(
     *,
     caption_text: str | None,
     image_urls: list[str] | None,
     post_created_at: datetime | None,
     school: str,
     model: str | None = None,
-) -> list[dict]:
-    """Extract zero-or-more events from one Instagram post.
+) -> ExtractedPostContent:
+    """Triage content and extract zero-or-more events and hiring positions.
 
     Args:
         caption_text: post caption (may be empty/None for image-only posts).
@@ -67,15 +75,14 @@ def extract_events_from_post(
         model: vision-capable OpenAI model. Defaults to
             ``settings.openai_extraction_model``.
 
-    Returns the cleaned list of event dicts (each with title, description,
-    location, occurrences, categories, image_index, etc.). Returns an
-    empty list on any failure - never raises so the pipeline can keep
-    processing the next post.
+    Returns cleaned event and position dictionaries in one result. Returns an
+    empty result on any failure so the pipeline can keep processing the next
+    post.
     """
     client = _client()
     if client is None:
         log.warning("OpenAI key not configured; skipping extraction for %s", school)
-        return []
+        return ExtractedPostContent()
 
     tz_name = resolve_school_timezone(school)
     try:
@@ -133,32 +140,30 @@ def extract_events_from_post(
         )
     except Exception as e:
         log.exception("OpenAI extraction call failed: %s", e)
-        return []
+        return ExtractedPostContent()
 
     raw = (response.choices[0].message.content or "").strip()
     parsed = _parse_model_json(raw)
 
-    if isinstance(parsed, dict):
-        # Model occasionally returns a single event dict instead of an
-        # array of one. Treat as a single-event response rather than
-        # silently dropping it.
-        events = [parsed]
-    elif isinstance(parsed, list):
-        events = parsed
-    else:
-        # ``null`` (the model's "no event in this post" return) falls
-        # through here, as do unexpected shapes.
-        events = []
+    return _clean_extracted_content(parsed)
 
-    cleaned_events = []
-    for e in events:
-        if not isinstance(e, dict):
-            continue
-        try:
-            cleaned_events.append(_clean_event(e))
-        except ValueError:
-            continue
-    return cleaned_events
+
+def extract_events_from_post(
+    *,
+    caption_text: str | None,
+    image_urls: list[str] | None,
+    post_created_at: datetime | None,
+    school: str,
+    model: str | None = None,
+) -> list[dict]:
+    """Extract events for event-only consumers such as directory imports."""
+    return extract_post_content(
+        caption_text=caption_text,
+        image_urls=image_urls,
+        post_created_at=post_created_at,
+        school=school,
+        model=model,
+    ).events
 
 
 def _parse_model_json(raw: str):
@@ -226,7 +231,7 @@ def _build_prompt(
     )
 
     return f"""
-Analyze the following Instagram caption and list of images. Extract event information if it's an event post.
+Analyze the following Instagram caption and images. First classify the post, then extract every campus event and every open hiring position it clearly advertises.
 
 School context: This post is from {school}. Use this to guide location and timezone decisions.
 Current context: Today is {current_day}, {current_date}
@@ -237,7 +242,13 @@ Caption: {caption_text or ""}
 Images (0-indexed):
 {image_list_str}
 
-STRICT CONTENT POLICY:
+CLASSIFICATION POLICY:
+- Set "content_type" to "event" for event-only posts, "hiring" for hiring-only posts, "event_and_hiring" when both are clearly advertised, and "other" when neither applies.
+- A hiring post explicitly recruits people for one or more open roles, including executives, committee members, volunteers, paid staff, or internships.
+- General organization promotion, member introductions, election results, and event registration are not hiring unless the post clearly invites applications for a role.
+- Return an empty array for a content category that is not present. Never force an event into a position or a position into an event.
+
+EVENT POLICY:
 - ONLY extract an event if the post is clearly announcing or describing a real-world event.
 - Ideally, the post should have BOTH a specific date AND a specific start time.
 - EXCEPTION: For major events (e.g., full-day, multi-day, overnight), you MAY extract the event even if a specific start time is not explicitly stated, provided there is a specific DATE or date range.
@@ -248,32 +259,53 @@ STRICT CONTENT POLICY:
     * There is NO mention of a date at all.
     * The post only introduces people or some topic, UNLESS there is a clear call to attend or participate in an actual event (such as a meeting, workshop, performance, or competition).
 
-If you determine that there is NO event in the post, return the JSON value: null (not an object, not an array, just the literal null). Otherwise, return an array of JSON objects with ALL of the following fields:
+Return exactly one JSON object with this structure:
 {{
-    "title": string,
-    "description": string,
-    "location": string,
-    "organization": string,
-    "price": number or null,
-    "food": string[],
-    "registration": boolean,
-    "image_index": integer,
-    "occurrences": [
+  "content_type": "event" | "hiring" | "event_and_hiring" | "other",
+  "events": [
+    {{
+      "title": string,
+      "description": string,
+      "location": string,
+      "organization": string,
+      "price": number or null,
+      "food": string[],
+      "registration": boolean,
+      "image_index": integer,
+      "occurrences": [
         {{
-            "dtstart_utc": string,  // UTC start "YYYY-MM-DDTHH:MM:SSZ"
-            "dtend_utc": string,    // UTC end "YYYY-MM-DDTHH:MM:SSZ" or empty string if unknown
-            "duration": string,     // "HH:MM:SS" or empty string if unknown
-            "tz": string            // Timezone name like "{local_tz_key}"; use the post's timezone context
+          "dtstart_utc": string,
+          "dtend_utc": string,
+          "duration": string,
+          "tz": string
         }}
-    ],
-    "school": string,
-    "category": string or null  // one of the canonical categories, or null if none fit: {categories_str}
+      ],
+      "school": string,
+      "category": string or null
+    }}
+  ],
+  "positions": [
+    {{
+      "title": string,
+      "description": string,
+      "organization": string,
+      "position_type": "executive" | "committee" | "volunteer" | "staff" | "internship" | "general",
+      "requirements": string[],
+      "commitment": string or null,
+      "compensation": string or null,
+      "location": string or null,
+      "contact_email": string or null,
+      "deadline_date": string or null,
+      "deadline_at": string or null,
+      "image_index": integer
+    }}
+  ]
 }}
 
 IMAGE MAPPING RULES:
 - You are provided with a list of images.
-- For each extracted event, identify which specific image contains the relevant details (e.g., date/time/location).
-- Set "image_index" to the 0-based index of that image.
+- For each extracted event or position, identify which specific image contains its relevant details.
+- Set "image_index" to that image's 0-based index.
 - Otherwise, set "image_index": 0.
 
 OCCURRENCE RULES (CRITICAL):
@@ -286,7 +318,18 @@ OCCURRENCE RULES (CRITICAL):
 - If duration is not explicitly available, leave "duration" as an empty string.
 - Use the timezone context from the caption/image (default to "{local_tz_key}" for {school}) for the "tz" field.
 
-ADDITIONAL RULES:
+POSITION RULES:
+- Extract one position object per distinct advertised role. If a post recruits several roles, do not collapse them into one generic position.
+- Use "general" only for a genuinely open-ended team application that does not map to a more specific type.
+- Use "staff" for paid non-intern employment. Compensation details belong in "compensation", not in the type.
+- The description must be a concise, role-specific summary supported by the caption or image. Do not invent responsibilities.
+- Requirements must contain only explicit qualifications or expectations. Use [] when none are stated.
+- Preserve commitment, compensation, location, and contact email as written. Use null when absent.
+- "deadline_date" is "YYYY-MM-DD". Infer a missing year as the next occurrence relative to the post date ({post_date}), but never invent a missing month or day.
+- "deadline_at" is a UTC ISO 8601 timestamp ending in "Z" only when an application time is explicitly stated. Otherwise use null.
+- An application deadline is position metadata and must never be emitted as an event occurrence.
+
+ADDITIONAL EVENT RULES:
 - Prioritize caption text; use image text if missing details.
 - Title-case event titles.
 - For "organization": this is the organization / society / faculty hosting the event. Prefer the most specific named entity from the caption or image (e.g., "UW Tea Organization"); if none is named, use the Instagram handle as a fallback.
@@ -298,7 +341,8 @@ ADDITIONAL RULES:
 - For registration: only true if there is a clear instruction to register, RSVP, or sign up.
 - For description: caption text word-for-word. If empty, use image text.
 - If information is not available, use empty string for strings, null for price, and false for booleans.
-- Return ONLY the JSON array text, no extra commentary.
+- Event category must be one of the canonical categories or null: {categories_str}
+- Return ONLY the JSON object, with no extra commentary.
 """
 
 
@@ -310,6 +354,7 @@ def empty_str_to_none(v: object) -> object:
 
 OptionalStr = Annotated[str | None, BeforeValidator(empty_str_to_none)]
 OptionalDatetime = Annotated[datetime | None, BeforeValidator(empty_str_to_none)]
+PostContentType = Literal["event", "hiring", "event_and_hiring", "other"]
 
 
 class ExtractedOccurrence(BaseModel):
@@ -348,6 +393,73 @@ class ExtractedEvent(BaseModel):
         return self
 
 
+class ExtractedPosition(BaseModel):
+    title: str = Field(min_length=1, max_length=MAX_POSITION_TITLE_LENGTH)
+    description: str = Field(min_length=1, max_length=MAX_POSITION_DESCRIPTION_LENGTH)
+    organization: str = Field(default="")
+    position_type: PositionType
+    requirements: list[
+        Annotated[str, Field(min_length=1, max_length=MAX_POSITION_REQUIREMENT_LENGTH)]
+    ] = Field(default_factory=list, max_length=MAX_POSITION_REQUIREMENT_COUNT)
+    commitment: OptionalStr = Field(default=None, max_length=MAX_POSITION_DETAIL_LENGTH)
+    compensation: OptionalStr = Field(default=None, max_length=MAX_POSITION_DETAIL_LENGTH)
+    location: OptionalStr = Field(default=None, max_length=MAX_POSITION_DETAIL_LENGTH)
+    contact_email: OptionalStr = Field(default=None, max_length=320)
+    deadline_date: date | None = None
+    deadline_at: OptionalDatetime = None
+    image_index: int = Field(default=0, ge=0)
+
+    @model_validator(mode="after")
+    def deadline_time_requires_date(self) -> ExtractedPosition:
+        if self.deadline_at is not None and self.deadline_date is None:
+            raise ValueError("deadline_at requires deadline_date")
+        if self.deadline_at is not None and self.deadline_at.tzinfo is None:
+            raise ValueError("deadline_at must include a timezone")
+        return self
+
+
+class ExtractedPostContent(BaseModel):
+    content_type: PostContentType = "other"
+    events: list[dict] = Field(default_factory=list)
+    positions: list[dict] = Field(default_factory=list)
+
+
+def _clean_extracted_content(value: object) -> ExtractedPostContent:
+    if not isinstance(value, dict):
+        return ExtractedPostContent()
+
+    content_type = value.get("content_type")
+    if content_type not in {"event", "hiring", "event_and_hiring", "other"}:
+        log.warning("Extractor returned invalid content_type: %r", content_type)
+        return ExtractedPostContent()
+
+    events: list[dict] = []
+    if content_type in {"event", "event_and_hiring"}:
+        for event in value.get("events") or []:
+            if not isinstance(event, dict):
+                continue
+            try:
+                events.append(_clean_event(event))
+            except ValueError:
+                continue
+
+    positions: list[dict] = []
+    if content_type in {"hiring", "event_and_hiring"}:
+        for position in value.get("positions") or []:
+            if not isinstance(position, dict):
+                continue
+            try:
+                positions.append(_clean_position(position))
+            except ValueError:
+                continue
+
+    return ExtractedPostContent(
+        content_type=content_type,
+        events=events,
+        positions=positions,
+    )
+
+
 def _clean_event(event: dict) -> dict:
     """Validate and normalize one extracted event dict using Pydantic.
 
@@ -361,3 +473,13 @@ def _clean_event(event: dict) -> dict:
     except Exception as e:
         log.warning("Validation failed for event payload: %s", e)
         raise ValueError(f"Invalid event payload: {e}") from e
+
+
+def _clean_position(position: dict) -> dict:
+    """Validate and normalize one extracted hiring position."""
+    try:
+        validated = ExtractedPosition.model_validate(position)
+        return validated.model_dump(mode="json")
+    except Exception as e:
+        log.warning("Validation failed for position payload: %s", e)
+        raise ValueError(f"Invalid position payload: {e}") from e

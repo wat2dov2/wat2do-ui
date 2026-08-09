@@ -6,10 +6,7 @@ import {
 } from "@/shared/ui/search-combobox";
 import { Highlighter } from "@/shared/ui/highlighter";
 import { DEFAULT_SCHOOL } from "@/shared/constants/schools";
-import {
-  searchSchools,
-  type SchoolSummary,
-} from "@/shared/api/schools.api";
+import { searchSchools, type SchoolSummary } from "@/shared/api/schools.api";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 
 interface SchoolComboboxProps {
@@ -54,8 +51,8 @@ export function SchoolCombobox({
       ? (label: string) => (
           <Highlighter
             action="highlight"
-            color="var(--page-school-secondary)"
-            className="block min-w-0 flex-1 truncate text-school-marker-foreground"
+            color="var(--school-marker)"
+            className="block min-w-0 flex-1 truncate font-bold text-school-marker-foreground"
           >
             {label}
           </Highlighter>

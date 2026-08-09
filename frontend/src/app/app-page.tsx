@@ -46,6 +46,7 @@ function routeOwnsServerMetadata(pathname: string): boolean {
     pathname === ROUTES.LOGIN ||
     pathname === ROUTES.CONTACT ||
     pathname === ROUTES.ORGANIZATIONS ||
+    pathname === ROUTES.POSITIONS ||
     /^\/events\/\d+\/?$/.test(pathname) ||
     /^\/organizations\/\d+\/?$/.test(pathname)
   );

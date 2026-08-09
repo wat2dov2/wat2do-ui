@@ -17,4 +17,5 @@ export interface Organization {
   owner_email?: string | null;
   school: string;
   event_count?: number;
+  position_count?: number;
 }

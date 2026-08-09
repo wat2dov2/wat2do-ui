@@ -1,7 +1,10 @@
 import { revalidateTag } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 import { eventFeedTag } from "@/features/events/api/eventFeed.server";
-import { schoolBrandingTag } from "@/shared/api/schools.server";
+import {
+  SCHOOL_DIRECTORY_TAG,
+  schoolBrandingTag,
+} from "@/shared/api/schools.server";
 import { resolveSchool } from "@/shared/constants/schools";
 
 interface RevalidateEventsRequest {
@@ -45,6 +48,7 @@ export async function POST(request: NextRequest) {
   // thing to invalidate - there is no per-school path to revalidate.
   revalidateTag(eventFeedTag(school), "max");
   revalidateTag(schoolBrandingTag(school), "max");
+  revalidateTag(SCHOOL_DIRECTORY_TAG, "max");
 
   return NextResponse.json({ revalidated: true, school });
 }

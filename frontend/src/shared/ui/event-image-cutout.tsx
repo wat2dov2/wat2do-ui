@@ -233,7 +233,7 @@ export function EventImageCutout({
     ? imageSrc
     : null;
   const priorityAttributes =
-    imageLoading === "eager" ? { fetchpriority: "high" } : {};
+    imageLoading === "eager" ? { fetchPriority: "high" as const } : {};
 
   return (
     <div ref={imageRef} className={cn("relative", className)}>

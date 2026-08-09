@@ -4,6 +4,7 @@ import { notFound, permanentRedirect } from "next/navigation";
 import { AppPage } from "@/app/app-page";
 import imgContactHero from "@/assets/contact_hero.png";
 import { getOrganizationEventsSnapshot } from "@/features/events/api/eventFeed.server";
+import { getOrganizationPositionsSnapshot } from "@/features/positions/api/positionDirectory.server";
 import { getOrganizationDetailSnapshot } from "@/features/organizations/api/organizationDirectory.server";
 import { OrganizationDetailsPage as OrganizationDetailsPageContent } from "@/features/organizations/pages/OrganizationDetailsPage";
 import { getSchool } from "@/shared/api/schools.server";
@@ -33,13 +34,14 @@ function parseOrganizationId(value: string): number | null {
 function isOrganizationIndexable(organization: Organization): boolean {
   return Boolean(
     organization.status === "approved" &&
-      organization.organization_name.trim() &&
-      organization.school.trim() &&
-      (organization.categories.length > 0 ||
-        organization.organization_page.trim() ||
-        organization.ig ||
-        organization.discord ||
-        (organization.event_count ?? 0) > 0),
+    organization.organization_name.trim() &&
+    organization.school.trim() &&
+    (organization.categories.length > 0 ||
+      organization.organization_page.trim() ||
+      organization.ig ||
+      organization.discord ||
+      (organization.event_count ?? 0) > 0 ||
+      (organization.position_count ?? 0) > 0),
   );
 }
 
@@ -80,9 +82,9 @@ export async function generateMetadata({
 
   const schoolRecord = await getSchool(organization.school);
   const schoolName = schoolRecord?.name ?? organization.school;
-  const title = `${organization.organization_name} Events at ${schoolName} | Wat2Do`;
+  const title = `${organization.organization_name} Events and Positions at ${schoolName} | Wat2Do`;
   const categoryText = organization.categories.join(", ");
-  const description = `Explore ${organization.organization_name} at ${schoolName}${categoryText ? `, a student organization focused on ${categoryText}` : ""}. Find upcoming events and verified ways to connect.`;
+  const description = `Explore ${organization.organization_name} at ${schoolName}${categoryText ? `, a student organization focused on ${categoryText}` : ""}. Find upcoming events, open positions, and verified ways to connect.`;
 
   return buildPublicPageMetadata({
     title,
@@ -121,9 +123,10 @@ export default async function OrganizationDetailsPage({
     permanentRedirect(canonicalUrl);
   }
 
-  const [schoolRecord, initialEvents] = await Promise.all([
+  const [schoolRecord, initialEvents, initialPositions] = await Promise.all([
     getSchool(organization.school),
     getOrganizationEventsSnapshot(organization.id, organization.school),
+    getOrganizationPositionsSnapshot(organization.id, organization.school),
   ]);
   return (
     <AppPage>
@@ -131,6 +134,7 @@ export default async function OrganizationDetailsPage({
         organizationId={organization.id}
         initialOrganization={organization}
         initialEvents={initialEvents}
+        initialPositions={initialPositions}
         schoolName={schoolRecord?.name ?? organization.school}
       />
     </AppPage>

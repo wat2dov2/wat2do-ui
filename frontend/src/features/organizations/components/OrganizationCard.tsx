@@ -1,19 +1,20 @@
 import { memo, useMemo, useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useRouter } from "next/navigation";
-import {
-  Bookmark,
-  Instagram,
-} from "@/shared/ui/doodle-icons";
+import { Bookmark, Instagram } from "@/shared/ui/doodle-icons";
 import { EventCardContent } from "@/shared/ui/event-card-content";
 import { sanitizeHref } from "@/shared/utils/url";
 import { useSavedOrganizationsStore } from "@/features/organizations/store/savedOrganizations.store";
 import { useProfileCompleted } from "@/features/auth/hooks/useAuthState";
 import { OrganizationCategoryBadge } from "@/shared/components/OrganizationCategoryBadge";
-import { useCardMouseDownActivate, useMobileGridClickActivation, createAdaptivePressHandlers } from "@/shared/hooks";
+import {
+  useCardMouseDownActivate,
+  useMobileGridClickActivation,
+  createAdaptivePressHandlers,
+} from "@/shared/hooks";
 import { OrganizationOverflowMenu } from "@/features/organizations/components/OrganizationOverflowMenu";
 import {
-  getOrganizationEventCountBadge,
+  getOrganizationCountBadges,
   getOrganizationSocialHandle,
 } from "@/features/organizations/utils/organizationCardContent";
 import { useOrganizationCardFrame } from "@/features/organizations/hooks/useOrganizationCardFrame";
@@ -98,7 +99,9 @@ function OrganizationFooterActions({
   return (
     <div
       data-organization-card-footer
-      onMouseDown={preferClickPress ? undefined : (event) => event.stopPropagation()}
+      onMouseDown={
+        preferClickPress ? undefined : (event) => event.stopPropagation()
+      }
       onClick={(event) => event.stopPropagation()}
       className={`grid grid-cols-3 border-t border-border`}
     >
@@ -109,7 +112,9 @@ function OrganizationFooterActions({
           href={instagramHref}
           target="_blank"
           rel="noopener noreferrer"
-          onMouseDown={preferClickPress ? undefined : (event) => event.stopPropagation()}
+          onMouseDown={
+            preferClickPress ? undefined : (event) => event.stopPropagation()
+          }
           onClick={(event) => event.stopPropagation()}
           aria-label={t("organizations.instagram")}
           className="flex min-h-12 items-center justify-center border-l border-border px-2 text-muted-foreground transition-colors hover:bg-surface-hover"
@@ -139,7 +144,9 @@ function OrganizationCardComponent({
   const { t } = useTranslation();
   const router = useRouter();
   const profileCompleted = useProfileCompleted();
-  const toggleSaveOrganization = useSavedOrganizationsStore((state) => state.toggleSaveOrganization);
+  const toggleSaveOrganization = useSavedOrganizationsStore(
+    (state) => state.toggleSaveOrganization,
+  );
   const [isHoveringBadge, setIsHoveringBadge] = useState(false);
 
   const { cardRef, badgeRef, paths } = useOrganizationCardFrame();
@@ -148,8 +155,8 @@ function OrganizationCardComponent({
     () => getOrganizationPrimaryCategory(organization),
     [organization],
   );
-  const eventCountBadges = useMemo(
-    () => getOrganizationEventCountBadge(organization, t),
+  const countBadges = useMemo(
+    () => getOrganizationCountBadges(organization, t),
     [organization, t],
   );
   const socialHandle = useMemo(
@@ -202,7 +209,12 @@ function OrganizationCardComponent({
       if (preferClickPress) {
         if (mouseEvent.button !== 0) return;
         if (!(mouseEvent.target instanceof Element)) return;
-        if (mouseEvent.target.closest("button, a, [role='menuitem'], input, textarea, select, [data-no-card-activate], [data-organization-card-footer]")) return;
+        if (
+          mouseEvent.target.closest(
+            "button, a, [role='menuitem'], input, textarea, select, [data-no-card-activate], [data-organization-card-footer]",
+          )
+        )
+          return;
         handleCardActivate();
         return;
       }
@@ -316,7 +328,7 @@ function OrganizationCardComponent({
           title={organization.organization_name}
           titleHref={organizationPagePath(organization.id)}
           location={socialHandle}
-          badges={eventCountBadges}
+          badges={countBadges}
           className="pt-8 sm:pt-9"
           textClassName="text-foreground"
           secondaryTextClassName="text-muted-foreground"

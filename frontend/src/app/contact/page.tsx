@@ -9,7 +9,7 @@ import {
 
 const title = "About and Contact Wat2Do | Campus Event Discovery";
 const description =
-  "Meet the students behind Wat2Do, send a question or correction, and learn how Wat2Do helps students discover campus events and organizations.";
+  "Learn how Wat2Do's student founders built an Instagram event discovery system that has captured more than 3,000 University of Waterloo events since August 2025.";
 
 export const metadata: Metadata = buildPublicPageMetadata({
   title,

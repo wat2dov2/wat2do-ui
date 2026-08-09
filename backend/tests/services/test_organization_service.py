@@ -147,6 +147,40 @@ def test_normalize_organization_name_collapses_case_and_whitespace():
     assert organization_service._normalize_organization_name(None) == ""
 
 
+def test_list_organizations_hydrates_event_and_position_counts(fake_sb, patch_sb, monkeypatch):
+    patch_sb("services.organization_service")
+    fake_sb.set_response(
+        data=[
+            {
+                "id": 7,
+                "school_id": 1,
+                "organization_name": "UW Design Club",
+                "status": "approved",
+                "organization_type": "student-club",
+                "school_record": {"slug": "uwaterloo"},
+            }
+        ],
+        count=1,
+    )
+    monkeypatch.setattr(organization_service, "_fetch_owner_email", lambda _owner_id: None)
+    monkeypatch.setattr(
+        organization_service.event_service,
+        "get_organization_event_counts",
+        lambda _organization_ids: {7: 3},
+    )
+    monkeypatch.setattr(
+        organization_service.position_service,
+        "get_organization_position_counts",
+        lambda _organization_ids: {7: 2},
+    )
+
+    organizations, total = organization_service.list_organizations()
+
+    assert total == 1
+    assert organizations[0].event_count == 3
+    assert organizations[0].position_count == 2
+
+
 def test_lookup_organization_by_school_and_name_exact_match(fake_sb, patch_sb):
     patch_sb("services.organization_service")
     fake_sb.queue_responses(

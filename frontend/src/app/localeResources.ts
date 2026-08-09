@@ -21,6 +21,8 @@ import onboardingDemoEn from "@/features/onboarding-demo/locales/en.json";
 import onboardingDemoZh from "@/features/onboarding-demo/locales/zh.json";
 import postersEn from "@/features/posters/locales/en.json";
 import postersZh from "@/features/posters/locales/zh.json";
+import positionsEn from "@/features/positions/locales/en.json";
+import positionsZh from "@/features/positions/locales/zh.json";
 
 const localeResources = {
   en: {
@@ -35,6 +37,7 @@ const localeResources = {
     ...settingsEn,
     ...onboardingDemoEn,
     ...postersEn,
+    ...positionsEn,
   },
   zh: {
     ...sharedZh,
@@ -48,6 +51,7 @@ const localeResources = {
     ...settingsZh,
     ...onboardingDemoZh,
     ...postersZh,
+    ...positionsZh,
   },
 };
 

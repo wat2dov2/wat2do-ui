@@ -194,6 +194,7 @@ class OrganizationResponse(BaseModel):
     school: str | None = None
     owner_email: str | None = None
     event_count: int = 0
+    position_count: int = 0
 
     model_config = {"from_attributes": True}
 

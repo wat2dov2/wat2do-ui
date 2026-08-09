@@ -16,27 +16,31 @@ import { Link } from "@/shared/ui/link";
 import { Separator } from "@/shared/ui/separator";
 import { useAuthState } from "@/features/auth/hooks/useAuthState";
 import { OrganizationEventsGrid } from "@/features/events/components/OrganizationEventsGrid";
+import { OrganizationPositionsGrid } from "@/features/positions/components/OrganizationPositionsGrid";
 import { ClaimOrganizationModal } from "@/features/organizations/components/ClaimOrganizationModal";
 import { OrganizationCategoryBadges } from "@/features/organizations/components/OrganizationCategoryBadges";
 import { OrganizationMembershipActions } from "@/features/organizations/components/OrganizationMembershipActions";
 import { getOrganizationById } from "@/features/organizations/api/organizations.api";
 import { useSavedOrganizationsStore } from "@/features/organizations/store/savedOrganizations.store";
 import { ROUTES } from "@/shared/constants/routes";
-import { Container, PageHeader, Section, Stack } from "@/shared/layout";
+import { Container, PageHeader, Stack } from "@/shared/layout";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import { sanitizeHref } from "@/shared/utils/url";
-import type { Event, Organization } from "@/shared/types";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
+import type { Event, Organization, Position } from "@/shared/types";
 
 interface OrganizationDetailsPageProps {
   organizationId: number;
   initialOrganization: Organization;
   initialEvents: Event[];
+  initialPositions: Position[];
   schoolName: string;
 }
 
 interface OrganizationDetailsContentProps {
   organization: Organization;
   initialEvents: Event[];
+  initialPositions: Position[];
   schoolName: string;
 }
 
@@ -47,6 +51,7 @@ const ORGANIZATION_LINK_CLASS = "flex items-center gap-2 text-sm";
 function OrganizationDetailsContent({
   organization,
   initialEvents,
+  initialPositions,
   schoolName,
 }: OrganizationDetailsContentProps) {
   const { t } = useTranslation();
@@ -172,13 +177,28 @@ function OrganizationDetailsContent({
 
           <Separator />
 
-          <Section title={t("events.allEvents")}>
-            <OrganizationEventsGrid
-              organizationId={organization.id}
-              school={organization.school}
-              initialEvents={initialEvents}
-            />
-          </Section>
+          <Tabs defaultValue="events">
+            <TabsList aria-label={t("organizations.activityTabsLabel")}>
+              <TabsTrigger value="events">{t("navigation.events")}</TabsTrigger>
+              <TabsTrigger value="positions">
+                {t("navigation.positions")}
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="events" className="mt-6">
+              <OrganizationEventsGrid
+                organizationId={organization.id}
+                school={organization.school}
+                initialEvents={initialEvents}
+              />
+            </TabsContent>
+            <TabsContent value="positions" className="mt-6">
+              <OrganizationPositionsGrid
+                organizationId={organization.id}
+                school={organization.school}
+                initialPositions={initialPositions}
+              />
+            </TabsContent>
+          </Tabs>
         </Stack>
       </Container>
 
@@ -195,10 +215,15 @@ export function OrganizationDetailsPage({
   organizationId,
   initialOrganization,
   initialEvents,
+  initialPositions,
   schoolName,
 }: OrganizationDetailsPageProps) {
   const { t } = useTranslation();
-  const { data: organization, isPending, isError } = useQuery({
+  const {
+    data: organization,
+    isPending,
+    isError,
+  } = useQuery({
     queryKey: queryKeys.organizations.detail(organizationId),
     queryFn: () => getOrganizationById(organizationId),
     enabled: Number.isInteger(organizationId) && organizationId > 0,
@@ -223,6 +248,7 @@ export function OrganizationDetailsPage({
     <OrganizationDetailsContent
       organization={organization}
       initialEvents={initialEvents}
+      initialPositions={initialPositions}
       schoolName={schoolName}
     />
   );

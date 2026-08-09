@@ -6,8 +6,8 @@
  */
 
 /**
- * Standard image-area height (px) for full-size event cards
- * (EventCard, EventFormPreview, EventCardSkeleton).
+ * Standard image-area height (px) for full-size browse cards
+ * (event and position cards plus their previews and skeletons).
  */
 export const EVENT_CARD_IMAGE_HEIGHT = 208;
 

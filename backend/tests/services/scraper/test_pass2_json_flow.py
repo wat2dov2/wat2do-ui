@@ -471,7 +471,11 @@ def test_pipeline_pass2_cancel_updates_existing(monkeypatch, fake_sb, patch_sb):
     ]
 
     monkeypatch.setattr(pipeline_module, "upload_post_images", lambda urls: list(urls))
-    monkeypatch.setattr(pipeline_module, "extract_events_from_post", lambda **_kw: extracted)
+    monkeypatch.setattr(
+        pipeline_module,
+        "extract_post_content",
+        lambda **_kw: SimpleNamespace(events=extracted, positions=[]),
+    )
     monkeypatch.setattr(pipeline_module, "find_candidates", lambda **_kw: [candidate])
     monkeypatch.setattr(
         pipeline_module,
@@ -602,7 +606,11 @@ def test_pipeline_pass2_failure_falls_back_to_insert(monkeypatch, fake_sb, patch
 
     extracted = [_extracted()]
     monkeypatch.setattr(pipeline_module, "upload_post_images", lambda urls: list(urls))
-    monkeypatch.setattr(pipeline_module, "extract_events_from_post", lambda **_kw: extracted)
+    monkeypatch.setattr(
+        pipeline_module,
+        "extract_post_content",
+        lambda **_kw: SimpleNamespace(events=extracted, positions=[]),
+    )
     monkeypatch.setattr(pipeline_module, "find_candidates", lambda **_kw: [_candidate()])
     monkeypatch.setattr(pipeline_module, "reconcile_events", lambda **_kw: None)
     monkeypatch.setattr(

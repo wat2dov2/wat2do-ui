@@ -8,7 +8,7 @@ These complement the per-helper unit tests by exercising the full
 Mocks installed:
     * ``upload_post_images``           -> returns the URLs verbatim
       (skip the storage round-trip).
-    * ``extract_events_from_post``     -> returns canned events with
+    * ``extract_post_content``         -> returns canned events with
       multiple occurrences.
     * ``find_candidates``              -> returns [] (no candidates).
     * ``reconcile_events``             -> returns Pass 1 events unchanged.
@@ -100,8 +100,11 @@ def test_pipeline_produces_one_event_row_per_logical_event(monkeypatch, fake_sb,
     )
     monkeypatch.setattr(
         pipeline_module,
-        "extract_events_from_post",
-        lambda **_kw: _extracted_event_with_three_occurrences(),
+        "extract_post_content",
+        lambda **_kw: SimpleNamespace(
+            events=_extracted_event_with_three_occurrences(),
+            positions=[],
+        ),
     )
     monkeypatch.setattr(pipeline_module, "find_candidates", lambda **_kw: [])
     monkeypatch.setattr(
@@ -239,8 +242,11 @@ def test_pipeline_dry_run_skips_db_writes(monkeypatch, fake_sb, patch_sb):
     monkeypatch.setattr(pipeline_module, "upload_post_images", lambda urls: list(urls))
     monkeypatch.setattr(
         pipeline_module,
-        "extract_events_from_post",
-        lambda **_kw: _extracted_event_with_three_occurrences(),
+        "extract_post_content",
+        lambda **_kw: SimpleNamespace(
+            events=_extracted_event_with_three_occurrences(),
+            positions=[],
+        ),
     )
 
     result = pipeline_module.run_pipeline(

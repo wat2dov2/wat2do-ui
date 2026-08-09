@@ -1,0 +1,34 @@
+{
+  "positions": {
+    "position": "position",
+    "position_other": "positions",
+    "searchPlaceholder": "Search roles, skills, or locations...",
+    "clearSearch": "Clear position search",
+    "filterByType": "Filter positions by type",
+    "allTypes": "All position types",
+    "openDetails": "View {{title}} position details",
+    "drawerDescription": "Position details for {{title}} at {{organization}}",
+    "deadlineLabel": "Application deadline",
+    "due": "Due {{date}}",
+    "commitmentLabel": "Time commitment",
+    "locationLabel": "Location",
+    "compensationLabel": "Compensation",
+    "contactLabel": "Contact",
+    "aboutPosition": "About this position",
+    "requirements": "Requirements",
+    "viewSource": "View original Instagram post",
+    "emptyTitle": "No open positions found",
+    "emptyDescription": "Try another search or position type. New organization opportunities will appear here as they are posted.",
+    "organizationEmptyTitle": "No open positions",
+    "organizationEmptyDescription": "This organization does not currently have any open positions.",
+    "resultsLabel": "{{count}} positions found",
+    "types": {
+      "executive": "Executive",
+      "committee": "Committee",
+      "volunteer": "Volunteer",
+      "staff": "Paid staff",
+      "internship": "Internship",
+      "general": "General recruitment"
+    }
+  }
+}

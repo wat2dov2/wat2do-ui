@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import type { ReactNode } from "react";
 import { ClientProviders } from "@/app/client-providers";
 import { SiteBanner } from "@/app/SiteBanner";
+import { getSchoolDirectory } from "@/shared/api/schools.server";
 import { PageBackground } from "@/shared/layout";
 import "../index.css";
 
@@ -68,7 +69,12 @@ export const viewport: Viewport = {
   themeColor: "#0f0f0f",
 };
 
-export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
+export default async function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
+  const initialSchools = await getSchoolDirectory().catch((error: unknown) => {
+    console.error("Failed to preload the school directory:", error);
+    return undefined;
+  });
+
   return (
     <html
       lang="en"
@@ -86,7 +92,7 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
         <PageBackground />
         {/* Inside the providers so the strip's own controls can be translated;
             it is still a server component, rendered on the server as a child. */}
-        <ClientProviders>
+        <ClientProviders initialSchools={initialSchools}>
           <SiteBanner />
           {children}
         </ClientProviders>

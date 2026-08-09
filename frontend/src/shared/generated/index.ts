@@ -35,6 +35,11 @@ export type ApiGoingEventSelectionUpdate =
 export type ApiGoingEventStatusResponse =
   components["schemas"]["GoingEventStatusResponse"];
 
+// ── Positions ───────────────────────────────────────────────────────
+export type ApiPositionResponse = components["schemas"]["PositionResponse"];
+export type ApiPaginatedPositionResponse =
+  components["schemas"]["PaginatedResponse_PositionResponse_"];
+
 // ── Instagram Publishing ───────────────────────────────────────────
 export type ApiInstagramPublishBatchResponse =
   components["schemas"]["InstagramPublishBatchResponse"];

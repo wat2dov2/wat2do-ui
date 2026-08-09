@@ -37,6 +37,8 @@
     "instagram": "Instagram",
     "eventCount": "{{count}} 个活动",
     "eventCount_other": "{{count}} 个活动",
+    "positionCount": "{{count}} 个职位",
+    "positionCount_other": "{{count}} 个职位",
     "clubCreated": "组织已创建！",
     "clubUpdated": "组织已更新！",
     "addClub": "添加社团",
@@ -69,6 +71,7 @@
     "filterBy": "查看更多 {{name}} 的活动",
     "visitWebsite": "访问网站",
     "allOrganizations": "所有组织",
+    "activityTabsLabel": "组织动态",
     "submittedForReview": "已提交审核。管理员批准后，您的组织将会上线。",
     "awaitingReview": "该组织正在等待管理员审核。在获得批准之前，它不会公开显示，也无法发布活动。",
     "reviewRejected": "该组织未获批准。如果您认为这是错误，请联系 Wat2Do 团队。"
