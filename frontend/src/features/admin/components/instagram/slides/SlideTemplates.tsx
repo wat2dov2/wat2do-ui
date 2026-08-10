@@ -107,7 +107,7 @@ export function EventSlideTemplate({ model }: { model: EventSlideModel }) {
                 display: "flex",
                 backgroundColor: model.category.color,
                 color: DARK.categoryInk,
-                borderRadius: 20,
+                borderRadius: 36,
                 padding: "10px 22px",
                 fontSize: 30,
                 fontWeight: 700,
@@ -125,7 +125,7 @@ export function EventSlideTemplate({ model }: { model: EventSlideModel }) {
                 backgroundColor: DARK.background,
                 border: `2px solid ${DARK.foreground}`,
                 color: DARK.foreground,
-                borderRadius: 20,
+                borderRadius: 36,
                 padding: "10px 22px",
                 fontSize: 30,
                 fontWeight: 700,
@@ -207,15 +207,15 @@ const COVER_DOODLE_COLUMNS = 6;
 const COVER_DOODLE_CELL_SIZE = 210;
 const COVER_DOODLE_ICON_SIZE = 72;
 /** The poster fan sits on a fixed baseline so the copy above it never reflows. */
-const FAN_TOP = 850;
-const FAN_CARD_WIDTH = 230;
-const FAN_CARD_HEIGHT = 322;
+const FAN_TOP = 800;
+const FAN_CARD_WIDTH = 280;
+const FAN_CARD_HEIGHT = 392;
 /** How far the outer cards may dip below the baseline as the fan curves. */
-const FAN_MAX_DIP = 26;
+const FAN_MAX_DIP = 16;
 /** Tilt of the outermost card; the rest interpolate towards flat at the centre. */
-const FAN_MAX_TILT = 9;
+const FAN_MAX_TILT = 8;
 /** Cards always bite into each other, however few of them there are. */
-const FAN_MIN_OVERLAP = 40;
+const FAN_MIN_OVERLAP = 50;
 
 /**
  * The fanned poster row, laid out by hand.
@@ -265,7 +265,7 @@ function CoverPosterFan({ tiles, secondary }: { tiles: string[]; secondary: stri
               top: FAN_TOP + Math.round(Math.abs(offset) * FAN_MAX_DIP),
               width: FAN_CARD_WIDTH,
               height: FAN_CARD_HEIGHT,
-              borderRadius: 18,
+              borderRadius: 22,
               border: `3px solid ${secondary}`,
               overflow: "hidden",
               transform: `rotate(${(offset * FAN_MAX_TILT).toFixed(2)}deg)`,
@@ -384,9 +384,9 @@ export function CoverSlideTemplate({ model }: { model: CoverSlideModel }) {
         <div
           style={{
             display: "flex",
-            fontSize: 56,
+            fontSize: 42,
             fontWeight: 700,
-            letterSpacing: 1.5,
+            letterSpacing: 0,
             lineHeight: 1,
           }}
         >
@@ -403,7 +403,7 @@ export function CoverSlideTemplate({ model }: { model: CoverSlideModel }) {
           marginTop: 24,
         }}
       >
-        <div style={{ display: "flex", fontSize: 300, fontWeight: 700, lineHeight: 1 }}>
+        <div style={{ display: "flex", fontSize: 220, fontWeight: 700, lineHeight: 1 }}>
           {String(model.newEventCount)}
         </div>
         <div

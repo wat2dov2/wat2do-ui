@@ -59,7 +59,7 @@ export interface CoverSlideModel {
   logoSrc: string;
   /** Stable category doodles recoloured with the school's secondary color. */
   doodleIcons: string[];
-  /** The batch date, for example "SUN JUL 26". */
+  /** The batch date, for example "Sunday, July 26th". */
   dateLine: string;
   /** Events added to this school in the batch's scrape window. */
   newEventCount: number;
@@ -188,7 +188,7 @@ function defaultCoverBody(eventCount: number): string {
 }
 
 /**
- * "SUN JUL 26" from a `YYYY-MM-DD` local date.
+ * "Sunday, July 26th" from a `YYYY-MM-DD` local date.
  *
  * Formatted in UTC because the date is already local to the school: parsing it
  * gives UTC midnight, and any other zone would slide it a day.
@@ -196,13 +196,20 @@ function defaultCoverBody(eventCount: number): string {
 function formatCoverDate(localDate: string): string {
   const parsed = new Date(`${localDate}T00:00:00Z`);
   if (Number.isNaN(parsed.getTime())) return "";
-  return new Intl.DateTimeFormat("en-US", {
-    weekday: "short",
-    month: "short",
+
+  const parts = new Intl.DateTimeFormat("en-US", {
+    weekday: "long",
+    month: "long",
     day: "numeric",
     timeZone: "UTC",
-  })
-    .format(parsed)
-    .replace(",", "")
-    .toUpperCase();
+  }).formatToParts(parsed);
+  const weekday = parts.find(({ type }) => type === "weekday")?.value ?? "";
+  const month = parts.find(({ type }) => type === "month")?.value ?? "";
+  const day = parsed.getUTCDate();
+  const suffix =
+    day % 100 >= 11 && day % 100 <= 13
+      ? "th"
+      : (["th", "st", "nd", "rd"][day % 10] ?? "th");
+
+  return `${weekday}, ${month} ${day}${suffix}`;
 }

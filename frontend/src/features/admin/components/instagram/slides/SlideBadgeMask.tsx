@@ -19,10 +19,10 @@ import {
  * inlined as a data URI because satori renders `<img>` but not inline `<svg>`.
  */
 
-/** Card values scaled to the slide, which is about 2.7x the card's type scale. */
-const FILLET = 22;
-const INNER_RADIUS = 32;
-const NOTCH_PADDING = 11;
+/** Card values scaled to the slide card's exact 3x corner geometry. */
+const FILLET = 24;
+const INNER_RADIUS = 36;
+const NOTCH_PADDING = 12;
 
 function fillet(variant: BadgeMaskVariant, color: string): string {
   const svg =
