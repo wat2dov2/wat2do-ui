@@ -405,9 +405,7 @@
     "form": {
       "title": "Get in touch",
       "description": "Send questions, suggestions, corrections, or partnership ideas directly to the Wat2Do team.",
-      "name": "Name",
       "email": "Email address",
-      "namePlaceholder": "Your name",
       "emailPlaceholder": "you@example.com",
       "message": "Message",
       "messagePlaceholder": "How can we help?",

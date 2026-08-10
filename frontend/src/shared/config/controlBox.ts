@@ -14,7 +14,6 @@ const hoursToMilliseconds = (hours: number): number => hours * 60 * 60 * 1000;
 
 export const controlBox = {
   contact: {
-    maximumNameLength: contact.maximum_name_length,
     maximumMessageLength: contact.maximum_message_length,
   },
   eventDiscovery: {

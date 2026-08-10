@@ -55,6 +55,8 @@ function normalizeSearchQuery(query: string): string {
   return query.trim().toLowerCase().replace(/^@+/, "");
 }
 
+const RANDOM_EVENT_SEARCH_QUERY = "random";
+
 function matchesSearchQuery(event: Event, normalizedQuery: string): boolean {
   return eventSearchHaystack(event).some((field) =>
     field.toLowerCase().replace(/^@+/, "").includes(normalizedQuery),
@@ -70,6 +72,7 @@ export function filterEvents(
 ): Event[] {
   // Normalize the query once (loop-invariant) instead of recomputing per event.
   const q = filters.searchQuery ? normalizeSearchQuery(filters.searchQuery) : "";
+  const isRandomSearch = q === RANDOM_EVENT_SEARCH_QUERY;
   // Set lookup is O(1); .includes on an array is O(n). When goingFilter is
   // active this is run per-event, so hoist and wrap once.
   const goingSet = filters.goingFilter ? new Set(filters.goingEventIds) : null;
@@ -77,14 +80,14 @@ export function filterEvents(
     ? Date.parse(filters.addedSince)
     : Number.NaN;
 
-  return events.filter((event) => {
+  const filtered = events.filter((event) => {
     const food = event.food ?? [];
     const price = event.price ?? 0;
     const category = getEventCategory(event);
     const dayOfWeek = getEventDayOfWeek(event);
     const needsRegistration = event.registration ?? false;
 
-    if (q && !matchesSearchQuery(event, q)) {
+    if (q && !isRandomSearch && !matchesSearchQuery(event, q)) {
       return false;
     }
 
@@ -156,6 +159,13 @@ export function filterEvents(
 
     return true;
   });
+
+  if (!isRandomSearch || filtered.length === 0) {
+    return filtered;
+  }
+
+  const randomEvent = filtered[Math.floor(Math.random() * filtered.length)];
+  return randomEvent ? [randomEvent] : [];
 }
 
 /**

@@ -7089,12 +7089,6 @@
       },
       "ContactCreate": {
         "properties": {
-          "name": {
-            "type": "string",
-            "maxLength": 100,
-            "minLength": 1,
-            "title": "Name"
-          },
           "email": {
             "type": "string",
             "format": "email",
@@ -7110,7 +7104,6 @@
         "additionalProperties": false,
         "type": "object",
         "required": [
-          "name",
           "email",
           "message"
         ],

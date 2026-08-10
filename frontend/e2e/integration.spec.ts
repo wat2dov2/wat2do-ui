@@ -856,6 +856,25 @@ test.describe("Organization Integrations", () => {
 // ── Workflow 2: Home / Events Page ────────────────────────────────────
 
 test.describe("Events Page", () => {
+  test("returns one upcoming event for the random search command", async ({
+    page,
+  }) => {
+    await page.goto(BASE);
+
+    const cards = page.locator("article[data-event-id]");
+    await expect(cards).toHaveCount(1);
+
+    const search = page.getByPlaceholder("Search events");
+    await search.fill("RaNdOm");
+    await search.press("Enter");
+
+    await expect(cards).toHaveCount(1);
+    await expect(cards.first()).toHaveAttribute(
+      "aria-label",
+      "Event: Tech Career Fair",
+    );
+  });
+
   test("keeps vertical scrolling on the application content root", async ({
     page,
   }) => {

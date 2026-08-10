@@ -24,7 +24,6 @@ def test_submit_contact_message_queues_email(client, monkeypatch):
     response = client.post(
         "/contact/",
         json={
-            "name": "Student",
             "email": "student@uwaterloo.ca",
             "message": "Hello",
         },
@@ -39,9 +38,21 @@ def test_submit_contact_message_rejects_invalid_input(client):
     response = client.post(
         "/contact/",
         json={
-            "name": "Student\nInjected",
             "email": "not-an-email",
             "message": "   ",
+        },
+    )
+
+    assert response.status_code == 422
+
+
+def test_submit_contact_message_rejects_removed_name_field(client):
+    response = client.post(
+        "/contact/",
+        json={
+            "name": "Student",
+            "email": "student@uwaterloo.ca",
+            "message": "Hello",
         },
     )
 
@@ -53,7 +64,6 @@ def test_build_contact_email_escapes_html():
 
     message = contact_service.build_contact_email(
         ContactCreate(
-            name="<Student>",
             email="student@uwaterloo.ca",
             message="Hello <strong>team</strong>",
         )

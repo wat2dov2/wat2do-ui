@@ -22,7 +22,6 @@ import { LoadingButton } from "@/shared/ui/loading-button";
 import { Textarea } from "@/shared/ui/textarea";
 
 const EMPTY_MESSAGE: ContactMessage = {
-  name: "",
   email: "",
   message: "",
 };
@@ -44,7 +43,6 @@ export function ContactForm() {
     setIsSubmitting(true);
     try {
       await submitContactMessage({
-        name: form.name.trim(),
         email: form.email.trim(),
         message: form.message.trim(),
       });
@@ -83,20 +81,6 @@ export function ContactForm() {
         ) : (
           <form onSubmit={(event) => void handleSubmit(event)}>
             <FieldGroup>
-              <Field>
-                <FieldLabel htmlFor="contact-name">
-                  {t("contact.form.name")}
-                </FieldLabel>
-                <Input
-                  id="contact-name"
-                  value={form.name}
-                  onChange={(event) => setField("name", event.target.value)}
-                  maxLength={controlBox.contact.maximumNameLength}
-                  placeholder={t("contact.form.namePlaceholder")}
-                  autoComplete="name"
-                  required
-                />
-              </Field>
               <Field>
                 <FieldLabel htmlFor="contact-email">
                   {t("contact.form.email")}

@@ -1812,8 +1812,6 @@ export interface components {
         };
         /** ContactCreate */
         ContactCreate: {
-            /** Name */
-            name: string;
             /**
              * Email
              * Format: email

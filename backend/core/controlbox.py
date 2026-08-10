@@ -290,7 +290,6 @@ class EmailDeliveryControl(_ControlModel):
 
 class ContactControl(_ControlModel):
     recipient_email: EmailStr
-    maximum_name_length: int = Field(gt=0, le=255)
     maximum_message_length: int = Field(gt=0, le=20_000)
     rate_limit: RateLimitControl
 

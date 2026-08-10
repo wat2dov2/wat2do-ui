@@ -9,7 +9,6 @@ from services.email_service import EmailMessage
 
 def build_contact_email(data: ContactCreate) -> EmailMessage:
     sender = str(data.email)
-    safe_name = escape(data.name)
     safe_email = escape(sender)
     safe_message = "<br>".join(escape(data.message).splitlines())
 
@@ -19,8 +18,8 @@ def build_contact_email(data: ContactCreate) -> EmailMessage:
         subject="[Wat2Do contact] New message",
         body_html=(
             "<h2>New Wat2Do contact message</h2>"
-            f"<p><strong>From:</strong> {safe_name} &lt;{safe_email}&gt;</p>"
+            f"<p><strong>From:</strong> {safe_email}</p>"
             f"<p>{safe_message}</p>"
         ),
-        body_text=(f"New Wat2Do contact message\n\nFrom: {data.name} <{sender}>\n{data.message}"),
+        body_text=f"New Wat2Do contact message\n\nFrom: {sender}\n{data.message}",
     )

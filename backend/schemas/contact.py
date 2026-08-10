@@ -8,21 +8,13 @@ _CONTACT = controlbox.contact
 class ContactCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    name: str = Field(min_length=1, max_length=_CONTACT.maximum_name_length)
     email: EmailStr
     message: str = Field(min_length=1, max_length=_CONTACT.maximum_message_length)
 
-    @field_validator("name", "message")
+    @field_validator("message")
     @classmethod
     def _strip_non_blank(cls, value: str) -> str:
         stripped = value.strip()
         if not stripped:
             raise ValueError("value cannot be blank")
         return stripped
-
-    @field_validator("name")
-    @classmethod
-    def _single_line(cls, value: str) -> str:
-        if "\r" in value or "\n" in value:
-            raise ValueError("value must be a single line")
-        return value
