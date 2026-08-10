@@ -25,7 +25,7 @@ on:
 
 jobs:
   process-post:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, macOS, ARM64, wat2do-scraper]
     environment: production
 
     permissions:
