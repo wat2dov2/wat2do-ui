@@ -26,6 +26,7 @@ from core.constants.positions import (
     MAX_POSITION_REQUIREMENT_LENGTH,
     MAX_POSITION_TITLE_LENGTH,
 )
+from core.sanitize import normalize_scraped_text
 from schemas.position import PositionType
 from services.school_context import (
     canonical_school_key,
@@ -469,7 +470,7 @@ def _clean_event(event: dict) -> dict:
     """
     try:
         validated = ExtractedEvent.model_validate(event)
-        return validated.model_dump(mode="json")
+        return _normalize_extracted_strings(validated.model_dump(mode="json"))
     except Exception as e:
         log.warning("Validation failed for event payload: %s", e)
         raise ValueError(f"Invalid event payload: {e}") from e
@@ -479,7 +480,18 @@ def _clean_position(position: dict) -> dict:
     """Validate and normalize one extracted hiring position."""
     try:
         validated = ExtractedPosition.model_validate(position)
-        return validated.model_dump(mode="json")
+        return _normalize_extracted_strings(validated.model_dump(mode="json"))
     except Exception as e:
         log.warning("Validation failed for position payload: %s", e)
         raise ValueError(f"Invalid position payload: {e}") from e
+
+
+def _normalize_extracted_strings(value):
+    """Normalize every textual leaf returned by the extraction model."""
+    if isinstance(value, str):
+        return normalize_scraped_text(value)
+    if isinstance(value, list):
+        return [_normalize_extracted_strings(item) for item in value]
+    if isinstance(value, dict):
+        return {key: _normalize_extracted_strings(item) for key, item in value.items()}
+    return value

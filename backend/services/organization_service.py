@@ -364,7 +364,10 @@ def update_organization(
     r = get_sb().table(ORGANIZATIONS).update(payload).eq("id", organization_id).execute()
     if r.data:
         updated = _organization_response({**r.data[0], "school": updated_school})
-        if updated.organization_type != existing.organization_type:
+        if (
+            updated.organization_type != existing.organization_type
+            or updated.logo_url != existing.logo_url
+        ):
             event_feed_revalidation_service.revalidate_schools([existing.school, updated.school])
         return updated
     return None

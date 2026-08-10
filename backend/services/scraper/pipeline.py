@@ -22,6 +22,7 @@ from core.constants import (
     WORKFLOW_RUN_NO_POSTS,
     WORKFLOW_RUN_SUCCESS,
 )
+from core.sanitize import normalize_scraped_text
 from schemas.workflow_run import WorkflowRunCreate
 from services import workflow_run_service
 from services.scraper.dedup import _extract_shortcode, existing_shortcodes, find_candidates
@@ -194,7 +195,7 @@ def _process_one_post(
     image_urls = _extract_image_urls(post)
     uploaded = upload_post_images(image_urls)
 
-    caption = post.get("caption") or post.get("text") or ""
+    caption = normalize_scraped_text(post.get("caption") or post.get("text")) or ""
     post_dt = parse_post_timestamp(post.get("timestamp"))
 
     content = extract_post_content(

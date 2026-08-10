@@ -2,7 +2,7 @@
 
 import pytest
 
-from core.sanitize import sanitize_postgrest_value
+from core.sanitize import normalize_scraped_text, sanitize_postgrest_value
 
 
 class TestSanitizePostgrestValue:
@@ -84,3 +84,21 @@ class TestSanitizePostgrestValue:
     def test_quotes_stripped(self):
         assert sanitize_postgrest_value('a"b') == "ab"
         assert sanitize_postgrest_value("a`b") == "ab"
+
+
+class TestNormalizeScrapedText:
+    def test_decodes_json_escaped_emoji_and_newlines(self):
+        escaped = r"\ud83d\udcca Having trouble?\n\n\ud83c\udf55 Pizza is provided!"
+
+        assert normalize_scraped_text(escaped) == "📊 Having trouble?\n\n🍕 Pizza is provided!"
+
+    def test_decodes_bmp_unicode_escapes(self):
+        assert normalize_scraped_text(r"Caf\u00e9 \u2728") == "Café ✨"
+
+    def test_preserves_existing_unicode_and_unrelated_backslashes(self):
+        text = "📊 Café C:\\events\\poster"
+
+        assert normalize_scraped_text(text) == text
+
+    def test_preserves_invalid_lone_surrogate_escape(self):
+        assert normalize_scraped_text(r"broken \ud83d caption") == r"broken \ud83d caption"

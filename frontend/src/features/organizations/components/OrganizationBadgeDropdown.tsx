@@ -15,8 +15,22 @@ import { sanitizeHref } from "@/shared/utils/url";
 
 const ORGANIZATION_NAME_CLASS = "max-w-56 font-bold";
 
+function OrganizationLogo({ src }: { src: string | null | undefined }) {
+  if (!src) return null;
+
+  return (
+    <img
+      src={src}
+      alt=""
+      aria-hidden="true"
+      className="size-3 max-h-3 max-w-3 shrink-0 rounded-full object-cover"
+    />
+  );
+}
+
 interface OrganizationBadgeDropdownProps {
   organizationName: string;
+  organizationLogoUrl?: string | null;
   organizationType?: string | null;
   school?: string | null;
   /** Owning organization's link/social fields, embedded on the event response. */
@@ -35,6 +49,7 @@ interface OrganizationBadgeDropdownProps {
 
 export function OrganizationBadgeDropdown({
   organizationName,
+  organizationLogoUrl,
   organizationType,
   school,
   organizationPage,
@@ -84,6 +99,7 @@ export function OrganizationBadgeDropdown({
         onClick={onClick}
       >
         <span>
+          <OrganizationLogo src={organizationLogoUrl} />
           <TruncatedText
             text={organizationName || t("events.organization")}
             className={ORGANIZATION_NAME_CLASS}
@@ -116,6 +132,7 @@ export function OrganizationBadgeDropdown({
             onMouseEnter={badgeHoverProps?.onMouseEnter}
             onMouseLeave={badgeHoverProps?.onMouseLeave}
           >
+            <OrganizationLogo src={organizationLogoUrl} />
             <TruncatedText
               text={organizationName}
               className={ORGANIZATION_NAME_CLASS}

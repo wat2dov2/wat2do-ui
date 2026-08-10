@@ -192,6 +192,17 @@ def test_clean_event_category_normalized():
     assert cleaned["category"] == "Arts & Culture"
 
 
+def test_clean_event_decodes_serialized_caption_text():
+    cleaned = _clean_event(
+        {
+            "title": "Review session",
+            "description": r"\ud83d\udcca Study together\n\nBring questions.",
+        }
+    )
+
+    assert cleaned["description"] == "📊 Study together\n\nBring questions."
+
+
 def test_clean_event_occurrences_sorted_and_normalized():
     cleaned = _clean_event(
         {
@@ -222,3 +233,17 @@ def test_clean_position_normalizes_optional_fields():
     assert cleaned["commitment"] is None
     assert cleaned["deadline_at"] is None
     assert cleaned["deadline_date"] == "2026-09-01"
+
+
+def test_clean_position_decodes_serialized_text_fields():
+    cleaned = _clean_position(
+        {
+            "title": "Design Lead",
+            "description": r"Create posters \u2728",
+            "position_type": "committee",
+            "requirements": [r"Portfolio\nrequired"],
+        }
+    )
+
+    assert cleaned["description"] == "Create posters ✨"
+    assert cleaned["requirements"] == ["Portfolio\nrequired"]

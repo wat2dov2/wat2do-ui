@@ -97,6 +97,7 @@ export function PositionCardImage({
       >
         <OrganizationBadgeDropdown
           organizationName={position.organization_name}
+          organizationLogoUrl={position.organization_logo_url}
           organizationType={position.organization_type}
           school={position.school}
           organizationPage={position.organization_page}

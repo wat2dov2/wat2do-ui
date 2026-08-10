@@ -6,8 +6,9 @@ real httpx + S3 storage and is covered by the pipeline integration
 test instead.
 """
 
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
+from core.constants import BUCKET_EVENT_IMAGES
 from services.scraper import image_uploader
 from services.scraper.image_uploader import _is_safe_image_url
 
@@ -95,5 +96,45 @@ def test_garbage_url_rejected():
 def test_upload_returns_none_for_unsafe_url():
     """End-to-end: ``upload_image_from_url`` short-circuits for unsafe URLs."""
     # No need to mock httpx - _is_safe_image_url returns False before fetch.
-    assert image_uploader.upload_image_from_url("https://attacker.example/x.jpg") is None
-    assert image_uploader.upload_image_from_url("http://localhost:8000/admin") is None
+    assert (
+        image_uploader.upload_image_from_url(
+            "https://attacker.example/x.jpg",
+            bucket=BUCKET_EVENT_IMAGES,
+        )
+        is None
+    )
+    assert (
+        image_uploader.upload_image_from_url(
+            "http://localhost:8000/admin",
+            bucket=BUCKET_EVENT_IMAGES,
+        )
+        is None
+    )
+
+
+def test_upload_validates_bytes_for_requested_bucket(monkeypatch):
+    response = MagicMock()
+    response.headers = {"content-type": "image/jpeg"}
+    response.content = b"raw-image"
+    client = MagicMock()
+    client.__enter__.return_value.get.return_value = response
+    monkeypatch.setattr(image_uploader.httpx, "Client", lambda **kwargs: client)
+    monkeypatch.setattr(image_uploader, "_is_safe_image_url", lambda *args, **kwargs: True)
+
+    validate = MagicMock(return_value=(b"clean-image", "image/jpeg"))
+    upload = MagicMock(return_value="https://wat2do.io/media/organization-logos/logo.jpg")
+    monkeypatch.setattr(image_uploader.storage, "validate_and_prepare", validate)
+    monkeypatch.setattr(image_uploader.storage, "upload_file", upload)
+
+    result = image_uploader.upload_image_from_url(
+        "https://scontent.cdninstagram.com/logo.jpg",
+        bucket="organization-logos",
+    )
+
+    assert result == "https://wat2do.io/media/organization-logos/logo.jpg"
+    validate.assert_called_once_with("organization-logos", b"raw-image", "image/jpeg")
+    upload.assert_called_once_with(
+        "organization-logos",
+        b"clean-image",
+        content_type="image/jpeg",
+    )

@@ -24,6 +24,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { getQueryClient } from "@/shared/lib/queryClient";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import type { SchoolSummary } from "@/shared/api/schools.api";
+import { DEFAULT_SCHOOL } from "@/shared/constants/schools";
 
 installBundledLocales();
 
@@ -44,6 +45,7 @@ const DevClickToComponent =
  * the first paint and other languages swap in over it.
  */
 const AuthReadyContext = createContext(false);
+const RequestSchoolContext = createContext(DEFAULT_SCHOOL);
 
 setOnAfterRefresh(() => {
   fetchProfileAPI().catch((err) =>
@@ -81,12 +83,22 @@ export function useAuthReady() {
   return useContext(AuthReadyContext);
 }
 
+/** School resolved from the request host, stable across SSR and hydration. */
+export function useRequestSchool() {
+  return useContext(RequestSchoolContext);
+}
+
 interface ClientProvidersProps {
   children: ReactNode;
+  initialSchool: string;
   initialSchools?: SchoolSummary[];
 }
 
-export function ClientProviders({ children, initialSchools }: ClientProvidersProps) {
+export function ClientProviders({
+  children,
+  initialSchool,
+  initialSchools,
+}: ClientProvidersProps) {
   const [authReady, setAuthReady] = useState(false);
   const [queryClient] = useState(() => {
     const client = getQueryClient();
@@ -168,14 +180,16 @@ export function ClientProviders({ children, initialSchools }: ClientProvidersPro
     <QueryClientProvider client={queryClient}>
       <ErrorBoundary>
         <TooltipProvider delayDuration={0}>
-          <AuthReadyContext.Provider value={authReady}>
-            {DevClickToComponent ? (
-              <Suspense fallback={null}>
-                <DevClickToComponent />
-              </Suspense>
-            ) : null}
-            {children}
-          </AuthReadyContext.Provider>
+          <RequestSchoolContext.Provider value={initialSchool}>
+            <AuthReadyContext.Provider value={authReady}>
+              {DevClickToComponent ? (
+                <Suspense fallback={null}>
+                  <DevClickToComponent />
+                </Suspense>
+              ) : null}
+              {children}
+            </AuthReadyContext.Provider>
+          </RequestSchoolContext.Provider>
         </TooltipProvider>
       </ErrorBoundary>
     </QueryClientProvider>

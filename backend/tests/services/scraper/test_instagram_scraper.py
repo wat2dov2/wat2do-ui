@@ -3,7 +3,7 @@
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
-from services.scraper.instagram_scraper import ACTOR_ID, InstagramScraper
+from services.scraper.instagram_scraper import ACTOR_ID, PROFILE_ACTOR_ID, InstagramScraper
 
 
 def _scraper_with_client(client: MagicMock) -> InstagramScraper:
@@ -48,3 +48,25 @@ def test_scrape_returns_empty_when_apify_run_fails():
     assert posts == []
     assert pinned_warning is False
     client.dataset.assert_not_called()
+
+
+def test_scrape_profiles_sends_all_identifiers_to_profile_actor():
+    client = MagicMock()
+    client.actor.return_value.start.return_value = SimpleNamespace(id="run-123")
+    client.run.return_value.get.return_value = SimpleNamespace(
+        status="SUCCEEDED",
+        default_dataset_id="dataset-456",
+    )
+    client.dataset.return_value.list_items.return_value.items = [
+        {"id": "42", "username": "wat2do", "profilePicUrlHD": "https://cdn/logo.jpg"}
+    ]
+
+    profiles = _scraper_with_client(client).scrape_profiles(["wat2do", " 42 ", ""])
+
+    assert profiles == [
+        {"id": "42", "username": "wat2do", "profilePicUrlHD": "https://cdn/logo.jpg"}
+    ]
+    client.actor.assert_called_once_with(PROFILE_ACTOR_ID)
+    client.actor.return_value.start.assert_called_once_with(
+        run_input={"usernames": ["wat2do", "42"]}
+    )

@@ -856,6 +856,23 @@ test.describe("Organization Integrations", () => {
 // ── Workflow 2: Home / Events Page ────────────────────────────────────
 
 test.describe("Events Page", () => {
+  test("keeps vertical scrolling on the application content root", async ({
+    page,
+  }) => {
+    await page.goto(BASE);
+
+    const scrollState = await page.locator(".main-content-grid").evaluate((scrollRoot) => ({
+      documentCanScroll:
+        document.documentElement.scrollHeight > document.documentElement.clientHeight,
+      scrollRootOverflowY: getComputedStyle(scrollRoot).overflowY,
+    }));
+
+    expect(scrollState).toEqual({
+      documentCanScroll: false,
+      scrollRootOverflowY: "auto",
+    });
+  });
+
   test("renders the organization type icon from the event feed signature", async ({
     page,
   }) => {
@@ -2116,6 +2133,86 @@ test.describe("Events Page", () => {
 
     await clearNewlyAddedFilter.click();
     await expect(clearNewlyAddedFilter).toHaveCount(0);
+  });
+
+  test("keeps chronological ordering when client-side filters change", async ({
+    page,
+  }) => {
+    const now = Date.now();
+    const event = (
+      id: number,
+      title: string,
+      startsInDays: number,
+      addedHoursAgo: number,
+    ) => ({
+      id,
+      title,
+      location: "SLC",
+      occurrences: [
+        {
+          id,
+          event_id: id,
+          dtstart_utc: new Date(now + startsInDays * 86_400_000).toISOString(),
+          dtend_utc: null,
+        },
+      ],
+      price: 0,
+      food: [],
+      registration: false,
+      source_image_url: null,
+      category: "Career",
+      organization_id: 1,
+      organization: "UW Tech Club",
+      organization_type: "wusa",
+      organization_page: null,
+      organization_ig: "uwtechclub",
+      organization_discord: null,
+      school: "uwaterloo",
+      added_at: new Date(now - addedHoursAgo * 3_600_000).toISOString(),
+    });
+    const chronologicalEvents = [
+      event(11, "Soon Event", 1, 3),
+      event(12, "Middle Event", 2, 2),
+      event(13, "Later Event", 3, 1),
+    ];
+
+    await page.route(url => apiPath(url) === "/events", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          items: chronologicalEvents,
+          total: chronologicalEvents.length,
+          page: 1,
+          page_size: 20,
+          total_pages: 1,
+          latest_added_event: {
+            title: "Later Event",
+            added_at: chronologicalEvents[2].added_at,
+          },
+        }),
+      });
+    });
+
+    await page.goto(BASE);
+    const cards = page.locator("article[data-event-id]");
+    await expect(cards).toHaveCount(3);
+
+    const newlyAddedSelect = page.getByRole("combobox", { name: "New" });
+    await newlyAddedSelect.click();
+    await page.getByRole("option", { name: "New" }).click();
+
+    await expect
+      .poll(() =>
+        cards.evaluateAll((elements) =>
+          elements.map((element) => element.getAttribute("aria-label")),
+        ),
+      )
+      .toEqual([
+        "Event: Soon Event",
+        "Event: Middle Event",
+        "Event: Later Event",
+      ]);
   });
 
   test("anchors badge mask fillets to the intended image offsets", async ({

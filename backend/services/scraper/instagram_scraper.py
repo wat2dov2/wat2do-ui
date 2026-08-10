@@ -1,4 +1,4 @@
-"""Apify Instagram-post-scraper wrapper.
+"""Apify Instagram scraper wrappers.
 
 Class-based per backend-architecture.md: external-client wrappers are
 the one place we deviate from function-based services. The module
@@ -31,12 +31,13 @@ from core.constants import (
 log = logging.getLogger(__name__)
 
 ACTOR_ID = "apify/instagram-post-scraper"
+PROFILE_ACTOR_ID = "apify/instagram-profile-scraper"
 
 _TERMINAL_STATUSES = {"SUCCEEDED", "FAILED", "ABORTED", "TIMED-OUT"}
 
 
 class InstagramScraper:
-    """Thin Apify-client wrapper for Instagram post scraping."""
+    """Thin Apify-client wrapper for Instagram post and profile scraping."""
 
     def __init__(self, token: str | None = None) -> None:
         self._token = token or settings.apify_api_token
@@ -81,14 +82,59 @@ class InstagramScraper:
             cutoff_str,
         )
 
+        dataset_items = self._run_actor(
+            ACTOR_ID,
+            run_input,
+            timeout_seconds=timeout_seconds,
+        )
+
+        pinned_returned = False
+        if not has_post_url:
+            pinned_returned = any(bool(item.get("isPinned")) for item in dataset_items)
+        if results_limit == 1 and pinned_returned:
+            warning = "Apify returned a pinned post while resultsLimit=1"
+            log.warning(warning)
+            if os.getenv("GITHUB_ACTIONS", "").lower() == "true":
+                # GitHub Actions reads ``::warning::`` annotations from stdout;
+                # logger output is captured separately and does not produce
+                # the annotation, so we still print here.
+                print(f"::warning::{warning}")
+
+        return dataset_items, pinned_returned
+
+    def scrape_profiles(
+        self,
+        identifiers: list[str],
+        *,
+        timeout_seconds: int = SCRAPING_APIFY_TIMEOUT_SECONDS,
+    ) -> list[dict]:
+        """Return profile records for Instagram usernames, URLs, or ids."""
+        targets = [identifier.strip() for identifier in identifiers if identifier.strip()]
+        if not targets:
+            return []
+        log.info("Apify profile scrape start: targets=%d", len(targets))
+        return self._run_actor(
+            PROFILE_ACTOR_ID,
+            {"usernames": targets},
+            timeout_seconds=timeout_seconds,
+        )
+
+    def _run_actor(
+        self,
+        actor_id: str,
+        run_input: dict[str, object],
+        *,
+        timeout_seconds: int,
+    ) -> list[dict]:
+        """Run one Apify actor and return its complete default dataset."""
         try:
-            run = self._client.actor(ACTOR_ID).start(run_input=run_input)
+            run = self._client.actor(actor_id).start(run_input=run_input)
         except ApifyApiError as e:
             log.error("Apify start failed: %s", e)
-            return [], False
+            return []
         except Exception as e:
             log.error("Apify actor call failed: %s", e)
-            return [], False
+            return []
 
         run_id = run.id
         log.info("Apify run started (run_id=%s); polling for completion", run_id)
@@ -104,7 +150,7 @@ class InstagramScraper:
                         self._client.run(run_id).abort()
                     except Exception as e:
                         log.warning("Apify abort failed for %s: %s", run_id, e)
-                    return [], False
+                    return []
 
                 completed_run = self._client.run(run_id).get()
                 if completed_run:
@@ -114,34 +160,21 @@ class InstagramScraper:
                 time.sleep(SCRAPING_POLL_INTERVAL_SECONDS)
         except Exception as e:
             log.error("Apify polling failed for %s: %s", run_id, e)
-            return [], False
+            return []
 
         if completed_run is None or status != "SUCCEEDED":
             log.error("Apify run %s ended with status=%s", run_id, status)
-            return [], False
+            return []
 
         try:
             dataset_id = completed_run.default_dataset_id
             dataset_items = list(self._client.dataset(dataset_id).list_items().items)
         except Exception as e:
             log.error("Failed to fetch Apify dataset for %s: %s", run_id, e)
-            return [], False
+            return []
 
         log.info("Apify run %s returned %d items", run_id, len(dataset_items))
-
-        pinned_returned = False
-        if not has_post_url:
-            pinned_returned = any(bool(item.get("isPinned")) for item in dataset_items)
-        if results_limit == 1 and pinned_returned:
-            warning = "Apify returned a pinned post while resultsLimit=1"
-            log.warning(warning)
-            if os.getenv("GITHUB_ACTIONS", "").lower() == "true":
-                # GitHub Actions reads ``::warning::`` annotations from stdout;
-                # logger output is captured separately and does not produce
-                # the annotation, so we still print here.
-                print(f"::warning::{warning}")
-
-        return dataset_items, pinned_returned
+        return dataset_items
 
 
 _scraper: InstagramScraper | None = None

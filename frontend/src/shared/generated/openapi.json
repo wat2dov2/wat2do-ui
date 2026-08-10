@@ -7569,6 +7569,17 @@
             ],
             "title": "Source Image Url"
           },
+          "organization_logo_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Organization Logo Url"
+          },
           "organization_type": {
             "anyOf": [
               {
@@ -7746,6 +7757,17 @@
               }
             ],
             "title": "Source Image Url"
+          },
+          "organization_logo_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Organization Logo Url"
           },
           "organization_type": {
             "anyOf": [
@@ -7975,6 +7997,17 @@
             ],
             "title": "Organization"
           },
+          "organization_logo_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Organization Logo Url"
+          },
           "organization_type": {
             "anyOf": [
               {
@@ -8060,7 +8093,7 @@
           "added_at"
         ],
         "title": "EventSummaryResponse",
-        "description": "Payload for list/card views.\n\nDescription is included because the feed search matches event copy as well\nas titles, hosts, locations, and food.\n\nThe owning organization's type/link/social fields (``organization_type``,\n``organization_page``, ``organization_ig``, ``organization_discord``) are\nembedded read-time from the ``organizations`` row via the\n``events.organization_id`` FK so the event card can render without a second\nfetch.\n\n``created_by`` is intentionally omitted - this response is returned on\npublic GET /events/ and would otherwise leak the creator's Supabase\nauth UID to anonymous callers."
+        "description": "Payload for list/card views.\n\nDescription is included because the feed search matches event copy as well\nas titles, hosts, locations, and food.\n\nThe owning organization's display/link/social fields (``organization_logo_url``,\n``organization_type``, ``organization_page``, ``organization_ig``,\n``organization_discord``) are\nembedded read-time from the ``organizations`` row via the\n``events.organization_id`` FK so the event card can render without a second\nfetch.\n\n``created_by`` is intentionally omitted - this response is returned on\npublic GET /events/ and would otherwise leak the creator's Supabase\nauth UID to anonymous callers."
       },
       "EventUpdate": {
         "properties": {

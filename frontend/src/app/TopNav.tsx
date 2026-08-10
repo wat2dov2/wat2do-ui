@@ -13,8 +13,8 @@ import { SchoolCombobox } from "@/shared/ui/school-combobox";
 import { SearchCombobox } from "@/shared/ui/search-combobox";
 import { LanguageSelector } from "@/shared/ui/language-selector";
 import { useAuthState, type AuthState } from "@/features/auth/hooks/useAuthState";
+import { useRequestSchool } from "@/app/client-providers";
 import { getUserProfile, logoutAPI, updateUserProfile } from "@/features/auth/api/auth.api";
-import { useEventsStore } from "@/features/events/store/events.store";
 import { ROUTES } from "@/shared/constants/routes";
 import { getSchoolOrigin } from "@/shared/constants/schools";
 import imgImage1 from "@/assets/38e8096a28295e8dcc0e5020d0a5f3dd85d5f019.png";
@@ -22,7 +22,7 @@ import imgImage1 from "@/assets/38e8096a28295e8dcc0e5020d0a5f3dd85d5f019.png";
 type NavOrganization = AuthState["clubs"][number];
 
 export function TopNav() {
-  const schoolFilter = useEventsStore((s) => s.schoolFilter);
+  const requestSchool = useRequestSchool();
   const { profileCompleted, isAdmin, clubs, organizationId } = useAuthState();
   const { t } = useTranslation();
   const router = useRouter();
@@ -98,7 +98,7 @@ export function TopNav() {
         </button>
         <span className="hidden text-muted-foreground text-lg font-light sm:inline">/</span>
         <SchoolCombobox
-          value={schoolFilter ?? ""}
+          value={requestSchool}
           onChange={handleSchoolChange}
           triggerClassName="pl-1 pr-2 sm:pl-1.5 sm:pr-3"
         />

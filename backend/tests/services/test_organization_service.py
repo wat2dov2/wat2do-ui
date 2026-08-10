@@ -309,3 +309,51 @@ def test_update_organization_type_revalidates_event_feed(
     assert updated is not None
     assert updated.organization_type == "wusa"
     revalidate.assert_called_once_with(["uwaterloo", "uwaterloo"])
+
+
+def test_update_organization_logo_revalidates_event_feed(
+    monkeypatch,
+    fake_sb,
+    patch_sb,
+):
+    patch_sb("services.organization_service")
+    existing = OrganizationResponse(
+        id=7,
+        organization_name="UW Tea Organization",
+        logo_url=None,
+        school="uwaterloo",
+    )
+    monkeypatch.setattr(
+        organization_service,
+        "get_organization",
+        MagicMock(return_value=existing),
+    )
+    revalidate = MagicMock()
+    monkeypatch.setattr(
+        organization_service.event_feed_revalidation_service,
+        "revalidate_schools",
+        revalidate,
+    )
+    fake_sb.queue_responses(
+        [
+            [
+                {
+                    "id": 7,
+                    "organization_name": "UW Tea Organization",
+                    "logo_url": "https://wat2do.io/media/organization-logos/tea.jpg",
+                    "school": "uwaterloo",
+                }
+            ]
+        ]
+    )
+
+    updated = organization_service.update_organization(
+        7,
+        OrganizationUpdate(
+            logo_url="https://wat2do.io/media/organization-logos/tea.jpg",
+        ),
+    )
+
+    assert updated is not None
+    assert updated.logo_url == "https://wat2do.io/media/organization-logos/tea.jpg"
+    revalidate.assert_called_once_with(["uwaterloo", "uwaterloo"])

@@ -1993,6 +1993,8 @@ export interface components {
             registration: boolean;
             /** Source Image Url */
             source_image_url?: string | null;
+            /** Organization Logo Url */
+            organization_logo_url?: string | null;
             /** Organization Type */
             organization_type?: string | null;
             /** School */
@@ -2052,6 +2054,8 @@ export interface components {
             registration: boolean;
             /** Source Image Url */
             source_image_url?: string | null;
+            /** Organization Logo Url */
+            organization_logo_url?: string | null;
             /** Organization Type */
             organization_type?: string | null;
             /** School */
@@ -2100,8 +2104,9 @@ export interface components {
          *     Description is included because the feed search matches event copy as well
          *     as titles, hosts, locations, and food.
          *
-         *     The owning organization's type/link/social fields (``organization_type``,
-         *     ``organization_page``, ``organization_ig``, ``organization_discord``) are
+         *     The owning organization's display/link/social fields (``organization_logo_url``,
+         *     ``organization_type``, ``organization_page``, ``organization_ig``,
+         *     ``organization_discord``) are
          *     embedded read-time from the ``organizations`` row via the
          *     ``events.organization_id`` FK so the event card can render without a second
          *     fetch.
@@ -2138,6 +2143,8 @@ export interface components {
             category?: string | null;
             /** Organization */
             organization?: string | null;
+            /** Organization Logo Url */
+            organization_logo_url?: string | null;
             /** Organization Type */
             organization_type?: string | null;
             /** Organization Page */

@@ -208,8 +208,9 @@ class EventSummaryResponse(BaseModel):
     Description is included because the feed search matches event copy as well
     as titles, hosts, locations, and food.
 
-    The owning organization's type/link/social fields (``organization_type``,
-    ``organization_page``, ``organization_ig``, ``organization_discord``) are
+    The owning organization's display/link/social fields (``organization_logo_url``,
+    ``organization_type``, ``organization_page``, ``organization_ig``,
+    ``organization_discord``) are
     embedded read-time from the ``organizations`` row via the
     ``events.organization_id`` FK so the event card can render without a second
     fetch.
@@ -231,6 +232,7 @@ class EventSummaryResponse(BaseModel):
     source_url: str | None = None
     category: str | None = None
     organization: str | None = None
+    organization_logo_url: str | None = None
     organization_type: OrganizationTypeValue | None = None
     organization_page: str | None = None
     organization_ig: str | None = None
@@ -278,6 +280,7 @@ class EventResponse(BaseModel):
     food: list[str] | None = None
     registration: bool = False
     source_image_url: str | None = None
+    organization_logo_url: str | None = None
     organization_type: OrganizationTypeValue | None = None
     school: str | None = None
     source_url: str | None = None
@@ -306,6 +309,7 @@ class EventPublicResponse(BaseModel):
     food: list[str] | None = None
     registration: bool = False
     source_image_url: str | None = None
+    organization_logo_url: str | None = None
     organization_type: OrganizationTypeValue | None = None
     school: str | None = None
     source_url: str | None = None

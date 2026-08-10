@@ -1,9 +1,11 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
+import { headers } from "next/headers";
 import type { ReactNode } from "react";
 import { ClientProviders } from "@/app/client-providers";
 import { SiteBanner } from "@/app/SiteBanner";
 import { getSchoolDirectory } from "@/shared/api/schools.server";
+import { getSchoolFromRequestHost } from "@/shared/constants/schools";
 import { PageBackground } from "@/shared/layout";
 import "../index.css";
 
@@ -73,10 +75,16 @@ export const viewport: Viewport = {
 };
 
 export default async function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
-  const initialSchools = await getSchoolDirectory().catch((error: unknown) => {
-    console.error("Failed to preload the school directory:", error);
-    return undefined;
-  });
+  const [requestHeaders, initialSchools] = await Promise.all([
+    headers(),
+    getSchoolDirectory().catch((error: unknown) => {
+      console.error("Failed to preload the school directory:", error);
+      return undefined;
+    }),
+  ]);
+  const initialSchool = getSchoolFromRequestHost(
+    requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host"),
+  );
 
   return (
     <html
@@ -95,7 +103,10 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         <PageBackground />
         {/* Inside the providers so the strip's own controls can be translated;
             it is still a server component, rendered on the server as a child. */}
-        <ClientProviders initialSchools={initialSchools}>
+        <ClientProviders
+          initialSchool={initialSchool}
+          initialSchools={initialSchools}
+        >
           <SiteBanner />
           {children}
         </ClientProviders>

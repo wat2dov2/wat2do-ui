@@ -148,6 +148,7 @@ export function EventCardImage({
           <BadgeMask variant="bottom-left" cutout containerRef={registerCorner("bottom-left")}>
             <OrganizationBadgeDropdown
               organizationName={event.organization}
+              organizationLogoUrl={event.organization_logo_url}
               organizationType={event.organization_type}
               school={event.school}
               organizationPage={event.organization_page}

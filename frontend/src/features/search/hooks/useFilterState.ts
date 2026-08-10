@@ -4,8 +4,6 @@ import {
   storeStatesToFilterState,
   normalizeFilterState,
   clearNarrowingFilterState,
-  DEFAULT_FILTER_SORT_BY,
-  DEFAULT_FILTER_SORT_ORDER,
 } from "@/features/search/api/filterService";
 import { useSearchStore } from "@/features/search/store/search.store";
 import type { FilterState } from "@/shared/types";
@@ -101,7 +99,6 @@ export function useFilterState() {
     })),
   );
   const {
-    setFilterState,
     updateFilterState,
     toggleFilterValue,
     clearAllFilters,
@@ -148,17 +145,8 @@ export function useFilterState() {
     [updateFilterState],
   );
   const setAddedSince = useCallback(
-    (value: string) => {
-      setFilterState((current) =>
-        normalizeFilterState({
-          ...current,
-          addedSince: value,
-          sortBy: value ? "added_at" : DEFAULT_FILTER_SORT_BY,
-          sortOrder: value ? "desc" : DEFAULT_FILTER_SORT_ORDER,
-        }),
-      );
-    },
-    [setFilterState],
+    (value: string) => updateFilterState({ addedSince: value }),
+    [updateFilterState],
   );
   const setSortBy = useCallback(
     (value: string) => updateFilterState({ sortBy: value }),

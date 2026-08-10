@@ -99,6 +99,34 @@ def test_extract_image_urls_returns_empty_list_when_no_images():
     assert _extract_image_urls({"caption": "no images"}) == []
 
 
+def test_pipeline_normalizes_caption_before_extraction(monkeypatch):
+    extracted_captions: list[str] = []
+
+    monkeypatch.setattr(pipeline_module, "upload_post_images", lambda urls: list(urls))
+    monkeypatch.setattr(
+        pipeline_module,
+        "extract_post_content",
+        lambda **kwargs: (
+            extracted_captions.append(kwargs["caption_text"])
+            or SimpleNamespace(events=[], positions=[])
+        ),
+    )
+
+    result = SimpleNamespace(events_extracted=0, positions_extracted=0)
+    pipeline_module._process_one_post(
+        {
+            "caption": r"\ud83d\udcca Review session\n\nBring questions.",
+            "timestamp": _now_iso(),
+        },
+        handle="uwstatsclub",
+        school="uwaterloo",
+        result=result,
+        dry_run=False,
+    )
+
+    assert extracted_captions == ["📊 Review session\n\nBring questions."]
+
+
 def test_pipeline_routes_hiring_post_to_position_writer(monkeypatch):
     position = {
         "title": "Design Lead",

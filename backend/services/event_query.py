@@ -40,6 +40,7 @@ T = TypeVar("T", bound=BaseModel)
 _SUMMARY_COMPUTED_FIELDS = {
     "occurrences",
     "school",
+    "organization_logo_url",
     "organization_type",
     "organization_page",
     "organization_ig",
@@ -48,9 +49,9 @@ _SUMMARY_COMPUTED_FIELDS = {
 _SUMMARY_COLUMNS = ",".join(
     f for f in EventSummaryResponse.model_fields if f not in _SUMMARY_COMPUTED_FIELDS
 )
-# Read-time embed of the owning organization's link/social fields via the
+# Read-time embed of the owning organization's display/link/social fields via the
 # ``events.organization_id`` FK, flattened onto the event in ``hydrate_event``.
-ORGANIZATION_EMBED = "organizations(organization_type,organization_page,ig,discord)"
+ORGANIZATION_EMBED = "organizations(logo_url,organization_type,organization_page,ig,discord)"
 SCHOOL_EMBED = school_service.SCHOOL_SLUG_EMBED
 _LIGHTWEIGHT_DATE_COLUMNS = "id,event_id,dtstart_utc,events!inner(id)"
 _LIGHTWEIGHT_DATE_SCAN_CHUNK_SIZE = 250
@@ -90,6 +91,7 @@ def hydrate_event(row: dict, occurrences: list[OccurrenceResponse], model: type[
     org = row.pop("organizations", None)
     org_fields = (
         {
+            "organization_logo_url": org.get("logo_url"),
             "organization_type": org.get("organization_type"),
             "organization_page": org.get("organization_page"),
             "organization_ig": org.get("ig"),

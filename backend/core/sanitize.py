@@ -10,6 +10,7 @@ The ``sanitize_postgrest_value`` function below keeps only safe characters
 and collapses any resulting extra whitespace.
 """
 
+import json
 import re
 
 # Allow: word characters (letters, digits, underscore), spaces, hyphens,
@@ -18,6 +19,15 @@ _SAFE_PATTERN = re.compile(r"[^\w\s\-'%]", re.UNICODE)
 
 # Collapse multiple spaces into one.
 _MULTI_SPACE = re.compile(r"\s{2,}")
+
+# Instagram captions occasionally arrive with JSON string escapes still
+# serialized as text. Match only the sequences observed at that ingestion
+# boundary: line breaks and Unicode code points, including surrogate pairs.
+_JSON_TEXT_ESCAPE = re.compile(
+    r"\\r\\n|\\n|"
+    r"\\u[dD][89aAbB][0-9a-fA-F]{2}\\u[dD][c-fC-F][0-9a-fA-F]{2}|"
+    r"\\u[0-9a-fA-F]{4}"
+)
 
 
 def sanitize_postgrest_value(value: str) -> str:
@@ -40,3 +50,29 @@ def remove_surrogates(text: str | None) -> str | None:
     if not isinstance(text, str):
         return text
     return text.encode("utf-8", "ignore").decode("utf-8")
+
+
+def normalize_scraped_text(text: str | None) -> str | None:
+    """Decode serialized newlines and Unicode escapes in scraped social text.
+
+    The replacement is intentionally narrower than ``unicode_escape`` so
+    already-correct Unicode and unrelated backslashes remain unchanged.
+    Invalid lone surrogate escapes are preserved instead of introducing a
+    string that cannot be encoded as UTF-8.
+    """
+    if not isinstance(text, str):
+        return text
+
+    def decode_match(match: re.Match[str]) -> str:
+        escaped = match.group(0)
+        if escaped == r"\r\n":
+            return "\n"
+        try:
+            decoded = json.loads(f'"{escaped}"')
+        except json.JSONDecodeError:
+            return escaped
+        if any(0xD800 <= ord(character) <= 0xDFFF for character in decoded):
+            return escaped
+        return decoded
+
+    return remove_surrogates(_JSON_TEXT_ESCAPE.sub(decode_match, text))

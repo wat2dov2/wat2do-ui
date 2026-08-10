@@ -27,6 +27,7 @@ interface EventViewOnlyFields {
   organization_id?: ApiEventResponse["organization_id"];
   description?: ApiEventResponse["description"];
   source_url?: ApiEventResponse["source_url"];
+  organization_logo_url?: ApiEventResponse["organization_logo_url"];
   organization_type?: ApiEventResponse["organization_type"];
   ig_handle?: ApiEventResponse["ig_handle"];
   created_by?: ApiEventResponse["created_by"];

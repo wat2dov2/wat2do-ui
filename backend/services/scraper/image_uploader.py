@@ -77,8 +77,13 @@ def _is_safe_image_url(url: str, allow_all_domains: bool = False) -> bool:
     return True
 
 
-def upload_image_from_url(url: str, allow_all_domains: bool = False) -> str | None:
-    """Fetch ``url`` and push to the event-images bucket.
+def upload_image_from_url(
+    url: str,
+    *,
+    bucket: str,
+    allow_all_domains: bool = False,
+) -> str | None:
+    """Fetch ``url``, validate its bytes, and push it to ``bucket``.
 
     Returns the public Storage URL on success, ``None`` on failure.
     Failures are logged and never raised; the caller drops that image.
@@ -104,11 +109,12 @@ def upload_image_from_url(url: str, allow_all_domains: bool = False) -> str | No
         content_type = _CONTENT_TYPE_FALLBACK
 
     try:
-        return storage.upload_file(
-            BUCKET_EVENT_IMAGES,
+        prepared, prepared_content_type = storage.validate_and_prepare(
+            bucket,
             resp.content,
-            content_type=content_type,
+            content_type,
         )
+        return storage.upload_file(bucket, prepared, content_type=prepared_content_type)
     except Exception as e:
         # ValidationError (unsupported MIME, oversize, decoding failure)
         # falls in here too; we treat all upload failures as soft drops.
@@ -126,7 +132,11 @@ def upload_post_images(image_urls: Iterable[str], allow_all_domains: bool = Fals
     for url in image_urls:
         if not url:
             continue
-        result = upload_image_from_url(url, allow_all_domains=allow_all_domains)
+        result = upload_image_from_url(
+            url,
+            bucket=BUCKET_EVENT_IMAGES,
+            allow_all_domains=allow_all_domains,
+        )
         if result is not None:
             uploaded.append(result)
     return uploaded

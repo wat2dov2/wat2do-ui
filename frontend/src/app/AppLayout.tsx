@@ -76,14 +76,11 @@ export function AppLayout({ children }: AppLayoutProps) {
   ];
 
   return (
-    <div className="h-dvh flex flex-col">
+    <div className="flex h-dvh flex-col overflow-hidden">
       <TopNav />
 
       <PageFrame
-        className="main-content-grid mt-12 flex-1 overflow-auto"
-        style={{
-          minHeight: "calc(100vh - 48px)",
-        }}
+        className="main-content-grid mt-12 min-h-0 flex-1 overflow-x-hidden overflow-y-auto"
       >
         {children}
       </PageFrame>

@@ -73,6 +73,7 @@ def test_hydrate_event_reuses_validated_occurrences_without_json_dump(monkeypatc
             "location": "SLC",
             "organization": "UW Blueprint",
             "organizations": {
+                "logo_url": "https://example.com/uw-blueprint.jpg",
                 "organization_type": "wusa",
                 "organization_page": None,
                 "ig": None,
@@ -85,6 +86,7 @@ def test_hydrate_event_reuses_validated_occurrences_without_json_dump(monkeypatc
     )
 
     assert event.id == 42
+    assert event.organization_logo_url == "https://example.com/uw-blueprint.jpg"
     assert event.organization_type == "wusa"
     assert event.occurrences[0].dtstart_utc == occurrence.dtstart_utc
 
@@ -93,6 +95,7 @@ def test_summary_columns_exclude_computed_response_fields():
     """Computed API fields must not be requested as physical events columns."""
 
     assert "occurrences" not in event_query._SUMMARY_COLUMNS
+    assert "organization_logo_url" not in event_query._SUMMARY_COLUMNS
     assert "organization_type" not in event_query._SUMMARY_COLUMNS
     assert "click_count" not in event_query._SUMMARY_COLUMNS
 
