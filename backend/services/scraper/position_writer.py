@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import logging
 
+from postgrest.exceptions import APIError
+
 from core.constants.positions import (
     MAX_POSITION_DESCRIPTION_LENGTH,
     MAX_POSITION_DETAIL_LENGTH,
@@ -74,7 +76,14 @@ def write_position(
         "ingestion_source": "instagram_scraper",
     }
 
-    inserted = get_sb().table(POSITIONS).insert(row).execute()
+    try:
+        inserted = get_sb().table(POSITIONS).insert(row).execute()
+    except APIError as e:
+        if getattr(e, "code", None) == "23505":
+            log.info("[%s] skipping duplicate position %r", ig_handle, title)
+            return "skipped"
+        raise
+
     if not inserted.data:
         log.error("[%s] positions insert returned no row for %r", ig_handle, title)
         return "skipped"
