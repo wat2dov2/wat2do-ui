@@ -234,12 +234,13 @@ async function captureSchoolPage(slug) {
       window.scrollTo(0, 0);
     });
 
-    return page.screenshot({
+    const screenshot = await page.screenshot({
       type: "jpeg",
       quality: controls.jpeg_quality,
       fullPage: false,
       captureBeyondViewport: false,
     });
+    return screenshot;
   } finally {
     await browser.close();
   }
