@@ -1,5 +1,5 @@
-import { AdminEventsPageRoute } from "@/app/client-routes";
+import { AdminEventsRoute } from "@/app/routes/adminRoutes";
 
 export default function AdminEventsPage() {
-  return <AdminEventsPageRoute />;
+  return <AdminEventsRoute />;
 }

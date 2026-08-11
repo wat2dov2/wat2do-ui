@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { notFound, permanentRedirect } from "next/navigation";
-import { AppPage } from "@/app/app-page";
 import imgContactHero from "@/assets/contact_hero.png";
 import { getOrganizationEventsSnapshot } from "@/features/events/api/eventFeed.server";
 import { getOrganizationPositionsSnapshot } from "@/features/positions/api/positionDirectory.server";
@@ -116,14 +115,12 @@ export default async function OrganizationDetailsPage({
     getOrganizationPositionsSnapshot(organization.id, organization.school),
   ]);
   return (
-    <AppPage>
-      <OrganizationDetailsPageContent
-        organizationId={organization.id}
-        initialOrganization={organization}
-        initialEvents={initialEvents}
-        initialPositions={initialPositions}
-        schoolName={schoolRecord?.name ?? organization.school}
-      />
-    </AppPage>
+    <OrganizationDetailsPageContent
+      organizationId={organization.id}
+      initialOrganization={organization}
+      initialEvents={initialEvents}
+      initialPositions={initialPositions}
+      schoolName={schoolRecord?.name ?? organization.school}
+    />
   );
 }

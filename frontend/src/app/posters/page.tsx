@@ -1,5 +1,12 @@
-import { PostersRoute } from "@/app/client-routes";
+"use client";
+
+import { ProtectedRoute } from "@/app/ProtectedRoute";
+import { PromoterPostersPage } from "@/features/posters/pages/PromoterPostersPage";
 
 export default function PostersPage() {
-  return <PostersRoute />;
+  return (
+    <ProtectedRoute>
+      <PromoterPostersPage />
+    </ProtectedRoute>
+  );
 }

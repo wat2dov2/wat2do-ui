@@ -1,5 +1,5 @@
-import { AdminInstagramPageRoute } from "@/app/client-routes";
+import { AdminInstagramRoute } from "@/app/routes/adminRoutes";
 
 export default function AdminInstagramPage() {
-  return <AdminInstagramPageRoute />;
+  return <AdminInstagramRoute />;
 }

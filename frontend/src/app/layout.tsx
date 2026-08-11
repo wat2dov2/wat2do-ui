@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { headers } from "next/headers";
 import type { ReactNode } from "react";
+import { AppShell } from "@/app/app-shell";
 import { ClientProviders } from "@/app/client-providers";
 import { SiteBanner } from "@/app/SiteBanner";
 import { getSchoolDirectory } from "@/shared/api/schools.server";
@@ -108,7 +109,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
           initialSchools={initialSchools}
         >
           <SiteBanner />
-          {children}
+          <AppShell>{children}</AppShell>
         </ClientProviders>
       </body>
     </html>

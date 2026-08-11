@@ -1,4 +1,4 @@
-import { useMemo, useCallback, useState, useEffect } from "react";
+import { useMemo, useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { toast } from "@/shared/hooks/use-toast";
@@ -18,9 +18,7 @@ import {
   NewlyAddedFilterSelect,
   type NewlyAddedFilterValue,
 } from "@/features/events/components/NewlyAddedFilterSelect";
-import { QP } from "@/shared/constants/queryParams";
 import { ROUTES } from "@/shared/constants/routes";
-import { useMutableSearchParams } from "@/shared/hooks/useMutableSearchParams";
 import { controlBox } from "@/shared/config/controlBox";
 import type { ViewMode, Event } from "@/shared/types";
 import { usePosterLandingConfirmation } from "@/features/qrcode/hooks/usePosterLandingConfirmation";
@@ -53,7 +51,6 @@ export function EventsPageContainer({
   const { profileCompleted, userEmail } = useAuthState();
   const { t } = useTranslation();
   const router = useRouter();
-  const [searchParams, setSearchParams] = useMutableSearchParams();
 
   const {
     isLoading,
@@ -74,36 +71,19 @@ export function EventsPageContainer({
     initialSchool,
   });
   const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
-  const urlEventId = useMemo(() => {
-    const eventIdParam = searchParams.get(QP.EVENT_ID);
-    if (!eventIdParam) return null;
-    const parsed = parseInt(eventIdParam, 10);
-    return Number.isNaN(parsed) ? null : parsed;
-  }, [searchParams]);
-
-  useEffect(() => {
-    setSelectedEventId(urlEventId);
-  }, [urlEventId]);
 
   const selectedEvent = useMemo(() => {
     if (selectedEventId == null) return null;
     return allEvents.find((e) => e.id === selectedEventId) ?? null;
   }, [selectedEventId, allEvents]);
 
-  const handleEventClick = useCallback(
-    (event: Event) => {
-      const nextParams = new URLSearchParams(searchParams);
-      nextParams.set(QP.EVENT_ID, String(event.id));
-      setSearchParams(nextParams);
-    },
-    [searchParams, setSearchParams],
-  );
+  const handleEventClick = useCallback((event: Event) => {
+    setSelectedEventId(event.id);
+  }, []);
 
   const handleCloseEventDetails = useCallback(() => {
-    const nextParams = new URLSearchParams(searchParams);
-    nextParams.delete(QP.EVENT_ID);
-    setSearchParams(nextParams, { replace: true });
-  }, [searchParams, setSearchParams]);
+    setSelectedEventId(null);
+  }, []);
 
   const handleViewModeChange = useCallback(
     (mode: ViewMode) => {

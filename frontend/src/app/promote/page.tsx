@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import { PromoteRoute } from "@/app/client-routes";
 import imgContactHero from "@/assets/contact_hero.png";
+import { PromotePage as PromotePageContent } from "@/features/posters/pages/PromotePage";
 import {
   buildPublicPageMetadata,
   getBrandCanonicalUrl,
@@ -21,5 +21,5 @@ export const metadata: Metadata = buildPublicPageMetadata({
 });
 
 export default function PromotePage() {
-  return <PromoteRoute />;
+  return <PromotePageContent />;
 }

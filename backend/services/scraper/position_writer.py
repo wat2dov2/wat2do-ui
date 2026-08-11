@@ -18,6 +18,7 @@ from core.database import get_sb
 from core.sanitize import remove_surrogates
 from core.tables import POSITIONS
 from services import school_service
+from services.event_feed_revalidation import event_feed_revalidation_service
 from services.scraper.org_resolve import ResolvedOrganization
 
 log = logging.getLogger(__name__)
@@ -94,6 +95,7 @@ def write_position(
         inserted.data[0].get("id"),
         title,
     )
+    event_feed_revalidation_service.revalidate_school(school.slug)
     return "inserted"
 
 

@@ -1,6 +1,6 @@
 {
   "enabled": true,
-  "rate_cents": 25,
+  "rate_cents": 100,
   "maximum_active_posters": 50,
   "landing_confirmation_seconds": 5,
   "confirmation_token_minutes": 15,

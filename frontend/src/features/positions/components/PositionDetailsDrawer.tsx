@@ -50,7 +50,7 @@ function PositionDetailItem({
   value,
 }: PositionDetailItemProps) {
   return (
-    <Item variant="outline">
+    <Item>
       <ItemMedia variant="icon">
         <Icon />
       </ItemMedia>
@@ -110,9 +110,15 @@ export function PositionDetailsDrawer({
                 })}
               </DrawerDescription>
 
-              <FormGrid columns="sidebar">
+              <FormGrid columns={2}>
+                <PositionCardImage
+                  position={position}
+                  variant="detail"
+                  onOrganizationFilterSelect={onClose}
+                />
+
                 <Stack gap={6}>
-                  <Stack gap={2}>
+                  <Stack gap={2} align="start">
                     <DrawerTitle className="text-left text-2xl font-bold leading-tight sm:text-3xl">
                       {position.title}
                     </DrawerTitle>
@@ -178,12 +184,6 @@ export function PositionDetailsDrawer({
                     </Section>
                   ) : null}
                 </Stack>
-
-                <PositionCardImage
-                  position={position}
-                  variant="detail"
-                  onOrganizationFilterSelect={onClose}
-                />
               </FormGrid>
             </DrawerBody>
           </>

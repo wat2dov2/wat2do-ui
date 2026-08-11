@@ -1,5 +1,12 @@
-import { SettingsRoute } from "@/app/client-routes";
+"use client";
+
+import { ProtectedRoute } from "@/app/ProtectedRoute";
+import { SettingsPage as SettingsPageContent } from "@/features/settings/pages/SettingsPage";
 
 export default function SettingsPage() {
-  return <SettingsRoute />;
+  return (
+    <ProtectedRoute>
+      <SettingsPageContent />
+    </ProtectedRoute>
+  );
 }

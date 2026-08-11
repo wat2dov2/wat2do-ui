@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
-import { AppPage } from "@/app/app-page";
 import imgAuthLogo from "@/assets/38e8096a28295e8dcc0e5020d0a5f3dd85d5f019.png";
 import { AuthEntryPage } from "@/features/auth/pages/AuthEntryPage";
 import { getSchoolBrowseSnapshot } from "@/features/events/api/eventFeed.server";
@@ -82,13 +81,11 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   ]);
 
   return (
-    <AppPage authFlow chrome={false}>
-      <AuthEntryPage
-        previewEvents={previewEvents}
-        initialEmail={firstSearchParam(query.email)}
-        invitationToken={firstSearchParam(query.token)}
-        initialReturnTo={firstSearchParam(query[QP.RETURN_TO])}
-      />
-    </AppPage>
+    <AuthEntryPage
+      previewEvents={previewEvents}
+      initialEmail={firstSearchParam(query.email)}
+      invitationToken={firstSearchParam(query.token)}
+      initialReturnTo={firstSearchParam(query[QP.RETURN_TO])}
+    />
   );
 }

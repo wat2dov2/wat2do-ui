@@ -1,5 +1,5 @@
-import { OrganizationPanelPostersPageRoute } from "@/app/client-routes";
+import { OrganizationPanelPostersRoute } from "@/app/routes/organizationPanelRoutes";
 
 export default function OrganizationPanelPostersPage() {
-  return <OrganizationPanelPostersPageRoute />;
+  return <OrganizationPanelPostersRoute />;
 }

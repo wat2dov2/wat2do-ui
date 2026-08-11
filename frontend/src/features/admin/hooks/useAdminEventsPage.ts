@@ -5,10 +5,7 @@ import {
 } from "@/features/admin/utils/eventFilters";
 import { useAdminStore } from "@/features/admin/store/admin.store";
 import type { Event } from "@/shared/types";
-import { SCROLL_INTO_VIEW_DELAY_MS } from "@/shared/constants/ui";
-import { QP } from "@/shared/constants/queryParams";
 import { usePagination } from "@/shared/hooks";
-import { useMutableSearchParams } from "@/shared/hooks/useMutableSearchParams";
 
 interface UseAdminEventsPageOptions {
   events: Event[];
@@ -23,8 +20,7 @@ export function useAdminEventsPage({
   const [selectedCategory, setSelectedCategoryState] = useState("");
   const [showReportedOnly, setShowReportedOnly] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
-  const [highlightedEventId, setHighlightedEventId] = useState<number | null>(null);
-  const [searchParams, setSearchParams] = useMutableSearchParams();
+  const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
   const reportedEventIds = useAdminStore((s) => s.reportedEventIds);
   const fetchReportedEventIds = useAdminStore((s) => s.fetchReportedEventIds);
 
@@ -35,37 +31,10 @@ export function useAdminEventsPage({
     );
   }, [fetchReportedEventIds]);
 
-  const eventIdParam = searchParams.get(QP.EVENT_ID);
   const selectedEvent = useMemo(() => {
-    if (eventIdParam) {
-      const eventId = parseInt(eventIdParam, 10);
-      if (!isNaN(eventId)) {
-        return events.find((e) => e.id === eventId) || null;
-      }
-    }
-    return null;
-  }, [eventIdParam, events]);
-
-  useEffect(() => {
-    if (!eventIdParam) return;
-    const eventId = parseInt(eventIdParam, 10);
-    if (isNaN(eventId)) return;
-
-    let timeoutId: ReturnType<typeof setTimeout> | undefined;
-    const rafId = requestAnimationFrame(() => {
-      setHighlightedEventId(eventId);
-      timeoutId = setTimeout(() => {
-        const element = document.getElementById(`event-${eventId}`);
-        if (element) {
-          element.scrollIntoView({ behavior: "smooth", block: "center" });
-        }
-      }, SCROLL_INTO_VIEW_DELAY_MS);
-    });
-    return () => {
-      cancelAnimationFrame(rafId);
-      if (timeoutId !== undefined) clearTimeout(timeoutId);
-    };
-  }, [eventIdParam]);
+    if (selectedEventId == null) return null;
+    return events.find((event) => event.id === selectedEventId) ?? null;
+  }, [events, selectedEventId]);
 
   const categories = useMemo(() => {
     return getEventCategories(events);
@@ -99,15 +68,14 @@ export function useAdminEventsPage({
     selectedCategory,
     showReportedOnly,
     deleteConfirmId,
-    highlightedEventId,
     currentPage,
     selectedEvent,
     categories,
     filteredEvents,
     paginatedEvents,
     totalPages,
-    searchParams,
-    setSearchParams,
+    selectEvent: setSelectedEventId,
+    clearSelectedEvent: () => setSelectedEventId(null),
     setSearchQuery: (query: string) => {
       setSearchQueryState(query);
       setCurrentPage(1);

@@ -41,7 +41,7 @@ const slideFrame: React.CSSProperties = {
 
 const CARD_INSET = 60;
 const CARD_WIDTH = SLIDE_WIDTH - CARD_INSET * 2;
-const CARD_IMAGE_HEIGHT = 840;
+const CARD_IMAGE_HEIGHT = 780;
 
 /**
  * One event, rendered as the app's event card in dark mode.
@@ -109,7 +109,7 @@ export function EventSlideTemplate({ model }: { model: EventSlideModel }) {
                 color: DARK.categoryInk,
                 borderRadius: 36,
                 padding: "10px 22px",
-                fontSize: 30,
+                fontSize: 34,
                 fontWeight: 700,
               }}
             >
@@ -127,7 +127,7 @@ export function EventSlideTemplate({ model }: { model: EventSlideModel }) {
                 color: DARK.foreground,
                 borderRadius: 36,
                 padding: "10px 22px",
-                fontSize: 30,
+                fontSize: 34,
                 fontWeight: 700,
               }}
             >
@@ -136,14 +136,14 @@ export function EventSlideTemplate({ model }: { model: EventSlideModel }) {
           </SlideBadgeMask>
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", padding: "36px 40px 40px 40px" }}>
+        <div style={{ display: "flex", flexDirection: "column", padding: "32px 40px 36px 40px" }}>
           <div
             style={{
               display: "flex",
-              fontSize: 56,
+              fontSize: 64,
               fontWeight: 600,
-              lineHeight: 1.1,
-              maxHeight: 130,
+              lineHeight: 1.05,
+              maxHeight: 136,
               overflow: "hidden",
             }}
           >
@@ -155,15 +155,15 @@ export function EventSlideTemplate({ model }: { model: EventSlideModel }) {
               display: "flex",
               alignItems: "flex-end",
               justifyContent: "space-between",
-              marginTop: 30,
+              marginTop: 24,
             }}
           >
             <div style={{ display: "flex", flexDirection: "column", color: DARK.mutedForeground }}>
-              <div style={{ display: "flex", fontSize: 32 }}>{model.dateLine}</div>
+              <div style={{ display: "flex", fontSize: 38 }}>{model.dateLine}</div>
               {model.timeLine ? (
-                <div style={{ display: "flex", marginTop: 8, fontSize: 32 }}>{model.timeLine}</div>
+                <div style={{ display: "flex", marginTop: 8, fontSize: 38 }}>{model.timeLine}</div>
               ) : null}
-              <div style={{ display: "flex", marginTop: 8, fontSize: 32 }}>{model.location}</div>
+              <div style={{ display: "flex", marginTop: 8, fontSize: 38 }}>{model.location}</div>
             </div>
 
             {model.badges.length > 0 ? (
@@ -185,7 +185,7 @@ export function EventSlideTemplate({ model }: { model: EventSlideModel }) {
                       color: DARK.foreground,
                       borderRadius: 16,
                       padding: "6px 16px",
-                      fontSize: 26,
+                      fontSize: 30,
                       fontWeight: 500,
                     }}
                   >
@@ -207,7 +207,7 @@ const COVER_DOODLE_COLUMNS = 6;
 const COVER_DOODLE_CELL_SIZE = 210;
 const COVER_DOODLE_ICON_SIZE = 72;
 /** The poster fan sits on a fixed baseline so the copy above it never reflows. */
-const FAN_TOP = 800;
+const FAN_TOP = 760;
 const FAN_CARD_WIDTH = 280;
 const FAN_CARD_HEIGHT = 392;
 /** How far the outer cards may dip below the baseline as the fan curves. */

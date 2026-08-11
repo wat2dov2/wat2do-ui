@@ -200,7 +200,7 @@ export function EventList({
   // Early returns AFTER all hooks
   if (isLoading) {
     return (
-      <div className="space-y-5">
+      <div className="space-y-5" aria-busy="true">
         <section className="space-y-2.5">
           <Skeleton className="h-5 w-28 rounded-lg" />
           <div className={CARD_GRID_CLASS}>

@@ -60,7 +60,7 @@ export function OrganizationList({
 
   if (isLoading) {
     return (
-      <div className={CARD_GRID_CLASS}>
+      <div className={CARD_GRID_CLASS} aria-busy="true">
         {Array.from({ length: 12 }).map((_, index) => (
           <OrganizationCardSkeleton key={index} />
         ))}

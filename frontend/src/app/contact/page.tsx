@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { AppPage } from "@/app/app-page";
 import imgContactHero from "@/assets/contact_hero.png";
 import { ContactPage as ContactPageContent } from "@/features/contact/pages/ContactPage";
 import {
@@ -25,9 +24,5 @@ export const metadata: Metadata = buildPublicPageMetadata({
 });
 
 export default function ContactPage() {
-  return (
-    <AppPage>
-      <ContactPageContent />
-    </AppPage>
-  );
+  return <ContactPageContent />;
 }

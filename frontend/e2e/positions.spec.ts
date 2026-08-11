@@ -137,12 +137,46 @@ test("browses, filters, and searches open organization positions", async ({
     .getByRole("button", { name: "View Design Lead position details" })
     .click();
   const drawer = page.getByRole("dialog");
+  await expect(drawer).toHaveCSS("animation-name", "slideFromBottom");
+  await expect(page.locator('[data-slot="drawer-overlay"]')).toHaveCSS(
+    "animation-name",
+    "fadeIn",
+  );
   await expect(
     drawer.getByRole("heading", { name: "Design Lead" }),
   ).toBeVisible();
   await expect(
     drawer.getByRole("heading", { name: "Requirements" }),
   ).toBeVisible();
+  const detailGrid = drawer.locator('[data-slot="form-grid"]').first();
+  const detailColumns = detailGrid.locator(":scope > *");
+  await expect
+    .poll(async () => {
+      const imageBox = await detailColumns.nth(0).boundingBox();
+      const contentBox = await detailColumns.nth(1).boundingBox();
+      return imageBox !== null && contentBox !== null && imageBox.x < contentBox.x;
+    })
+    .toBe(true);
+
+  const organizationLink = drawer.getByRole("link", {
+    name: "UW Design Club",
+  });
+  await expect
+    .poll(() =>
+      organizationLink.evaluate((link) => {
+        const parent = link.parentElement;
+        return (
+          parent !== null &&
+          link.getBoundingClientRect().width < parent.getBoundingClientRect().width
+        );
+      }),
+    )
+    .toBe(true);
+
+  const deadlineItem = drawer
+    .getByText("Application deadline")
+    .locator('xpath=ancestor::*[@data-slot="item"]');
+  await expect(deadlineItem).toHaveAttribute("data-variant", "default");
   await page.keyboard.press("Escape");
 
   await page

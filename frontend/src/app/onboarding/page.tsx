@@ -1,5 +1,7 @@
-import { OnboardingRoute } from "@/app/client-routes";
+"use client";
+
+import { OnboardingPage as OnboardingPageContent } from "@/features/onboarding/pages/OnboardingPage";
 
 export default function OnboardingPage() {
-  return <OnboardingRoute />;
+  return <OnboardingPageContent />;
 }

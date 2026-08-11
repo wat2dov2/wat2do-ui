@@ -478,9 +478,122 @@ async function seedQrData(
   );
 }
 
+// ── Global navigation progress ────────────────────────────────────────
+
+test.describe("Navigation progress", () => {
+  test("starts immediately and waits for destination loading UI to clear", async ({
+    page,
+  }) => {
+    await page.goto(BASE);
+    await page.evaluate(() => {
+      const link = document.createElement("a");
+      link.href = "/contact";
+      link.dataset.testid = "controlled-navigation-link";
+      link.textContent = "Navigate";
+      link.addEventListener("click", (event) => event.preventDefault());
+      document.body.append(link);
+    });
+
+    const progress = page.locator('[data-slot="navigation-progress"]');
+    const immediateState = await page
+      .getByTestId("controlled-navigation-link")
+      .evaluate((link) => {
+        (link as HTMLAnchorElement).click();
+        return document
+          .querySelector('[data-slot="navigation-progress"]')
+          ?.getAttribute("data-state");
+      });
+
+    expect(immediateState).toBe("priming");
+    await expect(progress).toHaveAttribute(
+      "data-state",
+      /priming|starting|loading/,
+    );
+    await expect(progress).toHaveCSS("height", "2px");
+    await expect(progress).toHaveCSS("top", "0px");
+    await expect(progress).toHaveCSS("opacity", "1");
+    await expect(progress).toHaveCSS("transition-duration", "0s");
+
+    await page.evaluate(() => {
+      const unrelatedSkeleton = document.createElement("div");
+      unrelatedSkeleton.dataset.slot = "skeleton";
+      unrelatedSkeleton.dataset.testid = "persistent-skeleton";
+      document.body.append(unrelatedSkeleton);
+
+      const loadingState = document.createElement("div");
+      loadingState.setAttribute("aria-busy", "true");
+      loadingState.dataset.testid = "controlled-loading-state";
+      document.body.append(loadingState);
+      window.history.pushState({}, "", "/?navigation-progress=complete");
+    });
+
+    await page.waitForTimeout(400);
+    await expect(progress).toHaveAttribute(
+      "data-state",
+      /priming|starting|loading/,
+    );
+
+    await page.getByTestId("controlled-loading-state").evaluate((element) => {
+      element.remove();
+    });
+    await expect(progress).toHaveAttribute("data-state", "idle");
+    await expect(page.getByTestId("persistent-skeleton")).toHaveCount(1);
+  });
+});
+
 // ── Workflow 1: Auth Page ─────────────────────────────────────────────
 
 test.describe("Auth Page", () => {
+  test("keeps the cached session when a deploy interrupts a 401 retry", async ({
+    page,
+  }) => {
+    let refreshRequestCount = 0;
+    await page.route(url => apiPath(url) === "/auth/refresh", async (route) => {
+      refreshRequestCount += 1;
+      if (refreshRequestCount === 1) {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            access_token: "expired-access-token",
+            token_type: "bearer",
+            expires_in: 1,
+            user_id: "mock-user-id",
+          }),
+        });
+        return;
+      }
+
+      await route.fulfill({
+        status: 503,
+        contentType: "application/json",
+        body: JSON.stringify({ detail: "Service restarting" }),
+      });
+    });
+    await page.route(url => apiPath(url) === "/users/me", async (route) => {
+      await route.fulfill({
+        status: 401,
+        contentType: "application/json",
+        body: JSON.stringify({ detail: "Access token expired" }),
+      });
+    });
+    await page.addInitScript(
+      ({ emailKey, email }) => {
+        window.localStorage.setItem(emailKey, JSON.stringify(email));
+      },
+      { emailKey: STORAGE_KEYS.USER_EMAIL, email: TEST_EMAIL },
+    );
+
+    await page.goto(BASE);
+
+    await expect.poll(() => refreshRequestCount).toBe(2);
+    await expect
+      .poll(() =>
+        page.evaluate((emailKey) => window.localStorage.getItem(emailKey), STORAGE_KEYS.USER_EMAIL),
+      )
+      .toBe(JSON.stringify(TEST_EMAIL));
+  });
+
   test("keeps the server-rendered headline mounted through app readiness", async ({
     page,
   }) => {
@@ -1123,8 +1236,16 @@ test.describe("Events Page", () => {
 
     const card = page.locator('article[data-event-id="1"]').first();
     await expect(card).toBeVisible();
-    await card.click();
-    await expect(page).toHaveURL(/eventId=1/);
+    const openedSynchronously = await card.evaluate((element) => {
+      (element as HTMLElement).click();
+      return (
+        document
+          .querySelector('[data-slot="drawer-content"]')
+          ?.getAttribute("data-state") === "open"
+      );
+    });
+    expect(openedSynchronously).toBe(true);
+    await expect(page).toHaveURL(`${BASE}/`);
 
     const eventDrawer = page.getByRole("dialog", { name: "Tech Career Fair" });
     const hostSection = eventDrawer.locator('[data-slot="event-host"]');
@@ -1142,7 +1263,6 @@ test.describe("Events Page", () => {
     await expect(page.getByRole("button", { name: "Share on LINE" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Share on WeChat" })).toBeVisible();
     await expect(eventDrawer.getByRole("button", { name: "Delete" })).toHaveCount(0);
-    await expect(page).toHaveURL(/eventId=1/);
 
     await page.evaluate(() => {
       Object.defineProperty(window, "open", {
@@ -1202,7 +1322,6 @@ test.describe("Events Page", () => {
     await expect(page.getByRole("heading", { name: "Share" })).not.toBeVisible();
 
     await eventDrawer.getByRole("button", { name: "Report" }).click();
-    await expect(page).toHaveURL(/eventId=1/);
 
     const reportDialog = page.getByRole("dialog", { name: "Report event" });
     await reportDialog
@@ -1443,12 +1562,11 @@ test.describe("Events Page", () => {
       .toBeGreaterThan(0);
   });
 
-  test("scrolls and closes event details opened from a direct eventId link", async ({ page }) => {
+  test("scrolls and closes event details opened from a card", async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 320 });
-    await page.goto(`${BASE}/?eventId=1`);
-    await page.waitForTimeout(3000);
+    await page.goto(BASE);
+    await page.locator('article[data-event-id="1"]').click();
 
-    await expect(page).toHaveURL(/eventId=1/);
     const drawer = page.getByRole("dialog");
     const drawerBody = drawer.locator('[data-slot="drawer-body"]');
     await expect(drawer).toBeVisible();
@@ -1467,23 +1585,19 @@ test.describe("Events Page", () => {
       .poll(() => drawerBody.evaluate(element => element.scrollTop))
       .toBeGreaterThan(0);
 
-    await page.getByRole("button", { name: "Close" }).click();
+    const closedSynchronously = await page
+      .getByRole("button", { name: "Close" })
+      .evaluate((button) => {
+        (button as HTMLButtonElement).click();
+        return (
+          document
+            .querySelector('[data-slot="drawer-content"]')
+            ?.getAttribute("data-state") !== "open"
+        );
+      });
 
-    await expect(page).not.toHaveURL(/eventId=1/);
+    expect(closedSynchronously).toBe(true);
     await expect(page.getByRole("dialog")).not.toBeVisible();
-  });
-
-  test("browser back closes event details opened from a card", async ({ page }) => {
-    await page.goto(BASE);
-
-    await page.locator('article[data-event-id="1"]').click();
-    await expect(page).toHaveURL(/eventId=1/);
-    await expect(page.getByRole("dialog", { name: "Tech Career Fair" })).toBeVisible();
-
-    await page.goBack();
-
-    await expect(page).not.toHaveURL(/eventId=/);
-    await expect(page.getByRole("dialog", { name: "Tech Career Fair" })).toHaveCount(0);
   });
 
   test("shows similar events below a dedicated event page", async ({ page }) => {
@@ -1734,7 +1848,8 @@ test.describe("Events Page", () => {
       ).toBeDisabled();
     };
 
-    await page.goto(`${BASE}/?eventId=1`);
+    await page.goto(BASE);
+    await page.locator('article[data-event-id="1"]').click();
     await assertEventDetails();
     await assertInlineRegistration();
 
@@ -1806,7 +1921,8 @@ test.describe("Events Page", () => {
       });
     });
 
-    await page.goto(`${BASE}/?eventId=1`);
+    await page.goto(BASE);
+    await page.locator('article[data-event-id="1"]').click();
 
     const drawer = page.getByRole("dialog", { name: "Tech Career Fair" });
     await expect(drawer.getByText("Full detail loaded", { exact: true })).toBeVisible();
@@ -1883,7 +1999,8 @@ test.describe("Events Page", () => {
       });
     });
 
-    await page.goto(`${BASE}/?eventId=1`);
+    await page.goto(BASE);
+    await page.locator('article[data-event-id="1"]').click();
 
     const drawer = page.getByRole("dialog", { name: "Recurring Workshop" });
     const extraDatesButton = drawer.getByRole("button", { name: "+1 date" });

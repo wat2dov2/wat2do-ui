@@ -1,5 +1,5 @@
-import { AdminDiagnosticsPageRoute } from "@/app/client-routes";
+import { AdminDiagnosticsRoute } from "@/app/routes/adminRoutes";
 
 export default function AdminDiagnosticsPage() {
-  return <AdminDiagnosticsPageRoute />;
+  return <AdminDiagnosticsRoute />;
 }

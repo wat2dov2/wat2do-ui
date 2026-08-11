@@ -132,13 +132,16 @@ export async function getSchoolBrowseSnapshot(school: string): Promise<SchoolBro
     },
   };
 
-  const firstPage = await fetchEventsPage(resolvedSchool, 1, fetchOptions);
-  const allItems = [...firstPage.items];
-
-  for (let page = 2; page <= firstPage.total_pages; page += 1) {
-    const nextPage = await fetchEventsPage(resolvedSchool, page, fetchOptions);
-    allItems.push(...nextPage.items);
-  }
+  const [firstPage, promotedEvents] = await Promise.all([
+    fetchEventsPage(resolvedSchool, 1, fetchOptions),
+    fetchPromotedEvents(resolvedSchool, fetchOptions),
+  ]);
+  const remainingPages = await Promise.all(
+    Array.from({ length: Math.max(firstPage.total_pages - 1, 0) }, (_, index) =>
+      fetchEventsPage(resolvedSchool, index + 2, fetchOptions),
+    ),
+  );
+  const allItems = [firstPage, ...remainingPages].flatMap((page) => page.items);
 
   const feed: PaginatedEventsResponse = {
     items: allItems,
@@ -148,8 +151,6 @@ export async function getSchoolBrowseSnapshot(school: string): Promise<SchoolBro
     total_pages: 1,
     latest_added_event: firstPage.latest_added_event ?? null,
   };
-
-  const promotedEvents = await fetchPromotedEvents(resolvedSchool, fetchOptions);
 
   return { feed, promotedEvents };
 }

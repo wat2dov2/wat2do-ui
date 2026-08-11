@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * Organization panel route handlers.
  *

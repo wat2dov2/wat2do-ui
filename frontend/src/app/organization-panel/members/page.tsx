@@ -1,5 +1,5 @@
-import { OrganizationPanelMembersPageRoute } from "@/app/client-routes";
+import { OrganizationPanelMembersRoute } from "@/app/routes/organizationPanelRoutes";
 
 export default function OrganizationPanelMembersPage() {
-  return <OrganizationPanelMembersPageRoute />;
+  return <OrganizationPanelMembersRoute />;
 }

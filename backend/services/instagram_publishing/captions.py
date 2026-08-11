@@ -16,7 +16,7 @@ def build_caption(events: list[dict[str, Any]], school: str) -> str:
     """Build a factual caption from canonical event data."""
     timezone = ZoneInfo(resolve_school_timezone(school))
     school_slug = canonical_school_key(school)
-    school_url = f"https://{school_slug}.wat2do.io"
+    school_hostname = f"{school_slug}.wat2do.io"
     lines = [
         f"Fresh events at {school_slug}, added to Wat2Do in the last 24 hours 👀",
         "",
@@ -46,7 +46,7 @@ def build_caption(events: list[dict[str, Any]], school: str) -> str:
             "",
             (
                 "For final, up-to-date dates, times, locations, registration details, "
-                f"and event changes, visit {school_url}."
+                f"and event changes, visit {school_hostname}."
             ),
             "",
             f"#{school_slug.replace('-', '')} #CampusEvents #Wat2Do",

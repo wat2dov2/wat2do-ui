@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
-import { AppPage } from "@/app/app-page";
 import imgContactHero from "@/assets/contact_hero.png";
 import { getOrganizationDirectorySnapshot } from "@/features/organizations/api/organizationDirectory.server";
 import type { PaginatedOrganizationsResponse } from "@/features/organizations/api/organizations.api";
@@ -70,11 +69,9 @@ export default async function OrganizationsPage() {
   const initialDirectory = await loadInitialDirectory(school);
 
   return (
-    <AppPage>
-      <OrganizationsPageContent
-        initialDirectory={initialDirectory}
-        initialSchool={school}
-      />
-    </AppPage>
+    <OrganizationsPageContent
+      initialDirectory={initialDirectory}
+      initialSchool={school}
+    />
   );
 }

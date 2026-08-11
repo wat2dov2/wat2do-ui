@@ -50,7 +50,7 @@ def test_checked_in_controlbox_is_valid() -> None:
     assert controlbox.instagram_publishing.new_event_window_hours == 24
     assert controlbox.instagram_publishing.maximum_event_slides == 9
     assert controlbox.instagram_publishing.token_refresh_lead_days == 14
-    assert controlbox.promoter_program.rate_cents == 25
+    assert controlbox.promoter_program.rate_cents == 100
     assert controlbox.promoter_program.maximum_active_posters == 50
     assert controlbox.promoter_program.payout_day_of_month == 1
     assert controlbox.promoter_program.quiet_poster_days == 30

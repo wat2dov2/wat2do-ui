@@ -293,11 +293,11 @@ async function installPromoterApiMocks(
           lifetime_unique_scans: index === 0 ? 8 : 0,
           period_unique_scans: index === 0 ? 6 : 0,
           period_creditable_scans: index === 0 ? 5 : 0,
-          pending_cents: index === 0 ? 125 : 0,
+          pending_cents: index === 0 ? 500 : 0,
         })),
         period_creditable_scans: posters.length > 0 ? 5 : 0,
         period_unqualified_scans: posters.length > 0 ? 1 : 0,
-        pending_cents: posters.length > 0 ? 125 : 0,
+        pending_cents: posters.length > 0 ? 500 : 0,
         lifetime_paid_cents: 500,
         active_slots_used: posters.length,
         active_slots_limit: 50,
@@ -502,12 +502,12 @@ async function installActivationDedupeMocks(page: Page) {
             lifetime_unique_scans: confirmedVisitors.size,
             period_unique_scans: confirmedVisitors.size,
             period_creditable_scans: Math.max(0, confirmedVisitors.size - 1),
-            pending_cents: Math.max(0, confirmedVisitors.size - 1) * 25,
+            pending_cents: Math.max(0, confirmedVisitors.size - 1) * 100,
           },
         ],
         period_creditable_scans: Math.max(0, confirmedVisitors.size - 1),
         period_unqualified_scans: confirmedVisitors.size > 0 ? 1 : 0,
-        pending_cents: Math.max(0, confirmedVisitors.size - 1) * 25,
+        pending_cents: Math.max(0, confirmedVisitors.size - 1) * 100,
         lifetime_paid_cents: 0,
         active_slots_used: 1,
         active_slots_limit: 50,
@@ -749,7 +749,7 @@ test.describe("Promoter poster campaign", () => {
     const termsDialog = page.getByTestId("promoter-terms-dialog");
     const acceptTerms = page.getByTestId("promoter-terms-accept");
     await expect(termsDialog).toContainText("at least 5 seconds");
-    await expect(termsDialog).toContainText(/\$0\.25/);
+    await expect(termsDialog).toContainText(/\$1\.00/);
     await expect(termsDialog).toContainText(
       "on the 1st of the following month",
     );
@@ -934,7 +934,7 @@ test.describe("Promoter poster campaign", () => {
 
     await page.goto(`${BASE_URL}/posters`);
     posterCard = page.getByTestId(`poster-card-${scanApi.posterId}`);
-    await expect(posterCard).toContainText("$0.25");
+    await expect(posterCard).toContainText("$1.00");
     await expect(posterCard).toContainText("2");
   });
 

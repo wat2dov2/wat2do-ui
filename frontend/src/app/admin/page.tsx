@@ -1,5 +1,5 @@
-import { AdminRoute } from "@/app/client-routes";
+import { AdminPanelRoute } from "@/app/routes/adminRoutes";
 
 export default function AdminPage() {
-  return <AdminRoute />;
+  return <AdminPanelRoute />;
 }

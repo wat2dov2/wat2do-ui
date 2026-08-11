@@ -52,7 +52,9 @@ export function SiteBannerStrip({
       data-slot="site-banner"
       className="fixed inset-x-0 top-0 z-nav flex h-9 items-center justify-center gap-2 border-b border-border bg-surface px-4 text-xs text-foreground sm:text-sm"
     >
-      <span className="min-w-0 truncate">{message}</span>
+      <span className="min-w-0 max-w-[calc(100dvw_-_10rem)] truncate">
+        {message}
+      </span>
       <Link
         href={ctaHref}
         className="shrink-0 font-semibold underline underline-offset-4"

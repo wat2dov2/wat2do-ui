@@ -1,0 +1,544 @@
+{
+  "schema_version": 1,
+  "school": {
+    "slug": "columbia",
+    "name": "Columbia University",
+    "primary_color": "#B9D9EB",
+    "secondary_color": "#0B2B3C",
+    "timezone": "America/New_York",
+    "site_url": "http://columbia.localhost:3000"
+  },
+  "term": {
+    "label": "FALL '26",
+    "start": "2026-09-08",
+    "end": "2026-12-23"
+  },
+  "claims": {
+    "observed_club_count": 222,
+    "all_time_event_count": 973
+  },
+  "background_images": [
+    "https://wat2do.io/media/event-images/6a5db1179d454e3895ae485fe600ec85.jpg",
+    "https://wat2do.io/media/event-images/2a73fc36de21434985fcbf3abbae1b1b.jpg",
+    "https://wat2do.io/media/event-images/3a4deaf154a443eab87fd4462abfa0af.jpg",
+    "https://wat2do.io/media/event-images/dcd0e5ccd5b74b029948b930098e29be.jpg",
+    "https://wat2do.io/media/event-images/4d20fac8b27c4f599b6a66df6926df98.jpg",
+    "https://wat2do.io/media/event-images/65955ae49edd4e7ba753cbaf464ea053.jpg",
+    "https://wat2do.io/media/event-images/7f173b098d924360a2c188add1e01f17.jpg",
+    "https://wat2do.io/media/event-images/1446990bc89d45d58e9d4f007b6de329.jpg",
+    "https://wat2do.io/media/event-images/de6b43a9cc084a4cb9044a6a057b73a3.jpg",
+    "https://wat2do.io/media/event-images/f17ffe44c32f4758b31205bbdb8949aa.jpg",
+    "https://wat2do.io/media/event-images/29c8156c42e147e5a7a79c87a024f1f0.jpg",
+    "https://wat2do.io/media/event-images/0d491eb674de41c097a4b7719d519b8e.jpg",
+    "https://wat2do.io/media/event-images/0bfdb288ad1c4f8688e93e2872bf96ae.jpg",
+    "https://wat2do.io/media/event-images/7e10f78b0fa1457dbea840ca2884b1f5.jpg",
+    "https://wat2do.io/media/event-images/1250d09baee542c286f4aaa3289454f5.jpg",
+    "https://wat2do.io/media/event-images/cd85461596914a8e996012599eea9976.jpg",
+    "https://wat2do.io/media/event-images/1a78c09dcf1643fab279faf4dd76a323.jpg",
+    "https://wat2do.io/media/event-images/1354a331bf414f8bbb985534288a2b76.jpg",
+    "https://wat2do.io/media/event-images/67b06cbfbc6d43c6aba3662944cea6f1.jpg",
+    "https://wat2do.io/media/event-images/bc265fe8d556458886d6da65d0f1a007.jpg",
+    "https://wat2do.io/media/event-images/6ae802af849e45218d9d504c0e811067.jpg",
+    "https://wat2do.io/media/event-images/e55f942ca2954a7d9acf3c4d6bb72951.jpg",
+    "https://wat2do.io/media/event-images/8447a1b842014998bbf45be372c73471.jpg",
+    "https://wat2do.io/media/event-images/db4801cc8e704ae29d5681fee854c55e.jpg",
+    "https://wat2do.io/media/event-images/4a98f03aaae841cf9223a92fbd5db920.jpg",
+    "https://wat2do.io/media/event-images/c4943c5bdfb64675bad3f200abf082f5.jpg",
+    "https://wat2do.io/media/event-images/f8d8cbe4432f4578868d0234b0dd7994.jpg",
+    "https://wat2do.io/media/event-images/f9aa4d815fd74c06b7e4b6dc4f6592a3.jpg",
+    "https://wat2do.io/media/event-images/fe0d9d67a9f84e17aadbd70b3a417160.jpg",
+    "https://wat2do.io/media/event-images/e7e6c478b8c84372ad2c55ff83f2eca6.jpg",
+    "https://wat2do.io/media/event-images/d531342638a74553bda0bbbe5e09e2bc.jpg",
+    "https://wat2do.io/media/event-images/9269a3de10a847fcb4add9c3281a4170.jpg",
+    "https://wat2do.io/media/event-images/08027746f86349aca3f389a95c4a9ff3.jpg",
+    "https://wat2do.io/media/event-images/0b327cae99af48a3ae71f751ecf4d537.jpg",
+    "https://wat2do.io/media/event-images/13b48f2fb56d4fe480be3690444d4533.jpg",
+    "https://wat2do.io/media/event-images/d48f9c37aae64bdaaf6695057b030267.jpg",
+    "https://wat2do.io/media/event-images/013845e4eb39466f99967c812353da9c.jpg",
+    "https://wat2do.io/media/event-images/86d035fc5c5848998f13b11183ef0b5c.jpg",
+    "https://wat2do.io/media/event-images/7ee4058aab5d49b6bfbaa96dbd3c963a.jpg",
+    "https://wat2do.io/media/event-images/d5fdec9e36db46c592f5182ce71077e0.jpg",
+    "https://wat2do.io/media/event-images/b4585d108a2a4befb6145ab7c10aa65c.jpg",
+    "https://wat2do.io/media/event-images/9e5630ecab7d4f1c82d75ea48dfe49ff.jpg",
+    "https://wat2do.io/media/event-images/52d613f87f7347a1a52597d719de47f6.jpg",
+    "https://wat2do.io/media/event-images/9f0a2415c9084a56a855c19c8c3fedbc.jpg",
+    "https://wat2do.io/media/event-images/e855b6bb16294a3cb8294bc1237ed11c.jpg",
+    "https://wat2do.io/media/event-images/ea888e2a319649589c5d91ae8ed5a775.jpg",
+    "https://wat2do.io/media/event-images/a50aa57c62d5477e9f54d83c7ae5d3a3.jpg",
+    "https://wat2do.io/media/event-images/934c2f2a19d34e47807140556d10e51c.jpg"
+  ],
+  "recap": {
+    "event_count": 0,
+    "top_clubs": [],
+    "food_linked_event_count": 0,
+    "food_mentions": [],
+    "food_examples": [],
+    "busiest_date": {
+      "date": "2026-09-08",
+      "label": "September 8",
+      "count": 0
+    },
+    "busiest_weekday": "Monday",
+    "quietest_weekday": "Monday",
+    "heatmap": [
+      {
+        "date": "2026-09-08",
+        "count": 0
+      },
+      {
+        "date": "2026-09-09",
+        "count": 0
+      },
+      {
+        "date": "2026-09-10",
+        "count": 0
+      },
+      {
+        "date": "2026-09-11",
+        "count": 0
+      },
+      {
+        "date": "2026-09-12",
+        "count": 0
+      },
+      {
+        "date": "2026-09-13",
+        "count": 0
+      },
+      {
+        "date": "2026-09-14",
+        "count": 0
+      },
+      {
+        "date": "2026-09-15",
+        "count": 0
+      },
+      {
+        "date": "2026-09-16",
+        "count": 0
+      },
+      {
+        "date": "2026-09-17",
+        "count": 0
+      },
+      {
+        "date": "2026-09-18",
+        "count": 0
+      },
+      {
+        "date": "2026-09-19",
+        "count": 0
+      },
+      {
+        "date": "2026-09-20",
+        "count": 0
+      },
+      {
+        "date": "2026-09-21",
+        "count": 0
+      },
+      {
+        "date": "2026-09-22",
+        "count": 0
+      },
+      {
+        "date": "2026-09-23",
+        "count": 0
+      },
+      {
+        "date": "2026-09-24",
+        "count": 0
+      },
+      {
+        "date": "2026-09-25",
+        "count": 0
+      },
+      {
+        "date": "2026-09-26",
+        "count": 0
+      },
+      {
+        "date": "2026-09-27",
+        "count": 0
+      },
+      {
+        "date": "2026-09-28",
+        "count": 0
+      },
+      {
+        "date": "2026-09-29",
+        "count": 0
+      },
+      {
+        "date": "2026-09-30",
+        "count": 0
+      },
+      {
+        "date": "2026-10-01",
+        "count": 0
+      },
+      {
+        "date": "2026-10-02",
+        "count": 0
+      },
+      {
+        "date": "2026-10-03",
+        "count": 0
+      },
+      {
+        "date": "2026-10-04",
+        "count": 0
+      },
+      {
+        "date": "2026-10-05",
+        "count": 0
+      },
+      {
+        "date": "2026-10-06",
+        "count": 0
+      },
+      {
+        "date": "2026-10-07",
+        "count": 0
+      },
+      {
+        "date": "2026-10-08",
+        "count": 0
+      },
+      {
+        "date": "2026-10-09",
+        "count": 0
+      },
+      {
+        "date": "2026-10-10",
+        "count": 0
+      },
+      {
+        "date": "2026-10-11",
+        "count": 0
+      },
+      {
+        "date": "2026-10-12",
+        "count": 0
+      },
+      {
+        "date": "2026-10-13",
+        "count": 0
+      },
+      {
+        "date": "2026-10-14",
+        "count": 0
+      },
+      {
+        "date": "2026-10-15",
+        "count": 0
+      },
+      {
+        "date": "2026-10-16",
+        "count": 0
+      },
+      {
+        "date": "2026-10-17",
+        "count": 0
+      },
+      {
+        "date": "2026-10-18",
+        "count": 0
+      },
+      {
+        "date": "2026-10-19",
+        "count": 0
+      },
+      {
+        "date": "2026-10-20",
+        "count": 0
+      },
+      {
+        "date": "2026-10-21",
+        "count": 0
+      },
+      {
+        "date": "2026-10-22",
+        "count": 0
+      },
+      {
+        "date": "2026-10-23",
+        "count": 0
+      },
+      {
+        "date": "2026-10-24",
+        "count": 0
+      },
+      {
+        "date": "2026-10-25",
+        "count": 0
+      },
+      {
+        "date": "2026-10-26",
+        "count": 0
+      },
+      {
+        "date": "2026-10-27",
+        "count": 0
+      },
+      {
+        "date": "2026-10-28",
+        "count": 0
+      },
+      {
+        "date": "2026-10-29",
+        "count": 0
+      },
+      {
+        "date": "2026-10-30",
+        "count": 0
+      },
+      {
+        "date": "2026-10-31",
+        "count": 0
+      },
+      {
+        "date": "2026-11-01",
+        "count": 0
+      },
+      {
+        "date": "2026-11-02",
+        "count": 0
+      },
+      {
+        "date": "2026-11-03",
+        "count": 0
+      },
+      {
+        "date": "2026-11-04",
+        "count": 0
+      },
+      {
+        "date": "2026-11-05",
+        "count": 0
+      },
+      {
+        "date": "2026-11-06",
+        "count": 0
+      },
+      {
+        "date": "2026-11-07",
+        "count": 0
+      },
+      {
+        "date": "2026-11-08",
+        "count": 0
+      },
+      {
+        "date": "2026-11-09",
+        "count": 0
+      },
+      {
+        "date": "2026-11-10",
+        "count": 0
+      },
+      {
+        "date": "2026-11-11",
+        "count": 0
+      },
+      {
+        "date": "2026-11-12",
+        "count": 0
+      },
+      {
+        "date": "2026-11-13",
+        "count": 0
+      },
+      {
+        "date": "2026-11-14",
+        "count": 0
+      },
+      {
+        "date": "2026-11-15",
+        "count": 0
+      },
+      {
+        "date": "2026-11-16",
+        "count": 0
+      },
+      {
+        "date": "2026-11-17",
+        "count": 0
+      },
+      {
+        "date": "2026-11-18",
+        "count": 0
+      },
+      {
+        "date": "2026-11-19",
+        "count": 0
+      },
+      {
+        "date": "2026-11-20",
+        "count": 0
+      },
+      {
+        "date": "2026-11-21",
+        "count": 0
+      },
+      {
+        "date": "2026-11-22",
+        "count": 0
+      },
+      {
+        "date": "2026-11-23",
+        "count": 0
+      },
+      {
+        "date": "2026-11-24",
+        "count": 0
+      },
+      {
+        "date": "2026-11-25",
+        "count": 0
+      },
+      {
+        "date": "2026-11-26",
+        "count": 0
+      },
+      {
+        "date": "2026-11-27",
+        "count": 0
+      },
+      {
+        "date": "2026-11-28",
+        "count": 0
+      },
+      {
+        "date": "2026-11-29",
+        "count": 0
+      },
+      {
+        "date": "2026-11-30",
+        "count": 0
+      },
+      {
+        "date": "2026-12-01",
+        "count": 0
+      },
+      {
+        "date": "2026-12-02",
+        "count": 0
+      },
+      {
+        "date": "2026-12-03",
+        "count": 0
+      },
+      {
+        "date": "2026-12-04",
+        "count": 0
+      },
+      {
+        "date": "2026-12-05",
+        "count": 0
+      },
+      {
+        "date": "2026-12-06",
+        "count": 0
+      },
+      {
+        "date": "2026-12-07",
+        "count": 0
+      },
+      {
+        "date": "2026-12-08",
+        "count": 0
+      },
+      {
+        "date": "2026-12-09",
+        "count": 0
+      },
+      {
+        "date": "2026-12-10",
+        "count": 0
+      },
+      {
+        "date": "2026-12-11",
+        "count": 0
+      },
+      {
+        "date": "2026-12-12",
+        "count": 0
+      },
+      {
+        "date": "2026-12-13",
+        "count": 0
+      },
+      {
+        "date": "2026-12-14",
+        "count": 0
+      },
+      {
+        "date": "2026-12-15",
+        "count": 0
+      },
+      {
+        "date": "2026-12-16",
+        "count": 0
+      },
+      {
+        "date": "2026-12-17",
+        "count": 0
+      },
+      {
+        "date": "2026-12-18",
+        "count": 0
+      },
+      {
+        "date": "2026-12-19",
+        "count": 0
+      },
+      {
+        "date": "2026-12-20",
+        "count": 0
+      },
+      {
+        "date": "2026-12-21",
+        "count": 0
+      },
+      {
+        "date": "2026-12-22",
+        "count": 0
+      },
+      {
+        "date": "2026-12-23",
+        "count": 0
+      }
+    ],
+    "awards": [
+      {
+        "title": "Procrastinator Award",
+        "organization": "Not enough data yet",
+        "handle": "",
+        "description": "No qualifying announcement gap yet.",
+        "logo_url": ""
+      },
+      {
+        "title": "Feed the Campus Award",
+        "organization": "Not enough data yet",
+        "handle": "",
+        "description": "No structured food-linked events yet.",
+        "logo_url": ""
+      },
+      {
+        "title": "Swiss Army Club",
+        "organization": "Not enough data yet",
+        "handle": "",
+        "description": "No categorized events yet.",
+        "logo_url": ""
+      },
+      {
+        "title": "Early Planners Award",
+        "organization": "Not enough data yet",
+        "handle": "",
+        "description": "No qualifying announcement gap yet.",
+        "logo_url": ""
+      }
+    ]
+  }
+}

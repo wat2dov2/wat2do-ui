@@ -1,3 +1,5 @@
+"use client";
+
 import { useTranslation } from "react-i18next";
 import { GooseLoadingAnimation } from "@/shared/ui/goose-loading-animation";
 import { cn } from "@/shared/lib/utils";
@@ -21,6 +23,7 @@ export function LoadingPage({
 
   return (
     <div
+      data-slot="loading-page"
       className={cn(
         "flex flex-col items-center justify-center gap-3 py-24",
         className

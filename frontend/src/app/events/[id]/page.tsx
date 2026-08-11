@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { notFound, permanentRedirect } from "next/navigation";
-import { AppPage } from "@/app/app-page";
 import imgContactHero from "@/assets/contact_hero.png";
 import { getEventDetailSnapshot } from "@/features/events/api/eventFeed.server";
 import {
@@ -111,9 +110,7 @@ export default async function EventDetailsPage({ params }: EventDetailsPageProps
   return (
     <>
       {structuredData ? <StructuredData data={structuredData} /> : null}
-      <AppPage>
-        <EventDetailsPageContainer eventId={event.id} initialEvent={event} />
-      </AppPage>
+      <EventDetailsPageContainer eventId={event.id} initialEvent={event} />
     </>
   );
 }

@@ -25,7 +25,8 @@ def test_build_caption_uses_canonical_handle_time_location_and_cta(monkeypatch):
     assert "Fresh events at utm" in caption
     assert "University of Toronto Mississauga" not in caption
     assert "final, up-to-date" in caption
-    assert "https://utm.wat2do.io" in caption
+    assert "utm.wat2do.io" in caption
+    assert "https://" not in caption
 
 
 def test_build_caption_preserves_school_url_within_instagram_limit(monkeypatch):
@@ -44,4 +45,5 @@ def test_build_caption_preserves_school_url_within_instagram_limit(monkeypatch):
     caption = build_caption([event] * 9, "uwaterloo")
 
     assert len(caption) <= 2200
-    assert "https://uwaterloo.wat2do.io" in caption
+    assert "uwaterloo.wat2do.io" in caption
+    assert "https://" not in caption

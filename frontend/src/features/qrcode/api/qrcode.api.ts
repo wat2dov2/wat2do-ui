@@ -8,6 +8,7 @@ import { api, isApiError } from "@/shared/services/apiClient";
 import { isSafeUrl } from "@/shared/utils/url";
 import { ROUTES } from "@/shared/constants/routes";
 import { QP } from "@/shared/constants/queryParams";
+import { eventPagePath } from "@/features/events/lib/eventUrls";
 import { STORAGE_KEYS } from "@/shared/constants/storageKeys";
 import { StorageService } from "@/shared/services/storageService";
 import {
@@ -131,7 +132,7 @@ export function redirectFromConfig(config: QrRedirectConfig): void {
     case "event":
       if (config.destination_id != null)
         window.location.href = appendRedirectQueryParams(
-          `${ROUTES.HOME}?${QP.EVENT_ID}=${config.destination_id}`,
+          eventPagePath(Number(config.destination_id)),
           config.query_params,
         );
       break;

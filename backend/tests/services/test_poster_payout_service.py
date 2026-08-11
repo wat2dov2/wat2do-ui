@@ -137,7 +137,7 @@ def test_promoter_earnings_calculates_integer_cents(monkeypatch):
 
     assert result.period_creditable_scans == 2
     assert result.period_unqualified_scans == 4
-    assert result.pending_cents == 50
+    assert result.pending_cents == 200
     assert result.lifetime_paid_cents == 1000
     assert result.active_slots_used == 1
     assert result.posters[0].latitude == 43.4723

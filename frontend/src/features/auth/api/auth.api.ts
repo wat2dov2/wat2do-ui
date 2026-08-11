@@ -6,7 +6,7 @@
  * Refresh token is in an httpOnly cookie (managed by the backend).
  */
 
-import { api, isApiError } from "@/shared/services/apiClient";
+import { api, isApiError, refreshAccessToken } from "@/shared/services/apiClient";
 import { DEFAULT_SCHOOL } from "@/shared/constants/schools";
 import {
   loadUserEmail,
@@ -129,38 +129,6 @@ export async function logoutAPI(): Promise<void> {
 }
 
 /**
- * Why a refresh did not produce a new access token.
- *
- * "rejected" is the server saying this session is over. "unreachable" is us
- * failing to ask - a dropped connection, a timeout, a 502 while the service
- * rolls over. Only the first is a reason to sign someone out.
- */
-type RefreshOutcome = "refreshed" | "rejected" | "unreachable";
-
-async function refreshTokenAPI(): Promise<RefreshOutcome> {
-  // Refresh token is sent automatically as an httpOnly cookie
-  try {
-    const res = await api.post<ApiTokenResponse>("/auth/refresh");
-    saveAccessToken(res.access_token);
-    return "refreshed";
-  } catch (err) {
-    // This runs on every page load, so treating any failure as a logout meant
-    // one unlucky request - a cold start, a deploy, a lift going through a
-    // tunnel - discarded a session that was still perfectly valid, and the
-    // user had to sign in again for no reason they could see. A 4xx is the
-    // only answer that actually says the session is finished.
-    if (isApiError(err) && err.status >= 400 && err.status < 500) {
-      console.error("Token refresh rejected, clearing auth data:", err);
-      clearAllAuthData();
-      lastProfileFetchAt = 0;
-      return "rejected";
-    }
-    console.error("Token refresh could not reach the server, keeping the session:", err);
-    return "unreachable";
-  }
-}
-
-/**
  * Initialize auth on app startup.
  * Checks if there's a hint of a prior session (userEmail in localStorage),
  * then attempts to refresh the access token via the httpOnly cookie.
@@ -168,14 +136,19 @@ async function refreshTokenAPI(): Promise<RefreshOutcome> {
  *
  * A session that could not be refreshed because the server was unreachable is
  * left alone rather than cleared: the cached session is still the best thing we
- * know, and the next request will refresh it. `refreshTokenAPI` has already
- * cleared the cache if the server actually rejected the session.
+ * know, and the next request will refresh it. A definitive rejection clears the
+ * cache below.
  */
 export async function initializeAuth(): Promise<boolean> {
   const email = loadUserEmail();
   if (!email) return false;
 
-  if (await refreshTokenAPI() !== "refreshed") {
+  const refreshOutcome = await refreshAccessToken();
+  if (refreshOutcome === "rejected") {
+    clearAllAuthData();
+    lastProfileFetchAt = 0;
+  }
+  if (refreshOutcome !== "refreshed") {
     return false;
   }
 
@@ -261,4 +234,3 @@ export async function updateProfileAPI(profile: UserProfile): Promise<void> {
   // to reconcile here - re-saving would just fire another redundant
   // auth-state-refresh event.
 }
-

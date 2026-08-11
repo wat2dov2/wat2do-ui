@@ -25,6 +25,7 @@ import { getQueryClient } from "@/shared/lib/queryClient";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import type { SchoolSummary } from "@/shared/api/schools.api";
 import { DEFAULT_SCHOOL } from "@/shared/constants/schools";
+import { NavigationProgress } from "@/shared/ui/navigation-progress";
 
 installBundledLocales();
 
@@ -182,6 +183,9 @@ export function ClientProviders({
         <TooltipProvider delayDuration={0}>
           <RequestSchoolContext.Provider value={initialSchool}>
             <AuthReadyContext.Provider value={authReady}>
+              <Suspense fallback={null}>
+                <NavigationProgress />
+              </Suspense>
               {DevClickToComponent ? (
                 <Suspense fallback={null}>
                   <DevClickToComponent />

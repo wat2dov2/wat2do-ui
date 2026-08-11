@@ -1,5 +1,7 @@
-import { QRRoute } from "@/app/client-routes";
+"use client";
+
+import { QRRedirectPage } from "@/features/qrcode/pages/QRRedirectPage";
 
 export default function QRPage() {
-  return <QRRoute />;
+  return <QRRedirectPage />;
 }

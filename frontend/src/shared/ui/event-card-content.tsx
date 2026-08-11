@@ -80,21 +80,21 @@ export function EventCardContent({
             <div className="space-y-0.5 min-w-0 flex-1">
               {date && (
                 <span
-                  className={`block text-[11px] truncate ${secondaryTextClassName}`}
+                  className={`block text-[13px] truncate ${secondaryTextClassName}`}
                 >
                   {date}
                 </span>
               )}
               {time && (
                 <span
-                  className={`block text-[11px] truncate ${secondaryTextClassName}`}
+                  className={`block text-[13px] truncate ${secondaryTextClassName}`}
                 >
                   {time}
                 </span>
               )}
               {location && (
                 <span
-                  className={`block text-[11px] truncate ${secondaryTextClassName}`}
+                  className={`block text-[13px] truncate ${secondaryTextClassName}`}
                 >
                   {location}
                 </span>

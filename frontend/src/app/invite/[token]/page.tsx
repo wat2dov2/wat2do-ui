@@ -1,5 +1,7 @@
-import { InviteRoute } from "@/app/client-routes";
+"use client";
+
+import { InviteLandingPage } from "@/features/organizations/pages/InviteLandingPage";
 
 export default function InvitePage() {
-  return <InviteRoute />;
+  return <InviteLandingPage />;
 }

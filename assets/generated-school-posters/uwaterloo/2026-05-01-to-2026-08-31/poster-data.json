@@ -1,0 +1,661 @@
+{
+  "schema_version": 1,
+  "school": {
+    "slug": "uwaterloo",
+    "name": "University of Waterloo",
+    "primary_color": "#000000",
+    "secondary_color": "#FED34C",
+    "timezone": "America/Toronto",
+    "site_url": "https://uwaterloo.wat2do.io"
+  },
+  "term": {
+    "label": "SPRING '26",
+    "start": "2026-05-01",
+    "end": "2026-08-31"
+  },
+  "claims": {
+    "observed_club_count": 451,
+    "all_time_event_count": 3975
+  },
+  "background_images": [
+    "https://wat2do.io/media/event-images/16a0cfaa4b2a49dcb1d2a028c37a05b4.jpg",
+    "https://wat2do.io/media/event-images/e8857454effd46278d7aad07672305bf.jpg",
+    "https://wat2do.io/media/event-images/42d86fe082204291b63195a2a3146657.jpg",
+    "https://wat2do.io/media/event-images/c7e6d00234144846a83a2f8b90851f0b.jpg",
+    "https://wat2do.io/media/event-images/088b9df36ea94b84b5404b1226801a41.jpg",
+    "https://wat2do.io/media/event-images/7b600e49683c416c8e3760190728a0e4.jpg",
+    "https://wat2do.io/media/event-images/8e23b430c7f04766b39445a7cd6bebfe.jpg",
+    "https://wat2do.io/media/event-images/d4f3a5127a7f40a29a524ad5eb00b961.jpg",
+    "https://wat2do.io/media/event-images/5a7f260deb0c4886ae0136cf69f24258.jpg",
+    "https://wat2do.io/media/event-images/efd3ec1dc7804c64859bbb245b4b8b12.png",
+    "https://wat2do.io/media/event-images/0ddfe735e6f24590a46912fa6b264281.png",
+    "https://wat2do.io/media/event-images/96c3875184fa43a69f6892d5a8854ea8.png",
+    "https://wat2do.io/media/event-images/5a0499a3f4064934ba9794f4cac5cca0.png",
+    "https://wat2do.io/media/event-images/229398b0c34a4c24922f00d2dee64a1b.png",
+    "https://wat2do.io/media/event-images/c563853e6a454a1eba6349527517c2fa.jpg",
+    "https://wat2do.io/media/event-images/a01986bcf7dc41babd1d3b979f48684f.jpg",
+    "https://wat2do.io/media/event-images/6f540bc1f0234003a081ec99e9362ec1.jpg",
+    "https://wat2do.io/media/event-images/9130edeba46b42dd8b28813811cd0d7f.png",
+    "https://wat2do.io/media/event-images/397dc2fbc5864008b57de41405e65c77.webp",
+    "https://wat2do.io/media/event-images/e33746d30b6b4219b27352bedd37f9d9.png",
+    "https://wat2do.io/media/event-images/183c8d56910a48cfaa45b6b91fb3066e.png",
+    "https://wat2do.io/media/event-images/c036301555c54e9cb83c565c5ea566d6.png",
+    "https://wat2do.io/media/event-images/0517ac75a00b4391a53bddf9d959766a.png",
+    "https://wat2do.io/media/event-images/aa1750caf7874d4883242486c5b55945.png",
+    "https://wat2do.io/media/event-images/e099c7ca8c5c464b82f42108b8593f77.jpg",
+    "https://wat2do.io/media/event-images/bc39e3138a4d4a05832213142cbb62ae.jpg",
+    "https://wat2do.io/media/event-images/a51d361504c7429c85eab820366290c2.jpg",
+    "https://wat2do.io/media/event-images/c4732418ac894df4adf0b1c697a9f7e7.jpg",
+    "https://wat2do.io/media/event-images/e7fd80c454a54fd8b88d8ab24f7108a6.jpg",
+    "https://wat2do.io/media/event-images/06d1bb40a6d647e9b88cbbb909839e3e.jpg",
+    "https://wat2do.io/media/event-images/1080a99b2fa3401a9dc8c262d4a89705.jpg",
+    "https://wat2do.io/media/event-images/906ae8287c2b439daa83fd4cc8cf5c0d.jpg",
+    "https://wat2do.io/media/event-images/df22541b2da6471489853b051bf579e1.jpg",
+    "https://wat2do.io/media/event-images/b37071086e78447ab578ed16a205beae.jpg",
+    "https://wat2do.io/media/event-images/aa22b72ccd674cecad2563bb5e799a47.jpg",
+    "https://wat2do.io/media/event-images/a8429c3275b1432d9ed645de934a064b.jpg",
+    "https://wat2do.io/media/event-images/b31d99558a214950a88bd0cc3220a4e3.jpg",
+    "https://wat2do.io/media/event-images/3deefa9d8678454fb411c462a9b9eefb.jpg",
+    "https://wat2do.io/media/event-images/dd05e866c5c74d96be0d96029546cf9a.jpg",
+    "https://wat2do.io/media/event-images/76ebb8848db94422b0db32bfdd89c543.jpg",
+    "https://wat2do.io/media/event-images/ba540fb4fa4e473fa25523d8587401c5.jpg",
+    "https://wat2do.io/media/event-images/f74f9ca3ea4f46aba0dd19d30c6b3b4b.jpg",
+    "https://wat2do.io/media/event-images/967353f3cc93426eb31787c263a65b22.jpg",
+    "https://wat2do.io/media/event-images/8bd0ec65ab7d428cad3d9fe0e8592b6a.jpg",
+    "https://wat2do.io/media/event-images/d6494be8921d4da6a552ad304305cdd2.jpg",
+    "https://wat2do.io/media/event-images/735157d95ac2497b8ba5737de95443a5.jpg",
+    "https://wat2do.io/media/event-images/55bdd58f7ff841c0b1876f13d151f436.jpg",
+    "https://wat2do.io/media/event-images/c6c2635863ae4a8db4bac537d2aeb349.jpg"
+  ],
+  "recap": {
+    "event_count": 962,
+    "top_clubs": [
+      {
+        "name": "Waterloo Engineering Society",
+        "handle": "uwengsoc",
+        "logo_url": "https://wat2do.io/media/organization-logos/b3b6b85879e24819bd19089638fcb802.jpg",
+        "event_count": 32
+      },
+      {
+        "name": "Jamnetwork",
+        "handle": "jamnetwork_uw",
+        "logo_url": "https://wat2do.io/media/organization-logos/13b17ffb9fd548d29a45487ced9cd2c2.jpg",
+        "event_count": 24
+      },
+      {
+        "name": "UW Quizbowl",
+        "handle": "uwquizbowl",
+        "logo_url": "https://wat2do.io/media/organization-logos/9a97f7e58fd14085a3503c1bb5add65b.jpg",
+        "event_count": 24
+      },
+      {
+        "name": "Muslim Students' Association (MSA)",
+        "handle": "uwmsa",
+        "logo_url": "https://wat2do.io/media/organization-logos/0b8d769cddba435882853054ee182a92.jpg",
+        "event_count": 21
+      },
+      {
+        "name": "Hip Hop, UW",
+        "handle": "uwhiphop",
+        "logo_url": "https://wat2do.io/media/organization-logos/1b10ec3be1644e788552064c75031c72.jpg",
+        "event_count": 19
+      }
+    ],
+    "food_linked_event_count": 284,
+    "food_mentions": [
+      {
+        "label": "pizza",
+        "count": 74
+      },
+      {
+        "label": "drinks",
+        "count": 30
+      },
+      {
+        "label": "s'mores",
+        "count": 18
+      }
+    ],
+    "food_examples": [
+      {
+        "title": "Yalla Natlama BBQ",
+        "image_url": "https://wat2do.io/media/event-images/a5edb14d03ae495bb31900847630249c.jpg"
+      },
+      {
+        "title": "Cheese Club Meeting",
+        "image_url": "https://wat2do.io/media/event-images/b88c7ccddd104426ac73c2abbddead69.jpg"
+      }
+    ],
+    "busiest_date": {
+      "date": "2026-06-11",
+      "label": "June 11",
+      "count": 35
+    },
+    "busiest_weekday": "Thursday",
+    "quietest_weekday": "Sunday",
+    "heatmap": [
+      {
+        "date": "2026-05-01",
+        "count": 2
+      },
+      {
+        "date": "2026-05-02",
+        "count": 1
+      },
+      {
+        "date": "2026-05-03",
+        "count": 1
+      },
+      {
+        "date": "2026-05-04",
+        "count": 0
+      },
+      {
+        "date": "2026-05-05",
+        "count": 0
+      },
+      {
+        "date": "2026-05-06",
+        "count": 0
+      },
+      {
+        "date": "2026-05-07",
+        "count": 1
+      },
+      {
+        "date": "2026-05-08",
+        "count": 2
+      },
+      {
+        "date": "2026-05-09",
+        "count": 0
+      },
+      {
+        "date": "2026-05-10",
+        "count": 0
+      },
+      {
+        "date": "2026-05-11",
+        "count": 4
+      },
+      {
+        "date": "2026-05-12",
+        "count": 7
+      },
+      {
+        "date": "2026-05-13",
+        "count": 11
+      },
+      {
+        "date": "2026-05-14",
+        "count": 14
+      },
+      {
+        "date": "2026-05-15",
+        "count": 12
+      },
+      {
+        "date": "2026-05-16",
+        "count": 6
+      },
+      {
+        "date": "2026-05-17",
+        "count": 1
+      },
+      {
+        "date": "2026-05-18",
+        "count": 4
+      },
+      {
+        "date": "2026-05-19",
+        "count": 13
+      },
+      {
+        "date": "2026-05-20",
+        "count": 20
+      },
+      {
+        "date": "2026-05-21",
+        "count": 22
+      },
+      {
+        "date": "2026-05-22",
+        "count": 13
+      },
+      {
+        "date": "2026-05-23",
+        "count": 11
+      },
+      {
+        "date": "2026-05-24",
+        "count": 2
+      },
+      {
+        "date": "2026-05-25",
+        "count": 11
+      },
+      {
+        "date": "2026-05-26",
+        "count": 14
+      },
+      {
+        "date": "2026-05-27",
+        "count": 18
+      },
+      {
+        "date": "2026-05-28",
+        "count": 18
+      },
+      {
+        "date": "2026-05-29",
+        "count": 11
+      },
+      {
+        "date": "2026-05-30",
+        "count": 7
+      },
+      {
+        "date": "2026-05-31",
+        "count": 8
+      },
+      {
+        "date": "2026-06-01",
+        "count": 13
+      },
+      {
+        "date": "2026-06-02",
+        "count": 20
+      },
+      {
+        "date": "2026-06-03",
+        "count": 16
+      },
+      {
+        "date": "2026-06-04",
+        "count": 20
+      },
+      {
+        "date": "2026-06-05",
+        "count": 14
+      },
+      {
+        "date": "2026-06-06",
+        "count": 17
+      },
+      {
+        "date": "2026-06-07",
+        "count": 3
+      },
+      {
+        "date": "2026-06-08",
+        "count": 10
+      },
+      {
+        "date": "2026-06-09",
+        "count": 16
+      },
+      {
+        "date": "2026-06-10",
+        "count": 15
+      },
+      {
+        "date": "2026-06-11",
+        "count": 35
+      },
+      {
+        "date": "2026-06-12",
+        "count": 16
+      },
+      {
+        "date": "2026-06-13",
+        "count": 16
+      },
+      {
+        "date": "2026-06-14",
+        "count": 6
+      },
+      {
+        "date": "2026-06-15",
+        "count": 17
+      },
+      {
+        "date": "2026-06-16",
+        "count": 15
+      },
+      {
+        "date": "2026-06-17",
+        "count": 11
+      },
+      {
+        "date": "2026-06-18",
+        "count": 28
+      },
+      {
+        "date": "2026-06-19",
+        "count": 19
+      },
+      {
+        "date": "2026-06-20",
+        "count": 9
+      },
+      {
+        "date": "2026-06-21",
+        "count": 4
+      },
+      {
+        "date": "2026-06-22",
+        "count": 12
+      },
+      {
+        "date": "2026-06-23",
+        "count": 12
+      },
+      {
+        "date": "2026-06-24",
+        "count": 19
+      },
+      {
+        "date": "2026-06-25",
+        "count": 28
+      },
+      {
+        "date": "2026-06-26",
+        "count": 16
+      },
+      {
+        "date": "2026-06-27",
+        "count": 15
+      },
+      {
+        "date": "2026-06-28",
+        "count": 6
+      },
+      {
+        "date": "2026-06-29",
+        "count": 12
+      },
+      {
+        "date": "2026-06-30",
+        "count": 21
+      },
+      {
+        "date": "2026-07-01",
+        "count": 6
+      },
+      {
+        "date": "2026-07-02",
+        "count": 24
+      },
+      {
+        "date": "2026-07-03",
+        "count": 13
+      },
+      {
+        "date": "2026-07-04",
+        "count": 16
+      },
+      {
+        "date": "2026-07-05",
+        "count": 8
+      },
+      {
+        "date": "2026-07-06",
+        "count": 11
+      },
+      {
+        "date": "2026-07-07",
+        "count": 25
+      },
+      {
+        "date": "2026-07-08",
+        "count": 22
+      },
+      {
+        "date": "2026-07-09",
+        "count": 24
+      },
+      {
+        "date": "2026-07-10",
+        "count": 12
+      },
+      {
+        "date": "2026-07-11",
+        "count": 9
+      },
+      {
+        "date": "2026-07-12",
+        "count": 16
+      },
+      {
+        "date": "2026-07-13",
+        "count": 14
+      },
+      {
+        "date": "2026-07-14",
+        "count": 22
+      },
+      {
+        "date": "2026-07-15",
+        "count": 18
+      },
+      {
+        "date": "2026-07-16",
+        "count": 30
+      },
+      {
+        "date": "2026-07-17",
+        "count": 15
+      },
+      {
+        "date": "2026-07-18",
+        "count": 20
+      },
+      {
+        "date": "2026-07-19",
+        "count": 10
+      },
+      {
+        "date": "2026-07-20",
+        "count": 13
+      },
+      {
+        "date": "2026-07-21",
+        "count": 23
+      },
+      {
+        "date": "2026-07-22",
+        "count": 23
+      },
+      {
+        "date": "2026-07-23",
+        "count": 28
+      },
+      {
+        "date": "2026-07-24",
+        "count": 18
+      },
+      {
+        "date": "2026-07-25",
+        "count": 14
+      },
+      {
+        "date": "2026-07-26",
+        "count": 22
+      },
+      {
+        "date": "2026-07-27",
+        "count": 14
+      },
+      {
+        "date": "2026-07-28",
+        "count": 18
+      },
+      {
+        "date": "2026-07-29",
+        "count": 26
+      },
+      {
+        "date": "2026-07-30",
+        "count": 28
+      },
+      {
+        "date": "2026-07-31",
+        "count": 16
+      },
+      {
+        "date": "2026-08-01",
+        "count": 9
+      },
+      {
+        "date": "2026-08-02",
+        "count": 5
+      },
+      {
+        "date": "2026-08-03",
+        "count": 5
+      },
+      {
+        "date": "2026-08-04",
+        "count": 10
+      },
+      {
+        "date": "2026-08-05",
+        "count": 12
+      },
+      {
+        "date": "2026-08-06",
+        "count": 7
+      },
+      {
+        "date": "2026-08-07",
+        "count": 1
+      },
+      {
+        "date": "2026-08-08",
+        "count": 5
+      },
+      {
+        "date": "2026-08-09",
+        "count": 4
+      },
+      {
+        "date": "2026-08-10",
+        "count": 3
+      },
+      {
+        "date": "2026-08-11",
+        "count": 2
+      },
+      {
+        "date": "2026-08-12",
+        "count": 2
+      },
+      {
+        "date": "2026-08-13",
+        "count": 0
+      },
+      {
+        "date": "2026-08-14",
+        "count": 0
+      },
+      {
+        "date": "2026-08-15",
+        "count": 1
+      },
+      {
+        "date": "2026-08-16",
+        "count": 1
+      },
+      {
+        "date": "2026-08-17",
+        "count": 0
+      },
+      {
+        "date": "2026-08-18",
+        "count": 0
+      },
+      {
+        "date": "2026-08-19",
+        "count": 3
+      },
+      {
+        "date": "2026-08-20",
+        "count": 1
+      },
+      {
+        "date": "2026-08-21",
+        "count": 1
+      },
+      {
+        "date": "2026-08-22",
+        "count": 0
+      },
+      {
+        "date": "2026-08-23",
+        "count": 1
+      },
+      {
+        "date": "2026-08-24",
+        "count": 0
+      },
+      {
+        "date": "2026-08-25",
+        "count": 0
+      },
+      {
+        "date": "2026-08-26",
+        "count": 1
+      },
+      {
+        "date": "2026-08-27",
+        "count": 0
+      },
+      {
+        "date": "2026-08-28",
+        "count": 0
+      },
+      {
+        "date": "2026-08-29",
+        "count": 2
+      },
+      {
+        "date": "2026-08-30",
+        "count": 1
+      },
+      {
+        "date": "2026-08-31",
+        "count": 0
+      }
+    ],
+    "awards": [
+      {
+        "title": "Procrastinator Award",
+        "organization": "Muslim Students Association - Orphan Sponsorship Program",
+        "handle": "uw_osp",
+        "description": "Announced with 1 hour to spare.",
+        "logo_url": "https://wat2do.io/media/organization-logos/fd6225640e364c6095784389993c4f1c.jpg"
+      },
+      {
+        "title": "Feed the Campus Award",
+        "organization": "Muslim Students Association - Orphan Sponsorship Program",
+        "handle": "uw_osp",
+        "description": "Hosted the most food-linked events (11).",
+        "logo_url": "https://wat2do.io/media/organization-logos/fd6225640e364c6095784389993c4f1c.jpg"
+      },
+      {
+        "title": "Swiss Army Club",
+        "organization": "Jamnetwork",
+        "handle": "jamnetwork_uw",
+        "description": "Showed up across 3 event categories.",
+        "logo_url": "https://wat2do.io/media/organization-logos/13b17ffb9fd548d29a45487ced9cd2c2.jpg"
+      },
+      {
+        "title": "Early Planners Award",
+        "organization": "Aviation Society",
+        "handle": "uw_aviation",
+        "description": "Longest post-to-event gap: 94 days.",
+        "logo_url": "https://wat2do.io/media/organization-logos/6c53667956a748478dd5946b30cf11ac.jpg"
+      }
+    ]
+  }
+}

@@ -57,12 +57,17 @@ async function requestFileUpload<T>(
   let response = await fetch(url, createUploadRequest(file, authentication));
 
   if (response.status === 401 && authentication === "session") {
-    const refreshed = await refreshAccessToken();
-    if (refreshed) {
+    const refreshOutcome = await refreshAccessToken();
+    if (refreshOutcome === "refreshed") {
       response = await fetch(url, createUploadRequest(file, authentication));
-    } else {
+      if (response.status === 401) {
+        handleAuthFailure();
+      }
+    } else if (refreshOutcome === "rejected") {
       handleAuthFailure();
       throw new Error(`${failureLabel} failed: session expired`);
+    } else {
+      throw new Error(`${failureLabel} failed: session temporarily unavailable`);
     }
   }
 

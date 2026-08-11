@@ -93,7 +93,6 @@ export function AdminEventsPage({
     selectedCategory,
     showReportedOnly,
     deleteConfirmId,
-    highlightedEventId,
     currentPage,
     selectedEvent,
     categories,
@@ -103,6 +102,8 @@ export function AdminEventsPage({
     setSearchQuery,
     setSelectedCategory,
     toggleReportedOnly,
+    selectEvent,
+    clearSelectedEvent,
     setDeleteConfirmId,
     setCurrentPage,
     isEventReported,
@@ -254,18 +255,14 @@ export function AdminEventsPage({
             >
               {paginatedEvents.map((event) => {
                 const isReported = isEventReported(event.id);
-                const isHighlighted = highlightedEventId === event.id;
+                const isHighlighted = selectedEvent?.id === event.id;
                 return (
                   <TableRow
                     key={event.id}
                     id={`event-${event.id}`}
                     interactive
                     className={isHighlighted ? "bg-primary/10" : undefined}
-                    onClick={() => {
-                      const newParams = new URLSearchParams(searchParams.toString());
-                      newParams.set(QP.EVENT_ID, event.id.toString());
-                      setSearchParams(newParams);
-                    }}
+                    onClick={() => selectEvent(event.id)}
                   >
                     <TableCell>
                       <div className="font-medium text-sm text-foreground">
@@ -342,11 +339,7 @@ export function AdminEventsPage({
 
           <EventDetailsModal
             event={selectedEvent}
-            onClose={() => {
-              const newParams = new URLSearchParams(searchParams.toString());
-              newParams.delete(QP.EVENT_ID);
-              setSearchParams(newParams);
-            }}
+            onClose={clearSelectedEvent}
             allEvents={events}
             hideSimilarEvents
           />

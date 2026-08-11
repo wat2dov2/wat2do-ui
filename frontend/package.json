@@ -12,6 +12,7 @@
     "audit:i18n": "node scripts/audit-i18n-literals.mjs",
     "check": "npm run lint && npm run audit:i18n && npm run type-check",
     "generate-poster-templates": "node scripts/generate-poster-templates.mjs",
+    "render-school-posters": "node scripts/school-posters/render-school-posters.mjs",
     "start": "next start",
     "preview": "next start",
     "generate-types": "cd ../backend && .venv/bin/python scripts/export_openapi.py && cd ../frontend && npx openapi-typescript src/shared/generated/openapi.json -o src/shared/generated/api-types.ts"

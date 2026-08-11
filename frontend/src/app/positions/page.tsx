@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
-import { AppPage } from "@/app/app-page";
 import imgContactHero from "@/assets/contact_hero.png";
 import { getPositionDirectorySnapshot } from "@/features/positions/api/positionDirectory.server";
 import type { PaginatedPositionsResponse } from "@/features/positions/api/positions.api";
@@ -68,11 +67,9 @@ export default async function PositionsPage() {
   const initialDirectory = await loadPositions(school);
 
   return (
-    <AppPage>
-      <PositionsPageContent
-        initialDirectory={initialDirectory}
-        initialSchool={school}
-      />
-    </AppPage>
+    <PositionsPageContent
+      initialDirectory={initialDirectory}
+      initialSchool={school}
+    />
   );
 }

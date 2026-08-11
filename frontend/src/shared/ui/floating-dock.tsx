@@ -82,7 +82,6 @@ function IconContainer({
     return (
       <Link
         href={href}
-        prefetch={false}
         aria-label={title}
         aria-current={isActive ? "page" : undefined}
         className={hitboxClassName}

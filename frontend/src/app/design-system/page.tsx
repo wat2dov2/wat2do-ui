@@ -1,5 +1,7 @@
-import { DesignSystemRoute } from "@/app/client-routes";
+"use client";
+
+import { DesignSystemPage as DesignSystemPageContent } from "@/features/design-system";
 
 export default function DesignSystemPage() {
-  return <DesignSystemRoute />;
+  return <DesignSystemPageContent />;
 }

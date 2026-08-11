@@ -1,5 +1,7 @@
-import { SubmitEventPageRoute } from "@/app/client-routes";
+"use client";
+
+import { SubmitEventPage } from "@/features/events/pages/SubmitEventPage";
 
 export default function SubmitEventRoute() {
-  return <SubmitEventPageRoute />;
+  return <SubmitEventPage />;
 }

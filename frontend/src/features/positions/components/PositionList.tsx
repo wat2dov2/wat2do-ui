@@ -73,7 +73,7 @@ export function PositionList({
 
   if (isLoading) {
     return (
-      <div className={CARD_GRID_CLASS}>
+      <div className={CARD_GRID_CLASS} aria-busy="true">
         {Array.from({ length: 8 }).map((_, index) => (
           <PositionCardSkeleton key={index} />
         ))}

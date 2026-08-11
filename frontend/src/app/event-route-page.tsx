@@ -1,7 +1,6 @@
 "use client";
 
 import { useLayoutEffect } from "react";
-import { AppPage } from "@/app/app-page";
 import { EventsPageContainer } from "@/features/events/pages/EventsPageContainer";
 import { useEventsStore } from "@/features/events/store/events.store";
 import { resolveSchool } from "@/shared/constants/schools";
@@ -46,11 +45,9 @@ export function EventRoutePage({
   }, [initialSnapshot, initialSchool]);
 
   return (
-    <AppPage>
-      <EventsPageContainer
-        initialSnapshot={initialSnapshot}
-        initialSchool={initialSchool}
-      />
-    </AppPage>
+    <EventsPageContainer
+      initialSnapshot={initialSnapshot}
+      initialSchool={initialSchool}
+    />
   );
 }

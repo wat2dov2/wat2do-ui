@@ -79,7 +79,7 @@ export function getApiErrorMessage(
 // prevents concurrent refresh calls - all in-flight 401s wait on the
 // same refresh attempt.
 
-let refreshPromise: Promise<boolean> | null = null;
+let refreshPromise: Promise<RefreshOutcome> | null = null;
 
 const AUTH_CREDENTIAL_PATHS = new Set([
   "/auth/refresh",
@@ -93,6 +93,9 @@ interface TokenRefreshResponse {
   expires_in: number;
   user_id: string;
 }
+
+/** The authoritative result of attempting to rotate the current session. */
+export type RefreshOutcome = "refreshed" | "rejected" | "unreachable";
 
 /**
  * Optional hook invoked after a successful silent access-token refresh and
@@ -118,12 +121,14 @@ function notifyAfterSuccessfulRefresh(): void {
 }
 
 /**
- * Attempt to refresh the access token. Returns true if a new token was
- * obtained, false otherwise. Concurrent callers share one in-flight request.
- * Exported for use by uploadService which makes raw fetch calls.
+ * Attempt to refresh the access token. The refresh endpoint uses 401 when the
+ * cookie is missing or expired; other failures leave the session intact so a
+ * deploy, origin misconfiguration, or rate limit cannot log the user out.
+ * Concurrent callers share one in-flight request. Exported for startup auth
+ * and raw upload requests.
  */
-export function refreshAccessToken(): Promise<boolean> {
-  if (authSessionInvalid) return Promise.resolve(false);
+export function refreshAccessToken(): Promise<RefreshOutcome> {
+  if (authSessionInvalid) return Promise.resolve("rejected");
   if (refreshPromise) return refreshPromise;
 
   refreshPromise = (async () => {
@@ -134,14 +139,16 @@ export function refreshAccessToken(): Promise<boolean> {
         credentials: "include", // send the httpOnly refresh cookie
       });
 
-      if (!res.ok) return false;
+      if (!res.ok) {
+        return res.status === 401 ? "rejected" : "unreachable";
+      }
 
       const data: TokenRefreshResponse = await res.json();
       setAccessToken(data.access_token);
-      return true;
+      return "refreshed";
     } catch (err) {
       console.error("Token refresh request failed:", err);
-      return false;
+      return "unreachable";
     }
   })().finally(() => {
     refreshPromise = null;
@@ -232,14 +239,17 @@ async function request<T>(
       !path.startsWith("/auth/")
     ) {
       if (!authSessionInvalid && retryCount === 0) {
-        const refreshed = await refreshAccessToken();
-        if (refreshed && !authSessionInvalid) {
+        const refreshOutcome = await refreshAccessToken();
+        if (refreshOutcome === "refreshed" && !authSessionInvalid) {
           const result = await request<T>(path, options, retryCount + 1);
           notifyAfterSuccessfulRefresh();
           return result;
         }
+        if (refreshOutcome === "unreachable") {
+          throw new ApiError(res.status, body);
+        }
       }
-      
+
       // Only call handleAuthFailure() for core/session-verifying endpoints.
       // If a background/secondary endpoint (e.g. /credits/ or /going-events/) fails with 401,
       // we still throw the ApiError normally but do NOT clear the user session.

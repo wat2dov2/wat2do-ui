@@ -6,13 +6,10 @@
  * whole object:
  *
  *   import { QP } from "@/shared/constants/queryParams";
- *   searchParams.get(QP.EVENT_ID);
+ *   searchParams.get(QP.SUBMISSION_ID);
  */
 
 export const QP = {
-  /** Identifies a specific event (numeric id as string) */
-  EVENT_ID: "eventId",
-
   /** Identifies a specific event submission (uuid string) */
   SUBMISSION_ID: "submissionId",
 

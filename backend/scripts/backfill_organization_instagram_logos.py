@@ -15,6 +15,8 @@ S3, or database writes.
 from __future__ import annotations
 
 import argparse
+import json
+import logging
 import sys
 from collections import defaultdict
 from pathlib import Path
@@ -30,6 +32,22 @@ from services.event_feed_revalidation import event_feed_revalidation_service  # 
 from services.scraper.image_uploader import upload_image_from_url  # noqa: E402
 from services.scraper.instagram_scraper import get_scraper  # noqa: E402
 from services.storage_service import storage  # noqa: E402
+
+PAGE_SIZE = 500
+
+
+def list_school_organizations(school: str) -> list[Any]:
+    """Return every approved organization for a school."""
+    organizations: list[Any] = []
+    while True:
+        page, total = organization_service.list_organizations(
+            school=school,
+            skip=len(organizations),
+            limit=PAGE_SIZE,
+        )
+        organizations.extend(page)
+        if not page or len(organizations) >= total:
+            return organizations
 
 
 def normalize_instagram_identifier(value: object) -> str:
@@ -54,9 +72,14 @@ def profile_identifiers(profile: dict[str, Any]) -> set[str]:
     return values - {""}
 
 
-def _profile_picture_url(profile: dict[str, Any]) -> str | None:
-    value = profile.get("profilePicUrlHD") or profile.get("profilePicUrl")
-    return str(value).strip() if value else None
+def _profile_picture_urls(profile: dict[str, Any]) -> list[str]:
+    """Return distinct profile-picture sources from highest to lowest quality."""
+    urls: list[str] = []
+    for value in (profile.get("profilePicUrlHD"), profile.get("profilePicUrl")):
+        url = str(value).strip() if value else ""
+        if url and url not in urls:
+            urls.append(url)
+    return urls
 
 
 def _delete_uploaded_logo(url: str) -> None:
@@ -65,12 +88,28 @@ def _delete_uploaded_logo(url: str) -> None:
         storage.delete_file(BUCKET_ORGANIZATION_LOGOS, path)
 
 
-def backfill_school(school: str) -> tuple[int, int, int]:
+def load_profile_cache(path: Path) -> dict[str, dict[str, Any]]:
+    """Load requested Instagram identifiers from an append-only JSONL cache."""
+    profiles: dict[str, dict[str, Any]] = {}
+    for line_number, line in enumerate(path.read_text().splitlines(), start=1):
+        if not line.strip():
+            continue
+        row = json.loads(line)
+        identifier = normalize_instagram_identifier(row.get("requested_handle"))
+        profile = row.get("profile")
+        if not identifier or not isinstance(profile, dict):
+            raise ValueError(f"Invalid profile cache row {path}:{line_number}")
+        profiles[identifier] = profile
+    return profiles
+
+
+def backfill_school(
+    school: str,
+    *,
+    profile_cache: dict[str, dict[str, Any]] | None = None,
+) -> tuple[int, int, int]:
     """Backfill one school and return ``(eligible, updated, failed)``."""
-    organizations, _ = organization_service.list_organizations(
-        school=school,
-        limit=1000,
-    )
+    organizations = list_school_organizations(school)
     eligible = [
         organization
         for organization in organizations
@@ -80,7 +119,11 @@ def backfill_school(school: str) -> tuple[int, int, int]:
     for organization in eligible:
         by_identifier[normalize_instagram_identifier(organization.ig)].append(organization)
 
-    profiles = get_scraper().scrape_profiles(list(by_identifier))
+    profiles = (
+        [profile_cache[identifier] for identifier in by_identifier if identifier in profile_cache]
+        if profile_cache is not None
+        else get_scraper().scrape_profiles(list(by_identifier))
+    )
     if eligible and not profiles:
         print("Apify returned no profiles", file=sys.stderr)
         return len(eligible), 0, len(eligible)
@@ -95,11 +138,11 @@ def backfill_school(school: str) -> tuple[int, int, int]:
         }
         if not matched:
             continue
-        source_url = _profile_picture_url(profile)
+        source_urls = _profile_picture_urls(profile)
         for organization in matched.values():
             if organization.id in updated_ids or organization.id in failed_ids:
                 continue
-            if not source_url:
+            if not source_urls:
                 reason = profile.get("error") or "missing profile picture"
                 print(
                     f"  profile failed: {organization.id} "
@@ -107,10 +150,14 @@ def backfill_school(school: str) -> tuple[int, int, int]:
                 )
                 failed_ids.add(organization.id)
                 continue
-            permanent_url = upload_image_from_url(
-                source_url,
-                bucket=BUCKET_ORGANIZATION_LOGOS,
-            )
+            permanent_url = None
+            for source_url in source_urls:
+                permanent_url = upload_image_from_url(
+                    source_url,
+                    bucket=BUCKET_ORGANIZATION_LOGOS,
+                )
+                if permanent_url is not None:
+                    break
             if permanent_url is None:
                 print(f"  image failed: {organization.id} {organization.organization_name}")
                 failed_ids.add(organization.id)
@@ -152,12 +199,14 @@ def main() -> int:
         action="store_true",
         help="Call Apify, upload to S3, and update organizations",
     )
+    parser.add_argument(
+        "--profile-cache",
+        type=Path,
+        help="Reuse requested_handle/profile JSONL instead of calling Apify",
+    )
     args = parser.parse_args()
 
-    organizations, _ = organization_service.list_organizations(
-        school=args.school,
-        limit=1000,
-    )
+    organizations = list_school_organizations(args.school)
     eligible = [
         organization
         for organization in organizations
@@ -171,7 +220,15 @@ def main() -> int:
         print("Dry run only. Re-run with --apply to call Apify and write logos.")
         return 0
 
-    eligible_count, updated_count, failed_count = backfill_school(args.school)
+    try:
+        profile_cache = load_profile_cache(args.profile_cache) if args.profile_cache else None
+    except (OSError, ValueError, json.JSONDecodeError) as exc:
+        print(f"Invalid profile cache: {exc}", file=sys.stderr)
+        return 2
+    eligible_count, updated_count, failed_count = backfill_school(
+        args.school,
+        profile_cache=profile_cache,
+    )
     print(
         f"eligible {eligible_count}, updated {updated_count}, failed or unresolved {failed_count}"
     )
@@ -179,4 +236,5 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    logging.getLogger("httpx").setLevel(logging.WARNING)
     raise SystemExit(main())
