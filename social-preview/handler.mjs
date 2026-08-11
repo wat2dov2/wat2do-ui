@@ -213,8 +213,16 @@ async function captureSchoolPage(slug) {
     }
 
     await page.addStyleTag({
-      content:
-        "*,*::before,*::after{animation:none!important;transition:none!important}",
+      content: `
+        *,*::before,*::after {
+          animation: none !important;
+          transition: none !important;
+        }
+        [role="listitem"] {
+          opacity: 1 !important;
+          transform: none !important;
+        }
+      `,
     });
     await page.evaluate(async () => {
       await document.fonts.ready;
