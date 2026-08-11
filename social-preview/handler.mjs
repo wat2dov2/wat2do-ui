@@ -115,9 +115,20 @@ export function buildAssetKey(slug, revision, renderedAt) {
 
 export function buildCaptureViewport() {
   return {
-    width: controls.viewport_width,
-    height: controls.viewport_height,
+    width: Math.round(controls.viewport_width / controls.capture_scale),
+    height: Math.round(controls.viewport_height / controls.capture_scale),
     deviceScaleFactor: controls.device_scale_factor,
+  };
+}
+
+export function buildCaptureClip() {
+  const viewport = buildCaptureViewport();
+  return {
+    x: 0,
+    y: 0,
+    width: viewport.width,
+    height: viewport.height,
+    scale: controls.capture_scale,
   };
 }
 
@@ -247,6 +258,7 @@ async function captureSchoolPage(slug) {
       quality: controls.jpeg_quality,
       fullPage: false,
       captureBeyondViewport: false,
+      clip: buildCaptureClip(),
     });
     return screenshot;
   } finally {

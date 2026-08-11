@@ -32,6 +32,7 @@ def test_checked_in_controlbox_is_valid() -> None:
     assert controlbox.social_previews.capture_path == "/"
     assert controlbox.social_previews.viewport_width == 1200
     assert controlbox.social_previews.viewport_height == 630
+    assert controlbox.social_previews.capture_scale == 0.6
     assert controlbox.social_previews.device_scale_factor == 1
     assert controlbox.social_previews.jpeg_quality == 90
     assert controlbox.social_previews.reserved_concurrency == 2
@@ -113,6 +114,7 @@ def test_duplicate_upload_mime_types_are_rejected(tmp_path: Path) -> None:
 @pytest.mark.parametrize(
     ("field", "value"),
     [
+        ("capture_scale", 0.4),
         ("device_scale_factor", 4),
         ("asset_retention_days", 6),
         ("capture_path", "/events"),
@@ -121,7 +123,7 @@ def test_duplicate_upload_mime_types_are_rejected(tmp_path: Path) -> None:
 def test_invalid_social_preview_control_is_rejected(
     tmp_path: Path,
     field: str,
-    value: int | str,
+    value: float | int | str,
 ) -> None:
     path = _write_control(
         tmp_path,

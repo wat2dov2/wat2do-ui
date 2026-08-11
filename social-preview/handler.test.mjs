@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   buildAssetKey,
+  buildCaptureClip,
   buildCaptureUrl,
   buildCaptureViewport,
   isSchedulerEvent,
@@ -65,8 +66,15 @@ test("capture targets the canonical school event feed at social-card size", () =
     "https://uwaterloo.wat2do.io/",
   );
   assert.deepEqual(buildCaptureViewport(), {
-    width: 1200,
-    height: 630,
+    width: 2000,
+    height: 1050,
     deviceScaleFactor: 1,
+  });
+  assert.deepEqual(buildCaptureClip(), {
+    x: 0,
+    y: 0,
+    width: 2000,
+    height: 1050,
+    scale: 0.6,
   });
 });

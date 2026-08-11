@@ -3,6 +3,7 @@
   "capture_path": "/",
   "viewport_width": 1200,
   "viewport_height": 630,
+  "capture_scale": 0.6,
   "device_scale_factor": 1,
   "jpeg_quality": 90,
   "navigation_timeout_seconds": 30,

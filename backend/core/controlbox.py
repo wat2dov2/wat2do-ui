@@ -266,6 +266,7 @@ class SocialPreviewsControl(_ControlModel):
     capture_path: Literal["/"]
     viewport_width: int = Field(ge=600, le=2400)
     viewport_height: int = Field(ge=315, le=1260)
+    capture_scale: float = Field(ge=0.5, le=1)
     device_scale_factor: int = Field(ge=1, le=3)
     jpeg_quality: int = Field(ge=1, le=100)
     navigation_timeout_seconds: int = Field(gt=0, le=120)
