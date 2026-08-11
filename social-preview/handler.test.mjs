@@ -3,7 +3,7 @@ import test from "node:test";
 
 import {
   buildAssetKey,
-  buildCaptureClip,
+  buildCaptureScreenshotOptions,
   buildCaptureUrl,
   buildCaptureViewport,
   isSchedulerEvent,
@@ -70,11 +70,17 @@ test("capture targets the canonical school event feed at social-card size", () =
     height: 1050,
     deviceScaleFactor: 1,
   });
-  assert.deepEqual(buildCaptureClip(), {
-    x: 0,
-    y: 0,
-    width: 2000,
-    height: 1050,
-    scale: 0.6,
+  assert.deepEqual(buildCaptureScreenshotOptions(), {
+    type: "jpeg",
+    quality: 90,
+    fullPage: false,
+    captureBeyondViewport: true,
+    clip: {
+      x: 0,
+      y: 0,
+      width: 2000,
+      height: 1050,
+      scale: 0.6,
+    },
   });
 });

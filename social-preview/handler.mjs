@@ -121,14 +121,20 @@ export function buildCaptureViewport() {
   };
 }
 
-export function buildCaptureClip() {
+export function buildCaptureScreenshotOptions() {
   const viewport = buildCaptureViewport();
   return {
-    x: 0,
-    y: 0,
-    width: viewport.width,
-    height: viewport.height,
-    scale: controls.capture_scale,
+    type: "jpeg",
+    quality: controls.jpeg_quality,
+    fullPage: false,
+    captureBeyondViewport: true,
+    clip: {
+      x: 0,
+      y: 0,
+      width: viewport.width,
+      height: viewport.height,
+      scale: controls.capture_scale,
+    },
   };
 }
 
@@ -253,13 +259,7 @@ async function captureSchoolPage(slug) {
       window.scrollTo(0, 0);
     });
 
-    const screenshot = await page.screenshot({
-      type: "jpeg",
-      quality: controls.jpeg_quality,
-      fullPage: false,
-      captureBeyondViewport: false,
-      clip: buildCaptureClip(),
-    });
+    const screenshot = await page.screenshot(buildCaptureScreenshotOptions());
     return screenshot;
   } finally {
     await browser.close();
