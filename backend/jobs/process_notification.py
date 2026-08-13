@@ -68,13 +68,15 @@ def main() -> int:
             if media_list_str:
                 for m_id in media_list_str.split(","):
                     try:
-                        shortcode = get_shortcode_from_media_id(int(m_id.strip()))
+                        m_id_part = m_id.strip().split("_")[0]
+                        shortcode = get_shortcode_from_media_id(int(m_id_part))
                         targets.append(f"https://www.instagram.com/p/{shortcode}/")
                     except ValueError:
                         log.warning("Invalid media_id in media_list: %s", m_id)
             elif media_id_str:
                 try:
-                    shortcode = get_shortcode_from_media_id(int(media_id_str.strip()))
+                    m_id_part = media_id_str.strip().split("_")[0]
+                    shortcode = get_shortcode_from_media_id(int(m_id_part))
                     targets.append(f"https://www.instagram.com/p/{shortcode}/")
                 except ValueError:
                     log.warning("Invalid media_id: %s", media_id_str)

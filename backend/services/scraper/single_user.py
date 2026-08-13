@@ -87,7 +87,7 @@ def filter_valid_posts(posts: list[dict]) -> list[dict]:
         if not post.get("error")
         and not post.get("errorDescription")
         and post.get("url")
-        and "/p/" in (post.get("url") or "")
+        and any(x in (post.get("url") or "") for x in ("/p/", "/reel/", "/tv/"))
     ]
 
 
