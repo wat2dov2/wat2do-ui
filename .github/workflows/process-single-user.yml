@@ -1,7 +1,8 @@
 name: Process Single User
 run-name: >-
   ${{
-    github.event.client_payload.notification_dict.title ||
+    github.event.client_payload.notification_dict['android.title'] &&
+    format('{0} - {1}', github.event.client_payload.notification_dict['android.title'], github.event.client_payload.notification_dict['android.subText']) ||
     (
       (github.event.client_payload.username || github.event.client_payload.poster_id || inputs.poster_id) &&
       format('Process @{0}', github.event.client_payload.username || github.event.client_payload.poster_id || inputs.poster_id)
