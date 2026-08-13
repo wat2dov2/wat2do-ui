@@ -1,5 +1,13 @@
 name: Process Single User
-run-name: Process @${{ github.event.client_payload.username || github.event.client_payload.poster_id || inputs.poster_id }}
+run-name: >-
+  ${{
+    github.event.client_payload.notification_dict.title ||
+    (
+      (github.event.client_payload.username || github.event.client_payload.poster_id || inputs.poster_id) &&
+      format('Process @{0}', github.event.client_payload.username || github.event.client_payload.poster_id || inputs.poster_id)
+    ) ||
+    format('Process Notification for {0}', github.event.client_payload.school || github.event.client_payload.intended_recipient_id)
+  }}
 
 # One-off scrape of a single Instagram handle.
 # Triggered either manually (workflow_dispatch) or by an external service
