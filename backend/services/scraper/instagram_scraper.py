@@ -51,7 +51,7 @@ class InstagramScraper:
 
     def scrape(
         self,
-        target: str,
+        target: str | list[str],
         *,
         results_limit: int | None = None,
         cutoff_days: int = 1,
@@ -59,10 +59,10 @@ class InstagramScraper:
     ) -> tuple[list[dict], bool]:
         """Run the actor for ``target``; return (raw_posts, pinned_warning).
 
-        ``target`` is an Instagram handle, @handle, or post URL.
+        ``target`` is an Instagram handle, @handle, or post URL, or a list of them.
         """
-        username_list = [target]
-        has_post_url = target.startswith("http")
+        username_list = [target] if isinstance(target, str) else target
+        has_post_url = any(t.startswith("http") for t in username_list)
 
         cutoff = datetime.now(timezone.utc) - timedelta(days=cutoff_days)
         cutoff_str = cutoff.strftime("%Y-%m-%d")

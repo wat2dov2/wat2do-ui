@@ -12,6 +12,7 @@ and collapses any resulting extra whitespace.
 
 import json
 import re
+from datetime import datetime, timezone
 
 # Allow: word characters (letters, digits, underscore), spaces, hyphens,
 # apostrophes, and the percent sign (used as the ILIKE wildcard wrapper).
@@ -76,3 +77,17 @@ def normalize_scraped_text(text: str | None) -> str | None:
         return decoded
 
     return remove_surrogates(_JSON_TEXT_ESCAPE.sub(decode_match, text))
+
+
+def parse_iso_datetime(value: str | None) -> datetime | None:
+    """Parse ISO 8601 strings, sometimes with trailing Z, and ensure UTC timezone."""
+    if not isinstance(value, str) or not value:
+        return None
+    try:
+        cleaned = value.replace("Z", "+00:00") if value.endswith("Z") else value
+        dt = datetime.fromisoformat(cleaned)
+    except ValueError:
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc)

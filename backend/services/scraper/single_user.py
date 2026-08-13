@@ -7,8 +7,8 @@ import os
 from datetime import datetime, timedelta, timezone
 
 from core.controlbox import controlbox
+from core.sanitize import parse_iso_datetime
 from services import school_service
-from services.scraper.pipeline import parse_post_timestamp
 
 log = logging.getLogger(__name__)
 
@@ -46,15 +46,6 @@ def resolve_single_user_scrape_school() -> str:
             )
             return school.slug
 
-        school = school_service.get_school_by_name(target_school)
-        if school:
-            log.info(
-                "Resolved school slug=%r from target_school name=%r via DB",
-                school.slug,
-                target_school,
-            )
-            return school.slug
-
         raise SchoolResolutionError(
             f"Could not resolve school slug from target_school={target_school!r} via DB",
         )
@@ -66,17 +57,6 @@ def resolve_single_user_scrape_school() -> str:
 
 def is_post_url_target(target: str) -> bool:
     return target.startswith("http")
-
-
-def is_numeric_id_target(target: str) -> bool:
-    """Whether the target is an Instagram user id rather than a handle.
-
-    The dispatch payload carries ``username`` when it has one and ``poster_id``
-    when it does not, and the workflow falls back to the second. A handle is
-    never all digits in practice, so a target that is tells us we were handed an
-    id and have to look the handle up.
-    """
-    return target.isdigit()
 
 
 def filter_valid_posts(posts: list[dict]) -> list[dict]:
@@ -91,56 +71,40 @@ def filter_valid_posts(posts: list[dict]) -> list[dict]:
     ]
 
 
-def resolve_single_user_handle(*, target: str, posts: list[dict]) -> str:
-    """Return the Instagram handle to use for pipeline grouping and DB writes.
-
-    This value is stored as ``events.ig_handle`` and is what the published
-    caption credits as ``@handle``, so a target that is not already a handle -
-    a post URL, or a numeric user id from a dispatch payload without a
-    ``username`` - is resolved against the scraped post's owner. Writing the id
-    through verbatim is what put ``@79731783885`` in front of readers.
-    """
-    cleaned = target.strip().lstrip("@")
-    if (is_post_url_target(cleaned) or is_numeric_id_target(cleaned)) and posts:
-        owner = (posts[0].get("ownerUsername") or posts[0].get("username") or "").strip()
-        if owner:
-            return owner.lstrip("@")
-        log.warning(
-            "Could not resolve a handle for target=%r; storing it as-is",
-            cleaned,
-        )
-    return cleaned
-
-
-def fetch_posts_for_single_user(
-    target: str,
+def fetch_posts_for_targets(
+    targets: list[str],
     *,
     cutoff_days: int,
     scraper,
 ) -> tuple[list[dict], bool]:
-    """Fetch the one post (or newest of several) to process for a webhook run."""
-    is_post = is_post_url_target(target)
+    """Fetch the posts to process for a webhook run or manual dispatch."""
+    is_post = all(is_post_url_target(t) for t in targets)
+
+    results_limit = len(targets) if is_post else 1
 
     posts, pinned_warning = scraper.scrape(
-        target,
-        results_limit=1,
+        targets,
+        results_limit=results_limit,
         cutoff_days=cutoff_days,
     )
 
-    if not is_post and posts and posts[0].get("timestamp"):
-        post_dt = parse_post_timestamp(posts[0]["timestamp"])
+    if not is_post and len(targets) == 1 and posts and posts[0].get("timestamp"):
+        post_dt = parse_iso_datetime(posts[0]["timestamp"])
         now = datetime.now(timezone.utc)
         if post_dt and post_dt > now - _RECENT_POST_WINDOW:
             log.info("Fetched post is recent, using it")
         else:
+            # WORKAROUND: Apify has a known bug where `skipPinnedPosts` is sometimes ignored
+            # when `resultsLimit=1`. If the only post returned is old, it's likely a pinned post
+            # that consumed our limit. We re-fetch with a higher limit to find the newest unpinned post.
             log.info("Fetched post is not recent, fetching more posts to find the most recent")
             posts, pinned_warning = scraper.scrape(
-                target,
+                targets,
                 results_limit=4,
                 cutoff_days=cutoff_days,
             )
 
-    if len(posts) > 1:
+    if not is_post and len(posts) > 1:
         posts.sort(key=lambda item: item.get("timestamp", 0), reverse=True)
         posts = posts[:1]
 

@@ -6,8 +6,8 @@ import pytest
 
 from services.scraper.directory_scraper import (
     DirectoryConfig,
+    DirectoryScrapeResult,
     crawl_directory_links,
-    is_url_scraped,
     run_directory_pipeline,
     scrape_event_page,
 )
@@ -34,46 +34,25 @@ def test_directory_config_instantiation():
     assert config.image_selector == "img.banner"
 
 
-@patch("services.scraper.directory_scraper.get_sb")
-def test_is_url_scraped_true(mock_get_sb):
-    # Set up mock query response
+@patch("services.scraper.dedup.get_sb")
+def test_existing_urls_mock(mock_get_sb):
+    from services.scraper.dedup import existing_urls
+
     mock_execute = MagicMock()
-    mock_execute.data = [{"id": 42}]
-
-    mock_eq = MagicMock()
-    mock_eq.limit.return_value.execute.return_value = mock_execute
-
+    mock_execute.data = [{"source_url": "https://example.com/event/1"}]
+    mock_range = MagicMock()
+    mock_range.execute.return_value = mock_execute
+    mock_order = MagicMock()
+    mock_order.range.return_value = mock_range
+    mock_in = MagicMock()
+    mock_in.order.return_value = mock_order
     mock_select = MagicMock()
-    mock_select.eq.return_value = mock_eq
-
+    mock_select.in_.return_value = mock_in
     mock_table = MagicMock()
     mock_table.select.return_value = mock_select
-
     mock_get_sb.return_value.table.return_value = mock_table
 
-    assert is_url_scraped("https://example.com/event/1") is True
-    mock_get_sb.return_value.table.assert_called_with("events")
-    mock_select.eq.assert_called_with("source_url", "https://example.com/event/1")
-
-
-@patch("services.scraper.directory_scraper.get_sb")
-def test_is_url_scraped_false(mock_get_sb):
-    # Set up empty response
-    mock_execute = MagicMock()
-    mock_execute.data = []
-
-    mock_eq = MagicMock()
-    mock_eq.limit.return_value.execute.return_value = mock_execute
-
-    mock_select = MagicMock()
-    mock_select.eq.return_value = mock_eq
-
-    mock_table = MagicMock()
-    mock_table.select.return_value = mock_select
-
-    mock_get_sb.return_value.table.return_value = mock_table
-
-    assert is_url_scraped("https://example.com/event/2") is False
+    assert "https://example.com/event/1" in existing_urls({"https://example.com/event/1"})
 
 
 @patch("services.scraper.directory_scraper.httpx.Client")
@@ -161,9 +140,9 @@ def test_scrape_event_page(mock_get):
 @patch("services.scraper.directory_scraper.scrape_event_page")
 @patch("services.scraper.directory_scraper.upload_post_images")
 @patch("services.scraper.directory_scraper.extract_events_from_post")
-@patch("services.scraper.directory_scraper.is_url_scraped")
+@patch("services.scraper.directory_scraper.existing_urls")
 def test_run_directory_pipeline_dry_run(
-    mock_is_scraped, mock_extract, mock_upload, mock_scrape, mock_crawl
+    mock_existing_urls, mock_extract, mock_upload, mock_scrape, mock_crawl
 ):
     mock_crawl.return_value = ["https://example.com/event/1"]
     mock_scrape.return_value = ("Event text content", ["https://example.com/img.png"])
@@ -176,7 +155,7 @@ def test_run_directory_pipeline_dry_run(
             "occurrences": [],
         }
     ]
-    mock_is_scraped.return_value = False
+    mock_existing_urls.return_value = set()
 
     config = DirectoryConfig(
         id="test",

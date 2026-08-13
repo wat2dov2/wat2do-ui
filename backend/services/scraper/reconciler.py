@@ -11,13 +11,13 @@ import json
 import logging
 from typing import Annotated, Any
 
-from openai import OpenAI
 from pydantic import BaseModel, BeforeValidator, Field, field_validator, model_validator
 
 from core.config import settings
 from core.constants import EVENT_CATEGORIES
 from services.scraper.extractor import (
     ExtractedOccurrence,
+    _client,
     _parse_model_json,
     empty_str_to_none,
 )
@@ -60,12 +60,6 @@ class ReconciledEvent(BaseModel):
     def sort_occurrences(self) -> ReconciledEvent:
         self.occurrences.sort(key=lambda occ: occ.dtstart_utc)
         return self
-
-
-def _client() -> OpenAI | None:
-    if not settings.openai_api_key:
-        return None
-    return OpenAI(api_key=settings.openai_api_key)
 
 
 def reconcile_events(
@@ -202,17 +196,6 @@ def _guard_cross_org_id(
             )
             return None
         return event_id
-
-    # Legacy: scrape has org_id, candidate null org but matching ig_handle.
-    if isinstance(scrape_organization_id, int) and cand_org is None:
-        if scrape_ig and cand_ig and scrape_ig == cand_ig:
-            return event_id
-        log.warning(
-            "Pass 2 id=%s stripped - scrape org_id=%s but candidate has no org/ig match",
-            event_id,
-            scrape_organization_id,
-        )
-        return None
 
     # Scrape org unresolved: only allow overwrite when ig_handle matches.
     if scrape_organization_id is None and isinstance(cand_org, int):

@@ -22,7 +22,7 @@ from core.constants import (
     WORKFLOW_RUN_NO_POSTS,
     WORKFLOW_RUN_SUCCESS,
 )
-from core.sanitize import normalize_scraped_text
+from core.sanitize import normalize_scraped_text, parse_iso_datetime
 from schemas.workflow_run import WorkflowRunCreate
 from services import workflow_run_service
 from services.scraper.dedup import _extract_shortcode, existing_shortcodes, find_candidates
@@ -96,7 +96,9 @@ def run_pipeline(
             _finalize(result)
             return result
 
-        seen_shortcodes: set[str] = set() if dry_run else existing_shortcodes()
+        target_shortcodes = {_extract_shortcode(p.get("url") or "") for p in posts}
+        target_shortcodes.discard(None)
+        seen_shortcodes: set[str] = set() if dry_run else existing_shortcodes(target_shortcodes)
         cutoff_dt = datetime.now(timezone.utc) - timedelta(days=cutoff_days)
         new_posts = _filter_new_posts(
             posts,
@@ -141,7 +143,7 @@ def _filter_new_posts(
         if shortcode in seen_shortcodes:
             continue
 
-        post_dt = parse_post_timestamp(post.get("timestamp"))
+        post_dt = parse_iso_datetime(post.get("timestamp"))
         if post_dt is not None and post_dt < cutoff:
             continue
 
@@ -159,7 +161,7 @@ def _get_candidate_handles(post: dict, fallback_handle: str) -> list[str]:
 
     # 2. ownerUsername
     owner = post.get("ownerUsername")
-    if owner and isinstance(owner, str):
+    if owner and isinstance(owner, str) and owner != fallback_handle:
         handles.append(owner)
 
     # 3. coauthors
@@ -196,7 +198,7 @@ def _process_one_post(
     uploaded = upload_post_images(image_urls)
 
     caption = normalize_scraped_text(post.get("caption") or post.get("text")) or ""
-    post_dt = parse_post_timestamp(post.get("timestamp"))
+    post_dt = parse_iso_datetime(post.get("timestamp"))
 
     content = extract_post_content(
         caption_text=caption,
@@ -431,17 +433,3 @@ def _extract_image_urls(post: dict) -> list[str]:
             images.append(single)
 
     return images
-
-
-def parse_post_timestamp(value: object) -> datetime | None:
-    """Apify timestamps come as ISO 8601 strings (sometimes with trailing Z)."""
-    if not isinstance(value, str) or not value:
-        return None
-    try:
-        cleaned = value.replace("Z", "+00:00") if value.endswith("Z") else value
-        dt = datetime.fromisoformat(cleaned)
-    except ValueError:
-        return None
-    if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=timezone.utc)
-    return dt.astimezone(timezone.utc)

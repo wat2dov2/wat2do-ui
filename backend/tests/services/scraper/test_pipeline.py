@@ -13,20 +13,7 @@ from services.scraper.org_resolve import ResolvedOrganization
 from services.scraper.pipeline import (
     _extract_image_urls,
     _filter_new_posts,
-    parse_post_timestamp,
 )
-
-
-def test_parse_post_timestamp_z_suffix():
-    parsed = parse_post_timestamp("2026-04-27T14:00:00Z")
-    assert parsed is not None
-    assert parsed.tzinfo == timezone.utc
-
-
-def test_parse_post_timestamp_invalid_returns_none():
-    assert parse_post_timestamp("garbage") is None
-    assert parse_post_timestamp(None) is None
-    assert parse_post_timestamp(12345) is None
 
 
 def test_filter_new_posts_drops_seen_shortcodes():
@@ -138,7 +125,7 @@ def test_pipeline_routes_hiring_post_to_position_writer(monkeypatch):
     }
     written: list[dict] = []
 
-    monkeypatch.setattr(pipeline_module, "existing_shortcodes", lambda: set())
+    monkeypatch.setattr(pipeline_module, "existing_shortcodes", lambda shortcodes: set())
     monkeypatch.setattr(
         pipeline_module.workflow_run_service,
         "create_workflow_run",

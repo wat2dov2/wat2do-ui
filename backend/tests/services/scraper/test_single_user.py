@@ -11,10 +11,9 @@ from schemas.school import School
 from services.scraper import single_user
 from services.scraper.single_user import (
     SchoolResolutionError,
-    fetch_posts_for_single_user,
+    fetch_posts_for_targets,
     filter_valid_posts,
     is_post_url_target,
-    resolve_single_user_handle,
     resolve_single_user_scrape_school,
 )
 
@@ -84,22 +83,6 @@ def test_resolve_single_user_scrape_school_prefers_recipient_id_over_target_scho
     assert not mock_get_school.called
 
 
-def test_resolve_single_user_scrape_school_falls_back_to_target_school_name(monkeypatch):
-    monkeypatch.delenv("INTENDED_RECIPIENT_ID", raising=False)
-    monkeypatch.setenv("TARGET_SCHOOL", "University of Waterloo")
-    monkeypatch.setattr(
-        single_user.school_service,
-        "get_school",
-        MagicMock(return_value=None),
-    )
-    monkeypatch.setattr(
-        single_user.school_service,
-        "get_school_by_name",
-        MagicMock(return_value=_school("uwaterloo")),
-    )
-    assert resolve_single_user_scrape_school() == "uwaterloo"
-
-
 def test_resolve_single_user_scrape_school_falls_back_to_target_school_slug(monkeypatch):
     monkeypatch.delenv("INTENDED_RECIPIENT_ID", raising=False)
     monkeypatch.setenv("TARGET_SCHOOL", "utm")
@@ -149,34 +132,7 @@ def test_filter_valid_posts_keeps_real_posts():
     assert filter_valid_posts(posts) == [{"url": "https://www.instagram.com/p/GOOD/"}]
 
 
-def test_resolve_single_user_handle_from_post_owner():
-    posts = [{"ownerUsername": "club_page", "url": "https://www.instagram.com/p/X/"}]
-    assert (
-        resolve_single_user_handle(
-            target="https://www.instagram.com/p/X/",
-            posts=posts,
-        )
-        == "club_page"
-    )
-
-
-def test_resolve_single_user_handle_keeps_username():
-    assert resolve_single_user_handle(target="uwteaorganization", posts=[]) == "uwteaorganization"
-
-
-def test_resolve_single_user_handle_resolves_numeric_user_id():
-    """A dispatch without a username sends the numeric id; the caption needs the handle."""
-    posts = [{"ownerUsername": "utsgsplatoon", "url": "https://www.instagram.com/p/X/"}]
-    assert resolve_single_user_handle(target="79731783885", posts=posts) == "utsgsplatoon"
-
-
-def test_resolve_single_user_handle_keeps_numeric_id_when_owner_is_unknown():
-    """Nothing better to store: keep the id rather than dropping the grouping key."""
-    posts = [{"url": "https://www.instagram.com/p/X/"}]
-    assert resolve_single_user_handle(target="79731783885", posts=posts) == "79731783885"
-
-
-def test_fetch_posts_for_single_user_uses_recent_post_without_refetch():
+def test_fetch_posts_for_targets_uses_recent_post_without_refetch():
     scraper = MagicMock()
     recent = datetime.now(timezone.utc) - timedelta(minutes=5)
     scraper.scrape.return_value = (
@@ -184,8 +140,8 @@ def test_fetch_posts_for_single_user_uses_recent_post_without_refetch():
         False,
     )
 
-    posts, pinned = fetch_posts_for_single_user(
-        "uwteaorganization",
+    posts, pinned = fetch_posts_for_targets(
+        ["uwteaorganization"],
         cutoff_days=1,
         scraper=scraper,
     )
@@ -195,7 +151,7 @@ def test_fetch_posts_for_single_user_uses_recent_post_without_refetch():
     scraper.scrape.assert_called_once()
 
 
-def test_fetch_posts_for_single_user_refetches_when_stale():
+def test_fetch_posts_for_targets_refetches_when_stale():
     scraper = MagicMock()
     stale = datetime.now(timezone.utc) - timedelta(hours=2)
     fresh = datetime.now(timezone.utc) - timedelta(minutes=10)
@@ -210,8 +166,8 @@ def test_fetch_posts_for_single_user_refetches_when_stale():
         ),
     ]
 
-    posts, _pinned = fetch_posts_for_single_user(
-        "uwteaorganization",
+    posts, _pinned = fetch_posts_for_targets(
+        ["uwteaorganization"],
         cutoff_days=1,
         scraper=scraper,
     )
@@ -220,7 +176,7 @@ def test_fetch_posts_for_single_user_refetches_when_stale():
     assert posts[0]["url"].endswith("NEW/")
 
 
-def test_fetch_posts_for_single_user_skips_recency_for_post_url():
+def test_fetch_posts_for_targets_skips_recency_for_post_url():
     scraper = MagicMock()
     stale = datetime.now(timezone.utc) - timedelta(hours=2)
     scraper.scrape.return_value = (
@@ -228,8 +184,8 @@ def test_fetch_posts_for_single_user_skips_recency_for_post_url():
         False,
     )
 
-    posts, _pinned = fetch_posts_for_single_user(
-        "https://www.instagram.com/p/DIRECT/",
+    posts, _pinned = fetch_posts_for_targets(
+        ["https://www.instagram.com/p/DIRECT/"],
         cutoff_days=1,
         scraper=scraper,
     )

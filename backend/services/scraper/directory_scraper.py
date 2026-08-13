@@ -14,9 +14,7 @@ import httpx
 from bs4 import BeautifulSoup
 from pydantic import BaseModel
 
-from core.database import get_sb
-from core.tables import EVENTS
-from services.scraper.dedup import find_candidates
+from services.scraper.dedup import existing_urls, find_candidates
 from services.scraper.event_writer import write_event
 from services.scraper.extractor import extract_events_from_post
 from services.scraper.image_uploader import upload_post_images
@@ -59,16 +57,6 @@ class DirectoryScrapeResult:
     events_updated: int = 0
     events_duplicates: int = 0
     errors: list[str] = field(default_factory=list)
-
-
-def is_url_scraped(url: str) -> bool:
-    """Check if an event page URL has already been scraped and written to the database."""
-    try:
-        res = get_sb().table(EVENTS).select("id").eq("source_url", url).limit(1).execute()
-        return bool(res.data)
-    except Exception as e:
-        log.warning("Failed to query DB for source_url=%s: %s", url, e)
-        return False
 
 
 def crawl_directory_links(config: DirectoryConfig, max_pages: int = 5) -> list[str]:
@@ -200,11 +188,15 @@ def run_directory_pipeline(
         result.errors.append(err_msg)
         return result
 
+    scraped_urls: set[str] = set()
+    if not dry_run and event_urls:
+        scraped_urls = existing_urls(set(event_urls))
+
     for url in event_urls:
         log.info("[%s] Processing URL: %s", config.id, url)
 
         # Dry-run re-parses already-scraped URLs so parsing can be tested end-to-end.
-        if not dry_run and is_url_scraped(url):
+        if not dry_run and url in scraped_urls:
             log.info("[%s] URL already scraped - skipping: %s", config.id, url)
             continue
 

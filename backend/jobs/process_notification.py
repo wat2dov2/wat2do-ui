@@ -65,21 +65,20 @@ def main() -> int:
             media_list_str = qs.get("media_list", [None])[0]
             media_id_str = qs.get("media_id", [None])[0]
 
-            if media_list_str:
-                for m_id in media_list_str.split(","):
-                    try:
-                        m_id_part = m_id.strip().split("_")[0]
-                        shortcode = get_shortcode_from_media_id(int(m_id_part))
-                        targets.append(f"https://www.instagram.com/p/{shortcode}/")
-                    except ValueError:
-                        log.warning("Invalid media_id in media_list: %s", m_id)
-            elif media_id_str:
+            raw_ids = (
+                media_list_str.split(",")
+                if media_list_str
+                else [media_id_str]
+                if media_id_str
+                else []
+            )
+            for m_id in raw_ids:
                 try:
-                    m_id_part = media_id_str.strip().split("_")[0]
+                    m_id_part = m_id.strip().split("_")[0]
                     shortcode = get_shortcode_from_media_id(int(m_id_part))
                     targets.append(f"https://www.instagram.com/p/{shortcode}/")
                 except ValueError:
-                    log.warning("Invalid media_id: %s", media_id_str)
+                    log.warning("Invalid media_id: %s", m_id)
 
     if not targets:
         log.error(
@@ -98,18 +97,14 @@ def main() -> int:
 
     cutoff_days = int(os.getenv("CUTOFF_DAYS", "1"))
 
-    # Process each target
-    overall_status = 0
-    for target in unique_targets:
-        log.info("Dispatching scrape run for target: %s", target)
-        status = run(
-            username=target,
-            cutoff_days=cutoff_days,
-            dry_run=False,
-            allow_past_events=False,
-        )
-        if status != 0:
-            overall_status = status
+    # Process all targets in a single batch
+    log.info("Dispatching scrape run for targets: %s", unique_targets)
+    overall_status = run(
+        targets=unique_targets,
+        cutoff_days=cutoff_days,
+        dry_run=False,
+        allow_past_events=False,
+    )
 
     return overall_status
 

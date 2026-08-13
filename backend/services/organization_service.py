@@ -1,5 +1,6 @@
 """Organizations via Supabase. Sync."""
 
+import functools
 import logging
 from datetime import datetime, timezone
 
@@ -66,14 +67,7 @@ def lookup_organization_by_school_and_name(school: str, name: str) -> dict | Non
     if school_record is None:
         return None
 
-    rows = (
-        get_sb()
-        .table(ORGANIZATIONS)
-        .select(f"id,organization_name,organization_type,ig,{school_service.SCHOOL_SLUG_EMBED}")
-        .eq("school_id", school_record.id)
-        .order("id", desc=False)
-        .execute()
-    ).data or []
+    rows = _get_organizations_for_school_lookup(school_record.id)
 
     matches = [
         row for row in rows if _normalize_organization_name(row.get("organization_name")) == target
@@ -81,6 +75,18 @@ def lookup_organization_by_school_and_name(school: str, name: str) -> dict | Non
     if not matches:
         return None
     return school_service.with_school_slug(matches[0])
+
+
+@functools.lru_cache(maxsize=16)
+def _get_organizations_for_school_lookup(school_id: int) -> list[dict]:
+    return (
+        get_sb()
+        .table(ORGANIZATIONS)
+        .select(f"id,organization_name,organization_type,ig,{school_service.SCHOOL_SLUG_EMBED}")
+        .eq("school_id", school_id)
+        .order("id", desc=False)
+        .execute()
+    ).data or []
 
 
 def _fetch_owner_email(user_id: str | None) -> str | None:

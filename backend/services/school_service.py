@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 import unicodedata
+from functools import lru_cache
 from typing import Final
 
 from core.database import get_sb
@@ -31,6 +32,7 @@ def normalize_school_slug(value: str | None) -> str:
     return (value or "").strip().lower()
 
 
+@lru_cache(maxsize=128)
 def get_school(slug: str | None) -> SchoolRecord | None:
     normalized_slug = normalize_school_slug(slug)
     if not normalized_slug:
@@ -48,6 +50,7 @@ def get_school(slug: str | None) -> SchoolRecord | None:
     return SchoolRecord.model_validate(response.data[0])
 
 
+@lru_cache(maxsize=128)
 def get_school_by_recipient_id(recipient_id: str | None) -> SchoolRecord | None:
     normalized_recipient_id = (recipient_id or "").strip()
     if not normalized_recipient_id:
@@ -177,6 +180,7 @@ def search_schools(query: str, limit: int = DEFAULT_SEARCH_LIMIT) -> list[School
     return [school for _, school in ranked[:limit]]
 
 
+@lru_cache(maxsize=128)
 def get_school_by_name(name: str | None) -> SchoolRecord | None:
     normalized_name = (name or "").strip()
     if not normalized_name:

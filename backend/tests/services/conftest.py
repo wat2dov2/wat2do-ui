@@ -155,3 +155,29 @@ def patch_sb(monkeypatch, fake_sb):
         monkeypatch.setattr(f"{module_path}.get_sb", lambda: fake_sb)
 
     return _patch
+
+
+@pytest.fixture(autouse=True)
+def clear_scraper_caches():
+    """Clear all LRU caches used in the scraper pipeline between tests."""
+    # dedup caches
+    from services.scraper.dedup import clear_candidate_caches
+
+    clear_candidate_caches()
+
+    # event_writer caches
+    from services.scraper.event_writer import _lookup_organization_by_ig
+
+    _lookup_organization_by_ig.cache_clear()
+
+    # school_service caches
+    from services.school_service import get_school, get_school_by_name, get_school_by_recipient_id
+
+    get_school.cache_clear()
+    get_school_by_recipient_id.cache_clear()
+    get_school_by_name.cache_clear()
+
+    # organization_service caches
+    from services.organization_service import _get_organizations_for_school_lookup
+
+    _get_organizations_for_school_lookup.cache_clear()

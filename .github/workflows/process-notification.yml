@@ -1,13 +1,8 @@
-name: Process Single User
+name: Process Notifications
 run-name: >-
   ${{
-    github.event.client_payload.notification_dict['android.title'] &&
-    format('{0} - {1}', github.event.client_payload.notification_dict['android.title'], github.event.client_payload.notification_dict['android.subText']) ||
-    (
-      (github.event.client_payload.username || github.event.client_payload.poster_id || inputs.poster_id) &&
-      format('Process @{0}', github.event.client_payload.username || github.event.client_payload.poster_id || inputs.poster_id)
-    ) ||
-    format('Process Notification for {0}', github.event.client_payload.school || github.event.client_payload.intended_recipient_id)
+    github.event.client_payload.notification_dict && format('{0} - {1}', github.event.client_payload.notification_dict['android.title'], github.event.client_payload.notification_dict['android.subText']) ||
+    format('Process @{0}', inputs.poster_id)
   }}
 
 # One-off scrape of a single Instagram handle.
@@ -30,7 +25,7 @@ on:
         description: 'School name'
         required: false
         type: string
-        default: 'University of Waterloo'
+        default: 'uwaterloo'
 
 jobs:
   process-post:
@@ -51,9 +46,9 @@ jobs:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       APIFY_API_TOKEN: ${{ secrets.APIFY_API_TOKEN }}
       EVENT_FEED_REVALIDATION_SECRET: ${{ secrets.EVENT_FEED_REVALIDATION_SECRET }}
-      POSTER_ID: ${{ github.event.client_payload.username || github.event.client_payload.poster_id || inputs.poster_id }}
+      POSTER_ID: ${{ inputs.poster_id }}
       INTENDED_RECIPIENT_ID: ${{ github.event.client_payload.intended_recipient_id }}
-      TARGET_SCHOOL: ${{ github.event.client_payload.school || inputs.school || 'University of Waterloo' }}
+      TARGET_SCHOOL: ${{ inputs.school || 'uwaterloo' }}
       CUTOFF_DAYS: ${{ github.event_name == 'workflow_dispatch' && '1825' || '1' }}
 
     steps:

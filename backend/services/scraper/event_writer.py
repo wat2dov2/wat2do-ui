@@ -7,6 +7,7 @@ Every logical event is one ``events`` row + N ``event_dates`` rows.
 
 from __future__ import annotations
 
+import functools
 import logging
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING
@@ -22,7 +23,7 @@ from core.constants import (
     MAX_ORGANIZATION_NAME_LENGTH,
 )
 from core.database import get_sb
-from core.sanitize import remove_surrogates
+from core.sanitize import parse_iso_datetime, remove_surrogates
 from core.tables import EVENTS, ORGANIZATIONS
 from schemas.event import normalize_category
 from schemas.event_date import OccurrenceCreate, OccurrenceResponse, OccurrenceUpdate
@@ -155,6 +156,12 @@ def write_event(
         title,
     )
     event_feed_revalidation_service.revalidate_school(school.slug)
+
+    # Cache invalidation for scraper deduplication queries
+    from services.scraper.dedup import clear_candidate_caches
+
+    clear_candidate_caches()
+
     return "inserted"
 
 
@@ -186,6 +193,11 @@ def _overwrite_event(
             get_sb().table(EVENTS).delete().eq("id", new_id).execute()
             raise
         event_feed_revalidation_service.revalidate_school(school_slug)
+
+        from services.scraper.dedup import clear_candidate_caches
+
+        clear_candidate_caches()
+
         return "inserted"
 
     incoming_org_id = event_row.get("organization_id")
@@ -214,6 +226,11 @@ def _overwrite_event(
             get_sb().table(EVENTS).delete().eq("id", new_id).execute()
             raise
         event_feed_revalidation_service.revalidate_school(school_slug)
+
+        from services.scraper.dedup import clear_candidate_caches
+
+        clear_candidate_caches()
+
         return "inserted"
 
     merged = _merge_overwrite_payload(event_row, old_event)
@@ -247,6 +264,11 @@ def _overwrite_event(
                     existing_id,
                     e,
                 )
+
+    from services.scraper.dedup import clear_candidate_caches
+
+    clear_candidate_caches()
+
     return "updated"
 
 
@@ -305,6 +327,7 @@ def _merge_overwrite_payload(incoming: dict, old_event) -> dict:
     return merged
 
 
+@functools.lru_cache(maxsize=2048)
 def _lookup_organization_by_ig(ig_handle: str) -> dict | None:
     rows = (
         get_sb()
@@ -365,6 +388,12 @@ def _ensure_organization_by_ig(
             organization_name,
             school_slug,
         )
+        _lookup_organization_by_ig.cache_clear()
+
+        from services import organization_service
+
+        organization_service._get_organizations_for_school_lookup.cache_clear()
+
         return row
 
     return _lookup_organization_by_ig(cleaned)
@@ -426,12 +455,12 @@ def _coerce_future_occurrences(
     for occ in occurrences:
         if not isinstance(occ, dict):
             continue
-        dtstart = _parse_iso(occ.get("dtstart_utc"))
+        dtstart = parse_iso_datetime(occ.get("dtstart_utc"))
         if dtstart is None:
             continue
         if not allow_past_events and dtstart < now:
             continue
-        dtend = _parse_iso(occ.get("dtend_utc"))
+        dtend = parse_iso_datetime(occ.get("dtend_utc"))
         try:
             out.append(
                 OccurrenceCreate(
@@ -444,16 +473,3 @@ def _coerce_future_occurrences(
         except Exception as e:
             log.warning("Skipping invalid occurrence %r: %s", occ, e)
     return out
-
-
-def _parse_iso(value: str | None) -> datetime | None:
-    if not value:
-        return None
-    try:
-        cleaned = value.replace("Z", "+00:00") if value.endswith("Z") else value
-        dt = datetime.fromisoformat(cleaned)
-    except ValueError:
-        return None
-    if dt.tzinfo is None:
-        return None
-    return dt.astimezone(timezone.utc)

@@ -9,6 +9,7 @@ this module only gathers candidates.
 
 from __future__ import annotations
 
+import functools
 import logging
 import re
 from datetime import datetime, timedelta, timezone
@@ -201,15 +202,16 @@ def _parse_iso8601_utc(value: str | None) -> datetime | None:
     return dt.astimezone(timezone.utc)
 
 
-def _same_organization_candidates(
-    *,
-    organization_id: int | None,
-    ig_handle: str | None,
-    candidate_title: str,
-) -> list[dict]:
-    """Return future same-org events whose title clears the similarity threshold."""
+def clear_candidate_caches() -> None:
+    """Clear in-memory deduplication caches after a successful write."""
+    _fetch_org_events_by_id.cache_clear()
+    _fetch_org_events_by_ig.cache_clear()
+    _fetch_day_events.cache_clear()
 
-    def _page_by_org_id(offset: int, page_size: int) -> list[dict]:
+
+@functools.lru_cache(maxsize=128)
+def _fetch_org_events_by_id(organization_id: int) -> list[dict]:
+    def _page(offset: int, page_size: int) -> list[dict]:
         return (
             get_sb()
             .table(EVENTS)
@@ -220,7 +222,12 @@ def _same_organization_candidates(
             .execute()
         ).data or []
 
-    def _page_by_ig(offset: int, page_size: int) -> list[dict]:
+    return fetch_all_pages(_page)
+
+
+@functools.lru_cache(maxsize=128)
+def _fetch_org_events_by_ig(ig_handle: str) -> list[dict]:
+    def _page(offset: int, page_size: int) -> list[dict]:
         return (
             get_sb()
             .table(EVENTS)
@@ -231,10 +238,21 @@ def _same_organization_candidates(
             .execute()
         ).data or []
 
+    return fetch_all_pages(_page)
+
+
+def _same_organization_candidates(
+    *,
+    organization_id: int | None,
+    ig_handle: str | None,
+    candidate_title: str,
+) -> list[dict]:
+    """Return future same-org events whose title clears the similarity threshold."""
+
     if isinstance(organization_id, int):
-        rows = fetch_all_pages(_page_by_org_id)
+        rows = _fetch_org_events_by_id(organization_id)
     elif ig_handle:
-        rows = fetch_all_pages(_page_by_ig)
+        rows = _fetch_org_events_by_ig(ig_handle)
     else:
         return []
 
@@ -256,6 +274,23 @@ def _same_organization_candidates(
     return out
 
 
+@functools.lru_cache(maxsize=128)
+def _fetch_day_events(day_start_iso: str, day_end_iso: str) -> list[dict]:
+    def _page(offset: int, page_size: int) -> list[dict]:
+        return (
+            get_sb()
+            .table(EVENT_DATES)
+            .select(f"event_id,events({_SAME_DAY_EVENT_EMBED})")
+            .gte("dtstart_utc", day_start_iso)
+            .lt("dtstart_utc", day_end_iso)
+            .order("id", desc=False)
+            .range(offset, offset + page_size - 1)
+            .execute()
+        ).data or []
+
+    return fetch_all_pages(_page)
+
+
 def _same_day_candidates(
     *,
     target_start: datetime,
@@ -271,19 +306,7 @@ def _same_day_candidates(
     soft_name = _normalize_organization_name(organization_name)
     allow_soft_name = soft_name and not isinstance(organization_id, int)
 
-    def _page(offset: int, page_size: int) -> list[dict]:
-        return (
-            get_sb()
-            .table(EVENT_DATES)
-            .select(f"event_id,events({_SAME_DAY_EVENT_EMBED})")
-            .gte("dtstart_utc", day_start.isoformat())
-            .lt("dtstart_utc", day_end.isoformat())
-            .order("id", desc=False)
-            .range(offset, offset + page_size - 1)
-            .execute()
-        ).data or []
-
-    rows = fetch_all_pages(_page)
+    rows = _fetch_day_events(day_start.isoformat(), day_end.isoformat())
     norm_candidate_title = normalize(candidate_title)
     seen_event_ids: set[int] = set()
     out: list[dict] = []
@@ -347,13 +370,20 @@ def _latest_occurrence_end(occurrences: list[dict]) -> datetime | None:
     return max(candidates) if candidates else None
 
 
-def existing_shortcodes() -> set[str]:
-    """Return Instagram shortcodes already present on ``events.source_url``.
+def existing_shortcodes(shortcodes: set[str]) -> set[str]:
+    """Return which of the provided shortcodes already exist on ``events.source_url``.
 
-    Used by the pipeline filter stage. Paginated via ``fetch_all_pages``
-    because PostgREST caps responses at 1000 rows; without pagination,
-    posts beyond the first page would be re-scraped as "new".
+    Used by the pipeline filter stage. Queries only for the provided shortcodes
+    to prevent memory and latency issues as the events table grows.
     """
+    if not shortcodes:
+        return set()
+
+    clean_shortcodes = {sc.strip().strip("/") for sc in shortcodes if sc.strip()}
+    if not clean_shortcodes:
+        return set()
+
+    conditions = ",".join(f"source_url.ilike.%/{sc}%" for sc in clean_shortcodes)
 
     def _page(offset: int, page_size: int) -> list[dict]:
         return (
@@ -361,6 +391,7 @@ def existing_shortcodes() -> set[str]:
             .table(EVENTS)
             .select("source_url")
             .not_.is_("source_url", "null")
+            .or_(conditions)
             .order("id", desc=False)
             .range(offset, offset + page_size - 1)
             .execute()
@@ -373,8 +404,40 @@ def existing_shortcodes() -> set[str]:
         if not url:
             continue
         shortcode = _extract_shortcode(url)
-        if shortcode:
+        if shortcode and shortcode in clean_shortcodes:
             seen.add(shortcode)
+    return seen
+
+
+def existing_urls(urls: set[str]) -> set[str]:
+    """Return which of the provided exact URLs already exist on ``events.source_url``.
+
+    Used by the directory scraper pipeline filter stage to prevent N+1 queries.
+    """
+    if not urls:
+        return set()
+
+    clean_urls = {u.strip() for u in urls if u.strip()}
+    if not clean_urls:
+        return set()
+
+    def _page(offset: int, page_size: int) -> list[dict]:
+        return (
+            get_sb()
+            .table(EVENTS)
+            .select("source_url")
+            .in_("source_url", list(clean_urls))
+            .order("id", desc=False)
+            .range(offset, offset + page_size - 1)
+            .execute()
+        ).data or []
+
+    rows = fetch_all_pages(_page)
+    seen: set[str] = set()
+    for row in rows:
+        url = row.get("source_url")
+        if url and url in clean_urls:
+            seen.add(url)
     return seen
 
 

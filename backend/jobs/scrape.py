@@ -30,9 +30,8 @@ from services.scraper.instagram_scraper import get_scraper  # noqa: E402
 from services.scraper.pipeline import ScrapeResult, run_pipeline  # noqa: E402
 from services.scraper.single_user import (  # noqa: E402
     SchoolResolutionError,
-    fetch_posts_for_single_user,
+    fetch_posts_for_targets,
     filter_valid_posts,
-    resolve_single_user_handle,
     resolve_single_user_scrape_school,
 )
 
@@ -99,7 +98,7 @@ def _log_automate_event(school: str, username: str | None, url: str | None) -> N
 
 def run(
     *,
-    username: str,
+    targets: list[str],
     cutoff_days: int,
     dry_run: bool,
     allow_past_events: bool,
@@ -110,53 +109,64 @@ def run(
         log.error("%s", exc)
         return 1
 
-    target = username.strip()
-    if not target:
-        log.error("No valid username provided, exiting.")
+    clean_targets = [t.strip() for t in targets if t.strip()]
+    if not clean_targets:
+        log.error("No valid targets provided, exiting.")
         return 1
 
     log.info(
-        "Single-user scrape: username=%s, school=%s, cutoff_days=%d, dry_run=%s, allow_past_events=%s",
-        target,
+        "Batch scrape: targets=%d, school=%s, cutoff_days=%d, dry_run=%s, allow_past_events=%s",
+        len(clean_targets),
         school,
         cutoff_days,
         dry_run,
         allow_past_events,
     )
 
-    posts, pinned_warning = fetch_posts_for_single_user(
-        target,
+    posts, pinned_warning = fetch_posts_for_targets(
+        clean_targets,
         cutoff_days=cutoff_days,
         scraper=get_scraper(),
     )
     posts = filter_valid_posts(posts)
     if not posts:
-        log.info("No valid posts retrieved for target=%s", target)
+        log.info("No valid posts retrieved for targets")
         _print_summary(
             school,
-            ScrapeResult(ig_handle=target, dry_run=dry_run),
+            ScrapeResult(ig_handle="unknown", dry_run=dry_run),
         )
         return 0
 
-    handle = resolve_single_user_handle(target=target, posts=posts)
-    result = run_pipeline(
-        ig_handle=handle,
-        school=school,
-        posts=posts,
-        cutoff_days=cutoff_days,
-        pinned_post_warning=pinned_warning,
-        dry_run=dry_run,
-        github_run_id=os.getenv("GITHUB_RUN_ID"),
-        allow_past_events=allow_past_events,
-    )
-    _print_summary(school, result)
+    from collections import defaultdict
 
-    resolved_username = posts[0].get("ownerUsername") or posts[0].get("username")
-    resolved_url = posts[0].get("url")
-    _create_github_annotation(school, resolved_username, resolved_url)
-    _log_automate_event(school, resolved_username, resolved_url)
+    posts_by_owner = defaultdict(list)
+    for p in posts:
+        owner = (p.get("ownerUsername") or p.get("username") or "unknown").strip()
+        posts_by_owner[owner].append(p)
 
-    return 0 if result.status != WORKFLOW_RUN_ERROR else 1
+    overall_status = 0
+    for owner, owner_posts in posts_by_owner.items():
+        handle = owner.lstrip("@")
+        result = run_pipeline(
+            ig_handle=handle,
+            school=school,
+            posts=owner_posts,
+            cutoff_days=cutoff_days,
+            pinned_post_warning=pinned_warning if len(clean_targets) == 1 else False,
+            dry_run=dry_run,
+            github_run_id=os.getenv("GITHUB_RUN_ID"),
+            allow_past_events=allow_past_events,
+        )
+        _print_summary(school, result)
+
+        resolved_url = owner_posts[0].get("url")
+        _create_github_annotation(school, handle, resolved_url)
+        _log_automate_event(school, handle, resolved_url)
+
+        if result.status == WORKFLOW_RUN_ERROR:
+            overall_status = 1
+
+    return overall_status
 
 
 def main() -> int:
@@ -166,7 +176,7 @@ def main() -> int:
     )
     args = _parse_args()
     return run(
-        username=args.username,
+        targets=[args.username],
         cutoff_days=args.cutoff_days,
         dry_run=args.dry_run == "true",
         allow_past_events=args.allow_past_events == "true",

@@ -47,12 +47,9 @@ def resolve_organization_for_scrape(
             cleaned_handles.append(c)
 
     # 1. Try to find an existing org that matches the target school
-    # We cache the lookups so we don't query the DB twice for the fallback logic.
-    org_cache = {}
+    # (The underlying lookup is LRU cached, so multiple calls are free)
     for cleaned in cleaned_handles:
         org = event_writer_mod._lookup_organization_by_ig(cleaned)
-        org_cache[cleaned] = org
-
         if org is not None:
             # Check if this org actually belongs to our target school
             org_school = org.get("schools")
@@ -68,7 +65,7 @@ def resolve_organization_for_scrape(
     # (i.e. it doesn't exist in the database yet, so we can safely create a stub for it).
     fallback_handle = None
     for cleaned in cleaned_handles:
-        if org_cache[cleaned] is None:
+        if event_writer_mod._lookup_organization_by_ig(cleaned) is None:
             fallback_handle = cleaned
             break
 

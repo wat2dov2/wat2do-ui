@@ -407,7 +407,6 @@ def test_pass2_insert_json_creates_row(fake_sb, patch_sb, monkeypatch):
     fake_sb.queue_responses(
         [
             [],  # org_resolve loop 1 lookup miss
-            [],  # _ensure_organization_by_ig lookup miss
             [{"id": 8}],  # organization insert
             [{"id": 7}],
             [

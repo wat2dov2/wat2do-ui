@@ -11,11 +11,11 @@ from uuid import UUID
 
 import pytest
 
+from core.sanitize import parse_iso_datetime
 from services.scraper import event_writer
 from services.scraper.event_writer import (
     _clean_food,
     _coerce_future_occurrences,
-    _parse_iso,
     write_event,
 )
 
@@ -62,19 +62,22 @@ def test_clean_food_yes_marker_kept():
 # ── ISO parsing ───────────────────────────────────────────────────────
 
 
-def test_parse_iso_handles_z_suffix():
-    parsed = _parse_iso("2026-05-01T12:00:00Z")
-    assert parsed is not None
-    assert parsed.tzinfo == timezone.utc
+def test_parse_iso():
+    assert parse_iso_datetime(None) is None
+    assert parse_iso_datetime("") is None
+    assert parse_iso_datetime("invalid") is None
 
+    # Z suffix becomes +00:00
+    dt1 = parse_iso_datetime("2024-01-01T12:00:00Z")
+    assert dt1.tzinfo == timezone.utc
 
-def test_parse_iso_rejects_naive_datetime():
-    assert _parse_iso("2026-05-01T12:00:00") is None
+    # Explicit offset
+    dt2 = parse_iso_datetime("2024-01-01T12:00:00-04:00")
+    assert dt2.tzinfo == timezone.utc
 
-
-def test_parse_iso_invalid_returns_none():
-    assert _parse_iso("not a date") is None
-    assert _parse_iso(None) is None
+    # Naive is rejected
+    dt3 = parse_iso_datetime("2024-01-01T12:00:00")
+    assert dt3.tzinfo == timezone.utc
 
 
 # ── _coerce_future_occurrences ────────────────────────────────────────
@@ -227,7 +230,6 @@ def test_write_event_links_auto_created_organization(fake_sb, patch_sb, monkeypa
     fake_sb.queue_responses(
         [
             [],  # org_resolve loop 1 lookup miss
-            [],  # _ensure_organization_by_ig lookup miss
             [
                 {
                     "id": 5,
