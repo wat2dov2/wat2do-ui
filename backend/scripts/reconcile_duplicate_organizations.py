@@ -371,6 +371,7 @@ def build_transaction_sql(plan: dict[str, Any]) -> str:
         f"WHERE id = {int(clear['organization']['id'])};"
         for clear in plan["instagram_clears"]
     ]
+    action_sql_str = "\n\n".join(action_sql)
     return f"""BEGIN;
 SET LOCAL lock_timeout = '10s';
 SET LOCAL statement_timeout = '60s';
@@ -405,7 +406,7 @@ BEGIN
 END
 $validate$;
 
-{"\n\n".join(action_sql)}
+{action_sql_str}
 
 COMMIT;
 """

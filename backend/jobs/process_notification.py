@@ -86,7 +86,6 @@ def main() -> int:
         )
         return 1  # Error out the GitHub action
 
-
     # Deduplicate and keep order
     seen = set()
     unique_targets = []
