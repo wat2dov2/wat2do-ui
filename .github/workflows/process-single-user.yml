@@ -96,9 +96,17 @@ jobs:
 
       - name: Process the Instagram account
         working-directory: backend
+        env:
+          NOTIFICATION_JSON: ${{ toJSON(github.event.client_payload.notification_dict) }}
         run: |
           export EVENT_FEED_REVALIDATION_URL="${FRONTEND_URL%/}/api/revalidate-events"
-          python jobs/scrape.py \
-            --username "$POSTER_ID" \
-            --cutoff-days "$CUTOFF_DAYS" \
-            --dry-run false
+          if [[ "$NOTIFICATION_JSON" != "null" && -n "$NOTIFICATION_JSON" ]]; then
+            echo "Processing raw notification payload..."
+            python jobs/process_notification.py
+          else
+            echo "Processing standard poster_id..."
+            python jobs/scrape.py \
+              --username "$POSTER_ID" \
+              --cutoff-days "$CUTOFF_DAYS" \
+              --dry-run false
+          fi
