@@ -23,9 +23,8 @@ on:
         type: string
       school:
         description: 'School name'
-        required: false
+        required: true
         type: string
-        default: 'uwaterloo'
 
 jobs:
   process-post:
@@ -47,8 +46,8 @@ jobs:
       APIFY_API_TOKEN: ${{ secrets.APIFY_API_TOKEN }}
       EVENT_FEED_REVALIDATION_SECRET: ${{ secrets.EVENT_FEED_REVALIDATION_SECRET }}
       POSTER_ID: ${{ inputs.poster_id }}
-      INTENDED_RECIPIENT_ID: ${{ github.event.client_payload.intended_recipient_id }}
-      TARGET_SCHOOL: ${{ inputs.school || 'uwaterloo' }}
+      INTENDED_RECIPIENT_ID: ${{ github.event.client_payload.intended_recipient_id || github.event.client_payload.notification_dict['com.instagram.android.igns.logging.intended_recipient_id'] }}
+      TARGET_SCHOOL: ${{ github.event_name == 'workflow_dispatch' && inputs.school || '' }}
       CUTOFF_DAYS: ${{ github.event_name == 'workflow_dispatch' && '1825' || '1' }}
 
     steps:

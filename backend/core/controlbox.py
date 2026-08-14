@@ -350,6 +350,19 @@ class InstagramPublishingControl(_ControlModel):
         return self
 
 
+class WorkflowFailureAlertsControl(_ControlModel):
+    discord_admin_role_ids: tuple[str, ...] = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def validate_discord_role_ids(self) -> "WorkflowFailureAlertsControl":
+        role_ids = self.discord_admin_role_ids
+        if len(role_ids) != len(set(role_ids)):
+            raise ValueError("Discord admin role IDs must be unique")
+        if any(not role_id.isdigit() or not 17 <= len(role_id) <= 20 for role_id in role_ids):
+            raise ValueError("Discord admin role IDs must be 17 to 20 digit snowflakes")
+        return self
+
+
 class PromoterQrPlacementControl(_ControlModel):
     x: float = Field(ge=0, le=1)
     y: float = Field(ge=0, le=1)
@@ -445,6 +458,7 @@ class ControlBox(_ControlModel):
     public_attendance: PublicAttendanceControl
     social_previews: SocialPreviewsControl
     instagram_publishing: InstagramPublishingControl
+    workflow_failure_alerts: WorkflowFailureAlertsControl
     promoter_program: PromoterProgramControl
 
 

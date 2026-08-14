@@ -1,0 +1,94 @@
+name: Notify workflow failures
+
+on:
+  workflow_run:
+    workflows:
+      - CI/CD
+      - Daily Directory Scrape
+      - Daily Instagram maintenance and publishing drafts
+      - Monthly promoter poster payouts
+      - Nightly recommendation compute
+      - Process Notifications
+      - Scheduled notification emails
+      - Terraform
+    branches: [main]
+    types: [completed]
+
+permissions:
+  contents: read
+
+jobs:
+  notify-discord:
+    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+          sparse-checkout: backend/controlbox/workflow_failure_alerts.json
+          sparse-checkout-cone-mode: false
+
+      - name: Notify Wat2Do administrators
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_DEBUG_WEBHOOK_URL }}
+          RUN_URL: ${{ github.event.workflow_run.html_url }}
+          RUN_TITLE: ${{ github.event.workflow_run.display_title }}
+          WORKFLOW_NAME: ${{ github.event.workflow_run.name }}
+          HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
+          TRIGGER_EVENT: ${{ github.event.workflow_run.event }}
+          RUN_ACTOR: ${{ github.event.workflow_run.actor.login }}
+          COMPLETED_AT: ${{ github.event.workflow_run.updated_at }}
+        run: |
+          test -n "$DISCORD_WEBHOOK_URL"
+          role_ids="$(jq -cer '
+            .discord_admin_role_ids
+            | if length > 0 and all(.[]; type == "string" and test("^[0-9]{17,20}$"))
+              then .
+              else error("invalid Discord admin role IDs")
+              end
+          ' backend/controlbox/workflow_failure_alerts.json)"
+          mentions="$(jq -r 'map("<@&" + . + ">") | join(" ")' <<< "$role_ids")"
+          payload="$(jq -n \
+            --arg content "$mentions" \
+            --arg run_url "$RUN_URL" \
+            --arg run_title "$RUN_TITLE" \
+            --arg workflow_name "$WORKFLOW_NAME" \
+            --arg branch "$HEAD_BRANCH" \
+            --arg event "$TRIGGER_EVENT" \
+            --arg actor "$RUN_ACTOR" \
+            --arg completed_at "$COMPLETED_AT" \
+            --argjson roles "$role_ids" \
+            '{
+              content: $content,
+              allowed_mentions: {
+                parse: [],
+                roles: $roles,
+                users: [],
+                replied_user: false
+              },
+              embeds: [{
+                title: "GitHub Actions workflow failed",
+                url: $run_url,
+                color: 15158332,
+                fields: [
+                  {name: "Workflow", value: ($workflow_name[0:1024]), inline: true},
+                  {name: "Branch", value: ($branch[0:1024]), inline: true},
+                  {name: "Event", value: ($event[0:1024]), inline: true},
+                  {name: "Run", value: ($run_title[0:1024])},
+                  {name: "Triggered by", value: ($actor[0:1024]), inline: true}
+                ],
+                timestamp: $completed_at
+              }]
+            }')"
+          curl \
+            --fail \
+            --silent \
+            --show-error \
+            --retry 3 \
+            --retry-all-errors \
+            --header 'Content-Type: application/json' \
+            --data "$payload" \
+            --output /dev/null \
+            "${DISCORD_WEBHOOK_URL}?wait=true"

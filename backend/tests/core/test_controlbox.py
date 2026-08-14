@@ -50,6 +50,7 @@ def test_checked_in_controlbox_is_valid() -> None:
     assert controlbox.instagram_publishing.new_event_window_hours == 24
     assert controlbox.instagram_publishing.maximum_event_slides == 9
     assert controlbox.instagram_publishing.token_refresh_lead_days == 14
+    assert controlbox.workflow_failure_alerts.discord_admin_role_ids == ("1506447680287674469",)
     assert controlbox.promoter_program.rate_cents == 100
     assert controlbox.promoter_program.maximum_active_posters == 50
     assert controlbox.promoter_program.payout_day_of_month == 1
@@ -158,6 +159,17 @@ def test_unknown_control_is_rejected(tmp_path: Path) -> None:
     )
 
     with pytest.raises(ValidationError, match="mystery_knob"):
+        load_controlbox(path)
+
+
+def test_invalid_discord_admin_role_id_is_rejected(tmp_path: Path) -> None:
+    path = _write_control(
+        tmp_path,
+        "workflow_failure_alerts",
+        lambda payload: payload.update({"discord_admin_role_ids": ["not-a-snowflake"]}),
+    )
+
+    with pytest.raises(ValidationError, match="Discord admin role IDs"):
         load_controlbox(path)
 
 

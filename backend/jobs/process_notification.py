@@ -1,9 +1,5 @@
 #!/usr/bin/env python3
-"""Wrapper to process raw Instagram push notification dictionaries.
-
-Extracts media IDs or usernames from the JSON payload and calls `scrape.run()`
-for each extracted target.
-"""
+"""Process exact Instagram posts from a forwarded Android notification."""
 
 from __future__ import annotations
 
@@ -24,6 +20,15 @@ from jobs.scrape import run  # noqa: E402
 
 log = logging.getLogger(__name__)
 
+_IG_ACTION_KEY = "com.instagram.android.igns.logging.ig_action"
+_PUSH_CATEGORY_KEY = "com.instagram.android.igns.logging.push_category"
+_MEDIA_QUERY_KEYS = ("media_list", "media_id")
+_DIGEST_QUERY_KEYS = ("cache_ent_id", "total_non_mmc_media_count")
+
+
+class NotificationPayloadError(ValueError):
+    """Raised when a post notification contains invalid processing metadata."""
+
 
 def get_shortcode_from_media_id(media_id: int) -> str:
     """Convert a numeric Instagram media ID to its base64 shortcode."""
@@ -33,6 +38,48 @@ def get_shortcode_from_media_id(media_id: int) -> str:
         media_id, remainder = divmod(media_id, 64)
         shortcode = alphabet[remainder] + shortcode
     return shortcode
+
+
+def _action_query(payload: dict[str, object]) -> tuple[str, dict[str, list[str]]]:
+    action = payload.get(_IG_ACTION_KEY, "")
+    if not isinstance(action, str):
+        raise NotificationPayloadError("Notification action must be a string.")
+
+    action_path, separator, query_string = action.partition("?")
+    query = urllib.parse.parse_qs(query_string, keep_blank_values=True) if separator else {}
+    return action_path, query
+
+
+def _notification_targets(payload: dict[str, object]) -> tuple[str, list[str]]:
+    action_path, query = _action_query(payload)
+    raw_media_ids: list[str] = []
+    for key in _MEDIA_QUERY_KEYS:
+        for value in query.get(key, []):
+            raw_media_ids.extend(value.split(","))
+
+    if not raw_media_ids:
+        has_digest_metadata = any(key in query or key in payload for key in _DIGEST_QUERY_KEYS)
+        if has_digest_metadata:
+            raise NotificationPayloadError(
+                "Instagram digest notification did not expose materialized media IDs."
+            )
+        return action_path, []
+
+    media_ids: list[int] = []
+    seen: set[int] = set()
+    for raw_media_id in raw_media_ids:
+        base_media_id = raw_media_id.strip().split("_", 1)[0]
+        if not base_media_id.isdigit() or int(base_media_id) <= 0:
+            raise NotificationPayloadError("Notification contains an invalid media ID.")
+        media_id = int(base_media_id)
+        if media_id not in seen:
+            seen.add(media_id)
+            media_ids.append(media_id)
+
+    return action_path, [
+        f"https://www.instagram.com/p/{get_shortcode_from_media_id(media_id)}/"
+        for media_id in media_ids
+    ]
 
 
 def main() -> int:
@@ -52,55 +99,31 @@ def main() -> int:
         log.error("Failed to decode NOTIFICATION_JSON: %s", exc)
         return 1
 
-    targets = []
+    if not isinstance(payload, dict):
+        log.error("NOTIFICATION_JSON must contain a JSON object.")
+        return 1
 
-    # 1. Look for media_list or media_id in ig_action
-    ig_action = payload.get("com.instagram.android.igns.logging.ig_action", "")
-    if ig_action:
-        # Some URLs might lack a schema, parsing query params from paths can be tricky
-        # if the URL is just 'clips_home?media_list=...'
-        if "?" in ig_action:
-            query_string = ig_action.split("?", 1)[1]
-            qs = urllib.parse.parse_qs(query_string)
-            media_list_str = qs.get("media_list", [None])[0]
-            media_id_str = qs.get("media_id", [None])[0]
-
-            raw_ids = (
-                media_list_str.split(",")
-                if media_list_str
-                else [media_id_str]
-                if media_id_str
-                else []
-            )
-            for m_id in raw_ids:
-                try:
-                    m_id_part = m_id.strip().split("_")[0]
-                    shortcode = get_shortcode_from_media_id(int(m_id_part))
-                    targets.append(f"https://www.instagram.com/p/{shortcode}/")
-                except ValueError:
-                    log.warning("Invalid media_id: %s", m_id)
+    try:
+        action_path, targets = _notification_targets(payload)
+    except NotificationPayloadError as exc:
+        log.error("%s", exc)
+        return 1
 
     if not targets:
-        log.error(
-            "No media IDs found in payload. Full notification payload: %s",
-            json.dumps(payload),
+        category = payload.get(_PUSH_CATEGORY_KEY)
+        log.info(
+            "Ignoring unsupported Instagram notification category=%r action=%r",
+            category if isinstance(category, str) else None,
+            action_path,
         )
-        return 1  # Error out the GitHub action
-
-    # Deduplicate and keep order
-    seen = set()
-    unique_targets = []
-    for t in targets:
-        if t not in seen:
-            seen.add(t)
-            unique_targets.append(t)
+        return 0
 
     cutoff_days = int(os.getenv("CUTOFF_DAYS", "1"))
 
     # Process all targets in a single batch
-    log.info("Dispatching scrape run for targets: %s", unique_targets)
+    log.info("Dispatching scrape run for %d exact post target(s)", len(targets))
     overall_status = run(
-        targets=unique_targets,
+        targets=targets,
         cutoff_days=cutoff_days,
         dry_run=False,
         allow_past_events=False,
