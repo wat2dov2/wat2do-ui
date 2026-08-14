@@ -1,13 +1,17 @@
 # Instagram Automation Commands
 
+Run Keychain-backed commands from an interactive terminal logged in as the same macOS account that owns the self-hosted `wat2do-scraper` runner.
+The current runner account is `runner`.
+macOS Keychain items stored under another account are invisible to GitHub Actions.
+
 # List schools in the spreadsheet
-cd /Users/tonyqiu/Desktop/projects/2026/wat2do-v2/backend && python scripts/follow_from_xlsx.py --list-schools
+cd backend && python scripts/follow_from_xlsx.py --list-schools
 
 # Store or replace a browser session securely in macOS Keychain
-cd /Users/tonyqiu/Desktop/projects/2026/wat2do-v2/backend && python scripts/manage_instagram_digest_sessions.py store <intended-recipient-id>
+cd backend && python scripts/manage_instagram_digest_sessions.py store <intended-recipient-id>
 
 # Run follow automation using the school's recipient-routed Keychain session
-cd /Users/tonyqiu/Desktop/projects/2026/wat2do-v2/backend && python scripts/follow_from_xlsx.py --username <school>.wat2do.io
+cd backend && python scripts/follow_from_xlsx.py --username <school>.wat2do.io
 
 # Run bell notification automation on emulator (non-headless / normal GUI window)
 # First: open Instagram on the emulator and navigate to "All profiles you follow".

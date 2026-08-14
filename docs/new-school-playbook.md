@@ -878,6 +878,12 @@ The actual implementation should normalize handles through one shared helper rat
 
 ### 14.1 Obtain a browser session securely
 
+Use an interactive terminal logged in as the same macOS account that owns the self-hosted `wat2do-scraper` runner.
+
+The current runner account is `runner`.
+
+macOS Keychain is user-scoped, so a session stored under another account is invisible to the notification and health workflows.
+
 Log into the exact chapter account on desktop Instagram.
 
 Open browser developer tools, inspect Instagram cookies, and copy the current `sessionid` value.
@@ -1299,7 +1305,7 @@ The final handoff must contain no secrets and must include:
 - [ ] Desktop session identity confirmed as the chapter account.
 - [ ] Follow dry run matched the database count.
 - [ ] All verified handles followed or reconciled.
-- [ ] Recipient-scoped Keychain session stored and no plaintext session file created.
+- [ ] Recipient-scoped Keychain session stored under the self-hosted runner's macOS account and no plaintext session file created.
 - [ ] Consolidated bell list opened or blocker recorded.
 - [ ] Post notifications set to `All` and count spot-checked.
 - [ ] Account logged into the dedicated Automate phone as a separate login.
