@@ -1,0 +1,35 @@
+{
+  "positions": {
+    "position": "ਅਹੁਦਾ",
+    "position_other": "ਅਹੁਦੇ",
+    "searchPlaceholder": "ਭੂਮਿਕਾਵਾਂ, ਹੁਨਰ ਜਾਂ ਸਥਾਨਾਂ ਦੀ ਖੋਜ ਕਰੋ...",
+    "clearSearch": "ਅਹੁਦੇ ਦੀ ਖੋਜ ਸਾਫ਼ ਕਰੋ",
+    "filterByType": "ਕਿਸਮ ਮੁਤਾਬਕ ਅਹੁਦਿਆਂ ਨੂੰ ਫਿਲਟਰ ਕਰੋ",
+    "allTypes": "ਸਾਰੇ ਅਹੁਦਿਆਂ ਦੀਆਂ ਕਿਸਮਾਂ",
+    "openDetails": "{{title}} ਅਹੁਦੇ ਦੇ ਵੇਰਵੇ ਵੇਖੋ",
+    "drawerDescription": "{{organization}} ਵਿੱਚ {{title}} ਅਹੁਦੇ ਦੇ ਵੇਰਵੇ",
+    "deadlineLabel": "ਐਪਲੀਕੇਸ਼ਨ ਦੀ ਆਖਰੀ ਮਿਤੀ",
+    "due": "ਬਕਾਇਆ {{date}}",
+    "commitmentLabel": "ਸਮੇਂ ਦੀ ਵਚਨਬੱਧਤਾ",
+    "locationLabel": "ਟਿਕਾਣਾ",
+    "compensationLabel": "ਮੁਆਵਜ਼ਾ",
+    "contactLabel": "ਸੰਪਰਕ",
+    "aboutPosition": "ਇਸ ਅਹੁਦੇ ਬਾਰੇ",
+    "requirements": "ਲੋੜਾਂ",
+    "viewSource": "ਅਸਲੀ Instagram ਪੋਸਟ ਦੇਖੋ",
+    "emptyTitle": "ਕੋਈ ਖੁੱਲ੍ਹਾ ਅਹੁਦਾ ਨਹੀਂ ਮਿਲਿਆ",
+    "emptyDescription": "ਕੋਈ ਹੋਰ ਖੋਜ ਜਾਂ ਅਹੁਦੇ ਦੀ ਕਿਸਮ ਅਜ਼ਮਾਓ। ਸੰਸਥਾਵਾਂ ਦੇ ਨਵੇਂ ਮੌਕੇ ਪੋਸਟ ਹੋਣ 'ਤੇ ਇੱਥੇ ਦਿਖਾਈ ਦੇਣਗੇ।",
+    "organizationEmptyTitle": "ਕੋਈ ਖੁੱਲ੍ਹਾ ਅਹੁਦਾ ਨਹੀਂ",
+    "organizationEmptyDescription": "ਇਸ ਸੰਸਥਾ ਵਿੱਚ ਇਸ ਵੇਲੇ ਕੋਈ ਖੁੱਲ੍ਹਾ ਅਹੁਦਾ ਨਹੀਂ ਹੈ।",
+    "resultsLabel": "{{count}} ਅਹੁਦੇ ਮਿਲੇ",
+    "types": {
+      "executive": "ਕਾਰਜਕਾਰੀ",
+      "committee": "ਕਮੇਟੀ",
+      "volunteer": "ਵਲੰਟੀਅਰ",
+      "staff": "ਤਨਖਾਹਦਾਰ ਸਟਾਫ",
+      "internship": "ਇੰਟਰਨਸ਼ਿਪ",
+      "general": "ਆਮ ਭਰਤੀ"
+    },
+    "position_one": "ਅਹੁਦਾ"
+  }
+}

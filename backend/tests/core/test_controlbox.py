@@ -50,6 +50,15 @@ def test_checked_in_controlbox_is_valid() -> None:
     assert controlbox.instagram_publishing.new_event_window_hours == 24
     assert controlbox.instagram_publishing.maximum_event_slides == 9
     assert controlbox.instagram_publishing.token_refresh_lead_days == 14
+    assert str(controlbox.instagram_digest.endpoint_url) == (
+        "https://i.instagram.com/graphql/query"
+    )
+    assert controlbox.instagram_digest.operation_name == "SubscriptionDigestFeedQuery"
+    assert controlbox.instagram_digest.client_doc_id == "20099285643937437306465362209"
+    assert controlbox.instagram_digest.web_app_id == "936619743392459"
+    assert controlbox.instagram_digest.request_timeout_seconds == 30
+    assert controlbox.instagram_digest.keychain_operation_timeout_seconds == 30
+    assert controlbox.instagram_digest.maximum_pages == 25
     assert controlbox.workflow_failure_alerts.discord_admin_role_ids == ("1506447680287674469",)
     assert controlbox.promoter_program.rate_cents == 100
     assert controlbox.promoter_program.maximum_active_posters == 50
@@ -170,6 +179,32 @@ def test_invalid_discord_admin_role_id_is_rejected(tmp_path: Path) -> None:
     )
 
     with pytest.raises(ValidationError, match="Discord admin role IDs"):
+        load_controlbox(path)
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "message"),
+    [
+        ("endpoint_url", "https://www.instagram.com/graphql/query", "i.instagram.com"),
+        ("client_doc_id", "not-a-document-id", "client_doc_id"),
+        ("web_app_id", "not-an-app-id", "web_app_id"),
+        ("keychain_operation_timeout_seconds", 0, "keychain_operation_timeout_seconds"),
+        ("maximum_pages", 0, "maximum_pages"),
+    ],
+)
+def test_invalid_instagram_digest_control_is_rejected(
+    tmp_path: Path,
+    field: str,
+    value: str | int,
+    message: str,
+) -> None:
+    path = _write_control(
+        tmp_path,
+        "instagram_digest",
+        lambda payload: payload.update({field: value}),
+    )
+
+    with pytest.raises(ValidationError, match=message):
         load_controlbox(path)
 
 

@@ -1,6 +1,20 @@
 from datetime import date, datetime
+from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+
+def validate_recipient_id(value: Any) -> str:
+    """Return one canonical numeric Instagram notification recipient ID."""
+    if (
+        not isinstance(value, str)
+        or not value.isascii()
+        or not value.isdigit()
+        or not 1 <= len(value) <= 32
+        or value.startswith("0")
+    ):
+        raise ValueError("recipient_id must be a canonical numeric identifier")
+    return value
 
 
 class School(BaseModel):
@@ -15,6 +29,11 @@ class School(BaseModel):
     semester_start: date | None = None
     semester_end: date | None = None
     social_preview_image_url: str | None = None
+
+    @field_validator("recipient_id")
+    @classmethod
+    def validate_notification_recipient_id(cls, value: str | None) -> str | None:
+        return None if value is None else validate_recipient_id(value)
 
 
 class SchoolRecord(School):

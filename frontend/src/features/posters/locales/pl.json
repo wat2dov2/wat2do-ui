@@ -1,0 +1,187 @@
+{
+  "posters": {
+    "download": "Pobierz",
+    "downloadPdf": "PDF",
+    "downloadPng": "PNG",
+    "recruitment": {
+      "title": "Pomóż większej liczbie uczniów odkrywać wydarzenia w {{school}}.",
+      "description": "Umieść oficjalne plakaty Wat2Do i zarabiaj {{rate}} za każdego kwalifikującego się nowego odwiedzającego.",
+      "seeHowItWorks": "Zobacz jak to działa",
+      "dismiss": "Ukryj tę wiadomość na {{days}} dni"
+    },
+    "promote": {
+      "title": "Przynieś Wat2Do do {{school}}",
+      "description": "Umieść oficjalne plakaty na terenie kampusu i zarabiaj {{rate}} za każdego kwalifikującego się nowego odwiedzającego, którego przyciągną.",
+      "stepsTitle": "Jak to działa",
+      "stepsDescription": "Rozpocznij w kilka minut z oficjalnym projektem gotowym do druku.",
+      "step1Title": "Wybierz oficjalny plakat",
+      "step1Description": "Wybierz spośród zatwierdzonych projektów Wat2Do.",
+      "step2Title": "Umieść i aktywuj",
+      "step2Description": "Umieść każdą kopię w jednej lokalizacji kampusu, a następnie zeskanuj ją, aby potwierdzić to umiejscowienie.",
+      "step3Title": "Zarabiaj dla nowych odwiedzających",
+      "step3Description": "Zarabiaj {{rate}}, gdy potwierdzony, kwalifikujący się nowy odwiedzający przybędzie.",
+      "coverageTitle": "Pokrycie kampusu w {{school}}",
+      "coverageDescription": "Przybliżone komórki pokazują, gdzie aktywni plakatowicze pomagają studentom odkrywać wydarzenia, nie ujawniając żadnego promotora."
+    },
+    "enrollment": {
+      "pausedTitle": "Program promotora jest wstrzymany",
+      "pausedDescription": "Istniejące plakaty i zarobki są nadal dostępne, ale nowe zapisy i tworzenie plakatów są tymczasowo wstrzymane.",
+      "pausedMaintenanceDescription": "Tworzenie nowych plakatów jest wstrzymane, ale nadal możesz zaktualizować swój adres e-mail do wypłat.",
+      "readyTitle": "Gotowy, aby pomóc swojemu kampusowi?",
+      "readyDescription": "Zweryfikuj swój szkolny e-mail, aby dołączyć. Będzie to Twój początkowy Interac adres e-Transfer i możesz go później zaktualizować.",
+      "schoolRequiredTitle": "Najpierw dodaj swoją szkołę",
+      "schoolRequiredDescription": "Szkoła w Twoim profilu jest wymagana, aby Twoje plakaty prowadziły do właściwego kanału wydarzeń na kampusie.",
+      "completeProfile": "Uzupełnij mój profil",
+      "enrolledTitle": "Jesteś w programie",
+      "enrolled": "Zapisany",
+      "enrolledDescription": "Twój panel promotora jest gotowy.",
+      "settingsTitle": "Program promotorów",
+      "settingsDescription": "Sprawdź swój status i utrzymuj aktualny swój Interac e-mail przelewu.",
+      "joinTitle": "Dołącz do programu promotorów",
+      "joinDescription": "Rejestracja jest natychmiastowa. Potrzebujesz tylko e-maila do wypłat i akceptacji warunków programu promotorów.",
+      "payoutEmail": "Email wypłaty",
+      "payoutEmailPlaceholder": "you@example.com",
+      "payoutEmailDescription": "Comiesięczne Interac przelewy będą wysyłane na ten adres.",
+      "acceptTermsPrefix": "Przeczytaj pełne warunki przed akceptacją.",
+      "termsAccepted": "Zaakceptowałeś warunki programu promotorów.",
+      "termsLink": "Warunki świadczenia usług dla promotorów",
+      "error": "Nie udało nam się zaktualizować Twojej rejestracji promotora.",
+      "trustMonthly": "Płatności są wysyłane pierwszego dnia każdego miesiąca przez przekaz e-Transfer Interac.",
+      "trustActivation": "Skan aktywacyjny ustala lokalizację i zarabia 0 $.",
+      "trustTraffic": "Duplikaty, niepotwierdzone, zautomatyzowane i oszukańcze ruchy są wykluczone.",
+      "trustPrivacy": " Wat2Do nie przechowuje surowych adresów IP.",
+      "join": "Dołącz do programu",
+      "save": "Zapisz ustawienia wypłat",
+      "discord": "Uzyskaj pomoc w Discord"
+    },
+    "dashboard": {
+      "title": "Moje plakaty",
+      "description": "Twórz, umieszczaj i śledź swoje oficjalne plakaty Wat2Do.",
+      "discordHelp": "Potrzebujesz pomocy? Dołącz do Discord.",
+      "enrollmentRequired": "Dołącz do programu promocyjnego, aby tworzyć i zarządzać oficjalnymi plakatami.",
+      "loadErrorTitle": "Nie udało się załadować Twojego pulpitu",
+      "loadErrorDescription": "Spróbuj ponownie za chwilę. Twoje plakaty i zarobki nie zostały zmienione.",
+      "pendingEarnings": "Oczekujące w tym miesiącu",
+      "creditableVisitors": "Kwalifikujący się odwiedzający w tym miesiącu",
+      "unqualifiedScans": "Niekwalifikowane skany w tym miesiącu",
+      "lifetimePaid": "Całkowicie opłacone",
+      "activeSlots": "Aktywne sloty plakatów",
+      "slotValue": "{{used}} z {{limit}}",
+      "updatedDaily": "Aktualizowane codziennie",
+      "mapTitle": "Mapa plakatów na kampusie",
+      "mapDescription": "Twoje umieszczone plakaty są precyzyjne i możliwe do wybrania. Pozostałe pokrycie kampusu jest przybliżone i prywatne.",
+      "pausedTitle": "Tworzenie plakatów zostało wstrzymane",
+      "pausedDescription": "Twój pulpit, pobrane pliki, zarobki i wypłaty pozostają dostępne."
+    },
+    "create": {
+      "open": "Twórz plakaty",
+      "title": "Twórz oficjalne plakaty",
+      "description": "Wybierz jeden zatwierdzony projekt i utwórz osobno śledzony QR dla każdej fizycznej kopii.",
+      "chooseTemplate": "Wybierz projekt plakatu",
+      "chooseTemplateDescription": "Wybrany szablon ma przypisane stałe miejsce QR i format druku.",
+      "selectTemplate": "Wybierz projekt",
+      "customTitle": "Masz własny projekt plakatu?",
+      "customDescription": "Dołącz do naszego Discord i podziel się nim z nami. Przeglądamy zgłoszenia i dodajemy zatwierdzone projekty do oficjalnej kolekcji.",
+      "discord": "Udostępnij go w Discord",
+      "copies": "Egzemplarze",
+      "slotsRemaining": "Pozostało {{count}} aktywnych miejsc",
+      "submit": "Twórz plakaty",
+      "error": "Nie udało się utworzyć partii plakatów.",
+      "createdTitle": "Twoje unikalne plakaty są gotowe",
+      "createdDescription": "Utworzono {{count}} osobno śledzonych kopii. Pobierz je przed umieszczeniem każdej kopii.",
+      "downloadError": "Nie udało się wygenerować plików plakatów. Spróbuj ponownie."
+    },
+    "inventory": {
+      "title": "Stan magazynowy plakatów",
+      "description": "Umieszczone plakaty stają się nieaktywne po {{days}} dniach bez zaakceptowanego skanu.",
+      "emptyTitle": "Utwórz swój pierwszy oficjalny plakat Wat2Do",
+      "emptyDescription": "Pobierz go, umieść na kampusie i zeskanuj samodzielnie, aby aktywować umieszczenie. Skan aktywacyjny przynosi $0.",
+      "lastScanned": "Ostatni skan: {{time}}",
+      "totalVisitors": "Łączna liczba potwierdzonych odwiedzających",
+      "periodVisitors": "Kwalifikujący się w tym miesiącu",
+      "periodEarnings": "Oczekujące w tym miesiącu",
+      "activationInstruction": "Umieść tę kopię, zeskanuj jej QR i zezwól na dostęp do lokalizacji, aby ustalić miejsce umieszczenia.",
+      "downloadError": "Nie można wygenerować tego plakatu do pobrania.",
+      "templateUnavailable": "Ten starszy plakat nie ma szablonu możliwego do ponownego wygenerowania."
+    },
+    "lifecycle": {
+      "not-placed": "Nieumieszczony",
+      "quiet": "Nieaktywny"
+    },
+    "map": {
+      "loading": "Ładowanie pokrycia kampusu...",
+      "loadErrorTitle": "Pokrycie niedostępne",
+      "loadErrorDescription": "Okazja wciąż jest otwarta. Spróbuj ponownie mapy później.",
+      "coverageMarker": "Przybliżona komórka kampusu z {{count}} plakatami",
+      "campusCoverage": "Przybliżone pokrycie kampusu",
+      "coverageSummary": ", {{count}} plakatów, {{recent}} ostatnio zeskanowanych",
+      "ownedMarker": "Twój plakat: {{name}}",
+      "managedMarker": "Zarządzany plakat: {{name}}",
+      "visitorCount": "{{count}} potwierdzonych odwiedzających",
+      "yourPosters": "Twoje plakaty",
+      "managedPosters": "Zarządzane plakaty",
+      "otherCoverage": "Inne pokrycie kampusu",
+      "noCoverageTitle": "Tutaj jeszcze nie umieszczono plakatów",
+      "noCoverageDescription": "Bądź jednym z pierwszych promotorów, którzy dodadzą pokrycie kampusu."
+    },
+    "payouts": {
+      "title": "Historia wypłat",
+      "description": "Miesięczne Interac rekordy e-przelewów. Wstrzymane wypłaty są przeglądane zamiast usuwane.",
+      "loading": "Ładowanie historii wypłat...",
+      "loadErrorTitle": "Historia wypłat jest niedostępna",
+      "loadErrorDescription": "Spróbuj ponownie później. Twoje rekordy wypłat nie zostały zmienione.",
+      "empty": "Jeszcze nie ma zakończonych okresów wypłat.",
+      "period": "Okres",
+      "visitors": "Kwalifikujący się odwiedzający",
+      "rate": "Stawka",
+      "amount": "Kwota",
+      "status": "Status",
+      "paidDate": "Data wypłaty",
+      "statuses": {
+        "pending": "Oczekujące",
+        "held": "Wstrzymane do przeglądu",
+        "paid": "Wypłacone",
+        "voided": "Unieważnione"
+      }
+    },
+    "terms": {
+      "title": "Warunki świadczenia usług dla promotorów",
+      "description": "Proszę zapoznać się z warunkami programu promotora.",
+      "scrollToAccept": "Przewiń wszystkie warunki, aby włączyć akceptację.",
+      "accept": "Akceptuj warunki",
+      "eligibility": {
+        "title": "Uprawnienia i rejestracja",
+        "body": "Musisz używać własnego konta Wat2Do, mieć podany szkołę w profilu, podać adres e-mail, który może odbierać przelewy elektroniczne Interac, oraz zaakceptować warunki promotora podczas rejestracji. Rejestracja nie gwarantuje dostępności plakatów w przyszłości."
+      },
+      "posters": {
+        "title": "Oficjalne plakaty i lokalizacje",
+        "body": "Używaj wyłącznie zatwierdzonych plików wygenerowanych przez Wat2Do. Każdy unikalny QR należy do jednej fizycznej lokalizacji. Nie duplikuj QR w różnych miejscach, nie przenoś go do innej lokalizacji ani nie używaj ponownie dla innego plakatu."
+      },
+      "scans": {
+        "title": "Aktywacja i kwalifikujące skany",
+        "body": "Pierwsze skanowanie ustala rozmieszczenie plakatu jako skan aktywacyjny i nie podlega płatności. Odwiedzający musi pozostać na Wat2Do przez co najmniej {{seconds}} sekund, zanim skanowanie będzie kwalifikować się do płatności. Skanowania powielone, niepotwierdzone, automatyczne, zmanipulowane i oszukańcze nie kwalifikują się. Wat2Do może przejrzeć nietypowy ruch, zanim zatwierdzi wypłatę."
+      },
+      "payments": {
+        "title": "Płatności",
+        "body": "Każde kwalifikujące się skanowanie przynosi {{rate}}. Kwota należna za poprzedni miesiąc kalendarzowy UTC jest wypłacana przez Interac za pośrednictwem e-Transfer w dniu {{payoutDay}} następnego miesiąca. Kwoty wstrzymane pozostają pod przeglądem. Podatki i dokładne dane dotyczące wypłaty pozostają Twoją odpowiedzialnością."
+      },
+      "disputes": {
+        "title": "Spory dotyczące wypłat i skanów",
+        "body": "Jeśli uważasz, że skan lub wypłata zostały zmierzone nieprawidłowo, skontaktuj się z Wat2Do za pośrednictwem promotora Discord i podaj plakat, okres wypłaty oraz istotne szczegóły. Wat2Do przejrzy zapisy programu i wyjaśni wynik.",
+        "contact": "Skontaktuj się z pomocą promotora"
+      },
+      "conduct": {
+        "title": "Bezpieczne i szanujące przepisy umieszczanie",
+        "body": "Umieszczaj plakaty tylko tam, gdzie masz pozwolenie. Nie zasłaniaj wymaganych ogłoszeń, nie uszkadzaj mienia, nie wprowadzaj w błąd Wat2Do ani nie umieszczaj materiałów w miejscach, gdzie zakazują tego przepisy kampusu lub lokalne przepisy."
+      },
+      "privacy": {
+        "title": "Prywatność i pomiar",
+        "body": "Publiczne obszary plakatowe pokazują jedynie przybliżone komórki mapy. Wat2Do używa skróconych identyfikatorów odwiedzających, nie przechowuje surowych adresów IP i utrzymuje w tajemnicy tożsamość promotorów, szczegóły płatności oraz dokładne miejsca umieszczenia. Pomiar ogranicza się do potwierdzania unikalnych, ważnych wizyt i ochrony programu przed nadużyciami."
+      },
+      "changes": {
+        "title": "Zmiany w programie i zawieszenie",
+        "body": "Wat2Do może wstrzymać nową rejestrację lub tworzenie plakatów, wycofać projekty, zaktualizować te warunki lub zawiesić uczestnictwo w przypadku nadużycia. Istniejące QR przekierowania i zarobione zapisy wypłat pozostają dostępne zgodnie z zasadami programu."
+      }
+    }
+  }
+}

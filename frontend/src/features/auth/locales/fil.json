@@ -1,0 +1,67 @@
+{
+  "auth": {
+    "heading": "Tuklasin kung ano ang nangyayari sa campus.",
+    "description": "Mag-sign in o gumawa ng account upang i-save ang mga kaganapan, i-personalize ang iyong feed, at tuklasin kung ano ang nangyayari sa campus.",
+    "emailLabel": "Email address",
+    "emailPlaceholder": "ikaw@{{domain}}",
+    "continue": "Magpatuloy",
+    "skipToOnboarding": "Magpatuloy nang hindi nag-sign in",
+    "verifyOtp": "I-verify ang code",
+    "resendOtp": "Muling ipadala ang code",
+    "otpLabel": "Kodigo sa Pagpapatunay",
+    "otpDescription": "Nagpadala kami ng 6-digit na kodigo sa pag-login sa {{email}}. Ipasok ito sa ibaba para makapag-sign in.",
+    "invalidOtp": "Ang kodigo sa pag-login na ito ay hindi wasto o nag-expire na.",
+    "invalidLoginLink": "Ang link na ito sa pag-login ay hindi wasto o nag-expire na.",
+    "genericError": "May nagkamaling nangyari. Pakisubukang muli.",
+    "backToLogin": "Bumalik sa pag-sign in",
+    "callbackDescription": "Kumpirmahin ang pag-sign in para sa {{email}}.",
+    "callbackContinue": "Magpatuloy sa pag-sign in",
+    "heroTitle": "Mangyayari ngayong linggo",
+    "heroSubtitle": "Mga tunay na kaganapan mula sa mga club sa campus, ina-update bawat segundo.",
+    "heroEmpty": "Bumobomba ang mga bagong kaganapan araw-araw. Mag-sign in para mauna ang makita ito.",
+    "consentHeading": "Data, kaligtasan, at ang iyong feed sa campus",
+    "consentDescription": "Paano namin pinapanatiling ligtas at kapaki-pakinabang ang pagtuklas ng mga kaganapan para sa mga estudyante.",
+    "consentControlData": "Ikaw ang may kontrol sa iyong profile na datos at maaari mong i-update o i-delete ang iyong account anumang oras.",
+    "consentNoSell": "Hindi namin binebenta ang iyong datos sa mga third party o data brokers.",
+    "consentAnonymized": "Maaaring suriin namin ang mga hindi pinangalanang pattern ng paggamit upang mapabuti ang pagtuklas ng mga kaganapan.",
+    "consentAgreeTerms": "Sumasang-ayon ako sa mga tuntunin ng plataporma at patakaran sa katanggap-tanggap na paggamit para sa pagtuklas ng mga kaganapan sa campus.",
+    "consentSubscribeUpdates": "Mag-subscribe sa paminsang-paminsang mga update tungkol sa mga bagong tampok at tampok na kaganapan sa campus.",
+    "signedInAs": "Nakalog-in bilang"
+  },
+  "onboarding": {
+    "faculties": {
+      "engineering": "Inhinyeriya",
+      "mathematics": "Matematika",
+      "science": "Agham",
+      "arts": "Sining",
+      "environment": "Kapaligiran",
+      "health": "Kalusugan",
+      "appliedHealthSciences": "Aplikadong Agham Pangkalusugan"
+    },
+    "stepProgress": "Hakbang {{step}} ng {{total}}",
+    "safetyTitle": "Maligayang pagdating sa iyong tahanan ng mga kaganapan sa campus.",
+    "safetyDescription": "Tutulungan ka naming tuklasin kung ano ang nangyayari sa paligid ng iyong paaralan at kumonekta sa mga komunidad na naaayon sa iyong mga interes.",
+    "safetyGoingEvents": "I-mark ang mga kaganapang pupuntahan mo, subaybayan ang mga takdang petsa, at mabilis na i-filter ayon sa mga bagay na mahalaga sa iyo.",
+    "safetySafeguards": "Ang mga panseguridad sa komunidad at kaligtasan ay tumutulong panatilihing mataas ang kalidad at mapagkakatiwalaan ang mga kaganapan.",
+    "doneTitle": "Handa ka na!",
+    "doneDescription": "Handa na ang iyong personalisadong feed sa campus. Panahon na upang tuklasin kung ano ang nangyayari sa paligid mo.",
+    "doneButton": "Tuklasin natin",
+    "gooseName": "Ginoong Goose",
+    "doneNextLabel": "Dalhin mo ako sa Wat2Do!",
+    "gooseStep0": "Kumusta!",
+    "gooseStep1": "Maligayang pagdating sa pamilya ng Wat2Do! Kami ay isang grupo na may 1 layunin: lumikha ng maraming alaala hangga't maaari sa maikling panahon natin sa unibersidad",
+    "gooseStep2": "Ang bawat isa dito ay may iba't ibang hilig. Anong klase ng mga kaganapan ang gusto mo?",
+    "gooseStep3WithSchool": "5 ibang estudyante ay may parehong interes! Ngayon, alin sa mga ito mula sa {{school}} ang nakakuha ng atensyon mo?",
+    "gooseStep3Default": "Gusto ito, ganito namin mahahanap ang magagandang bagay. Alin sa mga ito ang nakakuha ng atensyon mo?",
+    "gooseStep4": "Nakuha, at anong fakultad ka?",
+    "year": {
+      "yesFirstYear": "Oo, bago ito!",
+      "noReturning": "Hindi, matagal na ako dito"
+    },
+    "events": {
+      "noEvents": "Walang mga kaganapan sa ngayon.",
+      "noEventsAvailable": "Walang mga kaganapan sa ngayon. Maaari kang magpatuloy nang hindi pumipili.",
+      "selectAriaLabel": "Piliin ang mga kaganapan na nakakuha ng atensyon mo"
+    }
+  }
+}

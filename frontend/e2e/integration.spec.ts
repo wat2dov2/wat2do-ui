@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { STORAGE_KEYS } from "../src/shared/constants/storageKeys";
 import { MAX_IMAGE_UPLOAD_SIZE_BYTES } from "../src/shared/constants/uploads";
+import arTranslations from "../src/shared/locales/ar.json";
 
 const BASE = "http://127.0.0.1:3000";
 const APP_API = `${BASE}/api`;
@@ -216,6 +217,40 @@ test.beforeEach(async ({ page }) => {
         total_pages: 1,
       }),
     });
+  });
+});
+
+test.describe("Language loading", () => {
+  test("loads and persists an RTL locale after first paint", async ({ page }) => {
+    await page.goto(BASE);
+
+    const documentElement = page.locator("html");
+    await expect(documentElement).toHaveAttribute("lang", "en");
+    await expect(documentElement).toHaveAttribute("dir", "ltr");
+
+    await page.getByRole("combobox").filter({ hasText: "English" }).click();
+    await page.getByRole("option", { name: "العربية" }).click();
+
+    await expect(documentElement).toHaveAttribute("lang", "ar");
+    await expect(documentElement).toHaveAttribute("dir", "rtl");
+    await expect(
+      page.getByRole("button", {
+        name: arTranslations.navigation.goToEvents,
+      }),
+    ).toBeVisible();
+    await expect
+      .poll(() =>
+        page.evaluate(
+          (key) => window.localStorage.getItem(key),
+          STORAGE_KEYS.LANGUAGE,
+        ),
+      )
+      .toBe(JSON.stringify("ar"));
+
+    await page.reload();
+
+    await expect(documentElement).toHaveAttribute("lang", "ar");
+    await expect(documentElement).toHaveAttribute("dir", "rtl");
   });
 });
 

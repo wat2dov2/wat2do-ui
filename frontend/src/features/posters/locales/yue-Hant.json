@@ -1,0 +1,187 @@
+{
+  "posters": {
+    "download": "下載",
+    "downloadPdf": "PDF",
+    "downloadPng": "PNG",
+    "recruitment": {
+      "title": "幫助更多學生發現 {{school}} 的活動。",
+      "description": "張貼官方 Wat2Do 海報，每帶來一位符合資格的新訪客即可賺取 {{rate}}。",
+      "seeHowItWorks": "了解運作方式",
+      "dismiss": "隱藏此訊息 {{days}} 天"
+    },
+    "promote": {
+      "title": "將 Wat2Do 帶到 {{school}}",
+      "description": "在校園各處張貼官方海報，每帶來一位符合資格的新訪客即可賺取 {{rate}}。",
+      "stepsTitle": "運作方式",
+      "stepsDescription": "使用官方、可直接列印的設計，幾分鐘內即可開始。",
+      "step1Title": "選擇官方海報",
+      "step1Description": "從 Wat2Do 核准的設計中選擇。",
+      "step2Title": "張貼並啟動",
+      "step2Description": "將每份副本放置於校園內一個位置，然後掃描它以確認該擺放位置。",
+      "step3Title": "為新訪客賺取獎勵",
+      "step3Description": "當確認符合資格的新訪客到達時，賺取 {{rate}}。",
+      "coverageTitle": "{{school}} 校園覆蓋範圍",
+      "coverageDescription": "近似的格子顯示現有海報如何幫助學生發現活動，而不揭露任何推廣者身份。"
+    },
+    "enrollment": {
+      "pausedTitle": "推廣者計劃已暫停",
+      "pausedDescription": "現有的海報和收入仍然可用，但新註冊和海報創建暫停中。",
+      "pausedMaintenanceDescription": "新海報創建暫停，但你仍然可以更新你的付款電郵。",
+      "readyTitle": "準備好幫助你的校園了嗎？",
+      "readyDescription": "驗證你的學校電郵以加入。這將成為你最初的 Interac 電子轉帳地址，你以後也可以更新。",
+      "schoolRequiredTitle": "先新增你的學校",
+      "schoolRequiredDescription": "你的個人資料需要有學校，這樣你的海報才能引導到正確的校園活動資訊。",
+      "completeProfile": "完成我的個人資料",
+      "enrolledTitle": "你已經參加計劃",
+      "enrolled": "已登記",
+      "enrolledDescription": "你的推廣者儀表板已準備就緒。",
+      "settingsTitle": "推廣者計劃",
+      "settingsDescription": "檢視你的狀態並保持你的 Interac 電子轉帳電郵最新。",
+      "joinTitle": "加入推廣者計劃",
+      "joinDescription": "註冊即時生效。你只需提供收款電郵並同意推廣者條款。",
+      "payoutEmail": "付款電郵",
+      "payoutEmailPlaceholder": "you@example.com",
+      "payoutEmailDescription": "每月 Interac 電子轉帳將會發送到這個電郵地址。",
+      "acceptTermsPrefix": "接受前請先閱讀完整條款。",
+      "termsAccepted": "你已同意推廣者條款。",
+      "termsLink": "推廣人服務條款",
+      "error": "我們無法更新您的推廣人註冊。",
+      "trustMonthly": "付款將由 Interac 電子轉帳於每月一日發送。",
+      "trustActivation": "啟動掃描會確定位置但獲得 $0。",
+      "trustTraffic": "重複、未確認、自動化及欺詐流量將被排除。",
+      "trustPrivacy": "Wat2Do 不會儲存原始 IP 位址。",
+      "join": "加入計劃",
+      "save": "儲存付款設定",
+      "discord": "在 Discord 獲取幫助"
+    },
+    "dashboard": {
+      "title": "我的海報",
+      "description": "創建、放置及追蹤您官方 Wat2Do 海報。",
+      "discordHelp": "需要幫助？加入 Discord.",
+      "enrollmentRequired": "加入推廣員計劃以建立及管理官方海報",
+      "loadErrorTitle": "無法載入您的儀表板",
+      "loadErrorDescription": "稍後再試。您的海報和收益未有變動",
+      "pendingEarnings": "本月待處理",
+      "creditableVisitors": "本月合資格訪客",
+      "unqualifiedScans": "本月不合格掃描",
+      "lifetimePaid": "累計已付款",
+      "activeSlots": "啟用中的海報位置",
+      "slotValue": "已使用 {{used}} / {{limit}}",
+      "updatedDaily": "每日更新",
+      "mapTitle": "校園海報地圖",
+      "mapDescription": "您放置的海報精確且可選擇。其他校園範圍為大概資料且為私人",
+      "pausedTitle": "海報創作已暫停",
+      "pausedDescription": "你的控制面板、下載、收益及付款仍然可用。"
+    },
+    "create": {
+      "open": "創作海報",
+      "title": "創作官方海報",
+      "description": "選擇一個已批准的設計，並為每份實體副本創建單獨追蹤的 QR",
+      "chooseTemplate": "選擇海報設計",
+      "chooseTemplateDescription": "所選模板擁有其固定的 QR 位置及印刷格式。",
+      "selectTemplate": "選擇設計",
+      "customTitle": "有自己的海報設計嗎？",
+      "customDescription": "加入我們的 Discord 並與我們分享。我們會審核提交作品，並將批准的設計加入官方收藏。",
+      "discord": "在 Discord 上分享它",
+      "copies": "副本",
+      "slotsRemaining": "剩餘{{count}}個可用插槽",
+      "submit": "創作海報",
+      "error": "海報批次無法創建",
+      "createdTitle": "你嘅獨特海報已準備好",
+      "createdDescription": "已創建{{count}}份獨立追蹤副本。請喺放置每份副本前下載",
+      "downloadError": "無法生成海報文件。請再試一次"
+    },
+    "inventory": {
+      "title": "海報庫存",
+      "description": "放置嘅海報如果{{days}}日內冇被接受掃描就會變得靜默",
+      "emptyTitle": "創建你嘅第一張正式Wat2Do海報",
+      "emptyDescription": "下載後放喺校園內，然後自行掃描以啟動放置。啟動掃描唔會賺取任何金錢",
+      "lastScanned": "最後掃描於{{time}}",
+      "totalVisitors": "確認訪客總數",
+      "periodVisitors": "本月符合資格",
+      "periodEarnings": "本月待處理",
+      "activationInstruction": "將此副本放置，掃描其 QR，並允許位置存取以確定放置位置。",
+      "downloadError": "此海報無法生成以供下載。",
+      "templateUnavailable": "此舊版海報沒有可再生成的範本。"
+    },
+    "lifecycle": {
+      "not-placed": "未放置",
+      "quiet": "未有活動"
+    },
+    "map": {
+      "loading": "正在加載校園覆蓋範圍…",
+      "loadErrorTitle": "覆蓋範圍不可用",
+      "loadErrorDescription": "機會仍然開放。稍後再試地圖。",
+      "coverageMarker": "約 {{count}} 張海報的校園單元",
+      "campusCoverage": "大致校園覆蓋範圍",
+      "coverageSummary": "{{count}} 張海報，最近 {{recent}} 張已掃描",
+      "ownedMarker": "你的海報：{{name}}",
+      "managedMarker": "管理海報：{{name}}",
+      "visitorCount": "{{count}} 位已確認訪客",
+      "yourPosters": "你的海報",
+      "managedPosters": "管理的海報",
+      "otherCoverage": "其他校園覆蓋",
+      "noCoverageTitle": "這裡尚未放置任何海報",
+      "noCoverageDescription": "成為首批在校園新增覆蓋的推廣者之一。"
+    },
+    "payouts": {
+      "title": "付款歷史",
+      "description": "每月 Interac 電子轉帳記錄。待處理的付款會被審核而非刪除。",
+      "loading": "正在加載付款歷史...",
+      "loadErrorTitle": "付款歷史不可用",
+      "loadErrorDescription": "稍後再試。你的付款記錄未有更改。",
+      "empty": "尚未完成付款期。",
+      "period": "期間",
+      "visitors": "符合資格的訪客",
+      "rate": "費率",
+      "amount": "金額",
+      "status": "狀態",
+      "paidDate": "付款日期",
+      "statuses": {
+        "pending": "待處理",
+        "held": "待審核",
+        "paid": "已支付",
+        "voided": "作廢"
+      }
+    },
+    "terms": {
+      "title": "推廣人服務條款",
+      "description": "請查看推廣者計劃條款。",
+      "scrollToAccept": "滾動瀏覽所有條款以便接受。",
+      "accept": "接受條款",
+      "eligibility": {
+        "title": "資格與註冊",
+        "body": "您必須使用您自己的 Wat2Do 帳戶，在您的個人資料中保留一所學校，提供可以接收 Interac 電子轉賬的電郵，並在註冊時接受推廣者條款。註冊並不保證未來海報的可用性。"
+      },
+      "posters": {
+        "title": "官方海報和擺放",
+        "body": "僅使用 Wat2Do 生成的獲批檔案。每個獨特的 QR 對應一個實體擺放位置。不要在多個地點重複使用 QR，或將其移至其他擺放位置，或用於其他海報。"
+      },
+      "scans": {
+        "title": "啟動及符合資格的掃描",
+        "body": "第一次掃描確定海報的放置位置為啟動掃描，並不會有報酬。訪客必須至少停留在 Wat2Do {{seconds}} 秒，掃描才能符合資格。重複、未確認、自動化、被操控或欺詐的掃描均不符合資格。Wat2Do 可能會在發放報酬前審查異常流量。"
+      },
+      "payments": {
+        "title": "付款",
+        "body": "每次符合條件的掃描可獲 {{rate}}。前一個 UTC 日曆月的合資格餘額將由 Interac 在次月的 {{payoutDay}} 以電子轉賬方式支付。保留金額仍在審核中。稅務及準確的支付細節仍由你自行負責。"
+      },
+      "disputes": {
+        "title": "支付及掃描爭議",
+        "body": "如果你認為掃描或付款的測量有誤，請通過推廣者 Discord 聯絡 Wat2Do，並提供海報、付款期間及相關詳情。Wat2Do 將會審查程式記錄並解釋結果。",
+        "contact": "聯絡推廣者支援"
+      },
+      "conduct": {
+        "title": "安全及尊重的張貼方式",
+        "body": "只在你獲得許可的地方張貼海報。不要遮蓋必須張貼的通知、損壞財物、誤導 Wat2Do，或在校園或地方法律禁止的地方放置材料。"
+      },
+      "privacy": {
+        "title": "私隱及衡量",
+        "body": "公開的海報區域只以大致地圖格顯示。Wat2Do 使用經雜湊處理的訪客識別碼，不儲存原始 IP 地址，並保持推廣者身份、支付詳情及精確張貼位置私密。衡量只限於確認唯一及有效的訪問，並保護計劃免受濫用。"
+      },
+      "changes": {
+        "title": "計劃更改及暫停",
+        "body": "Wat2Do 可能暫停新的註冊或海報製作、退休設計、更新這些條款，或因濫用而暫停參與。根據計劃規則，現有的 QR 重新定向和已獲得的支付紀錄仍然可用。"
+      }
+    }
+  }
+}

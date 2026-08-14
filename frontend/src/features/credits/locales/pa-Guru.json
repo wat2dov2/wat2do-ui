@@ -1,0 +1,39 @@
+{
+  "credits": {
+    "buyCredits": "ਕ੍ਰੈਡਿਟ ਖਰੀਦੋ",
+    "currentBalance": "ਮੌਜੂਦਾ ਬਕਾਇਆ:",
+    "creditCount": "{{count}} ਕ੍ਰੈਡਿਟ",
+    "creditCount_other": "{{count}} ਕ੍ਰੈਡਿਟ",
+    "bonusCount": "+{{count}} ਬੋਨਸ",
+    "bonusCount_other": "+{{count}} ਬੋਨਸ",
+    "totalCreditCount": "{{count}} ਕੁੱਲ ਕ੍ਰੈਡਿਟ",
+    "totalCreditCount_other": "{{count}} ਕੁੱਲ ਕ੍ਰੈਡਿਟ",
+    "pricePerCredit": "${{price}}¢/ਕ੍ਰੈਡਿਟ",
+    "added": "ਕ੍ਰੈਡਿਟ ਜੋੜਿਆ ਗਿਆ!",
+    "addedMessage": "{{count}} ਕ੍ਰੈਡਿਟ ਤੁਹਾਡੇ ਖਾਤੇ ਵਿੱਚ ਜੋੜ ਦਿੱਤੇ ਗਏ ਹਨ।",
+    "processing": "ਪ੍ਰਕਿਰਿਆ ਕੀਤੀ ਜਾ ਰਹੀ ਹੈ...",
+    "buyMore": "+ ਹੋਰ ਖਰੀਦੋ",
+    "notEnough": "ਕਾਫ਼ੀ ਕ੍ਰੈਡਿਟ ਨਹੀਂ ਹਨ",
+    "loginRequired": "ਤੁਹਾਨੂੰ ਕ੍ਰੈਡਿਟ ਖਰੀਦਣ ਲਈ ਲੌਗ ਇਨ ਹੋਣਾ ਚਾਹੀਦਾ ਹੈ।",
+    "purchaseFailed": "ਖਰੀਦ ਅਸਫਲ ਰਹੀ। ਕਿਰਪਾ ਕਰਕੇ ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ।",
+    "spendCredits": "{{credits}} ਕ੍ਰੈਡਿਟ ਖਰਚ ਕਰੋ",
+    "securePayment": "Stripe ਦੁਆਰਾ ਸੰਚਾਲਿਤ ਸੁਰੱਖਿਅਤ ਭੁਗਤਾਨ। ਕ੍ਰੈਡਿਟ ਦੀ ਮਿਆਦ ਕਦੇ ਖਤਮ ਨਹੀਂ ਹੁੰਦੀ।",
+    "creditCount_one": "{{count}} ਕ੍ਰੈਡਿਟ",
+    "bonusCount_one": "+{{count}} ਬੋਨਸ",
+    "totalCreditCount_one": "{{count}} ਕੁੱਲ ਕ੍ਰੈਡਿਟ"
+  },
+  "promotion": {
+    "promoteEvent": "ਇਸ ਘਟਨਾ ਦਾ ਪ੍ਰਚਾਰ ਕਰੋ",
+    "getMoreVisibility": "\"{{title}}\" ਨੂੰ ਅਧਿਕਾਰਤ ਸੰਗਠਨ ਇਵੈਂਟਾਂ ਲਈ ਇੱਕ ਸਧਾਰਨ ਵਿਸ਼ੇਸ਼ਤਾ ਵਾਲੀ ਪਲੇਸਮੈਂਟ ਦੇ ਨਾਲ ਪ੍ਰੋਮੋਟ ਕਰੋ।",
+    "bestValue": "ਵਧੀਆ ਮੁੱਲ",
+    "maybeLater": "ਸ਼ਾਇਦ ਬਾਅਦ ਵਿੱਚ",
+    "notEnoughCredits": "ਕਾਫ਼ੀ ਕ੍ਰੈਡਿਟ ਨਹੀਂ ਹਨ",
+    "promotedEventName": "ਪ੍ਰੋਮੋਟ ਕੀਤਾ ਇਵੈਂਟ",
+    "promotedEventDescription": "ਇਸ ਇਵੈਂਟ ਨੂੰ ਵਿਦਿਆਰਥੀਆਂ ਲਈ ਵਧੇਰੇ ਪ੍ਰਮੁੱਖਤਾ ਨਾਲ ਦਿਖਾਓ",
+    "durationDays": "{{count}} ਦਿਨ",
+    "durationDays_other": "{{count}} ਦਿਨ",
+    "creditsCost": "{{credits}} ਕ੍ਰੈਡਿਟ",
+    "spendCredits": "{{credits}} ਕ੍ਰੈਡਿਟ ਖਰਚ ਕਰੋ",
+    "durationDays_one": "{{count}} ਦਿਨ"
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "positions": {
+    "position": "позиция",
+    "position_other": "позиции",
+    "searchPlaceholder": "Поиск вакансий, навыков или местоположений...",
+    "clearSearch": "Очистить поиск по должности",
+    "filterByType": "Фильтровать должности по типу",
+    "allTypes": "Все типы должностей",
+    "openDetails": "Просмотреть детали позиции {{title}}",
+    "drawerDescription": "Детали позиции {{title}} в {{organization}}",
+    "deadlineLabel": "Срок подачи заявки",
+    "due": "До {{date}}",
+    "commitmentLabel": "Трудовая нагрузка",
+    "locationLabel": "Местоположение",
+    "compensationLabel": "Компенсация",
+    "contactLabel": "Контакт",
+    "aboutPosition": "О данной должности",
+    "requirements": "Требования",
+    "viewSource": "Посмотреть оригинальное Instagram объявление",
+    "emptyTitle": "Открытых вакансий не найдено",
+    "emptyDescription": "Попробуйте другой поиск или тип должности. Новые возможности в организации появятся здесь по мере их публикации.",
+    "organizationEmptyTitle": "Нет открытых вакансий",
+    "organizationEmptyDescription": "У этой организации в настоящее время нет открытых вакансий.",
+    "resultsLabel": "Найдено {{count}} вакансий",
+    "types": {
+      "executive": "Руководящий",
+      "committee": "Комитет",
+      "volunteer": "Волонтёр",
+      "staff": "Оплачиваемый персонал",
+      "internship": "Стажировка",
+      "general": "Общий набор"
+    },
+    "position_one": "позиция",
+    "position_few": "позиции",
+    "position_many": "позиций"
+  }
+}

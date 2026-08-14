@@ -1,3 +1,5 @@
+import pytest
+
 from core.tables import SCHOOLS
 from schemas.school import SchoolSummary
 from services import school_service
@@ -119,3 +121,54 @@ def test_get_school_by_recipient_id(fake_sb, patch_sb):
     assert school is not None
     assert school.slug == "uwaterloo"
     fake_sb.eq.assert_called_once_with("recipient_id", "76214170483")
+
+
+@pytest.mark.parametrize("recipient_id", ["0", "012345", "not-numeric"])
+def test_get_school_by_recipient_id_rejects_noncanonical_values(
+    recipient_id,
+    fake_sb,
+    patch_sb,
+):
+    patch_sb("services.school_service")
+
+    assert school_service.get_school_by_recipient_id(recipient_id) is None
+    fake_sb.table.assert_not_called()
+
+
+def test_list_notification_routed_schools_uses_authoritative_recipient_mapping(
+    fake_sb,
+    patch_sb,
+):
+    patch_sb("services.school_service")
+    fake_sb.set_response(
+        data=[
+            {
+                "id": 2,
+                "slug": "uottawa",
+                "name": "University of Ottawa",
+                "primary_color": "#8F001A",
+                "secondary_color": "#FFFFFF",
+                "timezone": "America/Toronto",
+                "recipient_id": "43530696650",
+            },
+            {
+                "id": 1,
+                "slug": "uwaterloo",
+                "name": "University of Waterloo",
+                "primary_color": "#FFD54F",
+                "secondary_color": "#111111",
+                "timezone": "America/Toronto",
+                "recipient_id": "76214170483",
+            },
+        ]
+    )
+
+    schools = school_service.list_notification_routed_schools()
+
+    assert [(school.slug, school.recipient_id) for school in schools] == [
+        ("uottawa", "43530696650"),
+        ("uwaterloo", "76214170483"),
+    ]
+    fake_sb.table.assert_called_once_with(SCHOOLS)
+    fake_sb.is_.assert_called_once_with("recipient_id", "null")
+    fake_sb.order.assert_called_once_with("slug")

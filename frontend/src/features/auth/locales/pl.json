@@ -1,0 +1,67 @@
+{
+  "auth": {
+    "heading": "Odkryj, co dzieje się na kampusie.",
+    "description": "Zaloguj się lub załóż konto, aby zapisywać wydarzenia, personalizować swój feed i odkrywać, co dzieje się na kampusie.",
+    "emailLabel": "Adres e-mail",
+    "emailPlaceholder": "ty@{{domain}}",
+    "continue": "Kontynuuj",
+    "skipToOnboarding": "Kontynuuj bez logowania",
+    "verifyOtp": "Zweryfikuj kod",
+    "resendOtp": "Wyślij kod ponownie",
+    "otpLabel": "Kod weryfikacyjny",
+    "otpDescription": "Wysłaliśmy 6-cyfrowy kod logowania na {{email}}. Wprowadź go poniżej, aby się zalogować.",
+    "invalidOtp": "Ten kod logowania jest nieprawidłowy lub wygasł.",
+    "invalidLoginLink": "Ten link do logowania jest nieprawidłowy lub wygasł.",
+    "genericError": "Coś poszło nie tak. Spróbuj ponownie.",
+    "backToLogin": "Powrót do logowania",
+    "callbackDescription": "Potwierdź logowanie dla {{email}}.",
+    "callbackContinue": "Kontynuuj logowanie",
+    "heroTitle": "Wydarzenia w tym tygodniu",
+    "heroSubtitle": "Rzeczywiste wydarzenia z klubów na całym kampusie, aktualizowane co sekundę.",
+    "heroEmpty": "Nowe wydarzenia pojawiają się codziennie. Zaloguj się, aby zobaczyć je jako pierwszy.",
+    "consentHeading": "Dane, bezpieczeństwo i Twój kanał informacji z kampusu",
+    "consentDescription": "Jak zapewniamy, aby odkrywanie wydarzeń było bezpieczne i użyteczne dla studentów.",
+    "consentControlData": "Masz kontrolę nad danymi w swoim profilu i możesz aktualizować lub usuwać swoje konto w dowolnym momencie.",
+    "consentNoSell": "Nie sprzedajemy Twoich danych osobom trzecim ani brokerom danych.",
+    "consentAnonymized": "Możemy przeglądać anonimizowane wzorce użytkowania, aby poprawić odkrywanie wydarzeń.",
+    "consentAgreeTerms": "Zgadzam się z warunkami korzystania z platformy i zasadami dozwolonego użytkowania przy odkrywaniu wydarzeń na uczelni.",
+    "consentSubscribeUpdates": "Zapisz się na okazjonalne aktualizacje dotyczące nowych funkcji i najważniejszych wydarzeń na uczelni.",
+    "signedInAs": "Zalogowano jako"
+  },
+  "onboarding": {
+    "faculties": {
+      "engineering": "Inżynieria",
+      "mathematics": "Matematyka",
+      "science": "Nauki ścisłe",
+      "arts": "Sztuka",
+      "environment": "Środowisko",
+      "health": "Zdrowie",
+      "appliedHealthSciences": "Stosowane nauki zdrowotne"
+    },
+    "stepProgress": "Krok {{step}} z {{total}}",
+    "safetyTitle": "Witamy w Twoim domowym panelu wydarzeń na kampusie.",
+    "safetyDescription": "Pomagamy Ci odkrywać, co dzieje się wokół Twojej szkoły, i łączyć się ze społecznościami, które odpowiadają Twoim zainteresowaniom.",
+    "safetyGoingEvents": "Oznacz wydarzenia, w których będziesz uczestniczyć, śledź terminy i szybko filtruj to, co jest dla Ciebie ważne.",
+    "safetySafeguards": "Społeczność i zabezpieczenia bezpieczeństwa pomagają utrzymać wydarzenia na wysokim poziomie i godne zaufania.",
+    "doneTitle": "Wszystko gotowe!",
+    "doneDescription": "Twój spersonalizowany kanał kampusowy jest gotowy. Czas odkrywać, co dzieje się wokół Ciebie.",
+    "doneButton": "Zacznijmy eksplorację",
+    "gooseName": "Pan Gęś",
+    "doneNextLabel": "Zabierz mnie do Wat2Do!",
+    "gooseStep0": "Cześć!",
+    "gooseStep1": "Witamy w rodzinie Wat2Do! Jesteśmy kolektywem z jednym celem: tworzyć jak najwięcej wspomnień w naszym krótkim czasie na uczelni",
+    "gooseStep2": "Każdy tutaj interesuje się czymś innym. Jakiego rodzaju wydarzenia Cię interesują?",
+    "gooseStep3WithSchool": "5 innych studentów ma dokładnie takie same zainteresowania! Teraz, które z tych w {{school}} przyciągają Twoją uwagę?",
+    "gooseStep3Default": "Super, tak właśnie znajdujemy dobre rzeczy. Które z tych przyciągają Twoją uwagę?",
+    "gooseStep4": "Rozumiem, a na jakim wydziale jesteś?",
+    "year": {
+      "yesFirstYear": "Tak, całkowicie nowy!",
+      "noReturning": "Nie, jestem tu już"
+    },
+    "events": {
+      "noEvents": "Brak wydarzeń w tej chwili.",
+      "noEventsAvailable": "Brak wydarzeń w tej chwili. Możesz kontynuować bez wyboru.",
+      "selectAriaLabel": "Wybierz wydarzenia, które przyciągają Twoją uwagę"
+    }
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "settings": {
+    "description": "Gerencie suas preferências e configurações de conta",
+    "unsavedChanges": "Alterações não salvas",
+    "unsavedChangesDescription": "Salve ou cancele as alterações das suas configurações.",
+    "saveSuccess": "Suas configurações foram salvas.",
+    "saveError": "Não foi possível salvar suas configurações. Suas alterações ainda estão aqui.",
+    "tabs": {
+      "profile": "Perfil",
+      "notifications": "Notificações",
+      "appearance": "Aparência",
+      "promoter": "Programa de promotores"
+    },
+    "profile": {
+      "title": "Informações do Perfil",
+      "description": "Gerencie os detalhes e preferências do seu perfil",
+      "status": "Status do Perfil",
+      "statusComplete": "Seu perfil está configurado e completo",
+      "statusIncomplete": "Complete seu perfil para salvar suas preferências de eventos no campus",
+      "email": "Email",
+      "editProfile": "Editar Perfil",
+      "completeProfile": "Completar Perfil",
+      "school": "Escola",
+      "selectSchool": "Selecionar uma escola",
+      "faculty": "Faculdade",
+      "selectFaculty": "Selecionar uma faculdade",
+      "firstYearStudent": "Calouro",
+      "interests": "Interesses",
+      "selectInterests": "Selecione seus interesses",
+      "avatarAlt": "Avatar",
+      "changeAvatar": "Escolha um novo avatar"
+    },
+    "notifications": {
+      "title": "Preferências de Notificação",
+      "description": "Escolha como você quer ser notificado sobre eventos e atualizações",
+      "morningEmail": "Email matinal",
+      "morningEmailDesc": "Às 9h, obtenha as partidas fortes adicionadas nas últimas 24 horas.",
+      "eventReminder": "Lembretes de eventos",
+      "eventReminderDesc": "Receba um e-mail cerca de uma hora antes de um evento que você selecionou.",
+      "eventChange": "Alertas de alteração de evento",
+      "eventChangeDesc": "Receba um e-mail imediato quando um evento selecionado mudar.",
+      "loadFailed": "Não foi possível carregar suas preferências de notificação.",
+      "retry": "Tentar novamente"
+    },
+    "appearance": {
+      "viewPreferences": "Ver preferências",
+      "viewPreferencesDesc": "Personalize como os eventos são exibidos",
+      "defaultViewMode": "Modo de visualização padrão",
+      "defaultViewModeDesc": "Escolha como os eventos são exibidos por padrão",
+      "grid": "Grade",
+      "calendar": "Calendário",
+      "map": "Mapa",
+      "language": "Idioma",
+      "languageDescription": "Escolha seu idioma preferido"
+    }
+  }
+}

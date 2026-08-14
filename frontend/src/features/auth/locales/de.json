@@ -1,0 +1,67 @@
+{
+  "auth": {
+    "heading": "Entdecke, was auf dem Campus passiert.",
+    "description": "Melde dich an oder erstelle ein Konto, um Veranstaltungen zu speichern, deinen Feed zu personalisieren und zu entdecken, was auf dem Campus passiert.",
+    "emailLabel": "E-Mail-Adresse",
+    "emailPlaceholder": "you@{{domain}}",
+    "continue": "Fortfahren",
+    "skipToOnboarding": "Ohne Anmeldung fortfahren",
+    "verifyOtp": "Code überprüfen",
+    "resendOtp": "Code erneut senden",
+    "otpLabel": "Verifizierungscode",
+    "otpDescription": "Wir haben einen 6-stelligen Login-Code an {{email}} gesendet. Geben Sie ihn unten ein, um sich anzumelden.",
+    "invalidOtp": "Dieser Login-Code ist ungültig oder abgelaufen.",
+    "invalidLoginLink": "Dieser Login-Link ist ungültig oder abgelaufen.",
+    "genericError": "Etwas ist schief gelaufen. Bitte versuchen Sie es erneut.",
+    "backToLogin": "Zurück zur Anmeldung",
+    "callbackDescription": "Anmeldung für {{email}} bestätigen.",
+    "callbackContinue": "Mit der Anmeldung fortfahren",
+    "heroTitle": "Diese Woche",
+    "heroSubtitle": "Echte Veranstaltungen von Clubs auf dem gesamten Campus, jede Sekunde aktualisiert.",
+    "heroEmpty": "Jeden Tag kommen neue Veranstaltungen hinzu. Melden Sie sich an, um sie zuerst zu sehen.",
+    "consentHeading": "Daten, Sicherheit und Ihr Campus-Feed",
+    "consentDescription": "Wie wir die Entdeckung von Veranstaltungen sicher und nützlich für Studierende gestalten.",
+    "consentControlData": "Sie kontrollieren Ihre Profildaten und können Ihr Konto jederzeit aktualisieren oder löschen.",
+    "consentNoSell": "Wir verkaufen Ihre Daten nicht an Dritte oder Datenhändler.",
+    "consentAnonymized": "Wir können anonymisierte Nutzungsmuster überprüfen, um die Entdeckung von Veranstaltungen zu verbessern.",
+    "consentAgreeTerms": "Ich stimme den Plattformbedingungen und der Richtlinie zur akzeptablen Nutzung für die Entdeckung von Campusveranstaltungen zu.",
+    "consentSubscribeUpdates": "Abonnieren Sie gelegentliche Updates über neue Funktionen und Höhepunkte von Campusveranstaltungen.",
+    "signedInAs": "Angemeldet als"
+  },
+  "onboarding": {
+    "faculties": {
+      "engineering": "Ingenieurwesen",
+      "mathematics": "Mathematik",
+      "science": "Wissenschaft",
+      "arts": "Künste",
+      "environment": "Umwelt",
+      "health": "Gesundheit",
+      "appliedHealthSciences": "Angewandte Gesundheitswissenschaften"
+    },
+    "stepProgress": "Schritt {{step}} von {{total}}",
+    "safetyTitle": "Willkommen auf der Startseite für Campusveranstaltungen.",
+    "safetyDescription": "Wir helfen Ihnen, herauszufinden, was an Ihrer Schule passiert, und sich mit Gemeinschaften zu verbinden, die zu Ihren Interessen passen.",
+    "safetyGoingEvents": "Markieren Sie Veranstaltungen, an denen Sie teilnehmen, verfolgen Sie Fristen und filtern Sie schnell nach dem, was Ihnen wichtig ist.",
+    "safetySafeguards": "Gemeinschafts- und Sicherheitsmaßnahmen helfen, Veranstaltungen qualitativ hochwertig und vertrauenswürdig zu halten.",
+    "doneTitle": "Alles bereit!",
+    "doneDescription": "Ihr personalisierter Campus-Feed ist bereit. Zeit herauszufinden, was um Sie herum passiert.",
+    "doneButton": "Lass uns erkunden",
+    "gooseName": "Herr Gans",
+    "doneNextLabel": "Bring mich zu Wat2Do !",
+    "gooseStep0": "Hallo!",
+    "gooseStep1": "Willkommen in der Wat2Do Familie! Wir sind ein Kollektiv mit einem Ziel: so viele Erinnerungen wie möglich in unserer kurzen Zeit an der Universität zu schaffen",
+    "gooseStep2": "Jeder hier interessiert sich für etwas anderes. An welche Art von Veranstaltungen hast du Interesse?",
+    "gooseStep3WithSchool": "5 andere Studenten haben genau die gleichen Interessen! Welche dieser Veranstaltungen von {{school}} gefallen dir?",
+    "gooseStep3Default": "Super, so entdecken wir die guten Sachen. Welche davon gefallen dir?",
+    "gooseStep4": "Alles klar, und in welcher Fakultät bist du?",
+    "year": {
+      "yesFirstYear": "Ja, ganz neu!",
+      "noReturning": "Nein, schon länger hier"
+    },
+    "events": {
+      "noEvents": "Zurzeit gibt es keine Veranstaltungen.",
+      "noEventsAvailable": "Zurzeit gibt es keine Veranstaltungen. Du kannst ohne Auswahl fortfahren.",
+      "selectAriaLabel": "Wähle Veranstaltungen, die dir gefallen"
+    }
+  }
+}

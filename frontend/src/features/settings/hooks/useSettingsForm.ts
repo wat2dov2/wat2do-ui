@@ -23,7 +23,7 @@ import {
 import { controlBox } from "@/shared/config/controlBox";
 import { DEFAULT_SCHOOL } from "@/shared/constants/schools";
 import {
-  LANGUAGE_CODES,
+  isSupportedLanguage,
   type SupportedLanguage,
 } from "@/shared/constants/languages";
 import { toast } from "@/shared/hooks/use-toast";
@@ -76,9 +76,7 @@ interface SavedSettings {
 }
 
 function resolveLanguage(language: string): SupportedLanguage {
-  return LANGUAGE_CODES.includes(language)
-    ? (language as SupportedLanguage)
-    : "en";
+  return isSupportedLanguage(language) ? language : "en";
 }
 
 export function useSettingsForm() {

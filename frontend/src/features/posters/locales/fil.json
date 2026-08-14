@@ -1,0 +1,187 @@
+{
+  "posters": {
+    "download": "I-download",
+    "downloadPdf": "PDF",
+    "downloadPng": "PNG",
+    "recruitment": {
+      "title": "Tulungan ang mas maraming estudyante na matuklasan ang mga kaganapan sa {{school}}.",
+      "description": "Maglagay ng mga opisyal na poster ng Wat2Do at kumita ng {{rate}} para sa bawat kwalipikadong bagong bisita.",
+      "seeHowItWorks": "Tingnan kung paano ito gumagana",
+      "dismiss": "Itago ang mensaheng ito sa loob ng {{days}} na araw"
+    },
+    "promote": {
+      "title": "Dalhin ang Wat2Do sa {{school}}",
+      "description": "Maglagay ng mga opisyal na poster sa paligid ng kampus at kumita ng {{rate}} para sa bawat kwalipikadong bagong bisita na kanilang nadadala.",
+      "stepsTitle": "Paano ito gumagana",
+      "stepsDescription": "Magsimula sa loob ng ilang minuto gamit ang opisyal, handa nang iprint na disenyo.",
+      "step1Title": "Pumili ng opisyal na poster",
+      "step1Description": "Pumili mula sa mga aprubadong disenyo ng Wat2Do.",
+      "step2Title": "Ilagay at i-activate ito",
+      "step2Description": "Ilagay ang bawat kopya sa isang lokasyon ng kampus, pagkatapos i-scan ito upang matukoy ang paglalagay.",
+      "step3Title": "Kumita para sa mga bagong bisita",
+      "step3Description": "Kumita ng {{rate}} kapag dumating ang isang kumpirmado, kwalipikadong bagong bisita.",
+      "coverageTitle": "Saklaw ng kampus sa {{school}}",
+      "coverageDescription": "Ang tinatayang mga cell ay nagpapakita kung saan ang mga aktibong poster ay tumutulong sa mga estudyante na matuklasan ang mga kaganapan nang hindi naihahayag ang anumang tagapag-promote."
+    },
+    "enrollment": {
+      "pausedTitle": "Panandaliang nililimitahan ang programa ng tagapag-promote",
+      "pausedDescription": "Mananatiling available ang mga umiiral na poster at kita, ngunit pansamantalang pinahinto ang bagong pag-enroll at paggawa ng poster.",
+      "pausedMaintenanceDescription": "Pansamantalang pinahinto ang paggawa ng bagong poster, ngunit maaari mo pa ring i-update ang iyong payout email.",
+      "readyTitle": "Handa ka na bang tumulong sa iyong campus?",
+      "readyDescription": "I-verify ang iyong school email para makasali. Ito ang magiging unang Interac e-Transfer address mo, at maaari mo itong i-update sa hinaharap.",
+      "schoolRequiredTitle": "Idagdag muna ang iyong paaralan",
+      "schoolRequiredDescription": "Kinakailangan ang isang paaralan sa iyong profile upang matiyak na patungo sa tamang feed ng campus event ang iyong mga poster.",
+      "completeProfile": "Kumpletuhin ang aking profile",
+      "enrolledTitle": "Kasali ka sa programa",
+      "enrolled": "Nakarehistro",
+      "enrolledDescription": "Handa na ang iyong promoter dashboard.",
+      "settingsTitle": "Programa ng Promoter",
+      "settingsDescription": "Suriin ang iyong status at panatilihing updated ang iyong Interac e-Transfer email.",
+      "joinTitle": "Sumali sa programa ng promoter",
+      "joinDescription": "Agad ang pag-enroll. Kailangan mo lamang ng payout email at pagtanggap sa mga termino ng promoter.",
+      "payoutEmail": "Email ng payout",
+      "payoutEmailPlaceholder": "you@example.com",
+      "payoutEmailDescription": "Ang buwanang Interac e-Transfers ay ipapadala sa address na ito.",
+      "acceptTermsPrefix": "Basahin ang kumpletong mga termino bago tanggapin.",
+      "termsAccepted": "Tinanggap mo na ang mga termino ng promoter.",
+      "termsLink": "Mga Tuntunin sa Serbisyo ng Promoter",
+      "error": "Hindi namin ma-update ang iyong pagpaparehistro bilang promoter.",
+      "trustMonthly": "Ipinapadala ang mga bayad sa unang araw ng bawat buwan sa pamamagitan ng Interac e-Transfer.",
+      "trustActivation": "Itinatakda ng Activation scan ang placement at kumikita ng $0.",
+      "trustTraffic": "Hindi kasama ang duplicate, hindi nakumpirma, automated, at pandarayang traffic.",
+      "trustPrivacy": "Wat2Do ay hindi nag-iimbak ng raw IP addresses.",
+      "join": "Sumali sa programa",
+      "save": "I-save ang mga setting ng payout",
+      "discord": "Kumuha ng tulong sa Discord"
+    },
+    "dashboard": {
+      "title": "Aking mga poster",
+      "description": "Gumawa, maglagay, at subaybayan ang iyong opisyal na Wat2Do posters.",
+      "discordHelp": "Kailangan ng tulong? Sumali sa Discord.",
+      "enrollmentRequired": "Sumali sa programa ng tagapagtaguyod upang lumikha at pamahalaan ang opisyal na mga poster.",
+      "loadErrorTitle": "Hindi ma-load ang iyong dashboard",
+      "loadErrorDescription": "Subukang muli sa loob ng sandali. Hindi nagbago ang iyong mga poster at kita.",
+      "pendingEarnings": "Naka-pending ngayong buwan",
+      "creditableVisitors": "Mga kwalipikadong bisita ngayong buwan",
+      "unqualifiedScans": "Hindi kwalipikadong mga scan ngayong buwan",
+      "lifetimePaid": "Kabuuang bayad sa buhay",
+      "activeSlots": "Mga aktibong slot ng poster",
+      "slotValue": "{{used}} ng {{limit}}",
+      "updatedDaily": "Ina-update araw-araw",
+      "mapTitle": "Mapa ng poster sa campus",
+      "mapDescription": "Ang iyong inilagay na mga poster ay tiyak at mapipili. Ang ibang saklaw sa campus ay tinatayang at pribado.",
+      "pausedTitle": "Pansamantalang itinigil ang paggawa ng poster",
+      "pausedDescription": "Mananatiling magagamit ang iyong dashboard, downloads, kita, at payouts."
+    },
+    "create": {
+      "open": "Gumawa ng mga poster",
+      "title": "Gumawa ng opisyal na mga poster",
+      "description": "Pumili ng isang aprubadong disenyo at gumawa ng hiwalay na sinusubaybayang QR para sa bawat pisikal na kopya.",
+      "chooseTemplate": "Pumili ng disenyo ng poster",
+      "chooseTemplateDescription": "Ang napiling template ay may nakatakdang QR na posisyon at format ng pag-print.",
+      "selectTemplate": "Pumili ng disenyo",
+      "customTitle": "May sarili ka bang disenyo ng poster?",
+      "customDescription": "Sumali sa aming Discord at ibahagi ito sa amin. Nirerepaso namin ang mga isinumiteng disenyo at idinadagdag ang mga aprubadong disenyo sa opisyal na koleksyon.",
+      "discord": "Ibahagi ito sa Discord",
+      "copies": "Mga kopya",
+      "slotsRemaining": "{{count}} natitirang aktibong slots",
+      "submit": "Gumawa ng mga poster",
+      "error": "Hindi malikha ang batch ng poster.",
+      "createdTitle": "Handa na ang iyong natatanging mga poster",
+      "createdDescription": "{{count}} hiwalay na nasubaybayang mga kopya ang nalikha. I-download ang mga ito bago ilagay ang bawat kopya.",
+      "downloadError": "Hindi malikhang ang mga file ng poster. Pakisubukang muli."
+    },
+    "inventory": {
+      "title": "Imbentaryo ng poster",
+      "description": "Ang mga nailagay na poster ay magiging tahimik pagkatapos ng {{days}} araw nang walang tinanggap na scan.",
+      "emptyTitle": "Gumawa ng iyong unang opisyal na poster na Wat2Do",
+      "emptyDescription": "I-download ito, ilagay sa campus, at i-scan ito mismo upang i-activate ang paglalagay. Ang Activation scan ay kikita ng $0.",
+      "lastScanned": "Huling na-scan {{time}}",
+      "totalVisitors": "Kabuuang kumpirmadong bisita",
+      "periodVisitors": "Kwalipikado ngayong buwan",
+      "periodEarnings": "Naka-pending ngayong buwan",
+      "activationInstruction": "Ilapag ang kopyang ito, i-scan ang QR, at payagan ang pag-access sa lokasyon upang maitatag ang kinalalagyan.",
+      "downloadError": "Hindi malikha ang poster na ito para ma-download.",
+      "templateUnavailable": "Ang legacy poster na ito ay walang maaring muling malikha na template."
+    },
+    "lifecycle": {
+      "not-placed": "Hindi nailagay",
+      "quiet": "Tahimik"
+    },
+    "map": {
+      "loading": "Naglo-load ng coverage sa campus...",
+      "loadErrorTitle": "Hindi available ang coverage",
+      "loadErrorDescription": "Bukas pa rin ang pagkakataon. Subukang muli ang mapa mamaya.",
+      "coverageMarker": "Tinatayang cell ng campus na may {{count}} poster",
+      "campusCoverage": "Tinatayang coverage ng campus",
+      "coverageSummary": "{{count}} poster, {{recent}} na-scan kamakailan",
+      "ownedMarker": "Ang iyong poster: {{name}}",
+      "managedMarker": "Pinamahalaang poster: {{name}}",
+      "visitorCount": "{{count}} nakumpirmang mga bisita",
+      "yourPosters": "Ang iyong mga poster",
+      "managedPosters": "Pinamahalaang mga poster",
+      "otherCoverage": "Iba pang saklaw ng campus",
+      "noCoverageTitle": "Walang nailagay na mga poster dito",
+      "noCoverageDescription": "Maging isa sa mga unang tagapagtaguyod na magdagdag ng saklaw ng campus."
+    },
+    "payouts": {
+      "title": "Kasaysayan ng payout",
+      "description": "Buwanang Interac rekord ng e-Transfer. Ang mga hawak na payout ay nire-review kaysa alisin.",
+      "loading": "Ilo-load ang kasaysayan ng payout...",
+      "loadErrorTitle": "Hindi magagamit ang kasaysayan ng payout",
+      "loadErrorDescription": "Subukang muli mamaya. Ang iyong mga rekord ng payout ay hindi nabago.",
+      "empty": "Walang ganap na panahon ng payout hanggang ngayon.",
+      "period": "Panahon",
+      "visitors": "Karapat-dapat na mga bisita",
+      "rate": "Rate",
+      "amount": "Halaga",
+      "status": "Katayuan",
+      "paidDate": "Petsa ng bayad",
+      "statuses": {
+        "pending": "Nakabinbin",
+        "held": "Nakasaklaw para sa pagsusuri",
+        "paid": "Bayad na",
+        "voided": "Binawian ng bisa"
+      }
+    },
+    "terms": {
+      "title": "Mga Tuntunin sa Serbisyo ng Promoter",
+      "description": "Pakisuri ang mga tuntunin ng programa ng promoter.",
+      "scrollToAccept": "I-scroll ang lahat ng tuntunin upang payagan ang pagtanggap.",
+      "accept": "Tanggapin ang mga tuntunin",
+      "eligibility": {
+        "title": "Kakayahan at pag-enroll",
+        "body": "Dapat mong gamitin ang sarili mong Wat2Do account, maglagay ng paaralan sa iyong profile, magbigay ng email na makakatanggap ng Interac e-Transfers, at tanggapin ang mga tuntunin ng promoter kapag nag-e-enroll. Ang pag-enroll ay hindi garantiya ng hinaharap na availability ng poster."
+      },
+      "posters": {
+        "title": "Opisyal na mga poster at mga lugar",
+        "body": "Gamitin lamang ang mga aprubadong file na ginawa ng Wat2Do. Ang bawat natatanging QR ay kabilang sa isang pisikal na lugar. Huwag kopyahin ang isang QR sa iba't ibang lokasyon, ilipat ito sa ibang lugar, o gamitin muli ito para sa ibang poster."
+      },
+      "scans": {
+        "title": "Aktibasyon at kwalipikadong mga scan",
+        "body": "Ang unang scan ay itinatag bilang Activation scan para sa paglalagay ng poster at hindi ito binabayaran. Ang isang bisita ay dapat manatili sa Wat2Do ng hindi bababa sa {{seconds}} na segundo bago ang isang scan ay maaaring maging kwalipikado. Ang mga duplicate, hindi nakumpirma, automated, manipuladong, at pandaraya na scans ay hindi kwalipikado. Maaaring suriin ng Wat2Do ang hindi karaniwang trapiko bago maglabas ng bayad."
+      },
+      "payments": {
+        "title": "Pagbabayad",
+        "body": "Bawat kwalipikadong scan ay kumikita ng {{rate}}. Ang karapat-dapat na balanse para sa nakaraang UTC na buwan ng kalendaryo ay binabayaran sa pamamagitan ng Interac e-Transfer sa {{payoutDay}} ng susunod na buwan. Ang mga naihold na halaga ay nananatiling sinusuri. Ang buwis at tamang detalye ng bayad ay nananatiling iyong responsibilidad."
+      },
+      "disputes": {
+        "title": "Hindi pagkakaunawaan sa payout at scan",
+        "body": "Kung naniniwala ka na ang isang scan o payout ay nasukat nang mali, makipag-ugnayan sa Wat2Do sa pamamagitan ng promoter na Discord at isama ang poster, panahon ng payout, at mga kaugnay na detalye. Susuriin ni Wat2Do ang mga rekord ng programa at ipapaliwanag ang resulta.",
+        "contact": "Makipag-ugnayan sa suporta ng promoter"
+      },
+      "conduct": {
+        "title": "Ligtas at magalang na paglalagay",
+        "body": "Maglagay ng mga poster lamang sa mga lugar na may pahintulot. Huwag takpan ang mga kinakailangang paalala, sirain ang ari-arian, maling ipakita si Wat2Do, o ilagay ang mga materyales sa mga lugar na ipinagbabawal ng mga patakaran ng kampus o lokal."
+      },
+      "privacy": {
+        "title": "Pribado at pagsukat",
+        "body": "Ang mga pampublikong lugar ng poster ay lumilitaw lamang bilang tinatayang mga selula sa mapa. Gumagamit si Wat2Do ng mga naka-hash na identifier ng bisita, hindi nag-iimbak ng raw na mga address ng IP, at pinananatili ang pagkakakilanlan ng promoter, detalye ng bayad, at eksaktong lugar na pribado. Ang pagsukat ay limitado sa pagkumpirma ng natatangi at wastong pagbisita at sa pagprotekta sa programa mula sa pang-aabuso."
+      },
+      "changes": {
+        "title": "Mga pagbabago sa programa at suspensyon",
+        "body": "Wat2Do ay maaaring pansamantalang ihinto ang bagong pag-enroll o paggawa ng poster, alisin ang mga disenyo, i-update ang mga tuntuning ito, o suspindihin ang partisipasyon para sa pang-aabuso. Ang umiiral na QR na mga redireksyon at mga record ng natanggap na bayad ay mananatiling magagamit alinsunod sa mga patakaran ng programa."
+      }
+    }
+  }
+}

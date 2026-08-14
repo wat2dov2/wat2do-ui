@@ -1,0 +1,122 @@
+{
+  "onboardingDemo": {
+    "progress": {
+      "label": "Tiến trình hướng dẫn",
+      "start": "Bắt đầu",
+      "personalize": "Cá nhân hóa",
+      "discover": "Khám phá",
+      "unlock": "Mở khóa"
+    },
+    "chrome": {
+      "demo": "Trình diễn"
+    },
+    "actions": {
+      "continue": "Tiếp tục",
+      "back": "Quay lại",
+      "showMyWeek": "Hiển thị tuần của tôi",
+      "great": "Tuyệt vời",
+      "finish": "Hoàn tất",
+      "done": "Xong",
+      "continueWithoutPicks": "Tiếp tục mà không chọn",
+      "editPicks": "Chỉnh sửa lựa chọn",
+      "restartDemo": "Khởi động lại trình diễn"
+    },
+    "source": {
+      "eyebrow": "Xem trước trình diễn",
+      "title": "Chào mừng đến với Wat2Do",
+      "question": "Bạn đã nghe về chúng tôi ở đâu?",
+      "groupLabel": "Bạn đã nghe về Wat2Do như thế nào?",
+      "previewLabel": "Xem trước - sự kiện mẫu trong khuôn viên"
+    },
+    "intent": {
+      "title": "Bạn thường tìm kiếm điều gì?",
+      "description": "Chọn vài mục. Chúng tôi sẽ sử dụng điều này để định hình nguồn tin đầu tiên của bạn.",
+      "groupLabel": "Sở thích trong khuôn viên",
+      "previewReady": "Bắt đầu định hình nguồn tin của bạn",
+      "previewEmpty": "Chúng tôi vẫn sẽ tìm các sự kiện sắp tới trên toàn khuôn viên."
+    },
+    "availability": {
+      "title": "Bạn thường rảnh vào lúc nào?",
+      "description": "Điều này giúp chúng tôi tìm các sự kiện mà bạn thực sự có thể tham gia.",
+      "groupLabel": "Thời gian rảnh",
+      "socialTitle": "Bạn thường đi bằng cách nào?",
+      "socialGroupLabel": "Chế độ xã hội",
+      "weekPreviewTitle": "Tổng quan tuần của bạn",
+      "emptyWeek": "Chọn thời gian rảnh của bạn để xem trước tuần"
+    },
+    "eventMatch": {
+      "eyebrow": "Xem trước bản demo - sự kiện mẫu",
+      "title": "Chúng tôi tìm thấy các sự kiện bạn có thể thực sự tham gia",
+      "description": "Chọn vài sự kiện mà bạn thấy hấp dẫn.",
+      "pickedStatus": "{{count}}/3 đã chọn - cần ít nhất 2 để tiếp tục",
+      "reactionGroup": "Phản ứng cho {{title}}",
+      "reactions": {
+        "interested": "Hứng thú",
+        "maybe": "Có thể",
+        "notForMe": "Không phải cho tôi"
+      }
+    },
+    "payoff": {
+      "title": "Tuyệt. Radar khuôn viên của bạn đã sẵn sàng.",
+      "matched": "Bạn đã phù hợp với {{count}} sự kiện trong tuần này.",
+      "strongestVibe": "Cảm giác mạnh nhất của bạn: {{vibe}}.",
+      "bestNight": "Tối thứ Năm có vẻ là đêm ra ngoài tốt nhất của bạn.",
+      "fallback": "Bản tin đầu tiên về campus của bạn đã sẵn sàng."
+    },
+    "buildWeek": {
+      "title": "Chúng tôi đã xây dựng tuần Wat2Do đầu tiên của bạn",
+      "descriptionWithPicks": "Các sự kiện bạn sẽ tham gia, câu lạc bộ phù hợp và đêm ra ngoài tốt nhất của bạn đã sẵn sàng.",
+      "descriptionWithoutPicks": "Chúng tôi đã tạo một bản tin khởi đầu thay vì vậy. Bạn có thể điều chỉnh khi duyệt.",
+      "tonight": "Tối nay",
+      "tonightWithPick": "1 sự kiện đáng để xem",
+      "tonightWithoutPick": "Kiểm tra lại sớm nhé",
+      "thisWeek": "Tuần này",
+      "weekMatches": "{{count}} các kết quả phù hợp từ các câu lạc bộ xung quanh Waterloo",
+      "clubsToFollow": "Các câu lạc bộ để theo dõi",
+      "clubSuggestions": "3 gợi ý",
+      "freeFoodAlerts": "Thông báo thức ăn miễn phí",
+      "on": "Bật",
+      "off": "Tắt"
+    },
+    "proUnlock": {
+      "badge": "Dùng thử Pro trong 2 tuần",
+      "title": "Bạn đã được nâng cấp lên Wat2Do Pro",
+      "description": "Tận hưởng khám phá campus cá nhân hóa trong 14 ngày. Không cần thanh toán.",
+      "brand": "Wat2Do Pro",
+      "visualTitle": "Radar campus đã được mở khóa",
+      "visualDescription": "Thông báo cá nhân hóa, sự kiện tham gia và kế hoạch hàng tuần của bạn - tất cả trong một nơi.",
+      "benefits": {
+        "save": "Đánh dấu sự kiện là sẽ tham gia",
+        "follow": "Theo dõi các câu lạc bộ",
+        "alerts": "Nhận thông báo phù hợp ngay lập tức",
+        "calendar": "Đồng bộ các sự kiện vào lịch của bạn",
+        "food": "Nhận thức ăn miễn phí và nhắc nhở RSVP",
+        "profile": "Mở khóa Hồ sơ Vị giác Sinh viên của bạn"
+      }
+    },
+    "challenge": {
+      "title": "Duy trì Pro bằng cách sử dụng Wat2Do trong tuần này",
+      "description": "Đánh dấu sẽ tham gia 3 sự kiện trong tuần này để gia hạn Pro thêm 7 ngày.",
+      "label": "Thử thách Khám phá Campus",
+      "progress": "{{count}} / {{total}} sự kiện tham gia",
+      "reward": "Phần thưởng: +7 ngày Pro",
+      "progressAria": "Tiến trình thử thách",
+      "markedInterested": "{{count}} sự kiện được đánh dấu quan tâm trong quá trình thiết lập",
+      "markedInterested_other": "{{count}} sự kiện được đánh dấu quan tâm trong quá trình thiết lập"
+    },
+    "home": {
+      "badge": "Demo hoàn tất",
+      "title": "Chào bạn, đây là những điều đáng chú ý trong tuần này.",
+      "description": "Đây là bản xem trước trang chủ cá nhân của bạn - không có dữ liệu nào được lưu.",
+      "recommended": "Được đề xuất cho bạn",
+      "proTrialBadge": "Dùng thử Pro - 14 ngày",
+      "saved": "Sẽ diễn ra trong tuần này",
+      "freeFood": "Thức ăn miễn phí gần bạn",
+      "freeFoodPreview": "Đêm pizza tại SLC Great Hall - Thứ 6:00 PM",
+      "trialEnds": "Dùng thử kết thúc trong 14 ngày",
+      "clubs": "Câu lạc bộ bạn có thể thích",
+      "clubsPreview": "EngSoc, CS Club, Velocity",
+      "remaining": "14 ngày còn lại"
+    }
+  }
+}

@@ -52,18 +52,107 @@ function addFinding(sourceFile, node, kind, value) {
   findings.push(`${location(sourceFile, node)} ${kind}: ${JSON.stringify(value)}`);
 }
 
-// Helper to recursively get all dot-notation keys of a JSON object
-function getFlattenedKeys(obj, prefix = "") {
-  let keys = [];
-  for (const key in obj) {
+const PLURAL_SUFFIX = /_(zero|one|two|few|many|other)$/;
+
+function unwrapExpression(node) {
+  let current = node;
+  while (
+    ts.isAsExpression(current) ||
+    ts.isSatisfiesExpression(current) ||
+    ts.isParenthesizedExpression(current)
+  ) {
+    current = current.expression;
+  }
+  return current;
+}
+
+function readSupportedLanguageCodes() {
+  const languagesPath = path.join(srcRoot, "shared", "constants", "languages.ts");
+  const source = fs.readFileSync(languagesPath, "utf8");
+  const sourceFile = ts.createSourceFile(
+    languagesPath,
+    source,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.TS,
+  );
+  let codes = null;
+
+  function visit(node) {
+    if (
+      ts.isVariableDeclaration(node) &&
+      node.name.getText(sourceFile) === "SUPPORTED_LANGUAGES" &&
+      node.initializer
+    ) {
+      const initializer = unwrapExpression(node.initializer);
+      if (!ts.isArrayLiteralExpression(initializer)) {
+        return;
+      }
+      codes = initializer.elements.flatMap((element) => {
+        const language = unwrapExpression(element);
+        if (!ts.isObjectLiteralExpression(language)) {
+          return [];
+        }
+        const codeProperty = language.properties.find(
+          (property) =>
+            ts.isPropertyAssignment(property) &&
+            property.name.getText(sourceFile).replaceAll(/["']/g, "") === "code",
+        );
+        if (!codeProperty || !ts.isPropertyAssignment(codeProperty)) {
+          return [];
+        }
+        const value = unwrapExpression(codeProperty.initializer);
+        return ts.isStringLiteral(value) ? [value.text] : [];
+      });
+    }
+    ts.forEachChild(node, visit);
+  }
+
+  visit(sourceFile);
+  if (!codes || codes.length === 0 || codes[0] !== "en") {
+    throw new Error("SUPPORTED_LANGUAGES must be a non-empty array starting with English");
+  }
+  if (new Set(codes).size !== codes.length) {
+    throw new Error("SUPPORTED_LANGUAGES contains duplicate locale codes");
+  }
+  return codes;
+}
+
+function getFlattenedEntries(obj, prefix = "", entries = new Map()) {
+  for (const [key, value] of Object.entries(obj)) {
     const fullKey = prefix ? `${prefix}.${key}` : key;
-    if (typeof obj[key] === "object" && obj[key] !== null && !Array.isArray(obj[key])) {
-      keys = keys.concat(getFlattenedKeys(obj[key], fullKey));
+    if (typeof value === "object" && value !== null && !Array.isArray(value)) {
+      getFlattenedEntries(value, fullKey, entries);
     } else {
-      keys.push(fullKey);
+      entries.set(fullKey, value);
     }
   }
-  return keys;
+  return entries;
+}
+
+function getFlattenedKeys(obj) {
+  return [...getFlattenedEntries(obj).keys()];
+}
+
+function pluralParts(key) {
+  const match = key.match(PLURAL_SUFFIX);
+  return match ? { stem: key.slice(0, -match[0].length), category: match[1] } : null;
+}
+
+function tokenSignature(value) {
+  if (typeof value !== "string") {
+    return [];
+  }
+  return [
+    ...(value.match(/{{[^{}]+}}/g) ?? []),
+    ...(value.match(/<\/?[A-Za-z][^>]*>/g) ?? []),
+    ...(value.match(/https?:\/\/[^\s<>"')\]]+/g) ?? []),
+    ...(value.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi) ?? []),
+  ].sort();
+}
+
+function sameTokens(left, right) {
+  return JSON.stringify(tokenSignature(left)) === JSON.stringify(tokenSignature(right));
 }
 
 // 1. Find all locales folders and check key parity + build global enBundle
@@ -81,57 +170,125 @@ function findLocalesFolders(dir, list = []) {
   return list;
 }
 
-const localesFolders = findLocalesFolders(srcRoot);
+const supportedLanguageCodes = readSupportedLanguageCodes();
+const localesFolders = findLocalesFolders(srcRoot).sort();
 const globalEnBundle = {};
+const globalEnglishSources = new Map();
 
 // Helper to merge nested objects
-function deepMerge(target, source) {
-  for (const key in source) {
-    if (typeof source[key] === "object" && source[key] !== null && !Array.isArray(source[key])) {
+function deepMerge(target, source, sourcePath, prefix = "") {
+  for (const [key, value] of Object.entries(source)) {
+    const fullKey = prefix ? `${prefix}.${key}` : key;
+    if (typeof value === "object" && value !== null && !Array.isArray(value)) {
       target[key] = target[key] || {};
-      deepMerge(target[key], source[key]);
+      deepMerge(target[key], value, sourcePath, fullKey);
     } else {
-      target[key] = source[key];
+      const existingSource = globalEnglishSources.get(fullKey);
+      if (existingSource) {
+        findings.push(
+          `Duplicate merged English key "${fullKey}" in ${existingSource} and ${sourcePath}`,
+        );
+      }
+      globalEnglishSources.set(fullKey, sourcePath);
+      target[key] = value;
     }
   }
 }
 
 for (const folder of localesFolders) {
   const enPath = path.join(folder, "en.json");
-  const zhPath = path.join(folder, "zh.json");
-  
-  let enKeys = new Set();
-  let zhKeys = new Set();
-  
-  if (fs.existsSync(enPath)) {
-    try {
-      const enContent = JSON.parse(fs.readFileSync(enPath, "utf8"));
-      enKeys = new Set(getFlattenedKeys(enContent));
-      deepMerge(globalEnBundle, enContent);
-    } catch (err) {
-      findings.push(`Failed to parse English locale JSON: ${path.relative(frontendRoot, enPath)} (${err.message})`);
-    }
-  }
-  
-  if (fs.existsSync(zhPath)) {
-    try {
-      const zhContent = JSON.parse(fs.readFileSync(zhPath, "utf8"));
-      zhKeys = new Set(getFlattenedKeys(zhContent));
-    } catch (err) {
-      findings.push(`Failed to parse Chinese locale JSON: ${path.relative(frontendRoot, zhPath)} (${err.message})`);
-    }
-  }
-  
-  // Check key parity between en.json and zh.json
   const relativeFolder = path.relative(frontendRoot, folder);
-  for (const key of enKeys) {
-    if (!zhKeys.has(key)) {
-      findings.push(`Missing key in Simplified Chinese (${relativeFolder}/zh.json): "${key}" (present in en.json)`);
-    }
+  let englishEntries;
+  try {
+    const english = JSON.parse(fs.readFileSync(enPath, "utf8"));
+    englishEntries = getFlattenedEntries(english);
+    deepMerge(globalEnBundle, english, path.relative(frontendRoot, enPath));
+  } catch (err) {
+    findings.push(
+      `Failed to parse English locale JSON: ${path.relative(frontendRoot, enPath)} (${err.message})`,
+    );
+    continue;
   }
-  for (const key of zhKeys) {
-    if (!enKeys.has(key)) {
-      findings.push(`Missing key in English (${relativeFolder}/en.json): "${key}" (present in zh.json)`);
+
+  const pluralStems = new Set(
+    [...englishEntries.keys()].flatMap((key) => {
+      const parts = pluralParts(key);
+      return parts ? [parts.stem] : [];
+    }),
+  );
+
+  for (const language of supportedLanguageCodes) {
+    const localePath = path.join(folder, `${language}.json`);
+    let localeEntries;
+    try {
+      localeEntries = getFlattenedEntries(
+        JSON.parse(fs.readFileSync(localePath, "utf8")),
+      );
+    } catch (err) {
+      findings.push(
+        `Failed to parse ${language} locale JSON: ${path.relative(frontendRoot, localePath)} (${err.message})`,
+      );
+      continue;
+    }
+
+    for (const [key, englishValue] of englishEntries) {
+      const englishPlural = pluralParts(key);
+      if (
+        language !== "en" &&
+        englishPlural &&
+        pluralStems.has(englishPlural.stem)
+      ) {
+        continue;
+      }
+      if (!localeEntries.has(key)) {
+        findings.push(`Missing key in ${language} (${relativeFolder}/${language}.json): "${key}"`);
+        continue;
+      }
+      const localeValue = localeEntries.get(key);
+      if (typeof localeValue !== "string" || localeValue.trim() === "") {
+        findings.push(`Empty or non-string value in ${language} (${relativeFolder}/${language}.json): "${key}"`);
+      } else if (!sameTokens(englishValue, localeValue)) {
+        findings.push(`Placeholder, markup, or address mismatch in ${language} (${relativeFolder}/${language}.json): "${key}"`);
+      }
+    }
+
+    if (language === "en") {
+      continue;
+    }
+
+    const pluralCategories = new Set(
+      new Intl.PluralRules(language).resolvedOptions().pluralCategories,
+    );
+    for (const stem of pluralStems) {
+      const reference =
+        englishEntries.get(stem) ?? englishEntries.get(`${stem}_other`);
+      for (const category of pluralCategories) {
+        const key = `${stem}_${category}`;
+        const value = localeEntries.get(key);
+        if (typeof value !== "string" || value.trim() === "") {
+          findings.push(`Missing plural category ${language} (${relativeFolder}/${language}.json): "${key}"`);
+        } else if (!sameTokens(reference, value)) {
+          findings.push(`Placeholder, markup, or address mismatch in ${language} (${relativeFolder}/${language}.json): "${key}"`);
+        }
+      }
+    }
+
+    for (const [key, value] of localeEntries) {
+      if (typeof value !== "string" || value.trim() === "") {
+        findings.push(`Empty or non-string value in ${language} (${relativeFolder}/${language}.json): "${key}"`);
+      }
+      const parts = pluralParts(key);
+      if (parts && pluralStems.has(parts.stem)) {
+        if (
+          parts.category === "zero" ||
+          pluralCategories.has(parts.category)
+        ) {
+          continue;
+        }
+      } else if (englishEntries.has(key)) {
+        continue;
+      }
+      findings.push(`Unexpected key in ${language} (${relativeFolder}/${language}.json): "${key}"`);
     }
   }
 }
@@ -155,6 +312,21 @@ function scanFile(filePath) {
   );
 
   function visit(node) {
+    if (
+      ts.isImportDeclaration(node) &&
+      ts.isStringLiteral(node.moduleSpecifier)
+    ) {
+      const match = node.moduleSpecifier.text.match(/\/locales\/([^/]+)\.json$/);
+      if (match && match[1] !== "en") {
+        addFinding(
+          sourceFile,
+          node.moduleSpecifier,
+          "Static non-English locale import",
+          node.moduleSpecifier.text,
+        );
+      }
+    }
+
     if (!isTs) {
       if (ts.isJsxText(node)) {
         const text = normalizeJsxText(node.getFullText());

@@ -1,0 +1,35 @@
+{
+  "credits": {
+    "buyCredits": "크레딧 구매",
+    "currentBalance": "현재 잔액:",
+    "creditCount": "{{count}} 크레딧",
+    "creditCount_other": "{{count}} 크레딧",
+    "bonusCount": "보너스 +{{count}}",
+    "bonusCount_other": "보너스 +{{count}}",
+    "totalCreditCount": "총 {{count}} 크레딧",
+    "totalCreditCount_other": "총 {{count}} 크레딧",
+    "pricePerCredit": "크레딧당 ${{price}}¢",
+    "added": "크레딧이 추가되었습니다!",
+    "addedMessage": "계정에 {{count}} 크레딧이 추가되었습니다.",
+    "processing": "처리 중...",
+    "buyMore": "더 구매하기 +",
+    "notEnough": "크레딧이 부족합니다",
+    "loginRequired": " 크레딧을 구매하려면 로그인해야 합니다. ",
+    "purchaseFailed": " 구매 실패. 다시 시도해 주세요. ",
+    "spendCredits": "{{credits}}크레딧 사용",
+    "securePayment": " 스트라이프가 지원하는 안전한 결제. 크레딧은 절대 만료되지 않습니다. "
+  },
+  "promotion": {
+    "promoteEvent": " 이 행사를 홍보하세요",
+    "getMoreVisibility": " 공식 조직 행사를 위한 간단한 소개 배치로 \"{{title}}\"를 홍보하세요. ",
+    "bestValue": " 최고의 가치",
+    "maybeLater": " 아마 나중에",
+    "notEnoughCredits": "크레딧이 부족합니다",
+    "promotedEventName": " 프로모션 이벤트",
+    "promotedEventDescription": " 이 사건을 학생들에게 더 눈에 띄게 보여줘",
+    "durationDays": " {{count}} 일",
+    "durationDays_other": " {{count}} 일수",
+    "creditsCost": "{{credits}} 학점",
+    "spendCredits": "{{credits}}크레딧 사용"
+  }
+}

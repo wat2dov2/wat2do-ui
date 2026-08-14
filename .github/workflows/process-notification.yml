@@ -5,7 +5,7 @@ run-name: >-
     format('Process @{0}', inputs.poster_id)
   }}
 
-# One-off scrape of a single Instagram handle.
+# Process forwarded Instagram notifications or a manually selected handle.
 # Triggered either manually (workflow_dispatch) or by an external service
 # posting to repository_dispatch with type=new_instagram_post.
 #
@@ -67,7 +67,7 @@ jobs:
             echo "Either intended_recipient_id or school must be provided." >&2
             exit 1
           fi
-          if [[ -n "$INTENDED_RECIPIENT_ID" ]] && ! [[ "$INTENDED_RECIPIENT_ID" =~ ^[0-9]{1,32}$ ]]; then
+          if [[ -n "$INTENDED_RECIPIENT_ID" ]] && ! [[ "$INTENDED_RECIPIENT_ID" =~ ^[1-9][0-9]{0,31}$ ]]; then
             echo "Invalid intended recipient ID format." >&2
             exit 1
           fi
@@ -101,6 +101,7 @@ jobs:
         working-directory: backend
         env:
           NOTIFICATION_JSON: ${{ toJSON(github.event.client_payload.notification_dict) }}
+          SESSION_FAILURE_REPORT_PATH: ${{ runner.temp }}/instagram-digest-session-failures.json
         run: |
           export EVENT_FEED_REVALIDATION_URL="${FRONTEND_URL%/}/api/revalidate-events"
           if [[ "$NOTIFICATION_JSON" != "null" && -n "$NOTIFICATION_JSON" ]]; then
@@ -113,3 +114,12 @@ jobs:
               --cutoff-days "$CUTOFF_DAYS" \
               --dry-run false
           fi
+
+      - name: Upload sanitized Instagram session failure context
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: instagram-digest-session-failures
+          path: ${{ runner.temp }}/instagram-digest-session-failures.json
+          if-no-files-found: warn
+          retention-days: 1

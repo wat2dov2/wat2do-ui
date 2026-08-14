@@ -1,17 +1,24 @@
-import i18n from 'i18next';
-import { initReactI18next } from 'react-i18next';
-import { loadLanguage, saveLanguage, type SupportedLanguage } from '@/shared/services/preferencesStorage';
-import { LANGUAGE_CODES } from '@/shared/constants/languages';
+import i18n from "i18next";
+import { initReactI18next } from "react-i18next";
+import {
+  loadLanguage,
+  saveLanguage,
+} from "@/shared/services/preferencesStorage";
+import {
+  getLanguageByCode,
+  isSupportedLanguage,
+  type SupportedLanguage,
+} from "@/shared/constants/languages";
 
 // Device language preference, or English when unset.
-export const getStoredLanguage = (): string => {
+export const getStoredLanguage = (): SupportedLanguage => {
   return loadLanguage();
 };
 
 i18n
   .use(initReactI18next)
   .init({
-    fallbackLng: 'en',
+    fallbackLng: "en",
     lng: getStoredLanguage(),
     interpolation: {
       escapeValue: false, // React already escapes values
@@ -21,9 +28,14 @@ i18n
     returnNull: false, // Return key if translation is missing
   });
 
-i18n.on('languageChanged', (lng: string) => {
-  if (LANGUAGE_CODES.includes(lng)) {
-    saveLanguage(lng as SupportedLanguage);
+i18n.on("languageChanged", (lng: string) => {
+  if (isSupportedLanguage(lng)) {
+    saveLanguage(lng);
+    if (typeof document !== "undefined") {
+      const language = getLanguageByCode(lng);
+      document.documentElement.lang = lng;
+      document.documentElement.dir = language?.direction ?? "ltr";
+    }
   }
 });
 

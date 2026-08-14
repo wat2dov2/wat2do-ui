@@ -1,0 +1,123 @@
+{
+  "onboardingDemo": {
+    "progress": {
+      "label": "Progreso sa onboarding",
+      "start": "Magsimula",
+      "personalize": "Personalize",
+      "discover": "Tuklasin",
+      "unlock": "I-unlock"
+    },
+    "chrome": {
+      "demo": "Demo"
+    },
+    "actions": {
+      "continue": "Magpatuloy",
+      "back": "Bumalik",
+      "showMyWeek": "Ipakita ang aking linggo",
+      "great": "Mahusay",
+      "finish": "Tapusin",
+      "done": "Tapos na",
+      "continueWithoutPicks": "Magpatuloy nang walang mga pinili",
+      "editPicks": "I-edit ang mga pinili",
+      "restartDemo": "Magsimula muli ng demo"
+    },
+    "source": {
+      "eyebrow": "Paunang pagpapakita ng demo",
+      "title": "Maligayang pagdating sa Wat2Do",
+      "question": "Saan mo narinig ang tungkol sa amin?",
+      "groupLabel": "Paano mo narinig ang tungkol sa Wat2Do",
+      "previewLabel": "Preview - halimbawa ng mga kaganapan sa campus"
+    },
+    "intent": {
+      "title": "Ano ang karaniwan mong hinahanap?",
+      "description": "Pumili ng ilan. Gagamitin namin ito upang buuin ang iyong unang feed.",
+      "groupLabel": "Interes sa campus",
+      "previewReady": "Nagsisimula nang buuin ang iyong feed",
+      "previewEmpty": "Patuloy pa rin naming hahanapin ang mga darating na kaganapan sa buong campus."
+    },
+    "availability": {
+      "title": "Kailan ka kadalasang libre?",
+      "description": "Nakakatulong ito sa amin na mahanap ang mga kaganapan na maaari mong puntahan.",
+      "groupLabel": "Pagkakaroon ng oras",
+      "socialTitle": "Paano ka kadalasang pumupunta?",
+      "socialGroupLabel": "Paraan ng pakikisalamuha",
+      "weekPreviewTitle": "Ang iyong linggo sa isang sulyap",
+      "emptyWeek": "Piliin ang iyong mga libreng oras upang makita ang iyong linggo"
+    },
+    "eventMatch": {
+      "eyebrow": "Demo preview - mga halimbawa ng kaganapan",
+      "title": "Nakakita kami ng mga kaganapan na maaari mong puntahan",
+      "description": "Pumili ng ilan na pumukaw sa iyong interes.",
+      "pickedStatus": "{{count}}/3 napili - kailangan ng hindi bababa sa 2 upang magpatuloy",
+      "reactionGroup": "Reaksyon para sa {{title}}",
+      "reactions": {
+        "interested": "Interesado",
+        "maybe": "Baka",
+        "notForMe": "Hindi para sa akin"
+      }
+    },
+    "payoff": {
+      "title": "Maganda. Handa na ang iyong radar sa campus.",
+      "matched": "Naka-match ka sa {{count}} na mga kaganapan ngayong linggo.",
+      "strongestVibe": "Ang pinakamalakas mong vibe: {{vibe}}.",
+      "bestNight": "Mukhang Huwebes ng gabi ang pinakamagandang gabi mo para lumabas.",
+      "fallback": "Ang iyong unang campus feed ay handa na."
+    },
+    "buildWeek": {
+      "title": "Ginawa namin ang iyong unang Wat2Do na linggo",
+      "descriptionWithPicks": "Ang iyong mga pupuntahang kaganapan, tumutugmang mga club, at pinakamagandang gabi sa labas ay handa na.",
+      "descriptionWithoutPicks": "Gumawa kami ng starter feed sa halip. Maaari mo itong i-tune habang nagba-browse ka.",
+      "tonight": "Ngayong gabi",
+      "tonightWithPick": "1 na kaganapang sulit tingnan",
+      "tonightWithoutPick": "Bumalik ka sa lalong madaling panahon",
+      "thisWeek": "Ngayong linggo",
+      "weekMatches": "{{count}} na mga match mula sa mga club sa paligid ng Waterloo",
+      "clubsToFollow": "Mga club na dapat sundan",
+      "clubSuggestions": "3 mga mungkahi",
+      "freeFoodAlerts": "Mga abiso ng libreng pagkain",
+      "on": "Bukas",
+      "off": "Naka-off"
+    },
+    "proUnlock": {
+      "badge": "2 linggong trial ng Pro",
+      "title": "Na-upgrade ka na sa Wat2Do Pro",
+      "description": "Masiyahan sa personalisadong pagtuklas ng campus sa loob ng 14 araw. Walang bayad na kinakailangan.",
+      "brand": "Wat2Do Pro",
+      "visualTitle": "Na-unlock ang campus radar",
+      "visualDescription": "Personal na mga abiso, mga paparating na event, at ang iyong lingguhang plano - lahat sa isang lugar.",
+      "benefits": {
+        "save": "Markahan ang mga event bilang pupunta",
+        "follow": "Sundan ang mga club",
+        "alerts": "Makatanggap ng instant matching alerts",
+        "calendar": "I-sync ang mga kaganapan sa iyong kalendaryo",
+        "food": "Kumuha ng libreng pagkain at RSVP mga paalala",
+        "profile": "Buksan ang iyong Campus Taste Profile"
+      }
+    },
+    "challenge": {
+      "title": "Panatilihin ang Pro sa pamamagitan ng paggamit ng Wat2Do ngayong linggo",
+      "description": "Markahan bilang pupunta ang 3 event ngayong linggo para mapalawig ang Pro nang 7 araw.",
+      "label": "Campus Explorer Challenge",
+      "progress": "{{count}} / {{total}} na mga kaganapan ang pupuntahan",
+      "reward": "Gantimpala: +7 araw ng Pro",
+      "progressAria": "Progreso ng hamon",
+      "markedInterested": "{{count}} event ang minarkahang interesado habang nag-o-onboard",
+      "markedInterested_one": "{{count}} event ang minarkahang interesado habang nag-o-onboard",
+      "markedInterested_other": "{{count}} event ang minarkahang interesado habang nag-o-onboard"
+    },
+    "home": {
+      "badge": "Demo tapos na",
+      "title": "Kumusta, narito ang mga bagay na sulit tingnan ngayong linggo.",
+      "description": "Ito ay isang paunang pagpapakita ng iyong personalized na home - walang data ang na-save.",
+      "recommended": "Inirerekomenda para sa iyo",
+      "proTrialBadge": "Trial ng Pro - 14 araw",
+      "saved": "Pupuntahan ngayong linggo",
+      "freeFood": "Libreng pagkain malapit sa iyo",
+      "freeFoodPreview": "Pizza night sa SLC Great Hall - Hul 6:00 PM",
+      "trialEnds": "Magtatapos ang trial sa loob ng 14 na araw",
+      "clubs": "Mga club na maaaring magustuhan mo",
+      "clubsPreview": "EngSoc, CS Club, Velocity",
+      "remaining": "14 araw na natitira"
+    }
+  }
+}

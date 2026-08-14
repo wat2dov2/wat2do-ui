@@ -1,0 +1,39 @@
+{
+  "credits": {
+    "buyCredits": "Credits kaufen",
+    "currentBalance": "Aktuelles Guthaben:",
+    "creditCount": "{{count}} Guthabenpunkt",
+    "creditCount_other": "{{count}} Guthabenpunkte",
+    "bonusCount": " +{{count}} Bonus",
+    "bonusCount_other": " +{{count}} Bonus",
+    "totalCreditCount": "{{count}} Gesamtes Guthaben",
+    "totalCreditCount_other": "{{count}} Gesamtguthabenpunkte",
+    "pricePerCredit": "${{price}}¢/Guthabenpunkt",
+    "added": "Guthaben hinzugefügt!",
+    "addedMessage": "{{count}} Guthabenpunkte wurden Ihrem Konto hinzugefügt.",
+    "processing": "Verarbeitung...",
+    "buyMore": "+ Mehr kaufen",
+    "notEnough": "Nicht genügend Guthaben",
+    "loginRequired": "Sie müssen eingeloggt sein, um Credits zu kaufen.",
+    "purchaseFailed": "Kauf fehlgeschlagen. Bitte versuchen Sie es erneut.",
+    "spendCredits": "{{credits}} Credits ausgeben",
+    "securePayment": "Sichere Zahlung powered by Stripe. Credits verfallen niemals.",
+    "creditCount_one": "{{count}} Guthabenpunkt",
+    "bonusCount_one": " +{{count}} Bonus",
+    "totalCreditCount_one": "{{count}} Gesamtes Guthaben"
+  },
+  "promotion": {
+    "promoteEvent": "Dieses Event bewerben",
+    "getMoreVisibility": "Bewerben Sie \"{{title}}\" mit einer einfachen hervorgehobenen Platzierung für offizielle Organisationsevents.",
+    "bestValue": "Bestes Angebot",
+    "maybeLater": "Vielleicht später",
+    "notEnoughCredits": "Nicht genügend Guthaben",
+    "promotedEventName": "Beworbenes Event",
+    "promotedEventDescription": "Dieses Event für Studenten stärker hervorheben",
+    "durationDays": "{{count}} Tag",
+    "durationDays_other": "{{count}} Tage",
+    "creditsCost": "{{credits}} Guthaben",
+    "spendCredits": "{{credits}} Credits ausgeben",
+    "durationDays_one": "{{count}} Tag"
+  }
+}

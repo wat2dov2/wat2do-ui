@@ -1,0 +1,34 @@
+{
+  "positions": {
+    "position": "vị trí",
+    "position_other": "vị trí",
+    "searchPlaceholder": "Tìm kiếm vai trò, kỹ năng hoặc địa điểm...",
+    "clearSearch": "Xóa tìm kiếm vị trí",
+    "filterByType": "Lọc các vị trí theo loại",
+    "allTypes": "Tất cả các loại vị trí",
+    "openDetails": "Xem chi tiết vị trí {{title}}",
+    "drawerDescription": "Chi tiết vị trí cho {{title}} tại {{organization}}",
+    "deadlineLabel": "Hạn chót nộp đơn",
+    "due": "Hạn chót {{date}}",
+    "commitmentLabel": "Cam kết thời gian",
+    "locationLabel": "Địa điểm",
+    "compensationLabel": "Thù lao",
+    "contactLabel": "Liên hệ",
+    "aboutPosition": "Về vị trí này",
+    "requirements": "Yêu cầu",
+    "viewSource": "Xem bài đăng Instagram gốc",
+    "emptyTitle": "Không tìm thấy vị trí đang mở",
+    "emptyDescription": "Thử tìm một từ khóa khác hoặc loại vị trí khác. Cơ hội tổ chức mới sẽ xuất hiện ở đây khi chúng được đăng tải.",
+    "organizationEmptyTitle": "Không có vị trí nào mở",
+    "organizationEmptyDescription": "Tổ chức này hiện không có vị trí nào mở.",
+    "resultsLabel": "{{count}} vị trí được tìm thấy",
+    "types": {
+      "executive": "Điều hành",
+      "committee": "Ủy ban",
+      "volunteer": "Tình nguyện",
+      "staff": "Nhân viên trả lương",
+      "internship": "Thực tập",
+      "general": "Tuyển dụng chung"
+    }
+  }
+}

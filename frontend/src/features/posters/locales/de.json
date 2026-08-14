@@ -1,0 +1,187 @@
+{
+  "posters": {
+    "download": "Herunterladen",
+    "downloadPdf": "PDF",
+    "downloadPng": "PNG",
+    "recruitment": {
+      "title": "Hilf mehr Schülern, Veranstaltungen an {{school}} zu entdecken.",
+      "description": "Hänge offizielle Wat2Do Poster auf und verdiene {{rate}} für jeden qualifizierten neuen Besucher.",
+      "seeHowItWorks": "Sieh dir an, wie es funktioniert",
+      "dismiss": "Diese Nachricht für {{days}} Tage ausblenden"
+    },
+    "promote": {
+      "title": "Bring Wat2Do an {{school}}",
+      "description": "Platziere offizielle Poster auf dem Campus und verdiene {{rate}} für jeden qualifizierten neuen Besucher, den sie bringen.",
+      "stepsTitle": "Wie es funktioniert",
+      "stepsDescription": "Starte in wenigen Minuten mit einem offiziellen, druckfertigen Design.",
+      "step1Title": "Wähle ein offizielles Poster",
+      "step1Description": "Wähle aus den genehmigten Designs von Wat2Do.",
+      "step2Title": "Platzieren und aktivieren",
+      "step2Description": "Stellen Sie jede Kopie an einem Standort auf dem Campus auf und scannen Sie sie dann, um diese Platzierung zu bestätigen.",
+      "step3Title": "Verdienen für neue Besucher",
+      "step3Description": "Verdienen Sie {{rate}}, wenn ein bestätigter, qualifizierter neuer Besucher eintrifft.",
+      "coverageTitle": "Campus-Abdeckung an {{school}}",
+      "coverageDescription": "Ungefähre Zellen zeigen, wo aktive Poster den Studierenden helfen, Veranstaltungen zu entdecken, ohne einen Promoter zu exponieren."
+    },
+    "enrollment": {
+      "pausedTitle": "Das Promoter-Programm ist pausiert",
+      "pausedDescription": "Bestehende Poster und Einnahmen bleiben verfügbar, aber neue Anmeldungen und die Erstellung von Postern sind vorübergehend ausgesetzt.",
+      "pausedMaintenanceDescription": "Die Erstellung neuer Poster ist ausgesetzt, aber Sie können weiterhin Ihre Auszahlungs-E-Mail aktualisieren.",
+      "readyTitle": "Bereit, Ihrem Campus zu helfen?",
+      "readyDescription": "Verifizieren Sie Ihre Schul-E-Mail, um teilzunehmen. Sie wird Ihre anfängliche Interac E-Transfer-Adresse sein, und Sie können sie später aktualisieren.",
+      "schoolRequiredTitle": "Fügen Sie zuerst Ihre Schule hinzu",
+      "schoolRequiredDescription": "Eine Schule in Ihrem Profil ist erforderlich, damit Ihre Poster zum richtigen Campus-Event-Feed führen.",
+      "completeProfile": "Vervollständigen Sie mein Profil",
+      "enrolledTitle": "Sie sind im Programm",
+      "enrolled": "Eingeschrieben",
+      "enrolledDescription": "Ihr Promoter-Dashboard ist bereit.",
+      "settingsTitle": "Promoter-Programm",
+      "settingsDescription": "Überprüfen Sie Ihren Status und halten Sie Ihre Interac E-Transfer-E-Mail aktuell.",
+      "joinTitle": "Dem Promoter-Programm beitreten",
+      "joinDescription": "Die Anmeldung ist sofort. Sie benötigen nur eine Auszahlungs-E-Mail und die Annahme der Promoter-Bedingungen.",
+      "payoutEmail": "Auszahlungs-E-Mail",
+      "payoutEmailPlaceholder": "you@example.com",
+      "payoutEmailDescription": "Monatliche Interac E-Transfers werden an diese Adresse gesendet.",
+      "acceptTermsPrefix": "Lesen Sie die vollständigen Bedingungen, bevor Sie zustimmen.",
+      "termsAccepted": "Sie haben die Promoter-Bedingungen akzeptiert.",
+      "termsLink": "Nutzungsbedingungen für Promoter",
+      "error": "Wir konnten Ihre Promoter-Anmeldung nicht aktualisieren.",
+      "trustMonthly": "Zahlungen werden am ersten Tag jedes Monats per Interac e-Transfer gesendet.",
+      "trustActivation": "Der Aktivierungsscan bestimmt die Platzierung und verdient $0.",
+      "trustTraffic": "Doppelte, unbestätigte, automatisierte und betrügerische Zugriffe werden ausgeschlossen.",
+      "trustPrivacy": "Wat2Do speichert keine rohen IP-Adressen.",
+      "join": "Am Programm teilnehmen",
+      "save": "Auszahlungs-Einstellungen speichern",
+      "discord": "Hilfe zu Discord erhalten"
+    },
+    "dashboard": {
+      "title": "Meine Poster",
+      "description": "Erstellen, platzieren und verfolgen Sie Ihre offiziellen Wat2Do Poster.",
+      "discordHelp": "Brauchen Sie Hilfe? Treten Sie dem Discord bei.",
+      "enrollmentRequired": "Trete dem Werbeprogramm bei, um offizielle Poster zu erstellen und zu verwalten.",
+      "loadErrorTitle": "Dein Dashboard konnte nicht geladen werden",
+      "loadErrorDescription": "Versuche es in einem Moment erneut. Deine Poster und Einnahmen wurden nicht verändert.",
+      "pendingEarnings": "Ausstehend in diesem Monat",
+      "creditableVisitors": "Qualifizierende Besucher in diesem Monat",
+      "unqualifiedScans": "Nicht qualifizierende Scans in diesem Monat",
+      "lifetimePaid": "Lebenslang bezahlt",
+      "activeSlots": "Aktive Posterplätze",
+      "slotValue": "{{used}} von {{limit}}",
+      "updatedDaily": "Täglich aktualisiert",
+      "mapTitle": "Campus-Posterkarte",
+      "mapDescription": "Deine platzierten Poster sind präzise und auswählbar. Andere Campusabdeckungen sind ungefähr und privat.",
+      "pausedTitle": "Die Erstellung von Postern ist pausiert",
+      "pausedDescription": "Ihr Dashboard, Ihre Downloads, Einnahmen und Auszahlungen bleiben verfügbar."
+    },
+    "create": {
+      "open": "Poster erstellen",
+      "title": "Offizielle Poster erstellen",
+      "description": "Wählen Sie ein genehmigtes Design und erstellen Sie für jede physische Kopie ein separat verfolgtes QR.",
+      "chooseTemplate": "Posterdesign auswählen",
+      "chooseTemplateDescription": "Die ausgewählte Vorlage hat ihre feste QR-Platzierung und Druckformat.",
+      "selectTemplate": "Design auswählen",
+      "customTitle": "Eigenes Posterdesign?",
+      "customDescription": "Treten Sie unserem Discord bei und teilen Sie es mit uns. Wir überprüfen Einsendungen und fügen genehmigte Designs der offiziellen Sammlung hinzu.",
+      "discord": "Auf Discord teilen",
+      "copies": "Kopien",
+      "slotsRemaining": "{{count}} aktive Slots verbleibend",
+      "submit": "Poster erstellen",
+      "error": "Der Poster-Stapel konnte nicht erstellt werden.",
+      "createdTitle": "Ihre einzigartigen Poster sind fertig",
+      "createdDescription": "Es wurden {{count}} separat verfolgte Kopien erstellt. Laden Sie diese herunter, bevor Sie jede Kopie platzieren.",
+      "downloadError": "Die Poster-Dateien konnten nicht generiert werden. Bitte versuchen Sie es erneut."
+    },
+    "inventory": {
+      "title": "Poster-Inventar",
+      "description": "Platzierte Poster werden nach {{days}} Tagen ohne akzeptierten Scan still.",
+      "emptyTitle": "Erstellen Sie Ihr erstes offizielles Wat2Do Poster",
+      "emptyDescription": "Laden Sie es herunter, platzieren Sie es auf dem Campus und scannen Sie es selbst, um die Platzierung zu aktivieren. Der Aktivierungs-Scan bringt $0.",
+      "lastScanned": "Zuletzt gescannt {{time}}",
+      "totalVisitors": "Insgesamt bestätigte Besucher",
+      "periodVisitors": "Qualifiziert in diesem Monat",
+      "periodEarnings": "Ausstehend in diesem Monat",
+      "activationInstruction": "Platziere diese Kopie, scanne ihr QR und erlaube den Standortzugriff, um die Platzierung zu bestimmen.",
+      "downloadError": "Dieses Poster konnte nicht zum Herunterladen erstellt werden.",
+      "templateUnavailable": "Dieses Legacy-Poster hat keine regenerierbare Vorlage."
+    },
+    "lifecycle": {
+      "not-placed": "Nicht platziert",
+      "quiet": "Ruhend"
+    },
+    "map": {
+      "loading": "Laden der Campus-Abdeckung...",
+      "loadErrorTitle": "Abdeckung nicht verfügbar",
+      "loadErrorDescription": "Die Gelegenheit ist noch offen. Versuche die Karte später erneut.",
+      "coverageMarker": "Ungefähre Campus-Zelle mit {{count}} Postern",
+      "campusCoverage": "Ungefähre Campus-Abdeckung",
+      "coverageSummary": "{{count}} Poster, {{recent}} kürzlich gescannt",
+      "ownedMarker": "Dein Poster: {{name}}",
+      "managedMarker": "Verwaltetes Plakat: {{name}}",
+      "visitorCount": "{{count}} bestätigte Besucher",
+      "yourPosters": "Ihre Plakate",
+      "managedPosters": "Verwaltete Plakate",
+      "otherCoverage": "Andere Campus-Abdeckung",
+      "noCoverageTitle": "Hier wurden noch keine Plakate platziert",
+      "noCoverageDescription": "Seien Sie einer der ersten Werbenden, die Campus-Abdeckung hinzufügen."
+    },
+    "payouts": {
+      "title": "Auszahlungshistorie",
+      "description": "Monatliche Interac e-Transfer-Aufzeichnungen. Zurückgehaltene Auszahlungen werden überprüft, anstatt entfernt.",
+      "loading": "Lade Auszahlungshistorie...",
+      "loadErrorTitle": "Auszahlungshistorie ist nicht verfügbar",
+      "loadErrorDescription": "Versuchen Sie es später erneut. Ihre Auszahlungsaufzeichnungen wurden nicht geändert.",
+      "empty": "Noch keine abgeschlossenen Auszahlungszeiträume.",
+      "period": "Zeitraum",
+      "visitors": "Qualifizierende Besucher",
+      "rate": "Rate",
+      "amount": "Betrag",
+      "status": "Status",
+      "paidDate": "Auszahlungsdatum",
+      "statuses": {
+        "pending": "Ausstehend",
+        "held": "Zur Überprüfung zurückgehalten",
+        "paid": "Bezahlt",
+        "voided": "Ungültig"
+      }
+    },
+    "terms": {
+      "title": "Nutzungsbedingungen für Promoter",
+      "description": "Bitte überprüfen Sie die Bedingungen des Promoterprogramms.",
+      "scrollToAccept": "Scrollen Sie durch alle Bedingungen, um die Zustimmung zu aktivieren.",
+      "accept": "Bedingungen akzeptieren",
+      "eligibility": {
+        "title": "Berechtigung und Anmeldung",
+        "body": "Sie müssen Ihr eigenes Wat2Do Konto verwenden, eine Schule in Ihrem Profil angeben, eine E-Mail bereitstellen, die Interac E-Transfers empfangen kann, und die Bedingungen des Promoters akzeptieren, wenn Sie sich anmelden. Die Anmeldung garantiert nicht die zukünftige Verfügbarkeit von Postern."
+      },
+      "posters": {
+        "title": "Offizielle Poster und Platzierungen",
+        "body": "Verwenden Sie nur die von Wat2Do generierten genehmigten Dateien. Jeder einzelne QR gehört zu einem physischen Standort. Duplizieren Sie kein QR über Standorte hinweg, verschieben Sie es an einen anderen Standort oder verwenden Sie es für ein anderes Poster erneut."
+      },
+      "scans": {
+        "title": "Aktivierung und qualifizierende Scans",
+        "body": "Der erste Scan bestimmt die Plakatplatzierung als Aktivierungsscan und ist nicht zahlbar. Ein Besucher muss mindestens {{seconds}} Sekunden auf Wat2Do bleiben, bevor ein Scan qualifiziert werden kann. Doppelte, nicht bestätigte, automatische, manipulierte und betrügerische Scans qualifizieren sich nicht. Wat2Do kann ungewöhnlichen Verkehr überprüfen, bevor eine Auszahlung freigegeben wird."
+      },
+      "payments": {
+        "title": "Zahlungen",
+        "body": "Jeder qualifizierende Scan bringt {{rate}} ein. Der zum vorherigen UTC Kalendermonat geschuldete Betrag wird von Interac per E-Transfer am {{payoutDay}} des folgenden Monats ausgezahlt. Zurückgehaltene Beträge bleiben zur Überprüfung. Steuern und genaue Auszahlungsdetails liegen in Ihrer Verantwortung."
+      },
+      "disputes": {
+        "title": "Auszahlungs- und Scan-Streitigkeiten",
+        "body": "Wenn Sie glauben, dass ein Scan oder eine Auszahlung falsch gemessen wurde, wenden Sie sich über den Promoter Discord an Wat2Do und geben Sie das Plakat, den Auszahlungszeitraum und relevante Details an. Wat2Do wird die Programmaufzeichnungen überprüfen und das Ergebnis erklären.",
+        "contact": "Kontakt zum Veranstalter-Support"
+      },
+      "conduct": {
+        "title": "Sichere und respektvolle Platzierung",
+        "body": "Plakatieren Sie nur dort, wo Sie die Erlaubnis haben. Decken Sie keine vorgeschriebenen Hinweise ab, beschädigen Sie kein Eigentum, geben Sie Wat2Do nicht falsch wieder und platzieren Sie Materialien nicht an Orten, an denen die Regeln des Campus oder der örtlichen Behörden dies verbieten."
+      },
+      "privacy": {
+        "title": "Datenschutz und Messung",
+        "body": "Öffentliche Plakatflächen erscheinen nur als ungefähre Kartenfelder. Wat2Do verwendet gehashte Besucherkennungen, speichert keine Roh-IP-Adressen und hält die Identitäten der Veranstalter, Zahlungsdetails und genaue Platzierungen vertraulich. Die Messung beschränkt sich darauf, eindeutige, gültige Besuche zu bestätigen und das Programm vor Missbrauch zu schützen."
+      },
+      "changes": {
+        "title": "Programmänderungen und Aussetzung",
+        "body": "Wat2Do kann neue Anmeldungen oder die Erstellung von Postern pausieren, Designs aus dem Programm nehmen, diese Bedingungen aktualisieren oder die Teilnahme bei Missbrauch aussetzen. Bestehende QR Weiterleitungen und verdiente Auszahlungsaufzeichnungen bleiben gemäß den Programmregeln verfügbar."
+      }
+    }
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "settings": {
+    "description": "계정 환경 설정 및 설정 관리",
+    "unsavedChanges": "저장되지 않은 변경 사항",
+    "unsavedChangesDescription": "설정 변경 사항을 저장하거나 취소하세요.",
+    "saveSuccess": "설정이 저장되었습니다.",
+    "saveError": "설정을 저장할 수 없습니다. 변경 내용이 여전히 남아 있습니다.",
+    "tabs": {
+      "profile": "프로필",
+      "notifications": "알림",
+      "appearance": "외관",
+      "promoter": "프로모터 프로그램"
+    },
+    "profile": {
+      "title": "프로필 정보",
+      "description": "프로필 세부 정보 및 환경 설정 관리",
+      "status": "프로필 상태",
+      "statusComplete": "프로필이 설정되고 완료되었습니다",
+      "statusIncomplete": "캠퍼스 이벤트 환경 설정을 저장하려면 프로필을 완성하세요",
+      "email": "이메일",
+      "editProfile": "프로필 편집",
+      "completeProfile": "프로필 완성",
+      "school": "학교",
+      "selectSchool": "학교 선택",
+      "faculty": "학부",
+      "selectFaculty": "학부 선택",
+      "firstYearStudent": "1학년 학생",
+      "interests": "관심사",
+      "selectInterests": "관심사를 선택하세요",
+      "avatarAlt": "아바타",
+      "changeAvatar": "새 아바타 선택"
+    },
+    "notifications": {
+      "title": "알림 설정",
+      "description": "이벤트 및 업데이트에 대한 알림 방법 선택",
+      "morningEmail": "아침 이메일",
+      "morningEmailDesc": "오전 9시에 지난 24시간 동안 추가된 강력한 매치를 받으세요.",
+      "eventReminder": "이벤트 알림",
+      "eventReminderDesc": "선택한 이벤트 약 1시간 전에 이메일을 받으세요.",
+      "eventChange": "이벤트 변경 알림",
+      "eventChangeDesc": "선택한 이벤트가 변경될 때 즉시 이메일을 받으세요.",
+      "loadFailed": "알림 환경설정을 로드할 수 없습니다.",
+      "retry": "다시 시도"
+    },
+    "appearance": {
+      "viewPreferences": "환경설정 보기",
+      "viewPreferencesDesc": "이벤트 표시 방식을 사용자화",
+      "defaultViewMode": "기본 보기 모드",
+      "defaultViewModeDesc": "기본적으로 이벤트가 표시되는 방식을 선택하세요",
+      "grid": "그리드",
+      "calendar": "달력",
+      "map": "지도",
+      "language": "언어",
+      "languageDescription": "선호하는 언어 선택"
+    }
+  }
+}

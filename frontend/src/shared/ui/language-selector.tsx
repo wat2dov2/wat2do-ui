@@ -9,6 +9,7 @@ import { useLanguage } from "@/shared/hooks/useLanguage";
 import {
   getDefaultLanguage,
   getLanguageByCode,
+  isSupportedLanguage,
   SUPPORTED_LANGUAGES,
   type SupportedLanguage,
 } from "@/shared/constants/languages";
@@ -31,11 +32,14 @@ export function LanguageSelector({
     getLanguageByCode(currentLanguageCode) ?? getDefaultLanguage();
 
   const handleValueChange = (nextLanguage: string) => {
-    if (onValueChange) {
-      onValueChange(nextLanguage as SupportedLanguage);
+    if (!isSupportedLanguage(nextLanguage)) {
       return;
     }
-    void language.changeLanguage(nextLanguage);
+    if (onValueChange) {
+      onValueChange(nextLanguage);
+      return;
+    }
+    void language.changeLanguage(nextLanguage).catch(() => undefined);
   };
 
   return (

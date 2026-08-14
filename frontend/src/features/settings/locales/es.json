@@ -1,0 +1,57 @@
+{
+  "settings": {
+    "description": "Gestiona las preferencias y configuraciones de tu cuenta",
+    "unsavedChanges": "Cambios no guardados",
+    "unsavedChangesDescription": "Guarde o cancele los cambios de configuración.",
+    "saveSuccess": "Sus configuraciones se guardaron.",
+    "saveError": "No pudimos guardar sus configuraciones. Sus cambios aún están aquí.",
+    "tabs": {
+      "profile": "Perfil",
+      "notifications": "Notificaciones",
+      "appearance": "Apariencia",
+      "promoter": "Programa de promotores"
+    },
+    "profile": {
+      "title": "Información del perfil",
+      "description": "Administre los detalles y preferencias de su perfil",
+      "status": "Estado del perfil",
+      "statusComplete": "Su perfil está configurado y completo",
+      "statusIncomplete": "Complete su perfil para guardar sus preferencias de eventos del campus",
+      "email": "Correo electrónico",
+      "editProfile": "Editar perfil",
+      "completeProfile": "Completar perfil",
+      "school": "Escuela",
+      "selectSchool": "Seleccionar una escuela",
+      "faculty": "Facultad",
+      "selectFaculty": "Seleccionar una facultad",
+      "firstYearStudent": "Estudiante de primer año",
+      "interests": "Intereses",
+      "selectInterests": "Selecciona tus intereses",
+      "avatarAlt": "Avatar",
+      "changeAvatar": "Elige un nuevo avatar"
+    },
+    "notifications": {
+      "title": "Preferencias de notificación",
+      "description": "Elige cómo quieres ser notificado sobre eventos y actualizaciones",
+      "morningEmail": "Correo matutino",
+      "morningEmailDesc": "A las 9 AM, obtener coincidencias fuertes agregadas en las últimas 24 horas.",
+      "eventReminder": "Recordatorios de eventos",
+      "eventReminderDesc": "Recibir un correo aproximadamente una hora antes de un evento que hayas seleccionado.",
+      "eventChange": "Alertas de cambios de eventos",
+      "eventChangeDesc": "Recibir un correo inmediato cuando un evento seleccionado cambie.",
+      "loadFailed": "No se pudieron cargar tus preferencias de notificación.",
+      "retry": "Reintentar"
+    },
+    "appearance": {
+      "viewPreferences": "Ver preferencias",
+      "viewPreferencesDesc": "Personaliza cómo se muestran los eventos",
+      "defaultViewMode": "Modo de vista predeterminado",
+      "defaultViewModeDesc": "Elige cómo se muestran los eventos por defecto",
+      "grid": "Cuadrícula",
+      "calendar": "Calendario",
+      "map": "Mapa",
+      "language": "Idioma",
+      "languageDescription": "Elige tu idioma preferido"
+    }
+  }
+}

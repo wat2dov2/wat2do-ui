@@ -8,6 +8,9 @@ import logging
 import os
 import sys
 import urllib.parse
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
@@ -16,18 +19,56 @@ from dotenv import load_dotenv  # noqa: E402
 load_dotenv()
 
 import core.logging  # noqa: F401, E402
+from core.controlbox import controlbox  # noqa: E402
 from jobs.scrape import run  # noqa: E402
+from schemas.school import validate_recipient_id  # noqa: E402
+from services import school_service  # noqa: E402
+from services.instagram_digest.client import (  # noqa: E402
+    DigestResult,
+    InstagramDigestClient,
+    InstagramDigestError,
+)
+from services.instagram_digest.ledger import (  # noqa: E402
+    MaterializedMedia,
+    MediaClaim,
+    claim_next_notification_media,
+    mark_media_failed,
+    mark_media_succeeded,
+    record_notification_media,
+)
+from services.instagram_digest.sessions import (  # noqa: E402
+    KeychainSessionStore,
+    RoutedSessionHealth,
+    SessionHealthAudit,
+    SessionHealthIssue,
+    SessionHealthStatus,
+    SessionStoreError,
+    recipient_session_transaction,
+)
 
 log = logging.getLogger(__name__)
 
 _IG_ACTION_KEY = "com.instagram.android.igns.logging.ig_action"
 _PUSH_CATEGORY_KEY = "com.instagram.android.igns.logging.push_category"
+_PUSH_ID_KEY = "com.instagram.android.igns.logging.push_id"
+_RECIPIENT_ID_KEY = "com.instagram.android.igns.logging.intended_recipient_id"
 _MEDIA_QUERY_KEYS = ("media_list", "media_id")
-_DIGEST_QUERY_KEYS = ("cache_ent_id", "total_non_mmc_media_count")
+_CACHE_ID_KEY = "cache_ent_id"
+_TOTAL_MEDIA_COUNT_KEY = "total_non_mmc_media_count"
+_ACTIONABLE_CATEGORIES = frozenset({"post", "subscription_daily_digest"})
+_ACTIONABLE_ACTION_PATH = "clips_home"
 
 
 class NotificationPayloadError(ValueError):
     """Raised when a post notification contains invalid processing metadata."""
+
+
+@dataclass(frozen=True)
+class ParsedNotification:
+    action_path: str
+    explicit_media: tuple[MaterializedMedia, ...]
+    cache_ent_id: str | None
+    total_media_count: int | None
 
 
 def get_shortcode_from_media_id(media_id: int) -> str:
@@ -40,6 +81,16 @@ def get_shortcode_from_media_id(media_id: int) -> str:
     return shortcode
 
 
+def _media_target(media_id: str) -> MaterializedMedia:
+    numeric_media_id = int(media_id)
+    return MaterializedMedia(
+        media_id=media_id,
+        source_url=(
+            f"https://www.instagram.com/p/{get_shortcode_from_media_id(numeric_media_id)}/"
+        ),
+    )
+
+
 def _action_query(payload: dict[str, object]) -> tuple[str, dict[str, list[str]]]:
     action = payload.get(_IG_ACTION_KEY, "")
     if not isinstance(action, str):
@@ -50,36 +101,270 @@ def _action_query(payload: dict[str, object]) -> tuple[str, dict[str, list[str]]
     return action_path, query
 
 
-def _notification_targets(payload: dict[str, object]) -> tuple[str, list[str]]:
+def _metadata_value(
+    payload: dict[str, object],
+    query: dict[str, list[str]],
+    key: str,
+) -> str | None:
+    values: list[str] = []
+    for value in query.get(key, []):
+        normalized = value.strip()
+        if not normalized:
+            raise NotificationPayloadError(f"Notification {key} cannot be empty.")
+        values.append(normalized)
+
+    if key in payload:
+        payload_value = payload[key]
+        if isinstance(payload_value, bool) or not isinstance(payload_value, (str, int)):
+            raise NotificationPayloadError(f"Notification {key} has an invalid type.")
+        normalized = str(payload_value).strip()
+        if not normalized:
+            raise NotificationPayloadError(f"Notification {key} cannot be empty.")
+        values.append(normalized)
+
+    if not values:
+        return None
+    if any(value != values[0] for value in values[1:]):
+        raise NotificationPayloadError(f"Notification {key} values conflict.")
+    return values[0]
+
+
+def _parse_media_id(raw_media_id: object) -> str:
+    if isinstance(raw_media_id, bool) or not isinstance(raw_media_id, (str, int)):
+        raise NotificationPayloadError("Notification contains an invalid media ID.")
+    media_id = str(raw_media_id).strip().split("_", 1)[0]
+    if not media_id.isascii() or not media_id.isdigit() or int(media_id) <= 0:
+        raise NotificationPayloadError("Notification contains an invalid media ID.")
+    if len(media_id) > 32 or str(int(media_id)) != media_id:
+        raise NotificationPayloadError("Notification contains an invalid media ID.")
+    return media_id
+
+
+def _parse_notification(payload: dict[str, object]) -> ParsedNotification:
     action_path, query = _action_query(payload)
     raw_media_ids: list[str] = []
     for key in _MEDIA_QUERY_KEYS:
         for value in query.get(key, []):
             raw_media_ids.extend(value.split(","))
 
-    if not raw_media_ids:
-        has_digest_metadata = any(key in query or key in payload for key in _DIGEST_QUERY_KEYS)
-        if has_digest_metadata:
-            raise NotificationPayloadError(
-                "Instagram digest notification did not expose materialized media IDs."
-            )
-        return action_path, []
-
-    media_ids: list[int] = []
-    seen: set[int] = set()
+    explicit_media: dict[str, MaterializedMedia] = {}
     for raw_media_id in raw_media_ids:
-        base_media_id = raw_media_id.strip().split("_", 1)[0]
-        if not base_media_id.isdigit() or int(base_media_id) <= 0:
-            raise NotificationPayloadError("Notification contains an invalid media ID.")
-        media_id = int(base_media_id)
-        if media_id not in seen:
-            seen.add(media_id)
-            media_ids.append(media_id)
+        media_id = _parse_media_id(raw_media_id)
+        explicit_media.setdefault(media_id, _media_target(media_id))
 
-    return action_path, [
-        f"https://www.instagram.com/p/{get_shortcode_from_media_id(media_id)}/"
-        for media_id in media_ids
-    ]
+    cache_ent_id = _metadata_value(payload, query, _CACHE_ID_KEY)
+    if cache_ent_id is not None and len(cache_ent_id) > 255:
+        raise NotificationPayloadError("Notification cache_ent_id is invalid.")
+    total_count_value = _metadata_value(payload, query, _TOTAL_MEDIA_COUNT_KEY)
+    total_media_count: int | None = None
+    if total_count_value is not None:
+        if not total_count_value.isascii() or not total_count_value.isdigit():
+            raise NotificationPayloadError("Notification total_non_mmc_media_count is invalid.")
+        total_media_count = int(total_count_value)
+
+    return ParsedNotification(
+        action_path=action_path,
+        explicit_media=tuple(explicit_media.values()),
+        cache_ent_id=cache_ent_id,
+        total_media_count=total_media_count,
+    )
+
+
+def _required_payload_text(
+    payload: dict[str, object],
+    key: str,
+    label: str,
+    *,
+    maximum_length: int,
+) -> str:
+    value = payload.get(key)
+    if not isinstance(value, str) or not value.strip() or len(value.strip()) > maximum_length:
+        raise NotificationPayloadError(f"Actionable notification requires a valid {label}.")
+    return value.strip()
+
+
+def _resolve_recipient(payload: dict[str, object]) -> str:
+    intended_recipient_id = (os.getenv("INTENDED_RECIPIENT_ID") or "").strip()
+    try:
+        intended_recipient_id = validate_recipient_id(intended_recipient_id)
+    except ValueError:
+        raise NotificationPayloadError(
+            "Actionable notification requires a valid intended recipient ID."
+        ) from None
+
+    payload_recipient = payload.get(_RECIPIENT_ID_KEY)
+    if payload_recipient is not None:
+        if (
+            not isinstance(payload_recipient, str)
+            or payload_recipient.strip() != intended_recipient_id
+        ):
+            raise NotificationPayloadError(
+                "Notification intended recipient does not match workflow routing."
+            )
+    return intended_recipient_id
+
+
+def _digest_media_id(media: dict[str, Any]) -> str:
+    candidates: list[str] = []
+    for key in ("pk", "id"):
+        value = media.get(key)
+        if value is not None:
+            candidates.append(_parse_media_id(value))
+    if not candidates or any(candidate != candidates[0] for candidate in candidates[1:]):
+        raise NotificationPayloadError("Instagram digest returned media with an invalid identity.")
+    return candidates[0]
+
+
+def _materialize_media(
+    notification: ParsedNotification,
+    intended_recipient_id: str,
+) -> list[MaterializedMedia]:
+    materialized = {item.media_id: item for item in notification.explicit_media}
+    if notification.cache_ent_id is None:
+        return list(materialized.values())
+
+    digest_control = controlbox.instagram_digest
+    session_store = KeychainSessionStore()
+    with recipient_session_transaction(intended_recipient_id):
+        session = session_store.load(intended_recipient_id)
+        result: DigestResult = InstagramDigestClient(
+            session,
+            endpoint_url=str(digest_control.endpoint_url),
+            operation_name=digest_control.operation_name,
+            client_doc_id=digest_control.client_doc_id,
+            web_app_id=digest_control.web_app_id,
+            timeout_seconds=digest_control.request_timeout_seconds,
+            max_pages=digest_control.maximum_pages,
+        ).fetch_media(notification.cache_ent_id)
+        session_store.store(result.session)
+    for digest_media in result.media:
+        media_id = _digest_media_id(digest_media)
+        materialized.setdefault(media_id, _media_target(media_id))
+    log.info(
+        "Materialized Instagram digest pages=%d unique_media=%d",
+        result.page_count,
+        len(materialized),
+    )
+    return list(materialized.values())
+
+
+def _is_supported_category(payload: dict[str, object]) -> bool:
+    category = payload.get(_PUSH_CATEGORY_KEY)
+    return isinstance(category, str) and category in _ACTIONABLE_CATEGORIES
+
+
+def _validate_actionable_notification(notification: ParsedNotification) -> None:
+    if notification.action_path != _ACTIONABLE_ACTION_PATH:
+        raise NotificationPayloadError(
+            "Actionable notification has an unsupported Instagram action."
+        )
+    if not notification.explicit_media and notification.cache_ent_id is None:
+        raise NotificationPayloadError(
+            "Actionable notification contains no recoverable Instagram media."
+        )
+
+
+def _write_session_failure_report(
+    *,
+    school: str,
+    intended_recipient_id: str,
+    error: InstagramDigestError | SessionStoreError,
+) -> None:
+    report_path = (os.getenv("SESSION_FAILURE_REPORT_PATH") or "").strip()
+    if not report_path:
+        return
+    if isinstance(error, InstagramDigestError):
+        issue = SessionHealthIssue.REMOTE_CHECK_FAILED
+    elif error.status is SessionHealthStatus.MISSING:
+        issue = SessionHealthIssue.MISSING_SESSION
+    elif error.status is SessionHealthStatus.TRANSIENT_ERROR:
+        issue = SessionHealthIssue.PERSISTENCE_FAILED
+    else:
+        issue = SessionHealthIssue.INVALID_SESSION
+    report = SessionHealthAudit(
+        healthy=False,
+        issues=(),
+        sessions=(
+            RoutedSessionHealth(
+                school=school,
+                intended_recipient_id=intended_recipient_id,
+                account_username=None,
+                status=error.status,
+                issue=issue,
+            ),
+        ),
+    )
+    try:
+        Path(report_path).write_text(
+            json.dumps(report.report_fields(), indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+    except OSError:
+        log.error("Instagram session failure report could not be written.")
+
+
+def _process_claim(claim: MediaClaim, *, cutoff_days: int) -> int:
+    try:
+        status = run(
+            targets=[claim.source_url],
+            cutoff_days=cutoff_days,
+            dry_run=False,
+            allow_past_events=False,
+        )
+    except Exception:  # noqa: BLE001 - every claim must reach a terminal ledger state
+        log.error("Exact Instagram media scrape raised an unexpected error.")
+        status = 1
+        failure_category = "scrape_exception"
+    else:
+        failure_category = "scrape_error"
+
+    try:
+        finalized = (
+            mark_media_succeeded(
+                media_row_id=claim.media_row_id,
+                claim_token=claim.claim_token,
+            )
+            if status == 0
+            else mark_media_failed(
+                media_row_id=claim.media_row_id,
+                claim_token=claim.claim_token,
+                failure_category=failure_category,
+            )
+        )
+    except Exception:  # noqa: BLE001 - never leak database details
+        log.error("Instagram media ledger finalization failed.")
+        finalized = False
+
+    if not finalized:
+        log.error("Instagram media claim was not finalized.")
+    return 0 if status == 0 and finalized else 1
+
+
+def _process_pending_media(
+    notification_id: str,
+    *,
+    cutoff_days: int,
+    github_run_id: str | None,
+) -> tuple[int, int]:
+    overall_status = 0
+    processed_count = 0
+    while True:
+        try:
+            claim = claim_next_notification_media(
+                notification_id=notification_id,
+                github_run_id=github_run_id,
+            )
+        except Exception:  # noqa: BLE001 - database details must stay out of logs
+            log.error("Instagram notification ledger claim failed.")
+            return 1, processed_count
+        if claim is None:
+            return overall_status, processed_count
+
+        processed_count += 1
+        overall_status = max(
+            overall_status,
+            _process_claim(claim, cutoff_days=cutoff_days),
+        )
 
 
 def main() -> int:
@@ -93,6 +378,7 @@ def main() -> int:
         log.error("NOTIFICATION_JSON environment variable is empty or not set.")
         return 1
 
+    school = None
     try:
         payload = json.loads(payload_str)
     except json.JSONDecodeError as exc:
@@ -103,33 +389,97 @@ def main() -> int:
         log.error("NOTIFICATION_JSON must contain a JSON object.")
         return 1
 
+    if not _is_supported_category(payload):
+        log.info("Ignoring unsupported Instagram notification.")
+        return 0
+
     try:
-        action_path, targets = _notification_targets(payload)
+        notification = _parse_notification(payload)
+        _validate_actionable_notification(notification)
     except NotificationPayloadError as exc:
         log.error("%s", exc)
         return 1
 
-    if not targets:
-        category = payload.get(_PUSH_CATEGORY_KEY)
-        log.info(
-            "Ignoring unsupported Instagram notification category=%r action=%r",
-            category if isinstance(category, str) else None,
-            action_path,
+    try:
+        intended_recipient_id = _resolve_recipient(payload)
+        push_id = _required_payload_text(
+            payload,
+            _PUSH_ID_KEY,
+            "push ID",
+            maximum_length=255,
         )
-        return 0
+        push_category = _required_payload_text(
+            payload,
+            _PUSH_CATEGORY_KEY,
+            "push category",
+            maximum_length=100,
+        )
+        school = school_service.get_school_by_recipient_id(intended_recipient_id)
+        if school is None:
+            raise NotificationPayloadError(
+                "No school mapping exists for the notification recipient."
+            )
+        media = _materialize_media(notification, intended_recipient_id)
+    except (InstagramDigestError, SessionStoreError) as exc:
+        school_slug = school.slug if school is not None else "unknown"
+        _write_session_failure_report(
+            school=school_slug,
+            intended_recipient_id=intended_recipient_id,
+            error=exc,
+        )
+        log.error(
+            "Instagram digest session failed school=%s status=%s",
+            school_slug,
+            exc.status.value,
+        )
+        return 1
+    except NotificationPayloadError as exc:
+        log.error("%s", exc)
+        return 1
+    except Exception:  # noqa: BLE001 - do not expose database or upstream internals
+        log.error("Instagram notification materialization failed unexpectedly.")
+        return 1
 
-    cutoff_days = int(os.getenv("CUTOFF_DAYS", "1"))
-
-    # Process all targets in a single batch
-    log.info("Dispatching scrape run for %d exact post target(s)", len(targets))
-    overall_status = run(
-        targets=targets,
-        cutoff_days=cutoff_days,
-        dry_run=False,
-        allow_past_events=False,
+    materialization_incomplete = (
+        notification.total_media_count is not None and len(media) < notification.total_media_count
     )
+    if materialization_incomplete:
+        log.error(
+            "Instagram digest materialization is incomplete advertised=%d materialized=%d",
+            notification.total_media_count,
+            len(media),
+        )
 
-    return overall_status
+    try:
+        cutoff_days = int(os.getenv("CUTOFF_DAYS", "1"))
+    except ValueError:
+        log.error("CUTOFF_DAYS must be an integer.")
+        return 1
+
+    try:
+        notification_id = record_notification_media(
+            school_id=school.id,
+            intended_recipient_id=intended_recipient_id,
+            push_id=push_id,
+            push_category=push_category,
+            cache_ent_id=notification.cache_ent_id,
+            total_non_mmc_media_count=notification.total_media_count,
+            media=media,
+        )
+    except Exception:  # noqa: BLE001 - database details must not enter workflow output
+        log.error("Instagram notification ledger recording failed.")
+        return 1
+
+    processing_status, processed_count = _process_pending_media(
+        notification_id,
+        cutoff_days=cutoff_days,
+        github_run_id=(os.getenv("GITHUB_RUN_ID") or "").strip() or None,
+    )
+    if processed_count:
+        log.info("Processed %d exact Instagram media target(s).", processed_count)
+    else:
+        log.info("No pending Instagram media remain for this notification.")
+    return 1 if materialization_incomplete else processing_status
 
 
 if __name__ == "__main__":

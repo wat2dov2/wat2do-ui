@@ -1,0 +1,57 @@
+{
+  "settings": {
+    "description": "Zarządzaj preferencjami i ustawieniami konta",
+    "unsavedChanges": "Niezapisane zmiany",
+    "unsavedChangesDescription": "Zapisz lub anuluj zmiany ustawień.",
+    "saveSuccess": "Twoje ustawienia zostały zapisane.",
+    "saveError": "Nie udało nam się zapisać Twoich ustawień. Twoje zmiany wciąż są tutaj.",
+    "tabs": {
+      "profile": "Profil",
+      "notifications": "Powiadomienia",
+      "appearance": "Wygląd",
+      "promoter": "Program promotorów"
+    },
+    "profile": {
+      "title": "Informacje o profilu",
+      "description": "Zarządzaj szczegółami i preferencjami swojego profilu",
+      "status": "Status profilu",
+      "statusComplete": "Twój profil jest skonfigurowany i kompletny",
+      "statusIncomplete": "Uzupełnij profil, aby zapisać preferencje dotyczące wydarzeń na kampusie",
+      "email": "E-mail",
+      "editProfile": "Edytuj profil",
+      "completeProfile": "Uzupełnij profil",
+      "school": "Szkoła",
+      "selectSchool": "Wybierz szkołę",
+      "faculty": "Wydział",
+      "selectFaculty": "Wybierz wydział",
+      "firstYearStudent": "Student pierwszego roku",
+      "interests": "Zainteresowania",
+      "selectInterests": "Wybierz swoje zainteresowania",
+      "avatarAlt": "Awatar",
+      "changeAvatar": "Wybierz nowy awatar"
+    },
+    "notifications": {
+      "title": "Preferencje powiadomień",
+      "description": "Wybierz, w jaki sposób chcesz otrzymywać powiadomienia o wydarzeniach i aktualizacjach",
+      "morningEmail": "Poranny e-mail",
+      "morningEmailDesc": "O godzinie 9:00 otrzymuj listę silnych dopasowań dodanych w ciągu ostatnich 24 godzin.",
+      "eventReminder": "Przypomnienia o wydarzeniach",
+      "eventReminderDesc": "Otrzymuj e-mail około godzinę przed wybranym wydarzeniem.",
+      "eventChange": "Alerty o zmianach wydarzeń",
+      "eventChangeDesc": "Otrzymuj natychmiastowy e-mail, gdy wybrane wydarzenie zostanie zmienione.",
+      "loadFailed": "Nie udało się załadować Twoich ustawień powiadomień.",
+      "retry": "Ponów próbę"
+    },
+    "appearance": {
+      "viewPreferences": "Zobacz ustawienia",
+      "viewPreferencesDesc": "Dostosuj sposób wyświetlania wydarzeń",
+      "defaultViewMode": "Domyślny tryb widoku",
+      "defaultViewModeDesc": "Wybierz sposób domyślnego wyświetlania wydarzeń",
+      "grid": "Siatka",
+      "calendar": "Kalendarz",
+      "map": "Mapa",
+      "language": "Język",
+      "languageDescription": "Wybierz preferowany język"
+    }
+  }
+}

@@ -26,12 +26,17 @@ load_dotenv()
 
 import core.logging  # noqa: F401, E402  - triggers basicConfig for standalone execution
 from core.constants import WORKFLOW_RUN_ERROR  # noqa: E402
-from services.scraper.instagram_scraper import get_scraper  # noqa: E402
+from services.scraper.instagram_scraper import (  # noqa: E402
+    InstagramScraperError,
+    get_scraper,
+)
 from services.scraper.pipeline import ScrapeResult, run_pipeline  # noqa: E402
 from services.scraper.single_user import (  # noqa: E402
     SchoolResolutionError,
+    exact_post_results_match_targets,
     fetch_posts_for_targets,
     filter_valid_posts,
+    is_exact_post_url_target,
     resolve_single_user_scrape_school,
 )
 
@@ -123,19 +128,40 @@ def run(
         allow_past_events,
     )
 
-    posts, pinned_warning = fetch_posts_for_targets(
-        clean_targets,
-        cutoff_days=cutoff_days,
-        scraper=get_scraper(),
-    )
+    exact_post_targets = all(is_exact_post_url_target(t) for t in clean_targets)
+    try:
+        posts, pinned_warning = fetch_posts_for_targets(
+            clean_targets,
+            cutoff_days=cutoff_days,
+            scraper=get_scraper(),
+        )
+    except InstagramScraperError as exc:
+        log.error("%s", exc)
+        return 1
+
     posts = filter_valid_posts(posts)
-    if not posts:
-        log.info("No valid posts retrieved for targets")
+    if (
+        exact_post_targets
+        and posts
+        and not exact_post_results_match_targets(
+            clean_targets,
+            posts,
+        )
+    ):
+        log.error("Exact Instagram post scrape returned mismatched media")
         _print_summary(
             school,
             ScrapeResult(ig_handle="unknown", dry_run=dry_run),
         )
-        return 0
+        return 1
+    if not posts:
+        log_method = log.error if exact_post_targets else log.info
+        log_method("No valid posts retrieved for targets")
+        _print_summary(
+            school,
+            ScrapeResult(ig_handle="unknown", dry_run=dry_run),
+        )
+        return 1 if exact_post_targets else 0
 
     from collections import defaultdict
 

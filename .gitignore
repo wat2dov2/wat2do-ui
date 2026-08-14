@@ -47,7 +47,6 @@ verify-out/
 frontend/test-results/
 frontend/playwright-report/
 
-# instagram automation runtime state (backend/scripts/follow_from_xlsx.py, automate_bell_notifications.py)
-session_*.json
+# Instagram automation runtime state
 progress_*.json
 debug_dumps/

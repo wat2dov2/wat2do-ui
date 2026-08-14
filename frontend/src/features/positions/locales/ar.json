@@ -1,0 +1,39 @@
+{
+  "positions": {
+    "position": "منصب",
+    "position_other": "مناصب",
+    "searchPlaceholder": "ابحث عن الأدوار أو المهارات أو المواقع...",
+    "clearSearch": "مسح بحث المنصب",
+    "filterByType": "تصفية المناصب حسب النوع",
+    "allTypes": "جميع أنواع المناصب",
+    "openDetails": "عرض تفاصيل الوظيفة {{title}}",
+    "drawerDescription": "تفاصيل وظيفة {{title}} في {{organization}}",
+    "deadlineLabel": "الموعد النهائي للتقديم",
+    "due": "آخر موعد {{date}}",
+    "commitmentLabel": "الالتزام بالوقت",
+    "locationLabel": "الموقع",
+    "compensationLabel": "التعويض",
+    "contactLabel": "تواصل",
+    "aboutPosition": "حول هذه الوظيفة",
+    "requirements": "المتطلبات",
+    "viewSource": "عرض المنشور الأصلي لـ Instagram",
+    "emptyTitle": "لم يتم العثور على وظائف شاغرة",
+    "emptyDescription": "حاول بحثًا آخر أو نوع وظيفة آخر. ستظهر فرص التنظيم الجديدة هنا بمجرد نشرها.",
+    "organizationEmptyTitle": "لا توجد وظائف شاغرة",
+    "organizationEmptyDescription": "لا تمتلك هذه المنظمة حاليًا أي وظائف شاغرة.",
+    "resultsLabel": "تم العثور على {{count}} وظيفة",
+    "types": {
+      "executive": "تنفيذي",
+      "committee": "لجنة",
+      "volunteer": "متطوع",
+      "staff": "موظف بأجر",
+      "internship": "تدريب عملي",
+      "general": "توظيف عام"
+    },
+    "position_one": "منصب",
+    "position_zero": "مناصب",
+    "position_two": "منصبان",
+    "position_few": "مناصب",
+    "position_many": "منصب"
+  }
+}

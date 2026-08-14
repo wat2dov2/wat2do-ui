@@ -9,7 +9,7 @@ from typing import Final
 
 from core.database import get_sb
 from core.tables import SCHOOLS
-from schemas.school import SchoolRecord, SchoolSummary
+from schemas.school import SchoolRecord, SchoolSummary, validate_recipient_id
 
 DEFAULT_SEARCH_LIMIT: Final[int] = 10
 SCHOOL_COLUMNS: Final[str] = (
@@ -55,6 +55,10 @@ def get_school_by_recipient_id(recipient_id: str | None) -> SchoolRecord | None:
     normalized_recipient_id = (recipient_id or "").strip()
     if not normalized_recipient_id:
         return None
+    try:
+        normalized_recipient_id = validate_recipient_id(normalized_recipient_id)
+    except ValueError:
+        return None
     response = (
         get_sb()
         .table(SCHOOLS)
@@ -66,6 +70,19 @@ def get_school_by_recipient_id(recipient_id: str | None) -> SchoolRecord | None:
     if not response.data:
         return None
     return SchoolRecord.model_validate(response.data[0])
+
+
+def list_notification_routed_schools() -> list[SchoolRecord]:
+    """Return every school that owns an Instagram notification recipient."""
+    response = (
+        get_sb()
+        .table(SCHOOLS)
+        .select(SCHOOL_COLUMNS)
+        .not_.is_("recipient_id", "null")
+        .order("slug")
+        .execute()
+    )
+    return [SchoolRecord.model_validate(row) for row in response.data or []]
 
 
 def get_school_id(slug_or_name: str | None) -> int | None:
@@ -204,6 +221,7 @@ __all__ = [
     "get_school_by_recipient_id",
     "get_school_by_name",
     "get_school_id",
+    "list_notification_routed_schools",
     "normalize_school_slug",
     "SCHOOL_SLUG_EMBED",
     "school_exists",

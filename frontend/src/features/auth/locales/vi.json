@@ -1,0 +1,67 @@
+{
+  "auth": {
+    "heading": "Khám phá những gì đang diễn ra trên khuôn viên trường.",
+    "description": "Đăng nhập hoặc tạo tài khoản để lưu sự kiện, cá nhân hóa nguồn cấp dữ liệu của bạn và khám phá những gì đang diễn ra trên khuôn viên trường.",
+    "emailLabel": "Địa chỉ email",
+    "emailPlaceholder": "you@{{domain}}",
+    "continue": "Tiếp tục",
+    "skipToOnboarding": "Tiếp tục mà không đăng nhập",
+    "verifyOtp": "Xác minh mã",
+    "resendOtp": "Gửi lại mã",
+    "otpLabel": "Mã xác minh",
+    "otpDescription": "Chúng tôi đã gửi một mã đăng nhập 6 chữ số tới {{email}}. Nhập nó bên dưới để đăng nhập.",
+    "invalidOtp": "Mã đăng nhập này không hợp lệ hoặc đã hết hạn.",
+    "invalidLoginLink": "Liên kết đăng nhập này không hợp lệ hoặc đã hết hạn.",
+    "genericError": "Đã xảy ra lỗi. Vui lòng thử lại.",
+    "backToLogin": "Quay lại đăng nhập",
+    "callbackDescription": "Xác nhận đăng nhập cho {{email}}.",
+    "callbackContinue": "Tiếp tục đăng nhập",
+    "heroTitle": "Diễn ra trong tuần này",
+    "heroSubtitle": "Các sự kiện thực tế từ các câu lạc bộ trên toàn trường, cập nhật từng giây.",
+    "heroEmpty": "Các sự kiện mới xuất hiện mỗi ngày. Đăng nhập để bắt đầu theo dõi chúng trước.",
+    "consentHeading": "Dữ liệu, an toàn và nguồn tin tức của bạn trên campus",
+    "consentDescription": "Cách chúng tôi giữ việc khám phá sự kiện an toàn và hữu ích cho sinh viên.",
+    "consentControlData": "Bạn kiểm soát dữ liệu hồ sơ của mình và có thể cập nhật hoặc xóa tài khoản bất cứ lúc nào.",
+    "consentNoSell": "Chúng tôi không bán dữ liệu của bạn cho bên thứ ba hoặc các công ty môi giới dữ liệu.",
+    "consentAnonymized": "Chúng tôi có thể xem xét các mô hình sử dụng ẩn danh để cải thiện việc khám phá sự kiện.",
+    "consentAgreeTerms": "Tôi đồng ý với các điều khoản của nền tảng và chính sách sử dụng chấp nhận được cho việc khám phá sự kiện trong khuôn viên trường.",
+    "consentSubscribeUpdates": "Đăng ký nhận cập nhật định kỳ về các tính năng mới và các sự kiện nổi bật trong khuôn viên trường.",
+    "signedInAs": "Đã đăng nhập với tư cách"
+  },
+  "onboarding": {
+    "faculties": {
+      "engineering": "Kỹ thuật",
+      "mathematics": "Toán học",
+      "science": "Khoa học",
+      "arts": "Nghệ thuật",
+      "environment": "Môi trường",
+      "health": "Sức khỏe",
+      "appliedHealthSciences": "Khoa học sức khỏe ứng dụng"
+    },
+    "stepProgress": "Bước {{step}} của {{total}}",
+    "safetyTitle": "Chào mừng bạn đến với trang sự kiện của khuôn viên trường.",
+    "safetyDescription": "Chúng tôi giúp bạn khám phá những gì đang diễn ra xung quanh trường và kết nối với các cộng đồng phù hợp với sở thích của bạn.",
+    "safetyGoingEvents": "Đánh dấu các sự kiện bạn sẽ tham gia, theo dõi các hạn chót và nhanh chóng lọc theo những gì quan trọng với bạn.",
+    "safetySafeguards": "Các biện pháp bảo vệ cộng đồng và an toàn giúp giữ cho các sự kiện chất lượng cao và đáng tin cậy.",
+    "doneTitle": "Bạn đã sẵn sàng!",
+    "doneDescription": "Bảng tin cá nhân hóa của bạn đã sẵn sàng. Đã đến lúc khám phá những gì đang diễn ra xung quanh bạn.",
+    "doneButton": "Hãy khám phá",
+    "gooseName": "Ông Ngỗng",
+    "doneNextLabel": "Đưa tôi đến Wat2Do!",
+    "gooseStep0": "Chào bạn!",
+    "gooseStep1": "Chào mừng đến với gia đình Wat2Do! Chúng tôi là một tập thể với mục tiêu 1: tạo ra nhiều kỷ niệm nhất có thể trong khoảng thời gian ngắn ở đại học",
+    "gooseStep2": "Mọi người ở đây đều thích những thứ khác nhau. Bạn thích tham gia những sự kiện nào?",
+    "gooseStep3WithSchool": "5 những sinh viên khác cũng có cùng sở thích! Bây giờ, trong số những điều này từ {{school}}, điều gì thu hút bạn?",
+    "gooseStep3Default": "Tuyệt vời, đây là cách chúng tôi tìm ra những điều hay. Trong số những điều này, điều gì thu hút bạn?",
+    "gooseStep4": "Hiểu rồi, vậy bạn thuộc khoa nào?",
+    "year": {
+      "yesFirstYear": "Đúng rồi, hoàn toàn mới!",
+      "noReturning": "Không, đã ở đây"
+    },
+    "events": {
+      "noEvents": "Hiện tại không có sự kiện nào.",
+      "noEventsAvailable": "Hiện tại không có sự kiện nào. Bạn có thể tiếp tục mà không cần chọn.",
+      "selectAriaLabel": "Chọn những sự kiện thu hút bạn"
+    }
+  }
+}

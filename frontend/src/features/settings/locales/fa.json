@@ -1,0 +1,57 @@
+{
+  "settings": {
+    "description": "مدیریت ترجیحات و تنظیمات حساب کاربری شما",
+    "unsavedChanges": "تغییرات ذخیره نشده",
+    "unsavedChangesDescription": "تغییرات تنظیمات خود را ذخیره یا لغو کنید.",
+    "saveSuccess": "تنظیمات شما ذخیره شد.",
+    "saveError": "نتوانستیم تنظیمات شما را ذخیره کنیم. تغییرات شما هنوز اینجاست.",
+    "tabs": {
+      "profile": "پروفایل",
+      "notifications": "اعلان‌ها",
+      "appearance": "ظاهر",
+      "promoter": "برنامه تبلیغ‌کننده"
+    },
+    "profile": {
+      "title": "اطلاعات پروفایل",
+      "description": "جزئیات و ترجیحات پروفایل خود را مدیریت کنید",
+      "status": "وضعیت پروفایل",
+      "statusComplete": "پروفایل شما راه‌اندازی و کامل شده است",
+      "statusIncomplete": "برای ذخیره ترجیحات رویدادهای دانشگاه خود، پروفایل خود را کامل کنید",
+      "email": "ایمیل",
+      "editProfile": "ویرایش پروفایل",
+      "completeProfile": "تکمیل پروفایل",
+      "school": "مدرسه",
+      "selectSchool": "انتخاب یک مدرسه",
+      "faculty": "دانشکده",
+      "selectFaculty": "انتخاب یک دانشکده",
+      "firstYearStudent": "دانشجوی سال اول",
+      "interests": "علایق",
+      "selectInterests": "علایق خود را انتخاب کنید",
+      "avatarAlt": "آواتار",
+      "changeAvatar": "انتخاب آواتار جدید"
+    },
+    "notifications": {
+      "title": "تنظیمات اعلان‌ها",
+      "description": "انتخاب نحوه دریافت اطلاعیه‌ها درباره رویدادها و به‌روزرسانی‌ها",
+      "morningEmail": "ایمیل صبحگاهی",
+      "morningEmailDesc": "در ساعت 9 صبح، پیشنهادهای قوی اضافه شده در 24 ساعت گذشته را دریافت کنید.",
+      "eventReminder": "یادآوری رویدادها",
+      "eventReminderDesc": "دریافت ایمیل حدود یک ساعت قبل از رویدادی که انتخاب کرده‌اید.",
+      "eventChange": "هشدار تغییر رویداد",
+      "eventChangeDesc": "دریافت ایمیل فوری هنگامی که یک رویداد انتخاب‌شده تغییر می‌کند.",
+      "loadFailed": "نمی‌توان تنظیمات اعلان شما را بارگذاری کرد.",
+      "retry": "تلاش دوباره"
+    },
+    "appearance": {
+      "viewPreferences": "مشاهده تنظیمات",
+      "viewPreferencesDesc": "سفارشی کردن نحوه نمایش رویدادها",
+      "defaultViewMode": "حالت نمایش پیش‌فرض",
+      "defaultViewModeDesc": "انتخاب نحوه نمایش رویدادها به صورت پیش‌فرض",
+      "grid": "شبکه‌ای",
+      "calendar": "تقویم",
+      "map": "نقشه",
+      "language": "زبان",
+      "languageDescription": "زبان موردنظر خود را انتخاب کنید"
+    }
+  }
+}

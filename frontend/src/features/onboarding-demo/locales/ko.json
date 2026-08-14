@@ -1,0 +1,122 @@
+{
+  "onboardingDemo": {
+    "progress": {
+      "label": "온보딩 진행 상황",
+      "start": "시작",
+      "personalize": "개인화",
+      "discover": "발견",
+      "unlock": "잠금 해제"
+    },
+    "chrome": {
+      "demo": "데모"
+    },
+    "actions": {
+      "continue": "계속",
+      "back": "뒤로",
+      "showMyWeek": "내 주간 보기",
+      "great": "좋아요",
+      "finish": "완료",
+      "done": "끝",
+      "continueWithoutPicks": "선택 없이 계속",
+      "editPicks": "선택 편집",
+      "restartDemo": "데모 다시 시작"
+    },
+    "source": {
+      "eyebrow": "데모 미리보기",
+      "title": "환영합니다 Wat2Do",
+      "question": "저희에 대해 어디서 들으셨나요?",
+      "groupLabel": "어떻게 Wat2Do에 대해 들으셨나요?",
+      "previewLabel": "미리 보기 - 샘플 캠퍼스 이벤트"
+    },
+    "intent": {
+      "title": "보통 무엇을 찾고 계신가요?",
+      "description": "몇 가지를 선택하세요. 이를 통해 첫 번째 피드를 구성할 것입니다.",
+      "groupLabel": "캠퍼스 관심사",
+      "previewReady": "피드 구성 시작",
+      "previewEmpty": "캠퍼스 전체의 향후 이벤트도 계속 찾아드립니다."
+    },
+    "availability": {
+      "title": "보통 언제 시간이 있으신가요?",
+      "description": "이는 실제로 참여할 수 있는 이벤트를 찾는 데 도움이 됩니다.",
+      "groupLabel": "가능 시간",
+      "socialTitle": "보통 어떻게 이동하시나요?",
+      "socialGroupLabel": "소셜 모드",
+      "weekPreviewTitle": "이번 주 한눈에 보기",
+      "emptyWeek": "이번 주를 미리 보기 위해 자유 시간을 선택하세요"
+    },
+    "eventMatch": {
+      "eyebrow": "데모 미리 보기 - 샘플 이벤트",
+      "title": "실제로 갈 수 있는 이벤트를 찾았어요",
+      "description": "마음을 끄는 몇 가지를 선택하세요.",
+      "pickedStatus": "{{count}}/3 선택됨 - 계속하려면 최소 2개 필요",
+      "reactionGroup": "{{title}}에 대한 반응",
+      "reactions": {
+        "interested": "관심 있음",
+        "maybe": "그럴 수도 있음",
+        "notForMe": "나에게는 해당 없음"
+      }
+    },
+    "payoff": {
+      "title": "좋아요. 캠퍼스 레이더가 준비되었습니다.",
+      "matched": "이번 주에 {{count}}개의 이벤트와 매치되었습니다.",
+      "strongestVibe": "당신의 가장 강한 분위기: {{vibe}}.",
+      "bestNight": "목요일 저녁이 가장 좋은 외출 시간으로 보입니다.",
+      "fallback": "첫 번째 캠퍼스 피드가 준비되었습니다."
+    },
+    "buildWeek": {
+      "title": "당신의 첫 번째 Wat2Do 주를 만들었습니다.",
+      "descriptionWithPicks": "가고 있는 이벤트, 매칭된 클럽, 최고의 외출 밤이 준비되었습니다.",
+      "descriptionWithoutPicks": "대신 스타터 피드를 만들었어요. 둘러보면서 조정할 수 있습니다.",
+      "tonight": "오늘 밤",
+      "tonightWithPick": "확인할 가치가 있는 1개의 이벤트",
+      "tonightWithoutPick": "곧 다시 확인하세요",
+      "thisWeek": "이번 주",
+      "weekMatches": "Waterloo 주변 클럽에서 {{count}} 경기",
+      "clubsToFollow": "팔로우할 동아리",
+      "clubSuggestions": "3가지 추천",
+      "freeFoodAlerts": "무료 음식 알림",
+      "on": "켜짐",
+      "off": "꺼짐"
+    },
+    "proUnlock": {
+      "badge": "2주 Pro 체험",
+      "title": "귀하는 Wat2Do Pro로 업그레이드되었습니다",
+      "description": "14일 동안 맞춤형 캠퍼스 탐색을 즐기세요. 결제 필요 없음.",
+      "brand": "Wat2Do Pro",
+      "visualTitle": "캠퍼스 레이더 잠금 해제",
+      "visualDescription": "맞춤 알림, 참여 예정 이벤트, 주간 계획 모두 한 곳에서 확인하세요.",
+      "benefits": {
+        "save": "이벤트를 참여로 표시",
+        "follow": "클럽 팔로우",
+        "alerts": "즉시 매칭 알림 받기",
+        "calendar": "일정을 캘린더와 동기화",
+        "food": "무료 음식과 RSVP 알림 받기",
+        "profile": "캠퍼스 취향 프로필 잠금 해제"
+      }
+    },
+    "challenge": {
+      "title": "이번 주에 Wat2Do를 사용하여 Pro 유지",
+      "description": "이번 주에 3개의 이벤트에 '참석' 표시하여 Pro를 7일 연장",
+      "label": "캠퍼스 탐험가 챌린지",
+      "progress": "{{total}}개 중 {{count}}개 이벤트 참여 예정",
+      "reward": "보상: Pro +7일",
+      "progressAria": "챌린지 진행 상황",
+      "markedInterested": "온보딩 중 {{count}}개의 관심 이벤트 표시",
+      "markedInterested_other": "온보딩 중 {{count}}개의 관심 이벤트 표시"
+    },
+    "home": {
+      "badge": "데모 완료",
+      "title": "안녕하세요, 이번 주에 확인할 만한 것은 다음과 같습니다.",
+      "description": "개인화된 홈 미리보기입니다 - 데이터는 저장되지 않았습니다.",
+      "recommended": "추천",
+      "proTrialBadge": "Pro 체험 - 14일",
+      "saved": "이번 주 예정",
+      "freeFood": "주변 무료 음식",
+      "freeFoodPreview": "SLC 그레이트 홀에서 피자 나이트 - 목요일 오후 6:00",
+      "trialEnds": "체험 기간 종료까지 14일",
+      "clubs": "추천 동아리",
+      "clubsPreview": "EngSoc, CS 클럽, Velocity",
+      "remaining": "14일 남음"
+    }
+  }
+}

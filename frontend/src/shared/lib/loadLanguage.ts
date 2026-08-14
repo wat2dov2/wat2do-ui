@@ -1,108 +1,36 @@
-import i18n from '@/shared/lib/i18n';
+import type { SupportedLanguage } from "@/shared/constants/languages";
+import i18n from "@/shared/lib/i18n";
 
-// Cache of loading promises to prevent duplicate loads
-const loadingPromises = new Map<string, Promise<void>>();
+const loadingPromises = new Map<SupportedLanguage, Promise<void>>();
 
-type SupportedLanguage = 'en' | 'zh';
-type TranslationModule = { default: Record<string, unknown> };
-type TranslationLoader = () => Promise<TranslationModule>;
-
-// Keep each feature's locale loaders together so adding a feature or language
-// updates one list while preserving static imports for bundler code splitting.
-const featureTranslationLoaders: Array<Record<SupportedLanguage, TranslationLoader>> = [
-  {
-    en: () => import('@/shared/locales/en.json'),
-    zh: () => import('@/shared/locales/zh.json'),
-  },
-  {
-    en: () => import('@/features/auth/locales/en.json'),
-    zh: () => import('@/features/auth/locales/zh.json'),
-  },
-  {
-    en: () => import('@/features/events/locales/en.json'),
-    zh: () => import('@/features/events/locales/zh.json'),
-  },
-  {
-    en: () => import('@/features/organizations/locales/en.json'),
-    zh: () => import('@/features/organizations/locales/zh.json'),
-  },
-  {
-    en: () => import('@/features/organization-panel/locales/en.json'),
-    zh: () => import('@/features/organization-panel/locales/zh.json'),
-  },
-  {
-    en: () => import('@/features/admin/locales/en.json'),
-    zh: () => import('@/features/admin/locales/zh.json'),
-  },
-  {
-    en: () => import('@/features/credits/locales/en.json'),
-    zh: () => import('@/features/credits/locales/zh.json'),
-  },
-  {
-    en: () => import('@/features/qrcode/locales/en.json'),
-    zh: () => import('@/features/qrcode/locales/zh.json'),
-  },
-  {
-    en: () => import('@/features/settings/locales/en.json'),
-    zh: () => import('@/features/settings/locales/zh.json'),
-  },
-  {
-    en: () => import('@/features/onboarding-demo/locales/en.json'),
-    zh: () => import('@/features/onboarding-demo/locales/zh.json'),
-  },
-  {
-    en: () => import('@/features/posters/locales/en.json'),
-    zh: () => import('@/features/posters/locales/zh.json'),
-  },
-  {
-    en: () => import('@/features/positions/locales/en.json'),
-    zh: () => import('@/features/positions/locales/zh.json'),
-  },
-];
-
-async function loadTranslations(lang: SupportedLanguage): Promise<TranslationModule> {
-  const modules = await Promise.all(
-    featureTranslationLoaders.map((loaders) => loaders[lang]()),
-  );
-  return {
-    default: Object.assign({}, ...modules.map((module) => module.default)),
-  };
-}
-
-const localeLoaders: Record<string, TranslationLoader> = {
-  en: () => loadTranslations('en'),
-  zh: () => loadTranslations('zh'),
-};
-
-export async function loadLanguage(lang: string): Promise<void> {
-  if (i18n.hasResourceBundle(lang, 'translation')) {
+export async function loadLanguage(language: SupportedLanguage): Promise<void> {
+  if (i18n.hasResourceBundle(language, "translation")) {
     return;
   }
 
-  const existingPromise = loadingPromises.get(lang);
+  const existingPromise = loadingPromises.get(language);
   if (existingPromise) {
     return existingPromise;
   }
 
   const loadPromise = (async () => {
     try {
-      const loader = localeLoaders[lang];
-      if (!loader) {
-        throw new Error(`No loader registered for locale "${lang}"`);
+      if (language === "en") {
+        throw new Error("The eager English locale bundle is unavailable");
       }
-      const resources = await loader();
-      i18n.addResourceBundle(lang, 'translation', resources.default);
+      const { loadLazyLanguage } = await import(
+        "@/shared/lib/languageLoaders"
+      );
+      const resources = await loadLazyLanguage(language);
+      i18n.addResourceBundle(language, "translation", resources);
     } catch (error) {
-      console.error(`Failed to load language "${lang}":`, error);
-      if (lang !== 'en') {
-        await loadLanguage('en');
-        i18n.changeLanguage('en');
-      }
+      console.error(`Failed to load language "${language}":`, error);
+      throw error;
     } finally {
-      loadingPromises.delete(lang);
+      loadingPromises.delete(language);
     }
   })();
 
-  loadingPromises.set(lang, loadPromise);
+  loadingPromises.set(language, loadPromise);
   return loadPromise;
 }

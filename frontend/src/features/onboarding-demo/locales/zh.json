@@ -102,7 +102,6 @@
       "reward": "奖励：+7 天 Pro",
       "progressAria": "挑战进度",
       "markedInterested": "你在引导中标记了 {{count}} 个感兴趣活动",
-      "markedInterested_one": "你在引导中标记了 {{count}} 个感兴趣活动",
       "markedInterested_other": "你在引导中标记了 {{count}} 个感兴趣活动"
     },
     "home": {

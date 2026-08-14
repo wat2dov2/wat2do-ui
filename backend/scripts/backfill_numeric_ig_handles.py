@@ -32,12 +32,12 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from core.controlbox import controlbox  # noqa: E402
 from core.database import supabase_admin  # noqa: E402
 from core.tables import EVENTS, ORGANIZATIONS  # noqa: E402
 
-# Instagram's public web app id. The endpoint answers without a session, but
-# only at a human pace: it starts returning 401 after a short burst.
-_IG_APP_ID = "936619743392459"
+# The endpoint answers without a session, but only at a human pace: it starts
+# returning 401 after a short burst.
 _IG_USER_INFO = "https://i.instagram.com/api/v1/users/{user_id}/info/"
 _REQUEST_SPACING_SECONDS = 5.0
 _BACKOFF_SECONDS = 90
@@ -53,7 +53,10 @@ def _lookup_username(user_id: str) -> str | None:
     """Resolve one id, backing off when Instagram asks us to slow down."""
     request = urllib.request.Request(
         _IG_USER_INFO.format(user_id=user_id),
-        headers={"X-IG-App-ID": _IG_APP_ID, "User-Agent": "Mozilla/5.0"},
+        headers={
+            "X-IG-App-ID": controlbox.instagram_digest.web_app_id,
+            "User-Agent": "Mozilla/5.0",
+        },
     )
     for attempt in range(_MAX_ATTEMPTS):
         try:

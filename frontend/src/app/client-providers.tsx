@@ -19,15 +19,12 @@ import {
 } from "@/shared/lib/posthog";
 import { setOnAfterRefresh } from "@/shared/services/apiClient";
 import { TooltipProvider } from "@/shared/ui/tooltip";
-import { installBundledLocales } from "@/app/localeResources";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { getQueryClient } from "@/shared/lib/queryClient";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import type { SchoolSummary } from "@/shared/api/schools.api";
 import { DEFAULT_SCHOOL } from "@/shared/constants/schools";
 import { NavigationProgress } from "@/shared/ui/navigation-progress";
-
-installBundledLocales();
 
 const DevClickToComponent =
   process.env.NODE_ENV === "development"
@@ -133,28 +130,18 @@ export function ClientProviders({
   }, [queryClient]);
 
   useEffect(() => {
-    let cancelled = false;
-
     async function initLanguage() {
       try {
         const initialLang = getStoredLanguage();
         await loadLanguage(initialLang);
-        i18n.changeLanguage(initialLang);
+        await i18n.changeLanguage(initialLang);
       } catch (err) {
         console.error("Language initialization failed, falling back to English:", err);
-      }
-
-      if (!cancelled) {
-        document.documentElement.dataset.clientReady = "true";
+        await i18n.changeLanguage("en");
       }
     }
 
     void initLanguage();
-
-    return () => {
-      cancelled = true;
-      delete document.documentElement.dataset.clientReady;
-    };
   }, []);
 
   // Not chained behind the language load: restoring the session is a network

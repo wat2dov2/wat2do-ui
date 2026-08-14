@@ -1,0 +1,35 @@
+{
+  "positions": {
+    "position": "Position",
+    "position_other": "Positionen",
+    "searchPlaceholder": "Rollen, Fähigkeiten oder Standorte suchen...",
+    "clearSearch": "Positionssuche löschen",
+    "filterByType": "Positionen nach Typ filtern",
+    "allTypes": "Alle Positionstypen",
+    "openDetails": "Details zur Position {{title}} anzeigen",
+    "drawerDescription": "Positionsdetails für {{title}} bei {{organization}}",
+    "deadlineLabel": "Bewerbungsfrist",
+    "due": "Fällig am {{date}}",
+    "commitmentLabel": "Zeitaufwand",
+    "locationLabel": "Ort",
+    "compensationLabel": "Vergütung",
+    "contactLabel": "Kontakt",
+    "aboutPosition": "Über diese Position",
+    "requirements": "Anforderungen",
+    "viewSource": "Ursprünglichen Instagram Beitrag anzeigen",
+    "emptyTitle": "Keine offenen Positionen gefunden",
+    "emptyDescription": "Versuchen Sie eine andere Suche oder Positionstyp. Neue Möglichkeiten zur Mitarbeit in Organisationen werden hier erscheinen, sobald sie veröffentlicht werden.",
+    "organizationEmptyTitle": "Keine offenen Stellen",
+    "organizationEmptyDescription": "Diese Organisation hat derzeit keine offenen Stellen.",
+    "resultsLabel": "{{count}} Stellen gefunden",
+    "types": {
+      "executive": "Leitende Position",
+      "committee": "Ausschuss",
+      "volunteer": "Freiwillige",
+      "staff": "Bezahltes Personal",
+      "internship": "Praktikum",
+      "general": "Allgemeine Rekrutierung"
+    },
+    "position_one": "Position"
+  }
+}

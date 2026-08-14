@@ -1,0 +1,57 @@
+{
+  "settings": {
+    "description": "Pamahalaan ang iyong mga kagustuhan at settings ng account",
+    "unsavedChanges": "Hindi na-save na mga pagbabago",
+    "unsavedChangesDescription": "I-save o i-cancel ang iyong mga pagbabago sa settings.",
+    "saveSuccess": "Nailigtas ang iyong mga setting.",
+    "saveError": "Hindi namin maisa-save ang iyong mga setting. Nandoon pa rin ang iyong mga pagbabago.",
+    "tabs": {
+      "profile": "Profile",
+      "notifications": "Mga Abiso",
+      "appearance": "Hitsura",
+      "promoter": "Programa ng Promoter"
+    },
+    "profile": {
+      "title": "Impormasyon ng Profile",
+      "description": "Pamamahala ng iyong mga detalye at kagustuhan sa profile",
+      "status": "Katayuan ng Profile",
+      "statusComplete": "Nakaset up at kumpleto ang iyong profile",
+      "statusIncomplete": "Kumpletuhin ang iyong profile upang mai-save ang iyong mga kagustuhan sa mga kaganapan sa campus",
+      "email": "Email",
+      "editProfile": "I-edit ang Profile",
+      "completeProfile": "Kumpletuhin ang Profile",
+      "school": "Paaralan",
+      "selectSchool": "Pumili ng paaralan",
+      "faculty": "Kolehiyo",
+      "selectFaculty": "Pumili ng kolehiyo",
+      "firstYearStudent": "Estudyante sa Unang Taon",
+      "interests": "Mga Interes",
+      "selectInterests": "Piliin ang iyong mga interes",
+      "avatarAlt": "Avatar",
+      "changeAvatar": "Pumili ng bagong avatar"
+    },
+    "notifications": {
+      "title": "Mga Kagustuhan sa Abiso",
+      "description": "Piliin kung paano mo nais makatanggap ng abiso tungkol sa mga kaganapan at update",
+      "morningEmail": "Umaga na email",
+      "morningEmailDesc": "Sa 9 AM, makakakuha ng mga malalakas na tugma na idinagdag sa nakaraang 24 na oras.",
+      "eventReminder": "Paalala ng Kaganapan",
+      "eventReminderDesc": "Makakatanggap ng email mga isang oras bago ang kaganapan na pinili mo.",
+      "eventChange": "Mga alerto sa pagbabago ng kaganapan",
+      "eventChangeDesc": "Makakatanggap ng agarang email kapag nagbago ang isang piniling kaganapan.",
+      "loadFailed": "Hindi ma-load ang iyong mga kagustuhan sa notification.",
+      "retry": "Subukan muli"
+    },
+    "appearance": {
+      "viewPreferences": "Tingnan ang Mga Kagustuhan",
+      "viewPreferencesDesc": "I-customize kung paano ipinapakita ang mga kaganapan",
+      "defaultViewMode": "Default na Mode ng Pagtingin",
+      "defaultViewModeDesc": "Piliin kung paano ipinapakita ang mga kaganapan bilang default",
+      "grid": "Grid",
+      "calendar": "Kalendaryo",
+      "map": "Mapa",
+      "language": "Wika",
+      "languageDescription": "Piliin ang iyong gustong wika"
+    }
+  }
+}

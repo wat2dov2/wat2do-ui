@@ -1,0 +1,57 @@
+{
+  "settings": {
+    "description": "Quản lý các tùy chọn và cài đặt tài khoản của bạn",
+    "unsavedChanges": "Các thay đổi chưa được lưu",
+    "unsavedChangesDescription": "Lưu hoặc hủy các thay đổi cài đặt của bạn.",
+    "saveSuccess": "Cài đặt của bạn đã được lưu.",
+    "saveError": "Chúng tôi không thể lưu cài đặt của bạn. Thay đổi của bạn vẫn còn ở đây.",
+    "tabs": {
+      "profile": "Hồ sơ",
+      "notifications": "Thông báo",
+      "appearance": "Giao diện",
+      "promoter": "Chương trình người quảng bá"
+    },
+    "profile": {
+      "title": "Thông tin hồ sơ",
+      "description": "Quản lý chi tiết và tùy chọn hồ sơ của bạn",
+      "status": "Trạng thái hồ sơ",
+      "statusComplete": "Hồ sơ của bạn đã được thiết lập và hoàn chỉnh",
+      "statusIncomplete": "Hoàn thành hồ sơ của bạn để lưu các tùy chọn sự kiện tại trường",
+      "email": "Email",
+      "editProfile": "Chỉnh sửa hồ sơ",
+      "completeProfile": "Hoàn thành hồ sơ",
+      "school": "Trường học",
+      "selectSchool": "Chọn một trường",
+      "faculty": "Khoa",
+      "selectFaculty": "Chọn một khoa",
+      "firstYearStudent": "Sinh viên năm nhất",
+      "interests": "Sở thích",
+      "selectInterests": "Chọn sở thích của bạn",
+      "avatarAlt": "Hình đại diện",
+      "changeAvatar": "Chọn hình đại diện mới"
+    },
+    "notifications": {
+      "title": "Tùy chọn thông báo",
+      "description": "Chọn cách bạn muốn nhận thông báo về các sự kiện và cập nhật",
+      "morningEmail": "Email buổi sáng",
+      "morningEmailDesc": "Vào 9 giờ sáng, nhận các kết quả phù hợp mạnh được thêm trong 24 giờ qua.",
+      "eventReminder": "Nhắc nhở sự kiện",
+      "eventReminderDesc": "Nhận email khoảng một giờ trước sự kiện bạn đã chọn.",
+      "eventChange": "Cảnh báo thay đổi sự kiện",
+      "eventChangeDesc": "Nhận email ngay lập tức khi sự kiện đã chọn thay đổi.",
+      "loadFailed": "Không thể tải tùy chọn thông báo của bạn.",
+      "retry": "Thử lại"
+    },
+    "appearance": {
+      "viewPreferences": "Xem Tùy chọn",
+      "viewPreferencesDesc": "Tùy chỉnh cách hiển thị sự kiện",
+      "defaultViewMode": "Chế độ xem mặc định",
+      "defaultViewModeDesc": "Chọn cách hiển thị sự kiện theo mặc định",
+      "grid": "Lưới",
+      "calendar": "Lịch",
+      "map": "Bản đồ",
+      "language": "Ngôn ngữ",
+      "languageDescription": "Chọn ngôn ngữ ưa thích của bạn"
+    }
+  }
+}

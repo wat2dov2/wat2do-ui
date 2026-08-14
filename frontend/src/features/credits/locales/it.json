@@ -1,0 +1,43 @@
+{
+  "credits": {
+    "buyCredits": "Acquista Crediti",
+    "currentBalance": "Saldo attuale:",
+    "creditCount": "{{count}} credito",
+    "creditCount_other": "{{count}} crediti",
+    "bonusCount": " +{{count}} bonus",
+    "bonusCount_other": " +{{count}} bonus",
+    "totalCreditCount": "{{count}} credito totale",
+    "totalCreditCount_other": "{{count}} crediti totali",
+    "pricePerCredit": "${{price}}¢/credito",
+    "added": "Crediti aggiunti!",
+    "addedMessage": "{{count}} crediti sono stati aggiunti al tuo account.",
+    "processing": "Elaborazione...",
+    "buyMore": " + Acquista di più",
+    "notEnough": "Crediti insufficienti",
+    "loginRequired": "Devi essere loggato per acquistare crediti.",
+    "purchaseFailed": "Acquisto non riuscito. Per favore riprova.",
+    "spendCredits": "Spendi {{credits}} crediti",
+    "securePayment": "Pagamento sicuro gestito da Stripe. I crediti non scadono mai.",
+    "creditCount_one": "{{count}} credito",
+    "creditCount_many": "{{count}} crediti",
+    "bonusCount_one": " +{{count}} bonus",
+    "bonusCount_many": " +{{count}} bonus",
+    "totalCreditCount_one": "{{count}} credito totale",
+    "totalCreditCount_many": "{{count}} crediti totali"
+  },
+  "promotion": {
+    "promoteEvent": "Promuovi questo evento",
+    "getMoreVisibility": "Promuovi \"{{title}}\" con una semplice posizione in evidenza per eventi di organizzazioni ufficiali.",
+    "bestValue": "Miglior valore",
+    "maybeLater": "Forse più tardi",
+    "notEnoughCredits": "Crediti insufficienti",
+    "promotedEventName": "Evento promosso",
+    "promotedEventDescription": "Mostra questo evento più in evidenza agli studenti",
+    "durationDays": "{{count}} giorno",
+    "durationDays_other": "{{count}} giorni",
+    "creditsCost": "{{credits}} crediti",
+    "spendCredits": "Spendi {{credits}} crediti",
+    "durationDays_one": "{{count}} giorno",
+    "durationDays_many": "{{count}} giorni"
+  }
+}

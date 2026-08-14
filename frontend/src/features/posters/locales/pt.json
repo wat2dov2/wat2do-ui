@@ -1,0 +1,187 @@
+{
+  "posters": {
+    "download": "Baixar",
+    "downloadPdf": "PDF",
+    "downloadPng": "PNG",
+    "recruitment": {
+      "title": "Ajude mais estudantes a descobrir eventos em {{school}}.",
+      "description": "Coloque cartazes oficiais de Wat2Do e ganhe {{rate}} por cada novo visitante qualificado.",
+      "seeHowItWorks": "Veja como funciona",
+      "dismiss": "Ocultar esta mensagem por {{days}} dias"
+    },
+    "promote": {
+      "title": "Leve Wat2Do para {{school}}",
+      "description": "Coloque cartazes oficiais pelo campus e ganhe {{rate}} por cada novo visitante qualificado que eles atraírem.",
+      "stepsTitle": "Como funciona",
+      "stepsDescription": "Comece em minutos com um design oficial pronto para impressão.",
+      "step1Title": "Escolha um cartaz oficial",
+      "step1Description": "Escolha entre os designs aprovados de Wat2Do.",
+      "step2Title": "Coloque e ative",
+      "step2Description": "Coloque cada cópia em um local do campus e depois escaneie para confirmar essa colocação.",
+      "step3Title": "Ganhe para novos visitantes",
+      "step3Description": "Ganhe {{rate}} quando um novo visitante confirmado e qualificado chegar.",
+      "coverageTitle": "Cobertura do campus em {{school}}",
+      "coverageDescription": "As células aproximadas mostram onde pôsteres ativos estão ajudando os estudantes a descobrir eventos sem expor nenhum promotor."
+    },
+    "enrollment": {
+      "pausedTitle": "O programa de promotores está pausado",
+      "pausedDescription": "Os pôsteres e os ganhos existentes continuam disponíveis, mas novas inscrições e criação de pôsteres estão temporariamente pausadas.",
+      "pausedMaintenanceDescription": "A criação de novos pôsteres está pausada, mas você ainda pode atualizar seu e-mail de pagamento.",
+      "readyTitle": "Pronto para ajudar seu campus?",
+      "readyDescription": "Verifique seu e-mail escolar para entrar. Ele será seu endereço inicial de Interac e-Transfer, e você poderá atualizá-lo depois.",
+      "schoolRequiredTitle": "Adicione sua escola primeiro",
+      "schoolRequiredDescription": "Uma escola em seu perfil é necessária para que seus pôsteres levem ao feed de eventos correto do campus.",
+      "completeProfile": "Complete meu perfil",
+      "enrolledTitle": "Você está no programa",
+      "enrolled": "Inscrito",
+      "enrolledDescription": "Seu painel de promotor está pronto.",
+      "settingsTitle": "Programa de promotores",
+      "settingsDescription": "Revise seu status e mantenha seu Interac e-mail de transferência eletrônica atualizado.",
+      "joinTitle": "Participe do programa de promotores",
+      "joinDescription": "A inscrição é instantânea. Você só precisa de um e-mail para pagamento e aceitar os termos do promotor.",
+      "payoutEmail": "Email do pagamento",
+      "payoutEmailPlaceholder": "you@example.com",
+      "payoutEmailDescription": "Transferências eletrônicas mensais Interac serão enviadas para este endereço.",
+      "acceptTermsPrefix": "Leia os termos completos antes de aceitar.",
+      "termsAccepted": "Você aceitou os termos do promotor.",
+      "termsLink": "Termos de Serviço para Promotores",
+      "error": "Não foi possível atualizar sua inscrição como promotor.",
+      "trustMonthly": "Os pagamentos são enviados no primeiro dia de cada mês via Interac e-Transfer.",
+      "trustActivation": "A verificação de ativação estabelece o posicionamento e não gera ganhos ($0).",
+      "trustTraffic": "Tráfego duplicado, não confirmado, automatizado e fraudulento é excluído.",
+      "trustPrivacy": " Wat2Do não armazena endereços IP brutos.",
+      "join": "Participar do programa",
+      "save": "Salvar configurações de pagamento",
+      "discord": "Obter ajuda sobre Discord"
+    },
+    "dashboard": {
+      "title": "Meus cartazes",
+      "description": "Crie, posicione e acompanhe seus cartazes oficiais do Wat2Do.",
+      "discordHelp": "Precisa de ajuda? Participe do Discord.",
+      "enrollmentRequired": "Participe do programa de promotores para criar e gerenciar pôsteres oficiais.",
+      "loadErrorTitle": "Seu painel não pôde ser carregado",
+      "loadErrorDescription": "Tente novamente em um momento. Seus pôsteres e ganhos não foram alterados.",
+      "pendingEarnings": "Pendente este mês",
+      "creditableVisitors": "Visitantes qualificados este mês",
+      "unqualifiedScans": "Escaneamentos não qualificados este mês",
+      "lifetimePaid": "Pago ao longo da vida",
+      "activeSlots": "Espaços ativos para pôsteres",
+      "slotValue": "{{used}} de {{limit}}",
+      "updatedDaily": "Atualizado diariamente",
+      "mapTitle": "Mapa de pôsteres do campus",
+      "mapDescription": "Seus pôsteres colocados são precisos e selecionáveis. A cobertura de outros locais do campus é aproximada e privada.",
+      "pausedTitle": "Criação de pôsteres está pausada",
+      "pausedDescription": "Seu painel, downloads, ganhos e pagamentos continuam disponíveis."
+    },
+    "create": {
+      "open": "Criar pôsteres",
+      "title": "Criar pôsteres oficiais",
+      "description": "Escolha um design aprovado e crie um QR rastreado separadamente para cada cópia física.",
+      "chooseTemplate": "Escolher um design de pôster",
+      "chooseTemplateDescription": "O modelo selecionado possui sua QR e formato de impressão fixos.",
+      "selectTemplate": "Selecionar design",
+      "customTitle": "Tem seu próprio design de pôster?",
+      "customDescription": "Participe do nosso Discord e compartilhe conosco. Revisamos as submissões e adicionamos designs aprovados à coleção oficial.",
+      "discord": "Compartilhe no Discord",
+      "copies": "Cópias",
+      "slotsRemaining": "{{count}} vagas ativas restantes",
+      "submit": "Criar pôsteres",
+      "error": "O lote de pôsteres não pôde ser criado.",
+      "createdTitle": "Seus pôsteres únicos estão prontos",
+      "createdDescription": "{{count}} cópias rastreadas separadamente foram criadas. Baixe-as antes de colocar cada cópia.",
+      "downloadError": "Os arquivos do pôster não puderam ser gerados. Por favor, tente novamente."
+    },
+    "inventory": {
+      "title": "Inventário de pôsteres",
+      "description": "Pôsteres colocados ficam inativos após {{days}} dias sem uma digitalização aceita.",
+      "emptyTitle": "Crie seu primeiro pôster oficial Wat2Do",
+      "emptyDescription": "Baixe-o, coloque-o no campus e digitalize você mesmo para ativar a colocação. A digitalização de ativação rende $0.",
+      "lastScanned": "Última digitalização {{time}}",
+      "totalVisitors": "Total de visitantes confirmados",
+      "periodVisitors": "Qualificando neste mês",
+      "periodEarnings": "Pendente este mês",
+      "activationInstruction": "Coloque esta cópia, escaneie seu QR e permita o acesso à localização para estabelecer a colocação.",
+      "downloadError": "Este pôster não pôde ser gerado para download.",
+      "templateUnavailable": "Este pôster legado não possui um modelo regenerável."
+    },
+    "lifecycle": {
+      "not-placed": "Não colocado",
+      "quiet": "Inativo"
+    },
+    "map": {
+      "loading": "Carregando cobertura do campus...",
+      "loadErrorTitle": "Cobertura não disponível",
+      "loadErrorDescription": "A oportunidade ainda está aberta. Tente o mapa novamente mais tarde.",
+      "coverageMarker": "Célula aproximada do campus com {{count}} pôsteres",
+      "campusCoverage": "Cobertura aproximada do campus",
+      "coverageSummary": "{{count}} pôsteres, {{recent}} escaneados recentemente",
+      "ownedMarker": "Seu pôster: {{name}}",
+      "managedMarker": "Cartaz gerenciado: {{name}}",
+      "visitorCount": "{{count}} visitantes confirmados",
+      "yourPosters": "Seus cartazes",
+      "managedPosters": "Cartazes gerenciados",
+      "otherCoverage": "Cobertura de campus adicional",
+      "noCoverageTitle": "Nenhum cartaz colocado aqui ainda",
+      "noCoverageDescription": "Seja um dos primeiros promotores a adicionar cobertura no campus."
+    },
+    "payouts": {
+      "title": "Histórico de pagamentos",
+      "description": "Registros mensais de e-Transfer Interac. Pagamentos retidos são revisados, em vez de removidos.",
+      "loading": "Carregando histórico de pagamentos...",
+      "loadErrorTitle": "Histórico de pagamentos não disponível",
+      "loadErrorDescription": "Tente novamente mais tarde. Seus registros de pagamento não foram alterados.",
+      "empty": "Nenhum período de pagamento concluído ainda.",
+      "period": "Período",
+      "visitors": "Visitantes qualificados",
+      "rate": "Taxa",
+      "amount": "Quantia",
+      "status": "Status",
+      "paidDate": "Data de pagamento",
+      "statuses": {
+        "pending": "Pendente",
+        "held": "Retido para revisão",
+        "paid": "Pago",
+        "voided": "Anulado"
+      }
+    },
+    "terms": {
+      "title": "Termos de Serviço para Promotores",
+      "description": "Por favor, revise os termos do programa de promotores.",
+      "scrollToAccept": "Role por todos os termos para habilitar a aceitação.",
+      "accept": "Aceitar termos",
+      "eligibility": {
+        "title": "Elegibilidade e inscrição",
+        "body": "Você deve usar sua própria conta Wat2Do, manter uma escola em seu perfil, fornecer um e-mail que possa receber transferências eletrônicas Interac, e aceitar os termos do promotor ao se inscrever. A inscrição não garante disponibilidade futura de cartazes."
+      },
+      "posters": {
+        "title": "Cartazes e colocações oficiais",
+        "body": "Use apenas os arquivos aprovados gerados por Wat2Do. Cada QR único pertence a uma colocação física. Não duplique um QR entre locais, mova-o para outra colocação ou reutilize-o para outro cartaz."
+      },
+      "scans": {
+        "title": "Ativação e escaneamentos qualificáveis",
+        "body": "O primeiro escaneamento estabelece a colocação do pôster como o escaneamento de Ativação e não é pagável. Um visitante deve permanecer em Wat2Do por pelo menos {{seconds}} segundos antes que um escaneamento possa se qualificar. Escaneamentos duplicados, não confirmados, automatizados, manipulados e fraudulentos não se qualificam. Wat2Do pode revisar tráfego incomum antes de liberar um pagamento."
+      },
+      "payments": {
+        "title": "Pagamentos",
+        "body": "Cada escaneamento qualificado ganha {{rate}}. O saldo elegível do mês do calendário anterior de UTC é pago por Interac via e-Transfer no {{payoutDay}} do mês seguinte. Valores retidos permanecem sob revisão. Impostos e detalhes precisos de pagamento continuam sendo sua responsabilidade."
+      },
+      "disputes": {
+        "title": "Disputas sobre pagamento e escaneamento",
+        "body": "Se você acreditar que um escaneamento ou pagamento foi medido incorretamente, entre em contato com Wat2Do através do promotor Discord e inclua o pôster, período de pagamento e detalhes relevantes. Wat2Do revisará os registros do programa e explicará o resultado.",
+        "contact": "Contatar o suporte do promotor"
+      },
+      "conduct": {
+        "title": "Colocação segura e respeitosa",
+        "body": "Coloque cartazes apenas onde você tem permissão. Não cubra avisos obrigatórios, danifique propriedade, represente Wat2Do de forma incorreta ou coloque materiais onde as regras do campus ou locais o proíbam."
+      },
+      "privacy": {
+        "title": "Privacidade e medição",
+        "body": "As áreas públicas de cartazes aparecem apenas como células de mapa aproximadas. Wat2Do usa identificadores de visitantes criptografados, não armazena endereços IP brutos e mantém as identidades dos promotores, detalhes de pagamento e localizações exatas em sigilo. A medição é limitada à confirmação de visitas únicas e válidas e à proteção do programa contra abusos."
+      },
+      "changes": {
+        "title": "Alterações e suspensão do programa",
+        "body": "Wat2Do pode pausar novas inscrições ou criação de pôsteres, aposentar designs, atualizar estes termos ou suspender a participação em caso de abuso. Redirecionamentos existentes de QR e registros de pagamento ganhos permanecem disponíveis de acordo com as regras do programa."
+      }
+    }
+  }
+}

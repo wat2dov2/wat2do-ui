@@ -1,0 +1,36 @@
+{
+  "positions": {
+    "position": "posizione",
+    "position_other": "posizioni",
+    "searchPlaceholder": "Cerca ruoli, competenze o località...",
+    "clearSearch": "Cancella ricerca posizione",
+    "filterByType": "Filtra posizioni per tipo",
+    "allTypes": "Tutti i tipi di posizione",
+    "openDetails": "Visualizza i dettagli della posizione di {{title}}",
+    "drawerDescription": "Dettagli della posizione per {{title}} presso {{organization}}",
+    "deadlineLabel": "Scadenza per la candidatura",
+    "due": "Entro il {{date}}",
+    "commitmentLabel": "Impegno di tempo",
+    "locationLabel": "Luogo",
+    "compensationLabel": "Compenso",
+    "contactLabel": "Contatto",
+    "aboutPosition": "Informazioni su questa posizione",
+    "requirements": "Requisiti",
+    "viewSource": "Visualizza il post originale Instagram [",
+    "emptyTitle": "Nessuna posizione aperta trovata",
+    "emptyDescription": "Prova un'altra ricerca o tipo di posizione. Nuove opportunità organizzative appariranno qui non appena verranno pubblicate.",
+    "organizationEmptyTitle": "Nessuna posizione aperta",
+    "organizationEmptyDescription": "Questa organizzazione attualmente non ha posizioni aperte.",
+    "resultsLabel": "{{count}} posizioni trovate",
+    "types": {
+      "executive": "Dirigenziale",
+      "committee": "Comitato",
+      "volunteer": "Volontario",
+      "staff": "Personale retribuito",
+      "internship": "Tirocinio",
+      "general": "Selezione generale"
+    },
+    "position_one": "posizione",
+    "position_many": "posizioni"
+  }
+}

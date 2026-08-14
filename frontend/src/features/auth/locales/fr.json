@@ -1,0 +1,67 @@
+{
+  "auth": {
+    "heading": "Découvrez ce qui se passe sur le campus.",
+    "description": "Connectez-vous ou créez un compte pour enregistrer des événements, personnaliser votre fil d'actualités et découvrir ce qui se passe sur le campus.",
+    "emailLabel": "Adresse e-mail",
+    "emailPlaceholder": "vous@{{domain}}",
+    "continue": "Continuer",
+    "skipToOnboarding": "Continuer sans se connecter",
+    "verifyOtp": "Vérifier le code",
+    "resendOtp": "Renvoyer le code",
+    "otpLabel": "Code de vérification",
+    "otpDescription": "Nous avons envoyé un code de connexion à 6 chiffres à {{email}}. Saisissez-le ci-dessous pour vous connecter.",
+    "invalidOtp": "Ce code de connexion est invalide ou a expiré.",
+    "invalidLoginLink": "Ce lien de connexion est invalide ou a expiré.",
+    "genericError": "Une erreur est survenue. Veuillez réessayer.",
+    "backToLogin": "Retour à la connexion",
+    "callbackDescription": "Confirmer la connexion pour {{email}}.",
+    "callbackContinue": "Continuer la connexion",
+    "heroTitle": "Ce qui se passe cette semaine",
+    "heroSubtitle": "Événements réels des clubs à travers le campus, mis à jour chaque seconde.",
+    "heroEmpty": "De nouveaux événements arrivent chaque jour. Connectez-vous pour être les premiers à les découvrir.",
+    "consentHeading": "Données, sécurité et votre fil d'actualité du campus",
+    "consentDescription": "Comment nous maintenons la découverte des événements sûre et utile pour les étudiants.",
+    "consentControlData": "Vous contrôlez les données de votre profil et pouvez mettre à jour ou supprimer votre compte à tout moment.",
+    "consentNoSell": "Nous ne vendons pas vos données à des tiers ou à des courtiers en données.",
+    "consentAnonymized": "Nous pouvons analyser les modèles d'utilisation anonymisés pour améliorer la découverte des événements.",
+    "consentAgreeTerms": "J'accepte les conditions de la plateforme et la politique d'utilisation acceptable pour la découverte des événements sur le campus.",
+    "consentSubscribeUpdates": "Abonnez-vous pour recevoir occasionnellement des mises à jour sur les nouvelles fonctionnalités et les événements importants du campus.",
+    "signedInAs": "Connecté en tant que"
+  },
+  "onboarding": {
+    "faculties": {
+      "engineering": "Ingénierie",
+      "mathematics": "Mathématiques",
+      "science": "Sciences",
+      "arts": "Arts",
+      "environment": "Environnement",
+      "health": "Santé",
+      "appliedHealthSciences": "Sciences de la santé appliquées"
+    },
+    "stepProgress": "Étape {{step}} sur {{total}}",
+    "safetyTitle": "Bienvenue sur la page des événements de votre campus.",
+    "safetyDescription": "Nous vous aidons à découvrir ce qui se passe autour de votre école et à vous connecter avec des communautés correspondant à vos centres d'intérêt.",
+    "safetyGoingEvents": "Marquez les événements auxquels vous allez assister, suivez les délais et filtrez rapidement selon ce qui est important pour vous.",
+    "safetySafeguards": "Les communautés et les mesures de sécurité contribuent à garantir que les événements sont de haute qualité et fiables.",
+    "doneTitle": "Tout est prêt !",
+    "doneDescription": "Votre fil personnalisé du campus est prêt. Il est temps de découvrir ce qui se passe autour de vous.",
+    "doneButton": "Explorons",
+    "gooseName": "M. Goose",
+    "doneNextLabel": "Emmenez-moi à Wat2Do !",
+    "gooseStep0": "Salut !",
+    "gooseStep1": "Bienvenue dans la famille Wat2Do ! Nous sommes un collectif avec un objectif : créer autant de souvenirs que possible pendant notre court passage à l'université",
+    "gooseStep2": "Chacun ici s'intéresse à des choses différentes. Quel type d'événements t'intéresse ?",
+    "gooseStep3WithSchool": "5 autres étudiants ont exactement les mêmes intérêts ! Maintenant, lesquels de ces événements de {{school}} attirent ton attention ?",
+    "gooseStep3Default": "Super, c'est comme ça qu'on trouve les bonnes choses. Lesquels de ces événements attirent ton attention ?",
+    "gooseStep4": "Compris, et dans quelle faculté es-tu ?",
+    "year": {
+      "yesFirstYear": "Oui, tout nouveau !",
+      "noReturning": "Non, je suis déjà là"
+    },
+    "events": {
+      "noEvents": "Pas d'événements pour le moment.",
+      "noEventsAvailable": "Pas d'événements pour le moment. Tu peux continuer sans sélectionner.",
+      "selectAriaLabel": "Sélectionne les événements qui attirent ton attention"
+    }
+  }
+}

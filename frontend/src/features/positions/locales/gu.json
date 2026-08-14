@@ -1,0 +1,35 @@
+{
+  "positions": {
+    "position": "હોદ્દો",
+    "position_other": "હોદ્દાઓ",
+    "searchPlaceholder": "ભૂમિકા, કુશળતા અથવા સ્થાનો શોધો...",
+    "clearSearch": "હોદ્દાની શોધ સાફ કરો",
+    "filterByType": "પ્રકાર મુજબ હોદ્દાઓ ફિલ્ટર કરો",
+    "allTypes": "તમામ હોદ્દાના પ્રકાર",
+    "openDetails": "{{title}} હોદ્દાની વિગતો જુઓ",
+    "drawerDescription": "{{organization}} ખાતે {{title}} હોદ્દાની વિગતો",
+    "deadlineLabel": "અરજીની છેલ્લી તારીખ",
+    "due": "અંતિમ તારીખ {{date}}",
+    "commitmentLabel": "સમયની પ્રતિબદ્ધતા",
+    "locationLabel": "સ્થળ",
+    "compensationLabel": "વળતર",
+    "contactLabel": "સંપર્ક",
+    "aboutPosition": "આ હોદ્દા વિશે",
+    "requirements": "આવશ્યકતાઓ",
+    "viewSource": "મૂળ Instagram પોસ્ટ જુઓ",
+    "emptyTitle": "કોઈ ખુલ્લો હોદ્દો મળ્યો નથી",
+    "emptyDescription": "બીજી શોધ અથવા હોદ્દાનો પ્રકાર અજમાવો. સંસ્થાની નવી તકો પોસ્ટ થશે ત્યારે અહીં દેખાશે.",
+    "organizationEmptyTitle": "કોઈ ખુલ્લો હોદ્દો નથી",
+    "organizationEmptyDescription": "આ સંસ્થામાં હાલમાં કોઈ ખુલ્લો હોદ્દો નથી.",
+    "resultsLabel": "{{count}} હોદ્દા મળ્યા",
+    "types": {
+      "executive": "એક્ઝિક્યુટિવ",
+      "committee": "કમિટી",
+      "volunteer": "સ્વયંસેવક",
+      "staff": "વેતનદાર સ્ટાફ",
+      "internship": "ઇન્ટર્નશિપ",
+      "general": "સામાન્ય ભરતી"
+    },
+    "position_one": "હોદ્દો"
+  }
+}

@@ -1,0 +1,122 @@
+{
+  "onboardingDemo": {
+    "progress": {
+      "label": "入職進度",
+      "start": "開始",
+      "personalize": "個人化",
+      "discover": "探索",
+      "unlock": "解鎖"
+    },
+    "chrome": {
+      "demo": "示範"
+    },
+    "actions": {
+      "continue": "繼續",
+      "back": "返回",
+      "showMyWeek": "顯示我的一週",
+      "great": "很好",
+      "finish": "完成",
+      "done": "完成",
+      "continueWithoutPicks": "不選擇繼續",
+      "editPicks": "編輯選擇",
+      "restartDemo": "重新開始示範"
+    },
+    "source": {
+      "eyebrow": "示範預覽",
+      "title": "歡迎來到 Wat2Do",
+      "question": "你係邊度聽過我哋嘅？",
+      "groupLabel": "你點樣聽過 Wat2Do 呢？",
+      "previewLabel": "預覽 - 校園活動樣本"
+    },
+    "intent": {
+      "title": "你通常會搵啲咩？",
+      "description": "揀幾個。我哋會用呢啲去設計你嘅第一個資訊流。",
+      "groupLabel": "校園興趣",
+      "previewReady": "開始設計你嘅資訊流",
+      "previewEmpty": "我哋仍然會搵全校即將舉行嘅活動。"
+    },
+    "availability": {
+      "title": "你通常幾時有空？",
+      "description": "呢個幫助我哋搵到你真係能參加嘅活動。",
+      "groupLabel": "可用時間",
+      "socialTitle": "你通常點去？",
+      "socialGroupLabel": "社交模式",
+      "weekPreviewTitle": "你的每週概覽",
+      "emptyWeek": "選擇你的空閒時間以預覽你的一週"
+    },
+    "eventMatch": {
+      "eyebrow": "示範預覽 - 範例活動",
+      "title": "我們找到你可能真正會參加的活動",
+      "description": "挑選幾個吸引你的活動。",
+      "pickedStatus": "已選 {{count}}/3 - 至少選 2 個以繼續",
+      "reactionGroup": "對 {{title}} 的反應",
+      "reactions": {
+        "interested": "有興趣",
+        "maybe": "可能",
+        "notForMe": "不適合我"
+      }
+    },
+    "payoff": {
+      "title": "很好。你的校園雷達已準備好。",
+      "matched": "你今個星期同 {{count}} 個活動配對成功。",
+      "strongestVibe": "你最強烈嘅氛圍：{{vibe}}。",
+      "bestNight": "星期四晚上睇落係你最佳嘅外出夜晚。",
+      "fallback": "你嘅第一個校園動態已經準備好。"
+    },
+    "buildWeek": {
+      "title": "我哋已經為你建立咗第一個 Wat2Do 星期",
+      "descriptionWithPicks": "你要去嘅活動、匹配嘅社團同最佳夜晚都已經準備好。",
+      "descriptionWithoutPicks": "我哋改咗做入門動態。你可以一邊瀏覽一邊調整佢。",
+      "tonight": "今晚",
+      "tonightWithPick": "1 個值得一睇嘅活動",
+      "tonightWithoutPick": "快啲再嚟睇",
+      "thisWeek": "今個星期",
+      "weekMatches": "來自 Waterloo 嘅社團有 {{count}} 個匹配",
+      "clubsToFollow": "要關注的社團",
+      "clubSuggestions": "3 個建議",
+      "freeFoodAlerts": "免費食物通知",
+      "on": "開啟",
+      "off": "關閉"
+    },
+    "proUnlock": {
+      "badge": "2 星期專業試用",
+      "title": "你已升級至 Wat2Do Pro",
+      "description": "享受個人化校園探索 14 天。無需付款。",
+      "brand": "Wat2Do Pro",
+      "visualTitle": "校園雷達已解鎖",
+      "visualDescription": "個人化通知、即將舉行的活動，以及你的每週計劃 – 全部集中在一個地方。",
+      "benefits": {
+        "save": "標記參加活動",
+        "follow": "追蹤社團",
+        "alerts": "即時配對提醒",
+        "calendar": "將活動同步到你的日曆",
+        "food": "獲取免費食物及 RSVP 提醒",
+        "profile": "解鎖你的校園品味檔案"
+      }
+    },
+    "challenge": {
+      "title": "使用 Wat2Do 維持 Pro 服務至本週",
+      "description": "標記本週三個活動為參加以延長 Pro 七日",
+      "label": "校園探索挑戰",
+      "progress": "會參加 {{total}} 個活動中嘅 {{count}} 個",
+      "reward": "獎勵：+7 天 Pro",
+      "progressAria": "挑戰進度",
+      "markedInterested": "在入職期間標記 {{count}} 個感興趣的活動",
+      "markedInterested_other": "在入職期間標記 {{count}} 個感興趣的活動"
+    },
+    "home": {
+      "badge": "示範完成",
+      "title": "你好，今個星期值得留意嘅內容如下。",
+      "description": "呢個係你個人化主頁嘅預覽 - 冇儲存任何數據。",
+      "recommended": "為你推薦",
+      "proTrialBadge": "專業版試用 - 14日",
+      "saved": "今個星期活動",
+      "freeFood": "你附近的免費食物",
+      "freeFoodPreview": "Pizza之夜於SLC大禮堂 - 星期四 下午6:00",
+      "trialEnds": "試用期於14日後結束",
+      "clubs": "你可能會喜歡的社團",
+      "clubsPreview": "EngSoc、CS Club、Velocity",
+      "remaining": "剩餘14日"
+    }
+  }
+}

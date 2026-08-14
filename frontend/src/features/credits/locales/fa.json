@@ -1,0 +1,39 @@
+{
+  "credits": {
+    "buyCredits": "خرید اعتبار",
+    "currentBalance": "موجودی فعلی:",
+    "creditCount": "{{count}} اعتبار",
+    "creditCount_other": "{{count}} اعتبار",
+    "bonusCount": "+{{count}} جایزه",
+    "bonusCount_other": "+{{count}} جایزه",
+    "totalCreditCount": "مجموع {{count}} اعتبار",
+    "totalCreditCount_other": "مجموع {{count}} اعتبار",
+    "pricePerCredit": "${{price}}¢/اعتبار",
+    "added": "اعتبارها اضافه شد!",
+    "addedMessage": "{{count}} اعتبار به حساب شما اضافه شد.",
+    "processing": "در حال پردازش...",
+    "buyMore": "+ خرید بیشتر",
+    "notEnough": "اعتبار کافی نیست",
+    "loginRequired": "برای خرید اعتبار باید وارد حساب کاربری خود شوید.",
+    "purchaseFailed": "خرید ناموفق بود. لطفاً دوباره تلاش کنید.",
+    "spendCredits": "صرف {{credits}} اعتبار",
+    "securePayment": "پرداخت امن توسط Stripe ارائه شده است. اعتبارها هیچ‌گاه منقضی نمی‌شوند.",
+    "creditCount_one": "{{count}} اعتبار",
+    "bonusCount_one": "+{{count}} جایزه",
+    "totalCreditCount_one": "مجموع {{count}} اعتبار"
+  },
+  "promotion": {
+    "promoteEvent": "این رویداد را تبلیغ کنید",
+    "getMoreVisibility": "\"{{title}}\" را با یک جایگاه ویژه ساده برای رویدادهای رسمی سازمان، تبلیغ کنید.",
+    "bestValue": "بهترین ارزش",
+    "maybeLater": "شاید بعداً",
+    "notEnoughCredits": "اعتبار کافی نیست",
+    "promotedEventName": "رویداد تبلیغ شده",
+    "promotedEventDescription": "این رویداد را برای دانشجویان برجسته‌تر نشان دهید",
+    "durationDays": "{{count}} روز",
+    "durationDays_other": "{{count}} روز",
+    "creditsCost": "{{credits}} اعتبار",
+    "spendCredits": "صرف {{credits}} اعتبار",
+    "durationDays_one": "{{count}} روز"
+  }
+}

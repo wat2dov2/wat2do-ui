@@ -1,0 +1,57 @@
+{
+  "settings": {
+    "description": "إدارة تفضيلات وإعدادات حسابك",
+    "unsavedChanges": "تغييرات غير محفوظة",
+    "unsavedChangesDescription": "احفظ أو ألغ تغييرات الإعدادات الخاصة بك.",
+    "saveSuccess": "تم حفظ إعداداتك.",
+    "saveError": "لم نتمكن من حفظ إعداداتك. التغييرات الخاصة بك لا تزال هنا.",
+    "tabs": {
+      "profile": "الملف الشخصي",
+      "notifications": "الإشعارات",
+      "appearance": "المظهر",
+      "promoter": "برنامج المروج"
+    },
+    "profile": {
+      "title": "معلومات الملف الشخصي",
+      "description": "قم بإدارة تفاصيل ملفك الشخصي وتفضيلاتك",
+      "status": "حالة الملف الشخصي",
+      "statusComplete": "تم إعداد ملفك الشخصي وهو مكتمل",
+      "statusIncomplete": "أكمل ملفك الشخصي لحفظ تفضيلاتك لفعاليات الحرم الجامعي",
+      "email": "البريد الإلكتروني",
+      "editProfile": "تعديل الملف الشخصي",
+      "completeProfile": "إكمال الملف الشخصي",
+      "school": "المدرسة",
+      "selectSchool": "اختر مدرسة",
+      "faculty": "الكلية",
+      "selectFaculty": "اختر كلية",
+      "firstYearStudent": "طالب السنة الأولى",
+      "interests": "الاهتمامات",
+      "selectInterests": "اختر اهتماماتك",
+      "avatarAlt": "الصورة الرمزية",
+      "changeAvatar": "اختر صورة رمزية جديدة"
+    },
+    "notifications": {
+      "title": "تفضيلات الإشعارات",
+      "description": "اختر الطريقة التي تريد أن تتلقى بها الإشعارات عن الأحداث والتحديثات",
+      "morningEmail": "البريد الصباحي",
+      "morningEmailDesc": "في الساعة 9 صباحاً، احصل على التطابقات القوية المضافة خلال آخر 24 ساعة.",
+      "eventReminder": "تذكيرات الأحداث",
+      "eventReminderDesc": "تلقي بريد إلكتروني قبل ساعة تقريبًا من الحدث الذي اخترته.",
+      "eventChange": "تنبيهات تغيير الأحداث",
+      "eventChangeDesc": "تلقي بريد إلكتروني فوري عند تغيير حدث محدد.",
+      "loadFailed": "لم نتمكن من تحميل تفضيلات الإشعارات الخاصة بك.",
+      "retry": "إعادة المحاولة"
+    },
+    "appearance": {
+      "viewPreferences": "عرض التفضيلات",
+      "viewPreferencesDesc": "تخصيص طريقة عرض الأحداث",
+      "defaultViewMode": "وضع العرض الافتراضي",
+      "defaultViewModeDesc": "اختر كيفية عرض الأحداث بشكل افتراضي",
+      "grid": "شبكة",
+      "calendar": "تقويم",
+      "map": "خريطة",
+      "language": "اللغة",
+      "languageDescription": "اختر لغتك المفضلة"
+    }
+  }
+}

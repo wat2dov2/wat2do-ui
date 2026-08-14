@@ -1,0 +1,67 @@
+{
+  "auth": {
+    "heading": "Scopri cosa sta succedendo nel campus.",
+    "description": "Accedi o crea un account per salvare eventi, personalizzare il tuo feed e scoprire cosa sta succedendo nel campus.",
+    "emailLabel": "Indirizzo email",
+    "emailPlaceholder": "tuo@{{domain}}",
+    "continue": "Continua",
+    "skipToOnboarding": "Continua senza effettuare l'accesso",
+    "verifyOtp": "Verifica codice",
+    "resendOtp": "Reinvia codice",
+    "otpLabel": "Codice di verifica",
+    "otpDescription": "Abbiamo inviato un codice di accesso di 6 cifre a {{email}}. Inseriscilo qui sotto per accedere.",
+    "invalidOtp": "Questo codice di accesso non è valido o è scaduto.",
+    "invalidLoginLink": "Questo link di accesso non è valido o è scaduto.",
+    "genericError": "Qualcosa è andato storto. Per favore riprova.",
+    "backToLogin": "Torna al login",
+    "callbackDescription": "Conferma l'accesso per {{email}}.",
+    "callbackContinue": "Continua per accedere",
+    "heroTitle": "In evidenza questa settimana",
+    "heroSubtitle": "Eventi reali dai club del campus, aggiornati ogni secondo.",
+    "heroEmpty": "Nuovi eventi arrivano ogni giorno. Accedi per essere il primo a scoprirli.",
+    "consentHeading": "Dati, sicurezza e il tuo feed del campus",
+    "consentDescription": "Come manteniamo la scoperta degli eventi sicura e utile per gli studenti.",
+    "consentControlData": "Puoi controllare i dati del tuo profilo e aggiornare o cancellare il tuo account in qualsiasi momento.",
+    "consentNoSell": "Non vendiamo i tuoi dati a terzi o broker di dati.",
+    "consentAnonymized": "Possiamo esaminare i modelli di utilizzo anonimizzati per migliorare la scoperta degli eventi.",
+    "consentAgreeTerms": "Accetto i termini della piattaforma e la politica di uso accettabile per la scoperta degli eventi del campus.",
+    "consentSubscribeUpdates": "Iscriviti per ricevere aggiornamenti occasionali sulle nuove funzionalità e sui principali eventi del campus.",
+    "signedInAs": "Accesso effettuato come"
+  },
+  "onboarding": {
+    "faculties": {
+      "engineering": "Ingegneria",
+      "mathematics": "Matematica",
+      "science": "Scienze",
+      "arts": "Arti",
+      "environment": "Ambiente",
+      "health": "Salute",
+      "appliedHealthSciences": "Scienze della salute applicate"
+    },
+    "stepProgress": "Passo {{step}} di {{total}}",
+    "safetyTitle": "Benvenuto nella tua home degli eventi del campus.",
+    "safetyDescription": "Ti aiutiamo a scoprire cosa succede intorno alla tua scuola e a connetterti con comunità che corrispondono ai tuoi interessi.",
+    "safetyGoingEvents": "Segna gli eventi a cui parteciperai, tieni traccia delle scadenze e filtra rapidamente ciò che è importante per te.",
+    "safetySafeguards": "Le comunità e le salvaguardie di sicurezza aiutano a mantenere gli eventi di alta qualità e affidabili.",
+    "doneTitle": "Sei pronto!",
+    "doneDescription": "Il tuo feed personalizzato del campus è pronto. È il momento di scoprire cosa succede intorno a te.",
+    "doneButton": "Esploriamo",
+    "gooseName": "Signor Goose",
+    "doneNextLabel": "Portami a Wat2Do!",
+    "gooseStep0": "Ciao!",
+    "gooseStep1": "Benvenuto nella famiglia Wat2Do! Siamo un collettivo con un unico obiettivo: creare il maggior numero possibile di ricordi nel nostro breve tempo all'università",
+    "gooseStep2": "Qui ognuno è appassionato di qualcosa di diverso. Che tipo di eventi ti interessano?",
+    "gooseStep3WithSchool": "Altri 5 studenti hanno gli stessi interessi! Ora, quali di questi dalla {{school}} ti attirano?",
+    "gooseStep3Default": "Fantastico, questo è come troviamo le cose interessanti. Quali di questi ti attirano?",
+    "gooseStep4": "Capito, e in quale facoltà sei?",
+    "year": {
+      "yesFirstYear": "Sì, nuovissimo!",
+      "noReturning": "No, sono già qui"
+    },
+    "events": {
+      "noEvents": "Nessun evento al momento.",
+      "noEventsAvailable": "Nessun evento al momento. Puoi continuare senza selezionare.",
+      "selectAriaLabel": "Seleziona gli eventi che attirano la tua attenzione"
+    }
+  }
+}

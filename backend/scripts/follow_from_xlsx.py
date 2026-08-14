@@ -8,22 +8,19 @@ first "." (e.g. ``tmu.wat2do.io`` -> ``tmu``), matching the School column's
 canonical slugs. One run does the whole school. Resumable: progress is saved
 after every account, so if it stops for any reason, rerun to continue.
 
-Talks to Instagram's web API (www.instagram.com/api/v1) using a browser
-session cookie, exactly like the website does. Follows only: the post
+Talks to Instagram's web API (www.instagram.com/api/v1) using the school's
+recipient-scoped browser session from macOS Keychain. Follows only: the post
 notifications toggle (friendships/favorite) gets new accounts' sessions
 revoked on the spot, so turn notifications on in the app if needed.
 
-Credentials: the IG_SESSIONID env var holds the ``sessionid`` cookie from a
-logged-in instagram.com browser session (DevTools > Application > Cookies).
-Instagram revokes the session if the user-agent doesn't match the issuing
-browser, so set IG_USER_AGENT to that browser's exact ``navigator.userAgent``
-if it isn't current Brave/Chrome on macOS. Both are cached in
-session_<username>.json so reruns need no env vars until the cookie expires.
+Credentials are managed through ``manage_instagram_digest_sessions.py`` and
+never enter environment variables or repository files. The school's
+``schools.recipient_id`` selects exactly one Keychain item.
 
 Usage (from backend/):
   python scripts/follow_from_xlsx.py --list-schools
   python scripts/follow_from_xlsx.py --username ubc.wat2do.io --dry-run
-  IG_SESSIONID='...' python scripts/follow_from_xlsx.py --username ubc.wat2do.io
+  python scripts/follow_from_xlsx.py --username ubc.wat2do.io
 """
 
 import argparse
@@ -36,6 +33,20 @@ import time
 from pathlib import Path
 
 import requests
+from dotenv import load_dotenv
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+load_dotenv()
+
+from core.controlbox import controlbox  # noqa: E402
+from services import school_service  # noqa: E402
+from services.instagram_digest.sessions import (  # noqa: E402
+    InstagramSession,
+    KeychainSessionStore,
+    SessionStoreError,
+    recipient_session_transaction,
+    refresh_browser_session,
+)
 
 XLSX_PATH = Path(__file__).resolve().parent.parent / "services" / "scraper" / "wat2do-clubs.xlsx"
 HEADER_ROW = 2  # row 1 is a freeform description line
@@ -49,15 +60,6 @@ FOLLOW_MIN_DELAY = 60  # seconds
 FOLLOW_MAX_DELAY = 90
 
 WEB_BASE = "https://www.instagram.com"
-WEB_APP_ID = "936619743392459"  # constant app id the instagram.com frontend sends
-# Instagram binds the sessionid to the browser it was issued in; a mismatched
-# user-agent gets the whole session revoked on the first request. This default
-# matches current Brave/Chrome on macOS; override with IG_USER_AGENT set to the
-# exact `navigator.userAgent` of the browser the cookie was copied from.
-DEFAULT_BROWSER_UA = (
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
-    "(KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36"
-)
 
 
 class IgError(RuntimeError):
@@ -72,22 +74,24 @@ class IgUserNotFound(IgError):
     """The username no longer resolves (account deleted or renamed)."""
 
 
-class IgWebClient:
-    """Minimal instagram.com web API client authenticated by a sessionid cookie."""
+class IgTransientError(IgError):
+    """Temporary Instagram/edge failure (5xx); safe to retry after a cooldown."""
 
-    def __init__(self, sessionid: str, user_agent: str):
+
+class IgWebClient:
+    """Minimal Instagram web API client using one validated Keychain session."""
+
+    def __init__(self, session: InstagramSession):
+        self.session = session
         self.http = requests.Session()
         self.http.headers.update(
             {
-                "User-Agent": user_agent,
+                "User-Agent": session.user_agent,
                 "Accept": "*/*",
-                "X-IG-App-ID": WEB_APP_ID,
+                "X-IG-App-ID": controlbox.instagram_digest.web_app_id,
                 "X-Requested-With": "XMLHttpRequest",
                 "Referer": f"{WEB_BASE}/",
                 "Origin": WEB_BASE,
-                "sec-ch-ua": '"Brave";v="150", "Chromium";v="150", "Not?A_Brand";v="24"',
-                "sec-ch-ua-mobile": "?0",
-                "sec-ch-ua-platform": '"macOS"',
                 "Sec-Fetch-Site": "same-origin",
                 "Sec-Fetch-Mode": "cors",
                 "Sec-Fetch-Dest": "empty",
@@ -95,12 +99,24 @@ class IgWebClient:
                 "X-IG-WWW-Claim": "0",
             }
         )
-        self.http.cookies.set("sessionid", sessionid, domain=".instagram.com")
-        # ds_user_id always accompanies sessionid in a real browser; the user id
-        # is the sessionid's prefix (before the first url-encoded ':').
-        user_id = sessionid.split("%3A", 1)[0].split(":", 1)[0]
-        if user_id.isdigit():
-            self.http.cookies.set("ds_user_id", user_id, domain=".instagram.com")
+        for name, value in session.cookies.items():
+            self.http.cookies.set(name, value, domain=".instagram.com")
+        self.http.headers["X-CSRFToken"] = session.csrftoken
+
+    def session_snapshot(self) -> InstagramSession:
+        """Capture any cookies rotated by Instagram without exposing them."""
+        cookies = {cookie.name: cookie.value for cookie in self.http.cookies}
+        return InstagramSession(
+            intended_recipient_id=self.session.intended_recipient_id,
+            sessionid=cookies["sessionid"],
+            csrftoken=cookies.get("csrftoken", self.session.csrftoken),
+            ds_user_id=self.session.intended_recipient_id,
+            user_agent=self.session.user_agent,
+            account_username=self.session.account_username,
+            mid=cookies.get("mid"),
+            ig_did=cookies.get("ig_did"),
+            rur=cookies.get("rur"),
+        )
 
     def _request(self, method: str, url: str, **kwargs):
         """Issue a request, keeping the rotating csrf/claim tokens up to date.
@@ -141,19 +157,12 @@ class IgWebClient:
             raise IgLoginRequired(f"HTTP {resp.status_code}: {message or resp.text[:200]}")
         if resp.status_code == 404 or message == "User not found":
             raise IgUserNotFound(message or "404")
+        # 5xx (including non-standard edge codes like 572) are transient.
+        if resp.status_code >= 500:
+            raise IgTransientError(f"HTTP {resp.status_code}: {message or resp.text[:200]}")
         if resp.status_code >= 400 or body.get("status") == "fail":
             raise IgError(f"HTTP {resp.status_code}: {message or resp.text[:200]}")
         return body
-
-    def login_check(self) -> str:
-        """Validate the session, prime the csrftoken header, return the username.
-
-        Uses the web settings endpoint: app-only endpoints like
-        accounts/current_user reject browser user-agents outright.
-        """
-        resp = self._request("GET", f"{WEB_BASE}/api/v1/accounts/edit/web_form_data/")
-        body = self._check(resp)
-        return body.get("form_data", {}).get("username", "(unknown)")
 
     def user_id(self, username: str) -> str:
         """Resolve a handle to a user id via the exact profile lookup.
@@ -330,31 +339,67 @@ def load_progress(progress_file: Path) -> set[str]:
     return set(json.loads(progress_file.read_text()).get("followed", []))
 
 
-def build_client(session_file: Path) -> IgWebClient:
-    saved: dict = {}
-    if session_file.exists():
-        saved = json.loads(session_file.read_text())
+def prepare_session(account_username: str) -> tuple[str, KeychainSessionStore]:
+    """Resolve routing and refresh the recipient-scoped Keychain session."""
+    slug = slugify(account_username.split(".", 1)[0])
+    school = school_service.get_school(slug)
+    if school is None or school.recipient_id is None:
+        sys.exit(f"School '{slug}' has no notification recipient routing.")
 
-    sessionid = os.environ.get("IG_SESSIONID") or saved.get("sessionid")
-    if not sessionid:
-        sys.exit(
-            "No credentials: set IG_SESSIONID to the `sessionid` cookie of a "
-            "logged-in instagram.com browser session (DevTools > Application > Cookies)."
-        )
-    user_agent = os.environ.get("IG_USER_AGENT") or saved.get("user_agent") or DEFAULT_BROWSER_UA
-
-    cl = IgWebClient(sessionid, user_agent)
+    store = KeychainSessionStore()
     try:
-        username = cl.login_check()
-    except IgLoginRequired:
+        with recipient_session_transaction(school.recipient_id):
+            session = _refresh_stored_session(
+                store,
+                school.recipient_id,
+                account_username,
+            )
+    except SessionStoreError as exc:
         sys.exit(
-            "Instagram rejected the sessionid (expired or revoked). Log into "
-            "instagram.com in a browser, copy the fresh `sessionid` cookie from "
-            "DevTools > Application > Cookies, and rerun with IG_SESSIONID set."
+            f"Instagram Keychain session is {exc.status.value}. "
+            "Repair it with manage_instagram_digest_sessions.py."
         )
-    session_file.write_text(json.dumps({"sessionid": sessionid, "user_agent": user_agent}))
-    print(f"Logged in as {username}; session saved to {session_file}")
-    return cl
+    print(f"Logged in as {session.account_username}; session refreshed in macOS Keychain")
+    return school.recipient_id, store
+
+
+def _refresh_stored_session(
+    store: KeychainSessionStore,
+    recipient_id: str,
+    account_username: str,
+) -> InstagramSession:
+    session = refresh_browser_session(
+        store.load(recipient_id),
+        timeout_seconds=controlbox.instagram_digest.request_timeout_seconds,
+    )
+    if session.account_username != account_username.lower():
+        sys.exit("Instagram Keychain session belongs to a different account.")
+    store.store(session)
+    return session
+
+
+def _follow_with_stored_session(
+    store: KeychainSessionStore,
+    recipient_id: str,
+    account_username: str,
+    handle: str,
+) -> None:
+    with recipient_session_transaction(recipient_id):
+        session = store.load(recipient_id)
+        if session.account_username != account_username.lower():
+            sys.exit("Instagram Keychain session belongs to a different account.")
+        client = IgWebClient(session)
+        client.follow(client.user_id(handle))
+        store.store(client.session_snapshot())
+
+
+def _check_stored_session(
+    store: KeychainSessionStore,
+    recipient_id: str,
+    account_username: str,
+) -> None:
+    with recipient_session_transaction(recipient_id):
+        _refresh_stored_session(store, recipient_id, account_username)
 
 
 def main() -> None:
@@ -410,7 +455,7 @@ def main() -> None:
             print(f"  {h}")
         return
 
-    cl = build_client(Path(f"session_{args.username}.json"))
+    recipient_id, session_store = prepare_session(args.username)
 
     processed = 0
     cooldowns = 0
@@ -418,21 +463,31 @@ def main() -> None:
         try:
             while True:
                 try:
-                    cl.follow(cl.user_id(handle))
+                    _follow_with_stored_session(
+                        session_store,
+                        recipient_id,
+                        args.username,
+                        handle,
+                    )
                     break
-                except IgLoginRequired:
-                    # Instagram soft-blocks friendship endpoints under heat while
-                    # the session itself stays valid. Confirm the session is
-                    # alive (raises if not), then cool off and retry.
-                    cl.login_check()
+                except (IgLoginRequired, IgTransientError) as e:
+                    # Soft-blocks and transient 5xx (e.g. HTTP 572) while the
+                    # session itself stays valid. Confirm alive, then cool off.
+                    _check_stored_session(
+                        session_store,
+                        recipient_id,
+                        args.username,
+                    )
                     cooldowns += 1
                     if cooldowns > 3:
                         raise
                     wait = 300 * cooldowns
-                    print(
-                        f"    friendship endpoints soft-blocked; cooling off {wait // 60} min",
-                        flush=True,
+                    reason = (
+                        "friendship endpoints soft-blocked"
+                        if isinstance(e, IgLoginRequired)
+                        else f"transient Instagram error ({e})"
                     )
+                    print(f"    {reason}; cooling off {wait // 60} min", flush=True)
                     time.sleep(wait)
 
             followed.add(handle)

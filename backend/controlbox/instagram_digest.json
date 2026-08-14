@@ -1,0 +1,9 @@
+{
+  "endpoint_url": "https://i.instagram.com/graphql/query",
+  "operation_name": "SubscriptionDigestFeedQuery",
+  "client_doc_id": "20099285643937437306465362209",
+  "web_app_id": "936619743392459",
+  "request_timeout_seconds": 30,
+  "keychain_operation_timeout_seconds": 30,
+  "maximum_pages": 25
+}

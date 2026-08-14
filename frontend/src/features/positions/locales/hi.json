@@ -1,0 +1,35 @@
+{
+  "positions": {
+    "position": "पद",
+    "position_other": "पद",
+    "searchPlaceholder": "भूमिकाएँ, कौशल या स्थान खोजें...",
+    "clearSearch": "पद की खोज साफ़ करें",
+    "filterByType": "पदों को प्रकार के अनुसार फ़िल्टर करें",
+    "allTypes": "सभी पद प्रकार",
+    "openDetails": "{{title}} पद का विवरण देखें",
+    "drawerDescription": "{{organization}} में {{title}} पद का विवरण",
+    "deadlineLabel": "आवेदन की समय सीमा",
+    "due": "देय {{date}}",
+    "commitmentLabel": "समय की प्रतिबद्धता",
+    "locationLabel": "जगह",
+    "compensationLabel": "मुआवज़ा",
+    "contactLabel": "संपर्क",
+    "aboutPosition": "इस पद के बारे में",
+    "requirements": "आवश्यकताएं",
+    "viewSource": "मूल Instagram पोस्ट देखें",
+    "emptyTitle": "कोई रिक्त पद नहीं मिला",
+    "emptyDescription": "कोई दूसरी खोज या पद का प्रकार आज़माएं। संगठन के नए अवसर पोस्ट होने पर यहां दिखाई देंगे।",
+    "organizationEmptyTitle": "कोई रिक्त पद नहीं",
+    "organizationEmptyDescription": "इस संगठन में फिलहाल कोई रिक्त पद नहीं है.",
+    "resultsLabel": "{{count}} पद मिले",
+    "types": {
+      "executive": "कार्यकारिणी",
+      "committee": "समिति",
+      "volunteer": "स्वयंसेवक",
+      "staff": "वेतनभोगी कर्मचारी",
+      "internship": "प्रशिक्षण",
+      "general": "सामान्य भर्ती"
+    },
+    "position_one": "पद"
+  }
+}

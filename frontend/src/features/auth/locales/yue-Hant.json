@@ -1,0 +1,67 @@
+{
+  "auth": {
+    "heading": "探索校園內的活動。",
+    "description": "登入或建立帳戶以儲存活動、個人化你的資訊流，並探索校園內的活動。",
+    "emailLabel": "電郵地址",
+    "emailPlaceholder": "you@{{domain}}",
+    "continue": "繼續",
+    "skipToOnboarding": "不登入繼續",
+    "verifyOtp": "驗證碼",
+    "resendOtp": "重新發送驗證碼",
+    "otpLabel": "驗證碼",
+    "otpDescription": "我們已經將一個6位數的登入碼發送到 {{email}}。請在下方輸入以登入。",
+    "invalidOtp": "此登入碼無效或已過期。",
+    "invalidLoginLink": "此登入連結無效或已過期。",
+    "genericError": "出錯了。請再試一次。",
+    "backToLogin": "返回登入",
+    "callbackDescription": "確認 {{email}} 的登入。",
+    "callbackContinue": "繼續登入",
+    "heroTitle": "本週活動",
+    "heroSubtitle": "來自校園各個社團的實時活動，每秒更新。",
+    "heroEmpty": "每天都有新活動推出。登入以搶先觀看。",
+    "consentHeading": "資料、安全性及你的校園資訊流",
+    "consentDescription": "我哋點樣保持活動發現對學生既安全同有用。",
+    "consentControlData": "你可以控制你既個人資料，並隨時更新或刪除你既帳戶。",
+    "consentNoSell": "我哋唔會將你既資料賣畀第三方或數據經紀商。",
+    "consentAnonymized": "我哋可能會審閱匿名使用模式，以改善活動發現。",
+    "consentAgreeTerms": "我同意平台條款同校園活動發現既可接受使用政策。",
+    "consentSubscribeUpdates": "訂閱偶爾既更新，了解新功能同校園活動亮點。",
+    "signedInAs": "登入為"
+  },
+  "onboarding": {
+    "faculties": {
+      "engineering": "工程學",
+      "mathematics": "數學",
+      "science": "科學",
+      "arts": "藝術",
+      "environment": "環境",
+      "health": "健康",
+      "appliedHealthSciences": "應用健康科學"
+    },
+    "stepProgress": "第 {{step}} 步，共 {{total}} 步",
+    "safetyTitle": "歡迎來到你的校園活動主頁。",
+    "safetyDescription": "我們幫助你發現學校周圍的活動，並與符合你興趣的社群連接。",
+    "safetyGoingEvents": "標記你會參加的活動，追蹤截止日期，並快速篩選對你重要的資料。",
+    "safetySafeguards": "社群及安全保障有助於保持活動的高質素和可信度。",
+    "doneTitle": "一切就緒！",
+    "doneDescription": "你的個人化校園資訊已準備好。是時候探索你周圍發生的事情。",
+    "doneButton": "開始探索",
+    "gooseName": "鵝先生",
+    "doneNextLabel": "帶我去 Wat2Do！",
+    "gooseStep0": "嗨！",
+    "gooseStep1": "歡迎加入 Wat2Do 家族！我哋係一個有共同目標嘅團體：喺大學嘅短暫時光裡創造盡可能多嘅回憶",
+    "gooseStep2": "呢度每個人都唔同嗜好。你對咩類型嘅活動有興趣？",
+    "gooseStep3WithSchool": "仲有 5 個同學有一模一樣嘅興趣！而家，喺 {{school}} 呢啲活動入面邊啲吸引你？",
+    "gooseStep3Default": "正呀，呢啲就係我哋搵好嘢嘅方法。邊啲吸引你？",
+    "gooseStep4": "明白，你係邊個學院嘅？",
+    "year": {
+      "yesFirstYear": "係呀，全新嘅！",
+      "noReturning": "唔係，已經喺度"
+    },
+    "events": {
+      "noEvents": "目前冇活動。",
+      "noEventsAvailable": "目前冇活動，你可以唔揀繼續。",
+      "selectAriaLabel": "揀啲吸引你嘅活動"
+    }
+  }
+}

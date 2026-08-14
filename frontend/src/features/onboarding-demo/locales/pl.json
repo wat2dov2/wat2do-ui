@@ -1,0 +1,125 @@
+{
+  "onboardingDemo": {
+    "progress": {
+      "label": "Postęp w onboardingu",
+      "start": "Rozpocznij",
+      "personalize": "Personalizuj",
+      "discover": "Odkrywaj",
+      "unlock": "Odblokuj"
+    },
+    "chrome": {
+      "demo": "Demo"
+    },
+    "actions": {
+      "continue": "Kontynuuj",
+      "back": "Wstecz",
+      "showMyWeek": "Pokaż mój tydzień",
+      "great": "Świetnie",
+      "finish": "Zakończ",
+      "done": "Gotowe",
+      "continueWithoutPicks": "Kontynuuj bez wyborów",
+      "editPicks": "Edytuj wybory",
+      "restartDemo": "Uruchom ponownie demo"
+    },
+    "source": {
+      "eyebrow": "Podgląd demo",
+      "title": "Witamy w Wat2Do",
+      "question": "Skąd o nas usłyszałeś?",
+      "groupLabel": "Jak usłyszałeś o Wat2Do?",
+      "previewLabel": "Podgląd - przykładowe wydarzenia na kampusie"
+    },
+    "intent": {
+      "title": "Czego zazwyczaj szukasz?",
+      "description": "Wybierz kilka. Użyjemy tego, aby ukształtować Twój pierwszy kanał.",
+      "groupLabel": "Zainteresowania na kampusie",
+      "previewReady": "Rozpoczynamy kształtowanie Twojego kanału",
+      "previewEmpty": "Nadal będziemy znajdować nadchodzące wydarzenia na całym kampusie."
+    },
+    "availability": {
+      "title": "Kiedy zazwyczaj jesteś wolny?",
+      "description": "To pomaga nam znaleźć wydarzenia, w których naprawdę możesz wziąć udział.",
+      "groupLabel": "Dostępność",
+      "socialTitle": "Jak zazwyczaj się poruszasz?",
+      "socialGroupLabel": "Tryb społeczny",
+      "weekPreviewTitle": "Twój tydzień w skrócie",
+      "emptyWeek": "Wybierz swoje wolne czasy, aby zobaczyć przegląd tygodnia"
+    },
+    "eventMatch": {
+      "eyebrow": "Podgląd demo - przykładowe wydarzenia",
+      "title": "Znaleźliśmy wydarzenia, na które faktycznie możesz się wybrać",
+      "description": "Wybierz kilka, które przyciągną Twoją uwagę.",
+      "pickedStatus": "Wybrano {{count}}/3 - potrzebujesz co najmniej 2, aby kontynuować",
+      "reactionGroup": "Reakcja na {{title}}",
+      "reactions": {
+        "interested": "Interesuje mnie",
+        "maybe": "Może",
+        "notForMe": "Nie dla mnie"
+      }
+    },
+    "payoff": {
+      "title": "Super. Twój radar kampusu jest gotowy.",
+      "matched": "Dopasowałeś się do {{count}} wydarzeń w tym tygodniu.",
+      "strongestVibe": "Twoja najsilniejsza energia: {{vibe}}.",
+      "bestNight": "Czwartek wieczorem wydaje się najlepszą nocą na wyjście.",
+      "fallback": "Twój pierwszy kanał kampusu jest gotowy."
+    },
+    "buildWeek": {
+      "title": "Stworzyliśmy Twój pierwszy Wat2Do tydzień",
+      "descriptionWithPicks": "Twoje planowane wydarzenia, pasujące kluby i najlepsze noce na wyjście są gotowe.",
+      "descriptionWithoutPicks": "Zamiast tego przygotowaliśmy startowy kanał. Możesz go dostosować podczas przeglądania.",
+      "tonight": "Dziś wieczorem",
+      "tonightWithPick": "1 wydarzenie warte sprawdzenia",
+      "tonightWithoutPick": "Sprawdź wkrótce",
+      "thisWeek": "W tym tygodniu",
+      "weekMatches": "{{count}} mecze z klubów w całym Waterloo",
+      "clubsToFollow": "Kluby do obserwowania",
+      "clubSuggestions": "3 propozycje",
+      "freeFoodAlerts": "Powiadomienia o darmowym jedzeniu",
+      "on": "Włączone",
+      "off": "Wyłączone"
+    },
+    "proUnlock": {
+      "badge": "2-tygodniowa wersja próbna Pro",
+      "title": "Zostałeś uaktualniony do Wat2Do Pro",
+      "description": "Ciesz się spersonalizowanym odkrywaniem kampusu przez 14 dni. Płatność nie jest wymagana.",
+      "brand": "Wat2Do Pro",
+      "visualTitle": "Radar kampusu odblokowany",
+      "visualDescription": "Spersonalizowane powiadomienia, nadchodzące wydarzenia i Twój tygodniowy plan - wszystko w jednym miejscu.",
+      "benefits": {
+        "save": "Oznacz wydarzenia jako uczestniczone",
+        "follow": "Śledź kluby",
+        "alerts": "Otrzymuj natychmiastowe powiadomienia o dopasowaniach",
+        "calendar": "Synchronizuj wydarzenia z kalendarzem",
+        "food": "Odbieraj darmowe jedzenie i przypomnienia o RSVP",
+        "profile": "Odblokuj swój Profil Smakowy Kampusu"
+      }
+    },
+    "challenge": {
+      "title": "Utrzymaj Pro, używając Wat2Do w tym tygodniu",
+      "description": "Oznacz 3 wydarzenia jako uczestnictwo w tym tygodniu, aby przedłużyć Pro o 7 dni.",
+      "label": "Wyzwanie Campus Explorer",
+      "progress": "Udział w {{count}} z {{total}} wydarzeń",
+      "reward": "Nagroda: +7 dni Pro",
+      "progressAria": "Postęp wyzwania",
+      "markedInterested": "{{count}} wydarzenie oznaczone jako interesujące podczas wdrażania",
+      "markedInterested_one": "{{count}} wydarzenie oznaczone jako interesujące podczas wdrażania",
+      "markedInterested_other": "{{count}} wydarzenia oznaczone jako interesujące podczas wdrażania",
+      "markedInterested_few": "{{count}} wydarzenia oznaczone jako interesujące podczas wdrażania",
+      "markedInterested_many": "{{count}} wydarzeń oznaczonych jako interesujące podczas wdrażania"
+    },
+    "home": {
+      "badge": "Demo zakończone",
+      "title": "Cześć, oto co warto sprawdzić w tym tygodniu.",
+      "description": "To jest podgląd Twojej spersonalizowanej strony głównej - żadne dane nie zostały zapisane.",
+      "recommended": "Polecane dla Ciebie",
+      "proTrialBadge": "Wersja próbna Pro - 14 dni",
+      "saved": "Wybierane w tym tygodniu",
+      "freeFood": "Darmowe jedzenie w pobliżu",
+      "freeFoodPreview": "Wieczór pizzy w SLC Great Hall - Czwartek 18:00",
+      "trialEnds": "Okres próbny kończy się za 14 dni",
+      "clubs": "Kluby, które mogą Ci się spodobać",
+      "clubsPreview": "EngSoc, CS Club, Velocity",
+      "remaining": "Pozostało 14 dni"
+    }
+  }
+}

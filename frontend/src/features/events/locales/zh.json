@@ -113,7 +113,6 @@
     "promoted": "热门推广",
     "new": "新",
     "goingCount": "{{count}} 人参加",
-    "goingCount_one": "{{count}} 人参加",
     "goingCount_other": "{{count}} 人参加",
     "andOthersCount": "以及另外 {{count}} 人",
     "andOthersCount_other": "以及另外 {{count}} 人",

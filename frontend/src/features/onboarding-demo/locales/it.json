@@ -1,0 +1,124 @@
+{
+  "onboardingDemo": {
+    "progress": {
+      "label": "Progresso onboarding",
+      "start": "Inizia",
+      "personalize": "Personalizza",
+      "discover": "Scopri",
+      "unlock": "Sblocca"
+    },
+    "chrome": {
+      "demo": "Demo"
+    },
+    "actions": {
+      "continue": "Continua",
+      "back": "Indietro",
+      "showMyWeek": "Mostra la mia settimana",
+      "great": "Ottimo",
+      "finish": "Finisci",
+      "done": "Fatto",
+      "continueWithoutPicks": "Continua senza selezioni",
+      "editPicks": "Modifica selezioni",
+      "restartDemo": "Riavvia demo"
+    },
+    "source": {
+      "eyebrow": "Anteprima demo",
+      "title": "Benvenuto a Wat2Do",
+      "question": "Dove hai sentito parlare di noi?",
+      "groupLabel": "Come hai sentito parlare di Wat2Do",
+      "previewLabel": "Anteprima - eventi campali di esempio"
+    },
+    "intent": {
+      "title": "Cosa stai solitamente cercando?",
+      "description": "Scegline alcuni. Li useremo per modellare il tuo primo feed.",
+      "groupLabel": "Interessi del campus",
+      "previewReady": "Iniziando a modellare il tuo feed",
+      "previewEmpty": "Troveremo comunque eventi imminenti in tutto il campus."
+    },
+    "availability": {
+      "title": "Quando sei solitamente disponibile?",
+      "description": "Questo ci aiuta a trovare eventi a cui puoi effettivamente partecipare.",
+      "groupLabel": "Disponibilità",
+      "socialTitle": "Come ti sposti solitamente?",
+      "socialGroupLabel": "Modalità sociale",
+      "weekPreviewTitle": "La tua settimana a colpo d'occhio",
+      "emptyWeek": "Seleziona i tuoi tempi liberi per visualizzare la tua settimana"
+    },
+    "eventMatch": {
+      "eyebrow": "Anteprima demo - eventi di esempio",
+      "title": "Abbiamo trovato eventi a cui potresti effettivamente partecipare",
+      "description": "Scegline alcuni che attirano la tua attenzione.",
+      "pickedStatus": "{{count}}/3 selezionati - ne servono almeno 2 per continuare",
+      "reactionGroup": "Reazione per {{title}}",
+      "reactions": {
+        "interested": "Mi interessa",
+        "maybe": "Forse",
+        "notForMe": "Non fa per me"
+      }
+    },
+    "payoff": {
+      "title": "Bene. Il tuo radar del campus è pronto.",
+      "matched": "Hai trovato {{count}} eventi questa settimana.",
+      "strongestVibe": "Il tuo vibe più forte: {{vibe}}.",
+      "bestNight": "La serata di giovedì sembra la tua migliore uscita.",
+      "fallback": "Il tuo primo feed del campus è pronto."
+    },
+    "buildWeek": {
+      "title": "Abbiamo creato la tua prima settimana Wat2Do",
+      "descriptionWithPicks": "I tuoi eventi programmati, i club corrispondenti e le migliori serate sono pronti.",
+      "descriptionWithoutPicks": "Abbiamo creato invece un feed iniziale. Puoi aggiustarlo mentre navighi.",
+      "tonight": "Stasera",
+      "tonightWithPick": "1 evento che vale la pena controllare",
+      "tonightWithoutPick": "Controlla di nuovo presto",
+      "thisWeek": "Questa settimana",
+      "weekMatches": "{{count}} corrispondenze dai club intorno a Waterloo",
+      "clubsToFollow": "Club da seguire",
+      "clubSuggestions": "3 suggerimenti",
+      "freeFoodAlerts": "Avvisi cibo gratuito",
+      "on": "Attivo",
+      "off": "Disattivo"
+    },
+    "proUnlock": {
+      "badge": "Prova Pro di 2 settimane",
+      "title": "Sei stato aggiornato a Wat2Do Pro",
+      "description": "Goditi la scoperta del campus personalizzata per 14 giorni. Nessun pagamento richiesto.",
+      "brand": "Wat2Do Pro",
+      "visualTitle": "Radar del campus sbloccato",
+      "visualDescription": "Avvisi personalizzati, eventi a cui partecipare e il tuo piano settimanale - tutto in un unico posto.",
+      "benefits": {
+        "save": "Segna gli eventi a cui partecipi",
+        "follow": "Segui club",
+        "alerts": "Ricevi avvisi di corrispondenza istantanei",
+        "calendar": "Sincronizza eventi con il tuo calendario",
+        "food": "Ricevi cibo gratuito e promemoria RSVP",
+        "profile": "Sblocca il tuo Profilo dei Gusti del Campus"
+      }
+    },
+    "challenge": {
+      "title": "Mantieni Pro attivo utilizzando Wat2Do questa settimana",
+      "description": "Segna 3 eventi come parteciperò questa settimana per estendere Pro di 7 giorni.",
+      "label": "Sfida Esploratore del Campus",
+      "progress": "{{count}} / {{total}} eventi a cui parteciperai",
+      "reward": "Ricompensa: +7 giorni di Pro",
+      "progressAria": "Progresso della sfida",
+      "markedInterested": "{{count}} eventi segnati come interessato durante l'onboarding",
+      "markedInterested_one": "{{count}} evento segnato come interessato durante l'onboarding",
+      "markedInterested_other": "{{count}} eventi segnati come interessato durante l'onboarding",
+      "markedInterested_many": "{{count}} eventi segnati come interessato durante l'onboarding"
+    },
+    "home": {
+      "badge": "Demo completata",
+      "title": "Ciao, ecco cosa vale la pena controllare questa settimana.",
+      "description": "Questa è un'anteprima della tua home personalizzata - nessun dato è stato salvato.",
+      "recommended": "Consigliato per te",
+      "proTrialBadge": "Pro trial - 14 giorni",
+      "saved": "In arrivo questa settimana",
+      "freeFood": "Cibo gratuito vicino a te",
+      "freeFoodPreview": "Serata pizza al SLC Great Hall - Gio 18:00",
+      "trialEnds": "La prova termina tra 14 giorni",
+      "clubs": "Club che potrebbero piacerti",
+      "clubsPreview": "EngSoc, Club di Informatica, Velocity",
+      "remaining": "14 giorni rimanenti"
+    }
+  }
+}

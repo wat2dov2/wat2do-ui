@@ -1,0 +1,35 @@
+{
+  "positions": {
+    "position": "பதவி",
+    "position_other": "பதவிகள்",
+    "searchPlaceholder": "பணிகள், திறன்கள், அல்லது இடங்களைத் தேடுங்கள்...",
+    "clearSearch": "பதவி தேடலை அழிக்கவும்",
+    "filterByType": "பதவிகளை வகைப்படி வடிகட்டவும்",
+    "allTypes": "எல்லா பதவி வகைகளும்",
+    "openDetails": "{{title}} பதவியின் விவரங்களைப் பார்க்கவும்",
+    "drawerDescription": "{{organization}}-இல் {{title}} பதவியின் விவரங்கள்",
+    "deadlineLabel": "விண்ணப்பக் கடைசி தேதி",
+    "due": "கடைசி நாள் {{date}}",
+    "commitmentLabel": "நேர ஒதுக்கீடு",
+    "locationLabel": "இடம்",
+    "compensationLabel": "ஊதியம்",
+    "contactLabel": "தொடர்பு",
+    "aboutPosition": "இந்த பதவியை பற்றி",
+    "requirements": "தேவைகள்",
+    "viewSource": "மூல Instagram பதிவை பார்க்க",
+    "emptyTitle": "திறந்த பதவிகள் எதுவும் இல்லை",
+    "emptyDescription": "வேறு தேடல் அல்லது பதவி வகையை முயற்சி செய்யவும். புதிய அமைப்பு வாய்ப்புகள் பதிவிடப்படும்போது இங்கே தோன்றும்.",
+    "organizationEmptyTitle": "திறந்த பதவிகள் இல்லை",
+    "organizationEmptyDescription": "இந்த அமைப்பில் தற்போது திறந்த பதவிகள் எதுவும் இல்லை.",
+    "resultsLabel": "{{count}} பதவிகள் கிடைத்தன",
+    "types": {
+      "executive": "நிர்வாகம்",
+      "committee": "குழு",
+      "volunteer": "தன்னார்வலர்",
+      "staff": "சம்பளம் பெறும் பணியாளர்",
+      "internship": "பயிற்சிப் பணி",
+      "general": "பொது ஆட்சேர்ப்பு"
+    },
+    "position_one": "பதவி"
+  }
+}

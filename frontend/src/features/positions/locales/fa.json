@@ -1,0 +1,35 @@
+{
+  "positions": {
+    "position": "موقعیت",
+    "position_other": "موقعیت‌ها",
+    "searchPlaceholder": "جستجوی نقش‌ها، مهارت‌ها یا مکان‌ها...",
+    "clearSearch": "پاک کردن جستجوی موقعیت",
+    "filterByType": "فیلتر کردن موقعیت‌ها بر اساس نوع",
+    "allTypes": "تمام نوع‌های موقعیت",
+    "openDetails": "مشاهده جزئیات موقعیت {{title}}",
+    "drawerDescription": "جزئیات موقعیت {{title}} در {{organization}}",
+    "deadlineLabel": "مهلت درخواست",
+    "due": "تا تاریخ {{date}}",
+    "commitmentLabel": "میزان تعهد زمانی",
+    "locationLabel": "مکان",
+    "compensationLabel": "جبران خدمات",
+    "contactLabel": "تماس",
+    "aboutPosition": "درباره این موقعیت",
+    "requirements": "الزامات",
+    "viewSource": "مشاهده پست اصلی Instagram",
+    "emptyTitle": "هیچ موقعیت باز یافت نشد",
+    "emptyDescription": "جستجو یا نوع موقعیت دیگری را امتحان کنید. فرصت‌های جدید سازمانی پس از انتشار در اینجا نمایش داده می‌شوند.",
+    "organizationEmptyTitle": "هیچ موقعیت خالی وجود ندارد",
+    "organizationEmptyDescription": "این سازمان در حال حاضر هیچ موقعیت خالی ندارد.",
+    "resultsLabel": "{{count}} موقعیت یافت شد",
+    "types": {
+      "executive": "مدیر اجرایی",
+      "committee": "کمیته",
+      "volunteer": "داوطلب",
+      "staff": "کارمند حقوق‌بگیر",
+      "internship": "کارآموزی",
+      "general": "استخدام عمومی"
+    },
+    "position_one": "موقعیت"
+  }
+}

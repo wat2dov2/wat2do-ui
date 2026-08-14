@@ -121,7 +121,7 @@ These rules are hard gates.
 9. A local Instagram app may retain multiple independent account sessions, but that is not permission to join those accounts in Accounts Center.
 10. Treat every Instagram account limit, security challenge, suspension, or identity check as a real blocker that must be recorded.
 11. Do not bypass Instagram or Meta security controls.
-12. Delete ignored local session files and temporary token files after the operational step is complete.
+12. Store browser sessions only through the recipient-scoped macOS Keychain command and delete temporary token files after the operational step is complete.
 13. Any token that has appeared in chat, Linear, shell output, a screenshot, or a tracked file must be revoked and regenerated before use.
 
 The legacy WAT-154 Linear issue contains a plaintext token.
@@ -886,7 +886,14 @@ Also capture the exact browser `navigator.userAgent` because Instagram may bind 
 
 Do not paste either value into chat, task notes, source code, screenshots, or a command that will persist in shell history.
 
-Use a hidden prompt or ignored environment file for the current run.
+Store both values through hidden prompts, using the intended recipient ID already assigned to the school:
+
+```sh
+cd backend
+python scripts/manage_instagram_digest_sessions.py store <intended-recipient-id>
+```
+
+The command remotely validates the session identity before writing the recipient-scoped Keychain item.
 
 ### 14.2 Dry run and identity check
 
@@ -917,7 +924,9 @@ When Instagram reports a deleted or renamed organization account, do not mutate 
 
 Revalidate the organization against official sources, then update or clear the database handle through the normal reviewed organization update path.
 
-Delete the ignored local session file after the follow run is complete.
+The follow command persists rotated cookies back to the same Keychain item after every successful follow.
+
+No plaintext session file should exist before, during, or after the run.
 
 ## 15. Phase K: Enable post notifications on Android
 
@@ -1290,7 +1299,7 @@ The final handoff must contain no secrets and must include:
 - [ ] Desktop session identity confirmed as the chapter account.
 - [ ] Follow dry run matched the database count.
 - [ ] All verified handles followed or reconciled.
-- [ ] Session cookie and ignored session file removed.
+- [ ] Recipient-scoped Keychain session stored and no plaintext session file created.
 - [ ] Consolidated bell list opened or blocker recorded.
 - [ ] Post notifications set to `All` and count spot-checked.
 - [ ] Account logged into the dedicated Automate phone as a separate login.

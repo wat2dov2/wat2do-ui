@@ -1,0 +1,39 @@
+{
+  "credits": {
+    "buyCredits": "کریڈٹس خریدیں",
+    "currentBalance": "موجودہ بیلنس:",
+    "creditCount": "{{count}} کریڈٹ",
+    "creditCount_other": "{{count}} کریڈٹس",
+    "bonusCount": "+{{count}} بونس",
+    "bonusCount_other": "+{{count}} بونس",
+    "totalCreditCount": "{{count}} کل کریڈٹ",
+    "totalCreditCount_other": "{{count}} کل کریڈٹس",
+    "pricePerCredit": "${{price}}¢/کریڈٹ",
+    "added": "کریڈٹس شامل کر دی گئیں!",
+    "addedMessage": "{{count}} کریڈٹس آپ کے اکاؤنٹ میں شامل کر دی گئی ہیں۔",
+    "processing": "عملدرآمد ہو رہا ہے...",
+    "buyMore": "+ مزید خریدیں",
+    "notEnough": "کافی کریڈٹس نہیں ہیں",
+    "loginRequired": "کریڈٹس خریدنے کے لیے آپ کو لاگ ان ہونا ضروری ہے۔",
+    "purchaseFailed": "خریداری ناکام ہو گئی۔ براہ کرم دوبارہ کوشش کریں۔",
+    "spendCredits": "{{credits}} کریڈٹس خرچ کریں",
+    "securePayment": "محفوظ ادائیگی Stripe کے ذریعے چلائی گئی ہے۔ کریڈٹس کبھی ختم نہیں ہوتے۔",
+    "creditCount_one": "{{count}} کریڈٹ",
+    "bonusCount_one": "+{{count}} بونس",
+    "totalCreditCount_one": "{{count}} کل کریڈٹ"
+  },
+  "promotion": {
+    "promoteEvent": "اس ایونٹ کو فروغ دیں",
+    "getMoreVisibility": "سرکاری تنظیمی تقریبات کے لیے سادہ نمایاں جگہ کے ساتھ \"{{title}}\" کو فروغ دیں۔",
+    "bestValue": "بہترین قیمت",
+    "maybeLater": "شاید بعد میں",
+    "notEnoughCredits": "کافی کریڈٹس نہیں ہیں",
+    "promotedEventName": "تشہیر شدہ تقریب",
+    "promotedEventDescription": "اس تقریب کو طلبہ کے لیے زیادہ نمایاں دکھائیں",
+    "durationDays": "{{count}} دن",
+    "durationDays_other": "{{count}} دن",
+    "creditsCost": "{{credits}} کریڈٹس",
+    "spendCredits": "{{credits}} کریڈٹس خرچ کریں",
+    "durationDays_one": "{{count}} دن"
+  }
+}

@@ -350,6 +350,24 @@ class InstagramPublishingControl(_ControlModel):
         return self
 
 
+class InstagramDigestControl(_ControlModel):
+    endpoint_url: HttpUrl
+    operation_name: Literal["SubscriptionDigestFeedQuery"]
+    client_doc_id: str = Field(pattern=r"^[0-9]{20,40}$")
+    web_app_id: str = Field(pattern=r"^[0-9]{10,20}$")
+    request_timeout_seconds: float = Field(gt=0, le=120)
+    keychain_operation_timeout_seconds: float = Field(gt=0, le=120)
+    maximum_pages: int = Field(gt=0, le=100)
+
+    @model_validator(mode="after")
+    def validate_endpoint(self) -> "InstagramDigestControl":
+        if self.endpoint_url.host != "i.instagram.com":
+            raise ValueError("Instagram digest endpoint must use i.instagram.com")
+        if self.endpoint_url.path != "/graphql/query":
+            raise ValueError("Instagram digest endpoint must use /graphql/query")
+        return self
+
+
 class WorkflowFailureAlertsControl(_ControlModel):
     discord_admin_role_ids: tuple[str, ...] = Field(min_length=1)
 
@@ -457,6 +475,7 @@ class ControlBox(_ControlModel):
     uploads: UploadsControl
     public_attendance: PublicAttendanceControl
     social_previews: SocialPreviewsControl
+    instagram_digest: InstagramDigestControl
     instagram_publishing: InstagramPublishingControl
     workflow_failure_alerts: WorkflowFailureAlertsControl
     promoter_program: PromoterProgramControl

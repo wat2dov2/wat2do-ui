@@ -1,0 +1,57 @@
+{
+  "settings": {
+    "description": "管理你的帳戶偏好及設定",
+    "unsavedChanges": "未儲存的更改",
+    "unsavedChangesDescription": "儲存或取消您的設定變更。",
+    "saveSuccess": "您的設定已儲存。",
+    "saveError": "我們無法儲存您的設定。您的更改仍然存在。",
+    "tabs": {
+      "profile": "個人檔案",
+      "notifications": "通知",
+      "appearance": "外觀",
+      "promoter": "推廣者計劃"
+    },
+    "profile": {
+      "title": "個人檔案資訊",
+      "description": "管理您的個人檔案詳細資料和偏好設定",
+      "status": "個人檔案狀態",
+      "statusComplete": "您的個人檔案已設置完成",
+      "statusIncomplete": "完成您的個人檔案以儲存您的校園活動偏好",
+      "email": "電郵",
+      "editProfile": "編輯個人檔案",
+      "completeProfile": "完善個人檔案",
+      "school": "學校",
+      "selectSchool": "選擇學校",
+      "faculty": "學院",
+      "selectFaculty": "選擇學院",
+      "firstYearStudent": "一年級學生",
+      "interests": "興趣",
+      "selectInterests": "選擇你的興趣",
+      "avatarAlt": "頭像",
+      "changeAvatar": "選擇新的頭像"
+    },
+    "notifications": {
+      "title": "通知偏好",
+      "description": "選擇你想收到活動及更新的通知方式",
+      "morningEmail": "早晨電郵",
+      "morningEmailDesc": "上午9時，取得過去24小時新增的強力匹配。",
+      "eventReminder": "活動提醒",
+      "eventReminderDesc": "在你選定的活動前大約一小時收取電郵。",
+      "eventChange": "活動變更警報",
+      "eventChangeDesc": "當你選定的活動有變更時，即時收取電郵。",
+      "loadFailed": "無法加載你的通知偏好設定。",
+      "retry": "重試"
+    },
+    "appearance": {
+      "viewPreferences": "查看偏好設定",
+      "viewPreferencesDesc": "自訂活動顯示方式",
+      "defaultViewMode": "預設檢視模式",
+      "defaultViewModeDesc": "選擇活動預設的顯示方式",
+      "grid": "格子",
+      "calendar": "日曆",
+      "map": "地圖",
+      "language": "語言",
+      "languageDescription": "選擇你喜愛的語言"
+    }
+  }
+}

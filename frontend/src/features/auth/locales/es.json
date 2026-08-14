@@ -1,0 +1,67 @@
+{
+  "auth": {
+    "heading": "Descubre lo que está sucediendo en el campus.",
+    "description": "Inicia sesión o crea una cuenta para guardar eventos, personalizar tu feed y descubrir lo que está sucediendo en el campus.",
+    "emailLabel": "Dirección de correo electrónico",
+    "emailPlaceholder": "tú@{{domain}}",
+    "continue": "Continuar",
+    "skipToOnboarding": "Continuar sin iniciar sesión",
+    "verifyOtp": "Verificar código",
+    "resendOtp": "Reenviar código",
+    "otpLabel": "Código de verificación",
+    "otpDescription": "Hemos enviado un código de inicio de sesión de 6 dígitos a {{email}}. Introdúcelo abajo para iniciar sesión.",
+    "invalidOtp": "Este código de inicio de sesión no es válido o ha caducado.",
+    "invalidLoginLink": "Este enlace de inicio de sesión no es válido o ha caducado.",
+    "genericError": "Algo salió mal. Por favor, inténtalo de nuevo.",
+    "backToLogin": "Volver a iniciar sesión",
+    "callbackDescription": "Confirma el inicio de sesión para {{email}}.",
+    "callbackContinue": "Continuar para iniciar sesión",
+    "heroTitle": "Lo que sucede esta semana",
+    "heroSubtitle": "Eventos reales de clubes de todo el campus, actualizados cada segundo.",
+    "heroEmpty": "Nuevos eventos llegan cada día. Inicia sesión para verlos primero.",
+    "consentHeading": "Datos, seguridad y tu feed del campus",
+    "consentDescription": "Cómo mantenemos el descubrimiento de eventos seguro y útil para los estudiantes.",
+    "consentControlData": "Tú controlas los datos de tu perfil y puedes actualizar o eliminar tu cuenta en cualquier momento.",
+    "consentNoSell": "No vendemos tus datos a terceros ni a corredores de datos.",
+    "consentAnonymized": "Podemos revisar patrones de uso anonimizados para mejorar el descubrimiento de eventos.",
+    "consentAgreeTerms": "Acepto los términos de la plataforma y la política de uso aceptable para el descubrimiento de eventos en el campus.",
+    "consentSubscribeUpdates": "Suscríbete para recibir actualizaciones ocasionales sobre nuevas funciones y eventos destacados del campus.",
+    "signedInAs": "Conectado como"
+  },
+  "onboarding": {
+    "faculties": {
+      "engineering": "Ingeniería",
+      "mathematics": "Matemáticas",
+      "science": "Ciencias",
+      "arts": "Artes",
+      "environment": "Medio ambiente",
+      "health": "Salud",
+      "appliedHealthSciences": "Ciencias de la Salud Aplicadas"
+    },
+    "stepProgress": "Paso {{step}} de {{total}}",
+    "safetyTitle": "Bienvenido a tu página de eventos del campus.",
+    "safetyDescription": "Te ayudamos a descubrir lo que está ocurriendo en tu escuela y a conectarte con comunidades que coincidan con tus intereses.",
+    "safetyGoingEvents": "Marca los eventos a los que vas a asistir, realiza un seguimiento de los plazos y filtra rápidamente por lo que te importa.",
+    "safetySafeguards": "Las medidas de seguridad y de la comunidad ayudan a mantener los eventos de alta calidad y confiables.",
+    "doneTitle": "¡Todo listo!",
+    "doneDescription": "Tu feed personalizado del campus está listo. Es hora de descubrir lo que ocurre a tu alrededor.",
+    "doneButton": "Vamos a explorar",
+    "gooseName": "Sr. Goose",
+    "doneNextLabel": "¡Llévame a Wat2Do!",
+    "gooseStep0": "¡Hola!",
+    "gooseStep1": "¡Bienvenido a la familia Wat2Do ! Somos un colectivo con un objetivo: crear la mayor cantidad de recuerdos posible durante nuestro breve tiempo en la universidad",
+    "gooseStep2": "Todos aquí tienen intereses diferentes. ¿Qué tipo de eventos te gustan?",
+    "gooseStep3WithSchool": "¡5 otros estudiantes tienen exactamente los mismos intereses! Ahora, ¿cuáles de estos de {{school}} llaman tu atención?",
+    "gooseStep3Default": "Genial, así es como encontramos lo bueno. ¿Cuáles de estos llaman tu atención?",
+    "gooseStep4": "Entendido, ¿y en qué facultad estás?",
+    "year": {
+      "yesFirstYear": "Sí, ¡recién llegado!",
+      "noReturning": "No, ya llevo tiempo aquí"
+    },
+    "events": {
+      "noEvents": "No hay eventos por ahora.",
+      "noEventsAvailable": "No hay eventos por ahora. Puedes continuar sin seleccionar.",
+      "selectAriaLabel": "Selecciona los eventos que llamen tu atención"
+    }
+  }
+}

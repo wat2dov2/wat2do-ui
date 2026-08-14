@@ -1,0 +1,57 @@
+{
+  "settings": {
+    "description": "Verwalten Sie Ihre Kontoeinstellungen und Präferenzen",
+    "unsavedChanges": "Ungespeicherte Änderungen",
+    "unsavedChangesDescription": "Speichern oder abbrechen Ihrer Einstellungenänderungen.",
+    "saveSuccess": "Ihre Einstellungen wurden gespeichert.",
+    "saveError": "Wir konnten Ihre Einstellungen nicht speichern. Ihre Änderungen sind weiterhin vorhanden.",
+    "tabs": {
+      "profile": "Profil",
+      "notifications": "Benachrichtigungen",
+      "appearance": "Aussehen",
+      "promoter": "Promoter-Programm"
+    },
+    "profile": {
+      "title": "Profilinformationen",
+      "description": "Verwalten Sie Ihre Profildetails und Präferenzen",
+      "status": "Profilstatus",
+      "statusComplete": "Ihr Profil ist eingerichtet und vollständig",
+      "statusIncomplete": "Vervollständigen Sie Ihr Profil, um Ihre Präferenzen für Campus-Events zu speichern",
+      "email": "E-Mail",
+      "editProfile": "Profil bearbeiten",
+      "completeProfile": "Profil vervollständigen",
+      "school": "Schule",
+      "selectSchool": "Eine Schule auswählen",
+      "faculty": "Fakultät",
+      "selectFaculty": "Fakultät auswählen",
+      "firstYearStudent": "Erstsemester",
+      "interests": "Interessen",
+      "selectInterests": "Wähle deine Interessen",
+      "avatarAlt": "Avatar",
+      "changeAvatar": "Wähle einen neuen Avatar"
+    },
+    "notifications": {
+      "title": "Benachrichtigungseinstellungen",
+      "description": "Wähle, wie du über Ereignisse und Updates benachrichtigt werden möchtest",
+      "morningEmail": "Morgen-E-Mail",
+      "morningEmailDesc": "Um 9 Uhr morgens die in den letzten 24 Stunden hinzugefügten starken Übereinstimmungen abrufen.",
+      "eventReminder": "Veranstaltungserinnerungen",
+      "eventReminderDesc": "Erhalten Sie etwa eine Stunde vor einer von Ihnen ausgewählten Veranstaltung eine E-Mail.",
+      "eventChange": "Benachrichtigungen bei Veranstaltungsänderungen",
+      "eventChangeDesc": "Erhalten Sie sofort eine E-Mail, wenn sich eine ausgewählte Veranstaltung ändert.",
+      "loadFailed": "Konnte Ihre Benachrichtigungseinstellungen nicht laden.",
+      "retry": "Erneut versuchen"
+    },
+    "appearance": {
+      "viewPreferences": "Einstellungen anzeigen",
+      "viewPreferencesDesc": "Anpassen, wie Ereignisse angezeigt werden",
+      "defaultViewMode": "Standardanzeigemodus",
+      "defaultViewModeDesc": "Wählen Sie aus, wie Ereignisse standardmäßig angezeigt werden",
+      "grid": "Raster",
+      "calendar": "Kalender",
+      "map": "Karte",
+      "language": "Sprache",
+      "languageDescription": "Wählen Sie Ihre bevorzugte Sprache"
+    }
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "credits": {
+    "buyCredits": "ક્રેડિટ ખરીદો",
+    "currentBalance": "વર્તમાન બેલેન્સ:",
+    "creditCount": "{{count}} ક્રેડિટ",
+    "creditCount_other": "{{count}} ક્રેડિટ્સ",
+    "bonusCount": "+{{count}} બોનસ",
+    "bonusCount_other": "+{{count}} બોનસ",
+    "totalCreditCount": "{{count}} કુલ ક્રેડિટ",
+    "totalCreditCount_other": "{{count}} કુલ ક્રેડિટ્સ",
+    "pricePerCredit": "${{price}}¢/ક્રેડિટ",
+    "added": "ક્રેડિટ્સ ઉમેરવામાં આવ્યા!",
+    "addedMessage": "{{count}} ક્રેડિટ્સ તમારા એકાઉન્ટમાં ઉમેરવામાં આવ્યા છે.",
+    "processing": "પ્રોસેસ થઈ રહ્યું છે...",
+    "buyMore": "+ વધુ ખરીદો",
+    "notEnough": "કપાત ક્રેડિટ્સ નથી",
+    "loginRequired": "ક્રેડિટ્સ ખરીદવા માટે તમને લોગઇન કરવું અનિવાર્ય છે.",
+    "purchaseFailed": "ખરીદી નિષ્ફળ ગઈ. કૃપા કરીને ફરી પ્રયાસ કરો.",
+    "spendCredits": "ખર્ચ કરો {{credits}} ક્રેડિટ્સ",
+    "securePayment": "સુરક્ષિત પેમેન્ટ Stripe દ્વારા સંચાલિત. ક્રેડિટ્સ કદી સમાપ્ત નથી થતા.",
+    "creditCount_one": "{{count}} ક્રેડિટ",
+    "bonusCount_one": "+{{count}} બોનસ",
+    "totalCreditCount_one": "{{count}} કુલ ક્રેડિટ"
+  },
+  "promotion": {
+    "promoteEvent": "આ ઇવેન્ટ પ્રમોટ કરો",
+    "getMoreVisibility": "સરકારી સંસ્થા ઇવેન્ટ્સ માટે સરળ ફીચર્ડ પ્લેસમેન્ટ સાથે \"{{title}}\" પ્રમોટ કરો.",
+    "bestValue": "શ્રેષ્ઠ મલ્ય",
+    "maybeLater": "પછીથી શક્ય છે",
+    "notEnoughCredits": "કપાત ક્રેડિટ્સ નથી",
+    "promotedEventName": "પ્રમોટેડ ઇવેન્ટ",
+    "promotedEventDescription": "વિદ્યાર્થીઓ માટે આ ઇવેન્ટ વધુ પ્રખ્યાત રીતે બતાવો",
+    "durationDays": "{{count}} દિવસ",
+    "durationDays_other": "{{count}} દિવસો",
+    "creditsCost": "{{credits}} ક્રેડિટ્સ",
+    "spendCredits": "ખર્ચ કરો {{credits}} ક્રેડિટ્સ",
+    "durationDays_one": "{{count}} દિવસ"
+  }
+}

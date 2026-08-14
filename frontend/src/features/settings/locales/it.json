@@ -1,0 +1,57 @@
+{
+  "settings": {
+    "description": "Gestisci le preferenze e le impostazioni del tuo account",
+    "unsavedChanges": "Modifiche non salvate",
+    "unsavedChangesDescription": "Salva o annulla le modifiche delle impostazioni.",
+    "saveSuccess": "Le tue impostazioni sono state salvate.",
+    "saveError": "Non siamo riusciti a salvare le tue impostazioni. Le tue modifiche sono ancora qui.",
+    "tabs": {
+      "profile": "Profilo",
+      "notifications": "Notifiche",
+      "appearance": "Aspetto",
+      "promoter": "Programma promotore"
+    },
+    "profile": {
+      "title": "Informazioni sul Profilo",
+      "description": "Gestisci i dettagli e le preferenze del tuo profilo",
+      "status": "Stato del Profilo",
+      "statusComplete": "Il tuo profilo è configurato e completo",
+      "statusIncomplete": "Completa il tuo profilo per salvare le preferenze degli eventi del campus",
+      "email": "Email",
+      "editProfile": "Modifica Profilo",
+      "completeProfile": "Completa Profilo",
+      "school": "Scuola",
+      "selectSchool": "Seleziona una scuola",
+      "faculty": "Facoltà",
+      "selectFaculty": "Seleziona una facoltà",
+      "firstYearStudent": "Studente del Primo Anno",
+      "interests": "Interessi",
+      "selectInterests": "Seleziona i tuoi interessi",
+      "avatarAlt": "Avatar",
+      "changeAvatar": "Scegli un nuovo avatar"
+    },
+    "notifications": {
+      "title": "Preferenze di Notifica",
+      "description": "Scegli come vuoi essere notificato riguardo eventi e aggiornamenti",
+      "morningEmail": "Email mattutina",
+      "morningEmailDesc": "Alle 9:00, ricevi le corrispondenze più forti aggiunte nelle ultime 24 ore.",
+      "eventReminder": "Promemoria eventi",
+      "eventReminderDesc": "Ricevi un'email circa un'ora prima di un evento che hai selezionato.",
+      "eventChange": "Avvisi di modifica eventi",
+      "eventChangeDesc": "Ricevi un'email immediata quando un evento selezionato cambia.",
+      "loadFailed": "Impossibile caricare le tue preferenze di notifica.",
+      "retry": "Riprova"
+    },
+    "appearance": {
+      "viewPreferences": "Visualizza preferenze",
+      "viewPreferencesDesc": "Personalizza come vengono visualizzati gli eventi",
+      "defaultViewMode": "Modalità di visualizzazione predefinita",
+      "defaultViewModeDesc": "Scegli come vengono visualizzati gli eventi per impostazione predefinita",
+      "grid": "Griglia",
+      "calendar": "Calendario",
+      "map": "Mappa",
+      "language": "Lingua",
+      "languageDescription": "Scegli la tua lingua preferita"
+    }
+  }
+}

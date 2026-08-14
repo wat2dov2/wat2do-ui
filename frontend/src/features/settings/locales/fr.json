@@ -1,0 +1,57 @@
+{
+  "settings": {
+    "description": "Gérez les préférences et paramètres de votre compte",
+    "unsavedChanges": "Modifications non enregistrées",
+    "unsavedChangesDescription": "Enregistrez ou annulez vos modifications de paramètres.",
+    "saveSuccess": "Vos paramètres ont été enregistrés.",
+    "saveError": "Nous n'avons pas pu enregistrer vos paramètres. Vos modifications sont toujours présentes.",
+    "tabs": {
+      "profile": "Profil",
+      "notifications": "Notifications",
+      "appearance": "Apparence",
+      "promoter": "Programme de promoteur"
+    },
+    "profile": {
+      "title": "Informations du profil",
+      "description": "Gérez les détails et préférences de votre profil",
+      "status": "Statut du profil",
+      "statusComplete": "Votre profil est configuré et complet",
+      "statusIncomplete": "Complétez votre profil pour enregistrer vos préférences d'événements sur le campus",
+      "email": "Email",
+      "editProfile": "Modifier le profil",
+      "completeProfile": "Compléter le profil",
+      "school": "École",
+      "selectSchool": "Sélectionner une école",
+      "faculty": "Faculté",
+      "selectFaculty": "Sélectionner une faculté",
+      "firstYearStudent": "Étudiant de première année",
+      "interests": "Centres d'intérêt",
+      "selectInterests": "Sélectionnez vos centres d'intérêt",
+      "avatarAlt": "Avatar",
+      "changeAvatar": "Choisir un nouvel avatar"
+    },
+    "notifications": {
+      "title": "Préférences de notification",
+      "description": "Choisissez comment vous souhaitez être informé des événements et mises à jour",
+      "morningEmail": "Email du matin",
+      "morningEmailDesc": "À 9 h, obtenir les correspondances fortes ajoutées au cours des dernières 24 heures.",
+      "eventReminder": "Rappels d'événements",
+      "eventReminderDesc": "Recevoir un email environ une heure avant un événement que vous avez sélectionné.",
+      "eventChange": "Alertes de modification d'événement",
+      "eventChangeDesc": "Recevoir un email immédiat lorsqu'un événement sélectionné change.",
+      "loadFailed": "Impossible de charger vos préférences de notification.",
+      "retry": "Réessayer"
+    },
+    "appearance": {
+      "viewPreferences": "Voir les préférences",
+      "viewPreferencesDesc": "Personnaliser l'affichage des événements",
+      "defaultViewMode": "Mode d'affichage par défaut",
+      "defaultViewModeDesc": "Choisissez comment les événements sont affichés par défaut",
+      "grid": "Grille",
+      "calendar": "Calendrier",
+      "map": "Carte",
+      "language": "Langue",
+      "languageDescription": "Choisissez votre langue préférée"
+    }
+  }
+}

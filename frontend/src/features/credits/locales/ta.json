@@ -1,0 +1,39 @@
+{
+  "credits": {
+    "buyCredits": "கிரெடிட்களை வாங்கவும்",
+    "currentBalance": "தற்போதைய இருப்பு:",
+    "creditCount": "{{count}} கிரெடிட்",
+    "creditCount_other": "{{count}} கிரெடிட்கள்",
+    "bonusCount": "+{{count}} போனஸ்",
+    "bonusCount_other": "+{{count}} போனஸ்",
+    "totalCreditCount": "{{count}} மொத்த கிரெடிட்",
+    "totalCreditCount_other": "{{count}} மொத்த கிரெடிட்கள்",
+    "pricePerCredit": "${{price}}¢/கிரெடிட்",
+    "added": "கிரெடிட்கள் சேர்க்கப்பட்டன!",
+    "addedMessage": "{{count}} கிரெடிட்கள் உங்கள் கணக்கில் சேர்க்கப்பட்டுள்ளன.",
+    "processing": "செயலாக்கப்படுகிறது...",
+    "buyMore": "+ மேலும் வாங்கு",
+    "notEnough": "போதுமான கிரெடிட்கள் இல்லை",
+    "loginRequired": "கிரெடிட்கள் வாங்க நீங்கள் உள்நுழைந்திருக்க வேண்டும்.",
+    "purchaseFailed": "வாங்குதல் தோல்வியடைந்தது. தயவுசெய்து மீண்டும் முயற்சிக்கவும்.",
+    "spendCredits": "{{credits}} கிரெடிட்கள் பயன்படுத்தவும்",
+    "securePayment": "Stripe மூலம் பாதுகாப்பான பணம் செலுத்தல். கிரெடிட்கள் ஒருபோதும் காலாவதியாகாது.",
+    "creditCount_one": "{{count}} கிரெடிட்",
+    "bonusCount_one": "+{{count}} போனஸ்",
+    "totalCreditCount_one": "{{count}} மொத்த கிரெடிட்"
+  },
+  "promotion": {
+    "promoteEvent": "இந்த நிகழ்வை பிரசாரம் செய்யவும்",
+    "getMoreVisibility": "அதிகாரபூர்வ நிறுவன நிகழ்வுகளுக்கான எளிய சிறப்பிக்கப்பட்ட இடமாற்றத்துடன் \"{{title}}\" ஐ பிரசாரம் செய்யவும்.",
+    "bestValue": "மிகச்சிறந்த மதிப்பு",
+    "maybeLater": "பிறகு பார்க்கலாம்",
+    "notEnoughCredits": "போதுமான கிரெடிட்கள் இல்லை",
+    "promotedEventName": "விளம்பர நிகழ்ச்சி",
+    "promotedEventDescription": "மாணவர்களுக்கு இந்த நிகழ்ச்சியை அதிகமாக காட்டு",
+    "durationDays": "{{count}} நாள்",
+    "durationDays_other": "{{count}} நாட்கள்",
+    "creditsCost": "{{credits}} கிரெடிட்ஸ்",
+    "spendCredits": "{{credits}} கிரெடிட்கள் பயன்படுத்தவும்",
+    "durationDays_one": "{{count}} நாள்"
+  }
+}

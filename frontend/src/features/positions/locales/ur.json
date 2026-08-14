@@ -1,0 +1,35 @@
+{
+  "positions": {
+    "position": "عہدہ",
+    "position_other": "عہدے",
+    "searchPlaceholder": "عہدے، مہارتیں یا مقامات تلاش کریں...",
+    "clearSearch": "عہدے کی تلاش صاف کریں",
+    "filterByType": "عہدوں کو قسم کے لحاظ سے فلٹر کریں",
+    "allTypes": "عہدوں کی تمام اقسام",
+    "openDetails": "{{title}} عہدے کی تفصیلات دیکھیں",
+    "drawerDescription": "{{organization}} میں {{title}} عہدے کی تفصیلات",
+    "deadlineLabel": "درخواست دینے کی آخری تاریخ",
+    "due": "آخری تاریخ {{date}}",
+    "commitmentLabel": "وقت کی مصروفیت",
+    "locationLabel": "مقام",
+    "compensationLabel": "معاوضہ",
+    "contactLabel": "رابطہ",
+    "aboutPosition": "اس عہدے کے بارے میں",
+    "requirements": "ضروریات",
+    "viewSource": "اصل Instagram پوسٹ دیکھیں",
+    "emptyTitle": "کوئی خالی عہدہ نہیں ملا",
+    "emptyDescription": "دوسری تلاش یا عہدے کی قسم آزمائیں۔ تنظیم کے نئے مواقع پوسٹ ہونے پر یہاں دکھائی دیں گے۔",
+    "organizationEmptyTitle": "کوئی خالی عہدہ نہیں",
+    "organizationEmptyDescription": "اس تنظیم میں فی الحال کوئی خالی عہدہ نہیں ہے۔",
+    "resultsLabel": "{{count}} عہدے ملے",
+    "types": {
+      "executive": "انتظامی",
+      "committee": "کمیٹی",
+      "volunteer": "رضاکار",
+      "staff": "تنخواہ دار عملہ",
+      "internship": "انٹرنشپ",
+      "general": "عمومی بھرتی"
+    },
+    "position_one": "عہدہ"
+  }
+}

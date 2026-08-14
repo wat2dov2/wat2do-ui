@@ -1,0 +1,187 @@
+{
+  "posters": {
+    "download": "Tải xuống",
+    "downloadPdf": "PDF",
+    "downloadPng": "PNG",
+    "recruitment": {
+      "title": "Giúp nhiều sinh viên hơn khám phá các sự kiện tại {{school}}.",
+      "description": "Đăng các poster chính thức của Wat2Do và nhận {{rate}} cho mỗi khách mới đủ điều kiện.",
+      "seeHowItWorks": "Xem cách nó hoạt động",
+      "dismiss": "Ẩn thông báo này trong {{days}} ngày"
+    },
+    "promote": {
+      "title": "Mang Wat2Do đến {{school}}",
+      "description": "Đặt các poster chính thức xung quanh khuôn viên và nhận {{rate}} cho mỗi khách mới họ mang đến đủ điều kiện.",
+      "stepsTitle": "Cách hoạt động",
+      "stepsDescription": "Bắt đầu chỉ trong vài phút với thiết kế chính thức, sẵn sàng in.",
+      "step1Title": "Chọn một poster chính thức",
+      "step1Description": "Chọn từ các thiết kế được Wat2Do phê duyệt.",
+      "step2Title": "Đặt và kích hoạt nó",
+      "step2Description": "Đặt mỗi bản sao ở một vị trí trong khuôn viên, sau đó quét nó để xác nhận vị trí đó.",
+      "step3Title": "Kiếm điểm cho khách đến mới",
+      "step3Description": "Kiếm {{rate}} khi một khách mới được xác nhận và đủ điều kiện đến.",
+      "coverageTitle": "Phủ sóng khuôn viên tại {{school}}",
+      "coverageDescription": "Các ô ước lượng cho thấy nơi những người dán poster hoạt động đang giúp sinh viên khám phá các sự kiện mà không tiết lộ bất kỳ người quảng bá nào."
+    },
+    "enrollment": {
+      "pausedTitle": "Chương trình người quảng bá đang tạm dừng",
+      "pausedDescription": "Các poster và thu nhập hiện có vẫn khả dụng, nhưng việc đăng ký mới và tạo poster tạm thời bị tạm dừng.",
+      "pausedMaintenanceDescription": "Việc tạo poster mới đang tạm dừng, nhưng bạn vẫn có thể cập nhật email nhận thanh toán của mình.",
+      "readyTitle": "Sẵn sàng giúp đỡ khuôn viên trường của bạn chưa?",
+      "readyDescription": "Xác minh email trường học của bạn để tham gia. Đây sẽ là địa chỉ Interac e-Transfer ban đầu của bạn, và bạn có thể cập nhật sau.",
+      "schoolRequiredTitle": "Thêm trường của bạn trước",
+      "schoolRequiredDescription": "Cần có một trường trên hồ sơ của bạn để các poster dẫn đến nguồn sự kiện đúng của khuôn viên.",
+      "completeProfile": "Hoàn tất hồ sơ của tôi",
+      "enrolledTitle": "Bạn đang tham gia chương trình",
+      "enrolled": "Đã đăng ký",
+      "enrolledDescription": "Bảng điều khiển người quảng bá của bạn đã sẵn sàng.",
+      "settingsTitle": "Chương trình người quảng bá",
+      "settingsDescription": "Xem lại trạng thái của bạn và giữ cho email e-Transfer Interac của bạn luôn cập nhật.",
+      "joinTitle": "Tham gia chương trình người quảng bá",
+      "joinDescription": "Việc đăng ký là tức thì. Bạn chỉ cần một email thanh toán và chấp nhận các điều khoản của chương trình người quảng bá.",
+      "payoutEmail": "Email thanh toán",
+      "payoutEmailPlaceholder": "you@example.com",
+      "payoutEmailDescription": "Các chuyển khoản e-Transfer hàng tháng Interac sẽ được gửi đến địa chỉ này.",
+      "acceptTermsPrefix": "Đọc đầy đủ các điều khoản trước khi chấp nhận.",
+      "termsAccepted": "Bạn đã chấp nhận các điều khoản của chương trình người quảng bá.",
+      "termsLink": "Điều khoản Dịch vụ của Người Quảng bá",
+      "error": "Chúng tôi không thể cập nhật đăng ký người quảng bá của bạn.",
+      "trustMonthly": "Thanh toán được gửi vào ngày mùng một của mỗi tháng bằng Interac e-Transfer.",
+      "trustActivation": "Quét Kích hoạt xác nhận vị trí và kiếm $0.",
+      "trustTraffic": "Lưu lượng truy cập trùng lặp, chưa được xác nhận, tự động và gian lận sẽ bị loại trừ.",
+      "trustPrivacy": "Wat2Do không lưu trữ địa chỉ IP thô.",
+      "join": "Tham gia chương trình",
+      "save": "Lưu cài đặt thanh toán",
+      "discord": "Nhận trợ giúp về Discord"
+    },
+    "dashboard": {
+      "title": "Áp phích của tôi",
+      "description": "Tạo, đặt và theo dõi các áp phích chính thức của bạn Wat2Do.",
+      "discordHelp": "Cần trợ giúp? Tham gia Discord.",
+      "enrollmentRequired": "Tham gia chương trình nhà quảng bá để tạo và quản lý các áp phích chính thức.",
+      "loadErrorTitle": "Bảng điều khiển của bạn không thể tải",
+      "loadErrorDescription": "Thử lại sau. Các áp phích và thu nhập của bạn không thay đổi.",
+      "pendingEarnings": "Đang chờ trong tháng này",
+      "creditableVisitors": "Khách truy cập đủ điều kiện trong tháng này",
+      "unqualifiedScans": "Quét không đủ điều kiện trong tháng này",
+      "lifetimePaid": "Đã trả cả đời",
+      "activeSlots": "Vị trí áp phích đang hoạt động",
+      "slotValue": "{{used}} trong {{limit}}",
+      "updatedDaily": "Cập nhật hàng ngày",
+      "mapTitle": "Bản đồ áp phích trong khuôn viên",
+      "mapDescription": "Các áp phích bạn đặt là chính xác và có thể chọn. Các khu vực khác trong khuôn viên chỉ ước lượng và riêng tư.",
+      "pausedTitle": "Tạo poster đã tạm dừng",
+      "pausedDescription": "Bảng điều khiển, tải xuống, thu nhập và thanh toán của bạn vẫn có sẵn."
+    },
+    "create": {
+      "open": "Tạo poster",
+      "title": "Tạo poster chính thức",
+      "description": "Chọn một thiết kế được phê duyệt và tạo một QR riêng biệt cho từng bản sao vật lý.",
+      "chooseTemplate": "Chọn thiết kế poster",
+      "chooseTemplateDescription": "Mẫu đã chọn có vị trí QR cố định và định dạng in.",
+      "selectTemplate": "Chọn thiết kế",
+      "customTitle": "Bạn có thiết kế poster riêng không?",
+      "customDescription": "Tham gia Discord của chúng tôi và chia sẻ với chúng tôi. Chúng tôi sẽ xem xét các bài gửi và thêm các thiết kế được phê duyệt vào bộ sưu tập chính thức.",
+      "discord": "Chia sẻ trên Discord",
+      "copies": "Bản sao",
+      "slotsRemaining": "{{count}} vị trí hoạt động còn lại",
+      "submit": "Tạo poster",
+      "error": "Không thể tạo lô áp phích.",
+      "createdTitle": "Các áp phích độc đáo của bạn đã sẵn sàng",
+      "createdDescription": "{{count}} bản sao được theo dõi riêng đã được tạo. Tải chúng về trước khi đặt mỗi bản sao.",
+      "downloadError": "Không thể tạo các tệp áp phích. Vui lòng thử lại."
+    },
+    "inventory": {
+      "title": "Kho áp phích",
+      "description": "Các áp phích đã đặt sẽ trở nên im lặng sau {{days}} ngày mà không có quét được chấp nhận.",
+      "emptyTitle": "Tạo áp phích chính thức Wat2Do đầu tiên của bạn",
+      "emptyDescription": "Tải nó về, đặt nó trong khuôn viên, và quét nó để kích hoạt việc đặt. Quét kích hoạt giúp bạn kiếm $0.",
+      "lastScanned": "Quét lần cuối {{time}}",
+      "totalVisitors": "Tổng số khách đã xác nhận",
+      "periodVisitors": "Điều kiện trong tháng này",
+      "periodEarnings": "Đang chờ trong tháng này",
+      "activationInstruction": "Đặt bản sao này, quét QR của nó, và cho phép truy cập vị trí để thiết lập vị trí đặt.",
+      "downloadError": "Không thể tạo poster này để tải xuống.",
+      "templateUnavailable": "Poster cũ này không có mẫu có thể tái tạo."
+    },
+    "lifecycle": {
+      "not-placed": "Chưa được đặt",
+      "quiet": "Im lặng"
+    },
+    "map": {
+      "loading": "Đang tải phạm vi campus...",
+      "loadErrorTitle": "Phạm vi không khả dụng",
+      "loadErrorDescription": "Cơ hội vẫn còn mở. Hãy thử lại bản đồ sau.",
+      "coverageMarker": "Ô campus xấp xỉ với {{count}} poster",
+      "campusCoverage": "Phạm vi campus xấp xỉ",
+      "coverageSummary": "{{count}} poster, {{recent}} mới được quét gần đây",
+      "ownedMarker": "Poster của bạn: {{name}}",
+      "managedMarker": "Áp phích được quản lý: {{name}}",
+      "visitorCount": "{{count}} khách tham quan đã xác nhận",
+      "yourPosters": "Áp phích của bạn",
+      "managedPosters": "Áp phích được quản lý",
+      "otherCoverage": "Phủ sóng ở các cơ sở khác",
+      "noCoverageTitle": "Chưa có áp phích nào được đặt ở đây",
+      "noCoverageDescription": "Trở thành một trong những người quảng bá đầu tiên thêm phủ sóng cơ sở."
+    },
+    "payouts": {
+      "title": "Lịch sử thanh toán",
+      "description": "Hồ sơ e-Transfer hàng tháng của Interac. Các khoản thanh toán bị giữ sẽ được xem xét thay vì bị xóa.",
+      "loading": "Đang tải lịch sử thanh toán...",
+      "loadErrorTitle": "Lịch sử thanh toán không khả dụng",
+      "loadErrorDescription": "Thử lại sau. Hồ sơ thanh toán của bạn chưa bị thay đổi.",
+      "empty": "Chưa có kỳ thanh toán nào hoàn tất.",
+      "period": "Thời kỳ",
+      "visitors": "Khách truy cập đủ điều kiện",
+      "rate": "Tỉ lệ",
+      "amount": "Số tiền",
+      "status": "Trạng thái",
+      "paidDate": "Ngày thanh toán",
+      "statuses": {
+        "pending": "Đang chờ",
+        "held": "Đang chờ xem xét",
+        "paid": "Đã thanh toán",
+        "voided": "Bị hủy"
+      }
+    },
+    "terms": {
+      "title": "Điều khoản Dịch vụ của Người Quảng bá",
+      "description": "Vui lòng xem xét các điều khoản chương trình khuyến mãi.",
+      "scrollToAccept": "Cuộn qua tất cả các điều khoản để kích hoạt việc chấp nhận.",
+      "accept": "Chấp nhận các điều khoản",
+      "eligibility": {
+        "title": "Điều kiện và đăng ký",
+        "body": "Bạn phải sử dụng tài khoản Wat2Do của riêng mình, giữ thông tin trường học trên hồ sơ của bạn, cung cấp email có thể nhận các chuyển khoản điện tử Interac, và chấp nhận các điều khoản của nhà tổ chức khi đăng ký. Việc đăng ký không đảm bảo sự có sẵn của poster trong tương lai."
+      },
+      "posters": {
+        "title": "Poster và vị trí chính thức",
+        "body": "Chỉ sử dụng các tệp được phê duyệt do Wat2Do tạo ra. Mỗi QR duy nhất thuộc về một vị trí vật lý. Không sao chép QR sang các địa điểm khác, di chuyển nó đến một vị trí khác, hoặc tái sử dụng nó cho poster khác."
+      },
+      "scans": {
+        "title": "Kích hoạt và quét đủ điều kiện",
+        "body": "Quét đầu tiên xác định vị trí poster là quét Kích hoạt và không được thanh toán. Một khách truy cập phải ở lại Wat2Do ít nhất {{seconds}} giây trước khi một lượt quét đủ điều kiện. Các lượt quét trùng lặp, chưa xác nhận, tự động, bị thao túng và gian lận sẽ không đủ điều kiện. Wat2Do có thể xem xét lưu lượng bất thường trước khi phát hành thanh toán."
+      },
+      "payments": {
+        "title": "Thanh toán",
+        "body": "Mỗi lượt quét đủ điều kiện sẽ kiếm được {{rate}}. Số dư đủ điều kiện cho tháng lịch UTC trước đó sẽ được Interac trả qua chuyển khoản điện tử vào ngày {{payoutDay}} của tháng tiếp theo. Số tiền đang giữ vẫn đang được xem xét. Thuế và chi tiết thanh toán chính xác vẫn là trách nhiệm của bạn."
+      },
+      "disputes": {
+        "title": "Tranh chấp về thanh toán và quét",
+        "body": "Nếu bạn cho rằng việc quét hoặc thanh toán đã được đo lường không chính xác, hãy liên hệ với Wat2Do thông qua người quảng bá Discord và bao gồm tờ áp phích, kỳ thanh toán và các chi tiết liên quan. Wat2Do sẽ xem xét hồ sơ chương trình và giải thích kết quả.",
+        "contact": "Liên hệ hỗ trợ người quảng bá"
+      },
+      "conduct": {
+        "title": "Bố trí an toàn và tôn trọng",
+        "body": "Chỉ đặt áp phích ở những nơi bạn được phép. Không che các thông báo bắt buộc, không làm hư hỏng tài sản, không trình bày sai Wat2Do hoặc đặt vật liệu ở những nơi mà quy định của khuôn viên hoặc địa phương cấm."
+      },
+      "privacy": {
+        "title": "Riêng tư và đo lường",
+        "body": "Khu vực áp phích công cộng chỉ xuất hiện dưới dạng các ô bản đồ gần đúng. Wat2Do sử dụng các định danh khách truy cập đã được băm, không lưu trữ địa chỉ IP thô, và giữ bí mật danh tính người quảng bá, chi tiết thanh toán, và vị trí đặt chính xác. Việc đo lường giới hạn chỉ để xác nhận các lượt truy cập độc đáo, hợp lệ và bảo vệ chương trình khỏi lạm dụng."
+      },
+      "changes": {
+        "title": "Thay đổi chương trình và tạm ngưng",
+        "body": "Wat2Do có thể tạm dừng việc đăng ký mới hoặc tạo áp phích, loại bỏ các thiết kế, cập nhật các điều khoản này, hoặc đình chỉ sự tham gia do lạm dụng. Các chuyển hướng QR hiện có và hồ sơ thanh toán đã kiếm được vẫn có sẵn theo quy định của chương trình."
+      }
+    }
+  }
+}
