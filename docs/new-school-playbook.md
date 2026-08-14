@@ -880,9 +880,14 @@ The actual implementation should normalize handles through one shared helper rat
 
 Use an interactive terminal logged in as the same macOS account that owns the self-hosted `wat2do-scraper` runner.
 
-The current runner account is `runner`.
+The current runner account is `tonyqiu`.
+Confirm that `whoami` matches the owner of the running `Runner.Listener` process before storing the session.
 
 macOS Keychain is user-scoped, so a session stored under another account is invisible to the notification and health workflows.
+
+The runner LaunchAgent must also share that account's existing GUI security audit session.
+Its plist must not contain `SessionCreate=true`, because an isolated audit session cannot unlock the login Keychain in a noninteractive workflow.
+Follow the runner verification and restart procedure in `docs/instagram_automation_guide.md` after every runner installation or service reinstall.
 
 Log into the exact chapter account on desktop Instagram.
 
