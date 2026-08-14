@@ -32,7 +32,7 @@ import sys
 import time
 from pathlib import Path
 
-import requests
+import httpx
 from dotenv import load_dotenv
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -44,6 +44,7 @@ from services.instagram_digest.sessions import (  # noqa: E402
     InstagramSession,
     KeychainSessionStore,
     SessionStoreError,
+    instagram_cookie_jar,
     recipient_session_transaction,
     refresh_browser_session,
 )
@@ -83,7 +84,10 @@ class IgWebClient:
 
     def __init__(self, session: InstagramSession):
         self.session = session
-        self.http = requests.Session()
+        self.http = httpx.Client(
+            cookies=instagram_cookie_jar(session.cookies),
+            follow_redirects=False,
+        )
         self.http.headers.update(
             {
                 "User-Agent": session.user_agent,
@@ -99,13 +103,11 @@ class IgWebClient:
                 "X-IG-WWW-Claim": "0",
             }
         )
-        for name, value in session.cookies.items():
-            self.http.cookies.set(name, value, domain=".instagram.com")
         self.http.headers["X-CSRFToken"] = session.csrftoken
 
     def session_snapshot(self) -> InstagramSession:
         """Capture any cookies rotated by Instagram without exposing them."""
-        cookies = {cookie.name: cookie.value for cookie in self.http.cookies}
+        cookies = {cookie.name: cookie.value for cookie in self.http.cookies.jar}
         return InstagramSession(
             intended_recipient_id=self.session.intended_recipient_id,
             sessionid=cookies["sessionid"],
@@ -126,9 +128,9 @@ class IgWebClient:
         """
         for attempt in range(3):
             try:
-                resp = self.http.request(method, url, timeout=30, allow_redirects=False, **kwargs)
+                resp = self.http.request(method, url, timeout=30, **kwargs)
                 break
-            except requests.RequestException:
+            except httpx.RequestError:
                 if attempt == 2:
                     raise
                 time.sleep(10 * (attempt + 1))
