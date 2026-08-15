@@ -457,12 +457,12 @@ def main() -> int:
             intended_recipient_id=intended_recipient_id,
             error=exc,
         )
-        if (
-            not notification.explicit_media
-            or notification.total_media_count is None
-            or school is None
-        ):
+        if not notification.explicit_media or school is None:
             return 1
+        log.warning(
+            "Session failure fallback: processing %d explicit media items without a full digest",
+            len(notification.explicit_media)
+        )
         media = list(notification.explicit_media)
         digest_session_failed = True
     except NotificationPayloadError as exc:

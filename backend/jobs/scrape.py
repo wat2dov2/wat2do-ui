@@ -157,6 +157,11 @@ def run(
     if not posts:
         log_method = log.error if exact_post_targets else log.info
         log_method("No valid posts retrieved for targets")
+        if exact_post_targets:
+            print(
+                "::warning::No valid posts retrieved for exact target. The post may have been immediately deleted, made private, or is otherwise unavailable to Apify.",
+                flush=True,
+            )
         _print_summary(
             school,
             ScrapeResult(ig_handle="unknown", dry_run=dry_run),
