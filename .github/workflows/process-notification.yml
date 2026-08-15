@@ -28,14 +28,7 @@ on:
 
 jobs:
   process-post:
-    # Cache-backed digests need recipient sessions stored in the Mac runner's Keychain.
-    # All other notification work uses GitHub-hosted Linux.
-    runs-on: >-
-      ${{
-        contains(toJSON(github.event.client_payload.notification_dict), 'cache_ent_id')
-        && 'wat2do-scraper'
-        || 'ubuntu-latest'
-      }}
+    runs-on: ubuntu-latest
     environment: production
 
     permissions:
