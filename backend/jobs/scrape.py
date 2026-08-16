@@ -77,12 +77,33 @@ def _print_summary(school: str, result: ScrapeResult) -> None:
     )
 
 
-def _create_github_annotation(school: str, username: str | None, url: str | None) -> None:
+def _create_github_annotation(
+    school: str, username: str | None, url: str | None, result: ScrapeResult
+) -> None:
     """Emit a GitHub Actions notice annotation summarising the processed post."""
+    lines = [f"{school} | @{username}"]
     if url:
-        message = f"{school}\n@{username}\n{url}"
+        lines.append(url)
+
+    if result.events_saved > 0 or result.positions_saved > 0:
+        lines.append(
+            f"✅ Saved {result.events_saved} event(s) and {result.positions_saved} position(s)."
+        )
     else:
-        message = f"{school}\n@{username}"
+        if result.posts_fetched == 0:
+            lines.append("❌ No posts fetched from Apify.")
+        elif result.posts_new == 0:
+            lines.append(
+                "❌ Post was previously processed or is older than the cutoff date."
+            )
+        elif result.events_extracted == 0 and result.positions_extracted == 0:
+            lines.append("❌ Post did not contain an event or position.")
+        else:
+            lines.append(
+                "❌ Post extracted but discarded during save (event dates passed or missing required fields)."
+            )
+
+    message = "\n".join(lines)
     escaped = message.replace("\n", "%0A")
     print(f"::notice::{escaped}", flush=True)
 
@@ -191,7 +212,7 @@ def run(
         _print_summary(school, result)
 
         resolved_url = owner_posts[0].get("url")
-        _create_github_annotation(school, handle, resolved_url)
+        _create_github_annotation(school, handle, resolved_url, result)
         _log_automate_event(school, handle, resolved_url)
 
         if result.status == WORKFLOW_RUN_ERROR:
