@@ -34,6 +34,14 @@ jobs:
     outputs:
       runner: ${{ steps.check.outputs.runner }}
     steps:
+      - name: Debug Token Lengths
+        env:
+          RUNNER_CHECK_TOKEN: ${{ secrets.RUNNER_CHECK_TOKEN }}
+          DEFAULT_GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "RUNNER_CHECK_TOKEN length: ${#RUNNER_CHECK_TOKEN}"
+          echo "DEFAULT_GH_TOKEN length: ${#DEFAULT_GH_TOKEN}"
+
       - name: Check Mac mini runner status
         id: check
         env:

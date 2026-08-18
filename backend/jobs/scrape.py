@@ -174,7 +174,7 @@ def run(
         )
         return 1
     if not posts:
-        log_method = log.error if exact_post_targets else log.info
+        log_method = log.warning if exact_post_targets else log.info
         log_method("No valid posts retrieved for targets")
         if exact_post_targets:
             print(
@@ -185,7 +185,7 @@ def run(
             school,
             ScrapeResult(ig_handle="unknown", dry_run=dry_run),
         )
-        return 1 if exact_post_targets else 0
+        return 0
 
     from collections import defaultdict
 
