@@ -461,7 +461,7 @@ def main() -> int:
             return 1
         log.warning(
             "Session failure fallback: processing %d explicit media items without a full digest",
-            len(notification.explicit_media)
+            len(notification.explicit_media),
         )
         media = list(notification.explicit_media)
         digest_session_failed = True

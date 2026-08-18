@@ -37,14 +37,16 @@ jobs:
       - name: Check Mac mini runner status
         id: check
         env:
-          GH_TOKEN: ${{ secrets.RUNNER_CHECK_TOKEN || github.token }}
+          RUNNER_CHECK_TOKEN: ${{ secrets.RUNNER_CHECK_TOKEN }}
+          DEFAULT_GH_TOKEN: ${{ github.token }}
         run: |
-          status=$(gh api "repos/${{ github.repository }}/actions/runners" --jq '.runners[] | select(.name == "wat2do-mac-mini" or .name == "wat2do-scraper" or (.labels[]?.name == "wat2do-scraper")) | .status' 2>/dev/null || echo "offline")
+          export GH_TOKEN="${RUNNER_CHECK_TOKEN:-$DEFAULT_GH_TOKEN}"
+          status=$(gh api "repos/${{ github.repository }}/actions/runners" --jq '.runners[] | select(.name == "wat2do-mac-mini" or .name == "wat2do-scraper" or (.labels[]?.name == "wat2do-scraper")) | .status' 2>/dev/null || true)
           if [[ "$status" == "online" ]]; then
             echo "Mac mini runner is online."
             echo "runner=wat2do-scraper" >> "$GITHUB_OUTPUT"
           else
-            echo "Mac mini runner status is '$status'. Falling back to ubuntu-latest."
+            echo "Mac mini runner status is '${status:-offline}'. Falling back to ubuntu-latest."
             echo "runner=ubuntu-latest" >> "$GITHUB_OUTPUT"
           fi
 

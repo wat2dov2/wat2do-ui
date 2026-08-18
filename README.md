@@ -8,8 +8,8 @@
   <a href="https://wat2do.io" target="_blank">
     <img src="https://img.shields.io/badge/Live%20Site-wat2do.io-blue?style=flat-square" alt="Live Site"/>
   </a>
-  <a href="https://github.com/tonyqiu123/wat2do-ui/actions">
-    <img src="https://img.shields.io/github/actions/workflow/status/tonyqiu123/wat2do-ui/ci-cd.yml?branch=main&style=flat-square" alt="GitHub Actions Status"/>
+  <a href="https://github.com/wat2dov2/wat2do-ui/actions">
+    <img src="https://img.shields.io/github/actions/workflow/status/wat2dov2/wat2do-ui/ci-cd.yml?branch=main&style=flat-square" alt="GitHub Actions Status"/>
   </a>
 </p>
 
@@ -88,7 +88,7 @@ The single-user scrape workflow remains an authenticated GitHub trigger but runs
 
 ## 🤝 Support
 
-If you have questions or feedback, please reach out at <a href="https://wat2do.io/contact" target="_blank">wat2do.io/contact</a> or add a <a href="https://github.com/tonyqiu123/wat2do-ui/issues" target="_blank">GitHub issue</a>.
+If you have questions or feedback, please reach out at <a href="https://wat2do.io/contact" target="_blank">wat2do.io/contact</a> or add a <a href="https://github.com/wat2dov2/wat2do-ui/issues" target="_blank">GitHub issue</a>.
 
 Enjoy discovering events!
 

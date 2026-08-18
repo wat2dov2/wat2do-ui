@@ -93,9 +93,7 @@ def _create_github_annotation(
         if result.posts_fetched == 0:
             lines.append("❌ No posts fetched from Apify.")
         elif result.posts_new == 0:
-            lines.append(
-                "❌ Post was previously processed or is older than the cutoff date."
-            )
+            lines.append("❌ Post was previously processed or is older than the cutoff date.")
         elif result.events_extracted == 0 and result.positions_extracted == 0:
             lines.append("❌ Post did not contain an event or position.")
         else:

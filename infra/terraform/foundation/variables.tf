@@ -24,7 +24,7 @@ variable "domain_name" {
 variable "github_repository" {
   description = "GitHub repository allowed to assume wat2do OIDC roles, in owner/name form."
   type        = string
-  default     = "tonyqiu123/wat2do-ui"
+  default     = "wat2dov2/wat2do-ui"
 }
 
 variable "github_production_environment" {
