@@ -42,7 +42,7 @@ jobs:
         run: |
           export GH_TOKEN="${RUNNER_CHECK_TOKEN:-$DEFAULT_GH_TOKEN}"
           status=$(gh api "repos/${{ github.repository }}/actions/runners" --jq '.runners[] | select(.name == "wat2do-mac-mini" or .name == "wat2do-scraper" or (.labels[]?.name == "wat2do-scraper")) | .status' 2>/dev/null || true)
-          if [[ "$status" == "online" ]]; then
+          if echo "$status" | grep -q "online"; then
             echo "Mac mini runner is online."
             echo "runner=wat2do-scraper" >> "$GITHUB_OUTPUT"
           else

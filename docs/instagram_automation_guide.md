@@ -40,6 +40,39 @@ The printed properties must not contain `creates session`.
 Run the `Instagram digest session health` workflow after this check, because an interactive Keychain read does not exercise the Actions security context.
 The standard runner service installer can recreate `SessionCreate=true`, so repeat this verification after every service reinstall.
 
+## Running Multiple Concurrent Runners on Mac mini
+
+A single self-hosted runner instance only executes one job at a time.
+To process multiple incoming notifications concurrently, register additional runner instances (e.g. `actions-runner-wat2do-2`) on the same Mac mini.
+
+1. Generate a registration token using the GitHub CLI or repository settings:
+```sh
+gh api -X POST repos/wat2dov2/wat2do-ui/actions/runners/registration-token --jq .token
+```
+
+2. Create a new runner folder, copy binaries from the existing runner, and configure it:
+```sh
+mkdir -p ~/actions-runner-wat2do-2 && cd ~/actions-runner-wat2do-2
+cp -R ~/actions-runner-wat2do/bin ~/actions-runner-wat2do/externals ~/actions-runner-wat2do/config.sh ~/actions-runner-wat2do/run.sh ~/actions-runner-wat2do/env.sh ~/actions-runner-wat2do/svc.sh ./
+./config.sh --url https://github.com/wat2dov2/wat2do-ui \
+  --token <REGISTRATION_TOKEN> \
+  --name wat2do-mac-mini-2 \
+  --labels wat2do-scraper,macOS,ARM64 \
+  --unattended
+```
+
+3. Install the LaunchAgent service and remove `SessionCreate`:
+```sh
+./svc.sh install
+runner_plist=~/Library/LaunchAgents/actions.runner.wat2dov2-wat2do-ui.wat2do-mac-mini-2.plist
+if /usr/libexec/PlistBuddy -c 'Print :SessionCreate' "$runner_plist" >/dev/null 2>&1; then
+  /usr/libexec/PlistBuddy -c 'Delete :SessionCreate' "$runner_plist"
+fi
+/usr/bin/plutil -lint "$runner_plist"
+/bin/launchctl bootstrap "gui/$(id -u)" "$runner_plist"
+```
+Repeat for additional slots (`wat2do-mac-mini-3`, etc.) as needed.
+
 # List schools in the spreadsheet
 cd backend && python scripts/follow_from_xlsx.py --list-schools
 
