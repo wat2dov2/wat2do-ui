@@ -519,7 +519,16 @@ def main() -> int:
         log.info("Processed %d exact Instagram media target(s).", processed_count)
     else:
         log.info("No pending Instagram media remain for this notification.")
-    return 1 if digest_session_failed or materialization_incomplete else processing_status
+
+    if digest_session_failed or materialization_incomplete:
+        print(
+            f"::error::Instagram session failed or is missing on the Mac mini. "
+            f"Only recovered {len(media)} out of {notification.total_media_count or 'unknown'} posts.",
+            file=sys.stderr,
+        )
+        return 1
+
+    return processing_status
 
 
 if __name__ == "__main__":
