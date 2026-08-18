@@ -3,9 +3,13 @@ data "aws_partition" "current" {}
 data "aws_caller_identity" "current" {}
 
 resource "aws_iam_openid_connect_provider" "github_actions" {
-  url             = "https://token.actions.githubusercontent.com"
-  client_id_list  = ["sts.amazonaws.com"]
-  thumbprint_list = ["ab9d0263244dd0326eb67015705a667e79cfe998"]
+  url            = "https://token.actions.githubusercontent.com"
+  client_id_list = ["sts.amazonaws.com", "https://github.com/wat2dov2/wat2do-ui", "https://github.com/wat2dov2"]
+  thumbprint_list = [
+    "6938fd4d98bab03faadb97b34396831e3780aea1",
+    "1c58a3a8518e8759bf075b76b750d4f8d514f826",
+    "ab9d0263244dd0326eb67015705a667e79cfe998",
+  ]
 }
 
 locals {
@@ -25,13 +29,17 @@ data "aws_iam_policy_document" "github_production_assume_role" {
     condition {
       test     = "StringEquals"
       variable = "${local.github_oidc_condition_prefix}:aud"
-      values   = ["sts.amazonaws.com"]
+      values   = ["sts.amazonaws.com", "https://github.com/wat2dov2/wat2do-ui", "https://github.com/wat2dov2"]
     }
 
     condition {
       test     = "StringLike"
       variable = "${local.github_oidc_condition_prefix}:sub"
-      values   = ["repo:${var.github_repository}:*"]
+      values = [
+        "repo:${var.github_repository}:environment:${var.github_production_environment}",
+        "repo:${var.github_repository}:ref:refs/heads/main",
+        "repo:${var.github_repository}:*",
+      ]
     }
   }
 }
