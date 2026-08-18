@@ -147,6 +147,29 @@ jobs:
           test -n "$AWS_ACCOUNT_ID"
           test -n "$AWS_DEPLOY_ROLE_ARN"
 
+      - name: Debug GitHub OIDC token claims
+        run: |
+          token_resp=$(curl -s -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=sts.amazonaws.com")
+          jwt=$(echo "$token_resp" | jq -r '.value')
+          python3 -c "
+          import sys, json, base64
+          jwt = '$jwt'
+          if '.' in jwt:
+              payload = jwt.split('.')[1]
+              payload += '=' * (-len(payload) % 4)
+              claims = json.loads(base64.b64decode(payload))
+              print('=== OIDC CLAIMS ===')
+              for k, v in sorted(claims.items()):
+                  print(f'{k}: {v}')
+          else:
+              print('Could not parse JWT:', jwt)
+          "
+          aws sts assume-role-with-web-identity \
+            --role-arn "$AWS_DEPLOY_ROLE_ARN" \
+            --role-session-name "debug-session" \
+            --web-identity-token "$jwt" \
+            --region ca-central-1 || true
+
       - name: Configure AWS credentials with GitHub OIDC
         uses: aws-actions/configure-aws-credentials@v4
         with:
