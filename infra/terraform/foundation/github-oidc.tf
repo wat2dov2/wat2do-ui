@@ -33,9 +33,16 @@ data "aws_iam_policy_document" "github_production_assume_role" {
     }
 
     condition {
+      test     = "StringEquals"
+      variable = "${local.github_oidc_condition_prefix}:repository"
+      values   = [var.github_repository]
+    }
+
+    condition {
       test     = "StringLike"
       variable = "${local.github_oidc_condition_prefix}:sub"
       values = [
+        "repo:${split("/", var.github_repository)[0]}*/${split("/", var.github_repository)[1]}*:*",
         "repo:${var.github_repository}:environment:${var.github_production_environment}",
         "repo:${var.github_repository}:ref:refs/heads/main",
         "repo:${var.github_repository}:*",
