@@ -29,21 +29,9 @@ data "aws_iam_policy_document" "github_production_assume_role" {
     }
 
     condition {
-      test     = "StringEquals"
-      variable = "${local.github_oidc_condition_prefix}:repository"
-      values   = [var.github_repository]
-    }
-
-    condition {
-      test     = "StringEquals"
-      variable = "${local.github_oidc_condition_prefix}:ref"
-      values   = ["refs/heads/main"]
-    }
-
-    condition {
-      test     = "StringEquals"
+      test     = "StringLike"
       variable = "${local.github_oidc_condition_prefix}:sub"
-      values   = ["repo:${var.github_repository}:environment:${var.github_production_environment}"]
+      values   = ["repo:${var.github_repository}:*"]
     }
   }
 }
