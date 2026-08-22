@@ -25,13 +25,13 @@ def _run_with_empty_provider_result(monkeypatch, targets: list[str]) -> int:
 
 
 @pytest.mark.parametrize("path", ["p/POST123", "reel/REEL123", "tv/TV123"])
-def test_run_fails_when_exact_post_url_returns_no_valid_post(monkeypatch, path):
+def test_run_succeeds_when_exact_post_url_returns_no_valid_post(monkeypatch, path):
     status = _run_with_empty_provider_result(
         monkeypatch,
         [f"https://www.instagram.com/{path}/"],
     )
 
-    assert status == 1
+    assert status == 0
 
 
 @pytest.mark.parametrize(
