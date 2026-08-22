@@ -47,6 +47,6 @@ verify-out/
 frontend/test-results/
 frontend/playwright-report/
 
-# Instagram automation runtime state
+# Archived Instagram automation runtime state
 progress_*.json
 debug_dumps/

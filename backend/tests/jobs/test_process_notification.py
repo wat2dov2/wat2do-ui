@@ -3,9 +3,7 @@ import logging
 from types import SimpleNamespace
 
 from jobs import process_notification
-from services.instagram_digest.client import DigestResult
-from services.instagram_digest.ledger import MediaClaim
-from services.instagram_digest.sessions import SessionHealthStatus, SessionStoreError
+from services.instagram_notifications.ledger import MediaClaim
 
 RECIPIENT_ID = "12342599092"
 PUSH_ID = "push-123"
@@ -119,90 +117,35 @@ def test_media_notification_processes_ordered_unique_exact_claims(monkeypatch) -
     ]
 
 
-def test_digest_merges_explicit_and_paginated_media_in_stable_order(monkeypatch) -> None:
-    explicit_id = "123456789"
-    continuation_id = "987654321"
-    _set_payload(
-        monkeypatch,
-        _actionable_payload(
-            "clips_home?"
-            f"media_list={explicit_id}_1&cache_ent_id=cache-123&"
-            "total_non_mmc_media_count=2"
-        ),
-    )
-    _install_school(monkeypatch)
-    record_calls, _claim_calls = _capture_ledger(monkeypatch)
-    monkeypatch.setattr(
-        process_notification.KeychainSessionStore,
-        "load",
-        lambda _self, recipient_id: SimpleNamespace(recipient=recipient_id),
-    )
-    monkeypatch.setattr(
-        process_notification.KeychainSessionStore,
-        "store",
-        lambda _self, session: None,
-    )
-
-    class FakeDigestClient:
-        def __init__(self, session, **kwargs):
-            assert session.recipient == RECIPIENT_ID
-            assert kwargs["operation_name"] == "SubscriptionDigestFeedQuery"
-            assert kwargs["web_app_id"] == "936619743392459"
-
-        def fetch_media(self, cache_ent_id):
-            assert cache_ent_id == "cache-123"
-            return DigestResult(
-                media=(
-                    {"pk": explicit_id, "id": f"{explicit_id}_44"},
-                    {"pk": int(continuation_id)},
-                ),
-                page_count=2,
-                session=SimpleNamespace(intended_recipient_id=RECIPIENT_ID),
-            )
-
-    monkeypatch.setattr(process_notification, "InstagramDigestClient", FakeDigestClient)
-    monkeypatch.setattr(process_notification, "run", lambda **_kwargs: 0)
-    monkeypatch.setattr(process_notification, "mark_media_succeeded", lambda **_kwargs: True)
-
-    assert process_notification.main() == 0
-
-    assert [item.media_id for item in record_calls[0]["media"]] == [
-        explicit_id,
-        continuation_id,
-    ]
-    assert record_calls[0]["cache_ent_id"] == "cache-123"
-    assert record_calls[0]["total_non_mmc_media_count"] == 2
-
-
-def test_complete_explicit_digest_skips_session_expansion(monkeypatch) -> None:
+def test_digest_processes_only_explicit_media_and_keeps_metadata(
+    monkeypatch,
+    caplog,
+) -> None:
     first_media_id = "123456789"
     second_media_id = "987654321"
     _set_payload(
         monkeypatch,
         _actionable_payload(
             "clips_home?"
-            f"media_list={first_media_id},{second_media_id}&cache_ent_id=cache-123&"
-            "total_non_mmc_media_count=2"
+            f"media_list={first_media_id}_1,{second_media_id}_2&cache_ent_id=cache-123&"
+            "total_non_mmc_media_count=9"
         ),
     )
     _install_school(monkeypatch)
     record_calls, _claim_calls = _capture_ledger(monkeypatch)
-    monkeypatch.setattr(
-        process_notification.KeychainSessionStore,
-        "load",
-        lambda _self, _recipient_id: (_ for _ in ()).throw(
-            AssertionError("complete explicit media must not load a session")
-        ),
-    )
     monkeypatch.setattr(process_notification, "run", lambda **_kwargs: 0)
     monkeypatch.setattr(process_notification, "mark_media_succeeded", lambda **_kwargs: True)
 
-    assert process_notification.main() == 0
+    with caplog.at_level(logging.WARNING):
+        assert process_notification.main() == 0
 
     assert [item.media_id for item in record_calls[0]["media"]] == [
         first_media_id,
         second_media_id,
     ]
+    assert record_calls[0]["cache_ent_id"] == "cache-123"
+    assert record_calls[0]["total_non_mmc_media_count"] == 9
+    assert "exposed 2 of 9 advertised media items" in caplog.text
 
 
 def test_duplicate_delivery_with_no_claims_does_not_scrape(monkeypatch) -> None:
@@ -275,7 +218,7 @@ def test_each_media_is_claimed_only_immediately_before_its_scrape(monkeypatch) -
     ]
 
 
-def test_incomplete_digest_is_recorded_and_reported_honestly(
+def test_incomplete_digest_is_recorded_and_processes_explicit_media(
     monkeypatch,
     caplog,
 ) -> None:
@@ -288,10 +231,10 @@ def test_incomplete_digest_is_recorded_and_reported_honestly(
     monkeypatch.setattr(process_notification, "run", lambda **_kwargs: 0)
     monkeypatch.setattr(process_notification, "mark_media_succeeded", lambda **_kwargs: True)
 
-    with caplog.at_level(logging.ERROR):
-        assert process_notification.main() == 1
+    with caplog.at_level(logging.WARNING):
+        assert process_notification.main() == 0
 
-    assert "advertised=4 materialized=1" in caplog.text
+    assert "exposed 1 of 4 advertised media items" in caplog.text
     assert record_calls[0]["total_non_mmc_media_count"] == 4
 
 
@@ -335,18 +278,18 @@ def test_unrelated_notification_with_media_shape_is_a_noop(monkeypatch) -> None:
     assert process_notification.main() == 0
 
 
-def test_actionable_digest_without_recoverable_media_fails(monkeypatch, caplog) -> None:
+def test_actionable_digest_without_explicit_media_fails(monkeypatch, caplog) -> None:
     _set_payload(
         monkeypatch,
         _actionable_payload(
-            "clips_home?total_non_mmc_media_count=4",
+            "clips_home?cache_ent_id=cache-123&total_non_mmc_media_count=4",
         ),
     )
 
     with caplog.at_level(logging.ERROR):
         assert process_notification.main() == 1
 
-    assert "no recoverable Instagram media" in caplog.text
+    assert "no explicit Instagram media" in caplog.text
 
 
 def test_invalid_media_notification_fails_without_logging_identifier(
@@ -364,183 +307,6 @@ def test_invalid_media_notification_fails_without_logging_identifier(
 
     assert "invalid media ID" in caplog.text
     assert sensitive_marker not in caplog.text
-
-
-def test_digest_session_failure_writes_sanitized_school_report(
-    monkeypatch,
-    caplog,
-    tmp_path,
-) -> None:
-    sensitive_marker = "secret-upstream-detail"
-    _set_payload(
-        monkeypatch,
-        _actionable_payload("clips_home?cache_ent_id=cache-123"),
-    )
-    _install_school(monkeypatch)
-    report_path = tmp_path / "session-failure.json"
-    monkeypatch.setenv("SESSION_FAILURE_REPORT_PATH", str(report_path))
-
-    def fail_load(_self, _recipient_id):
-        raise SessionStoreError(
-            SessionHealthStatus.REAUTHORIZATION_REQUIRED,
-            sensitive_marker,
-        )
-
-    monkeypatch.setattr(process_notification.KeychainSessionStore, "load", fail_load)
-
-    with caplog.at_level(logging.ERROR):
-        assert process_notification.main() == 1
-
-    assert "school=ubc status=reauthorization_required" in caplog.text
-    assert sensitive_marker not in caplog.text
-    report_text = report_path.read_text(encoding="utf-8")
-    report = json.loads(report_text)
-    assert report == {
-        "healthy": False,
-        "issues": [],
-        "sessions": [
-            {
-                "account_username": None,
-                "intended_recipient_id": RECIPIENT_ID,
-                "issue": "invalid_session",
-                "school": "ubc",
-                "status": "reauthorization_required",
-            }
-        ],
-    }
-    assert sensitive_marker not in report_text
-
-
-def test_digest_session_failure_processes_explicit_media_before_failing(
-    monkeypatch,
-    caplog,
-    tmp_path,
-) -> None:
-    explicit_media_id = "123456789"
-    _set_payload(
-        monkeypatch,
-        _actionable_payload(
-            "clips_home?"
-            f"media_id={explicit_media_id}&cache_ent_id=cache-123&"
-            "total_non_mmc_media_count=2"
-        ),
-    )
-    _install_school(monkeypatch)
-    report_path = tmp_path / "session-failure.json"
-    monkeypatch.setenv("SESSION_FAILURE_REPORT_PATH", str(report_path))
-    record_calls, _claim_calls = _capture_ledger(monkeypatch)
-    scrape_calls = []
-
-    def fail_load(_self, _recipient_id):
-        raise SessionStoreError(SessionHealthStatus.MISSING, "sensitive detail")
-
-    monkeypatch.setattr(process_notification.KeychainSessionStore, "load", fail_load)
-    monkeypatch.setattr(
-        process_notification,
-        "run",
-        lambda **kwargs: scrape_calls.append(kwargs) or 0,
-    )
-    monkeypatch.setattr(process_notification, "mark_media_succeeded", lambda **_kwargs: True)
-
-    with caplog.at_level(logging.ERROR):
-        assert process_notification.main() == 1
-
-    assert [item.media_id for item in record_calls[0]["media"]] == [explicit_media_id]
-    assert [call["targets"] for call in scrape_calls] == [[record_calls[0]["media"][0].source_url]]
-    assert "school=ubc status=missing" in caplog.text
-    assert "advertised=2 materialized=1" in caplog.text
-    assert "sensitive detail" not in caplog.text
-    report = json.loads(report_path.read_text(encoding="utf-8"))
-    assert report["sessions"][0]["issue"] == "missing_session"
-
-
-def test_digest_session_failure_without_total_does_not_record_partial_media(
-    monkeypatch,
-) -> None:
-    _set_payload(
-        monkeypatch,
-        _actionable_payload(
-            "clips_home?media_id=123456789&cache_ent_id=cache-123",
-        ),
-    )
-    _install_school(monkeypatch)
-
-    def fail_load(_self, _recipient_id):
-        raise SessionStoreError(SessionHealthStatus.MISSING, "sensitive detail")
-
-    monkeypatch.setattr(process_notification.KeychainSessionStore, "load", fail_load)
-    monkeypatch.setattr(
-        process_notification,
-        "record_notification_media",
-        lambda **_kwargs: (_ for _ in ()).throw(
-            AssertionError("unknown partial media must not be recorded as complete")
-        ),
-    )
-
-    assert process_notification.main() == 1
-
-
-def test_digest_session_persistence_failure_keeps_materialized_media(
-    monkeypatch,
-    caplog,
-    tmp_path,
-) -> None:
-    explicit_media_id = "123456789"
-    continuation_media_id = "987654321"
-    _set_payload(
-        monkeypatch,
-        _actionable_payload(
-            "clips_home?"
-            f"media_id={explicit_media_id}&cache_ent_id=cache-123&"
-            "total_non_mmc_media_count=2"
-        ),
-    )
-    _install_school(monkeypatch)
-    report_path = tmp_path / "session-failure.json"
-    monkeypatch.setenv("SESSION_FAILURE_REPORT_PATH", str(report_path))
-    record_calls, _claim_calls = _capture_ledger(monkeypatch)
-    scrape_calls = []
-    monkeypatch.setattr(
-        process_notification.KeychainSessionStore,
-        "load",
-        lambda _self, recipient_id: SimpleNamespace(recipient=recipient_id),
-    )
-
-    digest_result = DigestResult(
-        media=({"pk": continuation_media_id},),
-        page_count=2,
-        session=SimpleNamespace(intended_recipient_id=RECIPIENT_ID),
-    )
-    monkeypatch.setattr(
-        process_notification,
-        "InstagramDigestClient",
-        lambda *_args, **_kwargs: SimpleNamespace(fetch_media=lambda _cache_ent_id: digest_result),
-    )
-
-    def fail_store(_self, _session):
-        raise SessionStoreError(SessionHealthStatus.TRANSIENT_ERROR, "sensitive detail")
-
-    monkeypatch.setattr(process_notification.KeychainSessionStore, "store", fail_store)
-    monkeypatch.setattr(
-        process_notification,
-        "run",
-        lambda **kwargs: scrape_calls.append(kwargs) or 0,
-    )
-    monkeypatch.setattr(process_notification, "mark_media_succeeded", lambda **_kwargs: True)
-
-    with caplog.at_level(logging.ERROR):
-        assert process_notification.main() == 1
-
-    assert [item.media_id for item in record_calls[0]["media"]] == [
-        explicit_media_id,
-        continuation_media_id,
-    ]
-    assert len(scrape_calls) == 2
-    assert "school=ubc status=transient_error" in caplog.text
-    assert "materialization is incomplete" not in caplog.text
-    assert "sensitive detail" not in caplog.text
-    report = json.loads(report_path.read_text(encoding="utf-8"))
-    assert report["sessions"][0]["issue"] == "persistence_failed"
 
 
 def test_actionable_notification_requires_push_id(monkeypatch, caplog) -> None:

@@ -49,7 +49,7 @@ Do not introduce a second source of truth.
 | Instagram token encryption key | Ignored backend environment file and production secret manager | Never store it in a controlbox file, migration, document, or task output. |
 | Notification-to-school routing | `public.schools.recipient_id` | This is the identifier observed from the Android Automate notification payload. |
 | Single-account scrape school resolution | `backend/services/scraper/single_user.py` | It resolves `INTENDED_RECIPIENT_ID` through Supabase and already accepts database-added schools. |
-| Organization following targets | Supabase organizations for the school | The current `follow_from_xlsx.py` path is legacy and must be replaced or consolidated before a database-first launch. |
+| Organization following targets | Supabase organizations for the school | Follow the verified target set through the logged-in Android account while browser-cookie automation is paused. |
 | Bell notification state | Instagram Android application state | `automate_bell_notifications.py` drives the already-open consolidated list and does not read the spreadsheet. |
 
 ## 3. Important distinctions and corrections
@@ -94,11 +94,11 @@ The single-user scraper consumes an Instagram post or username and resolves its 
 
 It does not use the Meta publishing token or publishing user ID.
 
-### 3.5 Only the follow script is currently spreadsheet-backed
+### 3.5 Browser-cookie follow automation is paused
 
-`backend/scripts/follow_from_xlsx.py` currently reads `backend/services/scraper/wat2do-clubs.xlsx` and therefore conflicts with the desired database-first organization workflow.
+Do not extract an Instagram browser cookie or create a replacement browser-session follow script.
 
-Before using it for a new school, consolidate it into the database-backed organization path so it selects distinct verified `organizations.ig` handles for one `schools.slug`.
+Until an approved database-backed Android automation path exists, follow the verified Supabase target set through the logged-in Instagram Android application.
 
 `backend/scripts/automate_bell_notifications.py` does not read the spreadsheet.
 
@@ -121,7 +121,7 @@ These rules are hard gates.
 9. A local Instagram app may retain multiple independent account sessions, but that is not permission to join those accounts in Accounts Center.
 10. Treat every Instagram account limit, security challenge, suspension, or identity check as a real blocker that must be recorded.
 11. Do not bypass Instagram or Meta security controls.
-12. Store browser sessions only through the recipient-scoped macOS Keychain command and delete temporary token files after the operational step is complete.
+12. Do not extract, store, or automate with Instagram browser-session cookies.
 13. Any token that has appeared in chat, Linear, shell output, a screenshot, or a tracked file must be revoked and regenerated before use.
 
 The legacy WAT-154 Linear issue contains a plaintext token.
@@ -234,7 +234,6 @@ At minimum, inspect the following current sources because their structure may ha
 - `backend/core/controlbox.py` and its tests.
 - `backend/scripts/import_instagram_tokens.py`.
 - `backend/services/instagram_publishing/credentials.py`.
-- `backend/scripts/follow_from_xlsx.py` or its database-backed replacement.
 - `backend/scripts/automate_bell_notifications.py`.
 - `backend/services/scraper/single_user.py`.
 - `.github/workflows/process-single-user.yml`.
@@ -417,7 +416,6 @@ The affected legacy scripts currently include:
 - `backend/scripts/search_missing_instagrams.py`
 - `backend/scripts/ig_search_shards.py`
 - `backend/scripts/import_master_clubs_xlsx.py`
-- `backend/scripts/follow_from_xlsx.py`
 
 Do not create parallel database and spreadsheet import implementations.
 
@@ -876,68 +874,25 @@ order by instagram_handle;
 
 The actual implementation should normalize handles through one shared helper rather than relying on this illustrative SQL alone.
 
-### 14.1 Obtain a browser session securely
+### 14.1 Confirm the Android account identity
 
-Use an interactive terminal logged in as the same macOS account that owns the self-hosted `wat2do-scraper` runner.
+Open Instagram on the assigned emulator and confirm the active account is exactly `<schoolslug>.wat2do.io`.
 
-The current runner account is `tonyqiu`.
-Confirm that `whoami` matches the owner of the running `Runner.Listener` process before storing the session.
+Stop on an authentication loss, security challenge, soft block, or unexpected account identity.
 
-macOS Keychain is user-scoped, so a session stored under another account is invisible to the notification and health workflows.
+Do not extract a browser cookie as a workaround.
 
-The runner LaunchAgent must also share that account's existing GUI security audit session.
-Its plist must not contain `SessionCreate=true`, because an isolated audit session cannot unlock the login Keychain in a noninteractive workflow.
-Follow the runner verification and restart procedure in `docs/instagram_automation_guide.md` after every runner installation or service reinstall.
+### 14.2 Reconcile and follow the Supabase target set
 
-Log into the exact chapter account on desktop Instagram.
+Use the Supabase query above as the authoritative target list.
 
-Open browser developer tools, inspect Instagram cookies, and copy the current `sessionid` value.
+Open each normalized handle in the Instagram Android application, confirm the exact profile identity, and follow it from the chapter account.
 
-Also capture the exact browser `navigator.userAgent` because Instagram may bind the session to it.
+Record completed, invalid, renamed, missing, and blocked handles in the onboarding evidence packet so the operation can resume without repeating completed follows.
 
-Do not paste either value into chat, task notes, source code, screenshots, or a command that will persist in shell history.
+Do not retry a refusal aggressively or mutate a stale organization handle without revalidating it through the normal reviewed organization update path.
 
-Store both values through hidden prompts, using the intended recipient ID already assigned to the school:
-
-```sh
-cd backend
-python scripts/manage_instagram_digest_sessions.py store <intended-recipient-id>
-```
-
-The command remotely validates the session identity before writing the recipient-scoped Keychain item.
-
-### 14.2 Dry run and identity check
-
-Run the database-backed follow command in dry-run mode first.
-
-It must print the authenticated Instagram username, target school, total database handles, already-completed handles, invalid handles, and remaining handles without printing the session cookie.
-
-Stop if the authenticated username is not `<schoolslug>.wat2do.io`.
-
-Compare the dry-run count with the database query count.
-
-### 14.3 Follow with pacing and resumability
-
-Run the follow operation only after the dry run matches the intended school and account.
-
-Preserve the existing safe behavior from `follow_from_xlsx.py`:
-
-- Resolve each normalized handle to an exact Instagram user ID.
-- Follow only that resolved account.
-- Save progress after every successful follow.
-- Pace requests with the existing randomized delay.
-- Retry only documented transient failures.
-- Stop cleanly on authentication loss, a security challenge, or repeated soft blocks.
-- Resume from saved progress instead of starting over.
-- Never turn an Instagram refusal into an aggressive retry loop.
-
-When Instagram reports a deleted or renamed organization account, do not mutate the old spreadsheet.
-
-Revalidate the organization against official sources, then update or clear the database handle through the normal reviewed organization update path.
-
-The follow command persists rotated cookies back to the same Keychain item after every successful follow.
-
-No plaintext session file should exist before, during, or after the run.
+Compare the final followed count with the distinct verified Supabase handle count before enabling notifications.
 
 ## 15. Phase K: Enable post notifications on Android
 
@@ -1307,10 +1262,9 @@ The final handoff must contain no secrets and must include:
 ### Following, notifications, and Automate
 
 - [ ] Follow target set read from Supabase.
-- [ ] Desktop session identity confirmed as the chapter account.
-- [ ] Follow dry run matched the database count.
+- [ ] Android account identity confirmed as the chapter account.
 - [ ] All verified handles followed or reconciled.
-- [ ] Recipient-scoped Keychain session stored under the self-hosted runner's macOS account and no plaintext session file created.
+- [ ] Followed count reconciled against the database target count.
 - [ ] Consolidated bell list opened or blocker recorded.
 - [ ] Post notifications set to `All` and count spot-checked.
 - [ ] Account logged into the dedicated Automate phone as a separate login.

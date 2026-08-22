@@ -6,7 +6,6 @@ on:
       - CI/CD
       - Daily Directory Scrape
       - Daily Instagram maintenance and publishing drafts
-      - Instagram digest session health
       - Monthly promoter poster payouts
       - Nightly recommendation compute
       - Process Notifications
@@ -16,7 +15,6 @@ on:
     types: [completed]
 
 permissions:
-  actions: read
   contents: read
 
 jobs:
@@ -32,17 +30,6 @@ jobs:
           sparse-checkout: backend/controlbox/workflow_failure_alerts.json
           sparse-checkout-cone-mode: false
 
-      - name: Download sanitized Instagram session context
-        if: ${{ github.event.workflow_run.name == 'Instagram digest session health' || github.event.workflow_run.name == 'Process Notifications' }}
-        continue-on-error: true
-        uses: actions/download-artifact@v4
-        with:
-          name: instagram-digest-session-failures
-          path: ${{ runner.temp }}/instagram-digest-session-failures
-          github-token: ${{ github.token }}
-          repository: ${{ github.repository }}
-          run-id: ${{ github.event.workflow_run.id }}
-
       - name: Notify Wat2Do administrators
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_DEBUG_WEBHOOK_URL }}
@@ -55,121 +42,6 @@ jobs:
           COMPLETED_AT: ${{ github.event.workflow_run.updated_at }}
         run: |
           test -n "$DISCORD_WEBHOOK_URL"
-          session_failures=""
-          session_report="$RUNNER_TEMP/instagram-digest-session-failures/instagram-digest-session-failures.json"
-          if [[ ( "$WORKFLOW_NAME" == "Instagram digest session health" \
-            || "$WORKFLOW_NAME" == "Process Notifications" ) \
-            && -f "$session_report" \
-            && ! -L "$session_report" ]]; then
-            report_bytes="$(wc -c < "$session_report")"
-            if [[ "$report_bytes" =~ ^[0-9]+$ ]] && (( report_bytes <= 65536 )); then
-              session_failures="$(jq -er '
-                def global_issue:
-                  . == "audit_failed"
-                  or . == "routing_lookup_failed"
-                  or . == "keychain_index_invalid";
-                def session_issue:
-                  . == "invalid_routing"
-                  or . == "duplicate_routing"
-                  or . == "missing_session"
-                  or . == "unindexed_session"
-                  or . == "orphan_session"
-                  or . == "invalid_session"
-                  or . == "remote_check_failed"
-                  or . == "persistence_failed";
-                def valid_session:
-                  type == "object"
-                  and keys == [
-                    "account_username",
-                    "intended_recipient_id",
-                    "issue",
-                    "school",
-                    "status"
-                  ]
-                  and (
-                    .school == null
-                    or (
-                      (.school | type) == "string"
-                      and (.school | test("^[a-z0-9][a-z0-9-]{0,63}$"))
-                    )
-                  )
-                  and (
-                    .account_username == null
-                    or (
-                      (.account_username | type) == "string"
-                      and (.account_username | test("^[a-z0-9._]{1,30}$"))
-                    )
-                  )
-                  and (
-                    (.intended_recipient_id | type) == "string"
-                    and (
-                      (.intended_recipient_id | test("^[1-9][0-9]{0,31}$"))
-                      or (
-                        .issue == "invalid_routing"
-                        and (.intended_recipient_id | test("^[A-Za-z0-9._:-]{0,64}$"))
-                      )
-                    )
-                  )
-                  and (
-                    if .status == "healthy"
-                    then .issue == null
-                    else
-                      (
-                        .status == "missing"
-                        or .status == "reauthorization_required"
-                        or .status == "transient_error"
-                        or .status == "configuration_error"
-                      )
-                      and (.issue | session_issue)
-                    end
-                  );
-                if
-                  type == "object"
-                  and keys == ["healthy", "issues", "sessions"]
-                  and .healthy == false
-                  and (.issues | type) == "array"
-                  and (.issues | length) <= 10
-                  and all(.issues[]; type == "string" and global_issue)
-                  and (.sessions | type) == "array"
-                  and (.sessions | length) <= 100
-                  and all(.sessions[]; valid_session)
-                  and (
-                    (.issues | length) > 0
-                    or any(.sessions[]; .status != "healthy")
-                  )
-                then
-                  (
-                    [.issues[] | "audit: " + .]
-                    + [
-                        .sessions[]
-                        | select(.status != "healthy")
-                        | (
-                            (.school // "unmapped")
-                            + " / "
-                            + (
-                                if .account_username != null
-                                then "@" + .account_username
-                                elif .intended_recipient_id != ""
-                                then "recipient " + .intended_recipient_id
-                                else "invalid recipient"
-                                end
-                              )
-                            + ": "
-                            + .status
-                            + " ("
-                            + .issue
-                            + ")"
-                          )
-                      ]
-                  )
-                  | join("\n")
-                  | .[0:1024]
-                else
-                  error("invalid Instagram session health report")
-                end
-              ' "$session_report" 2>/dev/null || true)"
-            fi
-          fi
           role_ids="$(jq -cer '
             .discord_admin_role_ids
             | if length > 0 and all(.[]; type == "string" and test("^[0-9]{17,20}$"))
@@ -187,7 +59,6 @@ jobs:
             --arg event "$TRIGGER_EVENT" \
             --arg actor "$RUN_ACTOR" \
             --arg completed_at "$COMPLETED_AT" \
-            --arg session_failures "$session_failures" \
             --argjson roles "$role_ids" \
             '{
               content: $content,
@@ -201,21 +72,13 @@ jobs:
                 title: "GitHub Actions workflow failed",
                 url: $run_url,
                 color: 15158332,
-                fields: (
-                  [
-                    {name: "Workflow", value: ($workflow_name[0:1024]), inline: true},
-                    {name: "Branch", value: ($branch[0:1024]), inline: true},
-                    {name: "Event", value: ($event[0:1024]), inline: true},
-                    {name: "Run", value: ($run_title[0:1024])},
-                    {name: "Triggered by", value: ($actor[0:1024]), inline: true}
-                  ]
-                  + (
-                      if $session_failures == ""
-                      then []
-                      else [{name: "Affected sessions", value: $session_failures}]
-                      end
-                    )
-                ),
+                fields: [
+                  {name: "Workflow", value: ($workflow_name[0:1024]), inline: true},
+                  {name: "Branch", value: ($branch[0:1024]), inline: true},
+                  {name: "Event", value: ($event[0:1024]), inline: true},
+                  {name: "Run", value: ($run_title[0:1024])},
+                  {name: "Triggered by", value: ($actor[0:1024]), inline: true}
+                ],
                 timestamp: $completed_at
               }]
             }')"

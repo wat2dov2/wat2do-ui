@@ -54,7 +54,7 @@ def _lookup_username(user_id: str) -> str | None:
     request = urllib.request.Request(
         _IG_USER_INFO.format(user_id=user_id),
         headers={
-            "X-IG-App-ID": controlbox.instagram_digest.web_app_id,
+            "X-IG-App-ID": controlbox.scraping.instagram_web_app_id,
             "User-Agent": "Mozilla/5.0",
         },
     )

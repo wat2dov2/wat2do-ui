@@ -1,6 +1,6 @@
 import pytest
 
-from services.instagram_digest import ledger
+from services.instagram_notifications import ledger
 
 
 def _record(**overrides):
@@ -27,7 +27,7 @@ def _record(**overrides):
 
 
 def test_record_notification_media_records_metadata_and_returns_id(fake_sb, patch_sb):
-    patch_sb("services.instagram_digest.ledger")
+    patch_sb("services.instagram_notifications.ledger")
     fake_sb.set_response(data="notification-1")
 
     assert _record() == "notification-1"
@@ -55,7 +55,7 @@ def test_record_notification_media_records_metadata_and_returns_id(fake_sb, patc
 
 
 def test_record_notification_media_deduplicates_identical_media(fake_sb, patch_sb):
-    patch_sb("services.instagram_digest.ledger")
+    patch_sb("services.instagram_notifications.ledger")
     fake_sb.set_response(data="notification-1")
 
     result = _record(
@@ -73,7 +73,7 @@ def test_record_notification_media_deduplicates_identical_media(fake_sb, patch_s
 
 
 def test_record_notification_media_records_empty_materialization(fake_sb, patch_sb):
-    patch_sb("services.instagram_digest.ledger")
+    patch_sb("services.instagram_notifications.ledger")
     fake_sb.set_response(data="notification-1")
 
     assert _record(cache_ent_id="   ", media=[]) == "notification-1"
@@ -83,7 +83,7 @@ def test_record_notification_media_records_empty_materialization(fake_sb, patch_
 
 
 def test_record_notification_media_rejects_conflicting_duplicate_urls(fake_sb, patch_sb):
-    patch_sb("services.instagram_digest.ledger")
+    patch_sb("services.instagram_notifications.ledger")
 
     with pytest.raises(ValueError, match="multiple source URLs"):
         _record(
@@ -97,7 +97,7 @@ def test_record_notification_media_rejects_conflicting_duplicate_urls(fake_sb, p
 
 
 def test_claim_next_notification_media_returns_one_irreversible_claim(fake_sb, patch_sb):
-    patch_sb("services.instagram_digest.ledger")
+    patch_sb("services.instagram_notifications.ledger")
     fake_sb.set_response(
         data=[
             {
@@ -129,7 +129,7 @@ def test_claim_next_notification_media_returns_none_when_no_pending_rows(
     fake_sb,
     patch_sb,
 ):
-    patch_sb("services.instagram_digest.ledger")
+    patch_sb("services.instagram_notifications.ledger")
 
     assert (
         ledger.claim_next_notification_media(
@@ -141,7 +141,7 @@ def test_claim_next_notification_media_returns_none_when_no_pending_rows(
 
 
 def test_mark_media_succeeded_uses_token_guarded_rpc(fake_sb, patch_sb):
-    patch_sb("services.instagram_digest.ledger")
+    patch_sb("services.instagram_notifications.ledger")
     fake_sb.set_response(data=True)
 
     assert ledger.mark_media_succeeded(media_row_id="media-row-1", claim_token="claim-1")
@@ -157,7 +157,7 @@ def test_mark_media_succeeded_uses_token_guarded_rpc(fake_sb, patch_sb):
 
 
 def test_mark_media_failed_sends_only_sanitized_category(fake_sb, patch_sb):
-    patch_sb("services.instagram_digest.ledger")
+    patch_sb("services.instagram_notifications.ledger")
     fake_sb.set_response(data=True)
 
     assert ledger.mark_media_failed(
@@ -177,7 +177,7 @@ def test_mark_media_failed_sends_only_sanitized_category(fake_sb, patch_sb):
 
 
 def test_finalization_returns_false_after_claim_is_lost(fake_sb, patch_sb):
-    patch_sb("services.instagram_digest.ledger")
+    patch_sb("services.instagram_notifications.ledger")
     fake_sb.set_response(data=False)
 
     assert not ledger.mark_media_succeeded(
@@ -187,7 +187,7 @@ def test_finalization_returns_false_after_claim_is_lost(fake_sb, patch_sb):
 
 
 def test_mark_media_failed_rejects_empty_category(fake_sb, patch_sb):
-    patch_sb("services.instagram_digest.ledger")
+    patch_sb("services.instagram_notifications.ledger")
 
     with pytest.raises(ValueError, match="cannot be empty"):
         ledger.mark_media_failed(

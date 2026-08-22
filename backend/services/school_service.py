@@ -72,19 +72,6 @@ def get_school_by_recipient_id(recipient_id: str | None) -> SchoolRecord | None:
     return SchoolRecord.model_validate(response.data[0])
 
 
-def list_notification_routed_schools() -> list[SchoolRecord]:
-    """Return every school that owns an Instagram notification recipient."""
-    response = (
-        get_sb()
-        .table(SCHOOLS)
-        .select(SCHOOL_COLUMNS)
-        .not_.is_("recipient_id", "null")
-        .order("slug")
-        .execute()
-    )
-    return [SchoolRecord.model_validate(row) for row in response.data or []]
-
-
 def get_school_id(slug_or_name: str | None) -> int | None:
     school = get_school(slug_or_name) or get_school_by_name(slug_or_name)
     return school.id if school is not None else None
@@ -221,7 +208,6 @@ __all__ = [
     "get_school_by_recipient_id",
     "get_school_by_name",
     "get_school_id",
-    "list_notification_routed_schools",
     "normalize_school_slug",
     "SCHOOL_SLUG_EMBED",
     "school_exists",

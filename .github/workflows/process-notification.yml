@@ -136,7 +136,6 @@ jobs:
         working-directory: backend
         env:
           NOTIFICATION_JSON: ${{ toJSON(github.event.client_payload.notification_dict) }}
-          SESSION_FAILURE_REPORT_PATH: ${{ runner.temp }}/instagram-digest-session-failures.json
         run: |
           export EVENT_FEED_REVALIDATION_URL="${FRONTEND_URL%/}/api/revalidate-events"
           if [[ "$NOTIFICATION_JSON" != "null" && -n "$NOTIFICATION_JSON" ]]; then
@@ -149,12 +148,3 @@ jobs:
               --cutoff-days "$CUTOFF_DAYS" \
               --dry-run false
           fi
-
-      - name: Upload sanitized Instagram session failure context
-        if: ${{ failure() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: instagram-digest-session-failures
-          path: ${{ runner.temp }}/instagram-digest-session-failures.json
-          if-no-files-found: warn
-          retention-days: 1

@@ -9,8 +9,6 @@ import os
 import sys
 import urllib.parse
 from dataclasses import dataclass
-from pathlib import Path
-from typing import Any
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
@@ -19,31 +17,16 @@ from dotenv import load_dotenv  # noqa: E402
 load_dotenv()
 
 import core.logging  # noqa: F401, E402
-from core.controlbox import controlbox  # noqa: E402
 from jobs.scrape import run  # noqa: E402
 from schemas.school import validate_recipient_id  # noqa: E402
 from services import school_service  # noqa: E402
-from services.instagram_digest.client import (  # noqa: E402
-    DigestResult,
-    InstagramDigestClient,
-    InstagramDigestError,
-)
-from services.instagram_digest.ledger import (  # noqa: E402
+from services.instagram_notifications.ledger import (  # noqa: E402
     MaterializedMedia,
     MediaClaim,
     claim_next_notification_media,
     mark_media_failed,
     mark_media_succeeded,
     record_notification_media,
-)
-from services.instagram_digest.sessions import (  # noqa: E402
-    KeychainSessionStore,
-    RoutedSessionHealth,
-    SessionHealthAudit,
-    SessionHealthIssue,
-    SessionHealthStatus,
-    SessionStoreError,
-    recipient_session_transaction,
 )
 
 log = logging.getLogger(__name__)
@@ -204,57 +187,6 @@ def _resolve_recipient(payload: dict[str, object]) -> str:
     return intended_recipient_id
 
 
-def _digest_media_id(media: dict[str, Any]) -> str:
-    candidates: list[str] = []
-    for key in ("pk", "id"):
-        value = media.get(key)
-        if value is not None:
-            candidates.append(_parse_media_id(value))
-    if not candidates or any(candidate != candidates[0] for candidate in candidates[1:]):
-        raise NotificationPayloadError("Instagram digest returned media with an invalid identity.")
-    return candidates[0]
-
-
-def _materialize_media(
-    notification: ParsedNotification,
-    intended_recipient_id: str,
-) -> tuple[list[MaterializedMedia], SessionStoreError | None]:
-    materialized = {item.media_id: item for item in notification.explicit_media}
-    if notification.cache_ent_id is None or (
-        notification.total_media_count is not None
-        and len(materialized) >= notification.total_media_count
-    ):
-        return list(materialized.values()), None
-
-    digest_control = controlbox.instagram_digest
-    session_store = KeychainSessionStore()
-    persistence_error = None
-    with recipient_session_transaction(intended_recipient_id):
-        session = session_store.load(intended_recipient_id)
-        result: DigestResult = InstagramDigestClient(
-            session,
-            endpoint_url=str(digest_control.endpoint_url),
-            operation_name=digest_control.operation_name,
-            client_doc_id=digest_control.client_doc_id,
-            web_app_id=digest_control.web_app_id,
-            timeout_seconds=digest_control.request_timeout_seconds,
-            max_pages=digest_control.maximum_pages,
-        ).fetch_media(notification.cache_ent_id)
-        try:
-            session_store.store(result.session)
-        except SessionStoreError as exc:
-            persistence_error = exc
-    for digest_media in result.media:
-        media_id = _digest_media_id(digest_media)
-        materialized.setdefault(media_id, _media_target(media_id))
-    log.info(
-        "Materialized Instagram digest pages=%d unique_media=%d",
-        result.page_count,
-        len(materialized),
-    )
-    return list(materialized.values()), persistence_error
-
-
 def _is_supported_category(payload: dict[str, object]) -> bool:
     category = payload.get(_PUSH_CATEGORY_KEY)
     return isinstance(category, str) and category in _ACTIONABLE_CATEGORIES
@@ -265,67 +197,10 @@ def _validate_actionable_notification(notification: ParsedNotification) -> None:
         raise NotificationPayloadError(
             "Actionable notification has an unsupported Instagram action."
         )
-    if not notification.explicit_media and notification.cache_ent_id is None:
+    if not notification.explicit_media:
         raise NotificationPayloadError(
-            "Actionable notification contains no recoverable Instagram media."
+            "Actionable notification contains no explicit Instagram media."
         )
-
-
-def _write_session_failure_report(
-    *,
-    school: str,
-    intended_recipient_id: str,
-    error: InstagramDigestError | SessionStoreError,
-) -> None:
-    report_path = (os.getenv("SESSION_FAILURE_REPORT_PATH") or "").strip()
-    if not report_path:
-        return
-    if isinstance(error, InstagramDigestError):
-        issue = SessionHealthIssue.REMOTE_CHECK_FAILED
-    elif error.status is SessionHealthStatus.MISSING:
-        issue = SessionHealthIssue.MISSING_SESSION
-    elif error.status is SessionHealthStatus.TRANSIENT_ERROR:
-        issue = SessionHealthIssue.PERSISTENCE_FAILED
-    else:
-        issue = SessionHealthIssue.INVALID_SESSION
-    report = SessionHealthAudit(
-        healthy=False,
-        issues=(),
-        sessions=(
-            RoutedSessionHealth(
-                school=school,
-                intended_recipient_id=intended_recipient_id,
-                account_username=None,
-                status=error.status,
-                issue=issue,
-            ),
-        ),
-    )
-    try:
-        Path(report_path).write_text(
-            json.dumps(report.report_fields(), indent=2, sort_keys=True) + "\n",
-            encoding="utf-8",
-        )
-    except OSError:
-        log.error("Instagram session failure report could not be written.")
-
-
-def _report_digest_session_failure(
-    *,
-    school: str,
-    intended_recipient_id: str,
-    error: InstagramDigestError | SessionStoreError,
-) -> None:
-    _write_session_failure_report(
-        school=school,
-        intended_recipient_id=intended_recipient_id,
-        error=error,
-    )
-    log.error(
-        "Instagram digest session failed school=%s status=%s",
-        school,
-        error.status.value,
-    )
 
 
 def _process_claim(claim: MediaClaim, *, cutoff_days: int) -> int:
@@ -403,7 +278,6 @@ def main() -> int:
         log.error("NOTIFICATION_JSON environment variable is empty or not set.")
         return 1
 
-    school = None
     try:
         payload = json.loads(payload_str)
     except json.JSONDecodeError as exc:
@@ -425,8 +299,6 @@ def main() -> int:
         log.error("%s", exc)
         return 1
 
-    digest_session_failed = False
-    session_persistence_error = None
     try:
         intended_recipient_id = _resolve_recipient(payload)
         push_id = _required_payload_text(
@@ -446,48 +318,20 @@ def main() -> int:
             raise NotificationPayloadError(
                 "No school mapping exists for the notification recipient."
             )
-        media, session_persistence_error = _materialize_media(
-            notification,
-            intended_recipient_id,
-        )
-    except (InstagramDigestError, SessionStoreError) as exc:
-        school_slug = school.slug if school is not None else "unknown"
-        _report_digest_session_failure(
-            school=school_slug,
-            intended_recipient_id=intended_recipient_id,
-            error=exc,
-        )
-        if not notification.explicit_media or school is None:
-            return 1
-        log.warning(
-            "Session failure fallback: processing %d explicit media items without a full digest",
-            len(notification.explicit_media),
-        )
-        media = list(notification.explicit_media)
-        digest_session_failed = True
     except NotificationPayloadError as exc:
         log.error("%s", exc)
         return 1
     except Exception:  # noqa: BLE001 - do not expose database or upstream internals
-        log.error("Instagram notification materialization failed unexpectedly.")
+        log.error("Instagram notification routing failed unexpectedly.")
         return 1
 
-    if session_persistence_error is not None:
-        _report_digest_session_failure(
-            school=school.slug,
-            intended_recipient_id=intended_recipient_id,
-            error=session_persistence_error,
-        )
-        digest_session_failed = True
-
-    materialization_incomplete = (
-        notification.total_media_count is not None and len(media) < notification.total_media_count
-    )
-    if materialization_incomplete:
-        log.error(
-            "Instagram digest materialization is incomplete advertised=%d materialized=%d",
-            notification.total_media_count,
+    media = list(notification.explicit_media)
+    if notification.total_media_count is not None and len(media) < notification.total_media_count:
+        log.warning(
+            "Instagram notification exposed %d of %d advertised media items; "
+            "processing explicit media only.",
             len(media),
+            notification.total_media_count,
         )
 
     try:
@@ -519,15 +363,6 @@ def main() -> int:
         log.info("Processed %d exact Instagram media target(s).", processed_count)
     else:
         log.info("No pending Instagram media remain for this notification.")
-
-    if digest_session_failed or materialization_incomplete:
-        print(
-            f"::error::Instagram session failed or is missing on the Mac mini. "
-            f"Only recovered {len(media)} out of {notification.total_media_count or 'unknown'} posts.",
-            file=sys.stderr,
-        )
-        return 1
-
     return processing_status
 
 
