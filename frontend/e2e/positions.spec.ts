@@ -132,6 +132,7 @@ test("browses, filters, and searches open organization positions", async ({
     page.getByText("Operations Assistant", { exact: true }),
   ).toBeVisible();
   await expect(page.getByText("Due Sep 1", { exact: true })).toBeVisible();
+  await expect(page.getByText("Committee", { exact: true })).toHaveCount(0);
 
   await page
     .getByRole("button", { name: "View Design Lead position details" })
@@ -148,6 +149,7 @@ test("browses, filters, and searches open organization positions", async ({
   await expect(
     drawer.getByRole("heading", { name: "Requirements" }),
   ).toBeVisible();
+  await expect(drawer.getByText("Committee", { exact: true })).toBeVisible();
   const detailGrid = drawer.locator('[data-slot="form-grid"]').first();
   const detailColumns = detailGrid.locator(":scope > *");
   await expect

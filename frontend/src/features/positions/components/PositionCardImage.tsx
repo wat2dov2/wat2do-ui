@@ -68,15 +68,17 @@ export function PositionCardImage({
         ) : null}
       </EventImageCutout>
 
-      <BadgeMask
-        variant="top-left"
-        cutout
-        containerRef={registerCorner("top-left")}
-      >
-        <Badge variant="category" size="md">
-          {t(`positions.types.${position.position_type}`)}
-        </Badge>
-      </BadgeMask>
+      {variant === "detail" ? (
+        <BadgeMask
+          variant="top-left"
+          cutout
+          containerRef={registerCorner("top-left")}
+        >
+          <Badge variant="category" size="md">
+            {t(`positions.types.${position.position_type}`)}
+          </Badge>
+        </BadgeMask>
+      ) : null}
 
       {deadlineDate ? (
         <BadgeMask
