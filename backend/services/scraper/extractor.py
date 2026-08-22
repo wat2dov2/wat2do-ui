@@ -246,8 +246,19 @@ Images (0-indexed):
 CLASSIFICATION POLICY:
 - Set "content_type" to "event" for event-only posts, "hiring" for hiring-only posts, "event_and_hiring" when both are clearly advertised, and "other" when neither applies.
 - A hiring post explicitly recruits people for one or more open roles, including executives, committee members, volunteers, paid staff, or internships.
-- General organization promotion, member introductions, election results, and event registration are not hiring unless the post clearly invites applications for a role.
+- General organization promotion, member introductions, election activity, and event registration are not hiring unless the post clearly invites applications, nominations, auditions, or sign-ups for a currently open role.
 - Return an empty array for a content category that is not present. Never force an event into a position or a position into an event.
+
+POSITION ELIGIBILITY GATE (CRITICAL):
+- Before extracting any position, find explicit evidence in the caption or an image that applications, nominations, auditions, or sign-ups are currently open for that role. Qualifying evidence includes language such as "we're hiring", "applications are open", "apply", "join our team", "nominations are open", or "run for", or a current application form or call to action.
+- A role title, list of roles, description of responsibilities, person holding a role, or announcement that an election exists is not evidence that a position is open.
+- Election voting posts are not hiring. Candidate lists or slates, campaign information, voting instructions, election dates, ballots, and results must return an empty positions array even when they name roles.
+- An election post qualifies as hiring only when it explicitly invites people to apply, nominate themselves, or run for a currently open role.
+- Member or executive introductions, team spotlights, and posts naming "this year's" role holders are not hiring.
+- If there is no explicit current recruiting evidence, do not extract any position and do not set "content_type" to "hiring" solely because role names appear.
+- Example: "Executive elections start today. Read the candidate speeches and vote for Treasurer" is "other" with "positions": [].
+- Counterexample: "Nominations are open. Apply or run for Treasurer by Friday" is "hiring" and may produce a Treasurer position.
+- Example: "Meet this year's Merch Coordinator" is "other" with "positions": [].
 
 EVENT POLICY:
 - ONLY extract an event if the post is clearly announcing or describing a real-world event.

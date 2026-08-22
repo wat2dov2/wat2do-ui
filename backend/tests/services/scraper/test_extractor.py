@@ -101,6 +101,51 @@ def test_extraction_prompt_uses_school_slug(monkeypatch):
     assert '"positions": [' in prompt
 
 
+def test_extraction_prompt_rejects_election_voting_and_role_introductions(monkeypatch):
+    calls = []
+    monkeypatch.setattr(extractor, "resolve_school_timezone", lambda _school: "America/Toronto")
+    monkeypatch.setattr(extractor, "current_semester_end", lambda *_args, **_kwargs: None)
+
+    class FakeCompletions:
+        def create(self, **kwargs):
+            calls.append(kwargs)
+            message = type("Message", (), {"content": '{"content_type":"other"}'})()
+            choice = type("Choice", (), {"message": message})()
+            return type("Response", (), {"choices": [choice]})()
+
+    fake_client = type(
+        "Client",
+        (),
+        {
+            "chat": type(
+                "Chat",
+                (),
+                {"completions": FakeCompletions()},
+            )()
+        },
+    )()
+    monkeypatch.setattr(extractor, "_client", lambda: fake_client)
+
+    extractor.extract_post_content(
+        caption_text=(
+            "F26 Exec Elections start today. Read the candidates' speeches and vote for "
+            "Treasurer, Assistant Events Leader, and Marketing Media and Design Manager."
+        ),
+        image_urls=[],
+        post_created_at=None,
+        school="uwaterloo",
+    )
+
+    prompt = calls[0]["messages"][1]["content"][0]["text"]
+    assert "POSITION ELIGIBILITY GATE (CRITICAL):" in prompt
+    assert "Election voting posts are not hiring." in prompt
+    assert "Candidate lists or slates" in prompt
+    assert "explicitly invites people to apply, nominate themselves, or run" in prompt
+    assert '"Executive elections start today. Read the candidate speeches and vote' in prompt
+    assert '"Nominations are open. Apply or run for Treasurer by Friday"' in prompt
+    assert '"Meet this year\'s Merch Coordinator" is "other"' in prompt
+
+
 def test_clean_extracted_content_triages_hiring_positions():
     result = _clean_extracted_content(
         {
