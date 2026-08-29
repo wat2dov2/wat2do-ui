@@ -3,7 +3,8 @@
 These fixtures prove the product rules we care about:
   * update caption + matching candidate id → overwrite
   * cancel caption → cancelled=true on existing id
-  * no update language → insert (id null) even if candidates exist
+  * same-occurrence repost → overwrite even without update language
+  * distinct occurrence → insert (id null)
   * omitted candidates are not deleted
   * Pass 2 failure → pipeline falls back to insert-only
 """
@@ -26,6 +27,7 @@ from services.scraper.reconciler import reconcile_events
 
 _FUTURE = (datetime.now(timezone.utc) + timedelta(days=3)).replace(microsecond=0)
 _FUTURE_ISO = _FUTURE.isoformat().replace("+00:00", "Z")
+_NEXT_FUTURE_ISO = (_FUTURE + timedelta(days=7)).isoformat().replace("+00:00", "Z")
 
 
 @pytest.fixture(autouse=True)
@@ -190,8 +192,18 @@ def test_pass2_cancel_json_sets_cancelled_true(monkeypatch):
 
 
 def test_pass2_new_instance_json_has_null_id(monkeypatch):
-    """No update language → insert even when a similar candidate exists."""
-    extracted = _extracted(title="Tea Tasting Night")
+    """A distinct later occurrence remains an insert."""
+    extracted = _extracted(
+        title="Tea Tasting Night",
+        occurrences=[
+            {
+                "dtstart_utc": _NEXT_FUTURE_ISO,
+                "dtend_utc": None,
+                "duration": None,
+                "tz": "America/Toronto",
+            }
+        ],
+    )
     candidate = _candidate()
     pass2 = [{**extracted, "id": None, "cancelled": False}]
     _mock_openai_json(monkeypatch, pass2)
@@ -199,7 +211,7 @@ def test_pass2_new_instance_json_has_null_id(monkeypatch):
     result = reconcile_events(
         extracted_events=[extracted],
         candidates_by_index=[[candidate]],
-        caption_text="Tea tasting this Friday in SLC 3223!",
+        caption_text="Tea tasting next Friday in SLC 3223! A new weekly session.",
         school="uwaterloo",
     )
 
@@ -207,6 +219,24 @@ def test_pass2_new_instance_json_has_null_id(monkeypatch):
     assert len(result) == 1
     assert result[0]["id"] is None
     assert result[0]["cancelled"] is False
+
+
+def test_pass2_same_occurrence_repost_json_keeps_candidate_id(monkeypatch):
+    """A second flyer for the same occurrence overwrites its existing event."""
+    extracted = _extracted(title="Tea Tasting Night", description="Reminder: bring a mug.")
+    candidate = _candidate()
+    pass2 = [{**extracted, "id": 42, "cancelled": False}]
+    _mock_openai_json(monkeypatch, pass2)
+
+    result = reconcile_events(
+        extracted_events=[extracted],
+        candidates_by_index=[[candidate]],
+        caption_text="Tea Tasting Night is this Friday in SLC 3223! Bring a mug.",
+        school="uwaterloo",
+    )
+
+    assert result is not None
+    assert result[0]["id"] == 42
 
 
 def test_pass2_omitted_candidate_is_not_in_output(monkeypatch):

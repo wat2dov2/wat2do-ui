@@ -12,10 +12,13 @@ from uuid import UUID
 import pytest
 
 from core.sanitize import parse_iso_datetime
+from schemas.event_date import OccurrenceCreate, OccurrenceResponse
 from services.scraper import event_writer
 from services.scraper.event_writer import (
     _clean_food,
     _coerce_future_occurrences,
+    _merge_overwrite_occurrences,
+    _merge_overwrite_payload,
     write_event,
 )
 
@@ -57,6 +60,125 @@ def test_clean_food_caps_at_20_items():
 
 def test_clean_food_yes_marker_kept():
     assert _clean_food(["Yes!"]) == ["Yes!"]
+
+
+def test_merge_overwrite_payload_preserves_fields_missing_from_new_post():
+    old = SimpleNamespace(
+        description="Full original details",
+        price=10,
+        food=["Pizza"],
+        category="Social",
+        ig_handle="uwtea",
+        organization_id=7,
+        source_url="https://instagram.com/p/old",
+        source_image_url="https://cdn/old.jpg",
+        registration=True,
+        cancelled=True,
+    )
+
+    merged = _merge_overwrite_payload(
+        {
+            "title": "New title",
+            "description": None,
+            "location": "New room",
+            "price": None,
+            "food": None,
+            "category": None,
+            "ig_handle": None,
+            "organization_id": None,
+            "source_url": "https://instagram.com/p/new",
+            "source_image_url": None,
+            "registration": False,
+            "cancelled": False,
+        },
+        old,
+    )
+
+    assert merged["title"] == "New title"
+    assert merged["location"] == "New room"
+    assert merged["description"] == "Full original details"
+    assert merged["price"] == 10
+    assert merged["food"] == ["Pizza"]
+    assert merged["category"] == "Social"
+    assert merged["ig_handle"] == "uwtea"
+    assert merged["organization_id"] == 7
+    assert merged["source_url"] == "https://instagram.com/p/new"
+    assert merged["source_image_url"] == "https://cdn/old.jpg"
+    assert merged["registration"] is True
+    assert merged["cancelled"] is True
+
+
+def test_merge_overwrite_payload_uses_new_nonempty_values():
+    old = SimpleNamespace(
+        description="Longer old wording",
+        price=10,
+        food=["Pizza"],
+        category="Social",
+        ig_handle="oldhandle",
+        organization_id=7,
+        source_url="https://instagram.com/p/old",
+        source_image_url="https://cdn/old.jpg",
+        registration=False,
+        cancelled=False,
+    )
+    incoming = {
+        "description": "Corrected",
+        "price": 0,
+        "food": ["Cookies"],
+        "category": "Academic",
+        "ig_handle": "newhandle",
+        "organization_id": 8,
+        "source_url": "https://instagram.com/p/new",
+        "source_image_url": "https://cdn/new.jpg",
+        "registration": True,
+        "cancelled": True,
+    }
+
+    assert _merge_overwrite_payload(incoming, old) == incoming
+
+
+def test_merge_overwrite_occurrences_patches_exact_start_and_keeps_unmentioned_dates():
+    first_start = datetime(2026, 9, 10, 22, tzinfo=timezone.utc)
+    second_start = datetime(2026, 9, 17, 22, tzinfo=timezone.utc)
+    existing = [
+        OccurrenceResponse(
+            id=UUID(int=1),
+            event_id=42,
+            dtstart_utc=first_start,
+            dtend_utc=first_start + timedelta(hours=2),
+            duration="2 hours",
+            tz="America/Toronto",
+            created_at=datetime.now(timezone.utc),
+        ),
+        OccurrenceResponse(
+            id=UUID(int=2),
+            event_id=42,
+            dtstart_utc=second_start,
+            dtend_utc=None,
+            duration=None,
+            tz="America/Toronto",
+            created_at=datetime.now(timezone.utc),
+        ),
+    ]
+    incoming = [
+        OccurrenceCreate(
+            dtstart_utc=first_start,
+            dtend_utc=None,
+            duration=None,
+            tz=None,
+        )
+    ]
+
+    merged = _merge_overwrite_occurrences(existing, incoming)
+
+    assert len(merged) == 2
+    assert merged[0].id == UUID(int=1)
+    assert merged[0].dtstart_utc == first_start
+    assert merged[0].dtend_utc == first_start + timedelta(hours=2)
+    assert merged[0].duration == "2 hours"
+    assert merged[0].tz == "America/Toronto"
+    assert merged[1].id == UUID(int=2)
+    assert merged[1].dtstart_utc == second_start
 
 
 # ── ISO parsing ───────────────────────────────────────────────────────
@@ -484,7 +606,19 @@ def test_write_event_overwrites_by_id(fake_sb, patch_sb, monkeypatch):
     )
 
     result = write_event(
-        _event(id=42, location="SLC 3223", cancelled=True),
+        _event(
+            id=42,
+            location="SLC 3223",
+            cancelled=True,
+            occurrences=[
+                {
+                    "dtstart_utc": future.isoformat(),
+                    "dtend_utc": "",
+                    "duration": "",
+                    "tz": "UTC",
+                }
+            ],
+        ),
         ig_handle="uwteaorganization",
         source_url="https://instagram.com/p/abc",
     )

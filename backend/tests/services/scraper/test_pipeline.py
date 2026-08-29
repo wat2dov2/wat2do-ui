@@ -56,6 +56,18 @@ def test_filter_new_posts_accepts_reels():
     assert len(fresh) == 1
 
 
+def test_filter_new_posts_drops_duplicate_shortcode_in_same_batch():
+    cutoff = datetime.now(timezone.utc) - timedelta(days=7)
+    posts = [
+        {"url": "https://instagram.com/p/SAME/", "timestamp": _now_iso()},
+        {"url": "https://instagram.com/p/SAME/", "timestamp": _now_iso()},
+    ]
+
+    fresh = _filter_new_posts(posts, seen_shortcodes=set(), cutoff=cutoff)
+
+    assert fresh == [posts[0]]
+
+
 def test_extract_image_urls_carousel_via_images_field():
     post = {
         "images": [

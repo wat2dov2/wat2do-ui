@@ -12,6 +12,7 @@ from __future__ import annotations
 import functools
 import logging
 import re
+import unicodedata
 from datetime import datetime, timedelta, timezone
 from difflib import SequenceMatcher
 from urllib.parse import urlparse
@@ -32,6 +33,17 @@ from services.organization_service import _normalize_organization_name
 
 log = logging.getLogger(__name__)
 
+_LANGUAGE_QUALIFIERS = frozenset(
+    {
+        "arabic",
+        "english",
+        "french",
+        "mandarin",
+        "spanish",
+    }
+)
+_TITLE_NUMBER_RE = re.compile(r"\b\d+[a-z]*\b")
+
 _CANDIDATE_EVENT_SELECT = (
     "id,title,description,location,price,food,registration,category,"
     "organization,organization_id,ig_handle,school_id,cancelled,source_url,source_image_url,"
@@ -47,15 +59,20 @@ _SAME_DAY_EVENT_EMBED = (
 )
 
 
+def _fold_text(value: str | None) -> str:
+    normalized = unicodedata.normalize("NFKD", value or "")
+    return "".join(char for char in normalized if not unicodedata.combining(char)).casefold()
+
+
 def normalize(s: str) -> str:
     """Lowercase + strip non-alphanumeric - used for substring duplicate checks."""
-    return re.sub(r"[^a-z0-9]", "", (s or "").lower())
+    return re.sub(r"[^a-z0-9]", "", _fold_text(s))
 
 
 def jaccard_similarity(a: str, b: str) -> float:
     """Word-set Jaccard similarity. Empty strings -> 0.0."""
-    set_a = set(re.findall(r"\w+", (a or "").lower()))
-    set_b = set(re.findall(r"\w+", (b or "").lower()))
+    set_a = set(re.findall(r"[a-z0-9]+", _fold_text(a)))
+    set_b = set(re.findall(r"[a-z0-9]+", _fold_text(b)))
     if not set_a or not set_b:
         return 0.0
     return len(set_a & set_b) / len(set_a | set_b)
@@ -63,7 +80,7 @@ def jaccard_similarity(a: str, b: str) -> float:
 
 def sequence_similarity(a: str, b: str) -> float:
     """SequenceMatcher ratio (case-insensitive)."""
-    return SequenceMatcher(None, (a or "").lower(), (b or "").lower()).ratio()
+    return SequenceMatcher(None, _fold_text(a), _fold_text(b)).ratio()
 
 
 def title_similarity(a: str, b: str) -> float:
@@ -73,6 +90,251 @@ def title_similarity(a: str, b: str) -> float:
     "Friday Movie Night") and reordered-but-similar titles.
     """
     return max(jaccard_similarity(a, b), sequence_similarity(a, b))
+
+
+def confident_duplicate_id(
+    *,
+    event: dict,
+    candidates: list[dict],
+    organization_id: int | None,
+    ig_handle: str | None,
+) -> int | None:
+    """Return the strongest deterministic same-organization duplicate match.
+
+    Candidate gathering remains deliberately broad. This function owns only
+    high-confidence identity: matching organization, occurrence time, title,
+    and location with no contradictory title qualifiers. Ambiguous rows stay
+    available to Pass 2 instead of being auto-linked.
+    """
+    ranked: list[tuple[tuple[float, float], int]] = []
+    for candidate in candidates:
+        candidate_id = candidate.get("id")
+        if not isinstance(candidate_id, int):
+            continue
+        score = _confident_duplicate_score(
+            event,
+            candidate,
+            organization_id=organization_id,
+            ig_handle=ig_handle,
+        )
+        if score is not None:
+            ranked.append((score, candidate_id))
+    if not ranked:
+        return None
+    ranked.sort(key=lambda item: item[0])
+    return ranked[0][1]
+
+
+def collapse_duplicate_extractions(
+    events: list[dict],
+    *,
+    organization_ids: list[int | None],
+    ig_handles: list[str | None],
+) -> tuple[list[dict], list[int], int]:
+    """Collapse high-confidence duplicate objects emitted by one extraction.
+
+    Returns the merged events, the original index supplying each event's
+    resolved organization context, and the number of removed duplicates.
+    """
+    collapsed: list[dict] = []
+    source_indexes: list[int] = []
+
+    for index, event in enumerate(events):
+        organization_id = organization_ids[index] if index < len(organization_ids) else None
+        ig_handle = ig_handles[index] if index < len(ig_handles) else None
+        matching_index = None
+        for existing_index, existing in enumerate(collapsed):
+            existing_source_index = source_indexes[existing_index]
+            existing_org_id = (
+                organization_ids[existing_source_index]
+                if existing_source_index < len(organization_ids)
+                else None
+            )
+            existing_ig = (
+                ig_handles[existing_source_index]
+                if existing_source_index < len(ig_handles)
+                else None
+            )
+            if not _same_resolved_organization(
+                organization_id,
+                ig_handle,
+                existing_org_id,
+                existing_ig,
+            ):
+                continue
+            if (
+                _confident_duplicate_score(
+                    event,
+                    existing,
+                    organization_id=organization_id,
+                    ig_handle=ig_handle,
+                    candidate_organization_id=existing_org_id,
+                    candidate_ig_handle=existing_ig,
+                )
+                is not None
+            ):
+                matching_index = existing_index
+                break
+
+        if matching_index is None:
+            collapsed.append(dict(event))
+            source_indexes.append(index)
+            continue
+        collapsed[matching_index] = _merge_extracted_duplicates(
+            collapsed[matching_index],
+            event,
+        )
+
+    return collapsed, source_indexes, len(events) - len(collapsed)
+
+
+def _confident_duplicate_score(
+    event: dict,
+    candidate: dict,
+    *,
+    organization_id: int | None,
+    ig_handle: str | None,
+    candidate_organization_id: int | None = None,
+    candidate_ig_handle: str | None = None,
+) -> tuple[float, float] | None:
+    if candidate_organization_id is None:
+        candidate_organization_id = candidate.get("organization_id")
+    if candidate_ig_handle is None:
+        candidate_ig_handle = candidate.get("ig_handle")
+    if not _same_resolved_organization(
+        organization_id,
+        ig_handle,
+        candidate_organization_id,
+        candidate_ig_handle,
+    ):
+        return None
+
+    incoming_title = event.get("title") or ""
+    candidate_title = candidate.get("title") or ""
+    title_score = title_similarity(incoming_title, candidate_title)
+    location_score = jaccard_similarity(
+        event.get("location") or "",
+        candidate.get("location") or "",
+    )
+    if title_score <= SCRAPING_TITLE_SIMILARITY_THRESHOLD:
+        return None
+    if location_score <= SCRAPING_LOCATION_SIMILARITY_THRESHOLD:
+        return None
+    if _has_conflicting_title_qualifiers(incoming_title, candidate_title):
+        return None
+
+    if not _has_exact_occurrence_start(event, candidate):
+        return None
+
+    return (-title_score, -location_score)
+
+
+def _same_resolved_organization(
+    left_id: int | None,
+    left_ig: str | None,
+    right_id: int | None,
+    right_ig: str | None,
+) -> bool:
+    if isinstance(left_id, int) and isinstance(right_id, int):
+        return left_id == right_id
+    normalized_left_ig = (left_ig or "").strip().lstrip("@").casefold()
+    normalized_right_ig = (right_ig or "").strip().lstrip("@").casefold()
+    return bool(normalized_left_ig and normalized_left_ig == normalized_right_ig)
+
+
+def _has_conflicting_title_qualifiers(left: str, right: str) -> bool:
+    left_text = _fold_text(left)
+    right_text = _fold_text(right)
+    left_tokens = set(re.findall(r"[a-z0-9]+", left_text))
+    right_tokens = set(re.findall(r"[a-z0-9]+", right_text))
+
+    left_languages = left_tokens & _LANGUAGE_QUALIFIERS
+    right_languages = right_tokens & _LANGUAGE_QUALIFIERS
+    if left_languages != right_languages:
+        return True
+
+    left_numbers = set(_TITLE_NUMBER_RE.findall(left_text))
+    right_numbers = set(_TITLE_NUMBER_RE.findall(right_text))
+    return bool(
+        left_numbers
+        and right_numbers
+        and left_numbers - right_numbers
+        and right_numbers - left_numbers
+    )
+
+
+def _candidate_occurrences(event: dict) -> list[dict]:
+    occurrences = event.get("occurrences")
+    if isinstance(occurrences, list):
+        return [item for item in occurrences if isinstance(item, dict)]
+    event_dates = event.get("event_dates")
+    if isinstance(event_dates, list):
+        return [item for item in event_dates if isinstance(item, dict)]
+    return []
+
+
+def _has_exact_occurrence_start(left: dict, right: dict) -> bool:
+    left_starts = {
+        parsed
+        for occurrence in _candidate_occurrences(left)
+        if (parsed := _parse_iso8601_utc(occurrence.get("dtstart_utc"))) is not None
+    }
+    right_starts = {
+        parsed
+        for occurrence in _candidate_occurrences(right)
+        if (parsed := _parse_iso8601_utc(occurrence.get("dtstart_utc"))) is not None
+    }
+    return bool(left_starts & right_starts)
+
+
+def _merge_extracted_duplicates(existing: dict, incoming: dict) -> dict:
+    merged = dict(existing)
+    for field in ("title", "description", "location", "organization"):
+        old_value = str(merged.get(field) or "").strip()
+        new_value = str(incoming.get(field) or "").strip()
+        if new_value and len(new_value) > len(old_value):
+            merged[field] = incoming[field]
+
+    for field in ("price", "category", "source_image_url"):
+        if merged.get(field) in (None, "") and incoming.get(field) not in (None, ""):
+            merged[field] = incoming[field]
+
+    old_food = merged.get("food") if isinstance(merged.get("food"), list) else []
+    new_food = incoming.get("food") if isinstance(incoming.get("food"), list) else []
+    if new_food:
+        merged["food"] = list(dict.fromkeys([*old_food, *new_food]))
+    merged["registration"] = bool(merged.get("registration") or incoming.get("registration"))
+    merged["occurrences"] = _merge_extracted_occurrences(existing, incoming)
+    return merged
+
+
+def _merge_extracted_occurrences(existing: dict, incoming: dict) -> list[dict]:
+    merged = [dict(occurrence) for occurrence in _candidate_occurrences(existing)]
+    for incoming_occurrence in _candidate_occurrences(incoming):
+        incoming_start = _parse_iso8601_utc(incoming_occurrence.get("dtstart_utc"))
+        matching_index = None
+        for index, existing_occurrence in enumerate(merged):
+            existing_start = _parse_iso8601_utc(existing_occurrence.get("dtstart_utc"))
+            if incoming_start is None or incoming_start != existing_start:
+                continue
+            matching_index = index
+            break
+        if matching_index is None:
+            merged.append(dict(incoming_occurrence))
+            continue
+        replacement = dict(merged[matching_index])
+        replacement.update(
+            {key: value for key, value in incoming_occurrence.items() if value not in (None, "")}
+        )
+        merged[matching_index] = replacement
+
+    merged.sort(
+        key=lambda occurrence: (
+            _parse_iso8601_utc(occurrence.get("dtstart_utc"))
+            or datetime.max.replace(tzinfo=timezone.utc)
+        )
+    )
+    return merged
 
 
 def find_candidates(

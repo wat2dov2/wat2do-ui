@@ -14,7 +14,11 @@ import httpx
 from bs4 import BeautifulSoup
 from pydantic import BaseModel
 
-from services.scraper.dedup import existing_urls, find_candidates
+from services.scraper.dedup import (
+    collapse_duplicate_extractions,
+    existing_urls,
+    find_candidates,
+)
 from services.scraper.event_writer import write_event
 from services.scraper.extractor import extract_events_from_post
 from services.scraper.image_uploader import upload_post_images
@@ -259,6 +263,19 @@ def run_directory_pipeline(
                 )
                 for event in extracted_events
             ]
+            extracted_events, source_indexes, duplicate_count = collapse_duplicate_extractions(
+                extracted_events,
+                organization_ids=[r.organization_id for r in resolved_orgs],
+                ig_handles=[r.ig_handle for r in resolved_orgs],
+            )
+            if duplicate_count:
+                result.events_duplicates += duplicate_count
+                resolved_orgs = [resolved_orgs[index] for index in source_indexes]
+                log.info(
+                    "[%s] Collapsed %d same-page duplicate event extraction(s)",
+                    config.id,
+                    duplicate_count,
+                )
             candidates_by_index = [
                 find_candidates(
                     title=event.get("title") or "",

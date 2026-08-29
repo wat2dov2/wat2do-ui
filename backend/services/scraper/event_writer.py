@@ -135,6 +135,7 @@ def write_event(
             ig_handle=ig_handle,
             school_slug=school.slug,
             title=title,
+            replace_occurrences=bool(event.get("replace_occurrences", False)),
         )
 
     inserted = get_sb().table(EVENTS).insert(event_row).execute()
@@ -173,6 +174,7 @@ def _overwrite_event(
     ig_handle: str | None,
     school_slug: str,
     title: str,
+    replace_occurrences: bool,
 ) -> str:
     """Overwrite an existing event and notify savers on material changes."""
     old_event = event_service.get_event(existing_id)
@@ -241,9 +243,16 @@ def _overwrite_event(
         existing_id,
         title,
     )
-    stable_occurrences = _preserve_exact_occurrence_ids(
-        old_event.occurrences,
-        future_occurrences,
+    stable_occurrences = (
+        _preserve_exact_occurrence_ids(
+            old_event.occurrences,
+            future_occurrences,
+        )
+        if replace_occurrences
+        else _merge_overwrite_occurrences(
+            old_event.occurrences,
+            future_occurrences,
+        )
     )
     recipient_ids = event_service.update_event_and_occurrences(
         existing_id,
@@ -302,6 +311,63 @@ def _preserve_exact_occurrence_ids(
     return updates
 
 
+def _merge_overwrite_occurrences(
+    existing: list[OccurrenceResponse],
+    incoming: list[OccurrenceCreate],
+) -> list[OccurrenceUpdate]:
+    """Patch overlapping occurrences and retain dates omitted by a newer post."""
+    merged = [
+        OccurrenceUpdate(
+            id=occurrence.id,
+            dtstart_utc=occurrence.dtstart_utc,
+            dtend_utc=occurrence.dtend_utc,
+            duration=occurrence.duration,
+            tz=occurrence.tz,
+        )
+        for occurrence in existing
+    ]
+    matched_existing_indexes: set[int] = set()
+
+    for incoming_occurrence in incoming:
+        matching_index = None
+        for index, existing_occurrence in enumerate(merged):
+            if index in matched_existing_indexes or existing_occurrence.id is None:
+                continue
+            if incoming_occurrence.dtstart_utc != existing_occurrence.dtstart_utc:
+                continue
+            matching_index = index
+            break
+
+        if matching_index is None:
+            merged.append(
+                OccurrenceUpdate(
+                    **incoming_occurrence.model_dump(),
+                )
+            )
+            continue
+
+        old_occurrence = merged[matching_index]
+        merged[matching_index] = OccurrenceUpdate(
+            id=old_occurrence.id,
+            dtstart_utc=incoming_occurrence.dtstart_utc,
+            dtend_utc=(
+                incoming_occurrence.dtend_utc
+                if incoming_occurrence.dtend_utc is not None
+                else old_occurrence.dtend_utc
+            ),
+            duration=(
+                incoming_occurrence.duration
+                if incoming_occurrence.duration is not None
+                else old_occurrence.duration
+            ),
+            tz=incoming_occurrence.tz or old_occurrence.tz,
+        )
+        matched_existing_indexes.add(matching_index)
+
+    merged.sort(key=lambda occurrence: occurrence.dtstart_utc)
+    return merged
+
+
 def _occurrence_signature(occurrence) -> tuple:
     return (
         occurrence.dtstart_utc,
@@ -312,17 +378,28 @@ def _occurrence_signature(occurrence) -> tuple:
 
 
 def _merge_overwrite_payload(incoming: dict, old_event) -> dict:
-    """Field-merge provenance so null/empty incoming cannot wipe ownership."""
+    """Apply newer supplied evidence without erasing older absent fields."""
     merged = dict(incoming)
 
-    if merged.get("ig_handle") is None and old_event.ig_handle:
-        merged["ig_handle"] = old_event.ig_handle
-    if merged.get("organization_id") is None and old_event.organization_id is not None:
-        merged["organization_id"] = old_event.organization_id
-    if not merged.get("source_url") and old_event.source_url:
-        merged["source_url"] = old_event.source_url
-    if not merged.get("source_image_url") and old_event.source_image_url:
-        merged["source_image_url"] = old_event.source_image_url
+    for field in (
+        "description",
+        "price",
+        "food",
+        "category",
+        "ig_handle",
+        "organization_id",
+        "source_url",
+        "source_image_url",
+    ):
+        if merged.get(field) in (None, "", []):
+            old_value = getattr(old_event, field, None)
+            if old_value not in (None, "", []):
+                merged[field] = old_value
+
+    if not merged.get("registration") and old_event.registration:
+        merged["registration"] = True
+    if not merged.get("cancelled") and old_event.cancelled:
+        merged["cancelled"] = True
 
     return merged
 

@@ -25,7 +25,12 @@ from core.constants import (
 from core.sanitize import normalize_scraped_text, parse_iso_datetime
 from schemas.workflow_run import WorkflowRunCreate
 from services import workflow_run_service
-from services.scraper.dedup import _extract_shortcode, existing_shortcodes, find_candidates
+from services.scraper.dedup import (
+    _extract_shortcode,
+    collapse_duplicate_extractions,
+    existing_shortcodes,
+    find_candidates,
+)
 from services.scraper.event_writer import _lookup_organization_by_ig, write_event
 from services.scraper.extractor import extract_post_content
 from services.scraper.image_uploader import upload_post_images
@@ -135,12 +140,13 @@ def _filter_new_posts(
 ) -> list[dict]:
     """Drop already-seen shortcodes and posts older than ``cutoff``."""
     fresh: list[dict] = []
+    known_shortcodes = set(seen_shortcodes)
     for post in posts:
         url = post.get("url") or ""
         shortcode = _extract_shortcode(url)
         if shortcode is None:
             continue
-        if shortcode in seen_shortcodes:
+        if shortcode in known_shortcodes:
             continue
 
         post_dt = parse_iso_datetime(post.get("timestamp"))
@@ -148,6 +154,7 @@ def _filter_new_posts(
             continue
 
         fresh.append(post)
+        known_shortcodes.add(shortcode)
     return fresh
 
 
@@ -307,6 +314,20 @@ def _process_events_for_school(
         )
         for event in events_copy
     ]
+    events_copy, source_indexes, duplicate_count = collapse_duplicate_extractions(
+        events_copy,
+        organization_ids=[resolved.organization_id for resolved in resolved_orgs],
+        ig_handles=[resolved.ig_handle for resolved in resolved_orgs],
+    )
+    if duplicate_count:
+        result.events_duplicates += duplicate_count
+        resolved_orgs = [resolved_orgs[index] for index in source_indexes]
+        log.info(
+            "[%s] Collapsed %d same-post duplicate event extraction(s) for %s",
+            handle,
+            duplicate_count,
+            target_school,
+        )
     candidates_by_index = [
         find_candidates(
             title=event.get("title") or "",

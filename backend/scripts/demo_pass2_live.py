@@ -39,6 +39,7 @@ def _db_event(
     description: str = "",
     ig: str = "uwtea",
     organization_id: int | None = 7,
+    start: str = FUTURE,
 ) -> dict:
     return {
         "id": eid,
@@ -56,11 +57,17 @@ def _db_event(
         "cancelled": False,
         "source_url": f"https://instagram.com/p/{eid}",
         "source_image_url": f"https://cdn/{eid}.jpg",
-        "event_dates": [_occ()],
+        "event_dates": [_occ(start)],
     }
 
 
-def _extracted(*, title: str, location: str, description: str = "") -> dict:
+def _extracted(
+    *,
+    title: str,
+    location: str,
+    description: str = "",
+    start: str = FUTURE,
+) -> dict:
     return {
         "title": title,
         "description": description,
@@ -70,7 +77,7 @@ def _extracted(*, title: str, location: str, description: str = "") -> dict:
         "food": [],
         "registration": False,
         "image_index": 0,
-        "occurrences": [_occ()],
+        "occurrences": [_occ(start)],
         "school": "uwaterloo",
         "category": "Arts & Culture",
         "source_image_url": "https://cdn/new.jpg",
@@ -235,14 +242,28 @@ def main() -> int:
 
     results.append(
         run_case(
-            name="New week announcement (no update language)",
+            name="New week announcement",
             caption=(
                 "Tea Tasting Night this Friday in SLC 3223! Bring a mug. "
                 "Same weekly series, new week."
             ),
-            extracted=_extracted(title="Tea Tasting Night", location="SLC 3223"),
+            extracted=_extracted(
+                title="Tea Tasting Night",
+                location="SLC 3223",
+                start=_future(12),
+            ),
             db_rows=[_db_event(eid=44, title="Tea Tasting Night", location="SLC 3223")],
-            expect="INSERT (id=null) - do not overwrite just because title matches",
+            expect="INSERT (id=null) because the occurrence is a different week",
+        )
+    )
+
+    results.append(
+        run_case(
+            name="Same-occurrence reminder",
+            caption="Tea Tasting Night is this Friday in SLC 3223! Bring a mug.",
+            extracted=_extracted(title="Tea Tasting Night", location="SLC 3223"),
+            db_rows=[_db_event(eid=45, title="Tea Tasting Night", location="SLC 3223")],
+            expect="OVERWRITE id=45 because this is a reminder for the same occurrence",
         )
     )
 

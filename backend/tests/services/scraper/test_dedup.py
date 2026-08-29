@@ -4,6 +4,8 @@ from datetime import datetime, timedelta, timezone
 
 from services.scraper.dedup import (
     _extract_shortcode,
+    collapse_duplicate_extractions,
+    confident_duplicate_id,
     find_candidates,
     jaccard_similarity,
     normalize,
@@ -101,6 +103,179 @@ def test_extract_shortcode_unrelated_url_returns_none():
 
 def _occ(start_iso: str) -> dict:
     return {"dtstart_utc": start_iso, "dtend_utc": "", "duration": "", "tz": "UTC"}
+
+
+def _duplicate_event(**overrides) -> dict:
+    event = {
+        "title": "Shoot N Shine",
+        "description": "Campus photo session",
+        "location": "University Square",
+        "organization": "Ottawa Student Union",
+        "occurrences": [_occ("2026-09-10T18:00:00+00:00")],
+        "price": None,
+        "food": [],
+        "registration": False,
+    }
+    event.update(overrides)
+    return event
+
+
+def test_confident_duplicate_requires_same_org_title_location_and_time():
+    candidate = {
+        **_duplicate_event(title="Shoot & Shine"),
+        "id": 42,
+        "organization_id": 7,
+        "ig_handle": "uottawasu",
+    }
+
+    assert (
+        confident_duplicate_id(
+            event=_duplicate_event(),
+            candidates=[candidate],
+            organization_id=7,
+            ig_handle="uottawasu",
+        )
+        == 42
+    )
+
+
+def test_confident_duplicate_rejects_nearby_nonmatching_start_time():
+    candidate = {
+        **_duplicate_event(
+            occurrences=[_occ("2026-09-10T18:30:00+00:00")],
+        ),
+        "id": 42,
+        "organization_id": 7,
+    }
+
+    assert (
+        confident_duplicate_id(
+            event=_duplicate_event(),
+            candidates=[candidate],
+            organization_id=7,
+            ig_handle=None,
+        )
+        is None
+    )
+
+
+def test_confident_duplicate_normalizes_equal_timezone_offsets():
+    candidate = {
+        **_duplicate_event(
+            occurrences=[_occ("2026-09-10T14:00:00-04:00")],
+        ),
+        "id": 42,
+        "organization_id": 7,
+    }
+
+    assert (
+        confident_duplicate_id(
+            event=_duplicate_event(),
+            candidates=[candidate],
+            organization_id=7,
+            ig_handle=None,
+        )
+        == 42
+    )
+
+
+def test_confident_duplicate_rejects_different_organizations():
+    candidate = {
+        **_duplicate_event(),
+        "id": 42,
+        "organization_id": 99,
+        "ig_handle": "anotherclub",
+    }
+
+    assert (
+        confident_duplicate_id(
+            event=_duplicate_event(),
+            candidates=[candidate],
+            organization_id=7,
+            ig_handle="uottawasu",
+        )
+        is None
+    )
+
+
+def test_confident_duplicate_rejects_distinct_language_sessions():
+    candidate = {
+        **_duplicate_event(title="Virtual Orientation - French"),
+        "id": 42,
+        "organization_id": 7,
+    }
+
+    assert (
+        confident_duplicate_id(
+            event=_duplicate_event(title="Virtual Orientation - English"),
+            candidates=[candidate],
+            organization_id=7,
+            ig_handle=None,
+        )
+        is None
+    )
+
+
+def test_confident_duplicate_leaves_generic_and_language_specific_titles_to_llm():
+    candidate = {
+        **_duplicate_event(title="Virtual Orientation - French"),
+        "id": 42,
+        "organization_id": 7,
+    }
+
+    assert (
+        confident_duplicate_id(
+            event=_duplicate_event(title="Virtual Orientation"),
+            candidates=[candidate],
+            organization_id=7,
+            ig_handle=None,
+        )
+        is None
+    )
+
+
+def test_confident_duplicate_rejects_distinct_campuses():
+    candidate = {
+        **_duplicate_event(location="Waterloo Campus"),
+        "id": 42,
+        "organization_id": 7,
+    }
+
+    assert (
+        confident_duplicate_id(
+            event=_duplicate_event(location="Brantford Campus"),
+            candidates=[candidate],
+            organization_id=7,
+            ig_handle=None,
+        )
+        is None
+    )
+
+
+def test_collapse_duplicate_extractions_merges_supplied_details():
+    events = [
+        _duplicate_event(description="Photo session", price=None),
+        _duplicate_event(
+            description="Campus photo session with professional headshots",
+            price=5,
+            food=["Snacks"],
+            registration=True,
+        ),
+    ]
+
+    collapsed, source_indexes, duplicate_count = collapse_duplicate_extractions(
+        events,
+        organization_ids=[7, 7],
+        ig_handles=["uottawasu", "uottawasu"],
+    )
+
+    assert duplicate_count == 1
+    assert source_indexes == [0]
+    assert len(collapsed) == 1
+    assert collapsed[0]["description"].endswith("professional headshots")
+    assert collapsed[0]["price"] == 5
+    assert collapsed[0]["food"] == ["Snacks"]
+    assert collapsed[0]["registration"] is True
 
 
 def test_find_candidates_returns_empty_without_occurrences_or_handle():

@@ -1,6 +1,10 @@
-"""Unit tests for Pass 2 reconciler schema + unknown-id handling."""
+"""Unit tests for Pass 2 reconciler schema, prompt, and id handling."""
 
-from services.scraper.reconciler import ReconciledEvent, reconcile_events
+from services.scraper.reconciler import (
+    ReconciledEvent,
+    _build_reconcile_prompt,
+    reconcile_events,
+)
 
 
 def test_reconciled_event_accepts_cancelled_with_id():
@@ -34,6 +38,79 @@ def test_reconcile_events_empty_input_returns_empty(monkeypatch):
         )
         == []
     )
+
+
+def test_reconcile_prompt_reuses_same_occurrence_reposts_but_not_new_occurrences():
+    prompt = _build_reconcile_prompt(
+        extracted_events=[{"title": "Tea Tasting", "occurrences": []}],
+        candidates_by_index=[[{"id": 42, "title": "Tea Tasting"}]],
+        caption_text="A reminder for Tea Tasting.",
+        school="uwaterloo",
+    )
+
+    assert "normal repost, reminder, secondary flyer" in prompt
+    assert "candidate `occurrences[].dtstart_utc`" in prompt
+    assert "distinct occurrence, session, edition, or new week" in prompt
+    assert "matching titles alone as insufficient" in prompt
+    assert "replace_occurrences" in prompt
+
+
+def _matching_event_data() -> tuple[dict, dict]:
+    extracted = {
+        "title": "Tea Tasting",
+        "description": "New details",
+        "location": "SLC 3223",
+        "occurrences": [{"dtstart_utc": "2026-09-10T22:00:00Z"}],
+    }
+    candidate = {
+        "id": 42,
+        "organization_id": 7,
+        "ig_handle": "uwtea",
+        "title": "Tea Tasting",
+        "location": "SLC 3223",
+        "occurrences": [{"dtstart_utc": "2026-09-10T22:00:00Z"}],
+    }
+    return extracted, candidate
+
+
+def test_reconcile_events_enforces_confident_duplicate_id(monkeypatch):
+    extracted, candidate = _matching_event_data()
+    _mock_client(
+        monkeypatch,
+        '[{"id": null, "title": "Tea Tasting", "description": "New details", '
+        '"location": "SLC 3223", "cancelled": false, '
+        '"occurrences": [{"dtstart_utc": "2026-09-10T22:00:00Z"}]}]',
+    )
+
+    result = reconcile_events(
+        extracted_events=[extracted],
+        candidates_by_index=[[candidate]],
+        caption_text="Tea Tasting reminder",
+        school="uwaterloo",
+        resolved_organization_ids=[7],
+        resolved_ig_handles=["uwtea"],
+    )
+
+    assert result is not None
+    assert result[0]["id"] == 42
+
+
+def test_reconcile_events_keeps_confident_match_when_llm_unavailable(monkeypatch):
+    extracted, candidate = _matching_event_data()
+    monkeypatch.setattr("services.scraper.reconciler._client", lambda: None)
+
+    result = reconcile_events(
+        extracted_events=[extracted],
+        candidates_by_index=[[candidate]],
+        caption_text="Tea Tasting reminder",
+        school="uwaterloo",
+        resolved_organization_ids=[7],
+        resolved_ig_handles=["uwtea"],
+    )
+
+    assert result is not None
+    assert result[0]["id"] == 42
+    assert result[0]["replace_occurrences"] is False
 
 
 def test_reconcile_events_strips_unknown_ids(monkeypatch):

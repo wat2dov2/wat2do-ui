@@ -599,13 +599,17 @@ def test_live_pass2_cancel_caption_sets_cancelled(fake_sb, patch_sb):
 
 @pytest.mark.live_llm
 @pytest.mark.skipif(not settings.openai_api_key, reason="OPENAI_API_KEY not configured")
-def test_live_pass2_no_update_language_inserts_new_instance(fake_sb, patch_sb):
-    """Recurring-style repost without update language should insert (null id)."""
+def test_live_pass2_new_occurrence_inserts_new_instance(fake_sb, patch_sb):
+    """A distinct later weekly occurrence should insert (null id)."""
     patch_sb("services.scraper.dedup")
     row = _db_event(eid=44, title="Tea Tasting Night", location="SLC 3223")
     _queue_dedup_db(fake_sb, same_org_rows=[row], same_day_rows=[])
 
-    extracted = _extracted(title="Tea Tasting Night", location="SLC 3223")
+    extracted = _extracted(
+        title="Tea Tasting Night",
+        location="SLC 3223",
+        start_iso=_OTHER_DAY_ISO,
+    )
     candidates = find_candidates(
         title=extracted["title"],
         location=extracted["location"],
@@ -619,16 +623,46 @@ def test_live_pass2_no_update_language_inserts_new_instance(fake_sb, patch_sb):
         extracted_events=[extracted],
         candidates_by_index=[candidates],
         caption_text=(
-            "Tea Tasting Night this Friday in SLC 3223! Bring a mug. Same weekly series, new week."
+            "Tea Tasting Night next Friday in SLC 3223! Bring a mug. Same weekly series, new week."
         ),
         school="uwaterloo",
     )
     assert finals is not None
     assert len(finals) == 1
     assert finals[0]["id"] is None, (
-        f"expected insert (id=null) for announcement without update language; "
+        f"expected insert (id=null) for a distinct event occurrence; "
         f"got id={finals[0]['id']} location={finals[0].get('location')!r}"
     )
+    assert finals[0]["cancelled"] is False
+
+
+@pytest.mark.live_llm
+@pytest.mark.skipif(not settings.openai_api_key, reason="OPENAI_API_KEY not configured")
+def test_live_pass2_same_occurrence_repost_overwrites_existing_event(fake_sb, patch_sb):
+    """A normal reminder for the same occurrence should reuse its candidate id."""
+    patch_sb("services.scraper.dedup")
+    row = _db_event(eid=45, title="Tea Tasting Night", location="SLC 3223")
+    _queue_dedup_db(fake_sb, same_org_rows=[row], same_day_rows=[])
+
+    extracted = _extracted(title="Tea Tasting Night", location="SLC 3223")
+    candidates = find_candidates(
+        title=extracted["title"],
+        location=extracted["location"],
+        description="",
+        occurrences=extracted["occurrences"],
+        ig_handle="uwteaorganization",
+    )
+    assert candidates[0]["id"] == 45
+
+    finals = reconcile_events(
+        extracted_events=[extracted],
+        candidates_by_index=[candidates],
+        caption_text="Tea Tasting Night is this Friday in SLC 3223! Bring a mug.",
+        school="uwaterloo",
+    )
+    assert finals is not None
+    assert len(finals) == 1
+    assert finals[0]["id"] == 45
     assert finals[0]["cancelled"] is False
 
 

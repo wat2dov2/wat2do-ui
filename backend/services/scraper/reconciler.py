@@ -15,6 +15,7 @@ from pydantic import BaseModel, BeforeValidator, Field, field_validator, model_v
 
 from core.config import settings
 from core.constants import EVENT_CATEGORIES
+from services.scraper.dedup import confident_duplicate_id
 from services.scraper.extractor import (
     ExtractedOccurrence,
     _client,
@@ -55,6 +56,7 @@ class ReconciledEvent(BaseModel):
     category: str | None = None
     cancelled: bool = False
     source_image_url: OptionalStr = None
+    replace_occurrences: bool = False
 
     @model_validator(mode="after")
     def sort_occurrences(self) -> ReconciledEvent:
@@ -80,10 +82,28 @@ def reconcile_events(
     if not extracted_events:
         return []
 
+    confident_ids = [
+        confident_duplicate_id(
+            event=event,
+            candidates=(candidates_by_index[index] if index < len(candidates_by_index) else []),
+            organization_id=(
+                resolved_organization_ids[index]
+                if resolved_organization_ids is not None and index < len(resolved_organization_ids)
+                else None
+            ),
+            ig_handle=(
+                resolved_ig_handles[index]
+                if resolved_ig_handles is not None and index < len(resolved_ig_handles)
+                else None
+            ),
+        )
+        for index, event in enumerate(extracted_events)
+    ]
+
     client = _client()
     if client is None:
         log.warning("OpenAI key not configured; skipping Pass 2 reconcile for %s", school)
-        return None
+        return _confident_match_fallback(extracted_events, confident_ids)
 
     prompt = _build_reconcile_prompt(
         extracted_events=extracted_events,
@@ -105,7 +125,7 @@ def reconcile_events(
         )
     except Exception as e:
         log.exception("Pass 2 reconcile OpenAI call failed: %s", e)
-        return None
+        return _confident_match_fallback(extracted_events, confident_ids)
 
     raw = (response.choices[0].message.content or "").strip()
     parsed = _parse_model_json(raw)
@@ -115,7 +135,7 @@ def reconcile_events(
         events = parsed
     else:
         log.warning("Pass 2 reconcile returned non-array JSON: %r", type(parsed).__name__)
-        return None
+        return _confident_match_fallback(extracted_events, confident_ids)
 
     candidates_by_id: dict[int, dict] = {}
     for candidates in candidates_by_index:
@@ -134,6 +154,10 @@ def reconcile_events(
         except Exception as err:
             log.warning("Pass 2 event validation failed: %s", err)
             continue
+        if len(events) == len(extracted_events) and i < len(confident_ids):
+            confident_id = confident_ids[i]
+            if confident_id is not None:
+                validated.id = confident_id
         if validated.id is not None and validated.id not in allowed_ids:
             log.warning(
                 "Pass 2 returned unknown id=%s; treating as insert",
@@ -164,8 +188,34 @@ def reconcile_events(
 
     if not cleaned and extracted_events:
         log.warning("Pass 2 produced zero valid events; caller should fall back")
-        return None
+        return _confident_match_fallback(extracted_events, confident_ids)
     return cleaned
+
+
+def _confident_match_fallback(
+    extracted_events: list[dict],
+    confident_ids: list[int | None],
+) -> list[dict] | None:
+    """Preserve deterministic duplicate IDs when the gray-zone model fails."""
+    if not any(event_id is not None for event_id in confident_ids):
+        return None
+
+    fallback: list[dict] = []
+    for index, event in enumerate(extracted_events):
+        event_id = confident_ids[index] if index < len(confident_ids) else None
+        try:
+            validated = ReconciledEvent.model_validate(
+                {
+                    **event,
+                    "id": event_id,
+                    "replace_occurrences": False,
+                }
+            )
+        except Exception as err:
+            log.warning("Deterministic reconcile fallback validation failed: %s", err)
+            continue
+        fallback.append(validated.model_dump(mode="json"))
+    return fallback or None
 
 
 def _guard_cross_org_id(
@@ -235,6 +285,12 @@ def _build_reconcile_prompt(
                 "extracted": extracted,
                 "scrape_organization_id": scrape_org_id,
                 "scrape_ig_handle": scrape_ig,
+                "confident_duplicate_id": confident_duplicate_id(
+                    event=extracted,
+                    candidates=candidates,
+                    organization_id=scrape_org_id,
+                    ig_handle=scrape_ig,
+                ),
                 "candidates": candidates,
             }
         )
@@ -272,17 +328,21 @@ Each object must use this shape:
   "school": string,
   "category": string or null,  // one of: {categories_str}
   "cancelled": boolean,
-  "source_image_url": string or null
+  "source_image_url": string or null,
+  "replace_occurrences": boolean
 }}
 
 RULES:
-- DEFAULT TO INSERT. If the caption is a normal event announcement (even with the same title/location as a candidate), return id=null. Similar candidates alone are NOT a reason to overwrite.
-- Same organization_id + strong title/date match: prefer overwrite/link when the caption clearly indicates an update / move / correction / reschedule of that existing event, unless the caption clearly indicates a new instance.
+- When `confident_duplicate_id` is an integer, use that exact id. Deterministic title, location, organization, and occurrence checks have already established identity.
+- Reuse a candidate id when it is the same logical event from the same organization: the attendee activity and at least one occurrence must strongly match, and the caption must not indicate a distinct new occurrence. Compare each extracted `occurrences[].dtstart_utc` against each candidate `occurrences[].dtstart_utc`. This applies to a normal repost, reminder, secondary flyer, performer reveal, or ticket reminder even when it does not say "update".
+- Treat matching titles alone as insufficient. Insert when the candidate is absent, the activity is materially different, or the caption/date makes clear this is a distinct occurrence, session, edition, or new week. If no candidate `occurrences[].dtstart_utc` exactly matches an extracted occurrence after UTC normalization, id MUST be null, even for the same title, organization, and location.
+- Same organization_id + strong activity and occurrence match: prefer overwrite/link. Updated, moved, corrected, rescheduled, and cancelled posts also overwrite/link the matching candidate.
 - Different organization_id: never overwrite; always insert (id=null).
-- Only set "id" to a candidate id when the caption CLEARLY says the existing event is being updated / moved / changed / corrected / rescheduled (words like update, moved, new room, corrected, rescheduled), OR when cancelling.
+- Only set "id" to a candidate id from the matching extracted event's provided candidates. Never link two merely similar recurring events just to avoid an insert.
 - If the caption says the event is cancelled / canceled, return the matched candidate object with "cancelled": true and keep other fields from the candidate unless the caption also corrects them. Cancel requires an id.
 - New overlapping fields from the extracted event win, including a shorter description.
-- Rebuild "occurrences" correctly on the final object (full list for that event).
+- Set `replace_occurrences` to false for ordinary reposts, reminders, cancellations, and partial details. Set it to true only when the source explicitly replaces or reschedules the complete occurrence schedule.
+- Rebuild "occurrences" correctly from the new source. The writer preserves unmentioned existing occurrences unless `replace_occurrences` is true.
 - Only use an "id" that appears in the provided candidates for that extracted event.
 - Candidates include organization_id, organization, and ig_handle - use them for ownership decisions.
 - Omitted candidates are left unchanged. Never delete. Never merge two existing database events into one.
