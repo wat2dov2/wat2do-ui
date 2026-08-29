@@ -81,7 +81,7 @@ jobs:
       POSTER_ID: ${{ inputs.poster_id }}
       INTENDED_RECIPIENT_ID: ${{ github.event.client_payload.intended_recipient_id || github.event.client_payload.notification_dict['com.instagram.android.igns.logging.intended_recipient_id'] }}
       TARGET_SCHOOL: ${{ github.event_name == 'workflow_dispatch' && inputs.school || '' }}
-      CUTOFF_DAYS: ${{ github.event_name == 'workflow_dispatch' && '1825' || '1' }}
+      CUTOFF_DAYS: ${{ github.event_name == 'workflow_dispatch' && '1825' || github.event.client_payload.cutoff_days || '1' }}
 
     steps:
       - uses: actions/checkout@v4
