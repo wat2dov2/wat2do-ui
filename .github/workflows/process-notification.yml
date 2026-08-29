@@ -39,11 +39,20 @@ jobs:
         env:
           RUNNER_CHECK_TOKEN: ${{ secrets.RUNNER_CHECK_TOKEN }}
           DEFAULT_GH_TOKEN: ${{ github.token }}
+          CACHE_ENT_ID: ${{ github.event.client_payload.notification_dict.cache_ent_id || '' }}
+          INSTAGRAM_ACTION: ${{ github.event.client_payload.notification_dict['com.instagram.android.igns.logging.ig_action'] || '' }}
         run: |
           export GH_TOKEN="${RUNNER_CHECK_TOKEN:-$DEFAULT_GH_TOKEN}"
+          has_cache_ent_id=false
+          if [[ -n "$CACHE_ENT_ID" || "$INSTAGRAM_ACTION" == *"cache_ent_id="* ]]; then
+            has_cache_ent_id=true
+          fi
           status=$(gh api "repos/${{ github.repository }}/actions/runners" --jq '.runners[] | select(.name == "wat2do-mac-mini" or .name == "wat2do-scraper" or (.labels[]?.name == "wat2do-scraper")) | .status' 2>/dev/null || true)
           if echo "$status" | grep -q "online"; then
             echo "Mac mini runner is online."
+            echo "runner=wat2do-scraper" >> "$GITHUB_OUTPUT"
+          elif [[ "$has_cache_ent_id" == "true" ]]; then
+            echo "Mac mini runner is offline. CacheEntID processing will wait for it."
             echo "runner=wat2do-scraper" >> "$GITHUB_OUTPUT"
           else
             echo "Mac mini runner status is '${status:-offline}'. Falling back to ubuntu-latest."

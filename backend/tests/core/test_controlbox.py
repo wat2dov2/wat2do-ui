@@ -51,6 +51,9 @@ def test_checked_in_controlbox_is_valid() -> None:
     assert controlbox.instagram_publishing.maximum_event_slides == 9
     assert controlbox.instagram_publishing.token_refresh_lead_days == 14
     assert controlbox.scraping.instagram_web_app_id == "936619743392459"
+    assert controlbox.instagram_digest.operation_name == "SubscriptionDigestFeedQuery"
+    assert controlbox.instagram_digest.client_doc_id == "20099285643937437306465362209"
+    assert controlbox.instagram_digest.maximum_pages == 25
     assert controlbox.workflow_failure_alerts.discord_admin_role_ids == ("1506447680287674469",)
     assert controlbox.promoter_program.rate_cents == 100
     assert controlbox.promoter_program.maximum_active_posters == 50
@@ -182,6 +185,17 @@ def test_invalid_instagram_web_app_id_is_rejected(tmp_path: Path) -> None:
     )
 
     with pytest.raises(ValidationError, match="instagram_web_app_id"):
+        load_controlbox(path)
+
+
+def test_invalid_instagram_digest_endpoint_is_rejected(tmp_path: Path) -> None:
+    path = _write_control(
+        tmp_path,
+        "instagram_digest",
+        lambda payload: payload.update({"endpoint_url": "https://example.com/graphql/query"}),
+    )
+
+    with pytest.raises(ValidationError, match="must use i.instagram.com"):
         load_controlbox(path)
 
 

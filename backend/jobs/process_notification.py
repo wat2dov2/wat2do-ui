@@ -20,6 +20,10 @@ import core.logging  # noqa: F401, E402
 from jobs.scrape import run  # noqa: E402
 from schemas.school import validate_recipient_id  # noqa: E402
 from services import school_service  # noqa: E402
+from services.instagram_notifications.browser_digest import (  # noqa: E402
+    BrowserDigestError,
+    BrowserInstagramDigestResolver,
+)
 from services.instagram_notifications.ledger import (  # noqa: E402
     MaterializedMedia,
     MediaClaim,
@@ -197,10 +201,46 @@ def _validate_actionable_notification(notification: ParsedNotification) -> None:
         raise NotificationPayloadError(
             "Actionable notification has an unsupported Instagram action."
         )
-    if not notification.explicit_media:
+    if not notification.explicit_media and notification.cache_ent_id is None:
         raise NotificationPayloadError(
-            "Actionable notification contains no explicit Instagram media."
+            "Actionable notification contains no Instagram media identity."
         )
+
+
+def _materialize_media(
+    notification: ParsedNotification,
+    intended_recipient_id: str,
+    *,
+    resolver: BrowserInstagramDigestResolver | None = None,
+) -> list[MaterializedMedia]:
+    materialized = {item.media_id: item for item in notification.explicit_media}
+    if notification.cache_ent_id is None or (
+        notification.total_media_count is not None
+        and len(materialized) >= notification.total_media_count
+    ):
+        return list(materialized.values())
+
+    resolution = (resolver or BrowserInstagramDigestResolver()).resolve(
+        intended_recipient_id,
+        notification.cache_ent_id,
+    )
+    for raw_media_id in resolution.media_ids:
+        media_id = _parse_media_id(raw_media_id)
+        materialized.setdefault(media_id, _media_target(media_id))
+
+    if (
+        notification.total_media_count is not None
+        and len(materialized) != notification.total_media_count
+    ):
+        raise BrowserDigestError(
+            "Instagram digest did not resolve the advertised number of media IDs"
+        )
+    log.info(
+        "Expanded Instagram digest through %s to %d exact media target(s).",
+        resolution.account_username,
+        len(materialized),
+    )
+    return list(materialized.values())
 
 
 def _process_claim(claim: MediaClaim, *, cutoff_days: int) -> int:
@@ -325,7 +365,12 @@ def main() -> int:
         log.error("Instagram notification routing failed unexpectedly.")
         return 1
 
-    media = list(notification.explicit_media)
+    try:
+        media = _materialize_media(notification, intended_recipient_id)
+    except (BrowserDigestError, NotificationPayloadError) as exc:
+        log.error("%s", exc)
+        return 1
+
     if notification.total_media_count is not None and len(media) < notification.total_media_count:
         log.warning(
             "Instagram notification exposed %d of %d advertised media items; "

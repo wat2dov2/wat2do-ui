@@ -3,6 +3,7 @@ import logging
 from types import SimpleNamespace
 
 from jobs import process_notification
+from services.instagram_notifications.browser_digest import DigestResolution
 from services.instagram_notifications.ledger import MediaClaim
 
 RECIPIENT_ID = "12342599092"
@@ -68,6 +69,22 @@ def _capture_ledger(monkeypatch):
     return record_calls, claim_calls
 
 
+def _install_digest_resolver(monkeypatch, media_ids: tuple[str, ...]):
+    calls = []
+
+    class _Resolver:
+        def resolve(self, intended_recipient_id: str, cache_ent_id: str):
+            calls.append((intended_recipient_id, cache_ent_id))
+            return DigestResolution(
+                account_username="ubc.wat2do.io",
+                media_ids=media_ids,
+                page_count=1,
+            )
+
+    monkeypatch.setattr(process_notification, "BrowserInstagramDigestResolver", _Resolver)
+    return calls
+
+
 def test_media_notification_processes_ordered_unique_exact_claims(monkeypatch) -> None:
     first_media_id = 123456789
     second_media_id = 987654321
@@ -117,35 +134,46 @@ def test_media_notification_processes_ordered_unique_exact_claims(monkeypatch) -
     ]
 
 
-def test_digest_processes_only_explicit_media_and_keeps_metadata(
+def test_digest_expands_hidden_media_before_recording_and_keeps_metadata(
     monkeypatch,
     caplog,
 ) -> None:
     first_media_id = "123456789"
     second_media_id = "987654321"
+    third_media_id = "111111111"
+    fourth_media_id = "222222222"
     _set_payload(
         monkeypatch,
         _actionable_payload(
             "clips_home?"
             f"media_list={first_media_id}_1,{second_media_id}_2&cache_ent_id=cache-123&"
-            "total_non_mmc_media_count=9"
+            "total_non_mmc_media_count=4"
         ),
     )
     _install_school(monkeypatch)
+    resolver_calls = _install_digest_resolver(
+        monkeypatch,
+        (third_media_id, fourth_media_id),
+    )
     record_calls, _claim_calls = _capture_ledger(monkeypatch)
     monkeypatch.setattr(process_notification, "run", lambda **_kwargs: 0)
     monkeypatch.setattr(process_notification, "mark_media_succeeded", lambda **_kwargs: True)
 
-    with caplog.at_level(logging.WARNING):
+    with caplog.at_level(logging.INFO):
         assert process_notification.main() == 0
 
     assert [item.media_id for item in record_calls[0]["media"]] == [
         first_media_id,
         second_media_id,
+        third_media_id,
+        fourth_media_id,
     ]
+    assert resolver_calls == [(RECIPIENT_ID, "cache-123")]
     assert record_calls[0]["cache_ent_id"] == "cache-123"
-    assert record_calls[0]["total_non_mmc_media_count"] == 9
-    assert "exposed 2 of 9 advertised media items" in caplog.text
+    assert record_calls[0]["total_non_mmc_media_count"] == 4
+    assert "Expanded Instagram digest through ubc.wat2do.io to 4 exact media target" in (
+        caplog.text
+    )
 
 
 def test_duplicate_delivery_with_no_claims_does_not_scrape(monkeypatch) -> None:
@@ -278,18 +306,74 @@ def test_unrelated_notification_with_media_shape_is_a_noop(monkeypatch) -> None:
     assert process_notification.main() == 0
 
 
-def test_actionable_digest_without_explicit_media_fails(monkeypatch, caplog) -> None:
+def test_cache_only_digest_is_expanded_before_validation(monkeypatch) -> None:
     _set_payload(
         monkeypatch,
         _actionable_payload(
-            "clips_home?cache_ent_id=cache-123&total_non_mmc_media_count=4",
+            "clips_home?cache_ent_id=cache-123&total_non_mmc_media_count=2",
         ),
+    )
+    _install_school(monkeypatch)
+    _install_digest_resolver(monkeypatch, ("123456789", "987654321"))
+    record_calls, _claim_calls = _capture_ledger(monkeypatch)
+    monkeypatch.setattr(process_notification, "run", lambda **_kwargs: 0)
+    monkeypatch.setattr(process_notification, "mark_media_succeeded", lambda **_kwargs: True)
+
+    assert process_notification.main() == 0
+    assert [item.media_id for item in record_calls[0]["media"]] == [
+        "123456789",
+        "987654321",
+    ]
+
+
+def test_digest_resolution_failure_stops_before_ledger_recording(
+    monkeypatch,
+    caplog,
+) -> None:
+    _set_payload(
+        monkeypatch,
+        _actionable_payload(
+            "clips_home?media_id=123456789&cache_ent_id=cache-123&total_non_mmc_media_count=2",
+        ),
+    )
+    _install_school(monkeypatch)
+
+    class _Resolver:
+        def resolve(self, *_args):
+            raise process_notification.BrowserDigestError("sanitized browser failure")
+
+    monkeypatch.setattr(process_notification, "BrowserInstagramDigestResolver", _Resolver)
+    monkeypatch.setattr(
+        process_notification,
+        "record_notification_media",
+        lambda **_kwargs: (_ for _ in ()).throw(AssertionError("ledger should not run")),
     )
 
     with caplog.at_level(logging.ERROR):
         assert process_notification.main() == 1
 
-    assert "no explicit Instagram media" in caplog.text
+    assert "sanitized browser failure" in caplog.text
+
+
+def test_digest_count_mismatch_stops_before_ledger_recording(monkeypatch, caplog) -> None:
+    _set_payload(
+        monkeypatch,
+        _actionable_payload(
+            "clips_home?media_id=123456789&cache_ent_id=cache-123&total_non_mmc_media_count=3",
+        ),
+    )
+    _install_school(monkeypatch)
+    _install_digest_resolver(monkeypatch, ("987654321",))
+    monkeypatch.setattr(
+        process_notification,
+        "record_notification_media",
+        lambda **_kwargs: (_ for _ in ()).throw(AssertionError("ledger should not run")),
+    )
+
+    with caplog.at_level(logging.ERROR):
+        assert process_notification.main() == 1
+
+    assert "did not resolve the advertised number" in caplog.text
 
 
 def test_invalid_media_notification_fails_without_logging_identifier(

@@ -39,6 +39,32 @@ When making technical decisions, do not give much weight to development cost.
 Instead, prefer quality, simplicity, robustness, scalability, and long-term
 maintainability.
 
+### Instagram notification ingestion direction
+
+Collect Instagram notifications through the official Android app and Android
+`NotificationListenerService` routing.
+For physical-device capacity planning, budget no more than three Instagram
+accounts per device and scale horizontally by adding devices.
+
+When Instagram collapses a notification into "account posted and N others", the
+`process-notification` job may expand that notification's CacheEntID through one
+existing, human-authenticated browser tab before recording notification media.
+CacheEntID workflow jobs must run on the single browser-capable Mac runner so each
+job switches the browser to the notification's intended recipient account,
+completes that one query, and only then lets the next job use the browser.
+The browser's visible account switcher and active account identity are the source
+of truth for matching recipient IDs to logged-in usernames.
+
+Browser credentials must remain inside the browser.
+Never read, copy, print, persist, rotate, or maintain `sessionid` values or browser
+cookie jars, and never create a parallel pool of browser sessions.
+If serialized browser expansion cannot complete, fail before recording that
+notification's media so the workflow can be rerun safely.
+Other notification workflow runs must remain independently processable.
+
+Secrets and Instagram credentials must still follow the repository's existing
+secret-storage rules and must never be committed.
+
 ### Bug fixes and testing
 
 When doing bug fixes, always start with reproducing the bug in an E2E setting as
