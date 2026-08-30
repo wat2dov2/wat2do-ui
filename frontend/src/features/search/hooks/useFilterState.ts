@@ -32,7 +32,7 @@ export function useFilterActions() {
   );
 
   const toggleFilterValue = useCallback(
-    (key: "categories" | "locations" | "foods" | "days" | "organizations", value: string) => {
+    (key: "categories" | "locations" | "foods" | "days", value: string) => {
       setFilterState((current) => {
         const currentValues = current[key];
         return {
@@ -73,6 +73,7 @@ export function useFilterState() {
     selectedLocations,
     selectedFoods,
     selectedDays,
+    minPrice,
     maxPrice,
     registration,
     freeFoodFilter,
@@ -90,6 +91,7 @@ export function useFilterState() {
       selectedLocations: s.selectedLocations,
       selectedFoods: s.selectedFoods,
       selectedDays: s.selectedDays,
+      minPrice: s.minPrice,
       maxPrice: s.maxPrice,
       registration: s.registration,
       freeFoodFilter: s.freeFoodFilter,
@@ -130,6 +132,10 @@ export function useFilterState() {
   );
   const setSelectedOrganizations = useCallback(
     (value: string[]) => updateFilterState({ organizations: value }),
+    [updateFilterState],
+  );
+  const setMinPrice = useCallback(
+    (value: string) => updateFilterState({ minPrice: value }),
     [updateFilterState],
   );
   const setMaxPrice = useCallback(
@@ -182,11 +188,6 @@ export function useFilterState() {
     (day: string) => toggleFilterValue("days", day),
     [toggleFilterValue],
   );
-  const toggleOrganization = useCallback(
-    (org: string) => toggleFilterValue("organizations", org),
-    [toggleFilterValue],
-  );
-
   return {
     searchQuery,
     setSearchQuery,
@@ -198,6 +199,8 @@ export function useFilterState() {
     setSelectedFoods,
     selectedDays,
     setSelectedDays,
+    minPrice,
+    setMinPrice,
     maxPrice,
     setMaxPrice,
     registration,
@@ -216,7 +219,6 @@ export function useFilterState() {
     toggleCategory,
     toggleLocation,
     toggleDay,
-    toggleOrganization,
     clearAllFilters,
     sortBy,
     setSortBy,

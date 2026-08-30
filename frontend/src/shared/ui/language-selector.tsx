@@ -50,8 +50,7 @@ export function LanguageSelector({
     >
       <SelectTrigger size="sm">
         <SelectValue>
-          <span className="sm:hidden">{currentLanguage.shortLabel}</span>
-          <span className="hidden sm:inline">{currentLanguage.label}</span>
+          {currentLanguage.label}
         </SelectValue>
       </SelectTrigger>
       <SelectContent>

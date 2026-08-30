@@ -28,23 +28,13 @@ export function useSearch({
 
   const handleClearAllFilters = filterState.clearAllFilters;
 
-  const availableOrganizations = useMemo(() => {
-    const orgs = new Set<string>();
-    events.forEach((event) => {
-      const org = event.organization?.trim();
-      if (org) {
-        orgs.add(org);
-      }
-    });
-    return Array.from(orgs).sort();
-  }, [events]);
-
   const filteredEvents = useMemo(() => {
     const filtered = filterEvents(events, {
       searchQuery: filterState.searchQuery,
       goingFilter: filterState.goingFilter,
       freeFoodFilter: filterState.freeFoodFilter,
       selectedDays: filterState.selectedDays,
+      minPrice: filterState.minPrice,
       maxPrice: filterState.maxPrice,
       selectedLocations: filterState.selectedLocations,
       selectedFoods: filterState.selectedFoods,
@@ -63,6 +53,7 @@ export function useSearch({
     filterState.searchQuery,
     filterState.freeFoodFilter,
     filterState.selectedDays,
+    filterState.minPrice,
     filterState.maxPrice,
     filterState.selectedLocations,
     filterState.selectedFoods,
@@ -86,6 +77,7 @@ export function useSearch({
         selectedLocations: filterState.selectedLocations,
         selectedFoods: filterState.selectedFoods,
         selectedDays: filterState.selectedDays,
+        minPrice: filterState.minPrice,
         maxPrice: filterState.maxPrice,
         registration: filterState.registration,
         selectedOrganizations: filterState.selectedOrganizations,
@@ -99,6 +91,7 @@ export function useSearch({
       filterState.selectedLocations,
       filterState.selectedFoods,
       filterState.selectedDays,
+      filterState.minPrice,
       filterState.maxPrice,
       filterState.registration,
       filterState.selectedOrganizations,
@@ -138,6 +131,5 @@ export function useSearch({
     filteredEvents,
     filterCount,
     handleClearAllFilters,
-    availableOrganizations,
   };
 }

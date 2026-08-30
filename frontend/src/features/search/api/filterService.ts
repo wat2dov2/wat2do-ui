@@ -15,6 +15,7 @@ export const EMPTY_FILTER_STATE: FilterState = {
   locations: [],
   foods: [],
   days: [],
+  minPrice: "",
   maxPrice: "",
   registration: false,
   organizations: [],
@@ -38,6 +39,7 @@ export interface SearchStoreFilterValues {
   selectedLocations: string[];
   selectedFoods: string[];
   selectedDays: string[];
+  minPrice: string;
   maxPrice: string;
   registration: boolean;
   selectedOrganizations: string[];
@@ -58,7 +60,7 @@ function stringArray(value: unknown): string[] {
     : [];
 }
 
-function maxPriceFrom(value: unknown): string {
+function priceFrom(value: unknown): string {
   return typeof value === "string" ? value : "";
 }
 
@@ -106,7 +108,8 @@ export function normalizeFilterState(filters: Partial<FilterState>): FilterState
     locations: stringArray(filters.locations),
     foods: stringArray(filters.foods),
     days: stringArray(filters.days),
-    maxPrice: maxPriceFrom(filters.maxPrice),
+    minPrice: priceFrom(filters.minPrice),
+    maxPrice: priceFrom(filters.maxPrice),
     registration: filters.registration === true,
     organizations: stringArray(filters.organizations),
     freeFood: filters.freeFood === true,
@@ -136,6 +139,7 @@ export function storeStatesToFilterState(
     locations: values.selectedLocations,
     foods: values.selectedFoods,
     days: values.selectedDays,
+    minPrice: values.minPrice,
     maxPrice: values.maxPrice,
     registration: values.registration,
     organizations: values.selectedOrganizations,
@@ -162,7 +166,8 @@ export function filterStateFromInput(
     locations: stringArray(filters.locations),
     foods: stringArray(filters.foods),
     days: stringArray(filters.days),
-    maxPrice: maxPriceFrom(filters.maxPrice),
+    minPrice: priceFrom(filters.minPrice),
+    maxPrice: priceFrom(filters.maxPrice),
     registration:
       typeof filters.registration === "boolean" ? filters.registration : false,
     organizations: stringArray(filters.organizations),

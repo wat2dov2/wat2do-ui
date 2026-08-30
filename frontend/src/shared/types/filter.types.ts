@@ -13,6 +13,7 @@ export interface FilterState {
   locations: string[];
   foods: string[];
   days: string[];
+  minPrice: string;
   maxPrice: string;
   registration: boolean;
   organizations: string[];

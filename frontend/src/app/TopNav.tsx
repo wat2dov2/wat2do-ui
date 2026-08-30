@@ -41,6 +41,30 @@ import imgImage1 from "@/assets/38e8096a28295e8dcc0e5020d0a5f3dd85d5f019.png";
 
 type NavOrganization = AuthState["clubs"][number];
 
+interface Wat2DoLogoLinkProps {
+  label: string;
+  onNavigate?: () => void;
+}
+
+function Wat2DoLogoLink({ label, onNavigate }: Wat2DoLogoLinkProps) {
+  return (
+    <NextLink
+      href={ROUTES.HOME}
+      onClick={onNavigate}
+      className="flex h-8 w-10 shrink-0 cursor-pointer items-center justify-center transition-opacity hover:opacity-80"
+      aria-label={label}
+    >
+      <Image
+        alt=""
+        width={34}
+        height={24}
+        className="h-6 w-[34px] object-contain"
+        src={imgImage1}
+      />
+    </NextLink>
+  );
+}
+
 const PRIMARY_NAV_ITEMS = [
   { labelKey: "navigation.events", href: ROUTES.HOME, Icon: Ticket },
   {
@@ -80,10 +104,6 @@ export function TopNav() {
   const navigationItems = isAuthenticated
     ? [...PRIMARY_NAV_ITEMS, SETTINGS_NAV_ITEM]
     : PRIMARY_NAV_ITEMS;
-
-  const handleLogoClick = useCallback(() => {
-    router.push(ROUTES.HOME);
-  }, [router]);
 
   const handleAdminClick = useCallback(() => {
     router.push(ROUTES.ADMIN);
@@ -125,19 +145,7 @@ export function TopNav() {
   return (
     <header className="fixed top-0 left-0 right-0 z-nav flex h-12 items-center justify-between gap-1.5 border-b border-border bg-surface px-2 sm:gap-2 sm:px-4">
       <div className="flex min-w-0 flex-1 items-center gap-1.5 sm:gap-2.5">
-        <button
-          onMouseDown={handleLogoClick}
-          className="flex h-8 w-10 shrink-0 cursor-pointer items-center justify-center transition-opacity hover:opacity-80"
-          aria-label={t("navigation.goToEvents")}
-        >
-          <Image
-            alt={t("common.logo")}
-            width={34}
-            height={24}
-            className="h-6 w-[34px] object-contain"
-            src={imgImage1}
-          />
-        </button>
+        <Wat2DoLogoLink label={t("navigation.goToEvents")} />
         <span className="hidden text-muted-foreground text-lg font-light sm:inline">/</span>
         <SchoolCombobox
           value={requestSchool}
@@ -186,17 +194,25 @@ export function TopNav() {
             <DrawerHeader className="sr-only">
               <DrawerTitle>{t("navigation.primary")}</DrawerTitle>
             </DrawerHeader>
-            <DrawerBody className="gap-1 pt-0">
+            <DrawerBody className="gap-3">
+              <Wat2DoLogoLink
+                label={t("navigation.goToEvents")}
+                onNavigate={() => setNavigationOpen(false)}
+              />
+              <Separator />
               {!profileCompleted && (
-                <Button
-                  className="w-full"
-                  onClick={() => {
-                    setNavigationOpen(false);
-                    handleSignIn();
-                  }}
-                >
-                  {t("events.signIn")}
-                </Button>
+                <>
+                  <Button
+                    className="w-full"
+                    onClick={() => {
+                      setNavigationOpen(false);
+                      handleSignIn();
+                    }}
+                  >
+                    {t("events.signIn")}
+                  </Button>
+                  <Separator />
+                </>
               )}
               <nav
                 aria-label={t("navigation.primary")}

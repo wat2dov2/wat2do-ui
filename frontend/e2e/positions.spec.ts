@@ -212,6 +212,8 @@ test("browses, filters, and searches open organization positions", async ({
     .getByText("Application deadline")
     .locator('xpath=ancestor::*[@data-slot="item"]');
   await expect(deadlineItem).toHaveAttribute("data-variant", "default");
+  await expect(deadlineItem).toHaveCSS("flex-direction", "column");
+  await expect(deadlineItem).toHaveCSS("align-items", "flex-start");
   await page.keyboard.press("Escape");
 
   await page

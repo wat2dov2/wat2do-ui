@@ -18,9 +18,10 @@ export function getFilterCounts(filters: {
   selectedLocations: string[];
   selectedFoods: string[];
   selectedDays: string[];
+  minPrice: string;
   maxPrice: string;
   registration: boolean;
-  selectedOrganizations?: string[];
+  selectedOrganizations: string[];
   freeFoodFilter: boolean;
   goingFilter: boolean;
   addedSince?: string;
@@ -31,9 +32,10 @@ export function getFilterCounts(filters: {
     filters.selectedLocations.length +
     filters.selectedFoods.length +
     filters.selectedDays.length +
+    (filters.minPrice ? 1 : 0) +
     (filters.maxPrice ? 1 : 0) +
     (filters.registration ? 1 : 0) +
-    (filters.selectedOrganizations?.length ?? 0) +
+    filters.selectedOrganizations.length +
     (filters.freeFoodFilter ? 1 : 0) +
     (filters.goingFilter ? 1 : 0) +
     (filters.addedSince ? 1 : 0) +

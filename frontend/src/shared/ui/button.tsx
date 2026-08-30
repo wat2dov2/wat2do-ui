@@ -6,7 +6,7 @@ import { Check } from "@/shared/ui/doodle-icons"
 import { cn } from "@/shared/lib/utils"
 
 const OUTLINE_CONTROL_STYLES =
-  "border border-border bg-background text-foreground hover:bg-surface-hover active:bg-surface-active dark:border-secondary dark:bg-secondary dark:text-secondary-foreground dark:hover:bg-secondary-hover dark:active:bg-secondary-active"
+  "border border-border/60 bg-background text-foreground hover:bg-surface-hover active:bg-surface-active dark:border-secondary dark:bg-secondary dark:text-secondary-foreground dark:hover:bg-secondary-hover dark:active:bg-secondary-active"
 
 /**
  * `data-selected` marks a toggleable button that is currently "on". Selected
@@ -31,7 +31,7 @@ const buttonVariants = cva(
       size: {
         default: "h-9 px-4 py-2 has-[>svg]:px-3",
         sm: "h-8 gap-1.5 px-3 has-[>svg]:px-2.5",
-        lg: "h-11 px-6 has-[>svg]:px-4",
+        lg: "h-11 px-5 has-[>svg]:px-4",
         icon: "size-9",
         "icon-sm": "size-8",
         "icon-lg": "size-10",

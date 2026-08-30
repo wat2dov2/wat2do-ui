@@ -15,6 +15,7 @@ export interface SearchFilters {
   goingFilter: boolean;
   freeFoodFilter: boolean;
   selectedDays: string[];
+  minPrice: string;
   maxPrice: string;
   selectedLocations: string[];
   selectedFoods: string[];
@@ -203,8 +204,11 @@ export function filterEvents(
       return false;
     }
 
-    // Maximum price only applies when the freeFood quick filter is off.
+    // The price range only applies when the freeFood quick filter is off.
     if (!filters.freeFoodFilter) {
+      if (filters.minPrice && price < parseFloat(filters.minPrice)) {
+        return false;
+      }
       if (filters.maxPrice && price > parseFloat(filters.maxPrice)) {
         return false;
       }
@@ -213,7 +217,9 @@ export function filterEvents(
     if (
       filters.selectedLocations.length > 0 &&
       !filters.selectedLocations.some((loc) =>
-        (event.location ?? "").toLocaleLowerCase().includes(loc.toLocaleLowerCase()),
+        (event.location ?? "")
+          .toLocaleLowerCase()
+          .includes(loc.trim().toLocaleLowerCase()),
       )
     ) {
       return false;
@@ -242,10 +248,12 @@ export function filterEvents(
       return false;
     }
 
+    const organization = (event.organization ?? "").toLocaleLowerCase();
     if (
-      filters.selectedOrganizations &&
       filters.selectedOrganizations.length > 0 &&
-      !filters.selectedOrganizations.includes(event.organization ?? "")
+      !filters.selectedOrganizations.some((query) =>
+        organization.includes(query.trim().toLocaleLowerCase()),
+      )
     ) {
       return false;
     }

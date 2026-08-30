@@ -74,12 +74,12 @@ export function EventCardContent({
     <div
       data-slot="event-card-content"
       className={cn(
-        "relative flex flex-1 flex-col pb-2.5 pt-3 sm:pb-3 sm:pt-4",
+        "relative flex flex-1 flex-col pb-2.5 pt-2 sm:pb-3 sm:pt-2.5",
         horizontalPadding === "inset" && "px-2.5 sm:px-3",
         className,
       )}
     >
-      <div className="flex flex-col gap-3 h-full flex-1">
+      <div className="flex h-full flex-1 flex-col gap-0">
         <div className="min-w-0">
           <h3
             className={`font-semibold text-base leading-[1.1] line-clamp-2 ${textClassName}`}
@@ -109,7 +109,7 @@ export function EventCardContent({
         </div>
 
         {date || time || location || badges.length > 0 ? (
-          <div className="flex items-end justify-between gap-3 mt-auto min-w-0">
+          <div className="flex min-w-0 items-end justify-between gap-3">
             <div className="space-y-0.5 min-w-0 flex-1">
               {date && (
                 <span

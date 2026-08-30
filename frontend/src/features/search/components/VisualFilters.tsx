@@ -1,12 +1,12 @@
-import { useCallback, useMemo, useEffect, useState } from "react";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Calendar, Grid3x3 } from "@/shared/ui/doodle-icons";
 import { FilterSection } from "@/features/search/components/FilterSection";
 import { MultiSelect } from "@/shared/ui/multi-select";
 import { Switch } from "@/shared/ui/switch";
-import { SearchCombobox } from "@/shared/ui/search-combobox";
 import { Input } from "@/shared/ui/input";
 import { Button } from "@/shared/ui/button";
+import { FormGrid } from "@/shared/layout";
 import type { ViewMode } from "@/shared/types";
 
 interface SingleValueFilterInputProps {
@@ -16,52 +16,44 @@ interface SingleValueFilterInputProps {
 }
 
 function SingleValueFilterInput({ value, onChange, placeholder }: SingleValueFilterInputProps) {
-  const [localValue, setLocalValue] = useState(value);
-
-  // Sync with external updates (like clear all filters)
-  useEffect(() => {
-    setLocalValue(value);
-  }, [value]);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value;
-    setLocalValue(val);
-    onChange(val.trim() ? [val.trim()] : []);
-  };
-
   return (
     <Input
       type="text"
       placeholder={placeholder}
-      value={localValue}
-      onChange={handleChange}
+      value={value}
+      onChange={(event) => {
+        const nextValue = event.target.value;
+        onChange(nextValue.trim() ? [nextValue] : []);
+      }}
     />
   );
 }
 
+export interface VisualFilterControls {
+  selectedCategories: string[];
+  setSelectedCategories: (categories: string[]) => void;
+  categoryOptions: Array<{ id: string; label: string }>;
+  toggleCategory: (id: string) => void;
+  selectedLocations: string[];
+  setSelectedLocations: (locations: string[]) => void;
+  selectedFoods: string[];
+  setSelectedFoods: (foods: string[]) => void;
+  selectedDays: string[];
+  setSelectedDays: (days: string[]) => void;
+  dayOptions: Array<{ id: string; label: string }>;
+  toggleDay: (id: string) => void;
+  minPrice: string;
+  setMinPrice: (value: string) => void;
+  maxPrice: string;
+  setMaxPrice: (value: string) => void;
+  registration: boolean;
+  setRegistration: (value: boolean) => void;
+  selectedOrganizations: string[];
+  setSelectedOrganizations: (value: string[]) => void;
+}
+
 interface VisualFiltersProps {
-  filters: {
-    selectedCategories: string[];
-    setSelectedCategories: (categories: string[]) => void;
-    categoryOptions: Array<{ id: string; label: string }>;
-    toggleCategory: (id: string) => void;
-    selectedLocations: string[];
-    setSelectedLocations: (locations: string[]) => void;
-    selectedFoods: string[];
-    setSelectedFoods: (foods: string[]) => void;
-    selectedDays: string[];
-    setSelectedDays: (days: string[]) => void;
-    dayOptions: Array<{ id: string; label: string }>;
-    toggleDay: (id: string) => void;
-    maxPrice: string;
-    setMaxPrice: (value: string) => void;
-    registration: boolean;
-    setRegistration: (value: boolean) => void;
-    selectedOrganizations: string[];
-    setSelectedOrganizations: (value: string[]) => void;
-    toggleOrganization: (org: string) => void;
-    availableOrganizations: string[];
-  };
+  filters: VisualFilterControls;
   viewMode: ViewMode;
   onViewModeChange: (mode: ViewMode) => void;
 }
@@ -93,17 +85,8 @@ export function VisualFilters({ filters, viewMode, onViewModeChange }: VisualFil
     ],
     [t],
   );
-
-  const handleSelectOrganization = useCallback(
-    (org: string) => {
-      if (filters.selectedOrganizations.includes(org)) {
-        filters.setSelectedOrganizations([]);
-      } else {
-        filters.setSelectedOrganizations([org]);
-      }
-    },
-    [filters],
-  );
+  const activePriceFilterCount =
+    Number(Boolean(filters.minPrice)) + Number(Boolean(filters.maxPrice));
 
   return (
     <div className="-space-y-px">
@@ -202,47 +185,52 @@ export function VisualFilters({ filters, viewMode, onViewModeChange }: VisualFil
       <FilterSection
         title={t("filters.organization", "Organization")}
         indicator={
-          filters.selectedOrganizations.length > 0
-            ? `${filters.selectedOrganizations.length}`
+          filters.selectedOrganizations[0]?.trim()
+            ? "1"
             : undefined
         }
         onClear={() => filters.setSelectedOrganizations([])}
       >
-        <div className="space-y-2">
-          {filters.availableOrganizations.length === 0 ? (
-            <p className="text-xs text-muted-foreground text-center py-2">
-              {t("filters.noOrganizations")}
-            </p>
-          ) : (
-            <SearchCombobox<string>
-              selectedKey={filters.selectedOrganizations[0] ?? ""}
-              onSelect={handleSelectOrganization}
-              items={filters.availableOrganizations}
-              getKey={(org) => org}
-              getLabel={(org) => org}
-              displayValue={filters.selectedOrganizations[0] ?? t("forms.selectOrganization", "Select organization...")}
-              isPlaceholder={filters.selectedOrganizations.length === 0}
-              variant="field"
-              searchPlaceholder={t("forms.searchOrganizationPlaceholder", "Search organizations...")}
-              emptyLabel={t("forms.noOrganizationFound", "No organization found")}
-            />
-          )}
-        </div>
+        <SingleValueFilterInput
+          value={filters.selectedOrganizations[0] ?? ""}
+          onChange={filters.setSelectedOrganizations}
+          placeholder={t("filters.searchOrganization")}
+        />
       </FilterSection>
 
-      {/* Maximum Price Filter */}
+      {/* Price Range Filter */}
       <FilterSection
-        title={t("filters.maxPrice")}
-        indicator={filters.maxPrice ? "1" : undefined}
-        onClear={() => filters.setMaxPrice("")}
+        title={t("filters.price")}
+        indicator={
+          activePriceFilterCount > 0
+            ? String(activePriceFilterCount)
+            : undefined
+        }
+        onClear={() => {
+          filters.setMinPrice("");
+          filters.setMaxPrice("");
+        }}
       >
-        <Input
-          type="number"
-          min="0"
-          placeholder={t("filters.maxPrice")}
-          value={filters.maxPrice}
-          onChange={(event) => filters.setMaxPrice(event.target.value)}
-        />
+        <FormGrid columns={2} collapse={false} className="gap-2">
+          <Input
+            type="number"
+            min="0"
+            step="0.01"
+            aria-label={t("filters.min")}
+            placeholder={t("filters.min")}
+            value={filters.minPrice}
+            onChange={(event) => filters.setMinPrice(event.target.value)}
+          />
+          <Input
+            type="number"
+            min="0"
+            step="0.01"
+            aria-label={t("filters.max")}
+            placeholder={t("filters.max")}
+            value={filters.maxPrice}
+            onChange={(event) => filters.setMaxPrice(event.target.value)}
+          />
+        </FormGrid>
       </FilterSection>
 
       {/* Requires Registration Filter */}

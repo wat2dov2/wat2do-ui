@@ -1176,6 +1176,8 @@ test.describe("Events Page", () => {
     ).toHaveCount(0);
     await expect(page.getByText(/Find current campus events/i)).toHaveCount(0);
     await expect(addEventButton.locator("svg")).toHaveCount(0);
+    await expect(addEventButton).toHaveCSS("padding-left", "20px");
+    await expect(addEventButton).toHaveCSS("padding-right", "20px");
     await expect
       .poll(async () => {
         const [
@@ -2148,6 +2150,14 @@ test.describe("Events Page", () => {
     await expect(card).toBeVisible();
     await expect(card).not.toContainText(/\b0 clicks?\b/);
     await expect(card).not.toContainText(/\b0 going\b/);
+    const cardContent = card.locator('[data-slot="event-card-content"]');
+    const contentStack = cardContent.locator(":scope > div");
+    await expect(cardContent).toHaveCSS("padding-top", "10px");
+    await expect(contentStack).toHaveCSS("row-gap", "0px");
+    await expect(contentStack.locator(":scope > div").nth(1)).toHaveCSS(
+      "margin-top",
+      "0px",
+    );
     await expect(
       card.getByText(/^(?:Sun|Mon|Tues|Wed|Thur|Fri|Sat) [A-Z][a-z]{2} \d{1,2}$/),
     ).toBeVisible();
@@ -2744,6 +2754,7 @@ test.describe("Events Page", () => {
 
     await expect(calendarButton).toHaveClass(/bg-background/);
     await expect(categoryButton).toHaveClass(/bg-background/);
+    await expect(categoryButton).toHaveClass(/border-border\/60/);
     await expect(gridButton).toHaveClass(/bg-primary/);
 
     const categoryBoundsBeforeSelection = await categoryButton.boundingBox();
@@ -2789,7 +2800,7 @@ test.describe("Events Page", () => {
     await expect(clearFiltersButton).toHaveCount(0);
   });
 
-  test("filters food with free text and restores all events when cleared", async ({
+  test("filters free-text fields and price range, then restores all events", async ({
     page,
   }) => {
     const now = new Date();
@@ -2828,6 +2839,7 @@ test.describe("Events Page", () => {
           title: "Pizza Social",
           price: 12,
           food: ["Pizza", "Cookies"],
+          organization: "Campus Food Society",
           occurrences: [
             {
               id: 2,
@@ -2842,6 +2854,7 @@ test.describe("Events Page", () => {
           id: 3,
           title: "Campus Mixer",
           food: ["Yes!"],
+          organization: "Student Life Club",
           occurrences: [
             {
               id: 3,
@@ -2893,6 +2906,24 @@ test.describe("Events Page", () => {
     await expect(pizzaCard).toBeVisible();
 
     await foodInput.clear();
+    await expect(page.locator("article[data-event-id]")).toHaveCount(3);
+
+    const organizationInput = drawer.getByPlaceholder("Search organization...");
+    await organizationInput.fill("food");
+    await expect(page.locator("article[data-event-id]")).toHaveCount(1);
+    await expect(pizzaCard).toBeVisible();
+    await organizationInput.clear();
+    await expect(page.locator("article[data-event-id]")).toHaveCount(3);
+
+    const minPriceInput = drawer.getByRole("spinbutton", { name: "Min" });
+    const maxPriceInput = drawer.getByRole("spinbutton", { name: "Max" });
+    await minPriceInput.fill("1");
+    await expect(page.locator("article[data-event-id]")).toHaveCount(1);
+    await expect(pizzaCard).toBeVisible();
+    await minPriceInput.clear();
+    await maxPriceInput.fill("0");
+    await expect(page.locator("article[data-event-id]")).toHaveCount(2);
+    await maxPriceInput.clear();
     await expect(page.locator("article[data-event-id]")).toHaveCount(3);
   });
 
@@ -3497,7 +3528,7 @@ test.describe("Navigation", () => {
   test("moves compact navigation controls into the drawer", async ({
     page,
   }) => {
-    await page.setViewportSize({ width: 1024, height: 900 });
+    await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(BASE, { waitUntil: "domcontentloaded" });
 
     const topNavigation = page.getByRole("banner");
@@ -3521,8 +3552,16 @@ test.describe("Navigation", () => {
     await expect(
       navigationDrawer.getByText("Primary navigation", { exact: true }),
     ).toBeHidden();
+    const drawerBody = navigationDrawer.locator('[data-slot="drawer-body"]');
+    await expect(drawerBody).toHaveCSS("padding-top", "16px");
     await expect(
-      navigationDrawer.locator('[data-slot="drawer-body"] > button').first(),
+      drawerBody.getByRole("link", { name: "Go to events", exact: true }),
+    ).toBeVisible();
+    await expect(
+      drawerBody.locator(":scope > [data-slot=separator]"),
+    ).toHaveCount(2);
+    await expect(
+      drawerBody.locator(":scope > button").first(),
     ).toHaveText("Sign in");
     await expect(
       navigationDrawer.getByRole("link", { name: "Events", exact: true }),
