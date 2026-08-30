@@ -15,8 +15,6 @@ WHERE slug = 'uwaterloo';
 
 UPDATE public.site_banner
 SET
-    message = 'We scraped 3,000+ Waterloo events so students could try more new things.',
-    cta_label = 'Read our story',
     message_translation_key = 'siteBanner.founderStory.message',
     cta_label_translation_key = 'siteBanner.founderStory.cta',
     cta_href = '/contact',
