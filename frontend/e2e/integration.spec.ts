@@ -3494,6 +3494,50 @@ test.describe("Navigation", () => {
     ).toHaveAttribute("href", "/promote");
   });
 
+  test("moves compact navigation controls into the drawer", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1024, height: 900 });
+    await page.goto(BASE, { waitUntil: "domcontentloaded" });
+
+    const topNavigation = page.getByRole("banner");
+    await expect(
+      topNavigation.getByRole("combobox").filter({ hasText: "English" }),
+    ).toBeHidden();
+    await expect(
+      topNavigation.getByRole("button", { name: "Switch to dark mode" }),
+    ).toBeHidden();
+    await expect(
+      topNavigation.getByRole("button", { name: "Sign in", exact: true }),
+    ).toBeHidden();
+
+    await topNavigation
+      .getByRole("button", { name: "Open navigation menu" })
+      .click();
+
+    const navigationDrawer = page.getByRole("dialog", {
+      name: "Primary navigation",
+    });
+    await expect(
+      navigationDrawer.getByText("Primary navigation", { exact: true }),
+    ).toBeHidden();
+    await expect(
+      navigationDrawer.locator('[data-slot="drawer-body"] > button').first(),
+    ).toHaveText("Sign in");
+    await expect(
+      navigationDrawer.getByRole("link", { name: "Events", exact: true }),
+    ).toBeVisible();
+    await expect(
+      navigationDrawer.getByRole("button", { name: "Sign in", exact: true }),
+    ).toBeVisible();
+    await expect(
+      navigationDrawer.getByRole("combobox").filter({ hasText: "English" }),
+    ).toBeVisible();
+    await expect(
+      navigationDrawer.getByRole("button", { name: "Switch to dark mode" }),
+    ).toBeVisible();
+  });
+
   test("uses only the bottom-left page glow and no drawer decoration", async ({
     page,
   }) => {

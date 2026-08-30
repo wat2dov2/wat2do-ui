@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import Image from "next/image";
 import NextLink from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -25,11 +25,13 @@ import { LanguageSelector } from "@/shared/ui/language-selector";
 import { ThemeToggle } from "@/shared/ui/theme-toggle";
 import { Separator } from "@/shared/ui/separator";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/shared/ui/dropdown-menu";
+  Drawer,
+  DrawerContent,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/shared/ui/drawer";
+import { DrawerBody } from "@/shared/layout";
 import { useAuthState, type AuthState } from "@/features/auth/hooks/useAuthState";
 import { useRequestSchool } from "@/app/client-providers";
 import { getUserProfile, logoutAPI, updateUserProfile } from "@/features/auth/api/auth.api";
@@ -66,6 +68,7 @@ function isRouteActive(pathname: string, href: string): boolean {
 }
 
 export function TopNav() {
+  const [navigationOpen, setNavigationOpen] = useState(false);
   const requestSchool = useRequestSchool();
   const { isAuthenticated, profileCompleted, isAdmin, clubs, organizationId } =
     useAuthState();
@@ -165,34 +168,71 @@ export function TopNav() {
           })}
         </nav>
 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="outline"
-              size="icon-sm"
-              className="xl:hidden"
-              aria-label={t("navigation.openMenu")}
-            >
-              <MoreHorizontal className="size-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48">
-            {navigationItems.map(({ labelKey, href, Icon }) => {
-              const active = isRouteActive(pathname, href);
-              return (
-                <DropdownMenuItem key={href} asChild>
-                  <NextLink
-                    href={href}
-                    aria-current={active ? "page" : undefined}
-                  >
-                    <Icon />
-                    {t(labelKey)}
-                  </NextLink>
-                </DropdownMenuItem>
-              );
-            })}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <Drawer
+          open={navigationOpen}
+          onOpenChange={setNavigationOpen}
+          direction="right"
+        >
+          <Button
+            variant="outline"
+            size="icon-sm"
+            className="xl:hidden"
+            aria-label={t("navigation.openMenu")}
+            onClick={() => setNavigationOpen(true)}
+          >
+            <MoreHorizontal className="size-4" />
+          </Button>
+          <DrawerContent aria-describedby={undefined}>
+            <DrawerHeader className="sr-only">
+              <DrawerTitle>{t("navigation.primary")}</DrawerTitle>
+            </DrawerHeader>
+            <DrawerBody className="gap-1 pt-0">
+              {!profileCompleted && (
+                <Button
+                  className="w-full"
+                  onClick={() => {
+                    setNavigationOpen(false);
+                    handleSignIn();
+                  }}
+                >
+                  {t("events.signIn")}
+                </Button>
+              )}
+              <nav
+                aria-label={t("navigation.primary")}
+                className="flex flex-col gap-1"
+              >
+                {navigationItems.map(({ labelKey, href, Icon }) => {
+                  const active = isRouteActive(pathname, href);
+                  return (
+                    <Button
+                      key={href}
+                      asChild
+                      variant={active ? "outline" : "ghost"}
+                      className="w-full justify-start"
+                    >
+                      <NextLink
+                        href={href}
+                        aria-current={active ? "page" : undefined}
+                        onClick={() => setNavigationOpen(false)}
+                      >
+                        <Icon />
+                        {t(labelKey)}
+                      </NextLink>
+                    </Button>
+                  );
+                })}
+              </nav>
+            </DrawerBody>
+            <Separator />
+            <DrawerFooter>
+              <div className="flex items-center justify-between gap-2">
+                <LanguageSelector />
+                <ThemeToggle />
+              </div>
+            </DrawerFooter>
+          </DrawerContent>
+        </Drawer>
 
         {profileCompleted && isAdmin && (
           <Tooltip>
@@ -229,13 +269,15 @@ export function TopNav() {
           />
         )}
 
-        <Separator
-          orientation="vertical"
-          data-nav-preferences-divider
-          className="ml-0.5 mr-1.5 data-[orientation=vertical]:h-6"
-        />
-        <LanguageSelector />
-        <ThemeToggle />
+        <div className="hidden items-center gap-2 xl:flex">
+          <Separator
+            orientation="vertical"
+            data-nav-preferences-divider
+            className="ml-0.5 mr-1.5 data-[orientation=vertical]:h-6"
+          />
+          <LanguageSelector />
+          <ThemeToggle />
+        </div>
 
         {profileCompleted ? (
           <Tooltip>
@@ -252,7 +294,11 @@ export function TopNav() {
         ) : (
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button size="sm" onMouseDown={handleSignIn}>
+              <Button
+                size="sm"
+                className="hidden xl:inline-flex"
+                onMouseDown={handleSignIn}
+              >
                 {t("events.signIn")}
               </Button>
             </TooltipTrigger>
