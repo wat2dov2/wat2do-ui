@@ -77,7 +77,7 @@ export function IntegrationCard({
           {integration?.connected ? (
             <>
               <Button
-                variant="secondary"
+                variant="outline"
                 size="sm"
                 onMouseDown={onConnect}
                 disabled={disabled}
@@ -85,7 +85,7 @@ export function IntegrationCard({
                 {t("integrations.manage")}
               </Button>
               <Button
-                variant="secondary"
+                variant="outline"
                 size="sm"
                 className="text-destructive hover:text-destructive"
                 onMouseDown={onDisconnect}

@@ -1,4 +1,5 @@
-import type { FilterState } from "@/shared/types";
+import type { EventDateFilter, FilterState } from "@/shared/types";
+import { parseLocalDateValue } from "@/shared/utils/date";
 
 /**
  * Filter Service
@@ -22,6 +23,8 @@ export const EMPTY_FILTER_STATE: FilterState = {
   sortBy: DEFAULT_FILTER_SORT_BY,
   sortOrder: DEFAULT_FILTER_SORT_ORDER,
   addedSince: "",
+  dateFilter: "any",
+  customDate: "",
 };
 
 /**
@@ -43,6 +46,8 @@ export interface SearchStoreFilterValues {
   sortBy: string;
   sortOrder: "asc" | "desc";
   addedSince: string;
+  dateFilter: EventDateFilter;
+  customDate: string;
 }
 
 type FilterStateInput = Partial<Record<keyof FilterState, unknown>>;
@@ -67,7 +72,34 @@ function isoTimestampFrom(value: unknown): string {
     : "";
 }
 
+const EVENT_DATE_FILTERS = new Set<EventDateFilter>([
+  "any",
+  "today",
+  "tomorrow",
+  "thisWeek",
+  "thisWeekend",
+  "nextWeek",
+  "custom",
+]);
+
+function localDateFrom(value: unknown): string {
+  return typeof value === "string" && parseLocalDateValue(value) ? value : "";
+}
+
+function dateFilterFrom(
+  value: unknown,
+  customDate: string,
+): EventDateFilter {
+  const candidate =
+    typeof value === "string" && EVENT_DATE_FILTERS.has(value as EventDateFilter)
+      ? (value as EventDateFilter)
+      : "any";
+  return candidate === "custom" && !customDate ? "any" : candidate;
+}
+
 export function normalizeFilterState(filters: Partial<FilterState>): FilterState {
+  const customDate = localDateFrom(filters.customDate);
+  const dateFilter = dateFilterFrom(filters.dateFilter, customDate);
   return {
     searchQuery: typeof filters.searchQuery === "string" ? filters.searchQuery : "",
     categories: stringArray(filters.categories),
@@ -82,6 +114,8 @@ export function normalizeFilterState(filters: Partial<FilterState>): FilterState
     sortBy: typeof filters.sortBy === "string" && filters.sortBy ? filters.sortBy : DEFAULT_FILTER_SORT_BY,
     sortOrder: sortOrderFrom(filters.sortOrder),
     addedSince: isoTimestampFrom(filters.addedSince),
+    dateFilter,
+    customDate: dateFilter === "custom" ? customDate : "",
   };
 }
 
@@ -110,6 +144,8 @@ export function storeStatesToFilterState(
     sortBy: values.sortBy,
     sortOrder: values.sortOrder,
     addedSince: values.addedSince,
+    dateFilter: values.dateFilter,
+    customDate: values.customDate,
   };
 }
 
@@ -119,6 +155,7 @@ export function storeStatesToFilterState(
 export function filterStateFromInput(
   filters: FilterStateInput,
 ): FilterState {
+  const customDate = localDateFrom(filters.customDate);
   return normalizeFilterState({
     searchQuery: typeof filters.searchQuery === "string" ? filters.searchQuery : "",
     categories: stringArray(filters.categories),
@@ -134,6 +171,8 @@ export function filterStateFromInput(
     sortBy: typeof filters.sortBy === "string" ? filters.sortBy : DEFAULT_FILTER_SORT_BY,
     sortOrder: sortOrderFrom(filters.sortOrder),
     addedSince: isoTimestampFrom(filters.addedSince),
+    dateFilter: dateFilterFrom(filters.dateFilter, customDate),
+    customDate,
   });
 }
 

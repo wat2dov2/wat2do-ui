@@ -101,7 +101,7 @@ def test_extraction_prompt_uses_school_slug(monkeypatch):
     assert '"positions": [' in prompt
 
 
-def test_extraction_prompt_rejects_election_voting_and_role_introductions(monkeypatch):
+def test_extraction_prompt_has_strict_event_and_position_eligibility_gates(monkeypatch):
     calls = []
     monkeypatch.setattr(extractor, "resolve_school_timezone", lambda _school: "America/Toronto")
     monkeypatch.setattr(extractor, "current_semester_end", lambda *_args, **_kwargs: None)
@@ -141,6 +141,13 @@ def test_extraction_prompt_rejects_election_voting_and_role_introductions(monkey
     assert "Election voting posts are not hiring." in prompt
     assert "Candidate lists or slates" in prompt
     assert "explicitly invites people to apply, nominate themselves, or run" in prompt
+    assert "current-board rosters" in prompt
+    assert "generic club membership" in prompt
+    assert "ticket or registration release" in prompt
+    assert "a program reveal" in prompt
+    assert "one object per logical event" in prompt
+    assert 'Use ["Food"] for a generic food mention.' in prompt
+    assert 'Never return "Yes" or "Yes!" as a food label.' in prompt
     assert '"Executive elections start today. Read the candidate speeches and vote' in prompt
     assert '"Nominations are open. Apply or run for Treasurer by Friday"' in prompt
     assert '"Meet this year\'s Merch Coordinator" is "other"' in prompt

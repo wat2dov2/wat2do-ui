@@ -62,6 +62,16 @@
       "clear": "નવા ઉમેરાયેલ ફિલ્ટર સાફ કરો",
       "sinceLastVisitAt": "છેલ્લી મુલાકાત પછી ઉમેરાયું ({{time}})"
     },
+    "dateFilter": {
+      "label": "ઇવેન્ટની તારીખ",
+      "any": "કોઈપણ દિવસ",
+      "today": "આજે",
+      "tomorrow": "આવતીકાલે",
+      "thisWeek": "આ અઠવાડિયે",
+      "thisWeekend": "આ સપ્તાહાંત",
+      "nextWeek": "આવતા અઠવાડિયે",
+      "custom": "પસંદગીની તારીખ"
+    },
     "clearAllFilters": "બધા ફિલ્ટર્સ સાફ કરો",
     "calendarViewComingSoon": "કેલેન્ડર વિવ જોવા આવ્યા છે...",
     "mapViewComingSoon": "નકશા દૃશ્ય ટૂંક સમયમાં આવી રહ્યું છે...",

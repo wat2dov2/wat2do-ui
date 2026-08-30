@@ -31,7 +31,7 @@ export function MoreFiltersButton({
     <Drawer open={open} onOpenChange={onOpenChange}>
       <div className="relative w-fit">
         <Button
-          variant={open || filterCount > 0 ? "primary" : "secondary"}
+          variant={open || filterCount > 0 ? "primary" : "outline"}
           size="sm"
           onClick={() => onOpenChange(!open)}
           aria-expanded={open}

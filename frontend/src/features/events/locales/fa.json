@@ -62,6 +62,16 @@
       "clear": "پاک کردن فیلترهای اضافه شده اخیر",
       "sinceLastVisitAt": "از آخرین بازدید اضافه شده است ({{time}})"
     },
+    "dateFilter": {
+      "label": "تاریخ رویداد",
+      "any": "هر روزی",
+      "today": "امروز",
+      "tomorrow": "فردا",
+      "thisWeek": "این هفته",
+      "thisWeekend": "این آخر هفته",
+      "nextWeek": "هفته آینده",
+      "custom": "سفارشی"
+    },
     "clearAllFilters": "پاک کردن همه فیلترها",
     "calendarViewComingSoon": "نمای تقویم به زودی می‌آید...",
     "mapViewComingSoon": "نمای نقشه به زودی...",

@@ -1,7 +1,7 @@
 import React, { useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { X, ImagePlus } from "@/shared/ui/doodle-icons";
-import { Button } from "@/shared/ui/button";
+import { Button, OUTLINE_CONTROL_STYLES } from "@/shared/ui/button";
 import { Field, FieldLabel, FieldError } from "@/shared/ui/field";
 import { cn } from "@/shared/lib/utils";
 
@@ -76,7 +76,7 @@ export function ImageUploadField({
           </div>
           <Button
             type="button"
-            variant="secondary"
+            variant="outline"
             size="sm"
             onMouseDown={onRemoveImage}
             className="absolute top-2 right-2"
@@ -87,8 +87,12 @@ export function ImageUploadField({
       ) : (
         <button
           type="button"
+          data-elevation="control"
           onMouseDown={() => fileInputRef.current?.click()}
-          className="flex w-full flex-col items-center justify-center gap-2 rounded-xl bg-secondary px-3 py-6 text-center text-secondary-foreground shadow-xs transition-[color,box-shadow] outline-none hover:bg-secondary-hover focus-visible:ring-[3px] focus-visible:ring-ring/50 cursor-pointer"
+          className={cn(
+            OUTLINE_CONTROL_STYLES,
+            "flex w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-xl px-3 py-6 text-center transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
+          )}
         >
           <ImagePlus className="size-8 text-muted-foreground" />
           <p className="text-base font-medium md:text-sm">

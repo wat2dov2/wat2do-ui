@@ -329,6 +329,7 @@ function OrganizationCardComponent({
           titleHref={organizationPagePath(organization.id)}
           location={socialHandle}
           badges={countBadges}
+          horizontalPadding="inset"
           className="pt-8 sm:pt-9"
           textClassName="text-foreground"
           secondaryTextClassName="text-muted-foreground"

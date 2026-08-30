@@ -5,12 +5,38 @@
 
 import { Badge } from "@/shared/ui/badge";
 import Link from "next/link";
+import { cn } from "@/shared/lib/utils";
+import type { ComponentProps } from "react";
 
 interface CardBadge {
   text: string;
+  size?: "sm" | "md";
 }
 
 const EMPTY_BADGES: readonly CardBadge[] = [];
+
+/**
+ * Shared lower frame for image-led event and position cards.
+ *
+ * The page itself owns the surface, so the frame intentionally has no fill,
+ * border, or shadow. Keeping that decision here prevents card call sites from
+ * drifting back to separate visual shells.
+ */
+export function EventCardContentFrame({
+  className,
+  ...props
+}: ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="event-card-content-frame"
+      className={cn(
+        "relative z-20 flex flex-1 flex-col overflow-hidden rounded-b-xl rounded-tl-xl text-foreground",
+        className,
+      )}
+      {...props}
+    />
+  );
+}
 
 interface EventCardContentProps {
   title: string;
@@ -26,6 +52,7 @@ interface EventCardContentProps {
   textClassName?: string;
   secondaryTextClassName?: string;
   badgeClassName?: string;
+  horizontalPadding?: "flush" | "inset";
 }
 
 export function EventCardContent({
@@ -41,10 +68,16 @@ export function EventCardContent({
   textClassName = "text-foreground",
   secondaryTextClassName = "text-muted-foreground",
   badgeClassName = "border-muted-foreground text-muted-foreground",
+  horizontalPadding = "flush",
 }: EventCardContentProps) {
   return (
     <div
-      className={`relative flex flex-col flex-1 px-2.5 pt-3 pb-2.5 sm:px-3 sm:pt-4 sm:pb-3 ${className ?? ""}`}
+      data-slot="event-card-content"
+      className={cn(
+        "relative flex flex-1 flex-col pb-2.5 pt-3 sm:pb-3 sm:pt-4",
+        horizontalPadding === "inset" && "px-2.5 sm:px-3",
+        className,
+      )}
     >
       <div className="flex flex-col gap-3 h-full flex-1">
         <div className="min-w-0">
@@ -114,7 +147,7 @@ export function EventCardContent({
                   <Badge
                     key={badge.text}
                     variant="outline"
-                    size="sm"
+                    size={badge.size ?? "sm"}
                     className={`block max-w-full truncate ${badgeClassName}`}
                   >
                     {badge.text}

@@ -143,7 +143,7 @@ export function FormLayoutSection() {
         </FormSection>
 
         <FormActions>
-          <Button type="button" variant="secondary">
+          <Button type="button" variant="outline">
             Cancel
           </Button>
           <Button type="submit">Create event</Button>

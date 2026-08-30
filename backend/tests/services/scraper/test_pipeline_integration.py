@@ -215,6 +215,7 @@ def test_pipeline_produces_one_event_row_per_logical_event(monkeypatch, fake_sb,
     events_inserts = [c for c in dict_inserts if c[0][0].get("title") == "Tea Tasting Series"]
     assert len(events_inserts) == 1
     assert events_inserts[0][0][0]["school_id"] == 1
+    assert events_inserts[0][0][0]["food"] == ["Food"]
     assert "school" not in events_inserts[0][0][0]
 
     occurrence_inserts = [

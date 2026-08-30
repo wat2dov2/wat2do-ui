@@ -21,6 +21,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/auth/google": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Start Google Oauth */
+        get: operations["start_google_oauth_auth_google_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/google/callback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Complete Google Oauth */
+        get: operations["complete_google_oauth_auth_google_callback_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/send-otp": {
         parameters: {
             query?: never;
@@ -3728,10 +3762,10 @@ export interface components {
          * @description The single site-wide banner, as shown above the navigation.
          */
         SiteBannerResponse: {
-            /** Message */
-            message: string;
-            /** Cta Label */
-            cta_label: string;
+            /** Message Translation Key */
+            message_translation_key: string;
+            /** Cta Label Translation Key */
+            cta_label_translation_key: string;
             /** Cta Href */
             cta_href: string;
         };
@@ -4008,6 +4042,66 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["EventFormDataResponse"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    start_google_oauth_auth_google_get: {
+        parameters: {
+            query: {
+                callback_url: string;
+                return_to?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            307: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    complete_google_oauth_auth_google_callback_get: {
+        parameters: {
+            query?: {
+                code?: string | null;
+                error?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            307: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

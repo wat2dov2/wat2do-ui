@@ -160,7 +160,7 @@ export function AdminPanel({ onNavigate }: AdminPanelProps) {
                           </div>
                         </div>
                         <Button
-                          variant="secondary"
+                          variant="outline"
                           size="sm"
                           className="shrink-0"
                           onMouseDown={(e) => {

@@ -733,10 +733,11 @@ test.describe("Promoter poster campaign", () => {
 
     await expect(page).toHaveURL(/\/promote$/);
     await expect(page.getByTestId("promote-page")).toBeVisible();
-    await expect(page.getByRole("link", { name: "Posters" })).toHaveAttribute(
-      "aria-current",
-      "page",
-    );
+    await expect(
+      page
+        .getByRole("banner")
+        .getByRole("link", { name: "Posters", exact: true }),
+    ).toHaveCount(0);
     await expect(page.getByTestId("promoter-enrollment-form")).toBeVisible();
     await expect(page.getByTestId("poster-map-fallback")).toBeVisible();
     await expect(page.getByText("PRIVATE PROMOTER NAME")).toHaveCount(0);
@@ -842,10 +843,11 @@ test.describe("Promoter poster campaign", () => {
 
     await expect(page).toHaveURL(/\/promote$/);
     await expect(page.getByTestId("promote-page")).toBeVisible();
-    const publicPosterDockLink = page.getByRole("link", { name: "Posters" });
-    await expect(publicPosterDockLink).toBeVisible();
-    await expect(publicPosterDockLink).toHaveAttribute("href", "/promote");
-    await expect(publicPosterDockLink).toHaveAttribute("aria-current", "page");
+    await expect(
+      page
+        .getByRole("banner")
+        .getByRole("link", { name: "Posters", exact: true }),
+    ).toHaveCount(0);
     await expect(
       page.getByTestId("promoter-enrollment-signed-out"),
     ).toBeVisible();

@@ -46,7 +46,7 @@ export function NewlyAddedFilterSelect({
       <Button
         type="button"
         size="sm"
-        variant={active ? "primary" : "secondary"}
+        variant={active ? "primary" : "outline"}
         aria-pressed={active}
         onClick={() => (active ? onClear() : onValueChange("last24Hours"))}
       >
@@ -65,7 +65,7 @@ export function NewlyAddedFilterSelect({
       >
         <SelectTrigger
           size="sm"
-          variant={active ? "primary" : "secondary"}
+          variant={active ? "primary" : "outline"}
           aria-label={label}
           className={active ? "pr-11" : undefined}
         >

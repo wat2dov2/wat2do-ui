@@ -7,6 +7,7 @@
  */
 
 import { api, isApiError, refreshAccessToken } from "@/shared/services/apiClient";
+import { API_BASE_URL } from "@/shared/config/api";
 import { DEFAULT_SCHOOL } from "@/shared/constants/schools";
 import {
   loadUserEmail,
@@ -106,6 +107,32 @@ export async function verifyOtpAPI(
     school,
     onboardingRequired: !!res.onboarding_required,
   };
+}
+
+export function getGoogleOAuthStartUrl(returnTo?: string): string {
+  const startUrl = new URL(`${API_BASE_URL}/auth/google`, window.location.origin);
+  startUrl.searchParams.set(
+    "callback_url",
+    `${window.location.origin}/api/auth/google/callback`,
+  );
+  if (returnTo) {
+    startUrl.searchParams.set("return_to", returnTo);
+  }
+  return startUrl.toString();
+}
+
+export async function completeGoogleOAuthAPI(): Promise<UserProfile> {
+  const refreshOutcome = await refreshAccessToken();
+  if (refreshOutcome !== "refreshed") {
+    throw new Error("Google sign-in session could not be completed");
+  }
+
+  const profile = await fetchProfileAPI();
+  if (!profile || !loadUserEmail()) {
+    throw new Error("Google sign-in profile could not be loaded");
+  }
+  dispatchAuthUserLogin(profile.school);
+  return profile;
 }
 
 export async function logoutAPI(): Promise<void> {

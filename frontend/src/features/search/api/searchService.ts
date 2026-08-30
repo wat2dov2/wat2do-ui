@@ -1,5 +1,9 @@
 import type { Event } from "@/shared/types";
-import { getPrimaryOccurrence } from "@/shared/utils/date";
+import type { EventDateFilter } from "@/shared/types/filter.types";
+import {
+  getPrimaryOccurrence,
+  parseLocalDateValue,
+} from "@/shared/utils/date";
 import { getEventCategory } from "@/shared/utils/event";
 
 /**
@@ -20,6 +24,8 @@ export interface SearchFilters {
   goingEventIds: number[];
   selectedOrganizations: string[];
   addedSince: string;
+  dateFilter: EventDateFilter;
+  customDate: string;
 }
 
 export interface SortOptions {
@@ -57,6 +63,84 @@ function normalizeSearchQuery(query: string): string {
 
 const RANDOM_EVENT_SEARCH_QUERY = "random";
 
+interface DateFilterRange {
+  startMs: number;
+  endMs: number;
+}
+
+function localMidnight(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+function addLocalDays(date: Date, days: number): Date {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
+}
+
+function resolveDateFilterRange(
+  dateFilter: EventDateFilter,
+  customDate: string,
+  currentDate: Date,
+): DateFilterRange | null {
+  if (dateFilter === "any") return null;
+
+  const today = localMidnight(currentDate);
+  let start: Date;
+  let end: Date;
+
+  switch (dateFilter) {
+    case "today":
+      start = today;
+      end = addLocalDays(today, 1);
+      break;
+    case "tomorrow":
+      start = addLocalDays(today, 1);
+      end = addLocalDays(today, 2);
+      break;
+    case "thisWeek": {
+      const daysUntilNextMonday = today.getDay() === 0 ? 1 : 8 - today.getDay();
+      start = today;
+      end = addLocalDays(today, daysUntilNextMonday);
+      break;
+    }
+    case "thisWeekend": {
+      const day = today.getDay();
+      const daysUntilSaturday = day === 0 ? -1 : (6 - day + 7) % 7;
+      start = addLocalDays(today, daysUntilSaturday);
+      end = addLocalDays(start, 2);
+      break;
+    }
+    case "nextWeek": {
+      const daysSinceMonday = today.getDay() === 0 ? 6 : today.getDay() - 1;
+      start = addLocalDays(today, 7 - daysSinceMonday);
+      end = addLocalDays(start, 7);
+      break;
+    }
+    case "custom": {
+      const selectedDate = parseLocalDateValue(customDate);
+      if (!selectedDate) return null;
+      start = selectedDate;
+      end = addLocalDays(selectedDate, 1);
+      break;
+    }
+  }
+
+  return { startMs: start.getTime(), endMs: end.getTime() };
+}
+
+function eventOverlapsDateRange(event: Event, range: DateFilterRange): boolean {
+  return (event.occurrences ?? []).some((occurrence) => {
+    const startMs = new Date(occurrence.dtstart_utc).getTime();
+    if (Number.isNaN(startMs) || startMs >= range.endMs) return false;
+
+    if (!occurrence.dtend_utc) {
+      return startMs >= range.startMs;
+    }
+
+    const endMs = new Date(occurrence.dtend_utc).getTime();
+    return !Number.isNaN(endMs) && endMs > range.startMs;
+  });
+}
+
 function matchesSearchQuery(event: Event, normalizedQuery: string): boolean {
   return eventSearchHaystack(event).some((field) =>
     field.toLowerCase().replace(/^@+/, "").includes(normalizedQuery),
@@ -79,6 +163,11 @@ export function filterEvents(
   const addedSinceTime = filters.addedSince
     ? Date.parse(filters.addedSince)
     : Number.NaN;
+  const dateRange = resolveDateFilterRange(
+    filters.dateFilter,
+    filters.customDate,
+    new Date(),
+  );
 
   const filtered = events.filter((event) => {
     const food = event.food ?? [];
@@ -104,6 +193,10 @@ export function filterEvents(
       if (Number.isNaN(addedTime) || addedTime < addedSinceTime) {
         return false;
       }
+    }
+
+    if (dateRange && !eventOverlapsDateRange(event, dateRange)) {
+      return false;
     }
 
     if (filters.selectedDays.length > 0 && !filters.selectedDays.includes(dayOfWeek)) {

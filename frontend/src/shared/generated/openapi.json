@@ -46,6 +46,119 @@
         }
       }
     },
+    "/auth/google": {
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Start Google Oauth",
+        "operationId": "start_google_oauth_auth_google_get",
+        "parameters": [
+          {
+            "name": "callback_url",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 2048,
+              "title": "Callback Url"
+            }
+          },
+          {
+            "name": "return_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 2048
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Return To"
+            }
+          }
+        ],
+        "responses": {
+          "307": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/google/callback": {
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Complete Google Oauth",
+        "operationId": "complete_google_oauth_auth_google_callback_get",
+        "parameters": [
+          {
+            "name": "code",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 2048
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Code"
+            }
+          },
+          {
+            "name": "error",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 255
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Error"
+            }
+          }
+        ],
+        "responses": {
+          "307": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/auth/send-otp": {
       "post": {
         "tags": [
@@ -12207,13 +12320,13 @@
       },
       "SiteBannerResponse": {
         "properties": {
-          "message": {
+          "message_translation_key": {
             "type": "string",
-            "title": "Message"
+            "title": "Message Translation Key"
           },
-          "cta_label": {
+          "cta_label_translation_key": {
             "type": "string",
-            "title": "Cta Label"
+            "title": "Cta Label Translation Key"
           },
           "cta_href": {
             "type": "string",
@@ -12222,8 +12335,8 @@
         },
         "type": "object",
         "required": [
-          "message",
-          "cta_label",
+          "message_translation_key",
+          "cta_label_translation_key",
           "cta_href"
         ],
         "title": "SiteBannerResponse",

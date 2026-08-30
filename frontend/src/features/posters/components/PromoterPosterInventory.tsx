@@ -207,7 +207,7 @@ export function PromoterPosterInventory({
             <CardFooter>
               <Stack direction="horizontal" wrap gap={2}>
                 <PosterDownloadMenu
-                  variant="secondary"
+                  variant="outline"
                   size="sm"
                   isLoading={downloadingPosterId === poster.id}
                   disabled={!template}

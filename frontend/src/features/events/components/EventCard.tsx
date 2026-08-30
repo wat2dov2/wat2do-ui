@@ -1,8 +1,11 @@
-import { memo, useCallback, useMemo, useState } from "react";
+import { memo, useCallback, useMemo } from "react";
 import type { TFunction } from "i18next";
 import { tracker } from "@/shared/services/trackingService";
 import { useTranslation } from "react-i18next";
-import { EventCardContent } from "@/shared/ui/event-card-content";
+import {
+  EventCardContent,
+  EventCardContentFrame,
+} from "@/shared/ui/event-card-content";
 import { EventCardImage } from "@/features/events/components/EventCardImage";
 import { useEventStatsActions } from "@/features/events/hooks/useEventStats";
 import { useEventsStore } from "@/features/events/store/events.store";
@@ -73,9 +76,7 @@ function EventCardBody({
   titleHref,
 }: EventCardBodyProps) {
   return (
-    <div
-      className={`flex flex-col flex-1 border-l border-r border-b rounded-tl-xl rounded-b-xl overflow-hidden relative z-20 bg-surface text-foreground border-border`}
-    >
+    <EventCardContentFrame>
       <EventCardContent
         title={event.title}
         titleHref={titleHref}
@@ -88,7 +89,7 @@ function EventCardBody({
         secondaryTextClassName="text-muted-foreground"
         badgeClassName="border-border text-muted-foreground"
       />
-    </div>
+    </EventCardContentFrame>
   );
 }
 
@@ -124,8 +125,6 @@ function EventCardComponent({
   imagePriority = false,
   className,
 }: EventCardProps) {
-  const [isHoveringBadge, setIsHoveringBadge] = useState(false);
-
   const { t, i18n } = useTranslation();
 
   const schoolFilter = useEventsStore((s) => s.schoolFilter);
@@ -206,7 +205,7 @@ function EventCardComponent({
         // Grid cards fill their cell so a row shares one height; a preview card
         // stands alone and sits at its natural height.
         interactive && "h-full group cursor-pointer transition-all duration-300",
-        interactive && !isHoveringBadge && "hover:opacity-90 hover:shadow-lg",
+        interactive && "hover:shadow-lg",
         className,
       )}
     >
@@ -215,7 +214,6 @@ function EventCardComponent({
         variant="card"
         interactive={interactive}
         priority={imagePriority}
-        onBadgeHoverChange={interactive ? setIsHoveringBadge : undefined}
       />
 
       <EventCardBody

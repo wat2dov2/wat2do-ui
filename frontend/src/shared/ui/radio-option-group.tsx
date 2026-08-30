@@ -1,4 +1,6 @@
 import { Circle } from "@/shared/ui/doodle-icons";
+import { OUTLINE_CONTROL_STYLES } from "@/shared/ui/button";
+import { cn } from "@/shared/lib/utils";
 
 interface RadioOption {
   value: string;
@@ -22,11 +24,14 @@ export function RadioOptionGroup({
   className = "",
 }: RadioOptionGroupProps) {
   return (
-    <div className={`space-y-2 ${className}`}>
+    <div className={cn("space-y-2", className)}>
       {options.map((option) => (
         <label
           key={option.value}
-          className="flex items-center gap-2 p-3 border border-border rounded-xl cursor-pointer hover:bg-secondary-hover"
+          className={cn(
+            OUTLINE_CONTROL_STYLES,
+            "flex cursor-pointer items-center gap-2 rounded-xl p-3",
+          )}
         >
           <div className="relative">
             <input

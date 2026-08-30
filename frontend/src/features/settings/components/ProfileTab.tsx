@@ -60,7 +60,7 @@ export function ProfileTab({
                 <Button
                   type="button"
                   size="sm"
-                  variant="secondary"
+                  variant="outline"
                   className="absolute -bottom-1 -right-1 rounded-full size-7 p-0"
                   onClick={() => fileRef.current?.click()}
                   disabled={disabled}

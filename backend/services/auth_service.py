@@ -4,9 +4,11 @@ import hashlib
 from typing import NoReturn
 from urllib.parse import urlencode
 
+from supabase_auth import SyncMemoryStorage
 from supabase_auth.errors import AuthApiError
 
 from core.allowed_emails import get_school_for_email
+from core.config import settings
 from core.controlbox import controlbox
 from core.errors import (
     EMAIL_NOT_ALLOWED,
@@ -54,6 +56,27 @@ class AuthResult:
         self.refresh_token = refresh_token
 
 
+class OAuthStartResult:
+    """Authorization URL plus the one-time PKCE verifier bound to this browser."""
+
+    def __init__(self, authorization_url: str, code_verifier: str):
+        self.authorization_url = authorization_url
+        self.code_verifier = code_verifier
+
+
+class _OAuthVerifierStorage(SyncMemoryStorage):
+    """Capture the PKCE verifier without persisting a user session server-side."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.code_verifier: str | None = None
+
+    def set_item(self, key: str, value: str) -> None:
+        super().set_item(key, value)
+        if key.endswith("-code-verifier"):
+            self.code_verifier = value
+
+
 class AuthService:
     def __init__(self, auth_client=None, db_client=None):
         self._auth_eager = auth_client
@@ -82,6 +105,66 @@ class AuthService:
         from core.database import get_sb
 
         return get_sb()
+
+    @staticmethod
+    def _new_oauth_auth(storage: SyncMemoryStorage | None = None):
+        """Create an isolated PKCE client for one OAuth request."""
+        from supabase import ClientOptions, create_client
+
+        return create_client(
+            settings.supabase_url,
+            settings.supabase_key,
+            ClientOptions(
+                flow_type="pkce",
+                storage=storage or SyncMemoryStorage(),
+                persist_session=False,
+                auto_refresh_token=False,
+            ),
+        ).auth
+
+    def prepare_google_oauth(self, callback_url: str) -> OAuthStartResult:
+        storage = _OAuthVerifierStorage()
+        response = self._new_oauth_auth(storage).sign_in_with_oauth(
+            {
+                "provider": "google",
+                "options": {"redirect_to": callback_url},
+            }
+        )
+        if not response.url or not storage.code_verifier:
+            raise ServiceError("Failed to start Google sign-in")
+        return OAuthStartResult(response.url, storage.code_verifier)
+
+    def verify_google_oauth(
+        self,
+        code: str,
+        code_verifier: str,
+        callback_url: str,
+    ) -> AuthResult:
+        try:
+            response = self._new_oauth_auth().exchange_code_for_session(
+                {
+                    "auth_code": code,
+                    "code_verifier": code_verifier,
+                    "redirect_to": callback_url,
+                }
+            )
+        except AuthApiError as exc:
+            logger.warning("Supabase Google OAuth verification failed: %s", exc.message)
+            raise AuthenticationError(INVALID_OR_EXPIRED_TOKEN)
+        except Exception as exc:
+            logger.warning("Supabase Google OAuth verification failed: %s", exc)
+            raise AuthenticationError(INVALID_OR_EXPIRED_TOKEN)
+
+        if not response.session or not response.user or not response.user.email:
+            raise AuthenticationError(INVALID_OR_EXPIRED_TOKEN)
+
+        from datetime import datetime, timezone
+
+        return self._complete_authenticated_session(
+            response,
+            response.user.email.strip().lower(),
+            datetime.now(timezone.utc).isoformat(),
+        )
 
     @staticmethod
     def _handle_auth_error(
@@ -252,6 +335,98 @@ class AuthService:
             to=email_clean, subject=subject, body_html=body_html, body_text=body_text
         )
 
+    def _complete_authenticated_session(
+        self,
+        auth_response,
+        email_clean: str,
+        now_str: str,
+    ) -> AuthResult:
+        """Map any verified Supabase session into Wat2Do's one user/session path."""
+        db_user = None
+        try:
+            r_user = (
+                self._db.table(USERS)
+                .select("*,school_record:schools(slug)")
+                .eq("email", email_clean)
+                .execute()
+            )
+            if r_user.data:
+                db_user = r_user.data[0]
+        except Exception as exc:
+            logger.warning("Failed to look up DB user: %s", exc)
+
+        onboarding_required = False
+        if db_user:
+            normalized_user = school_service.with_school_slug(db_user)
+            school = normalized_user.get("school")
+            if school_service.get_school(school) is None:
+                logger.error("Existing user is not assigned to a registered school")
+                raise ServiceError(REGISTRATION_FAILED)
+        else:
+            school = get_school_for_email(email_clean) or None
+            school_record = school_service.get_school(school)
+            if school_record is None:
+                logger.error("Allowed email resolved to an unregistered school")
+                raise ServiceError(REGISTRATION_FAILED)
+
+            onboarding_required = True
+            import uuid
+
+            user_id = str(uuid.uuid4())
+            payload = {
+                "id": user_id,
+                "supabase_auth_id": auth_response.user.id,
+                "email": email_clean,
+                "school_id": school_record.id,
+            }
+            if email_clean == "tqiu@uwaterloo.ca":
+                payload["role"] = "admin"
+            try:
+                self._db.table(USERS).insert(payload).execute()
+                logger.info("Created public.users record for %s (id=%s)", email_clean, user_id)
+            except Exception as exc:
+                logger.error("Failed to create public.users record: %s", exc)
+                raise ServiceError(REGISTRATION_FAILED)
+
+            try:
+                r_invites = (
+                    self._db.table("organization_invitations")
+                    .select("*")
+                    .eq("email", email_clean)
+                    .eq("status", "pending")
+                    .gt("expires_at", now_str)
+                    .execute()
+                )
+                for invite in r_invites.data or []:
+                    from services.organization_service import add_organization_member
+
+                    try:
+                        add_organization_member(invite["organization_id"], uuid.UUID(user_id))
+                    except Exception as exc:
+                        logger.warning(
+                            "Failed to auto-add user %s to organization %s: %s",
+                            user_id,
+                            invite["organization_id"],
+                            exc,
+                        )
+
+                    self._db.table("organization_invitations").update({"status": "accepted"}).eq(
+                        "id", invite["id"]
+                    ).execute()
+            except Exception as exc:
+                logger.warning("Failed to process auto-join for user %s: %s", user_id, exc)
+
+        return AuthResult(
+            body=TokenResponse(
+                access_token=auth_response.session.access_token,
+                expires_in=auth_response.session.expires_in,
+                user_id=auth_response.user.id,
+                school=school,
+                onboarding_required=onboarding_required,
+            ),
+            refresh_token=auth_response.session.refresh_token,
+        )
+
     def verify_otp(self, email: str, token: str) -> AuthResult:
         email_clean = email.strip().lower()
         token_clean = token.strip()
@@ -314,92 +489,7 @@ class AuthService:
         except Exception as e:
             logger.warning("Failed to delete used verification tokens: %s", e)
 
-        db_user = None
-        try:
-            r_user = (
-                self._db.table(USERS)
-                .select("*,school_record:schools(slug)")
-                .eq("email", email_clean)
-                .execute()
-            )
-            if r_user.data:
-                db_user = r_user.data[0]
-        except Exception as e:
-            logger.warning("Failed to look up DB user: %s", e)
-
-        onboarding_required = False
-        if db_user:
-            normalized_user = school_service.with_school_slug(db_user)
-            school = normalized_user.get("school")
-            if school_service.get_school(school) is None:
-                logger.error("Existing user is not assigned to a registered school")
-                raise ServiceError(REGISTRATION_FAILED)
-            user_id = db_user["id"]
-        else:
-            school = get_school_for_email(email_clean) or None
-            school_record = school_service.get_school(school)
-            if school_record is None:
-                logger.error("Allowed email resolved to an unregistered school")
-                raise ServiceError(REGISTRATION_FAILED)
-
-            onboarding_required = True
-            import uuid
-
-            user_id = str(uuid.uuid4())
-            payload = {
-                "id": user_id,
-                "supabase_auth_id": res.user.id,
-                "email": email_clean,
-                "school_id": school_record.id,
-            }
-            if email_clean == "tqiu@uwaterloo.ca":
-                payload["role"] = "admin"
-            try:
-                self._db.table(USERS).insert(payload).execute()
-                logger.info("Created public.users record for %s (id=%s)", email_clean, user_id)
-            except Exception as e:
-                logger.error("Failed to create public.users record: %s", e)
-                raise ServiceError(REGISTRATION_FAILED)
-
-            # Auto-join pending organization invitations for this email
-            try:
-                r_invites = (
-                    self._db.table("organization_invitations")
-                    .select("*")
-                    .eq("email", email_clean)
-                    .eq("status", "pending")
-                    .gt("expires_at", now_str)
-                    .execute()
-                )
-                for invite in r_invites.data or []:
-                    from services.organization_service import add_organization_member
-
-                    try:
-                        add_organization_member(invite["organization_id"], uuid.UUID(user_id))
-                    except Exception as e:
-                        logger.warning(
-                            "Failed to auto-add user %s to organization %s: %s",
-                            user_id,
-                            invite["organization_id"],
-                            e,
-                        )
-
-                    self._db.table("organization_invitations").update({"status": "accepted"}).eq(
-                        "id", invite["id"]
-                    ).execute()
-            except Exception as e:
-                logger.warning("Failed to process auto-join for user %s: %s", user_id, e)
-
-        return AuthResult(
-            body=TokenResponse(
-                access_token=res.session.access_token,
-                expires_in=res.session.expires_in,
-                user_id=res.user.id,
-                school=school,
-                onboarding_required=onboarding_required,
-            ),
-            refresh_token=res.session.refresh_token,
-        )
+        return self._complete_authenticated_session(res, email_clean, now_str)
 
     def refresh(self, refresh_token: str) -> AuthResult:
         try:

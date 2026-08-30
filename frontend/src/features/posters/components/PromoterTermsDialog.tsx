@@ -114,7 +114,7 @@ export function PromoterTermsDialog({
                 variant="surface"
               >
                 {section === "disputes" && (
-                  <Button asChild variant="secondary" size="sm">
+                  <Button asChild variant="outline" size="sm">
                     <a
                       href={promoterProgram.discordInviteUrl}
                       target="_blank"
@@ -152,7 +152,7 @@ export function PromoterTermsDialog({
             </>
           ) : (
             <DialogClose asChild>
-              <Button type="button" variant="secondary">
+              <Button type="button" variant="outline">
                 {t("common.close")}
               </Button>
             </DialogClose>

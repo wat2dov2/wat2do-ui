@@ -23,8 +23,6 @@ interface EventCardImageProps {
   event: Event;
   /** `card` is the grid card's fixed-height header; `detail` is the square poster. */
   variant: "card" | "detail";
-  /** Lets the grid card drop its own hover treatment while a badge is hovered. */
-  onBadgeHoverChange?: (hovering: boolean) => void;
   /**
    * Renders the organization badge inert. The submit form's live preview shows
    * the badge but must not let its menu filter the feed and leave the form.
@@ -46,7 +44,6 @@ interface EventCardImageProps {
 export function EventCardImage({
   event,
   variant,
-  onBadgeHoverChange,
   interactive = true,
   onOrganizationFilterSelect,
   priority = false,
@@ -65,21 +62,17 @@ export function EventCardImage({
     [goingSelections, event.id],
   );
 
-  const badgeHoverProps = useMemo(
-    () => ({
-      onMouseEnter: () => onBadgeHoverChange?.(true),
-      onMouseLeave: () => onBadgeHoverChange?.(false),
-    }),
-    [onBadgeHoverChange],
-  );
-
   return (
     <>
       <div
         ref={surfaceRef}
+        data-slot="event-card-image"
+        data-variant={variant}
         className={cn(
           "relative shrink-0 overflow-hidden",
-          variant === "card" ? "rounded-t-xl" : "aspect-square w-full rounded-xl",
+          variant === "card"
+            ? "rounded-t-xl rounded-br-xl"
+            : "aspect-square w-full rounded-xl",
         )}
         style={variant === "card" ? { height: EVENT_CARD_IMAGE_HEIGHT } : undefined}
       >
@@ -156,7 +149,6 @@ export function EventCardImage({
               organizationDiscord={event.organization_discord}
               disabled={!interactive}
               onFilterSelect={onOrganizationFilterSelect}
-              badgeHoverProps={badgeHoverProps}
               onMouseDown={(e) => e.stopPropagation()}
               onClick={(e) => e.stopPropagation()}
             />

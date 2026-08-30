@@ -87,10 +87,19 @@
     "organizationPanel": "組織面板",
     "clubPanelTooltip": "管理你嘅組織",
     "mission": "使命",
-    "contact": "聯絡人",
+    "about": "關於我哋",
     "goToEvents": "前往活動",
-    "posters": "海報",
+    "primary": "主要導覽",
+    "openMenu": "開啟導覽選單",
+    "switchToLightMode": "切換至淺色模式",
+    "switchToDarkMode": "切換至深色模式",
     "dismissAnnouncement": "關閉公告"
+  },
+  "siteBanner": {
+    "founderStory": {
+      "message": "我哋搜集咗超過 3,000 個滑鐵盧活動，等學生可以試多啲新嘢。",
+      "cta": "睇我哋嘅故事"
+    }
   },
   "modals": {
     "welcome": {
@@ -401,6 +410,11 @@
       "scale": "自2025年8月以來，Wat2Do 已經收集咗超過3,000個活動。我哋持續改進算法，直到平均能夠喺 Instagram 貼文上線後大約一分鐘內就顯示到相關活動。",
       "mission": "解決嗰個發現問題改變咗我哋自己嘅大學經歷。而家我哋想分享我哋建立嘅嘢，幫助學生喺世界各地發現更多周圍發生嘅新同型嘢。",
       "signature": "- Tony & Erica"
+    },
+    "help": {
+      "title": "你可以點樣幫我哋",
+      "description": "喺校園張貼 Wat2Do 海報，幫其他學生喺活動舉行之前發現佢哋。我哋嘅海報計劃會提供開始所需嘅一切。",
+      "action": "幫手張貼校園海報"
     },
     "form": {
       "title": "聯絡我哋",

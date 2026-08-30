@@ -12,6 +12,7 @@ export interface EventBadge {
   text: string;
   bgClass: string;
   textClass: string;
+  size: "sm" | "md";
 }
 
 export interface BadgeInput {
@@ -48,6 +49,7 @@ export function computeEventBadges(
       text: t("common.cancelled"),
       bgClass: overrides?.cancelledBg ?? "bg-destructive/15",
       textClass: overrides?.cancelledText ?? "text-destructive",
+      size: "sm",
     });
   }
 
@@ -57,6 +59,7 @@ export function computeEventBadges(
       text: `$${price}`,
       bgClass: overrides?.priceBg ?? "bg-primary/20",
       textClass: overrides?.priceText ?? "text-primary",
+      size: "md",
     });
   }
 
@@ -66,6 +69,7 @@ export function computeEventBadges(
       text: translateFood(food[0], t),
       bgClass: overrides?.foodBg ?? "bg-secondary",
       textClass: overrides?.foodText ?? "text-primary",
+      size: "md",
     });
   }
 

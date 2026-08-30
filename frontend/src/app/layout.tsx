@@ -7,6 +7,7 @@ import { ClientProviders } from "@/app/client-providers";
 import { SiteBanner } from "@/app/SiteBanner";
 import { getSchoolDirectory } from "@/shared/api/schools.server";
 import { getSchoolFromRequestHost } from "@/shared/constants/schools";
+import { STORAGE_KEYS } from "@/shared/constants/storageKeys";
 import { PageBackground } from "@/shared/layout";
 import "../index.css";
 
@@ -35,7 +36,33 @@ const APP_DESCRIPTION =
 
 const themeInitScript = `
 (function() {
-  document.documentElement.classList.add('dark');
+  try {
+    var themeKey = ${JSON.stringify(STORAGE_KEYS.THEME)};
+    var themeCookie = document.cookie
+      .split('; ')
+      .find(function(cookie) { return cookie.indexOf(themeKey + '=') === 0; });
+    var cookieTheme = themeCookie
+      ? decodeURIComponent(themeCookie.slice(themeKey.length + 1))
+      : null;
+    var localTheme = localStorage.getItem(themeKey);
+    if (localTheme) {
+      try { localTheme = JSON.parse(localTheme); } catch (error) {}
+    }
+    var savedTheme = cookieTheme || localTheme;
+    var isDark = savedTheme === 'dark' ||
+      (savedTheme !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    document.documentElement.classList.toggle('dark', isDark);
+  } catch (error) {
+    document.documentElement.classList.toggle(
+      'dark',
+      window.matchMedia('(prefers-color-scheme: dark)').matches
+    );
+  }
+  requestAnimationFrame(function() {
+    requestAnimationFrame(function() {
+      document.documentElement.classList.remove('no-transitions');
+    });
+  });
 })();
 `;
 
@@ -72,7 +99,11 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#0f0f0f",
+  colorScheme: "light dark",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#fafafa" },
+    { media: "(prefers-color-scheme: dark)", color: "#0f0f0f" },
+  ],
 };
 
 export default async function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
@@ -90,17 +121,17 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   return (
     <html
       lang="en"
-      className={`dark no-transitions ${satoshi.variable}`}
+      className={`no-transitions ${satoshi.variable}`}
       suppressHydrationWarning
     >
       <head>
-        <link rel="stylesheet" href="/api/school-theme" />
-      </head>
-      <body>
         <script
           id="theme-init"
           dangerouslySetInnerHTML={{ __html: themeInitScript }}
         />
+        <link rel="stylesheet" href="/api/school-theme" />
+      </head>
+      <body>
         <PageBackground />
         {/* Inside the providers so the strip's own controls can be translated;
             it is still a server component, rendered on the server as a child. */}

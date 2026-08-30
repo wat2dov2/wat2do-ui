@@ -62,6 +62,16 @@
       "clear": "Clear newly added filter",
       "sinceLastVisitAt": "Added since last visit ({{time}})"
     },
+    "dateFilter": {
+      "label": "Event date",
+      "any": "Any day",
+      "today": "Today",
+      "tomorrow": "Tomorrow",
+      "thisWeek": "This week",
+      "thisWeekend": "This weekend",
+      "nextWeek": "Next week",
+      "custom": "Custom"
+    },
     "clearAllFilters": "Clear all filters",
     "calendarViewComingSoon": "Calendar view coming soon...",
     "mapViewComingSoon": "Map view coming soon...",

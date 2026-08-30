@@ -13,6 +13,28 @@ _PASSWORD_MIN_LENGTH = 8
 _PASSWORD_MAX_LENGTH = 128
 
 
+def validate_safe_return_to(value: str | None) -> str | None:
+    if value is None:
+        return None
+    decoded = value
+    while True:
+        next_value = unquote(decoded)
+        if next_value == decoded:
+            break
+        decoded = next_value
+    parsed = urlsplit(decoded)
+    if (
+        not decoded.startswith("/")
+        or decoded.startswith("//")
+        or parsed.scheme
+        or parsed.netloc
+        or "\\" in decoded
+        or any(category(character) == "Cc" for character in decoded)
+    ):
+        raise ValueError("return_to must be a safe relative application path")
+    return decoded
+
+
 class SendOtpRequest(BaseModel):
     email: EmailStr
     token: str | None = Field(default=None, description="Optional invitation token")
@@ -21,25 +43,7 @@ class SendOtpRequest(BaseModel):
     @field_validator("return_to")
     @classmethod
     def validate_return_to(cls, value: str | None) -> str | None:
-        if value is None:
-            return None
-        decoded = value
-        while True:
-            next_value = unquote(decoded)
-            if next_value == decoded:
-                break
-            decoded = next_value
-        parsed = urlsplit(decoded)
-        if (
-            not decoded.startswith("/")
-            or decoded.startswith("//")
-            or parsed.scheme
-            or parsed.netloc
-            or "\\" in decoded
-            or any(category(character) == "Cc" for character in decoded)
-        ):
-            raise ValueError("return_to must be a safe relative application path")
-        return decoded
+        return validate_safe_return_to(value)
 
 
 class VerifyOtpRequest(BaseModel):

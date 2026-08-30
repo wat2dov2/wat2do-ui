@@ -62,6 +62,16 @@
       "clear": "Limpar filtro de recém-adicionados",
       "sinceLastVisitAt": "Adicionado desde a última visita ({{time}})"
     },
+    "dateFilter": {
+      "label": "Data do evento",
+      "any": "Qualquer dia",
+      "today": "Hoje",
+      "tomorrow": "Amanhã",
+      "thisWeek": "Esta semana",
+      "thisWeekend": "Este fim de semana",
+      "nextWeek": "Próxima semana",
+      "custom": "Personalizado"
+    },
     "clearAllFilters": "Limpar todos os filtros",
     "calendarViewComingSoon": "Visualização do calendário em breve...",
     "mapViewComingSoon": "Visualização do mapa em breve...",

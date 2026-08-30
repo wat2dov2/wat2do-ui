@@ -40,7 +40,7 @@ function PageHeader({
 }: PageHeaderProps) {
   const backButton = back ? (
     "href" in back ? (
-      <Button asChild variant="secondary" size="sm" data-slot="page-back">
+      <Button asChild variant="outline" size="sm" data-slot="page-back">
         <Link href={back.href}>
           <ArrowLeft />
           {back.label}
@@ -49,7 +49,7 @@ function PageHeader({
     ) : (
       <Button
         type="button"
-        variant="secondary"
+        variant="outline"
         size="sm"
         data-slot="page-back"
         onClick={back.onClick}

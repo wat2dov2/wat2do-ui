@@ -28,6 +28,15 @@ export const QP = {
   /** Same-origin path restored after sign-in and onboarding */
   RETURN_TO: "returnTo",
 
+  /** Authentication provider completing the shared callback route */
+  OAUTH_PROVIDER: "oauth",
+
+  /** Login-page marker for a failed external provider flow */
+  OAUTH_ERROR: "oauthError",
+
+  /** Whether a completed external login still needs onboarding */
+  ONBOARDING_REQUIRED: "onboardingRequired",
+
   /** Overrides the initial page/mode on first load */
   PAGE_MODE: "pageMode",
 

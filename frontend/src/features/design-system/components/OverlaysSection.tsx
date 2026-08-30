@@ -39,7 +39,7 @@ export function OverlaysSection() {
       >
         <Stack gap={6}>
           <ShowcaseBlock label="Dialog">
-            <Button variant="secondary" onClick={() => setDialogOpen(true)}>
+            <Button variant="outline" onClick={() => setDialogOpen(true)}>
               Open dialog
             </Button>
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -81,7 +81,7 @@ export function OverlaysSection() {
           <ShowcaseBlock label="DropdownMenu">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="secondary">
+                <Button variant="outline">
                   Open menu
                   <ChevronDown />
                 </Button>

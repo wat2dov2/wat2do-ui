@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 import { STORAGE_KEYS } from "../src/shared/constants/storageKeys";
 import { MAX_IMAGE_UPLOAD_SIZE_BYTES } from "../src/shared/constants/uploads";
 import arTranslations from "../src/shared/locales/ar.json";
@@ -49,6 +49,24 @@ function apiPath(url: URL): string | null {
 
   const path = url.pathname.slice("/api".length);
   return path.endsWith("/") && path !== "/" ? path.slice(0, -1) : path;
+}
+
+async function resolveThemeColors(
+  page: Page,
+  variables: readonly string[],
+): Promise<Record<string, string>> {
+  return page.evaluate((names) => {
+    const sample = document.createElement("div");
+    document.body.append(sample);
+    const colors = Object.fromEntries(
+      names.map((name) => {
+        sample.style.backgroundColor = `var(${name})`;
+        return [name, getComputedStyle(sample).backgroundColor];
+      }),
+    );
+    sample.remove();
+    return colors;
+  }, variables);
 }
 
 test.beforeEach(async ({ page }) => {
@@ -674,11 +692,39 @@ test.describe("Auth Page", () => {
     await page.goto(`${BASE}/login`);
     await expect(page.locator("h1")).toContainText("Discover");
     await expect(page.locator('input[type="email"]')).toBeVisible();
-    await expect(page.getByRole("button", { name: /continue/i })).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Continue with Google", exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Continue", exact: true }),
+    ).toBeVisible();
     await expect(page.getByText(/platform terms/i)).toBeVisible();
     await expect(
       page.getByTestId("auth-preview-events").locator(":scope > *"),
     ).toHaveCount(4);
+  });
+
+  test("starts Google OAuth with the same-origin backend callback", async ({
+    page,
+  }) => {
+    await page.route(
+      (url) => url.pathname.endsWith("/auth/google"),
+      async (route) => route.abort(),
+    );
+    await page.goto(`${BASE}/login?returnTo=%2Fpositions`);
+    const googleRequest = page.waitForRequest((request) =>
+      new URL(request.url()).pathname.endsWith("/auth/google"),
+    );
+
+    await page
+      .getByRole("button", { name: "Continue with Google", exact: true })
+      .click();
+    const requestUrl = new URL((await googleRequest).url());
+
+    expect(requestUrl.searchParams.get("callback_url")).toBe(
+      `${BASE}/api/auth/google/callback`,
+    );
+    expect(requestUrl.searchParams.get("return_to")).toBe("/positions");
   });
 
   test("continues from email to verification code entry", async ({ page }) => {
@@ -692,7 +738,9 @@ test.describe("Auth Page", () => {
 
     await page.goto(`${BASE}/login`);
     await page.locator('input[type="email"]').fill(TEST_EMAIL);
-    await page.getByRole("button", { name: /continue/i }).click();
+    await page
+      .getByRole("button", { name: "Continue", exact: true })
+      .click();
 
     await expect(page.getByText(/6-digit login code/i)).toBeVisible();
     await expect(page.getByRole("button", { name: /verify code/i })).toBeVisible();
@@ -701,7 +749,10 @@ test.describe("Auth Page", () => {
 
   test("submit button is disabled until form is valid", async ({ page }) => {
     await page.goto(`${BASE}/login`);
-    const submit = page.getByRole("button", { name: /continue/i });
+    const submit = page.getByRole("button", {
+      name: "Continue",
+      exact: true,
+    });
 
     await expect(submit).toBeDisabled();
 
@@ -723,7 +774,9 @@ test.describe("Auth Page", () => {
 
     await page.goto(`${BASE}/login`);
     await page.locator('input[type="email"]').fill("bad@example.com");
-    await page.getByRole("button", { name: /continue/i }).click();
+    await page
+      .getByRole("button", { name: "Continue", exact: true })
+      .click();
 
     await expect(page.getByText("Use a supported school email")).toBeVisible({ timeout: 10000 });
   });
@@ -1581,7 +1634,7 @@ test.describe("Events Page", () => {
     const drawer = page.getByRole("dialog", { name: /Report event/i });
     const drawerBody = drawer.locator('[data-slot="drawer-body"]');
     await expect(drawerBody).toBeVisible();
-    await expect(drawer.locator('[data-slot="drawer-doodle-field"]')).toBeVisible();
+    await expect(drawer.locator('[data-slot="drawer-doodle-field"]')).toHaveCount(0);
     await expect
       .poll(() =>
         drawerBody.evaluate(
@@ -2222,6 +2275,7 @@ test.describe("Events Page", () => {
           const bounds = element.getBoundingClientRect();
           return {
             backgroundColor: styles.backgroundColor,
+            borderTopWidth: styles.borderTopWidth,
             borderRadius: styles.borderRadius,
             color: styles.color,
             fontSize: styles.fontSize,
@@ -2234,6 +2288,7 @@ test.describe("Events Page", () => {
       ),
     );
     expect(selectStyles).toEqual(buttonStyles);
+    expect(selectStyles.borderTopWidth).toBe("1px");
 
     await newlyAddedSelect.click();
     await expect(
@@ -2304,6 +2359,114 @@ test.describe("Events Page", () => {
 
     await clearNewlyAddedFilter.click();
     await expect(clearNewlyAddedFilter).toHaveCount(0);
+  });
+
+  test("filters events by preset or custom date from the quick-filter strip", async ({
+    page,
+  }) => {
+    await page.goto(BASE);
+
+    const dateFilter = page.getByRole("combobox", { name: "Event date" });
+    await expect(dateFilter.locator("svg")).toHaveCount(0);
+    const freeFoodFilter = page.getByRole("button", {
+      name: "Free food",
+      exact: true,
+    });
+    const [freeFoodBounds, dateFilterBounds] = await Promise.all([
+      freeFoodFilter.boundingBox(),
+      dateFilter.boundingBox(),
+    ]);
+    expect(freeFoodBounds).not.toBeNull();
+    expect(dateFilterBounds).not.toBeNull();
+    if (freeFoodBounds && dateFilterBounds) {
+      expect(dateFilterBounds.x).toBeGreaterThan(freeFoodBounds.x);
+    }
+
+    await dateFilter.click();
+    for (const option of [
+      "Any day",
+      "Today",
+      "Tomorrow",
+      "This week",
+      "This weekend",
+      "Next week",
+      "Custom",
+    ]) {
+      await expect(page.getByRole("option", { name: option })).toBeVisible();
+    }
+    await page.getByRole("option", { name: "Today" }).click();
+    await expect(page.getByText("Tech Career Fair", { exact: true })).toHaveCount(0);
+
+    await dateFilter.click();
+    await page.getByRole("option", { name: "Tomorrow" }).click();
+    await expect(page.getByText("Tech Career Fair", { exact: true })).toBeVisible();
+
+    await dateFilter.click();
+    await page.getByRole("option", { name: "Custom" }).click();
+    await expect(page.locator('[data-slot="calendar"]')).toBeVisible();
+    const tomorrowDataDay = await page.evaluate(() => {
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      return tomorrow.toLocaleDateString();
+    });
+    await page.locator(`button[data-day="${tomorrowDataDay}"]`).click();
+
+    await expect(dateFilter).not.toContainText("Custom");
+    await expect(page.getByText("Tech Career Fair", { exact: true })).toBeVisible();
+  });
+
+  test("renders borderless event card content without horizontal padding", async ({
+    page,
+  }) => {
+    await page.goto(BASE);
+
+    const card = page.locator("article[data-event-id]").first();
+    const frame = card.locator('[data-slot="event-card-content-frame"]');
+    const content = frame.locator('[data-slot="event-card-content"]');
+    await expect(frame).toBeVisible();
+    await expect
+      .poll(() =>
+        frame.evaluate((element) => {
+          const styles = getComputedStyle(element);
+          return {
+            backgroundColor: styles.backgroundColor,
+            borderTopWidth: styles.borderTopWidth,
+            borderRightWidth: styles.borderRightWidth,
+            borderBottomWidth: styles.borderBottomWidth,
+            borderLeftWidth: styles.borderLeftWidth,
+          };
+        }),
+      )
+      .toEqual({
+        backgroundColor: "rgba(0, 0, 0, 0)",
+        borderTopWidth: "0px",
+        borderRightWidth: "0px",
+        borderBottomWidth: "0px",
+        borderLeftWidth: "0px",
+      });
+    await expect(content).toHaveCSS("padding-left", "0px");
+    await expect(content).toHaveCSS("padding-right", "0px");
+
+    const organizationBadge = card.locator('[data-slot="organization-badge"]');
+    await expect(organizationBadge).toHaveCSS("opacity", "1");
+    await card.hover();
+    await expect(card).toHaveCSS("opacity", "1");
+    await expect(organizationBadge).toHaveCSS("opacity", "1");
+    await expect(
+      card.locator('xpath=ancestor::*[@data-slot="card-grid"]'),
+    ).toHaveCSS("column-gap", "20px");
+  });
+
+  test("rounds the event card image's bottom-right corner", async ({ page }) => {
+    await page.goto(BASE);
+
+    const cardImage = page
+      .locator(
+        'article[data-event-id] [data-slot="event-card-image"][data-variant="card"]',
+      )
+      .first();
+    await expect(cardImage).toBeVisible();
+    await expect(cardImage).toHaveCSS("border-bottom-right-radius", "12px");
   });
 
   test("keeps chronological ordering when client-side filters change", async ({
@@ -2401,6 +2564,9 @@ test.describe("Events Page", () => {
       const viewBox = svg?.viewBox.baseVal;
       const svgBounds = svg?.getBoundingClientRect();
       const badgeBounds = element.getBoundingClientRect();
+      const organizationBadgeBounds = card
+        ?.querySelector('[data-slot="organization-badge"]')
+        ?.getBoundingClientRect();
       const groups = Array.from(mask?.querySelectorAll(":scope > g") ?? []);
       const topLeftGroup = groups.find((group) => {
         const rect = group.querySelector(":scope > rect");
@@ -2410,6 +2576,38 @@ test.describe("Events Page", () => {
         );
       });
       const topLeftRect = topLeftGroup?.querySelector(":scope > rect");
+      const topLeftFillets = Array.from(
+        topLeftGroup?.querySelectorAll(":scope > svg") ?? [],
+      ).map((fillet) => ({
+        x: Number(fillet.getAttribute("x")),
+        y: Number(fillet.getAttribute("y")),
+      }));
+      const topSideFillet = topLeftFillets.toSorted(
+        (a, b) => b.x - a.x,
+      )[0];
+      const topBottomFillet = topLeftFillets.toSorted(
+        (a, b) => b.y - a.y,
+      )[0];
+      const bottomLeftGroup = groups.find((group) => {
+        const rect = group.querySelector(":scope > rect");
+        return (
+          Number(rect?.getAttribute("x")) < 0 &&
+          Number(rect?.getAttribute("y")) > 0
+        );
+      });
+      const bottomLeftRect = bottomLeftGroup?.querySelector(":scope > rect");
+      const bottomLeftFillets = Array.from(
+        bottomLeftGroup?.querySelectorAll(":scope > svg") ?? [],
+      )
+        .map((fillet) => ({
+          x: Number(fillet.getAttribute("x")),
+          y: Number(fillet.getAttribute("y")),
+          width: Number(fillet.getAttribute("width")),
+          height: Number(fillet.getAttribute("height")),
+        }))
+        .toSorted((a, b) => b.y - a.y);
+      const bottomSideFillet = bottomLeftFillets[0];
+      const bottomTopFillet = bottomLeftFillets.at(-1);
       const scaleX = svgBounds && viewBox ? svgBounds.width / viewBox.width : 0;
       const scaleY =
         svgBounds && viewBox ? svgBounds.height / viewBox.height : 0;
@@ -2423,6 +2621,14 @@ test.describe("Events Page", () => {
         (Number(topLeftRect?.getAttribute("y")) +
           Number(topLeftRect?.getAttribute("height"))) *
           scaleY;
+      const bottomCutoutRight =
+        (svgBounds?.left ?? 0) +
+        (Number(bottomLeftRect?.getAttribute("x")) +
+          Number(bottomLeftRect?.getAttribute("width"))) *
+          scaleX;
+      const bottomCutoutTop =
+        (svgBounds?.top ?? 0) +
+        Number(bottomLeftRect?.getAttribute("y")) * scaleY;
       const bottomFilletEdgeOffsets = groups
         .map((group) => ({
           rectY: Number(group.querySelector(":scope > rect")?.getAttribute("y")),
@@ -2439,12 +2645,42 @@ test.describe("Events Page", () => {
       return {
         topLeftRightGap: cutoutRight - badgeBounds.right,
         topLeftBottomGap: cutoutBottom - badgeBounds.bottom,
+        topSideFilletOverlap:
+          (Number(topLeftRect?.getAttribute("x")) +
+            Number(topLeftRect?.getAttribute("width")) -
+            (topSideFillet?.x ?? 0)) *
+          scaleX,
+        topBottomFilletOverlap:
+          (Number(topLeftRect?.getAttribute("y")) +
+            Number(topLeftRect?.getAttribute("height")) -
+            (topBottomFillet?.y ?? 0)) *
+          scaleY,
+        bottomLeftRightGap:
+          bottomCutoutRight - (organizationBadgeBounds?.right ?? 0),
+        bottomLeftTopGap:
+          (organizationBadgeBounds?.top ?? 0) - bottomCutoutTop,
+        bottomSideFilletOverlap:
+          (Number(bottomLeftRect?.getAttribute("x")) +
+            Number(bottomLeftRect?.getAttribute("width")) -
+            (bottomSideFillet?.x ?? 0)) *
+          scaleX,
+        bottomTopFilletOverlap:
+          ((bottomTopFillet?.y ?? 0) +
+            (bottomTopFillet?.height ?? 0) -
+            Number(bottomLeftRect?.getAttribute("y"))) *
+          scaleY,
         bottomFilletEdgeOffsets,
       };
     });
 
     expect(geometry.topLeftRightGap).toBeCloseTo(6, 0);
     expect(geometry.topLeftBottomGap).toBeCloseTo(2, 0);
+    expect(geometry.topSideFilletOverlap).toBeCloseTo(0.25, 2);
+    expect(geometry.topBottomFilletOverlap).toBeCloseTo(0.25, 2);
+    expect(geometry.bottomLeftRightGap).toBeCloseTo(4, 0);
+    expect(geometry.bottomLeftTopGap).toBeCloseTo(4, 0);
+    expect(geometry.bottomSideFilletOverlap).toBeCloseTo(0.25, 2);
+    expect(geometry.bottomTopFilletOverlap).toBeCloseTo(0.25, 2);
     expect(geometry.bottomFilletEdgeOffsets).toHaveLength(1);
     for (const edgeOffset of geometry.bottomFilletEdgeOffsets) {
       expect(edgeOffset).toBeCloseTo(8, 0);
@@ -2506,13 +2742,16 @@ test.describe("Events Page", () => {
       name: "Arts & Culture",
     });
 
-    await expect(calendarButton).toHaveClass(/bg-secondary/);
-    await expect(categoryButton).toHaveClass(/bg-secondary/);
+    await expect(calendarButton).toHaveClass(/bg-background/);
+    await expect(categoryButton).toHaveClass(/bg-background/);
     await expect(gridButton).toHaveClass(/bg-primary/);
+
+    const categoryBoundsBeforeSelection = await categoryButton.boundingBox();
+    expect(categoryBoundsBeforeSelection).not.toBeNull();
 
     await calendarButton.click();
     await expect(calendarButton).toHaveClass(/bg-primary/);
-    await expect(gridButton).toHaveClass(/bg-secondary/);
+    await expect(gridButton).toHaveClass(/bg-background/);
     await expect(
       drawer.getByRole("button", { name: "Clear View" }),
     ).toHaveCount(0);
@@ -2525,6 +2764,16 @@ test.describe("Events Page", () => {
     await moreFiltersButton.click();
     await categoryButton.click();
     await expect(categoryButton).toHaveClass(/bg-primary/);
+    const categoryBoundsAfterSelection = await categoryButton.boundingBox();
+    expect(categoryBoundsAfterSelection).not.toBeNull();
+    if (categoryBoundsBeforeSelection && categoryBoundsAfterSelection) {
+      expect(categoryBoundsAfterSelection.width).toBe(
+        categoryBoundsBeforeSelection.width,
+      );
+      expect(categoryBoundsAfterSelection.height).toBe(
+        categoryBoundsBeforeSelection.height,
+      );
+    }
 
     await page.keyboard.press("Escape");
     const clearFiltersButton = page.getByRole("button", {
@@ -2577,11 +2826,26 @@ test.describe("Events Page", () => {
           ...eventBase,
           id: 2,
           title: "Pizza Social",
+          price: 12,
           food: ["Pizza", "Cookies"],
           occurrences: [
             {
               id: 2,
               event_id: 2,
+              dtstart_utc: startsAt,
+              dtend_utc: null,
+            },
+          ],
+        },
+        {
+          ...eventBase,
+          id: 3,
+          title: "Campus Mixer",
+          food: ["Yes!"],
+          occurrences: [
+            {
+              id: 3,
+              event_id: 3,
               dtstart_utc: startsAt,
               dtend_utc: null,
             },
@@ -2607,10 +2871,18 @@ test.describe("Events Page", () => {
     });
 
     await page.goto(BASE);
-    await expect(page.locator("article[data-event-id]")).toHaveCount(2);
+    await expect(page.locator("article[data-event-id]")).toHaveCount(3);
     const pizzaCard = page.locator('article[data-event-id="2"]');
     await expect(pizzaCard).toContainText("Pizza");
     await expect(pizzaCard).not.toContainText("Cookies");
+    for (const label of ["$12", "Pizza"]) {
+      await expect(pizzaCard.getByText(label, { exact: true })).toHaveClass(
+        /text-\[11px\]/,
+      );
+    }
+    const genericFoodCard = page.locator('article[data-event-id="3"]');
+    await expect(genericFoodCard).toContainText("Food");
+    await expect(genericFoodCard).not.toContainText("Yes!");
 
     await page.getByRole("button", { name: "More filters" }).click();
     const drawer = page.getByRole("dialog", { name: "More filters" });
@@ -2621,7 +2893,7 @@ test.describe("Events Page", () => {
     await expect(pizzaCard).toBeVisible();
 
     await foodInput.clear();
-    await expect(page.locator("article[data-event-id]")).toHaveCount(2);
+    await expect(page.locator("article[data-event-id]")).toHaveCount(3);
   });
 
   test("app API proxy returns events", async ({ request }) => {
@@ -2697,6 +2969,9 @@ test.describe("Organizations Page", () => {
     const body = await page.textContent("body");
     expect(body).toBeTruthy();
     const organizationCard = page.locator('[data-organization-id="1"]');
+    const organizationContent = organizationCard.locator(
+      '[data-slot="event-card-content"]',
+    );
     const addClubButton = page.getByRole("button", {
       name: "Add club",
       exact: true,
@@ -2714,6 +2989,11 @@ test.describe("Organizations Page", () => {
     await expect(
       organizationCard.getByRole("button", { name: "More options" }),
     ).toHaveCount(0);
+    await expect(organizationContent).toHaveCSS("padding-left", "12px");
+    await expect(organizationContent).toHaveCSS("padding-right", "12px");
+    await expect(
+      organizationCard.locator('xpath=ancestor::*[@data-slot="card-grid"]'),
+    ).toHaveCSS("column-gap", "20px");
     await expect
       .poll(async () => {
         const [
@@ -3154,6 +3434,207 @@ test.describe("Navigation", () => {
       await expect(page.getByText("Failed to load events. Please try again.")).toHaveCount(0);
       await expect(page.getByRole("main", { name: "Events list" })).toBeVisible();
     }
+  });
+
+  test("school options are available immediately from the client directory", async ({ page }) => {
+    await page.goto(BASE, { waitUntil: "domcontentloaded" });
+
+    await page
+      .getByRole("banner")
+      .getByRole("button", { name: "University of Waterloo" })
+      .click();
+
+    await expect(page.getByText("Loading...", { exact: true })).toHaveCount(0);
+    await expect(
+      page
+        .getByRole("dialog")
+        .getByRole("button", { name: "University of Waterloo" }),
+    ).toBeVisible();
+  });
+
+  test("uses the top navigation and exposes poster help through About us", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(BASE, { waitUntil: "domcontentloaded" });
+
+    const navigation = page.getByRole("navigation", {
+      name: "Primary navigation",
+    });
+    for (const linkName of [
+      "Events",
+      "Organizations",
+      "Positions",
+      "About us",
+    ]) {
+      await expect(
+        navigation.getByRole("link", { name: linkName, exact: true }),
+      ).toBeVisible();
+    }
+    const preferencesDivider = page.locator("[data-nav-preferences-divider]");
+    await expect(preferencesDivider).toBeVisible();
+    await expect(preferencesDivider).toHaveCSS("height", "24px");
+    await expect(preferencesDivider).toHaveCSS("width", "1px");
+    await expect(preferencesDivider).toHaveCSS("margin-left", "2px");
+    await expect(preferencesDivider).toHaveCSS("margin-right", "6px");
+    await expect(
+      navigation.getByRole("link", { name: "Posters", exact: true }),
+    ).toHaveCount(0);
+
+    await navigation
+      .getByRole("link", { name: "About us", exact: true })
+      .click();
+    await expect(page).toHaveURL(/\/contact$/);
+    await expect(page.getByText("How you can help us", { exact: true })).toBeVisible();
+    await expect(
+      page.getByRole("link", {
+        name: "Help with campus posters",
+        exact: true,
+      }),
+    ).toHaveAttribute("href", "/promote");
+  });
+
+  test("uses only the bottom-left page glow and no drawer decoration", async ({
+    page,
+  }) => {
+    await page.goto(BASE, { waitUntil: "domcontentloaded" });
+
+    const background = page.locator('[data-slot="page-background"]');
+    await expect(background.locator("img")).toHaveCount(0);
+    await expect(background.locator(".page-doodle-grid")).toHaveCount(0);
+    const backgroundImage = await background
+      .locator(".bg-page-glow")
+      .evaluate((element) => getComputedStyle(element).backgroundImage);
+    expect(backgroundImage.match(/radial-gradient/g)).toHaveLength(1);
+
+    await page
+      .getByRole("button", { name: "More filters", exact: true })
+      .click();
+    await expect(page.locator('[data-slot="drawer-doodle-field"]')).toHaveCount(0);
+  });
+
+  test("theme toggle animates and persists through the shared theme cookie", async ({
+    page,
+  }) => {
+    await page.addInitScript(
+      ({ themeKey }) => localStorage.setItem(themeKey, JSON.stringify("dark")),
+      { themeKey: STORAGE_KEYS.THEME },
+    );
+    await page.goto(BASE, { waitUntil: "domcontentloaded" });
+
+    await expect(page.locator("html")).toHaveClass(/dark/);
+    const darkThemeToggle = page.getByRole("button", {
+      name: "Switch to light mode",
+    });
+    const darkControlColors = await resolveThemeColors(page, ["--secondary"]);
+    await expect(darkThemeToggle).toHaveCSS(
+      "background-color",
+      darkControlColors["--secondary"]!,
+    );
+    await expect(darkThemeToggle).toHaveCSS(
+      "border-top-color",
+      darkControlColors["--secondary"]!,
+    );
+    await page.evaluate(() => {
+      const root = document.documentElement;
+      const originalAnimate = root.animate.bind(root);
+      root.animate = ((keyframes, options) => {
+        const clipPath = (keyframes as PropertyIndexedKeyframes).clipPath;
+        (
+          window as typeof window & {
+            __themeAnimation?: {
+              clipPath: string[];
+              transitionsLocked: boolean;
+              pseudoElement: string | null;
+            };
+          }
+        ).__themeAnimation = {
+          clipPath: Array.isArray(clipPath)
+            ? clipPath.map(String)
+            : [String(clipPath)],
+          transitionsLocked: root.classList.contains("no-transitions"),
+          pseudoElement:
+            typeof options === "object" && options
+              ? (options.pseudoElement ?? null)
+              : null,
+        };
+        return originalAnimate(keyframes, options);
+      }) as typeof root.animate;
+    });
+    await darkThemeToggle.click();
+    await expect(page.locator("html")).not.toHaveClass(/dark/);
+    const lightThemeToggle = page.getByRole("button", {
+      name: "Switch to dark mode",
+    });
+    const lightControlColors = await resolveThemeColors(page, [
+      "--background",
+      "--border",
+    ]);
+    await expect(lightThemeToggle).toHaveCSS(
+      "background-color",
+      lightControlColors["--background"]!,
+    );
+    await expect(lightThemeToggle).toHaveCSS(
+      "border-top-color",
+      lightControlColors["--border"]!,
+    );
+    await expect
+      .poll(() =>
+        page.evaluate(
+          () =>
+            (
+              window as typeof window & {
+                __themeAnimation?: {
+                  clipPath: string[];
+                  transitionsLocked: boolean;
+                  pseudoElement: string | null;
+                };
+              }
+            ).__themeAnimation ?? null,
+        ),
+      )
+      .toEqual({
+        clipPath: [
+          expect.stringMatching(/^circle\(0px at /),
+          expect.stringMatching(/^circle\(.+px at /),
+        ],
+        transitionsLocked: true,
+        pseudoElement: "::view-transition-new(root)",
+      });
+    await expect(page.locator("html")).not.toHaveClass(/no-transitions/);
+    await expect
+      .poll(() =>
+        page.evaluate(
+          (key) => JSON.parse(localStorage.getItem(key) ?? "null"),
+          STORAGE_KEYS.THEME,
+        ),
+      )
+      .toBe("light");
+    await expect
+      .poll(() =>
+        page.evaluate((key) => {
+          const cookie = document.cookie
+            .split("; ")
+            .find((entry) => entry.startsWith(`${key}=`));
+          return cookie ? decodeURIComponent(cookie.slice(key.length + 1)) : null;
+        }, STORAGE_KEYS.THEME),
+      )
+      .toBe("light");
+
+    await page.evaluate((key) => localStorage.removeItem(key), STORAGE_KEYS.THEME);
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await expect(page.locator("html")).not.toHaveClass(/dark/);
+
+    await page.getByRole("button", { name: "Switch to dark mode" }).click();
+    await expect(page.locator("html")).toHaveClass(/dark/);
+    await expect
+      .poll(() =>
+        page.evaluate(
+          (key) => JSON.parse(localStorage.getItem(key) ?? "null"),
+          STORAGE_KEYS.THEME,
+        ),
+      )
+      .toBe("dark");
   });
 
   test("events page first paint uses app chrome, not an empty shell", async ({ page }) => {

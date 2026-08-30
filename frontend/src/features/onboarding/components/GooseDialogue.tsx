@@ -55,7 +55,7 @@ export function GooseDialogue({
 
         <div className="flex items-center gap-2">
           {showBack && onBack && (
-            <Button type="button" variant="secondary" size="sm" onMouseDown={onBack}>
+            <Button type="button" variant="outline" size="sm" onMouseDown={onBack}>
               {t("common.back")}
             </Button>
           )}

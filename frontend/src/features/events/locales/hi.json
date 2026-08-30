@@ -62,6 +62,16 @@
       "clear": "नया जोड़ा गया फ़िल्टर साफ़ करें",
       "sinceLastVisitAt": "पिछली विज़िट के बाद से जोड़ा गया ({{time}})"
     },
+    "dateFilter": {
+      "label": "इवेंट की तारीख",
+      "any": "कोई भी दिन",
+      "today": "आज",
+      "tomorrow": "कल",
+      "thisWeek": "इस सप्ताह",
+      "thisWeekend": "इस सप्ताहांत",
+      "nextWeek": "अगले सप्ताह",
+      "custom": "मनपसंद तारीख"
+    },
     "clearAllFilters": "सभी फ़िल्टर साफ़ करें",
     "calendarViewComingSoon": "कैलेंडर दृश्य जल्द ही आ रहा है...",
     "mapViewComingSoon": "मानचित्र दृश्य जल्द ही आ रहा है...",

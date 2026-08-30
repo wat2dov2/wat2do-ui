@@ -62,6 +62,16 @@
       "clear": "ਨਵੇਂ ਸ਼ਾਮਲ ਕੀਤੇ ਫਿਲਟਰ ਨੂੰ ਸਾਫ਼ ਕਰੋ",
       "sinceLastVisitAt": "ਪਿਛਲੀ ਫੇਰੀ ਤੋਂ ਬਾਅਦ ਜੋੜਿਆ ਗਿਆ ({{time}})"
     },
+    "dateFilter": {
+      "label": "ਇਵੈਂਟ ਦੀ ਤਾਰੀਖ",
+      "any": "ਕੋਈ ਵੀ ਦਿਨ",
+      "today": "ਅੱਜ",
+      "tomorrow": "ਕੱਲ੍ਹ",
+      "thisWeek": "ਇਸ ਹਫ਼ਤੇ",
+      "thisWeekend": "ਇਸ ਹਫ਼ਤੇ ਦੇ ਅੰਤ",
+      "nextWeek": "ਅਗਲੇ ਹਫ਼ਤੇ",
+      "custom": "ਆਪਣੀ ਤਾਰੀਖ"
+    },
     "clearAllFilters": "ਸਾਰੇ ਫਿਲਟਰ ਸਾਫ਼ ਕਰੋ",
     "calendarViewComingSoon": "ਕੈਲੰਡਰ ਦ੍ਰਿਸ਼ ਜਲਦੀ ਹੀ ਆ ਰਿਹਾ ਹੈ...",
     "mapViewComingSoon": "ਨਕਸ਼ੇ ਦਾ ਦ੍ਰਿਸ਼ ਜਲਦੀ ਹੀ ਆ ਰਿਹਾ ਹੈ...",

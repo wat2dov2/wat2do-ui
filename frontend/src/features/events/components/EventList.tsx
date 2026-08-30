@@ -48,7 +48,7 @@ function EventCardsGrid({
   onEventClick,
 }: EventCardsGridProps) {
   return (
-    <div className={CARD_GRID_CLASS}>
+    <div data-slot="card-grid" className={CARD_GRID_CLASS}>
       {events.map((event, index) => (
         <CardEntrance
           key={event.id}
@@ -248,7 +248,7 @@ export function EventList({
         }
         action={
           hasActiveFilters && onClearFilters ? (
-            <Button variant="secondary" onMouseDown={onClearFilters}>
+            <Button variant="outline" onMouseDown={onClearFilters}>
               {t("events.clearAllFilters")}
             </Button>
           ) : undefined

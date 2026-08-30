@@ -15,14 +15,12 @@ import type { Position } from "@/shared/types";
 interface PositionCardImageProps {
   position: Position;
   variant: "card" | "detail";
-  onBadgeHoverChange?: (hovering: boolean) => void;
   onOrganizationFilterSelect?: () => void;
 }
 
 export function PositionCardImage({
   position,
   variant,
-  onBadgeHoverChange,
   onOrganizationFilterSelect,
 }: PositionCardImageProps) {
   const { t, i18n } = useTranslation();
@@ -31,20 +29,14 @@ export function PositionCardImage({
     () => formatPositionDeadlineBadge(position, i18n.language),
     [i18n.language, position],
   );
-  const badgeHoverProps = useMemo(
-    () => ({
-      onMouseEnter: () => onBadgeHoverChange?.(true),
-      onMouseLeave: () => onBadgeHoverChange?.(false),
-    }),
-    [onBadgeHoverChange],
-  );
-
   return (
     <div
       ref={surfaceRef}
+      data-slot="position-card-image"
+      data-variant={variant}
       className={
         variant === "card"
-          ? "relative shrink-0 overflow-hidden rounded-t-xl"
+          ? "relative shrink-0 overflow-hidden rounded-t-xl rounded-br-xl"
           : "relative aspect-square w-full overflow-hidden rounded-xl"
       }
       style={
@@ -106,7 +98,6 @@ export function PositionCardImage({
           organizationIg={position.organization_ig}
           organizationDiscord={position.organization_discord}
           onFilterSelect={onOrganizationFilterSelect}
-          badgeHoverProps={badgeHoverProps}
           onMouseDown={(event) => event.stopPropagation()}
           onClick={(event) => event.stopPropagation()}
         />

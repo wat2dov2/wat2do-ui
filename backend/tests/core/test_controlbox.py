@@ -51,6 +51,15 @@ def test_checked_in_controlbox_is_valid() -> None:
     assert controlbox.instagram_publishing.maximum_event_slides == 9
     assert controlbox.instagram_publishing.token_refresh_lead_days == 14
     assert controlbox.scraping.instagram_web_app_id == "936619743392459"
+    assert controlbox.emulator_farm.maximum_running_nodes == 1
+    assert controlbox.emulator_farm.accounts_per_node == 3
+    assert controlbox.emulator_farm.check_interval_seconds == 1800
+    assert controlbox.emulator_farm.live_monitor_interval_seconds == 3
+    assert controlbox.emulator_farm.run_headlessly is False
+    assert controlbox.emulator_farm.github_repository == "wat2dov2/wat2do-ui"
+    assert controlbox.emulator_farm.github_event_type == "new_instagram_post"
+    assert [node.name for node in controlbox.emulator_farm.nodes] == ["ig_node_1"]
+    assert [node.port for node in controlbox.emulator_farm.nodes] == [5554]
     assert controlbox.instagram_digest.operation_name == "SubscriptionDigestFeedQuery"
     assert controlbox.instagram_digest.client_doc_id == "20099285643937437306465362209"
     assert controlbox.instagram_digest.maximum_pages == 25
@@ -196,6 +205,50 @@ def test_invalid_instagram_digest_endpoint_is_rejected(tmp_path: Path) -> None:
     )
 
     with pytest.raises(ValidationError, match="must use i.instagram.com"):
+        load_controlbox(path)
+
+
+def _append_emulator_node(
+    payload: dict[str, object],
+    *,
+    port: int,
+) -> None:
+    payload["maximum_running_nodes"] = 2
+    payload["nodes"].append(
+        {
+            "name": "ig_node_2",
+            "port": port,
+        }
+    )
+
+
+@pytest.mark.parametrize(
+    ("mutate", "message"),
+    [
+        (
+            lambda payload: payload.update({"maximum_running_nodes": 4}),
+            "maximum_running_nodes",
+        ),
+        (
+            lambda payload: payload["nodes"][0].update({"port": 5555}),
+            "ports must be even",
+        ),
+        (
+            lambda payload: _append_emulator_node(payload, port=5554),
+            "ports must be unique",
+        ),
+        (
+            lambda payload: payload.update(
+                {"system_image": "system-images;android-35;google_apis;x86_64"}
+            ),
+            "Google Play",
+        ),
+    ],
+)
+def test_invalid_emulator_farm_control_is_rejected(tmp_path: Path, mutate, message: str) -> None:
+    path = _write_control(tmp_path, "emulator_farm", mutate)
+
+    with pytest.raises(ValidationError, match=message):
         load_controlbox(path)
 
 

@@ -6,7 +6,7 @@ import {
   clearNarrowingFilterState,
 } from "@/features/search/api/filterService";
 import { useSearchStore } from "@/features/search/store/search.store";
-import type { FilterState } from "@/shared/types";
+import type { EventDateFilter, FilterState } from "@/shared/types";
 
 type FilterStateUpdater = FilterState | ((current: FilterState) => FilterState);
 
@@ -81,6 +81,8 @@ export function useFilterState() {
     sortBy,
     sortOrder,
     addedSince,
+    dateFilter,
+    customDate,
   } = useSearchStore(
     useShallow((s) => ({
       searchQuery: s.searchQuery,
@@ -96,6 +98,8 @@ export function useFilterState() {
       sortBy: s.sortBy,
       sortOrder: s.sortOrder,
       addedSince: s.addedSince,
+      dateFilter: s.dateFilter,
+      customDate: s.customDate,
     })),
   );
   const {
@@ -146,6 +150,11 @@ export function useFilterState() {
   );
   const setAddedSince = useCallback(
     (value: string) => updateFilterState({ addedSince: value }),
+    [updateFilterState],
+  );
+  const setDateFilter = useCallback(
+    (value: EventDateFilter, selectedDate = "") =>
+      updateFilterState({ dateFilter: value, customDate: selectedDate }),
     [updateFilterState],
   );
   const setSortBy = useCallback(
@@ -201,6 +210,9 @@ export function useFilterState() {
     setGoingFilter,
     addedSince,
     setAddedSince,
+    dateFilter,
+    customDate,
+    setDateFilter,
     toggleCategory,
     toggleLocation,
     toggleDay,

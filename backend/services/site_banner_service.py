@@ -18,7 +18,7 @@ def get_site_banner() -> SiteBannerResponse | None:
     response = (
         get_sb()
         .table(SITE_BANNER)
-        .select("message,cta_label,cta_href,enabled")
+        .select("message_translation_key,cta_label_translation_key,cta_href,enabled")
         .eq("id", _SINGLE_ROW_ID)
         .limit(1)
         .execute()

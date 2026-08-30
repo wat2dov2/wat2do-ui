@@ -70,7 +70,7 @@ export function InstagramIntegrationModal({
 
             <Field orientation="horizontal">
               <DialogClose asChild>
-                <Button variant="secondary" type="button">
+                <Button variant="outline" type="button">
                   {t("common.cancel")}
                 </Button>
               </DialogClose>

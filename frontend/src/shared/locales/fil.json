@@ -90,10 +90,19 @@
     "organizationPanel": "Panel ng organisasyon",
     "clubPanelTooltip": "Pamahalaan ang iyong organisasyon",
     "mission": "Misyon",
-    "contact": "Makipag-ugnayan",
+    "about": "Tungkol sa amin",
     "goToEvents": "Pumunta sa mga kaganapan",
-    "posters": "Mga Poster",
+    "primary": "Pangunahing nabigasyon",
+    "openMenu": "Buksan ang menu ng nabigasyon",
+    "switchToLightMode": "Lumipat sa light mode",
+    "switchToDarkMode": "Lumipat sa dark mode",
     "dismissAnnouncement": "Isara ang anunsyo"
+  },
+  "siteBanner": {
+    "founderStory": {
+      "message": "Nakalap namin ang 3,000+ event sa Waterloo para mas maraming bagong bagay ang masubukan ng mga estudyante.",
+      "cta": "Basahin ang kuwento namin"
+    }
   },
   "modals": {
     "welcome": {
@@ -404,6 +413,11 @@
       "scale": "Mula Agosto 2025, naitala na ni Wat2Do ang higit sa 3,000 na mga kaganapan. Patuloy naming pinabuti ang algorithm hanggang sa kaya nitong ipakita ang isang kaganapan, sa karaniwan, mga isang minuto matapos itong mailathala sa Instagram.",
       "mission": "Ang paglutas sa problemang iyon sa pagtuklas ay nagbago ng aming sariling karanasan sa unibersidad. Ngayon gusto naming ibahagi ang aming ginawa at tulungan ang mga estudyante saanman na matuklasan ang higit pang bago at nakaka-cool na mga bagay na nangyayari sa paligid nila.",
       "signature": "- Tony & Erica"
+    },
+    "help": {
+      "title": "Paano mo kami matutulungan",
+      "description": "Maglagay ng mga poster ng Wat2Do sa campus upang matulungan ang ibang estudyante na makita ang mga kaganapan bago mangyari ang mga ito. Ibibigay ng aming poster program ang lahat ng kailangan mo para makapagsimula.",
+      "action": "Tumulong sa mga poster sa campus"
     },
     "form": {
       "title": "Makipag-ugnayan",

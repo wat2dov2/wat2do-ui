@@ -351,6 +351,53 @@ class InstagramPublishingControl(_ControlModel):
         return self
 
 
+class EmulatorFarmNodeControl(_ControlModel):
+    name: str = Field(pattern=r"^ig_node_[1-9][0-9]*$")
+    port: int = Field(ge=5554, le=5682)
+
+    @model_validator(mode="after")
+    def validate_node(self) -> "EmulatorFarmNodeControl":
+        if self.port % 2:
+            raise ValueError("emulator console ports must be even")
+        return self
+
+
+class EmulatorFarmControl(_ControlModel):
+    maximum_running_nodes: int = Field(gt=0, le=3)
+    accounts_per_node: int = Field(gt=0, le=3)
+    check_interval_seconds: int = Field(ge=300)
+    live_monitor_interval_seconds: int = Field(ge=1, le=60)
+    boot_timeout_seconds: int = Field(gt=0, le=900)
+    notification_evidence_max_age_seconds: int = Field(gt=0, le=604800)
+    system_image: str = Field(min_length=1)
+    device_profile: str = Field(pattern=r"^[a-z0-9_]+$")
+    memory_megabytes_per_node: int = Field(ge=2048, le=6144)
+    cpu_cores_per_node: int = Field(ge=1, le=4)
+    run_headlessly: bool
+    instagram_package: Literal["com.instagram.android"]
+    automate_package: Literal["com.llamalab.automate"]
+    recipient_id_key: Literal["com.instagram.android.igns.logging.intended_recipient_id"]
+    github_repository: str = Field(pattern=r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
+    github_event_type: Literal["new_instagram_post"]
+    nodes: tuple[EmulatorFarmNodeControl, ...] = Field(min_length=1, max_length=3)
+
+    @model_validator(mode="after")
+    def validate_farm(self) -> "EmulatorFarmControl":
+        if len(self.nodes) != self.maximum_running_nodes:
+            raise ValueError("configured emulator nodes must equal maximum_running_nodes")
+        names = [node.name for node in self.nodes]
+        ports = [node.port for node in self.nodes]
+        if len(names) != len(set(names)):
+            raise ValueError("emulator node names must be unique")
+        if len(ports) != len(set(ports)):
+            raise ValueError("emulator node ports must be unique")
+        if "google_apis_playstore" not in self.system_image:
+            raise ValueError("emulator farm system image must include Google Play")
+        if not self.system_image.endswith(";arm64-v8a"):
+            raise ValueError("emulator farm system image must use arm64-v8a")
+        return self
+
+
 class InstagramDigestControl(_ControlModel):
     endpoint_url: HttpUrl
     operation_name: Literal["SubscriptionDigestFeedQuery"]
@@ -477,6 +524,7 @@ class ControlBox(_ControlModel):
     uploads: UploadsControl
     public_attendance: PublicAttendanceControl
     social_previews: SocialPreviewsControl
+    emulator_farm: EmulatorFarmControl
     instagram_digest: InstagramDigestControl
     instagram_publishing: InstagramPublishingControl
     workflow_failure_alerts: WorkflowFailureAlertsControl

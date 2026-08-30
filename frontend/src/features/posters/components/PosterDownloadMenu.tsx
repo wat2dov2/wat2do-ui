@@ -14,7 +14,7 @@ interface PosterDownloadMenuProps {
   isLoading: boolean;
   disabled?: boolean;
   size?: "default" | "sm";
-  variant?: "primary" | "secondary";
+  variant?: "primary" | "outline";
   testId: string;
 }
 

@@ -12,15 +12,31 @@ import {
   type SupportedLanguage,
 } from "@/shared/constants/languages";
 
-// ── Theme ───────────────────────────────────────────────────────────
+export type ThemePreference = "dark" | "light";
 
-export function loadTheme(): "dark" | "light" | null {
-  const saved = StorageService.getItem<string | null>(STORAGE_KEYS.THEME, null);
+const THEME_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 365;
+
+export function loadTheme(): ThemePreference | null {
+  const saved = StorageService.getItem<unknown>(STORAGE_KEYS.THEME, null);
   return saved === "dark" || saved === "light" ? saved : null;
 }
 
-export function saveTheme(theme: "dark" | "light"): void {
+export function saveTheme(theme: ThemePreference): void {
   StorageService.setItem(STORAGE_KEYS.THEME, theme);
+
+  if (typeof window === "undefined") return;
+
+  const cookieAttributes = [
+    `${STORAGE_KEYS.THEME}=${encodeURIComponent(theme)}`,
+    "path=/",
+    `max-age=${THEME_COOKIE_MAX_AGE_SECONDS}`,
+    "samesite=lax",
+  ];
+  const hostname = window.location.hostname.toLowerCase();
+  if (hostname === "wat2do.io" || hostname.endsWith(".wat2do.io")) {
+    cookieAttributes.push("domain=.wat2do.io", "secure");
+  }
+  document.cookie = cookieAttributes.join("; ");
 }
 
 // ── Language ────────────────────────────────────────────────────────

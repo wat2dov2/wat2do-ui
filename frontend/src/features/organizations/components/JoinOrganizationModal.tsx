@@ -99,7 +99,7 @@ export function JoinOrganizationModal({ isOpen, onClose, organization }: JoinOrg
 
             <DialogFooter className="pt-4 gap-2 flex justify-end">
               <DialogClose asChild>
-                <Button type="button" variant="secondary" disabled={isSubmitting}>
+                <Button type="button" variant="outline" disabled={isSubmitting}>
                   {t("common.cancel")}
                 </Button>
               </DialogClose>

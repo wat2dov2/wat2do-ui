@@ -56,7 +56,7 @@ class ErrorBoundary extends Component<Props, State> {
             {this.state.error?.message || translate("errorBoundary.message")}
           </p>
           <div className="flex gap-3">
-            <Button onMouseDown={this.handleReset} variant="secondary">
+            <Button onMouseDown={this.handleReset} variant="outline">
               {translate("common.tryAgain")}
             </Button>
             <Button onMouseDown={() => window.location.reload()} variant="primary">

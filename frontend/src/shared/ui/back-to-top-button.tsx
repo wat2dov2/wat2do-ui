@@ -6,7 +6,7 @@ import { MAIN_CONTENT_SCROLL_ROOT_SELECTOR } from "@/shared/constants/ui";
 
 /**
  * Scroll-to-top control for AppLayout's main content scroller.
- * Positioned by AppLayout on the same baseline as FloatingDock icons.
+ * Positioned by AppLayout in the bottom-right corner.
  */
 export function BackToTopButton() {
   const { t } = useTranslation();

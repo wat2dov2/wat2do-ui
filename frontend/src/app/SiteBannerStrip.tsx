@@ -20,9 +20,10 @@ import { X } from "@/shared/ui/doodle-icons";
 export const SITE_BANNER_DISMISSED_COOKIE = "wat2do_site_banner_dismissed";
 
 interface SiteBannerStripProps {
-  message: string;
+  messageTranslationKey: string;
+  schoolName: string;
   ctaHref: string;
-  ctaLabel: string;
+  ctaLabelTranslationKey: string;
 }
 
 function rememberDismissal(): void {
@@ -38,9 +39,10 @@ function rememberDismissal(): void {
  * case the server cannot: the visitor dismissing it in front of us.
  */
 export function SiteBannerStrip({
-  message,
+  messageTranslationKey,
+  schoolName,
   ctaHref,
-  ctaLabel,
+  ctaLabelTranslationKey,
 }: SiteBannerStripProps) {
   const { t } = useTranslation();
   const [dismissed, setDismissed] = useState(false);
@@ -53,13 +55,13 @@ export function SiteBannerStrip({
       className="fixed inset-x-0 top-0 z-nav flex h-9 items-center justify-center gap-2 border-b border-border bg-surface px-4 text-xs text-foreground sm:text-sm"
     >
       <span className="min-w-0 max-w-[calc(100dvw_-_10rem)] truncate">
-        {message}
+        {t(messageTranslationKey, { school: schoolName })}
       </span>
       <Link
         href={ctaHref}
         className="shrink-0 font-semibold underline underline-offset-4"
       >
-        {ctaLabel}
+        {t(ctaLabelTranslationKey)}
       </Link>
       <Button
         variant="ghost"

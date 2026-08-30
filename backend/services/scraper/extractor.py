@@ -251,17 +251,19 @@ CLASSIFICATION POLICY:
 
 POSITION ELIGIBILITY GATE (CRITICAL):
 - Before extracting any position, find explicit evidence in the caption or an image that applications, nominations, auditions, or sign-ups are currently open for that role. Qualifying evidence includes language such as "we're hiring", "applications are open", "apply", "join our team", "nominations are open", or "run for", or a current application form or call to action.
-- A role title, list of roles, description of responsibilities, person holding a role, or announcement that an election exists is not evidence that a position is open.
+- The recruiting evidence must be on this post and must connect to the advertised role. A deadline, a role title, a list of roles, a description of responsibilities, a department name, a person holding a role, or an announcement that an election exists is not enough by itself.
 - Election voting posts are not hiring. Candidate lists or slates, campaign information, voting instructions, election dates, ballots, and results must return an empty positions array even when they name roles.
 - An election post qualifies as hiring only when it explicitly invites people to apply, nominate themselves, or run for a currently open role.
-- Member or executive introductions, team spotlights, and posts naming "this year's" role holders are not hiring.
+- Member or executive introductions, current-board rosters, team spotlights, role-and-name graphics, posts naming "this year's" role holders, and "meet the team" posts are not hiring.
+- Do not extract generic club membership, active-member tiers, unnamed departments, or duties-only slides as positions. A role description does not become an opening unless the same post explicitly asks people to apply, nominate themselves, audition, run, or sign up for it now.
 - If there is no explicit current recruiting evidence, do not extract any position and do not set "content_type" to "hiring" solely because role names appear.
 - Example: "Executive elections start today. Read the candidate speeches and vote for Treasurer" is "other" with "positions": [].
 - Counterexample: "Nominations are open. Apply or run for Treasurer by Friday" is "hiring" and may produce a Treasurer position.
 - Example: "Meet this year's Merch Coordinator" is "other" with "positions": [].
 
 EVENT POLICY:
-- ONLY extract an event if the post is clearly announcing or describing a real-world event.
+- ONLY extract an attendee-facing activity if the post is clearly announcing or describing a real-world event. The activity itself must be named and something a person can attend, participate in, or watch.
+- A ticketed, paid, RSVP-only, or registration-required activity is still an event when the actual activity is clearly named. Do not reject an event merely because it has tickets or registration.
 - Ideally, the post should have BOTH a specific date AND a specific start time.
 - EXCEPTION: For major events (e.g., full-day, multi-day, overnight), you MAY extract the event even if a specific start time is not explicitly stated, provided there is a specific DATE or date range.
 - For these major events ONLY, if no time is given, you may default the start time to 00:00 (midnight) or a logical start time implied by the context.
@@ -270,6 +272,9 @@ EVENT POLICY:
     * The post is inappropriate (nudity, explicit sexual content, or graphic violence).
     * There is NO mention of a date at all.
     * The post only introduces people or some topic, UNLESS there is a clear call to attend or participate in an actual event (such as a meeting, workshop, performance, or competition).
+    * It only announces ticket or registration release, a presale, a giveaway, merchandise, a waitlist, an application, a submission period, a placement test, or another administrative deadline rather than the activity itself.
+    * It only promotes a trailer, teaser, behind-the-scenes content, a campaign, a vote, election results, a call for artists or volunteers, or a program reveal.
+    * It lists event names in a recruitment, volunteer, planning, or administrative schedule without inviting attendees to those activities.
 
 Return exactly one JSON object with this structure:
 {{
@@ -332,6 +337,7 @@ OCCURRENCE RULES (CRITICAL):
 
 POSITION RULES:
 - Extract one position object per distinct advertised role. If a post recruits several roles, do not collapse them into one generic position.
+- If the same advertised role appears in the caption and multiple images, return it once, using the image with the strongest recruiting evidence.
 - Use "general" only for a genuinely open-ended team application that does not map to a more specific type.
 - Use "staff" for paid non-intern employment. Compensation details belong in "compensation", not in the type.
 - The description must be a concise, role-specific summary supported by the caption or image. Do not invent responsibilities.
@@ -343,13 +349,14 @@ POSITION RULES:
 
 ADDITIONAL EVENT RULES:
 - Prioritize caption text; use image text if missing details.
+- Extract one object per logical event, even when the caption and several images repeat it. Combine all explicitly advertised occurrences for that same activity into that object's occurrences array. Do not create event objects for its ticket, registration, check-in, application, campaign, or other administrative milestones.
 - Title-case event titles.
 - For "organization": this is the organization / society / faculty hosting the event. Prefer the most specific named entity from the caption or image (e.g., "UW Tea Organization"); if none is named, use the Instagram handle as a fallback.
 - If year not found, infer the NEXT occurrence of that date relative to the post creation date ({post_date}). If end time < start time (e.g., 7pm-12am), set end to the next day.
 - When no explicit date is found but there are relative terms like "tonight", "tomorrow", interpret these relative to the POST CREATION DATE ({post_date}).
 - For location: Use the exact location as stated in the caption or image. If the location is a building or room on campus, use only that (e.g., "SLC 3223", "DC Library"). Include city/province if the event is off-campus and the address is provided.
 - For price: REGISTRATION COST ONLY. Prefer non-member / general admission price if multiple are listed. Free events are 0.0. Use null if price is not mentioned.
-- For food: Return an array. Use specific items when named (e.g., ["Pizza", "Bubble tea"]). Use ["Yes!"] for a generic food mention. Use [] when no food is mentioned.
+- For food: Return an array. Use specific items when named (e.g., ["Pizza", "Bubble tea"]). Use ["Food"] for a generic food mention. Never return "Yes" or "Yes!" as a food label. Use [] when no food is mentioned.
 - For registration: only true if there is a clear instruction to register, RSVP, or sign up.
 - For description: caption text word-for-word. If empty, use image text.
 - If information is not available, use empty string for strings, null for price, and false for booleans.

@@ -26,8 +26,8 @@ function resolveCtaHref(href: string): string {
  *
  * A server component, so the copy is part of the first paint rather than
  * appearing after hydration, and so a visitor who has already dismissed it is
- * simply never sent it. `{{school}}` in the message becomes the name of the
- * school whose subdomain the visitor is on.
+ * simply never sent it. The database stores stable translation keys while the
+ * visitor's active locale owns the rendered copy.
  *
  * The navigation is fixed to the top, so this is too, and `index.css` offsets
  * the nav and the page below it whenever this strip is present.
@@ -47,16 +47,13 @@ export async function SiteBanner() {
     requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host") ?? "";
   const { school } = getHostnameSchoolStatus(hostname.split(":")[0] ?? "");
   const schoolRecord = await getSchool(school);
-  const message = banner.message.replace(
-    /\{\{school\}\}/g,
-    schoolRecord?.name ?? "your campus",
-  );
 
   return (
     <SiteBannerStrip
-      message={message}
+      messageTranslationKey={banner.message_translation_key}
+      schoolName={schoolRecord?.name ?? school}
       ctaHref={href}
-      ctaLabel={banner.cta_label}
+      ctaLabelTranslationKey={banner.cta_label_translation_key}
     />
   );
 }

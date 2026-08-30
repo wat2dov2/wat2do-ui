@@ -14,7 +14,10 @@
 
 import { startTransition } from "react";
 import { create } from "zustand";
-import type { FilterState } from "@/shared/types/filter.types";
+import type {
+  EventDateFilter,
+  FilterState,
+} from "@/shared/types/filter.types";
 import {
   DEFAULT_FILTER_SORT_BY,
   DEFAULT_FILTER_SORT_ORDER,
@@ -35,6 +38,8 @@ interface FilterValues {
   sortBy: string;
   sortOrder: "asc" | "desc";
   addedSince: string;
+  dateFilter: EventDateFilter;
+  customDate: string;
 }
 
 interface SearchStoreState extends FilterValues {
@@ -57,6 +62,8 @@ const emptyFilters: FilterValues = {
   sortBy: DEFAULT_FILTER_SORT_BY,
   sortOrder: DEFAULT_FILTER_SORT_ORDER,
   addedSince: "",
+  dateFilter: "any",
+  customDate: "",
 };
 
 export const useSearchStore = create<SearchStoreState>((set) => ({
@@ -79,6 +86,8 @@ export const useSearchStore = create<SearchStoreState>((set) => ({
       sortBy: normalized.sortBy,
       sortOrder: normalized.sortOrder,
       addedSince: normalized.addedSince,
+      dateFilter: normalized.dateFilter,
+      customDate: normalized.customDate,
     });
   },
   // startTransition keeps the UI responsive when clearing - both

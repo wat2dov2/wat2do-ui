@@ -40,7 +40,7 @@ export function AdminDeleteDialog({
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
         <div className="flex gap-2 justify-end mt-4">
-          <Button variant="secondary" onClick={onClose} disabled={isLoading}>
+          <Button variant="outline" onClick={onClose} disabled={isLoading}>
             {cancelLabel || t("common.cancel")}
           </Button>
           <LoadingButton

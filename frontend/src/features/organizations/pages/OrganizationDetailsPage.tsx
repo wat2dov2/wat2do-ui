@@ -94,7 +94,7 @@ function OrganizationDetailsContent({
                 {isAuthenticated ? (
                   <Button
                     type="button"
-                    variant="secondary"
+                    variant="outline"
                     selected={isSaved}
                     onClick={() => toggleSave(organization.id)}
                   >

@@ -130,6 +130,24 @@ export function ContactPage() {
           </CardContent>
         </Card>
 
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("contact.help.title")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Stack gap={4}>
+              <CardDescription>{t("contact.help.description")}</CardDescription>
+              <Stack direction="horizontal">
+                <Button asChild>
+                  <NextLink href={ROUTES.PROMOTE}>
+                    {t("contact.help.action")}
+                  </NextLink>
+                </Button>
+              </Stack>
+            </Stack>
+          </CardContent>
+        </Card>
+
         <ContactForm />
 
         <Card>
@@ -266,12 +284,12 @@ export function ContactPage() {
         </Section>
 
         <Stack direction="horizontal" gap={4}>
-          <Button asChild variant="secondary">
+          <Button asChild variant="outline">
             <NextLink href={ROUTES.HOME}>
               {t("contact.actions.browse")}
             </NextLink>
           </Button>
-          <Button asChild variant="secondary">
+          <Button asChild variant="outline">
             <NextLink href={ROUTES.ORGANIZATIONS}>
               {t("contact.actions.explore")}
             </NextLink>

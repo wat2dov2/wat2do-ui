@@ -87,10 +87,19 @@
     "organizationPanel": "Organization Panel",
     "clubPanelTooltip": "Manage your organization",
     "mission": "Mission",
-    "contact": "Contact",
+    "about": "About us",
     "goToEvents": "Go to events",
-    "posters": "Posters",
+    "primary": "Primary navigation",
+    "openMenu": "Open navigation menu",
+    "switchToLightMode": "Switch to light mode",
+    "switchToDarkMode": "Switch to dark mode",
     "dismissAnnouncement": "Dismiss announcement"
+  },
+  "siteBanner": {
+    "founderStory": {
+      "message": "We scraped 3,000+ Waterloo events so students could try more new things.",
+      "cta": "Read our story"
+    }
   },
   "modals": {
     "welcome": {
@@ -401,6 +410,11 @@
       "scale": "Since August 2025, Wat2Do has captured more than 3,000 events. We kept improving the algorithm until it could surface an event, on average, about one minute after its Instagram post went live.",
       "mission": "Solving that discovery problem changed our own university experience. Now we want to share what we built and help students everywhere discover more of the new, cool things happening around them.",
       "signature": "- Tony & Erica"
+    },
+    "help": {
+      "title": "How you can help us",
+      "description": "Put up Wat2Do posters on campus to help other students find events before they happen. Our poster program gives you everything you need to get started.",
+      "action": "Help with campus posters"
     },
     "form": {
       "title": "Get in touch",

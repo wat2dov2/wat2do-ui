@@ -87,10 +87,19 @@
     "organizationPanel": "조직 패널",
     "clubPanelTooltip": "조직 관리",
     "mission": "미션",
-    "contact": "연락처",
+    "about": "소개",
     "goToEvents": "이벤트로 이동",
-    "posters": "포스터",
+    "primary": "기본 탐색",
+    "openMenu": "탐색 메뉴 열기",
+    "switchToLightMode": "라이트 모드로 전환",
+    "switchToDarkMode": "다크 모드로 전환",
     "dismissAnnouncement": "공지사항 닫기"
+  },
+  "siteBanner": {
+    "founderStory": {
+      "message": "학생들이 더 많은 새로운 경험을 할 수 있도록 워털루 이벤트 3,000개 이상을 모았습니다.",
+      "cta": "우리 이야기 읽기"
+    }
   },
   "modals": {
     "welcome": {
@@ -401,6 +410,11 @@
       "scale": "2025년 8월 이후, Wat2Do은 3,000개 이상의 이벤트를 포착했습니다. 우리는 알고리즘을 계속 개선하여 평균적으로 Instagram 게시물이 올라간 지 약 1분 만에 이벤트를 찾아낼 수 있게 되었습니다.",
       "mission": "그 발견 문제를 해결한 것은 우리 자신의 대학 경험을 바꾸어 놓았습니다. 이제 우리는 우리가 만든 것을 공유하고, 학생들이 주변에서 일어나는 새로운 멋진 것들을 더 많이 발견할 수 있도록 돕고 싶습니다.",
       "signature": "- Tony & Erica"
+    },
+    "help": {
+      "title": "저희를 도울 수 있는 방법",
+      "description": "캠퍼스에 Wat2Do 포스터를 붙여 다른 학생들이 행사가 열리기 전에 발견할 수 있도록 도와주세요. 포스터 프로그램에서 시작에 필요한 모든 것을 제공합니다.",
+      "action": "캠퍼스 포스터 돕기"
     },
     "form": {
       "title": "연락하기",

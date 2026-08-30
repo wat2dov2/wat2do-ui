@@ -1,0 +1,126 @@
+import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { format } from "date-fns";
+import { Button } from "@/shared/ui/button";
+import { Calendar } from "@/shared/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/shared/ui/popover";
+import type { EventDateFilter } from "@/shared/types";
+import { parseLocalDateValue } from "@/shared/utils/date";
+
+interface DateFilterSelectProps {
+  value: EventDateFilter;
+  customDate: string;
+  onChange: (value: EventDateFilter, customDate?: string) => void;
+}
+
+const DATE_FILTER_OPTIONS: EventDateFilter[] = [
+  "any",
+  "today",
+  "tomorrow",
+  "thisWeek",
+  "thisWeekend",
+  "nextWeek",
+  "custom",
+];
+
+export function DateFilterSelect({
+  value,
+  customDate,
+  onChange,
+}: DateFilterSelectProps) {
+  const { t, i18n } = useTranslation();
+  const [open, setOpen] = useState(false);
+  const [showCustomPicker, setShowCustomPicker] = useState(false);
+  const selectedCustomDate = useMemo(
+    () => parseLocalDateValue(customDate),
+    [customDate],
+  );
+  const active = value !== "any";
+  const customLabel = selectedCustomDate
+    ? new Intl.DateTimeFormat(i18n.language || "en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      }).format(selectedCustomDate)
+    : t("events.dateFilter.custom");
+  const selectedLabel =
+    value === "custom"
+      ? customLabel
+      : t(`events.dateFilter.${value}`);
+
+  const handleOpenChange = (nextOpen: boolean) => {
+    setOpen(nextOpen);
+    if (!nextOpen) {
+      setShowCustomPicker(false);
+    }
+  };
+
+  const handleOptionSelect = (nextValue: EventDateFilter) => {
+    if (nextValue === "custom") {
+      setShowCustomPicker(true);
+      return;
+    }
+    onChange(nextValue);
+    setOpen(false);
+  };
+
+  const handleCustomDateSelect = (date: Date | undefined) => {
+    if (!date) return;
+    onChange("custom", format(date, "yyyy-MM-dd"));
+    setOpen(false);
+  };
+
+  return (
+    <Popover open={open} onOpenChange={handleOpenChange}>
+      <PopoverTrigger asChild>
+        <Button
+          type="button"
+          size="sm"
+          variant={active ? "primary" : "outline"}
+          role="combobox"
+          aria-label={t("events.dateFilter.label")}
+          aria-expanded={open}
+          aria-haspopup="listbox"
+        >
+          {selectedLabel}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent
+        className={showCustomPicker ? "w-auto p-0" : "w-48 p-1"}
+        align="start"
+      >
+        {showCustomPicker ? (
+          <Calendar
+            mode="single"
+            selected={selectedCustomDate}
+            onSelect={handleCustomDateSelect}
+            defaultMonth={selectedCustomDate}
+            disabled={{ before: new Date() }}
+            autoFocus
+          />
+        ) : (
+          <div role="listbox" aria-label={t("events.dateFilter.label")}>
+            {DATE_FILTER_OPTIONS.map((option) => (
+              <Button
+                key={option}
+                type="button"
+                role="option"
+                size="sm"
+                variant={value === option ? "primary" : "ghost"}
+                aria-selected={value === option}
+                className="w-full justify-start"
+                onClick={() => handleOptionSelect(option)}
+              >
+                {t(`events.dateFilter.${option}`)}
+              </Button>
+            ))}
+          </div>
+        )}
+      </PopoverContent>
+    </Popover>
+  );
+}

@@ -50,6 +50,73 @@ def test_prepare_otp_email_preserves_safe_return_path(monkeypatch):
     assert "email=student%40uwaterloo.ca" in message.body_text
 
 
+def test_prepare_google_oauth_captures_request_pkce_verifier(monkeypatch):
+    service = AuthService(auth_client=MagicMock(), db_client=MagicMock())
+    oauth_client = MagicMock()
+    oauth_client.sign_in_with_oauth.return_value = SimpleNamespace(
+        url="https://accounts.example/authorize"
+    )
+
+    def create_oauth_client(storage=None):
+        assert storage is not None
+        storage.set_item("supabase.auth.token-code-verifier", "pkce-verifier")
+        return oauth_client
+
+    monkeypatch.setattr(service, "_new_oauth_auth", create_oauth_client)
+
+    result = service.prepare_google_oauth("https://uwaterloo.wat2do.io/api/auth/google/callback")
+
+    assert result.authorization_url == "https://accounts.example/authorize"
+    assert result.code_verifier == "pkce-verifier"
+    oauth_client.sign_in_with_oauth.assert_called_once_with(
+        {
+            "provider": "google",
+            "options": {"redirect_to": ("https://uwaterloo.wat2do.io/api/auth/google/callback")},
+        }
+    )
+
+
+def test_verify_google_oauth_uses_shared_user_completion(monkeypatch):
+    mock_db = MagicMock()
+    mock_db.table().select().eq().execute.return_value = MagicMock(
+        data=[
+            {
+                "id": "db-user-id",
+                "email": "student@uwaterloo.ca",
+                "school_record": {"slug": "uwaterloo"},
+            }
+        ]
+    )
+    oauth_client = MagicMock()
+    oauth_response = MagicMock()
+    oauth_response.session.access_token = "google-access-token"
+    oauth_response.session.refresh_token = "google-refresh-token"
+    oauth_response.session.expires_in = 3600
+    oauth_response.user.id = "supabase-user-id"
+    oauth_response.user.email = "Student@UWaterloo.ca"
+    oauth_client.exchange_code_for_session.return_value = oauth_response
+    service = AuthService(auth_client=MagicMock(), db_client=mock_db)
+    monkeypatch.setattr(service, "_new_oauth_auth", lambda storage=None: oauth_client)
+
+    result = service.verify_google_oauth(
+        "auth-code",
+        "pkce-verifier",
+        "https://uwaterloo.wat2do.io/api/auth/google/callback",
+    )
+
+    assert result.body.access_token == "google-access-token"
+    assert result.body.school == "uwaterloo"
+    assert result.body.onboarding_required is False
+    assert result.refresh_token == "google-refresh-token"
+    oauth_client.exchange_code_for_session.assert_called_once_with(
+        {
+            "auth_code": "auth-code",
+            "code_verifier": "pkce-verifier",
+            "redirect_to": ("https://uwaterloo.wat2do.io/api/auth/google/callback"),
+        }
+    )
+
+
 class TestAuthServiceVerifyOtp:
     def test_verify_otp_success_with_digit_token(self):
         """Verifies that numeric OTP codes (e.g. 6-digit or 8-digit) call verify_otp directly with the token."""

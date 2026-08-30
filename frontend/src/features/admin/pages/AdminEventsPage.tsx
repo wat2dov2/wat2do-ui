@@ -219,7 +219,7 @@ export function AdminEventsPage({
             </Select>
             <Button
               type="button"
-              variant="secondary"
+              variant="outline"
               size="sm"
               onClick={toggleReportedOnly}
               aria-pressed={showReportedOnly}
@@ -299,7 +299,7 @@ export function AdminEventsPage({
                     <TableCell>
                       <div className="flex items-center justify-end gap-2">
                         <Button
-                          variant="secondary"
+                          variant="outline"
                           size="sm"
                           onClick={async (e) => {
                             e.stopPropagation();
@@ -309,7 +309,7 @@ export function AdminEventsPage({
                           {t("common.edit")}
                         </Button>
                         <Button
-                          variant="secondary"
+                          variant="outline"
                           size="sm"
                           onClick={(e) => {
                             e.stopPropagation();
@@ -452,7 +452,7 @@ export function AdminEventsPage({
                       {submission.status === SUBMISSION_PENDING && (
                         <>
                           <Button
-                            variant="secondary"
+                            variant="outline"
                             size="sm"
                             onClick={(e) => {
                               e.stopPropagation();
@@ -463,7 +463,7 @@ export function AdminEventsPage({
                             {t("admin.approve")}
                           </Button>
                           <Button
-                            variant="secondary"
+                            variant="outline"
                             size="sm"
                             onClick={(e) => {
                               e.stopPropagation();

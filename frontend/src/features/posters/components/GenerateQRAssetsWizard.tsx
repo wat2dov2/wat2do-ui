@@ -466,7 +466,7 @@ export function GenerateQRAssetsWizard({ onClose, userEmail: userEmailProp }: Ge
                       </Stack>
                       <Button
                         type="button"
-                        variant="secondary"
+                        variant="outline"
                         size="icon"
                         onClick={() => handleRemoveAsset(asset.id)}
                       >
@@ -619,7 +619,7 @@ export function GenerateQRAssetsWizard({ onClose, userEmail: userEmailProp }: Ge
           {step > 1 ? (
             <Button
               type="button"
-              variant="secondary"
+              variant="outline"
               size="sm"
               onClick={() =>
                 setStep((prev) =>
@@ -634,7 +634,7 @@ export function GenerateQRAssetsWizard({ onClose, userEmail: userEmailProp }: Ge
             onClose && (
               <Button
                 type="button"
-                variant="secondary"
+                variant="outline"
                 size="sm"
                 onClick={onClose}
               >

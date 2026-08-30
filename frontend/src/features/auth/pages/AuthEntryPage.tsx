@@ -11,6 +11,7 @@ import {
   getSafeReturnTo,
 } from "@/features/auth/utils/returnTo";
 import { AuthPageLayout } from "@/features/auth/components/AuthPageLayout";
+import { GoogleSignInButton } from "@/features/auth/components/GoogleSignInButton";
 import { ROUTES } from "@/shared/constants/routes";
 import { QP } from "@/shared/constants/queryParams";
 import { Button } from "@/shared/ui/button";
@@ -21,6 +22,7 @@ interface AuthEntryPageProps {
   initialEmail?: string;
   invitationToken?: string;
   initialReturnTo?: string;
+  initialOAuthError?: string;
 }
 
 export function AuthEntryPage({
@@ -28,6 +30,7 @@ export function AuthEntryPage({
   initialEmail,
   invitationToken,
   initialReturnTo,
+  initialOAuthError,
 }: AuthEntryPageProps) {
   const router = useRouter();
   const { t } = useTranslation();
@@ -49,7 +52,12 @@ export function AuthEntryPage({
       description={t("auth.description")}
       previewEvents={previewEvents}
     >
+      <GoogleSignInButton
+        returnTo={returnTo ?? undefined}
+        hasError={initialOAuthError === "google"}
+      />
       <EmailOtpForm
+        className="mt-4"
         initialEmail={initialEmail}
         invitationToken={invitationToken}
         returnTo={returnTo ?? undefined}
@@ -73,7 +81,7 @@ export function AuthEntryPage({
         requestFooter={
           <Button
             type="button"
-            variant="secondary"
+            variant="outline"
             onClick={() =>
               router.push(appendSafeReturnTo(ROUTES.ONBOARDING, returnTo))
             }

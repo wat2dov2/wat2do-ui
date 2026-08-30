@@ -254,7 +254,7 @@ export function InstagramCarouselDrawer({
             <Stack direction="horizontal" gap={3} align="center" justify="center">
               <Button
                 type="button"
-                variant="secondary"
+                variant="outline"
                 size="icon"
                 disabled={slideIndex === COVER_INDEX}
                 aria-label={t("admin.instagramPublishing.previousSlide")}
@@ -281,7 +281,7 @@ export function InstagramCarouselDrawer({
 
               <Button
                 type="button"
-                variant="secondary"
+                variant="outline"
                 size="icon"
                 disabled={slideIndex >= slideCount - 1}
                 aria-label={t("admin.instagramPublishing.nextSlide")}
@@ -325,7 +325,7 @@ export function InstagramCarouselDrawer({
                     <Stack direction="horizontal" justify="end" gap={2}>
                       <Button
                         type="button"
-                        variant="secondary"
+                        variant="outline"
                         disabled={busy}
                         onClick={() => {
                           setAddingEvent(false);
@@ -386,7 +386,7 @@ export function InstagramCarouselDrawer({
                   ) : null}
                   <Button
                     type="button"
-                    variant="secondary"
+                    variant="outline"
                     disabled={!editable || busy || eventIds.length <= 1}
                     className="self-start"
                     onClick={handleRemoveSlide}
@@ -419,7 +419,7 @@ export function InstagramCarouselDrawer({
 
         <DrawerFooter>
           <Stack direction="horizontal" justify="end" gap={2} wrap>
-            <Button type="button" variant="secondary" disabled={busy} onClick={onClose}>
+            <Button type="button" variant="outline" disabled={busy} onClick={onClose}>
               {t("common.close")}
             </Button>
             <Button
@@ -431,7 +431,7 @@ export function InstagramCarouselDrawer({
               {t("admin.instagramPublishing.addEventId")}
             </Button>
             <LoadingButton
-              variant="secondary"
+              variant="outline"
               isLoading={isSaving || isSavingSlide}
               disabled={!canSave}
               onClick={saveDraft}

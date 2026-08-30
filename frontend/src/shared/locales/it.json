@@ -93,10 +93,19 @@
     "organizationPanel": "Pannello dell'organizzazione",
     "clubPanelTooltip": "Gestisci la tua organizzazione",
     "mission": "Missione",
-    "contact": "Contatto",
+    "about": "Chi siamo",
     "goToEvents": "Vai agli eventi",
-    "posters": "Manifesti",
+    "primary": "Navigazione principale",
+    "openMenu": "Apri il menu di navigazione",
+    "switchToLightMode": "Passa alla modalità chiara",
+    "switchToDarkMode": "Passa alla modalità scura",
     "dismissAnnouncement": "Chiudi annuncio"
+  },
+  "siteBanner": {
+    "founderStory": {
+      "message": "Abbiamo raccolto oltre 3.000 eventi di Waterloo per aiutare gli studenti a provare più cose nuove.",
+      "cta": "Leggi la nostra storia"
+    }
   },
   "modals": {
     "welcome": {
@@ -407,6 +416,11 @@
       "scale": "Da agosto 2025, Wat2Do ha catturato più di 3.000 eventi. Abbiamo continuato a migliorare l'algoritmo fino a quando è stato in grado di mostrare un evento, in media, circa un minuto dopo la pubblicazione del suo post su Instagram.",
       "mission": "Risolvere quel problema di scoperta ha cambiato la nostra esperienza universitaria. Ora vogliamo condividere ciò che abbiamo costruito e aiutare gli studenti di tutto il mondo a scoprire più cose nuove e interessanti che accadono intorno a loro.",
       "signature": "- Tony & Erica"
+    },
+    "help": {
+      "title": "Come puoi aiutarci",
+      "description": "Affiggi poster di Wat2Do nel campus per aiutare altri studenti a scoprire gli eventi prima che inizino. Il nostro programma di poster ti offre tutto il necessario per cominciare.",
+      "action": "Aiuta con i poster nel campus"
     },
     "form": {
       "title": "Mettiti in contatto",

@@ -235,7 +235,7 @@ export function EventShareDialog({
               </Stack>
               <Button
                 type="button"
-                variant="secondary"
+                variant="outline"
                 size="sm"
                 onMouseDown={() => setWechatQrVisible(false)}
               >

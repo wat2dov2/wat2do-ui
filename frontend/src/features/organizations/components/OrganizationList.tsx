@@ -75,6 +75,7 @@ export function OrganizationList({
   return (
     <>
       <div
+        data-slot="card-grid"
         className={CARD_GRID_CLASS}
         role="list"
         aria-label={`${organizations.length} organizations found`}

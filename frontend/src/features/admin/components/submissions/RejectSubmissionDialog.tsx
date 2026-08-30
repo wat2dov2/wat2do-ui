@@ -51,7 +51,7 @@ export function RejectSubmissionDialog({
             />
           </div>
           <div className="flex gap-2 justify-end pt-2">
-            <Button variant="secondary" onClick={onClose} disabled={isRejecting}>
+            <Button variant="outline" onClick={onClose} disabled={isRejecting}>
               {t("common.cancel")}
             </Button>
             <LoadingButton

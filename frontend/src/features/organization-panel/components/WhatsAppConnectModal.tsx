@@ -52,7 +52,7 @@ export function WhatsAppConnectModal({
               <p className="text-sm text-muted-foreground text-center mb-4">
                 {t("common.or")}
               </p>
-              <Button variant="secondary" className="w-full" asChild>
+              <Button variant="outline" className="w-full" asChild>
                 <a
                   href={WHATSAPP_BOT_URL}
                   target="_blank"
@@ -72,7 +72,7 @@ export function WhatsAppConnectModal({
 
             <Field orientation="horizontal">
               <DialogClose asChild>
-                <Button variant="secondary" type="button">
+                <Button variant="outline" type="button">
                   {t("common.cancel")}
                 </Button>
               </DialogClose>

@@ -93,9 +93,9 @@ export function DateTimePicker({
         <Button
           id={id}
           type="button"
-          variant="secondary"
+          variant="outline"
           className={cn(
-            "w-full min-w-0 justify-start border border-border px-3 text-left font-normal text-secondary-foreground hover:bg-muted-hover",
+            "w-full min-w-0 justify-start px-3 text-left font-normal",
             !date && "text-muted-foreground",
             hasError && "ring-2 ring-destructive/50 bg-destructive/10",
             className

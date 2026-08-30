@@ -95,7 +95,7 @@ export function EventSuccessScreen({
           </div>
 
           <div className="flex gap-2 w-full">
-            <Button variant="secondary" onMouseDown={handleDone} className="flex-1">
+            <Button variant="outline" onMouseDown={handleDone} className="flex-1">
               {t("common.done")}
             </Button>
             {onPromote && (

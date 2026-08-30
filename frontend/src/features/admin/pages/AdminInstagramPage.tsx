@@ -56,7 +56,7 @@ export function AdminInstagramPage({ onBack }: AdminInstagramPageProps) {
               <p className="text-sm text-destructive">
                 {getApiErrorMessage(error, t("admin.instagramPublishing.loadError"))}
               </p>
-              <Button variant="secondary" onClick={() => retry()}>
+              <Button variant="outline" onClick={() => retry()}>
                 {t("admin.instagramPublishing.retry")}
               </Button>
             </Stack>
@@ -89,7 +89,7 @@ export function AdminInstagramPage({ onBack }: AdminInstagramPageProps) {
               <p className="text-sm text-destructive">
                 {getApiErrorMessage(detailError, t("admin.instagramPublishing.loadError"))}
               </p>
-              <Button variant="secondary" onClick={() => retryDetail()}>
+              <Button variant="outline" onClick={() => retryDetail()}>
                 {t("admin.instagramPublishing.retry")}
               </Button>
             </Stack>

@@ -61,6 +61,20 @@ const toMidnight = (date: Date): Date =>
 const sameDay = (firstDate: Date, secondDate: Date): boolean =>
   firstDate.toDateString() === secondDate.toDateString();
 
+/** Parse a date-only form value as local calendar time, never UTC midnight. */
+export function parseLocalDateValue(value: string): Date | undefined {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) return undefined;
+
+  const [, year, month, day] = match;
+  const date = new Date(Number(year), Number(month) - 1, Number(day));
+  return date.getFullYear() === Number(year) &&
+    date.getMonth() === Number(month) - 1 &&
+    date.getDate() === Number(day)
+    ? date
+    : undefined;
+}
+
 /**
  * Resolve the primary occurrence from an event's occurrences list.
  * Earliest future occurrence wins; falls back to earliest past occurrence if all are in the past.

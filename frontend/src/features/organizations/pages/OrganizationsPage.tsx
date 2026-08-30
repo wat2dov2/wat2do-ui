@@ -116,7 +116,7 @@ export function OrganizationsPage({
           />
           <Button
             type="button"
-            variant="secondary"
+            variant="outline"
             size="lg"
             className="shrink-0"
             onMouseDown={() => {
@@ -155,7 +155,7 @@ export function OrganizationsPage({
                   variant={
                     selectedCategories.includes(category)
                       ? "primary"
-                      : "secondary"
+                      : "outline"
                   }
                   size="sm"
                   onClick={() => toggleCategory(category)}

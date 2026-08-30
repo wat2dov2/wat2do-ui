@@ -37,10 +37,6 @@ interface OrganizationBadgeDropdownProps {
   organizationPage?: string | null;
   organizationIg?: string | null;
   organizationDiscord?: string | null;
-  badgeHoverProps?: {
-    onMouseEnter: () => void;
-    onMouseLeave: () => void;
-  };
   disabled?: boolean;
   onFilterSelect?: () => void;
   onMouseDown?: React.MouseEventHandler;
@@ -55,7 +51,6 @@ export function OrganizationBadgeDropdown({
   organizationPage,
   organizationIg,
   organizationDiscord,
-  badgeHoverProps,
   disabled = false,
   onFilterSelect,
   onMouseDown,
@@ -94,11 +89,11 @@ export function OrganizationBadgeDropdown({
         asChild
         variant="outline"
         size="md"
-        className="tracking-normal bg-background border-foreground text-foreground flex min-w-0 max-w-full items-center gap-1.5 opacity-70"
+        className="tracking-normal bg-background border-foreground text-foreground flex min-w-0 max-w-full items-center gap-1.5"
         onMouseDown={onMouseDown}
         onClick={onClick}
       >
-        <span>
+        <span data-slot="organization-badge">
           <OrganizationLogo src={organizationLogoUrl} />
           <TruncatedText
             text={organizationName || t("events.organization")}
@@ -123,15 +118,11 @@ export function OrganizationBadgeDropdown({
           asChild
           variant="outline"
           size="md"
-          className="tracking-normal bg-background border-foreground text-foreground flex min-w-0 max-w-full items-center gap-1.5 transition-[background-color,opacity] opacity-70 hover:bg-surface-hover hover:opacity-100 active:scale-95 cursor-pointer"
+          className="tracking-normal bg-background border-foreground text-foreground flex min-w-0 max-w-full items-center gap-1.5 transition-[background-color,transform] hover:bg-surface-hover active:scale-95 cursor-pointer"
           onMouseDown={onMouseDown}
           onClick={onClick}
         >
-          <button
-            type="button"
-            onMouseEnter={badgeHoverProps?.onMouseEnter}
-            onMouseLeave={badgeHoverProps?.onMouseLeave}
-          >
+          <button type="button" data-slot="organization-badge">
             <OrganizationLogo src={organizationLogoUrl} />
             <TruncatedText
               text={organizationName}

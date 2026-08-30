@@ -167,7 +167,7 @@ export function EventFormStep({
                   {onBack && (
                     <Button
                       type="button"
-                      variant="secondary"
+                      variant="outline"
                       size="icon-sm"
                       onMouseDown={onBack}
                       aria-label={t("common.back")}
@@ -193,7 +193,7 @@ export function EventFormStep({
               {showSubmit ? (
                 <Field orientation="horizontal" className="mt-6">
                   {onCancel ? (
-                    <Button variant="secondary" type="button" onClick={onCancel}>
+                    <Button variant="outline" type="button" onClick={onCancel}>
                       {t("common.cancel")}
                     </Button>
                   ) : null}

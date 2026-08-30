@@ -91,7 +91,7 @@ export function GoingOccurrencePickerContent({
       <Stack direction="horizontal" gap={2}>
         <Button
           type="button"
-          variant="secondary"
+          variant="outline"
           onClick={onCancel}
           disabled={isPending}
           className="flex-1"

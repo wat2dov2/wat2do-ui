@@ -5,19 +5,22 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { Check } from "@/shared/ui/doodle-icons"
 import { cn } from "@/shared/lib/utils"
 
+const OUTLINE_CONTROL_STYLES =
+  "border border-border bg-background text-foreground hover:bg-surface-hover active:bg-surface-active dark:border-secondary dark:bg-secondary dark:text-secondary-foreground dark:hover:bg-secondary-hover dark:active:bg-secondary-active"
+
 /**
  * `data-selected` marks a toggleable button that is currently "on". Selected
  * styling is defined once per variant here so no call site hand-rolls it.
  */
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all cursor-pointer disabled:pointer-events-none disabled:opacity-50 disabled:cursor-not-allowed [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 aria-invalid:border-destructive",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-transparent text-sm font-medium transition-all cursor-pointer disabled:pointer-events-none disabled:opacity-50 disabled:cursor-not-allowed [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 aria-invalid:border-destructive",
   {
     variants: {
       variant: {
         primary:
           "bg-primary text-primary-foreground hover:bg-primary-hover active:bg-primary-active",
-        secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary-hover active:bg-secondary-active data-[selected=true]:bg-selected data-[selected=true]:text-selected-foreground data-[selected=true]:shadow-[inset_0_0_0_1px_var(--selected-border)] data-[selected=true]:hover:bg-selected-hover",
+        outline:
+          `${OUTLINE_CONTROL_STYLES} data-[selected=true]:border-selected-border data-[selected=true]:bg-selected data-[selected=true]:text-selected-foreground data-[selected=true]:hover:bg-selected-hover`,
         ghost:
           "bg-transparent text-foreground hover:bg-surface-hover active:bg-surface-active data-[selected=true]:bg-selected data-[selected=true]:text-selected-foreground data-[selected=true]:hover:bg-selected-hover",
         destructive:
@@ -114,4 +117,4 @@ const Button = React.forwardRef<
 
 Button.displayName = "Button"
 
-export { Button, buttonVariants }
+export { Button, buttonVariants, OUTLINE_CONTROL_STYLES }

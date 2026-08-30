@@ -45,7 +45,7 @@ export function FacebookIntegrationModal({
       <div className="flex gap-2">
         <Button
           type="button"
-          variant={connectionType === "page" ? "primary" : "secondary"}
+          variant={connectionType === "page" ? "primary" : "outline"}
           className="flex-1"
           onMouseDown={() => handleConnectionTypeChange("page")}
         >
@@ -53,7 +53,7 @@ export function FacebookIntegrationModal({
         </Button>
         <Button
           type="button"
-          variant={connectionType === "group" ? "primary" : "secondary"}
+          variant={connectionType === "group" ? "primary" : "outline"}
           className="flex-1"
           onMouseDown={() => handleConnectionTypeChange("group")}
         >

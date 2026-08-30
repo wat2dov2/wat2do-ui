@@ -1,11 +1,23 @@
-from urllib.parse import urlparse
+import base64
+import json
+from urllib.parse import urlencode, urlparse
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, Response, status
-from fastapi.responses import JSONResponse
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    HTTPException,
+    Query,
+    Request,
+    Response,
+    status,
+)
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from core.client_ip import get_client_ip
 from core.config import settings
+from core.constants import MAX_URL_LENGTH
 from core.controlbox import controlbox
 from core.errors import INVALID_OR_EXPIRED_TOKEN, NO_REFRESH_TOKEN
 from core.exceptions import AuthenticationError, ServiceError
@@ -19,6 +31,7 @@ from schemas.auth import (
     SendOtpRequest,
     TokenResponse,
     VerifyOtpRequest,
+    validate_safe_return_to,
 )
 from services.auth_service import auth
 from services.email_service import email_service
@@ -26,6 +39,9 @@ from services.email_service import email_service
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 COOKIE_MAX_AGE = controlbox.authentication.session_cookie_days * 24 * 3600
+GOOGLE_OAUTH_STATE_COOKIE = "google_oauth_state"
+GOOGLE_OAUTH_STATE_MAX_AGE = 10 * 60
+GOOGLE_OAUTH_CALLBACK_PATH = "/api/auth/google/callback"
 
 
 # Fail fast in production without Secure cookies. The refresh token is a
@@ -95,6 +111,74 @@ def _clear_refresh_cookie(response: Response, request: Request) -> None:
     )
 
 
+def _validate_google_callback_url(callback_url: str) -> str:
+    parsed = urlparse(callback_url)
+    origin = f"{parsed.scheme}://{parsed.netloc}" if parsed.scheme and parsed.netloc else ""
+    if (
+        parsed.scheme not in {"http", "https"}
+        or not settings.is_allowed_origin(origin)
+        or parsed.path != GOOGLE_OAUTH_CALLBACK_PATH
+        or parsed.params
+        or parsed.query
+        or parsed.fragment
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="Invalid Google OAuth callback URL",
+        )
+    return callback_url
+
+
+def _encode_google_oauth_state(payload: dict[str, str | None]) -> str:
+    raw = json.dumps(payload, separators=(",", ":")).encode("utf-8")
+    return base64.urlsafe_b64encode(raw).decode("ascii")
+
+
+def _decode_google_oauth_state(value: str | None) -> dict[str, str | None] | None:
+    if not value:
+        return None
+    try:
+        raw = base64.urlsafe_b64decode(value.encode("ascii"))
+        payload = json.loads(raw)
+    except (ValueError, TypeError, json.JSONDecodeError):
+        return None
+    if not isinstance(payload, dict):
+        return None
+    verifier = payload.get("code_verifier")
+    callback_url = payload.get("callback_url")
+    return_to = payload.get("return_to")
+    if not isinstance(verifier, str) or not isinstance(callback_url, str):
+        return None
+    if return_to is not None and not isinstance(return_to, str):
+        return None
+    return {
+        "code_verifier": verifier,
+        "callback_url": callback_url,
+        "return_to": return_to,
+    }
+
+
+def _oauth_frontend_url(
+    callback_url: str,
+    path: str,
+    params: dict[str, str] | None = None,
+) -> str:
+    parsed = urlparse(callback_url)
+    query = f"?{urlencode(params)}" if params else ""
+    return f"{parsed.scheme}://{parsed.netloc}{path}{query}"
+
+
+def _clear_google_oauth_state_cookie(
+    response: Response,
+    request: Request,
+) -> None:
+    response.delete_cookie(
+        key=GOOGLE_OAUTH_STATE_COOKIE,
+        path=GOOGLE_OAUTH_CALLBACK_PATH,
+        domain=_refresh_cookie_domain(request),
+    )
+
+
 def _origin_allowed(request: Request) -> bool:
     """Return True if the request's Origin or Referer is in allowed origins.
 
@@ -121,6 +205,111 @@ def _origin_allowed(request: Request) -> bool:
     # No Origin/Referer: treat as untrusted. Browsers send Origin on
     # cross-site POSTs; its absence is suspicious.
     return False
+
+
+@router.get("/google", response_class=RedirectResponse)
+def start_google_oauth(
+    request: Request,
+    callback_url: str = Query(..., max_length=MAX_URL_LENGTH),
+    return_to: str | None = Query(default=None, max_length=MAX_URL_LENGTH),
+    _rl: None = Depends(send_otp_rate_limiter.ip_dependency()),
+):
+    callback_url = _validate_google_callback_url(callback_url)
+    try:
+        safe_return_to = validate_safe_return_to(return_to)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=str(exc),
+        ) from exc
+
+    result = auth.prepare_google_oauth(callback_url)
+    state = _encode_google_oauth_state(
+        {
+            "code_verifier": result.code_verifier,
+            "callback_url": callback_url,
+            "return_to": safe_return_to,
+        }
+    )
+    response = RedirectResponse(result.authorization_url, status_code=status.HTTP_302_FOUND)
+    response.set_cookie(
+        key=GOOGLE_OAUTH_STATE_COOKIE,
+        value=state,
+        httponly=True,
+        samesite="lax",
+        secure=settings.cookie_secure or settings.is_production,
+        path=GOOGLE_OAUTH_CALLBACK_PATH,
+        max_age=GOOGLE_OAUTH_STATE_MAX_AGE,
+        domain=_refresh_cookie_domain(request),
+    )
+    return response
+
+
+@router.get("/google/callback", response_class=RedirectResponse)
+def complete_google_oauth(
+    request: Request,
+    code: str | None = Query(default=None, max_length=MAX_URL_LENGTH),
+    error: str | None = Query(default=None, max_length=255),
+    _rl: None = Depends(verify_otp_rate_limiter.ip_dependency()),
+):
+    state_payload = _decode_google_oauth_state(request.cookies.get(GOOGLE_OAUTH_STATE_COOKIE))
+    fallback_callback_url = f"{settings.frontend_url.rstrip('/')}{GOOGLE_OAUTH_CALLBACK_PATH}"
+    callback_url = (
+        state_payload.get("callback_url") if state_payload is not None else fallback_callback_url
+    )
+
+    try:
+        callback_url = _validate_google_callback_url(callback_url)
+    except HTTPException:
+        callback_url = fallback_callback_url
+        state_payload = None
+
+    if error or not code or state_payload is None:
+        response = RedirectResponse(
+            _oauth_frontend_url(
+                callback_url,
+                "/login",
+                {"oauthError": "google"},
+            ),
+            status_code=status.HTTP_303_SEE_OTHER,
+        )
+        _clear_google_oauth_state_cookie(response, request)
+        return response
+
+    try:
+        result = auth.verify_google_oauth(
+            code,
+            state_payload["code_verifier"] or "",
+            callback_url,
+        )
+    except ServiceError:
+        response = RedirectResponse(
+            _oauth_frontend_url(
+                callback_url,
+                "/login",
+                {"oauthError": "google"},
+            ),
+            status_code=status.HTTP_303_SEE_OTHER,
+        )
+        _clear_google_oauth_state_cookie(response, request)
+        return response
+
+    callback_params = {
+        "oauth": "google",
+        "school": result.body.school or "",
+        "onboardingRequired": "true" if result.body.onboarding_required else "false",
+    }
+    return_to = state_payload.get("return_to")
+    if return_to:
+        callback_params["returnTo"] = return_to
+    response = RedirectResponse(
+        _oauth_frontend_url(callback_url, "/auth/callback", callback_params),
+        status_code=status.HTTP_303_SEE_OTHER,
+    )
+    if result.refresh_token:
+        _set_refresh_cookie(response, result.refresh_token, request)
+    _clear_google_oauth_state_cookie(response, request)
+    return response
 
 
 @router.post("/send-otp", response_model=MessageResponse)

@@ -511,13 +511,15 @@ def _clean_food(value: object) -> list | None:
     seen: set[str] = set()
     deduped: list[str] = []
     for item in items:
-        key = item.lower()
+        normalized_item = "Food" if item.casefold() in {"yes", "yes!"} else item
+        clean_item = remove_surrogates(normalized_item[:MAX_EVENT_FOOD_ITEM_LENGTH])
+        if not clean_item:
+            continue
+        key = clean_item.casefold()
         if key in seen:
             continue
         seen.add(key)
-        clean_item = remove_surrogates(item[:MAX_EVENT_FOOD_ITEM_LENGTH])
-        if clean_item:
-            deduped.append(clean_item)
+        deduped.append(clean_item)
         if len(deduped) >= MAX_EVENT_FOOD_COUNT:
             break
     return deduped or None

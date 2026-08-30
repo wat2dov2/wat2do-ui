@@ -505,7 +505,7 @@ export function AdminPayoutsPanel() {
         ) : null}
 
         <Stack direction="horizontal" gap={2} justify="end">
-          <Button variant="secondary" onClick={resetFilters}>
+          <Button variant="outline" onClick={resetFilters}>
             {t("admin.posterPayouts.filters.reset")}
           </Button>
           <Button onClick={applyFilters} disabled={amountRangeInvalid}>
@@ -529,7 +529,7 @@ export function AdminPayoutsPanel() {
             </div>
             <Stack direction="horizontal" gap={2} wrap>
               <LoadingButton
-                variant="secondary"
+                variant="outline"
                 isLoading={isExporting}
                 onClick={handleExport}
               >
@@ -555,7 +555,7 @@ export function AdminPayoutsPanel() {
                 t("admin.posterPayouts.loadError"),
               )}
             </p>
-            <Button variant="secondary" onClick={() => retry()}>
+            <Button variant="outline" onClick={() => retry()}>
               {t("admin.posterPayouts.retry")}
             </Button>
           </Stack>
@@ -672,7 +672,7 @@ export function AdminPayoutsPanel() {
                     >
                       <Button
                         size="sm"
-                        variant="secondary"
+                        variant="outline"
                         onClick={() => setOpenPayoutId(payout.id)}
                       >
                         {t("admin.posterPayouts.actions.review")}
@@ -741,7 +741,7 @@ export function AdminPayoutsPanel() {
           </div>
           <DialogFooter>
             <Button
-              variant="secondary"
+              variant="outline"
               onClick={() => setBulkPaidConfirmationOpen(false)}
               disabled={isBulkMarkingPaid}
             >

@@ -1,0 +1,24 @@
+{
+  "maximum_running_nodes": 1,
+  "accounts_per_node": 3,
+  "check_interval_seconds": 1800,
+  "live_monitor_interval_seconds": 3,
+  "boot_timeout_seconds": 300,
+  "notification_evidence_max_age_seconds": 86400,
+  "system_image": "system-images;android-35;google_apis_playstore;arm64-v8a",
+  "device_profile": "pixel_6",
+  "memory_megabytes_per_node": 3072,
+  "cpu_cores_per_node": 2,
+  "run_headlessly": false,
+  "instagram_package": "com.instagram.android",
+  "automate_package": "com.llamalab.automate",
+  "recipient_id_key": "com.instagram.android.igns.logging.intended_recipient_id",
+  "github_repository": "wat2dov2/wat2do-ui",
+  "github_event_type": "new_instagram_post",
+  "nodes": [
+    {
+      "name": "ig_node_1",
+      "port": 5554
+    }
+  ]
+}

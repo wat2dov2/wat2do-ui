@@ -1,13 +1,10 @@
 import { controlBox } from "@/shared/config/controlBox";
+import type { components } from "@/shared/generated/api-types";
 import { getServerApiBaseUrl } from "@/shared/services/serverApi";
 
 export const SITE_BANNER_TAG = "site-banner";
 
-export interface SiteBanner {
-  message: string;
-  cta_label: string;
-  cta_href: string;
-}
+export type SiteBanner = components["schemas"]["SiteBannerResponse"];
 
 /**
  * The one site-wide banner, or null when it is switched off.

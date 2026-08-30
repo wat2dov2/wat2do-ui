@@ -118,7 +118,7 @@ export function PayoutDetailDialog({
             <p className="text-sm text-destructive">
               {t("admin.posterPayouts.detail.loadError")}
             </p>
-            <Button variant="secondary" onClick={onRetry}>
+            <Button variant="outline" onClick={onRetry}>
               {t("admin.posterPayouts.retry")}
             </Button>
           </Stack>
@@ -320,7 +320,7 @@ export function PayoutDetailDialog({
                   {actions.map((action) => (
                     <Button
                       key={action}
-                      variant={action === "void" ? "destructive" : "secondary"}
+                      variant={action === "void" ? "destructive" : "outline"}
                       selected={reviewAction === action}
                       onClick={() => {
                         setReviewAction(action);
@@ -356,7 +356,7 @@ export function PayoutDetailDialog({
 
                       <FormActions>
                         <Button
-                          variant="secondary"
+                          variant="outline"
                           onClick={() => {
                             setReviewAction(null);
                             setNotes("");

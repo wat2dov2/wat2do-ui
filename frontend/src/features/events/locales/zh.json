@@ -62,6 +62,16 @@
       "clear": "清除最新添加筛选",
       "sinceLastVisitAt": "自上次访问后新增（{{time}}）"
     },
+    "dateFilter": {
+      "label": "活动日期",
+      "any": "任意日期",
+      "today": "今天",
+      "tomorrow": "明天",
+      "thisWeek": "本周",
+      "thisWeekend": "本周末",
+      "nextWeek": "下周",
+      "custom": "自定义日期"
+    },
     "clearAllFilters": "清除所有筛选",
     "calendarViewComingSoon": "日历视图即将推出...",
     "mapViewComingSoon": "地图视图即将推出...",

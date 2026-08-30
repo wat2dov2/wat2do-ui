@@ -1,14 +1,6 @@
-import type { CSSProperties } from "react"
-
-import {
-  getOrganizationCategoryDoodleDecorations,
-} from "@/shared/data/organizationCategoryStyles"
-
-const PAGE_DOODLES = getOrganizationCategoryDoodleDecorations(72)
-
 /**
- * Global page background decoration: a tilted field of category doodles plus
- * mirrored school-colour glows on the top-right and bottom-left corners.
+ * Global page background decoration: one school-colour glow in the bottom-left
+ * corner.
  */
 function PageBackground() {
   return (
@@ -17,20 +9,6 @@ function PageBackground() {
       aria-hidden="true"
       className="pointer-events-none fixed inset-0 -z-10 overflow-hidden"
     >
-      <div className="page-doodle-grid">
-        {PAGE_DOODLES.map((doodle, index) => (
-          <span
-            key={`${doodle.icon}-${index}`}
-            className="page-doodle-icon"
-            style={
-              {
-                "--doodle-icon": `url("${doodle.icon}")`,
-                "--doodle-color": `var(--page-school-${doodle.color})`,
-              } as CSSProperties
-            }
-          />
-        ))}
-      </div>
       <div className="bg-page-glow absolute inset-0" />
     </div>
   )

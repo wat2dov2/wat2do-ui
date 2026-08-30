@@ -61,14 +61,152 @@ def _verify_result(
     expires_in=3600,
     user_id="uid-001",
     refresh_token="ref-tok",
+    school=None,
+    onboarding_required=False,
 ):
     """Build an AuthResult that mimics a successful verification."""
     body = TokenResponse(
         access_token=access_token,
         expires_in=expires_in,
         user_id=user_id,
+        school=school,
+        onboarding_required=onboarding_required,
     )
     return AuthResult(body=body, refresh_token=refresh_token)
+
+
+# ===========================================================================
+# GET /auth/google and /auth/google/callback
+# ===========================================================================
+
+
+class TestGoogleOAuth:
+    CALLBACK_URL = "http://localhost:3000/api/auth/google/callback"
+
+    def test_start_google_oauth_sets_pkce_state_and_redirects(
+        self,
+        client,
+        monkeypatch,
+    ):
+        monkeypatch.setattr(settings, "cookie_secure", False)
+        monkeypatch.setattr(
+            auth,
+            "prepare_google_oauth",
+            MagicMock(
+                return_value=SimpleNamespace(
+                    authorization_url="https://accounts.example/authorize",
+                    code_verifier="verifier",
+                )
+            ),
+        )
+
+        response = client.get(
+            "/auth/google",
+            params={
+                "callback_url": self.CALLBACK_URL,
+                "return_to": "/positions?school=uwaterloo",
+            },
+            follow_redirects=False,
+        )
+
+        assert response.status_code == 302
+        assert response.headers["location"] == "https://accounts.example/authorize"
+        assert response.cookies.get("google_oauth_state")
+        set_cookie = response.headers["set-cookie"].lower()
+        assert "httponly" in set_cookie
+        assert "path=/api/auth/google/callback" in set_cookie
+        auth.prepare_google_oauth.assert_called_once_with(self.CALLBACK_URL)
+
+    @pytest.mark.parametrize(
+        "callback_url",
+        [
+            "https://evil.example/api/auth/google/callback",
+            "http://localhost:3000/auth/google/callback",
+            "http://localhost:3000/api/auth/google/callback?next=evil",
+        ],
+    )
+    def test_start_google_oauth_rejects_untrusted_callback(
+        self,
+        client,
+        monkeypatch,
+        callback_url,
+    ):
+        mock_prepare = MagicMock()
+        monkeypatch.setattr(auth, "prepare_google_oauth", mock_prepare)
+
+        response = client.get(
+            "/auth/google",
+            params={"callback_url": callback_url},
+            follow_redirects=False,
+        )
+
+        assert response.status_code == 422
+        mock_prepare.assert_not_called()
+
+    def test_complete_google_oauth_sets_refresh_cookie_and_returns_to_app(
+        self,
+        client,
+        monkeypatch,
+    ):
+        monkeypatch.setattr(settings, "cookie_secure", False)
+        monkeypatch.setattr(
+            auth,
+            "prepare_google_oauth",
+            MagicMock(
+                return_value=SimpleNamespace(
+                    authorization_url="https://accounts.example/authorize",
+                    code_verifier="verifier",
+                )
+            ),
+        )
+        start_response = client.get(
+            "/auth/google",
+            params={
+                "callback_url": self.CALLBACK_URL,
+                "return_to": "/positions?school=uwaterloo",
+            },
+            follow_redirects=False,
+        )
+        state_cookie = start_response.cookies["google_oauth_state"]
+        client.cookies.set("google_oauth_state", state_cookie)
+        result = _verify_result(
+            school="uwaterloo",
+            onboarding_required=False,
+        )
+        monkeypatch.setattr(
+            auth,
+            "verify_google_oauth",
+            MagicMock(return_value=result),
+        )
+
+        response = client.get(
+            "/auth/google/callback",
+            params={"code": "auth-code"},
+            follow_redirects=False,
+        )
+
+        assert response.status_code == 303
+        location = response.headers["location"]
+        assert location.startswith("http://localhost:3000/auth/callback?")
+        assert "oauth=google" in location
+        assert "school=uwaterloo" in location
+        assert "returnTo=%2Fpositions%3Fschool%3Duwaterloo" in location
+        assert response.cookies.get("refresh_token") == "ref-tok"
+        auth.verify_google_oauth.assert_called_once_with(
+            "auth-code",
+            "verifier",
+            self.CALLBACK_URL,
+        )
+
+    def test_complete_google_oauth_without_pkce_state_returns_to_login(self, client):
+        response = client.get(
+            "/auth/google/callback",
+            params={"code": "auth-code"},
+            follow_redirects=False,
+        )
+
+        assert response.status_code == 303
+        assert response.headers["location"] == ("http://localhost:3000/login?oauthError=google")
 
 
 def _refresh_result(

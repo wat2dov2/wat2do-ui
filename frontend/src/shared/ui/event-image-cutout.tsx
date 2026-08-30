@@ -20,6 +20,8 @@ const useSafeLayoutEffect =
 
 /** Size of the corner fillet glyph, matching the `size-2` used by BadgeMask. */
 const FILLET = 8;
+/** Subpixel overlap keeps each fillet visually joined to its badge. */
+const FILLET_BADGE_OVERLAP = 0.25;
 /** Inner-corner radius of the notch, matching BadgeMask's `rounded-*-xl`. */
 const INNER_RADIUS = 12;
 /** Stable coordinate space so the server and hydrated SVG keep identical geometry. */
@@ -140,7 +142,10 @@ function cornerPieces(
     case "top-left":
       return {
         rect: { x: -rx, y: -ry, width: nw + rx, height: nh + ry, rx, ry },
-        fillets: [{ x: nw, y: 0 }, { x: 0, y: nh }],
+        fillets: [
+          { x: nw - FILLET_BADGE_OVERLAP, y: 0 },
+          { x: 0, y: nh - FILLET_BADGE_OVERLAP },
+        ],
         filletWidth,
         filletHeight,
       };
@@ -148,8 +153,11 @@ function cornerPieces(
       return {
         rect: { x: w - nw, y: -ry, width: nw + rx, height: nh + ry, rx, ry },
         fillets: [
-          { x: w - nw - filletWidth, y: 0 },
-          { x: w - filletWidth, y: nh },
+          {
+            x: w - nw - filletWidth + FILLET_BADGE_OVERLAP,
+            y: 0,
+          },
+          { x: w - filletWidth, y: nh - FILLET_BADGE_OVERLAP },
         ],
         filletWidth,
         filletHeight,
@@ -158,8 +166,11 @@ function cornerPieces(
       return {
         rect: { x: -rx, y: h - nh, width: nw + rx, height: nh + ry, rx, ry },
         fillets: [
-          { x: nw, y: h - filletHeight },
-          { x: 0, y: h - nh - filletHeight },
+          { x: nw - FILLET_BADGE_OVERLAP, y: h - filletHeight },
+          {
+            x: 0,
+            y: h - nh - filletHeight + FILLET_BADGE_OVERLAP,
+          },
         ],
         filletWidth,
         filletHeight,
@@ -168,8 +179,14 @@ function cornerPieces(
       return {
         rect: { x: w - nw, y: h - nh, width: nw + rx, height: nh + ry, rx, ry },
         fillets: [
-          { x: w - nw - filletWidth, y: h - filletHeight },
-          { x: w - filletWidth, y: h - nh - filletHeight },
+          {
+            x: w - nw - filletWidth + FILLET_BADGE_OVERLAP,
+            y: h - filletHeight,
+          },
+          {
+            x: w - filletWidth,
+            y: h - nh - filletHeight + FILLET_BADGE_OVERLAP,
+          },
         ],
         filletWidth,
         filletHeight,

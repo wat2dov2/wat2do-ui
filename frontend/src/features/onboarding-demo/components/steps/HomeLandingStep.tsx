@@ -84,7 +84,7 @@ export function HomeLandingStep({ flow }: HomeLandingStepProps) {
       </section>
 
       <div className="flex justify-center pt-4">
-        <Button type="button" variant="secondary" onClick={flow.restart}>
+        <Button type="button" variant="outline" onClick={flow.restart}>
           {t("onboardingDemo.actions.restartDemo")}
         </Button>
       </div>

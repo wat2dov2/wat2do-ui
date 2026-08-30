@@ -7,6 +7,7 @@ import { cn } from "@/shared/lib/utils"
 import { Button } from "@/shared/ui/button"
 import { Calendar } from "@/shared/ui/calendar"
 import { CalendarDays } from "@/shared/ui/doodle-icons"
+import { parseLocalDateValue } from "@/shared/utils/date"
 import {
   Popover,
   PopoverContent,
@@ -24,23 +25,6 @@ interface DatePickerProps {
   disabled?: boolean
 }
 
-function parseLocalDate(value: string): Date | undefined {
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value)
-  if (!match) return undefined
-
-  const [, year, month, day] = match
-  const date = new Date(Number(year), Number(month) - 1, Number(day))
-  if (
-    Number.isNaN(date.getTime()) ||
-    date.getFullYear() !== Number(year) ||
-    date.getMonth() !== Number(month) - 1 ||
-    date.getDate() !== Number(day)
-  ) {
-    return undefined
-  }
-  return date
-}
-
 function DatePicker({
   id,
   value,
@@ -52,7 +36,7 @@ function DatePicker({
   disabled = false,
 }: DatePickerProps) {
   const [isOpen, setIsOpen] = useState(false)
-  const date = useMemo(() => parseLocalDate(value), [value])
+  const date = useMemo(() => parseLocalDateValue(value), [value])
 
   const handleDateSelect = (selectedDate: Date | undefined) => {
     if (!selectedDate) return
@@ -67,10 +51,10 @@ function DatePicker({
         <Button
           id={id}
           type="button"
-          variant="secondary"
+          variant="outline"
           disabled={disabled}
           className={cn(
-            "w-full min-w-0 justify-start border border-border px-3 text-left font-normal text-secondary-foreground hover:bg-muted-hover",
+            "w-full min-w-0 justify-start px-3 text-left font-normal",
             !date && "text-muted-foreground",
             hasError && "bg-destructive/10 ring-2 ring-destructive/50",
             className,

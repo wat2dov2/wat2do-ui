@@ -86,6 +86,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
       initialEmail={firstSearchParam(query.email)}
       invitationToken={firstSearchParam(query.token)}
       initialReturnTo={firstSearchParam(query[QP.RETURN_TO])}
+      initialOAuthError={firstSearchParam(query[QP.OAUTH_ERROR])}
     />
   );
 }

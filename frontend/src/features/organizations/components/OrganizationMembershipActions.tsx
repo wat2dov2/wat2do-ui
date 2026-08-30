@@ -177,7 +177,7 @@ export function OrganizationMembershipActions({
             {t("organizationPanel.requestPending")}
           </MembershipStatusNotice>
           <Button
-            variant="secondary"
+            variant="outline"
             onClick={handleLeaveOrCancel}
             disabled={actionLoading}
             className="border-destructive/30 text-destructive"
@@ -199,7 +199,7 @@ export function OrganizationMembershipActions({
             {t("organizationPanel.memberBadge")}
           </MembershipStatusNotice>
           <Button
-            variant="secondary"
+            variant="outline"
             onClick={handleLeaveOrCancel}
             disabled={actionLoading}
             className="border-destructive/30 text-destructive"

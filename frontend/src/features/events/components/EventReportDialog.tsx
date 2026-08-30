@@ -108,7 +108,7 @@ export function EventReportDialog({
             <DrawerFooter className="flex-row justify-end gap-2">
               <Button
                 type="button"
-                variant="secondary"
+                variant="outline"
                 onMouseDown={() => onOpenChange(false)}
                 disabled={isSubmitting}
               >

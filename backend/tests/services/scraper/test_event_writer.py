@@ -58,8 +58,8 @@ def test_clean_food_caps_at_20_items():
     assert len(_clean_food(too_many)) == 20
 
 
-def test_clean_food_yes_marker_kept():
-    assert _clean_food(["Yes!"]) == ["Yes!"]
+def test_clean_food_yes_markers_normalized_to_food():
+    assert _clean_food(["Yes!", "yes", "Food"]) == ["Food"]
 
 
 def test_merge_overwrite_payload_preserves_fields_missing_from_new_post():

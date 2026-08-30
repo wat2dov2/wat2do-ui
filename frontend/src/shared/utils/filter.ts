@@ -1,3 +1,5 @@
+import type { EventDateFilter } from "@/shared/types/filter.types";
+
 /**
  * Get filter counts for UI display.
  *
@@ -22,6 +24,7 @@ export function getFilterCounts(filters: {
   freeFoodFilter: boolean;
   goingFilter: boolean;
   addedSince?: string;
+  dateFilter?: EventDateFilter;
 }): number {
   return (
     filters.selectedCategories.length +
@@ -33,6 +36,7 @@ export function getFilterCounts(filters: {
     (filters.selectedOrganizations?.length ?? 0) +
     (filters.freeFoodFilter ? 1 : 0) +
     (filters.goingFilter ? 1 : 0) +
-    (filters.addedSince ? 1 : 0)
+    (filters.addedSince ? 1 : 0) +
+    (filters.dateFilter && filters.dateFilter !== "any" ? 1 : 0)
   );
 }

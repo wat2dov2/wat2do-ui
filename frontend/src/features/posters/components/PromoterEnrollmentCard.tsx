@@ -58,7 +58,7 @@ function PromoterTermsField({
       </FieldDescription>
       <Button
         type="button"
-        variant="secondary"
+        variant="outline"
         selected={accepted}
         onClick={onOpen}
         data-testid="promoter-terms-open"
@@ -162,7 +162,7 @@ export function PromoterEnrollmentCard({
           </CardDescription>
         </CardHeader>
         <CardFooter>
-          <Button asChild variant="secondary">
+          <Button asChild variant="outline">
             <Link href={settingsTabPath(SETTINGS_TABS.PROFILE)}>
               {t("posters.enrollment.completeProfile")}
             </Link>
@@ -301,7 +301,7 @@ export function PromoterEnrollmentCard({
                   ? t("posters.enrollment.save")
                   : t("posters.enrollment.join")}
               </LoadingButton>
-              <Button asChild variant="secondary">
+              <Button asChild variant="outline">
                 <a
                   href={promoterProgram.discordInviteUrl}
                   target="_blank"

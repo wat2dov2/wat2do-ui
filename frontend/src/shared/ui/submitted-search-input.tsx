@@ -1,6 +1,7 @@
 import { Search, X } from "@/shared/ui/doodle-icons";
 import { useEnterKeySubmit } from "@/shared/hooks";
 import { cn } from "@/shared/lib/utils";
+import { OUTLINE_CONTROL_STYLES } from "@/shared/ui/button";
 import type { KeyboardEvent } from "react";
 
 interface SubmittedSearchInputProps {
@@ -35,7 +36,8 @@ export function SubmittedSearchInput({
   return (
     <div
       className={cn(
-        "relative min-w-0 flex-1 overflow-hidden rounded-xl bg-secondary shadow-xs transition-[color,box-shadow] focus-within:ring-[3px] focus-within:ring-ring/50",
+        OUTLINE_CONTROL_STYLES,
+        "relative min-w-0 flex-1 overflow-hidden rounded-xl transition-[color,box-shadow] focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50",
         size === "lg" ? "h-11" : "h-9",
         className,
       )}
@@ -53,7 +55,7 @@ export function SubmittedSearchInput({
           onKeyDown?.(event);
         }}
         className={cn(
-          "block h-full w-full min-w-0 rounded-none bg-transparent px-3 py-2 text-secondary-foreground outline-none placeholder:text-muted-foreground",
+          "block h-full w-full min-w-0 rounded-none bg-transparent px-3 py-2 text-foreground outline-none placeholder:text-muted-foreground",
           size === "lg" ? "text-base leading-7" : "text-sm",
           value ? "pr-[5.5rem]" : "pr-14",
         )}
@@ -77,7 +79,7 @@ export function SubmittedSearchInput({
           event.preventDefault();
           onSubmit();
         }}
-        className="absolute right-0 top-0 flex h-full w-11 items-center justify-center rounded-l-none rounded-r-xl border-l border-border/60 bg-secondary text-muted-foreground transition-colors hover:bg-muted-hover hover:text-foreground"
+        className="absolute right-0 top-0 flex h-full w-11 items-center justify-center rounded-l-none rounded-r-xl border-l border-border bg-transparent text-muted-foreground transition-colors hover:bg-surface-hover hover:text-foreground dark:border-secondary dark:hover:bg-secondary-hover dark:hover:text-secondary-foreground"
         aria-label={submitLabel}
       >
         <Search className="size-4" />

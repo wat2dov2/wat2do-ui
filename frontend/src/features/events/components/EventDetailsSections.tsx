@@ -311,7 +311,7 @@ function EventRegistrationCard({
                   {t("common.addToCalendar")}
                 </Button>
               </EventCalendarDownloadMenu>
-              <Button type="button" variant="secondary" onClick={() => setShareOpen(true)}>
+              <Button type="button" variant="outline" onClick={() => setShareOpen(true)}>
                 <Share2 className="size-4" />
                 {t("common.share")}
               </Button>
@@ -575,7 +575,7 @@ export function EventActions({
     <Stack direction="horizontal" gap={2} wrap data-slot="event-actions">
       {isAdmin && (
         <>
-          <Button type="button" variant="secondary" size="sm" onClick={handleEdit}>
+          <Button type="button" variant="outline" size="sm" onClick={handleEdit}>
             <Edit className="size-4" />
             {t("common.edit")}
           </Button>
@@ -590,11 +590,11 @@ export function EventActions({
           </Button>
         </>
       )}
-      <Button type="button" variant="secondary" size="sm" onClick={() => setShareOpen(true)}>
+      <Button type="button" variant="outline" size="sm" onClick={() => setShareOpen(true)}>
         <Share2 className="size-4" />
         {t("common.share")}
       </Button>
-      <Button type="button" variant="secondary" size="sm" onClick={() => setReportOpen(true)}>
+      <Button type="button" variant="outline" size="sm" onClick={() => setReportOpen(true)}>
         <Flag className="size-4" />
         {t("common.report")}
       </Button>
@@ -745,12 +745,7 @@ export function EventDetailsSimilarEvents({
     <>
       <Separator />
       <Section title={t("events.similarEvents")}>
-        {/*
-         * The same grid the feed uses. These are event cards, so they get the
-         * card grid rather than FormGrid, whose wider `gap-5` is meant for form
-         * fields and made the same cards sit further apart here than on the
-         * page the reader just came from.
-         */}
+        {/* Similar events use the same shared card grid as the main feed. */}
         <div className={CARD_GRID_CLASS}>
           {similarEvents.map((similarEvent) => (
             <EventCard

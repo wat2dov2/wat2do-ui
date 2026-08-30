@@ -10,7 +10,10 @@ import { cn } from "@/shared/lib/utils";
 import { LazyImage } from "@/shared/ui/lazy-image";
 import { BadgeMask } from "@/shared/ui/badge-mask";
 import { Badge } from "@/shared/ui/badge";
-import { EventCardContent } from "@/shared/ui/event-card-content";
+import {
+  EventCardContent,
+  EventCardContentFrame,
+} from "@/shared/ui/event-card-content";
 import { OrganizationBadgeDropdown } from "@/features/organizations/components/OrganizationBadgeDropdown";
 import { EVENT_CARD_IMAGE_HEIGHT } from "@/shared/constants/ui";
 
@@ -22,7 +25,12 @@ export interface PreviewEventData {
   date: string;
   time: string;
   location: string;
-  badges: Array<{ text: string; bgClass: string; textClass: string }>;
+  badges: Array<{
+    text: string;
+    bgClass: string;
+    textClass: string;
+    size?: "sm" | "md";
+  }>;
   isLive?: boolean;
   isNew?: boolean;
   organizationType?: string | null;
@@ -64,8 +72,8 @@ export function PreviewStyleEventCard({
       {...interactiveProps}
       data-event-id={dataEventId}
       className={cn(
-        "rounded-xl flex flex-col h-full bg-surface overflow-hidden transition-all duration-300",
-        onMouseDown && "cursor-pointer group hover:opacity-90 hover:shadow-lg",
+        "rounded-xl flex flex-col h-full overflow-hidden transition-all duration-300",
+        onMouseDown && "cursor-pointer group hover:shadow-lg",
         selected && "outline-2 outline-sky-400 dark:outline-sky-300 outline-offset-2 rounded-xl",
       )}
     >
@@ -115,12 +123,7 @@ export function PreviewStyleEventCard({
         )}
       </div>
 
-      <div
-        className={cn(
-          "flex flex-col flex-1 border-l border-r border-b rounded-tl-xl rounded-b-xl overflow-hidden relative z-20",
-          "bg-surface text-foreground border-border",
-        )}
-      >
+      <EventCardContentFrame>
         <EventCardContent
           title={event.title}
           date={event.date}
@@ -131,7 +134,7 @@ export function PreviewStyleEventCard({
           secondaryTextClassName="text-muted-foreground"
           badgeClassName={cn("border-current", "text-muted-foreground")}
         />
-      </div>
+      </EventCardContentFrame>
     </div>
   );
 }

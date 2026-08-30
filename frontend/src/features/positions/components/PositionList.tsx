@@ -1,8 +1,8 @@
 import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { CardEntrance } from "@/shared/ui/card-entrance";
-import { Card, CardContent, CardHeader } from "@/shared/ui/card";
 import { Skeleton } from "@/shared/ui/skeleton";
+import { EventCardContentFrame } from "@/shared/ui/event-card-content";
 import { Spinner } from "@/shared/ui/spinner";
 import { Users } from "@/shared/ui/doodle-icons";
 import { EmptyState } from "@/shared/feedback/empty-state";
@@ -26,22 +26,19 @@ interface PositionListProps {
 
 function PositionCardSkeleton() {
   return (
-    <Card className="h-full gap-4 overflow-hidden py-0">
+    <div className="flex h-full flex-col overflow-hidden rounded-xl">
       <Skeleton
-        className="w-full rounded-none"
+        className="w-full rounded-t-xl rounded-br-xl"
         style={{ height: EVENT_CARD_IMAGE_HEIGHT }}
       />
-      <CardHeader className="pt-6">
+      <EventCardContentFrame className="gap-3 py-4">
         <Skeleton className="h-5 w-24" />
         <Skeleton className="h-6 w-4/5" />
         <Skeleton className="h-4 w-1/2" />
-      </CardHeader>
-      <CardContent className="space-y-3 pb-6">
         <Skeleton className="h-4 w-full" />
         <Skeleton className="h-4 w-5/6" />
-        <Skeleton className="h-9 w-full" />
-      </CardContent>
-    </Card>
+      </EventCardContentFrame>
+    </div>
   );
 }
 
@@ -94,6 +91,7 @@ export function PositionList({
   return (
     <>
       <div
+        data-slot="card-grid"
         className={CARD_GRID_CLASS}
         role="list"
         aria-label={t("positions.resultsLabel", { count: positions.length })}

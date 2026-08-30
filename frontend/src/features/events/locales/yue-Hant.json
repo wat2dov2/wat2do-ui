@@ -62,6 +62,16 @@
       "clear": "清除新增篩選條件",
       "sinceLastVisitAt": "自上次訪問以來新增（{{time}}）"
     },
+    "dateFilter": {
+      "label": "活動日期",
+      "any": "任何日子",
+      "today": "今日",
+      "tomorrow": "聽日",
+      "thisWeek": "今個星期",
+      "thisWeekend": "今個週末",
+      "nextWeek": "下個星期",
+      "custom": "自訂日期"
+    },
     "clearAllFilters": "清除所有篩選條件",
     "calendarViewComingSoon": "日曆視圖即將推出...",
     "mapViewComingSoon": "地圖檢視即將推出...",

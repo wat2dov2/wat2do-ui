@@ -133,10 +133,43 @@ test("browses, filters, and searches open organization positions", async ({
   ).toBeVisible();
   await expect(page.getByText("Due Sep 1", { exact: true })).toBeVisible();
   await expect(page.getByText("Committee", { exact: true })).toHaveCount(0);
+  const positionCard = page.getByRole("button", {
+    name: "View Design Lead position details",
+  });
+  const positionFrame = positionCard.locator(
+    '[data-slot="event-card-content-frame"]',
+  );
+  const positionContent = positionFrame.locator(
+    '[data-slot="event-card-content"]',
+  );
+  await expect(positionFrame).toHaveCSS(
+    "background-color",
+    "rgba(0, 0, 0, 0)",
+  );
+  await expect(positionFrame).toHaveCSS("border-top-width", "0px");
+  await expect(positionFrame).toHaveCSS("border-right-width", "0px");
+  await expect(positionFrame).toHaveCSS("border-bottom-width", "0px");
+  await expect(positionFrame).toHaveCSS("border-left-width", "0px");
+  await expect(positionContent).toHaveCSS("padding-left", "0px");
+  await expect(positionContent).toHaveCSS("padding-right", "0px");
+  const organizationBadge = positionCard.locator(
+    '[data-slot="organization-badge"]',
+  );
+  await expect(organizationBadge).toHaveCSS("opacity", "1");
+  await positionCard.hover();
+  await expect(positionCard).toHaveCSS("opacity", "1");
+  await expect(organizationBadge).toHaveCSS("opacity", "1");
+  await expect(page.locator('[data-slot="card-grid"]')).toHaveCSS(
+    "column-gap",
+    "20px",
+  );
+  await expect(
+    positionCard.locator(
+      '[data-slot="position-card-image"][data-variant="card"]',
+    ),
+  ).toHaveCSS("border-bottom-right-radius", "12px");
 
-  await page
-    .getByRole("button", { name: "View Design Lead position details" })
-    .click();
+  await positionCard.click();
   const drawer = page.getByRole("dialog");
   await expect(drawer).toHaveCSS("animation-name", "slideFromBottom");
   await expect(page.locator('[data-slot="drawer-overlay"]')).toHaveCSS(

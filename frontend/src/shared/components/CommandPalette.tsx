@@ -200,7 +200,7 @@ export function CommandPalette({
             }}
           >
             <HelpCircle className="mr-2 size-4" />
-            <span>{t("navigation.contact")}</span>
+            <span>{t("navigation.about")}</span>
           </CommandItem>
         </CommandGroup>
       </CommandList>

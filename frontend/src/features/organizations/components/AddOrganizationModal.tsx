@@ -365,7 +365,7 @@ export function OrganizationForm({
 
       <FormActions>
         {onCancel ? (
-          <Button variant="secondary" type="button" onClick={onCancel}>
+          <Button variant="outline" type="button" onClick={onCancel}>
             {t("common.cancel")}
           </Button>
         ) : null}

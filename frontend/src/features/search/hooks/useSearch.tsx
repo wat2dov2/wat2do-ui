@@ -54,6 +54,8 @@ export function useSearch({
       goingEventIds,
       selectedOrganizations: filterState.selectedOrganizations,
       addedSince: filterState.addedSince,
+      dateFilter: filterState.dateFilter,
+      customDate: filterState.customDate,
     });
     return sortEvents(filtered, { sortBy: filterState.sortBy, sortOrder: filterState.sortOrder });
   }, [
@@ -73,6 +75,8 @@ export function useSearch({
     filterState.sortOrder,
     filterState.selectedOrganizations,
     filterState.addedSince,
+    filterState.dateFilter,
+    filterState.customDate,
   ]);
 
   const filterCount = useMemo(
@@ -88,6 +92,7 @@ export function useSearch({
         freeFoodFilter: filterState.freeFoodFilter,
         goingFilter: filterState.goingFilter,
         addedSince: filterState.addedSince,
+        dateFilter: filterState.dateFilter,
       }),
     [
       filterState.selectedCategories,
@@ -100,6 +105,7 @@ export function useSearch({
       filterState.freeFoodFilter,
       filterState.goingFilter,
       filterState.addedSince,
+      filterState.dateFilter,
     ],
   );
 

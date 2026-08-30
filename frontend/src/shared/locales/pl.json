@@ -96,10 +96,19 @@
     "organizationPanel": "Panel organizacji",
     "clubPanelTooltip": "Zarządzaj swoją organizacją",
     "mission": "Misja",
-    "contact": "Kontakt",
+    "about": "O nas",
     "goToEvents": "Przejdź do wydarzeń",
-    "posters": "Plakaty",
+    "primary": "Główna nawigacja",
+    "openMenu": "Otwórz menu nawigacji",
+    "switchToLightMode": "Przełącz na tryb jasny",
+    "switchToDarkMode": "Przełącz na tryb ciemny",
     "dismissAnnouncement": "Zamknij ogłoszenie"
+  },
+  "siteBanner": {
+    "founderStory": {
+      "message": "Zebraliśmy ponad 3000 wydarzeń w Waterloo, aby studenci mogli próbować więcej nowych rzeczy.",
+      "cta": "Przeczytaj naszą historię"
+    }
   },
   "modals": {
     "welcome": {
@@ -410,6 +419,11 @@
       "scale": "Od sierpnia 2025 Wat2Do zarejestrowało ponad 3000 wydarzeń. Stale udoskonalaliśmy algorytm, aż mógł wyświetlić wydarzenie średnio około minuty po opublikowaniu posta Instagram.",
       "mission": "Rozwiązanie tego problemu odkrywania zmieniło nasze własne doświadczenia na uniwersytecie. Teraz chcemy podzielić się tym, co stworzyliśmy, i pomóc studentom wszędzie odkrywać więcej nowych, fajnych rzeczy dziejących się wokół nich.",
       "signature": "- Tony & Erica"
+    },
+    "help": {
+      "title": "Jak możesz nam pomóc",
+      "description": "Rozwieszaj plakaty Wat2Do na kampusie, aby pomóc innym studentom znaleźć wydarzenia, zanim się odbędą. Nasz program plakatowy zapewnia wszystko, czego potrzebujesz na początek.",
+      "action": "Pomóż z plakatami na kampusie"
     },
     "form": {
       "title": "Skontaktuj się z nami",

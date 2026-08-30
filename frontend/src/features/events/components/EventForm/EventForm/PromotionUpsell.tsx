@@ -54,7 +54,7 @@ export function PromotionUpsell({
           </div>
           <Button
             type="button"
-            variant="secondary"
+            variant="outline"
             size="sm"
             onMouseDown={onBuyCredits}
             className="h-auto p-0 text-xs font-medium text-warning hover:text-warning/80"
@@ -83,7 +83,7 @@ export function PromotionUpsell({
         </div>
 
         <div className="flex gap-2">
-          <Button variant="secondary" onClick={onClose} className="flex-1">
+          <Button variant="outline" onClick={onClose} className="flex-1">
             {t("promotion.maybeLater")}
           </Button>
           <Button

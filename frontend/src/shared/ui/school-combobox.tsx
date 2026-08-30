@@ -6,7 +6,7 @@ import {
 } from "@/shared/ui/search-combobox";
 import { Highlighter } from "@/shared/ui/highlighter";
 import { DEFAULT_SCHOOL } from "@/shared/constants/schools";
-import { searchSchools, type SchoolSummary } from "@/shared/api/schools.api";
+import type { SchoolSummary } from "@/shared/api/schools.api";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 
 interface SchoolComboboxProps {
@@ -21,7 +21,7 @@ interface SchoolComboboxProps {
   showHighlight?: boolean;
 }
 
-type SchoolOption = Pick<SchoolSummary, "slug" | "name">;
+type SchoolOption = Pick<SchoolSummary, "slug" | "name" | "email_domains">;
 
 export function SchoolCombobox({
   value,
@@ -35,7 +35,7 @@ export function SchoolCombobox({
   showHighlight = true,
 }: SchoolComboboxProps) {
   const { t } = useTranslation();
-  const { getSchoolName } = useSchoolDirectory();
+  const { schools, getSchoolName } = useSchoolDirectory();
 
   const displayValue = useMemo(() => {
     if (value) return getSchoolName(value);
@@ -63,19 +63,22 @@ export function SchoolCombobox({
     <SearchCombobox<SchoolOption>
       selectedKey={value}
       onSelect={(school) => onChange(school.slug)}
-      fetcher={searchSchools}
+      items={schools}
       getKey={(school) => school.slug}
       getLabel={(school) => school.name}
+      getSearchTerms={(school) => [
+        school.name,
+        school.slug,
+        ...(school.email_domains ?? []),
+      ]}
       displayValue={displayValue}
       isPlaceholder={!value && Boolean(placeholder)}
       renderTriggerLabel={renderTriggerLabel}
-      debounceMs={220}
       variant={variant}
       align={align}
       id={id}
       searchPlaceholder={t("schools.searchPlaceholder")}
       emptyLabel={t("schools.noSchoolFound")}
-      loadingLabel={t("common.loading")}
       contentClassName={contentClassName}
       triggerClassName={triggerClassName}
     />

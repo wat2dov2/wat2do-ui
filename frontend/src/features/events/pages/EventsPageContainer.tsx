@@ -18,6 +18,7 @@ import {
   NewlyAddedFilterSelect,
   type NewlyAddedFilterValue,
 } from "@/features/events/components/NewlyAddedFilterSelect";
+import { DateFilterSelect } from "@/features/events/components/DateFilterSelect";
 import { ROUTES } from "@/shared/constants/routes";
 import { controlBox } from "@/shared/config/controlBox";
 import type { ViewMode, Event } from "@/shared/types";
@@ -167,7 +168,7 @@ export function EventsPageContainer({
     syncScrollFadeAfterWheel: syncFilterScrollFadeAfterWheel,
     dragScrollProps: filterDragScrollProps,
   } = useHorizontalScrollFade<HTMLDivElement>({
-    refreshKey: `${filterConfigs.length + 1}:${filters.categoryOptions.length}`,
+    refreshKey: `${filterConfigs.length + 2}:${filters.categoryOptions.length}`,
   });
 
   return (
@@ -191,7 +192,7 @@ export function EventsPageContainer({
             </div>
             <Button
               type="button"
-              variant="secondary"
+              variant="outline"
               size="lg"
               className="shrink-0"
               onMouseDown={handleSubmitEventClick}
@@ -222,7 +223,7 @@ export function EventsPageContainer({
                 {filterConfigs.map((config) => (
                   <Button
                     key={config.id}
-                    variant={config.active ? "primary" : "secondary"}
+                    variant={config.active ? "primary" : "outline"}
                     size="sm"
                     onClick={config.onClick}
                     aria-pressed={config.active}
@@ -230,13 +231,18 @@ export function EventsPageContainer({
                     {t(config.labelKey)}
                   </Button>
                 ))}
+                <DateFilterSelect
+                  value={filters.dateFilter}
+                  customDate={filters.customDate}
+                  onChange={filters.setDateFilter}
+                />
                 {filters.categoryOptions.map((category) => (
                   <Button
                     key={category.id}
                     variant={
                       filters.selectedCategories.includes(category.id)
                         ? "primary"
-                        : "secondary"
+                        : "outline"
                     }
                     size="sm"
                     onClick={() => filters.toggleCategory(category.id)}

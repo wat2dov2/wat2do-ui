@@ -445,7 +445,7 @@ export function AdminOrganizationsPage({
                     <div className="flex items-center justify-end gap-2">
                       {organization.status !== "approved" && (
                         <Button
-                          variant="secondary"
+                          variant="outline"
                           size="sm"
                           onClick={() => void handleReviewOrganization(organization.id, "approved")}
                           className="text-primary hover:bg-surface-hover border border-transparent"
@@ -455,7 +455,7 @@ export function AdminOrganizationsPage({
                       )}
                       {organization.status !== "rejected" && (
                         <Button
-                          variant="secondary"
+                          variant="outline"
                           size="sm"
                           onClick={() => void handleReviewOrganization(organization.id, "rejected")}
                           className="text-destructive hover:bg-surface-hover border border-transparent"
@@ -539,7 +539,7 @@ export function AdminOrganizationsPage({
                   <TableCell>
                     <div className="flex items-center justify-end gap-2">
                       <Button
-                        variant="secondary"
+                        variant="outline"
                         size="sm"
                         onClick={(e) => {
                           e.stopPropagation();
@@ -549,7 +549,7 @@ export function AdminOrganizationsPage({
                         {t("common.edit")}
                       </Button>
                       <Button
-                        variant="secondary"
+                        variant="outline"
                         size="sm"
                         onClick={(e) => {
                           e.stopPropagation();
@@ -643,7 +643,7 @@ export function AdminOrganizationsPage({
                         {claim.status === "pending" && (
                           <>
                             <Button
-                              variant="secondary"
+                              variant="outline"
                               size="sm"
                               onClick={() => handleApproveClaim(claim.id)}
                               className="text-primary hover:bg-surface-hover border border-transparent"
@@ -651,7 +651,7 @@ export function AdminOrganizationsPage({
                               {t("admin.approve")}
                             </Button>
                             <Button
-                              variant="secondary"
+                              variant="outline"
                               size="sm"
                               onClick={() => setRejectClaimId(claim.id)}
                               className="text-destructive hover:bg-surface-hover border border-transparent"
@@ -709,7 +709,7 @@ export function AdminOrganizationsPage({
             />
           </div>
           <DialogFooter className="flex gap-2 justify-end">
-            <Button variant="secondary" onClick={() => setRejectClaimId(null)} disabled={submittingResolution}>
+            <Button variant="outline" onClick={() => setRejectClaimId(null)} disabled={submittingResolution}>
               {t("common.cancel") || "Cancel"}
             </Button>
             <Button

@@ -72,7 +72,7 @@ export function ContactForm() {
             </p>
             <Button
               type="button"
-              variant="secondary"
+              variant="outline"
               onClick={() => setIsSubmitted(false)}
             >
               {t("contact.form.sendAnother")}

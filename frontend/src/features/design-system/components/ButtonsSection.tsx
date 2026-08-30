@@ -5,7 +5,7 @@ import { ShowcaseBlock } from "./ShowcaseBlock";
 
 const BUTTON_VARIANTS = [
   { label: "Primary", variant: "primary" as const },
-  { label: "Secondary", variant: "secondary" as const },
+  { label: "Outline", variant: "outline" as const },
   { label: "Ghost", variant: "ghost" as const },
   { label: "Warning", variant: "warning" as const },
   { label: "Destructive", variant: "destructive" as const },
@@ -47,7 +47,7 @@ export function ButtonsSection() {
 
         <ShowcaseBlock label="Icon buttons">
           <Stack direction="horizontal" gap={2} align="center">
-            <Button size="icon-sm" variant="secondary" aria-label="Add item">
+            <Button size="icon-sm" variant="outline" aria-label="Add item">
               <Plus />
             </Button>
             <Button size="icon" variant="primary" aria-label="Add item">
@@ -62,7 +62,7 @@ export function ButtonsSection() {
         <ShowcaseBlock label="States">
           <Stack direction="horizontal" gap={2} align="center" className="flex-wrap">
             <Button>Enabled</Button>
-            <Button variant="secondary" selected>
+            <Button variant="outline" selected>
               Selected
             </Button>
             <Button disabled>Disabled</Button>

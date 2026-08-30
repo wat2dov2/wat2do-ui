@@ -1,11 +1,14 @@
-import { memo, useState } from "react";
+import { memo } from "react";
 import { useTranslation } from "react-i18next";
 import { PositionCardImage } from "@/features/positions/components/PositionCardImage";
 import {
   createAdaptivePressHandlers,
   useMobileGridClickActivation,
 } from "@/shared/hooks";
-import { EventCardContent } from "@/shared/ui/event-card-content";
+import {
+  EventCardContent,
+  EventCardContentFrame,
+} from "@/shared/ui/event-card-content";
 import type { Position } from "@/shared/types";
 
 interface PositionCardProps {
@@ -19,7 +22,6 @@ function PositionCardComponent({
 }: PositionCardProps) {
   const { t } = useTranslation();
   const preferClick = useMobileGridClickActivation();
-  const [isHoveringBadge, setIsHoveringBadge] = useState(false);
   const pressHandlers = createAdaptivePressHandlers({
     onClick: () => onPositionClick(position),
     preferClick,
@@ -37,21 +39,15 @@ function PositionCardComponent({
           onPositionClick(position);
         }
       }}
-      className={`group flex h-full w-full cursor-pointer flex-col rounded-xl transition-all duration-300 ${
-        isHoveringBadge ? "" : "hover:opacity-90 hover:shadow-lg"
-      }`}
+      className="group flex h-full w-full cursor-pointer flex-col rounded-xl transition-all duration-300 hover:shadow-lg"
     >
-      <PositionCardImage
-        position={position}
-        variant="card"
-        onBadgeHoverChange={setIsHoveringBadge}
-      />
-      <div className="relative z-20 flex flex-1 flex-col overflow-hidden rounded-b-xl rounded-tl-xl border-x border-b border-border bg-surface text-foreground">
+      <PositionCardImage position={position} variant="card" />
+      <EventCardContentFrame>
         <EventCardContent
           title={position.title}
           description={position.description}
         />
-      </div>
+      </EventCardContentFrame>
     </article>
   );
 }

@@ -314,7 +314,7 @@ export function PromoterPosterCreator({
                           <Stack grow>
                             <Button
                               type="button"
-                              variant="secondary"
+                              variant="outline"
                               selected={selectedTemplate?.id === template.id}
                               onClick={() => setSelectedTemplateId(template.id)}
                             >
@@ -333,7 +333,7 @@ export function PromoterPosterCreator({
                       </CardHeader>
                       <CardFooter>
                         <Stack grow>
-                          <Button asChild variant="secondary">
+                          <Button asChild variant="outline">
                             <a
                               href={promoterProgram.discordInviteUrl}
                               target="_blank"

@@ -105,15 +105,6 @@ export function VisualFilters({ filters, viewMode, onViewModeChange }: VisualFil
     [filters],
   );
 
-  const orgFetcher = useCallback(
-    (query: string) => {
-      return filters.availableOrganizations.filter((org) =>
-        org.toLowerCase().includes(query.toLowerCase()),
-      );
-    },
-    [filters.availableOrganizations],
-  );
-
   return (
     <div className="-space-y-px">
       {/* View Mode */}
@@ -126,7 +117,7 @@ export function VisualFilters({ filters, viewMode, onViewModeChange }: VisualFil
             return (
               <Button
                 key={option.id}
-                variant={active ? "primary" : "secondary"}
+                variant={active ? "primary" : "outline"}
                 onClick={() => onViewModeChange(option.id)}
                 aria-pressed={active}
                 className="w-full"
@@ -226,16 +217,14 @@ export function VisualFilters({ filters, viewMode, onViewModeChange }: VisualFil
             <SearchCombobox<string>
               selectedKey={filters.selectedOrganizations[0] ?? ""}
               onSelect={handleSelectOrganization}
-              fetcher={orgFetcher}
+              items={filters.availableOrganizations}
               getKey={(org) => org}
               getLabel={(org) => org}
               displayValue={filters.selectedOrganizations[0] ?? t("forms.selectOrganization", "Select organization...")}
               isPlaceholder={filters.selectedOrganizations.length === 0}
-              searchOnEmpty
               variant="field"
               searchPlaceholder={t("forms.searchOrganizationPlaceholder", "Search organizations...")}
               emptyLabel={t("forms.noOrganizationFound", "No organization found")}
-              loadingLabel={t("common.loading")}
             />
           )}
         </div>

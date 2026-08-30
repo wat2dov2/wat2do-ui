@@ -87,10 +87,19 @@
     "organizationPanel": "Bảng điều khiển tổ chức",
     "clubPanelTooltip": "Quản lý tổ chức của bạn",
     "mission": "Sứ mệnh",
-    "contact": "Liên hệ",
+    "about": "Về chúng tôi",
     "goToEvents": "Đi tới sự kiện",
-    "posters": "Áp Phích",
+    "primary": "Điều hướng chính",
+    "openMenu": "Mở menu điều hướng",
+    "switchToLightMode": "Chuyển sang chế độ sáng",
+    "switchToDarkMode": "Chuyển sang chế độ tối",
     "dismissAnnouncement": "Đóng thông báo"
+  },
+  "siteBanner": {
+    "founderStory": {
+      "message": "Chúng tôi đã tổng hợp hơn 3.000 sự kiện ở Waterloo để sinh viên có thể trải nghiệm thêm nhiều điều mới.",
+      "cta": "Đọc câu chuyện của chúng tôi"
+    }
   },
   "modals": {
     "welcome": {
@@ -401,6 +410,11 @@
       "scale": "Kể từ tháng Tám 2025, Wat2Do đã ghi lại hơn 3,000 sự kiện. Chúng tôi tiếp tục cải thiện thuật toán cho đến khi nó có thể hiển thị một sự kiện, trung bình, khoảng một phút sau khi bài đăng của Instagram được đăng.",
       "mission": "Giải quyết vấn đề khám phá đó đã thay đổi trải nghiệm đại học của chính chúng tôi. Bây giờ chúng tôi muốn chia sẻ những gì chúng tôi đã xây dựng và giúp sinh viên ở khắp nơi khám phá nhiều điều mới mẻ, thú vị đang diễn ra xung quanh họ.",
       "signature": "- Tony & Erica"
+    },
+    "help": {
+      "title": "Cách bạn có thể giúp chúng tôi",
+      "description": "Dán áp phích Wat2Do trong khuôn viên để giúp các sinh viên khác tìm thấy sự kiện trước khi chúng diễn ra. Chương trình áp phích cung cấp mọi thứ bạn cần để bắt đầu.",
+      "action": "Giúp dán áp phích trong khuôn viên"
     },
     "form": {
       "title": "Liên hệ",

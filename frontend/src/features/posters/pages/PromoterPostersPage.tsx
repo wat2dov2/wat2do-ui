@@ -89,7 +89,7 @@ export function PromoterPostersPage() {
             <p>{t("posters.dashboard.loadErrorDescription")}</p>
             <Button
               type="button"
-              variant="secondary"
+              variant="outline"
               size="sm"
               onClick={() => void dashboard.earnings.refetch()}
             >

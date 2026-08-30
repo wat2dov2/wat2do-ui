@@ -1,5 +1,5 @@
-import { useEffect, useSyncExternalStore } from "react";
-import { loadTheme, saveTheme } from "@/shared/services/preferencesStorage";
+import { useCallback, useSyncExternalStore } from "react";
+import { saveTheme } from "@/shared/services/preferencesStorage";
 
 function getDarkModeSnapshot(): boolean {
   return document.documentElement.classList.contains("dark");
@@ -15,12 +15,7 @@ function subscribeToDarkMode(onStoreChange: () => void): () => void {
     attributes: true,
     attributeFilter: ["class"],
   });
-  const media = window.matchMedia("(prefers-color-scheme: dark)");
-  media.addEventListener("change", onStoreChange);
-  return () => {
-    observer.disconnect();
-    media.removeEventListener("change", onStoreChange);
-  };
+  return () => observer.disconnect();
 }
 
 export function useDarkMode() {
@@ -30,27 +25,10 @@ export function useDarkMode() {
     getServerDarkModeSnapshot,
   );
 
-  // Align stored preference + DOM class on first client mount.
-  useEffect(() => {
-    const saved = loadTheme();
-    const shouldBeDark = saved !== null
-      ? saved === "dark"
-      : window.matchMedia("(prefers-color-scheme: dark)").matches;
-
-    if (shouldBeDark) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-    saveTheme(shouldBeDark ? "dark" : "light");
-
-    const raf = requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        document.documentElement.classList.remove("no-transitions");
-      });
-    });
-    return () => cancelAnimationFrame(raf);
+  const setDarkMode = useCallback((nextIsDarkMode: boolean) => {
+    document.documentElement.classList.toggle("dark", nextIsDarkMode);
+    saveTheme(nextIsDarkMode ? "dark" : "light");
   }, []);
 
-  return { isDarkMode };
+  return { isDarkMode, setDarkMode };
 }

@@ -40,7 +40,7 @@ export function SettingsSaveBar({
         <ItemActions>
           <Button
             type="button"
-            variant="secondary"
+            variant="outline"
             size="sm"
             disabled={isSaving}
             onClick={onCancel}
