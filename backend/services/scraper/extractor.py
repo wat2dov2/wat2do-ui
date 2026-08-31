@@ -59,6 +59,7 @@ def extract_post_content(
     image_urls: list[str] | None,
     post_created_at: datetime | None,
     school: str,
+    source_organization: str | None = None,
     model: str | None = None,
 ) -> ExtractedPostContent:
     """Triage content and extract zero-or-more events and hiring positions.
@@ -73,6 +74,8 @@ def extract_post_content(
             phrases like "tonight"/"tomorrow"). Falls back to "now" in
             the school's local TZ if missing.
         school: school slug (e.g. "uwaterloo").
+        source_organization: trusted publisher of an official directory page.
+            When present, the prompt treats it as the default event host.
         model: vision-capable OpenAI model. Defaults to
             ``settings.openai_extraction_model``.
 
@@ -119,6 +122,7 @@ def extract_post_content(
         post_time=post_local.strftime("%H:%M"),
         semester_line=semester_line,
         categories_str=categories_str,
+        source_organization=source_organization,
     )
 
     user_content: list[dict] = [{"type": "text", "text": prompt}]
@@ -155,6 +159,7 @@ def extract_events_from_post(
     image_urls: list[str] | None,
     post_created_at: datetime | None,
     school: str,
+    source_organization: str | None = None,
     model: str | None = None,
 ) -> list[dict]:
     """Extract events for event-only consumers such as directory imports."""
@@ -163,6 +168,7 @@ def extract_events_from_post(
         image_urls=image_urls,
         post_created_at=post_created_at,
         school=school,
+        source_organization=source_organization,
         model=model,
     ).events
 
@@ -219,6 +225,7 @@ def _build_prompt(
     post_time: str,
     semester_line: str,
     categories_str: str,
+    source_organization: str | None,
 ) -> str:
     """Assemble the extraction prompt.
 
@@ -230,11 +237,22 @@ def _build_prompt(
         if image_urls
         else "No images provided."
     )
+    source_organization_rule = (
+        f"""
+OFFICIAL DIRECTORY PUBLISHER:
+- This page comes from the official event directory published by {source_organization}.
+- Use "{source_organization}" as the event organization unless the page explicitly identifies a distinct student club or organization as the host or co-host.
+- Never invent an organization from an event title, series name, campaign, service, venue, vendor, or URL slug.
+"""
+        if source_organization
+        else ""
+    )
 
     return f"""
 Analyze the following Instagram caption and images. First classify the post, then extract every campus event and every open hiring position it clearly advertises.
 
 School context: This post is from {school}. Use this to guide location and timezone decisions.
+{source_organization_rule}
 Current context: Today is {current_day}, {current_date}
 Post was created on: {post_day}, {post_date} at {post_time}
 {semester_line}

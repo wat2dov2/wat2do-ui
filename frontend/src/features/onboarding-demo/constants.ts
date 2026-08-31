@@ -1,4 +1,5 @@
 import type { PreviewEventData } from "@/features/auth/components/PreviewStyleEventCard";
+import { Utensils } from "@/shared/ui/doodle-icons";
 import type { OnboardingDemoStep } from "./types";
 
 export const ONBOARDING_DEMO_STEPS: OnboardingDemoStep[] = [
@@ -85,7 +86,7 @@ export const DEMO_EVENTS: (PreviewEventData & { id: number })[] = [
     date: "Thu, Jun 19",
     time: "6:00 PM",
     location: "SLC Great Hall",
-    badges: [{ text: "Free food", bgClass: "bg-primary/10", textClass: "text-primary" }],
+    badges: [{ text: "Free food", icon: Utensils }],
   },
   {
     id: 2,
@@ -107,7 +108,7 @@ export const DEMO_EVENTS: (PreviewEventData & { id: number })[] = [
     date: "Wed, Jun 18",
     time: "5:00 PM",
     location: "MC 4026",
-    badges: [{ text: "Workshop", bgClass: "bg-primary/10", textClass: "text-primary" }],
+    badges: [{ text: "Workshop" }],
   },
   {
     id: 4,

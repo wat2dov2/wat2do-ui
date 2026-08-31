@@ -90,6 +90,7 @@ def test_extraction_prompt_uses_school_slug(monkeypatch):
             image_urls=[],
             post_created_at=None,
             school=" UBC ",
+            source_organization="Alma Mater Society of UBC",
         )
         == []
     )
@@ -99,6 +100,10 @@ def test_extraction_prompt_uses_school_slug(monkeypatch):
     assert "University of British Columbia" not in prompt
     assert '"content_type": "event" | "hiring"' in prompt
     assert '"positions": [' in prompt
+    assert "OFFICIAL DIRECTORY PUBLISHER:" in prompt
+    assert "published by Alma Mater Society of UBC" in prompt
+    assert "unless the page explicitly identifies a distinct student club" in prompt
+    assert "Never invent an organization from an event title" in prompt
 
 
 def test_extraction_prompt_has_strict_event_and_position_eligibility_gates(monkeypatch):

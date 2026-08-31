@@ -246,6 +246,7 @@ class ScrapingControl(_ControlModel):
     title_similarity_threshold: float = Field(ge=0, le=1)
     location_similarity_threshold: float = Field(ge=0, le=1)
     description_similarity_threshold: float = Field(ge=0, le=1)
+    directory_maximum_events_per_source: int = Field(gt=0, le=100)
     maximum_candidates: int = Field(gt=0)
     maximum_cross_organization_candidates: int = Field(gt=0)
 

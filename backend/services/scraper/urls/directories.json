@@ -3,10 +3,347 @@
     "id": "wusa",
     "name": "WUSA Events",
     "school": "uwaterloo",
+    "default_organization": "WUSA",
+    "source_format": "html",
     "entry_url": "https://wusa.ca/events/",
-    "event_url_contains": "/event/",
+    "event_url_patterns": ["/event/"],
     "next_page_selector": "a.tribe-events-c-nav__next",
     "content_selector": ".tribe-events-single-event-description, .tribe-events-calendar-single, .entry-content",
     "image_selector": ".tribe-events-event-image img, .entry-content img"
+  },
+  {
+    "id": "utoronto-events",
+    "name": "U of T Student Organization Portal Events",
+    "school": "utoronto",
+    "default_organization": "University of Toronto Student Organization Portal",
+    "source_format": "html",
+    "entry_url": "https://sop.utoronto.ca/events/",
+    "event_url_patterns": ["sop.utoronto.ca/event/"]
+  },
+  {
+    "id": "scsu-events",
+    "name": "SCSU Events",
+    "school": "utsc",
+    "default_organization": "Scarborough Campus Students' Union",
+    "source_format": "html",
+    "entry_url": "https://www.scsu.ca/events/",
+    "event_url_patterns": ["scsu.ca/events/"],
+    "event_url_exclude_patterns": ["format=ical"]
+  },
+  {
+    "id": "utmsu-events",
+    "name": "UTMSU Events",
+    "school": "utm",
+    "default_organization": "University of Toronto Mississauga Students' Union",
+    "source_format": "html",
+    "entry_url": "https://utmsu.ca/events/",
+    "event_url_patterns": ["utmsu.ca/event/", "utmsu.ca/events/"]
+  },
+  {
+    "id": "ssmu-events",
+    "name": "SSMU Events",
+    "school": "mcgill",
+    "default_organization": "Students' Society of McGill University",
+    "source_format": "html",
+    "entry_url": "https://ssmu.ca/events/",
+    "event_url_patterns": ["ssmu.ca/event/", "ssmu.ca/events/"],
+    "event_url_exclude_patterns": ["/category/", "/list", "/month", "/today"]
+  },
+  {
+    "id": "mcmaster-events",
+    "name": "McMaster Events",
+    "school": "mcmaster",
+    "default_organization": "McMaster University",
+    "source_format": "html",
+    "entry_url": "https://news.mcmaster.ca/events/",
+    "event_url_patterns": ["news.mcmaster.ca/events/"]
+  },
+  {
+    "id": "western-usc-events",
+    "name": "Western USC Events",
+    "school": "western",
+    "default_organization": "University Students' Council",
+    "source_format": "html",
+    "entry_url": "https://westernusc.ca/events/",
+    "event_url_patterns": ["westernusc.ca/event/", "bouncelife.com/events/"]
+  },
+  {
+    "id": "queens-ams-events",
+    "name": "Queen's AMS Events",
+    "school": "queens",
+    "default_organization": "Alma Mater Society of Queen's University",
+    "source_format": "html",
+    "entry_url": "https://www.myams.org/events/",
+    "event_url_patterns": ["myams.org/event/"]
+  },
+  {
+    "id": "cusa-events",
+    "name": "CUSA Events",
+    "school": "carleton",
+    "default_organization": "Carleton University Students' Association",
+    "source_format": "html",
+    "entry_url": "https://www.cusaonline.ca/events/",
+    "event_url_patterns": ["cusaonline.ca/event/", "cusaonline.ca/events/"]
+  },
+  {
+    "id": "busu-events",
+    "name": "BUSU Events",
+    "school": "brock",
+    "default_organization": "Brock University Students' Union",
+    "source_format": "html",
+    "entry_url": "https://www.brockbusu.ca/whats-on/",
+    "event_url_patterns": ["brockbusu.ca/ents/event/"]
+  },
+  {
+    "id": "laurier-events",
+    "name": "Laurier Events",
+    "school": "wlu",
+    "default_organization": "Wilfrid Laurier University",
+    "source_format": "json",
+    "entry_url": "https://events.wlu.ca/_data/current-live.json",
+    "event_url_patterns": ["events.wlu.ca/20"]
+  },
+  {
+    "id": "yfs-events",
+    "name": "York University Events",
+    "school": "york",
+    "default_organization": "York University",
+    "source_format": "json",
+    "entry_url": "https://events.yorku.ca/wp-json/wp/v2/mec-events?per_page=50",
+    "event_url_patterns": ["events.yorku.ca/events/"],
+    "json_url_fields": ["link"]
+  },
+  {
+    "id": "tmu-events",
+    "name": "Toronto Metropolitan University Events",
+    "school": "tmu",
+    "default_organization": "Toronto Metropolitan University",
+    "source_format": "html",
+    "entry_url": "https://www.torontomu.ca/news-events/events/",
+    "event_url_patterns": ["torontomu.ca/news-events/events/", "torontomu.ca/sustainability/news-events/events/"]
+  },
+  {
+    "id": "uottawa-events",
+    "name": "uOttawa Events",
+    "school": "uottawa",
+    "default_organization": "University of Ottawa",
+    "source_format": "html",
+    "entry_url": "https://www.uottawa.ca/campus-life/events-all/all",
+    "event_url_patterns": ["uottawa.ca/campus-life/events-all/"]
+  },
+  {
+    "id": "ocad-events",
+    "name": "OCAD U Events",
+    "school": "ocad",
+    "default_organization": "OCAD University",
+    "source_format": "json",
+    "entry_url": "https://www.ocadu.ca/api/events",
+    "event_url_patterns": ["ocadu.ca/events-and-exhibitions/"],
+    "json_url_fields": ["view_node"]
+  },
+  {
+    "id": "ualberta-su-events",
+    "name": "University of Alberta Students' Union Events",
+    "school": "ualberta",
+    "default_organization": "University of Alberta Students' Union",
+    "source_format": "html",
+    "entry_url": "https://www.su.ualberta.ca/events/",
+    "event_url_patterns": ["su.ualberta.ca/events/"]
+  },
+  {
+    "id": "cadeul-events",
+    "name": "CADEUL Events",
+    "school": "laval",
+    "default_organization": "CADEUL",
+    "source_format": "html",
+    "entry_url": "https://cadeul.com/evenements/",
+    "event_url_patterns": ["cadeul.com/evenement/", "cadeul.com/evenements/"]
+  },
+  {
+    "id": "munsu-events",
+    "name": "MUNSU Events",
+    "school": "memorial",
+    "default_organization": "Memorial University of Newfoundland Students' Union",
+    "source_format": "html",
+    "entry_url": "https://munsu.ca/events/",
+    "event_url_patterns": ["munsu.ca/events/"],
+    "event_url_exclude_patterns": ["format=ical"]
+  },
+  {
+    "id": "sfu-events",
+    "name": "SFU Events",
+    "school": "sfu",
+    "default_organization": "Simon Fraser University",
+    "source_format": "json",
+    "entry_url": "https://events.sfu.ca/live/json/events",
+    "event_url_patterns": ["events.sfu.ca/event/"]
+  },
+  {
+    "id": "faecum-events",
+    "name": "FAÉCUM Events",
+    "school": "udem",
+    "default_organization": "FAÉCUM",
+    "source_format": "html",
+    "entry_url": "https://www.faecum.qc.ca/activites",
+    "event_url_patterns": ["faecum.qc.ca/activite/"]
+  },
+  {
+    "id": "umsu-events",
+    "name": "UMSU Events",
+    "school": "umanitoba",
+    "default_organization": "University of Manitoba Students' Union",
+    "source_format": "html",
+    "entry_url": "https://umsu.ca/events/",
+    "event_url_patterns": ["umsu.ca/event/", "umsu.ca/events/"],
+    "event_url_exclude_patterns": ["/category/", "/list", "/month", "/today"]
+  },
+  {
+    "id": "concordia-events",
+    "name": "Concordia Events",
+    "school": "concordia",
+    "default_organization": "Concordia University",
+    "source_format": "html",
+    "entry_url": "https://www.concordia.ca/events.html",
+    "event_url_patterns": ["concordia.ca/events/"],
+    "event_url_exclude_patterns": ["academic-dates.html", "submit-an-event.html", "university-holidays.html"]
+  },
+  {
+    "id": "dsu-events",
+    "name": "Dalhousie Student Union Events",
+    "school": "dalhousie",
+    "default_organization": "Dalhousie Student Union",
+    "source_format": "html",
+    "entry_url": "https://www.dsu.ca/event-calendar",
+    "event_url_patterns": ["dsu.ca/event/"]
+  },
+  {
+    "id": "guelph-events",
+    "name": "University of Guelph Events",
+    "school": "guelph",
+    "default_organization": "University of Guelph",
+    "source_format": "json",
+    "entry_url": "https://news.uoguelph.ca/wp-json/tribe/events/v1/events?per_page=50",
+    "event_url_patterns": ["news.uoguelph.ca/event/"]
+  },
+  {
+    "id": "ucalgary-su-events",
+    "name": "UCalgary Students' Union Events",
+    "school": "ucalgary",
+    "default_organization": "Students' Union, UCalgary",
+    "source_format": "html",
+    "entry_url": "https://su.ucalgary.ca/calendar/",
+    "event_url_patterns": ["su.ucalgary.ca/calendar/"],
+    "event_url_exclude_patterns": ["?ical=1", "/feed/", "/list", "/month", "/today"]
+  },
+  {
+    "id": "ussu-events",
+    "name": "USSU Events",
+    "school": "usask",
+    "default_organization": "University of Saskatchewan Students' Union",
+    "source_format": "html",
+    "entry_url": "https://ussu.ca/events/",
+    "event_url_patterns": ["ussu.ca/event/", "ussu.ca/events/"],
+    "event_url_exclude_patterns": ["/category/", "/list", "/month", "/today"]
+  },
+  {
+    "id": "uvss-events",
+    "name": "UVSS Events",
+    "school": "uvic",
+    "default_organization": "University of Victoria Students' Society",
+    "source_format": "html",
+    "entry_url": "https://uvss.ca/events/",
+    "event_url_patterns": ["uvss.ca/event/"]
+  },
+  {
+    "id": "uwsa-events",
+    "name": "UWSA Events",
+    "school": "windsor",
+    "default_organization": "University of Windsor Students' Alliance",
+    "source_format": "html",
+    "entry_url": "https://www.uwsa.ca/events/",
+    "event_url_patterns": ["uwsa.ca/event/", "uwsa.ca/events/"]
+  },
+  {
+    "id": "uqam-events",
+    "name": "UQAM Events",
+    "school": "uqam",
+    "default_organization": "Université du Québec à Montréal",
+    "source_format": "html",
+    "entry_url": "https://evenements.uqam.ca/",
+    "event_url_patterns": ["evenements.uqam.ca/evenements/"]
+  },
+  {
+    "id": "otsu-events",
+    "name": "Ontario Tech Student Union Events",
+    "school": "ontariotech",
+    "default_organization": "Ontario Tech Student Union",
+    "source_format": "html",
+    "entry_url": "https://www.otsu.ca/latest/events",
+    "event_url_patterns": ["otsu.ca/latest/events/"]
+  },
+  {
+    "id": "cornell-campusgroups-events",
+    "name": "Cornell CampusGroups Events",
+    "school": "cornell",
+    "default_organization": "Cornell University",
+    "source_format": "ical",
+    "entry_url": "https://cornell.campusgroups.com/ical/cornell/ical_cornell.ics",
+    "event_url_patterns": ["cornell.campusgroups.com/rsvp"]
+  },
+  {
+    "id": "nyu-events",
+    "name": "NYU Events",
+    "school": "nyu",
+    "default_organization": "New York University",
+    "source_format": "json",
+    "entry_url": "https://events.nyu.edu/live/json/events",
+    "event_url_patterns": ["events.nyu.edu/event/"]
+  },
+  {
+    "id": "penn-clubs-events",
+    "name": "Penn Clubs Events",
+    "school": "upenn",
+    "default_organization": "Penn Clubs",
+    "source_format": "html",
+    "entry_url": "https://pennclubs.com/events/",
+    "event_url_patterns": ["pennclubs.com/events/"]
+  },
+  {
+    "id": "columbia-lionhub-events",
+    "name": "Columbia LionHub Events",
+    "school": "columbia",
+    "default_organization": "Columbia University",
+    "source_format": "ical",
+    "entry_url": "https://lionhub.columbia.edu/ical/columbia/ical_columbia.ics",
+    "event_url_patterns": ["lionhub.columbia.edu/rsvp"]
+  },
+  {
+    "id": "mit-events",
+    "name": "MIT Events",
+    "school": "mit",
+    "default_organization": "Massachusetts Institute of Technology",
+    "source_format": "html",
+    "entry_url": "https://calendar.mit.edu/",
+    "event_url_patterns": ["calendar.mit.edu/event/"],
+    "event_url_exclude_patterns": ["/confirm"]
+  },
+  {
+    "id": "ubc-ams-events",
+    "name": "UBC AMS Events",
+    "school": "ubc",
+    "default_organization": "Alma Mater Society of UBC",
+    "source_format": "html",
+    "entry_url": "https://www.ams.ubc.ca/events/",
+    "event_url_patterns": ["ams.ubc.ca/event/", "ams.ubc.ca/events/"],
+    "event_url_exclude_patterns": ["/category/", "/list", "/month", "/today"]
+  },
+  {
+    "id": "berkeley-events",
+    "name": "UC Berkeley Events",
+    "school": "berkeley",
+    "default_organization": "University of California, Berkeley",
+    "source_format": "json",
+    "entry_url": "https://events.berkeley.edu/live/json/events",
+    "event_url_patterns": ["events.berkeley.edu/"]
   }
 ]

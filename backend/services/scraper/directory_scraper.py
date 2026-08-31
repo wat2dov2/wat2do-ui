@@ -1,19 +1,24 @@
-"""Web directory event scraper service.
+"""Official directory event scraper service.
 
-Crawls event list pages, follows pagination (Next buttons), fetches detail pages,
-and feeds their text/images to the existing AI vision/text extractor.
+Discovers event detail URLs from HTML, JSON, and iCalendar sources, fetches
+their pages, and feeds the page text/images to the existing AI extractor.
 """
 
 from __future__ import annotations
 
+import json
 import logging
 from dataclasses import dataclass, field
-from urllib.parse import urljoin, urlparse
+from datetime import date, datetime, time, timezone
+from typing import Literal
+from urllib.parse import urldefrag, urljoin, urlparse, urlsplit, urlunsplit
 
 import httpx
 from bs4 import BeautifulSoup
-from pydantic import BaseModel
+from icalendar import Calendar
+from pydantic import BaseModel, Field
 
+from core.controlbox import controlbox
 from services.scraper.dedup import (
     collapse_duplicate_extractions,
     existing_urls,
@@ -22,16 +27,14 @@ from services.scraper.dedup import (
 from services.scraper.event_writer import write_event
 from services.scraper.extractor import extract_events_from_post
 from services.scraper.image_uploader import upload_post_images
-from services.scraper.org_resolve import resolve_organization_for_scrape
+from services.scraper.org_resolve import ResolvedOrganization, resolve_organization_for_scrape
 from services.scraper.reconciler import reconcile_events
 
 log = logging.getLogger(__name__)
 
-# Realistic User-Agent to avoid getting blocked by DDoS protection / WAFs.
-_USER_AGENT = (
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-    "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-)
+# Some WAFs reject a full browser user-agent from a non-browser HTTP client.
+# A minimal command-line user-agent is accepted more consistently.
+_USER_AGENT = "curl/8.7.1"
 _HTTP_TIMEOUT_SECONDS = 30.0
 
 
@@ -41,8 +44,12 @@ class DirectoryConfig(BaseModel):
     id: str
     name: str
     school: str
+    default_organization: str
+    source_format: Literal["html", "ical", "json"]
     entry_url: str
-    event_url_contains: str
+    event_url_patterns: list[str]
+    event_url_exclude_patterns: list[str] = Field(default_factory=list)
+    json_url_fields: list[str] = Field(default_factory=lambda: ["url"])
     next_page_selector: str | None = None
     content_selector: str | None = None
     image_selector: str | None = None
@@ -63,10 +70,116 @@ class DirectoryScrapeResult:
     errors: list[str] = field(default_factory=list)
 
 
+def _clean_event_url(url: str) -> str:
+    """Remove fragments and trailing slashes without discarding identity query params."""
+    fragmentless_url, _fragment = urldefrag(url)
+    parsed = urlsplit(fragmentless_url)
+    path = parsed.path.rstrip("/") or "/"
+    return urlunsplit((parsed.scheme, parsed.netloc, path, parsed.query, ""))
+
+
+def _matches_event_url(url: str, config: DirectoryConfig) -> bool:
+    parsed = urlsplit(url)
+    path_url = urlunsplit((parsed.scheme, parsed.netloc, parsed.path, "", ""))
+    return any(pattern in path_url for pattern in config.event_url_patterns) and not any(
+        pattern in url for pattern in config.event_url_exclude_patterns
+    )
+
+
+def _add_event_url(event_urls: dict[str, None], candidate: str, config: DirectoryConfig) -> None:
+    absolute_url = urljoin(config.entry_url, candidate.strip())
+    if not _matches_event_url(absolute_url, config):
+        return
+
+    clean_url = _clean_event_url(absolute_url)
+    if clean_url != _clean_event_url(config.entry_url):
+        event_urls.setdefault(clean_url, None)
+
+
+def _iter_json_ld_event_urls(value: object):
+    if isinstance(value, list):
+        for item in value:
+            yield from _iter_json_ld_event_urls(item)
+        return
+    if not isinstance(value, dict):
+        return
+
+    raw_type = value.get("@type")
+    types = raw_type if isinstance(raw_type, list) else [raw_type]
+    if "Event" in types and isinstance(value.get("url"), str):
+        yield value["url"]
+
+    for child in value.values():
+        yield from _iter_json_ld_event_urls(child)
+
+
+def _add_html_event_urls(event_urls: dict[str, None], html: str, config: DirectoryConfig) -> None:
+    soup = BeautifulSoup(html, "html.parser")
+    for link in soup.find_all("a", href=True):
+        _add_event_url(event_urls, link["href"], config)
+
+    for script in soup.select('script[type="application/ld+json"]'):
+        try:
+            payload = json.loads(script.get_text())
+        except (TypeError, json.JSONDecodeError):
+            continue
+        for url in _iter_json_ld_event_urls(payload):
+            _add_event_url(event_urls, url, config)
+
+
+def _add_json_event_urls(
+    event_urls: dict[str, None], value: object, config: DirectoryConfig
+) -> None:
+    if isinstance(value, list):
+        for item in value:
+            _add_json_event_urls(event_urls, item, config)
+        return
+    if not isinstance(value, dict):
+        return
+
+    if "title" in value:
+        for url_field in config.json_url_fields:
+            event_url = value.get(url_field)
+            if isinstance(event_url, str):
+                _add_event_url(event_urls, event_url, config)
+
+    for child in value.values():
+        if isinstance(child, (dict, list)):
+            _add_json_event_urls(event_urls, child, config)
+
+
+def _ical_start_utc(value: date | datetime) -> datetime:
+    if isinstance(value, datetime):
+        if value.tzinfo is None:
+            return value.replace(tzinfo=timezone.utc)
+        return value.astimezone(timezone.utc)
+    return datetime.combine(value, time.min, tzinfo=timezone.utc)
+
+
+def _add_ical_event_urls(
+    event_urls: dict[str, None], content: bytes, config: DirectoryConfig
+) -> None:
+    calendar = Calendar.from_ical(content)
+    today_utc = datetime.now(timezone.utc).date()
+    upcoming_events: list[tuple[datetime, str]] = []
+    for component in calendar.walk("VEVENT"):
+        event_url = component.get("URL")
+        start_property = component.get("DTSTART")
+        if not event_url or not start_property:
+            continue
+        start = _ical_start_utc(start_property.dt)
+        if start.date() >= today_utc:
+            upcoming_events.append((start, str(event_url)))
+
+    upcoming_events.sort(key=lambda item: item[0])
+    for _start, event_url in upcoming_events:
+        _add_event_url(event_urls, event_url, config)
+
+
 def crawl_directory_links(config: DirectoryConfig, max_pages: int = 5) -> list[str]:
-    """Crawl the directory list page following pagination to collect event detail URLs."""
-    event_urls: set[str] = set()
-    current_url = config.entry_url
+    """Collect event detail URLs from an official HTML, JSON, or iCalendar feed."""
+    event_urls: dict[str, None] = {}
+    current_url: str | None = config.entry_url
     pages_crawled = 0
 
     headers = {"User-Agent": _USER_AGENT}
@@ -82,18 +195,18 @@ def crawl_directory_links(config: DirectoryConfig, max_pages: int = 5) -> list[s
                 break
 
             pages_crawled += 1
-            soup = BeautifulSoup(resp.text, "html.parser")
+            if config.source_format == "ical":
+                _add_ical_event_urls(event_urls, resp.content, config)
+                current_url = None
+                continue
 
-            links = soup.find_all("a", href=True)
-            for link in links:
-                href = link["href"].strip()
-                absolute_url = urljoin(current_url, href)
-                # Match by URL substring pattern only (not a same-domain check).
-                if config.event_url_contains in absolute_url:
-                    # Strip query strings/fragments for clean deduplication
-                    clean_url = absolute_url.split("?")[0].split("#")[0].rstrip("/")
-                    if clean_url != config.entry_url.rstrip("/"):
-                        event_urls.add(clean_url)
+            if config.source_format == "json":
+                _add_json_event_urls(event_urls, resp.json(), config)
+                current_url = None
+                continue
+
+            soup = BeautifulSoup(resp.text, "html.parser")
+            _add_html_event_urls(event_urls, resp.text, config)
 
             next_url = None
             if config.next_page_selector:
@@ -109,7 +222,16 @@ def crawl_directory_links(config: DirectoryConfig, max_pages: int = 5) -> list[s
         len(event_urls),
         pages_crawled,
     )
-    return sorted(list(event_urls))
+    urls = list(event_urls)
+    maximum_urls = controlbox.scraping.directory_maximum_events_per_source
+    if len(urls) > maximum_urls:
+        log.info(
+            "[%s] Limiting %d discovered URLs to the configured maximum of %d",
+            config.id,
+            len(urls),
+            maximum_urls,
+        )
+    return urls[:maximum_urls]
 
 
 def scrape_event_page(url: str, config: DirectoryConfig) -> tuple[str, list[str]]:
@@ -230,6 +352,7 @@ def run_directory_pipeline(
                 image_urls=uploaded_images,
                 post_created_at=None,  # Extractor falls back to "now" in school TZ
                 school=config.school,
+                source_organization=config.default_organization,
             )
             result.events_extracted += len(extracted_events)
 
@@ -255,13 +378,7 @@ def run_directory_pipeline(
                 continue
 
             resolved_orgs = [
-                resolve_organization_for_scrape(
-                    ig_handle=None,
-                    school=config.school,
-                    organization_name=(event.get("organization") or "").strip() or None,
-                    create_stub_if_missing=False,
-                )
-                for event in extracted_events
+                _resolve_directory_organization(event, config) for event in extracted_events
             ]
             extracted_events, source_indexes, duplicate_count = collapse_duplicate_extractions(
                 extracted_events,
@@ -312,12 +429,7 @@ def run_directory_pipeline(
                 if len(to_write) == len(resolved_orgs):
                     resolved = resolved_orgs[i]
                 else:
-                    resolved = resolve_organization_for_scrape(
-                        ig_handle=None,
-                        school=config.school,
-                        organization_name=(event.get("organization") or "").strip() or None,
-                        create_stub_if_missing=False,
-                    )
+                    resolved = _resolve_directory_organization(event, config)
                 outcome = write_event(event, ig_handle=None, source_url=url, resolved_org=resolved)
                 if outcome == "inserted":
                     result.events_saved += 1
@@ -331,3 +443,25 @@ def run_directory_pipeline(
             result.errors.append(err_msg)
 
     return result
+
+
+def _resolve_directory_organization(event: dict, config: DirectoryConfig) -> ResolvedOrganization:
+    """Keep a known explicit host, otherwise use the directory publisher."""
+    extracted_name = (event.get("organization") or "").strip() or None
+    resolved = resolve_organization_for_scrape(
+        ig_handle=None,
+        school=config.school,
+        organization_name=extracted_name,
+        create_stub_if_missing=False,
+    )
+    if resolved.organization_id is not None:
+        event["organization"] = resolved.organization_name or extracted_name or ""
+        return resolved
+
+    event["organization"] = config.default_organization
+    return resolve_organization_for_scrape(
+        ig_handle=None,
+        school=config.school,
+        organization_name=config.default_organization,
+        create_stub_if_missing=False,
+    )

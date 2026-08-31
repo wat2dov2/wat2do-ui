@@ -214,6 +214,8 @@ test("browses, filters, and searches open organization positions", async ({
   await expect(deadlineItem).toHaveAttribute("data-variant", "default");
   await expect(deadlineItem).toHaveCSS("flex-direction", "column");
   await expect(deadlineItem).toHaveCSS("align-items", "flex-start");
+  await expect(deadlineItem).toHaveCSS("padding-left", "0px");
+  await expect(deadlineItem).toHaveCSS("padding-right", "0px");
   await page.keyboard.press("Escape");
 
   await page

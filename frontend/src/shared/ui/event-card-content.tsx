@@ -4,16 +4,50 @@
  */
 
 import { Badge } from "@/shared/ui/badge";
+import {
+  Calendar,
+  Clock,
+  MapPin,
+  type LucideIcon,
+} from "@/shared/ui/doodle-icons";
 import Link from "next/link";
 import { cn } from "@/shared/lib/utils";
 import type { ComponentProps } from "react";
 
-interface CardBadge {
+export interface CardBadge {
   text: string;
   size?: "sm" | "md";
+  icon?: LucideIcon;
 }
 
 const EMPTY_BADGES: readonly CardBadge[] = [];
+
+interface EventCardMetadataLineProps {
+  icon: LucideIcon;
+  slot: "date" | "time" | "location";
+  text: string;
+  textClassName: string;
+}
+
+function EventCardMetadataLine({
+  icon: Icon,
+  slot,
+  text,
+  textClassName,
+}: EventCardMetadataLineProps) {
+  return (
+    <span
+      data-slot={`event-card-${slot}`}
+      className={cn(
+        "flex min-w-0 items-center gap-1 text-[13px]",
+        textClassName,
+      )}
+    >
+      <Icon aria-hidden="true" className="size-3 shrink-0" />
+      <span className="truncate">{text}</span>
+    </span>
+  );
+}
 
 /**
  * Shared lower frame for image-led event and position cards.
@@ -79,10 +113,13 @@ export function EventCardContent({
         className,
       )}
     >
-      <div className="flex h-full flex-1 flex-col gap-0">
+      <div className="flex h-full flex-1 flex-col gap-2">
         <div className="min-w-0">
           <h3
-            className={`font-semibold text-base leading-[1.1] line-clamp-2 ${textClassName}`}
+            className={cn(
+              "line-clamp-2 text-[15px] font-semibold leading-[1.1]",
+              textClassName,
+            )}
           >
             {titleHref ? (
               <Link href={titleHref} prefetch={false}>
@@ -111,27 +148,30 @@ export function EventCardContent({
         {date || time || location || badges.length > 0 ? (
           <div className="flex min-w-0 items-end justify-between gap-3">
             <div className="space-y-0.5 min-w-0 flex-1">
-              {date && (
-                <span
-                  className={`block text-[13px] truncate ${secondaryTextClassName}`}
-                >
-                  {date}
-                </span>
-              )}
-              {time && (
-                <span
-                  className={`block text-[13px] truncate ${secondaryTextClassName}`}
-                >
-                  {time}
-                </span>
-              )}
-              {location && (
-                <span
-                  className={`block text-[13px] truncate ${secondaryTextClassName}`}
-                >
-                  {location}
-                </span>
-              )}
+              {date ? (
+                <EventCardMetadataLine
+                  icon={Calendar}
+                  slot="date"
+                  text={date}
+                  textClassName={secondaryTextClassName}
+                />
+              ) : null}
+              {time ? (
+                <EventCardMetadataLine
+                  icon={Clock}
+                  slot="time"
+                  text={time}
+                  textClassName={secondaryTextClassName}
+                />
+              ) : null}
+              {location ? (
+                <EventCardMetadataLine
+                  icon={MapPin}
+                  slot="location"
+                  text={location}
+                  textClassName={secondaryTextClassName}
+                />
+              ) : null}
             </div>
 
             {badges.length > 0 && (
@@ -143,16 +183,22 @@ export function EventCardContent({
                * most this column may claim; past that the label ellipsises.
                */
               <div className="flex min-w-0 max-w-[50%] shrink flex-col items-end gap-1.5">
-                {badges.map((badge) => (
-                  <Badge
-                    key={badge.text}
-                    variant="outline"
-                    size={badge.size ?? "sm"}
-                    className={`block max-w-full truncate ${badgeClassName}`}
-                  >
-                    {badge.text}
-                  </Badge>
-                ))}
+                {badges.map((badge) => {
+                  const Icon = badge.icon;
+                  return (
+                    <Badge
+                      key={badge.text}
+                      variant="outline"
+                      size={badge.size ?? "sm"}
+                      className={cn("max-w-full gap-1", badgeClassName)}
+                    >
+                      {Icon ? (
+                        <Icon aria-hidden="true" className="size-2.5 shrink-0" />
+                      ) : null}
+                      <span className="min-w-0 truncate">{badge.text}</span>
+                    </Badge>
+                  );
+                })}
               </div>
             )}
           </div>

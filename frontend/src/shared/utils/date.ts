@@ -142,25 +142,44 @@ export function wasAddedWithinLast24Hours(
 }
 
 /**
- * Format event date for card display (e.g., "Tuesday Jan 27")
- * Uses i18n locale for proper localization
+ * Format an event date for compact card display.
+ * Today and tomorrow use localized relative labels; later dates use the full
+ * localized weekday so cards never abbreviate Monday to Mon, for example.
  */
 export function formatCardDate(
   event: { occurrences?: Occurrence[] },
-  locale: string = 'en-US'
+  locale: string = "en-US",
+  currentDate: Date = new Date(),
 ): string {
   const primary = getPrimaryOccurrence(event);
   if (primary && primary.dtstart_utc) {
     const date = new Date(primary.dtstart_utc);
-    const englishWeekdays = ["Sun", "Mon", "Tues", "Wed", "Thur", "Fri", "Sat"];
-    const dayOfWeek = locale.toLowerCase().startsWith("en")
-      ? englishWeekdays[date.getDay()]
-      : date.toLocaleDateString(locale, { weekday: "short" });
-    const month = date.toLocaleDateString(locale, { month: 'short' });
-    const day = date.getDate();
-    return `${dayOfWeek} ${month} ${day}`;
+    if (Number.isNaN(date.getTime())) return "";
+
+    const relativeDateFormatter = new Intl.RelativeTimeFormat(locale, {
+      numeric: "auto",
+    });
+    const formatRelativeDate = (offset: 0 | 1): string => {
+      const label = relativeDateFormatter.format(offset, "day");
+      return `${label.charAt(0).toLocaleUpperCase(locale)}${label.slice(1)}`;
+    };
+
+    if (sameDay(date, currentDate)) return formatRelativeDate(0);
+
+    const tomorrow = new Date(
+      currentDate.getFullYear(),
+      currentDate.getMonth(),
+      currentDate.getDate() + 1,
+    );
+    if (sameDay(date, tomorrow)) return formatRelativeDate(1);
+
+    return new Intl.DateTimeFormat(locale, {
+      weekday: "long",
+      month: "short",
+      day: "numeric",
+    }).format(date);
   }
-  return '';
+  return "";
 }
 
 /**

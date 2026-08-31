@@ -1,4 +1,4 @@
-import { memo, useCallback, useMemo } from "react";
+import { memo, useCallback } from "react";
 import type { TFunction } from "i18next";
 import { tracker } from "@/shared/services/trackingService";
 import { useTranslation } from "react-i18next";
@@ -132,11 +132,8 @@ function EventCardComponent({
 
   const badges = useEventBadges(event);
 
-  const cardDate = useMemo(
-    () => formatCardDate(event, i18n.language || "en-US"),
-    [event, i18n.language],
-  );
-  const cardTime = useMemo(() => formatCardTime(event), [event]);
+  const cardDate = formatCardDate(event, i18n.language || "en-US");
+  const cardTime = formatCardTime(event);
 
   const { handleCardActivate } = useEventCardNavigation({
     event,

@@ -14,6 +14,7 @@ import {
   EventCardContent,
   EventCardContentFrame,
 } from "@/shared/ui/event-card-content";
+import type { CardBadge } from "@/shared/ui/event-card-content";
 import { OrganizationBadgeDropdown } from "@/features/organizations/components/OrganizationBadgeDropdown";
 import { EVENT_CARD_IMAGE_HEIGHT } from "@/shared/constants/ui";
 
@@ -25,12 +26,7 @@ export interface PreviewEventData {
   date: string;
   time: string;
   location: string;
-  badges: Array<{
-    text: string;
-    bgClass: string;
-    textClass: string;
-    size?: "sm" | "md";
-  }>;
+  badges: CardBadge[];
   isLive?: boolean;
   isNew?: boolean;
   organizationType?: string | null;

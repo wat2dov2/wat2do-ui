@@ -2142,25 +2142,141 @@ test.describe("Events Page", () => {
     await expect.poll(() => submittedOccurrenceIds).toEqual([secondOccurrenceId]);
   });
 
-  test("omits zero stats and abbreviates card weekdays", async ({ page }) => {
+  test("shows relative card dates, full weekdays, metadata icons, and badge icons", async ({ page }) => {
+    const now = new Date();
+    const todayStartsAt = new Date(now.getTime() - 60_000);
+    const todayEndsAt = new Date(now.getTime() + 3_600_000);
+    const tomorrowStartsAt = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate() + 1,
+      12,
+    );
+    const laterStartsAt = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate() + 7,
+      12,
+    );
+    const eventFixture = {
+      location: "SLC",
+      price: 0,
+      food: [] as string[],
+      registration: false,
+      source_image_url: null,
+      category: "Career",
+      organization_id: 1,
+      organization: "UW Tech Club",
+      organization_type: "wusa",
+      organization_page: "https://example.com/tech",
+      organization_ig: "uwtechclub",
+      organization_discord: "https://discord.gg/uwtechclub",
+      school: "uwaterloo",
+      added_at: now.toISOString(),
+    };
+
+    await page.route(url => apiPath(url) === "/events", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          items: [
+            {
+              ...eventFixture,
+              id: 1,
+              title: "Today with badges",
+              occurrences: [
+                {
+                  id: 1,
+                  event_id: 1,
+                  dtstart_utc: todayStartsAt.toISOString(),
+                  dtend_utc: todayEndsAt.toISOString(),
+                },
+              ],
+              price: 12,
+              food: ["Pizza"],
+              registration: true,
+            },
+            {
+              ...eventFixture,
+              id: 2,
+              title: "Tomorrow event",
+              occurrences: [
+                {
+                  id: 2,
+                  event_id: 2,
+                  dtstart_utc: tomorrowStartsAt.toISOString(),
+                  dtend_utc: null,
+                },
+              ],
+            },
+            {
+              ...eventFixture,
+              id: 3,
+              title: "Later event",
+              occurrences: [
+                {
+                  id: 3,
+                  event_id: 3,
+                  dtstart_utc: laterStartsAt.toISOString(),
+                  dtend_utc: null,
+                },
+              ],
+            },
+          ],
+          total: 3,
+          page: 1,
+          page_size: 20,
+          total_pages: 1,
+          latest_added_event: null,
+        }),
+      });
+    });
+
     await page.goto(BASE);
     await page.waitForTimeout(3000);
 
-    const card = page.locator("article[data-event-id]").first();
-    await expect(card).toBeVisible();
-    await expect(card).not.toContainText(/\b0 clicks?\b/);
-    await expect(card).not.toContainText(/\b0 going\b/);
-    const cardContent = card.locator('[data-slot="event-card-content"]');
+    const todayCard = page.locator('article[data-event-id="1"]');
+    const tomorrowCard = page.locator('article[data-event-id="2"]');
+    const laterCard = page.locator('article[data-event-id="3"]');
+    await expect(todayCard).toBeVisible();
+    await expect(todayCard).not.toContainText(/\b0 clicks?\b/);
+    await expect(todayCard).not.toContainText(/\b0 going\b/);
+    await expect(todayCard.locator('[data-slot="event-card-date"]')).toHaveText("Today");
+    await expect(tomorrowCard.locator('[data-slot="event-card-date"]')).toHaveText("Tomorrow");
+
+    const laterDate = new Intl.DateTimeFormat("en", {
+      weekday: "long",
+      month: "short",
+      day: "numeric",
+    }).format(laterStartsAt);
+    expect(laterDate).toMatch(
+      /^(?:Sunday|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday)/,
+    );
+    await expect(laterCard.locator('[data-slot="event-card-date"]')).toHaveText(laterDate);
+
+    await expect(todayCard.getByRole("heading", { name: "Today with badges" })).toHaveCSS(
+      "font-size",
+      "15px",
+    );
+    await expect(todayCard.locator('[data-slot="event-card-date"] svg')).toHaveCount(1);
+    await expect(todayCard.locator('[data-slot="event-card-time"] svg')).toHaveCount(1);
+    await expect(todayCard.locator('[data-slot="event-card-location"] svg')).toHaveCount(1);
+
+    for (const badgeText of ["$12", "Pizza", "Registration"]) {
+      await expect(
+        todayCard.getByText(badgeText, { exact: true }).locator("..").locator("svg"),
+      ).toHaveCount(1);
+    }
+
+    const cardContent = todayCard.locator('[data-slot="event-card-content"]');
     const contentStack = cardContent.locator(":scope > div");
     await expect(cardContent).toHaveCSS("padding-top", "10px");
-    await expect(contentStack).toHaveCSS("row-gap", "0px");
+    await expect(contentStack).toHaveCSS("row-gap", "8px");
     await expect(contentStack.locator(":scope > div").nth(1)).toHaveCSS(
       "margin-top",
       "0px",
     );
-    await expect(
-      card.getByText(/^(?:Sun|Mon|Tues|Wed|Thur|Fri|Sat) [A-Z][a-z]{2} \d{1,2}$/),
-    ).toBeVisible();
   });
 
   test("persists optimistic click and going stats across refresh", async ({ page }) => {

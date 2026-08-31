@@ -1,16 +1,31 @@
 """Unit tests for services/scraper/directory_scraper."""
 
+import json
+from pathlib import Path
 from unittest.mock import MagicMock, patch
-
-import pytest
 
 from services.scraper.directory_scraper import (
     DirectoryConfig,
-    DirectoryScrapeResult,
+    _resolve_directory_organization,
     crawl_directory_links,
     run_directory_pipeline,
     scrape_event_page,
 )
+from services.scraper.org_resolve import ResolvedOrganization
+
+
+def directory_config(**overrides) -> DirectoryConfig:
+    values = {
+        "id": "test",
+        "name": "Test",
+        "school": "test-school",
+        "default_organization": "Test Students' Union",
+        "source_format": "html",
+        "entry_url": "https://example.com/events",
+        "event_url_patterns": ["/event/"],
+    }
+    values.update(overrides)
+    return DirectoryConfig(**values)
 
 
 def test_directory_config_instantiation():
@@ -18,8 +33,10 @@ def test_directory_config_instantiation():
         id="test-dir",
         name="Test Directory",
         school="Test School",
+        default_organization="Test Students' Union",
+        source_format="html",
         entry_url="https://example.com/events",
-        event_url_contains="/event/",
+        event_url_patterns=["/event/"],
         next_page_selector="a.next",
         content_selector=".desc",
         image_selector="img.banner",
@@ -28,10 +45,61 @@ def test_directory_config_instantiation():
     assert config.name == "Test Directory"
     assert config.school == "Test School"
     assert config.entry_url == "https://example.com/events"
-    assert config.event_url_contains == "/event/"
+    assert config.default_organization == "Test Students' Union"
+    assert config.source_format == "html"
+    assert config.event_url_patterns == ["/event/"]
     assert config.next_page_selector == "a.next"
     assert config.content_selector == ".desc"
     assert config.image_selector == "img.banner"
+
+
+def test_directory_catalog_covers_every_authoritative_school():
+    config_path = Path(__file__).parents[3] / "services" / "scraper" / "urls" / "directories.json"
+    configs = [DirectoryConfig.model_validate(item) for item in json.loads(config_path.read_text())]
+
+    assert len(configs) == 37
+    assert {config.school for config in configs} == {
+        "berkeley",
+        "brock",
+        "carleton",
+        "columbia",
+        "concordia",
+        "cornell",
+        "dalhousie",
+        "guelph",
+        "laval",
+        "mcmaster",
+        "mcgill",
+        "memorial",
+        "mit",
+        "nyu",
+        "ocad",
+        "ontariotech",
+        "queens",
+        "sfu",
+        "tmu",
+        "ualberta",
+        "ubc",
+        "ucalgary",
+        "udem",
+        "umanitoba",
+        "uottawa",
+        "upenn",
+        "uqam",
+        "usask",
+        "utoronto",
+        "utsc",
+        "utm",
+        "uvic",
+        "uwaterloo",
+        "western",
+        "windsor",
+        "wlu",
+        "york",
+    }
+    assert len({config.id for config in configs}) == len(configs)
+    assert all(config.default_organization for config in configs)
+    assert all(config.event_url_patterns for config in configs)
 
 
 @patch("services.scraper.dedup.get_sb")
@@ -87,20 +155,119 @@ def test_crawl_directory_links(mock_client_cls):
 
     mock_client.get.side_effect = [resp1, resp2]
 
-    config = DirectoryConfig(
-        id="test",
-        name="Test",
-        school="Test School",
-        entry_url="https://example.com/events",
-        event_url_contains="/event/",
-        next_page_selector="a.next",
-    )
+    config = directory_config(school="Test School", next_page_selector="a.next")
 
     urls = crawl_directory_links(config, max_pages=2)
     assert len(urls) == 3
     assert "https://example.com/event/tote-bag" in urls
     assert "https://example.com/event/chess-lessons" in urls
     assert "https://example.com/event/trivia-night" in urls
+
+
+@patch("services.scraper.directory_scraper.httpx.Client")
+def test_html_crawl_discovers_json_ld_event_urls(mock_client_cls):
+    mock_client = MagicMock()
+    mock_client_cls.return_value.__enter__.return_value = mock_client
+    response = MagicMock()
+    response.text = """
+    <script type="application/ld+json">
+      {"@type":"Event","url":"https://example.com/event/welcome?instance=42#details"}
+    </script>
+    <a href="https://facebook.com/share?u=https://example.com/event/welcome">Share</a>
+    """
+    response.raise_for_status = MagicMock()
+    mock_client.get.return_value = response
+
+    assert crawl_directory_links(directory_config(), max_pages=1) == [
+        "https://example.com/event/welcome?instance=42"
+    ]
+
+
+@patch("services.scraper.directory_scraper.httpx.Client")
+def test_json_crawl_discovers_event_urls(mock_client_cls):
+    mock_client = MagicMock()
+    mock_client_cls.return_value.__enter__.return_value = mock_client
+    response = MagicMock()
+    response.json.return_value = [
+        {"title": "Welcome", "url": "https://events.example.edu/event/welcome"},
+        {
+            "title": {"rendered": "Orientation"},
+            "link": "https://events.example.edu/event/orientation",
+        },
+        {"image": {"url": "https://cdn.example.edu/event-image.jpg"}},
+    ]
+    response.raise_for_status = MagicMock()
+    mock_client.get.return_value = response
+    config = directory_config(
+        source_format="json",
+        entry_url="https://events.example.edu/live/json/events",
+        event_url_patterns=["events.example.edu/event/"],
+        json_url_fields=["url", "link"],
+    )
+
+    assert crawl_directory_links(config, max_pages=5) == [
+        "https://events.example.edu/event/welcome",
+        "https://events.example.edu/event/orientation",
+    ]
+    mock_client.get.assert_called_once()
+
+
+@patch("services.scraper.directory_scraper.httpx.Client")
+def test_ical_crawl_preserves_identity_query_params(mock_client_cls):
+    mock_client = MagicMock()
+    mock_client_cls.return_value.__enter__.return_value = mock_client
+    response = MagicMock()
+    response.content = b"""BEGIN:VCALENDAR\r
+VERSION:2.0\r
+BEGIN:VEVENT\r
+UID:welcome@example.edu\r
+DTSTART:20990901T170000Z\r
+SUMMARY:Welcome\r
+URL:https://groups.example.edu/rsvp?id=42\r
+END:VEVENT\r
+END:VCALENDAR\r
+"""
+    response.raise_for_status = MagicMock()
+    mock_client.get.return_value = response
+    config = directory_config(
+        source_format="ical",
+        entry_url="https://groups.example.edu/events.ics",
+        event_url_patterns=["groups.example.edu/rsvp"],
+    )
+
+    assert crawl_directory_links(config, max_pages=5) == ["https://groups.example.edu/rsvp?id=42"]
+    mock_client.get.assert_called_once()
+
+
+@patch("services.scraper.directory_scraper.resolve_organization_for_scrape")
+def test_directory_organization_falls_back_to_trusted_publisher(mock_resolve):
+    mock_resolve.side_effect = [
+        ResolvedOrganization(None, "WUSAThrift", None),
+        ResolvedOrganization(7, "WUSA", None),
+    ]
+    event = {"organization": "WUSAThrift"}
+    config = directory_config(
+        school="uwaterloo",
+        default_organization="WUSA",
+    )
+
+    resolved = _resolve_directory_organization(event, config)
+
+    assert event["organization"] == "WUSA"
+    assert resolved.organization_id == 7
+    assert mock_resolve.call_count == 2
+
+
+@patch("services.scraper.directory_scraper.resolve_organization_for_scrape")
+def test_directory_organization_keeps_a_known_explicit_host(mock_resolve):
+    mock_resolve.return_value = ResolvedOrganization(9, "UW Tea Club", "uwteaclub")
+    event = {"organization": "UW Tea Club"}
+
+    resolved = _resolve_directory_organization(event, directory_config(school="uwaterloo"))
+
+    assert event["organization"] == "UW Tea Club"
+    assert resolved.organization_id == 9
+    mock_resolve.assert_called_once()
 
 
 @patch("services.scraper.directory_scraper.httpx.get")
@@ -121,12 +288,8 @@ def test_scrape_event_page(mock_get):
     resp.raise_for_status = MagicMock()
     mock_get.return_value = resp
 
-    config = DirectoryConfig(
-        id="test",
-        name="Test",
+    config = directory_config(
         school="Test School",
-        entry_url="https://example.com/events",
-        event_url_contains="/event/",
         content_selector=".desc",
         image_selector="img.banner",
     )
@@ -157,13 +320,7 @@ def test_run_directory_pipeline_dry_run(
     ]
     mock_existing_urls.return_value = set()
 
-    config = DirectoryConfig(
-        id="test",
-        name="Test",
-        school="Test School",
-        entry_url="https://example.com/events",
-        event_url_contains="/event/",
-    )
+    config = directory_config(school="Test School")
 
     result = run_directory_pipeline(config, max_pages=1, dry_run=True)
 
@@ -182,4 +339,5 @@ def test_run_directory_pipeline_dry_run(
         image_urls=["https://supabase.com/stored.png"],
         post_created_at=None,
         school="Test School",
+        source_organization="Test Students' Union",
     )

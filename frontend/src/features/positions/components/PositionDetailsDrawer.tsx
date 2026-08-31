@@ -50,7 +50,7 @@ function PositionDetailItem({
   value,
 }: PositionDetailItemProps) {
   return (
-    <Item className="flex-col items-start">
+    <Item className="flex-col items-start px-0">
       <ItemMedia variant="icon">
         <Icon />
       </ItemMedia>

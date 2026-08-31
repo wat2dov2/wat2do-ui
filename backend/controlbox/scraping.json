@@ -7,6 +7,7 @@
   "title_similarity_threshold": 0.7,
   "location_similarity_threshold": 0.5,
   "description_similarity_threshold": 0.3,
+  "directory_maximum_events_per_source": 50,
   "maximum_candidates": 10,
   "maximum_cross_organization_candidates": 3
 }
