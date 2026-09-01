@@ -148,6 +148,14 @@ def test_extraction_prompt_has_strict_event_and_position_eligibility_gates(monke
     assert "explicitly invites people to apply, nominate themselves, or run" in prompt
     assert "current-board rosters" in prompt
     assert "generic club membership" in prompt
+    assert "independently pass BOTH tests" in prompt
+    assert "ROLE TEST:" in prompt
+    assert "OPENING TEST:" in prompt
+    assert "Mentors and mentees joining a peer-mentorship program" in prompt
+    assert "Do not relabel a program as an internship" in prompt
+    assert "competitive-team members joining through auditions" in prompt
+    assert "One-off event helpers" in prompt
+    assert 'Omit ineligible entries such as "General Members"' in prompt
     assert "ticket or registration release" in prompt
     assert "a program reveal" in prompt
     assert "one object per logical event" in prompt
@@ -156,6 +164,10 @@ def test_extraction_prompt_has_strict_event_and_position_eligibility_gates(monke
     assert '"Executive elections start today. Read the candidate speeches and vote' in prompt
     assert '"Nominations are open. Apply or run for Treasurer by Friday"' in prompt
     assert '"Meet this year\'s Merch Coordinator" is "other"' in prompt
+    assert '"Apply to be a mentor or mentee in our peer mentorship program"' in prompt
+    assert '"Applications are open for our eight-week equity research training program"' in prompt
+    assert '"Volunteers needed for our Welcome Week events; sign up below"' in prompt
+    assert '"Try out for our varsity esports team"' in prompt
 
 
 def test_clean_extracted_content_triages_hiring_positions():

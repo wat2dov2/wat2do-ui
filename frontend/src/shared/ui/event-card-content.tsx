@@ -7,7 +7,7 @@ import { Badge } from "@/shared/ui/badge";
 import {
   Calendar,
   Clock,
-  MapPin,
+  LocationPin,
   type LucideIcon,
 } from "@/shared/ui/doodle-icons";
 import Link from "next/link";
@@ -146,7 +146,10 @@ export function EventCardContent({
         </div>
 
         {date || time || location || badges.length > 0 ? (
-          <div className="flex min-w-0 items-end justify-between gap-3">
+          <div
+            data-slot="event-card-metadata"
+            className="flex min-w-0 items-end justify-between gap-1"
+          >
             <div className="space-y-0.5 min-w-0 flex-1">
               {date ? (
                 <EventCardMetadataLine
@@ -166,7 +169,7 @@ export function EventCardContent({
               ) : null}
               {location ? (
                 <EventCardMetadataLine
-                  icon={MapPin}
+                  icon={LocationPin}
                   slot="location"
                   text={location}
                   textClassName={secondaryTextClassName}
@@ -179,10 +182,13 @@ export function EventCardContent({
                * Capped rather than `shrink-0`: a food badge carries whatever the
                * host typed, so an unbounded one ("Free pizza, samosas and bubble
                * tea") ate the row and squeezed the date, time and location
-               * beside it down to a few characters each. Half the row is the
+               * beside it down to a few characters each. Two-fifths of the row is the
                * most this column may claim; past that the label ellipsises.
                */
-              <div className="flex min-w-0 max-w-[50%] shrink flex-col items-end gap-1.5">
+              <div
+                data-slot="event-card-badges"
+                className="flex min-w-0 max-w-[40%] shrink flex-col items-end gap-0.5"
+              >
                 {badges.map((badge) => {
                   const Icon = badge.icon;
                   return (

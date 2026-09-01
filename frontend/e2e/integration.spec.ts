@@ -2261,13 +2261,27 @@ test.describe("Events Page", () => {
     );
     await expect(todayCard.locator('[data-slot="event-card-date"] svg')).toHaveCount(1);
     await expect(todayCard.locator('[data-slot="event-card-time"] svg')).toHaveCount(1);
-    await expect(todayCard.locator('[data-slot="event-card-location"] svg')).toHaveCount(1);
+    await expect(todayCard.locator('[data-slot="event-card-location"] svg')).toHaveAttribute(
+      "viewBox",
+      "0 0 24 24",
+    );
 
-    for (const badgeText of ["$12", "Pizza", "Registration"]) {
+    await expect(
+      todayCard.getByText("$12", { exact: true }).locator("..").locator("svg"),
+    ).toHaveCount(0);
+    for (const badgeText of ["Pizza", "Registration"]) {
       await expect(
         todayCard.getByText(badgeText, { exact: true }).locator("..").locator("svg"),
       ).toHaveCount(1);
     }
+    await expect(todayCard.locator('[data-slot="event-card-metadata"]')).toHaveCSS(
+      "column-gap",
+      "4px",
+    );
+    await expect(todayCard.locator('[data-slot="event-card-badges"]')).toHaveCSS(
+      "row-gap",
+      "2px",
+    );
 
     const cardContent = todayCard.locator('[data-slot="event-card-content"]');
     const contentStack = cardContent.locator(":scope > div");

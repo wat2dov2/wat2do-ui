@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { MapPin, DollarSign, Utensils, Plus, Trash2, ExternalLink } from "@/shared/ui/doodle-icons";
+import { LocationPin, DollarSign, Utensils, Plus, Trash2, ExternalLink } from "@/shared/ui/doodle-icons";
 import {
   Field,
   FieldGroup,
@@ -125,7 +125,7 @@ export function EventFormFields() {
             onChange={(value) => updateField("location", value as string)}
             onBlur={() => handleBlur("location")}
             placeholder={t("forms.locationPlaceholder")}
-            labelIcon={<MapPin className="size-4" />}
+            labelIcon={<LocationPin className="size-4" />}
             error={errors.location}
             touched={touched.location}
           />

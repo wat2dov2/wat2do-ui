@@ -9,7 +9,6 @@ import type { TFunction } from "i18next";
 import { translateFood } from "@/shared/utils/foodTranslation";
 import type { CardBadge } from "@/shared/ui/event-card-content";
 import {
-  DollarSign,
   Ticket,
   Utensils,
   X,
@@ -47,7 +46,6 @@ export function computeEventBadges(
     badges.push({
       text: `$${price}`,
       size: "md",
-      icon: DollarSign,
     });
   }
 

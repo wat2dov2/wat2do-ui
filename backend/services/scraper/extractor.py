@@ -263,21 +263,36 @@ Images (0-indexed):
 
 CLASSIFICATION POLICY:
 - Set "content_type" to "event" for event-only posts, "hiring" for hiring-only posts, "event_and_hiring" when both are clearly advertised, and "other" when neither applies.
-- A hiring post explicitly recruits people for one or more open roles, including executives, committee members, volunteers, paid staff, or internships.
-- General organization promotion, member introductions, election activity, and event registration are not hiring unless the post clearly invites applications, nominations, auditions, or sign-ups for a currently open role.
+- A hiring post explicitly recruits people for one or more qualifying open roles, including executives, committee members, ongoing volunteers, paid staff, or internships.
+- A qualifying role gives the selected person defined work, service, leadership, or organizational responsibilities. An application or sign-up for participation, membership, a program, a team, or an event is not a position.
+- General organization promotion, member introductions, election activity, event registration, program applications, and participant sign-ups are not hiring. Only roles that pass both eligibility tests below qualify.
 - Return an empty array for a content category that is not present. Never force an event into a position or a position into an event.
 
 POSITION ELIGIBILITY GATE (CRITICAL):
-- Before extracting any position, find explicit evidence in the caption or an image that applications, nominations, auditions, or sign-ups are currently open for that role. Qualifying evidence includes language such as "we're hiring", "applications are open", "apply", "join our team", "nominations are open", or "run for", or a current application form or call to action.
+- Before extracting each position, independently pass BOTH tests below. If either test fails, omit that position even when another role in the same post qualifies.
+- ROLE TEST: The selected person will perform defined work or service, own ongoing responsibilities, hold organizational authority, or fill an explicit paid job or internship for the organization.
+- OPENING TEST: This post explicitly says that applications, nominations, or recruitment are currently open for that specific qualifying role. Evidence includes "we're hiring", "applications are open", "apply for [role]", "join our [executive/committee/staff] team", "nominations are open", or "run for [role]".
+- A call to action such as "apply", "applications open", "sign up", "register", "join", "try out", "audition", "volunteer", or a form/deadline is never sufficient by itself. First establish that the thing being applied for passes the ROLE TEST.
 - The recruiting evidence must be on this post and must connect to the advertised role. A deadline, a role title, a list of roles, a description of responsibilities, a department name, a person holding a role, or an announcement that an election exists is not enough by itself.
 - Election voting posts are not hiring. Candidate lists or slates, campaign information, voting instructions, election dates, ballots, and results must return an empty positions array even when they name roles.
 - An election post qualifies as hiring only when it explicitly invites people to apply, nominate themselves, or run for a currently open role.
 - Member or executive introductions, current-board rosters, team spotlights, role-and-name graphics, posts naming "this year's" role holders, and "meet the team" posts are not hiring.
-- Do not extract generic club membership, active-member tiers, unnamed departments, or duties-only slides as positions. A role description does not become an opening unless the same post explicitly asks people to apply, nominate themselves, audition, run, or sign up for it now.
+- Do not extract generic club membership, general members, active-member tiers, supporters, unnamed departments, or duties-only slides as positions. A named functional team role with real duties may qualify; "general member" or "general team member" without a defined organizational responsibility never does.
+- Mentors and mentees joining a peer-mentorship program are program participants, not positions, even when they apply, guide someone, volunteer, or commit for a semester. A Director or Coordinator responsible for operating the mentorship program may qualify.
+- Applicants to a course, workshop, cohort, accelerator, competition, scholarship, student-development program, or other learning program are participants, not positions. Do not relabel a program as an internship merely because applications are open, participants complete projects, professionals are involved, or the program is paid.
+- Players, athletes, dancers, singers, models, performers, chorus members, and competitive-team members joining through auditions, casting, or tryouts are participants, not positions. A separately advertised coach, choreographer, director, designer, or other work/leadership vacancy may qualify.
+- One-off event helpers, event-day volunteers, orientation or Welcome Week volunteers, race or relay participants, and sign-ups for posted volunteer shifts are not positions. An ongoing volunteer role may qualify only when the post recruits for specific continuing responsibilities on behalf of the organization, separate from attending or helping at one event.
+- Evaluate mixed lists role by role. Omit ineligible entries such as "General Members" while retaining qualifying entries such as "Outreach Ambassador" or "Events Team Member" when the post connects them to defined duties and a current application.
+- A role description does not become an opening unless the same post explicitly asks people to apply, nominate themselves, run, or otherwise respond to current recruitment for that role.
 - If there is no explicit current recruiting evidence, do not extract any position and do not set "content_type" to "hiring" solely because role names appear.
 - Example: "Executive elections start today. Read the candidate speeches and vote for Treasurer" is "other" with "positions": [].
 - Counterexample: "Nominations are open. Apply or run for Treasurer by Friday" is "hiring" and may produce a Treasurer position.
 - Example: "Meet this year's Merch Coordinator" is "other" with "positions": [].
+- Example: "Apply to be a mentor or mentee in our peer mentorship program" is "other" with "positions": [].
+- Example: "Applications are open for our eight-week equity research training program" is "other" with "positions": [].
+- Example: "Volunteers needed for our Welcome Week events; sign up below" is "other" with "positions": [].
+- Example: "Try out for our varsity esports team" is "other" with "positions": [].
+- Mixed example: "Applications open for Outreach Ambassadors, Events Team Members, and General Members" may include the two defined team roles but must omit General Members.
 
 EVENT POLICY:
 - ONLY extract an attendee-facing activity if the post is clearly announcing or describing a real-world event. The activity itself must be named and something a person can attend, participate in, or watch.

@@ -5,8 +5,8 @@ import {
   Clock,
   DollarSign,
   Instagram,
+  LocationPin,
   Mail,
-  MapPin,
 } from "@/shared/ui/doodle-icons";
 import type { LucideIcon } from "@/shared/ui/doodle-icons";
 import { PositionCardImage } from "@/features/positions/components/PositionCardImage";
@@ -147,7 +147,7 @@ export function PositionDetailsDrawer({
                     ) : null}
                     {position.location ? (
                       <PositionDetailItem
-                        icon={MapPin}
+                        icon={LocationPin}
                         label={t("positions.locationLabel")}
                         value={position.location}
                       />
