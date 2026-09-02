@@ -1,8 +1,8 @@
 import json
 import logging
 import sys
-from unittest.mock import MagicMock
 from types import SimpleNamespace
+from unittest.mock import MagicMock
 
 # Mock fcntl for Windows test runs so we don't get "No module named 'fcntl'"
 if sys.platform == "win32":
