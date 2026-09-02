@@ -68,6 +68,20 @@ def test_action_media_ids_and_merge_use_one_canonical_media_list() -> None:
     )
 
 
+def test_digest_media_count_treats_under_count_as_advisory() -> None:
+    assert browser_digest.digest_media_count_shortfall(155, 156) == 1
+    assert browser_digest.digest_media_count_shortfall(156, 156) == 0
+    assert browser_digest.digest_media_count_shortfall(155, None) == 0
+
+
+def test_digest_media_count_rejects_over_count() -> None:
+    with pytest.raises(
+        browser_digest.BrowserDigestError,
+        match="resolved more media IDs than advertised",
+    ):
+        browser_digest.digest_media_count_shortfall(157, 156)
+
+
 def test_resolver_switches_to_matching_active_identity_and_returns_only_media_ids() -> None:
     sources: list[str] = []
     current_username = "ulaval.wat2do.io"

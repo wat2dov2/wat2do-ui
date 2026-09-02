@@ -35,6 +35,7 @@ from services.instagram_notifications.browser_digest import (  # noqa: E402
     BrowserInstagramDigestResolver,
     DigestResolution,
     action_media_ids,
+    digest_media_count_shortfall,
     merge_action_media_ids,
 )
 
@@ -804,7 +805,10 @@ def _expand_digest_notification(
         if not total_media_count_text.isascii() or not total_media_count_text.isdigit():
             raise BrowserDigestError("Instagram digest media count is invalid")
         total_media_count = int(total_media_count_text)
-        if len(explicit_media_ids) >= total_media_count:
+        if not digest_media_count_shortfall(
+            len(explicit_media_ids),
+            total_media_count,
+        ):
             return notification, None
 
     resolution = resolver.resolve(
@@ -813,10 +817,7 @@ def _expand_digest_notification(
     )
     expanded_action = merge_action_media_ids(instagram_action, resolution.media_ids)
     expanded_media_ids = action_media_ids(expanded_action)
-    if total_media_count is not None and len(expanded_media_ids) != total_media_count:
-        raise BrowserDigestError(
-            "Instagram digest did not resolve the advertised number of media IDs"
-        )
+    digest_media_count_shortfall(len(expanded_media_ids), total_media_count)
     expanded = dict(notification)
     expanded[_INSTAGRAM_ACTION_KEY] = expanded_action
     return expanded, resolution

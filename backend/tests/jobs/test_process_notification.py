@@ -262,7 +262,7 @@ def test_incomplete_digest_is_recorded_and_processes_explicit_media(
     with caplog.at_level(logging.WARNING):
         assert process_notification.main() == 0
 
-    assert "exposed 1 of 4 advertised media items" in caplog.text
+    assert "returned 1 of 4 advertised media items" in caplog.text
     assert record_calls[0]["total_non_mmc_media_count"] == 4
 
 
@@ -355,7 +355,10 @@ def test_digest_resolution_failure_stops_before_ledger_recording(
     assert "sanitized browser failure" in caplog.text
 
 
-def test_digest_count_mismatch_stops_before_ledger_recording(monkeypatch, caplog) -> None:
+def test_terminal_digest_shortfall_processes_every_available_media(
+    monkeypatch,
+    caplog,
+) -> None:
     _set_payload(
         monkeypatch,
         _actionable_payload(
@@ -364,6 +367,29 @@ def test_digest_count_mismatch_stops_before_ledger_recording(monkeypatch, caplog
     )
     _install_school(monkeypatch)
     _install_digest_resolver(monkeypatch, ("987654321",))
+    record_calls, _claim_calls = _capture_ledger(monkeypatch)
+    monkeypatch.setattr(process_notification, "run", lambda **_kwargs: 0)
+    monkeypatch.setattr(process_notification, "mark_media_succeeded", lambda **_kwargs: True)
+
+    with caplog.at_level(logging.WARNING):
+        assert process_notification.main() == 0
+
+    assert [item.media_id for item in record_calls[0]["media"]] == [
+        "123456789",
+        "987654321",
+    ]
+    assert "returned 2 of 3 advertised media items" in caplog.text
+
+
+def test_digest_over_count_stops_before_ledger_recording(monkeypatch, caplog) -> None:
+    _set_payload(
+        monkeypatch,
+        _actionable_payload(
+            "clips_home?media_list=123456789,987654321&cache_ent_id=cache-123&"
+            "total_non_mmc_media_count=1",
+        ),
+    )
+    _install_school(monkeypatch)
     monkeypatch.setattr(
         process_notification,
         "record_notification_media",
@@ -373,7 +399,7 @@ def test_digest_count_mismatch_stops_before_ledger_recording(monkeypatch, caplog
     with caplog.at_level(logging.ERROR):
         assert process_notification.main() == 1
 
-    assert "did not resolve the advertised number" in caplog.text
+    assert "resolved more media IDs than advertised" in caplog.text
 
 
 def test_invalid_media_notification_fails_without_logging_identifier(

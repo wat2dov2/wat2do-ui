@@ -234,6 +234,19 @@ def action_media_ids(instagram_action: str) -> tuple[str, ...]:
     return tuple(media_ids)
 
 
+def digest_media_count_shortfall(
+    actual_count: int,
+    advertised_count: int | None,
+) -> int:
+    """Return the advisory shortfall while rejecting impossible over-counts."""
+
+    if advertised_count is None:
+        return 0
+    if actual_count > advertised_count:
+        raise BrowserDigestError("Instagram digest resolved more media IDs than advertised")
+    return advertised_count - actual_count
+
+
 def merge_action_media_ids(
     instagram_action: str,
     additional_media_ids: Sequence[str],

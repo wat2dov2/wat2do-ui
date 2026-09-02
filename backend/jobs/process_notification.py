@@ -23,6 +23,7 @@ from services import school_service  # noqa: E402
 from services.instagram_notifications.browser_digest import (  # noqa: E402
     BrowserDigestError,
     BrowserInstagramDigestResolver,
+    digest_media_count_shortfall,
 )
 from services.instagram_notifications.ledger import (  # noqa: E402
     MaterializedMedia,
@@ -214,32 +215,36 @@ def _materialize_media(
     resolver: BrowserInstagramDigestResolver | None = None,
 ) -> list[MaterializedMedia]:
     materialized = {item.media_id: item for item in notification.explicit_media}
-    if notification.cache_ent_id is None or (
-        notification.total_media_count is not None
-        and len(materialized) >= notification.total_media_count
-    ):
-        return list(materialized.values())
-
-    resolution = (resolver or BrowserInstagramDigestResolver()).resolve(
-        intended_recipient_id,
-        notification.cache_ent_id,
-    )
-    for raw_media_id in resolution.media_ids:
-        media_id = _parse_media_id(raw_media_id)
-        materialized.setdefault(media_id, _media_target(media_id))
-
-    if (
-        notification.total_media_count is not None
-        and len(materialized) != notification.total_media_count
-    ):
-        raise BrowserDigestError(
-            "Instagram digest did not resolve the advertised number of media IDs"
-        )
-    log.info(
-        "Expanded Instagram digest through %s to %d exact media target(s).",
-        resolution.account_username,
+    shortfall = digest_media_count_shortfall(
         len(materialized),
+        notification.total_media_count,
     )
+    if notification.cache_ent_id is not None and shortfall:
+        resolution = (resolver or BrowserInstagramDigestResolver()).resolve(
+            intended_recipient_id,
+            notification.cache_ent_id,
+        )
+        for raw_media_id in resolution.media_ids:
+            media_id = _parse_media_id(raw_media_id)
+            materialized.setdefault(media_id, _media_target(media_id))
+
+        shortfall = digest_media_count_shortfall(
+            len(materialized),
+            notification.total_media_count,
+        )
+        log.info(
+            "Expanded Instagram digest through %s to %d exact media target(s).",
+            resolution.account_username,
+            len(materialized),
+        )
+
+    if shortfall:
+        log.warning(
+            "Instagram returned %d of %d advertised media items; processing all "
+            "media available from the terminal digest page.",
+            len(materialized),
+            notification.total_media_count,
+        )
     return list(materialized.values())
 
 
@@ -370,14 +375,6 @@ def main() -> int:
     except (BrowserDigestError, NotificationPayloadError) as exc:
         log.error("%s", exc)
         return 1
-
-    if notification.total_media_count is not None and len(media) < notification.total_media_count:
-        log.warning(
-            "Instagram notification exposed %d of %d advertised media items; "
-            "processing explicit media only.",
-            len(media),
-            notification.total_media_count,
-        )
 
     try:
         cutoff_days = int(os.getenv("CUTOFF_DAYS", "1"))
