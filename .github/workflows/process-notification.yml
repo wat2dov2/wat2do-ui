@@ -2,6 +2,7 @@ name: Process Notifications
 run-name: >-
   ${{
     github.event.client_payload.notification_dict && format('{0} - {1}', github.event.client_payload.notification_dict['android.title'], github.event.client_payload.notification_dict['android.subText']) ||
+    inputs.notification_payload && 'Process manual payload' ||
     format('Process @{0}', inputs.poster_id)
   }}
 
@@ -19,11 +20,15 @@ on:
     inputs:
       poster_id:
         description: 'Instagram username to process'
-        required: true
+        required: false
         type: string
       school:
         description: 'School name'
-        required: true
+        required: false
+        type: string
+      notification_payload:
+        description: 'Raw JSON payload of the notification'
+        required: false
         type: string
 
 jobs:
@@ -39,8 +44,8 @@ jobs:
         env:
           RUNNER_CHECK_TOKEN: ${{ secrets.RUNNER_CHECK_TOKEN }}
           DEFAULT_GH_TOKEN: ${{ github.token }}
-          CACHE_ENT_ID: ${{ github.event.client_payload.notification_dict.cache_ent_id || '' }}
-          INSTAGRAM_ACTION: ${{ github.event.client_payload.notification_dict['com.instagram.android.igns.logging.ig_action'] || '' }}
+          CACHE_ENT_ID: ${{ github.event.client_payload.notification_dict.cache_ent_id || fromJSON(inputs.notification_payload || '{}').cache_ent_id || '' }}
+          INSTAGRAM_ACTION: ${{ github.event.client_payload.notification_dict['com.instagram.android.igns.logging.ig_action'] || fromJSON(inputs.notification_payload || '{}')['com.instagram.android.igns.logging.ig_action'] || '' }}
         run: |
           export GH_TOKEN="${RUNNER_CHECK_TOKEN:-$DEFAULT_GH_TOKEN}"
           has_cache_ent_id=false
@@ -82,7 +87,7 @@ jobs:
       APIFY_API_TOKEN: ${{ secrets.APIFY_API_TOKEN }}
       EVENT_FEED_REVALIDATION_SECRET: ${{ secrets.EVENT_FEED_REVALIDATION_SECRET }}
       POSTER_ID: ${{ inputs.poster_id }}
-      INTENDED_RECIPIENT_ID: ${{ github.event.client_payload.intended_recipient_id || github.event.client_payload.notification_dict['com.instagram.android.igns.logging.intended_recipient_id'] }}
+      INTENDED_RECIPIENT_ID: ${{ github.event.client_payload.intended_recipient_id || github.event.client_payload.notification_dict['com.instagram.android.igns.logging.intended_recipient_id'] || fromJSON(inputs.notification_payload || '{}')['com.instagram.android.igns.logging.intended_recipient_id'] }}
       TARGET_SCHOOL: ${{ github.event_name == 'workflow_dispatch' && inputs.school || '' }}
       CUTOFF_DAYS: ${{ github.event_name == 'workflow_dispatch' && '1825' || github.event.client_payload.cutoff_days || '1' }}
 
@@ -92,7 +97,7 @@ jobs:
       - name: Validate job inputs
         id: validate
         env:
-          NOTIFICATION_JSON: ${{ toJSON(github.event.client_payload.notification_dict) }}
+          NOTIFICATION_JSON: ${{ inputs.notification_payload || toJSON(github.event.client_payload.notification_dict) }}
         run: |
           test -n "$AWS_DEPLOY_ROLE_ARN"
           test -n "$FRONTEND_URL"
@@ -147,7 +152,7 @@ jobs:
         if: steps.validate.outputs.skip != 'true'
         working-directory: backend
         env:
-          NOTIFICATION_JSON: ${{ toJSON(github.event.client_payload.notification_dict) }}
+          NOTIFICATION_JSON: ${{ inputs.notification_payload || toJSON(github.event.client_payload.notification_dict) }}
         run: |
           export EVENT_FEED_REVALIDATION_URL="${FRONTEND_URL%/}/api/revalidate-events"
           if [[ "$NOTIFICATION_JSON" != "null" && -n "$NOTIFICATION_JSON" ]]; then
