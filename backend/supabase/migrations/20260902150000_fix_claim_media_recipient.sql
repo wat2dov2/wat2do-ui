@@ -1,5 +1,8 @@
 BEGIN;
 
+DROP FUNCTION IF EXISTS public.claim_next_instagram_notification_media(uuid, text);
+DROP FUNCTION IF EXISTS public.claim_next_pending_instagram_media(text);
+
 CREATE OR REPLACE FUNCTION public.claim_next_instagram_notification_media(
     p_notification_id uuid,
     p_github_run_id text
@@ -91,5 +94,11 @@ END;
 $$;
 
 NOTIFY pgrst, 'reload schema';
+
+REVOKE ALL ON FUNCTION public.claim_next_instagram_notification_media(uuid, text) FROM public;
+GRANT EXECUTE ON FUNCTION public.claim_next_instagram_notification_media(uuid, text) TO service_role;
+
+REVOKE ALL ON FUNCTION public.claim_next_pending_instagram_media(text) FROM public;
+GRANT EXECUTE ON FUNCTION public.claim_next_pending_instagram_media(text) TO service_role;
 
 COMMIT;
