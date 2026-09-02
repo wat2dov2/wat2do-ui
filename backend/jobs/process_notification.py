@@ -335,7 +335,7 @@ def main() -> int:
         return 1
 
     try:
-        record_notification_media(
+        _, newly_inserted_count = record_notification_media(
             school_id=school.id,
             intended_recipient_id=intended_recipient_id,
             push_id=push_id,
@@ -348,10 +348,13 @@ def main() -> int:
         log.error("Instagram notification ledger recording failed.")
         return 1
 
-    success_msg = f"Successfully queued {len(media)} Instagram posts to the ledger."
+    success_msg = f"Successfully queued {newly_inserted_count} new Instagram posts (ignored {len(media) - newly_inserted_count} duplicates) to the ledger."
     log.info(success_msg)
     if os.getenv("GITHUB_ACTIONS") == "true":
         print(f"::notice::{success_msg}", flush=True)
+        if github_output := os.getenv("GITHUB_OUTPUT"):
+            with open(github_output, "a") as f:
+                f.write(f"new_items={newly_inserted_count}\n")
     return 0
 
 

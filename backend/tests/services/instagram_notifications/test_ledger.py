@@ -28,9 +28,9 @@ def _record(**overrides):
 
 def test_record_notification_media_records_metadata_and_returns_id(fake_sb, patch_sb):
     patch_sb("services.instagram_notifications.ledger")
-    fake_sb.set_response(data="notification-1")
+    fake_sb.set_response(data=[{"notification_id": "notification-1", "newly_inserted_count": 0}])
 
-    assert _record() == "notification-1"
+    assert _record() == ("notification-1", 0)
     fake_sb.rpc.assert_called_once_with(
         "record_instagram_notification_media",
         {
@@ -56,7 +56,7 @@ def test_record_notification_media_records_metadata_and_returns_id(fake_sb, patc
 
 def test_record_notification_media_deduplicates_identical_media(fake_sb, patch_sb):
     patch_sb("services.instagram_notifications.ledger")
-    fake_sb.set_response(data="notification-1")
+    fake_sb.set_response(data=[{"notification_id": "notification-1", "newly_inserted_count": 1}])
 
     result = _record(
         media=[
@@ -65,7 +65,7 @@ def test_record_notification_media_deduplicates_identical_media(fake_sb, patch_s
         ]
     )
 
-    assert result == "notification-1"
+    assert result == ("notification-1", 1)
     params = fake_sb.rpc.call_args.args[1]
     assert params["p_media"] == [
         {"media_id": "123", "source_url": "https://www.instagram.com/p/ABC123/"}
@@ -74,9 +74,9 @@ def test_record_notification_media_deduplicates_identical_media(fake_sb, patch_s
 
 def test_record_notification_media_records_empty_materialization(fake_sb, patch_sb):
     patch_sb("services.instagram_notifications.ledger")
-    fake_sb.set_response(data="notification-1")
+    fake_sb.set_response(data=[{"notification_id": "notification-1", "newly_inserted_count": 0}])
 
-    assert _record(cache_ent_id="   ", media=[]) == "notification-1"
+    assert _record(cache_ent_id="   ", media=[]) == ("notification-1", 0)
     params = fake_sb.rpc.call_args.args[1]
     assert params["p_cache_ent_id"] is None
     assert params["p_media"] == []

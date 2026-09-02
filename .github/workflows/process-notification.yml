@@ -149,6 +149,7 @@ jobs:
         run: pip install --prefer-binary -r requirements.txt
 
       - name: Process the Instagram account
+        id: process
         if: steps.validate.outputs.skip != 'true'
         working-directory: backend
         env:
@@ -160,6 +161,7 @@ jobs:
             python jobs/process_notification.py
           else
             echo "Processing standard poster_id..."
+            echo "new_items=1" >> "$GITHUB_OUTPUT"
             python jobs/scrape.py \
               --username "$POSTER_ID" \
               --cutoff-days "$CUTOFF_DAYS" \
@@ -167,7 +169,7 @@ jobs:
           fi
 
       - name: Trigger background scraper
-        if: success() && steps.validate.outputs.skip != 'true'
+        if: success() && steps.validate.outputs.skip != 'true' && steps.process.outputs.new_items > 0
         run: gh workflow run scrape-pending-media.yml -f cutoff_days="$CUTOFF_DAYS"
         env:
           GH_TOKEN: ${{ secrets.RUNNER_CHECK_TOKEN }}

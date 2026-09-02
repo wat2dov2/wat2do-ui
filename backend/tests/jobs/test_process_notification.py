@@ -57,7 +57,7 @@ def _capture_ledger(monkeypatch):
 
     def record(**kwargs):
         record_calls.append(kwargs)
-        return "notification-1"
+        return "notification-1", len(kwargs.get("media", []))
 
     monkeypatch.setattr(process_notification, "record_notification_media", record)
     return record_calls

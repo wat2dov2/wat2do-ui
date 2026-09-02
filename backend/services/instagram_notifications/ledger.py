@@ -35,7 +35,7 @@ def record_notification_media(
     cache_ent_id: str | None,
     total_non_mmc_media_count: int | None,
     media: Sequence[MaterializedMedia],
-) -> str:
+) -> tuple[str, int]:
     """Record one notification and its recovered media without claiming work."""
 
     normalized_media = _deduplicate_media(media)
@@ -58,10 +58,17 @@ def record_notification_media(
         )
         .execute()
     )
-    notification_id = response.data
+    rows = response.data or []
+    if not rows:
+        raise RuntimeError("Instagram notification ledger returned no record ID")
+
+    notification_id = rows[0].get("notification_id")
+    newly_inserted_count = rows[0].get("newly_inserted_count", 0)
+
     if not isinstance(notification_id, str) or not notification_id:
         raise RuntimeError("Instagram notification ledger returned no record ID")
-    return notification_id
+
+    return notification_id, newly_inserted_count
 
 
 def claim_next_notification_media(

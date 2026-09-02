@@ -114,9 +114,15 @@ def main() -> int:
         )
 
     if processed_count:
-        log.info("Processed %d pending Instagram media target(s).", processed_count)
+        success_msg = f"Processed {processed_count} pending Instagram media target(s)."
+        log.info(success_msg)
+        if os.getenv("GITHUB_ACTIONS") == "true":
+            print(f"::notice::{success_msg}", flush=True)
     else:
-        log.info("No pending Instagram media remain.")
+        success_msg = "No pending Instagram media remain."
+        log.info(success_msg)
+        if os.getenv("GITHUB_ACTIONS") == "true":
+            print(f"::notice::{success_msg}", flush=True)
 
     return overall_status
 
