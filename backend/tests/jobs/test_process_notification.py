@@ -70,6 +70,9 @@ def _install_digest_resolver(monkeypatch, media_ids: tuple[str, ...]):
             )
 
     monkeypatch.setattr(process_notification, "BrowserInstagramDigestResolver", _Resolver)
+    import sys
+
+    monkeypatch.setattr(sys, "platform", "darwin")
     return calls
 
 
@@ -201,33 +204,30 @@ def test_cache_only_digest_is_expanded_before_validation(monkeypatch) -> None:
     ]
 
 
-def test_digest_resolution_failure_stops_before_ledger_recording(
-    monkeypatch,
-    caplog,
-) -> None:
+def test_digest_resolution_failure_falls_back_to_explicit_media(monkeypatch, caplog) -> None:
     _set_payload(
         monkeypatch,
         _actionable_payload(
-            "clips_home?media_id=123456789&cache_ent_id=cache-123&total_non_mmc_media_count=2",
+            "clips_home?media_id=123456789&cache_ent_id=cache-123&total_non_mmc_media_count=2"
         ),
     )
     _install_school(monkeypatch)
+    import sys
+
+    monkeypatch.setattr(sys, "platform", "darwin")
 
     class _Resolver:
         def resolve(self, *_args):
             raise process_notification.BrowserDigestError("sanitized browser failure")
 
     monkeypatch.setattr(process_notification, "BrowserInstagramDigestResolver", _Resolver)
-    monkeypatch.setattr(
-        process_notification,
-        "record_notification_media",
-        lambda **_kwargs: (_ for _ in ()).throw(AssertionError("ledger should not run")),
-    )
+    record_calls = _capture_ledger(monkeypatch)
 
     with caplog.at_level(logging.ERROR):
-        assert process_notification.main() == 1
+        assert process_notification.main() == 0
 
     assert "sanitized browser failure" in caplog.text
+    assert [item.media_id for item in record_calls[0]["media"]] == ["123456789"]
 
 
 def test_terminal_digest_shortfall_processes_every_available_media(
@@ -242,6 +242,9 @@ def test_terminal_digest_shortfall_processes_every_available_media(
     )
     _install_school(monkeypatch)
     _install_digest_resolver(monkeypatch, ("987654321",))
+    import sys
+
+    monkeypatch.setattr(sys, "platform", "darwin")
     record_calls = _capture_ledger(monkeypatch)
     with caplog.at_level(logging.WARNING):
         assert process_notification.main() == 0
@@ -253,25 +256,24 @@ def test_terminal_digest_shortfall_processes_every_available_media(
     assert "returned 2 of 3 advertised media items" in caplog.text
 
 
-def test_digest_over_count_stops_before_ledger_recording(monkeypatch, caplog) -> None:
+def test_digest_over_count_falls_back_to_explicit_media(monkeypatch, caplog) -> None:
     _set_payload(
         monkeypatch,
         _actionable_payload(
-            "clips_home?media_list=123456789,987654321&cache_ent_id=cache-123&"
-            "total_non_mmc_media_count=1",
+            "clips_home?media_list=123456789,987654321&cache_ent_id=cache-123&total_non_mmc_media_count=1"
         ),
     )
     _install_school(monkeypatch)
-    monkeypatch.setattr(
-        process_notification,
-        "record_notification_media",
-        lambda **_kwargs: (_ for _ in ()).throw(AssertionError("ledger should not run")),
-    )
+    import sys
+
+    monkeypatch.setattr(sys, "platform", "darwin")
+    record_calls = _capture_ledger(monkeypatch)
 
     with caplog.at_level(logging.ERROR):
-        assert process_notification.main() == 1
+        assert process_notification.main() == 0
 
     assert "resolved more media IDs than advertised" in caplog.text
+    assert [item.media_id for item in record_calls[0]["media"]] == ["123456789", "987654321"]
 
 
 def test_invalid_media_notification_fails_without_logging_identifier(
