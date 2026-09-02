@@ -36,14 +36,18 @@ class GitHubActionErrorHandler(logging.Handler):
         atexit.register(self._flush)
 
     def emit(self, record: logging.LogRecord) -> None:
+        import os
+        if "PYTEST_CURRENT_TEST" in os.environ:
+            return
         msg = self.format(record)
         self._errors.append(msg)
 
     def _flush(self) -> None:
-        if not self._errors:
-            return
         import os
         import sys
+
+        if "PYTEST_CURRENT_TEST" in os.environ or not self._errors:
+            return
 
         if os.getenv("GITHUB_ACTIONS") == "true":
             compacted = " \\n".join(msg.replace("\n", " ") for msg in self._errors)

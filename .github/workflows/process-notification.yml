@@ -2,7 +2,7 @@ name: Process Notifications
 run-name: >-
   ${{
     github.event.client_payload.notification_dict && format('{0} - {1}', github.event.client_payload.notification_dict['android.title'], github.event.client_payload.notification_dict['android.subText']) ||
-    inputs.notification_payload && 'Process manual payload' ||
+    inputs.notification_payload && format('{0} - {1}', fromJSON(inputs.notification_payload || '{}')['android.title'], fromJSON(inputs.notification_payload || '{}')['android.subText']) ||
     format('Process @{0}', inputs.poster_id)
   }}
 

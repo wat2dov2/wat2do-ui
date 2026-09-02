@@ -16,6 +16,10 @@ on:
 jobs:
   scrape-pending:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        worker: [1, 2, 3, 4, 5]
+      fail-fast: false
     environment: production
     permissions:
       contents: read

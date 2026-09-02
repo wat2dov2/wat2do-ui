@@ -48,25 +48,13 @@ def _claim_for(item, index: int) -> MediaClaim:
 
 def _capture_ledger(monkeypatch):
     record_calls = []
-    claim_calls = []
-    next_index = 0
 
     def record(**kwargs):
         record_calls.append(kwargs)
         return "notification-1"
 
-    def claim_next(**kwargs):
-        nonlocal next_index
-        claim_calls.append(kwargs)
-        media = record_calls[0]["media"]
-        if next_index >= len(media):
-            return None
-        next_index += 1
-        return _claim_for(media[next_index - 1], next_index)
-
     monkeypatch.setattr(process_notification, "record_notification_media", record)
-    monkeypatch.setattr(process_notification, "claim_next_notification_media", claim_next)
-    return record_calls, claim_calls
+    return record_calls
 
 
 def _install_digest_resolver(monkeypatch, media_ids: tuple[str, ...]):
@@ -85,7 +73,7 @@ def _install_digest_resolver(monkeypatch, media_ids: tuple[str, ...]):
     return calls
 
 
-def test_media_notification_processes_ordered_unique_exact_claims(monkeypatch) -> None:
+def test_media_notification_records_ordered_unique_exact_claims(monkeypatch) -> None:
     first_media_id = 123456789
     second_media_id = 987654321
     _set_payload(
@@ -96,19 +84,7 @@ def test_media_notification_processes_ordered_unique_exact_claims(monkeypatch) -
         ),
     )
     _install_school(monkeypatch)
-    record_calls, claim_calls = _capture_ledger(monkeypatch)
-    scrape_calls = []
-    success_calls = []
-    monkeypatch.setattr(
-        process_notification,
-        "run",
-        lambda **kwargs: scrape_calls.append(kwargs) or 0,
-    )
-    monkeypatch.setattr(
-        process_notification,
-        "mark_media_succeeded",
-        lambda **kwargs: success_calls.append(kwargs) or True,
-    )
+    record_calls = _capture_ledger(monkeypatch)
 
     assert process_notification.main() == 0
 
@@ -122,16 +98,6 @@ def test_media_notification_processes_ordered_unique_exact_claims(monkeypatch) -
     assert record_calls[0]["school_id"] == 7
     assert record_calls[0]["intended_recipient_id"] == RECIPIENT_ID
     assert record_calls[0]["push_id"] == PUSH_ID
-    assert claim_calls == [
-        {"notification_id": "notification-1", "github_run_id": "31759739105"},
-        {"notification_id": "notification-1", "github_run_id": "31759739105"},
-        {"notification_id": "notification-1", "github_run_id": "31759739105"},
-    ]
-    assert [call["targets"] for call in scrape_calls] == [[url] for url in expected_urls]
-    assert success_calls == [
-        {"media_row_id": "media-row-1", "claim_token": "claim-1"},
-        {"media_row_id": "media-row-2", "claim_token": "claim-2"},
-    ]
 
 
 def test_digest_expands_hidden_media_before_recording_and_keeps_metadata(
@@ -155,10 +121,7 @@ def test_digest_expands_hidden_media_before_recording_and_keeps_metadata(
         monkeypatch,
         (third_media_id, fourth_media_id),
     )
-    record_calls, _claim_calls = _capture_ledger(monkeypatch)
-    monkeypatch.setattr(process_notification, "run", lambda **_kwargs: 0)
-    monkeypatch.setattr(process_notification, "mark_media_succeeded", lambda **_kwargs: True)
-
+    record_calls = _capture_ledger(monkeypatch)
     with caplog.at_level(logging.INFO):
         assert process_notification.main() == 0
 
@@ -176,76 +139,6 @@ def test_digest_expands_hidden_media_before_recording_and_keeps_metadata(
     )
 
 
-def test_duplicate_delivery_with_no_claims_does_not_scrape(monkeypatch) -> None:
-    _set_payload(monkeypatch, _actionable_payload("clips_home?media_id=123456789"))
-    _install_school(monkeypatch)
-    monkeypatch.setattr(
-        process_notification,
-        "record_notification_media",
-        lambda **_kwargs: "notification-1",
-    )
-    monkeypatch.setattr(
-        process_notification,
-        "claim_next_notification_media",
-        lambda **_kwargs: None,
-    )
-    monkeypatch.setattr(
-        process_notification,
-        "run",
-        lambda **_kwargs: (_ for _ in ()).throw(AssertionError("scrape should not run")),
-    )
-
-    assert process_notification.main() == 0
-
-
-def test_each_media_is_claimed_only_immediately_before_its_scrape(monkeypatch) -> None:
-    _set_payload(
-        monkeypatch,
-        _actionable_payload("clips_home?media_list=123456789,987654321"),
-    )
-    _install_school(monkeypatch)
-    recorded_media = []
-    events = []
-    next_index = 0
-
-    def record(**kwargs):
-        recorded_media.extend(kwargs["media"])
-        return "notification-1"
-
-    def claim_next(**_kwargs):
-        nonlocal next_index
-        if next_index == len(recorded_media):
-            events.append("claim-none")
-            return None
-        next_index += 1
-        events.append(f"claim-{next_index}")
-        return _claim_for(recorded_media[next_index - 1], next_index)
-
-    monkeypatch.setattr(process_notification, "record_notification_media", record)
-    monkeypatch.setattr(process_notification, "claim_next_notification_media", claim_next)
-    monkeypatch.setattr(
-        process_notification,
-        "run",
-        lambda **_kwargs: events.append(f"scrape-{next_index}") or 0,
-    )
-    monkeypatch.setattr(
-        process_notification,
-        "mark_media_succeeded",
-        lambda **_kwargs: events.append(f"finalize-{next_index}") or True,
-    )
-
-    assert process_notification.main() == 0
-    assert events == [
-        "claim-1",
-        "scrape-1",
-        "finalize-1",
-        "claim-2",
-        "scrape-2",
-        "finalize-2",
-        "claim-none",
-    ]
-
-
 def test_incomplete_digest_is_recorded_and_processes_explicit_media(
     monkeypatch,
     caplog,
@@ -255,10 +148,7 @@ def test_incomplete_digest_is_recorded_and_processes_explicit_media(
         _actionable_payload("clips_home?media_id=123456789&total_non_mmc_media_count=4"),
     )
     _install_school(monkeypatch)
-    record_calls, _claim_calls = _capture_ledger(monkeypatch)
-    monkeypatch.setattr(process_notification, "run", lambda **_kwargs: 0)
-    monkeypatch.setattr(process_notification, "mark_media_succeeded", lambda **_kwargs: True)
-
+    record_calls = _capture_ledger(monkeypatch)
     with caplog.at_level(logging.WARNING):
         assert process_notification.main() == 0
 
@@ -276,12 +166,6 @@ def test_unrelated_notification_is_a_sanitized_noop(monkeypatch, caplog) -> None
             "android.text": sensitive_marker,
         },
     )
-    monkeypatch.setattr(
-        process_notification,
-        "run",
-        lambda **_kwargs: (_ for _ in ()).throw(AssertionError("scrape should not run")),
-    )
-
     with caplog.at_level(logging.INFO):
         assert process_notification.main() == 0
 
@@ -297,12 +181,6 @@ def test_unrelated_notification_with_media_shape_is_a_noop(monkeypatch) -> None:
         monkeypatch,
         payload,
     )
-    monkeypatch.setattr(
-        process_notification,
-        "run",
-        lambda **_kwargs: (_ for _ in ()).throw(AssertionError("scrape should not run")),
-    )
-
     assert process_notification.main() == 0
 
 
@@ -315,10 +193,7 @@ def test_cache_only_digest_is_expanded_before_validation(monkeypatch) -> None:
     )
     _install_school(monkeypatch)
     _install_digest_resolver(monkeypatch, ("123456789", "987654321"))
-    record_calls, _claim_calls = _capture_ledger(monkeypatch)
-    monkeypatch.setattr(process_notification, "run", lambda **_kwargs: 0)
-    monkeypatch.setattr(process_notification, "mark_media_succeeded", lambda **_kwargs: True)
-
+    record_calls = _capture_ledger(monkeypatch)
     assert process_notification.main() == 0
     assert [item.media_id for item in record_calls[0]["media"]] == [
         "123456789",
@@ -367,10 +242,7 @@ def test_terminal_digest_shortfall_processes_every_available_media(
     )
     _install_school(monkeypatch)
     _install_digest_resolver(monkeypatch, ("987654321",))
-    record_calls, _claim_calls = _capture_ledger(monkeypatch)
-    monkeypatch.setattr(process_notification, "run", lambda **_kwargs: 0)
-    monkeypatch.setattr(process_notification, "mark_media_succeeded", lambda **_kwargs: True)
-
+    record_calls = _capture_ledger(monkeypatch)
     with caplog.at_level(logging.WARNING):
         assert process_notification.main() == 0
 
@@ -453,46 +325,6 @@ def test_workflow_recipient_must_be_canonical(monkeypatch, caplog) -> None:
         assert process_notification.main() == 1
 
     assert "valid intended recipient ID" in caplog.text
-
-
-def test_scrape_failure_is_terminal_and_other_claims_continue(monkeypatch) -> None:
-    _set_payload(
-        monkeypatch,
-        _actionable_payload("clips_home?media_list=123456789,987654321"),
-    )
-    _install_school(monkeypatch)
-    _capture_ledger(monkeypatch)
-    statuses = iter((1, 0))
-    scrape_calls = []
-    failed_calls = []
-    succeeded_calls = []
-    monkeypatch.setattr(
-        process_notification,
-        "run",
-        lambda **kwargs: scrape_calls.append(kwargs) or next(statuses),
-    )
-    monkeypatch.setattr(
-        process_notification,
-        "mark_media_failed",
-        lambda **kwargs: failed_calls.append(kwargs) or True,
-    )
-    monkeypatch.setattr(
-        process_notification,
-        "mark_media_succeeded",
-        lambda **kwargs: succeeded_calls.append(kwargs) or True,
-    )
-
-    assert process_notification.main() == 1
-
-    assert len(scrape_calls) == 2
-    assert failed_calls == [
-        {
-            "media_row_id": "media-row-1",
-            "claim_token": "claim-1",
-            "failure_category": "scrape_error",
-        }
-    ]
-    assert succeeded_calls == [{"media_row_id": "media-row-2", "claim_token": "claim-2"}]
 
 
 def test_non_object_notification_json_fails(monkeypatch, caplog) -> None:

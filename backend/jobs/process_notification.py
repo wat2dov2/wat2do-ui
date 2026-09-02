@@ -347,7 +347,10 @@ def main() -> int:
         log.error("Instagram notification ledger recording failed.")
         return 1
 
-    log.info("Successfully recorded media to the ledger.")
+    success_msg = f"Successfully queued {len(media)} Instagram posts to the ledger."
+    log.info(success_msg)
+    if os.getenv("GITHUB_ACTIONS") == "true":
+        print(f"::notice::{success_msg}", flush=True)
     return 0
 
 
