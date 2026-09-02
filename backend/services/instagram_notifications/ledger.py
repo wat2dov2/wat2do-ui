@@ -23,6 +23,7 @@ class MediaClaim:
     media_row_id: str
     source_url: str
     claim_token: str
+    intended_recipient_id: str
 
 
 def record_notification_media(
@@ -89,6 +90,7 @@ def claim_next_notification_media(
         media_row_id=str(row["media_row_id"]),
         source_url=str(row["source_url"]),
         claim_token=str(row["claim_token"]),
+        intended_recipient_id=str(row["intended_recipient_id"]),
     )
 
 
@@ -116,6 +118,7 @@ def claim_next_pending_media(
         media_row_id=str(row["media_row_id"]),
         source_url=str(row["source_url"]),
         claim_token=str(row["claim_token"]),
+        intended_recipient_id=str(row["intended_recipient_id"]),
     )
 
 

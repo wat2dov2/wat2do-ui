@@ -27,6 +27,7 @@ log = logging.getLogger(__name__)
 
 
 def _process_claim(claim: MediaClaim, *, cutoff_days: int) -> int:
+    os.environ["INTENDED_RECIPIENT_ID"] = claim.intended_recipient_id
     try:
         status = run(
             targets=[claim.source_url],

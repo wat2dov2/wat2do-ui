@@ -104,6 +104,7 @@ def test_claim_next_notification_media_returns_one_irreversible_claim(fake_sb, p
                 "media_row_id": "media-row-1",
                 "source_url": "https://www.instagram.com/p/ABC123/",
                 "claim_token": "claim-1",
+                "intended_recipient_id": "76214170483",
             }
         ]
     )
@@ -115,6 +116,7 @@ def test_claim_next_notification_media_returns_one_irreversible_claim(fake_sb, p
         media_row_id="media-row-1",
         source_url="https://www.instagram.com/p/ABC123/",
         claim_token="claim-1",
+        intended_recipient_id="76214170483",
     )
     fake_sb.rpc.assert_called_once_with(
         "claim_next_instagram_notification_media",
