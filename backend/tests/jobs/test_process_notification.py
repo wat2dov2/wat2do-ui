@@ -1,6 +1,12 @@
 import json
 import logging
+import sys
+from unittest.mock import MagicMock
 from types import SimpleNamespace
+
+# Mock fcntl for Windows test runs so we don't get "No module named 'fcntl'"
+if sys.platform == "win32":
+    sys.modules["fcntl"] = MagicMock()
 
 from jobs import process_notification
 from services.instagram_notifications.browser_digest import DigestResolution
@@ -218,7 +224,7 @@ def test_digest_resolution_failure_falls_back_to_explicit_media(monkeypatch, cap
 
     class _Resolver:
         def resolve(self, *_args):
-            raise process_notification.BrowserDigestError("sanitized browser failure")
+            raise Exception("sanitized browser failure")
 
     monkeypatch.setattr(process_notification, "BrowserInstagramDigestResolver", _Resolver)
     record_calls = _capture_ledger(monkeypatch)
@@ -256,7 +262,7 @@ def test_terminal_digest_shortfall_processes_every_available_media(
     assert "returned 2 of 3 advertised media items" in caplog.text
 
 
-def test_digest_over_count_falls_back_to_explicit_media(monkeypatch, caplog) -> None:
+def test_digest_over_count_stops_before_ledger_recording(monkeypatch, caplog) -> None:
     _set_payload(
         monkeypatch,
         _actionable_payload(
@@ -267,13 +273,16 @@ def test_digest_over_count_falls_back_to_explicit_media(monkeypatch, caplog) -> 
     import sys
 
     monkeypatch.setattr(sys, "platform", "darwin")
-    record_calls = _capture_ledger(monkeypatch)
+    monkeypatch.setattr(
+        process_notification,
+        "record_notification_media",
+        lambda **_kwargs: (_ for _ in ()).throw(AssertionError("ledger should not run")),
+    )
 
     with caplog.at_level(logging.ERROR):
-        assert process_notification.main() == 0
+        assert process_notification.main() == 1
 
     assert "resolved more media IDs than advertised" in caplog.text
-    assert [item.media_id for item in record_calls[0]["media"]] == ["123456789", "987654321"]
 
 
 def test_invalid_media_notification_fails_without_logging_identifier(

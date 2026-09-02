@@ -20,6 +20,7 @@ import core.logging  # noqa: F401, E402
 from schemas.school import validate_recipient_id  # noqa: E402
 from services import school_service  # noqa: E402
 from services.instagram_notifications.browser_digest import (  # noqa: E402
+    BrowserDigestError,
     BrowserInstagramDigestResolver,
     digest_media_count_shortfall,
 )
@@ -297,7 +298,7 @@ def main() -> int:
     try:
         notification = _parse_notification(payload)
         _validate_actionable_notification(notification)
-    except NotificationPayloadError as exc:
+    except (NotificationPayloadError, BrowserDigestError) as exc:
         log.error("%s", exc)
         return 1
 
@@ -320,7 +321,7 @@ def main() -> int:
             raise NotificationPayloadError(
                 "No school mapping exists for the notification recipient."
             )
-    except NotificationPayloadError as exc:
+    except (NotificationPayloadError, BrowserDigestError) as exc:
         log.error("%s", exc)
         return 1
     except Exception:  # noqa: BLE001 - do not expose database or upstream internals
@@ -329,7 +330,7 @@ def main() -> int:
 
     try:
         media = _materialize_media(notification, intended_recipient_id)
-    except NotificationPayloadError as exc:
+    except (NotificationPayloadError, BrowserDigestError) as exc:
         log.error("%s", exc)
         return 1
 
