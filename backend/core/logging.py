@@ -17,3 +17,34 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger(__name__)
+
+
+class GitHubActionErrorHandler(logging.Handler):
+    """Buffer errors and flush them as GitHub action workflow annotations on exit.
+
+    GitHub Actions imposes a limit of 10 annotations per step. This handler
+    compacts all errors generated during the script's execution into a single
+    workflow annotation to guarantee visibility without hitting the limit.
+    """
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.setLevel(logging.ERROR)
+        self._errors: list[str] = []
+        import atexit
+
+        atexit.register(self._flush)
+
+    def emit(self, record: logging.LogRecord) -> None:
+        msg = self.format(record)
+        self._errors.append(msg)
+
+    def _flush(self) -> None:
+        if not self._errors:
+            return
+        import os
+        import sys
+
+        if os.getenv("GITHUB_ACTIONS") == "true":
+            compacted = " \\n".join(msg.replace("\n", " ") for msg in self._errors)
+            print(f"::error::{compacted}", file=sys.stderr)

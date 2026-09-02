@@ -47,15 +47,18 @@ jobs:
           if [[ -n "$CACHE_ENT_ID" || "$INSTAGRAM_ACTION" == *"cache_ent_id="* ]]; then
             has_cache_ent_id=true
           fi
-          status=$(gh api "repos/${{ github.repository }}/actions/runners" --jq '.runners[] | select(.name == "wat2do-mac-mini" or .name == "wat2do-scraper" or (.labels[]?.name == "wat2do-scraper")) | .status' 2>/dev/null || true)
-          if echo "$status" | grep -q "online"; then
-            echo "Mac mini runner is online."
-            echo "runner=wat2do-scraper" >> "$GITHUB_OUTPUT"
-          elif [[ "$has_cache_ent_id" == "true" ]]; then
-            echo "Mac mini runner is offline. CacheEntID processing will wait for it."
-            echo "runner=wat2do-scraper" >> "$GITHUB_OUTPUT"
+          
+          if [[ "$has_cache_ent_id" == "true" ]]; then
+            status=$(gh api "repos/${{ github.repository }}/actions/runners" --jq '.runners[] | select(.name == "wat2do-mac-mini" or .name == "wat2do-scraper" or (.labels[]?.name == "wat2do-scraper")) | .status' 2>/dev/null || true)
+            if echo "$status" | grep -q "online"; then
+              echo "cache_ent_id processing requires the Mac mini and it is online."
+              echo "runner=wat2do-scraper" >> "$GITHUB_OUTPUT"
+            else
+              echo "cache_ent_id is present, but Mac mini is offline. Falling back to ubuntu-latest explicit media."
+              echo "runner=ubuntu-latest" >> "$GITHUB_OUTPUT"
+            fi
           else
-            echo "Mac mini runner status is '${status:-offline}'. Falling back to ubuntu-latest."
+            echo "Standard notification processing does not require the Mac mini. Routing to ubuntu-latest."
             echo "runner=ubuntu-latest" >> "$GITHUB_OUTPUT"
           fi
 
@@ -157,3 +160,9 @@ jobs:
               --cutoff-days "$CUTOFF_DAYS" \
               --dry-run false
           fi
+
+      - name: Trigger background scraper
+        if: success() && steps.validate.outputs.skip != 'true'
+        run: gh workflow run scrape-pending-media.yml -f cutoff_days="$CUTOFF_DAYS"
+        env:
+          GH_TOKEN: ${{ secrets.RUNNER_CHECK_TOKEN }}

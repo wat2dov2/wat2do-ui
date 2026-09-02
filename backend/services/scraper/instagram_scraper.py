@@ -135,10 +135,20 @@ class InstagramScraper:
         timeout_seconds: int,
     ) -> list[dict]:
         """Run one Apify actor and return its complete default dataset."""
+        from tenacity import retry, stop_after_attempt, wait_exponential_jitter
+
+        @retry(
+            stop=stop_after_attempt(5),
+            wait=wait_exponential_jitter(initial=1, max=10, jitter=2),
+            reraise=True,
+        )
+        def _start_actor_with_retry() -> object:
+            return self._client.actor(actor_id).start(run_input=run_input)
+
         try:
-            run = self._client.actor(actor_id).start(run_input=run_input)
+            run = _start_actor_with_retry()
         except Exception:
-            log.error("Apify actor start failed")
+            log.error("Apify actor start failed after retries")
             raise InstagramScraperError("start") from None
 
         run_id = getattr(run, "id", None)

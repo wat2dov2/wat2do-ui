@@ -1,0 +1,56 @@
+name: Scrape Pending Media
+run-name: Scrape Pending Media
+
+# Processes pending Instagram media claims from the database queue
+# Triggered by workflow_dispatch (from process-notification.yml) or other jobs
+
+on:
+  workflow_dispatch:
+    inputs:
+      cutoff_days:
+        description: 'Number of days to look back'
+        required: false
+        type: string
+        default: '1'
+
+jobs:
+  scrape-pending:
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: read
+      actions: write
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Configure application storage
+        run: |
+          account_id="$(aws sts get-caller-identity --query Account --output text || echo '123456789012')"
+          echo "STORAGE_BUCKET_NAME=wat2do-production-assets-$account_id" >> "$GITHUB_ENV"
+          echo "STORAGE_PUBLIC_BASE_URL=https://wat2do.io/media" >> "$GITHUB_ENV"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        working-directory: backend
+        run: pip install --prefer-binary -r requirements.txt
+
+      - name: Scrape pending media
+        working-directory: backend
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          APIFY_API_TOKEN: ${{ secrets.APIFY_API_TOKEN }}
+          EVENT_FEED_REVALIDATION_SECRET: ${{ secrets.EVENT_FEED_REVALIDATION_SECRET }}
+          GH_TOKEN: ${{ secrets.RUNNER_CHECK_TOKEN }}
+          CUTOFF_DAYS: ${{ inputs.cutoff_days || '1' }}
+          EVENT_FEED_REVALIDATION_URL: "${{ env.FRONTEND_URL }}/api/revalidate-events"
+        run: |
+          python jobs/scrape_pending_media.py

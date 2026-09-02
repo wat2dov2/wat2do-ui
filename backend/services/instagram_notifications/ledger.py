@@ -92,6 +92,33 @@ def claim_next_notification_media(
     )
 
 
+def claim_next_pending_media(
+    *,
+    github_run_id: str | None,
+) -> MediaClaim | None:
+    """Irreversibly claim the next globally pending media item immediately before use."""
+
+    response = (
+        get_sb()
+        .rpc(
+            "claim_next_pending_instagram_media",
+            {
+                "p_github_run_id": _optional_text(github_run_id),
+            },
+        )
+        .execute()
+    )
+    rows = response.data or []
+    if not rows:
+        return None
+    row = rows[0]
+    return MediaClaim(
+        media_row_id=str(row["media_row_id"]),
+        source_url=str(row["source_url"]),
+        claim_token=str(row["claim_token"]),
+    )
+
+
 def mark_media_succeeded(*, media_row_id: str, claim_token: str) -> bool:
     """Commit success only while the irreversible claim is still processing."""
     return _finalize_media(

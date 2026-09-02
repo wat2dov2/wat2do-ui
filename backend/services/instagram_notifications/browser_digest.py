@@ -82,13 +82,37 @@ class BrowserInstagramDigestResolver:
         if not _CACHE_ID_PATTERN.fullmatch(cache_id):
             raise BrowserDigestError("Instagram digest cache ID is invalid")
 
-        account_username = self._activate_recipient_account(recipient_id)
-        media_ids, page_count = self._fetch_digest(cache_id)
-        return DigestResolution(
-            account_username=account_username,
-            media_ids=media_ids,
-            page_count=page_count,
-        )
+        for attempt in range(1, 4):
+            try:
+                account_username = self._activate_recipient_account(recipient_id)
+                media_ids, page_count = self._fetch_digest(cache_id)
+                return DigestResolution(
+                    account_username=account_username,
+                    media_ids=media_ids,
+                    page_count=page_count,
+                )
+            except BrowserDigestError as exc:
+                if attempt == 3 or "AppleScript is unavailable" in str(exc):
+                    raise
+                if "Open one logged-in Instagram tab" in str(exc):
+                    self._open_new_instagram_tab()
+                self._sleep(2.0)
+
+        # This point is unreachable because the loop either returns or raises.
+        raise RuntimeError("Unreachable")
+
+    def _open_new_instagram_tab(self) -> None:
+        script = 'tell application "Brave Browser"\nif not (exists window 1) then\nmake new window\nend if\ntell window 1\nmake new tab with properties {URL:"https://www.instagram.com/"}\nend tell\nend tell'
+        try:
+            subprocess.run(
+                ["/usr/bin/osascript", "-e", script],
+                capture_output=True,
+                check=True,
+                timeout=10.0,
+            )
+            self._sleep(3.0)
+        except Exception:
+            pass
 
     def _run(self, source: str) -> str:
         return self._javascript_runner(source, _CONTROL.request_timeout_seconds).strip()

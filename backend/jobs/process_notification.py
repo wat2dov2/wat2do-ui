@@ -17,20 +17,14 @@ from dotenv import load_dotenv  # noqa: E402
 load_dotenv()
 
 import core.logging  # noqa: F401, E402
-from jobs.scrape import run  # noqa: E402
 from schemas.school import validate_recipient_id  # noqa: E402
 from services import school_service  # noqa: E402
 from services.instagram_notifications.browser_digest import (  # noqa: E402
-    BrowserDigestError,
     BrowserInstagramDigestResolver,
     digest_media_count_shortfall,
 )
 from services.instagram_notifications.ledger import (  # noqa: E402
     MaterializedMedia,
-    MediaClaim,
-    claim_next_notification_media,
-    mark_media_failed,
-    mark_media_succeeded,
     record_notification_media,
 )
 
@@ -220,23 +214,47 @@ def _materialize_media(
         notification.total_media_count,
     )
     if notification.cache_ent_id is not None and shortfall:
-        resolution = (resolver or BrowserInstagramDigestResolver()).resolve(
-            intended_recipient_id,
-            notification.cache_ent_id,
-        )
-        for raw_media_id in resolution.media_ids:
-            media_id = _parse_media_id(raw_media_id)
-            materialized.setdefault(media_id, _media_target(media_id))
+        import sys
 
-        shortfall = digest_media_count_shortfall(
-            len(materialized),
-            notification.total_media_count,
-        )
-        log.info(
-            "Expanded Instagram digest through %s to %d exact media target(s).",
-            resolution.account_username,
-            len(materialized),
-        )
+        if sys.platform != "darwin":
+            log.warning(
+                "Skipping cache_ent_id resolution because this runner does not support browser automation."
+            )
+        else:
+            try:
+                import fcntl
+
+                # If multiple jobs run concurrently on the Mac mini, this lock ensures they queue sequentially
+                # and don't try to control the physical browser at the exact same time.
+                lock_path = "/tmp/wat2do_instagram_browser.lock"
+                with open(lock_path, "w") as lock_file:
+                    log.info("Waiting for exclusive access to the Brave browser...")
+                    fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX)
+                    log.info("Acquired exclusive browser access.")
+
+                    resolution = (resolver or BrowserInstagramDigestResolver()).resolve(
+                        intended_recipient_id,
+                        notification.cache_ent_id,
+                    )
+
+            except Exception as exc:  # noqa: BLE001 - gracefully fallback on any resolution failure
+                log.error(
+                    "Browser digest resolution failed: %s. Falling back to explicit media.", exc
+                )
+            else:
+                for raw_media_id in resolution.media_ids:
+                    media_id = _parse_media_id(raw_media_id)
+                    materialized.setdefault(media_id, _media_target(media_id))
+
+                shortfall = digest_media_count_shortfall(
+                    len(materialized),
+                    notification.total_media_count,
+                )
+                log.info(
+                    "Expanded Instagram digest through %s to %d exact media target(s).",
+                    resolution.account_username,
+                    len(materialized),
+                )
 
     if shortfall:
         log.warning(
@@ -248,75 +266,14 @@ def _materialize_media(
     return list(materialized.values())
 
 
-def _process_claim(claim: MediaClaim, *, cutoff_days: int) -> int:
-    try:
-        status = run(
-            targets=[claim.source_url],
-            cutoff_days=cutoff_days,
-            dry_run=False,
-            allow_past_events=False,
-        )
-    except Exception:  # noqa: BLE001 - every claim must reach a terminal ledger state
-        log.error("Exact Instagram media scrape raised an unexpected error.")
-        status = 1
-        failure_category = "scrape_exception"
-    else:
-        failure_category = "scrape_error"
-
-    try:
-        finalized = (
-            mark_media_succeeded(
-                media_row_id=claim.media_row_id,
-                claim_token=claim.claim_token,
-            )
-            if status == 0
-            else mark_media_failed(
-                media_row_id=claim.media_row_id,
-                claim_token=claim.claim_token,
-                failure_category=failure_category,
-            )
-        )
-    except Exception:  # noqa: BLE001 - never leak database details
-        log.error("Instagram media ledger finalization failed.")
-        finalized = False
-
-    if not finalized:
-        log.error("Instagram media claim was not finalized.")
-    return 0 if status == 0 and finalized else 1
-
-
-def _process_pending_media(
-    notification_id: str,
-    *,
-    cutoff_days: int,
-    github_run_id: str | None,
-) -> tuple[int, int]:
-    overall_status = 0
-    processed_count = 0
-    while True:
-        try:
-            claim = claim_next_notification_media(
-                notification_id=notification_id,
-                github_run_id=github_run_id,
-            )
-        except Exception:  # noqa: BLE001 - database details must stay out of logs
-            log.error("Instagram notification ledger claim failed.")
-            return 1, processed_count
-        if claim is None:
-            return overall_status, processed_count
-
-        processed_count += 1
-        overall_status = max(
-            overall_status,
-            _process_claim(claim, cutoff_days=cutoff_days),
-        )
-
-
 def main() -> int:
+    from core.logging import GitHubActionErrorHandler
+
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     )
+    logging.getLogger().addHandler(GitHubActionErrorHandler())
 
     payload_str = os.getenv("NOTIFICATION_JSON", "").strip()
     if not payload_str:
@@ -372,18 +329,12 @@ def main() -> int:
 
     try:
         media = _materialize_media(notification, intended_recipient_id)
-    except (BrowserDigestError, NotificationPayloadError) as exc:
+    except NotificationPayloadError as exc:
         log.error("%s", exc)
         return 1
 
     try:
-        cutoff_days = int(os.getenv("CUTOFF_DAYS", "1"))
-    except ValueError:
-        log.error("CUTOFF_DAYS must be an integer.")
-        return 1
-
-    try:
-        notification_id = record_notification_media(
+        record_notification_media(
             school_id=school.id,
             intended_recipient_id=intended_recipient_id,
             push_id=push_id,
@@ -396,16 +347,8 @@ def main() -> int:
         log.error("Instagram notification ledger recording failed.")
         return 1
 
-    processing_status, processed_count = _process_pending_media(
-        notification_id,
-        cutoff_days=cutoff_days,
-        github_run_id=(os.getenv("GITHUB_RUN_ID") or "").strip() or None,
-    )
-    if processed_count:
-        log.info("Processed %d exact Instagram media target(s).", processed_count)
-    else:
-        log.info("No pending Instagram media remain for this notification.")
-    return processing_status
+    log.info("Successfully recorded media to the ledger.")
+    return 0
 
 
 if __name__ == "__main__":
