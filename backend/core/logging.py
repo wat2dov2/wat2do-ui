@@ -37,6 +37,7 @@ class GitHubActionErrorHandler(logging.Handler):
 
     def emit(self, record: logging.LogRecord) -> None:
         import os
+
         if "PYTEST_CURRENT_TEST" in os.environ:
             return
         msg = self.format(record)
