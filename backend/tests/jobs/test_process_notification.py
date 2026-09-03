@@ -26,6 +26,7 @@ def _set_payload(monkeypatch, payload: object) -> None:
 
 def _actionable_payload(action: str, **extra: object) -> dict[str, object]:
     return {
+        "android.subText": "ubc.wat2do.io",
         "com.instagram.android.igns.logging.ig_action": action,
         "com.instagram.android.igns.logging.push_category": PUSH_CATEGORY,
         "com.instagram.android.igns.logging.push_id": PUSH_ID,
@@ -67,8 +68,13 @@ def _install_digest_resolver(monkeypatch, media_ids: tuple[str, ...]):
     calls = []
 
     class _Resolver:
-        def resolve(self, intended_recipient_id: str, cache_ent_id: str):
-            calls.append((intended_recipient_id, cache_ent_id))
+        def resolve(
+            self,
+            intended_recipient_id: str,
+            account_username: str,
+            cache_ent_id: str,
+        ):
+            calls.append((intended_recipient_id, account_username, cache_ent_id))
             return DigestResolution(
                 account_username="ubc.wat2do.io",
                 media_ids=media_ids,
@@ -140,7 +146,7 @@ def test_digest_expands_hidden_media_before_recording_and_keeps_metadata(
         third_media_id,
         fourth_media_id,
     ]
-    assert resolver_calls == [(RECIPIENT_ID, "cache-123")]
+    assert resolver_calls == [(RECIPIENT_ID, "ubc.wat2do.io", "cache-123")]
     assert record_calls[0]["cache_ent_id"] == "cache-123"
     assert record_calls[0]["total_non_mmc_media_count"] == 4
     assert "Expanded Instagram digest through ubc.wat2do.io to 4 exact media target" in (
@@ -210,7 +216,10 @@ def test_cache_only_digest_is_expanded_before_validation(monkeypatch) -> None:
     ]
 
 
-def test_digest_resolution_failure_falls_back_to_explicit_media(monkeypatch, caplog) -> None:
+def test_digest_resolution_failure_stops_before_ledger_recording(
+    monkeypatch,
+    caplog,
+) -> None:
     _set_payload(
         monkeypatch,
         _actionable_payload(
@@ -224,16 +233,40 @@ def test_digest_resolution_failure_falls_back_to_explicit_media(monkeypatch, cap
 
     class _Resolver:
         def resolve(self, *_args):
-            raise Exception("sanitized browser failure")
+            raise process_notification.BrowserDigestError("sanitized browser failure")
 
     monkeypatch.setattr(process_notification, "BrowserInstagramDigestResolver", _Resolver)
-    record_calls = _capture_ledger(monkeypatch)
+    monkeypatch.setattr(
+        process_notification,
+        "record_notification_media",
+        lambda **_kwargs: (_ for _ in ()).throw(AssertionError("ledger should not run")),
+    )
 
     with caplog.at_level(logging.ERROR):
-        assert process_notification.main() == 0
+        assert process_notification.main() == 1
 
     assert "sanitized browser failure" in caplog.text
-    assert [item.media_id for item in record_calls[0]["media"]] == ["123456789"]
+
+
+def test_cache_digest_requires_browser_capable_runner(monkeypatch, caplog) -> None:
+    _set_payload(
+        monkeypatch,
+        _actionable_payload(
+            "clips_home?media_id=123456789&cache_ent_id=cache-123&total_non_mmc_media_count=2"
+        ),
+    )
+    _install_school(monkeypatch)
+    monkeypatch.setattr(sys, "platform", "linux")
+    monkeypatch.setattr(
+        process_notification,
+        "record_notification_media",
+        lambda **_kwargs: (_ for _ in ()).throw(AssertionError("ledger should not run")),
+    )
+
+    with caplog.at_level(logging.ERROR):
+        assert process_notification.main() == 1
+
+    assert "requires the browser-capable Mac runner" in caplog.text
 
 
 def test_terminal_digest_shortfall_processes_every_available_media(

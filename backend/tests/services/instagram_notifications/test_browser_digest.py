@@ -14,7 +14,6 @@ from services.instagram_notifications import browser_digest
         browser_digest._switch_button_state_source(),
         browser_digest._click_switch_accounts_source(),
         browser_digest._account_chooser_state_source(),
-        browser_digest._account_usernames_source("usask.wat2do.io"),
         browser_digest._click_account_source("usask.wat2do.io"),
         browser_digest._current_account_username_source(),
         browser_digest._recipient_is_active_source("41553815702"),
@@ -43,7 +42,6 @@ def test_switcher_sources_render_unambiguous_css_selector_quotes() -> None:
             browser_digest._open_more_source(),
             browser_digest._switch_button_state_source(),
             browser_digest._account_chooser_state_source(),
-            browser_digest._account_usernames_source("usask.wat2do.io"),
             browser_digest._click_account_source("usask.wat2do.io"),
             browser_digest._close_account_chooser_source(),
         )
@@ -53,6 +51,7 @@ def test_switcher_sources_render_unambiguous_css_selector_quotes() -> None:
     assert "querySelectorAll('button,[role=\"button\"]')" in rendered
     assert "querySelectorAll('h1,[role=\"heading\"]')" in rendered
     assert "closest('[role=\"dialog\"]')" in rendered
+    assert 'scrollIntoView({behavior: "instant", block: "center"})' in rendered
 
 
 def test_action_media_ids_and_merge_use_one_canonical_media_list() -> None:
@@ -82,7 +81,7 @@ def test_digest_media_count_rejects_over_count() -> None:
         browser_digest.digest_media_count_shortfall(157, 156)
 
 
-def test_resolver_switches_to_matching_active_identity_and_returns_only_media_ids() -> None:
+def test_resolver_switches_once_to_requested_account_and_returns_only_media_ids() -> None:
     sources: list[str] = []
     current_username = "ulaval.wat2do.io"
     recipient_active = False
@@ -106,8 +105,6 @@ def test_resolver_switches_to_matching_active_identity_and_returns_only_media_id
             return current_username
         if "activeRecipient" in source:
             return "true" if recipient_active else "false"
-        if "const handle =" in source:
-            return json.dumps(["ulaval.wat2do.io", "usask.wat2do.io"])
         if "const settings =" in source:
             menu_open = True
             return "clicked"
@@ -131,7 +128,11 @@ def test_resolver_switches_to_matching_active_identity_and_returns_only_media_id
     resolution = browser_digest.BrowserInstagramDigestResolver(
         javascript_runner=run_javascript,
         sleep=lambda _seconds: None,
-    ).resolve("41553815702", "18083776211391703")
+    ).resolve(
+        "41553815702",
+        "usask.wat2do.io",
+        "18083776211391703",
+    )
 
     assert resolution == browser_digest.DigestResolution(
         account_username="usask.wat2do.io",
@@ -142,6 +143,45 @@ def test_resolver_switches_to_matching_active_identity_and_returns_only_media_id
     assert "sessionid" not in rendered_sources.lower()
     assert "18083776211391703" in rendered_sources
     assert "41553815702" in rendered_sources
+    assert rendered_sources.count('const username = "usask.wat2do.io"') == 1
+    assert "ulaval.wat2do.io" not in rendered_sources
+
+
+def test_resolver_rejects_unmapped_account_without_switching() -> None:
+    sources: list[str] = []
+
+    def run_javascript(source: str, _timeout: float) -> str:
+        sources.append(source)
+        if "const anchor = [...document.querySelectorAll" in source:
+            return "ulaval.wat2do.io"
+        if "const settings =" in source:
+            return "clicked"
+        if "some(element" in source and "Switch accounts" in source:
+            return "ready"
+        if 'h1,[role="heading"]' in source and "some(element" in source:
+            return "ready"
+        if 'const username = "usask.wat2do.io"' in source:
+            return "missing"
+        raise AssertionError(f"Unexpected JavaScript source: {source}")
+
+    resolver = browser_digest.BrowserInstagramDigestResolver(
+        javascript_runner=run_javascript,
+        sleep=lambda _seconds: None,
+    )
+
+    with pytest.raises(
+        browser_digest.BrowserDigestError,
+        match="Matching Instagram browser account is unavailable",
+    ):
+        resolver.resolve(
+            "41553815702",
+            "usask.wat2do.io",
+            "18083776211391703",
+        )
+
+    rendered_sources = "\n".join(sources)
+    assert rendered_sources.count('const username = "usask.wat2do.io"') == 1
+    assert "fetch(" not in rendered_sources
 
 
 def test_apple_events_permission_error_has_actionable_sanitized_message(monkeypatch) -> None:

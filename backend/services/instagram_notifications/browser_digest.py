@@ -23,6 +23,7 @@ _CONTROL = controlbox.instagram_digest
 _DIGEST_RESULT_KEY = "__wat2doInstagramDigestQuery"
 _CACHE_ID_PATTERN = re.compile(r"^[A-Za-z0-9._:-]{1,255}$")
 _USERNAME_PATTERN = re.compile(r"^[A-Za-z0-9._]{1,30}$")
+_WAT2DO_ACCOUNT_PATTERN = re.compile(r"^(?:[a-z0-9._]+[.]wat2do[.]io|wat2do[.]ca)$")
 _MEDIA_KEYS = frozenset({"media_list", "media_id"})
 _APPLE_SCRIPT = """
 on run argv
@@ -69,77 +70,46 @@ class BrowserInstagramDigestResolver:
         self._javascript_runner = javascript_runner or _execute_brave_javascript
         self._sleep = sleep
         self._monotonic = monotonic
-        self._recipient_accounts: dict[str, str] = {}
 
-    def resolve(self, intended_recipient_id: str, cache_ent_id: str) -> DigestResolution:
+    def resolve(
+        self,
+        intended_recipient_id: str,
+        account_username: str,
+        cache_ent_id: str,
+    ) -> DigestResolution:
         """Resolve one CacheEntID without copying any browser credential."""
 
         try:
             recipient_id = validate_recipient_id(intended_recipient_id)
         except ValueError:
             raise BrowserDigestError("Instagram digest recipient ID is invalid") from None
+        username = account_username.strip().casefold()
+        if not _WAT2DO_ACCOUNT_PATTERN.fullmatch(username):
+            raise BrowserDigestError("Instagram digest account username is invalid")
         cache_id = cache_ent_id.strip()
         if not _CACHE_ID_PATTERN.fullmatch(cache_id):
             raise BrowserDigestError("Instagram digest cache ID is invalid")
 
-        for attempt in range(1, 4):
-            try:
-                account_username = self._activate_recipient_account(recipient_id)
-                media_ids, page_count = self._fetch_digest(cache_id)
-                return DigestResolution(
-                    account_username=account_username,
-                    media_ids=media_ids,
-                    page_count=page_count,
-                )
-            except BrowserDigestError as exc:
-                if attempt == 3 or "AppleScript is unavailable" in str(exc):
-                    raise
-                if "Open one logged-in Instagram tab" in str(exc):
-                    self._open_new_instagram_tab()
-                self._sleep(2.0)
-
-        # This point is unreachable because the loop either returns or raises.
-        raise RuntimeError("Unreachable")
-
-    def _open_new_instagram_tab(self) -> None:
-        script = 'tell application "Brave Browser"\nif not (exists window 1) then\nmake new window\nend if\ntell window 1\nmake new tab with properties {URL:"https://www.instagram.com/"}\nend tell\nend tell'
-        try:
-            subprocess.run(
-                ["/usr/bin/osascript", "-e", script],
-                capture_output=True,
-                check=True,
-                timeout=10.0,
-            )
-            self._sleep(3.0)
-        except Exception:
-            pass
+        self._activate_recipient_account(recipient_id, username)
+        media_ids, page_count = self._fetch_digest(cache_id)
+        return DigestResolution(
+            account_username=username,
+            media_ids=media_ids,
+            page_count=page_count,
+        )
 
     def _run(self, source: str) -> str:
         return self._javascript_runner(source, _CONTROL.request_timeout_seconds).strip()
 
-    def _activate_recipient_account(self, recipient_id: str) -> str:
-        cached_username = self._recipient_accounts.get(recipient_id)
-        if cached_username is not None:
-            self._switch_account(cached_username)
-            if self._recipient_is_active(recipient_id):
-                self._close_account_chooser()
-                return cached_username
-            del self._recipient_accounts[recipient_id]
-
+    def _activate_recipient_account(self, recipient_id: str, username: str) -> None:
         current_username = self._current_account_username()
-        if current_username is not None and self._recipient_is_active(recipient_id):
-            self._recipient_accounts[recipient_id] = current_username
-            self._close_account_chooser()
-            return current_username
-
-        for username in self._available_account_usernames(current_username):
-            if username == current_username:
-                continue
+        if current_username != username:
             self._switch_account(username)
-            if self._recipient_is_active(recipient_id):
-                self._recipient_accounts[recipient_id] = username
-                return username
-        raise BrowserDigestError("Matching Instagram browser account is unavailable")
+        if not self._recipient_is_active(recipient_id):
+            raise BrowserDigestError(
+                "Instagram browser account does not match the notification recipient"
+            )
+        self._close_account_chooser()
 
     def _current_account_username(self) -> str | None:
         username = self._run(_current_account_username_source())
@@ -151,24 +121,6 @@ class BrowserInstagramDigestResolver:
 
     def _recipient_is_active(self, recipient_id: str) -> bool:
         return self._run(_recipient_is_active_source(recipient_id)) == "true"
-
-    def _available_account_usernames(self, current_username: str | None) -> tuple[str, ...]:
-        self._open_account_chooser()
-        raw = self._run(_account_usernames_source(current_username))
-        try:
-            payload = json.loads(raw)
-        except json.JSONDecodeError:
-            raise BrowserDigestError("Instagram account switcher returned invalid state") from None
-        if not isinstance(payload, list):
-            raise BrowserDigestError("Instagram account switcher returned invalid state")
-        usernames: dict[str, None] = {}
-        for value in payload:
-            if not isinstance(value, str) or not _USERNAME_PATTERN.fullmatch(value):
-                raise BrowserDigestError("Instagram account switcher returned invalid state")
-            usernames.setdefault(value, None)
-        if not usernames:
-            raise BrowserDigestError("No Instagram browser accounts are available")
-        return tuple(usernames)
 
     def _open_account_chooser(self) -> None:
         if self._run(_account_chooser_state_source()) == "ready":
@@ -380,36 +332,6 @@ def _account_chooser_state_source() -> str:
 """.strip()
 
 
-def _account_usernames_source(current_username: str | None) -> str:
-    return f"""
-(() => {{
-  const heading = [...document.querySelectorAll('h1,[role="heading"]')]
-    .find(element =>
-      (element.innerText || element.textContent || "").trim() === "Switch accounts"
-    );
-  const dialog = heading?.closest('[role="dialog"]');
-  if (!dialog) return JSON.stringify([]);
-  const handle = /^(?:[A-Za-z0-9._]+[.]wat2do[.]io|wat2do[.]ca)$/;
-  const usernames = new Set();
-  const currentUsername = {json.dumps(current_username)};
-  if (currentUsername) usernames.add(currentUsername);
-  for (const control of dialog.querySelectorAll('button,[role="button"]')) {{
-    const text = (control.innerText || control.textContent || "").trim();
-    if (handle.test(text)) usernames.add(text);
-  }}
-  for (const image of dialog.querySelectorAll("img[alt]")) {{
-    const alt = image.getAttribute("alt") || "";
-    const suffix = "'s profile picture";
-    if (alt.endsWith(suffix)) {{
-      const username = alt.slice(0, -suffix.length);
-      if (handle.test(username)) usernames.add(username);
-    }}
-  }}
-  return JSON.stringify([...usernames]);
-}})()
-""".strip()
-
-
 def _click_account_source(username: str) -> str:
     return f"""
 (() => {{
@@ -422,6 +344,7 @@ def _click_account_source(username: str) -> str:
   const button = [...(dialog?.querySelectorAll('button,[role="button"]') || [])]
     .find(element => (element.innerText || element.textContent || "").trim() === username);
   if (!button) return "missing";
+  button.scrollIntoView({{behavior: "instant", block: "center"}});
   button.click();
   return "clicked";
 }})()

@@ -38,6 +38,7 @@ _RECIPIENT_ID_KEY = "com.instagram.android.igns.logging.intended_recipient_id"
 _MEDIA_QUERY_KEYS = ("media_list", "media_id")
 _CACHE_ID_KEY = "cache_ent_id"
 _TOTAL_MEDIA_COUNT_KEY = "total_non_mmc_media_count"
+_ACCOUNT_USERNAME_KEY = "android.subText"
 _ACTIONABLE_CATEGORIES = frozenset({"post", "subscription_daily_digest"})
 _ACTIONABLE_ACTION_PATH = "clips_home"
 
@@ -206,6 +207,7 @@ def _validate_actionable_notification(notification: ParsedNotification) -> None:
 def _materialize_media(
     notification: ParsedNotification,
     intended_recipient_id: str,
+    account_username: str,
     *,
     resolver: BrowserInstagramDigestResolver | None = None,
 ) -> list[MaterializedMedia]:
@@ -218,44 +220,34 @@ def _materialize_media(
         import sys
 
         if sys.platform != "darwin":
-            log.warning(
-                "Skipping cache_ent_id resolution because this runner does not support browser automation."
+            raise BrowserDigestError("CacheEntID expansion requires the browser-capable Mac runner")
+
+        import fcntl
+
+        lock_path = "/tmp/wat2do_instagram_browser.lock"
+        with open(lock_path, "w") as lock_file:
+            log.info("Waiting for exclusive access to the Brave browser...")
+            fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX)
+            log.info("Acquired exclusive browser access.")
+            resolution = (resolver or BrowserInstagramDigestResolver()).resolve(
+                intended_recipient_id,
+                account_username,
+                notification.cache_ent_id,
             )
-        else:
-            try:
-                import fcntl
 
-                # If multiple jobs run concurrently on the Mac mini, this lock ensures they queue sequentially
-                # and don't try to control the physical browser at the exact same time.
-                lock_path = "/tmp/wat2do_instagram_browser.lock"
-                with open(lock_path, "w") as lock_file:
-                    log.info("Waiting for exclusive access to the Brave browser...")
-                    fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX)
-                    log.info("Acquired exclusive browser access.")
+        for raw_media_id in resolution.media_ids:
+            media_id = _parse_media_id(raw_media_id)
+            materialized.setdefault(media_id, _media_target(media_id))
 
-                    resolution = (resolver or BrowserInstagramDigestResolver()).resolve(
-                        intended_recipient_id,
-                        notification.cache_ent_id,
-                    )
-
-            except Exception as exc:  # noqa: BLE001 - gracefully fallback on any resolution failure
-                log.error(
-                    "Browser digest resolution failed: %s. Falling back to explicit media.", exc
-                )
-            else:
-                for raw_media_id in resolution.media_ids:
-                    media_id = _parse_media_id(raw_media_id)
-                    materialized.setdefault(media_id, _media_target(media_id))
-
-                shortfall = digest_media_count_shortfall(
-                    len(materialized),
-                    notification.total_media_count,
-                )
-                log.info(
-                    "Expanded Instagram digest through %s to %d exact media target(s).",
-                    resolution.account_username,
-                    len(materialized),
-                )
+        shortfall = digest_media_count_shortfall(
+            len(materialized),
+            notification.total_media_count,
+        )
+        log.info(
+            "Expanded Instagram digest through %s to %d exact media target(s).",
+            resolution.account_username,
+            len(materialized),
+        )
 
     if shortfall:
         log.warning(
@@ -316,6 +308,12 @@ def main() -> int:
             "push category",
             maximum_length=100,
         )
+        account_username = _required_payload_text(
+            payload,
+            _ACCOUNT_USERNAME_KEY,
+            "receiving Instagram account",
+            maximum_length=30,
+        )
         school = school_service.get_school_by_recipient_id(intended_recipient_id)
         if school is None:
             raise NotificationPayloadError(
@@ -329,7 +327,11 @@ def main() -> int:
         return 1
 
     try:
-        media = _materialize_media(notification, intended_recipient_id)
+        media = _materialize_media(
+            notification,
+            intended_recipient_id,
+            account_username,
+        )
     except (NotificationPayloadError, BrowserDigestError) as exc:
         log.error("%s", exc)
         return 1
