@@ -27,6 +27,7 @@ from core.constants import (
 )
 from core.database import get_sb
 from core.pagination import fetch_all_pages
+from core.retry import supabase_retry
 from core.tables import EVENT_DATES, EVENTS
 from services import school_service
 from services.organization_service import _normalize_organization_name
@@ -299,8 +300,12 @@ def _merge_extracted_duplicates(existing: dict, incoming: dict) -> dict:
         if merged.get(field) in (None, "") and incoming.get(field) not in (None, ""):
             merged[field] = incoming[field]
 
-    old_food = merged.get("food") if isinstance(merged.get("food"), list) else []
-    new_food = incoming.get("food") if isinstance(incoming.get("food"), list) else []
+    old_food = merged.get("food")
+    if not isinstance(old_food, list):
+        old_food = []
+    new_food = incoming.get("food")
+    if not isinstance(new_food, list):
+        new_food = []
     if new_food:
         merged["food"] = list(dict.fromkeys([*old_food, *new_food]))
     merged["registration"] = bool(merged.get("registration") or incoming.get("registration"))
@@ -632,6 +637,7 @@ def _latest_occurrence_end(occurrences: list[dict]) -> datetime | None:
     return max(candidates) if candidates else None
 
 
+@supabase_retry
 def existing_shortcodes(shortcodes: set[str]) -> set[str]:
     """Return which of the provided shortcodes already exist on ``events.source_url``.
 

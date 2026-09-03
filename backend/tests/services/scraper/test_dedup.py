@@ -1,11 +1,16 @@
 """Unit tests for services/scraper/dedup."""
 
 from datetime import datetime, timedelta, timezone
+from unittest.mock import MagicMock
+
+from httpx import RemoteProtocolError
+from tenacity import wait_none
 
 from services.scraper.dedup import (
     _extract_shortcode,
     collapse_duplicate_extractions,
     confident_duplicate_id,
+    existing_shortcodes,
     find_candidates,
     jaccard_similarity,
     normalize,
@@ -96,6 +101,25 @@ def test_extract_shortcode_unrelated_url_returns_none():
     # to be skipped, not duplicated. Confirm with a sentinel test that
     # the function doesn't raise on a non-instagram URL.
     assert _extract_shortcode("https://example.com/uwteaorganization") is None
+
+
+def test_existing_shortcodes_retries_transient_database_read(monkeypatch):
+    response = MagicMock(data=[{"source_url": "https://www.instagram.com/p/AbCDeF1/"}])
+    query = MagicMock()
+    query.execute.side_effect = [RemoteProtocolError("connection terminated"), response]
+    query.range.return_value = query
+    query.order.return_value = query
+    query.or_.return_value = query
+    query.not_.is_.return_value = query
+    query.select.return_value = query
+    database = MagicMock()
+    database.table.return_value = query
+    monkeypatch.setattr("services.scraper.dedup.get_sb", lambda: database)
+
+    retry_without_wait = existing_shortcodes.retry_with(wait=wait_none())
+
+    assert retry_without_wait({"AbCDeF1"}) == {"AbCDeF1"}
+    assert query.execute.call_count == 2
 
 
 # ── find_candidates ───────────────────────────────────────────────────
