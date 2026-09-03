@@ -81,6 +81,21 @@ def test_digest_media_count_rejects_over_count() -> None:
         browser_digest.digest_media_count_shortfall(157, 156)
 
 
+@pytest.mark.parametrize(
+    "username",
+    ("usask.wat2do.io", "wat2do.ca", "utm.wat2do.ca"),
+)
+def test_resolver_accepts_configured_account_username_formats(username: str) -> None:
+    resolver = browser_digest.BrowserInstagramDigestResolver(
+        javascript_runner=lambda *_args: (_ for _ in ()).throw(
+            browser_digest.BrowserDigestError("browser reached")
+        )
+    )
+
+    with pytest.raises(browser_digest.BrowserDigestError, match="browser reached"):
+        resolver.resolve("41553815702", username, "18083776211391703")
+
+
 def test_resolver_switches_once_to_requested_account_and_returns_only_media_ids() -> None:
     sources: list[str] = []
     current_username = "ulaval.wat2do.io"

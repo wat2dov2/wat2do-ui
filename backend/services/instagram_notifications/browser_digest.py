@@ -23,7 +23,9 @@ _CONTROL = controlbox.instagram_digest
 _DIGEST_RESULT_KEY = "__wat2doInstagramDigestQuery"
 _CACHE_ID_PATTERN = re.compile(r"^[A-Za-z0-9._:-]{1,255}$")
 _USERNAME_PATTERN = re.compile(r"^[A-Za-z0-9._]{1,30}$")
-_WAT2DO_ACCOUNT_PATTERN = re.compile(r"^(?:[a-z0-9._]+[.]wat2do[.]io|wat2do[.]ca)$")
+_WAT2DO_ACCOUNT_PATTERN = re.compile(
+    r"^(?:[a-z0-9._]+[.]wat2do[.]io|(?:[a-z0-9._]+[.])?wat2do[.]ca)$"
+)
 _MEDIA_KEYS = frozenset({"media_list", "media_id"})
 _APPLE_SCRIPT = """
 on run argv
