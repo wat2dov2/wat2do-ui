@@ -33,7 +33,7 @@ on:
 
 jobs:
   process-post:
-    runs-on: wat2do-mac-mini
+    runs-on: wat2do-scraper-1
     environment: production
 
     permissions:
