@@ -27,8 +27,6 @@ jobs:
         with:
           ref: main
           persist-credentials: false
-          sparse-checkout: backend/controlbox/workflow_failure_alerts.json
-          sparse-checkout-cone-mode: false
 
       - name: Notify Wat2Do administrators
         env:
