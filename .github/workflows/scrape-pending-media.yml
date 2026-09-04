@@ -13,12 +13,17 @@ on:
         type: string
         default: '1'
 
+concurrency:
+  group: scrape-pending
+  cancel-in-progress: false
+
 jobs:
   scrape-pending:
     runs-on: wat2do-heavy-pool
-    concurrency:
-      group: scrape-pending
-      cancel-in-progress: false
+    strategy:
+      matrix:
+        worker: [1, 2]
+      fail-fast: false
     environment: production
     permissions:
       contents: read
