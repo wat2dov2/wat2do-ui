@@ -54,14 +54,23 @@ jobs:
       INTENDED_RECIPIENT_ID: ${{ github.event.client_payload.intended_recipient_id || github.event.client_payload.notification_dict['com.instagram.android.igns.logging.intended_recipient_id'] || fromJSON(inputs.notification_payload || '{}')['com.instagram.android.igns.logging.intended_recipient_id'] }}
       TARGET_SCHOOL: ${{ github.event_name == 'workflow_dispatch' && inputs.school || '' }}
       CUTOFF_DAYS: ${{ github.event_name == 'workflow_dispatch' && '1825' || github.event.client_payload.cutoff_days || '1' }}
+      NOTIFICATION_JSON: ${{ inputs.notification_payload || toJSON(github.event.client_payload.notification_dict) }}
 
     steps:
       - uses: actions/checkout@v4
 
+      - name: Expose notification payload
+        run: echo "$NOTIFICATION_JSON" > notification_payload.json
+
+      - name: Upload notification payload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: notification-payload
+          path: notification_payload.json
+          retention-days: 14
+
       - name: Validate job inputs
         id: validate
-        env:
-          NOTIFICATION_JSON: ${{ inputs.notification_payload || toJSON(github.event.client_payload.notification_dict) }}
         run: |
           test -n "$AWS_DEPLOY_ROLE_ARN"
           test -n "$FRONTEND_URL"
@@ -106,6 +115,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
 
       - name: Install dependencies
         if: steps.validate.outputs.skip != 'true'
@@ -116,8 +127,6 @@ jobs:
         id: process
         if: steps.validate.outputs.skip != 'true'
         working-directory: backend
-        env:
-          NOTIFICATION_JSON: ${{ inputs.notification_payload || toJSON(github.event.client_payload.notification_dict) }}
         run: |
           export EVENT_FEED_REVALIDATION_URL="${FRONTEND_URL%/}/api/revalidate-events"
           if [[ "$NOTIFICATION_JSON" != "null" && -n "$NOTIFICATION_JSON" ]]; then
