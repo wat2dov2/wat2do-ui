@@ -32,43 +32,8 @@ on:
         type: string
 
 jobs:
-  select-runner:
-    runs-on: ubuntu-latest
-    permissions:
-      actions: read
-    outputs:
-      runner: ${{ steps.check.outputs.runner }}
-    steps:
-      - name: Check Mac mini runner status
-        id: check
-        env:
-          RUNNER_CHECK_TOKEN: ${{ secrets.RUNNER_CHECK_TOKEN }}
-          DEFAULT_GH_TOKEN: ${{ github.token }}
-          CACHE_ENT_ID: ${{ github.event.client_payload.notification_dict.cache_ent_id || fromJSON(inputs.notification_payload || '{}').cache_ent_id || '' }}
-          INSTAGRAM_ACTION: ${{ github.event.client_payload.notification_dict['com.instagram.android.igns.logging.ig_action'] || fromJSON(inputs.notification_payload || '{}')['com.instagram.android.igns.logging.ig_action'] || '' }}
-        run: |
-          export GH_TOKEN="${RUNNER_CHECK_TOKEN:-$DEFAULT_GH_TOKEN}"
-          has_cache_ent_id=false
-          if [[ -n "$CACHE_ENT_ID" || "$INSTAGRAM_ACTION" == *"cache_ent_id="* ]]; then
-            has_cache_ent_id=true
-          fi
-          
-          if [[ "$has_cache_ent_id" == "true" ]]; then
-            status=$(gh api "repos/${{ github.repository }}/actions/runners" --jq '.runners[] | select(.name == "wat2do-mac-mini" or .name == "wat2do-scraper" or (.labels[]?.name == "wat2do-scraper")) | .status' 2>/dev/null || true)
-            if echo "$status" | grep -q "online"; then
-              echo "cache_ent_id processing requires the Mac mini and it is online."
-            else
-              echo "cache_ent_id processing requires the Mac mini and will wait for it to come online."
-            fi
-            echo "runner=wat2do-scraper" >> "$GITHUB_OUTPUT"
-          else
-            echo "Standard notification processing does not require the Mac mini. Routing to ubuntu-latest."
-            echo "runner=ubuntu-latest" >> "$GITHUB_OUTPUT"
-          fi
-
   process-post:
-    needs: select-runner
-    runs-on: ${{ needs.select-runner.outputs.runner }}
+    runs-on: wat2do-scraper
     environment: production
 
     permissions:

@@ -22,7 +22,7 @@ concurrency:
 
 jobs:
   scrape:
-    runs-on: ubuntu-latest
+    runs-on: wat2do-scraper
     environment: production
     timeout-minutes: 60
     permissions:

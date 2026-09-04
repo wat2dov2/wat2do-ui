@@ -15,7 +15,7 @@ on:
 
 jobs:
   scrape-pending:
-    runs-on: ubuntu-latest
+    runs-on: wat2do-scraper
     strategy:
       matrix:
         worker: [1, 2, 3, 4, 5]
