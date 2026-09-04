@@ -20,7 +20,7 @@ permissions:
 jobs:
   notify-discord:
     if: ${{ github.event.workflow_run.conclusion == 'failure' }}
-    runs-on: wat2do-scraper
+    runs-on: wat2do-heavy-pool
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4

@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   compute:
-    runs-on: wat2do-scraper
+    runs-on: wat2do-heavy-pool
     environment: production
     timeout-minutes: 45
     permissions:
