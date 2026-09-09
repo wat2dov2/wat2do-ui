@@ -114,8 +114,7 @@ jobs:
         if: steps.validate.outputs.skip != 'true'
         uses: astral-sh/setup-uv@v3
         with:
-          enable-cache: true
-          cache-dependency-glob: "backend/requirements*.txt"
+          enable-cache: false
 
       - name: Set up Python
         if: steps.validate.outputs.skip != 'true'
@@ -139,7 +138,6 @@ jobs:
             python jobs/process_notification.py
           else
             echo "Processing standard poster_id..."
-            echo "new_items=1" >> "$GITHUB_OUTPUT"
             python jobs/scrape.py \
               --username "$POSTER_ID" \
               --cutoff-days "$CUTOFF_DAYS" \

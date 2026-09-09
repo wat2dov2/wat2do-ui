@@ -165,6 +165,12 @@ def reconcile_events(
             )
             validated.id = None
 
+        if len(events) == len(extracted_events) and i < len(extracted_events):
+            if not validated.source_image_url:
+                validated.source_image_url = extracted_events[i].get("source_image_url")
+            if validated.image_index == 0 and "image_index" in extracted_events[i]:
+                validated.image_index = extracted_events[i].get("image_index", 0)
+
         # Pair by index when Pass 2 returns one object per extract; otherwise
         # leave scrape org context unset for unpaired trailing objects.
         if resolved_organization_ids is not None and len(events) == len(extracted_events):
