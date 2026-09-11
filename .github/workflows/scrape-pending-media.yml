@@ -43,6 +43,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ env.AWS_DEPLOY_ROLE_ARN }}
+          role-duration-seconds: 21600
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Configure application storage

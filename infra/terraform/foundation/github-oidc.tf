@@ -70,8 +70,9 @@ data "aws_iam_policy_document" "terraform_assume_role" {
 }
 
 resource "aws_iam_role" "github_deploy" {
-  name               = "wat2do-production-github-deploy"
-  assume_role_policy = data.aws_iam_policy_document.github_production_assume_role.json
+  max_session_duration = 21600
+  name                 = "wat2do-production-github-deploy"
+  assume_role_policy   = data.aws_iam_policy_document.github_production_assume_role.json
 }
 
 resource "aws_iam_role" "terraform" {
