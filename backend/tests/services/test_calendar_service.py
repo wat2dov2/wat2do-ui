@@ -189,7 +189,7 @@ def _event_row(**overrides) -> dict:
         "description": "Live jazz on the quad",
         "location": "The Quad",
         "school": "uwaterloo",
-        "organization": "Music Organization",
+        "club": "Music Club",
         "source_url": None,
         "added_at": "2026-04-15T10:00:00+00:00",
         "created_by": None,
@@ -389,3 +389,53 @@ def test_build_ics_for_user_unknown_school_renders_utc(monkeypatch, fake_sb, pat
 
     # UTC wall-clock equals the stored UTC; no TZID conversion.
     assert "DTSTART:20260501T230000Z" in text or "DTSTART;TZID=UTC:20260501T230000" in text
+
+
+@pytest.mark.parametrize("count", [0, 1, 999, 1000, 1001, 2200])
+def test_selected_event_reads_preserve_batch_boundaries(monkeypatch, fake_sb, patch_sb, count):
+    patch_sb("services.calendar_service")
+    selections = [_selection(event_id, event_id) for event_id in range(1, count + 1)]
+    occurrence_reader = MagicMock(return_value=[])
+    monkeypatch.setattr(calendar_service.event_date_service, "list_by_ids", occurrence_reader)
+    fake_sb.set_response(data=[])
+
+    assert calendar_service._fetch_selected_events(selections) == []
+
+    ids = [selection.event_id for selection in selections]
+    assert [call.args for call in fake_sb.in_.call_args_list] == [
+        ("id", ids[start : start + 1000]) for start in range(0, count, 1000)
+    ]
+    if count:
+        occurrence_reader.assert_called_once_with([str(UUID(int=value)) for value in ids])
+    else:
+        occurrence_reader.assert_not_called()
+
+
+def test_selected_event_reads_preserve_selection_order_and_skip_missing(
+    monkeypatch, fake_sb, patch_sb
+):
+    patch_sb("services.calendar_service")
+    fake_sb.set_response(data=[_event_row(id=1), _event_row(id=2)])
+    occurrences = [
+        calendar_service.OccurrenceResponse.model_validate(_occurrence_row(1, id=11)),
+        calendar_service.OccurrenceResponse.model_validate(_occurrence_row(2, id=22)),
+    ]
+    monkeypatch.setattr(
+        calendar_service.event_date_service, "list_by_ids", lambda _ids: occurrences
+    )
+
+    events = calendar_service._fetch_selected_events(
+        [
+            _selection(2, 22),
+            _selection(3, 33),
+            _selection(1, 11),
+            _selection(2, 22),
+        ]
+    )
+
+    assert [event.id for event in events] == [2, 1, 2]
+    assert [[occ.id for occ in event.occurrences] for event in events] == [
+        [UUID(int=22)],
+        [UUID(int=11)],
+        [UUID(int=22)],
+    ]

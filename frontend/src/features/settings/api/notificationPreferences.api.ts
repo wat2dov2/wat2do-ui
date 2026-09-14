@@ -34,20 +34,17 @@ export async function fetchNotificationPreferences(): Promise<NotificationPrefer
   const response = await api.get<ApiNotificationPreferencesListResponse>(
     "/notification-preferences",
   );
-  return {
-    morningEmail:
-      response.preferences.find(
-        (preference) => preference.notification_type === "morning_email",
-      )?.enabled ?? true,
-    eventReminder:
-      response.preferences.find(
-        (preference) => preference.notification_type === "event_reminder",
-      )?.enabled ?? true,
-    eventChange:
-      response.preferences.find(
-        (preference) => preference.notification_type === "event_change",
-      )?.enabled ?? true,
+  const preferences: NotificationPreferences = {
+    morningEmail: true,
+    eventReminder: true,
+    eventChange: true,
   };
+  for (const key of NOTIFICATION_PREFERENCE_KEYS) {
+    preferences[key] = response.preferences.find(
+      (preference) => preference.notification_type === NOTIFICATION_TYPE_BY_KEY[key],
+    )?.enabled ?? true;
+  }
+  return preferences;
 }
 
 export async function saveNotificationPreferences(
@@ -55,9 +52,9 @@ export async function saveNotificationPreferences(
 ): Promise<void> {
   const payload: ApiNotificationPreferencesBulkUpdate = {
     preferences: NOTIFICATION_PREFERENCE_KEYS.map((key) => ({
-        notification_type: NOTIFICATION_TYPE_BY_KEY[key],
-        enabled: preferences[key],
-      })),
+      notification_type: NOTIFICATION_TYPE_BY_KEY[key],
+      enabled: preferences[key],
+    })),
   };
   await api.patch("/notification-preferences", payload);
 }

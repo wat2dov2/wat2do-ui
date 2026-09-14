@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 import unicodedata
 from functools import lru_cache
-from typing import Final
+from typing import Final, cast
 
 from core.database import get_sb
 from core.tables import SCHOOLS
@@ -13,7 +13,7 @@ from schemas.school import SchoolRecord, SchoolSummary, validate_recipient_id
 
 DEFAULT_SEARCH_LIMIT: Final[int] = 10
 SCHOOL_COLUMNS: Final[str] = (
-    "id, slug, name, primary_color, secondary_color, timezone, "
+    "id, slug, name, primary_color, secondary_color, timezone, language, faculties, location_examples, "
     "recipient_id, semester_start, semester_end, social_preview_image_url, "
     "social_preview_revision, social_preview_rendered_revision, social_preview_rendered_at"
 )
@@ -139,14 +139,14 @@ def search_schools(query: str, limit: int = DEFAULT_SEARCH_LIMIT) -> list[School
         get_sb()
         .table(SCHOOLS)
         .select(
-            "slug, name, primary_color, secondary_color, school_email_domains(domain, is_primary)"
+            "slug, name, primary_color, secondary_color, language, faculties, location_examples, school_email_domains(domain, is_primary)"
         )
         .order("name")
         .execute()
     )
 
     ranked: list[tuple[tuple[int, int, str], SchoolSummary]] = []
-    for row in response.data or []:
+    for row in cast(list[dict], response.data or []):
         email_domains = _ordered_email_domains(row.get("school_email_domains"))
         school = SchoolSummary.model_validate(
             {
@@ -154,27 +154,25 @@ def search_schools(query: str, limit: int = DEFAULT_SEARCH_LIMIT) -> list[School
                 "email_domains": email_domains,
             }
         )
+        name_key = school.name.casefold()
         if not normalized_query:
-            ranked.append(((0, 0, school.name.casefold()), school))
+            ranked.append(((0, 0, name_key), school))
             continue
 
         terms = {
             _normalize(school.slug),
-            _compact(school.slug),
             _normalize(school.name),
-            _compact(school.name),
         }
         for domain_row in row.get("school_email_domains") or []:
             domain = domain_row.get("domain")
             if domain:
                 terms.add(_normalize(domain))
-                terms.add(_compact(domain))
         best_rank: tuple[int, int, str] | None = None
         for term in terms:
             score = _score_term(term, normalized_query, query_compact)
             if score is None:
                 continue
-            candidate = (score[0], score[1], school.name.casefold())
+            candidate = (score[0], score[1], name_key)
             if best_rank is None or candidate < best_rank:
                 best_rank = candidate
         if best_rank is not None:

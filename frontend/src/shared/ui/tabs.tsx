@@ -37,8 +37,8 @@ function TabsList({
 
 const TabsTrigger = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.Trigger>,
-  React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger>
->(({ className, ...props }, ref) => (
+  React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger> & { count?: number }
+>(({ className, children, count, ...props }, ref) => (
   <TabsPrimitive.Trigger
     ref={ref}
     data-slot="tabs-trigger"
@@ -49,7 +49,14 @@ const TabsTrigger = React.forwardRef<
       className
     )}
     {...props}
-  />
+  >
+    {children}
+    {count !== undefined && count > 0 ? (
+      <span data-slot="tabs-count" className="ms-1.5 inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-primary/15 px-1.5 text-[10px] font-bold text-primary">
+        {count}
+      </span>
+    ) : null}
+  </TabsPrimitive.Trigger>
 ))
 TabsTrigger.displayName = TabsPrimitive.Trigger.displayName
 

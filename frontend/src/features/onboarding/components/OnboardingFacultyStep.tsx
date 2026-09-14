@@ -9,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/ui/select";
-import { FACULTY_OPTIONS } from "../hooks/useOnboardingFlow";
+import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 import { SPLASH_ANIMATION_MS } from "../constants";
 import { toFacultyTranslationKey } from "@/shared/utils/string";
 
@@ -46,15 +46,19 @@ function generateSplashPoints(faculty: string) {
 }
 
 interface OnboardingFacultyStepProps {
+  school: string;
   faculty: string;
   onFacultyChange: (value: string) => void;
 }
 
 export function OnboardingFacultyStep({
+  school,
   faculty,
   onFacultyChange,
 }: OnboardingFacultyStepProps) {
   const { t } = useTranslation();
+  const { schoolBySlug } = useSchoolDirectory();
+  const faculties = schoolBySlug.get(school)?.faculties ?? [];
   const value = faculty || SELECT_PLACEHOLDER_VALUE;
   const [splash, setSplash] = useState(false);
   const [splashPoints, setSplashPoints] = useState<ReturnType<
@@ -64,7 +68,7 @@ export function OnboardingFacultyStep({
   const handleValueChange = (v: string) => {
     const next = v === SELECT_PLACEHOLDER_VALUE ? "" : v;
     onFacultyChange(next);
-    if (next && FACULTY_OPTIONS.includes(next as (typeof FACULTY_OPTIONS)[number])) {
+    if (next && faculties.includes(next)) {
       setSplashPoints(generateSplashPoints(next));
       setSplash(true);
       setTimeout(() => setSplash(false), SPLASH_ANIMATION_MS);
@@ -121,7 +125,7 @@ export function OnboardingFacultyStep({
             >
               {t("common.select")}
             </SelectItem>
-            {FACULTY_OPTIONS.map((item) => {
+            {faculties.map((item) => {
               const key = toFacultyTranslationKey(item);
               const translated = t(key);
               return (

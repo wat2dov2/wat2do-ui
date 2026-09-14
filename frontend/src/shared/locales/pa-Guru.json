@@ -13,7 +13,6 @@
     "or": "ਜਾਂ",
     "separatorBullet": "•",
     "free": "ਮੁਫ਼ਤ",
-    "freeFood": "ਮੁਫਤ ਭੋਜਨ",
     "backToTop": "ਸਿਖਰ 'ਤੇ ਵਾਪਸ ਜਾਓ",
     "cancelled": "ਰੱਦ ਕਰ ਦਿੱਤਾ",
     "registration": "ਰਜਿਸਟ੍ਰੇਸ਼ਨ",
@@ -70,7 +69,11 @@
     "all": "ਸਾਰੇ",
     "minuteAgo_one": "{{count}} ਮਿੰਟ ਪਹਿਲਾਂ",
     "hourAgo_one": "{{count}} ਘੰਟਾ ਪਹਿਲਾਂ",
-    "dayAgo_one": "{{count}} ਦਿਨ ਪਹਿਲਾਂ"
+    "dayAgo_one": "{{count}} ਦਿਨ ਪਹਿਲਾਂ",
+    "latestAddedItem": "<addedPrefix></addedPrefix><eventTitle>{{title}}</eventTitle> <addedTime>ਨੇ {{time}} ਸ਼ਾਮਲ ਕੀਤਾ</addedTime>",
+    "newlyAddedFilter": {
+      "last24Hours": "ਨਵਾਂ"
+    }
   },
   "errorBoundary": {
     "title": "ਕੁਝ ਗਲਤ ਹੋ ਗਿਆ",
@@ -81,13 +84,13 @@
     "events": "ਸਮਾਗਮ",
     "create": "ਇਵੈਂਟ ਜਮ੍ਹਾਂ ਕਰੋ",
     "loginRequiredToSubmit": "ਸਿਰਫ਼ ਲੌਗ-ਇਨ ਕੀਤੇ ਉਪਭੋਗਤਾ ਈਵੈਂਟਸ ਜਾਂ ਸੰਸਥਾਵਾਂ ਨੂੰ ਦਰਜ ਕਰ ਸਕਦੇ ਹਨ।",
-    "organizations": "ਸੰਸਥਾਵਾਂ",
+    "clubs": "ਸੰਸਥਾਵਾਂ",
     "positions": "ਅਹੁਦੇ",
     "myEvents": "ਮੇਰੇ ਇਵੈਂਟ",
     "settings": "ਸੈਟਿੰਗਾਂ",
     "admin": "ਐਡਮਿਨ",
     "adminPanel": "ਐਡਮਿਨ ਪੈਨਲ",
-    "organizationPanel": "ਸੰਸਥਾ ਪੈਨਲ",
+    "clubPanel": "ਸੰਸਥਾ ਪੈਨਲ",
     "clubPanelTooltip": "ਆਪਣੀ ਸੰਸਥਾ ਦਾ ਪ੍ਰਬੰਧਨ ਕਰੋ",
     "mission": "ਮਿਸ਼ਨ",
     "about": "ਸਾਡੇ ਬਾਰੇ",
@@ -117,8 +120,7 @@
       "continueWithGoogle": "Google ਨਾਲ ਜਾਰੀ ਰੱਖੋ"
     },
     "signOut": {
-      "logOut": "ਲੌਗ ਆਊਟ ਕਰੋ",
-      "signOutOfAccount": "ਆਪਣੇ ਖਾਤੇ ਤੋਂ ਸਾਈਨ ਆਊਟ ਕਰੋ"
+      "logOut": "ਲੌਗ ਆਊਟ ਕਰੋ"
     },
     "getStarted": "ਸ਼ੁਰੂ ਕਰੋ",
     "profile": {
@@ -172,9 +174,9 @@
     "desc": "ਘਟਦਾ",
     "ascending": "ਚੜ੍ਹਦਾ",
     "descending": "ਉਤਰਦੇ ਹੋਏ",
-    "organization": "ਸੰਸਥਾ",
-    "searchOrganization": "ਖੋਜ ਸੰਸਥਾ...",
-    "noOrganizations": "ਕੋਈ ਸੰਸਥਾਵਾਂ ਉਪਲਬਧ ਨਹੀਂ ਹਨ"
+    "club": "ਸੰਸਥਾ",
+    "searchClub": "ਖੋਜ ਸੰਸਥਾ...",
+    "noClubs": "ਕੋਈ ਸੰਸਥਾਵਾਂ ਉਪਲਬਧ ਨਹੀਂ ਹਨ"
   },
   "commands": {
     "commands": "ਹੁਕਮ",
@@ -221,10 +223,10 @@
     "locationPlaceholder": "ਜਿਵੇਂ ਕਿ MC 1234, SLC ਮਹਾਨ ਹਾਲ",
     "selectPackage": "ਇੱਕ ਪੈਕੇਜ ਚੁਣੋ",
     "eventTitlePlaceholder": "ਉਦਾਹਰਨ ਲਈ, ਤਕਨੀਕੀ ਗੱਲਬਾਤ: AI 2024 ਵਿੱਚ",
-    "organizationNamePlaceholder": "ਉਦਾਹਰਨ ਲਈ, ਕੰਪਿਊਟਰ ਵਿਗਿਆਨ ਸੰਸਥਾ",
-    "selectOrganization": "ਕੋਈ ਸੰਸਥਾ ਚੁਣੋ",
-    "searchOrganizationPlaceholder": "ਖੋਜ ਸੰਸਥਾਵਾਂ...",
-    "noOrganizationFound": "ਕੋਈ ਸੰਸਥਾ ਨਹੀਂ ਮਿਲੀ",
+    "clubNamePlaceholder": "ਉਦਾਹਰਨ ਲਈ, ਕੰਪਿਊਟਰ ਵਿਗਿਆਨ ਸੰਸਥਾ",
+    "selectClub": "ਕੋਈ ਸੰਸਥਾ ਚੁਣੋ",
+    "searchClubPlaceholder": "ਖੋਜ ਸੰਸਥਾਵਾਂ...",
+    "noClubFound": "ਕੋਈ ਸੰਸਥਾ ਨਹੀਂ ਮਿਲੀ",
     "descriptionPlaceholder": "ਲੋਕਾਂ ਨੂੰ ਦੱਸੋ ਕਿ ਤੁਹਾਡਾ ਇਵੈਂਟ ਕਿਸ ਬਾਰੇ ਹੈ...",
     "sourceUrl": "ਸਰੋਤ ਲਿੰਕ",
     "sourceUrlPlaceholder": "https://instagram.com/p/...",
@@ -243,21 +245,21 @@
     "description": "ਵਰਣਨ",
     "saveChanges": "ਤਬਦੀਲੀਆਂ ਸੇਵ ਕਰੋ",
     "requiredInformation": "ਲੋੜੀਂਦੀ ਜਾਣਕਾਰੀ",
-    "organizationName": "ਸੰਸਥਾ ਦਾ ਨਾਮ",
-    "organizationType": "ਸੰਗਠਨ ਦੀ ਕਿਸਮ",
-    "organizationTypeMapped": "{{type}}",
-    "organizationTypeIndependent": "ਸੁਤੰਤਰ",
-    "organizationNameRequired": "ਸੰਸਥਾ ਦਾ ਨਾਮ ਲੋੜੀਂਦਾ ਹੈ",
+    "clubName": "ਸੰਸਥਾ ਦਾ ਨਾਮ",
+    "clubType": "ਸੰਗਠਨ ਦੀ ਕਿਸਮ",
+    "clubTypeMapped": "{{type}}",
+    "clubTypeIndependent": "ਸੁਤੰਤਰ",
+    "clubNameRequired": "ਸੰਸਥਾ ਦਾ ਨਾਮ ਲੋੜੀਂਦਾ ਹੈ",
     "ownerEmail": "ਮਾਲਕ ਦੀ ਈਮੇਲ",
     "categories": "ਸ਼੍ਰੇਣੀਆਂ",
     "categoryRequired": "ਘੱਟੋ-ਘੱਟ ਇੱਕ ਸ਼੍ਰੇਣੀ ਦੀ ਲੋੜ ਹੈ",
     "add": "ਸ਼ਾਮਲ ਕਰੋ",
-    "organizationPageUrl": "ਸੰਗਠਨ ਪੰਨਾ URL",
-    "organizationPageUrlPlaceholder": "ਉਦਾਹਰਨ ਲਈ, https://example.com ਜਾਂ 123",
+    "clubPageUrl": "ਸੰਗਠਨ ਪੰਨਾ URL",
+    "clubPageUrlPlaceholder": "ਉਦਾਹਰਨ ਲਈ, https://example.com ਜਾਂ 123",
     "instagramHandle": "Instagram ਹੈਂਡਲ",
     "discordLink": "Discord ਲਿੰਕ",
     "titleRequired": "ਸਿਰਲੇਖ ਲੋੜੀਂਦਾ ਹੈ",
-    "organizationRequired": "ਸੰਗਠਨ ਦੀ ਲੋੜ ਹੈ",
+    "clubRequired": "ਸੰਗਠਨ ਦੀ ਲੋੜ ਹੈ",
     "occurrenceRequired": "ਘੱਟੋ-ਘੱਟ ਇੱਕ ਤਾਰੀਖ ਦੀ ਲੋੜ ਹੈ",
     "locationRequired": "ਟਿਕਾਣਾ ਲੋੜੀਂਦਾ ਹੈ",
     "schoolRequired": "ਸਕੂਲ ਦੀ ਲੋੜ ਹੈ",
@@ -285,7 +287,7 @@
     "politicsAndAdvocacy": "ਰਾਜਨੀਤੀ ਅਤੇ ਵਕਾਲਤ",
     "religionAndSpirituality": "ਧਰਮ ਅਤੇ ਅਧਿਆਤਮਿਕਤਾ",
     "events": "ਸਮਾਗਮ",
-    "organizations": "ਸੰਸਥਾਵਾਂ"
+    "clubs": "ਸੰਸਥਾਵਾਂ"
   },
   "locations": {
     "LAX": "LAX",
@@ -373,8 +375,8 @@
     "phase3Date": "ਅਕਤੂਬਰ 2025",
     "phase3Title": "ਕੈਂਪਸ ਨਾਲ ਸਾਂਝਾ ਕਰਨਾ",
     "phase3Paragraph1": "ਅਸੀਂ ਕੁਝ ਸਮੂਹ ਚੈਟਾਂ ਵਿੱਚ ਲਿੰਕ ਪੋਸਟ ਕੀਤਾ ਹੈ। ਫਿਰ ਅਸੀਂ ਇੱਕ ਪੋਸਟਰ ਬਣਾਇਆ (ਵਿਅੰਗਾਤਮਕ, ਅਸੀਂ ਜਾਣਦੇ ਹਾਂ) ਅਤੇ ਇਸਨੂੰ SLC ਵਿੱਚ ਫਸਾਇਆ। ਇੱਕ ਹਫ਼ਤੇ ਦੇ ਅੰਦਰ, ਲੋਕ ਸਾਨੂੰ ਸਕ੍ਰੀਨਸ਼ੌਟਸ ਭੇਜ ਰਹੇ ਸਨ।",
-    "phase3Paragraph2": "<em>\"ਉਡੀਕ ਕਰੋ, ਇੱਥੇ ਇੱਕ Repair Organization ਹੈ? ਮੈਂ ਅਸਲ ਵਿੱਚ ਉੱਥੇ ਆਪਣੀ ਸਾਈਕਲ ਠੀਕ ਕਰ ਸਕਦਾ ਹਾਂ?\"</em>",
-    "phase3Paragraph3": "ਕਿਸੇ ਨੇ <strong>Gatka Organization</strong> (ਸਿੱਖ ਮਾਰਸ਼ਲ ਆਰਟਸ) ਨੂੰ Wat2Do ਰਾਹੀਂ ਲੱਭਿਆ ਅਤੇ ਕਿਹਾ ਕਿ ਇਹ ਉਹਨਾਂ ਦੇ ਕਾਰਜਕਾਲ ਦੀ ਖਾਸ ਗੱਲ ਹੈ। ਇੱਕ ਹੋਰ ਵਿਅਕਤੀ ਨੇ <strong>Retro Rollers</strong> (ਰੋਲਰ ਸਕੇਟਿੰਗ ਮੀਟਿੰਗ) ਦੀ ਖੋਜ ਕੀਤੀ ਅਤੇ ਇੱਕ ਰਾਤ ਵਿੱਚ ਛੇ ਨਵੇਂ ਦੋਸਤ ਬਣਾਏ।",
+    "phase3Paragraph2": "<em>\"ਉਡੀਕ ਕਰੋ, ਇੱਥੇ ਇੱਕ Repair Club ਹੈ? ਮੈਂ ਅਸਲ ਵਿੱਚ ਉੱਥੇ ਆਪਣੀ ਸਾਈਕਲ ਠੀਕ ਕਰ ਸਕਦਾ ਹਾਂ?\"</em>",
+    "phase3Paragraph3": "ਕਿਸੇ ਨੇ <strong>Gatka Club</strong> (ਸਿੱਖ ਮਾਰਸ਼ਲ ਆਰਟਸ) ਨੂੰ Wat2Do ਰਾਹੀਂ ਲੱਭਿਆ ਅਤੇ ਕਿਹਾ ਕਿ ਇਹ ਉਹਨਾਂ ਦੇ ਕਾਰਜਕਾਲ ਦੀ ਖਾਸ ਗੱਲ ਹੈ। ਇੱਕ ਹੋਰ ਵਿਅਕਤੀ ਨੇ <strong>Retro Rollers</strong> (ਰੋਲਰ ਸਕੇਟਿੰਗ ਮੀਟਿੰਗ) ਦੀ ਖੋਜ ਕੀਤੀ ਅਤੇ ਇੱਕ ਰਾਤ ਵਿੱਚ ਛੇ ਨਵੇਂ ਦੋਸਤ ਬਣਾਏ।",
     "phase3Paragraph4": "ਉਦੋਂ ਸਾਨੂੰ ਅਹਿਸਾਸ ਹੋਇਆ: ਇਹ ਸਿਰਫ਼ ਇੱਕ ਕੈਲੰਡਰ ਨਹੀਂ ਹੈ। ਇਹ ਕੈਂਪਸ ਜੀਵਨ ਦੇ ਸੰਸਕਰਣ ਨੂੰ ਖੋਜਣ ਦਾ ਇੱਕ ਤਰੀਕਾ ਹੈ ਜਿਸ ਬਾਰੇ ਤੁਸੀਂ ਨਹੀਂ ਜਾਣਦੇ ਸੀ ਕਿ ਮੌਜੂਦ ਹੈ।",
     "photo3Alt": "ਕਮਿਊਨਿਟੀ ਖੋਜ",
     "photo3Caption": "ਲੋਕਾਂ ਨੇ ਉਹਨਾਂ ਘਟਨਾਵਾਂ ਦੀ ਖੋਜ ਕਰਨੀ ਸ਼ੁਰੂ ਕਰ ਦਿੱਤੀ ਜੋ ਉਹਨਾਂ ਨੂੰ ਕਦੇ ਵੀ ਮੌਜੂਦ ਨਹੀਂ ਸਨ।",
@@ -390,8 +392,8 @@
     "guideIndustryAtlassian": "<strong>Atlassian ਕੌਫੀ ਚੈਟਸ:</strong> ਕੈਰੀਅਰ ਫੇਅਰ ਬੂਥ ਨਾਲੋਂ ਘੱਟ ਡਰਾਉਣੀ। ਤੁਸੀਂ ਅਸਲ ਵਿੱਚ ਗੱਲਬਾਤ ਕਰ ਸਕਦੇ ਹੋ।",
     "guideIndustryStartup": "<strong>ਸਟਾਰਟਅੱਪ ਕਰੀਅਰ ਫੇਅਰ:</strong> ਵੱਡੇ ਕਾਰਪੋਰੇਟ ਬੂਥਾਂ ਨੂੰ ਛੱਡੋ। ਸਿੱਧੇ ਸਟਾਰਟਅੱਪਸ 'ਤੇ ਜਾਓ ਜਿੱਥੇ ਤੁਸੀਂ ਅਸਲ ਸੰਸਥਾਪਕਾਂ ਨਾਲ ਗੱਲ ਕਰ ਸਕਦੇ ਹੋ।",
     "guideRandomTitle": "ਬੇਤਰਤੀਬ ਸਮੱਗਰੀ ਦੀ ਜਾਂਚ ਕੀਤੀ ਜਾ ਰਹੀ ਹੈ",
-    "guideRandomRepair": "<strong>Repair Organization:</strong> ਤੁਹਾਡਾ ਲੈਪਟਾਪ ਚਾਰਜਰ ਟੁੱਟ ਗਿਆ ਹੈ? ਇਹਨਾਂ ਲੋਕਾਂ ਕੋਲ ਟੂਲ ਹਨ ਅਤੇ ਇਹ ਤੁਹਾਨੂੰ ਸਿਖਾਉਣਗੇ ਕਿ ਇਸਨੂੰ ਆਪਣੇ ਆਪ ਕਿਵੇਂ ਠੀਕ ਕਰਨਾ ਹੈ। ਪੂਰੀ ਤਰ੍ਹਾਂ ਮੁਫਤ।",
-    "guideRandomGatka": "<strong>Gatka Organization:</strong> ਸਿੱਖ ਮਾਰਸ਼ਲ ਆਰਟਸ ਲੱਕੜ ਦੀਆਂ ਸੋਟੀਆਂ ਨਾਲ। ਕਿਸੇ ਤਜ਼ਰਬੇ ਦੀ ਲੋੜ ਨਹੀਂ। ਅੰਡਰਰੇਟ ਕੀਤਾ ਗਿਆ।",
+    "guideRandomRepair": "<strong>Repair Club:</strong> ਤੁਹਾਡਾ ਲੈਪਟਾਪ ਚਾਰਜਰ ਟੁੱਟ ਗਿਆ ਹੈ? ਇਹਨਾਂ ਲੋਕਾਂ ਕੋਲ ਟੂਲ ਹਨ ਅਤੇ ਇਹ ਤੁਹਾਨੂੰ ਸਿਖਾਉਣਗੇ ਕਿ ਇਸਨੂੰ ਆਪਣੇ ਆਪ ਕਿਵੇਂ ਠੀਕ ਕਰਨਾ ਹੈ। ਪੂਰੀ ਤਰ੍ਹਾਂ ਮੁਫਤ।",
+    "guideRandomGatka": "<strong>Gatka Club:</strong> ਸਿੱਖ ਮਾਰਸ਼ਲ ਆਰਟਸ ਲੱਕੜ ਦੀਆਂ ਸੋਟੀਆਂ ਨਾਲ। ਕਿਸੇ ਤਜ਼ਰਬੇ ਦੀ ਲੋੜ ਨਹੀਂ। ਅੰਡਰਰੇਟ ਕੀਤਾ ਗਿਆ।",
     "guideRandomRetro": "<strong>Retro Rollers:</strong> ਸਥਾਨਕ ਰਿੰਕਸ 'ਤੇ ਰੋਲਰ ਸਕੇਟਿੰਗ। ਮੱਧਕਾਲ ਦੇ ਦੌਰਾਨ ਤਣਾਅ ਨੂੰ ਦੂਰ ਕਰਨ ਲਈ ਬਹੁਤ ਵਧੀਆ।",
     "guideFriendsTitle": "ਦੋਸਤਾਂ ਨਾਲ ਜਾਣਾ",
     "guideFriendsFood": "<strong>ਮੁਫ਼ਤ ਭੋਜਨ ਸਮਾਗਮ:</strong> ਫਿਲਟਰਾਂ ਵਿੱਚ \"ਪ੍ਰਦਾਨ ਕੀਤੇ ਭੋਜਨ\" ਦੁਆਰਾ ਕ੍ਰਮਬੱਧ ਕਰੋ। ਪ੍ਰੋ ਟਿਪ: 15 ਮਿੰਟ ਪਹਿਲਾਂ ਦਿਖਾਓ।",
@@ -452,10 +454,10 @@
       "random": {
         "title": "ਬੇਤਰਤੀਬ ਇਵੈਂਟਸ ਜੋ ਤੁਸੀਂ ਨਹੀਂ ਜਾਣਦੇ ਸੀ ਮੌਜੂਦ ਹਨ",
         "desc": "ਇਮਾਨਦਾਰੀ ਨਾਲ, ਇਸ ਪ੍ਰੋਜੈਕਟ ਨੂੰ ਬਣਾਉਣ ਬਾਰੇ ਸਭ ਤੋਂ ਵਧੀਆ ਹਿੱਸਾ ਉਹਨਾਂ ਸੰਸਥਾਵਾਂ ਦੀ ਖੋਜ ਕਰ ਰਿਹਾ ਸੀ ਜਿਨ੍ਹਾਂ ਬਾਰੇ ਸਾਨੂੰ ਪਤਾ ਨਹੀਂ ਸੀ ਕਿ ਕੈਂਪਸ ਵਿੱਚ ਸਨ। ਉੱਥੇ ਏ ",
-        "repair": "Repair Organization",
+        "repair": "Repair Club",
         "repairSuffix": " ਜਿੱਥੇ ਤੁਸੀਂ ਆਪਣੇ ਟੁੱਟੇ ਇਲੈਕਟ੍ਰੋਨਿਕਸ ਠੀਕ ਕਰ ਸਕਦੇ ਹੋ, Iranian Students' Association ਦੀ ",
         "zumba": "Persian Zumba",
-        "zumbaSuffix": " ਕਲਾਸ, ਅਤੇ Strength Organization ਦਾ ",
+        "zumbaSuffix": " ਕਲਾਸ, ਅਤੇ Strength Club ਦਾ ",
         "barbells": "Battle of the Barbells"
       },
       "search": {

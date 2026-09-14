@@ -5,9 +5,8 @@
     "searchPlaceholder": "جستجوی نقش‌ها، مهارت‌ها یا مکان‌ها...",
     "clearSearch": "پاک کردن جستجوی موقعیت",
     "filterByType": "فیلتر کردن موقعیت‌ها بر اساس نوع",
-    "allTypes": "تمام نوع‌های موقعیت",
     "openDetails": "مشاهده جزئیات موقعیت {{title}}",
-    "drawerDescription": "جزئیات موقعیت {{title}} در {{organization}}",
+    "drawerDescription": "جزئیات موقعیت {{title}} در {{club}}",
     "deadlineLabel": "مهلت درخواست",
     "due": "تا تاریخ {{date}}",
     "commitmentLabel": "میزان تعهد زمانی",
@@ -16,11 +15,10 @@
     "contactLabel": "تماس",
     "aboutPosition": "درباره این موقعیت",
     "requirements": "الزامات",
-    "viewSource": "مشاهده پست اصلی Instagram",
     "emptyTitle": "هیچ موقعیت باز یافت نشد",
     "emptyDescription": "جستجو یا نوع موقعیت دیگری را امتحان کنید. فرصت‌های جدید سازمانی پس از انتشار در اینجا نمایش داده می‌شوند.",
-    "organizationEmptyTitle": "هیچ موقعیت خالی وجود ندارد",
-    "organizationEmptyDescription": "این سازمان در حال حاضر هیچ موقعیت خالی ندارد.",
+    "clubEmptyTitle": "هیچ موقعیت خالی وجود ندارد",
+    "clubEmptyDescription": "این سازمان در حال حاضر هیچ موقعیت خالی ندارد.",
     "resultsLabel": "{{count}} موقعیت یافت شد",
     "types": {
       "executive": "مدیر اجرایی",
@@ -30,6 +28,21 @@
       "internship": "کارآموزی",
       "general": "استخدام عمومی"
     },
-    "position_one": "موقعیت"
+    "position_one": "موقعیت",
+    "title": "عنوان موقعیت",
+    "paid": "با حقوق",
+    "unpaid": "بدون حقوق",
+    "unknown": "دستمزد نامشخص",
+    "addPosition": "افزودن موقعیت",
+    "submitted": "موقعیت برای بررسی ارسال شد.",
+    "submissions": "موقعیت‌های ارسالی",
+    "placeholders": {
+      "title": "مثلاً: هماهنگ‌کننده بازاریابی",
+      "description": "نقش، وظایف و فرصت‌های یادگیری یا مشارکت فرد را توضیح دهید.",
+      "compensation": "مثلاً: ساعتی ۲۰ دلار، حق‌الزحمه ۵۰۰ دلار یا بدون دستمزد",
+      "commitment": "مثلاً: هفته‌ای ۳ تا ۵ ساعت، از سپتامبر تا دسامبر",
+      "contact": "مثلاً: hiring@example.com",
+      "requirements": "هر شرط را در یک خط بنویسید، مثلاً:\nتوانایی کار گروهی\nامکان شرکت در جلسات هفتگی"
+    }
   }
 }

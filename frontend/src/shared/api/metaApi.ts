@@ -1,16 +1,18 @@
 /**
  * Fetches shared domain constants from the backend (/meta/constants).
  *
- * Loaded during app init (client-providers.tsx) so categories, interest mappings,
- * and status enums hydrate from one backend source of truth. The small
- * fallback below keeps first paint from waiting on that network request.
+ * TanStack Query owns the fetched values. The small fallback below keeps
+ * first paint from waiting on that network request.
  */
 
+import { queryOptions } from "@tanstack/react-query";
 import { api } from "@/shared/services/apiClient";
+import { getQueryClient } from "@/shared/lib/queryClient";
+import { queryKeys } from "@/shared/lib/queryKeys";
 
 interface AppConstants {
   event_categories: string[];
-  organization_categories: string[];
+  club_categories: string[];
   interests: string[];
   interest_to_categories: Record<string, string[]>;
   report_statuses: string[];
@@ -34,12 +36,9 @@ const FALLBACK_INTEREST_TO_CATEGORIES = Object.fromEntries(
   FALLBACK_CATEGORIES.map((category) => [category, [category]]),
 );
 
-// ---------------------------------------------------------------------------
-// Module-level cache - written once by loadAppConstants(), read many times.
-// ---------------------------------------------------------------------------
-let cached: AppConstants = {
+export const DEFAULT_APP_CONSTANTS: AppConstants = {
   event_categories: FALLBACK_CATEGORIES,
-  organization_categories: FALLBACK_CATEGORIES,
+  club_categories: FALLBACK_CATEGORIES,
   interests: FALLBACK_CATEGORIES,
   interest_to_categories: FALLBACK_INTEREST_TO_CATEGORIES,
   report_statuses: ["pending", "resolved", "dismissed"],
@@ -62,24 +61,25 @@ function toStringArrayRecord(value: unknown): Record<string, string[]> {
 function normalizeAppConstants(payload: AppConstantsPayload): AppConstants {
   return {
     event_categories: toStringArray(payload.event_categories),
-    organization_categories: toStringArray(payload.organization_categories),
+    club_categories: toStringArray(payload.club_categories),
     interests: toStringArray(payload.interests),
     interest_to_categories: toStringArrayRecord(payload.interest_to_categories),
     report_statuses: toStringArray(payload.report_statuses),
   };
 }
 
-/**
- * Fetch constants from the backend. Call once during app init.
- */
-export async function loadAppConstants(): Promise<void> {
-  cached = normalizeAppConstants(await api.get<AppConstantsPayload>("/meta/constants"));
+export function appConstantsQueryOptions() {
+  return queryOptions({
+    queryKey: queryKeys.meta.constants(),
+    queryFn: async () => normalizeAppConstants(await api.get<AppConstantsPayload>("/meta/constants")),
+    placeholderData: DEFAULT_APP_CONSTANTS,
+  });
 }
 
 /**
- * Synchronous access to the fetched constants.
- * Safe to call anywhere after app init.
+ * Imperative snapshot for non-React event mappers.
+ * Rendered options must subscribe through useAppConstants instead.
  */
-export function getAppConstants(): AppConstants {
-  return cached;
+export function getAppConstantsSnapshot(): AppConstants {
+  return getQueryClient().getQueryData(queryKeys.meta.constants()) ?? DEFAULT_APP_CONSTANTS;
 }

@@ -1,23 +1,23 @@
 {
   "events": {
+    "minimumGoing": "ઓછામાં ઓછા હાજર",
     "eventTitle": "ઇવેન્ટ શીર્ષક",
     "loadFailed": "ઇવેન્ટ્સ લોડ કરવાની નિષ્ફળતા. કૃપા કરીને ફરી પ્રયાસ કરો.",
     "deleteFailed": "ઇવેન્ટ મૌલિક રીતે કાઢી ન શકી. કૃપા કરીને ફરી પ્રયાસ કરો.",
     "submitFailed": "ઇવેન્ટ સબમિટ કરવામાં નિષ્ફળ. કૃપા કરીને ફરી પ્રયાસ કરો.",
     "submissionFailedTitle": "સબમિશન નિષ્ફળ",
-    "organizationRequired": "ઇવેન્ટ સબમિટ કરતા પહેલા એક સંસ્થા પસંદ કરો.",
-    "organization": "સંસ્થા",
+    "clubRequired": "ઇવેન્ટ સબમિટ કરતા પહેલા એક સંસ્થા પસંદ કરો.",
+    "club": "સંસ્થા",
     "status": "સ્થિતિ",
     "dayOfWeek": "અઠવાડ્યનો દિવસ",
     "createEvent": "ઇવેન્ટ સબમિટ કરો",
-    "submitEventSchoolDescription": "ફક્ત {{school}}ની સંસ્થાઓ દર્શાવવામાં આવે છે, જેથી તમારો ઇવેન્ટ યોગ્ય કેમ્પ્સ માટે સબમિટ થાય.",
+    "submitEventSchoolDescription": "ફક્ત {{school}}ની સંસ્થાઓ દર્શાવવામાં આવે છે।",
     "submitEventForReview": "સમીક્ષા માટે ઇવેન્ટ સબમિટ કરો",
     "submitForReview": "સમીક્ષા માટે સબમિટ કરો",
     "uploadEventFlyer": "ઇવેન્ટ ફ્લાયર અપલોડ કરો",
     "uploadEventFlyerDescription": "ઇમેજ ફ્લાયર અપલોડ કરો અથવા પેસ્ટ કરો, અને AI આપોઆપ વિગતો ભરી દેશે.",
     "processingEventImage": "ઇવેન્ટ ઈમેજ પ્રોસેસ કરવામાં આવી રહી છે",
     "clickToUploadOrPasteImage": "ઇમેજ અપલોડ કરવા માટે ક્લિક કરો અથવા પેસ્ટ કરો",
-    "imagePasteShortcutHint": "{{formats}} (જેમકે Cmd+V / Ctrl+V)",
     "flyerExtracted": "ફ્લાયર વિગતો સફળતાપૂર્વક કાઢી લેવાઈ.",
     "flyerParseFailed": "ફ્લાયર પાર્સિંગ નિષ્ફળ થયું",
     "flyerParseFailedDescription": "અમે ફ્લાયરમાંથી ઇવેન્ટ વિગતો વાંચી શક્યા નથી.",
@@ -47,7 +47,6 @@
     "noUpcomingEvents": "કોઈ આવનારા ઇવન્ટ નથી",
     "upcomingEventCount": "આવનારી ઇવેન્ટ",
     "upcomingEventCount_other": "આવનારી ઇવેન્ટ્સ",
-    "latestAddedEvent": "{{title}} એ {{time}} ઉમેર્યું",
     "thisWeek": "આ સપ્તાહ",
     "discoverEvents": "ઇવેન્ટ્સ શોધો",
     "clickCount": "{{count}} ક્લિક",
@@ -56,12 +55,6 @@
     "noEventsFoundDesc": "તમારા વર્તમાન ફિલ્ટર્સ સાથે મેળ ખાતી કોઈ ઇવેન્ટ નથી મળી. તમારી સર્ચને જરૂરી પ્રમાણે ઍડજસ્ટ કરો અથવા કેટલાક ફિલ્ટર્સ સાફ કરો.",
     "noEventsScheduled": "કોઈ ઇવેન્ટ શેડ્યૂલ નથી",
     "noEventsScheduledDesc": "હાલમાં કોઈ ઇવેન્ટ શેડ્યૂલ કરેલ નથી. પછીથી ફરી તપાસો!",
-    "newlyAddedFilter": {
-      "last24Hours": "નવું",
-      "sinceLastVisit": "છેલ્લી મુલાકાત પછી ઉમેરાયા",
-      "clear": "નવા ઉમેરાયેલ ફિલ્ટર સાફ કરો",
-      "sinceLastVisitAt": "છેલ્લી મુલાકાત પછી ઉમેરાયું ({{time}})"
-    },
     "dateFilter": {
       "label": "ઇવેન્ટની તારીખ",
       "any": "કોઈપણ દિવસ",
@@ -91,6 +84,7 @@
       "submitFailed": "રિપોર્ટ સબમિટ થઈ શક્યું નહીં"
     },
     "goingEvents": {
+      "timeUnavailable": "આ ઇવેન્ટ શરૂ થઈ ગઈ છે અથવા રદ થઈ છે, તેથી તમે તમારી હાજરી નોંધાવી શકતા નથી.",
       "markFailed": "આ ઇવેન્ટને જવાનું તરીકે ચિહ્નિત કરવામાં આવી ન શક્યું",
       "unmarkFailed": "આ ઇવેન્ટને જવાનું ચિહ્ન કાઢી શક્યું નહીં",
       "saveFailed": "તમારું પસંદ કરેલો સમય સાચવો નહીં",

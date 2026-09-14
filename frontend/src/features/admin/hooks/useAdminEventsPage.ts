@@ -1,35 +1,46 @@
-import { useMemo, useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   filterAdminEvents,
   getEventCategories,
 } from "@/features/admin/utils/eventFilters";
+import { ADMIN_ITEMS_PER_PAGE } from "@/features/admin/constants";
 import { useAdminStore } from "@/features/admin/store/admin.store";
+import { REPORT_PENDING } from "@/shared/constants/statuses";
 import type { Event } from "@/shared/types";
 import { usePagination } from "@/shared/hooks";
 
 interface UseAdminEventsPageOptions {
   events: Event[];
-  itemsPerPage?: number;
 }
 
 export function useAdminEventsPage({
   events,
-  itemsPerPage = 20,
 }: UseAdminEventsPageOptions) {
   const [searchQuery, setSearchQueryState] = useState("");
   const [selectedCategory, setSelectedCategoryState] = useState("");
-  const [showReportedOnly, setShowReportedOnly] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
   const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
-  const reportedEventIds = useAdminStore((s) => s.reportedEventIds);
-  const fetchReportedEventIds = useAdminStore((s) => s.fetchReportedEventIds);
 
-  // Defer to the admin store (TTL-cached) for reported event IDs.
+  const reports = useAdminStore(s => s.reports);
+  const reportsLoadedAt = useAdminStore(s => s.loadedAt.reports);
+  const fetchReports = useAdminStore(s => s.fetchReports);
+  const [reportsError, setReportsError] = useState(false);
+  const [reportAttempt, setReportAttempt] = useState(0);
+
   useEffect(() => {
-    fetchReportedEventIds().catch((err) =>
-      console.error("Failed to fetch reported events:", err),
-    );
-  }, [fetchReportedEventIds]);
+    let cancelled = false;
+    fetchReports(reportAttempt > 0).then(() => {
+      if (!cancelled) setReportsError(false);
+    }).catch(() => {
+      if (!cancelled) setReportsError(true);
+    });
+    return () => { cancelled = true; };
+  }, [fetchReports, reportAttempt]);
+
+  const pendingReports = useMemo(
+    () => reports.filter(report => report.status === REPORT_PENDING),
+    [reports],
+  );
 
   const selectedEvent = useMemo(() => {
     if (selectedEventId == null) return null;
@@ -44,10 +55,8 @@ export function useAdminEventsPage({
     return filterAdminEvents(events, {
       searchQuery,
       selectedCategory,
-      showReportedOnly,
-      reportedEventIds,
     });
-  }, [events, searchQuery, selectedCategory, showReportedOnly, reportedEventIds]);
+  }, [events, searchQuery, selectedCategory]);
 
   const {
     currentPage,
@@ -56,17 +65,16 @@ export function useAdminEventsPage({
     paginatedItems: paginatedEvents,
   } = usePagination({
     items: filteredEvents,
-    itemsPerPage,
+    itemsPerPage: ADMIN_ITEMS_PER_PAGE,
   });
 
-  const isEventReported = (eventId: number) => {
-    return reportedEventIds.has(eventId);
-  };
-
   return {
+    pendingReports,
+    reportsLoading: reportsLoadedAt === undefined && !reportsError,
+    reportsError,
+    retryReports: () => setReportAttempt(value => value + 1),
     searchQuery,
     selectedCategory,
-    showReportedOnly,
     deleteConfirmId,
     currentPage,
     selectedEvent,
@@ -84,12 +92,7 @@ export function useAdminEventsPage({
       setSelectedCategoryState(category);
       setCurrentPage(1);
     },
-    toggleReportedOnly: () => {
-      setShowReportedOnly((value) => !value);
-      setCurrentPage(1);
-    },
     setDeleteConfirmId,
     setCurrentPage,
-    isEventReported,
   };
 }

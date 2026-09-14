@@ -8,7 +8,6 @@ interface GooseDialogueProps {
   onBack?: () => void;
   onNext: () => void;
   nextLabel?: string;
-  nextDisabled?: boolean;
   showBack?: boolean;
 }
 
@@ -17,7 +16,6 @@ export function GooseDialogue({
   onBack,
   onNext,
   nextLabel,
-  nextDisabled = false,
   showBack = true,
 }: GooseDialogueProps) {
   const { t } = useTranslation();
@@ -63,7 +61,6 @@ export function GooseDialogue({
             type="button"
             size="sm"
             onMouseDown={onNext}
-            disabled={nextDisabled}
           >
             {resolvedNextLabel}
           </Button>

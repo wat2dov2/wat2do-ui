@@ -14,13 +14,15 @@ import {
 } from "@/shared/constants/schools";
 import { loadUserProfile } from "@/features/auth/api/userRepository";
 import { Container, PageHeader, Stack } from "@/shared/layout";
+import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 import type { EventFormData } from "@/shared/types";
 
 export function SubmitEventPage() {
   const { t } = useTranslation();
+  const { getSchoolName } = useSchoolDirectory();
   const router = useRouter();
-  const { isAdmin, hasOrganization } = useAuthState();
-  const canCreateEvents = hasOrganization || isAdmin;
+  const { isAdmin, hasClub } = useAuthState();
+  const canCreateEvents = hasClub || isAdmin;
   const addEvent = useEventsStore((state) => state.addEvent);
   const schoolFilter = useEventsStore((state) => state.schoolFilter);
   const school = resolveWritableSchool(
@@ -39,8 +41,8 @@ export function SubmitEventPage() {
 
   const submit = useCallback(
     async (eventData: EventFormData) => {
-      if (eventData.organization_id == null) {
-        throw new Error(t("events.organizationRequired"));
+      if (eventData.club_id == null) {
+        throw new Error(t("events.clubRequired"));
       }
       if (canCreateEvents) {
         const eventId = await addEvent(eventData);
@@ -72,7 +74,7 @@ export function SubmitEventPage() {
             back={{ href: ROUTES.HOME, label: t("events.allEvents") }}
             title={t("events.createEvent")}
             description={t("events.submitEventSchoolDescription", {
-              school,
+              school: getSchoolName(school),
             })}
           />
           <SubmitEventFlow

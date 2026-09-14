@@ -34,7 +34,6 @@ import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { LoadingButton } from "@/shared/ui/loading-button";
 import { LoadingPage } from "@/shared/ui/loading-page";
-import { Pagination } from "@/shared/ui/Pagination";
 import {
   Select,
   SelectContent,
@@ -567,9 +566,16 @@ export function AdminPayoutsPanel() {
           </p>
         </Section>
       ) : (
-        <Section variant="surface" className="overflow-hidden p-0">
-          <div className="overflow-x-auto">
-            <AdminTable
+        <Stack gap={3}>
+            <AdminTable count={page?.total ?? 0} label={t("admin.posterPayouts.tabs.payouts")}
+              pagination={{
+                currentPage: page?.page ?? 1,
+                totalPages: page?.total_pages ?? 1,
+                onPageChange: (nextPage) => {
+                  setPageNumber(nextPage);
+                  setSelectedPayoutIds(new Set());
+                },
+              }}
               headers={[
                 {
                   label: (
@@ -682,26 +688,12 @@ export function AdminPayoutsPanel() {
                 );
               })}
             </AdminTable>
-          </div>
-
-          <div className="flex items-center justify-between border-t border-border px-4 py-3">
-            <p className="text-xs text-muted-foreground" aria-live="polite">
-              {isFetching
-                ? t("admin.posterPayouts.refreshing")
-                : t("admin.posterPayouts.results", {
-                    count: page?.total ?? 0,
-                  })}
+          {isFetching ? (
+            <p className="text-xs text-muted-foreground" role="status">
+              {t("admin.posterPayouts.refreshing")}
             </p>
-            <Pagination
-              currentPage={page?.page ?? 1}
-              totalPages={page?.total_pages ?? 1}
-              onPageChange={(nextPage) => {
-                setPageNumber(nextPage);
-                setSelectedPayoutIds(new Set());
-              }}
-            />
-          </div>
-        </Section>
+          ) : null}
+        </Stack>
       )}
 
       <PayoutDetailDialog

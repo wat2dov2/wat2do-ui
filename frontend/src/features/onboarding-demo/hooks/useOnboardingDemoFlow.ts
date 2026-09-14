@@ -18,10 +18,6 @@ const INITIAL_STATE: OnboardingDemoState = {
   proTrialAccepted: false,
 };
 
-function getInterestedCount(reactions: Record<number, EventReaction>): number {
-  return Object.values(reactions).filter((r) => r === "interested").length;
-}
-
 function getReactionCount(reactions: Record<number, EventReaction>): number {
   return Object.keys(reactions).length;
 }
@@ -115,10 +111,9 @@ export function useOnboardingDemoFlow() {
   }, []);
 
   const goNext = useCallback(() => {
-    if (!canContinue && currentStep !== "event_match") return;
-    if (currentStep === "event_match" && getReactionCount(state.reactions) < 2) return;
+    if (!canContinue) return;
     setStepIndex((prev) => Math.min(prev + 1, ONBOARDING_DEMO_STEPS.length - 1));
-  }, [canContinue, currentStep, state.reactions]);
+  }, [canContinue]);
 
   const goBack = useCallback(() => {
     setStepIndex((prev) => Math.max(prev - 1, 0));
@@ -134,20 +129,16 @@ export function useOnboardingDemoFlow() {
     setStepIndex(0);
   }, []);
 
-  const challengeProgress = getInterestedCount(state.reactions);
-
   return {
     currentStep,
     stepIndex,
-    totalSteps: ONBOARDING_DEMO_STEPS.length,
     state,
     canContinue,
     matchedEvents,
     previewEvents,
     interestedEvents,
-    interestedEventIds,
     strongestVibe,
-    challengeProgress,
+    challengeProgress: interestedEventIds.length,
     setSource,
     toggleInterest,
     toggleAvailability,

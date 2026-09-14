@@ -1,6 +1,5 @@
-import { redirect } from "next/navigation";
-import { ROUTES } from "@/shared/constants/routes";
+import { ClubPanelRoute } from "@/app/routes/clubPanelRoutes";
 
-export default function ClubPanelRedirectPage() {
-  redirect(ROUTES.ORGANIZATION_PANEL);
+export default function ClubPanelPage() {
+  return <ClubPanelRoute />;
 }

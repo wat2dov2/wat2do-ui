@@ -5,9 +5,8 @@
     "searchPlaceholder": "Tìm kiếm vai trò, kỹ năng hoặc địa điểm...",
     "clearSearch": "Xóa tìm kiếm vị trí",
     "filterByType": "Lọc các vị trí theo loại",
-    "allTypes": "Tất cả các loại vị trí",
     "openDetails": "Xem chi tiết vị trí {{title}}",
-    "drawerDescription": "Chi tiết vị trí cho {{title}} tại {{organization}}",
+    "drawerDescription": "Chi tiết vị trí cho {{title}} tại {{club}}",
     "deadlineLabel": "Hạn chót nộp đơn",
     "due": "Hạn chót {{date}}",
     "commitmentLabel": "Cam kết thời gian",
@@ -16,11 +15,10 @@
     "contactLabel": "Liên hệ",
     "aboutPosition": "Về vị trí này",
     "requirements": "Yêu cầu",
-    "viewSource": "Xem bài đăng Instagram gốc",
     "emptyTitle": "Không tìm thấy vị trí đang mở",
     "emptyDescription": "Thử tìm một từ khóa khác hoặc loại vị trí khác. Cơ hội tổ chức mới sẽ xuất hiện ở đây khi chúng được đăng tải.",
-    "organizationEmptyTitle": "Không có vị trí nào mở",
-    "organizationEmptyDescription": "Tổ chức này hiện không có vị trí nào mở.",
+    "clubEmptyTitle": "Không có vị trí nào mở",
+    "clubEmptyDescription": "Tổ chức này hiện không có vị trí nào mở.",
     "resultsLabel": "{{count}} vị trí được tìm thấy",
     "types": {
       "executive": "Điều hành",
@@ -29,6 +27,21 @@
       "staff": "Nhân viên trả lương",
       "internship": "Thực tập",
       "general": "Tuyển dụng chung"
+    },
+    "title": "Tên vị trí",
+    "paid": "Có lương",
+    "unpaid": "Không lương",
+    "unknown": "Chưa rõ thù lao",
+    "addPosition": "Thêm vị trí",
+    "submitted": "Đã gửi vị trí để xét duyệt.",
+    "submissions": "Vị trí được gửi",
+    "placeholders": {
+      "title": "Ví dụ: Điều phối viên tiếp thị",
+      "description": "Mô tả vai trò, công việc và những gì ứng viên có thể học hỏi hoặc đóng góp.",
+      "compensation": "Ví dụ: 20 $/giờ, thù lao 500 $ hoặc không lương",
+      "commitment": "Ví dụ: 3-5 giờ mỗi tuần, từ tháng 9 đến tháng 12",
+      "contact": "Ví dụ: hiring@example.com",
+      "requirements": "Mỗi dòng một yêu cầu, ví dụ:\nThoải mái làm việc nhóm\nCó thể tham gia họp hằng tuần"
     }
   }
 }

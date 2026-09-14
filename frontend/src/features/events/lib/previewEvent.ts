@@ -10,14 +10,14 @@
 import type { Event, EventFormData } from "@/shared/types";
 
 /** Stands in for the not-yet-saved event's id on the preview's occurrences. */
-export const PREVIEW_EVENT_ID = -1;
+const PREVIEW_EVENT_ID = -1;
 
 interface PreviewEventOptions {
   formData: EventFormData;
   /** Data URL or stored URL of the poster the form is showing. */
   imagePreview: string;
-  /** Resolved name of the selected organization, empty when none is selected. */
-  organizationName: string;
+  /** Resolved name of the selected club, empty when none is selected. */
+  clubName: string;
   /** Shown while the title field is empty, so the card never renders blank. */
   fallbackTitle: string;
   /**
@@ -31,7 +31,7 @@ interface PreviewEventOptions {
 export function buildPreviewEvent({
   formData,
   imagePreview,
-  organizationName,
+  clubName,
   fallbackTitle,
   base,
 }: PreviewEventOptions): Event {
@@ -55,7 +55,7 @@ export function buildPreviewEvent({
     registration: formData.registration,
     source_image_url: imagePreview || null,
     category: formData.category || null,
-    organization: organizationName || base?.organization || null,
+    club: clubName || base?.club || null,
     cancelled: base?.cancelled ?? false,
     added_at: base?.added_at ?? now,
   };

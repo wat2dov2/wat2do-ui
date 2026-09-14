@@ -5,9 +5,8 @@
     "searchPlaceholder": "Szukaj ról, umiejętności lub lokalizacji...",
     "clearSearch": "Wyczyść wyszukiwanie stanowisk",
     "filterByType": "Filtruj stanowiska według typu",
-    "allTypes": "Wszystkie typy stanowisk",
     "openDetails": "Zobacz szczegóły stanowiska {{title}}",
-    "drawerDescription": "Szczegóły stanowiska {{title}} w {{organization}}",
+    "drawerDescription": "Szczegóły stanowiska {{title}} w {{club}}",
     "deadlineLabel": "Termin składania wniosków",
     "due": "Do {{date}}",
     "commitmentLabel": "Zaangażowanie czasowe",
@@ -16,11 +15,10 @@
     "contactLabel": "Kontakt",
     "aboutPosition": "O tym stanowisku",
     "requirements": "Wymagania",
-    "viewSource": "Zobacz oryginalne Instagram ogłoszenie",
     "emptyTitle": "Nie znaleziono żadnych otwartych stanowisk",
     "emptyDescription": "Spróbuj innego wyszukiwania lub typu stanowiska. Nowe możliwości w organizacji pojawią się tutaj w miarę ich publikowania.",
-    "organizationEmptyTitle": "Brak dostępnych stanowisk",
-    "organizationEmptyDescription": "Ta organizacja obecnie nie ma żadnych dostępnych stanowisk.",
+    "clubEmptyTitle": "Brak dostępnych stanowisk",
+    "clubEmptyDescription": "Ta organizacja obecnie nie ma żadnych dostępnych stanowisk.",
     "resultsLabel": "Znaleziono {{count}} stanowisk",
     "types": {
       "executive": "Kadra kierownicza",
@@ -32,6 +30,21 @@
     },
     "position_one": "stanowisko",
     "position_few": "stanowiska",
-    "position_many": "stanowisk"
+    "position_many": "stanowisk",
+    "title": "Nazwa stanowiska",
+    "paid": "Płatne",
+    "unpaid": "Bezpłatne",
+    "unknown": "Nieokreślone wynagrodzenie",
+    "addPosition": "Dodaj stanowisko",
+    "submitted": "Stanowisko przesłane do weryfikacji.",
+    "submissions": "Zgłoszone stanowiska",
+    "placeholders": {
+      "title": "np. koordynator marketingu",
+      "description": "Opisz rolę, zadania oraz to, czego można się nauczyć lub co można wnieść.",
+      "compensation": "np. 20 $/godzinę, honorarium 500 $ lub bez wynagrodzenia",
+      "commitment": "np. 3–5 godzin tygodniowo, od września do grudnia",
+      "contact": "np. hiring@example.com",
+      "requirements": "Jedno wymaganie w wierszu, na przykład:\nUmiejętność pracy w zespole\nDostępność na cotygodniowe spotkania"
+    }
   }
 }

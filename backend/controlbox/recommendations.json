@@ -42,7 +42,7 @@
     "category_match": 0.4,
     "category_without_profile": 0.2,
     "school_match": 0.15,
-    "organization_affinity": 0.15,
+    "club_affinity": 0.15,
     "temporal_tiers": [
       {
         "within_hours": 24,

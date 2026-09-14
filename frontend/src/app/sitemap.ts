@@ -4,11 +4,11 @@ import { headers } from "next/headers";
 import { getSchoolBrowseSnapshot } from "@/features/events/api/eventFeed.server";
 import { isEventIndexable } from "@/features/events/lib/eventSeo";
 import { eventPagePath } from "@/features/events/lib/eventUrls";
-import { getAllOrganizationDirectorySnapshot } from "@/features/organizations/api/organizationDirectory.server";
-import { isOrganizationIndexable } from "@/features/organizations/lib/organizationSeo";
+import { getAllClubDirectorySnapshot } from "@/features/clubs/api/clubDirectory.server";
+import { isClubIndexable } from "@/features/clubs/lib/clubSeo";
 import { getPositionDirectorySnapshot } from "@/features/positions/api/positionDirectory.server";
 import { getSchoolFromRequestHost } from "@/shared/constants/schools";
-import { organizationPagePath } from "@/shared/constants/routes";
+import { clubPagePath } from "@/shared/constants/routes";
 import { getSchoolCanonicalUrl } from "@/shared/lib/seo";
 
 export const dynamic = "force-dynamic";
@@ -29,9 +29,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const rootUrl = getSchoolCanonicalUrl(school, "/");
 
   try {
-    const [snapshot, organizations, positions] = await Promise.all([
+    const [snapshot, clubs, positions] = await Promise.all([
       getSchoolBrowseSnapshot(school),
-      getAllOrganizationDirectorySnapshot(school),
+      getAllClubDirectorySnapshot(school),
       getPositionDirectorySnapshot(school),
     ]);
     const eventEntries: MetadataRoute.Sitemap = snapshot.feed.items
@@ -42,12 +42,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         changeFrequency: "daily",
         priority: 0.8,
       }));
-    const organizationEntries: MetadataRoute.Sitemap = organizations
-      .filter(isOrganizationIndexable)
-      .map((organization) => ({
+    const clubEntries: MetadataRoute.Sitemap = clubs
+      .filter(isClubIndexable)
+      .map((club) => ({
         url: getSchoolCanonicalUrl(
           school,
-          organizationPagePath(organization.id),
+          clubPagePath(club.id),
         ),
         changeFrequency: "weekly",
         priority: 0.6,
@@ -60,10 +60,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         changeFrequency: "daily",
         priority: 1,
       },
-      ...(organizations.length > 0
+      ...(clubs.length > 0
         ? [
             {
-              url: getSchoolCanonicalUrl(school, "/organizations"),
+              url: getSchoolCanonicalUrl(school, "/clubs"),
               changeFrequency: "daily" as const,
               priority: 0.9,
             },
@@ -79,7 +79,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           ]
         : []),
       ...eventEntries,
-      ...organizationEntries,
+      ...clubEntries,
     ];
   } catch (error) {
     console.error("School sitemap generation failed:", error);

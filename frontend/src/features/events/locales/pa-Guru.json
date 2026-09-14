@@ -1,23 +1,23 @@
 {
   "events": {
+    "minimumGoing": "ਘੱਟੋ-ਘੱਟ ਹਾਜ਼ਰੀ",
     "eventTitle": "ਇਵੈਂਟ ਦਾ ਸਿਰਲੇਖ",
     "loadFailed": "ਇਵੈਂਟ ਲੋਡ ਕਰਨ ਵਿੱਚ ਅਸਫਲ। ਕਿਰਪਾ ਕਰਕੇ ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ।",
     "deleteFailed": "ਇਵੈਂਟ ਨੂੰ ਮਿਟਾਉਣਾ ਅਸਫਲ ਰਿਹਾ। ਕਿਰਪਾ ਕਰਕੇ ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ।",
     "submitFailed": "ਇਵੈਂਟ ਸਪੁਰਦ ਕਰਨਾ ਅਸਫਲ ਰਿਹਾ। ਕਿਰਪਾ ਕਰਕੇ ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ।",
     "submissionFailedTitle": "ਸਪੁਰਦਗੀ ਅਸਫਲ ਰਹੀ",
-    "organizationRequired": "ਇਵੈਂਟ ਸਪੁਰਦ ਕਰਨ ਤੋਂ ਪਹਿਲਾਂ ਕੋਈ ਸੰਸਥਾ ਚੁਣੋ।",
-    "organization": "ਸੰਸਥਾ",
+    "clubRequired": "ਇਵੈਂਟ ਸਪੁਰਦ ਕਰਨ ਤੋਂ ਪਹਿਲਾਂ ਕੋਈ ਸੰਸਥਾ ਚੁਣੋ।",
+    "club": "ਸੰਸਥਾ",
     "status": "ਸਥਿਤੀ",
     "dayOfWeek": "ਹਫ਼ਤੇ ਦਾ ਦਿਨ",
     "createEvent": "ਇਵੈਂਟ ਜਮ੍ਹਾਂ ਕਰੋ",
-    "submitEventSchoolDescription": "ਸਿਰਫ਼ {{school}} ਦੀਆਂ ਸੰਸਥਾਵਾਂ ਦਿਖਾਈਆਂ ਜਾਂਦੀਆਂ ਹਨ, ਇਸਲਈ ਤੁਹਾਡਾ ਇਵੈਂਟ ਸਹੀ ਕੈਂਪਸ ਵਿੱਚ ਸਪੁਰਦ ਕੀਤਾ ਜਾਂਦਾ ਹੈ।",
+    "submitEventSchoolDescription": "ਸਿਰਫ਼ {{school}} ਦੀਆਂ ਸੰਸਥਾਵਾਂ ਦਿਖਾਈਆਂ ਜਾਂਦੀਆਂ ਹਨ।",
     "submitEventForReview": "ਸਮੀਖਿਆ ਲਈ ਇਵੈਂਟ ਦਰਜ ਕਰੋ",
     "submitForReview": "ਸਮੀਖਿਆ ਲਈ ਜਮ੍ਹਾਂ ਕਰੋ",
     "uploadEventFlyer": "ਇਵੈਂਟ ਫਲਾਇਰ ਅੱਪਲੋਡ ਕਰੋ",
     "uploadEventFlyerDescription": "ਇੱਕ ਚਿੱਤਰ ਫਲਾਇਰ ਨੂੰ ਅੱਪਲੋਡ ਜਾਂ ਪੇਸਟ ਕਰੋ, ਅਤੇ AI ਆਪਣੇ ਆਪ ਹੀ ਵੇਰਵਿਆਂ ਨੂੰ ਪਹਿਲਾਂ ਤੋਂ ਭਰ ਦੇਵੇਗਾ।",
     "processingEventImage": "ਇਵੈਂਟ ਚਿੱਤਰ 'ਤੇ ਪ੍ਰਕਿਰਿਆ ਕੀਤੀ ਜਾ ਰਹੀ ਹੈ",
     "clickToUploadOrPasteImage": "ਚਿੱਤਰ ਅੱਪਲੋਡ ਕਰਨ ਜਾਂ ਪੇਸਟ ਕਰਨ ਲਈ ਕਲਿੱਕ ਕਰੋ",
-    "imagePasteShortcutHint": "{{formats}} (ਉਦਾਹਰਨ ਲਈ Cmd+V / Ctrl+V)",
     "flyerExtracted": "ਫਲਾਇਰ ਵੇਰਵੇ ਸਫਲਤਾਪੂਰਵਕ ਕੱਢੇ ਗਏ।",
     "flyerParseFailed": "ਫਲਾਇਰ ਪਾਰਸਿੰਗ ਅਸਫਲ",
     "flyerParseFailedDescription": "ਅਸੀਂ ਫਲਾਇਰ ਤੋਂ ਇਵੈਂਟ ਵੇਰਵੇ ਨਹੀਂ ਪੜ੍ਹ ਸਕੇ।",
@@ -47,7 +47,6 @@
     "noUpcomingEvents": "ਕੋਈ ਆਗਾਮੀ ਇਵੈਂਟ ਨਹੀਂ ਹਨ",
     "upcomingEventCount": "ਆਉਣ ਵਾਲਾ ਇਵੈਂਟ",
     "upcomingEventCount_other": "ਆਉਣ ਵਾਲੇ ਇਵੈਂਟ",
-    "latestAddedEvent": "{{title}} ਨੇ {{time}} ਸ਼ਾਮਲ ਕੀਤਾ",
     "thisWeek": "ਇਸ ਹਫਤੇ",
     "discoverEvents": "ਘਟਨਾਵਾਂ ਦੀ ਖੋਜ ਕਰੋ",
     "clickCount": "{{count}} ਕਲਿੱਕ",
@@ -56,12 +55,6 @@
     "noEventsFoundDesc": "ਤੁਹਾਡੇ ਮੌਜੂਦਾ ਫਿਲਟਰਾਂ ਨਾਲ ਮੇਲ ਖਾਂਦਾ ਕੋਈ ਵੀ ਇਵੈਂਟ ਨਹੀਂ ਲੱਭ ਸਕਿਆ। ਆਪਣੀ ਖੋਜ ਨੂੰ ਵਿਵਸਥਿਤ ਕਰਨ ਜਾਂ ਕੁਝ ਫਿਲਟਰਾਂ ਨੂੰ ਸਾਫ਼ ਕਰਨ ਦੀ ਕੋਸ਼ਿਸ਼ ਕਰੋ।",
     "noEventsScheduled": "ਕੋਈ ਇਵੈਂਟ ਨਿਯਤ ਨਹੀਂ ਕੀਤਾ ਗਿਆ ਹੈ",
     "noEventsScheduledDesc": "ਵਰਤਮਾਨ ਵਿੱਚ ਕੋਈ ਸਮਾਗਮ ਨਿਯਤ ਨਹੀਂ ਹਨ। ਬਾਅਦ ਵਿੱਚ ਦੁਬਾਰਾ ਜਾਂਚ ਕਰੋ!",
-    "newlyAddedFilter": {
-      "last24Hours": "ਨਵਾਂ",
-      "sinceLastVisit": "ਪਿਛਲੀ ਫੇਰੀ ਤੋਂ ਬਾਅਦ ਜੋੜਿਆ ਗਿਆ",
-      "clear": "ਨਵੇਂ ਸ਼ਾਮਲ ਕੀਤੇ ਫਿਲਟਰ ਨੂੰ ਸਾਫ਼ ਕਰੋ",
-      "sinceLastVisitAt": "ਪਿਛਲੀ ਫੇਰੀ ਤੋਂ ਬਾਅਦ ਜੋੜਿਆ ਗਿਆ ({{time}})"
-    },
     "dateFilter": {
       "label": "ਇਵੈਂਟ ਦੀ ਤਾਰੀਖ",
       "any": "ਕੋਈ ਵੀ ਦਿਨ",
@@ -91,6 +84,7 @@
       "submitFailed": "ਰਿਪੋਰਟ ਦਰਜ ਨਹੀਂ ਕੀਤੀ ਜਾ ਸਕੀ"
     },
     "goingEvents": {
+      "timeUnavailable": "ਇਹ ਇਵੈਂਟ ਸ਼ੁਰੂ ਹੋ ਚੁੱਕਾ ਹੈ ਜਾਂ ਰੱਦ ਹੋ ਗਿਆ ਹੈ, ਇਸ ਲਈ ਤੁਸੀਂ ਹਾਜ਼ਰੀ ਦਰਜ ਨਹੀਂ ਕਰ ਸਕਦੇ।",
       "markFailed": "ਇਸ ਇਵੈਂਟ ਦੀ ਜਾ ਰਹੀ ਵਜੋਂ ਨਿਸ਼ਾਨਦੇਹੀ ਨਹੀਂ ਕੀਤੀ ਜਾ ਸਕੀ",
       "unmarkFailed": "ਇਸ ਇਵੈਂਟ ਦੀ ਜਾ ਰਹੀ ਵਜੋਂ ਨਿਸ਼ਾਨਦੇਹੀ ਨਹੀਂ ਕੀਤੀ ਜਾ ਸਕੀ",
       "saveFailed": "ਤੁਹਾਡਾ ਚੁਣਿਆ ਸਮਾਂ ਸੁਰੱਖਿਅਤ ਨਹੀਂ ਕੀਤਾ ਜਾ ਸਕਿਆ",

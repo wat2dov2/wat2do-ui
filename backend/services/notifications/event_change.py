@@ -2,6 +2,7 @@
 
 import hashlib
 import json
+from itertools import batched
 from typing import Any
 from uuid import UUID
 
@@ -52,10 +53,9 @@ def enqueue_event_change(
         return 0
 
     users: list[dict] = []
-    for start in range(0, len(user_ids), 500):
-        chunk = user_ids[start : start + 500]
+    for chunk in batched(user_ids, 500):
         users.extend(
-            (get_sb().table(USERS).select("id,email").in_("id", chunk).execute()).data or []
+            (get_sb().table(USERS).select("id,email").in_("id", list(chunk)).execute()).data or []
         )
     by_id = {u["id"]: u for u in users}
     enabled_user_ids = get_enabled_user_ids(

@@ -21,7 +21,7 @@ from core.exceptions import (
 from schemas.payout import PayoutReviewEvent, PosterPayoutResponse
 from schemas.user import UserResponse
 from services import poster_payout_service
-from services.poster_risk import RiskEvaluation
+from services.poster_risk import RiskEvaluation, RiskFinding
 
 USER_ID = UUID("11111111-1111-1111-1111-111111111111")
 PAYOUT_ID = UUID("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
@@ -667,3 +667,58 @@ def test_automatic_rehold_clears_stale_reviewer(fake_sb, patch_sb):
     payload = fake_sb.update.call_args.args[0]
     assert payload["status"] == "held"
     assert payload["reviewed_by"] is None
+
+
+@pytest.mark.parametrize("count", [0, 1, 499, 500, 501, 1001])
+def test_store_scan_risk_preserves_batch_boundaries(count, fake_sb, patch_sb):
+    patch_sb("services.poster_payout_service")
+    scans = [{"id": index} for index in range(count)]
+
+    poster_payout_service._store_scan_risk(scans, RiskEvaluation(score=0, findings=()))
+
+    expected_chunks = [
+        [str(index) for index in range(start, min(start + 500, count))]
+        for start in range(0, count, 500)
+    ]
+    assert fake_sb.in_.call_args_list == [call("id", chunk) for chunk in expected_chunks]
+    assert fake_sb.update.call_count == len(expected_chunks)
+    assert fake_sb.execute.call_count == len(expected_chunks)
+    for update in fake_sb.update.call_args_list:
+        payload = update.args[0]
+        assert payload["risk_score"] == 0
+        assert payload["risk_flags"] == []
+        assert (
+            payload["risk_rules_version"]
+            == poster_payout_service.controlbox.promoter_program.risk_rules_version
+        )
+
+
+def test_store_scan_risk_batches_distinct_payload_groups(fake_sb, patch_sb):
+    patch_sb("services.poster_payout_service")
+    scans = [{"id": index} for index in range(503)]
+    finding = RiskFinding(
+        code="RAPID_COOKIE_CREATION",
+        points=7,
+        affected_scan_ids=("0", "2"),
+        evidence={"network_reference": "network"},
+    )
+
+    poster_payout_service._store_scan_risk(
+        scans,
+        RiskEvaluation(score=7, findings=(finding,)),
+    )
+
+    unflagged_ids = [str(index) for index in range(503) if index not in (0, 2)]
+    assert fake_sb.in_.call_args_list == [
+        call("id", ["0", "2"]),
+        call("id", unflagged_ids[:500]),
+        call("id", unflagged_ids[500:]),
+    ]
+    payloads = [update.args[0] for update in fake_sb.update.call_args_list]
+    assert [payload["risk_score"] for payload in payloads] == [7, 0, 0]
+    assert [payload["risk_flags"] for payload in payloads] == [
+        [{"code": finding.code, "points": 7, "evidence": finding.evidence}],
+        [],
+        [],
+    ]
+    assert len({payload["risk_evaluated_at"] for payload in payloads}) == 1

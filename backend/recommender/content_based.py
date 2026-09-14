@@ -31,27 +31,12 @@ log = logging.getLogger(__name__)
 
 
 def get_content_scores(
-    user_id: str,
     candidate_events: list[EventResponse],
     *,
     user: UserResponse | None = None,
     user_scores: dict[int, float] | None = None,
 ) -> dict[int, float]:
-    """
-    Score each candidate event based on how well it matches the user profile.
-    Returns {event_id: score} with scores in [0, 1].
-
-    Args:
-        user_id: The user to score for.
-        candidate_events: Events to score.
-        user: Optional pre-fetched user profile. When provided the DB lookup
-              for the user row is skipped, avoiding a redundant round-trip
-              when the caller already has the profile (e.g. batch evaluation).
-        user_scores: Optional pre-fetched interaction scores {event_id: score}.
-              When provided the DB lookup for interaction scores is skipped.
-              The caller is responsible for fetching these (and can parallelise
-              the fetch with other lookups).
-    """
+    """Score candidates against a supplied profile and optional interaction scores."""
     if user_scores is None:
         user_scores = {}
 
@@ -86,7 +71,7 @@ def get_content_scores(
         if user_school and event_school and user_school == event_school:
             score += CB_SCHOOL_MATCH
 
-        org = event.organization or ""
+        org = event.club or ""
         if org in org_affinity:
             score += CB_ORG_AFFINITY * min(org_affinity[org], 1.0)
 
@@ -110,16 +95,12 @@ def get_content_scores(
             try:
                 event_time = dtstart if dtstart.tzinfo else dtstart.replace(tzinfo=timezone.utc)
                 hours_away = (event_time - now).total_seconds() / 3600
-                if hours_away < 0:
-                    score += 0.0
-                else:
-                    added = False
+                if hours_away >= 0:
                     for max_hours, weight in CB_TEMPORAL_TIERS:
                         if hours_away < max_hours:
                             score += weight
-                            added = True
                             break
-                    if not added:
+                    else:
                         score += CB_TEMPORAL_FALLBACK
             except (ValueError, TypeError) as e:
                 log.warning("Bad dtstart for event %s, using fallback: %s", eid, e)
@@ -130,7 +111,7 @@ def get_content_scores(
             score += CB_FREE_EVENT
 
         food = event.food
-        if food and len(food) > 0:
+        if food:
             score += CB_HAS_FOOD
 
         if is_first_year and cat in FIRST_YEAR_CATEGORIES:
@@ -151,7 +132,7 @@ def _compute_org_affinity(
 
     id_to_org: dict[int, str] = {}
     for e in candidate_events:
-        org = e.organization
+        org = e.club
         if org:
             id_to_org[e.id] = org
 
@@ -159,10 +140,10 @@ def _compute_org_affinity(
     missing_ids = [eid for eid in user_scores if eid not in id_to_org]
     if missing_ids:
         try:
-            r = get_sb().table(EVENTS).select("id, organization").in_("id", missing_ids).execute()
+            r = get_sb().table(EVENTS).select("id, club").in_("id", missing_ids).execute()
             for row in r.data or []:
-                if row.get("organization"):
-                    id_to_org[row["id"]] = row["organization"]
+                if row.get("club"):
+                    id_to_org[row["id"]] = row["club"]
         except Exception as e:
             log.warning("Failed to load org data for interacted events: %s", e)
 

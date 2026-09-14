@@ -5,9 +5,8 @@
     "searchPlaceholder": "Rechercher des rôles, compétences ou lieux...",
     "clearSearch": "Effacer la recherche de poste",
     "filterByType": "Filtrer les postes par type",
-    "allTypes": "Tous les types de postes",
     "openDetails": "Voir les détails du poste {{title}}",
-    "drawerDescription": "Détails du poste pour {{title}} chez {{organization}}",
+    "drawerDescription": "Détails du poste pour {{title}} chez {{club}}",
     "deadlineLabel": "Date limite de candidature",
     "due": "Avant le {{date}}",
     "commitmentLabel": "Engagement en temps",
@@ -16,11 +15,10 @@
     "contactLabel": "Contact",
     "aboutPosition": "À propos de ce poste",
     "requirements": "Exigences",
-    "viewSource": "Voir le message original Instagram ",
     "emptyTitle": "Aucun poste vacant trouvé",
     "emptyDescription": "Essayez une autre recherche ou un autre type de poste. De nouvelles opportunités au sein de l'organisation apparaîtront ici dès qu'elles seront publiées.",
-    "organizationEmptyTitle": "Aucun poste ouvert",
-    "organizationEmptyDescription": "Cette organisation n'a actuellement aucun poste ouvert.",
+    "clubEmptyTitle": "Aucun poste ouvert",
+    "clubEmptyDescription": "Cette organisation n'a actuellement aucun poste ouvert.",
     "resultsLabel": "{{count}} postes trouvés",
     "types": {
       "executive": "Direction",
@@ -31,6 +29,21 @@
       "general": "Recrutement général"
     },
     "position_one": "poste",
-    "position_many": "postes"
+    "position_many": "postes",
+    "title": "Titre du poste",
+    "paid": "Rémunéré",
+    "unpaid": "Non rémunéré",
+    "unknown": "Rémunération non précisée",
+    "addPosition": "Ajouter un poste",
+    "submitted": "Poste soumis pour examen.",
+    "submissions": "Propositions de postes",
+    "placeholders": {
+      "title": "p. ex. Responsable marketing",
+      "description": "Décrivez le rôle, les tâches et ce que la personne pourra apprendre ou apporter.",
+      "compensation": "p. ex. 20 $/heure, honoraires de 500 $ ou non rémunéré",
+      "commitment": "p. ex. 3 à 5 heures par semaine, de septembre à décembre",
+      "contact": "p. ex. hiring@example.com",
+      "requirements": "Une exigence par ligne, par exemple :\nAimer travailler en équipe\nÊtre disponible pour les réunions hebdomadaires"
+    }
   }
 }

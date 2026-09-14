@@ -6,7 +6,7 @@ import { QP } from "@/shared/constants/queryParams";
 import { AnimatePresence, LazyMotion, domAnimation, m } from "framer-motion";
 import { useOnboardingFlow } from "../hooks/useOnboardingFlow";
 import { useUpdateProfile } from "../hooks/useUpdateProfile";
-import { getUserId, getUserProfile } from "@/features/auth";
+import { getUserProfile } from "@/features/auth";
 import { OnboardingEventGrid } from "../components/OnboardingEventGrid";
 import { OnboardingFacultyStep } from "../components/OnboardingFacultyStep";
 import { GooseDialogue } from "../components/GooseDialogue";
@@ -14,7 +14,7 @@ import { OnboardingProgressDots } from "../components/OnboardingProgressDots";
 import { OnboardingYearStep } from "../components/OnboardingYearStep";
 import { LanguageSelector } from "@/shared/ui/language-selector";
 import { MultiSelect } from "@/shared/ui/multi-select";
-import { getEventCategories } from "@/shared/data/eventCategories";
+import { useAppConstants } from "@/shared/hooks/useAppConstants";
 import { getSafeReturnTo } from "@/features/auth/utils/returnTo";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 
@@ -32,6 +32,7 @@ const GOOSE_MESSAGE_KEYS: Record<number, string> = {
 };
 
 export function OnboardingPage() {
+  const { event_categories: eventCategories } = useAppConstants();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { t } = useTranslation();
@@ -61,29 +62,30 @@ export function OnboardingPage() {
       // Anonymous preview (reached via the "continue without signing in" path):
       // there is no account to attach preferences to, so send them straight to
       // their school feed instead of persisting an ownerless profile.
-      const userId = getUserId();
+      const currentProfile = getUserProfile();
+      const userId = currentProfile?.id;
       if (!userId) {
         router.push(homeWithSchool);
         return;
       }
 
       const profile = {
-        ...getUserProfile(),
+        ...currentProfile,
         id: userId,
-        fullName: getUserProfile()?.fullName ?? null,
-        avatarUrl: getUserProfile()?.avatarUrl ?? null,
+        fullName: currentProfile?.fullName ?? null,
+        avatarUrl: currentProfile?.avatarUrl ?? null,
         faculty: data.faculty,
         interests: data.selectedTopics,
         isFirstYear: data.isFirstYear,
         school: data.school,
         role: "user" as const,
-        hasOrganization: false,
+        hasClub: false,
         clubs: [],
-        organizationId: null,
-        organizationName: null,
-        payoutEmail: getUserProfile()?.payoutEmail ?? null,
-        promoterTosAcceptedAt: getUserProfile()?.promoterTosAcceptedAt ?? null,
-        promoterTosVersion: getUserProfile()?.promoterTosVersion ?? null,
+        clubId: null,
+        clubName: null,
+        payoutEmail: currentProfile?.payoutEmail ?? null,
+        promoterTosAcceptedAt: currentProfile?.promoterTosAcceptedAt ?? null,
+        promoterTosVersion: currentProfile?.promoterTosVersion ?? null,
       };
 
       // Persist to localStorage before navigate so `useAuthState` sees
@@ -109,7 +111,7 @@ export function OnboardingPage() {
     2: (
       <MultiSelect
         className="max-w-md mx-auto"
-        options={getEventCategories()}
+        options={eventCategories}
         selected={flow.selectedTopics}
         onToggle={flow.toggleTopic}
         translationKeyPrefix="categories"
@@ -123,6 +125,7 @@ export function OnboardingPage() {
     ),
     4: (
       <OnboardingFacultyStep
+        school={flow.school}
         faculty={flow.faculty}
         onFacultyChange={flow.setFaculty}
       />
@@ -179,7 +182,6 @@ export function OnboardingPage() {
             message={gooseMessage}
             onBack={flow.goBack}
             onNext={flow.goNext}
-            nextDisabled={!flow.canContinue}
             showBack={flow.currentStep > 0}
             nextLabel={isDoneStep ? t("onboarding.doneNextLabel") : undefined}
           />

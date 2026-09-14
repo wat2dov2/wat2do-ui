@@ -2,6 +2,7 @@
 
 import logging
 from datetime import datetime, timedelta, timezone
+from itertools import batched
 from typing import Any
 
 from core.constants import NOTIFICATION_TYPE_EVENT_REMINDER
@@ -91,7 +92,7 @@ def _load_due_reminders(
                     "occurrence:event_dates!user_going_events_event_occurrence_fkey!inner"
                     "(id,dtstart_utc,dtend_utc),"
                     "event:events!fk_user_going_events_event_id!inner"
-                    "(id,title,location,organization,category,cancelled)"
+                    "(id,title,location,club,category,cancelled)"
                 )
                 .gte("occurrence.dtstart_utc", window_start.isoformat())
                 .lt("occurrence.dtstart_utc", window_end.isoformat())
@@ -122,7 +123,7 @@ def _load_due_reminders(
 
 def _load_users(user_ids: list[str]) -> dict[str, dict]:
     users: dict[str, dict] = {}
-    for user_chunk in _chunks(user_ids):
+    for user_chunk in batched(user_ids, _CHUNK_SIZE):
         rows = (
             get_sb()
             .table(USERS)
@@ -189,10 +190,6 @@ def _send_event_reminder(*, user: dict, reminder: dict) -> bool | None:
             f"notification=event_reminder user={user_id} occurrence={reminder['event_date_id']}"
         ),
     )
-
-
-def _chunks(values: list[Any]) -> list[list[Any]]:
-    return [values[start : start + _CHUNK_SIZE] for start in range(0, len(values), _CHUNK_SIZE)]
 
 
 def _aware_utc(value: datetime) -> datetime:

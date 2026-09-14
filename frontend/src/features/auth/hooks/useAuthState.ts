@@ -14,7 +14,7 @@ import {
   loadUserEmail,
   loadUserProfile,
   AUTH_STATE_REFRESH_EVENT,
-  type UserOrganizationSummary,
+  type UserClubSummary,
 } from "@/features/auth/api/userRepository";
 import { ROLE_ADMIN } from "@/shared/constants/roles";
 
@@ -31,10 +31,10 @@ export interface AuthState {
   /** Same as `isAuthenticated`; UI gates treat a valid session as "profile ready". */
   profileCompleted: boolean;
   isAdmin: boolean;
-  hasOrganization: boolean;
-  clubs: UserOrganizationSummary[];
-  organizationId: number | null;
-  organizationName: string | null;
+  hasClub: boolean;
+  clubs: UserClubSummary[];
+  clubId: number | null;
+  clubName: string | null;
   payoutEmail: string | null;
   promoterTosAcceptedAt: string | null;
   promoterTosVersion: string | null;
@@ -51,10 +51,10 @@ const SERVER_AUTH_STATE: AuthState = Object.freeze({
   isAuthenticated: false,
   profileCompleted: false,
   isAdmin: false,
-  hasOrganization: false,
+  hasClub: false,
   clubs: [],
-  organizationId: null,
-  organizationName: null,
+  clubId: null,
+  clubName: null,
   payoutEmail: null,
   promoterTosAcceptedAt: null,
   promoterTosVersion: null,
@@ -68,7 +68,7 @@ const SERVER_AUTH_STATE: AuthState = Object.freeze({
  * The token lives in memory only, so it is absent on every page load until the
  * `/auth/refresh` round trip lands - a whole network hop after first paint.
  * Keying this on the token therefore rendered every page signed-out first and
- * signed-in a moment later, which is the layout jump users see on organization
+ * signed-in a moment later, which is the layout jump users see on club
  * and event pages: header actions swap, membership controls appear, the page
  * reflows around them.
  *
@@ -99,10 +99,10 @@ function computeSnapshot(): AuthState {
     isAuthenticated: authed,
     profileCompleted,
     isAdmin: authed && role === ROLE_ADMIN,
-    hasOrganization: authed && (profile?.hasOrganization ?? false),
+    hasClub: authed && (profile?.hasClub ?? false),
     clubs,
-    organizationId: authed ? profile?.organizationId ?? null : null,
-    organizationName: authed ? profile?.organizationName ?? null : null,
+    clubId: authed ? profile?.clubId ?? null : null,
+    clubName: authed ? profile?.clubName ?? null : null,
     payoutEmail: authed ? profile?.payoutEmail ?? null : null,
     promoterTosAcceptedAt: authed ? profile?.promoterTosAcceptedAt ?? null : null,
     promoterTosVersion: authed ? profile?.promoterTosVersion ?? null : null,

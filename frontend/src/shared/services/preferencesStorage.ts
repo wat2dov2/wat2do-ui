@@ -1,10 +1,3 @@
-/**
- * Preferences Storage
- * Thin localStorage wrappers for device-level preferences (theme, language).
- * Lives in shared/ because these are consumed by shared infrastructure
- * (i18n, dark mode hook, theme toggler) - not feature-specific logic.
- */
-
 import { StorageService } from "@/shared/services/storageService";
 import { STORAGE_KEYS } from "@/shared/constants/storageKeys";
 import {
@@ -12,14 +5,9 @@ import {
   type SupportedLanguage,
 } from "@/shared/constants/languages";
 
-export type ThemePreference = "dark" | "light";
+type ThemePreference = "dark" | "light";
 
 const THEME_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 365;
-
-export function loadTheme(): ThemePreference | null {
-  const saved = StorageService.getItem<unknown>(STORAGE_KEYS.THEME, null);
-  return saved === "dark" || saved === "light" ? saved : null;
-}
 
 export function saveTheme(theme: ThemePreference): void {
   StorageService.setItem(STORAGE_KEYS.THEME, theme);
@@ -39,14 +27,12 @@ export function saveTheme(theme: ThemePreference): void {
   document.cookie = cookieAttributes.join("; ");
 }
 
-// ── Language ────────────────────────────────────────────────────────
-
-export function loadLanguage(): SupportedLanguage {
+export function loadLanguage(defaultLanguage: SupportedLanguage = 'en'): SupportedLanguage {
   const saved = StorageService.getItem<string | null>(STORAGE_KEYS.LANGUAGE, null);
   if (saved && isSupportedLanguage(saved)) {
     return saved;
   }
-  return 'en';
+  return defaultLanguage;
 }
 
 export function saveLanguage(language: SupportedLanguage): void {

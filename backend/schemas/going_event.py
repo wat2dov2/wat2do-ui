@@ -42,8 +42,13 @@ class GoingEventStatusResponse(BaseModel):
     going_count: int
 
 
+class EventAttendeeResponse(BaseModel):
+    name: str
+    avatar_url: str
+
+
 class EventAttendeesResponse(BaseModel):
-    """Public who's-going summary: count plus abbreviated display names."""
+    """Public who's-going summary without user IDs or full names."""
 
     going_count: int
-    names: list[str]
+    attendees: list[EventAttendeeResponse]

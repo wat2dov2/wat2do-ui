@@ -9,7 +9,6 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/shared/ui/drawer";
-import { Button } from "@/shared/ui/button";
 import { LoadingButton } from "@/shared/ui/loading-button";
 import { Textarea } from "@/shared/ui/textarea";
 import { Field, FieldLabel } from "@/shared/ui/field";
@@ -74,11 +73,6 @@ export function EventReportDialog({
                 </DrawerDescription>
               </DrawerHeader>
             </DrawerBody>
-            <DrawerFooter className="flex-row justify-end">
-              <Button type="button" onMouseDown={() => onOpenChange(false)}>
-                {t("common.done")}
-              </Button>
-            </DrawerFooter>
           </>
         ) : (
           <>
@@ -106,14 +100,6 @@ export function EventReportDialog({
               </Field>
             </DrawerBody>
             <DrawerFooter className="flex-row justify-end gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onMouseDown={() => onOpenChange(false)}
-                disabled={isSubmitting}
-              >
-                {t("common.cancel")}
-              </Button>
               <LoadingButton
                 type="button"
                 onMouseDown={handleSubmit}

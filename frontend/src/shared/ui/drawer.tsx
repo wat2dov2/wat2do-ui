@@ -3,6 +3,9 @@ import { Drawer as DrawerPrimitive } from "vaul"
 
 import { COARSE_POINTER_MEDIA } from "@/shared/hooks/useCoarsePointer"
 import { cn } from "@/shared/lib/utils"
+import { useTranslation } from "react-i18next"
+import { Button } from "@/shared/ui/button"
+import { ChevronLeft, ChevronRight } from "@/shared/ui/doodle-icons"
 
 /**
  * The open drawer's content element, or null outside a drawer.
@@ -36,12 +39,6 @@ function DrawerPortal({
   return <DrawerPrimitive.Portal data-slot="drawer-portal" {...props} />
 }
 
-function DrawerClose({
-  ...props
-}: React.ComponentProps<typeof DrawerPrimitive.Close>) {
-  return <DrawerPrimitive.Close data-slot="drawer-close" {...props} />
-}
-
 const DrawerOverlay = React.forwardRef<
   React.ElementRef<typeof DrawerPrimitive.Overlay>,
   React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Overlay>
@@ -60,8 +57,8 @@ DrawerOverlay.displayName = "DrawerOverlay"
 
 const DrawerContent = React.forwardRef<
   React.ElementRef<typeof DrawerPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Content>
->(({ className, children, ...props }, ref) => {
+  React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Content> & { size?: "default" | "wide" }
+>(({ className, children, size = "default", ...props }, ref) => {
   // Opening a drawer moves focus to the first focusable child. When that is a
   // text field on a touch device, the keyboard opens and the browser scales the
   // page into the field before the user has chosen to type. Hold focus outside
@@ -97,6 +94,7 @@ const DrawerContent = React.forwardRef<
             "data-[vaul-drawer-direction=bottom]:bottom-0 data-[vaul-drawer-direction=bottom]:left-1/2 data-[vaul-drawer-direction=bottom]:w-full data-[vaul-drawer-direction=bottom]:max-w-screen-md data-[vaul-drawer-direction=bottom]:-translate-x-1/2 data-[vaul-drawer-direction=bottom]:mt-16 data-[vaul-drawer-direction=bottom]:max-h-[85dvh] data-[vaul-drawer-direction=bottom]:rounded-t-xl data-[vaul-drawer-direction=bottom]:border-t",
             "data-[vaul-drawer-direction=right]:inset-y-0 data-[vaul-drawer-direction=right]:right-0 data-[vaul-drawer-direction=right]:w-3/4 data-[vaul-drawer-direction=right]:border-l data-[vaul-drawer-direction=right]:sm:max-w-sm",
             "data-[vaul-drawer-direction=left]:inset-y-0 data-[vaul-drawer-direction=left]:left-0 data-[vaul-drawer-direction=left]:w-3/4 data-[vaul-drawer-direction=left]:border-r data-[vaul-drawer-direction=left]:sm:max-w-sm",
+            size === "wide" && "data-[vaul-drawer-direction=bottom]:max-w-screen-2xl lg:data-[vaul-drawer-direction=bottom]:h-[85dvh]",
             className
           )}
           {...props}
@@ -114,7 +112,25 @@ const DrawerContent = React.forwardRef<
 })
 DrawerContent.displayName = "DrawerContent"
 
-function DrawerHeader({ className, ...props }: React.ComponentProps<"div">) {
+function DrawerHeader({ className, children, navigation, ...props }: React.ComponentProps<"div"> & {
+  navigation?: { previous?: () => void; next?: () => void }
+}) {
+  const { t } = useTranslation()
+  const container = useDrawerPortalContainer()
+  React.useEffect(() => {
+    if (!navigation || !container) return
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return
+      const target = event.target
+      if (target instanceof Element && target.closest('input,textarea,select,[contenteditable=true],[role=combobox],[role=listbox],[role=menu]')) return
+      const dialogs = document.querySelectorAll('[role=dialog][data-state=open]')
+      if (dialogs.length && dialogs[dialogs.length - 1] !== container) return
+      const navigate = event.key === "ArrowLeft" ? navigation.previous : event.key === "ArrowRight" ? navigation.next : undefined
+      if (navigate) { event.preventDefault(); navigate() }
+    }
+    document.addEventListener("keydown", handleKeyDown)
+    return () => document.removeEventListener("keydown", handleKeyDown)
+  }, [container, navigation])
   return (
     <div
       data-slot="drawer-header"
@@ -123,7 +139,17 @@ function DrawerHeader({ className, ...props }: React.ComponentProps<"div">) {
         className
       )}
       {...props}
-    />
+    >
+      {navigation ? (
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex shrink-0 gap-2">
+            <Button variant="outline" size="icon" aria-label={t("admin.previous")} disabled={!navigation.previous} onClick={navigation.previous}><ChevronLeft /></Button>
+            <Button variant="outline" size="icon" aria-label={t("admin.next")} disabled={!navigation.next} onClick={navigation.next}><ChevronRight /></Button>
+          </div>
+          <div className="min-w-0 flex-1">{children}</div>
+        </div>
+      ) : children}
+    </div>
   )
 }
 
@@ -131,7 +157,7 @@ function DrawerFooter({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="drawer-footer"
-      className={cn("mt-auto flex flex-col gap-2 p-4", className)}
+      className={cn("mt-auto flex shrink-0 flex-col gap-4 p-4 sm:p-6", className)}
       {...props}
     />
   )
@@ -165,7 +191,6 @@ function DrawerDescription({
 
 export {
   Drawer,
-  DrawerClose,
   DrawerContent,
   DrawerHeader,
   DrawerFooter,

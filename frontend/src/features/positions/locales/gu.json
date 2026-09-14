@@ -5,9 +5,8 @@
     "searchPlaceholder": "ભૂમિકા, કુશળતા અથવા સ્થાનો શોધો...",
     "clearSearch": "હોદ્દાની શોધ સાફ કરો",
     "filterByType": "પ્રકાર મુજબ હોદ્દાઓ ફિલ્ટર કરો",
-    "allTypes": "તમામ હોદ્દાના પ્રકાર",
     "openDetails": "{{title}} હોદ્દાની વિગતો જુઓ",
-    "drawerDescription": "{{organization}} ખાતે {{title}} હોદ્દાની વિગતો",
+    "drawerDescription": "{{club}} ખાતે {{title}} હોદ્દાની વિગતો",
     "deadlineLabel": "અરજીની છેલ્લી તારીખ",
     "due": "અંતિમ તારીખ {{date}}",
     "commitmentLabel": "સમયની પ્રતિબદ્ધતા",
@@ -16,11 +15,10 @@
     "contactLabel": "સંપર્ક",
     "aboutPosition": "આ હોદ્દા વિશે",
     "requirements": "આવશ્યકતાઓ",
-    "viewSource": "મૂળ Instagram પોસ્ટ જુઓ",
     "emptyTitle": "કોઈ ખુલ્લો હોદ્દો મળ્યો નથી",
     "emptyDescription": "બીજી શોધ અથવા હોદ્દાનો પ્રકાર અજમાવો. સંસ્થાની નવી તકો પોસ્ટ થશે ત્યારે અહીં દેખાશે.",
-    "organizationEmptyTitle": "કોઈ ખુલ્લો હોદ્દો નથી",
-    "organizationEmptyDescription": "આ સંસ્થામાં હાલમાં કોઈ ખુલ્લો હોદ્દો નથી.",
+    "clubEmptyTitle": "કોઈ ખુલ્લો હોદ્દો નથી",
+    "clubEmptyDescription": "આ સંસ્થામાં હાલમાં કોઈ ખુલ્લો હોદ્દો નથી.",
     "resultsLabel": "{{count}} હોદ્દા મળ્યા",
     "types": {
       "executive": "એક્ઝિક્યુટિવ",
@@ -30,6 +28,21 @@
       "internship": "ઇન્ટર્નશિપ",
       "general": "સામાન્ય ભરતી"
     },
-    "position_one": "હોદ્દો"
+    "position_one": "હોદ્દો",
+    "title": "પદનું શીર્ષક",
+    "paid": "વેતન સાથે",
+    "unpaid": "વેતન વગર",
+    "unknown": "વેતન નિર્દિષ્ટ નથી",
+    "addPosition": "પદ ઉમેરો",
+    "submitted": "પદ સમીક્ષા માટે મોકલ્યું.",
+    "submissions": "મોકલેલાં પદો",
+    "placeholders": {
+      "title": "દા.ત.: માર્કેટિંગ સંયોજક",
+      "description": "ભૂમિકા, કામ અને વ્યક્તિ શું શીખી શકે અથવા યોગદાન આપી શકે તે વર્ણવો.",
+      "compensation": "દા.ત.: કલાકના $20, $500 માનદ વેતન અથવા અવેતન",
+      "commitment": "દા.ત.: સપ્ટેમ્બરથી ડિસેમ્બર સુધી અઠવાડિયે 3-5 કલાક",
+      "contact": "દા.ત.: hiring@example.com",
+      "requirements": "દરેક લીટીમાં એક આવશ્યકતા, દા.ત.:\nટીમ સાથે કામ કરવામાં અનુકૂળ\nસાપ્તાહિક બેઠકો માટે ઉપલબ્ધ"
+    }
   }
 }

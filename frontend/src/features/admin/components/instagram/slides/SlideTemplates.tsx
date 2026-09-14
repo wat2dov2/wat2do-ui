@@ -47,7 +47,7 @@ const CARD_IMAGE_HEIGHT = 780;
  * One event, rendered as the app's event card in dark mode.
  *
  * Same anatomy as EventCard: poster with the category chip top-left and the
- * organization badge bottom-left, then a surface body holding the title, the
+ * club badge bottom-left, then a surface body holding the title, the
  * date/time/location column, and the price / free-food chips. Click and going
  * counts are deliberately absent - a published slide is not a live card.
  *
@@ -131,7 +131,7 @@ export function EventSlideTemplate({ model }: { model: EventSlideModel }) {
                 fontWeight: 700,
               }}
             >
-              {model.organizationLine}
+              {model.clubLine}
             </div>
           </SlideBadgeMask>
         </div>
@@ -208,8 +208,8 @@ const COVER_DOODLE_CELL_SIZE = 210;
 const COVER_DOODLE_ICON_SIZE = 72;
 /** The poster fan sits on a fixed baseline so the copy above it never reflows. */
 const FAN_TOP = 760;
-const FAN_CARD_WIDTH = 280;
-const FAN_CARD_HEIGHT = 392;
+const FAN_CARD_WIDTH = 220;
+const FAN_CARD_HEIGHT = 308;
 /** How far the outer cards may dip below the baseline as the fan curves. */
 const FAN_MAX_DIP = 16;
 /** Tilt of the outermost card; the rest interpolate towards flat at the centre. */
@@ -403,14 +403,14 @@ export function CoverSlideTemplate({ model }: { model: CoverSlideModel }) {
           marginTop: 24,
         }}
       >
-        <div style={{ display: "flex", fontSize: 220, fontWeight: 700, lineHeight: 1 }}>
+        <div style={{ display: "flex", fontSize: 240, fontWeight: 700, lineHeight: 1 }}>
           {String(model.newEventCount)}
         </div>
         <div
           style={{
             display: "flex",
             marginTop: 12,
-            fontSize: 96,
+            fontSize: 70,
             fontWeight: 700,
             lineHeight: 1.05,
             maxWidth: COVER_CONTENT_WIDTH,
@@ -418,7 +418,7 @@ export function CoverSlideTemplate({ model }: { model: CoverSlideModel }) {
         >
           {model.headline}
         </div>
-        <div style={{ display: "flex", marginTop: 28, fontSize: 38, fontWeight: 500 }}>
+        <div style={{ display: "flex", marginTop: 28, fontSize: model.body.length > 75 ? 24 : 38, fontWeight: 500 }}>
           {model.body}
         </div>
       </div>
@@ -437,7 +437,14 @@ export function CoverSlideTemplate({ model }: { model: CoverSlideModel }) {
           fontWeight: 700,
         }}
       >
-        <div style={{ display: "flex" }}>{model.swipeLine}</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          {model.swipeLine}
+          {/* Vector hand keeps the pointing cue identical in Satori and browsers. */}
+          <svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true">
+            <path d="M5 18h7l5-9c2-3 6-1 5 2l-2 5h15c5 0 5 6 0 6H24v9c0 4-3 6-6 5l-6-3H5Z" fill="#ffcc4d" stroke="#d99e29" strokeWidth="2" strokeLinejoin="round" />
+            <path d="M24 24h-6m6 5h-6m4 5h-4" fill="none" stroke="#d99e29" strokeWidth="2" strokeLinecap="round" />
+          </svg>
+        </div>
         <div style={{ display: "flex" }}>{model.siteLine}</div>
       </div>
     </div>

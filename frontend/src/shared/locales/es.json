@@ -13,7 +13,6 @@
     "or": "o",
     "separatorBullet": "•",
     "free": "Gratis",
-    "freeFood": "Comida gratis",
     "backToTop": "Volver arriba",
     "cancelled": "Cancelado",
     "registration": "Registro",
@@ -73,7 +72,11 @@
     "hourAgo_one": "Hace {{count}} hora",
     "hourAgo_many": "Hace {{count}} horas",
     "dayAgo_one": "Hace {{count}} día",
-    "dayAgo_many": "Hace {{count}} días"
+    "dayAgo_many": "Hace {{count}} días",
+    "latestAddedItem": "<addedPrefix></addedPrefix><eventTitle>{{title}}</eventTitle> <addedTime>agregado {{time}}</addedTime>",
+    "newlyAddedFilter": {
+      "last24Hours": "Nuevo"
+    }
   },
   "errorBoundary": {
     "title": "Algo salió mal",
@@ -84,13 +87,13 @@
     "events": "Eventos",
     "create": "Enviar Evento",
     "loginRequiredToSubmit": "Solo los usuarios registrados pueden enviar eventos u organizaciones.",
-    "organizations": "Organizaciones",
+    "clubs": "Organizaciones",
     "positions": "Posiciones",
     "myEvents": "Mis Eventos",
     "settings": "Configuración",
     "admin": "Administración",
     "adminPanel": "Panel de Administración",
-    "organizationPanel": "Panel de la organización",
+    "clubPanel": "Panel de la organización",
     "clubPanelTooltip": "Administra tu organización",
     "mission": "Misión",
     "about": "Sobre nosotros",
@@ -120,8 +123,7 @@
       "continueWithGoogle": "Continuar con Google"
     },
     "signOut": {
-      "logOut": "Cerrar sesión",
-      "signOutOfAccount": "Cerrar sesión de tu cuenta"
+      "logOut": "Cerrar sesión"
     },
     "getStarted": "Comenzar",
     "profile": {
@@ -175,9 +177,9 @@
     "desc": "Desc.",
     "ascending": "Ascendente",
     "descending": "Descendente",
-    "organization": "Organización",
-    "searchOrganization": "Buscar organización...",
-    "noOrganizations": "No hay organizaciones disponibles"
+    "club": "Organización",
+    "searchClub": "Buscar organización...",
+    "noClubs": "No hay organizaciones disponibles"
   },
   "commands": {
     "commands": "Comandos",
@@ -224,10 +226,10 @@
     "locationPlaceholder": "p. ej., MC 1234, SLC Gran Salón",
     "selectPackage": "Seleccionar un paquete",
     "eventTitlePlaceholder": "p. ej., Charla tecnológica: IA en 2024",
-    "organizationNamePlaceholder": "p. ej., Organización de Ciencias de la Computación",
-    "selectOrganization": "Seleccionar una organización",
-    "searchOrganizationPlaceholder": "Buscar organizaciones...",
-    "noOrganizationFound": "No se encontró ninguna organización",
+    "clubNamePlaceholder": "p. ej., Organización de Ciencias de la Computación",
+    "selectClub": "Seleccionar una organización",
+    "searchClubPlaceholder": "Buscar organizaciones...",
+    "noClubFound": "No se encontró ninguna organización",
     "descriptionPlaceholder": "Cuéntales a las personas de qué trata tu evento...",
     "sourceUrl": "Enlace fuente",
     "sourceUrlPlaceholder": "https://instagram.com/p/...",
@@ -246,21 +248,21 @@
     "description": "Descripción",
     "saveChanges": "Guardar cambios",
     "requiredInformation": "Información Requerida",
-    "organizationName": "Nombre de la Organización",
-    "organizationType": "Tipo de organización",
-    "organizationTypeMapped": "{{type}}",
-    "organizationTypeIndependent": "Independiente",
-    "organizationNameRequired": "El nombre de la organización es obligatorio",
+    "clubName": "Nombre de la Organización",
+    "clubType": "Tipo de organización",
+    "clubTypeMapped": "{{type}}",
+    "clubTypeIndependent": "Independiente",
+    "clubNameRequired": "El nombre de la organización es obligatorio",
     "ownerEmail": "Correo Electrónico del Propietario",
     "categories": "Categorías",
     "categoryRequired": "Se requiere al menos una categoría",
     "add": "Agregar",
-    "organizationPageUrl": "Página de la Organización URL",
-    "organizationPageUrlPlaceholder": "Ej., https://example.com o 123",
+    "clubPageUrl": "Página de la Organización URL",
+    "clubPageUrlPlaceholder": "Ej., https://example.com o 123",
     "instagramHandle": "Instagram Usuario",
     "discordLink": "Discord Enlace",
     "titleRequired": "El título es obligatorio",
-    "organizationRequired": "La organización es obligatoria",
+    "clubRequired": "La organización es obligatoria",
     "occurrenceRequired": "Se requiere al menos una fecha",
     "locationRequired": "La ubicación es obligatoria",
     "schoolRequired": "La escuela es obligatoria",
@@ -288,7 +290,7 @@
     "politicsAndAdvocacy": "Política y Defensa",
     "religionAndSpirituality": "Religión y Espiritualidad",
     "events": "Eventos",
-    "organizations": "Organizaciones"
+    "clubs": "Organizaciones"
   },
   "locations": {
     "LAX": "LAX",

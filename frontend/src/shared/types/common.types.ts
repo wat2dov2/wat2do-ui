@@ -1,17 +1,19 @@
+import type { ApiClubResponse } from "@/shared/generated";
+
 export type ViewMode = "grid" | "calendar" | "map";
 
-/** Admin review state. Only approved organizations are listed publicly. */
-export type OrganizationStatus = "pending" | "approved" | "rejected";
+/** Admin review state. Only approved clubs are listed publicly. */
+export type ClubStatus = ApiClubResponse["status"];
 
-export interface Organization {
+export interface Club {
   id: number;
-  organization_name: string;
-  status: OrganizationStatus;
+  club_name: string;
+  status: ClubStatus;
   categories: string[];
-  organization_page: string;
+  club_page: string;
   ig: string | null;
   discord: string | null;
-  organization_type: string;
+  club_type: string;
   logo_url?: string | null;
   created_by?: string | null;
   owner_email?: string | null;

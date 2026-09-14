@@ -1,5 +1,7 @@
 import {
   useCallback,
+  useEffect,
+  useId,
   useMemo,
   useRef,
   useState,
@@ -64,7 +66,7 @@ const VARIANT_CONTENT_STYLES: Record<SearchComboboxVariant, string> = {
 /**
  * Generic client-side search-and-select combobox: a popover with a search
  * input and a scrollable result list. The single source of truth for static
- * school and organization pickers.
+ * school and club pickers.
  */
 export function SearchCombobox<T>({
   selectedKey,
@@ -87,9 +89,11 @@ export function SearchCombobox<T>({
 }: SearchComboboxProps<T>) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const [activeIndex, setActiveIndex] = useState(0);
+  const listId = useId();
+  const resultsRef = useRef<HTMLDivElement>(null);
   const [triggerWidth, setTriggerWidth] = useState(280);
   const triggerRef = useRef<HTMLButtonElement>(null);
-  const openRef = useRef(false);
 
   const displayedResults = useMemo(() => {
     const normalizedQuery = search.trim().toLocaleLowerCase();
@@ -118,10 +122,11 @@ export function SearchCombobox<T>({
   }, [allOption, getKey, getLabel, getSearchTerms, items, search]);
 
   const handleOpenChange = useCallback((nextOpen: boolean) => {
-    openRef.current = nextOpen;
+    if (nextOpen && triggerRef.current) setTriggerWidth(triggerRef.current.getBoundingClientRect().width);
     setOpen(nextOpen);
     if (!nextOpen) {
       setSearch("");
+      setActiveIndex(0);
     }
   }, []);
 
@@ -130,16 +135,30 @@ export function SearchCombobox<T>({
     handleOpenChange(false);
   }, [handleOpenChange, onSelect]);
 
-  const handleSelectFirstResult = useCallback(() => {
-    const firstResult = displayedResults[0];
+  const handleSelectActiveResult = useCallback(() => {
+    const firstResult = displayedResults[Math.min(activeIndex, displayedResults.length - 1)];
     if (firstResult !== undefined) {
       handleSelect(firstResult);
     }
-  }, [displayedResults, handleSelect]);
+  }, [activeIndex, displayedResults, handleSelect]);
 
-  const handleSearchKeyDown = useEnterKeySubmit<HTMLInputElement>({
-    onSubmit: handleSelectFirstResult,
+  const handleSearchEnter = useEnterKeySubmit<HTMLInputElement>({
+    onSubmit: handleSelectActiveResult,
   });
+
+  useEffect(() => {
+    resultsRef.current?.querySelector(`[data-active="true"]`)?.scrollIntoView({ block: "nearest" });
+  }, [activeIndex, open]);
+
+  const handleSearchKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.nativeEvent.isComposing) return;
+    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      event.preventDefault();
+      setActiveIndex((index) => Math.max(0, Math.min(displayedResults.length - 1, index + (event.key === "ArrowDown" ? 1 : -1))));
+    } else {
+      handleSearchEnter(event);
+    }
+  };
 
   const handleTriggerMouseDown = (e: MouseEvent<HTMLButtonElement>) => {
     if (e.button !== 0) return;
@@ -147,8 +166,7 @@ export function SearchCombobox<T>({
     e.stopPropagation();
     setTriggerWidth(e.currentTarget.getBoundingClientRect().width);
 
-    const nextOpen = !openRef.current;
-    handleOpenChange(nextOpen);
+    handleOpenChange(true);
 
     e.preventDefault();
   };
@@ -158,7 +176,7 @@ export function SearchCombobox<T>({
   };
 
   const handleTriggerKeyDown = (e: KeyboardEvent<HTMLButtonElement>) => {
-    if (e.key !== "ArrowDown") return;
+    if (!["ArrowDown", "ArrowUp", "Enter", " "].includes(e.key)) return;
 
     e.preventDefault();
     setTriggerWidth(e.currentTarget.getBoundingClientRect().width);
@@ -229,33 +247,44 @@ export function SearchCombobox<T>({
           <Search className="size-4 text-muted-foreground shrink-0" />
           <input
             type="text"
+            role="combobox"
+            aria-expanded={open}
+            aria-controls={listId}
+            aria-autocomplete="list"
+            aria-activedescendant={displayedResults.length ? `${listId}-${Math.min(activeIndex, displayedResults.length - 1)}` : undefined}
             placeholder={searchPlaceholder}
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => { setSearch(e.target.value); setActiveIndex(0); }}
             onKeyDown={handleSearchKeyDown}
             className="flex-1 px-2 py-2.5 text-sm bg-transparent focus:outline-none text-foreground placeholder:text-muted-foreground"
           />
         </div>
 
-        <div className="max-h-[220px] overflow-y-auto p-1 empty:hidden">
+        <div ref={resultsRef} id={listId} role="listbox" aria-label={searchPlaceholder} className="max-h-[220px] overflow-y-auto p-1 empty:hidden">
           {showEmpty ? (
             <div className="py-6 text-center text-sm text-muted-foreground">
               {emptyLabel}
             </div>
           ) : (
-            displayedResults.map((item) => {
+            displayedResults.map((item, index) => {
               const key = getKey(item);
               const selected = key === selectedKey;
               return (
                 <button
                   key={key}
+                  id={`${listId}-${index}`}
+                  role="option"
+                  aria-selected={selected}
+                  data-active={index === activeIndex}
+                  tabIndex={-1}
                   type="button"
-                  onMouseDown={() => handleSelect(item)}
+                  onClick={() => handleSelect(item)}
+                  onPointerMove={() => setActiveIndex(index)}
                   className={cn(
                     "w-full flex items-center gap-2 px-2 py-2 text-sm rounded-xl text-left transition-colors",
                     selected
                       ? "bg-primary text-primary-foreground"
-                      : "text-foreground hover:bg-surface-hover",
+                      : "text-foreground hover:bg-surface-hover data-[active=true]:bg-surface-hover",
                   )}
                 >
                   <Check

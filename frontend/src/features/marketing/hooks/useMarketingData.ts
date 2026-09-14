@@ -3,11 +3,7 @@ import type { QRCode, QRCodeScan } from "@/features/posters";
 import { listPostersFromBackend } from "@/features/posters/api/posters.api";
 import { getScansFromBackend, normalizeBackendScan } from "@/features/posters/api/scans.api";
 
-/**
- * Manages QR code poster and scan data. Does NOT auto-load on mount --
- * call `loadQRCodes()` explicitly from the consuming component's useEffect
- * so the side effect timing is visible and controllable at the call site.
- */
+/** Loads on demand so the caller controls when fetching starts. */
 export function useMarketingData() {
   const [qrCodes, setQRCodes] = useState<QRCode[]>([]);
   const [scans, setScans] = useState<QRCodeScan[]>([]);
@@ -30,15 +26,19 @@ export function useMarketingData() {
   }, []);
 
   const qrCodesWithStats = useMemo(() => {
-    return qrCodes.map((qr) => {
-      const qrScans = scans.filter((s) => s.qrCodeId === qr.id);
-      const uniqueScans = new Set(qrScans.map((s) => s.visitorReference)).size;
-      return {
-        ...qr,
-        totalScans: qrScans.length,
-        uniqueScans,
-      };
-    });
+    const counts = new Map<string, { total: number; visitors: Set<string> }>();
+    for (const scan of scans) {
+      const count = counts.get(scan.qrCodeId) ?? { total: 0, visitors: new Set<string>() };
+      count.total += 1;
+      count.visitors.add(scan.visitorReference);
+      counts.set(scan.qrCodeId, count);
+    }
+
+    return qrCodes.map((qr) => ({
+      ...qr,
+      totalScans: counts.get(qr.id)?.total ?? 0,
+      uniqueScans: counts.get(qr.id)?.visitors.size ?? 0,
+    }));
   }, [qrCodes, scans]);
 
   return {

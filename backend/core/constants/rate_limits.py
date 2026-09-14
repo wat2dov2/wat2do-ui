@@ -27,7 +27,7 @@ SUBMISSION_RATE_LIMIT_MAX_REQUESTS = _CONTROL.submissions.maximum_requests
 SUBMISSION_RATE_LIMIT_WINDOW_SECONDS = _CONTROL.submissions.window_seconds
 
 MAX_GOING_EVENTS_PER_USER = _CONTROL.maximum_going_events_per_user
-MAX_SAVED_ORGANIZATIONS_PER_USER = _CONTROL.maximum_saved_organizations_per_user
+MAX_SAVED_CLUBS_PER_USER = _CONTROL.maximum_saved_clubs_per_user
 
 CALENDAR_FEED_RATE_LIMIT_MAX_REQUESTS = _CONTROL.calendar_feed.maximum_requests
 CALENDAR_FEED_RATE_LIMIT_WINDOW_SECONDS = _CONTROL.calendar_feed.window_seconds

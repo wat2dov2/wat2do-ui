@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock
+from uuid import UUID
 from zoneinfo import ZoneInfo
 
 import httpx
@@ -12,6 +13,7 @@ from core.constants import (
     NOTIFICATION_TYPE_MORNING_EMAIL,
 )
 from jobs import send_notifications
+from schemas.event import EventResponse
 from schemas.notification_preference import NotificationPreferenceUpdate
 from services.notifications import (
     delivery_log,
@@ -512,3 +514,69 @@ def test_claimed_delivery_does_not_retry_terminal_provider_error(monkeypatch):
     assert result is False
     send.assert_called_once()
     mark_failed.assert_called_once_with("row-1", "provider_http_400")
+
+
+@pytest.mark.parametrize("user_count", [0, 1, 499, 500, 501, 1001])
+@pytest.mark.parametrize("loader", ["reminders", "preferences"])
+def test_user_reads_preserve_batch_boundaries(fake_sb, patch_sb, user_count, loader):
+    user_ids = [str(index) for index in range(user_count)]
+    if loader == "reminders":
+        patch_sb("services.notifications.event_reminder")
+        event_reminder._load_users(user_ids)
+    else:
+        patch_sb("services.notifications.preferences")
+        preferences.get_enabled_user_ids(user_ids, NOTIFICATION_TYPE_MORNING_EMAIL)
+
+    chunks = [call.args[1] for call in fake_sb.in_.call_args_list]
+    assert [value for chunk in chunks for value in chunk] == user_ids
+    assert all(0 < len(chunk) <= 500 for chunk in chunks)
+    assert len(chunks) == (user_count + 499) // 500
+
+
+def test_going_exclusion_reads_cover_each_user_event_batch(fake_sb, patch_sb):
+    patch_sb("services.notifications.morning_email")
+    user_ids = [str(index) for index in range(501)]
+    event_ids = list(range(501))
+
+    assert morning_email._load_going_exclusions(user_ids, event_ids) == {}
+
+    calls = fake_sb.in_.call_args_list
+    pairs = list(zip(calls[::2], calls[1::2], strict=True))
+    assert len(pairs) == 4
+    assert [
+        (list(user_call.args[1]), list(event_call.args[1])) for user_call, event_call in pairs
+    ] == [
+        (user_ids[user_start : user_start + 500], event_ids[event_start : event_start + 500])
+        for user_start in (0, 500)
+        for event_start in (0, 500)
+    ]
+
+
+@pytest.mark.parametrize("count", [0, 1, 499, 500, 501, 1200])
+def test_event_change_reads_recipients_in_batches(monkeypatch, fake_sb, patch_sb, count):
+    patch_sb("services.notifications.event_change")
+    recipients = [UUID(int=value) for value in range(1, count + 1)]
+    fake_sb.set_response(data=[])
+    enabled = MagicMock(return_value=set())
+    monkeypatch.setattr(event_change, "get_enabled_user_ids", enabled)
+    send = MagicMock()
+    monkeypatch.setattr(event_change, "_send_event_change", send)
+
+    assert (
+        event_change.enqueue_event_change(
+            EventResponse.model_validate(_event()),
+            {"title": {"old": "Old", "new": "New"}},
+            recipients + recipients,
+        )
+        == 0
+    )
+
+    ids = [str(value) for value in recipients]
+    assert [call.args for call in fake_sb.in_.call_args_list] == [
+        ("id", ids[start : start + 500]) for start in range(0, count, 500)
+    ]
+    send.assert_not_called()
+    if count:
+        enabled.assert_called_once_with(ids, NOTIFICATION_TYPE_EVENT_CHANGE)
+    else:
+        enabled.assert_not_called()

@@ -19,16 +19,14 @@ import { useMarketingData } from "@/features/marketing/hooks/useMarketingData";
 
 interface MarketingPageProps {
   events: Event[];
-  userEmail: string;
 }
 
-export function MarketingPage({ events, userEmail }: MarketingPageProps) {
+export function MarketingPage({ events }: MarketingPageProps) {
   const { t } = useTranslation();
   const { qrCodesWithStats, loading, loadQRCodes } = useMarketingData();
 
-  // Explicit data load on mount (side effect is visible at the call site)
   useEffect(() => {
-    loadQRCodes().catch((err) => console.error("Failed to initialize QR codes:", err));
+    void loadQRCodes();
   }, [loadQRCodes]);
 
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -37,10 +35,6 @@ export function MarketingPage({ events, userEmail }: MarketingPageProps) {
   const handleCreate = () => {
     loadQRCodes();
     setShowCreateModal(false);
-  };
-
-  const handleViewDetails = (qrCode: QRCode) => {
-    setSelectedQRCode(qrCode);
   };
 
   if (loading) {
@@ -74,12 +68,12 @@ export function MarketingPage({ events, userEmail }: MarketingPageProps) {
               key={qr.id}
               role="button"
               tabIndex={0}
-              aria-label={`View QR code: ${qr.name}`}
-              onMouseDown={() => handleViewDetails(qr)}
+              aria-label={`${t("common.view")}: ${qr.name}`}
+              onMouseDown={() => setSelectedQRCode(qr)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
-                  handleViewDetails(qr);
+                  setSelectedQRCode(qr);
                 }
               }}
               className="bg-surface border border-border rounded-xl overflow-hidden hover:shadow-md hover:opacity-80 transition-all cursor-pointer"
@@ -159,7 +153,6 @@ export function MarketingPage({ events, userEmail }: MarketingPageProps) {
         onClose={() => setShowCreateModal(false)}
         onCreate={handleCreate}
         events={events}
-        userEmail={userEmail}
       />
 
       {selectedQRCode && (
@@ -167,7 +160,6 @@ export function MarketingPage({ events, userEmail }: MarketingPageProps) {
           isOpen={selectedQRCode !== null}
           onClose={() => setSelectedQRCode(null)}
           qrCode={selectedQRCode}
-          events={events}
         />
       )}
     </div>

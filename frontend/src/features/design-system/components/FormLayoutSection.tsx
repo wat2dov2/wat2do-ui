@@ -29,7 +29,7 @@ import { Textarea } from "@/shared/ui/textarea";
 
 const eventFormSchema = z.object({
   name: z.string().min(1, "Event name is required"),
-  organization: z.string().min(1, "Organization is required"),
+  club: z.string().min(1, "Club is required"),
   category: z.string().min(1, "Choose a category"),
   description: z.string().optional(),
 });
@@ -46,7 +46,7 @@ export function FormLayoutSection() {
     resolver: zodResolver(eventFormSchema),
     defaultValues: {
       name: "",
-      organization: "",
+      club: "",
       category: "",
       description: "",
     },
@@ -80,17 +80,17 @@ export function FormLayoutSection() {
               <FieldError errors={[errors.name]} />
             </Field>
 
-            <Field data-invalid={Boolean(errors.organization)}>
-              <FieldLabel htmlFor="design-system-organization">
-                Organization
+            <Field data-invalid={Boolean(errors.club)}>
+              <FieldLabel htmlFor="design-system-club">
+                Club
               </FieldLabel>
               <Input
-                id="design-system-organization"
+                id="design-system-club"
                 placeholder="Waterloo CS Club"
-                aria-invalid={Boolean(errors.organization)}
-                {...register("organization")}
+                aria-invalid={Boolean(errors.club)}
+                {...register("club")}
               />
-              <FieldError errors={[errors.organization]} />
+              <FieldError errors={[errors.club]} />
             </Field>
           </FormGrid>
         </FormSection>

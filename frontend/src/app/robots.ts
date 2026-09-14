@@ -25,7 +25,7 @@ export default async function robots(): Promise<MetadataRoute.Robots> {
         "/invite/",
         "/login",
         "/onboarding",
-        "/organization-panel/",
+        "/club-panel/",
         "/settings",
       ],
     },

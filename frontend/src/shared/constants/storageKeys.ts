@@ -23,7 +23,6 @@ export const STORAGE_KEYS = {
   NOTIFICATION_PREFS: "notificationPreferences",
 
   // Signed-in event discovery history
-  EVENT_VISITS: "wat2do:event-visits",
 
   // Promoter campaign UI preference
   PROMOTER_BANNER_DISMISSED_UNTIL: "wat2do:promoter-banner-dismissed-until",

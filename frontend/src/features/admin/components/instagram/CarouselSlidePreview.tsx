@@ -1,4 +1,9 @@
 import { useTranslation } from "react-i18next";
+import { useEffect, useRef, useState } from "react";
+import { Button } from "@/shared/ui/button";
+import { Input } from "@/shared/ui/input";
+import { X } from "@/shared/ui/doodle-icons";
+import { cn } from "@/shared/lib/utils";
 import { CoverSlideTemplate } from "@/features/admin/components/instagram/slides/SlideTemplates";
 import {
   SLIDE_HEIGHT,
@@ -10,6 +15,12 @@ import type { Event } from "@/shared/types";
 import type { SchoolColors } from "@/shared/lib/schoolBranding";
 
 interface CarouselSlidePreviewProps {
+  onRemove?: () => void;
+  onPositionChange?: (position: number) => void;
+  disabled?: boolean;
+  removeDisabled?: boolean;
+  selected?: boolean;
+  onSelect?: () => void;
   /** Slide 0 is the cover; the rest are event slides in carousel order. */
   slideIndex: number;
   slideCount: number;
@@ -29,8 +40,6 @@ interface CarouselSlidePreviewProps {
 const COVER_INDEX = 0;
 /** On-screen width of the preview column, matching a feed card. */
 const PREVIEW_WIDTH = 288;
-/** A full 1080x1350 slide, scaled to the preview column. */
-const PREVIEW_SCALE = PREVIEW_WIDTH / SLIDE_WIDTH;
 
 /**
  * What the admin is looking at on a given slide.
@@ -49,29 +58,65 @@ export function CarouselSlidePreview({
   cover,
   coverColors,
   publishedAssetUrl,
+  selected,
+  onSelect,
+  onRemove,
+  onPositionChange,
+  disabled,
+  removeDisabled,
 }: CarouselSlidePreviewProps) {
   const { t } = useTranslation();
   const isCover = slideIndex === COVER_INDEX;
+  const previewRef = useRef<HTMLDivElement>(null);
+  const [previewWidth, setPreviewWidth] = useState(PREVIEW_WIDTH);
+  const previewScale = previewWidth / SLIDE_WIDTH;
+
+  useEffect(() => {
+    const node = previewRef.current;
+    if (!node) return;
+    const measure = () => setPreviewWidth(node.getBoundingClientRect().width);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
 
   return (
-    <figure className="flex flex-col items-center gap-2" style={{ width: PREVIEW_WIDTH }}>
+    <div ref={previewRef} className="relative isolate flex max-w-full flex-col gap-2" style={{ width: PREVIEW_WIDTH }}>
+      {!isCover && onRemove && (
+        <div className="absolute right-2 top-2 z-20" onPointerDown={(event) => event.stopPropagation()}>
+          <Button variant="outline" size="icon-sm" disabled={disabled || removeDisabled}
+            aria-label={t("admin.instagramPublishing.removeSlide")} onClick={onRemove}>
+            <X />
+          </Button>
+        </div>
+      )}
+    <figure
+      role={onSelect ? "button" : undefined}
+      tabIndex={onSelect ? 0 : undefined}
+      aria-pressed={selected}
+      onClick={onSelect}
+      onKeyDown={(event) => { if (onSelect && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); onSelect(); } }}
+      className={cn("relative z-0 flex max-w-full flex-col items-center gap-2 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring", onSelect && "cursor-pointer", selected && "ring-2 ring-primary")}
+      style={{ width: "100%" }}
+    >
       {publishedAssetUrl ? (
         <img
           src={publishedAssetUrl}
           alt=""
           className="rounded-xl border border-border"
-          style={{ width: PREVIEW_WIDTH, height: SLIDE_HEIGHT * PREVIEW_SCALE }}
+          style={{ width: "100%", height: "auto" }}
         />
       ) : isCover && coverColors ? (
         <div
           className="overflow-hidden rounded-xl border border-border bg-surface"
-          style={{ width: PREVIEW_WIDTH, height: SLIDE_HEIGHT * PREVIEW_SCALE }}
+          style={{ width: "100%", height: SLIDE_HEIGHT * previewScale }}
         >
           <div
             style={{
               width: SLIDE_WIDTH,
               height: SLIDE_HEIGHT,
-              transform: `scale(${PREVIEW_SCALE})`,
+              transform: `scale(${previewScale})`,
               transformOrigin: "top left",
             }}
           >
@@ -87,11 +132,31 @@ export function CarouselSlidePreview({
             : t("admin.instagramPublishing.slideEventUnavailable")}
         </p>
       )}
-      <figcaption className="text-xs text-muted-foreground">
-        {isCover
-          ? t("admin.instagramPublishing.coverSlide")
-          : t("admin.instagramPublishing.slideOf", { index: slideIndex, count: slideCount - 1 })}
-      </figcaption>
+      {isCover && (
+        <figcaption className="text-xs text-muted-foreground">
+          {t("admin.instagramPublishing.coverSlide")}
+        </figcaption>
+      )}
     </figure>
+      {!isCover && onPositionChange && (
+        <Input
+          key={slideIndex}
+          format="integer"
+          defaultValue={slideIndex}
+          disabled={disabled}
+          aria-label={t("admin.instagramPublishing.slideOf", { index: slideIndex, count: slideCount - 1 })}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") event.currentTarget.blur();
+          }}
+          onBlur={(event) => {
+            const position = Number(event.currentTarget.value);
+            if (position >= 1 && position < slideCount && position !== slideIndex) {
+              onPositionChange(position);
+            }
+            event.currentTarget.value = String(slideIndex);
+          }}
+        />
+      )}
+    </div>
   );
 }

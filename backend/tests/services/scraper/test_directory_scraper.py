@@ -6,12 +6,12 @@ from unittest.mock import MagicMock, patch
 
 from services.scraper.directory_scraper import (
     DirectoryConfig,
-    _resolve_directory_organization,
+    _resolve_directory_club,
     crawl_directory_links,
     run_directory_pipeline,
     scrape_event_page,
 )
-from services.scraper.org_resolve import ResolvedOrganization
+from services.scraper.org_resolve import ResolvedClub
 
 
 def directory_config(**overrides) -> DirectoryConfig:
@@ -19,7 +19,7 @@ def directory_config(**overrides) -> DirectoryConfig:
         "id": "test",
         "name": "Test",
         "school": "test-school",
-        "default_organization": "Test Students' Union",
+        "default_club": "Test Students' Union",
         "source_format": "html",
         "entry_url": "https://example.com/events",
         "event_url_patterns": ["/event/"],
@@ -33,7 +33,7 @@ def test_directory_config_instantiation():
         id="test-dir",
         name="Test Directory",
         school="Test School",
-        default_organization="Test Students' Union",
+        default_club="Test Students' Union",
         source_format="html",
         entry_url="https://example.com/events",
         event_url_patterns=["/event/"],
@@ -45,7 +45,7 @@ def test_directory_config_instantiation():
     assert config.name == "Test Directory"
     assert config.school == "Test School"
     assert config.entry_url == "https://example.com/events"
-    assert config.default_organization == "Test Students' Union"
+    assert config.default_club == "Test Students' Union"
     assert config.source_format == "html"
     assert config.event_url_patterns == ["/event/"]
     assert config.next_page_selector == "a.next"
@@ -60,7 +60,7 @@ def test_directory_catalog_covers_every_authoritative_school():
     assert len(configs) == 37
     assert {config.school for config in configs} == {
         "berkeley",
-        "brock",
+        "brocku",
         "carleton",
         "columbia",
         "concordia",
@@ -98,7 +98,7 @@ def test_directory_catalog_covers_every_authoritative_school():
         "york",
     }
     assert len({config.id for config in configs}) == len(configs)
-    assert all(config.default_organization for config in configs)
+    assert all(config.default_club for config in configs)
     assert all(config.event_url_patterns for config in configs)
 
 
@@ -239,34 +239,34 @@ END:VCALENDAR\r
     mock_client.get.assert_called_once()
 
 
-@patch("services.scraper.directory_scraper.resolve_organization_for_scrape")
-def test_directory_organization_falls_back_to_trusted_publisher(mock_resolve):
+@patch("services.scraper.directory_scraper.resolve_club_for_scrape")
+def test_directory_club_falls_back_to_trusted_publisher(mock_resolve):
     mock_resolve.side_effect = [
-        ResolvedOrganization(None, "WUSAThrift", None),
-        ResolvedOrganization(7, "WUSA", None),
+        ResolvedClub(None, "WUSAThrift", None),
+        ResolvedClub(7, "WUSA", None),
     ]
-    event = {"organization": "WUSAThrift"}
+    event = {"club": "WUSAThrift"}
     config = directory_config(
         school="uwaterloo",
-        default_organization="WUSA",
+        default_club="WUSA",
     )
 
-    resolved = _resolve_directory_organization(event, config)
+    resolved = _resolve_directory_club(event, config)
 
-    assert event["organization"] == "WUSA"
-    assert resolved.organization_id == 7
+    assert event["club"] == "WUSA"
+    assert resolved.club_id == 7
     assert mock_resolve.call_count == 2
 
 
-@patch("services.scraper.directory_scraper.resolve_organization_for_scrape")
-def test_directory_organization_keeps_a_known_explicit_host(mock_resolve):
-    mock_resolve.return_value = ResolvedOrganization(9, "UW Tea Club", "uwteaclub")
-    event = {"organization": "UW Tea Club"}
+@patch("services.scraper.directory_scraper.resolve_club_for_scrape")
+def test_directory_club_keeps_a_known_explicit_host(mock_resolve):
+    mock_resolve.return_value = ResolvedClub(9, "UW Tea Club", "uwteaclub")
+    event = {"club": "UW Tea Club"}
 
-    resolved = _resolve_directory_organization(event, directory_config(school="uwaterloo"))
+    resolved = _resolve_directory_club(event, directory_config(school="uwaterloo"))
 
-    assert event["organization"] == "UW Tea Club"
-    assert resolved.organization_id == 9
+    assert event["club"] == "UW Tea Club"
+    assert resolved.club_id == 9
     mock_resolve.assert_called_once()
 
 
@@ -339,5 +339,5 @@ def test_run_directory_pipeline_dry_run(
         image_urls=["https://supabase.com/stored.png"],
         post_created_at=None,
         school="Test School",
-        source_organization="Test Students' Union",
+        source_club="Test Students' Union",
     )

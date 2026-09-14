@@ -6,14 +6,11 @@
 import { api } from "@/shared/services/apiClient";
 import type { ApiCreditBalanceResponse, ApiPromotionResponse } from "@/shared/generated";
 
-type CreditBalanceResponse = ApiCreditBalanceResponse;
-type PromotionResponse = ApiPromotionResponse;
-
 /**
  * Fetch user credit balance from the backend
  */
 export async function fetchBalance(): Promise<number> {
-  const res = await api.get<CreditBalanceResponse>("/credits/");
+  const res = await api.get<ApiCreditBalanceResponse>("/credits/");
   return res.balance;
 }
 
@@ -28,7 +25,7 @@ export async function addCreditsRepo(
   userId: string,
   amount: number,
 ): Promise<number> {
-  const res = await api.post<CreditBalanceResponse>("/credits/add", {
+  const res = await api.post<ApiCreditBalanceResponse>("/credits/add", {
     user_id: userId,
     amount,
   });
@@ -41,8 +38,8 @@ export async function addCreditsRepo(
  */
 export async function createPromotionAPI(
   eventId: number,
-): Promise<PromotionResponse> {
-  return api.post<PromotionResponse>("/promotions/", {
+): Promise<ApiPromotionResponse> {
+  return api.post<ApiPromotionResponse>("/promotions/", {
     event_id: eventId,
   });
 }

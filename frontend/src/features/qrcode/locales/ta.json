@@ -31,7 +31,6 @@
     "urlRequired": "URL அவசியம்",
     "urlInvalid": "சரியான URL உள்ளிடவும்",
     "descriptionOptional": "விருப்பம்",
-    "imageFormat": "PNG, JPG 5MB வரை",
     "noScanData": "என்னையோடு தரவு இல்லை",
     "noScanDataDesc": "செயல்திறனை கண்காணிக்க உங்கள் QR குறியீட்டை பகிரவும்",
     "posterAriaLabel": "போஸ்டர் {{id}}",

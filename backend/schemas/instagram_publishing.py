@@ -56,8 +56,8 @@ class InstagramPublishBatchBaseResponse(BaseModel):
     window_end: datetime
     status: InstagramPublishBatchStatus
     caption: str
+    caption_intro: str = ""
     cover_body: str = ""
-    ai_model: str | None = None
     version: int
     error_message: str | None = None
     meta_media_id: str | None = None
@@ -69,6 +69,7 @@ class InstagramPublishBatchBaseResponse(BaseModel):
 
 class InstagramPublishBatchSummaryResponse(InstagramPublishBatchBaseResponse):
     item_count: int = 0
+    eligible_count: int = 0
 
 
 class InstagramPublishBatchResponse(InstagramPublishBatchBaseResponse):
@@ -82,12 +83,12 @@ class InstagramPublishBatchUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     version: int = Field(gt=0)
-    caption: str = Field(min_length=1, max_length=2200)
+    caption_intro: str = Field(default="", max_length=2200)
     cover_body: str = Field(default="", max_length=280)
     # Carousel order, by event. The editor owns which events are on the
     # carousel - including ones an admin added by hand - so the batch stores
     # exactly this list.
-    event_ids: list[int] = Field(min_length=1, max_length=9)
+    event_ids: list[int] = Field(min_length=1)
 
 
 class InstagramPublishBatchPublish(BaseModel):

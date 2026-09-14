@@ -13,18 +13,18 @@ from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
 from core.constants import (
+    MAX_CLUB_NAME_LENGTH,
+    MAX_EVENT_CLUB_LENGTH,
     MAX_EVENT_DESCRIPTION_LENGTH,
     MAX_EVENT_FOOD_COUNT,
     MAX_EVENT_FOOD_ITEM_LENGTH,
     MAX_EVENT_HANDLE_LENGTH,
     MAX_EVENT_LOCATION_LENGTH,
-    MAX_EVENT_ORGANIZATION_LENGTH,
     MAX_EVENT_TITLE_LENGTH,
-    MAX_ORGANIZATION_NAME_LENGTH,
 )
 from core.database import get_sb
 from core.sanitize import parse_iso_datetime, remove_surrogates
-from core.tables import EVENTS, ORGANIZATIONS
+from core.tables import CLUBS, EVENTS
 from schemas.event import normalize_category
 from schemas.event_date import OccurrenceCreate, OccurrenceResponse, OccurrenceUpdate
 from services import event_date_service, event_service, school_service
@@ -32,7 +32,7 @@ from services.event_feed_revalidation import event_feed_revalidation_service
 from services.notifications.event_change import enqueue_event_change
 
 if TYPE_CHECKING:
-    from services.scraper.org_resolve import ResolvedOrganization
+    from services.scraper.org_resolve import ResolvedClub
 
 log = logging.getLogger(__name__)
 
@@ -43,7 +43,7 @@ def write_event(
     ig_handle: str | None,
     source_url: str,
     allow_past_events: bool = False,
-    resolved_org: ResolvedOrganization | None = None,
+    resolved_org: ResolvedClub | None = None,
 ) -> str:
     """Insert or overwrite one event from Pass 1 / Pass 2 output.
 
@@ -69,22 +69,22 @@ def write_event(
         return "skipped"
 
     if resolved_org is None:
-        from services.scraper.org_resolve import resolve_organization_for_scrape
+        from services.scraper.org_resolve import resolve_club_for_scrape
 
-        resolved_org = resolve_organization_for_scrape(
+        resolved_org = resolve_club_for_scrape(
             ig_handle=ig_handle,
             school=(event.get("school") or "").strip() or None,
-            organization_name=(event.get("organization") or "").strip() or None,
+            club_name=(event.get("club") or "").strip() or None,
             create_stub_if_missing=bool((ig_handle or "").strip()),
         )
 
     effective_ig = resolved_org.ig_handle or (
         ig_handle[:MAX_EVENT_HANDLE_LENGTH] if ig_handle else None
     )
-    organization_name = _resolve_organization_name(
+    club_name = _resolve_club_name(
         event,
         ig_handle=effective_ig,
-        organization_name=resolved_org.organization_name,
+        club_name=resolved_org.club_name,
     )
     category = normalize_category(event.get("category")) if event.get("category") else None
     school_slug = (event.get("school") or "").strip()
@@ -116,10 +116,10 @@ def write_event(
         "registration": bool(event.get("registration", False)),
         "source_image_url": (event.get("source_image_url") or None),
         "source_url": source_url or None,
-        "organization_id": resolved_org.organization_id,
+        "club_id": resolved_org.club_id,
         "school_id": school.id,
         "category": category,
-        "organization": organization_name[:MAX_EVENT_ORGANIZATION_LENGTH],
+        "club": club_name[:MAX_EVENT_CLUB_LENGTH],
         "ig_handle": effective_ig[:MAX_EVENT_HANDLE_LENGTH] if effective_ig else None,
         "cancelled": bool(event.get("cancelled", False)),
         "ingestion_source": "instagram_scraper",
@@ -202,8 +202,8 @@ def _overwrite_event(
 
         return "inserted"
 
-    incoming_org_id = event_row.get("organization_id")
-    old_org_id = old_event.organization_id
+    incoming_org_id = event_row.get("club_id")
+    old_org_id = old_event.club_id
     if (
         isinstance(incoming_org_id, int)
         and isinstance(old_org_id, int)
@@ -387,7 +387,7 @@ def _merge_overwrite_payload(incoming: dict, old_event) -> dict:
         "food",
         "category",
         "ig_handle",
-        "organization_id",
+        "club_id",
         "source_url",
         "source_image_url",
     ):
@@ -405,11 +405,11 @@ def _merge_overwrite_payload(incoming: dict, old_event) -> dict:
 
 
 @functools.lru_cache(maxsize=2048)
-def _lookup_organization_by_ig(ig_handle: str) -> dict | None:
+def _lookup_club_by_ig(ig_handle: str) -> dict | None:
     rows = (
         get_sb()
-        .table(ORGANIZATIONS)
-        .select("id,organization_name,schools(slug)")
+        .table(CLUBS)
+        .select("id,club_name,schools(slug)")
         .eq("ig", ig_handle)
         .limit(1)
         .execute()
@@ -417,39 +417,37 @@ def _lookup_organization_by_ig(ig_handle: str) -> dict | None:
     return rows[0] if rows else None
 
 
-def _ensure_organization_by_ig(
+def _ensure_club_by_ig(
     ig_handle: str | None,
     *,
     school: str | None,
     preferred_name: str | None = None,
 ) -> dict | None:
-    """Return the organization for an IG handle, creating a stub row when missing."""
+    """Return the club for an IG handle, creating a stub row when missing."""
     cleaned = (ig_handle or "").strip().lstrip("@")
     if not cleaned:
         return None
 
-    existing = _lookup_organization_by_ig(cleaned)
+    existing = _lookup_club_by_ig(cleaned)
     if existing is not None:
         return existing
 
     school_slug = (school or "").strip()
     if not school_slug:
-        log.warning("[%s] skipping organization auto-create - school slug is required", cleaned)
+        log.warning("[%s] skipping club auto-create - school slug is required", cleaned)
         return None
     school_record = school_service.get_school(school_slug)
     if school_record is None:
-        log.warning("[%s] skipping organization auto-create - school is not registered", cleaned)
+        log.warning("[%s] skipping club auto-create - school is not registered", cleaned)
         return None
 
-    organization_name = ((preferred_name or "").strip() or f"@{cleaned}")[
-        :MAX_ORGANIZATION_NAME_LENGTH
-    ]
+    club_name = ((preferred_name or "").strip() or f"@{cleaned}")[:MAX_CLUB_NAME_LENGTH]
     inserted = (
         get_sb()
-        .table(ORGANIZATIONS)
+        .table(CLUBS)
         .insert(
             {
-                "organization_name": organization_name,
+                "club_name": club_name,
                 "ig": cleaned,
                 "school_id": school_record.id,
             }
@@ -459,44 +457,44 @@ def _ensure_organization_by_ig(
     if inserted.data:
         row = inserted.data[0]
         log.info(
-            "[%s] auto-created organization id=%s name=%r school=%s",
+            "[%s] auto-created club id=%s name=%r school=%s",
             cleaned,
             row.get("id"),
-            organization_name,
+            club_name,
             school_slug,
         )
-        _lookup_organization_by_ig.cache_clear()
+        _lookup_club_by_ig.cache_clear()
 
-        from services import organization_service
+        from services import club_service
 
-        organization_service._get_organizations_for_school_lookup.cache_clear()
+        club_service._get_clubs_for_school_lookup.cache_clear()
 
         return row
 
-    return _lookup_organization_by_ig(cleaned)
+    return _lookup_club_by_ig(cleaned)
 
 
-def _resolve_organization_name(
+def _resolve_club_name(
     event: dict,
     *,
     ig_handle: str | None,
-    organization_name: str | None = None,
+    club_name: str | None = None,
 ) -> str:
-    """Pick a non-empty organization string for the events row.
+    """Pick a non-empty club string for the events row.
 
-    Order: resolved organization name → extractor's ``organization`` → raw IG
-    handle. ``organization_id`` is the canonical ownership link when known.
+    Order: resolved club name → extractor's ``club`` → raw IG
+    handle. ``club_id`` is the canonical ownership link when known.
     """
-    if organization_name and organization_name.strip():
-        return organization_name.strip()
+    if club_name and club_name.strip():
+        return club_name.strip()
 
-    org = (event.get("organization") or "").strip()
+    org = (event.get("club") or "").strip()
     if org:
         return org
 
     if ig_handle:
         return f"@{ig_handle.lstrip('@')}"
-    return "Unknown Organization"
+    return "Unknown Club"
 
 
 def _clean_food(value: object) -> list | None:

@@ -51,17 +51,14 @@ export function useExclusiveDisclosure({
       const detail = (event as CustomEvent<ExclusiveDisclosureDetail>).detail;
       if (!detail || detail.scope !== scope || detail.id === id) return;
 
-      if (!isControlled) {
-        setUncontrolledOpen(false);
-      }
-      onOpenChange?.(false);
+      setOpen(false);
     };
 
     window.addEventListener(EXCLUSIVE_DISCLOSURE_OPEN_EVENT, closeWhenAnotherDisclosureOpens);
     return () => {
       window.removeEventListener(EXCLUSIVE_DISCLOSURE_OPEN_EVENT, closeWhenAnotherDisclosureOpens);
     };
-  }, [id, isControlled, onOpenChange, scope]);
+  }, [id, setOpen, scope]);
 
   return [currentOpen, setOpen] as const;
 }

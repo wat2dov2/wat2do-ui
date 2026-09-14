@@ -51,7 +51,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const featuredEvent = previewEvents.find((event) => event.source_image_url);
   const title = "Sign In to Wat2Do";
   const description =
-    "Sign in or create a Wat2Do account to save campus events, follow student organizations, and personalize your event feed.";
+    "Sign in or create a Wat2Do account to save campus events, follow student clubs, and personalize your event feed.";
 
   return buildNoIndexPageMetadata({
     title,

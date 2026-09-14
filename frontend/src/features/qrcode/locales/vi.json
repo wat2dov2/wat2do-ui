@@ -31,7 +31,6 @@
     "urlRequired": "URL là bắt buộc",
     "urlInvalid": "Vui lòng nhập URL hợp lệ",
     "descriptionOptional": "Tùy chọn",
-    "imageFormat": "PNG, JPG tối đa 5MB",
     "noScanData": "Chưa có dữ liệu quét",
     "noScanDataDesc": "Chia sẻ mã QR của bạn để bắt đầu theo dõi hiệu suất",
     "posterAriaLabel": "Poster {{id}}",

@@ -17,16 +17,16 @@ def _school() -> SchoolRecord:
     )
 
 
-def _organization(
-    organization_id: int,
+def _club(
+    club_id: int,
     name: str,
     *,
     ig: str | None = None,
 ) -> dict:
     return {
-        "id": organization_id,
-        "organization_name": name,
-        "logo_url": f"https://assets.test/org-{organization_id}.png",
+        "id": club_id,
+        "club_name": name,
+        "logo_url": f"https://assets.test/org-{club_id}.png",
         "ig": ig,
         "status": "approved",
     }
@@ -34,7 +34,7 @@ def _organization(
 
 def _event(
     event_id: int,
-    organization_id: int,
+    club_id: int,
     *,
     added_at: str,
     category: str,
@@ -45,8 +45,8 @@ def _event(
         "id": event_id,
         "title": f"Event {event_id}",
         "description": "Campus event",
-        "organization": None,
-        "organization_id": organization_id,
+        "club": None,
+        "club_id": club_id,
         "category": category,
         "food": food,
         "source_image_url": f"https://assets.test/event-{event_id}.png",
@@ -61,10 +61,10 @@ def _occurrence(event_id: int, start: str) -> dict:
 
 
 def _build() -> dict:
-    organizations = [
-        _organization(1, "Columbia Federalist", ig="https://instagram.com/columbia_federalist/"),
-        _organization(2, "Gourmand Columbia", ig="@gourmandcolumbia"),
-        _organization(3, "No Events Club"),
+    clubs = [
+        _club(1, "Columbia Federalist", ig="https://instagram.com/columbia_federalist/"),
+        _club(2, "Gourmand Columbia", ig="@gourmandcolumbia"),
+        _club(3, "No Events Club"),
     ]
     events = [
         _event(
@@ -105,7 +105,7 @@ def _build() -> dict:
     ]
     return build_poster_data(
         school=_school(),
-        organizations=organizations,
+        clubs=clubs,
         term_events=events,
         occurrences=occurrences,
         total_event_count=960,
@@ -177,7 +177,7 @@ def test_build_poster_data_derives_awards_with_stable_semantics():
 def test_build_poster_data_converts_utc_occurrences_to_the_school_day():
     payload = build_poster_data(
         school=_school(),
-        organizations=[_organization(1, "Night Owls")],
+        clubs=[_club(1, "Night Owls")],
         term_events=[
             _event(
                 20,
@@ -208,15 +208,15 @@ def test_build_poster_data_uses_event_handles_for_legacy_organizers():
     )
     legacy_event.update(
         {
-            "organization_id": None,
-            "organization": "@columbiabso",
+            "club_id": None,
+            "club": "@columbiabso",
             "ig_handle": "@columbiabso",
         }
     )
 
     payload = build_poster_data(
         school=_school(),
-        organizations=[],
+        clubs=[],
         term_events=[legacy_event],
         occurrences=[_occurrence(30, "2026-04-10T16:00:00Z")],
         total_event_count=1,

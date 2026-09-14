@@ -1,5 +1,5 @@
 import { lazy, Suspense, useCallback, useMemo, useState } from "react";
-import Link from "next/link";
+import publicAttendance from "../../../../../backend/controlbox/public_attendance.json";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
@@ -14,12 +14,9 @@ import {
 } from "@/shared/utils/date";
 import {
   Calendar,
-  Discord,
   DollarSign,
   Edit,
-  ExternalLink,
   Flag,
-  Instagram,
   LocationPin,
   Share2,
   Trash2,
@@ -45,7 +42,8 @@ import { EventCalendarDownloadMenu } from "@/features/events/components/EventCal
 import { EventCard } from "@/features/events/components/EventCard";
 import { EventCardImage } from "@/features/events/components/EventCardImage";
 import { EventLocationMap } from "@/features/events/components/EventLocationMap";
-import { OrganizationTypeIcon } from "@/shared/components/OrganizationTypeIcon";
+import { ClubBadgeDropdown } from "@/features/clubs";
+import { AvatarStack } from "@/shared/ui/avatar-stack";
 import { GoingOccurrencePickerContent } from "@/features/events/components/GoingOccurrencePickerContent";
 import { fetchEventAttendees } from "@/features/events/api/events.api";
 import { useEventsStore } from "@/features/events/store/events.store";
@@ -57,7 +55,7 @@ import { useUIStore } from "@/shared/store/ui.store";
 import { controlBox } from "@/shared/config/controlBox";
 import { translateFood } from "@/shared/utils/foodTranslation";
 import { queryKeys } from "@/shared/lib/queryKeys";
-import { organizationPagePath, ROUTES } from "@/shared/constants/routes";
+import { ROUTES } from "@/shared/constants/routes";
 import { toast } from "@/shared/hooks/use-toast";
 import type { Event } from "@/shared/types";
 
@@ -91,36 +89,6 @@ function EventSectionHeader({ children }: { children: React.ReactNode }) {
       <h3 className="text-sm font-semibold text-foreground">{children}</h3>
       <Separator />
     </Stack>
-  );
-}
-
-/** Organization name with its mapped organization-type icon. */
-function EventHostName({ event }: { event: Event }) {
-  const content = (
-    <>
-      <span>{event.organization}</span>
-      <OrganizationTypeIcon
-        school={event.school}
-        organizationType={event.organization_type}
-      />
-    </>
-  );
-
-  if (event.organization_id != null) {
-    return (
-      <Link
-        href={organizationPagePath(event.organization_id)}
-        className="inline-flex items-center gap-1.5 text-foreground transition-colors hover:text-primary"
-      >
-        {content}
-      </Link>
-    );
-  }
-
-  return (
-    <span className="inline-flex items-center gap-1.5">
-      {content}
-    </span>
   );
 }
 
@@ -320,8 +288,8 @@ function EventRegistrationCard({
               {t("events.cancelGoingPrompt")}{" "}
               <Button
                 type="button"
-                variant="ghost"
-                size="sm"
+                variant="link"
+                size="inline"
                 disabled={going.isPending}
                 onClick={() => void going.saveSelection([])}
               >
@@ -444,7 +412,7 @@ function EventMapSection({
   return <EventLocationMap location={event.location} school={event.school ?? school} />;
 }
 
-/** "N going" heading, divider, and abbreviated attendee names. */
+/** Shared live attendance summary for the drawer and event page. */
 function EventAttendeesSection({ eventId }: { eventId: number }) {
   const { t } = useTranslation();
   const { data: attendees } = useQuery({
@@ -454,68 +422,23 @@ function EventAttendeesSection({ eventId }: { eventId: number }) {
   });
   if (!attendees || attendees.going_count <= 0) return null;
 
-  const overflowCount = attendees.going_count - attendees.names.length;
+  const profiles = attendees.attendees.slice(0, publicAttendance.maximum_display_names);
+  const overflowCount = profiles.length === publicAttendance.maximum_display_names
+    ? Math.max(0, attendees.going_count - profiles.length)
+    : 0;
   return (
     <Stack gap={3}>
       <EventSectionHeader>
         {t("events.goingCount", { count: attendees.going_count })}
       </EventSectionHeader>
-      {attendees.names.length > 0 && (
-        <p className="text-sm text-muted-foreground">
-          {attendees.names.join(", ")}
-          {overflowCount > 0 && ` ${t("events.andOthersCount", { count: overflowCount })}`}
-        </p>
-      )}
-    </Stack>
-  );
-}
-
-/** Website and social links belonging to the event's host. */
-function EventHostLinks({ event }: { event: Event }) {
-  const { t } = useTranslation();
-  const igHandle = event.organization_ig ?? event.ig_handle;
-  const igHref = igHandle
-    ? igHandle.startsWith("http")
-      ? igHandle
-      : `https://instagram.com/${igHandle}`
-    : undefined;
-  const allLinks: { href: string | undefined; label: string; Icon: LucideIcon }[] = [
-    {
-      href: event.organization_page ?? undefined,
-      label: t("organizations.visitWebsite"),
-      Icon: ExternalLink,
-    },
-    { href: igHref, label: t("organizations.instagram"), Icon: Instagram },
-    {
-      href: event.organization_discord ?? undefined,
-      label: t("organizations.discord"),
-      Icon: Discord,
-    },
-  ];
-  const links = allLinks.filter(
-    (link): link is { href: string; label: string; Icon: LucideIcon } => Boolean(link.href),
-  );
-  if (links.length === 0) return null;
-
-  return (
-    <Stack
-      direction="horizontal"
-      gap={4}
-      wrap
-      data-slot="event-host-links"
-    >
-      {links.map((link) => (
-        <a
-          key={link.label}
-          href={link.href}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-sm text-primary hover:underline flex items-center gap-1.5"
-        >
-          <link.Icon className="size-3.5" />
-          {link.label}
-        </a>
-      ))}
+      <AvatarStack
+        avatars={profiles.map((attendee) => ({
+          name: attendee.name || t("events.going"),
+          src: attendee.avatar_url,
+        }))}
+        overflowCount={overflowCount}
+        overflowLabel={t("events.andOthersCount", { count: overflowCount })}
+      />
     </Stack>
   );
 }
@@ -639,15 +562,15 @@ export function EventDetailsBody({
   school,
   isFetchingDetails = false,
   renderTitle,
-  onOrganizationFilterSelect,
+  onClubFilterSelect,
 }: {
   event: Event;
   school: string | null | undefined;
   isFetchingDetails?: boolean;
   /** Override the title element (the drawer supplies its DrawerTitle). */
   renderTitle?: (title: string) => React.ReactNode;
-  /** Lets drawer composition close after its organization filter is applied. */
-  onOrganizationFilterSelect?: () => void;
+  /** Lets drawer composition close after its club filter is applied. */
+  onClubFilterSelect?: () => void;
 }) {
   const { t } = useTranslation();
   return (
@@ -659,7 +582,7 @@ export function EventDetailsBody({
         <EventCardImage
           event={event}
           variant="detail"
-          onOrganizationFilterSelect={onOrganizationFilterSelect}
+          onClubFilterSelect={onClubFilterSelect}
         />
       </div>
 
@@ -693,10 +616,16 @@ export function EventDetailsBody({
       <Stack gap={6} className="order-2 md:col-start-1">
         <Stack gap={3} data-slot="event-host">
           <EventSectionHeader>{t("events.hostedBy")}</EventSectionHeader>
-          <p className="text-sm text-muted-foreground">
-            <EventHostName event={event} />
-          </p>
-          <EventHostLinks event={event} />
+            <ClubBadgeDropdown
+              clubName={event.club}
+              clubLogoUrl={event.club_logo_url}
+              clubType={event.club_type}
+              school={event.school}
+              clubPage={event.club_page}
+              clubIg={event.club_ig}
+              clubDiscord={event.club_discord}
+              onFilterSelect={onClubFilterSelect}
+            />
         </Stack>
 
         <EventAttendeesSection eventId={event.id} />

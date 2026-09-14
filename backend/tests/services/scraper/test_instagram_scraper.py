@@ -5,6 +5,7 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock
 
 import pytest
+from tenacity import wait_none
 
 from services.scraper.instagram_scraper import (
     ACTOR_ID,
@@ -60,7 +61,7 @@ def test_scrape_raises_sanitized_terminal_error_when_apify_run_fails():
 
 
 @pytest.mark.parametrize("failure_stage", ["start", "poll", "dataset"])
-def test_scrape_raises_sanitized_provider_errors(failure_stage, caplog):
+def test_scrape_raises_sanitized_provider_errors(failure_stage, caplog, monkeypatch):
     secret = f"secret-{failure_stage}-provider-detail"
     client = MagicMock()
     client.actor.return_value.start.return_value = SimpleNamespace(id="run-123")
@@ -70,6 +71,7 @@ def test_scrape_raises_sanitized_provider_errors(failure_stage, caplog):
     )
 
     if failure_stage == "start":
+        monkeypatch.setattr("tenacity.wait_exponential_jitter", lambda **kwargs: wait_none())
         client.actor.return_value.start.side_effect = RuntimeError(secret)
     elif failure_stage == "poll":
         client.run.return_value.get.side_effect = RuntimeError(secret)
@@ -83,6 +85,7 @@ def test_scrape_raises_sanitized_provider_errors(failure_stage, caplog):
     assert str(raised.value) == f"Instagram scraper provider {failure_stage} failure"
     assert secret not in str(raised.value)
     assert secret not in caplog.text
+    assert client.actor.return_value.start.call_count == (5 if failure_stage == "start" else 1)
 
 
 def test_scrape_preserves_successful_empty_dataset():

@@ -14,7 +14,7 @@ It deliberately excludes these routes:
 - `/qr/{qr_code_id}` because calling it records a scan.
 - `/calendar/token` because its GET handler can create a calendar token.
 - `/calendar/feed/{token}.ics` because it requires that private calendar token.
-- `/organizations/invitations/{token}` because it requires a private invitation token.
+- `/clubs/invitations/{token}` because it requires a private invitation token.
 - `/notification-preferences/unsubscribe` because it requires a private unsubscribe token.
 
 The profiler also skips a parameterized detail route when no corresponding resource exists.

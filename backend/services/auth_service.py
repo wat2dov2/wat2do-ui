@@ -7,11 +7,9 @@ from urllib.parse import urlencode
 from supabase_auth import SyncMemoryStorage
 from supabase_auth.errors import AuthApiError
 
-from core.allowed_emails import get_school_for_email
 from core.config import settings
 from core.controlbox import controlbox
 from core.errors import (
-    EMAIL_NOT_ALLOWED,
     FAILED_TO_GENERATE_TOKEN,
     FAILED_TO_SAVE_TOKEN,
     INVALID_OR_EXPIRED_TOKEN,
@@ -20,7 +18,6 @@ from core.errors import (
 )
 from core.exceptions import (
     AuthenticationError,
-    AuthorizationError,
     ServiceError,
 )
 from core.logging import logger
@@ -30,7 +27,7 @@ from schemas.auth import (
 )
 from services import school_service
 from services.email_service import EmailMessage
-from services.school_context import school_frontend_url
+from services.school_context import school_from_frontend_url, school_frontend_url
 
 
 def _sanitize_for_log(value: str | None) -> str:
@@ -164,6 +161,7 @@ class AuthService:
             response,
             response.user.email.strip().lower(),
             datetime.now(timezone.utc).isoformat(),
+            school_from_frontend_url(callback_url),
         )
 
     @staticmethod
@@ -191,17 +189,17 @@ class AuthService:
         email: str,
         invitation_token: str | None = None,
         return_to: str | None = None,
+        signup_school: str | None = None,
     ) -> EmailMessage:
         email_clean = email.strip().lower()
-        has_valid_invite = False
-        recipient_school: str | None = None
+        recipient_school = signup_school
         if invitation_token:
             from datetime import datetime, timezone
 
             now_str = datetime.now(timezone.utc).isoformat()
             try:
                 r_invite = (
-                    self._db.table("organization_invitations")
+                    self._db.table("club_invitations")
                     .select("*")
                     .eq("token", invitation_token)
                     .eq("email", email_clean)
@@ -210,13 +208,12 @@ class AuthService:
                     .execute()
                 )
                 if r_invite.data:
-                    has_valid_invite = True
-                    organization_id = r_invite.data[0].get("organization_id")
-                    if organization_id is not None:
-                        from services import organization_service
+                    club_id = r_invite.data[0].get("club_id")
+                    if club_id is not None:
+                        from services import club_service
 
-                        organization = organization_service.get_organization(int(organization_id))
-                        recipient_school = organization.school if organization else None
+                        club = club_service.get_club(int(club_id))
+                        recipient_school = recipient_school or (club.school if club else None)
             except Exception as e:
                 logger.warning("Failed to check invitation token: %s", e)
 
@@ -227,21 +224,13 @@ class AuthService:
                 .eq("email", email_clean)
                 .execute()
             )
-            exists = bool(r_user.data)
-            if exists:
+            if r_user.data:
                 recipient_school = (
                     school_service.with_school_slug(r_user.data[0]).get("school")
                     or recipient_school
                 )
         except Exception as e:
             logger.warning("Failed to check if user exists: %s", e)
-            exists = False
-
-        if not exists:
-            email_school = get_school_for_email(email_clean)
-            recipient_school = recipient_school or email_school
-            if not has_valid_invite and email_school is None:
-                raise AuthorizationError(EMAIL_NOT_ALLOWED)
 
         safe_email = _sanitize_for_log(email_clean)
 
@@ -340,6 +329,7 @@ class AuthService:
         auth_response,
         email_clean: str,
         now_str: str,
+        signup_school: str | None = None,
     ) -> AuthResult:
         """Map any verified Supabase session into Wat2Do's one user/session path."""
         db_user = None
@@ -359,14 +349,15 @@ class AuthService:
         if db_user:
             normalized_user = school_service.with_school_slug(db_user)
             school = normalized_user.get("school")
-            if school_service.get_school(school) is None:
+            if school and school_service.get_school(school) is None:
                 logger.error("Existing user is not assigned to a registered school")
                 raise ServiceError(REGISTRATION_FAILED)
+            onboarding_required = school is None
         else:
-            school = get_school_for_email(email_clean) or None
+            school = signup_school
             school_record = school_service.get_school(school)
-            if school_record is None:
-                logger.error("Allowed email resolved to an unregistered school")
+            if school and school_record is None:
+                logger.error("Signup site resolved to an unregistered school")
                 raise ServiceError(REGISTRATION_FAILED)
 
             onboarding_required = True
@@ -377,7 +368,7 @@ class AuthService:
                 "id": user_id,
                 "supabase_auth_id": auth_response.user.id,
                 "email": email_clean,
-                "school_id": school_record.id,
+                "school_id": school_record.id if school_record else None,
             }
             if email_clean == "tqiu@uwaterloo.ca":
                 payload["role"] = "admin"
@@ -390,7 +381,7 @@ class AuthService:
 
             try:
                 r_invites = (
-                    self._db.table("organization_invitations")
+                    self._db.table("club_invitations")
                     .select("*")
                     .eq("email", email_clean)
                     .eq("status", "pending")
@@ -398,19 +389,19 @@ class AuthService:
                     .execute()
                 )
                 for invite in r_invites.data or []:
-                    from services.organization_service import add_organization_member
+                    from services.club_service import add_club_member
 
                     try:
-                        add_organization_member(invite["organization_id"], uuid.UUID(user_id))
+                        add_club_member(invite["club_id"], uuid.UUID(user_id))
                     except Exception as exc:
                         logger.warning(
-                            "Failed to auto-add user %s to organization %s: %s",
+                            "Failed to auto-add user %s to club %s: %s",
                             user_id,
-                            invite["organization_id"],
+                            invite["club_id"],
                             exc,
                         )
 
-                    self._db.table("organization_invitations").update({"status": "accepted"}).eq(
+                    self._db.table("club_invitations").update({"status": "accepted"}).eq(
                         "id", invite["id"]
                     ).execute()
             except Exception as exc:
@@ -427,7 +418,7 @@ class AuthService:
             refresh_token=auth_response.session.refresh_token,
         )
 
-    def verify_otp(self, email: str, token: str) -> AuthResult:
+    def verify_otp(self, email: str, token: str, signup_school: str | None = None) -> AuthResult:
         email_clean = email.strip().lower()
         token_clean = token.strip()
 
@@ -489,7 +480,7 @@ class AuthService:
         except Exception as e:
             logger.warning("Failed to delete used verification tokens: %s", e)
 
-        return self._complete_authenticated_session(res, email_clean, now_str)
+        return self._complete_authenticated_session(res, email_clean, now_str, signup_school)
 
     def refresh(self, refresh_token: str) -> AuthResult:
         try:

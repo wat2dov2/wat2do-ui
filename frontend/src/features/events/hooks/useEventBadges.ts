@@ -14,7 +14,7 @@ import {
   X,
 } from "@/shared/ui/doodle-icons";
 
-export interface BadgeInput {
+interface BadgeInput {
   price?: number | null;
   food?: string[];
   registration?: boolean;

@@ -37,7 +37,7 @@ SKIPPED_GET_ROUTES = {
     "/calendar/feed/{token}.ics": "Requires a private calendar token.",
     "/calendar/token": "GET may create a calendar token, so it is not read-only.",
     "/notification-preferences/unsubscribe": "Requires a private unsubscribe token.",
-    "/organizations/invitations/{token}": "Requires a private invitation token.",
+    "/clubs/invitations/{token}": "Requires a private invitation token.",
     "/qr/{qr_code_id}": "Records a scan and is intentionally excluded from profiling.",
 }
 
@@ -78,8 +78,8 @@ PUBLIC_ENDPOINTS = (
     Endpoint("/events/stats", "/events/stats?school=uwaterloo", False),
     Endpoint("/meta/constants", "/meta/constants", False),
     Endpoint(
-        "/organizations/",
-        "/organizations/?school=uwaterloo&page=1&page_size=20",
+        "/clubs/",
+        "/clubs/?school=uwaterloo&page=1&page_size=20",
         False,
     ),
     Endpoint("/promotions/active-ids", "/promotions/active-ids", False),
@@ -96,21 +96,21 @@ AUTHENTICATED_ENDPOINTS = (
         True,
     ),
     Endpoint("/notification-preferences", "/notification-preferences", True),
-    Endpoint("/organizations/claims", "/organizations/claims", True),
+    Endpoint("/clubs/claims", "/clubs/claims", True),
     Endpoint(
-        "/organizations/integrations/discord/options",
-        "/organizations/integrations/discord/options",
+        "/clubs/integrations/discord/options",
+        "/clubs/integrations/discord/options",
         True,
     ),
     Endpoint(
-        "/organizations/integrations/{platform}/options",
-        "/organizations/integrations/slack/options",
+        "/clubs/integrations/{platform}/options",
+        "/clubs/integrations/slack/options",
         True,
     ),
-    Endpoint("/organizations/mine", "/organizations/mine", True),
+    Endpoint("/clubs/mine", "/clubs/mine", True),
     Endpoint(
-        "/organizations/review",
-        "/organizations/review?page=1&page_size=10",
+        "/clubs/review",
+        "/clubs/review?page=1&page_size=10",
         True,
     ),
     Endpoint("/payouts/", "/payouts/?page=1&page_size=10", True),
@@ -124,7 +124,7 @@ AUTHENTICATED_ENDPOINTS = (
     Endpoint("/qr/earnings", "/qr/earnings", True),
     Endpoint("/qr/scans", "/qr/scans?page=1&page_size=10", True),
     Endpoint("/reports/", "/reports/?page=1&page_size=10", True),
-    Endpoint("/saved-organizations/", "/saved-organizations/", True),
+    Endpoint("/saved-clubs/", "/saved-clubs/", True),
     Endpoint("/submissions/", "/submissions/?page=1&page_size=10", True),
     Endpoint("/users/", "/users/?skip=0&limit=20", True),
     Endpoint("/users/me", "/users/me", True),
@@ -302,73 +302,73 @@ def discover_dynamic_endpoints(
             "No event was available for a path parameter."
         )
 
-    organizations = _get_json(
+    clubs = _get_json(
         client,
         base_url,
-        "/organizations/?school=uwaterloo&page=1&page_size=1",
+        "/clubs/?school=uwaterloo&page=1&page_size=1",
         access_token,
         False,
     )
-    owned_organizations = _get_json(
+    owned_clubs = _get_json(
         client,
         base_url,
-        "/organizations/mine",
+        "/clubs/mine",
         access_token,
         True,
     )
-    organization_id = _first_id(owned_organizations) or _first_id(organizations)
-    organization_routes = (
-        "/organizations/{organization_id}",
-        "/organizations/{organization_id}/integrations/{platform}",
-        "/organizations/{organization_id}/invitations",
-        "/organizations/{organization_id}/join-requests",
-        "/organizations/{organization_id}/members",
-        "/organizations/{organization_id}/membership",
-        "/organizations/{organization_id}/memberships",
+    club_id = _first_id(owned_clubs) or _first_id(clubs)
+    club_routes = (
+        "/clubs/{club_id}",
+        "/clubs/{club_id}/integrations/{platform}",
+        "/clubs/{club_id}/invitations",
+        "/clubs/{club_id}/join-requests",
+        "/clubs/{club_id}/members",
+        "/clubs/{club_id}/membership",
+        "/clubs/{club_id}/memberships",
     )
-    if organization_id:
+    if club_id:
         endpoints.extend(
             (
                 Endpoint(
-                    "/organizations/{organization_id}",
-                    f"/organizations/{organization_id}",
+                    "/clubs/{club_id}",
+                    f"/clubs/{club_id}",
                     False,
                 ),
                 Endpoint(
-                    "/organizations/{organization_id}/integrations/{platform}",
-                    f"/organizations/{organization_id}/integrations/slack",
+                    "/clubs/{club_id}/integrations/{platform}",
+                    f"/clubs/{club_id}/integrations/slack",
                     True,
                 ),
                 Endpoint(
-                    "/organizations/{organization_id}/invitations",
-                    f"/organizations/{organization_id}/invitations",
+                    "/clubs/{club_id}/invitations",
+                    f"/clubs/{club_id}/invitations",
                     True,
                 ),
                 Endpoint(
-                    "/organizations/{organization_id}/join-requests",
-                    f"/organizations/{organization_id}/join-requests",
+                    "/clubs/{club_id}/join-requests",
+                    f"/clubs/{club_id}/join-requests",
                     True,
                 ),
                 Endpoint(
-                    "/organizations/{organization_id}/members",
-                    f"/organizations/{organization_id}/members",
+                    "/clubs/{club_id}/members",
+                    f"/clubs/{club_id}/members",
                     True,
                 ),
                 Endpoint(
-                    "/organizations/{organization_id}/membership",
-                    f"/organizations/{organization_id}/membership",
+                    "/clubs/{club_id}/membership",
+                    f"/clubs/{club_id}/membership",
                     True,
                 ),
                 Endpoint(
-                    "/organizations/{organization_id}/memberships",
-                    f"/organizations/{organization_id}/memberships",
+                    "/clubs/{club_id}/memberships",
+                    f"/clubs/{club_id}/memberships",
                     True,
                 ),
             )
         )
     else:
-        for route in organization_routes:
-            skipped[route] = "No organization was available for a path parameter."
+        for route in club_routes:
+            skipped[route] = "No club was available for a path parameter."
 
     dynamic_lists = (
         (
@@ -443,13 +443,13 @@ def _known_get_paths() -> set[str]:
         "/events/{event_id}",
         "/going-events/{event_id}/attendees",
         "/instagram-publishing/batches/{batch_id}",
-        "/organizations/{organization_id}",
-        "/organizations/{organization_id}/integrations/{platform}",
-        "/organizations/{organization_id}/invitations",
-        "/organizations/{organization_id}/join-requests",
-        "/organizations/{organization_id}/members",
-        "/organizations/{organization_id}/membership",
-        "/organizations/{organization_id}/memberships",
+        "/clubs/{club_id}",
+        "/clubs/{club_id}/integrations/{platform}",
+        "/clubs/{club_id}/invitations",
+        "/clubs/{club_id}/join-requests",
+        "/clubs/{club_id}/members",
+        "/clubs/{club_id}/membership",
+        "/clubs/{club_id}/memberships",
         "/payouts/admin/{payout_id}",
         "/submissions/{submission_id}",
         "/users/{user_id}",

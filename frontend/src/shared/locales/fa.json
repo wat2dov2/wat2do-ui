@@ -13,7 +13,6 @@
     "or": "یا",
     "separatorBullet": "•",
     "free": "رایگان",
-    "freeFood": "غذای رایگان",
     "backToTop": "بازگشت به بالا",
     "cancelled": "لغو شد",
     "registration": "ثبت‌نام",
@@ -70,7 +69,11 @@
     "all": "همه",
     "minuteAgo_one": "{{count}} دقیقه پیش",
     "hourAgo_one": "{{count}} ساعت پیش",
-    "dayAgo_one": "{{count}} روز پیش"
+    "dayAgo_one": "{{count}} روز پیش",
+    "latestAddedItem": "<addedPrefix></addedPrefix><eventTitle>{{title}}</eventTitle> <addedTime>افزوده شد {{time}}</addedTime>",
+    "newlyAddedFilter": {
+      "last24Hours": "جدید"
+    }
   },
   "errorBoundary": {
     "title": "مشکلی پیش آمد",
@@ -81,13 +84,13 @@
     "events": "رویدادها",
     "create": "ثبت رویداد",
     "loginRequiredToSubmit": "فقط کاربران وارد شده می‌توانند رویدادها یا سازمان‌ها را ارسال کنند.",
-    "organizations": "سازمان‌ها",
+    "clubs": "سازمان‌ها",
     "positions": "موقعیت‌ها",
     "myEvents": "رویدادهای من",
     "settings": "تنظیمات",
     "admin": "مدیر",
     "adminPanel": "پنل مدیریت",
-    "organizationPanel": "پنل سازمان",
+    "clubPanel": "پنل سازمان",
     "clubPanelTooltip": "مدیریت سازمان شما",
     "mission": "ماموریت",
     "about": "درباره ما",
@@ -117,8 +120,7 @@
       "continueWithGoogle": "ادامه با Google"
     },
     "signOut": {
-      "logOut": "خروج",
-      "signOutOfAccount": "از حساب خود خارج شوید"
+      "logOut": "خروج"
     },
     "getStarted": "شروع کنید",
     "profile": {
@@ -172,9 +174,9 @@
     "desc": "نزولی",
     "ascending": "به ترتیب صعودی",
     "descending": "به ترتیب نزولی",
-    "organization": "سازمان",
-    "searchOrganization": "جستجوی سازمان...",
-    "noOrganizations": "هیچ سازمانی موجود نیست"
+    "club": "سازمان",
+    "searchClub": "جستجوی سازمان...",
+    "noClubs": "هیچ سازمانی موجود نیست"
   },
   "commands": {
     "commands": "دستورات",
@@ -221,10 +223,10 @@
     "locationPlaceholder": "مثلاً MC 1234, SLC سالن بزرگ",
     "selectPackage": "یک بسته را انتخاب کنید",
     "eventTitlePlaceholder": "مثلاً، گفت‌و‌گوی فنی: AI در 2024",
-    "organizationNamePlaceholder": "مثلاً، سازمان علوم کامپیوتر",
-    "selectOrganization": "یک سازمان را انتخاب کنید",
-    "searchOrganizationPlaceholder": "جستجوی سازمان‌ها...",
-    "noOrganizationFound": "هیچ سازمانی یافت نشد",
+    "clubNamePlaceholder": "مثلاً، سازمان علوم کامپیوتر",
+    "selectClub": "یک سازمان را انتخاب کنید",
+    "searchClubPlaceholder": "جستجوی سازمان‌ها...",
+    "noClubFound": "هیچ سازمانی یافت نشد",
     "descriptionPlaceholder": "به مردم بگویید رویداد شما درباره چیست...",
     "sourceUrl": "لینک منبع",
     "sourceUrlPlaceholder": "https://instagram.com/p/...",
@@ -243,21 +245,21 @@
     "description": "توضیحات",
     "saveChanges": "ذخیره تغییرات",
     "requiredInformation": "اطلاعات مورد نیاز",
-    "organizationName": "نام سازمان",
-    "organizationType": "نوع سازمان",
-    "organizationTypeMapped": "{{type}}",
-    "organizationTypeIndependent": "مستقل",
-    "organizationNameRequired": "نام سازمان الزامی است",
+    "clubName": "نام سازمان",
+    "clubType": "نوع سازمان",
+    "clubTypeMapped": "{{type}}",
+    "clubTypeIndependent": "مستقل",
+    "clubNameRequired": "نام سازمان الزامی است",
     "ownerEmail": "ایمیل صاحب",
     "categories": "دسته‌بندی‌ها",
     "categoryRequired": "حداقل یک دسته‌بندی الزامی است",
     "add": "افزودن",
-    "organizationPageUrl": "صفحه سازمان URL",
-    "organizationPageUrlPlaceholder": "مثلاً، https://example.com یا 123",
+    "clubPageUrl": "صفحه سازمان URL",
+    "clubPageUrlPlaceholder": "مثلاً، https://example.com یا 123",
     "instagramHandle": "Instagram شناسه",
     "discordLink": "Discord لینک",
     "titleRequired": "عنوان الزامی است",
-    "organizationRequired": "سازمان الزامی است",
+    "clubRequired": "سازمان الزامی است",
     "occurrenceRequired": "حداقل یک تاریخ الزامی است",
     "locationRequired": "مکان الزامی است",
     "schoolRequired": "مدرسه الزامی است",
@@ -285,7 +287,7 @@
     "politicsAndAdvocacy": "سیاست و حمایت",
     "religionAndSpirituality": "دین و معنویت",
     "events": "رویدادها",
-    "organizations": "سازمان‌ها"
+    "clubs": "سازمان‌ها"
   },
   "locations": {
     "LAX": "LAX",
@@ -373,8 +375,8 @@
     "phase3Date": "اکتبر 2025",
     "phase3Title": "به اشتراک گذاشتن آن با دانشگاه",
     "phase3Paragraph1": "ما لینک را در چند گروه چت ارسال کردیم. سپس یک پوستر ساختیم (طنزآمیز است، می‌دانیم) و آن را در SLC چسباندیم. ظرف یک هفته، مردم برای ما اسکرین‌شات‌ها را پیامک می‌کردند.",
-    "phase3Paragraph2": "<em>«صبر کن، اون یه Repair Organization داره؟ من واقعاً می‌تونم دوچرخه‌م رو اونجا تعمیر کنم؟»</em>",
-    "phase3Paragraph3": "کسی <strong>Gatka Organization</strong> (هنرهای رزمی سیک) را از طریق Wat2Do پیدا کرد و گفت که این نقطه عطف ترم او بود. شخص دیگری <strong>Retro Rollers</strong> (جلسات اسکیت روی غلتک) را کشف کرد و در یک شب شش دوست جدید پیدا کرد.",
+    "phase3Paragraph2": "<em>«صبر کن، اون یه Repair Club داره؟ من واقعاً می‌تونم دوچرخه‌م رو اونجا تعمیر کنم؟»</em>",
+    "phase3Paragraph3": "کسی <strong>Gatka Club</strong> (هنرهای رزمی سیک) را از طریق Wat2Do پیدا کرد و گفت که این نقطه عطف ترم او بود. شخص دیگری <strong>Retro Rollers</strong> (جلسات اسکیت روی غلتک) را کشف کرد و در یک شب شش دوست جدید پیدا کرد.",
     "phase3Paragraph4": "این همان زمانی بود که متوجه شدیم: این فقط یک تقویم نیست. این راهی است برای کشف نسخه‌ای از زندگی دانشگاهی که نمی‌دانستید وجود دارد.",
     "photo3Alt": "کشف جامعه",
     "photo3Caption": "مردم شروع به کشف رویدادهایی کردند که هرگز وجودشان را نمی‌دانستند.",
@@ -390,8 +392,8 @@
     "guideIndustryAtlassian": "<strong>گفتگوهای قهوه Atlassian:</strong> بسیار کمتر ترسناک از غرفه یک نمایشگاه شغلی است. شما واقعاً می‌توانید یک مکالمه داشته باشید.",
     "guideIndustryStartup": "<strong>نمایشگاه شغلی استارتاپ:</strong> از غرفه‌های بزرگ شرکت‌های تجاری صرف‌نظر کنید. مستقیماً به سراغ استارتاپ‌ها بروید جایی که می‌توانید با بنیان‌گذاران واقعی صحبت کنید.",
     "guideRandomTitle": "چیزهای تصادفی که ارزش بررسی دارند",
-    "guideRandomRepair": "<strong>Repair Organization:</strong> شارژر لپ‌تاپ خود را خراب کرده‌اید؟ این افراد ابزار دارند و به شما آموزش می‌دهند چگونه خودتان آن را تعمیر کنید. کاملاً رایگان.",
-    "guideRandomGatka": "<strong>Gatka Organization:</strong> هنرهای رزمی سیک با چوب. نیاز به تجربه ندارد. کمتر قدردانی شده.",
+    "guideRandomRepair": "<strong>Repair Club:</strong> شارژر لپ‌تاپ خود را خراب کرده‌اید؟ این افراد ابزار دارند و به شما آموزش می‌دهند چگونه خودتان آن را تعمیر کنید. کاملاً رایگان.",
+    "guideRandomGatka": "<strong>Gatka Club:</strong> هنرهای رزمی سیک با چوب. نیاز به تجربه ندارد. کمتر قدردانی شده.",
     "guideRandomRetro": "<strong>Retro Rollers:</strong> اسکیت روی رولر در پیست‌های محلی. عالی برای کاهش استرس در طول امتحانات وسط ترم.",
     "guideFriendsTitle": "رفتن با دوستان",
     "guideFriendsFood": "<strong>رویدادهای غذای رایگان:</strong> بر اساس «غذا ارائه شده» در فیلترها مرتب کنید. نکته حرفه‌ای: 15 دقیقه زودتر حاضر شوید.",
@@ -452,10 +454,10 @@
       "random": {
         "title": "رویدادهای تصادفی که نمی‌دانستید وجود دارند",
         "desc": "صادقانه بگویم، بهترین قسمت ساخت این پروژه کشف سازمان‌هایی بود که نمی‌دانستیم در دانشگاه حضور دارند. یک ",
-        "repair": "Repair Organization",
+        "repair": "Repair Club",
         "repairSuffix": " که می‌توانید وسایل الکترونیکی خراب خود را تعمیر کنید، Iranian Students' Association کلاسی به نام ",
         "zumba": "Persian Zumba",
-        "zumbaSuffix": " دارد و Strength Organization برنامه‌ای به نام ",
+        "zumbaSuffix": " دارد و Strength Club برنامه‌ای به نام ",
         "barbells": "Battle of the Barbells"
       },
       "search": {

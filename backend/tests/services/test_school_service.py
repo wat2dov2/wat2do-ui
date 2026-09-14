@@ -32,6 +32,8 @@ def test_search_schools_leads_with_the_primary_domain(fake_sb, patch_sb):
                 "name": "University of Waterloo",
                 "primary_color": "#FFD54F",
                 "secondary_color": "#111111",
+                "faculties": ["Engineering", "Mathematics"],
+                "location_examples": ["MC", "SLC"],
                 "school_email_domains": [
                     {"domain": "edu.uwaterloo.ca", "is_primary": False},
                     {"domain": "uwaterloo.ca", "is_primary": True},
@@ -43,6 +45,8 @@ def test_search_schools_leads_with_the_primary_domain(fake_sb, patch_sb):
     [school] = school_service.search_schools("")
 
     assert school.email_domains == ["uwaterloo.ca", "edu.uwaterloo.ca"]
+    assert school.faculties == ["Engineering", "Mathematics"]
+    assert school.location_examples == ["MC", "SLC"]
 
 
 def test_search_schools_matches_domain_fragment(fake_sb, patch_sb):
@@ -133,3 +137,44 @@ def test_get_school_by_recipient_id_rejects_noncanonical_values(
 
     assert school_service.get_school_by_recipient_id(recipient_id) is None
     fake_sb.table.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "query,expected",
+    [
+        ("UWATERLOO", ["uwaterloo"]),
+        ("u waterloo", ["uwaterloo"]),
+        ("u-waterloo", ["uwaterloo"]),
+        ("waterloo.ca", ["uwaterloo"]),
+        ("  University   of Waterloo ", ["uwaterloo"]),
+        ("ＭＩＴ", ["mit"]),
+        ("mit edu", ["mit"]),
+        ("massachusetts", ["mit"]),
+        ("MassachusettsInstituteofTechnology", ["mit"]),
+        ("technology", ["mit"]),
+        ("unknown university", []),
+        ("", ["mit", "uwaterloo"]),
+    ],
+)
+def test_search_schools_normalized_and_compact_terms(query, expected, fake_sb, patch_sb):
+    patch_sb("services.school_service")
+    fake_sb.set_response(data=SCHOOL_ROWS)
+
+    schools = school_service.search_schools(query)
+
+    assert [school.slug for school in schools] == expected
+
+
+@pytest.mark.parametrize("limit", [1, 2, 3])
+def test_search_schools_ranks_exact_then_prefix_then_substring(limit, fake_sb, patch_sb):
+    patch_sb("services.school_service")
+    rows = [
+        {**SCHOOL_ROWS[0], "slug": "abc", "name": "ABC University", "school_email_domains": []},
+        {**SCHOOL_ROWS[0], "slug": "xabc", "name": "XABC University", "school_email_domains": []},
+        {**SCHOOL_ROWS[0], "slug": "ab", "name": "AB University", "school_email_domains": []},
+    ]
+    fake_sb.set_response(data=rows)
+
+    schools = school_service.search_schools("a b", limit)
+
+    assert [school.slug for school in schools] == ["ab", "abc", "xabc"][:limit]

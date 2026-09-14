@@ -5,7 +5,7 @@ import { Slot } from "@radix-ui/react-slot"
 import { cn } from "@/shared/lib/utils"
 
 const badgeVariants = cva(
-  "inline-flex items-center border focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+  "inline-flex w-fit max-w-full items-center border focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
   {
     variants: {
       variant: {
@@ -16,9 +16,9 @@ const badgeVariants = cva(
         destructive:
           "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive-hover",
         success:
-          "border-success/20 bg-success/10 text-success",
+          "border-success/40 bg-success/10 text-foreground",
         warning:
-          "border-warning/20 bg-warning/10 text-warning",
+          "border-warning/40 bg-warning/10 text-foreground",
         muted:
           "border-border bg-muted text-muted-foreground",
         outline:
@@ -30,7 +30,7 @@ const badgeVariants = cva(
         new:
           "border-badge-new bg-badge-new",
         category:
-          "border-transparent gap-1.5 max-w-full leading-none",
+          "border-transparent gap-1.5 leading-none",
       },
       size: {
         sm: "px-1.5 py-px text-[9px] font-medium rounded-lg",

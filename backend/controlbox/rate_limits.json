@@ -36,5 +36,5 @@
     "window_seconds": 3600
   },
   "maximum_going_events_per_user": 10000,
-  "maximum_saved_organizations_per_user": 10000
+  "maximum_saved_clubs_per_user": 10000
 }

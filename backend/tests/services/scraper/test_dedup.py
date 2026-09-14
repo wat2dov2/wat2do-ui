@@ -85,9 +85,9 @@ def test_extract_shortcode_tv_path():
 
 
 def test_extract_shortcode_profile_url_returns_none():
-    """A profile link (/uwteaorganization) is NOT a post - returns None."""
-    assert _extract_shortcode("https://instagram.com/uwteaorganization") is None
-    assert _extract_shortcode("https://instagram.com/uwteaorganization/") is None
+    """A profile link (/uwteaclub) is NOT a post - returns None."""
+    assert _extract_shortcode("https://instagram.com/uwteaclub") is None
+    assert _extract_shortcode("https://instagram.com/uwteaclub/") is None
 
 
 def test_extract_shortcode_unrelated_url_returns_none():
@@ -100,7 +100,7 @@ def test_extract_shortcode_unrelated_url_returns_none():
     # tolerates false positives because they only cause a real IG post
     # to be skipped, not duplicated. Confirm with a sentinel test that
     # the function doesn't raise on a non-instagram URL.
-    assert _extract_shortcode("https://example.com/uwteaorganization") is None
+    assert _extract_shortcode("https://example.com/uwteaclub") is None
 
 
 def test_existing_shortcodes_retries_transient_database_read(monkeypatch):
@@ -134,7 +134,7 @@ def _duplicate_event(**overrides) -> dict:
         "title": "Shoot N Shine",
         "description": "Campus photo session",
         "location": "University Square",
-        "organization": "Ottawa Student Union",
+        "club": "Ottawa Student Union",
         "occurrences": [_occ("2026-09-10T18:00:00+00:00")],
         "price": None,
         "food": [],
@@ -148,7 +148,7 @@ def test_confident_duplicate_requires_same_org_title_location_and_time():
     candidate = {
         **_duplicate_event(title="Shoot & Shine"),
         "id": 42,
-        "organization_id": 7,
+        "club_id": 7,
         "ig_handle": "uottawasu",
     }
 
@@ -156,7 +156,7 @@ def test_confident_duplicate_requires_same_org_title_location_and_time():
         confident_duplicate_id(
             event=_duplicate_event(),
             candidates=[candidate],
-            organization_id=7,
+            club_id=7,
             ig_handle="uottawasu",
         )
         == 42
@@ -169,14 +169,14 @@ def test_confident_duplicate_rejects_nearby_nonmatching_start_time():
             occurrences=[_occ("2026-09-10T18:30:00+00:00")],
         ),
         "id": 42,
-        "organization_id": 7,
+        "club_id": 7,
     }
 
     assert (
         confident_duplicate_id(
             event=_duplicate_event(),
             candidates=[candidate],
-            organization_id=7,
+            club_id=7,
             ig_handle=None,
         )
         is None
@@ -189,25 +189,25 @@ def test_confident_duplicate_normalizes_equal_timezone_offsets():
             occurrences=[_occ("2026-09-10T14:00:00-04:00")],
         ),
         "id": 42,
-        "organization_id": 7,
+        "club_id": 7,
     }
 
     assert (
         confident_duplicate_id(
             event=_duplicate_event(),
             candidates=[candidate],
-            organization_id=7,
+            club_id=7,
             ig_handle=None,
         )
         == 42
     )
 
 
-def test_confident_duplicate_rejects_different_organizations():
+def test_confident_duplicate_rejects_different_clubs():
     candidate = {
         **_duplicate_event(),
         "id": 42,
-        "organization_id": 99,
+        "club_id": 99,
         "ig_handle": "anotherclub",
     }
 
@@ -215,7 +215,7 @@ def test_confident_duplicate_rejects_different_organizations():
         confident_duplicate_id(
             event=_duplicate_event(),
             candidates=[candidate],
-            organization_id=7,
+            club_id=7,
             ig_handle="uottawasu",
         )
         is None
@@ -226,14 +226,14 @@ def test_confident_duplicate_rejects_distinct_language_sessions():
     candidate = {
         **_duplicate_event(title="Virtual Orientation - French"),
         "id": 42,
-        "organization_id": 7,
+        "club_id": 7,
     }
 
     assert (
         confident_duplicate_id(
             event=_duplicate_event(title="Virtual Orientation - English"),
             candidates=[candidate],
-            organization_id=7,
+            club_id=7,
             ig_handle=None,
         )
         is None
@@ -244,14 +244,14 @@ def test_confident_duplicate_leaves_generic_and_language_specific_titles_to_llm(
     candidate = {
         **_duplicate_event(title="Virtual Orientation - French"),
         "id": 42,
-        "organization_id": 7,
+        "club_id": 7,
     }
 
     assert (
         confident_duplicate_id(
             event=_duplicate_event(title="Virtual Orientation"),
             candidates=[candidate],
-            organization_id=7,
+            club_id=7,
             ig_handle=None,
         )
         is None
@@ -262,14 +262,14 @@ def test_confident_duplicate_rejects_distinct_campuses():
     candidate = {
         **_duplicate_event(location="Waterloo Campus"),
         "id": 42,
-        "organization_id": 7,
+        "club_id": 7,
     }
 
     assert (
         confident_duplicate_id(
             event=_duplicate_event(location="Brantford Campus"),
             candidates=[candidate],
-            organization_id=7,
+            club_id=7,
             ig_handle=None,
         )
         is None
@@ -289,7 +289,7 @@ def test_collapse_duplicate_extractions_merges_supplied_details():
 
     collapsed, source_indexes, duplicate_count = collapse_duplicate_extractions(
         events,
-        organization_ids=[7, 7],
+        club_ids=[7, 7],
         ig_handles=["uottawasu", "uottawasu"],
     )
 
@@ -314,7 +314,7 @@ def test_find_candidates_returns_empty_without_occurrences_or_handle():
     assert result == []
 
 
-def test_find_candidates_same_organization(fake_sb, patch_sb):
+def test_find_candidates_same_club(fake_sb, patch_sb):
     """Same IG handle + future event + similar title -> candidate list."""
     patch_sb("services.scraper.dedup")
 
@@ -325,7 +325,7 @@ def test_find_candidates_same_organization(fake_sb, patch_sb):
                 {
                     "id": 42,
                     "title": "Tea Tasting Night",
-                    "ig_handle": "uwteaorganization",
+                    "ig_handle": "uwteaclub",
                     "location": "SLC",
                     "description": "...",
                     "cancelled": False,
@@ -341,15 +341,15 @@ def test_find_candidates_same_organization(fake_sb, patch_sb):
         location="SLC",
         description="",
         occurrences=[_occ(future)],
-        ig_handle="uwteaorganization",
+        ig_handle="uwteaclub",
     )
     assert len(result) == 1
     assert result[0]["id"] == 42
     assert "occurrences" in result[0]
 
 
-def test_find_candidates_skips_past_same_organization_events(fake_sb, patch_sb):
-    """Past same-organization events are not candidates for update."""
+def test_find_candidates_skips_past_same_club_events(fake_sb, patch_sb):
+    """Past same-club events are not candidates for update."""
     patch_sb("services.scraper.dedup")
 
     past = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
@@ -360,7 +360,7 @@ def test_find_candidates_skips_past_same_organization_events(fake_sb, patch_sb):
                 {
                     "id": 99,
                     "title": "Tea Tasting Night",
-                    "ig_handle": "uwteaorganization",
+                    "ig_handle": "uwteaclub",
                     "location": "SLC",
                     "description": "",
                     "cancelled": False,
@@ -376,7 +376,7 @@ def test_find_candidates_skips_past_same_organization_events(fake_sb, patch_sb):
         location="SLC",
         description="",
         occurrences=[_occ(future)],
-        ig_handle="uwteaorganization",
+        ig_handle="uwteaclub",
     )
     assert result == []
 
@@ -395,8 +395,8 @@ def test_find_candidates_same_day_substring_plus_location(fake_sb, patch_sb):
                     "events": {
                         "id": 17,
                         "title": "Movie Night",
-                        "ig_handle": "otherorganization",
-                        "organization_id": 99,
+                        "ig_handle": "otherclub",
+                        "club_id": 99,
                         "location": "DC Library",
                         "description": "Free popcorn",
                         "cancelled": False,
@@ -412,14 +412,14 @@ def test_find_candidates_same_day_substring_plus_location(fake_sb, patch_sb):
         location="DC Library 1568",
         description="popcorn provided",
         occurrences=[_occ(future)],
-        ig_handle="uwteaorganization",
+        ig_handle="uwteaclub",
     )
     assert len(result) == 1
     assert result[0]["id"] == 17
 
 
-def test_find_candidates_same_org_by_organization_id(fake_sb, patch_sb):
-    """organization_id match finds same-org candidates even without ig_handle."""
+def test_find_candidates_same_org_by_club_id(fake_sb, patch_sb):
+    """club_id match finds same-org candidates even without ig_handle."""
     patch_sb("services.scraper.dedup")
 
     future = (datetime.now(timezone.utc) + timedelta(days=7)).isoformat()
@@ -429,9 +429,9 @@ def test_find_candidates_same_org_by_organization_id(fake_sb, patch_sb):
                 {
                     "id": 42,
                     "title": "Tea Tasting Night",
-                    "organization_id": 7,
+                    "club_id": 7,
                     "ig_handle": None,
-                    "organization": "UW Tea Organization",
+                    "club": "UW Tea Club",
                     "location": "SLC",
                     "description": "...",
                     "cancelled": False,
@@ -448,11 +448,11 @@ def test_find_candidates_same_org_by_organization_id(fake_sb, patch_sb):
         description="",
         occurrences=[_occ(future)],
         ig_handle=None,
-        organization_id=7,
+        club_id=7,
     )
     assert len(result) == 1
     assert result[0]["id"] == 42
-    assert result[0]["organization_id"] == 7
+    assert result[0]["club_id"] == 7
 
 
 def test_find_candidates_ranks_same_org_before_cross_org(fake_sb, patch_sb):
@@ -466,9 +466,9 @@ def test_find_candidates_ranks_same_org_before_cross_org(fake_sb, patch_sb):
                 {
                     "id": 10,
                     "title": "Tea Social Hour",
-                    "organization_id": 7,
+                    "club_id": 7,
                     "ig_handle": "uwtea",
-                    "organization": "UW Tea",
+                    "club": "UW Tea",
                     "location": "SLC",
                     "description": "tea",
                     "cancelled": False,
@@ -481,9 +481,9 @@ def test_find_candidates_ranks_same_org_before_cross_org(fake_sb, patch_sb):
                     "events": {
                         "id": 20,
                         "title": "Tea Social Hour",
-                        "organization_id": 99,
+                        "club_id": 99,
                         "ig_handle": "other",
-                        "organization": "Other Club",
+                        "club": "Other Club",
                         "location": "SLC 1000",
                         "description": "tea social",
                         "cancelled": False,
@@ -500,7 +500,7 @@ def test_find_candidates_ranks_same_org_before_cross_org(fake_sb, patch_sb):
         description="tea social",
         occurrences=[_occ(future)],
         ig_handle="uwtea",
-        organization_id=7,
+        club_id=7,
     )
     assert [r["id"] for r in result] == [10, 20]
 
@@ -518,9 +518,9 @@ def test_find_candidates_caps_cross_org_same_day(fake_sb, patch_sb):
                 "events": {
                     "id": 100 + i,
                     "title": "Campus Mixer Night",
-                    "organization_id": 50 + i,
+                    "club_id": 50 + i,
                     "ig_handle": f"club{i}",
-                    "organization": f"Club {i}",
+                    "club": f"Club {i}",
                     "location": "SLC Ballroom",
                     "description": "campus mixer night free food",
                     "cancelled": False,
@@ -536,11 +536,11 @@ def test_find_candidates_caps_cross_org_same_day(fake_sb, patch_sb):
         description="campus mixer night free food",
         occurrences=[_occ(future)],
         ig_handle="uwtea",
-        organization_id=7,
+        club_id=7,
         max_cross_org=3,
     )
     assert len(result) == 3
-    assert all(r["organization_id"] != 7 for r in result)
+    assert all(r["club_id"] != 7 for r in result)
 
 
 def test_find_candidates_soft_name_match_when_org_id_missing(fake_sb, patch_sb):
@@ -548,7 +548,7 @@ def test_find_candidates_soft_name_match_when_org_id_missing(fake_sb, patch_sb):
     patch_sb("services.scraper.dedup")
 
     future = (datetime.now(timezone.utc) + timedelta(days=2)).isoformat()
-    # No same-org DB call when both organization_id and ig_handle are missing.
+    # No same-org DB call when both club_id and ig_handle are missing.
     fake_sb.queue_responses(
         [
             [
@@ -557,9 +557,9 @@ def test_find_candidates_soft_name_match_when_org_id_missing(fake_sb, patch_sb):
                     "events": {
                         "id": 55,
                         "title": "Tea Tasting Night",
-                        "organization_id": None,
+                        "club_id": None,
                         "ig_handle": None,
-                        "organization": "UW Tea Organization",
+                        "club": "UW Tea Club",
                         "location": "Remote",
                         "description": "unrelated location text",
                         "cancelled": False,
@@ -576,8 +576,8 @@ def test_find_candidates_soft_name_match_when_org_id_missing(fake_sb, patch_sb):
         description="weekly tasting",
         occurrences=[_occ(future)],
         ig_handle=None,
-        organization_id=None,
-        organization_name="uw tea   organization",
+        club_id=None,
+        club_name="uw tea   club",
     )
     assert len(result) == 1
     assert result[0]["id"] == 55

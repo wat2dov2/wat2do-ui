@@ -130,10 +130,6 @@ function getFlattenedEntries(obj, prefix = "", entries = new Map()) {
   return entries;
 }
 
-function getFlattenedKeys(obj) {
-  return [...getFlattenedEntries(obj).keys()];
-}
-
 function pluralParts(key) {
   const match = key.match(PLURAL_SUFFIX);
   return match ? { stem: key.slice(0, -match[0].length), category: match[1] } : null;
@@ -293,7 +289,7 @@ for (const folder of localesFolders) {
   }
 }
 
-const globalEnKeys = new Set(getFlattenedKeys(globalEnBundle));
+const globalEnKeys = new Set(getFlattenedEntries(globalEnBundle).keys());
 
 function scanFile(filePath) {
   if (NON_USER_FACING_DIRECTORIES.some((directory) => filePath.startsWith(directory))) {

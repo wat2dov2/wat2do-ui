@@ -1,23 +1,23 @@
 {
   "events": {
+    "minimumGoing": "حداقل شرکت‌کننده",
     "eventTitle": "عنوان رویداد",
     "loadFailed": "بارگذاری رویدادها ناموفق بود. لطفاً دوباره تلاش کنید.",
     "deleteFailed": "حذف رویداد ناموفق بود. لطفاً دوباره تلاش کنید.",
     "submitFailed": "ارسال رویداد ناموفق بود. لطفاً دوباره تلاش کنید.",
     "submissionFailedTitle": "ارسال ناموفق",
-    "organizationRequired": "قبل از ارسال رویداد، یک سازمان انتخاب کنید.",
-    "organization": "سازمان",
+    "clubRequired": "قبل از ارسال رویداد، یک سازمان انتخاب کنید.",
+    "club": "سازمان",
     "status": "وضعیت",
     "dayOfWeek": "روز هفته",
     "createEvent": "ثبت رویداد",
-    "submitEventSchoolDescription": "فقط سازمان‌های {{school}} نمایش داده می‌شوند، بنابراین رویداد شما به پردیس مناسب ارسال می‌شود.",
+    "submitEventSchoolDescription": "فقط سازمان‌های {{school}} نمایش داده می‌شوند.",
     "submitEventForReview": "ارسال رویداد برای بررسی",
     "submitForReview": "ارسال برای بررسی",
     "uploadEventFlyer": "بارگذاری بروشور رویداد",
     "uploadEventFlyerDescription": "یک تصویر بروشور بارگذاری یا جای‌گذاری کنید، و AI به طور خودکار جزئیات را پر خواهد کرد.",
     "processingEventImage": "در حال پردازش تصویر رویداد",
     "clickToUploadOrPasteImage": "برای بارگذاری تصویر کلیک کنید یا جای‌گذاری کنید",
-    "imagePasteShortcutHint": "{{formats}} (مثلاً Cmd+V / Ctrl+V)",
     "flyerExtracted": "جزئیات بروشور با موفقیت استخراج شد.",
     "flyerParseFailed": "تجزیه بروشور شکست خورد",
     "flyerParseFailedDescription": "نتوانستیم جزئیات رویداد را از بروشور بخوانیم.",
@@ -47,7 +47,6 @@
     "noUpcomingEvents": "هیچ رویداد آینده‌ای وجود ندارد",
     "upcomingEventCount": "رویداد آینده",
     "upcomingEventCount_other": "رویدادهای آینده",
-    "latestAddedEvent": "{{title}} افزوده شد {{time}}",
     "thisWeek": "این هفته",
     "discoverEvents": "کشف رویدادها",
     "clickCount": "{{count}} کلیک",
@@ -56,12 +55,6 @@
     "noEventsFoundDesc": "هیچ رویدادی مطابق فیلترهای فعلی شما پیدا نشد. سعی کنید جستجوی خود را تنظیم کنید یا برخی فیلترها را پاک کنید.",
     "noEventsScheduled": "هیچ رویدادی برنامه‌ریزی نشده است",
     "noEventsScheduledDesc": "در حال حاضر هیچ رویدادی برنامه‌ریزی نشده است. بعداً دوباره بررسی کنید!",
-    "newlyAddedFilter": {
-      "last24Hours": "جدید",
-      "sinceLastVisit": "از آخرین بازدید اضافه شده است",
-      "clear": "پاک کردن فیلترهای اضافه شده اخیر",
-      "sinceLastVisitAt": "از آخرین بازدید اضافه شده است ({{time}})"
-    },
     "dateFilter": {
       "label": "تاریخ رویداد",
       "any": "هر روزی",
@@ -91,6 +84,7 @@
       "submitFailed": "امکان ارسال گزارش وجود نداشت"
     },
     "goingEvents": {
+      "timeUnavailable": "این رویداد شروع شده یا لغو شده است، بنابراین نمی‌توانید حضور خود را ثبت کنید.",
       "markFailed": "نمی‌توان این رویداد را به عنوان موردی که در آن شرکت می‌کنید علامت زد",
       "unmarkFailed": "نمی‌توان علامت شرکت در این رویداد را برداشت",
       "saveFailed": "نمی‌توان زمان انتخابی شما را ذخیره کرد",

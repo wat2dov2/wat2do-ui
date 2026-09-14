@@ -1,15 +1,22 @@
 from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock
 
+import pytest
+
 from schemas.position import PositionResponse
 from services import position_service
+
+
+@pytest.fixture(autouse=True)
+def mock_latest_position(monkeypatch):
+    monkeypatch.setattr(position_service, "get_latest_added_position", lambda _school: None)
 
 
 def _position(position_id: int = 1) -> PositionResponse:
     now = datetime.now(timezone.utc)
     return PositionResponse(
         id=position_id,
-        organization_id=4,
+        club_id=4,
         title="Design Lead",
         description="Lead the design team.",
         position_type="committee",
@@ -26,9 +33,9 @@ def _position(position_id: int = 1) -> PositionResponse:
         is_active=True,
         added_at=now,
         updated_at=now,
-        organization_name="UW Design Club",
-        organization_logo_url="https://example.com/logo.png",
-        organization_ig="uwdesign",
+        club_name="UW Design Club",
+        club_logo_url="https://example.com/logo.png",
+        club_ig="uwdesign",
         school="uwaterloo",
     )
 
@@ -39,7 +46,7 @@ def test_list_positions_is_public_and_paginated(client, monkeypatch):
 
     response = client.get(
         "/positions/?page=2&page_size=5&school=uwaterloo&search=design"
-        "&position_type=committee&organization_id=4"
+        "&position_type=committee&club_id=4"
     )
 
     assert response.status_code == 200
@@ -55,9 +62,25 @@ def test_list_positions_is_public_and_paginated(client, monkeypatch):
         school="uwaterloo",
         search="design",
         position_type="committee",
-        organization_id=4,
+        club_id=4,
         include_closed=False,
+        added_since=None,
+        paid_only=False,
     )
+
+
+def test_list_positions_passes_aware_added_since(client, monkeypatch):
+    list_positions = MagicMock(return_value=([], 0))
+    monkeypatch.setattr(position_service, "list_positions", list_positions)
+    response = client.get("/positions/?added_since=2026-09-09T12:00:00Z")
+    assert response.status_code == 200
+    assert list_positions.call_args.kwargs["added_since"] == datetime(
+        2026, 9, 9, 12, tzinfo=timezone.utc
+    )
+
+
+def test_list_positions_rejects_naive_added_since(client):
+    assert client.get("/positions/?added_since=2026-09-09T12:00:00").status_code == 422
 
 
 def test_list_positions_rejects_unknown_type(client):

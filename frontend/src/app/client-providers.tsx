@@ -8,16 +8,10 @@ import { loadLanguage } from "@/shared/lib/loadLanguage";
 import ErrorBoundary from "@/app/ErrorBoundary";
 import {
   fetchProfileAPI,
-  getSessionEmail,
-  getUserId,
   initializeAuth,
 } from "@/features/auth/api/auth.api";
-import { loadAppConstants } from "@/shared/api/metaApi";
-import {
-  identifyPostHogUser,
-  resetPostHogUser,
-} from "@/shared/lib/posthog";
 import { setOnAfterRefresh } from "@/shared/services/apiClient";
+import { appConstantsQueryOptions } from "@/shared/api/metaApi";
 import { TooltipProvider } from "@/shared/ui/tooltip";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { getQueryClient } from "@/shared/lib/queryClient";
@@ -50,14 +44,6 @@ setOnAfterRefresh(() => {
     console.error("Post-refresh profile fetch failed:", err),
   );
 });
-
-async function bootstrapConstants() {
-  try {
-    await loadAppConstants();
-  } catch (err) {
-    console.error("App constants initialization failed, using fallbacks:", err);
-  }
-}
 
 async function bootstrapAuth(): Promise<boolean> {
   try {
@@ -109,7 +95,6 @@ export function ClientProviders({
   useEffect(() => {
     const handleLogin = () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.user.all });
-      identifyPostHogUser(getUserId(), getSessionEmail());
     };
     const handleLogout = () => {
       queryClient.removeQueries({ queryKey: queryKeys.user.all });
@@ -119,7 +104,6 @@ export function ClientProviders({
       });
       queryClient.removeQueries({ queryKey: queryKeys.posters.all });
       queryClient.removeQueries({ queryKey: queryKeys.posterPayouts.all });
-      resetPostHogUser();
     };
     window.addEventListener("auth-user-login", handleLogin);
     window.addEventListener("auth-user-logout", handleLogout);
@@ -132,7 +116,7 @@ export function ClientProviders({
   useEffect(() => {
     async function initLanguage() {
       try {
-        const initialLang = getStoredLanguage();
+        const initialLang = getStoredLanguage(initialSchools?.find((school) => school.slug === initialSchool)?.language ?? "en");
         await loadLanguage(initialLang);
         await i18n.changeLanguage(initialLang);
       } catch (err) {
@@ -142,18 +126,15 @@ export function ClientProviders({
     }
 
     void initLanguage();
-  }, []);
+  }, [initialSchool, initialSchools]);
 
   // Not chained behind the language load: restoring the session is a network
   // round trip, and every millisecond it waits is a millisecond the UI is
   // guessing about the signed-in state. They are unrelated, so they race.
   useEffect(() => {
-    void bootstrapConstants();
+    void queryClient.prefetchQuery(appConstantsQueryOptions());
     let cancelled = false;
-    void bootstrapAuth().then((ok) => {
-      if (ok) {
-        identifyPostHogUser(getUserId(), getSessionEmail());
-      }
+    void bootstrapAuth().then(() => {
       if (!cancelled) {
         setAuthReady(true);
       }
@@ -162,7 +143,7 @@ export function ClientProviders({
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [queryClient]);
 
   return (
     <QueryClientProvider client={queryClient}>

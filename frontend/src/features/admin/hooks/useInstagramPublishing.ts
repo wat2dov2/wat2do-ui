@@ -1,3 +1,4 @@
+import { useCallback } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   getInstagramPublishBatch,
@@ -11,6 +12,9 @@ import type {
   ApiInstagramPublishBatchUpdate,
 } from "@/shared/generated";
 import { queryKeys } from "@/shared/lib/queryKeys";
+import instagramPublishingControl from "../../../../../backend/controlbox/instagram_publishing.json";
+
+const statusPollInterval = instagramPublishingControl.status_poll_interval_seconds * 1000;
 
 interface UpdateVariables {
   id: string;
@@ -20,6 +24,10 @@ interface UpdateVariables {
 interface PublishVariables {
   id: string;
   data: ApiInstagramPublishBatchPublish;
+}
+
+function batchDetailQuery(id: string) {
+  return { queryKey: queryKeys.instagramPublishing.batch(id), queryFn: () => getInstagramPublishBatch(id) };
 }
 
 export function useInstagramPublishing(
@@ -32,12 +40,16 @@ export function useInstagramPublishing(
     queryKey: queryKeys.instagramPublishing.batchPage(pageNumber, pageSize),
     queryFn: () => getInstagramPublishBatches(pageNumber, pageSize),
     placeholderData: (previous) => previous,
+    refetchInterval: (query) => query.state.data?.items.some((batch) => batch.status === "publishing") ? statusPollInterval : false,
   });
   const detailQuery = useQuery({
-    queryKey: queryKeys.instagramPublishing.batch(selectedBatchId ?? ""),
-    queryFn: () => getInstagramPublishBatch(selectedBatchId as string),
+    ...batchDetailQuery(selectedBatchId ?? ""),
     enabled: selectedBatchId !== null,
+    refetchInterval: (query) => query.state.data?.status === "publishing" ? statusPollInterval : false,
   });
+  const prefetchBatch = useCallback((id: string) => {
+    void queryClient.prefetchQuery(batchDetailQuery(id));
+  }, [queryClient]);
   const refresh = () =>
     queryClient.invalidateQueries({
       queryKey: queryKeys.instagramPublishing.batches(),
@@ -77,6 +89,7 @@ export function useInstagramPublishing(
     isDetailLoading: detailQuery.isLoading,
     detailError: detailQuery.error,
     retryDetail: detailQuery.refetch,
+    prefetchBatch,
     updateBatch: updateMutation.mutateAsync,
     publishBatch: publishMutation.mutateAsync,
     // A mutation keeps its variables after it settles, so the batch being

@@ -1,9 +1,15 @@
 from pydantic import BaseModel, Field
 
+from schemas.position import PositionFields
+
 
 class EventFormOccurrenceResponse(BaseModel):
     dtstart_local: str = ""
     dtend_local: str = ""
+
+
+class PositionImageResponse(PositionFields):
+    source_image_url: str | None = None
 
 
 class EventFormDataResponse(BaseModel):

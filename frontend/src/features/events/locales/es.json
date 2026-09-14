@@ -1,23 +1,23 @@
 {
   "events": {
+    "minimumGoing": "Asistentes mínimos",
     "eventTitle": "Título del Evento",
     "loadFailed": "No se pudo cargar los eventos. Por favor, inténtelo de nuevo.",
     "deleteFailed": "No se pudo eliminar el evento. Por favor, inténtelo de nuevo.",
     "submitFailed": "No se pudo enviar el evento. Por favor, inténtelo de nuevo.",
     "submissionFailedTitle": "Error al enviar",
-    "organizationRequired": "Seleccione una organización antes de enviar el evento.",
-    "organization": "Organización",
+    "clubRequired": "Seleccione una organización antes de enviar el evento.",
+    "club": "Organización",
     "status": "Estado",
     "dayOfWeek": "Día de la Semana",
     "createEvent": "Enviar Evento",
-    "submitEventSchoolDescription": "Solo se muestran organizaciones de {{school}}, por lo que su evento se envía al campus correcto.",
+    "submitEventSchoolDescription": "Solo se muestran organizaciones de {{school}}.",
     "submitEventForReview": "Enviar Evento para Revisión",
     "submitForReview": "Enviar para Revisión",
     "uploadEventFlyer": "Subir volante del evento",
     "uploadEventFlyerDescription": "Sube o pega una imagen del volante, y la IA completará automáticamente los detalles.",
     "processingEventImage": "Procesando imagen del evento",
     "clickToUploadOrPasteImage": "Haz clic para subir imagen o pegar",
-    "imagePasteShortcutHint": "{{formats}} (por ejemplo, Cmd+V / Ctrl+V)",
     "flyerExtracted": "Detalles del volante extraídos con éxito.",
     "flyerParseFailed": "Error al analizar el volante",
     "flyerParseFailedDescription": "No pudimos leer los detalles del evento del volante.",
@@ -47,7 +47,6 @@
     "noUpcomingEvents": "No hay eventos próximos",
     "upcomingEventCount": "evento próximo",
     "upcomingEventCount_other": "eventos próximos",
-    "latestAddedEvent": "{{title}} agregado {{time}}",
     "thisWeek": "Esta semana",
     "discoverEvents": "Descubrir eventos",
     "clickCount": "{{count}} clic",
@@ -56,12 +55,6 @@
     "noEventsFoundDesc": "No se encontraron eventos que coincidan con tus filtros actuales. Intenta ajustar tu búsqueda o borrar algunos filtros.",
     "noEventsScheduled": "No hay eventos programados",
     "noEventsScheduledDesc": "Actualmente no hay eventos programados. ¡Vuelve más tarde!",
-    "newlyAddedFilter": {
-      "last24Hours": "Nuevo",
-      "sinceLastVisit": "Agregado desde la última visita",
-      "clear": "Borrar filtro de agregado recientemente",
-      "sinceLastVisitAt": "Agregado desde la última visita ({{time}})"
-    },
     "dateFilter": {
       "label": "Fecha del evento",
       "any": "Cualquier día",
@@ -91,6 +84,7 @@
       "submitFailed": "No se pudo enviar el reporte"
     },
     "goingEvents": {
+      "timeUnavailable": "Este evento ya comenzó o fue cancelado, por lo que no puedes marcar que asistirás.",
       "markFailed": "No se pudo marcar este evento como asistiendo",
       "unmarkFailed": "No se pudo desmarcar este evento como asistiendo",
       "saveFailed": "No se pudo guardar tu hora seleccionada",

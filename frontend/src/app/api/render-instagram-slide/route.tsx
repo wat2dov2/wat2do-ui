@@ -94,10 +94,11 @@ function getBearerSecret(request: NextRequest): string | null {
  * Inline a poster as a data URI.
  *
  * Slide images are only ever our own CloudFront storage objects; anything else is
- * dropped rather than fetched, so this route can never be pointed at an
+ * rejected rather than fetched, so this route can never be pointed at an
  * internal host.
  */
 async function inlineImage(sourceUrl: string | null | undefined): Promise<string> {
+  if (!sourceUrl) return "";
   const storageBase = (() => {
     try {
       return new URL(process.env.STORAGE_PUBLIC_BASE_URL ?? "");
@@ -105,13 +106,13 @@ async function inlineImage(sourceUrl: string | null | undefined): Promise<string
       return null;
     }
   })();
-  if (!sourceUrl || !storageBase) return "";
+  if (!storageBase) throw new Error("STORAGE_PUBLIC_BASE_URL is not configured for slide rendering");
 
   let parsed: URL;
   try {
     parsed = new URL(sourceUrl);
   } catch {
-    return "";
+    throw new Error("Poster URL is invalid");
   }
   const storagePathPrefix = `${storageBase.pathname.replace(/\/$/, "")}/`;
   if (
@@ -119,16 +120,18 @@ async function inlineImage(sourceUrl: string | null | undefined): Promise<string
     parsed.origin !== storageBase.origin ||
     !parsed.pathname.startsWith(storagePathPrefix)
   ) {
-    return "";
+    throw new Error("Poster URL is outside the configured storage origin");
   }
 
   const response = await fetch(parsed, { redirect: "error" });
-  if (!response.ok) return "";
+  if (!response.ok) throw new Error(`Poster download failed: HTTP ${response.status}`);
   const contentType = response.headers.get("content-type") ?? "";
-  if (!contentType.startsWith("image/")) return "";
+  if (!contentType.startsWith("image/")) throw new Error("Poster download did not return an image");
 
   const bytes = Buffer.from(await response.arrayBuffer());
-  if (bytes.byteLength > MAX_SOURCE_IMAGE_BYTES) return "";
+  if (bytes.byteLength === 0 || bytes.byteLength > MAX_SOURCE_IMAGE_BYTES) {
+    throw new Error("Poster download is empty or exceeds the image size limit");
+  }
   return `data:${contentType.split(";")[0]};base64,${bytes.toString("base64")}`;
 }
 
@@ -149,6 +152,7 @@ async function buildSlide(slide: SlideRequest): Promise<React.ReactElement> {
     <CoverSlideTemplate
       model={buildCoverSlideModel({
         school,
+        language: schoolRecord.language ?? "en",
         colors: getSchoolColors(schoolRecord),
         localDate: slide.local_date ?? "",
         // A cover always has at least one event, so the carousel size is the

@@ -31,7 +31,6 @@
     "urlRequired": "URL ay kinakailangan",
     "urlInvalid": "Pakipasok ang isang wastong URL",
     "descriptionOptional": "Opsyonal",
-    "imageFormat": "PNG, JPG hanggang 5MB",
     "noScanData": "Wala pang data ng scan",
     "noScanDataDesc": "Ibahagi ang iyong QR code para simulan ang pagsubaybay sa performance",
     "posterAriaLabel": "Poster {{id}}",

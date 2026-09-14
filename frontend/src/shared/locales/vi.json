@@ -13,7 +13,6 @@
     "or": "hoặc",
     "separatorBullet": "•",
     "free": "Miễn phí",
-    "freeFood": "Thức ăn miễn phí",
     "backToTop": "Quay về đầu trang",
     "cancelled": "Đã hủy",
     "registration": "Đăng ký",
@@ -67,7 +66,11 @@
     "logo": "Logo",
     "loadingMap": "Đang tải bản đồ...",
     "clearFilters": "Xóa bộ lọc",
-    "all": "Tất cả"
+    "all": "Tất cả",
+    "latestAddedItem": "<addedPrefix></addedPrefix><eventTitle>{{title}}</eventTitle> <addedTime>đã thêm {{time}}</addedTime>",
+    "newlyAddedFilter": {
+      "last24Hours": "Mới"
+    }
   },
   "errorBoundary": {
     "title": "Đã xảy ra sự cố",
@@ -78,13 +81,13 @@
     "events": "Sự kiện",
     "create": "Gửi sự kiện",
     "loginRequiredToSubmit": "Chỉ những người đã đăng nhập mới có thể gửi sự kiện hoặc tổ chức.",
-    "organizations": "Tổ chức",
+    "clubs": "Tổ chức",
     "positions": "Vị trí",
     "myEvents": "Sự kiện của tôi",
     "settings": "Cài đặt",
     "admin": "Quản trị",
     "adminPanel": "Bảng điều khiển quản trị",
-    "organizationPanel": "Bảng điều khiển tổ chức",
+    "clubPanel": "Bảng điều khiển tổ chức",
     "clubPanelTooltip": "Quản lý tổ chức của bạn",
     "mission": "Sứ mệnh",
     "about": "Về chúng tôi",
@@ -114,8 +117,7 @@
       "continueWithGoogle": "Tiếp tục với Google"
     },
     "signOut": {
-      "logOut": "Đăng xuất",
-      "signOutOfAccount": "Đăng xuất khỏi tài khoản của bạn"
+      "logOut": "Đăng xuất"
     },
     "getStarted": "Bắt đầu",
     "profile": {
@@ -169,9 +171,9 @@
     "desc": "Giảm dần",
     "ascending": "Theo thứ tự tăng dần",
     "descending": "Theo thứ tự giảm dần",
-    "organization": "Tổ chức",
-    "searchOrganization": "Tìm tổ chức...",
-    "noOrganizations": "Không có tổ chức nào khả dụng"
+    "club": "Tổ chức",
+    "searchClub": "Tìm tổ chức...",
+    "noClubs": "Không có tổ chức nào khả dụng"
   },
   "commands": {
     "commands": "Lệnh",
@@ -218,10 +220,10 @@
     "locationPlaceholder": "ví dụ: MC 1234, SLC Đại sảnh",
     "selectPackage": "Chọn một gói",
     "eventTitlePlaceholder": "ví dụ, Talk Công nghệ: AI ở 2024",
-    "organizationNamePlaceholder": "ví dụ, Tổ chức Khoa học Máy tính",
-    "selectOrganization": "Chọn một tổ chức",
-    "searchOrganizationPlaceholder": "Tìm kiếm tổ chức...",
-    "noOrganizationFound": "Không tìm thấy tổ chức",
+    "clubNamePlaceholder": "ví dụ, Tổ chức Khoa học Máy tính",
+    "selectClub": "Chọn một tổ chức",
+    "searchClubPlaceholder": "Tìm kiếm tổ chức...",
+    "noClubFound": "Không tìm thấy tổ chức",
     "descriptionPlaceholder": "Cho mọi người biết về sự kiện của bạn...",
     "sourceUrl": "Liên kết nguồn",
     "sourceUrlPlaceholder": "https://instagram.com/p/...",
@@ -240,21 +242,21 @@
     "description": "Mô tả",
     "saveChanges": "Lưu thay đổi",
     "requiredInformation": "Thông tin bắt buộc",
-    "organizationName": "Tên tổ chức",
-    "organizationType": "Loại tổ chức",
-    "organizationTypeMapped": "{{type}}",
-    "organizationTypeIndependent": "Độc lập",
-    "organizationNameRequired": "Tên tổ chức là bắt buộc",
+    "clubName": "Tên tổ chức",
+    "clubType": "Loại tổ chức",
+    "clubTypeMapped": "{{type}}",
+    "clubTypeIndependent": "Độc lập",
+    "clubNameRequired": "Tên tổ chức là bắt buộc",
     "ownerEmail": "Email chủ sở hữu",
     "categories": "Danh mục",
     "categoryRequired": "Cần ít nhất một danh mục",
     "add": "Thêm",
-    "organizationPageUrl": "Trang tổ chức URL",
-    "organizationPageUrlPlaceholder": "ví dụ, https://example.com hoặc 123",
+    "clubPageUrl": "Trang tổ chức URL",
+    "clubPageUrlPlaceholder": "ví dụ, https://example.com hoặc 123",
     "instagramHandle": "Instagram Tên dùng",
     "discordLink": "Discord Liên kết",
     "titleRequired": "Tiêu đề là bắt buộc",
-    "organizationRequired": "Tổ chức là bắt buộc",
+    "clubRequired": "Tổ chức là bắt buộc",
     "occurrenceRequired": "Cần ít nhất một ngày",
     "locationRequired": "Địa điểm là bắt buộc",
     "schoolRequired": "Trường học là bắt buộc",
@@ -282,7 +284,7 @@
     "politicsAndAdvocacy": "Chính trị & Vận động",
     "religionAndSpirituality": "Tôn giáo & Tâm linh",
     "events": "Sự kiện",
-    "organizations": "Tổ chức"
+    "clubs": "Tổ chức"
   },
   "locations": {
     "LAX": "LAX",
@@ -370,8 +372,8 @@
     "phase3Date": "Tháng Mười 2025",
     "phase3Title": "Chia sẻ với khuôn viên trường",
     "phase3Paragraph1": "Chúng tôi đã đăng liên kết trong vài nhóm chat. Rồi chúng tôi làm một tấm poster (mỉa mai, chúng tôi biết) và dán nó ở SLC. Trong vòng một tuần, mọi người đã nhắn tin cho chúng tôi các ảnh chụp màn hình.",
-    "phase3Paragraph2": "<em>\"Đợi đã, có Repair Organization á? Mình thực sự có thể sửa xe đạp ở đó sao?\"</em>",
-    "phase3Paragraph3": "Ai đó đã tìm thấy <strong>Gatka Organization</strong> (võ thuật Sikh) thông qua Wat2Do và nói rằng đó là điểm nổi bật trong kỳ học của họ. Một người khác phát hiện <strong>Retro Rollers</strong> (các buổi gặp gỡ trượt patin) và kết bạn được sáu người chỉ trong một đêm.",
+    "phase3Paragraph2": "<em>\"Đợi đã, có Repair Club á? Mình thực sự có thể sửa xe đạp ở đó sao?\"</em>",
+    "phase3Paragraph3": "Ai đó đã tìm thấy <strong>Gatka Club</strong> (võ thuật Sikh) thông qua Wat2Do và nói rằng đó là điểm nổi bật trong kỳ học của họ. Một người khác phát hiện <strong>Retro Rollers</strong> (các buổi gặp gỡ trượt patin) và kết bạn được sáu người chỉ trong một đêm.",
     "phase3Paragraph4": "Đó là lúc chúng tôi nhận ra: điều này không chỉ là một lịch. Đây là cách để khám phá phiên bản cuộc sống trong khuôn viên mà bạn chưa từng biết đến.",
     "photo3Alt": "Khám phá cộng đồng",
     "photo3Caption": "Mọi người bắt đầu khám phá những sự kiện mà họ chưa từng biết tồn tại.",
@@ -387,8 +389,8 @@
     "guideIndustryAtlassian": "<strong>Atlassian Buổi trò chuyện cà phê:</strong> Ít gây áp lực hơn nhiều so với gian hàng hội chợ việc làm. Bạn thực sự có thể trò chuyện.",
     "guideIndustryStartup": "<strong>Hội chợ nghề nghiệp khởi nghiệp:</strong> Bỏ qua các gian hàng công ty lớn. Đi thẳng đến các startup, nơi bạn có thể nói chuyện với các nhà sáng lập thực sự.",
     "guideRandomTitle": "Những thứ ngẫu nhiên đáng thử",
-    "guideRandomRepair": "<strong>Repair Organization:</strong> Bị hỏng sạc laptop? Nhóm này có dụng cụ và sẽ dạy bạn cách tự sửa. Hoàn toàn miễn phí.",
-    "guideRandomGatka": "<strong>Gatka Organization:</strong> Võ thuật Sikh với gậy gỗ. Không cần kinh nghiệm. Đáng giá.",
+    "guideRandomRepair": "<strong>Repair Club:</strong> Bị hỏng sạc laptop? Nhóm này có dụng cụ và sẽ dạy bạn cách tự sửa. Hoàn toàn miễn phí.",
+    "guideRandomGatka": "<strong>Gatka Club:</strong> Võ thuật Sikh với gậy gỗ. Không cần kinh nghiệm. Đáng giá.",
     "guideRandomRetro": "<strong>Retro Rollers:</strong> Trượt patin tại các sân trượt địa phương. Tuyệt vời để giảm căng thẳng trong kỳ thi giữa kỳ.",
     "guideFriendsTitle": "Đi cùng bạn bè",
     "guideFriendsFood": "<strong>Sự kiện có món ăn miễn phí:</strong> Sắp xếp theo \"Có cung cấp thức ăn\" trong bộ lọc. Mẹo quan trọng: đến sớm 15 phút.",
@@ -449,10 +451,10 @@
       "random": {
         "title": "Các Sự Kiện Ngẫu Nhiên Mà Bạn Chưa Biết Tồn Tại",
         "desc": "Thành thật mà nói, phần hay nhất khi xây dựng dự án này là khám phá các tổ chức mà chúng tôi hoàn toàn không biết có mặt trên khuôn viên. Có một ",
-        "repair": "Repair Organization",
+        "repair": "Repair Club",
         "repairSuffix": " nơi bạn có thể sửa thiết bị điện tử bị hỏng, Iranian Students' Association có lớp ",
         "zumba": "Persian Zumba",
-        "zumbaSuffix": ", còn Strength Organization có ",
+        "zumbaSuffix": ", còn Strength Club có ",
         "barbells": "Battle of the Barbells"
       },
       "search": {

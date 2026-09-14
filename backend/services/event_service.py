@@ -15,9 +15,9 @@ from postgrest.exceptions import APIError
 
 from core.constants import DEFAULT_LIST_LIMIT, MAX_LIST_LIMIT
 from core.database import get_sb
-from core.errors import EVENT_ALREADY_PAST, ORGANIZATION_NOT_FOUND
+from core.errors import CLUB_NOT_FOUND, EVENT_ALREADY_PAST
 from core.exceptions import NotFoundError, ValidationError
-from core.pagination import fetch_all_pages
+from core.pagination import LatestAddedItem, fetch_all_pages
 from core.retry import supabase_retry
 from core.tables import EVENTS
 from schemas.event import (
@@ -26,7 +26,6 @@ from schemas.event import (
     EventStatsResponse,
     EventSummaryResponse,
     EventUpdate,
-    LatestEventResponse,
 )
 from schemas.event_date import OccurrenceResponse, OccurrenceUpdate
 from services import (
@@ -74,23 +73,23 @@ def _to_utc(dt: datetime | None) -> datetime:
     return dt.astimezone(timezone.utc)
 
 
-def _resolve_organization_fields(organization_id: int) -> dict[str, str | int | None]:
-    """Derive the event's denormalized fields from its owning organization.
+def _resolve_club_fields(club_id: int) -> dict[str, str | int | None]:
+    """Derive the event's denormalized fields from its owning club.
 
-    The organization is the single source of truth for an event's display name
+    The club is the single source of truth for an event's display name
     and school - callers never set these directly, so both the
     direct-create path and the submission-approval path stay in agreement.
     """
-    from services import organization_service  # local import avoids an import cycle
+    from services import club_service  # local import avoids an import cycle
 
-    organization = organization_service.get_organization(organization_id)
-    if organization is None:
-        raise NotFoundError(ORGANIZATION_NOT_FOUND)
-    school_id = organization.school_id or school_service.get_school_id(organization.school)
+    club = club_service.get_club(club_id)
+    if club is None:
+        raise NotFoundError(CLUB_NOT_FOUND)
+    school_id = club.school_id or school_service.get_school_id(club.school)
     if school_id is None:
-        raise ValidationError("Organization school is not registered")
+        raise ValidationError("Club school is not registered")
     return {
-        "organization": organization.organization_name,
+        "club": club.club_name,
         "school_id": school_id,
     }
 
@@ -99,7 +98,7 @@ def _resolve_organization_fields(organization_id: int) -> dict[str, str | int | 
 
 
 @supabase_retry
-def get_latest_added_event(school: str | None = None) -> LatestEventResponse | None:
+def get_latest_added_event(school: str | None = None) -> LatestAddedItem | None:
     """Return the most recently added event (by added_at desc), or None if no events."""
     q = get_sb().table(EVENTS).select("title,added_at")
     if school:
@@ -110,42 +109,16 @@ def get_latest_added_event(school: str | None = None) -> LatestEventResponse | N
     r = q.order("added_at", desc=True).limit(1).execute()
     if not r.data or len(r.data) == 0:
         return None
-    return LatestEventResponse.model_validate(r.data[0])
+    return LatestAddedItem.model_validate(r.data[0])
 
 
 @supabase_retry
-def get_organization_event_counts(
-    organization_ids: list[int],
-) -> dict[int, int]:
-    """Return per-organization event totals."""
-    if not organization_ids:
-        return {}
-
-    counts = {organization_id: 0 for organization_id in organization_ids}
-
-    r = (
-        get_sb()
-        .table(EVENTS)
-        .select("organization_id")
-        .in_("organization_id", organization_ids)
-        .execute()
-    )
-
-    for row in r.data or []:
-        organization_id = row.get("organization_id")
-        if organization_id not in counts:
-            continue
-        counts[organization_id] += 1
-
-    return counts
-
-
 @supabase_retry
 def get_event(event_id: int) -> EventResponse | None:
     r = (
         get_sb()
         .table(EVENTS)
-        .select(f"*,{event_query.ORGANIZATION_EMBED},{event_query.SCHOOL_EMBED}")
+        .select(f"*,{event_query.CLUB_EMBED},{event_query.SCHOOL_EMBED}")
         .eq("id", event_id)
         .execute()
     )
@@ -211,9 +184,9 @@ def list_events(
     min_price: float | None = None,
     max_price: float | None = None,
     registration: bool | None = None,
-    organizations: list[str] | None = None,
-    organization_ids: list[int] | None = None,
-    free_food: bool = False,
+    clubs: list[str] | None = None,
+    club_ids: list[int] | None = None,
+    has_food: bool = False,
     ids: list[int] | None = None,
     sort_by: str = "date",
     sort_order: str = "asc",
@@ -251,9 +224,9 @@ def list_events(
         min_price=min_price,
         max_price=max_price,
         registration=registration,
-        organizations=organizations,
-        organization_ids=organization_ids,
-        free_food=free_food,
+        clubs=clubs,
+        club_ids=club_ids,
+        has_food=has_food,
         ids=ids,
         sort_by=sort_by,
         sort_order=sort_order,
@@ -279,7 +252,7 @@ def list_promoted_events(school: str | None = None) -> list[EventSummaryResponse
 def create_event(data: EventCreate, *, created_by: str) -> EventResponse:
     payload = data.model_dump(mode="json")
     payload.pop("occurrences", None)
-    payload.update(_resolve_organization_fields(data.organization_id))
+    payload.update(_resolve_club_fields(data.club_id))
     payload["created_by"] = created_by
     r = get_sb().table(EVENTS).insert(payload).execute()
     new_row = r.data[0]
@@ -300,7 +273,7 @@ def create_event(data: EventCreate, *, created_by: str) -> EventResponse:
     return created
 
 
-def has_ended(event: EventResponse, *, now: datetime | None = None) -> bool:
+def has_ended(event: EventResponse | EventSummaryResponse, *, now: datetime | None = None) -> bool:
     """Return True if every occurrence on the event is strictly in the past.
 
     For multi-occurrence events, we use the LATEST occurrence's end time
@@ -321,7 +294,7 @@ def update_event(event_id: int, data: EventUpdate) -> EventUpdateResult | None:
 
     Past-event freezing (audit I12) - once every occurrence has passed,
     mutations are rejected. This prevents owners from silently rewriting
-    title / dtstart / organization on an event users already saved.
+    title / dtstart / club on an event users already saved.
     """
     existing = get_event(event_id)
     if existing is None:
@@ -336,10 +309,10 @@ def update_event(event_id: int, data: EventUpdate) -> EventUpdateResult | None:
     payload = data.model_dump(mode="json", exclude_unset=True)
     new_occurrences = payload.pop("occurrences", None)
 
-    # Reassigning the organization re-derives the denormalized display fields so the
-    # event row never drifts from its owning organization.
-    if payload.get("organization_id") is not None:
-        payload.update(_resolve_organization_fields(payload["organization_id"]))
+    # Reassigning the club re-derives the denormalized display fields so the
+    # event row never drifts from its owning club.
+    if payload.get("club_id") is not None:
+        payload.update(_resolve_club_fields(payload["club_id"]))
 
     recipient_ids = update_event_and_occurrences(
         event_id,

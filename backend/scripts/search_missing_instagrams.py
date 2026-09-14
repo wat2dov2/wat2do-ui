@@ -60,7 +60,7 @@ COMMON_TOKENS = frozenset(
         "inc",
         "of",
         "on",
-        "organization",
+        "club",
         "society",
         "student",
         "students",

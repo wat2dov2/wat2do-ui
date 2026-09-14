@@ -40,7 +40,7 @@ export function mapEventInputToFormData(
   fallbackDefaults: EventInputFallbacks,
 ): EventFormData {
   return {
-    organization_id: typeof parsed.organization_id === "number" ? parsed.organization_id : null,
+    club_id: typeof parsed.club_id === "number" ? parsed.club_id : null,
     title: (parsed.title as string) || "",
     description: (parsed.description as string) || "",
     occurrences: normalizeOccurrences(parsed.occurrences, fallbackDefaults.occurrences),
@@ -58,40 +58,21 @@ export function mapEventInputToFormData(
   };
 }
 
-/**
- * Get smart defaults for form (next hour)
- */
-export function getSmartDefaults() {
+/** New events start at the next local hour. */
+export function getEventFormDefaults(): EventFormData {
   const now = new Date();
   const nextHour = new Date(now.setHours(now.getHours() + 1, 0, 0, 0));
   return {
+    club_id: null,
+    title: "",
+    description: "",
     occurrences: [{ dtstart_local: toLocalDateTimeInput(nextHour), dtend_local: "" }],
-  };
-}
-
-/**
- * Get initial form state
- */
-export function getInitialState(initialData?: EventFormData, isEditMode = false) {
-  const smartDefaults = getSmartDefaults();
-  const formData =
-    isEditMode && initialData
-      ? initialData
-      : {
-        organization_id: null,
-        title: "",
-        description: "",
-        occurrences: smartDefaults.occurrences,
-        location: "",
-        category: "",
-        price: 0,
-        food: [],
-        registration: false,
-        source_url: null,
-        source_image_url: null,
-      };
-
-  return {
-    formData,
+    location: "",
+    category: "",
+    price: 0,
+    food: [],
+    registration: false,
+    source_url: null,
+    source_image_url: null,
   };
 }

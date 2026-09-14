@@ -31,7 +31,6 @@
     "urlRequired": "URL જરૂરી છે",
     "urlInvalid": "કૃપા કરીને માન્ય URL દાખલ કરો",
     "descriptionOptional": "ૈચ્છિક",
-    "imageFormat": "PNG, JPG 5MB સુધી",
     "noScanData": "હજી સુધી સ્કેન ડેટા નથી",
     "noScanDataDesc": "તમારા QR કોડને શેર કરો પ્રદર્શનને ટ્રેક કરવા માટે શરૂ કરવા",
     "posterAriaLabel": "પોસ્ટર {{id}}",

@@ -37,8 +37,8 @@ export async function generateMetadata(): Promise<Metadata> {
     loadPositions(school),
   ]);
   const schoolName = schoolRecord?.name ?? school;
-  const title = `${schoolName} Student Organization Positions | Wat2Do`;
-  const description = `Find open executive, committee, volunteer, staff, and internship positions with student organizations at ${schoolName}.`;
+  const title = `${schoolName} Student Club Positions | Wat2Do`;
+  const description = `Find open executive, committee, volunteer, staff, and internship positions with student clubs at ${schoolName}.`;
   const featuredPosition = directory?.items.find(
     (position) => position.source_image_url,
   );
@@ -52,7 +52,7 @@ export async function generateMetadata(): Promise<Metadata> {
       featuredPosition ? `${featuredPosition.title} position` : "",
       {
         url: imgContactHero.src,
-        alt: `Discover student organization positions at ${schoolName}`,
+        alt: `Discover student club positions at ${schoolName}`,
         width: imgContactHero.width,
         height: imgContactHero.height,
         type: "image/png",

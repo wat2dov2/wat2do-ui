@@ -12,7 +12,7 @@ import {
   DialogDescription,
   DialogTitle,
 } from "@/shared/ui/dialog";
-import { OrganizationBadgeDropdown } from "@/features/organizations/components/OrganizationBadgeDropdown";
+import { ClubBadgeDropdown } from "@/features/clubs/components/ClubBadgeDropdown";
 import { useGoingEvents } from "@/features/events/hooks/useGoingEvents";
 import { isEventHappeningNow, wasAddedWithinLast24Hours } from "@/shared/utils/date";
 import { cn } from "@/shared/lib/utils";
@@ -24,18 +24,18 @@ interface EventCardImageProps {
   /** `card` is the grid card's fixed-height header; `detail` is the square poster. */
   variant: "card" | "detail";
   /**
-   * Renders the organization badge inert. The submit form's live preview shows
+   * Renders the club badge inert. The submit form's live preview shows
    * the badge but must not let its menu filter the feed and leave the form.
    */
   interactive?: boolean;
-  /** Runs after the organization badge applies its feed filter. */
-  onOrganizationFilterSelect?: () => void;
+  /** Runs after the club badge applies its feed filter. */
+  onClubFilterSelect?: () => void;
   /** Load this poster immediately because it can be an initial LCP candidate. */
   priority?: boolean;
 }
 
 /**
- * Event poster with its corner badges: new, live, and organization.
+ * Event poster with its corner badges: new, live, and club.
  *
  * Every surface that shows an event's artwork shows the same badges in the same
  * corners, so the grid card, the details drawer, and the event page all render
@@ -45,7 +45,7 @@ export function EventCardImage({
   event,
   variant,
   interactive = true,
-  onOrganizationFilterSelect,
+  onClubFilterSelect,
   priority = false,
 }: EventCardImageProps) {
   const { t } = useTranslation();
@@ -137,18 +137,18 @@ export function EventCardImage({
           </BadgeMask>
         )}
 
-        {event.organization && (
+        {event.club && (
           <BadgeMask variant="bottom-left" cutout containerRef={registerCorner("bottom-left")}>
-            <OrganizationBadgeDropdown
-              organizationName={event.organization}
-              organizationLogoUrl={event.organization_logo_url}
-              organizationType={event.organization_type}
+            <ClubBadgeDropdown
+              clubName={event.club}
+              clubLogoUrl={event.club_logo_url}
+              clubType={event.club_type}
               school={event.school}
-              organizationPage={event.organization_page}
-              organizationIg={event.organization_ig}
-              organizationDiscord={event.organization_discord}
+              clubPage={event.club_page}
+              clubIg={event.club_ig}
+              clubDiscord={event.club_discord}
               disabled={!interactive}
-              onFilterSelect={onOrganizationFilterSelect}
+              onFilterSelect={onClubFilterSelect}
               onMouseDown={(e) => e.stopPropagation()}
               onClick={(e) => e.stopPropagation()}
             />

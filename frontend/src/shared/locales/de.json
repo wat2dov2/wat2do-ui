@@ -13,7 +13,6 @@
     "or": "oder",
     "separatorBullet": "•",
     "free": "Kostenlos",
-    "freeFood": "Kostenloses Essen",
     "backToTop": "Zurück nach oben",
     "cancelled": "Abgesagt",
     "registration": "Registrierung",
@@ -70,7 +69,11 @@
     "all": "Alle",
     "minuteAgo_one": "vor {{count}} Minute",
     "hourAgo_one": "vor {{count}} Stunde",
-    "dayAgo_one": "vor {{count}} Tag"
+    "dayAgo_one": "vor {{count}} Tag",
+    "latestAddedItem": "<addedPrefix></addedPrefix><eventTitle>{{title}}</eventTitle> <addedTime>hinzugefügt {{time}}</addedTime>",
+    "newlyAddedFilter": {
+      "last24Hours": "Neu"
+    }
   },
   "errorBoundary": {
     "title": "Etwas ist schiefgelaufen",
@@ -81,13 +84,13 @@
     "events": "Veranstaltungen",
     "create": "Veranstaltung einreichen",
     "loginRequiredToSubmit": "Nur angemeldete Benutzer können Veranstaltungen oder Organisationen einreichen.",
-    "organizations": "Organisationen",
+    "clubs": "Organisationen",
     "positions": "Positionen",
     "myEvents": "Meine Veranstaltungen",
     "settings": "Einstellungen",
     "admin": "Admin",
     "adminPanel": "Admin-Bereich",
-    "organizationPanel": "Organisationspanel",
+    "clubPanel": "Organisationspanel",
     "clubPanelTooltip": "Verwalten Sie Ihre Organisation",
     "mission": "Mission",
     "about": "Über uns",
@@ -117,8 +120,7 @@
       "continueWithGoogle": "Mit Google fortfahren"
     },
     "signOut": {
-      "logOut": "Abmelden",
-      "signOutOfAccount": "Von Ihrem Konto abmelden"
+      "logOut": "Abmelden"
     },
     "getStarted": "Loslegen",
     "profile": {
@@ -172,9 +174,9 @@
     "desc": "Abst.",
     "ascending": "Aufsteigend",
     "descending": "Absteigend",
-    "organization": "Organisation",
-    "searchOrganization": "Organisation suchen...",
-    "noOrganizations": "Keine Organisationen verfügbar"
+    "club": "Organisation",
+    "searchClub": "Organisation suchen...",
+    "noClubs": "Keine Organisationen verfügbar"
   },
   "commands": {
     "commands": "Befehle",
@@ -221,10 +223,10 @@
     "locationPlaceholder": "z. B. MC 1234, SLC Große Halle",
     "selectPackage": "Paket auswählen",
     "eventTitlePlaceholder": "z. B., Tech Talk: KI im Jahr 2024",
-    "organizationNamePlaceholder": "z. B., Computer Science Organization",
-    "selectOrganization": "Organisation auswählen",
-    "searchOrganizationPlaceholder": "Organisationen suchen...",
-    "noOrganizationFound": "Keine Organisation gefunden",
+    "clubNamePlaceholder": "z. B., Computer Science Club",
+    "selectClub": "Organisation auswählen",
+    "searchClubPlaceholder": "Organisationen suchen...",
+    "noClubFound": "Keine Organisation gefunden",
     "descriptionPlaceholder": "Erzählen Sie den Leuten, worum es bei Ihrer Veranstaltung geht...",
     "sourceUrl": "Quellenlink",
     "sourceUrlPlaceholder": "https://instagram.com/p/...",
@@ -243,21 +245,21 @@
     "description": "Beschreibung",
     "saveChanges": "Änderungen speichern",
     "requiredInformation": "Erforderliche Informationen",
-    "organizationName": "Name der Organisation",
-    "organizationType": "Organisationstyp",
-    "organizationTypeMapped": "{{type}}",
-    "organizationTypeIndependent": "Unabhängig",
-    "organizationNameRequired": "Name der Organisation ist erforderlich",
+    "clubName": "Name der Organisation",
+    "clubType": "Organisationstyp",
+    "clubTypeMapped": "{{type}}",
+    "clubTypeIndependent": "Unabhängig",
+    "clubNameRequired": "Name der Organisation ist erforderlich",
     "ownerEmail": "E-Mail des Eigentümers",
     "categories": "Kategorien",
     "categoryRequired": "Mindestens eine Kategorie ist erforderlich",
     "add": "Hinzufügen",
-    "organizationPageUrl": "Organisationsseite URL",
-    "organizationPageUrlPlaceholder": "z. B. https://example.com oder 123",
+    "clubPageUrl": "Organisationsseite URL",
+    "clubPageUrlPlaceholder": "z. B. https://example.com oder 123",
     "instagramHandle": "Instagram Benutzername",
     "discordLink": "Discord Link",
     "titleRequired": "Titel ist erforderlich",
-    "organizationRequired": "Organisation ist erforderlich",
+    "clubRequired": "Organisation ist erforderlich",
     "occurrenceRequired": "Mindestens ein Datum ist erforderlich",
     "locationRequired": "Ort ist erforderlich",
     "schoolRequired": "Schule ist erforderlich",
@@ -285,7 +287,7 @@
     "politicsAndAdvocacy": "Politik & Interessenvertretung",
     "religionAndSpirituality": "Religion & Spiritualität",
     "events": "Veranstaltungen",
-    "organizations": "Organisationen"
+    "clubs": "Organisationen"
   },
   "locations": {
     "LAX": "LAX",
@@ -455,7 +457,7 @@
         "repair": "Reparaturorganisation",
         "repairSuffix": "wo Sie Ihre kaputten Elektronikgeräte reparieren können, die Iranian Students' Association's ",
         "zumba": "Persischer Zumba",
-        "zumbaSuffix": " Klasse und Strength Organization's ",
+        "zumbaSuffix": " Klasse und Strength Club's ",
         "barbells": "Schlacht der Hanteln"
       },
       "search": {

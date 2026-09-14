@@ -59,7 +59,7 @@ def extract_post_content(
     image_urls: list[str] | None,
     post_created_at: datetime | None,
     school: str,
-    source_organization: str | None = None,
+    source_club: str | None = None,
     model: str | None = None,
 ) -> ExtractedPostContent:
     """Triage content and extract zero-or-more events and hiring positions.
@@ -74,7 +74,7 @@ def extract_post_content(
             phrases like "tonight"/"tomorrow"). Falls back to "now" in
             the school's local TZ if missing.
         school: school slug (e.g. "uwaterloo").
-        source_organization: trusted publisher of an official directory page.
+        source_club: trusted publisher of an official directory page.
             When present, the prompt treats it as the default event host.
         model: vision-capable OpenAI model. Defaults to
             ``settings.openai_extraction_model``.
@@ -122,7 +122,7 @@ def extract_post_content(
         post_time=post_local.strftime("%H:%M"),
         semester_line=semester_line,
         categories_str=categories_str,
-        source_organization=source_organization,
+        source_club=source_club,
     )
 
     user_content: list[dict] = [{"type": "text", "text": prompt}]
@@ -150,6 +150,20 @@ def extract_post_content(
     raw = (response.choices[0].message.content or "").strip()
     parsed = _parse_model_json(raw)
 
+    # These values belong to the source, not to model interpretation.
+    if isinstance(parsed, dict):
+        for key in ("events", "positions"):
+            for item in parsed.get(key) or []:
+                if not isinstance(item, dict):
+                    continue
+                if caption_text and caption_text.strip():
+                    item["description"] = (
+                        caption_text[:MAX_POSITION_DESCRIPTION_LENGTH]
+                        if key == "positions"
+                        else caption_text
+                    )
+                item["school"] = canonical_school_key(school)
+
     return _clean_extracted_content(parsed)
 
 
@@ -159,7 +173,7 @@ def extract_events_from_post(
     image_urls: list[str] | None,
     post_created_at: datetime | None,
     school: str,
-    source_organization: str | None = None,
+    source_club: str | None = None,
     model: str | None = None,
 ) -> list[dict]:
     """Extract events for event-only consumers such as directory imports."""
@@ -168,7 +182,7 @@ def extract_events_from_post(
         image_urls=image_urls,
         post_created_at=post_created_at,
         school=school,
-        source_organization=source_organization,
+        source_club=source_club,
         model=model,
     ).events
 
@@ -225,68 +239,73 @@ def _build_prompt(
     post_time: str,
     semester_line: str,
     categories_str: str,
-    source_organization: str | None,
+    source_club: str | None,
 ) -> str:
     """Assemble the extraction prompt.
 
     Kept verbose because Instagram-caption phrasing is irregular enough that
     aggressive trimming causes regressions in date inference and price parsing.
     """
-    image_list_str = (
-        "\n".join(f"Image {i}: {url}" for i, url in enumerate(image_urls))
-        if image_urls
-        else "No images provided."
+    description_field = (
+        '\n      "description": string,' if not caption_text or not caption_text.strip() else ""
     )
-    source_organization_rule = (
+    description_rule = (
+        "No caption is available. Extract description from the relevant image text; do not invent details."
+        if description_field
+        else "Do not output description. The application attaches the original caption to every extracted item."
+    )
+    source_club_rule = (
         f"""
 OFFICIAL DIRECTORY PUBLISHER:
-- This page comes from the official event directory published by {source_organization}.
-- Use "{source_organization}" as the event organization unless the page explicitly identifies a distinct student club or organization as the host or co-host.
-- Never invent an organization from an event title, series name, campaign, service, venue, vendor, or URL slug.
+- This page comes from the official event directory published by {source_club}.
+- Use "{source_club}" as the event club unless the page explicitly identifies a distinct student club as the host or co-host.
+- Never invent a club from an event title, series name, campaign, service, venue, vendor, or URL slug.
 """
-        if source_organization
+        if source_club
         else ""
     )
 
     return f"""
 Analyze the following Instagram caption and images. First classify the post, then extract every campus event and every open hiring position it clearly advertises.
 
-School context: This post is from {school}. Use this to guide location and timezone decisions.
-{source_organization_rule}
+Campus context: {school}. Use this only as a fallback for ambiguous location and timezone information.
+Explicit school, club, location, and timezone information in the caption or image takes precedence over campus context.
+Preserve the school and club names printed in the source, including in descriptions. Never rename a host to match campus context or substitute a similarly named club from another school.
+{source_club_rule}
 Current context: Today is {current_day}, {current_date}
 Post was created on: {post_day}, {post_date} at {post_time}
 {semester_line}
 Caption: {caption_text or ""}
 
-Images (0-indexed):
-{image_list_str}
+Images are attached below with 0-indexed markers ({len([url for url in image_urls if url])} images).
+{description_rule}
 
 CLASSIFICATION POLICY:
 - Set "content_type" to "event" for event-only posts, "hiring" for hiring-only posts, "event_and_hiring" when both are clearly advertised, and "other" when neither applies.
 - A hiring post explicitly recruits people for one or more qualifying open roles, including executives, committee members, ongoing volunteers, paid staff, or internships.
-- A qualifying role gives the selected person defined work, service, leadership, or organizational responsibilities. An application or sign-up for participation, membership, a program, a team, or an event is not a position.
-- General organization promotion, member introductions, election activity, event registration, program applications, and participant sign-ups are not hiring. Only roles that pass both eligibility tests below qualify.
+- A qualifying role gives the selected person defined work, service, leadership, or club responsibilities. An application or sign-up for participation, membership, a program, a team, or an event is not a position.
+- General club promotion, member introductions, election activity, event registration, program applications, and participant sign-ups are not hiring. Only roles that pass both eligibility tests below qualify.
 - Return an empty array for a content category that is not present. Never force an event into a position or a position into an event.
 
 POSITION ELIGIBILITY GATE (CRITICAL):
 - Before extracting each position, independently pass BOTH tests below. If either test fails, omit that position even when another role in the same post qualifies.
-- ROLE TEST: The selected person will perform defined work or service, own ongoing responsibilities, hold organizational authority, or fill an explicit paid job or internship for the organization.
-- OPENING TEST: This post explicitly says that applications, nominations, or recruitment are currently open for that specific qualifying role. Evidence includes "we're hiring", "applications are open", "apply for [role]", "join our [executive/committee/staff] team", "nominations are open", or "run for [role]".
+- ROLE TEST: The selected person will perform defined work or service, own ongoing responsibilities, hold club authority, or fill an explicit paid job or internship for the club.
+- OPENING TEST: This post explicitly says that applications or recruitment are currently open for that specific non-elected role. Evidence includes "we're hiring", "applications are open", "apply for [role]", or "join our [executive/committee/staff] team".
 - A call to action such as "apply", "applications open", "sign up", "register", "join", "try out", "audition", "volunteer", or a form/deadline is never sufficient by itself. First establish that the thing being applied for passes the ROLE TEST.
 - The recruiting evidence must be on this post and must connect to the advertised role. A deadline, a role title, a list of roles, a description of responsibilities, a department name, a person holding a role, or an announcement that an election exists is not enough by itself.
 - Election voting posts are not hiring. Candidate lists or slates, campaign information, voting instructions, election dates, ballots, and results must return an empty positions array even when they name roles.
-- An election post qualifies as hiring only when it explicitly invites people to apply, nominate themselves, or run for a currently open role.
+- Executive elections, nominations, self-nominations, and invitations to run for elected office are not hiring. A separate, explicitly recruited non-elected job in the same post may qualify.
 - Member or executive introductions, current-board rosters, team spotlights, role-and-name graphics, posts naming "this year's" role holders, and "meet the team" posts are not hiring.
-- Do not extract generic club membership, general members, active-member tiers, supporters, unnamed departments, or duties-only slides as positions. A named functional team role with real duties may qualify; "general member" or "general team member" without a defined organizational responsibility never does.
+- Do not extract generic club membership, general members, active-member tiers, supporters, unnamed departments, or duties-only slides as positions. A named functional team role with real duties may qualify; "general member" or "general team member" without a defined club responsibility never does.
 - Mentors and mentees joining a peer-mentorship program are program participants, not positions, even when they apply, guide someone, volunteer, or commit for a semester. A Director or Coordinator responsible for operating the mentorship program may qualify.
 - Applicants to a course, workshop, cohort, accelerator, competition, scholarship, student-development program, or other learning program are participants, not positions. Do not relabel a program as an internship merely because applications are open, participants complete projects, professionals are involved, or the program is paid.
 - Players, athletes, dancers, singers, models, performers, chorus members, and competitive-team members joining through auditions, casting, or tryouts are participants, not positions. A separately advertised coach, choreographer, director, designer, or other work/leadership vacancy may qualify.
-- One-off event helpers, event-day volunteers, orientation or Welcome Week volunteers, race or relay participants, and sign-ups for posted volunteer shifts are not positions. An ongoing volunteer role may qualify only when the post recruits for specific continuing responsibilities on behalf of the organization, separate from attending or helping at one event.
+- One-off event helpers, event-day volunteers, orientation or Welcome Week volunteers, race or relay participants, and sign-ups for posted volunteer shifts are not positions. An ongoing volunteer role may qualify only when the post recruits for specific continuing responsibilities on behalf of the club, separate from attending or helping at one event.
 - Evaluate mixed lists role by role. Omit ineligible entries such as "General Members" while retaining qualifying entries such as "Outreach Ambassador" or "Events Team Member" when the post connects them to defined duties and a current application.
-- A role description does not become an opening unless the same post explicitly asks people to apply, nominate themselves, run, or otherwise respond to current recruitment for that role.
+- A role description does not become an opening unless the same post explicitly asks people to apply or otherwise respond to current recruitment for that non-elected role.
 - If there is no explicit current recruiting evidence, do not extract any position and do not set "content_type" to "hiring" solely because role names appear.
 - Example: "Executive elections start today. Read the candidate speeches and vote for Treasurer" is "other" with "positions": [].
-- Counterexample: "Nominations are open. Apply or run for Treasurer by Friday" is "hiring" and may produce a Treasurer position.
+- Example: "Nominations are open. Apply or run for Treasurer by Friday" is "other" with "positions": [].
 - Example: "Meet this year's Merch Coordinator" is "other" with "positions": [].
 - Example: "Apply to be a mentor or mentee in our peer mentorship program" is "other" with "positions": [].
 - Example: "Applications are open for our eight-week equity research training program" is "other" with "positions": [].
@@ -297,6 +316,7 @@ POSITION ELIGIBILITY GATE (CRITICAL):
 EVENT POLICY:
 - ONLY extract an attendee-facing activity if the post is clearly announcing or describing a real-world event. The activity itself must be named and something a person can attend, participate in, or watch.
 - A ticketed, paid, RSVP-only, or registration-required activity is still an event when the actual activity is clearly named. Do not reject an event merely because it has tickets or registration.
+- Closure notices, holiday hours, cancellations, and "no meeting today" announcements are not events. A closure or reopening date does not describe a gathering. Only extract an independently advertised gathering, such as a holiday BBQ, not the closure itself.
 - Ideally, the post should have BOTH a specific date AND a specific start time.
 - EXCEPTION: For major events (e.g., full-day, multi-day, overnight), you MAY extract the event even if a specific start time is not explicitly stated, provided there is a specific DATE or date range.
 - For these major events ONLY, if no time is given, you may default the start time to 00:00 (midnight) or a logical start time implied by the context.
@@ -314,10 +334,9 @@ Return exactly one JSON object with this structure:
   "content_type": "event" | "hiring" | "event_and_hiring" | "other",
   "events": [
     {{
-      "title": string,
-      "description": string,
+      "title": string,{description_field}
       "location": string,
-      "organization": string,
+      "club": string,
       "price": number or null,
       "food": string[],
       "registration": boolean,
@@ -330,19 +349,18 @@ Return exactly one JSON object with this structure:
           "tz": string
         }}
       ],
-      "school": string,
       "category": string or null
     }}
   ],
   "positions": [
     {{
-      "title": string,
-      "description": string,
-      "organization": string,
+      "title": string,{description_field}
+      "club": string,
       "position_type": "executive" | "committee" | "volunteer" | "staff" | "internship" | "general",
       "requirements": string[],
       "commitment": string or null,
       "compensation": string or null,
+      "is_paid": true | false | null,
       "location": string or null,
       "contact_email": string or null,
       "deadline_date": string or null,
@@ -373,9 +391,9 @@ POSITION RULES:
 - If the same advertised role appears in the caption and multiple images, return it once, using the image with the strongest recruiting evidence.
 - Use "general" only for a genuinely open-ended team application that does not map to a more specific type.
 - Use "staff" for paid non-intern employment. Compensation details belong in "compensation", not in the type.
-- The description must be a concise, role-specific summary supported by the caption or image. Do not invent responsibilities.
 - Requirements must contain only explicit qualifications or expectations. Use [] when none are stated.
 - Preserve commitment, compensation, location, and contact email as written. Use null when absent.
+- Set is_paid to true only for explicitly paid roles, false for explicitly unpaid or volunteer roles, and null when payment is unspecified. Never infer payment from position type alone.
 - "deadline_date" is "YYYY-MM-DD". Infer a missing year as the next occurrence relative to the post date ({post_date}), but never invent a missing month or day.
 - "deadline_at" is a UTC ISO 8601 timestamp ending in "Z" only when an application time is explicitly stated. Otherwise use null.
 - An application deadline is position metadata and must never be emitted as an event occurrence.
@@ -384,14 +402,13 @@ ADDITIONAL EVENT RULES:
 - Prioritize caption text; use image text if missing details.
 - Extract one object per logical event, even when the caption and several images repeat it. Combine all explicitly advertised occurrences for that same activity into that object's occurrences array. Do not create event objects for its ticket, registration, check-in, application, campaign, or other administrative milestones.
 - Title-case event titles.
-- For "organization": this is the organization / society / faculty hosting the event. Prefer the most specific named entity from the caption or image (e.g., "UW Tea Organization"); if none is named, use the Instagram handle as a fallback.
+- For "club": this is the club / society / faculty hosting the event. Prefer the most specific named entity from the caption or image (e.g., "UW Tea Club"); if none is named, use the Instagram handle as a fallback.
 - If year not found, infer the NEXT occurrence of that date relative to the post creation date ({post_date}). If end time < start time (e.g., 7pm-12am), set end to the next day.
 - When no explicit date is found but there are relative terms like "tonight", "tomorrow", interpret these relative to the POST CREATION DATE ({post_date}).
 - For location: Use the exact location as stated in the caption or image. If the location is a building or room on campus, use only that (e.g., "SLC 3223", "DC Library"). Include city/province if the event is off-campus and the address is provided.
 - For price: REGISTRATION COST ONLY. Prefer non-member / general admission price if multiple are listed. Free events are 0.0. Use null if price is not mentioned.
 - For food: Return an array. Use specific items when named (e.g., ["Pizza", "Bubble tea"]). Use ["Food"] for a generic food mention. Never return "Yes" or "Yes!" as a food label. Use [] when no food is mentioned.
 - For registration: only true if there is a clear instruction to register, RSVP, or sign up.
-- For description: caption text word-for-word. If empty, use image text.
 - If information is not available, use empty string for strings, null for price, and false for booleans.
 - Event category must be one of the canonical categories or null: {categories_str}
 - Return ONLY the JSON object, with no extra commentary.
@@ -420,7 +437,7 @@ class ExtractedEvent(BaseModel):
     title: str = Field(default="")
     description: str = Field(default="")
     location: str = Field(default="")
-    organization: str = Field(default="")
+    club: str = Field(default="")
     price: float | None = None
     food: list[str] = Field(default_factory=list)
     registration: bool = False
@@ -448,13 +465,14 @@ class ExtractedEvent(BaseModel):
 class ExtractedPosition(BaseModel):
     title: str = Field(min_length=1, max_length=MAX_POSITION_TITLE_LENGTH)
     description: str = Field(min_length=1, max_length=MAX_POSITION_DESCRIPTION_LENGTH)
-    organization: str = Field(default="")
+    club: str = Field(default="")
     position_type: PositionType
     requirements: list[
         Annotated[str, Field(min_length=1, max_length=MAX_POSITION_REQUIREMENT_LENGTH)]
     ] = Field(default_factory=list, max_length=MAX_POSITION_REQUIREMENT_COUNT)
     commitment: OptionalStr = Field(default=None, max_length=MAX_POSITION_DETAIL_LENGTH)
     compensation: OptionalStr = Field(default=None, max_length=MAX_POSITION_DETAIL_LENGTH)
+    is_paid: bool | None = None
     location: OptionalStr = Field(default=None, max_length=MAX_POSITION_DETAIL_LENGTH)
     contact_email: OptionalStr = Field(default=None, max_length=320)
     deadline_date: date | None = None

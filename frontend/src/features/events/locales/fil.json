@@ -1,23 +1,23 @@
 {
   "events": {
+    "minimumGoing": "Minimum na dadalo",
     "eventTitle": "Pamagat ng Kaganapan",
     "loadFailed": "Nabigong i-load ang mga kaganapan. Pakisubukang muli.",
     "deleteFailed": "Nabigong tanggalin ang kaganapan. Pakisubukang muli.",
     "submitFailed": "Nabigong isumite ang kaganapan. Pakisubukang muli.",
     "submissionFailedTitle": "Nabigong isumite",
-    "organizationRequired": "Pumili ng organisasyon bago isumite ang kaganapan.",
-    "organization": "Organisasyon",
+    "clubRequired": "Pumili ng organisasyon bago isumite ang kaganapan.",
+    "club": "Organisasyon",
     "status": "Katayuan",
     "dayOfWeek": "Araw ng Linggo",
     "createEvent": "Magsumite ng event",
-    "submitEventSchoolDescription": "Tanging mga organisasyon mula sa {{school}} ang ipinapakita, kaya ang iyong kaganapan ay maisusumite sa tamang kampus.",
+    "submitEventSchoolDescription": "Tanging mga organisasyon mula sa {{school}} ang ipinapakita.",
     "submitEventForReview": "Isumite ang Kaganapan para sa Pagsusuri",
     "submitForReview": "Isumite para sa Pagsusuri",
     "uploadEventFlyer": "Mag-upload ng Flyer ng Kaganapan",
     "uploadEventFlyerDescription": "Mag-upload o i-paste ang isang imahe ng flyer, at awtomatikong pupunan ng AI ang mga detalye.",
     "processingEventImage": "Pinoproseso ang imahe ng kaganapan",
     "clickToUploadOrPasteImage": "I-click para mag-upload ng imahe o i-paste",
-    "imagePasteShortcutHint": "{{formats}} (hal. Cmd+V / Ctrl+V)",
     "flyerExtracted": "Matagumpay na na-extract ang mga detalye ng flyer.",
     "flyerParseFailed": "Nabigo ang pag-parse ng flyer",
     "flyerParseFailedDescription": "Hindi namin mabasa ang mga detalye ng kaganapan mula sa flyer.",
@@ -47,7 +47,6 @@
     "noUpcomingEvents": "Walang paparating na mga kaganapan",
     "upcomingEventCount": "paparating na kaganapan",
     "upcomingEventCount_other": "paparating na mga kaganapan",
-    "latestAddedEvent": "{{title}} nagdagdag ng {{time}}",
     "thisWeek": "Ngayong Linggo",
     "discoverEvents": "Tuklasin ang Mga Kaganapan",
     "clickCount": "{{count}} pag-click",
@@ -56,12 +55,6 @@
     "noEventsFoundDesc": "Hindi makahanap ng anumang mga kaganapan na tumutugma sa iyong kasalukuyang mga filter. Subukang baguhin ang iyong paghahanap o linisin ang ilang mga filter.",
     "noEventsScheduled": "Walang naka-iskedyul na mga kaganapan",
     "noEventsScheduledDesc": "Walang kasalukuyang naka-iskedyul na mga kaganapan. Balik-balikan mamaya!",
-    "newlyAddedFilter": {
-      "last24Hours": "Bago",
-      "sinceLastVisit": "Idinagdag mula noong huling pagbisita",
-      "clear": "Linisin ang bagong idinagdag na filter",
-      "sinceLastVisitAt": "Idinagdag mula noong huling pagbisita ({{time}})"
-    },
     "dateFilter": {
       "label": "Petsa ng event",
       "any": "Kahit anong araw",
@@ -91,6 +84,7 @@
       "submitFailed": "Hindi maipasa ang ulat"
     },
     "goingEvents": {
+      "timeUnavailable": "Nagsimula na o nakansela ang event na ito, kaya hindi mo na mamarkahang dadalo ka.",
       "markFailed": "Hindi maitakda ang event na ito bilang dadalo",
       "unmarkFailed": "Hindi maalis ang pagmamarka ng event na ito bilang dadalo",
       "saveFailed": "Hindi maisalba ang napiling oras",

@@ -96,7 +96,7 @@ def get_qr_code_by_id(qr_code_id: str) -> QrCodeResponse | None:
 
 
 def create_qr_code(data: QrCodeCreate, *, creator: UserResponse) -> QrCodeResponse:
-    """Create one standard organization or administrator QR code."""
+    """Create one standard club or administrator QR code."""
     if get_qr_code_by_id(data.id) is not None:
         raise ConflictError(POSTER_ALREADY_EXISTS)
 

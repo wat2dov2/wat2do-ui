@@ -12,7 +12,7 @@ import type { Event } from "@/shared/types";
 type Batch = ApiInstagramPublishBatchResponse;
 
 /** Carousel order, as Instagram will show it after the cover. */
-export function carouselItems(batch: Batch): Batch["items"] {
+function carouselItems(batch: Batch): Batch["items"] {
   return [...batch.items].sort(
     (left, right) => Number(left.position) - Number(right.position),
   );

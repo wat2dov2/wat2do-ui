@@ -1,6 +1,9 @@
 """Service-level tests for chunked occurrence reads."""
 
+from types import SimpleNamespace
 from uuid import UUID
+
+import pytest
 
 from services import event_date_service
 
@@ -25,26 +28,55 @@ def test_list_by_ids_fetches_only_selected_occurrences(fake_sb, patch_sb):
     result = event_date_service.list_by_ids([occurrence_id])
 
     assert result[0].id == UUID(occurrence_id)
-    fake_sb.in_.assert_called_once_with("id", [occurrence_id])
+    fake_sb.in_.assert_called_once_with("id", (occurrence_id,))
 
 
-def test_list_for_events_chunks_large_id_lists(fake_sb, patch_sb):
-    """>500 ids triggers multiple .in_() queries, not one URI-too-long request."""
+@pytest.mark.parametrize("count", [0, 1, 499, 500, 501, 1200])
+@pytest.mark.parametrize("by_occurrence", [False, True])
+def test_occurrence_reads_preserve_batch_boundaries(fake_sb, patch_sb, count, by_occurrence):
     patch_sb("services.event_date_service")
-    # 1200 event ids => 3 chunks of 500/500/200.
-    ids = list(range(1, 1201))
-    # Each chunk's response: empty (we don't care about the rows here, just
-    # that the chunk loop fires multiple in_() calls).
+    ids = (
+        [str(UUID(int=index + 1)) for index in range(count)]
+        if by_occurrence
+        else list(range(count))
+    )
     fake_sb.set_response(data=[])
-    event_date_service.list_for_events(ids)
-    # Each chunk made exactly one .in_() call → expect 3 calls total.
-    assert fake_sb.in_.call_count == 3
-    # First chunk should be 500 ids; last should be 200.
-    chunk_sizes = [len(call[0][1]) for call in fake_sb.in_.call_args_list]
-    assert chunk_sizes == [500, 500, 200]
+
+    if by_occurrence:
+        result = event_date_service.list_by_ids(ids + ids)
+        assert result == []
+    else:
+        result = event_date_service.list_for_events(ids)
+        assert result == {event_id: [] for event_id in ids}
+
+    calls = fake_sb.in_.call_args_list
+    assert [list(call.args[1]) for call in calls] == [
+        ids[start : start + 500] for start in range(0, count, 500)
+    ]
+    assert all(call.args[0] == ("id" if by_occurrence else "event_id") for call in calls)
+    assert fake_sb.execute.call_count == len(calls)
 
 
 def test_list_for_events_empty_input_no_query():
     """Empty event_ids returns {} without any DB call."""
-    # No fake_sb / patch_sb — confirms the function short-circuits.
+    # No database fixture: empty input must short-circuit.
     assert event_date_service.list_for_events([]) == {}
+
+
+def test_list_for_events_preserves_rows_and_empty_groups_across_batches(fake_sb, patch_sb):
+    patch_sb("services.event_date_service")
+    first = _occ_row(1, "2026-05-01T18:00:00+00:00", 1)
+    last = _occ_row(501, "2026-05-02T18:00:00+00:00", 2)
+    unrelated = _occ_row(999, "2026-05-03T18:00:00+00:00", 3)
+    fake_sb.execute.side_effect = [
+        SimpleNamespace(data=[first, unrelated]),
+        SimpleNamespace(data=[last]),
+    ]
+
+    result = event_date_service.list_for_events(list(range(1, 502)))
+
+    assert len(result) == 501
+    assert result[1][0].id == UUID(first["id"])
+    assert result[501][0].id == UUID(last["id"])
+    assert result[2] == []
+    assert 999 not in result

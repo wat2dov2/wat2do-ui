@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { ImageOff } from "@/shared/ui/doodle-icons";
 import { Badge } from "@/shared/ui/badge";
 import { BadgeMask } from "@/shared/ui/badge-mask";
-import { OrganizationBadgeDropdown } from "@/features/organizations/components/OrganizationBadgeDropdown";
+import { ClubBadgeDropdown } from "@/features/clubs/components/ClubBadgeDropdown";
 import {
   EventImageCutout,
   useEventImageCutouts,
@@ -15,13 +15,13 @@ import type { Position } from "@/shared/types";
 interface PositionCardImageProps {
   position: Position;
   variant: "card" | "detail";
-  onOrganizationFilterSelect?: () => void;
+  onClubFilterSelect?: () => void;
 }
 
 export function PositionCardImage({
   position,
   variant,
-  onOrganizationFilterSelect,
+  onClubFilterSelect,
 }: PositionCardImageProps) {
   const { t, i18n } = useTranslation();
   const { surfaceRef, registerCorner, cutouts, box } = useEventImageCutouts();
@@ -89,15 +89,15 @@ export function PositionCardImage({
         cutout
         containerRef={registerCorner("bottom-left")}
       >
-        <OrganizationBadgeDropdown
-          organizationName={position.organization_name}
-          organizationLogoUrl={position.organization_logo_url}
-          organizationType={position.organization_type}
+        <ClubBadgeDropdown
+          clubName={position.club_name}
+          clubLogoUrl={position.club_logo_url}
+          clubType={position.club_type}
           school={position.school}
-          organizationPage={position.organization_page}
-          organizationIg={position.organization_ig}
-          organizationDiscord={position.organization_discord}
-          onFilterSelect={onOrganizationFilterSelect}
+          clubPage={position.club_page}
+          clubIg={position.club_ig}
+          clubDiscord={position.club_discord}
+          onFilterSelect={onClubFilterSelect}
           onMouseDown={(event) => event.stopPropagation()}
           onClick={(event) => event.stopPropagation()}
         />

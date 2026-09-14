@@ -12,7 +12,7 @@ import { eventPagePath } from "@/features/events/lib/eventUrls";
 import { STORAGE_KEYS } from "@/shared/constants/storageKeys";
 import { StorageService } from "@/shared/services/storageService";
 import {
-  filterStateFromInput,
+  normalizeFilterState,
   stagePendingFilterState,
 } from "@/features/search/api/filterService";
 
@@ -22,7 +22,7 @@ export type QrRedirectConfig = ApiQrCodeRedirect;
 /** Resolve to redirect config, an unplaced-poster location retry, or not found. */
 export type QrRedirectResult = QrRedirectConfig | { requires_location: true } | null;
 
-export interface PosterScanConfirmation {
+interface PosterScanConfirmation {
   token: string;
   posterId: string;
 }
@@ -139,7 +139,7 @@ export function redirectFromConfig(config: QrRedirectConfig): void {
     case "events-list":
       if (config.filters && typeof config.filters === "object" && !Array.isArray(config.filters)) {
         stagePendingFilterState(
-          filterStateFromInput(
+          normalizeFilterState(
             config.filters as Record<string, unknown>,
           ),
         );

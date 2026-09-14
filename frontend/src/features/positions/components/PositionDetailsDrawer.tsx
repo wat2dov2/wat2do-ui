@@ -26,16 +26,17 @@ import {
   ItemMedia,
   ItemTitle,
 } from "@/shared/ui/item";
-import { Link } from "@/shared/ui/link";
+import { ClubBadgeDropdown } from "@/features/clubs";
 import { Separator } from "@/shared/ui/separator";
 import { DrawerBody, FormGrid, Section, Stack } from "@/shared/layout";
-import { organizationPagePath } from "@/shared/constants/routes";
 import { sanitizeHref } from "@/shared/utils/url";
 import type { Position } from "@/shared/types";
 
 interface PositionDetailsDrawerProps {
   position: Position | null;
   onClose: () => void;
+  positions: Position[];
+  onSelect: (position: Position) => void;
 }
 
 interface PositionDetailItemProps {
@@ -65,6 +66,8 @@ function PositionDetailItem({
 export function PositionDetailsDrawer({
   position,
   onClose,
+  positions,
+  onSelect,
 }: PositionDetailsDrawerProps) {
   const { t, i18n } = useTranslation();
   const deadline = useMemo(
@@ -72,6 +75,9 @@ export function PositionDetailsDrawer({
     [i18n.language, position],
   );
   const sourceHref = sanitizeHref(position?.source_url ?? "");
+  const index = positions.findIndex((item) => item.id === position?.id);
+  const previous = index > 0 ? positions[index - 1] : undefined;
+  const next = index >= 0 ? positions[index + 1] : undefined;
 
   return (
     <Drawer
@@ -83,7 +89,7 @@ export function PositionDetailsDrawer({
       <DrawerContent className="overflow-hidden p-0 [&_[data-slot=drawer-handle]]:hidden data-[vaul-drawer-direction=bottom]:max-w-screen-lg">
         {position ? (
           <>
-            <DrawerHeader className="text-left">
+            <DrawerHeader className="text-left" navigation={{ previous: previous ? () => onSelect(previous) : undefined, next: next ? () => onSelect(next) : undefined }}>
               <Stack direction="horizontal" justify="end" gap={2} wrap>
                 {sourceHref ? (
                   <Button asChild>
@@ -93,7 +99,7 @@ export function PositionDetailsDrawer({
                       rel="noopener noreferrer"
                     >
                       <Instagram />
-                      {t("positions.viewSource")}
+                      {t("forms.sourceUrl")}
                     </a>
                   </Button>
                 ) : null}
@@ -102,11 +108,11 @@ export function PositionDetailsDrawer({
 
             <Separator />
 
-            <DrawerBody>
+            <DrawerBody key={position.id}>
               <DrawerDescription className="sr-only">
                 {t("positions.drawerDescription", {
                   title: position.title,
-                  organization: position.organization_name,
+                  club: position.club_name,
                 })}
               </DrawerDescription>
 
@@ -114,7 +120,7 @@ export function PositionDetailsDrawer({
                 <PositionCardImage
                   position={position}
                   variant="detail"
-                  onOrganizationFilterSelect={onClose}
+                  onClubFilterSelect={onClose}
                 />
 
                 <Stack gap={6}>
@@ -122,12 +128,16 @@ export function PositionDetailsDrawer({
                     <DrawerTitle className="text-left text-2xl font-bold leading-tight sm:text-3xl">
                       {position.title}
                     </DrawerTitle>
-                    <Link
-                      href={organizationPagePath(position.organization_id)}
-                      variant="muted"
-                    >
-                      {position.organization_name}
-                    </Link>
+                    <ClubBadgeDropdown
+                      clubName={position.club_name}
+                      clubLogoUrl={position.club_logo_url}
+                      clubType={position.club_type}
+                      school={position.school}
+                      clubPage={position.club_page}
+                      clubIg={position.club_ig}
+                      clubDiscord={position.club_discord}
+                      onFilterSelect={onClose}
+                    />
                   </Stack>
 
                   <FormGrid columns={2} collapse={false}>

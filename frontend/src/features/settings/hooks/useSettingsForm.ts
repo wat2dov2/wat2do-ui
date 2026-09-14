@@ -28,6 +28,7 @@ import {
 } from "@/shared/constants/languages";
 import { toast } from "@/shared/hooks/use-toast";
 import { loadLanguage } from "@/shared/lib/loadLanguage";
+import { saveLanguage } from "@/shared/services/preferencesStorage";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import { uploadAvatar } from "@/shared/services/uploadService";
 import { useUIStore } from "@/shared/store/ui.store";
@@ -42,10 +43,10 @@ const DEFAULT_PROFILE: UserProfile = {
   isFirstYear: false,
   school: DEFAULT_SCHOOL,
   role: "user",
-  hasOrganization: false,
+  hasClub: false,
   clubs: [],
-  organizationId: null,
-  organizationName: null,
+  clubId: null,
+  clubName: null,
   payoutEmail: null,
   promoterTosAcceptedAt: null,
   promoterTosVersion: null,
@@ -197,6 +198,7 @@ export function useSettingsForm() {
       if (appearanceChanged) {
         await loadLanguage(nextValues.appearance.language);
         await i18n.changeLanguage(nextValues.appearance.language);
+        saveLanguage(nextValues.appearance.language);
         setPersistedViewMode(nextValues.appearance.viewMode);
       }
 

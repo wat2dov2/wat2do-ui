@@ -5,7 +5,7 @@ import { getSchoolPublicUrl, resolveSchool } from "@/shared/constants/schools";
 const SITE_NAME = "Wat2Do";
 const PRODUCTION_ORIGIN = "https://wat2do.io";
 
-export interface SeoImage {
+interface SeoImage {
   url: string;
   alt: string;
   width?: number;

@@ -11,10 +11,10 @@ from core.config import settings
 from core.constants import ROLE_ADMIN
 from core.errors import (
     ADMIN_ACCESS_REQUIRED,
+    CLUB_MEMBER_OR_ADMIN_ACCESS_REQUIRED,
     CREDENTIALS_INVALID,
     INVALID_OR_EXPIRED_TOKEN,
     NOT_AUTHORIZED,
-    ORGANIZATION_MEMBER_OR_ADMIN_ACCESS_REQUIRED,
     USER_NOT_FOUND,
 )
 from core.exceptions import AuthenticationError, AuthorizationError, NotFoundError
@@ -52,7 +52,7 @@ _jwks_client: PyJWKClient | None = None
 # an attacker signs a token with the *public* key as an HMAC secret.
 _ASYMMETRIC_ALGS = ("RS256", "ES256", "EdDSA")
 # Supabase issues tokens with iss = <project_url>/auth/v1
-_EXPECTED_ISSUER = f"{settings.supabase_url.rstrip('/')}/auth/v1"
+_EXPECTED_ISSUER = settings.supabase_jwt_issuer or f"{settings.supabase_url.rstrip('/')}/auth/v1"
 
 # Lazy import to avoid circular dependency (user_service → database → config)
 _user_service = None
@@ -74,13 +74,13 @@ def _get_user_service():
     return _user_service
 
 
-def _resolve_user(token: HTTPAuthorizationCredentials) -> dict:
+def _resolve_user(token: HTTPAuthorizationCredentials) -> AuthUser:
     """Validate a Bearer token locally via JWKS signature verification."""
     return _decode_jwt(token.credentials)
 
 
-def _decode_jwt(credentials: str) -> dict:
-    """Decode and verify a raw JWT string. Returns the auth-user dict.
+def _decode_jwt(credentials: str) -> AuthUser:
+    """Decode and verify a raw JWT string.
 
     Narrowed exception surface so signature failures surface clearly.
     Failures are logged at ``warning`` so operators see JWKS regressions.
@@ -190,18 +190,18 @@ def get_admin_user(
     return db_user
 
 
-def get_organization_owner_or_admin(
+def get_club_owner_or_admin(
     db_user: "UserResponse" = Depends(get_db_user),
 ) -> "UserResponse":
-    """Require admin OR organization manager/member (user in at least one organization). Returns 403 if neither."""
+    """Require admin OR club manager/member (user in at least one club). Returns 403 if neither."""
     if db_user.role == ROLE_ADMIN:
         return db_user
 
-    from services import organization_service
+    from services import club_service
 
-    organizations = organization_service.list_organizations_by_owner(str(db_user.id))
-    if not organizations:
-        raise AuthorizationError(ORGANIZATION_MEMBER_OR_ADMIN_ACCESS_REQUIRED)
+    clubs = club_service.list_clubs_by_owner(str(db_user.id))
+    if not clubs:
+        raise AuthorizationError(CLUB_MEMBER_OR_ADMIN_ACCESS_REQUIRED)
     return db_user
 
 

@@ -9,11 +9,6 @@ interface ConfettiConfig {
   angle?: number;
 }
 
-interface UseConfettiReturn {
-  trigger: (config?: ConfettiConfig) => void;
-  triggerBurst: (count?: number) => void; // Multiple bursts for celebrations
-}
-
 function resolveColorToken(token: string, fallback: string): string {
   if (typeof window === "undefined") {
     return fallback;
@@ -40,7 +35,7 @@ const defaultConfig: Omit<Required<ConfettiConfig>, "colors"> = {
   angle: 90,
 };
 
-export function useConfetti(): UseConfettiReturn {
+export function useConfetti() {
   const trigger = useCallback((config?: ConfettiConfig) => {
     const colors = config?.colors ?? getThemeConfettiColors();
     confetti({
@@ -51,32 +46,5 @@ export function useConfetti(): UseConfettiReturn {
     });
   }, []);
 
-  const triggerBurst = useCallback((count: number = 3) => {
-    const end = Date.now() + count * 650;
-    const colors = getThemeConfettiColors();
-
-    const frame = () => {
-      confetti({
-        particleCount: 3,
-        angle: 60,
-        spread: 55,
-        origin: { x: 0, y: 0.6 },
-        colors,
-      });
-      confetti({
-        particleCount: 3,
-        angle: 120,
-        spread: 55,
-        origin: { x: 1, y: 0.6 },
-        colors,
-      });
-
-      if (Date.now() < end) {
-        requestAnimationFrame(frame);
-      }
-    };
-    frame();
-  }, []);
-
-  return { trigger, triggerBurst };
+  return { trigger };
 }

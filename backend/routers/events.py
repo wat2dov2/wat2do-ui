@@ -12,13 +12,14 @@ from core.constants import (
     MAX_SEARCH_QUERY_LENGTH,
 )
 from core.errors import (
+    CLUB_EVENT_CREATION_REQUIRED,
+    CLUB_NOT_FOUND,
+    CLUB_PENDING_REVIEW,
     EVENT_NOT_FOUND,
-    ORGANIZATION_EVENT_CREATION_REQUIRED,
-    ORGANIZATION_NOT_FOUND,
-    ORGANIZATION_PENDING_REVIEW,
 )
 from core.exceptions import AuthorizationError, get_or_404
 from core.pagination import PaginationParams, paginated_response
+from schemas.club import CLUB_STATUS_APPROVED
 from schemas.event import (
     EventCreate,
     EventFeedResponse,
@@ -28,9 +29,8 @@ from schemas.event import (
     EventSummaryResponse,
     EventUpdate,
 )
-from schemas.organization import ORGANIZATION_STATUS_APPROVED
 from schemas.user import UserResponse
-from services import event_service, organization_service
+from services import club_service, event_service
 from services.notifications import event_change
 
 log = logging.getLogger(__name__)
@@ -49,23 +49,21 @@ def _get_event_or_404_authorized(event_id: int, db_user: UserResponse) -> EventR
     )
 
 
-def _authorize_event_organization(organization_id: int, db_user: UserResponse) -> None:
-    """Require management-team membership (or admin) to publish under this organization.
+def _authorize_event_club(club_id: int, db_user: UserResponse) -> None:
+    """Require management-team membership (or admin) to publish under this club.
 
-    Membership alone is not enough: the organization itself must have cleared
-    admin review, so submitting an organization is never a route to publishing
+    Membership alone is not enough: the club itself must have cleared
+    admin review, so submitting a club is never a route to publishing
     events without moderation. Display fields are derived server-side; this only
     enforces who may post.
     """
-    organization = get_or_404(
-        organization_service.get_organization(organization_id), ORGANIZATION_NOT_FOUND
-    )
+    club = get_or_404(club_service.get_club(club_id), CLUB_NOT_FOUND)
     if not is_admin(db_user):
-        if organization.status != ORGANIZATION_STATUS_APPROVED:
-            raise AuthorizationError(ORGANIZATION_PENDING_REVIEW)
-        owned_organizations = organization_service.list_organizations_by_owner(str(db_user.id))
-        if not any(c.id == organization.id for c in owned_organizations):
-            raise AuthorizationError(ORGANIZATION_EVENT_CREATION_REQUIRED)
+        if club.status != CLUB_STATUS_APPROVED:
+            raise AuthorizationError(CLUB_PENDING_REVIEW)
+        owned_clubs = club_service.list_clubs_by_owner(str(db_user.id))
+        if not any(c.id == club.id for c in owned_clubs):
+            raise AuthorizationError(CLUB_EVENT_CREATION_REQUIRED)
 
 
 @router.get("/promoted", response_model=list[EventSummaryResponse])
@@ -93,9 +91,9 @@ def list_events(
     min_price: float | None = Query(default=None, ge=0, le=MAX_EVENT_PRICE),
     max_price: float | None = Query(default=None, ge=0, le=MAX_EVENT_PRICE),
     registration: bool | None = Query(default=None),
-    organizations: list[str] | None = Query(default=None),
-    organization_ids: list[int] | None = Query(default=None),
-    free_food: bool = Query(default=False),
+    clubs: list[str] | None = Query(default=None),
+    club_ids: list[int] | None = Query(default=None),
+    has_food: bool = Query(default=False),
     added_within_24h: bool = Query(default=False),
     ids: list[int] | None = Query(default=None),
     sort_by: EventSortBy = Query(default="date"),
@@ -126,9 +124,9 @@ def list_events(
             min_price=min_price,
             max_price=max_price,
             registration=registration,
-            organizations=organizations,
-            organization_ids=organization_ids,
-            free_food=free_food,
+            clubs=clubs,
+            club_ids=club_ids,
+            has_food=has_food,
             ids=ids,
             sort_by=sort_by,
             sort_order=sort_order,
@@ -154,7 +152,7 @@ def create_event(
     data: EventCreate,
     db_user: UserResponse = Depends(get_db_user),
 ):
-    _authorize_event_organization(data.organization_id, db_user)
+    _authorize_event_club(data.club_id, db_user)
     return event_service.create_event(data, created_by=str(db_user.id))
 
 
@@ -166,8 +164,8 @@ def update_event(
 ):
     old_event = _get_event_or_404_authorized(event_id, db_user)
     # Reassigning orgs requires management-team membership (or admin), same as create.
-    if data.organization_id is not None:
-        _authorize_event_organization(data.organization_id, db_user)
+    if data.club_id is not None:
+        _authorize_event_club(data.club_id, db_user)
     update_result = get_or_404(event_service.update_event(event_id, data), EVENT_NOT_FOUND)
     updated_event = update_result.event
     # Notify on material diff only (compute_event_diff); never fail the update on notify errors.

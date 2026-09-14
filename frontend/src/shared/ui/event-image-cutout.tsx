@@ -37,7 +37,7 @@ interface MeasuredCutout {
  * Measures the corner badges so their notches can be knocked out of the card face.
  *
  * Sizes are measured rather than hardcoded because badge width depends on its
- * text - organization name, category label, translated strings - so a fixed
+ * text - club name, category label, translated strings - so a fixed
  * placement would drift the moment a label or locale changes.
  */
 export function useEventImageCutouts() {

@@ -1,23 +1,23 @@
 {
   "events": {
+    "minimumGoing": "Минимум участников",
     "eventTitle": "Название события",
     "loadFailed": "Не удалось загрузить события. Пожалуйста, попробуйте еще раз.",
     "deleteFailed": "Не удалось удалить событие. Пожалуйста, попробуйте еще раз.",
     "submitFailed": "Не удалось отправить событие. Пожалуйста, попробуйте еще раз.",
     "submissionFailedTitle": "Не удалось отправить",
-    "organizationRequired": "Выберите организацию перед отправкой события.",
-    "organization": "Организация",
+    "clubRequired": "Выберите организацию перед отправкой события.",
+    "club": "Организация",
     "status": "Статус",
     "dayOfWeek": "День недели",
     "createEvent": "Отправить событие",
-    "submitEventSchoolDescription": "Показываются только организации из {{school}}, поэтому ваше событие отправляется на правильный кампус.",
+    "submitEventSchoolDescription": "Показываются только организации из {{school}}.",
     "submitEventForReview": "Отправить событие на проверку",
     "submitForReview": "Отправить на проверку",
     "uploadEventFlyer": "Загрузить афишу мероприятия",
     "uploadEventFlyerDescription": "Загрузите или вставьте изображение афиши, и ИИ автоматически заполнит детали.",
     "processingEventImage": "Обработка изображения мероприятия",
     "clickToUploadOrPasteImage": "Нажмите, чтобы загрузить изображение или вставить",
-    "imagePasteShortcutHint": "{{formats}} (например, Cmd+V / Ctrl+V)",
     "flyerExtracted": "Детали афиши успешно извлечены.",
     "flyerParseFailed": "Не удалось распознать афишу",
     "flyerParseFailedDescription": "Мы не смогли считать детали мероприятия с афиши.",
@@ -47,7 +47,6 @@
     "noUpcomingEvents": "Нет предстоящих событий",
     "upcomingEventCount": "предстоящее событие",
     "upcomingEventCount_other": "предстоящего события",
-    "latestAddedEvent": "{{title}} добавлено {{time}}",
     "thisWeek": "На этой неделе",
     "discoverEvents": "Открыть события",
     "clickCount": "{{count}} клик",
@@ -56,12 +55,6 @@
     "noEventsFoundDesc": "Не удалось найти события, соответствующие вашим текущим фильтрам. Попробуйте изменить поиск или сбросить некоторые фильтры.",
     "noEventsScheduled": "События не запланированы",
     "noEventsScheduledDesc": "В данный момент события не запланированы. Загляните позже!",
-    "newlyAddedFilter": {
-      "last24Hours": "Новое",
-      "sinceLastVisit": "Добавлено с последнего визита",
-      "clear": "Снять фильтр «добавлено с последнего визита»",
-      "sinceLastVisitAt": "Добавлено с последнего визита ({{time}})"
-    },
     "dateFilter": {
       "label": "Дата события",
       "any": "Любой день",
@@ -91,6 +84,7 @@
       "submitFailed": "Не удалось отправить жалобу"
     },
     "goingEvents": {
+      "timeUnavailable": "Мероприятие уже началось или было отменено, поэтому отметить участие нельзя.",
       "markFailed": "Не удалось отметить участие в этом событии",
       "unmarkFailed": "Не удалось снять отметку участия в этом событии",
       "saveFailed": "Не удалось сохранить выбранное время",

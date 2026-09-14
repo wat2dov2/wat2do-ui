@@ -31,7 +31,6 @@
     "urlRequired": "URL требуется",
     "urlInvalid": "Пожалуйста, введите действительный URL",
     "descriptionOptional": "Необязательно",
-    "imageFormat": "PNG, JPG до 5 МБ",
     "noScanData": "Данных сканирования пока нет",
     "noScanDataDesc": "Поделитесь кодом QR, чтобы начать отслеживание производительности",
     "posterAriaLabel": "Постер {{id}}",

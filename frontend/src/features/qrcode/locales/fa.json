@@ -31,7 +31,6 @@
     "urlRequired": "URL الزامی است",
     "urlInvalid": "لطفاً یک URL معتبر وارد کنید",
     "descriptionOptional": "اختیاری",
-    "imageFormat": "PNG, JPG تا ۵ مگابایت",
     "noScanData": "هنوز داده‌ای از اسکن وجود ندارد",
     "noScanDataDesc": "کد QR خود را به اشتراک بگذارید تا عملکرد را دنبال کنید",
     "posterAriaLabel": "پوستر {{id}}",

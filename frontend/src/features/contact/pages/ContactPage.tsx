@@ -59,7 +59,7 @@ function ContactSearchLink({
   club?: boolean;
   children: ReactNode;
 }) {
-  const href = club ? ROUTES.ORGANIZATIONS : ROUTES.HOME;
+  const href = club ? ROUTES.CLUBS : ROUTES.HOME;
 
   return (
     <Link
@@ -290,7 +290,7 @@ export function ContactPage() {
             </NextLink>
           </Button>
           <Button asChild variant="outline">
-            <NextLink href={ROUTES.ORGANIZATIONS}>
+            <NextLink href={ROUTES.CLUBS}>
               {t("contact.actions.explore")}
             </NextLink>
           </Button>

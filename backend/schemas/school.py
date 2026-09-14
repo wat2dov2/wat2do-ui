@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -25,6 +25,9 @@ class School(BaseModel):
     primary_color: str
     secondary_color: str
     timezone: str
+    language: Literal["en", "fr"] = "en"
+    faculties: list[str] = Field(default_factory=list)
+    location_examples: list[str] = Field(default_factory=list)
     recipient_id: str | None = None
     semester_start: date | None = None
     semester_end: date | None = None
@@ -50,4 +53,7 @@ class SchoolSummary(BaseModel):
     name: str
     primary_color: str
     secondary_color: str
+    language: Literal["en", "fr"] = "en"
+    faculties: list[str] = Field(default_factory=list)
+    location_examples: list[str] = Field(default_factory=list)
     email_domains: list[str] = Field(default_factory=list)

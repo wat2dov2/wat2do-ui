@@ -5,9 +5,9 @@ from unittest.mock import MagicMock
 import pytest
 from PIL import Image
 
+from schemas.club import ClubResponse
 from schemas.event import EventResponse
-from schemas.organization import OrganizationResponse
-from services import event_service, organization_service
+from services import club_service, event_service
 from services.storage_service import StorageService, storage
 from tests.conftest import FAKE_USER, OTHER_USER
 
@@ -54,7 +54,7 @@ def _mock_event(**overrides) -> EventResponse:
         "id": 1,
         "title": "Test Event",
         "location": "Here",
-        "organization": "TestOrg",
+        "club": "TestOrg",
         "added_at": datetime.now(timezone.utc),
         "created_by": FAKE_USER["id"],
     }
@@ -62,15 +62,15 @@ def _mock_event(**overrides) -> EventResponse:
     return EventResponse.model_validate(defaults)
 
 
-def _mock_organization(**overrides) -> OrganizationResponse:
+def _mock_club(**overrides) -> ClubResponse:
     defaults = {
         "id": 1,
-        "organization_name": "Test Organization",
-        "organization_type": "wusa",
+        "club_name": "Test Club",
+        "club_type": "wusa",
         "created_by": FAKE_USER["id"],
     }
     defaults.update(overrides)
-    return OrganizationResponse.model_validate(defaults)
+    return ClubResponse.model_validate(defaults)
 
 
 # ── QR asset uploads (no resource ownership — just auth) ────────────────
@@ -241,32 +241,26 @@ def test_upload_event_image_unsigned_authenticated(authenticated_client, monkeyp
     assert resp.json()["url"] == "https://example.com/img.png"
 
 
-# ── Organization logo upload ownership ──────────────────────────────────────────
+# ── Club logo upload ownership ──────────────────────────────────────────
 
 
-def test_upload_organization_logo_non_owner_rejected(other_user_client, monkeypatch):
-    """Non-owner cannot upload a logo to someone else's organization."""
-    organization = _mock_organization(created_by=FAKE_USER["id"])
-    monkeypatch.setattr(
-        organization_service, "get_organization", MagicMock(return_value=organization)
-    )
+def test_upload_club_logo_non_owner_rejected(other_user_client, monkeypatch):
+    """Non-owner cannot upload a logo to someone else's club."""
+    club = _mock_club(created_by=FAKE_USER["id"])
+    monkeypatch.setattr(club_service, "get_club", MagicMock(return_value=club))
 
     from services import user_service
 
     files = _make_file("logo.png", _real_png(), "image/png")
-    resp = other_user_client.post("/uploads/organization-logo/1", files=files)
+    resp = other_user_client.post("/uploads/club-logo/1", files=files)
     assert resp.status_code == 403
 
 
-def test_upload_organization_logo_owner_allowed(authenticated_client, monkeypatch):
-    """Owner can upload a logo to their own organization."""
-    organization = _mock_organization(created_by=FAKE_USER["id"])
-    monkeypatch.setattr(
-        organization_service, "get_organization", MagicMock(return_value=organization)
-    )
-    monkeypatch.setattr(
-        organization_service, "update_organization", MagicMock(return_value=organization)
-    )
+def test_upload_club_logo_owner_allowed(authenticated_client, monkeypatch):
+    """Owner can upload a logo to their own club."""
+    club = _mock_club(created_by=FAKE_USER["id"])
+    monkeypatch.setattr(club_service, "get_club", MagicMock(return_value=club))
+    monkeypatch.setattr(club_service, "update_club", MagicMock(return_value=club))
     monkeypatch.setattr(
         storage, "upload_file", MagicMock(return_value="https://example.com/logo.png")
     )
@@ -274,7 +268,7 @@ def test_upload_organization_logo_owner_allowed(authenticated_client, monkeypatc
     from services import user_service
 
     files = _make_file("logo.png", _real_png(), "image/png")
-    resp = authenticated_client.post("/uploads/organization-logo/1", files=files)
+    resp = authenticated_client.post("/uploads/club-logo/1", files=files)
     assert resp.status_code == 200
 
 

@@ -1,13 +1,12 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { Calendar, Grid3x3 } from "@/shared/ui/doodle-icons";
 import { FilterSection } from "@/features/search/components/FilterSection";
 import { MultiSelect } from "@/shared/ui/multi-select";
 import { Switch } from "@/shared/ui/switch";
 import { Input } from "@/shared/ui/input";
-import { Button } from "@/shared/ui/button";
 import { FormGrid } from "@/shared/layout";
-import type { ViewMode } from "@/shared/types";
+import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
+import { useEventsStore } from "@/features/events/store/events.store";
 
 interface SingleValueFilterInputProps {
   value: string;
@@ -30,10 +29,6 @@ function SingleValueFilterInput({ value, onChange, placeholder }: SingleValueFil
 }
 
 export interface VisualFilterControls {
-  selectedCategories: string[];
-  setSelectedCategories: (categories: string[]) => void;
-  categoryOptions: Array<{ id: string; label: string }>;
-  toggleCategory: (id: string) => void;
   selectedLocations: string[];
   setSelectedLocations: (locations: string[]) => void;
   selectedFoods: string[];
@@ -48,27 +43,20 @@ export interface VisualFilterControls {
   setMaxPrice: (value: string) => void;
   registration: boolean;
   setRegistration: (value: boolean) => void;
-  selectedOrganizations: string[];
-  setSelectedOrganizations: (value: string[]) => void;
+  selectedClubs: string[];
+  setSelectedClubs: (value: string[]) => void;
 }
 
 interface VisualFiltersProps {
   filters: VisualFilterControls;
-  viewMode: ViewMode;
-  onViewModeChange: (mode: ViewMode) => void;
 }
 
-export function VisualFilters({ filters, viewMode, onViewModeChange }: VisualFiltersProps) {
+export function VisualFilters({ filters }: VisualFiltersProps) {
   const { t } = useTranslation();
+  const school = useEventsStore(state => state.schoolFilter);
+  const { schoolBySlug } = useSchoolDirectory();
+  const locationPlaceholder = schoolBySlug.get(school)?.location_examples?.join(", ") || t("filters.location");
 
-  const categoryValues = useMemo(
-    () => filters.categoryOptions.map((o) => o.id),
-    [filters.categoryOptions],
-  );
-  const categoryLabels = useMemo(
-    () => new Map(filters.categoryOptions.map((o) => [o.id, o.label])),
-    [filters.categoryOptions],
-  );
   const dayValues = useMemo(
     () => filters.dayOptions.map((o) => o.id),
     [filters.dayOptions],
@@ -78,59 +66,11 @@ export function VisualFilters({ filters, viewMode, onViewModeChange }: VisualFil
     [filters.dayOptions],
   );
 
-  const viewModeOptions = useMemo(
-    () => [
-      { id: "grid" as const, label: t("settings.appearance.grid"), icon: Grid3x3 },
-      { id: "calendar" as const, label: t("settings.appearance.calendar"), icon: Calendar },
-    ],
-    [t],
-  );
   const activePriceFilterCount =
     Number(Boolean(filters.minPrice)) + Number(Boolean(filters.maxPrice));
 
   return (
     <div className="-space-y-px">
-      {/* View Mode */}
-      <FilterSection title={t("common.view")}>
-        <div className="grid grid-cols-2 gap-2">
-          {viewModeOptions.map((option) => {
-            const ViewIcon = option.icon;
-            const active = viewMode === option.id;
-
-            return (
-              <Button
-                key={option.id}
-                variant={active ? "primary" : "outline"}
-                onClick={() => onViewModeChange(option.id)}
-                aria-pressed={active}
-                className="w-full"
-              >
-                <ViewIcon className="size-3.5" />
-                {option.label}
-              </Button>
-            );
-          })}
-        </div>
-      </FilterSection>
-
-      {/* Category Filter */}
-      <FilterSection
-        title={t("filters.category")}
-        indicator={
-          filters.selectedCategories.length > 0
-            ? `${filters.selectedCategories.length}`
-            : undefined
-        }
-        onClear={() => filters.setSelectedCategories([])}
-      >
-        <MultiSelect
-          options={categoryValues}
-          selected={filters.selectedCategories}
-          onToggle={filters.toggleCategory}
-          getLabel={(id) => categoryLabels.get(id) ?? id}
-        />
-      </FilterSection>
-
       {/* Location Filter (free-text: filter events by location substring) */}
       <FilterSection
         title={t("filters.location")}
@@ -142,7 +82,7 @@ export function VisualFilters({ filters, viewMode, onViewModeChange }: VisualFil
         <SingleValueFilterInput
           value={filters.selectedLocations[0] ?? ""}
           onChange={filters.setSelectedLocations}
-          placeholder={t("forms.locationPlaceholder")}
+          placeholder={locationPlaceholder}
         />
       </FilterSection>
 
@@ -181,20 +121,20 @@ export function VisualFilters({ filters, viewMode, onViewModeChange }: VisualFil
         />
       </FilterSection>
 
-      {/* Organization Filter */}
+      {/* Club Filter */}
       <FilterSection
-        title={t("filters.organization", "Organization")}
+        title={t("filters.club", "Club")}
         indicator={
-          filters.selectedOrganizations[0]?.trim()
+          filters.selectedClubs[0]?.trim()
             ? "1"
             : undefined
         }
-        onClear={() => filters.setSelectedOrganizations([])}
+        onClear={() => filters.setSelectedClubs([])}
       >
         <SingleValueFilterInput
-          value={filters.selectedOrganizations[0] ?? ""}
-          onChange={filters.setSelectedOrganizations}
-          placeholder={t("filters.searchOrganization")}
+          value={filters.selectedClubs[0] ?? ""}
+          onChange={filters.setSelectedClubs}
+          placeholder={t("filters.searchClub")}
         />
       </FilterSection>
 

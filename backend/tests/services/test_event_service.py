@@ -18,10 +18,60 @@ from postgrest.exceptions import APIError
 
 from core.constants import MAX_LIST_LIMIT
 from core.exceptions import NotFoundError
+from schemas.club import ClubResponse
 from schemas.event import EventResponse, EventSummaryResponse
 from schemas.event_date import OccurrenceResponse
-from schemas.organization import OrganizationResponse
-from services import event_query, event_service, organization_service
+from services import club_service, event_query, event_service
+
+
+def test_food_filter_is_independent_of_price():
+    assert event_query._matches_has_food({"food": ["Pizza"], "price": 20}, True)
+    assert event_query._matches_has_food({"food": ["Pizza"], "price": 0}, True)
+    assert not event_query._matches_has_food({"food": [], "price": 0}, True)
+    assert event_query._matches_has_food({"food": [], "price": 20}, False)
+
+
+def test_non_category_selections_must_all_match():
+    row = {"food": ["Pizza", "Cookies"], "location": "SLC Great Hall"}
+    assert event_query._matches_foods(row, {"piz", "cookies"})
+    assert not event_query._matches_foods(row, {"pizza", "soup"})
+    assert event_query._matches_foods(row, set())
+    assert event_query._matches_locations(row, ["slc", "hall"])
+    assert not event_query._matches_locations(row, ["slc", "library"])
+    assert event_query._matches_locations(row, [])
+    candidate = event_query._EventCandidate(
+        row=row, earliest_dtstart=None, weekdays={"Monday", "Tuesday"}
+    )
+    assert event_query._matches_days(candidate, {"monday", "tuesday"})
+    assert not event_query._matches_days(candidate, {"monday", "friday"})
+    assert event_query._matches_days(candidate, set())
+
+
+def test_filter_groups_intersect():
+    matching = event_query._EventCandidate(
+        row={"title": "Social", "food": ["Pizza"], "location": "SLC"},
+        earliest_dtstart=None,
+        weekdays={"Monday", "Tuesday"},
+    )
+    wrong_food = event_query._EventCandidate(
+        row={"title": "Social", "food": ["Soup"], "location": "SLC"},
+        earliest_dtstart=None,
+        weekdays={"Monday", "Tuesday"},
+    )
+    wrong_day = event_query._EventCandidate(
+        row=matching.row,
+        earliest_dtstart=None,
+        weekdays={"Monday"},
+    )
+    result = event_query._filter_candidates(
+        [matching, wrong_food, wrong_day],
+        search=None,
+        locations=["slc"],
+        foods=[" PIZ "],
+        days=["Monday", "Tuesday"],
+        has_food=True,
+    )
+    assert result == [matching]
 
 
 @pytest.fixture(autouse=True)
@@ -34,7 +84,7 @@ def _event(**overrides) -> EventResponse:
         "id": 1,
         "title": "Test Event",
         "location": "Here",
-        "organization": "TestOrg",
+        "club": "TestOrg",
         "added_at": datetime.now(timezone.utc),
         "created_by": "11111111-1111-1111-1111-111111111111",
     }
@@ -71,11 +121,11 @@ def test_hydrate_event_reuses_validated_occurrences_without_json_dump(monkeypatc
             "id": 42,
             "title": "Fast Feed Night",
             "location": "SLC",
-            "organization": "UW Blueprint",
-            "organizations": {
+            "club": "UW Blueprint",
+            "clubs": {
                 "logo_url": "https://example.com/uw-blueprint.jpg",
-                "organization_type": "wusa",
-                "organization_page": None,
+                "club_type": "wusa",
+                "club_page": None,
                 "ig": None,
                 "discord": None,
             },
@@ -86,8 +136,8 @@ def test_hydrate_event_reuses_validated_occurrences_without_json_dump(monkeypatc
     )
 
     assert event.id == 42
-    assert event.organization_logo_url == "https://example.com/uw-blueprint.jpg"
-    assert event.organization_type == "wusa"
+    assert event.club_logo_url == "https://example.com/uw-blueprint.jpg"
+    assert event.club_type == "wusa"
     assert event.occurrences[0].dtstart_utc == occurrence.dtstart_utc
 
 
@@ -95,50 +145,48 @@ def test_summary_columns_exclude_computed_response_fields():
     """Computed API fields must not be requested as physical events columns."""
 
     assert "occurrences" not in event_query._SUMMARY_COLUMNS
-    assert "organization_logo_url" not in event_query._SUMMARY_COLUMNS
-    assert "organization_type" not in event_query._SUMMARY_COLUMNS
+    assert "club_logo_url" not in event_query._SUMMARY_COLUMNS
+    assert "club_type" not in event_query._SUMMARY_COLUMNS
     assert "click_count" not in event_query._SUMMARY_COLUMNS
 
 
 # ---------------------------------------------------------------------------
-# _resolve_organization_fields — the single source for derived event display fields
+# _resolve_club_fields — the single source for derived event display fields
 # ---------------------------------------------------------------------------
 
 
-def _organization(**overrides) -> OrganizationResponse:
+def _club(**overrides) -> ClubResponse:
     defaults = {
         "id": 7,
-        "organization_name": "UW Tea Organization",
+        "club_name": "UW Tea Club",
         "categories": [],
-        "organization_page": None,
+        "club_page": None,
         "ig": None,
         "discord": None,
-        "organization_type": "wusa",
+        "club_type": "wusa",
         "logo_url": None,
         "created_by": "11111111-1111-1111-1111-111111111111",
         "school": "uwaterloo",
         "school_id": 1,
     }
     defaults.update(overrides)
-    return OrganizationResponse.model_validate(defaults)
+    return ClubResponse.model_validate(defaults)
 
 
-def test_resolve_organization_fields_derives_from_organization(monkeypatch):
-    monkeypatch.setattr(
-        organization_service, "get_organization", MagicMock(return_value=_organization())
-    )
+def test_resolve_club_fields_derives_from_club(monkeypatch):
+    monkeypatch.setattr(club_service, "get_club", MagicMock(return_value=_club()))
 
-    assert event_service._resolve_organization_fields(7) == {
-        "organization": "UW Tea Organization",
+    assert event_service._resolve_club_fields(7) == {
+        "club": "UW Tea Club",
         "school_id": 1,
     }
 
 
-def test_resolve_organization_fields_missing_organization_raises(monkeypatch):
-    monkeypatch.setattr(organization_service, "get_organization", MagicMock(return_value=None))
+def test_resolve_club_fields_missing_club_raises(monkeypatch):
+    monkeypatch.setattr(club_service, "get_club", MagicMock(return_value=None))
 
     with pytest.raises(NotFoundError):
-        event_service._resolve_organization_fields(999)
+        event_service._resolve_club_fields(999)
 
 
 # ---------------------------------------------------------------------------
@@ -352,7 +400,7 @@ def test_list_events_returns_upcoming_with_occurrences(monkeypatch, fake_sb, pat
                     "id": 42,
                     "title": "Tea Tasting Series",
                     "location": "SLC",
-                    "organization": "UW Tea Organization",
+                    "club": "UW Tea Club",
                     "added_at": datetime(2026, 4, 15, tzinfo=timezone.utc).isoformat(),
                 }
             ],
@@ -435,9 +483,9 @@ def test_list_events_pushes_filters_into_event_query(monkeypatch):
         min_price=0,
         max_price=20,
         registration=True,
-        organizations=["UW Blueprint"],
-        organization_ids=[7, 8],
-        free_food=True,
+        clubs=["UW Blueprint"],
+        club_ids=[7, 8],
+        has_food=True,
         ids=[1, 2],
         sort_by="title",
         sort_order="desc",
@@ -456,9 +504,9 @@ def test_list_events_pushes_filters_into_event_query(monkeypatch):
     assert kwargs["min_price"] == 0
     assert kwargs["max_price"] == 20
     assert kwargs["registration"] is True
-    assert kwargs["organizations"] == ["UW Blueprint"]
-    assert kwargs["organization_ids"] == [7, 8]
-    assert kwargs["free_food"] is True
+    assert kwargs["clubs"] == ["UW Blueprint"]
+    assert kwargs["club_ids"] == [7, 8]
+    assert kwargs["has_food"] is True
     assert kwargs["ids"] == [1, 2]
     assert kwargs["sort_by"] == "title"
     assert kwargs["sort_order"] == "desc"
@@ -481,7 +529,7 @@ def test_load_events_page_filters_counts_slices_and_hydrates(monkeypatch, fake_s
                     "id": 1,
                     "title": "Alpha Hack Night",
                     "location": "SLC Great Hall",
-                    "organization": "UW Blueprint",
+                    "club": "UW Blueprint",
                     "school": "uwaterloo",
                     "category": "Technology",
                     "price": 0,
@@ -501,7 +549,7 @@ def test_load_events_page_filters_counts_slices_and_hydrates(monkeypatch, fake_s
                     "id": 2,
                     "title": "Beta Hack Night",
                     "location": "SLC Great Hall",
-                    "organization": "UW Blueprint",
+                    "club": "UW Blueprint",
                     "school": "uwaterloo",
                     "category": "Technology",
                     "price": 0,
@@ -519,7 +567,7 @@ def test_load_events_page_filters_counts_slices_and_hydrates(monkeypatch, fake_s
                     "id": 3,
                     "title": "Library Talk",
                     "location": "DC Library",
-                    "organization": "Library Organization",
+                    "club": "Library Club",
                     "school": "uwaterloo",
                     "category": "Academic",
                     "price": 0,
@@ -559,9 +607,9 @@ def test_load_events_page_filters_counts_slices_and_hydrates(monkeypatch, fake_s
         min_price=0,
         max_price=0,
         registration=True,
-        organizations=["UW Blueprint"],
-        organization_ids=[7],
-        free_food=True,
+        clubs=["UW Blueprint"],
+        club_ids=[7],
+        has_food=True,
         sort_by="title",
         sort_order="asc",
     )
@@ -572,8 +620,8 @@ def test_load_events_page_filters_counts_slices_and_hydrates(monkeypatch, fake_s
     list_for_events.assert_called_once_with([2])
     fake_sb.eq.assert_any_call("events.school_id", 1)
     fake_sb.in_.assert_any_call("events.category", ["Technology"])
-    fake_sb.in_.assert_any_call("events.organization", ["UW Blueprint"])
-    fake_sb.in_.assert_any_call("events.organization_id", [7])
+    fake_sb.ilike.assert_any_call("events.club", "%UW Blueprint%")
+    fake_sb.eq.assert_any_call("events.club_id", 7)
     fake_sb.eq.assert_any_call("events.registration", True)
     fake_sb.gte.assert_any_call("events.price", 0)
     fake_sb.lte.assert_any_call("events.price", 0)
@@ -585,7 +633,7 @@ def test_event_search_matches_description_and_food():
         "title": "Campus Social",
         "description": "Bring your own board game",
         "location": "SLC",
-        "organization": "Student Club",
+        "club": "Student Club",
         "food": ["Custom dumplings"],
     }
 
@@ -607,7 +655,7 @@ def test_load_events_page_default_date_uses_lightweight_candidate_scan(monkeypat
                     "id": 2,
                     "title": "Beta Hack Night",
                     "location": "SLC Great Hall",
-                    "organization": "UW Blueprint",
+                    "club": "UW Blueprint",
                     "school": "uwaterloo",
                     "category": "Technology",
                     "price": 0,
@@ -741,7 +789,7 @@ def test_load_hydrated_events_overlaps_rows_and_occurrences(monkeypatch):
                 "id": 2,
                 "title": "Beta Hack Night",
                 "location": "SLC Great Hall",
-                "organization": "UW Blueprint",
+                "club": "UW Blueprint",
                 "school": "uwaterloo",
                 "category": "Technology",
                 "price": 0,
@@ -849,27 +897,6 @@ def test_get_latest_added_event_filters_by_school(fake_sb, patch_sb, monkeypatch
     fake_sb.eq.assert_any_call("school_id", 99)
 
 
-def test_get_organization_event_counts_aggregates_count(fake_sb, patch_sb):
-    patch_sb("services.event_service")
-    fake_sb.set_response(
-        data=[
-            {
-                "organization_id": 1,
-            },
-            {
-                "organization_id": 1,
-            },
-            {
-                "organization_id": 2,
-            },
-        ]
-    )
-
-    counts = event_service.get_organization_event_counts([1, 2, 99])
-
-    assert counts == {1: 2, 2: 1, 99: 0}
-
-
 def _occ_response(dtstart, dtend=None, occ_id=1, event_id=42):
     """Helper: build an OccurrenceResponse for the test above."""
     return OccurrenceResponse.model_validate(
@@ -883,3 +910,34 @@ def _occ_response(dtstart, dtend=None, occ_id=1, event_id=42):
             "created_at": datetime.now(timezone.utc),
         }
     )
+
+
+@pytest.mark.parametrize("count", [0, 1, 499, 500, 501, 1200])
+def test_event_row_reads_preserve_batch_boundaries(fake_sb, patch_sb, count):
+    patch_sb("services.event_query")
+    ids = list(range(count))
+    fake_sb.set_response(data=[])
+
+    assert event_query._load_event_rows_by_ids(ids, columns="id,title") == []
+
+    assert [call.args for call in fake_sb.in_.call_args_list] == [
+        ("id", ids[start : start + 500]) for start in range(0, count, 500)
+    ]
+
+
+@pytest.mark.parametrize("sort_by", ["date", "added_at", "unknown"])
+@pytest.mark.parametrize("sort_order,expected", [("asc", [1, 3, 2, 4]), ("desc", [3, 1, 4, 2])])
+def test_candidate_date_sort_keeps_missing_dates_last(sort_by, sort_order, expected):
+    date = datetime(2026, 5, 1, tzinfo=timezone.utc)
+    candidates = [
+        event_query._EventCandidate(
+            row={"id": event_id, "added_at": date if event_id % 2 else None},
+            earliest_dtstart=date if event_id % 2 else None,
+        )
+        for event_id in [4, 3, 2, 1]
+    ]
+
+    result = event_query._sort_candidates(candidates, sort_by=sort_by, sort_order=sort_order)
+
+    assert [candidate.row["id"] for candidate in result] == expected
+    assert [candidate.row["id"] for candidate in candidates] == [4, 3, 2, 1]

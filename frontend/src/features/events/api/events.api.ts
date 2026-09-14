@@ -6,6 +6,8 @@
 import type { Event, EventFormData } from "@/shared/types";
 import type {
   ApiEventAttendeesResponse,
+  ApiEventFeedResponse,
+  ApiLatestAddedItem,
   ApiEventPublicResponse,
   ApiEventResponse,
   ApiEventStatsResponse,
@@ -19,17 +21,10 @@ import {
 } from "@/shared/api/eventPayload";
 import { api, getPaginatedItems } from "@/shared/services/apiClient";
 
-export type LatestAddedEvent = {
-  title: string;
-  added_at: string;
-} | null;
+export type LatestAddedEvent = ApiLatestAddedItem | null;
 
-export type PaginatedEventsResponse = {
+export type PaginatedEventsResponse = Omit<ApiEventFeedResponse, "items" | "latest_added_event"> & {
   items: Event[];
-  total: number;
-  page: number;
-  page_size: number;
-  total_pages: number;
   latest_added_event: LatestAddedEvent;
 };
 
@@ -40,17 +35,17 @@ export async function fetchEventById(id: number): Promise<Event> {
   return api.get<ApiEventPublicResponse>(`/events/${id}`);
 }
 
-async function fetchEventFeed(
-  school: string,
-  { organizationId, includePast = false }: EventFeedOptions = {},
+export async function fetchEventFeed(
+  school?: string,
+  { clubId, includePast = false }: EventFeedOptions = {},
 ): Promise<Event[]> {
   const params = new URLSearchParams({
-    school,
     sort_by: "date",
     sort_order: "asc",
   });
-  if (organizationId != null) {
-    params.append("organization_ids", String(organizationId));
+  if (school) params.append("school", school);
+  if (clubId != null) {
+    params.append("club_ids", String(clubId));
   }
   if (includePast) {
     params.append("include_past", "true");
@@ -59,27 +54,22 @@ async function fetchEventFeed(
 }
 
 interface EventFeedOptions {
-  organizationId?: number;
+  clubId?: number;
   /** Drop the server's start-of-today lower bound and return past events too. */
   includePast?: boolean;
-}
-
-/** Every upcoming event for one school, soonest first. */
-export async function fetchSchoolEvents(school: string): Promise<Event[]> {
-  return fetchEventFeed(school);
 }
 
 /**
  * Every event a host has ever run, past included.
  *
- * The organization page is the host's whole record, not just what is still to
+ * The club page is the host's whole record, not just what is still to
  * come, so it opts out of the feed's default start-of-today lower bound.
  */
-export async function fetchOrganizationEvents(
-  organizationId: number,
+export async function fetchClubEvents(
+  clubId: number,
   school: string,
 ): Promise<Event[]> {
-  return fetchEventFeed(school, { organizationId, includePast: true });
+  return fetchEventFeed(school, { clubId, includePast: true });
 }
 
 export async function createEventAPI(eventData: EventFormData): Promise<Event> {
@@ -102,10 +92,8 @@ export async function deleteEventAPI(eventId: number): Promise<void> {
 
 export type EventStats = ApiEventStatsResponse;
 
-export type EventAttendees = ApiEventAttendeesResponse;
-
 /** Public who's-going summary (count + abbreviated display names). */
-export async function fetchEventAttendees(eventId: number): Promise<EventAttendees> {
+export async function fetchEventAttendees(eventId: number): Promise<ApiEventAttendeesResponse> {
   return api.get<ApiEventAttendeesResponse>(`/going-events/${eventId}/attendees`);
 }
 

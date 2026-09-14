@@ -43,7 +43,7 @@ export function WelcomeSourceStep({ flow }: WelcomeSourceStepProps) {
             {t("onboardingDemo.source.previewLabel")}
           </p>
           <div className="grid grid-cols-2 gap-3">
-            {flow.previewEvents.slice(0, 4).map((event) => (
+            {flow.previewEvents.map((event) => (
               <PreviewStyleEventCard key={event.id} event={event} data-event-id={event.id} />
             ))}
           </div>

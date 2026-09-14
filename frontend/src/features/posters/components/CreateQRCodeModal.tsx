@@ -47,10 +47,9 @@ interface CreateQRCodeModalProps {
   onClose: () => void;
   onCreate: (qrCode: QRCode) => void;
   events: Event[];
-  userEmail: string;
 }
 
-function CreateQRCodeModalContent({
+export function CreateQRCodeModal({
   isOpen,
   onClose,
   onCreate,
@@ -60,10 +59,8 @@ function CreateQRCodeModalContent({
   const form = useCreateQRCodeForm(events);
   const { createPoster } = useCreatePoster();
 
-  // Use modal state hook for standardized open/close handling
   const modalState = useModalState({
     onClose,
-    resetOnClose: true,
     resetFn: form.reset,
   });
 
@@ -289,7 +286,7 @@ function CreateQRCodeModalContent({
                     type="button"
                     onMouseDown={handleGenerate}
                     isLoading={isGenerating}
-                    loadingText={t("common.pleaseWait") || "Please wait..."}
+                    loadingText={t("common.pleaseWait")}
                   >
                     {t("qrCode.generateQRCode")}
                   </LoadingButton>
@@ -315,8 +312,4 @@ function CreateQRCodeModalContent({
     </Dialog>
     </>
   );
-}
-
-export function CreateQRCodeModal(props: CreateQRCodeModalProps) {
-  return <CreateQRCodeModalContent {...props} />;
 }

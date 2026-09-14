@@ -15,8 +15,60 @@ def registered_school(monkeypatch):
     monkeypatch.setattr(
         auth_service.school_service,
         "get_school",
-        lambda _school: SimpleNamespace(id=1),
+        lambda school: SimpleNamespace(id=1) if school else None,
     )
+
+
+@pytest.mark.parametrize("school", [None, "utsg"])
+def test_google_signup_accepts_personal_email_and_uses_site_school(monkeypatch, school):
+    db = MagicMock()
+    db.table().select().eq().execute.return_value = SimpleNamespace(data=[])
+    db.table().select().eq().eq().gt().execute.return_value = SimpleNamespace(data=[])
+    oauth = MagicMock()
+    oauth.exchange_code_for_session.return_value = SimpleNamespace(
+        user=SimpleNamespace(id="auth-id", email="new@gmail.com"),
+        session=SimpleNamespace(access_token="access", refresh_token="refresh", expires_in=3600),
+    )
+    service = AuthService(auth_client=MagicMock(), db_client=db)
+    monkeypatch.setattr(service, "_new_oauth_auth", lambda: oauth)
+    monkeypatch.setattr(auth_service, "school_from_frontend_url", lambda url: school)
+    result = service.verify_google_oauth(
+        "code", "verifier", "https://utsg.wat2do.io/api/auth/google/callback"
+    )
+    assert result.body.school == school
+    assert result.body.onboarding_required
+    payload = db.table().insert.call_args.args[0]
+    assert payload["email"] == "new@gmail.com"
+    assert payload["school_id"] == (1 if school else None)
+
+
+def test_personal_email_can_request_otp():
+    db = MagicMock()
+    db.table().select().eq().execute.return_value = SimpleNamespace(data=[])
+    client = MagicMock()
+    client.admin.generate_link.return_value = SimpleNamespace(
+        properties=SimpleNamespace(hashed_token="hash", email_otp="123456")
+    )
+    message = AuthService(auth_client=client, db_client=db).prepare_otp_email("new@gmail.com")
+    assert message.to == "new@gmail.com"
+
+
+@pytest.mark.parametrize(
+    "url,expected",
+    [
+        ("https://utsg.wat2do.io", "utsg"),
+        ("https://wat2do.io", None),
+        ("http://localhost:3000", None),
+        ("https://utsg.wat2do.io.evil.com", None),
+    ],
+)
+def test_signup_school_from_site(monkeypatch, url, expected):
+    from services import school_context
+
+    monkeypatch.setattr(
+        school_context.settings, "cors_origin_regex", r"https://([a-z]+\.)?wat2do\.io"
+    )
+    assert school_context.school_from_frontend_url(url) == expected
 
 
 def test_prepare_otp_email_preserves_safe_return_path(monkeypatch):
@@ -295,7 +347,6 @@ class TestAuthServiceVerifyOtp:
         session.session.expires_in = 3600
         session.user.id = "auth-user-id"
         mock_auth.verify_otp.return_value = session
-        monkeypatch.setattr(auth_service, "get_school_for_email", MagicMock(return_value=None))
 
         result = AuthService(auth_client=mock_auth, db_client=mock_db).verify_otp(
             "legacy@gmail.com",

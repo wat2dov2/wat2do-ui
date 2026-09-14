@@ -5,9 +5,9 @@ A single-user scrape is dispatched with ``client_payload.username`` when the
 webhook has one and ``poster_id`` when it does not, and the workflow falls back
 to the second. Until ``resolve_single_user_handle`` learned to look those up, a
 numeric id was written straight through to ``events.ig_handle`` - and to the
-``organizations.ig`` of any organization the same run created. So a published
+``clubs.ig`` of any club the same run created. So a published
 carousel credited ``@79731783885`` instead of ``@utsgsplatoon``, and the
-organization's page showed the id where its handle belongs.
+club's page showed the id where its handle belongs.
 
 The id is the only thing left to resolve from: both columns hold it, so there is
 no mapping inside the database. Instagram's public profile endpoint answers
@@ -34,7 +34,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from core.controlbox import controlbox  # noqa: E402
 from core.database import supabase_admin  # noqa: E402
-from core.tables import EVENTS, ORGANIZATIONS  # noqa: E402
+from core.tables import CLUBS, EVENTS  # noqa: E402
 
 # The endpoint answers without a session, but only at a human pace: it starts
 # returning 401 after a short burst.
@@ -110,15 +110,12 @@ def main() -> int:
     args = parser.parse_args()
 
     events = _rows_with_numeric_handle(EVENTS, "ig_handle")
-    organizations = _rows_with_numeric_handle(ORGANIZATIONS, "ig")
+    clubs = _rows_with_numeric_handle(CLUBS, "ig")
     user_ids = sorted(
         {str(row["ig_handle"]).strip() for row in events}
-        | {str(row["ig"]).strip() for row in organizations}
+        | {str(row["ig"]).strip() for row in clubs}
     )
-    print(
-        f"found {len(events)} events and {len(organizations)} organizations "
-        f"holding {len(user_ids)} distinct ids"
-    )
+    print(f"found {len(events)} events and {len(clubs)} clubs holding {len(user_ids)} distinct ids")
     if not user_ids:
         return 0
 
@@ -150,21 +147,19 @@ def main() -> int:
             ).execute()
         updated_events += 1
 
-    updated_organizations = 0
-    for row in organizations:
+    updated_clubs = 0
+    for row in clubs:
         username = resolved.get(str(row["ig"]).strip())
         if not username:
             continue
         if not args.dry_run:
-            supabase_admin.table(ORGANIZATIONS).update({"ig": username}).eq(
-                "id", row["id"]
-            ).execute()
-        updated_organizations += 1
+            supabase_admin.table(CLUBS).update({"ig": username}).eq("id", row["id"]).execute()
+        updated_clubs += 1
 
     verb = "would update" if args.dry_run else "updated"
     print(
         f"resolved {len(resolved)}/{len(user_ids)} ids; "
-        f"{verb} {updated_events} events and {updated_organizations} organizations"
+        f"{verb} {updated_events} events and {updated_clubs} clubs"
     )
     if unresolved:
         print(f"unresolved ids ({len(unresolved)}): {', '.join(unresolved)}", file=sys.stderr)

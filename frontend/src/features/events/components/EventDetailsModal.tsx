@@ -100,6 +100,10 @@ export function EventDetailsModal({
     },
     [onClose],
   );
+  const navigationEvents = allEvents ?? storeEvents;
+  const navigationIndex = navigationEvents.findIndex((item) => item.id === displayedEvent?.id);
+  const previousEvent = navigationIndex > 0 ? navigationEvents[navigationIndex - 1] : undefined;
+  const nextEvent = navigationIndex >= 0 ? navigationEvents[navigationIndex + 1] : undefined;
 
   return (
     <Drawer open={drawerOpen} onOpenChange={handleDrawerOpenChange}>
@@ -115,7 +119,7 @@ export function EventDetailsModal({
             </>
           ) : displayedEvent ? (
             <>
-              <DrawerHeader className="text-left">
+              <DrawerHeader className="text-left" navigation={{ previous: previousEvent ? () => handleSimilarEventClick(previousEvent) : undefined, next: nextEvent ? () => handleSimilarEventClick(nextEvent) : undefined }}>
                 <Stack
                   direction="horizontal"
                   justify="end"
@@ -135,14 +139,14 @@ export function EventDetailsModal({
 
               <DrawerBody>
                 <DrawerDescription className="sr-only">
-                  {t("events.hostedBy")} {displayedEvent.organization}
+                  {t("events.hostedBy")} {displayedEvent.club}
                 </DrawerDescription>
 
                 <EventDetailsBody
                   event={displayedEvent}
                   school={schoolFilter}
                   isFetchingDetails={isFetchingEvent}
-                  onOrganizationFilterSelect={onClose}
+                  onClubFilterSelect={onClose}
                   renderTitle={(title) => (
                     <DrawerTitle className="text-left text-2xl font-bold leading-tight sm:text-3xl">
                       {title}

@@ -125,7 +125,7 @@ class _QrCodeMutation(BaseModel):
 
 
 class QrCodeCreate(_QrCodeMutation):
-    """Create one standard organization or administrator QR code."""
+    """Create one standard club or administrator QR code."""
 
     id: str = Field(
         min_length=1,

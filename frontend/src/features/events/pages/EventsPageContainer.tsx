@@ -1,29 +1,27 @@
 import { useMemo, useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
+import { MinimumCountFilter } from "@/shared/ui/minimum-count-filter";
 import { toast } from "@/shared/hooks/use-toast";
 import { EventList } from "../components/EventList";
-import { EventCount } from "../components/EventCount";
+import { PageCountHeading } from "@/shared/ui/page-count-heading";
 import { SearchBar } from "@/features/search/components/SearchBar";
 import { MoreFiltersButton } from "@/features/search/components/MoreFiltersButton";
 import { FilterDropdown } from "@/features/search/components/FilterDropdown";
 import { useUIStore } from "@/shared/store/ui.store";
 import { useAuthState } from "@/features/auth/hooks/useAuthState";
-import { useHorizontalScrollFade } from "@/shared/hooks";
-import { HorizontalScrollFade } from "@/shared/ui/horizontal-scroll-fade";
+import { FilterBar } from "@/shared/layout/filter-bar";
 import { Button } from "@/shared/ui/button";
 import { useEventsPageData } from "@/features/events/hooks/useEventsPageData";
 import { EventDetailsModal } from "@/features/events/components/EventDetailsModal";
 import {
-  NewlyAddedFilterSelect,
-  type NewlyAddedFilterValue,
-} from "@/features/events/components/NewlyAddedFilterSelect";
+  NewlyAddedFilterButton,
+} from "@/shared/ui/newly-added-filter-button";
 import { DateFilterSelect } from "@/features/events/components/DateFilterSelect";
 import { ROUTES } from "@/shared/constants/routes";
-import { controlBox } from "@/shared/config/controlBox";
-import type { ViewMode, Event } from "@/shared/types";
+import type { Event } from "@/shared/types";
 import { usePosterLandingConfirmation } from "@/features/qrcode/hooks/usePosterLandingConfirmation";
-import { Stack } from "@/shared/layout";
+import { PageHeader, Stack } from "@/shared/layout";
 import type { SchoolBrowseSnapshot } from "@/features/events/api/eventFeed.server";
 
 interface QuickFilterButtonConfig {
@@ -46,10 +44,9 @@ export function EventsPageContainer({
   usePosterLandingConfirmation();
 
   const viewMode = useUIStore((s) => s.viewMode);
-  const setViewMode = useUIStore((s) => s.setViewMode);
   const showFilterDropdown = useUIStore((s) => s.showFilterDropdown);
   const setShowFilterDropdown = useUIStore((s) => s.setShowFilterDropdown);
-  const { profileCompleted, userEmail } = useAuthState();
+  const { profileCompleted } = useAuthState();
   const { t } = useTranslation();
   const router = useRouter();
 
@@ -61,13 +58,11 @@ export function EventsPageContainer({
     eventStats,
     latestAddedEvent,
     promotedEvents,
-    lastVisitAt,
+
     filters,
     orderedEvents,
     allEvents,
   } = useEventsPageData({
-    profileCompleted,
-    userEmail: profileCompleted ? userEmail : null,
     initialSnapshot,
     initialSchool,
   });
@@ -85,33 +80,6 @@ export function EventsPageContainer({
   const handleCloseEventDetails = useCallback(() => {
     setSelectedEventId(null);
   }, []);
-
-  const handleViewModeChange = useCallback(
-    (mode: ViewMode) => {
-      setViewMode(mode);
-    },
-    [setViewMode],
-  );
-
-  const newlyAddedFilterValue: NewlyAddedFilterValue | null =
-    filters.addedSince === ""
-      ? null
-      : filters.addedSince === lastVisitAt
-        ? "sinceLastVisit"
-        : "last24Hours";
-
-  const handleNewlyAddedFilterChange = useCallback(
-    (value: NewlyAddedFilterValue) => {
-      const cutoff =
-        value === "sinceLastVisit" && lastVisitAt
-          ? lastVisitAt
-          : new Date(
-              Date.now() - controlBox.eventDiscovery.newEventWindowMs,
-            ).toISOString();
-      filters.setAddedSince(cutoff);
-    },
-    [filters, lastVisitAt],
-  );
 
   const handleNewlyAddedFilterClear = useCallback(() => {
     filters.setAddedSince("");
@@ -136,10 +104,16 @@ export function EventsPageContainer({
           visible: profileCompleted,
         },
         {
-          id: "freeFood",
-          labelKey: "common.freeFood",
-          active: filters.freeFoodFilter,
-          onClick: () => filters.setFreeFoodFilter(!filters.freeFoodFilter),
+          id: "free",
+          labelKey: "common.free",
+          active: filters.maxPrice === "0",
+          onClick: filters.toggleFree,
+        },
+        {
+          id: "hasFood",
+          labelKey: "filters.food",
+          active: filters.hasFoodFilter,
+          onClick: () => filters.setHasFoodFilter(!filters.hasFoodFilter),
         },
       ].filter((config) => config.visible !== false),
     [filters, profileCompleted],
@@ -160,25 +134,15 @@ export function EventsPageContainer({
     router.push(ROUTES.EVENT_SUBMIT);
   }, [profileCompleted, router, t]);
 
-  const {
-    scrollRef: filterScrollRef,
-    scrollEndRef: filterScrollEndRef,
-    showScrollFade: showFilterScrollFade,
-    syncScrollFade: syncFilterScrollFade,
-    syncScrollFadeAfterWheel: syncFilterScrollFadeAfterWheel,
-    dragScrollProps: filterDragScrollProps,
-  } = useHorizontalScrollFade<HTMLDivElement>({
-    refreshKey: `${filterConfigs.length + 2}:${filters.categoryOptions.length}`,
-  });
 
   return (
     <>
       <div className="space-y-2">
-        <div className="space-y-3 pb-2">
-          <EventCount
+        <PageHeader variant="listing">
+          <PageCountHeading
             count={totalEvents}
-            latestAddedEvent={latestAddedEvent}
-            onLatestAddedEventSearch={handleLatestAddedEventSearch}
+            label={t("events.upcomingEventCount", { count: totalEvents })}
+            latest={latestAddedEvent ? { item: latestAddedEvent, onSelect: handleLatestAddedEventSearch } : null}
           />
           <Stack direction="horizontal" align="center" gap={2}>
             <div className="min-w-0 flex-1">
@@ -201,23 +165,24 @@ export function EventsPageContainer({
             </Button>
           </Stack>
 
-          <Stack direction="horizontal" align="center" gap={2}>
-            <div className="relative min-w-0 flex-1">
-              <HorizontalScrollFade
-                ref={filterScrollRef}
-                visible={showFilterScrollFade}
-                {...filterDragScrollProps}
-                data-testid="event-quick-filter-scroll"
-                onScroll={syncFilterScrollFade}
-                onWheel={syncFilterScrollFadeAfterWheel}
-                onTouchEnd={syncFilterScrollFade}
-                className="no-visible-scrollbar flex min-w-0 cursor-grab flex-nowrap items-center gap-2 overflow-x-auto pb-1 active:cursor-grabbing"
+          <FilterBar refreshKey={`${filterConfigs.length + 2}:${filters.categoryOptions.length}`} data-testid="event-quick-filter-scroll" trailing={<>
+              <MoreFiltersButton
+                open={showFilterDropdown}
+                onOpenChange={setShowFilterDropdown}
+                filterCount={filters.filterCount}
+                onClearFilters={filters.clearAllFilters}
               >
-                <NewlyAddedFilterSelect
-                  value={newlyAddedFilterValue}
-                  showSinceLastVisit={profileCompleted && lastVisitAt !== null}
-                  lastVisitAt={lastVisitAt}
-                  onValueChange={handleNewlyAddedFilterChange}
+                {showFilterDropdown ? (
+                  <FilterDropdown
+                    filters={filters}
+                  />
+                ) : null}
+              </MoreFiltersButton>
+            </>}>
+                <NewlyAddedFilterButton
+                  value={filters.addedSince || null}
+
+                  onValueChange={filters.setAddedSince}
                   onClear={handleNewlyAddedFilterClear}
                 />
                 {filterConfigs.map((config) => (
@@ -236,6 +201,12 @@ export function EventsPageContainer({
                   customDate={filters.customDate}
                   onChange={filters.setDateFilter}
                 />
+                <MinimumCountFilter
+                  value={filters.minGoing}
+                  onChange={filters.setMinGoing}
+                  countLabel={t("events.goingCount", { count: filters.minGoing })}
+                  inputLabel={t("events.minimumGoing")}
+                />
                 {filters.categoryOptions.map((category) => (
                   <Button
                     key={category.id}
@@ -253,31 +224,8 @@ export function EventsPageContainer({
                     {category.label}
                   </Button>
                 ))}
-                <span
-                  ref={filterScrollEndRef}
-                  aria-hidden="true"
-                  className="h-px w-px shrink-0"
-                />
-              </HorizontalScrollFade>
-            </div>
-            <div className="shrink-0 pb-1">
-              <MoreFiltersButton
-                open={showFilterDropdown}
-                onOpenChange={setShowFilterDropdown}
-                filterCount={filters.filterCount}
-                onClearFilters={filters.handleClearAllFilters}
-              >
-                {showFilterDropdown ? (
-                  <FilterDropdown
-                    viewMode={viewMode}
-                    onViewModeChange={handleViewModeChange}
-                    filters={filters}
-                  />
-                ) : null}
-              </MoreFiltersButton>
-            </div>
-          </Stack>
-        </div>
+                </FilterBar>
+        </PageHeader>
 
         <main
           className="relative z-10 w-full"
@@ -303,7 +251,7 @@ export function EventsPageContainer({
               promotedEvents={promotedEvents}
               viewMode={viewMode}
               onEventClick={handleEventClick}
-              onClearFilters={filters.handleClearAllFilters}
+              onClearFilters={filters.clearAllFilters}
               hasActiveFilters={filters.filterCount > 0}
               eventStats={eventStats}
               isLoading={isLoading}

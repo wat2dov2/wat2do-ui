@@ -26,6 +26,7 @@ type PageHeaderProps = React.ComponentProps<"header"> & {
   actionsPlacement?: "back" | "heading"
   back?: PageHeaderBack
   icon?: LucideIcon
+  variant?: "default" | "listing"
 }
 
 function PageHeader({
@@ -35,6 +36,8 @@ function PageHeader({
   actionsPlacement = "back",
   back,
   icon: Icon,
+  variant = "default",
+  children,
   className,
   ...props
 }: PageHeaderProps) {
@@ -107,8 +110,14 @@ function PageHeader({
   const actionsBesideBack = Boolean(back && actionsPlacement === "back")
 
   return (
-    <header data-slot="page-header" className={cn(className)} {...props}>
-      <Stack gap={4}>
+    <header
+      data-slot="page-header"
+      data-variant={variant}
+      // Paint beyond the page gutters without widening or moving the header controls.
+      className={cn(variant === "listing" && "sticky top-0 z-20 isolate m-0 shrink-0 bg-background pt-4 pb-2 before:pointer-events-none before:absolute before:inset-y-0 before:left-1/2 before:-z-10 before:w-screen before:-translate-x-1/2 before:bg-background before:content-['']", className)}
+      {...props}
+    >
+      <Stack gap={variant === "listing" ? 3 : 4}>
         {back ? (
           <Stack
             direction="horizontal"
@@ -133,6 +142,7 @@ function PageHeader({
             {!actionsBesideBack ? actionGroup : null}
           </Stack>
         ) : null}
+        {children}
       </Stack>
     </header>
   )

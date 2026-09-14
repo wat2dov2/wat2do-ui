@@ -5,9 +5,8 @@
     "searchPlaceholder": "Maghanap ng mga tungkulin, kasanayan, o lokasyon...",
     "clearSearch": "I-clear ang paghahanap ng posisyon",
     "filterByType": "I-filter ang mga posisyon ayon sa uri",
-    "allTypes": "Lahat ng uri ng posisyon",
     "openDetails": "Tingnan ang mga detalye ng posisyon ng {{title}}",
-    "drawerDescription": "Mga detalye ng posisyon para sa {{title}} sa {{organization}}",
+    "drawerDescription": "Mga detalye ng posisyon para sa {{title}} sa {{club}}",
     "deadlineLabel": "Huling petsa ng aplikasyon",
     "due": "Takda sa {{date}}",
     "commitmentLabel": "Oras na kailangan",
@@ -16,11 +15,10 @@
     "contactLabel": "Makipag-ugnayan",
     "aboutPosition": "Tungkol sa posisyon na ito",
     "requirements": "Mga Kailangan",
-    "viewSource": "Tingnan ang orihinal na post ng Instagram",
     "emptyTitle": "Walang makita na bukas na posisyon",
     "emptyDescription": "Subukan ang ibang paghahanap o uri ng posisyon. Mga bagong oportunidad sa organisasyon ay lilitaw dito kapag ini-post.",
-    "organizationEmptyTitle": "Walang bukas na posisyon",
-    "organizationEmptyDescription": "Ang organisasyong ito ay kasalukuyang walang bukas na posisyon.",
+    "clubEmptyTitle": "Walang bukas na posisyon",
+    "clubEmptyDescription": "Ang organisasyong ito ay kasalukuyang walang bukas na posisyon.",
     "resultsLabel": "{{count}} na posisyon ang natagpuan",
     "types": {
       "executive": "Ehekutibo",
@@ -30,6 +28,21 @@
       "internship": "Internship",
       "general": "Pangkalahatang recruitment"
     },
-    "position_one": "posisyon"
+    "position_one": "posisyon",
+    "title": "Pamagat ng posisyon",
+    "paid": "May bayad",
+    "unpaid": "Walang bayad",
+    "unknown": "Hindi tinukoy ang bayad",
+    "addPosition": "Magdagdag ng posisyon",
+    "submitted": "Naipasa ang posisyon para suriin.",
+    "submissions": "Mga isinumiteng posisyon",
+    "placeholders": {
+      "title": "hal. Marketing Coordinator",
+      "description": "Ilarawan ang tungkulin, mga gawain, at kung ano ang matututuhan o maiaambag ng tao.",
+      "compensation": "hal. $20/oras, $500 na honorarium, o walang bayad",
+      "commitment": "hal. 3-5 oras bawat linggo, Setyembre hanggang Disyembre",
+      "contact": "hal. hiring@example.com",
+      "requirements": "Isang kinakailangan bawat linya, halimbawa:\nKomportableng makipagtulungan sa pangkat\nMaaaring dumalo sa lingguhang pulong"
+    }
   }
 }

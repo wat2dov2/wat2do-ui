@@ -6,6 +6,9 @@ test with a mocked extractor; these tests pin JSON parsing, triage, and
 the validated defaults that matter when the model returns unexpected shapes.
 """
 
+import json
+from types import SimpleNamespace
+
 import pytest
 
 from services.scraper import extractor
@@ -17,6 +20,64 @@ from services.scraper.extractor import (
 )
 
 # ── _parse_model_json ────────────────────────────────────────────────
+
+
+@pytest.mark.parametrize(
+    "caption",
+    [
+        "Original caption with details.",
+        "x" * (extractor.MAX_POSITION_DESCRIPTION_LENGTH + 1),
+        None,
+        "   ",
+    ],
+)
+def test_extraction_attaches_source_fields_without_model_copying(monkeypatch, caption):
+    calls = []
+    monkeypatch.setattr(extractor, "resolve_school_timezone", lambda _: "America/Toronto")
+    monkeypatch.setattr(extractor, "current_semester_end", lambda *args, **kwargs: None)
+    payload = {
+        "content_type": "event_and_hiring",
+        "events": [{"title": "Workshop", "school": "wrong-school"}],
+        "positions": [{"title": "Designer", "position_type": "committee"}],
+    }
+    if not caption or not caption.strip():
+        for items in (payload["events"], payload["positions"]):
+            items[0]["description"] = "Details read from the image."
+
+    def create(**kwargs):
+        calls.append(kwargs)
+        return SimpleNamespace(
+            choices=[SimpleNamespace(message=SimpleNamespace(content=json.dumps(payload)))]
+        )
+
+    monkeypatch.setattr(
+        extractor,
+        "_client",
+        lambda: SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=create))),
+    )
+    result = extractor.extract_post_content(
+        caption_text=caption,
+        image_urls=["https://example.com/image.jpg"],
+        post_created_at=None,
+        school=" UTSG ",
+    )
+
+    expected = caption if caption and caption.strip() else "Details read from the image."
+    assert result.events[0]["description"] == expected
+    assert (
+        result.positions[0]["description"] == expected[: extractor.MAX_POSITION_DESCRIPTION_LENGTH]
+    )
+    assert result.events[0]["school"] == "utsg"
+    content = calls[0]["messages"][1]["content"]
+    prompt = content[0]["text"]
+    assert "Campus context: utsg." in prompt
+    assert "takes precedence over campus context" in prompt
+    assert "Never rename a host to match campus context" in prompt
+    assert ('"description": string' in prompt) == (not caption or not caption.strip())
+    assert '"school": string' not in prompt
+    assert "https://example.com/image.jpg" not in prompt
+    assert content[1] == {"type": "text", "text": "Image 0:"}
+    assert content[2]["image_url"]["url"] == "https://example.com/image.jpg"
 
 
 def test_parse_model_json_strict_array():
@@ -90,20 +151,20 @@ def test_extraction_prompt_uses_school_slug(monkeypatch):
             image_urls=[],
             post_created_at=None,
             school=" UBC ",
-            source_organization="Alma Mater Society of UBC",
+            source_club="Alma Mater Society of UBC",
         )
         == []
     )
 
     prompt = calls[0]["messages"][1]["content"][0]["text"]
-    assert "This post is from ubc." in prompt
+    assert "Campus context: ubc." in prompt
     assert "University of British Columbia" not in prompt
     assert '"content_type": "event" | "hiring"' in prompt
     assert '"positions": [' in prompt
     assert "OFFICIAL DIRECTORY PUBLISHER:" in prompt
     assert "published by Alma Mater Society of UBC" in prompt
     assert "unless the page explicitly identifies a distinct student club" in prompt
-    assert "Never invent an organization from an event title" in prompt
+    assert "Never invent a club from an event title" in prompt
 
 
 def test_extraction_prompt_has_strict_event_and_position_eligibility_gates(monkeypatch):
@@ -145,7 +206,8 @@ def test_extraction_prompt_has_strict_event_and_position_eligibility_gates(monke
     assert "POSITION ELIGIBILITY GATE (CRITICAL):" in prompt
     assert "Election voting posts are not hiring." in prompt
     assert "Candidate lists or slates" in prompt
-    assert "explicitly invites people to apply, nominate themselves, or run" in prompt
+    assert "invitations to run for elected office are not hiring" in prompt
+    assert "Closure notices, holiday hours" in prompt
     assert "current-board rosters" in prompt
     assert "generic club membership" in prompt
     assert "independently pass BOTH tests" in prompt
@@ -179,7 +241,7 @@ def test_clean_extracted_content_triages_hiring_positions():
                 {
                     "title": "Design Lead",
                     "description": "Lead the club's visual design work.",
-                    "organization": "UW Design Club",
+                    "club": "UW Design Club",
                     "position_type": "committee",
                     "requirements": ["Portfolio"],
                     "deadline_date": "2026-08-31",

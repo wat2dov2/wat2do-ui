@@ -7,6 +7,8 @@ const columnClasses = {
   2: "md:grid-cols-2",
   3: "md:grid-cols-2 lg:grid-cols-3",
   4: "sm:grid-cols-2 xl:grid-cols-4",
+  split: "grid-cols-2 items-start [&>*]:min-w-0",
+  gallery: "grid-cols-[repeat(auto-fit,minmax(min(100%,288px),1fr))] items-start",
   sidebar:
     "[&>:last-child]:order-first lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:[&>:last-child]:order-none",
 } as const
@@ -35,7 +37,7 @@ function FormGrid({
   ...props
 }: FormGridProps) {
   const responsiveColumns =
-    !collapse && columns !== "sidebar"
+    !collapse && typeof columns === "number"
       ? fixedColumnClasses[columns]
       : columnClasses[columns]
 

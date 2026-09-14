@@ -1,8 +1,9 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useFilterState } from "@/features/search/hooks/useFilterState";
-import { filterEvents, sortEvents, getFilterCounts } from "@/features/search/api/searchService";
-import { getEventCategories } from "@/shared/data/eventCategories";
+import { filterEvents, sortEvents } from "@/features/search/api/searchService";
+import { getFilterCounts } from "@/shared/utils/filter";
+import { useAppConstants } from "@/shared/hooks/useAppConstants";
 import { availableDays } from "@/shared/constants/eventFilters";
 import { translateCategory } from "@/shared/utils/event";
 import type { Event } from "@/shared/types";
@@ -11,104 +12,74 @@ import type { Event } from "@/shared/types";
  * Search/filter orchestration: useFilterState for store state, searchService for logic.
  * UI expand/collapse state lives in components.
  */
-export interface UseSearchOptions {
+interface UseSearchOptions {
   events: Event[];
-  profileCompleted: boolean;
   goingEventIds: number[];
+  goingCounts: Readonly<Record<string, { going_count: number }>> | null;
 }
 
 export function useSearch({
   events,
-  profileCompleted,
   goingEventIds,
+  goingCounts,
 }: UseSearchOptions) {
   const { t } = useTranslation();
+  const { event_categories: eventCategories } = useAppConstants();
 
   const filterState = useFilterState();
-
-  const handleClearAllFilters = filterState.clearAllFilters;
 
   const filteredEvents = useMemo(() => {
     const filtered = filterEvents(events, {
       searchQuery: filterState.searchQuery,
       goingFilter: filterState.goingFilter,
-      freeFoodFilter: filterState.freeFoodFilter,
+      hasFoodFilter: filterState.hasFoodFilter,
       selectedDays: filterState.selectedDays,
       minPrice: filterState.minPrice,
       maxPrice: filterState.maxPrice,
+      minGoing: filterState.minGoing,
       selectedLocations: filterState.selectedLocations,
       selectedFoods: filterState.selectedFoods,
       selectedCategories: filterState.selectedCategories,
       registration: filterState.registration,
-      profileCompleted,
       goingEventIds,
-      selectedOrganizations: filterState.selectedOrganizations,
+      selectedClubs: filterState.selectedClubs,
       addedSince: filterState.addedSince,
       dateFilter: filterState.dateFilter,
       customDate: filterState.customDate,
-    });
+    }, goingCounts ?? {});
     return sortEvents(filtered, { sortBy: filterState.sortBy, sortOrder: filterState.sortOrder });
   }, [
     events,
     filterState.searchQuery,
-    filterState.freeFoodFilter,
+    filterState.hasFoodFilter,
     filterState.selectedDays,
     filterState.minPrice,
     filterState.maxPrice,
+    filterState.minGoing,
+    goingCounts,
     filterState.selectedLocations,
     filterState.selectedFoods,
     filterState.selectedCategories,
     filterState.registration,
-    profileCompleted,
     filterState.goingFilter,
     goingEventIds,
     filterState.sortBy,
     filterState.sortOrder,
-    filterState.selectedOrganizations,
+    filterState.selectedClubs,
     filterState.addedSince,
     filterState.dateFilter,
     filterState.customDate,
   ]);
 
-  const filterCount = useMemo(
-    () =>
-      getFilterCounts({
-        selectedCategories: filterState.selectedCategories,
-        selectedLocations: filterState.selectedLocations,
-        selectedFoods: filterState.selectedFoods,
-        selectedDays: filterState.selectedDays,
-        minPrice: filterState.minPrice,
-        maxPrice: filterState.maxPrice,
-        registration: filterState.registration,
-        selectedOrganizations: filterState.selectedOrganizations,
-        freeFoodFilter: filterState.freeFoodFilter,
-        goingFilter: filterState.goingFilter,
-        addedSince: filterState.addedSince,
-        dateFilter: filterState.dateFilter,
-      }),
-    [
-      filterState.selectedCategories,
-      filterState.selectedLocations,
-      filterState.selectedFoods,
-      filterState.selectedDays,
-      filterState.minPrice,
-      filterState.maxPrice,
-      filterState.registration,
-      filterState.selectedOrganizations,
-      filterState.freeFoodFilter,
-      filterState.goingFilter,
-      filterState.addedSince,
-      filterState.dateFilter,
-    ],
-  );
+  const filterCount = getFilterCounts(filterState);
 
   const categoryOptions = useMemo(
     () =>
-      getEventCategories().map((cat) => ({
+      eventCategories.map((cat) => ({
         id: cat,
         label: translateCategory(cat, t),
       })),
-    [t],
+    [eventCategories, t],
   );
 
   const dayOptions = useMemo(
@@ -130,6 +101,5 @@ export function useSearch({
     dayOptions,
     filteredEvents,
     filterCount,
-    handleClearAllFilters,
   };
 }

@@ -5,9 +5,8 @@
     "searchPlaceholder": "Cerca ruoli, competenze o località...",
     "clearSearch": "Cancella ricerca posizione",
     "filterByType": "Filtra posizioni per tipo",
-    "allTypes": "Tutti i tipi di posizione",
     "openDetails": "Visualizza i dettagli della posizione di {{title}}",
-    "drawerDescription": "Dettagli della posizione per {{title}} presso {{organization}}",
+    "drawerDescription": "Dettagli della posizione per {{title}} presso {{club}}",
     "deadlineLabel": "Scadenza per la candidatura",
     "due": "Entro il {{date}}",
     "commitmentLabel": "Impegno di tempo",
@@ -16,11 +15,10 @@
     "contactLabel": "Contatto",
     "aboutPosition": "Informazioni su questa posizione",
     "requirements": "Requisiti",
-    "viewSource": "Visualizza il post originale Instagram [",
     "emptyTitle": "Nessuna posizione aperta trovata",
     "emptyDescription": "Prova un'altra ricerca o tipo di posizione. Nuove opportunità organizzative appariranno qui non appena verranno pubblicate.",
-    "organizationEmptyTitle": "Nessuna posizione aperta",
-    "organizationEmptyDescription": "Questa organizzazione attualmente non ha posizioni aperte.",
+    "clubEmptyTitle": "Nessuna posizione aperta",
+    "clubEmptyDescription": "Questa organizzazione attualmente non ha posizioni aperte.",
     "resultsLabel": "{{count}} posizioni trovate",
     "types": {
       "executive": "Dirigenziale",
@@ -31,6 +29,21 @@
       "general": "Selezione generale"
     },
     "position_one": "posizione",
-    "position_many": "posizioni"
+    "position_many": "posizioni",
+    "title": "Titolo della posizione",
+    "paid": "Retribuito",
+    "unpaid": "Non retribuito",
+    "unknown": "Retribuzione non specificata",
+    "addPosition": "Aggiungi posizione",
+    "submitted": "Posizione inviata per la revisione.",
+    "submissions": "Posizioni proposte",
+    "placeholders": {
+      "title": "ad es. Coordinatore marketing",
+      "description": "Descrivi il ruolo, le attività e ciò che la persona può imparare o offrire.",
+      "compensation": "ad es. 20 $/ora, compenso di 500 $ o non retribuito",
+      "commitment": "ad es. 3-5 ore a settimana, da settembre a dicembre",
+      "contact": "ad es. hiring@example.com",
+      "requirements": "Un requisito per riga, ad esempio:\nSaper lavorare in squadra\nEssere disponibili per riunioni settimanali"
+    }
   }
 }

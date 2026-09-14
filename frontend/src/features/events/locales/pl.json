@@ -1,23 +1,23 @@
 {
   "events": {
+    "minimumGoing": "Minimum uczestników",
     "eventTitle": "Tytuł wydarzenia",
     "loadFailed": "Nie udało się załadować wydarzeń. Spróbuj ponownie.",
     "deleteFailed": "Nie udało się usunąć wydarzenia. Spróbuj ponownie.",
     "submitFailed": "Nie udało się przesłać wydarzenia. Spróbuj ponownie.",
     "submissionFailedTitle": "Przesyłanie nie powiodło się",
-    "organizationRequired": "Wybierz organizację przed przesłaniem wydarzenia.",
-    "organization": "Organizacja",
+    "clubRequired": "Wybierz organizację przed przesłaniem wydarzenia.",
+    "club": "Organizacja",
     "status": "Status",
     "dayOfWeek": "Dzień tygodnia",
     "createEvent": "Prześlij wydarzenie",
-    "submitEventSchoolDescription": "Wyświetlane są tylko organizacje z {{school}}, dzięki czemu Twoje wydarzenie zostanie przesłane na odpowiedni kampus.",
+    "submitEventSchoolDescription": "Wyświetlane są tylko organizacje z {{school}}.",
     "submitEventForReview": "Prześlij wydarzenie do zatwierdzenia",
     "submitForReview": "Prześlij do zatwierdzenia",
     "uploadEventFlyer": "Prześlij ulotkę wydarzenia",
     "uploadEventFlyerDescription": "Prześlij lub wklej obraz ulotki, a AI automatycznie uzupełni szczegóły.",
     "processingEventImage": "Przetwarzanie obrazu wydarzenia",
     "clickToUploadOrPasteImage": "Kliknij, aby przesłać obraz lub wkleić",
-    "imagePasteShortcutHint": "{{formats}} (np. Cmd+V / Ctrl+V)",
     "flyerExtracted": "Szczegóły ulotki zostały pomyślnie wyodrębnione.",
     "flyerParseFailed": "Analiza ulotki nie powiodła się",
     "flyerParseFailedDescription": "Nie mogliśmy odczytać szczegółów wydarzenia z ulotki.",
@@ -47,7 +47,6 @@
     "noUpcomingEvents": "Brak nadchodzących wydarzeń",
     "upcomingEventCount": "nadchodzące wydarzenie",
     "upcomingEventCount_other": "nadchodzących wydarzeń",
-    "latestAddedEvent": "{{title}} dodano {{time}}",
     "thisWeek": "Ten tydzień",
     "discoverEvents": "Odkryj Wydarzenia",
     "clickCount": "{{count}} kliknięcie",
@@ -56,12 +55,6 @@
     "noEventsFoundDesc": "Nie znaleziono żadnych wydarzeń pasujących do aktualnych filtrów. Spróbuj zmienić wyszukiwanie lub usunąć niektóre filtry.",
     "noEventsScheduled": "Brak zaplanowanych wydarzeń",
     "noEventsScheduledDesc": "Obecnie nie ma zaplanowanych wydarzeń. Sprawdź później!",
-    "newlyAddedFilter": {
-      "last24Hours": "Nowe",
-      "sinceLastVisit": "Dodano od ostatniej wizyty",
-      "clear": "Wyczyść filtr nowo dodanych",
-      "sinceLastVisitAt": "Dodano od ostatniej wizyty ({{time}})"
-    },
     "dateFilter": {
       "label": "Data wydarzenia",
       "any": "Dowolny dzień",
@@ -91,6 +84,7 @@
       "submitFailed": "Nie udało się wysłać zgłoszenia"
     },
     "goingEvents": {
+      "timeUnavailable": "To wydarzenie już się rozpoczęło lub zostało odwołane, więc nie możesz zaznaczyć udziału.",
       "markFailed": "Nie udało się oznaczyć tego wydarzenia jako uczestniczonego",
       "unmarkFailed": "Nie udało się odznaczyć tego wydarzenia jako uczestniczonego",
       "saveFailed": "Nie udało się zapisać wybranego czasu",

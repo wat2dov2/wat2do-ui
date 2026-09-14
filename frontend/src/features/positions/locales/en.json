@@ -5,9 +5,8 @@
     "searchPlaceholder": "Search roles, skills, or locations...",
     "clearSearch": "Clear position search",
     "filterByType": "Filter positions by type",
-    "allTypes": "All position types",
     "openDetails": "View {{title}} position details",
-    "drawerDescription": "Position details for {{title}} at {{organization}}",
+    "drawerDescription": "Position details for {{title}} at {{club}}",
     "deadlineLabel": "Application deadline",
     "due": "Due {{date}}",
     "commitmentLabel": "Time commitment",
@@ -16,11 +15,10 @@
     "contactLabel": "Contact",
     "aboutPosition": "About this position",
     "requirements": "Requirements",
-    "viewSource": "View original Instagram post",
     "emptyTitle": "No open positions found",
-    "emptyDescription": "Try another search or position type. New organization opportunities will appear here as they are posted.",
-    "organizationEmptyTitle": "No open positions",
-    "organizationEmptyDescription": "This organization does not currently have any open positions.",
+    "emptyDescription": "Try another search or position type. New club opportunities will appear here as they are posted.",
+    "clubEmptyTitle": "No open positions",
+    "clubEmptyDescription": "This club does not currently have any open positions.",
     "resultsLabel": "{{count}} positions found",
     "types": {
       "executive": "Executive",
@@ -29,6 +27,21 @@
       "staff": "Paid staff",
       "internship": "Internship",
       "general": "General recruitment"
-    }
+    },
+    "title": "Position title",
+    "placeholders": {
+      "title": "e.g. Marketing Coordinator",
+      "description": "Describe the role, what the person will do, and what they can learn or contribute.",
+      "compensation": "e.g. $20/hour, $500 honorarium, or unpaid",
+      "commitment": "e.g. 3-5 hours per week, September to December",
+      "contact": "e.g. hiring@example.com",
+      "requirements": "One requirement per line, for example:\nComfortable working in a team\nAvailable for weekly meetings"
+    },
+    "paid": "Paid",
+    "unpaid": "Unpaid",
+    "unknown": "Payment unspecified",
+    "addPosition": "Add position",
+    "submitted": "Position submitted for review.",
+    "submissions": "Position submissions"
   }
 }

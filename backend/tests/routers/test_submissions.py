@@ -19,7 +19,7 @@ FAKE_DB_USER = UserResponse(
 _VALID_EVENT_DATA = {
     "title": "X",
     "location": "Loc",
-    "organization_id": 7,
+    "club_id": 7,
     "occurrences": [
         {
             "dtstart_utc": "2026-12-01T18:00:00+00:00",
@@ -99,7 +99,7 @@ def test_create_submission_optional_auth_user_keeps_school_out_of_event_data(cli
     assert resp.status_code == 201
     args, _ = mock_create.call_args
     assert args[0] == str(FAKE_DB_USER.id)
-    assert args[1].organization_id == _VALID_EVENT_DATA["organization_id"]
+    assert args[1].club_id == _VALID_EVENT_DATA["club_id"]
     assert "school" not in args[1].model_dump()
 
 

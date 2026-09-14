@@ -265,7 +265,7 @@
  * height. Driven by :has() so no component has to know whether the strip is
  * enabled - it either rendered or it did not.
  */
-body:has([data-slot="site-banner"]) header {
+body:has([data-slot="site-banner"]) [data-slot="top-nav"] {
   top: var(--site-banner-height);
 }
 

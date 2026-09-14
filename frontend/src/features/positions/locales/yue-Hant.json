@@ -5,9 +5,8 @@
     "searchPlaceholder": "搜尋職位、技能或地點...",
     "clearSearch": "清除職位搜尋",
     "filterByType": "按類型篩選職位",
-    "allTypes": "所有職位類型",
     "openDetails": "查看 {{title}} 職位詳情",
-    "drawerDescription": "{{organization}} 的 {{title}} 職位詳情",
+    "drawerDescription": "{{club}} 的 {{title}} 職位詳情",
     "deadlineLabel": "申請截止日期",
     "due": "截止於 {{date}}",
     "commitmentLabel": "時間投入",
@@ -16,11 +15,10 @@
     "contactLabel": "聯絡人",
     "aboutPosition": "關於此職位",
     "requirements": "要求",
-    "viewSource": "查看原始 Instagram 職位發佈",
     "emptyTitle": "未找到開放職位",
     "emptyDescription": "嘗試其他搜尋或職位類型。新的組織機會會在發布時顯示於此.",
-    "organizationEmptyTitle": "沒有空缺職位",
-    "organizationEmptyDescription": "此組織目前沒有任何空缺職位.",
+    "clubEmptyTitle": "沒有空缺職位",
+    "clubEmptyDescription": "此組織目前沒有任何空缺職位.",
     "resultsLabel": "找到{{count}}個職位",
     "types": {
       "executive": "高層管理",
@@ -29,6 +27,21 @@
       "staff": "有薪員工",
       "internship": "實習",
       "general": "一般招聘"
+    },
+    "title": "職位名稱",
+    "paid": "有薪",
+    "unpaid": "無薪",
+    "unknown": "未註明薪酬",
+    "addPosition": "新增職位",
+    "submitted": "職位已提交審核。",
+    "submissions": "職位提交",
+    "placeholders": {
+      "title": "例如：市場推廣統籌",
+      "description": "介紹職位、工作內容，以及參與者可以學到或者貢獻啲乜。",
+      "compensation": "例如：每小時20加元、500加元酬金，或者無薪",
+      "commitment": "例如：9月至12月，每星期3至5小時",
+      "contact": "例如：hiring@example.com",
+      "requirements": "每行填一項要求，例如：\n樂意同團隊合作\n可以參加每星期嘅會議"
     }
   }
 }

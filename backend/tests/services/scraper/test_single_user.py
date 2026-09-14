@@ -119,13 +119,13 @@ def test_resolve_single_user_scrape_school_rejects_unknown_target_school(monkeyp
 
 def test_is_post_url_target():
     assert is_post_url_target("https://www.instagram.com/p/ABC123/")
-    assert not is_post_url_target("uwteaorganization")
+    assert not is_post_url_target("uwteaclub")
 
 
 def test_filter_valid_posts_keeps_real_posts():
     posts = [
         {"url": "https://www.instagram.com/p/GOOD/"},
-        {"url": "https://www.instagram.com/uwteaorganization"},
+        {"url": "https://www.instagram.com/uwteaclub"},
         {"url": "https://www.instagram.com/p/BAD/", "error": "not found"},
         {"errorDescription": "blocked"},
     ]
@@ -141,7 +141,7 @@ def test_fetch_posts_for_targets_uses_recent_post_without_refetch():
     )
 
     posts, pinned = fetch_posts_for_targets(
-        ["uwteaorganization"],
+        ["uwteaclub"],
         cutoff_days=1,
         scraper=scraper,
     )
@@ -167,7 +167,7 @@ def test_fetch_posts_for_targets_refetches_when_stale():
     ]
 
     posts, _pinned = fetch_posts_for_targets(
-        ["uwteaorganization"],
+        ["uwteaclub"],
         cutoff_days=1,
         scraper=scraper,
     )

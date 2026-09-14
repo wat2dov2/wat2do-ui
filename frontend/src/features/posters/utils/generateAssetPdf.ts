@@ -15,14 +15,14 @@ interface AssetPlacement {
   height: number;
 }
 
-export interface AssetForPdf {
+interface AssetForPdf {
   imagePreview: string;
   name: string;
   quantity: number;
   placement: AssetPlacement;
 }
 
-export interface AssetOutputOptions {
+interface AssetOutputOptions {
   printSize?: "a4" | "us-letter";
   orientation?: "portrait";
   pageLabels?: string[];

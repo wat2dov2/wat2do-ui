@@ -5,9 +5,8 @@
     "searchPlaceholder": "Buscar roles, habilidades o ubicaciones...",
     "clearSearch": "Borrar búsqueda de posición",
     "filterByType": "Filtrar posiciones por tipo",
-    "allTypes": "Todos los tipos de posición",
     "openDetails": "Ver detalles del puesto de {{title}}",
-    "drawerDescription": "Detalles del puesto de {{title}} en {{organization}}",
+    "drawerDescription": "Detalles del puesto de {{title}} en {{club}}",
     "deadlineLabel": "Plazo de solicitud",
     "due": "Vence el {{date}}",
     "commitmentLabel": "Compromiso de tiempo",
@@ -16,11 +15,10 @@
     "contactLabel": "Contacto",
     "aboutPosition": "Acerca de este puesto",
     "requirements": "Requisitos",
-    "viewSource": "Ver publicación originalInstagram ",
     "emptyTitle": "No se encontraron posiciones abiertas",
     "emptyDescription": "Prueba otra búsqueda o tipo de puesto. Nuevas oportunidades en la organización aparecerán aquí a medida que se publiquen.",
-    "organizationEmptyTitle": "No hay puestos disponibles",
-    "organizationEmptyDescription": "Esta organización actualmente no tiene ningún puesto disponible.",
+    "clubEmptyTitle": "No hay puestos disponibles",
+    "clubEmptyDescription": "Esta organización actualmente no tiene ningún puesto disponible.",
     "resultsLabel": "{{count}} puestos encontrados",
     "types": {
       "executive": "Ejecutivo",
@@ -31,6 +29,21 @@
       "general": "Reclutamiento general"
     },
     "position_one": "posición",
-    "position_many": "posiciones"
+    "position_many": "posiciones",
+    "title": "Título del puesto",
+    "paid": "Remunerado",
+    "unpaid": "No remunerado",
+    "unknown": "Pago no especificado",
+    "addPosition": "Añadir puesto",
+    "submitted": "Puesto enviado para revisión.",
+    "submissions": "Propuestas de puestos",
+    "placeholders": {
+      "title": "p. ej., Coordinador de marketing",
+      "description": "Describe el puesto, las tareas y lo que la persona puede aprender o aportar.",
+      "compensation": "p. ej., 20 $/hora, honorarios de 500 $ o sin remuneración",
+      "commitment": "p. ej., de 3 a 5 horas semanales, de septiembre a diciembre",
+      "contact": "p. ej., hiring@example.com",
+      "requirements": "Un requisito por línea, por ejemplo:\nComodidad trabajando en equipo\nDisponibilidad para reuniones semanales"
+    }
   }
 }

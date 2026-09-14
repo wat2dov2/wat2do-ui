@@ -13,7 +13,7 @@ from collections.abc import Iterator
 from concurrent.futures import Executor, ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from itertools import groupby
+from itertools import batched, groupby
 from typing import Any, Callable
 
 from core.database import get_sb
@@ -53,13 +53,12 @@ def get_stored_recommendations_for_users(
 ) -> dict[str, list[dict]]:
     """Load stored recommendation rows in user chunks without live fallback."""
     grouped: dict[str, list[dict]] = {user_id: [] for user_id in user_ids}
-    for start in range(0, len(user_ids), 500):
-        chunk = user_ids[start : start + 500]
+    for chunk in batched(user_ids, 500):
         rows = (
             get_sb()
             .table(USER_RECOMMENDATIONS)
             .select("user_id,event_id,rank,predicted_score,computed_at")
-            .in_("user_id", chunk)
+            .in_("user_id", list(chunk))
             .order("rank")
             .execute()
         ).data or []
@@ -405,7 +404,6 @@ class RecommendationEngine:
             if has_profile:
                 futures["content"] = pool.submit(
                     self._content_scorer,
-                    user_id,
                     candidates,
                     user=user,
                     user_scores=user_scores,

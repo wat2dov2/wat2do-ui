@@ -13,7 +13,6 @@
     "or": "or",
     "separatorBullet": "•",
     "free": "Free",
-    "freeFood": "Free food",
     "backToTop": "Back to top",
     "cancelled": "Cancelled",
     "registration": "Registration",
@@ -67,7 +66,11 @@
     "logo": "Logo",
     "loadingMap": "Loading map...",
     "clearFilters": "Clear filters",
-    "all": "All"
+    "all": "All",
+    "latestAddedItem": "<addedPrefix></addedPrefix><eventTitle>{{title}}</eventTitle> <addedTime>added {{time}}</addedTime>",
+    "newlyAddedFilter": {
+      "last24Hours": "New"
+    }
   },
   "errorBoundary": {
     "title": "Something went wrong",
@@ -77,15 +80,15 @@
   "navigation": {
     "events": "Events",
     "create": "Submit Event",
-    "loginRequiredToSubmit": "Only logged-in users can submit events or organizations.",
-    "organizations": "Organizations",
+    "loginRequiredToSubmit": "Only logged-in users can submit events or clubs.",
+    "clubs": "Clubs",
     "positions": "Positions",
     "myEvents": "My Events",
     "settings": "Settings",
     "admin": "Admin",
     "adminPanel": "Admin Panel",
-    "organizationPanel": "Organization Panel",
-    "clubPanelTooltip": "Manage your organization",
+    "clubPanel": "Club Panel",
+    "clubPanelTooltip": "Manage your club",
     "mission": "Mission",
     "about": "About us",
     "goToEvents": "Go to events",
@@ -104,7 +107,7 @@
   "modals": {
     "welcome": {
       "title": "Welcome to wat2do",
-      "description": "Discover campus events, connect with organizations, and never miss out on what's happening."
+      "description": "Discover campus events, connect with clubs, and never miss out on what's happening."
     },
     "signIn": {
       "title": "Sign in",
@@ -114,8 +117,7 @@
       "continueWithGoogle": "Continue with Google"
     },
     "signOut": {
-      "logOut": "Log out",
-      "signOutOfAccount": "Sign out of your account"
+      "logOut": "Log out"
     },
     "getStarted": "Get Started",
     "profile": {
@@ -169,9 +171,9 @@
     "desc": "Desc",
     "ascending": "Ascending",
     "descending": "Descending",
-    "organization": "Organization",
-    "searchOrganization": "Search organization...",
-    "noOrganizations": "No organizations available"
+    "club": "Club",
+    "searchClub": "Search club...",
+    "noClubs": "No clubs available"
   },
   "commands": {
     "commands": "Commands",
@@ -218,10 +220,10 @@
     "locationPlaceholder": "e.g. MC 1234, SLC Great Hall",
     "selectPackage": "Select a package",
     "eventTitlePlaceholder": "e.g., Tech Talk: AI in 2024",
-    "organizationNamePlaceholder": "e.g., Computer Science Organization",
-    "selectOrganization": "Select an organization",
-    "searchOrganizationPlaceholder": "Search organizations...",
-    "noOrganizationFound": "No organization found",
+    "clubNamePlaceholder": "e.g., Computer Science Club",
+    "selectClub": "Select a club",
+    "searchClubPlaceholder": "Search clubs...",
+    "noClubFound": "No club found",
     "descriptionPlaceholder": "Tell people what your event is about...",
     "sourceUrl": "Source link",
     "sourceUrlPlaceholder": "https://instagram.com/p/...",
@@ -240,21 +242,21 @@
     "description": "Description",
     "saveChanges": "Save Changes",
     "requiredInformation": "Required Information",
-    "organizationName": "Organization Name",
-    "organizationType": "Organization Type",
-    "organizationTypeMapped": "{{type}}",
-    "organizationTypeIndependent": "Independent",
-    "organizationNameRequired": "Organization name is required",
+    "clubName": "Club Name",
+    "clubType": "Club Type",
+    "clubTypeMapped": "{{type}}",
+    "clubTypeIndependent": "Independent",
+    "clubNameRequired": "Club name is required",
     "ownerEmail": "Owner Email",
     "categories": "Categories",
     "categoryRequired": "At least one category is required",
     "add": "Add",
-    "organizationPageUrl": "Organization Page URL",
-    "organizationPageUrlPlaceholder": "e.g., https://example.com or 123",
+    "clubPageUrl": "Club Page URL",
+    "clubPageUrlPlaceholder": "e.g., https://example.com or 123",
     "instagramHandle": "Instagram Handle",
     "discordLink": "Discord Link",
     "titleRequired": "Title is required",
-    "organizationRequired": "Organization is required",
+    "clubRequired": "Club is required",
     "occurrenceRequired": "At least one date is required",
     "locationRequired": "Location is required",
     "schoolRequired": "School is required",
@@ -282,7 +284,7 @@
     "politicsAndAdvocacy": "Politics & Advocacy",
     "religionAndSpirituality": "Religion & Spirituality",
     "events": "Events",
-    "organizations": "Organizations"
+    "clubs": "Clubs"
   },
   "locations": {
     "LAX": "LAX",
@@ -363,15 +365,15 @@
     "phase2Title": "Building for Ourselves",
     "phase2Paragraph1": "We were sitting in the SLC, complaining about missing <em>yet another event</em> (this time it was free Chipotle at a Women in Engineering mixer), when Erica said: <strong> \"Why isn't there just... one place for all of this?\"</strong>",
     "phase2Paragraph2": "So we built it.",
-    "phase2Paragraph3": "Tony handled the backend—scraping organization Instagrams, linking up with WUSA feeds, building the filter logic. Erica designed everything: the illustrations, the hand-drawn icons, the color palette.",
+    "phase2Paragraph3": "Tony handled the backend—scraping club Instagrams, linking up with WUSA feeds, building the filter logic. Erica designed everything: the illustrations, the hand-drawn icons, the color palette.",
     "phase2Paragraph4": "The first version was rough. But it worked.",
     "photo2Alt": "Building together",
     "photo2Caption": "Late nights in the SLC. Tony on backend, Erica on design.",
     "phase3Date": "October 2025",
     "phase3Title": "Sharing It With Campus",
     "phase3Paragraph1": "We posted the link in a few group chats. Then we made a poster (ironic, we know) and stuck it in the SLC. Within a week, people were texting us screenshots.",
-    "phase3Paragraph2": "<em>\"Wait, there's a Repair Organization? I can actually fix my bike there?\"</em>",
-    "phase3Paragraph3": "Someone found the <strong>Gatka Organization</strong> (Sikh martial arts) through Wat2Do and said it was the highlight of their term. Another person discovered <strong>Retro Rollers</strong> (roller skating meetups) and made six new friends in one night.",
+    "phase3Paragraph2": "<em>\"Wait, there's a Repair Club? I can actually fix my bike there?\"</em>",
+    "phase3Paragraph3": "Someone found the <strong>Gatka Club</strong> (Sikh martial arts) through Wat2Do and said it was the highlight of their term. Another person discovered <strong>Retro Rollers</strong> (roller skating meetups) and made six new friends in one night.",
     "phase3Paragraph4": "That's when we realized: this isn't just a calendar. It's a way to discover the version of campus life you didn't know existed.",
     "photo3Alt": "Community discovery",
     "photo3Caption": "People started discovering events they never knew existed.",
@@ -387,13 +389,13 @@
     "guideIndustryAtlassian": "<strong>Atlassian Coffee Chats:</strong> Way less intimidating than a career fair booth. You can actually have a conversation.",
     "guideIndustryStartup": "<strong>Startup Career Fair:</strong> Skip the big corporate booths. Go straight to startups where you can talk to actual founders.",
     "guideRandomTitle": "Random Stuff Worth Checking Out",
-    "guideRandomRepair": "<strong>Repair Organization:</strong> Broke your laptop charger? These folks have tools and will teach you how to fix it yourself. Completely free.",
-    "guideRandomGatka": "<strong>Gatka Organization:</strong> Sikh martial arts with wooden sticks. No experience needed. Underrated.",
+    "guideRandomRepair": "<strong>Repair Club:</strong> Broke your laptop charger? These folks have tools and will teach you how to fix it yourself. Completely free.",
+    "guideRandomGatka": "<strong>Gatka Club:</strong> Sikh martial arts with wooden sticks. No experience needed. Underrated.",
     "guideRandomRetro": "<strong>Retro Rollers:</strong> Roller skating at local rinks. Great for de-stressing during midterms.",
     "guideFriendsTitle": "Going With Friends",
     "guideFriendsFood": "<strong>Free Food Events:</strong> Sort by \"Food Provided\" in the filters. Pro tip: show up 15 minutes early.",
-    "guideFriendsGames": "<strong>Game Nights:</strong> Perfect low-key hangout. Most organizations provide the games.",
-    "guideFriendsWonderland": "<strong>Canada's Wonderland Trips:</strong> Various organizations organize discounted group trips. Way cheaper than going solo.",
+    "guideFriendsGames": "<strong>Game Nights:</strong> Perfect low-key hangout. Most clubs provide the games.",
+    "guideFriendsWonderland": "<strong>Canada's Wonderland Trips:</strong> Various clubs organize discounted group trips. Way cheaper than going solo.",
     "footerPS": "<strong>P.S.</strong> We don't run ads. Everything runs out of our own pockets. No data selling. Just students helping students.",
     "footerCopyright": "© 2025 Wat2Do · Built by Tony & Erica"
   },
@@ -407,7 +409,7 @@
       "title": "Why we built Wat2Do",
       "origin": "Wat2Do began when we, its co-founders, discovered a way to scrape public Instagram posts about events happening at the University of Waterloo. We built it for ourselves because we loved trying new things, and students were constantly creating new and interesting things to do.",
       "belief": "We believe university is one of the best times and environments to try something new. The problem was never a lack of things happening. It was finding them before they were over.",
-      "scale": "Since August 2025, Wat2Do has captured more than 3,000 events. We kept improving the algorithm until it could surface an event, on average, about one minute after its Instagram post went live.",
+      "scale": "Since August 2025, Wat2Do has captured more than 3,000 events. We since scaled the algorithm from 400 accounts to 8,000 and process 1000 new events a week (as of September 13th, 2026).",
       "mission": "Solving that discovery problem changed our own university experience. Now we want to share what we built and help students everywhere discover more of the new, cool things happening around them.",
       "signature": "- Tony & Erica"
     },
@@ -448,11 +450,11 @@
       },
       "random": {
         "title": "Random Events You Didn't Know Existed",
-        "desc": "Honestly, the best part about building this project was discovering organizations we had no idea were on campus. There's a ",
-        "repair": "Repair Organization",
+        "desc": "Honestly, the best part about building this project was discovering clubs we had no idea were on campus. There's a ",
+        "repair": "Repair Club",
         "repairSuffix": " where you can fix your broken electronics, the Iranian Students' Association's ",
         "zumba": "Persian Zumba",
-        "zumbaSuffix": " class, and Strength Organization's ",
+        "zumbaSuffix": " class, and Strength Club's ",
         "barbells": "Battle of the Barbells"
       },
       "search": {
@@ -472,7 +474,7 @@
     },
     "actions": {
       "browse": "Browse Events",
-      "explore": "Explore Organizations"
+      "explore": "Explore Clubs"
     },
     "footer": {
       "about": "We built Wat2Do to connect Waterloo students to underrated campus life events. For suggestions or feedback, get in touch.",

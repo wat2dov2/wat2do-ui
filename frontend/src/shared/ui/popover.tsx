@@ -3,17 +3,44 @@ import * as PopoverPrimitive from "@radix-ui/react-popover"
 
 import { useDrawerPortalContainer } from "@/shared/ui/drawer"
 import { cn } from "@/shared/lib/utils"
+import { useExclusiveDisclosure } from "@/shared/hooks/useExclusiveDisclosure"
+import { createAdaptivePressHandlers } from "@/shared/hooks/useMouseDownPress"
+
+const PopoverDisclosureContext = React.createContext<{
+  open: boolean
+  setOpen: (open: boolean) => void
+} | null>(null)
 
 function Popover({
+  open, defaultOpen, onOpenChange,
   ...props
 }: React.ComponentProps<typeof PopoverPrimitive.Root>) {
-  return <PopoverPrimitive.Root data-slot="popover" {...props} />
+  const [exclusiveOpen, setOpen] = useExclusiveDisclosure({ open, defaultOpen, onOpenChange })
+  return (
+    <PopoverDisclosureContext.Provider value={{ open: exclusiveOpen, setOpen }}>
+      <PopoverPrimitive.Root data-slot="popover" open={exclusiveOpen} onOpenChange={setOpen} {...props} />
+    </PopoverDisclosureContext.Provider>
+  )
 }
 
 function PopoverTrigger({
+  onMouseDown,
+  onClick,
+  disabled,
   ...props
 }: React.ComponentProps<typeof PopoverPrimitive.Trigger>) {
-  return <PopoverPrimitive.Trigger data-slot="popover-trigger" {...props} />
+  const disclosure = React.useContext(PopoverDisclosureContext)
+  const pressHandlers = createAdaptivePressHandlers({
+    disabled,
+    onMouseDown,
+    onClick: (event) => {
+      onClick?.(event as React.MouseEvent<HTMLButtonElement>)
+      if (!event.defaultPrevented) disclosure?.setOpen(!disclosure.open)
+      // The shared press handler owns toggling, including keyboard and touch.
+      event.preventDefault()
+    },
+  })
+  return <PopoverPrimitive.Trigger data-slot="popover-trigger" disabled={disabled} {...props} {...pressHandlers} />
 }
 
 function PopoverContent({

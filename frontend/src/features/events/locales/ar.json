@@ -1,23 +1,23 @@
 {
   "events": {
+    "minimumGoing": "الحد الأدنى للحاضرين",
     "eventTitle": "عنوان الحدث",
     "loadFailed": "فشل تحميل الأحداث. يرجى المحاولة مرة أخرى.",
     "deleteFailed": "فشل في حذف الحدث. يرجى المحاولة مرة أخرى.",
     "submitFailed": "فشل في إرسال الحدث. يرجى المحاولة مرة أخرى.",
     "submissionFailedTitle": "فشل الإرسال",
-    "organizationRequired": "اختر مؤسسة قبل إرسال الحدث.",
-    "organization": "منظمة",
+    "clubRequired": "اختر مؤسسة قبل إرسال الحدث.",
+    "club": "منظمة",
     "status": "الحالة",
     "dayOfWeek": "يوم الأسبوع",
     "createEvent": "إرسال فعالية",
-    "submitEventSchoolDescription": "يتم عرض المؤسسات من {{school}} فقط، لذلك يتم إرسال الحدث الخاص بك إلى الحرم الجامعي الصحيح.",
+    "submitEventSchoolDescription": "يتم عرض المؤسسات من {{school}} فقط.",
     "submitEventForReview": "إرسال الحدث للمراجعة",
     "submitForReview": "إرسال للمراجعة",
     "uploadEventFlyer": "تحميل منشور الفعالية",
     "uploadEventFlyerDescription": "قم بتحميل أو لصق صورة المنشور، وسيقوم AI تلقائيًا بملء التفاصيل.",
     "processingEventImage": "معالجة صورة الفعالية",
     "clickToUploadOrPasteImage": "انقر لرفع صورة أو للصق",
-    "imagePasteShortcutHint": "{{formats}} (على سبيل المثال Cmd+V / Ctrl+V)",
     "flyerExtracted": "تم استخراج تفاصيل المنشور بنجاح.",
     "flyerParseFailed": "فشل تحليل المنشور",
     "flyerParseFailedDescription": "لم نتمكن من قراءة تفاصيل الفعالية من المنشور.",
@@ -47,7 +47,6 @@
     "noUpcomingEvents": "لا توجد أحداث قادمة",
     "upcomingEventCount": "فعالية قادمة",
     "upcomingEventCount_other": "فعاليات قادمة",
-    "latestAddedEvent": "تمت إضافة {{title}} {{time}}",
     "thisWeek": "هذا الأسبوع",
     "discoverEvents": "اكتشف الفعاليات",
     "clickCount": "{{count}} نقرة",
@@ -56,12 +55,6 @@
     "noEventsFoundDesc": "لم نتمكن من العثور على أي فعاليات تتطابق مع الفلاتر الحالية. حاول تعديل البحث أو مسح بعض الفلاتر.",
     "noEventsScheduled": "لا توجد فعاليات مجدولة",
     "noEventsScheduledDesc": "لا توجد فعاليات مجدولة حاليا. تحقق لاحقًا!",
-    "newlyAddedFilter": {
-      "last24Hours": "جديد",
-      "sinceLastVisit": "تمت الإضافة منذ آخر زيارة",
-      "clear": "مسح فلاتر الإضافات الجديدة",
-      "sinceLastVisitAt": "تمت الإضافة منذ آخر زيارة ({{time}})"
-    },
     "dateFilter": {
       "label": "تاريخ الفعالية",
       "any": "أي يوم",
@@ -91,6 +84,7 @@
       "submitFailed": "تعذر إرسال التقرير"
     },
     "goingEvents": {
+      "timeUnavailable": "بدأت هذه الفعالية بالفعل أو أُلغيت، لذا لا يمكنك تأكيد حضورك.",
       "markFailed": "تعذر تحديد هذه الفعالية على أنك ستحضرها",
       "unmarkFailed": "تعذر إلغاء تحديد حضور هذه الفعالية",
       "saveFailed": "تعذر حفظ الوقت الذي اخترته",

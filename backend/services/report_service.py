@@ -10,6 +10,7 @@ from core.errors import EVENT_NOT_FOUND, INVALID_STATUS_TRANSITION
 from core.exceptions import NotFoundError, ValidationError
 from core.tables import REPORTED_EVENTS
 from schemas.report import ReportResponse
+from services import school_service
 
 log = logging.getLogger(__name__)
 
@@ -77,14 +78,26 @@ def get_reports(
     Returns (items, total_count).  Pass ``limit=None`` only for trusted
     internal maintenance callers that intentionally need all rows.
     """
-    q = get_sb().table(REPORTED_EVENTS).select("*", count="exact")
+    q = (
+        get_sb()
+        .table(REPORTED_EVENTS)
+        .select(f"*,events({school_service.SCHOOL_SLUG_EMBED})", count="exact")
+    )
     if status:
         q = q.eq("status", status)
     q = q.order("reported_at", desc=True)
     if limit is not None:
         q = q.range(offset, offset + limit - 1)
     r = q.execute()
-    items = [ReportResponse.model_validate(row) for row in (r.data or [])]
+    items = [
+        ReportResponse.model_validate(
+            {
+                **row,
+                "school": school_service.with_school_slug(row.get("events") or {}).get("school"),
+            }
+        )
+        for row in (r.data or [])
+    ]
     return items, r.count or len(items)
 
 

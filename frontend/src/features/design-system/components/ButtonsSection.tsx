@@ -25,6 +25,9 @@ export function ButtonsSection() {
       description="Primary actions and controls across the app."
     >
       <Stack gap={6}>
+        <ShowcaseBlock label="Inline action">
+          <Button variant="link" size="inline">Underlined action</Button>
+        </ShowcaseBlock>
         <ShowcaseBlock label="Variants">
           <Stack direction="horizontal" gap={2} align="center" className="flex-wrap">
             {BUTTON_VARIANTS.map(({ label, variant }) => (

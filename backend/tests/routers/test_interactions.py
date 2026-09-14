@@ -1,4 +1,4 @@
-"""Tests for interactions router — auth, ownership, batch limits, dedup, rate limiting."""
+"""Tests for interactions router - auth, ownership, batch limits, dedup, rate limiting."""
 
 from unittest.mock import MagicMock
 
@@ -8,7 +8,7 @@ from fastapi.testclient import TestClient
 from core.auth import get_optional_user
 from core.constants import MAX_INTERACTION_BATCH_SIZE
 from main import app
-from tests.conftest import FAKE_USER, OTHER_USER
+from tests.conftest import FAKE_USER
 
 # ── Helpers ────────────────────────────────────────────────────────────
 
@@ -39,7 +39,8 @@ def _batch_payload(
     payload: dict = {
         "session_id": session_id,
         "interactions": interactions
-        or [
+        if interactions is not None
+        else [
             {"event_id": 1, "interaction_type": "click"},
             {"event_id": 2, "interaction_type": "click"},
         ],
@@ -63,15 +64,6 @@ def authenticated_client():
     app.dependency_overrides.pop(get_optional_user, None)
 
 
-@pytest.fixture
-def other_user_client():
-    """Client authenticated as a different user."""
-    app.dependency_overrides[get_optional_user] = lambda: OTHER_USER
-    c = TestClient(app)
-    yield c
-    app.dependency_overrides.pop(get_optional_user, None)
-
-
 @pytest.fixture(autouse=True)
 def _clear_rate_limiters():
     """Reset all interaction rate limiters between tests."""
@@ -85,11 +77,8 @@ def _clear_rate_limiters():
     anon_interaction_rate_limiter._requests.clear()
 
 
-# ── Anonymous tracking (no auth) ──────────────────────────────────────
-
-
-def test_batch_202_anonymous(client, monkeypatch):
-    """POST /interactions/batch returns 202 without auth (anonymous tracking)."""
+@pytest.fixture(autouse=True)
+def _mock_session_dedup(monkeypatch):
     from services import interaction_service
 
     monkeypatch.setattr(
@@ -97,6 +86,15 @@ def test_batch_202_anonymous(client, monkeypatch):
         "check_duplicate_interactions_for_session",
         lambda **kw: kw["interactions"],
     )
+
+
+# ── Anonymous tracking (no auth) ──────────────────────────────────────
+
+
+def test_batch_202_anonymous(client, monkeypatch):
+    """POST /interactions/batch returns 202 without auth (anonymous tracking)."""
+    from services import interaction_service
+
     monkeypatch.setattr(interaction_service, "record_interactions", MagicMock(return_value=2))
 
     resp = client.post("/interactions/batch", json=_batch_payload())
@@ -108,11 +106,6 @@ def test_batch_anonymous_records_clicks(client, monkeypatch):
     """Anonymous click interactions are persisted for public click counts."""
     from services import interaction_service
 
-    monkeypatch.setattr(
-        interaction_service,
-        "check_duplicate_interactions_for_session",
-        lambda **kw: kw["interactions"],
-    )
     mock_record = MagicMock(return_value=1)
     monkeypatch.setattr(interaction_service, "record_interactions", mock_record)
 
@@ -150,11 +143,6 @@ def test_batch_anonymous_passes_no_user_id(client, monkeypatch):
     """Anonymous request passes user_id=None to the service."""
     from services import interaction_service
 
-    monkeypatch.setattr(
-        interaction_service,
-        "check_duplicate_interactions_for_session",
-        lambda **kw: kw["interactions"],
-    )
     mock_record = MagicMock(return_value=2)
     monkeypatch.setattr(interaction_service, "record_interactions", mock_record)
 
@@ -215,6 +203,8 @@ def test_batch_accepts_max_size(client, monkeypatch):
     ]
     resp = client.post("/interactions/batch", json=_batch_payload(interactions=at_limit))
     assert resp.status_code == 202
+    assert resp.json()["recorded"] == MAX_INTERACTION_BATCH_SIZE
+    interaction_service.record_interactions.assert_called_once()
 
 
 # ── User-ID ownership validation ─────────────────────────────────────
@@ -280,8 +270,8 @@ def test_dedup_filters_duplicates_for_authenticated_user(authenticated_client, m
     assert resp.json()["recorded"] == 0
 
 
-def test_dedup_not_called_for_anonymous(client, monkeypatch):
-    """Anonymous requests skip deduplication entirely."""
+def test_user_dedup_not_called_for_anonymous(client, monkeypatch):
+    """Anonymous requests use session dedup, not user dedup."""
     from services import interaction_service
 
     mock_dedup = MagicMock()
@@ -307,21 +297,17 @@ def test_rate_limit_triggers_429(authenticated_client, monkeypatch):
     )
     monkeypatch.setattr(interaction_service, "record_interactions", MagicMock(return_value=2))
 
-    original_max = _interaction_limiter.max_requests
-    _interaction_limiter.max_requests = 2
-    try:
-        r1 = authenticated_client.post("/interactions/batch", json=_batch_payload())
-        r2 = authenticated_client.post("/interactions/batch", json=_batch_payload())
-        assert r1.status_code == 202
-        assert r2.status_code == 202
+    monkeypatch.setattr(_interaction_limiter, "max_requests", 2)
+    r1 = authenticated_client.post("/interactions/batch", json=_batch_payload())
+    r2 = authenticated_client.post("/interactions/batch", json=_batch_payload())
+    assert r1.status_code == 202
+    assert r2.status_code == 202
 
-        r3 = authenticated_client.post("/interactions/batch", json=_batch_payload())
-        assert r3.status_code == 429
-        assert "Too many requests" in r3.json()["detail"]
-        assert "Retry-After" in r3.headers
-        assert int(r3.headers["Retry-After"]) >= 1
-    finally:
-        _interaction_limiter.max_requests = original_max
+    r3 = authenticated_client.post("/interactions/batch", json=_batch_payload())
+    assert r3.status_code == 429
+    assert "Too many requests" in r3.json()["detail"]
+    assert "Retry-After" in r3.headers
+    assert int(r3.headers["Retry-After"]) >= 1
 
 
 def test_anon_rate_limit_by_ip_triggers_429(client, monkeypatch):
@@ -331,20 +317,16 @@ def test_anon_rate_limit_by_ip_triggers_429(client, monkeypatch):
 
     monkeypatch.setattr(interaction_service, "record_interactions", MagicMock(return_value=2))
 
-    original_max = anon_interaction_rate_limiter.max_requests
-    anon_interaction_rate_limiter.max_requests = 2
-    try:
-        r1 = client.post("/interactions/batch", json=_batch_payload())
-        r2 = client.post("/interactions/batch", json=_batch_payload())
-        assert r1.status_code == 202
-        assert r2.status_code == 202
+    monkeypatch.setattr(anon_interaction_rate_limiter, "max_requests", 2)
+    r1 = client.post("/interactions/batch", json=_batch_payload())
+    r2 = client.post("/interactions/batch", json=_batch_payload())
+    assert r1.status_code == 202
+    assert r2.status_code == 202
 
-        r3 = client.post("/interactions/batch", json=_batch_payload())
-        assert r3.status_code == 429
-        assert "Too many requests" in r3.json()["detail"]
-        assert "Retry-After" in r3.headers
-    finally:
-        anon_interaction_rate_limiter.max_requests = original_max
+    r3 = client.post("/interactions/batch", json=_batch_payload())
+    assert r3.status_code == 429
+    assert "Too many requests" in r3.json()["detail"]
+    assert "Retry-After" in r3.headers
 
 
 def test_anon_rate_limit_does_not_affect_user_keyed_limiter(client, monkeypatch):
@@ -354,39 +336,22 @@ def test_anon_rate_limit_does_not_affect_user_keyed_limiter(client, monkeypatch)
 
     monkeypatch.setattr(interaction_service, "record_interactions", MagicMock(return_value=2))
 
-    # Set user-keyed limiter to 1 — should not affect anonymous requests
-    _interaction_limiter.max_requests = 1
-    try:
-        r1 = client.post("/interactions/batch", json=_batch_payload())
-        r2 = client.post("/interactions/batch", json=_batch_payload())
-        assert r1.status_code == 202
-        assert r2.status_code == 202  # not hit because user limiter is separate
-    finally:
-        _interaction_limiter.max_requests = 30
+    monkeypatch.setattr(_interaction_limiter, "max_requests", 1)
+    r1 = client.post("/interactions/batch", json=_batch_payload())
+    r2 = client.post("/interactions/batch", json=_batch_payload())
+    assert r1.status_code == 202
+    assert r2.status_code == 202  # not hit because user limiter is separate
 
 
 # ── Edge cases ────────────────────────────────────────────────────────
 
 
 def test_batch_propagates_db_error(client, monkeypatch):
-    """Audit D11: DB errors must surface as 5xx, not be masked as recorded=0.
-
-    Previously ``record_interactions_batch`` swallowed ``APIError`` and
-    returned 0 — identical to a successful empty-after-dedup batch.  The
-    frontend treated this as "tracking is fine" while interactions
-    silently dropped.  The fix propagates the error; the global
-    PostgREST handler maps unknown error codes to 502 so clients can
-    retry.
-    """
+    """Database failures return 502, not a successful zero-count response."""
     from postgrest.exceptions import APIError
 
     from services import interaction_service
 
-    monkeypatch.setattr(
-        interaction_service,
-        "check_duplicate_interactions_for_session",
-        lambda **kw: kw["interactions"],
-    )
     monkeypatch.setattr(
         interaction_service,
         "record_interactions",
@@ -457,3 +422,4 @@ def test_batch_empty_interactions_accepted(client, monkeypatch):
     )
     assert resp.status_code == 202
     assert resp.json()["recorded"] == 0
+    interaction_service.record_interactions.assert_not_called()

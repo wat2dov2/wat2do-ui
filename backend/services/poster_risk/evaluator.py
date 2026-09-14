@@ -54,27 +54,28 @@ def evaluate_period_scans(
 
     window = timedelta(seconds=control.rapid_window_seconds)
     for ip_hash, ip_scans in scans_by_ip.items():
-        ordered = sorted(ip_scans, key=lambda row: _as_datetime(row["scanned_at"]))
+        ordered = sorted(
+            ((_as_datetime(row["scanned_at"]), row) for row in ip_scans),
+            key=lambda entry: entry[0],
+        )
         affected_ids: set[str] = set()
         maximum_distinct = 0
 
         end = 0
         visitor_counts: dict[str, int] = {}
-        for start, start_scan in enumerate(ordered):
-            if end < start:
-                end = start
+        for start, (start_time, start_scan) in enumerate(ordered):
             while end < len(ordered):
-                candidate_time = _as_datetime(ordered[end]["scanned_at"])
-                if candidate_time - _as_datetime(start_scan["scanned_at"]) > window:
+                candidate_time, candidate_scan = ordered[end]
+                if candidate_time - start_time > window:
                     break
-                visitor = str(ordered[end]["dedupe_hash"])
+                visitor = str(candidate_scan["dedupe_hash"])
                 visitor_counts[visitor] = visitor_counts.get(visitor, 0) + 1
                 end += 1
 
             distinct_count = len(visitor_counts)
             maximum_distinct = max(maximum_distinct, distinct_count)
             if distinct_count >= control.rapid_distinct_visitors:
-                affected_ids.update(str(row["id"]) for row in ordered[start:end])
+                affected_ids.update(str(row["id"]) for _, row in ordered[start:end])
 
             starting_visitor = str(start_scan["dedupe_hash"])
             visitor_counts[starting_visitor] -= 1

@@ -21,7 +21,7 @@ import {
 import type {
   ApiTokenResponse,
   ApiUserResponse,
-  ApiOrganizationResponse,
+  ApiClubResponse,
 } from "@/shared/generated";
 
 export type { UserProfile };
@@ -90,7 +90,7 @@ export async function verifyOtpAPI(
   email: string,
   token: string,
 ): Promise<{ userId: string; school: string; onboardingRequired: boolean }> {
-  const res = await api.post<ApiTokenResponse & { onboarding_required?: boolean }>("/auth/verify-otp", {
+  const res = await api.post<ApiTokenResponse>("/auth/verify-otp", {
     email,
     token,
   });
@@ -157,9 +157,8 @@ export async function logoutAPI(): Promise<void> {
 
 /**
  * Initialize auth on app startup.
- * Checks if there's a hint of a prior session (userEmail in localStorage),
- * then attempts to refresh the access token via the httpOnly cookie.
- * Also refreshes the user profile (including role) so cached data stays current.
+ * Restore the shared httpOnly session even on a campus with no local cache.
+ * Refresh the user profile (including role) after the cookie is verified.
  *
  * A session that could not be refreshed because the server was unreachable is
  * left alone rather than cleared: the cached session is still the best thing we
@@ -167,9 +166,6 @@ export async function logoutAPI(): Promise<void> {
  * cache below.
  */
 export async function initializeAuth(): Promise<boolean> {
-  const email = loadUserEmail();
-  if (!email) return false;
-
   const refreshOutcome = await refreshAccessToken();
   if (refreshOutcome === "rejected") {
     clearAllAuthData();
@@ -198,22 +194,22 @@ export function getLastProfileFetchAt(): number {
 
 export async function fetchProfileAPI(): Promise<UserProfile | null> {
   try {
-    // Fetch profile and organization ownership in parallel.
-    // Organization fetch failures degrade gracefully to hasOrganization=false.
+    // Fetch profile and club ownership in parallel.
+    // Club fetch failures degrade gracefully to hasClub=false.
     const [data, clubs] = await Promise.all([
       api.get<ApiUserResponse>("/users/me"),
-      api.get<ApiOrganizationResponse[]>("/organizations/mine").catch((err) => {
-        console.error("Failed to fetch user organizations, defaulting hasOrganization to false:", err);
-        return [] as ApiOrganizationResponse[];
+      api.get<ApiClubResponse[]>("/clubs/mine").catch((err) => {
+        console.error("Failed to fetch user clubs, defaulting hasClub to false:", err);
+        return [] as ApiClubResponse[];
       }),
     ]);
 
     const cachedProfile = loadUserProfile();
-    // Membership in an organization still awaiting review grants no publishing
-    // rights, so only approved organizations count towards hasOrganization.
+    // Membership in a club still awaiting review grants no publishing
+    // rights, so only approved clubs count towards hasClub.
     const approvedClubs = clubs.filter((club) => club.status === "approved");
     const associatedClub =
-      approvedClubs.find((club) => club.id === cachedProfile?.organizationId) ??
+      approvedClubs.find((club) => club.id === cachedProfile?.clubId) ??
       approvedClubs[0] ??
       null;
     const profile: UserProfile = {
@@ -225,13 +221,13 @@ export async function fetchProfileAPI(): Promise<UserProfile | null> {
       interests: data.interests ?? [],
       isFirstYear: data.is_first_year ?? false,
       role: data.role ?? "user",
-      hasOrganization: approvedClubs.length > 0,
+      hasClub: approvedClubs.length > 0,
       clubs: approvedClubs.map((club) => ({
         id: club.id,
-        organization_name: club.organization_name,
+        club_name: club.club_name,
       })),
-      organizationId: associatedClub?.id ?? null,
-      organizationName: associatedClub?.organization_name ?? null,
+      clubId: associatedClub?.id ?? null,
+      clubName: associatedClub?.club_name ?? null,
       payoutEmail: data.payout_email ?? null,
       promoterTosAcceptedAt: data.promoter_tos_accepted_at ?? null,
       promoterTosVersion: data.promoter_tos_version ?? null,

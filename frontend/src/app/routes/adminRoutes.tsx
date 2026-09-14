@@ -19,8 +19,11 @@ const AdminPanel = lazy(() =>
 const AdminEventsPage = lazy(() =>
   import("@/features/admin/pages/AdminEventsPage").then((m) => ({ default: m.AdminEventsPage }))
 );
-const AdminOrganizationsPage = lazy(() =>
-  import("@/features/admin/pages/AdminOrganizationsPage").then((m) => ({ default: m.AdminOrganizationsPage }))
+const AdminPositionsPage = lazy(() =>
+  import("@/features/admin/pages/AdminPositionsPage").then((m) => ({ default: m.AdminPositionsPage }))
+);
+const AdminClubsPage = lazy(() =>
+  import("@/features/admin/pages/AdminClubsPage").then((m) => ({ default: m.AdminClubsPage }))
 );
 const AdminPostersPage = lazy(() =>
   import("@/features/admin/pages/AdminPostersPage").then((m) => ({
@@ -80,17 +83,23 @@ export function AdminEventsRoute() {
   );
 }
 
-export function AdminOrganizationsRoute() {
+export function AdminClubsRoute() {
   const router = useRouter();
   const onBack = useCallback(() => router.push(ROUTES.ADMIN), [router]);
 
   return (
     <AdminSuspense>
-      <AdminOrganizationsPage
+      <AdminClubsPage
         onBack={onBack}
       />
     </AdminSuspense>
   );
+}
+
+export function AdminPositionsRoute() {
+  const router = useRouter();
+  const onBack = useCallback(() => router.push(ROUTES.ADMIN), [router]);
+  return <AdminSuspense><AdminPositionsPage onBack={onBack} /></AdminSuspense>;
 }
 
 export function AdminPostersRoute() {

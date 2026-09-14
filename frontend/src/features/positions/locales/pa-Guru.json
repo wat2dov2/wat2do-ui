@@ -5,9 +5,8 @@
     "searchPlaceholder": "ਭੂਮਿਕਾਵਾਂ, ਹੁਨਰ ਜਾਂ ਸਥਾਨਾਂ ਦੀ ਖੋਜ ਕਰੋ...",
     "clearSearch": "ਅਹੁਦੇ ਦੀ ਖੋਜ ਸਾਫ਼ ਕਰੋ",
     "filterByType": "ਕਿਸਮ ਮੁਤਾਬਕ ਅਹੁਦਿਆਂ ਨੂੰ ਫਿਲਟਰ ਕਰੋ",
-    "allTypes": "ਸਾਰੇ ਅਹੁਦਿਆਂ ਦੀਆਂ ਕਿਸਮਾਂ",
     "openDetails": "{{title}} ਅਹੁਦੇ ਦੇ ਵੇਰਵੇ ਵੇਖੋ",
-    "drawerDescription": "{{organization}} ਵਿੱਚ {{title}} ਅਹੁਦੇ ਦੇ ਵੇਰਵੇ",
+    "drawerDescription": "{{club}} ਵਿੱਚ {{title}} ਅਹੁਦੇ ਦੇ ਵੇਰਵੇ",
     "deadlineLabel": "ਐਪਲੀਕੇਸ਼ਨ ਦੀ ਆਖਰੀ ਮਿਤੀ",
     "due": "ਬਕਾਇਆ {{date}}",
     "commitmentLabel": "ਸਮੇਂ ਦੀ ਵਚਨਬੱਧਤਾ",
@@ -16,11 +15,10 @@
     "contactLabel": "ਸੰਪਰਕ",
     "aboutPosition": "ਇਸ ਅਹੁਦੇ ਬਾਰੇ",
     "requirements": "ਲੋੜਾਂ",
-    "viewSource": "ਅਸਲੀ Instagram ਪੋਸਟ ਦੇਖੋ",
     "emptyTitle": "ਕੋਈ ਖੁੱਲ੍ਹਾ ਅਹੁਦਾ ਨਹੀਂ ਮਿਲਿਆ",
     "emptyDescription": "ਕੋਈ ਹੋਰ ਖੋਜ ਜਾਂ ਅਹੁਦੇ ਦੀ ਕਿਸਮ ਅਜ਼ਮਾਓ। ਸੰਸਥਾਵਾਂ ਦੇ ਨਵੇਂ ਮੌਕੇ ਪੋਸਟ ਹੋਣ 'ਤੇ ਇੱਥੇ ਦਿਖਾਈ ਦੇਣਗੇ।",
-    "organizationEmptyTitle": "ਕੋਈ ਖੁੱਲ੍ਹਾ ਅਹੁਦਾ ਨਹੀਂ",
-    "organizationEmptyDescription": "ਇਸ ਸੰਸਥਾ ਵਿੱਚ ਇਸ ਵੇਲੇ ਕੋਈ ਖੁੱਲ੍ਹਾ ਅਹੁਦਾ ਨਹੀਂ ਹੈ।",
+    "clubEmptyTitle": "ਕੋਈ ਖੁੱਲ੍ਹਾ ਅਹੁਦਾ ਨਹੀਂ",
+    "clubEmptyDescription": "ਇਸ ਸੰਸਥਾ ਵਿੱਚ ਇਸ ਵੇਲੇ ਕੋਈ ਖੁੱਲ੍ਹਾ ਅਹੁਦਾ ਨਹੀਂ ਹੈ।",
     "resultsLabel": "{{count}} ਅਹੁਦੇ ਮਿਲੇ",
     "types": {
       "executive": "ਕਾਰਜਕਾਰੀ",
@@ -30,6 +28,21 @@
       "internship": "ਇੰਟਰਨਸ਼ਿਪ",
       "general": "ਆਮ ਭਰਤੀ"
     },
-    "position_one": "ਅਹੁਦਾ"
+    "position_one": "ਅਹੁਦਾ",
+    "title": "ਅਹੁਦੇ ਦਾ ਸਿਰਲੇਖ",
+    "paid": "ਤਨਖਾਹ ਸਮੇਤ",
+    "unpaid": "ਬਿਨਾਂ ਤਨਖਾਹ",
+    "unknown": "ਤਨਖਾਹ ਨਿਰਧਾਰਤ ਨਹੀਂ",
+    "addPosition": "ਅਹੁਦਾ ਜੋੜੋ",
+    "submitted": "ਅਹੁਦਾ ਸਮੀਖਿਆ ਲਈ ਭੇਜਿਆ ਗਿਆ।",
+    "submissions": "ਭੇਜੇ ਗਏ ਅਹੁਦੇ",
+    "placeholders": {
+      "title": "ਜਿਵੇਂ: ਮਾਰਕੀਟਿੰਗ ਕੋਆਰਡੀਨੇਟਰ",
+      "description": "ਭੂਮਿਕਾ, ਕੰਮ ਅਤੇ ਵਿਅਕਤੀ ਕੀ ਸਿੱਖ ਸਕਦਾ ਹੈ ਜਾਂ ਯੋਗਦਾਨ ਪਾ ਸਕਦਾ ਹੈ, ਬਾਰੇ ਦੱਸੋ।",
+      "compensation": "ਜਿਵੇਂ: $20 ਪ੍ਰਤੀ ਘੰਟਾ, $500 ਮਾਣਭੱਤਾ ਜਾਂ ਬਿਨਾਂ ਤਨਖ਼ਾਹ",
+      "commitment": "ਜਿਵੇਂ: ਸਤੰਬਰ ਤੋਂ ਦਸੰਬਰ ਤੱਕ ਹਫ਼ਤੇ ਦੇ 3-5 ਘੰਟੇ",
+      "contact": "ਜਿਵੇਂ: hiring@example.com",
+      "requirements": "ਹਰ ਲਾਈਨ ਵਿੱਚ ਇੱਕ ਲੋੜ, ਜਿਵੇਂ:\nਟੀਮ ਨਾਲ ਕੰਮ ਕਰਨ ਵਿੱਚ ਸਹਿਜ\nਹਫ਼ਤਾਵਾਰੀ ਮੀਟਿੰਗਾਂ ਲਈ ਉਪਲਬਧ"
+    }
   }
 }

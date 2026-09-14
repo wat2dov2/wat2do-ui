@@ -77,16 +77,15 @@ export function parseLocalDateValue(value: string): Date | undefined {
 
 /**
  * Resolve the primary occurrence from an event's occurrences list.
- * Earliest future occurrence wins; falls back to earliest past occurrence if all are in the past.
+ * Earliest active or future occurrence wins; only falls back after all sessions end.
  */
-export function getPrimaryOccurrence(event: { occurrences?: Occurrence[] }): Occurrence | null {
+export function getPrimaryOccurrence(event: { occurrences?: Occurrence[] }, currentDate = new Date()): Occurrence | null {
   const occurrences = event.occurrences;
   if (!occurrences || occurrences.length === 0) {
     return null;
   }
-  const now = new Date();
-  const future = occurrences.filter(o => new Date(o.dtstart_utc) >= now);
-  const pool = future.length > 0 ? future : occurrences;
+  const active = occurrences.filter(o => isActiveOrUpcomingOccurrence(o, currentDate.getTime()));
+  const pool = active.length > 0 ? active : occurrences;
   const sorted = [...pool].sort((a, b) => new Date(a.dtstart_utc).getTime() - new Date(b.dtstart_utc).getTime());
   return sorted[0] || null;
 }
@@ -108,7 +107,7 @@ export function isEventHappeningNow(
   event: { occurrences?: Occurrence[] },
   currentDate: Date = new Date()
 ): boolean {
-  const primary = getPrimaryOccurrence(event);
+  const primary = getPrimaryOccurrence(event, currentDate);
   if (!primary?.dtstart_utc) return false;
 
   const start = new Date(primary.dtstart_utc);
@@ -151,7 +150,7 @@ export function formatCardDate(
   locale: string = "en-US",
   currentDate: Date = new Date(),
 ): string {
-  const primary = getPrimaryOccurrence(event);
+  const primary = getPrimaryOccurrence(event, currentDate);
   if (primary && primary.dtstart_utc) {
     const date = new Date(primary.dtstart_utc);
     if (Number.isNaN(date.getTime())) return "";
@@ -232,7 +231,7 @@ export function getEventDateSection(
 ): EventDateSection | null {
   if (!hasActiveEventOccurrence(event, currentDate.getTime())) return null;
 
-  const primary = getPrimaryOccurrence(event);
+  const primary = getPrimaryOccurrence(event, currentDate);
   const rawStart = primary?.dtstart_utc;
   if (!rawStart) return null;
 

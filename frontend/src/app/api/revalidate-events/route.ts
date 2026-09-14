@@ -1,7 +1,7 @@
 import { revalidateTag } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 import { eventFeedTag } from "@/features/events/api/eventFeed.server";
-import { organizationDirectoryTag } from "@/features/organizations/api/organizationDirectory.server";
+import { clubDirectoryTag } from "@/features/clubs/api/clubDirectory.server";
 import { positionDirectoryTag } from "@/features/positions/api/positionDirectory.server";
 import {
   SCHOOL_DIRECTORY_TAG,
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
   // Public discovery renders per-host, so tagged fetch caches are the only
   // school-specific surfaces to invalidate - there is no per-school pathname.
   revalidateTag(eventFeedTag(school), "max");
-  revalidateTag(organizationDirectoryTag(school), "max");
+  revalidateTag(clubDirectoryTag(school), "max");
   revalidateTag(positionDirectoryTag(school), "max");
   revalidateTag(schoolBrandingTag(school), "max");
   revalidateTag(SCHOOL_DIRECTORY_TAG, "max");

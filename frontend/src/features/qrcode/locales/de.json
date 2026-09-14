@@ -31,7 +31,6 @@
     "urlRequired": "URL ist erforderlich",
     "urlInvalid": "Bitte geben Sie ein gültiges URL ein",
     "descriptionOptional": "Optional",
-    "imageFormat": "PNG, JPG bis zu 5 MB",
     "noScanData": "Noch keine Scandaten vorhanden",
     "noScanDataDesc": "Teilen Sie Ihren QR-Code, um die Leistung zu verfolgen",
     "posterAriaLabel": "Poster {{id}}",

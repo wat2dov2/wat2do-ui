@@ -1,23 +1,23 @@
 {
   "events": {
+    "minimumGoing": "Participants minimum",
     "eventTitle": "Titre de l'événement",
     "loadFailed": "Échec du chargement des événements. Veuillez réessayer.",
     "deleteFailed": "Échec de la suppression de l'événement. Veuillez réessayer.",
     "submitFailed": "Échec de la soumission de l'événement. Veuillez réessayer.",
     "submissionFailedTitle": "Échec de la soumission",
-    "organizationRequired": "Sélectionnez une organisation avant de soumettre l'événement.",
-    "organization": "Organisation",
+    "clubRequired": "Sélectionnez une organisation avant de soumettre l'événement.",
+    "club": "Organisation",
     "status": "Statut",
     "dayOfWeek": "Jour de la semaine",
     "createEvent": "Soumettre l'événement",
-    "submitEventSchoolDescription": "Seules les organisations de {{school}} sont affichées, afin que votre événement soit soumis au bon campus.",
+    "submitEventSchoolDescription": "Seules les organisations de {{school}} sont affichées.",
     "submitEventForReview": "Soumettre l'événement pour révision",
     "submitForReview": "Soumettre pour révision",
     "uploadEventFlyer": "Télécharger le flyer de l'événement",
     "uploadEventFlyerDescription": "Téléchargez ou collez une image du flyer, et l'IA remplira automatiquement les détails.",
     "processingEventImage": "Traitement de l'image de l'événement",
     "clickToUploadOrPasteImage": "Cliquez pour télécharger l'image ou coller",
-    "imagePasteShortcutHint": "{{formats}} (par ex. Cmd+V / Ctrl+V)",
     "flyerExtracted": "Détails du flyer extraits avec succès.",
     "flyerParseFailed": "Échec de l'analyse du flyer",
     "flyerParseFailedDescription": "Nous n'avons pas pu lire les détails de l'événement à partir du flyer.",
@@ -47,7 +47,6 @@
     "noUpcomingEvents": "Aucun événement à venir",
     "upcomingEventCount": "événement à venir",
     "upcomingEventCount_other": "événements à venir",
-    "latestAddedEvent": "{{title}} ajouté(e) {{time}}",
     "thisWeek": "Cette semaine",
     "discoverEvents": "Découvrir les événements",
     "clickCount": "{{count}} clic",
@@ -56,12 +55,6 @@
     "noEventsFoundDesc": "Aucun événement ne correspond à vos filtres actuels. Essayez d'ajuster votre recherche ou de supprimer certains filtres.",
     "noEventsScheduled": "Aucun événement prévu",
     "noEventsScheduledDesc": "Aucun événement n'est actuellement prévu. Revenez plus tard !",
-    "newlyAddedFilter": {
-      "last24Hours": "Nouveau",
-      "sinceLastVisit": "Ajouté depuis la dernière visite",
-      "clear": "Effacer le filtre des nouveautés",
-      "sinceLastVisitAt": "Ajouté depuis la dernière visite ({{time}})"
-    },
     "dateFilter": {
       "label": "Date de l’événement",
       "any": "N’importe quel jour",
@@ -91,6 +84,7 @@
       "submitFailed": "Impossible de soumettre le signalement"
     },
     "goingEvents": {
+      "timeUnavailable": "Cet événement a déjà commencé ou a été annulé. Vous ne pouvez plus indiquer votre participation.",
       "markFailed": "Impossible de marquer cet événement comme assisté",
       "unmarkFailed": "Impossible de retirer la marque de cet événement comme assisté",
       "saveFailed": "Impossible d'enregistrer l'heure que vous avez sélectionnée",

@@ -64,7 +64,7 @@ export function CommandPaletteHotkeys() {
       // destructive. Sort order survives: it is how the feed is read, not a
       // narrowing of it.
       if (e.key === "Escape") {
-        if (useUIStore.getState().showCommandPalette || hasOpenOverlay()) return;
+        if (e.defaultPrevented || useUIStore.getState().showCommandPalette || hasOpenOverlay()) return;
 
         const state = useSearchStore.getState();
         const current = storeStatesToFilterState(state);

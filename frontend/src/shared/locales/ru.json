@@ -13,7 +13,6 @@
     "or": "или",
     "separatorBullet": "•",
     "free": "Бесплатно",
-    "freeFood": "Бесплатная еда",
     "backToTop": "Вернуться к началу",
     "cancelled": "Отменено",
     "registration": "Регистрация",
@@ -76,7 +75,11 @@
     "hourAgo_many": "{{count}} часов назад",
     "dayAgo_one": "{{count}} день назад",
     "dayAgo_few": "{{count}} дня назад",
-    "dayAgo_many": "{{count}} дней назад"
+    "dayAgo_many": "{{count}} дней назад",
+    "latestAddedItem": "<addedPrefix></addedPrefix><eventTitle>{{title}}</eventTitle> <addedTime>добавлено {{time}}</addedTime>",
+    "newlyAddedFilter": {
+      "last24Hours": "Новое"
+    }
   },
   "errorBoundary": {
     "title": "Что-то пошло не так",
@@ -87,13 +90,13 @@
     "events": "События",
     "create": "Отправить событие",
     "loginRequiredToSubmit": "Только вошедшие в систему пользователи могут отправлять события или организации.",
-    "organizations": "Организации",
+    "clubs": "Организации",
     "positions": "Должности",
     "myEvents": "Мои события",
     "settings": "Настройки",
     "admin": "Админ",
     "adminPanel": "Панель администратора",
-    "organizationPanel": "Панель организации",
+    "clubPanel": "Панель организации",
     "clubPanelTooltip": "Управление вашей организацией",
     "mission": "Миссия",
     "about": "О нас",
@@ -123,8 +126,7 @@
       "continueWithGoogle": "Продолжить с помощью Google"
     },
     "signOut": {
-      "logOut": "Выйти",
-      "signOutOfAccount": "Выйти из аккаунта"
+      "logOut": "Выйти"
     },
     "getStarted": "Начать",
     "profile": {
@@ -178,9 +180,9 @@
     "desc": "Убыв.",
     "ascending": "По возрастанию",
     "descending": "По убыванию",
-    "organization": "Организация",
-    "searchOrganization": "Поиск организации...",
-    "noOrganizations": "Нет доступных организаций"
+    "club": "Организация",
+    "searchClub": "Поиск организации...",
+    "noClubs": "Нет доступных организаций"
   },
   "commands": {
     "commands": "Команды",
@@ -227,10 +229,10 @@
     "locationPlaceholder": "например, MC 1234, SLC Большой зал",
     "selectPackage": "Выбрать пакет",
     "eventTitlePlaceholder": "например, Технический доклад: ИИ в 2024",
-    "organizationNamePlaceholder": "например, Организация компьютерных наук",
-    "selectOrganization": "Выбрать организацию",
-    "searchOrganizationPlaceholder": "Поиск организаций...",
-    "noOrganizationFound": "Организации не найдены",
+    "clubNamePlaceholder": "например, Организация компьютерных наук",
+    "selectClub": "Выбрать организацию",
+    "searchClubPlaceholder": "Поиск организаций...",
+    "noClubFound": "Организации не найдены",
     "descriptionPlaceholder": "Расскажите людям, о чем ваше мероприятие...",
     "sourceUrl": "Ссылка на источник",
     "sourceUrlPlaceholder": "https://instagram.com/p/...",
@@ -249,21 +251,21 @@
     "description": "Описание",
     "saveChanges": "Сохранить изменения",
     "requiredInformation": "Требуемая информация",
-    "organizationName": "Название организации",
-    "organizationType": "Тип организации",
-    "organizationTypeMapped": "{{type}}",
-    "organizationTypeIndependent": "Независимый",
-    "organizationNameRequired": "Название организации обязательно",
+    "clubName": "Название организации",
+    "clubType": "Тип организации",
+    "clubTypeMapped": "{{type}}",
+    "clubTypeIndependent": "Независимый",
+    "clubNameRequired": "Название организации обязательно",
     "ownerEmail": "Электронная почта владельца",
     "categories": "Категории",
     "categoryRequired": "Необходимо выбрать хотя бы одну категорию",
     "add": "Добавить",
-    "organizationPageUrl": "Страница организации URL",
-    "organizationPageUrlPlaceholder": "например, https://example.com или 123",
+    "clubPageUrl": "Страница организации URL",
+    "clubPageUrlPlaceholder": "например, https://example.com или 123",
     "instagramHandle": "Instagram Никнейм",
     "discordLink": "Discord Ссылка",
     "titleRequired": "Заголовок обязателен",
-    "organizationRequired": "Организация обязательна",
+    "clubRequired": "Организация обязательна",
     "occurrenceRequired": "Необходима хотя бы одна дата",
     "locationRequired": "Место проведения обязательно",
     "schoolRequired": "Школа обязательна",
@@ -291,7 +293,7 @@
     "politicsAndAdvocacy": "Политика и адвокация",
     "religionAndSpirituality": "Религия и духовность",
     "events": "События",
-    "organizations": "Организации"
+    "clubs": "Организации"
   },
   "locations": {
     "LAX": "LAX",

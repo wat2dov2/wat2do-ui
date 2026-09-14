@@ -1,23 +1,23 @@
 {
   "events": {
+    "minimumGoing": "کم از کم شرکاء",
     "eventTitle": "ایونٹ کا عنوان",
     "loadFailed": "ایونٹس لوڈ کرنے میں ناکام۔ براہ کرم دوبارہ کوشش کریں۔",
     "deleteFailed": "ایونٹ حذف کرنے میں ناکام۔ براہ کرم دوبارہ کوشش کریں۔",
     "submitFailed": "ایونٹ جمع کرانے میں ناکام۔ براہ کرم دوبارہ کوشش کریں۔",
     "submissionFailedTitle": "جمع کرانے میں ناکامی",
-    "organizationRequired": "ایونٹ جمع کرانے سے پہلے ایک تنظیم منتخب کریں۔",
-    "organization": "تنظیم",
+    "clubRequired": "ایونٹ جمع کرانے سے پہلے ایک تنظیم منتخب کریں۔",
+    "club": "تنظیم",
     "status": "حیثیت",
     "dayOfWeek": "ہفتے کا دن",
     "createEvent": "ایونٹ جمع کرائیں",
-    "submitEventSchoolDescription": "صرف {{school}} کی تنظیمیں دکھائی جاتی ہیں، لہٰذا آپ کا ایونٹ صحیح کیمپس پر جمع کر دیا جاتا ہے۔",
+    "submitEventSchoolDescription": "صرف {{school}} کی تنظیمیں دکھائی جاتی ہیں۔",
     "submitEventForReview": "ایونٹ کے جائزے کے لیے جمع کروائیں",
     "submitForReview": "جائزے کے لیے جمع کروائیں",
     "uploadEventFlyer": "ایونٹ فلائر اپلوڈ کریں",
     "uploadEventFlyerDescription": "تصویری فلائر اپلوڈ کریں یا چسپاں کریں، اور AI خود بخود تفصیلات پُر کر دے گا۔",
     "processingEventImage": "ایونٹ کی تصویر پر کارروائی ہو رہی ہے",
     "clickToUploadOrPasteImage": "تصویر اپلوڈ کرنے کے لیے کلک کریں یا چسپاں کریں",
-    "imagePasteShortcutHint": "{{formats}} (مثلاً Cmd+V / Ctrl+V)",
     "flyerExtracted": "فلائر کی تفصیلات کامیابی کے ساتھ نکالی گئیں۔",
     "flyerParseFailed": "فلائر کی تفہیم ناکام رہی",
     "flyerParseFailedDescription": "ہم فلائر سے ایونٹ کی تفصیلات نہیں پڑھ سکے۔",
@@ -47,7 +47,6 @@
     "noUpcomingEvents": "کوئی آنے والا ایونٹ نہیں",
     "upcomingEventCount": "آنے والا ایونٹ",
     "upcomingEventCount_other": "آنے والے ایونٹس",
-    "latestAddedEvent": "{{title}} نے {{time}} کو شامل کیا",
     "thisWeek": "اس ہفتے",
     "discoverEvents": "ایونٹس دریافت کریں",
     "clickCount": "{{count}} کلک",
@@ -56,12 +55,6 @@
     "noEventsFoundDesc": "آپ کے موجودہ فلٹر کے مطابق کوئی ایونٹ نہیں ملا۔ اپنی تلاش کو ایڈجسٹ کرنے یا کچھ فلٹر صاف کرنے کی کوشش کریں۔",
     "noEventsScheduled": "کوئی ایونٹ شیڈول نہیں",
     "noEventsScheduledDesc": "فی الحال کوئی ایونٹ شیڈول نہیں ہے۔ بعد میں دوبارہ چیک کریں!",
-    "newlyAddedFilter": {
-      "last24Hours": "نیا",
-      "sinceLastVisit": "پچھلی وزٹ کے بعد شامل",
-      "clear": "نئے شامل شدہ فلٹر صاف کریں",
-      "sinceLastVisitAt": "پچھلی وزٹ کے بعد شامل ({{time}})"
-    },
     "dateFilter": {
       "label": "ایونٹ کی تاریخ",
       "any": "کوئی بھی دن",
@@ -91,6 +84,7 @@
       "submitFailed": "رپورٹ جمع نہیں ہو سکی"
     },
     "goingEvents": {
+      "timeUnavailable": "یہ ایونٹ شروع ہو چکا ہے یا منسوخ ہو گیا ہے، اس لیے آپ شرکت درج نہیں کر سکتے۔",
       "markFailed": "اس تقریب کو اپنی شرکت کے طور پر نشان زد نہیں کیا جا سکا",
       "unmarkFailed": "اس تقریب سے شرکت کا نشان نہیں ہٹایا جا سکا",
       "saveFailed": "آپ کے منتخب کردہ وقت کو محفوظ نہیں کیا جا سکا",

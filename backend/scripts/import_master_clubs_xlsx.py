@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Bulk-import organizations from wat2do-clubs.xlsx into the
-Supabase ``organizations`` table.
+"""Bulk-import clubs from wat2do-clubs.xlsx into the
+Supabase ``clubs`` table.
 
 Every row with a name and a registered school slug is imported.  The sheet's
 ``IG Source`` column records how a handle was discovered and gates overwrites in
@@ -10,7 +10,7 @@ Usage (from backend/):
   python scripts/import_master_clubs_xlsx.py            # dry-run, prints diff
   python scripts/import_master_clubs_xlsx.py --apply    # write to Supabase
 
-Idempotent: keyed on ``(school, organization_name)``.  Re-running with ``--apply``
+Idempotent: keyed on ``(school, club_name)``.  Re-running with ``--apply``
 inserts new rows, updates rows whose xlsx values changed, and leaves
 unchanged rows alone.
 """
@@ -28,12 +28,12 @@ import openpyxl
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from core.constants.organizations import (
-    ORGANIZATION_CATEGORIES,
-    ORGANIZATION_CATEGORY_IMPORT_ALIASES,
+from core.constants.clubs import (
+    CLUB_CATEGORIES,
+    CLUB_CATEGORY_IMPORT_ALIASES,
 )
 from core.database import get_sb
-from core.tables import ORGANIZATIONS
+from core.tables import CLUBS
 
 log = logging.getLogger(__name__)
 
@@ -44,13 +44,13 @@ XLSX_PATH = Path(__file__).resolve().parent.parent / "services" / "scraper" / "w
 # hosted schools table are skipped with a warning so the sheet can contain
 # schools that have not launched yet.
 
-# The sheet's Organization Type column holds the student-association slug that
+# The sheet's Club Type column holds the student-association slug that
 # owns the club (e.g. "msu" for McMaster).  A blank cell means "no opinion": the
 # insert omits the field so the database default (`independent`) applies, and the
 # update leaves whatever an admin already chose.  Only a non-blank cell writes.
-ORGANIZATION_TYPE_PATTERN = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
+CLUB_TYPE_PATTERN = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 
-ORGANIZATION_NAME_MAX = 500
+CLUB_NAME_MAX = 500
 
 
 def _normalize_handle(value: object) -> str | None:
@@ -65,7 +65,7 @@ def _normalize_handle(value: object) -> str | None:
 
 
 def _normalize_categories(raw: object) -> list[str]:
-    """Parse a Category cell into canonical organization category names."""
+    """Parse a Category cell into canonical club category names."""
     if raw is None:
         return []
     text = str(raw).strip()
@@ -74,10 +74,10 @@ def _normalize_categories(raw: object) -> list[str]:
 
     matched = []
     remaining = text
-    source_categories = (*ORGANIZATION_CATEGORY_IMPORT_ALIASES.keys(), *ORGANIZATION_CATEGORIES)
+    source_categories = (*CLUB_CATEGORY_IMPORT_ALIASES.keys(), *CLUB_CATEGORIES)
     for category in source_categories:
         if category in text:
-            canonical = ORGANIZATION_CATEGORY_IMPORT_ALIASES.get(category, category)
+            canonical = CLUB_CATEGORY_IMPORT_ALIASES.get(category, category)
             if canonical not in matched:
                 matched.append(canonical)
             remaining = remaining.replace(category, "")
@@ -86,8 +86,8 @@ def _normalize_categories(raw: object) -> list[str]:
     return matched + leftovers
 
 
-def _normalize_organization_type(value: object) -> str | None:
-    """Lowercase the Organization Type cell.  Blank means None; validation is later."""
+def _normalize_club_type(value: object) -> str | None:
+    """Lowercase the Club Type cell.  Blank means None; validation is later."""
     if value is None:
         return None
     return str(value).strip().lower() or None
@@ -115,7 +115,7 @@ def _read_xlsx_rows() -> list[dict]:
         "IG Source",
         "Discord URL",
         "Discord Source",
-        "Organization Type",
+        "Club Type",
     ]
     if header != expected:
         raise RuntimeError(f"Unexpected xlsx header.  Expected {expected!r}, got {header!r}")
@@ -132,9 +132,7 @@ def _read_xlsx_rows() -> list[dict]:
                 "directory": _normalize_str(raw_row[4]),
                 "ig_handle": _normalize_handle(raw_row[6]),
                 "discord": _normalize_str(raw_row[8]) if len(raw_row) > 8 else None,
-                "organization_type": _normalize_organization_type(
-                    raw_row[10] if len(raw_row) > 10 else None
-                ),
+                "club_type": _normalize_club_type(raw_row[10] if len(raw_row) > 10 else None),
             }
         )
     wb.close()
@@ -149,7 +147,7 @@ def _validate_rows(
     skipped: Counter[str] = Counter()
     unknown_schools: set[str] = set()
     bad_categories: set[str] = set()
-    bad_organization_types: set[str] = set()
+    bad_club_types: set[str] = set()
     seen: dict[tuple[str, str], int] = {}
 
     for idx, row in enumerate(rows, start=3):
@@ -167,23 +165,21 @@ def _validate_rows(
 
         valid_categories = []
         for category in row["categories"]:
-            if category in ORGANIZATION_CATEGORIES:
+            if category in CLUB_CATEGORIES:
                 valid_categories.append(category)
             else:
                 bad_categories.add(category)
 
-        organization_type = row["organization_type"]
-        if organization_type and not ORGANIZATION_TYPE_PATTERN.match(organization_type):
-            bad_organization_types.add(organization_type)
-            organization_type = None
+        club_type = row["club_type"]
+        if club_type and not CLUB_TYPE_PATTERN.match(club_type):
+            bad_club_types.add(club_type)
+            club_type = None
 
-        organization_name = row["name"][:ORGANIZATION_NAME_MAX]
-        if len(row["name"]) > ORGANIZATION_NAME_MAX:
-            log.warning(
-                "Row %s: organization_name truncated to %s chars", idx, ORGANIZATION_NAME_MAX
-            )
+        club_name = row["name"][:CLUB_NAME_MAX]
+        if len(row["name"]) > CLUB_NAME_MAX:
+            log.warning("Row %s: club_name truncated to %s chars", idx, CLUB_NAME_MAX)
 
-        key = (canonical_school, organization_name)
+        key = (canonical_school, club_name)
         if key in seen:
             skipped["duplicate_school_name"] += 1
             continue
@@ -191,14 +187,14 @@ def _validate_rows(
 
         kept.append(
             {
-                "organization_name": organization_name,
+                "club_name": club_name,
                 "school": canonical_school,
                 "school_id": db_schools[canonical_school],
                 "categories": valid_categories,
-                "organization_page": row["directory"],
+                "club_page": row["directory"],
                 "ig": row["ig_handle"],
                 "discord": row["discord"],
-                "organization_type": organization_type,
+                "club_type": club_type,
             }
         )
 
@@ -209,20 +205,20 @@ def _validate_rows(
         )
     if bad_categories:
         log.warning(
-            "xlsx Category values not in ORGANIZATION_CATEGORIES skipped: "
+            "xlsx Category values not in CLUB_CATEGORIES skipped: "
             + ", ".join(sorted(bad_categories))
         )
-    if bad_organization_types:
+    if bad_club_types:
         log.warning(
-            "xlsx Organization Type values rejected (must be lowercase kebab-case): "
-            + ", ".join(sorted(bad_organization_types))
+            "xlsx Club Type values rejected (must be lowercase kebab-case): "
+            + ", ".join(sorted(bad_club_types))
         )
 
     return kept, dict(skipped)
 
 
 def _fetch_existing(sb, schools: dict[str, int]) -> dict[tuple[str, str], dict]:
-    """Return all organizations whose school is in *schools*, keyed on (school, organization_name)."""
+    """Return all clubs whose school is in *schools*, keyed on (school, club_name)."""
     if not schools:
         return {}
     existing: dict[tuple[str, str], dict] = {}
@@ -231,10 +227,10 @@ def _fetch_existing(sb, schools: dict[str, int]) -> dict[tuple[str, str], dict]:
     offset = 0
     while True:
         res = (
-            sb.table(ORGANIZATIONS)
+            sb.table(CLUBS)
             .select(
-                "id, organization_name, school_id, school_record:schools(slug), "
-                "categories, organization_page, ig, discord, organization_type"
+                "id, club_name, school_id, school_record:schools(slug), "
+                "categories, club_page, ig, discord, club_type"
             )
             .in_("school_id", list(schools.values()))
             .range(offset, offset + page_size - 1)
@@ -244,7 +240,7 @@ def _fetch_existing(sb, schools: dict[str, int]) -> dict[tuple[str, str], dict]:
         for row in batch:
             school = (row.pop("school_record", None) or {}).get("slug")
             if school:
-                existing[(school, row["organization_name"])] = row
+                existing[(school, row["club_name"])] = row
         if len(batch) < page_size:
             break
         offset += page_size
@@ -253,12 +249,12 @@ def _fetch_existing(sb, schools: dict[str, int]) -> dict[tuple[str, str], dict]:
 
 def _diff(planned: dict, existing: dict) -> dict | None:
     """Return a dict of {field: (old, new)} for fields that differ, or None."""
-    fields = ("categories", "organization_page", "ig", "discord", "organization_type")
+    fields = ("categories", "club_page", "ig", "discord", "club_type")
     diff: dict[str, tuple] = {}
     for field in fields:
         old = existing.get(field)
         new = planned[field]
-        if field == "organization_type" and new is None:
+        if field == "club_type" and new is None:
             # A blank cell is "no opinion", so never clear an admin's choice.
             continue
         if field == "categories":
@@ -324,7 +320,7 @@ def main() -> int:
     unchanged = 0
 
     for row in kept:
-        key = (row["school"], row["organization_name"])
+        key = (row["school"], row["club_name"])
         if key in existing:
             diff = _diff(row, existing[key])
             if diff:
@@ -363,7 +359,7 @@ def main() -> int:
                 "update example id=%s school=%r name=%r diff=%s",
                 cid,
                 planned["school"],
-                planned["organization_name"],
+                planned["club_name"],
                 diff,
             )
         return 0
@@ -375,40 +371,32 @@ def main() -> int:
         batch_size = 200
         payload = [
             {
-                "organization_name": row["organization_name"],
+                "club_name": row["club_name"],
                 "school_id": row["school_id"],
                 "categories": row["categories"],
-                "organization_page": row["organization_page"],
+                "club_page": row["club_page"],
                 "ig": row["ig"],
                 # Omitted when blank so the database default (`independent`) applies.
-                **(
-                    {"organization_type": row["organization_type"]}
-                    if row["organization_type"]
-                    else {}
-                ),
+                **({"club_type": row["club_type"]} if row["club_type"] else {}),
             }
             for row in to_insert
         ]
         for start in range(0, len(payload), batch_size):
             chunk = payload[start : start + batch_size]
-            sb.table(ORGANIZATIONS).insert(chunk).execute()
+            sb.table(CLUBS).insert(chunk).execute()
             inserted += len(chunk)
             log.info("  inserted %s/%s", inserted, len(payload))
 
     updated = 0
     for cid, planned, _ in to_update:
-        sb.table(ORGANIZATIONS).update(
+        sb.table(CLUBS).update(
             {
                 "categories": planned["categories"],
-                "organization_page": planned["organization_page"],
+                "club_page": planned["club_page"],
                 "ig": planned["ig"],
                 "discord": planned["discord"],
                 # Omitted when blank so an admin's existing choice survives re-import.
-                **(
-                    {"organization_type": planned["organization_type"]}
-                    if planned["organization_type"]
-                    else {}
-                ),
+                **({"club_type": planned["club_type"]} if planned["club_type"] else {}),
             }
         ).eq("id", cid).execute()
         updated += 1

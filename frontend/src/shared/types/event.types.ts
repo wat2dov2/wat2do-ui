@@ -24,17 +24,17 @@ interface EventViewOnlyFields {
   /** Live/upcoming/past flag derived elsewhere. */
   isLive?: boolean;
   /** Full-detail/admin-only fields are absent from list summaries. */
-  organization_id?: ApiEventResponse["organization_id"];
+  club_id?: ApiEventResponse["club_id"];
   description?: ApiEventResponse["description"];
   source_url?: ApiEventResponse["source_url"];
-  organization_logo_url?: ApiEventResponse["organization_logo_url"];
-  organization_type?: ApiEventResponse["organization_type"];
+  club_logo_url?: ApiEventResponse["club_logo_url"];
+  club_type?: ApiEventResponse["club_type"];
   ig_handle?: ApiEventResponse["ig_handle"];
   created_by?: ApiEventResponse["created_by"];
   /** Org link/social fields are embedded only on the list summary shape. */
-  organization_page?: ApiEventSummaryResponse["organization_page"];
-  organization_ig?: ApiEventSummaryResponse["organization_ig"];
-  organization_discord?: ApiEventSummaryResponse["organization_discord"];
+  club_page?: ApiEventSummaryResponse["club_page"];
+  club_ig?: ApiEventSummaryResponse["club_ig"];
+  club_discord?: ApiEventSummaryResponse["club_discord"];
 }
 
 export type Event = EventApiShape & EventViewOnlyFields;
@@ -46,10 +46,10 @@ export interface EventFormOccurrence {
 }
 
 // Event creation/edit form data (matches EventFormData from SubmitEventModal).
-// The owning organization (organization_id) is the single source of truth for the event's
-// organization/school - those are derived server-side, never entered.
+// The owning club (club_id) is the single source of truth for the event's
+// club/school - those are derived server-side, never entered.
 export interface EventFormData {
-  organization_id: number | null;
+  club_id: number | null;
   title: string;
   description: string;
   occurrences: EventFormOccurrence[];
@@ -66,7 +66,7 @@ export interface EventFormData {
 // Form validation errors
 export interface ValidationErrors {
   title?: string;
-  organization_id?: string;
+  club_id?: string;
   occurrences?: string;
   location?: string;
 }

@@ -10,18 +10,18 @@ const instagramCoverLogoSvg = readFileSync(
   ),
   "utf8",
 );
-const organizationCategoryDoodleDirectory = fileURLToPath(
-  new URL("./public/icons/organization-categories/", import.meta.url),
+const clubCategoryDoodleDirectory = fileURLToPath(
+  new URL("./public/icons/club-categories/", import.meta.url),
 );
-const organizationCategoryDoodleSvgs = Object.fromEntries(
-  readdirSync(organizationCategoryDoodleDirectory)
+const clubCategoryDoodleSvgs = Object.fromEntries(
+  readdirSync(clubCategoryDoodleDirectory)
     .filter((file) => file.endsWith(".svg"))
     .map((file) => [
-      `/icons/organization-categories/${file}`,
+      `/icons/club-categories/${file}`,
       readFileSync(
         fileURLToPath(
           new URL(
-            `./public/icons/organization-categories/${file}`,
+            `./public/icons/club-categories/${file}`,
             import.meta.url,
           ),
         ),
@@ -87,20 +87,22 @@ const apiCollectionPaths = [
   "credits",
   "events",
   "instagram-publishing/batches",
-  "organizations",
+  "clubs",
   "payouts",
   "positions",
+  "position-submissions",
   "promotions",
   "qr",
   "reports",
   "going-events",
-  "saved-organizations",
+  "saved-clubs",
   "submissions",
   "users",
   "v1/saved-events",
 ];
 
 const nextConfig: NextConfig = {
+  experimental: { testProxy: process.env.PLAYWRIGHT_TEST === "1" },
   output: "standalone",
   images: {
     remotePatterns: [
@@ -113,8 +115,8 @@ const nextConfig: NextConfig = {
   },
   env: {
     NEXT_PUBLIC_INSTAGRAM_COVER_LOGO_SVG: instagramCoverLogoSvg,
-    NEXT_PUBLIC_ORGANIZATION_CATEGORY_DOODLE_SVGS: JSON.stringify(
-      organizationCategoryDoodleSvgs,
+    NEXT_PUBLIC_CLUB_CATEGORY_DOODLE_SVGS: JSON.stringify(
+      clubCategoryDoodleSvgs,
     ),
     NEXT_PUBLIC_PROMOTER_PROGRAM: JSON.stringify(publicPromoterProgram),
   },
@@ -148,7 +150,7 @@ const nextConfig: NextConfig = {
       },
     ];
   },
-  allowedDevOrigins: ["127.0.0.1", "localhost"],
+  allowedDevOrigins: ["127.0.0.1", "localhost", "wat2do.localhost", "*.wat2do.localhost"],
 };
 
 export default nextConfig;

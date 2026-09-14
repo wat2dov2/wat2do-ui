@@ -2,7 +2,6 @@ import { useCallback, startTransition } from "react";
 import { useShallow } from "zustand/react/shallow";
 import {
   storeStatesToFilterState,
-  normalizeFilterState,
   clearNarrowingFilterState,
 } from "@/features/search/api/filterService";
 import { useSearchStore } from "@/features/search/store/search.store";
@@ -16,9 +15,9 @@ function readCurrentFilterState(): FilterState {
 
 export function useFilterActions() {
   const setFilterState = useCallback((updater: FilterStateUpdater) => {
-    const nextFilters = normalizeFilterState(
-      typeof updater === "function" ? updater(readCurrentFilterState()) : updater,
-    );
+    const nextFilters = typeof updater === "function"
+      ? updater(readCurrentFilterState())
+      : updater;
     startTransition(() => {
       useSearchStore.getState().setFilterState(nextFilters);
     });
@@ -26,7 +25,7 @@ export function useFilterActions() {
 
   const updateFilterState = useCallback(
     (patch: Partial<FilterState>) => {
-      setFilterState((current) => normalizeFilterState({ ...current, ...patch }));
+      setFilterState((current) => ({ ...current, ...patch }));
     },
     [setFilterState],
   );
@@ -47,44 +46,18 @@ export function useFilterActions() {
   );
 
   const clearAllFilters = useCallback(() => {
-    setFilterState((current) => clearNarrowingFilterState(current));
+    setFilterState(clearNarrowingFilterState);
   }, [setFilterState]);
 
   return {
-    setFilterState,
     updateFilterState,
     toggleFilterValue,
     clearAllFilters,
   };
 }
 
-/**
- * Hook for managing filter state
- *
- * Backed by the shared Zustand search store so that every call site
- * (App Router pages, EventsPageContainer, CommandPalette) reads and writes
- * the same filter values.
- */
 export function useFilterState() {
-  // ── Shared filter values from the store (single shallow subscription) ──
-  const {
-    searchQuery,
-    selectedCategories,
-    selectedLocations,
-    selectedFoods,
-    selectedDays,
-    minPrice,
-    maxPrice,
-    registration,
-    freeFoodFilter,
-    selectedOrganizations,
-    goingFilter,
-    sortBy,
-    sortOrder,
-    addedSince,
-    dateFilter,
-    customDate,
-  } = useSearchStore(
+  const values = useSearchStore(
     useShallow((s) => ({
       searchQuery: s.searchQuery,
       selectedCategories: s.selectedCategories,
@@ -93,9 +66,10 @@ export function useFilterState() {
       selectedDays: s.selectedDays,
       minPrice: s.minPrice,
       maxPrice: s.maxPrice,
+      minGoing: s.minGoing,
       registration: s.registration,
-      freeFoodFilter: s.freeFoodFilter,
-      selectedOrganizations: s.selectedOrganizations,
+      hasFoodFilter: s.hasFoodFilter,
+      selectedClubs: s.selectedClubs,
       goingFilter: s.goingFilter,
       sortBy: s.sortBy,
       sortOrder: s.sortOrder,
@@ -104,6 +78,7 @@ export function useFilterState() {
       customDate: s.customDate,
     })),
   );
+  const { maxPrice } = values;
   const {
     updateFilterState,
     toggleFilterValue,
@@ -130,8 +105,8 @@ export function useFilterState() {
     (value: string[]) => updateFilterState({ days: value }),
     [updateFilterState],
   );
-  const setSelectedOrganizations = useCallback(
-    (value: string[]) => updateFilterState({ organizations: value }),
+  const setSelectedClubs = useCallback(
+    (value: string[]) => updateFilterState({ clubs: value }),
     [updateFilterState],
   );
   const setMinPrice = useCallback(
@@ -146,9 +121,17 @@ export function useFilterState() {
     (value: boolean) => updateFilterState({ registration: value }),
     [updateFilterState],
   );
-  const setFreeFoodFilter = useCallback(
-    (value: boolean) => updateFilterState({ freeFood: value }),
+  const setMinGoing = useCallback(
+    (value: number) => updateFilterState({ minGoing: value }),
     [updateFilterState],
+  );
+  const setHasFoodFilter = useCallback(
+    (value: boolean) => updateFilterState({ hasFood: value }),
+    [updateFilterState],
+  );
+  const toggleFree = useCallback(
+    () => updateFilterState({ minPrice: "", maxPrice: maxPrice === "0" ? "" : "0" }),
+    [maxPrice, updateFilterState],
   );
   const setGoingFilter = useCallback(
     (value: boolean) => updateFilterState({ going: value }),
@@ -163,25 +146,8 @@ export function useFilterState() {
       updateFilterState({ dateFilter: value, customDate: selectedDate }),
     [updateFilterState],
   );
-  const setSortBy = useCallback(
-    (value: string) => updateFilterState({ sortBy: value }),
-    [updateFilterState],
-  );
-  const setSortOrder = useCallback(
-    (value: "asc" | "desc") => updateFilterState({ sortOrder: value }),
-    [updateFilterState],
-  );
-  const setSort = useCallback(
-    (sortBy: string, sortOrder: "asc" | "desc") =>
-      updateFilterState({ sortBy, sortOrder }),
-    [updateFilterState],
-  );
   const toggleCategory = useCallback(
     (cat: string) => toggleFilterValue("categories", cat),
-    [toggleFilterValue],
-  );
-  const toggleLocation = useCallback(
-    (loc: string) => toggleFilterValue("locations", loc),
     [toggleFilterValue],
   );
   const toggleDay = useCallback(
@@ -189,41 +155,24 @@ export function useFilterState() {
     [toggleFilterValue],
   );
   return {
-    searchQuery,
+    ...values,
     setSearchQuery,
-    selectedCategories,
     setSelectedCategories,
-    selectedLocations,
     setSelectedLocations,
-    selectedFoods,
     setSelectedFoods,
-    selectedDays,
     setSelectedDays,
-    minPrice,
     setMinPrice,
-    maxPrice,
     setMaxPrice,
-    registration,
+    setMinGoing,
     setRegistration,
-    selectedOrganizations,
-    setSelectedOrganizations,
-    freeFoodFilter,
-    setFreeFoodFilter,
-    goingFilter,
+    setSelectedClubs,
+    setHasFoodFilter,
+    toggleFree,
     setGoingFilter,
-    addedSince,
     setAddedSince,
-    dateFilter,
-    customDate,
     setDateFilter,
     toggleCategory,
-    toggleLocation,
     toggleDay,
     clearAllFilters,
-    sortBy,
-    setSortBy,
-    sortOrder,
-    setSortOrder,
-    setSort,
   };
 }

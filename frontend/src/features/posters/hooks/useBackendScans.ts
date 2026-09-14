@@ -10,16 +10,12 @@ import { queryKeys } from "@/shared/lib/queryKeys";
  * Fetches scans from the backend so that scans from any device (e.g. phone)
  * appear in the dashboard. Returns normalized QRCodeScan[] and loading state.
  */
-export function useBackendScans(refreshKey?: number): {
-  scans: QRCodeScan[];
-  loading: boolean;
-  error: Error | null;
-} {
-  const { data: scans = [], isLoading, error } = useQuery({
-    queryKey: queryKeys.scans.list(refreshKey),
+export function useBackendScans() {
+  const { data: scans = [], isLoading } = useQuery({
+    queryKey: queryKeys.scans.list(),
     queryFn: () => getScansFromBackend().then((raw) => raw.map(normalizeBackendScan)),
     placeholderData: [] as QRCodeScan[],
   });
 
-  return { scans, loading: isLoading, error: error instanceof Error ? error : error ? new Error(String(error)) : null };
+  return { scans, loading: isLoading };
 }

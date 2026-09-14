@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import type { ComponentProps } from "react";
 import type { ApiInstagramPublishBatchSummaryResponse } from "@/shared/generated";
 import { AdminTable } from "@/features/admin/components/shared/AdminTable";
 import { Badge } from "@/shared/ui/badge";
@@ -8,7 +9,10 @@ type Batch = ApiInstagramPublishBatchSummaryResponse;
 
 interface InstagramRunsTableProps {
   batches: Batch[];
+  total: number;
   onOpenRun: (batchId: string) => void;
+  onPrefetchRun: (batchId: string) => void;
+  pagination: ComponentProps<typeof AdminTable>["pagination"];
 }
 
 function statusBadgeVariant(status: Batch["status"]) {
@@ -27,12 +31,15 @@ function statusBadgeVariant(status: Batch["status"]) {
   }
 }
 
-export function InstagramRunsTable({ batches, onOpenRun }: InstagramRunsTableProps) {
+export function InstagramRunsTable({ batches, total, onOpenRun, onPrefetchRun, pagination }: InstagramRunsTableProps) {
   const { t, i18n } = useTranslation();
   const locale = i18n.language || "en-US";
 
   return (
     <AdminTable
+      count={total}
+      label={t("admin.instagramPublishing.batches")}
+      pagination={pagination}
       headers={[
         { label: t("admin.instagramPublishing.columns.school") },
         { label: t("admin.instagramPublishing.columns.dateRan") },
@@ -52,6 +59,8 @@ export function InstagramRunsTable({ batches, onOpenRun }: InstagramRunsTablePro
             tabIndex={0}
             aria-label={batch.account_key}
             onClick={() => onOpenRun(batch.id)}
+            onMouseEnter={() => onPrefetchRun(batch.id)}
+            onFocus={() => onPrefetchRun(batch.id)}
             onKeyDown={(event) => {
               if (event.key === "Enter" || event.key === " ") {
                 event.preventDefault();
@@ -64,7 +73,7 @@ export function InstagramRunsTable({ batches, onOpenRun }: InstagramRunsTablePro
             <TableCell>
               {ran.toLocaleTimeString(locale, { hour: "numeric", minute: "2-digit" })}
             </TableCell>
-            <TableCell>{batch.item_count}</TableCell>
+            <TableCell>{t("admin.instagramPublishing.eventEligibility", { count: batch.item_count, eligible: batch.eligible_count })}</TableCell>
             <TableCell>
               <Badge variant={statusBadgeVariant(batch.status)}>
                 {t(`admin.instagramPublishing.status.${batch.status}`)}

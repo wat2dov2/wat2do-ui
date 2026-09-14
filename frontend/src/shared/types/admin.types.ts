@@ -11,6 +11,7 @@ import type { EventFormData } from "@/shared/types/event.types";
 export type ReportStatus = (typeof REPORT_STATUSES)[number];
 
 export interface ReportedEvent {
+  school?: string | null;
   id: string;
   eventId: number;
   reportedBy: string | null;
@@ -22,6 +23,7 @@ export interface ReportedEvent {
 export type SubmissionStatus = (typeof SUBMISSION_STATUSES)[number];
 
 export interface EventSubmission {
+  school?: string | null;
   id: string;
   eventData: EventFormData;
   submittedBy: string;

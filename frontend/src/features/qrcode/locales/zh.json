@@ -31,7 +31,6 @@
     "urlRequired": "链接为必填项",
     "urlInvalid": "请输入有效的链接",
     "descriptionOptional": "可选",
-    "imageFormat": "支持 PNG, JPG，最大 5MB",
     "noScanData": "暂无扫码数据",
     "noScanDataDesc": "分享您的二维码以开始跟踪效果",
     "posterAriaLabel": "海报 {{id}}",

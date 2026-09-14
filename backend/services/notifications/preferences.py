@@ -1,6 +1,7 @@
 """Notification preference CRUD and default resolution."""
 
 from datetime import datetime, timezone
+from itertools import batched
 
 from core.constants import NOTIFICATION_DEFAULT_ENABLED, NOTIFICATION_TYPES
 from core.database import get_sb
@@ -90,8 +91,7 @@ def get_enabled_user_ids(
         return set()
 
     explicit: dict[str, bool] = {}
-    for start in range(0, len(unique_ids), 500):
-        chunk = unique_ids[start : start + 500]
+    for chunk in batched(unique_ids, 500):
         rows = (
             get_sb()
             .table(NOTIFICATION_PREFERENCES)

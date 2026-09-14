@@ -1,8 +1,6 @@
 import { useCallback, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { skipToken, useQuery } from "@tanstack/react-query";
 import {
-  SCHOOL_DIRECTORY_LIMIT,
-  searchSchools,
   type SchoolSummary,
 } from "@/shared/api/schools.api";
 import { resolveSchool } from "@/shared/constants/schools";
@@ -11,9 +9,9 @@ import { queryKeys } from "@/shared/lib/queryKeys";
 const EMPTY_SCHOOLS: SchoolSummary[] = [];
 
 export function useSchoolDirectory() {
-  const query = useQuery({
+  const query = useQuery<SchoolSummary[]>({
     queryKey: queryKeys.schools.directory(),
-    queryFn: () => searchSchools("", SCHOOL_DIRECTORY_LIMIT),
+    queryFn: skipToken,
   });
   const schools = query.data ?? EMPTY_SCHOOLS;
   const schoolBySlug = useMemo(
@@ -29,7 +27,8 @@ export function useSchoolDirectory() {
   );
 
   return {
-    ...query,
+    isPending: query.isPending,
+    isError: query.isError,
     schools,
     schoolBySlug,
     getSchoolName,

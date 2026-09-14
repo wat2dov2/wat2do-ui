@@ -1,17 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
-import { isEventCategory } from "@/shared/data/eventCategories";
+import { useAppConstants } from "@/shared/hooks/useAppConstants";
 
 const ONBOARDING_TOTAL_STEPS = 5;
-
-export const FACULTY_OPTIONS = [
-  "Engineering",
-  "Mathematics",
-  "Science",
-  "Arts",
-  "Environment",
-  "Health",
-  "Applied Health Sciences",
-] as const;
 
 interface UseOnboardingFlowOptions {
   onComplete: (data: {
@@ -29,6 +19,7 @@ interface UseOnboardingFlowOptions {
 }
 
 export function useOnboardingFlow({ onComplete, initialSchool }: UseOnboardingFlowOptions) {
+  const { event_categories: eventCategories } = useAppConstants();
   const [step, setStep] = useState(0);
   const school = initialSchool ?? "";
   const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
@@ -37,12 +28,9 @@ export function useOnboardingFlow({ onComplete, initialSchool }: UseOnboardingFl
   const [isFirstYear, setIsFirstYear] = useState<boolean | null>(null);
 
   const validTopics = useMemo(
-    () => selectedTopics.filter((t) => isEventCategory(t)),
-    [selectedTopics]
+    () => selectedTopics.filter((topic) => eventCategories.includes(topic)),
+    [selectedTopics, eventCategories]
   );
-
-  // All questions optional - user can always continue
-  const canContinue = true;
 
   const toggleEventId = useCallback((eventId: number) => {
     setSelectedEventIds((prev) =>
@@ -57,8 +45,6 @@ export function useOnboardingFlow({ onComplete, initialSchool }: UseOnboardingFl
   }, []);
 
   const goNext = useCallback(() => {
-    if (!canContinue) return;
-
     if (step >= ONBOARDING_TOTAL_STEPS - 1) {
       onComplete({
         school,
@@ -72,7 +58,6 @@ export function useOnboardingFlow({ onComplete, initialSchool }: UseOnboardingFl
 
     setStep((prev) => prev + 1);
   }, [
-    canContinue,
     validTopics,
     school,
     faculty,
@@ -94,10 +79,8 @@ export function useOnboardingFlow({ onComplete, initialSchool }: UseOnboardingFl
     selectedEventIds,
     faculty,
     isFirstYear,
-    canContinue,
     setFaculty,
     setIsFirstYear,
-    setSelectedTopics,
     toggleTopic,
     toggleEventId,
     goNext,

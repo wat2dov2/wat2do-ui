@@ -4,7 +4,7 @@
  * Every client-side route string used in router navigation or pathname
  * comparisons should reference this object instead of using a raw string.
  *
- * Sub-route maps (ADMIN_ROUTE_MAP, ORGANIZATION_PANEL_ROUTE_MAP) are also derived from these
+ * Sub-route maps (ADMIN_ROUTE_MAP, CLUB_PANEL_ROUTE_MAP) are also derived from these
  * constants so there is a single source of truth.
  */
 
@@ -18,33 +18,35 @@ export const ROUTES = {
   ONBOARDING: "/onboarding",
   ONBOARDING_DEMO: "/onboarding-demo",
   CONTACT: "/contact",
-  ORGANIZATIONS: "/organizations",
+  CLUBS: "/clubs",
   POSITIONS: "/positions",
-  ORGANIZATION_CREATE: "/organizations/new",
+  CLUB_CREATE: "/clubs/new",
   SETTINGS: "/settings",
   MARKETING: "/marketing",
   INVITE: "/invite",
   EVENT_SUBMIT: "/events/submit",
+  POSITION_SUBMIT: "/positions/submit",
   PROMOTE: "/promote",
   POSTERS: "/posters",
 
   // Admin
   ADMIN: "/admin",
   ADMIN_EVENTS: "/admin/events",
-  ADMIN_ORGANIZATIONS: "/admin/organizations",
+  ADMIN_POSITIONS: "/admin/positions",
+  ADMIN_CLUBS: "/admin/clubs",
   ADMIN_POSTERS: "/admin/posters",
   ADMIN_INSTAGRAM: "/admin/instagram",
   ADMIN_DIAGNOSTICS: "/admin/diagnostics",
 
-  // Organization Panel
-  ORGANIZATION_PANEL: "/organization-panel",
-  ORGANIZATION_PANEL_POSTERS: "/organization-panel/posters",
-  ORGANIZATION_PANEL_INTEGRATIONS: "/organization-panel/integrations",
-  ORGANIZATION_PANEL_MEMBERS: "/organization-panel/members",
+  // Club Panel
+  CLUB_PANEL: "/club-panel",
+  CLUB_PANEL_POSTERS: "/club-panel/posters",
+  CLUB_PANEL_INTEGRATIONS: "/club-panel/integrations",
+  CLUB_PANEL_MEMBERS: "/club-panel/members",
 } as const;
 
-export function organizationPagePath(organizationId: number): string {
-  return `${ROUTES.ORGANIZATIONS}/${organizationId}`;
+export function clubPagePath(clubId: number): string {
+  return `${ROUTES.CLUBS}/${clubId}`;
 }
 
 const APP_NAME = "Wat2Do";
@@ -58,9 +60,9 @@ const ROUTE_PAGE_TITLES: Partial<
   [ROUTES.ONBOARDING]: "Onboarding",
   [ROUTES.ONBOARDING_DEMO]: "Onboarding Demo",
   [ROUTES.CONTACT]: "Contact",
-  [ROUTES.ORGANIZATIONS]: "Organizations",
+  [ROUTES.CLUBS]: "Clubs",
   [ROUTES.POSITIONS]: "Positions",
-  [ROUTES.ORGANIZATION_CREATE]: "Add an Organization",
+  [ROUTES.CLUB_CREATE]: "Add a Club",
   [ROUTES.SETTINGS]: "Settings",
   [ROUTES.MARKETING]: "Marketing",
   [ROUTES.EVENT_SUBMIT]: "Submit an Event",
@@ -68,14 +70,15 @@ const ROUTE_PAGE_TITLES: Partial<
   [ROUTES.POSTERS]: "My Posters",
   [ROUTES.ADMIN]: "Admin",
   [ROUTES.ADMIN_EVENTS]: "Admin Events",
-  [ROUTES.ADMIN_ORGANIZATIONS]: "Admin Organizations",
+  [ROUTES.ADMIN_POSITIONS]: "Admin Positions",
+  [ROUTES.ADMIN_CLUBS]: "Admin Clubs",
   [ROUTES.ADMIN_POSTERS]: "Admin Posters",
   [ROUTES.ADMIN_INSTAGRAM]: "Instagram Publishing",
   [ROUTES.ADMIN_DIAGNOSTICS]: "App Diagnostics",
-  [ROUTES.ORGANIZATION_PANEL]: "Organization Panel",
-  [ROUTES.ORGANIZATION_PANEL_POSTERS]: "Posters",
-  [ROUTES.ORGANIZATION_PANEL_INTEGRATIONS]: "Integrations",
-  [ROUTES.ORGANIZATION_PANEL_MEMBERS]: "Members",
+  [ROUTES.CLUB_PANEL]: "Club Panel",
+  [ROUTES.CLUB_PANEL_POSTERS]: "Posters",
+  [ROUTES.CLUB_PANEL_INTEGRATIONS]: "Integrations",
+  [ROUTES.CLUB_PANEL_MEMBERS]: "Members",
 };
 
 function buildDocumentTitle(pageTitle?: string): string {
@@ -86,14 +89,14 @@ export function getRouteDocumentTitle(pathname: string): string {
   const normalizedPathname = pathname.replace(/\/+$/, "") || ROUTES.HOME;
 
   if (normalizedPathname.startsWith("/invite/")) {
-    return buildDocumentTitle("Organization Invite");
+    return buildDocumentTitle("Club Invite");
   }
 
   if (
-    normalizedPathname !== ROUTES.ORGANIZATION_CREATE &&
-    normalizedPathname.startsWith(`${ROUTES.ORGANIZATIONS}/`)
+    normalizedPathname !== ROUTES.CLUB_CREATE &&
+    normalizedPathname.startsWith(`${ROUTES.CLUBS}/`)
   ) {
-    return buildDocumentTitle("Organization");
+    return buildDocumentTitle("Club");
   }
 
   if (normalizedPathname.startsWith("/qr/")) {
@@ -123,7 +126,8 @@ export function settingsTabPath(
 // ── Admin sub-route map ────────────────────────────────────────────
 export const ADMIN_ROUTE_MAP = {
   "admin-events": ROUTES.ADMIN_EVENTS,
-  "admin-organizations": ROUTES.ADMIN_ORGANIZATIONS,
+  "admin-positions": ROUTES.ADMIN_POSITIONS,
+  "admin-clubs": ROUTES.ADMIN_CLUBS,
   "admin-posters": ROUTES.ADMIN_POSTERS,
   "admin-instagram": ROUTES.ADMIN_INSTAGRAM,
   "admin-diagnostics": ROUTES.ADMIN_DIAGNOSTICS,
@@ -131,12 +135,12 @@ export const ADMIN_ROUTE_MAP = {
 
 export type AdminRouteKey = keyof typeof ADMIN_ROUTE_MAP;
 
-// ── Organization Panel sub-route map ───────────────────────────────────────
-export const ORGANIZATION_PANEL_ROUTE_MAP = {
-  "organization-panel-posters": ROUTES.ORGANIZATION_PANEL_POSTERS,
-  "organization-panel-integrations": ROUTES.ORGANIZATION_PANEL_INTEGRATIONS,
-  "organization-panel-members": ROUTES.ORGANIZATION_PANEL_MEMBERS,
+// ── Club Panel sub-route map ───────────────────────────────────────
+export const CLUB_PANEL_ROUTE_MAP = {
+  "club-panel-posters": ROUTES.CLUB_PANEL_POSTERS,
+  "club-panel-integrations": ROUTES.CLUB_PANEL_INTEGRATIONS,
+  "club-panel-members": ROUTES.CLUB_PANEL_MEMBERS,
 } as const;
 
-export type OrganizationPanelRouteKey =
-  keyof typeof ORGANIZATION_PANEL_ROUTE_MAP;
+export type ClubPanelRouteKey =
+  keyof typeof CLUB_PANEL_ROUTE_MAP;

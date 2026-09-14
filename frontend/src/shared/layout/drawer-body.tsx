@@ -2,7 +2,9 @@ import * as React from "react"
 
 import { cn } from "@/shared/lib/utils"
 
-type DrawerBodyProps = React.ComponentProps<"div">
+type DrawerBodyProps = React.ComponentProps<"div"> & {
+  scroll?: "body" | "columns"
+}
 
 /**
  * Scrollable region between a drawer's header and footer.
@@ -13,7 +15,7 @@ type DrawerBodyProps = React.ComponentProps<"div">
  * the scroll stays inside the drawer instead of chaining to the page behind it.
  * Vaul owns touch gesture arbitration and detects this scrollable ancestor.
  */
-function DrawerBody({ className, ...props }: DrawerBodyProps) {
+function DrawerBody({ className, scroll = "body", ...props }: DrawerBodyProps) {
   return (
     <div
       data-slot="drawer-body"
@@ -23,6 +25,7 @@ function DrawerBody({ className, ...props }: DrawerBodyProps) {
         // overflow-y alone computes overflow-x to auto, which is how a stray wide
         // child produced a horizontal scrollbar.
         "flex min-h-0 min-w-0 flex-auto flex-col gap-6 overflow-y-auto overflow-x-hidden overscroll-contain p-4 sm:p-6",
+        scroll === "columns" && "overflow-hidden [&>div]:min-h-0 [&>div]:flex-1 [&>div]:grid-rows-[minmax(0,1fr)] [&>div>div]:h-full [&>div>div]:min-h-0 [&>div>div]:overflow-y-auto [&>div>div]:overscroll-contain [&>div>div]:p-1",
         className
       )}
       {...props}

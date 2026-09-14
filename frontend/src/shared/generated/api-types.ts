@@ -21,6 +21,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/ai/parse-position-image": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Parse Position Image */
+        post: operations["parse_position_image_ai_parse_position_image_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/google": {
         parameters: {
             query?: never;
@@ -183,6 +200,320 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/clubs/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Clubs
+         * @description Public directory. Only approved clubs are listed.
+         */
+        get: operations["list_clubs_clubs__get"];
+        put?: never;
+        /**
+         * Create Club
+         * @description Anyone signed in may submit a club; only admins publish directly.
+         */
+        post: operations["create_club_clubs__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/clubs/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Clubs For Review
+         * @description Admin review queue across every review state.
+         */
+        get: operations["list_clubs_for_review_clubs_review_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/clubs/mine": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List My Clubs */
+        get: operations["list_my_clubs_clubs_mine_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/clubs/integrations/discord/options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Discord Options */
+        get: operations["get_discord_options_clubs_integrations_discord_options_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/clubs/integrations/{platform}/options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Platform Options */
+        get: operations["get_platform_options_clubs_integrations__platform__options_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/clubs/claims": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Claims */
+        get: operations["list_claims_clubs_claims_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/clubs/{club_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Club */
+        get: operations["get_club_clubs__club_id__get"];
+        put?: never;
+        post?: never;
+        /** Delete Club */
+        delete: operations["delete_club_clubs__club_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Club */
+        patch: operations["update_club_clubs__club_id__patch"];
+        trace?: never;
+    };
+    "/clubs/{club_id}/integrations/{platform}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Platform Integration */
+        get: operations["get_platform_integration_clubs__club_id__integrations__platform__get"];
+        /** Upsert Platform Integration */
+        put: operations["upsert_platform_integration_clubs__club_id__integrations__platform__put"];
+        post?: never;
+        /** Disconnect Platform Integration */
+        delete: operations["disconnect_platform_integration_clubs__club_id__integrations__platform__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/clubs/{club_id}/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Review Club
+         * @description Approve or reject a submitted club.
+         */
+        post: operations["review_club_clubs__club_id__review_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/clubs/{club_id}/members": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Club Members */
+        get: operations["list_club_members_clubs__club_id__members_get"];
+        put?: never;
+        /**
+         * Add Club Member
+         * @description Add by email: existing users join club_members directly; otherwise invite.
+         */
+        post: operations["add_club_member_clubs__club_id__members_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/clubs/{club_id}/members/{user_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove Club Member */
+        delete: operations["remove_club_member_clubs__club_id__members__user_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/clubs/{club_id}/invitations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Invitations */
+        get: operations["list_invitations_clubs__club_id__invitations_get"];
+        put?: never;
+        /** Create Invitation */
+        post: operations["create_invitation_clubs__club_id__invitations_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/clubs/{club_id}/invitations/{invitation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Revoke Invitation */
+        delete: operations["revoke_invitation_clubs__club_id__invitations__invitation_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/clubs/invitations/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Invitation By Token
+         * @description Public: validate invitation token and return public details (club name).
+         */
+        get: operations["get_invitation_by_token_clubs_invitations__token__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/clubs/invitations/{token}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Accept Invitation */
+        post: operations["accept_invitation_clubs_invitations__token__accept_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/clubs/{club_id}/claims": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Claim */
+        post: operations["create_claim_clubs__club_id__claims_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/clubs/claims/{claim_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Claim */
+        patch: operations["update_claim_clubs_claims__claim_id__patch"];
         trace?: never;
     };
     "/contact/": {
@@ -557,428 +888,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/organizations/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List Organizations
-         * @description Public directory. Only approved organizations are listed.
-         */
-        get: operations["list_organizations_organizations__get"];
-        put?: never;
-        /**
-         * Create Organization
-         * @description Anyone signed in may submit an organization; only admins publish directly.
-         */
-        post: operations["create_organization_organizations__post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/organizations/review": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List Organizations For Review
-         * @description Admin review queue across every review state.
-         */
-        get: operations["list_organizations_for_review_organizations_review_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/organizations/mine": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List My Organizations */
-        get: operations["list_my_organizations_organizations_mine_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/organizations/integrations/discord/options": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Discord Options */
-        get: operations["get_discord_options_organizations_integrations_discord_options_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/organizations/integrations/{platform}/options": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Platform Options */
-        get: operations["get_platform_options_organizations_integrations__platform__options_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/organizations/claims": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Claims */
-        get: operations["list_claims_organizations_claims_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/organizations/{organization_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Organization */
-        get: operations["get_organization_organizations__organization_id__get"];
-        put?: never;
-        post?: never;
-        /** Delete Organization */
-        delete: operations["delete_organization_organizations__organization_id__delete"];
-        options?: never;
-        head?: never;
-        /** Update Organization */
-        patch: operations["update_organization_organizations__organization_id__patch"];
-        trace?: never;
-    };
-    "/organizations/{organization_id}/integrations/{platform}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Platform Integration */
-        get: operations["get_platform_integration_organizations__organization_id__integrations__platform__get"];
-        /** Upsert Platform Integration */
-        put: operations["upsert_platform_integration_organizations__organization_id__integrations__platform__put"];
-        post?: never;
-        /** Disconnect Platform Integration */
-        delete: operations["disconnect_platform_integration_organizations__organization_id__integrations__platform__delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/organizations/{organization_id}/review": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Review Organization
-         * @description Approve or reject a submitted organization.
-         */
-        post: operations["review_organization_organizations__organization_id__review_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/organizations/{organization_id}/members": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Organization Members */
-        get: operations["list_organization_members_organizations__organization_id__members_get"];
-        put?: never;
-        /**
-         * Add Organization Member
-         * @description Add by email: existing users join organization_members directly; otherwise invite.
-         */
-        post: operations["add_organization_member_organizations__organization_id__members_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/organizations/{organization_id}/members/{user_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Remove Organization Member */
-        delete: operations["remove_organization_member_organizations__organization_id__members__user_id__delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/organizations/{organization_id}/invitations": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Invitations */
-        get: operations["list_invitations_organizations__organization_id__invitations_get"];
-        put?: never;
-        /** Create Invitation */
-        post: operations["create_invitation_organizations__organization_id__invitations_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/organizations/{organization_id}/invitations/{invitation_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Revoke Invitation */
-        delete: operations["revoke_invitation_organizations__organization_id__invitations__invitation_id__delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/organizations/invitations/{token}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Invitation By Token
-         * @description Public: validate invitation token and return public details (organization name).
-         */
-        get: operations["get_invitation_by_token_organizations_invitations__token__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/organizations/invitations/{token}/accept": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Accept Invitation */
-        post: operations["accept_invitation_organizations_invitations__token__accept_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/organizations/{organization_id}/join": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Request To Join Organization */
-        post: operations["request_to_join_organization_organizations__organization_id__join_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/organizations/{organization_id}/membership": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get My Membership Status */
-        get: operations["get_my_membership_status_organizations__organization_id__membership_get"];
-        put?: never;
-        post?: never;
-        /** Leave Organization Or Cancel Request */
-        delete: operations["leave_organization_or_cancel_request_organizations__organization_id__membership_delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/organizations/{organization_id}/memberships": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Organization Memberships */
-        get: operations["list_organization_memberships_organizations__organization_id__memberships_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/organizations/{organization_id}/memberships/{user_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Remove Organization Membership */
-        delete: operations["remove_organization_membership_organizations__organization_id__memberships__user_id__delete"];
-        options?: never;
-        head?: never;
-        /** Update Organization Membership */
-        patch: operations["update_organization_membership_organizations__organization_id__memberships__user_id__patch"];
-        trace?: never;
-    };
-    "/organizations/{organization_id}/claims": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Create Claim */
-        post: operations["create_claim_organizations__organization_id__claims_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/organizations/claims/{claim_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** Update Claim */
-        patch: operations["update_claim_organizations_claims__claim_id__patch"];
-        trace?: never;
-    };
-    "/organizations/{organization_id}/join-requests": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Join Requests */
-        get: operations["list_join_requests_organizations__organization_id__join_requests_get"];
-        put?: never;
-        /**
-         * Create Join Request
-         * @description Request to join the organization's management team (organization_members).
-         */
-        post: operations["create_join_request_organizations__organization_id__join_requests_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/organizations/{organization_id}/join-requests/{request_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** Update Join Request */
-        patch: operations["update_join_request_organizations__organization_id__join_requests__request_id__patch"];
-        trace?: never;
-    };
     "/payouts/": {
         parameters: {
             query?: never;
@@ -1079,6 +988,41 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/position-submissions/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Submissions */
+        get: operations["list_submissions_position_submissions__get"];
+        put?: never;
+        /** Create Submission */
+        post: operations["create_submission_position_submissions__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/position-submissions/{submission_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Review Submission */
+        patch: operations["review_submission_position_submissions__submission_id__patch"];
         trace?: never;
     };
     "/positions/": {
@@ -1258,15 +1202,15 @@ export interface paths {
         patch: operations["update_report_reports__report_id__patch"];
         trace?: never;
     };
-    "/saved-organizations/": {
+    "/saved-clubs/": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** List Saved Organizations */
-        get: operations["list_saved_organizations_saved_organizations__get"];
+        /** List Saved Clubs */
+        get: operations["list_saved_clubs_saved_clubs__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1275,7 +1219,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/saved-organizations/{organization_id}": {
+    "/saved-clubs/{club_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1284,16 +1228,16 @@ export interface paths {
         };
         get?: never;
         /**
-         * Save Organization
-         * @description Save (bookmark) an organization.
+         * Save Club
+         * @description Save (bookmark) a club.
          *
-         *     - 404 if the organization does not exist.
-         *     - 400 if the user has already hit ``MAX_SAVED_ORGANIZATIONS_PER_USER``.
+         *     - 404 if the club does not exist.
+         *     - 400 if the user has already hit ``MAX_SAVED_CLUBS_PER_USER``.
          */
-        put: operations["save_organization_saved_organizations__organization_id__put"];
+        put: operations["save_club_saved_clubs__club_id__put"];
         post?: never;
-        /** Unsave Organization */
-        delete: operations["unsave_organization_saved_organizations__organization_id__delete"];
+        /** Unsave Club */
+        delete: operations["unsave_club_saved_clubs__club_id__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1441,7 +1385,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/uploads/organization-logo/{organization_id}": {
+    "/uploads/club-logo/{club_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1450,8 +1394,8 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Upload Organization Logo */
-        post: operations["upload_organization_logo_uploads_organization_logo__organization_id__post"];
+        /** Upload Club Logo */
+        post: operations["upload_club_logo_uploads_club_logo__club_id__post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1744,8 +1688,8 @@ export interface components {
         AppConstantsResponse: {
             /** Event Categories */
             event_categories: string[];
-            /** Organization Categories */
-            organization_categories: string[];
+            /** Club Categories */
+            club_categories: string[];
             /** Interests */
             interests: string[];
             /** Interest To Categories */
@@ -1777,6 +1721,11 @@ export interface components {
             /** File */
             file: string;
         };
+        /** Body_parse_position_image_ai_parse_position_image_post */
+        Body_parse_position_image_ai_parse_position_image_post: {
+            /** File */
+            file: string;
+        };
         /** Body_upload_avatar_uploads_avatar_post */
         Body_upload_avatar_uploads_avatar_post: {
             /** File */
@@ -1787,6 +1736,11 @@ export interface components {
             /** File */
             file: string;
         };
+        /** Body_upload_club_logo_uploads_club_logo__club_id__post */
+        Body_upload_club_logo_uploads_club_logo__club_id__post: {
+            /** File */
+            file: string;
+        };
         /** Body_upload_event_image_unsigned_uploads_event_image_post */
         Body_upload_event_image_unsigned_uploads_event_image_post: {
             /** File */
@@ -1794,11 +1748,6 @@ export interface components {
         };
         /** Body_upload_event_image_uploads_event_image__event_id__post */
         Body_upload_event_image_uploads_event_image__event_id__post: {
-            /** File */
-            file: string;
-        };
-        /** Body_upload_organization_logo_uploads_organization_logo__organization_id__post */
-        Body_upload_organization_logo_uploads_organization_logo__organization_id__post: {
             /** File */
             file: string;
         };
@@ -1844,6 +1793,269 @@ export interface components {
             /** Cells */
             cells: components["schemas"]["CampusCoverageCell"][];
         };
+        /** ClubClaimCreate */
+        ClubClaimCreate: {
+            /** Executive Role */
+            executive_role: string;
+            /** Proof Url */
+            proof_url?: string | null;
+        };
+        /** ClubClaimResponse */
+        ClubClaimResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Club Id */
+            club_id: number;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+            /** Executive Role */
+            executive_role: string;
+            /** Proof Url */
+            proof_url: string | null;
+            /** Status */
+            status: string;
+            /** Rejection Reason */
+            rejection_reason?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            clubs?: components["schemas"]["ClubResponse"] | null;
+            users?: components["schemas"]["UserResponse"] | null;
+        };
+        /** ClubClaimUpdate */
+        ClubClaimUpdate: {
+            /** Status */
+            status: string;
+            /** Rejection Reason */
+            rejection_reason?: string | null;
+        };
+        /** ClubCreate */
+        ClubCreate: {
+            /** Club Name */
+            club_name: string;
+            /** Categories */
+            categories?: string[] | null;
+            /** Club Page */
+            club_page?: string | null;
+            /** Ig */
+            ig?: string | null;
+            /** Discord */
+            discord?: string | null;
+            /**
+             * Club Type
+             * @default independent
+             */
+            club_type: string;
+            /** Logo Url */
+            logo_url?: string | null;
+            /**
+             * School
+             * @default uwaterloo
+             */
+            school: string;
+        };
+        /** ClubIntegrationResponse */
+        ClubIntegrationResponse: {
+            /** Club Id */
+            club_id: number;
+            /**
+             * Platform
+             * @enum {string}
+             */
+            platform: "whatsapp" | "discord" | "instagram" | "slack" | "telegram" | "linkedin" | "facebook";
+            /** Connected */
+            connected: boolean;
+            /** Name */
+            name?: string | null;
+            /** Last Sync */
+            last_sync?: string | null;
+            /** Metadata */
+            metadata?: {
+                [key: string]: string;
+            } | null;
+        };
+        /**
+         * ClubIntegrationUpdate
+         * @description Update request for a club's integration configuration.
+         *
+         *     The ``metadata`` dict is now bounded on three axes:
+         *     - max key count (``MAX_INTEGRATION_METADATA_KEYS``)
+         *     - max per-key length (``MAX_INTEGRATION_METADATA_KEY_LENGTH``)
+         *     - max per-value length (``MAX_INTEGRATION_METADATA_VALUE_LENGTH``)
+         *
+         *     Unknown envelope fields are rejected via ``extra="forbid"`` so future
+         *     refactors that accidentally echo request data back to the DB do not
+         *     introduce a mass-assignment surface.
+         */
+        ClubIntegrationUpdate: {
+            /**
+             * Connected
+             * @default true
+             */
+            connected: boolean;
+            /** Name */
+            name?: string | null;
+            /** Metadata */
+            metadata?: {
+                [key: string]: string;
+            } | null;
+        };
+        /** ClubInvitationCreate */
+        ClubInvitationCreate: {
+            /**
+             * Email
+             * @description Email to invite
+             */
+            email: string;
+        };
+        /** ClubInvitationPublicResponse */
+        ClubInvitationPublicResponse: {
+            /** Club Name */
+            club_name: string;
+            /** Email */
+            email: string;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+        };
+        /** ClubInvitationResponse */
+        ClubInvitationResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Club Id */
+            club_id: number;
+            /** Email */
+            email: string;
+            /**
+             * Token
+             * Format: uuid
+             */
+            token: string;
+            /**
+             * Invited By
+             * Format: uuid
+             */
+            invited_by: string;
+            /** Status */
+            status: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+        };
+        /** ClubMemberAdd */
+        ClubMemberAdd: {
+            /** Email */
+            email: string;
+        };
+        /** ClubMemberResponse */
+        ClubMemberResponse: {
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+            /** Email */
+            email: string;
+            /** Full Name */
+            full_name?: string | null;
+            /** Avatar Url */
+            avatar_url?: string | null;
+            /** Role */
+            role: string;
+            /**
+             * Joined At
+             * Format: date-time
+             */
+            joined_at: string;
+        };
+        /** ClubResponse */
+        ClubResponse: {
+            /** Id */
+            id: number;
+            /** Club Name */
+            club_name: string;
+            /**
+             * Status
+             * @default approved
+             * @enum {string}
+             */
+            status: "pending" | "approved" | "rejected";
+            /** Categories */
+            categories?: string[] | null;
+            /** Club Page */
+            club_page?: string | null;
+            /** Ig */
+            ig?: string | null;
+            /** Discord */
+            discord?: string | null;
+            /**
+             * Club Type
+             * @default independent
+             */
+            club_type: string;
+            /** Logo Url */
+            logo_url?: string | null;
+            /** Created By */
+            created_by?: string | null;
+            /** School */
+            school?: string | null;
+            /** Owner Email */
+            owner_email?: string | null;
+            /**
+             * Event Count
+             * @default 0
+             */
+            event_count: number;
+            /**
+             * Position Count
+             * @default 0
+             */
+            position_count: number;
+        };
+        /** ClubUpdate */
+        ClubUpdate: {
+            /** Club Name */
+            club_name?: string | null;
+            /** Categories */
+            categories?: string[] | null;
+            /** Club Page */
+            club_page?: string | null;
+            /** Ig */
+            ig?: string | null;
+            /** Discord */
+            discord?: string | null;
+            /** Club Type */
+            club_type?: string | null;
+            /** Logo Url */
+            logo_url?: string | null;
+            /** School */
+            school?: string | null;
+        };
         /** ContactCreate */
         ContactCreate: {
             /**
@@ -1882,15 +2094,22 @@ export interface components {
             /** Channels */
             channels: components["schemas"]["DiscordChannelOption"][];
         };
+        /** EventAttendeeResponse */
+        EventAttendeeResponse: {
+            /** Name */
+            name: string;
+            /** Avatar Url */
+            avatar_url: string;
+        };
         /**
          * EventAttendeesResponse
-         * @description Public who's-going summary: count plus abbreviated display names.
+         * @description Public who's-going summary without user IDs or full names.
          */
         EventAttendeesResponse: {
             /** Going Count */
             going_count: number;
-            /** Names */
-            names: string[];
+            /** Attendees */
+            attendees: components["schemas"]["EventAttendeeResponse"][];
         };
         /** EventCreate */
         EventCreate: {
@@ -1917,8 +2136,8 @@ export interface components {
             source_url?: string | null;
             /** Category */
             category?: string | null;
-            /** Organization Id */
-            organization_id: number;
+            /** Club Id */
+            club_id: number;
             /** Ig Handle */
             ig_handle?: string | null;
             /**
@@ -1942,7 +2161,7 @@ export interface components {
             page_size: number;
             /** Total Pages */
             total_pages: number;
-            latest_added_event?: components["schemas"]["LatestEventResponse"] | null;
+            latest_added_event?: components["schemas"]["LatestAddedItem"] | null;
         };
         /** EventFormDataResponse */
         EventFormDataResponse: {
@@ -2004,8 +2223,8 @@ export interface components {
         EventPublicResponse: {
             /** Id */
             id: number;
-            /** Organization Id */
-            organization_id?: number | null;
+            /** Club Id */
+            club_id?: number | null;
             /** Title */
             title: string;
             /** Description */
@@ -2025,18 +2244,18 @@ export interface components {
             registration: boolean;
             /** Source Image Url */
             source_image_url?: string | null;
-            /** Organization Logo Url */
-            organization_logo_url?: string | null;
-            /** Organization Type */
-            organization_type?: string | null;
+            /** Club Logo Url */
+            club_logo_url?: string | null;
+            /** Club Type */
+            club_type?: string | null;
             /** School */
             school?: string | null;
             /** Source Url */
             source_url?: string | null;
             /** Category */
             category?: string | null;
-            /** Organization */
-            organization?: string | null;
+            /** Club */
+            club?: string | null;
             /** Ig Handle */
             ig_handle?: string | null;
             /**
@@ -2065,8 +2284,8 @@ export interface components {
         EventResponse: {
             /** Id */
             id: number;
-            /** Organization Id */
-            organization_id?: number | null;
+            /** Club Id */
+            club_id?: number | null;
             /** Title */
             title: string;
             /** Description */
@@ -2086,18 +2305,18 @@ export interface components {
             registration: boolean;
             /** Source Image Url */
             source_image_url?: string | null;
-            /** Organization Logo Url */
-            organization_logo_url?: string | null;
-            /** Organization Type */
-            organization_type?: string | null;
+            /** Club Logo Url */
+            club_logo_url?: string | null;
+            /** Club Type */
+            club_type?: string | null;
             /** School */
             school?: string | null;
             /** Source Url */
             source_url?: string | null;
             /** Category */
             category?: string | null;
-            /** Organization */
-            organization?: string | null;
+            /** Club */
+            club?: string | null;
             /** Ig Handle */
             ig_handle?: string | null;
             /**
@@ -2136,11 +2355,11 @@ export interface components {
          *     Description is included because the feed search matches event copy as well
          *     as titles, hosts, locations, and food.
          *
-         *     The owning organization's display/link/social fields (``organization_logo_url``,
-         *     ``organization_type``, ``organization_page``, ``organization_ig``,
-         *     ``organization_discord``) are
-         *     embedded read-time from the ``organizations`` row via the
-         *     ``events.organization_id`` FK so the event card can render without a second
+         *     The owning club's display/link/social fields (``club_logo_url``,
+         *     ``club_type``, ``club_page``, ``club_ig``,
+         *     ``club_discord``) are
+         *     embedded read-time from the ``clubs`` row via the
+         *     ``events.club_id`` FK so the event card can render without a second
          *     fetch.
          *
          *     ``created_by`` is intentionally omitted - this response is returned on
@@ -2173,18 +2392,18 @@ export interface components {
             source_url?: string | null;
             /** Category */
             category?: string | null;
-            /** Organization */
-            organization?: string | null;
-            /** Organization Logo Url */
-            organization_logo_url?: string | null;
-            /** Organization Type */
-            organization_type?: string | null;
-            /** Organization Page */
-            organization_page?: string | null;
-            /** Organization Ig */
-            organization_ig?: string | null;
-            /** Organization Discord */
-            organization_discord?: string | null;
+            /** Club */
+            club?: string | null;
+            /** Club Logo Url */
+            club_logo_url?: string | null;
+            /** Club Type */
+            club_type?: string | null;
+            /** Club Page */
+            club_page?: string | null;
+            /** Club Ig */
+            club_ig?: string | null;
+            /** Club Discord */
+            club_discord?: string | null;
             /** Ig Handle */
             ig_handle?: string | null;
             /** School */
@@ -2222,8 +2441,8 @@ export interface components {
             source_url?: string | null;
             /** Category */
             category?: string | null;
-            /** Organization Id */
-            organization_id?: number | null;
+            /** Club Id */
+            club_id?: number | null;
             /** Ig Handle */
             ig_handle?: string | null;
             /** Cancelled */
@@ -2304,12 +2523,15 @@ export interface components {
             /** Caption */
             caption: string;
             /**
+             * Caption Intro
+             * @default
+             */
+            caption_intro: string;
+            /**
              * Cover Body
              * @default
              */
             cover_body: string;
-            /** Ai Model */
-            ai_model?: string | null;
             /** Version */
             version: number;
             /** Error Message */
@@ -2374,12 +2596,15 @@ export interface components {
             /** Caption */
             caption: string;
             /**
+             * Caption Intro
+             * @default
+             */
+            caption_intro: string;
+            /**
              * Cover Body
              * @default
              */
             cover_body: string;
-            /** Ai Model */
-            ai_model?: string | null;
             /** Version */
             version: number;
             /** Error Message */
@@ -2405,13 +2630,21 @@ export interface components {
              * @default 0
              */
             item_count: number;
+            /**
+             * Eligible Count
+             * @default 0
+             */
+            eligible_count: number;
         };
         /** InstagramPublishBatchUpdate */
         InstagramPublishBatchUpdate: {
             /** Version */
             version: number;
-            /** Caption */
-            caption: string;
+            /**
+             * Caption Intro
+             * @default
+             */
+            caption_intro: string;
             /**
              * Cover Body
              * @default
@@ -2489,11 +2722,8 @@ export interface components {
                 [key: string]: unknown;
             } | null;
         };
-        /**
-         * LatestEventResponse
-         * @description Minimal payload for 'latest added event' (e.g. for 'X added 22 minutes ago').
-         */
-        LatestEventResponse: {
+        /** LatestAddedItem */
+        LatestAddedItem: {
             /** Title */
             title: string;
             /**
@@ -2620,389 +2850,18 @@ export interface components {
             /** Id */
             id?: string | null;
         };
-        /** OrganizationClaimCreate */
-        OrganizationClaimCreate: {
-            /** Executive Role */
-            executive_role: string;
-            /** Proof Url */
-            proof_url?: string | null;
-        };
-        /** OrganizationClaimResponse */
-        OrganizationClaimResponse: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Organization Id */
-            organization_id: number;
-            /**
-             * User Id
-             * Format: uuid
-             */
-            user_id: string;
-            /** Executive Role */
-            executive_role: string;
-            /** Proof Url */
-            proof_url: string | null;
-            /** Status */
-            status: string;
-            /** Rejection Reason */
-            rejection_reason?: string | null;
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-            /**
-             * Updated At
-             * Format: date-time
-             */
-            updated_at: string;
-            organizations?: components["schemas"]["OrganizationResponse"] | null;
-            users?: components["schemas"]["UserResponse"] | null;
-        };
-        /** OrganizationClaimUpdate */
-        OrganizationClaimUpdate: {
-            /** Status */
-            status: string;
-            /** Rejection Reason */
-            rejection_reason?: string | null;
-        };
-        /** OrganizationCreate */
-        OrganizationCreate: {
-            /** Organization Name */
-            organization_name: string;
-            /** Categories */
-            categories?: string[] | null;
-            /** Organization Page */
-            organization_page?: string | null;
-            /** Ig */
-            ig?: string | null;
-            /** Discord */
-            discord?: string | null;
-            /**
-             * Organization Type
-             * @default independent
-             */
-            organization_type: string;
-            /** Logo Url */
-            logo_url?: string | null;
-            /**
-             * School
-             * @default uwaterloo
-             */
-            school: string;
-        };
-        /** OrganizationIntegrationResponse */
-        OrganizationIntegrationResponse: {
-            /** Organization Id */
-            organization_id: number;
-            /**
-             * Platform
-             * @enum {string}
-             */
-            platform: "whatsapp" | "discord" | "instagram" | "slack" | "telegram" | "linkedin" | "facebook";
-            /** Connected */
-            connected: boolean;
-            /** Name */
-            name?: string | null;
-            /** Last Sync */
-            last_sync?: string | null;
-            /** Metadata */
-            metadata?: {
-                [key: string]: string;
-            } | null;
-        };
-        /**
-         * OrganizationIntegrationUpdate
-         * @description Update request for a organization's integration configuration.
-         *
-         *     The ``metadata`` dict is now bounded on three axes:
-         *     - max key count (``MAX_INTEGRATION_METADATA_KEYS``)
-         *     - max per-key length (``MAX_INTEGRATION_METADATA_KEY_LENGTH``)
-         *     - max per-value length (``MAX_INTEGRATION_METADATA_VALUE_LENGTH``)
-         *
-         *     Unknown envelope fields are rejected via ``extra="forbid"`` so future
-         *     refactors that accidentally echo request data back to the DB do not
-         *     introduce a mass-assignment surface.
-         */
-        OrganizationIntegrationUpdate: {
-            /**
-             * Connected
-             * @default true
-             */
-            connected: boolean;
-            /** Name */
-            name?: string | null;
-            /** Metadata */
-            metadata?: {
-                [key: string]: string;
-            } | null;
-        };
-        /** OrganizationInvitationCreate */
-        OrganizationInvitationCreate: {
-            /**
-             * Email
-             * @description Email to invite
-             */
-            email: string;
-        };
-        /** OrganizationInvitationPublicResponse */
-        OrganizationInvitationPublicResponse: {
-            /** Organization Name */
-            organization_name: string;
-            /** Email */
-            email: string;
-            /**
-             * Expires At
-             * Format: date-time
-             */
-            expires_at: string;
-        };
-        /** OrganizationInvitationResponse */
-        OrganizationInvitationResponse: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Organization Id */
-            organization_id: number;
-            /** Email */
-            email: string;
-            /**
-             * Token
-             * Format: uuid
-             */
-            token: string;
-            /**
-             * Invited By
-             * Format: uuid
-             */
-            invited_by: string;
-            /** Status */
-            status: string;
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-            /**
-             * Expires At
-             * Format: date-time
-             */
-            expires_at: string;
-        };
-        /** OrganizationJoinRequestCreate */
-        OrganizationJoinRequestCreate: {
-            /** Pitch */
-            pitch: string;
-        };
-        /** OrganizationJoinRequestResponse */
-        OrganizationJoinRequestResponse: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Organization Id */
-            organization_id: number;
-            /**
-             * User Id
-             * Format: uuid
-             */
-            user_id: string;
-            /** Pitch */
-            pitch: string;
-            /** Status */
-            status: string;
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-            /**
-             * Updated At
-             * Format: date-time
-             */
-            updated_at: string;
-            users?: components["schemas"]["UserResponse"] | null;
-        };
-        /** OrganizationJoinRequestUpdate */
-        OrganizationJoinRequestUpdate: {
-            /** Status */
-            status: string;
-        };
-        /** OrganizationMemberAdd */
-        OrganizationMemberAdd: {
-            /** Email */
-            email: string;
-        };
-        /** OrganizationMemberResponse */
-        OrganizationMemberResponse: {
-            /**
-             * User Id
-             * Format: uuid
-             */
-            user_id: string;
-            /** Email */
-            email: string;
-            /** Full Name */
-            full_name?: string | null;
-            /** Avatar Url */
-            avatar_url?: string | null;
-            /** Role */
-            role: string;
-            /**
-             * Joined At
-             * Format: date-time
-             */
-            joined_at: string;
-        };
-        /** OrganizationMembershipResponse */
-        OrganizationMembershipResponse: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Organization Id */
-            organization_id: number;
-            /**
-             * User Id
-             * Format: uuid
-             */
-            user_id: string;
-            /**
-             * Status
-             * @enum {string}
-             */
-            status: "pending" | "approved" | "rejected";
-            /**
-             * Role
-             * @enum {string}
-             */
-            role: "member" | "officer" | "owner";
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-            /**
-             * Updated At
-             * Format: date-time
-             */
-            updated_at: string;
-        };
-        /** OrganizationMembershipUpdate */
-        OrganizationMembershipUpdate: {
-            /**
-             * Status
-             * @enum {string}
-             */
-            status: "pending" | "approved" | "rejected";
-            /** Role */
-            role?: ("member" | "officer" | "owner") | null;
-        };
-        /** OrganizationMembershipWithUserResponse */
-        OrganizationMembershipWithUserResponse: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Organization Id */
-            organization_id: number;
-            /**
-             * User Id
-             * Format: uuid
-             */
-            user_id: string;
-            /**
-             * Status
-             * @enum {string}
-             */
-            status: "pending" | "approved" | "rejected";
-            /**
-             * Role
-             * @enum {string}
-             */
-            role: "member" | "officer" | "owner";
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-            /**
-             * Updated At
-             * Format: date-time
-             */
-            updated_at: string;
-            user: components["schemas"]["UserMinResponse"];
-        };
-        /** OrganizationResponse */
-        OrganizationResponse: {
-            /** Id */
-            id: number;
-            /** Organization Name */
-            organization_name: string;
-            /**
-             * Status
-             * @default approved
-             * @enum {string}
-             */
-            status: "pending" | "approved" | "rejected";
-            /** Categories */
-            categories?: string[] | null;
-            /** Organization Page */
-            organization_page?: string | null;
-            /** Ig */
-            ig?: string | null;
-            /** Discord */
-            discord?: string | null;
-            /**
-             * Organization Type
-             * @default independent
-             */
-            organization_type: string;
-            /** Logo Url */
-            logo_url?: string | null;
-            /** Created By */
-            created_by?: string | null;
-            /** School */
-            school?: string | null;
-            /** Owner Email */
-            owner_email?: string | null;
-            /**
-             * Event Count
-             * @default 0
-             */
-            event_count: number;
-            /**
-             * Position Count
-             * @default 0
-             */
-            position_count: number;
-        };
-        /** OrganizationUpdate */
-        OrganizationUpdate: {
-            /** Organization Name */
-            organization_name?: string | null;
-            /** Categories */
-            categories?: string[] | null;
-            /** Organization Page */
-            organization_page?: string | null;
-            /** Ig */
-            ig?: string | null;
-            /** Discord */
-            discord?: string | null;
-            /** Organization Type */
-            organization_type?: string | null;
-            /** Logo Url */
-            logo_url?: string | null;
-            /** School */
-            school?: string | null;
+        /** PaginatedResponse[ClubResponse] */
+        PaginatedResponse_ClubResponse_: {
+            /** Items */
+            items: components["schemas"]["ClubResponse"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+            /** Total Pages */
+            total_pages: number;
         };
         /** PaginatedResponse[InstagramPublishBatchSummaryResponse] */
         PaginatedResponse_InstagramPublishBatchSummaryResponse_: {
@@ -3017,23 +2876,10 @@ export interface components {
             /** Total Pages */
             total_pages: number;
         };
-        /** PaginatedResponse[OrganizationResponse] */
-        PaginatedResponse_OrganizationResponse_: {
+        /** PaginatedResponse[PositionSubmissionResponse] */
+        PaginatedResponse_PositionSubmissionResponse_: {
             /** Items */
-            items: components["schemas"]["OrganizationResponse"][];
-            /** Total */
-            total: number;
-            /** Page */
-            page: number;
-            /** Page Size */
-            page_size: number;
-            /** Total Pages */
-            total_pages: number;
-        };
-        /** PaginatedResponse[PositionResponse] */
-        PaginatedResponse_PositionResponse_: {
-            /** Items */
-            items: components["schemas"]["PositionResponse"][];
+            items: components["schemas"]["PositionSubmissionResponse"][];
             /** Total */
             total: number;
             /** Page */
@@ -3205,12 +3051,8 @@ export interface components {
              */
             servers: components["schemas"]["DiscordServerOption"][];
         };
-        /** PositionResponse */
-        PositionResponse: {
-            /** Id */
-            id: number;
-            /** Organization Id */
-            organization_id: number;
+        /** PositionCreate */
+        PositionCreate: {
             /** Title */
             title: string;
             /** Description */
@@ -3226,6 +3068,8 @@ export interface components {
             commitment?: string | null;
             /** Compensation */
             compensation?: string | null;
+            /** Is Paid */
+            is_paid?: boolean | null;
             /** Location */
             location?: string | null;
             /** Contact Email */
@@ -3234,6 +3078,88 @@ export interface components {
             deadline_date?: string | null;
             /** Deadline At */
             deadline_at?: string | null;
+            /** Club Id */
+            club_id: number;
+            /** Source Url */
+            source_url: string;
+            /** Source Image Url */
+            source_image_url?: string | null;
+        };
+        /** PositionDirectoryResponse */
+        PositionDirectoryResponse: {
+            /** Items */
+            items: components["schemas"]["PositionResponse"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+            /** Total Pages */
+            total_pages: number;
+            latest_added_position?: components["schemas"]["LatestAddedItem"] | null;
+        };
+        /** PositionImageResponse */
+        PositionImageResponse: {
+            /** Title */
+            title: string;
+            /** Description */
+            description: string;
+            /**
+             * Position Type
+             * @enum {string}
+             */
+            position_type: "executive" | "committee" | "volunteer" | "staff" | "internship" | "general";
+            /** Requirements */
+            requirements?: string[];
+            /** Commitment */
+            commitment?: string | null;
+            /** Compensation */
+            compensation?: string | null;
+            /** Is Paid */
+            is_paid?: boolean | null;
+            /** Location */
+            location?: string | null;
+            /** Contact Email */
+            contact_email?: string | null;
+            /** Deadline Date */
+            deadline_date?: string | null;
+            /** Deadline At */
+            deadline_at?: string | null;
+            /** Source Image Url */
+            source_image_url?: string | null;
+        };
+        /** PositionResponse */
+        PositionResponse: {
+            /** Title */
+            title: string;
+            /** Description */
+            description: string;
+            /**
+             * Position Type
+             * @enum {string}
+             */
+            position_type: "executive" | "committee" | "volunteer" | "staff" | "internship" | "general";
+            /** Requirements */
+            requirements?: string[];
+            /** Commitment */
+            commitment?: string | null;
+            /** Compensation */
+            compensation?: string | null;
+            /** Is Paid */
+            is_paid?: boolean | null;
+            /** Location */
+            location?: string | null;
+            /** Contact Email */
+            contact_email?: string | null;
+            /** Deadline Date */
+            deadline_date?: string | null;
+            /** Deadline At */
+            deadline_at?: string | null;
+            /** Id */
+            id: number;
+            /** Club Id */
+            club_id: number;
             /** Source Url */
             source_url: string;
             /** Source Image Url */
@@ -3255,20 +3181,50 @@ export interface components {
              * Format: date-time
              */
             updated_at: string;
-            /** Organization Name */
-            organization_name: string;
-            /** Organization Logo Url */
-            organization_logo_url?: string | null;
-            /** Organization Type */
-            organization_type?: string | null;
-            /** Organization Page */
-            organization_page?: string | null;
-            /** Organization Ig */
-            organization_ig?: string | null;
-            /** Organization Discord */
-            organization_discord?: string | null;
+            /** Club Name */
+            club_name: string;
+            /** Club Logo Url */
+            club_logo_url?: string | null;
+            /** Club Type */
+            club_type?: string | null;
+            /** Club Page */
+            club_page?: string | null;
+            /** Club Ig */
+            club_ig?: string | null;
+            /** Club Discord */
+            club_discord?: string | null;
             /** School */
             school: string;
+        };
+        /** PositionSubmissionCreate */
+        PositionSubmissionCreate: {
+            position_data: components["schemas"]["PositionCreate"];
+        };
+        /** PositionSubmissionResponse */
+        PositionSubmissionResponse: {
+            /** School */
+            school?: string | null;
+            /** Id */
+            id: string;
+            /** User Id */
+            user_id: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "approved" | "rejected";
+            /** Rejection Reason */
+            rejection_reason?: string | null;
+            /**
+             * Submitted At
+             * Format: date-time
+             */
+            submitted_at: string;
+            /** Reviewed At */
+            reviewed_at?: string | null;
+            /** Submitted By Email */
+            submitted_by_email?: string | null;
+            position_data: components["schemas"]["PositionCreate"];
         };
         /** PosterEarningsItem */
         PosterEarningsItem: {
@@ -3458,7 +3414,7 @@ export interface components {
         };
         /**
          * QrCodeCreate
-         * @description Create one standard organization or administrator QR code.
+         * @description Create one standard club or administrator QR code.
          */
         QrCodeCreate: {
             /** Name */
@@ -3668,6 +3624,8 @@ export interface components {
         };
         /** ReportResponse */
         ReportResponse: {
+            /** School */
+            school?: string | null;
             /** Id */
             id: string;
             /** Event Id */
@@ -3698,10 +3656,10 @@ export interface components {
             status: "pending" | "resolved" | "dismissed";
         };
         /**
-         * SaveOrganizationStatusResponse
+         * SaveClubStatusResponse
          * @description Locks the save/unsave status contract at the OpenAPI boundary.
          */
-        SaveOrganizationStatusResponse: {
+        SaveClubStatusResponse: {
             /**
              * Status
              * @enum {string}
@@ -3720,6 +3678,16 @@ export interface components {
             secondary_color: string;
             /** Timezone */
             timezone: string;
+            /**
+             * Language
+             * @default en
+             * @enum {string}
+             */
+            language: "en" | "fr";
+            /** Faculties */
+            faculties?: string[];
+            /** Location Examples */
+            location_examples?: string[];
             /** Recipient Id */
             recipient_id?: string | null;
             /** Semester Start */
@@ -3739,6 +3707,16 @@ export interface components {
             primary_color: string;
             /** Secondary Color */
             secondary_color: string;
+            /**
+             * Language
+             * @default en
+             * @enum {string}
+             */
+            language: "en" | "fr";
+            /** Faculties */
+            faculties?: string[];
+            /** Location Examples */
+            location_examples?: string[];
             /** Email Domains */
             email_domains?: string[];
         };
@@ -3782,14 +3760,12 @@ export interface components {
         };
         /** SubmissionResponse */
         SubmissionResponse: {
+            /** School */
+            school?: string | null;
             /** Id */
             id: string;
             /** User Id */
             user_id: string | null;
-            /** Event Data */
-            event_data: {
-                [key: string]: unknown;
-            };
             /**
              * Status
              * @enum {string}
@@ -3806,6 +3782,10 @@ export interface components {
             reviewed_at?: string | null;
             /** Submitted By Email */
             submitted_by_email?: string | null;
+            /** Event Data */
+            event_data: {
+                [key: string]: unknown;
+            };
         };
         /** SubmissionUpdate */
         SubmissionUpdate: {
@@ -3842,20 +3822,6 @@ export interface components {
         UploadResponse: {
             /** Url */
             url: string;
-        };
-        /** UserMinResponse */
-        UserMinResponse: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Email */
-            email: string;
-            /** Full Name */
-            full_name?: string | null;
-            /** Avatar Url */
-            avatar_url?: string | null;
         };
         /** UserPosterPayoutResponse */
         UserPosterPayoutResponse: {
@@ -4023,7 +3989,9 @@ export type $defs = Record<string, never>;
 export interface operations {
     parse_event_image_ai_parse_event_image_post: {
         parameters: {
-            query?: never;
+            query: {
+                school: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -4041,6 +4009,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EventFormDataResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    parse_position_image_ai_parse_position_image_post: {
+        parameters: {
+            query: {
+                school: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_parse_position_image_ai_parse_position_image_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PositionImageResponse"];
                 };
             };
             /** @description Validation Error */
@@ -4277,6 +4280,768 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_clubs_clubs__get: {
+        parameters: {
+            query?: {
+                club_type?: string | null;
+                school?: string | null;
+                search?: string | null;
+                categories?: string[] | null;
+                ids?: number[] | null;
+                min_events?: number;
+                /** @description Page number (1-indexed) */
+                page?: number;
+                /** @description Items per page (max 100) */
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_ClubResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_club_clubs__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClubCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClubResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_clubs_for_review_clubs_review_get: {
+        parameters: {
+            query?: {
+                club_status?: ("pending" | "approved" | "rejected") | null;
+                school?: string | null;
+                /** @description Page number (1-indexed) */
+                page?: number;
+                /** @description Items per page (max 100) */
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_ClubResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_my_clubs_clubs_mine_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClubResponse"][];
+                };
+            };
+        };
+    };
+    get_discord_options_clubs_integrations_discord_options_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscordIntegrationOptionsResponse"];
+                };
+            };
+        };
+    };
+    get_platform_options_clubs_integrations__platform__options_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                platform: "whatsapp" | "discord" | "instagram" | "slack" | "telegram" | "linkedin" | "facebook";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlatformIntegrationOptionsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_claims_clubs_claims_get: {
+        parameters: {
+            query?: {
+                status?: string | null;
+                school?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClubClaimResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_club_clubs__club_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                club_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClubResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_club_clubs__club_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                club_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_club_clubs__club_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                club_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClubUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClubResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_platform_integration_clubs__club_id__integrations__platform__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                club_id: number;
+                platform: "whatsapp" | "discord" | "instagram" | "slack" | "telegram" | "linkedin" | "facebook";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClubIntegrationResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upsert_platform_integration_clubs__club_id__integrations__platform__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                club_id: number;
+                platform: "whatsapp" | "discord" | "instagram" | "slack" | "telegram" | "linkedin" | "facebook";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClubIntegrationUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClubIntegrationResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    disconnect_platform_integration_clubs__club_id__integrations__platform__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                club_id: number;
+                platform: "whatsapp" | "discord" | "instagram" | "slack" | "telegram" | "linkedin" | "facebook";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClubIntegrationResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    review_club_clubs__club_id__review_post: {
+        parameters: {
+            query: {
+                club_status: "pending" | "approved" | "rejected";
+            };
+            header?: never;
+            path: {
+                club_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClubResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_club_members_clubs__club_id__members_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                club_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClubMemberResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_club_member_clubs__club_id__members_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                club_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClubMemberAdd"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClubMemberResponse"] | components["schemas"]["ClubInvitationResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_club_member_clubs__club_id__members__user_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                club_id: number;
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_invitations_clubs__club_id__invitations_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                club_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClubInvitationResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_invitation_clubs__club_id__invitations_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                club_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClubInvitationCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClubInvitationResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    revoke_invitation_clubs__club_id__invitations__invitation_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                club_id: number;
+                invitation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_invitation_by_token_clubs_invitations__token__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClubInvitationPublicResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    accept_invitation_clubs_invitations__token__accept_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_claim_clubs__club_id__claims_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                club_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClubClaimCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClubClaimResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_claim_clubs_claims__claim_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                claim_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClubClaimUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClubClaimResponse"];
+                };
             };
             /** @description Validation Error */
             422: {
@@ -4538,9 +5303,9 @@ export interface operations {
                 min_price?: number | null;
                 max_price?: number | null;
                 registration?: boolean | null;
-                organizations?: string[] | null;
-                organization_ids?: number[] | null;
-                free_food?: boolean;
+                clubs?: string[] | null;
+                club_ids?: number[] | null;
+                has_food?: boolean;
                 added_within_24h?: boolean;
                 ids?: number[] | null;
                 sort_by?: "date" | "title" | "location" | "price" | "added_at";
@@ -4942,7 +5707,7 @@ export interface operations {
         };
         responses: {
             /** @description Successful Response */
-            200: {
+            202: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -5114,1059 +5879,6 @@ export interface operations {
                 };
                 content: {
                     "text/html": string;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_organizations_organizations__get: {
-        parameters: {
-            query?: {
-                organization_type?: string | null;
-                school?: string | null;
-                search?: string | null;
-                categories?: string[] | null;
-                ids?: number[] | null;
-                /** @description Page number (1-indexed) */
-                page?: number;
-                /** @description Items per page (max 100) */
-                page_size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaginatedResponse_OrganizationResponse_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_organization_organizations__post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["OrganizationCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["OrganizationResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_organizations_for_review_organizations_review_get: {
-        parameters: {
-            query?: {
-                organization_status?: ("pending" | "approved" | "rejected") | null;
-                school?: string | null;
-                /** @description Page number (1-indexed) */
-                page?: number;
-                /** @description Items per page (max 100) */
-                page_size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaginatedResponse_OrganizationResponse_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_my_organizations_organizations_mine_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["OrganizationResponse"][];
-                };
-            };
-        };
-    };
-    get_discord_options_organizations_integrations_discord_options_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DiscordIntegrationOptionsResponse"];
-                };
-            };
-        };
-    };
-    get_platform_options_organizations_integrations__platform__options_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                platform: "whatsapp" | "discord" | "instagram" | "slack" | "telegram" | "linkedin" | "facebook";
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PlatformIntegrationOptionsResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_claims_organizations_claims_get: {
-        parameters: {
-            query?: {
-                status?: string | null;
-                school?: string | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["OrganizationClaimResponse"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_organization_organizations__organization_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                organization_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["OrganizationResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_organization_organizations__organization_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                organization_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_organization_organizations__organization_id__patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                organization_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["OrganizationUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["OrganizationResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_platform_integration_organizations__organization_id__integrations__platform__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                organization_id: number;
-                platform: "whatsapp" | "discord" | "instagram" | "slack" | "telegram" | "linkedin" | "facebook";
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["OrganizationIntegrationResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    upsert_platform_integration_organizations__organization_id__integrations__platform__put: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                organization_id: number;
-                platform: "whatsapp" | "discord" | "instagram" | "slack" | "telegram" | "linkedin" | "facebook";
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["OrganizationIntegrationUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["OrganizationIntegrationResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    disconnect_platform_integration_organizations__organization_id__integrations__platform__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                organization_id: number;
-                platform: "whatsapp" | "discord" | "instagram" | "slack" | "telegram" | "linkedin" | "facebook";
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["OrganizationIntegrationResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    review_organization_organizations__organization_id__review_post: {
-        parameters: {
-            query: {
-                organization_status: "pending" | "approved" | "rejected";
-            };
-            header?: never;
-            path: {
-                organization_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["OrganizationResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_organization_members_organizations__organization_id__members_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                organization_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["OrganizationMemberResponse"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    add_organization_member_organizations__organization_id__members_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                organization_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["OrganizationMemberAdd"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["OrganizationMemberResponse"] | components["schemas"]["OrganizationInvitationResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    remove_organization_member_organizations__organization_id__members__user_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                organization_id: number;
-                user_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_invitations_organizations__organization_id__invitations_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                organization_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["OrganizationInvitationResponse"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_invitation_organizations__organization_id__invitations_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                organization_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["OrganizationInvitationCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["OrganizationInvitationResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    revoke_invitation_organizations__organization_id__invitations__invitation_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                organization_id: number;
-                invitation_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_invitation_by_token_organizations_invitations__token__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                token: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["OrganizationInvitationPublicResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    accept_invitation_organizations_invitations__token__accept_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                token: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    request_to_join_organization_organizations__organization_id__join_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                organization_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["OrganizationMembershipResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_my_membership_status_organizations__organization_id__membership_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                organization_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["OrganizationMembershipResponse"] | null;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    leave_organization_or_cancel_request_organizations__organization_id__membership_delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                organization_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_organization_memberships_organizations__organization_id__memberships_get: {
-        parameters: {
-            query?: {
-                status?: string | null;
-            };
-            header?: never;
-            path: {
-                organization_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["OrganizationMembershipWithUserResponse"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    remove_organization_membership_organizations__organization_id__memberships__user_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                organization_id: number;
-                user_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_organization_membership_organizations__organization_id__memberships__user_id__patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                organization_id: number;
-                user_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["OrganizationMembershipUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["OrganizationMembershipResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_claim_organizations__organization_id__claims_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                organization_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["OrganizationClaimCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["OrganizationClaimResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_claim_organizations_claims__claim_id__patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                claim_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["OrganizationClaimUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["OrganizationClaimResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_join_requests_organizations__organization_id__join_requests_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                organization_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["OrganizationJoinRequestResponse"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_join_request_organizations__organization_id__join_requests_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                organization_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["OrganizationJoinRequestCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["OrganizationJoinRequestResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_join_request_organizations__organization_id__join_requests__request_id__patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                organization_id: number;
-                request_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["OrganizationJoinRequestUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["OrganizationJoinRequestResponse"];
                 };
             };
             /** @description Validation Error */
@@ -6390,14 +6102,12 @@ export interface operations {
             };
         };
     };
-    list_positions_positions__get: {
+    list_submissions_position_submissions__get: {
         parameters: {
             query?: {
+                submission_status?: ("pending" | "approved" | "rejected") | null;
                 school?: string | null;
                 search?: string | null;
-                position_type?: ("executive" | "committee" | "volunteer" | "staff" | "internship" | "general") | null;
-                organization_id?: number | null;
-                include_closed?: boolean;
                 /** @description Page number (1-indexed) */
                 page?: number;
                 /** @description Items per page (max 100) */
@@ -6415,7 +6125,116 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PaginatedResponse_PositionResponse_"];
+                    "application/json": components["schemas"]["PaginatedResponse_PositionSubmissionResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_submission_position_submissions__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PositionSubmissionCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PositionSubmissionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    review_submission_position_submissions__submission_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                submission_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubmissionUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PositionSubmissionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_positions_positions__get: {
+        parameters: {
+            query?: {
+                school?: string | null;
+                search?: string | null;
+                position_type?: ("executive" | "committee" | "volunteer" | "staff" | "internship" | "general") | null;
+                club_id?: number | null;
+                include_closed?: boolean;
+                added_since?: string | null;
+                paid_only?: boolean;
+                /** @description Page number (1-indexed) */
+                page?: number;
+                /** @description Items per page (max 100) */
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PositionDirectoryResponse"];
                 };
             };
             /** @description Validation Error */
@@ -6855,7 +6674,7 @@ export interface operations {
             };
         };
     };
-    list_saved_organizations_saved_organizations__get: {
+    list_saved_clubs_saved_clubs__get: {
         parameters: {
             query?: never;
             header?: never;
@@ -6875,12 +6694,12 @@ export interface operations {
             };
         };
     };
-    save_organization_saved_organizations__organization_id__put: {
+    save_club_saved_clubs__club_id__put: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                organization_id: number;
+                club_id: number;
             };
             cookie?: never;
         };
@@ -6892,7 +6711,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SaveOrganizationStatusResponse"];
+                    "application/json": components["schemas"]["SaveClubStatusResponse"];
                 };
             };
             /** @description Validation Error */
@@ -6906,12 +6725,12 @@ export interface operations {
             };
         };
     };
-    unsave_organization_saved_organizations__organization_id__delete: {
+    unsave_club_saved_clubs__club_id__delete: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                organization_id: number;
+                club_id: number;
             };
             cookie?: never;
         };
@@ -6923,7 +6742,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SaveOrganizationStatusResponse"];
+                    "application/json": components["schemas"]["SaveClubStatusResponse"];
                 };
             };
             /** @description Validation Error */
@@ -7285,18 +7104,18 @@ export interface operations {
             };
         };
     };
-    upload_organization_logo_uploads_organization_logo__organization_id__post: {
+    upload_club_logo_uploads_club_logo__club_id__post: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                organization_id: number;
+                club_id: number;
             };
             cookie?: never;
         };
         requestBody: {
             content: {
-                "multipart/form-data": components["schemas"]["Body_upload_organization_logo_uploads_organization_logo__organization_id__post"];
+                "multipart/form-data": components["schemas"]["Body_upload_club_logo_uploads_club_logo__club_id__post"];
             };
         };
         responses: {

@@ -2,6 +2,7 @@
 
 import logging
 from collections import defaultdict
+from itertools import batched
 from uuid import UUID
 
 from postgrest.exceptions import APIError
@@ -18,10 +19,12 @@ from core.exceptions import NotFoundError, ValidationError
 from core.pagination import fetch_all_pages
 from core.tables import USER_GOING_EVENTS, USERS
 from schemas.going_event import (
+    EventAttendeeResponse,
     GoingEventSelection,
     GoingEventStatusResponse,
     UserEventPair,
 )
+from services.user_service import avatar_url_for_user
 
 log = logging.getLogger(__name__)
 
@@ -106,8 +109,8 @@ def _abbreviate_full_name(full_name: str | None) -> str | None:
     return f"{parts[0]} {parts[-1][0]}."
 
 
-def get_attendee_display_names(event_id: int) -> list[str]:
-    """Return distinct abbreviated display names ordered by first Going time."""
+def get_event_attendees(event_id: int) -> list[EventAttendeeResponse]:
+    """Return distinct profiles, including unnamed users, ordered by first Going time."""
     rows = fetch_all_pages(
         lambda offset, page_size: (
             (
@@ -127,11 +130,19 @@ def get_attendee_display_names(event_id: int) -> list[str]:
         return []
 
     user_rows = (
-        get_sb().table(USERS).select("id,full_name").in_("id", user_ids).execute()
+        get_sb().table(USERS).select("id,full_name,avatar_url").in_("id", user_ids).execute()
     ).data or []
-    full_names = {str(row["id"]): row.get("full_name") for row in user_rows}
-    names = (_abbreviate_full_name(full_names.get(user_id)) for user_id in user_ids)
-    return [name for name in names if name]
+    users = {str(row["id"]): row for row in user_rows}
+    attendees = []
+    for user_id in user_ids:
+        row = users.get(user_id, {})
+        attendees.append(
+            EventAttendeeResponse(
+                name=_abbreviate_full_name(row.get("full_name")) or "",
+                avatar_url=avatar_url_for_user(user_id, row.get("avatar_url")),
+            )
+        )
+    return attendees
 
 
 def get_going_counts_for_events(event_ids: list[int]) -> dict[int, int]:
@@ -141,9 +152,11 @@ def get_going_counts_for_events(event_ids: list[int]) -> dict[int, int]:
         return {}
 
     counts: dict[int, int] = {}
-    for start in range(0, len(unique_ids), 500):
-        chunk = unique_ids[start : start + 500]
-        rows = get_sb().rpc("get_event_going_counts", {"p_event_ids": chunk}).execute().data or []
+    for chunk in batched(unique_ids, 500):
+        rows = (
+            get_sb().rpc("get_event_going_counts", {"p_event_ids": list(chunk)}).execute().data
+            or []
+        )
         counts.update({int(row["event_id"]): int(row["going_count"]) for row in rows})
     return counts
 

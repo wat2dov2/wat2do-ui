@@ -31,7 +31,6 @@
     "urlRequired": "URL이 필요합니다",
     "urlInvalid": "유효한 URL을 입력해주세요",
     "descriptionOptional": "선택 사항",
-    "imageFormat": "PNG, JPG 최대 5MB",
     "noScanData": "아직 스캔 데이터가 없습니다",
     "noScanDataDesc": "성능 추적을 시작하려면 QR 코드를 공유하세요",
     "posterAriaLabel": "포스터 {{id}}",

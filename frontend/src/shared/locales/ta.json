@@ -13,7 +13,6 @@
     "or": "அல்லது",
     "separatorBullet": "•",
     "free": "இலவசம்",
-    "freeFood": "இலவச உணவு",
     "backToTop": "மேலுக்கு மறு செல்ல",
     "cancelled": "ரத்து செய்யப்பட்டது",
     "registration": "பதிவு",
@@ -70,7 +69,11 @@
     "all": "அனைத்து",
     "minuteAgo_one": "{{count}} நிமிடத்திற்கு முன்",
     "hourAgo_one": "{{count}} மணி நேரத்திற்கு முன்",
-    "dayAgo_one": "{{count}} நாள் முன்பு"
+    "dayAgo_one": "{{count}} நாள் முன்பு",
+    "latestAddedItem": "<addedPrefix></addedPrefix><eventTitle>{{title}}</eventTitle> <addedTime>சேர்த்தது {{time}}</addedTime>",
+    "newlyAddedFilter": {
+      "last24Hours": "புதியது"
+    }
   },
   "errorBoundary": {
     "title": "ஏதோ தவறு நடந்துவிட்டது",
@@ -81,13 +84,13 @@
     "events": "நிகழ்வுகள்",
     "create": "நிகழ்வைச் சமர்ப்பிக்கவும்",
     "loginRequiredToSubmit": "தற்போது உள்நுழைந்த பயனர்கள் மட்டுமே நிகழ்வுகள் அல்லது அமைப்புகளை சமர்ப்பிக்க முடியும்.",
-    "organizations": "அமைப்புகள்",
+    "clubs": "அமைப்புகள்",
     "positions": "பதவிகள்",
     "myEvents": "என் நிகழ்வுகள்",
     "settings": "அமைப்புகள்",
     "admin": "நிர்வாகம்",
     "adminPanel": "நிர்வாகக் குழு",
-    "organizationPanel": "அமைப்பு நிர்வாகம்",
+    "clubPanel": "அமைப்பு நிர்வாகம்",
     "clubPanelTooltip": "உங்கள் அமைப்பை நிர்வகிக்கவும்",
     "mission": "மிஷன்",
     "about": "எங்களைப் பற்றி",
@@ -117,8 +120,7 @@
       "continueWithGoogle": "Google மூலம் தொடரவும்"
     },
     "signOut": {
-      "logOut": "வெளியே செல்லவும்",
-      "signOutOfAccount": "உங்கள் கணக்கிலிருந்து வெளியேறு"
+      "logOut": "வெளியே செல்லவும்"
     },
     "getStarted": "தொடக்கம் செய்யவும்",
     "profile": {
@@ -172,9 +174,9 @@
     "desc": "இறங்குவரிசை",
     "ascending": "ஏறுமுகமாக",
     "descending": "இறங்குமுகமாக",
-    "organization": "அமைப்பு",
-    "searchOrganization": "அமைப்பைத் தேடு...",
-    "noOrganizations": "எந்த அமைப்பும் கிடைக்கவில்லை"
+    "club": "அமைப்பு",
+    "searchClub": "அமைப்பைத் தேடு...",
+    "noClubs": "எந்த அமைப்பும் கிடைக்கவில்லை"
   },
   "commands": {
     "commands": "கட்டளைகள்",
@@ -221,10 +223,10 @@
     "locationPlaceholder": "உதா: எம்சீ 1234, SLC பெரிய கூடம்",
     "selectPackage": "ஒரு பேக்கேஜ் தேர்ந்தெடுக்கவும்",
     "eventTitlePlaceholder": "உதா., டெக் டாக்: AI இல் 2024",
-    "organizationNamePlaceholder": "உதா., கணினி அறிவியல் அமைப்பு",
-    "selectOrganization": "ஒரு அமைப்பை தேர்ந்தெடுக்கவும்",
-    "searchOrganizationPlaceholder": "அமைகள் தேடுதல்...",
-    "noOrganizationFound": "அமைப்பு காணப்படவில்லை",
+    "clubNamePlaceholder": "உதா., கணினி அறிவியல் அமைப்பு",
+    "selectClub": "ஒரு அமைப்பை தேர்ந்தெடுக்கவும்",
+    "searchClubPlaceholder": "அமைகள் தேடுதல்...",
+    "noClubFound": "அமைப்பு காணப்படவில்லை",
     "descriptionPlaceholder": "உங்கள் நிகழ்ச்சி பற்றி மக்களுக்கு சொல்லவும்...",
     "sourceUrl": "மூல இணைப்பு",
     "sourceUrlPlaceholder": "https://instagram.com/p/...",
@@ -243,21 +245,21 @@
     "description": "விவரம்",
     "saveChanges": "மாற்றங்களைச் சேமிக்கவும்",
     "requiredInformation": "தேவையான தகவல்கள்",
-    "organizationName": "நிறுவனம் பெயர்",
-    "organizationType": "நிறுவன வகை",
-    "organizationTypeMapped": "{{type}}",
-    "organizationTypeIndependent": "சுயாதீன",
-    "organizationNameRequired": "அமைப்பின் பெயர் தேவை",
+    "clubName": "நிறுவனம் பெயர்",
+    "clubType": "நிறுவன வகை",
+    "clubTypeMapped": "{{type}}",
+    "clubTypeIndependent": "சுயாதீன",
+    "clubNameRequired": "அமைப்பின் பெயர் தேவை",
     "ownerEmail": "உரிமையாளர் மின்னஞ்சல்",
     "categories": "வகைகள்",
     "categoryRequired": "குறைந்தபட்சம் ஒரு வகை தேவை",
     "add": "சேர்",
-    "organizationPageUrl": "அமைப்பு பக்கம் URL",
-    "organizationPageUrlPlaceholder": "எ.கா., https://example.com அல்லது 123",
+    "clubPageUrl": "அமைப்பு பக்கம் URL",
+    "clubPageUrlPlaceholder": "எ.கா., https://example.com அல்லது 123",
     "instagramHandle": "Instagram கைப்பெயர்",
     "discordLink": "Discord இணைப்பு",
     "titleRequired": "தலைப்பு தேவை",
-    "organizationRequired": "அமைப்பு தேவை",
+    "clubRequired": "அமைப்பு தேவை",
     "occurrenceRequired": "குறைந்தபட்சம் ஒரு தேதி தேவை",
     "locationRequired": "இடம் தேவையுள்ளது",
     "schoolRequired": "பள்ளி தேவையுள்ளது",
@@ -285,7 +287,7 @@
     "politicsAndAdvocacy": "அரசியல் மற்றும் விளம்பரம்",
     "religionAndSpirituality": "மதம் மற்றும் ஆன்மீகம்",
     "events": "நிகழ்வுகள்",
-    "organizations": "அமைப்புகள்"
+    "clubs": "அமைப்புகள்"
   },
   "locations": {
     "LAX": "LAX",
@@ -373,8 +375,8 @@
     "phase3Date": "அக்டோபர் 2025",
     "phase3Title": "கேம்பஸுடன் பகிர்வு",
     "phase3Paragraph1": "நாம் சில குழுச் சந்தைப்படுத்தல்களில் அந்த இணைப்பைப் பதித்தோம். பின்னர் நாம் ஒரு போச்டர் தயாரித்து (ஆயிரனிக்காக, நாங்கள் அறிந்தோம்) அதை SLCல் ஒட்டினோம். ஒரு வாரத்திற்குள்ளாக, மக்கள் எங்களுக்கு ஸ்க்ரீன்ஷாட்டுகளை அனுப்ப ஆரம்பித்தனர்.",
-    "phase3Paragraph2": "<em>\"நிறுத்துங்கள், ஒரு Repair Organization இருக்கிறதா? நான் அங்கே என் சைக்கிளை உண்மையாக சரிசெய்ய முடியுமா?\"</em>",
-    "phase3Paragraph3": "யாரோ ஒருவர் <strong>Gatka Organization</strong> (சிக் பல்கலை அரங்கு கலைகள்) ஐ Wat2Do மூலம் கண்டுபிடித்து, அது அவர்களின் காலத்தின் முக்கியமான அனுபவம் என்று சொன்னார். மற்றொருவர் <strong>Retro Rollers</strong> (ரோலர் ஸ்கேட்டிங் சந்திப்புகள்) ஐ கண்டுபிடித்து, ஒரு இரவில் ஆறு புதிய நண்பர்களைச் சேர்ந்தார்.",
+    "phase3Paragraph2": "<em>\"நிறுத்துங்கள், ஒரு Repair Club இருக்கிறதா? நான் அங்கே என் சைக்கிளை உண்மையாக சரிசெய்ய முடியுமா?\"</em>",
+    "phase3Paragraph3": "யாரோ ஒருவர் <strong>Gatka Club</strong> (சிக் பல்கலை அரங்கு கலைகள்) ஐ Wat2Do மூலம் கண்டுபிடித்து, அது அவர்களின் காலத்தின் முக்கியமான அனுபவம் என்று சொன்னார். மற்றொருவர் <strong>Retro Rollers</strong> (ரோலர் ஸ்கேட்டிங் சந்திப்புகள்) ஐ கண்டுபிடித்து, ஒரு இரவில் ஆறு புதிய நண்பர்களைச் சேர்ந்தார்.",
     "phase3Paragraph4": "அப்போது நாங்கள் உணர்ந்தோம்: இது வெறும் காலண்டர் அல்ல. இது நீங்கள் அறியாத கல்மம் வாழ்க்கையின் வடிவத்தை கண்டுபிடிக்க ஒரு வழி.",
     "photo3Alt": "சமூக கண்டுபிடிப்பு",
     "photo3Caption": "மக்கள் அவர்கள் அறியாத நிகழ்ச்சிகளை கண்டுபிடிக்க ஆரம்பித்தனர்.",
@@ -390,8 +392,8 @@
     "guideIndustryAtlassian": "<strong>Atlassian காபி உரையாடல்கள்:</strong> ஒரு தொழில் விழா ஸ்டாளுக்கு விரோதமாக மிகவும் பயமில்லாதது. நீங்கள் உண்மையில் உரையாடல் கொள்ள முடியும்.",
     "guideIndustryStartup": "<strong>ஸ்டார்ட்அப் தொழில் கண்காட்சி:</strong> பெரிய நிறுவனங்களின் அரங்குகளைத் தவிர்க்கவும். உண்மையான நிறுவனர்களுடன் பேசக்கூடிய ஸ்டார்ட்அப்புகளுக்கு நேராகச் செல்லுங்கள்.",
     "guideRandomTitle": "சுலபமாக பார்க்க வேண்டிய சில விஷயங்கள்",
-    "guideRandomRepair": "<strong>Repair Organization:</strong> உங்கள் லேப்டாப்பின் சார்ஜரை உடைத்தீர்களா? இந்த மக்கள் உபகரணங்களை கொண்டுள்ளனர் மற்றும் அதை நீங்கள் எப்படி திருத்துவது என்பதில் கற்றுத் தருவார்கள். முழுவதும் இலவசம்.",
-    "guideRandomGatka": "<strong>Gatka Organization:</strong> மரக் காற்களுடன் சிக்குத் தரும் சிக்ஹ் போராட்டக் கலை. அனுபவம் தேவையில்லை. குறைந்த மதிப்பிடப்பட்டுள்ளது.",
+    "guideRandomRepair": "<strong>Repair Club:</strong> உங்கள் லேப்டாப்பின் சார்ஜரை உடைத்தீர்களா? இந்த மக்கள் உபகரணங்களை கொண்டுள்ளனர் மற்றும் அதை நீங்கள் எப்படி திருத்துவது என்பதில் கற்றுத் தருவார்கள். முழுவதும் இலவசம்.",
+    "guideRandomGatka": "<strong>Gatka Club:</strong> மரக் காற்களுடன் சிக்குத் தரும் சிக்ஹ் போராட்டக் கலை. அனுபவம் தேவையில்லை. குறைந்த மதிப்பிடப்பட்டுள்ளது.",
     "guideRandomRetro": "<strong>Retro Rollers:</strong> உள்ளூர் ரிங்குகளில் ரோலர் ஸ்கேட்டிங். நடுத்தரத் தேர்வுகளில் மன அழுத்தத்தை குறைக்க அருமை.",
     "guideFriendsTitle": "நண்பர்களுடன் செல்",
     "guideFriendsFood": "<strong>இலவச உணவுக் கருத்தரங்குகள்:</strong> வடிகட்டிகளில் \"உணவு வழங்கப்படுகிறது\" என்ற முறையில் வரிசைப்படுத்தவும். சிறந்த ஆலோசனை: 15 நிமிடங்கள் முன்னதாக வரும்.",
@@ -452,10 +454,10 @@
       "random": {
         "title": "நீங்கள் தெரியாமல் இருந்த சீரற்ற நிகழ்வுகள்",
         "desc": "மெய்யாகச் சொல்வதான், இந்த திட்டத்தை உருவாக்குவதில் சிறந்த பகுதி என்னவென்றால், கல்லூரியில் இருக்கும் என்பதை நாம் அறியாத நிறுவனங்களை கண்டுபிடிப்பது. அங்கு ஒரு ",
-        "repair": "Repair Organization",
+        "repair": "Repair Club",
         "repairSuffix": " இல் உங்கள் பழுதான மின்னணுப் பொருட்களைச் சரிசெய்யலாம், Iranian Students' Association வழங்கும் ",
         "zumba": "Persian Zumba",
-        "zumbaSuffix": " வகுப்பு, மற்றும் Strength Organization நடத்தும் ",
+        "zumbaSuffix": " வகுப்பு, மற்றும் Strength Club நடத்தும் ",
         "barbells": "Battle of the Barbells"
       },
       "search": {

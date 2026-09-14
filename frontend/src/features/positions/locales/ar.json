@@ -5,9 +5,8 @@
     "searchPlaceholder": "ابحث عن الأدوار أو المهارات أو المواقع...",
     "clearSearch": "مسح بحث المنصب",
     "filterByType": "تصفية المناصب حسب النوع",
-    "allTypes": "جميع أنواع المناصب",
     "openDetails": "عرض تفاصيل الوظيفة {{title}}",
-    "drawerDescription": "تفاصيل وظيفة {{title}} في {{organization}}",
+    "drawerDescription": "تفاصيل وظيفة {{title}} في {{club}}",
     "deadlineLabel": "الموعد النهائي للتقديم",
     "due": "آخر موعد {{date}}",
     "commitmentLabel": "الالتزام بالوقت",
@@ -16,11 +15,10 @@
     "contactLabel": "تواصل",
     "aboutPosition": "حول هذه الوظيفة",
     "requirements": "المتطلبات",
-    "viewSource": "عرض المنشور الأصلي لـ Instagram",
     "emptyTitle": "لم يتم العثور على وظائف شاغرة",
     "emptyDescription": "حاول بحثًا آخر أو نوع وظيفة آخر. ستظهر فرص التنظيم الجديدة هنا بمجرد نشرها.",
-    "organizationEmptyTitle": "لا توجد وظائف شاغرة",
-    "organizationEmptyDescription": "لا تمتلك هذه المنظمة حاليًا أي وظائف شاغرة.",
+    "clubEmptyTitle": "لا توجد وظائف شاغرة",
+    "clubEmptyDescription": "لا تمتلك هذه المنظمة حاليًا أي وظائف شاغرة.",
     "resultsLabel": "تم العثور على {{count}} وظيفة",
     "types": {
       "executive": "تنفيذي",
@@ -34,6 +32,21 @@
     "position_zero": "مناصب",
     "position_two": "منصبان",
     "position_few": "مناصب",
-    "position_many": "منصب"
+    "position_many": "منصب",
+    "title": "عنوان المنصب",
+    "paid": "مدفوع",
+    "unpaid": "غير مدفوع",
+    "unknown": "الأجر غير محدد",
+    "addPosition": "إضافة منصب",
+    "submitted": "تم إرسال المنصب للمراجعة.",
+    "submissions": "الوظائف المقدمة",
+    "placeholders": {
+      "title": "مثلاً: منسق التسويق",
+      "description": "صِف الدور والمهام وما يمكن للشخص تعلمه أو المساهمة به.",
+      "compensation": "مثلاً: 20 دولاراً في الساعة، أو مكافأة 500 دولار، أو دون أجر",
+      "commitment": "مثلاً: 3 إلى 5 ساعات أسبوعياً، من سبتمبر إلى ديسمبر",
+      "contact": "مثلاً: hiring@example.com",
+      "requirements": "متطلب واحد في كل سطر، مثلاً:\nالقدرة على العمل ضمن فريق\nالتفرغ للاجتماعات الأسبوعية"
+    }
   }
 }

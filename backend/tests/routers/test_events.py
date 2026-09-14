@@ -4,9 +4,10 @@ from unittest.mock import MagicMock
 from uuid import UUID
 
 from core.constants import ROLE_ADMIN
-from schemas.event import EventResponse, LatestEventResponse
-from schemas.organization import OrganizationResponse
-from services import event_service, organization_service
+from core.pagination import LatestAddedItem
+from schemas.club import ClubResponse
+from schemas.event import EventResponse
+from services import club_service, event_service
 from tests.conftest import ADMIN_USER, FAKE_USER, OTHER_USER
 
 
@@ -14,10 +15,10 @@ def _mock_event(**overrides) -> EventResponse:
     """Build a mock EventResponse."""
     defaults = {
         "id": 1,
-        "organization_id": 7,
+        "club_id": 7,
         "title": "Test Event",
         "location": "Here",
-        "organization": "TestOrg",
+        "club": "TestOrg",
         "added_at": datetime.now(timezone.utc),
         "created_by": FAKE_USER["id"],
     }
@@ -30,26 +31,24 @@ def _update_result(event: EventResponse) -> event_service.EventUpdateResult:
     return event_service.EventUpdateResult(event=event, recipient_ids=[])
 
 
-def _mock_organization(**overrides) -> OrganizationResponse:
+def _mock_club(**overrides) -> ClubResponse:
     defaults = {
         "id": 7,
-        "organization_name": "Verified Organization",
+        "club_name": "Verified Club",
         "categories": [],
-        "organization_page": None,
+        "club_page": None,
         "ig": None,
         "discord": None,
-        "organization_type": "wusa",
+        "club_type": "wusa",
         "logo_url": None,
         "created_by": FAKE_USER["id"],
     }
     defaults.update(overrides)
-    return OrganizationResponse.model_validate(defaults)
+    return ClubResponse.model_validate(defaults)
 
 
 def test_create_event_requires_auth(client):
-    response = client.post(
-        "/events/", json={"title": "Test", "location": "Here", "organization_id": 7}
-    )
+    response = client.post("/events/", json={"title": "Test", "location": "Here", "club_id": 7})
     assert response.status_code == 401
 
 
@@ -58,23 +57,23 @@ def test_delete_event_requires_auth(client):
     assert response.status_code == 401
 
 
-def test_create_event_sets_created_by_for_organization_owner(authenticated_client, monkeypatch):
-    """Approved organization owners can create events for their organization.
+def test_create_event_sets_created_by_for_club_owner(authenticated_client, monkeypatch):
+    """Approved club owners can create events for their club.
 
-    The router only authorizes organization ownership and forwards the raw payload;
-    organization/school are derived from organization_id inside
-    event_service.create_event (see test_resolve_organization_fields_*).
+    The router only authorizes club ownership and forwards the raw payload;
+    club/school are derived from club_id inside
+    event_service.create_event (see test_resolve_club_fields_*).
     """
     created_event = _mock_event(
-        organization_id=7,
-        organization="Verified Organization",
-        organization_type="wusa",
+        club_id=7,
+        club="Verified Club",
+        club_type="wusa",
     )
     mock_create = MagicMock(return_value=created_event)
-    mock_get_organization = MagicMock(return_value=_mock_organization(id=7, school="uwaterloo"))
-    mock_resolve = MagicMock(return_value=[_mock_organization(id=7, school="uwaterloo")])
-    monkeypatch.setattr(organization_service, "get_organization", mock_get_organization)
-    monkeypatch.setattr(organization_service, "list_organizations_by_owner", mock_resolve)
+    mock_get_club = MagicMock(return_value=_mock_club(id=7, school="uwaterloo"))
+    mock_resolve = MagicMock(return_value=[_mock_club(id=7, school="uwaterloo")])
+    monkeypatch.setattr(club_service, "get_club", mock_get_club)
+    monkeypatch.setattr(club_service, "list_clubs_by_owner", mock_resolve)
     monkeypatch.setattr(event_service, "create_event", mock_create)
 
     resp = authenticated_client.post(
@@ -82,7 +81,7 @@ def test_create_event_sets_created_by_for_organization_owner(authenticated_clien
         json={
             "title": "Test",
             "location": "Here",
-            "organization_id": 7,
+            "club_id": 7,
             "occurrences": [
                 {
                     "dtstart_utc": "2026-12-01T18:00:00+00:00",
@@ -97,22 +96,20 @@ def test_create_event_sets_created_by_for_organization_owner(authenticated_clien
     assert mock_create.call_count == 1
     args, kwargs = mock_create.call_args
     create_data = args[0]
-    assert create_data.organization_id == 7
+    assert create_data.club_id == 7
     assert kwargs["created_by"] == FAKE_USER["id"]
-    mock_get_organization.assert_called_once_with(7)
+    mock_get_club.assert_called_once_with(7)
     mock_resolve.assert_called_once_with(FAKE_USER["id"])
 
 
-def test_create_event_without_matching_organization_rejected(authenticated_client, monkeypatch):
-    """Authenticated users cannot create events unless they own the event's organization."""
+def test_create_event_without_matching_club_rejected(authenticated_client, monkeypatch):
+    """Authenticated users cannot create events unless they own the event's club."""
     monkeypatch.setattr(
-        organization_service,
-        "list_organizations_by_owner",
+        club_service,
+        "list_clubs_by_owner",
         MagicMock(return_value=[]),
     )
-    monkeypatch.setattr(
-        organization_service, "get_organization", MagicMock(return_value=_mock_organization(id=7))
-    )
+    monkeypatch.setattr(club_service, "get_club", MagicMock(return_value=_mock_club(id=7)))
     monkeypatch.setattr(event_service, "create_event", MagicMock())
 
     resp = authenticated_client.post(
@@ -120,7 +117,7 @@ def test_create_event_without_matching_organization_rejected(authenticated_clien
         json={
             "title": "Test",
             "location": "Here",
-            "organization_id": 7,
+            "club_id": 7,
             "occurrences": [
                 {
                     "dtstart_utc": "2026-12-01T18:00:00+00:00",
@@ -140,8 +137,8 @@ def test_create_event_admin_allowed(admin_client, monkeypatch):
     """Admins can create events for operations and moderation workflows."""
     created_event = _mock_event(created_by=ADMIN_USER["id"])
     mock_create = MagicMock(return_value=created_event)
-    mock_get_organization = MagicMock(return_value=_mock_organization(id=7))
-    monkeypatch.setattr(organization_service, "get_organization", mock_get_organization)
+    mock_get_club = MagicMock(return_value=_mock_club(id=7))
+    monkeypatch.setattr(club_service, "get_club", mock_get_club)
     monkeypatch.setattr(event_service, "create_event", mock_create)
 
     resp = admin_client.post(
@@ -149,7 +146,7 @@ def test_create_event_admin_allowed(admin_client, monkeypatch):
         json={
             "title": "Test",
             "location": "Here",
-            "organization_id": 7,
+            "club_id": 7,
             "occurrences": [
                 {
                     "dtstart_utc": "2026-12-01T18:00:00+00:00",
@@ -162,7 +159,7 @@ def test_create_event_admin_allowed(admin_client, monkeypatch):
     )
 
     assert resp.status_code == 201
-    mock_get_organization.assert_called_once_with(7)
+    mock_get_club.assert_called_once_with(7)
     _, kwargs = mock_create.call_args
     assert kwargs["created_by"] == ADMIN_USER["id"]
 
@@ -351,9 +348,9 @@ def test_list_events_forwards_school_and_pagination(client, monkeypatch):
         min_price=None,
         max_price=None,
         registration=None,
-        organizations=None,
-        organization_ids=None,
-        free_food=False,
+        clubs=None,
+        club_ids=None,
+        has_food=False,
         ids=None,
         sort_by="date",
         sort_order="asc",
@@ -415,9 +412,9 @@ def test_list_events_forwards_date_window(client, monkeypatch):
         min_price=None,
         max_price=None,
         registration=None,
-        organizations=None,
-        organization_ids=None,
-        free_food=False,
+        clubs=None,
+        club_ids=None,
+        has_food=False,
         ids=None,
         sort_by="date",
         sort_order="asc",
@@ -446,10 +443,10 @@ def test_list_events_forwards_filters_and_sort(client, monkeypatch):
             ("min_price", "0"),
             ("max_price", "20"),
             ("registration", "true"),
-            ("organizations", "UW Blueprint"),
-            ("organization_ids", "7"),
-            ("organization_ids", "8"),
-            ("free_food", "true"),
+            ("clubs", "UW Blueprint"),
+            ("club_ids", "7"),
+            ("club_ids", "8"),
+            ("has_food", "true"),
             ("ids", "1"),
             ("ids", "2"),
             ("sort_by", "added_at"),
@@ -472,9 +469,9 @@ def test_list_events_forwards_filters_and_sort(client, monkeypatch):
         min_price=0,
         max_price=20,
         registration=True,
-        organizations=["UW Blueprint"],
-        organization_ids=[7, 8],
-        free_food=True,
+        clubs=["UW Blueprint"],
+        club_ids=[7, 8],
+        has_food=True,
         ids=[1, 2],
         sort_by="added_at",
         sort_order="desc",
@@ -513,9 +510,9 @@ def test_list_events_forwards_added_within_24h(client, monkeypatch):
         min_price=None,
         max_price=None,
         registration=None,
-        organizations=None,
-        organization_ids=None,
-        free_food=False,
+        clubs=None,
+        club_ids=None,
+        has_food=False,
         ids=None,
         sort_by="date",
         sort_order="asc",
@@ -526,7 +523,7 @@ def test_list_events_forwards_added_within_24h(client, monkeypatch):
 
 
 def test_list_events_includes_latest_added_metadata(client, monkeypatch):
-    latest = LatestEventResponse(
+    latest = LatestAddedItem(
         title="MIT Men's Soccer",
         added_at=datetime(2026, 5, 15, 18, 0, tzinfo=timezone.utc),
     )
@@ -654,14 +651,12 @@ def test_get_event_stats_requires_school(client):
     assert response.status_code == 422
 
 
-def test_create_event_rejected_while_organization_awaits_review(authenticated_client, monkeypatch):
-    """Membership in an unapproved organization must not unlock publishing."""
-    pending_organization = _mock_organization(id=7, school="uwaterloo", status="pending")
-    monkeypatch.setattr(
-        organization_service, "get_organization", MagicMock(return_value=pending_organization)
-    )
-    mock_resolve = MagicMock(return_value=[pending_organization])
-    monkeypatch.setattr(organization_service, "list_organizations_by_owner", mock_resolve)
+def test_create_event_rejected_while_club_awaits_review(authenticated_client, monkeypatch):
+    """Membership in an unapproved club must not unlock publishing."""
+    pending_club = _mock_club(id=7, school="uwaterloo", status="pending")
+    monkeypatch.setattr(club_service, "get_club", MagicMock(return_value=pending_club))
+    mock_resolve = MagicMock(return_value=[pending_club])
+    monkeypatch.setattr(club_service, "list_clubs_by_owner", mock_resolve)
     mock_create = MagicMock()
     monkeypatch.setattr(event_service, "create_event", mock_create)
 
@@ -670,7 +665,7 @@ def test_create_event_rejected_while_organization_awaits_review(authenticated_cl
         json={
             "title": "Test",
             "location": "Here",
-            "organization_id": 7,
+            "club_id": 7,
             "occurrences": [
                 {
                     "dtstart_utc": "2026-12-01T18:00:00+00:00",

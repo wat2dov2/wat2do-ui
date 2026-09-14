@@ -13,7 +13,6 @@
     "or": "或者",
     "separatorBullet": "•",
     "free": "免費",
-    "freeFood": "免費食物",
     "backToTop": "返上頁",
     "cancelled": "已取消",
     "registration": "登記",
@@ -67,7 +66,11 @@
     "logo": "標誌",
     "loadingMap": "地圖加載中...",
     "clearFilters": "清除篩選器",
-    "all": "全部"
+    "all": "全部",
+    "latestAddedItem": "<addedPrefix></addedPrefix><eventTitle>{{title}}</eventTitle> <addedTime>已於 {{time}} 添加</addedTime>",
+    "newlyAddedFilter": {
+      "last24Hours": "最新"
+    }
   },
   "errorBoundary": {
     "title": "出咗啲問題",
@@ -78,13 +81,13 @@
     "events": "活動",
     "create": "提交活動",
     "loginRequiredToSubmit": "只有登入用戶先可以提交活動或組織。",
-    "organizations": "組織",
+    "clubs": "組織",
     "positions": "職位",
     "myEvents": "我的活動",
     "settings": "設定",
     "admin": "管理員",
     "adminPanel": "管理員面板",
-    "organizationPanel": "組織面板",
+    "clubPanel": "組織面板",
     "clubPanelTooltip": "管理你嘅組織",
     "mission": "使命",
     "about": "關於我哋",
@@ -114,8 +117,7 @@
       "continueWithGoogle": "使用 Google 繼續"
     },
     "signOut": {
-      "logOut": "登出",
-      "signOutOfAccount": "登出你的帳戶"
+      "logOut": "登出"
     },
     "getStarted": "開始使用",
     "profile": {
@@ -169,9 +171,9 @@
     "desc": "降序",
     "ascending": "升序",
     "descending": "降序",
-    "organization": "組織",
-    "searchOrganization": "搜尋組織...",
-    "noOrganizations": "沒有可用的組織"
+    "club": "組織",
+    "searchClub": "搜尋組織...",
+    "noClubs": "沒有可用的組織"
   },
   "commands": {
     "commands": "指令",
@@ -218,10 +220,10 @@
     "locationPlaceholder": "例如 MC 1234, SLC 大禮堂",
     "selectPackage": "選擇套餐",
     "eventTitlePlaceholder": "例如, 科技講座：2024 年的人工智能",
-    "organizationNamePlaceholder": "例如, 計算機科學組織",
-    "selectOrganization": "選擇一個組織",
-    "searchOrganizationPlaceholder": "搜尋組織...",
-    "noOrganizationFound": "找不到組織",
+    "clubNamePlaceholder": "例如, 計算機科學組織",
+    "selectClub": "選擇一個組織",
+    "searchClubPlaceholder": "搜尋組織...",
+    "noClubFound": "找不到組織",
     "descriptionPlaceholder": "告訴大家你的活動是關於什麼...",
     "sourceUrl": "來源連結",
     "sourceUrlPlaceholder": "https://instagram.com/p/...",
@@ -240,21 +242,21 @@
     "description": "描述",
     "saveChanges": "儲存更改",
     "requiredInformation": "所需資料",
-    "organizationName": "組織名稱",
-    "organizationType": "組織類型",
-    "organizationTypeMapped": "{{type}}",
-    "organizationTypeIndependent": "獨立",
-    "organizationNameRequired": "必須填寫組織名稱",
+    "clubName": "組織名稱",
+    "clubType": "組織類型",
+    "clubTypeMapped": "{{type}}",
+    "clubTypeIndependent": "獨立",
+    "clubNameRequired": "必須填寫組織名稱",
     "ownerEmail": "擁有者電郵",
     "categories": "類別",
     "categoryRequired": "至少需要一個類別",
     "add": "新增",
-    "organizationPageUrl": "組織頁面 URL",
-    "organizationPageUrlPlaceholder": "例如：https://example.com 或 123",
+    "clubPageUrl": "組織頁面 URL",
+    "clubPageUrlPlaceholder": "例如：https://example.com 或 123",
     "instagramHandle": "Instagram 帳號",
     "discordLink": "Discord 連結",
     "titleRequired": "必須填寫標題",
-    "organizationRequired": "必須選擇組織",
+    "clubRequired": "必須選擇組織",
     "occurrenceRequired": "至少需要一個日期",
     "locationRequired": "必須填寫地點",
     "schoolRequired": "必須填寫學校",
@@ -282,7 +284,7 @@
     "politicsAndAdvocacy": "政治與倡議",
     "religionAndSpirituality": "宗教與靈性",
     "events": "活動",
-    "organizations": "組織"
+    "clubs": "組織"
   },
   "locations": {
     "LAX": "洛杉磯國際機場",

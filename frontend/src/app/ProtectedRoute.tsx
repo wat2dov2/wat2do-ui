@@ -7,7 +7,7 @@ import {
   useAuthState,
   appendSafeReturnTo,
 } from "@/features/auth";
-import { ROLE_ADMIN, ROLE_ORGANIZATION, type Role } from "@/shared/constants/roles";
+import { ROLE_ADMIN, ROLE_CLUB, type Role } from "@/shared/constants/roles";
 import { ROUTES } from "@/shared/constants/routes";
 import { LoadingPage } from "@/shared/ui/loading-page";
 
@@ -30,7 +30,7 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const authReady = useAuthReady();
-  const { isAuthenticated: authed, role, hasOrganization } = useAuthState();
+  const { isAuthenticated: authed, role, hasClub } = useAuthState();
 
   const needsFreshRole = requiredRole === ROLE_ADMIN;
   const [refreshing, setRefreshing] = useState<boolean>(() => {
@@ -68,7 +68,7 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
       )
     : requiredRole === ROLE_ADMIN && role !== "admin"
       ? ROUTES.HOME
-      : requiredRole === ROLE_ORGANIZATION && !hasOrganization && role !== "admin"
+      : requiredRole === ROLE_CLUB && !hasClub && role !== "admin"
         ? ROUTES.HOME
         : null;
 

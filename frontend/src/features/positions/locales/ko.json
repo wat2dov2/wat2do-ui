@@ -5,9 +5,8 @@
     "searchPlaceholder": "역할, 기술 또는 위치 검색...",
     "clearSearch": "직책 검색 지우기",
     "filterByType": "유형별 직책 필터",
-    "allTypes": "모든 직책 유형",
     "openDetails": "{{title}} 직위 세부 정보 보기",
-    "drawerDescription": "{{organization}}의 {{title}} 직책 세부 정보",
+    "drawerDescription": "{{club}}의 {{title}} 직책 세부 정보",
     "deadlineLabel": "지원 마감일",
     "due": "마감 {{date}}",
     "commitmentLabel": "근무 시간",
@@ -16,11 +15,10 @@
     "contactLabel": "연락처",
     "aboutPosition": "이 직책에 대해",
     "requirements": "요구사항",
-    "viewSource": "원본 Instagram 게시물 보기",
     "emptyTitle": "열린 채용 공고가 없습니다",
     "emptyDescription": "다른 검색어나 직위 유형을 시도해 보세요. 새로운 조직 기회가 게시되면 여기에 나타납니다.",
-    "organizationEmptyTitle": "열린 직위가 없습니다",
-    "organizationEmptyDescription": "이 조직에는 현재 열린 직위가 없습니다.",
+    "clubEmptyTitle": "열린 직위가 없습니다",
+    "clubEmptyDescription": "이 조직에는 현재 열린 직위가 없습니다.",
     "resultsLabel": "{{count}}개의 직위가 발견되었습니다",
     "types": {
       "executive": "임원",
@@ -29,6 +27,21 @@
       "staff": "유급 직원",
       "internship": "인턴십",
       "general": "일반 채용"
+    },
+    "title": "직책 이름",
+    "paid": "유급",
+    "unpaid": "무급",
+    "unknown": "보수 미지정",
+    "addPosition": "직책 추가",
+    "submitted": "검토를 위해 제출했습니다.",
+    "submissions": "제출된 직책",
+    "placeholders": {
+      "title": "예: 마케팅 코디네이터",
+      "description": "역할, 담당 업무, 배우거나 기여할 수 있는 내용을 설명해 주세요.",
+      "compensation": "예: 시급 20달러, 사례비 500달러 또는 무급",
+      "commitment": "예: 9월부터 12월까지 주 3~5시간",
+      "contact": "예: hiring@example.com",
+      "requirements": "한 줄에 하나씩 입력하세요. 예:\n팀 활동에 익숙한 분\n매주 회의에 참석할 수 있는 분"
     }
   }
 }

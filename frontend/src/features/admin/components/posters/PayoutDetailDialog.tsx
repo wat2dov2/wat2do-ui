@@ -187,7 +187,7 @@ export function PayoutDetailDialog({
                   {t("admin.posterPayouts.detail.noContributions")}
                 </p>
               ) : (
-                <AdminTable
+                <AdminTable count={detail.contributions.length} label={detail.contributions.length === 1 ? t("admin.posterPayouts.detail.poster") : t("admin.posters")}
                   headers={[
                     { label: t("admin.posterPayouts.detail.poster") },
                     { label: t("admin.posterPayouts.detail.template") },

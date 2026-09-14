@@ -17,6 +17,9 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
+        link: "bg-transparent text-primary underline underline-offset-4 hover:text-primary-hover",
+        avatar:
+          "overflow-hidden rounded-full bg-secondary text-secondary-foreground hover:ring-2 hover:ring-ring/50 [&_img]:size-full [&_img]:object-cover",
         primary:
           "bg-primary text-primary-foreground hover:bg-primary-hover active:bg-primary-active",
         outline:
@@ -29,6 +32,8 @@ const buttonVariants = cva(
           "bg-warning text-warning-foreground hover:bg-warning-hover active:bg-warning-active focus-visible:ring-warning/20",
       },
       size: {
+        inline: "h-auto rounded-none border-0 p-0 font-normal whitespace-normal",
+        navigation: "h-9 w-full justify-start px-3 py-2",
         default: "h-9 px-4 py-2 has-[>svg]:px-3",
         sm: "h-8 gap-1.5 px-3 has-[>svg]:px-2.5",
         lg: "h-11 px-5 has-[>svg]:px-4",
@@ -85,7 +90,7 @@ const Button = React.forwardRef<
     // A ghost button has no fill, so it has nothing to raise off the page and
     // the control shadow reads as a shadow cast by nothing. Every other variant
     // paints a surface and keeps it.
-    const elevation = variant === "ghost" ? undefined : "control"
+    const elevation = variant === "ghost" || variant === "link" ? undefined : "control"
 
     return (
       <Comp

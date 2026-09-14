@@ -2,7 +2,7 @@ import { controlBox } from "@/shared/config/controlBox";
 import type { components } from "@/shared/generated/api-types";
 import { getServerApiBaseUrl } from "@/shared/services/serverApi";
 
-export const SITE_BANNER_TAG = "site-banner";
+const SITE_BANNER_TAG = "site-banner";
 
 export type SiteBanner = components["schemas"]["SiteBannerResponse"];
 

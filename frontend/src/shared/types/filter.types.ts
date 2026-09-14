@@ -15,9 +15,10 @@ export interface FilterState {
   days: string[];
   minPrice: string;
   maxPrice: string;
+  minGoing: number;
   registration: boolean;
-  organizations: string[];
-  freeFood: boolean;
+  clubs: string[];
+  hasFood: boolean;
   going: boolean;
   sortBy: string;
   sortOrder: "asc" | "desc";

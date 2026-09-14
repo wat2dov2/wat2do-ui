@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import type { Event, Organization } from "@/shared/types";
+import type { Event, Club } from "@/shared/types";
 import { buildPreviewEvent } from "@/features/events/lib/previewEvent";
-import { getAllOrganizations } from "@/features/organizations";
+import { getAllClubs } from "@/features/clubs";
 import { useQuery } from "@tanstack/react-query";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import { useEventsStore } from "@/features/events/store/events.store";
@@ -18,7 +18,7 @@ import { EventFormFields } from "@/features/events/components/EventForm/EventFor
 import { EventFormProvider } from "@/features/events/components/EventForm/EventForm/EventFormContext";
 import type { useEventForm } from "@/features/events/hooks/useEventForm";
 
-const NO_ORGANIZATIONS: Organization[] = [];
+const NO_CLUBS: Club[] = [];
 
 /** The subset of useEventForm's return value that EventFormStep needs. */
 type EventFormHookReturn = ReturnType<typeof useEventForm>;
@@ -50,7 +50,6 @@ interface EventFormStepProps {
   >;
   isDarkMode: boolean;
   /** Absent when the form is an always-present panel with nothing to dismiss. */
-  onCancel?: () => void;
   onBack?: () => void;
   showHeading?: boolean;
   /** The live event-card preview beside the fields. */
@@ -70,7 +69,6 @@ export function EventFormStep({
   onSubmit,
   eventForm,
   isDarkMode,
-  onCancel,
   onBack,
   showHeading = true,
   showPreview = true,
@@ -80,21 +78,22 @@ export function EventFormStep({
 }: EventFormStepProps) {
   const { t } = useTranslation();
   const schoolFilter = useEventsStore((s) => s.schoolFilter);
+  const clubSchool = previewBase?.school ?? schoolFilter;
 
-  const fetchOrganizations = useCallback(
-    () => getAllOrganizations(schoolFilter ?? undefined),
-    [schoolFilter],
+  const fetchClubs = useCallback(
+    () => getAllClubs(clubSchool ?? undefined),
+    [clubSchool],
   );
-  const { data: organizations = NO_ORGANIZATIONS } = useQuery({
-    queryKey: queryKeys.organizations.allForSchool(schoolFilter),
-    queryFn: fetchOrganizations,
-    placeholderData: NO_ORGANIZATIONS,
+  const { data: clubs = NO_CLUBS } = useQuery({
+    queryKey: queryKeys.clubs.allForSchool(clubSchool),
+    queryFn: fetchClubs,
+    placeholderData: NO_CLUBS,
   });
 
-  const selectedOrganizationName = useMemo(() => {
-    const id = eventForm.formData.organization_id;
-    return id != null ? organizations.find((org) => org.id === id)?.organization_name ?? "" : "";
-  }, [organizations, eventForm.formData.organization_id]);
+  const selectedClubName = useMemo(() => {
+    const id = eventForm.formData.club_id;
+    return id != null ? clubs.find((org) => org.id === id)?.club_name ?? "" : "";
+  }, [clubs, eventForm.formData.club_id]);
 
   // One event, rebuilt as the form changes: the preview column and any host
   // drawing its own preview show the same card, keystroke for keystroke.
@@ -103,14 +102,14 @@ export function EventFormStep({
       buildPreviewEvent({
         formData: eventForm.formData,
         imagePreview: eventForm.imagePreview,
-        organizationName: selectedOrganizationName,
+        clubName: selectedClubName,
         fallbackTitle: t("events.eventTitle"),
         base: previewBase,
       }),
     [
       eventForm.formData,
       eventForm.imagePreview,
-      selectedOrganizationName,
+      selectedClubName,
       previewBase,
       t,
     ],
@@ -130,8 +129,8 @@ export function EventFormStep({
       errors: eventForm.errors,
       touched: eventForm.touched,
       handleBlur: eventForm.handleBlur,
-      organizations,
-      selectedOrganizationName,
+      clubs,
+      selectedClubName,
       updateOccurrence: eventForm.updateOccurrence,
       addOccurrence: eventForm.addOccurrence,
       removeOccurrence: eventForm.removeOccurrence,
@@ -150,9 +149,9 @@ export function EventFormStep({
       eventForm,
       isDarkMode,
       isEditMode,
-      organizations,
+      clubs,
       previewEvent,
-      selectedOrganizationName,
+      selectedClubName,
     ]
   );
 
@@ -192,11 +191,6 @@ export function EventFormStep({
               <EventFormFields />
               {showSubmit ? (
                 <Field orientation="horizontal" className="mt-6">
-                  {onCancel ? (
-                    <Button variant="outline" type="button" onClick={onCancel}>
-                      {t("common.cancel")}
-                    </Button>
-                  ) : null}
                   <LoadingButton
                     type="button"
                     onMouseDown={onSubmit}

@@ -2,7 +2,7 @@ name: Daily Instagram maintenance and publishing drafts
 
 on:
   schedule:
-    - cron: '17 9 * * *'
+    - cron: '0 8 * * *'
       timezone: 'America/Toronto'
   workflow_dispatch:
 

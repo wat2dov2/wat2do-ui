@@ -6,8 +6,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response,
 
 from core.auth import (
     get_authorized_resource,
+    get_club_owner_or_admin,
     get_db_user,
-    get_organization_owner_or_admin,
     is_admin,
 )
 from core.client_ip import get_client_ip
@@ -88,7 +88,7 @@ def list_qr_codes(
     if not is_admin(db_user):
         enrolled = db_user.promoter_tos_accepted_at is not None
         if not enrolled:
-            get_organization_owner_or_admin(db_user)
+            get_club_owner_or_admin(db_user)
     kwargs = {
         "offset": pagination.offset,
         "limit": pagination.page_size,
@@ -111,7 +111,7 @@ def list_scans(
     from_time: datetime | None = None,
     to_time: datetime | None = None,
     pagination: PaginationParams = Depends(),
-    db_user: UserResponse = Depends(get_organization_owner_or_admin),
+    db_user: UserResponse = Depends(get_club_owner_or_admin),
 ):
     owned_by = None if is_admin(db_user) else str(db_user.id)
     items, total = qr_code_service.list_scans(
@@ -179,7 +179,7 @@ def create_poster(
     db_user: UserResponse = Depends(get_db_user),
 ):
     if isinstance(data, QrCodeCreate):
-        get_organization_owner_or_admin(db_user)
+        get_club_owner_or_admin(db_user)
         return qr_code_service.create_qr_code(data, creator=db_user)
     return PromoterPosterBatchResponse(
         posters=qr_code_service.create_promoter_qr_codes(data, creator=db_user)
@@ -190,7 +190,7 @@ def create_poster(
 def update_poster(
     qr_code_id: str,
     data: QrCodeUpdate,
-    db_user: UserResponse = Depends(get_organization_owner_or_admin),
+    db_user: UserResponse = Depends(get_club_owner_or_admin),
 ):
     if data.id != qr_code_id:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=ID_MISMATCH)
@@ -201,7 +201,7 @@ def update_poster(
 @router.delete("/{qr_code_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_poster(
     qr_code_id: str,
-    db_user: UserResponse = Depends(get_organization_owner_or_admin),
+    db_user: UserResponse = Depends(get_club_owner_or_admin),
 ):
     _get_poster_or_404_authorized(qr_code_id, db_user)
     qr_code_service.delete_qr_code(qr_code_id)

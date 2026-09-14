@@ -1,6 +1,7 @@
 import {
   useEffect,
   useId,
+  useRef,
   useState,
   type ComponentProps,
   type FormEvent,
@@ -80,6 +81,8 @@ export function EmailOtpForm({
 }: EmailOtpFormProps) {
   const { t } = useTranslation();
   const fieldId = useId();
+  const formRef = useRef<HTMLFormElement>(null);
+  const submittedOtpRef = useRef<string | null>(null);
   const [hostnameSchool, setHostnameSchool] = useState<string | null>(null);
   const [isCompletingAction, setIsCompletingAction] = useState(false);
   const { schoolBySlug } = useSchoolDirectory();
@@ -91,6 +94,15 @@ export function EmailOtpForm({
   const emailId = `${fieldId}-email`;
   const otpId = `${fieldId}-otp`;
   const isBusy = flow.isLoading || isCompletingAction;
+  useEffect(() => {
+    if (!flow.emailSent || flow.otpToken.length !== 6) {
+      submittedOtpRef.current = null;
+      return;
+    }
+    if (isBusy || isSubmitDisabled || submittedOtpRef.current === flow.otpToken) return;
+    submittedOtpRef.current = flow.otpToken;
+    formRef.current?.requestSubmit();
+  }, [flow.emailSent, flow.otpToken, isBusy, isSubmitDisabled]);
   const resolvedRequestCodeLabel = requestCodeLabel ?? t("auth.continue");
   const resolvedActionLabel = actionLabel ?? t("auth.verifyOtp");
   const schoolSlug =
@@ -112,7 +124,7 @@ export function EmailOtpForm({
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (isBusy) {
+    if (isBusy || isSubmitDisabled) {
       return;
     }
 
@@ -131,6 +143,7 @@ export function EmailOtpForm({
 
   return (
     <form
+      ref={formRef}
       data-slot="email-otp-form"
       className={cn("w-full", className)}
       onSubmit={(event) => void handleSubmit(event)}

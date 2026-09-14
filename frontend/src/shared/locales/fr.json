@@ -13,7 +13,6 @@
     "or": "ou",
     "separatorBullet": "•",
     "free": "Gratuit",
-    "freeFood": "Nourriture gratuite",
     "backToTop": "Retour en haut",
     "cancelled": "Annulé",
     "registration": "Inscription",
@@ -73,7 +72,11 @@
     "hourAgo_one": "il y a {{count}} heure",
     "hourAgo_many": "il y a {{count}} heures",
     "dayAgo_one": "Il y a {{count}} jour",
-    "dayAgo_many": "Il y a {{count}} jours"
+    "dayAgo_many": "Il y a {{count}} jours",
+    "latestAddedItem": "<addedPrefix></addedPrefix><eventTitle>{{title}}</eventTitle> <addedTime>ajouté(e) {{time}}</addedTime>",
+    "newlyAddedFilter": {
+      "last24Hours": "Nouveau"
+    }
   },
   "errorBoundary": {
     "title": "Quelque chose a mal tourné",
@@ -84,13 +87,13 @@
     "events": "Événements",
     "create": "Soumettre l'événement",
     "loginRequiredToSubmit": "Seuls les utilisateurs connectés peuvent soumettre des événements ou des organisations.",
-    "organizations": "Organisations",
+    "clubs": "Organisations",
     "positions": "Postes",
     "myEvents": "Mes Événements",
     "settings": "Paramètres",
     "admin": "Admin",
     "adminPanel": "Panneau d'administration",
-    "organizationPanel": "Panneau de l'organisation",
+    "clubPanel": "Panneau de l'organisation",
     "clubPanelTooltip": "Gérez votre organisation",
     "mission": "Mission",
     "about": "À propos",
@@ -120,8 +123,7 @@
       "continueWithGoogle": "Continuer avec Google"
     },
     "signOut": {
-      "logOut": "Se déconnecter",
-      "signOutOfAccount": "Se déconnecter de votre compte"
+      "logOut": "Se déconnecter"
     },
     "getStarted": "Commencer",
     "profile": {
@@ -175,9 +177,9 @@
     "desc": "Décroiss.",
     "ascending": "Ascendant",
     "descending": "Descendant",
-    "organization": "Organisation",
-    "searchOrganization": "Rechercher une organisation...",
-    "noOrganizations": "Aucune organisation disponible"
+    "club": "Organisation",
+    "searchClub": "Rechercher une organisation...",
+    "noClubs": "Aucune organisation disponible"
   },
   "commands": {
     "commands": "Commandes",
@@ -224,10 +226,10 @@
     "locationPlaceholder": "par ex. MC 1234, SLC Grande Salle",
     "selectPackage": "Sélectionner un forfait",
     "eventTitlePlaceholder": "par ex., Conférence Tech : L'IA en 2024",
-    "organizationNamePlaceholder": "par ex., Organisation Informatique",
-    "selectOrganization": "Sélectionner une organisation",
-    "searchOrganizationPlaceholder": "Rechercher des organisations...",
-    "noOrganizationFound": "Aucune organisation trouvée",
+    "clubNamePlaceholder": "par ex., Organisation Informatique",
+    "selectClub": "Sélectionner une organisation",
+    "searchClubPlaceholder": "Rechercher des organisations...",
+    "noClubFound": "Aucune organisation trouvée",
     "descriptionPlaceholder": "Dites aux gens de quoi parle votre événement...",
     "sourceUrl": "Lien source",
     "sourceUrlPlaceholder": "https://instagram.com/p/...",
@@ -246,21 +248,21 @@
     "description": "Description",
     "saveChanges": "Enregistrer les modifications",
     "requiredInformation": "Informations requises",
-    "organizationName": "Nom de l'organisation",
-    "organizationType": "Type d'organisation",
-    "organizationTypeMapped": "{{type}}",
-    "organizationTypeIndependent": "Indépendant",
-    "organizationNameRequired": "Le nom de l'organisation est requis",
+    "clubName": "Nom de l'organisation",
+    "clubType": "Type d'organisation",
+    "clubTypeMapped": "{{type}}",
+    "clubTypeIndependent": "Indépendant",
+    "clubNameRequired": "Le nom de l'organisation est requis",
     "ownerEmail": "E-mail du propriétaire",
     "categories": "Catégories",
     "categoryRequired": "Au moins une catégorie est requise",
     "add": "Ajouter",
-    "organizationPageUrl": "Page de l'organisation URL",
-    "organizationPageUrlPlaceholder": "par ex., https://example.com ou 123",
+    "clubPageUrl": "Page de l'organisation URL",
+    "clubPageUrlPlaceholder": "par ex., https://example.com ou 123",
     "instagramHandle": "Instagram Identifiant",
     "discordLink": "Discord Lien",
     "titleRequired": "Le titre est requis",
-    "organizationRequired": "L'organisation est requise",
+    "clubRequired": "L'organisation est requise",
     "occurrenceRequired": "Au moins une date est requise",
     "locationRequired": "L'emplacement est requis",
     "schoolRequired": "École est requise",
@@ -288,7 +290,7 @@
     "politicsAndAdvocacy": "Politique et plaidoyer",
     "religionAndSpirituality": "Religion et spiritualité",
     "events": "Événements",
-    "organizations": "Organisations"
+    "clubs": "Organisations"
   },
   "locations": {
     "LAX": "LAX",
@@ -455,7 +457,7 @@
       "random": {
         "title": "Événements aléatoires dont vous ignoriez l'existence",
         "desc": "Honnêtement, la meilleure partie de la création de ce projet a été de découvrir des organisations dont nous n'avions aucune idée sur le campus. Il y a un ",
-        "repair": "Repair Organization",
+        "repair": "Repair Club",
         "repairSuffix": " où vous pouvez réparer vos appareils électroniques cassés, la ",
         "zumba": "Zumba perse",
         "zumbaSuffix": " cours, et Organisation de la Force ",

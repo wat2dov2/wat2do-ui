@@ -5,10 +5,11 @@ import {
 } from "@/shared/services/apiClient";
 import { API_BASE_URL } from "@/shared/config/api";
 import type { EventFormData } from "@/shared/types";
+import type { ApiPositionImageResponse } from "@/shared/generated";
 
-interface UploadResponse {
-  url: string;
-}
+import type { components } from "@/shared/generated/api-types";
+
+type UploadResponse = components["schemas"]["UploadResponse"];
 
 interface UploadErrorResponse {
   detail?: string;
@@ -99,11 +100,15 @@ export async function uploadClaimProof(file: File): Promise<string> {
   return uploadFile("/uploads/claim-proof", file);
 }
 
-export async function parseEventImage(file: File): Promise<EventFormData> {
+export async function parseEventImage(file: File, school: string): Promise<EventFormData> {
   return requestFileUpload<EventFormData>(
-    "/ai/parse-event-image",
+    "/ai/parse-event-image?school=" + encodeURIComponent(school),
     file,
     "AI parsing",
     "none",
   );
+}
+
+export async function parsePositionImage(file: File, school: string): Promise<ApiPositionImageResponse> {
+  return requestFileUpload<ApiPositionImageResponse>("/ai/parse-position-image?school=" + encodeURIComponent(school), file, "AI parsing");
 }

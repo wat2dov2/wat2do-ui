@@ -64,7 +64,7 @@ def _matching_event_data() -> tuple[dict, dict]:
     }
     candidate = {
         "id": 42,
-        "organization_id": 7,
+        "club_id": 7,
         "ig_handle": "uwtea",
         "title": "Tea Tasting",
         "location": "SLC 3223",
@@ -87,7 +87,7 @@ def test_reconcile_events_enforces_confident_duplicate_id(monkeypatch):
         candidates_by_index=[[candidate]],
         caption_text="Tea Tasting reminder",
         school="uwaterloo",
-        resolved_organization_ids=[7],
+        resolved_club_ids=[7],
         resolved_ig_handles=["uwtea"],
     )
 
@@ -104,7 +104,7 @@ def test_reconcile_events_keeps_confident_match_when_llm_unavailable(monkeypatch
         candidates_by_index=[[candidate]],
         caption_text="Tea Tasting reminder",
         school="uwaterloo",
-        resolved_organization_ids=[7],
+        resolved_club_ids=[7],
         resolved_ig_handles=["uwtea"],
     )
 
@@ -181,7 +181,7 @@ def _mock_client(monkeypatch, content: str):
 
 
 def test_reconcile_events_strips_cross_org_ids(monkeypatch):
-    """Candidate with a different organization_id cannot be overwritten."""
+    """Candidate with a different club_id cannot be overwritten."""
     _mock_client(
         monkeypatch,
         '[{"id": 42, "title": "Tea", "location": "SLC", "cancelled": false, '
@@ -190,12 +190,10 @@ def test_reconcile_events_strips_cross_org_ids(monkeypatch):
 
     result = reconcile_events(
         extracted_events=[{"title": "Tea"}],
-        candidates_by_index=[
-            [{"id": 42, "title": "Tea", "organization_id": 99, "ig_handle": "other"}]
-        ],
+        candidates_by_index=[[{"id": 42, "title": "Tea", "club_id": 99, "ig_handle": "other"}]],
         caption_text="UPDATE: Tea moved to SLC",
         school="uwaterloo",
-        resolved_organization_ids=[7],
+        resolved_club_ids=[7],
         resolved_ig_handles=["uwtea"],
     )
     assert result is not None
@@ -212,12 +210,10 @@ def test_reconcile_events_allows_legacy_null_org_with_matching_ig(monkeypatch):
 
     result = reconcile_events(
         extracted_events=[{"title": "Tea"}],
-        candidates_by_index=[
-            [{"id": 42, "title": "Tea", "organization_id": None, "ig_handle": "uwtea"}]
-        ],
+        candidates_by_index=[[{"id": 42, "title": "Tea", "club_id": None, "ig_handle": "uwtea"}]],
         caption_text="UPDATE: Tea moved to SLC",
         school="uwaterloo",
-        resolved_organization_ids=[7],
+        resolved_club_ids=[7],
         resolved_ig_handles=["uwtea"],
     )
     assert result is not None

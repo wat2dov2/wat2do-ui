@@ -71,7 +71,7 @@ class ContentScoringControl(_ControlModel):
     category_match: float = Field(ge=0, le=1)
     category_without_profile: float = Field(ge=0, le=1)
     school_match: float = Field(ge=0, le=1)
-    organization_affinity: float = Field(ge=0, le=1)
+    club_affinity: float = Field(ge=0, le=1)
     temporal_tiers: tuple[TemporalTier, ...] = Field(min_length=1)
     temporal_fallback: float = Field(ge=0, le=1)
     free_event: float = Field(ge=0, le=1)
@@ -165,7 +165,7 @@ class AuthenticationControl(_ControlModel):
     legacy_frontend_origins: tuple[HttpUrl, ...]
 
 
-class OrganizationManagementControl(_ControlModel):
+class ClubManagementControl(_ControlModel):
     directory_page_size: int = Field(gt=0, le=100)
     directory_revalidate_seconds: int = Field(gt=0)
     invite_expiration_days: int = Field(gt=0)
@@ -234,7 +234,7 @@ class RateLimitsControl(_ControlModel):
     submissions: RateLimitControl
     calendar_feed: RateLimitControl
     maximum_going_events_per_user: int = Field(gt=0)
-    maximum_saved_organizations_per_user: int = Field(gt=0)
+    maximum_saved_clubs_per_user: int = Field(gt=0)
 
 
 class ScrapingControl(_ControlModel):
@@ -242,20 +242,18 @@ class ScrapingControl(_ControlModel):
     poll_interval_seconds: int = Field(gt=0)
     instagram_web_app_id: str = Field(pattern=r"^[0-9]{10,20}$")
     single_user_recent_post_minutes: int = Field(gt=0)
-    same_organization_title_threshold: float = Field(ge=0, le=1)
+    same_club_title_threshold: float = Field(ge=0, le=1)
     title_similarity_threshold: float = Field(ge=0, le=1)
     location_similarity_threshold: float = Field(ge=0, le=1)
     description_similarity_threshold: float = Field(ge=0, le=1)
     directory_maximum_events_per_source: int = Field(gt=0, le=100)
     maximum_candidates: int = Field(gt=0)
-    maximum_cross_organization_candidates: int = Field(gt=0)
+    maximum_cross_club_candidates: int = Field(gt=0)
 
     @model_validator(mode="after")
     def validate_candidate_limits(self) -> "ScrapingControl":
-        if self.maximum_cross_organization_candidates > self.maximum_candidates:
-            raise ValueError(
-                "maximum_cross_organization_candidates cannot exceed maximum_candidates"
-            )
+        if self.maximum_cross_club_candidates > self.maximum_candidates:
+            raise ValueError("maximum_cross_club_candidates cannot exceed maximum_candidates")
         return self
 
 
@@ -337,8 +335,8 @@ class InstagramPublishingControl(_ControlModel):
     new_event_window_hours: int = Field(gt=0)
     minimum_lead_hours: int = Field(ge=0)
     maximum_lead_days: int = Field(gt=0)
-    maximum_ai_candidates: int = Field(gt=0, le=100)
     maximum_event_slides: int = Field(gt=0, le=9)
+    status_poll_interval_seconds: float = Field(gt=0, le=60)
     meta_poll_attempts: int = Field(gt=0, le=30)
     meta_poll_interval_seconds: float = Field(gt=0, le=30)
     meta_request_timeout_seconds: float = Field(gt=0, le=120)
@@ -504,12 +502,17 @@ class PromoterProgramControl(_ControlModel):
         return self
 
 
+class GoogleAnalyticsControl(_ControlModel):
+    measurement_id: str = Field(pattern=r"^(G-[A-Z0-9]+)?$")
+
+
 class ControlBox(_ControlModel):
+    google_analytics: GoogleAnalyticsControl
     event_discovery: EventDiscoveryControl
     client_cache: ClientCacheControl
     interaction_tracking: InteractionTrackingControl
     authentication: AuthenticationControl
-    organization_management: OrganizationManagementControl
+    club_management: ClubManagementControl
     recommendations: RecommendationControl
     morning_email: MorningEmailControl
     event_reminder: EventReminderControl

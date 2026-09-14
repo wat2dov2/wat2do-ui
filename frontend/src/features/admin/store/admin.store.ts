@@ -11,42 +11,41 @@ import {
   getEventSubmissions,
   getReportedEvents,
   updateEventSubmission,
-  getOrganizationClaims,
-  getOrganizationsForReview,
+  getClubClaims,
+  getClubSubmissions,
   resolveClaim,
-  resolveOrganizationReview,
-  type OrganizationClaim,
+  resolveClubReview,
+  type ClubClaim,
 } from "@/features/admin/api/admin.api";
 import {
-  REPORT_PENDING,
   SUBMISSION_APPROVED,
   SUBMISSION_REJECTED,
 } from "@/shared/constants/statuses";
 import { controlBox } from "@/shared/config/controlBox";
-import type { EventSubmission, Organization, OrganizationStatus } from "@/shared/types";
+import type { EventSubmission, ReportedEvent, Club, ClubStatus } from "@/shared/types";
 
 interface LoadedAt {
   submissions?: number;
   reports?: number;
   claims?: number;
-  organizationReviews?: number;
+  clubSubmissions?: number;
 }
 
 interface AdminState {
   submissions: EventSubmission[];
-  reportedEventIds: Set<number>;
-  claims: OrganizationClaim[];
-  organizationReviews: Organization[];
+  reports: ReportedEvent[];
+  claims: ClubClaim[];
+  clubSubmissions: Club[];
   loadedAt: LoadedAt;
   submissionsSchool?: string;
   claimsSchool?: string;
-  organizationReviewsSchool?: string;
+  clubSubmissionsSchool?: string;
 
   fetchSubmissions: (school?: string, force?: boolean) => Promise<void>;
-  fetchReportedEventIds: (force?: boolean) => Promise<void>;
+  fetchReports: (force?: boolean) => Promise<void>;
   fetchClaims: (school?: string, force?: boolean) => Promise<void>;
-  fetchOrganizationReviews: (school?: string, force?: boolean) => Promise<void>;
-  reviewOrganization: (organizationId: number, status: OrganizationStatus) => Promise<void>;
+  fetchClubSubmissions: (school?: string, force?: boolean) => Promise<void>;
+  reviewClub: (clubId: number, status: ClubStatus) => Promise<void>;
   approveSubmission: (id: string) => Promise<void>;
   rejectSubmission: (id: string, reason: string) => Promise<void>;
   approveClaim: (id: string) => Promise<void>;
@@ -59,13 +58,13 @@ const fresh = (ts: number | undefined): boolean =>
 
 export const useAdminStore = create<AdminState>((set, get) => ({
   submissions: [],
-  reportedEventIds: new Set<number>(),
+  reports: [],
   claims: [],
-  organizationReviews: [],
+  clubSubmissions: [],
   loadedAt: {},
   submissionsSchool: undefined,
   claimsSchool: undefined,
-  organizationReviewsSchool: undefined,
+  clubSubmissionsSchool: undefined,
 
   fetchSubmissions: async (school, force = false) => {
     const isSchoolChanged = school !== get().submissionsSchool;
@@ -79,24 +78,21 @@ export const useAdminStore = create<AdminState>((set, get) => ({
       }));
     } catch (err) {
       console.error("Failed to fetch submissions:", err);
+      throw err;
     }
   },
 
-  fetchReportedEventIds: async (force = false) => {
+  fetchReports: async (force = false) => {
     if (!force && fresh(get().loadedAt.reports)) return;
     try {
       const reports = await getReportedEvents();
-      const pendingIds = new Set<number>(
-        reports.flatMap((r) =>
-          r.status === REPORT_PENDING ? [r.eventId] : [],
-        ),
-      );
       set((state) => ({
-        reportedEventIds: pendingIds,
+        reports,
         loadedAt: { ...state.loadedAt, reports: Date.now() },
       }));
     } catch (err) {
       console.error("Failed to fetch reported events:", err);
+      throw err;
     }
   },
 
@@ -104,7 +100,7 @@ export const useAdminStore = create<AdminState>((set, get) => ({
     const isSchoolChanged = school !== get().claimsSchool;
     if (!force && !isSchoolChanged && fresh(get().loadedAt.claims)) return;
     try {
-      const claims = await getOrganizationClaims(undefined, school);
+      const claims = await getClubClaims(undefined, school);
       set((state) => ({
         claims,
         claimsSchool: school,
@@ -112,34 +108,36 @@ export const useAdminStore = create<AdminState>((set, get) => ({
       }));
     } catch (err) {
       console.error("Failed to fetch claims:", err);
+      throw err;
     }
   },
 
-  fetchOrganizationReviews: async (school, force = false) => {
-    const isSchoolChanged = school !== get().organizationReviewsSchool;
-    if (!force && !isSchoolChanged && fresh(get().loadedAt.organizationReviews)) return;
+  fetchClubSubmissions: async (school, force = false) => {
+    const isSchoolChanged = school !== get().clubSubmissionsSchool;
+    if (!force && !isSchoolChanged && fresh(get().loadedAt.clubSubmissions)) return;
     try {
-      const organizationReviews = await getOrganizationsForReview(undefined, school);
+      const clubSubmissions = await getClubSubmissions(undefined, school);
       set((state) => ({
-        organizationReviews,
-        organizationReviewsSchool: school,
-        loadedAt: { ...state.loadedAt, organizationReviews: Date.now() },
+        clubSubmissions,
+        clubSubmissionsSchool: school,
+        loadedAt: { ...state.loadedAt, clubSubmissions: Date.now() },
       }));
     } catch (err) {
-      console.error("Failed to fetch organizations for review:", err);
+      console.error("Failed to fetch clubs for review:", err);
+      throw err;
     }
   },
 
-  reviewOrganization: async (organizationId, status) => {
+  reviewClub: async (clubId, status) => {
     try {
-      await resolveOrganizationReview(organizationId, status);
+      await resolveClubReview(clubId, status);
       set((state) => ({
-        organizationReviews: state.organizationReviews.map((organization) =>
-          organization.id === organizationId ? { ...organization, status } : organization,
+        clubSubmissions: state.clubSubmissions.map((club) =>
+          club.id === clubId ? { ...club, status } : club,
         ),
       }));
     } catch (err) {
-      console.error("Failed to review organization:", err);
+      console.error("Failed to review club:", err);
       throw err;
     }
   },
@@ -207,13 +205,13 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   reset: () => {
     set({
       submissions: [],
-      reportedEventIds: new Set<number>(),
+      reports: [],
       claims: [],
-      organizationReviews: [],
+      clubSubmissions: [],
       loadedAt: {},
       submissionsSchool: undefined,
       claimsSchool: undefined,
-      organizationReviewsSchool: undefined,
+      clubSubmissionsSchool: undefined,
     });
   },
 }));

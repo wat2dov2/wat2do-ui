@@ -1,23 +1,23 @@
 {
   "events": {
+    "minimumGoing": "न्यूनतम उपस्थित",
     "eventTitle": "घटना का शीर्षक",
     "loadFailed": "ईवेंट लोड करने में विफल. कृपया पुन: प्रयास करें।",
     "deleteFailed": "ईवेंट हटाने में विफल. कृपया पुन: प्रयास करें।",
     "submitFailed": "इवेंट सबमिट करने में विफल. कृपया पुन: प्रयास करें।",
     "submissionFailedTitle": "सबमिशन विफल",
-    "organizationRequired": "इवेंट सबमिट करने से पहले एक संगठन चुनें.",
-    "organization": "संगठन",
+    "clubRequired": "इवेंट सबमिट करने से पहले एक संगठन चुनें.",
+    "club": "संगठन",
     "status": "स्थिति",
     "dayOfWeek": "सप्ताह का दिन",
     "createEvent": "इवेंट जमा करें",
-    "submitEventSchoolDescription": "केवल {{school}} के संगठन दिखाए गए हैं, इसलिए आपका कार्यक्रम सही परिसर में सबमिट किया गया है।",
+    "submitEventSchoolDescription": "केवल {{school}} के संगठन दिखाए गए हैं।",
     "submitEventForReview": "समीक्षा के लिए इवेंट सबमिट करें",
     "submitForReview": "समीक्षा के लिए सबमिट करें",
     "uploadEventFlyer": "इवेंट फ़्लायर अपलोड करें",
     "uploadEventFlyerDescription": "एक छवि फ़्लायर अपलोड या पेस्ट करें, और AI विवरण स्वचालित रूप से पहले से भर जाएगा।",
     "processingEventImage": "इवेंट छवि संसाधित की जा रही है",
     "clickToUploadOrPasteImage": "छवि अपलोड करने या चिपकाने के लिए क्लिक करें",
-    "imagePasteShortcutHint": "{{formats}} (उदा. Cmd+V / Ctrl+V)",
     "flyerExtracted": "फ़्लायर विवरण सफलतापूर्वक निकाला गया.",
     "flyerParseFailed": "फ़्लायर पार्सिंग विफल",
     "flyerParseFailedDescription": "हम फ़्लायर से घटना का विवरण नहीं पढ़ सके।",
@@ -47,7 +47,6 @@
     "noUpcomingEvents": "कोई आगामी ईवेंट नहीं",
     "upcomingEventCount": "आगामी इवेंट",
     "upcomingEventCount_other": "आगामी इवेंट",
-    "latestAddedEvent": "{{title}} जोड़ा गया {{time}}",
     "thisWeek": "इस सप्ताह",
     "discoverEvents": "घटनाक्रम खोजें",
     "clickCount": "{{count}} क्लिक",
@@ -56,12 +55,6 @@
     "noEventsFoundDesc": "आपके वर्तमान फ़िल्टर से मेल खाने वाला कोई भी ईवेंट नहीं मिल सका। अपनी खोज को समायोजित करने या कुछ फ़िल्टर साफ़ करने का प्रयास करें।",
     "noEventsScheduled": "कोई कार्यक्रम निर्धारित नहीं है",
     "noEventsScheduledDesc": "इस समय किसी आयोजन की योजना नहीं है। बाद में पुनः जाँचें!",
-    "newlyAddedFilter": {
-      "last24Hours": "नया",
-      "sinceLastVisit": "पिछली यात्रा से जोड़ा गया",
-      "clear": "नया जोड़ा गया फ़िल्टर साफ़ करें",
-      "sinceLastVisitAt": "पिछली विज़िट के बाद से जोड़ा गया ({{time}})"
-    },
     "dateFilter": {
       "label": "इवेंट की तारीख",
       "any": "कोई भी दिन",
@@ -91,6 +84,7 @@
       "submitFailed": "रिपोर्ट प्रस्तुत नहीं हो सकी"
     },
     "goingEvents": {
+      "timeUnavailable": "यह इवेंट शुरू हो चुका है या रद्द हो गया है, इसलिए आप अपनी उपस्थिति दर्ज नहीं कर सकते।",
       "markFailed": "इस इवेंट को चल रहा है के रूप में चिह्नित नहीं किया जा सका",
       "unmarkFailed": "इस ईवेंट को चल रहे के रूप में अचिह्नित नहीं किया जा सका",
       "saveFailed": "आपका चयनित समय सहेजा नहीं जा सका",

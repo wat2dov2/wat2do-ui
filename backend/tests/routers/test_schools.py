@@ -27,6 +27,9 @@ def test_search_schools_route_is_public_and_delegates(client, monkeypatch):
             "primary_color": "#A31F34",
             "secondary_color": "#FFFFFF",
             "email_domains": ["mit.edu"],
+            "language": "en",
+            "faculties": [],
+            "location_examples": [],
         }
     ]
     mock.assert_called_once_with("mit", limit=10)
@@ -57,6 +60,9 @@ def test_get_school_route_is_public_and_delegates(client, monkeypatch):
         "semester_start": None,
         "semester_end": None,
         "social_preview_image_url": None,
+        "language": "en",
+        "faculties": [],
+        "location_examples": [],
     }
     mock.assert_called_once_with("mit")
 

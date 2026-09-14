@@ -5,10 +5,23 @@ import pytest
 from fastapi.testclient import TestClient
 
 from core.auth import get_current_user
+from core.config import settings
 from core.constants import ROLE_ADMIN, ROLE_USER
 from main import app
 from schemas.user import UserResponse
 from services import user_service
+
+
+@pytest.fixture(autouse=True)
+def test_environment_settings(monkeypatch):
+    """Isolate test cookies, redirects, and email from developer settings."""
+    monkeypatch.setattr(settings, "email_provider", "")
+    monkeypatch.setattr(settings, "email_provider_api_key", "")
+    monkeypatch.setattr(settings, "cookie_domain", "")
+    monkeypatch.setattr(settings, "frontend_url", "http://localhost:3000")
+    monkeypatch.setattr(settings, "cors_origins", ["http://localhost:3000"])
+    monkeypatch.setattr(settings, "cors_origin_regex", "")
+
 
 # In tests we make the auth id (Supabase ``sub``) and the internal
 # ``users.id`` the **same** UUID per actor. In production they're

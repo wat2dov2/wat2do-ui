@@ -16,7 +16,8 @@ import logging
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
-from typing import SupportsInt, TypeVar, cast
+from itertools import batched
+from typing import TypeVar
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from pydantic import BaseModel
@@ -35,23 +36,23 @@ T = TypeVar("T", bound=BaseModel)
 
 # Columns the summary response needs from the events table. Computed fields are
 # filled after fetch and must not be sent to PostgREST as real column names.
-# The organization link/social fields are hydrated from the embedded
-# ``organizations`` row (see ``ORGANIZATION_EMBED``), not real events columns.
+# The club link/social fields are hydrated from the embedded
+# ``clubs`` row (see ``CLUB_EMBED``), not real events columns.
 _SUMMARY_COMPUTED_FIELDS = {
     "occurrences",
     "school",
-    "organization_logo_url",
-    "organization_type",
-    "organization_page",
-    "organization_ig",
-    "organization_discord",
+    "club_logo_url",
+    "club_type",
+    "club_page",
+    "club_ig",
+    "club_discord",
 }
 _SUMMARY_COLUMNS = ",".join(
     f for f in EventSummaryResponse.model_fields if f not in _SUMMARY_COMPUTED_FIELDS
 )
-# Read-time embed of the owning organization's display/link/social fields via the
-# ``events.organization_id`` FK, flattened onto the event in ``hydrate_event``.
-ORGANIZATION_EMBED = "organizations(logo_url,organization_type,organization_page,ig,discord)"
+# Read-time embed of the owning club's display/link/social fields via the
+# ``events.club_id`` FK, flattened onto the event in ``hydrate_event``.
+CLUB_EMBED = "clubs(logo_url,club_type,club_page,ig,discord)"
 SCHOOL_EMBED = school_service.SCHOOL_SLUG_EMBED
 _LIGHTWEIGHT_DATE_COLUMNS = "id,event_id,dtstart_utc,events!inner(id)"
 _LIGHTWEIGHT_DATE_SCAN_CHUNK_SIZE = 250
@@ -82,20 +83,20 @@ def hydrate_event(row: dict, occurrences: list[OccurrenceResponse], model: type[
     model - shared by the browse list, recommender candidates, and the calendar
     feed so the shape never drifts between them.
 
-    When the row carries an embedded ``organizations`` object (from
-    ``ORGANIZATION_EMBED``), its type/link/social fields are flattened onto the
+    When the row carries an embedded ``clubs`` object (from
+    ``CLUB_EMBED``), its type/link/social fields are flattened onto the
     event so the card badge can render them without a second fetch. Rows without
     the embed (e.g. the single-event ``select("*")`` path) are left unchanged.
     """
     row = school_service.with_school_slug(row)
-    org = row.pop("organizations", None)
+    org = row.pop("clubs", None)
     org_fields = (
         {
-            "organization_logo_url": org.get("logo_url"),
-            "organization_type": org.get("organization_type"),
-            "organization_page": org.get("organization_page"),
-            "organization_ig": org.get("ig"),
-            "organization_discord": org.get("discord"),
+            "club_logo_url": org.get("logo_url"),
+            "club_type": org.get("club_type"),
+            "club_page": org.get("club_page"),
+            "club_ig": org.get("ig"),
+            "club_discord": org.get("discord"),
         }
         if isinstance(org, dict)
         else {}
@@ -103,23 +104,15 @@ def hydrate_event(row: dict, occurrences: list[OccurrenceResponse], model: type[
     return model.model_validate({**row, **org_fields, "occurrences": occurrences})
 
 
-def _int_or_none(value: object) -> int | None:
-    try:
-        return int(cast(SupportsInt, value)) if value is not None else None
-    except (TypeError, ValueError):
-        return None
-
-
 def _load_event_rows_by_ids(event_ids: list[int], *, columns: str) -> list[dict]:
     """Load event rows in caller order, chunking PostgREST ``in`` filters."""
     rows_by_id: dict[int, dict] = {}
-    for start in range(0, len(event_ids), 500):
-        chunk = event_ids[start : start + 500]
+    for chunk in batched(event_ids, 500):
         rows = (
             get_sb()
             .table(EVENTS)
-            .select(f"{columns},{ORGANIZATION_EMBED},{SCHOOL_EMBED}")
-            .in_("id", chunk)
+            .select(f"{columns},{CLUB_EMBED},{SCHOOL_EMBED}")
+            .in_("id", list(chunk))
             .execute()
             .data
             or []
@@ -230,9 +223,9 @@ def load_events_page(
     min_price: float | None = None,
     max_price: float | None = None,
     registration: bool | None = None,
-    organizations: list[str] | None = None,
-    organization_ids: list[int] | None = None,
-    free_food: bool = False,
+    clubs: list[str] | None = None,
+    club_ids: list[int] | None = None,
+    has_food: bool = False,
     ids: list[int] | None = None,
     sort_by: str = "date",
     sort_order: str = "asc",
@@ -257,9 +250,9 @@ def load_events_page(
         min_price=min_price,
         max_price=max_price,
         registration=registration,
-        organizations=organizations,
-        organization_ids=organization_ids,
-        free_food=free_food,
+        clubs=clubs,
+        club_ids=club_ids,
+        has_food=has_food,
         ids=ids,
         sort_by=sort_by,
         sort_order=sort_order,
@@ -280,8 +273,7 @@ def load_events_page(
         get_sb()
         .table(EVENT_DATES)
         .select(
-            "event_id,dtstart_utc,dtend_utc,tz,"
-            f"events!inner({columns},{ORGANIZATION_EMBED},{SCHOOL_EMBED})"
+            f"event_id,dtstart_utc,dtend_utc,tz,events!inner({columns},{CLUB_EMBED},{SCHOOL_EMBED})"
         )
     )
     if start_utc is not None:
@@ -300,10 +292,12 @@ def load_events_page(
         q = q.in_("events.id", ids)
     if categories:
         q = q.in_("events.category", categories)
-    if organizations:
-        q = q.in_("events.organization", organizations)
-    if organization_ids:
-        q = q.in_("events.organization_id", organization_ids)
+    for club in clubs or []:
+        term = sanitize_postgrest_value(club.strip())
+        if term:
+            q = q.ilike("events.club", f"%{term}%")
+    for club_id in club_ids or []:
+        q = q.eq("events.club_id", club_id)
     if registration is not None:
         q = q.eq("events.registration", registration)
     if min_price is not None:
@@ -320,7 +314,7 @@ def load_events_page(
         locations=locations,
         foods=foods,
         days=days,
-        free_food=free_food,
+        has_food=has_food,
     )
     candidates = _sort_candidates(candidates, sort_by=sort_by, sort_order=sort_order)
     total = len(candidates)
@@ -340,9 +334,9 @@ def _can_use_lightweight_date_page(
     min_price: float | None,
     max_price: float | None,
     registration: bool | None,
-    organizations: list[str] | None,
-    organization_ids: list[int] | None,
-    free_food: bool,
+    clubs: list[str] | None,
+    club_ids: list[int] | None,
+    has_food: bool,
     ids: list[int] | None,
     sort_by: str,
     sort_order: str,
@@ -366,9 +360,9 @@ def _can_use_lightweight_date_page(
         and min_price is None
         and max_price is None
         and registration is None
-        and not organizations
-        and not organization_ids
-        and not free_food
+        and not clubs
+        and not club_ids
+        and not has_food
         and ids is None
         and sort_by == "date"
         and sort_order == "asc"
@@ -555,11 +549,11 @@ def _filter_candidates(
     locations: list[str] | None,
     foods: list[str] | None,
     days: list[str] | None,
-    free_food: bool,
+    has_food: bool,
 ) -> list[_EventCandidate]:
     search_value = (search or "").casefold()
-    location_terms = [loc.casefold() for loc in locations or [] if loc.strip()]
-    food_values = {food for food in foods or [] if food.strip()}
+    location_terms = [loc.strip().casefold() for loc in locations or [] if loc.strip()]
+    food_values = {food.strip().casefold() for food in foods or [] if food.strip()}
     day_values = {day.casefold() for day in days or [] if day.strip()}
 
     return [
@@ -569,7 +563,7 @@ def _filter_candidates(
         and _matches_locations(candidate.row, location_terms)
         and _matches_foods(candidate.row, food_values)
         and _matches_days(candidate, day_values)
-        and _matches_free_food(candidate.row, free_food)
+        and _matches_has_food(candidate.row, has_food)
     ]
 
 
@@ -582,7 +576,7 @@ def _matches_search(row: dict, search: str) -> bool:
         row.get("title") or "",
         row.get("description") or "",
         row.get("location") or "",
-        row.get("organization") or "",
+        row.get("club") or "",
         *food_values,
     ]
     return any(search in str(value).casefold() for value in haystacks)
@@ -592,7 +586,7 @@ def _matches_locations(row: dict, locations: list[str]) -> bool:
     if not locations:
         return True
     value = str(row.get("location") or "").casefold()
-    return any(location in value for location in locations)
+    return all(location in value for location in locations)
 
 
 def _matches_foods(row: dict, foods: set[str]) -> bool:
@@ -601,19 +595,19 @@ def _matches_foods(row: dict, foods: set[str]) -> bool:
     event_food = row.get("food") or []
     if isinstance(event_food, str):
         event_food = [event_food]
-    return any(item in foods for item in event_food)
+    return all(any(query in item.casefold() for item in event_food) for query in foods)
 
 
 def _matches_days(candidate: _EventCandidate, days: set[str]) -> bool:
     if not days:
         return True
-    return any(day.casefold() in days for day in candidate.weekdays)
+    return days.issubset(day.casefold() for day in candidate.weekdays)
 
 
-def _matches_free_food(row: dict, free_food: bool) -> bool:
-    if not free_food:
+def _matches_has_food(row: dict, has_food: bool) -> bool:
+    if not has_food:
         return True
-    return bool(row.get("food") or []) and (row.get("price") or 0) == 0
+    return bool(row.get("food") or [])
 
 
 def _sort_candidates(
@@ -623,6 +617,7 @@ def _sort_candidates(
     sort_order: str,
 ) -> list[_EventCandidate]:
     reverse = sort_order == "desc"
+    missing_date = (datetime.min if reverse else datetime.max).replace(tzinfo=timezone.utc)
 
     def key(candidate: _EventCandidate):
         row = candidate.row
@@ -634,17 +629,7 @@ def _sort_candidates(
             return (row.get("price") or 0, row.get("id") or 0)
         if sort_by == "added_at":
             added_at = _parse_datetime(row.get("added_at"))
-            missing_added_at = (
-                datetime.min.replace(tzinfo=timezone.utc)
-                if reverse
-                else datetime.max.replace(tzinfo=timezone.utc)
-            )
-            return (added_at or missing_added_at, row.get("id") or 0)
-        missing_date = (
-            datetime.min.replace(tzinfo=timezone.utc)
-            if reverse
-            else datetime.max.replace(tzinfo=timezone.utc)
-        )
+            return (added_at or missing_date, row.get("id") or 0)
         return (candidate.earliest_dtstart or missing_date, row.get("id") or 0)
 
     return sorted(candidates, key=key, reverse=reverse)

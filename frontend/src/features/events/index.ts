@@ -4,5 +4,5 @@
  */
 
 export { EventDetailsModal } from "./components/EventDetailsModal";
-export { OrganizationEventsGrid } from "./components/OrganizationEventsGrid";
+export { ClubEventsGrid } from "./components/ClubEventsGrid";
 export { useEventsStore } from "./store/events.store";

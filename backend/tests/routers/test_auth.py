@@ -249,6 +249,7 @@ class TestSendOtp:
             "student@uwaterloo.ca",
             invitation_token=None,
             return_to=None,
+            signup_school=None,
         )
         mock_dispatch.assert_called_once_with(mock_prepare.return_value)
 
@@ -270,6 +271,7 @@ class TestSendOtp:
             "student@uwaterloo.ca",
             invitation_token=None,
             return_to="/promote?school=uwaterloo",
+            signup_school=None,
         )
 
     @pytest.mark.parametrize(
@@ -374,9 +376,9 @@ class TestRefresh:
         result = _refresh_result()
         monkeypatch.setattr(auth, "refresh", MagicMock(return_value=result))
 
+        client.cookies.set("refresh_token", "old-tok")
         resp = client.post(
             "/auth/refresh",
-            cookies={"refresh_token": "old-tok"},
             headers={"Origin": self.ALLOWED_ORIGIN},
         )
 
@@ -397,9 +399,9 @@ class TestRefresh:
             r"^https://([a-z0-9-]+\.)?wat2do\.io$",
         )
 
+        client.cookies.set("refresh_token", "old-tok")
         resp = client.post(
             "/auth/refresh",
-            cookies={"refresh_token": "old-tok"},
             headers={"Origin": "https://mit.wat2do.io"},
         )
 
@@ -414,9 +416,9 @@ class TestRefresh:
             MagicMock(side_effect=AuthenticationError(SESSION_REFRESH_FAILED)),
         )
 
+        client.cookies.set("refresh_token", "expired-tok")
         resp = client.post(
             "/auth/refresh",
-            cookies={"refresh_token": "expired-tok"},
             headers={"Origin": self.ALLOWED_ORIGIN},
         )
 
@@ -436,10 +438,10 @@ class TestLogout:
         """Logout with Bearer token calls service and clears the cookie."""
         monkeypatch.setattr(auth, "logout", MagicMock())
 
+        client.cookies.set("refresh_token", "ref-tok")
         resp = client.post(
             "/auth/logout",
             headers={"Authorization": "Bearer my-token"},
-            cookies={"refresh_token": "ref-tok"},
         )
 
         assert resp.status_code == 200
@@ -469,15 +471,22 @@ class TestCookieBehavior:
         set_cookie = resp.headers.get("set-cookie", "")
         assert "httponly" in set_cookie.lower()
 
-    def test_verify_otp_cookie_path_is_auth(self, client, monkeypatch):
-        """Cookie path is restricted to /auth to limit exposure."""
+    @pytest.mark.parametrize("cookie_path", ["/auth/refresh", "/api/auth/refresh"])
+    def test_verify_otp_uses_configured_refresh_cookie_path(self, client, monkeypatch, cookie_path):
+        from http.cookies import SimpleCookie
+
+        from routers import auth as auth_router
+
+        monkeypatch.setattr(auth_router, "REFRESH_COOKIE_PATH", cookie_path)
         result = _verify_result()
         monkeypatch.setattr(auth, "verify_otp", MagicMock(return_value=result))
 
         resp = client.post("/auth/verify-otp", json=VALID_VERIFY_OTP)
 
         set_cookie = resp.headers.get("set-cookie", "")
-        assert "path=/auth" in set_cookie.lower()
+        cookies = SimpleCookie()
+        cookies.load(set_cookie)
+        assert cookies["refresh_token"]["path"] == cookie_path
 
     def test_verify_otp_cookie_samesite_lax(self, client, monkeypatch):
         """Cookie SameSite is lax for CSRF protection."""

@@ -8,13 +8,13 @@ import React, {
 import { useTranslation } from "react-i18next";
 import {
   Drawer,
-  DrawerClose,
   DrawerContent,
   DrawerHeader,
   DrawerTitle,
 } from "@/shared/ui/drawer";
-import { X, ImagePlus } from "@/shared/ui/doodle-icons";
+import { ImageUploadField } from "@/shared/ui/image-upload-field";
 import { parseEventImage } from "@/shared/services/uploadService";
+import { getCurrentSchool } from "@/shared/constants/schools";
 import { toast } from "@/shared/hooks/use-toast";
 import { useEventForm } from "@/features/events/hooks/useEventForm";
 import { mapEventInputToFormData } from "@/features/events/hooks/useEventForm.utils";
@@ -34,7 +34,6 @@ import {
   type EventFormContextValue,
 } from "@/features/events/components/EventForm/EventForm/EventFormContext";
 import { Section, Stack } from "@/shared/layout";
-import { cn } from "@/shared/lib/utils";
 import type { Event, EventFormData } from "@/shared/types";
 
 // The picker, the paste handler, and the server all read the same control-box
@@ -169,7 +168,7 @@ export function SubmitEventFlow({
 
       setIsParsingImage(true);
       try {
-        const parsedData = await parseEventImage(file);
+        const parsedData = await parseEventImage(file, getCurrentSchool());
         eventForm.setFormData((previous) =>
           mapEventInputToFormData(
             parsedData as unknown as Record<string, unknown>,
@@ -191,6 +190,7 @@ export function SubmitEventFlow({
         setHasInitiated(true);
       } catch (error) {
         console.error("AI image parse error:", error);
+        setHasInitiated(true);
         toast({
           title: t("events.flyerParseFailed"),
           description:
@@ -277,11 +277,15 @@ export function SubmitEventFlow({
   // reporting stay in one place.
   useEffect(() => {
     if (!saveRef) return;
-    saveRef.current = handleSubmit;
+    saveRef.current = () =>
+      isEditMode && !eventForm.imageFile &&
+      JSON.stringify(eventForm.formData) === JSON.stringify(initialData)
+        ? Promise.resolve(true)
+        : handleSubmit();
     return () => {
       saveRef.current = null;
     };
-  }, [saveRef, handleSubmit]);
+  }, [saveRef, handleSubmit, isEditMode, eventForm.imageFile, eventForm.formData, initialData]);
 
   const currentStep: SubmitEventStep = eventFormPromotion.promotionSuccess
     ? "promotion-success"
@@ -295,7 +299,7 @@ export function SubmitEventFlow({
 
   const successContext = {
     formData: eventForm.formData,
-    selectedOrganizationName: "",
+    selectedClubName: "",
   } as unknown as EventFormContextValue;
 
   if (currentStep === "promotion-success") {
@@ -358,28 +362,12 @@ export function SubmitEventFlow({
             </div>
           ) : (
             <div className="w-full">
-              <input
-                ref={fileInputRef}
-                type="file"
+              <ImageUploadField
+                fileInputRef={fileInputRef}
+                label={t("events.clickToUploadOrPasteImage")}
                 accept={EVENT_IMAGE_ACCEPT}
-                onChange={handleImageParseSelect}
-                className="hidden"
+                onImageUpload={handleImageParseSelect}
               />
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="flex w-full cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border/80 bg-secondary px-4 py-8 text-center text-secondary-foreground shadow-xs outline-none transition-[color,box-shadow] hover:bg-secondary-hover focus-visible:ring-[3px] focus-visible:ring-ring/50"
-              >
-                <ImagePlus className="mb-0.5 size-8 text-muted-foreground" />
-                <p className="text-sm font-semibold text-foreground">
-                  {t("events.clickToUploadOrPasteImage")}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {t("events.imagePasteShortcutHint", {
-                    formats: t("qrCode.imageFormat"),
-                  })}
-                </p>
-              </button>
             </div>
           )}
         </Stack>
@@ -390,10 +378,7 @@ export function SubmitEventFlow({
   return (
     <Section
       variant="surface"
-      className={cn(
-        "flex min-h-[64dvh] overflow-hidden p-0",
-        embedded && "min-h-0 flex-1 rounded-none border-0",
-      )}
+      className={embedded ? "flex min-h-0 overflow-hidden p-0" : "flex min-h-[64dvh] overflow-hidden p-0"}
     >
       <EventFormStep
         isEditMode={isEditMode}
@@ -402,7 +387,6 @@ export function SubmitEventFlow({
         onSubmit={handleSubmit}
         eventForm={eventForm}
         isDarkMode={isDarkMode}
-        onCancel={onClose}
         onBack={onBack}
         showHeading={showHeading}
         showPreview={showPreview}
@@ -470,15 +454,6 @@ function SubmitEventModalContent({
   return (
     <Drawer open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DrawerContent aria-describedby={undefined}>
-        <DrawerClose asChild>
-          <button
-            type="button"
-            className="absolute right-3 top-3 z-20 flex size-9 items-center justify-center rounded-xl text-foreground opacity-80 transition-opacity hover:bg-muted-hover hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-            aria-label={t("common.close")}
-          >
-            <X className="size-4" />
-          </button>
-        </DrawerClose>
         <DrawerHeader className="sr-only">
           <DrawerTitle>{t("events.updateEvent")}</DrawerTitle>
         </DrawerHeader>

@@ -1,3 +1,4 @@
+import type { ApiTokenResponse } from "@/shared/generated";
 import { API_BASE_URL } from "@/shared/config/api";
 import { StorageService } from "@/shared/services/storageService";
 import { STORAGE_KEYS } from "@/shared/constants/storageKeys";
@@ -87,15 +88,8 @@ const AUTH_CREDENTIAL_PATHS = new Set([
   "/auth/verify-otp",
 ]);
 
-interface TokenRefreshResponse {
-  access_token: string;
-  token_type: string;
-  expires_in: number;
-  user_id: string;
-}
-
 /** The authoritative result of attempting to rotate the current session. */
-export type RefreshOutcome = "refreshed" | "rejected" | "unreachable";
+type RefreshOutcome = "refreshed" | "rejected" | "unreachable";
 
 /**
  * Optional hook invoked after a successful silent access-token refresh and
@@ -143,7 +137,7 @@ export function refreshAccessToken(): Promise<RefreshOutcome> {
         return res.status === 401 ? "rejected" : "unreachable";
       }
 
-      const data: TokenRefreshResponse = await res.json();
+      const data: ApiTokenResponse = await res.json();
       setAccessToken(data.access_token);
       return "refreshed";
     } catch (err) {

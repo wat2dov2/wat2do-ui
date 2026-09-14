@@ -10,7 +10,7 @@ interface HomeLandingStepProps {
 
 export function HomeLandingStep({ flow }: HomeLandingStepProps) {
   const { t } = useTranslation();
-  const recommended = flow.matchedEvents.slice(0, 4);
+  const recommended = flow.previewEvents;
   const saved = flow.interestedEvents;
   const showFreeFood = flow.state.interests.includes("Free food");
 

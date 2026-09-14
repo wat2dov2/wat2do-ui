@@ -5,8 +5,6 @@ export function filterAdminEvents(
   filters: {
     searchQuery?: string;
     selectedCategory?: string;
-    showReportedOnly?: boolean;
-    reportedEventIds?: Set<number>;
   },
 ): Event[] {
   let filtered = events;
@@ -16,7 +14,7 @@ export function filterAdminEvents(
     filtered = filtered.filter(
       (event) =>
         event.title.toLowerCase().includes(query) ||
-        (event.organization ?? "").toLowerCase().includes(query),
+        (event.club ?? "").toLowerCase().includes(query),
     );
   }
 
@@ -24,10 +22,6 @@ export function filterAdminEvents(
     filtered = filtered.filter(
       (event) => event.category === filters.selectedCategory,
     );
-  }
-
-  if (filters.showReportedOnly && filters.reportedEventIds) {
-    filtered = filtered.filter((event) => filters.reportedEventIds!.has(event.id));
   }
 
   return filtered;

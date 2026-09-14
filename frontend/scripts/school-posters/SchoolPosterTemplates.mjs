@@ -421,7 +421,7 @@ function AwardCard({ award, index }) {
       box({ fontSize: 27, fontWeight: 700, lineHeight: 1.05 }, award.title),
       award.handle
         ? box({ marginTop: 5, fontSize: 18, fontWeight: 700 }, award.handle)
-        : box({ marginTop: 5, fontSize: 18, fontWeight: 700 }, award.organization),
+        : box({ marginTop: 5, fontSize: 18, fontWeight: 700 }, award.club),
       box({ marginTop: 5, fontSize: 18, fontWeight: 600, lineHeight: 1.2 }, award.description),
     ),
   );

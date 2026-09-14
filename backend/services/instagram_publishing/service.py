@@ -11,12 +11,12 @@ from __future__ import annotations
 
 import logging
 from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime, timedelta, timezone
 from typing import Any
 from uuid import UUID
 from zoneinfo import ZoneInfo
 
-from core.config import settings
 from core.constants import (
     INSTAGRAM_BATCH_EMPTY,
     INSTAGRAM_BATCH_FAILED,
@@ -33,6 +33,7 @@ from core.errors import (
     INSTAGRAM_PUBLISH_BATCH_VERSION_CONFLICT,
 )
 from core.exceptions import ConflictError, NotFoundError, ValidationError
+from core.pagination import fetch_all_pages
 from core.tables import (
     EVENT_DATES,
     EVENTS,
@@ -46,9 +47,9 @@ from schemas.instagram_publishing import (
     InstagramPublishBatchUpdate,
 )
 from services import event_query, school_service
-from services.instagram_publishing.captions import build_caption
+from services.event_service import has_ended
+from services.instagram_publishing.captions import build_caption, default_caption_intro
 from services.instagram_publishing.credentials import load_account_credentials
-from services.instagram_publishing.curation import select_candidate_ids
 from services.instagram_publishing.meta import MetaInstagramClient
 from services.instagram_publishing.rendering import render_cover_asset, render_event_asset
 from services.school_context import resolve_school_timezone
@@ -60,7 +61,7 @@ _SUCCESSFUL_CUTOFF_STATUSES = (
     INSTAGRAM_BATCH_PUBLISHED,
     INSTAGRAM_BATCH_EMPTY,
 )
-_EVENT_COLUMNS = "id,title,description,location,organization,ig_handle"
+_EVENT_COLUMNS = "id,title,description,location,club,ig_handle,source_image_url"
 _BATCH_SELECT = f"*,{school_service.SCHOOL_SLUG_EMBED}"
 
 
@@ -136,7 +137,7 @@ def get_batch(batch_id: UUID | str) -> dict[str, Any]:
     if not response.data:
         raise NotFoundError(INSTAGRAM_PUBLISH_BATCH_NOT_FOUND)
     batch = _with_batch_school(response.data[0])
-    _hydrate_batches([batch])
+    _hydrate_batch(batch)
     return batch
 
 
@@ -156,6 +157,15 @@ def update_batch(
     slide_events = _load_slide_events(event_ids)
     if any(event_id not in slide_events for event_id in event_ids):
         raise ValidationError("Every carousel slide must be a dated, existing event")
+    now = datetime.now(timezone.utc)
+    invalid_ids = [
+        event_id for event_id in event_ids if not _is_publishable_event(slide_events[event_id], now)
+    ]
+    if invalid_ids:
+        raise ValidationError(
+            f"Cannot add or save event IDs: {', '.join(map(str, invalid_ids))}. "
+            "Each event needs a poster image and an upcoming or ongoing occurrence."
+        )
 
     try:
         response = (
@@ -165,7 +175,12 @@ def update_batch(
                 {
                     "p_batch_id": str(batch_id),
                     "p_expected_version": data.version,
-                    "p_caption": data.caption,
+                    "p_caption": build_caption(
+                        [_slide_payload(slide_events[event_id]) for event_id in event_ids],
+                        batch["school"],
+                        data.caption_intro,
+                    ),
+                    "p_caption_intro": data.caption_intro,
                     "p_cover_body": data.cover_body,
                     "p_event_ids": event_ids,
                 },
@@ -180,7 +195,7 @@ def update_batch(
     return get_batch(batch_id)
 
 
-def publish_batch(
+def claim_batch_for_publishing(
     batch_id: UUID | str,
     data: InstagramPublishBatchPublish,
 ) -> dict[str, Any]:
@@ -198,6 +213,10 @@ def publish_batch(
     items = _ordered_items(batch)
     if not items:
         raise ValidationError("Instagram publishing batch has no publishable slides")
+    if len(items) > _CONTROL.maximum_event_slides:
+        raise ValidationError(
+            f"Choose at most {_CONTROL.maximum_event_slides} event slides before publishing"
+        )
 
     claimed = (
         get_sb()
@@ -205,6 +224,7 @@ def publish_batch(
         .update(
             {
                 "status": INSTAGRAM_BATCH_PUBLISHING,
+                "caption": batch["caption"],
                 "error_message": None,
                 "version": data.version + 1,
                 "updated_at": _iso_now(),
@@ -219,8 +239,28 @@ def publish_batch(
         raise ConflictError(INSTAGRAM_PUBLISH_BATCH_VERSION_CONFLICT)
 
     batch.update(claimed.data[0])
+    return batch
+
+
+def publish_claimed_batch(batch: dict[str, Any]) -> None:
+    """Render and publish after the response; record failure on the claimed row."""
+    batch_id = batch["id"]
     try:
-        _publish_claimed_batch(credentials.access_token, batch, items)
+        credentials = load_account_credentials(str(batch["account_key"]))
+        if credentials.instagram_user_id != batch["instagram_user_id"]:
+            raise ValidationError("Instagram account credentials no longer match this batch")
+        # The claim locks out draft edits. Remove filtered, unpublished entries
+        # so history contains exactly the slides that will be rendered.
+        (
+            get_sb()
+            .table(INSTAGRAM_PUBLISH_ITEMS)
+            .delete()
+            .eq("batch_id", str(batch_id))
+            .not_.in_("event_id", [int(item["event_id"]) for item in _ordered_items(batch)])
+            .is_("published_at", "null")
+            .execute()
+        )
+        _publish_claimed_batch(credentials.access_token, batch, _ordered_items(batch))
     except Exception as exc:
         log.exception("Instagram batch %s failed to publish", batch_id)
         (
@@ -236,8 +276,6 @@ def publish_batch(
             .eq("id", str(batch_id))
             .execute()
         )
-        raise
-    return get_batch(batch_id)
 
 
 def _enabled_account_keys() -> list[str]:
@@ -269,6 +307,7 @@ def _generate_account_batch(
     window_start = _last_successful_cutoff(account_key) or (
         now - timedelta(hours=_CONTROL.fallback_window_hours)
     )
+    caption_intro = default_caption_intro(account_key)
     batch_response = (
         get_sb()
         .table(INSTAGRAM_PUBLISH_BATCHES)
@@ -281,7 +320,7 @@ def _generate_account_batch(
                 "window_start": window_start.isoformat(),
                 "window_end": now.isoformat(),
                 "status": INSTAGRAM_BATCH_GENERATING,
-                "ai_model": settings.openai_instagram_curation_model,
+                "caption_intro": caption_intro,
             }
         )
         .execute()
@@ -301,16 +340,6 @@ def _generate_account_batch(
             _complete_empty_batch(batch["id"])
             return "empty"
 
-        candidate_ids = select_candidate_ids(
-            candidates,
-            maximum_count=_CONTROL.maximum_event_slides,
-        )
-        candidates_by_id = {int(candidate["id"]): candidate for candidate in candidates}
-        selected = [candidates_by_id[event_id] for event_id in candidate_ids]
-        if not selected:
-            _complete_empty_batch(batch["id"])
-            return "empty"
-
         item_rows = [
             {
                 "batch_id": batch["id"],
@@ -318,7 +347,7 @@ def _generate_account_batch(
                 "event_id": candidate["id"],
                 "position": position,
             }
-            for position, candidate in enumerate(selected, start=1)
+            for position, candidate in enumerate(candidates, start=1)
         ]
         get_sb().table(INSTAGRAM_PUBLISH_ITEMS).insert(item_rows).execute()
         (
@@ -327,7 +356,7 @@ def _generate_account_batch(
             .update(
                 {
                     "status": INSTAGRAM_BATCH_READY_FOR_REVIEW,
-                    "caption": build_caption(selected, account_key),
+                    "caption": build_caption(candidates, account_key, caption_intro),
                     "error_message": None,
                     "updated_at": _iso_now(),
                 }
@@ -364,46 +393,65 @@ def _load_candidates(
     school_id = school_service.get_school_id(school)
     if school_id is None:
         return []
-    events_response = (
-        get_sb()
-        .table(EVENTS)
-        .select(_EVENT_COLUMNS)
-        .eq("school_id", school_id)
-        .eq("cancelled", False)
-        .gte("added_at", window_start.isoformat())
-        .lt("added_at", window_end.isoformat())
-        .order("added_at", desc=True)
-        .limit(_CONTROL.maximum_ai_candidates * 3)
-        .execute()
+    events = fetch_all_pages(
+        lambda offset, limit: (
+            (
+                get_sb()
+                .table(EVENTS)
+                .select(_EVENT_COLUMNS)
+                .eq("school_id", school_id)
+                .eq("cancelled", False)
+                .gte("added_at", window_start.isoformat())
+                .lt("added_at", window_end.isoformat())
+                .order("added_at", desc=True)
+                .order("id")
+                .range(offset, offset + limit - 1)
+                .execute()
+            ).data
+            or []
+        )
     )
-    events = events_response.data or []
     if not events:
         return []
 
     event_ids = [int(event["id"]) for event in events]
-    published = (
-        get_sb()
-        .table(INSTAGRAM_PUBLISH_ITEMS)
-        .select("event_id")
-        .eq("account_key", account_key)
-        .in_("event_id", event_ids)
-        .not_.is_("published_at", "null")
-        .execute()
-    ).data or []
+    published = fetch_all_pages(
+        lambda offset, limit: (
+            (
+                get_sb()
+                .table(INSTAGRAM_PUBLISH_ITEMS)
+                .select("event_id")
+                .eq("account_key", account_key)
+                .in_("event_id", event_ids)
+                .not_.is_("published_at", "null")
+                .order("id")
+                .range(offset, offset + limit - 1)
+                .execute()
+            ).data
+            or []
+        )
+    )
     published_ids = {int(row["event_id"]) for row in published}
 
     occurrence_start = window_end + timedelta(hours=_CONTROL.minimum_lead_hours)
     occurrence_end = window_end + timedelta(days=_CONTROL.maximum_lead_days)
-    occurrences = (
-        get_sb()
-        .table(EVENT_DATES)
-        .select("event_id,dtstart_utc,dtend_utc,tz")
-        .in_("event_id", event_ids)
-        .gte("dtstart_utc", occurrence_start.isoformat())
-        .lte("dtstart_utc", occurrence_end.isoformat())
-        .order("dtstart_utc")
-        .execute()
-    ).data or []
+    occurrences = fetch_all_pages(
+        lambda offset, limit: (
+            (
+                get_sb()
+                .table(EVENT_DATES)
+                .select("event_id,dtstart_utc,dtend_utc,tz")
+                .in_("event_id", event_ids)
+                .gte("dtstart_utc", occurrence_start.isoformat())
+                .lte("dtstart_utc", occurrence_end.isoformat())
+                .order("dtstart_utc")
+                .order("id")
+                .range(offset, offset + limit - 1)
+                .execute()
+            ).data
+            or []
+        )
+    )
     first_occurrence: dict[int, dict[str, Any]] = {}
     for occurrence in occurrences:
         first_occurrence.setdefault(int(occurrence["event_id"]), occurrence)
@@ -412,11 +460,15 @@ def _load_candidates(
     for event in events:
         event_id = int(event["id"])
         occurrence = first_occurrence.get(event_id)
-        if event_id in published_ids or occurrence is None:
+        if (
+            event_id in published_ids
+            or occurrence is None
+            or not (event.get("source_image_url") or "").strip()
+        ):
             continue
         candidates.append(_with_occurrence(event, occurrence, school))
     candidates.sort(key=lambda event: (event["dtstart_utc"], -event["id"]))
-    return candidates[: _CONTROL.maximum_ai_candidates]
+    return candidates
 
 
 def _load_slide_events(event_ids: list[int]) -> dict[int, EventSummaryResponse]:
@@ -429,6 +481,11 @@ def _load_slide_events(event_ids: list[int]) -> dict[int, EventSummaryResponse]:
     """
     events = event_query.load_events_by_ids(event_ids, model=EventSummaryResponse)
     return {event_id: event for event_id, event in events.items() if event.occurrences}
+
+
+def _is_publishable_event(event: EventSummaryResponse, now: datetime) -> bool:
+    """Draft eligibility is deterministic; published history is never filtered."""
+    return bool((event.source_image_url or "").strip()) and not has_ended(event, now=now)
 
 
 def _slide_payload(event: EventSummaryResponse) -> dict[str, Any]:
@@ -447,7 +504,7 @@ def _slide_payload(event: EventSummaryResponse) -> dict[str, Any]:
         **event.model_dump(mode="json", exclude={"occurrences"}),
         "dtstart_utc": occurrence.dtstart_utc.isoformat(),
         "dtend_utc": occurrence.dtend_utc.isoformat() if occurrence.dtend_utc else None,
-        "tz": occurrence.tz or resolve_school_timezone(event.school),
+        "tz": resolve_school_timezone(event.school),
     }
 
 
@@ -465,7 +522,7 @@ def _with_occurrence(
         # Slides print local times, and the renderer only ever sees this dict -
         # so resolve the zone here instead of teaching the frontend the
         # school-to-timezone map.
-        "tz": occurrence.get("tz") or resolve_school_timezone(school),
+        "tz": resolve_school_timezone(school),
     }
 
 
@@ -540,13 +597,6 @@ def _publish_claimed_batch(
     )
 
 
-def _hydrate_batches(batches: list[dict[str, Any]]) -> None:
-    """Fill in everything a batch response carries beyond its own row."""
-    _attach_items(batches)
-    for batch in batches:
-        batch["new_event_count"] = _count_new_events(batch)
-
-
 def _count_new_events(batch: dict[str, Any]) -> int:
     """Count recent school events plus the current carousel, without duplicates.
 
@@ -601,49 +651,66 @@ def _count_active_events_added_between(
     return response.count or 0
 
 
-def _attach_items(batches: list[dict[str, Any]]) -> None:
-    """Attach each batch's slides, ordered, with their event data joined on."""
-    if not batches:
-        return
-    batch_ids = [str(batch["id"]) for batch in batches]
-    items = (
-        get_sb()
-        .table(INSTAGRAM_PUBLISH_ITEMS)
-        .select("*")
-        .in_("batch_id", batch_ids)
-        .order("position")
-        .execute()
-    ).data or []
+def _load_batch_items(batch_ids: list[str], columns: str) -> list[dict[str, Any]]:
+    return fetch_all_pages(
+        lambda offset, limit: (
+            (
+                get_sb()
+                .table(INSTAGRAM_PUBLISH_ITEMS)
+                .select(columns)
+                .in_("batch_id", batch_ids)
+                .order("position")
+                .order("id")
+                .range(offset, offset + limit - 1)
+                .execute()
+            ).data
+            or []
+        )
+    )
 
-    slide_events = _load_slide_events([int(item["event_id"]) for item in items])
-    grouped: dict[str, list[dict[str, Any]]] = defaultdict(list)
+
+def _hydrate_batch(batch: dict[str, Any]) -> None:
+    """Join current event data to the detail response's ordered slides."""
+    items = _load_batch_items([str(batch["id"])], "*")
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        events_future = pool.submit(_load_slide_events, [int(item["event_id"]) for item in items])
+        count_future = pool.submit(_count_new_events, batch)
+        slide_events = events_future.result()
+        batch["new_event_count"] = count_future.result()
+
+    now = datetime.now(timezone.utc)
+    editable = batch["status"] in (INSTAGRAM_BATCH_READY_FOR_REVIEW, INSTAGRAM_BATCH_FAILED)
+    batch["items"] = []
     for item in items:
         event = slide_events.get(int(item["event_id"]))
-        if event is None:
-            continue
-        grouped[str(item["batch_id"])].append({**item, "event": event})
-    for batch in batches:
-        batch["items"] = grouped.get(str(batch["id"]), [])
+        if event is not None and (not editable or _is_publishable_event(event, now)):
+            batch["items"].append({**item, "event": event})
+    if editable:
+        batch["caption"] = build_caption(
+            [_slide_payload(item["event"]) for item in batch["items"]],
+            batch["school"],
+            batch.get("caption_intro", ""),
+        )
 
 
 def _attach_item_counts(batches: list[dict[str, Any]]) -> None:
     """Attach the only item data needed by the paginated batch list."""
     if not batches:
         return
-    batch_ids = [str(batch["id"]) for batch in batches]
-    items = (
-        get_sb()
-        .table(INSTAGRAM_PUBLISH_ITEMS)
-        .select("batch_id")
-        .in_("batch_id", batch_ids)
-        .execute()
-    ).data or []
+    items = _load_batch_items([str(batch["id"]) for batch in batches], "batch_id,event_id")
 
     counts: dict[str, int] = defaultdict(int)
+    eligible_counts: dict[str, int] = defaultdict(int)
+    events = _load_slide_events(list({int(item["event_id"]) for item in items}))
+    now = datetime.now(timezone.utc)
     for item in items:
         counts[str(item["batch_id"])] += 1
+        event = events.get(int(item["event_id"]))
+        if event is not None and _is_publishable_event(event, now):
+            eligible_counts[str(item["batch_id"])] += 1
     for batch in batches:
         batch["item_count"] = counts[str(batch["id"])]
+        batch["eligible_count"] = eligible_counts[str(batch["id"])]
 
 
 def _ordered_items(batch: dict[str, Any]) -> list[dict[str, Any]]:

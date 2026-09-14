@@ -1,65 +1,39 @@
 import type { Event } from "@/shared/types";
 import type { EventDateFilter } from "@/shared/types/filter.types";
+import type { SearchStoreFilterValues } from "@/features/search/api/filterService";
 import {
   getPrimaryOccurrence,
+  isActiveOrUpcomingOccurrence,
   parseLocalDateValue,
 } from "@/shared/utils/date";
 import { getEventCategory } from "@/shared/utils/event";
 
-/**
- * Search, filter, and sort operations for Event collections.
- */
-
-export interface SearchFilters {
-  searchQuery: string;
-  goingFilter: boolean;
-  freeFoodFilter: boolean;
-  selectedDays: string[];
-  minPrice: string;
-  maxPrice: string;
-  selectedLocations: string[];
-  selectedFoods: string[];
-  selectedCategories: string[];
-  registration: boolean;
-  profileCompleted: boolean;
+interface SearchFilters extends Omit<SearchStoreFilterValues, "sortBy" | "sortOrder"> {
   goingEventIds: number[];
-  selectedOrganizations: string[];
-  addedSince: string;
-  dateFilter: EventDateFilter;
-  customDate: string;
 }
 
-export interface SortOptions {
-  sortBy: string;
-  sortOrder: "asc" | "desc";
-}
+type SortOptions = Pick<SearchStoreFilterValues, "sortBy" | "sortOrder">;
 
-/**
- * Fields a free-text query is matched against.
- *
- * Events are discovered by club as often as by title ("animusic" should find
- * events posted by @uw_animusic), so the owning organization's name and its
- * Instagram handles are part of the haystack. All of these ship on the list
- * summary payload, so matching stays client-side.
- */
+/** Include club names and Instagram handles already present in event summaries. */
 function eventSearchHaystack(event: Event): string[] {
   return [
     event.title,
-    event.organization,
+    event.club,
     event.ig_handle,
-    event.organization_ig,
+    event.club_ig,
     event.description,
     event.location,
     ...(event.food ?? []),
   ].filter((field): field is string => Boolean(field));
 }
 
-/**
- * Normalize a query for comparison. Handles are displayed as "@uw_animusic",
- * so a leading "@" is dropped to keep pasted handles matching.
- */
+/** Ignore leading @ so pasted Instagram handles match. */
 function normalizeSearchQuery(query: string): string {
   return query.trim().toLowerCase().replace(/^@+/, "");
+}
+
+function normalizeSelectedValues(values: string[]): string[] {
+  return values.map((value) => value.trim().toLocaleLowerCase()).filter(Boolean);
 }
 
 const RANDOM_EVENT_SEARCH_QUERY = "random";
@@ -128,8 +102,7 @@ function resolveDateFilterRange(
   return { startMs: start.getTime(), endMs: end.getTime() };
 }
 
-function eventOverlapsDateRange(event: Event, range: DateFilterRange): boolean {
-  return (event.occurrences ?? []).some((occurrence) => {
+function occurrenceOverlapsDateRange(occurrence: Event["occurrences"][number], range: DateFilterRange): boolean {
     const startMs = new Date(occurrence.dtstart_utc).getTime();
     if (Number.isNaN(startMs) || startMs >= range.endMs) return false;
 
@@ -139,7 +112,6 @@ function eventOverlapsDateRange(event: Event, range: DateFilterRange): boolean {
 
     const endMs = new Date(occurrence.dtend_utc).getTime();
     return !Number.isNaN(endMs) && endMs > range.startMs;
-  });
 }
 
 function matchesSearchQuery(event: Event, normalizedQuery: string): boolean {
@@ -148,34 +120,43 @@ function matchesSearchQuery(event: Event, normalizedQuery: string): boolean {
   );
 }
 
-/**
- * Filter events based on search and filter criteria
- */
 export function filterEvents(
   events: Event[],
   filters: SearchFilters,
+  goingCounts: Readonly<Record<string, { going_count: number }>> = {},
 ): Event[] {
-  // Normalize the query once (loop-invariant) instead of recomputing per event.
   const q = filters.searchQuery ? normalizeSearchQuery(filters.searchQuery) : "";
   const isRandomSearch = q === RANDOM_EVENT_SEARCH_QUERY;
-  // Set lookup is O(1); .includes on an array is O(n). When goingFilter is
-  // active this is run per-event, so hoist and wrap once.
   const goingSet = filters.goingFilter ? new Set(filters.goingEventIds) : null;
+  const locations = normalizeSelectedValues(filters.selectedLocations);
+  const foods = normalizeSelectedValues(filters.selectedFoods);
+  const clubs = normalizeSelectedValues(filters.selectedClubs);
+  const minPrice = filters.minPrice ? parseFloat(filters.minPrice) : Number.NaN;
+  const maxPrice = filters.maxPrice ? parseFloat(filters.maxPrice) : Number.NaN;
   const addedSinceTime = filters.addedSince
     ? Date.parse(filters.addedSince)
     : Number.NaN;
+  const currentDate = new Date();
   const dateRange = resolveDateFilterRange(
     filters.dateFilter,
     filters.customDate,
-    new Date(),
+    currentDate,
   );
+  // Carry only matching, still-visible sessions into cards and date sections.
+  // Returning the original occurrence list could label a Today result Tomorrow.
+  const candidates = dateRange
+    ? events.map((event) => ({
+        ...event,
+        occurrences: event.occurrences.filter((occurrence) =>
+          isActiveOrUpcomingOccurrence(occurrence, currentDate.getTime()) &&
+          occurrenceOverlapsDateRange(occurrence, dateRange),
+        ),
+      })).filter((event) => event.occurrences.length > 0)
+    : events;
 
-  const filtered = events.filter((event) => {
+  const filtered = candidates.filter((event) => {
     const food = event.food ?? [];
     const price = event.price ?? 0;
-    const category = getEventCategory(event);
-    const dayOfWeek = getEventDayOfWeek(event);
-    const needsRegistration = event.registration ?? false;
 
     if (q && !isRandomSearch && !matchesSearchQuery(event, q)) {
       return false;
@@ -184,8 +165,9 @@ export function filterEvents(
     if (goingSet && !goingSet.has(event.id)) {
       return false;
     }
+    if ((goingCounts[event.id]?.going_count ?? 0) < filters.minGoing) return false;
 
-    if (filters.freeFoodFilter && (food.length === 0 || price > 0)) {
+    if (filters.hasFoodFilter && food.length === 0) {
       return false;
     }
 
@@ -196,66 +178,39 @@ export function filterEvents(
       }
     }
 
-    if (dateRange && !eventOverlapsDateRange(event, dateRange)) {
-      return false;
+    if (filters.selectedDays.length > 0) {
+      const weekdays = getEventWeekdays(event);
+      if (!filters.selectedDays.every((day) => weekdays.has(day))) return false;
     }
 
-    if (filters.selectedDays.length > 0 && !filters.selectedDays.includes(dayOfWeek)) {
-      return false;
+    if (price < minPrice || price > maxPrice) return false;
+
+    if (locations.length > 0) {
+      const location = (event.location ?? "").toLocaleLowerCase();
+      if (!locations.every((query) => location.includes(query))) return false;
     }
 
-    // The price range only applies when the freeFood quick filter is off.
-    if (!filters.freeFoodFilter) {
-      if (filters.minPrice && price < parseFloat(filters.minPrice)) {
+    if (foods.length > 0) {
+      const availableFoods = food.map((item) => item.toLocaleLowerCase());
+      if (!foods.every((query) => availableFoods.some((item) => item.includes(query)))) {
         return false;
       }
-      if (filters.maxPrice && price > parseFloat(filters.maxPrice)) {
-        return false;
-      }
-    }
-
-    if (
-      filters.selectedLocations.length > 0 &&
-      !filters.selectedLocations.some((loc) =>
-        (event.location ?? "")
-          .toLocaleLowerCase()
-          .includes(loc.trim().toLocaleLowerCase()),
-      )
-    ) {
-      return false;
-    }
-
-    if (
-      filters.selectedFoods.length > 0 &&
-      !filters.selectedFoods.some((query) => {
-        const normalizedQuery = query.trim().toLocaleLowerCase();
-        return normalizedQuery
-          ? food.some((item) => item.toLocaleLowerCase().includes(normalizedQuery))
-          : true;
-      })
-    ) {
-      return false;
     }
 
     if (
       filters.selectedCategories.length > 0 &&
-      !filters.selectedCategories.includes(category)
+      !filters.selectedCategories.includes(getEventCategory(event))
     ) {
       return false;
     }
 
-    if (filters.registration && !needsRegistration) {
+    if (filters.registration && !event.registration) {
       return false;
     }
 
-    const organization = (event.organization ?? "").toLocaleLowerCase();
-    if (
-      filters.selectedOrganizations.length > 0 &&
-      !filters.selectedOrganizations.some((query) =>
-        organization.includes(query.trim().toLocaleLowerCase()),
-      )
-    ) {
-      return false;
+    if (clubs.length > 0) {
+      const club = (event.club ?? "").toLocaleLowerCase();
+      if (!clubs.every((query) => club.includes(query))) return false;
     }
 
     return true;
@@ -269,67 +224,52 @@ export function filterEvents(
   return randomEvent ? [randomEvent] : [];
 }
 
-/**
- * Sort events based on sort options
- */
-export function sortEvents(
-  events: Event[],
-  sortOptions: SortOptions,
-): Event[] {
-  const { sortBy, sortOrder } = sortOptions;
-  const sorted = [...events];
-
-  sorted.sort((a, b) => {
-    let comparison = 0;
-
-    switch (sortBy) {
-      case "date": {
-        const getDateValue = (event: Event): number => {
-          const primary = getPrimaryOccurrence(event);
-          if (primary && primary.dtstart_utc) {
-            const d = new Date(primary.dtstart_utc);
-            if (!isNaN(d.getTime())) return d.getTime();
-          }
-          return 0;
-        };
-        const dateA = getDateValue(a);
-        const dateB = getDateValue(b);
-        comparison = dateA - dateB;
-        break;
-      }
-      case "title":
-        comparison = a.title.localeCompare(b.title);
-        break;
-      case "location":
-        comparison = (a.location ?? "").localeCompare(b.location ?? "");
-        break;
-      case "price":
-        comparison = (a.price || 0) - (b.price || 0);
-        break;
-      case "added_at": {
-        const dateA = new Date(a.added_at).getTime();
-        const dateB = new Date(b.added_at).getTime();
-        comparison =
-          (Number.isNaN(dateA) ? 0 : dateA) -
-          (Number.isNaN(dateB) ? 0 : dateB);
-        break;
-      }
-      default:
-        return 0;
+function eventSortValue(event: Event, sortBy: string): string | number {
+  switch (sortBy) {
+    case "date": {
+      const primary = getPrimaryOccurrence(event);
+      const timestamp = primary?.dtstart_utc
+        ? new Date(primary.dtstart_utc).getTime()
+        : Number.NaN;
+      return Number.isNaN(timestamp) ? 0 : timestamp;
     }
-
-    return sortOrder === "asc" ? comparison : -comparison;
-  });
-
-  return sorted;
+    case "title":
+      return event.title;
+    case "location":
+      return event.location ?? "";
+    case "price":
+      return event.price || 0;
+    case "added_at": {
+      const timestamp = new Date(event.added_at).getTime();
+      return Number.isNaN(timestamp) ? 0 : timestamp;
+    }
+    default:
+      return 0;
+  }
 }
 
-// Canonical home: shared/utils/filter.ts - re-exported for feature consumers
-export { getFilterCounts } from "@/shared/utils/filter";
-function getEventDayOfWeek(event: Event): string {
-  const primary = getPrimaryOccurrence(event);
-  if (!primary || !primary.dtstart_utc) return "";
-  const date = new Date(primary.dtstart_utc);
-  if (Number.isNaN(date.getTime())) return "";
-  return date.toLocaleDateString("en-US", { weekday: "long" });
+export function sortEvents(
+  events: Event[],
+  { sortBy, sortOrder }: SortOptions,
+): Event[] {
+  const ranked = events.map((event) => ({
+    event,
+    value: eventSortValue(event, sortBy),
+  }));
+  ranked.sort((a, b) => {
+    const comparison = typeof a.value === "string" && typeof b.value === "string"
+      ? a.value.localeCompare(b.value)
+      : Number(a.value) - Number(b.value);
+    return sortOrder === "asc" ? comparison : -comparison;
+  });
+  return ranked.map(({ event }) => event);
+}
+
+function getEventWeekdays(event: Event): Set<string> {
+  return new Set((event.occurrences ?? []).flatMap((occurrence) => {
+    const date = new Date(occurrence.dtstart_utc);
+    return Number.isNaN(date.getTime()) ? [] : [
+      date.toLocaleDateString("en-US", { weekday: "long", timeZone: occurrence.tz || undefined }),
+    ];
+  }));
 }

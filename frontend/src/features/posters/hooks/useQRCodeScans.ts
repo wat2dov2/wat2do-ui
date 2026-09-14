@@ -7,9 +7,7 @@ interface UseQRCodeScansOptions {
   isOpen: boolean;
 }
 
-/**
- * Hook for managing QR code scans. Loads scans from backend when modal is open.
- */
+/** Load QR scans while the details modal is open. */
 export function useQRCodeScans({ qrCode, isOpen }: UseQRCodeScansOptions) {
   const [scans, setScans] = useState<QRCodeScan[]>([]);
   const [timeRange, setTimeRange] = useState<string>("30");
@@ -31,6 +29,5 @@ export function useQRCodeScans({ qrCode, isOpen }: UseQRCodeScansOptions) {
     scans,
     timeRange,
     setTimeRange,
-    loadScans,
   };
 }

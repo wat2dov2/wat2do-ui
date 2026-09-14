@@ -45,6 +45,7 @@ _BUILDER_METHODS = (
     "ilike",
     "is_",
     "contains",
+    "overlaps",
     "not_",
     "or_",
     # ordering / windowing
@@ -83,9 +84,6 @@ class FakeSupabase:
 
         self._response = MagicMock(data=[], count=0)
         self.execute = MagicMock(side_effect=lambda: self._response, name="execute")
-        # Supabase exposes ``not_`` as a nested filter builder (``.not_.is_(...)``).
-        # Point it at this instance so chained calls still reach ``execute()``.
-        self.not_ = self
         # Supabase exposes ``not_`` as a nested filter builder (``.not_.is_(...)``).
         # Point it at this instance so chained calls still reach ``execute()``.
         self.not_ = self
@@ -166,9 +164,9 @@ def clear_scraper_caches():
     clear_candidate_caches()
 
     # event_writer caches
-    from services.scraper.event_writer import _lookup_organization_by_ig
+    from services.scraper.event_writer import _lookup_club_by_ig
 
-    _lookup_organization_by_ig.cache_clear()
+    _lookup_club_by_ig.cache_clear()
 
     # school_service caches
     from services.school_service import get_school, get_school_by_name, get_school_by_recipient_id
@@ -177,7 +175,7 @@ def clear_scraper_caches():
     get_school_by_recipient_id.cache_clear()
     get_school_by_name.cache_clear()
 
-    # organization_service caches
-    from services.organization_service import _get_organizations_for_school_lookup
+    # club_service caches
+    from services.club_service import _get_clubs_for_school_lookup
 
-    _get_organizations_for_school_lookup.cache_clear()
+    _get_clubs_for_school_lookup.cache_clear()

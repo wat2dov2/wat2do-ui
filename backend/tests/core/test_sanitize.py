@@ -1,8 +1,10 @@
-"""Tests for core.sanitize — PostgREST filter injection prevention."""
+"""Tests for shared input sanitization."""
+
+from datetime import datetime, timezone
 
 import pytest
 
-from core.sanitize import normalize_scraped_text, sanitize_postgrest_value
+from core.sanitize import normalize_scraped_text, parse_iso_datetime, sanitize_postgrest_value
 
 
 class TestSanitizePostgrestValue:
@@ -102,3 +104,22 @@ class TestNormalizeScrapedText:
 
     def test_preserves_invalid_lone_surrogate_escape(self):
         assert normalize_scraped_text(r"broken \ud83d caption") == r"broken \ud83d caption"
+
+
+class TestParseIsoDatetime:
+    @pytest.mark.parametrize("value", [None, "", "invalid", "2026-02-30T12:00:00Z"])
+    def test_invalid_values_return_none(self, value):
+        assert parse_iso_datetime(value) is None
+
+    @pytest.mark.parametrize(
+        ("value", "expected"),
+        [
+            ("2026-09-12T12:00:00Z", datetime(2026, 9, 12, 12, tzinfo=timezone.utc)),
+            ("2026-09-12T12:00:00", datetime(2026, 9, 12, 12, tzinfo=timezone.utc)),
+            ("2026-09-12T12:00:00-04:00", datetime(2026, 9, 12, 16, tzinfo=timezone.utc)),
+            ("2026-09-12T01:00:00+05:30", datetime(2026, 9, 11, 19, 30, tzinfo=timezone.utc)),
+        ],
+    )
+    def test_normalizes_to_utc(self, value, expected):
+        assert parse_iso_datetime(value) == expected
+        assert parse_iso_datetime(value).tzinfo == timezone.utc

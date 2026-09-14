@@ -1,7 +1,7 @@
 from datetime import date
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, BackgroundTasks, Depends, Query, status
 
 from core.auth import get_admin_user
 from core.pagination import PaginatedResponse, PaginationParams, paginated_response
@@ -54,10 +54,17 @@ def update_instagram_publish_batch(
     return instagram_publishing.update_batch(batch_id, data)
 
 
-@router.post("/batches/{batch_id}/publish", response_model=InstagramPublishBatchResponse)
+@router.post(
+    "/batches/{batch_id}/publish",
+    response_model=InstagramPublishBatchResponse,
+    status_code=status.HTTP_202_ACCEPTED,
+)
 def publish_instagram_batch(
     batch_id: UUID,
     data: InstagramPublishBatchPublish,
+    background_tasks: BackgroundTasks,
     _: UserResponse = Depends(get_admin_user),
 ):
-    return instagram_publishing.publish_batch(batch_id, data)
+    batch = instagram_publishing.claim_batch_for_publishing(batch_id, data)
+    background_tasks.add_task(instagram_publishing.publish_claimed_batch, batch)
+    return batch

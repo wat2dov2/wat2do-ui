@@ -5,9 +5,8 @@
     "searchPlaceholder": "عہدے، مہارتیں یا مقامات تلاش کریں...",
     "clearSearch": "عہدے کی تلاش صاف کریں",
     "filterByType": "عہدوں کو قسم کے لحاظ سے فلٹر کریں",
-    "allTypes": "عہدوں کی تمام اقسام",
     "openDetails": "{{title}} عہدے کی تفصیلات دیکھیں",
-    "drawerDescription": "{{organization}} میں {{title}} عہدے کی تفصیلات",
+    "drawerDescription": "{{club}} میں {{title}} عہدے کی تفصیلات",
     "deadlineLabel": "درخواست دینے کی آخری تاریخ",
     "due": "آخری تاریخ {{date}}",
     "commitmentLabel": "وقت کی مصروفیت",
@@ -16,11 +15,10 @@
     "contactLabel": "رابطہ",
     "aboutPosition": "اس عہدے کے بارے میں",
     "requirements": "ضروریات",
-    "viewSource": "اصل Instagram پوسٹ دیکھیں",
     "emptyTitle": "کوئی خالی عہدہ نہیں ملا",
     "emptyDescription": "دوسری تلاش یا عہدے کی قسم آزمائیں۔ تنظیم کے نئے مواقع پوسٹ ہونے پر یہاں دکھائی دیں گے۔",
-    "organizationEmptyTitle": "کوئی خالی عہدہ نہیں",
-    "organizationEmptyDescription": "اس تنظیم میں فی الحال کوئی خالی عہدہ نہیں ہے۔",
+    "clubEmptyTitle": "کوئی خالی عہدہ نہیں",
+    "clubEmptyDescription": "اس تنظیم میں فی الحال کوئی خالی عہدہ نہیں ہے۔",
     "resultsLabel": "{{count}} عہدے ملے",
     "types": {
       "executive": "انتظامی",
@@ -30,6 +28,21 @@
       "internship": "انٹرنشپ",
       "general": "عمومی بھرتی"
     },
-    "position_one": "عہدہ"
+    "position_one": "عہدہ",
+    "title": "عہدے کا عنوان",
+    "paid": "تنخواہ کے ساتھ",
+    "unpaid": "بلا معاوضہ",
+    "unknown": "معاوضہ متعین نہیں",
+    "addPosition": "عہدہ شامل کریں",
+    "submitted": "عہدہ جائزے کے لیے بھیج دیا گیا۔",
+    "submissions": "جمع کرائے گئے عہدے",
+    "placeholders": {
+      "title": "مثلاً: مارکیٹنگ کوآرڈینیٹر",
+      "description": "کردار، ذمہ داریوں اور اس شخص کے سیکھنے یا تعاون کرنے کے مواقع بیان کریں۔",
+      "compensation": "مثلاً: 20 ڈالر فی گھنٹہ، 500 ڈالر اعزازیہ، یا بلا معاوضہ",
+      "commitment": "مثلاً: ستمبر سے دسمبر تک ہفتے میں 3 سے 5 گھنٹے",
+      "contact": "مثلاً: hiring@example.com",
+      "requirements": "ہر سطر میں ایک شرط، مثلاً:\nٹیم کے ساتھ کام کرنے میں سہولت\nہفتہ وار اجلاسوں کے لیے دستیابی"
+    }
   }
 }

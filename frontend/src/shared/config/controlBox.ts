@@ -3,7 +3,7 @@ import clientCache from "../../../../backend/controlbox/client_cache.json";
 import contact from "../../../../backend/controlbox/contact.json";
 import eventDiscovery from "../../../../backend/controlbox/event_discovery.json";
 import interactionTracking from "../../../../backend/controlbox/interaction_tracking.json";
-import organizationManagement from "../../../../backend/controlbox/organization_management.json";
+import clubManagement from "../../../../backend/controlbox/club_management.json";
 import siteBanner from "../../../../backend/controlbox/site_banner.json";
 import socialPreviews from "../../../../backend/controlbox/social_previews.json";
 import uploads from "../../../../backend/controlbox/uploads.json";
@@ -28,10 +28,10 @@ export const controlBox = {
     initialRenderCount: eventDiscovery.initial_render_count,
     serverFeedPageSize: eventDiscovery.server_feed_page_size,
   },
-  organizationManagement: {
-    directoryPageSize: organizationManagement.directory_page_size,
+  clubManagement: {
+    directoryPageSize: clubManagement.directory_page_size,
     directoryRevalidateSeconds:
-      organizationManagement.directory_revalidate_seconds,
+      clubManagement.directory_revalidate_seconds,
   },
   clientCache: {
     defaultQueryStaleMs: secondsToMilliseconds(

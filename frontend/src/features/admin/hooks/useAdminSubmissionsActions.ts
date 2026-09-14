@@ -1,16 +1,13 @@
 import { useState, useCallback } from "react";
 import { useAdminStore } from "@/features/admin/store/admin.store";
 import type { EventSubmission } from "@/shared/types";
-import { QP } from "@/shared/constants/queryParams";
 
 interface UseAdminSubmissionsActionsOptions {
-  searchParams: { toString: () => string };
-  setSearchParams: (params: URLSearchParams) => void;
+  onReviewed: (submissionId: string) => void;
 }
 
 export function useAdminSubmissionsActions({
-  searchParams,
-  setSearchParams,
+  onReviewed,
 }: UseAdminSubmissionsActionsOptions) {
   const [rejectSubmissionId, setRejectSubmissionId] = useState<string | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
@@ -25,11 +22,9 @@ export function useAdminSubmissionsActions({
         console.error("Failed to approve submission:", err);
         return;
       }
-      const newParams = new URLSearchParams(searchParams.toString());
-      newParams.delete(QP.SUBMISSION_ID);
-      setSearchParams(newParams);
+      onReviewed(submission.id);
     },
-    [approveSubmission, searchParams, setSearchParams],
+    [approveSubmission, onReviewed],
   );
 
   const handleRejectClick = useCallback((submission: EventSubmission) => {
@@ -38,7 +33,7 @@ export function useAdminSubmissionsActions({
   }, []);
 
   const handleRejectConfirm = useCallback(
-    async (submissionIdParam: string | null) => {
+    async () => {
       if (!rejectSubmissionId || !rejectionReason.trim()) return;
       try {
         await rejectSubmission(rejectSubmissionId, rejectionReason.trim());
@@ -49,13 +44,9 @@ export function useAdminSubmissionsActions({
       const rejectedId = rejectSubmissionId;
       setRejectSubmissionId(null);
       setRejectionReason("");
-      if (submissionIdParam === rejectedId) {
-        const newParams = new URLSearchParams(searchParams.toString());
-        newParams.delete(QP.SUBMISSION_ID);
-        setSearchParams(newParams);
-      }
+      onReviewed(rejectedId);
     },
-    [rejectSubmissionId, rejectionReason, rejectSubmission, searchParams, setSearchParams],
+    [rejectSubmissionId, rejectionReason, rejectSubmission, onReviewed],
   );
 
   return {

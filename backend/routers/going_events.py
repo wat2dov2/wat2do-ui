@@ -36,7 +36,7 @@ def list_event_attendees(event_id: int):
     counts = going_event_service.get_going_counts_for_events([event_id])
     return {
         "going_count": counts.get(event_id, 0),
-        "names": going_event_service.get_attendee_display_names(event_id),
+        "attendees": going_event_service.get_event_attendees(event_id),
     }
 
 

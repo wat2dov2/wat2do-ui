@@ -35,6 +35,14 @@ from schemas.auth import (
 )
 from services.auth_service import auth
 from services.email_service import email_service
+from services.school_context import school_from_frontend_url
+
+
+def _request_school(request: Request) -> str | None:
+    return school_from_frontend_url(
+        request.headers.get("origin") or request.headers.get("referer") or ""
+    )
+
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -315,6 +323,7 @@ def complete_google_oauth(
 @router.post("/send-otp", response_model=MessageResponse)
 def send_otp(
     data: SendOtpRequest,
+    request: Request,
     background_tasks: BackgroundTasks,
     _rl: None = Depends(send_otp_rate_limiter.ip_dependency()),
 ):
@@ -322,6 +331,7 @@ def send_otp(
         data.email,
         invitation_token=data.token,
         return_to=data.return_to,
+        signup_school=_request_school(request),
     )
     background_tasks.add_task(email_service.send_safely, message)
     return MessageResponse(message="Verification link and code sent successfully")
@@ -334,7 +344,7 @@ def verify_otp(
     response: Response,
     _rl: None = Depends(verify_otp_rate_limiter.ip_dependency()),
 ):
-    result = auth.verify_otp(data.email, data.token)
+    result = auth.verify_otp(data.email, data.token, signup_school=_request_school(request))
     if result.refresh_token:
         _set_refresh_cookie(response, result.refresh_token, request)
     return result.body

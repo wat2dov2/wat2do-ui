@@ -11,6 +11,7 @@ from core.constants import (
     SUBMISSION_REJECTED,
 )
 from schemas.event import EventCreate
+from schemas.position import PositionCreate
 
 SubmissionStatus = Literal[SUBMISSION_PENDING, SUBMISSION_APPROVED, SUBMISSION_REJECTED]
 
@@ -45,12 +46,25 @@ class SubmissionUpdate(BaseModel):
     rejection_reason: str | None = Field(default=None, max_length=MAX_REJECTION_REASON_LENGTH)
 
 
-class SubmissionResponse(BaseModel):
+class SubmissionMetadata(BaseModel):
+    school: str | None = None
     id: str
     user_id: str | None
-    event_data: dict
     status: SubmissionStatus
     rejection_reason: str | None = None
     submitted_at: datetime
     reviewed_at: datetime | None = None
     submitted_by_email: str | None = None
+
+
+class SubmissionResponse(SubmissionMetadata):
+    event_data: dict
+
+
+class PositionSubmissionCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    position_data: PositionCreate
+
+
+class PositionSubmissionResponse(SubmissionMetadata):
+    position_data: PositionCreate

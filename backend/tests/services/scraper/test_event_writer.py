@@ -11,7 +11,6 @@ from uuid import UUID
 
 import pytest
 
-from core.sanitize import parse_iso_datetime
 from schemas.event_date import OccurrenceCreate, OccurrenceResponse
 from services.scraper import event_writer
 from services.scraper.event_writer import (
@@ -22,13 +21,13 @@ from services.scraper.event_writer import (
     write_event,
 )
 
-_REAL_ENSURE_ORGANIZATION_BY_IG = event_writer._ensure_organization_by_ig
+_REAL_ENSURE_CLUB_BY_IG = event_writer._ensure_club_by_ig
 
 
 @pytest.fixture(autouse=True)
-def disable_organization_auto_create(monkeypatch):
+def disable_club_auto_create(monkeypatch):
     """Existing write_event tests focus on event persistence, not org creation."""
-    monkeypatch.setattr(event_writer, "_ensure_organization_by_ig", lambda *args, **kwargs: None)
+    monkeypatch.setattr(event_writer, "_ensure_club_by_ig", lambda *args, **kwargs: None)
     monkeypatch.setattr(
         event_writer.school_service,
         "get_school",
@@ -69,7 +68,7 @@ def test_merge_overwrite_payload_preserves_fields_missing_from_new_post():
         food=["Pizza"],
         category="Social",
         ig_handle="uwtea",
-        organization_id=7,
+        club_id=7,
         source_url="https://instagram.com/p/old",
         source_image_url="https://cdn/old.jpg",
         registration=True,
@@ -85,7 +84,7 @@ def test_merge_overwrite_payload_preserves_fields_missing_from_new_post():
             "food": None,
             "category": None,
             "ig_handle": None,
-            "organization_id": None,
+            "club_id": None,
             "source_url": "https://instagram.com/p/new",
             "source_image_url": None,
             "registration": False,
@@ -101,7 +100,7 @@ def test_merge_overwrite_payload_preserves_fields_missing_from_new_post():
     assert merged["food"] == ["Pizza"]
     assert merged["category"] == "Social"
     assert merged["ig_handle"] == "uwtea"
-    assert merged["organization_id"] == 7
+    assert merged["club_id"] == 7
     assert merged["source_url"] == "https://instagram.com/p/new"
     assert merged["source_image_url"] == "https://cdn/old.jpg"
     assert merged["registration"] is True
@@ -115,7 +114,7 @@ def test_merge_overwrite_payload_uses_new_nonempty_values():
         food=["Pizza"],
         category="Social",
         ig_handle="oldhandle",
-        organization_id=7,
+        club_id=7,
         source_url="https://instagram.com/p/old",
         source_image_url="https://cdn/old.jpg",
         registration=False,
@@ -127,7 +126,7 @@ def test_merge_overwrite_payload_uses_new_nonempty_values():
         "food": ["Cookies"],
         "category": "Academic",
         "ig_handle": "newhandle",
-        "organization_id": 8,
+        "club_id": 8,
         "source_url": "https://instagram.com/p/new",
         "source_image_url": "https://cdn/new.jpg",
         "registration": True,
@@ -181,27 +180,6 @@ def test_merge_overwrite_occurrences_patches_exact_start_and_keeps_unmentioned_d
     assert merged[1].dtstart_utc == second_start
 
 
-# ── ISO parsing ───────────────────────────────────────────────────────
-
-
-def test_parse_iso():
-    assert parse_iso_datetime(None) is None
-    assert parse_iso_datetime("") is None
-    assert parse_iso_datetime("invalid") is None
-
-    # Z suffix becomes +00:00
-    dt1 = parse_iso_datetime("2024-01-01T12:00:00Z")
-    assert dt1.tzinfo == timezone.utc
-
-    # Explicit offset
-    dt2 = parse_iso_datetime("2024-01-01T12:00:00-04:00")
-    assert dt2.tzinfo == timezone.utc
-
-    # Naive is rejected
-    dt3 = parse_iso_datetime("2024-01-01T12:00:00")
-    assert dt3.tzinfo == timezone.utc
-
-
 # ── _coerce_future_occurrences ────────────────────────────────────────
 
 
@@ -241,7 +219,7 @@ def _event(**overrides) -> dict:
         "title": "Tea Tasting",
         "description": "Come try teas.",
         "location": "SLC 3223",
-        "organization": "UW Tea Organization",
+        "club": "UW Tea Club",
         "category": "Arts & Culture",
         # dtend left as empty string - OccurrenceCreate's
         # _dtend_after_dtstart validator only fires when dtend is set.
@@ -275,33 +253,33 @@ def test_write_event_skips_when_required_fields_missing(monkeypatch):
     assert write_event(_event(location=""), ig_handle="x", source_url="u") == "skipped"
 
 
-def test_ensure_organization_by_ig_returns_existing_without_insert(fake_sb, patch_sb):
+def test_ensure_club_by_ig_returns_existing_without_insert(fake_sb, patch_sb):
     patch_sb("services.scraper.event_writer")
     fake_sb.queue_responses(
         [
             [
                 {
                     "id": 9,
-                    "organization_name": "UW Tea Organization",
+                    "club_name": "UW Tea Club",
                 }
             ]
         ]
     )
 
-    result = _REAL_ENSURE_ORGANIZATION_BY_IG(
-        "@uwteaorganization",
+    result = _REAL_ENSURE_CLUB_BY_IG(
+        "@uwteaclub",
         school="uwaterloo",
         preferred_name="Ignored When Existing",
     )
 
     assert result == {
         "id": 9,
-        "organization_name": "UW Tea Organization",
+        "club_name": "UW Tea Club",
     }
     assert fake_sb.insert.call_count == 0
 
 
-def test_ensure_organization_by_ig_creates_stub_when_missing(fake_sb, patch_sb, monkeypatch):
+def test_ensure_club_by_ig_creates_stub_when_missing(fake_sb, patch_sb, monkeypatch):
     patch_sb("services.scraper.event_writer")
     monkeypatch.setattr(
         event_writer.school_service,
@@ -314,39 +292,39 @@ def test_ensure_organization_by_ig_creates_stub_when_missing(fake_sb, patch_sb, 
             [
                 {
                     "id": 42,
-                    "organization_name": "UW Tea Organization",
+                    "club_name": "UW Tea Club",
                 }
             ],
         ]
     )
 
-    result = _REAL_ENSURE_ORGANIZATION_BY_IG(
-        "uwteaorganization",
+    result = _REAL_ENSURE_CLUB_BY_IG(
+        "uwteaclub",
         school="uwaterloo",
-        preferred_name="UW Tea Organization",
+        preferred_name="UW Tea Club",
     )
 
     assert result["id"] == 42
     insert_payload = fake_sb.insert.call_args_list[0][0][0]
     assert insert_payload == {
-        "organization_name": "UW Tea Organization",
-        "ig": "uwteaorganization",
+        "club_name": "UW Tea Club",
+        "ig": "uwteaclub",
         "school_id": 1,
     }
 
 
-def test_ensure_organization_by_ig_skips_create_without_school(fake_sb, patch_sb):
+def test_ensure_club_by_ig_skips_create_without_school(fake_sb, patch_sb):
     patch_sb("services.scraper.event_writer")
     fake_sb.queue_responses([[]])
 
-    assert _REAL_ENSURE_ORGANIZATION_BY_IG("club", school=None) is None
+    assert _REAL_ENSURE_CLUB_BY_IG("club", school=None) is None
     assert fake_sb.insert.call_count == 0
 
 
-def test_write_event_links_auto_created_organization(fake_sb, patch_sb, monkeypatch):
+def test_write_event_links_auto_created_club(fake_sb, patch_sb, monkeypatch):
     patch_sb("services.scraper.event_writer")
     patch_sb("services.event_date_service")
-    monkeypatch.setattr(event_writer, "_ensure_organization_by_ig", _REAL_ENSURE_ORGANIZATION_BY_IG)
+    monkeypatch.setattr(event_writer, "_ensure_club_by_ig", _REAL_ENSURE_CLUB_BY_IG)
 
     occ_now = datetime.now(timezone.utc).isoformat()
     fake_sb.queue_responses(
@@ -355,9 +333,9 @@ def test_write_event_links_auto_created_organization(fake_sb, patch_sb, monkeypa
             [
                 {
                     "id": 5,
-                    "organization_name": "UW Tea Organization",
+                    "club_name": "UW Tea Club",
                 }
-            ],  # organization insert
+            ],  # club insert
             [{"id": 7}],  # events insert
             [
                 {
@@ -375,7 +353,7 @@ def test_write_event_links_auto_created_organization(fake_sb, patch_sb, monkeypa
 
     result = write_event(
         _event(),
-        ig_handle="uwteaorganization",
+        ig_handle="uwteaclub",
         source_url="https://instagram.com/p/abc",
     )
     assert result == "inserted"
@@ -383,10 +361,10 @@ def test_write_event_links_auto_created_organization(fake_sb, patch_sb, monkeypa
     dict_inserts = [
         call[0][0] for call in fake_sb.insert.call_args_list if isinstance(call[0][0], dict)
     ]
-    assert dict_inserts[0]["ig"] == "uwteaorganization"
-    assert dict_inserts[1]["organization_id"] == 5
-    assert dict_inserts[1]["organization"] == "UW Tea Organization"
-    assert "organization_type" not in dict_inserts[1]
+    assert dict_inserts[0]["ig"] == "uwteaclub"
+    assert dict_inserts[1]["club_id"] == 5
+    assert dict_inserts[1]["club"] == "UW Tea Club"
+    assert "club_type" not in dict_inserts[1]
 
 
 def test_write_event_inserts_one_event_row_plus_occurrences(fake_sb, patch_sb, monkeypatch):
@@ -441,9 +419,7 @@ def test_write_event_inserts_one_event_row_plus_occurrences(fake_sb, patch_sb, m
             {"dtstart_utc": _future(16), "dtend_utc": "", "duration": "", "tz": "UTC"},
         ],
     )
-    result = write_event(
-        event, ig_handle="uwteaorganization", source_url="https://instagram.com/p/abc"
-    )
+    result = write_event(event, ig_handle="uwteaclub", source_url="https://instagram.com/p/abc")
     assert result == "inserted"
 
     # The events insert should have been called exactly once, with one parent
@@ -573,7 +549,7 @@ def test_write_event_overwrites_by_id(fake_sb, patch_sb, monkeypatch):
         "id": 42,
         "title": "Tea Tasting",
         "location": "SLC 1000",
-        "organization": "UW Tea Organization",
+        "club": "UW Tea Club",
         "cancelled": False,
         "added_at": datetime.now(timezone.utc),
         "occurrences": [
@@ -619,7 +595,7 @@ def test_write_event_overwrites_by_id(fake_sb, patch_sb, monkeypatch):
                 }
             ],
         ),
-        ig_handle="uwteaorganization",
+        ig_handle="uwteaclub",
         source_url="https://instagram.com/p/abc",
     )
     assert result == "updated"
@@ -632,10 +608,10 @@ def test_write_event_overwrites_by_id(fake_sb, patch_sb, monkeypatch):
 
 
 def test_write_event_refuses_cross_org_overwrite(fake_sb, patch_sb, monkeypatch):
-    """Different organization_id on both sides → insert instead of overwrite."""
+    """Different club_id on both sides → insert instead of overwrite."""
     from schemas.event import EventResponse
     from schemas.event_date import OccurrenceResponse
-    from services.scraper.org_resolve import ResolvedOrganization
+    from services.scraper.org_resolve import ResolvedClub
 
     patch_sb("services.scraper.event_writer")
     patch_sb("services.event_date_service")
@@ -644,10 +620,10 @@ def test_write_event_refuses_cross_org_overwrite(fake_sb, patch_sb, monkeypatch)
     old = EventResponse.model_validate(
         {
             "id": 42,
-            "organization_id": 7,
+            "club_id": 7,
             "title": "Tea Tasting",
             "location": "SLC",
-            "organization": "UW Tea",
+            "club": "UW Tea",
             "ig_handle": "uwtea",
             "cancelled": False,
             "added_at": datetime.now(timezone.utc),
@@ -688,9 +664,9 @@ def test_write_event_refuses_cross_org_overwrite(fake_sb, patch_sb, monkeypatch)
         _event(id=42),
         ig_handle=None,
         source_url="https://directory.example/event",
-        resolved_org=ResolvedOrganization(
-            organization_id=99,
-            organization_name="Other Club",
+        resolved_org=ResolvedClub(
+            club_id=99,
+            club_name="Other Club",
             ig_handle=None,
         ),
     )
@@ -702,18 +678,18 @@ def test_write_event_refuses_cross_org_overwrite(fake_sb, patch_sb, monkeypatch)
 def test_write_event_preserves_ig_and_org_on_null_incoming(fake_sb, patch_sb, monkeypatch):
     """Directory-style overwrite must not wipe IG provenance fields."""
     from schemas.event import EventResponse
-    from services.scraper.org_resolve import ResolvedOrganization
+    from services.scraper.org_resolve import ResolvedClub
 
     patch_sb("services.scraper.event_writer")
 
     future = datetime.now(timezone.utc) + timedelta(days=2)
     base = {
         "id": 42,
-        "organization_id": 7,
+        "club_id": 7,
         "title": "Tea Tasting",
         "location": "SLC 1000",
-        "organization": "UW Tea Organization",
-        "ig_handle": "uwteaorganization",
+        "club": "UW Tea Club",
+        "ig_handle": "uwteaclub",
         "source_url": "https://instagram.com/p/OLD",
         "source_image_url": "https://cdn/old.jpg",
         "cancelled": False,
@@ -751,17 +727,17 @@ def test_write_event_preserves_ig_and_org_on_null_incoming(fake_sb, patch_sb, mo
         _event(id=42, location="SLC 3223", source_image_url=None),
         ig_handle=None,
         source_url="",
-        resolved_org=ResolvedOrganization(
-            organization_id=7,
-            organization_name="UW Tea Organization",
+        resolved_org=ResolvedClub(
+            club_id=7,
+            club_name="UW Tea Club",
             ig_handle=None,
         ),
     )
     assert result == "updated"
     update.assert_called_once()
     update_payload = update.call_args.args[1]
-    assert update_payload["ig_handle"] == "uwteaorganization"
-    assert update_payload["organization_id"] == 7
-    assert "organization_type" not in update_payload
+    assert update_payload["ig_handle"] == "uwteaclub"
+    assert update_payload["club_id"] == 7
+    assert "club_type" not in update_payload
     assert update_payload["source_url"] == "https://instagram.com/p/OLD"
     assert update_payload["source_image_url"] == "https://cdn/old.jpg"

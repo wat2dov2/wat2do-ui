@@ -2,19 +2,19 @@
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime
 from typing import Any
 
 from core.constants import DEFAULT_LIST_LIMIT
 from core.database import get_sb
+from core.pagination import LatestAddedItem
 from core.sanitize import sanitize_postgrest_value
 from core.tables import POSITIONS
 from schemas.position import PositionResponse, PositionType
 from services import school_service
 
 _POSITION_SELECT = (
-    "*,organizations(organization_name,logo_url,organization_type,organization_page,ig,discord),"
-    f"{school_service.SCHOOL_SLUG_EMBED}"
+    f"*,clubs(club_name,logo_url,club_type,club_page,ig,discord),{school_service.SCHOOL_SLUG_EMBED}"
 )
 
 
@@ -25,20 +25,20 @@ def _apply_open_filter(query: Any) -> Any:
 
 def _position_response(row: dict) -> PositionResponse:
     normalized = school_service.with_school_slug(row)
-    organization = normalized.pop("organizations", None)
-    organization_fields = (
+    club = normalized.pop("clubs", None)
+    club_fields = (
         {
-            "organization_name": organization.get("organization_name"),
-            "organization_logo_url": organization.get("logo_url"),
-            "organization_type": organization.get("organization_type"),
-            "organization_page": organization.get("organization_page"),
-            "organization_ig": organization.get("ig"),
-            "organization_discord": organization.get("discord"),
+            "club_name": club.get("club_name"),
+            "club_logo_url": club.get("logo_url"),
+            "club_type": club.get("club_type"),
+            "club_page": club.get("club_page"),
+            "club_ig": club.get("ig"),
+            "club_discord": club.get("discord"),
         }
-        if isinstance(organization, dict)
+        if isinstance(club, dict)
         else {}
     )
-    return PositionResponse.model_validate({**normalized, **organization_fields})
+    return PositionResponse.model_validate({**normalized, **club_fields})
 
 
 def list_positions(
@@ -48,8 +48,10 @@ def list_positions(
     school: str | None = None,
     search: str | None = None,
     position_type: PositionType | None = None,
-    organization_id: int | None = None,
+    club_id: int | None = None,
     include_closed: bool = False,
+    added_since: datetime | None = None,
+    paid_only: bool = False,
 ) -> tuple[list[PositionResponse], int]:
     query = get_sb().table(POSITIONS).select(_POSITION_SELECT, count="exact")
 
@@ -60,8 +62,12 @@ def list_positions(
         query = query.eq("school_id", school_id)
     if position_type is not None:
         query = query.eq("position_type", position_type)
-    if organization_id is not None:
-        query = query.eq("organization_id", organization_id)
+    if added_since is not None:
+        query = query.gte("added_at", added_since.isoformat())
+    if paid_only:
+        query = query.eq("is_paid", True)
+    if club_id is not None:
+        query = query.eq("club_id", club_id)
     if search:
         term = sanitize_postgrest_value(search)
         if term:
@@ -90,24 +96,35 @@ def list_positions(
     return items, response.count or len(items)
 
 
-def get_organization_position_counts(
-    organization_ids: list[int],
+def get_club_position_counts(
+    club_ids: list[int],
 ) -> dict[int, int]:
-    """Return per-organization open-position totals."""
-    if not organization_ids:
+    """Return per-club open-position totals."""
+    if not club_ids:
         return {}
 
-    counts = {organization_id: 0 for organization_id in organization_ids}
+    counts = {club_id: 0 for club_id in club_ids}
     response = _apply_open_filter(
-        get_sb().table(POSITIONS).select("organization_id").in_("organization_id", organization_ids)
+        get_sb().table(POSITIONS).select("club_id").in_("club_id", club_ids)
     ).execute()
 
     for row in response.data or []:
-        organization_id = row.get("organization_id")
-        if organization_id in counts:
-            counts[organization_id] += 1
+        club_id = row.get("club_id")
+        if club_id in counts:
+            counts[club_id] += 1
 
     return counts
+
+
+def get_latest_added_position(school: str | None) -> LatestAddedItem | None:
+    query = _apply_open_filter(get_sb().table(POSITIONS).select("title,added_at"))
+    if school:
+        school_id = school_service.get_school_id(school)
+        if school_id is None:
+            return None
+        query = query.eq("school_id", school_id)
+    response = query.order("added_at", desc=True).order("id", desc=True).limit(1).execute()
+    return LatestAddedItem.model_validate(response.data[0]) if response.data else None
 
 
 def get_position(position_id: int) -> PositionResponse | None:

@@ -1,23 +1,23 @@
 {
   "events": {
+    "minimumGoing": "Số người tối thiểu",
     "eventTitle": "Tiêu đề sự kiện",
     "loadFailed": "Không tải được sự kiện. Vui lòng thử lại.",
     "deleteFailed": "Xóa sự kiện thất bại. Vui lòng thử lại.",
     "submitFailed": "Gửi sự kiện thất bại. Vui lòng thử lại.",
     "submissionFailedTitle": "Gửi thất bại",
-    "organizationRequired": "Chọn một tổ chức trước khi gửi sự kiện.",
-    "organization": "Tổ chức",
+    "clubRequired": "Chọn một tổ chức trước khi gửi sự kiện.",
+    "club": "Tổ chức",
     "status": "Trạng thái",
     "dayOfWeek": "Ngày trong tuần",
     "createEvent": "Gửi sự kiện",
-    "submitEventSchoolDescription": "Chỉ các tổ chức từ {{school}} được hiển thị, vì vậy sự kiện của bạn được gửi đến đúng cơ sở.",
+    "submitEventSchoolDescription": "Chỉ các tổ chức từ {{school}} được hiển thị.",
     "submitEventForReview": "Gửi sự kiện để xem xét",
     "submitForReview": "Gửi để xem xét",
     "uploadEventFlyer": "Tải lên Tờ rơi Sự kiện",
     "uploadEventFlyerDescription": "Tải lên hoặc dán một hình ảnh tờ rơi, và AI sẽ tự động điền trước các chi tiết.",
     "processingEventImage": "Đang xử lý hình ảnh sự kiện",
     "clickToUploadOrPasteImage": "Nhấp để tải lên hình ảnh hoặc dán",
-    "imagePasteShortcutHint": "{{formats}} (ví dụ: Cmd+V / Ctrl+V)",
     "flyerExtracted": "Chi tiết tờ rơi đã được trích xuất thành công.",
     "flyerParseFailed": "Phân tích tờ rơi thất bại",
     "flyerParseFailedDescription": "Chúng tôi không thể đọc được chi tiết sự kiện từ tờ rơi.",
@@ -47,7 +47,6 @@
     "noUpcomingEvents": "Không có sự kiện sắp tới nào",
     "upcomingEventCount": "sự kiện sắp tới",
     "upcomingEventCount_other": "các sự kiện sắp tới",
-    "latestAddedEvent": "{{title}} đã thêm {{time}}",
     "thisWeek": "Tuần này",
     "discoverEvents": "Khám Phá Sự Kiện",
     "clickCount": "{{count}} nhấp",
@@ -56,12 +55,6 @@
     "noEventsFoundDesc": "Không tìm thấy sự kiện nào phù hợp với bộ lọc hiện tại của bạn. Hãy thử điều chỉnh tìm kiếm hoặc xóa một số bộ lọc.",
     "noEventsScheduled": "Không có sự kiện nào được lên lịch",
     "noEventsScheduledDesc": "Hiện tại không có sự kiện nào được lên lịch. Hãy quay lại sau!",
-    "newlyAddedFilter": {
-      "last24Hours": "Mới",
-      "sinceLastVisit": "Được thêm kể từ lần truy cập trước",
-      "clear": "Xóa bộ lọc mới được thêm",
-      "sinceLastVisitAt": "Được thêm kể từ lần truy cập trước ({{time}})"
-    },
     "dateFilter": {
       "label": "Ngày diễn ra sự kiện",
       "any": "Bất kỳ ngày nào",
@@ -91,6 +84,7 @@
       "submitFailed": "Không thể gửi báo cáo"
     },
     "goingEvents": {
+      "timeUnavailable": "Sự kiện này đã bắt đầu hoặc bị hủy nên bạn không thể xác nhận tham gia.",
       "markFailed": "Không thể đánh dấu sự kiện này là sẽ tham gia",
       "unmarkFailed": "Không thể bỏ đánh dấu sự kiện này là sẽ tham gia",
       "saveFailed": "Không thể lưu thời gian bạn đã chọn",

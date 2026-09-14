@@ -17,6 +17,11 @@ from services.instagram_publishing import service
 @pytest.fixture(autouse=True)
 def registered_school(monkeypatch):
     monkeypatch.setattr(service.school_service, "get_school_id", lambda _school: 1)
+    monkeypatch.setattr(
+        service.school_service,
+        "get_school",
+        lambda _school: SimpleNamespace(timezone="America/Toronto"),
+    )
 
 
 def test_generate_due_batches_uses_enabled_connected_accounts(monkeypatch):
@@ -67,6 +72,12 @@ class _FakeQuery:
         self._data = data
         self._calls = calls
         self._count = len(data) if count is None else count
+        self._range = None
+
+    def range(self, start, end):
+        self._calls.append(("range", (start, end), {}))
+        self._range = (start, end)
+        return self
 
     def __getattr__(self, name):
         def chain(*args, **kwargs):
@@ -80,7 +91,11 @@ class _FakeQuery:
         return self
 
     def execute(self):
-        return SimpleNamespace(data=self._data, count=self._count)
+        data = self._data
+        if self._range is not None:
+            start, end = self._range
+            data = data[start : end + 1]
+        return SimpleNamespace(data=data, count=self._count)
 
 
 def test_list_batches_attaches_item_counts_without_hydrating_details(monkeypatch):
@@ -91,9 +106,9 @@ def test_list_batches_attaches_item_counts_without_hydrating_details(monkeypatch
         {"id": "batch-2", "school_record": {"slug": "wlu"}},
     ]
     items = [
-        {"batch_id": "batch-1"},
-        {"batch_id": "batch-1"},
-        {"batch_id": "batch-2"},
+        {"batch_id": "batch-1", "event_id": 1},
+        {"batch_id": "batch-1", "event_id": 2},
+        {"batch_id": "batch-2", "event_id": 3},
     ]
 
     def table(name: str):
@@ -106,7 +121,15 @@ def test_list_batches_attaches_item_counts_without_hydrating_details(monkeypatch
     monkeypatch.setattr(service, "get_sb", lambda: SimpleNamespace(table=table))
     monkeypatch.setattr(
         service,
-        "_hydrate_batches",
+        "_load_slide_events",
+        lambda ids: {
+            1: _event(1),
+            2: _event(2).model_copy(update={"source_image_url": None}),
+        },
+    )
+    monkeypatch.setattr(
+        service,
+        "_hydrate_batch",
         Mock(side_effect=AssertionError("list should not hydrate batch details")),
     )
 
@@ -119,11 +142,12 @@ def test_list_batches_attaches_item_counts_without_hydrating_details(monkeypatch
 
     assert total == 12
     assert [batch["item_count"] for batch in result] == [2, 1]
-    assert ("select", ("batch_id",), {}) in item_calls
+    assert [batch["eligible_count"] for batch in result] == [1, 0]
+    assert ("select", ("batch_id,event_id",), {}) in item_calls
     assert ("range", (0, 24), {}) in batch_calls
 
 
-def test_load_candidates_includes_added_events_from_any_source_without_images(monkeypatch):
+def test_load_candidates_requires_images_from_any_source(monkeypatch):
     event_calls: list[tuple] = []
     published_calls: list[tuple] = []
     occurrence_calls: list[tuple] = []
@@ -133,6 +157,7 @@ def test_load_candidates_includes_added_events_from_any_source_without_images(mo
             "title": "Golden Hawk Welcome Social",
             "school": "wlu",
             "ingestion_source": "seed",
+            "source_image_url": "https://example.com/poster.jpg",
         },
         {
             "id": 302,
@@ -140,8 +165,15 @@ def test_load_candidates_includes_added_events_from_any_source_without_images(mo
             "school": "wlu",
             "ingestion_source": "manual",
         },
+        {"id": 303, "title": "No poster", "source_image_url": "  "},
     ]
     occurrences = [
+        {
+            "event_id": 303,
+            "dtstart_utc": "2026-08-07T21:00:00+00:00",
+            "dtend_utc": None,
+            "tz": "America/Toronto",
+        },
         {
             "event_id": 301,
             "dtstart_utc": "2026-08-07T21:00:00+00:00",
@@ -176,19 +208,79 @@ def test_load_candidates_includes_added_events_from_any_source_without_images(mo
     )
 
     assert [event["id"] for event in result] == [301]
-    assert "source_image_url" not in result[0]
+    assert result[0]["source_image_url"] == "https://example.com/poster.jpg"
     assert ("eq", ("school_id", 10), {}) in event_calls
     assert ("eq", ("cancelled", False), {}) in event_calls
     assert not any(args and args[0] == "ingestion_source" for _, args, _ in event_calls)
     assert not any(args and args[0] == "source_image_url" for _, args, _ in event_calls)
 
 
+def test_load_candidates_pages_occurrences_and_published_items(monkeypatch):
+    events = [
+        {"id": event_id, "title": "Event", "source_image_url": "https://example.com/poster.jpg"}
+        for event_id in range(1, 1003)
+    ]
+    occurrences = [
+        {
+            "event_id": event["id"],
+            "dtstart_utc": "2026-08-07T21:00:00+00:00",
+            "dtend_utc": None,
+            "tz": "America/Toronto",
+        }
+        for event in events
+    ]
+    rows = {
+        service.EVENTS: events,
+        service.EVENT_DATES: occurrences,
+        service.INSTAGRAM_PUBLISH_ITEMS: [{"event_id": event_id} for event_id in range(1, 1002)],
+    }
+    calls = {name: [] for name in rows}
+    monkeypatch.setattr(
+        service,
+        "get_sb",
+        lambda: SimpleNamespace(
+            table=lambda name: _FakeQuery(rows[name], calls[name]),
+        ),
+    )
+
+    result = service._load_candidates(
+        account_key="wlu",
+        school="wlu",
+        window_start=datetime(2026, 7, 28, 4, tzinfo=timezone.utc),
+        window_end=datetime(2026, 7, 28, 15, tzinfo=timezone.utc),
+    )
+
+    assert [event["id"] for event in result] == [1002]
+    for table_calls in calls.values():
+        assert ("range", (1000, 1999), {}) in table_calls
+
+
+def test_batch_item_counts_include_every_page(monkeypatch):
+    calls = []
+    rows = [{"batch_id": "batch-1", "event_id": index} for index in range(1001)]
+    monkeypatch.setattr(service, "_load_slide_events", lambda ids: {})
+    monkeypatch.setattr(
+        service,
+        "get_sb",
+        lambda: SimpleNamespace(
+            table=lambda _name: _FakeQuery(rows, calls),
+        ),
+    )
+    batches = [{"id": "batch-1"}]
+
+    service._attach_item_counts(batches)
+
+    assert batches[0]["item_count"] == 1001
+    assert ("range", (1000, 1999), {}) in calls
+
+
 def _event(event_id: int, title: str = "Event") -> EventSummaryResponse:
     """A slide's event, hydrated exactly as the carousel response carries it."""
-    start = datetime(2026, 7, 27, 22, tzinfo=timezone.utc)
+    start = datetime(2099, 7, 27, 22, tzinfo=timezone.utc)
     return EventSummaryResponse(
         id=event_id,
         title=title,
+        source_image_url="https://example.com/poster.jpg",
         school="uwaterloo",
         added_at=start,
         occurrences=[
@@ -231,6 +323,93 @@ def _batch(event_ids: list[int], **overrides) -> dict:
     }
 
 
+@pytest.mark.parametrize("image", [None, "", "   "])
+def test_publishable_event_requires_image(image):
+    event = _event(1).model_copy(update={"source_image_url": image})
+    assert not service._is_publishable_event(event, datetime(2026, 9, 10, tzinfo=timezone.utc))
+
+
+def test_publishable_event_keeps_ongoing_and_recurring_events():
+    now = datetime(2026, 9, 10, tzinfo=timezone.utc)
+    event = _event(1)
+    past = event.occurrences[0].model_copy(
+        update={
+            "dtstart_utc": datetime(2026, 9, 8, tzinfo=timezone.utc),
+            "dtend_utc": datetime(2026, 9, 9, tzinfo=timezone.utc),
+        }
+    )
+    assert not service._is_publishable_event(event.model_copy(update={"occurrences": [past]}), now)
+    ongoing = past.model_copy(update={"dtend_utc": datetime(2026, 9, 11, tzinfo=timezone.utc)})
+    assert service._is_publishable_event(event.model_copy(update={"occurrences": [ongoing]}), now)
+    assert service._is_publishable_event(
+        event.model_copy(update={"occurrences": [past, *event.occurrences]}), now
+    )
+
+
+@pytest.mark.parametrize("status", ["ready_for_review", "failed", "published"])
+def test_hydration_excludes_invalid_slides_only_from_drafts(monkeypatch, status):
+    batch = _batch([1, 2, 3, 4], status=status)
+    items = [{**item, "batch_id": batch["id"]} for item in batch["items"]]
+    ended = _event(3)
+    ended.occurrences[0].dtstart_utc = datetime(2000, 1, 1, tzinfo=timezone.utc)
+    events = {1: _event(1), 2: _event(2).model_copy(update={"source_image_url": None}), 3: ended}
+    monkeypatch.setattr(
+        service, "get_sb", lambda: SimpleNamespace(table=lambda _name: _FakeQuery(items, []))
+    )
+    monkeypatch.setattr(service, "_load_slide_events", lambda _ids: events)
+    monkeypatch.setattr(service, "_count_new_events", lambda _batch: 3)
+    monkeypatch.setattr(service, "build_caption", lambda *_: "Caption")
+    service._hydrate_batch(batch)
+    assert [item["event_id"] for item in batch["items"]] == (
+        [1, 2, 3] if status == "published" else [1]
+    )
+    assert batch["new_event_count"] == 3
+
+
+def test_hydration_handles_an_empty_batch(monkeypatch):
+    batch = _batch([])
+    monkeypatch.setattr(service, "_load_batch_items", lambda *_: [])
+    load_events = Mock(return_value={})
+    monkeypatch.setattr(service, "_load_slide_events", load_events)
+    monkeypatch.setattr(service, "_count_new_events", lambda _: 0)
+    monkeypatch.setattr(service, "build_caption", lambda *_: "Empty caption")
+
+    service._hydrate_batch(batch)
+
+    assert batch["items"] == []
+    assert batch["new_event_count"] == 0
+    assert batch["caption"] == "Empty caption"
+    load_events.assert_called_once_with([])
+
+
+@pytest.mark.parametrize("status", ["ready_for_review", "failed", "publishing", "published"])
+def test_hydration_refreshes_only_editable_captions(monkeypatch, status):
+    batch = _batch([1], status=status)
+    batch["caption_intro"] = "Keep my intro"
+    items = [{**item, "batch_id": batch["id"]} for item in batch["items"]]
+    monkeypatch.setattr(
+        service,
+        "get_sb",
+        lambda: SimpleNamespace(
+            table=lambda _name: _FakeQuery(items, []),
+        ),
+    )
+    monkeypatch.setattr(service, "_load_slide_events", lambda _ids: {1: _event(1, "Updated title")})
+    monkeypatch.setattr(service, "_count_new_events", lambda _batch: 1)
+    caption = Mock(return_value="Updated caption")
+    monkeypatch.setattr(service, "build_caption", caption)
+
+    service._hydrate_batch(batch)
+
+    if status in ("ready_for_review", "failed"):
+        assert batch["caption"] == "Updated caption"
+        assert caption.call_args.args[0][0]["title"] == "Updated title"
+        assert caption.call_args.args[2] == "Keep my intro"
+    else:
+        assert batch["caption"] == "Caption"
+        caption.assert_not_called()
+
+
 @pytest.fixture
 def draft_editor(monkeypatch):
     """Stub every I/O edge of ``update_batch`` and record what it did."""
@@ -265,13 +444,18 @@ def draft_editor(monkeypatch):
 
 
 def test_update_batch_saves_the_carousel_order_without_rendering(monkeypatch, draft_editor):
+    monkeypatch.setattr(
+        "services.instagram_publishing.captions.resolve_school_timezone",
+        lambda _school: "America/Toronto",
+    )
+    monkeypatch.setattr("services.instagram_publishing.captions.get_school", lambda _school: None)
     monkeypatch.setattr(service, "get_batch", lambda _id: _batch([1, 2]))
     monkeypatch.setattr(service, "_load_slide_events", lambda _ids: {1: _event(1), 2: _event(2)})
 
     service.update_batch(
         "batch-1",
         InstagramPublishBatchUpdate(
-            version=3, caption="Caption", cover_body="Body", event_ids=[2, 1]
+            version=3, cover_body="Body", caption_intro="Our picks", event_ids=[2, 1]
         ),
     )
 
@@ -280,7 +464,33 @@ def test_update_batch_saves_the_carousel_order_without_rendering(monkeypatch, dr
     _, params = draft_editor["rpc"][0]
     assert params["p_event_ids"] == [2, 1]
     assert params["p_cover_body"] == "Body"
-    assert params["p_caption"] == "Caption"
+    assert params["p_caption_intro"] == "Our picks"
+    assert params["p_caption"] == service.build_caption(
+        [service._slide_payload(_event(2)), service._slide_payload(_event(1))],
+        "uwaterloo",
+        "Our picks",
+    )
+
+
+@pytest.mark.parametrize("reason", ["missing_image", "ended"])
+def test_update_batch_rejects_ineligible_addition_without_saving(monkeypatch, draft_editor, reason):
+    event = _event(2)
+    if reason == "missing_image":
+        event = event.model_copy(update={"source_image_url": None})
+    else:
+        occurrence = event.occurrences[0].model_copy(
+            update={
+                "dtstart_utc": datetime(2000, 1, 1, tzinfo=timezone.utc),
+                "dtend_utc": datetime(2000, 1, 2, tzinfo=timezone.utc),
+            }
+        )
+        event = event.model_copy(update={"occurrences": [occurrence]})
+    monkeypatch.setattr(service, "get_batch", lambda _id: _batch([1]))
+    monkeypatch.setattr(service, "_load_slide_events", lambda _ids: {1: _event(1), 2: event})
+
+    with pytest.raises(Exception, match="Cannot add or save event IDs: 2"):
+        service.update_batch("batch-1", InstagramPublishBatchUpdate(version=3, event_ids=[1, 2]))
+    assert draft_editor["rpc"] == []
 
 
 def test_update_batch_rejects_events_without_a_date(monkeypatch, draft_editor):
@@ -290,7 +500,7 @@ def test_update_batch_rejects_events_without_a_date(monkeypatch, draft_editor):
     with pytest.raises(Exception, match="dated, existing event"):
         service.update_batch(
             "batch-1",
-            InstagramPublishBatchUpdate(version=3, caption="Caption", event_ids=[9]),
+            InstagramPublishBatchUpdate(version=3, event_ids=[9]),
         )
 
 
@@ -301,7 +511,7 @@ def test_update_batch_rejects_a_repeated_event(monkeypatch, draft_editor):
     with pytest.raises(Exception, match="different event"):
         service.update_batch(
             "batch-1",
-            InstagramPublishBatchUpdate(version=3, caption="Caption", event_ids=[1, 1]),
+            InstagramPublishBatchUpdate(version=3, event_ids=[1, 1]),
         )
 
 
@@ -410,8 +620,14 @@ def test_publish_batch_renders_the_slides_from_live_event_data(monkeypatch):
 
     monkeypatch.setattr(service, "MetaInstagramClient", _FakeClient)
 
-    service.publish_batch("batch-1", InstagramPublishBatchPublish(version=3))
+    batch = service.claim_batch_for_publishing("batch-1", InstagramPublishBatchPublish(version=3))
+    assert rendered == []
+    assert containers == []
+    service.publish_claimed_batch(batch)
 
+    assert ("delete", (), {}) in table_calls
+    assert ("in_", ("event_id", [7, 8]), {}) in table_calls
+    assert ("is_", ("published_at", "null"), {}) in table_calls
     assert load_credentials.call_args.args[0] == "dalhousie"
     assert rendered == [("cover", [7, 8], "dalhousie", "Body", "2026-07-26", 20), 7, 8]
     assert containers == ["https://a/cover.png", "https://a/7.png", "https://a/8.png"]
@@ -428,23 +644,73 @@ def test_publish_batch_renders_the_slides_from_live_event_data(monkeypatch):
     } == {"https://a/7.png", "https://a/8.png"}
 
 
+def test_background_publish_records_failure(monkeypatch):
+    calls = []
+    monkeypatch.setattr(
+        service, "load_account_credentials", Mock(side_effect=RuntimeError("Invalidated session"))
+    )
+    monkeypatch.setattr(
+        service, "get_sb", lambda: SimpleNamespace(table=lambda _name: _FakeQuery([{}], calls))
+    )
+    service.publish_claimed_batch(_batch([7], status="publishing"))
+    updates = [args[0] for name, args, _ in calls if name == "update"]
+    assert updates[0]["status"] == "failed"
+    assert updates[0]["error_message"] == "Invalidated session"
+
+
+def test_publish_route_queues_work_without_rendering(monkeypatch):
+    from fastapi import BackgroundTasks
+
+    from routers.instagram_publishing import publish_instagram_batch
+    from services import instagram_publishing
+
+    batch = _batch([7], status="publishing", version=4)
+    claim = Mock(return_value=batch)
+    publish = Mock()
+    monkeypatch.setattr(instagram_publishing, "claim_batch_for_publishing", claim)
+    monkeypatch.setattr(instagram_publishing, "publish_claimed_batch", publish)
+    tasks = BackgroundTasks()
+    assert publish_instagram_batch(uuid4(), InstagramPublishBatchPublish(version=3), tasks) is batch
+    publish.assert_not_called()
+    assert len(tasks.tasks) == 1
+    assert tasks.tasks[0].func is publish
+    assert tasks.tasks[0].args == (batch,)
+
+
+def test_draft_allows_more_than_nine_events():
+    draft = InstagramPublishBatchUpdate(version=3, event_ids=list(range(1, 15)))
+    assert len(draft.event_ids) == 14
+
+
 def test_slide_payload_flattens_the_first_occurrence_for_the_renderer():
     payload = service._slide_payload(_event(7))
 
     assert payload["id"] == 7
-    assert payload["dtstart_utc"] == "2026-07-27T22:00:00+00:00"
+    assert payload["dtstart_utc"] == "2099-07-27T22:00:00+00:00"
     assert payload["tz"] == "America/Toronto"
     # The renderer reads a flat dict; the occurrence list never reaches it.
     assert "occurrences" not in payload
 
 
-def test_slide_payload_falls_back_to_the_school_timezone(monkeypatch):
+@pytest.mark.parametrize("occurrence_timezone", [None, "America/Toronto", "UTC"])
+def test_slide_payload_uses_school_timezone_even_when_occurrence_disagrees(
+    monkeypatch, occurrence_timezone
+):
     monkeypatch.setattr(
         service,
         "resolve_school_timezone",
-        lambda _school: "America/Toronto",
+        lambda school: "America/Edmonton" if school == "ualberta" else "America/Toronto",
     )
     event = _event(8)
-    event.occurrences[0].tz = None
+    event.school = "ualberta"
+    event.occurrences[0].tz = occurrence_timezone
 
-    assert service._slide_payload(event)["tz"] == "America/Toronto"
+    assert service._slide_payload(event)["tz"] == "America/Edmonton"
+    assert (
+        service._with_occurrence(
+            {"id": 8},
+            {"dtstart_utc": "2099-07-27T22:00:00+00:00", "tz": occurrence_timezone},
+            "ualberta",
+        )["tz"]
+        == "America/Edmonton"
+    )

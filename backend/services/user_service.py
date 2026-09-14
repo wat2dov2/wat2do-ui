@@ -1,6 +1,9 @@
 """Users (profile table) via Supabase. Sync."""
 
+import base64
+import hashlib
 from datetime import datetime, timezone
+from itertools import batched
 from uuid import UUID
 
 from core.constants import DEFAULT_LIST_LIMIT
@@ -23,8 +26,33 @@ from services.school_context import canonical_school_key
 _USER_SELECT = f"*,{school_service.SCHOOL_SLUG_EMBED}"
 
 
+def avatar_url_for_user(user_id: str, avatar_url: str | None = None) -> str:
+    """Preserve uploaded photos, otherwise generate a stable, private identicon."""
+    if avatar_url:
+        return avatar_url
+    digest = hashlib.sha256(user_id.encode()).digest()
+    color = f"hsl({int.from_bytes(digest[:2]) % 360} 55% 42%)"
+    cells = []
+    for y in range(5):
+        for x in range(3):
+            if digest[2 + y * 3 + x] & 1:
+                for column in {x, 4 - x}:
+                    cells.append(f"M{10 + column * 16} {10 + y * 16}h16v16h-16z")
+    svg = (
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">'
+        '<rect width="100" height="100" fill="#f1f5f9"/>'
+        f'<path fill="{color}" d="{"".join(cells)}"/></svg>'
+    )
+    return "data:image/svg+xml;base64," + base64.b64encode(svg.encode()).decode()
+
+
 def _user_response(row: dict) -> UserResponse:
-    return UserResponse.model_validate(school_service.with_school_slug(row))
+    return UserResponse.model_validate(
+        {
+            **school_service.with_school_slug(row),
+            "avatar_url": avatar_url_for_user(str(row["id"]), row.get("avatar_url")),
+        }
+    )
 
 
 def get_user(user_id: UUID) -> UserResponse | None:
@@ -58,20 +86,13 @@ _LOAD_PAGE_SIZE = 1000
 
 
 def get_users_by_ids(user_ids: list[str]) -> dict[str, UserResponse]:
-    """Batch-fetch user profiles by ID.
-
-    Returns {user_id: UserResponse} for the given IDs. Missing users are
-    omitted. Paginates internally to avoid PostgREST's server-side
-    ``max-rows`` truncation.
-    """
+    """Fetch profiles in bounded ID batches, omitting missing users."""
     if not user_ids:
         return {}
 
     result: dict[str, UserResponse] = {}
 
-    # PostgREST IN-clause has practical limits, so chunk the IDs.
-    for chunk_start in range(0, len(user_ids), _LOAD_PAGE_SIZE):
-        chunk = user_ids[chunk_start : chunk_start + _LOAD_PAGE_SIZE]
+    for chunk in batched(user_ids, _LOAD_PAGE_SIZE):
         r = get_sb().table(USERS).select(_USER_SELECT).in_("id", chunk).execute()
         for row in r.data or []:
             user = _user_response(row)
@@ -99,11 +120,20 @@ def update_user(user_id: UUID, data: UserUpdate) -> UserResponse | None:
     payload = data.model_dump(exclude_unset=True)
     if not payload:
         return existing
+    school_changed = "school" in payload
+    school = None
     if "school" in payload:
         school = school_service.get_school(canonical_school_key(payload.pop("school")))
         if school is None:
             raise ValidationError("School is not registered")
         payload["school_id"] = school.id
+    if payload.get("faculty"):
+        school = school or school_service.get_school(canonical_school_key(existing.school))
+        if school is None or payload["faculty"] not in school.faculties:
+            raise ValidationError("Faculty is not offered by the selected school")
+    elif school_changed and "faculty" not in payload and school is not None:
+        if existing.faculty not in school.faculties:
+            payload["faculty"] = None
     r = get_sb().table(USERS).update(payload).eq("id", str(user_id)).execute()
     if not r.data:
         return None

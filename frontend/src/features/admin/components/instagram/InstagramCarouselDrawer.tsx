@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { ChevronLeft, ChevronRight, Plus, X } from "@/shared/ui/doodle-icons";
+import { Plus } from "@/shared/ui/doodle-icons";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { LoadingButton } from "@/shared/ui/loading-button";
@@ -15,7 +15,7 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/shared/ui/drawer";
-import { DrawerBody, Section, Stack } from "@/shared/layout";
+import { DrawerBody, FormGrid, Stack } from "@/shared/layout";
 import { toast } from "@/shared/hooks/use-toast";
 import { getApiErrorMessage } from "@/shared/services/apiClient";
 import { queryKeys } from "@/shared/lib/queryKeys";
@@ -34,6 +34,7 @@ import {
   publishedCarouselAssets,
 } from "@/features/admin/lib/instagramCarousel";
 import { CarouselSlidePreview } from "@/features/admin/components/instagram/CarouselSlidePreview";
+import { defaultCoverBody } from "@/features/admin/lib/instagramSlides";
 
 type Batch = ApiInstagramPublishBatchResponse;
 
@@ -44,8 +45,8 @@ interface InstagramCarouselDrawerProps {
   isPublishing: boolean;
   onClose: () => void;
   onSaveDraft: (draft: {
-    caption: string;
     coverBody: string;
+    captionIntro: string;
     eventIds: number[];
   }) => Promise<Batch>;
   onPublish: (version: number) => Promise<void>;
@@ -53,7 +54,6 @@ interface InstagramCarouselDrawerProps {
 
 /** The cover is slide 0; event slides follow in carousel order. */
 const COVER_INDEX = 0;
-const MAX_EVENT_SLIDES = 9;
 
 export function InstagramCarouselDrawer({
   batch,
@@ -67,7 +67,8 @@ export function InstagramCarouselDrawer({
   const queryClient = useQueryClient();
   const { schoolBySlug } = useSchoolDirectory();
   const [eventIds, setEventIds] = useState<number[]>(() => carouselEventIds(batch));
-  const [caption, setCaption] = useState(batch.caption);
+  const caption = batch.caption;
+  const [captionIntro, setCaptionIntro] = useState(batch.caption_intro);
   const [coverBody, setCoverBody] = useState(batch.cover_body);
   const [slideIndex, setSlideIndex] = useState(COVER_INDEX);
   const [addingEvent, setAddingEvent] = useState(false);
@@ -76,6 +77,14 @@ export function InstagramCarouselDrawer({
   const [isSavingSlide, setIsSavingSlide] = useState(false);
 
   const editable = isBatchEditable(batch);
+  const savedIntro = batch.caption_intro.trim();
+  const generatedCaption = savedIntro && caption.startsWith(`${savedIntro}\n\n`)
+    ? caption.slice(savedIntro.length + 2)
+    : caption === savedIntro ? "" : caption;
+  const displayedCaption = editable ? generatedCaption : caption;
+  const captionLength = editable
+    ? [captionIntro.trim(), generatedCaption].filter(Boolean).join("\n\n").length
+    : caption.length;
   const slideCount = eventIds.length + 1;
   const currentEventId = slideIndex === COVER_INDEX ? null : (eventIds[slideIndex - 1] ?? null);
   const busy = isSaving || isPublishing || isSavingSlide;
@@ -133,8 +142,8 @@ export function InstagramCarouselDrawer({
   /** Saves the carousel the editor is holding, with the given slides on it. */
   const persistDraft = useCallback(
     (slideEventIds: number[]) =>
-      onSaveDraft({ caption: caption.trim(), coverBody, eventIds: slideEventIds }),
-    [caption, coverBody, onSaveDraft],
+      onSaveDraft({ coverBody, captionIntro, eventIds: slideEventIds }),
+    [coverBody, captionIntro, onSaveDraft],
   );
 
   const handleUpdateEvent = useCallback(
@@ -144,7 +153,7 @@ export function InstagramCarouselDrawer({
       // there too until the run is refetched.
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.events.detail(eventId) }),
-        queryClient.invalidateQueries({ queryKey: queryKeys.instagramPublishing.batches() }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.instagramPublishing.all }),
       ]);
       // The form reports the event it saved; this drawer reports the run.
     },
@@ -155,8 +164,7 @@ export function InstagramCarouselDrawer({
   const canAddEventId =
     Number.isSafeInteger(parsedEventId) &&
     parsedEventId > 0 &&
-    !eventIds.includes(parsedEventId) &&
-    eventIds.length < MAX_EVENT_SLIDES;
+    !eventIds.includes(parsedEventId);
 
   /** Adds an existing event to this carousel and saves the new order immediately. */
   const handleAddEventId = useCallback(
@@ -184,11 +192,24 @@ export function InstagramCarouselDrawer({
   }, [handleAddEventId, t]);
 
   /** Takes the event off this carousel. The event itself is untouched. */
-  const handleRemoveSlide = useCallback(() => {
-    if (currentEventId == null) return;
-    setEventIds((current) => current.filter((eventId) => eventId !== currentEventId));
-    setSlideIndex((current) => Math.max(COVER_INDEX, current - 1));
-  }, [currentEventId]);
+  const handleRemoveSlide = useCallback(async (removedEventId: number) => {
+    if (!editable || busy || eventIds.length <= 1) return;
+    const previousIndex = slideIndex;
+    const next = eventIds.filter((eventId) => eventId !== removedEventId);
+    setEventIds(next);
+    setSlideIndex(currentEventId == null || currentEventId === removedEventId ? COVER_INDEX : next.indexOf(currentEventId) + 1);
+    setIsSavingSlide(true);
+    try {
+      const saved = await persistDraft(next);
+      setEventIds(carouselEventIds(saved));
+    } catch (error) {
+      setEventIds(eventIds);
+      setSlideIndex(previousIndex);
+      toast({ title: t("admin.instagramPublishing.saveError"), description: getApiErrorMessage(error), variant: "destructive" });
+    } finally {
+      setIsSavingSlide(false);
+    }
+  }, [currentEventId, eventIds, persistDraft, t, editable, busy, slideIndex]);
 
   /**
    * Saves everything the editor is holding: the open slide's event, then the
@@ -199,7 +220,7 @@ export function InstagramCarouselDrawer({
    * refuses to save (missing a required field) stops the whole save, with its
    * own errors already on screen.
    */
-  const handleSaveDraft = useCallback(async () => {
+  const handleSaveDraft = useCallback(async (nextEventIds = eventIds) => {
     const saveSlideEdit = slideSaveRef.current;
     if (saveSlideEdit) {
       setIsSavingSlide(true);
@@ -210,7 +231,7 @@ export function InstagramCarouselDrawer({
       }
     }
 
-    const saved = await persistDraft(eventIds);
+    const saved = await persistDraft(nextEventIds);
     setEventIds(carouselEventIds(saved));
     return saved;
   }, [eventIds, persistDraft]);
@@ -239,9 +260,51 @@ export function InstagramCarouselDrawer({
 
   const canSave = editable && !busy && eventIds.length > 0 && caption.trim().length > 0;
 
+  const startAddingEvent = async () => {
+    if (busy || addingEvent) return;
+    setIsSavingSlide(true);
+    try {
+      if (slideSaveRef.current && !(await slideSaveRef.current())) return;
+      setAddingEvent(true);
+    } catch (error) {
+      toast({ title: t("admin.instagramPublishing.saveError"), description: getApiErrorMessage(error), variant: "destructive" });
+    } finally {
+      setIsSavingSlide(false);
+    }
+  };
+
+  const selectSlide = async (index: number) => {
+    if (busy || index === slideIndex) return;
+    try {
+      if (editable) {
+        setIsSavingSlide(true);
+        if (slideSaveRef.current && !(await slideSaveRef.current())) return;
+        if (coverBody !== batch.cover_body) await persistDraft(eventIds);
+      }
+      setAddingEvent(false);
+      setSlideIndex(index);
+    } catch (error) {
+      toast({ title: t("admin.instagramPublishing.saveError"), description: getApiErrorMessage(error), variant: "destructive" });
+    } finally {
+      setIsSavingSlide(false);
+    }
+  };
+
+  const reorderSlide = async (sourceId: number, position: number) => {
+    if (!editable || busy || !Number.isSafeInteger(position) || position < 1 || position > eventIds.length || !eventIds.includes(sourceId)) return;
+    const next = eventIds.filter((id) => id !== sourceId);
+    next.splice(position - 1, 0, sourceId);
+    try {
+      if (!(await handleSaveDraft(next))) return;
+      setSlideIndex(currentEventId == null ? COVER_INDEX : next.indexOf(currentEventId) + 1);
+    } catch (error) {
+      toast({ title: t("admin.instagramPublishing.saveError"), description: getApiErrorMessage(error), variant: "destructive" });
+    }
+  };
+
   return (
     <Drawer open onOpenChange={(open) => !open && !busy && onClose()}>
-      <DrawerContent>
+      <DrawerContent size="wide">
         <DrawerHeader>
           <Stack gap={1}>
             <DrawerTitle>{batch.school}</DrawerTitle>
@@ -249,26 +312,24 @@ export function InstagramCarouselDrawer({
           </Stack>
         </DrawerHeader>
 
-        <DrawerBody>
-          <Stack gap={6}>
-            <Stack direction="horizontal" gap={3} align="center" justify="center">
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                disabled={slideIndex === COVER_INDEX}
-                aria-label={t("admin.instagramPublishing.previousSlide")}
-                onClick={() => setSlideIndex((current) => Math.max(COVER_INDEX, current - 1))}
-              >
-                <ChevronLeft className="size-4" />
-              </Button>
-
+        <DrawerBody scroll="columns">
+          <FormGrid columns="split">
+            <FormGrid columns="gallery">
+              {[null, ...eventIds].map((eventId, index) => (
               <CarouselSlidePreview
-                slideIndex={slideIndex}
+                key={eventId ?? "cover"}
+                selected={slideIndex === index}
+                onSelect={() => void selectSlide(index)}
+                disabled={busy}
+                removeDisabled={eventIds.length <= 1}
+                onRemove={editable && eventId != null ? () => void handleRemoveSlide(eventId) : undefined}
+                onPositionChange={editable && eventId != null ? (position) => void reorderSlide(eventId, position) : undefined}
+                slideIndex={index}
                 slideCount={slideCount}
-                event={previewedSlideEvent}
+                event={eventId === currentEventId ? previewedSlideEvent : eventId == null ? null : slideEvents[eventId] ?? null}
                 coverColors={coverColors}
                 cover={{
+                  language: school?.language ?? "en",
                   school: batch.school,
                   localDate: batch.local_date,
                   newEventCount: batch.new_event_count,
@@ -276,28 +337,17 @@ export function InstagramCarouselDrawer({
                   body: coverBody,
                   tiles: coverTiles,
                 }}
-                publishedAssetUrl={publishedAssets[slideIndex] ?? null}
+                publishedAssetUrl={publishedAssets[index] ?? null}
               />
-
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                disabled={slideIndex >= slideCount - 1}
-                aria-label={t("admin.instagramPublishing.nextSlide")}
-                onClick={() => setSlideIndex((current) => Math.min(slideCount - 1, current + 1))}
-              >
-                <ChevronRight className="size-4" />
-              </Button>
-            </Stack>
-
+              ))}
+            </FormGrid>
+            <Stack gap={6}>
             {/*
               A published run is a record, so it has no editing surface at all -
               the slides above are the images that were posted, and the caption
               below reads back what went with them.
             */}
             {!editable ? null : addingEvent ? (
-              <Section variant="surface" title={t("admin.instagramPublishing.addEventId")}>
                 <form
                   onSubmit={(event) => {
                     event.preventDefault();
@@ -340,9 +390,7 @@ export function InstagramCarouselDrawer({
                     </Stack>
                   </Stack>
                 </form>
-              </Section>
             ) : currentEventId == null ? (
-              <Section variant="surface" title={t("admin.instagramPublishing.coverSlide")}>
                 <Stack gap={2}>
                   <Label htmlFor="instagram-cover-body">
                     {t("admin.instagramPublishing.coverBody")}
@@ -353,21 +401,11 @@ export function InstagramCarouselDrawer({
                     maxLength={280}
                     rows={3}
                     disabled={!editable || busy}
-                    placeholder={t("admin.instagramPublishing.coverBodyPlaceholder")}
+                    placeholder={defaultCoverBody(eventIds.length, school?.language ?? "en")}
                     onChange={(event) => setCoverBody(event.target.value)}
                   />
                 </Stack>
-              </Section>
-            ) : (
-              <Section
-                variant="surface"
-                title={t("admin.instagramPublishing.slideOf", {
-                  index: slideIndex,
-                  count: eventIds.length,
-                })}
-              >
-                <Stack gap={4}>
-                  {editForm ? (
+            ) : editForm ? (
                     <SubmitEventFlow
                       key={currentEventId}
                       canCreateEvents
@@ -383,49 +421,42 @@ export function InstagramCarouselDrawer({
                       saveRef={slideSaveRef}
                       showSubmit={false}
                     />
-                  ) : null}
-                  <Button
-                    type="button"
-                    variant="outline"
-                    disabled={!editable || busy || eventIds.length <= 1}
-                    className="self-start"
-                    onClick={handleRemoveSlide}
-                  >
-                    <X className="size-4" />
-                    {t("admin.instagramPublishing.removeSlide")}
-                  </Button>
-                </Stack>
-              </Section>
-            )}
+            ) : null}
 
-            <Stack gap={2}>
+            {slideIndex === COVER_INDEX && !addingEvent && <Stack gap={2}>
+              <Label htmlFor="instagram-caption-intro">{t("admin.instagramPublishing.captionIntro")}</Label>
+              <Textarea
+                id="instagram-caption-intro"
+                value={captionIntro}
+                onChange={(event) => setCaptionIntro(event.target.value)}
+                disabled={!editable || busy}
+                maxLength={2200}
+                rows={3}
+              />
               <Stack direction="horizontal" justify="between" align="center" gap={3}>
                 <Label htmlFor="instagram-caption">{t("admin.instagramPublishing.caption")}</Label>
                 <span className="text-xs text-muted-foreground">
-                  {t("admin.instagramPublishing.characterCount", { count: caption.length })}
+                  {t("admin.instagramPublishing.characterCount", { count: captionLength })}
                 </span>
               </Stack>
               <Textarea
                 id="instagram-caption"
-                value={caption}
+                value={displayedCaption}
                 maxLength={2200}
                 rows={10}
-                disabled={!editable || busy}
-                onChange={(event) => setCaption(event.target.value)}
+                readOnly
               />
+            </Stack>}
             </Stack>
-          </Stack>
+          </FormGrid>
         </DrawerBody>
 
         <DrawerFooter>
           <Stack direction="horizontal" justify="end" gap={2} wrap>
-            <Button type="button" variant="outline" disabled={busy} onClick={onClose}>
-              {t("common.close")}
-            </Button>
             <Button
               type="button"
-              disabled={!editable || busy || eventIds.length >= MAX_EVENT_SLIDES}
-              onClick={() => setAddingEvent(true)}
+              disabled={!editable || busy}
+              onClick={() => void startAddingEvent()}
             >
               <Plus className="size-4" />
               {t("admin.instagramPublishing.addEventId")}

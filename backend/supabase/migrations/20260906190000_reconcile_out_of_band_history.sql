@@ -1,0 +1,6 @@
+-- Production already records this version with NULL name and statements.
+-- The original SQL could not be recovered from Git or the production ledger.
+-- Preserve the applied version without changing production history or guessing SQL.
+-- The observable public-schema delta and faculty reference data for all three
+-- missing versions are recovered together in 20260907181000.
+-- This marker alone is not a claim that the original migration did nothing.

@@ -3,41 +3,32 @@
 import logging
 from datetime import datetime, timedelta
 
+from core.errors import EVENT_IMAGE_NO_EVENT, POSITION_IMAGE_NO_POSITION
+from core.exceptions import ValidationError
 from schemas.event import normalize_category
 
 log = logging.getLogger(__name__)
 
-LOCATIONS = (
-    "SLC",
-    "PAC",
-    "Library",
-    "E7 Building",
-    "DC Building",
-    "Arts Building",
-    "MC Building",
-    "PAC Studio",
-    "Campus Loop",
-)
 
-FOODS = (
-    "Pizza",
-    "Snacks",
-    "Drinks",
-    "Sandwiches",
-    "Salad",
-    "Dessert",
-    "Vegan",
-    "Gluten-free",
-    "BBQ",
-    "Candy",
-    "Energy Bars",
-    "Water",
-    "International Cuisine",
-    "Catering",
-)
+def _image_data_url(file_contents: bytes, content_type: str) -> str:
+    import base64
 
-_LOCATIONS_SET = frozenset(LOCATIONS)
-_FOODS_SET = frozenset(FOODS)
+    return f"data:{content_type};base64,{base64.b64encode(file_contents).decode('utf-8')}"
+
+
+def parse_position_image(file_contents: bytes, content_type: str, *, user_school: str) -> dict:
+    from schemas.position import PositionFields
+    from services.scraper.extractor import extract_post_content
+
+    content = extract_post_content(
+        caption_text=None,
+        image_urls=[_image_data_url(file_contents, content_type)],
+        post_created_at=None,
+        school=user_school,
+    )
+    if not content.positions:
+        raise ValidationError(POSITION_IMAGE_NO_POSITION)
+    return PositionFields.model_validate(content.positions[0]).model_dump(mode="json")
 
 
 def _safe_get(d: dict, key: str, expected_type: type, default):
@@ -97,11 +88,12 @@ def validate_event_response(parsed: dict) -> dict:
     raw_category = _safe_get(parsed, "category", str, "")
     category = normalize_category(raw_category) or "" if raw_category.strip() else ""
 
-    raw_location = _safe_get(parsed, "location", str, "")
-    location = raw_location if raw_location in _LOCATIONS_SET else ""
+    location = _safe_get(parsed, "location", str, "").strip()
 
-    food_in = parsed.get("food", [])
-    food = [food for food in food_in if isinstance(food, str) and food in _FOODS_SET]
+    food_in = _safe_get(parsed, "food", list, [])
+    food = list(
+        dict.fromkeys(item.strip() for item in food_in if isinstance(item, str) and item.strip())
+    )
 
     return {
         "title": _safe_get(parsed, "title", str, ""),
@@ -119,18 +111,16 @@ def parse_event_image(
     file_contents: bytes,
     content_type: str,
     *,
-    user_school: str | None = None,
+    user_school: str,
 ) -> dict:
     """Extract event form data from an uploaded image file."""
-    import base64
     from zoneinfo import ZoneInfo
 
     from services.school_context import resolve_school_timezone
     from services.scraper.extractor import extract_events_from_post
 
-    base64_data = base64.b64encode(file_contents).decode("utf-8")
-    image_url = f"data:{content_type};base64,{base64_data}"
-    school = user_school or "uwaterloo"
+    image_url = _image_data_url(file_contents, content_type)
+    school = user_school
 
     extracted_events = extract_events_from_post(
         caption_text=None,
@@ -140,18 +130,11 @@ def parse_event_image(
     )
 
     if not extracted_events:
-        return {
-            "title": "",
-            "description": "",
-            "occurrences": [],
-            "location": "",
-            "category": "",
-            "price": 0.0,
-            "food": [],
-            "registration": False,
-        }
+        raise ValidationError(EVENT_IMAGE_NO_EVENT)
 
     event = extracted_events[0]
+    if not _safe_get(event, "title", str, "").strip():
+        raise ValidationError(EVENT_IMAGE_NO_EVENT)
     local_occurrences = []
     for occurrence in event.get("occurrences", []):
         dtstart_utc_str = occurrence.get("dtstart_utc")

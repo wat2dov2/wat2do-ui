@@ -15,7 +15,7 @@ import {
   EventCardContentFrame,
 } from "@/shared/ui/event-card-content";
 import type { CardBadge } from "@/shared/ui/event-card-content";
-import { OrganizationBadgeDropdown } from "@/features/organizations/components/OrganizationBadgeDropdown";
+import { ClubBadgeDropdown } from "@/features/clubs/components/ClubBadgeDropdown";
 import { EVENT_CARD_IMAGE_HEIGHT } from "@/shared/constants/ui";
 
 export interface PreviewEventData {
@@ -29,7 +29,7 @@ export interface PreviewEventData {
   badges: CardBadge[];
   isLive?: boolean;
   isNew?: boolean;
-  organizationType?: string | null;
+  clubType?: string | null;
   school?: string | null;
 }
 
@@ -109,9 +109,9 @@ export function PreviewStyleEventCard({
 
         {event.org && (
           <BadgeMask variant="bottom-left">
-            <OrganizationBadgeDropdown
-              organizationName={event.org}
-              organizationType={event.organizationType}
+            <ClubBadgeDropdown
+              clubName={event.org}
+              clubType={event.clubType}
               school={event.school}
               disabled={true}
             />

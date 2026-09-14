@@ -34,7 +34,7 @@ const schoolSchema = z
 const awardSchema = z
   .object({
     title: z.string(),
-    organization: z.string(),
+    club: z.string(),
     handle: z.string(),
     description: z.string(),
     logo_url: imageUrl,

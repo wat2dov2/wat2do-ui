@@ -318,7 +318,7 @@ export const Building2 = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.C
   }
 );
 
-export const OrganizationChart = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const ClubChart = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";

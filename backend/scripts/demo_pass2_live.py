@@ -38,7 +38,7 @@ def _db_event(
     location: str,
     description: str = "",
     ig: str = "uwtea",
-    organization_id: int | None = 7,
+    club_id: int | None = 7,
     start: str = FUTURE,
 ) -> dict:
     return {
@@ -50,8 +50,8 @@ def _db_event(
         "food": [],
         "registration": False,
         "category": "Arts & Culture",
-        "organization": "UW Tea Organization",
-        "organization_id": organization_id,
+        "club": "UW Tea Club",
+        "club_id": club_id,
         "ig_handle": ig,
         "school": "uwaterloo",
         "cancelled": False,
@@ -72,7 +72,7 @@ def _extracted(
         "title": title,
         "description": description,
         "location": location,
-        "organization": "UW Tea Organization",
+        "club": "UW Tea Club",
         "price": 0.0,
         "food": [],
         "registration": False,
@@ -148,8 +148,8 @@ def run_case(
         description=extracted.get("description") or "",
         occurrences=extracted["occurrences"],
         ig_handle="uwtea",
-        organization_id=7,
-        organization_name=extracted.get("organization"),
+        club_id=7,
+        club_name=extracted.get("club"),
     )
 
     _print_block("Pass 1 extracted (input)", extracted)
@@ -160,8 +160,8 @@ def run_case(
                 "id": c["id"],
                 "title": c["title"],
                 "location": c["location"],
-                "organization_id": c.get("organization_id"),
-                "organization": c.get("organization"),
+                "club_id": c.get("club_id"),
+                "club": c.get("club"),
                 "ig_handle": c.get("ig_handle"),
                 "cancelled": c.get("cancelled"),
             }
@@ -174,7 +174,7 @@ def run_case(
         candidates_by_index=[candidates],
         caption_text=caption,
         school="uwaterloo",
-        resolved_organization_ids=[7],
+        resolved_club_ids=[7],
         resolved_ig_handles=["uwtea"],
     )
 

@@ -31,10 +31,10 @@ from services.scraper.dedup import (
     existing_shortcodes,
     find_candidates,
 )
-from services.scraper.event_writer import _lookup_organization_by_ig, write_event
+from services.scraper.event_writer import _lookup_club_by_ig, write_event
 from services.scraper.extractor import extract_post_content
 from services.scraper.image_uploader import upload_post_images
-from services.scraper.org_resolve import resolve_organization_for_scrape
+from services.scraper.org_resolve import resolve_club_for_scrape
 from services.scraper.position_writer import write_position
 from services.scraper.reconciler import reconcile_events
 
@@ -246,7 +246,7 @@ def _process_one_post(
 
     target_schools = {school}
     for c in candidate_handles:
-        org = _lookup_organization_by_ig(c)
+        org = _lookup_club_by_ig(c)
         if org and isinstance(org.get("schools"), dict) and org["schools"].get("slug"):
             target_schools.add(org["schools"]["slug"])
 
@@ -306,17 +306,17 @@ def _process_events_for_school(
 
     events_copy = [{**event, "school": target_school} for event in events]
     resolved_orgs = [
-        resolve_organization_for_scrape(
+        resolve_club_for_scrape(
             ig_handle=candidate_handles,
             school=target_school,
-            organization_name=(event.get("organization") or "").strip() or None,
+            club_name=(event.get("club") or "").strip() or None,
             create_stub_if_missing=(target_school == source_school),
         )
         for event in events_copy
     ]
     events_copy, source_indexes, duplicate_count = collapse_duplicate_extractions(
         events_copy,
-        organization_ids=[resolved.organization_id for resolved in resolved_orgs],
+        club_ids=[resolved.club_id for resolved in resolved_orgs],
         ig_handles=[resolved.ig_handle for resolved in resolved_orgs],
     )
     if duplicate_count:
@@ -335,9 +335,8 @@ def _process_events_for_school(
             description=event.get("description") or "",
             occurrences=event.get("occurrences") or [],
             ig_handle=resolved.ig_handle,
-            organization_id=resolved.organization_id,
-            organization_name=resolved.organization_name
-            or ((event.get("organization") or "").strip() or None),
+            club_id=resolved.club_id,
+            club_name=resolved.club_name or ((event.get("club") or "").strip() or None),
         )
         for event, resolved in zip(events_copy, resolved_orgs, strict=True)
     ]
@@ -346,7 +345,7 @@ def _process_events_for_school(
         candidates_by_index=candidates_by_index,
         caption_text=caption,
         school=target_school,
-        resolved_organization_ids=[resolved.organization_id for resolved in resolved_orgs],
+        resolved_club_ids=[resolved.club_id for resolved in resolved_orgs],
         resolved_ig_handles=[resolved.ig_handle for resolved in resolved_orgs],
     )
     to_write = (
@@ -364,10 +363,10 @@ def _process_events_for_school(
         resolved = (
             resolved_orgs[index]
             if len(to_write) == len(resolved_orgs)
-            else resolve_organization_for_scrape(
+            else resolve_club_for_scrape(
                 ig_handle=candidate_handles,
                 school=target_school,
-                organization_name=(event.get("organization") or "").strip() or None,
+                club_name=(event.get("club") or "").strip() or None,
                 create_stub_if_missing=(target_school == source_school),
             )
         )
@@ -397,10 +396,10 @@ def _process_positions_for_school(
 ) -> None:
     for original in positions:
         position = {**original, "school": target_school}
-        resolved = resolve_organization_for_scrape(
+        resolved = resolve_club_for_scrape(
             ig_handle=candidate_handles,
             school=target_school,
-            organization_name=(position.get("organization") or "").strip() or None,
+            club_name=(position.get("club") or "").strip() or None,
             create_stub_if_missing=(target_school == source_school),
         )
         outcome = write_position(

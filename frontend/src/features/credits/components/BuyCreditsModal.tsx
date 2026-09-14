@@ -38,7 +38,6 @@ export function BuyCreditsModal({
 
   const modalState = useModalState({
     onClose,
-    resetOnClose: true,
     resetFn: () => {
       form.reset();
       setPurchaseError(null);

@@ -31,7 +31,6 @@
     "urlRequired": "URL مطلوب",
     "urlInvalid": "يرجى إدخال URL صالح",
     "descriptionOptional": "اختياري",
-    "imageFormat": "PNG, JPG حتى 5 ميغابايت",
     "noScanData": "لا توجد بيانات مسح ضوئي بعد",
     "noScanDataDesc": "شارك رمز QR الخاص بك لبدء تتبع الأداء",
     "posterAriaLabel": "ملصق {{id}}",

@@ -4,6 +4,8 @@ Updates use the transactional ``update_event_with_occurrences`` RPC owned by
 ``event_service`` so occurrence identity and Going cascades stay atomic.
 """
 
+from itertools import batched
+
 from core.database import get_sb
 from core.tables import EVENT_DATES
 from schemas.event_date import OccurrenceCreate, OccurrenceResponse
@@ -43,23 +45,15 @@ def list_for_event(event_id: int) -> list[OccurrenceResponse]:
 
 
 def list_for_events(event_ids: list[int]) -> dict[int, list[OccurrenceResponse]]:
-    """Batched fetch - returns a dict keyed by event_id.
+    """Group occurrences by event ID without per-event queries.
 
-    Used by list_events and the calendar feed to attach occurrences to
-    a page of event rows without an N+1 query. Empty input returns
-    ``{}``.
-
-    Chunked on the IDs because PostgREST sends ``in_(...)`` as a comma-
-    separated value in a query string. Past ~1000 ids the URL exceeds
-    Supabase's ~8KB cap and the request fails with 414. ``MAX_GOING_EVENTS_PER_USER``
-    is 10000, so calendar feeds for power users would hit this otherwise.
+    Batch IDs to stay below PostgREST URL limits. Requested IDs with no
+    occurrences retain empty lists.
     """
     if not event_ids:
         return {}
     grouped: dict[int, list[OccurrenceResponse]] = {eid: [] for eid in event_ids}
-    chunk_size = 500
-    for start in range(0, len(event_ids), chunk_size):
-        chunk = event_ids[start : start + chunk_size]
+    for chunk in batched(event_ids, 500):
         r = (
             get_sb()
             .table(EVENT_DATES)
@@ -82,8 +76,7 @@ def list_by_ids(occurrence_ids: list[str]) -> list[OccurrenceResponse]:
         return []
 
     occurrences: list[OccurrenceResponse] = []
-    for start in range(0, len(unique_ids), 500):
-        chunk = unique_ids[start : start + 500]
+    for chunk in batched(unique_ids, 500):
         response = (
             get_sb().table(EVENT_DATES).select("*").in_("id", chunk).order("dtstart_utc").execute()
         )

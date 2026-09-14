@@ -27,7 +27,7 @@ from services.scraper.dedup import (
 from services.scraper.event_writer import write_event
 from services.scraper.extractor import extract_events_from_post
 from services.scraper.image_uploader import upload_post_images
-from services.scraper.org_resolve import ResolvedOrganization, resolve_organization_for_scrape
+from services.scraper.org_resolve import ResolvedClub, resolve_club_for_scrape
 from services.scraper.reconciler import reconcile_events
 
 log = logging.getLogger(__name__)
@@ -44,7 +44,7 @@ class DirectoryConfig(BaseModel):
     id: str
     name: str
     school: str
-    default_organization: str
+    default_club: str
     source_format: Literal["html", "ical", "json"]
     entry_url: str
     event_url_patterns: list[str]
@@ -352,7 +352,7 @@ def run_directory_pipeline(
                 image_urls=uploaded_images,
                 post_created_at=None,  # Extractor falls back to "now" in school TZ
                 school=config.school,
-                source_organization=config.default_organization,
+                source_club=config.default_club,
             )
             result.events_extracted += len(extracted_events)
 
@@ -377,12 +377,10 @@ def run_directory_pipeline(
                     result.events_saved += 1
                 continue
 
-            resolved_orgs = [
-                _resolve_directory_organization(event, config) for event in extracted_events
-            ]
+            resolved_orgs = [_resolve_directory_club(event, config) for event in extracted_events]
             extracted_events, source_indexes, duplicate_count = collapse_duplicate_extractions(
                 extracted_events,
-                organization_ids=[r.organization_id for r in resolved_orgs],
+                club_ids=[r.club_id for r in resolved_orgs],
                 ig_handles=[r.ig_handle for r in resolved_orgs],
             )
             if duplicate_count:
@@ -400,9 +398,8 @@ def run_directory_pipeline(
                     description=event.get("description") or "",
                     occurrences=event.get("occurrences") or [],
                     ig_handle=resolved.ig_handle,
-                    organization_id=resolved.organization_id,
-                    organization_name=resolved.organization_name
-                    or ((event.get("organization") or "").strip() or None),
+                    club_id=resolved.club_id,
+                    club_name=resolved.club_name or ((event.get("club") or "").strip() or None),
                 )
                 for event, resolved in zip(extracted_events, resolved_orgs, strict=True)
             ]
@@ -411,7 +408,7 @@ def run_directory_pipeline(
                 candidates_by_index=candidates_by_index,
                 caption_text=text,
                 school=config.school,
-                resolved_organization_ids=[r.organization_id for r in resolved_orgs],
+                resolved_club_ids=[r.club_id for r in resolved_orgs],
                 resolved_ig_handles=[r.ig_handle for r in resolved_orgs],
             )
             to_write = (
@@ -429,7 +426,7 @@ def run_directory_pipeline(
                 if len(to_write) == len(resolved_orgs):
                     resolved = resolved_orgs[i]
                 else:
-                    resolved = _resolve_directory_organization(event, config)
+                    resolved = _resolve_directory_club(event, config)
                 outcome = write_event(event, ig_handle=None, source_url=url, resolved_org=resolved)
                 if outcome == "inserted":
                     result.events_saved += 1
@@ -445,23 +442,23 @@ def run_directory_pipeline(
     return result
 
 
-def _resolve_directory_organization(event: dict, config: DirectoryConfig) -> ResolvedOrganization:
+def _resolve_directory_club(event: dict, config: DirectoryConfig) -> ResolvedClub:
     """Keep a known explicit host, otherwise use the directory publisher."""
-    extracted_name = (event.get("organization") or "").strip() or None
-    resolved = resolve_organization_for_scrape(
+    extracted_name = (event.get("club") or "").strip() or None
+    resolved = resolve_club_for_scrape(
         ig_handle=None,
         school=config.school,
-        organization_name=extracted_name,
+        club_name=extracted_name,
         create_stub_if_missing=False,
     )
-    if resolved.organization_id is not None:
-        event["organization"] = resolved.organization_name or extracted_name or ""
+    if resolved.club_id is not None:
+        event["club"] = resolved.club_name or extracted_name or ""
         return resolved
 
-    event["organization"] = config.default_organization
-    return resolve_organization_for_scrape(
+    event["club"] = config.default_club
+    return resolve_club_for_scrape(
         ig_handle=None,
         school=config.school,
-        organization_name=config.default_organization,
+        club_name=config.default_club,
         create_stub_if_missing=False,
     )

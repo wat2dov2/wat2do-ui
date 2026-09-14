@@ -30,6 +30,8 @@ export function usePositionsPage({
   const [searchQuery, setSearchQuery] = useState("");
   const [submittedSearchQuery, setSubmittedSearchQuery] = useState("");
   const [positionType, setPositionType] = useState<PositionTypeFilter>("all");
+  const [addedSince, setAddedSince] = useState<string | null>(null);
+  const [paidOnly, setPaidOnly] = useState(false);
   const [selectedPosition, setSelectedPosition] = useState<Position | null>(null);
   const schoolFilter = useEventsStore((state) => state.schoolFilter);
   const school = resolveSchool(schoolFilter ?? initialSchool);
@@ -39,15 +41,17 @@ export function usePositionsPage({
       school,
       search: submittedSearchQuery,
       positionType,
+      addedSince,
+      paidOnly,
       pageSize: pageSize ?? null,
     }),
-    [pageSize, positionType, school, submittedSearchQuery],
+    [addedSince, paidOnly, pageSize, positionType, school, submittedSearchQuery],
   );
   const canUseInitialDirectory =
     initialDirectory != null &&
     school === resolveSchool(initialSchool) &&
     !submittedSearchQuery &&
-    positionType === "all";
+    positionType === "all" && addedSince === null && !paidOnly;
 
   const query = useInfiniteQuery({
     queryKey: queryKeys.positions.list(filters),
@@ -58,6 +62,8 @@ export function usePositionsPage({
         school,
         search: submittedSearchQuery || undefined,
         positionType: positionType === "all" ? undefined : positionType,
+        addedSince: addedSince ?? undefined,
+        paidOnly,
       }),
     initialPageParam: 1,
     getNextPageParam: (lastPage) =>
@@ -88,12 +94,27 @@ export function usePositionsPage({
   return {
     positions,
     total,
+    latestAddedPosition: pages[0]?.latest_added_position ?? null,
+    searchLatest: () => {
+      const latest = pages[0]?.latest_added_position;
+      if (!latest) return;
+      setSearchQuery(latest.title);
+      setSubmittedSearchQuery(latest.title);
+      setPositionType("all");
+      setAddedSince(null);
+      setPaidOnly(false);
+    },
+    paidOnly,
+    setPaidOnly,
     searchQuery,
     setSearchQuery,
     submitSearch,
     clearSearch,
     positionType,
     setPositionType,
+    addedSince,
+    setAddedSince,
+    clearNew: () => setAddedSince(null),
     selectedPosition,
     openPosition: setSelectedPosition,
     closePosition: () => setSelectedPosition(null),

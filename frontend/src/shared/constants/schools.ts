@@ -35,7 +35,7 @@ function parseSchoolCandidateFromHostname(hostname: string): string | null {
   const isWat2DoHostname =
     labels.length >= 2 && labels[labels.length - 2] === "wat2do" && labels[labels.length - 1] === "io";
   const isSchoolLocalhost =
-    labels.length === 2 && labels[labels.length - 1] === "localhost";
+    labels.length === 3 && labels[1] === "wat2do" && labels[2] === "localhost";
 
   if (
     (!isWat2DoHostname && !isSchoolLocalhost) ||
@@ -98,11 +98,14 @@ export function getSchoolFromRequestHost(host: string | null | undefined): strin
 
 /**
  * Absolute origin serving a school, derived from the current location so it
- * works across production subdomains and `*.localhost` dev hosts alike.
+ * works across production subdomains and `*.wat2do.localhost` dev hosts alike.
  */
 export function getSchoolOrigin(school: string): string {
   const slug = resolveSchool(school);
   const { protocol, hostname, port } = window.location;
+  if (hostname === "localhost" || hostname.endsWith(".localhost")) {
+    return `${protocol}//${slug}.wat2do.localhost${port ? `:${port}` : ""}`;
+  }
   const labels = hostname.split(".");
   const baseLabels = parseSchoolCandidateFromHostname(hostname)
     ? labels.slice(1)

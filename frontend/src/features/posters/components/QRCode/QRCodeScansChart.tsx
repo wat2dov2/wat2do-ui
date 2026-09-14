@@ -29,10 +29,7 @@ import {
 interface ChartData {
   date: string;
   dateLabel: string;
-  scans?: number;
-  unique?: number;
-  conversions?: number;
-  rate?: number;
+  scans: number;
 }
 
 interface QRCodeScansChartProps {

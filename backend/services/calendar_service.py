@@ -14,6 +14,7 @@ new URL (that's the point of rotation).
 import logging
 import secrets
 from datetime import datetime, timezone
+from itertools import batched
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from icalendar import Calendar
@@ -103,15 +104,13 @@ def _fetch_selected_events(
     event_ids = [selection.event_id for selection in selections]
     if not event_ids:
         return []
-    chunk_size = 1000
     rows_by_id: dict[int, dict] = {}
-    for start in range(0, len(event_ids), chunk_size):
-        batch = event_ids[start : start + chunk_size]
+    for batch in batched(event_ids, 1000):
         r = (
             get_sb()
             .table(EVENTS)
             .select(f"*,{event_query.SCHOOL_EMBED}")
-            .in_("id", batch)
+            .in_("id", list(batch))
             .execute()
         )
         for row in r.data or []:
@@ -149,6 +148,7 @@ def _event_to_vevents(event: EventResponse, dtstamp: datetime) -> list[ICalEvent
         return []
 
     tzid = resolve_school_timezone(event.school)
+    tzinfo: ZoneInfo | timezone
     try:
         tzinfo = ZoneInfo(tzid)
     except ZoneInfoNotFoundError:
@@ -159,33 +159,31 @@ def _event_to_vevents(event: EventResponse, dtstamp: datetime) -> list[ICalEvent
     event_url = f"{frontend}/events/{event.id}"
 
     description_parts: list[str] = []
-    if event.organization:
-        description_parts.append(event.organization)
+    if event.club:
+        description_parts.append(event.club)
     if event.description:
         description_parts.append(event.description)
     description_parts.append(event_url)
     description = "\n\n".join(description_parts)
 
-    components: list[ICalEvent] = []
-    for occ in event.occurrences:
-        components.append(
-            _occurrence_to_vevent(
-                event=event,
-                occurrence=occ,
-                tzinfo=tzinfo,
-                event_url=event_url,
-                description=description,
-                dtstamp=dtstamp,
-            )
+    return [
+        _occurrence_to_vevent(
+            event=event,
+            occurrence=occ,
+            tzinfo=tzinfo,
+            event_url=event_url,
+            description=description,
+            dtstamp=dtstamp,
         )
-    return components
+        for occ in event.occurrences
+    ]
 
 
 def _occurrence_to_vevent(
     *,
     event: EventResponse,
     occurrence: OccurrenceResponse,
-    tzinfo,
+    tzinfo: ZoneInfo | timezone,
     event_url: str,
     description: str,
     dtstamp: datetime,

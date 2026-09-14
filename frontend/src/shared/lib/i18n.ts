@@ -2,7 +2,6 @@ import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 import {
   loadLanguage,
-  saveLanguage,
 } from "@/shared/services/preferencesStorage";
 import {
   getLanguageByCode,
@@ -11,8 +10,8 @@ import {
 } from "@/shared/constants/languages";
 
 // Device language preference, or English when unset.
-export const getStoredLanguage = (): SupportedLanguage => {
-  return loadLanguage();
+export const getStoredLanguage = (defaultLanguage: SupportedLanguage = "en"): SupportedLanguage => {
+  return loadLanguage(defaultLanguage);
 };
 
 i18n
@@ -30,7 +29,6 @@ i18n
 
 i18n.on("languageChanged", (lng: string) => {
   if (isSupportedLanguage(lng)) {
-    saveLanguage(lng);
     if (typeof document !== "undefined") {
       const language = getLanguageByCode(lng);
       document.documentElement.lang = lng;

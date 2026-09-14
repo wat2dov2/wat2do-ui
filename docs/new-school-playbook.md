@@ -6,22 +6,22 @@ The executor may be an AI agent, but the executor must still follow `AGENTS.md`,
 
 Do not declare a school launched because a row, logo, or Instagram account merely exists.
 
-A launch is complete only when the school identity, database records, organization directory, Instagram account, following and notification setup, publishing credentials, Automate routing, application behavior, and verification gates all pass.
+A launch is complete only when the school identity, database records, club directory, Instagram account, following and notification setup, publishing credentials, Automate routing, application behavior, and verification gates all pass.
 
 ## 1. Definition of done
 
 A new school is complete only when all of the following are true:
 
-- The canonical school slug, official name, student email domains, timezone, current academic-term dates, academic-calendar source, official Instagram handle, student association, official organization directory, and official event directory have been researched from authoritative sources.
+- The canonical school slug, official name, student email domains, timezone, current academic-term dates, academic-calendar source, official Instagram handle, student association, official club directory, and official event directory have been researched from authoritative sources.
 - The school and every accepted student email domain exist in Supabase through the normal migration path.
 - The school has validated primary and secondary brand colors in Supabase and in `assets/school-logos/colors.json`.
 - `assets/school-logos/<schoolslug>.jpg` exists, matches the established dimensions and visual contract, and has been inspected at Instagram-avatar size.
-- Every organization listed by the selected authoritative directory has been accounted for, deduplicated, and imported into `public.organizations` with every supported field that can be verified.
-- Every organization imported from the official student-association directory has the school's verified association `organization_type`; organizations added from outside that directory use `independent` unless a separate association source proves otherwise.
+- Every club listed by the selected authoritative directory has been accounted for, deduplicated, and imported into `public.clubs` with every supported field that can be verified.
+- Every club imported from the official student-association directory has the school's verified association `club_type`; clubs added from outside that directory use `independent` unless a separate association source proves otherwise.
 - Missing Instagram handles have received the required parallel search and independent validation passes.
 - The chapter Instagram account exists as `<schoolslug>.wat2do.io`, is not joined to a shared Accounts Center, is a professional Business account, and has the standard Wat2Do profile.
-- The chapter account follows every verified organization Instagram account stored for that school.
-- Instagram post notifications are set to `All` for every followed organization when Instagram exposes the consolidated notification screen.
+- The chapter account follows every verified club Instagram account stored for that school.
+- Instagram post notifications are set to `All` for every followed club when Instagram exposes the consolidated notification screen.
 - The chapter account is logged into the dedicated Android device that runs the Automate flow.
 - A real notification from the chapter account has been observed, its Automate recipient identifier is mapped to the school, and the `process-single-user` workflow resolves it to the correct school.
 - The chapter account is configured in the Meta developer app using Instagram API with Instagram Login.
@@ -41,15 +41,15 @@ Do not introduce a second source of truth.
 | School colors | `public.schools.primary_color` and `public.schools.secondary_color` | Primary is the logo background and secondary is the Wat2Do mark. |
 | Logo research manifest | `assets/school-logos/colors.json` | Store source URL, confidence, official names, color names, file name, and the semantic color contract. |
 | Instagram profile image | `assets/school-logos/<schoolslug>.jpg` | Current assets are 1024 by 907 JPEG files. |
-| Organizations and their supported social fields | `public.organizations` | Use the school foreign key and fill only verified fields. |
-| Organization association type | `public.organizations.organization_type` | Store the verified student-association slug or `independent`; events derive it through their organization relation. |
-| Organization-type presentation | `frontend/src/shared/data/organizationTypeAssets.ts` and `frontend/public/icons/organization-types/` | A `<schoolslug>:<organization_type>` signature selects the association SVG. |
+| Clubs and their supported social fields | `public.clubs` | Use the school foreign key and fill only verified fields. |
+| Club association type | `public.clubs.club_type` | Store the verified student-association slug or `independent`; events derive it through their club relation. |
+| Club-type presentation | `frontend/src/shared/data/clubTypeAssets.ts` and `frontend/public/icons/club-types/` | A `<schoolslug>:<club_type>` signature selects the association SVG. |
 | Expected Instagram publishing accounts | `backend/controlbox/instagram_publishing.json` | This contains non-secret account keys, school slugs, usernames, and enablement only. |
 | Instagram publishing identity and credentials | `public.instagram_publishing_accounts` | This service-role-only table stores the validated user ID, username, encrypted token, expiry, and reauthorization state. |
 | Instagram token encryption key | Ignored backend environment file and production secret manager | Never store it in a controlbox file, migration, document, or task output. |
 | Notification-to-school routing | `public.schools.recipient_id` | This is the identifier observed from the Android Automate notification payload. |
 | Single-account scrape school resolution | `backend/services/scraper/single_user.py` | It resolves `INTENDED_RECIPIENT_ID` through Supabase and already accepts database-added schools. |
-| Organization following targets | Supabase organizations for the school | Follow the verified target set through the logged-in Android account while browser-cookie automation is paused. |
+| Club following targets | Supabase clubs for the school | Follow the verified target set through the logged-in Android account while browser-cookie automation is paused. |
 | Bell notification state | Instagram Android application state | `automate_bell_notifications.py` drives the already-open consolidated list and does not read the spreadsheet. |
 
 ## 3. Important distinctions and corrections
@@ -151,11 +151,11 @@ Create a working evidence table with these fields before editing code or data:
 | Academic calendar URL | Official registrar or academic calendar |
 | Current semester start and end | Official academic dates for the launch term |
 | Main student association | Official university or association source |
-| Organization type slug | Existing lower-case slug convention for the association |
-| Official organization directory | The most complete authoritative directory available |
+| Club type slug | Existing lower-case slug convention for the association |
+| Official club directory | The most complete authoritative directory available |
 | Official event directory | The student association or university event listing used for launch seeding or ongoing discovery |
 | Directory platform | Static HTML, CampusGroups, CampusLabs, Rubric, WordPress, custom SPA, API, or another observed platform |
-| Directory organization count | Count produced after complete pagination and deduplication |
+| Directory club count | Count produced after complete pagination and deduplication |
 
 ### 5.2 Choose the canonical slug
 
@@ -176,7 +176,7 @@ The final slug must be the short, recognizable identifier that will be used cons
 - `public.schools.slug`
 - `https://<schoolslug>.wat2do.io`
 - `<schoolslug>.wat2do.io` on Instagram
-- organization school relationships
+- club school relationships
 - Instagram publishing account key and school value
 - follow automation selection
 - task evidence and operational handoff
@@ -237,7 +237,7 @@ At minimum, inspect the following current sources because their structure may ha
 - `backend/scripts/automate_bell_notifications.py`.
 - `backend/services/scraper/single_user.py`.
 - `.github/workflows/process-single-user.yml`.
-- The current organization import, deduplication, and enrichment scripts.
+- The current club import, deduplication, and enrichment scripts.
 
 Search the repo for the proposed slug before adding it.
 
@@ -361,30 +361,30 @@ Verify the following:
 - The database colors exactly match the manifest colors.
 - The image remains recognizable at approximately 110 pixels wide.
 
-## 9. Phase E: Discover the authoritative organization directory
+## 9. Phase E: Discover the authoritative club directory
 
 ### 9.1 Select the source
 
 Search for the official directory run by the main student association, student affairs office, or university.
 
-Prefer the source that provides the most complete and current list of recognized student organizations.
+Prefer the source that provides the most complete and current list of recognized student clubs.
 
 Verify that the source is authoritative by linking it back to the university or student association.
 
 Do not treat a search-engine result, Instagram following list, third-party blog, or stale PDF as the primary inventory when a maintained official directory exists.
 
-Record the directory home URL, platform, pagination method, estimated organization count, last-updated signal, and any campus or faculty filters.
+Record the directory home URL, platform, pagination method, estimated club count, last-updated signal, and any campus or faculty filters.
 
 Separately identify the official event directory used to seed or supplement the event feed.
 
-Do not confuse an organization directory with the event-directory scraper configured in `backend/services/scraper/urls/directories.json`.
+Do not confuse an club directory with the event-directory scraper configured in `backend/services/scraper/urls/directories.json`.
 
 ### 9.2 Inspect the site before choosing a scraper
 
 Determine whether the directory exposes data through:
 
 - Static paginated HTML.
-- Organization detail pages.
+- Club detail pages.
 - Embedded JSON.
 - A public API used by the site's frontend.
 - A custom SPA.
@@ -403,7 +403,7 @@ Never add a one-school copy of an existing scraper.
 
 ### 9.3 Database-first requirement
 
-The desired end state is Supabase-first organization onboarding.
+The desired end state is Supabase-first club onboarding.
 
 The current discovery pipeline still passes through `backend/services/scraper/wat2do-clubs.xlsx` in several scripts.
 
@@ -421,39 +421,39 @@ Do not create parallel database and spreadsheet import implementations.
 
 Replace the old authoritative path in one change, delete or convert obsolete write paths, update tests, and leave one obvious workflow.
 
-### 9.4 Supported organization fields
+### 9.4 Supported club fields
 
-The current `public.organizations` contract supports these onboarding fields:
+The current `public.clubs` contract supports these onboarding fields:
 
-- `organization_name`
+- `club_name`
 - `categories`
-- `organization_page`
+- `club_page`
 - `ig`
 - `discord`
-- `organization_type`
+- `club_type`
 - `logo_url`
 - `school_id`
 - `status`
 
-Fill every supported field that can be verified from the directory or an official organization source.
+Fill every supported field that can be verified from the directory or an official club source.
 
-Use only canonical categories from `backend/core/constants/organizations.py`.
+Use only canonical categories from `backend/core/constants/clubs.py`.
 
 Normalize Instagram values to the repo's established handle form.
 
 Normalize Discord values to a valid invite URL.
 
-Use the official organization detail page as `organization_page`.
+Use the official club detail page as `club_page`.
 
-Use an official logo asset URL only when it is clearly attached to that organization.
+Use an official logo asset URL only when it is clearly attached to that club.
 
-Set imported, reviewed directory organizations to the status expected by the existing administrative import path.
+Set imported, reviewed directory clubs to the status expected by the existing administrative import path.
 
-Assign the school's verified association organization-type slug to every organization imported from the official student-association directory.
+Assign the school's verified association club-type slug to every club imported from the official student-association directory.
 
-Use `independent` only for organizations added from outside that directory unless another association source is explicitly approved.
+Use `independent` only for clubs added from outside that directory unless another association source is explicitly approved.
 
-The current organization table does not have dedicated Facebook, campus, source-evidence, or research-confidence columns.
+The current club table does not have dedicated Facebook, campus, source-evidence, or research-confidence columns.
 
 Capture Facebook and campus data from the official directory in the staged research artifact, but do not stuff it into another database field.
 
@@ -461,14 +461,14 @@ If those fields must become product data, propose and approve one schema path be
 
 ### 9.5 First-pass directory extraction
 
-The first pass must visit every directory page and every organization detail page needed to capture available metadata.
+The first pass must visit every directory page and every club detail page needed to capture available metadata.
 
 Extract all of the following when present:
 
-- Organization name.
+- Club name.
 - Category or categories.
 - Campus or faculty.
-- Organization detail URL.
+- Club detail URL.
 - Instagram URL or handle.
 - Discord invite URL.
 - Facebook URL.
@@ -476,23 +476,23 @@ Extract all of the following when present:
 - Logo URL.
 - Association affiliation evidence.
 
-Always attempt Instagram, Discord, and Facebook extraction from the official directory and organization detail pages.
+Always attempt Instagram, Discord, and Facebook extraction from the official directory and club detail pages.
 
 The later broad search batch may skip Discord and Facebook, but the authoritative directory pass must not skip them.
 
-Paginate until no new organization identifiers appear.
+Paginate until no new club identifiers appear.
 
 Apply every necessary directory filter and verify that the count is stable across a second collection pass.
 
-Deduplicate by stable directory identifier or canonical detail URL first, then by normalized school and organization name.
+Deduplicate by stable directory identifier or canonical detail URL first, then by normalized school and club name.
 
 Do not deduplicate two distinct campus chapters merely because their display names are similar.
 
-### 9.6 Classify every organization's type
+### 9.6 Classify every club's type
 
-`organization_type` is not an event category, organization topic, legal structure, campus, faculty, or synonym for `club`.
+`club_type` is not an event category, club topic, legal structure, campus, faculty, or synonym for `club`.
 
-In this repo, it identifies the school-level student association that officially recognizes or affiliates an organization.
+In this repo, it identifies the school-level student association that officially recognizes or affiliates an club.
 
 Do not use legacy or generic values such as `other`, `social`, `association`, `student-club`, or `official`.
 
@@ -500,86 +500,86 @@ Do not use legacy or generic values such as `other`, `social`, `association`, `s
 
 Research the main student association from official university or association sources.
 
-Record its official name, acronym, official website, directory URL, and the source that explains its relationship to listed organizations.
+Record its official name, acronym, official website, directory URL, and the source that explains its relationship to listed clubs.
 
-Choose the organization-type slug from the official acronym when possible.
+Choose the club-type slug from the official acronym when possible.
 
 The slug must be lowercase, trimmed, between 1 and 100 characters, and match `^[a-z0-9]+(?:-[a-z0-9]+)*$`.
 
 Examples already used by the repo include `wusa`, `ams`, `ssmu`, `sfss`, `cusa`, `uosu`, and `independent`.
 
-Search `frontend/src/shared/data/organizationTypeAssets.ts` before creating the value.
+Search `frontend/src/shared/data/clubTypeAssets.ts` before creating the value.
 
-If a signature for the new school already exists, use that exact organization type.
+If a signature for the new school already exists, use that exact club type.
 
 If the school does not yet have a signature, add exactly one reviewed signature for the verified association.
 
 #### Apply one type to the directory import
 
-The selected organization source for this playbook is the official student-association directory.
+The selected club source for this playbook is the official student-association directory.
 
-Treat inclusion in that directory as verification that the organization belongs to that student-association type.
+Treat inclusion in that directory as verification that the club belongs to that student-association type.
 
-Assign the same verified association slug to every organization imported from the directory.
+Assign the same verified association slug to every club imported from the directory.
 
-Do not perform separate row-by-row affiliation research for those directory organizations.
+Do not perform separate row-by-row affiliation research for those directory clubs.
 
 Every staged directory record must contain:
 
 ```json
 {
-  "organization_type": "<association-slug>",
-  "organization_type_source": "https://official-student-association-directory.example/"
+  "club_type": "<association-slug>",
+  "club_type_source": "https://official-student-association-directory.example/"
 }
 ```
 
 The source URL may remain in the staged research artifact when the database has no provenance column.
 
-The database-backed importer must explicitly include `organization_type` in inserts and reviewed updates.
+The database-backed importer must explicitly include `club_type` in inserts and reviewed updates.
 
-Do not rely on the database default because that would silently turn directory organizations into `independent`.
+Do not rely on the database default because that would silently turn directory clubs into `independent`.
 
-The current `backend/scripts/import_master_clubs_xlsx.py` intentionally does not update `organization_type`.
+The current `backend/scripts/import_master_clubs_xlsx.py` intentionally does not update `club_type`.
 
 That is another reason it cannot be the authoritative new-school importer for this workflow.
 
-Organizations added later from outside the official student-association directory use `independent` unless the human approves another authoritative association source.
+Clubs added later from outside the official student-association directory use `independent` unless the human approves another authoritative association source.
 
 Instagram-enrichment subagents must preserve the association type already assigned by the directory import.
 
 #### Register the association presentation
 
-For a new non-independent organization type, inspect the existing organization-type SVG assets and registration pattern.
+For a new non-independent club type, inspect the existing club-type SVG assets and registration pattern.
 
-Add one association SVG under `frontend/public/icons/organization-types/` using the established school-and-association filename convention.
+Add one association SVG under `frontend/public/icons/club-types/` using the established school-and-association filename convention.
 
-Add the `<schoolslug>:<organization_type>` signature to `frontend/src/shared/data/organizationTypeAssets.ts` and point it to that single SVG.
+Add the `<schoolslug>:<club_type>` signature to `frontend/src/shared/data/clubTypeAssets.ts` and point it to that single SVG.
 
 Use the official association mark or wordmark only when its use is approved and the source can be documented.
 
-Match the existing monochrome SVG-mask contract so `OrganizationTypeIcon` can fill it with `currentColor`.
+Match the existing monochrome SVG-mask contract so `ClubTypeIcon` can fill it with `currentColor`.
 
 Do not add an icon for `independent`.
 
 Do not place asset paths in the database or API response.
 
-Verify that organization cards, organization details, event cards, event details, admin filters, and organization forms all resolve the new signature through the shared registry.
+Verify that club cards, club details, event cards, event details, admin filters, and club forms all resolve the new signature through the shared registry.
 
-Events must continue deriving `organization_type` from their owning organization.
+Events must continue deriving `club_type` from their owning club.
 
-Do not add or restore an `events.organization_type` column.
+Do not add or restore an `events.club_type` column.
 
 ## 10. Phase F: Enrich missing Instagram handles with subagents
 
 ### 10.1 Build the missing set
 
-After the directory pass is stored, query the database for organizations at the new school whose `ig` field is null or fails normalization.
+After the directory pass is stored, query the database for clubs at the new school whose `ig` field is null or fails normalization.
 
 Exclude rows already carrying a verified profile from the official directory.
 
-Exclude the university-wide Instagram account, the student association's global account when it is not the organization itself, and known directory-chrome accounts.
+Exclude the university-wide Instagram account, the student association's global account when it is not the club itself, and known directory-chrome accounts.
 
-Export a deterministic research input containing the organization database ID, school slug, organization name, organization page, category, and any directory evidence.
+Export a deterministic research input containing the club database ID, school slug, club name, club page, category, and any directory evidence.
 
 ### 10.2 Run at least 15 independent browser-search jobs
 
@@ -587,11 +587,11 @@ Run at least 15 bounded subagent jobs across the remaining missing-Instagram set
 
 If the environment cannot run 15 at once, run sequential waves until at least 15 independent jobs have completed.
 
-Shard the rows so no two primary jobs own the same organization.
+Shard the rows so no two primary jobs own the same club.
 
 Keep shards small enough that every result receives evidence rather than a guessed handle.
 
-If fewer than 15 organizations are missing, assign one primary search per missing organization and use the remaining jobs as independent verification passes over the proposed matches and unresolved rows.
+If fewer than 15 clubs are missing, assign one primary search per missing club and use the remaining jobs as independent verification passes over the proposed matches and unresolved rows.
 
 Subagents must use browser or web search and must not write directly to Supabase, the workbook, or tracked files.
 
@@ -599,20 +599,20 @@ Each subagent returns structured results to one coordinator.
 
 ### 10.3 Required subagent search procedure
 
-For each assigned organization, the subagent must:
+For each assigned club, the subagent must:
 
-1. Open the official directory page and any official organization website first.
-2. Search for the exact organization name plus the school name and `Instagram`.
-3. Search `site:instagram.com` with the exact organization name and at least one school alias.
-4. Search common acronym and school-abbreviation variants only when supported by the organization name.
+1. Open the official directory page and any official club website first.
+2. Search for the exact club name plus the school name and `Instagram`.
+3. Search `site:instagram.com` with the exact club name and at least one school alias.
+4. Search common acronym and school-abbreviation variants only when supported by the club name.
 5. Open candidate Instagram profiles or reliable indexed profile metadata.
-6. Confirm both organization identity and school context.
-7. Reject accounts for another campus, a similarly named external organization, the university as a whole, a person, an event, or a stale renamed club without corroboration.
+6. Confirm both club identity and school context.
+7. Reject accounts for another campus, a similarly named external club, the university as a whole, a person, an event, or a stale renamed club without corroboration.
 8. Return no match when evidence is insufficient.
 
 Broad subagent search does not need to hunt for Discord or Facebook as a separate objective.
 
-However, if the official directory page or official organization website exposes Discord or Facebook during the Instagram search, the subagent must return those URLs as additional evidence.
+However, if the official directory page or official club website exposes Discord or Facebook during the Instagram search, the subagent must return those URLs as additional evidence.
 
 ### 10.4 Required result shape
 
@@ -620,14 +620,14 @@ Each result must contain:
 
 ```json
 {
-  "organization_id": 123,
+  "club_id": 123,
   "school": "<schoolslug>",
-  "organization_name": "Example Organization",
+  "club_name": "Example Club",
   "instagram_handle": "@example",
   "instagram_url": "https://www.instagram.com/example/",
   "confidence": "high",
   "evidence_urls": [
-    "https://official-directory.example/organization/example",
+    "https://official-directory.example/club/example",
     "https://www.instagram.com/example/"
   ],
   "school_context_evidence": "Profile or official site identifies the school",
@@ -648,43 +648,43 @@ One coordinator must validate and apply all results after every subagent finishe
 The coordinator must:
 
 - Reject malformed Instagram URLs and reserved path names such as `p`, `reel`, `explore`, `accounts`, and `stories`.
-- Reject known global school handles when the row represents a student organization.
-- Check that one handle is not assigned to multiple unrelated organizations.
-- Require school context plus organization-name evidence.
+- Reject known global school handles when the row represents a student club.
+- Check that one handle is not assigned to multiple unrelated clubs.
+- Require school context plus club-name evidence.
 - Preserve stronger directory-provided evidence over weaker search results.
 - Send medium-confidence matches to an independent verification pass.
 - Leave low-confidence matches null.
-- Produce counts for total organizations, official-directory Instagram matches, newly confirmed search matches, unresolved Instagram rows, Discord links, Facebook links, duplicate candidates, and rejected candidates.
+- Produce counts for total clubs, official-directory Instagram matches, newly confirmed search matches, unresolved Instagram rows, Discord links, Facebook links, duplicate candidates, and rejected candidates.
 
 Apply validated changes through one idempotent database import path.
 
 Never allow subagents to race by editing the same database rows or artifact.
 
-## 11. Phase G: Audit and import organizations
+## 11. Phase G: Audit and import clubs
 
 Run the database import in dry-run mode first.
 
-The dry run must report inserts, updates, unchanged rows, duplicates, invalid categories, invalid URLs, invalid organization types, unknown school references, and unresolved required fields.
+The dry run must report inserts, updates, unchanged rows, duplicates, invalid categories, invalid URLs, invalid club types, unknown school references, and unresolved required fields.
 
 Review sample diffs from every category of change before applying.
 
 The import must be idempotent.
 
-Key organization identity by the established database relation and normalized organization identity, not by spreadsheet row number.
+Key club identity by the established database relation and normalized club identity, not by spreadsheet row number.
 
 After applying, query the new school and verify:
 
 ```sql
 select
-  count(*) as organizations,
+  count(*) as clubs,
   count(*) filter (where ig is not null) as with_instagram,
   count(*) filter (where discord is not null) as with_discord,
-  count(*) filter (where organization_page is not null) as with_directory_page,
+  count(*) filter (where club_page is not null) as with_directory_page,
   count(*) filter (where logo_url is not null) as with_logo,
   count(*) filter (
-    where organization_type = '<association-slug>'
-  ) as association_directory_organizations
-from public.organizations
+    where club_type = '<association-slug>'
+  ) as association_directory_clubs
+from public.clubs
 where school_id = (
   select id from public.schools where slug = '<schoolslug>'
 );
@@ -692,25 +692,25 @@ where school_id = (
 
 Also audit duplicate Instagram handles within the school and across all schools.
 
-Audit organizations without names, invalid URLs, empty category arrays, unrecognized categories, and unexpected statuses.
+Audit clubs without names, invalid URLs, empty category arrays, unrecognized categories, and unexpected statuses.
 
-Audit the exact organization-type distribution:
+Audit the exact club-type distribution:
 
 ```sql
-select organization_type, count(*)
-from public.organizations
+select club_type, count(*)
+from public.clubs
 where school_id = (
   select id from public.schools where slug = '<schoolslug>'
 )
-group by organization_type
-order by organization_type;
+group by club_type
+order by club_type;
 ```
 
-Confirm the association-type count equals the number of organizations imported from the official directory.
+Confirm the association-type count equals the number of clubs imported from the official directory.
 
-Confirm that no directory organization is null, `independent`, mixed-case, whitespace-padded, generic, or assigned another type.
+Confirm that no directory club is null, `independent`, mixed-case, whitespace-padded, generic, or assigned another type.
 
-Confirm that every non-independent `<schoolslug>:<organization_type>` signature resolves to the expected shared frontend asset.
+Confirm that every non-independent `<schoolslug>:<club_type>` signature resolves to the expected shared frontend asset.
 
 Compare the final database count to the authoritative directory count and account for every difference in a reconciliation report.
 
@@ -760,7 +760,7 @@ Switch to a professional account.
 
 Choose the closest available community category.
 
-Prefer **Community Organization** when Instagram does not offer an exact **Community** category.
+Prefer **Community Club** when Instagram does not offer an exact **Community** category.
 
 Choose **Business** as the professional account type.
 
@@ -857,18 +857,18 @@ Verify all of the following from the public profile view:
 - The requested music track and artist are present.
 - No personal phone number, address, password, token, or unrelated account information is visible.
 
-## 14. Phase J: Follow every organization account
+## 14. Phase J: Follow every club account
 
-Complete organization discovery and database reconciliation before following accounts.
+Complete club discovery and database reconciliation before following accounts.
 
 The following set must come from Supabase:
 
 ```sql
-select distinct lower(trim(organization.ig)) as instagram_handle
-from public.organizations as organization
-join public.schools as school on school.id = organization.school_id
+select distinct lower(trim(club.ig)) as instagram_handle
+from public.clubs as club
+join public.schools as school on school.id = club.school_id
 where school.slug = '<schoolslug>'
-  and nullif(trim(organization.ig), '') is not null
+  and nullif(trim(club.ig), '') is not null
 order by instagram_handle;
 ```
 
@@ -890,7 +890,7 @@ Open each normalized handle in the Instagram Android application, confirm the ex
 
 Record completed, invalid, renamed, missing, and blocked handles in the onboarding evidence packet so the operation can resume without repeating completed follows.
 
-Do not retry a refusal aggressively or mutate a stale organization handle without revalidating it through the normal reviewed organization update path.
+Do not retry a refusal aggressively or mutate a stale club handle without revalidating it through the normal reviewed club update path.
 
 Compare the final followed count with the distinct verified Supabase handle count before enabling notifications.
 
@@ -902,7 +902,7 @@ Open the chapter Instagram profile in the Android application.
 
 Tap the **Following** count to open all followed profiles.
 
-Open the first followed organization.
+Open the first followed club.
 
 Tap the bell icon in the top-right corner.
 
@@ -947,7 +947,7 @@ Enable Android notification permission for Instagram.
 
 Confirm that post notifications are allowed by the operating system, are not silenced by battery optimization, and are visible to the Automate flow.
 
-Trigger or wait for one real post notification from a followed test organization.
+Trigger or wait for one real post notification from a followed test club.
 
 Verify that Automate sends a `new_instagram_post` repository dispatch containing the expected username or post URL and `intended_recipient_id`.
 
@@ -1112,9 +1112,9 @@ Run the local Supabase reset when migrations changed:
 cd backend && supabase db reset
 ```
 
-Confirm the new school, email domains, academic metadata, organizations, organization types, and required relationships survive the reset or are produced through the documented post-reset import step.
+Confirm the new school, email domains, academic metadata, clubs, club types, and required relationships survive the reset or are produced through the documented post-reset import step.
 
-Confirm no organization references an unknown school.
+Confirm no club references an unknown school.
 
 Confirm the school has no duplicate credential row and no credential row points to the wrong school.
 
@@ -1122,7 +1122,7 @@ Confirm the school has no duplicate credential row and no credential row points 
 
 Run the backend test suite using the repo's current documented environment.
 
-At minimum, cover school service, allowed-email resolution, organization import and reconciliation, controlbox validation, Instagram credential import, Instagram publishing credentials, single-user routing, follow-source selection, and any new directory adapter.
+At minimum, cover school service, allowed-email resolution, club import and reconciliation, controlbox validation, Instagram credential import, Instagram publishing credentials, single-user routing, follow-source selection, and any new directory adapter.
 
 ### 19.3 Frontend checks
 
@@ -1138,7 +1138,7 @@ Confirm `https://<schoolslug>.wat2do.io` resolves to the correct school context.
 
 Confirm the school colors theme the application correctly.
 
-Confirm organization pages and school-filtered event feeds return only the intended school's data.
+Confirm club pages and school-filtered event feeds return only the intended school's data.
 
 Do not launch a browser, Playwright, emulator, development server, or preview server unless the human explicitly requests it in the current task.
 
@@ -1190,14 +1190,14 @@ Use these rules:
 The final handoff must contain no secrets and must include:
 
 - School name and canonical slug.
-- Authoritative source URLs for student email domains, brand colors, academic dates, official Instagram, student association, organization directory, and event directory.
+- Authoritative source URLs for student email domains, brand colors, academic dates, official Instagram, student association, club directory, and event directory.
 - Migration file name.
 - School database row audit with the recipient ID redacted only if the human treats it as sensitive.
 - Student email-domain audit.
 - Logo file path, dimensions, and visual QA result.
-- Organization directory count and final database count.
-- Organization coverage counts for Instagram, Discord, directory pages, logos, categories, and association affiliation.
-- Organization-type distribution, official student-association directory source, and confirmation that every directory organization uses the association type.
+- Club directory count and final database count.
+- Club coverage counts for Instagram, Discord, directory pages, logos, categories, and association affiliation.
+- Club-type distribution, official student-association directory source, and confirmation that every directory club uses the association type.
 - Subagent job count, match count, unresolved count, and independent verification count.
 - Chapter Instagram username and non-secret profile checklist.
 - Expected follow count, completed follow count, and unresolved/dead-handle count.
@@ -1219,8 +1219,8 @@ The final handoff must contain no secrets and must include:
 - [ ] IANA timezone verified.
 - [ ] Current academic calendar URL and term dates verified.
 - [ ] Official school Instagram handle verified.
-- [ ] Student association and organization type verified.
-- [ ] Official organization directory verified.
+- [ ] Student association and club type verified.
+- [ ] Official club directory verified.
 - [ ] Official event directory verified.
 - [ ] School migration applied and reset-tested.
 - [ ] Allowed-email resolution tested.
@@ -1233,22 +1233,22 @@ The final handoff must contain no secrets and must include:
 - [ ] `<schoolslug>.jpg` created at the established dimensions.
 - [ ] Avatar crop and contrast inspected.
 
-### Organizations
+### Clubs
 
-- [ ] Every directory page and organization detail page collected.
+- [ ] Every directory page and club detail page collected.
 - [ ] Instagram, Discord, and Facebook extracted from the authoritative source when present.
 - [ ] Database-first import path used.
 - [ ] At least 15 subagent browser-search jobs completed across missing Instagram rows.
 - [ ] Medium-confidence matches independently verified.
 - [ ] Low-confidence matches left null.
 - [ ] One coordinator validated and applied results.
-- [ ] Organization count reconciled against the authoritative directory.
-- [ ] Every organization imported from the official student-association directory received the same verified association type.
-- [ ] Organizations added from outside that directory remained `independent` unless separately approved.
-- [ ] Database importer explicitly wrote `organization_type` instead of relying on the default.
+- [ ] Club count reconciled against the authoritative directory.
+- [ ] Every club imported from the official student-association directory received the same verified association type.
+- [ ] Clubs added from outside that directory remained `independent` unless separately approved.
+- [ ] Database importer explicitly wrote `club_type` instead of relying on the default.
 - [ ] New non-independent type signature and SVG were registered through the shared frontend registry.
-- [ ] Organization-type distribution matches the official directory import count.
-- [ ] Duplicate handles, invalid URLs, categories, statuses, and organization types audited.
+- [ ] Club-type distribution matches the official directory import count.
+- [ ] Duplicate handles, invalid URLs, categories, statuses, and club types audited.
 
 ### Instagram account and profile
 

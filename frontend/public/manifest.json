@@ -1,7 +1,7 @@
 {
   "name": "Wat2Do",
   "short_name": "Wat2Do",
-  "description": "Discover campus events, explore student organizations, and stay connected with what's happening around you.",
+  "description": "Discover campus events, explore student clubs, and stay connected with what's happening around you.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

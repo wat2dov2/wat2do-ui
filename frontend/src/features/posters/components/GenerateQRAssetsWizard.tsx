@@ -307,7 +307,7 @@ export function GenerateQRAssetsWizard({ onClose, userEmail: userEmailProp }: Ge
 
   const handleGenerateAndDownload = async () => {
     if (!userEmail) {
-      setPdfError(t("admin.qrAssets.errors.loginRequired") || "Please log in to generate PDFs.");
+      setPdfError(t("admin.qrAssets.errors.loginRequired"));
       return;
     }
     setPdfError(null);

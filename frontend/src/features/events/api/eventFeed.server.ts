@@ -1,6 +1,6 @@
 import type { Event } from "@/shared/types";
 import type { PaginatedEventsResponse } from "@/features/events/api/events.api";
-import { orderOrganizationEvents } from "@/features/events/lib/organizationEventOrder";
+import { orderClubEvents } from "@/features/events/lib/clubEventOrder";
 import { controlBox } from "@/shared/config/controlBox";
 import { resolveSchool } from "@/shared/constants/schools";
 import { getServerApiBaseUrl } from "@/shared/services/serverApi";
@@ -40,15 +40,15 @@ async function fetchEventsPage(
   school: string,
   page: number,
   fetchOptions: RequestInit,
-  options: { organizationId?: number; includePast?: boolean } = {},
+  options: { clubId?: number; includePast?: boolean } = {},
 ): Promise<PaginatedEventsResponse> {
   const params = new URLSearchParams({
     page: String(page),
     page_size: String(controlBox.eventDiscovery.serverFeedPageSize),
     school,
   });
-  if (options.organizationId != null) {
-    params.set("organization_ids", String(options.organizationId));
+  if (options.clubId != null) {
+    params.set("club_ids", String(options.clubId));
   }
   if (options.includePast) {
     params.set("include_past", "true");
@@ -62,9 +62,9 @@ async function fetchEventsPage(
   return (await response.json()) as PaginatedEventsResponse;
 }
 
-/** Every event for one organization, including history, for its public page. */
-export async function getOrganizationEventsSnapshot(
-  organizationId: number,
+/** Every event for one club, including history, for its public page. */
+export async function getClubEventsSnapshot(
+  clubId: number,
   school: string,
 ): Promise<Event[]> {
   const resolvedSchool = resolveSchool(school);
@@ -77,7 +77,7 @@ export async function getOrganizationEventsSnapshot(
       tags: [eventFeedTag(resolvedSchool)],
     },
   };
-  const options = { organizationId, includePast: true };
+  const options = { clubId, includePast: true };
   const firstPage = await fetchEventsPage(
     resolvedSchool,
     1,
@@ -97,7 +97,7 @@ export async function getOrganizationEventsSnapshot(
     ),
   );
 
-  return orderOrganizationEvents(
+  return orderClubEvents(
     [firstPage, ...remainingPages].flatMap((page) => page.items),
     Date.now(),
   );

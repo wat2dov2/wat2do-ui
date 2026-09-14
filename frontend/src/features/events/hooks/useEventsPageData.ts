@@ -7,7 +7,6 @@ import {
   useCurrentTime,
   useGoingEvents,
 } from "@/features/events/hooks/useGoingEvents";
-import { useLastEventsVisit } from "@/features/events/hooks/useLastEventsVisit";
 import { useCreditsStore } from "@/features/credits/store/credits.store";
 import { resolveSchool } from "@/shared/constants/schools";
 import { getUniqueEvents } from "@/shared/utils/event";
@@ -18,8 +17,6 @@ import type { SchoolBrowseSnapshot } from "@/features/events/api/eventFeed.serve
 import type { Event } from "@/shared/types";
 
 interface UseEventsPageDataOptions {
-  profileCompleted: boolean;
-  userEmail: string | null;
   /** The server's browse snapshot, or null when that fetch failed. */
   initialSnapshot: SchoolBrowseSnapshot | null;
   initialSchool: string;
@@ -34,15 +31,7 @@ interface EventFeedSource {
   schoolFilter: string;
 }
 
-/**
- * The feed to render: the store once it holds the server snapshot, and the
- * snapshot itself until then.
- *
- * Zustand never runs during the server render, so reading the store alone would
- * paint an empty, still-loading page on the server and again on hydration
- * before the real feed appeared - the skeleton flash between two identical
- * screens. Both branches describe the same feed, so the handover is invisible.
- */
+/** Render the server snapshot until store hydration to avoid an empty-feed flash. */
 function useEventFeedSource(
   initialSnapshot: SchoolBrowseSnapshot | null,
   initialSchool: string,
@@ -118,8 +107,6 @@ function derivePromotedEvents(
  * search/filters, and derived ordered events.
  */
 export function useEventsPageData({
-  profileCompleted,
-  userEmail,
   initialSnapshot,
   initialSchool,
 }: UseEventsPageDataOptions) {
@@ -132,7 +119,6 @@ export function useEventsPageData({
     error,
     schoolFilter,
   } = useEventFeedSource(initialSnapshot, initialSchool);
-  const lastVisitAt = useLastEventsVisit(userEmail, schoolFilter);
   const { data: goingSelections = [] } = useGoingEvents();
   const currentTimeMs = useCurrentTime();
   const goingEventIds = useMemo(
@@ -164,8 +150,8 @@ export function useEventsPageData({
 
   const filters = useSearch({
     events: visibleEvents,
-    profileCompleted,
     goingEventIds,
+    goingCounts: eventStats,
   });
 
   const orderedEvents = useMemo(
@@ -198,10 +184,7 @@ export function useEventsPageData({
     error,
     refreshEvents,
     totalEvents,
-    goingEventIds,
     eventStats,
-    schoolFilter,
-    lastVisitAt,
     latestAddedEvent,
     promotedEvents,
     filters,

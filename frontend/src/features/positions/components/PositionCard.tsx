@@ -39,7 +39,7 @@ function PositionCardComponent({
           onPositionClick(position);
         }
       }}
-      className="group flex h-full w-full cursor-pointer flex-col rounded-xl transition-all duration-300 hover:shadow-lg"
+      className="group isolate flex h-full w-full cursor-pointer flex-col rounded-xl transition-all duration-300 hover:shadow-lg"
     >
       <PositionCardImage position={position} variant="card" />
       <EventCardContentFrame>

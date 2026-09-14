@@ -23,12 +23,12 @@ import type {
 import { api, getPaginatedItems } from "@/shared/services/apiClient";
 import { API_BASE_URL } from "@/shared/config/api";
 import { stripTrailingSlash } from "@/shared/utils/string";
-import { filterStateFromInput } from "@/features/search/api/filterService";
+import { normalizeFilterState } from "@/features/search/api/filterService";
 
 /** Poster row from GET /qr/ or POST /qr/. */
 type QrCodePosterBackend = ApiQrCodeResponse;
 
-export type CreatePosterPayload = Omit<
+type CreatePosterPayload = Omit<
   ApiQrCodeCreate,
   "latitude" | "longitude" | "program"
 > &
@@ -41,7 +41,7 @@ function normalizePosterFilters(
   if (destinationType !== "events-list" || !filters || Array.isArray(filters)) {
     return undefined;
   }
-  return filterStateFromInput(
+  return normalizeFilterState(
     filters as Record<string, unknown>,
   );
 }

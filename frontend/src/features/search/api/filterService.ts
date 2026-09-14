@@ -1,13 +1,10 @@
 import type { EventDateFilter, FilterState } from "@/shared/types";
 import { parseLocalDateValue } from "@/shared/utils/date";
 
-/**
- * Filter Service
- * Normalization used by visual filters and one-shot QR filter handoff.
- */
+// Shared normalization for visual filters and QR handoff.
 
-export const DEFAULT_FILTER_SORT_BY = "date";
-export const DEFAULT_FILTER_SORT_ORDER = "asc";
+const DEFAULT_FILTER_SORT_BY = "date";
+const DEFAULT_FILTER_SORT_ORDER = "asc";
 
 export const EMPTY_FILTER_STATE: FilterState = {
   searchQuery: "",
@@ -17,9 +14,10 @@ export const EMPTY_FILTER_STATE: FilterState = {
   days: [],
   minPrice: "",
   maxPrice: "",
+  minGoing: 0,
   registration: false,
-  organizations: [],
-  freeFood: false,
+  clubs: [],
+  hasFood: false,
   going: false,
   sortBy: DEFAULT_FILTER_SORT_BY,
   sortOrder: DEFAULT_FILTER_SORT_ORDER,
@@ -28,28 +26,18 @@ export const EMPTY_FILTER_STATE: FilterState = {
   customDate: "",
 };
 
-/**
- * Shape of the search-store filter values consumed by the UI.
- * Intentionally independent from the store module so this mapping
- * stays a pure data transform (no Zustand imports here).
- */
-export interface SearchStoreFilterValues {
-  searchQuery: string;
-  selectedCategories: string[];
-  selectedLocations: string[];
-  selectedFoods: string[];
-  selectedDays: string[];
-  minPrice: string;
-  maxPrice: string;
-  registration: boolean;
-  selectedOrganizations: string[];
-  freeFoodFilter: boolean;
-  goingFilter: boolean;
-  sortBy: string;
-  sortOrder: "asc" | "desc";
-  addedSince: string;
-  dateFilter: EventDateFilter;
-  customDate: string;
+/** UI filter names, independent of the store implementation. */
+export interface SearchStoreFilterValues extends Omit<
+  FilterState,
+  "categories" | "locations" | "foods" | "days" | "clubs" | "hasFood" | "going"
+> {
+  selectedCategories: FilterState["categories"];
+  selectedLocations: FilterState["locations"];
+  selectedFoods: FilterState["foods"];
+  selectedDays: FilterState["days"];
+  selectedClubs: FilterState["clubs"];
+  hasFoodFilter: FilterState["hasFood"];
+  goingFilter: FilterState["going"];
 }
 
 type FilterStateInput = Partial<Record<keyof FilterState, unknown>>;
@@ -60,7 +48,7 @@ function stringArray(value: unknown): string[] {
     : [];
 }
 
-function priceFrom(value: unknown): string {
+function stringFrom(value: unknown): string {
   return typeof value === "string" ? value : "";
 }
 
@@ -99,22 +87,25 @@ function dateFilterFrom(
   return candidate === "custom" && !customDate ? "any" : candidate;
 }
 
-export function normalizeFilterState(filters: Partial<FilterState>): FilterState {
+export function normalizeFilterState(filters: FilterStateInput): FilterState {
   const customDate = localDateFrom(filters.customDate);
   const dateFilter = dateFilterFrom(filters.dateFilter, customDate);
   return {
-    searchQuery: typeof filters.searchQuery === "string" ? filters.searchQuery : "",
+    searchQuery: stringFrom(filters.searchQuery),
     categories: stringArray(filters.categories),
     locations: stringArray(filters.locations),
     foods: stringArray(filters.foods),
     days: stringArray(filters.days),
-    minPrice: priceFrom(filters.minPrice),
-    maxPrice: priceFrom(filters.maxPrice),
+    minPrice: stringFrom(filters.minPrice),
+    maxPrice: stringFrom(filters.maxPrice),
+    minGoing: typeof filters.minGoing === "number" && Number.isFinite(filters.minGoing)
+      ? Math.max(0, Math.floor(filters.minGoing))
+      : 0,
     registration: filters.registration === true,
-    organizations: stringArray(filters.organizations),
-    freeFood: filters.freeFood === true,
+    clubs: stringArray(filters.clubs),
+    hasFood: filters.hasFood === true,
     going: filters.going === true,
-    sortBy: typeof filters.sortBy === "string" && filters.sortBy ? filters.sortBy : DEFAULT_FILTER_SORT_BY,
+    sortBy: stringFrom(filters.sortBy) || DEFAULT_FILTER_SORT_BY,
     sortOrder: sortOrderFrom(filters.sortOrder),
     addedSince: isoTimestampFrom(filters.addedSince),
     dateFilter,
@@ -122,14 +113,7 @@ export function normalizeFilterState(filters: Partial<FilterState>): FilterState
   };
 }
 
-/**
- * Map Zustand search-store filter values to the shared `FilterState`
- * shape used by filter consumers.
- *
- * Key rename: the store uses `selectedCategories`/`selectedLocations`/
- * `selectedFoods`/`selectedDays` (UI-oriented naming), while `FilterState`
- * uses shorter `categories`/`locations`/`foods`/`days` keys.
- */
+/** Map UI-oriented store names to the shared filter shape. */
 export function storeStatesToFilterState(
   values: SearchStoreFilterValues,
 ): FilterState {
@@ -141,9 +125,10 @@ export function storeStatesToFilterState(
     days: values.selectedDays,
     minPrice: values.minPrice,
     maxPrice: values.maxPrice,
+    minGoing: values.minGoing,
     registration: values.registration,
-    organizations: values.selectedOrganizations,
-    freeFood: values.freeFoodFilter,
+    clubs: values.selectedClubs,
+    hasFood: values.hasFoodFilter,
     going: values.goingFilter,
     sortBy: values.sortBy,
     sortOrder: values.sortOrder,
@@ -151,34 +136,6 @@ export function storeStatesToFilterState(
     dateFilter: values.dateFilter,
     customDate: values.customDate,
   };
-}
-
-/**
- * Normalize untrusted JSON or API filter input to the UI FilterState.
- */
-export function filterStateFromInput(
-  filters: FilterStateInput,
-): FilterState {
-  const customDate = localDateFrom(filters.customDate);
-  return normalizeFilterState({
-    searchQuery: typeof filters.searchQuery === "string" ? filters.searchQuery : "",
-    categories: stringArray(filters.categories),
-    locations: stringArray(filters.locations),
-    foods: stringArray(filters.foods),
-    days: stringArray(filters.days),
-    minPrice: priceFrom(filters.minPrice),
-    maxPrice: priceFrom(filters.maxPrice),
-    registration:
-      typeof filters.registration === "boolean" ? filters.registration : false,
-    organizations: stringArray(filters.organizations),
-    freeFood: filters.freeFood === true,
-    going: filters.going === true,
-    sortBy: typeof filters.sortBy === "string" ? filters.sortBy : DEFAULT_FILTER_SORT_BY,
-    sortOrder: sortOrderFrom(filters.sortOrder),
-    addedSince: isoTimestampFrom(filters.addedSince),
-    dateFilter: dateFilterFrom(filters.dateFilter, customDate),
-    customDate,
-  });
 }
 
 export function clearNarrowingFilterState(current: FilterState): FilterState {
@@ -189,11 +146,7 @@ export function clearNarrowingFilterState(current: FilterState): FilterState {
   });
 }
 
-/**
- * Whether two filter states are equivalent. Both sides come from
- * `normalizeFilterState`, so key order and value shapes are already canonical
- * and a structural comparison is exact.
- */
+/** Normalized states have stable key order and value shapes. */
 export function isSameFilterState(a: FilterState, b: FilterState): boolean {
   return JSON.stringify(normalizeFilterState(a)) === JSON.stringify(normalizeFilterState(b));
 }
@@ -216,7 +169,7 @@ export function consumePendingFilterState(): FilterState | null {
   if (!raw) return null;
   sessionStorage.removeItem(PENDING_FILTERS_SESSION_KEY);
   try {
-    return filterStateFromInput(JSON.parse(raw) as FilterStateInput);
+    return normalizeFilterState(JSON.parse(raw) as FilterStateInput);
   } catch {
     return null;
   }

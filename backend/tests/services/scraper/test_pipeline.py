@@ -9,7 +9,7 @@ from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 
 from services.scraper import pipeline as pipeline_module
-from services.scraper.org_resolve import ResolvedOrganization
+from services.scraper.org_resolve import ResolvedClub
 from services.scraper.pipeline import (
     _extract_image_urls,
     _filter_new_posts,
@@ -42,7 +42,7 @@ def test_filter_new_posts_drops_old_posts():
 def test_filter_new_posts_drops_non_post_urls():
     cutoff = datetime.now(timezone.utc) - timedelta(days=7)
     posts = [
-        {"url": "https://instagram.com/uwteaorganization", "timestamp": _now_iso()},
+        {"url": "https://instagram.com/uwteaclub", "timestamp": _now_iso()},
         {"url": "https://instagram.com/p/REAL/", "timestamp": _now_iso()},
     ]
     fresh = _filter_new_posts(posts, seen_shortcodes=set(), cutoff=cutoff)
@@ -130,7 +130,7 @@ def test_pipeline_routes_hiring_post_to_position_writer(monkeypatch):
     position = {
         "title": "Design Lead",
         "description": "Lead the visual design team.",
-        "organization": "UW Design Club",
+        "club": "UW Design Club",
         "position_type": "committee",
         "requirements": ["Portfolio"],
         "image_index": 0,
@@ -154,13 +154,13 @@ def test_pipeline_routes_hiring_post_to_position_writer(monkeypatch):
         "extract_post_content",
         lambda **_kwargs: SimpleNamespace(events=[], positions=[position]),
     )
-    monkeypatch.setattr(pipeline_module, "_lookup_organization_by_ig", lambda _handle: None)
+    monkeypatch.setattr(pipeline_module, "_lookup_club_by_ig", lambda _handle: None)
     monkeypatch.setattr(
         pipeline_module,
-        "resolve_organization_for_scrape",
-        lambda **_kwargs: ResolvedOrganization(
-            organization_id=7,
-            organization_name="UW Design Club",
+        "resolve_club_for_scrape",
+        lambda **_kwargs: ResolvedClub(
+            club_id=7,
+            club_name="UW Design Club",
             ig_handle="uwdesign",
         ),
     )

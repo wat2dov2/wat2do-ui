@@ -1,41 +1,66 @@
-import { test, expect, type Page } from "@playwright/test";
+import { test } from "next/experimental/testmode/playwright.js";
+import { expect, type Page } from "@playwright/test";
+import type { NextFixture } from "next/experimental/testmode/playwright.js";
+import { mockApi } from "./api-fixture";
 import { STORAGE_KEYS } from "../src/shared/constants/storageKeys";
 import { MAX_IMAGE_UPLOAD_SIZE_BYTES } from "../src/shared/constants/uploads";
-import arTranslations from "../src/shared/locales/ar.json";
+import arTranslations from "../src/shared/locales/ar.json" with { type: "json" };
 
 const BASE = "http://127.0.0.1:3000";
 const APP_API = `${BASE}/api`;
 
 /** Shared test identity used across auth-seeded tests. */
 const TEST_EMAIL = "test@uwaterloo.ca";
+const MOCK_SCHOOLS = [{
+  slug: "uwaterloo", name: "University of Waterloo", primary_color: "#6b238e",
+  secondary_color: "#ffd54f", email_domains: ["uwaterloo.ca"], language: "en",
+  faculties: ["Arts", "Engineering", "Environment", "Health", "Mathematics", "Science"],
+}, {
+  slug: "utm", name: "University of Toronto Mississauga", primary_color: "#002A5C",
+  secondary_color: "#FFFFFF", email_domains: ["utoronto.ca"], language: "en",
+  faculties: ["Arts", "Science", "Management"],
+}, {
+  slug: "utsg", name: "University of Toronto", primary_color: "#002A5C",
+  secondary_color: "#FFFFFF", email_domains: ["utoronto.ca"], language: "en",
+  faculties: ["Arts and Science", "Engineering"],
+}, {
+  slug: "utsc", name: "University of Toronto Scarborough", primary_color: "#002A5C",
+  secondary_color: "#FFFFFF", email_domains: ["utoronto.ca"], language: "en",
+  faculties: ["Arts", "Science", "Management"],
+}, {
+  slug: "uqam", name: "Université du Québec à Montréal", primary_color: "#0072BC",
+  secondary_color: "#FFFFFF", email_domains: ["uqam.ca"], language: "fr",
+  faculties: ["Arts", "Sciences"],
+}];
 
-const MOCK_ORGANIZATIONS = [
+const MOCK_CLUBS = [
   {
     id: 1,
-    organization_name: "UW Tech Club",
-    organization_type: "independent",
-    organization_page: "https://example.com/tech",
-    description: "A test organization",
+    club_name: "UW Tech Club",
+    status: "approved",
+    club_type: "independent",
+    club_page: "https://example.com/tech",
+    description: "A test club",
     school: "uwaterloo",
     categories: ["Technology"],
     event_count: 1,
   },
   {
     id: 2,
-    organization_name: "UW Board Games Club",
-    organization_type: "independent",
-    organization_page: "https://example.com/board-games",
-    description: "Board games organization",
+    club_name: "UW Board Games Club",
+    club_type: "independent",
+    club_page: "https://example.com/board-games",
+    description: "Board games club",
     school: "uwaterloo",
     categories: ["Social"],
     event_count: 1,
   },
   {
     id: 3,
-    organization_name: "UW Computer Science Club",
-    organization_type: "independent",
-    organization_page: "https://csclub.uwaterloo.ca",
-    description: "Computer science organization",
+    club_name: "UW Computer Science Club",
+    club_type: "independent",
+    club_page: "https://csclub.uwaterloo.ca",
+    description: "Computer science club",
     school: "uwaterloo",
     categories: ["Technology"],
     event_count: 0,
@@ -69,7 +94,8 @@ async function resolveThemeColors(
   }, variables);
 }
 
-test.beforeEach(async ({ page }) => {
+test.beforeEach(async ({ page, next }) => {
+  await page.route("https://www.google.com/maps/embed/**", route => route.fulfill({ contentType: "text/html", body: "<html><body>Map fixture</body></html>" }));
   page.on("response", (response) => {
     const url = response.url();
     const status = response.status();
@@ -79,21 +105,21 @@ test.beforeEach(async ({ page }) => {
   });
 
   // Prevent CORS errors on active-ids by mocking it globally for all browser routes
-  await page.route(url => apiPath(url) === "/promotions/active-ids", async (route) => {
-    await route.fulfill({
+  await mockApi(page, next, url => apiPath(url) === "/promotions/active-ids", async () => {
+    return ({
       status: 200,
       contentType: "application/json",
       body: JSON.stringify([]),
     });
   });
 
-  await page.route(url => apiPath(url) === "/meta/constants", async (route) => {
-    await route.fulfill({
+  await mockApi(page, next, url => apiPath(url) === "/meta/constants", async () => {
+    return ({
       status: 200,
       contentType: "application/json",
       body: JSON.stringify({
         event_categories: ["Career", "Technology"],
-        organization_categories: ["Technology", "Social"],
+        club_categories: ["Technology", "Social"],
         interests: ["Career", "Technology"],
         interest_to_categories: {
           Career: ["Career"],
@@ -104,75 +130,66 @@ test.beforeEach(async ({ page }) => {
     });
   });
 
-  await page.route(url => apiPath(url) === "/schools", async (route) => {
-    await route.fulfill({
+  await mockApi(page, next, url => apiPath(url) === "/schools" || MOCK_SCHOOLS.some(school => apiPath(url) === `/schools/${school.slug}`), async (request) => {
+    return ({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify([
-        {
-          slug: "uwaterloo",
-          name: "University of Waterloo",
-          primary_color: "#6b238e",
-          secondary_color: "#ffd54f",
-          email_domains: ["uwaterloo.ca"],
-        },
-      ]),
+      body: JSON.stringify(apiPath(new URL(request.url)) === "/schools" ? MOCK_SCHOOLS : MOCK_SCHOOLS.find(school => apiPath(new URL(request.url)) === `/schools/${school.slug}`)),
     });
   });
 
-  await page.route(url => apiPath(url) === "/going-events", async (route) => {
-    await route.fulfill({
+  await mockApi(page, next, url => apiPath(url) === "/going-events", async () => {
+    return ({
       status: 200,
       contentType: "application/json",
       body: JSON.stringify([]),
     });
   });
 
-  await page.route(url => apiPath(url) === "/events/stats", async (route) => {
-    await route.fulfill({
+  await mockApi(page, next, url => apiPath(url) === "/events/stats", async () => {
+    return ({
       status: 200,
       contentType: "application/json",
       body: JSON.stringify({}),
     });
   });
 
-  await page.route(url => apiPath(url) === "/saved-organizations", async (route) => {
-    await route.fulfill({
+  await mockApi(page, next, url => apiPath(url) === "/saved-clubs", async () => {
+    return ({
       status: 200,
       contentType: "application/json",
       body: JSON.stringify([]),
     });
   });
 
-  await page.route(url => apiPath(url) === "/credits", async (route) => {
-    await route.fulfill({
+  await mockApi(page, next, url => apiPath(url) === "/credits", async () => {
+    return ({
       status: 200,
       contentType: "application/json",
       body: JSON.stringify({ balance: 0 }),
     });
   });
 
-  await page.route(url => apiPath(url)?.startsWith("/events/promoted") === true, async (route) => {
-    await route.fulfill({
+  await mockApi(page, next, url => apiPath(url)?.startsWith("/events/promoted") === true, async () => {
+    return ({
       status: 200,
       contentType: "application/json",
       body: JSON.stringify([]),
     });
   });
 
-  await page.route(url => apiPath(url) === "/events", async (route) => {
-    if (apiPath(new URL(route.request().url()))?.startsWith("/events/promoted") === true) {
-      await route.fulfill({
+  await mockApi(page, next, url => apiPath(url) === "/events", async (request) => {
+    if (apiPath(new URL(request.url))?.startsWith("/events/promoted") === true) {
+      return ({
         status: 200,
         contentType: "application/json",
         body: JSON.stringify([]),
       });
-      return;
     }
 
     const now = new Date();
     const startsAt = new Date(now.getTime() + 86_400_000).toISOString();
-    await route.fulfill({
+    return ({
       status: 200,
       contentType: "application/json",
       body: JSON.stringify({
@@ -187,12 +204,12 @@ test.beforeEach(async ({ page }) => {
             registration: false,
             source_image_url: null,
             category: "Career",
-            organization_id: 1,
-            organization: "UW Tech Club",
-            organization_type: "wusa",
-            organization_page: "https://example.com/tech",
-            organization_ig: "uwtechclub",
-            organization_discord: "https://discord.gg/uwtechclub",
+            club_id: 1,
+            club: "UW Tech Club",
+            club_type: "wusa",
+            club_page: "https://example.com/tech",
+            club_ig: "uwtechclub",
+            club_discord: "https://discord.gg/uwtechclub",
             school: "uwaterloo",
             added_at: now.toISOString(),
           },
@@ -209,22 +226,24 @@ test.beforeEach(async ({ page }) => {
     });
   });
 
-  await page.route(url => apiPath(url) === "/organizations", async (route) => {
-    const requestUrl = new URL(route.request().url());
+  await mockApi(page, next, url => apiPath(url) === "/clubs", async (request) => {
+    const requestUrl = new URL(request.url);
     const search = requestUrl.searchParams.get("search")?.toLowerCase() ?? "";
     const ids = requestUrl.searchParams.getAll("ids").map(Number);
-    let items = MOCK_ORGANIZATIONS;
+    const minEvents = Number(requestUrl.searchParams.get("min_events") ?? 0);
+    let items = MOCK_CLUBS;
+    items = items.filter(club => club.event_count >= minEvents);
 
     if (search) {
-      items = items.filter((organization) =>
-        organization.organization_name.toLowerCase().includes(search)
+      items = items.filter((club) =>
+        club.club_name.toLowerCase().includes(search)
       );
     }
     if (ids.length > 0) {
-      items = items.filter((organization) => ids.includes(organization.id));
+      items = items.filter((club) => ids.includes(club.id));
     }
 
-    await route.fulfill({
+    return ({
       status: 200,
       contentType: "application/json",
       body: JSON.stringify({
@@ -239,6 +258,16 @@ test.beforeEach(async ({ page }) => {
 });
 
 test.describe("Language loading", () => {
+  test("defaults a French school to French and preserves an explicit English preference", async ({ page }) => {
+    await page.goto("http://uqam.wat2do.localhost:3000/");
+    await expect(page.locator("html")).toHaveAttribute("lang", "fr");
+    await page.getByRole("combobox").filter({ hasText: "Français" }).click();
+    await page.getByRole("option", { name: "English", exact: true }).click();
+    await expect(page.locator("html")).toHaveAttribute("lang", "en");
+    await page.reload();
+    await expect(page.locator("html")).toHaveAttribute("lang", "en");
+  });
+
   test("loads and persists an RTL locale after first paint", async ({ page }) => {
     await page.goto(BASE);
 
@@ -252,7 +281,7 @@ test.describe("Language loading", () => {
     await expect(documentElement).toHaveAttribute("lang", "ar");
     await expect(documentElement).toHaveAttribute("dir", "rtl");
     await expect(
-      page.getByRole("button", {
+      page.getByRole("link", {
         name: arTranslations.navigation.goToEvents,
       }),
     ).toBeVisible();
@@ -289,10 +318,10 @@ test.describe("SEO discovery routes", () => {
   });
 });
 
-async function seedAuthenticatedSession(page: Parameters<typeof test>[0]["page"]) {
+async function seedAuthenticatedSession(page: Page, next: NextFixture) {
   // Mock auth refresh
-  await page.route(url => apiPath(url) === "/auth/refresh", async (route) => {
-    await route.fulfill({
+  await mockApi(page, next, url => apiPath(url) === "/auth/refresh", async () => {
+    return ({
       status: 200,
       contentType: "application/json",
       body: JSON.stringify({
@@ -305,8 +334,8 @@ async function seedAuthenticatedSession(page: Parameters<typeof test>[0]["page"]
   });
 
   // Mock users/me
-  await page.route(url => apiPath(url) === "/users/me", async (route) => {
-    await route.fulfill({
+  await mockApi(page, next, url => apiPath(url) === "/users/me", async () => {
+    return ({
       status: 200,
       contentType: "application/json",
       body: JSON.stringify({
@@ -321,22 +350,22 @@ async function seedAuthenticatedSession(page: Parameters<typeof test>[0]["page"]
     });
   });
 
-  // Mock organizations/mine
-  await page.route(url => apiPath(url) === "/organizations/mine", async (route) => {
-    await route.fulfill({
+  // Mock clubs/mine
+  await mockApi(page, next, url => apiPath(url) === "/clubs/mine", async () => {
+    return ({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify([MOCK_ORGANIZATIONS[0]]),
+      body: JSON.stringify([MOCK_CLUBS[0]]),
     });
   });
 
   // Mock integrations endpoints
   const platforms = ["whatsapp", "discord", "slack", "telegram", "linkedin", "facebook", "instagram"];
   for (const p of platforms) {
-    await page.route(url => apiPath(url)?.match(new RegExp(`^/organizations/\\d+/integrations/${p}$`)) != null, async (route) => {
-      const method = route.request().method();
+    await mockApi(page, next, url => apiPath(url)?.match(new RegExp(`^/clubs/\\d+/integrations/${p}$`)) != null, async (request) => {
+      const method = request.method;
       if (method === "GET") {
-        await route.fulfill({
+        return ({
           status: 200,
           contentType: "application/json",
           body: JSON.stringify({
@@ -348,8 +377,8 @@ async function seedAuthenticatedSession(page: Parameters<typeof test>[0]["page"]
           }),
         });
       } else if (method === "POST" || method === "PUT") {
-        const body = route.request().postDataJSON() || {};
-        await route.fulfill({
+        const body = (await request.json()) || {};
+        return ({
           status: 200,
           contentType: "application/json",
           body: JSON.stringify({
@@ -361,7 +390,7 @@ async function seedAuthenticatedSession(page: Parameters<typeof test>[0]["page"]
           }),
         });
       } else if (method === "DELETE") {
-        await route.fulfill({
+        return ({
           status: 200,
           contentType: "application/json",
           body: JSON.stringify({
@@ -373,10 +402,11 @@ async function seedAuthenticatedSession(page: Parameters<typeof test>[0]["page"]
           }),
         });
       }
+      throw new Error(`Unexpected integration method: ${method}`);
     });
 
-    await page.route(url => apiPath(url) === `/organizations/integrations/${p}/options`, async (route) => {
-      await route.fulfill({
+    await mockApi(page, next, url => apiPath(url) === `/clubs/integrations/${p}/options`, async () => {
+      return ({
         status: 200,
         contentType: "application/json",
         body: JSON.stringify({
@@ -387,9 +417,9 @@ async function seedAuthenticatedSession(page: Parameters<typeof test>[0]["page"]
     });
   }
 
-  // Mock saved organizations
-  await page.route(url => apiPath(url) === "/saved-organizations", async (route) => {
-    await route.fulfill({
+  // Mock saved clubs
+  await mockApi(page, next, url => apiPath(url) === "/saved-clubs", async () => {
+    return ({
       status: 200,
       contentType: "application/json",
       body: JSON.stringify([]),
@@ -397,8 +427,8 @@ async function seedAuthenticatedSession(page: Parameters<typeof test>[0]["page"]
   });
 
   // Mock credits
-  await page.route(url => apiPath(url) === "/credits", async (route) => {
-    await route.fulfill({
+  await mockApi(page, next, url => apiPath(url) === "/credits", async () => {
+    return ({
       status: 200,
       contentType: "application/json",
       body: JSON.stringify({ balance: 100 }),
@@ -406,8 +436,8 @@ async function seedAuthenticatedSession(page: Parameters<typeof test>[0]["page"]
   });
 
   // Mock saved events
-  await page.route(url => apiPath(url) === "/going-events", async (route) => {
-    await route.fulfill({
+  await mockApi(page, next, url => apiPath(url) === "/going-events", async () => {
+    return ({
       status: 200,
       contentType: "application/json",
       body: JSON.stringify([]),
@@ -415,8 +445,8 @@ async function seedAuthenticatedSession(page: Parameters<typeof test>[0]["page"]
   });
 
   // Mock active promotions IDs
-  await page.route(url => apiPath(url) === "/promotions/active-ids", async (route) => {
-    await route.fulfill({
+  await mockApi(page, next, url => apiPath(url) === "/promotions/active-ids", async () => {
+    return ({
       status: 200,
       contentType: "application/json",
       body: JSON.stringify([]),
@@ -430,15 +460,15 @@ async function seedAuthenticatedSession(page: Parameters<typeof test>[0]["page"]
     isFirstYear: false,
     school: "uwaterloo",
     role: "admin",
-    hasOrganization: true,
+    hasClub: true,
     clubs: [
       {
         id: 1,
-        organization_name: "UW Tech Club",
+        club_name: "UW Tech Club",
       }
     ],
-    organizationId: 1,
-    organizationName: "UW Tech Club",
+    clubId: 1,
+    clubName: "UW Tech Club",
   };
 
   await page.addInitScript(({ keyEmail, email, keyProfile, profileObj }) => {
@@ -453,7 +483,7 @@ async function seedAuthenticatedSession(page: Parameters<typeof test>[0]["page"]
 }
 
 async function seedQrData(
-  page: Parameters<typeof test>[0]["page"],
+  page: Page,
   opts?: { withScans?: boolean },
 ) {
   const now = new Date().toISOString();
@@ -597,14 +627,28 @@ test.describe("Navigation progress", () => {
 // ── Workflow 1: Auth Page ─────────────────────────────────────────────
 
 test.describe("Auth Page", () => {
+  test("restores a shared session without a campus-local profile cache", async ({ page, next }) => {
+    await seedAuthenticatedSession(page, next);
+    await page.goto(BASE);
+    await expect(page.getByRole("button", { name: "Open navigation menu" })).toBeVisible();
+
+    await page.evaluate(() => window.localStorage.clear());
+    await page.reload();
+
+    await expect(page.getByRole("button", { name: "Open navigation menu" })).toBeVisible();
+    await expect.poll(() => page.evaluate(
+      (key) => window.localStorage.getItem(key), STORAGE_KEYS.USER_EMAIL,
+    )).toBe(JSON.stringify(TEST_EMAIL));
+  });
+
   test("keeps the cached session when a deploy interrupts a 401 retry", async ({
-    page,
+    page, next,
   }) => {
     let refreshRequestCount = 0;
-    await page.route(url => apiPath(url) === "/auth/refresh", async (route) => {
+    await mockApi(page, next, url => apiPath(url) === "/auth/refresh", async () => {
       refreshRequestCount += 1;
       if (refreshRequestCount === 1) {
-        await route.fulfill({
+        return ({
           status: 200,
           contentType: "application/json",
           body: JSON.stringify({
@@ -614,17 +658,16 @@ test.describe("Auth Page", () => {
             user_id: "mock-user-id",
           }),
         });
-        return;
       }
 
-      await route.fulfill({
+      return ({
         status: 503,
         contentType: "application/json",
         body: JSON.stringify({ detail: "Service restarting" }),
       });
     });
-    await page.route(url => apiPath(url) === "/users/me", async (route) => {
-      await route.fulfill({
+    await mockApi(page, next, url => apiPath(url) === "/users/me", async () => {
+      return ({
         status: 401,
         contentType: "application/json",
         body: JSON.stringify({ detail: "Access token expired" }),
@@ -654,13 +697,14 @@ test.describe("Auth Page", () => {
       let heading: Element | null = null;
       let removed = false;
       const readHeading = () => {
-        heading ??= document.querySelector("h1");
+        const candidate = Array.from(document.querySelectorAll("h1")).find(element => element.getClientRects().length > 0);
+        if (!heading && candidate?.getClientRects().length) heading = candidate;
         if (heading && !heading.isConnected) {
           removed = true;
         }
       };
       const observer = new MutationObserver(readHeading);
-      observer.observe(document, { childList: true, subtree: true });
+      observer.observe(document, { childList: true, subtree: true, attributes: true, attributeFilter: ["hidden", "style"] });
       Object.defineProperty(window, "__readHydrationHeadingProbe", {
         configurable: true,
         value: () => ({ captured: heading !== null, removed }),
@@ -669,11 +713,8 @@ test.describe("Auth Page", () => {
 
     await page.goto(`${BASE}/login`);
     await expect(page.locator("h1")).toContainText("Discover");
-    await expect
-      .poll(() =>
-        page.evaluate(() => document.documentElement.dataset.clientReady),
-      )
-      .toBe("true");
+    await page.getByRole("textbox", { name: "Email address" }).fill(TEST_EMAIL);
+    await expect(page.getByRole("button", { name: "Continue", exact: true })).toBeEnabled();
 
     const probe = await page.evaluate(() =>
       (
@@ -698,10 +739,7 @@ test.describe("Auth Page", () => {
     await expect(
       page.getByRole("button", { name: "Continue", exact: true }),
     ).toBeVisible();
-    await expect(page.getByText(/platform terms/i)).toBeVisible();
-    await expect(
-      page.getByTestId("auth-preview-events").locator(":scope > *"),
-    ).toHaveCount(4);
+    await expect(page.getByRole("button", { name: "Continue without signing in" })).toBeVisible();
   });
 
   test("starts Google OAuth with the same-origin backend callback", async ({
@@ -727,9 +765,9 @@ test.describe("Auth Page", () => {
     expect(requestUrl.searchParams.get("return_to")).toBe("/positions");
   });
 
-  test("continues from email to verification code entry", async ({ page }) => {
-    await page.route(url => apiPath(url) === "/auth/send-otp", async (route) => {
-      await route.fulfill({
+  test("continues from email to verification code entry", async ({ page, next }) => {
+    await mockApi(page, next, url => apiPath(url) === "/auth/send-otp", async () => {
+      return ({
         status: 200,
         contentType: "application/json",
         body: JSON.stringify({ message: "sent" }),
@@ -745,6 +783,26 @@ test.describe("Auth Page", () => {
     await expect(page.getByText(/6-digit login code/i)).toBeVisible();
     await expect(page.getByRole("button", { name: /verify code/i })).toBeVisible();
     await expect(page.getByRole("button", { name: /resend code/i })).toBeVisible();
+  });
+
+  test("six OTP digits automatically submit once without a button click", async ({ page, next }) => {
+    let attempts = 0;
+    await mockApi(page, next, url => apiPath(url) === "/auth/send-otp", () => ({ json: { message: "sent" } }));
+    await mockApi(page, next, url => apiPath(url) === "/auth/verify-otp", async () => {
+      attempts += 1;
+      return ({ status: 401, json: { detail: "Invalid code" } });
+    });
+    await page.goto(`${BASE}/login`);
+    await page.getByRole("textbox", { name: "Email address" }).fill(TEST_EMAIL);
+    await page.getByRole("button", { name: "Continue", exact: true }).click();
+    const code = page.getByRole("textbox", { name: "Verification code", exact: true });
+    await code.fill("12345");
+    expect(attempts).toBe(0);
+    await code.fill("123456");
+    await expect(page.getByText("This login code is invalid or has expired.")).toBeVisible();
+    expect(attempts).toBe(1);
+    await code.fill("123457");
+    await expect.poll(() => attempts).toBe(2);
   });
 
   test("submit button is disabled until form is valid", async ({ page }) => {
@@ -763,9 +821,9 @@ test.describe("Auth Page", () => {
     await expect(submit).toBeEnabled();
   });
 
-  test("shows error on invalid signup attempt", async ({ page }) => {
-    await page.route(url => apiPath(url) === "/auth/send-otp", async (route) => {
-      await route.fulfill({
+  test("shows error on invalid signup attempt", async ({ page, next }) => {
+    await mockApi(page, next, url => apiPath(url) === "/auth/send-otp", async () => {
+      return ({
         status: 403,
         contentType: "application/json",
         body: JSON.stringify({ detail: "Use a supported school email" }),
@@ -778,15 +836,15 @@ test.describe("Auth Page", () => {
       .getByRole("button", { name: "Continue", exact: true })
       .click();
 
-    await expect(page.getByText("Use a supported school email")).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole("main").getByRole("alert")).toHaveText("Use a supported school email");
   });
 });
 
 // ── Workflow 7: Posters & QR Analytics ─────────────────────────────────
 
 test.describe("Posters & QR Analytics", () => {
-  test("marketing, admin posters, and club posters share QR data", async ({ page }) => {
-    await seedAuthenticatedSession(page);
+  test("marketing, admin posters, and club posters share QR data", async ({ page, next }) => {
+    await seedAuthenticatedSession(page, next);
     await seedQrData(page, { withScans: true });
 
     // Marketing page: shows QR cards
@@ -798,20 +856,109 @@ test.describe("Posters & QR Analytics", () => {
     await page.goto(`${BASE}/admin/posters`);
     await expect(page.getByText("Test Poster 1").first()).toBeVisible();
 
-    // Organization panel posters page reuses same posters view
-    await page.goto(`${BASE}/organization-panel/posters`);
+    // Club panel posters page reuses same posters view
+    await page.goto(`${BASE}/club-panel/posters`);
     await expect(page.getByText("Test Poster 1").first()).toBeVisible();
   });
 });
 
 test.describe("Admin diagnostics", () => {
+  test("admin cards count all pending queues and replace recent activity", async ({ page, next }) => {
+    await seedAuthenticatedSession(page, next);
+    let releaseSubmissions = () => {};
+    const submissionsReady = new Promise<void>(resolve => { releaseSubmissions = resolve; });
+    const now = new Date().toISOString();
+    await mockApi(page, next, url => apiPath(url) === "/submissions", async request => {
+      await submissionsReady;
+      const params = new URL(request.url).searchParams;
+      expect(params.has("school")).toBe(false);
+      const currentPage = Number(params.get("page") ?? 1);
+      const statuses = currentPage === 1 ? ["pending", "approved", "rejected"] : ["pending"];
+      return { json: {
+        items: statuses.map((status, index) => ({ id: `submission-${currentPage}-${index}`, event_data: { title: "Demo", occurrences: [] }, status, submitted_at: now })),
+        total: 4, page: currentPage, page_size: 3, total_pages: 2,
+      } };
+    });
+    await mockApi(page, next, url => apiPath(url) === "/reports", async () => ({
+      json: { items: ["pending", "pending", "resolved", "dismissed"].map((status, index) => ({
+        id: `report-${index}`, event_id: 1, reason: `Reason ${index}`, status, reported_at: now,
+      })), total: 4, page: 1, page_size: 20, total_pages: 1 },
+    }));
+    await mockApi(page, next, url => apiPath(url) === "/clubs/claims", async () => ({
+      json: [{ id: "pending-claim", status: "pending" }, { id: "approved-claim", status: "approved" }],
+    }));
+    await mockApi(page, next, url => apiPath(url) === "/clubs/review", async () => ({
+      json: { items: [
+        { ...MOCK_CLUBS[0], status: "pending" },
+        { ...MOCK_CLUBS[1], status: "pending", school: "ulaval" },
+        { ...MOCK_CLUBS[2], status: "approved" },
+      ], total: 3, page: 1, page_size: 20, total_pages: 1 },
+    }));
+    await mockApi(page, next, url => apiPath(url) === "/position-submissions", async request => {
+      expect(new URL(request.url).searchParams.get("submission_status")).toBe("pending");
+      return { json: { items: [{ id: "pending-position", status: "pending" }], total: 43, page: 1, page_size: 20, total_pages: 3 } };
+    });
+    await mockApi(page, next, url => apiPath(url) === "/payouts/admin", async request => {
+      expect(new URL(request.url).searchParams.get("payout_status")).toBe("pending");
+      return { json: { items: [{ id: "pending-payout", status: "pending" }], total: 27, page: 1, page_size: 1, total_pages: 27 } };
+    });
+
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(`${BASE}/admin`);
+    try {
+      await expect(page.getByRole("status", { name: "Event Submissions: Loading...", exact: true })).toBeVisible();
+      await expect(page.locator('[data-slot="admin-card-counts"]').getByText(/Unknown/)).toHaveCount(0);
+    } finally {
+      releaseSubmissions();
+    }
+    const events = page.getByRole("button").filter({ has: page.getByRole("heading", { name: "Events", exact: true }) });
+    const clubs = page.getByRole("button").filter({ has: page.getByRole("heading", { name: "Clubs", exact: true }) });
+    const positions = page.getByRole("button").filter({ has: page.getByRole("heading", { name: "Positions", exact: true }) });
+    const posters = page.getByRole("button").filter({ has: page.getByRole("heading", { name: "Posters", exact: true }) });
+    await expect(events.getByText("Event Submissions: 2 pending", { exact: true })).toBeVisible();
+    await expect(events.getByRole("status", { name: "Event Submissions: Loading...", exact: true })).toHaveCount(0);
+    await expect(events.getByText("Event reports: 2 pending", { exact: true })).toBeVisible();
+    await expect(clubs.getByText("Club submissions: 2 pending", { exact: true })).toBeVisible();
+    await expect(clubs.getByText("Claim Requests: 1 pending", { exact: true })).toBeVisible();
+    await expect(positions.getByText("Position submissions: 43 pending", { exact: true })).toBeVisible();
+    await expect(posters.getByText("Payouts: 27 pending", { exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Recent Activity", exact: true })).toHaveCount(0);
+    await expect(page.getByRole("table")).toHaveCount(0);
+    const headingBox = await events.getByRole("heading").boundingBox();
+    const countBox = await events.locator('[data-slot="admin-card-counts"]').boundingBox();
+    expect(headingBox && countBox && countBox.y >= headingBox.y + headingBox.height).toBeTruthy();
+    for (const width of [1440, 390]) {
+      await page.setViewportSize({ width, height: 900 });
+      await expect(events.locator('[data-slot="admin-card-counts"]')).toHaveCSS("flex-direction", "column");
+      await expect.poll(async () => {
+        const submissions = await events.getByText("Event Submissions: 2 pending", { exact: true }).boundingBox();
+        const reports = await events.getByText("Event reports: 2 pending", { exact: true }).boundingBox();
+        return Boolean(submissions && reports && reports.y >= submissions.y + submissions.height
+          && Math.abs(reports.x - submissions.x) < 2);
+      }).toBe(true);
+      await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    }
+    await events.click();
+    await expect(page).toHaveURL(`${BASE}/admin/events`);
+    await page.getByRole("tab", { name: "Event reports", exact: true }).click();
+    await expect(page.getByRole("cell", { name: "Reason 0", exact: true })).toBeVisible();
+    await expect(page.getByRole("cell", { name: "Reason 1", exact: true })).toBeVisible();
+    await expect(page.getByRole("cell", { name: "Reason 2", exact: true })).toHaveCount(0);
+    await expect(page.getByRole("cell", { name: "Reason 3", exact: true })).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: "2 Event reports", exact: true })).toBeVisible();
+    await page.getByRole("row").filter({ hasText: "Reason 0" }).getByRole("button", { name: "View", exact: true }).click();
+    await expect(page.locator('[data-slot="drawer-content"]')).toBeVisible();
+    await expect(page).toHaveURL(`${BASE}/admin/events`);
+  });
+
   test("opens from the admin dashboard and shows Automate logs under scraping", async ({
-    page,
+    page, next,
   }) => {
-    await seedAuthenticatedSession(page);
+    await seedAuthenticatedSession(page, next);
+    await mockApi(page, next, url => apiPath(url) === "/webhooks/automate/logs", async () => ({ json: [] }));
     await seedQrData(page);
-    await page.route(url => apiPath(url) === "/submissions", async (route) => {
-      await route.fulfill({
+    await mockApi(page, next, url => apiPath(url) === "/submissions", async () => {
+      return ({
         status: 200,
         contentType: "application/json",
         body: JSON.stringify({
@@ -852,10 +999,19 @@ test.describe("Admin diagnostics", () => {
 });
 
 test.describe("Admin Instagram publishing", () => {
-  test("adds an existing event by ID without opening event creation", async ({
-    page,
+  for (const school of ["uwaterloo", "western"]) {
+  test(`adds an existing event by ID and prepopulates its club for ${school}`, async ({
+    page, next,
   }) => {
-    await seedAuthenticatedSession(page);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await seedAuthenticatedSession(page, next);
+
+    const clubName = school === "western" ? "Western Tech Club" : "UW Tech Club";
+    await mockApi(page, next, url => apiPath(url) === "/clubs", async request => {
+      const requestedSchool = new URL(request.url).searchParams.get("school");
+      const items = requestedSchool === school ? [{ ...MOCK_CLUBS[0], school, club_name: clubName, ig: `${school}techclub` }] : [];
+      return { json: { items, total: items.length, page: 1, page_size: 20, total_pages: 1 } };
+    });
 
     const startsAt = new Date(Date.now() + 86_400_000).toISOString();
     const eventSummary = (id: number, title: string) => ({
@@ -877,13 +1033,13 @@ test.describe("Admin Instagram publishing", () => {
       source_image_url: null,
       source_url: null,
       category: "Technology",
-      organization: "UW Tech Club",
-      organization_type: "independent",
-      organization_page: "https://example.com/tech",
-      organization_ig: "uwtechclub",
-      organization_discord: null,
+      club: clubName,
+      club_type: "independent",
+      club_page: "https://example.com/tech",
+      club_ig: "uwtechclub",
+      club_discord: null,
       ig_handle: "uwtechclub",
-      school: "uwaterloo",
+      school,
       cancelled: false,
       added_at: new Date().toISOString(),
     });
@@ -892,7 +1048,7 @@ test.describe("Admin Instagram publishing", () => {
     const batchItem = (event: ReturnType<typeof eventSummary>, position: number) => ({
       id: `00000000-0000-4000-9000-${String(event.id).padStart(12, "0")}`,
       batch_id: "00000000-0000-4000-8000-000000000001",
-      account_key: "uwaterloo",
+      account_key: school,
       event_id: event.id,
       position,
       event,
@@ -903,16 +1059,16 @@ test.describe("Admin Instagram publishing", () => {
     });
     const batchBase = {
       id: "00000000-0000-4000-8000-000000000001",
-      account_key: "uwaterloo",
+      account_key: school,
       instagram_user_id: "17841476154506771",
-      school: "uwaterloo",
+      school,
       local_date: "2026-08-03",
       window_start: "2026-08-02T12:00:00Z",
       window_end: "2026-08-03T12:00:00Z",
       status: "ready_for_review",
       caption: "Campus events",
+      caption_intro: "" as string,
       cover_body: "Our latest picks",
-      ai_model: null,
       error_message: null,
       meta_media_id: null,
       published_cover_url: null,
@@ -932,13 +1088,17 @@ test.describe("Admin Instagram publishing", () => {
       items: [batchItem(firstEvent, 1), batchItem(secondEvent, 2)],
     };
     let savedEventIds: number[] | null = null;
+    let patchCount = 0;
+    let eventUpdateCount = 0;
+    const editedClubIds: number[] = [];
+    let currentBatch = initialBatch;
 
-    await page.route(url => apiPath(url) === "/instagram-publishing/batches", async (route) => {
-      await route.fulfill({
+    await mockApi(page, next, url => apiPath(url) === "/instagram-publishing/batches", async () => {
+      return ({
         status: 200,
         contentType: "application/json",
         body: JSON.stringify({
-          items: [{ ...batchBase, version: 1, item_count: 1 }],
+          items: [{ ...batchBase, version: 1, item_count: 1, eligible_count: 1 }],
           total: 1,
           page: 1,
           page_size: 25,
@@ -946,39 +1106,60 @@ test.describe("Admin Instagram publishing", () => {
         }),
       });
     });
-    await page.route(
-      url => apiPath(url) === `/instagram-publishing/batches/${batchBase.id}`,
-      async (route) => {
-        if (route.request().method() === "PATCH") {
-          const requestBody = route.request().postDataJSON() as { event_ids: number[] };
+    await mockApi(page, next, url => apiPath(url) === `/instagram-publishing/batches/${batchBase.id}`, async (request) => {
+        if (request.method === "PATCH") {
+          const requestBody = (await request.json()) as { event_ids: number[]; caption_intro: string };
+          if (requestBody.event_ids.includes(3)) {
+            return {
+              status: 400,
+              json: { detail: "Cannot add or save event IDs: 3. Each event needs a poster image and an upcoming or ongoing occurrence." },
+            };
+          }
+          patchCount += 1;
           savedEventIds = requestBody.event_ids;
-          await route.fulfill({
+          currentBatch = {
+            ...savedBatch,
+            caption_intro: requestBody.caption_intro,
+            version: currentBatch.version + 1,
+            items: requestBody.event_ids.map((id, index) => batchItem(id === 1 ? firstEvent : secondEvent, index + 1)),
+          };
+          return ({
             status: 200,
             contentType: "application/json",
-            body: JSON.stringify(savedBatch),
+            body: JSON.stringify(currentBatch),
           });
-          return;
         }
 
-        await route.fulfill({
+        return ({
           status: 200,
           contentType: "application/json",
-          body: JSON.stringify(initialBatch),
+          body: JSON.stringify(currentBatch),
         });
-      },
-    );
-    await page.route(url => apiPath(url) === "/events/2", async (route) => {
-      await route.fulfill({
+      });
+    await mockApi(page, next, url => ["/events/1", "/events/2"].some(path => path === apiPath(url)), async (request) => {
+      if (request.method !== "GET") {
+        eventUpdateCount += 1;
+        const body = await request.json() as { club_id: number };
+        editedClubIds.push(body.club_id);
+      }
+      const event = apiPath(new URL(request.url)) === "/events/1" ? firstEvent : secondEvent;
+      return ({
         status: 200,
         contentType: "application/json",
-        body: JSON.stringify({ ...secondEvent, organization_id: 1 }),
+        body: JSON.stringify({ ...event, club_id: 1 }),
       });
     });
 
     await page.goto(`${BASE}/admin/instagram`);
-    await page.getByRole("button", { name: "uwaterloo" }).click();
+    await page.getByRole("button", { name: school }).click();
 
-    const drawer = page.getByRole("dialog", { name: "uwaterloo" });
+    const drawer = page.getByRole("dialog", { name: school });
+    const split = drawer.locator('[data-columns="split"]');
+    expect(await split.evaluate(element => getComputedStyle(element).gridTemplateColumns.split(" ").length)).toBe(2);
+    for (const column of await split.locator(":scope > div").all()) {
+      await expect(column).toHaveCSS("overflow-y", "auto");
+    }
+    await drawer.getByLabel("Your caption intro", { exact: true }).fill("Your weekend plans");
     await drawer.getByRole("button", { name: "Add event ID" }).click();
 
     const eventIdInput = drawer.getByRole("spinbutton", { name: "Event ID" });
@@ -989,26 +1170,54 @@ test.describe("Admin Instagram publishing", () => {
 
     await eventIdInput.fill("1");
     await expect(submitEventId).toBeDisabled();
+    await eventIdInput.fill("3");
+    await submitEventId.click();
+    await expect(page.getByText(/Cannot add or save event IDs: 3/)).toBeVisible();
+    await expect(eventIdInput).toHaveValue("3");
+    await expect(drawer.locator("figure")).toHaveCount(2);
     await eventIdInput.fill("2");
     await expect(submitEventId).toBeEnabled();
     await submitEventId.click();
 
     await expect.poll(() => savedEventIds).toEqual([1, 2]);
-    await expect(drawer.getByText("Slide 2 of 2").first()).toBeVisible();
+    await expect(drawer.locator("figure")).toHaveCount(3);
     await expect(drawer.getByText("Second Carousel Event").first()).toBeVisible();
+    expect(currentBatch.caption_intro).toBe("Your weekend plans");
+    await expect(drawer.getByLabel("Saved caption preview (event details appended automatically)", { exact: true })).toHaveCount(0);
+
+    const firstPreview = drawer.locator("figure").filter({ hasText: "First Carousel Event" });
+    await firstPreview.click();
+    await expect(firstPreview).toHaveAttribute("aria-pressed", "true");
+    await expect(drawer.getByRole("textbox", { name: "Club *", exact: true })).toHaveValue(clubName);
+    expect(patchCount).toBe(1);
+    expect(eventUpdateCount).toBe(0);
+
+    const firstPosition = drawer.getByRole("textbox", { name: "Slide 1 of 2", exact: true });
+    await firstPosition.fill("2");
+    await firstPosition.press("Enter");
+    await expect.poll(() => savedEventIds).toEqual([2, 1]);
+
+    await drawer.getByRole("textbox", { name: "Club *", exact: true })
+      .fill(school === "western" ? "@westerntechclub" : "  uw tech club  ");
+    await drawer.getByRole("textbox", { name: /Event Title/ }).fill("Edited before adding another event");
+    await drawer.getByRole("button", { name: "Add event ID" }).click();
+    await expect(eventIdInput).toBeVisible();
+    await expect.poll(() => eventUpdateCount).toBe(1);
+    expect(editedClubIds).toEqual([1]);
   });
+  }
 });
 
-// ── Workflow 8: Organization Integrations ─────────────────────────────
+// ── Workflow 8: Club Integrations ─────────────────────────────
 
-test.describe("Organization Integrations", () => {
-  test("can connect WhatsApp integration end to end", async ({ page }) => {
-    await seedAuthenticatedSession(page);
-    await page.goto(`${BASE}/organization-panel/integrations`);
+test.describe("Club Integrations", () => {
+  test("can connect WhatsApp integration end to end", async ({ page, next }) => {
+    await seedAuthenticatedSession(page, next);
+    await page.goto(`${BASE}/club-panel/integrations`);
 
     // WhatsApp card
     const whatsappCard = page
-      .locator("div.bg-card", { hasText: "WhatsApp" })
+      .locator("div.bg-surface", { hasText: "WhatsApp" })
       .first();
 
     await expect(whatsappCard.getByRole("heading", { name: "WhatsApp" })).toBeVisible();
@@ -1027,12 +1236,12 @@ test.describe("Organization Integrations", () => {
     ).toBeVisible();
   });
 
-  test("can connect Discord integration with channel selection", async ({ page }) => {
-    await seedAuthenticatedSession(page);
-    await page.goto(`${BASE}/organization-panel/integrations`);
+  test("can connect Discord integration with channel selection", async ({ page, next }) => {
+    await seedAuthenticatedSession(page, next);
+    await page.goto(`${BASE}/club-panel/integrations`);
 
     const discordCard = page
-      .locator("div.bg-card", { hasText: "Discord" })
+      .locator("div.bg-surface", { hasText: "Discord" })
       .first();
 
     await expect(discordCard.getByRole("heading", { name: "Discord" })).toBeVisible();
@@ -1057,12 +1266,67 @@ test.describe("Organization Integrations", () => {
 // ── Workflow 2: Home / Events Page ────────────────────────────────────
 
 test.describe("Events Page", () => {
+  test("keeps mobile event controls fixed, preserves latest time, and navigates attendee drawers", async ({ page, next }, testInfo) => {
+    const title = "A very long campus event title that must truncate before the added time on a small mobile screen";
+    const addedAt = new Date(Date.now() - 3_600_000).toISOString();
+    const events = Array.from({ length: 30 }, (_, index) => ({
+      id: index + 1, title: index === 0 ? title : `Campus event ${index + 1}`,
+      description: "Event details. ".repeat(150), location: "SLC", price: 0,
+      food: [], registration: false, source_image_url: null, source_url: null,
+      category: "Career", club_id: 1, club: "UW Tech Club",
+      club_type: "independent", school: "uwaterloo", added_at: addedAt,
+      occurrences: [{ id: String(index + 1), event_id: index + 1,
+        dtstart_utc: new Date(Date.now() + (index + 1) * 86_400_000).toISOString(), dtend_utc: null }],
+    }));
+    const avatar = "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"><circle cx="16" cy="16" r="16" fill="blue"/></svg>');
+    await mockApi(page, next, url => apiPath(url) === "/events", async () => ({ json: {
+      items: events, total: events.length, page: 1, page_size: 100, total_pages: 1,
+      latest_added_event: { title, added_at: addedAt },
+    } }));
+    await mockApi(page, next, url => /^\/events\/\d+$/.test(apiPath(url) ?? ""), async request => ({ json: events[Number(new URL(request.url).pathname.split("/").at(-1)) - 1] }));
+    await mockApi(page, next, url => /^\/going-events\/\d+\/attendees$/.test(apiPath(url) ?? ""), async () => ({ json: {
+      going_count: 1, attendees: [{ name: "Taylor Q.", avatar_url: avatar }],
+    } }));
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(BASE);
+    const header = page.locator('[data-slot="page-header"]:visible');
+    const latest = header.getByRole("button").filter({ hasText: title });
+    await expect(latest).toBeVisible();
+    await expect(latest.getByText(/added .*ago/)).toBeVisible();
+    await expect.poll(() => latest.getByText(title, { exact: true }).evaluate(element => element.scrollWidth > element.clientWidth)).toBe(true);
+    const scrollRoot = page.locator(".main-content-grid:visible");
+    await expect(scrollRoot).toHaveCSS("padding-top", "0px");
+    await expect(header).toHaveCSS("margin-top", "0px");
+    await expect(header).toHaveCSS("padding-top", "16px");
+    expect(Math.abs((await header.boundingBox())!.y - (await scrollRoot.boundingBox())!.y)).toBeLessThan(2);
+    await scrollRoot.evaluate(element => { element.scrollTop = 400; });
+    await expect.poll(() => scrollRoot.evaluate(element => element.scrollTop)).toBeGreaterThan(300);
+    const pinnedTop = (await header.boundingBox())!.y;
+    await scrollRoot.evaluate(element => { element.scrollTop = 700; });
+    await expect.poll(async () => Math.abs((await header.boundingBox())!.y - pinnedTop)).toBeLessThan(1);
+    await scrollRoot.evaluate(element => { element.scrollTop = 0; });
+    await page.locator('article[data-event-id="1"]:visible').getByText("SLC", { exact: true }).click();
+    const drawer = page.getByRole("dialog");
+    await expect(drawer.getByRole("img", { name: "Taylor Q." })).toBeVisible();
+    const photo = drawer.locator(`img[src="${avatar}"]`);
+    await photo.scrollIntoViewIfNeeded();
+    await expect.poll(() => photo.evaluate(element => (element as HTMLImageElement).naturalWidth)).toBe(32);
+    await drawer.getByRole("button", { name: "Next", exact: true }).focus();
+    await page.keyboard.press("ArrowRight");
+    await expect(drawer.getByRole("heading", { name: "Campus event 2", level: 2, exact: true })).toBeVisible();
+    await drawer.getByRole("button", { name: "Previous", exact: true }).click();
+    await expect(drawer.getByRole("heading", { name: title, exact: true })).toBeVisible();
+    await page.screenshot({ path: testInfo.outputPath("event-drawer-mobile.png"), fullPage: true });
+    await page.goto(`${BASE}/events/1`);
+    await expect(page.getByRole("img", { name: "Taylor Q." })).toBeVisible();
+  });
+
   test("returns one upcoming event for the random search command", async ({
     page,
   }) => {
     await page.goto(BASE);
 
-    const cards = page.locator("article[data-event-id]");
+    const cards = page.locator("article[data-event-id]:visible");
     await expect(cards).toHaveCount(1);
 
     const search = page.getByPlaceholder("Search events");
@@ -1081,6 +1345,7 @@ test.describe("Events Page", () => {
   }) => {
     await page.goto(BASE);
 
+    await expect(page.locator(".main-content-grid:visible")).toHaveCSS("overflow-y", "auto");
     const scrollState = await page.locator(".main-content-grid").evaluate((scrollRoot) => ({
       documentCanScroll:
         document.documentElement.scrollHeight > document.documentElement.clientHeight,
@@ -1093,28 +1358,28 @@ test.describe("Events Page", () => {
     });
   });
 
-  test("renders the organization type icon from the event feed signature", async ({
+  test("renders the club type icon from the event feed signature", async ({
     page,
   }) => {
     await page.setViewportSize({ width: 1024, height: 900 });
     const assetResponse = page.waitForResponse(
       response =>
-        response.url().endsWith("/icons/organization-types/utsc-scsu.svg") &&
+        response.url().endsWith("/icons/club-types/utsc-scsu.svg") &&
         response.status() === 200,
     );
-    await page.goto("http://utsc.localhost:3000/school/utsc");
+    await page.goto("http://utsc.wat2do.localhost:3000/school/utsc");
 
     await expect(
       page.getByRole("heading", { name: "UTSC Eats SCSU Logo Preview" }),
     ).toBeVisible();
 
     const icon = page.getByRole("img", {
-      name: "Organization type: SCSU",
+      name: "Club type: SCSU",
     }).first();
     await expect(icon).toBeVisible();
     await expect
       .poll(() => icon.evaluate(element => getComputedStyle(element).maskImage))
-      .toContain("/icons/organization-types/utsc-scsu.svg");
+      .toContain("/icons/club-types/utsc-scsu.svg");
 
     const eventGrid = page.locator('[role="list"] section > div.grid').first();
     await expect
@@ -1125,12 +1390,12 @@ test.describe("Events Page", () => {
       )
       .toBe(6);
 
-    const organizationName = page
+    const clubName = page
       .getByText("UTSC Eats Campus Group", { exact: true })
       .first();
     await expect
       .poll(() =>
-        organizationName.evaluate(element => ({
+        clubName.evaluate(element => ({
           maxWidth: getComputedStyle(element).maxWidth,
           overflow: getComputedStyle(element).overflow,
           textOverflow: getComputedStyle(element).textOverflow,
@@ -1165,7 +1430,7 @@ test.describe("Events Page", () => {
 
     const body = await page.textContent("body");
     expect(body).toBeTruthy();
-    const eventCount = page.getByText("upcoming event", { exact: true }).locator("..");
+    const eventCount = page.getByRole("heading", { name: "1 upcoming event", exact: true });
     const addEventButton = page.getByRole("button", { name: "Add event" });
     const moreFiltersButton = page.getByRole("button", {
       name: "More filters",
@@ -1184,35 +1449,23 @@ test.describe("Events Page", () => {
           searchBox,
           addEventBox,
           moreFiltersBox,
-          sharesSearchRow,
-          filtersBesideStrip,
+          stripBox,
         ] = await Promise.all([
           eventSearch.boundingBox(),
           addEventButton.boundingBox(),
           moreFiltersButton.boundingBox(),
-          eventSearch.evaluate((searchElement) =>
-            Boolean(
-              searchElement.parentElement
-                ?.querySelector("button")
-                ?.textContent?.includes("Add event"),
-            ),
-          ),
-          page
-            .getByTestId("event-quick-filter-scroll")
-            .evaluate((strip) =>
-              Boolean(
-                strip.parentElement?.parentElement
-                  ?.querySelector("button")
-                  ?.textContent?.includes("More filters"),
-              ),
-            ),
+          page.getByTestId("event-quick-filter-scroll").boundingBox(),
         ]);
         return {
           searchHeight: searchBox?.height,
           addEventHeight: addEventBox?.height,
           moreFiltersHeight: moreFiltersBox?.height,
-          sharesSearchRow,
-          filtersBesideStrip,
+          sharesSearchRow: Boolean(searchBox && addEventBox &&
+            Math.abs(searchBox.y - addEventBox.y) < 1 &&
+            addEventBox.x >= searchBox.x + searchBox.width),
+          filtersBesideStrip: Boolean(stripBox && moreFiltersBox &&
+            Math.abs(stripBox.y - moreFiltersBox.y) < 1 &&
+            moreFiltersBox.x >= stripBox.x + stripBox.width),
         };
       })
       .toEqual({
@@ -1223,18 +1476,18 @@ test.describe("Events Page", () => {
         filtersBesideStrip: true,
       });
     await expect
-      .poll(async () =>
-        eventCount.evaluate(
-          (countElement) =>
-            countElement.parentElement?.querySelector("button") === null,
-        ),
-      )
+      .poll(async () => {
+        const [countBox, searchBox] = await Promise.all([
+          eventCount.boundingBox(), eventSearch.boundingBox(),
+        ]);
+        return Boolean(countBox && searchBox && countBox.y + countBox.height < searchBox.y);
+      })
       .toBe(true);
 
     await page.screenshot({ path: "e2e/screenshots/events-page.png", fullPage: true });
   });
 
-  test("permanently filters events after their effective end", async ({ page }) => {
+  test("permanently filters events after their effective end", async ({ page, next }) => {
     const nowMs = Date.now();
     const eventBase = {
       location: "SLC",
@@ -1243,8 +1496,8 @@ test.describe("Events Page", () => {
       registration: false,
       source_image_url: null,
       category: "Career",
-      organization: "UW Tech Club",
-      organization_type: "wusa",
+      club: "UW Tech Club",
+      club_type: "wusa",
       school: "uwaterloo",
       added_at: new Date(nowMs).toISOString(),
     };
@@ -1279,8 +1532,8 @@ test.describe("Events Page", () => {
       event(5, "Still Running", -120, 60),
     ];
 
-    await page.route(url => apiPath(url) === "/events", async (route) => {
-      await route.fulfill({
+    await mockApi(page, next, url => apiPath(url) === "/events", async () => {
+      return ({
         status: 200,
         contentType: "application/json",
         body: JSON.stringify({
@@ -1296,18 +1549,18 @@ test.describe("Events Page", () => {
 
     await page.goto(BASE);
 
-    await expect(page.locator('article[data-event-id="1"]')).toBeVisible();
-    await expect(page.locator('article[data-event-id="2"]')).toBeVisible();
-    await expect(page.locator('article[data-event-id="5"]')).toBeVisible();
-    await expect(page.locator('article[data-event-id="3"]')).toHaveCount(0);
-    await expect(page.locator('article[data-event-id="4"]')).toHaveCount(0);
+    await expect(page.locator('article[data-event-id="1"]:visible')).toBeVisible();
+    await expect(page.locator('article[data-event-id="2"]:visible')).toBeVisible();
+    await expect(page.locator('article[data-event-id="5"]:visible')).toBeVisible();
+    await expect(page.locator('article[data-event-id="3"]:visible')).toHaveCount(0);
+    await expect(page.locator('article[data-event-id="4"]:visible')).toHaveCount(0);
   });
 
-  test("shares and reports from event details while logged out", async ({ page }) => {
+  test("shares and reports from event details while logged out", async ({ page, next }) => {
     let submittedReport: Record<string, unknown> | null = null;
-    await page.route(url => apiPath(url) === "/reports", async (route) => {
-      submittedReport = route.request().postDataJSON();
-      await route.fulfill({
+    await mockApi(page, next, url => apiPath(url) === "/reports", async (request) => {
+      submittedReport = (await request.json());
+      return ({
         status: 201,
         contentType: "application/json",
         body: JSON.stringify({
@@ -1324,26 +1577,17 @@ test.describe("Events Page", () => {
 
     await page.goto(BASE);
 
-    const card = page.locator('article[data-event-id="1"]').first();
+    const card = page.locator('article[data-event-id="1"]:visible').first();
     await expect(card).toBeVisible();
-    const openedSynchronously = await card.evaluate((element) => {
-      (element as HTMLElement).click();
-      return (
-        document
-          .querySelector('[data-slot="drawer-content"]')
-          ?.getAttribute("data-state") === "open"
-      );
-    });
-    expect(openedSynchronously).toBe(true);
+    await card.click();
+    await expect(page.getByRole("dialog", { name: "Tech Career Fair" })).toBeVisible();
     await expect(page).toHaveURL(`${BASE}/`);
 
     const eventDrawer = page.getByRole("dialog", { name: "Tech Career Fair" });
     const hostSection = eventDrawer.locator('[data-slot="event-host"]');
     const hostLinks = hostSection.locator(':scope > [data-slot="event-host-links"]');
     await expect(hostSection.getByText("UW Tech Club")).toBeVisible();
-    await expect(hostLinks.getByRole("link", { name: "Visit Website" })).toBeVisible();
-    await expect(hostLinks.getByRole("link", { name: "Instagram" })).toBeVisible();
-    await expect(hostLinks.getByRole("link", { name: "Discord" })).toBeVisible();
+    await expect(hostLinks).toHaveCount(0);
     await expect(
       eventDrawer.getByRole("heading", { name: "Contact the Host" }),
     ).toHaveCount(0);
@@ -1420,7 +1664,7 @@ test.describe("Events Page", () => {
     await reportDialog.getByRole("button", { name: "Submit report" }).click();
 
     await expect(
-      reportDialog.getByRole("heading", { name: "Report submitted" }),
+      page.getByRole("dialog").getByRole("heading", { name: "Report submitted" }),
     ).toBeVisible();
     expect(submittedReport).toEqual({
       event_id: 1,
@@ -1429,20 +1673,18 @@ test.describe("Events Page", () => {
   });
 
   test("opens the event poster in-app and closes the drawer after filtering by host", async ({
-    page,
+    page, next,
   }) => {
     const now = new Date();
     const startsAt = new Date(now.getTime() + 86_400_000).toISOString();
     const posterUrl = "https://wat2do.io/media/e2e-event-poster.png";
-    const optimizedPosterUrl = `/_next/image?url=${encodeURIComponent(posterUrl)}&w=384&q=75`;
-    const optimizedPosterWidths: string[] = [];
     const posterBytes = Buffer.from(
       "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
       "base64",
     );
     const event = {
       id: 1,
-      organization_id: 1,
+      club_id: 1,
       title: "Poster Dialog Event",
       description: "Poster dialog details",
       location: "SLC",
@@ -1460,29 +1702,16 @@ test.describe("Events Page", () => {
       source_image_url: posterUrl,
       source_url: null,
       category: "Career",
-      organization: "UW Tech Club",
-      organization_type: "wusa",
-      organization_page: "https://example.com/tech",
-      organization_ig: "uwtechclub",
-      organization_discord: "https://discord.gg/uwtechclub",
+      club: "UW Tech Club",
+      club_type: "wusa",
+      club_page: "https://example.com/tech",
+      club_ig: "uwtechclub",
+      club_discord: "https://discord.gg/uwtechclub",
       school: "uwaterloo",
       cancelled: false,
       added_at: now.toISOString(),
     };
 
-    await page.route(
-      url =>
-        url.pathname === "/_next/image" &&
-        url.searchParams.get("url") === posterUrl,
-      async (route) => {
-        optimizedPosterWidths.push(new URL(route.request().url()).searchParams.get("w") ?? "");
-        await route.fulfill({
-          status: 200,
-          contentType: "image/png",
-          body: posterBytes,
-        });
-      },
-    );
     await page.route(posterUrl, async (route) => {
       await route.fulfill({
         status: 200,
@@ -1491,8 +1720,8 @@ test.describe("Events Page", () => {
       });
     });
 
-    await page.route(url => apiPath(url) === "/events", async (route) => {
-      await route.fulfill({
+    await mockApi(page, next, url => apiPath(url) === "/events", async () => {
+      return ({
         status: 200,
         contentType: "application/json",
         body: JSON.stringify({
@@ -1505,8 +1734,8 @@ test.describe("Events Page", () => {
         }),
       });
     });
-    await page.route(url => apiPath(url) === "/events/1", async (route) => {
-      await route.fulfill({
+    await mockApi(page, next, url => apiPath(url) === "/events/1", async () => {
+      return ({
         status: 200,
         contentType: "application/json",
         body: JSON.stringify(event),
@@ -1514,58 +1743,52 @@ test.describe("Events Page", () => {
     });
 
     await page.goto(BASE);
-    const eventCard = page.locator('article[data-event-id="1"]');
+    const eventCard = page.locator('article[data-event-id="1"]:visible');
     await expect(eventCard.locator("foreignObject")).toHaveCount(0);
     await expect(eventCard.locator("svg > g > image")).toHaveAttribute(
       "href",
-      optimizedPosterUrl,
+      posterUrl,
     );
     await eventCard.click();
 
     const eventDrawer = page.getByRole("dialog", { name: "Poster Dialog Event" });
     await expect(eventDrawer.locator("svg > g > image").first()).toHaveAttribute(
       "href",
-      optimizedPosterUrl,
+      posterUrl,
     );
-    await expect.poll(() => optimizedPosterWidths.length).toBeGreaterThan(0);
-    expect(optimizedPosterWidths).toEqual(
-      expect.arrayContaining(["384"]),
-    );
-    expect(optimizedPosterWidths).not.toContain("1200");
     await eventDrawer.getByRole("button", { name: "View full event image" }).click();
 
     const imageDialog = page.getByRole("dialog", { name: "View full event image" });
     await expect(imageDialog.getByRole("img", { name: "Poster Dialog Event" })).toBeVisible();
     await imageDialog.getByRole("button", { name: "Close" }).click();
 
-    await eventDrawer.getByRole("button", { name: "UW Tech Club" }).click();
+    await eventDrawer.getByRole("button", { name: "UW Tech Club" }).last().click();
     await page
       .getByRole("menuitem", { name: "See more events by UW Tech Club" })
       .click();
 
     await expect(eventDrawer).not.toBeVisible();
     await expect(page).toHaveURL(BASE + "/");
-    await expect(page.locator('article[data-event-id="1"]')).toBeVisible();
+    await expect(page.locator('article[data-event-id="1"]:visible')).toBeVisible();
   });
 
-  test("lets admins delete events from the drawer and dedicated page", async ({ page }) => {
-    await seedAuthenticatedSession(page);
+  test("lets admins delete events from the drawer and dedicated page", async ({ page, next }) => {
+    await seedAuthenticatedSession(page, next);
     const startsAt = new Date(Date.now() + 86_400_000).toISOString();
     let deleteRequests = 0;
 
-    await page.route(url => apiPath(url) === "/events/1", async (route) => {
-      if (route.request().method() === "DELETE") {
+    await mockApi(page, next, url => apiPath(url) === "/events/1", async (request) => {
+      if (request.method === "DELETE") {
         deleteRequests += 1;
-        await route.fulfill({ status: 204, body: "" });
-        return;
+        return ({ status: 204, body: "" });
       }
 
-      await route.fulfill({
+      return ({
         status: 200,
         contentType: "application/json",
         body: JSON.stringify({
           id: 1,
-          organization_id: 1,
+          club_id: 1,
           title: "Tech Career Fair",
           description: "Meet campus employers.",
           location: "SLC",
@@ -1582,8 +1805,8 @@ test.describe("Events Page", () => {
           registration: false,
           source_image_url: null,
           category: "Career",
-          organization: "UW Tech Club",
-          organization_type: "wusa",
+          club: "UW Tech Club",
+          club_type: "wusa",
           school: "uwaterloo",
           cancelled: false,
           added_at: new Date().toISOString(),
@@ -1592,7 +1815,7 @@ test.describe("Events Page", () => {
     });
 
     await page.goto(BASE);
-    await page.locator('article[data-event-id="1"]').click();
+    await page.locator('article[data-event-id="1"]:visible').click();
 
     const eventDrawer = page.getByRole("dialog", { name: "Tech Career Fair" });
     const drawerActions = eventDrawer.locator('[data-slot="event-actions"]');
@@ -1621,14 +1844,13 @@ test.describe("Events Page", () => {
     await expect(page).toHaveURL(`${BASE}/`);
   });
 
-  test("scrolls drawer content that exceeds the mobile viewport", async ({ page }) => {
-    await seedAuthenticatedSession(page);
+  test("scrolls drawer content that exceeds the mobile viewport", async ({ page, next }) => {
+    await seedAuthenticatedSession(page, next);
     await page.setViewportSize({ width: 375, height: 320 });
     await page.goto(BASE);
 
-    const card = page.locator('article[data-event-id="1"]').first();
-    await card.scrollIntoViewIfNeeded();
-    await card.click();
+    const card = page.locator('article[data-event-id="1"]:visible').first();
+    await card.getByText("SLC", { exact: true }).click();
     await page.getByRole("dialog", { name: "Tech Career Fair" })
       .getByRole("button", { name: "Report" })
       .click();
@@ -1655,7 +1877,7 @@ test.describe("Events Page", () => {
   test("scrolls and closes event details opened from a card", async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 320 });
     await page.goto(BASE);
-    await page.locator('article[data-event-id="1"]').click();
+    await page.locator('article[data-event-id="1"]:visible').getByText("SLC", { exact: true }).click();
 
     const drawer = page.getByRole("dialog");
     const drawerBody = drawer.locator('[data-slot="drawer-body"]');
@@ -1675,28 +1897,17 @@ test.describe("Events Page", () => {
       .poll(() => drawerBody.evaluate(element => element.scrollTop))
       .toBeGreaterThan(0);
 
-    const closedSynchronously = await page
-      .getByRole("button", { name: "Close" })
-      .evaluate((button) => {
-        (button as HTMLButtonElement).click();
-        return (
-          document
-            .querySelector('[data-slot="drawer-content"]')
-            ?.getAttribute("data-state") !== "open"
-        );
-      });
-
-    expect(closedSynchronously).toBe(true);
+    await page.keyboard.press("Escape");
     await expect(page.getByRole("dialog")).not.toBeVisible();
   });
 
-  test("shows similar events below a dedicated event page", async ({ page }) => {
+  test("shows similar events below a dedicated event page", async ({ page, next }) => {
     const now = new Date();
     const startsAt = new Date(now.getTime() + 86_400_000).toISOString();
     const eventDetails = [
       {
         id: 1,
-        organization_id: 1,
+        club_id: 1,
         title: "Tech Career Fair",
         description: "Meet campus employers.",
         location: "SLC",
@@ -1712,18 +1923,18 @@ test.describe("Events Page", () => {
         food: [],
         registration: false,
         source_image_url: null,
-        organization_type: "independent",
+        club_type: "independent",
         school: "uwaterloo",
         source_url: null,
         category: "Career",
-        organization: "UW Tech Club",
+        club: "UW Tech Club",
         ig_handle: null,
         cancelled: false,
         added_at: now.toISOString(),
       },
       {
         id: 2,
-        organization_id: 2,
+        club_id: 2,
         title: "Board Game Night",
         description: "Play board games with other students.",
         location: "MC",
@@ -1739,32 +1950,27 @@ test.describe("Events Page", () => {
         food: [],
         registration: false,
         source_image_url: null,
-        organization_type: "independent",
+        club_type: "independent",
         school: "uwaterloo",
         source_url: null,
         category: "Social",
-        organization: "UW Board Games Club",
+        club: "UW Board Games Club",
         ig_handle: null,
         cancelled: false,
         added_at: now.toISOString(),
       },
     ];
 
-    await page.route(
-      (url) => ["/events/1", "/events/2"].includes(apiPath(url) ?? ""),
-      async (route) => {
-        const id = Number(apiPath(new URL(route.request().url()))?.split("/").pop());
-        await route.fulfill({
+    await mockApi(page, next, (url) => ["/events/1", "/events/2"].includes(apiPath(url) ?? ""), async (request) => {
+        const id = Number(apiPath(new URL(request.url))?.split("/").pop());
+        return ({
           status: 200,
           contentType: "application/json",
           body: JSON.stringify(eventDetails.find((event) => event.id === id)),
         });
-      },
-    );
-    await page.route(
-      (url) => apiPath(url) === "/events",
-      async (route) => {
-        await route.fulfill({
+      });
+    await mockApi(page, next, (url) => apiPath(url) === "/events", async () => {
+        return ({
           status: 200,
           contentType: "application/json",
           body: JSON.stringify({
@@ -1776,8 +1982,7 @@ test.describe("Events Page", () => {
             latest_added_event: null,
           }),
         });
-      },
-    );
+      });
 
     await page.goto(`${BASE}/events/1`);
 
@@ -1797,22 +2002,22 @@ test.describe("Events Page", () => {
   });
 
   test("renders event facts and completes signed-out registration inline", async ({
-    page,
+    page, next,
   }) => {
     await page.setViewportSize({ width: 375, height: 844 });
     const now = new Date();
     const startsAt = new Date(now.getTime() + 86_400_000).toISOString();
     let registrationBody: { occurrence_ids: string[] } | null = null;
 
-    await page.route(url => apiPath(url) === "/auth/send-otp", async (route) => {
-      await route.fulfill({
+    await mockApi(page, next, url => apiPath(url) === "/auth/send-otp", async () => {
+      return ({
         status: 200,
         contentType: "application/json",
         body: JSON.stringify({ message: "sent" }),
       });
     });
-    await page.route(url => apiPath(url) === "/auth/verify-otp", async (route) => {
-      await route.fulfill({
+    await mockApi(page, next, url => apiPath(url) === "/auth/verify-otp", async () => {
+      return ({
         status: 200,
         contentType: "application/json",
         body: JSON.stringify({
@@ -1825,8 +2030,8 @@ test.describe("Events Page", () => {
         }),
       });
     });
-    await page.route(url => apiPath(url) === "/users/me", async (route) => {
-      await route.fulfill({
+    await mockApi(page, next, url => apiPath(url) === "/users/me", async () => {
+      return ({
         status: 200,
         contentType: "application/json",
         body: JSON.stringify({
@@ -1845,18 +2050,18 @@ test.describe("Events Page", () => {
         }),
       });
     });
-    await page.route(url => apiPath(url) === "/organizations/mine", async (route) => {
-      await route.fulfill({
+    await mockApi(page, next, url => apiPath(url) === "/clubs/mine", async () => {
+      return ({
         status: 200,
         contentType: "application/json",
         body: JSON.stringify([]),
       });
     });
-    await page.route(url => apiPath(url) === "/going-events/1", async (route) => {
-      registrationBody = route.request().postDataJSON() as {
+    await mockApi(page, next, url => apiPath(url) === "/going-events/1", async (request) => {
+      registrationBody = (await request.json()) as {
         occurrence_ids: string[];
       };
-      await route.fulfill({
+      return ({
         status: 200,
         contentType: "application/json",
         body: JSON.stringify({
@@ -1867,13 +2072,13 @@ test.describe("Events Page", () => {
         }),
       });
     });
-    await page.route(url => apiPath(url) === "/events/1", async (route) => {
-      await route.fulfill({
+    await mockApi(page, next, url => apiPath(url) === "/events/1", async () => {
+      return ({
         status: 200,
         contentType: "application/json",
         body: JSON.stringify({
           id: 1,
-          organization_id: 1,
+          club_id: 1,
           title: "Tech Career Fair",
           description: "Full detail loaded",
           location: "SLC",
@@ -1887,11 +2092,11 @@ test.describe("Events Page", () => {
           food: [],
           registration: true,
           source_image_url: null,
-          organization_type: "independent",
+          club_type: "independent",
           school: "uwaterloo",
           source_url: null,
           category: "Career",
-          organization: "UW Tech Club",
+          club: "UW Tech Club",
           ig_handle: null,
           cancelled: false,
           added_at: now.toISOString(),
@@ -1934,12 +2139,12 @@ test.describe("Events Page", () => {
         "you@uwaterloo.ca",
       );
       await expect(
-        authForm.getByRole("button", { name: "Register", exact: true }),
+        authForm.getByRole("button", { name: "Going", exact: true }),
       ).toBeDisabled();
     };
 
     await page.goto(BASE);
-    await page.locator('article[data-event-id="1"]').click();
+    await page.locator('article[data-event-id="1"]:visible').click();
     await assertEventDetails();
     await assertInlineRegistration();
 
@@ -1949,7 +2154,7 @@ test.describe("Events Page", () => {
 
     const authForm = page.getByTestId("event-registration-auth");
     const registerButton = authForm.getByRole("button", {
-      name: "Register",
+      name: "Going",
       exact: true,
     });
     await authForm.getByLabel("Email address").fill(TEST_EMAIL);
@@ -1959,38 +2164,36 @@ test.describe("Events Page", () => {
     await expect(authForm.getByLabel("Verification code")).toBeVisible();
     await expect(registerButton).toBeDisabled();
     await authForm.getByLabel("Verification code").fill("123456");
-    await expect(registerButton).toBeEnabled();
-    await registerButton.click();
 
     await expect.poll(() => registrationBody).toEqual({
       occurrence_ids: ["occurrence-1"],
     });
-    await expect(page.getByText("You're In")).toBeVisible();
+    await expect(page.getByText("Youre going!")).toBeVisible();
   });
 
-  test("shows New in the top-left without an event category badge", async ({ page }) => {
+  test("shows New in the top-left without an event category badge", async ({ page, next }) => {
     const now = new Date();
     const startsAt = new Date(now.getTime() + 86_400_000).toISOString();
-    await page.route(url => apiPath(url) === "/meta/constants", async (route) => {
-      await route.fulfill({
+    await mockApi(page, next, url => apiPath(url) === "/meta/constants", async () => {
+      return ({
         status: 200,
         contentType: "application/json",
         body: JSON.stringify({
           event_categories: ["Arts & Culture"],
-          organization_categories: ["Arts & Culture"],
+          club_categories: ["Arts & Culture"],
           interests: ["Arts & Culture"],
           interest_to_categories: { "Arts & Culture": ["Arts & Culture"] },
           report_statuses: ["pending", "resolved", "dismissed"],
         }),
       });
     });
-    await page.route(url => apiPath(url) === "/events/1", async (route) => {
-      await route.fulfill({
+    await mockApi(page, next, url => apiPath(url) === "/events/1", async () => {
+      return ({
         status: 200,
         contentType: "application/json",
         body: JSON.stringify({
           id: 1,
-          organization_id: 1,
+          club_id: 1,
           title: "Tech Career Fair",
           description: "Full detail loaded",
           location: "SLC",
@@ -1999,11 +2202,11 @@ test.describe("Events Page", () => {
           food: [],
           registration: false,
           source_image_url: null,
-          organization_type: "independent",
+          club_type: "independent",
           school: "uwaterloo",
           source_url: null,
           category: null,
-          organization: "UW Tech Club",
+          club: "UW Tech Club",
           ig_handle: null,
           cancelled: false,
           added_at: now.toISOString(),
@@ -2012,20 +2215,20 @@ test.describe("Events Page", () => {
     });
 
     await page.goto(BASE);
-    await page.locator('article[data-event-id="1"]').click();
+    await page.locator('article[data-event-id="1"]:visible').click();
 
     const drawer = page.getByRole("dialog", { name: "Tech Career Fair" });
     await expect(drawer.getByText("Full detail loaded", { exact: true })).toBeVisible();
     await expect(drawer.getByText("Arts & Culture", { exact: true })).toHaveCount(0);
-    const newBadge = drawer.getByText("New", { exact: true });
+    const newBadge = drawer.getByText("NEW", { exact: true });
     await expect(newBadge).toBeVisible();
     await expect(
       newBadge.locator("xpath=ancestor::div[contains(@class, 'absolute')][1]"),
     ).toHaveClass(/top-0.*left-0/);
   });
 
-  test("uses recurring-event controls above the event drawer", async ({ page }) => {
-    await seedAuthenticatedSession(page);
+  test("uses recurring-event controls above the event drawer", async ({ page, next }) => {
+    await seedAuthenticatedSession(page, next);
 
     const firstOccurrenceId = "11111111-1111-4111-8111-111111111111";
     const secondOccurrenceId = "22222222-2222-4222-8222-222222222222";
@@ -2033,13 +2236,13 @@ test.describe("Events Page", () => {
     const secondStartsAt = "2030-08-17T18:00:00Z";
     let submittedOccurrenceIds: string[] | null = null;
 
-    await page.route(url => apiPath(url) === "/events/1", async (route) => {
-      await route.fulfill({
+    await mockApi(page, next, url => apiPath(url) === "/events/1", async () => {
+      return ({
         status: 200,
         contentType: "application/json",
         body: JSON.stringify({
           id: 1,
-          organization_id: 1,
+          club_id: 1,
           title: "Recurring Workshop",
           description: "Choose one workshop date",
           location: "SLC",
@@ -2061,23 +2264,23 @@ test.describe("Events Page", () => {
           food: [],
           registration: true,
           source_image_url: null,
-          organization_type: "independent",
+          club_type: "independent",
           school: "uwaterloo",
           source_url: null,
           category: "Career",
-          organization: "UW Tech Club",
+          club: "UW Tech Club",
           ig_handle: null,
           cancelled: false,
           added_at: new Date().toISOString(),
         }),
       });
     });
-    await page.route(url => apiPath(url) === "/going-events/1", async (route) => {
-      const body = route.request().postDataJSON() as {
+    await mockApi(page, next, url => apiPath(url) === "/going-events/1", async (request) => {
+      const body = (await request.json()) as {
         occurrence_ids: string[];
       };
       submittedOccurrenceIds = body.occurrence_ids;
-      await route.fulfill({
+      return ({
         status: 200,
         contentType: "application/json",
         body: JSON.stringify({
@@ -2090,7 +2293,7 @@ test.describe("Events Page", () => {
     });
 
     await page.goto(BASE);
-    await page.locator('article[data-event-id="1"]').click();
+    await page.locator('article[data-event-id="1"]:visible').click();
 
     const drawer = page.getByRole("dialog", { name: "Recurring Workshop" });
     const extraDatesButton = drawer.getByRole("button", { name: "+1 date" });
@@ -2105,6 +2308,7 @@ test.describe("Events Page", () => {
     expect(tooltipZIndex).toBeGreaterThan(drawerZIndex);
 
     await page.mouse.move(0, 0);
+    await page.keyboard.press("Escape");
     await expect(tooltip).toBeHidden();
     await extraDatesButton.dispatchEvent("pointerdown", {
       pointerType: "touch",
@@ -2118,13 +2322,9 @@ test.describe("Events Page", () => {
     await expect(tooltip).toBeVisible();
     await page.keyboard.press("Escape");
 
-    await drawer.getByRole("button", { name: "Register", exact: true }).click();
+    await drawer.getByRole("button", { name: "Going", exact: true }).click();
 
-    const occurrenceSelect = drawer.getByRole("combobox", {
-      name: "Which time are you going?",
-    });
-    await expect(occurrenceSelect).toBeVisible();
-    await expect(occurrenceSelect).toHaveAttribute("data-slot", "select-trigger");
+    await expect(drawer.getByText("Which time are you going?", { exact: true })).toBeVisible();
     await expect(drawer.locator('input[type="checkbox"]')).toHaveCount(0);
 
     const secondLabel = new Intl.DateTimeFormat("en", {
@@ -2135,14 +2335,13 @@ test.describe("Events Page", () => {
       minute: "2-digit",
     }).format(new Date(secondStartsAt));
 
-    await occurrenceSelect.click();
-    await page.getByRole("option", { name: secondLabel }).click();
+    await drawer.getByRole("button", { name: secondLabel, exact: true }).click();
     await drawer.getByRole("button", { name: "Confirm", exact: true }).click();
 
     await expect.poll(() => submittedOccurrenceIds).toEqual([secondOccurrenceId]);
   });
 
-  test("shows relative card dates, full weekdays, metadata icons, and badge icons", async ({ page }) => {
+  test("shows relative card dates, full weekdays, metadata icons, and badge icons", async ({ page, next }) => {
     const now = new Date();
     const todayStartsAt = new Date(now.getTime() - 60_000);
     const todayEndsAt = new Date(now.getTime() + 3_600_000);
@@ -2165,18 +2364,18 @@ test.describe("Events Page", () => {
       registration: false,
       source_image_url: null,
       category: "Career",
-      organization_id: 1,
-      organization: "UW Tech Club",
-      organization_type: "wusa",
-      organization_page: "https://example.com/tech",
-      organization_ig: "uwtechclub",
-      organization_discord: "https://discord.gg/uwtechclub",
+      club_id: 1,
+      club: "UW Tech Club",
+      club_type: "wusa",
+      club_page: "https://example.com/tech",
+      club_ig: "uwtechclub",
+      club_discord: "https://discord.gg/uwtechclub",
       school: "uwaterloo",
       added_at: now.toISOString(),
     };
 
-    await page.route(url => apiPath(url) === "/events", async (route) => {
-      await route.fulfill({
+    await mockApi(page, next, url => apiPath(url) === "/events", async () => {
+      return ({
         status: 200,
         contentType: "application/json",
         body: JSON.stringify({
@@ -2236,9 +2435,9 @@ test.describe("Events Page", () => {
     await page.goto(BASE);
     await page.waitForTimeout(3000);
 
-    const todayCard = page.locator('article[data-event-id="1"]');
-    const tomorrowCard = page.locator('article[data-event-id="2"]');
-    const laterCard = page.locator('article[data-event-id="3"]');
+    const todayCard = page.locator('article[data-event-id="1"]:visible');
+    const tomorrowCard = page.locator('article[data-event-id="2"]:visible');
+    const laterCard = page.locator('article[data-event-id="3"]:visible');
     await expect(todayCard).toBeVisible();
     await expect(todayCard).not.toContainText(/\b0 clicks?\b/);
     await expect(todayCard).not.toContainText(/\b0 going\b/);
@@ -2293,17 +2492,17 @@ test.describe("Events Page", () => {
     );
   });
 
-  test("persists optimistic click and going stats across refresh", async ({ page }) => {
-    await seedAuthenticatedSession(page);
+  test("persists optimistic click and going stats across refresh", async ({ page, next }) => {
+    await seedAuthenticatedSession(page, next);
 
     let clickCount = 0;
     let goingCount = 0;
     let isGoing = false;
     let eventId: number | null = null;
 
-    await page.route(url => apiPath(url) === "/events/stats", async (route) => {
+    await mockApi(page, next, url => apiPath(url) === "/events/stats", async () => {
       const hasStats = clickCount > 0 || goingCount > 0;
-      await route.fulfill({
+      return ({
         status: 200,
         contentType: "application/json",
         body: JSON.stringify(
@@ -2313,27 +2512,29 @@ test.describe("Events Page", () => {
         ),
       });
     });
-    await page.route(url => apiPath(url) === "/going-events", async (route) => {
-      await route.fulfill({
+    await mockApi(page, next, url => apiPath(url) === "/going-events", async () => {
+      return ({
         status: 200,
         contentType: "application/json",
-        body: JSON.stringify(isGoing && eventId !== null ? [eventId] : []),
+        body: JSON.stringify(isGoing && eventId !== null ? [{ event_id: eventId, occurrence_ids: ["1"] }] : []),
       });
     });
-    await page.route(url => apiPath(url)?.startsWith("/going-events/") === true, async (route) => {
-      isGoing = route.request().method() === "PUT";
+    await mockApi(page, next, url => apiPath(url)?.startsWith("/going-events/") === true, async (request) => {
+      isGoing = request.method === "PUT";
       goingCount = isGoing ? 1 : 0;
-      await route.fulfill({
+      return ({
         status: 200,
         contentType: "application/json",
         body: JSON.stringify({
           status: isGoing ? "going" : "not_going",
+          event_id: eventId,
+          occurrence_ids: isGoing ? ["1"] : [],
           going_count: goingCount,
         }),
       });
     });
-    await page.route(url => apiPath(url) === "/interactions/batch", async (route) => {
-      const payload = route.request().postDataJSON() as {
+    await mockApi(page, next, url => apiPath(url) === "/interactions/batch", async (request) => {
+      const payload = (await request.json()) as {
         interactions?: Array<{ event_id: number; interaction_type: string }>;
       };
       clickCount +=
@@ -2341,7 +2542,7 @@ test.describe("Events Page", () => {
           (interaction) =>
             interaction.event_id === eventId && interaction.interaction_type === "click",
         ).length ?? 0;
-      await route.fulfill({
+      return ({
         status: 202,
         contentType: "application/json",
         body: JSON.stringify({ recorded: payload.interactions?.length ?? 0 }),
@@ -2349,19 +2550,19 @@ test.describe("Events Page", () => {
     });
 
     await page.goto(BASE);
-    const card = page.locator("article[data-event-id]").first();
+    const card = page.locator("article[data-event-id]:visible").first();
     await expect(card).toBeVisible();
     eventId = Number(await card.getAttribute("data-event-id"));
     expect(eventId).toBeGreaterThan(0);
 
-    await card.getByRole("button", { name: "Going" }).click();
-    await expect(card).toContainText("1 going");
-
     await card.click();
+    await page.getByRole("dialog").getByRole("button", { name: "Going", exact: true }).click();
+    await expect.poll(() => goingCount).toBe(1);
+    await page.keyboard.press("Escape");
     await expect(card).toContainText("1 click · 1 going");
 
     await page.reload();
-    const refreshedCard = page.locator(`article[data-event-id="${eventId}"]`).first();
+    const refreshedCard = page.locator(`article[data-event-id="${eventId}"]:visible`).first();
     await expect(refreshedCard).toContainText("1 click · 1 going");
   });
 
@@ -2397,19 +2598,19 @@ test.describe("Events Page", () => {
     ).toBe("none");
   });
 
-  test("uses a clearable select for newly added events", async ({ page }) => {
+  test("uses a toggle for newly added events when signed out", async ({ page }) => {
     await page.goto(BASE);
 
-    const newlyAddedSelect = page.getByRole("combobox", {
-      name: "New",
+    const newlyAddedSelect = page.getByRole("button", {
+      name: "New", exact: true,
     });
-    await expect(newlyAddedSelect).toHaveAttribute("data-slot", "select-trigger");
-    const freeFoodFilter = page.getByRole("button", {
-      name: "Free food",
+    await expect(newlyAddedSelect).toHaveAttribute("aria-pressed", "false");
+    const hasFoodFilter = page.getByRole("button", {
+      name: "Food",
       exact: true,
     });
     const [selectStyles, buttonStyles] = await Promise.all(
-      [newlyAddedSelect, freeFoodFilter].map((control) =>
+      [newlyAddedSelect, hasFoodFilter].map((control) =>
         control.evaluate((element) => {
           const styles = getComputedStyle(element);
           const bounds = element.getBoundingClientRect();
@@ -2431,57 +2632,12 @@ test.describe("Events Page", () => {
     expect(selectStyles.borderTopWidth).toBe("1px");
 
     await newlyAddedSelect.click();
-    await expect(
-      page.getByRole("option", { name: "New" }),
-    ).toBeVisible();
+    await expect(newlyAddedSelect).toHaveAttribute("aria-pressed", "true");
     await expect(
       page.getByRole("option", { name: "Added since last visit" }),
     ).toHaveCount(0);
 
-    await page
-      .getByRole("option", { name: "New" })
-      .click();
-
-    const clearNewlyAddedFilter = page.getByRole("button", {
-      name: "Clear newly added filter",
-    });
-    await expect(clearNewlyAddedFilter).toHaveAttribute(
-      "data-slot",
-      "filter-clear-button",
-    );
-    await expect(clearNewlyAddedFilter).toHaveClass(/h-5/);
-    await expect(clearNewlyAddedFilter).toContainText("1");
-    const [selectBounds, clearBounds] = await Promise.all([
-      newlyAddedSelect.boundingBox(),
-      clearNewlyAddedFilter.boundingBox(),
-    ]);
-    expect(selectBounds).not.toBeNull();
-    expect(clearBounds).not.toBeNull();
-    if (selectBounds && clearBounds) {
-      expect(
-        selectBounds.x +
-          selectBounds.width -
-          (clearBounds.x + clearBounds.width),
-      ).toBe(4);
-    }
-
-    await clearNewlyAddedFilter.hover();
-    await expect
-      .poll(() =>
-        clearNewlyAddedFilter.evaluate((element) => {
-          const backgroundColor = getComputedStyle(element).backgroundColor;
-          const functionalAlpha = backgroundColor.match(
-            /\/\s*([\d.]+)\s*\)$/,
-          )?.[1];
-          const rgbaAlpha = backgroundColor.match(
-            /^rgba\(.*,\s*([\d.]+)\)$/,
-          )?.[1];
-          return Number(functionalAlpha ?? rgbaAlpha ?? 1);
-        }),
-      )
-      .toBeCloseTo(0.28, 2);
-
-    const newBadges = page.getByText("NEW", { exact: true });
+    const newBadges = page.locator("article:visible").getByText("NEW", { exact: true });
     await expect.poll(() => newBadges.count()).toBeGreaterThan(0);
     const newBadge = newBadges.first();
     await expect(newBadge).toBeVisible();
@@ -2497,8 +2653,67 @@ test.describe("Events Page", () => {
         color: "rgb(255, 255, 255)",
       });
 
-    await clearNewlyAddedFilter.click();
-    await expect(clearNewlyAddedFilter).toHaveCount(0);
+    await newlyAddedSelect.click();
+    await expect(newlyAddedSelect).toHaveAttribute("aria-pressed", "false");
+  });
+
+  test("opens minimum going on mouse down, filters with a number input, and resets with All", async ({ page, next }) => {
+    await mockApi(page, next, url => apiPath(url) === "/events/stats", async () => {
+      return ({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ "1": { going_count: 3, saved_count: 0, view_count: 0 } }),
+      });
+    });
+    await page.goto(BASE);
+    const card = page.getByRole("button", { name: "Event: Tech Career Fair", exact: true });
+    const minimumGoing = page.getByRole("spinbutton", { name: "Minimum going" });
+    await expect(card).toBeVisible();
+    await expect(minimumGoing).toHaveCount(0);
+    await page.getByRole("button", { name: ">0 going", exact: true }).hover();
+    await expect(minimumGoing).toHaveCount(0);
+    await page.mouse.down();
+    await expect(minimumGoing).toBeVisible();
+    await page.mouse.up();
+    await expect(page.getByText("Minimum going", { exact: true })).toBeVisible();
+    await expect(minimumGoing).toHaveValue("0");
+    await page.keyboard.press("Escape");
+    await page.getByRole("button", { name: ">0 going", exact: true }).focus();
+    await page.keyboard.press("Enter");
+    await expect(minimumGoing).toBeVisible();
+    await minimumGoing.hover();
+    await minimumGoing.fill("3");
+    await expect(page.getByRole("button", { name: ">3 going", exact: true })).toBeVisible();
+    await minimumGoing.press("Backspace");
+    await expect(minimumGoing).toHaveValue("");
+    await expect(page.getByRole("button", { name: ">0 going", exact: true })).toBeVisible();
+    await minimumGoing.fill("03");
+    await expect(minimumGoing).toHaveValue("3");
+    await minimumGoing.fill("-1");
+    await expect(page.getByRole("button", { name: ">3 going", exact: true })).toBeVisible();
+    await expect(card).toBeVisible();
+    await minimumGoing.fill("4");
+    await expect(card).toHaveCount(0);
+    await minimumGoing.fill("0");
+    await page.keyboard.press("Escape");
+    await page.getByRole("button", { name: ">0 going", exact: true }).click();
+    await expect(minimumGoing).toHaveValue("0");
+    await expect(card).toBeVisible();
+  });
+
+  test("opens shared date options on mouse down rather than hover", async ({ page }) => {
+    await page.goto(BASE);
+    await page.getByRole("combobox", { name: "Event date" }).hover();
+    const tomorrow = page.getByRole("option", { name: "Tomorrow", exact: true });
+    await expect(tomorrow).toHaveCount(0);
+    await page.mouse.down();
+    await expect(tomorrow).toBeVisible();
+    await page.mouse.up();
+    await expect(tomorrow).toBeVisible();
+    await tomorrow.hover();
+    await expect(tomorrow).toBeVisible();
+    await tomorrow.click();
+    await expect(page.getByRole("combobox", { name: "Event date" })).toContainText("Tomorrow");
   });
 
   test("filters events by preset or custom date from the quick-filter strip", async ({
@@ -2508,18 +2723,18 @@ test.describe("Events Page", () => {
 
     const dateFilter = page.getByRole("combobox", { name: "Event date" });
     await expect(dateFilter.locator("svg")).toHaveCount(0);
-    const freeFoodFilter = page.getByRole("button", {
-      name: "Free food",
+    const hasFoodFilter = page.getByRole("button", {
+      name: "Food",
       exact: true,
     });
-    const [freeFoodBounds, dateFilterBounds] = await Promise.all([
-      freeFoodFilter.boundingBox(),
+    const [hasFoodBounds, dateFilterBounds] = await Promise.all([
+      hasFoodFilter.boundingBox(),
       dateFilter.boundingBox(),
     ]);
-    expect(freeFoodBounds).not.toBeNull();
+    expect(hasFoodBounds).not.toBeNull();
     expect(dateFilterBounds).not.toBeNull();
-    if (freeFoodBounds && dateFilterBounds) {
-      expect(dateFilterBounds.x).toBeGreaterThan(freeFoodBounds.x);
+    if (hasFoodBounds && dateFilterBounds) {
+      expect(dateFilterBounds.x).toBeGreaterThan(hasFoodBounds.x);
     }
 
     await dateFilter.click();
@@ -2532,14 +2747,14 @@ test.describe("Events Page", () => {
       "Next week",
       "Custom",
     ]) {
-      await expect(page.getByRole("option", { name: option })).toBeVisible();
+      await expect(page.getByRole("option", { name: option, exact: true })).toBeVisible();
     }
     await page.getByRole("option", { name: "Today" }).click();
-    await expect(page.getByText("Tech Career Fair", { exact: true })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Event: Tech Career Fair", exact: true })).toHaveCount(0);
 
     await dateFilter.click();
     await page.getByRole("option", { name: "Tomorrow" }).click();
-    await expect(page.getByText("Tech Career Fair", { exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Event: Tech Career Fair", exact: true })).toBeVisible();
 
     await dateFilter.click();
     await page.getByRole("option", { name: "Custom" }).click();
@@ -2552,7 +2767,7 @@ test.describe("Events Page", () => {
     await page.locator(`button[data-day="${tomorrowDataDay}"]`).click();
 
     await expect(dateFilter).not.toContainText("Custom");
-    await expect(page.getByText("Tech Career Fair", { exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Event: Tech Career Fair", exact: true })).toBeVisible();
   });
 
   test("renders borderless event card content without horizontal padding", async ({
@@ -2560,7 +2775,7 @@ test.describe("Events Page", () => {
   }) => {
     await page.goto(BASE);
 
-    const card = page.locator("article[data-event-id]").first();
+    const card = page.locator("article[data-event-id]:visible").first();
     const frame = card.locator('[data-slot="event-card-content-frame"]');
     const content = frame.locator('[data-slot="event-card-content"]');
     await expect(frame).toBeVisible();
@@ -2587,11 +2802,11 @@ test.describe("Events Page", () => {
     await expect(content).toHaveCSS("padding-left", "0px");
     await expect(content).toHaveCSS("padding-right", "0px");
 
-    const organizationBadge = card.locator('[data-slot="organization-badge"]');
-    await expect(organizationBadge).toHaveCSS("opacity", "1");
+    const clubBadge = card.locator('[data-slot="club-badge"]');
+    await expect(clubBadge).toHaveCSS("opacity", "1");
     await card.hover();
     await expect(card).toHaveCSS("opacity", "1");
-    await expect(organizationBadge).toHaveCSS("opacity", "1");
+    await expect(clubBadge).toHaveCSS("opacity", "1");
     await expect(
       card.locator('xpath=ancestor::*[@data-slot="card-grid"]'),
     ).toHaveCSS("column-gap", "20px");
@@ -2602,7 +2817,7 @@ test.describe("Events Page", () => {
 
     const cardImage = page
       .locator(
-        'article[data-event-id] [data-slot="event-card-image"][data-variant="card"]',
+        'article[data-event-id]:visible [data-slot="event-card-image"][data-variant="card"]',
       )
       .first();
     await expect(cardImage).toBeVisible();
@@ -2610,7 +2825,7 @@ test.describe("Events Page", () => {
   });
 
   test("keeps chronological ordering when client-side filters change", async ({
-    page,
+    page, next,
   }) => {
     const now = Date.now();
     const event = (
@@ -2635,12 +2850,12 @@ test.describe("Events Page", () => {
       registration: false,
       source_image_url: null,
       category: "Career",
-      organization_id: 1,
-      organization: "UW Tech Club",
-      organization_type: "wusa",
-      organization_page: null,
-      organization_ig: "uwtechclub",
-      organization_discord: null,
+      club_id: 1,
+      club: "UW Tech Club",
+      club_type: "wusa",
+      club_page: null,
+      club_ig: "uwtechclub",
+      club_discord: null,
       school: "uwaterloo",
       added_at: new Date(now - addedHoursAgo * 3_600_000).toISOString(),
     });
@@ -2650,8 +2865,8 @@ test.describe("Events Page", () => {
       event(13, "Later Event", 3, 1),
     ];
 
-    await page.route(url => apiPath(url) === "/events", async (route) => {
-      await route.fulfill({
+    await mockApi(page, next, url => apiPath(url) === "/events", async () => {
+      return ({
         status: 200,
         contentType: "application/json",
         body: JSON.stringify({
@@ -2669,12 +2884,12 @@ test.describe("Events Page", () => {
     });
 
     await page.goto(BASE);
-    const cards = page.locator("article[data-event-id]");
+    const cards = page.locator("article[data-event-id]:visible");
     await expect(cards).toHaveCount(3);
 
-    const newlyAddedSelect = page.getByRole("combobox", { name: "New" });
+    const newlyAddedSelect = page.getByRole("button", { name: "New", exact: true });
     await newlyAddedSelect.click();
-    await page.getByRole("option", { name: "New" }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "New", exact: true }).click();
 
     await expect
       .poll(() =>
@@ -2694,7 +2909,7 @@ test.describe("Events Page", () => {
   }) => {
     await page.goto(BASE);
 
-    const newBadges = page.getByText("NEW", { exact: true });
+    const newBadges = page.locator("article:visible").getByText("NEW", { exact: true });
     await expect.poll(() => newBadges.count()).toBeGreaterThan(0);
     const newBadge = newBadges.first();
     const geometry = await newBadge.evaluate((element) => {
@@ -2704,8 +2919,8 @@ test.describe("Events Page", () => {
       const viewBox = svg?.viewBox.baseVal;
       const svgBounds = svg?.getBoundingClientRect();
       const badgeBounds = element.getBoundingClientRect();
-      const organizationBadgeBounds = card
-        ?.querySelector('[data-slot="organization-badge"]')
+      const clubBadgeBounds = card
+        ?.querySelector('[data-slot="club-badge"]')
         ?.getBoundingClientRect();
       const groups = Array.from(mask?.querySelectorAll(":scope > g") ?? []);
       const topLeftGroup = groups.find((group) => {
@@ -2796,9 +3011,9 @@ test.describe("Events Page", () => {
             (topBottomFillet?.y ?? 0)) *
           scaleY,
         bottomLeftRightGap:
-          bottomCutoutRight - (organizationBadgeBounds?.right ?? 0),
+          bottomCutoutRight - (clubBadgeBounds?.right ?? 0),
         bottomLeftTopGap:
-          (organizationBadgeBounds?.top ?? 0) - bottomCutoutTop,
+          (clubBadgeBounds?.top ?? 0) - bottomCutoutTop,
         bottomSideFilletOverlap:
           (Number(bottomLeftRect?.getAttribute("x")) +
             Number(bottomLeftRect?.getAttribute("width")) -
@@ -2813,8 +3028,8 @@ test.describe("Events Page", () => {
       };
     });
 
-    expect(geometry.topLeftRightGap).toBeCloseTo(6, 0);
-    expect(geometry.topLeftBottomGap).toBeCloseTo(2, 0);
+    expect(geometry.topLeftRightGap).toBeCloseTo(4, 0);
+    expect(geometry.topLeftBottomGap).toBeCloseTo(4, 0);
     expect(geometry.topSideFilletOverlap).toBeCloseTo(0.25, 2);
     expect(geometry.topBottomFilletOverlap).toBeCloseTo(0.25, 2);
     expect(geometry.bottomLeftRightGap).toBeCloseTo(4, 0);
@@ -2827,96 +3042,49 @@ test.describe("Events Page", () => {
     }
   });
 
-  test("offers events added since the last visit only when signed in", async ({
-    page,
-  }) => {
-    await seedAuthenticatedSession(page);
-    const previousVisitAt = new Date(
-      Date.now() - 7 * 86_400_000,
-    ).toISOString();
-    await page.addInitScript(
-      ({ storageKey, visitKey, timestamp }) => {
-        window.localStorage.setItem(
-          storageKey,
-          JSON.stringify({ [visitKey]: timestamp }),
-        );
-      },
-      {
-        storageKey: STORAGE_KEYS.EVENT_VISITS,
-        visitKey: `${TEST_EMAIL}:uwaterloo`,
-        timestamp: previousVisitAt,
-      },
-    );
-
+  test("More filters excludes view and category controls", async ({ page }) => {
     await page.goto(BASE);
-
-    const newlyAddedSelect = page.getByRole("combobox", {
-      name: "New",
-    });
-    await newlyAddedSelect.click();
-    await page
-      .getByRole("option", { name: "Added since last visit" })
-      .click();
-
-    await expect(
-      page.getByRole("combobox", { name: "Added since last visit" }),
-    ).toBeVisible();
-    await expect
-      .poll(() => page.locator("article[data-event-id]").count())
-      .toBeGreaterThan(0);
-  });
-
-  test("keeps view mode separate from active filters", async ({ page }) => {
-    await page.goto(BASE);
-    await expect(
-      page.getByRole("button", { name: "Arts & Culture", exact: true }),
-    ).toBeVisible();
 
     const moreFiltersButton = page.getByRole("button", { name: "More filters" });
     await moreFiltersButton.click();
 
     const drawer = page.getByRole("dialog", { name: "More filters" });
-    const gridButton = drawer.getByRole("button", { name: "Grid" });
-    const calendarButton = drawer.getByRole("button", { name: "Calendar" });
-    const categoryButton = drawer.getByRole("button", {
-      name: "Arts & Culture",
-    });
-
-    await expect(calendarButton).toHaveClass(/bg-background/);
-    await expect(categoryButton).toHaveClass(/bg-background/);
-    await expect(categoryButton).toHaveClass(/border-border\/60/);
-    await expect(gridButton).toHaveClass(/bg-primary/);
-
-    const categoryBoundsBeforeSelection = await categoryButton.boundingBox();
-    expect(categoryBoundsBeforeSelection).not.toBeNull();
-
-    await calendarButton.click();
-    await expect(calendarButton).toHaveClass(/bg-primary/);
-    await expect(gridButton).toHaveClass(/bg-background/);
-    await expect(
-      drawer.getByRole("button", { name: "Clear View" }),
-    ).toHaveCount(0);
+    await expect(drawer.getByRole("button", { name: "Grid" })).toHaveCount(0);
+    await expect(drawer.getByRole("button", { name: "Calendar" })).toHaveCount(0);
+    await expect(drawer.getByRole("button", { name: "Career", exact: true })).toHaveCount(0);
 
     await page.keyboard.press("Escape");
     await expect(
       page.getByRole("button", { name: "Clear filters" }),
     ).toHaveCount(0);
+  });
 
-    await moreFiltersButton.click();
+  test("loads server categories reactively and clears their selection", async ({ page, next }) => {
+    let constantsRequests = 0;
+    let releaseConstants!: () => void;
+    const constantsGate = new Promise<void>(resolve => { releaseConstants = resolve; });
+    await mockApi(page, next, url => apiPath(url) === "/meta/constants", async () => {
+      constantsRequests += 1;
+      await constantsGate;
+      return { json: {
+        event_categories: ["Career", "Technology"],
+        club_categories: ["Technology", "Social"],
+        interests: ["Career", "Technology"],
+        interest_to_categories: { Career: ["Career"], Technology: ["Technology"] },
+        report_statuses: ["pending", "resolved", "dismissed"],
+      } };
+    });
+    await page.goto(BASE, { waitUntil: "domcontentloaded" });
+    await expect(page.getByRole("button", { name: "Arts & Culture", exact: true })).toBeVisible();
+    const response = page.waitForResponse(response => new URL(response.url()).pathname === "/api/meta/constants");
+    releaseConstants();
+    await response;
+    const categoryButton = page.getByRole("button", { name: "Career", exact: true });
+    await expect(categoryButton).toBeVisible();
+    await expect(page.getByRole("button", { name: "Arts & Culture", exact: true })).toHaveCount(0);
+    expect(constantsRequests).toBe(1);
     await categoryButton.click();
-    await expect(categoryButton).toHaveClass(/bg-primary/);
-    const categoryBoundsAfterSelection = await categoryButton.boundingBox();
-    expect(categoryBoundsAfterSelection).not.toBeNull();
-    if (categoryBoundsBeforeSelection && categoryBoundsAfterSelection) {
-      expect(categoryBoundsAfterSelection.width).toBe(
-        categoryBoundsBeforeSelection.width,
-      );
-      expect(categoryBoundsAfterSelection.height).toBe(
-        categoryBoundsBeforeSelection.height,
-      );
-    }
-
-    await page.keyboard.press("Escape");
+    await expect(categoryButton).toHaveAttribute("aria-pressed", "true");
     const clearFiltersButton = page.getByRole("button", {
       name: "Clear filters",
     });
@@ -2930,8 +3098,45 @@ test.describe("Events Page", () => {
     await expect(clearFiltersButton).toHaveCount(0);
   });
 
+  test("keeps categories inclusive while requiring every selected weekday and other filter", async ({ page, next }) => {
+    const monday = new Date();
+    monday.setUTCDate(monday.getUTCDate() + ((8 - monday.getUTCDay()) % 7 || 7));
+    monday.setUTCHours(17, 0, 0, 0);
+    const tuesday = new Date(monday.getTime() + 86400000);
+    const events = [[monday, tuesday], [monday], [tuesday]].map((dates, index) => ({
+      id: index + 1, title: `Filter test ${index + 1}`, location: "SLC",
+      club: "UW Tech Club", school: "uwaterloo", price: 0, food: ["Pizza"],
+      category: index === 0 ? "Technology" : "Career", added_at: new Date().toISOString(),
+      registration: false, occurrences: dates.map((date, occurrenceIndex) => ({
+        id: `${index}-${occurrenceIndex}`, event_id: index + 1,
+        dtstart_utc: date.toISOString(), dtend_utc: null, tz: "America/Toronto",
+      })),
+    }));
+    await mockApi(page, next, url => apiPath(url) === "/events", async () => ({
+      json: { items: events, total: 3, page: 1, page_size: 100, total_pages: 1 },
+    }));
+    await page.goto(BASE);
+    await page.getByRole("button", { name: "Career", exact: true }).click();
+    await page.getByRole("button", { name: "Technology", exact: true }).click();
+    const cards = page.locator("article[data-event-id]:visible");
+    await expect(cards).toHaveCount(3);
+    await page.getByRole("button", { name: "More filters" }).click();
+    const drawer = page.getByRole("dialog", { name: "More filters" });
+    await drawer.getByRole("button", { name: "Monday", exact: true }).click();
+    await expect(cards).toHaveCount(2);
+    await drawer.getByRole("button", { name: "Tuesday", exact: true }).click();
+    await expect(cards).toHaveCount(1);
+    await expect(cards.first()).toHaveAttribute("data-event-id", "1");
+    await drawer.getByPlaceholder("Search food...").fill("Soup");
+    await expect(cards).toHaveCount(0);
+    await drawer.getByPlaceholder("Search food...").clear();
+    await expect(cards).toHaveCount(1);
+    await drawer.getByRole("button", { name: "Monday", exact: true }).click();
+    await expect(cards).toHaveCount(2);
+  });
+
   test("filters free-text fields and price range, then restores all events", async ({
-    page,
+    page, next,
   }) => {
     const now = new Date();
     const startsAt = new Date(now.getTime() + 86_400_000).toISOString();
@@ -2949,13 +3154,13 @@ test.describe("Events Page", () => {
       registration: false,
       source_image_url: null,
       category: "Career",
-      organization: "UW Tech Club",
-      organization_type: "wusa",
+      club: "UW Tech Club",
+      club_type: "wusa",
       school: "uwaterloo",
       added_at: now.toISOString(),
     };
 
-    await page.route(url => apiPath(url) === "/events", async (route) => {
+    await mockApi(page, next, url => apiPath(url) === "/events", async () => {
       const items = [
         {
           ...eventBase,
@@ -2969,7 +3174,7 @@ test.describe("Events Page", () => {
           title: "Pizza Social",
           price: 12,
           food: ["Pizza", "Cookies"],
-          organization: "Campus Food Society",
+          club: "Campus Food Society",
           occurrences: [
             {
               id: 2,
@@ -2984,7 +3189,7 @@ test.describe("Events Page", () => {
           id: 3,
           title: "Campus Mixer",
           food: ["Yes!"],
-          organization: "Student Life Club",
+          club: "Student Life Club",
           occurrences: [
             {
               id: 3,
@@ -2996,7 +3201,7 @@ test.describe("Events Page", () => {
         },
       ];
 
-      await route.fulfill({
+      return ({
         status: 200,
         contentType: "application/json",
         body: JSON.stringify({
@@ -3014,16 +3219,14 @@ test.describe("Events Page", () => {
     });
 
     await page.goto(BASE);
-    await expect(page.locator("article[data-event-id]")).toHaveCount(3);
-    const pizzaCard = page.locator('article[data-event-id="2"]');
+    await expect(page.locator("article[data-event-id]:visible")).toHaveCount(3);
+    const pizzaCard = page.locator('article[data-event-id="2"]:visible');
     await expect(pizzaCard).toContainText("Pizza");
     await expect(pizzaCard).not.toContainText("Cookies");
     for (const label of ["$12", "Pizza"]) {
-      await expect(pizzaCard.getByText(label, { exact: true })).toHaveClass(
-        /text-\[11px\]/,
-      );
+      await expect(pizzaCard.getByText(label, { exact: true })).toHaveCSS("font-size", "11px");
     }
-    const genericFoodCard = page.locator('article[data-event-id="3"]');
+    const genericFoodCard = page.locator('article[data-event-id="3"]:visible');
     await expect(genericFoodCard).toContainText("Food");
     await expect(genericFoodCard).not.toContainText("Yes!");
 
@@ -3032,29 +3235,29 @@ test.describe("Events Page", () => {
     const foodInput = drawer.getByPlaceholder("Search food...");
     await foodInput.fill("piz");
 
-    await expect(page.locator("article[data-event-id]")).toHaveCount(1);
+    await expect(page.locator("article[data-event-id]:visible")).toHaveCount(1);
     await expect(pizzaCard).toBeVisible();
 
     await foodInput.clear();
-    await expect(page.locator("article[data-event-id]")).toHaveCount(3);
+    await expect(page.locator("article[data-event-id]:visible")).toHaveCount(3);
 
-    const organizationInput = drawer.getByPlaceholder("Search organization...");
-    await organizationInput.fill("food");
-    await expect(page.locator("article[data-event-id]")).toHaveCount(1);
+    const clubInput = drawer.getByPlaceholder("Search club...");
+    await clubInput.fill("food");
+    await expect(page.locator("article[data-event-id]:visible")).toHaveCount(1);
     await expect(pizzaCard).toBeVisible();
-    await organizationInput.clear();
-    await expect(page.locator("article[data-event-id]")).toHaveCount(3);
+    await clubInput.clear();
+    await expect(page.locator("article[data-event-id]:visible")).toHaveCount(3);
 
     const minPriceInput = drawer.getByRole("spinbutton", { name: "Min" });
     const maxPriceInput = drawer.getByRole("spinbutton", { name: "Max" });
     await minPriceInput.fill("1");
-    await expect(page.locator("article[data-event-id]")).toHaveCount(1);
+    await expect(page.locator("article[data-event-id]:visible")).toHaveCount(1);
     await expect(pizzaCard).toBeVisible();
     await minPriceInput.clear();
     await maxPriceInput.fill("0");
-    await expect(page.locator("article[data-event-id]")).toHaveCount(2);
+    await expect(page.locator("article[data-event-id]:visible")).toHaveCount(2);
     await maxPriceInput.clear();
-    await expect(page.locator("article[data-event-id]")).toHaveCount(3);
+    await expect(page.locator("article[data-event-id]:visible")).toHaveCount(3);
   });
 
   test("app API proxy returns events", async ({ request }) => {
@@ -3085,8 +3288,8 @@ test.describe("Events Page", () => {
     const events = feed.items;
     expect(events.length).toBeGreaterThanOrEqual(1);
     const searchableText = events
-      .map((event: { title: string; category?: string; organization?: string | null }) =>
-        `${event.title} ${event.category ?? ""} ${event.organization ?? ""}`.toLowerCase(),
+      .map((event: { title: string; category?: string; club?: string | null }) =>
+        `${event.title} ${event.category ?? ""} ${event.club ?? ""}`.toLowerCase(),
       )
       .join(" ");
     expect(searchableText).toContain("career");
@@ -3120,40 +3323,98 @@ test.describe("Events Page", () => {
   });
 });
 
-// ── Workflow 3: Organizations Page ────────────────────────────────────
+// ── Workflow 3: Clubs Page ────────────────────────────────────
 
-test.describe("Organizations Page", () => {
-  test("loads and displays organizations", async ({ page }) => {
-    await page.goto(`${BASE}/organizations`);
+test("Free and Food are independent toggles", async ({ page }) => {
+  await page.goto(BASE);
+  const filters = page.getByTestId("event-quick-filter-scroll");
+  const free = filters.getByRole("button", { name: "Free", exact: true });
+  const food = filters.getByRole("button", { name: "Food", exact: true });
+  await food.click();
+  await expect(food).toHaveAttribute("aria-pressed", "true");
+  await expect(free).toHaveAttribute("aria-pressed", "false");
+  await free.click();
+  await expect(free).toHaveAttribute("aria-pressed", "true");
+  await expect(food).toHaveAttribute("aria-pressed", "true");
+  await food.click();
+  await expect(food).toHaveAttribute("aria-pressed", "false");
+  await expect(free).toHaveAttribute("aria-pressed", "true");
+});
+
+test("New toggles directly without a dropdown or All button", async ({ page }) => {
+  await page.goto(BASE);
+  const filters = page.getByTestId("event-quick-filter-scroll");
+  await expect(filters.getByRole("button", { name: "All", exact: true })).toHaveCount(0);
+  const trigger = filters.getByRole("button", { name: "New", exact: true });
+  await trigger.click();
+  await expect(trigger).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await trigger.click();
+  await expect(trigger).toHaveAttribute("aria-pressed", "false");
+});
+
+test.describe("Clubs Page", () => {
+  test("uses club URLs and puts Positions before Clubs", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(`${BASE}/clubs`);
+    const navigation = page.getByRole("navigation", { name: "Primary navigation" }).first();
+    const links = navigation.getByRole("link");
+    const destinations = await links.evaluateAll(elements => elements.map(element => element.getAttribute("href")));
+    expect(destinations.indexOf("/positions")).toBeLessThan(destinations.indexOf("/clubs"));
+    expect(destinations).not.toContain("/organizations");
+  });
+  test("filters clubs by minimum event count and restores zero-event clubs", async ({ page }) => {
+    await page.goto(`${BASE}/clubs`);
+    await expect(page.locator("[data-club-id]")).toHaveCount(3);
+    const minimum = page.getByRole("spinbutton", { name: "Minimum events" });
+    expect(await minimum.evaluate(element => {
+      const input = element as HTMLInputElement;
+      const canvas = document.createElement("canvas");
+      const context = canvas.getContext("2d")!;
+      const style = getComputedStyle(input);
+      context.font = style.font;
+      return input.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight) - 20 >= context.measureText(input.placeholder).width;
+    })).toBe(true);
+    const request = page.waitForRequest(request => new URL(request.url()).searchParams.get("min_events") === "1");
+    await minimum.fill("1");
+    await request;
+    await expect(page.locator("[data-club-id]")).toHaveCount(2);
+    await expect(page.locator('[data-club-id="3"]')).toHaveCount(0);
+    await minimum.fill("0");
+    await expect(page.locator("[data-club-id]")).toHaveCount(3);
+  });
+
+  test("loads and displays clubs", async ({ page }) => {
+    await page.goto(`${BASE}/clubs`);
     await page.waitForTimeout(3000);
 
     const body = await page.textContent("body");
     expect(body).toBeTruthy();
-    const organizationCard = page.locator('[data-organization-id="1"]');
-    const organizationContent = organizationCard.locator(
+    const clubCard = page.locator('[data-club-id="1"]');
+    const clubContent = clubCard.locator(
       '[data-slot="event-card-content"]',
     );
     const addClubButton = page.getByRole("button", {
       name: "Add club",
       exact: true,
     });
-    const organizationSearch = page.getByPlaceholder("Search organizations...").locator("..");
-    const organizationScope = page.getByRole("combobox", { name: "All", exact: true });
+    const clubSearch = page.getByPlaceholder("Search clubs...").locator("..");
+    const clubScope = page.getByRole("combobox", { name: "All", exact: true });
     await expect(
-      page.getByRole("heading", { name: /clubs and student organizations/i }),
+      page.getByRole("heading", { name: /student clubs/i }),
     ).toHaveCount(0);
     await expect(page.getByText(/Explore student communities/i)).toHaveCount(0);
     await expect(addClubButton.locator("svg")).toHaveCount(0);
     await expect(
-      organizationCard.getByRole("link", { name: "View Organization Page" }),
+      clubCard.getByRole("link", { name: "View Club Page" }),
     ).toBeVisible();
     await expect(
-      organizationCard.getByRole("button", { name: "More options" }),
+      clubCard.getByRole("button", { name: "More options" }),
     ).toHaveCount(0);
-    await expect(organizationContent).toHaveCSS("padding-left", "12px");
-    await expect(organizationContent).toHaveCSS("padding-right", "12px");
+    await expect(clubContent).toHaveCSS("padding-left", "12px");
+    await expect(clubContent).toHaveCSS("padding-right", "12px");
     await expect(
-      organizationCard.locator('xpath=ancestor::*[@data-slot="card-grid"]'),
+      clubCard.locator('xpath=ancestor::*[@data-slot="card-grid"]'),
     ).toHaveCSS("column-gap", "20px");
     await expect
       .poll(async () => {
@@ -3161,24 +3422,13 @@ test.describe("Organizations Page", () => {
           searchBox,
           scopeBox,
           addClubBox,
-          sharesSearchRow,
           scopeBesideCategoryStrip,
         ] = await Promise.all([
-          organizationSearch.boundingBox(),
-          organizationScope.boundingBox(),
+          clubSearch.boundingBox(),
+          clubScope.boundingBox(),
           addClubButton.boundingBox(),
-          organizationSearch.evaluate((searchElement) =>
-            Boolean(
-              !searchElement.parentElement?.querySelector(
-                '[role="combobox"]',
-              ) &&
-              searchElement.parentElement
-                ?.querySelector("button")
-                ?.textContent?.includes("Add club"),
-            ),
-          ),
           page
-            .getByTestId("organization-category-filter-scroll")
+            .getByTestId("club-category-filter-scroll")
             .evaluate((strip) =>
               Boolean(
                 strip.parentElement?.parentElement?.querySelector(
@@ -3191,7 +3441,7 @@ test.describe("Organizations Page", () => {
           searchHeight: searchBox?.height,
           scopeHeight: scopeBox?.height,
           addClubHeight: addClubBox?.height,
-          sharesSearchRow,
+          sharesSearchRow: Boolean(searchBox && addClubBox && Math.abs(searchBox.y - addClubBox.y) < 1 && addClubBox.x >= searchBox.x + searchBox.width),
           scopeBesideCategoryStrip,
         };
       })
@@ -3203,39 +3453,69 @@ test.describe("Organizations Page", () => {
         scopeBesideCategoryStrip: true,
       });
 
-    await page.screenshot({ path: "e2e/screenshots/organizations-page.png", fullPage: true });
+    await page.screenshot({ path: "e2e/screenshots/clubs-page.png", fullPage: true });
   });
 
-  test("app API proxy returns organizations", async ({ request }) => {
-    const res = await request.get(`${APP_API}/organizations/`);
+  test("keeps club listing controls fixed while scrolling on mobile", async ({ page, next }) => {
+    const items = Array.from({ length: 30 }, (_, index) => ({
+      ...MOCK_CLUBS[index % MOCK_CLUBS.length],
+      id: index + 1,
+      club_name: `Campus Club ${index + 1}`,
+    }));
+    await mockApi(page, next, url => apiPath(url) === "/clubs", async () => ({
+      json: { items, total: items.length, page: 1, page_size: 30, total_pages: 1 },
+    }));
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(`${BASE}/clubs`);
+    await expect(page.locator('[data-club-id="30"]')).toBeAttached();
+    await expect(page.locator('[data-club-id="1"]')).toHaveCSS("isolation", "isolate");
+    const search = page.getByPlaceholder("Search clubs...");
+    const initial = await search.boundingBox();
+    expect(initial).not.toBeNull();
+    const scrollRoot = page.locator(".main-content-grid:visible");
+    const header = page.locator('[data-slot="page-header"]');
+    await expect(scrollRoot).toHaveCSS("padding-top", "0px");
+    await expect(header).toHaveCSS("margin-top", "0px");
+    await expect(header).toHaveCSS("padding-top", "16px");
+    expect(await header.evaluate(element => getComputedStyle(element).backgroundColor)).not.toBe("rgba(0, 0, 0, 0)");
+    expect(Math.abs((await header.boundingBox())!.y - (await scrollRoot.boundingBox())!.y)).toBeLessThan(2);
+    await expect(scrollRoot).toHaveCSS("overflow-y", "auto");
+    await scrollRoot.evaluate(element => { element.scrollTop = 600; });
+    await expect.poll(() => scrollRoot.evaluate(element => element.scrollTop)).toBeGreaterThan(400);
+    await expect.poll(async () => (await search.boundingBox())?.y).toBe(initial!.y);
+    await expect(page.getByRole("button", { name: "Add club", exact: true })).toBeInViewport();
+  });
+
+  test("app API proxy returns clubs", async ({ request }) => {
+    const res = await request.get(`${APP_API}/clubs/`);
     expect(res.status()).toBe(200);
-    const organizations = await res.json();
-    expect(organizations.items.length).toBeGreaterThan(0);
-    expect(organizations.items[0]).toHaveProperty("organization_name");
-    expect(organizations.items[0]).toHaveProperty("organization_type");
+    const clubs = await res.json();
+    expect(clubs.items.length).toBeGreaterThan(0);
+    expect(clubs.items[0]).toHaveProperty("club_name");
+    expect(clubs.items[0]).toHaveProperty("club_type");
   });
 
-  test("app API proxy preserves the organization paginated contract", async ({ request }) => {
-    const res = await request.get(`${APP_API}/organizations/`);
-    const organizations = await res.json();
-    expect(organizations.total).toBeGreaterThanOrEqual(organizations.items.length);
+  test("app API proxy preserves the club paginated contract", async ({ request }) => {
+    const res = await request.get(`${APP_API}/clubs/`);
+    const clubs = await res.json();
+    expect(clubs.total).toBeGreaterThanOrEqual(clubs.items.length);
     expect(
-      organizations.items.every(
-        (organization: { organization_name?: string; organization_type?: string }) =>
-          typeof organization.organization_name === "string" &&
-          typeof organization.organization_type === "string",
+      clubs.items.every(
+        (club: { club_name?: string; club_type?: string }) =>
+          typeof club.club_name === "string" &&
+          typeof club.club_type === "string",
       ),
     ).toBeTruthy();
   });
 
-  test("organization search filter works through app API proxy", async ({ request }) => {
-    const res = await request.get(`${APP_API}/organizations/?search=computer`);
+  test("club search filter works through app API proxy", async ({ request }) => {
+    const res = await request.get(`${APP_API}/clubs/?search=computer`);
     expect(res.status()).toBe(200);
-    const organizations = await res.json();
-    expect(organizations.items.length).toBeGreaterThanOrEqual(1);
-    const searchableText = organizations.items
-      .map((organization: { organization_name: string; categories?: string[] }) =>
-        `${organization.organization_name} ${(organization.categories ?? []).join(" ")}`.toLowerCase(),
+    const clubs = await res.json();
+    expect(clubs.items.length).toBeGreaterThanOrEqual(1);
+    const searchableText = clubs.items
+      .map((club: { club_name: string; categories?: string[] }) =>
+        `${club.club_name} ${(club.categories ?? []).join(" ")}`.toLowerCase(),
       )
       .join(" ");
     expect(searchableText).toContain("computer");
@@ -3245,6 +3525,26 @@ test.describe("Organizations Page", () => {
 // ── Workflow 4: Onboarding Page ───────────────────────────────────────
 
 test.describe("Onboarding Page", () => {
+  test("loads faculty choices from the selected school instead of Waterloo", async ({ page, next }) => {
+    await mockApi(page, next, url => apiPath(url) === "/schools", async () => {
+      return ({ json: [{
+        slug: "mcmaster", name: "McMaster University", language: "en",
+        primary_color: "#7A003C", secondary_color: "#FDBF57",
+        email_domains: ["mcmaster.ca"],
+        faculties: ["DeGroote School of Business", "Engineering", "Health Sciences", "Humanities", "Science", "Social Sciences"],
+      }] });
+    });
+    await page.goto(`${BASE}/onboarding?school=mcmaster`);
+    for (let step = 0; step < 4; step += 1) {
+      await page.getByRole("button", { name: "Continue", exact: true }).click();
+    }
+    await expect(page.getByRole("main").getByRole("combobox")).toHaveCount(2);
+    const faculty = page.getByRole("main").getByRole("combobox").last();
+    await faculty.click();
+    await expect(page.getByRole("option", { name: "DeGroote School of Business", exact: true })).toBeVisible();
+    await expect(page.getByRole("option", { name: "Mathematics", exact: true })).toHaveCount(0);
+  });
+
   test("renders onboarding steps", async ({ page }) => {
     await page.goto(`${BASE}/onboarding`);
     await page.waitForTimeout(1000);
@@ -3258,7 +3558,258 @@ test.describe("Onboarding Page", () => {
 
 // ── Workflow 5: Auth-protected endpoints ──────────────────────────────
 
+test("admin events show schools without status and use matching filter sizes", async ({ page, next }) => {
+  await seedAuthenticatedSession(page, next);
+  await mockApi(page, next, url => apiPath(url) === "/submissions", async () => ({
+    json: { items: [], total: 0, page: 1, page_size: 20, total_pages: 0 },
+  }));
+  await mockApi(page, next, url => apiPath(url) === "/reports", async () => ({
+    json: { items: [], total: 0, page: 1, page_size: 20, total_pages: 0 },
+  }));
+  await page.goto(`${BASE}/admin/events`);
+  const eventsTab = page.getByRole("tab", { name: "Events List", exact: true });
+  const submissionsTab = page.getByRole("tab", { name: /Event Submissions/ });
+  await expect(eventsTab).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByRole("tabpanel")).toHaveCount(1);
+  await expect(page.getByRole("columnheader", { name: "School", exact: true })).toBeVisible();
+  await expect(page.getByRole("columnheader", { name: "Status", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("cell", { name: "uwaterloo", exact: true })).toBeVisible();
+  const reported = page.getByRole("button", { name: "Reported Only", exact: true });
+  const search = page.getByPlaceholder("Search events...");
+  const category = page.getByRole("combobox").filter({ hasText: "All Categories" });
+  await expect(reported).toHaveCount(0);
+  await expect(search).toHaveCSS("height", "44px");
+  await expect(category).toHaveCSS("height", "44px");
+  const reportsTab = page.getByRole("tab", { name: "Event reports", exact: true });
+  await reportsTab.click();
+  await expect(reportsTab).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByRole("heading", { name: "No pending event reports", exact: true })).toBeVisible();
+  await expect(page.getByRole("cell", { name: "uwaterloo", exact: true })).toHaveCount(0);
+  await eventsTab.click();
+  await expect(page.getByRole("cell", { name: "uwaterloo", exact: true })).toBeVisible();
+  await submissionsTab.click();
+  await expect(submissionsTab).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByRole("tabpanel")).toHaveCount(1);
+  await expect(reported).toHaveCount(0);
+  await eventsTab.click();
+  await expect(page.getByRole("cell", { name: "uwaterloo", exact: true })).toBeVisible();
+});
+
+for (const [profileCount, totalCount, overflow] of [[0, 1, 0], [1, 1, 0], [8, 9, 1]]) {
+  test(`shows ${profileCount} attendee pictures and only real overflow for ${totalCount} going`, async ({ page, next }) => {
+    const avatar = "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"><circle cx="16" cy="16" r="16" fill="blue"/></svg>');
+    await mockApi(page, next, url => apiPath(url) === "/events/1", async () => ({ json: {
+      id: 1, title: "Attendee profiles", school: "uwaterloo", club_id: 1, club: "UW Tech Club",
+      description: "", location: "SLC", category: "Career", price: 0, food: [], registration: false,
+      cancelled: false, occurrences: [{ id: "occurrence-1", event_id: 1,
+        dtstart_utc: new Date(Date.now() + 86400000).toISOString(), dtend_utc: null }],
+    } }));
+    await mockApi(page, next, url => apiPath(url) === "/going-events/1/attendees", async () => ({ json: {
+      going_count: totalCount,
+      attendees: Array.from({ length: profileCount }, () => ({ name: "", avatar_url: avatar })),
+    } }));
+    await page.goto(BASE);
+    await page.locator('article[data-event-id="1"]:visible').click();
+    const stack = page.getByRole("dialog").locator('[data-slot="avatar-stack"]');
+    await expect(stack.getByRole("img", { name: "Going", exact: true })).toHaveCount(profileCount);
+    await expect(stack.getByText("+1", { exact: true })).toHaveCount(overflow);
+  });
+}
+
+for (const surface of ["drawer", "page"]) {
+  test(`refreshes attendance and avatar stack after Going in the ${surface}`, async ({ page, next }) => {
+    await seedAuthenticatedSession(page, next);
+    const avatar = "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"><circle cx="16" cy="16" r="16" fill="blue"/></svg>');
+    let going = false;
+    const occurrenceId = "00000000-0000-4000-8000-000000000001";
+    await mockApi(page, next, url => apiPath(url) === "/events/1", async () => ({ json: {
+      id: 1, title: "Attendance test", school: "uwaterloo", club_id: 1, club: "UW Tech Club",
+      club_logo_url: avatar, club_type: "independent",
+      description: "", location: "SLC", category: "Career", price: 0, food: [], registration: false,
+      cancelled: false, occurrences: [{ id: occurrenceId, event_id: 1,
+        dtstart_utc: new Date(Date.now() + 86400000).toISOString(), dtend_utc: null }],
+    } }));
+    await mockApi(page, next, url => apiPath(url) === "/going-events/1/attendees", async () => ({ json: {
+      going_count: going ? 1 : 0,
+      attendees: going ? [{ name: "Test U.", avatar_url: avatar }] : [],
+    } }));
+    await mockApi(page, next, url => apiPath(url) === "/going-events/1", async request => {
+      going = request.method !== "DELETE";
+      return { json: { status: going ? "going" : "not_going", event_id: 1,
+        occurrence_ids: going ? [occurrenceId] : [], going_count: going ? 1 : 0 } };
+    });
+    await page.goto(surface === "page" ? `${BASE}/events/1` : BASE);
+    if (surface === "drawer") await page.locator('article[data-event-id="1"]:visible').click();
+    const content = surface === "drawer" ? page.getByRole("dialog") : page.locator("body");
+    await expect(content.locator('[data-slot="event-host-links"]')).toHaveCount(0);
+    await expect(content.locator('[data-slot="avatar-stack"]')).toHaveCount(0);
+    await expect(content.locator('[data-slot="club-badge"]').last().locator("img")).toHaveAttribute("src", avatar);
+    await content.getByRole("button", { name: "Going", exact: true }).click();
+    await expect(content.getByRole("heading", { name: "1 going", exact: true })).toBeVisible();
+    await expect(content.locator('[data-slot="avatar-stack"]').getByRole("img", { name: "Test U." })).toBeVisible();
+    const cancel = content.getByRole("button", { name: /marking yourself not going/i });
+    await expect(cancel).toHaveCSS("text-decoration-line", "underline");
+    await cancel.click();
+    await expect(content.locator('[data-slot="avatar-stack"]')).toHaveCount(0);
+  });
+}
+
+for (const [detail, message] of [
+  ["One or more occurrences can no longer be selected", "This event has already started or was cancelled, so you can’t mark Going."],
+  ["Unexpected storage failure", "Couldn't save your selected time"],
+]) {
+  test(`Going rejection toast: ${detail}`, async ({ page, next }) => {
+    await seedAuthenticatedSession(page, next);
+    await mockApi(page, next, url => apiPath(url) === "/going-events/1/attendees", async () => ({
+      json: { going_count: 0, attendees: [] },
+    }));
+    await mockApi(page, next, url => apiPath(url) === "/events/1", async () => ({ json: {
+      id: 1, title: "Going toast test", school: "uwaterloo", club_id: 1, club: "UW Tech Club",
+      description: "", location: "SLC", category: "Career", price: 0, food: [], registration: false,
+      cancelled: false, occurrences: [{ id: "00000000-0000-4000-8000-000000000001", event_id: 1,
+        dtstart_utc: new Date(Date.now() - 60000).toISOString(),
+        dtend_utc: new Date(Date.now() + 3600000).toISOString() }],
+    } }));
+    await mockApi(page, next, url => apiPath(url) === "/going-events/1", async () => ({
+      status: 400, json: { detail },
+    }));
+    await page.goto(BASE);
+    await page.locator('article[data-event-id="1"]:visible').click();
+    await page.getByRole("dialog").getByRole("button", { name: "Going", exact: true }).click();
+    await expect(page.getByRole("status").filter({ hasText: message })).toBeVisible();
+    await expect(page.getByRole("dialog").locator('[data-slot="avatar-stack"]')).toHaveCount(0);
+  });
+}
+
+for (const route of ["/", "/positions", "/clubs"]) {
+  test(`listing header background spans the viewport on ${route}`, async ({ page }) => {
+    for (const width of [390, 1280]) {
+      await page.setViewportSize({ width, height: 844 });
+      await page.goto(`${BASE}${route}`);
+      const header = page.locator('[data-slot="page-header"][data-variant="listing"]:visible');
+      await expect(header).toBeVisible();
+      await expect(header).toHaveCSS("position", "sticky");
+      await expect.poll(() => header.evaluate(element => {
+        const background = getComputedStyle(element, "::before");
+        const rect = element.getBoundingClientRect();
+        const left = rect.left + rect.width / 2 - parseFloat(background.width) / 2;
+        return background.backgroundColor === getComputedStyle(element).backgroundColor
+          && left <= 1
+          && left + parseFloat(background.width) >= document.documentElement.clientWidth - 1;
+      })).toBe(true);
+      const scrollRoot = page.locator(".main-content-grid:visible");
+      await expect(scrollRoot).toHaveCSS("overflow-x", "hidden");
+    }
+  });
+}
+
+test("direct admin clubs visits load both pending tab counts", async ({ page, next }) => {
+  await seedAuthenticatedSession(page, next);
+  await mockApi(page, next, url => apiPath(url) === "/clubs/claims", async () => ({
+    json: ["pending", "approved"].map((status, index) => ({
+      id: `claim-${index}`, club_id: 1, user_id: "mock-user-id", status,
+      executive_role: "President", created_at: new Date().toISOString(),
+      clubs: MOCK_CLUBS[0], users: { email: TEST_EMAIL, full_name: "Test User" },
+    })),
+  }));
+  const items = ["pending", "pending", "rejected"].map((status, index) => ({
+    ...MOCK_CLUBS[0], id: index + 10, status,
+  }));
+  await mockApi(page, next, url => apiPath(url) === "/clubs/review", async () => ({
+    json: { items, total: 3, page: 1, page_size: 20, total_pages: 1 },
+  }));
+
+  await page.goto(`${BASE}/admin/clubs`);
+
+  await expect(page.getByRole("tab", { name: "Clubs List", exact: true })).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByRole("tab", { name: "Claim Requests 1", exact: true })).toBeVisible();
+  await expect(page.getByRole("tab", { name: "Club submissions 2", exact: true })).toBeVisible();
+});
+
+test("claim status badges hug their content inside drawers", async ({ page, next }) => {
+  await seedAuthenticatedSession(page, next);
+  await mockApi(page, next, url => apiPath(url) === "/clubs/claims", async () => ({
+    json: [{
+      id: "pending-claim", club_id: 1, user_id: "mock-user-id", status: "pending",
+      executive_role: "President", created_at: new Date().toISOString(),
+      clubs: MOCK_CLUBS[0], users: { email: TEST_EMAIL, full_name: "Test User" },
+    }],
+  }));
+  await page.goto(`${BASE}/admin/clubs?tab=claims`);
+  await page.getByRole("row").filter({ hasText: "President" }).getByRole("button", { name: "View", exact: true }).click();
+  const drawer = page.getByRole("dialog", { name: "Claim Requests", exact: true });
+  const badge = drawer.getByText("Pending", { exact: true });
+  for (const width of [1280, 390]) {
+    await page.setViewportSize({ width, height: 900 });
+    await expect(badge).toBeVisible();
+    await expect.poll(() => badge.evaluate(element => {
+      const range = document.createRange();
+      range.selectNodeContents(element);
+      const style = getComputedStyle(element);
+      const inset = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight)
+        + parseFloat(style.borderLeftWidth) + parseFloat(style.borderRightWidth);
+      return Math.abs(element.getBoundingClientRect().width - range.getBoundingClientRect().width - inset) < 2;
+    })).toBe(true);
+  }
+});
+
+test("club submissions use consistent naming and show multiple schools", async ({ page, next }) => {
+  await seedAuthenticatedSession(page, next);
+  const items = ["uwaterloo", "ualberta", "ulaval"].map((school, index) => ({
+    ...MOCK_CLUBS[0], id: index + 10, school, status: "pending",
+    club_name: `Demo ${school} Submission Club`, owner_email: `${school}@example.invalid`,
+  }));
+  await mockApi(page, next, url => apiPath(url) === "/clubs/review", async () => ({
+    json: { items, total: 3, page: 1, page_size: 20, total_pages: 1 },
+  }));
+  await page.goto(`${BASE}/admin/clubs?tab=submissions`);
+  await expect(page.getByRole("tab", { name: /Club submissions/ })).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByRole("tab", { name: /Club Reviews/i })).toHaveCount(0);
+  for (const item of items) {
+    await expect(page.getByText(item.club_name, { exact: true })).toBeVisible();
+  }
+  await expect(page.getByRole("columnheader", { name: "School", exact: true })).toBeVisible();
+  await page.getByRole("combobox", { name: "School", exact: true }).click();
+  await page.getByRole("option", { name: "University of Waterloo", exact: true }).click();
+  await expect(page.getByText(items[0].club_name, { exact: true })).toBeVisible();
+  await expect(page.getByText(items[1].club_name, { exact: true })).toHaveCount(0);
+  await page.getByPlaceholder("Search", { exact: true }).fill("no matching submission");
+  await expect(page.getByText(items[0].club_name, { exact: true })).toHaveCount(0);
+  await page.getByPlaceholder("Search", { exact: true }).fill("");
+  await expect(page.getByText(items[0].club_name, { exact: true })).toBeVisible();
+});
+
+test("location examples arrive in HTML without a browser school request", async ({ page, next }) => {
+  const schools = MOCK_SCHOOLS.map(school => ({ ...school, location_examples: ["Server-provided hall"] }));
+  await mockApi(page, next, url => apiPath(url) === "/schools", async () => ({ json: schools }));
+  const schoolRequests: string[] = [];
+  page.on("request", request => {
+    if (apiPath(new URL(request.url())) === "/schools") schoolRequests.push(request.url());
+  });
+  const response = await page.goto(BASE);
+  expect(await response!.text()).toContain("Server-provided hall");
+  await page.getByRole("button", { name: "More filters", exact: true }).click();
+  await expect(page.getByPlaceholder("Server-provided hall", { exact: true })).toBeVisible();
+  expect(schoolRequests).toEqual([]);
+});
+
 test.describe("Auth-protected API endpoints", () => {
+  test("position submissions preserve the API proxy without redirects", async ({ request }) => {
+    const url = `${APP_API}/position-submissions/`;
+    const listing = await request.get(`${url}?page=1&page_size=20`, {
+      maxRedirects: 0,
+    });
+    expect(listing.status()).toBe(401);
+    expect(listing.headers().location).toBeUndefined();
+
+    const submission = await request.post(url, {
+      data: { position_data: { title: "Test" } },
+      maxRedirects: 0,
+    });
+    expect(submission.status()).toBe(401);
+    expect(submission.headers().location).toBeUndefined();
+  });
+
   test("POST /events/ requires authentication", async ({ request }) => {
     const res = await request.post(`${APP_API}/events/`, {
       data: { title: "Test", location: "Test" },
@@ -3266,11 +3817,11 @@ test.describe("Auth-protected API endpoints", () => {
     expect([401, 403]).toContain(res.status());
   });
 
-  test("POST /organizations/ requires authentication", async ({ request }) => {
-    const res = await request.post(`${APP_API}/organizations/`, {
+  test("POST /clubs/ requires authentication", async ({ request }) => {
+    const res = await request.post(`${APP_API}/clubs/`, {
       data: {
-        organization_name: "Test",
-        organization_type: "independent",
+        club_name: "Test",
+        club_type: "independent",
         categories: ["Technology"],
       },
     });
@@ -3291,11 +3842,39 @@ test.describe("Auth-protected API endpoints", () => {
 });
 
 test.describe("Standalone submission pages", () => {
+  test("failed flyer extraction opens the manual event form", async ({ page, next }) => {
+    await mockApi(page, next, url => apiPath(url) === "/ai/parse-event-image", async () => ({
+      status: 400,
+      contentType: "application/json",
+      body: JSON.stringify({ detail: "No event could be read from this image." }),
+    }));
+    await page.goto(`${BASE}/events/submit`);
+    await page.locator('input[type="file"]').setInputFiles({
+      name: "event.png", mimeType: "image/png", buffer: Buffer.from("event-image"),
+    });
+    await expect(page.locator("#field-title")).toBeVisible();
+    await page.locator("#field-title").fill("Manually entered event");
+    await expect(page.locator("#field-title")).toHaveValue("Manually entered event");
+  });
+
+  test("dismissing filters with Escape preserves the selected date", async ({ page }) => {
+    await page.goto(BASE);
+    await page.getByRole("combobox", { name: "Event date" }).click();
+    await page.getByRole("option", { name: "Tomorrow", exact: true }).click();
+    await page.getByRole("button", { name: "More filters", exact: true }).click();
+    await expect(page.getByRole("dialog", { name: "More filters" })).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("dialog", { name: "More filters" })).toBeHidden();
+    await expect(page.getByRole("combobox", { name: "Event date" })).toHaveText("Tomorrow");
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("combobox", { name: "Event date" })).toHaveText("Any day");
+  });
+
   test("stale session can still access event submission as anonymous", async ({
-    page,
+    page, next,
   }) => {
-    await page.route(url => apiPath(url) === "/auth/refresh", async (route) => {
-      await route.fulfill({
+    await mockApi(page, next, url => apiPath(url) === "/auth/refresh", async () => {
+      return ({
         status: 401,
         contentType: "application/json",
         body: JSON.stringify({ detail: "Session expired" }),
@@ -3324,24 +3903,22 @@ test.describe("Standalone submission pages", () => {
   });
 
   test("anonymous visitor can parse an event flyer without session auth", async ({
-    page,
+    page, next,
   }) => {
     const portraitFlyerDataUrl = `data:image/svg+xml,${encodeURIComponent(
       '<svg xmlns="http://www.w3.org/2000/svg" width="600" height="900"><rect width="600" height="900" fill="#5b9bff"/></svg>',
     )}`;
     let parseAuthorization: string | null = null;
     let parseRequestCount = 0;
-    await page.route(
-      url => apiPath(url) === "/ai/parse-event-image",
-      async (route) => {
+    await mockApi(page, next, url => apiPath(url) === "/ai/parse-event-image", async (request) => {
         parseRequestCount += 1;
         parseAuthorization =
-          route.request().headers()["authorization"] ?? null;
-        await route.fulfill({
+          request.headers.get("authorization") ?? null;
+        return ({
           status: 200,
           contentType: "application/json",
           body: JSON.stringify({
-            organization_id: null,
+            club_id: null,
             title: "Public Flyer Event",
             description: "",
             occurrences: [
@@ -3358,10 +3935,10 @@ test.describe("Standalone submission pages", () => {
             source_image_url: portraitFlyerDataUrl,
           }),
         });
-      },
-    );
+      });
 
     await page.goto(`${BASE}/events/submit`);
+    await page.waitForLoadState("networkidle");
     await page.locator('input[type="file"]').setInputFiles({
       name: "oversized-event.png",
       mimeType: "image/png",
@@ -3415,25 +3992,26 @@ test.describe("Standalone submission pages", () => {
     expect(parseRequestCount).toBe(1);
   });
 
-  test("UTM hostname owns event and organization submission context", async ({
-    page,
+  test("UTM hostname owns event and club submission context", async ({
+    page, next,
   }) => {
-    await seedAuthenticatedSession(page);
-    let requestedOrganizationSchool: string | null = null;
+    await seedAuthenticatedSession(page, next);
+    let requestedClubSchool: string | null = null;
+    let requestedExtractionSchool: string | null = null;
 
-    await page.route(url => apiPath(url) === "/organizations", async (route) => {
-      requestedOrganizationSchool = new URL(
-        route.request().url(),
+    await mockApi(page, next, url => apiPath(url) === "/clubs", async (request) => {
+      requestedClubSchool = new URL(
+        request.url,
       ).searchParams.get("school");
-      await route.fulfill({
+      return ({
         status: 200,
         contentType: "application/json",
         body: JSON.stringify({
           items: [
             {
-              ...MOCK_ORGANIZATIONS[0],
+              ...MOCK_CLUBS[0],
               id: 91,
-              organization_name: "UTM Campus Club",
+              club_name: "UTM Campus Club",
               school: "utm",
             },
           ],
@@ -3444,14 +4022,13 @@ test.describe("Standalone submission pages", () => {
         }),
       });
     });
-    await page.route(
-      url => apiPath(url) === "/ai/parse-event-image",
-      async (route) => {
-        await route.fulfill({
+    await mockApi(page, next, url => apiPath(url) === "/ai/parse-event-image", async (request) => {
+        requestedExtractionSchool = new URL(request.url).searchParams.get("school");
+        return ({
           status: 200,
           contentType: "application/json",
           body: JSON.stringify({
-            organization_id: null,
+            club_id: null,
             title: "UTM Test Event",
             description: "",
             occurrences: [
@@ -3468,10 +4045,9 @@ test.describe("Standalone submission pages", () => {
             source_image_url: "/wat2do-logo.png",
           }),
         });
-      },
-    );
+      });
 
-    const utmBase = "http://utm.localhost:3000";
+    const utmBase = "http://utm.wat2do.localhost:3000";
     await page.goto(`${utmBase}/events/submit`);
 
     await expect(
@@ -3481,7 +4057,7 @@ test.describe("Standalone submission pages", () => {
     ).toBeVisible();
     await expect(
       page.getByText(
-        "Only organizations from University of Toronto Mississauga are shown",
+        "Only clubs from University of Toronto Mississauga are shown",
         { exact: false },
       ),
     ).toBeVisible();
@@ -3494,30 +4070,31 @@ test.describe("Standalone submission pages", () => {
     });
 
     await expect
-      .poll(() => requestedOrganizationSchool)
+      .poll(() => requestedClubSchool)
       .toBe("utm");
-    const organizationInput = page.getByRole("textbox", {
-      name: "Organization",
+    expect(requestedExtractionSchool).toBe("utm");
+    const clubInput = page.getByRole("textbox", {
+      name: "Club",
     });
-    await expect(organizationInput).toBeVisible();
-    await organizationInput.fill("UTM Campus Club");
-    await expect(organizationInput).toHaveValue("UTM Campus Club");
+    await expect(clubInput).toBeVisible();
+    await clubInput.fill("UTM Campus Club");
+    await expect(clubInput).toHaveValue("UTM Campus Club");
     await expect(
       page.getByText("UTM Campus Club", { exact: true }),
     ).toBeVisible();
     await expect(
-      page.getByRole("combobox", { name: "Organization" }),
+      page.getByRole("combobox", { name: "Club" }),
     ).toHaveCount(0);
 
-    await page.goto(`${utmBase}/organizations/new`);
+    await page.goto(`${utmBase}/clubs/new`);
     await expect(
       page.getByRole("heading", {
-        name: "Submit Organization",
+        name: "Submit Club",
       }),
     ).toBeVisible();
     await expect(
       page.getByText(
-        "This organization will be listed for University of Toronto Mississauga.",
+        "This club will be listed for University of Toronto Mississauga.",
       ),
     ).toBeVisible();
     await expect(page.getByRole("dialog")).toHaveCount(0);
@@ -3559,7 +4136,7 @@ test.describe("Navigation", () => {
   });
 
   test("main pages load without errors", async ({ page }) => {
-    const routes = ["/", "/school/uwaterloo", "/login", "/onboarding", "/organizations", "/contact", "/settings"];
+    const routes = ["/", "/login", "/onboarding", "/clubs", "/contact", "/settings"];
     for (const route of routes) {
       const res = await page.goto(`${BASE}${route}`);
       expect(res?.status()).toBe(200);
@@ -3583,7 +4160,7 @@ test.describe("Navigation", () => {
   test("default and alternate school routes load without event feed errors", async ({ page }) => {
     const routes = [
       { url: BASE, schoolName: "University of Waterloo" },
-      { url: `${BASE}/school/utsg`, schoolName: "University of Toronto" },
+      { url: "http://utsg.wat2do.localhost:3000/", schoolName: "University of Toronto" },
     ];
 
     for (const { url, schoolName } of routes) {
@@ -3599,17 +4176,20 @@ test.describe("Navigation", () => {
 
   test("school options are available immediately from the client directory", async ({ page }) => {
     await page.goto(BASE, { waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle");
 
-    await page
-      .getByRole("banner")
-      .getByRole("button", { name: "University of Waterloo" })
-      .click();
+    const schoolTrigger = page.locator('[data-slot="top-nav"]')
+      .getByRole("button", { name: "University of Waterloo" });
+    await schoolTrigger.hover();
+    await expect(schoolTrigger).toHaveAttribute("aria-expanded", "false");
+    await schoolTrigger.click();
+    await expect(schoolTrigger).toHaveAttribute("aria-expanded", "true");
 
     await expect(page.getByText("Loading...", { exact: true })).toHaveCount(0);
     await expect(
       page
         .getByRole("dialog")
-        .getByRole("button", { name: "University of Waterloo" }),
+        .getByRole("option", { name: "University of Waterloo" }),
     ).toBeVisible();
   });
 
@@ -3624,7 +4204,7 @@ test.describe("Navigation", () => {
     });
     for (const linkName of [
       "Events",
-      "Organizations",
+      "Clubs",
       "Positions",
       "About us",
     ]) {
@@ -3669,7 +4249,7 @@ test.describe("Navigation", () => {
       topNavigation.getByRole("button", { name: "Switch to dark mode" }),
     ).toBeHidden();
     await expect(
-      topNavigation.getByRole("button", { name: "Sign in", exact: true }),
+      topNavigation.getByRole("button", { name: "Sign In", exact: true }),
     ).toBeHidden();
 
     await topNavigation
@@ -3692,12 +4272,12 @@ test.describe("Navigation", () => {
     ).toHaveCount(2);
     await expect(
       drawerBody.locator(":scope > button").first(),
-    ).toHaveText("Sign in");
+    ).toHaveText("Sign In");
     await expect(
       navigationDrawer.getByRole("link", { name: "Events", exact: true }),
     ).toBeVisible();
     await expect(
-      navigationDrawer.getByRole("button", { name: "Sign in", exact: true }),
+      navigationDrawer.getByRole("button", { name: "Sign In", exact: true }),
     ).toBeVisible();
     await expect(
       navigationDrawer.getByRole("combobox").filter({ hasText: "English" }),
@@ -3705,6 +4285,30 @@ test.describe("Navigation", () => {
     await expect(
       navigationDrawer.getByRole("button", { name: "Switch to dark mode" }),
     ).toBeVisible();
+  });
+
+  test("account actions live in the compact sidecar and club selection stays out of the main bar", async ({ page, next }) => {
+    await seedAuthenticatedSession(page, next);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(BASE);
+    const topNavigation = page.getByRole("banner");
+    await expect(topNavigation.getByRole("button", { name: "Admin", exact: true })).toBeHidden();
+    await expect(topNavigation.getByRole("button", { name: "Log out", exact: true })).toBeHidden();
+    await expect(topNavigation.getByRole("button", { name: "UW Tech Club", exact: true })).toHaveCount(0);
+    await topNavigation.getByRole("button", { name: "Open navigation menu" }).click();
+    const drawer = page.getByRole("dialog", { name: "Primary navigation" });
+    await expect(drawer.getByRole("button", { name: "UW Tech Club", exact: true })).toBeVisible();
+    await expect(drawer.getByRole("button", { name: "Log out", exact: true })).toBeVisible();
+    await drawer.getByRole("button", { name: "Admin", exact: true }).click();
+    await expect(page).toHaveURL(/\/admin$/);
+    await expect(drawer).toHaveCount(0);
+
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await expect(topNavigation.getByRole("button", { name: "UW Tech Club", exact: true })).toHaveCount(0);
+    await expect(topNavigation.getByRole("button", { name: "Log out", exact: true })).toHaveCount(0);
+    await topNavigation.getByRole("button", { name: "Open navigation menu" }).click();
+    await expect(drawer.getByRole("button", { name: "UW Tech Club", exact: true })).toBeVisible();
+    await expect(drawer.getByRole("button", { name: "Log out", exact: true })).toBeVisible();
   });
 
   test("uses only the bottom-left page glow and no drawer decoration", async ({
@@ -3729,6 +4333,7 @@ test.describe("Navigation", () => {
   test("theme toggle animates and persists through the shared theme cookie", async ({
     page,
   }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
     await page.addInitScript(
       ({ themeKey }) => localStorage.setItem(themeKey, JSON.stringify("dark")),
       { themeKey: STORAGE_KEYS.THEME },
@@ -3736,6 +4341,7 @@ test.describe("Navigation", () => {
     await page.goto(BASE, { waitUntil: "domcontentloaded" });
 
     await expect(page.locator("html")).toHaveClass(/dark/);
+    await page.getByRole("button", { name: "Open navigation menu" }).click();
     const darkThemeToggle = page.getByRole("button", {
       name: "Switch to light mode",
     });
@@ -3774,7 +4380,19 @@ test.describe("Navigation", () => {
         return originalAnimate(keyframes, options);
       }) as typeof root.animate;
     });
-    await darkThemeToggle.click();
+    const toggleBounds = await darkThemeToggle.boundingBox();
+    expect(toggleBounds).not.toBeNull();
+    const clickPosition = { x: 6, y: 6 };
+    const origin = {
+      x: Math.floor(toggleBounds!.x + clickPosition.x),
+      y: Math.floor(toggleBounds!.y + clickPosition.y),
+    };
+    const viewport = page.viewportSize()!;
+    const radius = Math.hypot(
+      Math.max(origin.x, viewport.width - origin.x),
+      Math.max(origin.y, viewport.height - origin.y),
+    );
+    await darkThemeToggle.click({ position: clickPosition });
     await expect(page.locator("html")).not.toHaveClass(/dark/);
     const lightThemeToggle = page.getByRole("button", {
       name: "Switch to dark mode",
@@ -3787,10 +4405,15 @@ test.describe("Navigation", () => {
       "background-color",
       lightControlColors["--background"]!,
     );
-    await expect(lightThemeToggle).toHaveCSS(
-      "border-top-color",
-      lightControlColors["--border"]!,
-    );
+    const outlineBorder = await page.evaluate(() => {
+      const sample = document.createElement("button");
+      sample.className = "border-border/60";
+      document.body.append(sample);
+      const color = getComputedStyle(sample).borderTopColor;
+      sample.remove();
+      return color;
+    });
+    await expect(lightThemeToggle).toHaveCSS("border-top-color", outlineBorder);
     await expect
       .poll(() =>
         page.evaluate(
@@ -3808,8 +4431,8 @@ test.describe("Navigation", () => {
       )
       .toEqual({
         clipPath: [
-          expect.stringMatching(/^circle\(0px at /),
-          expect.stringMatching(/^circle\(.+px at /),
+          `circle(0px at ${origin.x}px ${origin.y}px)`,
+          `circle(${radius}px at ${origin.x}px ${origin.y}px)`,
         ],
         transitionsLocked: true,
         pseudoElement: "::view-transition-new(root)",
@@ -3836,8 +4459,10 @@ test.describe("Navigation", () => {
 
     await page.evaluate((key) => localStorage.removeItem(key), STORAGE_KEYS.THEME);
     await page.reload({ waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle");
     await expect(page.locator("html")).not.toHaveClass(/dark/);
 
+    await page.getByRole("button", { name: "Open navigation menu" }).click();
     await page.getByRole("button", { name: "Switch to dark mode" }).click();
     await expect(page.locator("html")).toHaveClass(/dark/);
     await expect
@@ -3848,6 +4473,25 @@ test.describe("Navigation", () => {
         ),
       )
       .toBe("dark");
+  });
+
+  test("changes theme without a view transition when reduced motion is requested", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto(BASE);
+    await expect(page.locator("html")).not.toHaveClass(/dark/);
+    await page.evaluate(() => {
+      document.startViewTransition = () => {
+        throw new Error("Reduced motion must not start a view transition");
+      };
+    });
+    const errors: string[] = [];
+    page.on("pageerror", error => errors.push(error.message));
+    await page.getByRole("button", { name: "Switch to dark mode" }).click();
+    await expect(page.locator("html")).toHaveClass(/dark/);
+    await expect(page.locator("html")).not.toHaveClass(/no-transitions/);
+    await page.getByRole("button", { name: "Switch to light mode" }).click();
+    await expect(page.locator("html")).not.toHaveClass(/dark/);
+    expect(errors).toEqual([]);
   });
 
   test("events page first paint uses app chrome, not an empty shell", async ({ page }) => {
@@ -3861,8 +4505,8 @@ test.describe("Navigation", () => {
       return;
     }
 
-    await expect(page.getByRole("banner")).toBeVisible();
-    await expect(page.getByRole("main")).toBeVisible();
+    await expect(page.locator('[data-slot="top-nav"]')).toBeVisible();
+    await expect(page.getByRole("main", { name: "Events list" })).toBeVisible();
   });
 
   test("no console errors on events page", async ({ page }) => {
@@ -3878,5 +4522,94 @@ test.describe("Navigation", () => {
       (e) => !e.includes("favicon") && !e.includes("Failed to load resource"),
     );
     expect(criticalErrors).toEqual([]);
+  });
+});
+
+test.describe("Position submissions", () => {
+  test("drops a poster, submits a paid role, and approves it through admin review", async ({ page, next }) => {
+    await seedAuthenticatedSession(page, next);
+    const positionData = { title: "Design Lead", description: "Design posters for campus activities.", position_type: "committee", requirements: ["Design experience"], is_paid: true, source_image_url: "https://example.com/poster.png" };
+    const submission = { id: "00000000-0000-4000-9000-000000000001", user_id: null, position_data: { ...positionData, club_id: 1, source_url: "https://example.com/jobs/design" }, status: "pending", submitted_at: new Date().toISOString(), submitted_by_email: TEST_EMAIL };
+    let submitted: Record<string, unknown> | null = null;
+    let reviewed = false;
+    await mockApi(page, next, url => apiPath(url) === "/ai/parse-position-image", async request => {
+      expect(new URL(request.url).searchParams.get("school")).toBe("uwaterloo");
+      return ({ json: positionData });
+    });
+    await mockApi(page, next, url => apiPath(url) === "/position-submissions", async request => {
+      if (request.method === "POST") {
+        submitted = (await request.json());
+        return ({ status: 201, json: submission });
+      } else {
+        if (new URL(request.url).searchParams.get("submission_status") === "pending") {
+          return { json: { items: reviewed ? [] : [submission], total: reviewed ? 0 : 1, page: 1, page_size: 20, total_pages: reviewed ? 0 : 1 } };
+        }
+        return ({ json: { items: [{ ...submission, status: reviewed ? "approved" : "pending" }], total: 21, page: 1, page_size: 20, total_pages: 2 } });
+      }
+    });
+    await mockApi(page, next, url => apiPath(url) === "/position-submissions/" + submission.id, async request => {
+      expect((await request.json()).status).toBe("approved");
+      reviewed = true;
+      return ({ json: { ...submission, status: "approved" } });
+    });
+    await mockApi(page, next, url => apiPath(url) === "/positions", () => ({ json: { items: [], total: 0, page: 1, page_size: 20, total_pages: 0, latest_added_position: null } }));
+    await mockApi(page, next, url => apiPath(url) === "/clubs/1", () => ({ json: MOCK_CLUBS[0] }));
+    await page.goto(`${BASE}/positions/submit`);
+    const title = page.getByRole("textbox", { name: "Position title" });
+    await expect(title).toBeVisible();
+    const form = title.locator("xpath=ancestor::form");
+    const transfer = await page.evaluateHandle(() => {
+      const data = new DataTransfer();
+      data.items.add(new File([new Uint8Array([137, 80, 78, 71])], "poster.png", { type: "image/png" }));
+      return data;
+    });
+    await form.locator('input[type="file"]').locator("..").dispatchEvent("drop", { dataTransfer: transfer });
+    await transfer.dispose();
+    await expect(title).toHaveValue("Design Lead");
+    await form.locator("#position-club").click();
+    const clubSearch = page.getByPlaceholder("Search clubs...");
+    await clubSearch.fill("UW Tech");
+    await clubSearch.press("Enter");
+    await form.getByRole("textbox", { name: "Source link" }).fill("https://example.com/jobs/design");
+    await form.getByRole("button", { name: "Submit for Review" }).click();
+    await expect(page.getByRole("status").filter({ hasText: "Position submitted for review." })).toBeVisible();
+    expect(submitted).toMatchObject({ position_data: { club_id: 1, is_paid: true, title: "Design Lead" } });
+    expect(submitted).not.toHaveProperty("position_data.school");
+    await page.goto(`${BASE}/admin/positions`);
+    const positionsTab = page.getByRole("tab", { name: "Positions", exact: true });
+    const submissionsTab = page.getByRole("tab", { name: /^Position submissions/ });
+    await expect(submissionsTab.locator('[data-slot="tabs-count"]')).toHaveText("1");
+    await expect(positionsTab).toHaveAttribute("aria-selected", "true");
+    await expect(page.getByRole("tabpanel")).toHaveCount(1);
+    await expect(page.getByRole("row").filter({ hasText: "Design Lead" })).toHaveCount(0);
+    await submissionsTab.click();
+    await expect(submissionsTab).toHaveAttribute("aria-selected", "true");
+    await expect(page.getByRole("tabpanel")).toHaveCount(1);
+    await expect(page.getByRole("heading", { name: "Position submissions", exact: true })).toHaveCount(0);
+    const tableLayout = page.getByRole("tabpanel").locator('[data-slot="admin-table"]');
+    const nextPage = tableLayout.getByRole("button", { name: "Next", exact: true });
+    await expect(nextPage).toBeVisible();
+    for (const width of [1280, 390]) {
+      await page.setViewportSize({ width, height: 844 });
+      await expect.poll(async () => {
+        const countBox = await tableLayout.getByRole("heading", { name: "21 Submissions", exact: true }).boundingBox();
+        const nextBox = await nextPage.boundingBox();
+        const tableBox = await tableLayout.locator('[data-slot="table-container"]').boundingBox();
+        return Boolean(countBox && nextBox && tableBox
+          && Math.abs(countBox.y + countBox.height / 2 - nextBox.y - nextBox.height / 2) < 2
+          && nextBox.y + nextBox.height <= tableBox.y
+          && Math.abs(nextBox.x + nextBox.width - tableBox.x - tableBox.width) < 2);
+      }).toBe(true);
+    }
+    await page.getByRole("row").filter({ hasText: "Design Lead" }).getByRole("button", { name: "View", exact: true }).click();
+    const drawer = page.getByRole("dialog", { name: "Design Lead" });
+    await expect(drawer.getByText("UW Tech Club (uwaterloo)")).toBeVisible();
+    await drawer.getByRole("button", { name: "Approve", exact: true }).click();
+    await expect.poll(() => reviewed).toBe(true);
+    await expect(drawer).not.toBeVisible();
+    await expect(page.getByRole("row").filter({ hasText: "Design Lead" })).toContainText("Approved");
+    await expect(submissionsTab.locator('[data-slot="tabs-count"]')).toHaveCount(0);
+    await positionsTab.click();
+    await expect(page.getByRole("row").filter({ hasText: "Design Lead" })).toHaveCount(0);
   });
 });

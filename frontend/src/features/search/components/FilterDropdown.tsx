@@ -3,17 +3,12 @@ import {
   VisualFilters,
   type VisualFilterControls,
 } from "@/features/search/components/VisualFilters";
-import type { ViewMode } from "@/shared/types";
 
 interface FilterDropdownProps {
-  viewMode: ViewMode;
-  onViewModeChange: (mode: ViewMode) => void;
   filters: VisualFilterControls;
 }
 
 export function FilterDropdown({
-  viewMode,
-  onViewModeChange,
   filters,
 }: FilterDropdownProps) {
   const { t } = useTranslation();
@@ -26,8 +21,6 @@ export function FilterDropdown({
 
       <VisualFilters
         filters={filters}
-        viewMode={viewMode}
-        onViewModeChange={onViewModeChange}
       />
     </>
   );

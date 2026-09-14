@@ -79,14 +79,25 @@ def test_school_frontend_url_replaces_existing_school_subdomain(monkeypatch):
     assert school_context.school_frontend_url("mit") == "https://mit.wat2do.io"
 
 
-def test_school_frontend_url_scopes_localhost_and_preserves_port(monkeypatch):
+@pytest.mark.parametrize("hostname", ["localhost", "wat2do.localhost", "ualberta.wat2do.localhost"])
+def test_school_frontend_url_scopes_localhost_and_preserves_port(monkeypatch, hostname):
     monkeypatch.setattr(
         school_context.settings,
         "frontend_url",
-        "http://localhost:3000",
+        f"http://{hostname}:3000",
     )
 
-    assert school_context.school_frontend_url("uwaterloo") == "http://uwaterloo.localhost:3000"
+    assert (
+        school_context.school_frontend_url("uwaterloo") == "http://uwaterloo.wat2do.localhost:3000"
+    )
+
+
+@pytest.mark.parametrize("parent", ["wat2do.io", "wat2do.localhost"])
+def test_school_from_frontend_url_shared_parent(monkeypatch, parent):
+    origin = f"http://ualberta.{parent}:3000"
+    monkeypatch.setattr(school_context.settings, "cors_origins", [origin])
+    assert school_context.school_from_frontend_url(origin) == "ualberta"
+    assert school_context.school_from_frontend_url(f"{origin}.evil.test") is None
 
 
 def test_school_frontend_url_rejects_legacy_domain(monkeypatch):

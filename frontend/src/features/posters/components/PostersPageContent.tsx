@@ -1,10 +1,3 @@
-/**
- * PostersPageContent -- shared posters page UI used by both admin and organization-panel.
- *
- * Feature-specific components (QR scan map, QR details modal, QR asset wizard)
- * are passed in via props so this module has zero feature imports.
- */
-
 import { Suspense, useMemo } from "react";
 import type { ComponentType } from "react";
 import { useTranslation } from "react-i18next";
@@ -27,24 +20,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/shared/ui/table";
-import { Pagination } from "@/shared/ui/Pagination";
 import { useBackendScans } from "@/features/posters/hooks/useBackendScans";
 import { useBackendPosters } from "@/features/posters/hooks/useBackendPosters";
 import { useIntersectionObserver } from "@/shared/hooks/useIntersectionObserver";
 import { usePagination } from "@/shared/hooks";
-import { usePostersFilters } from "@/features/posters/hooks/usePostersFilters";
+import { usePostersFilters, type TimeFilter } from "@/features/posters/hooks/usePostersFilters";
 import { formatRelativeTimeCompact } from "@/shared/utils/relativeTime";
-import type { Event } from "@/shared/types";
 import type { PosterMapMarker, QRCode } from "@/features/posters/types";
 import { POSTER_MAP_HEIGHT } from "@/shared/constants/ui";
 import { QP } from "@/shared/constants/queryParams";
 import { useMutableSearchParams } from "@/shared/hooks/useMutableSearchParams";
 import { buildManagedPosterMapMarkers } from "@/features/posters/utils/posterMapMarkers";
-
-type TimeFilter = "today" | "yesterday" | "last7days" | "last30days" | "alltime";
-
-
-
 
 /** Props for the lazy-loaded scan map component. */
 interface ScanMapProps {
@@ -58,7 +44,6 @@ interface DetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
   qrCode: QRCode;
-  events: Event[];
 }
 
 /** Props for the QR asset wizard component. */
@@ -67,7 +52,7 @@ interface AssetWizardProps {
 }
 
 interface PostersPageContentProps {
-  events: Event[];
+  school: string | null;
   userEmail: string;
   /** Lazy-loaded scan map component. */
   ScanMapComponent: ComponentType<ScanMapProps>;
@@ -78,7 +63,7 @@ interface PostersPageContentProps {
 }
 
 export function PostersPageContent({
-  events,
+  school,
   userEmail,
   ScanMapComponent,
   DetailsModalComponent,
@@ -89,7 +74,7 @@ export function PostersPageContent({
   const SCANS_PER_PAGE = 14;
 
   const { scans: backendScans, loading: scansLoading } = useBackendScans();
-  const { posters: backendPosters, loading: postersLoading } = useBackendPosters();
+  const { posters: backendPosters, loading: postersLoading } = useBackendPosters(school);
   const isLoading = postersLoading || scansLoading;
 
   // Intersection observer to only load map when it's about to be visible
@@ -104,17 +89,17 @@ export function PostersPageContent({
   });
 
   const sortedScans = useMemo(() => {
-    return filters.scansMatchingPosterSearch.toSorted(
+    return filters.filteredScans.toSorted(
       (a, b) => new Date(b.scannedAt).getTime() - new Date(a.scannedAt).getTime()
     );
-  }, [filters.scansMatchingPosterSearch]);
+  }, [filters.filteredScans]);
   const mapMarkers = useMemo(
     () =>
       buildManagedPosterMapMarkers(
-        filters.qrCodes,
-        filters.scansMatchingPosterSearch,
+        backendPosters,
+        filters.filteredScans,
       ),
-    [filters.qrCodes, filters.scansMatchingPosterSearch],
+    [backendPosters, filters.filteredScans],
   );
 
   const scansPagination = usePagination({
@@ -124,7 +109,7 @@ export function PostersPageContent({
 
   const qrCodeIdParam = searchParams.get(QP.QR_CODE_ID);
   const selectedQRCode = qrCodeIdParam
-    ? filters.qrCodes.find((q) => q.id === qrCodeIdParam) || null
+    ? backendPosters.find((q) => q.id === qrCodeIdParam) || null
     : null;
   const showDetailsModal = selectedQRCode !== null;
 
@@ -194,7 +179,7 @@ export function PostersPageContent({
                     markers={mapMarkers}
                     height={POSTER_MAP_HEIGHT}
                     onMarkerClick={(qrCodeId) => {
-                      const qrCode = filters.qrCodes.find(
+                      const qrCode = backendPosters.find(
                         (candidate) => candidate.id === qrCodeId,
                       );
                       if (qrCode) {
@@ -226,7 +211,7 @@ export function PostersPageContent({
           </div>
 
           <Stack gap={3}>
-            <Table>
+            <Table pagination={{ currentPage: scansPagination.currentPage, totalPages: scansPagination.totalPages, onPageChange: scansPagination.setCurrentPage }}>
               <TableHeader>
                 <TableRow>
                   <TableHead>{t("admin.timestamp")}</TableHead>
@@ -291,14 +276,6 @@ export function PostersPageContent({
                 )}
               </TableBody>
             </Table>
-
-            {sortedScans.length > 0 && (
-              <Pagination
-                currentPage={scansPagination.currentPage}
-                totalPages={scansPagination.totalPages}
-                onPageChange={scansPagination.setCurrentPage}
-              />
-            )}
           </Stack>
         </FormGrid>
       </Stack>
@@ -318,7 +295,6 @@ export function PostersPageContent({
             setSearchParams(newParams);
           }}
           qrCode={selectedQRCode}
-          events={events}
         />
       )}
     </Stack>

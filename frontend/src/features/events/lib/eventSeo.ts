@@ -1,6 +1,6 @@
 import { isVirtualLocation } from "@/features/events/lib/isVirtualLocation";
 import { eventPagePath } from "@/features/events/lib/eventUrls";
-import { organizationPagePath } from "@/shared/constants/routes";
+import { clubPagePath } from "@/shared/constants/routes";
 import { getSchoolCanonicalUrl } from "@/shared/lib/seo";
 import type { Event } from "@/shared/types";
 
@@ -36,7 +36,7 @@ export function isEventIndexable(event: Event): boolean {
   );
   const hasUsefulContext = Boolean(
     event.location?.trim() ||
-      event.organization?.trim() ||
+      event.club?.trim() ||
       event.description?.trim(),
   );
   return Boolean(
@@ -48,7 +48,7 @@ export function buildEventDescription(event: Event, schoolName: string): string 
   const description = event.description?.replace(/\s+/g, " ").trim();
   if (description) return description;
 
-  const details = [event.location, event.organization]
+  const details = [event.location, event.club]
     .map((value) => value?.trim())
     .filter((value): value is string => Boolean(value));
   return `${event.title} at ${schoolName}${details.length > 0 ? `. ${details.join(" - ")}.` : "."} View dates, times, location, cost, and attendance details on Wat2Do.`;
@@ -76,7 +76,7 @@ function parseStructuredLocation(location: string): StructuredLocation | null {
   };
 }
 
-export function isEventStructuredDataEligible(
+function isEventStructuredDataEligible(
   event: Event,
   nowMilliseconds = Date.now(),
 ): boolean {
@@ -92,8 +92,8 @@ export function isEventStructuredDataEligible(
       occurrenceEnd &&
       new Date(occurrenceEnd).getTime() >= nowMilliseconds &&
       event.description?.trim() &&
-      event.organization?.trim() &&
-      event.organization_id &&
+      event.club?.trim() &&
+      event.club_id &&
       isHttpUrl(event.source_url) &&
       isHttpUrl(event.source_image_url) &&
       location &&
@@ -112,7 +112,7 @@ export function buildEventStructuredData(
 
   const [occurrence] = event.occurrences;
   const location = parseStructuredLocation(event.location ?? "");
-  if (!location || !event.organization_id) return null;
+  if (!location || !event.club_id) return null;
   const school = event.school ?? "uwaterloo";
   const canonicalUrl = getSchoolCanonicalUrl(school, eventPagePath(event.id));
 
@@ -146,10 +146,10 @@ export function buildEventStructuredData(
     mainEntityOfPage: canonicalUrl,
     organizer: {
       "@type": "Organization",
-      name: event.organization,
+      name: event.club,
       url: getSchoolCanonicalUrl(
         school,
-        organizationPagePath(event.organization_id),
+        clubPagePath(event.club_id),
       ),
     },
   };

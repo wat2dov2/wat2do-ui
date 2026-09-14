@@ -10,13 +10,14 @@ import {
   type EventStats,
 } from "@/features/events/api/events.api";
 import type {
+  ApiEventAttendeesResponse,
   ApiGoingEventSelection,
-  ApiGoingEventStatusResponse,
 } from "@/shared/generated";
 import { toast } from "@/shared/hooks/use-toast";
 import { controlBox } from "@/shared/config/controlBox";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import { tracker } from "@/shared/services/trackingService";
+import { isApiError } from "@/shared/services/apiClient";
 import type { Event } from "@/shared/types";
 import { isActiveOrUpcomingOccurrence } from "@/shared/utils/date";
 
@@ -80,30 +81,51 @@ export function useGoingEventSelection(
         : clearGoingEvent(eventId),
     onMutate: async ({ eventId, occurrenceIds, userId: mutationUserId }) => {
       const queryKey = queryKeys.goingEvents.byUser(mutationUserId ?? "");
-      await queryClient.cancelQueries({ queryKey });
+      const attendeesKey = queryKeys.events.attendees(eventId);
+      await Promise.all([
+        queryClient.cancelQueries({ queryKey }),
+        queryClient.cancelQueries({ queryKey: attendeesKey }),
+      ]);
       const previous =
         queryClient.getQueryData<ApiGoingEventSelection[]>(queryKey) ?? [];
-      queryClient.setQueryData<ApiGoingEventSelection[]>(queryKey, (current = []) => {
-        const withoutEvent = current.filter(
-          (selection) => selection.event_id !== eventId,
-        );
-        return occurrenceIds.length > 0
-          ? [...withoutEvent, { event_id: eventId, occurrence_ids: occurrenceIds }]
-          : withoutEvent;
+      const previousAttendees = queryClient.getQueryData<ApiEventAttendeesResponse>(attendeesKey);
+      const wasGoing = previous.some(selection => selection.event_id === eventId && selection.occurrence_ids.length > 0);
+      const delta = Number(occurrenceIds.length > 0) - Number(wasGoing);
+      const cachedStats = school
+        ? queryClient.getQueryData<EventStatsMap>(queryKeys.events.stats(school))
+        : undefined;
+      queryClient.setQueryData<ApiEventAttendeesResponse>(attendeesKey, (current) => ({
+        going_count: Math.max(0, (current?.going_count ?? cachedStats?.[String(eventId)]?.going_count ?? 0) + delta),
+        attendees: current?.attendees ?? [],
+      }));
+      patchGoingSelection(queryClient, queryKey, {
+        event_id: eventId,
+        occurrence_ids: occurrenceIds,
       });
-      return { previous, queryKey };
+      return { previous, queryKey, previousAttendees, attendeesKey };
     },
-    onError: (_error, _variables, context) => {
+    onError: (error, _variables, context) => {
       if (context?.previous) {
         queryClient.setQueryData(context.queryKey, context.previous);
+        if (context.previousAttendees) {
+          queryClient.setQueryData(context.attendeesKey, context.previousAttendees);
+        } else {
+          queryClient.resetQueries({ queryKey: context.attendeesKey, exact: true });
+        }
       }
       toast({
-        description: t("events.goingEvents.saveFailed"),
+        description: t(isApiError(error) && error.message === "One or more occurrences can no longer be selected"
+          ? "events.goingEvents.timeUnavailable"
+          : "events.goingEvents.saveFailed"),
         variant: "destructive",
       });
     },
     onSuccess: (response, variables, context) => {
-      patchAuthoritativeSelection(queryClient, context.queryKey, response);
+      patchGoingSelection(queryClient, context.queryKey, response);
+      queryClient.setQueryData<ApiEventAttendeesResponse>(context.attendeesKey, current => ({
+        going_count: response.going_count,
+        attendees: current?.attendees ?? [],
+      }));
       if (school) {
         queryClient.setQueryData<EventStatsMap>(
           queryKeys.events.stats(school),
@@ -128,6 +150,8 @@ export function useGoingEventSelection(
         tracker.track(response.event_id, isGoing ? "going" : "ungoing");
       }
     },
+    onSettled: (_response, _error, variables) =>
+      queryClient.invalidateQueries({ queryKey: queryKeys.events.attendees(variables.eventId) }),
   });
 
   return {
@@ -161,10 +185,10 @@ export function useCurrentTime() {
   return now;
 }
 
-function patchAuthoritativeSelection(
+function patchGoingSelection(
   queryClient: ReturnType<typeof useQueryClient>,
   queryKey: ReturnType<typeof queryKeys.goingEvents.byUser>,
-  response: ApiGoingEventStatusResponse,
+  response: ApiGoingEventSelection,
 ) {
   queryClient.setQueryData<ApiGoingEventSelection[]>(queryKey, (current = []) => {
     const withoutEvent = current.filter(

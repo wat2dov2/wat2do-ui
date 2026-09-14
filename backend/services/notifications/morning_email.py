@@ -3,7 +3,7 @@
 import logging
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
-from typing import Any
+from itertools import batched
 
 from core.constants import NOTIFICATION_TYPE_MORNING_EMAIL
 from core.controlbox import controlbox
@@ -137,10 +137,7 @@ def _load_candidates_by_school(
                 (
                     get_sb()
                     .table(EVENTS)
-                    .select(
-                        "id,title,location,source_image_url,organization,"
-                        "category,added_at,cancelled"
-                    )
+                    .select("id,title,location,source_image_url,club,category,added_at,cancelled")
                     .eq("school_id", school_id)
                     .eq("cancelled", False)
                     .gt("added_at", earliest_start.isoformat())
@@ -161,7 +158,7 @@ def _load_candidates_by_school(
             continue
 
         earliest_occurrence: dict[int, dict] = {}
-        for event_id_chunk in _chunks(list(by_id)):
+        for event_id_chunk in batched(by_id, _CHUNK_SIZE):
             occurrence_rows = (
                 get_sb()
                 .table(EVENT_DATES)
@@ -192,8 +189,8 @@ def _load_going_exclusions(
     candidate_ids: list[int],
 ) -> dict[str, set[int]]:
     excluded: dict[str, set[int]] = defaultdict(set)
-    for user_chunk in _chunks(user_ids):
-        for event_chunk in _chunks(candidate_ids):
+    for user_chunk in batched(user_ids, _CHUNK_SIZE):
+        for event_chunk in batched(candidate_ids, _CHUNK_SIZE):
             rows = (
                 get_sb()
                 .table(USER_GOING_EVENTS)
@@ -287,10 +284,6 @@ def _send_prepared_email(
         provider_attempts=_CONTROL.provider_attempts,
         log_context=f"notification=morning_email user={user_id}",
     )
-
-
-def _chunks(values: list[Any]) -> list[list[Any]]:
-    return [values[start : start + _CHUNK_SIZE] for start in range(0, len(values), _CHUNK_SIZE)]
 
 
 def _aware_utc(value: datetime) -> datetime:

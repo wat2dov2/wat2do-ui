@@ -20,17 +20,9 @@ interface TagInputProps {
   placeholder?: string;
   error?: string;
   touched?: boolean;
-  tagColor?: "warning" | "primary" | "secondary";
   className?: string;
-  allowDuplicates?: boolean;
   required?: boolean;
 }
-
-const tagColorClasses = {
-  warning: "bg-primary/80 text-primary-foreground",
-  primary: "bg-primary/80 text-primary-foreground",
-  secondary: "bg-primary/80 text-primary-foreground",
-};
 
 export function TagInput({
   label,
@@ -43,7 +35,6 @@ export function TagInput({
   placeholder,
   error,
   touched,
-  tagColor = "warning",
   className,
   required = false,
 }: TagInputProps) {
@@ -94,10 +85,7 @@ export function TagInput({
           {value.map((item, index) => (
             <span
               key={item}
-              className={cn(
-                "inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-xl font-medium",
-                tagColorClasses[tagColor]
-              )}
+              className="inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-xl font-medium bg-primary/80 text-primary-foreground"
             >
               {item}
               <button

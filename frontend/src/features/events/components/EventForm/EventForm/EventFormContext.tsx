@@ -1,7 +1,7 @@
 import React, { createContext, useContext } from "react";
 import type {
   Event,
-  Organization,
+  Club,
   EventFormData,
   EventFormOccurrence,
   ValidationErrors,
@@ -18,10 +18,10 @@ export interface EventFormContextValue {
   errors: ValidationErrors;
   touched: Record<string, boolean>;
   handleBlur: (field: string) => void;
-  /** Organizations for the active school, loaded once and shared by the input + preview. */
-  organizations: Organization[];
-  /** Display name of the currently selected organization (empty when none selected). */
-  selectedOrganizationName: string;
+  /** Clubs for the active school, loaded once and shared by the input + preview. */
+  clubs: Club[];
+  /** Display name of the currently selected club (empty when none selected). */
+  selectedClubName: string;
   updateOccurrence: (index: number, field: keyof EventFormOccurrence, value: string) => void;
   addOccurrence: () => void;
   removeOccurrence: (index: number) => void;

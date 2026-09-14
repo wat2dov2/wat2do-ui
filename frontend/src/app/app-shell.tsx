@@ -11,7 +11,7 @@ import { useAuthReady } from "@/app/client-providers";
 import { useUserEmail } from "@/features/auth/hooks/useAuthState";
 import { useCreditsStore } from "@/features/credits/store/credits.store";
 import { useEventsStore } from "@/features/events/store/events.store";
-import { useSavedOrganizationsStore } from "@/features/organizations/store/savedOrganizations.store";
+import { useSavedClubsStore } from "@/features/clubs/store/savedClubs.store";
 import { getRouteDocumentTitle, ROUTES } from "@/shared/constants/routes";
 import {
   DEFAULT_SCHOOL,
@@ -54,11 +54,11 @@ function routeOwnsServerMetadata(pathname: string): boolean {
     pathname === ROUTES.HOME ||
     pathname === ROUTES.LOGIN ||
     pathname === ROUTES.CONTACT ||
-    pathname === ROUTES.ORGANIZATIONS ||
+    pathname === ROUTES.CLUBS ||
     pathname === ROUTES.POSITIONS ||
     pathname === ROUTES.PROMOTE ||
     /^\/events\/\d+\/?$/.test(pathname) ||
-    /^\/organizations\/\d+\/?$/.test(pathname)
+    /^\/clubs\/\d+\/?$/.test(pathname)
   );
 }
 
@@ -104,7 +104,7 @@ function AppShellContent({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!authReady || isAuthFlow) return;
-    void useSavedOrganizationsStore.getState().fetchSavedOrganizations();
+    void useSavedClubsStore.getState().fetchSavedClubs();
     void useCreditsStore.getState().fetchBalance();
     void useCreditsStore.getState().fetchActivePromotedEventIds();
   }, [authReady, isAuthFlow, userEmail]);

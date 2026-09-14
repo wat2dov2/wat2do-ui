@@ -39,7 +39,7 @@ def registered_school(monkeypatch):
     )
     monkeypatch.setattr(
         pipeline_module,
-        "_lookup_organization_by_ig",
+        "_lookup_club_by_ig",
         lambda handle: None,
     )
 
@@ -49,7 +49,7 @@ def _extracted(**overrides) -> dict:
         "title": "Tea Tasting Night",
         "description": "Come try teas.",
         "location": "SLC 3223",
-        "organization": "UW Tea Organization",
+        "club": "UW Tea Club",
         "price": 0.0,
         "food": ["Yes!"],
         "registration": False,
@@ -76,13 +76,13 @@ def _candidate(**overrides) -> dict:
         "title": "Tea Tasting Night",
         "description": "Longer original description that should be replaceable.",
         "location": "SLC 1000",
-        "organization": "UW Tea Organization",
-        "organization_id": 7,
+        "club": "UW Tea Club",
+        "club_id": 7,
         "price": 0.0,
         "food": ["Yes!"],
         "registration": False,
         "category": "Arts & Culture",
-        "ig_handle": "uwteaorganization",
+        "ig_handle": "uwteaclub",
         "school": "uwaterloo",
         "cancelled": False,
         "source_url": "https://instagram.com/p/OLD",
@@ -310,7 +310,7 @@ def test_pass2_cancel_json_overwrites_db_cancelled(fake_sb, patch_sb, monkeypatc
             "title": candidate["title"],
             "description": candidate["description"],
             "location": candidate["location"],
-            "organization": candidate["organization"],
+            "club": candidate["club"],
             "price": 0.0,
             "food": ["Yes!"],
             "registration": False,
@@ -337,7 +337,7 @@ def test_pass2_cancel_json_overwrites_db_cancelled(fake_sb, patch_sb, monkeypatc
             "id": 42,
             "title": "Tea Tasting Night",
             "location": "SLC 1000",
-            "organization": "UW Tea Organization",
+            "club": "UW Tea Club",
             "cancelled": False,
             "added_at": datetime.now(timezone.utc),
             "occurrences": [
@@ -358,7 +358,7 @@ def test_pass2_cancel_json_overwrites_db_cancelled(fake_sb, patch_sb, monkeypatc
 
     outcome = write_event(
         reconciled[0],
-        ig_handle="uwteaorganization",
+        ig_handle="uwteaclub",
         source_url="https://instagram.com/p/NEW",
     )
     assert outcome == "updated"
@@ -387,7 +387,7 @@ def test_pass2_update_json_overwrites_location(fake_sb, patch_sb, monkeypatch):
             "id": 42,
             "title": "Tea Tasting Night",
             "location": "SLC 1000",
-            "organization": "UW Tea Organization",
+            "club": "UW Tea Club",
             "cancelled": False,
             "added_at": datetime.now(timezone.utc),
             "occurrences": [
@@ -408,7 +408,7 @@ def test_pass2_update_json_overwrites_location(fake_sb, patch_sb, monkeypatch):
 
     outcome = write_event(
         reconciled[0],
-        ig_handle="uwteaorganization",
+        ig_handle="uwteaclub",
         source_url="https://instagram.com/p/NEW",
     )
     assert outcome == "updated"
@@ -437,7 +437,7 @@ def test_pass2_insert_json_creates_row(fake_sb, patch_sb, monkeypatch):
     fake_sb.queue_responses(
         [
             [],  # org_resolve loop 1 lookup miss
-            [{"id": 8}],  # organization insert
+            [{"id": 8}],  # club insert
             [{"id": 7}],
             [
                 {
@@ -455,7 +455,7 @@ def test_pass2_insert_json_creates_row(fake_sb, patch_sb, monkeypatch):
 
     outcome = write_event(
         reconciled[0],
-        ig_handle="uwteaorganization",
+        ig_handle="uwteaclub",
         source_url="https://instagram.com/p/NEW",
     )
     assert outcome == "inserted"
@@ -471,7 +471,7 @@ def test_pass2_insert_json_creates_row(fake_sb, patch_sb, monkeypatch):
 
 def test_pipeline_pass2_cancel_updates_existing(monkeypatch, fake_sb, patch_sb):
     """Skip Pass 1 extract; Pass 2 cancel JSON drives an update write."""
-    from services.scraper.org_resolve import ResolvedOrganization
+    from services.scraper.org_resolve import ResolvedClub
 
     patch_sb("services.scraper.event_writer")
     patch_sb("services.event_date_service")
@@ -486,7 +486,7 @@ def test_pipeline_pass2_cancel_updates_existing(monkeypatch, fake_sb, patch_sb):
             "title": "Tea Tasting Night",
             "description": candidate["description"],
             "location": "SLC 1000",
-            "organization": "UW Tea Organization",
+            "club": "UW Tea Club",
             "price": 0.0,
             "food": ["Yes!"],
             "registration": False,
@@ -508,11 +508,11 @@ def test_pipeline_pass2_cancel_updates_existing(monkeypatch, fake_sb, patch_sb):
     monkeypatch.setattr(pipeline_module, "find_candidates", lambda **_kw: [candidate])
     monkeypatch.setattr(
         pipeline_module,
-        "resolve_organization_for_scrape",
-        lambda **_kw: ResolvedOrganization(
-            organization_id=7,
-            organization_name="UW Tea Organization",
-            ig_handle="uwteaorganization",
+        "resolve_club_for_scrape",
+        lambda **_kw: ResolvedClub(
+            club_id=7,
+            club_name="UW Tea Club",
+            ig_handle="uwteaclub",
         ),
     )
     _mock_openai_json(monkeypatch, pass2)
@@ -520,11 +520,11 @@ def test_pipeline_pass2_cancel_updates_existing(monkeypatch, fake_sb, patch_sb):
     old = EventResponse.model_validate(
         {
             "id": 42,
-            "organization_id": 7,
+            "club_id": 7,
             "title": "Tea Tasting Night",
             "location": "SLC 1000",
-            "organization": "UW Tea Organization",
-            "ig_handle": "uwteaorganization",
+            "club": "UW Tea Club",
+            "ig_handle": "uwteaclub",
             "cancelled": False,
             "added_at": datetime.now(timezone.utc),
             "occurrences": [
@@ -582,7 +582,7 @@ def test_pipeline_pass2_cancel_updates_existing(monkeypatch, fake_sb, patch_sb):
                 data=[
                     {
                         "id": "00000000-0000-0000-0000-000000000aaa",
-                        "ig_username": "uwteaorganization",
+                        "ig_username": "uwteaclub",
                         "github_run_id": None,
                         "status": "success",
                         "posts_fetched": 1,
@@ -602,12 +602,12 @@ def test_pipeline_pass2_cancel_updates_existing(monkeypatch, fake_sb, patch_sb):
     fake_sb.execute.side_effect = _smart_execute
 
     result = pipeline_module.run_pipeline(
-        ig_handle="uwteaorganization",
+        ig_handle="uwteaclub",
         school="uwaterloo",
         posts=[
             {
                 "url": "https://www.instagram.com/p/CANCEL1/",
-                "ownerUsername": "uwteaorganization",
+                "ownerUsername": "uwteaclub",
                 "caption": "CANCELLED: Tea Tasting Night is off.",
                 "timestamp": datetime.now(timezone.utc).isoformat(),
                 "displayUrl": "https://cdn/img.jpg",
@@ -626,7 +626,7 @@ def test_pipeline_pass2_cancel_updates_existing(monkeypatch, fake_sb, patch_sb):
 
 def test_pipeline_pass2_failure_falls_back_to_insert(monkeypatch, fake_sb, patch_sb):
     """If Pass 2 returns None, pipeline inserts Pass 1 events with id cleared."""
-    from services.scraper.org_resolve import ResolvedOrganization
+    from services.scraper.org_resolve import ResolvedClub
 
     patch_sb("services.scraper.event_writer")
     patch_sb("services.event_date_service")
@@ -644,11 +644,11 @@ def test_pipeline_pass2_failure_falls_back_to_insert(monkeypatch, fake_sb, patch
     monkeypatch.setattr(pipeline_module, "reconcile_events", lambda **_kw: None)
     monkeypatch.setattr(
         pipeline_module,
-        "resolve_organization_for_scrape",
-        lambda **_kw: ResolvedOrganization(
-            organization_id=7,
-            organization_name="UW Tea Organization",
-            ig_handle="uwteaorganization",
+        "resolve_club_for_scrape",
+        lambda **_kw: ResolvedClub(
+            club_id=7,
+            club_name="UW Tea Club",
+            ig_handle="uwteaclub",
         ),
     )
 
@@ -703,7 +703,7 @@ def test_pipeline_pass2_failure_falls_back_to_insert(monkeypatch, fake_sb, patch
                 data=[
                     {
                         "id": "00000000-0000-0000-0000-000000000bbb",
-                        "ig_username": "uwteaorganization",
+                        "ig_username": "uwteaclub",
                         "github_run_id": None,
                         "status": "success",
                         "posts_fetched": 1,
@@ -723,12 +723,12 @@ def test_pipeline_pass2_failure_falls_back_to_insert(monkeypatch, fake_sb, patch
     fake_sb.execute.side_effect = _smart_execute
 
     result = pipeline_module.run_pipeline(
-        ig_handle="uwteaorganization",
+        ig_handle="uwteaclub",
         school="uwaterloo",
         posts=[
             {
                 "url": "https://www.instagram.com/p/FALLBACK1/",
-                "ownerUsername": "uwteaorganization",
+                "ownerUsername": "uwteaclub",
                 "caption": "Tea tasting Friday",
                 "timestamp": datetime.now(timezone.utc).isoformat(),
                 "displayUrl": "https://cdn/img.jpg",

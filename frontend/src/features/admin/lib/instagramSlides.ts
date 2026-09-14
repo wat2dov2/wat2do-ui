@@ -9,9 +9,9 @@
  */
 
 import {
-  getOrganizationCategoryConfig,
-  getOrganizationCategoryDoodleDataUris,
-} from "@/shared/data/organizationCategoryStyles";
+  getClubCategoryConfig,
+  getClubCategoryDoodleDataUris,
+} from "@/shared/data/clubCategoryStyles";
 import { getSchoolPublicUrl } from "@/shared/constants/schools";
 import type { SchoolColors } from "@/shared/lib/schoolBranding";
 import { buildInstagramCoverLogo } from "@/features/admin/lib/instagramCoverLogo";
@@ -25,7 +25,7 @@ export interface SlideEvent {
   title?: string | null;
   category?: string | null;
   location?: string | null;
-  organization?: string | null;
+  club?: string | null;
   ig_handle?: string | null;
   school?: string | null;
   source_image_url?: string | null;
@@ -45,8 +45,8 @@ export interface EventSlideModel {
   dateLine: string;
   timeLine: string;
   location: string;
-  /** Full organization name - a slide has room, so it is never truncated. */
-  organizationLine: string;
+  /** Full club name - a slide has room, so it is never truncated. */
+  clubLine: string;
   /** Price / free-food chips, mirroring the event card's badge column. */
   badges: string[];
   imageSrc: string;
@@ -72,13 +72,10 @@ export interface CoverSlideModel {
   tiles: string[];
 }
 
-// Slide copy is English-only: a slide is artwork posted to one Instagram
-// account, not app UI, so it never passes through i18n.
-const COVER_HEADLINE = "NEW EVENTS ADDED TODAY";
-const COVER_SWIPE_LINE = "Swipe to see our picks >";
+// Artwork follows the school's language, independent of the reviewing admin's locale.
 const FALLBACK_TITLE = "Untitled event";
 const FALLBACK_LOCATION = "See Wat2Do for location";
-const FALLBACK_ORGANIZATION = "Campus organization";
+const FALLBACK_CLUB = "Campus club";
 
 function text(value: string | null | undefined, fallback: string): string {
   const cleaned = (value ?? "").replace(/\s+/g, " ").trim();
@@ -127,7 +124,7 @@ export function buildEventSlideModel(
   imageSrc = event.source_image_url ?? "",
 ): EventSlideModel {
   const { dateLine, timeLine } = formatSlideDate(event);
-  const category = getOrganizationCategoryConfig(event.category);
+  const category = getClubCategoryConfig(event.category);
   return {
     eventId: event.id,
     category: { label: text(event.category, category.label), color: category.color },
@@ -135,7 +132,7 @@ export function buildEventSlideModel(
     dateLine,
     timeLine,
     location: text(event.location, FALLBACK_LOCATION),
-    organizationLine: text(event.organization, FALLBACK_ORGANIZATION),
+    clubLine: text(event.club, FALLBACK_CLUB),
     badges: slideBadges(event),
     imageSrc,
   };
@@ -152,6 +149,7 @@ export function buildEventSlideModel(
  */
 export function buildCoverSlideModel({
   school,
+  language,
   colors,
   localDate,
   newEventCount,
@@ -160,6 +158,7 @@ export function buildCoverSlideModel({
   tiles,
 }: {
   school: string;
+  language: "en" | "fr";
   colors: SchoolColors;
   /** The batch's `local_date`, as `YYYY-MM-DD`. */
   localDate: string;
@@ -172,19 +171,19 @@ export function buildCoverSlideModel({
   return {
     colors,
     logoSrc: buildInstagramCoverLogo(colors),
-    doodleIcons: getOrganizationCategoryDoodleDataUris(colors.secondary, 42),
-    dateLine: formatCoverDate(localDate),
+    doodleIcons: getClubCategoryDoodleDataUris(colors.secondary, 42),
+    dateLine: formatCoverDate(localDate, language),
     newEventCount,
-    headline: COVER_HEADLINE,
-    body: text(body, defaultCoverBody(eventCount)),
-    swipeLine: COVER_SWIPE_LINE,
-    siteLine: `More info on ${getSchoolPublicUrl(school)}`,
+    headline: language === "fr" ? "NOUVEAUX ÉVÉNEMENTS AUJOURD’HUI" : "NEW EVENTS ADDED TODAY",
+    body: text(body, defaultCoverBody(eventCount, language)),
+    swipeLine: language === "fr" ? "Voir les événements" : "Swipe to see the events",
+    siteLine: `${language === "fr" ? "Plus d’infos sur" : "More info on"} ${getSchoolPublicUrl(school)}`,
     tiles,
   };
 }
 
-function defaultCoverBody(eventCount: number): string {
-  return `Here are the ${eventCount} we like the most`;
+export function defaultCoverBody(eventCount: number, language: "en" | "fr"): string {
+  return language === "fr" ? `${eventCount} événements sur le campus à découvrir` : `Here are the ${eventCount} you should know about`;
 }
 
 /**
@@ -193,9 +192,10 @@ function defaultCoverBody(eventCount: number): string {
  * Formatted in UTC because the date is already local to the school: parsing it
  * gives UTC midnight, and any other zone would slide it a day.
  */
-function formatCoverDate(localDate: string): string {
+function formatCoverDate(localDate: string, language: "en" | "fr"): string {
   const parsed = new Date(`${localDate}T00:00:00Z`);
   if (Number.isNaN(parsed.getTime())) return "";
+  if (language === "fr") return new Intl.DateTimeFormat("fr-CA", { weekday: "long", month: "long", day: "numeric", timeZone: "UTC" }).format(parsed);
 
   const parts = new Intl.DateTimeFormat("en-US", {
     weekday: "long",

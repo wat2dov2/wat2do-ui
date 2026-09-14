@@ -37,7 +37,7 @@ async function installCommonApiMocks(page: Page): Promise<void> {
     (route) =>
       fulfillJson(route, {
         event_categories: ["Career", "Technology"],
-        organization_categories: ["Technology"],
+        club_categories: ["Technology"],
         interests: ["Career", "Technology"],
         interest_to_categories: {
           Career: ["Career"],
@@ -55,7 +55,7 @@ async function installCommonApiMocks(page: Page): Promise<void> {
     (route) => fulfillJson(route, []),
   );
   await page.route(
-    (url) => apiPath(url) === "/saved-organizations",
+    (url) => apiPath(url) === "/saved-clubs",
     (route) => fulfillJson(route, []),
   );
   await page.route(
@@ -63,7 +63,7 @@ async function installCommonApiMocks(page: Page): Promise<void> {
     (route) => fulfillJson(route, { balance: 0 }),
   );
   await page.route(
-    (url) => apiPath(url) === "/organizations/mine",
+    (url) => apiPath(url) === "/clubs/mine",
     (route) => fulfillJson(route, []),
   );
   await page.route(
@@ -98,8 +98,8 @@ async function installCommonApiMocks(page: Page): Promise<void> {
             registration: false,
             source_image_url: null,
             category: "Technology",
-            organization: "Wat2Do",
-            organization_type: "independent",
+            club: "Wat2Do",
+            club_type: "independent",
             school: "uwaterloo",
             added_at: new Date().toISOString(),
           },
@@ -214,10 +214,10 @@ async function installSessionMock(
     isFirstYear: false,
     school: school ?? "",
     role,
-    hasOrganization: false,
+    hasClub: false,
     clubs: [],
-    organizationId: null,
-    organizationName: null,
+    clubId: null,
+    clubName: null,
     payoutEmail: user.payout_email,
     promoterTosAcceptedAt: user.promoter_tos_accepted_at,
     promoterTosVersion: user.promoter_tos_version,
@@ -597,7 +597,7 @@ test.describe("Promoter poster campaign", () => {
     await expect(tabTriggers).toHaveCount(4);
     await expect(promoterTab).toHaveAttribute("aria-selected", "true");
     await expect(page.getByText("Enrolled", { exact: true })).toHaveClass(
-      /text-success/,
+      /text-foreground/,
     );
     await expect(
       page.getByRole("link", { name: "Open my posters" }),
@@ -681,6 +681,10 @@ test.describe("Promoter poster campaign", () => {
   });
 
   test("switches between every standard settings tab", async ({ page }) => {
+    const insertionEffectWarnings: string[] = [];
+    page.on("console", message => {
+      if (message.text().includes("useInsertionEffect")) insertionEffectWarnings.push(message.text());
+    });
     await installCommonApiMocks(page);
     await installSessionMock(page, { hasPromoterProfile: false });
 
@@ -693,11 +697,14 @@ test.describe("Promoter poster campaign", () => {
 
     await notificationsTab.click();
     await expect(page).toHaveURL(/\/settings\?tab=notifications$/);
-    await expect(page.getByText("Notification Preferences", { exact: true })).toBeVisible();
+    await expect(page.getByRole("tabpanel", { name: "Notifications" })
+      .getByRole("switch", { name: "Morning email", exact: true })).toBeVisible();
 
     await appearanceTab.click();
     await expect(page).toHaveURL(/\/settings\?tab=appearance$/);
-    await expect(page.getByText("View Preferences", { exact: true })).toBeVisible();
+    await expect(page.getByRole("tabpanel", { name: "Appearance" })
+      .getByRole("combobox", { name: "Default View Mode", exact: true })).toBeVisible();
+    expect(insertionEffectWarnings).toEqual([]);
   });
 
   test("hides promoter settings from users who are not enrolled", async ({
@@ -1282,7 +1289,8 @@ test.describe("Administrator poster payouts", () => {
       .click();
     await page.getByLabel("Period to").click();
     await page
-      .locator('[role="gridcell"][data-day="2026-07-01"] button')
+      .getByRole("grid", { name: /^July(?: 2026)?$/ })
+      .getByRole("button", { name: "Wednesday, July 1st, 2026", exact: true })
       .click();
     await page.getByLabel("Minimum amount").fill("50");
     await page.getByLabel("Maximum amount").fill("100");

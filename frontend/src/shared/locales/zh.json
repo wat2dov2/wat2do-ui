@@ -13,7 +13,6 @@
     "or": "或",
     "separatorBullet": "•",
     "free": "免费",
-    "freeFood": "免费食物",
     "backToTop": "返回顶部",
     "cancelled": "已取消",
     "registration": "报名",
@@ -67,7 +66,11 @@
     "logo": "图标",
     "loadingMap": "地图加载中...",
     "clearFilters": "清除筛选",
-    "all": "全部"
+    "all": "全部",
+    "latestAddedItem": "<addedPrefix></addedPrefix><eventTitle>{{title}}</eventTitle> <addedTime>添加于 {{time}}</addedTime>",
+    "newlyAddedFilter": {
+      "last24Hours": "新增"
+    }
   },
   "errorBoundary": {
     "title": "出错了",
@@ -78,13 +81,13 @@
     "events": "活动",
     "create": "提交活动",
     "loginRequiredToSubmit": "只有登录用户才能提交活动或组织。",
-    "organizations": "组织",
+    "clubs": "组织",
     "positions": "职位",
     "myEvents": "我的活动",
     "settings": "设置",
     "admin": "管理员",
     "adminPanel": "管理员面板",
-    "organizationPanel": "组织面板",
+    "clubPanel": "组织面板",
     "clubPanelTooltip": "管理您的组织",
     "mission": "使命",
     "about": "关于我们",
@@ -114,8 +117,7 @@
       "continueWithGoogle": "使用 Google 账号继续"
     },
     "signOut": {
-      "logOut": "退出登录",
-      "signOutOfAccount": "退出当前账号"
+      "logOut": "退出登录"
     },
     "getStarted": "开始使用",
     "profile": {
@@ -169,9 +171,9 @@
     "desc": "降序",
     "ascending": "升序",
     "descending": "降序",
-    "organization": "组织",
-    "searchOrganization": "搜索组织...",
-    "noOrganizations": "暂无组织"
+    "club": "组织",
+    "searchClub": "搜索组织...",
+    "noClubs": "暂无组织"
   },
   "commands": {
     "commands": "命令",
@@ -218,10 +220,10 @@
     "locationPlaceholder": "例如：MC 1234, SLC Great Hall",
     "selectPackage": "选择套餐",
     "eventTitlePlaceholder": "例如：技术讲座：2024年的AI技术",
-    "organizationNamePlaceholder": "例如：计算机科学组织",
-    "selectOrganization": "选择组织",
-    "searchOrganizationPlaceholder": "搜索组织...",
-    "noOrganizationFound": "未找到组织",
+    "clubNamePlaceholder": "例如：计算机科学组织",
+    "selectClub": "选择组织",
+    "searchClubPlaceholder": "搜索组织...",
+    "noClubFound": "未找到组织",
     "descriptionPlaceholder": "向大家介绍您的活动内容...",
     "sourceUrl": "来源链接",
     "sourceUrlPlaceholder": "https://instagram.com/p/...",
@@ -240,21 +242,21 @@
     "description": "描述",
     "saveChanges": "保存更改",
     "requiredInformation": "必填信息",
-    "organizationName": "组织名称",
-    "organizationType": "组织类型",
-    "organizationTypeMapped": "{{type}}",
-    "organizationTypeIndependent": "独立",
-    "organizationNameRequired": "组织名称为必填项",
+    "clubName": "组织名称",
+    "clubType": "组织类型",
+    "clubTypeMapped": "{{type}}",
+    "clubTypeIndependent": "独立",
+    "clubNameRequired": "组织名称为必填项",
     "ownerEmail": "所有者邮箱",
     "categories": "分类",
     "categoryRequired": "至少需要选择一个分类",
     "add": "添加",
-    "organizationPageUrl": "组织主页 URL",
-    "organizationPageUrlPlaceholder": "例如：https://example.com 或 123",
+    "clubPageUrl": "组织主页 URL",
+    "clubPageUrlPlaceholder": "例如：https://example.com 或 123",
     "instagramHandle": "Instagram 账号",
     "discordLink": "Discord 链接",
     "titleRequired": "活动标题为必填项",
-    "organizationRequired": "组织为必填项",
+    "clubRequired": "组织为必填项",
     "occurrenceRequired": "至少需要选择一个日期",
     "locationRequired": "地点为必填项",
     "schoolRequired": "学校为必填项",
@@ -282,7 +284,7 @@
     "politicsAndAdvocacy": "政治与倡导",
     "religionAndSpirituality": "宗教信仰",
     "events": "活动",
-    "organizations": "组织"
+    "clubs": "组织"
   },
   "locations": {
     "LAX": "LAX",
@@ -371,7 +373,7 @@
     "phase3Title": "与全校分享",
     "phase3Paragraph1": "我们将链接发到了几个群聊里。接着我们做了一张海报（很讽刺对吧）并贴在 SLC 大厅。在一周内，大家开始给我们发来截图反馈。",
     "phase3Paragraph2": "<em>“等等，这里竟然还有自行车维修组织？我真的可以去那里修自行车吗？”</em>",
-    "phase3Paragraph3": "有人通过 Wat2Do 发现了 <strong>Gatka Organization</strong>（锡克武术），并表示这是他们学期中最精彩的体验。另一个人发现了 <strong>Retro Rollers</strong>（轮滑聚会）并在一个晚上结识了六位新朋友。",
+    "phase3Paragraph3": "有人通过 Wat2Do 发现了 <strong>Gatka Club</strong>（锡克武术），并表示这是他们学期中最精彩的体验。另一个人发现了 <strong>Retro Rollers</strong>（轮滑聚会）并在一个晚上结识了六位新朋友。",
     "phase3Paragraph4": "那时我们明白：这不仅是一个日程表。它是探索你未曾了解的校园生活的新媒介。",
     "photo3Alt": "社区探索",
     "photo3Caption": "大家开始发现自己从未听说过的有趣活动。",

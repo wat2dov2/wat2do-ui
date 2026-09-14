@@ -1,7 +1,6 @@
 import { lazy, useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
-import { useEventsStore } from "@/features/events";
 import { useUserEmail } from "@/features/auth";
 import { AdminPayoutsPanel } from "@/features/admin/components/posters/AdminPayoutsPanel";
 import { ROUTES } from "@/shared/constants/routes";
@@ -25,7 +24,6 @@ const QRScanMap = lazy(() =>
 
 export function AdminPostersPage() {
   const { t } = useTranslation();
-  const events = useEventsStore((s) => s.events);
   const userEmail = useUserEmail();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<"posters" | "payouts">("posters");
@@ -63,7 +61,7 @@ export function AdminPostersPage() {
 
         <TabsContent value="posters" className="mt-5">
           <PostersPageContent
-            events={events}
+            school={null}
             userEmail={userEmail || ""}
             ScanMapComponent={QRScanMap}
             DetailsModalComponent={QRCodeDetailsModal}

@@ -5,17 +5,7 @@ import { promoterProgram } from "@/shared/config/promoterProgram";
 import { STORAGE_KEYS } from "@/shared/constants/storageKeys";
 import { StorageService } from "@/shared/services/storageService";
 
-export interface PromoterState {
-  userId: string | null;
-  isAuthenticated: boolean;
-  userEmail: string | null;
-  school: string | null;
-  payoutEmail: string | null;
-  isEnrolled: boolean;
-  isProgramEnabled: boolean;
-}
-
-export function usePromoterState(): PromoterState {
+export function usePromoterState() {
   const auth = useAuthState();
   const isEnrolled = Boolean(
     auth.payoutEmail &&
@@ -41,10 +31,7 @@ function loadBannerDismissal(): number {
   );
 }
 
-export function usePromoterBannerDismissal(): {
-  isDismissed: boolean;
-  dismiss: () => void;
-} {
+export function usePromoterBannerDismissal() {
   const [isDismissed, setIsDismissed] = useState(
     () => loadBannerDismissal() > Date.now(),
   );

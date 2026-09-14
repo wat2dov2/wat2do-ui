@@ -16,7 +16,7 @@ from core.config import settings
 from core.constants import (
     SCRAPING_LOCATION_SIMILARITY_THRESHOLD,
     SCRAPING_MAX_CANDIDATES,
-    SCRAPING_SAME_ORGANIZATION_TITLE_THRESHOLD,
+    SCRAPING_SAME_CLUB_TITLE_THRESHOLD,
     SCRAPING_TITLE_SIMILARITY_THRESHOLD,
 )
 from services.scraper.dedup import (
@@ -51,8 +51,8 @@ def _db_event(
     title: str,
     location: str,
     description: str = "",
-    ig_handle: str = "uwteaorganization",
-    organization_id: int | None = 7,
+    ig_handle: str = "uwteaclub",
+    club_id: int | None = 7,
     start_iso: str = _DAY_ISO,
     cancelled: bool = False,
 ) -> dict:
@@ -65,8 +65,8 @@ def _db_event(
         "food": [],
         "registration": False,
         "category": "Arts & Culture",
-        "organization": "UW Tea Organization",
-        "organization_id": organization_id,
+        "club": "UW Tea Club",
+        "club_id": club_id,
         "ig_handle": ig_handle,
         "school": "uwaterloo",
         "cancelled": cancelled,
@@ -105,7 +105,7 @@ def _extracted(
         "title": title,
         "description": description,
         "location": location,
-        "organization": "UW Tea Organization",
+        "club": "UW Tea Club",
         "price": 0.0,
         "food": [],
         "registration": False,
@@ -152,7 +152,7 @@ def test_dedup_same_org_near_threshold_included(fake_sb, patch_sb):
     # "Tea Tasting Night" vs "Tea Tasting Evening" is known > 0.8 in existing tests.
     a = "Tea Tasting Night"
     b = "Tea Tasting Evening"
-    assert title_similarity(a, b) > SCRAPING_SAME_ORGANIZATION_TITLE_THRESHOLD
+    assert title_similarity(a, b) > SCRAPING_SAME_CLUB_TITLE_THRESHOLD
 
     row = _db_event(eid=1, title=a, location="SLC")
     _queue_dedup_db(fake_sb, same_org_rows=[row], same_day_rows=[])
@@ -162,7 +162,7 @@ def test_dedup_same_org_near_threshold_included(fake_sb, patch_sb):
         location="SLC",
         description="",
         occurrences=[_occ(_DAY_ISO)],
-        ig_handle="uwteaorganization",
+        ig_handle="uwteaclub",
     )
     assert [h["id"] for h in hits] == [1]
 
@@ -171,7 +171,7 @@ def test_dedup_same_org_below_threshold_excluded(fake_sb, patch_sb):
     patch_sb("services.scraper.dedup")
     a = "Weekly Board Meeting"
     b = "Pizza Social Hour"
-    assert title_similarity(a, b) <= SCRAPING_SAME_ORGANIZATION_TITLE_THRESHOLD
+    assert title_similarity(a, b) <= SCRAPING_SAME_CLUB_TITLE_THRESHOLD
 
     row = _db_event(eid=2, title=a, location="SLC")
     _queue_dedup_db(fake_sb, same_org_rows=[row], same_day_rows=[])
@@ -181,7 +181,7 @@ def test_dedup_same_org_below_threshold_excluded(fake_sb, patch_sb):
         location="SLC",
         description="",
         occurrences=[_occ(_DAY_ISO)],
-        ig_handle="uwteaorganization",
+        ig_handle="uwteaclub",
     )
     assert hits == []
 
@@ -196,7 +196,7 @@ def test_dedup_past_same_org_event_excluded(fake_sb, patch_sb):
         location="SLC",
         description="",
         occurrences=[_occ(_DAY_ISO)],
-        ig_handle="uwteaorganization",
+        ig_handle="uwteaclub",
     )
     assert hits == []
 
@@ -218,7 +218,7 @@ def test_dedup_same_day_substring_needs_location(fake_sb, patch_sb):
         location="Remote Zoom Link Only",
         description="",
         occurrences=[_occ(_DAY_ISO)],
-        ig_handle="uwteaorganization",
+        ig_handle="uwteaclub",
     )
     assert far == []
 
@@ -229,7 +229,7 @@ def test_dedup_same_day_substring_needs_location(fake_sb, patch_sb):
         location="DC Library 1568",
         description="",
         occurrences=[_occ(_DAY_ISO)],
-        ig_handle="uwteaorganization",
+        ig_handle="uwteaclub",
     )
     assert [h["id"] for h in near] == [4]
     assert (
@@ -254,7 +254,7 @@ def test_dedup_same_day_different_utc_day_misses(fake_sb, patch_sb):
         location="DC Library 1568",
         description="",
         occurrences=[_occ(_DAY_ISO)],
-        ig_handle="uwteaorganization",
+        ig_handle="uwteaclub",
     )
     assert hits == []
     # Sanity: the seeded event would match if it were on the same day.
@@ -301,7 +301,7 @@ def test_dedup_merges_same_org_and_same_day_without_dup_ids(fake_sb, patch_sb):
         location="SLC 3223",
         description="popcorn night free snacks",
         occurrences=[_occ(_DAY_ISO)],
-        ig_handle="uwteaorganization",
+        ig_handle="uwteaclub",
     )
     ids = [h["id"] for h in hits]
     assert ids.count(7) == 1
@@ -328,7 +328,7 @@ def test_dedup_caps_at_max_candidates(fake_sb, patch_sb, monkeypatch):
         location="SLC",
         description="",
         occurrences=[_occ(_DAY_ISO)],
-        ig_handle="uwteaorganization",
+        ig_handle="uwteaclub",
         limit=3,
     )
     assert len(hits) == 3
@@ -340,7 +340,7 @@ def test_dedup_ranks_higher_title_similarity_first(fake_sb, patch_sb):
     looser = _db_event(eid=21, title="Tea Night Social", location="SLC")
     # Only include rows that clear the same-org threshold against the query.
     query = "Tea Tasting Night"
-    assert title_similarity(exact["title"], query) > SCRAPING_SAME_ORGANIZATION_TITLE_THRESHOLD
+    assert title_similarity(exact["title"], query) > SCRAPING_SAME_CLUB_TITLE_THRESHOLD
     # looser may or may not clear 0.8; if it doesn't, only exact returns.
     _queue_dedup_db(fake_sb, same_org_rows=[looser, exact], same_day_rows=[])
 
@@ -349,7 +349,7 @@ def test_dedup_ranks_higher_title_similarity_first(fake_sb, patch_sb):
         location="SLC",
         description="",
         occurrences=[_occ(_DAY_ISO)],
-        ig_handle="uwteaorganization",
+        ig_handle="uwteaclub",
     )
     assert hits
     assert hits[0]["id"] == 20
@@ -387,7 +387,7 @@ def test_dedup_title_and_location_threshold_pair(fake_sb, patch_sb):
         location=query_location,
         description=query_description,
         occurrences=[_occ(_DAY_ISO)],
-        ig_handle="uwteaorganization",
+        ig_handle="uwteaclub",
     )
     if should_match:
         assert [h["id"] for h in hits] == [30]
@@ -409,7 +409,7 @@ def test_e2e_dedup_then_pass2_update_uses_live_candidate_id(fake_sb, patch_sb, m
         location=extracted["location"],
         description=extracted["description"],
         occurrences=extracted["occurrences"],
-        ig_handle="uwteaorganization",
+        ig_handle="uwteaclub",
     )
     assert [c["id"] for c in candidates] == [42]
 
@@ -440,7 +440,7 @@ def test_e2e_dedup_miss_means_pass2_cannot_overwrite(fake_sb, patch_sb, monkeypa
         location=extracted["location"],
         description="",
         occurrences=extracted["occurrences"],
-        ig_handle="uwteaorganization",
+        ig_handle="uwteaclub",
     )
     assert candidates == []
 
@@ -470,7 +470,7 @@ def test_e2e_multi_candidate_pass2_picks_one(fake_sb, patch_sb, monkeypatch):
         location=extracted["location"],
         description="",
         occurrences=extracted["occurrences"],
-        ig_handle="uwteaorganization",
+        ig_handle="uwteaclub",
     )
     assert {c["id"] for c in candidates} == {70, 71}
 
@@ -500,7 +500,7 @@ def test_e2e_cancel_with_live_dedup_candidate(fake_sb, patch_sb, monkeypatch):
         location=extracted["location"],
         description="",
         occurrences=extracted["occurrences"],
-        ig_handle="uwteaorganization",
+        ig_handle="uwteaclub",
     )
     assert candidates[0]["id"] == 88
 
@@ -551,7 +551,7 @@ def test_live_pass2_update_caption_overwrites_matched_id(fake_sb, patch_sb):
         location=extracted["location"],
         description=extracted["description"],
         occurrences=extracted["occurrences"],
-        ig_handle="uwteaorganization",
+        ig_handle="uwteaclub",
     )
     assert [c["id"] for c in candidates] == [42]
 
@@ -582,7 +582,7 @@ def test_live_pass2_cancel_caption_sets_cancelled(fake_sb, patch_sb):
         location=extracted["location"],
         description="",
         occurrences=extracted["occurrences"],
-        ig_handle="uwteaorganization",
+        ig_handle="uwteaclub",
     )
     assert candidates[0]["id"] == 43
 
@@ -615,7 +615,7 @@ def test_live_pass2_new_occurrence_inserts_new_instance(fake_sb, patch_sb):
         location=extracted["location"],
         description="",
         occurrences=extracted["occurrences"],
-        ig_handle="uwteaorganization",
+        ig_handle="uwteaclub",
     )
     assert candidates[0]["id"] == 44
 
@@ -650,7 +650,7 @@ def test_live_pass2_same_occurrence_repost_overwrites_existing_event(fake_sb, pa
         location=extracted["location"],
         description="",
         occurrences=extracted["occurrences"],
-        ig_handle="uwteaorganization",
+        ig_handle="uwteaclub",
     )
     assert candidates[0]["id"] == 45
 
@@ -684,7 +684,7 @@ def test_live_pass2_two_candidates_picks_matching_one(fake_sb, patch_sb):
         location=extracted["location"],
         description=extracted["description"],
         occurrences=extracted["occurrences"],
-        ig_handle="uwteaorganization",
+        ig_handle="uwteaclub",
     )
     assert {c["id"] for c in candidates} >= {50}
 

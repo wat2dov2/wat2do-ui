@@ -5,9 +5,8 @@
     "searchPlaceholder": "Rollen, Fähigkeiten oder Standorte suchen...",
     "clearSearch": "Positionssuche löschen",
     "filterByType": "Positionen nach Typ filtern",
-    "allTypes": "Alle Positionstypen",
     "openDetails": "Details zur Position {{title}} anzeigen",
-    "drawerDescription": "Positionsdetails für {{title}} bei {{organization}}",
+    "drawerDescription": "Positionsdetails für {{title}} bei {{club}}",
     "deadlineLabel": "Bewerbungsfrist",
     "due": "Fällig am {{date}}",
     "commitmentLabel": "Zeitaufwand",
@@ -16,11 +15,10 @@
     "contactLabel": "Kontakt",
     "aboutPosition": "Über diese Position",
     "requirements": "Anforderungen",
-    "viewSource": "Ursprünglichen Instagram Beitrag anzeigen",
     "emptyTitle": "Keine offenen Positionen gefunden",
     "emptyDescription": "Versuchen Sie eine andere Suche oder Positionstyp. Neue Möglichkeiten zur Mitarbeit in Organisationen werden hier erscheinen, sobald sie veröffentlicht werden.",
-    "organizationEmptyTitle": "Keine offenen Stellen",
-    "organizationEmptyDescription": "Diese Organisation hat derzeit keine offenen Stellen.",
+    "clubEmptyTitle": "Keine offenen Stellen",
+    "clubEmptyDescription": "Diese Organisation hat derzeit keine offenen Stellen.",
     "resultsLabel": "{{count}} Stellen gefunden",
     "types": {
       "executive": "Leitende Position",
@@ -30,6 +28,21 @@
       "internship": "Praktikum",
       "general": "Allgemeine Rekrutierung"
     },
-    "position_one": "Position"
+    "position_one": "Position",
+    "title": "Stellentitel",
+    "paid": "Bezahlt",
+    "unpaid": "Unbezahlt",
+    "unknown": "Vergütung nicht angegeben",
+    "addPosition": "Stelle hinzufügen",
+    "submitted": "Stelle zur Prüfung eingereicht.",
+    "submissions": "Eingereichte Stellen",
+    "placeholders": {
+      "title": "z. B. Marketingkoordination",
+      "description": "Beschreibe die Rolle, die Aufgaben und mögliche Lern- oder Beitragsmöglichkeiten.",
+      "compensation": "z. B. 20 $/Stunde, 500 $ Honorar oder unbezahlt",
+      "commitment": "z. B. 3–5 Stunden pro Woche, September bis Dezember",
+      "contact": "z. B. hiring@example.com",
+      "requirements": "Eine Anforderung pro Zeile, zum Beispiel:\nGerne im Team arbeiten\nFür wöchentliche Treffen verfügbar sein"
+    }
   }
 }

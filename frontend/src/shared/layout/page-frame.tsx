@@ -14,7 +14,7 @@ function PageFrame({ className, ...props }: PageFrameProps) {
   return (
     <div
       data-slot="page-frame"
-      className={cn("w-full px-2 pt-4 pb-8 sm:p-4 sm:pb-8", className)}
+      className={cn("w-full px-2 pt-4 pb-8 sm:p-4 sm:pb-8 has-[[data-slot=page-header][data-variant=listing]]:pt-0", className)}
       {...props}
     />
   )

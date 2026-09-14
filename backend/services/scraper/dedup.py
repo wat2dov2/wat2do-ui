@@ -22,15 +22,16 @@ from core.constants import (
     SCRAPING_LOCATION_SIMILARITY_THRESHOLD,
     SCRAPING_MAX_CANDIDATES,
     SCRAPING_MAX_CROSS_ORG_CANDIDATES,
-    SCRAPING_SAME_ORGANIZATION_TITLE_THRESHOLD,
+    SCRAPING_SAME_CLUB_TITLE_THRESHOLD,
     SCRAPING_TITLE_SIMILARITY_THRESHOLD,
 )
 from core.database import get_sb
 from core.pagination import fetch_all_pages
 from core.retry import supabase_retry
+from core.sanitize import parse_iso_datetime
 from core.tables import EVENT_DATES, EVENTS
 from services import school_service
-from services.organization_service import _normalize_organization_name
+from services.club_service import _normalize_club_name
 
 log = logging.getLogger(__name__)
 
@@ -47,14 +48,7 @@ _TITLE_NUMBER_RE = re.compile(r"\b\d+[a-z]*\b")
 
 _CANDIDATE_EVENT_SELECT = (
     "id,title,description,location,price,food,registration,category,"
-    "organization,organization_id,ig_handle,school_id,cancelled,source_url,source_image_url,"
-    f"{school_service.SCHOOL_SLUG_EMBED},"
-    "event_dates(dtstart_utc,dtend_utc,duration,tz)"
-)
-
-_SAME_DAY_EVENT_EMBED = (
-    "id,title,description,location,price,food,registration,category,"
-    "organization,organization_id,ig_handle,school_id,cancelled,source_url,source_image_url,"
+    "club,club_id,ig_handle,school_id,cancelled,source_url,source_image_url,"
     f"{school_service.SCHOOL_SLUG_EMBED},"
     "event_dates(dtstart_utc,dtend_utc,duration,tz)"
 )
@@ -97,13 +91,13 @@ def confident_duplicate_id(
     *,
     event: dict,
     candidates: list[dict],
-    organization_id: int | None,
+    club_id: int | None,
     ig_handle: str | None,
 ) -> int | None:
-    """Return the strongest deterministic same-organization duplicate match.
+    """Return the strongest deterministic same-club duplicate match.
 
     Candidate gathering remains deliberately broad. This function owns only
-    high-confidence identity: matching organization, occurrence time, title,
+    high-confidence identity: matching club, occurrence time, title,
     and location with no contradictory title qualifiers. Ambiguous rows stay
     available to Pass 2 instead of being auto-linked.
     """
@@ -115,7 +109,7 @@ def confident_duplicate_id(
         score = _confident_duplicate_score(
             event,
             candidate,
-            organization_id=organization_id,
+            club_id=club_id,
             ig_handle=ig_handle,
         )
         if score is not None:
@@ -129,35 +123,33 @@ def confident_duplicate_id(
 def collapse_duplicate_extractions(
     events: list[dict],
     *,
-    organization_ids: list[int | None],
+    club_ids: list[int | None],
     ig_handles: list[str | None],
 ) -> tuple[list[dict], list[int], int]:
     """Collapse high-confidence duplicate objects emitted by one extraction.
 
     Returns the merged events, the original index supplying each event's
-    resolved organization context, and the number of removed duplicates.
+    resolved club context, and the number of removed duplicates.
     """
     collapsed: list[dict] = []
     source_indexes: list[int] = []
 
     for index, event in enumerate(events):
-        organization_id = organization_ids[index] if index < len(organization_ids) else None
+        club_id = club_ids[index] if index < len(club_ids) else None
         ig_handle = ig_handles[index] if index < len(ig_handles) else None
         matching_index = None
         for existing_index, existing in enumerate(collapsed):
             existing_source_index = source_indexes[existing_index]
             existing_org_id = (
-                organization_ids[existing_source_index]
-                if existing_source_index < len(organization_ids)
-                else None
+                club_ids[existing_source_index] if existing_source_index < len(club_ids) else None
             )
             existing_ig = (
                 ig_handles[existing_source_index]
                 if existing_source_index < len(ig_handles)
                 else None
             )
-            if not _same_resolved_organization(
-                organization_id,
+            if not _same_resolved_club(
+                club_id,
                 ig_handle,
                 existing_org_id,
                 existing_ig,
@@ -167,9 +159,9 @@ def collapse_duplicate_extractions(
                 _confident_duplicate_score(
                     event,
                     existing,
-                    organization_id=organization_id,
+                    club_id=club_id,
                     ig_handle=ig_handle,
-                    candidate_organization_id=existing_org_id,
+                    candidate_club_id=existing_org_id,
                     candidate_ig_handle=existing_ig,
                 )
                 is not None
@@ -193,19 +185,19 @@ def _confident_duplicate_score(
     event: dict,
     candidate: dict,
     *,
-    organization_id: int | None,
+    club_id: int | None,
     ig_handle: str | None,
-    candidate_organization_id: int | None = None,
+    candidate_club_id: int | None = None,
     candidate_ig_handle: str | None = None,
 ) -> tuple[float, float] | None:
-    if candidate_organization_id is None:
-        candidate_organization_id = candidate.get("organization_id")
+    if candidate_club_id is None:
+        candidate_club_id = candidate.get("club_id")
     if candidate_ig_handle is None:
         candidate_ig_handle = candidate.get("ig_handle")
-    if not _same_resolved_organization(
-        organization_id,
+    if not _same_resolved_club(
+        club_id,
         ig_handle,
-        candidate_organization_id,
+        candidate_club_id,
         candidate_ig_handle,
     ):
         return None
@@ -230,7 +222,7 @@ def _confident_duplicate_score(
     return (-title_score, -location_score)
 
 
-def _same_resolved_organization(
+def _same_resolved_club(
     left_id: int | None,
     left_ig: str | None,
     right_id: int | None,
@@ -278,19 +270,19 @@ def _has_exact_occurrence_start(left: dict, right: dict) -> bool:
     left_starts = {
         parsed
         for occurrence in _candidate_occurrences(left)
-        if (parsed := _parse_iso8601_utc(occurrence.get("dtstart_utc"))) is not None
+        if (parsed := parse_iso_datetime(occurrence.get("dtstart_utc"))) is not None
     }
     right_starts = {
         parsed
         for occurrence in _candidate_occurrences(right)
-        if (parsed := _parse_iso8601_utc(occurrence.get("dtstart_utc"))) is not None
+        if (parsed := parse_iso_datetime(occurrence.get("dtstart_utc"))) is not None
     }
     return bool(left_starts & right_starts)
 
 
 def _merge_extracted_duplicates(existing: dict, incoming: dict) -> dict:
     merged = dict(existing)
-    for field in ("title", "description", "location", "organization"):
+    for field in ("title", "description", "location", "club"):
         old_value = str(merged.get(field) or "").strip()
         new_value = str(incoming.get(field) or "").strip()
         if new_value and len(new_value) > len(old_value):
@@ -316,10 +308,10 @@ def _merge_extracted_duplicates(existing: dict, incoming: dict) -> dict:
 def _merge_extracted_occurrences(existing: dict, incoming: dict) -> list[dict]:
     merged = [dict(occurrence) for occurrence in _candidate_occurrences(existing)]
     for incoming_occurrence in _candidate_occurrences(incoming):
-        incoming_start = _parse_iso8601_utc(incoming_occurrence.get("dtstart_utc"))
+        incoming_start = parse_iso_datetime(incoming_occurrence.get("dtstart_utc"))
         matching_index = None
         for index, existing_occurrence in enumerate(merged):
-            existing_start = _parse_iso8601_utc(existing_occurrence.get("dtstart_utc"))
+            existing_start = parse_iso_datetime(existing_occurrence.get("dtstart_utc"))
             if incoming_start is None or incoming_start != existing_start:
                 continue
             matching_index = index
@@ -335,7 +327,7 @@ def _merge_extracted_occurrences(existing: dict, incoming: dict) -> list[dict]:
 
     merged.sort(
         key=lambda occurrence: (
-            _parse_iso8601_utc(occurrence.get("dtstart_utc"))
+            parse_iso_datetime(occurrence.get("dtstart_utc"))
             or datetime.max.replace(tzinfo=timezone.utc)
         )
     )
@@ -349,28 +341,28 @@ def find_candidates(
     description: str,
     occurrences: list[dict],
     ig_handle: str | None,
-    organization_id: int | None = None,
-    organization_name: str | None = None,
+    club_id: int | None = None,
+    club_name: str | None = None,
     limit: int = SCRAPING_MAX_CANDIDATES,
     max_cross_org: int = SCRAPING_MAX_CROSS_ORG_CANDIDATES,
 ) -> list[dict]:
     """Return similar existing events for Pass 2 reconcile.
 
     Combines:
-      1. Same-organization future events with similar titles
-         (``organization_id`` first, else ``ig_handle``).
+      1. Same-club future events with similar titles
+         (``club_id`` first, else ``ig_handle``).
       2. Same-day events that pass the location/description/title gauntlet,
          plus soft normalized-name matches when org id is unresolved.
 
     Same-org candidates are ranked first; cross-org same-day rows are capped
     tighter. Empty / missing first-occurrence start time means only
-    same-organization candidates can be returned.
+    same-club candidates can be returned.
     """
     same_org_ids: set[int] = set()
     scored: dict[int, tuple[float, dict, bool]] = {}
 
-    for row in _same_organization_candidates(
-        organization_id=organization_id,
+    for row in _same_club_candidates(
+        club_id=club_id,
         ig_handle=ig_handle,
         candidate_title=title,
     ):
@@ -383,15 +375,15 @@ def find_candidates(
 
     target_start = None
     if occurrences:
-        target_start = _parse_iso8601_utc(occurrences[0].get("dtstart_utc"))
+        target_start = parse_iso_datetime(occurrences[0].get("dtstart_utc"))
     if target_start is not None:
         for row in _same_day_candidates(
             target_start=target_start,
             candidate_title=title,
             candidate_location=location,
             candidate_description=description,
-            organization_id=organization_id,
-            organization_name=organization_name,
+            club_id=club_id,
+            club_name=club_name,
         ):
             eid = row.get("id")
             if not isinstance(eid, int):
@@ -399,7 +391,7 @@ def find_candidates(
             score = title_similarity(row.get("title") or "", title)
             is_same_org = eid in same_org_ids or _is_same_org_row(
                 row,
-                organization_id=organization_id,
+                club_id=club_id,
                 ig_handle=ig_handle,
             )
             existing = scored.get(eid)
@@ -423,10 +415,10 @@ def find_candidates(
 def _is_same_org_row(
     row: dict,
     *,
-    organization_id: int | None,
+    club_id: int | None,
     ig_handle: str | None,
 ) -> bool:
-    if isinstance(organization_id, int) and row.get("organization_id") == organization_id:
+    if isinstance(club_id, int) and row.get("club_id") == club_id:
         return True
     cleaned = (ig_handle or "").strip().lstrip("@")
     if cleaned and (row.get("ig_handle") or "").strip().lstrip("@") == cleaned:
@@ -452,21 +444,8 @@ def _normalize_candidate(row: dict) -> dict:
         )
     out["occurrences"] = occurrences
     out.setdefault("cancelled", False)
-    out.setdefault("organization_id", None)
+    out.setdefault("club_id", None)
     return out
-
-
-def _parse_iso8601_utc(value: str | None) -> datetime | None:
-    if not value:
-        return None
-    try:
-        cleaned = value.replace("Z", "+00:00") if value.endswith("Z") else value
-        dt = datetime.fromisoformat(cleaned)
-    except ValueError:
-        return None
-    if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=timezone.utc)
-    return dt.astimezone(timezone.utc)
 
 
 def clear_candidate_caches() -> None:
@@ -477,13 +456,13 @@ def clear_candidate_caches() -> None:
 
 
 @functools.lru_cache(maxsize=128)
-def _fetch_org_events_by_id(organization_id: int) -> list[dict]:
+def _fetch_org_events_by_id(club_id: int) -> list[dict]:
     def _page(offset: int, page_size: int) -> list[dict]:
         return (
             get_sb()
             .table(EVENTS)
             .select(_CANDIDATE_EVENT_SELECT)
-            .eq("organization_id", organization_id)
+            .eq("club_id", club_id)
             .order("id", desc=True)
             .range(offset, offset + page_size - 1)
             .execute()
@@ -508,16 +487,16 @@ def _fetch_org_events_by_ig(ig_handle: str) -> list[dict]:
     return fetch_all_pages(_page)
 
 
-def _same_organization_candidates(
+def _same_club_candidates(
     *,
-    organization_id: int | None,
+    club_id: int | None,
     ig_handle: str | None,
     candidate_title: str,
 ) -> list[dict]:
     """Return future same-org events whose title clears the similarity threshold."""
 
-    if isinstance(organization_id, int):
-        rows = _fetch_org_events_by_id(organization_id)
+    if isinstance(club_id, int):
+        rows = _fetch_org_events_by_id(club_id)
     elif ig_handle:
         rows = _fetch_org_events_by_ig(ig_handle)
     else:
@@ -535,7 +514,7 @@ def _same_organization_candidates(
             continue
         if (
             title_similarity(row.get("title") or "", candidate_title)
-            > SCRAPING_SAME_ORGANIZATION_TITLE_THRESHOLD
+            > SCRAPING_SAME_CLUB_TITLE_THRESHOLD
         ):
             out.append(row)
     return out
@@ -547,7 +526,7 @@ def _fetch_day_events(day_start_iso: str, day_end_iso: str) -> list[dict]:
         return (
             get_sb()
             .table(EVENT_DATES)
-            .select(f"event_id,events({_SAME_DAY_EVENT_EMBED})")
+            .select(f"event_id,events({_CANDIDATE_EVENT_SELECT})")
             .gte("dtstart_utc", day_start_iso)
             .lt("dtstart_utc", day_end_iso)
             .order("id", desc=False)
@@ -564,14 +543,14 @@ def _same_day_candidates(
     candidate_title: str,
     candidate_location: str,
     candidate_description: str,
-    organization_id: int | None,
-    organization_name: str | None,
+    club_id: int | None,
+    club_name: str | None,
 ) -> list[dict]:
     """Return same-UTC-day events that pass the duplicate similarity gauntlet."""
     day_start = target_start.replace(hour=0, minute=0, second=0, microsecond=0)
     day_end = day_start + timedelta(days=1)
-    soft_name = _normalize_organization_name(organization_name)
-    allow_soft_name = soft_name and not isinstance(organization_id, int)
+    soft_name = _normalize_club_name(club_name)
+    allow_soft_name = soft_name and not isinstance(club_id, int)
 
     rows = _fetch_day_events(day_start.isoformat(), day_end.isoformat())
     norm_candidate_title = normalize(candidate_title)
@@ -620,7 +599,7 @@ def _same_day_candidates(
 
         # Soft name signal for candidate gathering only when org_id unresolved.
         if allow_soft_name and title_sim > SCRAPING_TITLE_SIMILARITY_THRESHOLD:
-            existing_name = _normalize_organization_name(event.get("organization"))
+            existing_name = _normalize_club_name(event.get("club"))
             if existing_name and existing_name == soft_name:
                 out.append(event)
 
@@ -631,7 +610,7 @@ def _latest_occurrence_end(occurrences: list[dict]) -> datetime | None:
     """Return the latest dtend (or dtstart fallback) across occurrences."""
     candidates: list[datetime] = []
     for occ in occurrences:
-        end = _parse_iso8601_utc(occ.get("dtend_utc")) or _parse_iso8601_utc(occ.get("dtstart_utc"))
+        end = parse_iso_datetime(occ.get("dtend_utc")) or parse_iso_datetime(occ.get("dtstart_utc"))
         if end is not None:
             candidates.append(end)
     return max(candidates) if candidates else None

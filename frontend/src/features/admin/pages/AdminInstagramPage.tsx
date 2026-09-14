@@ -9,7 +9,6 @@ import { getApiErrorMessage } from "@/shared/services/apiClient";
 import { Button } from "@/shared/ui/button";
 import { Instagram } from "@/shared/ui/doodle-icons";
 import { LoadingPage } from "@/shared/ui/loading-page";
-import { Pagination } from "@/shared/ui/Pagination";
 import { toast } from "@/shared/hooks/use-toast";
 
 interface AdminInstagramPageProps {
@@ -31,6 +30,7 @@ export function AdminInstagramPage({ onBack }: AdminInstagramPageProps) {
     isDetailLoading,
     detailError,
     retryDetail,
+    prefetchBatch,
     updateBatch,
     publishBatch,
     updatingBatchId,
@@ -68,17 +68,20 @@ export function AdminInstagramPage({ onBack }: AdminInstagramPageProps) {
             </p>
           </Section>
         ) : (
-          <Stack gap={4}>
-            <InstagramRunsTable batches={batches} onOpenRun={setOpenBatchId} />
-            <Pagination
-              currentPage={page?.page ?? 1}
-              totalPages={page?.total_pages ?? 1}
-              onPageChange={(nextPage) => {
+          <InstagramRunsTable
+            batches={batches}
+            total={page?.total ?? 0}
+            onOpenRun={setOpenBatchId}
+            onPrefetchRun={prefetchBatch}
+            pagination={{
+              currentPage: page?.page ?? 1,
+              totalPages: page?.total_pages ?? 1,
+              onPageChange: (nextPage) => {
                 setOpenBatchId(null);
                 setPageNumber(nextPage);
-              }}
-            />
-          </Stack>
+              },
+            }}
+          />
         )}
 
         {openBatchId && isDetailLoading ? (
@@ -104,13 +107,13 @@ export function AdminInstagramPage({ onBack }: AdminInstagramPageProps) {
           isSaving={updatingBatchId === openBatch.id}
           isPublishing={publishingBatchId === openBatch.id}
           onClose={() => setOpenBatchId(null)}
-          onSaveDraft={async ({ caption, coverBody, eventIds }) => {
+          onSaveDraft={async ({ coverBody, captionIntro, eventIds }) => {
             const saved = await updateBatch({
               id: openBatch.id,
               data: {
                 version: openBatch.version,
-                caption,
                 cover_body: coverBody,
+                caption_intro: captionIntro,
                 event_ids: eventIds,
               },
             });
@@ -119,7 +122,7 @@ export function AdminInstagramPage({ onBack }: AdminInstagramPageProps) {
           }}
           onPublish={async (version) => {
             await publishBatch({ id: openBatch.id, data: { version } });
-            toast({ title: t("admin.instagramPublishing.published"), variant: "success" });
+            toast({ title: t("admin.instagramPublishing.status.publishing"), variant: "success" });
           }}
         />
       ) : null}

@@ -133,20 +133,27 @@ export function NavigationProgress() {
       });
     };
 
+    const advance = () => {
+      animationFrameRef.current = window.requestAnimationFrame(() => {
+        setState((current) => ({
+          phase: "starting",
+          progress: Math.max(current.progress, 42),
+          visible: true,
+        }));
+      });
+    };
+
     if (synchronous) {
       flushSync(prime);
       progressBarRef.current?.getBoundingClientRect();
+      advance();
     } else {
-      prime();
+      // Next may update history inside an insertion effect; defer React state writes.
+      animationFrameRef.current = window.requestAnimationFrame(() => {
+        prime();
+        advance();
+      });
     }
-
-    animationFrameRef.current = window.requestAnimationFrame(() => {
-      setState((current) => ({
-        phase: "starting",
-        progress: Math.max(current.progress, 42),
-        visible: true,
-      }));
-    });
 
     PROGRESS_STAGES.forEach(({ delay, progress }) => {
       timersRef.current.push(

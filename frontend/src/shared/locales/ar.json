@@ -13,7 +13,6 @@
     "or": "أو",
     "separatorBullet": "•",
     "free": "مجاني",
-    "freeFood": "طعام مجاني",
     "backToTop": "العودة إلى الأعلى",
     "cancelled": "ملغى",
     "registration": "تسجيل",
@@ -82,7 +81,11 @@
     "minuteAgo_zero": "قبل {{count}} دقيقة",
     "minuteAgo_two": "قبل {{count}} دقيقتين",
     "minuteAgo_few": "قبل {{count}} دقائق",
-    "minuteAgo_many": "قبل {{count}} دقيقة"
+    "minuteAgo_many": "قبل {{count}} دقيقة",
+    "latestAddedItem": "<addedPrefix>تمت إضافة</addedPrefix> <eventTitle>{{title}}</eventTitle> <addedTime>{{time}}</addedTime>",
+    "newlyAddedFilter": {
+      "last24Hours": "جديد"
+    }
   },
   "errorBoundary": {
     "title": "حدث خطأ ما",
@@ -93,13 +96,13 @@
     "events": "الأحداث",
     "create": "إرسال فعالية",
     "loginRequiredToSubmit": "يمكن فقط للمستخدمين المسجلين الدخول تقديم الفعاليات أو المنظمات.",
-    "organizations": "المنظمات",
+    "clubs": "المنظمات",
     "positions": "المناصب",
     "myEvents": "فعالياتي",
     "settings": "الإعدادات",
     "admin": "الإدارة",
     "adminPanel": "لوحة المسؤول",
-    "organizationPanel": "لوحة المنظمة",
+    "clubPanel": "لوحة المنظمة",
     "clubPanelTooltip": "إدارة منظمتك",
     "mission": "المهمة",
     "about": "من نحن",
@@ -129,8 +132,7 @@
       "continueWithGoogle": "المتابعة مع Google"
     },
     "signOut": {
-      "logOut": "تسجيل الخروج",
-      "signOutOfAccount": "تسجيل الخروج من حسابك"
+      "logOut": "تسجيل الخروج"
     },
     "getStarted": "ابدأ",
     "profile": {
@@ -184,9 +186,9 @@
     "desc": "تنازلي",
     "ascending": "تصاعدي",
     "descending": "تنازلي",
-    "organization": "منظمة",
-    "searchOrganization": "البحث عن منظمة...",
-    "noOrganizations": "لا توجد منظمات متاحة"
+    "club": "منظمة",
+    "searchClub": "البحث عن منظمة...",
+    "noClubs": "لا توجد منظمات متاحة"
   },
   "commands": {
     "commands": "الأوامر",
@@ -233,10 +235,10 @@
     "locationPlaceholder": "مثال: MC 1234, SLC القاعة الكبرى",
     "selectPackage": "اختر حزمة",
     "eventTitlePlaceholder": "مثال: حديث تقني: AI في 2024",
-    "organizationNamePlaceholder": "مثال: منظمة علوم الحاسوب",
-    "selectOrganization": "اختر منظمة",
-    "searchOrganizationPlaceholder": "البحث عن المنظمات...",
-    "noOrganizationFound": "لم يتم العثور على أي منظمة",
+    "clubNamePlaceholder": "مثال: منظمة علوم الحاسوب",
+    "selectClub": "اختر منظمة",
+    "searchClubPlaceholder": "البحث عن المنظمات...",
+    "noClubFound": "لم يتم العثور على أي منظمة",
     "descriptionPlaceholder": "أخبر الناس عن حدثك...",
     "sourceUrl": "رابط المصدر",
     "sourceUrlPlaceholder": "https://instagram.com/p/...",
@@ -255,21 +257,21 @@
     "description": "الوصف",
     "saveChanges": "حفظ التغييرات",
     "requiredInformation": "معلومات مطلوبة",
-    "organizationName": "اسم المنظمة",
-    "organizationType": "نوع المؤسسة",
-    "organizationTypeMapped": "{{type}}",
-    "organizationTypeIndependent": "مستقل",
-    "organizationNameRequired": "اسم المنظمة مطلوب",
+    "clubName": "اسم المنظمة",
+    "clubType": "نوع المؤسسة",
+    "clubTypeMapped": "{{type}}",
+    "clubTypeIndependent": "مستقل",
+    "clubNameRequired": "اسم المنظمة مطلوب",
     "ownerEmail": "البريد الإلكتروني للمالك",
     "categories": "الفئات",
     "categoryRequired": "يجب اختيار فئة واحدة على الأقل",
     "add": "إضافة",
-    "organizationPageUrl": "رابط صفحة المنظمة",
-    "organizationPageUrlPlaceholder": "مثال: https://example.com أو 123",
+    "clubPageUrl": "رابط صفحة المنظمة",
+    "clubPageUrlPlaceholder": "مثال: https://example.com أو 123",
     "instagramHandle": "معرّف Instagram",
     "discordLink": "رابط Discord",
     "titleRequired": "العنوان مطلوب",
-    "organizationRequired": "المنظمة مطلوبة",
+    "clubRequired": "المنظمة مطلوبة",
     "occurrenceRequired": "يجب إدخال تاريخ واحد على الأقل",
     "locationRequired": "الموقع مطلوب",
     "schoolRequired": "المدرسة مطلوبة",
@@ -297,7 +299,7 @@
     "politicsAndAdvocacy": "السياسة والدعوة",
     "religionAndSpirituality": "الدين والروحانيات",
     "events": "الأحداث",
-    "organizations": "المنظمات"
+    "clubs": "المنظمات"
   },
   "locations": {
     "LAX": "LAX",
@@ -385,8 +387,8 @@
     "phase3Date": "أكتوبر 2025",
     "phase3Title": "مشاركته مع الحرم الجامعي",
     "phase3Paragraph1": "قمنا بنشر الرابط في بعض دردشات المجموعات. ثم صنعنا ملصقًا (ساخر، نحن نعرف) وعلقناه في SLC. خلال أسبوع، بدأ الناس بإرسال لقطات شاشة لنا.",
-    "phase3Paragraph2": "<em>\"انتظر، هناك Repair Organization؟ هل يمكنني فعلاً إصلاح دراجتي هناك؟\"</em>",
-    "phase3Paragraph3": "لقد وجد شخص ما <strong>Gatka Organization</strong> (فنون الدفاع عن النفس السيخية) من خلال Wat2Do وقال إنه كان أبرز ما في فصله الدراسي. واكتشف شخص آخر <strong>Retro Rollers</strong> (لقاءات التزلج على العجلات) وصنع ستة أصدقاء جدد في ليلة واحدة.",
+    "phase3Paragraph2": "<em>\"انتظر، هناك Repair Club؟ هل يمكنني فعلاً إصلاح دراجتي هناك؟\"</em>",
+    "phase3Paragraph3": "لقد وجد شخص ما <strong>Gatka Club</strong> (فنون الدفاع عن النفس السيخية) من خلال Wat2Do وقال إنه كان أبرز ما في فصله الدراسي. واكتشف شخص آخر <strong>Retro Rollers</strong> (لقاءات التزلج على العجلات) وصنع ستة أصدقاء جدد في ليلة واحدة.",
     "phase3Paragraph4": "حينها أدركنا: هذا ليس مجرد تقويم. إنه طريقة لاكتشاف النسخة من حياة الحرم الجامعي التي لم تكن تعرف بوجودها.",
     "photo3Alt": "اكتشاف المجتمع",
     "photo3Caption": "بدأ الناس باكتشاف أحداث لم يكونوا يعلمون بوجودها.",
@@ -402,8 +404,8 @@
     "guideIndustryAtlassian": "<strong>Atlassian جلسات القهوة:</strong> أقل رعبًا من جناح معرض الوظائف. يمكنك فعلاً إجراء محادثة.",
     "guideIndustryStartup": "<strong>معرض وظائف الشركات الناشئة:</strong> تخطى أكشاك الشركات الكبرى. اذهب مباشرة إلى الشركات الناشئة حيث يمكنك التحدث مع المؤسسين الفعليين.",
     "guideRandomTitle": "أشياء عشوائية تستحق الاطلاع عليها",
-    "guideRandomRepair": "<strong>Repair Organization :</strong> هل كسر شاحن اللابتوب الخاص بك؟ هؤلاء الأشخاص لديهم الأدوات وسيعلمونك كيفية إصلاحه بنفسك. مجانًا تمامًا.",
-    "guideRandomGatka": "<strong>Gatka Organization :</strong> فنون قتالية سيخية بالعصي الخشبية. لا حاجة لأي خبرة. أقل تقديرًا مما تستحق.",
+    "guideRandomRepair": "<strong>Repair Club :</strong> هل كسر شاحن اللابتوب الخاص بك؟ هؤلاء الأشخاص لديهم الأدوات وسيعلمونك كيفية إصلاحه بنفسك. مجانًا تمامًا.",
+    "guideRandomGatka": "<strong>Gatka Club :</strong> فنون قتالية سيخية بالعصي الخشبية. لا حاجة لأي خبرة. أقل تقديرًا مما تستحق.",
     "guideRandomRetro": "<strong>Retro Rollers:</strong> التزلج على الأسطوانة في الملاعب المحلية. ممتاز للتخلص من التوتر خلال الاختبارات الوسطى.",
     "guideFriendsTitle": "الذهاب مع الأصدقاء",
     "guideFriendsFood": "<strong>فعاليات الطعام المجاني:</strong> رتب حسب \"الطعام المقدم\" في الفلاتر. نصيحة احترافية: احضر قبل 15 دقيقة.",
@@ -464,10 +466,10 @@
       "random": {
         "title": "أحداث عشوائية لم تكن تعرف بوجودها",
         "desc": "بصراحة، أفضل جزء في بناء هذا المشروع كان اكتشاف منظمات لم نكن نعرف بوجودها في الحرم الجامعي. هناك ",
-        "repair": "Repair Organization",
+        "repair": "Repair Club",
         "repairSuffix": " حيث يمكنك إصلاح أجهزتك الإلكترونية المعطلة، وبرنامج Iranian Students' Association: ",
         "zumba": "Persian Zumba",
-        "zumbaSuffix": "، وفعالية Strength Organization: ",
+        "zumbaSuffix": "، وفعالية Strength Club: ",
         "barbells": "Battle of the Barbells"
       },
       "search": {

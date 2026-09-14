@@ -1,0 +1,19 @@
+import type { ApiClubResponse } from "@/shared/generated";
+import type { Club } from "@/shared/types";
+
+export function normalizeClub(
+  raw: ApiClubResponse,
+): Club {
+  return {
+    ...raw,
+    categories: raw.categories ?? [],
+    club_page: raw.club_page ?? "",
+    ig: raw.ig ?? null,
+    discord: raw.discord ?? null,
+    logo_url: raw.logo_url ?? null,
+    created_by: raw.created_by ?? null,
+    school: raw.school ?? "",
+    event_count: raw.event_count ?? 0,
+    position_count: raw.position_count ?? 0,
+  };
+}

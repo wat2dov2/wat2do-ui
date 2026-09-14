@@ -8,22 +8,22 @@ const VALIDATION_MESSAGE_KEYS = {
   locationRequired: "forms.locationRequired",
 } as const;
 
-export type ValidationMessageOverrides = Partial<Record<keyof typeof VALIDATION_MESSAGE_KEYS, string>>;
+type ValidationMessageOverrides = Partial<Record<keyof typeof VALIDATION_MESSAGE_KEYS, string>>;
 
 export interface EventFormRules {
   /**
-   * Whether the event must be linked to an organization row.
+   * Whether the event must be linked to a club row.
    *
-   * A scraped event carries its host's name but no link to an organization,
+   * A scraped event carries its host's name but no link to a club,
    * and the Instagram carousel editor exists to correct exactly those events.
    * Demanding a link there would make every one of them unsaveable, so an
    * event that never had one may be edited without gaining one. Creating an
    * event always requires it.
    */
-  requireOrganization: boolean;
+  requireClub: boolean;
 }
 
-const DEFAULT_RULES: EventFormRules = { requireOrganization: true };
+const DEFAULT_RULES: EventFormRules = { requireClub: true };
 
 function getValidationMessages(): Record<keyof typeof VALIDATION_MESSAGE_KEYS, string> {
   return Object.fromEntries(
@@ -50,8 +50,8 @@ export function validateEventForm(
     errors.title = m.titleRequired;
   }
 
-  if (rules.requireOrganization && touched.organization_id && formData.organization_id == null) {
-    errors.organization_id = m.clubRequired;
+  if (rules.requireClub && touched.club_id && formData.club_id == null) {
+    errors.club_id = m.clubRequired;
   }
 
   if (touched.occurrences && !formData.occurrences.some((occurrence) => occurrence.dtstart_local)) {
@@ -75,7 +75,7 @@ export function isEventFormValid(
 ): boolean {
   return (
     formData.title.trim() !== "" &&
-    (!rules.requireOrganization || formData.organization_id != null) &&
+    (!rules.requireClub || formData.club_id != null) &&
     formData.occurrences.some((occurrence) => occurrence.dtstart_local !== "") &&
     formData.location !== "" &&
     Object.keys(errors).length === 0
@@ -88,7 +88,7 @@ export function isEventFormValid(
 export function markAllFieldsTouched(): Record<string, boolean> {
   return {
     title: true,
-    organization_id: true,
+    club_id: true,
     occurrences: true,
     location: true,
   };

@@ -12,7 +12,7 @@ import { computeEventBadges } from "@/features/events/hooks/useEventBadges";
 export function eventToPreview(event: Event, locale: string, t: TFunction): PreviewEventData {
   return {
     title: event.title,
-    org: event.organization || "",
+    org: event.club || "",
     category: getEventCategory(event),
     image: event.source_image_url ?? "",
     date: formatCardDate(event, locale),

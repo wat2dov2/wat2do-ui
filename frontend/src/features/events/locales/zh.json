@@ -1,23 +1,23 @@
 {
   "events": {
+    "minimumGoing": "最少参加人数",
     "eventTitle": "活动标题",
     "loadFailed": "加载活动失败。请重试。",
     "deleteFailed": "删除活动失败。请重试。",
     "submitFailed": "提交活动失败。请重试。",
     "submissionFailedTitle": "提交失败",
-    "organizationRequired": "提交活动前请选择一个组织。",
-    "organization": "组织",
+    "clubRequired": "提交活动前请选择一个组织。",
+    "club": "组织",
     "status": "状态",
     "dayOfWeek": "星期",
     "createEvent": "提交活动",
-    "submitEventSchoolDescription": "这里只显示 {{school}} 的组织，确保活动提交到正确的校园。",
+    "submitEventSchoolDescription": "这里只显示 {{school}} 的组织。",
     "submitEventForReview": "提交活动以供审核",
     "submitForReview": "提交审核",
     "uploadEventFlyer": "上传活动海报",
     "uploadEventFlyerDescription": "上传或粘贴活动海报图片，AI 会自动填写活动详情。",
     "processingEventImage": "正在处理活动图片",
     "clickToUploadOrPasteImage": "点击上传图片或粘贴",
-    "imagePasteShortcutHint": "{{formats}}（例如 Cmd+V / Ctrl+V）",
     "flyerExtracted": "已成功提取海报详情。",
     "flyerParseFailed": "海报解析失败",
     "flyerParseFailedDescription": "无法从海报中读取活动详情。",
@@ -47,7 +47,6 @@
     "noUpcomingEvents": "暂无即将到来的活动",
     "upcomingEventCount": "个即将到来的活动",
     "upcomingEventCount_other": "个即将到来的活动",
-    "latestAddedEvent": "{{title}} 添加于 {{time}}",
     "thisWeek": "本周",
     "discoverEvents": "发现活动",
     "clickCount": "{{count}} 次点击",
@@ -56,12 +55,6 @@
     "noEventsFoundDesc": "找不到符合您当前筛选条件的活动。请尝试调整搜索或清除某些筛选条件。",
     "noEventsScheduled": "暂无活动安排",
     "noEventsScheduledDesc": "当前没有任何活动安排，请稍后再来看看！",
-    "newlyAddedFilter": {
-      "last24Hours": "新增",
-      "sinceLastVisit": "自上次访问后添加",
-      "clear": "清除最新添加筛选",
-      "sinceLastVisitAt": "自上次访问后新增（{{time}}）"
-    },
     "dateFilter": {
       "label": "活动日期",
       "any": "任意日期",
@@ -91,6 +84,7 @@
       "submitFailed": "无法提交举报"
     },
     "goingEvents": {
+      "timeUnavailable": "此活动已开始或已取消，因此无法标记参加。",
       "markFailed": "无法标记此活动为参加",
       "unmarkFailed": "无法取消参加此活动",
       "saveFailed": "无法保存您选择的时间",

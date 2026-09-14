@@ -31,7 +31,6 @@
     "urlRequired": "URL jest wymagany",
     "urlInvalid": "Wprowadź prawidłowy URL",
     "descriptionOptional": "Opcjonalne",
-    "imageFormat": "PNG, JPG do 5 MB",
     "noScanData": "Brak danych skanu",
     "noScanDataDesc": "Udostępnij swój kod QR, aby rozpocząć śledzenie wydajności",
     "posterAriaLabel": "Plakat {{id}}",

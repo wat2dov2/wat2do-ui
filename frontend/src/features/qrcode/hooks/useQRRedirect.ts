@@ -38,7 +38,7 @@ export function useQRRedirect(): { message: string } {
   const router = useRouter();
   const { t } = useTranslation();
   const qrCodeId = pathname.replace(/^\/qr\//, "").split("/")[0] || null;
-  const [message, setMessage] = useState<string>(() => t("common.loading") || "Loading...");
+  const [message, setMessage] = useState<string>(() => t("common.loading"));
 
   // Hold `t` in a ref so i18n rehydration doesn't re-run the effect and
   // cause duplicate backend scans / redirect races.
@@ -56,7 +56,7 @@ export function useQRRedirect(): { message: string } {
 
     let cancelled = false;
     queueMicrotask(() => {
-      if (!cancelled) setMessage(tRef.current("common.loading") || "Loading...");
+      if (!cancelled) setMessage(tRef.current("common.loading"));
     });
 
     fetchQrRedirectFromBackend(qrCodeId)
@@ -67,7 +67,7 @@ export function useQRRedirect(): { message: string } {
           return;
         }
         if ("requires_location" in result && result.requires_location) {
-          setMessage(tRef.current("qrCode.gettingLocation") || "Getting location...");
+          setMessage(tRef.current("qrCode.gettingLocation"));
           getGeolocation().then(({ latitude, longitude }) =>
             fetchQrRedirectWithLocation(qrCodeId, latitude, longitude)
               .then((config) => {

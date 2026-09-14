@@ -9,7 +9,7 @@ import { useTranslation } from "react-i18next";
 import { cn } from "@/shared/lib/utils";
 import { Stack } from "@/shared/layout";
 
-export interface QRScanMapProps {
+interface QRScanMapProps {
   markers: PosterMapMarker[];
   height?: string;
   onMarkerClick?: (posterId: string) => void;

@@ -1,16 +1,20 @@
 export const queryKeys = {
+  meta: {
+    all: ["meta"] as const,
+    constants: () => [...queryKeys.meta.all, "constants"] as const,
+  },
   schools: {
     all: ["schools"] as const,
     directory: () => [...queryKeys.schools.all, "directory"] as const,
   },
-  organizations: {
-    all: ["organizations"] as const,
-    detail: (organizationId: number) =>
-      [...queryKeys.organizations.all, "detail", organizationId] as const,
+  clubs: {
+    all: ["clubs"] as const,
+    detail: (clubId: number) =>
+      [...queryKeys.clubs.all, "detail", clubId] as const,
     list: (filters: Record<string, unknown>) =>
-      [...queryKeys.organizations.all, "list", filters] as const,
+      [...queryKeys.clubs.all, "list", filters] as const,
     allForSchool: (school: string | null | undefined) =>
-      [...queryKeys.organizations.all, "all", school ?? ""] as const,
+      [...queryKeys.clubs.all, "all", school ?? ""] as const,
   },
   positions: {
     all: ["positions"] as const,
@@ -18,22 +22,25 @@ export const queryKeys = {
       [...queryKeys.positions.all, "list", filters] as const,
     detail: (positionId: number) =>
       [...queryKeys.positions.all, "detail", positionId] as const,
-    byOrganization: (organizationId: number, school: string) =>
+    byClub: (clubId: number, school: string) =>
       [
         ...queryKeys.positions.all,
-        "by-organization",
-        organizationId,
+        "by-club",
+        clubId,
         school,
       ] as const,
   },
+  positionSubmissions: {
+    all: ["position-submissions"] as const,
+    list: (page: number, status?: string, school = "", search = "") => [...queryKeys.positionSubmissions.all, page, status ?? "", school, search] as const,
+  },
   posters: {
     all: ["posters"] as const,
-    list: (school: string | null | undefined, refreshKey?: number) =>
+    list: (school: string | null | undefined) =>
       [
         ...queryKeys.posters.all,
         "list",
         school ?? "",
-        refreshKey ?? 0,
       ] as const,
     earnings: (userId: string | null | undefined) =>
       [...queryKeys.posters.all, "earnings", userId ?? ""] as const,
@@ -52,14 +59,14 @@ export const queryKeys = {
   },
   scans: {
     all: ["scans"] as const,
-    list: (refreshKey?: number) =>
-      [...queryKeys.scans.all, "list", refreshKey ?? 0] as const,
+    list: () => [...queryKeys.scans.all, "list"] as const,
   },
   user: {
     all: ["user"] as const,
   },
   events: {
     all: ["events"] as const,
+    admin: () => [...queryKeys.events.all, "admin"] as const,
     detail: (eventId: number) =>
       [...queryKeys.events.all, "detail", eventId] as const,
     attendees: (eventId: number) =>
@@ -68,11 +75,11 @@ export const queryKeys = {
       [...queryKeys.events.all, "stats", school] as const,
     bySchool: (school: string) =>
       [...queryKeys.events.all, "by-school", school] as const,
-    byOrganization: (organizationId: number, school: string) =>
+    byClub: (clubId: number, school: string) =>
       [
         ...queryKeys.events.all,
-        "by-organization",
-        organizationId,
+        "by-club",
+        clubId,
         school,
       ] as const,
   },

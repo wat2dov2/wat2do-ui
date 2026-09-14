@@ -1,4 +1,6 @@
-"""Tests for core.pagination — fetch_all_pages caps, apply_stable_order, envelope."""
+"""Tests for shared pagination limits and stable ordering."""
+
+from math import ceil
 
 import pytest
 
@@ -10,44 +12,52 @@ from core.pagination import (
 )
 
 
-class TestFetchAllPagesMaxRows:
-    """P17: fetch_all_pages must respect max_rows."""
+@pytest.mark.parametrize("loader", [fetch_all_pages, iter_all_pages])
+@pytest.mark.parametrize("page_size", [1, 2, 5])
+@pytest.mark.parametrize("row_count", [0, 1, 2, 4, 5, 8])
+@pytest.mark.parametrize("max_rows", [1, 3, 5, 10])
+def test_pagination_boundaries(loader, page_size, row_count, max_rows):
+    rows = [{"id": index} for index in range(row_count)]
+    offsets = []
 
-    def test_returns_full_result_under_cap(self):
-        all_rows = [{"id": i} for i in range(50)]
+    def query_fn(offset, limit):
+        offsets.append(offset)
+        assert limit == page_size
+        return rows[offset : offset + limit]
 
-        def query_fn(offset, page_size):
-            return all_rows[offset : offset + page_size]
-
-        result = fetch_all_pages(query_fn, page_size=10, max_rows=1000)
-        assert len(result) == 50
-
-    def test_raises_overflow_when_rows_exceed_cap(self):
-        # Emit 150 rows with page_size=50; cap=100.  After two pages we have
-        # 100 rows >= cap; the third page would push us over the limit so we
-        # must raise.
-        all_rows = [{"id": i} for i in range(150)]
-
-        def query_fn(offset, page_size):
-            return all_rows[offset : offset + page_size]
-
+    # A partial final page ends pagination without requesting another page.
+    full_page_rows = row_count // page_size * page_size
+    if full_page_rows >= max_rows:
+        expected_calls = ceil(max_rows / page_size)
         with pytest.raises(PaginationOverflowError):
-            fetch_all_pages(query_fn, page_size=50, max_rows=100)
+            list(loader(query_fn, page_size=page_size, max_rows=max_rows))
+    else:
+        expected_calls = row_count // page_size + 1
+        assert list(loader(query_fn, page_size=page_size, max_rows=max_rows)) == rows
 
-    def test_zero_max_rows_rejected(self):
-        with pytest.raises(ValueError):
-            fetch_all_pages(lambda o, s: [], max_rows=0)
+    assert offsets == [index * page_size for index in range(expected_calls)]
 
-    def test_terminates_on_partial_page(self):
-        """Helper stops once a partial page is returned — doesn't need max."""
-        pages = [[{"id": 0}, {"id": 1}], [{"id": 2}]]
 
-        def query_fn(offset, page_size):
-            # Return pages in order.
-            return pages[offset // page_size]
+@pytest.mark.parametrize("loader", [fetch_all_pages, iter_all_pages])
+@pytest.mark.parametrize("max_rows", [0, -1])
+def test_pagination_rejects_nonpositive_cap(loader, max_rows):
+    with pytest.raises(ValueError, match="max_rows must be positive"):
+        list(loader(lambda offset, size: [], max_rows=max_rows))
 
-        result = fetch_all_pages(query_fn, page_size=2, max_rows=1000)
-        assert [r["id"] for r in result] == [0, 1, 2]
+
+@pytest.mark.parametrize("loader", [fetch_all_pages, iter_all_pages])
+def test_pagination_propagates_query_errors(loader):
+    offsets = []
+
+    def query_fn(offset, page_size):
+        offsets.append(offset)
+        if offset:
+            raise RuntimeError("storage unavailable")
+        return [{"id": index} for index in range(page_size)]
+
+    with pytest.raises(RuntimeError, match="storage unavailable"):
+        list(loader(query_fn, page_size=2))
+    assert offsets == [0, 2]
 
 
 class TestIterAllPagesMaxRows:

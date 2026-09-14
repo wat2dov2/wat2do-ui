@@ -7,7 +7,7 @@ import {
   HelpCircle,
   LogOut,
   MoreHorizontal,
-  OrganizationChart,
+  ClubChart,
   Settings,
   Shield,
   Ticket,
@@ -31,7 +31,7 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/shared/ui/drawer";
-import { DrawerBody } from "@/shared/layout";
+import { DrawerBody, Stack } from "@/shared/layout";
 import { useAuthState, type AuthState } from "@/features/auth/hooks/useAuthState";
 import { useRequestSchool } from "@/app/client-providers";
 import { getUserProfile, logoutAPI, updateUserProfile } from "@/features/auth/api/auth.api";
@@ -39,7 +39,7 @@ import { ROUTES } from "@/shared/constants/routes";
 import { getSchoolOrigin } from "@/shared/constants/schools";
 import imgImage1 from "@/assets/38e8096a28295e8dcc0e5020d0a5f3dd85d5f019.png";
 
-type NavOrganization = AuthState["clubs"][number];
+type NavClub = AuthState["clubs"][number];
 
 interface Wat2DoLogoLinkProps {
   label: string;
@@ -68,14 +68,14 @@ function Wat2DoLogoLink({ label, onNavigate }: Wat2DoLogoLinkProps) {
 const PRIMARY_NAV_ITEMS = [
   { labelKey: "navigation.events", href: ROUTES.HOME, Icon: Ticket },
   {
-    labelKey: "navigation.organizations",
-    href: ROUTES.ORGANIZATIONS,
-    Icon: OrganizationChart,
-  },
-  {
     labelKey: "navigation.positions",
     href: ROUTES.POSITIONS,
     Icon: Users,
+  },
+  {
+    labelKey: "navigation.clubs",
+    href: ROUTES.CLUBS,
+    Icon: ClubChart,
   },
   { labelKey: "navigation.about", href: ROUTES.CONTACT, Icon: HelpCircle },
 ] as const;
@@ -94,34 +94,40 @@ function isRouteActive(pathname: string, href: string): boolean {
 export function TopNav() {
   const [navigationOpen, setNavigationOpen] = useState(false);
   const requestSchool = useRequestSchool();
-  const { isAuthenticated, profileCompleted, isAdmin, clubs, organizationId } =
+  const { isAuthenticated, profileCompleted, isAdmin, clubs, clubId, userAvatarUrl, userEmail } =
     useAuthState();
   const { t } = useTranslation();
   const router = useRouter();
   const pathname = usePathname();
-  const activeOrganization = clubs.find((club) => club.id === organizationId) ?? clubs[0];
-  const canOpenOrganizationPanel = profileCompleted && Boolean(activeOrganization);
+  const activeClub = clubs.find((club) => club.id === clubId) ?? clubs[0];
+  const canOpenClubPanel = profileCompleted && Boolean(activeClub);
+  const userAvatar = userAvatarUrl ? (
+    <img src={userAvatarUrl} alt="" />
+  ) : (userEmail?.[0] ?? "?").toUpperCase();
   const navigationItems = isAuthenticated
     ? [...PRIMARY_NAV_ITEMS, SETTINGS_NAV_ITEM]
     : PRIMARY_NAV_ITEMS;
 
   const handleAdminClick = useCallback(() => {
+    setNavigationOpen(false);
     router.push(ROUTES.ADMIN);
   }, [router]);
 
-  const handleOrganizationSelect = useCallback((org: NavOrganization) => {
+  const handleClubSelect = useCallback((org: NavClub) => {
+    setNavigationOpen(false);
     const profile = getUserProfile();
     if (profile) {
       updateUserProfile({
         ...profile,
-        organizationId: org.id,
-        organizationName: org.organization_name,
+        clubId: org.id,
+        clubName: org.club_name,
       });
     }
-    router.push(ROUTES.ORGANIZATION_PANEL);
+    router.push(ROUTES.CLUB_PANEL);
   }, [router]);
 
   const handleSignOut = useCallback(async () => {
+    setNavigationOpen(false);
     try {
       await logoutAPI();
     } catch (err) {
@@ -143,7 +149,7 @@ export function TopNav() {
   );
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-nav flex h-12 items-center justify-between gap-1.5 border-b border-border bg-surface px-2 sm:gap-2 sm:px-4">
+    <header data-slot="top-nav" className="fixed top-0 left-0 right-0 z-nav flex h-12 items-center justify-between gap-1.5 border-b border-border bg-surface px-2 sm:gap-2 sm:px-4">
       <div className="flex min-w-0 flex-1 items-center gap-1.5 sm:gap-2.5">
         <Wat2DoLogoLink label={t("navigation.goToEvents")} />
         <span className="hidden text-muted-foreground text-lg font-light sm:inline">/</span>
@@ -154,10 +160,10 @@ export function TopNav() {
         />
       </div>
 
-      <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
-        <nav
+      <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
+        {!isAuthenticated && <nav
           aria-label={t("navigation.primary")}
-          className="hidden items-center gap-0.5 xl:flex"
+          className="hidden items-center gap-0.5 md:flex"
         >
           {navigationItems.map(({ labelKey, href }) => {
             const active = isRouteActive(pathname, href);
@@ -174,7 +180,7 @@ export function TopNav() {
               </Button>
             );
           })}
-        </nav>
+        </nav>}
 
         <Drawer
           open={navigationOpen}
@@ -182,25 +188,35 @@ export function TopNav() {
           direction="right"
         >
           <Button
-            variant="outline"
+            variant={isAuthenticated ? "avatar" : "outline"}
             size="icon-sm"
-            className="xl:hidden"
+            className={isAuthenticated ? undefined : "md:hidden"}
             aria-label={t("navigation.openMenu")}
+            aria-haspopup="dialog"
+            aria-expanded={navigationOpen}
             onClick={() => setNavigationOpen(true)}
           >
-            <MoreHorizontal className="size-4" />
+            {isAuthenticated ? (
+              userAvatar
+            ) : <MoreHorizontal className="size-4" />}
           </Button>
           <DrawerContent aria-describedby={undefined}>
             <DrawerHeader className="sr-only">
               <DrawerTitle>{t("navigation.primary")}</DrawerTitle>
             </DrawerHeader>
             <DrawerBody className="gap-3">
-              <Wat2DoLogoLink
-                label={t("navigation.goToEvents")}
-                onNavigate={() => setNavigationOpen(false)}
-              />
+              <Stack direction="horizontal" align="center" justify="between" gap={2}>
+                <Wat2DoLogoLink
+                  label={t("navigation.goToEvents")}
+                  onNavigate={() => setNavigationOpen(false)}
+                />
+                <Stack direction="horizontal" align="center" gap={2}>
+                  <LanguageSelector />
+                  <ThemeToggle />
+                </Stack>
+              </Stack>
               <Separator />
-              {!profileCompleted && (
+              {!isAuthenticated && (
                 <>
                   <Button
                     className="w-full"
@@ -225,7 +241,7 @@ export function TopNav() {
                       key={href}
                       asChild
                       variant={active ? "outline" : "ghost"}
-                      className="w-full justify-start"
+                      size="navigation"
                     >
                       <NextLink
                         href={href}
@@ -239,53 +255,50 @@ export function TopNav() {
                   );
                 })}
               </nav>
+              {canOpenClubPanel && (
+                <SearchCombobox
+                  selectedKey={activeClub.id}
+                  onSelect={handleClubSelect}
+                  items={clubs}
+                  getKey={(club) => club.id}
+                  getLabel={(club) => club.club_name}
+                  displayValue={activeClub.club_name}
+                  variant="field"
+                  searchPlaceholder={t("clubs.searchPlaceholder")}
+                  emptyLabel={t("clubs.noClubsFound")}
+                />
+              )}
+              {profileCompleted && isAdmin && (
+                <Button variant="ghost" size="navigation" onClick={handleAdminClick}>
+                  <Shield />
+                  {t("navigation.admin")}
+                </Button>
+              )}
             </DrawerBody>
+            {isAuthenticated && <>
             <Separator />
             <DrawerFooter>
-              <div className="flex items-center justify-between gap-2">
-                <LanguageSelector />
-                <ThemeToggle />
-              </div>
+              <Stack direction="horizontal" align="center" justify="between" gap={2}>
+                  <Button asChild variant="avatar" size="icon-sm">
+                    <NextLink
+                      href={ROUTES.SETTINGS}
+                      aria-label={t("navigation.settings")}
+                      onClick={() => setNavigationOpen(false)}
+                    >
+                      {userAvatar}
+                    </NextLink>
+                  </Button>
+                <Button variant="ghost" size="sm" onClick={handleSignOut}>
+                  <LogOut />
+                  {t("modals.signOut.logOut")}
+                </Button>
+              </Stack>
             </DrawerFooter>
+            </>}
           </DrawerContent>
         </Drawer>
 
-        {profileCompleted && isAdmin && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                onMouseDown={handleAdminClick}
-                className="size-8 px-0 sm:w-auto sm:px-3"
-              >
-                <Shield className="size-4" strokeWidth={2.5} />
-                <span className="hidden sm:inline">{t("navigation.admin")}</span>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>{t("navigation.adminPanel")}</p>
-            </TooltipContent>
-          </Tooltip>
-        )}
-
-        {canOpenOrganizationPanel && (
-          <SearchCombobox
-            selectedKey={activeOrganization.id}
-            onSelect={handleOrganizationSelect}
-            items={clubs}
-            getKey={(organization) => organization.id}
-            getLabel={(organization) => organization.organization_name}
-            displayValue={activeOrganization.organization_name}
-            variant="nav"
-            align="end"
-            searchPlaceholder={t("organizations.searchPlaceholder")}
-            emptyLabel={t("organizations.noClubsFound")}
-            triggerClassName="max-w-[24vw] sm:max-w-[180px] md:max-w-[240px]"
-          />
-        )}
-
-        <div className="hidden items-center gap-2 xl:flex">
+        {!isAuthenticated && <div className="hidden items-center gap-2 md:flex">
           <Separator
             orientation="vertical"
             data-nav-preferences-divider
@@ -293,26 +306,14 @@ export function TopNav() {
           />
           <LanguageSelector />
           <ThemeToggle />
-        </div>
+        </div>}
 
-        {profileCompleted ? (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="outline" size="sm" onMouseDown={handleSignOut} className="size-8 px-0 sm:w-auto sm:px-3">
-                <LogOut className="size-4" strokeWidth={2.5} />
-                <span className="hidden sm:inline">{t("modals.signOut.logOut")}</span>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>{t("modals.signOut.signOutOfAccount")}</p>
-            </TooltipContent>
-          </Tooltip>
-        ) : (
+        {!isAuthenticated && (
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
                 size="sm"
-                className="hidden xl:inline-flex"
+                className="hidden md:inline-flex"
                 onMouseDown={handleSignIn}
               >
                 {t("events.signIn")}

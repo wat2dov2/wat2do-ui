@@ -6,7 +6,6 @@ import {
   Facebook,
   Linkedin,
   Mail,
-  X,
 } from "@/shared/ui/doodle-icons";
 import {
   DiscordIcon,
@@ -15,7 +14,6 @@ import {
 } from "@/shared/ui/platform-icons";
 import {
   Drawer,
-  DrawerClose,
   DrawerContent,
   DrawerDescription,
   DrawerHeader,
@@ -184,15 +182,6 @@ export function EventShareDialog({
   return (
     <Drawer open={open} onOpenChange={handleOpenChange}>
       <DrawerContent className="overflow-hidden p-0">
-        <DrawerClose asChild>
-          <button
-            type="button"
-            className="absolute right-3 top-3 z-20 flex size-9 items-center justify-center rounded-xl text-foreground opacity-80 transition-opacity hover:bg-muted-hover hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-            aria-label={t("common.close")}
-          >
-            <X className="size-4" />
-          </button>
-        </DrawerClose>
 
         <DrawerHeader className="text-left">
           <DrawerTitle>{t("common.share")}</DrawerTitle>

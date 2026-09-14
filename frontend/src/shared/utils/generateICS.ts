@@ -9,10 +9,6 @@ function escapeICS(text: string): string {
   return text.replace(/[\\;,]/g, "\\$&").replace(/\n/g, "\\n");
 }
 
-function toGoogleCalendarDate(isoString: string): string {
-  return isoString.replace(/[-:]/g, "").replace(/\.\d{3}/, "");
-}
-
 function generateICS(event: Event): string {
   const now = toICSDate(new Date().toISOString());
   const primary = getPrimaryOccurrence(event);
@@ -66,8 +62,8 @@ function buildGoogleCalendarUrl(event: Event): string {
   const dtstart_utc = primary?.dtstart_utc;
   const dtend_utc = primary?.dtend_utc;
   if (dtstart_utc) {
-    const start = toGoogleCalendarDate(dtstart_utc);
-    const end = dtend_utc ? toGoogleCalendarDate(dtend_utc) : start;
+    const start = toICSDate(dtstart_utc);
+    const end = dtend_utc ? toICSDate(dtend_utc) : start;
     params.set("dates", `${start}/${end}`);
   }
 

@@ -1,66 +1,46 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, type MouseEvent } from "react";
 import { flushSync } from "react-dom";
 import { useTranslation } from "react-i18next";
-import { saveTheme } from "@/shared/services/preferencesStorage";
+import { useDarkMode } from "@/shared/hooks/useDarkMode";
 import { Button } from "@/shared/ui/button";
 import { Moon, Sun } from "@/shared/ui/doodle-icons";
 
 export function ThemeToggle() {
   const { t } = useTranslation();
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  const buttonRef = useRef<HTMLButtonElement>(null);
+  const { isDarkMode, setDarkMode } = useDarkMode();
+  const animatingRef = useRef(false);
   const label = isDarkMode
     ? t("navigation.switchToLightMode")
     : t("navigation.switchToDarkMode");
 
-  useEffect(() => {
-    const updateTheme = () => {
-      setIsDarkMode(document.documentElement.classList.contains("dark"));
-    };
-    updateTheme();
-
-    const observer = new MutationObserver(updateTheme);
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["class"],
-    });
-
-    return () => observer.disconnect();
-  }, []);
-
-  const handleThemeChange = useCallback(async () => {
-    if (!buttonRef.current) return;
-
-    if (!document.startViewTransition) {
-      const nextIsDarkMode = !isDarkMode;
-      setIsDarkMode(nextIsDarkMode);
-      document.documentElement.classList.toggle("dark");
-      saveTheme(nextIsDarkMode ? "dark" : "light");
+  const handleThemeChange = useCallback(async (event: MouseEvent<HTMLButtonElement>) => {
+    if (animatingRef.current) return;
+    const { top, left, width, height } = event.currentTarget.getBoundingClientRect();
+    // Pointer activations originate at the actual click; keyboard activation
+    // has detail=0 and uses the control's center instead of viewport (0, 0).
+    const x = event.detail > 0 ? event.clientX : left + width / 2;
+    const y = event.detail > 0 ? event.clientY : top + height / 2;
+    if (!document.startViewTransition || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setDarkMode(!isDarkMode);
       return;
     }
 
     const root = document.documentElement;
+    animatingRef.current = true;
     root.classList.add("no-transitions");
 
     try {
       await document.startViewTransition(() => {
         flushSync(() => {
-          const nextIsDarkMode = !isDarkMode;
-          setIsDarkMode(nextIsDarkMode);
-          root.classList.toggle("dark");
-          saveTheme(nextIsDarkMode ? "dark" : "light");
+          setDarkMode(!isDarkMode);
         });
       }).ready;
 
-      const { top, left, width, height } =
-        buttonRef.current.getBoundingClientRect();
-      const x = left + width / 2;
-      const y = top + height / 2;
       const maxRadius = Math.hypot(
-        Math.max(left, window.innerWidth - left),
-        Math.max(top, window.innerHeight - top),
+        Math.max(x, window.innerWidth - x),
+        Math.max(y, window.innerHeight - y),
       );
 
       const animation = root.animate(
@@ -78,13 +58,13 @@ export function ThemeToggle() {
       );
       await animation.finished;
     } finally {
+      animatingRef.current = false;
       root.classList.remove("no-transitions");
     }
-  }, [isDarkMode]);
+  }, [isDarkMode, setDarkMode]);
 
   return (
     <Button
-      ref={buttonRef}
       variant="outline"
       size="icon-sm"
       aria-label={label}

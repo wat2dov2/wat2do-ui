@@ -31,7 +31,6 @@
     "urlRequired": "URL為必填",
     "urlInvalid": "請輸入有效的 URL",
     "descriptionOptional": "可選",
-    "imageFormat": "PNG, JPG 最多 5MB",
     "noScanData": "尚未有掃描數據",
     "noScanDataDesc": "分享你的 QR 代碼以開始追蹤表現",
     "posterAriaLabel": "封面 {{id}}",

@@ -8,11 +8,11 @@ import { useTranslation } from "react-i18next";
 import { QRCodeSVG } from "qrcode.react";
 import { Eye, Megaphone } from "@/shared/ui/doodle-icons";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/shared/ui/dialog";
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/shared/ui/drawer";
 import { useQRCodeScans } from "@/features/posters/hooks/useQRCodeScans";
 import { useQRCodeStats } from "@/features/posters/hooks/useQRCodeStats";
 import { QRCodeStatsDisplay } from "@/features/posters/components/QRCode/QRCodeStatsDisplay";
@@ -24,21 +24,19 @@ const QRCodeScansChart = lazy(() =>
     default: m.QRCodeScansChart,
   })),
 );
-import type { Event } from "@/shared/types";
 import type { QRCode } from "@/features/posters/types";
 import { generateQRCodeUrl } from "@/shared/utils/qrGenerator";
 import { getQRImageUrl } from "@/features/posters/api/posters.api";
-import { useModalState } from "@/shared/hooks/useModalState";
-import { ModalContentWrapper, EmptyState } from "@/shared/ui/modal-components";
+import { DrawerBody } from "@/shared/layout";
+import { EmptyState } from "@/shared/ui/modal-components";
 
 interface QRCodeDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
   qrCode: QRCode;
-  events: Event[];
 }
 
-function QRCodeDetailsModalContent({ isOpen, onClose, qrCode }: QRCodeDetailsModalProps) {
+export function QRCodeDetailsModal({ isOpen, onClose, qrCode }: QRCodeDetailsModalProps) {
   const { t } = useTranslation();
   const qrCodeScans = useQRCodeScans({ qrCode, isOpen });
   const qrCodeStats = useQRCodeStats({
@@ -46,11 +44,6 @@ function QRCodeDetailsModalContent({ isOpen, onClose, qrCode }: QRCodeDetailsMod
     timeRange: qrCodeScans.timeRange,
   });
 
-  const modalState = useModalState({
-    onClose,
-    resetOnClose: true,
-    resetFn: () => {},
-  });
 
   const qrUrl = generateQRCodeUrl(qrCode.id);
   const posterImageSrc = qrCode.imageUrl ? getQRImageUrl(qrCode.imageUrl) : undefined;
@@ -60,13 +53,13 @@ function QRCodeDetailsModalContent({ isOpen, onClose, qrCode }: QRCodeDetailsMod
   const previewSize = qrSize + qrPadding * 2;
 
   return (
-    <Dialog open={isOpen} onOpenChange={modalState.handleOpenChange}>
-      <DialogContent className="p-0 max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
-        <DialogHeader className="px-6 pt-6 pb-2 shrink-0">
-          <DialogTitle className="text-lg font-semibold">{qrCode.name}</DialogTitle>
-        </DialogHeader>
+    <Drawer open={isOpen} onOpenChange={open => { if (!open) onClose(); }}>
+      <DrawerContent aria-describedby={undefined}>
+        <DrawerHeader>
+          <DrawerTitle>{qrCode.name}</DrawerTitle>
+        </DrawerHeader>
 
-        <ModalContentWrapper className="overflow-y-auto flex-1 min-h-0">
+        <DrawerBody>
           <div className="space-y-6">
             {/* Poster image + QR preview: same outer size, QR has padding so it isn't cropped */}
             <div className="flex items-start gap-4">
@@ -122,12 +115,8 @@ function QRCodeDetailsModalContent({ isOpen, onClose, qrCode }: QRCodeDetailsMod
               />
             )}
           </div>
-        </ModalContentWrapper>
-      </DialogContent>
-    </Dialog>
+        </DrawerBody>
+      </DrawerContent>
+    </Drawer>
   );
-}
-
-export function QRCodeDetailsModal(props: QRCodeDetailsModalProps) {
-  return <QRCodeDetailsModalContent {...props} />;
 }

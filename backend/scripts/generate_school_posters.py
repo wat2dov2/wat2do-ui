@@ -2,7 +2,7 @@
 """Generate deterministic school marketing posters from the configured database.
 
 The database is the content source of truth. This script reads schools,
-organizations, events, and event occurrences, derives one JSON manifest, then
+clubs, events, and event occurrences, derives one JSON manifest, then
 passes that manifest to the React/Satori renderer in ``frontend/scripts``.
 
 Examples:
@@ -31,7 +31,7 @@ sys.path.insert(0, str(BACKEND_ROOT))
 
 from core.database import get_sb  # noqa: E402
 from core.pagination import fetch_all_pages  # noqa: E402
-from core.tables import EVENT_DATES, EVENTS, ORGANIZATIONS, SCHOOLS  # noqa: E402
+from core.tables import CLUBS, EVENT_DATES, EVENTS, SCHOOLS  # noqa: E402
 from schemas.school import SchoolRecord  # noqa: E402
 from services import school_service  # noqa: E402
 
@@ -40,10 +40,9 @@ RENDERER_PATH = (
     REPOSITORY_ROOT / "frontend" / "scripts" / "school-posters" / "render-school-posters.mjs"
 )
 _EVENT_COLUMNS = (
-    "id,title,description,organization,organization_id,category,food,source_image_url,"
-    "added_at,cancelled,ig_handle"
+    "id,title,description,club,club_id,category,food,source_image_url,added_at,cancelled,ig_handle"
 )
-_ORGANIZATION_COLUMNS = "id,organization_name,logo_url,ig,status"
+_CLUB_COLUMNS = "id,club_name,logo_url,ig,status"
 _EVENT_ID_CHUNK_SIZE = 500
 _BACKGROUND_IMAGE_LIMIT = 48
 _GENERIC_FOOD_LABELS = frozenset(
@@ -103,11 +102,11 @@ def _food_labels(event: dict[str, Any]) -> set[str]:
     return {label for item in food if (label := _normalize_food_label(item)) is not None}
 
 
-def _organization_key(event: dict[str, Any]) -> str | None:
-    organization_id = event.get("organization_id")
-    if organization_id is not None:
-        return f"id:{int(organization_id)}"
-    raw_identity = event.get("ig_handle") or event.get("organization")
+def _club_key(event: dict[str, Any]) -> str | None:
+    club_id = event.get("club_id")
+    if club_id is not None:
+        return f"id:{int(club_id)}"
+    raw_identity = event.get("ig_handle") or event.get("club")
     handle = _normalize_handle(raw_identity, "")
     return f"handle:{handle}" if handle != "campus-club" else None
 
@@ -115,37 +114,37 @@ def _organization_key(event: dict[str, Any]) -> str | None:
 def _award(
     *,
     title: str,
-    organization: dict[str, Any] | None,
+    club: dict[str, Any] | None,
     description: str,
 ) -> dict[str, Any]:
-    if organization is None:
+    if club is None:
         return {
             "title": title,
-            "organization": "Not enough data yet",
+            "club": "Not enough data yet",
             "handle": "",
             "description": description,
             "logo_url": "",
         }
     return {
         "title": title,
-        "organization": organization["organization_name"],
+        "club": club["club_name"],
         "handle": _normalize_handle(
-            organization.get("ig"),
-            str(organization["organization_name"]),
+            club.get("ig"),
+            str(club["club_name"]),
         ),
         "description": description,
-        "logo_url": str(organization.get("logo_url") or ""),
+        "logo_url": str(club.get("logo_url") or ""),
     }
 
 
-def _rank_organization_counts(
-    counts: Counter[str], organizations_by_key: dict[str, dict[str, Any]]
+def _rank_club_counts(
+    counts: Counter[str], clubs_by_key: dict[str, dict[str, Any]]
 ) -> list[tuple[str, int]]:
     return sorted(
-        ((organization_key, count) for organization_key, count in counts.items() if count > 0),
+        ((club_key, count) for club_key, count in counts.items() if count > 0),
         key=lambda item: (
             -item[1],
-            str(organizations_by_key.get(item[0], {}).get("organization_name") or "").casefold(),
+            str(clubs_by_key.get(item[0], {}).get("club_name") or "").casefold(),
             item[0],
         ),
     )
@@ -199,7 +198,7 @@ def _human_duration(hours: float) -> str:
 def build_poster_data(
     *,
     school: SchoolRecord,
-    organizations: list[dict[str, Any]],
+    clubs: list[dict[str, Any]],
     term_events: list[dict[str, Any]],
     occurrences: list[dict[str, Any]],
     total_event_count: int,
@@ -212,9 +211,7 @@ def build_poster_data(
         raise ValueError(f"School {school.slug} has no semester date range")
 
     timezone_info = ZoneInfo(school.timezone)
-    organizations_by_key = {
-        f"id:{int(row['id'])}": row for row in organizations if row.get("id") is not None
-    }
+    clubs_by_key = {f"id:{int(row['id'])}": row for row in clubs if row.get("id") is not None}
     events_by_id = {
         int(row["id"]): row
         for row in term_events
@@ -247,28 +244,28 @@ def build_poster_data(
     food_events: list[dict[str, Any]] = []
 
     for event in sorted(events_by_id.values(), key=lambda row: int(row["id"])):
-        organization_key = _organization_key(event)
-        if organization_key is None or organization_key in organizations_by_key:
+        club_key = _club_key(event)
+        if club_key is None or club_key in clubs_by_key:
             continue
-        raw_name = str(event.get("organization") or event.get("ig_handle") or "Campus club")
-        organizations_by_key[organization_key] = {
-            "organization_name": raw_name.strip().lstrip("@") or "Campus club",
-            "ig": event.get("ig_handle") or event.get("organization"),
+        raw_name = str(event.get("club") or event.get("ig_handle") or "Campus club")
+        clubs_by_key[club_key] = {
+            "club_name": raw_name.strip().lstrip("@") or "Campus club",
+            "ig": event.get("ig_handle") or event.get("club"),
             "logo_url": event.get("source_image_url") or "",
         }
 
     for event_id, event in events_by_id.items():
-        organization_key = _organization_key(event)
-        if organization_key is None or organization_key not in organizations_by_key:
+        club_key = _club_key(event)
+        if club_key is None or club_key not in clubs_by_key:
             continue
-        event_counts[organization_key] += 1
+        event_counts[club_key] += 1
         category = str(event.get("category") or "").strip()
         if category:
-            category_sets[organization_key].add(category)
+            category_sets[club_key].add(category)
 
         labels = _food_labels(event)
         if labels:
-            food_event_counts[organization_key] += 1
+            food_event_counts[club_key] += 1
             food_mentions.update(labels)
             food_events.append({**event, "food_label_count": len(labels)})
 
@@ -279,33 +276,31 @@ def build_poster_data(
                 first_occurrence.astimezone(timezone.utc) - added_at
             ).total_seconds() / 3600
             if gap_hours >= 0:
-                lead_times.append((gap_hours, organization_key, event_id))
+                lead_times.append((gap_hours, club_key, event_id))
 
-    ranked_clubs = _rank_organization_counts(event_counts, organizations_by_key)
+    ranked_clubs = _rank_club_counts(event_counts, clubs_by_key)
     top_clubs = []
-    for organization_key, count in ranked_clubs[:5]:
-        organization = organizations_by_key[organization_key]
+    for club_key, count in ranked_clubs[:5]:
+        club = clubs_by_key[club_key]
         top_clubs.append(
             {
-                "name": organization["organization_name"],
-                "handle": _normalize_handle(
-                    organization.get("ig"), str(organization["organization_name"])
-                ),
-                "logo_url": str(organization.get("logo_url") or ""),
+                "name": club["club_name"],
+                "handle": _normalize_handle(club.get("ig"), str(club["club_name"])),
+                "logo_url": str(club.get("logo_url") or ""),
                 "event_count": count,
             }
         )
 
-    ranked_food = _rank_organization_counts(food_event_counts, organizations_by_key)
+    ranked_food = _rank_club_counts(food_event_counts, clubs_by_key)
     ranked_categories = sorted(
         (
-            (organization_key, len(categories))
-            for organization_key, categories in category_sets.items()
+            (club_key, len(categories))
+            for club_key, categories in category_sets.items()
             if categories
         ),
         key=lambda item: (
             -item[1],
-            str(organizations_by_key[item[0]]["organization_name"]).casefold(),
+            str(clubs_by_key[item[0]]["club_name"]).casefold(),
             item[0],
         ),
     )
@@ -396,9 +391,7 @@ def build_poster_data(
             "awards": [
                 _award(
                     title="Procrastinator Award",
-                    organization=(
-                        organizations_by_key[procrastinator[1]] if procrastinator else None
-                    ),
+                    club=(clubs_by_key[procrastinator[1]] if procrastinator else None),
                     description=(
                         f"Announced with {_human_duration(procrastinator[0])} to spare."
                         if procrastinator
@@ -407,7 +400,7 @@ def build_poster_data(
                 ),
                 _award(
                     title="Feed the Campus Award",
-                    organization=(organizations_by_key[food_winner[0]] if food_winner else None),
+                    club=(clubs_by_key[food_winner[0]] if food_winner else None),
                     description=(
                         f"Hosted the most food-linked events ({food_winner[1]})."
                         if food_winner
@@ -416,9 +409,7 @@ def build_poster_data(
                 ),
                 _award(
                     title="Swiss Army Club",
-                    organization=(
-                        organizations_by_key[category_winner[0]] if category_winner else None
-                    ),
+                    club=(clubs_by_key[category_winner[0]] if category_winner else None),
                     description=(
                         f"Showed up across {category_winner[1]} event categories."
                         if category_winner
@@ -427,9 +418,7 @@ def build_poster_data(
                 ),
                 _award(
                     title="Early Planners Award",
-                    organization=(
-                        organizations_by_key[early_planner[1]] if early_planner else None
-                    ),
+                    club=(clubs_by_key[early_planner[1]] if early_planner else None),
                     description=(
                         f"Longest post-to-event gap: {_human_duration(early_planner[0])}."
                         if early_planner
@@ -441,12 +430,12 @@ def build_poster_data(
     }
 
 
-def _load_organizations(school_id: int) -> list[dict[str, Any]]:
+def _load_clubs(school_id: int) -> list[dict[str, Any]]:
     return fetch_all_pages(
         lambda offset, page_size: (
             get_sb()
-            .table(ORGANIZATIONS)
-            .select(_ORGANIZATION_COLUMNS)
+            .table(CLUBS)
+            .select(_CLUB_COLUMNS)
             .eq("school_id", school_id)
             .eq("status", "approved")
             .order("id")
@@ -517,17 +506,13 @@ def _load_total_event_count(school_id: int) -> int:
     return int(response.count or 0)
 
 
-def _load_observed_club_count(school_id: int, organizations: list[dict[str, Any]]) -> int:
-    identities = {
-        f"id:{int(organization['id'])}"
-        for organization in organizations
-        if organization.get("id") is not None
-    }
+def _load_observed_club_count(school_id: int, clubs: list[dict[str, Any]]) -> int:
+    identities = {f"id:{int(club['id'])}" for club in clubs if club.get("id") is not None}
     event_rows = fetch_all_pages(
         lambda offset, page_size: (
             get_sb()
             .table(EVENTS)
-            .select("id,organization,organization_id,ig_handle")
+            .select("id,club,club_id,ig_handle")
             .eq("school_id", school_id)
             .eq("cancelled", False)
             .order("id")
@@ -538,7 +523,7 @@ def _load_observed_club_count(school_id: int, organizations: list[dict[str, Any]
         )
     )
     identities.update(
-        identity for event in event_rows if (identity := _organization_key(event)) is not None
+        identity for event in event_rows if (identity := _club_key(event)) is not None
     )
     return len(identities)
 
@@ -566,16 +551,16 @@ def load_school_poster_data(school_slug: str) -> dict[str, Any]:
     if school is None:
         raise ValueError(f"Unknown school: {school_slug}")
     recap_school = resolve_recap_term(school)
-    organizations = _load_organizations(school.id)
+    clubs = _load_clubs(school.id)
     occurrences = _load_term_occurrences(recap_school)
     term_events = _load_term_events(school.id, _event_ids_in_term(occurrences))
     return build_poster_data(
         school=recap_school,
-        organizations=organizations,
+        clubs=clubs,
         term_events=term_events,
         occurrences=occurrences,
         total_event_count=_load_total_event_count(school.id),
-        observed_club_count=_load_observed_club_count(school.id, organizations),
+        observed_club_count=_load_observed_club_count(school.id, clubs),
         background_images=_load_background_images(school.id),
         site_url=f"https://{school.slug}.wat2do.io",
     )

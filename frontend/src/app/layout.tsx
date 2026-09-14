@@ -1,4 +1,6 @@
 import type { Metadata, Viewport } from "next";
+import { GoogleAnalytics } from "@next/third-parties/google";
+import googleAnalytics from "../../../backend/controlbox/google_analytics.json";
 import localFont from "next/font/local";
 import { headers } from "next/headers";
 import type { ReactNode } from "react";
@@ -32,7 +34,7 @@ const satoshi = localFont({
 });
 
 const APP_DESCRIPTION =
-  "Discover campus events, explore student organizations, and stay connected with what's happening around you.";
+  "Discover campus events, explore student clubs, and stay connected with what's happening around you.";
 
 const themeInitScript = `
 (function() {
@@ -120,7 +122,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
 
   return (
     <html
-      lang="en"
+      lang={initialSchools?.find((school) => school.slug === initialSchool)?.language ?? "en"}
       className={`no-transitions ${satoshi.variable}`}
       suppressHydrationWarning
     >
@@ -142,6 +144,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
           <SiteBanner />
           <AppShell>{children}</AppShell>
         </ClientProviders>
+        {process.env.NODE_ENV === "production" && googleAnalytics.measurement_id ? <GoogleAnalytics gaId={googleAnalytics.measurement_id} /> : null}
       </body>
     </html>
   );

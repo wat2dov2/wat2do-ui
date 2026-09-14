@@ -1,21 +1,4 @@
-"""MMR (Maximal Marginal Relevance) re-ranker for diversity.
-
-Performance notes
------------------
-The MMR loop is O(k * m) cosine-similarity computations where k = items
-returned and m = candidate pool size.  Two optimisations keep this fast in
-pure Python:
-
-1. **Pre-computed magnitudes** -- each vector's L2 norm is computed once
-   rather than re-derived on every similarity call.  This removes ~2/3 of
-   the per-call floating-point work.
-
-2. **Sparse dot product** -- because vectors are mostly zero (one-hot
-   category + one-hot time bucket + one price float), we store the indices
-   of non-zero entries and iterate only over those when computing dot
-   products and magnitudes.  For the typical 27-dim vector with 2-3
-   non-zero entries this turns an O(27) inner loop into O(2-3).
-"""
+"""MMR diversity ranking with sparse vectors and incremental similarities."""
 
 import logging
 import math
@@ -39,9 +22,6 @@ NUM_CATEGORIES = len(EVENT_CATEGORIES)
 
 TIME_BUCKETS = ("morning", "afternoon", "evening", "weekend")
 _TIME_BUCKET_INDEX = {b: i for i, b in enumerate(TIME_BUCKETS)}
-
-_VECTOR_DIM = NUM_CATEGORIES + 1 + len(TIME_BUCKETS)  # 27
-
 
 # Sparse vectors store only non-zero entries plus a pre-computed magnitude so
 # dot-product is O(min(|nz_a|, |nz_b|)) instead of O(dim).
@@ -113,25 +93,25 @@ def mmr_rerank(
             len(scored_events),
             len(score_map),
         )
-    remaining = set(score_map.keys())
+    remaining = set(score_map)
     selected: list[int] = []
+    max_similarities: dict[int, float] = {}
     neg_lambda = 1.0 - lambda_param
 
     for _ in range(min(k, len(score_map))):
         best_eid = None
         best_mmr = -float("inf")
 
-        # Deterministic order so ties resolve consistently: (-relevance, event_id).
-        # Plain set iteration would produce hash-order output that varies across processes.
-        for eid in sorted(remaining, key=lambda x: (-score_map[x], x)):
+        # Resolve ties by relevance and event ID in each remaining candidate set.
+        for eid in sorted(remaining, key=lambda eid: (-score_map[eid], eid)):
             relevance = score_map[eid]
             vec_eid = vectors[eid]
 
-            max_sim = 0.0
-            for sel_eid in selected:
-                sim = _sparse_cosine_sim(vec_eid, vectors[sel_eid])
+            max_sim = max_similarities.get(eid, 0.0)
+            if selected:
+                sim = _sparse_cosine_sim(vec_eid, vectors[selected[-1]])
                 if sim > max_sim:
-                    max_sim = sim
+                    max_similarities[eid] = max_sim = sim
 
             mmr = lambda_param * relevance - neg_lambda * max_sim
 
@@ -153,14 +133,7 @@ def _build_sparse_vector(
     *,
     user_timezone: str | None = None,
 ) -> _SparseVec:
-    """
-    Build a sparse feature vector for diversity measurement.
-
-    Dimensions (27 total):
-    - [0..21]  one-hot category (22 dims)
-    - [22]     normalized price (1 dim)
-    - [23..26] time bucket one-hot (4 dims: morning/afternoon/evening/weekend)
-    """
+    """Encode category, normalized price, and local-time bucket as sparse features."""
     if meta is None:
         return _SparseVec({})
 

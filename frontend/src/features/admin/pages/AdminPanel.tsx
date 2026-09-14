@@ -1,189 +1,54 @@
-import { useMemo } from "react";
-import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { useRouter } from "next/navigation";
-import {
-  ArrowRight,
-  Building2,
-  Calendar,
-  Clock,
-  FileText,
-  Instagram,
-  Megaphone,
-  QrCode,
-  Settings,
-  Shield,
-} from "@/shared/ui/doodle-icons";
+import { Building2, Users, Calendar, Instagram, Megaphone, Settings, Shield } from "@/shared/ui/doodle-icons";
 import { Button } from "@/shared/ui/button";
-import { LoadingPage } from "@/shared/ui/loading-page";
 import { AdminCard } from "@/shared/ui/AdminCard";
-import { useAdminPanel, mapActivityDisplay, type ActivityDisplay } from "@/features/admin/hooks/useAdminPanel";
-import { formatRelativeTime } from "@/shared/utils/relativeTime";
-import { QP } from "@/shared/constants/queryParams";
-import { ROUTES, type AdminRouteKey } from "@/shared/constants/routes";
+import { Stack } from "@/shared/layout/stack";
+import { FormGrid } from "@/shared/layout/form-grid";
+import { PageHeader } from "@/shared/layout/page-header";
+import { useAdminPanel } from "@/features/admin/hooks/useAdminPanel";
+import { type AdminRouteKey } from "@/shared/constants/routes";
 
 interface AdminPanelProps {
   onNavigate: (page: AdminRouteKey) => void;
 }
 
-type ActivityType = ActivityDisplay["type"];
-
-const activityIconMap: Record<ActivityType, ReactNode> = {
-  submission: <FileText className="size-4 text-primary" />,
-  poster: <QrCode className="size-4 text-primary" />,
-};
-
-/** Navigation route map for activity types. */
-const activityRouteMap: Record<ActivityType, string> = {
-  submission: ROUTES.ADMIN_EVENTS,
-  poster: ROUTES.ADMIN_POSTERS,
-};
-
-const activityQueryParamMap: Record<ActivityType, string> = {
-  submission: QP.SUBMISSION_ID,
-  poster: QP.QR_CODE_ID,
-};
-
 export function AdminPanel({ onNavigate }: AdminPanelProps) {
   const { t } = useTranslation();
-  const router = useRouter();
-  const { recentActivities, recentActivityLoading } = useAdminPanel();
-
-  const displayActivities = useMemo(
-    () => recentActivities.map((activity) => mapActivityDisplay(activity, t)),
-    [recentActivities, t]
-  );
-
-  const handleActivityClick = (display: ActivityDisplay) => {
-    const route = activityRouteMap[display.type];
-    const param = activityQueryParamMap[display.type];
-    const tabParam = display.type === "submission" ? "&tab=submissions" : "";
-    router.push(`${route}?${param}=${display.id}${tabParam}`);
-  };
+  const { counts, loadFailed, retry } = useAdminPanel();
 
   return (
-    <div className="space-y-5">
-      <div className="flex items-center gap-3">
-        <div className="size-12 rounded-full bg-primary/20 flex items-center justify-center">
-          <Shield className="size-6 text-primary" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-semibold text-foreground">{t("navigation.adminPanel")}</h1>
-          <p className="text-sm text-muted-foreground">
-            {t("admin.panelDescription")}
-          </p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-        <AdminCard
-          icon={Calendar}
-          title={t("navigation.events")}
-          description={t("admin.manageEventsDesc")}
-          onMouseDown={() => onNavigate("admin-events")}
-        />
-        <AdminCard
-          icon={Building2}
-          title={t("navigation.organizations")}
-          description={t("admin.manageClubsDescAlt")}
-          onMouseDown={() => onNavigate("admin-organizations")}
-        />
-        <AdminCard
-          icon={Megaphone}
-          title={t("admin.posters")}
-          description={t("admin.managePostersDescAlt")}
-          onMouseDown={() => onNavigate("admin-posters")}
-        />
-        <AdminCard
-          icon={Instagram}
-          title={t("admin.instagramPublishing.title")}
-          description={t("admin.instagramPublishing.cardDescription")}
-          onMouseDown={() => onNavigate("admin-instagram")}
-        />
-        <AdminCard
-          icon={Settings}
-          title={t("admin.diagnostics.title")}
-          description={t("admin.diagnostics.cardDescription")}
-          onMouseDown={() => onNavigate("admin-diagnostics")}
-        />
-      </div>
-
-      <div className="space-y-4">
-        <div>
-          <h2 className="text-lg font-semibold text-foreground mb-1">{t("admin.recentActivity")}</h2>
-          <p className="text-sm text-muted-foreground">
-            {t("admin.recentActivityDesc")}
-          </p>
-        </div>
-
-        {recentActivityLoading ? (
-          <div className="bg-surface border border-border rounded-xl overflow-hidden">
-            <LoadingPage />
-          </div>
-        ) : displayActivities.length > 0 ? (
-          <div className="bg-surface border border-border rounded-xl overflow-hidden">
-            <div className="divide-y divide-border">
-              {displayActivities.map((display) => (
-                <div
-                  key={`${display.type}-${display.id}`}
-                  role="button"
-                  tabIndex={0}
-                  className="w-full p-4 hover:bg-surface-hover transition-colors cursor-pointer"
-                  onMouseDown={() => handleActivityClick(display)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      handleActivityClick(display);
-                    }
-                  }}
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="size-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
-                      {activityIconMap[display.type]}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm text-foreground mb-1">
-                            <span className="font-bold">{display.label}</span>
-                            <span className="font-normal text-muted-foreground">: {display.detail}</span>
-                          </p>
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <Clock className="size-3" />
-                            <span>{formatRelativeTime(display.timestamp, t)}</span>
-                            {display.submittedBy && (
-                              <>
-                                <span>{t("common.separatorBullet")}</span>
-                                <span>{t("admin.submittedBy")}: {display.submittedBy}</span>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="shrink-0"
-                          onMouseDown={(e) => {
-                            e.stopPropagation();
-                            handleActivityClick(display);
-                          }}
-                        >
-                          {t("common.view")}
-                          <ArrowRight className="size-3 ml-1" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : (
-          <div className="bg-surface border border-border rounded-xl p-8 text-center">
-            <p className="text-sm text-muted-foreground">{t("admin.noRecentActivity")}</p>
-          </div>
-        )}
-      </div>
-    </div>
+    <Stack gap={5}>
+      <PageHeader icon={Shield} title={t("navigation.adminPanel")} description={t("admin.panelDescription")} />
+      {loadFailed ? (
+        <Stack align="start" gap={2} role="alert">
+          <p>{t("admin.pendingCountsError")}</p>
+          <Button variant="outline" onClick={retry}>{t("common.tryAgain")}</Button>
+        </Stack>
+      ) : null}
+      <FormGrid columns={3}>
+        <AdminCard icon={Calendar} title={t("navigation.events")} description={t("admin.manageEventsDesc")}
+          pendingCounts={[
+            { label: t("admin.eventSubmissions"), count: counts.eventSubmissions },
+            { label: t("admin.eventReports"), count: counts.eventReports },
+          ]}
+          onClick={() => onNavigate("admin-events")} />
+        <AdminCard icon={Building2} title={t("navigation.clubs")} description={t("admin.manageClubsDescAlt")}
+          pendingCounts={[
+            { label: t("admin.clubSubmissions"), count: counts.clubSubmissions },
+            { label: t("admin.claimRequests"), count: counts.claims },
+          ]}
+          onClick={() => onNavigate("admin-clubs")} />
+        <AdminCard icon={Users} title={t("navigation.positions")} description={t("positions.searchPlaceholder")}
+          pendingCounts={[{ label: t("positions.submissions"), count: counts.positionSubmissions }]}
+          onClick={() => onNavigate("admin-positions")} />
+        <AdminCard icon={Megaphone} title={t("admin.posters")} description={t("admin.managePostersDescAlt")}
+          pendingCounts={[{ label: t("admin.posterPayouts.tabs.payouts"), count: counts.payouts }]}
+          onClick={() => onNavigate("admin-posters")} />
+        <AdminCard icon={Instagram} title={t("admin.instagramPublishing.title")} description={t("admin.instagramPublishing.cardDescription")}
+          onClick={() => onNavigate("admin-instagram")} />
+        <AdminCard icon={Settings} title={t("admin.diagnostics.title")} description={t("admin.diagnostics.cardDescription")}
+          onClick={() => onNavigate("admin-diagnostics")} />
+      </FormGrid>
+    </Stack>
   );
 }

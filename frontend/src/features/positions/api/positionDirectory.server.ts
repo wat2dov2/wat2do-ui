@@ -14,11 +14,11 @@ async function fetchPositionsPage(
   school: string,
   page: number,
   fetchOptions: RequestInit,
-  organizationId?: number,
+  clubId?: number,
 ): Promise<PaginatedPositionsResponse> {
   const params = new URLSearchParams({ school, page: String(page) });
-  if (organizationId != null) {
-    params.set("organization_id", String(organizationId));
+  if (clubId != null) {
+    params.set("club_id", String(clubId));
   }
   const response = await fetch(
     `${getServerApiBaseUrl()}/positions/?${params.toString()}`,
@@ -61,9 +61,9 @@ function positionDirectoryFetchOptions(school: string): RequestInit {
   };
 }
 
-/** Every currently open position for one organization on its public page. */
-export async function getOrganizationPositionsSnapshot(
-  organizationId: number,
+/** Every currently open position for one club on its public page. */
+export async function getClubPositionsSnapshot(
+  clubId: number,
   school: string,
 ): Promise<Position[]> {
   const resolvedSchool = resolveSchool(school);
@@ -72,7 +72,7 @@ export async function getOrganizationPositionsSnapshot(
     resolvedSchool,
     1,
     fetchOptions,
-    organizationId,
+    clubId,
   );
   const remainingPages = await Promise.all(
     Array.from({ length: Math.max(firstPage.total_pages - 1, 0) }, (_, index) =>
@@ -80,7 +80,7 @@ export async function getOrganizationPositionsSnapshot(
         resolvedSchool,
         index + 2,
         fetchOptions,
-        organizationId,
+        clubId,
       ),
     ),
   );

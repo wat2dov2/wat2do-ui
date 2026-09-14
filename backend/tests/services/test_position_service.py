@@ -8,7 +8,7 @@ def _position_row(position_id: int = 1) -> dict:
     now = datetime.now(timezone.utc)
     return {
         "id": position_id,
-        "organization_id": 4,
+        "club_id": 4,
         "school_id": 1,
         "title": "Design Lead",
         "description": "Lead the design team.",
@@ -26,11 +26,11 @@ def _position_row(position_id: int = 1) -> dict:
         "is_active": True,
         "added_at": now.isoformat(),
         "updated_at": now.isoformat(),
-        "organizations": {
-            "organization_name": "UW Design Club",
+        "clubs": {
+            "club_name": "UW Design Club",
             "logo_url": "https://example.com/logo.png",
-            "organization_type": "student-club",
-            "organization_page": "https://example.com",
+            "club_type": "student-club",
+            "club_page": "https://example.com",
             "ig": "uwdesign",
             "discord": "https://discord.gg/example",
         },
@@ -38,7 +38,7 @@ def _position_row(position_id: int = 1) -> dict:
     }
 
 
-def test_list_positions_hydrates_organization_and_school(fake_sb, patch_sb, monkeypatch):
+def test_list_positions_hydrates_club_and_school(fake_sb, patch_sb, monkeypatch):
     patch_sb("services.position_service")
     monkeypatch.setattr(
         position_service.school_service,
@@ -51,21 +51,53 @@ def test_list_positions_hydrates_organization_and_school(fake_sb, patch_sb, monk
         school="uwaterloo",
         search="design",
         position_type="committee",
-        organization_id=4,
+        club_id=4,
     )
 
     assert total == 1
-    assert positions[0].organization_name == "UW Design Club"
-    assert positions[0].organization_logo_url == "https://example.com/logo.png"
-    assert positions[0].organization_type == "student-club"
-    assert positions[0].organization_page == "https://example.com"
-    assert positions[0].organization_discord == "https://discord.gg/example"
+    assert positions[0].club_name == "UW Design Club"
+    assert positions[0].club_logo_url == "https://example.com/logo.png"
+    assert positions[0].club_type == "student-club"
+    assert positions[0].club_page == "https://example.com"
+    assert positions[0].club_discord == "https://discord.gg/example"
     assert positions[0].school == "uwaterloo"
     fake_sb.eq.assert_any_call("school_id", 1)
     fake_sb.eq.assert_any_call("position_type", "committee")
-    fake_sb.eq.assert_any_call("organization_id", 4)
+    fake_sb.eq.assert_any_call("club_id", 4)
     fake_sb.eq.assert_any_call("is_active", True)
     assert fake_sb.or_.call_count == 2
+
+
+def test_list_positions_applies_added_since_before_pagination(fake_sb, patch_sb):
+    patch_sb("services.position_service")
+    fake_sb.set_response(data=[], count=0)
+    cutoff = datetime(2026, 9, 9, 12, tzinfo=timezone.utc)
+
+    position_service.list_positions(
+        added_since=cutoff, position_type="committee", skip=20, limit=10
+    )
+
+    fake_sb.gte.assert_called_once_with("added_at", cutoff.isoformat())
+    fake_sb.eq.assert_any_call("position_type", "committee")
+    fake_sb.range.assert_called_once_with(20, 29)
+
+
+def test_paid_filter_requires_explicit_true(fake_sb, patch_sb):
+    patch_sb("services.position_service")
+    fake_sb.set_response(data=[], count=0)
+    position_service.list_positions(paid_only=True)
+    fake_sb.eq.assert_any_call("is_paid", True)
+
+
+def test_latest_position_is_school_scoped_and_open(fake_sb, patch_sb, monkeypatch):
+    patch_sb("services.position_service")
+    monkeypatch.setattr(position_service.school_service, "get_school_id", lambda _school: 2)
+    fake_sb.set_response(data=[{"title": "Latest role", "added_at": "2026-09-09T12:00:00Z"}])
+    latest = position_service.get_latest_added_position("mcmaster")
+    assert latest.title == "Latest role"
+    fake_sb.eq.assert_any_call("school_id", 2)
+    fake_sb.eq.assert_any_call("is_active", True)
+    fake_sb.order.assert_any_call("added_at", desc=True)
 
 
 def test_list_positions_returns_empty_for_unknown_school(fake_sb, patch_sb, monkeypatch):
@@ -110,20 +142,20 @@ def test_get_position_returns_hydrated_position(fake_sb, patch_sb):
 
     assert position is not None
     assert position.id == 7
-    assert position.organization_ig == "uwdesign"
+    assert position.club_ig == "uwdesign"
 
 
-def test_get_organization_position_counts_aggregates_open_count(fake_sb, patch_sb):
+def test_get_club_position_counts_aggregates_open_count(fake_sb, patch_sb):
     patch_sb("services.position_service")
     fake_sb.set_response(
         data=[
-            {"organization_id": 1},
-            {"organization_id": 1},
-            {"organization_id": 2},
+            {"club_id": 1},
+            {"club_id": 1},
+            {"club_id": 2},
         ]
     )
 
-    counts = position_service.get_organization_position_counts([1, 2, 99])
+    counts = position_service.get_club_position_counts([1, 2, 99])
 
     assert counts == {1: 2, 2: 1, 99: 0}
     fake_sb.eq.assert_called_once_with("is_active", True)

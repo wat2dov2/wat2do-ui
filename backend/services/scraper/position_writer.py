@@ -19,7 +19,7 @@ from core.sanitize import remove_surrogates
 from core.tables import POSITIONS
 from services import school_service
 from services.event_feed_revalidation import event_feed_revalidation_service
-from services.scraper.org_resolve import ResolvedOrganization
+from services.scraper.org_resolve import ResolvedClub
 
 log = logging.getLogger(__name__)
 
@@ -29,7 +29,7 @@ def write_position(
     *,
     ig_handle: str,
     source_url: str,
-    resolved_org: ResolvedOrganization,
+    resolved_org: ResolvedClub,
 ) -> str:
     """Insert one extracted position, returning ``inserted`` or ``skipped``."""
     title = (position.get("title") or "").strip()
@@ -46,8 +46,8 @@ def write_position(
     if school is None:
         log.warning("[%s] dropping position %r - school is not registered", ig_handle, title)
         return "skipped"
-    if not isinstance(resolved_org.organization_id, int):
-        log.warning("[%s] dropping position %r - organization was not resolved", ig_handle, title)
+    if not isinstance(resolved_org.club_id, int):
+        log.warning("[%s] dropping position %r - club was not resolved", ig_handle, title)
         return "skipped"
 
     requirements: list[str] = []
@@ -58,7 +58,7 @@ def write_position(
         if len(requirements) >= MAX_POSITION_REQUIREMENT_COUNT:
             break
     row = {
-        "organization_id": resolved_org.organization_id,
+        "club_id": resolved_org.club_id,
         "school_id": school.id,
         "title": title[:MAX_POSITION_TITLE_LENGTH],
         "description": description[:MAX_POSITION_DESCRIPTION_LENGTH],
@@ -66,6 +66,7 @@ def write_position(
         "requirements": requirements,
         "commitment": _clean_optional(position.get("commitment"), MAX_POSITION_DETAIL_LENGTH),
         "compensation": _clean_optional(position.get("compensation"), MAX_POSITION_DETAIL_LENGTH),
+        "is_paid": position.get("is_paid"),
         "location": _clean_optional(position.get("location"), MAX_POSITION_DETAIL_LENGTH),
         "contact_email": _clean_optional(position.get("contact_email"), 320),
         "deadline_date": position.get("deadline_date"),

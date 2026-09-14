@@ -13,7 +13,7 @@ import {
 } from "@/features/events/components/EventDetailsSections";
 import {
   fetchEventById,
-  fetchSchoolEvents,
+  fetchEventFeed,
 } from "@/features/events/api/events.api";
 import { eventPagePath } from "@/features/events/lib/eventUrls";
 import { useEventsStore } from "@/features/events/store/events.store";
@@ -55,7 +55,7 @@ export function EventDetailsPageContainer({
   );
   const { data: fetchedSchoolEvents = [] } = useQuery({
     queryKey: queryKeys.events.bySchool(event?.school ?? ""),
-    queryFn: () => fetchSchoolEvents(event!.school),
+    queryFn: () => fetchEventFeed(event!.school),
     enabled: Boolean(event?.school) && !hasStoreSimilarEvents,
     staleTime: controlBox.clientCache.liveEventDataStaleMs,
   });

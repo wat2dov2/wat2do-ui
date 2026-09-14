@@ -1,27 +1,18 @@
 import { useState, useMemo } from "react";
 import type { QRCode, QRCodeScan } from "@/features/posters/types";
 
-type TimeFilter = "today" | "yesterday" | "last7days" | "last30days" | "alltime";
+export type TimeFilter = "today" | "yesterday" | "last7days" | "last30days" | "alltime";
 
 interface UsePostersFiltersOptions {
-  /** Posters from backend (GET /qr/). */
   backendPosters: QRCode[];
-  /** Scans from backend (GET /qr/scans). */
   backendScans: QRCodeScan[];
 }
 
-/**
- * Hook for managing filters on a posters page (time range, scan stats, QR code map).
- * Shared by admin and organization-panel posters pages.
- */
 export function usePostersFilters({
   backendPosters,
   backendScans,
 }: UsePostersFiltersOptions) {
   const [timeFilter, setTimeFilter] = useState<TimeFilter>("alltime");
-
-  const qrCodes = backendPosters;
-  const allScans = backendScans;
 
   const filteredScans = useMemo(() => {
     const now = new Date();
@@ -54,48 +45,26 @@ export function usePostersFilters({
         break;
       case "alltime":
       default:
-        return allScans;
+        return backendScans;
     }
 
-    return allScans.filter((scan) => {
+    return backendScans.filter((scan) => {
       const scanDate = new Date(scan.scannedAt);
       if (endDate) {
         return scanDate >= startDate && scanDate <= endDate;
       }
       return scanDate >= startDate;
     });
-  }, [allScans, timeFilter]);
-
-  const qrCodesWithStats = useMemo(() => {
-    return qrCodes.map((qr) => {
-      const scans = allScans.filter((s) => s.qrCodeId === qr.id);
-      const uniqueScans = new Set(scans.map((s) => s.visitorReference)).size;
-      return {
-        ...qr,
-        totalScans: scans.length,
-        uniqueScans,
-      };
-    });
-  }, [qrCodes, allScans]);
-
-  const filteredQRCodes = qrCodesWithStats;
-  const scansMatchingPosterSearch = filteredScans;
+  }, [backendScans, timeFilter]);
 
   const qrCodeMap = useMemo(() => {
-    const map = new Map<string, string>();
-    qrCodes.forEach((qr) => map.set(qr.id, qr.name));
-    return map;
-  }, [qrCodes]);
+    return new Map(backendPosters.map((poster) => [poster.id, poster.name]));
+  }, [backendPosters]);
 
   return {
     timeFilter,
     setTimeFilter,
-    qrCodes,
-    qrCodesWithStats,
-    filteredQRCodes,
-    allScans,
     filteredScans,
-    scansMatchingPosterSearch,
     qrCodeMap,
   };
 }

@@ -17,9 +17,9 @@ from core.constants import (
     MAX_EVENT_TITLE_LENGTH,
     MAX_URL_LENGTH,
 )
-from core.pagination import PaginatedResponse
+from core.pagination import LatestAddedItem, PaginatedResponse
+from schemas.club import ClubTypeValue
 from schemas.event_date import OccurrenceCreate, OccurrenceResponse, OccurrenceUpdate
-from schemas.organization import OrganizationTypeValue
 
 _log = logging.getLogger(__name__)
 
@@ -118,10 +118,10 @@ class EventCreate(BaseModel):
     source_image_url: str | None = Field(default=None, max_length=MAX_URL_LENGTH)
     source_url: str | None = Field(default=None, max_length=MAX_URL_LENGTH)
     category: str | None = Field(default=None, max_length=MAX_EVENT_CATEGORY_LENGTH)
-    # The owning organization is the single source of truth for the event's display
-    # name, type, and school; the server derives those fields from organization_id
-    # (see event_service._resolve_organization_fields), so they are not accepted here.
-    organization_id: int = Field(..., ge=1)
+    # The owning club is the single source of truth for the event's display
+    # name, type, and school; the server derives those fields from club_id
+    # (see event_service._resolve_club_fields), so they are not accepted here.
+    club_id: int = Field(..., ge=1)
     ig_handle: str | None = Field(default=None, max_length=MAX_EVENT_HANDLE_LENGTH)
     cancelled: bool = False
 
@@ -159,8 +159,8 @@ class EventUpdate(BaseModel):
     source_image_url: str | None = Field(default=None, max_length=MAX_URL_LENGTH)
     source_url: str | None = Field(default=None, max_length=MAX_URL_LENGTH)
     category: str | None = Field(default=None, max_length=MAX_EVENT_CATEGORY_LENGTH)
-    # Reassigning the organization re-derives organization/school server-side.
-    organization_id: int | None = Field(default=None, ge=1)
+    # Reassigning the club re-derives club/school server-side.
+    club_id: int | None = Field(default=None, ge=1)
     ig_handle: str | None = Field(default=None, max_length=MAX_EVENT_HANDLE_LENGTH)
     cancelled: bool | None = None
 
@@ -182,13 +182,6 @@ class EventUpdate(BaseModel):
         return _validate_optional_handle(v)
 
 
-class LatestEventResponse(BaseModel):
-    """Minimal payload for 'latest added event' (e.g. for 'X added 22 minutes ago')."""
-
-    title: str
-    added_at: datetime
-
-
 class EventTimeMeta(BaseModel):
     """Minimal event metadata for time-decay calculations.
 
@@ -208,11 +201,11 @@ class EventSummaryResponse(BaseModel):
     Description is included because the feed search matches event copy as well
     as titles, hosts, locations, and food.
 
-    The owning organization's display/link/social fields (``organization_logo_url``,
-    ``organization_type``, ``organization_page``, ``organization_ig``,
-    ``organization_discord``) are
-    embedded read-time from the ``organizations`` row via the
-    ``events.organization_id`` FK so the event card can render without a second
+    The owning club's display/link/social fields (``club_logo_url``,
+    ``club_type``, ``club_page``, ``club_ig``,
+    ``club_discord``) are
+    embedded read-time from the ``clubs`` row via the
+    ``events.club_id`` FK so the event card can render without a second
     fetch.
 
     ``created_by`` is intentionally omitted - this response is returned on
@@ -231,12 +224,12 @@ class EventSummaryResponse(BaseModel):
     source_image_url: str | None = None
     source_url: str | None = None
     category: str | None = None
-    organization: str | None = None
-    organization_logo_url: str | None = None
-    organization_type: OrganizationTypeValue | None = None
-    organization_page: str | None = None
-    organization_ig: str | None = None
-    organization_discord: str | None = None
+    club: str | None = None
+    club_logo_url: str | None = None
+    club_type: ClubTypeValue | None = None
+    club_page: str | None = None
+    club_ig: str | None = None
+    club_discord: str | None = None
     ig_handle: str | None = None
     school: str | None = None
     cancelled: bool = False
@@ -248,7 +241,7 @@ class EventSummaryResponse(BaseModel):
 class EventFeedResponse(PaginatedResponse[EventSummaryResponse]):
     """Public school feed response with catalog-freshness metadata."""
 
-    latest_added_event: LatestEventResponse | None = None
+    latest_added_event: LatestAddedItem | None = None
 
 
 class EventStatsResponse(BaseModel):
@@ -271,7 +264,7 @@ class EventResponse(BaseModel):
     """
 
     id: int
-    organization_id: int | None = None
+    club_id: int | None = None
     title: str
     description: str | None = None
     location: str | None = None
@@ -280,12 +273,12 @@ class EventResponse(BaseModel):
     food: list[str] | None = None
     registration: bool = False
     source_image_url: str | None = None
-    organization_logo_url: str | None = None
-    organization_type: OrganizationTypeValue | None = None
+    club_logo_url: str | None = None
+    club_type: ClubTypeValue | None = None
     school: str | None = None
     source_url: str | None = None
     category: str | None = None
-    organization: str | None = None
+    club: str | None = None
     ig_handle: str | None = None
     cancelled: bool = False
     added_at: datetime
@@ -300,7 +293,7 @@ class EventPublicResponse(BaseModel):
     """
 
     id: int
-    organization_id: int | None = None
+    club_id: int | None = None
     title: str
     description: str | None = None
     location: str | None = None
@@ -309,12 +302,12 @@ class EventPublicResponse(BaseModel):
     food: list[str] | None = None
     registration: bool = False
     source_image_url: str | None = None
-    organization_logo_url: str | None = None
-    organization_type: OrganizationTypeValue | None = None
+    club_logo_url: str | None = None
+    club_type: ClubTypeValue | None = None
     school: str | None = None
     source_url: str | None = None
     category: str | None = None
-    organization: str | None = None
+    club: str | None = None
     ig_handle: str | None = None
     cancelled: bool = False
     added_at: datetime

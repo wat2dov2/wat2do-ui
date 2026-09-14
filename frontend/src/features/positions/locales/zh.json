@@ -5,9 +5,8 @@
     "searchPlaceholder": "搜索职位、技能或地点...",
     "clearSearch": "清除职位搜索",
     "filterByType": "按职位类型筛选",
-    "allTypes": "所有职位类型",
     "openDetails": "查看 {{title}} 职位详情",
-    "drawerDescription": "{{organization}} 的 {{title}} 职位详情",
+    "drawerDescription": "{{club}} 的 {{title}} 职位详情",
     "deadlineLabel": "申请截止日期",
     "due": "截止 {{date}}",
     "commitmentLabel": "时间投入",
@@ -16,11 +15,10 @@
     "contactLabel": "联系方式",
     "aboutPosition": "职位介绍",
     "requirements": "要求",
-    "viewSource": "查看 Instagram 原帖",
     "emptyTitle": "未找到开放职位",
     "emptyDescription": "请尝试其他搜索条件或职位类型。学生组织发布的新机会将显示在这里。",
-    "organizationEmptyTitle": "暂无开放职位",
-    "organizationEmptyDescription": "该组织目前没有开放职位。",
+    "clubEmptyTitle": "暂无开放职位",
+    "clubEmptyDescription": "该组织目前没有开放职位。",
     "resultsLabel": "找到 {{count}} 个职位",
     "types": {
       "executive": "执行团队",
@@ -29,6 +27,21 @@
       "staff": "带薪职位",
       "internship": "实习",
       "general": "综合招募"
+    },
+    "title": "职位名称",
+    "paid": "有薪",
+    "unpaid": "无薪",
+    "unknown": "未注明薪酬",
+    "addPosition": "添加职位",
+    "submitted": "职位已提交审核。",
+    "submissions": "职位提交",
+    "placeholders": {
+      "title": "例如：市场营销协调员",
+      "description": "描述职位、工作内容，以及任职者可以学习或贡献的方面。",
+      "compensation": "例如：每小时20加元、500加元酬金或无薪",
+      "commitment": "例如：9月至12月，每周3至5小时",
+      "contact": "例如：hiring@example.com",
+      "requirements": "每行填写一项要求，例如：\n乐于团队合作\n能够参加每周例会"
     }
   }
 }

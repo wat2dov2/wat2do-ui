@@ -16,9 +16,9 @@ import {
 } from "@/shared/ui/select";
 import { MultiSelect } from "@/shared/ui/multi-select";
 import { SchoolCombobox } from "@/shared/ui/school-combobox";
-import { getAvailableInterests } from "@/shared/data/interests";
+import { useAppConstants } from "@/shared/hooks/useAppConstants";
 import { toFacultyTranslationKey } from "@/shared/utils/string";
-import { FACULTY_OPTIONS } from "@/features/onboarding";
+import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 
 interface ProfileTabProps {
   userEmail: string | null;
@@ -37,7 +37,10 @@ export function ProfileTab({
   onProfileChange,
   onAvatarChange,
 }: ProfileTabProps) {
+  const { interests } = useAppConstants();
   const { t } = useTranslation();
+  const { schoolBySlug } = useSchoolDirectory();
+  const faculties = schoolBySlug.get(profile.school ?? "")?.faculties ?? [];
   const fileRef = useRef<HTMLInputElement>(null);
   const avatarUrl = avatarPreviewUrl ?? profile.avatarUrl;
 
@@ -102,7 +105,7 @@ export function ProfileTab({
             <SchoolCombobox
               id="school"
               value={profile.school || ""}
-              onChange={(value) => onProfileChange({ school: value })}
+              onChange={(value) => onProfileChange({ school: value, faculty: "" })}
               variant="field"
               placeholder={t("settings.profile.selectSchool")}
             />
@@ -121,7 +124,7 @@ export function ProfileTab({
                 <SelectValue placeholder={t("settings.profile.selectFaculty")} />
               </SelectTrigger>
               <SelectContent>
-                {FACULTY_OPTIONS.map((faculty) => (
+                {faculties.map((faculty) => (
                   <SelectItem key={faculty} value={faculty}>
                     {(() => {
                       const key = toFacultyTranslationKey(faculty);
@@ -160,7 +163,7 @@ export function ProfileTab({
               {t("settings.profile.selectInterests")}
             </p>
             <MultiSelect
-              options={getAvailableInterests()}
+              options={interests}
               selected={profile.interests}
               onToggle={(interest) => {
                 const next = profile.interests.includes(interest)

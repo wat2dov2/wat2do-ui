@@ -10,15 +10,16 @@ import {
 } from "@/shared/ui/field";
 import { Switch } from "@/shared/ui/switch";
 import { Button } from "@/shared/ui/button";
-import { getEventCategories } from "@/shared/data/eventCategories";
+import { useAppConstants } from "@/shared/hooks/useAppConstants";
 import { translateCategory } from "@/shared/utils/event";
 import { FormDateTimePicker, FormInput, FormSelect, FormTextarea } from "@/shared/ui/form-field";
 import { TagInput } from "@/shared/ui/tag-input";
 import { ImageUploadField } from "@/shared/ui/image-upload-field";
-import { OrganizationInput } from "@/features/events/components/OrganizationInput";
+import { ClubInput } from "@/features/events/components/ClubInput";
 import { useEventFormContext } from "@/features/events/components/EventForm/EventForm/EventFormContext";
 
 export function EventFormFields() {
+  const { event_categories: eventCategories } = useAppConstants();
   const { t } = useTranslation();
   const {
     formData,
@@ -26,7 +27,7 @@ export function EventFormFields() {
     errors,
     touched,
     handleBlur,
-    organizations,
+    clubs,
     updateOccurrence,
     addOccurrence,
     removeOccurrence,
@@ -56,15 +57,15 @@ export function EventFormFields() {
             touched={touched.title}
           />
 
-          <OrganizationInput
-            value={formData.organization_id}
-            organizations={organizations}
-            onChange={(organizationId) =>
-              updateField("organization_id", organizationId)
+          <ClubInput
+            value={formData.club_id}
+            clubs={clubs}
+            onChange={(clubId) =>
+              updateField("club_id", clubId)
             }
-            onBlur={() => handleBlur("organization_id")}
-            error={errors.organization_id}
-            touched={touched.organization_id}
+            onBlur={() => handleBlur("club_id")}
+            error={errors.club_id}
+            touched={touched.club_id}
           />
 
           <Field>
@@ -162,7 +163,7 @@ export function EventFormFields() {
               value={formData.category}
               onChange={(value) => updateField("category", value)}
               placeholder={t("forms.selectCategory")}
-              options={getEventCategories().map((cat) => ({ value: cat, label: translateCategory(cat, t) }))}
+              options={eventCategories.map((cat) => ({ value: cat, label: translateCategory(cat, t) }))}
             />
 
             <FormInput
@@ -189,7 +190,6 @@ export function EventFormFields() {
             onAdd={addFood}
             onRemove={removeFood}
             placeholder={t("forms.foodPlaceholder")}
-            tagColor="warning"
           />
 
           <Field>

@@ -3,7 +3,7 @@
 SVG files can embed ``<script>`` tags, event-handler attributes
 (``onload``, ``onclick``, ...), ``<foreignObject>`` (embeds arbitrary
 HTML), ``xlink:href="javascript:..."`` URIs, and more.  Since the
-backend accepts SVG uploads for organization logos and QR assets, every SVG
+backend accepts SVG uploads for club logos and QR assets, every SVG
 must be sanitized before it reaches Supabase storage.
 
 Strategy:

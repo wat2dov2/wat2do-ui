@@ -6,6 +6,7 @@ import csv
 import io
 import json
 from datetime import date, datetime, timezone
+from itertools import batched
 from pathlib import Path
 from typing import NoReturn
 from uuid import UUID
@@ -592,14 +593,11 @@ def _store_scan_risk(scans: list[dict], evaluation: RiskEvaluation) -> None:
             "risk_rules_version": controlbox.promoter_program.risk_rules_version,
         }
         group_key = json.dumps(payload, sort_keys=True)
-        if group_key not in groups:
-            groups[group_key] = (payload, [])
-        groups[group_key][1].append(scan_id)
+        groups.setdefault(group_key, (payload, []))[1].append(scan_id)
 
     for payload, scan_ids in groups.values():
-        for chunk_start in range(0, len(scan_ids), 500):
-            chunk = scan_ids[chunk_start : chunk_start + 500]
-            get_sb().table(QR_CODE_SCANS).update(payload).in_("id", chunk).execute()
+        for chunk in batched(scan_ids, 500):
+            get_sb().table(QR_CODE_SCANS).update(payload).in_("id", list(chunk)).execute()
 
 
 def _upsert_period_payout(

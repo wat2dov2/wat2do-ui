@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
-from core.controlbox import controlbox, load_controlbox
+from core.controlbox import GoogleAnalyticsControl, controlbox, load_controlbox
 
 _SOURCE = Path(__file__).resolve().parents[2] / "controlbox"
 
@@ -18,6 +18,17 @@ def _write_control(tmp_path: Path, feature: str, mutate) -> Path:
     mutate(payload)
     path.write_text(json.dumps(payload), encoding="utf-8")
     return directory
+
+
+@pytest.mark.parametrize("measurement_id", ["", "G-ABC123DEF4"])
+def test_google_analytics_accepts_disabled_or_configured_tracking(measurement_id):
+    assert GoogleAnalyticsControl(measurement_id=measurement_id).measurement_id == measurement_id
+
+
+@pytest.mark.parametrize("measurement_id", ["UA-1234", "G-", "G-test", "<script>"])
+def test_google_analytics_rejects_invalid_measurement_ids(measurement_id):
+    with pytest.raises(ValidationError):
+        GoogleAnalyticsControl(measurement_id=measurement_id)
 
 
 def test_checked_in_controlbox_is_valid() -> None:
@@ -38,8 +49,8 @@ def test_checked_in_controlbox_is_valid() -> None:
     assert controlbox.social_previews.reserved_concurrency == 2
     assert controlbox.social_previews.asset_retention_days == 30
     assert str(controlbox.authentication.legacy_frontend_origins[0]) == "https://wat2do.ca/"
-    assert controlbox.organization_management.directory_page_size == 20
-    assert controlbox.organization_management.directory_revalidate_seconds == 3600
+    assert controlbox.club_management.directory_page_size == 20
+    assert controlbox.club_management.directory_revalidate_seconds == 3600
     assert str(controlbox.contact.recipient_email) == "contact@wat2do.io"
     assert controlbox.contact.rate_limit.maximum_requests == 5
     assert controlbox.site_banner.dismissal_days == 30
@@ -49,6 +60,7 @@ def test_checked_in_controlbox_is_valid() -> None:
     assert not hasattr(controlbox.instagram_publishing, "accounts")
     assert controlbox.instagram_publishing.new_event_window_hours == 24
     assert controlbox.instagram_publishing.maximum_event_slides == 9
+    assert controlbox.instagram_publishing.status_poll_interval_seconds == 3
     assert controlbox.instagram_publishing.token_refresh_lead_days == 14
     assert controlbox.scraping.instagram_web_app_id == "936619743392459"
     assert controlbox.scraping.directory_maximum_events_per_source == 50

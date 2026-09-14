@@ -1,19 +1,37 @@
-"""Event submission persistence and moderation workflow."""
+"""Event and position submission persistence and moderation workflows."""
 
 import logging
 import uuid
 from datetime import datetime, timezone
+from typing import Literal
 
 from core.constants import SUBMISSION_APPROVED, SUBMISSION_PENDING, SUBMISSION_REJECTED
 from core.database import get_sb
-from core.errors import INVALID_STATUS_TRANSITION
+from core.errors import (
+    INVALID_STATUS_TRANSITION,
+    POSITION_ALREADY_EXISTS,
+    SUBMISSION_SCHOOL_REQUIRED,
+)
 from core.exceptions import ValidationError
-from core.tables import EVENT_SUBMISSIONS
+from core.sanitize import sanitize_postgrest_value
+from core.tables import EVENT_SUBMISSIONS, POSITION_SUBMISSIONS
 from schemas.event import EventCreate
-from schemas.submission import SubmissionResponse
-from services import event_service, organization_service, school_service
+from schemas.position import PositionCreate
+from schemas.submission import PositionSubmissionResponse, SubmissionResponse
+from services import club_service, event_service, school_service
 
 log = logging.getLogger(__name__)
+
+SubmissionKind = Literal["event", "position"]
+
+
+def _resource(kind: SubmissionKind):
+    return (
+        (EVENT_SUBMISSIONS, "event_data", SubmissionResponse)
+        if kind == "event"
+        else (POSITION_SUBMISSIONS, "position_data", PositionSubmissionResponse)
+    )
+
 
 _ALLOWED_TRANSITIONS: dict[str, frozenset[str]] = {
     SUBMISSION_PENDING: frozenset({SUBMISSION_APPROVED, SUBMISSION_REJECTED}),
@@ -38,33 +56,34 @@ def _fetch_user_email(user_id: str | None) -> str | None:
     return None
 
 
-def create_submission(user_id: str | None, event_data: EventCreate | dict) -> SubmissionResponse:
+def create_submission(
+    user_id: str | None,
+    event_data: EventCreate | PositionCreate | dict,
+    *,
+    kind: SubmissionKind = "event",
+):
+    table, data_field, response_model = _resource(kind)
     event_dict = (
         event_data.model_dump(mode="json", exclude_none=True)
-        if isinstance(event_data, EventCreate)
+        if isinstance(event_data, (EventCreate, PositionCreate))
         else event_data
     )
-    organization_id = event_dict.get("organization_id")
-    organization = (
-        organization_service.get_organization(int(organization_id))
-        if organization_id is not None
-        else None
-    )
-    if organization is None or organization.school_id is None:
-        raise ValidationError("Submission organization school is not registered")
+    club_id = event_dict.get("club_id")
+    club = club_service.get_club(int(club_id)) if club_id is not None else None
+    if club is None or club.school_id is None:
+        raise ValidationError(SUBMISSION_SCHOOL_REQUIRED)
     payload = {
         "id": str(uuid.uuid4()),
         "user_id": user_id,
-        "event_data": event_dict,
-        "school_id": organization.school_id,
+        data_field: event_dict,
+        "school_id": club.school_id,
         "status": SUBMISSION_PENDING,
     }
-    r = get_sb().table(EVENT_SUBMISSIONS).insert(payload).execute()
+    r = get_sb().table(table).insert(payload).execute()
     if r.data:
         email = _fetch_user_email(user_id)
-        return SubmissionResponse.model_validate({**r.data[0], "submitted_by_email": email})
-    log.warning("Insert returned no data for create_submission(user_id=%s)", user_id)
-    return SubmissionResponse(**payload, submitted_at=datetime.now(timezone.utc).isoformat())
+        return response_model.model_validate({**r.data[0], "submitted_by_email": email})
+    raise RuntimeError("Submission insert returned no row")
 
 
 def get_submissions(
@@ -73,8 +92,17 @@ def get_submissions(
     *,
     offset: int = 0,
     limit: int | None = None,
-) -> tuple[list[SubmissionResponse], int]:
-    q = get_sb().table(EVENT_SUBMISSIONS).select("*, users(email)", count="exact")
+    kind: SubmissionKind = "event",
+    search: str | None = None,
+):
+    table, data_field, response_model = _resource(kind)
+    q = (
+        get_sb()
+        .table(table)
+        .select(f"*, users!user_id(email), {school_service.SCHOOL_SLUG_EMBED}", count="exact")
+    )
+    if search and search.strip():
+        q = q.ilike(f"{data_field}->>title", f"%{sanitize_postgrest_value(search.strip())}%")
     if status:
         q = q.eq("status", status)
     if school:
@@ -91,19 +119,14 @@ def get_submissions(
         email = None
         if "users" in row and isinstance(row["users"], dict):
             email = row["users"].get("email")
-        model_data = {**row, "submitted_by_email": email}
-        items.append(SubmissionResponse.model_validate(model_data))
+        model_data = {**school_service.with_school_slug(row), "submitted_by_email": email}
+        items.append(response_model.model_validate(model_data))
     return items, r.count or len(items)
 
 
-def get_submission_by_id(submission_id: str) -> SubmissionResponse | None:
-    r = (
-        get_sb()
-        .table(EVENT_SUBMISSIONS)
-        .select("*, users(email)")
-        .eq("id", submission_id)
-        .execute()
-    )
+def get_submission_by_id(submission_id: str, *, kind: SubmissionKind = "event"):
+    table, _, response_model = _resource(kind)
+    r = get_sb().table(table).select("*, users!user_id(email)").eq("id", submission_id).execute()
     if not r.data:
         return None
     row = r.data[0]
@@ -111,7 +134,7 @@ def get_submission_by_id(submission_id: str) -> SubmissionResponse | None:
     if "users" in row and isinstance(row["users"], dict):
         email = row["users"].get("email")
     model_data = {**row, "submitted_by_email": email}
-    return SubmissionResponse.model_validate(model_data)
+    return response_model.model_validate(model_data)
 
 
 def update_submission(
@@ -173,6 +196,54 @@ def update_submission(
         email = _fetch_user_email(r.data[0].get("user_id"))
         return SubmissionResponse.model_validate({**r.data[0], "submitted_by_email": email})
     return None
+
+
+def review_position_submission(
+    submission_id: str, status: str, rejection_reason: str | None, *, reviewed_by: str
+):
+    from postgrest.exceptions import APIError
+
+    from services.event_feed_revalidation import event_feed_revalidation_service
+
+    existing = get_submission_by_id(submission_id, kind="position")
+    if existing is None:
+        return None
+    if status != existing.status and status not in _ALLOWED_TRANSITIONS[existing.status]:
+        raise ValidationError(INVALID_STATUS_TRANSITION)
+    # Validate the stored payload again before the transaction publishes it.
+    PositionCreate.model_validate(existing.position_data)
+    try:
+        result = (
+            get_sb()
+            .rpc(
+                "review_position_submission",
+                {
+                    "p_id": submission_id,
+                    "p_status": status,
+                    "p_reason": rejection_reason,
+                    "p_reviewer": reviewed_by,
+                },
+            )
+            .execute()
+        )
+    except APIError as exc:
+        if exc.code == "23514":
+            raise ValidationError(INVALID_STATUS_TRANSITION) from exc
+        if exc.code == "23505":
+            raise ValidationError(POSITION_ALREADY_EXISTS) from exc
+        raise
+    if not result.data:
+        return None
+    if status == SUBMISSION_APPROVED:
+        club = club_service.get_club(existing.position_data.club_id)
+        if club:
+            event_feed_revalidation_service.revalidate_school(club.school)
+    return PositionSubmissionResponse.model_validate(
+        {
+            **result.data[0],
+            "submitted_by_email": existing.submitted_by_email,
+        }
+    )
 
 
 def delete_submission(submission_id: str) -> bool:

@@ -2,7 +2,7 @@
 
 BUCKET_EVENT_IMAGES = "event-images"
 BUCKET_AVATARS = "avatars"
-BUCKET_ORGANIZATION_LOGOS = "organization-logos"
+BUCKET_CLUB_LOGOS = "organization-logos"
 BUCKET_QR_ASSETS = "qr-assets"
 BUCKET_CLAIM_PROOFS = "claim-proofs"
 

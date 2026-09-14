@@ -161,7 +161,6 @@ def evaluate_all_users(
                 user_scores = {}
 
             content = get_content_scores(
-                uid,
                 all_events_data,
                 user=user,
                 user_scores=user_scores,

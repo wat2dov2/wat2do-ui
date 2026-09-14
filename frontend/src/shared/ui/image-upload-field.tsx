@@ -23,7 +23,8 @@ interface ImageUploadFieldProps {
   imagePreview?: string;
   error?: string;
   onImageUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onRemoveImage: () => void;
+  onRemoveImage?: () => void;
+  accept?: string;
   fileInputRef?: React.RefObject<HTMLInputElement>;
   className?: string;
   multiple?: boolean;
@@ -40,6 +41,7 @@ export function ImageUploadField({
   fileInputRef: externalRef,
   className = "",
   multiple = false,
+  accept = "image/*",
   previewVariant = "thumbnail",
 }: ImageUploadFieldProps) {
   const { t } = useTranslation();
@@ -48,14 +50,26 @@ export function ImageUploadField({
   const previewStyles = PREVIEW_STYLES[previewVariant];
 
   return (
-    <Field className={className}>
+    <Field className={className}
+      onDragOver={(event) => {
+        if (Array.from(event.dataTransfer.types).includes("Files")) event.preventDefault();
+      }}
+      onDrop={(event) => {
+        if (!event.dataTransfer.files.length || !fileInputRef.current) return;
+        event.preventDefault();
+        const transfer = new DataTransfer();
+        Array.from(event.dataTransfer.files).slice(0, multiple ? undefined : 1).forEach((file) => transfer.items.add(file));
+        fileInputRef.current.files = transfer.files;
+        fileInputRef.current.dispatchEvent(new Event("change", { bubbles: true }));
+      }}
+    >
       <FieldLabel className="text-sm font-medium text-foreground">
         {label} {required && <span className="text-destructive">*</span>}
       </FieldLabel>
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/*"
+        accept={accept}
         onChange={onImageUpload}
         className="hidden"
         multiple={multiple}
@@ -74,21 +88,22 @@ export function ImageUploadField({
               className={previewStyles.image}
             />
           </div>
-          <Button
+          {onRemoveImage && <Button
             type="button"
             variant="outline"
             size="sm"
-            onMouseDown={onRemoveImage}
+            onClick={onRemoveImage}
+            aria-label={t("common.delete")}
             className="absolute top-2 right-2"
           >
             <X className="size-4" />
-          </Button>
+          </Button>}
         </div>
       ) : (
         <button
           type="button"
           data-elevation="control"
-          onMouseDown={() => fileInputRef.current?.click()}
+          onClick={() => fileInputRef.current?.click()}
           className={cn(
             OUTLINE_CONTROL_STYLES,
             "flex w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-xl px-3 py-6 text-center transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
@@ -98,7 +113,6 @@ export function ImageUploadField({
           <p className="text-base font-medium md:text-sm">
             {t("forms.clickToUploadImage")}
           </p>
-          <p className="text-sm text-muted-foreground">{t("qrCode.imageFormat")}</p>
         </button>
       )}
       {error && <FieldError className="text-xs">{error}</FieldError>}

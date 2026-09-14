@@ -14,18 +14,6 @@ from recommender.config import (
     WEIGHTS_WARM_NO_COLLAB,
 )
 
-# Temperature-tier table for select_weights.
-# Each entry is (predicate, weights) evaluated in order; the first matching
-# predicate wins.  Adding a new tier requires only a new row here - the
-# function body never changes (Open/Closed).
-_TEMP_TIERS: list[tuple] = [
-    # (predicate(interaction_count, has_profile), weights)
-    (lambda count, profile, hot, warm: count >= hot, WEIGHTS_HOT),
-    (lambda count, profile, hot, warm: count >= warm, WEIGHTS_WARM),
-    (lambda count, profile, hot, warm: profile, WEIGHTS_WARM_NO_COLLAB),
-]
-_TEMP_DEFAULT = WEIGHTS_COLD
-
 
 def select_weights(
     interaction_count: int,
@@ -37,10 +25,11 @@ def select_weights(
 
     Returns (w_content, w_collab, w_pop).
     """
-    for predicate, weights in _TEMP_TIERS:
-        if predicate(interaction_count, has_profile, hot_threshold, warm_threshold):
-            return weights
-    return _TEMP_DEFAULT
+    if interaction_count >= hot_threshold:
+        return WEIGHTS_HOT
+    if interaction_count >= warm_threshold:
+        return WEIGHTS_WARM
+    return WEIGHTS_WARM_NO_COLLAB if has_profile else WEIGHTS_COLD
 
 
 def blend_scores(
@@ -66,27 +55,23 @@ def blend_scores(
     This preserves candidates with zero preference signal rather than
     silently collapsing the blend.
     """
+    if not (content_scores or collab_scores or pop_scores):
+        return {}
+
     w_content, w_collab, w_pop = weights
     skip = exclude or set()
 
     # Renormalize weights across scorers that actually produced data.
-    scorer_present = (
-        bool(content_scores),
-        bool(collab_scores),
-        bool(pop_scores),
-    )
     effective_weights = [
-        w_content if scorer_present[0] else 0.0,
-        w_collab if scorer_present[1] else 0.0,
-        w_pop if scorer_present[2] else 0.0,
+        w_content if content_scores else 0.0,
+        w_collab if collab_scores else 0.0,
+        w_pop if pop_scores else 0.0,
     ]
     total_weight = sum(effective_weights)
     if total_weight > 0:
         w_content, w_collab, w_pop = (w / total_weight for w in effective_weights)
     else:
         w_content, w_collab, w_pop = 0.0, 0.0, 0.0
-
-    any_scorer_present = any(scorer_present)
 
     blended: dict[int, float] = {}
     for eid in candidate_ids:
@@ -97,8 +82,5 @@ def blend_scores(
             + w_collab * collab_scores.get(eid, 0)
             + w_pop * pop_scores.get(eid, 0)
         )
-        # Keep zero-scored items when any scorer produced data so the
-        # blend doesn't silently go empty (which triggers a fallback path).
-        if score > 0 or any_scorer_present:
-            blended[eid] = score
+        blended[eid] = score
     return blended

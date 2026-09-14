@@ -83,11 +83,16 @@ def test_attendees_uses_aggregate_count_rpc(client, monkeypatch):
     )
     monkeypatch.setattr(
         going_event_service,
-        "get_attendee_display_names",
-        MagicMock(return_value=["Sean Y."]),
+        "get_event_attendees",
+        MagicMock(
+            return_value=[{"name": "Sean Y.", "avatar_url": "https://example.com/avatar.jpg"}]
+        ),
     )
 
     response = client.get("/going-events/42/attendees")
 
     assert response.status_code == 200
-    assert response.json() == {"going_count": 4, "names": ["Sean Y."]}
+    assert response.json() == {
+        "going_count": 4,
+        "attendees": [{"name": "Sean Y.", "avatar_url": "https://example.com/avatar.jpg"}],
+    }

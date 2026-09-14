@@ -7,12 +7,17 @@ import type {
   EventFormData,
   EventSubmission,
   ReportedEvent,
-  Organization,
-  OrganizationStatus,
+  Club,
+  ClubStatus,
   SubmissionStatus,
 } from "@/shared/types";
 import type {
   ApiAdminPayoutDetail,
+  ApiEventCreate,
+  ApiReportResponse,
+  ApiSubmissionResponse,
+  ApiPositionSubmissionResponse,
+  ApiPositionSubmissionPage,
   ApiInstagramPublishBatchPublish,
   ApiInstagramPublishBatchResponse,
   ApiInstagramPublishBatchUpdate,
@@ -24,25 +29,34 @@ import type {
 } from "@/shared/generated";
 import { getDefaultEventCategory } from "@/shared/data/eventCategories";
 import {
-  createOrganizationAPI,
-  updateOrganizationAPI,
-  deleteOrganizationAPI,
-} from "@/features/organizations";
+  createClubAPI,
+  updateClubAPI,
+  deleteClubAPI,
+} from "@/features/clubs";
 import { api, getPaginatedItems } from "@/shared/services/apiClient";
+import type { components } from "@/shared/generated/api-types";
+import { ADMIN_ITEMS_PER_PAGE } from "@/features/admin/constants";
+
+export async function getPositionSubmissions(page = 1, status?: string, school?: string, search?: string) {
+  const params = new URLSearchParams({ page: String(page), page_size: String(ADMIN_ITEMS_PER_PAGE) });
+  if (status) params.set("submission_status", status);
+  if (school) params.set("school", school);
+  if (search) params.set("search", search);
+  return api.get<ApiPositionSubmissionPage>("/position-submissions/?" + params.toString());
+}
+
+export function reviewPositionSubmission(id: string, status: "approved" | "rejected") {
+  return api.patch<ApiPositionSubmissionResponse>("/position-submissions/" + id, { status });
+}
 
 // Re-export types for convenience
 export type { ReportedEvent };
 
-// ── Backend response shapes (derived from OpenAPI spec) ─────────────
-import type { ApiEventCreate, ApiReportResponse, ApiSubmissionResponse } from "@/shared/generated";
-
-type SubmissionResponse = ApiSubmissionResponse;
-type ReportResponse = ApiReportResponse;
-
 // ── Mappers ─────────────────────────────────────────────────────────
 
-function toReportedEvent(row: ReportResponse): ReportedEvent {
+function toReportedEvent(row: ApiReportResponse): ReportedEvent {
   return {
+    school: row.school,
     id: row.id,
     eventId: row.event_id,
     reportedBy: row.user_id,
@@ -54,7 +68,7 @@ function toReportedEvent(row: ReportResponse): ReportedEvent {
 
 function toEventFormData(eventData: ApiEventCreate): EventFormData {
   return {
-    organization_id: eventData.organization_id ?? null,
+    club_id: eventData.club_id ?? null,
     title: eventData.title || "",
     description: eventData.description ?? "",
     occurrences: (eventData.occurrences || []).map((occurrence) => {
@@ -75,8 +89,9 @@ function toEventFormData(eventData: ApiEventCreate): EventFormData {
   };
 }
 
-function toEventSubmission(row: SubmissionResponse): EventSubmission {
+function toEventSubmission(row: ApiSubmissionResponse): EventSubmission {
   return {
+    school: row.school,
     id: row.id,
     eventData: toEventFormData(row.event_data as ApiEventCreate),
     submittedBy: row.submitted_by_email || row.user_id,
@@ -86,42 +101,42 @@ function toEventSubmission(row: SubmissionResponse): EventSubmission {
   };
 }
 
-// ── Organization mutations ─────────────────────────────────────────
+// ── Club mutations ─────────────────────────────────────────
 
-export async function adminCreateOrganization(club: Organization): Promise<Organization> {
-  return createOrganizationAPI({
-    organization_name: club.organization_name,
+export async function adminCreateClub(club: Club): Promise<Club> {
+  return createClubAPI({
+    club_name: club.club_name,
     categories: club.categories,
-    organization_page: club.organization_page,
+    club_page: club.club_page,
     ig: club.ig,
     discord: club.discord,
-    organization_type: club.organization_type,
+    club_type: club.club_type,
     logo_url: club.logo_url,
     school: club.school,
   });
 }
 
-export async function adminUpdateOrganization(club: Organization): Promise<Organization> {
-  return updateOrganizationAPI(club, {
-    organization_name: club.organization_name,
+export async function adminUpdateClub(club: Club): Promise<Club> {
+  return updateClubAPI(club, {
+    club_name: club.club_name,
     categories: club.categories,
-    organization_page: club.organization_page,
+    club_page: club.club_page,
     ig: club.ig,
     discord: club.discord,
-    organization_type: club.organization_type,
+    club_type: club.club_type,
     logo_url: club.logo_url,
     school: club.school,
   });
 }
 
-export async function adminDeleteOrganization(organizationId: number): Promise<void> {
-  await deleteOrganizationAPI(organizationId);
+export async function adminDeleteClub(clubId: number): Promise<void> {
+  await deleteClubAPI(clubId);
 }
 
 // ── Reported Events API ─────────────────────────────────────────────
 
 export async function getReportedEvents(): Promise<ReportedEvent[]> {
-  const rows = await getPaginatedItems<ReportResponse>("/reports/");
+  const rows = await getPaginatedItems<ApiReportResponse>("/reports/");
   return rows.map(toReportedEvent);
 }
 
@@ -132,7 +147,7 @@ export async function getEventSubmissions(school?: string): Promise<EventSubmiss
   if (school) params.set("school", school);
   const qs = params.toString();
   const url = `/submissions/${qs ? `?${qs}` : ""}`;
-  const rows = await getPaginatedItems<SubmissionResponse>(url);
+  const rows = await getPaginatedItems<ApiSubmissionResponse>(url);
   return rows.map(toEventSubmission);
 }
 
@@ -191,54 +206,37 @@ export async function publishInstagramBatch(
 }
 
 
-// ── Admin Organizations API ─────────────────────────────────────────
+// ── Admin Clubs API ─────────────────────────────────────────
 
-export interface OrganizationClaim {
-  id: string;
-  organization_id: number;
-  user_id: string;
-  executive_role: string;
-  proof_url: string | null;
-  status: string;
-  rejection_reason?: string | null;
-  created_at: string;
-  updated_at: string;
-  organizations?: Organization;
-  users?: {
-    id: string;
-    email: string;
-    full_name: string | null;
-    avatar_url: string | null;
-  };
-}
+export type ClubClaim = components["schemas"]["ClubClaimResponse"];
 
-export async function getOrganizationClaims(status?: string, school?: string): Promise<OrganizationClaim[]> {
+export async function getClubClaims(status?: string, school?: string): Promise<ClubClaim[]> {
   const params = new URLSearchParams();
   if (status) params.set("status", status);
   if (school) params.set("school", school);
   const qs = params.toString();
-  const url = `/organizations/claims${qs ? `?${qs}` : ""}`;
-  return api.get<OrganizationClaim[]>(url);
+  const url = `/clubs/claims${qs ? `?${qs}` : ""}`;
+  return api.get<ClubClaim[]>(url);
 }
 
-/** Organizations awaiting (or already through) admin review. */
-export async function getOrganizationsForReview(
-  status?: OrganizationStatus,
+/** Clubs awaiting (or already through) admin review. */
+export async function getClubSubmissions(
+  status?: ClubStatus,
   school?: string
-): Promise<Organization[]> {
+): Promise<Club[]> {
   const params = new URLSearchParams();
-  if (status) params.set("organization_status", status);
+  if (status) params.set("club_status", status);
   if (school) params.set("school", school);
   const qs = params.toString();
-  return getPaginatedItems<Organization>(`/organizations/review${qs ? `?${qs}` : ""}`);
+  return getPaginatedItems<Club>(`/clubs/review${qs ? `?${qs}` : ""}`);
 }
 
-export async function resolveOrganizationReview(
-  organizationId: number,
-  status: OrganizationStatus
-): Promise<Organization> {
-  return api.post<Organization>(
-    `/organizations/${organizationId}/review?organization_status=${status}`,
+export async function resolveClubReview(
+  clubId: number,
+  status: ClubStatus
+): Promise<Club> {
+  return api.post<Club>(
+    `/clubs/${clubId}/review?club_status=${status}`,
     {}
   );
 }
@@ -247,8 +245,8 @@ export async function resolveClaim(
   claimId: string,
   status: "approved" | "rejected",
   rejectionReason?: string
-): Promise<OrganizationClaim> {
-  return api.patch<OrganizationClaim>(`/organizations/claims/${claimId}`, {
+): Promise<ClubClaim> {
+  return api.patch<ClubClaim>(`/clubs/claims/${claimId}`, {
     status,
     rejection_reason: rejectionReason || null,
   });
@@ -275,8 +273,6 @@ export interface AdminPosterPayoutFilters {
 }
 
 export type AdminPosterPayoutDetail = ApiAdminPayoutDetail;
-export type AdminPosterPayoutPage = ApiPaginatedPosterPayoutResponse;
-export type AdminPosterPayoutCsv = ApiPayoutCsvExportResponse;
 
 function addOptionalParam(
   params: URLSearchParams,
@@ -290,7 +286,7 @@ function addOptionalParam(
 
 export async function getAdminPosterPayouts(
   filters: AdminPosterPayoutFilters,
-): Promise<AdminPosterPayoutPage> {
+): Promise<ApiPaginatedPosterPayoutResponse> {
   const params = new URLSearchParams({
     page: String(filters.page),
     page_size: String(filters.pageSize),
@@ -303,7 +299,7 @@ export async function getAdminPosterPayouts(
   addOptionalParam(params, "min_amount_cents", filters.minAmountCents);
   addOptionalParam(params, "max_amount_cents", filters.maxAmountCents);
   addOptionalParam(params, "fraud_status", filters.fraudStatus);
-  return api.get<AdminPosterPayoutPage>(`/payouts/admin?${params.toString()}`);
+  return api.get<ApiPaginatedPosterPayoutResponse>(`/payouts/admin?${params.toString()}`);
 }
 
 export async function getAdminPosterPayoutDetail(
@@ -333,8 +329,8 @@ export async function markAdminPosterPayoutsPaid(
 
 export async function exportAdminPosterPayouts(
   payoutIds: string[],
-): Promise<AdminPosterPayoutCsv> {
-  return api.post<AdminPosterPayoutCsv>("/payouts/admin/export", {
+): Promise<ApiPayoutCsvExportResponse> {
+  return api.post<ApiPayoutCsvExportResponse>("/payouts/admin/export", {
     payout_ids: payoutIds,
   });
 }

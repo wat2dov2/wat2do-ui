@@ -32,7 +32,7 @@ import openpyxl
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from core.constants.organizations import ORGANIZATION_CATEGORIES
+from core.constants.clubs import CLUB_CATEGORIES
 
 log = logging.getLogger(__name__)
 
@@ -43,7 +43,7 @@ ENRICH_SHARD_DIR = Path("/tmp/claude/enrich_shards")
 ENRICH_RESULT_DIR = Path("/tmp/claude/enrich_results")
 EXPORT_DIR = Path("/tmp/claude/club_exports")
 
-VALID_CATEGORIES = frozenset(ORGANIZATION_CATEGORIES)
+VALID_CATEGORIES = frozenset(CLUB_CATEGORIES)
 
 # Global institution accounts that must never be attached to an individual club.
 GLOBAL_SCHOOL_HANDLES = frozenset(
@@ -117,7 +117,7 @@ def _normalize_category(value: object) -> str | None:
     if not text:
         return None
     matched: list[str] = []
-    for category in ORGANIZATION_CATEGORIES:
+    for category in CLUB_CATEGORIES:
         if category in text and category not in matched:
             matched.append(category)
     if not matched:

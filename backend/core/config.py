@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     environment: str = "development"
 
     supabase_url: str
+    supabase_jwt_issuer: str = ""
     supabase_key: str
     supabase_secret_key: str = ""
     database_url: str = ""
@@ -25,8 +26,6 @@ class Settings(BaseSettings):
     storage_bucket_name: str = ""
     storage_public_base_url: str = ""
     openai_api_key: str = ""
-    openai_instagram_curation_model: str = "gpt-5.6-sol"
-    openai_instagram_curation_timeout: int = 60
     # Apify token for the Instagram scraper (services/scraper).
     # Empty string => the scraping pipeline raises at startup.  Set in
     # GitHub repo secrets for the process-single-user workflow.

@@ -10,7 +10,7 @@ def _event(event_id: int) -> dict[str, object]:
         "id": event_id,
         "title": f"Campus Event {event_id}",
         "category": "Games & Recreation",
-        "organization": "Wat2Do Club",
+        "club": "Wat2Do Club",
         "ig_handle": "wat2do",
         "location": "Student Life Centre",
         "school": "uwaterloo",

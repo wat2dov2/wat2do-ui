@@ -40,7 +40,7 @@ class ReconciledEvent(BaseModel):
     title: str = Field(default="")
     description: str = Field(default="")
     location: str = Field(default="")
-    organization: str = Field(default="")
+    club: str = Field(default="")
     price: float | None = None
     food: list[str] = Field(default_factory=list)
 
@@ -71,7 +71,7 @@ def reconcile_events(
     caption_text: str | None,
     school: str,
     model: str | None = None,
-    resolved_organization_ids: list[int | None] | None = None,
+    resolved_club_ids: list[int | None] | None = None,
     resolved_ig_handles: list[str | None] | None = None,
 ) -> list[dict] | None:
     """Return final event dicts for upsert, or None on failure.
@@ -86,9 +86,9 @@ def reconcile_events(
         confident_duplicate_id(
             event=event,
             candidates=(candidates_by_index[index] if index < len(candidates_by_index) else []),
-            organization_id=(
-                resolved_organization_ids[index]
-                if resolved_organization_ids is not None and index < len(resolved_organization_ids)
+            club_id=(
+                resolved_club_ids[index]
+                if resolved_club_ids is not None and index < len(resolved_club_ids)
                 else None
             ),
             ig_handle=(
@@ -110,7 +110,7 @@ def reconcile_events(
         candidates_by_index=candidates_by_index,
         caption_text=caption_text,
         school=school,
-        resolved_organization_ids=resolved_organization_ids,
+        resolved_club_ids=resolved_club_ids,
         resolved_ig_handles=resolved_ig_handles,
     )
     messages = [
@@ -173,17 +173,15 @@ def reconcile_events(
 
         # Pair by index when Pass 2 returns one object per extract; otherwise
         # leave scrape org context unset for unpaired trailing objects.
-        if resolved_organization_ids is not None and len(events) == len(extracted_events):
-            scrape_org_id = (
-                resolved_organization_ids[i] if i < len(resolved_organization_ids) else None
-            )
+        if resolved_club_ids is not None and len(events) == len(extracted_events):
+            scrape_org_id = resolved_club_ids[i] if i < len(resolved_club_ids) else None
             scrape_ig = None
             if resolved_ig_handles is not None and i < len(resolved_ig_handles):
                 scrape_ig = resolved_ig_handles[i]
             validated.id = _guard_cross_org_id(
                 validated.id,
                 candidates_by_id=candidates_by_id,
-                scrape_organization_id=scrape_org_id,
+                scrape_club_id=scrape_org_id,
                 scrape_ig_handle=scrape_ig,
             )
 
@@ -228,33 +226,33 @@ def _guard_cross_org_id(
     event_id: int | None,
     *,
     candidates_by_id: dict[int, dict],
-    scrape_organization_id: int | None,
+    scrape_club_id: int | None,
     scrape_ig_handle: str | None,
 ) -> int | None:
-    """Strip overwrite ids that would cross organization ownership."""
+    """Strip overwrite ids that would cross club ownership."""
     if event_id is None:
         return None
     candidate = candidates_by_id.get(event_id)
     if candidate is None:
         return None
 
-    cand_org = candidate.get("organization_id")
+    cand_org = candidate.get("club_id")
     cand_ig = (candidate.get("ig_handle") or "").strip().lstrip("@") or None
     scrape_ig = (scrape_ig_handle or "").strip().lstrip("@") or None
 
-    if isinstance(scrape_organization_id, int) and isinstance(cand_org, int):
-        if scrape_organization_id != cand_org:
+    if isinstance(scrape_club_id, int) and isinstance(cand_org, int):
+        if scrape_club_id != cand_org:
             log.warning(
                 "Pass 2 cross-org id=%s stripped (scrape_org=%s cand_org=%s)",
                 event_id,
-                scrape_organization_id,
+                scrape_club_id,
                 cand_org,
             )
             return None
         return event_id
 
     # Scrape org unresolved: only allow overwrite when ig_handle matches.
-    if scrape_organization_id is None and isinstance(cand_org, int):
+    if scrape_club_id is None and isinstance(cand_org, int):
         if scrape_ig and cand_ig and scrape_ig == cand_ig:
             return event_id
         log.warning(
@@ -273,7 +271,7 @@ def _build_reconcile_prompt(
     candidates_by_index: list[list[dict]],
     caption_text: str | None,
     school: str,
-    resolved_organization_ids: list[int | None] | None = None,
+    resolved_club_ids: list[int | None] | None = None,
     resolved_ig_handles: list[str | None] | None = None,
 ) -> str:
     categories_str = ", ".join(EVENT_CATEGORIES)
@@ -282,19 +280,19 @@ def _build_reconcile_prompt(
         candidates = candidates_by_index[i] if i < len(candidates_by_index) else []
         scrape_org_id = None
         scrape_ig = None
-        if resolved_organization_ids is not None and i < len(resolved_organization_ids):
-            scrape_org_id = resolved_organization_ids[i]
+        if resolved_club_ids is not None and i < len(resolved_club_ids):
+            scrape_org_id = resolved_club_ids[i]
         if resolved_ig_handles is not None and i < len(resolved_ig_handles):
             scrape_ig = resolved_ig_handles[i]
         pairs.append(
             {
                 "extracted": extracted,
-                "scrape_organization_id": scrape_org_id,
+                "scrape_club_id": scrape_org_id,
                 "scrape_ig_handle": scrape_ig,
                 "confident_duplicate_id": confident_duplicate_id(
                     event=extracted,
                     candidates=candidates,
-                    organization_id=scrape_org_id,
+                    club_id=scrape_org_id,
                     ig_handle=scrape_ig,
                 ),
                 "candidates": candidates,
@@ -318,7 +316,7 @@ Each object must use this shape:
   "title": string,
   "description": string,
   "location": string,
-  "organization": string,
+  "club": string,
   "price": number or null,
   "food": string[],
   "registration": boolean,
@@ -339,18 +337,18 @@ Each object must use this shape:
 }}
 
 RULES:
-- When `confident_duplicate_id` is an integer, use that exact id. Deterministic title, location, organization, and occurrence checks have already established identity.
-- Reuse a candidate id when it is the same logical event from the same organization: the attendee activity and at least one occurrence must strongly match, and the caption must not indicate a distinct new occurrence. Compare each extracted `occurrences[].dtstart_utc` against each candidate `occurrences[].dtstart_utc`. This applies to a normal repost, reminder, secondary flyer, performer reveal, or ticket reminder even when it does not say "update".
-- Treat matching titles alone as insufficient. Insert when the candidate is absent, the activity is materially different, or the caption/date makes clear this is a distinct occurrence, session, edition, or new week. If no candidate `occurrences[].dtstart_utc` exactly matches an extracted occurrence after UTC normalization, id MUST be null, even for the same title, organization, and location.
-- Same organization_id + strong activity and occurrence match: prefer overwrite/link. Updated, moved, corrected, rescheduled, and cancelled posts also overwrite/link the matching candidate.
-- Different organization_id: never overwrite; always insert (id=null).
+- When `confident_duplicate_id` is an integer, use that exact id. Deterministic title, location, club, and occurrence checks have already established identity.
+- Reuse a candidate id when it is the same logical event from the same club: the attendee activity and at least one occurrence must strongly match, and the caption must not indicate a distinct new occurrence. Compare each extracted `occurrences[].dtstart_utc` against each candidate `occurrences[].dtstart_utc`. This applies to a normal repost, reminder, secondary flyer, performer reveal, or ticket reminder even when it does not say "update".
+- Treat matching titles alone as insufficient. Insert when the candidate is absent, the activity is materially different, or the caption/date makes clear this is a distinct occurrence, session, edition, or new week. If no candidate `occurrences[].dtstart_utc` exactly matches an extracted occurrence after UTC normalization, id MUST be null, even for the same title, club, and location.
+- Same club_id + strong activity and occurrence match: prefer overwrite/link. Updated, moved, corrected, rescheduled, and cancelled posts also overwrite/link the matching candidate.
+- Different club_id: never overwrite; always insert (id=null).
 - Only set "id" to a candidate id from the matching extracted event's provided candidates. Never link two merely similar recurring events just to avoid an insert.
 - If the caption says the event is cancelled / canceled, return the matched candidate object with "cancelled": true and keep other fields from the candidate unless the caption also corrects them. Cancel requires an id.
 - New overlapping fields from the extracted event win, including a shorter description.
 - Set `replace_occurrences` to false for ordinary reposts, reminders, cancellations, and partial details. Set it to true only when the source explicitly replaces or reschedules the complete occurrence schedule.
 - Rebuild "occurrences" correctly from the new source. The writer preserves unmentioned existing occurrences unless `replace_occurrences` is true.
 - Only use an "id" that appears in the provided candidates for that extracted event.
-- Candidates include organization_id, organization, and ig_handle - use them for ownership decisions.
+- Candidates include club_id, club, and ig_handle - use them for ownership decisions.
 - Omitted candidates are left unchanged. Never delete. Never merge two existing database events into one.
 - Return ONLY the JSON array text, no commentary.
 """.strip()

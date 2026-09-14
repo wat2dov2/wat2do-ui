@@ -31,7 +31,7 @@ function eventOccurrencesToFormOccurrences(event: Event): EventFormOccurrence[] 
  */
 export function eventToFormData(event: Event): EventFormData {
   return {
-    organization_id: event.organization_id ?? null,
+    club_id: event.club_id ?? null,
     title: event.title,
     description: event.description || "",
     occurrences: eventOccurrencesToFormOccurrences(event),

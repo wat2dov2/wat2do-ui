@@ -1,4 +1,7 @@
+from types import SimpleNamespace
 from uuid import UUID
+
+import pytest
 
 from services import going_event_service
 
@@ -90,20 +93,86 @@ def test_get_all_user_goings_collapses_occurrence_duplicates(fake_sb, patch_sb):
     assert [(str(pair.user_id), pair.event_id) for pair in pairs] == [(USER_ID, 42)]
 
 
-def test_get_attendee_display_names_deduplicates_users(fake_sb, patch_sb):
+def test_get_event_attendees_deduplicates_users(fake_sb, patch_sb):
     patch_sb("services.going_event_service")
     fake_sb.queue_responses(
         [
             [{"user_id": "u1"}, {"user_id": "u1"}, {"user_id": "u2"}],
             [
                 {"id": "u1", "full_name": "Sean Yun-Park"},
-                {"id": "u2", "full_name": "Jesse"},
+                {"id": "u2", "full_name": "Jesse", "avatar_url": "https://example.com/jesse.jpg"},
             ],
         ]
     )
 
-    assert going_event_service.get_attendee_display_names(42) == [
-        "Sean Y.",
-        "Jesse",
-    ]
+    attendees = going_event_service.get_event_attendees(42)
+    assert [attendee.name for attendee in attendees] == ["Sean Y.", "Jesse"]
+    assert attendees[0].avatar_url.startswith("data:image/svg+xml;base64,")
+    assert attendees[1].avatar_url == "https://example.com/jesse.jpg"
     fake_sb.in_.assert_called_once_with("id", ["u1", "u2"])
+
+
+def test_get_event_attendees_keeps_unnamed_profiles(fake_sb, patch_sb):
+    patch_sb("services.going_event_service")
+    fake_sb.queue_responses(
+        [
+            [{"user_id": "u1"}, {"user_id": "u2"}, {"user_id": "u3"}],
+            [
+                {"id": "u1", "full_name": None, "avatar_url": "https://example.com/profile.jpg"},
+                {"id": "u2", "full_name": "   ", "avatar_url": None},
+                {"id": "u3", "full_name": "", "avatar_url": None},
+            ],
+        ]
+    )
+
+    attendees = going_event_service.get_event_attendees(42)
+    assert len(attendees) == 3
+    assert [attendee.name for attendee in attendees] == ["", "", ""]
+    assert attendees[0].avatar_url == "https://example.com/profile.jpg"
+    assert attendees[1].avatar_url.startswith("data:image/svg+xml;base64,")
+    assert attendees[2].avatar_url.startswith("data:image/svg+xml;base64,")
+
+
+def test_get_event_attendees_caps_profiles_at_configured_limit(fake_sb, patch_sb):
+    patch_sb("services.going_event_service")
+    limit = going_event_service.MAX_ATTENDEE_NAMES
+    user_ids = [f"u{index}" for index in range(limit + 2)]
+    fake_sb.queue_responses(
+        [
+            [{"user_id": user_id} for user_id in user_ids],
+            [{"id": user_id, "full_name": None} for user_id in user_ids[:limit]],
+        ]
+    )
+
+    attendees = going_event_service.get_event_attendees(42)
+    assert len(attendees) == limit
+    fake_sb.in_.assert_called_once_with("id", user_ids[:limit])
+
+
+@pytest.mark.parametrize("count", [0, 1, 499, 500, 501, 1200])
+def test_going_counts_preserve_batch_boundaries(fake_sb, patch_sb, count):
+    patch_sb("services.going_event_service")
+    ids = list(range(count))
+    fake_sb.set_response(data=[])
+
+    assert going_event_service.get_going_counts_for_events(ids + ids) == {}
+
+    calls = fake_sb.rpc.call_args_list
+    assert [call.args for call in calls] == [
+        ("get_event_going_counts", {"p_event_ids": ids[start : start + 500]})
+        for start in range(0, count, 500)
+    ]
+    assert fake_sb.execute.call_count == len(calls)
+
+
+def test_going_counts_merge_batches_with_integer_results(fake_sb, patch_sb):
+    patch_sb("services.going_event_service")
+    fake_sb.execute.side_effect = [
+        SimpleNamespace(data=[{"event_id": "1", "going_count": "3"}]),
+        SimpleNamespace(data=[{"event_id": "501", "going_count": "2"}]),
+    ]
+
+    assert going_event_service.get_going_counts_for_events(list(range(1, 502))) == {
+        1: 3,
+        501: 2,
+    }

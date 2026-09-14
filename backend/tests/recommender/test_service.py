@@ -9,8 +9,11 @@ from recommender.service import (
     BatchRecommendationRunner,
     RecommendationEngine,
     RecommendationSnapshot,
+    get_stored_recommendations_for_users,
 )
 from schemas.event import EventResponse
+from tests.conftest import make_db_user
+from tests.services.conftest import FakeSupabase
 
 
 def _event(event_id: int, school: str = "uwaterloo") -> EventResponse:
@@ -19,7 +22,7 @@ def _event(event_id: int, school: str = "uwaterloo") -> EventResponse:
             "id": event_id,
             "title": f"Event {event_id}",
             "location": "SLC",
-            "organization": "Test Organization",
+            "club": "Test Club",
             "school": school,
             "added_at": datetime.now(timezone.utc),
         }
@@ -256,3 +259,62 @@ def test_live_read_fails_closed_when_snapshot_future_check_fails(monkeypatch):
     )
 
     assert engine.get_recommendations("u1") == []
+
+
+def test_content_scorer_receives_loaded_inputs_without_unused_user_id(monkeypatch):
+    user = make_db_user(interests=["Technology"], school="uwaterloo")
+    event = _event(1)
+    user_scores = {1: 1.0}
+    content_scorer = MagicMock(side_effect=lambda events, *, user, user_scores: {events[0].id: 1.0})
+    engine = RecommendationEngine(content_scorer=content_scorer)
+    monkeypatch.setattr("recommender.service.user_service.get_user", lambda user_id: user)
+    monkeypatch.setattr(
+        "recommender.service.interaction_service.get_user_interaction_count",
+        lambda user_id: 0,
+    )
+    monkeypatch.setattr("recommender.service.get_user_event_scores", lambda user_id: user_scores)
+    snapshot = RecommendationSnapshot(
+        candidates=(event,),
+        popularity_scores={},
+        collaborative_model=None,
+    )
+
+    result = engine._compute_from_snapshot(str(user.id), snapshot, limit=1)
+
+    content_scorer.assert_called_once_with([event], user=user, user_scores=user_scores)
+    assert [item.event_id for item in result] == [1]
+
+
+@pytest.mark.parametrize("count", [0, 1, 499, 500, 501, 1200])
+def test_stored_recommendation_reads_preserve_batch_boundaries(monkeypatch, count):
+    fake_sb = FakeSupabase()
+    monkeypatch.setattr("recommender.service.get_sb", lambda: fake_sb)
+    ids = [str(index) for index in range(count)]
+    fake_sb.set_response(data=[])
+
+    assert get_stored_recommendations_for_users(ids) == {user_id: [] for user_id in ids}
+
+    assert [call.args for call in fake_sb.in_.call_args_list] == [
+        ("user_id", ids[start : start + 500]) for start in range(0, count, 500)
+    ]
+    assert fake_sb.order.call_count == (count + 499) // 500
+
+
+def test_stored_recommendations_accumulate_rows_across_user_batches(monkeypatch):
+    database = FakeSupabase()
+    monkeypatch.setattr("recommender.service.get_sb", lambda: database)
+    user_ids = [str(index) for index in range(501)]
+    first = {"user_id": "0", "event_id": 1, "rank": 1}
+    second = {"user_id": "0", "event_id": 2, "rank": 2}
+    last = {"user_id": "500", "event_id": 3, "rank": 1}
+    foreign = {"user_id": "not-requested", "event_id": 4, "rank": 1}
+    database.queue_responses([[first, second], [last, foreign]])
+
+    result = get_stored_recommendations_for_users(user_ids)
+
+    assert list(result) == user_ids
+    assert result["0"] == [first, second]
+    assert result["500"] == [last]
+    assert all(result[user_id] == [] for user_id in user_ids[1:500])
+    assert "not-requested" not in result
+    assert database.execute.call_count == 2

@@ -5,9 +5,8 @@
     "searchPlaceholder": "Pesquisar cargos, habilidades ou localizações...",
     "clearSearch": "Limpar busca de posição",
     "filterByType": "Filtrar posições por tipo",
-    "allTypes": "Todos os tipos de posições",
     "openDetails": "Ver detalhes da posição {{title}}",
-    "drawerDescription": "Detalhes da posição {{title}} na {{organization}}",
+    "drawerDescription": "Detalhes da posição {{title}} na {{club}}",
     "deadlineLabel": "Prazo de inscrição",
     "due": "Até {{date}}",
     "commitmentLabel": "Compromisso de tempo",
@@ -16,11 +15,10 @@
     "contactLabel": "Contato",
     "aboutPosition": "Sobre esta posição",
     "requirements": "Requisitos",
-    "viewSource": "Ver publicação original Instagram",
     "emptyTitle": "Nenhuma posição aberta encontrada",
     "emptyDescription": "Tente outra pesquisa ou tipo de posição. Novas oportunidades na organização aparecerão aqui à medida que forem publicadas.",
-    "organizationEmptyTitle": "Nenhuma posição aberta",
-    "organizationEmptyDescription": "Esta organização atualmente não possui nenhuma posição aberta.",
+    "clubEmptyTitle": "Nenhuma posição aberta",
+    "clubEmptyDescription": "Esta organização atualmente não possui nenhuma posição aberta.",
     "resultsLabel": "{{count}} posições encontradas",
     "types": {
       "executive": "Executivo",
@@ -31,6 +29,21 @@
       "general": "Recrutamento geral"
     },
     "position_one": "posição",
-    "position_many": "posições"
+    "position_many": "posições",
+    "title": "Título da vaga",
+    "paid": "Remunerado",
+    "unpaid": "Não remunerado",
+    "unknown": "Remuneração não especificada",
+    "addPosition": "Adicionar vaga",
+    "submitted": "Vaga enviada para análise.",
+    "submissions": "Vagas enviadas",
+    "placeholders": {
+      "title": "ex.: Coordenador de marketing",
+      "description": "Descreva a função, as tarefas e o que a pessoa pode aprender ou contribuir.",
+      "compensation": "ex.: 20 $/hora, honorários de 500 $ ou não remunerado",
+      "commitment": "ex.: 3 a 5 horas por semana, de setembro a dezembro",
+      "contact": "ex.: hiring@example.com",
+      "requirements": "Um requisito por linha, por exemplo:\nFacilidade para trabalhar em equipe\nDisponibilidade para reuniões semanais"
+    }
   }
 }

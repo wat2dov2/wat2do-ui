@@ -19,7 +19,7 @@ USER_NOT_FOUND = "User not found"
 USER_PROFILE_NOT_FOUND = "User profile not found — complete signup first"
 EVENT_NOT_FOUND = "Event not found"
 SUBMISSION_NOT_FOUND = "Submission not found"
-ORGANIZATION_NOT_FOUND = "Organization not found"
+CLUB_NOT_FOUND = "Club not found"
 POSTER_NOT_FOUND = "Poster not found"
 PAYOUT_NOT_FOUND = "Payout not found"
 REPORT_NOT_FOUND = "Report not found"
@@ -42,17 +42,15 @@ SESSION_REFRESH_FAILED = "Could not refresh session — please log in again"
 # 403 – Authorization
 # ---------------------------------------------------------------------------
 ADMIN_ACCESS_REQUIRED = "Admin access required"
-ORGANIZATION_MEMBER_OR_ADMIN_ACCESS_REQUIRED = "Organization manager or admin access required"
+CLUB_MEMBER_OR_ADMIN_ACCESS_REQUIRED = "Club manager or admin access required"
 NOT_AUTHORIZED = "Not authorized"
 EMAIL_NOT_ALLOWED = (
     "Only student emails from allowed schools can sign up. "
     "Use a valid university email (e.g. @uwaterloo.ca)."
 )
-ORGANIZATION_EVENT_CREATION_REQUIRED = (
-    "Only approved organization owners can create events for their organization"
-)
-ORGANIZATION_PENDING_REVIEW = (
-    "This organization is still awaiting review. You can publish events once it is approved."
+CLUB_EVENT_CREATION_REQUIRED = "Only approved club owners can create events for their club"
+CLUB_PENDING_REVIEW = (
+    "This club is still awaiting review. You can publish events once it is approved."
 )
 
 # ---------------------------------------------------------------------------
@@ -67,9 +65,7 @@ INSUFFICIENT_CREDITS = "Insufficient credits"
 # snake_case so it stays stable across i18n / wording changes.
 INSUFFICIENT_CREDITS_CODE = "insufficient_credits"
 INVALID_PROMOTION_PACKAGE = "Invalid promotion package"
-ORGANIZATION_PROMOTION_REQUIRED = (
-    "Only organization owners can promote events from their organization"
-)
+CLUB_PROMOTION_REQUIRED = "Only club owners can promote events from their club"
 EVENT_NOT_ACTIVE = "Only published events can be promoted"
 ID_MISMATCH = "ID mismatch"
 REQUIRES_LOCATION = "requires_location"
@@ -78,6 +74,9 @@ BATCH_TOO_LARGE = "Batch exceeds maximum size of {limit} interactions"
 USER_ID_MISMATCH = "Cannot submit interactions on behalf of another user"
 DUPLICATE_INTERACTION_LIMIT = "Too many duplicate interactions for the same event"
 INVALID_STATUS_TRANSITION = "Invalid status transition"
+SUBMISSION_SCHOOL_REQUIRED = "Submission club school is not registered"
+POSITION_ALREADY_EXISTS = "This position already exists"
+POSITION_IMAGE_NO_POSITION = "No open position was found in this image"
 PROMOTER_ENROLLMENT_REQUIRED = "Promoter enrollment is required"
 PROMOTER_PROGRAM_PAUSED = "The promoter program is paused"
 PROMOTER_POSTER_LIMIT_REACHED = "Maximum active promoter poster limit reached"
@@ -96,7 +95,7 @@ EVENT_ALREADY_PAST = "Event has already ended and cannot be modified or promoted
 GOING_EVENTS_CAP_REACHED = "Maximum going events limit reached"
 INVALID_EVENT_OCCURRENCE = "One or more occurrences do not belong to this event"
 OCCURRENCE_NOT_SELECTABLE = "One or more occurrences can no longer be selected"
-SAVED_ORGANIZATIONS_CAP_REACHED = "Maximum saved organizations limit reached"
+SAVED_CLUBS_CAP_REACHED = "Maximum saved clubs limit reached"
 
 INVALID_ROLE = "Role must be 'user' or 'admin'"
 CANNOT_DELETE_SELF = "Admins cannot delete their own account"
@@ -108,6 +107,9 @@ INSTAGRAM_PUBLISH_BATCH_VERSION_CONFLICT = "Instagram publishing batch was chang
 INSTAGRAM_PUBLISH_BATCH_NOT_EDITABLE = "Instagram publishing batch is not editable"
 INSTAGRAM_PUBLISHING_NOT_CONFIGURED = "Instagram publishing is not configured"
 INSTAGRAM_REAUTHORIZATION_REQUIRED = "Instagram account requires reauthorization"
+EVENT_IMAGE_NO_EVENT = (
+    "No event could be read from this image. Try a clearer poster or enter the details manually."
+)
 
 # ---------------------------------------------------------------------------
 # 502 / 503 – Upstream / AI errors

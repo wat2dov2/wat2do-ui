@@ -84,6 +84,9 @@ function createMouseDownPressHandlers({
 
   const handleClick: PressHandler = (event) => {
     if (onClick) {
+      if (!disabled && !event.defaultPrevented && event.button === 0 && event.detail === 0) {
+        onClick(event);
+      }
       event.preventDefault();
     }
   };

@@ -9,7 +9,7 @@ import {
 } from "@/shared/services/validationService";
 import { useForm } from "@/shared/hooks/useForm";
 import { useTagInput } from "@/shared/hooks/useTagInput";
-import { getInitialState } from "@/features/events/hooks/useEventForm.utils";
+import { getEventFormDefaults } from "@/features/events/hooks/useEventForm.utils";
 
 interface UseEventFormOptions {
   initialData?: EventFormData;
@@ -21,16 +21,10 @@ export function useEventForm(options: UseEventFormOptions) {
   const { initialData, isEditMode = false, isOpen } = options;
   const { t } = useTranslation();
 
-  const getDefaults = useCallback(() => getInitialState(initialData, isEditMode).formData, [
-    initialData,
-    isEditMode,
-  ]);
-  // A scraped event names its host but is linked to no organization row, and
-  // the carousel editor is where those get corrected. Editing one must not
-  // demand a link it never had; creating an event still does.
+  // Existing unlinked events remain editable; new events require a club.
   const rules = useMemo<EventFormRules>(
-    () => ({ requireOrganization: !isEditMode || initialData?.organization_id != null }),
-    [isEditMode, initialData?.organization_id],
+    () => ({ requireClub: !isEditMode || initialData?.club_id != null }),
+    [isEditMode, initialData?.club_id],
   );
   const validate = useCallback(
     (data: EventFormData, touched: Record<string, boolean>) =>
@@ -39,7 +33,7 @@ export function useEventForm(options: UseEventFormOptions) {
         touched,
         {
           titleRequired: t("forms.titleRequired"),
-          clubRequired: t("forms.organizationRequired"),
+          clubRequired: t("forms.clubRequired"),
           occurrenceRequired: t("forms.occurrenceRequired"),
           locationRequired: t("forms.locationRequired"),
         },
@@ -51,12 +45,11 @@ export function useEventForm(options: UseEventFormOptions) {
     initialData,
     isEditMode,
     isOpen,
-    getDefaults,
+    getDefaults: getEventFormDefaults,
     validate,
   });
 
   const errors = form.errors as import("@/shared/types").ValidationErrors;
-
 
   const foodTag = useTagInput({
     onAdd: (value) => {
@@ -103,8 +96,7 @@ export function useEventForm(options: UseEventFormOptions) {
     [form],
   );
 
-  // Editing an existing event starts from its current poster: it is the event's
-  // image until someone uploads a replacement, and the form requires one.
+  // Preserve the current poster until a replacement is uploaded.
   const [imagePreview, setImagePreview] = useState(
     () => initialData?.source_image_url ?? "",
   );
@@ -151,8 +143,7 @@ export function useEventForm(options: UseEventFormOptions) {
       isEditMode && initialData && initialData !== prevInitialDataRef.current;
 
     if (shouldReseed && initialData) {
-      const resetState = getInitialState(initialData, isEditMode);
-      form.setFormData(resetState.formData);
+      form.setFormData(initialData);
       setImagePreview(initialData.source_image_url ?? "");
       setImageFile(null);
       prevInitialDataRef.current = initialData;
@@ -160,13 +151,7 @@ export function useEventForm(options: UseEventFormOptions) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, isEditMode, initialData]);
 
-  // Update the editor immediately; parse after debounce.
-  //
-  // A poster is required to submit a new event, because a listing without one
-  // is the weakest thing in the feed. It is not required to edit an existing
-  // one: an event that is already published has whatever poster it has, and
-  // demanding a fresh upload blocked every unrelated correction - a moved room,
-  // a changed time - behind an image the editor may not even have.
+  // Only creation requires a poster; existing events can be edited without one.
   const isValid = useMemo(
     () =>
       isEventFormValid(form.formData, errors, rules) &&

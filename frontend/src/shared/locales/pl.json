@@ -13,7 +13,6 @@
     "or": "lub",
     "separatorBullet": "•",
     "free": "Bezpłatne",
-    "freeFood": "Darmowe jedzenie",
     "backToTop": "Powrót na górę",
     "cancelled": "Anulowano",
     "registration": "Rejestracja",
@@ -76,7 +75,11 @@
     "hourAgo_many": "{{count}} godzin temu",
     "dayAgo_one": "{{count}} dzień temu",
     "dayAgo_few": "{{count}} dni temu",
-    "dayAgo_many": "{{count}} dni temu"
+    "dayAgo_many": "{{count}} dni temu",
+    "latestAddedItem": "<addedPrefix></addedPrefix><eventTitle>{{title}}</eventTitle> <addedTime>dodano {{time}}</addedTime>",
+    "newlyAddedFilter": {
+      "last24Hours": "Nowe"
+    }
   },
   "errorBoundary": {
     "title": "Coś poszło nie tak",
@@ -87,13 +90,13 @@
     "events": "Wydarzenia",
     "create": "Prześlij wydarzenie",
     "loginRequiredToSubmit": "Tylko zalogowani użytkownicy mogą zgłaszać wydarzenia lub organizacje.",
-    "organizations": "Organizacje",
+    "clubs": "Organizacje",
     "positions": "Stanowiska",
     "myEvents": "Moje wydarzenia",
     "settings": "Ustawienia",
     "admin": "Admin",
     "adminPanel": "Panel administracyjny",
-    "organizationPanel": "Panel organizacji",
+    "clubPanel": "Panel organizacji",
     "clubPanelTooltip": "Zarządzaj swoją organizacją",
     "mission": "Misja",
     "about": "O nas",
@@ -123,8 +126,7 @@
       "continueWithGoogle": "Kontynuuj z Google"
     },
     "signOut": {
-      "logOut": "Wyloguj się",
-      "signOutOfAccount": "Wyloguj się ze swojego konta"
+      "logOut": "Wyloguj się"
     },
     "getStarted": "Rozpocznij",
     "profile": {
@@ -178,9 +180,9 @@
     "desc": "Malej.",
     "ascending": "Rosnąco",
     "descending": "Malejąco",
-    "organization": "Organizacja",
-    "searchOrganization": "Szukaj organizacji...",
-    "noOrganizations": "Brak dostępnych organizacji"
+    "club": "Organizacja",
+    "searchClub": "Szukaj organizacji...",
+    "noClubs": "Brak dostępnych organizacji"
   },
   "commands": {
     "commands": "Polecenia",
@@ -227,10 +229,10 @@
     "locationPlaceholder": "np. MC 1234, SLC Wielka Sala",
     "selectPackage": "Wybierz pakiet",
     "eventTitlePlaceholder": "np. Talk Technologiczny: AI w 2024",
-    "organizationNamePlaceholder": "np. Organizacja Informatyczna",
-    "selectOrganization": "Wybierz organizację",
-    "searchOrganizationPlaceholder": "Szukaj organizacji...",
-    "noOrganizationFound": "Nie znaleziono organizacji",
+    "clubNamePlaceholder": "np. Organizacja Informatyczna",
+    "selectClub": "Wybierz organizację",
+    "searchClubPlaceholder": "Szukaj organizacji...",
+    "noClubFound": "Nie znaleziono organizacji",
     "descriptionPlaceholder": "Powiedz ludziom, o czym jest Twoje wydarzenie...",
     "sourceUrl": "Link do źródła",
     "sourceUrlPlaceholder": "https://instagram.com/p/...",
@@ -249,21 +251,21 @@
     "description": "Opis",
     "saveChanges": "Zapisz zmiany",
     "requiredInformation": "Wymagane informacje",
-    "organizationName": "Nazwa organizacji",
-    "organizationType": "Typ organizacji",
-    "organizationTypeMapped": "{{type}}",
-    "organizationTypeIndependent": "Niezależny",
-    "organizationNameRequired": "Nazwa organizacji jest wymagana",
+    "clubName": "Nazwa organizacji",
+    "clubType": "Typ organizacji",
+    "clubTypeMapped": "{{type}}",
+    "clubTypeIndependent": "Niezależny",
+    "clubNameRequired": "Nazwa organizacji jest wymagana",
     "ownerEmail": "Email właściciela",
     "categories": "Kategorie",
     "categoryRequired": "Wymagana jest przynajmniej jedna kategoria",
     "add": "Dodaj",
-    "organizationPageUrl": "Strona organizacji URL",
-    "organizationPageUrlPlaceholder": "np., https://example.com lub 123",
+    "clubPageUrl": "Strona organizacji URL",
+    "clubPageUrlPlaceholder": "np., https://example.com lub 123",
     "instagramHandle": "Instagram Nazwa użytkownika",
     "discordLink": "Discord Link",
     "titleRequired": "Tytuł jest wymagany",
-    "organizationRequired": "Organizacja jest wymagana",
+    "clubRequired": "Organizacja jest wymagana",
     "occurrenceRequired": "Wymagana jest przynajmniej jedna data",
     "locationRequired": "Lokalizacja jest wymagana",
     "schoolRequired": "Szkoła jest wymagana",
@@ -291,7 +293,7 @@
     "politicsAndAdvocacy": "Polityka i rzecznictwo",
     "religionAndSpirituality": "Religia i duchowość",
     "events": "Wydarzenia",
-    "organizations": "Organizacje"
+    "clubs": "Organizacje"
   },
   "locations": {
     "LAX": "LAX",
