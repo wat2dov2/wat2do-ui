@@ -1,5 +1,9 @@
 {
   "apify_timeout_seconds": 3600,
+  "embed_timeout_seconds": 30,
+  "embed_maximum_attempts": 3,
+  "embed_retry_wait_seconds": 1,
+  "embed_retry_maximum_wait_seconds": 10,
   "poll_interval_seconds": 5,
   "instagram_web_app_id": "936619743392459",
   "single_user_recent_post_minutes": 30,

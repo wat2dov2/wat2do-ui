@@ -59,10 +59,6 @@ def resolve_single_user_scrape_school() -> str:
     )
 
 
-def is_post_url_target(target: str) -> bool:
-    return target.startswith("http")
-
-
 def is_exact_post_url_target(target: str) -> bool:
     """Return whether a target identifies one exact Instagram post."""
     try:
@@ -101,7 +97,7 @@ def exact_post_results_match_targets(targets: list[str], posts: list[dict]) -> b
 
 
 def filter_valid_posts(posts: list[dict]) -> list[dict]:
-    """Keep Apify items that look like real Instagram post URLs."""
+    """Keep retrieved items that identify real Instagram posts."""
     return [
         post
         for post in posts
@@ -119,17 +115,16 @@ def fetch_posts_for_targets(
     scraper,
 ) -> tuple[list[dict], bool]:
     """Fetch the posts to process for a webhook run or manual dispatch."""
-    is_post = all(is_post_url_target(t) for t in targets)
+    if targets and all(is_exact_post_url_target(t) for t in targets):
+        return scraper.scrape_posts(targets), False
 
-    results_limit = len(targets) if is_post else 1
-
-    posts, pinned_warning = scraper.scrape(
+    posts, pinned_warning = scraper.scrape_latest(
         targets,
-        results_limit=results_limit,
+        results_limit=1,
         cutoff_days=cutoff_days,
     )
 
-    if not is_post and len(targets) == 1 and posts and posts[0].get("timestamp"):
+    if len(targets) == 1 and posts and posts[0].get("timestamp"):
         post_dt = parse_iso_datetime(posts[0]["timestamp"])
         now = datetime.now(timezone.utc)
         if post_dt and post_dt > now - _RECENT_POST_WINDOW:
@@ -139,13 +134,13 @@ def fetch_posts_for_targets(
             # when `resultsLimit=1`. If the only post returned is old, it's likely a pinned post
             # that consumed our limit. We re-fetch with a higher limit to find the newest unpinned post.
             log.info("Fetched post is not recent, fetching more posts to find the most recent")
-            posts, pinned_warning = scraper.scrape(
+            posts, pinned_warning = scraper.scrape_latest(
                 targets,
                 results_limit=4,
                 cutoff_days=cutoff_days,
             )
 
-    if not is_post and len(posts) > 1:
+    if len(posts) > 1:
         posts.sort(key=lambda item: item.get("timestamp", 0), reverse=True)
         posts = posts[:1]
 

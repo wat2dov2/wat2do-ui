@@ -31,7 +31,25 @@ def test_google_analytics_rejects_invalid_measurement_ids(measurement_id):
         GoogleAnalyticsControl(measurement_id=measurement_id)
 
 
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("embed_timeout_seconds", 0),
+        ("embed_maximum_attempts", 0),
+        ("embed_maximum_attempts", 6),
+        ("embed_retry_wait_seconds", 0),
+        ("embed_retry_maximum_wait_seconds", 0),
+    ],
+)
+def test_invalid_embed_controls_are_rejected(tmp_path, field, value):
+    directory = _write_control(tmp_path, "scraping", lambda data: data.update({field: value}))
+    with pytest.raises(ValidationError):
+        load_controlbox(directory)
+
+
 def test_checked_in_controlbox_is_valid() -> None:
+    assert controlbox.scraping.embed_timeout_seconds == 30
+    assert controlbox.scraping.embed_maximum_attempts == 3
     assert controlbox.recommendations.snapshot.candidate_events_per_school == 1000
     assert controlbox.morning_email.new_event_window_hours == 24
     assert controlbox.event_reminder.lead_minutes == 60

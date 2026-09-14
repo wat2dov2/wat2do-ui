@@ -13,7 +13,6 @@ from services.scraper.single_user import (
     SchoolResolutionError,
     fetch_posts_for_targets,
     filter_valid_posts,
-    is_post_url_target,
     resolve_single_user_scrape_school,
 )
 
@@ -117,11 +116,6 @@ def test_resolve_single_user_scrape_school_rejects_unknown_target_school(monkeyp
         resolve_single_user_scrape_school()
 
 
-def test_is_post_url_target():
-    assert is_post_url_target("https://www.instagram.com/p/ABC123/")
-    assert not is_post_url_target("uwteaclub")
-
-
 def test_filter_valid_posts_keeps_real_posts():
     posts = [
         {"url": "https://www.instagram.com/p/GOOD/"},
@@ -135,7 +129,7 @@ def test_filter_valid_posts_keeps_real_posts():
 def test_fetch_posts_for_targets_uses_recent_post_without_refetch():
     scraper = MagicMock()
     recent = datetime.now(timezone.utc) - timedelta(minutes=5)
-    scraper.scrape.return_value = (
+    scraper.scrape_latest.return_value = (
         [{"url": "https://instagram.com/p/A/", "timestamp": recent.isoformat()}],
         False,
     )
@@ -148,14 +142,14 @@ def test_fetch_posts_for_targets_uses_recent_post_without_refetch():
 
     assert len(posts) == 1
     assert pinned is False
-    scraper.scrape.assert_called_once()
+    scraper.scrape_latest.assert_called_once()
 
 
 def test_fetch_posts_for_targets_refetches_when_stale():
     scraper = MagicMock()
     stale = datetime.now(timezone.utc) - timedelta(hours=2)
     fresh = datetime.now(timezone.utc) - timedelta(minutes=10)
-    scraper.scrape.side_effect = [
+    scraper.scrape_latest.side_effect = [
         ([{"url": "https://instagram.com/p/OLD/", "timestamp": stale.isoformat()}], False),
         (
             [
@@ -172,17 +166,16 @@ def test_fetch_posts_for_targets_refetches_when_stale():
         scraper=scraper,
     )
 
-    assert scraper.scrape.call_count == 2
+    assert scraper.scrape_latest.call_count == 2
     assert posts[0]["url"].endswith("NEW/")
 
 
 def test_fetch_posts_for_targets_skips_recency_for_post_url():
     scraper = MagicMock()
     stale = datetime.now(timezone.utc) - timedelta(hours=2)
-    scraper.scrape.return_value = (
-        [{"url": "https://instagram.com/p/DIRECT/", "timestamp": stale.isoformat()}],
-        False,
-    )
+    scraper.scrape_posts.return_value = [
+        {"url": "https://instagram.com/p/DIRECT/", "timestamp": stale.isoformat()}
+    ]
 
     posts, _pinned = fetch_posts_for_targets(
         ["https://www.instagram.com/p/DIRECT/"],
@@ -191,4 +184,5 @@ def test_fetch_posts_for_targets_skips_recency_for_post_url():
     )
 
     assert len(posts) == 1
-    scraper.scrape.assert_called_once()
+    scraper.scrape_posts.assert_called_once_with(["https://www.instagram.com/p/DIRECT/"])
+    scraper.scrape_latest.assert_not_called()

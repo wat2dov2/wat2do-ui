@@ -146,7 +146,11 @@ Before switching registrar nameservers, inventory every current Vercel DNS recor
 The first ARM64 frontend and backend images, plus the x86-64 social-preview image, must be pushed to ECR by digest before the initial production apply.
 Once production exists, pushes to `main` use GitHub OIDC to build all three images, tag them with the full commit SHA, update the ECS task definition, and update the Lambda image.
 Scheduled directory scraping, notifications, and recommendation compute run on GitHub-hosted runners.
-The single-user scrape workflow remains an authenticated GitHub trigger but runs its compute in ECS.
+Instagram notifications resolve to exact post URLs, which the pending-media workers fetch from public Instagram embeds without Apify or Instagram credentials.
+Single images and all available carousel slide images use the same parser; incomplete or unavailable content fails the claim rather than being marked successful.
+Post timestamps are optional, and the notification digest expansion still needs its existing logged-in browser session.
+Manual username lookups and profile-logo backfills remain separate Apify tools.
+For a read-only live retrieval check, run `cd backend && python scripts/probe_instagram_post.py --url https://www.instagram.com/p/SHORTCODE/`.
 
 ## 🤝 Support
 

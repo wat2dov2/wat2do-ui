@@ -239,6 +239,10 @@ class RateLimitsControl(_ControlModel):
 
 class ScrapingControl(_ControlModel):
     apify_timeout_seconds: int = Field(gt=0)
+    embed_timeout_seconds: int = Field(gt=0)
+    embed_maximum_attempts: int = Field(gt=0, le=5)
+    embed_retry_wait_seconds: int = Field(gt=0)
+    embed_retry_maximum_wait_seconds: int = Field(gt=0)
     poll_interval_seconds: int = Field(gt=0)
     instagram_web_app_id: str = Field(pattern=r"^[0-9]{10,20}$")
     single_user_recent_post_minutes: int = Field(gt=0)

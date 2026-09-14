@@ -73,7 +73,6 @@ jobs:
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          APIFY_API_TOKEN: ${{ secrets.APIFY_API_TOKEN }}
           EVENT_FEED_REVALIDATION_SECRET: ${{ secrets.EVENT_FEED_REVALIDATION_SECRET }}
           GH_TOKEN: ${{ secrets.RUNNER_CHECK_TOKEN }}
           CUTOFF_DAYS: ${{ inputs.cutoff_days || '1' }}

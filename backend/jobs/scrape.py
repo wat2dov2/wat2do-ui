@@ -91,7 +91,7 @@ def _create_github_annotation(
         )
     else:
         if result.posts_fetched == 0:
-            lines.append("❌ No posts fetched from Apify.")
+            lines.append("❌ No posts retrieved.")
         elif result.posts_new == 0:
             lines.append("❌ Post was previously processed or is older than the cutoff date.")
         elif result.events_extracted == 0 and result.positions_extracted == 0:
@@ -178,14 +178,14 @@ def run(
         log_method("No valid posts retrieved for targets")
         if exact_post_targets:
             print(
-                "::warning::No valid posts retrieved for exact target. The post may have been immediately deleted, made private, or is otherwise unavailable to Apify.",
+                "::warning::Exact post retrieval failed; the media claim must not be marked successful.",
                 flush=True,
             )
         _print_summary(
             school,
             ScrapeResult(ig_handle="unknown", dry_run=dry_run),
         )
-        return 0
+        return 1 if exact_post_targets else 0
 
     from collections import defaultdict
 

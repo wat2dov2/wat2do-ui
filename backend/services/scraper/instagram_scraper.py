@@ -1,4 +1,4 @@
-"""Apify Instagram scraper wrappers.
+"""Instagram retrieval: public embeds for exact posts, Apify for manual lookups.
 
 Class-based per backend-architecture.md: external-client wrappers are
 the one place we deviate from function-based services. The module
@@ -20,13 +20,18 @@ import time
 from datetime import datetime, timedelta, timezone
 from typing import Literal
 
+import httpx
 from apify_client import ApifyClient
+from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential_jitter
 
 from core.config import settings
 from core.constants import (
     SCRAPING_APIFY_TIMEOUT_SECONDS,
     SCRAPING_POLL_INTERVAL_SECONDS,
 )
+from core.controlbox import controlbox
+from services.scraper.instagram_embed import extract_post
+from services.scraper.single_user import is_exact_post_url_target
 
 log = logging.getLogger(__name__)
 
@@ -34,30 +39,59 @@ ACTOR_ID = "apify/instagram-post-scraper"
 PROFILE_ACTOR_ID = "apify/instagram-profile-scraper"
 
 _TERMINAL_STATUSES = {"SUCCEEDED", "FAILED", "ABORTED", "TIMED-OUT"}
+_CONTROL = controlbox.scraping
+
+
+def _transient_http_error(error: BaseException) -> bool:
+    return isinstance(error, httpx.TransportError) or (
+        isinstance(error, httpx.HTTPStatusError) and error.response.status_code >= 500
+    )
 
 
 class InstagramScraperError(RuntimeError):
     """A categorized provider failure safe to expose in workflow output."""
 
-    def __init__(self, stage: Literal["start", "poll", "terminal", "dataset"]):
+    def __init__(
+        self, stage: Literal["start", "poll", "terminal", "dataset", "input", "http", "content"]
+    ):
         super().__init__(f"Instagram scraper provider {stage} failure")
         self.stage = stage
 
 
 class InstagramScraper:
-    """Thin Apify-client wrapper for Instagram post and profile scraping."""
+    """Fetch exact posts without credentials; retain separate manual lookup tools."""
 
-    def __init__(self, token: str | None = None) -> None:
-        self._token = token or settings.apify_api_token
-        if not self._token:
-            raise RuntimeError(
-                "APIFY_API_TOKEN is not set. The scraping pipeline cannot run "
-                "without an Apify token. Set it in .env (local) or GitHub repo "
-                "secrets (workflows)."
-            )
-        self._client = ApifyClient(self._token)
+    def scrape_posts(self, targets: list[str]) -> list[dict]:
+        if not targets or not all(is_exact_post_url_target(target) for target in targets):
+            raise InstagramScraperError("input")
+        posts = []
+        with httpx.Client(timeout=_CONTROL.embed_timeout_seconds, follow_redirects=False) as client:
+            for target in dict.fromkeys(targets):
+                try:
+                    response = self._fetch_embed(client, target)
+                    posts.append(extract_post(response, target))
+                except httpx.HTTPError:
+                    raise InstagramScraperError("http") from None
+                except (ValueError, TypeError, KeyError, IndexError, AttributeError, OverflowError):
+                    raise InstagramScraperError("content") from None
+        return posts
 
-    def scrape(
+    @staticmethod
+    @retry(
+        retry=retry_if_exception(_transient_http_error),
+        stop=stop_after_attempt(_CONTROL.embed_maximum_attempts),
+        wait=wait_exponential_jitter(
+            initial=_CONTROL.embed_retry_wait_seconds,
+            max=_CONTROL.embed_retry_maximum_wait_seconds,
+        ),
+        reraise=True,
+    )
+    def _fetch_embed(client: httpx.Client, target: str) -> str:
+        response = client.get(f"{target.rstrip('/')}/embed/captioned/")
+        response.raise_for_status()
+        return response.text
+
+    def scrape_latest(
         self,
         target: str | list[str],
         *,
@@ -65,12 +99,10 @@ class InstagramScraper:
         cutoff_days: int = 1,
         timeout_seconds: int = SCRAPING_APIFY_TIMEOUT_SECONDS,
     ) -> tuple[list[dict], bool]:
-        """Run the actor for ``target``; return (raw_posts, pinned_warning).
-
-        ``target`` is an Instagram handle, @handle, or post URL, or a list of them.
-        """
+        """Manual username lookup only; exact posts use ``scrape_posts``."""
         username_list = [target] if isinstance(target, str) else target
-        has_post_url = any(t.startswith("http") for t in username_list)
+        if any(t.startswith("http") for t in username_list):
+            raise InstagramScraperError("input")
 
         cutoff = datetime.now(timezone.utc) - timedelta(days=cutoff_days)
         cutoff_str = cutoff.strftime("%Y-%m-%d")
@@ -96,9 +128,7 @@ class InstagramScraper:
             timeout_seconds=timeout_seconds,
         )
 
-        pinned_returned = False
-        if not has_post_url:
-            pinned_returned = any(bool(item.get("isPinned")) for item in dataset_items)
+        pinned_returned = any(bool(item.get("isPinned")) for item in dataset_items)
         if results_limit == 1 and pinned_returned:
             warning = "Apify returned a pinned post while resultsLimit=1"
             log.warning(warning)
@@ -135,7 +165,9 @@ class InstagramScraper:
         timeout_seconds: int,
     ) -> list[dict]:
         """Run one Apify actor and return its complete default dataset."""
-        from tenacity import retry, stop_after_attempt, wait_exponential_jitter
+        if not settings.apify_api_token:
+            raise InstagramScraperError("start")
+        client = ApifyClient(settings.apify_api_token)
 
         @retry(
             stop=stop_after_attempt(5),
@@ -143,7 +175,7 @@ class InstagramScraper:
             reraise=True,
         )
         def _start_actor_with_retry() -> object:
-            return self._client.actor(actor_id).start(run_input=run_input)
+            return client.actor(actor_id).start(run_input=run_input)
 
         try:
             run = _start_actor_with_retry()
@@ -165,12 +197,12 @@ class InstagramScraper:
                 if time.time() > deadline:
                     log.error("Apify run timed out after %ds; aborting", timeout_seconds)
                     try:
-                        self._client.run(run_id).abort()
+                        client.run(run_id).abort()
                     except Exception:
                         log.warning("Apify run abort failed")
                     raise InstagramScraperError("poll") from None
 
-                completed_run = self._client.run(run_id).get()
+                completed_run = client.run(run_id).get()
                 if completed_run:
                     status = completed_run.status or "UNKNOWN"
                 if status in _TERMINAL_STATUSES:
@@ -191,7 +223,7 @@ class InstagramScraper:
             log.error("Apify run did not return a dataset identifier")
             raise InstagramScraperError("dataset")
         try:
-            dataset_items = list(self._client.dataset(dataset_id).list_items().items)
+            dataset_items = list(client.dataset(dataset_id).list_items().items)
         except Exception:
             log.error("Failed to fetch Apify dataset")
             raise InstagramScraperError("dataset") from None

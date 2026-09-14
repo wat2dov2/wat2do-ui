@@ -8,7 +8,7 @@ Stages:
     5. Save - write events, occurrences, and positions.
 
 Public entry point: ``run_pipeline``. ``backend/jobs/scrape.py`` prefetches
-posts via Apify, then hands them here for processing.
+posts, then hands them here for processing.
 """
 
 from __future__ import annotations
@@ -72,7 +72,7 @@ def run_pipeline(
     github_run_id: str | None = None,
     allow_past_events: bool = False,
 ) -> ScrapeResult:
-    """Process prefetched Apify posts for one Instagram handle."""
+    """Process prefetched posts for one Instagram handle."""
     result = ScrapeResult(
         ig_handle=ig_handle,
         pinned_post_warning=pinned_post_warning,
@@ -159,7 +159,7 @@ def _filter_new_posts(
 
 
 def _get_candidate_handles(post: dict, fallback_handle: str) -> list[str]:
-    """Extract all relevant IG handles from an Apify post payload."""
+    """Extract all relevant IG handles from a retrieved post payload."""
     handles = []
 
     # 1. Target handle
@@ -428,7 +428,7 @@ def _finalize(result: ScrapeResult) -> None:
 
 
 def _extract_image_urls(post: dict) -> list[str]:
-    """Pull image URLs from an Apify Instagram-post-scraper item."""
+    """Pull image URLs from a retrieved Instagram post."""
     images: list[str] = []
 
     images_field = post.get("images")
