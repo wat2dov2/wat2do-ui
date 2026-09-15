@@ -22,7 +22,7 @@ jobs:
     runs-on: wat2do-heavy-pool
     strategy:
       matrix:
-        worker: [1, 2]
+        worker: [1, 2, 3, 4, 5]
       fail-fast: false
     environment: production
     permissions:
