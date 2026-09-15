@@ -35,9 +35,6 @@
     "submissionReceivedDesc": "已发送给管理员进行审核。",
     "eventCreatedDesc": "现在已发布并对学生可见。",
     "eventUpdatedDesc": "已更新。",
-    "promote": "推广",
-    "eventPromoted": "活动已推广！",
-    "eventPromotedDesc": "现在已被推广，将更醒目地展示给学生。",
     "noResults": "未找到结果。",
     "signInToView": "登录以查看您的活动",
     "signInToViewDesc": "标记您要参加的活动并在一处查看它们。",
@@ -68,7 +65,6 @@
     "clearAllFilters": "清除所有筛选",
     "calendarViewComingSoon": "日历视图即将推出...",
     "mapViewComingSoon": "地图视图即将推出...",
-    "promotedEvents": "热门推广活动",
     "dateSections": {
       "today": "今天",
       "tomorrow": "明天",
@@ -114,7 +110,6 @@
         "email": "电子邮件"
       }
     },
-    "promoted": "热门推广",
     "new": "新",
     "goingCount": "{{count}} 人参加",
     "goingCount_other": "{{count}} 人参加",

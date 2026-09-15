@@ -57,7 +57,6 @@ export function EventsPageContainer({
     totalEvents,
     eventStats,
     latestAddedEvent,
-    promotedEvents,
 
     filters,
     orderedEvents,
@@ -133,7 +132,6 @@ export function EventsPageContainer({
     }
     router.push(ROUTES.EVENT_SUBMIT);
   }, [profileCompleted, router, t]);
-
 
   return (
     <>
@@ -248,7 +246,6 @@ export function EventsPageContainer({
           ) : (
             <EventList
               events={orderedEvents}
-              promotedEvents={promotedEvents}
               viewMode={viewMode}
               onEventClick={handleEventClick}
               onClearFilters={filters.clearAllFilters}

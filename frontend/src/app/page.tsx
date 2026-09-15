@@ -44,7 +44,6 @@ export async function generateMetadata(): Promise<Metadata> {
   const title = `${schoolName} Events and Things to Do | Wat2Do`;
   const description = `Discover current events, activities, and things to do for students at ${schoolName}. Explore campus events by date, category, cost, and more.`;
   const featuredEvent =
-    snapshot?.promotedEvents.find((event) => event.source_image_url) ??
     snapshot?.feed.items.find((event) => event.source_image_url);
   const fallbackImage = selectSeoImage(
     featuredEvent?.source_image_url,

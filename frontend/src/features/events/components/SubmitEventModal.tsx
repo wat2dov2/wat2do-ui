@@ -18,7 +18,6 @@ import { getCurrentSchool } from "@/shared/constants/schools";
 import { toast } from "@/shared/hooks/use-toast";
 import { useEventForm } from "@/features/events/hooks/useEventForm";
 import { mapEventInputToFormData } from "@/features/events/hooks/useEventForm.utils";
-import { useEventFormPromotion } from "@/features/events/hooks/useEventFormPromotion";
 import {
   useSubmitEvent,
   type SubmitEventResult,
@@ -26,9 +25,7 @@ import {
 import { useDarkMode } from "@/shared/hooks/useDarkMode";
 import { controlBox } from "@/shared/config/controlBox";
 import { EventFormStep } from "@/features/events/components/EventFormStep";
-import { SubmitSuccessStep } from "@/features/events/components/SubmitSuccessStep";
-import { PromotionUpsell } from "@/features/events/components/EventForm/EventForm/PromotionUpsell";
-import { PromotionSuccessScreen } from "@/features/events/components/EventForm/EventForm/PromotionSuccessScreen";
+import { EventSuccessScreen } from "@/features/events/components/EventForm/EventForm/EventSuccessScreen";
 import {
   EventFormProvider,
   type EventFormContextValue,
@@ -53,15 +50,12 @@ interface SubmitEventSharedProps {
     event: EventFormData,
   ) => SubmitEventResult | Promise<SubmitEventResult>;
   canCreateEvents: boolean;
-  onPromote?: (eventId: number) => Promise<boolean>;
-  onBuyCredits?: () => void;
   onBack?: () => void;
   editEventId?: number;
 }
 
 interface SubmitEventFlowProps extends SubmitEventSharedProps {
   initialData?: EventFormData;
-  userCredits?: number;
   onUpdate?: (
     eventId: number,
     event: EventFormData,
@@ -87,7 +81,6 @@ interface SubmitEventModalProps extends SubmitEventSharedProps {
   /** The modal owns a dismissable surface, so closing is never optional here. */
   onClose: () => void;
   isOpen: boolean;
-  userCredits?: number;
   initialData?: EventFormData;
   loadEventForEdit?: (eventId: number) => Promise<EventFormData>;
   onUpdate?: (
@@ -97,8 +90,6 @@ interface SubmitEventModalProps extends SubmitEventSharedProps {
 }
 
 type SubmitEventStep =
-  | "promotion-success"
-  | "promotion-upsell"
   | "submit-success"
   | "image-parse"
   | "form";
@@ -110,9 +101,6 @@ export function SubmitEventFlow({
   onClose,
   onSubmit,
   canCreateEvents,
-  userCredits = 0,
-  onPromote,
-  onBuyCredits,
   onBack,
   editEventId,
   onUpdate,
@@ -236,11 +224,6 @@ export function SubmitEventFlow({
     return () => window.removeEventListener("paste", handlePaste);
   }, [isParsingImage, handleImageFileParse]);
 
-  const eventFormPromotion = useEventFormPromotion({
-    createdEventId: submitResult?.createdEventId ?? null,
-    onPromote,
-  });
-
   const handleSubmitted = useCallback((eventId: number | null) => {
     setSubmitResult({ createdEventId: eventId });
   }, []);
@@ -251,7 +234,6 @@ export function SubmitEventFlow({
     onSubmit,
     onUpdate,
     onClose,
-    showPromotion: eventFormPromotion.showPromotion,
     onSubmitted: handleSubmitted,
   });
 
@@ -287,52 +269,22 @@ export function SubmitEventFlow({
     };
   }, [saveRef, handleSubmit, isEditMode, eventForm.imageFile, eventForm.formData, initialData]);
 
-  const currentStep: SubmitEventStep = eventFormPromotion.promotionSuccess
-    ? "promotion-success"
-    : eventFormPromotion.showPromotion
-      ? "promotion-upsell"
-      : submitResult && !isEditMode
-        ? "submit-success"
-        : !isEditMode && !hasInitiated
-          ? "image-parse"
-          : "form";
+  const currentStep: SubmitEventStep = submitResult && !isEditMode
+    ? "submit-success"
+    : !isEditMode && !hasInitiated
+      ? "image-parse"
+      : "form";
 
   const successContext = {
     formData: eventForm.formData,
     selectedClubName: "",
   } as unknown as EventFormContextValue;
 
-  if (currentStep === "promotion-success") {
-    return (
-      <EventFormProvider value={successContext}>
-        <PromotionSuccessScreen onClose={onClose ?? NOOP} />
-      </EventFormProvider>
-    );
-  }
-
-  if (currentStep === "promotion-upsell") {
-    return (
-      <EventFormProvider value={successContext}>
-        <PromotionUpsell
-          onClose={onClose ?? NOOP}
-          onPromote={eventFormPromotion.handlePromote}
-          onBuyCredits={onBuyCredits ?? NOOP}
-          userCredits={userCredits}
-        />
-      </EventFormProvider>
-    );
-  }
-
   if (currentStep === "submit-success") {
     return (
       <EventFormProvider value={successContext}>
-        <SubmitSuccessStep
+        <EventSuccessScreen
           onClose={onClose ?? NOOP}
-          onPromote={
-            onPromote && submitResult?.createdEventId != null
-              ? () => eventFormPromotion.setShowPromotion(true)
-              : undefined
-          }
           isEditMode={isEditMode}
           isSubmissionOnly={submitResult?.createdEventId == null}
         />
@@ -407,9 +359,6 @@ function SubmitEventModalContent({
   onClose,
   onSubmit,
   canCreateEvents,
-  userCredits = 0,
-  onPromote,
-  onBuyCredits,
   onBack,
   editEventId,
   initialData,
@@ -469,9 +418,6 @@ function SubmitEventModalContent({
             onClose={onClose}
             onSubmit={onSubmit}
             canCreateEvents={canCreateEvents}
-            userCredits={userCredits}
-            onPromote={onPromote}
-            onBuyCredits={onBuyCredits}
             onBack={onBack}
             editEventId={editEventId}
             onUpdate={onUpdate}

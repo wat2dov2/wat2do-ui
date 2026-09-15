@@ -35,9 +35,6 @@
     "submissionReceivedDesc": "관리자에게 검토를 위해 전송되었습니다.",
     "eventCreatedDesc": "이제 학생들에게 공개되었습니다.",
     "eventUpdatedDesc": "업데이트되었습니다.",
-    "promote": "홍보",
-    "eventPromoted": "이벤트 홍보 완료!",
-    "eventPromotedDesc": "이제 승급되었으며 학생들에게 더 눈에 띄게 표시됩니다.",
     "noResults": "결과가 없습니다.",
     "signInToView": "이벤트를 보려면 로그인하세요",
     "signInToViewDesc": "참석할 이벤트를 표시하고 한 곳에서 모두 확인하세요.",
@@ -68,7 +65,6 @@
     "clearAllFilters": "모든 필터 해제",
     "calendarViewComingSoon": "캘린더 보기 곧 제공 예정...",
     "mapViewComingSoon": "지도 보기 곧 제공됩니다...",
-    "promotedEvents": "추천 이벤트",
     "dateSections": {
       "today": "오늘",
       "tomorrow": "내일",
@@ -114,7 +110,6 @@
         "email": "이메일"
       }
     },
-    "promoted": "홍보",
     "new": "신규",
     "goingCount": "{{count}}명 참여",
     "goingCount_other": "{{count}}명 참여",

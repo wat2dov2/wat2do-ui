@@ -84,14 +84,12 @@ const publicPromoterProgram = {
   })),
 };
 const apiCollectionPaths = [
-  "credits",
   "events",
   "instagram-publishing/batches",
   "clubs",
   "payouts",
   "positions",
   "position-submissions",
-  "promotions",
   "qr",
   "reports",
   "going-events",

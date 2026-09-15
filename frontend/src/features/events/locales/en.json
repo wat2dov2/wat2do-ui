@@ -35,9 +35,6 @@
     "submissionReceivedDesc": "has been sent to admins for review.",
     "eventCreatedDesc": "is now live and visible to students.",
     "eventUpdatedDesc": "has been updated.",
-    "promote": "Promote",
-    "eventPromoted": "Event Promoted!",
-    "eventPromotedDesc": "is now promoted and will appear more prominently for students.",
     "noResults": "No results found.",
     "signInToView": "Sign in to view your events",
     "signInToViewDesc": "Mark events you're going to and view them all in one place.",
@@ -68,7 +65,6 @@
     "clearAllFilters": "Clear all filters",
     "calendarViewComingSoon": "Calendar view coming soon...",
     "mapViewComingSoon": "Map view coming soon...",
-    "promotedEvents": "Promoted Events",
     "dateSections": {
       "today": "Today",
       "tomorrow": "Tomorrow",
@@ -114,7 +110,6 @@
         "email": "Email"
       }
     },
-    "promoted": "Promoted",
     "new": "NEW",
     "goingCount": "{{count}} going",
     "goingCount_one": "{{count}} going",

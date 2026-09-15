@@ -52,8 +52,6 @@ test.describe("Onboarding Wizard", () => {
         "/clubs/mine": [],
         "/going-events": [],
         "/saved-clubs": [],
-        "/credits": { balance: 0 },
-        "/promotions/active-ids": [],
         "/events/stats": {},
         "/events": {
           items: [],

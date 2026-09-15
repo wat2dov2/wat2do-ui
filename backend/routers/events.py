@@ -26,7 +26,6 @@ from schemas.event import (
     EventPublicResponse,
     EventResponse,
     EventStatsResponse,
-    EventSummaryResponse,
     EventUpdate,
 )
 from schemas.user import UserResponse
@@ -64,14 +63,6 @@ def _authorize_event_club(club_id: int, db_user: UserResponse) -> None:
         owned_clubs = club_service.list_clubs_by_owner(str(db_user.id))
         if not any(c.id == club.id for c in owned_clubs):
             raise AuthorizationError(CLUB_EVENT_CREATION_REQUIRED)
-
-
-@router.get("/promoted", response_model=list[EventSummaryResponse])
-def list_promoted_events(
-    school: str | None = Query(default=None, max_length=MAX_EVENT_SCHOOL_LENGTH),
-):
-    """Public list of promoted events for a school."""
-    return event_service.list_promoted_events(school=school)
 
 
 @router.get("/stats", response_model=dict[str, EventStatsResponse])

@@ -59,14 +59,6 @@ CLUB_PENDING_REVIEW = (
 SIGNUP_FAILED = "Unable to create account — check email/password requirements"
 PASSWORD_RESET_FAILED = "Unable to reset password — please try again"
 EMAIL_OR_USERNAME_TAKEN = "Email already taken"
-INSUFFICIENT_CREDITS = "Insufficient credits"
-# Machine-readable error code for frontend to branch on without
-# relying on the human-readable ``INSUFFICIENT_CREDITS`` message.  Kept
-# snake_case so it stays stable across i18n / wording changes.
-INSUFFICIENT_CREDITS_CODE = "insufficient_credits"
-INVALID_PROMOTION_PACKAGE = "Invalid promotion package"
-CLUB_PROMOTION_REQUIRED = "Only club owners can promote events from their club"
-EVENT_NOT_ACTIVE = "Only published events can be promoted"
 ID_MISMATCH = "ID mismatch"
 REQUIRES_LOCATION = "requires_location"
 INVALID_CUSTOM_URL = "custom-url destination_id must be a valid http or https URL"
@@ -91,7 +83,7 @@ INVALID_SCAN_CONFIRMATION = "Invalid or expired scan confirmation"
 PAYOUT_NOTES_REQUIRED = "Notes are required when holding or voiding a payout"
 PAYOUT_EXPORT_PENDING_ONLY = "Only pending payouts can be exported"
 INVALID_PAYOUT_FILTERS = "Invalid payout filter range"
-EVENT_ALREADY_PAST = "Event has already ended and cannot be modified or promoted"
+EVENT_ALREADY_PAST = "Event has already ended and cannot be modified"
 GOING_EVENTS_CAP_REACHED = "Maximum going events limit reached"
 INVALID_EVENT_OCCURRENCE = "One or more occurrences do not belong to this event"
 OCCURRENCE_NOT_SELECTABLE = "One or more occurrences can no longer be selected"

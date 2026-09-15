@@ -35,9 +35,6 @@
     "submissionReceivedDesc": "已送交管理員審核。",
     "eventCreatedDesc": "現已上線並對學生可見。",
     "eventUpdatedDesc": "已更新。",
-    "promote": "推廣",
-    "eventPromoted": "活動已推廣！",
-    "eventPromotedDesc": "現已提升，學生將更明顯地見到它。",
     "noResults": "未找到結果。",
     "signInToView": "登入以查看你的活動",
     "signInToViewDesc": "標記你要參加的活動，並在同一地方查看所有活動。",
@@ -68,7 +65,6 @@
     "clearAllFilters": "清除所有篩選條件",
     "calendarViewComingSoon": "日曆視圖即將推出...",
     "mapViewComingSoon": "地圖檢視即將推出...",
-    "promotedEvents": "推廣活動",
     "dateSections": {
       "today": "今日",
       "tomorrow": "明日",
@@ -114,7 +110,6 @@
         "email": "電郵"
       }
     },
-    "promoted": "推廣",
     "new": "最新",
     "goingCount": "{{count}} 人參加",
     "goingCount_other": "{{count}} 人參加",

@@ -74,7 +74,6 @@ PUBLIC_ENDPOINTS = (
         "/events/?school=uwaterloo&page=1&page_size=20",
         False,
     ),
-    Endpoint("/events/promoted", "/events/promoted?school=uwaterloo", False),
     Endpoint("/events/stats", "/events/stats?school=uwaterloo", False),
     Endpoint("/meta/constants", "/meta/constants", False),
     Endpoint(
@@ -82,13 +81,11 @@ PUBLIC_ENDPOINTS = (
         "/clubs/?school=uwaterloo&page=1&page_size=20",
         False,
     ),
-    Endpoint("/promotions/active-ids", "/promotions/active-ids", False),
     Endpoint("/qr/map", "/qr/map?school=uwaterloo", False),
     Endpoint("/schools", "/schools?q=waterloo&limit=10", False),
 )
 
 AUTHENTICATED_ENDPOINTS = (
-    Endpoint("/credits/", "/credits/", True),
     Endpoint("/going-events/", "/going-events/", True),
     Endpoint(
         "/instagram-publishing/batches/",
@@ -119,7 +116,6 @@ AUTHENTICATED_ENDPOINTS = (
         "/payouts/admin?page=1&page_size=10",
         True,
     ),
-    Endpoint("/promotions/", "/promotions/?limit=20&offset=0", True),
     Endpoint("/qr/", "/qr/?page=1&page_size=10", True),
     Endpoint("/qr/earnings", "/qr/earnings", True),
     Endpoint("/qr/scans", "/qr/scans?page=1&page_size=10", True),

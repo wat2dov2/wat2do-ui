@@ -27,7 +27,6 @@ import { AUTH_STATE_REFRESH_EVENT, loadUserProfile } from "@/features/auth/api/u
 
 interface EventsState {
   events: AppEvent[];
-  promotedEvents: AppEvent[];
   latestAddedEvent: LatestAddedEvent;
   isLoading: boolean;
   error: string | null;
@@ -45,7 +44,6 @@ interface EventsState {
   hydrateInitialFeed: (
     feed: PaginatedEventsResponse,
     school: string | null,
-    promotedEvents?: AppEvent[],
   ) => void;
   setSchoolFilter: (school: string) => void;
   addEvent: (data: EventFormData) => Promise<number>;
@@ -74,25 +72,22 @@ function getInitialSchoolFilter(): string {
 function removeEventFromState(state: EventsState, eventId: number): Partial<EventsState> {
   return {
     events: state.events.filter((event) => event.id !== eventId),
-    promotedEvents: state.promotedEvents.filter((event) => event.id !== eventId),
   };
 }
 
 export const useEventsStore = create<EventsState>((set, get) => ({
   events: [],
-  promotedEvents: [],
   latestAddedEvent: null,
   isLoading: true,
   error: null,
   schoolFilter: getInitialSchoolFilter(),
   hasHydratedInitialFeed: false,
 
-  hydrateInitialFeed: (feed, school, promotedEvents = []) => {
+  hydrateInitialFeed: (feed, school) => {
     const nextSchool = school ? resolveSchool(school) : get().schoolFilter;
 
     set({
       events: feed.items,
-      promotedEvents,
       latestAddedEvent: feed.latest_added_event ?? null,
       isLoading: false,
       error: null,
@@ -122,9 +117,6 @@ export const useEventsStore = create<EventsState>((set, get) => ({
 
     set((state) => ({
       events: state.events.map((event) => (event.id === eventId ? updated : event)),
-      promotedEvents: state.promotedEvents.map((event) =>
-        event.id === eventId ? updated : event,
-      ),
       latestAddedEvent:
         state.latestAddedEvent?.added_at === updated.added_at
           ? { title: updated.title, added_at: updated.added_at }

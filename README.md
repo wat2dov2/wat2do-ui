@@ -116,7 +116,7 @@ Supabase also runs this seed after `supabase db reset`, but that command deletes
 ## Feature control boxes
 
 Non-secret feature and algorithm tuning lives in one file per feature under [`backend/controlbox`](backend/controlbox).
-These files are the single editable sources for event discovery and ISR, frontend cache policy, recommendations, morning-email selection, authentication lifetimes, club invitations, notification defaults, credits and promotions, interaction behavior and abuse bounds, API rate limits, scraper behavior, email delivery, AI output size, admin pagination, public attendee previews, and Instagram publishing accounts.
+These files are the single editable sources for event discovery and ISR, frontend cache policy, recommendations, morning-email selection, authentication lifetimes, club invitations, notification defaults, interaction behavior and abuse bounds, API rate limits, scraper behavior, email delivery, AI output size, admin pagination, public attendee previews, and Instagram publishing accounts.
 The backend validates the complete directory at startup, rejects missing or unknown feature files, and rejects invalid values or conflicting limits, while the frontend imports only the feature files it needs at build time.
 Environment-specific credentials, infrastructure sizing, database constraints, and UI constants intentionally stay with their owning systems.
 Changes take effect after rebuilding the applications or restarting a scheduled Python job.

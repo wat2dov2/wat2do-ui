@@ -7,7 +7,6 @@ import {
   useCurrentTime,
   useGoingEvents,
 } from "@/features/events/hooks/useGoingEvents";
-import { useCreditsStore } from "@/features/credits/store/credits.store";
 import { resolveSchool } from "@/shared/constants/schools";
 import { getUniqueEvents } from "@/shared/utils/event";
 import { hasActiveEventOccurrence } from "@/shared/utils/date";
@@ -24,7 +23,6 @@ interface UseEventsPageDataOptions {
 
 interface EventFeedSource {
   events: Event[];
-  promotedEvents: Event[];
   latestAddedEvent: LatestAddedEvent;
   isLoading: boolean;
   error: string | null;
@@ -38,7 +36,6 @@ function useEventFeedSource(
 ): EventFeedSource {
   const hasHydrated = useEventsStore((s) => s.hasHydratedInitialFeed);
   const storeEvents = useEventsStore((s) => s.events);
-  const storePromotedEvents = useEventsStore((s) => s.promotedEvents);
   const storeLatestAddedEvent = useEventsStore((s) => s.latestAddedEvent);
   const storeIsLoading = useEventsStore((s) => s.isLoading);
   const storeError = useEventsStore((s) => s.error);
@@ -48,7 +45,6 @@ function useEventFeedSource(
     if (hasHydrated) {
       return {
         events: storeEvents,
-        promotedEvents: storePromotedEvents,
         latestAddedEvent: storeLatestAddedEvent,
         isLoading: storeIsLoading,
         error: storeError,
@@ -58,7 +54,6 @@ function useEventFeedSource(
 
     return {
       events: initialSnapshot?.feed.items ?? [],
-      promotedEvents: initialSnapshot?.promotedEvents ?? [],
       latestAddedEvent: initialSnapshot?.feed.latest_added_event ?? null,
       // The snapshot is the data, so nothing is pending; a missing snapshot
       // means the server's fetch failed and there is nothing more coming.
@@ -74,31 +69,8 @@ function useEventFeedSource(
     storeEvents,
     storeIsLoading,
     storeLatestAddedEvent,
-    storePromotedEvents,
     storeSchoolFilter,
   ]);
-}
-
-function derivePromotedEvents(
-  snapshotPromoted: Event[],
-  allEvents: Event[],
-  activePromotedIds: number[],
-): Event[] {
-  const byId = new Map<number, Event>();
-
-  for (const event of snapshotPromoted) {
-    byId.set(event.id, event);
-  }
-
-  for (const id of activePromotedIds) {
-    if (byId.has(id)) continue;
-    const event = allEvents.find((item) => item.id === id);
-    if (event) {
-      byId.set(id, event);
-    }
-  }
-
-  return Array.from(byId.values());
 }
 
 /**
@@ -113,7 +85,6 @@ export function useEventsPageData({
   const router = useRouter();
   const {
     events,
-    promotedEvents: snapshotPromotedEvents,
     latestAddedEvent,
     isLoading,
     error,
@@ -127,7 +98,6 @@ export function useEventsPageData({
   );
   const { data: eventStatsData, isSuccess: eventStatsReady } = useEventStats(schoolFilter);
   const eventStats = eventStatsReady ? (eventStatsData ?? {}) : null;
-  const activePromotedEventIds = useCreditsStore((s) => s.activePromotedEventIds);
 
   const visibleEvents = useMemo(
     () =>
@@ -137,15 +107,6 @@ export function useEventsPageData({
             hasActiveEventOccurrence(event, currentTimeMs),
           ),
     [currentTimeMs, events],
-  );
-  const visibleSnapshotPromotedEvents = useMemo(
-    () =>
-      currentTimeMs === null
-        ? snapshotPromotedEvents
-        : snapshotPromotedEvents.filter((event) =>
-            hasActiveEventOccurrence(event, currentTimeMs),
-          ),
-    [currentTimeMs, snapshotPromotedEvents],
   );
 
   const filters = useSearch({
@@ -157,20 +118,6 @@ export function useEventsPageData({
   const orderedEvents = useMemo(
     () => getUniqueEvents(filters.filteredEvents),
     [filters.filteredEvents],
-  );
-
-  const promotedEvents = useMemo(
-    () =>
-      derivePromotedEvents(
-        visibleSnapshotPromotedEvents,
-        visibleEvents,
-        activePromotedEventIds,
-      ),
-    [
-      visibleSnapshotPromotedEvents,
-      visibleEvents,
-      activePromotedEventIds,
-    ],
   );
 
   const totalEvents = filters.filteredEvents.length;
@@ -186,7 +133,6 @@ export function useEventsPageData({
     totalEvents,
     eventStats,
     latestAddedEvent,
-    promotedEvents,
     filters,
     orderedEvents,
     allEvents: visibleEvents,

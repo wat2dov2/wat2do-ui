@@ -31,7 +31,6 @@ export function EventRoutePage({
         .hydrateInitialFeed(
           initialSnapshot.feed,
           initialSchool,
-          initialSnapshot.promotedEvents,
         );
       return;
     }

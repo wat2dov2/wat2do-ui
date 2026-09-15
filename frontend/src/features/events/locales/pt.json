@@ -35,9 +35,6 @@
     "submissionReceivedDesc": "foi enviado para os administradores para revisão.",
     "eventCreatedDesc": "agora está ao vivo e visível para os estudantes.",
     "eventUpdatedDesc": "foi atualizado.",
-    "promote": "Promover",
-    "eventPromoted": "Evento Promovido!",
-    "eventPromotedDesc": "agora está promovido e aparecerá de forma mais destacada para os estudantes.",
     "noResults": "Nenhum resultado encontrado.",
     "signInToView": "Faça login para ver seus eventos",
     "signInToViewDesc": "Marque os eventos que você vai e veja todos em um só lugar.",
@@ -68,7 +65,6 @@
     "clearAllFilters": "Limpar todos os filtros",
     "calendarViewComingSoon": "Visualização do calendário em breve...",
     "mapViewComingSoon": "Visualização do mapa em breve...",
-    "promotedEvents": "Eventos promovidos",
     "dateSections": {
       "today": "Hoje",
       "tomorrow": "Amanhã",
@@ -114,7 +110,6 @@
         "email": "Email"
       }
     },
-    "promoted": "Promovido",
     "new": "NOVO",
     "goingCount": "{{count}} participante",
     "goingCount_one": "{{count}} participante",

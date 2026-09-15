@@ -35,9 +35,6 @@
     "submissionReceivedDesc": "એડમિન માટે સમીક્ષા માટે મોકલવામાં આવી છે.",
     "eventCreatedDesc": "હવે લાઈવ છે અને વિદ્યાર્થીઓને દેખાઈ રહ્યો છે.",
     "eventUpdatedDesc": "અપડેટ થઈ ગઈ છે.",
-    "promote": "પ્રચાર કરો",
-    "eventPromoted": "ઈવેન્ટ પ્રમોટ થઈ ગઈ!",
-    "eventPromotedDesc": "હવે પ્રમોટ કરવામાં આવ્યું છે અને વિદ્યાર્થીઓ માટે વધુ પ્રખ્યાત રીતે દેખાશે.",
     "noResults": "કોઈ પરિણામ મળ્યું નથી.",
     "signInToView": "તમારા ઇવન્ટ જોવા માટે સાઇન ઇન કરો",
     "signInToViewDesc": "જ્યાં તમે જવાના ઇવન્ટ માર્ક કરો અને બધા એક જ જગ્યાએ જુઓ.",
@@ -68,7 +65,6 @@
     "clearAllFilters": "બધા ફિલ્ટર્સ સાફ કરો",
     "calendarViewComingSoon": "કેલેન્ડર વિવ જોવા આવ્યા છે...",
     "mapViewComingSoon": "નકશા દૃશ્ય ટૂંક સમયમાં આવી રહ્યું છે...",
-    "promotedEvents": "પ્રોમોટેડ ઇવેન્ટ્સ",
     "dateSections": {
       "today": "આજ",
       "tomorrow": "કાલ",
@@ -114,7 +110,6 @@
         "email": "ઇમેઇલ"
       }
     },
-    "promoted": "પ્રચારિત",
     "new": "નવું",
     "goingCount": "{{count}} ભાગ લેનાર",
     "goingCount_one": "{{count}} ભાગ લેનાર",

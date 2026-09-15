@@ -35,9 +35,6 @@
     "submissionReceivedDesc": "جائزے کے لیے ایڈمنز کو بھیج دیا گیا ہے۔",
     "eventCreatedDesc": "اب لائیو ہے اور طلباء کے لیے نظر آ رہا ہے۔",
     "eventUpdatedDesc": "اپ ڈیٹ کر دیا گیا ہے۔",
-    "promote": "تشہیر کریں",
-    "eventPromoted": "تقریب کی تشہیر کر دی گئی!",
-    "eventPromotedDesc": "اب اس کی تشہیر ہو چکی ہے اور یہ طلبہ کو زیادہ نمایاں دکھائی دے گی۔",
     "noResults": "کوئی نتائج نہیں ملے۔",
     "signInToView": "اپنے ایونٹس دیکھنے کے لیے سائن ان کریں",
     "signInToViewDesc": "ایونٹس کو مارک کریں جن میں آپ جانے والے ہیں اور سب کو ایک جگہ دیکھیں۔",
@@ -68,7 +65,6 @@
     "clearAllFilters": "تمام فلٹرز صاف کریں",
     "calendarViewComingSoon": "کیلنڈر ویو جلد آرہا ہے...",
     "mapViewComingSoon": "میپ ویو جلد آ رہا ہے...",
-    "promotedEvents": "پروموٹڈ ایونٹس",
     "dateSections": {
       "today": "آج",
       "tomorrow": "کل",
@@ -114,7 +110,6 @@
         "email": "ای میل"
       }
     },
-    "promoted": "تشہیر شدہ",
     "new": "نیا",
     "goingCount": "{{count}} شریک",
     "goingCount_one": "{{count}} شریک",

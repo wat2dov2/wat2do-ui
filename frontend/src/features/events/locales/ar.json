@@ -35,9 +35,6 @@
     "submissionReceivedDesc": "تم إرساله إلى المسؤولين للمراجعة.",
     "eventCreatedDesc": "بات الآن مباشرًا ومرئيًا للطلاب.",
     "eventUpdatedDesc": "تم التحديث.",
-    "promote": "ترويج",
-    "eventPromoted": "تم ترويج الفعالية!",
-    "eventPromotedDesc": "تم ترويجها الآن وستظهر بشكل أوضح للطلاب.",
     "noResults": "لم يتم العثور على نتائج.",
     "signInToView": "سجل الدخول لمشاهدة أحداثك",
     "signInToViewDesc": "حدد الأحداث التي ستذهب إليها وشاهدها جميعًا في مكان واحد.",
@@ -68,7 +65,6 @@
     "clearAllFilters": "مسح جميع الفلاتر",
     "calendarViewComingSoon": "عرض التقويم قادم قريبًا...",
     "mapViewComingSoon": "عرض الخريطة سيأتي قريبًا...",
-    "promotedEvents": "الفعاليات المروجة",
     "dateSections": {
       "today": "اليوم",
       "tomorrow": "غدًا",
@@ -114,7 +110,6 @@
         "email": "البريد الإلكتروني"
       }
     },
-    "promoted": "تم الترويج",
     "new": "جديد",
     "goingCount": "{{count}} مشارك",
     "goingCount_one": "{{count}} مشارك",

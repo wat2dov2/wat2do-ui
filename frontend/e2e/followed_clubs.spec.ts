@@ -193,18 +193,6 @@ async function seedAuthenticatedSession(
     },
   );
 
-  // Mock GET /credits/
-  await page.route(
-    (url) => apiPath(url) === "/credits",
-    async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({ balance: 0 }),
-      });
-    },
-  );
-
   // Mock GET /going-events/
   await page.route(
     (url) => apiPath(url) === "/going-events",
@@ -315,17 +303,6 @@ test.describe("Followed Clubs Flow", () => {
     );
 
     await page.route(
-      (url) => apiPath(url) === "/promotions/active-ids",
-      async (route) => {
-        await route.fulfill({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify([]),
-        });
-      },
-    );
-
-    await page.route(
       (url) => apiPath(url) === "/going-events",
       async (route) => {
         await route.fulfill({
@@ -343,17 +320,6 @@ test.describe("Followed Clubs Flow", () => {
           status: 200,
           contentType: "application/json",
           body: JSON.stringify([]),
-        });
-      },
-    );
-
-    await page.route(
-      (url) => apiPath(url) === "/credits",
-      async (route) => {
-        await route.fulfill({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify({ balance: 0 }),
         });
       },
     );

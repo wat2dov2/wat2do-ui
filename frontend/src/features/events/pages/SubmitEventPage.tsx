@@ -1,9 +1,7 @@
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { useAuthState } from "@/features/auth";
-import { BuyCreditsModal } from "@/features/credits/components/BuyCreditsModal";
-import { useCreditsStore } from "@/features/credits/store/credits.store";
 import { SubmitEventFlow } from "@/features/events/components/SubmitEventModal";
 import { useEventsStore } from "@/features/events/store/events.store";
 import { submitEventForReview } from "@/shared/api/submissions.api";
@@ -30,10 +28,6 @@ export function SubmitEventPage() {
     getCurrentSchool(),
     loadUserProfile()?.school,
   );
-  const userCredits = useCreditsStore((state) => state.userCredits);
-  const addCredits = useCreditsStore((state) => state.addCredits);
-  const promoteEvent = useCreditsStore((state) => state.promoteEvent);
-  const [showBuyCredits, setShowBuyCredits] = useState(false);
 
   const close = useCallback(() => {
     router.push(ROUTES.HOME);
@@ -54,46 +48,23 @@ export function SubmitEventPage() {
     [addEvent, canCreateEvents, t],
   );
 
-  const promote = useCallback(
-    async (eventId: number): Promise<boolean> => {
-      const result = await promoteEvent(eventId);
-      if (result.needsCredits) {
-        setShowBuyCredits(true);
-        return false;
-      }
-      return result.success;
-    },
-    [promoteEvent, setShowBuyCredits],
-  );
-
   return (
-    <>
-      <Container size="lg">
-        <Stack gap={6}>
-          <PageHeader
-            back={{ href: ROUTES.HOME, label: t("events.allEvents") }}
-            title={t("events.createEvent")}
-            description={t("events.submitEventSchoolDescription", {
-              school: getSchoolName(school),
-            })}
-          />
-          <SubmitEventFlow
-            onClose={close}
-            onSubmit={submit}
-            canCreateEvents={canCreateEvents}
-            userCredits={userCredits}
-            onPromote={canCreateEvents ? promote : undefined}
-            onBuyCredits={() => setShowBuyCredits(true)}
-            showHeading={false}
-          />
-        </Stack>
-      </Container>
-      <BuyCreditsModal
-        isOpen={showBuyCredits}
-        onClose={() => setShowBuyCredits(false)}
-        currentCredits={userCredits}
-        onPurchase={addCredits}
-      />
-    </>
+    <Container size="lg">
+      <Stack gap={6}>
+        <PageHeader
+          back={{ href: ROUTES.HOME, label: t("events.allEvents") }}
+          title={t("events.createEvent")}
+          description={t("events.submitEventSchoolDescription", {
+            school: getSchoolName(school),
+          })}
+        />
+        <SubmitEventFlow
+          onClose={close}
+          onSubmit={submit}
+          canCreateEvents={canCreateEvents}
+          showHeading={false}
+        />
+      </Stack>
+    </Container>
   );
 }

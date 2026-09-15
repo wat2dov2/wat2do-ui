@@ -234,21 +234,6 @@ def list_events(
     )
 
 
-def list_promoted_events(school: str | None = None) -> list[EventSummaryResponse]:
-    """Return upcoming promoted events for a school."""
-    from services import credit_service
-
-    active_ids = credit_service.get_active_promoted_event_ids()
-    if not active_ids:
-        return []
-    promoted, _ = list_events(
-        school=school,
-        limit=MAX_LIST_LIMIT,
-        ids=active_ids,
-    )
-    return promoted
-
-
 def create_event(data: EventCreate, *, created_by: str) -> EventResponse:
     payload = data.model_dump(mode="json")
     payload.pop("occurrences", None)
@@ -360,20 +345,6 @@ def update_event_and_occurrences(
 
 
 def delete_event(event_id: int) -> bool:
-    # C6: refund active promotions before delete - ON DELETE CASCADE would
-    # otherwise drop them without a ledger refund. Helper never raises.
-    # event_dates cascade via FK.
-    from services import credit_service  # local import to avoid cycle
-
-    try:
-        credit_service.refund_active_promotions_for_event(event_id)
-    except Exception as e:
-        log.error(
-            "refund_active_promotions_for_event failed for event=%s: %s",
-            event_id,
-            e,
-        )
-
     existing = get_event(event_id)
     r = get_sb().table(EVENTS).delete().eq("id", event_id).execute()
     if r.data:

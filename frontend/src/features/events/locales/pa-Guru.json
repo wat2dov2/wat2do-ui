@@ -35,9 +35,6 @@
     "submissionReceivedDesc": "ਪ੍ਰਸ਼ਾਸਕਾਂ ਨੂੰ ਸਮੀਖਿਆ ਲਈ ਭੇਜਿਆ ਗਿਆ ਹੈ।",
     "eventCreatedDesc": "ਹੁਣ ਲਾਈਵ ਅਤੇ ਵਿਦਿਆਰਥੀਆਂ ਲਈ ਦ੍ਰਿਸ਼ਮਾਨ ਹੈ।",
     "eventUpdatedDesc": "ਅਪਡੇਟ ਕੀਤਾ ਗਿਆ ਹੈ।",
-    "promote": "ਪ੍ਰਚਾਰ ਕਰੋ",
-    "eventPromoted": "ਇਵੈਂਟ ਦਾ ਪ੍ਰਚਾਰ ਕੀਤਾ ਗਿਆ!",
-    "eventPromotedDesc": "ਹੁਣ ਅੱਗੇ ਵਧਾਇਆ ਗਿਆ ਹੈ ਅਤੇ ਵਿਦਿਆਰਥੀਆਂ ਲਈ ਵਧੇਰੇ ਪ੍ਰਮੁੱਖਤਾ ਨਾਲ ਦਿਖਾਈ ਦੇਵੇਗਾ।",
     "noResults": "ਕੋਈ ਨਤੀਜੇ ਨਹੀਂ ਮਿਲੇ।",
     "signInToView": "ਆਪਣੇ ਸਮਾਗਮਾਂ ਨੂੰ ਦੇਖਣ ਲਈ ਸਾਈਨ ਇਨ ਕਰੋ",
     "signInToViewDesc": "ਉਹਨਾਂ ਇਵੈਂਟਾਂ ਨੂੰ ਚਿੰਨ੍ਹਿਤ ਕਰੋ ਜਿਨ੍ਹਾਂ 'ਤੇ ਤੁਸੀਂ ਜਾ ਰਹੇ ਹੋ ਅਤੇ ਉਹਨਾਂ ਸਾਰਿਆਂ ਨੂੰ ਇੱਕ ਥਾਂ 'ਤੇ ਦੇਖੋ।",
@@ -68,7 +65,6 @@
     "clearAllFilters": "ਸਾਰੇ ਫਿਲਟਰ ਸਾਫ਼ ਕਰੋ",
     "calendarViewComingSoon": "ਕੈਲੰਡਰ ਦ੍ਰਿਸ਼ ਜਲਦੀ ਹੀ ਆ ਰਿਹਾ ਹੈ...",
     "mapViewComingSoon": "ਨਕਸ਼ੇ ਦਾ ਦ੍ਰਿਸ਼ ਜਲਦੀ ਹੀ ਆ ਰਿਹਾ ਹੈ...",
-    "promotedEvents": "ਪ੍ਰੋਮੋਟ ਕੀਤੇ ਇਵੈਂਟਸ",
     "dateSections": {
       "today": "ਅੱਜ",
       "tomorrow": "ਕੱਲ੍ਹ",
@@ -114,7 +110,6 @@
         "email": "ਈਮੇਲ"
       }
     },
-    "promoted": "ਪ੍ਰਚਾਰਿਤ",
     "new": "ਨਵਾਂ",
     "goingCount": "{{count}} ਹਾਜ਼ਰ ਹੋਣ ਵਾਲਾ",
     "goingCount_one": "{{count}} ਹਾਜ਼ਰ ਹੋਣ ਵਾਲਾ",

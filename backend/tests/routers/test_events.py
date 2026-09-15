@@ -619,18 +619,6 @@ def test_update_past_event_rejected(authenticated_client, monkeypatch):
         raise AssertionError("expected ValidationError for past-event update")
 
 
-def test_list_promoted_events_endpoint(client, monkeypatch):
-    mock_promoted = MagicMock(return_value=[_mock_event(id=1, title="Promoted Event")])
-    monkeypatch.setattr(event_service, "list_promoted_events", mock_promoted)
-
-    resp = client.get("/events/promoted", params={"school": "uwaterloo"})
-    assert resp.status_code == 200
-    body = resp.json()
-    assert len(body) == 1
-    assert body[0]["title"] == "Promoted Event"
-    mock_promoted.assert_called_once_with(school="uwaterloo")
-
-
 def test_get_event_stats_public(client, monkeypatch):
     mock_stats = MagicMock(
         return_value={

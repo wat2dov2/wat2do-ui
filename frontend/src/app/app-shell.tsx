@@ -9,7 +9,6 @@ import { UnknownSchoolPage } from "@/app/UnknownSchoolPage";
 import { useAppNavigation } from "@/app/hooks/useAppNavigation";
 import { useAuthReady } from "@/app/client-providers";
 import { useUserEmail } from "@/features/auth/hooks/useAuthState";
-import { useCreditsStore } from "@/features/credits/store/credits.store";
 import { useEventsStore } from "@/features/events/store/events.store";
 import { useSavedClubsStore } from "@/features/clubs/store/savedClubs.store";
 import { getRouteDocumentTitle, ROUTES } from "@/shared/constants/routes";
@@ -105,8 +104,6 @@ function AppShellContent({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!authReady || isAuthFlow) return;
     void useSavedClubsStore.getState().fetchSavedClubs();
-    void useCreditsStore.getState().fetchBalance();
-    void useCreditsStore.getState().fetchActivePromotedEventIds();
   }, [authReady, isAuthFlow, userEmail]);
 
   useAppNavigation({ setSchoolFilter });

@@ -191,24 +191,6 @@ class NotificationDefaultsControl(_ControlModel):
     event_change: bool
 
 
-class PromotionPackageControl(_ControlModel):
-    credits: int = Field(gt=0)
-    days: int = Field(gt=0)
-
-
-class CreditsControl(_ControlModel):
-    new_user_balance: int = Field(ge=0)
-    maximum_admin_add: int = Field(gt=0)
-    default_promotion_package: str = Field(min_length=1)
-    promotion_packages: dict[str, PromotionPackageControl] = Field(min_length=1)
-
-    @model_validator(mode="after")
-    def validate_default_package(self) -> "CreditsControl":
-        if self.default_promotion_package not in self.promotion_packages:
-            raise ValueError("default_promotion_package must exist in promotion_packages")
-        return self
-
-
 class InteractionIngestionControl(_ControlModel):
     default_query_limit: int = Field(gt=0)
     maximum_batch_size: int = Field(gt=0)
@@ -517,7 +499,6 @@ class ControlBox(_ControlModel):
     morning_email: MorningEmailControl
     event_reminder: EventReminderControl
     notification_defaults: NotificationDefaultsControl
-    credits: CreditsControl
     interaction_ingestion: InteractionIngestionControl
     rate_limits: RateLimitsControl
     scraping: ScrapingControl

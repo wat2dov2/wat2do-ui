@@ -35,9 +35,6 @@
     "submissionReceivedDesc": "wurde zur Überprüfung an die Administratoren gesendet.",
     "eventCreatedDesc": "ist jetzt live und für Studenten sichtbar.",
     "eventUpdatedDesc": "wurde aktualisiert.",
-    "promote": "Bewerben",
-    "eventPromoted": "Veranstaltung beworben!",
-    "eventPromotedDesc": "wird jetzt beworben und wird für Schüler prominenter angezeigt.",
     "noResults": "Keine Ergebnisse gefunden.",
     "signInToView": "Melde dich an, um deine Veranstaltungen zu sehen",
     "signInToViewDesc": "Markiere Veranstaltungen, an denen du teilnimmst, und sieh sie alle an einem Ort.",
@@ -68,7 +65,6 @@
     "clearAllFilters": "Alle Filter löschen",
     "calendarViewComingSoon": "Kalenderansicht kommt bald...",
     "mapViewComingSoon": "Kartenansicht kommt bald...",
-    "promotedEvents": "Geförderte Veranstaltungen",
     "dateSections": {
       "today": "Heute",
       "tomorrow": "Morgen",
@@ -114,7 +110,6 @@
         "email": "E-Mail"
       }
     },
-    "promoted": "Beworben",
     "new": "NEU",
     "goingCount": "{{count}} nimmt teil",
     "goingCount_one": "{{count}} nimmt teil",

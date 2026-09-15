@@ -104,15 +104,6 @@ test.beforeEach(async ({ page, next }) => {
     }
   });
 
-  // Prevent CORS errors on active-ids by mocking it globally for all browser routes
-  await mockApi(page, next, url => apiPath(url) === "/promotions/active-ids", async () => {
-    return ({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify([]),
-    });
-  });
-
   await mockApi(page, next, url => apiPath(url) === "/meta/constants", async () => {
     return ({
       status: 200,
@@ -162,30 +153,7 @@ test.beforeEach(async ({ page, next }) => {
     });
   });
 
-  await mockApi(page, next, url => apiPath(url) === "/credits", async () => {
-    return ({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({ balance: 0 }),
-    });
-  });
-
-  await mockApi(page, next, url => apiPath(url)?.startsWith("/events/promoted") === true, async () => {
-    return ({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify([]),
-    });
-  });
-
-  await mockApi(page, next, url => apiPath(url) === "/events", async (request) => {
-    if (apiPath(new URL(request.url))?.startsWith("/events/promoted") === true) {
-      return ({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify([]),
-      });
-    }
+  await mockApi(page, next, url => apiPath(url) === "/events", async () => {
 
     const now = new Date();
     const startsAt = new Date(now.getTime() + 86_400_000).toISOString();
@@ -426,26 +394,8 @@ async function seedAuthenticatedSession(page: Page, next: NextFixture) {
     });
   });
 
-  // Mock credits
-  await mockApi(page, next, url => apiPath(url) === "/credits", async () => {
-    return ({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({ balance: 100 }),
-    });
-  });
-
   // Mock saved events
   await mockApi(page, next, url => apiPath(url) === "/going-events", async () => {
-    return ({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify([]),
-    });
-  });
-
-  // Mock active promotions IDs
-  await mockApi(page, next, url => apiPath(url) === "/promotions/active-ids", async () => {
     return ({
       status: 200,
       contentType: "application/json",
@@ -1250,7 +1200,6 @@ test.describe("Club Integrations", () => {
     // Step 1: add bot — clicking immediately transitions to step 2
     await expect(page.getByRole("heading", { name: "Connect Discord" })).toBeVisible();
     await page.getByRole("button", { name: "Add to Discord" }).click();
-
 
     // Step 2: select server and channel (handleAddBot transitions instantly)
     const dialog = page.getByRole("dialog", { name: "Connect Discord" });

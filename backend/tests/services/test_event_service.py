@@ -442,26 +442,6 @@ def test_list_events_returns_upcoming_with_occurrences(monkeypatch, fake_sb, pat
     assert bound <= datetime.now(timezone.utc)  # the boundary is start-of-today, never future
 
 
-def test_list_promoted_events_queries_only_active_ids(monkeypatch):
-    """Promoted lookup routes active IDs through the canonical paged query."""
-    promoted = [EventSummaryResponse.model_validate(_event(id=1).model_dump())]
-    mock_list = MagicMock(return_value=(promoted, 1))
-    monkeypatch.setattr(event_service, "list_events", mock_list)
-    monkeypatch.setattr(
-        "services.credit_service.get_active_promoted_event_ids",
-        MagicMock(return_value=[1, 2]),
-    )
-
-    result = event_service.list_promoted_events(school="uwaterloo")
-
-    assert result == promoted
-    mock_list.assert_called_once_with(
-        school="uwaterloo",
-        limit=MAX_LIST_LIMIT,
-        ids=[1, 2],
-    )
-
-
 def test_list_events_pushes_filters_into_event_query(monkeypatch):
     mock_page = MagicMock(return_value=([], 0))
     monkeypatch.setattr(event_service.event_query, "load_events_page", mock_page)

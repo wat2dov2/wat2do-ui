@@ -62,10 +62,6 @@ export type ApiClubIntegrationResponse = components["schemas"]["ClubIntegrationR
 export type ApiDiscordChannelOption = components["schemas"]["DiscordChannelOption"];
 export type ApiDiscordServerOption = components["schemas"]["DiscordServerOption"];
 
-// ── Credits & Promotions ────────────────────────────────────────────
-export type ApiCreditBalanceResponse = components["schemas"]["CreditBalanceResponse"];
-export type ApiPromotionResponse = components["schemas"]["PromotionResponse"];
-
 // ── Reports ─────────────────────────────────────────────────────────
 export type ApiReportResponse = components["schemas"]["ReportResponse"];
 

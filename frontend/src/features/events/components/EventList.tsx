@@ -22,7 +22,6 @@ import { controlBox } from "@/shared/config/controlBox";
 
 interface EventListProps {
   events: Event[];
-  promotedEvents?: Event[];
   viewMode: "grid" | "calendar" | "map";
   onEventClick?: (event: Event) => void;
   /** Called when the empty-state "Clear filters" button is pressed. */
@@ -113,7 +112,6 @@ function groupEventsByDateSection(events: Event[]): DateSectionGroup[] {
  */
 export function EventList({
   events,
-  promotedEvents = [],
   viewMode,
   onEventClick,
   onClearFilters,
@@ -129,41 +127,35 @@ export function EventList({
   );
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
-  // Filter out promoted events from the main feed date sections so they don't duplicate
-  const regularEvents = useMemo(() => {
-    const promotedIds = new Set((promotedEvents || []).map((e) => e.id));
-    return events.filter((e) => !promotedIds.has(e.id));
-  }, [events, promotedEvents]);
-
   const dateSectionGroups = useMemo(
-    () => groupEventsByDateSection(regularEvents),
-    [regularEvents],
+    () => groupEventsByDateSection(events),
+    [events],
   );
   const sectionOrderedEvents = useMemo(
     () =>
       groupByDateSections
         ? dateSectionGroups.flatMap((group) => group.events)
-        : regularEvents,
-    [dateSectionGroups, groupByDateSections, regularEvents],
+        : events,
+    [dateSectionGroups, groupByDateSections, events],
   );
-  const visibleRegularEvents = useMemo(
+  const visibleEvents = useMemo(
     () => sectionOrderedEvents.slice(0, visibleEventCount),
     [sectionOrderedEvents, visibleEventCount],
   );
   const visibleDateSectionGroups = useMemo(
-    () => groupEventsByDateSection(visibleRegularEvents),
-    [visibleRegularEvents],
+    () => groupEventsByDateSection(visibleEvents),
+    [visibleEvents],
   );
   const priorityImageIds = useMemo(
     () =>
       new Set(
-        [...promotedEvents, ...visibleRegularEvents]
+        visibleEvents
           .slice(0, 2)
           .map((event) => event.id),
       ),
-    [promotedEvents, visibleRegularEvents],
+    [visibleEvents],
   );
-  const hasMoreEvents = visibleRegularEvents.length < sectionOrderedEvents.length;
+  const hasMoreEvents = visibleEvents.length < sectionOrderedEvents.length;
   const loadMoreEvents = useCallback(() => {
     setVisibleEventCount((count) =>
       Math.min(
@@ -232,7 +224,7 @@ export function EventList({
   // Guard on what will actually render, not on the raw input: date sectioning
   // can drop events, and checking `events.length` here would render a feed of
   // zero cards with no empty state at all.
-  if (promotedEvents.length === 0 && sectionOrderedEvents.length === 0) {
+  if (sectionOrderedEvents.length === 0) {
     return (
       <EmptyState
         icon={<Search />}
@@ -260,20 +252,6 @@ export function EventList({
 
   return (
     <div className="space-y-5" role="list" aria-label={`${events.length} events found`}>
-      {/* Promoted Events Section */}
-      {promotedEvents && promotedEvents.length > 0 && (
-        <section className="space-y-2.5" aria-label={t("events.promotedEvents")}>
-          <h2 className="text-base font-normal tracking-normal text-foreground">
-            {t("events.promotedEvents")}
-          </h2>
-          <EventCardsGrid
-            events={promotedEvents}
-            eventStats={eventStats}
-            priorityImageIds={priorityImageIds}
-            onEventClick={onEventClick}
-          />
-        </section>
-      )}
 
       {groupByDateSections ? (
         visibleDateSectionGroups.map((group) => {
@@ -295,7 +273,7 @@ export function EventList({
       ) : (
         <section className="space-y-2.5" aria-label={t("events.upcoming")}>
           <EventCardsGrid
-            events={visibleRegularEvents}
+            events={visibleEvents}
             eventStats={eventStats}
             priorityImageIds={priorityImageIds}
             onEventClick={onEventClick}

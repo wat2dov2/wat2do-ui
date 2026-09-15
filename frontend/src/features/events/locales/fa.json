@@ -35,9 +35,6 @@
     "submissionReceivedDesc": "برای بررسی به مدیران ارسال شد.",
     "eventCreatedDesc": "اکنون فعال است و برای دانشجویان قابل مشاهده است.",
     "eventUpdatedDesc": "به‌روزرسانی شد.",
-    "promote": "تبلیغ",
-    "eventPromoted": "رویداد تبلیغ شد!",
-    "eventPromotedDesc": "اکنون تبلیغ شده و برای دانشجویان برجسته‌تر نمایش داده می‌شود.",
     "noResults": "هیچ نتیجه‌ای یافت نشد.",
     "signInToView": "برای مشاهده رویدادهای خود وارد شوید",
     "signInToViewDesc": "رویدادهایی که قصد شرکت در آنها را دارید علامت بزنید و همه آنها را در یک مکان ببینید.",
@@ -68,7 +65,6 @@
     "clearAllFilters": "پاک کردن همه فیلترها",
     "calendarViewComingSoon": "نمای تقویم به زودی می‌آید...",
     "mapViewComingSoon": "نمای نقشه به زودی...",
-    "promotedEvents": "رویدادهای تبلیغ‌شده",
     "dateSections": {
       "today": "امروز",
       "tomorrow": "فردا",
@@ -114,7 +110,6 @@
         "email": "ایمیل"
       }
     },
-    "promoted": "تبلیغ‌شده",
     "new": "جدید",
     "goingCount": "{{count}} شرکت‌کننده",
     "goingCount_one": "{{count}} شرکت‌کننده",

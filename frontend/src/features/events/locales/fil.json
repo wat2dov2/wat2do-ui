@@ -35,9 +35,6 @@
     "submissionReceivedDesc": "ay naipadala na sa mga admin para sa pagsusuri.",
     "eventCreatedDesc": "ay live na at nakikita na ng mga estudyante.",
     "eventUpdatedDesc": "ay na-update.",
-    "promote": "I-promote",
-    "eventPromoted": "Event Itinaguyod!",
-    "eventPromotedDesc": "ay ngayong na-promote at mas lalabas para sa mga estudyante.",
     "noResults": "Walang nahanap na resulta.",
     "signInToView": "Mag-sign in upang makita ang iyong mga kaganapan",
     "signInToViewDesc": "Tandaan ang mga kaganapan na dadaluhan mo at tingnan lahat sa isang lugar.",
@@ -68,7 +65,6 @@
     "clearAllFilters": "Linisin ang lahat ng mga filter",
     "calendarViewComingSoon": "Paparating ang view ng kalendaryo...",
     "mapViewComingSoon": "Papakita ng mapa darating na...",
-    "promotedEvents": "Itinatampok na mga Kaganapan",
     "dateSections": {
       "today": "Ngayon",
       "tomorrow": "Bukas",
@@ -114,7 +110,6 @@
         "email": "Email"
       }
     },
-    "promoted": "Na-promote",
     "new": "BAGO",
     "goingCount": "{{count}} pupunta",
     "goingCount_one": "{{count}} pupunta",

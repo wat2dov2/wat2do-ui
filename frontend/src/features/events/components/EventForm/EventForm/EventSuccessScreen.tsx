@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Check, Sparkles, Megaphone } from "@/shared/ui/doodle-icons";
+import { Check, Sparkles } from "@/shared/ui/doodle-icons";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/shared/ui/button";
 import { formatCardDate, formatCardTime } from "@/shared/utils/date";
@@ -10,14 +10,12 @@ import { Section } from "@/shared/layout";
 
 interface EventSuccessScreenProps {
   onClose: () => void;
-  onPromote?: () => void;
   isEditMode: boolean;
   isSubmissionOnly: boolean;
 }
 
 export function EventSuccessScreen({
   onClose,
-  onPromote,
   isEditMode,
   isSubmissionOnly,
 }: EventSuccessScreenProps) {
@@ -98,15 +96,6 @@ export function EventSuccessScreen({
             <Button variant="outline" onMouseDown={handleDone} className="flex-1">
               {t("common.done")}
             </Button>
-            {onPromote && (
-              <Button
-                onMouseDown={onPromote}
-                className="flex-1 bg-primary hover:bg-primary-hover"
-              >
-                <Megaphone className="size-4 mr-1.5" />
-                {t("events.promote")}
-              </Button>
-            )}
           </div>
       </div>
     </Section>

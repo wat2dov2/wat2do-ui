@@ -16,7 +16,6 @@ interface UseSubmitEventOptions {
   onUpdate?: (eventId: number, event: EventFormData) => void | Promise<void>;
   /** Absent when the form is an always-present panel with nothing to dismiss. */
   onClose?: () => void;
-  showPromotion: boolean;
   onSubmitted: (eventId: number | null) => void;
 }
 
@@ -30,7 +29,6 @@ export function useSubmitEvent({
   onSubmit,
   onUpdate,
   onClose,
-  showPromotion,
   onSubmitted,
 }: UseSubmitEventOptions) {
   const { t } = useTranslation();
@@ -75,9 +73,7 @@ export function useSubmitEvent({
         const result = await onSubmit(dataToSubmit);
         const eventId = result.type === "event" ? result.eventId : null;
         onSubmitted(eventId);
-        if (!showPromotion) {
-          triggerConfetti();
-        }
+        triggerConfetti();
         return true;
       } catch (err) {
         console.error("Failed to submit event:", err);
@@ -94,7 +90,7 @@ export function useSubmitEvent({
         setIsSubmitting(false);
       }
     },
-    [isEditMode, editEventId, onUpdate, onSubmit, onClose, t, showPromotion, triggerConfetti, onSubmitted]
+    [isEditMode, editEventId, onUpdate, onSubmit, onClose, t, triggerConfetti, onSubmitted]
   );
 
   return {

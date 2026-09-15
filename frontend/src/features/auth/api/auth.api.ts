@@ -28,7 +28,7 @@ export type { UserProfile };
 
 /**
  * Dispatch a same-tab "auth-user-login" event so per-user stores (saved
- * events, promotions, etc.) can refetch after a successful login/signup.
+ * events, etc.) can refetch after a successful login/signup.
  * Mirrors the "auth-user-logout" broadcast in logoutAPI.
  */
 function dispatchAuthUserLogin(school?: string): void {
@@ -144,7 +144,7 @@ export async function logoutAPI(): Promise<void> {
   clearAllAuthData();
   // Reset freshness timestamp so the next admin route forces a re-fetch.
   lastProfileFetchAt = 0;
-  // Broadcast logout so per-user stores (saved events, promotions) reset
+  // Broadcast logout so per-user stores (saved events) reset
   // via the "auth-user-logout" event.
   if (typeof window !== "undefined") {
     try {

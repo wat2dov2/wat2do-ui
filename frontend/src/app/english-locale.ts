@@ -5,7 +5,6 @@ import en2 from "@/features/events/locales/en.json";
 import en3 from "@/features/clubs/locales/en.json";
 import en4 from "@/features/club-panel/locales/en.json";
 import en5 from "@/features/admin/locales/en.json";
-import en6 from "@/features/credits/locales/en.json";
 import en7 from "@/features/qrcode/locales/en.json";
 import en8 from "@/features/settings/locales/en.json";
 import en9 from "@/features/onboarding-demo/locales/en.json";
@@ -28,7 +27,7 @@ import en11 from "@/features/positions/locales/en.json";
  */
 const ENGLISH_TRANSLATIONS: Record<string, unknown> = Object.assign(
   {},
-  en0, en1, en2, en3, en4, en5, en6, en7, en8, en9, en10, en11,
+  en0, en1, en2, en3, en4, en5, en7, en8, en9, en10, en11,
 );
 
 i18n.addResourceBundle("en", "translation", ENGLISH_TRANSLATIONS);

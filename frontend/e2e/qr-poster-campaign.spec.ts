@@ -47,20 +47,12 @@ async function installCommonApiMocks(page: Page): Promise<void> {
       }),
   );
   await page.route(
-    (url) => apiPath(url) === "/promotions/active-ids",
-    (route) => fulfillJson(route, []),
-  );
-  await page.route(
     (url) => apiPath(url) === "/going-events",
     (route) => fulfillJson(route, []),
   );
   await page.route(
     (url) => apiPath(url) === "/saved-clubs",
     (route) => fulfillJson(route, []),
-  );
-  await page.route(
-    (url) => apiPath(url) === "/credits",
-    (route) => fulfillJson(route, { balance: 0 }),
   );
   await page.route(
     (url) => apiPath(url) === "/clubs/mine",

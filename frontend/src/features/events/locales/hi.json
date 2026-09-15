@@ -35,9 +35,6 @@
     "submissionReceivedDesc": "समीक्षा के लिए व्यवस्थापकों को भेजा गया है.",
     "eventCreatedDesc": "अब लाइव है और छात्रों को दिखाई दे रहा है।",
     "eventUpdatedDesc": "अद्यतन किया गया है.",
-    "promote": "प्रचार करें",
-    "eventPromoted": "इवेंट का प्रचार किया गया!",
-    "eventPromotedDesc": "अब प्रचारित किया गया है और यह छात्रों के लिए अधिक प्रमुखता से दिखाई देगा।",
     "noResults": "कोई परिणाम नहीं मिला.",
     "signInToView": "अपने ईवेंट देखने के लिए साइन इन करें",
     "signInToViewDesc": "जिन इवेंट में आप जा रहे हैं उन्हें चिह्नित करें और उन सभी को एक ही स्थान पर देखें।",
@@ -68,7 +65,6 @@
     "clearAllFilters": "सभी फ़िल्टर साफ़ करें",
     "calendarViewComingSoon": "कैलेंडर दृश्य जल्द ही आ रहा है...",
     "mapViewComingSoon": "मानचित्र दृश्य जल्द ही आ रहा है...",
-    "promotedEvents": "प्रचारित घटनाएँ",
     "dateSections": {
       "today": "आज",
       "tomorrow": "कल",
@@ -114,7 +110,6 @@
         "email": "ईमेल"
       }
     },
-    "promoted": "प्रचारित",
     "new": "नया",
     "goingCount": "{{count}} प्रतिभागी",
     "goingCount_one": "{{count}} प्रतिभागी",

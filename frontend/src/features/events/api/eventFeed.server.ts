@@ -7,7 +7,6 @@ import { getServerApiBaseUrl } from "@/shared/services/serverApi";
 
 export interface SchoolBrowseSnapshot {
   feed: PaginatedEventsResponse;
-  promotedEvents: Event[];
 }
 
 export function eventFeedTag(school: string): string {
@@ -103,23 +102,6 @@ export async function getClubEventsSnapshot(
   );
 }
 
-async function fetchPromotedEvents(
-  school: string,
-  fetchOptions: RequestInit,
-): Promise<Event[]> {
-  const params = new URLSearchParams({ school });
-  const response = await fetch(
-    `${getServerApiBaseUrl()}/events/promoted?${params.toString()}`,
-    fetchOptions,
-  );
-
-  if (!response.ok) {
-    throw new Error(`Promoted events request failed with status ${response.status}`);
-  }
-
-  return (await response.json()) as Event[];
-}
-
 export async function getSchoolBrowseSnapshot(school: string): Promise<SchoolBrowseSnapshot> {
   const resolvedSchool = resolveSchool(school);
   const fetchOptions: RequestInit = {
@@ -132,10 +114,7 @@ export async function getSchoolBrowseSnapshot(school: string): Promise<SchoolBro
     },
   };
 
-  const [firstPage, promotedEvents] = await Promise.all([
-    fetchEventsPage(resolvedSchool, 1, fetchOptions),
-    fetchPromotedEvents(resolvedSchool, fetchOptions),
-  ]);
+  const firstPage = await fetchEventsPage(resolvedSchool, 1, fetchOptions);
   const remainingPages = await Promise.all(
     Array.from({ length: Math.max(firstPage.total_pages - 1, 0) }, (_, index) =>
       fetchEventsPage(resolvedSchool, index + 2, fetchOptions),
@@ -152,5 +131,5 @@ export async function getSchoolBrowseSnapshot(school: string): Promise<SchoolBro
     latest_added_event: firstPage.latest_added_event ?? null,
   };
 
-  return { feed, promotedEvents };
+  return { feed };
 }
