@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Process pending exact Instagram posts using public embeds."""
+"""Process pending exact Instagram posts using Apify."""
 
 from __future__ import annotations
 

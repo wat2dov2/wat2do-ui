@@ -1,4 +1,4 @@
-"""Read-only live check of the production public-embed client. No ingestion writes."""
+"""Run Apify for one exact post and print its data without ingestion writes."""
 
 import argparse
 import json

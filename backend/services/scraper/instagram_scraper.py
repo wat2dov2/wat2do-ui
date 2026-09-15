@@ -1,4 +1,4 @@
-"""Instagram retrieval: public embeds for exact posts, Apify for manual lookups.
+"""Instagram retrieval through Apify for exact posts and manual lookups.
 
 Class-based per backend-architecture.md: external-client wrappers are
 the one place we deviate from function-based services. The module
@@ -20,17 +20,14 @@ import time
 from datetime import datetime, timedelta, timezone
 from typing import Literal
 
-import httpx
 from apify_client import ApifyClient
-from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential_jitter
+from tenacity import retry, stop_after_attempt, wait_exponential_jitter
 
 from core.config import settings
 from core.constants import (
     SCRAPING_APIFY_TIMEOUT_SECONDS,
     SCRAPING_POLL_INTERVAL_SECONDS,
 )
-from core.controlbox import controlbox
-from services.scraper.instagram_embed import extract_post
 from services.scraper.single_user import is_exact_post_url_target
 
 log = logging.getLogger(__name__)
@@ -39,57 +36,27 @@ ACTOR_ID = "apify/instagram-post-scraper"
 PROFILE_ACTOR_ID = "apify/instagram-profile-scraper"
 
 _TERMINAL_STATUSES = {"SUCCEEDED", "FAILED", "ABORTED", "TIMED-OUT"}
-_CONTROL = controlbox.scraping
-
-
-def _transient_http_error(error: BaseException) -> bool:
-    return isinstance(error, httpx.TransportError) or (
-        isinstance(error, httpx.HTTPStatusError) and error.response.status_code >= 500
-    )
 
 
 class InstagramScraperError(RuntimeError):
     """A categorized provider failure safe to expose in workflow output."""
 
-    def __init__(
-        self, stage: Literal["start", "poll", "terminal", "dataset", "input", "http", "content"]
-    ):
+    def __init__(self, stage: Literal["start", "poll", "terminal", "dataset", "input"]):
         super().__init__(f"Instagram scraper provider {stage} failure")
         self.stage = stage
 
 
 class InstagramScraper:
-    """Fetch exact posts without credentials; retain separate manual lookup tools."""
+    """Fetch exact posts and manual lookups through the shared Apify client."""
 
     def scrape_posts(self, targets: list[str]) -> list[dict]:
         if not targets or not all(is_exact_post_url_target(target) for target in targets):
             raise InstagramScraperError("input")
-        posts = []
-        with httpx.Client(timeout=_CONTROL.embed_timeout_seconds, follow_redirects=False) as client:
-            for target in dict.fromkeys(targets):
-                try:
-                    response = self._fetch_embed(client, target)
-                    posts.append(extract_post(response, target))
-                except httpx.HTTPError:
-                    raise InstagramScraperError("http") from None
-                except (ValueError, TypeError, KeyError, IndexError, AttributeError, OverflowError):
-                    raise InstagramScraperError("content") from None
-        return posts
-
-    @staticmethod
-    @retry(
-        retry=retry_if_exception(_transient_http_error),
-        stop=stop_after_attempt(_CONTROL.embed_maximum_attempts),
-        wait=wait_exponential_jitter(
-            initial=_CONTROL.embed_retry_wait_seconds,
-            max=_CONTROL.embed_retry_maximum_wait_seconds,
-        ),
-        reraise=True,
-    )
-    def _fetch_embed(client: httpx.Client, target: str) -> str:
-        response = client.get(f"{target.rstrip('/')}/embed/captioned/")
-        response.raise_for_status()
-        return response.text
+        return self._run_actor(
+            ACTOR_ID,
+            {"username": list(dict.fromkeys(targets))},
+            timeout_seconds=SCRAPING_APIFY_TIMEOUT_SECONDS,
+        )
 
     def scrape_latest(
         self,

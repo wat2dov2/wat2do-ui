@@ -4,7 +4,6 @@ import logging
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
-import httpx
 import pytest
 from tenacity import wait_none
 
@@ -14,73 +13,6 @@ from services.scraper.instagram_scraper import (
     InstagramScraper,
     InstagramScraperError,
 )
-
-
-def _public_client(monkeypatch, handler):
-    from services.scraper import instagram_scraper as module
-
-    client_type = httpx.Client
-    monkeypatch.setattr(module.settings, "apify_api_token", "")
-    monkeypatch.setattr(module, "ApifyClient", lambda *_: pytest.fail("Apify must not be called"))
-    monkeypatch.setattr(
-        module.httpx,
-        "Client",
-        lambda **kwargs: client_type(transport=httpx.MockTransport(handler), **kwargs),
-    )
-    monkeypatch.setattr(InstagramScraper._fetch_embed.retry, "wait", wait_none())
-    return InstagramScraper()
-
-
-def test_exact_posts_need_no_apify_and_retry_transient_http_failure(monkeypatch):
-    calls = []
-
-    def handler(request):
-        calls.append(request)
-        if len(calls) == 1:
-            return httpx.Response(503)
-        return httpx.Response(
-            200,
-            json={
-                "shortcode": "ABC123",
-                "owner": {"username": "club"},
-                "caption": {"text": "Hello"},
-                "display_url": "https://example.com/photo.jpg",
-            },
-        )
-
-    scraper = _public_client(monkeypatch, handler)
-    posts = scraper.scrape_posts(["https://www.instagram.com/p/ABC123/"])
-    assert posts[0]["caption"] == "Hello"
-    assert len(calls) == 2
-    assert str(calls[0].url) == "https://www.instagram.com/p/ABC123/embed/captioned/"
-    assert "cookie" not in calls[0].headers
-    assert "authorization" not in calls[0].headers
-
-
-@pytest.mark.parametrize("status", [302, 403, 404, 429])
-def test_unavailable_post_fails_without_apify_or_aggressive_retry(monkeypatch, status):
-    calls = []
-
-    def handler(request):
-        calls.append(request)
-        return httpx.Response(status, headers={"location": "https://example.com/login"})
-
-    scraper = _public_client(monkeypatch, handler)
-    with pytest.raises(InstagramScraperError, match="http failure"):
-        scraper.scrape_posts(["https://www.instagram.com/p/ABC123/"])
-    assert len(calls) == 1
-
-
-def test_login_shell_fails_instead_of_empty_success(monkeypatch):
-    scraper = _public_client(monkeypatch, lambda request: httpx.Response(200, text="Log in"))
-    with pytest.raises(InstagramScraperError, match="content failure"):
-        scraper.scrape_posts(["https://www.instagram.com/p/ABC123/"])
-
-
-def test_invalid_target_never_requests_network(monkeypatch):
-    scraper = _public_client(monkeypatch, lambda request: pytest.fail("Unexpected network call"))
-    with pytest.raises(InstagramScraperError, match="input failure"):
-        scraper.scrape_posts(["https://example.com/p/ABC123/"])
 
 
 def _scraper_with_client(client: MagicMock, monkeypatch) -> InstagramScraper:
@@ -194,3 +126,30 @@ def test_scrape_profiles_sends_all_identifiers_to_profile_actor(monkeypatch):
     client.actor.return_value.start.assert_called_once_with(
         run_input={"usernames": ["wat2do", "42"]}
     )
+
+
+def test_exact_posts_use_apify_without_profile_filters(monkeypatch):
+    targets = ["https://www.instagram.com/p/ABC123/", "https://www.instagram.com/reel/DEF456/"]
+    scraper = InstagramScraper()
+    actor = MagicMock(return_value=[{"url": url} for url in targets])
+    monkeypatch.setattr(scraper, "_run_actor", actor)
+
+    assert scraper.scrape_posts([*targets, targets[0]]) == [{"url": url} for url in targets]
+    assert actor.call_args.args == (ACTOR_ID, {"username": targets})
+    assert actor.call_args.kwargs["timeout_seconds"] > 0
+
+
+@pytest.mark.parametrize("targets", [[], ["https://example.com/p/ABC123/"], ["club"]])
+def test_invalid_exact_targets_never_start_actor(monkeypatch, targets):
+    scraper = InstagramScraper()
+    actor = MagicMock()
+    monkeypatch.setattr(scraper, "_run_actor", actor)
+    with pytest.raises(InstagramScraperError, match="input failure"):
+        scraper.scrape_posts(targets)
+    actor.assert_not_called()
+
+
+def test_exact_posts_require_apify_token(monkeypatch):
+    monkeypatch.setattr("services.scraper.instagram_scraper.settings.apify_api_token", "")
+    with pytest.raises(InstagramScraperError, match="start failure"):
+        InstagramScraper().scrape_posts(["https://www.instagram.com/p/ABC123/"])

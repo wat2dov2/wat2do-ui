@@ -122,34 +122,26 @@ def test_run_converts_sanitized_provider_failure_to_nonzero(monkeypatch, caplog)
     assert secret not in caplog.text
 
 
-def test_exact_post_ingestion_uses_embed_data_without_apify(monkeypatch):
-    import json
+def test_exact_post_ingestion_uses_apify_data(monkeypatch):
     from unittest.mock import MagicMock
 
-    from services.scraper.instagram_scraper import InstagramScraper
+    from services.scraper.instagram_scraper import ACTOR_ID, InstagramScraper
 
     url = "https://www.instagram.com/p/POST123/"
     payload = {
-        "shortcode": "POST123",
-        "owner": {"username": "club"},
-        "caption": {"text": "Join us!"},
-        "carousel_media_count": 2,
-        "carousel_media": [
-            {"display_url": "https://example.com/1.jpg"},
-            {"display_url": "https://example.com/2.jpg"},
-        ],
+        "url": url,
+        "ownerUsername": "club",
+        "caption": "Join us!",
+        "images": ["https://example.com/1.jpg", "https://example.com/2.jpg"],
     }
     monkeypatch.setattr(scrape, "resolve_single_user_scrape_school", lambda: "ulaval")
     monkeypatch.setattr(scrape, "get_scraper", InstagramScraper)
-    monkeypatch.setattr(
-        InstagramScraper, "_fetch_embed", staticmethod(lambda *_: json.dumps(payload))
-    )
-    monkeypatch.setattr(InstagramScraper, "_run_actor", lambda *_a, **_k: pytest.fail("Apify call"))
+    actor = MagicMock(return_value=[payload])
+    monkeypatch.setattr(InstagramScraper, "_run_actor", actor)
     pipeline = MagicMock(return_value=scrape.ScrapeResult(ig_handle="club", posts_fetched=1))
     monkeypatch.setattr(scrape, "run_pipeline", pipeline)
     monkeypatch.setattr(scrape, "_log_automate_event", lambda *_: None)
     assert scrape.run(targets=[url], cutoff_days=1, dry_run=False, allow_past_events=False) == 0
-    post = pipeline.call_args.kwargs["posts"][0]
+    assert actor.call_args.args == (ACTOR_ID, {"username": [url]})
     assert pipeline.call_args.kwargs["school"] == "ulaval"
-    assert post["timestamp"] is None
-    assert len(post["images"]) == 2
+    assert pipeline.call_args.kwargs["posts"] == [payload]
