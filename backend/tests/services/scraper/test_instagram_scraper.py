@@ -73,8 +73,38 @@ def test_unavailable_post_fails_without_apify_or_aggressive_retry(monkeypatch, s
 
 def test_login_shell_fails_instead_of_empty_success(monkeypatch):
     scraper = _public_client(monkeypatch, lambda request: httpx.Response(200, text="Log in"))
-    with pytest.raises(InstagramScraperError, match="content failure"):
+    with pytest.raises(InstagramScraperError, match="content failure") as raised:
         scraper.scrape_posts(["https://www.instagram.com/p/ABC123/"])
+    assert "https://www.instagram.com/p/ABC123/" in str(raised.value)
+    assert "No complete matching media object returned" in str(raised.value)
+
+
+@pytest.mark.parametrize(
+    ("fields", "reason"),
+    [
+        ({}, "Post has no caption field"),
+        (
+            {"caption": {"text": "Hello"}, "carousel_media": [], "carousel_media_count": 2},
+            "Incomplete carousel",
+        ),
+        ({"caption": "private-response-content"}, "Unexpected embed structure (AttributeError)"),
+        ({"edge_media_to_caption": {}}, "Unexpected embed structure (KeyError)"),
+    ],
+)
+def test_content_failure_identifies_target_and_safe_reason(monkeypatch, fields, reason):
+    scraper = _public_client(
+        monkeypatch,
+        lambda request: httpx.Response(
+            200,
+            json={"shortcode": "ABC123", "owner": {"username": "club"}, **fields},
+        ),
+    )
+    with pytest.raises(InstagramScraperError) as raised:
+        scraper.scrape_posts(["https://www.instagram.com/p/ABC123/"])
+    assert raised.value.stage == "content"
+    assert "https://www.instagram.com/p/ABC123/" in str(raised.value)
+    assert reason in str(raised.value)
+    assert "private-response-content" not in str(raised.value)
 
 
 def test_invalid_target_never_requests_network(monkeypatch):

@@ -30,7 +30,7 @@ from core.constants import (
     SCRAPING_POLL_INTERVAL_SECONDS,
 )
 from core.controlbox import controlbox
-from services.scraper.instagram_embed import extract_post
+from services.scraper.instagram_embed import InstagramEmbedError, extract_post
 from services.scraper.single_user import is_exact_post_url_target
 
 log = logging.getLogger(__name__)
@@ -52,9 +52,13 @@ class InstagramScraperError(RuntimeError):
     """A categorized provider failure safe to expose in workflow output."""
 
     def __init__(
-        self, stage: Literal["start", "poll", "terminal", "dataset", "input", "http", "content"]
+        self,
+        stage: Literal["start", "poll", "terminal", "dataset", "input", "http", "content"],
+        *,
+        detail: str | None = None,
     ):
-        super().__init__(f"Instagram scraper provider {stage} failure")
+        message = f"Instagram scraper provider {stage} failure"
+        super().__init__(f"{message}: {detail}" if detail else message)
         self.stage = stage
 
 
@@ -72,8 +76,21 @@ class InstagramScraper:
                     posts.append(extract_post(response, target))
                 except httpx.HTTPError:
                     raise InstagramScraperError("http") from None
-                except (ValueError, TypeError, KeyError, IndexError, AttributeError, OverflowError):
-                    raise InstagramScraperError("content") from None
+                except InstagramEmbedError as exc:
+                    raise InstagramScraperError("content", detail=f"{target}: {exc}") from None
+                except (
+                    ValueError,
+                    TypeError,
+                    KeyError,
+                    IndexError,
+                    AttributeError,
+                    OverflowError,
+                ) as exc:
+                    # Unanticipated library errors can contain response data; report only the type.
+                    raise InstagramScraperError(
+                        "content",
+                        detail=f"{target}: Unexpected embed structure ({type(exc).__name__})",
+                    ) from None
         return posts
 
     @staticmethod
