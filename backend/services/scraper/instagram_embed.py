@@ -15,6 +15,10 @@ from services.scraper.dedup import _extract_shortcode
 from services.scraper.single_user import is_exact_post_url_target
 
 
+class InstagramEmbedError(ValueError):
+    """An explicit embed validation failure with a safe, application-owned reason."""
+
+
 class _JsonScripts(HTMLParser):
     def __init__(self) -> None:
         super().__init__()
@@ -72,7 +76,7 @@ def _image(media: dict) -> str:
     candidates = media.get("image_versions2", {}).get("candidates", [])
     url = media.get("display_url") or (candidates[0].get("url") if candidates else None)
     if not isinstance(url, str) or not url.startswith("https://"):
-        raise ValueError("Media is missing a usable image; refusing partial carousel data")
+        raise InstagramEmbedError("Media is missing a usable image; refusing partial carousel data")
     return url
 
 
@@ -81,22 +85,22 @@ def _normalize(media: dict, url: str) -> dict:
     username = owner.get("username")
     taken_at = media.get("taken_at_timestamp", media.get("taken_at"))
     if not isinstance(username, str) or not username:
-        raise ValueError("Post is missing its author")
+        raise InstagramEmbedError("Post is missing its author")
     if taken_at is not None and (
         isinstance(taken_at, bool)
         or not isinstance(taken_at, (int, float))
         or not math.isfinite(taken_at)
     ):
-        raise ValueError("Invalid timestamp")
+        raise InstagramEmbedError("Invalid timestamp")
     if "edge_media_to_caption" in media:
         edges = media["edge_media_to_caption"]["edges"]
         caption = edges[0]["node"]["text"] if edges else ""
     elif "caption" in media:
         caption = (media["caption"] or {}).get("text", "")
     else:
-        raise ValueError("Post has no caption field; response may be incomplete")
+        raise InstagramEmbedError("Post has no caption field; response may be incomplete")
     if not isinstance(caption, str):
-        raise ValueError("Invalid caption")
+        raise InstagramEmbedError("Invalid caption")
 
     if "edge_sidecar_to_children" in media:
         sidecar = media["edge_sidecar_to_children"]
@@ -104,17 +108,17 @@ def _normalize(media: dict, url: str) -> dict:
         if sidecar.get("page_info", {}).get("has_next_page") or sidecar.get(
             "count", len(children)
         ) != len(children):
-            raise ValueError("Incomplete carousel")
+            raise InstagramEmbedError("Incomplete carousel")
     elif "carousel_media" in media:
         children = media["carousel_media"]
         if len(children) != media.get("carousel_media_count", len(children)):
-            raise ValueError("Incomplete carousel")
+            raise InstagramEmbedError("Incomplete carousel")
     elif media.get("media_type") == 8 or media.get("__typename") == "GraphSidecar":
-        raise ValueError("Missing carousel children")
+        raise InstagramEmbedError("Missing carousel children")
     else:
         children = [media]
     if not children:
-        raise ValueError("Empty carousel")
+        raise InstagramEmbedError("Empty carousel")
 
     return {
         "url": url,
@@ -135,16 +139,21 @@ def _single_image_post(response: str, url: str) -> dict:
     link = soup.select_one("a.EmbeddedMedia")
     image = soup.select_one("img.EmbeddedMediaImage")
     caption = soup.select_one(".Caption")
-    if link is None or image is None or caption is None:
-        raise ValueError("Missing single-image embed content")
+    missing = [
+        name
+        for name, element in (("post link", link), ("image", image), ("caption", caption))
+        if element is None
+    ]
+    if missing:
+        raise InstagramEmbedError(f"Missing single-image embed content: {', '.join(missing)}")
     linked = urlsplit(link.get("href", ""))
     if linked.hostname not in {"www.instagram.com", "instagram.com"} or _extract_shortcode(
         linked.path
     ) != _extract_shortcode(url):
-        raise ValueError("Embed does not match requested post")
+        raise InstagramEmbedError("Embed does not match requested post")
     author = caption.select_one(".CaptionUsername")
     if author is None:
-        raise ValueError("Missing embed author")
+        raise InstagramEmbedError("Missing embed author")
     username = author.get_text(strip=True)
     author.decompose()
     for br in caption.find_all("br"):
@@ -161,7 +170,7 @@ def _single_image_post(response: str, url: str) -> dict:
 
 def extract_post(response: str, url: str) -> dict:
     if not is_exact_post_url_target(url):
-        raise ValueError("Use a canonical HTTPS Instagram post or reel URL")
+        raise InstagramEmbedError("Use a canonical HTTPS Instagram post or reel URL")
     parser = None
     try:
         documents = [json.loads(response)]
@@ -177,4 +186,6 @@ def extract_post(response: str, url: str) -> dict:
             return _normalize(media, url)
     if parser is not None and parser.simple_embed:
         return _single_image_post(response, url)
-    raise ValueError("No complete matching media object returned; HTTP 200 is not proof of access")
+    raise InstagramEmbedError(
+        "No complete matching media object returned; HTTP 200 is not proof of access"
+    )

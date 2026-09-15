@@ -122,6 +122,25 @@ def test_run_converts_sanitized_provider_failure_to_nonzero(monkeypatch, caplog)
     assert secret not in caplog.text
 
 
+def test_content_failure_reason_reaches_workflow_logs(monkeypatch, caplog):
+    from services.scraper.instagram_scraper import InstagramScraper
+
+    target = "https://www.instagram.com/p/POST123/"
+    monkeypatch.setattr(scrape, "resolve_single_user_scrape_school", lambda: "uwaterloo")
+    monkeypatch.setattr(scrape, "get_scraper", InstagramScraper)
+    monkeypatch.setattr(
+        InstagramScraper, "_fetch_embed", lambda *_: "<html>private-response-content</html>"
+    )
+    with caplog.at_level(logging.ERROR):
+        status = scrape.run(
+            targets=[target], cutoff_days=1825, dry_run=False, allow_past_events=False
+        )
+    assert status == 1
+    assert target in caplog.text
+    assert "No complete matching media object returned" in caplog.text
+    assert "private-response-content" not in caplog.text
+
+
 def test_exact_post_ingestion_uses_embed_data_without_apify(monkeypatch):
     import json
     from unittest.mock import MagicMock

@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from services.scraper.instagram_embed import extract_post
+from services.scraper.instagram_embed import InstagramEmbedError, extract_post
 from services.scraper.pipeline import _extract_image_urls
 from services.scraper.single_user import exact_post_results_match_targets
 
@@ -107,6 +107,21 @@ def test_single_image_embed_preserves_caption_and_missing_timestamp():
     assert post["ownerUsername"] == "club"
     assert post["timestamp"] is None
     assert post["images"] == ["https://example.com/post.jpg"]
+
+
+@pytest.mark.parametrize(
+    ("markup", "missing"),
+    [
+        (f'<a class="EmbeddedMedia" href="{URL}"></a>', "post link"),
+        ('<img class="EmbeddedMediaImage" src="https://example.com/post.jpg">', "image"),
+        ('class="Caption"', "caption"),
+    ],
+)
+def test_single_image_failure_identifies_missing_element(markup, missing):
+    with pytest.raises(
+        InstagramEmbedError, match=f"Missing single-image embed content: {missing}$"
+    ):
+        extract_post(_simple_embed().replace(markup, ""), URL)
 
 
 def test_carousel_cannot_degrade_to_cover_image():
