@@ -58,13 +58,12 @@ jobs:
           enable-cache: false
 
       - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
+        working-directory: backend
+        run: uv venv --python 3.12 .venv
 
       - name: Install dependencies
         working-directory: backend
-        run: uv pip install --system -r requirements.txt
+        run: uv pip install --python .venv/bin/python -r requirements.txt
 
       - name: Scrape pending media
         working-directory: backend
@@ -79,4 +78,4 @@ jobs:
           CUTOFF_DAYS: ${{ inputs.cutoff_days || '1' }}
           EVENT_FEED_REVALIDATION_URL: "${{ env.FRONTEND_URL }}/api/revalidate-events"
         run: |
-          python jobs/scrape_pending_media.py
+          .venv/bin/python jobs/scrape_pending_media.py
