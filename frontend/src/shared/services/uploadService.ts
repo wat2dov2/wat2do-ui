@@ -1,7 +1,6 @@
 import {
   getAccessToken,
   refreshAccessToken,
-  handleAuthFailure,
 } from "@/shared/services/apiClient";
 import { API_BASE_URL } from "@/shared/config/api";
 import type { EventFormData } from "@/shared/types";
@@ -62,10 +61,9 @@ async function requestFileUpload<T>(
     if (refreshOutcome === "refreshed") {
       response = await fetch(url, createUploadRequest(file, authentication));
       if (response.status === 401) {
-        handleAuthFailure();
+        throw new Error(`${failureLabel} failed: session expired`);
       }
     } else if (refreshOutcome === "rejected") {
-      handleAuthFailure();
       throw new Error(`${failureLabel} failed: session expired`);
     } else {
       throw new Error(`${failureLabel} failed: session temporarily unavailable`);

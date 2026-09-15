@@ -106,6 +106,7 @@ def _set_refresh_cookie(response: Response, refresh_token: str, request: Request
         secure=settings.cookie_secure or settings.is_production,
         path=REFRESH_COOKIE_PATH,
         max_age=COOKIE_MAX_AGE,
+        expires=COOKIE_MAX_AGE,
         domain=_refresh_cookie_domain(request),
     )
 

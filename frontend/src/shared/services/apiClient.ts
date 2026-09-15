@@ -125,7 +125,7 @@ export function refreshAccessToken(): Promise<RefreshOutcome> {
   if (authSessionInvalid) return Promise.resolve("rejected");
   if (refreshPromise) return refreshPromise;
 
-  refreshPromise = (async () => {
+  const doRefresh = async () => {
     try {
       const res = await fetch(`${API_BASE_URL}/auth/refresh`, {
         method: "POST",
@@ -139,14 +139,23 @@ export function refreshAccessToken(): Promise<RefreshOutcome> {
 
       const data: ApiTokenResponse = await res.json();
       setAccessToken(data.access_token);
-      return "refreshed";
+      return "refreshed" as const;
     } catch (err) {
       console.error("Token refresh request failed:", err);
-      return "unreachable";
+      return "unreachable" as const;
     }
-  })().finally(() => {
-    refreshPromise = null;
-  });
+  };
+
+  refreshPromise = (async () => {
+    try {
+      if (typeof navigator !== "undefined" && navigator.locks) {
+        return await navigator.locks.request("auth-refresh", doRefresh);
+      }
+      return await doRefresh();
+    } finally {
+      refreshPromise = null;
+    }
+  })();
 
   return refreshPromise;
 }
