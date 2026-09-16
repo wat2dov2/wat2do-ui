@@ -28,12 +28,7 @@ export function useClubsPage({
   const [minEvents, setMinEvents] = useState(0);
 
   const schoolFilter = useEventsStore((s) => s.schoolFilter);
-  const resolvedSchoolFilter =
-    typeof window === "undefined"
-      ? resolveSchool(initialSchool)
-      : schoolFilter
-        ? resolveSchool(schoolFilter)
-        : undefined;
+  const resolvedSchoolFilter = resolveSchool(schoolFilter ?? initialSchool);
 
   const { club_categories: allCategories } = useAppConstants();
 
@@ -43,9 +38,11 @@ export function useClubsPage({
     clubs,
     totalItems,
     isLoading,
+    isError,
     isLoadingMore,
     hasMore,
     loadMore,
+    refresh,
   } = useClubsList({
     mode: "infinite",
     limit: controlBox.clubManagement.directoryPageSize,
@@ -89,9 +86,11 @@ export function useClubsPage({
     clubs,
     allCategories,
     isLoading,
+    isError,
     isLoadingMore,
     hasMore,
     loadMore,
+    refresh,
     toggleCategory,
     totalItems,
     activeTab,

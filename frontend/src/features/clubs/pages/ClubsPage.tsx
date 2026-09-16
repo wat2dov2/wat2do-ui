@@ -28,6 +28,7 @@ import { toast } from "@/shared/hooks/use-toast";
 import { clubPagePath, ROUTES } from "@/shared/constants/routes";
 import type { PaginatedClubsResponse } from "@/features/clubs/api/clubs.api";
 import { PageHeader, Stack } from "@/shared/layout";
+import { EmptyState } from "@/shared/feedback";
 
 type ClubScope = "all" | "followed" | "claimed";
 
@@ -56,9 +57,11 @@ export function ClubsPage({
     allCategories,
     clubs,
     isLoading,
+    isError,
     isLoadingMore,
     hasMore,
     loadMore,
+    refresh,
     totalItems,
     activeTab,
     setActiveTab,
@@ -79,9 +82,9 @@ export function ClubsPage({
   const showSignInPrompt =
     (activeTab === "followed" || activeTab === "claimed") && !authed;
   const showResults =
-    !showSignInPrompt && (isLoading || clubs.length > 0);
+    !showSignInPrompt && !isError && (isLoading || clubs.length > 0);
   const showEmptyState =
-    !showSignInPrompt && !isLoading && clubs.length === 0;
+    !showSignInPrompt && !isError && !isLoading && clubs.length === 0;
 
   return (
     <Stack gap={2}>
@@ -197,6 +200,16 @@ export function ClubsPage({
             {t("events.signIn")}
           </a>
         </div>
+      ) : isError ? (
+        <EmptyState
+          role="alert"
+          title={t("errorBoundary.title")}
+          action={
+            <Button variant="outline" onClick={refresh}>
+              {t("common.tryAgain")}
+            </Button>
+          }
+        />
       ) : showResults ? (
         <ClubList
           clubs={clubs}

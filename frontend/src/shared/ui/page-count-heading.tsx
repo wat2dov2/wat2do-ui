@@ -23,7 +23,7 @@ export function PageCountHeading({ count, label, latest, level = 1 }: PageCountH
       <span>{label}</span>
     </Heading>
     {latest ? (
-      <Stack direction="horizontal" align="baseline" gap={2}>
+      <Stack direction="horizontal" align="center" gap={2}>
         <Badge variant="new" size="sm" className="shrink-0">{t("events.new")}</Badge>
         <Button type="button" variant="link" size="inline" onClick={latest.onSelect} className="min-w-0 shrink text-left leading-tight sm:leading-normal">
           <span>

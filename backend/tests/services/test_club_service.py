@@ -1,7 +1,10 @@
+import json
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
+import httpx
 import pytest
+from postgrest import SyncPostgrestClient
 
 from schemas.club import ClubResponse, ClubUpdate
 from services import club_service
@@ -225,11 +228,56 @@ def test_directory_minimum_uses_computed_count_before_paging(fake_sb, patch_sb):
     fake_sb.range.assert_called_once_with(20, 29)
 
 
-def test_directory_categories_match_any_selection(fake_sb, patch_sb):
-    patch_sb("services.club_service")
-    fake_sb.set_response(data=[])
-    club_service.list_clubs(categories=["Business", "Technology"])
-    fake_sb.overlaps.assert_called_once_with("categories", ["Business", "Technology"])
+@pytest.mark.parametrize(
+    "categories",
+    [
+        ["Arts & Culture"],
+        ["Business", "Technology"],
+        ['Arts, "Culture" (campus)', "Littérature\\théâtre"],
+    ],
+)
+@pytest.mark.parametrize(
+    ("search", "expected_search"),
+    [("Campus Arts", "Campus Arts"), ('  Campus, "Arts" (U.W.)  ', "Campus Arts UW")],
+)
+def test_directory_categories_use_jsonb_containment_with_search(
+    monkeypatch, categories, search, expected_search
+):
+    requests: list[httpx.Request] = []
+
+    def respond(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        return httpx.Response(200, json=[], headers={"Content-Range": "*/0"})
+
+    with httpx.Client(transport=httpx.MockTransport(respond)) as client:
+        database = SyncPostgrestClient("https://database.test", http_client=client)
+        monkeypatch.setattr(club_service, "get_sb", lambda: database)
+
+        clubs, total = club_service.list_clubs(
+            school="uwaterloo",
+            search=search,
+            categories=categories,
+            min_events=1,
+            skip=20,
+            limit=10,
+        )
+
+    assert (clubs, total) == ([], 0)
+    assert len(requests) == 1
+    params = requests[0].url.params
+    assert "categories" not in params  # JSONB has no PostgreSQL array-overlap operator.
+    assert (
+        params["or"]
+        == "("
+        + ",".join(f"categories.cs.{json.dumps(json.dumps([category]))}" for category in categories)
+        + ")"
+    )
+    assert params["club_name"] == f"ilike.%{expected_search}%"
+    assert params["school_id"] == "eq.1"
+    assert params["event_count"] == "gte.1"
+    assert params["status"] == "eq.approved"
+    assert params["offset"] == "20"
+    assert params["limit"] == "10"
 
 
 def test_lookup_club_by_school_and_name_exact_match(fake_sb, patch_sb):

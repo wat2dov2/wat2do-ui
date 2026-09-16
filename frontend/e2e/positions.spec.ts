@@ -194,6 +194,9 @@ test("keeps the latest-added link visible while filters refresh, including empty
   try {
     await expect(latest).toBeVisible();
     await expect(page.getByRole("heading", { name: "2 positions", exact: true })).toBeVisible();
+    await expect(page.locator('[aria-busy="true"]')).toBeVisible();
+    await expect(page.getByRole("button", { name: "View Design Lead position details" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "View Operations Assistant position details" })).toHaveCount(0);
   } finally {
     releaseResponse();
   }
@@ -202,6 +205,69 @@ test("keeps the latest-added link visible while filters refresh, including empty
   await latest.click();
   await expect(page.getByPlaceholder("Search roles, skills, or locations...")).toHaveValue("Operations Assistant");
   await expect(page.getByRole("heading", { name: "1 position", exact: true })).toBeVisible();
+});
+
+test("aligns the latest-added badge and text on desktop and mobile", async ({ page }) => {
+  await page.goto("/positions");
+  const latest = page.getByRole("button").filter({ hasText: "Operations Assistant" }).filter({ hasText: "ago" });
+  const badge = latest.locator("..").getByText("NEW", { exact: true });
+
+  for (const width of [1280, 390]) {
+    await page.setViewportSize({ width, height: 844 });
+    await expect(latest).toBeVisible();
+    await expect(latest.locator("..")).toHaveCSS("align-items", "center");
+    const textBox = (await latest.boundingBox())!;
+    const badgeBox = (await badge.boundingBox())!;
+    expect(Math.abs(textBox.y + textBox.height / 2 - badgeBox.y - badgeBox.height / 2)).toBeLessThan(1);
+    await expect(latest).toHaveCSS("border-bottom-width", "0px");
+  }
+});
+
+test("shows loading while changing position type, then renders the matching roles", async ({ page, next }) => {
+  await page.goto("/positions");
+  await expect(page.getByRole("button", { name: "View Design Lead position details" })).toBeVisible();
+  let releaseResponse!: () => void;
+  const responseGate = new Promise<void>(resolve => { releaseResponse = resolve; });
+  await mockApi(page, next, url => apiPath(url) === "/positions" && url.searchParams.get("position_type") === "staff", async () => {
+    await responseGate;
+    return { json: {
+      items: [MOCK_POSITIONS[1]], total: 1, page: 1, page_size: 50, total_pages: 1,
+      latest_added_position: { title: MOCK_POSITIONS[1].title, added_at: MOCK_POSITIONS[1].added_at },
+    } };
+  });
+
+  await page.getByRole("button", { name: "Paid staff", exact: true }).click();
+  try {
+    await expect(page.locator('[aria-busy="true"]')).toBeVisible();
+    await expect(page.getByRole("button", { name: "View Design Lead position details" })).toHaveCount(0);
+  } finally {
+    releaseResponse();
+  }
+  await expect(page.getByRole("button", { name: "View Operations Assistant position details" })).toBeVisible();
+  await expect(page.locator('[aria-busy="true"]')).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "1 position", exact: true })).toBeVisible();
+});
+
+test("offers retry instead of stale results or an empty state when a filter request fails", async ({ page, next }) => {
+  await page.goto("/positions");
+  let failed = true;
+  await mockApi(page, next, url => apiPath(url) === "/positions" && url.searchParams.get("position_type") === "committee", async () => {
+    if (failed) return { status: 503, json: { detail: "Temporarily unavailable" } };
+    return { json: {
+      items: [MOCK_POSITIONS[0]], total: 1, page: 1, page_size: 50, total_pages: 1,
+      latest_added_position: { title: MOCK_POSITIONS[1].title, added_at: MOCK_POSITIONS[1].added_at },
+    } };
+  });
+
+  await page.getByRole("button", { name: "Committee", exact: true }).click();
+  const error = page.getByRole("alert");
+  await expect(error).toContainText("Something went wrong");
+  await expect(page.locator('[aria-busy="true"]')).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "View Operations Assistant position details" })).toHaveCount(0);
+  failed = false;
+  await error.getByRole("button", { name: "Try again", exact: true }).click();
+  await expect(error).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "View Design Lead position details" })).toBeVisible();
 });
 
 test("navigates position drawers by keyboard and resets scroll for the next role", async ({ page }, testInfo) => {

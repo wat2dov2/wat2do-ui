@@ -14,6 +14,7 @@ import { SubmittedSearchInput } from "@/shared/ui/submitted-search-input";
 import { Button } from "@/shared/ui/button";
 import { NewlyAddedFilterButton } from "@/shared/ui/newly-added-filter-button";
 import { POSITION_TYPES } from "@/features/positions/api/positions.api";
+import { EmptyState } from "@/shared/feedback/empty-state";
 
 interface PositionsPageProps {
   initialDirectory: PaginatedPositionsResponse | null;
@@ -70,14 +71,26 @@ export function PositionsPage({
         </FilterBar>
       </PageHeader>
 
-      <PositionList
-        positions={positionsPage.positions}
-        isLoading={positionsPage.isLoading}
-        isLoadingMore={positionsPage.isLoadingMore}
-        hasMore={positionsPage.hasMore}
-        onLoadMore={positionsPage.loadMore}
-        onPositionClick={positionsPage.openPosition}
-      />
+      {positionsPage.isError ? (
+        <EmptyState
+          role="alert"
+          title={t("errorBoundary.title")}
+          action={
+            <Button variant="outline" onClick={positionsPage.retry}>
+              {t("common.tryAgain")}
+            </Button>
+          }
+        />
+      ) : (
+        <PositionList
+          positions={positionsPage.positions}
+          isLoading={positionsPage.isLoading}
+          isLoadingMore={positionsPage.isLoadingMore}
+          hasMore={positionsPage.hasMore}
+          onLoadMore={positionsPage.loadMore}
+          onPositionClick={positionsPage.openPosition}
+        />
+      )}
 
       <PositionDetailsDrawer
         positions={positionsPage.positions}

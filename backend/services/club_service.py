@@ -1,6 +1,7 @@
 """Clubs via Supabase. Sync."""
 
 import functools
+import json
 import logging
 from datetime import datetime, timezone
 
@@ -263,12 +264,14 @@ def list_clubs(
     if search:
         term = sanitize_postgrest_value(search)
         if term:
-            # Sanitize strips PostgREST control chars (commas, dots, parens,
-            # quotes) then we double-quote so the value is a safe literal.
-            quoted = f'"%{term}%"'
-            q = q.or_(f"club_name.ilike.{quoted}")
+            q = q.ilike("club_name", f"%{term}%")
     if categories:
-        q = q.overlaps("categories", categories)
+        # JSONB containment per category, ORed to match any selected category.
+        q = q.or_(
+            ",".join(
+                f"categories.cs.{json.dumps(json.dumps([category]))}" for category in categories
+            )
+        )
     if min_events:
         q = q.gte("event_count", min_events)
     q = q.order("club_name").range(skip, skip + limit - 1)

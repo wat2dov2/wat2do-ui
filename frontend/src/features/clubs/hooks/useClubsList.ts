@@ -136,6 +136,7 @@ export function useClubsList(options: UseClubsListOptions) {
     getNextPageParam: (lastPage) =>
       lastPage.page < lastPage.total_pages ? lastPage.page + 1 : undefined,
     enabled: enabled && mode === "infinite",
+    retry: false,
     initialData: canUseInitialDirectory
       ? {
           pages: [options.initialDirectory],
@@ -148,6 +149,7 @@ export function useClubsList(options: UseClubsListOptions) {
     queryKey: [...listQueryKey, "page", currentPage],
     queryFn: () => loadPage(currentPage),
     enabled: enabled && mode === "paginated",
+    retry: false,
   });
 
   const refresh = useCallback(() => {
@@ -160,6 +162,7 @@ export function useClubsList(options: UseClubsListOptions) {
       totalItems: 0,
       totalPages: 0,
       isLoading: filters.activeTab === "followed" && !filters.isSavedLoaded,
+      isError: false,
       isLoadingMore: false,
       hasMore: false,
       currentPage: 1,
@@ -178,12 +181,13 @@ export function useClubsList(options: UseClubsListOptions) {
       totalItems: lastPage?.total ?? 0,
       totalPages: lastPage?.total_pages ?? 0,
       isLoading: infiniteQuery.isLoading,
+      isError: infiniteQuery.isError,
       isLoadingMore: infiniteQuery.isFetchingNextPage,
-      hasMore: infiniteQuery.hasNextPage ?? false,
+      hasMore: !infiniteQuery.isError && (infiniteQuery.hasNextPage ?? false),
       currentPage: lastPage?.page ?? 1,
       setCurrentPage,
       loadMore: () => {
-        if (!infiniteQuery.hasNextPage || infiniteQuery.isFetchingNextPage) return;
+        if (!infiniteQuery.hasNextPage || infiniteQuery.isFetchingNextPage || infiniteQuery.isError) return;
         void infiniteQuery.fetchNextPage();
       },
       refresh,
@@ -197,6 +201,7 @@ export function useClubsList(options: UseClubsListOptions) {
     totalItems: pageData?.total ?? 0,
     totalPages: pageData?.total_pages ?? 0,
     isLoading: pageQuery.isLoading,
+    isError: pageQuery.isError,
     isLoadingMore: false,
     hasMore: false,
     currentPage,

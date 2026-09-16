@@ -202,8 +202,12 @@ test.beforeEach(async ({ page, next }) => {
     const search = requestUrl.searchParams.get("search")?.toLowerCase() ?? "";
     const ids = requestUrl.searchParams.getAll("ids").map(Number);
     const minEvents = Number(requestUrl.searchParams.get("min_events") ?? 0);
+    const categories = requestUrl.searchParams.getAll("categories");
     let items = MOCK_CLUBS;
     items = items.filter(club => club.event_count >= minEvents);
+    if (categories.length > 0) {
+      items = items.filter(club => club.categories.some(category => categories.includes(category)));
+    }
 
     if (search) {
       items = items.filter((club) =>
@@ -539,39 +543,14 @@ async function seedQrData(
 // ── Global navigation progress ────────────────────────────────────────
 
 test.describe("Navigation progress", () => {
-  test("starts immediately and waits for destination loading UI to clear", async ({
-    page,
-  }) => {
-    await page.goto(BASE);
-    await page.evaluate(() => {
-      const link = document.createElement("a");
-      link.href = "/contact";
-      link.dataset.testid = "controlled-navigation-link";
-      link.textContent = "Navigate";
-      link.addEventListener("click", (event) => event.preventDefault());
-      document.body.append(link);
-    });
+  test.beforeEach(async ({ page }) => {
+    await page.goto(`${BASE}/contact`);
+    await expect(page.locator('[data-slot="loading-page"], [aria-busy="true"]')).toHaveCount(0);
+    await expect(page.locator('[data-slot="navigation-progress"]')).toHaveAttribute("data-state", "idle");
+  });
 
+  test("follows loading surfaces without requiring a URL change", async ({ page }) => {
     const progress = page.locator('[data-slot="navigation-progress"]');
-    const immediateState = await page
-      .getByTestId("controlled-navigation-link")
-      .evaluate((link) => {
-        (link as HTMLAnchorElement).click();
-        return document
-          .querySelector('[data-slot="navigation-progress"]')
-          ?.getAttribute("data-state");
-      });
-
-    expect(immediateState).toBe("priming");
-    await expect(progress).toHaveAttribute(
-      "data-state",
-      /priming|starting|loading/,
-    );
-    await expect(progress).toHaveCSS("height", "2px");
-    await expect(progress).toHaveCSS("top", "0px");
-    await expect(progress).toHaveCSS("opacity", "1");
-    await expect(progress).toHaveCSS("transition-duration", "0s");
-
     await page.evaluate(() => {
       const unrelatedSkeleton = document.createElement("div");
       unrelatedSkeleton.dataset.slot = "skeleton";
@@ -582,20 +561,104 @@ test.describe("Navigation progress", () => {
       loadingState.setAttribute("aria-busy", "true");
       loadingState.dataset.testid = "controlled-loading-state";
       document.body.append(loadingState);
-      window.history.pushState({}, "", "/?navigation-progress=complete");
+
+      const loadingPage = document.createElement("div");
+      loadingPage.dataset.slot = "loading-page";
+      loadingPage.dataset.testid = "controlled-loading-page";
+      document.body.append(loadingPage);
     });
 
-    await page.waitForTimeout(400);
-    await expect(progress).toHaveAttribute(
-      "data-state",
-      /priming|starting|loading/,
-    );
+    await expect(progress).toHaveAttribute("data-state", /priming|starting|loading/);
+    await expect(progress).toHaveCSS("height", "2px");
+    await expect(progress).toHaveCSS("top", "0px");
+    await expect(progress).toHaveCSS("opacity", "1");
 
     await page.getByTestId("controlled-loading-state").evaluate((element) => {
       element.remove();
     });
+    await expect(progress).toHaveAttribute("data-state", /priming|starting|loading/);
+    await page.getByTestId("controlled-loading-page").evaluate((element) => {
+      element.remove();
+    });
     await expect(progress).toHaveAttribute("data-state", "idle");
     await expect(page.getByTestId("persistent-skeleton")).toHaveCount(1);
+  });
+
+  for (const completion of ["false", "remove"] as const) {
+    test(`finishes when aria-busy is ${completion === "false" ? "false" : "removed"} without replacing the element`, async ({ page }) => {
+      const progress = page.locator('[data-slot="navigation-progress"]');
+      await page.evaluate(() => {
+        const loadingState = document.createElement("div");
+        loadingState.dataset.testid = "controlled-loading-state";
+        document.body.append(loadingState);
+      });
+      const loadingState = page.getByTestId("controlled-loading-state");
+      await loadingState.evaluate((element) => element.setAttribute("aria-busy", "true"));
+      await expect(progress).toHaveAttribute("data-state", /priming|starting|loading/);
+
+      await loadingState.evaluate((element, mode) => {
+        if (mode === "false") element.setAttribute("aria-busy", "false");
+        else element.removeAttribute("aria-busy");
+      }, completion);
+
+      await expect(progress).toHaveAttribute("data-state", "idle");
+      await expect(loadingState).toHaveCount(1);
+    });
+  }
+
+  test("does not start for cancelled links or hash-only history changes", async ({ page }) => {
+    const progress = page.locator('[data-slot="navigation-progress"]');
+    const clickState = await page.evaluate(() => {
+      const link = document.createElement("a");
+      link.href = "/clubs";
+      link.textContent = "Cancelled navigation";
+      link.addEventListener("click", (event) => event.preventDefault());
+      document.body.append(link);
+      link.click();
+      return document.querySelector('[data-slot="navigation-progress"]')?.getAttribute("data-state");
+    });
+    expect(clickState).toBe("idle");
+    await expect(page).toHaveURL(`${BASE}/contact`);
+
+    await page.evaluate(() => {
+      window.history.pushState({}, "", "#first");
+      window.history.pushState({}, "", "#second");
+    });
+    await page.goBack();
+    await expect(page).toHaveURL(`${BASE}/contact#first`);
+    await page.goForward();
+    await expect(page).toHaveURL(`${BASE}/contact#second`);
+    await page.evaluate(() => new Promise<void>((resolve) => {
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+    }));
+    await expect(progress).toHaveAttribute("data-state", "idle");
+    await expect(progress).toHaveCSS("opacity", "0");
+  });
+
+  test("a new load cancels the previous completion animation", async ({ page }) => {
+    const progress = page.locator('[data-slot="navigation-progress"]');
+    await page.evaluate(() => {
+      const loadingState = document.createElement("div");
+      loadingState.setAttribute("aria-busy", "true");
+      loadingState.dataset.testid = "controlled-loading-state";
+      document.body.append(loadingState);
+    });
+    await expect(progress).toHaveAttribute("data-state", /priming|starting|loading/);
+
+    await page.getByTestId("controlled-loading-state").evaluate(async (element) => {
+      element.removeAttribute("aria-busy");
+      // Let the observer schedule completion, then start another load before it hides.
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+      element.dataset.slot = "loading-page";
+    });
+    await page.waitForTimeout(400);
+    await expect(progress).toHaveAttribute("data-state", /priming|starting|loading/);
+    await expect(progress).toHaveCSS("opacity", "1");
+
+    await page.getByTestId("controlled-loading-state").evaluate((element) => {
+      delete element.dataset.slot;
+    });
+    await expect(progress).toHaveAttribute("data-state", "idle");
   });
 });
 
@@ -3443,6 +3506,95 @@ test("New toggles directly without a dropdown or All button", async ({ page }) =
 });
 
 test.describe("Clubs Page", () => {
+  test("keeps the server-rendered campus scope while hydrating", async ({ page }) => {
+    const directoryRequests: URL[] = [];
+    page.on("request", request => {
+      const url = new URL(request.url());
+      if (apiPath(url) === "/clubs") directoryRequests.push(url);
+    });
+    await page.goto(`${BASE}/clubs`);
+    await expect(page.locator("[data-club-id]")).toHaveCount(3);
+    await page.getByTestId("club-category-filter-scroll").getByRole("button", { name: "Technology", exact: true }).click();
+    await expect(page.locator("[data-club-id]")).toHaveCount(2);
+    expect(directoryRequests.length).toBeGreaterThan(0);
+    expect(directoryRequests.every(url => url.searchParams.get("school") === "uwaterloo")).toBe(true);
+  });
+
+  test("shows loading while categories change and combines categories with search", async ({ page, next }) => {
+    await page.goto(`${BASE}/clubs`);
+    await expect(page.locator("[data-club-id]")).toHaveCount(3);
+    let releaseResponse!: () => void;
+    const responseGate = new Promise<void>(resolve => { releaseResponse = resolve; });
+    await mockApi(page, next,
+      url => apiPath(url) === "/clubs" && url.searchParams.getAll("categories").length === 1 && url.searchParams.get("categories") === "Technology",
+      async () => {
+        await responseGate;
+        return { json: { items: [MOCK_CLUBS[0], MOCK_CLUBS[2]], total: 2, page: 1, page_size: 20, total_pages: 1 } };
+      },
+    );
+    await page.getByTestId("club-category-filter-scroll").getByRole("button", { name: "Technology", exact: true }).click();
+    try {
+      await expect(page.locator('[aria-busy="true"]')).toBeVisible();
+      await expect(page.locator("[data-club-id]")).toHaveCount(0);
+    } finally {
+      releaseResponse();
+    }
+    await expect(page.locator("[data-club-id]")).toHaveCount(2);
+    await expect(page.locator('[aria-busy="true"]')).toHaveCount(0);
+    await page.getByTestId("club-category-filter-scroll").getByRole("button", { name: "Social", exact: true }).click();
+    await expect(page.locator("[data-club-id]")).toHaveCount(3);
+    await page.getByPlaceholder("Search clubs...").fill("board games");
+    await page.getByRole("button", { name: "Search", exact: true }).click();
+    await expect(page.locator("[data-club-id]")).toHaveCount(1);
+    await expect(page.locator('[data-club-id="2"]')).toBeVisible();
+  });
+
+  test("shows a retry action after a failed club category request", async ({ page, next }) => {
+    let fail = true;
+    let attempts = 0;
+    await mockApi(page, next,
+      url => apiPath(url) === "/clubs" && url.searchParams.has("categories"),
+      async () => {
+        attempts += 1;
+        return fail
+          ? { status: 500, json: { detail: "Temporary directory failure" } }
+          : { json: { items: [MOCK_CLUBS[0]], total: 1, page: 1, page_size: 20, total_pages: 1 } };
+      },
+    );
+    await page.goto(`${BASE}/clubs`);
+    await page.getByTestId("club-category-filter-scroll").getByRole("button", { name: "Technology", exact: true }).click();
+    const error = page.getByRole("alert");
+    await expect(error.getByText("Something went wrong", { exact: true })).toBeVisible();
+    await expect(page.locator('[aria-busy="true"]')).toHaveCount(0);
+    await expect(page.getByText("No clubs found", { exact: true })).toHaveCount(0);
+    expect(attempts).toBe(1);
+    fail = false;
+    await error.getByRole("button", { name: "Try again", exact: true }).click();
+    await expect(page.locator('[data-club-id="1"]')).toBeVisible();
+    await expect(error).toHaveCount(0);
+    expect(attempts).toBe(2);
+  });
+
+  test("stops infinite-scroll requests after a page fails", async ({ page, next }) => {
+    let pageTwoAttempts = 0;
+    await mockApi(page, next, url => apiPath(url) === "/clubs", async request => {
+      if (new URL(request.url).searchParams.get("page") === "2") {
+        pageTwoAttempts += 1;
+        return { status: 500, json: { detail: "Temporary next-page failure" } };
+      }
+      return { json: { items: MOCK_CLUBS, total: 4, page: 1, page_size: 3, total_pages: 2 } };
+    });
+    await page.goto(`${BASE}/clubs`);
+    await page.locator('[data-slot="page-frame"]').evaluate(element => {
+      element.scrollTop = element.scrollHeight;
+    });
+    const error = page.getByRole("alert");
+    await expect(error.getByRole("button", { name: "Try again", exact: true })).toBeVisible();
+    await expect(page.locator('[aria-busy="true"]')).toHaveCount(0);
+    await expect(page.locator("[data-club-id]")).toHaveCount(0);
+    expect(pageTwoAttempts).toBe(1);
+  });
+
   test("uses club URLs and puts Positions before Clubs", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto(`${BASE}/clubs`);

@@ -55,6 +55,7 @@ export function usePositionsPage({
 
   const query = useInfiniteQuery({
     queryKey: queryKeys.positions.list(filters),
+    retry: false,
     queryFn: ({ pageParam }) =>
       getPositionsPage({
         page: pageParam,
@@ -89,7 +90,7 @@ export function usePositionsPage({
   }, []);
 
   const loadMore = useCallback(() => {
-    if (!query.hasNextPage || query.isFetchingNextPage || query.isPlaceholderData) return;
+    if (!query.hasNextPage || query.isFetchingNextPage || query.isPlaceholderData || query.isError) return;
     void query.fetchNextPage();
   }, [query]);
 
@@ -120,9 +121,11 @@ export function usePositionsPage({
     selectedPosition,
     openPosition: setSelectedPosition,
     closePosition: () => setSelectedPosition(null),
-    isLoading: query.isLoading,
+    isLoading: query.isLoading || query.isPlaceholderData,
+    isError: query.isError,
+    retry: () => void query.refetch(),
     isLoadingMore: query.isFetchingNextPage,
-    hasMore: !query.isPlaceholderData && (query.hasNextPage ?? false),
+    hasMore: !query.isPlaceholderData && !query.isError && (query.hasNextPage ?? false),
     loadMore,
   };
 }
