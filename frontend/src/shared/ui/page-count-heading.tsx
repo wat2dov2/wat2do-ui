@@ -18,7 +18,7 @@ export function PageCountHeading({ count, label, latest, level = 1 }: PageCountH
   const Heading = level === 1 ? "h1" : "h2";
   return (
     <Stack gap={1} className="sm:gap-2">
-    <Heading aria-label={`${count.toLocaleString(i18n.language)} ${label}`} className="inline-flex items-baseline gap-2 text-left text-2xl font-bold leading-none text-foreground sm:text-3xl">
+    <Heading aria-label={`${count.toLocaleString(i18n.language)} ${label}`} className="inline-flex items-baseline gap-2 text-left text-2xl font-bold text-foreground sm:text-3xl">
       <NumberFlow value={count} respectMotionPreference={false} />
       <span>{label}</span>
     </Heading>

@@ -17,7 +17,7 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        link: "bg-transparent text-primary underline underline-offset-4 hover:text-primary-hover",
+        link: "bg-transparent text-primary underline-offset-4 hover:text-primary-hover hover:underline",
         avatar:
           "overflow-hidden rounded-full bg-secondary text-secondary-foreground hover:ring-2 hover:ring-ring/50 [&_img]:size-full [&_img]:object-cover",
         primary:

@@ -89,6 +89,10 @@
   --font-sans: var(--font-family-sans);
   --font-mono: var(--font-family-mono);
 
+  /* Compact heading sizes share one line-height across the application. */
+  --text-2xl--line-height: 0.95;
+  --text-3xl--line-height: 0.95;
+
   /* Radius - generously rounded */
   --radius-xs: 6px;
   --radius-sm: 6px;
