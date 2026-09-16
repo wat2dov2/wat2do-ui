@@ -6,8 +6,7 @@ import type { Event } from "@/shared/types";
 import type { TFunction } from "i18next";
 import type { PreviewEventData } from "@/features/auth/components/PreviewStyleEventCard";
 import { formatCardDate, formatCardTime, isEventHappeningNow, wasAddedWithinLast24Hours } from "@/shared/utils/date";
-import { getEventCategory } from "@/shared/utils/event";
-import { computeEventBadges } from "@/features/events/hooks/useEventBadges";
+import { computeEventBadges, getEventCategory } from "@/shared/utils/event";
 
 export function eventToPreview(event: Event, timeZone: string, locale: string, t: TFunction): PreviewEventData {
   return {

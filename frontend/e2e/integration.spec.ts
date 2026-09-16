@@ -1087,14 +1087,14 @@ test.describe("Admin diagnostics", () => {
 });
 
 test.describe("Admin Instagram publishing", () => {
-  for (const school of ["uwaterloo", "western"]) {
+  for (const school of ["uwaterloo", "western", "ulaval"]) {
   test(`adds an existing event by ID and prepopulates its club for ${school}`, async ({
     page, next,
   }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await seedAuthenticatedSession(page, next);
 
-    const clubName = school === "western" ? "Western Tech Club" : "UW Tech Club";
+    const clubName = school === "western" ? "Western Tech Club" : school === "ulaval" ? "Laval Tech Club" : "UW Tech Club";
     await mockApi(page, next, url => apiPath(url) === "/clubs", async request => {
       const requestedSchool = new URL(request.url).searchParams.get("school");
       const items = requestedSchool === school ? [{ ...MOCK_CLUBS[0], school, club_name: clubName, ig: `${school}techclub` }] : [];
@@ -1117,7 +1117,7 @@ test.describe("Admin Instagram publishing", () => {
       ],
       price: 0,
       food: [],
-      registration: false,
+      registration: school === "ulaval",
       source_image_url: null,
       source_url: null,
       category: "Technology",
@@ -1285,6 +1285,11 @@ test.describe("Admin Instagram publishing", () => {
     await expect(drawer.getByLabel("Saved caption preview (event details appended automatically)", { exact: true })).toHaveCount(0);
 
     const firstPreview = drawer.locator("figure").filter({ hasText: "First Carousel Event" });
+    if (school === "ulaval") {
+      await expect(firstPreview.getByText("Inscription", { exact: true })).toBeVisible();
+      await expect(firstPreview.getByText("Demain", { exact: true })).toBeVisible();
+      await expect(drawer.getByRole("button", { name: "Save draft", exact: true })).toBeVisible();
+    }
     await firstPreview.click();
     await expect(firstPreview).toHaveAttribute("aria-pressed", "true");
     await expect(drawer.getByRole("textbox", { name: "Club *", exact: true })).toHaveValue(clubName);
@@ -1297,7 +1302,7 @@ test.describe("Admin Instagram publishing", () => {
     expect(savedEventIds).toBeNull();
 
     await drawer.getByRole("textbox", { name: "Club *", exact: true })
-      .fill(school === "western" ? "@westerntechclub" : "  uw tech club  ");
+      .fill(school === "uwaterloo" ? "  uw tech club  " : `@${school}techclub`);
     await drawer.getByRole("textbox", { name: /Event Title/ }).fill("Edited before adding another event");
     await drawer.getByRole("button", { name: "Add event ID" }).click();
     await expect(eventIdInput).toBeVisible();
@@ -4375,6 +4380,28 @@ test.describe("Navigation", () => {
     );
     expect(png.byteLength).toBeGreaterThan(50_000);
   });
+
+  for (const [school, tz] of [["ulaval", "America/Toronto"], ["ualberta", "America/Edmonton"]]) {
+    test(`renders a school-local Instagram event image for ${school}`, async ({ request }) => {
+      const renderSecret = process.env.INSTAGRAM_SLIDE_RENDER_SECRET?.trim();
+      const response = await request.post(`${BASE}/api/render-instagram-slide`, {
+        headers: renderSecret ? { authorization: `Bearer ${renderSecret}` } : undefined,
+        data: {
+          kind: "event", school,
+          event: {
+            id: 1, school, tz, title: "Campus Event", category: "Arts & Culture",
+            dtstart_utc: "2026-09-18T22:30:00Z", dtend_utc: "2026-09-19T00:00:00Z",
+            food: ["yes"], registration: true,
+          },
+        },
+      });
+      expect(response.status()).toBe(200);
+      expect(response.headers()["content-type"]).toContain("image/png");
+      const png = await response.body();
+      expect(png.readUInt32BE(16)).toBe(1080);
+      expect(png.readUInt32BE(20)).toBe(1350);
+    });
+  }
 
   test("main pages load without errors", async ({ page }) => {
     const routes = ["/", "/login", "/onboarding", "/clubs", "/contact", "/settings"];

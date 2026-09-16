@@ -1,4 +1,4 @@
-import { useTranslation } from "react-i18next";
+import { I18nextProvider, useTranslation } from "react-i18next";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
@@ -9,10 +9,12 @@ import {
   SLIDE_HEIGHT,
   SLIDE_WIDTH,
   buildCoverSlideModel,
+  getInstagramSlideLocale,
 } from "@/features/admin/lib/instagramSlides";
 import { EventCard } from "@/features/events/components/EventCard";
 import type { Event } from "@/shared/types";
 import type { SchoolColors } from "@/shared/lib/schoolBranding";
+import type { i18n } from "i18next";
 
 interface CarouselSlidePreviewProps {
   onRemove?: () => void;
@@ -70,6 +72,19 @@ export function CarouselSlidePreview({
   const previewRef = useRef<HTMLDivElement>(null);
   const [previewWidth, setPreviewWidth] = useState(PREVIEW_WIDTH);
   const previewScale = previewWidth / SLIDE_WIDTH;
+  const [localeResult, setLocaleResult] = useState<{ language: typeof cover.language; locale: i18n | null } | null>(null);
+  const slideLocale = localeResult?.language === cover.language ? localeResult.locale : null;
+  const localeError = localeResult?.language === cover.language && !localeResult.locale;
+
+  useEffect(() => {
+    if (isCover || publishedAssetUrl) return;
+    let active = true;
+    getInstagramSlideLocale(cover.language).then(
+      locale => { if (active) setLocaleResult({ language: cover.language, locale }); },
+      () => { if (active) setLocaleResult({ language: cover.language, locale: null }); },
+    );
+    return () => { active = false; };
+  }, [cover.language, isCover, publishedAssetUrl]);
 
   useEffect(() => {
     const node = previewRef.current;
@@ -123,11 +138,13 @@ export function CarouselSlidePreview({
             <CoverSlideTemplate model={buildCoverSlideModel({ ...cover, colors: coverColors })} />
           </div>
         </div>
-      ) : !isCover && event ? (
-        <EventCard event={event} interactive={false} />
+      ) : !isCover && event && slideLocale ? (
+        <I18nextProvider i18n={slideLocale}>
+          <EventCard event={event} interactive={false} />
+        </I18nextProvider>
       ) : (
         <p className="py-12 text-center text-sm text-muted-foreground">
-          {isCover
+          {localeError ? t("common.error") : isCover || event
             ? t("common.loading")
             : t("admin.instagramPublishing.slideEventUnavailable")}
         </p>

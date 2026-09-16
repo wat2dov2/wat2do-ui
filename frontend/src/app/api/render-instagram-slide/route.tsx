@@ -136,18 +136,19 @@ async function inlineImage(sourceUrl: string | null | undefined): Promise<string
 }
 
 async function buildSlide(slide: SlideRequest): Promise<React.ReactElement> {
+  const school = slide.kind === "event"
+    ? slide.event.school ?? slide.school ?? ""
+    : slide.school ?? slide.events[0]?.school ?? "";
+  const schoolRecord = await getSchool(school);
+  if (!schoolRecord) throw new Error(`School not found for slide rendering: ${school}`);
+
   if (slide.kind === "event") {
     const imageSrc = await inlineImage(slide.event.source_image_url);
-    return <EventSlideTemplate model={buildEventSlideModel(slide.event, imageSrc)} />;
+    return <EventSlideTemplate model={await buildEventSlideModel(slide.event, schoolRecord.language, imageSrc)} />;
   }
 
   const tiles = (await Promise.all(slide.events.map((event) => inlineImage(event.source_image_url))))
     .filter((tile) => tile.length > 0);
-  const school = slide.school ?? slide.events[0]?.school ?? "";
-  const schoolRecord = await getSchool(school);
-  if (!schoolRecord) {
-    throw new Error(`School not found for slide rendering: ${school}`);
-  }
   return (
     <CoverSlideTemplate
       model={buildCoverSlideModel({

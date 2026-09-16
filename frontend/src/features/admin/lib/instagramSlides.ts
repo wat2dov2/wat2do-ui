@@ -15,6 +15,14 @@ import {
 import { getSchoolPublicUrl } from "@/shared/constants/schools";
 import type { SchoolColors } from "@/shared/lib/schoolBranding";
 import { buildInstagramCoverLogo } from "@/features/admin/lib/instagramCoverLogo";
+import { createInstance, type i18n } from "i18next";
+import type { School } from "@/shared/api/schools.api";
+import { formatCardTime } from "@/shared/utils/date";
+import { computeEventBadges, translateCategory } from "@/shared/utils/event";
+import sharedEnglish from "@/shared/locales/en.json";
+import eventsEnglish from "@/features/events/locales/en.json";
+import clubsEnglish from "@/features/clubs/locales/en.json";
+import { loadLazyLanguage } from "@/shared/lib/languageLoaders";
 
 export const SLIDE_WIDTH = 1080;
 export const SLIDE_HEIGHT = 1350;
@@ -30,11 +38,13 @@ export interface SlideEvent {
   school?: string | null;
   source_image_url?: string | null;
   dtstart_utc?: string | null;
+  dtend_utc?: string | null;
   /** IANA zone resolved server-side; slides print local times. */
-  tz?: string | null;
+  tz: string;
   price?: number | null;
   food?: string[] | null;
   cancelled?: boolean | null;
+  registration?: boolean | null;
 }
 
 export interface EventSlideModel {
@@ -72,68 +82,80 @@ export interface CoverSlideModel {
   tiles: string[];
 }
 
-// Artwork follows the school's language, independent of the reviewing admin's locale.
-const FALLBACK_TITLE = "Untitled event";
-const FALLBACK_LOCATION = "See Wat2Do for location";
-const FALLBACK_CLUB = "Campus club";
+const slideLocales = new Map<School["language"], Promise<i18n>>();
 
-function text(value: string | null | undefined, fallback: string): string {
+/** Artwork never changes the reviewing admin's language or another render's locale. */
+export function getInstagramSlideLocale(language: School["language"]): Promise<i18n> {
+  let locale = slideLocales.get(language);
+  if (!locale) {
+    locale = (async () => {
+      const translation = language === "en"
+        ? { ...sharedEnglish, ...eventsEnglish, ...clubsEnglish }
+        : await loadLazyLanguage(language);
+      const instance = createInstance();
+      await instance.init({
+        lng: language,
+        fallbackLng: false,
+        interpolation: { escapeValue: false },
+        resources: { [language]: { translation } },
+      });
+      return instance;
+    })().catch(error => {
+      slideLocales.delete(language);
+      throw error;
+    });
+    slideLocales.set(language, locale);
+  }
+  return locale;
+}
+
+function text(value: string | null | undefined, fallback = ""): string {
   const cleaned = (value ?? "").replace(/\s+/g, " ").trim();
   return cleaned || fallback;
 }
 
 /**
- * The event's start in its own timezone, split the way an event card shows it.
+ * Absolute dates survive publication; times share the event card's range formatter.
  *
  * Formatted with an explicit zone so the browser preview and the server render
  * agree regardless of where either one runs.
  */
-function formatSlideDate(event: SlideEvent): { dateLine: string; timeLine: string } {
+function formatSlideDate(event: SlideEvent, locale: string): { dateLine: string; timeLine: string } {
   const start = event.dtstart_utc ? new Date(event.dtstart_utc) : null;
   if (!start || Number.isNaN(start.getTime())) {
-    return { dateLine: "Date to be announced", timeLine: "" };
+    return { dateLine: "", timeLine: "" };
   }
 
-  const timeZone = event.tz || "UTC";
+  const timeZone = event.tz;
   return {
-    dateLine: new Intl.DateTimeFormat("en-US", {
+    dateLine: new Intl.DateTimeFormat(locale, {
       weekday: "long",
       month: "long",
       day: "numeric",
       timeZone,
     }).format(start),
-    timeLine: new Intl.DateTimeFormat("en-US", {
-      hour: "numeric",
-      minute: "2-digit",
-      timeZone,
-    }).format(start),
+    timeLine: formatCardTime({ occurrences: [{ dtstart_utc: event.dtstart_utc!, dtend_utc: event.dtend_utc }] }, timeZone, locale),
   };
 }
 
-/** Price and free-food chips, matching `computeEventBadges` on the event card. */
-function slideBadges(event: SlideEvent): string[] {
-  const badges: string[] = [];
-  if (event.cancelled) badges.push("Cancelled");
-  if (event.price != null && event.price > 0) badges.push(`$${event.price}`);
-  if ((event.food ?? []).length > 0) badges.push("Free food");
-  return badges;
-}
-
-export function buildEventSlideModel(
+export async function buildEventSlideModel(
   event: SlideEvent,
+  language: School["language"],
   imageSrc = event.source_image_url ?? "",
-): EventSlideModel {
-  const { dateLine, timeLine } = formatSlideDate(event);
+): Promise<EventSlideModel> {
+  if (!event.tz) throw new Error("School timezone is required for event slides");
+  const { t } = await getInstagramSlideLocale(language);
+  const { dateLine, timeLine } = formatSlideDate(event, language);
   const category = getClubCategoryConfig(event.category);
   return {
     eventId: event.id,
-    category: { label: text(event.category, category.label), color: category.color },
-    title: text(event.title, FALLBACK_TITLE),
-    dateLine,
-    timeLine,
-    location: text(event.location, FALLBACK_LOCATION),
-    clubLine: text(event.club, FALLBACK_CLUB),
-    badges: slideBadges(event),
+    category: { label: translateCategory(text(event.category), t), color: category.color },
+    title: text(event.title),
+    dateLine: text(dateLine),
+    timeLine: text(timeLine),
+    location: text(event.location),
+    clubLine: text(event.club),
+    badges: computeEventBadges({ ...event, food: event.food ?? [], cancelled: event.cancelled ?? false, registration: event.registration ?? false }, t).map(badge => badge.text),
     imageSrc,
   };
 }

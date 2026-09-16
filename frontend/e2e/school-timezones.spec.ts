@@ -6,6 +6,7 @@ import { formatPositionDeadlineBadge } from "../src/features/positions/lib/posit
 import type { Event, Position } from "../src/shared/types";
 import { filterEvents } from "../src/features/search/api/searchService";
 import { EMPTY_FILTER_STATE } from "../src/features/search/api/filterService";
+import { buildEventSlideModel, getInstagramSlideLocale } from "../src/features/admin/lib/instagramSlides";
 
 const timeZone = "America/Edmonton";
 const event = {
@@ -57,4 +58,53 @@ test("a cross-school date filter evaluates each event in its own school", () => 
     hasFoodFilter: false, goingFilter: false, goingEventIds: [],
   }, school => school === "ualberta" ? timeZone : "America/Toronto");
   expect(filtered.map(item => item.school)).toEqual(["ualberta"]);
+});
+
+test("Instagram slides show both endpoints in the school's timezone across midnight", async () => {
+  const slide = await buildEventSlideModel({ ...event, ...event.occurrences[0], id: event.id, tz: timeZone }, "en");
+  expect(slide.dateLine).toBe("Monday, September 14");
+  expect(slide.timeLine).toContain("Sep 14, 11:30 PM MDT");
+  expect(slide.timeLine).toContain("Sep 15, 1:00 AM MDT");
+  expect(slide.timeLine).not.toMatch(/[\u2009\u202f]/);
+});
+
+test("Instagram translations stay school-scoped across concurrent English and French renders", async () => {
+  const input = {
+    id: 1, school: "ulaval", tz: "America/Toronto", title: "Original title",
+    dtstart_utc: "2026-09-18T22:30:00Z", dtend_utc: "2026-09-19T00:00:00Z",
+    category: "Arts & Culture", cancelled: true, food: ["yes"], registration: true,
+  };
+  const [french, english, locale] = await Promise.all([
+    buildEventSlideModel(input, "fr"), buildEventSlideModel(input, "en"), getInstagramSlideLocale("fr"),
+  ]);
+  expect(french.dateLine).toBe("vendredi 18 septembre");
+  expect(french.timeLine).toContain("18:30");
+  expect(french.timeLine).toContain("20:00");
+  expect(french.category.label).toBe("Arts et culture");
+  expect(french.badges).toEqual(["Annulé", "Nourriture", "Inscription"]);
+  expect(french.title).toBe(input.title);
+  expect(english.category.label).toBe("Arts & Culture");
+  expect(english.badges).toEqual(["Cancelled", "Food", "Registration"]);
+  expect((await buildEventSlideModel({ ...input, category: null }, "fr")).category.label).toBe("Événements");
+  expect(locale.language).toBe("fr");
+  expect(await getInstagramSlideLocale("fr")).toBe(locale);
+});
+
+test("event time ranges preserve both sides of a repeated DST hour", async () => {
+  const occurrence = { dtstart_utc: "2026-11-01T07:30:00Z", dtend_utc: "2026-11-01T08:30:00Z" };
+  const time = formatCardTime({ occurrences: [occurrence] }, timeZone);
+  expect(time).toContain("1:30 AM MDT");
+  expect(time).toContain("1:30 AM MST");
+  const slide = await buildEventSlideModel({ id: 1, tz: timeZone, ...occurrence }, "en");
+  expect(slide.timeLine).toBe(time);
+});
+
+test("Instagram slides omit unknown end times and reject a missing school timezone", async () => {
+  const input = { id: 1, tz: timeZone, dtstart_utc: "2026-09-18T22:30:00Z" };
+  const withoutEnd = await buildEventSlideModel(input, "en");
+  expect(withoutEnd.timeLine).toBe("4:30 PM MDT");
+  const invalidEnd = await buildEventSlideModel({ ...input, dtend_utc: "invalid" }, "en");
+  expect(invalidEnd.timeLine).toBe(withoutEnd.timeLine);
+  expect((await buildEventSlideModel({ ...input, dtstart_utc: null }, "fr")).dateLine).toBe("");
+  await expect(buildEventSlideModel({ ...input, tz: "" }, "en")).rejects.toThrow("School timezone is required");
 });

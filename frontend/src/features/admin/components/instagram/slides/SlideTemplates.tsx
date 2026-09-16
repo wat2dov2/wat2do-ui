@@ -117,7 +117,7 @@ export function EventSlideTemplate({ model }: { model: EventSlideModel }) {
             </div>
           </SlideBadgeMask>
 
-          <SlideBadgeMask variant="bottom-left" color={DARK.background}>
+          {model.clubLine ? <SlideBadgeMask variant="bottom-left" color={DARK.background}>
             <div
               style={{
                 display: "flex",
@@ -133,7 +133,7 @@ export function EventSlideTemplate({ model }: { model: EventSlideModel }) {
             >
               {model.clubLine}
             </div>
-          </SlideBadgeMask>
+          </SlideBadgeMask> : null}
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", padding: "32px 40px 36px 40px" }}>
@@ -158,12 +158,12 @@ export function EventSlideTemplate({ model }: { model: EventSlideModel }) {
               marginTop: 24,
             }}
           >
-            <div style={{ display: "flex", flexDirection: "column", color: DARK.mutedForeground }}>
-              <div style={{ display: "flex", fontSize: 38 }}>{model.dateLine}</div>
+            <div style={{ display: "flex", flexDirection: "column", flex: 1, minWidth: 0, color: DARK.mutedForeground }}>
+              {model.dateLine ? <div style={{ display: "flex", fontSize: 38 }}>{model.dateLine}</div> : null}
               {model.timeLine ? (
                 <div style={{ display: "flex", marginTop: 8, fontSize: 38 }}>{model.timeLine}</div>
               ) : null}
-              <div style={{ display: "flex", marginTop: 8, fontSize: 38 }}>{model.location}</div>
+              {model.location ? <div style={{ display: "flex", marginTop: 8, fontSize: 38 }}>{model.location}</div> : null}
             </div>
 
             {model.badges.length > 0 ? (
@@ -171,6 +171,7 @@ export function EventSlideTemplate({ model }: { model: EventSlideModel }) {
                 style={{
                   display: "flex",
                   flexDirection: "column",
+                  flexShrink: 0,
                   alignItems: "flex-end",
                   marginLeft: 24,
                 }}

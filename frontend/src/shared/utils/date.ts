@@ -214,9 +214,12 @@ export function formatCardTime(event: {
       ...(end && !sameDay(schoolCalendarDate(start, timeZone), schoolCalendarDate(end, timeZone))
         ? { month: "short", day: "numeric" } as const : {}),
     });
-    return end && Number.isFinite(end.getTime())
-      ? formatter.formatRange(start, end)
-      : formatter.format(start);
+    if (!end) return formatter.format(start);
+    // Intl can collapse distinct instants in a repeated DST hour into one time.
+    if (formatInTimeZone(start, timeZone, "XXX") !== formatInTimeZone(end, timeZone, "XXX")) {
+      return `${formatter.format(start)} – ${formatter.format(end)}`;
+    }
+    return formatter.formatRange(start, end);
   }
   return '';
 }

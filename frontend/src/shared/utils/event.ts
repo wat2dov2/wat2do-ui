@@ -1,6 +1,23 @@
 import type { Event, EventFormData, EventFormOccurrence } from "@/shared/types";
 import { getDefaultEventCategory } from "@/shared/data/eventCategories";
 import { toLocalDateTimeInput } from "@/shared/utils/date";
+import type { TFunction } from "i18next";
+import type { CardBadge } from "@/shared/ui/event-card-content";
+import { Ticket, Utensils, X } from "@/shared/ui/doodle-icons";
+import { translateFood } from "@/shared/utils/foodTranslation";
+
+/** Shared badge content for cards, previews, and published artwork. */
+export function computeEventBadges(
+  event: Pick<Partial<Event>, "price" | "food" | "registration" | "cancelled">,
+  t: TFunction,
+): CardBadge[] {
+  const badges: CardBadge[] = [];
+  if (event.cancelled) badges.push({ text: t("common.cancelled"), size: "sm", icon: X });
+  if (event.price != null && event.price > 0) badges.push({ text: `$${event.price}`, size: "md" });
+  if (event.food?.length) badges.push({ text: translateFood(event.food[0], t), size: "md", icon: Utensils });
+  if (event.registration) badges.push({ text: t("common.registration"), size: "md", icon: Ticket });
+  return badges;
+}
 
 /**
  * Event Utilities
