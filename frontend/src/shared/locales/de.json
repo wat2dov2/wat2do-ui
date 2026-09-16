@@ -260,7 +260,7 @@
     "discordLink": "Discord Link",
     "titleRequired": "Titel ist erforderlich",
     "clubRequired": "Organisation ist erforderlich",
-    "occurrenceRequired": "Mindestens ein Datum ist erforderlich",
+    "occurrenceRequired": "Gib mindestens ein gültiges Datum und eine Uhrzeit ein. Das Ende muss nach dem Beginn liegen.",
     "locationRequired": "Ort ist erforderlich",
     "schoolRequired": "Schule ist erforderlich",
     "pickDate": "Wählen Sie ein Datum",

@@ -260,7 +260,7 @@
     "discordLink": "Discord لنک",
     "titleRequired": "عنوان ضروری ہے",
     "clubRequired": "تنظیم ضروری ہے",
-    "occurrenceRequired": "کم از کم ایک تاریخ ضروری ہے",
+    "occurrenceRequired": "کم از کم ایک درست تاریخ اور وقت درج کریں۔ اختتام کا وقت آغاز کے بعد ہونا چاہیے۔",
     "locationRequired": "مقام ضروری ہے",
     "schoolRequired": "سکول ضروری ہے",
     "pickDate": "تاریخ منتخب کریں",

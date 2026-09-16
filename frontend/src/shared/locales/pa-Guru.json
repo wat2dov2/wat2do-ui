@@ -260,7 +260,7 @@
     "discordLink": "Discord ਲਿੰਕ",
     "titleRequired": "ਸਿਰਲੇਖ ਲੋੜੀਂਦਾ ਹੈ",
     "clubRequired": "ਸੰਗਠਨ ਦੀ ਲੋੜ ਹੈ",
-    "occurrenceRequired": "ਘੱਟੋ-ਘੱਟ ਇੱਕ ਤਾਰੀਖ ਦੀ ਲੋੜ ਹੈ",
+    "occurrenceRequired": "ਘੱਟੋ-ਘੱਟ ਇੱਕ ਵੈਧ ਤਾਰੀਖ ਅਤੇ ਸਮਾਂ ਦਾਖਲ ਕਰੋ। ਸਮਾਪਤੀ ਦਾ ਸਮਾਂ ਸ਼ੁਰੂਆਤ ਤੋਂ ਬਾਅਦ ਹੋਣਾ ਚਾਹੀਦਾ ਹੈ।",
     "locationRequired": "ਟਿਕਾਣਾ ਲੋੜੀਂਦਾ ਹੈ",
     "schoolRequired": "ਸਕੂਲ ਦੀ ਲੋੜ ਹੈ",
     "pickDate": "ਇੱਕ ਮਿਤੀ ਚੁਣੋ",

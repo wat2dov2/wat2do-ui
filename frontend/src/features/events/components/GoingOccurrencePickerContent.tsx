@@ -10,10 +10,12 @@ import {
   FieldLabel,
 } from "@/shared/ui/field";
 import { MultiSelect } from "@/shared/ui/multi-select";
+import { formatOccurrence } from "@/shared/utils/date";
 
 type EventOccurrence = NonNullable<Event["occurrences"]>[number];
 
 interface GoingOccurrencePickerContentProps {
+  timeZone: string;
   occurrences: EventOccurrence[];
   selectedIds: string[];
   isPending: boolean;
@@ -22,6 +24,7 @@ interface GoingOccurrencePickerContentProps {
 }
 
 export function GoingOccurrencePickerContent({
+  timeZone,
   occurrences,
   selectedIds,
   isPending,
@@ -42,15 +45,9 @@ export function GoingOccurrencePickerContent({
     (occurrenceId: string) => {
       const occurrence = occurrences.find((item) => item.id === occurrenceId);
       if (!occurrence) return occurrenceId;
-      return new Intl.DateTimeFormat(i18n.language, {
-        weekday: "long",
-        month: "long",
-        day: "numeric",
-        hour: "numeric",
-        minute: "2-digit",
-      }).format(new Date(occurrence.dtstart_utc));
+      return formatOccurrence(occurrence, timeZone, i18n.language);
     },
-    [i18n.language, occurrences],
+    [i18n.language, occurrences, timeZone],
   );
 
   const toggleOccurrence = (occurrenceId: string) => {

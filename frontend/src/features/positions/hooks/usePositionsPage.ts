@@ -66,6 +66,8 @@ export function usePositionsPage({
         paidOnly,
       }),
     initialPageParam: 1,
+    placeholderData: (previous, previousQuery) =>
+      previousQuery?.queryKey[2].school === school ? previous : undefined,
     getNextPageParam: (lastPage) =>
       lastPage.page < lastPage.total_pages ? lastPage.page + 1 : undefined,
     initialData: canUseInitialDirectory
@@ -87,7 +89,7 @@ export function usePositionsPage({
   }, []);
 
   const loadMore = useCallback(() => {
-    if (!query.hasNextPage || query.isFetchingNextPage) return;
+    if (!query.hasNextPage || query.isFetchingNextPage || query.isPlaceholderData) return;
     void query.fetchNextPage();
   }, [query]);
 
@@ -120,7 +122,7 @@ export function usePositionsPage({
     closePosition: () => setSelectedPosition(null),
     isLoading: query.isLoading,
     isLoadingMore: query.isFetchingNextPage,
-    hasMore: query.hasNextPage ?? false,
+    hasMore: !query.isPlaceholderData && (query.hasNextPage ?? false),
     loadMore,
   };
 }

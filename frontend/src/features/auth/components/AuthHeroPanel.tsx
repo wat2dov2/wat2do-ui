@@ -1,3 +1,4 @@
+import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 import { useMemo } from "react";
 import Image from "next/image";
 import { useTranslation } from "react-i18next";
@@ -13,6 +14,7 @@ interface AuthHeroPanelProps {
 
 export function AuthHeroPanel({ events = [] }: AuthHeroPanelProps) {
   const { t, i18n } = useTranslation();
+  const { getSchoolTimezone } = useSchoolDirectory();
 
   const locale = i18n.language || "en-US";
 
@@ -20,9 +22,9 @@ export function AuthHeroPanel({ events = [] }: AuthHeroPanelProps) {
     () =>
       events.map((event) => ({
         id: event.id,
-        preview: eventToPreview(event, locale, t),
+        preview: eventToPreview(event, getSchoolTimezone(event.school), locale, t),
       })),
-    [events, locale, t],
+    [events, locale, t, getSchoolTimezone],
   );
 
   return (

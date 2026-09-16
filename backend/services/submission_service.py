@@ -5,7 +5,12 @@ import uuid
 from datetime import datetime, timezone
 from typing import Literal
 
-from core.constants import SUBMISSION_APPROVED, SUBMISSION_PENDING, SUBMISSION_REJECTED
+from core.constants import (
+    DEFAULT_PAGE_SIZE,
+    SUBMISSION_APPROVED,
+    SUBMISSION_PENDING,
+    SUBMISSION_REJECTED,
+)
 from core.database import get_sb
 from core.errors import (
     INVALID_STATUS_TRANSITION,
@@ -14,11 +19,11 @@ from core.errors import (
 )
 from core.exceptions import ValidationError
 from core.sanitize import sanitize_postgrest_value
-from core.tables import EVENT_SUBMISSIONS, POSITION_SUBMISSIONS
+from core.tables import CLUBS, EVENT_SUBMISSIONS, POSITION_SUBMISSIONS
 from schemas.event import EventCreate
 from schemas.position import PositionCreate
 from schemas.submission import PositionSubmissionResponse, SubmissionResponse
-from services import club_service, event_service, school_service
+from services import admin_query, club_service, event_service, school_service
 
 log = logging.getLogger(__name__)
 
@@ -91,50 +96,82 @@ def get_submissions(
     school: str | None = None,
     *,
     offset: int = 0,
-    limit: int | None = None,
+    limit: int = DEFAULT_PAGE_SIZE,
     kind: SubmissionKind = "event",
     search: str | None = None,
 ):
     table, data_field, response_model = _resource(kind)
-    q = (
-        get_sb()
-        .table(table)
-        .select(f"*, users!user_id(email), {school_service.SCHOOL_SLUG_EMBED}", count="exact")
-    )
-    if search and search.strip():
-        q = q.ilike(f"{data_field}->>title", f"%{sanitize_postgrest_value(search.strip())}%")
-    if status:
-        q = q.eq("status", status)
-    if school:
-        school_id = school_service.get_school_id(school)
-        if school_id is None:
-            return [], 0
-        q = q.eq("school_id", school_id)
-    q = q.order("submitted_at", desc=True)
-    if limit is not None:
+    if kind == "event":
+        rows, total = admin_query.load_page_rows(
+            "submissions",
+            table,
+            f"*, users!user_id(email), {school_service.SCHOOL_SLUG_EMBED}",
+            offset=offset,
+            limit=limit,
+            search=search,
+            school=school,
+            status=status,
+        )
+    else:
+        q = (
+            get_sb()
+            .table(table)
+            .select(f"*, users!user_id(email), {school_service.SCHOOL_SLUG_EMBED}", count="exact")
+        )
+        if search and search.strip():
+            q = q.ilike(f"{data_field}->>title", f"%{sanitize_postgrest_value(search.strip())}%")
+        if status:
+            q = q.eq("status", status)
+        if school:
+            school_id = school_service.get_school_id(school)
+            if school_id is None:
+                return [], 0
+            q = q.eq("school_id", school_id)
+        q = q.order("submitted_at", desc=True)
         q = q.range(offset, offset + limit - 1)
-    r = q.execute()
+        r = q.execute()
+        rows, total = r.data or [], r.count or 0
+    return _submission_responses(rows, kind), total
+
+
+def _submission_responses(rows: list[dict], kind: SubmissionKind):
+    _, _, response_model = _resource(kind)
+    clubs_by_id = {}
+    if kind == "event":
+        club_ids = list(
+            {
+                row["event_data"]["club_id"]
+                for row in rows
+                if row.get("event_data", {}).get("club_id") is not None
+            }
+        )
+        if club_ids:
+            clubs = get_sb().table(CLUBS).select("id,club_name").in_("id", club_ids).execute()
+            clubs_by_id = {str(club["id"]): club["club_name"] for club in clubs.data or []}
     items = []
-    for row in r.data or []:
+    for row in rows:
         email = None
         if "users" in row and isinstance(row["users"], dict):
             email = row["users"].get("email")
         model_data = {**school_service.with_school_slug(row), "submitted_by_email": email}
+        if kind == "event":
+            model_data["club_name"] = clubs_by_id.get(str(row["event_data"].get("club_id")))
         items.append(response_model.model_validate(model_data))
-    return items, r.count or len(items)
+    return items
 
 
 def get_submission_by_id(submission_id: str, *, kind: SubmissionKind = "event"):
-    table, _, response_model = _resource(kind)
-    r = get_sb().table(table).select("*, users!user_id(email)").eq("id", submission_id).execute()
+    table, _, _ = _resource(kind)
+    r = (
+        get_sb()
+        .table(table)
+        .select(f"*, users!user_id(email), {school_service.SCHOOL_SLUG_EMBED}")
+        .eq("id", submission_id)
+        .execute()
+    )
     if not r.data:
         return None
-    row = r.data[0]
-    email = None
-    if "users" in row and isinstance(row["users"], dict):
-        email = row["users"].get("email")
-    model_data = {**row, "submitted_by_email": email}
-    return response_model.model_validate(model_data)
+    return _submission_responses(r.data, kind)[0]
 
 
 def update_submission(

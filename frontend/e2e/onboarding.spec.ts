@@ -16,7 +16,7 @@ test.describe("Onboarding Wizard", () => {
     test(`completes five steps ${answerQuestions ? "with answers" : "without optional answers"}`, async ({ page, next }) => {
       const profileUpdates: unknown[] = [];
       const school = {
-        slug: "uwaterloo",
+        slug: "uwaterloo", timezone: "America/Toronto",
         name: "University of Waterloo",
         language: "en",
         primary_color: "#6b238e",

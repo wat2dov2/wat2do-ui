@@ -1,51 +1,14 @@
-import { useState, useMemo } from "react";
-import { useAdminStore } from "@/features/admin/store/admin.store";
+import { getEventSubmissions } from "@/features/admin/api/admin.api";
+import { useAdminList } from "@/features/admin/hooks/useAdminList";
 import type { SubmissionStatus } from "@/shared/types";
 
-interface UseAdminSubmissionsFiltersOptions {
-  getClubName: (clubId: number | null | undefined) => string;
-}
-
-export function useAdminSubmissionsFilters({
-  getClubName,
-}: UseAdminSubmissionsFiltersOptions) {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [school, setSchool] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"all" | SubmissionStatus>("all");
-  const allSubmissions = useAdminStore((s) => s.submissions);
-
-  const filteredSubmissions = useMemo(() => {
-    let filtered = allSubmissions;
-    if (school) filtered = filtered.filter(submission => submission.school === school);
-
-    if (statusFilter !== "all") {
-      filtered = filtered.filter((s) => s.status === statusFilter);
-    }
-
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(
-        (s) =>
-          s.eventData.title.toLowerCase().includes(query) ||
-          getClubName(s.eventData.club_id).toLowerCase().includes(query) ||
-          s.submittedBy.toLowerCase().includes(query),
-      );
-    }
-
-    return filtered.toSorted(
-      (a, b) =>
-        new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime(),
-    );
-  }, [allSubmissions, statusFilter, searchQuery, getClubName, school]);
-
+export function useAdminSubmissionsFilters(enabled: boolean) {
+  const list = useAdminList("submissions", getEventSubmissions, enabled);
   return {
-    school,
-    setSchool,
-    searchQuery,
-    setSearchQuery,
-    statusFilter,
-    setStatusFilter,
-    allSubmissions,
-    filteredSubmissions,
+    ...list,
+    searchQuery: list.filters.search ?? "", school: list.filters.school ?? "", statusFilter: list.filters.status ?? "all",
+    setSearchQuery: (search: string) => list.setFilters({ search }),
+    setSchool: (school: string) => list.setFilters({ school }),
+    setStatusFilter: (status: "all" | SubmissionStatus) => list.setFilters({ status }),
   };
 }

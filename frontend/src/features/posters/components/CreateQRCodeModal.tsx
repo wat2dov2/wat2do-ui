@@ -1,3 +1,4 @@
+import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { ImageUploadField } from "@/shared/ui/image-upload-field";
@@ -56,6 +57,7 @@ export function CreateQRCodeModal({
   events,
 }: CreateQRCodeModalProps) {
   const { t, i18n } = useTranslation();
+  const { getSchoolTimezone } = useSchoolDirectory();
   const form = useCreateQRCodeForm(events);
   const { createPoster } = useCreatePoster();
 
@@ -250,7 +252,7 @@ export function CreateQRCodeModal({
                           <SelectContent>
                             {form.uniqueEvents.map((event) => (
                               <SelectItem key={event.id} value={event.id.toString()}>
-                                {event.title} - {formatCardDate(event, i18n.language || "en-US")}
+                                {event.title} - {formatCardDate(event, getSchoolTimezone(event.school), i18n.language || "en-US")}
                               </SelectItem>
                             ))}
                           </SelectContent>

@@ -260,7 +260,7 @@
     "discordLink": "Discord لینک",
     "titleRequired": "عنوان الزامی است",
     "clubRequired": "سازمان الزامی است",
-    "occurrenceRequired": "حداقل یک تاریخ الزامی است",
+    "occurrenceRequired": "حداقل یک تاریخ و زمان معتبر وارد کنید. پایان باید بعد از شروع باشد.",
     "locationRequired": "مکان الزامی است",
     "schoolRequired": "مدرسه الزامی است",
     "pickDate": "یک تاریخ انتخاب کنید",

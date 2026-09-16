@@ -11,6 +11,7 @@ import { useFilterActions } from "@/features/search/hooks/useFilterState";
 import { useAuthState } from "@/features/auth/hooks/useAuthState";
 import { eventToFormData, getEventCategory } from "@/shared/utils/event";
 import type { EventFormData } from "@/shared/types";
+import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 
 type SubmitEventModalComponent =
   typeof import("@/features/events/components/SubmitEventModal").SubmitEventModal;
@@ -18,6 +19,7 @@ type CommandPaletteComponent =
   typeof import("@/shared/components/CommandPalette").CommandPalette;
 
 export function ModalContainer() {
+  const { getSchoolTimezone } = useSchoolDirectory();
   const { profileCompleted } = useAuthState();
 
   const showCommandPalette = useUIStore((s) => s.showCommandPalette);
@@ -65,9 +67,9 @@ export function ModalContainer() {
       const { fetchEventById } = await import("@/features/events/api/events.api");
       const fullEvent = await fetchEventById(eventId);
       fullEvent.category = getEventCategory(fullEvent);
-      return eventToFormData(fullEvent);
+      return eventToFormData(fullEvent, getSchoolTimezone(fullEvent.school));
     },
-    [],
+    [getSchoolTimezone],
   );
 
   return (
@@ -78,7 +80,7 @@ export function ModalContainer() {
           onClose={handleSubmitEventClose}
           canCreateEvents
           editEventId={editingEvent.id}
-          initialData={"title" in editingEvent ? eventToFormData(editingEvent) : undefined}
+          initialData={"title" in editingEvent ? eventToFormData(editingEvent, getSchoolTimezone(editingEvent.school)) : undefined}
           loadEventForEdit={loadEventForEdit}
           onUpdate={async (eventId, eventData) => {
             await updateEvent(eventId, eventData);

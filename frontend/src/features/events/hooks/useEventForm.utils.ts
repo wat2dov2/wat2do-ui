@@ -1,8 +1,6 @@
 import type { EventFormData, EventFormOccurrence } from "@/shared/types";
 
-function toLocalDateTimeInput(date: Date): string {
-  return date.toLocaleString("sv-SE").replace(" ", "T").slice(0, 16);
-}
+import { toLocalDateTimeInput } from "@/shared/utils/date";
 
 function normalizeOccurrences(
   raw: unknown,
@@ -22,6 +20,7 @@ function normalizeOccurrences(
 
 /** What the form already holds for fields a payload may simply not carry. */
 interface EventInputFallbacks {
+  timeZone: string;
   occurrences: EventFormOccurrence[];
   /**
    * The poster the form is already showing. A parsed flyer may omit the image,
@@ -40,6 +39,7 @@ export function mapEventInputToFormData(
   fallbackDefaults: EventInputFallbacks,
 ): EventFormData {
   return {
+    timeZone: fallbackDefaults.timeZone,
     club_id: typeof parsed.club_id === "number" ? parsed.club_id : null,
     title: (parsed.title as string) || "",
     description: (parsed.description as string) || "",
@@ -59,14 +59,14 @@ export function mapEventInputToFormData(
 }
 
 /** New events start at the next local hour. */
-export function getEventFormDefaults(): EventFormData {
-  const now = new Date();
-  const nextHour = new Date(now.setHours(now.getHours() + 1, 0, 0, 0));
+export function getEventFormDefaults(timeZone: string): EventFormData {
+  const nextHour = new Date(Math.ceil((Date.now() + 1) / 3_600_000) * 3_600_000);
   return {
+    timeZone,
     club_id: null,
     title: "",
     description: "",
-    occurrences: [{ dtstart_local: toLocalDateTimeInput(nextHour), dtend_local: "" }],
+    occurrences: [{ dtstart_local: toLocalDateTimeInput(nextHour, timeZone), dtend_local: "" }],
     location: "",
     category: "",
     price: 0,

@@ -17,18 +17,20 @@ export function PageCountHeading({ count, label, latest, level = 1 }: PageCountH
   const { t, i18n } = useTranslation();
   const Heading = level === 1 ? "h1" : "h2";
   return (
-    <Stack gap={2}>
+    <Stack gap={1} className="sm:gap-2">
     <Heading aria-label={`${count.toLocaleString(i18n.language)} ${label}`} className="inline-flex items-baseline gap-2 text-left text-2xl font-bold leading-none text-foreground sm:text-3xl">
       <NumberFlow value={count} respectMotionPreference={false} />
       <span>{label}</span>
     </Heading>
     {latest ? (
-      <Button type="button" variant="ghost" size="sm" onClick={latest.onSelect} className="min-w-0 max-w-full self-start gap-2 text-left">
+      <Stack direction="horizontal" align="baseline" gap={2}>
         <Badge variant="new" size="sm" className="shrink-0">{t("events.new")}</Badge>
-        <span className="flex min-w-0 items-center gap-1">
-          <Trans i18nKey="common.latestAddedItem" components={{ addedPrefix: <span className="shrink-0 empty:hidden" />, eventTitle: <span className="truncate" />, addedTime: <span className="shrink-0" /> }} values={{ title: latest.item.title, time: formatRelativeTime(latest.item.added_at, t, { alwaysAgo: true }) }} />
-        </span>
-      </Button>
+        <Button type="button" variant="link" size="inline" onClick={latest.onSelect} className="min-w-0 shrink text-left leading-tight sm:leading-normal">
+          <span>
+            <Trans i18nKey="common.latestAddedItem" values={{ title: latest.item.title, time: formatRelativeTime(latest.item.added_at, t, { alwaysAgo: true }) }} components={{ addedPrefix: <span />, eventTitle: <span />, addedTime: <span /> }} />
+          </span>
+        </Button>
+      </Stack>
     ) : null}
     </Stack>
   );

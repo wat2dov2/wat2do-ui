@@ -257,7 +257,7 @@
     "discordLink": "Discord 链接",
     "titleRequired": "活动标题为必填项",
     "clubRequired": "组织为必填项",
-    "occurrenceRequired": "至少需要选择一个日期",
+    "occurrenceRequired": "请输入至少一个有效的日期和时间。结束时间必须晚于开始时间。",
     "locationRequired": "地点为必填项",
     "schoolRequired": "学校为必填项",
     "pickDate": "选择日期",

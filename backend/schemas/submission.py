@@ -59,6 +59,7 @@ class SubmissionMetadata(BaseModel):
 
 class SubmissionResponse(SubmissionMetadata):
     event_data: dict
+    club_name: str | None = None
 
 
 class PositionSubmissionCreate(BaseModel):

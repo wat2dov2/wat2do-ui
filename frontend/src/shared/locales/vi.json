@@ -257,7 +257,7 @@
     "discordLink": "Discord Liên kết",
     "titleRequired": "Tiêu đề là bắt buộc",
     "clubRequired": "Tổ chức là bắt buộc",
-    "occurrenceRequired": "Cần ít nhất một ngày",
+    "occurrenceRequired": "Nhập ít nhất một ngày và giờ hợp lệ. Thời gian kết thúc phải sau thời gian bắt đầu.",
     "locationRequired": "Địa điểm là bắt buộc",
     "schoolRequired": "Trường học là bắt buộc",
     "pickDate": "Chọn một ngày",

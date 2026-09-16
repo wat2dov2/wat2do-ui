@@ -53,7 +53,7 @@ _SUMMARY_COLUMNS = ",".join(
 # Read-time embed of the owning club's display/link/social fields via the
 # ``events.club_id`` FK, flattened onto the event in ``hydrate_event``.
 CLUB_EMBED = "clubs(logo_url,club_type,club_page,ig,discord)"
-SCHOOL_EMBED = school_service.SCHOOL_SLUG_EMBED
+SCHOOL_EMBED = "school_record:schools(slug,timezone)"
 _LIGHTWEIGHT_DATE_COLUMNS = "id,event_id,dtstart_utc,events!inner(id)"
 _LIGHTWEIGHT_DATE_SCAN_CHUNK_SIZE = 250
 
@@ -526,7 +526,7 @@ def _dedup_candidates_keeping_earliest(rows: list[dict], cap: int) -> list[_Even
         if rid is None:
             continue
         dtstart = _parse_datetime(row.get("dtstart_utc"))
-        weekday = _weekday(dtstart, row.get("tz"))
+        weekday = _weekday(dtstart, (event_row.get("school_record") or {}).get("timezone", "UTC"))
         candidate = seen.get(rid)
         if candidate is not None:
             if weekday:

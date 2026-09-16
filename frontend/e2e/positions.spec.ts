@@ -69,7 +69,7 @@ test.beforeEach(async ({ page, next }) => {
     (url) => apiPath(url) === "/schools" || apiPath(url) === "/schools/uwaterloo",
     async request => {
       const school = {
-            slug: "uwaterloo",
+            slug: "uwaterloo", timezone: "America/Toronto",
             name: "University of Waterloo",
             primary_color: "#000000",
             secondary_color: "#fed34c",
@@ -170,6 +170,38 @@ test("filters explicit paid and newly added positions and searches the latest it
   await page.setViewportSize({ width: 390, height: 844 });
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.screenshot({ path: testInfo.outputPath("positions-mobile.png"), fullPage: true });
+});
+
+test("keeps the latest-added link visible while filters refresh, including empty results", async ({ page, next }) => {
+  await page.goto("/positions");
+  const latest = page.getByRole("button").filter({ hasText: "Operations Assistant" }).filter({ hasText: "ago" });
+  await expect(latest).toBeVisible();
+
+  let releaseResponse!: () => void;
+  const responseGate = new Promise<void>(resolve => { releaseResponse = resolve; });
+  await mockApi(page, next, url => apiPath(url) === "/positions" && url.searchParams.get("search") === "no matching role", async () => {
+    await responseGate;
+    return { json: {
+      items: [], total: 0, page: 1, page_size: 50, total_pages: 0,
+      latest_added_position: { title: MOCK_POSITIONS[1].title, added_at: MOCK_POSITIONS[1].added_at },
+    } };
+  });
+
+  const requestStarted = page.waitForRequest(request => new URL(request.url()).searchParams.get("search") === "no matching role");
+  await page.getByPlaceholder("Search roles, skills, or locations...").fill("no matching role");
+  await page.getByRole("button", { name: "Search", exact: true }).click();
+  await requestStarted;
+  try {
+    await expect(latest).toBeVisible();
+    await expect(page.getByRole("heading", { name: "2 positions", exact: true })).toBeVisible();
+  } finally {
+    releaseResponse();
+  }
+  await expect(page.getByRole("heading", { name: "0 positions", exact: true })).toBeVisible();
+  await expect(latest).toBeVisible();
+  await latest.click();
+  await expect(page.getByPlaceholder("Search roles, skills, or locations...")).toHaveValue("Operations Assistant");
+  await expect(page.getByRole("heading", { name: "1 position", exact: true })).toBeVisible();
 });
 
 test("navigates position drawers by keyboard and resets scroll for the next role", async ({ page }, testInfo) => {

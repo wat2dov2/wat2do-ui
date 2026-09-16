@@ -5,12 +5,13 @@
  */
 
 import type { REPORT_STATUSES, SUBMISSION_STATUSES } from "@/shared/constants/statuses";
-import type { EventFormData } from "@/shared/types/event.types";
+import type { ApiEventCreate } from "@/shared/generated";
 
 /** Derived from REPORT_STATUSES constant tuple */
 export type ReportStatus = (typeof REPORT_STATUSES)[number];
 
 export interface ReportedEvent {
+  eventTitle?: string | null;
   school?: string | null;
   id: string;
   eventId: number;
@@ -23,9 +24,10 @@ export interface ReportedEvent {
 export type SubmissionStatus = (typeof SUBMISSION_STATUSES)[number];
 
 export interface EventSubmission {
+  clubName?: string | null;
   school?: string | null;
   id: string;
-  eventData: EventFormData;
+  eventData: ApiEventCreate;
   submittedBy: string;
   submittedAt: string;
   status: SubmissionStatus;

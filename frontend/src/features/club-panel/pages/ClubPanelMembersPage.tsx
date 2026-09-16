@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useQuery } from "@tanstack/react-query";
+import { getClubById } from "@/features/clubs";
+import { queryKeys } from "@/shared/lib/queryKeys";
+import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 import { useRouter } from "next/navigation";
 import {
   Users,
@@ -51,9 +55,18 @@ function RosterTableHeader({ columns }: RosterTableHeaderProps) {
 }
 
 export function ClubPanelMembersPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const router = useRouter();
   const { clubId } = useAuthState();
+  const { getSchoolTimezone } = useSchoolDirectory();
+  const { data: club } = useQuery({
+    queryKey: queryKeys.clubs.detail(clubId ?? 0),
+    queryFn: () => getClubById(clubId!),
+    enabled: clubId != null,
+  });
+  const formatDate = (value: string) => club
+    ? new Date(value).toLocaleDateString(i18n.language, { dateStyle: "medium", timeZone: getSchoolTimezone(club.school) })
+    : "";
 
   const [managers, setManagers] = useState<ClubMember[]>([]);
   const [invitations, setInvitations] = useState<ClubInvitation[]>([]);
@@ -343,11 +356,7 @@ export function ClubPanelMembersPage() {
                           </td>
                           <td className="px-6 py-4 text-sm">{renderRoleTag(member.role)}</td>
                           <td className="px-6 py-4 text-sm text-muted-foreground">
-                            {new Date(member.joined_at).toLocaleDateString(undefined, {
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric",
-                            })}
+                            {formatDate(member.joined_at)}
                           </td>
                           <td className="px-6 py-4 text-right">
                             {member.role.toLowerCase() !== "owner" && (
@@ -421,18 +430,10 @@ export function ClubPanelMembersPage() {
                             {invite.email}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
-                            {new Date(invite.created_at).toLocaleDateString(undefined, {
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric",
-                            })}
+                            {formatDate(invite.created_at)}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
-                            {new Date(invite.expires_at).toLocaleDateString(undefined, {
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric",
-                            })}
+                            {formatDate(invite.expires_at)}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-right">
                             <Button

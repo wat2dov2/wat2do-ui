@@ -10,16 +10,18 @@ from uuid import UUID
 
 from postgrest.exceptions import APIError
 
-from core.constants import DEFAULT_LIST_LIMIT
+from core.constants import DEFAULT_LIST_LIMIT, DEFAULT_PAGE_SIZE
 from core.controlbox import controlbox
 from core.database import get_sb
 from core.exceptions import ConflictError, NotFoundError, ValidationError
 from core.sanitize import sanitize_postgrest_value
 from core.tables import (
+    CLUB_CLAIMS,
     CLUB_INTEGRATIONS,
     CLUB_INVITATIONS,
     CLUB_MEMBERS,
     CLUBS,
+    USERS,
 )
 from schemas.club import (
     CLUB_STATUS_APPROVED,
@@ -32,7 +34,7 @@ from schemas.club import (
     ClubUpdate,
     IntegrationPlatform,
 )
-from services import position_service, school_service
+from services import admin_query, position_service, school_service
 from services.event_feed_revalidation import event_feed_revalidation_service
 from services.school_context import school_frontend_url
 
@@ -271,10 +273,7 @@ def list_clubs(
         q = q.gte("event_count", min_events)
     q = q.order("club_name").range(skip, skip + limit - 1)
     r = q.execute()
-    items = []
-    for row in r.data or []:
-        email = _fetch_owner_email(row.get("created_by"))
-        items.append(_club_response(row, owner_email=email))
+    items = _clubs_with_owner_emails(r.data or [])
 
     if items:
         club_ids = [item.id for item in items]
@@ -837,27 +836,61 @@ def create_claim(club_id: int, user_id: UUID, role: str, proof_url: str | None) 
     return r.data[0]
 
 
-def list_claims(status: str | None = None, school: str | None = None) -> list[dict]:
-    select_str = (
-        f"*, clubs!inner(*,{school_service.SCHOOL_SLUG_EMBED}), users(*)"
-        if school
-        else f"*, clubs(*,{school_service.SCHOOL_SLUG_EMBED}), users(*)"
+def list_claims(
+    status: str | None = None,
+    school: str | None = None,
+    *,
+    offset: int = 0,
+    limit: int = DEFAULT_PAGE_SIZE,
+    search: str | None = None,
+) -> tuple[list[dict], int]:
+    rows, total = admin_query.load_page_rows(
+        "claims",
+        CLUB_CLAIMS,
+        f"*, clubs(*,{school_service.SCHOOL_SLUG_EMBED}), users(*)",
+        offset=offset,
+        limit=limit,
+        search=search,
+        school=school,
+        status=status,
     )
-    query = get_sb().table("club_claims").select(select_str).order("created_at", desc=True)
-    if status is not None:
-        query = query.eq("status", status)
-    if school is not None:
-        school_record = school_service.get_school(school)
-        if school_record is None:
-            return []
-        query = query.eq("clubs.school_id", school_record.id)
-    r = query.execute()
-    rows = r.data or []
     for row in rows:
         club = row.get("clubs")
         if isinstance(club, dict):
             row["clubs"] = school_service.with_school_slug(club)
-    return rows
+    return rows, total
+
+
+def list_club_submissions(
+    *,
+    offset: int,
+    limit: int,
+    status: str | None = None,
+    school: str | None = None,
+    search: str | None = None,
+) -> tuple[list[ClubResponse], int]:
+    rows, total = admin_query.load_page_rows(
+        "clubSubmissions",
+        CLUBS,
+        _CLUB_SELECT,
+        offset=offset,
+        limit=limit,
+        search=search,
+        school=school,
+        status=status,
+    )
+    return _clubs_with_owner_emails(rows), total
+
+
+def _clubs_with_owner_emails(rows: list[dict]) -> list[ClubResponse]:
+    owner_ids = list({row["created_by"] for row in rows if row.get("created_by")})
+    owners = (
+        get_sb().table(USERS).select("id,email").in_("id", owner_ids).execute().data
+        if owner_ids
+        else []
+    )
+    emails = {row["id"]: row.get("email") for row in owners or []}
+    return [_club_response(row, owner_email=emails.get(row.get("created_by"))) for row in rows]
 
 
 def update_claim(claim_id: UUID, status: str, rejection_reason: str | None = None) -> dict:

@@ -4,13 +4,13 @@ import logging
 import uuid
 from datetime import datetime, timezone
 
-from core.constants import DEFAULT_LIST_LIMIT, REPORT_DISMISSED, REPORT_PENDING, REPORT_RESOLVED
+from core.constants import DEFAULT_PAGE_SIZE, REPORT_DISMISSED, REPORT_PENDING, REPORT_RESOLVED
 from core.database import get_sb
 from core.errors import EVENT_NOT_FOUND, INVALID_STATUS_TRANSITION
 from core.exceptions import NotFoundError, ValidationError
 from core.tables import REPORTED_EVENTS
 from schemas.report import ReportResponse
-from services import school_service
+from services import admin_query, school_service
 
 log = logging.getLogger(__name__)
 
@@ -71,34 +71,31 @@ def get_reports(
     status: str | None = None,
     *,
     offset: int = 0,
-    limit: int | None = DEFAULT_LIST_LIMIT,
+    limit: int = DEFAULT_PAGE_SIZE,
+    search: str | None = None,
+    school: str | None = None,
 ) -> tuple[list[ReportResponse], int]:
-    """Return reports, optionally filtered by status.
-
-    Returns (items, total_count).  Pass ``limit=None`` only for trusted
-    internal maintenance callers that intentionally need all rows.
-    """
-    q = (
-        get_sb()
-        .table(REPORTED_EVENTS)
-        .select(f"*,events({school_service.SCHOOL_SLUG_EMBED})", count="exact")
+    rows, total = admin_query.load_page_rows(
+        "reports",
+        REPORTED_EVENTS,
+        f"*,events(title,{school_service.SCHOOL_SLUG_EMBED})",
+        offset=offset,
+        limit=limit,
+        search=search,
+        school=school,
+        status=status,
     )
-    if status:
-        q = q.eq("status", status)
-    q = q.order("reported_at", desc=True)
-    if limit is not None:
-        q = q.range(offset, offset + limit - 1)
-    r = q.execute()
     items = [
         ReportResponse.model_validate(
             {
                 **row,
                 "school": school_service.with_school_slug(row.get("events") or {}).get("school"),
+                "event_title": (row.get("events") or {}).get("title"),
             }
         )
-        for row in (r.data or [])
+        for row in rows
     ]
-    return items, r.count or len(items)
+    return items, total
 
 
 def _get_report_by_id(report_id: str) -> ReportResponse | None:

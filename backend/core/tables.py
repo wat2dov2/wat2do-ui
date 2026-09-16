@@ -4,10 +4,12 @@ Single source of truth - import from here instead of using string literals.
 """
 
 USERS = "users"
+ADMIN_LIST_ENTRIES = "admin_list_entries"
 EVENTS = "events"
 EVENT_DATES = "event_dates"
 EVENT_SUBMISSIONS = "event_submissions"
 CLUBS = "clubs"
+CLUB_CLAIMS = "club_claims"
 CLUB_INTEGRATIONS = "club_integrations"
 CLUB_MEMBERS = "club_members"
 QR_CODES = "qr_codes"

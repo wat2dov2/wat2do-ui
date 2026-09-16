@@ -1,10 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
-import { tracker } from "@/shared/services/trackingService";
 import { LoadingPage } from "@/shared/ui/loading-page";
 import {
   EventActions,
@@ -69,12 +68,6 @@ export function EventDetailsPageContainer({
     },
     [router],
   );
-
-  useEffect(() => {
-    if (event) {
-      tracker.track(event.id, "detail_view");
-    }
-  }, [event]);
 
   if (isPending && !isError) {
     return <LoadingPage className="min-h-[60dvh]" />;

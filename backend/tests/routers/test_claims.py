@@ -70,13 +70,30 @@ def test_list_claims_success(admin_client, monkeypatch):
         }
     ]
 
-    monkeypatch.setattr(club_service, "list_claims", lambda status=None, school=None: mock_claims)
+    calls = []
+
+    def list_claims(**kwargs):
+        calls.append(kwargs)
+        return mock_claims, 41
+
+    monkeypatch.setattr(club_service, "list_claims", list_claims)
 
     resp = admin_client.get("/clubs/claims")
     assert resp.status_code == 200
-    assert len(resp.json()) == 1
-    assert resp.json()[0]["executive_role"] == "President"
+    assert len(resp.json()["items"]) == 1
+    assert resp.json()["items"][0]["executive_role"] == "President"
 
-    resp_filtered = admin_client.get("/clubs/claims?status=pending")
+    resp_filtered = admin_client.get(
+        "/clubs/claims?status=pending&school=ulaval&search=President&page=2&page_size=20"
+    )
     assert resp_filtered.status_code == 200
-    assert resp_filtered.json()[0]["status"] == "pending"
+    assert resp_filtered.json()["items"][0]["status"] == "pending"
+    assert resp_filtered.json()["total"] == 41
+    assert resp_filtered.json()["total_pages"] == 3
+    assert calls[-1] == {
+        "status": "pending",
+        "school": "ulaval",
+        "search": "President",
+        "offset": 20,
+        "limit": 20,
+    }

@@ -9,7 +9,9 @@ import {
   PopoverTrigger,
 } from "@/shared/ui/popover";
 import type { EventDateFilter } from "@/shared/types";
-import { parseLocalDateValue } from "@/shared/utils/date";
+import { parseLocalDateValue, schoolCalendarDate } from "@/shared/utils/date";
+import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
+import { useEventsStore } from "@/features/events/store/events.store";
 
 interface DateFilterSelectProps {
   value: EventDateFilter;
@@ -33,6 +35,11 @@ export function DateFilterSelect({
   onChange,
 }: DateFilterSelectProps) {
   const { t, i18n } = useTranslation();
+  const school = useEventsStore(state => state.schoolFilter);
+  const { schools } = useSchoolDirectory();
+  const calendarDays = schools.filter(item => !school || item.slug === school)
+    .map(item => schoolCalendarDate(new Date(), item.timezone).toISOString().slice(0, 10));
+  const firstSelectableDate = calendarDays.length ? parseLocalDateValue(calendarDays.sort()[0]) : undefined;
   const [open, setOpen] = useState(false);
   const [showCustomPicker, setShowCustomPicker] = useState(false);
   const selectedCustomDate = useMemo(
@@ -99,7 +106,7 @@ export function DateFilterSelect({
             selected={selectedCustomDate}
             onSelect={handleCustomDateSelect}
             defaultMonth={selectedCustomDate}
-            disabled={{ before: new Date() }}
+            disabled={firstSelectableDate ? { before: firstSelectableDate } : undefined}
             autoFocus
           />
         ) : (

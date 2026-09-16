@@ -203,7 +203,6 @@ def test_list_clubs_hydrates_event_and_position_counts(fake_sb, patch_sb, monkey
         ],
         count=1,
     )
-    monkeypatch.setattr(club_service, "_fetch_owner_email", lambda _owner_id: None)
     monkeypatch.setattr(
         club_service.position_service,
         "get_club_position_counts",

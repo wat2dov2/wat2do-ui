@@ -4,6 +4,7 @@ import type { ApiInstagramPublishBatchSummaryResponse } from "@/shared/generated
 import { AdminTable } from "@/features/admin/components/shared/AdminTable";
 import { Badge } from "@/shared/ui/badge";
 import { TableCell, TableRow } from "@/shared/ui/table";
+import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 
 type Batch = ApiInstagramPublishBatchSummaryResponse;
 
@@ -33,6 +34,7 @@ function statusBadgeVariant(status: Batch["status"]) {
 
 export function InstagramRunsTable({ batches, total, onOpenRun, onPrefetchRun, pagination }: InstagramRunsTableProps) {
   const { t, i18n } = useTranslation();
+  const { getSchoolTimezone } = useSchoolDirectory();
   const locale = i18n.language || "en-US";
 
   return (
@@ -71,7 +73,7 @@ export function InstagramRunsTable({ batches, total, onOpenRun, onPrefetchRun, p
             <TableCell>{batch.school}</TableCell>
             <TableCell>{batch.local_date}</TableCell>
             <TableCell>
-              {ran.toLocaleTimeString(locale, { hour: "numeric", minute: "2-digit" })}
+              {ran.toLocaleTimeString(locale, { hour: "numeric", minute: "2-digit", timeZone: getSchoolTimezone(batch.school), timeZoneName: "short" })}
             </TableCell>
             <TableCell>{t("admin.instagramPublishing.eventEligibility", { count: batch.item_count, eligible: batch.eligible_count })}</TableCell>
             <TableCell>

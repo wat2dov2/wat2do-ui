@@ -1,3 +1,4 @@
+import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -70,9 +71,10 @@ export function PositionDetailsDrawer({
   onSelect,
 }: PositionDetailsDrawerProps) {
   const { t, i18n } = useTranslation();
+  const { getSchoolTimezone } = useSchoolDirectory();
   const deadline = useMemo(
-    () => (position ? formatPositionDeadline(position, i18n.language) : null),
-    [i18n.language, position],
+    () => (position ? formatPositionDeadline(position, i18n.language, getSchoolTimezone(position.school)) : null),
+    [i18n.language, position, getSchoolTimezone],
   );
   const sourceHref = sanitizeHref(position?.source_url ?? "");
   const index = positions.findIndex((item) => item.id === position?.id);

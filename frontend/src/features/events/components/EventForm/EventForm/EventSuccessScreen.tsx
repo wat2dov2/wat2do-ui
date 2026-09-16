@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import { Check, Sparkles } from "@/shared/ui/doodle-icons";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/shared/ui/button";
@@ -19,17 +18,8 @@ export function EventSuccessScreen({
   isEditMode,
   isSubmissionOnly,
 }: EventSuccessScreenProps) {
-  const { t } = useTranslation();
-  const { formData, selectedClubName } = useEventFormContext();
-  const successEvent = useMemo(
-    () => ({
-      occurrences: formData.occurrences.map((o) => ({
-        dtstart_utc: o.dtstart_local,
-        dtend_utc: o.dtend_local || null,
-      })),
-    }),
-    [formData.occurrences],
-  );
+  const { t, i18n } = useTranslation();
+  const { formData, selectedClubName, previewEvent } = useEventFormContext();
 
   const handleDone = () => {
     onClose();
@@ -84,11 +74,11 @@ export function EventSuccessScreen({
               {selectedClubName}
             </p>
             <p className="text-sm text-muted-foreground">
-              {formatCardDate(successEvent)}
+              {formatCardDate(previewEvent, formData.timeZone, i18n.language)}
               {" "}
               {t("common.at")}
               {" "}
-              {formatCardTime(successEvent)}
+              {formatCardTime(previewEvent, formData.timeZone, i18n.language)}
             </p>
           </div>
 

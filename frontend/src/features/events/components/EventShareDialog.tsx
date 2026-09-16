@@ -1,3 +1,4 @@
+import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 import { useMemo, useState, type ComponentType } from "react";
 import { useTranslation } from "react-i18next";
 import { QRCodeSVG } from "qrcode.react";
@@ -80,12 +81,13 @@ export function EventShareDialog({
   open,
   onOpenChange,
 }: EventShareDialogProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const { getSchoolTimezone } = useSchoolDirectory();
   const [copied, setCopied] = useState(false);
   const [wechatQrVisible, setWechatQrVisible] = useState(false);
   const shareUrl = useMemo(() => buildEventShareUrl(event.id), [event.id]);
-  const cardDate = formatCardDate(event);
-  const cardTime = formatCardTime(event);
+  const cardDate = formatCardDate(event, getSchoolTimezone(event.school), i18n.language);
+  const cardTime = formatCardTime(event, getSchoolTimezone(event.school), i18n.language);
   const shareText = [
     event.title,
     [cardDate, cardTime].filter(Boolean).join(` ${t("common.at")} `),

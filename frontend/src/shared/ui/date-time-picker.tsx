@@ -9,6 +9,7 @@ import {
   PopoverTrigger,
 } from "@/shared/ui/popover";
 import { cn } from "@/shared/lib/utils";
+import { parseLocalDateValue } from "@/shared/utils/date";
 
 interface DateTimePickerProps {
   id?: string;
@@ -18,24 +19,6 @@ interface DateTimePickerProps {
   placeholder?: string;
   className?: string;
   hasError?: boolean;
-}
-
-function parseLocalDateTime(value: string): Date | undefined {
-  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(value);
-  if (!match) return undefined;
-  const [, year, month, day, hour, minute] = match;
-  const date = new Date(
-    Number(year),
-    Number(month) - 1,
-    Number(day),
-    Number(hour),
-    Number(minute)
-  );
-  return Number.isNaN(date.getTime()) ? undefined : date;
-}
-
-function formatLocalDateTime(date: Date): string {
-  return format(date, "yyyy-MM-dd'T'HH:mm");
 }
 
 const HOURS = Array.from({ length: 12 }, (_, index) => 12 - index);
@@ -52,38 +35,37 @@ export function DateTimePicker({
   hasError = false,
 }: DateTimePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const date = useMemo(() => parseLocalDateTime(value), [value]);
+  const date = useMemo(() => parseLocalDateValue(value.slice(0, 10)), [value]);
+  const hour = Number(value.slice(11, 13));
+  const minute = Number(value.slice(14, 16));
 
-  const commitDate = (nextDate: Date) => {
-    onChange(formatLocalDateTime(nextDate));
+  const commitDate = (nextDate: Date, nextHour: number, nextMinute: number) => {
+    onChange(`${format(nextDate, "yyyy-MM-dd")}T${String(nextHour).padStart(2, "0")}:${String(nextMinute).padStart(2, "0")}`);
   };
 
   const handleDateSelect = (selectedDate: Date | undefined) => {
     if (!selectedDate) return;
-    const nextDate = new Date(selectedDate);
-    if (date) {
-      nextDate.setHours(date.getHours(), date.getMinutes(), 0, 0);
-    }
-    commitDate(nextDate);
+    commitDate(selectedDate, hour, minute);
     onBlur?.();
   };
 
   const handleTimeChange = (type: "hour" | "minute" | "ampm", option: string) => {
     if (!date) return;
 
-    const nextDate = new Date(date);
+    let nextHour = hour;
+    let nextMinute = minute;
     if (type === "hour") {
       const selectedHour = Number(option) % 12;
-      nextDate.setHours(selectedHour + (nextDate.getHours() >= 12 ? 12 : 0));
+      nextHour = selectedHour + (hour >= 12 ? 12 : 0);
     } else if (type === "minute") {
-      nextDate.setMinutes(Number(option));
-    } else if (option === "PM" && nextDate.getHours() < 12) {
-      nextDate.setHours(nextDate.getHours() + 12);
-    } else if (option === "AM" && nextDate.getHours() >= 12) {
-      nextDate.setHours(nextDate.getHours() - 12);
+      nextMinute = Number(option);
+    } else if (option === "PM" && hour < 12) {
+      nextHour = hour + 12;
+    } else if (option === "AM" && hour >= 12) {
+      nextHour = hour - 12;
     }
 
-    commitDate(nextDate);
+    commitDate(date, nextHour, nextMinute);
     onBlur?.();
   };
 
@@ -103,7 +85,7 @@ export function DateTimePicker({
           onBlur={onBlur}
         >
           <span className="min-w-0 truncate">
-            {date ? format(date, "MM/dd/yyyy hh:mm aa") : placeholder}
+            {date ? `${format(date, "MM/dd/yyyy")} ${String(hour % 12 || 12).padStart(2, "0")}:${String(minute).padStart(2, "0")} ${hour >= 12 ? "PM" : "AM"}` : placeholder}
           </span>
         </Button>
       </PopoverTrigger>
@@ -119,32 +101,32 @@ export function DateTimePicker({
           <div className="flex min-w-0 flex-col divide-y divide-border sm:h-[300px] sm:flex-row sm:divide-x sm:divide-y-0">
             <div className="min-w-0 overflow-x-auto sm:h-full sm:w-auto sm:overflow-x-hidden sm:overflow-y-auto">
               <div className="flex sm:flex-col p-2">
-                {HOURS.map((hour) => (
+                {HOURS.map((optionHour) => (
                   <Button
-                    key={hour}
+                    key={optionHour}
                     type="button"
                     size="icon"
-                    variant={date && date.getHours() % 12 === hour % 12 ? "primary" : "ghost"}
+                    variant={date && hour % 12 === optionHour % 12 ? "primary" : "ghost"}
                     className="sm:w-full shrink-0 aspect-square"
-                    onMouseDown={() => handleTimeChange("hour", String(hour))}
+                    onMouseDown={() => handleTimeChange("hour", String(optionHour))}
                   >
-                    {hour}
+                    {optionHour}
                   </Button>
                 ))}
               </div>
             </div>
             <div className="min-w-0 overflow-x-auto sm:h-full sm:w-auto sm:overflow-x-hidden sm:overflow-y-auto">
               <div className="flex sm:flex-col p-2">
-                {MINUTES.map((minute) => (
+                {MINUTES.map((optionMinute) => (
                   <Button
-                    key={minute}
+                    key={optionMinute}
                     type="button"
                     size="icon"
-                    variant={date && date.getMinutes() === minute ? "primary" : "ghost"}
+                    variant={date && minute === optionMinute ? "primary" : "ghost"}
                     className="sm:w-full shrink-0 aspect-square"
-                    onMouseDown={() => handleTimeChange("minute", String(minute))}
+                    onMouseDown={() => handleTimeChange("minute", String(optionMinute))}
                   >
-                    {String(minute).padStart(2, "0")}
+                    {String(optionMinute).padStart(2, "0")}
                   </Button>
                 ))}
               </div>
@@ -158,8 +140,8 @@ export function DateTimePicker({
                     size="icon"
                     variant={
                       date &&
-                      ((period === "AM" && date.getHours() < 12) ||
-                        (period === "PM" && date.getHours() >= 12))
+                      ((period === "AM" && hour < 12) ||
+                        (period === "PM" && hour >= 12))
                         ? "primary"
                         : "ghost"
                     }

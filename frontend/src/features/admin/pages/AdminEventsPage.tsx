@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { Calendar, FileText } from "@/shared/ui/doodle-icons";
 import { Button } from "@/shared/ui/button";
@@ -17,8 +17,8 @@ import {
   TableRow,
 } from "@/shared/ui/table";
 import { EventDetailsModal, useEventsStore } from "@/features/events";
-import { fetchEventFeed } from "@/features/events/api/events.api";
-import { controlBox } from "@/shared/config/controlBox";
+import { getEventSubmission } from "@/features/admin/api/admin.api";
+import { useAdminPendingCounts } from "@/features/admin/hooks/useAdminList";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import { useAdminEventsPage } from "@/features/admin/hooks/useAdminEventsPage";
 import type { Event, SubmissionStatus } from "@/shared/types";
@@ -28,7 +28,6 @@ import { AdminEmptyState } from "@/features/admin/components/shared/AdminEmptySt
 import { LoadingState } from "@/shared/feedback";
 import { AdminDeleteDialog } from "@/features/admin/components/shared/AdminDeleteDialog";
 import { AdminTable } from "@/features/admin/components/shared/AdminTable";
-import { ADMIN_ITEMS_PER_PAGE } from "@/features/admin/constants";
 import { QP } from "@/shared/constants/queryParams";
 import { formatCardDate } from "@/shared/utils/date";
 import { useUIStore } from "@/shared/store/ui.store";
@@ -37,12 +36,9 @@ import { AdminEventReports } from "@/features/admin/components/AdminEventReports
 import { AdminStatusBadge } from "@/features/admin/components/shared/AdminStatusBadge";
 import { SubmissionDetailsDrawer } from "@/features/admin/components/submissions/SubmissionDetailsDrawer";
 import { RejectSubmissionDialog } from "@/features/admin/components/submissions/RejectSubmissionDialog";
-import { useAdminStore } from "@/features/admin/store/admin.store";
-import { useClubNameLookup } from "@/features/clubs";
 import { useAdminSubmissionsFilters } from "@/features/admin/hooks/useAdminSubmissionsFilters";
 import { AdminTableFilters } from "@/features/admin/components/shared/AdminTableFilters";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
-import { usePagination } from "@/shared/hooks";
 import { useAdminSubmissionsActions } from "@/features/admin/hooks/useAdminSubmissionsActions";
 import {
   SUBMISSION_PENDING,
@@ -71,32 +67,19 @@ export function AdminEventsPage({
 
   const deleteEvent = useEventsStore((s) => s.deleteEvent);
   const setEditingEvent = useUIStore((s) => s.setEditingEvent);
-  const queryClient = useQueryClient();
-
-  // Admin owns an all-school feed, independent of the public browse selection.
-  const { data: events = [], isPending: isLoadingEvents } = useQuery({
-    queryKey: queryKeys.events.admin(),
-    queryFn: () => fetchEventFeed(undefined, { includePast: true }),
-    staleTime: controlBox.clientCache.adminStaleMs,
-  });
 
   const onEditEvent = (event: Event) => {
     setEditingEvent(event);
   };
 
   const {
-    pendingReports,
-    reportsLoading,
-    reportsError,
-    retryReports,
     searchQuery,
     selectedCategory,
     deleteConfirmId,
     currentPage,
     selectedEvent,
+    selectedEventId,
     categories,
-    filteredEvents,
-    paginatedEvents,
     totalPages,
     setSearchQuery,
     setSelectedCategory,
@@ -104,7 +87,9 @@ export function AdminEventsPage({
     clearSelectedEvent,
     setDeleteConfirmId,
     setCurrentPage,
-  } = useAdminEventsPage({ events });
+    events, total, isLoadingEvents, error: eventsError, retry: retryEvents,
+  } = useAdminEventsPage(activeTab === "events");
+  const { counts } = useAdminPendingCounts(["submissions", "reports"]);
 
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -112,37 +97,15 @@ export function AdminEventsPage({
     setIsDeleting(true);
     try {
       await Promise.resolve(deleteEvent(eventId));
-      // The table reads the query, not the store the delete updates, so the
-      // deleted row only leaves the page once the feed is refetched.
-      await queryClient.invalidateQueries({
-        queryKey: queryKeys.events.admin(),
-      });
       setDeleteConfirmId(null);
     } finally {
       setIsDeleting(false);
     }
   };
 
-  const fetchSubmissions = useAdminStore((s) => s.fetchSubmissions);
-  const allSubmissions = useAdminStore((s) => s.submissions);
-
-  useEffect(() => {
-    fetchSubmissions().catch((err) =>
-      console.error("Failed to fetch submissions:", err),
-    );
-  }, [fetchSubmissions]);
-
-  const pendingSubmissionsCount = useMemo(() => {
-    return allSubmissions.filter((s) => s.status === SUBMISSION_PENDING).length;
-  }, [allSubmissions]);
-
-  const { getClubName } = useClubNameLookup();
-  const submissionFilters = useAdminSubmissionsFilters({ getClubName });
-  const { getSchoolName } = useSchoolDirectory();
-  const submissionPagination = usePagination({
-    items: submissionFilters.filteredSubmissions,
-    itemsPerPage: ADMIN_ITEMS_PER_PAGE,
-  });
+  const submissionFilters = useAdminSubmissionsFilters(activeTab === "submissions");
+  const { getSchoolName, getSchoolTimezone } = useSchoolDirectory();
+  const submissionPagination = submissionFilters.pagination;
   const submissionActions = useAdminSubmissionsActions({
     onReviewed: (id) => {
       if (submissionIdParam !== id) return;
@@ -152,10 +115,11 @@ export function AdminEventsPage({
     },
   });
 
-  const selectedSubmission = useMemo(() => {
-    if (!submissionIdParam) return null;
-    return submissionFilters.allSubmissions.find((s) => s.id === submissionIdParam) || null;
-  }, [submissionIdParam, submissionFilters.allSubmissions]);
+  const { data: selectedSubmission } = useQuery({
+    queryKey: queryKeys.admin.submission(submissionIdParam),
+    queryFn: () => getEventSubmission(submissionIdParam!),
+    enabled: Boolean(submissionIdParam),
+  });
 
   useEffect(() => {
     if (!submissionIdParam) return;
@@ -167,7 +131,7 @@ export function AdminEventsPage({
     return () => clearTimeout(id);
   }, [submissionIdParam]);
 
-  const fmtTime = (dateStr: string) => formatRelativeTime(dateStr, t);
+  const fmtTime = (dateStr: string, school?: string) => formatRelativeTime(dateStr, t, { timeZone: getSchoolTimezone(school), locale: i18n.language });
 
   return (
     <Tabs
@@ -186,10 +150,10 @@ export function AdminEventsPage({
           <TabsTrigger value="events">
             {t("admin.eventsList")}
           </TabsTrigger>
-          <TabsTrigger value="submissions" count={pendingSubmissionsCount}>
+          <TabsTrigger value="submissions" count={counts.submissions}>
             {t("admin.eventSubmissions")}
           </TabsTrigger>
-          <TabsTrigger value="reports" count={pendingReports.length}>{t("admin.eventReports")}</TabsTrigger>
+          <TabsTrigger value="reports" count={counts.reports}>{t("admin.eventReports")}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="events">
@@ -201,13 +165,14 @@ export function AdminEventsPage({
                 placeholder={t("admin.searchEvents")}
               />
               <Select
-                value={selectedCategory || undefined}
-                onValueChange={(value) => setSelectedCategory(value || "")}
+                value={selectedCategory || "all"}
+                onValueChange={(value) => setSelectedCategory(value === "all" ? "" : value)}
               >
                 <SelectTrigger size="lg">
                   <SelectValue placeholder={t("admin.allCategories")} />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="all">{t("admin.allCategories")}</SelectItem>
                   {categories.map((cat) => (
                     <SelectItem key={cat} value={cat}>
                       {cat}
@@ -217,8 +182,8 @@ export function AdminEventsPage({
               </Select>
             </Stack>
 
-            {filteredEvents.length > 0 ? (
-              <AdminTable count={filteredEvents.length} label={filteredEvents.length === 1 ? t("common.event") : t("common.events")}
+            {eventsError ? <Button onClick={retryEvents}>{t("common.tryAgain")}</Button> : isLoadingEvents ? <LoadingState label={t("common.loading")} /> : total > 0 ? (
+              <AdminTable count={total} label={total === 1 ? t("common.event") : t("common.events")}
                 pagination={{ currentPage, totalPages, onPageChange: setCurrentPage }}
                 headers={[
                   { label: t("events.eventTitle") },
@@ -230,7 +195,7 @@ export function AdminEventsPage({
                   { label: t("common.actions"), align: "right" },
                 ]}
               >
-                {paginatedEvents.map((event) => {
+                {events.map((event) => {
                   const isHighlighted = selectedEvent?.id === event.id;
                   return (
                     <TableRow
@@ -253,7 +218,7 @@ export function AdminEventsPage({
                       <TableCell>{event.school}</TableCell>
                       <TableCell>
                         <span className="text-sm text-muted-foreground">
-                          {formatCardDate(event, i18n.language || "en-US")}
+                          {formatCardDate(event, getSchoolTimezone(event.school), i18n.language || "en-US")}
                         </span>
                       </TableCell>
                       <TableCell>
@@ -295,10 +260,6 @@ export function AdminEventsPage({
                   );
                 })}
               </AdminTable>
-            ) : isLoadingEvents ? (
-              // "No events found" is a claim about the data; say it only once the
-              // feed has actually arrived.
-              <LoadingState label={t("common.loading")} />
             ) : (
               <AdminEmptyState
                 icon={Calendar}
@@ -323,25 +284,24 @@ export function AdminEventsPage({
           </Stack>
         </TabsContent>
         <TabsContent value="reports">
-          <AdminEventReports reports={pendingReports} events={events} onViewEvent={selectEvent}
-            isLoading={reportsLoading || isLoadingEvents} error={reportsError} onRetry={retryReports} />
+          <AdminEventReports onViewEvent={selectEvent} />
         </TabsContent>
         <TabsContent value="submissions">
           <Stack gap={5}>
             <AdminTableFilters
                 search={submissionFilters.searchQuery}
                 school={submissionFilters.school}
-                onSchoolChange={value => { submissionFilters.setSchool(value); submissionPagination.setCurrentPage(1); }}
+                onSchoolChange={value => { submissionFilters.setSchool(value); submissionPagination.onPageChange(1); }}
                 onSearchChange={(value) => {
                   submissionFilters.setSearchQuery(value);
-                  submissionPagination.setCurrentPage(1);
+                  submissionPagination.onPageChange(1);
                 }}
               >
               <Select
                 value={submissionFilters.statusFilter}
                 onValueChange={(value) => {
                   submissionFilters.setStatusFilter(value as "all" | SubmissionStatus);
-                  submissionPagination.setCurrentPage(1);
+                  submissionPagination.onPageChange(1);
                 }}
               >
                 <SelectTrigger size="lg">
@@ -356,9 +316,9 @@ export function AdminEventsPage({
               </Select>
             </AdminTableFilters>
 
-            {submissionFilters.filteredSubmissions.length > 0 ? (
-              <AdminTable count={submissionFilters.filteredSubmissions.length} label={submissionFilters.filteredSubmissions.length === 1 ? t("admin.submission") : t("admin.submissions")}
-                pagination={{ currentPage: submissionPagination.currentPage, totalPages: submissionPagination.totalPages, onPageChange: submissionPagination.setCurrentPage }}
+            {submissionFilters.isError ? <Button onClick={() => void submissionFilters.refetch()}>{t("common.tryAgain")}</Button> : submissionFilters.isPending ? <LoadingState label={t("common.loading")} /> : submissionFilters.total > 0 ? (
+              <AdminTable count={submissionFilters.total} label={submissionFilters.total === 1 ? t("admin.submission") : t("admin.submissions")}
+                pagination={{ currentPage: submissionPagination.currentPage, totalPages: submissionPagination.totalPages, onPageChange: submissionPagination.onPageChange }}
                 headers={[
                   { label: t("events.eventTitle") },
                   { label: t("events.club") },
@@ -369,7 +329,7 @@ export function AdminEventsPage({
                   { label: t("common.actions"), align: "right" },
                 ]}
               >
-                {submissionPagination.paginatedItems.map((submission) => (
+                {submissionFilters.items.map((submission) => (
                   <TableRow
                     key={submission.id}
                     id={`submission-${submission.id}`}
@@ -388,7 +348,7 @@ export function AdminEventsPage({
                     </TableCell>
                     <TableCell>
                       <div className="text-sm text-muted-foreground">
-                        {getClubName(submission.eventData.club_id)}
+                        {submission.clubName}
                       </div>
                     </TableCell>
                     <TableCell>
@@ -399,7 +359,7 @@ export function AdminEventsPage({
                     <TableCell>{submission.school ? getSchoolName(submission.school) : t("admin.unknown")}</TableCell>
                     <TableCell>
                       <span className="text-sm text-muted-foreground">
-                        {fmtTime(submission.submittedAt)}
+                        {fmtTime(submission.submittedAt, submission.school)}
                       </span>
                     </TableCell>
                     <TableCell>
@@ -448,7 +408,7 @@ export function AdminEventsPage({
 
             <SubmissionDetailsDrawer
               submission={selectedSubmission}
-              clubName={getClubName(selectedSubmission?.eventData.club_id)}
+              clubName={selectedSubmission?.clubName ?? ""}
               isOpen={selectedSubmission !== null}
               onClose={() => {
                 const newParams = new URLSearchParams(searchParams.toString());
@@ -457,7 +417,6 @@ export function AdminEventsPage({
               }}
               onApprove={submissionActions.handleApprove}
               onRejectClick={submissionActions.handleRejectClick}
-              formatRelativeTime={fmtTime}
             />
 
             <RejectSubmissionDialog
@@ -474,7 +433,7 @@ export function AdminEventsPage({
             />
           </Stack>
         </TabsContent>
-        <EventDetailsModal event={selectedEvent} onClose={clearSelectedEvent} allEvents={events} hideSimilarEvents />
+        <EventDetailsModal eventId={selectedEventId} event={selectedEvent} onClose={clearSelectedEvent} allEvents={events} hideSimilarEvents />
       </Stack>
     </Tabs>
   );

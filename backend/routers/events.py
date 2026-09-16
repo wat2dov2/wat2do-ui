@@ -5,7 +5,7 @@ from typing import Literal
 
 from fastapi import APIRouter, Depends, Query, status
 
-from core.auth import get_authorized_resource, get_db_user, is_admin
+from core.auth import get_admin_user, get_authorized_resource, get_db_user, is_admin
 from core.constants import (
     MAX_EVENT_PRICE,
     MAX_EVENT_SCHOOL_LENGTH,
@@ -18,7 +18,7 @@ from core.errors import (
     EVENT_NOT_FOUND,
 )
 from core.exceptions import AuthorizationError, get_or_404
-from core.pagination import PaginationParams, paginated_response
+from core.pagination import PaginatedResponse, PaginationParams, paginated_response
 from schemas.club import CLUB_STATUS_APPROVED
 from schemas.event import (
     EventCreate,
@@ -26,10 +26,11 @@ from schemas.event import (
     EventPublicResponse,
     EventResponse,
     EventStatsResponse,
+    EventSummaryResponse,
     EventUpdate,
 )
 from schemas.user import UserResponse
-from services import club_service, event_service
+from services import admin_query, club_service, event_query, event_service
 from services.notifications import event_change
 
 log = logging.getLogger(__name__)
@@ -63,6 +64,28 @@ def _authorize_event_club(club_id: int, db_user: UserResponse) -> None:
         owned_clubs = club_service.list_clubs_by_owner(str(db_user.id))
         if not any(c.id == club.id for c in owned_clubs):
             raise AuthorizationError(CLUB_EVENT_CREATION_REQUIRED)
+
+
+@router.get("/admin", response_model=PaginatedResponse[EventSummaryResponse])
+def list_admin_events(
+    search: str | None = Query(default=None, max_length=MAX_SEARCH_QUERY_LENGTH),
+    category: str | None = Query(default=None, max_length=MAX_SEARCH_QUERY_LENGTH),
+    school: str | None = Query(default=None, max_length=MAX_EVENT_SCHOOL_LENGTH),
+    pagination: PaginationParams = Depends(),
+    _: UserResponse = Depends(get_admin_user),
+):
+    ids, total = admin_query.load_page_ids(
+        "events",
+        offset=pagination.offset,
+        limit=pagination.page_size,
+        search=search,
+        category=category,
+        school=school,
+    )
+    events = event_query.load_events_by_ids([int(id) for id in ids], model=EventSummaryResponse)
+    return paginated_response(
+        [events[int(id)] for id in ids if int(id) in events], total, pagination
+    )
 
 
 @router.get("/stats", response_model=dict[str, EventStatsResponse])

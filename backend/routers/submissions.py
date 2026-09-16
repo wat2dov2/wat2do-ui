@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, Query, status
 from core.auth import get_admin_user, get_optional_user, resolve_db_user
 from core.constants import (
     MAX_SCHOOL_LENGTH,
+    MAX_SEARCH_QUERY_LENGTH,
     MAX_STATUS_FILTER_LENGTH,
     SUBMISSION_RATE_LIMIT_MAX_REQUESTS,
     SUBMISSION_RATE_LIMIT_WINDOW_SECONDS,
@@ -40,12 +41,14 @@ def create_submission(
 def list_submissions(
     submission_status: str | None = Query(default=None, max_length=MAX_STATUS_FILTER_LENGTH),
     school: str | None = Query(default=None, max_length=MAX_SCHOOL_LENGTH),
+    search: str | None = Query(default=None, max_length=MAX_SEARCH_QUERY_LENGTH),
     pagination: PaginationParams = Depends(),
     _: UserResponse = Depends(get_admin_user),
 ):
     items, total = submission_service.get_submissions(
         status=submission_status,
         school=school,
+        search=search,
         offset=pagination.offset,
         limit=pagination.page_size,
     )

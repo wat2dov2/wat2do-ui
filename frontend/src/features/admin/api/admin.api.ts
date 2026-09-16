@@ -4,7 +4,6 @@
  */
 
 import type {
-  EventFormData,
   EventSubmission,
   ReportedEvent,
   Club,
@@ -27,13 +26,13 @@ import type {
   ApiPayoutStatusUpdate,
   ApiPosterPayoutResponse,
 } from "@/shared/generated";
-import { getDefaultEventCategory } from "@/shared/data/eventCategories";
 import {
   createClubAPI,
   updateClubAPI,
   deleteClubAPI,
 } from "@/features/clubs";
-import { api, getPaginatedItems } from "@/shared/services/apiClient";
+import { api, type PaginatedApiResponse } from "@/shared/services/apiClient";
+import type { Event } from "@/shared/types";
 import type { components } from "@/shared/generated/api-types";
 import { ADMIN_ITEMS_PER_PAGE } from "@/features/admin/constants";
 
@@ -59,6 +58,7 @@ function toReportedEvent(row: ApiReportResponse): ReportedEvent {
     school: row.school,
     id: row.id,
     eventId: row.event_id,
+    eventTitle: row.event_title,
     reportedBy: row.user_id,
     reportedAt: row.reported_at,
     reason: row.reason,
@@ -66,34 +66,12 @@ function toReportedEvent(row: ApiReportResponse): ReportedEvent {
   };
 }
 
-function toEventFormData(eventData: ApiEventCreate): EventFormData {
-  return {
-    club_id: eventData.club_id ?? null,
-    title: eventData.title || "",
-    description: eventData.description ?? "",
-    occurrences: (eventData.occurrences || []).map((occurrence) => {
-      const startsAt = occurrence.dtstart_utc ? new Date(occurrence.dtstart_utc) : null;
-      const endsAt = occurrence.dtend_utc ? new Date(occurrence.dtend_utc) : null;
-      return {
-        dtstart_local: startsAt ? startsAt.toLocaleString("sv-SE").replace(" ", "T").slice(0, 16) : "",
-        dtend_local: endsAt
-          ? endsAt.toLocaleString("sv-SE").replace(" ", "T").slice(0, 16)
-          : "",
-      };
-    }),
-    location: eventData.location || "",
-    category: eventData.category ?? getDefaultEventCategory(),
-    price: eventData.price ?? 0,
-    food: eventData.food ?? [],
-    registration: eventData.registration ?? false,
-  };
-}
-
 function toEventSubmission(row: ApiSubmissionResponse): EventSubmission {
   return {
+    clubName: row.club_name,
     school: row.school,
     id: row.id,
-    eventData: toEventFormData(row.event_data as ApiEventCreate),
+    eventData: row.event_data as ApiEventCreate,
     submittedBy: row.submitted_by_email || row.user_id,
     submittedAt: row.submitted_at,
     status: row.status as EventSubmission["status"],
@@ -135,20 +113,42 @@ export async function adminDeleteClub(clubId: number): Promise<void> {
 
 // ── Reported Events API ─────────────────────────────────────────────
 
-export async function getReportedEvents(): Promise<ReportedEvent[]> {
-  const rows = await getPaginatedItems<ApiReportResponse>("/reports/");
-  return rows.map(toReportedEvent);
+export interface AdminListFilters {
+  page: number;
+  pageSize: number;
+  search?: string;
+  school?: string;
+  status?: string;
+  category?: string;
+}
+
+async function getAdminPage<T>(path: string, filters: AdminListFilters, statusKey = "status") {
+  const params = new URLSearchParams({ page: String(filters.page), page_size: String(filters.pageSize) });
+  for (const key of ["search", "school", "category"] as const) {
+    if (filters[key]) params.set(key, filters[key]);
+  }
+  if (filters.status && filters.status !== "all") params.set(statusKey, filters.status);
+  return api.get<PaginatedApiResponse<T>>(`${path}?${params}`);
+}
+
+export function getAdminEventsPage(filters: AdminListFilters) {
+  return getAdminPage<Event>("/events/admin", filters);
+}
+
+export async function getReportedEvents(filters: AdminListFilters) {
+  const page = await getAdminPage<ApiReportResponse>("/reports/", filters, "report_status");
+  return { ...page, items: page.items.map(toReportedEvent) };
 }
 
 // ── Event Submissions API ───────────────────────────────────────────
 
-export async function getEventSubmissions(school?: string): Promise<EventSubmission[]> {
-  const params = new URLSearchParams();
-  if (school) params.set("school", school);
-  const qs = params.toString();
-  const url = `/submissions/${qs ? `?${qs}` : ""}`;
-  const rows = await getPaginatedItems<ApiSubmissionResponse>(url);
-  return rows.map(toEventSubmission);
+export async function getEventSubmissions(filters: AdminListFilters) {
+  const page = await getAdminPage<ApiSubmissionResponse>("/submissions/", filters, "submission_status");
+  return { ...page, items: page.items.map(toEventSubmission) };
+}
+
+export async function getEventSubmission(id: string) {
+  return toEventSubmission(await api.get<ApiSubmissionResponse>(`/submissions/${id}`));
 }
 
 export async function updateEventSubmission(
@@ -210,25 +210,13 @@ export async function publishInstagramBatch(
 
 export type ClubClaim = components["schemas"]["ClubClaimResponse"];
 
-export async function getClubClaims(status?: string, school?: string): Promise<ClubClaim[]> {
-  const params = new URLSearchParams();
-  if (status) params.set("status", status);
-  if (school) params.set("school", school);
-  const qs = params.toString();
-  const url = `/clubs/claims${qs ? `?${qs}` : ""}`;
-  return api.get<ClubClaim[]>(url);
+export function getClubClaims(filters: AdminListFilters) {
+  return getAdminPage<ClubClaim>("/clubs/claims", filters);
 }
 
 /** Clubs awaiting (or already through) admin review. */
-export async function getClubSubmissions(
-  status?: ClubStatus,
-  school?: string
-): Promise<Club[]> {
-  const params = new URLSearchParams();
-  if (status) params.set("club_status", status);
-  if (school) params.set("school", school);
-  const qs = params.toString();
-  return getPaginatedItems<Club>(`/clubs/review${qs ? `?${qs}` : ""}`);
+export function getClubSubmissions(filters: AdminListFilters) {
+  return getAdminPage<Club>("/clubs/review", filters, "club_status");
 }
 
 export async function resolveClubReview(

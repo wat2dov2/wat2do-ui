@@ -135,6 +135,7 @@ export function AdminPayoutsPanel() {
   const dateFormatter = useMemo(
     () =>
       new Intl.DateTimeFormat(i18n.language, {
+        timeZone: "UTC",
         year: "numeric",
         month: "short",
         day: "numeric",
@@ -144,6 +145,7 @@ export function AdminPayoutsPanel() {
   const dateTimeFormatter = useMemo(
     () =>
       new Intl.DateTimeFormat(i18n.language, {
+        timeZone: "UTC",
         year: "numeric",
         month: "short",
         day: "numeric",
@@ -156,6 +158,7 @@ export function AdminPayoutsPanel() {
   const periodFormatter = useMemo(
     () =>
       new Intl.DateTimeFormat(i18n.language, {
+        timeZone: "UTC",
         year: "numeric",
         month: "long",
       }),
@@ -166,7 +169,7 @@ export function AdminPayoutsPanel() {
     formatCadCents(cents, i18n.language);
   const formatDate = (value: string | null) => {
     if (!value) return t("admin.posterPayouts.notAvailable");
-    const date = new Date(value.includes("T") ? value : `${value}T00:00:00`);
+    const date = new Date(value.includes("T") ? value : `${value}T00:00:00Z`);
     return Number.isNaN(date.getTime())
       ? t("admin.posterPayouts.notAvailable")
       : dateFormatter.format(date);
@@ -179,7 +182,7 @@ export function AdminPayoutsPanel() {
       : dateTimeFormatter.format(date);
   };
   const formatPeriod = (value: string) => {
-    const date = new Date(`${value.slice(0, 7)}-01T00:00:00`);
+    const date = new Date(`${value.slice(0, 7)}-01T00:00:00Z`);
     return Number.isNaN(date.getTime()) ? value : periodFormatter.format(date);
   };
 

@@ -1,3 +1,4 @@
+import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { ImageOff } from "@/shared/ui/doodle-icons";
@@ -24,10 +25,11 @@ export function PositionCardImage({
   onClubFilterSelect,
 }: PositionCardImageProps) {
   const { t, i18n } = useTranslation();
+  const { getSchoolTimezone } = useSchoolDirectory();
   const { surfaceRef, registerCorner, cutouts, box } = useEventImageCutouts();
   const deadlineDate = useMemo(
-    () => formatPositionDeadlineBadge(position, i18n.language),
-    [i18n.language, position],
+    () => formatPositionDeadlineBadge(position, i18n.language, getSchoolTimezone(position.school)),
+    [i18n.language, position, getSchoolTimezone],
   );
   return (
     <div

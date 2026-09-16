@@ -3,6 +3,7 @@ import { LocationPin, DollarSign, Utensils, Plus, Trash2, ExternalLink } from "@
 import {
   Field,
   FieldGroup,
+  FieldDescription,
   FieldLabel,
   FieldLegend,
   FieldSeparator,
@@ -17,8 +18,10 @@ import { TagInput } from "@/shared/ui/tag-input";
 import { ImageUploadField } from "@/shared/ui/image-upload-field";
 import { ClubInput } from "@/features/events/components/ClubInput";
 import { useEventFormContext } from "@/features/events/components/EventForm/EventForm/EventFormContext";
+import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 
 export function EventFormFields() {
+  const { getSchoolTimezone } = useSchoolDirectory();
   const { event_categories: eventCategories } = useAppConstants();
   const { t } = useTranslation();
   const {
@@ -60,9 +63,11 @@ export function EventFormFields() {
           <ClubInput
             value={formData.club_id}
             clubs={clubs}
-            onChange={(clubId) =>
-              updateField("club_id", clubId)
-            }
+            onChange={(clubId) => {
+              updateField("club_id", clubId);
+              const club = clubs.find((item) => item.id === clubId);
+              if (club) updateField("timeZone", getSchoolTimezone(club.school));
+            }}
             onBlur={() => handleBlur("club_id")}
             error={errors.club_id}
             touched={touched.club_id}
@@ -81,6 +86,7 @@ export function EventFormFields() {
                 {t("forms.addDate")}
               </Button>
             </div>
+            <FieldDescription>{formData.timeZone}</FieldDescription>
             <FieldGroup>
               {formData.occurrences.map((occurrence, index) => (
                 <div

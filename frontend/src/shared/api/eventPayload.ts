@@ -1,9 +1,21 @@
 import type { ApiEventCreate } from "@/shared/generated";
 import type { components } from "@/shared/generated/api-types";
-import type { EventFormData } from "@/shared/types";
+import type { EventFormData, EventFormOccurrence } from "@/shared/types";
+import { localDateTimeToUtc } from "@/shared/utils/date";
 
 function submittedOccurrences(eventData: EventFormData) {
   return eventData.occurrences.filter((occurrence) => occurrence.dtstart_local);
+}
+
+export function buildEventOccurrence(occurrence: EventFormOccurrence, timeZone: string): ApiEventCreate["occurrences"][number] {
+  return {
+    dtstart_utc: localDateTimeToUtc(occurrence.dtstart_local, timeZone, occurrence.original?.dtstart_utc),
+    dtend_utc: occurrence.dtend_local
+      ? localDateTimeToUtc(occurrence.dtend_local, timeZone, occurrence.original?.dtend_utc)
+      : null,
+    duration: null,
+    tz: timeZone,
+  };
 }
 
 /** Map frontend EventFormData to the backend EventCreate payload shape. */
@@ -12,14 +24,7 @@ export function buildEventPayload(eventData: EventFormData): ApiEventCreate {
     title: eventData.title,
     description: eventData.description || null,
     location: eventData.location,
-    occurrences: submittedOccurrences(eventData).map((occurrence) => ({
-      dtstart_utc: new Date(occurrence.dtstart_local).toISOString(),
-      dtend_utc: occurrence.dtend_local
-        ? new Date(occurrence.dtend_local).toISOString()
-        : null,
-      duration: null,
-      tz: Intl.DateTimeFormat().resolvedOptions().timeZone || null,
-    })),
+    occurrences: submittedOccurrences(eventData).map((occurrence) => buildEventOccurrence(occurrence, eventData.timeZone)),
     price: eventData.price || null,
     food: eventData.food?.length ? eventData.food : null,
     registration: eventData.registration || false,

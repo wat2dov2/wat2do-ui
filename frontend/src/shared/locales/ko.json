@@ -257,7 +257,7 @@
     "discordLink": "Discord 링크",
     "titleRequired": "제목은 필수입니다",
     "clubRequired": "조직이 필요합니다",
-    "occurrenceRequired": "최소 하나의 날짜가 필요합니다",
+    "occurrenceRequired": "유효한 날짜와 시간을 하나 이상 입력하세요. 종료 시간은 시작 시간보다 늦어야 합니다.",
     "locationRequired": "위치가 필요합니다",
     "schoolRequired": "학교가 필요합니다",
     "pickDate": "날짜를 선택하세요",

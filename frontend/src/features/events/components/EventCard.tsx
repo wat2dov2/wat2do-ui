@@ -1,14 +1,12 @@
+import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 import { memo, useCallback } from "react";
 import type { TFunction } from "i18next";
-import { tracker } from "@/shared/services/trackingService";
 import { useTranslation } from "react-i18next";
 import {
   EventCardContent,
   EventCardContentFrame,
 } from "@/shared/ui/event-card-content";
 import { EventCardImage } from "@/features/events/components/EventCardImage";
-import { useEventStatsActions } from "@/features/events/hooks/useEventStats";
-import { useEventsStore } from "@/features/events/store/events.store";
 import { formatCardDate, formatCardTime } from "@/shared/utils/date";
 import { useEventBadges } from "@/features/events/hooks/useEventBadges";
 import { useMouseDownAction, useMobileGridClickActivation } from "@/shared/hooks";
@@ -25,7 +23,7 @@ interface EventCardProps {
   /** Grid cards: open details on click below the sm breakpoint or on touch. */
   mobileClickActivation?: boolean;
   /**
-   * Renders the card inert: no navigation, no click tracking, no badge menu.
+   * Renders the card inert: no navigation or badge menu.
    * Preview surfaces - the submit form's live preview, the Instagram carousel
    * editor - show the card an event will appear as, and nothing more.
    */
@@ -93,28 +91,6 @@ function EventCardBody({
   );
 }
 
-interface UseEventCardNavigationOptions {
-  event: Event;
-  onEventClick?: (event: Event) => void;
-  onIncrementClickCount: (eventId: number) => void;
-}
-
-function useEventCardNavigation({
-  event,
-  onEventClick,
-  onIncrementClickCount,
-}: UseEventCardNavigationOptions) {
-  const handleCardActivate = useCallback(() => {
-    onIncrementClickCount(event.id);
-    tracker.track(event.id, "click");
-    onEventClick?.(event);
-  }, [event, onEventClick, onIncrementClickCount]);
-
-  return {
-    handleCardActivate,
-  };
-}
-
 function EventCardComponent({
   event,
   stats,
@@ -126,20 +102,14 @@ function EventCardComponent({
   className,
 }: EventCardProps) {
   const { t, i18n } = useTranslation();
-
-  const schoolFilter = useEventsStore((s) => s.schoolFilter);
-  const { incrementClickCount } = useEventStatsActions(schoolFilter);
+  const { getSchoolTimezone } = useSchoolDirectory();
 
   const badges = useEventBadges(event);
 
-  const cardDate = formatCardDate(event, i18n.language || "en-US");
-  const cardTime = formatCardTime(event);
+  const cardDate = formatCardDate(event, getSchoolTimezone(event.school), i18n.language || "en-US");
+  const cardTime = formatCardTime(event, getSchoolTimezone(event.school), i18n.language);
 
-  const { handleCardActivate } = useEventCardNavigation({
-    event,
-    onEventClick,
-    onIncrementClickCount: incrementClickCount,
-  });
+  const handleCardActivate = useCallback(() => onEventClick?.(event), [event, onEventClick]);
 
   const mobileGridClickActivation = useMobileGridClickActivation();
   const preferClickPress = mobileClickActivation && mobileGridClickActivation;

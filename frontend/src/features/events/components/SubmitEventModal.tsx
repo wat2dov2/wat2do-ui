@@ -161,6 +161,7 @@ export function SubmitEventFlow({
           mapEventInputToFormData(
             parsedData as unknown as Record<string, unknown>,
             {
+              timeZone: previous.timeZone,
               occurrences: previous.occurrences,
               source_image_url: previous.source_image_url,
             },

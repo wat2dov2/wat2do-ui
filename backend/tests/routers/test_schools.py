@@ -11,6 +11,7 @@ def test_search_schools_route_is_public_and_delegates(client, monkeypatch):
                 "name": "Massachusetts Institute of Technology",
                 "primary_color": "#A31F34",
                 "secondary_color": "#FFFFFF",
+                "timezone": "America/New_York",
                 "email_domains": ["mit.edu"],
             }
         ]
@@ -26,6 +27,7 @@ def test_search_schools_route_is_public_and_delegates(client, monkeypatch):
             "name": "Massachusetts Institute of Technology",
             "primary_color": "#A31F34",
             "secondary_color": "#FFFFFF",
+            "timezone": "America/New_York",
             "email_domains": ["mit.edu"],
             "language": "en",
             "faculties": [],

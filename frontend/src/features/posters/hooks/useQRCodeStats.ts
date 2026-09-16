@@ -42,7 +42,7 @@ export function useQRCodeStats({ scans, timeRange }: UseQRCodeStatsOptions) {
 
     const dates = Object.keys(grouped).sort().map((date) => ({
       date,
-      dateLabel: new Date(date).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+      dateLabel: new Date(date).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" }),
     }));
 
     return {

@@ -272,7 +272,7 @@
     "discordLink": "رابط Discord",
     "titleRequired": "العنوان مطلوب",
     "clubRequired": "المنظمة مطلوبة",
-    "occurrenceRequired": "يجب إدخال تاريخ واحد على الأقل",
+    "occurrenceRequired": "أدخل تاريخًا ووقتًا صالحين على الأقل. يجب أن تكون النهاية بعد البداية.",
     "locationRequired": "الموقع مطلوب",
     "schoolRequired": "المدرسة مطلوبة",
     "pickDate": "اختر تاريخًا",

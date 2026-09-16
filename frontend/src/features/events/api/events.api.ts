@@ -20,6 +20,8 @@ import {
   buildEventUpdatePayload,
 } from "@/shared/api/eventPayload";
 import { api, getPaginatedItems } from "@/shared/services/apiClient";
+import { getQueryClient } from "@/shared/lib/queryClient";
+import { queryKeys } from "@/shared/lib/queryKeys";
 
 export type LatestAddedEvent = ApiLatestAddedItem | null;
 
@@ -73,21 +75,36 @@ export async function fetchClubEvents(
 }
 
 export async function createEventAPI(eventData: EventFormData): Promise<Event> {
-  return api.post<ApiEventResponse>("/events/", buildEventPayload(eventData));
+  const event = await api.post<ApiEventResponse>("/events/", buildEventPayload(eventData));
+  await invalidateEventQueries();
+  return event;
 }
 
 export async function updateEventAPI(
   eventId: number,
   eventData: EventFormData,
 ): Promise<Event> {
-  return api.patch<ApiEventResponse>(
+  const event = await api.patch<ApiEventResponse>(
     `/events/${eventId}`,
     buildEventUpdatePayload(eventData),
   );
+  getQueryClient().setQueryData(queryKeys.events.detail(eventId), event);
+  await invalidateEventQueries();
+  return event;
 }
 
 export async function deleteEventAPI(eventId: number): Promise<void> {
   await api.delete(`/events/${eventId}`);
+  getQueryClient().removeQueries({ queryKey: queryKeys.events.detail(eventId) });
+  await invalidateEventQueries();
+}
+
+async function invalidateEventQueries(): Promise<void> {
+  const queryClient = getQueryClient();
+  await Promise.all([
+    queryClient.invalidateQueries({ queryKey: queryKeys.events.all }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.admin.all }),
+  ]);
 }
 
 export type EventStats = ApiEventStatsResponse;
@@ -124,4 +141,5 @@ export async function fetchEventStatsFromBackend(
 
 export async function reportEventToBackend(eventId: number, reason: string): Promise<void> {
   await api.post("/reports/", { event_id: eventId, reason });
+  await getQueryClient().invalidateQueries({ queryKey: queryKeys.admin.all });
 }

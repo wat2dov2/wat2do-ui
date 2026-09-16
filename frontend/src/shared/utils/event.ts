@@ -1,5 +1,6 @@
 import type { Event, EventFormData, EventFormOccurrence } from "@/shared/types";
 import { getDefaultEventCategory } from "@/shared/data/eventCategories";
+import { toLocalDateTimeInput } from "@/shared/utils/date";
 
 /**
  * Event Utilities
@@ -14,27 +15,25 @@ export function getEventCategory(event: Pick<Event, "category">): string {
   return event.category || getDefaultEventCategory();
 }
 
-function toLocalDateTimeInput(value: string): string {
-  return new Date(value).toLocaleString("sv-SE").replace(" ", "T").slice(0, 16);
-}
-
-function eventOccurrencesToFormOccurrences(event: Event): EventFormOccurrence[] {
+function eventOccurrencesToFormOccurrences(event: Event, timeZone: string): EventFormOccurrence[] {
   return (event.occurrences ?? []).map((occurrence) => ({
     id: occurrence.id,
-    dtstart_local: toLocalDateTimeInput(occurrence.dtstart_utc),
-    dtend_local: occurrence.dtend_utc ? toLocalDateTimeInput(occurrence.dtend_utc) : "",
+    original: { dtstart_utc: occurrence.dtstart_utc, dtend_utc: occurrence.dtend_utc },
+    dtstart_local: toLocalDateTimeInput(occurrence.dtstart_utc, timeZone),
+    dtend_local: occurrence.dtend_utc ? toLocalDateTimeInput(occurrence.dtend_utc, timeZone) : "",
   }));
 }
 
 /**
  * Convert Event to EventFormData for edit mode.
  */
-export function eventToFormData(event: Event): EventFormData {
+export function eventToFormData(event: Event, timeZone: string): EventFormData {
   return {
+    timeZone,
     club_id: event.club_id ?? null,
     title: event.title,
     description: event.description || "",
-    occurrences: eventOccurrencesToFormOccurrences(event),
+    occurrences: eventOccurrencesToFormOccurrences(event, timeZone),
     location: event.location ?? "",
     category: getEventCategory(event),
     price: event.price ?? 0,

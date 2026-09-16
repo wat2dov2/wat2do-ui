@@ -260,7 +260,7 @@
     "discordLink": "Discord लिंक",
     "titleRequired": "शीर्षक आवश्यक है",
     "clubRequired": "संगठन आवश्यक है",
-    "occurrenceRequired": "कम से कम एक तारीख आवश्यक है",
+    "occurrenceRequired": "कम से कम एक मान्य तारीख और समय दर्ज करें। समाप्ति का समय शुरुआत के बाद होना चाहिए।",
     "locationRequired": "स्थान आवश्यक है",
     "schoolRequired": "विद्यालय आवश्यक है",
     "pickDate": "एक तारीख चुनें",

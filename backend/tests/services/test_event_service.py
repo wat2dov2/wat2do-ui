@@ -24,6 +24,23 @@ from schemas.event_date import OccurrenceResponse
 from services import club_service, event_query, event_service
 
 
+def test_weekday_filter_uses_school_timezone_not_occurrence_hint():
+    [candidate] = event_query._dedup_candidates_keeping_earliest(
+        [
+            {
+                "dtstart_utc": "2026-09-15T05:30:00Z",
+                "tz": "America/Toronto",
+                "events": {
+                    "id": 1,
+                    "school_record": {"slug": "ualberta", "timezone": "America/Edmonton"},
+                },
+            }
+        ],
+        10,
+    )
+    assert candidate.weekdays == {"Monday"}
+
+
 def test_food_filter_is_independent_of_price():
     assert event_query._matches_has_food({"food": ["Pizza"], "price": 20}, True)
     assert event_query._matches_has_food({"food": ["Pizza"], "price": 0}, True)
@@ -510,7 +527,7 @@ def test_load_events_page_filters_counts_slices_and_hydrates(monkeypatch, fake_s
                     "title": "Alpha Hack Night",
                     "location": "SLC Great Hall",
                     "club": "UW Blueprint",
-                    "school": "uwaterloo",
+                    "school_record": {"slug": "uwaterloo", "timezone": "America/Toronto"},
                     "category": "Technology",
                     "price": 0,
                     "food": ["Pizza"],
@@ -530,7 +547,7 @@ def test_load_events_page_filters_counts_slices_and_hydrates(monkeypatch, fake_s
                     "title": "Beta Hack Night",
                     "location": "SLC Great Hall",
                     "club": "UW Blueprint",
-                    "school": "uwaterloo",
+                    "school_record": {"slug": "uwaterloo", "timezone": "America/Toronto"},
                     "category": "Technology",
                     "price": 0,
                     "food": ["Pizza"],
@@ -548,7 +565,7 @@ def test_load_events_page_filters_counts_slices_and_hydrates(monkeypatch, fake_s
                     "title": "Library Talk",
                     "location": "DC Library",
                     "club": "Library Club",
-                    "school": "uwaterloo",
+                    "school_record": {"slug": "uwaterloo", "timezone": "America/Toronto"},
                     "category": "Academic",
                     "price": 0,
                     "food": [],

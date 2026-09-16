@@ -1,9 +1,11 @@
 import { lazy, Suspense, useCallback, useMemo, useState } from "react";
+import { useEventView } from "@/features/events/hooks/useEventStats";
 import publicAttendance from "../../../../../backend/controlbox/public_attendance.json";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { sanitizeHref } from "@/shared/utils/url";
+import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 import {
   formatCardDate,
   formatCardTime,
@@ -95,18 +97,20 @@ function EventSectionHeader({ children }: { children: React.ReactNode }) {
 function EventDateTile({
   dtstartUtc,
   locale,
+  timeZone,
 }: {
   dtstartUtc: string;
   locale: string;
+  timeZone: string;
 }) {
   const start = new Date(dtstartUtc);
   if (Number.isNaN(start.getTime())) return null;
   return (
     <Card className="size-10 shrink-0 items-center justify-center gap-0.5 py-0">
       <span className="text-[9px] font-semibold">
-        {start.toLocaleDateString(locale, { month: "short" })}
+        {start.toLocaleDateString(locale, { month: "short", timeZone })}
       </span>
-      <span className="text-base font-bold leading-none">{start.getDate()}</span>
+      <span className="text-base font-bold leading-none">{start.toLocaleDateString(locale, { day: "numeric", timeZone })}</span>
     </Card>
   );
 }
@@ -126,6 +130,8 @@ function EventInfoTile({
 
 /** Date cell: primary occurrence plus a "+N dates" chip listing the rest. */
 function EventDateCell({ event }: { event: Event }) {
+  const { getSchoolTimezone } = useSchoolDirectory();
+  const timeZone = getSchoolTimezone(event.school);
   const { t, i18n } = useTranslation();
   const [extraDatesOpen, setExtraDatesOpen] = useState(false);
   const locale = i18n.language || "en-US";
@@ -138,10 +144,11 @@ function EventDateCell({ event }: { event: Event }) {
       <EventDateTile
         dtstartUtc={primaryOccurrence.dtstart_utc}
         locale={locale}
+        timeZone={timeZone}
       />
       <div className="min-w-0">
-        <p className="text-sm font-semibold text-foreground">{formatCardDate(event, locale)}</p>
-        <p className="text-sm text-muted-foreground">{formatCardTime(event)}</p>
+        <p className="text-sm font-semibold text-foreground">{formatCardDate(event, timeZone, locale)}</p>
+        <p className="text-sm text-muted-foreground">{formatCardTime(event, timeZone, locale)}</p>
         {extraOccurrences.length > 0 && (
           <Tooltip open={extraDatesOpen} onOpenChange={setExtraDatesOpen}>
             <TooltipTrigger asChild>
@@ -160,7 +167,7 @@ function EventDateCell({ event }: { event: Event }) {
               <div className="space-y-0.5">
                 {extraOccurrences.map((occ) => (
                   <p key={occ.id || `${occ.dtstart_utc}-${occ.dtend_utc}`}>
-                    {formatOccurrence(occ, t, locale)}
+                    {formatOccurrence(occ, timeZone, locale)}
                   </p>
                 ))}
               </div>
@@ -219,6 +226,7 @@ function EventRegistrationCard({
   const { t } = useTranslation();
   const { profileCompleted, userEmail, userFullName, userAvatarUrl } = useAuthState();
   const going = useGoingEventSelection(event, school);
+  const { getSchoolTimezone } = useSchoolDirectory();
   const now = useCurrentTime();
   const [pickerOpen, setPickerOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
@@ -312,6 +320,7 @@ function EventRegistrationCard({
       <CardContent>
         {pickerOpen ? (
           <GoingOccurrencePickerContent
+            timeZone={getSchoolTimezone(event.school)}
             key={`${event.id}:${going.selectedSelectableIds.join(",")}`}
             occurrences={going.selectableOccurrences}
             selectedIds={going.selectedSelectableIds}
@@ -496,6 +505,12 @@ export function EventActions({
 
   return (
     <Stack direction="horizontal" gap={2} wrap data-slot="event-actions">
+      <EventCalendarDownloadMenu event={event}>
+        <Button type="button" variant="outline" size="sm">
+          <Calendar className="size-4" />
+          {t("common.addToCalendar")}
+        </Button>
+      </EventCalendarDownloadMenu>
       {isAdmin && (
         <>
           <Button type="button" variant="outline" size="sm" onClick={handleEdit}>
@@ -572,6 +587,7 @@ export function EventDetailsBody({
   /** Lets drawer composition close after its club filter is applied. */
   onClubFilterSelect?: () => void;
 }) {
+  useEventView(event.id, event.school);
   const { t } = useTranslation();
   return (
     <div className="grid grid-cols-1 gap-6 md:grid-cols-[320px_minmax(0,1fr)] md:grid-rows-[auto_1fr] md:items-start md:gap-x-8">

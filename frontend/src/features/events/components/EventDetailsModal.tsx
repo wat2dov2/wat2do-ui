@@ -1,7 +1,6 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { useState, useMemo, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
-import { tracker } from "@/shared/services/trackingService";
 import {
   Drawer,
   DrawerContent,
@@ -77,12 +76,6 @@ export function EventDetailsModal({
   }
   const showSkeleton =
     drawerOpen && displayedEvent == null && !isFetchError && isFetchingEvent;
-
-  useEffect(() => {
-    if (displayedEvent) {
-      tracker.track(displayedEvent.id, "detail_view");
-    }
-  }, [displayedEvent]);
 
   const handleSimilarEventClick = useCallback((clickedEvent: Event) => {
     setOverrideEvent(clickedEvent);

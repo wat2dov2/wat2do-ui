@@ -4,6 +4,8 @@ from fastapi import APIRouter, Depends, Query, status
 
 from core.auth import get_admin_user, get_optional_user, resolve_db_user
 from core.constants import (
+    MAX_SCHOOL_LENGTH,
+    MAX_SEARCH_QUERY_LENGTH,
     MAX_STATUS_FILTER_LENGTH,
     REPORT_RATE_LIMIT_MAX_REQUESTS,
     REPORT_RATE_LIMIT_WINDOW_SECONDS,
@@ -46,11 +48,15 @@ def create_report(
 @router.get("/", response_model=PaginatedResponse[ReportResponse])
 def list_reports(
     report_status: str | None = Query(default=None, max_length=MAX_STATUS_FILTER_LENGTH),
+    search: str | None = Query(default=None, max_length=MAX_SEARCH_QUERY_LENGTH),
+    school: str | None = Query(default=None, max_length=MAX_SCHOOL_LENGTH),
     pagination: PaginationParams = Depends(),
     _: dict = Depends(get_admin_user),
 ):
     items, total = report_service.get_reports(
         status=report_status,
+        search=search,
+        school=school,
         offset=pagination.offset,
         limit=pagination.page_size,
     )

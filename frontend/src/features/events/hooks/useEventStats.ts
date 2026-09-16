@@ -1,4 +1,5 @@
-import { useCallback } from "react";
+import { useEffect, useRef } from "react";
+import { tracker } from "@/shared/services/trackingService";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   fetchEventStatsFromBackend,
@@ -25,32 +26,21 @@ export function useEventStats(school: string | null | undefined) {
   });
 }
 
-function patchEventStats(
-  queryClient: ReturnType<typeof useQueryClient>,
-  school: string,
-  eventId: number,
-  updater: (current: EventStats) => EventStats,
-) {
-  queryClient.setQueryData<EventStatsMap>(queryKeys.events.stats(school), (previous) => ({
-    ...(previous ?? {}),
-    [String(eventId)]: updater(previous?.[String(eventId)] ?? EMPTY_EVENT_STATS),
-  }));
-}
-
-export function useEventStatsActions(school: string | null | undefined) {
+export function useEventView(eventId: number, school: string) {
   const queryClient = useQueryClient();
-  const resolvedSchool = school ?? "";
+  const lastViewedId = useRef<number | null>(null);
 
-  const incrementClickCount = useCallback(
-    (eventId: number) => {
-      if (!resolvedSchool) return;
-      patchEventStats(queryClient, resolvedSchool, eventId, (current) => ({
-        ...current,
-        click_count: current.click_count + 1,
-      }));
-    },
-    [queryClient, resolvedSchool],
-  );
-
-  return { incrementClickCount };
+  useEffect(() => {
+    if (lastViewedId.current === eventId) return;
+    lastViewedId.current = eventId;
+    tracker.track(eventId, "click");
+    tracker.track(eventId, "detail_view");
+    queryClient.setQueryData<EventStatsMap>(queryKeys.events.stats(school), (previous) => {
+      const current = previous?.[String(eventId)] ?? EMPTY_EVENT_STATS;
+      return {
+        ...previous,
+        [String(eventId)]: { ...current, click_count: current.click_count + 1 },
+      };
+    });
+  }, [eventId, queryClient, school]);
 }

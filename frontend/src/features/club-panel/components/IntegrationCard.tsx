@@ -32,7 +32,7 @@ export function IntegrationCard({
 
   const formatLastSync = (isoString?: string) => {
     if (!isoString) return "";
-    return formatRelativeTime(isoString, t);
+    return formatRelativeTime(isoString, t, { alwaysAgo: true });
   };
 
   return (

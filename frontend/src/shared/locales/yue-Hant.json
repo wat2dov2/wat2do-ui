@@ -257,7 +257,7 @@
     "discordLink": "Discord 連結",
     "titleRequired": "必須填寫標題",
     "clubRequired": "必須選擇組織",
-    "occurrenceRequired": "至少需要一個日期",
+    "occurrenceRequired": "請輸入至少一個有效日期及時間。結束時間必須遲於開始時間。",
     "locationRequired": "必須填寫地點",
     "schoolRequired": "必須填寫學校",
     "pickDate": "選擇日期",

@@ -263,7 +263,7 @@
     "discordLink": "Discord Link",
     "titleRequired": "Il titolo è obbligatorio",
     "clubRequired": "L'organizzazione è obbligatoria",
-    "occurrenceRequired": "Almeno una data è obbligatoria",
+    "occurrenceRequired": "Inserisci almeno una data e un'ora valide. La fine deve essere successiva all'inizio.",
     "locationRequired": "La posizione è obbligatoria",
     "schoolRequired": "La scuola è obbligatoria",
     "pickDate": "Seleziona una data",

@@ -12,7 +12,9 @@ import { Button } from "@/shared/ui/button";
 import { LoadingButton } from "@/shared/ui/loading-button";
 import { SUBMISSION_PENDING } from "@/shared/constants/statuses";
 import type { EventSubmission } from "@/shared/types";
-import { formatCardDate, formatCardTime } from "@/shared/utils/date";
+import { formatOccurrence } from "@/shared/utils/date";
+import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
+import { formatRelativeTime } from "@/shared/utils/relativeTime";
 import { translateFood } from "@/shared/utils/foodTranslation";
 
 interface SubmissionDetailsDrawerProps {
@@ -22,7 +24,6 @@ interface SubmissionDetailsDrawerProps {
   onClose: () => void;
   onApprove: (submission: EventSubmission) => void | Promise<void>;
   onRejectClick: (submission: EventSubmission) => void;
-  formatRelativeTime: (dateStr: string) => string;
   isApproving?: boolean;
 }
 
@@ -33,10 +34,10 @@ export function SubmissionDetailsDrawer({
   onClose,
   onApprove,
   onRejectClick,
-  formatRelativeTime,
   isApproving = false,
 }: SubmissionDetailsDrawerProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const { getSchoolTimezone } = useSchoolDirectory();
 
   if (!submission) return null;
 
@@ -64,11 +65,10 @@ export function SubmissionDetailsDrawer({
             <div className="space-y-1">
               {submission.eventData.occurrences.map((occurrence) => (
                 <p
-                  key={occurrence.dtstart_local}
+                  key={occurrence.dtstart_utc}
                   className="text-sm text-muted-foreground"
                 >
-                  {formatCardDate({ occurrences: [{ dtstart_utc: occurrence.dtstart_local, dtend_utc: occurrence.dtend_local }] })}{" "}
-                  {formatCardTime({ occurrences: [{ dtstart_utc: occurrence.dtstart_local, dtend_utc: occurrence.dtend_local }] })}
+                  {formatOccurrence(occurrence, getSchoolTimezone(submission.school), i18n.language)}
                 </p>
               ))}
             </div>
@@ -80,13 +80,13 @@ export function SubmissionDetailsDrawer({
           />
           <DetailRow label={t("filters.price")} value={`$${submission.eventData.price}`} />
 
-          {submission.eventData.food.length > 0 && (
+          {(submission.eventData.food ?? []).length > 0 && (
             <div>
               <h3 className="font-semibold text-sm text-foreground mb-1">
                 {t("forms.foodProvided")}
               </h3>
               <div className="flex flex-wrap gap-2">
-                {submission.eventData.food.map((food) => (
+                {(submission.eventData.food ?? []).map((food) => (
                   <span
                     key={food}
                     className="text-xs px-2 py-1 bg-warning/20 text-warning rounded-full"
@@ -106,7 +106,7 @@ export function SubmissionDetailsDrawer({
           <div className="border-t border-border pt-4">
             <DetailRow label={t("admin.submittedBy")} value={submission.submittedBy} />
             <p className="text-xs text-muted-foreground mt-1">
-              {formatRelativeTime(submission.submittedAt)}
+              {formatRelativeTime(submission.submittedAt, t, { timeZone: getSchoolTimezone(submission.school), locale: i18n.language })}
             </p>
           </div>
 

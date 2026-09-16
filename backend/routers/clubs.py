@@ -99,14 +99,16 @@ def list_clubs(
 def list_clubs_for_review(
     club_status: ClubStatus | None = Query(default=None),
     school: str | None = Query(default=None, max_length=MAX_SCHOOL_LENGTH),
+    search: str | None = Query(default=None, max_length=MAX_SEARCH_QUERY_LENGTH),
     pagination: PaginationParams = Depends(),
     _: UserResponse = Depends(get_admin_user),
 ):
     """Admin review queue across every review state."""
-    items, total = club_service.list_clubs(
-        skip=pagination.offset,
+    items, total = club_service.list_club_submissions(
+        offset=pagination.offset,
         limit=pagination.page_size,
         school=school,
+        search=search,
         status=club_status,
     )
     return paginated_response(items, total, pagination)
@@ -136,13 +138,22 @@ def get_platform_options(
     return club_service.get_integration_options(platform)
 
 
-@router.get("/claims", response_model=list[ClubClaimResponse])
+@router.get("/claims", response_model=PaginatedResponse[ClubClaimResponse])
 def list_claims(
     status: str | None = Query(default=None),
     school: str | None = Query(default=None, max_length=MAX_SCHOOL_LENGTH),
+    search: str | None = Query(default=None, max_length=MAX_SEARCH_QUERY_LENGTH),
+    pagination: PaginationParams = Depends(),
     _: UserResponse = Depends(get_admin_user),
 ):
-    return club_service.list_claims(status=status, school=school)
+    items, total = club_service.list_claims(
+        status=status,
+        school=school,
+        search=search,
+        offset=pagination.offset,
+        limit=pagination.page_size,
+    )
+    return paginated_response(items, total, pagination)
 
 
 @router.get("/{club_id}", response_model=ClubResponse)

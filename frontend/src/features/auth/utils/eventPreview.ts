@@ -9,14 +9,14 @@ import { formatCardDate, formatCardTime, isEventHappeningNow, wasAddedWithinLast
 import { getEventCategory } from "@/shared/utils/event";
 import { computeEventBadges } from "@/features/events/hooks/useEventBadges";
 
-export function eventToPreview(event: Event, locale: string, t: TFunction): PreviewEventData {
+export function eventToPreview(event: Event, timeZone: string, locale: string, t: TFunction): PreviewEventData {
   return {
     title: event.title,
     org: event.club || "",
     category: getEventCategory(event),
     image: event.source_image_url ?? "",
-    date: formatCardDate(event, locale),
-    time: formatCardTime(event),
+    date: formatCardDate(event, timeZone, locale),
+    time: formatCardTime(event, timeZone, locale),
     location: event.location ?? "",
     badges: computeEventBadges(event, t),
     isLive: isEventHappeningNow(event),

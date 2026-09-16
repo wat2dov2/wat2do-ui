@@ -1,5 +1,5 @@
 import { ClaimDetailsDrawer } from "@/features/admin/components/ClaimDetailsDrawer";
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Building2, ExternalLink, ShieldAlert } from "@/shared/ui/doodle-icons";
 import { Button } from "@/shared/ui/button";
@@ -23,7 +23,10 @@ import {
   adminUpdateClub,
   adminDeleteClub,
 } from "@/features/admin/api/admin.api";
-import { useAdminStore } from "@/features/admin/store/admin.store";
+import { useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/shared/lib/queryKeys";
+import { useAdminList, useAdminPendingCounts } from "@/features/admin/hooks/useAdminList";
+import { getClubClaims, getClubSubmissions, resolveClaim, resolveClubReview } from "@/features/admin/api/admin.api";
 import { AdminPageHeader } from "@/features/admin/components/shared/AdminPageHeader";
 import { AdminSearchBar } from "@/features/admin/components/shared/AdminSearchBar";
 import { AdminTableFilters } from "@/features/admin/components/shared/AdminTableFilters";
@@ -31,9 +34,7 @@ import { AdminEmptyState } from "@/features/admin/components/shared/AdminEmptySt
 import { AdminDeleteDialog } from "@/features/admin/components/shared/AdminDeleteDialog";
 import { AdminTable } from "@/features/admin/components/shared/AdminTable";
 import { LoadingPage } from "@/shared/ui/loading-page";
-import { ADMIN_ITEMS_PER_PAGE } from "@/features/admin/constants";
 import { toast } from "@/shared/hooks/use-toast";
-import { usePagination } from "@/shared/hooks";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/shared/ui/dialog";
 import { Textarea } from "@/shared/ui/textarea";
 import { AdminStatusBadge } from "@/features/admin/components/shared/AdminStatusBadge";
@@ -55,8 +56,8 @@ interface AdminClubsPageProps {
 export function AdminClubsPage({
   onBack,
 }: AdminClubsPageProps) {
-  const { t } = useTranslation();
-  const { getSchoolName } = useSchoolDirectory();
+  const { t, i18n } = useTranslation();
+  const { getSchoolName, getSchoolTimezone } = useSchoolDirectory();
   const {
     searchQuery,
     clubType,
@@ -86,112 +87,39 @@ export function AdminClubsPage({
       : searchParams.get(QP.TAB) === "submissions" ? "submissions" : "clubs",
   );
 
-  const allClaims = useAdminStore((s) => s.claims);
-  const fetchClaims = useAdminStore((s) => s.fetchClaims);
-  const approveClaimAction = useAdminStore((s) => s.approveClaim);
-  const rejectClaimAction = useAdminStore((s) => s.rejectClaim);
-  const clubSubmissions = useAdminStore((s) => s.clubSubmissions);
-  const fetchClubSubmissions = useAdminStore((s) => s.fetchClubSubmissions);
-  const reviewClub = useAdminStore((s) => s.reviewClub);
-  const pendingSubmissionCount = useMemo(
-    () => clubSubmissions.filter((club) => club.status === "pending").length,
-    [clubSubmissions],
-  );
-
-  const [loadingClaims, setLoadingClaims] = useState(false);
+  const queryClient = useQueryClient();
+  const claimList = useAdminList("claims", getClubClaims, activeTab === "claims");
+  const submissionList = useAdminList("clubSubmissions", getClubSubmissions, activeTab === "submissions");
+  const moderationList = activeTab === "claims" ? claimList : submissionList;
+  const { counts } = useAdminPendingCounts(["claims", "clubSubmissions"]);
+  const pendingClaimsCount = counts.claims;
+  const pendingSubmissionCount = counts.clubSubmissions;
+  const claimSearchQuery = moderationList.filters.search ?? "";
+  const moderationSchool = moderationList.filters.school ?? "";
+  const claimStatusFilter = moderationList.filters.status ?? "all";
+  const setClaimSearchQuery = (search: string) => moderationList.setFilters({ search });
+  const setModerationSchool = (school: string) => moderationList.setFilters({ school });
+  const setClaimStatusFilter = (status: string) => moderationList.setFilters({ status });
+  const claimsPagination = claimList.pagination;
   const [isDeleting, setIsDeleting] = useState(false);
-  const clubTypeOptions = useMemo(
-    () => getClubTypeFilterOptions(undefined),
-    [],
-  );
-
-  const [claimSearchQuery, setClaimSearchQuery] = useState("");
-  const [moderationSchool, setModerationSchool] = useState("");
-  const [claimStatusFilter, setClaimStatusFilter] = useState<"all" | "pending" | "approved" | "rejected">("all");
-
-  const pendingClaimsCount = useMemo(() => {
-    return allClaims.filter((c) => c.status === "pending").length;
-  }, [allClaims]);
-
-  const filteredClaims = useMemo(() => {
-    let filtered = allClaims;
-    if (moderationSchool) filtered = filtered.filter(claim => claim.clubs?.school === moderationSchool);
-
-    if (claimStatusFilter !== "all") {
-      filtered = filtered.filter((c) => c.status === claimStatusFilter);
-    }
-
-    if (claimSearchQuery) {
-      const q = claimSearchQuery.toLowerCase();
-      filtered = filtered.filter((c) => {
-        const orgName = c.clubs?.club_name || "";
-        const userName = c.users?.full_name || "";
-        const userEmail = c.users?.email || "";
-        const role = c.executive_role || "";
-        return (
-          orgName.toLowerCase().includes(q) ||
-          userName.toLowerCase().includes(q) ||
-          userEmail.toLowerCase().includes(q) ||
-          role.toLowerCase().includes(q)
-        );
-      });
-    }
-
-    return filtered;
-  }, [allClaims, claimStatusFilter, claimSearchQuery, moderationSchool]);
-
-  const filteredClubSubmissions = useMemo(() => clubSubmissions.filter(club =>
-    (!moderationSchool || club.school === moderationSchool)
-    && (claimStatusFilter === "all" || club.status === claimStatusFilter)
-    && `${club.club_name} ${club.owner_email ?? ""}`.toLowerCase().includes(claimSearchQuery.trim().toLowerCase())
-  ), [clubSubmissions, moderationSchool, claimStatusFilter, claimSearchQuery]);
-
-  const claimsPagination = usePagination({
-    items: filteredClaims,
-    itemsPerPage: ADMIN_ITEMS_PER_PAGE,
-  });
-
+  const clubTypeOptions = useMemo(() => getClubTypeFilterOptions(undefined), []);
   const [selectedClaimId, setSelectedClaimId] = useState<string | null>(null);
-  const selectedClaim = allClaims.find(claim => claim.id === selectedClaimId);
+  const selectedClaim = claimList.items.find(claim => claim.id === selectedClaimId);
   const [rejectClaimId, setRejectClaimId] = useState<string | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
   const [submittingResolution, setSubmittingResolution] = useState(false);
-  const [loadingSubmissions, setLoadingSubmissions] = useState(false);
-
-  const loadClaimsData = useCallback(async () => {
-    setLoadingClaims(true);
-    try {
-      await fetchClaims();
-    } catch (error) {
-      console.error("Failed to load pending claims:", error);
-    } finally {
-      setLoadingClaims(false);
-    }
-  }, [fetchClaims]);
-
-  const loadClubSubmissions = useCallback(async () => {
-    setLoadingSubmissions(true);
-    try {
-      await fetchClubSubmissions();
-    } catch (error) {
-      console.error("Failed to load clubs awaiting review:", error);
-    } finally {
-      setLoadingSubmissions(false);
-    }
-  }, [fetchClubSubmissions]);
-
-  useEffect(() => {
-    void loadClaimsData();
-    void loadClubSubmissions();
-  }, [loadClaimsData, loadClubSubmissions]);
+  const refreshClubQueries = () => Promise.all([
+    queryClient.invalidateQueries({ queryKey: queryKeys.admin.all }),
+    refreshClubs(),
+  ]);
 
   const handleReviewClub = async (
     clubId: number,
     status: ClubStatus,
   ) => {
     try {
-      await reviewClub(clubId, status);
-      await refreshClubs();
+      await resolveClubReview(clubId, status);
+      await refreshClubQueries();
     } catch (error) {
       console.error("Failed to review club:", error);
     }
@@ -201,7 +129,7 @@ export function AdminClubsPage({
     setIsDeleting(true);
     try {
       await adminDeleteClub(clubId);
-      await refreshClubs();
+      await refreshClubQueries();
     } catch (error) {
       console.error("Failed to delete club:", error);
     } finally {
@@ -217,7 +145,7 @@ export function AdminClubsPage({
       } else {
         await adminCreateClub(club);
       }
-      await refreshClubs();
+      await refreshClubQueries();
       closeModal();
     } catch (error) {
       console.error("Failed to save club:", error);
@@ -226,7 +154,8 @@ export function AdminClubsPage({
 
   const handleApproveClaim = async (claimId: string) => {
     try {
-      await approveClaimAction(claimId);
+      await resolveClaim(claimId, "approved");
+      await refreshClubQueries();
       toast({
         title: t("common.success"),
         description: t("admin.claimApprovedSuccess"),
@@ -246,7 +175,8 @@ export function AdminClubsPage({
     if (!rejectClaimId) return;
     setSubmittingResolution(true);
     try {
-      await rejectClaimAction(rejectClaimId, rejectionReason);
+      await resolveClaim(rejectClaimId, "rejected", rejectionReason);
+      await refreshClubQueries();
       toast({
         title: t("common.success"),
         description: t("admin.claimRejectedSuccess"),
@@ -345,18 +275,12 @@ export function AdminClubsPage({
             <AdminTableFilters
                 search={claimSearchQuery}
                 school={moderationSchool}
-                onSchoolChange={value => { setModerationSchool(value); claimsPagination.setCurrentPage(1); }}
-                onSearchChange={(value) => {
-                  setClaimSearchQuery(value);
-                  claimsPagination.setCurrentPage(1);
-                }}
+                onSchoolChange={setModerationSchool}
+                onSearchChange={setClaimSearchQuery}
               >
               <Select
                 value={claimStatusFilter}
-                onValueChange={(value) => {
-                  setClaimStatusFilter(value as "all" | SubmissionStatus);
-                  claimsPagination.setCurrentPage(1);
-                }}
+                onValueChange={setClaimStatusFilter}
               >
                 <SelectTrigger size="lg">
                   <SelectValue placeholder={t("admin.allStatus")} />
@@ -375,10 +299,10 @@ export function AdminClubsPage({
 
       {activeTab === "submissions" ? (
         <>
-          {loadingSubmissions ? (
+          {submissionList.isError ? <Button onClick={() => void submissionList.refetch()}>{t("common.tryAgain")}</Button> : submissionList.isPending ? (
             <LoadingPage />
-          ) : filteredClubSubmissions.length > 0 ? (
-            <AdminTable count={filteredClubSubmissions.length} label={filteredClubSubmissions.length === 1 ? t("admin.submission") : t("admin.submissions")}
+          ) : submissionList.total > 0 ? (
+            <AdminTable pagination={submissionList.pagination} count={submissionList.total} label={submissionList.total === 1 ? t("admin.submission") : t("admin.submissions")}
               headers={[
                 { label: t("forms.clubName") },
                 { label: t("schools.school") },
@@ -388,7 +312,7 @@ export function AdminClubsPage({
                 { label: t("common.actions"), align: "right" },
               ]}
             >
-              {filteredClubSubmissions.map((club) => (
+              {submissionList.items.map((club) => (
                 <TableRow key={club.id}>
                   <TableCell>
                     <div className="font-medium text-sm text-foreground">
@@ -543,12 +467,12 @@ export function AdminClubsPage({
         </>
       ) : (
         <>
-          {loadingClaims ? (
+          {claimList.isError ? <Button onClick={() => void claimList.refetch()}>{t("common.tryAgain")}</Button> : claimList.isPending ? (
             <LoadingPage />
-          ) : filteredClaims.length > 0 ? (
+          ) : claimList.total > 0 ? (
             <>
-              <AdminTable count={filteredClaims.length} label={filteredClaims.length === 1 ? t("admin.claimRequest") : t("admin.claimRequests")}
-              pagination={{ currentPage: claimsPagination.currentPage, totalPages: claimsPagination.totalPages, onPageChange: claimsPagination.setCurrentPage }}
+              <AdminTable count={claimList.total} label={claimList.total === 1 ? t("admin.claimRequest") : t("admin.claimRequests")}
+              pagination={{ currentPage: claimsPagination.currentPage, totalPages: claimsPagination.totalPages, onPageChange: claimsPagination.onPageChange }}
                 headers={[
                   { label: t("forms.clubName") },
                   { label: t("admin.requestedBy") },
@@ -560,7 +484,7 @@ export function AdminClubsPage({
                   { label: t("common.actions"), align: "right" },
                 ]}
               >
-                {claimsPagination.paginatedItems.map((claim) => (
+                {claimList.items.map((claim) => (
                   <TableRow key={claim.id}>
                     <TableCell>
                       <div className="font-semibold text-sm text-foreground">
@@ -597,7 +521,7 @@ export function AdminClubsPage({
                     </TableCell>
                     <TableCell>
                       <span className="text-xs text-muted-foreground">
-                        {new Date(claim.created_at).toLocaleDateString()}
+                        {new Date(claim.created_at).toLocaleDateString(i18n.language, { timeZone: getSchoolTimezone(claim.clubs?.school) })}
                       </span>
                     </TableCell>
                     <TableCell>

@@ -12,25 +12,28 @@ const APP_API = `${BASE}/api`;
 /** Shared test identity used across auth-seeded tests. */
 const TEST_EMAIL = "test@uwaterloo.ca";
 const MOCK_SCHOOLS = [{
-  slug: "uwaterloo", name: "University of Waterloo", primary_color: "#6b238e",
+  slug: "uwaterloo", timezone: "America/Toronto", name: "University of Waterloo", primary_color: "#6b238e",
   secondary_color: "#ffd54f", email_domains: ["uwaterloo.ca"], language: "en",
   faculties: ["Arts", "Engineering", "Environment", "Health", "Mathematics", "Science"],
 }, {
-  slug: "utm", name: "University of Toronto Mississauga", primary_color: "#002A5C",
+  slug: "utm", timezone: "America/Toronto", name: "University of Toronto Mississauga", primary_color: "#002A5C",
   secondary_color: "#FFFFFF", email_domains: ["utoronto.ca"], language: "en",
   faculties: ["Arts", "Science", "Management"],
 }, {
-  slug: "utsg", name: "University of Toronto", primary_color: "#002A5C",
+  slug: "utsg", timezone: "America/Toronto", name: "University of Toronto", primary_color: "#002A5C",
   secondary_color: "#FFFFFF", email_domains: ["utoronto.ca"], language: "en",
   faculties: ["Arts and Science", "Engineering"],
 }, {
-  slug: "utsc", name: "University of Toronto Scarborough", primary_color: "#002A5C",
+  slug: "utsc", timezone: "America/Toronto", name: "University of Toronto Scarborough", primary_color: "#002A5C",
   secondary_color: "#FFFFFF", email_domains: ["utoronto.ca"], language: "en",
   faculties: ["Arts", "Science", "Management"],
 }, {
-  slug: "uqam", name: "Université du Québec à Montréal", primary_color: "#0072BC",
+  slug: "uqam", timezone: "America/Toronto", name: "Université du Québec à Montréal", primary_color: "#0072BC",
   secondary_color: "#FFFFFF", email_domains: ["uqam.ca"], language: "fr",
   faculties: ["Arts", "Sciences"],
+}, {
+  slug: "ulaval", timezone: "America/Toronto", name: "Université Laval", primary_color: "#E30513",
+  secondary_color: "#FFC72C", email_domains: ["ulaval.ca"], language: "fr", faculties: [],
 }];
 
 const MOCK_CLUBS = [
@@ -153,7 +156,7 @@ test.beforeEach(async ({ page, next }) => {
     });
   });
 
-  await mockApi(page, next, url => apiPath(url) === "/events", async () => {
+  await mockApi(page, next, url => ["/events", "/events/admin"].includes(apiPath(url) ?? ""), async () => {
 
     const now = new Date();
     const startsAt = new Date(now.getTime() + 86_400_000).toISOString();
@@ -222,6 +225,28 @@ test.beforeEach(async ({ page, next }) => {
         total_pages: 1,
       }),
     });
+  });
+});
+
+test.describe("School timezone rendering", () => {
+  test.use({ timezoneId: "Asia/Tokyo" });
+
+  test("an overseas browser shows the event school's clock in cards and details", async ({ page, next }) => {
+    const event = {
+      id: 501, title: "School timezone regression", school: "uwaterloo", club_id: 1,
+      club: "UW Tech Club", location: "SLC", category: "Career", price: 0,
+      food: [], registration: false, cancelled: false, source_image_url: null,
+      added_at: new Date().toISOString(),
+      occurrences: [{ id: "timezone-session", event_id: 501, dtstart_utc: "2035-01-15T04:30:00Z", dtend_utc: "2035-01-15T05:30:00Z" }],
+    };
+    await mockApi(page, next, url => apiPath(url) === "/events", async () => ({ json: {
+      items: [event], total: 1, page: 1, page_size: 20, total_pages: 1,
+    } }));
+    await mockApi(page, next, url => apiPath(url) === "/events/501", async () => ({ json: event }));
+    await page.goto(BASE);
+    await expect(page.getByText(/11:30.*PM.*EST/).first()).toBeVisible();
+    await page.goto(`${BASE}/events/501`);
+    await expect(page.getByText(/11:30.*PM.*EST/).first()).toBeVisible();
   });
 });
 
@@ -813,6 +838,55 @@ test.describe("Posters & QR Analytics", () => {
 });
 
 test.describe("Admin diagnostics", () => {
+  test("admin event search fetches one page and reports open unloaded events", async ({ page, next }) => {
+    await seedAuthenticatedSession(page, next);
+    const requests: URLSearchParams[] = [];
+    const now = new Date().toISOString();
+    const event = {
+      id: 99, title: "Reported event outside this page", club: "UW Tech Club", club_id: 1,
+      location: "SLC", school: "uwaterloo", category: "Career", added_at: now,
+      occurrences: [], food: [], price: 0, registration: false,
+    };
+    await mockApi(page, next, url => apiPath(url) === "/events/admin", async request => {
+      const params = new URL(request.url).searchParams;
+      requests.push(params);
+      expect(params.get("page_size")).toBe("20");
+      const currentPage = Number(params.get("page"));
+      return { json: {
+        items: [{ ...event, id: currentPage, title: `Admin page ${currentPage}` }],
+        total: 51, page: currentPage, page_size: 20, total_pages: 3,
+      } };
+    });
+    await mockApi(page, next, url => apiPath(url) === "/events/99", async () => ({ json: event }));
+    await mockApi(page, next, url => apiPath(url) === "/reports", async () => ({ json: {
+      items: [{ id: "report-99", event_id: 99, event_title: event.title, reason: "Wrong location", school: event.school, status: "pending", reported_at: now }],
+      total: 1, page: 1, page_size: 20, total_pages: 1,
+    } }));
+    await mockApi(page, next, url => apiPath(url) === "/submissions", async () => ({ json: {
+      items: [], total: 0, page: 1, page_size: 1, total_pages: 0,
+    } }));
+
+    await page.goto(`${BASE}/admin/events`);
+    await expect(page.getByRole("cell", { name: "Admin page 1", exact: true })).toBeVisible();
+    expect(requests).toHaveLength(1);
+    await page.getByRole("button", { name: "Next", exact: true }).click();
+    await expect(page.getByRole("cell", { name: "Admin page 2", exact: true })).toBeVisible();
+    expect(requests).toHaveLength(2);
+    const search = page.getByPlaceholder("Search events...");
+    await search.fill("Dance");
+    expect(requests).toHaveLength(2);
+    await search.press("Enter");
+    await expect(page.getByRole("cell", { name: "Admin page 1", exact: true })).toBeVisible();
+    expect(requests).toHaveLength(3);
+    expect(requests[2].get("search")).toBe("Dance");
+    expect(requests[2].get("page")).toBe("1");
+
+    await page.getByRole("tab", { name: "Event reports 1", exact: true }).click();
+    await page.getByRole("row").filter({ hasText: "Wrong location" }).getByRole("button", { name: "View", exact: true }).click();
+    await expect(page.getByRole("dialog", { name: event.title, exact: true })).toBeVisible();
+    expect(requests).toHaveLength(3);
+  });
+
   test("admin cards count all pending queues and replace recent activity", async ({ page, next }) => {
     await seedAuthenticatedSession(page, next);
     let releaseSubmissions = () => {};
@@ -822,27 +896,28 @@ test.describe("Admin diagnostics", () => {
       await submissionsReady;
       const params = new URL(request.url).searchParams;
       expect(params.has("school")).toBe(false);
+      expect(params.get("submission_status")).toBe("pending");
+      expect(params.get("page_size")).toBe("1");
       const currentPage = Number(params.get("page") ?? 1);
-      const statuses = currentPage === 1 ? ["pending", "approved", "rejected"] : ["pending"];
+      const statuses = ["pending"];
       return { json: {
         items: statuses.map((status, index) => ({ id: `submission-${currentPage}-${index}`, event_data: { title: "Demo", occurrences: [] }, status, submitted_at: now })),
-        total: 4, page: currentPage, page_size: 3, total_pages: 2,
+        total: 2, page: currentPage, page_size: 1, total_pages: 2,
       } };
     });
     await mockApi(page, next, url => apiPath(url) === "/reports", async () => ({
-      json: { items: ["pending", "pending", "resolved", "dismissed"].map((status, index) => ({
-        id: `report-${index}`, event_id: 1, reason: `Reason ${index}`, status, reported_at: now,
-      })), total: 4, page: 1, page_size: 20, total_pages: 1 },
+      json: { items: ["pending", "pending"].map((status, index) => ({
+        id: `report-${index}`, event_id: 1, event_title: "Tech Career Fair", reason: `Reason ${index}`, status, reported_at: now,
+      })), total: 2, page: 1, page_size: 20, total_pages: 1 },
     }));
     await mockApi(page, next, url => apiPath(url) === "/clubs/claims", async () => ({
-      json: [{ id: "pending-claim", status: "pending" }, { id: "approved-claim", status: "approved" }],
+      json: { items: [{ id: "pending-claim", status: "pending" }], total: 1, page: 1, page_size: 1, total_pages: 1 },
     }));
     await mockApi(page, next, url => apiPath(url) === "/clubs/review", async () => ({
       json: { items: [
         { ...MOCK_CLUBS[0], status: "pending" },
         { ...MOCK_CLUBS[1], status: "pending", school: "ulaval" },
-        { ...MOCK_CLUBS[2], status: "approved" },
-      ], total: 3, page: 1, page_size: 20, total_pages: 1 },
+      ], total: 2, page: 1, page_size: 20, total_pages: 1 },
     }));
     await mockApi(page, next, url => apiPath(url) === "/position-submissions", async request => {
       expect(new URL(request.url).searchParams.get("submission_status")).toBe("pending");
@@ -890,7 +965,7 @@ test.describe("Admin diagnostics", () => {
     }
     await events.click();
     await expect(page).toHaveURL(`${BASE}/admin/events`);
-    await page.getByRole("tab", { name: "Event reports", exact: true }).click();
+    await page.getByRole("tab", { name: "Event reports 2", exact: true }).click();
     await expect(page.getByRole("cell", { name: "Reason 0", exact: true })).toBeVisible();
     await expect(page.getByRole("cell", { name: "Reason 1", exact: true })).toBeVisible();
     await expect(page.getByRole("cell", { name: "Reason 2", exact: true })).toHaveCount(0);
@@ -1268,6 +1343,9 @@ test.describe("Events Page", () => {
     await page.screenshot({ path: testInfo.outputPath("event-drawer-mobile.png"), fullPage: true });
     await page.goto(`${BASE}/events/1`);
     await expect(page.getByRole("img", { name: "Taylor Q." })).toBeVisible();
+    await page.locator('[data-slot="event-actions"]').getByRole("button", { name: "Save to calendar", exact: true }).click();
+    await expect(page.getByRole("menuitem", { name: "Google Calendar" })).toBeVisible();
+    await expect(page.getByRole("menuitem", { name: "iCal" })).toBeVisible();
   });
 
   test("returns one upcoming event for the random search command", async ({
@@ -1534,6 +1612,10 @@ test.describe("Events Page", () => {
 
     const eventDrawer = page.getByRole("dialog", { name: "Tech Career Fair" });
     const hostSection = eventDrawer.locator('[data-slot="event-host"]');
+    await eventDrawer.locator('[data-slot="event-actions"]').getByRole("button", { name: "Save to calendar", exact: true }).click();
+    await expect(page.getByRole("menuitem", { name: "Google Calendar" })).toBeVisible();
+    await expect(page.getByRole("menuitem", { name: "iCal" })).toBeVisible();
+    await page.keyboard.press("Escape");
     const hostLinks = hostSection.locator(':scope > [data-slot="event-host-links"]');
     await expect(hostSection.getByText("UW Tech Club")).toBeVisible();
     await expect(hostLinks).toHaveCount(0);
@@ -2439,6 +2521,36 @@ test.describe("Events Page", () => {
       "margin-top",
       "0px",
     );
+  });
+
+  test("counts event views from cards, arrows, and direct visits", async ({ page, next }) => {
+    const clicks: number[] = [];
+    await mockApi(page, next, url => apiPath(url) === "/interactions/batch", async request => {
+      const payload = await request.json() as {
+        interactions: Array<{ event_id: number; interaction_type: string }>;
+      };
+      clicks.push(...payload.interactions.filter(item => item.interaction_type === "click").map(item => item.event_id));
+      return { status: 202, json: { recorded: payload.interactions.length } };
+    });
+    await page.goto(BASE);
+    const cards = page.locator("article[data-event-id]:visible");
+    await expect(cards.first()).toBeVisible();
+    const firstId = Number(await cards.first().getAttribute("data-event-id"));
+    const secondId = Number(await cards.nth(1).getAttribute("data-event-id"));
+    expect(clicks).toEqual([]);
+    await cards.first().click();
+    await expect(page.getByRole("dialog")).toBeVisible();
+    await expect.poll(() => clicks).toEqual([firstId]);
+    await page.keyboard.press("ArrowRight");
+    await expect.poll(() => clicks).toEqual([firstId, secondId]);
+    await page.keyboard.press("ArrowLeft");
+    await expect.poll(() => clicks).toEqual([firstId, secondId, firstId]);
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    await page.goto(`/events/${secondId}`);
+    await expect.poll(() => clicks).toEqual([firstId, secondId, firstId, secondId]);
+    await page.reload();
+    await expect.poll(() => clicks).toEqual([firstId, secondId, firstId, secondId, secondId]);
   });
 
   test("persists optimistic click and going stats across refresh", async ({ page, next }) => {
@@ -3477,7 +3589,7 @@ test.describe("Onboarding Page", () => {
   test("loads faculty choices from the selected school instead of Waterloo", async ({ page, next }) => {
     await mockApi(page, next, url => apiPath(url) === "/schools", async () => {
       return ({ json: [{
-        slug: "mcmaster", name: "McMaster University", language: "en",
+        slug: "mcmaster", timezone: "America/Toronto", name: "McMaster University", language: "en",
         primary_color: "#7A003C", secondary_color: "#FDBF57",
         email_domains: ["mcmaster.ca"],
         faculties: ["DeGroote School of Business", "Engineering", "Health Sciences", "Humanities", "Science", "Social Sciences"],
@@ -3655,17 +3767,17 @@ for (const route of ["/", "/positions", "/clubs"]) {
 test("direct admin clubs visits load both pending tab counts", async ({ page, next }) => {
   await seedAuthenticatedSession(page, next);
   await mockApi(page, next, url => apiPath(url) === "/clubs/claims", async () => ({
-    json: ["pending", "approved"].map((status, index) => ({
+    json: { items: ["pending"].map((status, index) => ({
       id: `claim-${index}`, club_id: 1, user_id: "mock-user-id", status,
       executive_role: "President", created_at: new Date().toISOString(),
       clubs: MOCK_CLUBS[0], users: { email: TEST_EMAIL, full_name: "Test User" },
-    })),
+    })), total: 1, page: 1, page_size: 1, total_pages: 1 },
   }));
-  const items = ["pending", "pending", "rejected"].map((status, index) => ({
+  const items = ["pending", "pending"].map((status, index) => ({
     ...MOCK_CLUBS[0], id: index + 10, status,
   }));
   await mockApi(page, next, url => apiPath(url) === "/clubs/review", async () => ({
-    json: { items, total: 3, page: 1, page_size: 20, total_pages: 1 },
+    json: { items, total: 2, page: 1, page_size: 20, total_pages: 1 },
   }));
 
   await page.goto(`${BASE}/admin/clubs`);
@@ -3678,11 +3790,11 @@ test("direct admin clubs visits load both pending tab counts", async ({ page, ne
 test("claim status badges hug their content inside drawers", async ({ page, next }) => {
   await seedAuthenticatedSession(page, next);
   await mockApi(page, next, url => apiPath(url) === "/clubs/claims", async () => ({
-    json: [{
+    json: { items: [{
       id: "pending-claim", club_id: 1, user_id: "mock-user-id", status: "pending",
       executive_role: "President", created_at: new Date().toISOString(),
       clubs: MOCK_CLUBS[0], users: { email: TEST_EMAIL, full_name: "Test User" },
-    }],
+    }], total: 1, page: 1, page_size: 20, total_pages: 1 },
   }));
   await page.goto(`${BASE}/admin/clubs?tab=claims`);
   await page.getByRole("row").filter({ hasText: "President" }).getByRole("button", { name: "View", exact: true }).click();

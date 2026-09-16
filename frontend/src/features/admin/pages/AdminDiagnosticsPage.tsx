@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
-import { format } from "date-fns";
+import { formatInTimeZone } from "date-fns-tz";
+import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 import { AdminPageHeader } from "@/features/admin/components/shared/AdminPageHeader";
 import { Container, Stack } from "@/shared/layout";
 import {
@@ -23,6 +24,7 @@ interface AdminDiagnosticsPageProps {
 }
 
 export function AdminDiagnosticsPage({ onBack }: AdminDiagnosticsPageProps) {
+  const { getSchoolTimezone } = useSchoolDirectory();
   const { t } = useTranslation();
   const { data: logs = [], isLoading } = useAutomateLogs();
 
@@ -71,7 +73,7 @@ export function AdminDiagnosticsPage({ onBack }: AdminDiagnosticsPageProps) {
                   ) : (
                     <pre className="whitespace-pre-wrap break-words rounded-xl border border-border bg-background p-4 font-mono text-sm text-muted-foreground">
                       {logs.map((log) => {
-                        const timestamp = format(new Date(log.created_at), "MM-dd HH:mm:ss");
+                        const timestamp = formatInTimeZone(log.created_at, getSchoolTimezone(log.school), "MM-dd HH:mm:ss zzz");
                         const sender = log.sender_id ? `<${log.sender_id}>` : "<system>";
                         const meta = [
                           log.school && `School: ${log.school}`,

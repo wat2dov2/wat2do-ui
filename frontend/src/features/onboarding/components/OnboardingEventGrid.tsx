@@ -1,3 +1,4 @@
+import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 /**
  * Onboarding event grid: 2×4 grid of event cards from the events store.
  * Uses the same card style as the auth page hero section.
@@ -27,6 +28,7 @@ export function OnboardingEventGrid({
   className,
 }: OnboardingEventGridProps) {
   const { t, i18n } = useTranslation();
+  const { getSchoolTimezone } = useSchoolDirectory();
 
   // Same store data as the events page - no duplicate fetch.
   const allEvents = useEventsStore((s) => s.events);
@@ -38,8 +40,8 @@ export function OnboardingEventGrid({
   const topEvents = useMemo(() => shuffle(allEvents).slice(0, 8), [allEvents]);
 
   const previewEvents = useMemo(
-    () => topEvents.map((e) => ({ event: e, preview: eventToPreview(e, locale, t) })),
-    [topEvents, locale, t],
+    () => topEvents.map((e) => ({ event: e, preview: eventToPreview(e, getSchoolTimezone(e.school), locale, t) })),
+    [topEvents, locale, t, getSchoolTimezone],
   );
 
   if (loading) {

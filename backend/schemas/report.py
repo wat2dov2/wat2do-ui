@@ -47,6 +47,7 @@ class ReportUpdate(BaseModel):
 
 
 class ReportResponse(BaseModel):
+    event_title: str | None = None
     school: str | None = None
     id: str
     event_id: int

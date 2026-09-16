@@ -53,6 +53,7 @@ class SchoolSummary(BaseModel):
     name: str
     primary_color: str
     secondary_color: str
+    timezone: str
     language: Literal["en", "fr"] = "en"
     faculties: list[str] = Field(default_factory=list)
     location_examples: list[str] = Field(default_factory=list)

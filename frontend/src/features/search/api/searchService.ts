@@ -5,6 +5,9 @@ import {
   getPrimaryOccurrence,
   isActiveOrUpcomingOccurrence,
   parseLocalDateValue,
+  schoolCalendarDate,
+  addCalendarDays,
+  localDateTimeToUtc,
 } from "@/shared/utils/date";
 import { getEventCategory } from "@/shared/utils/event";
 
@@ -43,63 +46,59 @@ interface DateFilterRange {
   endMs: number;
 }
 
-function localMidnight(date: Date): Date {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
-}
-
-function addLocalDays(date: Date, days: number): Date {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
-}
-
 function resolveDateFilterRange(
   dateFilter: EventDateFilter,
   customDate: string,
   currentDate: Date,
+  timeZone: string,
 ): DateFilterRange | null {
   if (dateFilter === "any") return null;
 
-  const today = localMidnight(currentDate);
+  const today = schoolCalendarDate(currentDate, timeZone);
   let start: Date;
   let end: Date;
 
   switch (dateFilter) {
     case "today":
       start = today;
-      end = addLocalDays(today, 1);
+      end = addCalendarDays(today, 1);
       break;
     case "tomorrow":
-      start = addLocalDays(today, 1);
-      end = addLocalDays(today, 2);
+      start = addCalendarDays(today, 1);
+      end = addCalendarDays(today, 2);
       break;
     case "thisWeek": {
-      const daysUntilNextMonday = today.getDay() === 0 ? 1 : 8 - today.getDay();
+      const daysUntilNextMonday = today.getUTCDay() === 0 ? 1 : 8 - today.getUTCDay();
       start = today;
-      end = addLocalDays(today, daysUntilNextMonday);
+      end = addCalendarDays(today, daysUntilNextMonday);
       break;
     }
     case "thisWeekend": {
-      const day = today.getDay();
+      const day = today.getUTCDay();
       const daysUntilSaturday = day === 0 ? -1 : (6 - day + 7) % 7;
-      start = addLocalDays(today, daysUntilSaturday);
-      end = addLocalDays(start, 2);
+      start = addCalendarDays(today, daysUntilSaturday);
+      end = addCalendarDays(start, 2);
       break;
     }
     case "nextWeek": {
-      const daysSinceMonday = today.getDay() === 0 ? 6 : today.getDay() - 1;
-      start = addLocalDays(today, 7 - daysSinceMonday);
-      end = addLocalDays(start, 7);
+      const daysSinceMonday = today.getUTCDay() === 0 ? 6 : today.getUTCDay() - 1;
+      start = addCalendarDays(today, 7 - daysSinceMonday);
+      end = addCalendarDays(start, 7);
       break;
     }
     case "custom": {
       const selectedDate = parseLocalDateValue(customDate);
       if (!selectedDate) return null;
-      start = selectedDate;
-      end = addLocalDays(selectedDate, 1);
+      start = new Date(`${customDate}T00:00:00Z`);
+      end = addCalendarDays(start, 1);
       break;
     }
   }
 
-  return { startMs: start.getTime(), endMs: end.getTime() };
+  return {
+    startMs: Date.parse(localDateTimeToUtc(start.toISOString().slice(0, 16), timeZone)),
+    endMs: Date.parse(localDateTimeToUtc(end.toISOString().slice(0, 16), timeZone)),
+  };
 }
 
 function occurrenceOverlapsDateRange(occurrence: Event["occurrences"][number], range: DateFilterRange): boolean {
@@ -123,6 +122,7 @@ function matchesSearchQuery(event: Event, normalizedQuery: string): boolean {
 export function filterEvents(
   events: Event[],
   filters: SearchFilters,
+  getSchoolTimezone: (school: Event["school"]) => string,
   goingCounts: Readonly<Record<string, { going_count: number }>> = {},
 ): Event[] {
   const q = filters.searchQuery ? normalizeSearchQuery(filters.searchQuery) : "";
@@ -137,21 +137,25 @@ export function filterEvents(
     ? Date.parse(filters.addedSince)
     : Number.NaN;
   const currentDate = new Date();
-  const dateRange = resolveDateFilterRange(
-    filters.dateFilter,
-    filters.customDate,
-    currentDate,
-  );
+  const dateRanges = new Map<string, DateFilterRange | null>();
   // Carry only matching, still-visible sessions into cards and date sections.
   // Returning the original occurrence list could label a Today result Tomorrow.
-  const candidates = dateRange
-    ? events.map((event) => ({
+  const candidates = filters.dateFilter !== "any"
+    ? events.map((event) => {
+      const timeZone = getSchoolTimezone(event.school);
+      if (!dateRanges.has(timeZone)) {
+        dateRanges.set(timeZone, resolveDateFilterRange(filters.dateFilter, filters.customDate, currentDate, timeZone));
+      }
+      const dateRange = dateRanges.get(timeZone);
+      if (!dateRange) return event;
+      return {
         ...event,
         occurrences: event.occurrences.filter((occurrence) =>
           isActiveOrUpcomingOccurrence(occurrence, currentDate.getTime()) &&
           occurrenceOverlapsDateRange(occurrence, dateRange),
         ),
-      })).filter((event) => event.occurrences.length > 0)
+      };
+    }).filter((event) => event.occurrences.length > 0)
     : events;
 
   const filtered = candidates.filter((event) => {
@@ -179,7 +183,7 @@ export function filterEvents(
     }
 
     if (filters.selectedDays.length > 0) {
-      const weekdays = getEventWeekdays(event);
+      const weekdays = getEventWeekdays(event, getSchoolTimezone(event.school));
       if (!filters.selectedDays.every((day) => weekdays.has(day))) return false;
     }
 
@@ -265,11 +269,11 @@ export function sortEvents(
   return ranked.map(({ event }) => event);
 }
 
-function getEventWeekdays(event: Event): Set<string> {
+function getEventWeekdays(event: Event, timeZone: string): Set<string> {
   return new Set((event.occurrences ?? []).flatMap((occurrence) => {
     const date = new Date(occurrence.dtstart_utc);
     return Number.isNaN(date.getTime()) ? [] : [
-      date.toLocaleDateString("en-US", { weekday: "long", timeZone: occurrence.tz || undefined }),
+      date.toLocaleDateString("en-US", { weekday: "long", timeZone }),
     ];
   }));
 }

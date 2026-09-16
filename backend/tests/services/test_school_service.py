@@ -10,6 +10,7 @@ SCHOOL_ROWS = [
         "name": "University of Waterloo",
         "primary_color": "#FFD54F",
         "secondary_color": "#111111",
+        "timezone": "America/Toronto",
         "school_email_domains": [{"domain": "uwaterloo.ca"}],
     },
     {
@@ -17,6 +18,7 @@ SCHOOL_ROWS = [
         "name": "Massachusetts Institute of Technology",
         "primary_color": "#A31F34",
         "secondary_color": "#FFFFFF",
+        "timezone": "America/Toronto",
         "school_email_domains": [{"domain": "mit.edu"}],
     },
 ]
@@ -32,6 +34,7 @@ def test_search_schools_leads_with_the_primary_domain(fake_sb, patch_sb):
                 "name": "University of Waterloo",
                 "primary_color": "#FFD54F",
                 "secondary_color": "#111111",
+                "timezone": "America/Toronto",
                 "faculties": ["Engineering", "Mathematics"],
                 "location_examples": ["MC", "SLC"],
                 "school_email_domains": [
@@ -45,6 +48,7 @@ def test_search_schools_leads_with_the_primary_domain(fake_sb, patch_sb):
     [school] = school_service.search_schools("")
 
     assert school.email_domains == ["uwaterloo.ca", "edu.uwaterloo.ca"]
+    assert school.timezone == "America/Toronto"
     assert school.faculties == ["Engineering", "Mathematics"]
     assert school.location_examples == ["MC", "SLC"]
 
@@ -59,6 +63,7 @@ def test_search_schools_matches_domain_fragment(fake_sb, patch_sb):
             name="Massachusetts Institute of Technology",
             primary_color="#A31F34",
             secondary_color="#FFFFFF",
+            timezone="America/Toronto",
             email_domains=["mit.edu"],
         )
     ]
@@ -75,6 +80,7 @@ def test_search_schools_matches_display_name_fragment(fake_sb, patch_sb):
             name="University of Waterloo",
             primary_color="#FFD54F",
             secondary_color="#111111",
+            timezone="America/Toronto",
             email_domains=["uwaterloo.ca"],
         )
     ]
@@ -90,6 +96,7 @@ def test_search_schools_returns_directory_for_blank_query(fake_sb, patch_sb):
             name="Massachusetts Institute of Technology",
             primary_color="#A31F34",
             secondary_color="#FFFFFF",
+            timezone="America/Toronto",
             email_domains=["mit.edu"],
         ),
         SchoolSummary(
@@ -97,6 +104,7 @@ def test_search_schools_returns_directory_for_blank_query(fake_sb, patch_sb):
             name="University of Waterloo",
             primary_color="#FFD54F",
             secondary_color="#111111",
+            timezone="America/Toronto",
             email_domains=["uwaterloo.ca"],
         ),
     ]

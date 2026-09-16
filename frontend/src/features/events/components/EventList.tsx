@@ -19,6 +19,7 @@ import { Spinner } from "@/shared/ui/spinner";
 import { CARD_GRID_CLASS } from "@/shared/constants/ui";
 import { CardEntrance } from "@/shared/ui/card-entrance";
 import { controlBox } from "@/shared/config/controlBox";
+import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 
 interface EventListProps {
   events: Event[];
@@ -82,11 +83,11 @@ interface DateSectionGroup {
  * timezone-skew straggler can still land in the past and is dropped here - the
  * one place this list decides what's shown, so callers bucket unconditionally.
  */
-function groupEventsByDateSection(events: Event[]): DateSectionGroup[] {
+function groupEventsByDateSection(events: Event[], getSchoolTimezone: ReturnType<typeof useSchoolDirectory>["getSchoolTimezone"]): DateSectionGroup[] {
   const groups = new Map<string, DateSectionGroup>();
 
   events.forEach((event) => {
-    const section = getEventDateSection(event);
+    const section = getEventDateSection(event, getSchoolTimezone(event.school));
     if (!section) return;
 
     const key = eventDateSectionKey(section);
@@ -120,6 +121,7 @@ export function EventList({
   isLoading = false,
   groupByDateSections = true,
 }: EventListProps) {
+  const { getSchoolTimezone } = useSchoolDirectory();
   const { t, i18n } = useTranslation();
   const locale = i18n.language || "en-US";
   const [visibleEventCount, setVisibleEventCount] = useState(
@@ -128,8 +130,8 @@ export function EventList({
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
   const dateSectionGroups = useMemo(
-    () => groupEventsByDateSection(events),
-    [events],
+    () => groupEventsByDateSection(events, getSchoolTimezone),
+    [events, getSchoolTimezone],
   );
   const sectionOrderedEvents = useMemo(
     () =>
@@ -143,8 +145,8 @@ export function EventList({
     [sectionOrderedEvents, visibleEventCount],
   );
   const visibleDateSectionGroups = useMemo(
-    () => groupEventsByDateSection(visibleEvents),
-    [visibleEvents],
+    () => groupEventsByDateSection(visibleEvents, getSchoolTimezone),
+    [visibleEvents, getSchoolTimezone],
   );
   const priorityImageIds = useMemo(
     () =>

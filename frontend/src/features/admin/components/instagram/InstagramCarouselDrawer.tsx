@@ -65,7 +65,7 @@ export function InstagramCarouselDrawer({
 }: InstagramCarouselDrawerProps) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  const { schoolBySlug } = useSchoolDirectory();
+  const { schoolBySlug, getSchoolTimezone } = useSchoolDirectory();
   const [eventIds, setEventIds] = useState<number[]>(() => carouselEventIds(batch));
   const caption = batch.caption;
   const [captionIntro, setCaptionIntro] = useState(batch.caption_intro);
@@ -115,9 +115,9 @@ export function InstagramCarouselDrawer({
   const editForm = useMemo(
     () =>
       currentEvent && currentEvent.id === currentEventId
-        ? eventToFormData({ ...currentEvent, category: getEventCategory(currentEvent) })
+        ? eventToFormData({ ...currentEvent, category: getEventCategory(currentEvent) }, getSchoolTimezone(currentEvent.school))
         : null,
-    [currentEvent, currentEventId],
+    [currentEvent, currentEventId, getSchoolTimezone],
   );
 
   // The slide is whatever the open form currently says, keystroke for

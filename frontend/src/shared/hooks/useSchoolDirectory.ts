@@ -26,11 +26,23 @@ export function useSchoolDirectory() {
     [schoolBySlug],
   );
 
+  const getSchoolTimezone = useCallback(
+    (school: string | null | undefined) => {
+      // Records without a school have no campus clock; label them explicitly in UTC.
+      if (!school) return "UTC";
+      const timezone = schoolBySlug.get(school)?.timezone;
+      if (!timezone) throw new Error(`Missing timezone for school: ${school}`);
+      return timezone;
+    },
+    [schoolBySlug],
+  );
+
   return {
     isPending: query.isPending,
     isError: query.isError,
     schools,
     schoolBySlug,
     getSchoolName,
+    getSchoolTimezone,
   };
 }

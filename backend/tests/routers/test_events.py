@@ -7,7 +7,7 @@ from core.constants import ROLE_ADMIN
 from core.pagination import LatestAddedItem
 from schemas.club import ClubResponse
 from schemas.event import EventResponse
-from services import club_service, event_service
+from services import admin_query, club_service, event_query, event_service
 from tests.conftest import ADMIN_USER, FAKE_USER, OTHER_USER
 
 
@@ -50,6 +50,34 @@ def _mock_club(**overrides) -> ClubResponse:
 def test_create_event_requires_auth(client):
     response = client.post("/events/", json={"title": "Test", "location": "Here", "club_id": 7})
     assert response.status_code == 401
+
+
+def test_admin_events_requires_auth(client):
+    assert client.get("/events/admin").status_code == 401
+
+
+def test_admin_events_requires_admin(authenticated_client):
+    assert authenticated_client.get("/events/admin").status_code == 403
+
+
+def test_admin_events_hydrates_one_filtered_page(admin_client, monkeypatch):
+    select = MagicMock(return_value=(["7", "2"], 13086))
+    hydrate = MagicMock(return_value={2: _mock_event(id=2), 7: _mock_event(id=7)})
+    monkeypatch.setattr(admin_query, "load_page_ids", select)
+    monkeypatch.setattr(event_query, "load_events_by_ids", hydrate)
+
+    response = admin_client.get(
+        "/events/admin?page=3&page_size=20&search=Dance&school=ulaval&category=Social"
+    )
+
+    assert response.status_code == 200
+    assert [item["id"] for item in response.json()["items"]] == [7, 2]
+    assert response.json()["total"] == 13086
+    assert response.json()["total_pages"] == 655
+    select.assert_called_once_with(
+        "events", offset=40, limit=20, search="Dance", school="ulaval", category="Social"
+    )
+    assert hydrate.call_args.args == ([7, 2],)
 
 
 def test_delete_event_requires_auth(client):

@@ -41,6 +41,7 @@ export type Event = EventApiShape & EventViewOnlyFields;
 
 export interface EventFormOccurrence {
   id?: string;
+  original?: { dtstart_utc: string; dtend_utc?: string | null };
   dtstart_local: string;
   dtend_local: string;
 }
@@ -49,6 +50,8 @@ export interface EventFormOccurrence {
 // The owning club (club_id) is the single source of truth for the event's
 // club/school - those are derived server-side, never entered.
 export interface EventFormData {
+  /** School clock used to interpret the form's wall-clock inputs. */
+  timeZone: string;
   club_id: number | null;
   title: string;
   description: string;

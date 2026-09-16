@@ -17,6 +17,7 @@ import { EventFormPreview } from "@/features/events/components/EventForm/EventFo
 import { EventFormFields } from "@/features/events/components/EventForm/EventForm/EventFormFields";
 import { EventFormProvider } from "@/features/events/components/EventForm/EventForm/EventFormContext";
 import type { useEventForm } from "@/features/events/hooks/useEventForm";
+import { getCurrentSchool } from "@/shared/constants/schools";
 
 const NO_CLUBS: Club[] = [];
 
@@ -100,6 +101,7 @@ export function EventFormStep({
   const previewEvent = useMemo(
     () =>
       buildPreviewEvent({
+        school: clubs.find((club) => club.id === eventForm.formData.club_id)?.school ?? previewBase?.school ?? getCurrentSchool(),
         formData: eventForm.formData,
         imagePreview: eventForm.imagePreview,
         clubName: selectedClubName,
@@ -108,6 +110,7 @@ export function EventFormStep({
       }),
     [
       eventForm.formData,
+      clubs,
       eventForm.imagePreview,
       selectedClubName,
       previewBase,

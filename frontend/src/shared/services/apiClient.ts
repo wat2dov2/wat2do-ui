@@ -1,4 +1,5 @@
 import type { ApiTokenResponse } from "@/shared/generated";
+import type { components } from "@/shared/generated/api-types";
 import { API_BASE_URL } from "@/shared/config/api";
 import { StorageService } from "@/shared/services/storageService";
 import { STORAGE_KEYS } from "@/shared/constants/storageKeys";
@@ -301,11 +302,7 @@ export const api = {
   },
 };
 
-interface PaginatedApiResponse<T> {
-  items: T[];
-  page: number;
-  total_pages: number;
-}
+export type PaginatedApiResponse<T> = Omit<components["schemas"]["PaginatedResponse_EventSummaryResponse_"], "items"> & { items: T[] };
 
 const MAX_BACKEND_PAGE_SIZE = 100;
 

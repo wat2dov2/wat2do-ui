@@ -1,5 +1,7 @@
 import { useState, useCallback } from "react";
-import { useAdminStore } from "@/features/admin/store/admin.store";
+import { useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/shared/lib/queryKeys";
+import { updateEventSubmission } from "@/features/admin/api/admin.api";
 import type { EventSubmission } from "@/shared/types";
 
 interface UseAdminSubmissionsActionsOptions {
@@ -11,20 +13,21 @@ export function useAdminSubmissionsActions({
 }: UseAdminSubmissionsActionsOptions) {
   const [rejectSubmissionId, setRejectSubmissionId] = useState<string | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
-  const approveSubmission = useAdminStore((s) => s.approveSubmission);
-  const rejectSubmission = useAdminStore((s) => s.rejectSubmission);
+  const queryClient = useQueryClient();
 
   const handleApprove = useCallback(
     async (submission: EventSubmission) => {
       try {
-        await approveSubmission(submission.id);
+        await updateEventSubmission(submission.id, "approved");
+        await queryClient.invalidateQueries({ queryKey: queryKeys.admin.all });
+        await queryClient.invalidateQueries({ queryKey: queryKeys.events.all });
       } catch (err) {
         console.error("Failed to approve submission:", err);
         return;
       }
       onReviewed(submission.id);
     },
-    [approveSubmission, onReviewed],
+    [queryClient, onReviewed],
   );
 
   const handleRejectClick = useCallback((submission: EventSubmission) => {
@@ -36,7 +39,8 @@ export function useAdminSubmissionsActions({
     async () => {
       if (!rejectSubmissionId || !rejectionReason.trim()) return;
       try {
-        await rejectSubmission(rejectSubmissionId, rejectionReason.trim());
+        await updateEventSubmission(rejectSubmissionId, "rejected", rejectionReason.trim());
+        await queryClient.invalidateQueries({ queryKey: queryKeys.admin.all });
       } catch (err) {
         console.error("Failed to reject submission:", err);
         return;
@@ -46,7 +50,7 @@ export function useAdminSubmissionsActions({
       setRejectionReason("");
       onReviewed(rejectedId);
     },
-    [rejectSubmissionId, rejectionReason, rejectSubmission, onReviewed],
+    [rejectSubmissionId, rejectionReason, queryClient, onReviewed],
   );
 
   return {

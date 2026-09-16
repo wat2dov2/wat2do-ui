@@ -18,4 +18,3 @@ export {
 } from "./api/clubs.api";
 
 // Hooks
-export { useClubNameLookup } from "./hooks/useClubNameLookup";

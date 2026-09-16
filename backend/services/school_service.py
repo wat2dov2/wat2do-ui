@@ -139,7 +139,7 @@ def search_schools(query: str, limit: int = DEFAULT_SEARCH_LIMIT) -> list[School
         get_sb()
         .table(SCHOOLS)
         .select(
-            "slug, name, primary_color, secondary_color, language, faculties, location_examples, school_email_domains(domain, is_primary)"
+            "slug, name, primary_color, secondary_color, timezone, language, faculties, location_examples, school_email_domains(domain, is_primary)"
         )
         .order("name")
         .execute()

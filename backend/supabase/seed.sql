@@ -542,6 +542,8 @@ WHERE event.source_url LIKE format('https://wat2do.local/seed/instagram-timezone
 ANALYZE public.clubs;
 -- Multi-school moderation fixtures. Stable IDs preserve review decisions on reruns.
 -- These synthetic users have no auth account and cannot sign in.
+DO $$
+BEGIN
 CREATE TEMP TABLE moderation_seed ON COMMIT DROP AS
 SELECT s.id AS school_id, s.slug, s.timezone, slot,
     md5('wat2do-local-moderation-user-' || s.slug || '-' || slot)::uuid AS user_id,
@@ -604,6 +606,23 @@ FROM moderation_seed fixture
 JOIN public.clubs club ON club.school_id = fixture.school_id
     AND club.club_name = format('Demo %s Claim Club %s', fixture.slug, fixture.slot)
 ON CONFLICT DO NOTHING;
+
+INSERT INTO public.reported_events (id, event_id, user_id, reason, status, reported_at, resolved_at)
+SELECT md5('wat2do-local-event-report-' || fixture.slug || '-' || fixture.slot)::uuid,
+    event.id, fixture.user_id,
+    format('Demo %s report %s: please verify the event location.', fixture.slug, fixture.slot),
+    CASE WHEN fixture.slot = 1 THEN 'pending' ELSE 'resolved' END,
+    now() - make_interval(mins => fixture.slot * 2),
+    CASE WHEN fixture.slot = 2 THEN now() END
+FROM moderation_seed fixture
+JOIN LATERAL (
+    SELECT id FROM public.events
+    WHERE school_id = fixture.school_id AND source_url LIKE 'https://wat2do.local/seed/%'
+    ORDER BY id OFFSET fixture.slot - 1 LIMIT 1
+) event ON true
+ON CONFLICT DO NOTHING;
+END;
+$$;
 
 ANALYZE public.events;
 ANALYZE public.event_dates;

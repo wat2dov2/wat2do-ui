@@ -10,6 +10,8 @@ import {
 import { useForm } from "@/shared/hooks/useForm";
 import { useTagInput } from "@/shared/hooks/useTagInput";
 import { getEventFormDefaults } from "@/features/events/hooks/useEventForm.utils";
+import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
+import { getCurrentSchool } from "@/shared/constants/schools";
 
 interface UseEventFormOptions {
   initialData?: EventFormData;
@@ -18,6 +20,8 @@ interface UseEventFormOptions {
 }
 
 export function useEventForm(options: UseEventFormOptions) {
+  const { getSchoolTimezone } = useSchoolDirectory();
+  const getDefaults = useCallback(() => getEventFormDefaults(getSchoolTimezone(getCurrentSchool())), [getSchoolTimezone]);
   const { initialData, isEditMode = false, isOpen } = options;
   const { t } = useTranslation();
 
@@ -45,7 +49,7 @@ export function useEventForm(options: UseEventFormOptions) {
     initialData,
     isEditMode,
     isOpen,
-    getDefaults: getEventFormDefaults,
+    getDefaults,
     validate,
   });
 

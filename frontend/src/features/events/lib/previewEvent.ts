@@ -8,11 +8,13 @@
  */
 
 import type { Event, EventFormData } from "@/shared/types";
+import { buildEventOccurrence } from "@/shared/api/eventPayload";
 
 /** Stands in for the not-yet-saved event's id on the preview's occurrences. */
 const PREVIEW_EVENT_ID = -1;
 
 interface PreviewEventOptions {
+  school: string;
   formData: EventFormData;
   /** Data URL or stored URL of the poster the form is showing. */
   imagePreview: string;
@@ -29,6 +31,7 @@ interface PreviewEventOptions {
 }
 
 export function buildPreviewEvent({
+  school,
   formData,
   imagePreview,
   clubName,
@@ -40,16 +43,22 @@ export function buildPreviewEvent({
 
   return {
     ...base,
+    school,
     id,
     title: formData.title || fallbackTitle,
     location: formData.location,
-    occurrences: formData.occurrences.map((occurrence, index) => ({
-      id: occurrence.id ?? `preview-${index}`,
-      event_id: id,
-      dtstart_utc: occurrence.dtstart_local,
-      dtend_utc: occurrence.dtend_local || undefined,
-      created_at: now,
-    })),
+    occurrences: formData.occurrences.flatMap((occurrence, index) => {
+      try {
+        return [{
+          ...buildEventOccurrence(occurrence, formData.timeZone),
+          id: occurrence.id ?? `preview-${index}`,
+          event_id: id,
+          created_at: now,
+        }];
+      } catch {
+        return [];
+      }
+    }),
     price: formData.price,
     food: formData.food,
     registration: formData.registration,

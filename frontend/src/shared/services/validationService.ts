@@ -1,5 +1,18 @@
 import type { EventFormData, ValidationErrors } from "@/shared/types";
 import i18n from "@/shared/lib/i18n";
+import { buildEventOccurrence } from "@/shared/api/eventPayload";
+
+function validOccurrences(formData: EventFormData): boolean {
+  try {
+    const occurrences = formData.occurrences.filter((item) => item.dtstart_local);
+    return occurrences.length > 0 && occurrences.every((item) => {
+      const { dtstart_utc, dtend_utc } = buildEventOccurrence(item, formData.timeZone);
+      return !dtend_utc || Date.parse(dtend_utc) > Date.parse(dtstart_utc);
+    });
+  } catch {
+    return false;
+  }
+}
 
 const VALIDATION_MESSAGE_KEYS = {
   titleRequired: "forms.titleRequired",
@@ -54,7 +67,7 @@ export function validateEventForm(
     errors.club_id = m.clubRequired;
   }
 
-  if (touched.occurrences && !formData.occurrences.some((occurrence) => occurrence.dtstart_local)) {
+  if (touched.occurrences && !validOccurrences(formData)) {
     errors.occurrences = m.occurrenceRequired;
   }
 
@@ -76,7 +89,7 @@ export function isEventFormValid(
   return (
     formData.title.trim() !== "" &&
     (!rules.requireClub || formData.club_id != null) &&
-    formData.occurrences.some((occurrence) => occurrence.dtstart_local !== "") &&
+    validOccurrences(formData) &&
     formData.location !== "" &&
     Object.keys(errors).length === 0
   );

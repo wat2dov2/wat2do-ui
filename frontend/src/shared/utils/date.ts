@@ -1,4 +1,24 @@
 import { controlBox } from "@/shared/config/controlBox";
+import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
+
+/** Calendar-only dates use UTC fields for arithmetic, not as event instants. */
+export function schoolCalendarDate(value: Date | string | number, timeZone: string): Date {
+  return new Date(`${formatInTimeZone(value, timeZone, "yyyy-MM-dd")}T00:00:00Z`);
+}
+
+export function toLocalDateTimeInput(value: Date | string | number, timeZone: string): string {
+  return formatInTimeZone(value, timeZone, "yyyy-MM-dd'T'HH:mm");
+}
+
+export function localDateTimeToUtc(value: string, timeZone: string, originalUtc?: string): string {
+  // Preserve an unchanged instant, including the second occurrence of a repeated DST hour.
+  if (originalUtc && toLocalDateTimeInput(originalUtc, timeZone) === value) return originalUtc;
+  const instant = fromZonedTime(value, timeZone);
+  if (!Number.isFinite(instant.getTime()) || toLocalDateTimeInput(instant, timeZone) !== value.slice(0, 16)) {
+    throw new RangeError("Invalid school-local date/time");
+  }
+  return instant.toISOString();
+}
 
 /**
  * Where an event sits in the feed's date sections: the two named near-term
@@ -55,11 +75,8 @@ export function hasActiveEventOccurrence(
   );
 }
 
-const toMidnight = (date: Date): Date =>
-  new Date(date.getFullYear(), date.getMonth(), date.getDate());
-
 const sameDay = (firstDate: Date, secondDate: Date): boolean =>
-  firstDate.toDateString() === secondDate.toDateString();
+  firstDate.getTime() === secondDate.getTime();
 
 /** Parse a date-only form value as local calendar time, never UTC midnight. */
 export function parseLocalDateValue(value: string): Date | undefined {
@@ -147,6 +164,7 @@ export function wasAddedWithinLast24Hours(
  */
 export function formatCardDate(
   event: { occurrences?: Occurrence[] },
+  timeZone: string,
   locale: string = "en-US",
   currentDate: Date = new Date(),
 ): string {
@@ -163,19 +181,16 @@ export function formatCardDate(
       return `${label.charAt(0).toLocaleUpperCase(locale)}${label.slice(1)}`;
     };
 
-    if (sameDay(date, currentDate)) return formatRelativeDate(0);
-
-    const tomorrow = new Date(
-      currentDate.getFullYear(),
-      currentDate.getMonth(),
-      currentDate.getDate() + 1,
-    );
-    if (sameDay(date, tomorrow)) return formatRelativeDate(1);
+    const day = schoolCalendarDate(date, timeZone);
+    const today = schoolCalendarDate(currentDate, timeZone);
+    if (sameDay(day, today)) return formatRelativeDate(0);
+    if (sameDay(day, addCalendarDays(today, 1))) return formatRelativeDate(1);
 
     return new Intl.DateTimeFormat(locale, {
       weekday: "long",
       month: "short",
       day: "numeric",
+      timeZone,
     }).format(date);
   }
   return "";
@@ -186,37 +201,37 @@ export function formatCardDate(
  */
 export function formatCardTime(event: {
   occurrences?: Occurrence[];
-}): string {
+}, timeZone: string, locale = "en-US"): string {
   const primary = getPrimaryOccurrence(event);
   if (primary && primary.dtstart_utc) {
     const start = new Date(primary.dtstart_utc);
-    const end = primary.dtend_utc ? new Date(primary.dtend_utc) : null;
+    const parsedEnd = primary.dtend_utc ? new Date(primary.dtend_utc) : null;
+    const end = parsedEnd && parsedEnd.getTime() >= start.getTime() ? parsedEnd : null;
     
-    const formatTime = (date: Date): string => {
-      const hours = date.getHours();
-      const minutes = date.getMinutes();
-      const ampm = hours >= 12 ? 'PM' : 'AM';
-      const displayHours = hours % 12 || 12;
-      const minutesStr = minutes > 0 ? `:${minutes.toString().padStart(2, '0')}` : '';
-      return `${displayHours}${minutesStr} ${ampm}`;
-    };
-    
-    return end ? `${formatTime(start)} to ${formatTime(end)}` : formatTime(start);
+    if (!Number.isFinite(start.getTime())) return "";
+    const formatter = new Intl.DateTimeFormat(locale, {
+      hour: "numeric", minute: "2-digit", timeZone, timeZoneName: "short",
+      ...(end && !sameDay(schoolCalendarDate(start, timeZone), schoolCalendarDate(end, timeZone))
+        ? { month: "short", day: "numeric" } as const : {}),
+    });
+    return end && Number.isFinite(end.getTime())
+      ? formatter.formatRange(start, end)
+      : formatter.format(start);
   }
   return '';
 }
 
-const addDays = (date: Date, days: number): Date =>
-  toMidnight(new Date(date.getFullYear(), date.getMonth(), date.getDate() + days));
+export const addCalendarDays = (date: Date, days: number): Date =>
+  new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate() + days));
 
 /** Sunday that closes the Monday-to-Sunday week containing `date`. */
 function endOfWeek(date: Date): Date {
-  return addDays(date, (7 - date.getDay()) % 7);
+  return addCalendarDays(date, (7 - date.getUTCDay()) % 7);
 }
 
 /** Monday that opens the Monday-to-Sunday week containing `date`. */
 function startOfWeek(date: Date): Date {
-  return addDays(date, date.getDay() === 0 ? -6 : 1 - date.getDay());
+  return addCalendarDays(date, date.getUTCDay() === 0 ? -6 : 1 - date.getUTCDay());
 }
 
 /**
@@ -227,6 +242,7 @@ export function getEventDateSection(
   event: {
     occurrences?: Occurrence[];
   },
+  timeZone: string,
   currentDate: Date = new Date()
 ): EventDateSection | null {
   if (!hasActiveEventOccurrence(event, currentDate.getTime())) return null;
@@ -243,11 +259,11 @@ export function getEventDateSection(
   // way lets an event be counted as upcoming but land in no section, which
   // renders an empty feed under a non-zero count.
   const visibleUntilMs = occurrenceVisibleUntilMs(primary);
-  const startDate = toMidnight(parsedStart);
+  const startDate = schoolCalendarDate(parsedStart, timeZone);
   const endDate =
-    visibleUntilMs === null ? startDate : toMidnight(new Date(visibleUntilMs));
-  const todayDate = toMidnight(currentDate);
-  const tomorrowDate = addDays(todayDate, 1);
+    visibleUntilMs === null ? startDate : schoolCalendarDate(visibleUntilMs, timeZone);
+  const todayDate = schoolCalendarDate(currentDate, timeZone);
+  const tomorrowDate = addCalendarDays(todayDate, 1);
 
   // Multi-day events surface in the earliest section they are still running in.
   if (todayDate >= startDate && todayDate <= endDate) return { kind: "today" };
@@ -262,7 +278,7 @@ export function getEventDateSection(
   // The current week's section starts the day after tomorrow so it never
   // repeats what the Today and Tomorrow sections already show.
   const thisWeekEnd = endOfWeek(todayDate);
-  const thisWeekStart = addDays(todayDate, 2);
+  const thisWeekStart = addCalendarDays(todayDate, 2);
   if (startDate <= thisWeekEnd) {
     return thisWeekStart > thisWeekEnd
       ? null
@@ -296,6 +312,7 @@ export function formatEventDateSectionRange(
   locale: string
 ): string {
   const formatter = new Intl.DateTimeFormat(locale, {
+    timeZone: "UTC",
     weekday: "short",
     month: "short",
     day: "numeric",
@@ -317,38 +334,12 @@ export function formatEventDateSectionRange(
  */
 export function formatOccurrence(
   occurrence: { dtstart_utc: string; dtend_utc?: string | null },
-  t: (key: string) => string,
+  timeZone: string,
   locale: string = "en-US"
 ): string {
   const start = new Date(occurrence.dtstart_utc);
   if (isNaN(start.getTime())) return "";
 
-  let datePrefix = "";
-  const today = new Date();
-  
-  if (sameDay(start, today)) {
-    const translated = t("filters.today");
-    datePrefix = translated === "filters.today" ? "Today" : translated;
-  } else {
-    const weekday = start.toLocaleDateString(locale, { weekday: "long" });
-    const month = start.toLocaleDateString(locale, { month: "short" });
-    const day = start.getDate();
-    datePrefix = `${weekday} ${month} ${day}`;
-  }
-
-  const formatTime = (d: Date): string => {
-    return d.toLocaleTimeString(locale, {
-      hour: "numeric",
-      minute: "2-digit",
-    });
-  };
-
-  const startStr = formatTime(start);
-  if (occurrence.dtend_utc) {
-    const end = new Date(occurrence.dtend_utc);
-    if (!isNaN(end.getTime())) {
-      return `${datePrefix}, ${startStr} - ${formatTime(end)}`;
-    }
-  }
-  return `${datePrefix}, ${startStr}`;
+  const event = { occurrences: [occurrence] };
+  return `${formatCardDate(event, timeZone, locale)}, ${formatCardTime(event, timeZone, locale)}`;
 }

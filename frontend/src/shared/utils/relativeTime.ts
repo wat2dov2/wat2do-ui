@@ -5,6 +5,8 @@ const MS_PER_DAY = 86_400_000;
 interface FormatRelativeTimeOptions {
   /** When true, never fall back to a calendar date - always "N minutes/hours/days ago". */
   alwaysAgo?: boolean;
+  timeZone?: string;
+  locale?: string;
 }
 
 /**
@@ -43,7 +45,7 @@ export function formatRelativeTime(
       ? t("common.dayAgo", { count: diffDays })
       : `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
   }
-  return d.toLocaleDateString();
+  return d.toLocaleDateString(options?.locale, { timeZone: options?.timeZone ?? "UTC" });
 }
 
 /**
@@ -75,5 +77,5 @@ export function formatRelativeTimeCompact(
       ? t("common.dayAgoCompact", { count: diffDays })
       : `${diffDays}d ago`;
   }
-  return d.toLocaleDateString();
+  return d.toLocaleDateString(undefined, { timeZone: "UTC" });
 }

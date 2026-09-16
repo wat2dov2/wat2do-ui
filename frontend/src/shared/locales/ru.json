@@ -266,7 +266,7 @@
     "discordLink": "Discord Ссылка",
     "titleRequired": "Заголовок обязателен",
     "clubRequired": "Организация обязательна",
-    "occurrenceRequired": "Необходима хотя бы одна дата",
+    "occurrenceRequired": "Укажите хотя бы одну корректную дату и время. Окончание должно быть позже начала.",
     "locationRequired": "Место проведения обязательно",
     "schoolRequired": "Школа обязательна",
     "pickDate": "Выберите дату",

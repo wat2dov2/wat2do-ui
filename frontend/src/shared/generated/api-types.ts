@@ -533,6 +533,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/events/admin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Admin Events */
+        get: operations["list_admin_events_events_admin_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/events/stats": {
         parameters: {
             query?: never;
@@ -2745,10 +2762,36 @@ export interface components {
             /** Id */
             id?: string | null;
         };
+        /** PaginatedResponse[ClubClaimResponse] */
+        PaginatedResponse_ClubClaimResponse_: {
+            /** Items */
+            items: components["schemas"]["ClubClaimResponse"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+            /** Total Pages */
+            total_pages: number;
+        };
         /** PaginatedResponse[ClubResponse] */
         PaginatedResponse_ClubResponse_: {
             /** Items */
             items: components["schemas"]["ClubResponse"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+            /** Total Pages */
+            total_pages: number;
+        };
+        /** PaginatedResponse[EventSummaryResponse] */
+        PaginatedResponse_EventSummaryResponse_: {
+            /** Items */
+            items: components["schemas"]["EventSummaryResponse"][];
             /** Total */
             total: number;
             /** Page */
@@ -3486,6 +3529,8 @@ export interface components {
         };
         /** ReportResponse */
         ReportResponse: {
+            /** Event Title */
+            event_title?: string | null;
             /** School */
             school?: string | null;
             /** Id */
@@ -3569,6 +3614,8 @@ export interface components {
             primary_color: string;
             /** Secondary Color */
             secondary_color: string;
+            /** Timezone */
+            timezone: string;
             /**
              * Language
              * @default en
@@ -3648,6 +3695,8 @@ export interface components {
             event_data: {
                 [key: string]: unknown;
             };
+            /** Club Name */
+            club_name?: string | null;
         };
         /** SubmissionUpdate */
         SubmissionUpdate: {
@@ -4232,6 +4281,7 @@ export interface operations {
             query?: {
                 club_status?: ("pending" | "approved" | "rejected") | null;
                 school?: string | null;
+                search?: string | null;
                 /** @description Page number (1-indexed) */
                 page?: number;
                 /** @description Items per page (max 100) */
@@ -4339,6 +4389,11 @@ export interface operations {
             query?: {
                 status?: string | null;
                 school?: string | null;
+                search?: string | null;
+                /** @description Page number (1-indexed) */
+                page?: number;
+                /** @description Items per page (max 100) */
+                page_size?: number;
             };
             header?: never;
             path?: never;
@@ -4352,7 +4407,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ClubClaimResponse"][];
+                    "application/json": components["schemas"]["PaginatedResponse_ClubClaimResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -4936,6 +4991,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MessageResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_admin_events_events_admin_get: {
+        parameters: {
+            query?: {
+                search?: string | null;
+                category?: string | null;
+                school?: string | null;
+                /** @description Page number (1-indexed) */
+                page?: number;
+                /** @description Items per page (max 100) */
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_EventSummaryResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -6266,6 +6358,8 @@ export interface operations {
         parameters: {
             query?: {
                 report_status?: string | null;
+                search?: string | null;
+                school?: string | null;
                 /** @description Page number (1-indexed) */
                 page?: number;
                 /** @description Items per page (max 100) */
@@ -6535,6 +6629,7 @@ export interface operations {
             query?: {
                 submission_status?: string | null;
                 school?: string | null;
+                search?: string | null;
                 /** @description Page number (1-indexed) */
                 page?: number;
                 /** @description Items per page (max 100) */

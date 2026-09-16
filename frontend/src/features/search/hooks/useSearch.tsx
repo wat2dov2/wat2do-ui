@@ -7,6 +7,7 @@ import { useAppConstants } from "@/shared/hooks/useAppConstants";
 import { availableDays } from "@/shared/constants/eventFilters";
 import { translateCategory } from "@/shared/utils/event";
 import type { Event } from "@/shared/types";
+import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 
 /**
  * Search/filter orchestration: useFilterState for store state, searchService for logic.
@@ -23,6 +24,7 @@ export function useSearch({
   goingEventIds,
   goingCounts,
 }: UseSearchOptions) {
+  const { getSchoolTimezone } = useSchoolDirectory();
   const { t } = useTranslation();
   const { event_categories: eventCategories } = useAppConstants();
 
@@ -46,10 +48,11 @@ export function useSearch({
       addedSince: filterState.addedSince,
       dateFilter: filterState.dateFilter,
       customDate: filterState.customDate,
-    }, goingCounts ?? {});
+    }, getSchoolTimezone, goingCounts ?? {});
     return sortEvents(filtered, { sortBy: filterState.sortBy, sortOrder: filterState.sortOrder });
   }, [
     events,
+    getSchoolTimezone,
     filterState.searchQuery,
     filterState.hasFoodFilter,
     filterState.selectedDays,
