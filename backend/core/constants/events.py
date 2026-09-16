@@ -2,6 +2,7 @@
 
 EVENT_CATEGORIES = (
     "Arts & Culture",
+    "Academics & Science",
     "Business",
     "Community Service",
     "Environment",
@@ -15,6 +16,7 @@ EVENT_CATEGORIES = (
 # Interests map 1:1 to categories now that we have a simplified taxonomy.
 INTEREST_TO_CATEGORIES: dict[str, list[str]] = {
     "Arts & Culture": ["Arts & Culture"],
+    "Academics & Science": ["Academics & Science"],
     "Business": ["Business"],
     "Community Service": ["Community Service"],
     "Environment": ["Environment"],

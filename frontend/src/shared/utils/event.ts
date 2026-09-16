@@ -77,6 +77,7 @@ export function getUniqueEvents(events: Event[]): Event[] {
  */
 const CATEGORY_TRANSLATION_KEYS: Record<string, string> = {
   "Arts & Culture": "categories.artsAndCulture",
+  "Academics & Science": "categories.academicsAndScience",
   Business: "categories.business",
   "Community Service": "categories.communityService",
   Environment: "categories.environment",

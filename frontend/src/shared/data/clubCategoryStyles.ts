@@ -1,5 +1,5 @@
 /**
- * The nine supported club categories.
+ * The ten supported club categories.
  *
  * Single source of truth for a category's label, card colour, and icon. Colour
  * is semantic and stable: every club in a category renders identically,
@@ -14,6 +14,11 @@ const clubCategoryStyles = {
     label: "Arts & Culture",
     color: "#FFB3C2",
     icon: "/icons/club-categories/arts-culture.svg",
+  },
+  "academics-science": {
+    label: "Academics & Science",
+    color: "#B8D8FF",
+    icon: "/icons/club-categories/academics-science.svg",
   },
   business: {
     label: "Business",

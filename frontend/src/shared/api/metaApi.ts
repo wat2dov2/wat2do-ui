@@ -22,6 +22,7 @@ type AppConstantsPayload = Partial<Record<keyof AppConstants, unknown>>;
 
 const FALLBACK_CATEGORIES = [
   "Arts & Culture",
+  "Academics & Science",
   "Business",
   "Community Service",
   "Environment",
