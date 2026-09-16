@@ -70,6 +70,7 @@ SELECT
         (
             ARRAY[
                 'Arts & Culture',
+                'Academics & Science',
                 'Business',
                 'Community Service',
                 'Environment',
@@ -79,7 +80,7 @@ SELECT
                 'Politics & Advocacy',
                 'Religion & Spirituality'
             ]
-        )[((club_seed.ordinal - 1) % 9) + 1]
+        )[((club_seed.ordinal - 1) % 10) + 1]
     ),
     format(
         'https://wat2do.local/clubs/%s',
@@ -166,6 +167,7 @@ WITH historical_seed AS (
         (
             ARRAY[
                 'Arts & Culture',
+                'Academics & Science',
                 'Business',
                 'Community Service',
                 'Environment',
@@ -175,7 +177,7 @@ WITH historical_seed AS (
                 'Politics & Advocacy',
                 'Religion & Spirituality'
             ]
-        )[((ordinal - 1) % 9) + 1] AS category,
+        )[((ordinal - 1) % 10) + 1] AS category,
         format('https://wat2do.local/seed/events/%s', lpad(ordinal::text, 3, '0')) AS source_url,
         (
             date_trunc('day', now() AT TIME ZONE 'America/Toronto')
