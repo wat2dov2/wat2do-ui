@@ -70,17 +70,15 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v3
         with:
-          enable-cache: true
-          cache-dependency-glob: "backend/requirements*.txt"
+          enable-cache: false
 
       - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
+        working-directory: backend
+        run: uv venv --python 3.12 .venv
 
       - name: Install dependencies
         working-directory: backend
-        run: uv pip install --system -r requirements.txt
+        run: uv pip install --python .venv/bin/python -r requirements.txt
 
       - name: Run scraper
         working-directory: backend
@@ -94,7 +92,7 @@ jobs:
             args+=(--dry-run)
           fi
           set -o pipefail
-          python -u jobs/scrape_directories.py "${args[@]}" \
+          .venv/bin/python -u jobs/scrape_directories.py "${args[@]}" \
             2>&1 | tee logs/directory_scraping.log
 
       - name: Upload logs

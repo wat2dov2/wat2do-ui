@@ -117,14 +117,13 @@ jobs:
 
       - name: Set up Python
         if: steps.validate.outputs.skip != 'true'
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
+        working-directory: backend
+        run: uv venv --python 3.12 .venv
 
       - name: Install dependencies
         if: steps.validate.outputs.skip != 'true'
         working-directory: backend
-        run: uv pip install --system -r requirements.txt
+        run: uv pip install --python .venv/bin/python -r requirements.txt
 
       - name: Process the Instagram account
         id: process
@@ -134,11 +133,11 @@ jobs:
           export EVENT_FEED_REVALIDATION_URL="${FRONTEND_URL%/}/api/revalidate-events"
           if [[ "$NOTIFICATION_JSON" != "null" && -n "$NOTIFICATION_JSON" ]]; then
             echo "Processing raw notification payload..."
-            python jobs/process_notification.py
+            .venv/bin/python jobs/process_notification.py
           else
             test -n "$APIFY_API_TOKEN"
             echo "Processing standard poster_id..."
-            python jobs/scrape.py \
+            .venv/bin/python jobs/scrape.py \
               --username "$POSTER_ID" \
               --cutoff-days "$CUTOFF_DAYS" \
               --dry-run false
