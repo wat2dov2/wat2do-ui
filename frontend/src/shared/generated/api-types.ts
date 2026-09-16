@@ -2580,10 +2580,10 @@ export interface components {
             /** Account Key */
             account_key: string;
             /** Event Id */
-            event_id: number;
+            event_id: number | null;
             /** Position */
             position: number;
-            event: components["schemas"]["EventSummaryResponse"];
+            event: components["schemas"]["EventSummaryResponse"] | null;
             /** Published Asset Url */
             published_asset_url?: string | null;
             /** Published At */

@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useId, type ReactNode } from "react";
 import { Input } from "@/shared/ui/input";
 import { Textarea } from "@/shared/ui/textarea";
 import {
@@ -78,7 +78,8 @@ export function FormInput({
   inputClassName,
 }: FormInputProps) {
   const hasError = touched && error;
-  const id = `field-${name}`;
+  const instanceId = useId();
+  const id = `field-${name}-${instanceId}`;
 
   const inputElement = (
     <Input
@@ -148,7 +149,8 @@ export function FormSelect({
   className,
 }: FormSelectProps) {
   const hasError = touched && error;
-  const id = `field-${name}`;
+  const instanceId = useId();
+  const id = `field-${name}-${instanceId}`;
 
   return (
     <Field className={className}>
@@ -206,7 +208,8 @@ export function FormDateTimePicker({
   className,
 }: FormDateTimePickerProps) {
   const hasError = touched && error;
-  const id = `field-${name}`;
+  const instanceId = useId();
+  const id = `field-${name}-${instanceId}`;
 
   return (
     <Field className={className}>
@@ -248,7 +251,8 @@ export function FormTextarea({
   className,
 }: FormTextareaProps) {
   const hasError = touched && error;
-  const id = `field-${name}`;
+  const instanceId = useId();
+  const id = `field-${name}-${instanceId}`;
 
   return (
     <Field className={className}>

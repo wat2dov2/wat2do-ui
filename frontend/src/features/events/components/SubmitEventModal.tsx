@@ -55,6 +55,8 @@ interface SubmitEventSharedProps {
 }
 
 interface SubmitEventFlowProps extends SubmitEventSharedProps {
+  /** Inactive embedded forms retain drafts without handling clipboard input. */
+  active?: boolean;
   initialData?: EventFormData;
   onUpdate?: (
     eventId: number,
@@ -108,6 +110,7 @@ export function SubmitEventFlow({
   embedded = false,
   showHeading = true,
   showPreview = true,
+  active = true,
   previewBase,
   onPreviewEventChange,
   saveRef,
@@ -205,7 +208,7 @@ export function SubmitEventFlow({
   );
 
   useEffect(() => {
-    if (isParsingImage) return;
+    if (!active || isParsingImage) return;
 
     const handlePaste = async (event: ClipboardEvent) => {
       const items = event.clipboardData?.items;
@@ -223,7 +226,7 @@ export function SubmitEventFlow({
 
     window.addEventListener("paste", handlePaste);
     return () => window.removeEventListener("paste", handlePaste);
-  }, [isParsingImage, handleImageFileParse]);
+  }, [active, isParsingImage, handleImageFileParse]);
 
   const handleSubmitted = useCallback((eventId: number | null) => {
     setSubmitResult({ createdEventId: eventId });

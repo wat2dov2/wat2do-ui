@@ -143,7 +143,7 @@ def test_list_batches_attaches_item_counts_without_hydrating_details(monkeypatch
     assert total == 12
     assert [batch["item_count"] for batch in result] == [2, 1]
     assert [batch["eligible_count"] for batch in result] == [1, 0]
-    assert ("select", ("batch_id,event_id",), {}) in item_calls
+    assert ("select", ("batch_id,event_id,published_asset_url",), {}) in item_calls
     assert ("range", (0, 24), {}) in batch_calls
 
 
@@ -380,6 +380,52 @@ def test_hydration_handles_an_empty_batch(monkeypatch):
     assert batch["new_event_count"] == 0
     assert batch["caption"] == "Empty caption"
     load_events.assert_called_once_with([])
+
+
+@pytest.mark.parametrize("status", ["ready_for_review", "published"])
+def test_deleted_event_does_not_block_batch_and_preserves_published_image(monkeypatch, status):
+    batch = _batch([1], status=status)
+    item = {
+        **batch["items"][0],
+        "event_id": None,
+        "published_asset_url": "https://example.com/published-slide.png",
+    }
+    monkeypatch.setattr(service, "_load_batch_items", lambda *_: [item])
+    load_events = Mock(return_value={})
+    monkeypatch.setattr(service, "_load_slide_events", load_events)
+    monkeypatch.setattr(service, "_count_new_events", lambda _: 0)
+    monkeypatch.setattr(service, "build_caption", lambda *_: "Empty caption")
+
+    service._hydrate_batch(batch)
+
+    load_events.assert_called_once_with([])
+    if status == "published":
+        assert batch["items"] == [{**item, "event": None}]
+    else:
+        assert batch["items"] == []
+
+
+def test_batch_counts_keep_published_images_but_ignore_deleted_draft_events(monkeypatch):
+    batches = [{"id": "draft"}, {"id": "published"}]
+    monkeypatch.setattr(
+        service,
+        "_load_batch_items",
+        lambda *_: [
+            {"batch_id": "draft", "event_id": None, "published_asset_url": None},
+            {
+                "batch_id": "published",
+                "event_id": None,
+                "published_asset_url": "https://example.com/slide.png",
+            },
+        ],
+    )
+    monkeypatch.setattr(service, "_load_slide_events", lambda _: {})
+
+    service._attach_item_counts(batches)
+
+    assert batches[0]["item_count"] == 0
+    assert batches[1]["item_count"] == 1
+    assert all(batch["eligible_count"] == 0 for batch in batches)
 
 
 @pytest.mark.parametrize("status", ["ready_for_review", "failed", "publishing", "published"])
@@ -626,7 +672,7 @@ def test_publish_batch_renders_the_slides_from_live_event_data(monkeypatch):
     service.publish_claimed_batch(batch)
 
     assert ("delete", (), {}) in table_calls
-    assert ("in_", ("event_id", [7, 8]), {}) in table_calls
+    assert ("or_", ("event_id.is.null,event_id.not.in.(7,8)",), {}) in table_calls
     assert ("is_", ("published_at", "null"), {}) in table_calls
     assert load_credentials.call_args.args[0] == "dalhousie"
     assert rendered == [("cover", [7, 8], "dalhousie", "Body", "2026-07-26", 20), 7, 8]

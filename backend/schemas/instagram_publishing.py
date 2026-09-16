@@ -30,12 +30,12 @@ class InstagramPublishItemResponse(BaseModel):
     id: UUID
     batch_id: UUID
     account_key: str
-    event_id: int
+    event_id: int | None
     position: int
     # The slide's live event, hydrated like any other card payload. Nothing
     # about it is stored on the batch: the events table is the source of truth
     # for everything a slide shows.
-    event: EventSummaryResponse
+    event: EventSummaryResponse | None
     # The PNG this slide published as, kept once the carousel is live so the
     # run keeps showing what Instagram got rather than re-rendering the event.
     published_asset_url: str | None = None

@@ -1,3 +1,4 @@
+import { useId } from "react";
 import { useTranslation } from "react-i18next";
 import { LocationPin, DollarSign, Utensils, Plus, Trash2, ExternalLink } from "@/shared/ui/doodle-icons";
 import {
@@ -21,6 +22,7 @@ import { useEventFormContext } from "@/features/events/components/EventForm/Even
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 
 export function EventFormFields() {
+  const registrationId = useId();
   const { getSchoolTimezone } = useSchoolDirectory();
   const { event_categories: eventCategories } = useAppConstants();
   const { t } = useTranslation();
@@ -199,12 +201,12 @@ export function EventFormFields() {
           />
 
           <Field>
-            <FieldLabel htmlFor="registration">
+            <FieldLabel htmlFor={registrationId}>
               {t("forms.registration")}
             </FieldLabel>
             <div className="w-fit">
               <Switch
-                id="registration"
+                id={registrationId}
                 checked={formData.registration}
                 onCheckedChange={(checked) =>
                   updateField("registration", checked)

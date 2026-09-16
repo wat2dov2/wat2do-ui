@@ -1,5 +1,5 @@
-import { useCallback, useMemo, useRef, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useCallback, useMemo, useState, type MutableRefObject } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { Plus } from "@/shared/ui/doodle-icons";
 import { Button } from "@/shared/ui/button";
@@ -19,12 +19,10 @@ import { DrawerBody, FormGrid, Stack } from "@/shared/layout";
 import { toast } from "@/shared/hooks/use-toast";
 import { getApiErrorMessage } from "@/shared/services/apiClient";
 import { queryKeys } from "@/shared/lib/queryKeys";
-import { controlBox } from "@/shared/config/controlBox";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 import { getSchoolColors } from "@/shared/lib/schoolBranding";
-import { SubmitEventFlow } from "@/features/events/components/SubmitEventModal";
+import { InstagramEventEditor } from "./InstagramEventEditor";
 import { fetchEventById, updateEventAPI } from "@/features/events/api/events.api";
-import { eventToFormData, getEventCategory } from "@/shared/utils/event";
 import type { ApiInstagramPublishBatchResponse } from "@/shared/generated";
 import type { Event, EventFormData } from "@/shared/types";
 import {
@@ -65,7 +63,7 @@ export function InstagramCarouselDrawer({
 }: InstagramCarouselDrawerProps) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  const { schoolBySlug, getSchoolTimezone } = useSchoolDirectory();
+  const { schoolBySlug } = useSchoolDirectory();
   const [eventIds, setEventIds] = useState<number[]>(() => carouselEventIds(batch));
   const caption = batch.caption;
   const [captionIntro, setCaptionIntro] = useState(batch.caption_intro);
@@ -85,7 +83,6 @@ export function InstagramCarouselDrawer({
   const captionLength = editable
     ? [captionIntro.trim(), generatedCaption].filter(Boolean).join("\n\n").length
     : caption.length;
-  const slideCount = eventIds.length + 1;
   const currentEventId = slideIndex === COVER_INDEX ? null : (eventIds[slideIndex - 1] ?? null);
   const busy = isSaving || isPublishing || isSavingSlide;
   const school = schoolBySlug.get(batch.school);
@@ -97,6 +94,9 @@ export function InstagramCarouselDrawer({
   // A published run shows the PNGs Instagram was given, not a fresh render of
   // events that have moved on since. Slide 0 is the cover.
   const publishedAssets = useMemo(() => publishedCarouselAssets(batch), [batch]);
+  const previewEventIds: (number | null)[] = publishedAssets.length
+    ? publishedAssets.map(() => null) : [null, ...eventIds];
+  const slideCount = previewEventIds.length;
   const coverTiles = useMemo(
     () =>
       eventIds
@@ -105,39 +105,19 @@ export function InstagramCarouselDrawer({
     [eventIds, slideEvents],
   );
 
-  // Landing on a slide populates the form with that event's details.
-  const { data: currentEvent } = useQuery({
-    queryKey: queryKeys.events.detail(currentEventId ?? 0),
-    queryFn: () => fetchEventById(currentEventId as number),
-    enabled: currentEventId != null,
-    staleTime: controlBox.clientCache.liveEventDataStaleMs,
-  });
-  const editForm = useMemo(
-    () =>
-      currentEvent && currentEvent.id === currentEventId
-        ? eventToFormData({ ...currentEvent, category: getEventCategory(currentEvent) }, getSchoolTimezone(currentEvent.school))
-        : null,
-    [currentEvent, currentEventId, getSchoolTimezone],
-  );
-
-  // The slide is whatever the open form currently says, keystroke for
-  // keystroke - it is the same card either way, just fed from the form instead
-  // of the server until the edit is saved. Tagged with its event so a slide
-  // never shows the one before it.
-  const [liveSlide, setLiveSlide] = useState<{ eventId: number; event: Event } | null>(null);
-  /** The open slide form's save, so this drawer's save covers it too. */
-  const slideSaveRef = useRef<(() => Promise<boolean>) | null>(null);
-  const handlePreviewEventChange = useCallback(
-    (event: Event) => {
-      if (currentEventId == null) return;
-      setLiveSlide({ eventId: currentEventId, event });
-    },
-    [currentEventId],
-  );
-
-  const savedSlideEvent = currentEventId == null ? null : (slideEvents[currentEventId] ?? null);
-  const previewedSlideEvent =
-    liveSlide && liveSlide.eventId === currentEventId ? liveSlide.event : savedSlideEvent;
+  const [editors, setEditors] = useState<Array<{
+    eventId: number;
+    saveRef: MutableRefObject<(() => Promise<boolean>) | null>;
+  }>>([]);
+  const [liveSlides, setLiveSlides] = useState<Record<number, Event>>({});
+  const openEditor = useCallback((eventId: number | null) => {
+    if (eventId == null) return;
+    setEditors((current) => current.some((editor) => editor.eventId === eventId)
+      ? current : [...current, { eventId, saveRef: { current: null } }]);
+  }, []);
+  const handlePreviewEventChange = useCallback((eventId: number, event: Event) => {
+    setLiveSlides((current) => ({ ...current, [eventId]: event }));
+  }, []);
 
   /** Saves the carousel the editor is holding, with the given slides on it. */
   const persistDraft = useCallback(
@@ -166,20 +146,21 @@ export function InstagramCarouselDrawer({
     parsedEventId > 0 &&
     !eventIds.includes(parsedEventId);
 
-  /** Adds an existing event to this carousel and saves the new order immediately. */
-  const handleAddEventId = useCallback(
-    async () => {
-      if (!canAddEventId) return;
-
-      const saved = await persistDraft([...eventIds, parsedEventId]);
-      const savedEventIds = carouselEventIds(saved);
-      setEventIds(savedEventIds);
-      setSlideIndex(savedEventIds.indexOf(parsedEventId) + 1);
+  /** Validate the event exists; keep the carousel change local until Save. */
+  const handleAddEventId = useCallback(async () => {
+    if (!canAddEventId || busy) return;
+    setIsSavingSlide(true);
+    try {
+      await fetchEventById(parsedEventId);
+      setEventIds([...eventIds, parsedEventId]);
+      openEditor(parsedEventId);
+      setSlideIndex(eventIds.length + 1);
       setAddingEvent(false);
       setEventIdInput("");
-    },
-    [canAddEventId, eventIds, parsedEventId, persistDraft],
-  );
+    } finally {
+      setIsSavingSlide(false);
+    }
+  }, [canAddEventId, busy, eventIds, parsedEventId, openEditor]);
 
   const addEventId = useCallback(() => {
     handleAddEventId().catch((error) => {
@@ -191,50 +172,34 @@ export function InstagramCarouselDrawer({
     });
   }, [handleAddEventId, t]);
 
-  /** Takes the event off this carousel. The event itself is untouched. */
-  const handleRemoveSlide = useCallback(async (removedEventId: number) => {
+  /** Removing a slide only changes this unsaved carousel. */
+  const handleRemoveSlide = useCallback((removedEventId: number) => {
     if (!editable || busy || eventIds.length <= 1) return;
-    const previousIndex = slideIndex;
     const next = eventIds.filter((eventId) => eventId !== removedEventId);
     setEventIds(next);
-    setSlideIndex(currentEventId == null || currentEventId === removedEventId ? COVER_INDEX : next.indexOf(currentEventId) + 1);
+    setSlideIndex(currentEventId == null || currentEventId === removedEventId
+      ? COVER_INDEX : next.indexOf(currentEventId) + 1);
+    setEditors((current) => current.filter((editor) => editor.eventId !== removedEventId));
+  }, [currentEventId, eventIds, editable, busy]);
+
+  /** Save visited forms before saving the carousel, including offscreen edits. */
+  const handleSaveDraft = useCallback(async () => {
     setIsSavingSlide(true);
     try {
-      const saved = await persistDraft(next);
+      for (const editor of editors) {
+        if (editor.saveRef.current && !(await editor.saveRef.current())) {
+          setAddingEvent(false);
+          setSlideIndex(eventIds.indexOf(editor.eventId) + 1);
+          return null;
+        }
+      }
+      const saved = await persistDraft(eventIds);
       setEventIds(carouselEventIds(saved));
-    } catch (error) {
-      setEventIds(eventIds);
-      setSlideIndex(previousIndex);
-      toast({ title: t("admin.instagramPublishing.saveError"), description: getApiErrorMessage(error), variant: "destructive" });
+      return saved;
     } finally {
       setIsSavingSlide(false);
     }
-  }, [currentEventId, eventIds, persistDraft, t, editable, busy, slideIndex]);
-
-  /**
-   * Saves everything the editor is holding: the open slide's event, then the
-   * carousel itself.
-   *
-   * The event form has no save button of its own here - one screen, one save -
-   * so a slide edited and left on screen is part of this draft. A form that
-   * refuses to save (missing a required field) stops the whole save, with its
-   * own errors already on screen.
-   */
-  const handleSaveDraft = useCallback(async (nextEventIds = eventIds) => {
-    const saveSlideEdit = slideSaveRef.current;
-    if (saveSlideEdit) {
-      setIsSavingSlide(true);
-      try {
-        if (!(await saveSlideEdit())) return null;
-      } finally {
-        setIsSavingSlide(false);
-      }
-    }
-
-    const saved = await persistDraft(nextEventIds);
-    setEventIds(carouselEventIds(saved));
-    return saved;
-  }, [eventIds, persistDraft]);
+  }, [editors, eventIds, persistDraft]);
 
   const saveDraft = useCallback(() => {
     handleSaveDraft().catch((error) => {
@@ -260,46 +225,23 @@ export function InstagramCarouselDrawer({
 
   const canSave = editable && !busy && eventIds.length > 0 && caption.trim().length > 0;
 
-  const startAddingEvent = async () => {
-    if (busy || addingEvent) return;
-    setIsSavingSlide(true);
-    try {
-      if (slideSaveRef.current && !(await slideSaveRef.current())) return;
-      setAddingEvent(true);
-    } catch (error) {
-      toast({ title: t("admin.instagramPublishing.saveError"), description: getApiErrorMessage(error), variant: "destructive" });
-    } finally {
-      setIsSavingSlide(false);
-    }
+  const startAddingEvent = () => {
+    if (!busy) setAddingEvent(true);
   };
 
-  const selectSlide = async (index: number) => {
-    if (busy || index === slideIndex) return;
-    try {
-      if (editable) {
-        setIsSavingSlide(true);
-        if (slideSaveRef.current && !(await slideSaveRef.current())) return;
-        if (coverBody !== batch.cover_body) await persistDraft(eventIds);
-      }
-      setAddingEvent(false);
-      setSlideIndex(index);
-    } catch (error) {
-      toast({ title: t("admin.instagramPublishing.saveError"), description: getApiErrorMessage(error), variant: "destructive" });
-    } finally {
-      setIsSavingSlide(false);
-    }
+  const selectSlide = (index: number) => {
+    if (busy) return;
+    setAddingEvent(false);
+    if (editable) openEditor(index === COVER_INDEX ? null : eventIds[index - 1] ?? null);
+    setSlideIndex(index);
   };
 
-  const reorderSlide = async (sourceId: number, position: number) => {
+  const reorderSlide = (sourceId: number, position: number) => {
     if (!editable || busy || !Number.isSafeInteger(position) || position < 1 || position > eventIds.length || !eventIds.includes(sourceId)) return;
     const next = eventIds.filter((id) => id !== sourceId);
     next.splice(position - 1, 0, sourceId);
-    try {
-      if (!(await handleSaveDraft(next))) return;
-      setSlideIndex(currentEventId == null ? COVER_INDEX : next.indexOf(currentEventId) + 1);
-    } catch (error) {
-      toast({ title: t("admin.instagramPublishing.saveError"), description: getApiErrorMessage(error), variant: "destructive" });
-    }
+    setEventIds(next);
+    setSlideIndex(currentEventId == null ? COVER_INDEX : next.indexOf(currentEventId) + 1);
   };
 
   return (
@@ -315,9 +257,9 @@ export function InstagramCarouselDrawer({
         <DrawerBody scroll="columns">
           <FormGrid columns="split">
             <FormGrid columns="gallery">
-              {[null, ...eventIds].map((eventId, index) => (
+              {previewEventIds.map((eventId, index) => (
               <CarouselSlidePreview
-                key={eventId ?? "cover"}
+                key={publishedAssets.length ? `published-${index}` : eventId ?? "cover"}
                 selected={slideIndex === index}
                 onSelect={() => void selectSlide(index)}
                 disabled={busy}
@@ -326,7 +268,7 @@ export function InstagramCarouselDrawer({
                 onPositionChange={editable && eventId != null ? (position) => void reorderSlide(eventId, position) : undefined}
                 slideIndex={index}
                 slideCount={slideCount}
-                event={eventId === currentEventId ? previewedSlideEvent : eventId == null ? null : slideEvents[eventId] ?? null}
+                event={eventId == null ? null : liveSlides[eventId] ?? slideEvents[eventId] ?? null}
                 coverColors={coverColors}
                 cover={{
                   language: school?.language ?? "en",
@@ -405,23 +347,18 @@ export function InstagramCarouselDrawer({
                     onChange={(event) => setCoverBody(event.target.value)}
                   />
                 </Stack>
-            ) : editForm ? (
-                    <SubmitEventFlow
-                      key={currentEventId}
-                      canCreateEvents
-                      embedded
-                      isEditMode
-                      showHeading={false}
-                      showPreview={false}
-                      editEventId={currentEventId}
-                      initialData={editForm}
-                      onUpdate={handleUpdateEvent}
-                      previewBase={savedSlideEvent}
-                      onPreviewEventChange={handlePreviewEventChange}
-                      saveRef={slideSaveRef}
-                      showSubmit={false}
-                    />
             ) : null}
+
+            {editable && editors.map(({ eventId, saveRef }) => (
+              <InstagramEventEditor
+                key={eventId}
+                eventId={eventId}
+                active={!addingEvent && currentEventId === eventId}
+                saveRef={saveRef}
+                onUpdate={handleUpdateEvent}
+                onPreviewEventChange={handlePreviewEventChange}
+              />
+            ))}
 
             {slideIndex === COVER_INDEX && !addingEvent && <Stack gap={2}>
               <Label htmlFor="instagram-caption-intro">{t("admin.instagramPublishing.captionIntro")}</Label>

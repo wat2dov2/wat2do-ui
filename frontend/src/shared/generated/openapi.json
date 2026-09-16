@@ -9356,7 +9356,14 @@
             "title": "Account Key"
           },
           "event_id": {
-            "type": "integer",
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Event Id"
           },
           "position": {
@@ -9364,7 +9371,14 @@
             "title": "Position"
           },
           "event": {
-            "$ref": "#/components/schemas/EventSummaryResponse"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EventSummaryResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "published_asset_url": {
             "anyOf": [

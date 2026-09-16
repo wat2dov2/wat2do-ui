@@ -1117,6 +1117,8 @@ test.describe("Admin Instagram publishing", () => {
     let eventUpdateCount = 0;
     const editedClubIds: number[] = [];
     let currentBatch = initialBatch;
+    let publishedBatch: Record<string, unknown> | null = null;
+    let publishedVersion: number | null = null;
 
     await mockApi(page, next, url => apiPath(url) === "/instagram-publishing/batches", async () => {
       return ({
@@ -1134,12 +1136,6 @@ test.describe("Admin Instagram publishing", () => {
     await mockApi(page, next, url => apiPath(url) === `/instagram-publishing/batches/${batchBase.id}`, async (request) => {
         if (request.method === "PATCH") {
           const requestBody = (await request.json()) as { event_ids: number[]; caption_intro: string };
-          if (requestBody.event_ids.includes(3)) {
-            return {
-              status: 400,
-              json: { detail: "Cannot add or save event IDs: 3. Each event needs a poster image and an upcoming or ongoing occurrence." },
-            };
-          }
           patchCount += 1;
           savedEventIds = requestBody.event_ids;
           currentBatch = {
@@ -1158,13 +1154,33 @@ test.describe("Admin Instagram publishing", () => {
         return ({
           status: 200,
           contentType: "application/json",
-          body: JSON.stringify(currentBatch),
+          body: JSON.stringify(publishedBatch ?? currentBatch),
         });
       });
+    await mockApi(page, next, url => apiPath(url) === `/instagram-publishing/batches/${batchBase.id}/publish`, async request => {
+      const body = await request.json() as { version: number };
+      publishedVersion = body.version;
+      expect(patchCount).toBe(2);
+      expect(body.version).toBe(currentBatch.version);
+      publishedBatch = {
+        ...currentBatch,
+        status: "published",
+        published_cover_url: "https://example.com/published-cover.png",
+        items: currentBatch.items.map((item, index) => ({
+          ...item,
+          event_id: index === 0 ? null : item.event_id,
+          event: index === 0 ? null : item.event,
+          published_asset_url: `https://example.com/published-${index}.png`,
+        })),
+      };
+      return { json: publishedBatch };
+    });
     await mockApi(page, next, url => ["/events/1", "/events/2"].some(path => path === apiPath(url)), async (request) => {
       if (request.method !== "GET") {
         eventUpdateCount += 1;
-        const body = await request.json() as { club_id: number };
+        const body = await request.json() as { club_id: number; title?: string };
+        const editedEvent = apiPath(new URL(request.url)) === "/events/1" ? firstEvent : secondEvent;
+        if (body.title) editedEvent.title = body.title;
         editedClubIds.push(body.club_id);
       }
       const event = apiPath(new URL(request.url)) === "/events/1" ? firstEvent : secondEvent;
@@ -1195,40 +1211,52 @@ test.describe("Admin Instagram publishing", () => {
 
     await eventIdInput.fill("1");
     await expect(submitEventId).toBeDisabled();
-    await eventIdInput.fill("3");
-    await submitEventId.click();
-    await expect(page.getByText(/Cannot add or save event IDs: 3/)).toBeVisible();
-    await expect(eventIdInput).toHaveValue("3");
-    await expect(drawer.locator("figure")).toHaveCount(2);
     await eventIdInput.fill("2");
     await expect(submitEventId).toBeEnabled();
     await submitEventId.click();
 
-    await expect.poll(() => savedEventIds).toEqual([1, 2]);
+    expect(savedEventIds).toBeNull();
     await expect(drawer.locator("figure")).toHaveCount(3);
     await expect(drawer.getByText("Second Carousel Event").first()).toBeVisible();
-    expect(currentBatch.caption_intro).toBe("Your weekend plans");
+    expect(currentBatch.caption_intro).toBe("");
     await expect(drawer.getByLabel("Saved caption preview (event details appended automatically)", { exact: true })).toHaveCount(0);
 
     const firstPreview = drawer.locator("figure").filter({ hasText: "First Carousel Event" });
     await firstPreview.click();
     await expect(firstPreview).toHaveAttribute("aria-pressed", "true");
     await expect(drawer.getByRole("textbox", { name: "Club *", exact: true })).toHaveValue(clubName);
-    expect(patchCount).toBe(1);
+    expect(patchCount).toBe(0);
     expect(eventUpdateCount).toBe(0);
 
     const firstPosition = drawer.getByRole("textbox", { name: "Slide 1 of 2", exact: true });
     await firstPosition.fill("2");
     await firstPosition.press("Enter");
-    await expect.poll(() => savedEventIds).toEqual([2, 1]);
+    expect(savedEventIds).toBeNull();
 
     await drawer.getByRole("textbox", { name: "Club *", exact: true })
       .fill(school === "western" ? "@westerntechclub" : "  uw tech club  ");
     await drawer.getByRole("textbox", { name: /Event Title/ }).fill("Edited before adding another event");
     await drawer.getByRole("button", { name: "Add event ID" }).click();
     await expect(eventIdInput).toBeVisible();
+    expect(eventUpdateCount).toBe(0);
+    expect(patchCount).toBe(0);
+    await addEventForm.getByRole("button", { name: "Cancel", exact: true }).click();
+    const secondPreview = drawer.locator("figure").filter({ hasText: "Second Carousel Event" });
+    await secondPreview.click();
+    await expect(drawer.getByRole("textbox", { name: /Event Title/ })).toHaveValue("Second Carousel Event");
+    await drawer.locator("figure").filter({ hasText: "Edited before adding another event" }).click();
+    await expect(drawer.getByRole("textbox", { name: /Event Title/ })).toHaveValue("Edited before adding another event");
+    expect(eventUpdateCount).toBe(0);
+    await drawer.getByRole("button", { name: "Save draft", exact: true }).click();
     await expect.poll(() => eventUpdateCount).toBe(1);
+    await expect.poll(() => savedEventIds).toEqual([2, 1]);
+    expect(patchCount).toBe(1);
+    expect(currentBatch.caption_intro).toBe("Your weekend plans");
     expect(editedClubIds).toEqual([1]);
+    await drawer.getByRole("button", { name: "Publish to Instagram", exact: true }).click();
+    await expect.poll(() => publishedVersion !== null && publishedVersion === currentBatch.version).toBe(true);
+    await expect(drawer.locator("figure")).toHaveCount(3);
+    await expect(drawer.locator('img[src="https://example.com/published-0.png"]')).toBeVisible();
   });
   }
 });
@@ -3913,9 +3941,9 @@ test.describe("Standalone submission pages", () => {
     await page.locator('input[type="file"]').setInputFiles({
       name: "event.png", mimeType: "image/png", buffer: Buffer.from("event-image"),
     });
-    await expect(page.locator("#field-title")).toBeVisible();
-    await page.locator("#field-title").fill("Manually entered event");
-    await expect(page.locator("#field-title")).toHaveValue("Manually entered event");
+    await expect(page.getByRole("textbox", { name: /Event Title/ })).toBeVisible();
+    await page.getByRole("textbox", { name: /Event Title/ }).fill("Manually entered event");
+    await expect(page.getByRole("textbox", { name: /Event Title/ })).toHaveValue("Manually entered event");
   });
 
   test("dismissing filters with Escape preserves the selected date", async ({ page }) => {
@@ -4016,7 +4044,7 @@ test.describe("Standalone submission pages", () => {
       buffer: Buffer.from("event-image"),
     });
 
-    await expect(page.locator("#field-title")).toHaveValue(
+    await expect(page.getByRole("textbox", { name: /Event Title/ })).toHaveValue(
       "Public Flyer Event",
     );
     const posterPreview = page.getByRole("img", {

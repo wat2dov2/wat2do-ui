@@ -251,12 +251,13 @@ def publish_claimed_batch(batch: dict[str, Any]) -> None:
             raise ValidationError("Instagram account credentials no longer match this batch")
         # The claim locks out draft edits. Remove filtered, unpublished entries
         # so history contains exactly the slides that will be rendered.
+        selected_ids = ",".join(str(int(item["event_id"])) for item in _ordered_items(batch))
         (
             get_sb()
             .table(INSTAGRAM_PUBLISH_ITEMS)
             .delete()
             .eq("batch_id", str(batch_id))
-            .not_.in_("event_id", [int(item["event_id"]) for item in _ordered_items(batch)])
+            .or_(f"event_id.is.null,event_id.not.in.({selected_ids})")
             .is_("published_at", "null")
             .execute()
         )
@@ -607,7 +608,9 @@ def _count_new_events(batch: dict[str, Any]) -> int:
     """
     window_end = _parse_datetime(batch["window_end"])
     window_start = window_end - timedelta(hours=_CONTROL.new_event_window_hours)
-    carousel_event_ids = {int(item["event_id"]) for item in batch.get("items", [])}
+    carousel_event_ids = {
+        int(item["event_id"]) for item in batch.get("items", []) if item.get("event_id") is not None
+    }
 
     recent_count = _count_active_events_added_between(
         school=batch["school"],
@@ -673,7 +676,10 @@ def _hydrate_batch(batch: dict[str, Any]) -> None:
     """Join current event data to the detail response's ordered slides."""
     items = _load_batch_items([str(batch["id"])], "*")
     with ThreadPoolExecutor(max_workers=2) as pool:
-        events_future = pool.submit(_load_slide_events, [int(item["event_id"]) for item in items])
+        events_future = pool.submit(
+            _load_slide_events,
+            [int(item["event_id"]) for item in items if item["event_id"] is not None],
+        )
         count_future = pool.submit(_count_new_events, batch)
         slide_events = events_future.result()
         batch["new_event_count"] = count_future.result()
@@ -682,8 +688,10 @@ def _hydrate_batch(batch: dict[str, Any]) -> None:
     editable = batch["status"] in (INSTAGRAM_BATCH_READY_FOR_REVIEW, INSTAGRAM_BATCH_FAILED)
     batch["items"] = []
     for item in items:
-        event = slide_events.get(int(item["event_id"]))
-        if event is not None and (not editable or _is_publishable_event(event, now)):
+        event = slide_events.get(item["event_id"])
+        if (event is not None and (not editable or _is_publishable_event(event, now))) or (
+            batch["status"] == INSTAGRAM_BATCH_PUBLISHED and item.get("published_asset_url")
+        ):
             batch["items"].append({**item, "event": event})
     if editable:
         batch["caption"] = build_caption(
@@ -697,15 +705,20 @@ def _attach_item_counts(batches: list[dict[str, Any]]) -> None:
     """Attach the only item data needed by the paginated batch list."""
     if not batches:
         return
-    items = _load_batch_items([str(batch["id"]) for batch in batches], "batch_id,event_id")
+    items = _load_batch_items(
+        [str(batch["id"]) for batch in batches], "batch_id,event_id,published_asset_url"
+    )
 
     counts: dict[str, int] = defaultdict(int)
     eligible_counts: dict[str, int] = defaultdict(int)
-    events = _load_slide_events(list({int(item["event_id"]) for item in items}))
+    events = _load_slide_events(
+        list({int(item["event_id"]) for item in items if item["event_id"] is not None})
+    )
     now = datetime.now(timezone.utc)
     for item in items:
-        counts[str(item["batch_id"])] += 1
-        event = events.get(int(item["event_id"]))
+        if item["event_id"] is not None or item.get("published_asset_url"):
+            counts[str(item["batch_id"])] += 1
+        event = events.get(item["event_id"])
         if event is not None and _is_publishable_event(event, now):
             eligible_counts[str(item["batch_id"])] += 1
     for batch in batches:

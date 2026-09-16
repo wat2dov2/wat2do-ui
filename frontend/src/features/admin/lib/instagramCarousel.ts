@@ -19,13 +19,14 @@ function carouselItems(batch: Batch): Batch["items"] {
 }
 
 export function carouselEventIds(batch: Batch): number[] {
-  return carouselItems(batch).map((item) => Number(item.event_id));
+  return carouselItems(batch).flatMap((item) => item.event_id == null ? [] : [item.event_id]);
 }
 
 /** Slide events by event id, as the backend hydrated them onto the batch. */
 export function carouselSlideEvents(batch: Batch): Record<number, Event> {
   return Object.fromEntries(
-    carouselItems(batch).map((item) => [Number(item.event_id), item.event]),
+    carouselItems(batch).flatMap((item) => item.event_id == null || !item.event
+      ? [] : [[item.event_id, item.event]]),
   );
 }
 
