@@ -42,6 +42,7 @@ PROFILE_SKIP = frozenset(
         "p",
         "privacy",
         "reel",
+        "reels",
         "stories",
         "terms",
     }

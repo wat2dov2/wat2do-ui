@@ -66,7 +66,7 @@ def canon_ig(url: str | None) -> tuple[str | None, str | None]:
     if not m:
         return None, None
     slug = m.group(1).strip("/")
-    if not slug or slug in {"p", "reel", "explore", "accounts", "stories"}:
+    if not slug or slug in {"p", "reel", "reels", "explore", "accounts", "stories"}:
         return None, None
     return f"https://www.instagram.com/{slug}/", f"@{slug}"
 

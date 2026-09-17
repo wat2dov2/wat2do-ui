@@ -24,6 +24,10 @@ export function clearAccessToken(): void {
   accessToken = null;
 }
 
+export function isAuthSessionInvalid(): boolean {
+  return authSessionInvalid;
+}
+
 class ApiError extends Error {
   status: number;
   body: unknown;

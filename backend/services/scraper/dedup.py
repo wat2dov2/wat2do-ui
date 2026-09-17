@@ -688,8 +688,8 @@ def existing_urls(urls: set[str]) -> set[str]:
     return seen
 
 
-# Captures the shortcode from /p/, /reel/, or /tv/ paths (query/fragment-safe).
-_SHORTCODE_RE = re.compile(r"/(?:p|reel|tv)/([A-Za-z0-9_-]+)")
+# Captures the shortcode from /p/, /reel/, /reels/, or /tv/ paths (query/fragment-safe).
+_SHORTCODE_RE = re.compile(r"/(?:p|reel|reels|tv)/([A-Za-z0-9_-]+)")
 
 
 def _extract_shortcode(source_url: str) -> str | None:

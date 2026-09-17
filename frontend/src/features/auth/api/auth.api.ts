@@ -6,7 +6,7 @@
  * Refresh token is in an httpOnly cookie (managed by the backend).
  */
 
-import { api, isApiError, refreshAccessToken } from "@/shared/services/apiClient";
+import { api, isApiError, refreshAccessToken, isAuthSessionInvalid } from "@/shared/services/apiClient";
 import { API_BASE_URL } from "@/shared/config/api";
 import { DEFAULT_SCHOOL } from "@/shared/constants/schools";
 import {
@@ -193,6 +193,8 @@ export function getLastProfileFetchAt(): number {
 }
 
 export async function fetchProfileAPI(): Promise<UserProfile | null> {
+  if (isAuthSessionInvalid()) return null;
+
   try {
     // Fetch profile and club ownership in parallel.
     // Club fetch failures degrade gracefully to hasClub=false.

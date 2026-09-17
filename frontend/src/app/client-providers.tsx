@@ -50,7 +50,7 @@ async function bootstrapAuth(): Promise<boolean> {
     const ok = await Promise.race([
       initializeAuth(),
       new Promise<boolean>((_, reject) =>
-        setTimeout(() => reject(new Error("initializeAuth timed out")), 5000),
+        setTimeout(() => reject(new Error("initializeAuth timed out")), 10000),
       ),
     ]);
     if (ok) {

@@ -16,7 +16,7 @@ log = logging.getLogger(__name__)
 
 _RECENT_POST_WINDOW = timedelta(minutes=controlbox.scraping.single_user_recent_post_minutes)
 _INSTAGRAM_POST_HOSTS = {"instagram.com", "www.instagram.com"}
-_INSTAGRAM_POST_PATH_PREFIXES = {"p", "reel", "tv"}
+_INSTAGRAM_POST_PATH_PREFIXES = {"p", "reel", "reels", "tv"}
 
 
 class SchoolResolutionError(ValueError):
@@ -70,11 +70,9 @@ def is_exact_post_url_target(target: str) -> bool:
             and parsed.port is None
             and parsed.username is None
             and parsed.password is None
-            and not parsed.query
-            and not parsed.fragment
-            and len(path_parts) == 2
-            and path_parts[0] in _INSTAGRAM_POST_PATH_PREFIXES
-            and _extract_shortcode(target) == path_parts[1]
+            and len(path_parts) >= 2
+            and path_parts[-2] in _INSTAGRAM_POST_PATH_PREFIXES
+            and _extract_shortcode(target) == path_parts[-1]
         )
     except ValueError:
         return False
@@ -104,7 +102,7 @@ def filter_valid_posts(posts: list[dict]) -> list[dict]:
         if not post.get("error")
         and not post.get("errorDescription")
         and post.get("url")
-        and any(x in (post.get("url") or "") for x in ("/p/", "/reel/", "/tv/"))
+        and any(x in (post.get("url") or "") for x in ("/p/", "/reel/", "/reels/", "/tv/"))
     ]
 
 

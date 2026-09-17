@@ -105,7 +105,7 @@ def _canon_ig(url_or_handle: str | None) -> tuple[str | None, str | None]:
     match = re.search(r"instagram\.com/([A-Za-z0-9_.]+)", text)
     handle = match.group(1) if match else text.lstrip("@")
     handle = handle.strip("/").split("?")[0].lower()
-    if not handle or handle in {"p", "reel", "explore", "accounts", "stories"}:
+    if not handle or handle in {"p", "reel", "reels", "explore", "accounts", "stories"}:
         return None, None
     return f"https://www.instagram.com/{handle}/", f"@{handle}"
 
