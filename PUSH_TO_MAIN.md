@@ -139,16 +139,6 @@ Follow the repo's existing commit message style (`git log -5`).
 
 ## 7. Push
 
-Before pushing, scan the commits that will be introduced with Gitleaks 8.30.1:
-
-```bash
-gitleaks git . --log-opts="origin/main..HEAD" --redact
-```
-
-CI also scans a clean archive of the tracked files and blocks deployment on any finding.
-Never print secret values while investigating a finding.
-Revoke exposed credentials before cleaning history.
-
 ```bash
 git push origin main
 ```
