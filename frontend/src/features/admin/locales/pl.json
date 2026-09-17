@@ -1,5 +1,8 @@
 {
   "admin": {
+    "resolveReport": "Rozwiąż",
+    "dismissReport": "Odrzuć",
+    "reportUpdateFailed": "Nie udało się zaktualizować zgłoszenia. Spróbuj ponownie.",
     "eventReport": "Zgłoszenie wydarzenia",
     "pendingCount": "{{label}}: {{value}} oczekujących",
     "pendingCountsError": "Nie udało się wczytać niektórych liczników oczekujących spraw.",

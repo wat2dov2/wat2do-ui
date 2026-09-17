@@ -1,5 +1,6 @@
 {
   "events": {
+    "slideAddedAt": "Idinagdag noong {{date}}",
     "minimumGoing": "Minimum na dadalo",
     "eventTitle": "Pamagat ng Kaganapan",
     "loadFailed": "Nabigong i-load ang mga kaganapan. Pakisubukang muli.",

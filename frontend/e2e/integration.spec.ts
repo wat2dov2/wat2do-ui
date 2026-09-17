@@ -248,9 +248,9 @@ test.describe("School timezone rendering", () => {
     } }));
     await mockApi(page, next, url => apiPath(url) === "/events/501", async () => ({ json: event }));
     await page.goto(BASE);
-    await expect(page.getByText(/11:30.*PM.*EST/).first()).toBeVisible();
+    await expect(page.getByText(/11:30.*PM/).first()).toBeVisible();
     await page.goto(`${BASE}/events/501`);
-    await expect(page.getByText(/11:30.*PM.*EST/).first()).toBeVisible();
+    await expect(page.getByText(/11:30.*PM/).first()).toBeVisible();
   });
 });
 
@@ -950,6 +950,41 @@ test.describe("Admin diagnostics", () => {
     expect(requests).toHaveLength(3);
   });
 
+  test("report review clears pending badges, supports unavailable events, and keeps failed updates retryable", async ({ page, next }) => {
+    await seedAuthenticatedSession(page, next);
+    let reports = [
+      { id: "report-1", event_id: 1, event_title: "Reported event", reason: "Wrong time", school: "uwaterloo", status: "pending", reported_at: new Date().toISOString() },
+      { id: "report-2", event_id: 2, event_title: null, reason: "Removed event", school: "uwaterloo", status: "pending", reported_at: new Date().toISOString() },
+    ];
+    let failUpdate = true;
+    const transitions: unknown[] = [];
+    await mockApi(page, next, url => apiPath(url) === "/reports", async () => ({ json: {
+      items: reports, total: reports.length, page: 1, page_size: 20, total_pages: reports.length ? 1 : 0,
+    } }));
+    await mockApi(page, next, url => /^\/reports\/report-/.test(apiPath(url)), async request => {
+      if (failUpdate) return { status: 500, json: { detail: "Temporary failure" } };
+      const body = await request.json();
+      transitions.push(body);
+      reports = reports.filter(report => !request.url.endsWith(report.id));
+      return { json: body };
+    });
+    await page.goto(`${BASE}/admin/events`);
+    await page.getByRole("tab", { name: "Event reports 2", exact: true }).click();
+    const firstRow = page.getByRole("row").filter({ hasText: "Wrong time" });
+    await firstRow.getByRole("button", { name: "Resolve", exact: true }).click();
+    await expect(page.getByRole("alert").filter({ hasText: "Could not update the report" })).toBeVisible();
+    await expect(firstRow).toBeVisible();
+    failUpdate = false;
+    await firstRow.getByRole("button", { name: "Resolve", exact: true }).click();
+    await expect(page.getByRole("tab", { name: "Event reports 1", exact: true })).toBeVisible();
+    const lastRow = page.getByRole("row").filter({ hasText: "Removed event" });
+    await expect(lastRow.getByRole("button", { name: "View", exact: true })).toBeDisabled();
+    await lastRow.getByRole("button", { name: "Dismiss", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "No pending event reports", exact: true })).toBeVisible();
+    await expect(page.getByRole("tab", { name: "Event reports", exact: true })).toBeVisible();
+    expect(transitions).toEqual([{ status: "resolved" }, { status: "dismissed" }]);
+  });
+
   test("admin cards count all pending queues and replace recent activity", async ({ page, next }) => {
     await seedAuthenticatedSession(page, next);
     let releaseSubmissions = () => {};
@@ -1287,7 +1322,7 @@ test.describe("Admin Instagram publishing", () => {
     const firstPreview = drawer.locator("figure").filter({ hasText: "First Carousel Event" });
     if (school === "ulaval") {
       await expect(firstPreview.getByText("Inscription", { exact: true })).toBeVisible();
-      await expect(firstPreview.getByText("Demain", { exact: true })).toBeVisible();
+      await expect(firstPreview.getByText(/^Ajouté le /)).toBeVisible();
       await expect(drawer.getByRole("button", { name: "Save draft", exact: true })).toBeVisible();
     }
     await firstPreview.click();

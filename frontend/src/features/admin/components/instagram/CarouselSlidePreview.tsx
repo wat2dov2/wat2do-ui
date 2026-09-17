@@ -1,20 +1,20 @@
-import { I18nextProvider, useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { X } from "@/shared/ui/doodle-icons";
 import { cn } from "@/shared/lib/utils";
-import { CoverSlideTemplate } from "@/features/admin/components/instagram/slides/SlideTemplates";
+import { CoverSlideTemplate, EventSlideTemplate } from "@/features/admin/components/instagram/slides/SlideTemplates";
 import {
   SLIDE_HEIGHT,
   SLIDE_WIDTH,
   buildCoverSlideModel,
-  getInstagramSlideLocale,
+  buildEventSlideModel,
+  type EventSlideModel,
 } from "@/features/admin/lib/instagramSlides";
-import { EventCard } from "@/features/events/components/EventCard";
+import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 import type { Event } from "@/shared/types";
 import type { SchoolColors } from "@/shared/lib/schoolBranding";
-import type { i18n } from "i18next";
 
 interface CarouselSlidePreviewProps {
   onRemove?: () => void;
@@ -43,16 +43,7 @@ const COVER_INDEX = 0;
 /** On-screen width of the preview column, matching a feed card. */
 const PREVIEW_WIDTH = 288;
 
-/**
- * What the admin is looking at on a given slide.
- *
- * Once the run is live this is simply the image that was posted. Until then an
- * event slide previews as the app's own grid card, rendered inert: the point
- * of this screen is checking which events are on the carousel and whether their
- * details are right, and the card is the maintained way to show one. The published
- * 1080x1350 image is rendered from the same event data at publish time by
- * `SlideTemplates`, which satori rasterizes server-side.
- */
+/** Drafts preview the exact published template; published assets remain historical. */
 export function CarouselSlidePreview({
   slideIndex,
   slideCount,
@@ -68,23 +59,28 @@ export function CarouselSlidePreview({
   removeDisabled,
 }: CarouselSlidePreviewProps) {
   const { t } = useTranslation();
+  const { getSchoolTimezone } = useSchoolDirectory();
   const isCover = slideIndex === COVER_INDEX;
   const previewRef = useRef<HTMLDivElement>(null);
   const [previewWidth, setPreviewWidth] = useState(PREVIEW_WIDTH);
   const previewScale = previewWidth / SLIDE_WIDTH;
-  const [localeResult, setLocaleResult] = useState<{ language: typeof cover.language; locale: i18n | null } | null>(null);
-  const slideLocale = localeResult?.language === cover.language ? localeResult.locale : null;
-  const localeError = localeResult?.language === cover.language && !localeResult.locale;
+  const [modelResult, setModelResult] = useState<{
+    event: Event; language: typeof cover.language; model: EventSlideModel | null;
+  } | null>(null);
+  const currentResult = modelResult?.event === event && modelResult?.language === cover.language ? modelResult : null;
+  const slideModel = currentResult?.model;
+  const modelError = currentResult && !slideModel;
 
   useEffect(() => {
-    if (isCover || publishedAssetUrl) return;
+    if (isCover || publishedAssetUrl || !event) return;
     let active = true;
-    getInstagramSlideLocale(cover.language).then(
-      locale => { if (active) setLocaleResult({ language: cover.language, locale }); },
-      () => { if (active) setLocaleResult({ language: cover.language, locale: null }); },
+    // Publishing uses the first stored occurrence, including for recurring events.
+    buildEventSlideModel({ ...event, ...event.occurrences[0], id: event.id, tz: getSchoolTimezone(event.school) }, cover.language).then(
+      model => { if (active) setModelResult({ event, language: cover.language, model }); },
+      () => { if (active) setModelResult({ event, language: cover.language, model: null }); },
     );
     return () => { active = false; };
-  }, [cover.language, isCover, publishedAssetUrl]);
+  }, [event, cover.language, getSchoolTimezone, isCover, publishedAssetUrl]);
 
   useEffect(() => {
     const node = previewRef.current;
@@ -122,7 +118,7 @@ export function CarouselSlidePreview({
           className="rounded-xl border border-border"
           style={{ width: "100%", height: "auto" }}
         />
-      ) : isCover && coverColors ? (
+      ) : (isCover && coverColors) || (!isCover && slideModel) ? (
         <div
           className="overflow-hidden rounded-xl border border-border bg-surface"
           style={{ width: "100%", height: SLIDE_HEIGHT * previewScale }}
@@ -135,16 +131,14 @@ export function CarouselSlidePreview({
               transformOrigin: "top left",
             }}
           >
-            <CoverSlideTemplate model={buildCoverSlideModel({ ...cover, colors: coverColors })} />
+            {isCover && coverColors
+              ? <CoverSlideTemplate model={buildCoverSlideModel({ ...cover, colors: coverColors })} />
+              : slideModel ? <EventSlideTemplate model={slideModel} /> : null}
           </div>
         </div>
-      ) : !isCover && event && slideLocale ? (
-        <I18nextProvider i18n={slideLocale}>
-          <EventCard event={event} interactive={false} />
-        </I18nextProvider>
       ) : (
         <p className="py-12 text-center text-sm text-muted-foreground">
-          {localeError ? t("common.error") : isCover || event
+          {modelError ? t("common.error") : isCover || event
             ? t("common.loading")
             : t("admin.instagramPublishing.slideEventUnavailable")}
         </p>

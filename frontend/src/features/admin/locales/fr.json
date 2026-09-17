@@ -1,5 +1,8 @@
 {
   "admin": {
+    "resolveReport": "Résoudre",
+    "dismissReport": "Classer sans suite",
+    "reportUpdateFailed": "Impossible de mettre à jour le signalement. Réessayez.",
     "eventReport": "Signalement d’événement",
     "pendingCount": "{{label}} : {{value}} en attente",
     "pendingCountsError": "Certains nombres en attente n’ont pas pu être chargés.",

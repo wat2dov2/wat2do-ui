@@ -1,5 +1,8 @@
 {
   "admin": {
+    "resolveReport": "ઉકેલો",
+    "dismissReport": "નકારી કાઢો",
+    "reportUpdateFailed": "રિપોર્ટ અપડેટ થઈ શક્યો નહીં. ફરી પ્રયાસ કરો.",
     "eventReport": "ઇવેન્ટ રિપોર્ટ",
     "pendingCount": "{{label}}: {{value}} બાકી",
     "pendingCountsError": "કેટલીક બાકી સંખ્યાઓ લોડ થઈ શકી નથી.",

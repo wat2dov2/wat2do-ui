@@ -1,5 +1,8 @@
 {
   "admin": {
+    "resolveReport": "Решить",
+    "dismissReport": "Отклонить",
+    "reportUpdateFailed": "Не удалось обновить жалобу. Попробуйте ещё раз.",
     "eventReport": "Жалоба на событие",
     "pendingCount": "{{label}}: {{value}} в ожидании",
     "pendingCountsError": "Не удалось загрузить некоторые счётчики ожидающих заявок.",

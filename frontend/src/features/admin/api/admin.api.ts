@@ -140,6 +140,10 @@ export async function getReportedEvents(filters: AdminListFilters) {
   return { ...page, items: page.items.map(toReportedEvent) };
 }
 
+export async function updateEventReport(id: string, status: Exclude<ReportedEvent["status"], "pending">): Promise<void> {
+  await api.patch(`/reports/${id}`, { status });
+}
+
 // ── Event Submissions API ───────────────────────────────────────────
 
 export async function getEventSubmissions(filters: AdminListFilters) {

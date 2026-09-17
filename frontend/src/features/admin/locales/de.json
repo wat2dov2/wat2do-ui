@@ -1,5 +1,8 @@
 {
   "admin": {
+    "resolveReport": "Erledigen",
+    "dismissReport": "Verwerfen",
+    "reportUpdateFailed": "Die Meldung konnte nicht aktualisiert werden. Bitte erneut versuchen.",
     "eventReport": "Veranstaltungsmeldung",
     "pendingCount": "{{label}}: {{value}} ausstehend",
     "pendingCountsError": "Einige ausstehende Anzahlen konnten nicht geladen werden.",

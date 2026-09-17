@@ -1,5 +1,8 @@
 {
   "admin": {
+    "resolveReport": "Resolver",
+    "dismissReport": "Descartar",
+    "reportUpdateFailed": "Não foi possível atualizar a denúncia. Tente novamente.",
     "eventReport": "Denúncia de evento",
     "pendingCount": "{{label}}: {{value}} pendentes",
     "pendingCountsError": "Não foi possível carregar algumas contagens pendentes.",

@@ -1,5 +1,8 @@
 {
   "admin": {
+    "resolveReport": "Resolver",
+    "dismissReport": "Descartar",
+    "reportUpdateFailed": "No se pudo actualizar el reporte. Inténtalo de nuevo.",
     "eventReport": "Reporte de evento",
     "pendingCount": "{{label}}: {{value}} pendientes",
     "pendingCountsError": "No se pudieron cargar algunos recuentos pendientes.",

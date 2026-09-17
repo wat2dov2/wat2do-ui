@@ -1,5 +1,8 @@
 {
   "admin": {
+    "resolveReport": "حل کریں",
+    "dismissReport": "مسترد کریں",
+    "reportUpdateFailed": "رپورٹ اپ ڈیٹ نہیں ہو سکی۔ دوبارہ کوشش کریں۔",
     "eventReport": "ایونٹ کی رپورٹ",
     "pendingCount": "{{label}}: {{value}} زیر التوا",
     "pendingCountsError": "کچھ زیر التوا تعداد لوڈ نہیں ہو سکیں۔",

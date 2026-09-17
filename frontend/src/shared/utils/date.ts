@@ -197,7 +197,7 @@ export function formatCardDate(
 }
 
 /**
- * Format event time for card display (e.g., "12:30 PM to 3:00 PM")
+ * Format compact school-local time ranges (e.g., "12:30-3:00 PM").
  */
 export function formatCardTime(event: {
   occurrences?: Occurrence[];
@@ -209,17 +209,19 @@ export function formatCardTime(event: {
     const end = parsedEnd && parsedEnd.getTime() >= start.getTime() ? parsedEnd : null;
     
     if (!Number.isFinite(start.getTime())) return "";
+    const crossesOffset = end && formatInTimeZone(start, timeZone, "XXX") !== formatInTimeZone(end, timeZone, "XXX");
     const formatter = new Intl.DateTimeFormat(locale, {
-      hour: "numeric", minute: "2-digit", timeZone, timeZoneName: "short",
+      hour: "numeric", minute: "2-digit", timeZone, ...(crossesOffset
+        ? { timeZoneName: "short" as const } : {}),
       ...(end && !sameDay(schoolCalendarDate(start, timeZone), schoolCalendarDate(end, timeZone))
         ? { month: "short", day: "numeric" } as const : {}),
     });
     if (!end) return formatter.format(start);
     // Intl can collapse distinct instants in a repeated DST hour into one time.
-    if (formatInTimeZone(start, timeZone, "XXX") !== formatInTimeZone(end, timeZone, "XXX")) {
-      return `${formatter.format(start)} – ${formatter.format(end)}`;
+    if (crossesOffset) {
+      return `${formatter.format(start)}-${formatter.format(end)}`;
     }
-    return formatter.formatRange(start, end);
+    return formatter.formatRange(start, end).replace(/\s*[\u2013\u2014]\s*/g, "-").replace(/[\u2009\u202f]/g, " ");
   }
   return '';
 }

@@ -1,5 +1,6 @@
 {
   "events": {
+    "slideAddedAt": "{{date}} को जोड़ा गया",
     "minimumGoing": "न्यूनतम उपस्थित",
     "eventTitle": "घटना का शीर्षक",
     "loadFailed": "ईवेंट लोड करने में विफल. कृपया पुन: प्रयास करें।",

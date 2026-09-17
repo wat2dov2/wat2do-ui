@@ -1,5 +1,6 @@
 {
   "events": {
+    "slideAddedAt": "Ajouté le {{date}}",
     "minimumGoing": "Participants minimum",
     "eventTitle": "Titre de l'événement",
     "loadFailed": "Échec du chargement des événements. Veuillez réessayer.",

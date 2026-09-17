@@ -1,5 +1,6 @@
 {
   "events": {
+    "slideAddedAt": "Hinzugefügt am {{date}}",
     "minimumGoing": "Mindestteilnehmer",
     "eventTitle": "Veranstaltungstitel",
     "loadFailed": "Fehler beim Laden der Veranstaltungen. Bitte versuchen Sie es erneut.",

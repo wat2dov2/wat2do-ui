@@ -1,5 +1,8 @@
 {
   "admin": {
+    "resolveReport": "حل کردن",
+    "dismissReport": "رد کردن",
+    "reportUpdateFailed": "به‌روزرسانی گزارش ممکن نشد. دوباره تلاش کنید.",
     "eventReport": "گزارش رویداد",
     "pendingCount": "{{label}}: {{value}} در انتظار",
     "pendingCountsError": "بارگیری برخی شمارش‌های در انتظار ممکن نشد.",

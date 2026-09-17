@@ -1,5 +1,8 @@
 {
   "admin": {
+    "resolveReport": "حل",
+    "dismissReport": "تجاهل",
+    "reportUpdateFailed": "تعذر تحديث البلاغ. يرجى المحاولة مرة أخرى.",
     "eventReport": "بلاغ عن فعالية",
     "pendingCount": "{{label}}: {{value}} قيد الانتظار",
     "pendingCountsError": "تعذر تحميل بعض أعداد العناصر المعلقة.",

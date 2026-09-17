@@ -1,5 +1,6 @@
 {
   "events": {
+    "slideAddedAt": "Added {{date}}",
     "minimumGoing": "Minimum going",
     "eventTitle": "Event Title",
     "loadFailed": "Failed to load events. Please try again.",

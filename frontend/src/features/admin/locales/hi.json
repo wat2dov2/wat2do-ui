@@ -1,5 +1,8 @@
 {
   "admin": {
+    "resolveReport": "हल करें",
+    "dismissReport": "खारिज करें",
+    "reportUpdateFailed": "रिपोर्ट अपडेट नहीं हो सकी। कृपया फिर से कोशिश करें।",
     "eventReport": "इवेंट रिपोर्ट",
     "pendingCount": "{{label}}: {{value}} लंबित",
     "pendingCountsError": "कुछ लंबित संख्याएँ लोड नहीं हो सकीं।",

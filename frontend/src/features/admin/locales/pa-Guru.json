@@ -1,5 +1,8 @@
 {
   "admin": {
+    "resolveReport": "ਹੱਲ ਕਰੋ",
+    "dismissReport": "ਖਾਰਜ ਕਰੋ",
+    "reportUpdateFailed": "ਰਿਪੋਰਟ ਅੱਪਡੇਟ ਨਹੀਂ ਹੋ ਸਕੀ। ਮੁੜ ਕੋਸ਼ਿਸ਼ ਕਰੋ।",
     "eventReport": "ਇਵੈਂਟ ਰਿਪੋਰਟ",
     "pendingCount": "{{label}}: {{value}} ਬਕਾਇਆ",
     "pendingCountsError": "ਕੁਝ ਬਕਾਇਆ ਗਿਣਤੀਆਂ ਲੋਡ ਨਹੀਂ ਹੋ ਸਕੀਆਂ।",

@@ -1,5 +1,8 @@
 {
   "admin": {
+    "resolveReport": "Risolvi",
+    "dismissReport": "Archivia",
+    "reportUpdateFailed": "Impossibile aggiornare la segnalazione. Riprova.",
     "eventReport": "Segnalazione di evento",
     "pendingCount": "{{label}}: {{value}} in attesa",
     "pendingCountsError": "Impossibile caricare alcuni conteggi in attesa.",

@@ -20,7 +20,7 @@ test("school clock controls display, not the live instant", () => {
   expect(getEventDateSection(event, timeZone, now)).toEqual({ kind: "today" });
   expect(formatCardTime(event, timeZone)).toContain("Sep 14");
   expect(formatCardTime(event, timeZone)).toContain("Sep 15");
-  expect(formatCardTime(event, timeZone)).toContain("MDT");
+  expect(formatCardTime(event, timeZone)).not.toContain("MDT");
   expect(isEventHappeningNow(event, new Date("2026-09-15T06:00:00Z"))).toBe(true);
   expect(isEventHappeningNow(event, now)).toBe(false);
 });
@@ -63,8 +63,8 @@ test("a cross-school date filter evaluates each event in its own school", () => 
 test("Instagram slides show both endpoints in the school's timezone across midnight", async () => {
   const slide = await buildEventSlideModel({ ...event, ...event.occurrences[0], id: event.id, tz: timeZone }, "en");
   expect(slide.dateLine).toBe("Monday, September 14");
-  expect(slide.timeLine).toContain("Sep 14, 11:30 PM MDT");
-  expect(slide.timeLine).toContain("Sep 15, 1:00 AM MDT");
+  expect(slide.timeLine).toContain("Sep 14, 11:30 PM");
+  expect(slide.timeLine).toContain("Sep 15, 1:00 AM");
   expect(slide.timeLine).not.toMatch(/[\u2009\u202f]/);
 });
 
@@ -102,9 +102,23 @@ test("event time ranges preserve both sides of a repeated DST hour", async () =>
 test("Instagram slides omit unknown end times and reject a missing school timezone", async () => {
   const input = { id: 1, tz: timeZone, dtstart_utc: "2026-09-18T22:30:00Z" };
   const withoutEnd = await buildEventSlideModel(input, "en");
-  expect(withoutEnd.timeLine).toBe("4:30 PM MDT");
+  expect(withoutEnd.timeLine).toBe("4:30 PM");
   const invalidEnd = await buildEventSlideModel({ ...input, dtend_utc: "invalid" }, "en");
   expect(invalidEnd.timeLine).toBe(withoutEnd.timeLine);
   expect((await buildEventSlideModel({ ...input, dtstart_utc: null }, "fr")).dateLine).toBe("");
   await expect(buildEventSlideModel({ ...input, tz: "" }, "en")).rejects.toThrow("School timezone is required");
+});
+
+test("ordinary ranges use compact localized times without redundant zone labels", () => {
+  const input = { occurrences: [{ dtstart_utc: "2026-09-21T22:00:00Z", dtend_utc: "2026-09-22T00:00:00Z" }] };
+  expect(formatCardTime(input, "America/Toronto")).toBe("6:00-8:00 PM");
+  expect(formatCardTime(input, "America/Toronto", "fr")).toBe("18:00-20:00");
+});
+
+test("published slides preserve the school-local added timestamp and omit missing dates", async () => {
+  const input = { id: 1, tz: timeZone, added_at: "2026-09-15T05:30:00Z" };
+  expect((await buildEventSlideModel(input, "en")).addedLine).toBe("Added Sep 14, 2026, 11:30 PM");
+  expect((await buildEventSlideModel(input, "fr")).addedLine).toContain("Ajouté le 14 sept. 2026");
+  expect((await buildEventSlideModel({ ...input, added_at: null }, "en")).addedLine).toBe("");
+  expect((await buildEventSlideModel({ ...input, added_at: "invalid" }, "en")).addedLine).toBe("");
 });

@@ -1,6 +1,5 @@
-import { useAdminList } from "@/features/admin/hooks/useAdminList";
-import { getReportedEvents } from "@/features/admin/api/admin.api";
-import { AdminTableFilters } from "./shared/AdminTableFilters";
+import { useAdminReports } from "@/features/admin/hooks/useAdminList";
+import { AdminTableFilters } from "@/features/admin/components/shared/AdminTableFilters";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 import { useTranslation } from "react-i18next";
 import { AdminTable } from "@/features/admin/components/shared/AdminTable";
@@ -15,9 +14,10 @@ import { formatRelativeTime } from "@/shared/utils/relativeTime";
 export function AdminEventReports({ onViewEvent }: { onViewEvent: (eventId: number) => void }) {
   const { t, i18n } = useTranslation();
   const { getSchoolName, getSchoolTimezone } = useSchoolDirectory();
-  const list = useAdminList("reports", getReportedEvents, true, { status: "pending" });
+  const { list, review } = useAdminReports();
   return (
     <Stack gap={5}>
+      {review.isError ? <p role="alert">{t("admin.reportUpdateFailed")}</p> : null}
       <AdminTableFilters
         search={list.filters.search ?? ""}
         school={list.filters.school ?? ""}
@@ -61,14 +61,24 @@ export function AdminEventReports({ onViewEvent }: { onViewEvent: (eventId: numb
               <TableCell variant="prose">{report.reason}</TableCell>
               <TableCell>{formatRelativeTime(report.reportedAt, t, { timeZone: getSchoolTimezone(report.school), locale: i18n.language })}</TableCell>
               <TableCell>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={!report.eventTitle}
-                  onClick={() => onViewEvent(report.eventId)}
-                >
-                  {t("common.view")}
-                </Button>
+                <Stack direction="horizontal" gap={2} justify="end" wrap>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={!report.eventTitle}
+                    onClick={() => onViewEvent(report.eventId)}
+                  >
+                    {t("common.view")}
+                  </Button>
+                  <Button size="sm" disabled={review.isPending}
+                    onClick={() => review.mutate({ id: report.id, status: "resolved" })}>
+                    {t("admin.resolveReport")}
+                  </Button>
+                  <Button variant="outline" size="sm" disabled={review.isPending}
+                    onClick={() => review.mutate({ id: report.id, status: "dismissed" })}>
+                    {t("admin.dismissReport")}
+                  </Button>
+                </Stack>
               </TableCell>
             </TableRow>
           ))}

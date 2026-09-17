@@ -1,5 +1,8 @@
 {
   "admin": {
+    "resolveReport": "Lutasin",
+    "dismissReport": "I-dismiss",
+    "reportUpdateFailed": "Hindi ma-update ang ulat. Pakisubukang muli.",
     "eventReport": "Ulat sa kaganapan",
     "pendingCount": "{{label}}: {{value}} nakabinbin",
     "pendingCountsError": "Hindi ma-load ang ilang bilang ng mga nakabinbin.",

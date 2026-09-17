@@ -1,5 +1,8 @@
 {
   "admin": {
+    "resolveReport": "Resolve",
+    "dismissReport": "Dismiss",
+    "reportUpdateFailed": "Could not update the report. Please try again.",
     "eventReport": "Event report",
     "pendingCount": "{{label}}: {{value}} pending",
     "pendingCountsError": "Some pending counts could not be loaded.",

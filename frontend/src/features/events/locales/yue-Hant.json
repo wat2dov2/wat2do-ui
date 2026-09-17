@@ -1,5 +1,6 @@
 {
   "events": {
+    "slideAddedAt": "加入於 {{date}}",
     "minimumGoing": "最少參加人數",
     "eventTitle": "活動標題",
     "loadFailed": "無法加載活動。請再試一次。",

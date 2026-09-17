@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { useQueries, useQuery } from "@tanstack/react-query";
+import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import type { PaginatedApiResponse } from "@/shared/services/apiClient";
 import { controlBox } from "@/shared/config/controlBox";
 import { ADMIN_ITEMS_PER_PAGE } from "@/features/admin/constants";
 import {
   getReportedEvents,
+  updateEventReport,
   getEventSubmissions,
   getClubClaims,
   getClubSubmissions,
@@ -73,4 +74,16 @@ export function useAdminPendingCounts(resources: ModerationResource[]) {
     isError: queries.some(query => query.isError),
     refetch: () => Promise.all(queries.map(query => query.refetch())),
   };
+}
+
+/** Report transitions refresh both the filtered page and all pending badges. */
+export function useAdminReports() {
+  const list = useAdminList("reports", getReportedEvents, true, { status: "pending" });
+  const queryClient = useQueryClient();
+  const review = useMutation({
+    mutationFn: ({ id, status }: { id: string; status: Parameters<typeof updateEventReport>[1] }) =>
+      updateEventReport(id, status),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.admin.all }),
+  });
+  return { list, review };
 }

@@ -1,5 +1,8 @@
 {
   "admin": {
+    "resolveReport": "解決",
+    "dismissReport": "駁回",
+    "reportUpdateFailed": "無法更新舉報，請再試一次。",
     "eventReport": "活動舉報",
     "pendingCount": "{{label}}：{{value}} 項待處理",
     "pendingCountsError": "未能載入部分待處理數量。",

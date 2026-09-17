@@ -8,7 +8,6 @@
  * event slide restates the event card instead of rendering it.
  */
 
-import { SlideBadgeMask } from "@/features/admin/components/instagram/slides/SlideBadgeMask";
 import {
   SLIDE_HEIGHT,
   SLIDE_WIDTH,
@@ -22,7 +21,6 @@ import {
 const DARK = {
   background: "#0f0f0f",
   surface: "#171717",
-  border: "#292929",
   secondary: "#242424",
   foreground: "#f5f5f5",
   mutedForeground: "#949494",
@@ -39,163 +37,40 @@ const slideFrame: React.CSSProperties = {
   position: "relative",
 };
 
-const CARD_INSET = 60;
+const CARD_INSET = 40;
 const CARD_WIDTH = SLIDE_WIDTH - CARD_INSET * 2;
-const CARD_IMAGE_HEIGHT = 780;
+const CARD_IMAGE_HEIGHT = 840;
 
-/**
- * One event, rendered as the app's event card in dark mode.
- *
- * Same anatomy as EventCard: poster with the category chip top-left and the
- * club badge bottom-left, then a surface body holding the title, the
- * date/time/location column, and the price / free-food chips. Click and going
- * counts are deliberately absent - a published slide is not a live card.
- *
- * The admin editor previews the real card, not this, so a change to EventCard's
- * anatomy will not show up here on its own. Keep the two in step by hand.
- */
+/** The complete poster stays unobscured; labels belong in the bounded caption. */
 export function EventSlideTemplate({ model }: { model: EventSlideModel }) {
   return (
-    <div
-      style={{
-        ...slideFrame,
-        backgroundColor: DARK.background,
-        color: DARK.foreground,
-        alignItems: "center",
-        justifyContent: "center",
-        padding: CARD_INSET,
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          width: CARD_WIDTH,
-          borderRadius: 36,
-          border: `2px solid ${DARK.border}`,
-          backgroundColor: DARK.surface,
-          overflow: "hidden",
-        }}
-      >
-        <div style={{ display: "flex", position: "relative", width: CARD_WIDTH, height: CARD_IMAGE_HEIGHT }}>
+    <div style={{ ...slideFrame, backgroundColor: DARK.background, color: DARK.foreground, padding: CARD_INSET }}>
+      <div style={{ display: "flex", flexDirection: "column", width: CARD_WIDTH, height: SLIDE_HEIGHT - CARD_INSET * 2, borderRadius: 36, backgroundColor: DARK.surface, overflow: "hidden" }}>
+        <div style={{ display: "flex", width: CARD_WIDTH, height: CARD_IMAGE_HEIGHT, flexShrink: 0, backgroundColor: DARK.secondary }}>
           {model.imageSrc ? (
-            <img
-              src={model.imageSrc}
-              width={CARD_WIDTH}
-              height={CARD_IMAGE_HEIGHT}
-              style={{ width: CARD_WIDTH, height: CARD_IMAGE_HEIGHT, objectFit: "cover" }}
-              alt=""
-            />
-          ) : (
-            <div
-              style={{
-                display: "flex",
-                width: CARD_WIDTH,
-                height: CARD_IMAGE_HEIGHT,
-                backgroundColor: DARK.secondary,
-              }}
-            />
-          )}
-
-          {/*
-           * Corner-notched like the card, rather than pills floating on the
-           * poster: the badge sits in a bite taken out of the artwork.
-           */}
-          <SlideBadgeMask variant="top-left" color={DARK.background}>
-            <div
-              style={{
-                display: "flex",
-                backgroundColor: model.category.color,
-                color: DARK.categoryInk,
-                borderRadius: 36,
-                padding: "10px 22px",
-                fontSize: 34,
-                fontWeight: 700,
-              }}
-            >
+            <img src={model.imageSrc} width={CARD_WIDTH} height={CARD_IMAGE_HEIGHT}
+              style={{ width: CARD_WIDTH, height: CARD_IMAGE_HEIGHT, objectFit: "contain" }} alt="" />
+          ) : null}
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", flex: 1, padding: "20px 32px", overflow: "hidden" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", height: 36, flexShrink: 0 }}>
+            <div style={{ display: "flex", backgroundColor: model.category.color, color: DARK.categoryInk, borderRadius: 12, padding: "4px 12px", fontSize: 24, fontWeight: 700 }}>
               {model.category.label}
             </div>
-          </SlideBadgeMask>
-
-          {model.clubLine ? <SlideBadgeMask variant="bottom-left" color={DARK.background}>
-            <div
-              style={{
-                display: "flex",
-                maxWidth: CARD_WIDTH - 120,
-                backgroundColor: DARK.background,
-                border: `2px solid ${DARK.foreground}`,
-                color: DARK.foreground,
-                borderRadius: 36,
-                padding: "10px 22px",
-                fontSize: 34,
-                fontWeight: 700,
-              }}
-            >
-              {model.clubLine}
+            <div style={{ display: "flex", gap: 12, fontSize: 24 }}>
+              {model.badges.map(badge => <div key={badge} style={{ display: "flex" }}>{badge}</div>)}
             </div>
-          </SlideBadgeMask> : null}
-        </div>
-
-        <div style={{ display: "flex", flexDirection: "column", padding: "32px 40px 36px 40px" }}>
-          <div
-            style={{
-              display: "flex",
-              fontSize: 64,
-              fontWeight: 600,
-              lineHeight: 1.05,
-              maxHeight: 136,
-              overflow: "hidden",
-            }}
-          >
+          </div>
+          <div style={{ display: "flex", fontSize: 48, fontWeight: 600, lineHeight: 1.05, maxHeight: 102, overflow: "hidden", marginTop: 12, flexShrink: 0 }}>
             {model.title}
           </div>
-
-          <div
-            style={{
-              display: "flex",
-              alignItems: "flex-end",
-              justifyContent: "space-between",
-              marginTop: 24,
-            }}
-          >
-            <div style={{ display: "flex", flexDirection: "column", flex: 1, minWidth: 0, color: DARK.mutedForeground }}>
-              {model.dateLine ? <div style={{ display: "flex", fontSize: 38 }}>{model.dateLine}</div> : null}
-              {model.timeLine ? (
-                <div style={{ display: "flex", marginTop: 8, fontSize: 38 }}>{model.timeLine}</div>
-              ) : null}
-              {model.location ? <div style={{ display: "flex", marginTop: 8, fontSize: 38 }}>{model.location}</div> : null}
-            </div>
-
-            {model.badges.length > 0 ? (
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  flexShrink: 0,
-                  alignItems: "flex-end",
-                  marginLeft: 24,
-                }}
-              >
-                {model.badges.map((badge) => (
-                  <div
-                    key={badge}
-                    style={{
-                      display: "flex",
-                      marginTop: 10,
-                      border: `2px solid ${DARK.border}`,
-                      color: DARK.foreground,
-                      borderRadius: 16,
-                      padding: "6px 16px",
-                      fontSize: 30,
-                      fontWeight: 500,
-                    }}
-                  >
-                    {badge}
-                  </div>
-                ))}
-              </div>
-            ) : null}
+          {model.clubLine ? <div style={{ display: "flex", fontSize: 28, lineHeight: 1.15, maxHeight: 33, overflow: "hidden", marginTop: 6, flexShrink: 0 }}>{model.clubLine}</div> : null}
+          <div style={{ display: "flex", flexDirection: "column", fontSize: 30, lineHeight: 1.15, color: DARK.mutedForeground, marginTop: 12 }}>
+            {model.dateLine ? <div style={{ display: "flex" }}>{model.dateLine}</div> : null}
+            {model.timeLine ? <div style={{ display: "flex" }}>{model.timeLine}</div> : null}
+            {model.location ? <div style={{ display: "flex", maxHeight: 35, overflow: "hidden" }}>{model.location}</div> : null}
           </div>
+          {model.addedLine ? <div style={{ display: "flex", fontSize: 24, color: DARK.mutedForeground, marginTop: "auto", paddingTop: 12, flexShrink: 0 }}>{model.addedLine}</div> : null}
         </div>
       </div>
     </div>

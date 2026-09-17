@@ -2,10 +2,7 @@
  * Slide view models for the published carousel image.
  *
  * A carousel slide is a deterministic function of event data: the same event
- * always produces the same slide. This module is that function, and it runs in
- * the PNG render route (`/api/render-instagram-slide`) - plus the cover, which
- * previews in the admin editor because it has no in-app equivalent. Event
- * slides preview as the app's own event card instead.
+ * always produces the same slide, in both the admin preview and PNG render route.
  */
 
 import {
@@ -37,6 +34,7 @@ export interface SlideEvent {
   ig_handle?: string | null;
   school?: string | null;
   source_image_url?: string | null;
+  added_at?: string | null;
   dtstart_utc?: string | null;
   dtend_utc?: string | null;
   /** IANA zone resolved server-side; slides print local times. */
@@ -55,11 +53,12 @@ export interface EventSlideModel {
   dateLine: string;
   timeLine: string;
   location: string;
-  /** Full club name - a slide has room, so it is never truncated. */
+  /** Club attribution below the title. */
   clubLine: string;
   /** Price / free-food chips, mirroring the event card's badge column. */
   badges: string[];
   imageSrc: string;
+  addedLine: string;
 }
 
 export interface CoverSlideModel {
@@ -147,6 +146,11 @@ export async function buildEventSlideModel(
   const { t } = await getInstagramSlideLocale(language);
   const { dateLine, timeLine } = formatSlideDate(event, language);
   const category = getClubCategoryConfig(event.category);
+  const addedAt = event.added_at ? new Date(event.added_at) : null;
+  const addedLine = addedAt && Number.isFinite(addedAt.getTime())
+    ? t("events.slideAddedAt", { date: new Intl.DateTimeFormat(language, {
+      year: "numeric", month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: event.tz,
+    }).format(addedAt) }) : "";
   return {
     eventId: event.id,
     category: { label: translateCategory(text(event.category), t), color: category.color },
@@ -157,6 +161,7 @@ export async function buildEventSlideModel(
     clubLine: text(event.club),
     badges: computeEventBadges({ ...event, food: event.food ?? [], cancelled: event.cancelled ?? false, registration: event.registration ?? false }, t).map(badge => badge.text),
     imageSrc,
+    addedLine: text(addedLine),
   };
 }
 

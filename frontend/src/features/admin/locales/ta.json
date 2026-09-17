@@ -1,5 +1,8 @@
 {
   "admin": {
+    "resolveReport": "தீர்க்கவும்",
+    "dismissReport": "நிராகரிக்கவும்",
+    "reportUpdateFailed": "புகாரைப் புதுப்பிக்க முடியவில்லை. மீண்டும் முயலவும்.",
     "eventReport": "நிகழ்வு புகார்",
     "pendingCount": "{{label}}: {{value}} நிலுவையில்",
     "pendingCountsError": "சில நிலுவை எண்ணிக்கைகளை ஏற்ற முடியவில்லை.",

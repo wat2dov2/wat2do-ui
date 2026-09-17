@@ -1,5 +1,6 @@
 {
   "events": {
+    "slideAddedAt": "Đã thêm {{date}}",
     "minimumGoing": "Số người tối thiểu",
     "eventTitle": "Tiêu đề sự kiện",
     "loadFailed": "Không tải được sự kiện. Vui lòng thử lại.",
