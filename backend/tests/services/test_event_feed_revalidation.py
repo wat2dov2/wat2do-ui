@@ -1,4 +1,5 @@
 import httpx
+import pytest
 
 from services import event_feed_revalidation as module
 
@@ -62,3 +63,26 @@ def test_revalidate_school_does_not_raise_on_http_failure(monkeypatch):
     monkeypatch.setattr(module.httpx, "post", fail_post)
 
     module.event_feed_revalidation_service.revalidate_school("uwaterloo")
+
+
+@pytest.mark.parametrize("school", ["uwaterloo", None])
+def test_revalidate_deleted_event_includes_detail_id(monkeypatch, school):
+    calls = []
+
+    def fake_post(url, *, json, headers, timeout):
+        calls.append(json)
+        return httpx.Response(200, request=httpx.Request("POST", url))
+
+    monkeypatch.setattr(
+        module.settings,
+        "event_feed_revalidation_url",
+        "https://wat2do.io/api/revalidate-events",
+    )
+    monkeypatch.setattr(module.httpx, "post", fake_post)
+
+    module.event_feed_revalidation_service.revalidate_school(school, event_id=42)
+
+    expected = {"event_id": 42}
+    if school:
+        expected["school"] = school
+    assert calls == [expected]

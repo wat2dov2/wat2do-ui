@@ -47,6 +47,7 @@ import {
 } from "@/shared/constants/statuses";
 import { SCROLL_INTO_VIEW_DELAY_MS } from "@/shared/constants/ui";
 import { formatRelativeTime } from "@/shared/utils/relativeTime";
+import { toast } from "@/shared/hooks/use-toast";
 import { useMutableSearchParams } from "@/shared/hooks/useMutableSearchParams";
 
 
@@ -96,8 +97,10 @@ export function AdminEventsPage({
   const handleDelete = async (eventId: number) => {
     setIsDeleting(true);
     try {
-      await Promise.resolve(deleteEvent(eventId));
+      await deleteEvent(eventId);
       setDeleteConfirmId(null);
+    } catch {
+      toast({ description: t("events.deleteFailed"), variant: "destructive" });
     } finally {
       setIsDeleting(false);
     }

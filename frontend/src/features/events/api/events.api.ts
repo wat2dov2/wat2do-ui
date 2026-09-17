@@ -19,7 +19,7 @@ import {
   buildEventPayload,
   buildEventUpdatePayload,
 } from "@/shared/api/eventPayload";
-import { api, getPaginatedItems } from "@/shared/services/apiClient";
+import { api, getPaginatedItems, isApiError, type PaginatedApiResponse } from "@/shared/services/apiClient";
 import { getQueryClient } from "@/shared/lib/queryClient";
 import { queryKeys } from "@/shared/lib/queryKeys";
 
@@ -94,9 +94,47 @@ export async function updateEventAPI(
 }
 
 export async function deleteEventAPI(eventId: number): Promise<void> {
-  await api.delete(`/events/${eventId}`);
-  getQueryClient().removeQueries({ queryKey: queryKeys.events.detail(eventId) });
-  await invalidateEventQueries();
+  try {
+    await api.delete(`/events/${eventId}`);
+  } catch (error) {
+    // A previous delete may have committed before its response was lost.
+    if (!isApiError(error) || error.status !== 404) throw error;
+  }
+
+  await removeDeletedEventFromQueries(eventId);
+  // The write is finished. A slow or unavailable read must not hold the delete
+  // dialog open or prevent the browse snapshot from dropping the event.
+  void invalidateEventQueries();
+}
+
+async function removeDeletedEventFromQueries(eventId: number): Promise<void> {
+  const queryClient = getQueryClient();
+  // Cancel old reads before applying the confirmed deletion so their responses
+  // cannot put the event back. Cancellation does not wait for network requests.
+  await Promise.all([
+    queryClient.cancelQueries({ queryKey: queryKeys.events.all }),
+    queryClient.cancelQueries({ queryKey: queryKeys.admin.lists("events") }),
+    queryClient.cancelQueries({ queryKey: queryKeys.goingEvents.all }),
+  ]);
+  queryClient.removeQueries({ queryKey: queryKeys.events.detail(eventId) });
+  queryClient.removeQueries({ queryKey: queryKeys.events.attendees(eventId) });
+  queryClient.setQueriesData<Event[]>(
+    { queryKey: queryKeys.events.lists() },
+    (events) => events?.filter((event) => event.id !== eventId),
+  );
+  queryClient.setQueriesData<PaginatedApiResponse<Event>>(
+    { queryKey: queryKeys.admin.lists("events") },
+    (page) => {
+      if (!page?.items.some((event) => event.id === eventId)) return page;
+      const items = page.items.filter((event) => event.id !== eventId);
+      const total = Math.max(0, page.total - (page.items.length - items.length));
+      return { ...page, items, total, total_pages: Math.ceil(total / page.page_size) };
+    },
+  );
+  queryClient.setQueriesData<ApiGoingEventSelection[]>(
+    { queryKey: queryKeys.goingEvents.all },
+    (selections) => selections?.filter((selection) => selection.event_id !== eventId),
+  );
 }
 
 async function invalidateEventQueries(): Promise<void> {

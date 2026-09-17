@@ -1,6 +1,6 @@
 import { revalidateTag } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
-import { eventFeedTag } from "@/features/events/api/eventFeed.server";
+import { eventDetailTag, eventFeedTag } from "@/features/events/api/eventFeed.server";
 import { clubDirectoryTag } from "@/features/clubs/api/clubDirectory.server";
 import { positionDirectoryTag } from "@/features/positions/api/positionDirectory.server";
 import {
@@ -11,6 +11,7 @@ import { resolveSchool } from "@/shared/constants/schools";
 
 interface RevalidateEventsRequest {
   school?: string;
+  event_id?: number;
   secret?: string;
 }
 
@@ -48,7 +49,11 @@ export async function POST(request: NextRequest) {
 
   // Public discovery renders per-host, so tagged fetch caches are the only
   // school-specific surfaces to invalidate - there is no per-school pathname.
-  revalidateTag(eventFeedTag(school), "max");
+  // Event writes must be visible on the very next read, including hard refresh.
+  revalidateTag(eventFeedTag(school), { expire: 0 });
+  if (typeof body.event_id === "number" && Number.isSafeInteger(body.event_id) && body.event_id > 0) {
+    revalidateTag(eventDetailTag(body.event_id), { expire: 0 });
+  }
   revalidateTag(clubDirectoryTag(school), "max");
   revalidateTag(positionDirectoryTag(school), "max");
   revalidateTag(schoolBrandingTag(school), "max");

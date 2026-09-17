@@ -901,6 +901,49 @@ test.describe("Posters & QR Analytics", () => {
 });
 
 test.describe("Admin diagnostics", () => {
+  test("admin event deletion removes the row before slow list refreshes finish", async ({ page, next }) => {
+    await seedAuthenticatedSession(page, next);
+    let deleted = false;
+    let releaseReads = () => {};
+    const pendingReads = new Promise<void>((resolve) => { releaseReads = resolve; });
+    const event = {
+      id: 1, title: "Event to delete", club: "UW Tech Club", club_id: 1,
+      location: "SLC", school: "uwaterloo", category: "Career",
+      added_at: new Date().toISOString(), occurrences: [], food: [], price: 0,
+      registration: false,
+    };
+    await mockApi(page, next, url => apiPath(url) === "/events/admin", async () => {
+      if (deleted) await pendingReads;
+      return { json: {
+        items: deleted ? [] : [event], total: deleted ? 0 : 1,
+        page: 1, page_size: 20, total_pages: deleted ? 0 : 1,
+      } };
+    });
+    await mockApi(page, next, url => ["/reports", "/submissions"].includes(apiPath(url)), async () => {
+      if (deleted) await pendingReads;
+      return { json: { items: [], total: 0, page: 1, page_size: 1, total_pages: 0 } };
+    });
+    await mockApi(page, next, url => apiPath(url) === "/events/1", async request => {
+      if (request.method === "DELETE") {
+        deleted = true;
+        return { status: 204, body: "" };
+      }
+      return { json: event };
+    });
+
+    try {
+      await page.goto(`${BASE}/admin/events`);
+      const row = page.getByRole("row").filter({ hasText: event.title });
+      await row.getByRole("button", { name: "Delete", exact: true }).click();
+      const confirmation = page.getByRole("dialog", { name: "Delete Event" });
+      await confirmation.getByRole("button", { name: "Delete", exact: true }).click();
+      await expect(confirmation).not.toBeVisible();
+      await expect(row).toHaveCount(0);
+    } finally {
+      releaseReads();
+    }
+  });
+
   test("admin event search fetches one page and reports open unloaded events", async ({ page, next }) => {
     await seedAuthenticatedSession(page, next);
     const requests: URLSearchParams[] = [];
@@ -2014,6 +2057,61 @@ test.describe("Events Page", () => {
     await expect.poll(() => deleteRequests).toBe(1);
     await expect(page).toHaveURL(`${BASE}/`);
   });
+
+  for (const deleteStatus of [204, 404, 403, 504]) {
+    test(`event deletion settles with status ${deleteStatus} while stats refresh is stalled`, async ({ page, next }) => {
+      await seedAuthenticatedSession(page, next);
+      let deleted = false;
+      let deleteRequests = 0;
+      let releaseStats: () => void = () => {};
+      const statsResponse = new Promise<void>((resolve) => { releaseStats = resolve; });
+      await mockApi(page, next, url => apiPath(url) === "/events/stats", async () => {
+        if (deleted) await statsResponse;
+        return { status: 200, json: {} };
+      });
+      await mockApi(page, next, url => apiPath(url) === "/events/1", async (request) => {
+        if (request.method === "DELETE") {
+          deleteRequests += 1;
+          deleted = deleteStatus === 204 || deleteStatus === 404;
+          return deleteStatus === 204
+            ? { status: 204, body: "" }
+            : { status: deleteStatus, json: { detail: "Delete failed" } };
+        }
+        return {
+          status: 200,
+          json: {
+            id: 1, title: "Tech Career Fair", location: "SLC", club: "UW Tech Club",
+            school: "uwaterloo", price: 0, food: [], registration: false,
+            occurrences: [], added_at: new Date().toISOString(),
+          },
+        };
+      });
+
+      try {
+        await page.goto(BASE);
+        const card = page.locator('article[data-event-id="1"]:visible');
+        await card.click();
+        const drawer = page.getByRole("dialog", { name: "Tech Career Fair" });
+        await drawer.getByRole("button", { name: "Delete", exact: true }).click();
+        const confirmation = page.getByRole("dialog", { name: "Delete Event" });
+        await confirmation.getByRole("button", { name: "Delete", exact: true }).click();
+        await expect.poll(() => deleteRequests).toBe(1);
+
+        if (deleteStatus === 204 || deleteStatus === 404) {
+          await expect(confirmation).not.toBeVisible();
+          await expect(drawer).not.toBeVisible();
+          await expect(card).toHaveCount(0);
+          await expect(page.getByText("Failed to delete event. Please try again.", { exact: true })).toHaveCount(0);
+        } else {
+          await expect(confirmation.getByRole("button", { name: "Delete", exact: true })).toBeEnabled();
+          await expect(card).toHaveCount(1);
+          await expect(page.getByText("Failed to delete event. Please try again.", { exact: true })).toBeVisible();
+        }
+      } finally {
+        releaseStats();
+      }
+    });
+  }
 
   test("scrolls drawer content that exceeds the mobile viewport", async ({ page, next }) => {
     await seedAuthenticatedSession(page, next);

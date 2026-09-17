@@ -18,8 +18,8 @@ log = logging.getLogger(__name__)
 
 
 class EventFeedRevalidationService:
-    def revalidate_school(self, school: str | None) -> None:
-        if not school:
+    def revalidate_school(self, school: str | None, *, event_id: int | None = None) -> None:
+        if not school and event_id is None:
             return
 
         url = settings.event_feed_revalidation_url.strip()
@@ -32,10 +32,16 @@ class EventFeedRevalidationService:
         if secret:
             headers["Authorization"] = f"Bearer {secret}"
 
+        payload: dict[str, str | int] = {}
+        if school:
+            payload["school"] = school
+        if event_id is not None:
+            payload["event_id"] = event_id
+
         try:
             response = httpx.post(
                 url,
-                json={"school": school},
+                json=payload,
                 headers=headers,
                 timeout=settings.event_feed_revalidation_timeout,
             )

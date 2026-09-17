@@ -13,6 +13,10 @@ export function eventFeedTag(school: string): string {
   return `event-feed-${resolveSchool(school)}`;
 }
 
+export function eventDetailTag(eventId: number): string {
+  return `event-detail-${eventId}`;
+}
+
 /** Public event detail shared by route metadata, initial HTML, and hydration. */
 export async function getEventDetailSnapshot(eventId: number): Promise<Event | null> {
   const response = await fetch(
@@ -23,6 +27,7 @@ export async function getEventDetailSnapshot(eventId: number): Promise<Event | n
           process.env.NODE_ENV === "development"
             ? 0
             : controlBox.eventDiscovery.feedRevalidateSeconds,
+        tags: [eventDetailTag(eventId)],
       },
     },
   );

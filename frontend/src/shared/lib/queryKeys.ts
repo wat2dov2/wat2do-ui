@@ -1,7 +1,8 @@
 export const queryKeys = {
   admin: {
     all: ["admin"] as const,
-    list: (resource: string, filters: object) => [...queryKeys.admin.all, resource, "list", filters] as const,
+    lists: (resource: string) => [...queryKeys.admin.all, resource, "list"] as const,
+    list: (resource: string, filters: object) => [...queryKeys.admin.lists(resource), filters] as const,
     count: (resource: string) => [...queryKeys.admin.all, resource, "pending-count"] as const,
     submission: (id: string | null) => [...queryKeys.admin.all, "submission", id] as const,
   },
@@ -78,11 +79,12 @@ export const queryKeys = {
       [...queryKeys.events.all, "attendees", eventId] as const,
     stats: (school: string) =>
       [...queryKeys.events.all, "stats", school] as const,
+    lists: () => [...queryKeys.events.all, "list"] as const,
     bySchool: (school: string) =>
-      [...queryKeys.events.all, "by-school", school] as const,
+      [...queryKeys.events.lists(), "by-school", school] as const,
     byClub: (clubId: number, school: string) =>
       [
-        ...queryKeys.events.all,
+        ...queryKeys.events.lists(),
         "by-club",
         clubId,
         school,

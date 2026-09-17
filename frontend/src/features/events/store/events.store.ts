@@ -15,7 +15,6 @@ import {
   deleteEventAPI,
 } from "@/features/events/api/events.api";
 import { getUniqueEvents } from "@/shared/utils/event";
-import { isApiError } from "@/shared/services/apiClient";
 import {
   DEFAULT_SCHOOL,
   getCurrentSchool,
@@ -125,16 +124,8 @@ export const useEventsStore = create<EventsState>((set, get) => ({
   },
 
   deleteEvent: async (eventId) => {
-    try {
-      await deleteEventAPI(eventId);
-      set((state) => removeEventFromState(state, eventId));
-    } catch (err) {
-      console.error("Failed to delete event:", err);
-      if (isApiError(err) && (err.status === 404 || err.status === 403)) {
-        set((state) => removeEventFromState(state, eventId));
-      }
-      throw err;
-    }
+    await deleteEventAPI(eventId);
+    set((state) => removeEventFromState(state, eventId));
   },
 }));
 

@@ -938,3 +938,44 @@ def test_candidate_date_sort_keeps_missing_dates_last(sort_by, sort_order, expec
 
     assert [candidate.row["id"] for candidate in result] == expected
     assert [candidate.row["id"] for candidate in candidates] == [4, 3, 2, 1]
+
+
+@pytest.mark.parametrize("school", ["uwaterloo", None])
+def test_delete_event_invalidates_feed_and_detail_after_commit(monkeypatch, school):
+    event = _event(id=42, school=school)
+    monkeypatch.setattr(event_service, "get_event", lambda event_id: event)
+    sb = MagicMock()
+    execute = sb.table.return_value.delete.return_value.eq.return_value.execute
+    execute.return_value.data = [{"id": 42}]
+    monkeypatch.setattr(event_service, "get_sb", lambda: sb)
+
+    def revalidate(actual_school, *, event_id):
+        execute.assert_called_once_with()
+        assert actual_school == school
+        assert event_id == 42
+
+    revalidation = MagicMock(side_effect=revalidate)
+    monkeypatch.setattr(
+        event_service.event_feed_revalidation_service, "revalidate_school", revalidation
+    )
+
+    assert event_service.delete_event(42)
+    sb.table.return_value.delete.return_value.eq.assert_called_once_with("id", 42)
+    revalidation.assert_called_once_with(school, event_id=42)
+
+
+def test_delete_event_database_failure_does_not_invalidate_cache(monkeypatch):
+    monkeypatch.setattr(event_service, "get_event", lambda event_id: _event(id=42))
+    sb = MagicMock()
+    sb.table.return_value.delete.return_value.eq.return_value.execute.side_effect = RuntimeError(
+        "database unavailable"
+    )
+    monkeypatch.setattr(event_service, "get_sb", lambda: sb)
+    revalidation = MagicMock()
+    monkeypatch.setattr(
+        event_service.event_feed_revalidation_service, "revalidate_school", revalidation
+    )
+
+    with pytest.raises(RuntimeError, match="database unavailable"):
+        event_service.delete_event(42)
+    revalidation.assert_not_called()

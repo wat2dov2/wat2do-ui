@@ -349,7 +349,7 @@ def delete_event(event_id: int) -> bool:
     r = get_sb().table(EVENTS).delete().eq("id", event_id).execute()
     if r.data:
         event_feed_revalidation_service.revalidate_school(
-            existing.school if existing is not None else None
+            existing.school if existing is not None else None, event_id=event_id
         )
     return bool(r.data)
 

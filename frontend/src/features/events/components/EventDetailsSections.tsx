@@ -492,6 +492,7 @@ export function EventActions({
         onDeleted();
       } else {
         router.replace(ROUTES.HOME);
+        router.refresh();
       }
     } catch {
       toast({
