@@ -1,9 +1,6 @@
-name: Daily Instagram maintenance and publishing drafts
+name: Manual Instagram maintenance and publishing drafts
 
 on:
-  schedule:
-    - cron: '0 8 * * *'
-      timezone: 'America/Toronto'
   workflow_dispatch:
 
 concurrency:

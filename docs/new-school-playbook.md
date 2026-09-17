@@ -1079,7 +1079,7 @@ Never select or display `encrypted_access_token` during routine verification.
 
 ## 18. Phase N: Verify publishing readiness
 
-The daily workflow runs `backend/jobs/generate_instagram_posts.py`.
+The manually triggered workflow runs `backend/jobs/generate_instagram_posts.py`.
 
 That job refreshes expiring tokens and generates due publishing drafts.
 
@@ -1089,7 +1089,7 @@ Do not hardcode those values in the playbook or a new script.
 
 After the account configuration is deployed and the token is imported:
 
-1. Trigger the approved daily Instagram maintenance workflow or run the job in the approved production-equivalent environment.
+1. Manually trigger the approved Instagram maintenance workflow or run the job in the approved production-equivalent environment.
 2. Confirm the account appears in token refresh statistics.
 3. Confirm no identity mismatch or reauthorization error is recorded.
 4. Seed or identify eligible upcoming events for the school.

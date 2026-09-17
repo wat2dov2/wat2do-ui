@@ -5,7 +5,7 @@ on:
     workflows:
       - CI/CD
       - Daily Directory Scrape
-      - Daily Instagram maintenance and publishing drafts
+      - Manual Instagram maintenance and publishing drafts
       - Monthly promoter poster payouts
       - Nightly recommendation compute
       - Process Notifications
