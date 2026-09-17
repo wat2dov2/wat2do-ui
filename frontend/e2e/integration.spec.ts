@@ -1828,6 +1828,15 @@ test.describe("Events Page", () => {
     await expect(
       page.getByRole("dialog").getByRole("heading", { name: "Report submitted" }),
     ).toBeVisible();
+    const confirmation = page.getByRole("dialog", { name: "Report submitted", exact: true });
+    const confirmationHeader = confirmation.locator('[data-slot="drawer-header"]');
+    const confirmationIcon = confirmation.locator('[data-slot="drawer-header-icon"]');
+    await expect(confirmationIcon).toBeVisible();
+    await expect.poll(async () => {
+      const header = await confirmationHeader.boundingBox();
+      const icon = await confirmationIcon.boundingBox();
+      return header && icon ? Math.abs(icon.x + icon.width / 2 - header.x - header.width / 2) : Infinity;
+    }).toBeLessThan(1);
     expect(submittedReport).toEqual({
       event_id: 1,
       reason: "Incorrect event details",

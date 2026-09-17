@@ -63,10 +63,7 @@ export function EventReportDialog({
         {isSubmitted ? (
           <>
             <DrawerBody className="mx-auto w-full max-w-md">
-              <DrawerHeader className="p-0 text-left">
-                <div className="mb-1 flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary">
-                  <CheckCircle2 className="size-5" />
-                </div>
+              <DrawerHeader icon={CheckCircle2} className="p-0">
                 <DrawerTitle>{t("events.reportDialog.submittedTitle")}</DrawerTitle>
                 <DrawerDescription>
                   {t("events.reportDialog.submittedDescription", { title: eventTitle })}

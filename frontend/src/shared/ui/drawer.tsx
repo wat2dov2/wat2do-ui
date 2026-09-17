@@ -5,7 +5,7 @@ import { COARSE_POINTER_MEDIA } from "@/shared/hooks/useCoarsePointer"
 import { cn } from "@/shared/lib/utils"
 import { useTranslation } from "react-i18next"
 import { Button } from "@/shared/ui/button"
-import { ChevronLeft, ChevronRight } from "@/shared/ui/doodle-icons"
+import { ChevronLeft, ChevronRight, type LucideIcon } from "@/shared/ui/doodle-icons"
 
 /**
  * The open drawer's content element, or null outside a drawer.
@@ -112,8 +112,9 @@ const DrawerContent = React.forwardRef<
 })
 DrawerContent.displayName = "DrawerContent"
 
-function DrawerHeader({ className, children, navigation, ...props }: React.ComponentProps<"div"> & {
+function DrawerHeader({ className, children, navigation, icon: Icon, ...props }: React.ComponentProps<"div"> & {
   navigation?: { previous?: () => void; next?: () => void }
+  icon?: LucideIcon
 }) {
   const { t } = useTranslation()
   const container = useDrawerPortalContainer()
@@ -140,6 +141,11 @@ function DrawerHeader({ className, children, navigation, ...props }: React.Compo
       )}
       {...props}
     >
+      {Icon ? (
+        <div data-slot="drawer-header-icon" aria-hidden="true" className="mx-auto mb-1 flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+          <Icon className="size-5" />
+        </div>
+      ) : null}
       {navigation ? (
         <div className="flex items-start justify-between gap-3">
           <div className="flex shrink-0 gap-2">
