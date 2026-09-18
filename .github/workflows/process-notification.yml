@@ -42,7 +42,7 @@ jobs:
           NOTIFICATION_JSON: ${{ inputs.notification_payload || toJSON(github.event.client_payload.notification_dict) }}
         run: |
           if echo "$NOTIFICATION_JSON" | grep -q "cache_ent_id"; then
-            echo "runner=self-hosted" >> "$GITHUB_OUTPUT"
+            echo "runner=wat2do-macmini-browser" >> "$GITHUB_OUTPUT"
           else
             echo "runner=ubuntu-latest" >> "$GITHUB_OUTPUT"
           fi
