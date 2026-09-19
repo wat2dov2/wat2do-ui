@@ -3,7 +3,7 @@
     "id": "wusa",
     "name": "WUSA Events",
     "school": "uwaterloo",
-    "default_club": "WUSA",
+    "default_club": "Waterloo Undergraduate Student Association",
     "source_format": "html",
     "entry_url": "https://wusa.ca/events/",
     "event_url_patterns": ["/event/"],

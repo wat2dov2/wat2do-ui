@@ -339,7 +339,8 @@
       "eventIdPlaceholder": "یک شناسه رویداد وارد کنید",
       "coverSlide": "اسلاید جلد",
       "coverBody": "متن بدنه جلد",
-      "slideOf": "اسلاید {{index}} از {{count}}"
+      "slideOf": "اسلاید {{index}} از {{count}}",
+      "undoRemoveSlide": "واگرد حذف اسلاید"
     },
     "clubSubmissions": "درخواست‌های باشگاه",
     "noClubSubmissions": "هیچ درخواست باشگاهی وجود ندارد",

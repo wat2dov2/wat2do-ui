@@ -339,7 +339,8 @@
       "eventIdPlaceholder": "Digite um ID de evento",
       "coverSlide": "Slide de capa",
       "coverBody": "Texto do corpo da capa",
-      "slideOf": "Slide {{index}} de {{count}}"
+      "slideOf": "Slide {{index}} de {{count}}",
+      "undoRemoveSlide": "Desfazer remoção do slide"
     },
     "clubSubmissions": "Submissões de clubes",
     "noClubSubmissions": "Nenhuma submissão de clube",

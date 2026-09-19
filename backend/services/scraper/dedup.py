@@ -97,8 +97,8 @@ def confident_duplicate_id(
     """Return the strongest deterministic same-club duplicate match.
 
     Candidate gathering remains deliberately broad. This function owns only
-    high-confidence identity: matching club, occurrence time, title,
-    and location with no contradictory title qualifiers. Ambiguous rows stay
+    high-confidence identity: matching club and occurrence time, with either
+    an exact title or similar title and location. Ambiguous rows stay
     available to Pass 2 instead of being auto-linked.
     """
     ranked: list[tuple[tuple[float, float], int]] = []
@@ -116,7 +116,7 @@ def confident_duplicate_id(
             ranked.append((score, candidate_id))
     if not ranked:
         return None
-    ranked.sort(key=lambda item: item[0])
+    ranked.sort(key=lambda item: (item[0], item[1]))
     return ranked[0][1]
 
 
@@ -211,7 +211,15 @@ def _confident_duplicate_score(
     )
     if title_score <= SCRAPING_TITLE_SIMILARITY_THRESHOLD:
         return None
-    if location_score <= SCRAPING_LOCATION_SIMILARITY_THRESHOLD:
+    # Venue is mutable. An exact title, owner, and occurrence identify the
+    # event even when a correction replaces the entire location.
+    if (
+        normalize(incoming_title) != normalize(candidate_title)
+        or (
+            "campus" in _fold_text(event.get("location"))
+            and "campus" in _fold_text(candidate.get("location"))
+        )
+    ) and location_score <= SCRAPING_LOCATION_SIMILARITY_THRESHOLD:
         return None
     if _has_conflicting_title_qualifiers(incoming_title, candidate_title):
         return None

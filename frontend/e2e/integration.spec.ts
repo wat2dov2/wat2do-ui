@@ -34,6 +34,9 @@ const MOCK_SCHOOLS = [{
 }, {
   slug: "ulaval", timezone: "America/Toronto", name: "Université Laval", primary_color: "#E30513",
   secondary_color: "#FFC72C", email_domains: ["ulaval.ca"], language: "fr", faculties: [],
+}, {
+  slug: "mun", timezone: "America/St_Johns", name: "Memorial University", primary_color: "#862633",
+  secondary_color: "#FFFFFF", email_domains: ["mun.ca"], language: "fr", faculties: [],
 }];
 
 const MOCK_CLUBS = [
@@ -255,8 +258,9 @@ test.describe("School timezone rendering", () => {
 });
 
 test.describe("Language loading", () => {
-  test("defaults a French school to French and preserves an explicit English preference", async ({ page }) => {
-    await page.goto("http://uqam.wat2do.localhost:3000/");
+  for (const school of ["uqam", "mun"]) {
+  test(`defaults ${school} to French and preserves an explicit English preference`, async ({ page }) => {
+    await page.goto(`http://${school}.wat2do.localhost:3000/`);
     await expect(page.locator("html")).toHaveAttribute("lang", "fr");
     await page.getByRole("combobox").filter({ hasText: "Français" }).click();
     await page.getByRole("option", { name: "English", exact: true }).click();
@@ -264,6 +268,8 @@ test.describe("Language loading", () => {
     await page.reload();
     await expect(page.locator("html")).toHaveAttribute("lang", "en");
   });
+
+  }
 
   test("loads and persists an RTL locale after first paint", async ({ page }) => {
     await page.goto(BASE);
@@ -1165,7 +1171,7 @@ test.describe("Admin diagnostics", () => {
 });
 
 test.describe("Admin Instagram publishing", () => {
-  for (const school of ["uwaterloo", "western", "ulaval"]) {
+  for (const school of ["uwaterloo", "western", "ulaval", "mun"]) {
   test(`adds an existing event by ID and prepopulates its club for ${school}`, async ({
     page, next,
   }) => {
@@ -1195,7 +1201,7 @@ test.describe("Admin Instagram publishing", () => {
       ],
       price: 0,
       food: [],
-      registration: school === "ulaval",
+      registration: school === "ulaval" || school === "mun",
       source_image_url: null,
       source_url: null,
       category: "Technology",
@@ -1363,7 +1369,7 @@ test.describe("Admin Instagram publishing", () => {
     await expect(drawer.getByLabel("Saved caption preview (event details appended automatically)", { exact: true })).toHaveCount(0);
 
     const firstPreview = drawer.locator("figure").filter({ hasText: "First Carousel Event" });
-    if (school === "ulaval") {
+    if (school === "ulaval" || school === "mun") {
       await expect(firstPreview.getByText("Inscription", { exact: true })).toBeVisible();
       await expect(firstPreview.getByText(/^Ajouté le /)).toBeVisible();
       await expect(drawer.getByRole("button", { name: "Save draft", exact: true })).toBeVisible();
@@ -1393,6 +1399,16 @@ test.describe("Admin Instagram publishing", () => {
     await drawer.locator("figure").filter({ hasText: "Edited before adding another event" }).click();
     await expect(drawer.getByRole("textbox", { name: /Event Title/ })).toHaveValue("Edited before adding another event");
     expect(eventUpdateCount).toBe(0);
+    const undoRemove = drawer.getByRole("button", { name: "Undo remove slide", exact: true });
+    await expect(undoRemove).toBeDisabled();
+    await drawer.locator("figure").filter({ hasText: "Edited before adding another event" })
+      .getByRole("button", { name: "Remove slide", exact: true }).click();
+    await expect(drawer.locator("figure")).toHaveCount(2);
+    expect(patchCount).toBe(0);
+    await undoRemove.click();
+    await expect(drawer.locator("figure")).toHaveCount(3);
+    await expect(drawer.getByRole("textbox", { name: /Event Title/ })).toHaveValue("Edited before adding another event");
+    await expect(undoRemove).toBeDisabled();
     await drawer.getByRole("button", { name: "Save draft", exact: true }).click();
     await expect.poll(() => eventUpdateCount).toBe(1);
     await expect.poll(() => savedEventIds).toEqual([2, 1]);

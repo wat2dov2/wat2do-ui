@@ -339,7 +339,8 @@
       "eventIdPlaceholder": "ਇੱਕ ਇਵੈਂਟ ID ਦਾਖਲ ਕਰੋ",
       "coverSlide": "ਕਵਰ ਸਲਾਈਡ",
       "coverBody": "ਮੁੱਖ ਪਾਠ ਨੂੰ ਕਵਰ ਕਰੋ",
-      "slideOf": "{{count}} ਵਿੱਚੋਂ ਸਲਾਈਡ {{index}}"
+      "slideOf": "{{count}} ਵਿੱਚੋਂ ਸਲਾਈਡ {{index}}",
+      "undoRemoveSlide": "ਸਲਾਈਡ ਹਟਾਉਣਾ ਵਾਪਸ ਲਓ"
     },
     "clubSubmissions": "ਕਲੱਬ ਸਬਮਿਸ਼ਨ",
     "noClubSubmissions": "ਕੋਈ ਕਲੱਬ ਸਬਮਿਸ਼ਨ ਨਹੀਂ",

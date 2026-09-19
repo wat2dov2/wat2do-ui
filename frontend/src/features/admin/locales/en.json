@@ -339,7 +339,8 @@
       "eventIdPlaceholder": "Enter an event ID",
       "coverSlide": "Cover slide",
       "coverBody": "Cover body text",
-      "slideOf": "Slide {{index}} of {{count}}"
+      "slideOf": "Slide {{index}} of {{count}}",
+      "undoRemoveSlide": "Undo remove slide"
     },
     "clubSubmissions": "Club submissions",
     "noClubSubmissions": "No club submissions",

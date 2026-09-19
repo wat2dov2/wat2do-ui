@@ -339,7 +339,8 @@
       "eventIdPlaceholder": "ஒரு நிகழ்வு ஐடி பதிவு செய்யவும்",
       "coverSlide": "முகப்பு ஸ்லைடு",
       "coverBody": "முகப்பு உள்ளடக்க உரை",
-      "slideOf": "{{count}}-இல் ஸ்லைடு {{index}}"
+      "slideOf": "{{count}}-இல் ஸ்லைடு {{index}}",
+      "undoRemoveSlide": "ஸ்லைடு அகற்றுதலைச் செயல்தவிர்"
     },
     "clubSubmissions": "கிளப் சமர்ப்பிப்புகள்",
     "noClubSubmissions": "கிளப் சமர்ப்பிப்புகள் இல்லை",

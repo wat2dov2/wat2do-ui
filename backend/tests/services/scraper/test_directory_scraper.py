@@ -4,6 +4,8 @@ import json
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 from services.scraper.directory_scraper import (
     DirectoryConfig,
     _resolve_directory_club,
@@ -341,3 +343,76 @@ def test_run_directory_pipeline_dry_run(
         school="Test School",
         source_club="Test Students' Union",
     )
+
+
+@pytest.mark.parametrize(
+    "title,old_location,new_location",
+    [
+        ("Campus Life Fair", "SLC Great Hall", "SLC Great Hall"),
+        (
+            "Fruit & Veggie Market",
+            "SLC Marketplace",
+            "Student Life Centre, Pearl Sullivan Engineering",
+        ),
+    ],
+)
+def test_wusa_pipeline_updates_existing_event_with_canonical_owner(
+    monkeypatch,
+    title,
+    old_location,
+    new_location,
+):
+    from services import club_service
+    from services.scraper import dedup, directory_scraper, event_writer
+
+    configs = json.loads(
+        (Path(__file__).parents[3] / "services/scraper/urls/directories.json").read_text()
+    )
+    config = DirectoryConfig.model_validate(next(row for row in configs if row["id"] == "wusa"))
+    canonical_name = "Waterloo Undergraduate Student Association"
+    club = {"id": 6943, "club_name": canonical_name, "ig": "yourwusa"}
+    monkeypatch.setattr(
+        club_service,
+        "lookup_club_by_school_and_name",
+        lambda school, name: club if school == "uwaterloo" and name == canonical_name else None,
+    )
+    monkeypatch.setattr(event_writer, "_lookup_club_by_ig", lambda _: None)
+    occurrence = {"dtstart_utc": "2099-09-23T15:00:00Z", "dtend_utc": "2099-09-23T18:00:00Z"}
+    candidate = {
+        "id": 18880,
+        "title": title,
+        "location": old_location,
+        "club_id": 6943,
+        "ig_handle": "yourwusa",
+        "event_dates": [occurrence],
+    }
+    monkeypatch.setattr(
+        dedup, "_fetch_org_events_by_id", lambda club_id: [candidate] if club_id == 6943 else []
+    )
+    monkeypatch.setattr(dedup, "_fetch_day_events", lambda *_: [])
+    monkeypatch.setattr(
+        directory_scraper,
+        "crawl_directory_links",
+        lambda *_args, **_kwargs: ["https://wusa.ca/event/example"],
+    )
+    monkeypatch.setattr(directory_scraper, "existing_urls", lambda _: set())
+    monkeypatch.setattr(directory_scraper, "scrape_event_page", lambda *_: ("Event details", []))
+    monkeypatch.setattr(
+        directory_scraper,
+        "extract_events_from_post",
+        lambda **_: [
+            {"title": title, "location": new_location, "club": "WUSA", "occurrences": [occurrence]}
+        ],
+    )
+    monkeypatch.setattr("services.scraper.reconciler._client", lambda: None)
+    write = MagicMock(return_value="updated")
+    monkeypatch.setattr(directory_scraper, "write_event", write)
+
+    result = run_directory_pipeline(config)
+
+    assert result.errors == []
+    assert result.events_updated == 1
+    saved = write.call_args.args[0]
+    assert saved["id"] == 18880
+    assert saved["location"] == new_location
+    assert write.call_args.kwargs["resolved_org"].club_id == 6943

@@ -339,7 +339,8 @@
       "eventIdPlaceholder": "એક ઘટના ID દાખલ કરો",
       "coverSlide": "કવર સ્લાઇડ",
       "coverBody": "કવર બોડી ટેક્સ્ટ",
-      "slideOf": "સ્લાઇડ {{index}} માંથી {{count}}"
+      "slideOf": "સ્લાઇડ {{index}} માંથી {{count}}",
+      "undoRemoveSlide": "સ્લાઇડ દૂર કરવાનું પૂર્વવત્ કરો"
     },
     "clubSubmissions": "ક્લબ સબમિશન",
     "noClubSubmissions": "કોઈ ક્લબ સબમિશન નથી",

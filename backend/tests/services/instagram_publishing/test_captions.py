@@ -9,7 +9,7 @@ from services.instagram_publishing.captions import build_caption, default_captio
 def school_language(monkeypatch):
     monkeypatch.setattr(
         "services.instagram_publishing.captions.get_school",
-        lambda slug: SimpleNamespace(language="fr" if slug == "uqam" else "en"),
+        lambda slug: SimpleNamespace(language="fr" if slug in ("uqam", "mun") else "en"),
     )
 
 
@@ -100,3 +100,19 @@ def test_oversized_intro_is_rejected(monkeypatch):
     )
     with pytest.raises(Exception, match="2200-character"):
         build_caption([], "utsg", "x" * 2200)
+
+
+def test_memorial_caption_uses_french_and_newfoundland_time(monkeypatch):
+    monkeypatch.setattr(
+        "services.instagram_publishing.captions.resolve_school_timezone",
+        lambda _: "America/St_Johns",
+    )
+    caption = build_caption(
+        [{"title": "Soirée", "dtstart_utc": "2026-09-23T22:00:00Z"}],
+        "mun",
+        default_caption_intro("mun"),
+    )
+    assert caption.startswith("Nouveaux événements à mun")
+    assert "23/09/2026 · 19 h 30" in caption
+    assert "À quel événement" in caption
+    assert "mun.wat2do.io" in caption

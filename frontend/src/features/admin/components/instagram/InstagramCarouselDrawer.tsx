@@ -65,6 +65,7 @@ export function InstagramCarouselDrawer({
   const queryClient = useQueryClient();
   const { schoolBySlug } = useSchoolDirectory();
   const [eventIds, setEventIds] = useState<number[]>(() => carouselEventIds(batch));
+  const [removedSlides, setRemovedSlides] = useState<Array<{ eventId: number; position: number }>>([]);
   const caption = batch.caption;
   const [captionIntro, setCaptionIntro] = useState(batch.caption_intro);
   const [coverBody, setCoverBody] = useState(batch.cover_body);
@@ -176,17 +177,31 @@ export function InstagramCarouselDrawer({
   const handleRemoveSlide = useCallback((removedEventId: number) => {
     if (!editable || busy || eventIds.length <= 1) return;
     const next = eventIds.filter((eventId) => eventId !== removedEventId);
+    setRemovedSlides((current) => [...current, { eventId: removedEventId, position: eventIds.indexOf(removedEventId) }]);
+    const removedEvent = liveSlides[removedEventId] ?? slideEvents[removedEventId];
+    if (removedEvent) handlePreviewEventChange(removedEventId, removedEvent);
     setEventIds(next);
     setSlideIndex(currentEventId == null || currentEventId === removedEventId
       ? COVER_INDEX : next.indexOf(currentEventId) + 1);
-    setEditors((current) => current.filter((editor) => editor.eventId !== removedEventId));
-  }, [currentEventId, eventIds, editable, busy]);
+  }, [currentEventId, eventIds, editable, busy, liveSlides, slideEvents, handlePreviewEventChange]);
+
+  const undoRemoveSlide = () => {
+    const removed = removedSlides.at(-1);
+    if (!removed || !editable || busy) return;
+    const next = eventIds.filter((id) => id !== removed.eventId);
+    next.splice(Math.min(removed.position, next.length), 0, removed.eventId);
+    setEventIds(next);
+    setRemovedSlides((current) => current.slice(0, -1));
+    setAddingEvent(false);
+    setSlideIndex(next.indexOf(removed.eventId) + 1);
+    openEditor(removed.eventId);
+  };
 
   /** Save visited forms before saving the carousel, including offscreen edits. */
   const handleSaveDraft = useCallback(async () => {
     setIsSavingSlide(true);
     try {
-      for (const editor of editors) {
+      for (const editor of editors.filter((item) => eventIds.includes(item.eventId))) {
         if (editor.saveRef.current && !(await editor.saveRef.current())) {
           setAddingEvent(false);
           setSlideIndex(eventIds.indexOf(editor.eventId) + 1);
@@ -390,6 +405,9 @@ export function InstagramCarouselDrawer({
 
         <DrawerFooter>
           <Stack direction="horizontal" justify="end" gap={2} wrap>
+            {editable && <Button variant="outline" disabled={busy || removedSlides.length === 0} onClick={undoRemoveSlide}>
+              {t("admin.instagramPublishing.undoRemoveSlide")}
+            </Button>}
             <Button
               type="button"
               disabled={!editable || busy}

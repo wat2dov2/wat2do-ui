@@ -339,7 +339,8 @@
       "eventIdPlaceholder": "이벤트 ID 입력",
       "coverSlide": "표지 슬라이드",
       "coverBody": "표지 본문 텍스트",
-      "slideOf": "슬라이드 {{index}} / {{count}}"
+      "slideOf": "슬라이드 {{index}} / {{count}}",
+      "undoRemoveSlide": "슬라이드 삭제 취소"
     },
     "clubSubmissions": "동아리 제출",
     "noClubSubmissions": "동아리 제출 없음",

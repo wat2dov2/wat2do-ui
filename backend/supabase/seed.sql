@@ -4,7 +4,7 @@
 
 BEGIN;
 
-UPDATE public.schools SET language = 'fr' WHERE slug = 'ulaval';
+UPDATE public.schools SET language = 'fr' WHERE slug IN ('ulaval', 'mun');
 
 UPDATE public.schools
 SET location_examples = examples.locations

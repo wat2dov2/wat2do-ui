@@ -339,7 +339,8 @@
       "eventIdPlaceholder": "Inserisci un ID evento",
       "coverSlide": "Diapositiva di copertina",
       "coverBody": "Testo del corpo copertina",
-      "slideOf": "Diapositiva {{index}} di {{count}}"
+      "slideOf": "Diapositiva {{index}} di {{count}}",
+      "undoRemoveSlide": "Annulla rimozione diapositiva"
     },
     "clubSubmissions": "Proposte di club",
     "noClubSubmissions": "Nessuna proposta di club",

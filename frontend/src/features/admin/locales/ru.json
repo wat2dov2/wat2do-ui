@@ -339,7 +339,8 @@
       "eventIdPlaceholder": "Введите ID события",
       "coverSlide": "Обложка слайда",
       "coverBody": "Текст основного слайда",
-      "slideOf": "Слайд {{index}} из {{count}}"
+      "slideOf": "Слайд {{index}} из {{count}}",
+      "undoRemoveSlide": "Отменить удаление слайда"
     },
     "clubSubmissions": "Заявки клубов",
     "noClubSubmissions": "Нет заявок клубов",

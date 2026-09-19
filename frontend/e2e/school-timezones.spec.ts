@@ -122,3 +122,14 @@ test("published slides preserve the school-local added timestamp and omit missin
   expect((await buildEventSlideModel({ ...input, added_at: null }, "en")).addedLine).toBe("");
   expect((await buildEventSlideModel({ ...input, added_at: "invalid" }, "en")).addedLine).toBe("");
 });
+
+
+test("Memorial Instagram slides use French and Newfoundland local time", async () => {
+  const slide = await buildEventSlideModel({
+    id: 1, school: "mun", tz: "America/St_Johns", title: "Campus event",
+    dtstart_utc: "2026-09-23T22:00:00Z", registration: true,
+  }, "fr");
+  expect(slide.dateLine).toBe("mercredi 23 septembre");
+  expect(slide.timeLine).toContain("19:30");
+  expect(slide.badges).toContain("Inscription");
+});

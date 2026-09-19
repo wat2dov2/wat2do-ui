@@ -760,3 +760,51 @@ def test_slide_payload_uses_school_timezone_even_when_occurrence_disagrees(
         )["tz"]
         == "America/Edmonton"
     )
+
+
+def test_get_batch_recovers_from_database_disconnect(monkeypatch):
+    from httpx import RemoteProtocolError
+
+    batch = {"id": "batch-1", "school_record": {"slug": "uwaterloo"}}
+    monkeypatch.setattr(
+        service, "get_sb", lambda: SimpleNamespace(table=lambda _: _FakeQuery([batch], []))
+    )
+    hydrate = Mock(side_effect=[RemoteProtocolError("Server disconnected"), None])
+    monkeypatch.setattr(service, "_hydrate_batch", hydrate)
+
+    assert service.get_batch("batch-1")["id"] == "batch-1"
+    assert hydrate.call_count == 2
+
+
+def test_concurrent_batch_reads_recover_without_mixing_results(monkeypatch):
+    from concurrent.futures import ThreadPoolExecutor
+    from threading import Lock
+
+    from httpx import RemoteProtocolError
+
+    monkeypatch.setattr(
+        service,
+        "get_sb",
+        lambda: SimpleNamespace(
+            table=lambda _: _FakeQuery(
+                [{"id": "batch-1", "school_record": {"slug": "uwaterloo"}}], []
+            )
+        ),
+    )
+    failures = 2
+    lock = Lock()
+
+    def hydrate(batch):
+        nonlocal failures
+        with lock:
+            if failures:
+                failures -= 1
+                raise RemoteProtocolError("Server disconnected")
+        batch["items"] = []
+        batch["new_event_count"] = 4
+
+    monkeypatch.setattr(service, "_hydrate_batch", hydrate)
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        results = list(pool.map(service.get_batch, ["batch-1", "batch-1"]))
+    assert [row["new_event_count"] for row in results] == [4, 4]
+    assert results[0] is not results[1]

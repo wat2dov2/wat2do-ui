@@ -339,7 +339,8 @@
       "eventIdPlaceholder": "Geben Sie eine Ereignis-ID ein",
       "coverSlide": "Titel-Folie",
       "coverBody": "Text auf der Titelfolie",
-      "slideOf": "Folie {{index}} von {{count}}"
+      "slideOf": "Folie {{index}} von {{count}}",
+      "undoRemoveSlide": "Entfernen der Folie rückgängig machen"
     },
     "clubSubmissions": "Club-Einreichungen",
     "noClubSubmissions": "Keine Club-Einreichungen",

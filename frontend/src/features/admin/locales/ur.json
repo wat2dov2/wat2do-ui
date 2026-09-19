@@ -339,7 +339,8 @@
       "eventIdPlaceholder": "تقریب کا شناختی نمبر درج کریں",
       "coverSlide": "کور سلائیڈ",
       "coverBody": "کور باڈی متن",
-      "slideOf": "{{count}} میں سے سلائیڈ {{index}}"
+      "slideOf": "{{count}} میں سے سلائیڈ {{index}}",
+      "undoRemoveSlide": "سلائیڈ ہٹانا واپس کریں"
     },
     "clubSubmissions": "کلب کی درخواستیں",
     "noClubSubmissions": "کلب کی کوئی درخواست نہیں",

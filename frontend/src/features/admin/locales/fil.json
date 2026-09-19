@@ -339,7 +339,8 @@
       "eventIdPlaceholder": "Ilagay ang ID ng kaganapan",
       "coverSlide": "Slide ng pabalat",
       "coverBody": "Teksto ng katawan ng pabalat",
-      "slideOf": "Slide {{index}} ng {{count}}"
+      "slideOf": "Slide {{index}} ng {{count}}",
+      "undoRemoveSlide": "Ibalik ang inalis na slide"
     },
     "clubSubmissions": "Mga pagsusumite ng club",
     "noClubSubmissions": "Walang pagsusumite ng club",

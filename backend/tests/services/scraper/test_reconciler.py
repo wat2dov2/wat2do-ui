@@ -218,3 +218,21 @@ def test_reconcile_events_allows_legacy_null_org_with_matching_ig(monkeypatch):
     )
     assert result is not None
     assert result[0]["id"] == 42
+
+
+def test_location_correction_reuses_event_when_model_is_unavailable(monkeypatch):
+    extracted, candidate = _matching_event_data()
+    extracted["location"] = "Student Life Centre, Pearl Sullivan Engineering"
+    candidate["location"] = "SLC Marketplace"
+    monkeypatch.setattr("services.scraper.reconciler._client", lambda: None)
+    result = reconcile_events(
+        extracted_events=[extracted],
+        candidates_by_index=[[candidate]],
+        caption_text="Updated location",
+        school="uwaterloo",
+        resolved_club_ids=[7],
+        resolved_ig_handles=["uwtea"],
+    )
+    assert result is not None
+    assert result[0]["id"] == 42
+    assert result[0]["location"] == extracted["location"]

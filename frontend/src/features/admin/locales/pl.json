@@ -339,7 +339,8 @@
       "eventIdPlaceholder": "Wprowadź ID wydarzenia",
       "coverSlide": "Slajd okładkowy",
       "coverBody": "Tekst główny na okładce",
-      "slideOf": "Slajd {{index}} z {{count}}"
+      "slideOf": "Slajd {{index}} z {{count}}",
+      "undoRemoveSlide": "Cofnij usunięcie slajdu"
     },
     "clubSubmissions": "Zgłoszenia klubów",
     "noClubSubmissions": "Brak zgłoszeń klubów",

@@ -581,3 +581,16 @@ def test_find_candidates_soft_name_match_when_org_id_missing(fake_sb, patch_sb):
     )
     assert len(result) == 1
     assert result[0]["id"] == 55
+
+
+def test_equally_confident_duplicates_prefer_original_event_id():
+    candidates = [{**_duplicate_event(), "id": event_id, "club_id": 7} for event_id in [99, 42]]
+    assert (
+        confident_duplicate_id(
+            event=_duplicate_event(),
+            candidates=candidates,
+            club_id=7,
+            ig_handle=None,
+        )
+        == 42
+    )

@@ -339,7 +339,8 @@
       "eventIdPlaceholder": "Nhập ID sự kiện",
       "coverSlide": "Slide bìa",
       "coverBody": "Văn bản nội dung bìa",
-      "slideOf": "Slide {{index}} của {{count}}"
+      "slideOf": "Slide {{index}} của {{count}}",
+      "undoRemoveSlide": "Hoàn tác xóa trang chiếu"
     },
     "clubSubmissions": "Đề xuất câu lạc bộ",
     "noClubSubmissions": "Chưa có đề xuất câu lạc bộ",

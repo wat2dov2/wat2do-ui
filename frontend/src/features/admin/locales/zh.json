@@ -339,7 +339,8 @@
       "eventIdPlaceholder": "输入活动 ID",
       "coverSlide": "封面",
       "coverBody": "封面正文",
-      "slideOf": "第 {{index}} 张，共 {{count}} 张"
+      "slideOf": "第 {{index}} 张，共 {{count}} 张",
+      "undoRemoveSlide": "撤销移除幻灯片"
     },
     "clubSubmissions": "社团提交",
     "noClubSubmissions": "暂无社团提交",

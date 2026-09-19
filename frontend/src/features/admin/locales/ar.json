@@ -339,7 +339,8 @@
       "eventIdPlaceholder": "أدخل معرف الحدث",
       "coverSlide": "شريحة الغلاف",
       "coverBody": "نص جسم الغلاف",
-      "slideOf": "الشريحة {{index}} من {{count}}"
+      "slideOf": "الشريحة {{index}} من {{count}}",
+      "undoRemoveSlide": "التراجع عن إزالة الشريحة"
     },
     "clubSubmissions": "طلبات الأندية",
     "noClubSubmissions": "لا توجد طلبات أندية",
