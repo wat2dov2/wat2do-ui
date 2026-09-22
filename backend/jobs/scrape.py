@@ -197,13 +197,14 @@ def run(
         posts_by_owner[owner].append(p)
 
     overall_status = 0
+    pipeline_cutoff = 1825 if exact_post_targets else cutoff_days
     for owner, owner_posts in posts_by_owner.items():
         handle = owner.lstrip("@")
         result = run_pipeline(
             ig_handle=handle,
             school=school,
             posts=owner_posts,
-            cutoff_days=cutoff_days,
+            cutoff_days=pipeline_cutoff,
             pinned_post_warning=pinned_warning if len(clean_targets) == 1 else False,
             dry_run=dry_run,
             github_run_id=os.getenv("GITHUB_RUN_ID"),

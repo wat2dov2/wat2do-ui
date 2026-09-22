@@ -70,7 +70,7 @@ def _process_claim(claim: MediaClaim, *, cutoff_days: int) -> int:
 
     if not finalized:
         log.error("Instagram media claim was not finalized.")
-    
+
     if not finalized:
         return 1
     return 2 if status == 2 else (0 if status == 0 else 1)
@@ -122,10 +122,12 @@ def main() -> int:
         processed_count += 1
         claim_status = _process_claim(claim, cutoff_days=cutoff_days)
         if claim_status == 2:
-            log.warning("Infrastructure failure detected. Halting worker to prevent infinite retry loops.")
+            log.warning(
+                "Infrastructure failure detected. Halting worker to prevent infinite retry loops."
+            )
             overall_status = 1
             break
-        
+
         overall_status = max(overall_status, claim_status)
 
     if processed_count:
