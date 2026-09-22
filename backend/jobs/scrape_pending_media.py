@@ -21,6 +21,7 @@ from services.instagram_notifications.ledger import (  # noqa: E402
     claim_next_pending_media,
     mark_media_failed,
     mark_media_succeeded,
+    rollback_media_claim,
 )
 
 log = logging.getLogger(__name__)
@@ -43,25 +44,36 @@ def _process_claim(claim: MediaClaim, *, cutoff_days: int) -> int:
         failure_category = "scrape_error"
 
     try:
-        finalized = (
-            mark_media_succeeded(
+        if status == 2:
+            finalized = rollback_media_claim(
                 media_row_id=claim.media_row_id,
                 claim_token=claim.claim_token,
             )
-            if status == 0
-            else mark_media_failed(
-                media_row_id=claim.media_row_id,
-                claim_token=claim.claim_token,
-                failure_category=failure_category,
+            if finalized:
+                log.info("Rolled back transient infrastructure failure to pending queue.")
+        else:
+            finalized = (
+                mark_media_succeeded(
+                    media_row_id=claim.media_row_id,
+                    claim_token=claim.claim_token,
+                )
+                if status == 0
+                else mark_media_failed(
+                    media_row_id=claim.media_row_id,
+                    claim_token=claim.claim_token,
+                    failure_category=failure_category,
+                )
             )
-        )
     except Exception:  # noqa: BLE001 - never leak database details
         log.error("Instagram media ledger finalization failed.")
         finalized = False
 
     if not finalized:
         log.error("Instagram media claim was not finalized.")
-    return 0 if status == 0 and finalized else 1
+    
+    if not finalized:
+        return 1
+    return 2 if status == 2 else (0 if status == 0 else 1)
 
 
 def main() -> int:
@@ -108,10 +120,13 @@ def main() -> int:
             break
 
         processed_count += 1
-        overall_status = max(
-            overall_status,
-            _process_claim(claim, cutoff_days=cutoff_days),
-        )
+        claim_status = _process_claim(claim, cutoff_days=cutoff_days)
+        if claim_status == 2:
+            log.warning("Infrastructure failure detected. Halting worker to prevent infinite retry loops.")
+            overall_status = 1
+            break
+        
+        overall_status = max(overall_status, claim_status)
 
     if processed_count:
         success_msg = f"Processed {processed_count} pending Instagram media target(s)."

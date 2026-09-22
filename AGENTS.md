@@ -135,6 +135,11 @@ Audit it and update it in the same change whenever tables, columns, constraints,
 or required relationships used by seeded data change.
 Verify the migration and seed together with `cd backend && supabase db reset`.
 
+### Python Dependencies
+
+Our CI uses a locked dependency file for caching and reproducibility. 
+Whenever you add or change a dependency in `backend/requirements.txt`, you **MUST** regenerate the lockfile by running `uv pip compile requirements.txt -o requirements.lock --python 3.12` in the `backend/` directory before committing.
+
 ---
 
 ## Prime directive

@@ -156,6 +156,8 @@ def run(
         )
     except InstagramScraperError as exc:
         log.error("%s", exc)
+        if getattr(exc, "stage", None) != "input":
+            return 2
         return 1
 
     posts = filter_valid_posts(posts)

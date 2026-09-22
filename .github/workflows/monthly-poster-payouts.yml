@@ -54,7 +54,10 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v3
         with:
-          enable-cache: false
+          enable-cache: true
+          cache-dependency-glob: "backend/requirements.lock"
+        env:
+          UV_CACHE_DIR: ${{ runner.temp }}/.uv-cache
 
       - name: Set up Python
         working-directory: backend
@@ -62,7 +65,7 @@ jobs:
 
       - name: Install dependencies
         working-directory: backend
-        run: uv pip install --python .venv/bin/python -r requirements.txt
+        run: uv pip install --python .venv/bin/python -r requirements.lock
 
       - name: Compute promoter poster payouts
         working-directory: backend

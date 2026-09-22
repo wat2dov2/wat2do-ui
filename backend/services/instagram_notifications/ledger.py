@@ -157,6 +157,26 @@ def mark_media_failed(
     )
 
 
+def rollback_media_claim(
+    *,
+    media_row_id: str,
+    claim_token: str,
+) -> bool:
+    """Release a claim back to pending for a transient infrastructure failure."""
+    response = (
+        get_sb()
+        .rpc(
+            "rollback_instagram_notification_media",
+            {
+                "p_media_row_id": media_row_id,
+                "p_claim_token": claim_token,
+            },
+        )
+        .execute()
+    )
+    return response.data is True
+
+
 def _finalize_media(
     *,
     media_row_id: str,
