@@ -117,7 +117,7 @@ def test_run_converts_sanitized_provider_failure_to_nonzero(monkeypatch, caplog)
             allow_past_events=False,
         )
 
-    assert status == 1
+    assert status == 2
     assert "Instagram scraper provider poll failure" in caplog.text
     assert secret not in caplog.text
 

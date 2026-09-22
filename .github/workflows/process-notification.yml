@@ -129,7 +129,7 @@ jobs:
         if: steps.validate.outputs.skip != 'true'
         uses: astral-sh/setup-uv@v3
         with:
-          enable-cache: true
+          enable-cache: ${{ !contains(needs.route.outputs.runner, 'self-hosted') }}
           cache-dependency-glob: "backend/requirements.lock"
         env:
           UV_CACHE_DIR: ${{ runner.temp }}/.uv-cache
