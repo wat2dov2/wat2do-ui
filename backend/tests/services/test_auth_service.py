@@ -23,9 +23,15 @@ def test_server_auth_does_not_rotate_browser_tokens_in_background(monkeypatch):
     requests = []
 
     def refresh_response(request):
-        assert request.url.path == "/auth/v1/token"
-        assert request.url.params["grant_type"] == "refresh_token"
-        requests.append(json.loads(request.content)["refresh_token"])
+        if request.url.path == "/auth/v1/verify":
+            payload = json.loads(request.content)
+            assert payload["email"] == "student@uwaterloo.ca"
+            assert payload["type"] == "email"
+            requests.append("otp-login")
+        else:
+            assert request.url.path == "/auth/v1/token"
+            assert request.url.params["grant_type"] == "refresh_token"
+            requests.append(json.loads(request.content)["refresh_token"])
         return httpx.Response(
             200,
             json={
@@ -43,8 +49,19 @@ def test_server_auth_does_not_rotate_browser_tokens_in_background(monkeypatch):
             },
         )
 
-    browser_refresh_token = "initial-refresh"
     with httpx.Client(transport=httpx.MockTransport(refresh_response)) as transport:
+        login_worker = create_client(
+            "https://example.supabase.co", "test-key", options=supabase.options
+        )
+        login_worker.auth._http_client.close()
+        monkeypatch.setattr(login_worker.auth, "_http_client", transport)
+        login = login_worker.auth.verify_otp(
+            {"email": "student@uwaterloo.ca", "token": "123456", "type": "email"}
+        )
+        assert login.session is not None
+        browser_refresh_token = login.session.refresh_token
+        timer.assert_not_called()
+
         # Each iteration uses a fresh SDK client, as on different deployment
         # workers. Only the token returned to the browser crosses the boundary.
         for _ in range(2):
@@ -57,8 +74,8 @@ def test_server_auth_does_not_rotate_browser_tokens_in_background(monkeypatch):
             result = service.refresh(browser_refresh_token)
             browser_refresh_token = result.refresh_token
 
-    assert requests == ["initial-refresh", "refresh-1"]
-    assert browser_refresh_token == "refresh-2"
+    assert requests == ["otp-login", "refresh-1", "refresh-2"]
+    assert browser_refresh_token == "refresh-3"
     timer.assert_not_called()
     assert supabase.options.persist_session is False
 
