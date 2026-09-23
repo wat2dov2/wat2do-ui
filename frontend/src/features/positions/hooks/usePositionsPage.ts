@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { PaginatedPositionsResponse } from "@/features/positions/api/positions.api";
 import { getPositionDirectory } from "@/features/positions/api/positions.api";
+import { useDiscoveryQueryTracking } from "@/shared/hooks/useDiscoveryQueryTracking";
 import { useEventsStore } from "@/features/events/store/events.store";
 import { resolveSchool } from "@/shared/constants/schools";
 import { filterPositions } from "@/features/positions/api/positionService";
@@ -20,7 +21,7 @@ export function usePositionsPage({
   initialSchool,
 }: UsePositionsPageOptions) {
   const [searchQuery, setSearchQuery] = useState("");
-  const [submittedSearchQuery, setSubmittedSearchQuery] = useState("");
+  const [submittedSearch, setSubmittedSearch] = useState({ query: "", revision: 0 });
   const [positionType, setPositionType] = useState<PositionTypeFilter>("all");
   const [addedSince, setAddedSince] = useState<string | null>(null);
   const [paidOnly, setPaidOnly] = useState(false);
@@ -35,23 +36,30 @@ export function usePositionsPage({
   });
   const positions = useMemo(
     () => filterPositions(query.data?.items ?? [], {
-      search: submittedSearchQuery,
+      search: submittedSearch.query,
       positionType,
       paidOnly,
       addedSince,
     }),
-    [query.data, submittedSearchQuery, positionType, paidOnly, addedSince],
+    [query.data, submittedSearch.query, positionType, paidOnly, addedSince],
   );
   const selectedPosition = query.data?.items.find(position => position.id === selectedPositionId) ?? null;
   const total = positions.length;
 
+  useDiscoveryQueryTracking({
+    school,
+    surface: "positions",
+    search_query: submittedSearch.query,
+    filters: { positionType, paidOnly, addedSince },
+  }, submittedSearch.revision);
+
   const submitSearch = useCallback(() => {
-    setSubmittedSearchQuery(searchQuery.trim());
+    setSubmittedSearch(previous => ({ query: searchQuery.trim(), revision: previous.revision + 1 }));
   }, [searchQuery]);
 
   const clearSearch = useCallback(() => {
     setSearchQuery("");
-    setSubmittedSearchQuery("");
+    setSubmittedSearch(previous => ({ query: "", revision: previous.revision + 1 }));
   }, []);
 
   return {
@@ -62,7 +70,7 @@ export function usePositionsPage({
       const latest = query.data?.latest_added_position;
       if (!latest) return;
       setSearchQuery(latest.title);
-      setSubmittedSearchQuery(latest.title);
+      setSubmittedSearch(previous => ({ query: latest.title, revision: previous.revision + 1 }));
       setPositionType("all");
       setAddedSince(null);
       setPaidOnly(false);

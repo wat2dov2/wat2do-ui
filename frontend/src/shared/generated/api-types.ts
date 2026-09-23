@@ -533,6 +533,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/discovery-queries/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Queries */
+        get: operations["list_queries_discovery_queries__get"];
+        put?: never;
+        /**
+         * Record Query
+         * @description Persist anonymous or signed-in browsing telemetry sent separately from UI reads.
+         *
+         *     Acknowledge only after persistence so the background client can safely retry.
+         */
+        post: operations["record_query_discovery_queries__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/events/admin": {
         parameters: {
             query?: never;
@@ -2006,6 +2029,60 @@ export interface components {
             /** Channels */
             channels: components["schemas"]["DiscordChannelOption"][];
         };
+        /** DiscoveryQueryCreate */
+        DiscoveryQueryCreate: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** School */
+            school: string;
+            /**
+             * Surface
+             * @enum {string}
+             */
+            surface: "events" | "clubs" | "positions";
+            /** Search Query */
+            search_query: string;
+            /**
+             * Page Url
+             * Format: uri
+             */
+            page_url: string;
+            /** Filters */
+            filters: {
+                [key: string]: unknown;
+            };
+        };
+        /** DiscoveryQueryResponse */
+        DiscoveryQueryResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** School */
+            school: string;
+            /**
+             * Surface
+             * @enum {string}
+             */
+            surface: "events" | "clubs" | "positions";
+            /** Search Query */
+            search_query: string;
+            /** Page Url */
+            page_url: string;
+            /** Filters */
+            filters: {
+                [key: string]: unknown;
+            };
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
         /** EventAttendeeResponse */
         EventAttendeeResponse: {
             /** Name */
@@ -2779,6 +2856,19 @@ export interface components {
         PaginatedResponse_ClubResponse_: {
             /** Items */
             items: components["schemas"]["ClubResponse"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+            /** Total Pages */
+            total_pages: number;
+        };
+        /** PaginatedResponse[DiscoveryQueryResponse] */
+        PaginatedResponse_DiscoveryQueryResponse_: {
+            /** Items */
+            items: components["schemas"]["DiscoveryQueryResponse"][];
             /** Total */
             total: number;
             /** Page */
@@ -4992,6 +5082,73 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["MessageResponse"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_queries_discovery_queries__get: {
+        parameters: {
+            query?: {
+                school?: string | null;
+                search?: string | null;
+                /** @description Page number (1-indexed) */
+                page?: number;
+                /** @description Items per page (max 100) */
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_DiscoveryQueryResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    record_query_discovery_queries__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DiscoveryQueryCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

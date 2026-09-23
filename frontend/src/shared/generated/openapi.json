@@ -1964,6 +1964,139 @@
         }
       }
     },
+    "/discovery-queries/": {
+      "post": {
+        "tags": [
+          "discovery-queries"
+        ],
+        "summary": "Record Query",
+        "description": "Persist anonymous or signed-in browsing telemetry sent separately from UI reads.\n\nAcknowledge only after persistence so the background client can safely retry.",
+        "operationId": "record_query_discovery_queries__post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiscoveryQueryCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "discovery-queries"
+        ],
+        "summary": "List Queries",
+        "operationId": "list_queries_discovery_queries__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "school",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 255
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "School"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Search"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 1000,
+              "minimum": 1,
+              "description": "Page number (1-indexed)",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "Page number (1-indexed)"
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "Items per page (max 100)",
+              "default": 50,
+              "title": "Page Size"
+            },
+            "description": "Items per page (max 100)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponse_DiscoveryQueryResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/events/admin": {
       "get": {
         "tags": [
@@ -7811,6 +7944,109 @@
         ],
         "title": "DiscordServerOption"
       },
+      "DiscoveryQueryCreate": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "school": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "School"
+          },
+          "surface": {
+            "type": "string",
+            "enum": [
+              "events",
+              "clubs",
+              "positions"
+            ],
+            "title": "Surface"
+          },
+          "search_query": {
+            "type": "string",
+            "maxLength": 2048,
+            "title": "Search Query"
+          },
+          "page_url": {
+            "type": "string",
+            "maxLength": 8192,
+            "minLength": 1,
+            "format": "uri",
+            "title": "Page Url"
+          },
+          "filters": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Filters"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "school",
+          "surface",
+          "search_query",
+          "page_url",
+          "filters"
+        ],
+        "title": "DiscoveryQueryCreate"
+      },
+      "DiscoveryQueryResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "school": {
+            "type": "string",
+            "title": "School"
+          },
+          "surface": {
+            "type": "string",
+            "enum": [
+              "events",
+              "clubs",
+              "positions"
+            ],
+            "title": "Surface"
+          },
+          "search_query": {
+            "type": "string",
+            "title": "Search Query"
+          },
+          "page_url": {
+            "type": "string",
+            "title": "Page Url"
+          },
+          "filters": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Filters"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "school",
+          "surface",
+          "search_query",
+          "page_url",
+          "filters",
+          "created_at"
+        ],
+        "title": "DiscoveryQueryResponse"
+      },
       "EventAttendeeResponse": {
         "properties": {
           "name": {
@@ -9877,6 +10113,42 @@
           "total_pages"
         ],
         "title": "PaginatedResponse[ClubResponse]"
+      },
+      "PaginatedResponse_DiscoveryQueryResponse_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/DiscoveryQueryResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          },
+          "total_pages": {
+            "type": "integer",
+            "title": "Total Pages"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "page_size",
+          "total_pages"
+        ],
+        "title": "PaginatedResponse[DiscoveryQueryResponse]"
       },
       "PaginatedResponse_EventSummaryResponse_": {
         "properties": {

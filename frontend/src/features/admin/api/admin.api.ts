@@ -131,6 +131,10 @@ async function getAdminPage<T>(path: string, filters: AdminListFilters, statusKe
   return api.get<PaginatedApiResponse<T>>(`${path}?${params}`);
 }
 
+export function getDiscoveryQueries(filters: AdminListFilters) {
+  return getAdminPage<components["schemas"]["DiscoveryQueryResponse"]>("/discovery-queries/", filters);
+}
+
 export function getAdminEventsPage(filters: AdminListFilters) {
   return getAdminPage<Event>("/events/admin", filters);
 }

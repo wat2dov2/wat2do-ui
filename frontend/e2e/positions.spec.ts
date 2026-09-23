@@ -68,6 +68,7 @@ function apiPath(url: URL): string | null {
 
 test.describe("Positions UI", () => {
   test.beforeEach(async ({ page, next }) => {
+    await mockApi(page, next, url => apiPath(url) === "/discovery-queries", async () => ({ status: 204 }));
     await page.clock.setFixedTime(new Date("2026-08-02T18:00:00Z"));
     await mockApi(page, next,
       (url) => apiPath(url) === "/schools" || apiPath(url) === "/schools/uwaterloo",
@@ -126,6 +127,29 @@ test.describe("Positions UI", () => {
         });
       },
     );
+  });
+
+  test("logs positions and filters despite a failed background write", async ({ page }) => {
+    const captured: Array<{ id: string; school: string; surface: string; search_query: string; page_url: string; filters: Record<string, unknown> }> = [];
+    await page.route("**/api/discovery-queries/", async route => {
+      captured.push(route.request().postDataJSON());
+      await route.fulfill({ status: 503, json: { detail: "Telemetry unavailable" } });
+    });
+    await page.goto("/positions");
+    await page.getByRole("button", { name: "Paid", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Operations Assistant", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Design Lead", exact: true })).toHaveCount(0);
+    await expect.poll(() => captured.some(row => row.filters.paidOnly === true)).toBe(true);
+    const search = page.getByPlaceholder("Search roles, skills, or locations...");
+    await search.fill("Operations");
+    await search.press("Enter");
+    await expect.poll(() => captured.some(row => row.search_query === "Operations")).toBe(true);
+    const submitted = captured.find(row => row.search_query === "Operations")!;
+    expect(submitted).toMatchObject({ school: "uwaterloo", surface: "positions", filters: { paidOnly: true } });
+    expect(submitted.page_url).toContain("/positions");
+    await expect.poll(() => captured.filter(row => row.id === submitted.id).length).toBeGreaterThan(1);
+    await expect(page.getByRole("heading", { name: "Operations Assistant", exact: true })).toBeVisible();
+    await expect(page.getByRole("alert")).toHaveCount(0);
   });
 
   test("keeps the listing controls fixed while scrolling on mobile", async ({ page, next }) => {

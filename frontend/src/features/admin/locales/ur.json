@@ -27,6 +27,14 @@
         "description": "پروسیس-سنگل-یوزر ورک فلو کے لیے Android Automate ایپ سے متنی نتائج۔",
         "loading": "لاگز لوڈ ہو رہے ہیں...",
         "placeholder": "Automate لاگ کا نتیجہ یہاں ظاہر ہوگا۔"
+      },
+      "queries": {
+        "title": "تلاش کا ریکارڈ",
+        "surface": "فہرست",
+        "pageUrl": "صفحے کا URL",
+        "filters": "لاگو فلٹرز",
+        "empty": "ابھی کوئی تلاش ریکارڈ نہیں ہوئی۔",
+        "emptySearch": "تلاش کا متن نہیں"
       }
     },
     "manageEvents": "ایونٹس کا نظم کریں",

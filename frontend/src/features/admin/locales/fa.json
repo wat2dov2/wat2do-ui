@@ -27,6 +27,14 @@
         "description": "خروجی متنی برنامه Android Automate برای گردش‌کار process-single-user.",
         "loading": "در حال بارگذاری گزارش‌ها...",
         "placeholder": "Automate خروجی گزارش در اینجا ظاهر خواهد شد."
+      },
+      "queries": {
+        "title": "گزارش جستجوها",
+        "surface": "فهرست",
+        "pageUrl": "نشانی صفحه",
+        "filters": "فیلترهای اعمال‌شده",
+        "empty": "هنوز جستجویی ثبت نشده است.",
+        "emptySearch": "بدون متن جستجو"
       }
     },
     "manageEvents": "مدیریت رویدادها",

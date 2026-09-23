@@ -1,0 +1,14 @@
+{
+  "maximum_search_length": 2048,
+  "maximum_page_url_length": 8192,
+  "maximum_filters_bytes": 16384,
+  "request_timeout_ms": 10000,
+  "retry_delays_ms": [
+    1000,
+    5000
+  ],
+  "rate_limit": {
+    "maximum_requests": 600,
+    "window_seconds": 60
+  }
+}

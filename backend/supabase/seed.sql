@@ -4,6 +4,8 @@
 
 BEGIN;
 
+-- discovery_queries intentionally starts empty: only actual browsing writes analytics.
+
 UPDATE public.schools SET language = 'fr' WHERE slug IN ('ulaval', 'mun');
 
 UPDATE public.schools

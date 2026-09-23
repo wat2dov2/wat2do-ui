@@ -86,6 +86,7 @@ PUBLIC_ENDPOINTS = (
 )
 
 AUTHENTICATED_ENDPOINTS = (
+    Endpoint("/discovery-queries/", "/discovery-queries/?page=1&page_size=20", True),
     Endpoint("/events/admin", "/events/admin?page=1&page_size=20", True),
     Endpoint("/going-events/", "/going-events/", True),
     Endpoint(

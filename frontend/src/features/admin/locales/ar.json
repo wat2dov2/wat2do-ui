@@ -27,6 +27,14 @@
         "description": "المخرجات النصية من تطبيق Android Automate لعملية سير العمل لمستخدم واحد.",
         "loading": "جارٍ تحميل السجلات...",
         "placeholder": "Automate مخرجات السجل ستظهر هنا."
+      },
+      "queries": {
+        "title": "سجل البحث",
+        "surface": "القائمة",
+        "pageUrl": "رابط الصفحة",
+        "filters": "الفلاتر المطبقة",
+        "empty": "لم تُسجّل أي عمليات بحث بعد.",
+        "emptySearch": "دون نص بحث"
       }
     },
     "manageEvents": "إدارة الفعاليات",

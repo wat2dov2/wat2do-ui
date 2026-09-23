@@ -84,6 +84,7 @@ const publicPromoterProgram = {
   })),
 };
 const apiCollectionPaths = [
+  "discovery-queries",
   "events",
   "instagram-publishing/batches",
   "clubs",

@@ -27,6 +27,14 @@
         "description": "Текстовый вывод из приложения Android Automate для рабочего процесса process-single-user.",
         "loading": "Загрузка журналов...",
         "placeholder": "Вывод журналов Automate появится здесь."
+      },
+      "queries": {
+        "title": "Поисковые запросы",
+        "surface": "Список",
+        "pageUrl": "URL страницы",
+        "filters": "Применённые фильтры",
+        "empty": "Запросы ещё не записаны.",
+        "emptySearch": "Без поискового текста"
       }
     },
     "manageEvents": "Управление событиями",

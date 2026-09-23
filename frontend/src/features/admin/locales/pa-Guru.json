@@ -27,6 +27,14 @@
         "description": "ਪ੍ਰਕਿਰਿਆ-ਸਿੰਗਲ-ਯੂਜ਼ਰ ਵਰਕਫਲੋ ਲਈ Android Automate ਐਪ ਤੋਂ ਟੈਕਸਟ ਆਉਟਪੁੱਟ।",
         "loading": "ਲੌਗ ਲੋਡ ਕੀਤੇ ਜਾ ਰਹੇ ਹਨ...",
         "placeholder": "Automate ਲਾਗ ਆਉਟਪੁੱਟ ਇੱਥੇ ਦਿਖਾਈ ਦੇਵੇਗੀ।"
+      },
+      "queries": {
+        "title": "ਖੋਜ ਰਿਕਾਰਡ",
+        "surface": "ਸੂਚੀ",
+        "pageUrl": "ਪੰਨੇ ਦਾ URL",
+        "filters": "ਲਾਗੂ ਕੀਤੇ ਫਿਲਟਰ",
+        "empty": "ਹਾਲੇ ਕੋਈ ਖੋਜ ਦਰਜ ਨਹੀਂ ਹੋਈ।",
+        "emptySearch": "ਕੋਈ ਖੋਜ ਲਿਖਤ ਨਹੀਂ"
       }
     },
     "manageEvents": "ਇਵੈਂਟਾਂ ਦਾ ਪ੍ਰਬੰਧਨ ਕਰੋ",

@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo } from "react";
 import { useShallow } from "zustand/react/shallow";
+import { useDiscoveryQueryTracking } from "@/shared/hooks/useDiscoveryQueryTracking";
 import { useEventsStore } from "@/features/events/store/events.store";
 import { useAppConstants } from "@/shared/hooks/useAppConstants";
 import { resolveSchool } from "@/shared/constants/schools";
@@ -23,7 +24,7 @@ export function useClubsPage({
   const savedClubIds = useSavedClubsStore(useShallow((s) => s.savedClubIds));
   const [activeTab, setActiveTab] = useState<"all" | "followed" | "claimed">("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [submittedSearchQuery, setSubmittedSearchQuery] = useState("");
+  const [submittedSearch, setSubmittedSearch] = useState({ query: "", revision: 0 });
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [minEvents, setMinEvents] = useState(0);
 
@@ -37,6 +38,7 @@ export function useClubsPage({
   const {
     clubs,
     totalItems,
+    currentPage,
     isLoading,
     isError,
     isLoadingMore,
@@ -47,7 +49,7 @@ export function useClubsPage({
     mode: "infinite",
     limit: controlBox.clubManagement.directoryPageSize,
     school: resolvedSchoolFilter,
-    search: submittedSearchQuery,
+    search: submittedSearch.query,
     categories: selectedCategories,
     minEvents,
     ids: activeTab === "followed" ? savedClubIds : (activeTab === "claimed" ? claimedClubIds : undefined),
@@ -58,13 +60,20 @@ export function useClubsPage({
     initialSchool,
   });
 
+  useDiscoveryQueryTracking({
+    school: resolvedSchoolFilter,
+    surface: "clubs",
+    search_query: submittedSearch.query,
+    filters: { categories: selectedCategories, minEvents, tab: activeTab, page: currentPage },
+  }, submittedSearch.revision);
+
   const submitSearchQuery = useCallback(() => {
-    setSubmittedSearchQuery(searchQuery.trim());
+    setSubmittedSearch(previous => ({ query: searchQuery.trim(), revision: previous.revision + 1 }));
   }, [searchQuery]);
 
   const clearSearchQuery = useCallback(() => {
     setSearchQuery("");
-    setSubmittedSearchQuery("");
+    setSubmittedSearch(previous => ({ query: "", revision: previous.revision + 1 }));
   }, []);
 
   const toggleCategory = useCallback((category: string) => {

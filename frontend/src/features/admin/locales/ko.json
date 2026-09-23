@@ -27,6 +27,14 @@
         "description": "단일 사용자 워크플로우를 위한 Android Automate 앱의 텍스트 출력",
         "loading": "로그 로딩 중...",
         "placeholder": "자동화 로그 출력이 여기에 표시됩니다."
+      },
+      "queries": {
+        "title": "검색 기록",
+        "surface": "목록",
+        "pageUrl": "페이지 URL",
+        "filters": "적용된 필터",
+        "empty": "아직 기록된 검색이 없습니다.",
+        "emptySearch": "검색어 없음"
       }
     },
     "manageEvents": "이벤트 관리",

@@ -27,6 +27,14 @@
         "description": "Android Automate 应用中 process-single-user 工作流程的文本输出。",
         "loading": "正在加载日志...",
         "placeholder": "Automate 日志输出将显示在此处。"
+      },
+      "queries": {
+        "title": "搜索记录",
+        "surface": "列表类型",
+        "pageUrl": "页面网址",
+        "filters": "已应用的筛选条件",
+        "empty": "暂无搜索记录。",
+        "emptySearch": "无搜索文字"
       }
     },
     "manageEvents": "活动管理",

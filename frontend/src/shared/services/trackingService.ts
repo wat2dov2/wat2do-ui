@@ -11,6 +11,8 @@
 import { getAccessToken } from "@/shared/services/apiClient";
 import { API_BASE_URL } from "@/shared/config/api";
 import { controlBox } from "@/shared/config/controlBox";
+import type { components } from "@/shared/generated/api-types";
+import discoveryQueriesControl from "../../../../backend/controlbox/discovery_queries.json";
 import { STORAGE_KEYS } from "@/shared/constants/storageKeys";
 
 interface QueuedInteraction {
@@ -47,6 +49,43 @@ function isExpectedLocalDevNetworkMiss(err: unknown): boolean {
     API_BASE_URL.startsWith("http://127.0.0.1");
 
   return process.env.NODE_ENV === "development" && localApi && message === "Failed to fetch";
+}
+
+/** Shared unload-safe transport; telemetry never enters the UI API/error path. */
+function postTrackingPayload(path: string, body: string, signal?: AbortSignal) {
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  const token = getAccessToken();
+  if (token) headers.Authorization = `Bearer ${token}`;
+  return fetch(`${API_BASE_URL}${path}`, {
+    method: "POST",
+    headers,
+    body,
+    keepalive: true,
+    priority: "low",
+    signal,
+  });
+}
+
+export function trackDiscoveryQuery(data: components["schemas"]["DiscoveryQueryCreate"]) {
+  const send = async () => {
+    const body = JSON.stringify(data);
+    for (let attempt = 0; attempt <= discoveryQueriesControl.retry_delays_ms.length; attempt++) {
+      try {
+        const response = await postTrackingPayload(
+          "/discovery-queries/", body,
+          AbortSignal.timeout(discoveryQueriesControl.request_timeout_ms),
+        );
+        if (response.ok || (response.status < 500 && response.status !== 429)) return;
+      } catch {
+        // Network failures affect telemetry only. Retry the same immutable row ID.
+      }
+      const delay = discoveryQueriesControl.retry_delays_ms[attempt];
+      if (delay === undefined) return;
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  };
+  // Defer even serialization/network setup until after the current UI task.
+  setTimeout(() => { void send().catch(() => undefined); }, 0);
 }
 
 // Low-signal leftovers still debounce; clicks/going flush immediately.
@@ -98,26 +137,8 @@ class Tracker {
       interactions: batch,
     });
 
-    const url = `${API_BASE_URL}/interactions/batch`;
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-    };
-    const token = getAccessToken();
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
-    }
-
     this.flushing = true;
-
-    // fetch + keepalive survives page unload (like sendBeacon) but supports
-    // custom headers, so the token travels in the Authorization header - not
-    // in the request body where it could be logged by intermediaries.
-    void fetch(url, {
-      method: "POST",
-      headers,
-      body: payload,
-      keepalive: true,
-    })
+    void postTrackingPayload("/interactions/batch", payload)
       .then((response) => {
         if (!response.ok) {
           // Put the batch back so a later open/hide can retry.

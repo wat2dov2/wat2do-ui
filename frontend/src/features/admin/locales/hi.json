@@ -27,6 +27,14 @@
         "description": "प्रक्रिया-एकल-उपयोगकर्ता वर्कफ़्लो के लिए Android Automate ऐप से टेक्स्ट आउटपुट।",
         "loading": "लॉग लोड हो रहे हैं...",
         "placeholder": "Automate लॉग आउटपुट यहां दिखाई देगा।"
+      },
+      "queries": {
+        "title": "खोज रिकॉर्ड",
+        "surface": "सूची",
+        "pageUrl": "पेज का URL",
+        "filters": "लागू फ़िल्टर",
+        "empty": "अभी कोई खोज दर्ज नहीं हुई है।",
+        "emptySearch": "कोई खोज पाठ नहीं"
       }
     },
     "manageEvents": "इवेंट प्रबंधित करें",

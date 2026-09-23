@@ -27,6 +27,14 @@
         "description": "Kết quả văn bản từ ứng dụng Android Automate cho quy trình xử lý một người dùng.",
         "loading": "Đang tải nhật ký...",
         "placeholder": "Automate kết quả nhật ký sẽ xuất hiện ở đây."
+      },
+      "queries": {
+        "title": "Truy vấn tìm kiếm",
+        "surface": "Danh sách",
+        "pageUrl": "URL trang",
+        "filters": "Bộ lọc đã áp dụng",
+        "empty": "Chưa có truy vấn nào được ghi lại.",
+        "emptySearch": "Không có nội dung tìm kiếm"
       }
     },
     "manageEvents": "Quản lý sự kiện",

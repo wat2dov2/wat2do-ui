@@ -17,6 +17,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/shared/ui/tabs";
+import { DiscoveryQueries } from "@/features/admin/components/DiscoveryQueries";
 import { useAutomateLogs } from "../api/automateLogsApi";
 
 interface AdminDiagnosticsPageProps {
@@ -41,6 +42,9 @@ export function AdminDiagnosticsPage({ onBack }: AdminDiagnosticsPageProps) {
         <Tabs defaultValue="scraping">
           <Stack gap={5}>
             <TabsList aria-label={t("admin.diagnostics.tabs.label")}>
+              <TabsTrigger value="queries">
+                {t("admin.diagnostics.queries.title")}
+              </TabsTrigger>
               <TabsTrigger value="endpoints">
                 {t("admin.diagnostics.tabs.endpoints")}
               </TabsTrigger>
@@ -49,6 +53,7 @@ export function AdminDiagnosticsPage({ onBack }: AdminDiagnosticsPageProps) {
               </TabsTrigger>
             </TabsList>
 
+            <TabsContent value="queries"><DiscoveryQueries /></TabsContent>
             <TabsContent value="endpoints" />
 
             <TabsContent value="scraping">

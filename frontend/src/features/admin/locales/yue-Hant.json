@@ -27,6 +27,14 @@
         "description": "Android Automate 應用程式的單用戶流程文字輸出。",
         "loading": "正在載入日誌...",
         "placeholder": "Automate 日誌輸出將會顯示在此。"
+      },
+      "queries": {
+        "title": "搜尋記錄",
+        "surface": "清單類型",
+        "pageUrl": "頁面網址",
+        "filters": "已套用嘅篩選條件",
+        "empty": "暫時未有搜尋記錄。",
+        "emptySearch": "冇搜尋文字"
       }
     },
     "manageEvents": "管理活動",

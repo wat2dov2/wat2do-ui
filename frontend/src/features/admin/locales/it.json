@@ -27,6 +27,14 @@
         "description": "Output di testo dall'app Android Automate per il flusso di lavoro process-single-user.",
         "loading": "Caricamento log...",
         "placeholder": "L'output del log di Automate apparirà qui."
+      },
+      "queries": {
+        "title": "Ricerche",
+        "surface": "Elenco",
+        "pageUrl": "URL della pagina",
+        "filters": "Filtri applicati",
+        "empty": "Nessuna ricerca registrata.",
+        "emptySearch": "Nessun testo di ricerca"
       }
     },
     "manageEvents": "Gestisci Eventi",

@@ -488,7 +488,23 @@ class GoogleAnalyticsControl(_ControlModel):
     measurement_id: str = Field(pattern=r"^(G-[A-Z0-9]+)?$")
 
 
+class DiscoveryQueriesControl(_ControlModel):
+    maximum_search_length: int = Field(gt=0)
+    maximum_page_url_length: int = Field(gt=0)
+    maximum_filters_bytes: int = Field(gt=0)
+    request_timeout_ms: int = Field(gt=0)
+    retry_delays_ms: tuple[int, ...] = Field(min_length=1)
+    rate_limit: RateLimitControl
+
+    @model_validator(mode="after")
+    def validate_retry_delays(self) -> "DiscoveryQueriesControl":
+        if any(delay <= 0 for delay in self.retry_delays_ms):
+            raise ValueError("retry delays must be positive")
+        return self
+
+
 class ControlBox(_ControlModel):
+    discovery_queries: DiscoveryQueriesControl
     google_analytics: GoogleAnalyticsControl
     event_discovery: EventDiscoveryControl
     client_cache: ClientCacheControl

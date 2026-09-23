@@ -27,6 +27,14 @@
         "description": "Tekstong output mula sa Android Automate app para sa proseso ng workflow ng single-user.",
         "loading": "Naglo-load ng mga log...",
         "placeholder": "Automate output ng log ay lilitaw dito."
+      },
+      "queries": {
+        "title": "Mga paghahanap",
+        "surface": "Listahan",
+        "pageUrl": "URL ng pahina",
+        "filters": "Mga inilapat na filter",
+        "empty": "Wala pang naitalang paghahanap.",
+        "emptySearch": "Walang teksto ng paghahanap"
       }
     },
     "manageEvents": "Pamahalaan ang mga event",

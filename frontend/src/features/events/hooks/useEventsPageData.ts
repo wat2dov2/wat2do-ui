@@ -1,5 +1,8 @@
 import { useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { useDiscoveryQueryTracking } from "@/shared/hooks/useDiscoveryQueryTracking";
+import { storeStatesToFilterState } from "@/features/search/api/filterService";
+import { useSearchStore } from "@/features/search/store/search.store";
 import { useSearch } from "@/features/search/hooks/useSearch";
 import { useEventsStore } from "@/features/events/store/events.store";
 import { useEventStats } from "@/features/events/hooks/useEventStats";
@@ -121,6 +124,14 @@ export function useEventsPageData({
   );
 
   const totalEvents = filters.filteredEvents.length;
+  const queryRevision = useSearchStore((state) => state.queryRevision);
+  const { searchQuery, ...appliedFilters } = storeStatesToFilterState(filters);
+  useDiscoveryQueryTracking({
+    school: schoolFilter,
+    surface: "events",
+    search_query: searchQuery,
+    filters: appliedFilters,
+  }, queryRevision);
 
   const refreshEvents = useCallback(() => {
     router.refresh();

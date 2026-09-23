@@ -352,3 +352,15 @@ def test_promoter_payout_day_must_exist_in_every_month(tmp_path: Path) -> None:
 
     with pytest.raises(ValidationError, match="payout_day_of_month"):
         load_controlbox(path)
+
+
+@pytest.mark.parametrize(
+    "field,value",
+    [("maximum_filters_bytes", 0), ("request_timeout_ms", 0), ("retry_delays_ms", [0])],
+)
+def test_discovery_query_limits_are_validated(tmp_path, field, value):
+    directory = _write_control(
+        tmp_path, "discovery_queries", lambda payload: payload.update({field: value})
+    )
+    with pytest.raises(ValidationError):
+        load_controlbox(directory)

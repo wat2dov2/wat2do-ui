@@ -27,6 +27,14 @@
         "description": "Wyjście tekstowe z aplikacji Android Automate dla procesu pojedynczego użytkownika.",
         "loading": "Ładowanie logów...",
         "placeholder": "Tutaj pojawi się wyjście logów Automate."
+      },
+      "queries": {
+        "title": "Zapytania wyszukiwania",
+        "surface": "Lista",
+        "pageUrl": "Adres URL strony",
+        "filters": "Zastosowane filtry",
+        "empty": "Nie zapisano jeszcze żadnych zapytań.",
+        "emptySearch": "Brak tekstu wyszukiwania"
       }
     },
     "manageEvents": "Zarządzaj wydarzeniami",

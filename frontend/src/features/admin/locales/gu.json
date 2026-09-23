@@ -27,6 +27,14 @@
         "description": "process-single-user વર્કફ્લો માટે Android Automate ઍપનું ટેક્સ્ટ આઉટપુટ.",
         "loading": "લોગ્સ લોડ થઈ રહ્યું છે...",
         "placeholder": "Automate લોગ આઉટપુટ અહીં દેખાશે."
+      },
+      "queries": {
+        "title": "શોધ રેકોર્ડ",
+        "surface": "યાદી",
+        "pageUrl": "પૃષ્ઠનું URL",
+        "filters": "લાગુ કરેલા ફિલ્ટર્સ",
+        "empty": "હજુ કોઈ શોધ નોંધાઈ નથી.",
+        "emptySearch": "શોધ લખાણ નથી"
       }
     },
     "manageEvents": "ઇવેન્ટનું સંચાલન કરો",

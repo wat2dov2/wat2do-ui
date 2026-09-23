@@ -27,6 +27,14 @@
         "description": "Salida de texto de la aplicación Android Automate para el flujo de trabajo de un solo usuario.",
         "loading": "Cargando registros...",
         "placeholder": "La salida de registros de Automate aparecerá aquí."
+      },
+      "queries": {
+        "title": "Consultas de búsqueda",
+        "surface": "Lista",
+        "pageUrl": "URL de la página",
+        "filters": "Filtros aplicados",
+        "empty": "Aún no hay consultas registradas.",
+        "emptySearch": "Sin texto de búsqueda"
       }
     },
     "manageEvents": "Gestionar Eventos",

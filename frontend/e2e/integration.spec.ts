@@ -4,6 +4,7 @@ import type { NextFixture } from "next/experimental/testmode/playwright.js";
 import { mockApi } from "./api-fixture";
 import { STORAGE_KEYS } from "../src/shared/constants/storageKeys";
 import { MAX_IMAGE_UPLOAD_SIZE_BYTES } from "../src/shared/constants/uploads";
+import type { components } from "../src/shared/generated/api-types";
 import arTranslations from "../src/shared/locales/ar.json" with { type: "json" };
 
 const BASE = "http://127.0.0.1:3000";
@@ -101,6 +102,7 @@ async function resolveThemeColors(
 }
 
 test.beforeEach(async ({ page, next }) => {
+  await mockApi(page, next, url => apiPath(url) === "/discovery-queries", async () => ({ status: 204 }));
   await page.route("https://www.google.com/maps/embed/**", route => route.fulfill({ contentType: "text/html", body: "<html><body>Map fixture</body></html>" }));
   page.on("response", (response) => {
     const url = response.url();
@@ -5103,5 +5105,78 @@ test.describe("Position submissions", () => {
     await expect(submissionsTab.locator('[data-slot="tabs-count"]')).toHaveCount(0);
     await positionsTab.click();
     await expect(page.getByRole("row").filter({ hasText: "Design Lead" })).toHaveCount(0);
+  });
+});
+
+
+test.describe("Discovery query diagnostics", () => {
+  for (const listing of [
+    { surface: "events", path: "/", placeholder: "Search events", filter: "Free", filters: { maxPrice: "0" } },
+    { surface: "clubs", path: "/clubs", placeholder: "Search clubs...", filter: "Technology", filters: { categories: ["Technology"] } },
+  ]) {
+    test(`${listing.surface} records applied queries without waiting for telemetry`, async ({ page }) => {
+      const captured: components["schemas"]["DiscoveryQueryCreate"][] = [];
+      let release: () => void;
+      const pending = new Promise<void>(resolve => { release = resolve; });
+      await page.route("**/api/discovery-queries/", async route => {
+        const payload = route.request().postDataJSON();
+        captured.push(payload);
+        if (payload.search_query) await pending;
+        await route.fulfill({ status: 204 });
+      });
+      try {
+        await page.goto(`${BASE}${listing.path}`);
+        await expect.poll(() => captured.length).toBe(1);
+        expect(captured[0]).toMatchObject({ school: "uwaterloo", surface: listing.surface, search_query: "", page_url: `${BASE}${listing.path}` });
+        const search = page.getByPlaceholder(listing.placeholder);
+        await search.fill("missing-account");
+        expect(captured).toHaveLength(1);
+        await search.press("Enter");
+        await expect.poll(() => captured.filter(row => row.search_query === "missing-account").length).toBe(1);
+        await search.press("Enter");
+        await expect.poll(() => captured.filter(row => row.search_query === "missing-account").length).toBe(2);
+        const [first, second] = captured.filter(row => row.search_query === "missing-account");
+        expect(first.id).not.toBe(second.id);
+        // The write is still held open while another filter applies normally.
+        await page.getByRole("button", { name: listing.filter, exact: true }).click();
+        await expect(page.getByRole("button", { name: listing.filter, exact: true })).toHaveAttribute("aria-pressed", "true");
+        await expect.poll(() => captured.at(-1)?.filters).toMatchObject(listing.filters);
+        await search.fill("another-missing-account");
+        await search.press("Enter");
+        await expect.poll(() => captured.at(-1)?.search_query).toBe("another-missing-account");
+        await expect(page.getByRole("alert")).toHaveCount(0);
+      } finally {
+        release!();
+      }
+    });
+  }
+
+  test("admin can inspect and page through query text, schools, URLs, and filters", async ({ page, next }) => {
+    await seedAuthenticatedSession(page, next);
+    await mockApi(page, next, url => apiPath(url) === "/webhooks/automate/logs", async () => ({ json: [] }));
+    const requests: URLSearchParams[] = [];
+    await mockApi(page, next, url => apiPath(url) === "/discovery-queries", async request => {
+      const params = new URL(request.url).searchParams;
+      requests.push(params);
+      const pageNumber = Number(params.get("page") ?? 1);
+      return { json: {
+        items: [{ id: `00000000-0000-0000-0000-00000000000${pageNumber}`, school: "uwaterloo", surface: "positions", search_query: `missing club ${pageNumber}`, page_url: "https://uwaterloo.wat2do.io/positions", filters: { paidOnly: true, positionType: "committee" }, created_at: "2026-09-22T12:00:00Z" }],
+        total: 21, page: pageNumber, page_size: 20, total_pages: 2,
+      } };
+    });
+    await page.goto(`${BASE}/admin/diagnostics`);
+    await page.getByRole("tab", { name: "Search queries" }).click();
+    const row = page.getByRole("row").filter({ hasText: "missing club 1" });
+    await expect(row).toContainText("University of Waterloo");
+    await expect(row).toContainText("Positions");
+    await expect(row).toContainText("https://uwaterloo.wat2do.io/positions");
+    await expect(row).toContainText('"paidOnly":true');
+    await page.getByRole("button", { name: "Next", exact: true }).click();
+    await expect(page.getByRole("row").filter({ hasText: "missing club 2" })).toBeVisible();
+    expect(requests.at(-1)?.get("page")).toBe("2");
+    await page.getByPlaceholder("Search").fill("missing");
+    await page.getByPlaceholder("Search").press("Enter");
+    await expect.poll(() => requests.at(-1)?.get("search")).toBe("missing");
+    expect(requests.at(-1)?.get("page")).toBe("1");
   });
 });

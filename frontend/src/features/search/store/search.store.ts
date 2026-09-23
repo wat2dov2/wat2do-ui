@@ -22,6 +22,7 @@ import {
 } from "@/features/search/api/filterService";
 
 interface SearchStoreState extends SearchStoreFilterValues {
+  queryRevision: number;
   // Bulk operations
   setFilterState: (filters: FilterState) => void;
   clearAllFilters: () => void;
@@ -54,8 +55,13 @@ const emptyFilters = toStoreValues(EMPTY_FILTER_STATE);
 
 export const useSearchStore = create<SearchStoreState>((set) => ({
   ...emptyFilters,
-  setFilterState: (filters) => set(toStoreValues(filters)),
-  clearAllFilters: () => startTransition(() => set(emptyFilters)),
+  queryRevision: 0,
+  setFilterState: (filters) => set((state) => ({
+    ...toStoreValues(filters), queryRevision: state.queryRevision + 1,
+  })),
+  clearAllFilters: () => startTransition(() => set((state) => ({
+    ...emptyFilters, queryRevision: state.queryRevision + 1,
+  }))),
 }));
 
 // Listening to auth broadcasts

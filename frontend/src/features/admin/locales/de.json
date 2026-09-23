@@ -27,6 +27,14 @@
         "description": "Textausgabe aus der Android-Automate-App für den Workflow 'single-user'",
         "loading": "Protokolle werden geladen...",
         "placeholder": "Automate-Protokollausgaben erscheinen hier."
+      },
+      "queries": {
+        "title": "Suchanfragen",
+        "surface": "Liste",
+        "pageUrl": "Seiten-URL",
+        "filters": "Angewendete Filter",
+        "empty": "Noch keine Suchanfragen erfasst.",
+        "emptySearch": "Kein Suchtext"
       }
     },
     "manageEvents": "Veranstaltungen verwalten",
