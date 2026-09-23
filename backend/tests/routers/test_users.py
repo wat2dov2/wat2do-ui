@@ -42,7 +42,9 @@ def test_session_survives_worker_restart_and_signing_key_outage(client, monkeypa
             raise TimeoutError("Simulated signing-key outage")
         return io.BytesIO(json.dumps({"keys": [public_jwk]}).encode())
 
-    monkeypatch.setattr("jwt.jwks_client.urllib.request.urlopen", fetch_keys)
+    # Intercept both urlopen() and direct opener.open() without replacing
+    # PyJWT's signature verification, key cache, or connection-error handling.
+    monkeypatch.setattr("urllib.request.OpenerDirector.open", fetch_keys)
     monkeypatch.setattr(auth, "_jwks_client", None)
     monkeypatch.setattr(user_service, "get_user_by_supabase_id", lambda _: _mock_user())
     claims = {
