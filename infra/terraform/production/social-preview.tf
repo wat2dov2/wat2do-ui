@@ -124,26 +124,6 @@ resource "aws_lambda_event_source_mapping" "social_preview" {
   }
 }
 
-resource "aws_cloudwatch_event_rule" "social_preview" {
-  name                = "${local.name_prefix}-social-preview"
-  description         = "Queue every school's event-feed social preview on a bounded cadence."
-  schedule_expression = local.social_preview_control.refresh_interval_hours == 1 ? "rate(1 hour)" : "rate(${local.social_preview_control.refresh_interval_hours} hours)"
-}
-
-resource "aws_cloudwatch_event_target" "social_preview" {
-  rule      = aws_cloudwatch_event_rule.social_preview.name
-  target_id = "social-preview-scheduler"
-  arn       = aws_lambda_function.social_preview.arn
-}
-
-resource "aws_lambda_permission" "social_preview_scheduler" {
-  statement_id  = "AllowEventBridgeScheduler"
-  action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.social_preview.function_name
-  principal     = "events.amazonaws.com"
-  source_arn    = aws_cloudwatch_event_rule.social_preview.arn
-}
-
 resource "aws_cloudwatch_metric_alarm" "social_preview_errors" {
   alarm_name          = "${local.name_prefix}-social-preview-errors"
   comparison_operator = "GreaterThanThreshold"

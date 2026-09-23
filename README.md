@@ -130,7 +130,7 @@ Changes take effect after rebuilding the applications or restarting a scheduled 
 Wat2Do serves the application from one private AWS ECS Fargate task in `ca-central-1`.
 The task contains the Next.js frontend on port 3000 and the FastAPI backend on port 8000.
 CloudFront is the public edge, an Application Load Balancer is the HTTPS origin, and Supabase remains the database, authentication, and object-storage provider.
-An isolated, concurrency-limited Lambda captures each school event feed as a social-preview image every six hours, then stores the immutable JPEG in the existing S3 and CloudFront asset path.
+An isolated, concurrency-limited Lambda captures changed school event feeds as social-preview images after their CacheEntID media finishes scraping, then stores the immutable JPEG in the existing S3 and CloudFront asset path.
 The encrypted Terraform state bucket and DynamoDB lock table remain in `us-west-2`; they do not affect Canadian application traffic.
 
 Terraform is split into `infra/terraform/foundation` and `infra/terraform/production`.

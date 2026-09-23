@@ -83,6 +83,7 @@ data "aws_iam_policy_document" "github_deploy" {
       "lambda:GetFunction",
       "lambda:GetFunctionConfiguration",
       "lambda:UpdateFunctionCode",
+      "lambda:InvokeFunction",
     ]
     resources = [
       "arn:${data.aws_partition.current.partition}:lambda:${var.application_region}:${data.aws_caller_identity.current.account_id}:function:wat2do-production-social-preview",

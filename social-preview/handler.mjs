@@ -72,15 +72,14 @@ async function supabaseRequest(path, init = {}) {
   return response.json();
 }
 
-export function isSchedulerEvent(event) {
-  return event?.source === "aws.events";
-}
-
-export function shouldAdvanceScheduledRevision(school) {
-  return (
-    Number(school.social_preview_revision) <=
-    Number(school.social_preview_rendered_revision)
-  );
+export function parseCompletedRun(event) {
+  if (
+    event?.action !== "scrape-completed" ||
+    !/^[0-9]{1,50}$/.test(event.run_id ?? "")
+  ) {
+    throw new Error("Unsupported social-preview Lambda event");
+  }
+  return String(event.run_id);
 }
 
 export function resolveTargetRevision(school, queuedRevision) {
@@ -142,34 +141,41 @@ export function buildCaptureUrl(slug, domainName) {
   return `https://${slug}.${domainName}${controls.capture_path}`;
 }
 
-async function markSchoolDirty(schoolId) {
-  const revision = await supabaseRequest("rpc/mark_school_social_preview_dirty", {
-    method: "POST",
-    body: JSON.stringify({ p_school_id: schoolId }),
-  });
-  const parsed = Number(revision);
-  if (!Number.isSafeInteger(parsed) || parsed <= 0) {
-    throw new Error(
-      `Failed to advance social-preview revision for school ${schoolId}`,
+async function enqueueCompletedRunPreviews(runId) {
+  // Page through notifications, not media, so a massive digest stays bounded.
+  const schoolIds = new Set();
+  const pageSize = controls.notification_page_size;
+  for (let offset = 0; ; offset += pageSize) {
+    const notifications = await supabaseRequest(
+      "instagram_notifications?select=id,school_id,instagram_notification_media!inner(id)" +
+        `&cache_ent_id=not.is.null&instagram_notification_media.github_run_id=eq.${runId}` +
+        `&order=id&limit=${pageSize}&offset=${offset}`,
     );
+    for (const notification of notifications)
+      schoolIds.add(Number(notification.school_id));
+    if (notifications.length < pageSize) break;
   }
-  return parsed;
-}
 
-async function enqueueSchoolPreviews() {
-  const schools = await supabaseRequest(
-    "schools?select=id,slug,social_preview_revision,social_preview_rendered_revision&order=id",
-  );
   const messages = [];
-  for (const school of schools ?? []) {
-    let revision = Number(school.social_preview_revision);
-    if (shouldAdvanceScheduledRevision(school)) {
-      revision = await markSchoolDirty(Number(school.id));
-    }
+  for (const schoolId of schoolIds) {
+    // A worker can roll over into another run. Do not capture half a digest.
+    const unfinished = await supabaseRequest(
+      "instagram_notification_media?select=id,instagram_notifications!inner(school_id,cache_ent_id)" +
+        `&instagram_notifications.school_id=eq.${schoolId}` +
+        "&instagram_notifications.cache_ent_id=not.is.null&status=in.(pending,processing)&limit=1",
+    );
+    if (unfinished.length) continue;
+    const school = await getSchoolState(schoolId);
+    if (
+      !school ||
+      Number(school.social_preview_rendered_revision) >=
+        Number(school.social_preview_revision)
+    )
+      continue;
     messages.push({
-      school_id: Number(school.id),
+      school_id: schoolId,
       slug: String(school.slug),
-      revision,
+      revision: Number(school.social_preview_revision),
     });
   }
 
@@ -365,7 +371,6 @@ async function processQueue(event) {
 }
 
 export async function handler(event) {
-  if (isSchedulerEvent(event)) return enqueueSchoolPreviews();
   if (Array.isArray(event?.Records)) return processQueue(event);
-  throw new Error("Unsupported social-preview Lambda event");
+  return enqueueCompletedRunPreviews(parseCompletedRun(event));
 }

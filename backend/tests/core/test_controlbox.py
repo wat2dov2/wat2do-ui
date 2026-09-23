@@ -39,7 +39,7 @@ def test_checked_in_controlbox_is_valid() -> None:
     assert controlbox.event_discovery.new_event_window_hours == 24
     assert controlbox.event_discovery.event_without_end_visibility_minutes == 60
     assert controlbox.event_discovery.initial_render_count == 24
-    assert controlbox.social_previews.refresh_interval_hours == 6
+    assert controlbox.social_previews.notification_page_size == 500
     assert controlbox.social_previews.capture_path == "/"
     assert controlbox.social_previews.viewport_width == 1200
     assert controlbox.social_previews.viewport_height == 630
@@ -141,6 +141,8 @@ def test_duplicate_upload_mime_types_are_rejected(tmp_path: Path) -> None:
 @pytest.mark.parametrize(
     ("field", "value"),
     [
+        ("notification_page_size", 0),
+        ("notification_page_size", 1001),
         ("capture_scale", 0.4),
         ("device_scale_factor", 4),
         ("asset_retention_days", 6),

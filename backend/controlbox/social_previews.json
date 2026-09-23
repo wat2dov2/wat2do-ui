@@ -1,5 +1,5 @@
 {
-  "refresh_interval_hours": 6,
+  "notification_page_size": 500,
   "capture_path": "/",
   "viewport_width": 1200,
   "viewport_height": 630,

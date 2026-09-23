@@ -244,7 +244,7 @@ class PublicAttendanceControl(_ControlModel):
 
 
 class SocialPreviewsControl(_ControlModel):
-    refresh_interval_hours: int = Field(gt=0, le=24)
+    notification_page_size: int = Field(gt=0, le=1000)
     capture_path: Literal["/"]
     viewport_width: int = Field(ge=600, le=2400)
     viewport_height: int = Field(ge=315, le=1260)

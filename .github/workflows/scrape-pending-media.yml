@@ -82,3 +82,31 @@ jobs:
           EVENT_FEED_REVALIDATION_URL: "${{ env.FRONTEND_URL }}/api/revalidate-events"
         run: |
           .venv/bin/python jobs/scrape_pending_media.py
+
+  refresh-previews:
+    needs: scrape-pending
+    # Terminal failures may still leave successfully imported events to capture.
+    if: ${{ always() && !cancelled() }}
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      id-token: write
+    steps:
+      - name: Configure AWS credentials with GitHub OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ca-central-1
+
+      - name: Queue previews for completed CacheEntID schools
+        env:
+          SCRAPE_RUN_ID: ${{ github.run_id }}
+        run: |
+          payload="$(jq -nc --arg run_id "$SCRAPE_RUN_ID" '{action: "scrape-completed", run_id: $run_id}')"
+          aws lambda invoke \
+            --function-name wat2do-production-social-preview \
+            --cli-binary-format raw-in-base64-out \
+            --payload "$payload" \
+            /tmp/social-preview-response.json > /tmp/social-preview-invoke.json
+          test "$(jq -r '.StatusCode' /tmp/social-preview-invoke.json)" = "200"
+          test "$(jq -r '.FunctionError // empty' /tmp/social-preview-invoke.json)" = ""
