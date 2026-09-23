@@ -201,7 +201,8 @@ export function buildCoverSlideModel({
     doodleIcons: getClubCategoryDoodleDataUris(colors.secondary, 42),
     dateLine: formatCoverDate(localDate, language),
     newEventCount,
-    headline: language === "fr" ? "NOUVEAUX ÉVÉNEMENTS AUJOURD’HUI" : "NEW EVENTS ADDED TODAY",
+    // Selected events can predate both the batch date and its recent-event window.
+    headline: language === "fr" ? "ÉVÉNEMENTS À DÉCOUVRIR" : "EVENTS TO EXPLORE",
     body: text(body, defaultCoverBody(eventCount, language)),
     swipeLine: language === "fr" ? "Voir les événements" : "Swipe to see the events",
     siteLine: `${language === "fr" ? "Plus d’infos sur" : "More info on"} ${getSchoolPublicUrl(school)}`,

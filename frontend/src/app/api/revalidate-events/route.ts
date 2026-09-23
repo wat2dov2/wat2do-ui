@@ -1,8 +1,8 @@
 import { revalidateTag } from "next/cache";
-import { NextRequest, NextResponse } from "next/server";
-import { eventDetailTag, eventFeedTag } from "@/features/events/api/eventFeed.server";
+import { after, NextRequest, NextResponse } from "next/server";
+import { eventDetailTag, eventFeedTag, getSchoolBrowseSnapshot } from "@/features/events/api/eventFeed.server";
 import { clubDirectoryTag } from "@/features/clubs/api/clubDirectory.server";
-import { positionDirectoryTag } from "@/features/positions/api/positionDirectory.server";
+import { getPositionDirectorySnapshot, positionDirectoryTag } from "@/features/positions/api/positionDirectory.server";
 import {
   SCHOOL_DIRECTORY_TAG,
   schoolBrandingTag,
@@ -58,6 +58,14 @@ export async function POST(request: NextRequest) {
   revalidateTag(positionDirectoryTag(school), "max");
   revalidateTag(schoolBrandingTag(school), "max");
   revalidateTag(SCHOOL_DIRECTORY_TAG, "max");
+
+  // Warm after invalidation finishes so the next visitor can use fresh cached data.
+  // Separate tasks let either directory finish warming if the other fails.
+  for (const warm of [getSchoolBrowseSnapshot, getPositionDirectorySnapshot]) {
+    after(async () => {
+      await warm(school);
+    });
+  }
 
   return NextResponse.json({ revalidated: true, school });
 }

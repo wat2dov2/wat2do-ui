@@ -27,6 +27,8 @@ export const queryKeys = {
     all: ["positions"] as const,
     list: (filters: Record<string, unknown>) =>
       [...queryKeys.positions.all, "list", filters] as const,
+    allForSchool: (school: string) =>
+      [...queryKeys.positions.all, "all", school] as const,
     detail: (positionId: number) =>
       [...queryKeys.positions.all, "detail", positionId] as const,
     byClub: (clubId: number, school: string) =>

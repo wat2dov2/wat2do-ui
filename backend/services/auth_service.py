@@ -486,6 +486,11 @@ class AuthService:
         try:
             res = self._auth.refresh_session(refresh_token)
         except AuthApiError as e:
+            # Only credential rejections invalidate the browser session.
+            # Preserve other statuses through the shared AuthApiError handler
+            # so temporary upstream failures do not become logout-triggering 401s.
+            if e.status not in {400, 401, 403}:
+                raise
             self._handle_auth_error(
                 e,
                 "Token refresh failed",

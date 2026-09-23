@@ -25,7 +25,10 @@ Its local state stores recipient evidence plus one-way hashes of dispatched push
 
 ## One-time Brave setup for collapsed digests
 
-Keep one logged-in `https://www.instagram.com/` tab open in Brave with the school accounts available under More > Switch accounts.
+Keep Brave running with the school accounts logged in and available under More > Switch accounts.
+The resolver reuses an Instagram tab or opens one if it has been closed.
+It waits for account controls to load and retries once from `https://www.instagram.com/` when the page or account switch gets stuck.
+If recovery fails, the notification fails before its media is recorded and can be rerun.
 In Brave, enable View > Developer > Allow JavaScript from Apple Events.
 This permission lets the local Python process ask the existing Instagram tab to switch accounts and make the digest request in its own authenticated context.
 The Python process receives only the matched username and recovered media IDs.

@@ -18,7 +18,7 @@ swapping clients.
 """
 
 from core.config import settings
-from supabase import Client, create_client
+from supabase import Client, ClientOptions, create_client
 
 # --- Fail-fast: service-role key is required for backend operation ----------
 # Every table has RLS enabled with no permissive policies.  Without the
@@ -35,7 +35,14 @@ if not settings.supabase_secret_key:
 # scope for the one caller that needs it (auth_service), but not re-exported
 # via ``__all__`` to discourage accidental adoption elsewhere.  New code
 # should not import this - use ``get_sb()``.
-supabase: Client = create_client(settings.supabase_url, settings.supabase_key)
+# Only browser-initiated auth requests may rotate tokens, because their HTTP
+# responses deliver the replacement refresh cookie. Background SDK refreshes
+# leave the browser holding an older token and make sessions worker-dependent.
+supabase: Client = create_client(
+    settings.supabase_url,
+    settings.supabase_key,
+    ClientOptions(auto_refresh_token=False, persist_session=False),
+)
 
 # Service-role client for backend table access (bypasses RLS).
 supabase_admin: Client = create_client(settings.supabase_url, settings.supabase_secret_key)

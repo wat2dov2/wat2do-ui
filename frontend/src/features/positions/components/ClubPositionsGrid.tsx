@@ -13,8 +13,6 @@ interface ClubPositionsGridProps {
   initialPositions: Position[];
 }
 
-const ignoreLoadMore = () => undefined;
-
 export function ClubPositionsGrid({
   clubId,
   school,
@@ -49,9 +47,6 @@ export function ClubPositionsGrid({
       <PositionList
         positions={positions}
         isLoading={isPending}
-        isLoadingMore={false}
-        hasMore={false}
-        onLoadMore={ignoreLoadMore}
         onPositionClick={handlePositionClick}
         emptyTitle={t("positions.clubEmptyTitle")}
         emptyDescription={t("positions.clubEmptyDescription")}

@@ -28,9 +28,8 @@ class Settings(BaseSettings):
     openai_api_key: str = ""
     # Required only for manual username lookups and profile-logo backfills.
     apify_api_token: str = ""
-    # OpenAI model used for vision-based event extraction in services/scraper.
-    # Vision-capable model used by event extraction.
-    openai_extraction_model: str = "gpt-5-nano"
+    # Vision-capable model shared by event extraction and reconciliation.
+    openai_extraction_model: str = "gpt-5.6-luna"
     # Set CORS_ORIGINS env var as a JSON list for production,
     # e.g. CORS_ORIGINS=["https://wat2do.app","https://www.wat2do.app"]
     cors_origins: list[str] = _DEV_ORIGINS

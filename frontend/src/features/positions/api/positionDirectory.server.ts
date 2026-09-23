@@ -1,6 +1,6 @@
 import type { ApiPaginatedPositionResponse } from "@/shared/generated";
 import type { PaginatedPositionsResponse } from "@/features/positions/api/positions.api";
-import { normalizePosition } from "@/features/positions/api/positionService";
+import { collectPositionPages, normalizePosition } from "@/features/positions/api/positionService";
 import { controlBox } from "@/shared/config/controlBox";
 import { resolveSchool } from "@/shared/constants/schools";
 import { getServerApiBaseUrl } from "@/shared/services/serverApi";
@@ -16,7 +16,11 @@ async function fetchPositionsPage(
   fetchOptions: RequestInit,
   clubId?: number,
 ): Promise<PaginatedPositionsResponse> {
-  const params = new URLSearchParams({ school, page: String(page) });
+  const params = new URLSearchParams({
+    school,
+    page: String(page),
+    page_size: String(controlBox.eventDiscovery.serverFeedPageSize),
+  });
   if (clubId != null) {
     params.set("club_id", String(clubId));
   }
@@ -42,11 +46,8 @@ export async function getPositionDirectorySnapshot(
   school: string,
 ): Promise<PaginatedPositionsResponse> {
   const resolvedSchool = resolveSchool(school);
-  return fetchPositionsPage(
-    resolvedSchool,
-    1,
-    positionDirectoryFetchOptions(resolvedSchool),
-  );
+  const fetchOptions = positionDirectoryFetchOptions(resolvedSchool);
+  return collectPositionPages((page) => fetchPositionsPage(resolvedSchool, page, fetchOptions));
 }
 
 function positionDirectoryFetchOptions(school: string): RequestInit {
@@ -68,22 +69,8 @@ export async function getClubPositionsSnapshot(
 ): Promise<Position[]> {
   const resolvedSchool = resolveSchool(school);
   const fetchOptions = positionDirectoryFetchOptions(resolvedSchool);
-  const firstPage = await fetchPositionsPage(
-    resolvedSchool,
-    1,
-    fetchOptions,
-    clubId,
+  const directory = await collectPositionPages((page) =>
+    fetchPositionsPage(resolvedSchool, page, fetchOptions, clubId),
   );
-  const remainingPages = await Promise.all(
-    Array.from({ length: Math.max(firstPage.total_pages - 1, 0) }, (_, index) =>
-      fetchPositionsPage(
-        resolvedSchool,
-        index + 2,
-        fetchOptions,
-        clubId,
-      ),
-    ),
-  );
-
-  return [firstPage, ...remainingPages].flatMap((page) => page.items);
+  return directory.items;
 }

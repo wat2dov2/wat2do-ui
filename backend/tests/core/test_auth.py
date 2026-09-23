@@ -1,10 +1,26 @@
 import jwt
 import pytest
+from fastapi import HTTPException
 from fastapi.security import HTTPAuthorizationCredentials
 
 from core import auth
 from core.errors import INVALID_OR_EXPIRED_TOKEN
 from core.exceptions import AuthenticationError
+
+
+def test_cold_process_key_fetch_failure_is_retryable(monkeypatch):
+    class UnreachableJwksClient:
+        def get_signing_key_from_jwt(self, credentials):
+            raise jwt.PyJWKClientConnectionError("Signing key endpoint unavailable")
+
+    monkeypatch.setattr(auth, "_get_jwks_client", lambda: UnreachableJwksClient())
+
+    with pytest.raises(HTTPException) as exc:
+        auth.get_current_user(
+            HTTPAuthorizationCredentials(scheme="Bearer", credentials="valid-token"),
+        )
+
+    assert exc.value.status_code == 503
 
 
 class EmptyJwksClient:

@@ -1,9 +1,10 @@
 import { useCallback, useMemo, useState } from "react";
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import type { PaginatedPositionsResponse } from "@/features/positions/api/positions.api";
-import { getPositionsPage } from "@/features/positions/api/positions.api";
+import { getPositionDirectory } from "@/features/positions/api/positions.api";
 import { useEventsStore } from "@/features/events/store/events.store";
 import { resolveSchool } from "@/shared/constants/schools";
+import { filterPositions } from "@/features/positions/api/positionService";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import type { Position, PositionType } from "@/shared/types";
 
@@ -12,15 +13,6 @@ type PositionTypeFilter = PositionType | "all";
 interface UsePositionsPageOptions {
   initialDirectory: PaginatedPositionsResponse | null;
   initialSchool: string;
-}
-
-function uniquePositions(positions: Position[]): Position[] {
-  const seen = new Set<number>();
-  return positions.filter((position) => {
-    if (seen.has(position.id)) return false;
-    seen.add(position.id);
-    return true;
-  });
 }
 
 export function usePositionsPage({
@@ -32,53 +24,26 @@ export function usePositionsPage({
   const [positionType, setPositionType] = useState<PositionTypeFilter>("all");
   const [addedSince, setAddedSince] = useState<string | null>(null);
   const [paidOnly, setPaidOnly] = useState(false);
-  const [selectedPosition, setSelectedPosition] = useState<Position | null>(null);
+  const [selectedPositionId, setSelectedPositionId] = useState<number | null>(null);
   const schoolFilter = useEventsStore((state) => state.schoolFilter);
   const school = resolveSchool(schoolFilter ?? initialSchool);
-  const pageSize = initialDirectory?.page_size;
-  const filters = useMemo(
-    () => ({
-      school,
+  const query = useQuery({
+    queryKey: queryKeys.positions.allForSchool(school),
+    retry: false,
+    queryFn: () => getPositionDirectory(school),
+    initialData: school === resolveSchool(initialSchool) ? initialDirectory ?? undefined : undefined,
+  });
+  const positions = useMemo(
+    () => filterPositions(query.data?.items ?? [], {
       search: submittedSearchQuery,
       positionType,
-      addedSince,
       paidOnly,
-      pageSize: pageSize ?? null,
+      addedSince,
     }),
-    [addedSince, paidOnly, pageSize, positionType, school, submittedSearchQuery],
+    [query.data, submittedSearchQuery, positionType, paidOnly, addedSince],
   );
-  const canUseInitialDirectory =
-    initialDirectory != null &&
-    school === resolveSchool(initialSchool) &&
-    !submittedSearchQuery &&
-    positionType === "all" && addedSince === null && !paidOnly;
-
-  const query = useInfiniteQuery({
-    queryKey: queryKeys.positions.list(filters),
-    retry: false,
-    queryFn: ({ pageParam }) =>
-      getPositionsPage({
-        page: pageParam,
-        pageSize,
-        school,
-        search: submittedSearchQuery || undefined,
-        positionType: positionType === "all" ? undefined : positionType,
-        addedSince: addedSince ?? undefined,
-        paidOnly,
-      }),
-    initialPageParam: 1,
-    placeholderData: (previous, previousQuery) =>
-      previousQuery?.queryKey[2].school === school ? previous : undefined,
-    getNextPageParam: (lastPage) =>
-      lastPage.page < lastPage.total_pages ? lastPage.page + 1 : undefined,
-    initialData: canUseInitialDirectory
-      ? { pages: [initialDirectory], pageParams: [1] }
-      : undefined,
-  });
-
-  const pages = query.data?.pages ?? [];
-  const positions = uniquePositions(pages.flatMap((page) => page.items));
-  const total = pages[pages.length - 1]?.total ?? 0;
+  const selectedPosition = query.data?.items.find(position => position.id === selectedPositionId) ?? null;
+  const total = positions.length;
 
   const submitSearch = useCallback(() => {
     setSubmittedSearchQuery(searchQuery.trim());
@@ -89,17 +54,12 @@ export function usePositionsPage({
     setSubmittedSearchQuery("");
   }, []);
 
-  const loadMore = useCallback(() => {
-    if (!query.hasNextPage || query.isFetchingNextPage || query.isPlaceholderData || query.isError) return;
-    void query.fetchNextPage();
-  }, [query]);
-
   return {
     positions,
     total,
-    latestAddedPosition: pages[0]?.latest_added_position ?? null,
+    latestAddedPosition: query.data?.latest_added_position ?? null,
     searchLatest: () => {
-      const latest = pages[0]?.latest_added_position;
+      const latest = query.data?.latest_added_position;
       if (!latest) return;
       setSearchQuery(latest.title);
       setSubmittedSearchQuery(latest.title);
@@ -119,13 +79,10 @@ export function usePositionsPage({
     setAddedSince,
     clearNew: () => setAddedSince(null),
     selectedPosition,
-    openPosition: setSelectedPosition,
-    closePosition: () => setSelectedPosition(null),
-    isLoading: query.isLoading || query.isPlaceholderData,
+    openPosition: (position: Position) => setSelectedPositionId(position.id),
+    closePosition: () => setSelectedPositionId(null),
+    isLoading: query.isLoading,
     isError: query.isError,
     retry: () => void query.refetch(),
-    isLoadingMore: query.isFetchingNextPage,
-    hasMore: !query.isPlaceholderData && !query.isError && (query.hasNextPage ?? false),
-    loadMore,
   };
 }

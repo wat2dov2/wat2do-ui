@@ -11,6 +11,7 @@ from core.config import settings
 from core.constants import ROLE_ADMIN
 from core.errors import (
     ADMIN_ACCESS_REQUIRED,
+    AUTHENTICATION_ERROR,
     CLUB_MEMBER_OR_ADMIN_ACCESS_REQUIRED,
     CREDENTIALS_INVALID,
     INVALID_OR_EXPIRED_TOKEN,
@@ -95,6 +96,11 @@ def _decode_jwt(credentials: str) -> AuthUser:
             issuer=_EXPECTED_ISSUER,
         )
         return _payload_to_user(payload)
+    except jwt.PyJWKClientConnectionError as e:
+        # A fresh worker has no cached signing keys. Failure to fetch them
+        # during a deployment is not evidence that the user's token is invalid.
+        log.warning("JWKS endpoint unavailable: %s", e)
+        raise HTTPException(status_code=503, detail=AUTHENTICATION_ERROR) from e
     except (jwt.PyJWKClientError, jwt.PyJWKSetError, jwt.InvalidTokenError) as e:
         log.warning("JWKS verification failed: %s", e)
         raise AuthenticationError(INVALID_OR_EXPIRED_TOKEN) from e

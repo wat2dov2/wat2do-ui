@@ -85,9 +85,6 @@ export function PositionsPage({
         <PositionList
           positions={positionsPage.positions}
           isLoading={positionsPage.isLoading}
-          isLoadingMore={positionsPage.isLoadingMore}
-          hasMore={positionsPage.hasMore}
-          onLoadMore={positionsPage.loadMore}
           onPositionClick={positionsPage.openPosition}
         />
       )}

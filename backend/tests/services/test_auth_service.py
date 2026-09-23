@@ -1,6 +1,8 @@
+import json
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
+import httpx
 import pytest
 from supabase_auth.errors import AuthApiError
 
@@ -8,6 +10,57 @@ from core.errors import INVALID_OR_EXPIRED_TOKEN
 from core.exceptions import AuthenticationError
 from services import auth_service
 from services.auth_service import AuthResult, AuthService
+from supabase import create_client
+
+
+def test_server_auth_does_not_rotate_browser_tokens_in_background(monkeypatch):
+    from supabase_auth._sync import gotrue_client
+
+    from core.database import supabase
+
+    timer = MagicMock()
+    monkeypatch.setattr(gotrue_client, "Timer", timer)
+    requests = []
+
+    def refresh_response(request):
+        assert request.url.path == "/auth/v1/token"
+        assert request.url.params["grant_type"] == "refresh_token"
+        requests.append(json.loads(request.content)["refresh_token"])
+        return httpx.Response(
+            200,
+            json={
+                "access_token": f"access-{len(requests)}",
+                "refresh_token": f"refresh-{len(requests)}",
+                "expires_in": 3600,
+                "token_type": "bearer",
+                "user": {
+                    "id": "test-user",
+                    "aud": "authenticated",
+                    "app_metadata": {},
+                    "user_metadata": {},
+                    "created_at": "2026-09-21T00:00:00Z",
+                },
+            },
+        )
+
+    browser_refresh_token = "initial-refresh"
+    with httpx.Client(transport=httpx.MockTransport(refresh_response)) as transport:
+        # Each iteration uses a fresh SDK client, as on different deployment
+        # workers. Only the token returned to the browser crosses the boundary.
+        for _ in range(2):
+            worker = create_client(
+                "https://example.supabase.co", "test-key", options=supabase.options
+            )
+            worker.auth._http_client.close()
+            monkeypatch.setattr(worker.auth, "_http_client", transport)
+            service = AuthService(auth_client=worker.auth)
+            result = service.refresh(browser_refresh_token)
+            browser_refresh_token = result.refresh_token
+
+    assert requests == ["initial-refresh", "refresh-1"]
+    assert browser_refresh_token == "refresh-2"
+    timer.assert_not_called()
+    assert supabase.options.persist_session is False
 
 
 @pytest.fixture(autouse=True)

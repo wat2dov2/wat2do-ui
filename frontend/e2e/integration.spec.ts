@@ -685,6 +685,72 @@ test.describe("Auth Page", () => {
     )).toBe(JSON.stringify(TEST_EMAIL));
   });
 
+  test("keeps the session when a new backend worker cannot fetch signing keys", async ({ page, next }) => {
+    await seedAuthenticatedSession(page, next);
+    await page.route(url => apiPath(url) === "/users/me", async (route) => {
+      await route.fulfill({
+        status: 503,
+        contentType: "application/json",
+        body: JSON.stringify({ detail: "Authentication error" }),
+      });
+    });
+
+    const profile = page.waitForResponse(url => apiPath(url.url()) === "/users/me");
+    await page.goto(BASE);
+    expect((await profile).status()).toBe(503);
+    await expect(page.getByRole("main", { name: "Events list" })).toBeVisible();
+    expect(await page.evaluate(
+      emailKey => window.localStorage.getItem(emailKey), STORAGE_KEYS.USER_EMAIL,
+    )).toBe(JSON.stringify(TEST_EMAIL));
+  });
+
+  for (const status of [429, 500, 503]) {
+    test(`keeps the cached session after an overnight refresh returns ${status}`, async ({ page }) => {
+      await page.route(url => apiPath(url) === "/auth/refresh", async (route) => {
+        await route.fulfill({
+          status,
+          contentType: "application/json",
+          body: JSON.stringify({ detail: "Authentication temporarily unavailable" }),
+        });
+      });
+      await page.addInitScript(
+        ({ emailKey, email }) => {
+          window.localStorage.setItem(emailKey, JSON.stringify(email));
+        },
+        { emailKey: STORAGE_KEYS.USER_EMAIL, email: TEST_EMAIL },
+      );
+
+      const refresh = page.waitForResponse(url => apiPath(url.url()) === "/auth/refresh");
+      await page.goto(BASE);
+      expect((await refresh).status()).toBe(status);
+      await expect(page.getByRole("main", { name: "Events list" })).toBeVisible();
+      expect(await page.evaluate(
+        emailKey => window.localStorage.getItem(emailKey), STORAGE_KEYS.USER_EMAIL,
+      )).toBe(JSON.stringify(TEST_EMAIL));
+
+      await page.unroute(url => apiPath(url) === "/auth/refresh");
+      await page.route(url => apiPath(url) === "/auth/refresh", async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            access_token: "recovered-access-token",
+            token_type: "bearer",
+            expires_in: 3600,
+            user_id: "mock-user-id",
+          }),
+        });
+      });
+      const recovered = page.waitForResponse(url => apiPath(url.url()) === "/auth/refresh");
+      await page.reload();
+      expect((await recovered).status()).toBe(200);
+      await expect(page.getByRole("main", { name: "Events list" })).toBeVisible();
+      expect(await page.evaluate(
+        emailKey => window.localStorage.getItem(emailKey), STORAGE_KEYS.USER_EMAIL,
+      )).toBe(JSON.stringify(TEST_EMAIL));
+    });
+  }
+
   test("keeps the cached session when a deploy interrupts a 401 retry", async ({
     page, next,
   }) => {

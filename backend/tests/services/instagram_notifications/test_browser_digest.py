@@ -216,3 +216,143 @@ def test_apple_events_permission_error_has_actionable_sanitized_message(monkeypa
         "Enable Brave View > Developer > Allow JavaScript from Apple Events"
     )
     assert "secret-cookie" not in str(raised.value)
+
+
+@pytest.mark.parametrize("slow", [True, False])
+def test_resolver_recovers_page_before_querying(slow: bool) -> None:
+    now = 0.0
+    navigations = 0
+    reads = 0
+    queries = 0
+
+    def sleep(seconds: float) -> None:
+        nonlocal now
+        now += seconds
+
+    def run(source: str, _timeout: float) -> str:
+        nonlocal navigations, reads, queries
+        if "location.replace" in source:
+            navigations += 1
+            return "navigating"
+        if "const anchor =" in source:
+            reads += 1
+            return "usask.wat2do.io" if navigations or (slow and reads >= 3) else ""
+        if "activeRecipient" in source:
+            return "true"
+        if "some(element" in source:
+            return "pending"
+        if "fetch(" in source:
+            queries += 1
+            return "started"
+        if "JSON.stringify(window" in source:
+            return json.dumps({"state": "succeeded", "media_ids": ["123"], "page_count": 1})
+        if source.startswith("delete window"):
+            return "cleared"
+        if "const settings =" in source:
+            return "missing"
+        raise AssertionError(source)
+
+    result = browser_digest.BrowserInstagramDigestResolver(
+        javascript_runner=run, sleep=sleep, monotonic=lambda: now
+    ).resolve("41553815702", "usask.wat2do.io", "cache-1")
+    assert result.media_ids == ("123",)
+    assert navigations == (0 if slow else 1)
+    assert queries == 1
+
+
+def test_resolver_stops_after_one_failed_page_recovery() -> None:
+    now = 0.0
+    sources: list[str] = []
+
+    def sleep(seconds: float) -> None:
+        nonlocal now
+        now += seconds
+
+    def run(source: str, _timeout: float) -> str:
+        sources.append(source)
+        return "missing" if "const settings =" in source else ""
+
+    with pytest.raises(browser_digest.BrowserDigestError):
+        browser_digest.BrowserInstagramDigestResolver(
+            javascript_runner=run, sleep=sleep, monotonic=lambda: now
+        ).resolve("41553815702", "usask.wat2do.io", "cache-1")
+    assert sum("location.replace" in source for source in sources) == 1
+    assert not any("fetch(" in source for source in sources)
+
+
+def test_recipient_mismatch_never_queries_or_retries_navigation() -> None:
+    sources: list[str] = []
+
+    def run(source: str, _timeout: float) -> str:
+        sources.append(source)
+        return "usask.wat2do.io" if "const anchor =" in source else "false"
+
+    with pytest.raises(browser_digest.BrowserDigestError, match="does not match"):
+        browser_digest.BrowserInstagramDigestResolver(javascript_runner=run).resolve(
+            "41553815702", "usask.wat2do.io", "cache-1"
+        )
+    assert not any("fetch(" in source or "location.replace" in source for source in sources)
+
+
+def test_closed_tab_waits_for_new_tab_before_reading_identity(monkeypatch) -> None:
+    responses = iter(
+        [
+            "",
+            "",
+            "usask.wat2do.io",
+            "usask.wat2do.io",
+            "true",
+            "pending",
+            "started",
+            '{"state":"succeeded","media_ids":["123"],"page_count":1}',
+            "cleared",
+        ]
+    )
+    calls: list[list[str]] = []
+
+    def run(args, **kwargs):
+        calls.append(args)
+        return subprocess.CompletedProcess(args, 0, stdout=next(responses))
+
+    monkeypatch.setattr(browser_digest.subprocess, "run", run)
+    result = browser_digest.BrowserInstagramDigestResolver(sleep=lambda _: None).resolve(
+        "41553815702", "usask.wat2do.io", "cache-1"
+    )
+    assert result.media_ids == ("123",)
+    assert all(args[2] == browser_digest._APPLE_SCRIPT for args in calls)
+    assert not any("location.replace" in args[-1] for args in calls)
+
+
+def test_stopped_browser_error_is_actionable(monkeypatch) -> None:
+    def run(*args, **kwargs):
+        raise subprocess.CalledProcessError(1, "osascript", stderr="Brave is not running.")
+
+    monkeypatch.setattr(browser_digest.subprocess, "run", run)
+    with pytest.raises(browser_digest.BrowserDigestError, match="Open Brave"):
+        browser_digest._execute_brave_javascript("document.title", 1)
+
+
+def test_missing_switch_controls_recovers_then_rechecks_recipient(monkeypatch) -> None:
+    sources: list[str] = []
+    recovered = False
+
+    def run(source: str, _timeout: float) -> str:
+        nonlocal recovered
+        sources.append(source)
+        if "location.replace" in source:
+            recovered = True
+            return "navigating"
+        if "const anchor =" in source:
+            return "usask.wat2do.io" if recovered else "ulaval.wat2do.io"
+        if "activeRecipient" in source:
+            return "false"
+        if "const settings =" in source:
+            return "missing"
+        return "pending"
+
+    with pytest.raises(browser_digest.BrowserDigestError, match="does not match"):
+        browser_digest.BrowserInstagramDigestResolver(javascript_runner=run).resolve(
+            "41553815702", "usask.wat2do.io", "cache-1"
+        )
+    assert recovered
+    assert not any("fetch(" in source for source in sources)

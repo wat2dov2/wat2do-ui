@@ -1,6 +1,12 @@
-from datetime import datetime, timezone
+import io
+import json
+from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock
 
+import jwt
+from cryptography.hazmat.primitives.asymmetric import ec
+
+from core import auth
 from schemas.user import UserResponse
 from services import user_service
 from tests.conftest import FAKE_USER
@@ -20,6 +26,58 @@ def _mock_user(**overrides) -> UserResponse:
 
 
 # ── GET /users/me ───────────────────────────────────────────────────
+
+
+def test_session_survives_worker_restart_and_signing_key_outage(client, monkeypatch):
+    private_key = ec.generate_private_key(ec.SECP256R1())
+    public_jwk = json.loads(jwt.algorithms.ECAlgorithm.to_jwk(private_key.public_key()))
+    public_jwk.update(kid="test-signing-key", use="sig", alg="ES256")
+    keys_available = True
+    fetch_count = 0
+
+    def fetch_keys(*args, **kwargs):
+        nonlocal fetch_count
+        fetch_count += 1
+        if not keys_available:
+            raise TimeoutError("Simulated signing-key outage")
+        return io.BytesIO(json.dumps({"keys": [public_jwk]}).encode())
+
+    monkeypatch.setattr("jwt.jwks_client.urllib.request.urlopen", fetch_keys)
+    monkeypatch.setattr(auth, "_jwks_client", None)
+    monkeypatch.setattr(user_service, "get_user_by_supabase_id", lambda _: _mock_user())
+    claims = {
+        "sub": FAKE_USER["id"],
+        "email": FAKE_USER["email"],
+        "aud": "authenticated",
+        "iss": auth._EXPECTED_ISSUER,
+        "exp": datetime.now(timezone.utc) + timedelta(hours=1),
+    }
+    token = jwt.encode(claims, private_key, algorithm="ES256", headers={"kid": public_jwk["kid"]})
+    headers = {"Authorization": f"Bearer {token}"}
+
+    assert client.get("/users/me", headers=headers).status_code == 200
+    keys_available = False
+    # A warm worker keeps verifying the exact same token from its cached key.
+    assert client.get("/users/me", headers=headers).status_code == 200
+    assert fetch_count == 1
+
+    # A deployment replaces that worker and its in-memory signing-key cache.
+    monkeypatch.setattr(auth, "_jwks_client", None)
+    assert client.get("/users/me", headers=headers).status_code == 503
+    assert fetch_count == 2
+
+    keys_available = True
+    recovered = client.get("/users/me", headers=headers)
+    assert recovered.status_code == 200
+    assert recovered.json()["email"] == FAKE_USER["email"]
+    assert fetch_count == 3
+
+    # Availability handling must not admit an actually expired session.
+    claims["exp"] = datetime.now(timezone.utc) - timedelta(seconds=1)
+    expired = jwt.encode(claims, private_key, algorithm="ES256", headers={"kid": public_jwk["kid"]})
+    assert (
+        client.get("/users/me", headers={"Authorization": f"Bearer {expired}"}).status_code == 401
+    )
 
 
 def test_get_me_requires_auth(client):

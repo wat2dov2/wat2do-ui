@@ -1,7 +1,7 @@
-"""Serialized CacheEntID expansion through an existing Brave Instagram tab.
+"""Serialized CacheEntID expansion through a human-authenticated Brave session.
 
 The browser keeps every credential. Python sends small JavaScript operations to
-the already-open Instagram tab and receives only sanitized account names and
+one Instagram tab and receives only sanitized account names and
 media IDs.
 """
 
@@ -30,6 +30,9 @@ _MEDIA_KEYS = frozenset({"media_list", "media_id"})
 _APPLE_SCRIPT = """
 on run argv
     set javascriptSource to item 1 of argv
+    if application "Brave Browser" is not running then
+        error "Brave is not running."
+    end if
     tell application "Brave Browser"
         repeat with browserWindow in windows
             repeat with browserTab in tabs of browserWindow
@@ -38,7 +41,15 @@ on run argv
                 end if
             end repeat
         end repeat
-        error "No open Instagram tab was found."
+        if (count of windows) is 0 then
+            set browserWindow to make new window
+            set URL of active tab of browserWindow to "https://www.instagram.com/"
+        else
+            tell front window
+                make new tab with properties {URL:"https://www.instagram.com/"}
+            end tell
+        end if
+        return ""
     end tell
 end run
 """.strip()
@@ -48,6 +59,10 @@ JavascriptRunner = Callable[[str, float], str]
 
 class BrowserDigestError(RuntimeError):
     """A sanitized browser or Instagram digest failure."""
+
+
+class _BrowserPageUnavailable(BrowserDigestError):
+    """Recoverable page readiness or account-control failure."""
 
 
 @dataclass(frozen=True)
@@ -92,7 +107,11 @@ class BrowserInstagramDigestResolver:
         if not _CACHE_ID_PATTERN.fullmatch(cache_id):
             raise BrowserDigestError("Instagram digest cache ID is invalid")
 
-        self._activate_recipient_account(recipient_id, username)
+        try:
+            self._prepare_recipient_account(recipient_id, username)
+        except _BrowserPageUnavailable:
+            self._run('window.location.replace("https://www.instagram.com/"); "navigating"')
+            self._prepare_recipient_account(recipient_id, username)
         media_ids, page_count = self._fetch_digest(cache_id)
         return DigestResolution(
             account_username=username,
@@ -102,6 +121,10 @@ class BrowserInstagramDigestResolver:
 
     def _run(self, source: str) -> str:
         return self._javascript_runner(source, _CONTROL.request_timeout_seconds).strip()
+
+    def _prepare_recipient_account(self, recipient_id: str, username: str) -> None:
+        self._poll_until(lambda: self._current_account_username() is not None)
+        self._activate_recipient_account(recipient_id, username)
 
     def _activate_recipient_account(self, recipient_id: str, username: str) -> None:
         current_username = self._current_account_username()
@@ -129,10 +152,10 @@ class BrowserInstagramDigestResolver:
             return
         if self._run(_switch_button_state_source()) != "ready":
             if self._run(_open_more_source()) == "missing":
-                raise BrowserDigestError("Instagram account switch control is unavailable")
+                raise _BrowserPageUnavailable("Instagram account switch control is unavailable")
             self._poll_text(_switch_button_state_source(), expected="ready")
         if self._run(_click_switch_accounts_source()) != "clicked":
-            raise BrowserDigestError("Instagram account switch control is unavailable")
+            raise _BrowserPageUnavailable("Instagram account switch control is unavailable")
         self._poll_text(_account_chooser_state_source(), expected="ready")
 
     def _switch_account(self, username: str) -> None:
@@ -194,7 +217,7 @@ class BrowserInstagramDigestResolver:
             if completed():
                 return
             self._sleep(_CONTROL.poll_interval_seconds)
-        raise BrowserDigestError("Instagram browser automation timed out")
+        raise _BrowserPageUnavailable("Instagram browser automation timed out")
 
 
 def action_media_ids(instagram_action: str) -> tuple[str, ...]:
@@ -284,8 +307,8 @@ def _execute_brave_javascript(source: str, timeout_seconds: float) -> str:
             raise BrowserDigestError(
                 "Enable Brave View > Developer > Allow JavaScript from Apple Events"
             ) from None
-        if "No open Instagram tab was found" in detail:
-            raise BrowserDigestError("Open one logged-in Instagram tab in Brave") from None
+        if "Brave is not running" in detail:
+            raise BrowserDigestError("Open Brave with the logged-in Instagram accounts") from None
         raise BrowserDigestError("Brave could not run Instagram browser automation") from None
     return completed.stdout
 
@@ -356,6 +379,7 @@ def _click_account_source(username: str) -> str:
 def _current_account_username_source() -> str:
     return r"""
 (() => {
+  if (document.readyState !== "complete") return "";
   const anchor = [...document.querySelectorAll("a[href]")].find(candidate => {
     const image = candidate.querySelector("img[alt]");
     const alt = image?.getAttribute("alt") || "";

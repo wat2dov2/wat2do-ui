@@ -6,6 +6,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from fastapi import HTTPException, status
 from fastapi.testclient import TestClient
+from supabase_auth.errors import AuthApiError
 
 from core.config import settings
 from core.errors import (
@@ -370,6 +371,27 @@ class TestRefresh:
     """Tests for the token refresh endpoint."""
 
     ALLOWED_ORIGIN = "http://localhost:3000"
+
+    @pytest.mark.parametrize("upstream_status", [400, 401, 403, 408, 429, 500, 502, 503])
+    def test_refresh_preserves_transient_upstream_failures(
+        self, client, monkeypatch, upstream_status
+    ):
+        upstream = MagicMock()
+        upstream.refresh_session.side_effect = AuthApiError(
+            "Private upstream error", upstream_status, None
+        )
+        monkeypatch.setattr(auth, "_auth_eager", upstream)
+
+        response = client.post(
+            "/auth/refresh",
+            cookies={"refresh_token": "existing-session"},
+            headers={"Origin": self.ALLOWED_ORIGIN},
+        )
+
+        expected_status = 401 if upstream_status in {400, 401, 403} else upstream_status
+        assert response.status_code == expected_status
+        assert "Private upstream error" not in response.text
+        assert "set-cookie" not in response.headers
 
     def test_refresh_success(self, client, monkeypatch):
         """Valid refresh token in cookie returns new tokens and rotates the cookie."""
