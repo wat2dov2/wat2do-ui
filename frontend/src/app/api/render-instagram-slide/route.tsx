@@ -3,6 +3,7 @@ import path from "node:path";
 import { NextRequest, NextResponse } from "next/server";
 import { Resvg, initWasm } from "@resvg/resvg-wasm";
 import satori from "satori";
+import sharp from "sharp";
 import {
   CoverSlideTemplate,
   EventSlideTemplate,
@@ -132,7 +133,10 @@ async function inlineImage(sourceUrl: string | null | undefined): Promise<string
   if (bytes.byteLength === 0 || bytes.byteLength > MAX_SOURCE_IMAGE_BYTES) {
     throw new Error("Poster download is empty or exceeds the image size limit");
   }
-  return `data:${contentType.split(";")[0]};base64,${bytes.toString("base64")}`;
+  // Resvg's WASM rasterizer silently omits WebP images. Decode every poster
+  // before embedding it so unsupported formats cannot publish as blank slides.
+  const png = await sharp(bytes).autoOrient().png().toBuffer();
+  return `data:image/png;base64,${png.toString("base64")}`;
 }
 
 async function buildSlide(slide: SlideRequest): Promise<React.ReactElement> {

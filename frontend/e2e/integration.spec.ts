@@ -1,9 +1,11 @@
 import { test } from "next/experimental/testmode/playwright.js";
 import { expect, type Page } from "@playwright/test";
+import sharp from "sharp";
 import type { NextFixture } from "next/experimental/testmode/playwright.js";
 import { mockApi } from "./api-fixture";
 import { STORAGE_KEYS } from "../src/shared/constants/storageKeys";
 import { MAX_IMAGE_UPLOAD_SIZE_BYTES } from "../src/shared/constants/uploads";
+import eventDiscovery from "../../backend/controlbox/event_discovery.json" with { type: "json" };
 import type { components } from "../src/shared/generated/api-types";
 import arTranslations from "../src/shared/locales/ar.json" with { type: "json" };
 
@@ -3040,7 +3042,55 @@ test.describe("Events Page", () => {
     await expect(newlyAddedSelect).toHaveAttribute("aria-pressed", "false");
   });
 
-  test("opens minimum going on mouse down, filters with a number input, and resets with All", async ({ page, next }) => {
+  test("keeps minimum going changes local and bounds rendering after scrolling a large feed", async ({ page, next }) => {
+    const batchSize = eventDiscovery.initial_render_count;
+    const startsAt = new Date(Date.now() + 86_400_000).toISOString();
+    const items = Array.from({ length: batchSize * 4 }, (_, index) => ({
+      id: index + 1, title: `Going filter event ${index + 1}`, school: "uwaterloo",
+      club: "UW Tech Club", location: "SLC", category: "Career", price: 0,
+      food: [], registration: false, source_image_url: null,
+      added_at: new Date().toISOString(),
+      occurrences: [{ id: index + 1, event_id: index + 1, dtstart_utc: startsAt, dtend_utc: null }],
+    }));
+    let feedRequests = 0;
+    let statsRequests = 0;
+    await mockApi(page, next, url => apiPath(url) === "/events", async () => {
+      feedRequests += 1;
+      return { json: { items, total: items.length, page: 1, page_size: items.length, total_pages: 1 } };
+    });
+    await mockApi(page, next, url => apiPath(url) === "/events/stats", async () => {
+      statsRequests += 1;
+      return { json: Object.fromEntries(items.map(event => [event.id, {
+        going_count: event.id % 2, click_count: 0,
+      }])) };
+    });
+    await page.goto(BASE);
+    const cards = page.locator("article[data-event-id]");
+    await expect(cards.first()).toContainText("1 going");
+    while (await cards.count() < items.length) {
+      const previousCount = await cards.count();
+      await page.getByTestId("event-list-sentinel").scrollIntoViewIfNeeded();
+      await expect.poll(() => cards.count()).toBeGreaterThan(previousCount);
+    }
+    await page.evaluate(() => window.scrollTo(0, 0));
+    const loadedFeedRequests = feedRequests;
+    const loadedStatsRequests = statsRequests;
+    await page.getByRole("button", { name: ">0 going", exact: true }).click();
+    const minimumGoing = page.getByRole("textbox", { name: "Minimum going" });
+    await minimumGoing.fill("1");
+    await expect(page.getByRole("list", { name: `${items.length / 2} events found`, exact: true })).toBeVisible();
+    await expect(cards).toHaveCount(batchSize);
+    expect(await cards.evaluateAll(elements => elements.every(element =>
+      Number(element.getAttribute("data-event-id")) % 2 === 1
+    ))).toBe(true);
+    await minimumGoing.fill("0");
+    await expect(page.getByRole("list", { name: `${items.length} events found`, exact: true })).toBeVisible();
+    await expect(cards).toHaveCount(batchSize);
+    expect(feedRequests).toBe(loadedFeedRequests);
+    expect(statsRequests).toBe(loadedStatsRequests);
+  });
+
+  test("opens minimum going on mouse down and applies integer input changes", async ({ page, next }) => {
     await mockApi(page, next, url => apiPath(url) === "/events/stats", async () => {
       return ({
         status: 200,
@@ -3050,7 +3100,7 @@ test.describe("Events Page", () => {
     });
     await page.goto(BASE);
     const card = page.getByRole("button", { name: "Event: Tech Career Fair", exact: true });
-    const minimumGoing = page.getByRole("spinbutton", { name: "Minimum going" });
+    const minimumGoing = page.getByRole("textbox", { name: "Minimum going" });
     await expect(card).toBeVisible();
     await expect(minimumGoing).toHaveCount(0);
     await page.getByRole("button", { name: ">0 going", exact: true }).hover();
@@ -3071,7 +3121,7 @@ test.describe("Events Page", () => {
     await expect(minimumGoing).toHaveValue("");
     await expect(page.getByRole("button", { name: ">0 going", exact: true })).toBeVisible();
     await minimumGoing.fill("03");
-    await expect(minimumGoing).toHaveValue("3");
+    await expect(minimumGoing).toHaveValue("03");
     await minimumGoing.fill("-1");
     await expect(page.getByRole("button", { name: ">3 going", exact: true })).toBeVisible();
     await expect(card).toBeVisible();
@@ -4577,6 +4627,42 @@ test.describe("Standalone submission pages", () => {
 // ── Workflow 6: Navigation ────────────────────────────────────────────
 
 test.describe("Navigation", () => {
+  for (const format of ["webp", "png", "jpeg"] as const) {
+    test(`includes ${format} poster pixels in the published Instagram slide`, async ({ page, next }) => {
+      const storageBase = process.env.STORAGE_PUBLIC_BASE_URL ?? "https://wat2do.io/media";
+      const sourceUrl = `${storageBase.replace(/\/$/, "")}/event-images/wat-300.${format}`;
+      const poster = await sharp({ create: {
+        width: 100, height: 100, channels: 3, background: { r: 240, g: 80, b: 20 },
+      } }).toFormat(format).toBuffer();
+      await mockApi(page, next, url => url.pathname.endsWith(`/wat-300.${format}`), async () => ({
+        contentType: `image/${format}`, body: poster,
+      }));
+      await page.goto(BASE);
+      const rendered = page.waitForResponse(response => response.url().endsWith("/api/render-instagram-slide"));
+      await page.evaluate(async ({ sourceUrl, secret }) => {
+        await fetch("/api/render-instagram-slide", {
+          method: "POST",
+          headers: { "content-type": "application/json", ...(secret ? { authorization: `Bearer ${secret}` } : {}) },
+          body: JSON.stringify({
+            kind: "event", school: "uwaterloo",
+            event: {
+              id: 1, school: "uwaterloo", tz: "America/Toronto", title: "Poster regression",
+              source_image_url: sourceUrl, category: "Career",
+              dtstart_utc: "2026-09-24T16:00:00Z",
+            },
+          }),
+        });
+      }, { sourceUrl, secret: process.env.INSTAGRAM_SLIDE_RENDER_SECRET?.trim() });
+      const response = await rendered;
+      expect(response.status()).toBe(200);
+      const pixel = await sharp(await response.body())
+        .extract({ left: 540, top: 400, width: 1, height: 1 }).removeAlpha().raw().toBuffer();
+      for (const [channel, expected] of [240, 80, 20].entries()) {
+        expect(Math.abs(pixel[channel] - expected)).toBeLessThanOrEqual(3);
+      }
+    });
+  }
+
   test("Instagram admin route is present in the Next build", async ({ request }) => {
     const response = await request.get(`${BASE}/admin/instagram`);
     expect(response.status()).toBe(200);

@@ -127,11 +127,19 @@ export function EventList({
   const [visibleEventCount, setVisibleEventCount] = useState(
     controlBox.eventDiscovery.initialRenderCount,
   );
+  const resultKey = useMemo(() => events.map((event) => event.id).join(","), [events]);
+  const [previousResultKey, setPreviousResultKey] = useState(resultKey);
+  // Reset before rendering children: an effect would first mount the entire
+  // previously expanded list on every filter edit. Stats-only updates keep it.
+  if (previousResultKey !== resultKey) {
+    setPreviousResultKey(resultKey);
+    setVisibleEventCount(controlBox.eventDiscovery.initialRenderCount);
+  }
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
   const dateSectionGroups = useMemo(
-    () => groupEventsByDateSection(events, getSchoolTimezone),
-    [events, getSchoolTimezone],
+    () => groupByDateSections ? groupEventsByDateSection(events, getSchoolTimezone) : [],
+    [events, getSchoolTimezone, groupByDateSections],
   );
   const sectionOrderedEvents = useMemo(
     () =>
@@ -145,8 +153,18 @@ export function EventList({
     [sectionOrderedEvents, visibleEventCount],
   );
   const visibleDateSectionGroups = useMemo(
-    () => groupEventsByDateSection(visibleEvents, getSchoolTimezone),
-    [visibleEvents, getSchoolTimezone],
+    () => {
+      let remaining = visibleEventCount;
+      const groups: DateSectionGroup[] = [];
+      for (const group of dateSectionGroups) {
+        if (remaining <= 0) break;
+        const sectionEvents = group.events.slice(0, remaining);
+        remaining -= sectionEvents.length;
+        groups.push({ ...group, events: sectionEvents });
+      }
+      return groups;
+    },
+    [dateSectionGroups, visibleEventCount],
   );
   const priorityImageIds = useMemo(
     () =>
