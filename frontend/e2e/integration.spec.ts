@@ -1242,7 +1242,7 @@ test.describe("Admin diagnostics", () => {
 
 test.describe("Admin Instagram publishing", () => {
   for (const school of ["uwaterloo", "western", "ulaval", "mun"]) {
-  test(`adds an existing event by ID and prepopulates its club for ${school}`, async ({
+  test(`adds an existing event by ID and preserves its club and source link for ${school}`, async ({
     page, next,
   }) => {
     await page.setViewportSize({ width: 390, height: 844 });
@@ -1273,7 +1273,7 @@ test.describe("Admin Instagram publishing", () => {
       food: [],
       registration: school === "ulaval" || school === "mun",
       source_image_url: null,
-      source_url: null,
+      source_url: `https://www.instagram.com/p/event-${id}/`,
       category: "Technology",
       club: clubName,
       club_type: "independent",
@@ -1321,7 +1321,7 @@ test.describe("Admin Instagram publishing", () => {
     const initialBatch = {
       ...batchBase,
       version: 1,
-      new_event_count: 2,
+      new_event_count: 1,
       items: [batchItem(firstEvent, 1)],
     };
     const savedBatch = {
@@ -1395,8 +1395,9 @@ test.describe("Admin Instagram publishing", () => {
     await mockApi(page, next, url => ["/events/1", "/events/2"].some(path => path === apiPath(url)), async (request) => {
       if (request.method !== "GET") {
         eventUpdateCount += 1;
-        const body = await request.json() as { club_id: number; title?: string };
+        const body = await request.json() as { club_id: number; title?: string; source_url: string | null };
         const editedEvent = apiPath(new URL(request.url)) === "/events/1" ? firstEvent : secondEvent;
+        expect(body.source_url).toBe(editedEvent.source_url);
         if (body.title) editedEvent.title = body.title;
         editedClubIds.push(body.club_id);
       }
@@ -1434,6 +1435,8 @@ test.describe("Admin Instagram publishing", () => {
 
     expect(savedEventIds).toBeNull();
     await expect(drawer.locator("figure")).toHaveCount(3);
+    // Adding an older event must raise the cover's count before the draft is saved.
+    await expect(drawer.locator("figure").first().getByText("2", { exact: true })).toBeVisible();
     await expect(drawer.getByText("Second Carousel Event").first()).toBeVisible();
     expect(currentBatch.caption_intro).toBe("");
     await expect(drawer.getByLabel("Saved caption preview (event details appended automatically)", { exact: true })).toHaveCount(0);
@@ -1447,6 +1450,7 @@ test.describe("Admin Instagram publishing", () => {
     await firstPreview.click();
     await expect(firstPreview).toHaveAttribute("aria-pressed", "true");
     await expect(drawer.getByRole("textbox", { name: "Club *", exact: true })).toHaveValue(clubName);
+    await expect(drawer.getByRole("textbox", { name: "Source link", exact: true })).toHaveValue(firstEvent.source_url);
     expect(patchCount).toBe(0);
     expect(eventUpdateCount).toBe(0);
 
@@ -1466,6 +1470,7 @@ test.describe("Admin Instagram publishing", () => {
     const secondPreview = drawer.locator("figure").filter({ hasText: "Second Carousel Event" });
     await secondPreview.click();
     await expect(drawer.getByRole("textbox", { name: /Event Title/ })).toHaveValue("Second Carousel Event");
+    await expect(drawer.getByRole("textbox", { name: "Source link", exact: true })).toHaveValue(secondEvent.source_url);
     await drawer.locator("figure").filter({ hasText: "Edited before adding another event" }).click();
     await expect(drawer.getByRole("textbox", { name: /Event Title/ })).toHaveValue("Edited before adding another event");
     expect(eventUpdateCount).toBe(0);

@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import logging
 from collections import defaultdict
-from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime, timedelta, timezone
 from typing import Any
 from uuid import UUID
@@ -678,14 +677,9 @@ def _load_batch_items(batch_ids: list[str], columns: str) -> list[dict[str, Any]
 def _hydrate_batch(batch: dict[str, Any]) -> None:
     """Join current event data to the detail response's ordered slides."""
     items = _load_batch_items([str(batch["id"])], "*")
-    with ThreadPoolExecutor(max_workers=2) as pool:
-        events_future = pool.submit(
-            _load_slide_events,
-            [int(item["event_id"]) for item in items if item["event_id"] is not None],
-        )
-        count_future = pool.submit(_count_new_events, batch)
-        slide_events = events_future.result()
-        batch["new_event_count"] = count_future.result()
+    slide_events = _load_slide_events(
+        [int(item["event_id"]) for item in items if item["event_id"] is not None]
+    )
 
     now = datetime.now(timezone.utc)
     editable = batch["status"] in (INSTAGRAM_BATCH_READY_FOR_REVIEW, INSTAGRAM_BATCH_FAILED)
@@ -696,6 +690,8 @@ def _hydrate_batch(batch: dict[str, Any]) -> None:
             batch["status"] == INSTAGRAM_BATCH_PUBLISHED and item.get("published_asset_url")
         ):
             batch["items"].append({**item, "event": event})
+    # The union count needs the final carousel, including older selected events.
+    batch["new_event_count"] = _count_new_events(batch)
     if editable:
         batch["caption"] = build_caption(
             [_slide_payload(item["event"]) for item in batch["items"]],

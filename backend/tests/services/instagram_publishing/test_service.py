@@ -382,6 +382,30 @@ def test_hydration_handles_an_empty_batch(monkeypatch):
     load_events.assert_called_once_with([])
 
 
+@pytest.mark.parametrize("status", ["ready_for_review", "failed", "published"])
+def test_hydration_counts_the_loaded_carousel_in_the_cover_total(monkeypatch, status):
+    batch = _batch(list(range(1, 36)), status=status)
+    items = batch.pop("items")  # A database batch row has no joined items yet.
+    events = {event_id: _event(event_id) for event_id in range(1, 36)}
+    events[35] = events[35].model_copy(update={"source_image_url": None})
+    monkeypatch.setattr(service, "_load_batch_items", lambda *_: items)
+    monkeypatch.setattr(service, "_load_slide_events", lambda _ids: events)
+    monkeypatch.setattr(service, "build_caption", lambda *_: "Caption")
+    calls: list[tuple] = []
+    queries = iter([_FakeQuery([], calls, count=12), _FakeQuery([], calls, count=4)])
+    monkeypatch.setattr(
+        service, "get_sb", lambda: SimpleNamespace(table=lambda _name: next(queries))
+    )
+
+    service._hydrate_batch(batch)
+
+    # Drafts exclude the posterless event before counting; published slides remain history.
+    expected_ids = list(range(1, 36 if status == "published" else 35))
+    assert [item["event_id"] for item in batch["items"]] == expected_ids
+    assert batch["new_event_count"] == 12 + len(expected_ids) - 4
+    assert ("in_", ("id", expected_ids), {}) in calls
+
+
 @pytest.mark.parametrize("status", ["ready_for_review", "published"])
 def test_deleted_event_does_not_block_batch_and_preserves_published_image(monkeypatch, status):
     batch = _batch([1], status=status)

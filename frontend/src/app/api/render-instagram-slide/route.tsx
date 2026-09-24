@@ -202,14 +202,21 @@ export async function POST(request: NextRequest) {
     height: SLIDE_HEIGHT,
     fonts,
   });
-  const png = new Resvg(svg, { fitTo: { mode: "width", value: SLIDE_WIDTH } })
-    .render()
-    .asPng();
-
-  return new NextResponse(new Uint8Array(png), {
-    headers: {
-      "content-type": "image/png",
-      "cache-control": "no-store",
-    },
-  });
+  const renderer = new Resvg(svg, { fitTo: { mode: "width", value: SLIDE_WIDTH } });
+  try {
+    const rendered = renderer.render();
+    try {
+      return new NextResponse(new Uint8Array(rendered.asPng()), {
+        headers: {
+          "content-type": "image/png",
+          "cache-control": "no-store",
+        },
+      });
+    } finally {
+      // WASM pixel buffers must be released before another batch renders.
+      rendered.free();
+    }
+  } finally {
+    renderer.free();
+  }
 }

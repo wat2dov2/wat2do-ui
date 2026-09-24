@@ -56,6 +56,7 @@ export function eventToFormData(event: Event, timeZone: string): EventFormData {
     price: event.price ?? 0,
     food: event.food || [],
     registration: event.registration ?? false,
+    source_url: event.source_url ?? null,
     source_image_url: event.source_image_url ?? null,
   };
 }
