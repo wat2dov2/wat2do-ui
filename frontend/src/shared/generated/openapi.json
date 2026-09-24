@@ -4339,6 +4339,20 @@
             }
           },
           {
+            "name": "sort_order",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "type": "string",
+              "default": "asc",
+              "title": "Sort Order"
+            }
+          },
+          {
             "name": "page",
             "in": "query",
             "required": false,

@@ -66,6 +66,7 @@ def test_list_positions_is_public_and_paginated(client, monkeypatch):
         include_closed=False,
         added_since=None,
         paid_only=False,
+        sort_order="asc",
     )
 
 
@@ -113,3 +114,16 @@ def test_get_position_returns_404(client, monkeypatch):
 
     assert response.status_code == 404
     assert response.json()["detail"] == "Position not found"
+
+
+def test_list_positions_accepts_descending_deadlines(client, monkeypatch):
+    list_positions = MagicMock(return_value=([], 0))
+    monkeypatch.setattr(position_service, "list_positions", list_positions)
+    response = client.get("/positions/?include_closed=true&sort_order=desc")
+    assert response.status_code == 200
+    assert list_positions.call_args.kwargs["sort_order"] == "desc"
+    assert list_positions.call_args.kwargs["include_closed"] is True
+
+
+def test_list_positions_rejects_unknown_sort_order(client):
+    assert client.get("/positions/?sort_order=unknown").status_code == 422

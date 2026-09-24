@@ -52,6 +52,7 @@ def list_positions(
     include_closed: bool = False,
     added_since: datetime | None = None,
     paid_only: bool = False,
+    sort_order: str = "asc",
 ) -> tuple[list[PositionResponse], int]:
     query = get_sb().table(POSITIONS).select(_POSITION_SELECT, count="exact")
 
@@ -86,9 +87,9 @@ def list_positions(
         query = _apply_open_filter(query)
 
     response = (
-        query.order("deadline_date", desc=False, nullsfirst=False)
-        .order("deadline_at", desc=False, nullsfirst=False)
-        .order("id", desc=False)
+        query.order("deadline_date", desc=sort_order == "desc", nullsfirst=False)
+        .order("deadline_at", desc=sort_order == "desc", nullsfirst=False)
+        .order("id", desc=sort_order == "desc")
         .range(skip, skip + limit - 1)
         .execute()
     )

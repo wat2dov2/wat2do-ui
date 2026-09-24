@@ -1,6 +1,8 @@
 from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 
+import pytest
+
 from services import position_service
 
 
@@ -159,3 +161,16 @@ def test_get_club_position_counts_aggregates_open_count(fake_sb, patch_sb):
 
     assert counts == {1: 2, 2: 1, 99: 0}
     fake_sb.eq.assert_called_once_with("is_active", True)
+
+
+@pytest.mark.parametrize("sort_order,descending", [("asc", False), ("desc", True)])
+def test_list_positions_orders_deadlines_before_pagination(
+    fake_sb, patch_sb, sort_order, descending
+):
+    patch_sb("services.position_service")
+    fake_sb.set_response(data=[], count=0)
+    position_service.list_positions(sort_order=sort_order, include_closed=True, skip=20, limit=20)
+    fake_sb.order.assert_any_call("deadline_date", desc=descending, nullsfirst=False)
+    fake_sb.order.assert_any_call("deadline_at", desc=descending, nullsfirst=False)
+    fake_sb.order.assert_any_call("id", desc=descending)
+    fake_sb.range.assert_called_once_with(20, 39)

@@ -1393,3 +1393,44 @@ test.describe("Administrator poster payouts", () => {
       });
   });
 });
+
+test("admin positions shows latest deadlines first and keeps undated rows last", async ({ page }) => {
+  await installCommonApiMocks(page);
+  await installSessionMock(page, { role: "admin" });
+  await page.route(url => apiPath(url) === "/position-submissions", route =>
+    fulfillJson(route, { items: [], total: 0, page: 1, page_size: 20, total_pages: 0 }),
+  );
+  const positions = [
+    { id: 1, title: "Earlier deadline", deadline_date: "2026-09-01" },
+    { id: 2, title: "Later deadline", deadline_date: "2026-09-30" },
+    { id: 3, title: "Open deadline", deadline_date: null },
+  ];
+  const requests: URL[] = [];
+  await page.route(url => apiPath(url) === "/positions", route => {
+    const url = new URL(route.request().url());
+    requests.push(url);
+    const items = url.searchParams.get("sort_order") === "desc"
+      ? [positions[1], positions[0], positions[2]] : positions;
+    return fulfillJson(route, {
+      items: items.map(position => ({
+        ...position, club_id: 4, club_name: "Design Club", school: "uwaterloo",
+        description: "Help the club", position_type: "committee", requirements: [],
+        deadline_at: null, is_active: true, added_at: "2026-08-01T12:00:00Z",
+        updated_at: "2026-08-01T12:00:00Z",
+      })),
+      total: 3, page: 1, page_size: 20, total_pages: 1, latest_added_position: null,
+    });
+  });
+
+  await page.goto(`${BASE_URL}/admin/positions`);
+  await expect(page.getByRole("columnheader", { name: "Application deadline" })).toBeVisible();
+  const rows = page.getByRole("table").locator("tbody tr");
+  await expect(rows).toHaveCount(3);
+  await expect(rows.nth(0)).toContainText("Later deadline");
+  await expect(rows.nth(0)).toContainText("Sep 30, 2026");
+  await expect(rows.nth(1)).toContainText("Sep 1, 2026");
+  await expect(rows.nth(2).getByRole("cell").nth(3)).toHaveText("-");
+  expect(requests.length).toBeGreaterThan(0);
+  expect(requests.every(url => url.searchParams.get("include_closed") === "true"
+    && url.searchParams.get("sort_order") === "desc")).toBe(true);
+});

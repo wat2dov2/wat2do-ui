@@ -25,6 +25,7 @@ interface PositionListOptions {
   pageSize?: number;
   search?: string;
   includeClosed?: boolean;
+  sortOrder?: "asc" | "desc";
 }
 
 export async function getPositionsPage(
@@ -34,6 +35,7 @@ export async function getPositionsPage(
     page: String(options.page),
     page_size: String(options.pageSize ?? controlBox.eventDiscovery.serverFeedPageSize),
   });
+  if (options.sortOrder) params.set("sort_order", options.sortOrder);
   if (options.school) params.set("school", options.school);
   if (options.search) params.set("search", options.search);
   if (options.includeClosed) params.set("include_closed", "true");

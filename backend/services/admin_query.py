@@ -26,10 +26,7 @@ def load_page_ids(
         if value:
             query = query.eq(name, value)
     response = (
-        query.order("sort_at", desc=resource != "events")
-        .order("id")
-        .range(offset, offset + limit - 1)
-        .execute()
+        query.order("sort_at", desc=True).order("id").range(offset, offset + limit - 1).execute()
     )
     return [row["id"] for row in response.data or []], int(response.count or 0)
 

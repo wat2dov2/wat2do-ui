@@ -1,3 +1,5 @@
+from typing import Literal
+
 from fastapi import APIRouter, Depends, Query
 from pydantic import AwareDatetime
 
@@ -20,6 +22,7 @@ def list_positions(
     include_closed: bool = Query(default=False),
     added_since: AwareDatetime | None = Query(default=None),
     paid_only: bool = Query(default=False),
+    sort_order: Literal["asc", "desc"] = Query(default="asc"),
     pagination: PaginationParams = Depends(),
 ):
     items, total = position_service.list_positions(
@@ -32,6 +35,7 @@ def list_positions(
         include_closed=include_closed,
         added_since=added_since,
         paid_only=paid_only,
+        sort_order=sort_order,
     )
     return {
         **paginated_response(items, total, pagination),

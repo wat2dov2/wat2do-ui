@@ -31,7 +31,7 @@ def test_admin_page_filters_before_bounded_selection(fake_sb, patch_sb, resource
     fake_sb.eq.assert_any_call("status", "pending")
     fake_sb.eq.assert_any_call("category", "Social")
     fake_sb.ilike.assert_called_once_with("search_text", "%Dance%")
-    fake_sb.order.assert_any_call("sort_at", desc=resource != "events")
+    fake_sb.order.assert_any_call("sort_at", desc=True)
     fake_sb.order.assert_any_call("id")
     fake_sb.range.assert_called_once_with(20, 39)
     fake_sb.execute.assert_called_once()

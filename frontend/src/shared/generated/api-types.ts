@@ -6157,6 +6157,7 @@ export interface operations {
                 include_closed?: boolean;
                 added_since?: string | null;
                 paid_only?: boolean;
+                sort_order?: "asc" | "desc";
                 /** @description Page number (1-indexed) */
                 page?: number;
                 /** @description Items per page (max 100) */
