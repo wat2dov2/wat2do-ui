@@ -138,6 +138,12 @@
     "upcomingEventCount_one": "bevorstehende Veranstaltung",
     "clickCount_one": "{{count}} Klick",
     "andOthersCount_one": "und {{count}} andere",
-    "moreDatesCount_one": "+{{count}} Datum"
+    "moreDatesCount_one": "+{{count}} Datum",
+    "formatFilter": {
+      "label": "Veranstaltungsformat",
+      "any": "Alle Formate",
+      "inPerson": "Vor Ort",
+      "online": "Online"
+    }
   }
 }

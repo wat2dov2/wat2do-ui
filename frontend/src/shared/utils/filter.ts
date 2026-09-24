@@ -1,4 +1,4 @@
-import type { EventDateFilter } from "@/shared/types/filter.types";
+import type { EventDateFilter, EventFormatFilter } from "@/shared/types/filter.types";
 
 /** Count narrowing filters, excluding the separate search field and sort order. */
 export function getFilterCounts(filters: {
@@ -9,6 +9,7 @@ export function getFilterCounts(filters: {
   minPrice: string;
   maxPrice: string;
   minGoing: number;
+  eventFormat: EventFormatFilter;
   registration: boolean;
   selectedClubs: string[];
   hasFoodFilter: boolean;
@@ -24,6 +25,7 @@ export function getFilterCounts(filters: {
     (filters.minPrice ? 1 : 0) +
     (filters.maxPrice ? 1 : 0) +
     (filters.minGoing > 0 ? 1 : 0) +
+    (filters.eventFormat !== "any" ? 1 : 0) +
     (filters.registration ? 1 : 0) +
     filters.selectedClubs.length +
     (filters.hasFoodFilter ? 1 : 0) +

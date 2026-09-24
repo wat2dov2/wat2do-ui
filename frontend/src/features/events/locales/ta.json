@@ -138,6 +138,12 @@
     "upcomingEventCount_one": "வரவிருக்கும் நிகழ்வு",
     "clickCount_one": "{{count}} கிளிக்",
     "andOthersCount_one": "மேலும் {{count}} பேர்",
-    "moreDatesCount_one": "+{{count}} நாள்"
+    "moreDatesCount_one": "+{{count}} நாள்",
+    "formatFilter": {
+      "label": "நிகழ்வு வடிவம்",
+      "any": "எந்த வடிவமும்",
+      "inPerson": "நேரில்",
+      "online": "இணையவழி"
+    }
   }
 }

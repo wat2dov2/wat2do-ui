@@ -9,7 +9,7 @@ import {
   addCalendarDays,
   localDateTimeToUtc,
 } from "@/shared/utils/date";
-import { getEventCategory } from "@/shared/utils/event";
+import { getEventCategory, isVirtualLocation } from "@/shared/utils/event";
 
 interface SearchFilters extends Omit<SearchStoreFilterValues, "sortBy" | "sortOrder"> {
   goingEventIds: number[];
@@ -170,6 +170,11 @@ export function filterEvents(
       return false;
     }
     if ((goingCounts[event.id]?.going_count ?? 0) < filters.minGoing) return false;
+
+    if (filters.eventFormat !== "any") {
+      const location = event.location?.trim() ?? "";
+      if (!location || isVirtualLocation(location) !== (filters.eventFormat === "online")) return false;
+    }
 
     if (filters.hasFoodFilter && food.length === 0) {
       return false;

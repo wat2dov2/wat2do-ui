@@ -1,6 +1,7 @@
 import { useMemo, useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
+import { EventFormatFilterSelect } from "@/features/events/components/EventFormatFilterSelect";
 import { MinimumCountFilter } from "@/shared/ui/minimum-count-filter";
 import { toast } from "@/shared/hooks/use-toast";
 import { EventList } from "../components/EventList";
@@ -163,7 +164,7 @@ export function EventsPageContainer({
             </Button>
           </Stack>
 
-          <FilterBar refreshKey={`${filterConfigs.length + 2}:${filters.categoryOptions.length}`} data-testid="event-quick-filter-scroll" trailing={<>
+          <FilterBar refreshKey={`${filterConfigs.length + 3}:${filters.categoryOptions.length}`} data-testid="event-quick-filter-scroll" trailing={<>
               <MoreFiltersButton
                 open={showFilterDropdown}
                 onOpenChange={setShowFilterDropdown}
@@ -204,6 +205,10 @@ export function EventsPageContainer({
                   onChange={filters.setMinGoing}
                   countLabel={t("events.goingCount", { count: filters.minGoing })}
                   inputLabel={t("events.minimumGoing")}
+                />
+                <EventFormatFilterSelect
+                  value={filters.eventFormat}
+                  onChange={filters.setEventFormat}
                 />
                 {filters.categoryOptions.map((category) => (
                   <Button

@@ -138,6 +138,12 @@
     "upcomingEventCount_one": "paparating na kaganapan",
     "clickCount_one": "{{count}} pag-click",
     "andOthersCount_one": "at {{count}} iba pa",
-    "moreDatesCount_one": "+{{count}} petsa"
+    "moreDatesCount_one": "+{{count}} petsa",
+    "formatFilter": {
+      "label": "Format ng kaganapan",
+      "any": "Anumang format",
+      "inPerson": "Personal",
+      "online": "Online"
+    }
   }
 }

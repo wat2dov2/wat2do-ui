@@ -143,6 +143,12 @@
     "andOthersCount_one": "et {{count}} autre",
     "andOthersCount_many": "et {{count}} autres",
     "moreDatesCount_one": "+{{count}} date",
-    "moreDatesCount_many": "+{{count}} dates"
+    "moreDatesCount_many": "+{{count}} dates",
+    "formatFilter": {
+      "label": "Format de l’événement",
+      "any": "Tous les formats",
+      "inPerson": "En personne",
+      "online": "En ligne"
+    }
   }
 }

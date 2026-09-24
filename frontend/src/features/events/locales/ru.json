@@ -148,6 +148,12 @@
     "andOthersCount_many": "и ещё {{count}} человек",
     "moreDatesCount_one": "+{{count}} дата",
     "moreDatesCount_few": "+{{count}} даты",
-    "moreDatesCount_many": "+{{count}} дат"
+    "moreDatesCount_many": "+{{count}} дат",
+    "formatFilter": {
+      "label": "Формат мероприятия",
+      "any": "Любой формат",
+      "inPerson": "Очно",
+      "online": "Онлайн"
+    }
   }
 }

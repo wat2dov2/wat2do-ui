@@ -1,6 +1,6 @@
 /**
  * Event card in the same style as the main event grid, without footer actions.
- * Used in AuthHeroPanel and OnboardingEventGrid.
+ * Used in onboarding event previews.
  */
 
 import React from "react";

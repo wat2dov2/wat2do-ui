@@ -138,6 +138,12 @@
     "upcomingEventCount_one": "આવનારી ઇવેન્ટ",
     "clickCount_one": "{{count}} ક્લિક",
     "andOthersCount_one": "અને {{count}} અન્ય",
-    "moreDatesCount_one": "+{{count}} તારીખ"
+    "moreDatesCount_one": "+{{count}} તારીખ",
+    "formatFilter": {
+      "label": "ઇવેન્ટનું સ્વરૂપ",
+      "any": "કોઈપણ સ્વરૂપ",
+      "inPerson": "રૂબરૂ",
+      "online": "ઑનલાઇન"
+    }
   }
 }

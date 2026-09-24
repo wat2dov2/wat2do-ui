@@ -3149,6 +3149,46 @@ test.describe("Events Page", () => {
     await expect(page.getByRole("combobox", { name: "Event date" })).toContainText("Tomorrow");
   });
 
+  test("filters event formats locally and resets to Any format", async ({ page }) => {
+    let feedRequests = 0;
+    await page.route(url => apiPath(url) === "/events", async (route) => {
+      feedRequests += 1;
+      const now = new Date().toISOString();
+      const startsAt = new Date(Date.now() + 86_400_000).toISOString();
+      const items = [
+        { id: 901, title: "Campus workshop", location: "Student Centre" },
+        { id: 902, title: "Remote workshop", location: "Online via Zoom" },
+        { id: 903, title: "Unannounced workshop", location: null },
+      ].map(event => ({
+        ...event, price: 0, food: [], registration: false, category: "Career",
+        school: "uwaterloo", added_at: now, source_image_url: null,
+        occurrences: [{ id: event.id, event_id: event.id, dtstart_utc: startsAt, dtend_utc: null }],
+      }));
+      await route.fulfill({ json: { items, total: 3, page: 1, page_size: 20, total_pages: 1 } });
+    });
+    await page.goto(BASE);
+    const format = page.getByRole("combobox", { name: "Event format" });
+    const cards = page.locator("article[data-event-id]");
+    await expect(format).toHaveText("Any format");
+    await expect(cards).toHaveCount(3);
+    const initialRequests = feedRequests;
+
+    await format.click();
+    await page.getByRole("option", { name: "Online", exact: true }).click();
+    await expect(cards).toHaveCount(1);
+    await expect(cards.first()).toContainText("Remote workshop");
+
+    await format.click();
+    await page.getByRole("option", { name: "In person", exact: true }).click();
+    await expect(cards).toHaveCount(1);
+    await expect(cards.first()).toContainText("Campus workshop");
+
+    await format.click();
+    await page.getByRole("option", { name: "Any format", exact: true }).click();
+    await expect(cards).toHaveCount(3);
+    expect(feedRequests).toBe(initialRequests);
+  });
+
   test("filters events by preset or custom date from the quick-filter strip", async ({
     page,
   }) => {

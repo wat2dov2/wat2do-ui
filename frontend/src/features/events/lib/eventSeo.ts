@@ -1,4 +1,4 @@
-import { isVirtualLocation } from "@/features/events/lib/isVirtualLocation";
+import { isVirtualLocation } from "@/shared/utils/event";
 import { eventPagePath } from "@/features/events/lib/eventUrls";
 import { clubPagePath } from "@/shared/constants/routes";
 import { getSchoolCanonicalUrl } from "@/shared/lib/seo";

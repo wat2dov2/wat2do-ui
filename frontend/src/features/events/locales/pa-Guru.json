@@ -138,6 +138,12 @@
     "upcomingEventCount_one": "ਆਉਣ ਵਾਲਾ ਇਵੈਂਟ",
     "clickCount_one": "{{count}} ਕਲਿੱਕ",
     "andOthersCount_one": "ਅਤੇ {{count}} ਹੋਰ",
-    "moreDatesCount_one": "+{{count}} ਮਿਤੀ"
+    "moreDatesCount_one": "+{{count}} ਮਿਤੀ",
+    "formatFilter": {
+      "label": "ਸਮਾਗਮ ਦਾ ਰੂਪ",
+      "any": "ਕੋਈ ਵੀ ਰੂਪ",
+      "inPerson": "ਵਿਅਕਤੀਗਤ ਤੌਰ ’ਤੇ",
+      "online": "ਆਨਲਾਈਨ"
+    }
   }
 }

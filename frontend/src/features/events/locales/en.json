@@ -134,6 +134,12 @@
     "similarEvents": "Similar Events",
     "submitEvent": "Add event",
     "allEvents": "All events",
-    "going": "Going"
+    "going": "Going",
+    "formatFilter": {
+      "label": "Event format",
+      "any": "Any format",
+      "inPerson": "In person",
+      "online": "Online"
+    }
   }
 }

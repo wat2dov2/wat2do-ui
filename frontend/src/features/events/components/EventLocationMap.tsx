@@ -1,4 +1,4 @@
-import { isVirtualLocation } from "@/features/events/lib/isVirtualLocation";
+import { isVirtualLocation } from "@/shared/utils/event";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 
 interface EventLocationMapProps {

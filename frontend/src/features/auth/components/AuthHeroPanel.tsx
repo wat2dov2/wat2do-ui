@@ -1,10 +1,7 @@
-import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
-import { useMemo } from "react";
 import Image from "next/image";
 import { useTranslation } from "react-i18next";
 import imgLogo from "@/assets/38e8096a28295e8dcc0e5020d0a5f3dd85d5f019.png";
-import { PreviewStyleEventCard } from "@/features/auth/components/PreviewStyleEventCard";
-import { eventToPreview } from "@/features/auth/utils/eventPreview";
+import { EventCard } from "@/features/events";
 import type { Event } from "@/shared/types";
 
 interface AuthHeroPanelProps {
@@ -13,24 +10,12 @@ interface AuthHeroPanelProps {
 }
 
 export function AuthHeroPanel({ events = [] }: AuthHeroPanelProps) {
-  const { t, i18n } = useTranslation();
-  const { getSchoolTimezone } = useSchoolDirectory();
-
-  const locale = i18n.language || "en-US";
-
-  const previewEvents = useMemo(
-    () =>
-      events.map((event) => ({
-        id: event.id,
-        preview: eventToPreview(event, getSchoolTimezone(event.school), locale, t),
-      })),
-    [events, locale, t, getSchoolTimezone],
-  );
+  const { t } = useTranslation();
 
   return (
     <section className="hidden lg:flex flex-1 min-h-full bg-gradient-to-br from-primary/[0.06] via-secondary/30 to-secondary/60 border-l border-border px-8 py-10 justify-center items-center overflow-hidden">
       <div className="w-full max-w-[520px] space-y-6">
-        {previewEvents.length > 0 ? (
+        {events.length > 0 ? (
           <>
             <header className="space-y-1">
               <h2 className="text-lg font-semibold text-foreground">
@@ -42,8 +27,8 @@ export function AuthHeroPanel({ events = [] }: AuthHeroPanelProps) {
               className="grid grid-cols-2 gap-4"
               data-testid="auth-preview-events"
             >
-              {previewEvents.map(({ id, preview }) => (
-                <PreviewStyleEventCard key={id} event={preview} />
+              {events.map((event) => (
+                <EventCard key={event.id} event={event} interactive={false} />
               ))}
             </div>
           </>

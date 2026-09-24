@@ -1,12 +1,12 @@
-import admin from "../../../../backend/controlbox/admin.json";
-import clientCache from "../../../../backend/controlbox/client_cache.json";
-import contact from "../../../../backend/controlbox/contact.json";
-import eventDiscovery from "../../../../backend/controlbox/event_discovery.json";
-import interactionTracking from "../../../../backend/controlbox/interaction_tracking.json";
-import clubManagement from "../../../../backend/controlbox/club_management.json";
-import siteBanner from "../../../../backend/controlbox/site_banner.json";
-import socialPreviews from "../../../../backend/controlbox/social_previews.json";
-import uploads from "../../../../backend/controlbox/uploads.json";
+import admin from "../../../../backend/controlbox/admin.json" with { type: "json" };
+import clientCache from "../../../../backend/controlbox/client_cache.json" with { type: "json" };
+import contact from "../../../../backend/controlbox/contact.json" with { type: "json" };
+import eventDiscovery from "../../../../backend/controlbox/event_discovery.json" with { type: "json" };
+import interactionTracking from "../../../../backend/controlbox/interaction_tracking.json" with { type: "json" };
+import clubManagement from "../../../../backend/controlbox/club_management.json" with { type: "json" };
+import siteBanner from "../../../../backend/controlbox/site_banner.json" with { type: "json" };
+import socialPreviews from "../../../../backend/controlbox/social_previews.json" with { type: "json" };
+import uploads from "../../../../backend/controlbox/uploads.json" with { type: "json" };
 
 const secondsToMilliseconds = (seconds: number): number => seconds * 1000;
 const minutesToMilliseconds = (minutes: number): number => minutes * 60 * 1000;

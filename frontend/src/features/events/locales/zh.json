@@ -133,6 +133,12 @@
     "similarEvents": "相似活动",
     "submitEvent": "添加活动",
     "allEvents": "所有活动",
-    "going": "参加"
+    "going": "参加",
+    "formatFilter": {
+      "label": "活动形式",
+      "any": "任何形式",
+      "inPerson": "线下",
+      "online": "线上"
+    }
   }
 }

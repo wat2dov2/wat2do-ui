@@ -133,6 +133,12 @@
     "similarEvents": "相似活動",
     "submitEvent": "新增活動",
     "allEvents": "所有活動",
-    "going": "會參加"
+    "going": "會參加",
+    "formatFilter": {
+      "label": "活動形式",
+      "any": "任何形式",
+      "inPerson": "實體",
+      "online": "網上"
+    }
   }
 }

@@ -138,6 +138,12 @@
     "upcomingEventCount_one": "رویداد آینده",
     "clickCount_one": "{{count}} کلیک",
     "andOthersCount_one": "و {{count}} نفر دیگر",
-    "moreDatesCount_one": "+{{count}} تاریخ"
+    "moreDatesCount_one": "+{{count}} تاریخ",
+    "formatFilter": {
+      "label": "قالب رویداد",
+      "any": "همه قالب‌ها",
+      "inPerson": "حضوری",
+      "online": "آنلاین"
+    }
   }
 }

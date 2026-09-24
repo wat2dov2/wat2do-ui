@@ -16,9 +16,9 @@ import { createInstance, type i18n } from "i18next";
 import type { School } from "@/shared/api/schools.api";
 import { formatCardTime } from "@/shared/utils/date";
 import { computeEventBadges, translateCategory } from "@/shared/utils/event";
-import sharedEnglish from "@/shared/locales/en.json";
-import eventsEnglish from "@/features/events/locales/en.json";
-import clubsEnglish from "@/features/clubs/locales/en.json";
+import sharedEnglish from "@/shared/locales/en.json" with { type: "json" };
+import eventsEnglish from "@/features/events/locales/en.json" with { type: "json" };
+import clubsEnglish from "@/features/clubs/locales/en.json" with { type: "json" };
 import { loadLazyLanguage } from "@/shared/lib/languageLoaders";
 
 export const SLIDE_WIDTH = 1080;

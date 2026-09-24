@@ -138,6 +138,12 @@
     "upcomingEventCount_one": "आगामी इवेंट",
     "clickCount_one": "{{count}} क्लिक",
     "andOthersCount_one": "और {{count}} अन्य",
-    "moreDatesCount_one": "+{{count}} दिनांक"
+    "moreDatesCount_one": "+{{count}} दिनांक",
+    "formatFilter": {
+      "label": "कार्यक्रम का प्रारूप",
+      "any": "कोई भी प्रारूप",
+      "inPerson": "आमने-सामने",
+      "online": "ऑनलाइन"
+    }
   }
 }

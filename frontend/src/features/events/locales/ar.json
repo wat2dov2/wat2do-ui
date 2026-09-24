@@ -158,6 +158,12 @@
     "upcomingEventCount_zero": "لا فعاليات قادمة",
     "upcomingEventCount_two": "فعاليتان قادمتان",
     "upcomingEventCount_few": "فعاليات قادمة",
-    "upcomingEventCount_many": "فعالية قادمة"
+    "upcomingEventCount_many": "فعالية قادمة",
+    "formatFilter": {
+      "label": "نوع الفعالية",
+      "any": "أي نوع",
+      "inPerson": "حضوري",
+      "online": "عبر الإنترنت"
+    }
   }
 }

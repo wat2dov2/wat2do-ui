@@ -133,6 +133,12 @@
     "similarEvents": "유사 이벤트",
     "submitEvent": "이벤트 추가",
     "allEvents": "모든 이벤트",
-    "going": "참여 예정"
+    "going": "참여 예정",
+    "formatFilter": {
+      "label": "행사 형식",
+      "any": "모든 형식",
+      "inPerson": "대면",
+      "online": "온라인"
+    }
   }
 }

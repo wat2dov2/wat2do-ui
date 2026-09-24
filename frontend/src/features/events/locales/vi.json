@@ -133,6 +133,12 @@
     "similarEvents": "Các sự kiện tương tự",
     "submitEvent": "Thêm sự kiện",
     "allEvents": "Tất cả các sự kiện",
-    "going": "Sẽ tham gia"
+    "going": "Sẽ tham gia",
+    "formatFilter": {
+      "label": "Hình thức sự kiện",
+      "any": "Mọi hình thức",
+      "inPerson": "Trực tiếp",
+      "online": "Trực tuyến"
+    }
   }
 }
