@@ -141,12 +141,6 @@ UPDATE public.schools SET faculties = ARRAY[
     'Western College of Veterinary Medicine'
 ] WHERE slug = 'usask';
 
--- https://www.uvic.ca/academics/faculties-schools-and-services/index.php
-UPDATE public.schools SET faculties = ARRAY[
-    'Business', 'Education', 'Engineering and Computer Science', 'Fine Arts',
-    'Graduate Studies', 'Health', 'Humanities', 'Law', 'Science', 'Social Sciences'
-] WHERE slug = 'uvic';
-
 -- https://www.uwindsor.ca/faculties-and-departments
 UPDATE public.schools SET faculties = ARRAY[
     'Arts, Humanities and Social Sciences', 'Education', 'Engineering',

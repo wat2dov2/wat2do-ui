@@ -246,15 +246,6 @@
     "event_url_exclude_patterns": ["/category/", "/list", "/month", "/today"]
   },
   {
-    "id": "uvss-events",
-    "name": "UVSS Events",
-    "school": "uvic",
-    "default_club": "University of Victoria Students' Society",
-    "source_format": "html",
-    "entry_url": "https://uvss.ca/events/",
-    "event_url_patterns": ["uvss.ca/event/"]
-  },
-  {
     "id": "uwsa-events",
     "name": "UWSA Events",
     "school": "windsor",

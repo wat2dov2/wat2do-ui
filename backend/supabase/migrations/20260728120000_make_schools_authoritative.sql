@@ -72,7 +72,6 @@ VALUES
   ('guelph', 'University of Guelph', 'America/Toronto', '45481970934', NULL, NULL),
   ('ucalgary', 'University of Calgary', 'America/Edmonton', '9510252848', NULL, NULL),
   ('usask', 'University of Saskatchewan', 'America/Regina', '41553815702', NULL, NULL),
-  ('uvic', 'University of Victoria', 'America/Vancouver', NULL, NULL, NULL),
   ('windsor', 'University of Windsor', 'America/Toronto', '45460825687', NULL, NULL),
   ('uqam', 'Université du Québec à Montréal', 'America/Toronto', NULL, NULL, NULL),
   ('ontariotech', 'Ontario Tech University', 'America/Toronto', NULL, NULL, NULL),

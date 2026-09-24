@@ -59,7 +59,7 @@ def test_directory_catalog_covers_every_authoritative_school():
     config_path = Path(__file__).parents[3] / "services" / "scraper" / "urls" / "directories.json"
     configs = [DirectoryConfig.model_validate(item) for item in json.loads(config_path.read_text())]
 
-    assert len(configs) == 37
+    assert len(configs) == 36
     assert {config.school for config in configs} == {
         "berkeley",
         "brocku",
@@ -92,7 +92,6 @@ def test_directory_catalog_covers_every_authoritative_school():
         "utoronto",
         "utsc",
         "utm",
-        "uvic",
         "uwaterloo",
         "western",
         "windsor",

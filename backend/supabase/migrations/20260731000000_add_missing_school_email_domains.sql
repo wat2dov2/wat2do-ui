@@ -38,7 +38,6 @@ FROM (VALUES
   ('ucalgary',    'ucalgary.ca',        true),
   ('usask',       'mail.usask.ca',      true),
   ('usask',       'usask.ca',           false),
-  ('uvic',        'uvic.ca',            true),
   ('uwindsor',    'uwindsor.ca',        true),
   ('uqam',        'courrier.uqam.ca',   true),
   ('ontariotech', 'ontariotechu.net',   true),

@@ -34,7 +34,6 @@ WITH school_brand_colors(slug, primary_color, secondary_color) AS (
     ('guelph', '#C20430', '#FFFFFF'),
     ('ucalgary', '#D6001C', '#FFFFFF'),
     ('usask', '#006F3C', '#FFFFFF'),
-    ('uvic', '#005493', '#F5AA1C'),
     ('windsor', '#0057B7', '#FFFFFF'),
     ('uqam', '#009A44', '#FFFFFF'),
     ('ontariotech', '#003C71', '#FFFFFF'),

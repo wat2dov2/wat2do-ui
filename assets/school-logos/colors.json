@@ -336,18 +336,6 @@
     "notes": "Primary is the background; secondary is the Wat2Do mark."
   },
   {
-    "slug": "uvic",
-    "official_name": "University of Victoria",
-    "confidence": "high",
-    "source_url": "https://www.uvic.ca/brand/",
-    "file": "uvic.jpg",
-    "primary_hex": "#005493",
-    "primary_name": "Primary brand color",
-    "secondary_hex": "#F5AA1C",
-    "secondary_name": "Secondary brand color",
-    "notes": "Primary is the background; secondary is the Wat2Do mark."
-  },
-  {
     "slug": "uqam",
     "official_name": "Université du Québec à Montréal",
     "confidence": "high",

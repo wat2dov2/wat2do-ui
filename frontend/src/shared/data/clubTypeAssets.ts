@@ -38,7 +38,6 @@ const CLUB_TYPE_ASSET_FILE_BY_SIGNATURE = {
   "ucalgary:su": "ucalgary-su.svg",
   "ottawa:uosu": "uottawa-uosu.svg",
   "usask:ussu": "usask-ussu.svg",
-  "uvic:uvss": "uvic-uvss.svg",
   "uwindsor:uwsa": "windsor-uwsa.svg",
   "ontariotech:otsu": "ontariotech-otsu.svg",
   "ocadu:ocadsu": "ocad-ocadsu.svg",

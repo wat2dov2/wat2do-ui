@@ -167,12 +167,6 @@ WITH school_calendar_data (
             '2026-12-23'::date
         ),
         (
-            'uvic',
-            'https://www.uvic.ca/calendar/dates/index.php',
-            '2026-09-09'::date,
-            '2026-12-23'::date
-        ),
-        (
             'uwindsor',
             'https://www.uwindsor.ca/registrar/events-listing',
             '2026-09-10'::date,
