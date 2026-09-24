@@ -21,11 +21,7 @@ export function DiscoveryQueries() {
         onSearchChange={search => list.setFilters({ search })}
         school={list.filters.school ?? ""}
         onSchoolChange={school => list.setFilters({ school })}
-      >
-        <Button variant="outline" onClick={() => void list.refetch()}>
-          {t("errorBoundary.refreshPage")}
-        </Button>
-      </AdminTableFilters>
+      />
       {list.isLoading ? <LoadingPage /> : list.isError ? (
         <Button onClick={() => void list.refetch()}>{t("common.tryAgain")}</Button>
       ) : (
