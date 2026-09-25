@@ -79,7 +79,7 @@ export function useFilterState() {
       customDate: s.customDate,
     })),
   );
-  const { maxPrice } = values;
+  const priceFilterValue = values.maxPrice === "0" ? "0" : values.minPrice;
   const {
     updateFilterState,
     toggleFilterValue,
@@ -134,9 +134,12 @@ export function useFilterState() {
     (value: boolean) => updateFilterState({ hasFood: value }),
     [updateFilterState],
   );
-  const toggleFree = useCallback(
-    () => updateFilterState({ minPrice: "", maxPrice: maxPrice === "0" ? "" : "0" }),
-    [maxPrice, updateFilterState],
+  const setPriceFilter = useCallback(
+    (value: string) => updateFilterState({
+      minPrice: value !== "" && Number(value) > 0 ? value : "",
+      maxPrice: value !== "" && Number(value) === 0 ? "0" : "",
+    }),
+    [updateFilterState],
   );
   const setGoingFilter = useCallback(
     (value: boolean) => updateFilterState({ going: value }),
@@ -173,7 +176,8 @@ export function useFilterState() {
     setRegistration,
     setSelectedClubs,
     setHasFoodFilter,
-    toggleFree,
+    priceFilterValue,
+    setPriceFilter,
     setGoingFilter,
     setAddedSince,
     setDateFilter,

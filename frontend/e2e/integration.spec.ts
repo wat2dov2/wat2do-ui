@@ -3703,6 +3703,20 @@ test.describe("Events Page", () => {
     await expect(genericFoodCard).toContainText("Food");
     await expect(genericFoodCard).not.toContainText("Yes!");
 
+    const quickFilters = page.getByTestId("event-quick-filter-scroll");
+    await quickFilters.getByRole("button", { name: "Free", exact: true }).click();
+    const quickPrice = page.getByRole("textbox", { name: "Price", exact: true });
+    await quickPrice.fill("0");
+    await expect(page.locator("article[data-event-id]:visible")).toHaveCount(2);
+    await quickPrice.fill("11");
+    await expect(page.locator("article[data-event-id]:visible")).toHaveCount(1);
+    await expect(pizzaCard).toBeVisible();
+    await quickPrice.fill("12");
+    await expect(page.locator("article[data-event-id]:visible")).toHaveCount(0);
+    await quickPrice.clear();
+    await expect(page.locator("article[data-event-id]:visible")).toHaveCount(3);
+    await page.keyboard.press("Escape");
+
     await page.getByRole("button", { name: "More filters" }).click();
     const drawer = page.getByRole("dialog", { name: "More filters" });
     const foodInput = drawer.getByPlaceholder("Search food...");
@@ -3798,7 +3812,7 @@ test.describe("Events Page", () => {
 
 // ── Workflow 3: Clubs Page ────────────────────────────────────
 
-test("Free and Food are independent toggles", async ({ page }) => {
+test("price dropdown accepts integers and stays independent of Food", async ({ page }) => {
   await page.goto(BASE);
   const filters = page.getByTestId("event-quick-filter-scroll");
   const free = filters.getByRole("button", { name: "Free", exact: true });
@@ -3807,7 +3821,19 @@ test("Free and Food are independent toggles", async ({ page }) => {
   await expect(food).toHaveAttribute("aria-pressed", "true");
   await expect(free).toHaveAttribute("aria-pressed", "false");
   await free.click();
+  const price = page.getByRole("textbox", { name: "Price", exact: true });
+  await price.fill("0");
   await expect(free).toHaveAttribute("aria-pressed", "true");
+  await price.fill("5");
+  await expect(filters.getByRole("button", { name: "> $5", exact: true })).toHaveAttribute("aria-pressed", "true");
+  for (const invalid of ["5.5", "-1", "abc", "9007199254740992"]) {
+    await price.fill(invalid);
+    await expect(price).toHaveValue("5");
+  }
+  await price.clear();
+  await expect(free).toHaveAttribute("aria-pressed", "false");
+  await price.fill("0");
+  await page.keyboard.press("Escape");
   await expect(food).toHaveAttribute("aria-pressed", "true");
   await food.click();
   await expect(food).toHaveAttribute("aria-pressed", "false");
@@ -5265,6 +5291,10 @@ test.describe("Discovery query diagnostics", () => {
         expect(first.id).not.toBe(second.id);
         // The write is still held open while another filter applies normally.
         await page.getByRole("button", { name: listing.filter, exact: true }).click();
+        if (listing.surface === "events") {
+          await page.getByRole("textbox", { name: "Price", exact: true }).fill("0");
+          await page.keyboard.press("Escape");
+        }
         await expect(page.getByRole("button", { name: listing.filter, exact: true })).toHaveAttribute("aria-pressed", "true");
         await expect.poll(() => captured.at(-1)?.filters).toMatchObject(listing.filters);
         await search.fill("another-missing-account");

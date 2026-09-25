@@ -4,21 +4,22 @@ import { Field, FieldLabel } from "@/shared/ui/field";
 import { Input } from "@/shared/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
 
-interface MinimumCountFilterProps {
-  value: number;
-  onChange: (value: number) => void;
-  countLabel: string;
+interface IntegerFilterProps {
+  value: string | number;
+  active: boolean;
+  onChange: (value: string) => void;
+  label: string;
   inputLabel: string;
 }
 
-export function MinimumCountFilter({ value, onChange, countLabel, inputLabel }: MinimumCountFilterProps) {
+export function IntegerFilter({ value, active, onChange, label, inputLabel }: IntegerFilterProps) {
   const inputId = useId();
 
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button size="sm" variant={value > 0 ? "primary" : "outline"}>
-          {">"}{countLabel}
+        <Button size="sm" variant={active ? "primary" : "outline"} aria-pressed={active}>
+          {label}
         </Button>
       </PopoverTrigger>
       <PopoverContent align="start">
@@ -29,7 +30,7 @@ export function MinimumCountFilter({ value, onChange, countLabel, inputLabel }: 
             format="integer"
             defaultValue={value}
             onChange={(event) => {
-              onChange(Number(event.currentTarget.value));
+              onChange(event.currentTarget.value);
             }}
           />
         </Field>

@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useShallow } from "zustand/react/shallow";
 import { Bookmark, Building2, Search } from "@/shared/ui/doodle-icons";
 import { Button } from "@/shared/ui/button";
-import { MinimumCountFilter } from "@/shared/ui/minimum-count-filter";
+import { IntegerFilter } from "@/shared/ui/integer-filter";
 import {
   ClubList,
   ClubListEmptyState,
@@ -151,10 +151,11 @@ export function ClubsPage({
               </SelectContent>
             </Select>
           </>}>
-              <MinimumCountFilter
+              <IntegerFilter
                 value={minEvents}
-                onChange={setMinEvents}
-                countLabel={t("clubs.eventCount", { count: minEvents })}
+                active={minEvents > 0}
+                onChange={(value) => setMinEvents(Number(value))}
+                label={`>${t("clubs.eventCount", { count: minEvents })}`}
                 inputLabel={t("clubs.minimumEvents")}
               />
               {allCategories.map((category) => (

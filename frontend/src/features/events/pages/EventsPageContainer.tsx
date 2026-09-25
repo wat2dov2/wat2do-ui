@@ -2,7 +2,7 @@ import { useMemo, useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { EventFormatFilterSelect } from "@/features/events/components/EventFormatFilterSelect";
-import { MinimumCountFilter } from "@/shared/ui/minimum-count-filter";
+import { IntegerFilter } from "@/shared/ui/integer-filter";
 import { toast } from "@/shared/hooks/use-toast";
 import { EventList } from "../components/EventList";
 import { PageCountHeading } from "@/shared/ui/page-count-heading";
@@ -104,12 +104,6 @@ export function EventsPageContainer({
           visible: profileCompleted,
         },
         {
-          id: "free",
-          labelKey: "common.free",
-          active: filters.maxPrice === "0",
-          onClick: filters.toggleFree,
-        },
-        {
           id: "hasFood",
           labelKey: "filters.food",
           active: filters.hasFoodFilter,
@@ -164,7 +158,7 @@ export function EventsPageContainer({
             </Button>
           </Stack>
 
-          <FilterBar refreshKey={`${filterConfigs.length + 3}:${filters.categoryOptions.length}`} data-testid="event-quick-filter-scroll" trailing={<>
+          <FilterBar refreshKey={`${filterConfigs.length + 4}:${filters.categoryOptions.length}`} data-testid="event-quick-filter-scroll" trailing={<>
               <MoreFiltersButton
                 open={showFilterDropdown}
                 onOpenChange={setShowFilterDropdown}
@@ -195,15 +189,23 @@ export function EventsPageContainer({
                     {t(config.labelKey)}
                   </Button>
                 ))}
+                <IntegerFilter
+                  value={filters.priceFilterValue}
+                  active={filters.priceFilterValue !== ""}
+                  onChange={filters.setPriceFilter}
+                  label={Number(filters.priceFilterValue) > 0 ? `> $${Number(filters.priceFilterValue)}` : t("common.free")}
+                  inputLabel={t("filters.price")}
+                />
                 <DateFilterSelect
                   value={filters.dateFilter}
                   customDate={filters.customDate}
                   onChange={filters.setDateFilter}
                 />
-                <MinimumCountFilter
+                <IntegerFilter
                   value={filters.minGoing}
-                  onChange={filters.setMinGoing}
-                  countLabel={t("events.goingCount", { count: filters.minGoing })}
+                  active={filters.minGoing > 0}
+                  onChange={(value) => filters.setMinGoing(Number(value))}
+                  label={`>${t("events.goingCount", { count: filters.minGoing })}`}
                   inputLabel={t("events.minimumGoing")}
                 />
                 <EventFormatFilterSelect

@@ -49,3 +49,21 @@ test("format survives filter handoff and resets through the shared Clear all act
   expect(normalizeFilterState({ eventFormat: "invalid" }).eventFormat).toBe("any");
   expect(normalizeFilterState({}).eventFormat).toBe("any");
 });
+
+
+test("price thresholds exclude the boundary, combine with other filters, and clear through shared state", () => {
+  useSearchStore.getState().setFilterState({ ...EMPTY_FILTER_STATE, minPrice: "9" });
+  expect(visibleEvents()).toEqual([3]);
+  expect(getFilterCounts(useSearchStore.getState())).toBe(1);
+  useSearchStore.getState().setFilterState({ ...EMPTY_FILTER_STATE, minPrice: "10" });
+  expect(visibleEvents()).toEqual([]);
+  useSearchStore.getState().setFilterState({ ...EMPTY_FILTER_STATE, maxPrice: "0" });
+  expect(visibleEvents()).toEqual([1, 2, 4, 5]);
+  useSearchStore.getState().setFilterState({ ...EMPTY_FILTER_STATE, maxPrice: "0", hasFood: true });
+  expect(visibleEvents()).toEqual([1]);
+  const handoff = storeStatesToFilterState(useSearchStore.getState());
+  expect(normalizeFilterState(JSON.parse(JSON.stringify(handoff))).maxPrice).toBe("0");
+  useSearchStore.getState().setFilterState(clearNarrowingFilterState(handoff));
+  expect(visibleEvents()).toEqual([1, 2, 3, 4, 5]);
+  expect(getFilterCounts(useSearchStore.getState())).toBe(0);
+});
