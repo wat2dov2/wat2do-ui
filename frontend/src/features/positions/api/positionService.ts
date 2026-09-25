@@ -40,7 +40,6 @@ export function filterPositions(
   filters: {
     search: string;
     positionType: PositionType | "all";
-    paidOnly: boolean;
     addedSince: string | null;
   },
   now = Date.now(),
@@ -53,9 +52,6 @@ export function filterPositions(
       return false;
     }
     if (filters.positionType !== "all" && position.position_type !== filters.positionType) {
-      return false;
-    }
-    if (filters.paidOnly && !position.is_paid) {
       return false;
     }
     if (

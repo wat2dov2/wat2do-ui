@@ -11,6 +11,7 @@ import {
 } from "@/shared/ui/event-image-cutout";
 import { EVENT_CARD_IMAGE_HEIGHT } from "@/shared/constants/ui";
 import { formatPositionDeadlineBadge } from "@/features/positions/lib/positionDates";
+import { wasAddedWithinLast24Hours } from "@/shared/utils/date";
 import type { Position } from "@/shared/types";
 
 interface PositionCardImageProps {
@@ -61,6 +62,12 @@ export function PositionCardImage({
           </div>
         ) : null}
       </EventImageCutout>
+
+      {variant === "card" && wasAddedWithinLast24Hours(position) ? (
+        <BadgeMask variant="top-left" cutout containerRef={registerCorner("top-left")}>
+          <Badge variant="new" size="md">{t("events.new")}</Badge>
+        </BadgeMask>
+      ) : null}
 
       {variant === "detail" ? (
         <BadgeMask

@@ -24,7 +24,6 @@ export function usePositionsPage({
   const [submittedSearch, setSubmittedSearch] = useState({ query: "", revision: 0 });
   const [positionType, setPositionType] = useState<PositionTypeFilter>("all");
   const [addedSince, setAddedSince] = useState<string | null>(null);
-  const [paidOnly, setPaidOnly] = useState(false);
   const [selectedPositionId, setSelectedPositionId] = useState<number | null>(null);
   const schoolFilter = useEventsStore((state) => state.schoolFilter);
   const school = resolveSchool(schoolFilter ?? initialSchool);
@@ -38,10 +37,9 @@ export function usePositionsPage({
     () => filterPositions(query.data?.items ?? [], {
       search: submittedSearch.query,
       positionType,
-      paidOnly,
       addedSince,
     }),
-    [query.data, submittedSearch.query, positionType, paidOnly, addedSince],
+    [query.data, submittedSearch.query, positionType, addedSince],
   );
   const selectedPosition = query.data?.items.find(position => position.id === selectedPositionId) ?? null;
   const total = positions.length;
@@ -50,7 +48,7 @@ export function usePositionsPage({
     school,
     surface: "positions",
     search_query: submittedSearch.query,
-    filters: { positionType, paidOnly, addedSince },
+    filters: { positionType, addedSince },
   }, submittedSearch.revision);
 
   const submitSearch = useCallback(() => {
@@ -73,10 +71,7 @@ export function usePositionsPage({
       setSubmittedSearch(previous => ({ query: latest.title, revision: previous.revision + 1 }));
       setPositionType("all");
       setAddedSince(null);
-      setPaidOnly(false);
     },
-    paidOnly,
-    setPaidOnly,
     searchQuery,
     setSearchQuery,
     submitSearch,

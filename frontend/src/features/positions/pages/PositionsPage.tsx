@@ -56,7 +56,6 @@ export function PositionsPage({
             onValueChange={positionsPage.setAddedSince}
             onClear={positionsPage.clearNew}
           />
-          <Button size="sm" variant={positionsPage.paidOnly ? "primary" : "outline"} aria-pressed={positionsPage.paidOnly} onClick={() => positionsPage.setPaidOnly(!positionsPage.paidOnly)}>{t("positions.paid")}</Button>
           {POSITION_TYPES.map((positionType) => (
             <Button
               key={positionType}

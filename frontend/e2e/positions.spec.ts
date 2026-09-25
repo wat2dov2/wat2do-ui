@@ -129,6 +129,16 @@ test.describe("Positions UI", () => {
     );
   });
 
+  test("shows a New badge only on recently added position cards", async ({ page }) => {
+    await page.goto("/positions");
+    const recent = page.getByRole("button", { name: "View Operations Assistant position details", exact: true });
+    const older = page.getByRole("button", { name: "View Design Lead position details", exact: true });
+    await expect(recent.getByText("New", { exact: true })).toBeVisible();
+    await expect(older.getByText("New", { exact: true })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Paid", exact: true })).toHaveCount(1);
+    await expect(page.getByRole("button", { name: "Paid staff", exact: true })).toHaveCount(0);
+  });
+
   test("logs positions and filters despite a failed background write", async ({ page }) => {
     const captured: Array<{ id: string; school: string; surface: string; search_query: string; page_url: string; filters: Record<string, unknown> }> = [];
     await page.route("**/api/discovery-queries/", async route => {
@@ -139,13 +149,13 @@ test.describe("Positions UI", () => {
     await page.getByRole("button", { name: "Paid", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Operations Assistant", exact: true })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Design Lead", exact: true })).toHaveCount(0);
-    await expect.poll(() => captured.some(row => row.filters.paidOnly === true)).toBe(true);
+    await expect.poll(() => captured.some(row => row.filters.positionType === "staff")).toBe(true);
     const search = page.getByPlaceholder("Search roles, skills, or locations...");
     await search.fill("Operations");
     await search.press("Enter");
     await expect.poll(() => captured.some(row => row.search_query === "Operations")).toBe(true);
     const submitted = captured.find(row => row.search_query === "Operations")!;
-    expect(submitted).toMatchObject({ school: "uwaterloo", surface: "positions", filters: { paidOnly: true } });
+    expect(submitted).toMatchObject({ school: "uwaterloo", surface: "positions", filters: { positionType: "staff" } });
     expect(submitted.page_url).toContain("/positions");
     await expect.poll(() => captured.filter(row => row.id === submitted.id).length).toBeGreaterThan(1);
     await expect(page.getByRole("heading", { name: "Operations Assistant", exact: true })).toBeVisible();
@@ -162,6 +172,7 @@ test.describe("Positions UI", () => {
     await expect(page.getByRole("heading", { name: "30 positions", exact: true })).toBeVisible();
     const scrollRoot = page.locator('[data-slot="page-frame"]');
     const header = page.locator('[data-slot="page-header"]');
+    await expect(scrollRoot).toHaveCSS("overscroll-behavior-y", "none");
     const initialHeaderTop = (await header.boundingBox())!.y;
     await expect(scrollRoot).toHaveCSS("padding-top", "0px");
     await expect(header).toHaveCSS("margin-top", "0px");
@@ -268,7 +279,7 @@ test.describe("Positions UI", () => {
     page.on("request", request => {
       if (apiPath(new URL(request.url())) === "/positions") filterRequests.push(request.url());
     });
-    await page.getByRole("button", { name: "Paid staff", exact: true }).click();
+    await page.getByRole("button", { name: "Paid", exact: true }).click();
     try {
       await expect(page.locator('[aria-busy="true"]')).toBeVisible();
       await expect(page.getByRole("button", { name: "View Design Lead position details" })).toHaveCount(0);
@@ -424,7 +435,7 @@ test.describe("Positions UI", () => {
     await expect(deadlineItem).toHaveCSS("padding-right", "0px");
     await page.keyboard.press("Escape");
 
-    await page.getByRole("button", { name: "Paid staff", exact: true }).click();
+    await page.getByRole("button", { name: "Paid", exact: true }).click();
     await expect(
       page.getByRole("heading", { name: "Operations Assistant", exact: true }),
     ).toBeVisible();
@@ -433,8 +444,8 @@ test.describe("Positions UI", () => {
     ).not.toBeVisible();
 
     await expect(page.getByRole("button", { name: "All position types", exact: true })).toHaveCount(0);
-    await page.getByRole("button", { name: "Paid staff", exact: true }).click();
-    await expect(page.getByRole("button", { name: "Paid staff", exact: true })).toHaveAttribute("aria-pressed", "false");
+    await page.getByRole("button", { name: "Paid", exact: true }).click();
+    await expect(page.getByRole("button", { name: "Paid", exact: true })).toHaveAttribute("aria-pressed", "false");
     await expect(page.getByRole("heading", { name: "2 positions" })).toBeVisible();
     await page
       .getByPlaceholder("Search roles, skills, or locations...")
@@ -464,12 +475,11 @@ dataTest("cached position directory loads every page and filters without another
   expect(directory.total).toBe(2);
   expect(directory.total_pages).toBe(1);
   expect(directory.latest_added_position?.title).toBe("Operations Assistant");
-  const filters = { search: "", positionType: "all" as const, paidOnly: false, addedSince: null as string | null };
+  const filters = { search: "", positionType: "all" as const, addedSince: null as string | null };
   const now = Date.parse("2026-08-02T18:00:00Z");
   expect(filterPositions(directory.items, { ...filters, search: "DESIGN" }, now).map(p => p.id)).toEqual([1]);
   expect(filterPositions(directory.items, { ...filters, search: "room bookings" }, now).map(p => p.id)).toEqual([2]);
   expect(filterPositions(directory.items, { ...filters, positionType: "staff" }, now).map(p => p.id)).toEqual([2]);
-  expect(filterPositions(directory.items, { ...filters, paidOnly: true }, now).map(p => p.id)).toEqual([2]);
   expect(filterPositions(directory.items, { ...filters, addedSince: "2026-08-01T18:00:00Z" }, now).map(p => p.id)).toEqual([2]);
   expect(filterPositions(directory.items, filters, Date.parse("2026-09-06T12:00:00Z"))).toEqual([]);
   expect(calls).toEqual([1, 2]);
