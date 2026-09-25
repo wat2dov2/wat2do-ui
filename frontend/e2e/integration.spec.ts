@@ -4839,6 +4839,32 @@ test.describe("Navigation", () => {
     ).toBeVisible();
   });
 
+  test("warms complete discovery pages before the mobile navigation drawer opens", async ({ page, next }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await mockApi(page, next, url => apiPath(url) === "/positions", async () => ({
+      json: { items: [], total: 0, page: 1, page_size: 100, total_pages: 1 },
+    }));
+    const warmedPositions = page.waitForResponse(async response => {
+      const url = new URL(response.url());
+      return url.pathname === "/positions" && url.searchParams.has("_rsc") &&
+        response.request().headers().rsc === "1" &&
+        (await response.text()).includes('"initialDirectory":{');
+    });
+    await page.goto(BASE);
+    await expect(page.getByRole("dialog", { name: "Primary navigation" })).toHaveCount(0);
+    const response = await warmedPositions;
+    expect(response.status()).toBe(200);
+    // A shell-only prefetch does not include the Positions page's initial directory.
+    expect(await response.text()).toContain('"initialDirectory":{');
+    await page.getByRole("button", { name: "Open navigation menu" }).click();
+    await page.getByRole("dialog", { name: "Primary navigation" }).getByRole("link", { name: "Positions", exact: true }).click();
+    await expect(page).toHaveURL(/\/positions$/);
+    await expect(page.getByRole("heading", { name: "0 positions", exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Open navigation menu" }).click();
+    await page.getByRole("dialog", { name: "Primary navigation" }).getByRole("link", { name: "Events", exact: true }).click();
+    await expect(page.getByRole("button", { name: "Event: Tech Career Fair", exact: true })).toBeVisible();
+  });
+
   test("uses the top navigation and exposes poster help through About us", async ({
     page,
   }) => {

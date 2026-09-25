@@ -50,6 +50,7 @@ function Wat2DoLogoLink({ label, onNavigate }: Wat2DoLogoLinkProps) {
   return (
     <NextLink
       href={ROUTES.HOME}
+      prefetch={true}
       onClick={onNavigate}
       className="flex h-8 w-10 shrink-0 cursor-pointer items-center justify-center transition-opacity hover:opacity-80"
       aria-label={label}
@@ -174,7 +175,7 @@ export function TopNav() {
                 variant={active ? "outline" : "ghost"}
                 size="sm"
               >
-                <NextLink href={href} aria-current={active ? "page" : undefined}>
+                <NextLink href={href} prefetch={href === ROUTES.HOME || href === ROUTES.POSITIONS ? true : undefined} aria-current={active ? "page" : undefined}>
                   {t(labelKey)}
                 </NextLink>
               </Button>
@@ -245,6 +246,7 @@ export function TopNav() {
                     >
                       <NextLink
                         href={href}
+                        prefetch={href === ROUTES.HOME || href === ROUTES.POSITIONS ? true : undefined}
                         aria-current={active ? "page" : undefined}
                         onClick={() => setNavigationOpen(false)}
                       >

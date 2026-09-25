@@ -5,6 +5,7 @@
 
 import { useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { PrefetchKind } from "next/dist/client/components/router-reducer/router-reducer-types";
 import { QP } from "@/shared/constants/queryParams";
 import { ROUTES } from "@/shared/constants/routes";
 import { consumePendingFilterState } from "@/features/search/api/filterService";
@@ -14,11 +15,27 @@ interface UseAppNavigationOptions {
   setSchoolFilter: (school: string) => void;
 }
 
+/** Keep full discovery payloads warm even when their navigation links are hidden. */
+export function warmDiscoveryRoutes(router: Pick<ReturnType<typeof useRouter>, "prefetch">): () => void {
+  let cancelled = false;
+  for (const href of [ROUTES.HOME, ROUTES.POSITIONS]) {
+    const warm = () => {
+      if (cancelled) return;
+      // Next's AUTO mode only warms the loading boundary for these dynamic pages.
+      router.prefetch(href, { kind: PrefetchKind.FULL, onInvalidate: warm });
+    };
+    warm();
+  }
+  return () => { cancelled = true; };
+}
+
 export function useAppNavigation({
   setSchoolFilter,
 }: UseAppNavigationOptions) {
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  useEffect(() => warmDiscoveryRoutes(router), [router]);
 
   const hasProcessedInitialRouteMode = useRef(false);
   const hasProcessedInitialSchool = useRef(false);
