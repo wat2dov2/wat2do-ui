@@ -3878,8 +3878,10 @@ test("price dropdown accepts integers and stays independent of Food", async ({ p
   const price = page.getByRole("textbox", { name: "Min price", exact: true });
   await expect(price).toBeFocused();
   await expect(free).toHaveAttribute("aria-pressed", "true");
+  await expect(free).not.toHaveClass(/\bbg-primary\b/);
   await price.fill("5");
   await expect(filters.getByRole("button", { name: "> $5", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await expect(filters.getByRole("button", { name: "> $5", exact: true })).not.toHaveClass(/\bbg-primary\b/);
   for (const invalid of ["5.5", "-1", "abc", "9007199254740992"]) {
     await price.fill(invalid);
     await expect(price).toHaveValue("5");
@@ -3897,6 +3899,7 @@ test("price dropdown accepts integers and stays independent of Food", async ({ p
   await food.click();
   await expect(food).toHaveAttribute("aria-pressed", "false");
   await expect(free).toHaveAttribute("aria-pressed", "true");
+  await expect(free).not.toHaveClass(/\bbg-primary\b/);
 });
 
 test("New toggles directly without a dropdown or All button", async ({ page }) => {

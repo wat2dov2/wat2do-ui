@@ -25,7 +25,7 @@ export function IntegerFilter({ value, active, onChange, label, inputLabel, pres
       if (!nextOpen) setShowInput(false);
     }}>
       <PopoverTrigger asChild>
-        <Button size="sm" variant={active ? "primary" : "outline"} aria-pressed={active} aria-expanded={open}>
+        <Button size="sm" variant={active && !preset ? "primary" : "outline"} aria-pressed={active} aria-expanded={open}>
           {label}
         </Button>
       </PopoverTrigger>
