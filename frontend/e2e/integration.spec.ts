@@ -3869,7 +3869,14 @@ test("price dropdown accepts integers and stays independent of Food", async ({ p
   await food.click();
   await expect(food).toHaveAttribute("aria-pressed", "true");
   await expect(free).toHaveAttribute("aria-pressed", "false");
+  await filters.getByRole("combobox", { name: "Event date", exact: true }).click();
+  const dropdown = page.locator('[data-slot="popover-content"]');
+  await expect(dropdown).toHaveCSS("padding", "4px");
+  await expect(dropdown).toHaveCSS("width", "192px");
+  await page.keyboard.press("Escape");
   await free.click();
+  await expect(dropdown).toHaveCSS("padding", "4px");
+  await expect(dropdown).toHaveCSS("width", "192px");
   await expect(page.getByRole("option", { name: "Free", exact: true })).toHaveAttribute("aria-selected", "true");
   await expect(page.getByRole("textbox", { name: "Min price", exact: true })).toHaveCount(0);
   await page.getByRole("option", { name: "Free", exact: true }).click();

@@ -98,7 +98,8 @@ export function DateFilterSelect({
         </Button>
       </PopoverTrigger>
       <PopoverContent
-        className={showCustomPicker ? "w-auto p-0" : "w-48 p-1"}
+        variant={showCustomPicker ? "default" : "menu"}
+        className={showCustomPicker ? "w-auto p-0" : undefined}
         align="start"
       >
         {showCustomPicker ? (

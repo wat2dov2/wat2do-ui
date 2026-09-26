@@ -29,7 +29,7 @@ export function IntegerFilter({ value, active, onChange, label, inputLabel, pres
           {label}
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="start">
+      <PopoverContent align="start" variant={preset && !showInput ? "menu" : "default"}>
         {preset && !showInput ? (
           <div role="listbox" aria-label={label}>
             <Button
