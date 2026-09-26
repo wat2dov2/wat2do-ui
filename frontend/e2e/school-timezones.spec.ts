@@ -37,11 +37,14 @@ test("school-local form values round-trip to UTC and reject nonexistent DST time
 test("editing an unchanged repeated DST hour preserves its exact instant", () => {
   const repeatedHourEvent = {
     ...event,
+    source_url: "https://www.instagram.com/p/original-event/",
     occurrences: [{ ...event.occurrences[0], dtstart_utc: "2026-11-01T08:30:25Z", dtend_utc: "2026-11-01T09:30:00Z" }],
   };
   const form = eventToFormData(repeatedHourEvent, timeZone);
   expect(form.occurrences[0].dtstart_local).toBe("2026-11-01T01:30");
   expect(buildEventUpdatePayload(form).occurrences[0].dtstart_utc).toBe("2026-11-01T08:30:25Z");
+  expect(form.source_url).toBe(repeatedHourEvent.source_url);
+  expect(buildEventUpdatePayload(form).source_url).toBe(repeatedHourEvent.source_url);
 });
 
 test("date-only position deadlines never shift to another calendar date", () => {

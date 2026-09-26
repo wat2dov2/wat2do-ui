@@ -205,7 +205,8 @@ export function buildCoverSlideModel({
     logoSrc: buildInstagramCoverLogo(colors),
     doodleIcons: getClubCategoryDoodleDataUris(colors.secondary, 42),
     dateLine: formatCoverDate(localDate, language),
-    newEventCount,
+    // Unsaved additions can exceed the count from the last batch response.
+    newEventCount: Math.max(newEventCount, eventCount),
     // Selected events can predate both the batch date and its recent-event window.
     headline: language === "fr" ? "ÉVÉNEMENTS À DÉCOUVRIR" : "EVENTS TO EXPLORE",
     body: text(body, defaultCoverBody(eventCount, language)),
