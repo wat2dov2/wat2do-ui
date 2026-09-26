@@ -9,6 +9,7 @@ import {
   getClubCategoryConfig,
   getClubCategoryDoodleDataUris,
 } from "@/shared/data/clubCategoryStyles";
+import { getAppConstantsSnapshot } from "@/shared/api/metaApi";
 import { getSchoolPublicUrl } from "@/shared/constants/schools";
 import type { SchoolColors } from "@/shared/lib/schoolBranding";
 import { buildInstagramCoverLogo } from "@/features/admin/lib/instagramCoverLogo";
@@ -143,9 +144,13 @@ export async function buildEventSlideModel(
   imageSrc = event.source_image_url ?? "",
 ): Promise<EventSlideModel> {
   if (!event.tz) throw new Error("School timezone is required for event slides");
+  const categoryName = event.category?.trim() ?? "";
+  if (!getAppConstantsSnapshot().event_categories.includes(categoryName)) {
+    throw new Error(`Event ${event.id} needs a valid category before rendering an Instagram slide`);
+  }
   const { t } = await getInstagramSlideLocale(language);
   const { dateLine, timeLine } = formatSlideDate(event, language);
-  const category = getClubCategoryConfig(event.category);
+  const category = getClubCategoryConfig(categoryName);
   const addedAt = event.added_at ? new Date(event.added_at) : null;
   const addedLine = addedAt && Number.isFinite(addedAt.getTime())
     ? t("events.slideAddedAt", { date: new Intl.DateTimeFormat(language, {
@@ -153,7 +158,7 @@ export async function buildEventSlideModel(
     }).format(addedAt) }) : "";
   return {
     eventId: event.id,
-    category: { label: translateCategory(text(event.category), t), color: category.color },
+    category: { label: translateCategory(categoryName, t), color: category.color },
     title: text(event.title),
     dateLine: text(dateLine),
     timeLine: text(timeLine),

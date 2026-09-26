@@ -1,3 +1,5 @@
+import { DEFAULT_APP_CONSTANTS } from "../src/shared/api/metaApi";
+import { getClubCategoryConfig } from "../src/shared/data/clubCategoryStyles";
 import { test, expect } from "@playwright/test";
 import { formatCardDate, formatCardTime, getEventDateSection, isEventHappeningNow, localDateTimeToUtc, toLocalDateTimeInput } from "../src/shared/utils/date";
 import { eventToFormData } from "../src/shared/utils/event";
@@ -10,7 +12,7 @@ import { buildEventSlideModel, getInstagramSlideLocale } from "../src/features/a
 
 const timeZone = "America/Edmonton";
 const event = {
-  id: 1, title: "Alberta midnight event", school: "ualberta",
+  id: 1, category: "Business", title: "Alberta midnight event", school: "ualberta",
   occurrences: [{ id: "session", dtstart_utc: "2026-09-15T05:30:00Z", dtend_utc: "2026-09-15T07:00:00Z" }],
 } as Event;
 
@@ -85,7 +87,7 @@ test("Instagram translations stay school-scoped across concurrent English and Fr
   expect(french.title).toBe(input.title);
   expect(english.category.label).toBe("Arts & Culture");
   expect(english.badges).toEqual(["Cancelled", "Food", "Registration"]);
-  expect((await buildEventSlideModel({ ...input, category: null }, "fr")).category.label).toBe("Événements");
+  await expect(buildEventSlideModel({ ...input, category: null }, "fr")).rejects.toThrow("valid category");
   expect(locale.language).toBe("fr");
   expect(await getInstagramSlideLocale("fr")).toBe(locale);
 });
@@ -95,12 +97,12 @@ test("event time ranges preserve both sides of a repeated DST hour", async () =>
   const time = formatCardTime({ occurrences: [occurrence] }, timeZone);
   expect(time).toContain("1:30 AM MDT");
   expect(time).toContain("1:30 AM MST");
-  const slide = await buildEventSlideModel({ id: 1, tz: timeZone, ...occurrence }, "en");
+  const slide = await buildEventSlideModel({ id: 1, category: "Business", tz: timeZone, ...occurrence }, "en");
   expect(slide.timeLine).toBe(time);
 });
 
 test("Instagram slides omit unknown end times and reject a missing school timezone", async () => {
-  const input = { id: 1, tz: timeZone, dtstart_utc: "2026-09-18T22:30:00Z" };
+  const input = { id: 1, category: "Business", tz: timeZone, dtstart_utc: "2026-09-18T22:30:00Z" };
   const withoutEnd = await buildEventSlideModel(input, "en");
   expect(withoutEnd.timeLine).toBe("4:30 PM");
   const invalidEnd = await buildEventSlideModel({ ...input, dtend_utc: "invalid" }, "en");
@@ -116,7 +118,7 @@ test("ordinary ranges use compact localized times without redundant zone labels"
 });
 
 test("published slides preserve the school-local added timestamp and omit missing dates", async () => {
-  const input = { id: 1, tz: timeZone, added_at: "2026-09-15T05:30:00Z" };
+  const input = { id: 1, category: "Business", tz: timeZone, added_at: "2026-09-15T05:30:00Z" };
   expect((await buildEventSlideModel(input, "en")).addedLine).toBe("Added Sep 14, 2026, 11:30 PM");
   expect((await buildEventSlideModel(input, "fr")).addedLine).toContain("Ajouté le 14 sept. 2026");
   expect((await buildEventSlideModel({ ...input, added_at: null }, "en")).addedLine).toBe("");
@@ -126,10 +128,28 @@ test("published slides preserve the school-local added timestamp and omit missin
 
 test("Memorial Instagram slides use French and Newfoundland local time", async () => {
   const slide = await buildEventSlideModel({
-    id: 1, school: "mun", tz: "America/St_Johns", title: "Campus event",
+    id: 1, category: "Business", school: "mun", tz: "America/St_Johns", title: "Campus event",
     dtstart_utc: "2026-09-23T22:00:00Z", registration: true,
   }, "fr");
   expect(slide.dateLine).toBe("mercredi 23 septembre");
   expect(slide.timeLine).toContain("19:30");
   expect(slide.badges).toContain("Inscription");
+});
+
+for (const category of [undefined, null, "", "   ", "Events", "Unknown"]) {
+  test(`Instagram slides reject an invalid category: ${category}`, async () => {
+    await expect(buildEventSlideModel({ id: 1, tz: timeZone, category }, "en")).rejects.toThrow("valid category");
+  });
+}
+
+test("every supported Instagram category keeps its localized label and colour", async () => {
+  for (const category of DEFAULT_APP_CONSTANTS.event_categories) {
+    for (const language of ["en", "fr"] as const) {
+      const slide = await buildEventSlideModel({ id: 1, tz: timeZone, category }, language);
+      expect(slide.category.color).toBe(getClubCategoryConfig(category).color);
+      expect(slide.category.color).not.toBe("#E8E8E8");
+      expect(slide.category.label).not.toMatch(/^(Events|Événements)$/);
+      expect(slide.category.label).not.toBe("");
+    }
+  }
 });

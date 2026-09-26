@@ -18,6 +18,7 @@ from uuid import UUID
 from zoneinfo import ZoneInfo
 
 from core.constants import (
+    EVENT_CATEGORIES,
     INSTAGRAM_BATCH_EMPTY,
     INSTAGRAM_BATCH_FAILED,
     INSTAGRAM_BATCH_GENERATING,
@@ -62,7 +63,7 @@ _SUCCESSFUL_CUTOFF_STATUSES = (
     INSTAGRAM_BATCH_PUBLISHED,
     INSTAGRAM_BATCH_EMPTY,
 )
-_EVENT_COLUMNS = "id,title,description,location,club,ig_handle,source_image_url"
+_EVENT_COLUMNS = "id,title,description,location,club,ig_handle,source_image_url,category"
 _BATCH_SELECT = f"*,{school_service.SCHOOL_SLUG_EMBED}"
 
 
@@ -167,7 +168,7 @@ def update_batch(
     if invalid_ids:
         raise ValidationError(
             f"Cannot add or save event IDs: {', '.join(map(str, invalid_ids))}. "
-            "Each event needs a poster image and an upcoming or ongoing occurrence."
+            "Each event needs a valid category, a poster image, and an upcoming or ongoing occurrence."
         )
 
     try:
@@ -467,6 +468,7 @@ def _load_candidates(
         if (
             event_id in published_ids
             or occurrence is None
+            or (event.get("category") or "").strip() not in EVENT_CATEGORIES
             or not (event.get("source_image_url") or "").strip()
         ):
             continue
@@ -489,7 +491,11 @@ def _load_slide_events(event_ids: list[int]) -> dict[int, EventSummaryResponse]:
 
 def _is_publishable_event(event: EventSummaryResponse, now: datetime) -> bool:
     """Draft eligibility is deterministic; published history is never filtered."""
-    return bool((event.source_image_url or "").strip()) and not has_ended(event, now=now)
+    return (
+        (event.category or "").strip() in EVENT_CATEGORIES
+        and bool((event.source_image_url or "").strip())
+        and not has_ended(event, now=now)
+    )
 
 
 def _slide_payload(event: EventSummaryResponse) -> dict[str, Any]:

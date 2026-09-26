@@ -147,7 +147,8 @@ def test_list_batches_attaches_item_counts_without_hydrating_details(monkeypatch
     assert ("range", (0, 24), {}) in batch_calls
 
 
-def test_load_candidates_requires_images_from_any_source(monkeypatch):
+@pytest.mark.parametrize("category", ["Business", None, "", "Events"])
+def test_load_candidates_requires_images_and_categories_from_any_source(monkeypatch, category):
     event_calls: list[tuple] = []
     published_calls: list[tuple] = []
     occurrence_calls: list[tuple] = []
@@ -155,6 +156,7 @@ def test_load_candidates_requires_images_from_any_source(monkeypatch):
         {
             "id": 301,
             "title": "Golden Hawk Welcome Social",
+            "category": category,
             "school": "wlu",
             "ingestion_source": "seed",
             "source_image_url": "https://example.com/poster.jpg",
@@ -207,8 +209,10 @@ def test_load_candidates_requires_images_from_any_source(monkeypatch):
         window_end=datetime(2026, 7, 28, 15, tzinfo=timezone.utc),
     )
 
-    assert [event["id"] for event in result] == [301]
-    assert result[0]["source_image_url"] == "https://example.com/poster.jpg"
+    assert [event["id"] for event in result] == ([301] if category == "Business" else [])
+    assert "category" in service._EVENT_COLUMNS.split(",")
+    if category == "Business":
+        assert result[0]["source_image_url"] == "https://example.com/poster.jpg"
     assert ("eq", ("school_id", 10), {}) in event_calls
     assert ("eq", ("cancelled", False), {}) in event_calls
     assert not any(args and args[0] == "ingestion_source" for _, args, _ in event_calls)
@@ -217,7 +221,12 @@ def test_load_candidates_requires_images_from_any_source(monkeypatch):
 
 def test_load_candidates_pages_occurrences_and_published_items(monkeypatch):
     events = [
-        {"id": event_id, "title": "Event", "source_image_url": "https://example.com/poster.jpg"}
+        {
+            "id": event_id,
+            "title": "Event",
+            "category": "Business",
+            "source_image_url": "https://example.com/poster.jpg",
+        }
         for event_id in range(1, 1003)
     ]
     occurrences = [
@@ -280,6 +289,7 @@ def _event(event_id: int, title: str = "Event") -> EventSummaryResponse:
     return EventSummaryResponse(
         id=event_id,
         title=title,
+        category="Business",
         source_image_url="https://example.com/poster.jpg",
         school="uwaterloo",
         added_at=start,
@@ -808,3 +818,15 @@ def test_concurrent_batch_reads_recover_without_mixing_results(monkeypatch):
         results = list(pool.map(service.get_batch, ["batch-1", "batch-1"]))
     assert [row["new_event_count"] for row in results] == [4, 4]
     assert results[0] is not results[1]
+
+
+@pytest.mark.parametrize("category", [None, "", "   ", "Events", "Unknown"])
+def test_publishable_event_requires_category(category):
+    event = _event(1).model_copy(update={"category": category})
+    assert not service._is_publishable_event(event, datetime(2026, 9, 10, tzinfo=timezone.utc))
+
+
+@pytest.mark.parametrize("category", service.EVENT_CATEGORIES)
+def test_publishable_event_accepts_every_canonical_category(category):
+    event = _event(1).model_copy(update={"category": category})
+    assert service._is_publishable_event(event, datetime(2026, 9, 10, tzinfo=timezone.utc))

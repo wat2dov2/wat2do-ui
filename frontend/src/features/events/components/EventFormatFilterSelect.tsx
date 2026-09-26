@@ -23,7 +23,7 @@ export function EventFormatFilterSelect({ value, onChange }: EventFormatFilterSe
         variant={value === "any" ? "outline" : "primary"}
         aria-label={t("events.formatFilter.label")}
       >
-        <SelectValue />
+        <SelectValue>{t(`events.formatFilter.${value}`)}</SelectValue>
       </SelectTrigger>
       <SelectContent position="popper" align="start">
         <SelectItem value="any">{t("events.formatFilter.any")}</SelectItem>
