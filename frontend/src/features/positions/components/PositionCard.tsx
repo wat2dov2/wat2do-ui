@@ -14,11 +14,13 @@ import type { Position } from "@/shared/types";
 interface PositionCardProps {
   position: Position;
   onPositionClick: (position: Position) => void;
+  imagePriority?: boolean;
 }
 
 function PositionCardComponent({
   position,
   onPositionClick,
+  imagePriority = false,
 }: PositionCardProps) {
   const { t } = useTranslation();
   const preferClick = useMobileGridClickActivation();
@@ -41,7 +43,7 @@ function PositionCardComponent({
       }}
       className="group isolate flex h-full w-full cursor-pointer flex-col rounded-xl transition-all duration-300 hover:shadow-lg"
     >
-      <PositionCardImage position={position} variant="card" />
+      <PositionCardImage position={position} variant="card" priority={imagePriority} />
       <EventCardContentFrame>
         <EventCardContent
           title={position.title}

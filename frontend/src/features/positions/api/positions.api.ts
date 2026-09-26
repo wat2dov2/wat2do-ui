@@ -8,6 +8,7 @@ import type { Position, PositionType } from "@/shared/types";
 import { normalizePosition } from "@/features/positions/api/positionService";
 import { controlBox } from "@/shared/config/controlBox";
 import { api } from "@/shared/services/apiClient";
+import { fetchDiscoverySnapshot, type DiscoverySnapshotMetadata } from "@/shared/api/discovery.api";
 export { parsePositionImage } from "@/shared/services/uploadService";
 export const POSITION_TYPES: PositionType[] = ["executive", "committee", "volunteer", "staff", "internship", "general"];
 
@@ -15,7 +16,7 @@ export function submitPosition(data: ApiPositionCreate): Promise<ApiPositionSubm
   return api.post<ApiPositionSubmissionResponse>("/position-submissions/", { position_data: data });
 }
 
-export type PaginatedPositionsResponse = Omit<ApiPaginatedPositionResponse, "items"> & {
+export type PaginatedPositionsResponse = Omit<ApiPaginatedPositionResponse, "items"> & DiscoverySnapshotMetadata & {
   items: Position[];
 };
 
@@ -65,5 +66,5 @@ export async function getClubPositions(
 }
 
 export function getPositionDirectory(school: string): Promise<PaginatedPositionsResponse> {
-  return collectPaginatedPages((page) => getPositionsPage({ school, page }));
+  return fetchDiscoverySnapshot(school, "positions");
 }

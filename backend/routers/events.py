@@ -123,7 +123,11 @@ def list_events(
     can ask for a host's full history. Omits ``created_by``.
     """
     with ThreadPoolExecutor(max_workers=1) as pool:
-        latest_event_future = pool.submit(event_service.get_latest_added_event, school)
+        latest_event_future = (
+            pool.submit(event_service.get_latest_added_event, school)
+            if pagination.page == 1
+            else None
+        )
         items, total = event_service.list_events(
             school=school,
             skip=pagination.offset,
@@ -147,7 +151,7 @@ def list_events(
             added_within_24h=added_within_24h,
             include_past=include_past,
         )
-        latest_event = latest_event_future.result()
+        latest_event = latest_event_future.result() if latest_event_future else None
 
     return {
         **paginated_response(items, total, pagination),

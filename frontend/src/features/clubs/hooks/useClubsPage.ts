@@ -6,9 +6,8 @@ import { resolveSchool } from "@/shared/constants/schools";
 import { useSavedClubsStore } from "@/features/clubs/store/savedClubs.store";
 import { useAuthState } from "@/features/auth/hooks/useAuthState";
 import { useQuery } from "@tanstack/react-query";
-import { getAllClubs } from "@/features/clubs/api/clubs.api";
+import { clubDirectoryQueryOptions } from "@/features/clubs/api/clubs.api";
 import { filterClubs } from "@/features/clubs/api/clubService";
-import { queryKeys } from "@/shared/lib/queryKeys";
 import type { PaginatedClubsResponse } from "@/features/clubs/api/clubs.api";
 
 interface UseClubsPageOptions {
@@ -36,12 +35,11 @@ export function useClubsPage({
   const isSavedLoaded = useSavedClubsStore((s) => s.hasLoaded);
 
   const query = useQuery({
-    queryKey: queryKeys.clubs.allForSchool(resolvedSchoolFilter),
-    queryFn: () => getAllClubs(resolvedSchoolFilter),
-    retry: false,
-    initialData: initialDirectory?.items,
+    ...clubDirectoryQueryOptions(resolvedSchoolFilter),
+    initialData: initialDirectory ?? undefined,
+    initialDataUpdatedAt: initialDirectory?.generated_at,
   });
-  const clubs = useMemo(() => filterClubs(query.data ?? [], {
+  const clubs = useMemo(() => filterClubs(query.data?.items ?? [], {
     search: submittedSearch.query,
     categories: selectedCategories,
     minEvents,

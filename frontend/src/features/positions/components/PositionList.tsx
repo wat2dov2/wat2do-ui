@@ -10,6 +10,7 @@ import {
 } from "@/shared/constants/ui";
 import { PositionCard } from "@/features/positions/components/PositionCard";
 import type { Position } from "@/shared/types";
+import imageDelivery from "../../../../../backend/controlbox/image_delivery.json" with { type: "json" };
 
 interface PositionListProps {
   positions: Position[];
@@ -82,6 +83,7 @@ export function PositionList({
           <PositionCard
             position={position}
             onPositionClick={onPositionClick}
+            imagePriority={index < imageDelivery.first_row_image_count}
           />
         </CardEntrance>
       ))}

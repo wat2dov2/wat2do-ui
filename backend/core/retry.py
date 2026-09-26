@@ -1,44 +1,74 @@
-"""Retry decorator for Supabase / PostgREST operations.
+"""Bounded recovery for Supabase table reads at the HTTP transport boundary.
 
-Extracted from ``core.constants`` because this is instantiated behavior
-(a configured decorator), not a plain data constant.
-
-**Idempotency requirement.** ``supabase_retry`` is safe to apply
-ONLY to idempotent operations - i.e. operations that can run twice with
-the same effect as running once.  These include:
-
-  * ``SELECT`` reads
-  * ``UPSERT`` / ``INSERT ... ON CONFLICT DO UPDATE`` keyed on a unique
-    business identifier
-  * ``UPDATE`` / ``DELETE`` with a specific ``WHERE`` clause
-
-Do **not** decorate operations that are not idempotent, such as:
-
-  * Plain ``INSERT`` without conflict handling (duplicates on retry)
-  * RPCs or writes that generate an auto-incrementing ID and return it
-  * Side-effects with external systems (email, webhooks, payments)
-
-If retrying a non-idempotent call is genuinely required, use a
-transactional wrapper (e.g. advisory lock + existence check) instead.
-
-**Thundering-herd prevention.** Under a Supabase outage, every
-in-flight request retries on the same backoff schedule; without jitter
-all clients release simultaneously and re-DoS the upstream on
-recovery.  ``wait_exponential_jitter`` adds a random component that
-spreads retry traffic.
+Only GET/HEAD table requests are replayable here. Writes, RPCs, auth, and HTTP
+error responses are returned once to their caller. Retrying one failed page
+preserves successful work and avoids rerunning whole multi-query services.
 """
 
-from tenacity import retry, stop_after_attempt, wait_exponential_jitter
+from collections.abc import Callable
+from time import sleep
 
-# Shared config so every retry site uses identical backoff parameters.
-# ``wait_exponential_jitter`` uses exponential-backoff with a random
-# additive delay (defaults to jitter=1.0s).  initial=0.5s, max=4s matches
-# the prior schedule while avoiding synchronized post-outage retries.
-RETRY_STOP = stop_after_attempt(3)
-RETRY_WAIT = wait_exponential_jitter(initial=0.5, max=4, jitter=1.0)
+import httpx
+from tenacity import Retrying, retry_if_exception_type, stop_after_attempt, wait_exponential_jitter
 
-#: Retry decorator for **idempotent** Supabase / PostgREST calls (see module
-#: docstring for the idempotency contract). ``reraise=True`` preserves the
-#: original Supabase/httpx exception after retries are exhausted instead of
-#: wrapping it in Tenacity's ``RetryError``.
-supabase_retry = retry(stop=RETRY_STOP, wait=RETRY_WAIT, reraise=True)
+from core.controlbox import controlbox
+from core.logging import logger
+
+
+class SupabaseReadTransport(httpx.BaseTransport):
+    def __init__(
+        self,
+        transport: httpx.BaseTransport | None = None,
+        *,
+        wait: Callable[[float], None] = sleep,
+    ) -> None:
+        # HTTP/2 connection termination has disrupted unrelated in-flight
+        # requests sharing a session. HTTP/1.1 keeps the existing pooled client
+        # while avoiding that shared multiplexed connection failure mode.
+        self._transport = transport or httpx.HTTPTransport(http2=False, retries=0)
+        self._wait = wait
+
+    def handle_request(self, request: httpx.Request) -> httpx.Response:
+        is_table_read = (
+            request.method in {"GET", "HEAD"}
+            and request.url.path.startswith("/rest/v1/")
+            and not request.url.path.startswith("/rest/v1/rpc/")
+        )
+        if not is_table_read:
+            return self._transport.handle_request(request)
+
+        config = controlbox.database
+        retrying = Retrying(
+            retry=retry_if_exception_type(
+                (httpx.NetworkError, httpx.TimeoutException, httpx.RemoteProtocolError)
+            ),
+            stop=stop_after_attempt(config.read_attempts),
+            wait=wait_exponential_jitter(
+                initial=config.read_backoff_initial_seconds,
+                max=config.read_backoff_max_seconds,
+                jitter=config.read_backoff_jitter_seconds,
+            ),
+            sleep=self._wait,
+            reraise=True,
+        )
+        for attempt in retrying:
+            with attempt:
+                if attempt.retry_state.attempt_number > 1:
+                    logger.warning(
+                        "Retrying Supabase table read method=%s path=%s attempt=%s",
+                        request.method,
+                        request.url.path,
+                        attempt.retry_state.attempt_number,
+                    )
+                response = self._transport.handle_request(request)
+                try:
+                    # A disconnect can occur after headers arrive. Read inside
+                    # the retry boundary so a partial body is never published.
+                    response.read()
+                finally:
+                    response.close()
+                return response
+        raise RuntimeError("Supabase read retry exhausted without a result")
+
+    def close(self) -> None:
+        self._transport.close()

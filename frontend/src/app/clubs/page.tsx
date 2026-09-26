@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cache } from "react";
 import { headers } from "next/headers";
 import imgContactHero from "@/assets/contact_hero.png";
 import { getClubDirectorySnapshot } from "@/features/clubs/api/clubDirectory.server";
@@ -12,16 +13,16 @@ import {
   selectSeoImage,
 } from "@/shared/lib/seo";
 
-async function loadInitialDirectory(
+const loadInitialDirectory = cache(async (
   school: string,
-): Promise<PaginatedClubsResponse | null> {
+): Promise<PaginatedClubsResponse | null> => {
   try {
     return await getClubDirectorySnapshot(school);
   } catch (err) {
     console.error("Initial club directory fetch failed:", err);
     return null;
   }
-}
+});
 
 async function resolveRequestSchool(): Promise<string> {
   const requestHeaders = await headers();

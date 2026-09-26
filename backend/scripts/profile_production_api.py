@@ -17,6 +17,7 @@ import getpass
 import html
 import json
 import math
+import re
 import statistics
 import sys
 import time
@@ -24,16 +25,20 @@ from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+from urllib.parse import quote
 
 import httpx
 
 DEFAULT_BASE_URL = "https://wat2do.io/api"
+DEFAULT_SCHOOL = "uwaterloo"
 DEFAULT_SAMPLES = 10
 DEFAULT_WARMUPS = 1
 REQUEST_TIMEOUT_SECONDS = 30.0
 TEMP_OUTPUT_DIR = Path("/tmp")
 
 SKIPPED_GET_ROUTES = {
+    "/auth/google": "Starts OAuth and writes a browser authentication state cookie.",
+    "/auth/google/callback": "Exchanges an OAuth code and changes the browser session.",
     "/calendar/feed/{token}.ics": "Requires a private calendar token.",
     "/calendar/token": "GET may create a calendar token, so it is not read-only.",
     "/notification-preferences/unsubscribe": "Requires a private unsubscribe token.",
@@ -71,18 +76,21 @@ PUBLIC_ENDPOINTS = (
     Endpoint("/health", "/health", False),
     Endpoint(
         "/events/",
-        "/events/?school=uwaterloo&page=1&page_size=20",
+        "/events/?school={school}&page=1&page_size=20",
         False,
     ),
-    Endpoint("/events/stats", "/events/stats?school=uwaterloo", False),
+    Endpoint("/events/stats", "/events/stats?school={school}", False),
+    Endpoint("/positions/", "/positions/?school={school}&page=1&page_size=20", False),
     Endpoint("/meta/constants", "/meta/constants", False),
     Endpoint(
         "/clubs/",
-        "/clubs/?school=uwaterloo&page=1&page_size=20",
+        "/clubs/?school={school}&page=1&page_size=20",
         False,
     ),
-    Endpoint("/qr/map", "/qr/map?school=uwaterloo", False),
-    Endpoint("/schools", "/schools?q=waterloo&limit=10", False),
+    Endpoint("/qr/map", "/qr/map?school={school}", False),
+    Endpoint("/schools", "/schools?q={school_query}&limit=10", False),
+    Endpoint("/schools/{slug}", "/schools/{school}", False),
+    Endpoint("/site-banner", "/site-banner", False),
 )
 
 AUTHENTICATED_ENDPOINTS = (
@@ -123,9 +131,12 @@ AUTHENTICATED_ENDPOINTS = (
     Endpoint("/qr/scans", "/qr/scans?page=1&page_size=10", True),
     Endpoint("/reports/", "/reports/?page=1&page_size=10", True),
     Endpoint("/saved-clubs/", "/saved-clubs/", True),
+    Endpoint("/v1/saved-events/", "/v1/saved-events/", True),
+    Endpoint("/position-submissions/", "/position-submissions/?page=1&page_size=10", True),
     Endpoint("/submissions/", "/submissions/?page=1&page_size=10", True),
     Endpoint("/users/", "/users/?skip=0&limit=20", True),
     Endpoint("/users/me", "/users/me", True),
+    Endpoint("/webhooks/automate/logs", "/webhooks/automate/logs?limit=20", True),
 )
 
 
@@ -271,6 +282,7 @@ def discover_dynamic_endpoints(
     base_url: str,
     access_token: str,
     auth_user_id: str,
+    school: str = DEFAULT_SCHOOL,
 ) -> tuple[list[Endpoint], dict[str, str]]:
     skipped: dict[str, str] = {}
     endpoints: list[Endpoint] = []
@@ -278,7 +290,7 @@ def discover_dynamic_endpoints(
     events = _get_json(
         client,
         base_url,
-        "/events/?school=uwaterloo&page=1&page_size=1",
+        f"/events/?school={quote(school, safe='')}&page=1&page_size=1",
         access_token,
         False,
     )
@@ -300,10 +312,23 @@ def discover_dynamic_endpoints(
             "No event was available for a path parameter."
         )
 
+    positions = _get_json(
+        client,
+        base_url,
+        f"/positions/?school={quote(school, safe='')}&page=1&page_size=1",
+        access_token,
+        False,
+    )
+    position_id = _first_id(positions)
+    if position_id:
+        endpoints.append(Endpoint("/positions/{position_id}", f"/positions/{position_id}", False))
+    else:
+        skipped["/positions/{position_id}"] = "No position was available for a path parameter."
+
     clubs = _get_json(
         client,
         base_url,
-        "/clubs/?school=uwaterloo&page=1&page_size=1",
+        f"/clubs/?school={quote(school, safe='')}&page=1&page_size=1",
         access_token,
         False,
     )
@@ -314,15 +339,13 @@ def discover_dynamic_endpoints(
         access_token,
         True,
     )
-    club_id = _first_id(owned_clubs) or _first_id(clubs)
+    school_owned_clubs = [club for club in _items(owned_clubs) if club.get("school") == school]
+    club_id = _first_id(school_owned_clubs) or _first_id(clubs)
     club_routes = (
         "/clubs/{club_id}",
         "/clubs/{club_id}/integrations/{platform}",
         "/clubs/{club_id}/invitations",
-        "/clubs/{club_id}/join-requests",
         "/clubs/{club_id}/members",
-        "/clubs/{club_id}/membership",
-        "/clubs/{club_id}/memberships",
     )
     if club_id:
         endpoints.extend(
@@ -343,23 +366,8 @@ def discover_dynamic_endpoints(
                     True,
                 ),
                 Endpoint(
-                    "/clubs/{club_id}/join-requests",
-                    f"/clubs/{club_id}/join-requests",
-                    True,
-                ),
-                Endpoint(
                     "/clubs/{club_id}/members",
                     f"/clubs/{club_id}/members",
-                    True,
-                ),
-                Endpoint(
-                    "/clubs/{club_id}/membership",
-                    f"/clubs/{club_id}/membership",
-                    True,
-                ),
-                Endpoint(
-                    "/clubs/{club_id}/memberships",
-                    f"/clubs/{club_id}/memberships",
                     True,
                 ),
             )
@@ -439,15 +447,13 @@ def authenticate(
 def _known_get_paths() -> set[str]:
     return {endpoint.label for endpoint in (*PUBLIC_ENDPOINTS, *AUTHENTICATED_ENDPOINTS)} | {
         "/events/{event_id}",
+        "/positions/{position_id}",
         "/going-events/{event_id}/attendees",
         "/instagram-publishing/batches/{batch_id}",
         "/clubs/{club_id}",
         "/clubs/{club_id}/integrations/{platform}",
         "/clubs/{club_id}/invitations",
-        "/clubs/{club_id}/join-requests",
         "/clubs/{club_id}/members",
-        "/clubs/{club_id}/membership",
-        "/clubs/{club_id}/memberships",
         "/payouts/admin/{payout_id}",
         "/submissions/{submission_id}",
         "/users/{user_id}",
@@ -477,10 +483,38 @@ def audit_openapi_coverage() -> dict[str, Any]:
     }
 
 
+def school_endpoints(school: str) -> list[Endpoint]:
+    """Scope the existing inventory without changing its route classifications."""
+    return [
+        Endpoint(
+            endpoint.label,
+            endpoint.path.format(
+                school=quote(school, safe=""),
+                school_query=quote("waterloo" if school == DEFAULT_SCHOOL else school, safe=""),
+            ),
+            endpoint.authenticated,
+        )
+        for endpoint in PUBLIC_ENDPOINTS
+    ]
+
+
+def _school_argument(value: str) -> str:
+    school = value.strip().lower().replace("_", "-")
+    if not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", school):
+        raise argparse.ArgumentTypeError("--school must be a registered school slug")
+    return school
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--base-url", default=DEFAULT_BASE_URL)
     parser.add_argument("--email", required=True)
+    parser.add_argument(
+        "--school",
+        type=_school_argument,
+        default=DEFAULT_SCHOOL,
+        help="School slug for public queries and event/club detail discovery (default: uwaterloo).",
+    )
     parser.add_argument("--samples", type=int, default=DEFAULT_SAMPLES)
     parser.add_argument("--warmups", type=int, default=DEFAULT_WARMUPS)
     parser.add_argument(
@@ -669,6 +703,13 @@ def main() -> int:
     if args.samples < 1 or args.warmups < 0:
         raise SystemExit("--samples must be positive and --warmups cannot be negative")
 
+    coverage = audit_openapi_coverage()
+    if coverage["unclassified_get_routes"] or coverage["stale_classifications"]:
+        raise SystemExit(
+            "Resolve profiler GET route classifications before authentication: "
+            + json.dumps(coverage)
+        )
+
     base_url = args.base_url.rstrip("/")
     with httpx.Client(
         timeout=REQUEST_TIMEOUT_SECONDS,
@@ -685,10 +726,11 @@ def main() -> int:
             base_url,
             access_token,
             current_user_id,
+            school=args.school,
         )
         run_started_at = datetime.now(timezone.utc)
         endpoints = [
-            *PUBLIC_ENDPOINTS,
+            *school_endpoints(args.school),
             *AUTHENTICATED_ENDPOINTS,
             *dynamic_endpoints,
         ]
@@ -711,6 +753,7 @@ def main() -> int:
         "generated_at": run_started_at.isoformat(),
         "base_url": base_url,
         "methodology": {
+            "school": args.school,
             "warmups_per_endpoint": args.warmups,
             "measured_samples_per_endpoint": args.samples,
             "sequential": True,
@@ -722,7 +765,7 @@ def main() -> int:
             **SKIPPED_GET_ROUTES,
             **dynamic_skips,
         },
-        "openapi_coverage": audit_openapi_coverage(),
+        "openapi_coverage": coverage,
     }
     run_directory = write_profile_artifacts(output, run_started_at)
     print(f"Profile artifacts written to {run_directory}")

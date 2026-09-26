@@ -10,6 +10,7 @@ import { SiteBanner } from "@/app/SiteBanner";
 import { getSchoolDirectory } from "@/shared/api/schools.server";
 import { getSchoolFromRequestHost } from "@/shared/constants/schools";
 import { STORAGE_KEYS } from "@/shared/constants/storageKeys";
+import { getSchoolThemeStyle } from "@/shared/lib/schoolBranding";
 import { PageBackground } from "@/shared/layout";
 import "../index.css";
 
@@ -119,11 +120,13 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   const initialSchool = getSchoolFromRequestHost(
     requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host"),
   );
+  const school = initialSchools?.find((school) => school.slug === initialSchool);
 
   return (
     <html
-      lang={initialSchools?.find((school) => school.slug === initialSchool)?.language ?? "en"}
+      lang={school?.language ?? "en"}
       className={`no-transitions ${satoshi.variable}`}
+      style={getSchoolThemeStyle(school)}
       suppressHydrationWarning
     >
       <head>
@@ -131,7 +134,6 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
           id="theme-init"
           dangerouslySetInnerHTML={{ __html: themeInitScript }}
         />
-        <link rel="stylesheet" href="/api/school-theme" />
       </head>
       <body>
         <PageBackground />

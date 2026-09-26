@@ -94,4 +94,6 @@ class PositionResponse(PositionFields):
 
 
 class PositionDirectoryResponse(PaginatedResponse[PositionResponse]):
-    latest_added_position: LatestAddedItem | None = None
+    latest_added_position: LatestAddedItem | None = Field(
+        default=None, description="School freshness metadata on the first page only."
+    )

@@ -69,6 +69,17 @@ resource "aws_s3_bucket_lifecycle_configuration" "assets" {
     }
   }
 
+  rule {
+    id     = "expire-discovery-generations"
+    status = "Enabled"
+    filter {
+      prefix = "${local.discovery_cache_control.storage_prefix}/generations/"
+    }
+    expiration {
+      days = local.discovery_cache_control.generation_retention_days
+    }
+  }
+
   depends_on = [aws_s3_bucket_versioning.assets]
 }
 
@@ -96,6 +107,18 @@ resource "aws_cloudfront_origin_access_control" "assets" {
 }
 
 data "aws_iam_policy_document" "assets_cloudfront_read" {
+  statement {
+    sid       = "DenyCloudFrontDiscoveryCacheRead"
+    effect    = "Deny"
+    actions   = ["s3:GetObject"]
+    resources = ["${aws_s3_bucket.assets.arn}/${local.discovery_cache_control.storage_prefix}/*"]
+
+    principals {
+      type        = "Service"
+      identifiers = ["cloudfront.amazonaws.com"]
+    }
+  }
+
   statement {
     sid       = "AllowCloudFrontRead"
     effect    = "Allow"

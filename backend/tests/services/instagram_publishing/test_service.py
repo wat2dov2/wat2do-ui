@@ -773,50 +773,66 @@ def test_slide_payload_uses_school_timezone_even_when_occurrence_disagrees(
 
 
 def test_get_batch_recovers_from_database_disconnect(monkeypatch):
-    from httpx import RemoteProtocolError
+    import httpx
+    from postgrest import SyncPostgrestClient
+
+    from core.retry import SupabaseReadTransport
 
     batch = {"id": "batch-1", "school_record": {"slug": "uwaterloo"}}
-    monkeypatch.setattr(
-        service, "get_sb", lambda: SimpleNamespace(table=lambda _: _FakeQuery([batch], []))
+    send = Mock(
+        side_effect=[
+            httpx.RemoteProtocolError("Server disconnected"),
+            httpx.Response(200, json=[batch]),
+        ]
     )
-    hydrate = Mock(side_effect=[RemoteProtocolError("Server disconnected"), None])
+    hydrate = Mock()
     monkeypatch.setattr(service, "_hydrate_batch", hydrate)
-
-    assert service.get_batch("batch-1")["id"] == "batch-1"
-    assert hydrate.call_count == 2
+    with httpx.Client(
+        transport=SupabaseReadTransport(httpx.MockTransport(send), wait=lambda _: None)
+    ) as http_client:
+        client = SyncPostgrestClient("https://example.supabase.co/rest/v1", http_client=http_client)
+        monkeypatch.setattr(service, "get_sb", lambda: client)
+        assert service.get_batch("batch-1")["id"] == "batch-1"
+    assert send.call_count == 2
+    hydrate.assert_called_once()
 
 
 def test_concurrent_batch_reads_recover_without_mixing_results(monkeypatch):
     from concurrent.futures import ThreadPoolExecutor
     from threading import Lock
 
-    from httpx import RemoteProtocolError
+    import httpx
+    from postgrest import SyncPostgrestClient
 
-    monkeypatch.setattr(
-        service,
-        "get_sb",
-        lambda: SimpleNamespace(
-            table=lambda _: _FakeQuery(
-                [{"id": "batch-1", "school_record": {"slug": "uwaterloo"}}], []
-            )
-        ),
-    )
-    failures = 2
+    from core.retry import SupabaseReadTransport
+
+    attempts = {}
     lock = Lock()
 
-    def hydrate(batch):
-        nonlocal failures
+    def send(request):
+        batch_id = request.url.params["id"].removeprefix("eq.")
         with lock:
-            if failures:
-                failures -= 1
-                raise RemoteProtocolError("Server disconnected")
+            attempts[batch_id] = attempts.get(batch_id, 0) + 1
+            attempt = attempts[batch_id]
+        if attempt == 1:
+            raise httpx.RemoteProtocolError("Server disconnected")
+        return httpx.Response(200, json=[{"id": batch_id, "school_record": {"slug": "uwaterloo"}}])
+
+    def hydrate(batch):
         batch["items"] = []
         batch["new_event_count"] = 4
 
     monkeypatch.setattr(service, "_hydrate_batch", hydrate)
-    with ThreadPoolExecutor(max_workers=2) as pool:
-        results = list(pool.map(service.get_batch, ["batch-1", "batch-1"]))
+    with httpx.Client(
+        transport=SupabaseReadTransport(httpx.MockTransport(send), wait=lambda _: None)
+    ) as http_client:
+        client = SyncPostgrestClient("https://example.supabase.co/rest/v1", http_client=http_client)
+        monkeypatch.setattr(service, "get_sb", lambda: client)
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            results = list(pool.map(service.get_batch, ["batch-1", "batch-2"]))
+    assert [row["id"] for row in results] == ["batch-1", "batch-2"]
     assert [row["new_event_count"] for row in results] == [4, 4]
+    assert attempts == {"batch-1": 2, "batch-2": 2}
     assert results[0] is not results[1]
 
 

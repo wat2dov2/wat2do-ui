@@ -7,19 +7,22 @@ import type { Club } from "@/shared/types";
 import type { ApiClubResponse, ApiPaginatedClubsResponse } from "@/shared/generated";
 import { api } from "@/shared/services/apiClient";
 import { normalizeClub } from "@/features/clubs/api/clubService";
-import { collectPaginatedPages } from "@/shared/lib/pagination";
-import { controlBox } from "@/shared/config/controlBox";
+import { queryOptions } from "@tanstack/react-query";
+import { queryKeys } from "@/shared/lib/queryKeys";
+import { resolveSchool } from "@/shared/constants/schools";
+import { fetchDiscoverySnapshot, preserveDiscoveryGeneration, type DiscoverySnapshotMetadata } from "@/shared/api/discovery.api";
 
-export async function getAllClubs(school?: string): Promise<Club[]> {
-  const directory = await collectPaginatedPages((page) => getClubsPaginated({
-    page,
-    school,
-    limit: controlBox.clubManagement.directoryPageSize,
-  }));
-  return directory.items;
+export function clubDirectoryQueryOptions(school: string | null | undefined) {
+  const resolvedSchool = resolveSchool(school);
+  return queryOptions({
+    queryKey: queryKeys.clubs.allForSchool(resolvedSchool),
+    queryFn: () => fetchDiscoverySnapshot<PaginatedClubsResponse>(resolvedSchool, "clubs"),
+    structuralSharing: preserveDiscoveryGeneration,
+    retry: false,
+  });
 }
 
-export type PaginatedClubsResponse = Omit<ApiPaginatedClubsResponse, "items"> & {
+export type PaginatedClubsResponse = Omit<ApiPaginatedClubsResponse, "items"> & DiscoverySnapshotMetadata & {
   items: Club[];
 };
 

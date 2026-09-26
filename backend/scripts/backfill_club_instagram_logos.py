@@ -28,7 +28,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from core.constants import BUCKET_CLUB_LOGOS  # noqa: E402
 from schemas.club import ClubUpdate  # noqa: E402
 from services import club_service  # noqa: E402
-from services.event_feed_revalidation import event_feed_revalidation_service  # noqa: E402
 from services.scraper.image_uploader import upload_image_from_url  # noqa: E402
 from services.scraper.instagram_scraper import get_scraper  # noqa: E402
 from services.storage_service import storage  # noqa: E402
@@ -179,8 +178,6 @@ def backfill_school(
             print(f"  profile unresolved: {club.id} {club.club_name}")
     failed_ids.update(unresolved_ids)
 
-    if updated_ids:
-        event_feed_revalidation_service.revalidate_school(school)
     return len(eligible), len(updated_ids), len(failed_ids)
 
 

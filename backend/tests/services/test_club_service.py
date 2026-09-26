@@ -387,7 +387,9 @@ def test_update_club_revalidates_event_feed(monkeypatch, fake_sb, patch_sb, upda
     assert updated is not None
     for field, value in updates.items():
         assert getattr(updated, field) == value
-    revalidate.assert_called_once_with(["uwaterloo", "uwaterloo"])
+    revalidate.assert_called_once_with(
+        ["uwaterloo", "uwaterloo"], resources=("events", "positions", "clubs")
+    )
 
 
 @pytest.mark.parametrize("platform", ["discord", "slack", "telegram", "facebook"])
@@ -447,3 +449,123 @@ def test_empty_integration_response_preserves_wire_defaults(platform):
         "last_sync": None,
         "metadata": {},
     }
+
+
+@pytest.mark.parametrize("auto_approve", [False, True])
+def test_create_club_refreshes_public_directory_only_when_approved(
+    monkeypatch, fake_sb, patch_sb, auto_approve
+):
+    from schemas.club import ClubCreate
+
+    patch_sb("services.club_service")
+    row = {
+        "id": 7,
+        "club_name": "Tea Club",
+        "school": "uwaterloo",
+        "status": "approved" if auto_approve else "pending",
+    }
+    fake_sb.set_response(data=[row])
+    monkeypatch.setattr(club_service, "get_club", lambda _: ClubResponse(**row))
+    monkeypatch.setattr(club_service, "add_club_member", MagicMock())
+    refresh = MagicMock()
+    monkeypatch.setattr(club_service.event_feed_revalidation_service, "revalidate_school", refresh)
+
+    club_service.create_club(
+        ClubCreate(club_name="Tea Club"),
+        created_by="11111111-1111-1111-1111-111111111111",
+        auto_approve=auto_approve,
+    )
+    if auto_approve:
+        refresh.assert_called_once_with("uwaterloo", resources=("clubs",))
+    else:
+        refresh.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "updates,resources",
+    [
+        ({"categories": ["Arts & Culture"]}, ("clubs",)),
+        ({"club_name": "New club name"}, ("events", "positions", "clubs")),
+        ({"club_page": "https://example.com/club"}, ("events", "positions", "clubs")),
+        ({"ig": "updatedclub"}, ("events", "positions", "clubs")),
+        ({"discord": "https://discord.gg/club"}, ("events", "positions", "clubs")),
+        ({"school": "western"}, ("events", "positions", "clubs")),
+    ],
+)
+def test_club_update_refreshes_only_datasets_that_embed_changed_fields(
+    monkeypatch, fake_sb, patch_sb, updates, resources
+):
+    patch_sb("services.club_service")
+    row = {"id": 7, "club_name": "Tea Club", "school": "uwaterloo"}
+    monkeypatch.setattr(club_service, "get_club", lambda _: ClubResponse(**row))
+    fake_sb.set_response(data=[{**row, **updates}])
+    refresh = MagicMock()
+    monkeypatch.setattr(club_service.event_feed_revalidation_service, "revalidate_schools", refresh)
+
+    club_service.update_club(7, ClubUpdate(**updates))
+    refresh.assert_called_once_with(
+        ["uwaterloo", updates.get("school", "uwaterloo")], resources=resources
+    )
+
+
+def test_club_status_change_refreshes_visibility_dependencies(monkeypatch, fake_sb, patch_sb):
+    patch_sb("services.club_service")
+    row = {"id": 7, "club_name": "Tea Club", "school": "uwaterloo", "status": "pending"}
+    monkeypatch.setattr(club_service, "get_club", lambda _: ClubResponse(**row))
+    fake_sb.set_response(data=[{**row, "status": "approved"}])
+    refresh = MagicMock()
+    monkeypatch.setattr(club_service.event_feed_revalidation_service, "revalidate_school", refresh)
+
+    club_service.set_club_status(7, "approved")
+    refresh.assert_called_once_with("uwaterloo", resources=("events", "positions", "clubs"))
+
+
+@pytest.mark.parametrize("database_fails", [False, True])
+def test_club_delete_refreshes_cascaded_content_only_after_commit(
+    monkeypatch, fake_sb, patch_sb, database_fails
+):
+    patch_sb("services.club_service")
+    monkeypatch.setattr(
+        club_service,
+        "get_club",
+        lambda _: ClubResponse(id=7, club_name="Tea Club", school="uwaterloo"),
+    )
+    fake_sb.set_response(data=[{"id": 7}])
+    if database_fails:
+        fake_sb.raise_on_execute(RuntimeError("database unavailable"))
+    refresh = MagicMock()
+    monkeypatch.setattr(club_service.event_feed_revalidation_service, "revalidate_school", refresh)
+
+    if database_fails:
+        with pytest.raises(RuntimeError):
+            club_service.delete_club(7)
+        refresh.assert_not_called()
+    else:
+        assert club_service.delete_club(7)
+        refresh.assert_called_once_with("uwaterloo", resources=("events", "positions", "clubs"))
+
+
+def test_club_directory_pages_use_unique_order_for_identical_names(monkeypatch):
+    requests = []
+    rows = [
+        {"id": club_id, "club_name": "Debate Club", "school_record": {"slug": "uwaterloo"}}
+        for club_id in (7, 8)
+    ]
+
+    def respond(request):
+        requests.append(request)
+        offset = int(request.url.params["offset"])
+        return httpx.Response(
+            200, json=rows[offset : offset + 1], headers={"Content-Range": f"{offset}-{offset}/2"}
+        )
+
+    monkeypatch.setattr(club_service.position_service, "get_club_position_counts", lambda _: {})
+    with httpx.Client(transport=httpx.MockTransport(respond)) as http_client:
+        client = SyncPostgrestClient("https://example.supabase.co/rest/v1", http_client=http_client)
+        monkeypatch.setattr(club_service, "get_sb", lambda: client)
+        first, total = club_service.list_clubs(skip=0, limit=1)
+        second, _ = club_service.list_clubs(skip=1, limit=1)
+
+    assert [club.id for club in first + second] == [7, 8]
+    assert total == 2
+    assert [request.url.params["order"] for request in requests] == ["club_name.asc,id.asc"] * 2

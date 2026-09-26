@@ -1,3 +1,4 @@
+import imageDelivery from "../backend/controlbox/image_delivery.json" with { type: "json" };
 import type { NextConfig } from "next";
 import { readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -102,11 +103,15 @@ const nextConfig: NextConfig = {
   experimental: { testProxy: process.env.PLAYWRIGHT_TEST === "1" },
   output: "standalone",
   images: {
+    formats: [imageDelivery.optimized_format as "image/webp"],
+    deviceSizes: imageDelivery.device_sizes,
+    imageSizes: imageDelivery.image_sizes,
+    qualities: [imageDelivery.quality],
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "wat2do.io",
-        pathname: "/media/**",
+        hostname: imageDelivery.optimized_remote_host,
+        pathname: `${imageDelivery.optimized_remote_path}**`,
       },
     ],
   },

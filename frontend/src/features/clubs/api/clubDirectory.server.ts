@@ -1,30 +1,20 @@
+import { readDiscoverySnapshot } from "@/shared/services/discoveryCache.server";
 import { collectPaginatedPages } from "@/shared/lib/pagination";
 import type { ApiClubResponse, ApiPaginatedClubsResponse } from "@/shared/generated";
 import { controlBox } from "@/shared/config/controlBox";
 import { resolveSchool } from "@/shared/constants/schools";
-import { getServerApiBaseUrl } from "@/shared/services/serverApi";
+import { fetchServerSnapshot, getServerApiBaseUrl } from "@/shared/services/serverApi";
 import { normalizeClub } from "@/features/clubs/api/clubService";
 import type { PaginatedClubsResponse } from "@/features/clubs/api/clubs.api";
 import type { Club } from "@/shared/types";
-
-export function clubDirectoryTag(school: string): string {
-  return `club-directory-${resolveSchool(school)}`;
-}
 
 /** Public club detail shared by route metadata, initial HTML, and hydration. */
 export async function getClubDetailSnapshot(
   clubId: number,
 ): Promise<Club | null> {
-  const response = await fetch(
+  const response = await fetchServerSnapshot(
     `${getServerApiBaseUrl()}/clubs/${encodeURIComponent(String(clubId))}`,
-    {
-      next: {
-        revalidate:
-          process.env.NODE_ENV === "development"
-            ? 0
-            : controlBox.clubManagement.directoryRevalidateSeconds,
-      },
-    },
+    { cache: "no-store" },
   );
 
   if (response.status === 404) return null;
@@ -39,7 +29,7 @@ export async function getClubDetailSnapshot(
   );
 }
 
-export async function getClubDirectorySnapshot(
+export async function buildClubDirectorySnapshot(
   school: string,
 ): Promise<PaginatedClubsResponse> {
   const resolvedSchool = resolveSchool(school);
@@ -55,16 +45,10 @@ async function fetchClubDirectoryPage(
     page_size: String(controlBox.clubManagement.directoryPageSize),
     school,
   });
-  const response = await fetch(
+  const response = await fetchServerSnapshot(
     `${getServerApiBaseUrl()}/clubs/?${params.toString()}`,
     {
-      next: {
-        revalidate:
-          process.env.NODE_ENV === "development"
-            ? 0
-            : controlBox.clubManagement.directoryRevalidateSeconds,
-        tags: [clubDirectoryTag(school)],
-      },
+      cache: "no-store",
     },
   );
 
@@ -79,4 +63,9 @@ async function fetchClubDirectoryPage(
     ...directory,
     items: directory.items.map(normalizeClub),
   };
+}
+
+export async function getClubDirectorySnapshot(school: string) {
+  const slug = resolveSchool(school);
+  return readDiscoverySnapshot(slug, "clubs", () => buildClubDirectorySnapshot(slug));
 }

@@ -1,5 +1,4 @@
 {
   "directory_page_size": 20,
-  "directory_revalidate_seconds": 259200,
   "invite_expiration_days": 7
 }

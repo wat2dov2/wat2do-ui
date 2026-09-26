@@ -11,9 +11,10 @@ import {
 } from "react";
 
 import { cn } from "@/shared/lib/utils";
-import { useIntersectionObserver } from "@/shared/hooks/useIntersectionObserver";
 import { BadgeMaskShape } from "@/shared/ui/badge-mask";
 import type { BadgeMaskVariant } from "@/shared/ui/badge-mask-paths";
+import { LazyImage } from "@/shared/ui/lazy-image";
+import { CARD_GRID_IMAGE_SIZES } from "@/shared/constants/ui";
 
 const useSafeLayoutEffect =
   typeof window !== "undefined" ? useLayoutEffect : useEffect;
@@ -202,6 +203,8 @@ interface EventImageCutoutProps {
   imageAlt?: string;
   /** Load the poster immediately for LCP candidates; defer off-screen cards. */
   imageLoading?: "eager" | "lazy";
+  imageSizes?: string;
+  imageFallback?: ReactNode;
   /** Measured badge sizes from `useEventImageCutouts`. */
   cutouts: MeasuredCutout[];
   width: number;
@@ -212,7 +215,7 @@ interface EventImageCutoutProps {
 }
 
 /**
- * Card image face rendered as a masked SVG, so its notches are genuinely
+ * Card image face with an SVG mask, so its notches are genuinely
  * transparent and the page backdrop - dotted grid and radial glow - shows
  * through rather than being simulated with a background-coloured overlay.
  *
@@ -228,6 +231,8 @@ export function EventImageCutout({
   imageSrc,
   imageAlt = "",
   imageLoading = "eager",
+  imageSizes = CARD_GRID_IMAGE_SIZES,
+  imageFallback,
   cutouts,
   width,
   height,
@@ -236,30 +241,14 @@ export function EventImageCutout({
 }: EventImageCutoutProps) {
   const maskId = useId();
   const ready = width > 0 && height > 0;
-  // Before measurement there are no pixels to draw in, so the square stands in
-  // and renders the unmasked face; the same element stays mounted either way.
+  // The SVG holds geometry only. The native image keeps its real aspect ratio
+  // before measurement, and stays mounted when the cutouts become available.
   const faceWidth = ready ? width : MASK_VIEWBOX_SIZE;
   const faceHeight = ready ? height : MASK_VIEWBOX_SIZE;
-  const { ref: imageRef, hasIntersected } =
-    useIntersectionObserver<HTMLDivElement>({
-      rootMargin: "200px",
-      enabled: Boolean(imageSrc) && imageLoading === "lazy",
-    });
-  const shouldLoadImage = imageLoading === "eager" || hasIntersected;
-  const displayedImageSrc = imageSrc
-    ? imageSrc
-    : null;
-  const priorityAttributes =
-    imageLoading === "eager" ? { fetchPriority: "high" as const } : {};
+  const maskImage = ready ? `url("#${maskId}")` : undefined;
 
   return (
-    <div ref={imageRef} className={cn("relative", className)}>
-      {/*
-       * The same SVG and image stay mounted before and after
-       * measurement. Its fixed coordinate space renders the unmasked face on
-       * the server; measurement only adds scaled notch geometry, so hydration
-       * cannot repaint the poster as a new LCP candidate.
-       */}
+    <div className={cn("relative", className)}>
       <svg
         aria-hidden="true"
         focusable="false"
@@ -312,35 +301,22 @@ export function EventImageCutout({
             </mask>
           </defs>
         ) : null}
-
-        <g mask={ready ? `url(#${maskId})` : undefined}>
-          <rect
-            x={0}
-            y={0}
-            width={faceWidth}
-            height={faceHeight}
-            fill={backgroundColor}
-          />
-          {displayedImageSrc && shouldLoadImage ? (
-            /*
-             * The face now draws in unscaled pixels, so the poster can cover
-             * honestly here: no parent stretch to undo, and "slice" crops to
-             * the card without altering the poster's proportions.
-             */
-            <image
-              href={displayedImageSrc}
-              {...priorityAttributes}
-              x={0}
-              y={0}
-              width={faceWidth}
-              height={faceHeight}
-              preserveAspectRatio="xMidYMid slice"
-            >
-              <title>{imageAlt}</title>
-            </image>
-          ) : null}
-        </g>
       </svg>
+
+      <div
+        data-slot="event-image-face"
+        className="absolute inset-0"
+        style={{ backgroundColor, maskImage, WebkitMaskImage: maskImage }}
+      >
+        <LazyImage
+          src={imageSrc}
+          alt={imageAlt}
+          sizes={imageSizes}
+          loading={imageLoading}
+          fallback={imageFallback}
+          className="absolute inset-0"
+        />
+      </div>
 
       <div className="relative z-10 size-full">{children}</div>
     </div>

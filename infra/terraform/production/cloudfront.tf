@@ -9,11 +9,12 @@ data "aws_cloudfront_cache_policy" "caching_optimized" {
 // Each school is served from its own subdomain, and the app resolves that school
 // from X-Forwarded-Host. The backend also needs one trusted viewer IP for
 // privacy-preserving scan hashing. CloudFront overwrites both headers before the
-// request reaches the origin.
+// request reaches the origin. Optimized images share one Accept cache key per
+// supported format so browser requests reuse proactively warmed derivatives.
 resource "aws_cloudfront_function" "forward_viewer_host" {
   name    = "wat2do-production-forward-viewer-host"
   runtime = "cloudfront-js-2.0"
-  comment = "Preserve viewer host and pass the CloudFront viewer IP to the origin."
+  comment = "Preserve viewer identity and normalize optimized-image format negotiation."
   publish = true
 
   code = <<-EOT
@@ -23,6 +24,24 @@ resource "aws_cloudfront_function" "forward_viewer_host" {
         request.headers['x-forwarded-host'] = { value: request.headers.host.value };
       }
       request.headers['x-wat2do-viewer-ip'] = { value: event.viewer.ip };
+      if (request.uri === '/_next/image') {
+        var optimizedFormat = ${jsonencode(local.image_delivery_control.optimized_format)};
+        var accept = request.headers.accept;
+        var values = accept ? (accept.multiValue || [accept]).map(function(header) { return header.value; }).join(',') : '';
+        var formats = values.toLowerCase().split(',');
+        var supported = false;
+        for (var i = 0; i < formats.length; i++) {
+          var fields = formats[i].split(';');
+          if (fields[0].trim() !== optimizedFormat) continue;
+          var quality = 1;
+          for (var j = 1; j < fields.length; j++) {
+            var parameter = fields[j].trim().split('=');
+            if (parameter[0].trim() === 'q') quality = Number(parameter[1]);
+          }
+          if (quality > 0 && quality <= 1) supported = true;
+        }
+        request.headers.accept = { value: supported ? optimizedFormat : '*/*' };
+      }
       return request;
     }
   EOT
@@ -198,6 +217,11 @@ resource "aws_cloudfront_distribution" "main" {
     cached_methods         = ["GET", "HEAD"]
     cache_policy_id        = aws_cloudfront_cache_policy.next_image.id
     compress               = true
+
+    function_association {
+      event_type   = "viewer-request"
+      function_arn = aws_cloudfront_function.forward_viewer_host.arn
+    }
   }
 
   restrictions {

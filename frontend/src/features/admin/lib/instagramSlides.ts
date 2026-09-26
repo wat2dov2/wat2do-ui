@@ -21,9 +21,15 @@ import sharedEnglish from "@/shared/locales/en.json" with { type: "json" };
 import eventsEnglish from "@/features/events/locales/en.json" with { type: "json" };
 import clubsEnglish from "@/features/clubs/locales/en.json" with { type: "json" };
 import { loadLazyLanguage } from "@/shared/lib/languageLoaders";
+import instagramPublishing from "../../../../../backend/controlbox/instagram_publishing.json" with { type: "json" };
 
 export const SLIDE_WIDTH = 1080;
 export const SLIDE_HEIGHT = 1350;
+/** Raster preparation and template layout use the same physical image bounds. */
+export const SLIDE_POSTER_REGIONS = {
+  event: { width: 1000, height: 840 },
+  cover: { width: 220, height: 308 },
+} as const;
 
 /** Event fields a slide reads. Mirrors the backend's stored event snapshot. */
 export interface SlideEvent {
@@ -211,7 +217,7 @@ export function buildCoverSlideModel({
     body: text(body, defaultCoverBody(eventCount, language)),
     swipeLine: language === "fr" ? "Voir les événements" : "Swipe to see the events",
     siteLine: `${language === "fr" ? "Plus d’infos sur" : "More info on"} ${getSchoolPublicUrl(school)}`,
-    tiles,
+    tiles: tiles.slice(0, instagramPublishing.maximum_event_slides),
   };
 }
 

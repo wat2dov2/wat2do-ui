@@ -27,7 +27,11 @@ def list_positions(
     pagination: PaginationParams = Depends(),
 ):
     with ThreadPoolExecutor(max_workers=1) as pool:
-        latest_position_future = pool.submit(position_service.get_latest_added_position, school)
+        latest_position_future = (
+            pool.submit(position_service.get_latest_added_position, school)
+            if pagination.page == 1
+            else None
+        )
         items, total = position_service.list_positions(
             skip=pagination.offset,
             limit=pagination.page_size,
@@ -40,7 +44,7 @@ def list_positions(
             paid_only=paid_only,
             sort_order=sort_order,
         )
-        latest_position = latest_position_future.result()
+        latest_position = latest_position_future.result() if latest_position_future else None
     return {
         **paginated_response(items, total, pagination),
         "latest_added_position": latest_position,

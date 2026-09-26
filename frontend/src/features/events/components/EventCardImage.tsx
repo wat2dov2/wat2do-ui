@@ -82,6 +82,16 @@ export function EventCardImage({
           imageSrc={event.source_image_url}
           imageAlt={event.title}
           imageLoading={eagerImage ? "eager" : "lazy"}
+          imageSizes={variant === "detail" ? "(max-width: 767px) 384px, 320px" : undefined}
+          imageFallback={
+            <Image
+              src={imgLogo}
+              alt=""
+              width={136}
+              height={96}
+              className="h-2/5 w-2/5 object-contain opacity-80"
+            />
+          }
           cutouts={cutouts}
           width={box.width}
           height={box.height}
@@ -99,17 +109,6 @@ export function EventCardImage({
               }}
             />
           ) : null}
-          {!event.source_image_url && (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <Image
-                src={imgLogo}
-                alt=""
-                width={136}
-                height={96}
-                className="h-2/5 w-2/5 object-contain opacity-80"
-              />
-            </div>
-          )}
         </EventImageCutout>
 
         {isGoing && (

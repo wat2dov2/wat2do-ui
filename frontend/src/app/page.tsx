@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cache } from "react";
 import { headers } from "next/headers";
 import { EventRoutePage } from "@/app/event-route-page";
 import imgContactHero from "@/assets/contact_hero.png";
@@ -15,16 +16,16 @@ import {
 
 export const revalidate = 0;
 
-async function loadInitialSnapshot(
+const loadInitialSnapshot = cache(async (
   school: string,
-): Promise<PaginatedEventsResponse | null> {
+): Promise<PaginatedEventsResponse | null> => {
   try {
     return await getSchoolBrowseSnapshot(school);
   } catch (err) {
     console.error("Initial event feed fetch failed:", err);
     return null;
   }
-}
+});
 
 /** Each school is served from its own subdomain, so the Host header scopes the feed. */
 async function resolveRequestSchool(): Promise<string> {

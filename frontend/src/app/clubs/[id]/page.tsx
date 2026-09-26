@@ -1,3 +1,4 @@
+import { cache } from "react";
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { notFound, permanentRedirect } from "next/navigation";
@@ -18,6 +19,8 @@ import {
 } from "@/shared/lib/seo";
 import type { Club } from "@/shared/types";
 
+const loadDetailSnapshot = cache(getClubDetailSnapshot);
+
 interface ClubDetailsPageProps {
   params: Promise<{
     id: string;
@@ -35,7 +38,7 @@ async function loadClub(
   clubId: number,
 ): Promise<Club | null> {
   try {
-    return await getClubDetailSnapshot(clubId);
+    return await loadDetailSnapshot(clubId);
   } catch (error) {
     console.error("Club SEO detail fetch failed:", error);
     return null;
@@ -95,7 +98,7 @@ export default async function ClubDetailsPage({
   const clubId = parseClubId(id);
   if (!clubId) notFound();
 
-  const club = await getClubDetailSnapshot(clubId);
+  const club = await loadDetailSnapshot(clubId);
   if (!club || club.status !== "approved") notFound();
 
   const canonicalUrl = getSchoolCanonicalUrl(

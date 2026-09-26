@@ -274,7 +274,9 @@ def review_position_submission(
     if status == SUBMISSION_APPROVED:
         club = club_service.get_club(existing.position_data.club_id)
         if club:
-            event_feed_revalidation_service.revalidate_school(club.school)
+            event_feed_revalidation_service.revalidate_school(
+                club.school, resources=("positions", "clubs")
+            )
     return PositionSubmissionResponse.model_validate(
         {
             **result.data[0],

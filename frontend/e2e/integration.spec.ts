@@ -2066,6 +2066,9 @@ test.describe("Events Page", () => {
         body: posterBytes,
       });
     });
+    await page.route(url => url.pathname === "/_next/image" && url.searchParams.get("url") === posterUrl, async (route) => {
+      await route.fulfill({ status: 200, contentType: "image/png", body: posterBytes });
+    });
 
     await mockApi(page, next, url => apiPath(url) === "/events", async () => {
       return ({
@@ -2092,17 +2095,21 @@ test.describe("Events Page", () => {
     await page.goto(BASE);
     const eventCard = page.locator('article[data-event-id="1"]:visible');
     await expect(eventCard.locator("foreignObject")).toHaveCount(0);
-    await expect(eventCard.locator("svg > g > image")).toHaveAttribute(
-      "href",
-      posterUrl,
-    );
+    const cardPoster = eventCard.locator('[data-slot="event-image-face"] img').first();
+    await expect(cardPoster).toHaveAttribute("srcset", /\/_next\/image\?url=/);
+    await expect(cardPoster).toHaveAttribute("loading", "eager");
+    await expect(cardPoster).toHaveCSS("object-fit", "cover");
+    await expect(eventCard.locator('[data-slot="event-image-face"]')).not.toHaveCSS("mask-image", "none");
+    await expect(eventCard.locator('[data-slot="lazy-image"]').first()).toHaveAttribute("data-image-state", "loaded");
+    // A failed image uses the stable artwork fallback; reopening the same URL
+    // must still render a cached image instead of retaining the previous error.
+    await cardPoster.dispatchEvent("error");
+    await expect(eventCard.locator('[data-slot="lazy-image"]').first()).toHaveAttribute("data-image-state", "error");
     await eventCard.click();
 
     const eventDrawer = page.getByRole("dialog", { name: "Poster Dialog Event" });
-    await expect(eventDrawer.locator("svg > g > image").first()).toHaveAttribute(
-      "href",
-      posterUrl,
-    );
+    await expect(eventDrawer.locator('[data-slot="event-image-face"] img').first()).toHaveAttribute("srcset", /\/_next\/image\?url=/);
+    await expect(eventDrawer.locator('[data-slot="lazy-image"]').first()).toHaveAttribute("data-image-state", "loaded");
     await eventDrawer.getByRole("button", { name: "View full event image" }).click();
 
     const imageDialog = page.getByRole("dialog", { name: "View full event image" });
@@ -3196,9 +3203,9 @@ test.describe("Events Page", () => {
     await expect(page.getByRole("combobox", { name: "Event date" })).toContainText("Tomorrow");
   });
 
-  test("filters event formats locally and resets to Any format", async ({ page }) => {
+  test("filters event formats locally and resets to Any format", async ({ page, next }) => {
     let feedRequests = 0;
-    await page.route(url => apiPath(url) === "/events", async (route) => {
+    await mockApi(page, next, url => apiPath(url) === "/events", async () => {
       feedRequests += 1;
       const now = new Date().toISOString();
       const startsAt = new Date(Date.now() + 86_400_000).toISOString();
@@ -3211,7 +3218,7 @@ test.describe("Events Page", () => {
         school: "uwaterloo", added_at: now, source_image_url: null,
         occurrences: [{ id: event.id, event_id: event.id, dtstart_utc: startsAt, dtend_utc: null }],
       }));
-      await route.fulfill({ json: { items, total: 3, page: 1, page_size: 20, total_pages: 1 } });
+      return { json: { items, total: 3, page: 1, page_size: 20, total_pages: 1 } };
     });
     await page.goto(BASE);
     const format = page.getByRole("combobox", { name: "Event format" });
@@ -3931,7 +3938,8 @@ test.describe("Clubs Page", () => {
     const directoryRequests: URL[] = [];
     page.on("request", request => {
       const url = new URL(request.url());
-      if (apiPath(url) === "/clubs") directoryRequests.push(url);
+      if (apiPath(url) === "/clubs" ||
+        (apiPath(url) === "/discovery" && url.searchParams.get("resource") === "clubs")) directoryRequests.push(url);
     });
     await page.goto(`${BASE}/clubs`);
     await expect(page.locator("[data-club-id]")).toHaveCount(3);
@@ -3945,7 +3953,9 @@ test.describe("Clubs Page", () => {
   test("filters the cached directory immediately without category or search requests", async ({ page }) => {
     const directoryRequests: string[] = [];
     page.on("request", request => {
-      if (apiPath(new URL(request.url())) === "/clubs") directoryRequests.push(request.url());
+      const url = new URL(request.url());
+      if (apiPath(url) === "/clubs" ||
+        (apiPath(url) === "/discovery" && url.searchParams.get("resource") === "clubs")) directoryRequests.push(request.url());
     });
     await page.goto(`${BASE}/clubs`);
     await expect(page.locator("[data-club-id]")).toHaveCount(3);
@@ -4861,12 +4871,14 @@ test.describe("Navigation", () => {
 
   test("default and alternate school routes load without event feed errors", async ({ page }) => {
     const routes = [
-      { url: BASE, schoolName: "University of Waterloo" },
-      { url: "http://utsg.wat2do.localhost:3000/", schoolName: "University of Toronto" },
+      { url: BASE, schoolName: "University of Waterloo", color: "#6b238e" },
+      { url: "http://utsg.wat2do.localhost:3000/", schoolName: "University of Toronto", color: "#002A5C" },
     ];
 
-    for (const { url, schoolName } of routes) {
-      await page.goto(url, { waitUntil: "domcontentloaded" });
+    for (const { url, schoolName, color } of routes) {
+      const response = await page.goto(url, { waitUntil: "domcontentloaded" });
+      expect(await response!.text()).toContain(`--page-school-primary:${color}`);
+      await expect(page.locator('link[href="/api/school-theme"]')).toHaveCount(0);
 
       await expect(
         page.getByRole("banner").getByRole("button", { name: schoolName }),
@@ -4895,7 +4907,7 @@ test.describe("Navigation", () => {
     ).toBeVisible();
   });
 
-  test("warms complete discovery pages before the mobile navigation drawer opens", async ({ page, next }) => {
+  test("warms adjacent discovery pages after initial load before mobile navigation", async ({ page, next }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await mockApi(page, next, url => apiPath(url) === "/positions", async () => ({
       json: { items: [], total: 0, page: 1, page_size: 100, total_pages: 1 },
@@ -4930,6 +4942,26 @@ test.describe("Navigation", () => {
     await page.getByRole("button", { name: "Open navigation menu" }).click();
     await page.getByRole("dialog", { name: "Primary navigation" }).getByRole("link", { name: "Events", exact: true }).click();
     await expect(page.getByRole("button", { name: "Event: Tech Career Fair", exact: true })).toBeVisible();
+  });
+
+  test("prefetches discovery on navigation intent when data saver suppresses background warming", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, "connection", { value: { saveData: true }, configurable: true });
+    });
+    await page.goto(BASE);
+    const warmedPositions = page.waitForResponse(async response => {
+      const url = new URL(response.url());
+      return url.pathname === "/positions" && url.searchParams.has("_rsc") &&
+        response.request().headers().rsc === "1" &&
+        (await response.text()).includes('"initialDirectory":{');
+    });
+    const positions = page.getByRole("navigation", { name: "Primary navigation" })
+      .getByRole("link", { name: "Positions", exact: true });
+    await positions.focus();
+    expect((await warmedPositions).status()).toBe(200);
+    await positions.click();
+    await expect(page).toHaveURL(/\/positions$/);
   });
 
   test("uses the top navigation and exposes poster help through About us", async ({

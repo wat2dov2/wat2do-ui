@@ -134,14 +134,93 @@ class RecommendationControl(_ControlModel):
 
 
 class EventDiscoveryControl(_ControlModel):
-    feed_revalidate_seconds: int = Field(gt=0)
     new_event_window_hours: int = Field(gt=0)
     event_without_end_visibility_minutes: int = Field(gt=0)
     initial_render_count: int = Field(gt=0, le=100)
     server_feed_page_size: int = Field(gt=0, le=100)
 
 
+class DatabaseControl(_ControlModel):
+    read_attempts: int = Field(ge=1, le=5)
+    read_backoff_initial_seconds: float = Field(ge=0, allow_inf_nan=False)
+    read_backoff_max_seconds: float = Field(ge=0, allow_inf_nan=False)
+    read_backoff_jitter_seconds: float = Field(ge=0, allow_inf_nan=False)
+
+    @model_validator(mode="after")
+    def validate_backoff(self) -> "DatabaseControl":
+        if self.read_backoff_max_seconds < self.read_backoff_initial_seconds:
+            raise ValueError("read_backoff_max_seconds cannot be shorter than initial backoff")
+        return self
+
+
+class ImageDeliveryControl(_ControlModel):
+    device_sizes: tuple[int, ...] = Field(min_length=1)
+    image_sizes: tuple[int, ...] = Field(min_length=1)
+    quality: int = Field(ge=1, le=100)
+    first_row_image_count: int = Field(ge=1, le=24)
+    optimized_format: Literal["image/webp"]
+    optimized_remote_host: str = Field(min_length=1)
+    optimized_remote_path: str = Field(pattern=r"^/.*\/$")
+    warm_widths: tuple[int, ...] = Field(min_length=1)
+    warm_request_timeout_seconds: int = Field(gt=0)
+    warm_retry_seconds: int = Field(gt=0)
+    warm_success_ttl_seconds: int = Field(gt=0)
+
+    @model_validator(mode="after")
+    def validate_sizes(self) -> "ImageDeliveryControl":
+        for sizes in (self.device_sizes, self.image_sizes, self.warm_widths):
+            if min(sizes) <= 0 or list(sizes) != sorted(set(sizes)):
+                raise ValueError("image sizes must be positive, unique and ascending")
+        if max(self.image_sizes) >= min(self.device_sizes):
+            raise ValueError("image_sizes must be smaller than the smallest device_sizes entry")
+        if not set(self.warm_widths).issubset((*self.device_sizes, *self.image_sizes)):
+            raise ValueError("warm_widths must be configured image or device sizes")
+        if any(character in self.optimized_remote_host for character in "/:?#@* "):
+            raise ValueError("optimized_remote_host must be a hostname without a scheme or path")
+        if any(part in {".", ".."} for part in self.optimized_remote_path.split("/")):
+            raise ValueError("optimized_remote_path cannot contain relative path segments")
+        return self
+
+
+class DiscoveryCacheControl(_ControlModel):
+    generation_retention_days: int = Field(ge=2)
+    schema_version: int = Field(ge=1)
+    storage_prefix: str = Field(min_length=1)
+    refresh_interval_seconds: int = Field(gt=0)
+    worker_interval_seconds: int = Field(gt=0)
+    lease_seconds: int = Field(gt=0)
+    request_timeout_seconds: int = Field(gt=0)
+    page_concurrency: int = Field(ge=1, le=8)
+    maximum_page_count: int = Field(gt=0)
+    state_write_attempts: int = Field(gt=0)
+    failure_backoff_seconds: int = Field(gt=0)
+    maximum_snapshot_age_seconds: int = Field(gt=0)
+    readiness_timeout_seconds: int = Field(gt=0)
+    startup_grace_seconds: int = Field(gt=0)
+    deployment_timeout_seconds: int = Field(gt=0)
+
+    @model_validator(mode="after")
+    def validate_lifecycle(self) -> "DiscoveryCacheControl":
+        if (
+            self.deployment_timeout_seconds
+            <= self.readiness_timeout_seconds + self.startup_grace_seconds
+        ):
+            raise ValueError("deployment_timeout_seconds must exceed readiness and startup grace")
+        if self.maximum_snapshot_age_seconds <= self.refresh_interval_seconds:
+            raise ValueError("maximum_snapshot_age_seconds must exceed the refresh interval")
+        if self.generation_retention_days * 86400 <= self.maximum_snapshot_age_seconds:
+            raise ValueError("generation_retention_days must outlast the maximum snapshot age")
+        if self.worker_interval_seconds > self.refresh_interval_seconds:
+            raise ValueError("worker_interval_seconds cannot exceed the refresh interval")
+        if self.request_timeout_seconds >= self.lease_seconds:
+            raise ValueError("request_timeout_seconds must be shorter than the lease")
+        if any(part in {"", ".", ".."} for part in self.storage_prefix.split("/")):
+            raise ValueError("storage_prefix must be a nonempty relative object prefix")
+        return self
+
+
 class ClientCacheControl(_ControlModel):
+    discovery_prefetch_idle_timeout_ms: int = Field(gt=0)
     default_query_stale_seconds: int = Field(ge=0)
     default_query_garbage_collection_seconds: int = Field(gt=0)
     live_event_data_stale_seconds: int = Field(ge=0)
@@ -167,7 +246,6 @@ class AuthenticationControl(_ControlModel):
 
 class ClubManagementControl(_ControlModel):
     directory_page_size: int = Field(gt=0, le=100)
-    directory_revalidate_seconds: int = Field(gt=0)
     invite_expiration_days: int = Field(gt=0)
 
 
@@ -278,8 +356,9 @@ class ContactControl(_ControlModel):
 
 
 class SiteBannerControl(_ControlModel):
-    """How long dismissing the site-wide banner keeps it hidden."""
+    """Refresh cadence and dismissal duration for the site-wide banner."""
 
+    refresh_seconds: int = Field(gt=0)
     dismissal_days: int = Field(gt=0, le=365)
 
 
@@ -503,6 +582,9 @@ class DiscoveryQueriesControl(_ControlModel):
 
 
 class ControlBox(_ControlModel):
+    database: DatabaseControl
+    image_delivery: ImageDeliveryControl
+    discovery_cache: DiscoveryCacheControl
     discovery_queries: DiscoveryQueriesControl
     google_analytics: GoogleAnalyticsControl
     event_discovery: EventDiscoveryControl

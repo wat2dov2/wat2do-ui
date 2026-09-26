@@ -12,6 +12,7 @@ import {
 import { Badge } from "@/shared/ui/badge";
 import { TruncatedText } from "@/shared/ui/truncated-text";
 import { sanitizeHref } from "@/shared/utils/url";
+import { LazyImage } from "@/shared/ui/lazy-image";
 
 const CLUB_NAME_CLASS = "max-w-56 font-bold";
 
@@ -19,11 +20,13 @@ function ClubLogo({ src }: { src: string | null | undefined }) {
   if (!src) return null;
 
   return (
-    <img
+    <LazyImage
       src={src}
       alt=""
-      aria-hidden="true"
-      className="size-3 max-h-3 max-w-3 shrink-0 rounded-full object-cover"
+      width={12}
+      height={12}
+      fallback={null}
+      className="size-3 shrink-0 rounded-full"
     />
   );
 }

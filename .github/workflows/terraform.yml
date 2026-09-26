@@ -6,6 +6,8 @@ on:
     paths:
       - 'infra/terraform/**'
       - 'backend/controlbox/social_previews.json'
+      - 'backend/controlbox/discovery_cache.json'
+      - 'backend/controlbox/image_delivery.json'
       - '.github/workflows/ci-cd.yml'
       - '.github/workflows/terraform.yml'
   push:
@@ -13,6 +15,8 @@ on:
     paths:
       - 'infra/terraform/**'
       - 'backend/controlbox/social_previews.json'
+      - 'backend/controlbox/discovery_cache.json'
+      - 'backend/controlbox/image_delivery.json'
       - '.github/workflows/ci-cd.yml'
       - '.github/workflows/terraform.yml'
   workflow_dispatch:

@@ -11,6 +11,7 @@
 import {
   SLIDE_HEIGHT,
   SLIDE_WIDTH,
+  SLIDE_POSTER_REGIONS,
   type CoverSlideModel,
   type EventSlideModel,
 } from "@/features/admin/lib/instagramSlides";
@@ -37,19 +38,32 @@ const slideFrame: React.CSSProperties = {
   position: "relative",
 };
 
-const CARD_INSET = 40;
-const CARD_WIDTH = SLIDE_WIDTH - CARD_INSET * 2;
-const CARD_IMAGE_HEIGHT = 840;
+const CARD_WIDTH = SLIDE_POSTER_REGIONS.event.width;
+const CARD_INSET = (SLIDE_WIDTH - CARD_WIDTH) / 2;
+const CARD_IMAGE_HEIGHT = SLIDE_POSTER_REGIONS.event.height;
+
+export interface SlidePosterProps {
+  src: string;
+  width: number;
+  height: number;
+  fit: "contain" | "cover";
+}
+
+type PosterRenderer = (props: SlidePosterProps) => React.ReactNode;
+
+/** Publishing consumes prepared PNGs; the browser preview supplies native lazy images. */
+const renderSlidePoster: PosterRenderer = ({ src, width, height, fit }) => (
+  <img src={src} width={width} height={height} style={{ width, height, objectFit: fit }} alt="" />
+);
 
 /** The complete poster stays unobscured; labels belong in the bounded caption. */
-export function EventSlideTemplate({ model }: { model: EventSlideModel }) {
+export function EventSlideTemplate({ model, renderPoster = renderSlidePoster }: { model: EventSlideModel; renderPoster?: PosterRenderer }) {
   return (
     <div style={{ ...slideFrame, backgroundColor: DARK.background, color: DARK.foreground, padding: CARD_INSET }}>
       <div style={{ display: "flex", flexDirection: "column", width: CARD_WIDTH, height: SLIDE_HEIGHT - CARD_INSET * 2, borderRadius: 36, backgroundColor: DARK.surface, overflow: "hidden" }}>
         <div style={{ display: "flex", width: CARD_WIDTH, height: CARD_IMAGE_HEIGHT, flexShrink: 0, backgroundColor: DARK.secondary }}>
           {model.imageSrc ? (
-            <img src={model.imageSrc} width={CARD_WIDTH} height={CARD_IMAGE_HEIGHT}
-              style={{ width: CARD_WIDTH, height: CARD_IMAGE_HEIGHT, objectFit: "contain" }} alt="" />
+            renderPoster({ src: model.imageSrc, width: CARD_WIDTH, height: CARD_IMAGE_HEIGHT, fit: "contain" })
           ) : null}
         </div>
         <div style={{ display: "flex", flexDirection: "column", flex: 1, padding: "20px 32px", overflow: "hidden" }}>
@@ -84,8 +98,8 @@ const COVER_DOODLE_CELL_SIZE = 210;
 const COVER_DOODLE_ICON_SIZE = 72;
 /** The poster fan sits on a fixed baseline so the copy above it never reflows. */
 const FAN_TOP = 760;
-const FAN_CARD_WIDTH = 220;
-const FAN_CARD_HEIGHT = 308;
+const FAN_CARD_WIDTH = SLIDE_POSTER_REGIONS.cover.width;
+const FAN_CARD_HEIGHT = SLIDE_POSTER_REGIONS.cover.height;
 /** How far the outer cards may dip below the baseline as the fan curves. */
 const FAN_MAX_DIP = 16;
 /** Tilt of the outermost card; the rest interpolate towards flat at the centre. */
@@ -104,7 +118,7 @@ const FAN_MIN_OVERLAP = 50;
  * clears the footer by design: `FAN_TOP + FAN_CARD_HEIGHT + FAN_MAX_DIP` must
  * stay above `SLIDE_HEIGHT - COVER_MARGIN`.
  */
-function CoverPosterFan({ tiles, secondary }: { tiles: string[]; secondary: string }) {
+function CoverPosterFan({ tiles, secondary, renderPoster }: { tiles: string[]; secondary: string; renderPoster: PosterRenderer }) {
   if (tiles.length === 0) return null;
 
   const step =
@@ -147,13 +161,7 @@ function CoverPosterFan({ tiles, secondary }: { tiles: string[]; secondary: stri
               transform: `rotate(${(offset * FAN_MAX_TILT).toFixed(2)}deg)`,
             }}
           >
-            <img
-              src={tile}
-              width={FAN_CARD_WIDTH}
-              height={FAN_CARD_HEIGHT}
-              style={{ width: FAN_CARD_WIDTH, height: FAN_CARD_HEIGHT, objectFit: "cover" }}
-              alt=""
-            />
+            {renderPoster({ src: tile, width: FAN_CARD_WIDTH, height: FAN_CARD_HEIGHT, fit: "cover" })}
           </div>
         );
       })}
@@ -242,7 +250,7 @@ function CoverDoodleField({ icons }: { icons: string[] }) {
  * carousel - so the same batch always draws the same cover and nothing about it
  * is stored. The admin editor renders this exact component, scaled down.
  */
-export function CoverSlideTemplate({ model }: { model: CoverSlideModel }) {
+export function CoverSlideTemplate({ model, renderPoster = renderSlidePoster }: { model: CoverSlideModel; renderPoster?: PosterRenderer }) {
   const { primary, secondary } = model.colors;
 
   return (
@@ -299,7 +307,7 @@ export function CoverSlideTemplate({ model }: { model: CoverSlideModel }) {
         </div>
       </div>
 
-      <CoverPosterFan tiles={model.tiles} secondary={secondary} />
+      <CoverPosterFan tiles={model.tiles} secondary={secondary} renderPoster={renderPoster} />
 
       <div
         style={{

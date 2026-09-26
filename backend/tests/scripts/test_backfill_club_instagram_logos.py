@@ -104,12 +104,9 @@ def test_backfill_school_updates_matches_and_reports_not_found(monkeypatch):
     )
     update = MagicMock(return_value=SimpleNamespace(id=1))
     monkeypatch.setattr(module.club_service, "update_club", update)
-    revalidate = MagicMock()
-    monkeypatch.setattr(module.event_feed_revalidation_service, "revalidate_school", revalidate)
 
     assert module.backfill_school("mcmaster") == (3, 2, 1)
     assert [call.args[0] for call in update.call_args_list] == [1, 2]
-    revalidate.assert_called_once_with("mcmaster")
 
 
 def test_backfill_school_reuses_profile_cache_without_apify(monkeypatch):
@@ -128,11 +125,6 @@ def test_backfill_school_reuses_profile_cache_without_apify(monkeypatch):
         module.club_service,
         "update_club",
         MagicMock(return_value=SimpleNamespace(id=1)),
-    )
-    monkeypatch.setattr(
-        module.event_feed_revalidation_service,
-        "revalidate_school",
-        MagicMock(),
     )
 
     result = module.backfill_school(

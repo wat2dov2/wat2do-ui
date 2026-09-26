@@ -1,25 +1,33 @@
-"""Next.js event-feed cache invalidation gateway.
+"""Next.js discovery cache invalidation gateway.
 
-The frontend owns ISR cache state. Backend event writes call this service after
-the database commit has succeeded so cached school homepages regenerate on the
-next request. The service is intentionally fail-open: event writes must not fail
-because the frontend cache endpoint is temporarily unavailable.
+The frontend acknowledges a request only after recording durable school/resource
+refresh state. Backend mutations notify it after the database commit succeeds.
+This gateway remains fail-open so a successful write survives a delivery outage;
+periodic frontend reconciliation repairs missed notifications.
 """
 
 from __future__ import annotations
 
 import logging
+from collections.abc import Sequence
+from typing import Literal
 
 import httpx
 
 from core.config import settings
 
 log = logging.getLogger(__name__)
+DiscoveryResource = Literal["events", "positions", "clubs", "branding", "schools"]
 
 
 class EventFeedRevalidationService:
-    def revalidate_school(self, school: str | None, *, event_id: int | None = None) -> None:
-        if not school and event_id is None:
+    def revalidate_school(
+        self,
+        school: str | None,
+        *,
+        resources: Sequence[DiscoveryResource],
+    ) -> None:
+        if not school:
             return
 
         url = settings.event_feed_revalidation_url.strip()
@@ -32,11 +40,7 @@ class EventFeedRevalidationService:
         if secret:
             headers["Authorization"] = f"Bearer {secret}"
 
-        payload: dict[str, str | int] = {}
-        if school:
-            payload["school"] = school
-        if event_id is not None:
-            payload["event_id"] = event_id
+        payload: dict[str, object] = {"school": school, "resources": list(dict.fromkeys(resources))}
 
         try:
             response = httpx.post(
@@ -53,13 +57,18 @@ class EventFeedRevalidationService:
                 exc,
             )
 
-    def revalidate_schools(self, schools: list[str | None]) -> None:
+    def revalidate_schools(
+        self,
+        schools: Sequence[str | None],
+        *,
+        resources: Sequence[DiscoveryResource],
+    ) -> None:
         seen: set[str] = set()
         for school in schools:
             if not school or school in seen:
                 continue
             seen.add(school)
-            self.revalidate_school(school)
+            self.revalidate_school(school, resources=resources)
 
 
 event_feed_revalidation_service = EventFeedRevalidationService()

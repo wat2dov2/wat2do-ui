@@ -20,6 +20,7 @@ import { CARD_GRID_CLASS } from "@/shared/constants/ui";
 import { CardEntrance } from "@/shared/ui/card-entrance";
 import { controlBox } from "@/shared/config/controlBox";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
+import imageDelivery from "../../../../../backend/controlbox/image_delivery.json" with { type: "json" };
 
 interface EventListProps {
   events: Event[];
@@ -170,7 +171,7 @@ export function EventList({
     () =>
       new Set(
         visibleEvents
-          .slice(0, 2)
+          .slice(0, imageDelivery.first_row_image_count)
           .map((event) => event.id),
       ),
     [visibleEvents],

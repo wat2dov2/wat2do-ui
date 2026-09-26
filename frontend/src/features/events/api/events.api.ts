@@ -26,10 +26,12 @@ import { queryKeys } from "@/shared/lib/queryKeys";
 import { collectPaginatedPages } from "@/shared/lib/pagination";
 import { orderClubEvents } from "@/features/events/lib/clubEventOrder";
 import { controlBox } from "@/shared/config/controlBox";
+import { resolveSchool } from "@/shared/constants/schools";
+import { fetchDiscoverySnapshot, preserveDiscoveryGeneration, type DiscoverySnapshotMetadata } from "@/shared/api/discovery.api";
 
 export type LatestAddedEvent = ApiLatestAddedItem | null;
 
-export type PaginatedEventsResponse = Omit<ApiEventFeedResponse, "items" | "latest_added_event"> & {
+export type PaginatedEventsResponse = Omit<ApiEventFeedResponse, "items" | "latest_added_event"> & DiscoverySnapshotMetadata & {
   items: Event[];
   latest_added_event: LatestAddedEvent;
 };
@@ -41,36 +43,30 @@ export async function fetchEventById(id: number): Promise<Event> {
   return api.get<ApiEventPublicResponse>(`/events/${id}`);
 }
 
-async function fetchEventFeed(
-  school: string,
-  clubId?: number,
-): Promise<PaginatedEventsResponse> {
-  return collectPaginatedPages((page) => {
+/** Every event a host has ever run, past included. */
+export async function fetchClubEvents(clubId: number, school: string): Promise<Event[]> {
+  const directory = await collectPaginatedPages((page) => {
     const params = new URLSearchParams({
       school,
       page: String(page),
       page_size: String(controlBox.eventDiscovery.serverFeedPageSize),
+      club_ids: String(clubId),
+      include_past: "true",
     });
-    if (clubId != null) {
-      params.set("club_ids", String(clubId));
-      params.set("include_past", "true");
-    }
     return api.get<PaginatedEventsResponse>(`/events/?${params.toString()}`);
   });
+  return directory.items;
 }
 
 /** The complete school feed is shared by browsing and related-event surfaces. */
 export function eventFeedQueryOptions(school: string) {
+  const resolvedSchool = resolveSchool(school);
   return queryOptions({
-    queryKey: queryKeys.events.bySchool(school),
-    queryFn: () => fetchEventFeed(school),
+    queryKey: queryKeys.events.bySchool(resolvedSchool),
+    queryFn: () => fetchDiscoverySnapshot<PaginatedEventsResponse>(resolvedSchool, "events"),
+    structuralSharing: preserveDiscoveryGeneration,
     retry: false,
   });
-}
-
-/** Every event a host has ever run, past included. */
-export async function fetchClubEvents(clubId: number, school: string): Promise<Event[]> {
-  return (await fetchEventFeed(school, clubId)).items;
 }
 
 export async function createEventAPI(eventData: EventFormData): Promise<Event> {
@@ -110,21 +106,15 @@ export async function deleteEventAPI(eventId: number): Promise<void> {
 /** Apply confirmed writes before refreshing so read latency never delays the UI. */
 async function writeEventToQueries(event: Event): Promise<void> {
   const queryClient = getQueryClient();
-  await queryClient.cancelQueries({ queryKey: queryKeys.events.all });
+  const confirmedAt = Date.now();
+  await cancelEventReads();
   queryClient.setQueryData(queryKeys.events.detail(event.id), event);
   for (const [key, feed] of queryClient.getQueriesData<PaginatedEventsResponse>({ queryKey: queryKeys.events.feeds() })) {
     if (!feed) continue;
     const existing = feed.items.find(item => item.id === event.id);
     const belongsToSchool = key.at(-1) === event.school;
     if (!existing && !belongsToSchool) continue;
-    const items = feed.items.filter(item => item.id !== event.id);
-    if (belongsToSchool) items.push(mergeEventSummary(existing, event));
-    let latest = feed.latest_added_event;
-    if (isLatestEvent(latest, existing)) latest = null;
-    if (belongsToSchool && (!latest || Date.parse(event.added_at) >= Date.parse(latest.added_at))) {
-      latest = { title: event.title, added_at: event.added_at };
-    }
-    queryClient.setQueryData(key, withFeedItems(feed, items, latest));
+    queryClient.setQueryData(key, mergeEventIntoFeed(feed, event, belongsToSchool, confirmedAt));
   }
   for (const [key, events] of queryClient.getQueriesData<Event[]>({ queryKey: queryKeys.events.lists() })) {
     if (!events) continue;
@@ -137,12 +127,56 @@ async function writeEventToQueries(event: Event): Promise<void> {
   }
   if (event.school) {
     const schoolFeed = queryClient.getQueryState(queryKeys.events.bySchool(event.school));
-    if (!schoolFeed?.data && schoolFeed?.fetchStatus !== "fetching") {
-      // Direct submission can happen before browsing. Keep a complete post-write
-      // read active when returning to a route with an older prefetched snapshot.
-      void queryClient.prefetchQuery(eventFeedQueryOptions(event.school));
+    if (!schoolFeed?.data) {
+      // The canonical generation can predate a direct submission. Preserve the
+      // confirmed write while retaining every event from the complete read.
+      updatePendingSchoolFeed(event.school, (feed) => {
+        const detail = queryClient.getQueryState<Event>(queryKeys.events.detail(event.id));
+        if (!detail?.data || detail.data.school !== event.school) return feed;
+        const latestConfirmedAt = Math.max(confirmedAt, detail.dataUpdatedAt);
+        if ((feed.generated_at ?? 0) >= latestConfirmedAt) return feed;
+        return mergeEventIntoFeed(feed, detail.data, true, latestConfirmedAt);
+      });
     }
   }
+}
+
+/** An initial complete read is shared by every confirmation waiting to merge. */
+function cancelEventReads() {
+  return getQueryClient().cancelQueries({
+    queryKey: queryKeys.events.all,
+    predicate: (query) => query.queryKey[1] !== queryKeys.events.feeds()[1] || query.state.data !== undefined,
+  });
+}
+
+function updatePendingSchoolFeed(
+  school: string,
+  update: (feed: PaginatedEventsResponse) => PaginatedEventsResponse,
+) {
+  const queryClient = getQueryClient();
+  void queryClient.fetchQuery(eventFeedQueryOptions(school)).then(() => {
+    queryClient.setQueryData<PaginatedEventsResponse>(queryKeys.events.bySchool(school),
+      (feed) => feed ? update(feed) : feed);
+  }).catch(() => {
+    // Query state owns read errors. A failed refresh cannot undo the write.
+  });
+}
+
+function mergeEventIntoFeed(
+  feed: PaginatedEventsResponse,
+  event: Event,
+  belongsToSchool: boolean,
+  confirmedAt: number,
+): PaginatedEventsResponse {
+  const existing = feed.items.find(item => item.id === event.id);
+  const items = feed.items.filter(item => item.id !== event.id);
+  if (belongsToSchool) items.push(mergeEventSummary(existing, event));
+  let latest = feed.latest_added_event;
+  if (isLatestEvent(latest, existing)) latest = null;
+  if (belongsToSchool && (!latest || Date.parse(event.added_at) >= Date.parse(latest.added_at))) {
+    latest = { title: event.title, added_at: event.added_at };
+  }
+  return withFeedItems(feed, items, latest, Math.max(confirmedAt, feed.confirmed_at ?? 0));
 }
 
 function mergeEventSummary(existing: Event | undefined, event: Event): Event {
@@ -161,21 +195,34 @@ function withFeedItems(
   feed: PaginatedEventsResponse,
   items: Event[],
   latestAddedEvent: LatestAddedEvent,
+  confirmedAt = Date.now(),
 ): PaginatedEventsResponse {
-  return { ...feed, items, total: items.length, page_size: items.length, latest_added_event: latestAddedEvent };
+  return { ...feed, items, total: items.length, page_size: items.length, latest_added_event: latestAddedEvent, confirmed_at: confirmedAt };
 }
 
 async function removeDeletedEventFromQueries(eventId: number): Promise<void> {
   const queryClient = getQueryClient();
+  const confirmedAt = Date.now();
   // Cancel old reads before applying the confirmed deletion so their responses
   // cannot put the event back. Cancellation does not wait for network requests.
   await Promise.all([
-    queryClient.cancelQueries({ queryKey: queryKeys.events.all }),
+    cancelEventReads(),
     queryClient.cancelQueries({ queryKey: queryKeys.admin.lists("events") }),
     queryClient.cancelQueries({ queryKey: queryKeys.goingEvents.all }),
   ]);
   queryClient.removeQueries({ queryKey: queryKeys.events.detail(eventId) });
   queryClient.removeQueries({ queryKey: queryKeys.events.attendees(eventId) });
+  for (const [key, feed] of queryClient.getQueriesData<PaginatedEventsResponse>({ queryKey: queryKeys.events.feeds() })) {
+    const school = key.at(-1);
+    if (feed || typeof school !== "string" || queryClient.getQueryState(key)?.fetchStatus !== "fetching") continue;
+    updatePendingSchoolFeed(school, (snapshot) => {
+      if ((snapshot.generated_at ?? 0) >= confirmedAt) return snapshot;
+      const removed = snapshot.items.find(event => event.id === eventId);
+      return withFeedItems(snapshot, snapshot.items.filter(event => event.id !== eventId),
+        isLatestEvent(snapshot.latest_added_event, removed) ? null : snapshot.latest_added_event,
+        Math.max(confirmedAt, snapshot.confirmed_at ?? 0));
+    });
+  }
   queryClient.setQueriesData<PaginatedEventsResponse>(
     { queryKey: queryKeys.events.feeds() },
     (feed) => {

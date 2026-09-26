@@ -35,7 +35,6 @@ def test_checked_in_controlbox_is_valid() -> None:
     assert controlbox.recommendations.snapshot.candidate_events_per_school == 1000
     assert controlbox.morning_email.new_event_window_hours == 24
     assert controlbox.event_reminder.lead_minutes == 60
-    assert controlbox.event_discovery.feed_revalidate_seconds == 259200
     assert controlbox.event_discovery.new_event_window_hours == 24
     assert controlbox.event_discovery.event_without_end_visibility_minutes == 60
     assert controlbox.event_discovery.initial_render_count == 24
@@ -50,10 +49,10 @@ def test_checked_in_controlbox_is_valid() -> None:
     assert controlbox.social_previews.asset_retention_days == 30
     assert str(controlbox.authentication.legacy_frontend_origins[0]) == "https://wat2do.ca/"
     assert controlbox.club_management.directory_page_size == 20
-    assert controlbox.club_management.directory_revalidate_seconds == 259200
     assert str(controlbox.contact.recipient_email) == "contact@wat2do.io"
     assert controlbox.contact.rate_limit.maximum_requests == 5
     assert controlbox.site_banner.dismissal_days == 30
+    assert controlbox.site_banner.refresh_seconds == 259200
     # Publishing accounts are not configured here at all: which accounts exist,
     # which school each serves, and whether each runs all come from the row
     # written when the account is connected.
@@ -363,5 +362,66 @@ def test_discovery_query_limits_are_validated(tmp_path, field, value):
     directory = _write_control(
         tmp_path, "discovery_queries", lambda payload: payload.update({field: value})
     )
+    with pytest.raises(ValidationError):
+        load_controlbox(directory)
+
+
+def test_discovery_controls_load_checked_in_feature_sources():
+    assert controlbox.database.read_attempts == 3
+    assert controlbox.discovery_cache.storage_prefix == "media/discovery-cache"
+    assert controlbox.discovery_cache.startup_grace_seconds == 90
+    assert controlbox.image_delivery.optimized_format == "image/webp"
+    assert controlbox.image_delivery.optimized_remote_host == "wat2do.io"
+    assert controlbox.image_delivery.optimized_remote_path == "/media/"
+
+
+@pytest.mark.parametrize(
+    "feature,patch",
+    [
+        ("database", {"read_attempts": 0}),
+        ("database", {"read_attempts": 6}),
+        ("database", {"read_backoff_initial_seconds": -1}),
+        ("database", {"read_backoff_jitter_seconds": -1}),
+        ("database", {"read_backoff_max_seconds": float("inf")}),
+        ("database", {"read_backoff_max_seconds": 0.01}),
+        ("discovery_cache", {"schema_version": 0}),
+        ("discovery_cache", {"page_concurrency": 0}),
+        ("discovery_cache", {"page_concurrency": 9}),
+        ("discovery_cache", {"maximum_page_count": 0}),
+        ("discovery_cache", {"state_write_attempts": 0}),
+        ("discovery_cache", {"startup_grace_seconds": 0}),
+        ("discovery_cache", {"deployment_timeout_seconds": 690}),
+        ("discovery_cache", {"maximum_snapshot_age_seconds": 300}),
+        (
+            "discovery_cache",
+            {"generation_retention_days": 2, "maximum_snapshot_age_seconds": 172800},
+        ),
+        ("discovery_cache", {"worker_interval_seconds": 301}),
+        ("discovery_cache", {"lease_seconds": 20, "request_timeout_seconds": 20}),
+        ("discovery_cache", {"storage_prefix": "/media/discovery-cache"}),
+        ("discovery_cache", {"storage_prefix": "media/../discovery-cache"}),
+        ("discovery_cache", {"storage_prefix": "media//discovery-cache"}),
+        ("image_delivery", {"device_sizes": []}),
+        ("image_delivery", {"device_sizes": [640, 256]}),
+        ("image_delivery", {"device_sizes": [256, 256]}),
+        ("image_delivery", {"image_sizes": [0, 16]}),
+        ("image_delivery", {"image_sizes": [256]}),
+        ("image_delivery", {"warm_widths": []}),
+        ("image_delivery", {"warm_widths": [385]}),
+        ("image_delivery", {"warm_widths": [640, 384]}),
+        ("image_delivery", {"warm_request_timeout_seconds": 0}),
+        ("image_delivery", {"warm_retry_seconds": 0}),
+        ("image_delivery", {"warm_success_ttl_seconds": 0}),
+        ("image_delivery", {"quality": 0}),
+        ("image_delivery", {"quality": 101}),
+        ("image_delivery", {"first_row_image_count": 25}),
+        ("image_delivery", {"optimized_format": "image/avif"}),
+        ("image_delivery", {"optimized_remote_host": "https://wat2do.io"}),
+        ("image_delivery", {"optimized_remote_host": "*.wat2do.io"}),
+        ("image_delivery", {"optimized_remote_path": "/media/../"}),
+    ],
+)
+def test_discovery_control_limits_reject_unsafe_configuration(tmp_path, feature, patch):
+    directory = _write_control(tmp_path, feature, lambda payload: payload.update(patch))
     with pytest.raises(ValidationError):
         load_controlbox(directory)

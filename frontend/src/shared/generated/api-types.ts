@@ -2150,6 +2150,7 @@ export interface components {
             page_size: number;
             /** Total Pages */
             total_pages: number;
+            /** @description School freshness metadata on the first page only. */
             latest_added_event?: components["schemas"]["LatestAddedItem"] | null;
         };
         /** EventFormDataResponse */
@@ -2365,7 +2366,7 @@ export interface components {
             /** Location */
             location?: string | null;
             /** Occurrences */
-            occurrences?: components["schemas"]["OccurrenceResponse"][];
+            occurrences?: components["schemas"]["OccurrenceSummaryResponse"][];
             /** Price */
             price?: number | null;
             /** Food */
@@ -2799,8 +2800,6 @@ export interface components {
              * Format: uuid
              */
             id: string;
-            /** Event Id */
-            event_id: number;
             /**
              * Dtstart Utc
              * Format: date-time
@@ -2808,10 +2807,30 @@ export interface components {
             dtstart_utc: string;
             /** Dtend Utc */
             dtend_utc?: string | null;
+            /** Event Id */
+            event_id: number;
             /** Duration */
             duration?: string | null;
             /** Tz */
             tz?: string | null;
+        };
+        /**
+         * OccurrenceSummaryResponse
+         * @description Browse dates retain selection identity without repeated parent/import fields.
+         */
+        OccurrenceSummaryResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Dtstart Utc
+             * Format: date-time
+             */
+            dtstart_utc: string;
+            /** Dtend Utc */
+            dtend_utc?: string | null;
         };
         /**
          * OccurrenceUpdate
@@ -3120,6 +3139,7 @@ export interface components {
             page_size: number;
             /** Total Pages */
             total_pages: number;
+            /** @description School freshness metadata on the first page only. */
             latest_added_position?: components["schemas"]["LatestAddedItem"] | null;
         };
         /** PositionImageResponse */

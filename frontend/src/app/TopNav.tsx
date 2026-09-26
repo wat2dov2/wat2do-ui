@@ -34,6 +34,7 @@ import {
 import { DrawerBody, Stack } from "@/shared/layout";
 import { useAuthState, type AuthState } from "@/features/auth/hooks/useAuthState";
 import { useRequestSchool } from "@/app/client-providers";
+import { prefetchDiscoveryRoute } from "@/app/hooks/useAppNavigation";
 import { getUserProfile, logoutAPI, updateUserProfile } from "@/features/auth/api/auth.api";
 import { DISCOVERY_ROUTES, ROUTES } from "@/shared/constants/routes";
 import { getSchoolOrigin } from "@/shared/constants/schools";
@@ -47,10 +48,15 @@ interface Wat2DoLogoLinkProps {
 }
 
 function Wat2DoLogoLink({ label, onNavigate }: Wat2DoLogoLinkProps) {
+  const router = useRouter();
+  const prefetch = () => prefetchDiscoveryRoute(router, ROUTES.HOME);
   return (
     <NextLink
       href={ROUTES.HOME}
-      prefetch={true}
+      prefetch={false}
+      onPointerEnter={prefetch}
+      onFocus={prefetch}
+      onTouchStart={prefetch}
       onClick={onNavigate}
       className="flex h-8 w-10 shrink-0 cursor-pointer items-center justify-center transition-opacity hover:opacity-80"
       aria-label={label}
@@ -175,7 +181,14 @@ export function TopNav() {
                 variant={active ? "outline" : "ghost"}
                 size="sm"
               >
-                <NextLink href={href} prefetch={DISCOVERY_ROUTES.includes(href) ? true : undefined} aria-current={active ? "page" : undefined}>
+                <NextLink
+                  href={href}
+                  prefetch={DISCOVERY_ROUTES.includes(href) ? false : undefined}
+                  onPointerEnter={() => prefetchDiscoveryRoute(router, href)}
+                  onFocus={() => prefetchDiscoveryRoute(router, href)}
+                  onTouchStart={() => prefetchDiscoveryRoute(router, href)}
+                  aria-current={active ? "page" : undefined}
+                >
                   {t(labelKey)}
                 </NextLink>
               </Button>
@@ -246,7 +259,10 @@ export function TopNav() {
                     >
                       <NextLink
                         href={href}
-                        prefetch={DISCOVERY_ROUTES.includes(href) ? true : undefined}
+                        prefetch={DISCOVERY_ROUTES.includes(href) ? false : undefined}
+                        onPointerEnter={() => prefetchDiscoveryRoute(router, href)}
+                        onFocus={() => prefetchDiscoveryRoute(router, href)}
+                        onTouchStart={() => prefetchDiscoveryRoute(router, href)}
                         aria-current={active ? "page" : undefined}
                         onClick={() => setNavigationOpen(false)}
                       >

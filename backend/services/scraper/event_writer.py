@@ -156,7 +156,10 @@ def write_event(
         len(future_occurrences),
         title,
     )
-    event_feed_revalidation_service.revalidate_school(school.slug)
+    event_feed_revalidation_service.revalidate_school(
+        school.slug,
+        resources=("events", "clubs"),
+    )
 
     # Cache invalidation for scraper deduplication queries
     from services.scraper.dedup import clear_candidate_caches
@@ -194,7 +197,10 @@ def _overwrite_event(
         except Exception:
             get_sb().table(EVENTS).delete().eq("id", new_id).execute()
             raise
-        event_feed_revalidation_service.revalidate_school(school_slug)
+        event_feed_revalidation_service.revalidate_school(
+            school_slug,
+            resources=("events", "clubs"),
+        )
 
         from services.scraper.dedup import clear_candidate_caches
 
@@ -227,7 +233,10 @@ def _overwrite_event(
         except Exception:
             get_sb().table(EVENTS).delete().eq("id", new_id).execute()
             raise
-        event_feed_revalidation_service.revalidate_school(school_slug)
+        event_feed_revalidation_service.revalidate_school(
+            school_slug,
+            resources=("events", "clubs"),
+        )
 
         from services.scraper.dedup import clear_candidate_caches
 
@@ -259,7 +268,10 @@ def _overwrite_event(
         merged,
         stable_occurrences,
     )
-    event_feed_revalidation_service.revalidate_school(school_slug)
+    event_feed_revalidation_service.revalidate_schools(
+        [old_event.school, school_slug],
+        resources=("events", "clubs"),
+    )
 
     updated = event_service.get_event(existing_id)
     if updated is not None:
@@ -468,6 +480,7 @@ def _ensure_club_by_ig(
         from services import club_service
 
         club_service._get_clubs_for_school_lookup.cache_clear()
+        event_feed_revalidation_service.revalidate_school(school_slug, resources=("clubs",))
 
         return row
 

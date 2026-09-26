@@ -23,7 +23,6 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from pydantic import BaseModel
 
 from core.database import get_sb
-from core.retry import supabase_retry
 from core.sanitize import sanitize_postgrest_value
 from core.tables import EVENT_DATES, EVENTS
 from schemas.event import EventSummaryResponse
@@ -143,7 +142,6 @@ def _load_hydrated_events_by_ids(event_ids: list[int], *, model: type[T]) -> dic
     }
 
 
-@supabase_retry
 def load_events_by_ids(event_ids: list[int], *, model: type[T]) -> dict[int, T]:
     """Hydrated events for an explicit id list, keyed by id.
 
@@ -154,7 +152,6 @@ def load_events_by_ids(event_ids: list[int], *, model: type[T]) -> dict[int, T]:
     return _load_hydrated_events_by_ids(event_ids, model=model)
 
 
-@supabase_retry
 def load_upcoming_events(
     *, since: datetime, school: str | None, cap: int, model: type[T]
 ) -> list[T]:
@@ -182,7 +179,6 @@ def load_upcoming_events(
     return [events_by_id[event_id] for event_id in event_ids if event_id in events_by_id]
 
 
-@supabase_retry
 def load_events_page(
     *,
     start_utc: datetime | None,

@@ -42,7 +42,9 @@ def _position(position_id: int = 1) -> PositionResponse:
 
 def test_list_positions_is_public_and_paginated(client, monkeypatch):
     list_positions = MagicMock(return_value=([_position()], 12))
+    latest_position = MagicMock(return_value=None)
     monkeypatch.setattr(position_service, "list_positions", list_positions)
+    monkeypatch.setattr(position_service, "get_latest_added_position", latest_position)
 
     response = client.get(
         "/positions/?page=2&page_size=5&school=uwaterloo&search=design"
@@ -58,6 +60,8 @@ def test_list_positions_is_public_and_paginated(client, monkeypatch):
     assert body["items"][0]["title"] == "Design Lead"
     assert "ingestion_source" not in body["items"][0]
     assert "updated_at" not in body["items"][0]
+    assert body["latest_added_position"] is None
+    latest_position.assert_not_called()
     list_positions.assert_called_once_with(
         skip=5,
         limit=5,

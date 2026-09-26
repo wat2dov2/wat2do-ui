@@ -4,7 +4,8 @@ import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { X } from "@/shared/ui/doodle-icons";
 import { cn } from "@/shared/lib/utils";
-import { CoverSlideTemplate, EventSlideTemplate } from "@/features/admin/components/instagram/slides/SlideTemplates";
+import { CoverSlideTemplate, EventSlideTemplate, type SlidePosterProps } from "@/features/admin/components/instagram/slides/SlideTemplates";
+import { LazyImage } from "@/shared/ui/lazy-image";
 import {
   SLIDE_HEIGHT,
   SLIDE_WIDTH,
@@ -70,6 +71,17 @@ export function CarouselSlidePreview({
   const currentResult = modelResult?.event === event && modelResult?.language === cover.language ? modelResult : null;
   const slideModel = currentResult?.model;
   const modelError = currentResult && !slideModel;
+  const renderPoster = ({ src, width, height, fit }: SlidePosterProps) => (
+    <div style={{ position: "relative", width, height }}>
+      <LazyImage
+        src={src}
+        alt=""
+        sizes={`${Math.ceil(width * previewScale)}px`}
+        fit={fit}
+        className="absolute inset-0"
+      />
+    </div>
+  );
 
   useEffect(() => {
     if (isCover || publishedAssetUrl || !event) return;
@@ -111,19 +123,14 @@ export function CarouselSlidePreview({
       className={cn("relative z-0 flex max-w-full flex-col items-center gap-2 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring", onSelect && "cursor-pointer", selected && "ring-2 ring-primary")}
       style={{ width: "100%" }}
     >
-      {publishedAssetUrl ? (
-        <img
-          src={publishedAssetUrl}
-          alt=""
-          className="rounded-xl border border-border"
-          style={{ width: "100%", height: "auto" }}
-        />
-      ) : (isCover && coverColors) || (!isCover && slideModel) ? (
+      {publishedAssetUrl || (isCover && coverColors) || (!isCover && slideModel) ? (
         <div
-          className="overflow-hidden rounded-xl border border-border bg-surface"
+          className="relative overflow-hidden rounded-xl border border-border bg-surface"
           style={{ width: "100%", height: SLIDE_HEIGHT * previewScale }}
         >
-          <div
+          {publishedAssetUrl ? (
+            <LazyImage src={publishedAssetUrl} alt="" sizes={`${previewWidth}px`} className="absolute inset-0" />
+          ) : <div
             style={{
               width: SLIDE_WIDTH,
               height: SLIDE_HEIGHT,
@@ -132,9 +139,9 @@ export function CarouselSlidePreview({
             }}
           >
             {isCover && coverColors
-              ? <CoverSlideTemplate model={buildCoverSlideModel({ ...cover, colors: coverColors })} />
-              : slideModel ? <EventSlideTemplate model={slideModel} /> : null}
-          </div>
+              ? <CoverSlideTemplate model={buildCoverSlideModel({ ...cover, colors: coverColors })} renderPoster={renderPoster} />
+              : slideModel ? <EventSlideTemplate model={slideModel} renderPoster={renderPoster} /> : null}
+          </div>}
         </div>
       ) : (
         <p className="py-12 text-center text-sm text-muted-foreground">

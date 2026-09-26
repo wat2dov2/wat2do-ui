@@ -1,4 +1,5 @@
 from types import SimpleNamespace
+from unittest.mock import MagicMock
 
 from services.scraper.org_resolve import ResolvedClub
 from services.scraper.position_writer import write_position
@@ -25,14 +26,14 @@ def _position() -> dict:
 
 def test_write_position_inserts_scraper_payload(fake_sb, patch_sb, monkeypatch):
     patch_sb("services.scraper.position_writer")
-    revalidated_schools: list[str] = []
+    revalidate = MagicMock()
     monkeypatch.setattr(
         "services.scraper.position_writer.school_service.get_school",
         lambda slug: SimpleNamespace(id=9, slug=slug),
     )
     monkeypatch.setattr(
         "services.scraper.position_writer.event_feed_revalidation_service.revalidate_school",
-        revalidated_schools.append,
+        revalidate,
     )
     fake_sb.set_response(data=[{"id": 41}])
 
@@ -56,7 +57,7 @@ def test_write_position_inserts_scraper_payload(fake_sb, patch_sb, monkeypatch):
     assert payload["requirements"] == ["Portfolio", "Clear communication"]
     assert payload["source_url"] == "https://www.instagram.com/p/HIRING123/"
     assert payload["ingestion_source"] == "instagram_scraper"
-    assert revalidated_schools == ["uwaterloo"]
+    revalidate.assert_called_once_with("uwaterloo", resources=("positions", "clubs"))
 
 
 def test_write_position_skips_unresolved_club(fake_sb, patch_sb, monkeypatch):

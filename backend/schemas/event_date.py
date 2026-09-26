@@ -50,12 +50,17 @@ class OccurrenceUpdate(OccurrenceCreate):
     id: UUID | None = None
 
 
-class OccurrenceResponse(BaseModel):
+class OccurrenceSummaryResponse(BaseModel):
+    """Browse dates retain selection identity without repeated parent/import fields."""
+
     id: UUID
-    event_id: int
     dtstart_utc: datetime
     dtend_utc: datetime | None = None
-    duration: str | None = None
-    tz: str | None = None
 
     model_config = {"from_attributes": True}
+
+
+class OccurrenceResponse(OccurrenceSummaryResponse):
+    event_id: int
+    duration: str | None = None
+    tz: str | None = None

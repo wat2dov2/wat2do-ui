@@ -385,7 +385,7 @@ def test_list_events_forwards_school_and_pagination(client, monkeypatch):
         added_within_24h=False,
         include_past=False,
     )
-    mock_latest.assert_called_once_with("uwaterloo")
+    mock_latest.assert_not_called()
 
 
 def test_list_events_overlaps_feed_and_latest_event_queries(client, monkeypatch):
@@ -615,11 +615,8 @@ def test_list_events_public_hides_created_by(client, monkeypatch):
     assert body["items"][0]["occurrences"] == [
         {
             "id": str(UUID(int=1)),
-            "event_id": 1,
             "dtstart_utc": "2026-09-25T18:00:00Z",
             "dtend_utc": None,
-            "duration": None,
-            "tz": None,
         }
     ]
 

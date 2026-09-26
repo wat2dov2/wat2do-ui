@@ -18,7 +18,6 @@ from core.database import get_sb
 from core.errors import CLUB_NOT_FOUND, EVENT_ALREADY_PAST
 from core.exceptions import NotFoundError, ValidationError
 from core.pagination import LatestAddedItem, fetch_all_pages
-from core.retry import supabase_retry
 from core.tables import EVENTS
 from schemas.event import (
     EventCreate,
@@ -97,7 +96,6 @@ def _resolve_club_fields(club_id: int) -> dict[str, str | int | None]:
 # ── Public functions ──────────────────────────────────────────────────
 
 
-@supabase_retry
 def get_latest_added_event(school: str | None = None) -> LatestAddedItem | None:
     """Return the most recently added event (by added_at desc), or None if no events."""
     q = get_sb().table(EVENTS).select("title,added_at")
@@ -112,7 +110,6 @@ def get_latest_added_event(school: str | None = None) -> LatestAddedItem | None:
     return LatestAddedItem.model_validate(r.data[0])
 
 
-@supabase_retry
 def get_event(event_id: int) -> EventResponse | None:
     r = (
         get_sb()
@@ -253,7 +250,10 @@ def create_event(data: EventCreate, *, created_by: str) -> EventResponse:
     created = get_event(new_id)
     if created is None:
         raise APIError("Failed to read created event")
-    event_feed_revalidation_service.revalidate_school(created.school)
+    event_feed_revalidation_service.revalidate_school(
+        created.school,
+        resources=("events", "clubs"),
+    )
     return created
 
 
@@ -306,7 +306,10 @@ def update_event(event_id: int, data: EventUpdate) -> EventUpdateResult | None:
 
     updated = get_event(event_id)
     if updated is not None:
-        event_feed_revalidation_service.revalidate_schools([existing.school, updated.school])
+        event_feed_revalidation_service.revalidate_schools(
+            [existing.school, updated.school],
+            resources=("events", "clubs"),
+        )
         return EventUpdateResult(
             event=updated,
             recipient_ids=recipient_ids,
@@ -348,7 +351,8 @@ def delete_event(event_id: int) -> bool:
     r = get_sb().table(EVENTS).delete().eq("id", event_id).execute()
     if r.data:
         event_feed_revalidation_service.revalidate_school(
-            existing.school if existing is not None else None, event_id=event_id
+            existing.school if existing is not None else None,
+            resources=("events", "clubs"),
         )
     return bool(r.data)
 

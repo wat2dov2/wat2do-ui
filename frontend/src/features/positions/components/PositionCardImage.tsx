@@ -1,7 +1,6 @@
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { ImageOff } from "@/shared/ui/doodle-icons";
 import { Badge } from "@/shared/ui/badge";
 import { BadgeMask } from "@/shared/ui/badge-mask";
 import { ClubBadgeDropdown } from "@/features/clubs/components/ClubBadgeDropdown";
@@ -18,12 +17,14 @@ interface PositionCardImageProps {
   position: Position;
   variant: "card" | "detail";
   onClubFilterSelect?: () => void;
+  priority?: boolean;
 }
 
 export function PositionCardImage({
   position,
   variant,
   onClubFilterSelect,
+  priority = false,
 }: PositionCardImageProps) {
   const { t, i18n } = useTranslation();
   const { getSchoolTimezone } = useSchoolDirectory();
@@ -50,18 +51,13 @@ export function PositionCardImage({
         backgroundColor="var(--surface-elevated)"
         imageSrc={position.source_image_url}
         imageAlt={position.title}
-        imageLoading={variant === "card" ? "lazy" : "eager"}
+        imageLoading={variant === "detail" || priority ? "eager" : "lazy"}
+        imageSizes={variant === "detail" ? "(max-width: 767px) calc(100vw - 48px), 480px" : undefined}
         cutouts={cutouts}
         width={box.width}
         height={box.height}
         className="absolute inset-0"
-      >
-        {!position.source_image_url ? (
-          <div className="absolute inset-0 flex items-center justify-center text-muted-foreground">
-            <ImageOff className="size-8 opacity-40" />
-          </div>
-        ) : null}
-      </EventImageCutout>
+      />
 
       {variant === "card" && wasAddedWithinLast24Hours(position) ? (
         <BadgeMask variant="top-left" cutout containerRef={registerCorner("top-left")}>

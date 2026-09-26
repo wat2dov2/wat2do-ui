@@ -3,5 +3,6 @@
   "default_query_garbage_collection_seconds": 1800,
   "live_event_data_stale_seconds": 60,
   "profile_stale_seconds": 60,
-  "admin_stale_seconds": 60
+  "admin_stale_seconds": 60,
+  "discovery_prefetch_idle_timeout_ms": 1500
 }

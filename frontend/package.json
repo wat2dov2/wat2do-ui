@@ -15,9 +15,11 @@
     "render-school-posters": "node scripts/school-posters/render-school-posters.mjs",
     "start": "next start",
     "preview": "next start",
-    "generate-types": "cd ../backend && .venv/bin/python scripts/export_openapi.py && cd ../frontend && npx openapi-typescript src/shared/generated/openapi.json -o src/shared/generated/api-types.ts"
+    "generate-types": "cd ../backend && .venv/bin/python scripts/export_openapi.py && cd ../frontend && npx openapi-typescript src/shared/generated/openapi.json -o src/shared/generated/api-types.ts",
+    "test:discovery": "playwright test e2e/discovery-snapshots.spec.ts e2e/discovery-revalidation.spec.ts e2e/discovery-images.spec.ts e2e/event-cache.spec.ts e2e/navigation-prefetch.spec.ts e2e/image-rendering.spec.ts --workers=1"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1141.0",
     "@hookform/resolvers": "^5.4.0",
     "@monaco-editor/react": "^4.7.0",
     "@next/third-parties": "^16.2.9",

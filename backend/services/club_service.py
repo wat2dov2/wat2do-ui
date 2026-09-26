@@ -15,6 +15,7 @@ from core.constants import DEFAULT_LIST_LIMIT, DEFAULT_PAGE_SIZE
 from core.controlbox import controlbox
 from core.database import get_sb
 from core.exceptions import ConflictError, NotFoundError, ValidationError
+from core.pagination import apply_stable_order
 from core.sanitize import sanitize_postgrest_value
 from core.tables import (
     CLUB_CLAIMS,
@@ -274,7 +275,7 @@ def list_clubs(
         )
     if min_events:
         q = q.gte("event_count", min_events)
-    q = q.order("club_name").range(skip, skip + limit - 1)
+    q = apply_stable_order(q, "club_name", desc=False).range(skip, skip + limit - 1)
     r = q.execute()
     items = _clubs_with_owner_emails(r.data or [])
 
@@ -310,6 +311,9 @@ def create_club(data: ClubCreate, *, created_by: str, auto_approve: bool = False
         add_club_member(club.id, UUID(created_by))
     except Exception as e:
         log.warning("Failed to auto-add creator %s to club members: %s", created_by, e)
+    _get_clubs_for_school_lookup.cache_clear()
+    if auto_approve:
+        event_feed_revalidation_service.revalidate_school(club.school, resources=("clubs",))
     return club
 
 
@@ -326,7 +330,9 @@ def set_club_status(club_id: int, status: ClubStatus) -> ClubResponse | None:
 
     updated = _club_response({**r.data[0], "school": existing.school})
     if existing.status != updated.status:
-        event_feed_revalidation_service.revalidate_schools([updated.school])
+        event_feed_revalidation_service.revalidate_school(
+            updated.school, resources=("events", "positions", "clubs")
+        )
     return updated
 
 
@@ -348,14 +354,37 @@ def update_club(club_id: int, data: ClubUpdate) -> ClubResponse | None:
     r = get_sb().table(CLUBS).update(payload).eq("id", club_id).execute()
     if r.data:
         updated = _club_response({**r.data[0], "school": updated_school})
-        if updated.club_type != existing.club_type or updated.logo_url != existing.logo_url:
-            event_feed_revalidation_service.revalidate_schools([existing.school, updated.school])
+        _get_clubs_for_school_lookup.cache_clear()
+        # These fields are embedded by the event and position read models.
+        changes_embedded_fields = any(
+            getattr(updated, field) != getattr(existing, field)
+            for field in (
+                "club_name",
+                "club_type",
+                "logo_url",
+                "school",
+                "club_page",
+                "ig",
+                "discord",
+            )
+        )
+        event_feed_revalidation_service.revalidate_schools(
+            [existing.school, updated.school],
+            resources=("events", "positions", "clubs") if changes_embedded_fields else ("clubs",),
+        )
         return updated
     return None
 
 
 def delete_club(club_id: int) -> bool:
+    existing = get_club(club_id)
     r = get_sb().table(CLUBS).delete().eq("id", club_id).execute()
+    if r.data:
+        _get_clubs_for_school_lookup.cache_clear()
+        event_feed_revalidation_service.revalidate_school(
+            existing.school if existing else None,
+            resources=("events", "positions", "clubs"),
+        )
     return bool(r.data)
 
 

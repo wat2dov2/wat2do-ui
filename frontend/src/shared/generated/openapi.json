@@ -8272,7 +8272,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "description": "School freshness metadata on the first page only."
           }
         },
         "type": "object",
@@ -8803,7 +8804,7 @@
           },
           "occurrences": {
             "items": {
-              "$ref": "#/components/schemas/OccurrenceResponse"
+              "$ref": "#/components/schemas/OccurrenceSummaryResponse"
             },
             "type": "array",
             "title": "Occurrences"
@@ -9934,10 +9935,6 @@
             "format": "uuid",
             "title": "Id"
           },
-          "event_id": {
-            "type": "integer",
-            "title": "Event Id"
-          },
           "dtstart_utc": {
             "type": "string",
             "format": "date-time",
@@ -9954,6 +9951,10 @@
               }
             ],
             "title": "Dtend Utc"
+          },
+          "event_id": {
+            "type": "integer",
+            "title": "Event Id"
           },
           "duration": {
             "anyOf": [
@@ -9981,10 +9982,43 @@
         "type": "object",
         "required": [
           "id",
-          "event_id",
-          "dtstart_utc"
+          "dtstart_utc",
+          "event_id"
         ],
         "title": "OccurrenceResponse"
+      },
+      "OccurrenceSummaryResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "dtstart_utc": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Dtstart Utc"
+          },
+          "dtend_utc": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dtend Utc"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "dtstart_utc"
+        ],
+        "title": "OccurrenceSummaryResponse",
+        "description": "Browse dates retain selection identity without repeated parent/import fields."
       },
       "OccurrenceUpdate": {
         "properties": {
@@ -10854,7 +10888,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "description": "School freshness metadata on the first page only."
           }
         },
         "type": "object",

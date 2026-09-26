@@ -6,10 +6,14 @@ locals {
     ManagedBy   = "terraform"
   }
 
-  availability_zones = slice(data.aws_availability_zones.available.names, 0, 2)
+  availability_zones      = slice(data.aws_availability_zones.available.names, 0, 2)
+  discovery_cache_control = jsondecode(file("${path.module}/../../../backend/controlbox/discovery_cache.json"))
+  image_delivery_control  = jsondecode(file("${path.module}/../../../backend/controlbox/image_delivery.json"))
 
   frontend_runtime_environment = {
     NODE_ENV                = "production"
+    AWS_REGION              = var.aws_region
+    STORAGE_BUCKET_NAME     = aws_s3_bucket.assets.id
     PORT                    = "3000"
     HOSTNAME                = "0.0.0.0"
     BACKEND_API_URL         = "http://127.0.0.1:8000"

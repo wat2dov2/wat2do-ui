@@ -87,6 +87,10 @@ jobs:
         working-directory: frontend
         run: npm run type-check
 
+      - name: Test discovery cache and image delivery without a browser
+        working-directory: frontend
+        run: npm run test:discovery
+
       - name: Build
         working-directory: frontend
         env:
@@ -268,11 +272,14 @@ jobs:
         run: |
           frontend_image="$ECR_REGISTRY/wat2do/frontend@$FRONTEND_DIGEST"
           backend_image="$ECR_REGISTRY/wat2do/backend@$BACKEND_DIGEST"
+          frontend_start_period="$(jq '[.readiness_timeout_seconds, 300] | min' backend/controlbox/discovery_cache.json)"
           aws ecs describe-task-definition --task-definition "$ECS_TASK_FAMILY" --query taskDefinition --output json > task-definition.json
-          jq --arg frontend_image "$frontend_image" --arg backend_image "$backend_image" '
+          jq --arg frontend_image "$frontend_image" --arg backend_image "$backend_image" --argjson frontend_start_period "$frontend_start_period" '
             del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy, .deregisteredAt)
+            | ([.containerDefinitions[] | select(.name == "backend") | .environment[] | select(.name == "STORAGE_BUCKET_NAME" or .name == "AWS_REGION")]) as $storage_env
             | .containerDefinitions |= map(
-              if (.name == "frontend" or .name == "frontend-cache-init") then .image = $frontend_image
+              if .name == "frontend" then .image = $frontend_image | .environment = ([.environment[] | select(.name != "STORAGE_BUCKET_NAME" and .name != "AWS_REGION")] + $storage_env) | .healthCheck.startPeriod = $frontend_start_period
+              elif .name == "frontend-cache-init" then .image = $frontend_image
               elif .name == "backend" then .image = $backend_image
               else . end
             )
@@ -328,8 +335,44 @@ jobs:
 
       - name: Deploy task revision and wait for service stability
         run: |
-          aws ecs update-service --cluster "$ECS_CLUSTER" --service "$ECS_SERVICE" --task-definition "$TASK_DEFINITION_ARN"
-          aws ecs wait services-stable --cluster "$ECS_CLUSTER" --services "$ECS_SERVICE"
+          grace_seconds="$(jq '.readiness_timeout_seconds + .startup_grace_seconds' backend/controlbox/discovery_cache.json)"
+          # The first release must allow bootstrap before Terraform applies.
+          # Instrumentation waits for complete snapshots before /healthz can answer.
+          aws ecs update-service --cluster "$ECS_CLUSTER" --service "$ECS_SERVICE" \
+            --health-check-grace-period-seconds "$grace_seconds" --task-definition "$TASK_DEFINITION_ARN"
+          deployment_timeout="$(jq '.deployment_timeout_seconds' backend/controlbox/discovery_cache.json)"
+          poll_interval="$(jq '.worker_interval_seconds' backend/controlbox/discovery_cache.json)"
+          deadline=$((SECONDS + deployment_timeout))
+          revision_seen=false
+          while true; do
+            service="$(aws ecs describe-services --cluster "$ECS_CLUSTER" --services "$ECS_SERVICE" --query 'services[0]' --output json)"
+            if jq -e --arg expected "$TASK_DEFINITION_ARN" \
+              'any(.deployments[]; .taskDefinition == $expected and .rolloutState == "FAILED")' \
+              <<< "$service" >/dev/null; then
+              echo "::error::The requested ECS task revision failed to deploy."
+              exit 1
+            fi
+            if jq -e --arg expected "$TASK_DEFINITION_ARN" '.taskDefinition == $expected' \
+              <<< "$service" >/dev/null; then
+              revision_seen=true
+            elif [ "$revision_seen" = true ]; then
+              echo "::error::ECS rolled back or replaced the requested task revision."
+              exit 1
+            fi
+            if jq -e --arg expected "$TASK_DEFINITION_ARN" '
+              .taskDefinition == $expected and (.deployments | length) == 1 and
+              .deployments[0].taskDefinition == $expected and
+              .deployments[0].rolloutState == "COMPLETED" and
+              .runningCount == .desiredCount and .pendingCount == 0
+            ' <<< "$service" >/dev/null; then
+              break
+            fi
+            if [ "$SECONDS" -ge "$deadline" ]; then
+              echo "::error::ECS did not finish the requested deployment within its configured deadline."
+              exit 1
+            fi
+            sleep "$poll_interval"
+          done
 
       - name: Deploy social-preview Lambda image when provisioned
         env:
@@ -347,6 +390,20 @@ jobs:
             --image-uri "$image" \
             >/dev/null
           aws lambda wait function-updated-v2 --function-name "$SOCIAL_PREVIEW_FUNCTION"
+
+      - name: Verify all-school discovery readiness
+        run: |
+          timeout_seconds="$(jq -r '.readiness_timeout_seconds' backend/controlbox/discovery_cache.json)"
+          request_timeout="$(jq -r '.request_timeout_seconds' backend/controlbox/discovery_cache.json)"
+          poll_interval="$(jq -r '.worker_interval_seconds' backend/controlbox/discovery_cache.json)"
+          deadline=$((SECONDS + timeout_seconds))
+          until curl --fail --silent --show-error --max-time "$request_timeout" https://wat2do.io/api/discovery/readiness; do
+            if [ "$SECONDS" -ge "$deadline" ]; then
+              echo "::error::Discovery snapshots are not ready for every school."
+              exit 1
+            fi
+            sleep "$poll_interval"
+          done
 
       - name: Smoke test school subdomain scoping
         run: ./scripts/smoke-subdomains.sh

@@ -18,7 +18,6 @@ from typing import Any, Callable
 
 from core.database import get_sb
 from core.pagination import iter_all_pages
-from core.retry import supabase_retry
 from core.tables import EVENT_DATES, USER_INTERACTIONS, USER_RECOMMENDATIONS, USERS
 from recommender.collaborative import (
     CollaborativeModel,
@@ -191,7 +190,6 @@ class RecommendationEngine:
         return []
 
     @staticmethod
-    @supabase_retry
     def _fetch_precomputed_recs(user_id: str):
         return (
             get_sb()
@@ -203,7 +201,6 @@ class RecommendationEngine:
         )
 
     @staticmethod
-    @supabase_retry
     def _fetch_recent_actions(user_id: str, since: str) -> set[int]:
         """Fetch event IDs the user interacted with after a given timestamp."""
         r = (
@@ -217,7 +214,6 @@ class RecommendationEngine:
         return {row["event_id"] for row in (r.data or [])}
 
     @staticmethod
-    @supabase_retry
     def _fetch_future_event_ids(event_ids: list[int], now: str) -> set[int]:
         """Check which of the given event IDs have at least one future occurrence.
 
@@ -284,7 +280,6 @@ class RecommendationEngine:
 
         return results
 
-    @supabase_retry
     def _store_user_recs(self, user_id: str, rows: list[dict]) -> None:
         """Upsert new recs then remove stale entries, so a failed insert never
         wipes existing recommendations.

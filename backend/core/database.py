@@ -17,7 +17,10 @@ lazily so a typo elsewhere fails fast at call time rather than silently
 swapping clients.
 """
 
+import httpx
+
 from core.config import settings
+from core.retry import SupabaseReadTransport
 from supabase import Client, ClientOptions, create_client
 
 # --- Fail-fast: service-role key is required for backend operation ----------
@@ -45,7 +48,17 @@ supabase: Client = create_client(
 )
 
 # Service-role client for backend table access (bypasses RLS).
-supabase_admin: Client = create_client(settings.supabase_url, settings.supabase_secret_key)
+supabase_admin: Client = create_client(
+    settings.supabase_url,
+    settings.supabase_secret_key,
+    ClientOptions(
+        httpx_client=httpx.Client(
+            transport=SupabaseReadTransport(),
+            timeout=ClientOptions().postgrest_client_timeout,
+            follow_redirects=True,
+        ),
+    ),
+)
 
 
 def get_sb() -> Client:

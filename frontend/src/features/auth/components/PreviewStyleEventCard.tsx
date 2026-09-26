@@ -16,7 +16,7 @@ import {
 } from "@/shared/ui/event-card-content";
 import type { CardBadge } from "@/shared/ui/event-card-content";
 import { ClubBadgeDropdown } from "@/features/clubs/components/ClubBadgeDropdown";
-import { EVENT_CARD_IMAGE_HEIGHT } from "@/shared/constants/ui";
+import { CARD_GRID_IMAGE_SIZES, EVENT_CARD_IMAGE_HEIGHT } from "@/shared/constants/ui";
 
 export interface PreviewEventData {
   title: string;
@@ -80,14 +80,12 @@ export function PreviewStyleEventCard({
         <LazyImage
           src={event.image}
           alt={event.title}
+          sizes={CARD_GRID_IMAGE_SIZES}
           className="absolute inset-0 h-full w-full"
           fallback={
             <div className={cn("absolute inset-0 flex items-center justify-center", "bg-surface-elevated")}>
               <ImageOff className={cn("size-8 opacity-40", "text-muted-foreground")} />
             </div>
-          }
-          placeholder={
-            <div className={cn("absolute inset-0 animate-pulse", "bg-surface-elevated")} />
           }
         />
 

@@ -34,6 +34,7 @@ export function useEventsPageData({
   const query = useQuery({
     ...eventFeedQueryOptions(schoolFilter),
     initialData: initialSnapshot ?? undefined,
+    initialDataUpdatedAt: initialSnapshot?.generated_at,
   });
   const events = useMemo(() => query.data?.items ?? [], [query.data]);
   const latestAddedEvent = query.data?.latest_added_event ?? null;

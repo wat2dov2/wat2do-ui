@@ -5,7 +5,7 @@ resource "aws_ecs_service" "application" {
   desired_count                      = 1
   enable_ecs_managed_tags            = true
   enable_execute_command             = false
-  health_check_grace_period_seconds  = 90
+  health_check_grace_period_seconds  = local.discovery_cache_control.readiness_timeout_seconds + local.discovery_cache_control.startup_grace_seconds
   deployment_minimum_healthy_percent = 100
   deployment_maximum_percent         = 200
 

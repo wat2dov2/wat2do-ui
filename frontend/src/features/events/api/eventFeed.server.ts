@@ -1,32 +1,17 @@
+import { readDiscoverySnapshot } from "@/shared/services/discoveryCache.server";
 import { collectPaginatedPages } from "@/shared/lib/pagination";
 import type { Event } from "@/shared/types";
 import type { PaginatedEventsResponse } from "@/features/events/api/events.api";
 import { orderClubEvents } from "@/features/events/lib/clubEventOrder";
 import { controlBox } from "@/shared/config/controlBox";
 import { resolveSchool } from "@/shared/constants/schools";
-import { getServerApiBaseUrl } from "@/shared/services/serverApi";
-
-export function eventFeedTag(school: string): string {
-  return `event-feed-${resolveSchool(school)}`;
-}
-
-export function eventDetailTag(eventId: number): string {
-  return `event-detail-${eventId}`;
-}
+import { fetchServerSnapshot, getServerApiBaseUrl } from "@/shared/services/serverApi";
 
 /** Public event detail shared by route metadata, initial HTML, and hydration. */
 export async function getEventDetailSnapshot(eventId: number): Promise<Event | null> {
-  const response = await fetch(
+  const response = await fetchServerSnapshot(
     `${getServerApiBaseUrl()}/events/${encodeURIComponent(String(eventId))}`,
-    {
-      next: {
-        revalidate:
-          process.env.NODE_ENV === "development"
-            ? 0
-            : controlBox.eventDiscovery.feedRevalidateSeconds,
-        tags: [eventDetailTag(eventId)],
-      },
-    },
+    { cache: "no-store" },
   );
 
   if (response.status === 404) return null;
@@ -54,7 +39,7 @@ async function fetchEventsPage(
   if (options.includePast) {
     params.set("include_past", "true");
   }
-  const response = await fetch(`${getServerApiBaseUrl()}/events/?${params.toString()}`, fetchOptions);
+  const response = await fetchServerSnapshot(`${getServerApiBaseUrl()}/events/?${params.toString()}`, fetchOptions);
 
   if (!response.ok) {
     throw new Error(`Event feed request failed with status ${response.status}`);
@@ -69,7 +54,7 @@ export async function getClubEventsSnapshot(
   school: string,
 ): Promise<Event[]> {
   const resolvedSchool = resolveSchool(school);
-  const fetchOptions = eventFeedFetchOptions(resolvedSchool);
+  const fetchOptions: RequestInit = { cache: "no-store" };
   const options = { clubId, includePast: true };
   const directory = await collectPaginatedPages((page) =>
     fetchEventsPage(resolvedSchool, page, fetchOptions, options),
@@ -77,20 +62,13 @@ export async function getClubEventsSnapshot(
   return orderClubEvents(directory.items, Date.now());
 }
 
-function eventFeedFetchOptions(school: string): RequestInit {
-  return {
-    next: {
-      revalidate:
-        process.env.NODE_ENV === "development"
-          ? 0
-          : controlBox.eventDiscovery.feedRevalidateSeconds,
-      tags: [eventFeedTag(school)],
-    },
-  };
+export async function buildSchoolBrowseSnapshot(school: string): Promise<PaginatedEventsResponse> {
+  const resolvedSchool = resolveSchool(school);
+  const fetchOptions: RequestInit = { cache: "no-store" };
+  return collectPaginatedPages((page) => fetchEventsPage(resolvedSchool, page, fetchOptions));
 }
 
-export async function getSchoolBrowseSnapshot(school: string): Promise<PaginatedEventsResponse> {
-  const resolvedSchool = resolveSchool(school);
-  const fetchOptions = eventFeedFetchOptions(resolvedSchool);
-  return collectPaginatedPages((page) => fetchEventsPage(resolvedSchool, page, fetchOptions));
+export async function getSchoolBrowseSnapshot(school: string) {
+  const slug = resolveSchool(school);
+  return readDiscoverySnapshot(slug, "events", () => buildSchoolBrowseSnapshot(slug));
 }

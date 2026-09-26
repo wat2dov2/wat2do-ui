@@ -1,0 +1,6 @@
+{
+  "read_attempts": 3,
+  "read_backoff_initial_seconds": 0.1,
+  "read_backoff_max_seconds": 1,
+  "read_backoff_jitter_seconds": 0.2
+}

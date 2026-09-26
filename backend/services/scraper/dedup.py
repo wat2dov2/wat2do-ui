@@ -27,7 +27,6 @@ from core.constants import (
 )
 from core.database import get_sb
 from core.pagination import fetch_all_pages
-from core.retry import supabase_retry
 from core.sanitize import parse_iso_datetime
 from core.tables import EVENT_DATES, EVENTS
 from services import school_service
@@ -624,7 +623,6 @@ def _latest_occurrence_end(occurrences: list[dict]) -> datetime | None:
     return max(candidates) if candidates else None
 
 
-@supabase_retry
 def existing_shortcodes(shortcodes: set[str]) -> set[str]:
     """Return which of the provided shortcodes already exist on ``events.source_url``.
 

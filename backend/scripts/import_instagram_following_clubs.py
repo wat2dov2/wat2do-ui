@@ -405,7 +405,10 @@ def apply_plan(sb: Any, plan: dict[str, Any], school: str | None = None) -> set[
         changed_schools.update(row["school"] for row in chunk)
 
     for changed_school in sorted(changed_schools):
-        event_feed_revalidation_service.revalidate_school(changed_school)
+        event_feed_revalidation_service.revalidate_school(
+            changed_school,
+            resources=("events", "positions", "clubs"),
+        )
     return changed_schools
 
 

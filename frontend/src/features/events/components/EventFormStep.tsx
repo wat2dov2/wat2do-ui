@@ -1,10 +1,9 @@
-import { useCallback, useEffect, useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type { Event, Club } from "@/shared/types";
 import { buildPreviewEvent } from "@/features/events/lib/previewEvent";
-import { getAllClubs } from "@/features/clubs";
+import { clubDirectoryQueryOptions } from "@/features/clubs";
 import { useQuery } from "@tanstack/react-query";
-import { queryKeys } from "@/shared/lib/queryKeys";
 import { useEventsStore } from "@/features/events/store/events.store";
 import { ArrowLeft } from "@/shared/ui/doodle-icons";
 import { Button } from "@/shared/ui/button";
@@ -81,14 +80,9 @@ export function EventFormStep({
   const schoolFilter = useEventsStore((s) => s.schoolFilter);
   const clubSchool = previewBase?.school ?? schoolFilter;
 
-  const fetchClubs = useCallback(
-    () => getAllClubs(clubSchool ?? undefined),
-    [clubSchool],
-  );
   const { data: clubs = NO_CLUBS } = useQuery({
-    queryKey: queryKeys.clubs.allForSchool(clubSchool),
-    queryFn: fetchClubs,
-    placeholderData: NO_CLUBS,
+    ...clubDirectoryQueryOptions(clubSchool),
+    select: (directory) => directory.items,
   });
 
   const selectedClubName = useMemo(() => {

@@ -19,7 +19,12 @@ from core.constants import (
 )
 from core.pagination import LatestAddedItem, PaginatedResponse
 from schemas.club import ClubTypeValue
-from schemas.event_date import OccurrenceCreate, OccurrenceResponse, OccurrenceUpdate
+from schemas.event_date import (
+    OccurrenceCreate,
+    OccurrenceResponse,
+    OccurrenceSummaryResponse,
+    OccurrenceUpdate,
+)
 
 _log = logging.getLogger(__name__)
 
@@ -217,7 +222,7 @@ class EventSummaryResponse(BaseModel):
     title: str
     description: str | None = None
     location: str | None = None
-    occurrences: list[OccurrenceResponse] = Field(default_factory=list)
+    occurrences: list[OccurrenceSummaryResponse] = Field(default_factory=list)
     price: float | None = None
     food: list[str] | None = None
     registration: bool = False
@@ -241,7 +246,9 @@ class EventSummaryResponse(BaseModel):
 class EventFeedResponse(PaginatedResponse[EventSummaryResponse]):
     """Public school feed response with catalog-freshness metadata."""
 
-    latest_added_event: LatestAddedItem | None = None
+    latest_added_event: LatestAddedItem | None = Field(
+        default=None, description="School freshness metadata on the first page only."
+    )
 
 
 class EventStatsResponse(BaseModel):

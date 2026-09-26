@@ -1,52 +1,90 @@
-import React, { useState } from "react";
-import { ImageOff } from "@/shared/ui/doodle-icons";
+"use client";
 
-interface LazyImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
-  fallback?: React.ReactNode;
-  placeholder?: React.ReactNode;
+import { useState, type ReactNode } from "react";
+import Image from "next/image";
+import imageDelivery from "../../../../backend/controlbox/image_delivery.json" with { type: "json" };
+import { ImageOff } from "@/shared/ui/doodle-icons";
+import { Skeleton } from "@/shared/ui/skeleton";
+import { cn } from "@/shared/lib/utils";
+
+type LazyImageProps = {
+  src?: string | null;
+  alt: string;
+  loading?: "eager" | "lazy";
+  className?: string;
+  fallback?: ReactNode;
+  fit?: "cover" | "contain";
+} & (
+  | { sizes: string; width?: never; height?: never }
+  | { width: number; height: number; sizes?: never }
+);
+
+function canOptimizeImage(src: string): boolean {
+  if (src.startsWith("/") && !src.startsWith("//")) return true;
+  try {
+    const url = new URL(src);
+    return url.protocol === "https:" &&
+      url.hostname === imageDelivery.optimized_remote_host &&
+      url.pathname.startsWith(imageDelivery.optimized_remote_path);
+  } catch {
+    return false;
+  }
 }
 
-export function LazyImage({
+function ImageContent({
   src,
   alt,
+  sizes,
+  width,
+  height,
+  loading = "lazy",
   className,
   fallback,
-  placeholder,
-  ...props
+  fit = "cover",
 }: LazyImageProps) {
-  const [imageError, setImageError] = useState(false);
-  const [imageLoaded, setImageLoaded] = useState(false);
-
-  if (!src || imageError) {
-    return (
-      <div className={className} style={{ position: "absolute", inset: 0 }}>
-        {fallback || (
-          <div className="absolute inset-0 bg-gradient-to-br from-muted to-muted/80 flex items-center justify-center">
-            <ImageOff className="size-8 text-muted-foreground/40" />
-          </div>
-        )}
-      </div>
-    );
-  }
+  const [status, setStatus] = useState<"loading" | "loaded" | "error">("loading");
+  const unavailable = !src || status === "error";
 
   return (
-    <div className={className} style={{ position: "absolute", inset: 0 }}>
-      {!imageLoaded && placeholder && (
-        <div className="absolute inset-0">{placeholder}</div>
+    <div
+      data-slot="lazy-image"
+      data-image-state={src ? status : "missing"}
+      className={cn("relative overflow-hidden", className)}
+    >
+      {unavailable ? (
+        <div
+          className="absolute inset-0 flex items-center justify-center bg-surface-elevated text-muted-foreground"
+          role={alt ? "img" : undefined}
+          aria-label={alt || undefined}
+        >
+          {fallback === undefined ? <ImageOff className="size-8 opacity-40" /> : fallback}
+        </div>
+      ) : (
+        <>
+          {status === "loading" ? <Skeleton className="absolute inset-0 rounded-none" /> : null}
+          <Image
+            src={src}
+            alt={alt}
+            fill={width === undefined}
+            width={width}
+            height={height}
+            sizes={sizes}
+            quality={imageDelivery.quality}
+            unoptimized={!canOptimizeImage(src)}
+            loading={loading}
+            fetchPriority={loading === "eager" ? "high" : undefined}
+            decoding="async"
+            onLoad={() => setStatus("loaded")}
+            onError={() => setStatus("error")}
+            className={cn("relative", fit === "contain" ? "object-contain" : "object-cover")}
+          />
+        </>
       )}
-      <img
-        src={src}
-        alt={alt}
-        loading="lazy"
-        decoding="async"
-        onLoad={() => setImageLoaded(true)}
-        onError={() => setImageError(true)}
-        className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${
-          imageLoaded ? "opacity-100" : "opacity-0"
-        }`}
-        {...props}
-      />
     </div>
   );
 }
 
+/** Native image discovery and loading, with state scoped to the current URL. */
+export function LazyImage(props: LazyImageProps) {
+  return <ImageContent key={props.src} {...props} />;
+}

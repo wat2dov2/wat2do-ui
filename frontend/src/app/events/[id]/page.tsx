@@ -1,3 +1,4 @@
+import { cache } from "react";
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { notFound, permanentRedirect } from "next/navigation";
@@ -21,6 +22,8 @@ import {
 import type { Event } from "@/shared/types";
 import { StructuredData } from "@/shared/ui/structured-data";
 
+const loadDetailSnapshot = cache(getEventDetailSnapshot);
+
 interface EventDetailsPageProps {
   params: Promise<{
     id: string;
@@ -34,7 +37,7 @@ function parseEventId(value: string): number | null {
 
 async function loadEvent(eventId: number): Promise<Event | null> {
   try {
-    return await getEventDetailSnapshot(eventId);
+    return await loadDetailSnapshot(eventId);
   } catch (error) {
     console.error("Event SEO detail fetch failed:", error);
     return null;
@@ -87,7 +90,7 @@ export default async function EventDetailsPage({ params }: EventDetailsPageProps
   const eventId = parseEventId(id);
   if (!eventId) notFound();
 
-  const event = await getEventDetailSnapshot(eventId);
+  const event = await loadDetailSnapshot(eventId);
   if (!event) notFound();
 
   const canonicalUrl = getSchoolCanonicalUrl(

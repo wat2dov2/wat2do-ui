@@ -17,7 +17,6 @@ export const controlBox = {
     maximumMessageLength: contact.maximum_message_length,
   },
   eventDiscovery: {
-    feedRevalidateSeconds: eventDiscovery.feed_revalidate_seconds,
     newEventWindowHours: eventDiscovery.new_event_window_hours,
     newEventWindowMs: hoursToMilliseconds(
       eventDiscovery.new_event_window_hours,
@@ -30,10 +29,9 @@ export const controlBox = {
   },
   clubManagement: {
     directoryPageSize: clubManagement.directory_page_size,
-    directoryRevalidateSeconds:
-      clubManagement.directory_revalidate_seconds,
   },
   clientCache: {
+    discoveryPrefetchIdleTimeoutMs: clientCache.discovery_prefetch_idle_timeout_ms,
     defaultQueryStaleMs: secondsToMilliseconds(
       clientCache.default_query_stale_seconds,
     ),
@@ -54,6 +52,7 @@ export const controlBox = {
     flushDebounceMs: interactionTracking.flush_debounce_milliseconds,
   },
   siteBanner: {
+    refreshSeconds: siteBanner.refresh_seconds,
     dismissalDays: siteBanner.dismissal_days,
   },
   admin: {

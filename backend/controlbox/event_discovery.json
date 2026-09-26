@@ -1,5 +1,4 @@
 {
-  "feed_revalidate_seconds": 259200,
   "new_event_window_hours": 24,
   "event_without_end_visibility_minutes": 60,
   "initial_render_count": 24,

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cache } from "react";
 import { headers } from "next/headers";
 import imgContactHero from "@/assets/contact_hero.png";
 import { getPositionDirectorySnapshot } from "@/features/positions/api/positionDirectory.server";
@@ -19,16 +20,16 @@ async function resolveRequestSchool(): Promise<string> {
   );
 }
 
-async function loadPositions(
+const loadPositions = cache(async (
   school: string,
-): Promise<PaginatedPositionsResponse | null> {
+): Promise<PaginatedPositionsResponse | null> => {
   try {
     return await getPositionDirectorySnapshot(school);
   } catch (error) {
     console.error("Initial position directory fetch failed:", error);
     return null;
   }
-}
+});
 
 export async function generateMetadata(): Promise<Metadata> {
   const school = await resolveRequestSchool();

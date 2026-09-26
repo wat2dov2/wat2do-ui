@@ -1,0 +1,28 @@
+{
+  "device_sizes": [
+    256,
+    384,
+    512,
+    640,
+    768,
+    1080
+  ],
+  "image_sizes": [
+    16,
+    24,
+    32,
+    48,
+    64,
+    96,
+    128
+  ],
+  "quality": 75,
+  "first_row_image_count": 6,
+  "optimized_format": "image/webp",
+  "optimized_remote_host": "wat2do.io",
+  "optimized_remote_path": "/media/",
+  "warm_widths": [384, 640],
+  "warm_request_timeout_seconds": 10,
+  "warm_retry_seconds": 60,
+  "warm_success_ttl_seconds": 86400
+}

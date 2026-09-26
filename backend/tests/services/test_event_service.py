@@ -8,6 +8,7 @@ Covers the pieces the router tests can't reach:
    event set for a school, hydrated with occurrences.
 """
 
+import json
 import threading
 from datetime import datetime, timezone
 from unittest.mock import MagicMock
@@ -110,7 +111,7 @@ def _event(**overrides) -> EventResponse:
 
 
 @pytest.mark.parametrize("read", ["detail", "upcoming"])
-def test_event_reads_bound_retries_to_three_database_attempts(monkeypatch, read):
+def test_event_reads_do_not_retry_service_errors(monkeypatch, read):
     failure = MagicMock(side_effect=RuntimeError("Database unavailable"))
     if read == "detail":
         monkeypatch.setattr(event_service, "get_sb", failure)
@@ -126,15 +127,10 @@ def test_event_reads_bound_retries_to_three_database_attempts(monkeypatch, read)
             "model": EventSummaryResponse,
         }
 
-    wrapper = query
-    while hasattr(wrapper, "retry"):
-        monkeypatch.setattr(wrapper.retry, "sleep", lambda _seconds: None)
-        wrapper = wrapper.__wrapped__
-
     with pytest.raises(RuntimeError, match="Database unavailable"):
         query(**kwargs)
 
-    assert failure.call_count == 3
+    assert failure.call_count == 1
 
 
 def test_upcoming_events_preserve_school_window_order_and_cap(monkeypatch):
@@ -212,6 +208,36 @@ def test_summary_columns_exclude_computed_response_fields():
     assert "club_logo_url" not in event_query._SUMMARY_COLUMNS
     assert "club_type" not in event_query._SUMMARY_COLUMNS
     assert "click_count" not in event_query._SUMMARY_COLUMNS
+
+
+def test_browse_occurrences_reduce_payload_without_losing_selection_or_full_detail_fields():
+    occurrences = [
+        _occurrence(datetime(2026, 10, day, 18, tzinfo=timezone.utc)).model_copy(
+            update={"id": UUID(int=day), "duration": "PT2H", "tz": "America/Toronto"}
+        )
+        for day in range(1, 7)
+    ]
+    row = {
+        "id": 1,
+        "title": "Recurring campus workshop",
+        "description": "Searchable details remain intact, including advanced watercolor techniques.",
+        "added_at": datetime(2026, 9, 26, tzinfo=timezone.utc),
+    }
+    summary = event_query.hydrate_event(row, occurrences, EventSummaryResponse).model_dump(
+        mode="json"
+    )
+    detail = event_query.hydrate_event(row, occurrences, EventResponse).model_dump(mode="json")
+    assert summary["description"] == row["description"]
+    for compact, full in zip(summary["occurrences"], detail["occurrences"], strict=True):
+        assert compact == {key: full[key] for key in ("id", "dtstart_utc", "dtend_utc")}
+        assert full["event_id"] == 1
+        assert full["duration"] == "PT2H"
+        assert full["tz"] == "America/Toronto"
+
+    legacy_summary = {**summary, "occurrences": detail["occurrences"]}
+    compact_bytes = len(json.dumps(summary, separators=(",", ":")).encode())
+    legacy_bytes = len(json.dumps(legacy_summary, separators=(",", ":")).encode())
+    assert compact_bytes < legacy_bytes * 0.85
 
 
 # ---------------------------------------------------------------------------
@@ -988,7 +1014,7 @@ def test_candidate_date_sort_keeps_missing_dates_last(sort_by, sort_order, expec
 
 
 @pytest.mark.parametrize("school", ["uwaterloo", None])
-def test_delete_event_invalidates_feed_and_detail_after_commit(monkeypatch, school):
+def test_delete_event_refreshes_school_snapshots_after_commit(monkeypatch, school):
     event = _event(id=42, school=school)
     monkeypatch.setattr(event_service, "get_event", lambda event_id: event)
     sb = MagicMock()
@@ -996,10 +1022,10 @@ def test_delete_event_invalidates_feed_and_detail_after_commit(monkeypatch, scho
     execute.return_value.data = [{"id": 42}]
     monkeypatch.setattr(event_service, "get_sb", lambda: sb)
 
-    def revalidate(actual_school, *, event_id):
+    def revalidate(actual_school, *, resources):
         execute.assert_called_once_with()
         assert actual_school == school
-        assert event_id == 42
+        assert resources == ("events", "clubs")
 
     revalidation = MagicMock(side_effect=revalidate)
     monkeypatch.setattr(
@@ -1008,7 +1034,10 @@ def test_delete_event_invalidates_feed_and_detail_after_commit(monkeypatch, scho
 
     assert event_service.delete_event(42)
     sb.table.return_value.delete.return_value.eq.assert_called_once_with("id", 42)
-    revalidation.assert_called_once_with(school, event_id=42)
+    revalidation.assert_called_once_with(
+        school,
+        resources=("events", "clubs"),
+    )
 
 
 def test_delete_event_database_failure_does_not_invalidate_cache(monkeypatch):
@@ -1026,3 +1055,26 @@ def test_delete_event_database_failure_does_not_invalidate_cache(monkeypatch):
     with pytest.raises(RuntimeError, match="database unavailable"):
         event_service.delete_event(42)
     revalidation.assert_not_called()
+
+
+def test_event_edit_refreshes_both_school_snapshots_after_commit(monkeypatch):
+    from schemas.event import EventUpdate
+
+    old = _event(id=42, school="uwaterloo", club_id=7)
+    updated = _event(id=42, school="western", club_id=8, title="Updated title")
+    monkeypatch.setattr(event_service, "get_event", MagicMock(side_effect=[old, updated]))
+    monkeypatch.setattr(event_service, "has_ended", lambda _: False)
+    commit = MagicMock(return_value=[])
+    monkeypatch.setattr(event_service, "update_event_and_occurrences", commit)
+    refresh = MagicMock(side_effect=lambda *args, **kwargs: commit.assert_called_once())
+    monkeypatch.setattr(
+        event_service.event_feed_revalidation_service, "revalidate_schools", refresh
+    )
+
+    result = event_service.update_event(42, EventUpdate(title="Updated title"))
+
+    assert result.event is updated
+    refresh.assert_called_once_with(
+        ["uwaterloo", "western"],
+        resources=("events", "clubs"),
+    )

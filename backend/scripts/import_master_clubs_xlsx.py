@@ -34,6 +34,7 @@ from core.constants.clubs import (
 )
 from core.database import get_sb
 from core.tables import CLUBS
+from services.event_feed_revalidation import event_feed_revalidation_service
 
 log = logging.getLogger(__name__)
 
@@ -384,6 +385,8 @@ def main() -> int:
         for start in range(0, len(payload), batch_size):
             chunk = payload[start : start + batch_size]
             sb.table(CLUBS).insert(chunk).execute()
+            for school in sorted({row["school"] for row in to_insert[start : start + batch_size]}):
+                event_feed_revalidation_service.revalidate_school(school, resources=("clubs",))
             inserted += len(chunk)
             log.info("  inserted %s/%s", inserted, len(payload))
 
@@ -399,6 +402,10 @@ def main() -> int:
                 **({"club_type": planned["club_type"]} if planned["club_type"] else {}),
             }
         ).eq("id", cid).execute()
+        event_feed_revalidation_service.revalidate_school(
+            planned["school"],
+            resources=("events", "positions", "clubs"),
+        )
         updated += 1
         if updated % 100 == 0:
             log.info("  updated %s/%s", updated, len(to_update))

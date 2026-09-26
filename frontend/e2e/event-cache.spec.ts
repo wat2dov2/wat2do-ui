@@ -43,24 +43,22 @@ test.afterEach(() => {
   else Reflect.deleteProperty(globalThis, "window");
 });
 
-test("school feed loads every page and preserves metadata without publishing partial failures", async () => {
+test("school feed reads one complete canonical snapshot with all results and freshness metadata", async () => {
   const urls: URL[] = [];
+  const complete = {
+    ...feed(Array.from({ length: 55 }, (_, index) => ({ ...event(1), id: index + 1, title: `Event ${index + 1}` }))),
+    generated_at: 1000,
+  };
   globalThis.fetch = async input => {
     const url = new URL(String(input), "http://localhost");
     urls.push(url);
-    const page = Number(url.searchParams.get("page"));
-    return Response.json({ ...feed([event(page)]), page, total: 2, total_pages: 2 });
+    return Response.json(complete);
   };
   const client = getQueryClient();
   const result = await client.fetchQuery(eventFeedQueryOptions("uwaterloo"));
-  expect(result.items.map(item => item.id)).toEqual([1, 2]);
-  expect(result.latest_added_event?.title).toBe("Event 1");
-  expect(result.total_pages).toBe(1);
-  expect(urls.map(url => url.searchParams.get("page"))).toEqual(["1", "2"]);
-  expect(urls.every(url => url.searchParams.get("school") === "uwaterloo")).toBe(true);
-  globalThis.fetch = async input => new URL(String(input), "http://localhost").searchParams.get("page") === "1"
-    ? Response.json({ ...feed([event(1, "ubc")]), total_pages: 2 })
-    : Response.json({ detail: "Request failed with status 503" }, { status: 503 });
+  expect(result).toEqual(complete);
+  expect(urls.map(url => `${url.pathname}${url.search}`)).toEqual(["/api/discovery?school=uwaterloo&resource=events"]);
+  globalThis.fetch = async () => Response.json({ detail: "Request failed with status 503" }, { status: 503 });
   await expect(client.fetchQuery(eventFeedQueryOptions("ubc"))).rejects.toThrow("503");
   expect(client.getQueryData(queryKeys.events.bySchool("ubc"))).toBeUndefined();
 });
@@ -202,10 +200,12 @@ test("club ordering is stable after server hydration and out-of-order mutation r
 });
 
 
-test("direct submission returns promptly while its complete feed refresh supersedes an old route snapshot", async () => {
+test("direct submission merges its confirmed event into an older complete canonical generation", async () => {
   const client = getQueryClient();
+  Date.now = () => 2000;
   const created = event(2);
   const complete = feed([event(1), created]);
+  const oldCanonical = { ...feed([event(1)]), generated_at: 1000 };
   let resolveRead!: (response: Response) => void;
   let readCount = 0;
   globalThis.fetch = async (_input, options) => {
@@ -223,9 +223,120 @@ test("direct submission returns promptly while its complete feed refresh superse
   const unsubscribe = returning.subscribe(() => {});
   expect(returning.getCurrentResult().isFetching).toBe(true);
   expect(readCount).toBe(1);
-  resolveRead(Response.json(complete));
-  await expect.poll(() => returning.getCurrentResult().data).toEqual(complete);
+  resolveRead(Response.json(oldCanonical));
+  await expect.poll(() => returning.getCurrentResult().data).toEqual({
+    ...complete, generated_at: 1000, confirmed_at: 2000,
+  });
   expect(readCount).toBe(1);
+  globalThis.fetch = async () => Response.json(oldCanonical);
+  await returning.refetch();
+  expect(returning.getCurrentResult().data?.items).toEqual(complete.items);
+  const rebuilt = { ...complete, generated_at: 3000 };
+  globalThis.fetch = async () => Response.json(rebuilt);
+  await returning.refetch();
+  expect(returning.getCurrentResult().data).toEqual(rebuilt);
   unsubscribe();
   returning.destroy();
+});
+
+test("canonical generations cannot roll back confirmed edits or resurrect confirmed deletions", async () => {
+  const client = getQueryClient();
+  const key = queryKeys.events.bySchool("uwaterloo");
+  const snapshot = { ...feed([event(1), event(2)]), generated_at: 1000 };
+  Date.now = () => 2000;
+  const observer = new QueryObserver(client, {
+    ...eventFeedQueryOptions("uwaterloo"), initialData: snapshot, initialDataUpdatedAt: snapshot.generated_at,
+  });
+  globalThis.fetch = async () => Response.json({ ...event(1), title: "Confirmed edit" });
+  await updateEventAPI(1, form);
+  Date.now = () => 2100;
+  globalThis.fetch = async () => new Response(null, { status: 204 });
+  await deleteEventAPI(2);
+  globalThis.fetch = async () => Response.json({ ...snapshot, generated_at: 1500 });
+  await observer.refetch();
+  expect(client.getQueryData<PaginatedEventsResponse>(key)).toMatchObject({
+    items: [{ id: 1, title: "Confirmed edit" }], confirmed_at: 2100,
+  });
+  const rebuilt = { ...feed([{ ...event(1), title: "Confirmed edit" }, event(3)]), generated_at: 2200 };
+  globalThis.fetch = async () => Response.json(rebuilt);
+  await observer.refetch();
+  expect(client.getQueryData(key)).toEqual(rebuilt);
+  observer.destroy();
+});
+
+test("concurrent direct confirmations share one complete read and preserve both new events", async () => {
+  const client = getQueryClient();
+  const key = queryKeys.events.bySchool("uwaterloo");
+  Date.now = () => 2000;
+  let nextId = 2;
+  let reads = 0;
+  let resolveRead!: (response: Response) => void;
+  globalThis.fetch = async (_input, options) => {
+    if (options?.method === "POST") return Response.json(event(nextId++));
+    reads += 1;
+    return new Promise<Response>(resolve => { resolveRead = resolve; });
+  };
+  await createEventAPI(form);
+  await createEventAPI(form);
+  expect(reads).toBe(1);
+  resolveRead(Response.json({ ...feed([event(1)]), generated_at: 1000 }));
+  await expect.poll(() => client.getQueryData<PaginatedEventsResponse>(key)?.items.map(item => item.id)).toEqual([1, 2, 3]);
+  expect(client.getQueryData<PaginatedEventsResponse>(key)?.confirmed_at).toBe(2000);
+});
+
+test("a direct create followed by deletion cannot reappear when its pending complete read finishes", async () => {
+  const client = getQueryClient();
+  const key = queryKeys.events.bySchool("uwaterloo");
+  Date.now = () => 2000;
+  let reads = 0;
+  let resolveRead!: (response: Response) => void;
+  globalThis.fetch = async (_input, options) => {
+    if (options?.method === "POST") return Response.json(event(2));
+    if (options?.method === "DELETE") return new Response(null, { status: 204 });
+    reads += 1;
+    return new Promise<Response>(resolve => { resolveRead = resolve; });
+  };
+  await createEventAPI(form);
+  Date.now = () => 2100;
+  await deleteEventAPI(2);
+  expect(reads).toBe(1);
+  resolveRead(Response.json({ ...feed([event(1), event(2)]), generated_at: 1000 }));
+  await expect.poll(() => client.getQueryData<PaginatedEventsResponse>(key)?.items.map(item => item.id)).toEqual([1]);
+  expect(client.getQueryData<PaginatedEventsResponse>(key)?.confirmed_at).toBe(2100);
+});
+
+test("old hydrated snapshots retain their actual age instead of becoming fresh on mount", () => {
+  Date.now = () => 1_000_000;
+  const snapshot = { ...feed([event(1)]), generated_at: 1000 };
+  const client = getQueryClient();
+  const observer = new QueryObserver(client, {
+    ...eventFeedQueryOptions("uwaterloo"), initialData: snapshot, initialDataUpdatedAt: snapshot.generated_at,
+  });
+  expect(client.getQueryState(queryKeys.events.bySchool("uwaterloo"))?.dataUpdatedAt).toBe(1000);
+  expect(observer.getCurrentResult().isStale).toBe(true);
+  observer.destroy();
+});
+
+test("Positions and Clubs browser consumers reuse complete public snapshots without auth requests", async () => {
+  const { getPositionDirectory }: typeof import("../src/features/positions/api/positions.api") = require("../src/features/positions/api/positions.api");
+  const { clubDirectoryQueryOptions }: typeof import("../src/features/clubs/api/clubs.api") = require("../src/features/clubs/api/clubs.api");
+  const requests: Array<{ url: string; credentials?: RequestCredentials }> = [];
+  globalThis.fetch = async (input, init) => {
+    requests.push({ url: String(input), credentials: init?.credentials });
+    return Response.json({ items: [{ id: 1, club_name: "Western Club" }], total: 1, page: 1, page_size: 1, total_pages: 1, generated_at: 1000 });
+  };
+  const positions = await getPositionDirectory(" UWO ");
+  const client = getQueryClient();
+  const directory = await client.fetchQuery(clubDirectoryQueryOptions(" UWO "));
+  const form = new QueryObserver(client, {
+    ...clubDirectoryQueryOptions("uwo"), select: (snapshot) => snapshot.items,
+  });
+  expect(requests).toEqual([
+    { url: "/api/discovery?school=uwo&resource=positions", credentials: "omit" },
+    { url: "/api/discovery?school=uwo&resource=clubs", credentials: "omit" },
+  ]);
+  expect(positions.generated_at).toBe(1000);
+  expect(form.getCurrentResult().data).toEqual(directory.items);
+  expect(client.getQueryData(queryKeys.clubs.allForSchool("uwo"))).toEqual(directory);
+  form.destroy();
 });

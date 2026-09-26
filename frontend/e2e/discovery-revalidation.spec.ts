@@ -2,68 +2,92 @@ import { expect, test } from "@playwright/test";
 import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
-const cache = require("next/cache");
 const server = require("next/server");
-const invalidations: Array<{ tag: string; profile: unknown }> = [];
 const callbacks: Array<() => Promise<void>> = [];
-const cacheModule = require.cache[require.resolve("next/cache")]!;
+const queued: Array<{ school: string; resources: string[] }> = [];
+let failQueue = false;
 const serverModule = require.cache[require.resolve("next/server")]!;
-cacheModule.exports = { ...cache, revalidateTag: (tag: string, profile: unknown) => invalidations.push({ tag, profile }) };
-serverModule.exports = { ...server, after: (callback: () => Promise<void>) => callbacks.push(callback) };
-const { POST }: typeof import("../src/app/api/revalidate-events/route") = require("../src/app/api/revalidate-events/route");
-cacheModule.exports = cache;
+serverModule.exports = {
+  ...server,
+  after: (callback: () => Promise<void>) => callbacks.push(callback),
+};
+require("../src/app/discoveryRefresh.server");
+const refreshModule =
+  require.cache[require.resolve("../src/app/discoveryRefresh.server")]!;
+const refresh = refreshModule.exports;
+refreshModule.exports = {
+  ...refresh,
+  queueDiscoveryRefresh: async (school: string, resources: string[]) => {
+    if (failQueue) throw new Error("storage unavailable");
+    queued.push({ school, resources });
+  },
+  reconcileDiscoverySnapshots: async () => {},
+};
+require("../src/shared/api/schools.server");
+const schoolsModule =
+  require.cache[require.resolve("../src/shared/api/schools.server")]!;
+const schools = schoolsModule.exports;
+schoolsModule.exports = {
+  ...schools,
+  getSchoolDirectory: async () => [{ slug: "uwo" }],
+};
+const {
+  POST,
+}: typeof import("../src/app/api/revalidate-events/route") = require("../src/app/api/revalidate-events/route");
 serverModule.exports = server;
-const originalFetch = globalThis.fetch;
+refreshModule.exports = refresh;
+schoolsModule.exports = schools;
 const originalSecret = process.env.EVENT_FEED_REVALIDATION_SECRET;
 
 test.beforeEach(() => {
-  invalidations.length = 0;
-  callbacks.length = 0;
+  callbacks.length = queued.length = 0;
+  failQueue = false;
   process.env.EVENT_FEED_REVALIDATION_SECRET = "test-revalidation-secret";
 });
 test.afterEach(() => {
-  globalThis.fetch = originalFetch;
-  if (originalSecret === undefined) delete process.env.EVENT_FEED_REVALIDATION_SECRET;
+  if (originalSecret === undefined)
+    delete process.env.EVENT_FEED_REVALIDATION_SECRET;
   else process.env.EVENT_FEED_REVALIDATION_SECRET = originalSecret;
 });
-
-function request(secret = "test-revalidation-secret") {
+function request(body: unknown, secret = "test-revalidation-secret") {
   return new server.NextRequest("http://localhost/api/revalidate-events", {
     method: "POST",
-    headers: { authorization: `Bearer ${secret}`, "content-type": "application/json" },
-    body: JSON.stringify({ school: "uwaterloo", event_id: 7 }),
+    headers: {
+      authorization: `Bearer ${secret}`,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify(body),
   });
 }
+const eventRequest = { school: "uwo", resources: ["events", "clubs"] };
 
-test("invalidates and warms every directory independently while preserving stale snapshots", async () => {
-  const urls: URL[] = [];
-  globalThis.fetch = async input => {
-    const url = new URL(String(input));
-    urls.push(url);
-    if (url.pathname === "/events/") return new Response(null, { status: 503 });
-    if (url.pathname === "/schools") return Response.json([]);
-    if (url.pathname.startsWith("/schools/")) return Response.json({ slug: "uwaterloo" });
-    return Response.json({ items: [], total: 0, page: 1, page_size: 100, total_pages: 1 });
-  };
-  const response = await POST(request());
-  expect(response.status).toBe(200);
-  expect(invalidations).toEqual([
-    { tag: "event-detail-7", profile: { expire: 0 } },
-    { tag: "event-feed-uwaterloo", profile: "max" },
-    { tag: "position-directory-uwaterloo", profile: "max" },
-    { tag: "club-directory-uwaterloo", profile: "max" },
-    { tag: "school-branding-uwaterloo", profile: "max" },
-    { tag: "school-directory", profile: "max" },
-  ]);
-  expect(callbacks).toHaveLength(5);
-  const results = await Promise.allSettled(callbacks.map(callback => callback()));
-  expect(results.map(result => result.status)).toEqual(["rejected", "fulfilled", "fulfilled", "fulfilled", "fulfilled"]);
-  expect(urls.map(url => url.pathname).sort()).toEqual(["/clubs/", "/events/", "/positions/", "/schools", "/schools/uwaterloo"].sort());
+test("acknowledges durable scoped work without claiming a completed warm", async () => {
+  const response = await POST(request(eventRequest));
+  expect(response.status).toBe(202);
+  expect(await response.json()).toEqual({
+    accepted: true,
+    school: "uwo",
+    resources: ["events", "clubs"],
+  });
+  expect(queued).toEqual([{ school: "uwo", resources: ["events", "clubs"] }]);
+  expect(callbacks).toHaveLength(1);
 });
 
-test("unauthorized invalidation never touches or warms the cache", async () => {
-  const response = await POST(request("wrong-secret"));
-  expect(response.status).toBe(401);
-  expect(invalidations).toEqual([]);
+test("failed durable writes are errors, not successful warming responses", async () => {
+  failQueue = true;
+  expect((await POST(request(eventRequest))).status).toBe(503);
+  expect(callbacks).toEqual([]);
+});
+
+test("invalid and unauthorized requests never schedule work", async () => {
+  expect((await POST(request(eventRequest, "wrong"))).status).toBe(401);
+  for (const body of [
+    { ...eventRequest, school: "western" },
+    { ...eventRequest, resources: ["invalid"] },
+    { ...eventRequest, event_ids: [0] },
+  ]) {
+    expect((await POST(request(body))).status).toBe(400);
+  }
+  expect(queued).toEqual([]);
   expect(callbacks).toEqual([]);
 });

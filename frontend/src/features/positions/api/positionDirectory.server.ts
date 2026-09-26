@@ -1,15 +1,12 @@
+import { readDiscoverySnapshot } from "@/shared/services/discoveryCache.server";
 import { collectPaginatedPages } from "@/shared/lib/pagination";
 import type { ApiPaginatedPositionResponse } from "@/shared/generated";
 import type { PaginatedPositionsResponse } from "@/features/positions/api/positions.api";
 import { normalizePosition } from "@/features/positions/api/positionService";
 import { controlBox } from "@/shared/config/controlBox";
 import { resolveSchool } from "@/shared/constants/schools";
-import { getServerApiBaseUrl } from "@/shared/services/serverApi";
+import { fetchServerSnapshot, getServerApiBaseUrl } from "@/shared/services/serverApi";
 import type { Position } from "@/shared/types";
-
-export function positionDirectoryTag(school: string): string {
-  return `position-directory-${resolveSchool(school)}`;
-}
 
 async function fetchPositionsPage(
   school: string,
@@ -25,7 +22,7 @@ async function fetchPositionsPage(
   if (clubId != null) {
     params.set("club_id", String(clubId));
   }
-  const response = await fetch(
+  const response = await fetchServerSnapshot(
     `${getServerApiBaseUrl()}/positions/?${params.toString()}`,
     fetchOptions,
   );
@@ -43,24 +40,12 @@ async function fetchPositionsPage(
   };
 }
 
-export async function getPositionDirectorySnapshot(
+export async function buildPositionDirectorySnapshot(
   school: string,
 ): Promise<PaginatedPositionsResponse> {
   const resolvedSchool = resolveSchool(school);
-  const fetchOptions = positionDirectoryFetchOptions(resolvedSchool);
+  const fetchOptions: RequestInit = { cache: "no-store" };
   return collectPaginatedPages((page) => fetchPositionsPage(resolvedSchool, page, fetchOptions));
-}
-
-function positionDirectoryFetchOptions(school: string): RequestInit {
-  return {
-    next: {
-      revalidate:
-        process.env.NODE_ENV === "development"
-          ? 0
-          : controlBox.eventDiscovery.feedRevalidateSeconds,
-      tags: [positionDirectoryTag(school)],
-    },
-  };
 }
 
 /** Every currently open position for one club on its public page. */
@@ -69,9 +54,14 @@ export async function getClubPositionsSnapshot(
   school: string,
 ): Promise<Position[]> {
   const resolvedSchool = resolveSchool(school);
-  const fetchOptions = positionDirectoryFetchOptions(resolvedSchool);
+  const fetchOptions: RequestInit = { cache: "no-store" };
   const directory = await collectPaginatedPages((page) =>
     fetchPositionsPage(resolvedSchool, page, fetchOptions, clubId),
   );
   return directory.items;
+}
+
+export async function getPositionDirectorySnapshot(school: string) {
+  const slug = resolveSchool(school);
+  return readDiscoverySnapshot(slug, "positions", () => buildPositionDirectorySnapshot(slug));
 }

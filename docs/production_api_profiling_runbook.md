@@ -11,6 +11,8 @@ It does not store access tokens, OTPs, response bodies, resource IDs, email addr
 The profiler sends only GET requests after authentication.
 It deliberately excludes these routes:
 
+- `/auth/google` because it starts OAuth and writes an authentication state cookie.
+- `/auth/google/callback` because it exchanges an OAuth code and changes the session.
 - `/qr/{qr_code_id}` because calling it records a scan.
 - `/calendar/token` because its GET handler can create a calendar token.
 - `/calendar/feed/{token}.ics` because it requires that private calendar token.
@@ -45,6 +47,21 @@ Every successful run creates a UTC-timestamped directory such as `/tmp/20260728T
 The directory contains `profile.json` and `latency-distributions.svg`.
 The script prints the exact run-directory path after writing both artifacts.
 There is no output-path option, so one run cannot accidentally overwrite another run.
+
+The default school remains `uwaterloo`.
+Use `--school` to compare the same public school queries and event/club detail routes for another campus:
+
+```bash
+.venv/bin/python scripts/profile_production_api.py \
+  --email your-account@example.com \
+  --school uwo
+```
+
+The selected slug scopes Events, Positions, Clubs, event statistics, the QR map, school search/detail, and event/position/club detail discovery.
+An owned club is preferred only when it belongs to that school.
+Account-wide and administrative routes retain their existing scope.
+The output records the selected school in `methodology.school`.
+This option does not change the route inventory, authentication, sampling defaults, or GET safety classification.
 
 If an OTP was already sent immediately before the run, add `--skip-send-otp`:
 
@@ -89,6 +106,7 @@ The measured duration includes network latency between the workstation and produ
 ## Coverage check
 
 Every run calls FastAPI's `app.openapi()` from the local checkout and compares its route classifications with that runtime-generated schema.
+Unclassified or stale routes stop the run before it sends an OTP or begins authentication.
 FastAPI includes every GET route registered on the application when the schema is generated.
 This includes parameterized GET routes and GET routes added through included routers.
 It does not prove that the deployed production application is running the same commit as the local checkout.

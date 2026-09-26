@@ -11,12 +11,14 @@ import {
 import {
   SLIDE_HEIGHT,
   SLIDE_WIDTH,
+  SLIDE_POSTER_REGIONS,
   buildCoverSlideModel,
   buildEventSlideModel,
   type SlideEvent,
 } from "@/features/admin/lib/instagramSlides";
 import { getSchool } from "@/shared/api/schools.server";
 import { getSchoolColors } from "@/shared/lib/schoolBranding";
+import instagramPublishing from "../../../../../backend/controlbox/instagram_publishing.json" with { type: "json" };
 
 export const runtime = "nodejs";
 
@@ -98,7 +100,7 @@ function getBearerSecret(request: NextRequest): string | null {
  * rejected rather than fetched, so this route can never be pointed at an
  * internal host.
  */
-async function inlineImage(sourceUrl: string | null | undefined): Promise<string> {
+async function inlineImage(sourceUrl: string | null | undefined, kind: SlideRequest["kind"]): Promise<string> {
   if (!sourceUrl) return "";
   const storageBase = (() => {
     try {
@@ -135,7 +137,11 @@ async function inlineImage(sourceUrl: string | null | undefined): Promise<string
   }
   // Resvg's WASM rasterizer silently omits WebP images. Decode every poster
   // before embedding it so unsupported formats cannot publish as blank slides.
-  const png = await sharp(bytes).autoOrient().png().toBuffer();
+  const png = await sharp(bytes).autoOrient().resize({
+    ...SLIDE_POSTER_REGIONS[kind],
+    fit: kind === "event" ? "inside" : "cover",
+    withoutEnlargement: true,
+  }).png().toBuffer();
   return `data:image/png;base64,${png.toString("base64")}`;
 }
 
@@ -147,12 +153,17 @@ async function buildSlide(slide: SlideRequest): Promise<React.ReactElement> {
   if (!schoolRecord) throw new Error(`School not found for slide rendering: ${school}`);
 
   if (slide.kind === "event") {
-    const imageSrc = await inlineImage(slide.event.source_image_url);
+    const imageSrc = await inlineImage(slide.event.source_image_url, "event");
     return <EventSlideTemplate model={await buildEventSlideModel(slide.event, schoolRecord.language, imageSrc)} />;
   }
 
-  const tiles = (await Promise.all(slide.events.map((event) => inlineImage(event.source_image_url))))
-    .filter((tile) => tile.length > 0);
+  const posterUrls = slide.events
+    .flatMap(event => event.source_image_url ? [event.source_image_url] : [])
+    .slice(0, instagramPublishing.maximum_event_slides);
+  // Recurring events can share a poster. Download and decode it once per cover,
+  // while preserving every event's position in the visible fan.
+  const images = new Map([...new Set(posterUrls)].map(url => [url, inlineImage(url, "cover")]));
+  const tiles = await Promise.all(posterUrls.map(url => images.get(url)!));
   return (
     <CoverSlideTemplate
       model={buildCoverSlideModel({
@@ -196,8 +207,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "A cover needs at least one event" }, { status: 400 });
   }
 
-  const [fonts] = await Promise.all([loadFonts(), loadRenderer()]);
-  const svg = await satori(await buildSlide(body), {
+  const [fonts, , slide] = await Promise.all([loadFonts(), loadRenderer(), buildSlide(body)]);
+  const svg = await satori(slide, {
     width: SLIDE_WIDTH,
     height: SLIDE_HEIGHT,
     fonts,

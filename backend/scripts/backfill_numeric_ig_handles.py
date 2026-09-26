@@ -35,6 +35,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from core.controlbox import controlbox  # noqa: E402
 from core.database import supabase_admin  # noqa: E402
 from core.tables import CLUBS, EVENTS  # noqa: E402
+from services import school_service  # noqa: E402
+from services.event_feed_revalidation import event_feed_revalidation_service  # noqa: E402
 
 # The endpoint answers without a session, but only at a human pace: it starts
 # returning 401 after a short burst.
@@ -83,7 +85,7 @@ def _rows_with_numeric_handle(table: str, column: str) -> list[dict[str, Any]]:
     while True:
         response = (
             supabase_admin.table(table)
-            .select(f"id,{column}")
+            .select(f"id,{column},{school_service.SCHOOL_SLUG_EMBED}")
             .not_.is_(column, "null")
             .range(offset, offset + _PAGE_SIZE - 1)
             .execute()
@@ -91,7 +93,11 @@ def _rows_with_numeric_handle(table: str, column: str) -> list[dict[str, Any]]:
         batch = response.data or []
         if not batch:
             break
-        rows.extend(row for row in batch if _is_numeric_handle(row.get(column)))
+        rows.extend(
+            school_service.with_school_slug(row)
+            for row in batch
+            if _is_numeric_handle(row.get(column))
+        )
         if len(batch) < _PAGE_SIZE:
             break
         offset += _PAGE_SIZE
@@ -145,6 +151,10 @@ def main() -> int:
             supabase_admin.table(EVENTS).update({"ig_handle": username}).eq(
                 "id", row["id"]
             ).execute()
+            event_feed_revalidation_service.revalidate_school(
+                row.get("school"),
+                resources=("events", "clubs"),
+            )
         updated_events += 1
 
     updated_clubs = 0
@@ -154,6 +164,10 @@ def main() -> int:
             continue
         if not args.dry_run:
             supabase_admin.table(CLUBS).update({"ig": username}).eq("id", row["id"]).execute()
+            event_feed_revalidation_service.revalidate_school(
+                row.get("school"),
+                resources=("events", "positions", "clubs"),
+            )
         updated_clubs += 1
 
     verb = "would update" if args.dry_run else "updated"

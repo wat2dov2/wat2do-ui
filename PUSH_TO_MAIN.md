@@ -60,12 +60,13 @@ cd frontend
 npm ci   # skip if node_modules already matches package-lock.json
 ```
 
-Run **all four** commands. Each must exit 0:
+Run **all five** commands. Each must exit 0:
 
 ```bash
 npm run lint
 npm run audit:i18n
 npm run type-check
+npm run test:discovery
 NEXT_PUBLIC_API_URL=/api npm run build
 ```
 
@@ -175,6 +176,7 @@ Agent handoff after a successful push:
   npm run lint && \
   npm run audit:i18n && \
   npm run type-check && \
+  npm run test:discovery && \
   NEXT_PUBLIC_API_URL=/api npm run build)
 
 # Social-preview worker
@@ -192,4 +194,4 @@ Agent handoff after a successful push:
 
 ## Verification
 
-Last agent-verified: 2026-07-23
+Last agent-verified: 2026-09-26

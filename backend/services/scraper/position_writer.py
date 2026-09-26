@@ -96,7 +96,7 @@ def write_position(
         inserted.data[0].get("id"),
         title,
     )
-    event_feed_revalidation_service.revalidate_school(school.slug)
+    event_feed_revalidation_service.revalidate_school(school.slug, resources=("positions", "clubs"))
     return "inserted"
 
 

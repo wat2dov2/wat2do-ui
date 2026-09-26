@@ -2,7 +2,7 @@ import { useReducer, type ChangeEvent, type FormEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useAuthState } from "@/features/auth";
-import { getAllClubs } from "@/features/clubs";
+import { clubDirectoryQueryOptions } from "@/features/clubs";
 import { useEventsStore } from "@/features/events/store/events.store";
 import { parsePositionImage, submitPosition } from "@/features/positions/api/positions.api";
 import { getCurrentSchool, resolveSchool } from "@/shared/constants/schools";
@@ -33,8 +33,8 @@ export function usePositionSubmission() {
     busy: false, error: null, submitted: false,
   });
   const clubs = useQuery({
-    queryKey: queryKeys.clubs.allForSchool(school),
-    queryFn: () => getAllClubs(school),
+    ...clubDirectoryQueryOptions(school),
+    select: (directory) => directory.items,
     enabled: isAuthenticated,
   });
   const edit = (data: Partial<ApiPositionCreate>) => dispatch({ type: "edit", data });

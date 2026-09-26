@@ -1,3 +1,4 @@
 {
-  "dismissal_days": 30
+  "dismissal_days": 30,
+  "refresh_seconds": 259200
 }

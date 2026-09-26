@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "storage_prefix": "media/discovery-cache",
+  "refresh_interval_seconds": 300,
+  "worker_interval_seconds": 15,
+  "lease_seconds": 120,
+  "request_timeout_seconds": 20,
+  "page_concurrency": 2,
+  "maximum_page_count": 200,
+  "state_write_attempts": 8,
+  "failure_backoff_seconds": 30,
+  "maximum_snapshot_age_seconds": 86400,
+  "readiness_timeout_seconds": 600,
+  "startup_grace_seconds": 90,
+  "deployment_timeout_seconds": 1200,
+  "generation_retention_days": 7
+}

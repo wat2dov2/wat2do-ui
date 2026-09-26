@@ -175,7 +175,7 @@ def test_apply_plan_writes_selected_school_and_revalidates_once(monkeypatch):
     assert query.update.call_args.args[0] == {"club_type": "utsu"}
     query.in_.assert_called_once_with("id", [1])
     assert query.insert.call_args.args[0][0]["club_name"] == "New Club"
-    revalidate.assert_called_once_with("utsg")
+    revalidate.assert_called_once_with("utsg", resources=("events", "positions", "clubs"))
 
 
 def test_apply_plan_skips_insert_already_written_by_a_partial_run(monkeypatch):

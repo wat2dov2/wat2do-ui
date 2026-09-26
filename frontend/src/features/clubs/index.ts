@@ -9,7 +9,7 @@ export { ClubBadgeDropdown } from "./components/ClubBadgeDropdown";
 
 // API
 export {
-  getAllClubs,
+  clubDirectoryQueryOptions,
   getMyClubs,
   getClubById,
   createClubAPI,

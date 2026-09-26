@@ -17,7 +17,7 @@ export async function getSiteBanner(): Promise<SiteBanner | null> {
   try {
     const response = await fetch(`${getServerApiBaseUrl()}/site-banner`, {
       next: {
-        revalidate: controlBox.eventDiscovery.feedRevalidateSeconds,
+        revalidate: controlBox.siteBanner.refreshSeconds,
         tags: [SITE_BANNER_TAG],
       },
     });

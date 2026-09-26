@@ -511,7 +511,9 @@ def main() -> int:
         run_transaction(build_transaction_sql(plan))
         deleted_logos = delete_unreferenced_logos(sb, obsolete_logos)
         changed_schools = sorted(counts)
-        event_feed_revalidation_service.revalidate_schools(changed_schools)
+        event_feed_revalidation_service.revalidate_schools(
+            changed_schools, resources=("events", "positions", "clubs")
+        )
         log.info(
             "Reconciled %s; deleted %d unreferenced logos",
             ", ".join(changed_schools),

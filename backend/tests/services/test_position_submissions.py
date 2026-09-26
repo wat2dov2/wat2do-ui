@@ -121,3 +121,30 @@ def test_terminal_submission_cannot_be_reopened(monkeypatch):
             row()["id"], "pending", None, reviewed_by="admin"
         )
     database.assert_not_called()
+
+
+def test_approved_position_refreshes_positions_and_clubs_after_commit(
+    fake_sb, patch_sb, monkeypatch
+):
+    from services.event_feed_revalidation import event_feed_revalidation_service
+
+    patch_sb("services.submission_service")
+    monkeypatch.setattr(
+        submission_service,
+        "get_submission_by_id",
+        lambda *args, **kwargs: PositionSubmissionResponse(**row()),
+    )
+    monkeypatch.setattr(
+        submission_service.club_service,
+        "get_club",
+        lambda _id: SimpleNamespace(id=7, school="uwaterloo"),
+    )
+    fake_sb.set_response(data=[row("approved")])
+    refresh = Mock(side_effect=lambda *args, **kwargs: fake_sb.execute.assert_called_once())
+    monkeypatch.setattr(event_feed_revalidation_service, "revalidate_school", refresh)
+
+    submission_service.review_position_submission(
+        row()["id"], "approved", None, reviewed_by="admin"
+    )
+
+    refresh.assert_called_once_with("uwaterloo", resources=("positions", "clubs"))

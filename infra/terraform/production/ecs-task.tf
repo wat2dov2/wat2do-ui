@@ -154,11 +154,13 @@ resource "aws_ecs_task_definition" "application" {
         },
       ]
       healthCheck = {
-        command     = ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:3000/healthz').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))\""]
-        interval    = 15
-        timeout     = 5
-        retries     = 3
-        startPeriod = 20
+        command  = ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:3000/healthz').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))\""]
+        interval = 15
+        timeout  = 5
+        retries  = 3
+        # ECS caps the container start period at 300 seconds. The service grace
+        # covers the full discovery bootstrap while old healthy tasks serve.
+        startPeriod = min(local.discovery_cache_control.readiness_timeout_seconds, 300)
       }
       logConfiguration = {
         logDriver = "awslogs"

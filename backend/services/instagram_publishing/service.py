@@ -35,7 +35,6 @@ from core.errors import (
 )
 from core.exceptions import ConflictError, NotFoundError, ValidationError
 from core.pagination import fetch_all_pages
-from core.retry import supabase_retry
 from core.tables import (
     EVENT_DATES,
     EVENTS,
@@ -104,7 +103,6 @@ def generate_due_batches(
     return stats
 
 
-@supabase_retry
 def list_batches(
     *,
     batch_status: str | None,
@@ -128,7 +126,6 @@ def list_batches(
     return batches, response.count or len(batches)
 
 
-@supabase_retry
 def get_batch(batch_id: UUID | str) -> dict[str, Any]:
     response = (
         get_sb()
