@@ -34,7 +34,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       getClubDirectorySnapshot(school),
       getPositionDirectorySnapshot(school),
     ]);
-    const eventEntries: MetadataRoute.Sitemap = snapshot.feed.items
+    const eventEntries: MetadataRoute.Sitemap = snapshot.items
       .filter(isEventIndexable)
       .map((event) => ({
         url: getSchoolCanonicalUrl(school, eventPagePath(event.id)),
@@ -56,7 +56,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     return [
       {
         url: rootUrl,
-        lastModified: validLastModified(snapshot.feed.latest_added_event?.added_at),
+        lastModified: validLastModified(snapshot.latest_added_event?.added_at),
         changeFrequency: "daily",
         priority: 1,
       },

@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import type { PaginatedPositionsResponse } from "@/features/positions/api/positions.api";
 import { getPositionDirectory } from "@/features/positions/api/positions.api";
 import { useDiscoveryQueryTracking } from "@/shared/hooks/useDiscoveryQueryTracking";
-import { useEventsStore } from "@/features/events/store/events.store";
 import { resolveSchool } from "@/shared/constants/schools";
 import { filterPositions } from "@/features/positions/api/positionService";
 import { queryKeys } from "@/shared/lib/queryKeys";
@@ -25,13 +24,12 @@ export function usePositionsPage({
   const [positionType, setPositionType] = useState<PositionTypeFilter>("all");
   const [addedSince, setAddedSince] = useState<string | null>(null);
   const [selectedPositionId, setSelectedPositionId] = useState<number | null>(null);
-  const schoolFilter = useEventsStore((state) => state.schoolFilter);
-  const school = resolveSchool(schoolFilter ?? initialSchool);
+  const school = resolveSchool(initialSchool);
   const query = useQuery({
     queryKey: queryKeys.positions.allForSchool(school),
     retry: false,
     queryFn: () => getPositionDirectory(school),
-    initialData: school === resolveSchool(initialSchool) ? initialDirectory ?? undefined : undefined,
+    initialData: initialDirectory ?? undefined,
   });
   const positions = useMemo(
     () => filterPositions(query.data?.items ?? [], {
@@ -85,7 +83,7 @@ export function usePositionsPage({
     openPosition: (position: Position) => setSelectedPositionId(position.id),
     closePosition: () => setSelectedPositionId(null),
     isLoading: query.isLoading,
-    isError: query.isError,
+    isError: query.isLoadingError,
     retry: () => void query.refetch(),
   };
 }

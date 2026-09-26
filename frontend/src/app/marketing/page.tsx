@@ -1,16 +1,19 @@
 "use client";
 
 import { ProtectedRoute } from "@/app/ProtectedRoute";
-import { useEventsStore } from "@/features/events/store/events.store";
+import { useQuery } from "@tanstack/react-query";
+import { useRequestSchool } from "@/app/client-providers";
+import { eventFeedQueryOptions } from "@/features/events/api/events.api";
 import { MarketingPage as MarketingPageContent } from "@/features/marketing/pages/MarketingPage";
 import { ROLE_ADMIN } from "@/shared/constants/roles";
 
 export default function MarketingPage() {
-  const events = useEventsStore((state) => state.events);
+  const school = useRequestSchool();
+  const { data } = useQuery(eventFeedQueryOptions(school));
 
   return (
     <ProtectedRoute requiredRole={ROLE_ADMIN}>
-      <MarketingPageContent events={events} />
+      <MarketingPageContent events={data?.items ?? []} />
     </ProtectedRoute>
   );
 }

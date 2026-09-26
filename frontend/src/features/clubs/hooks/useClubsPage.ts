@@ -1,7 +1,6 @@
 import { useState, useCallback, useMemo } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { useDiscoveryQueryTracking } from "@/shared/hooks/useDiscoveryQueryTracking";
-import { useEventsStore } from "@/features/events/store/events.store";
 import { useAppConstants } from "@/shared/hooks/useAppConstants";
 import { resolveSchool } from "@/shared/constants/schools";
 import { useSavedClubsStore } from "@/features/clubs/store/savedClubs.store";
@@ -30,8 +29,7 @@ export function useClubsPage({
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [minEvents, setMinEvents] = useState(0);
 
-  const schoolFilter = useEventsStore((s) => s.schoolFilter);
-  const resolvedSchoolFilter = resolveSchool(schoolFilter ?? initialSchool);
+  const resolvedSchoolFilter = resolveSchool(initialSchool);
 
   const { club_categories: allCategories } = useAppConstants();
 
@@ -41,9 +39,7 @@ export function useClubsPage({
     queryKey: queryKeys.clubs.allForSchool(resolvedSchoolFilter),
     queryFn: () => getAllClubs(resolvedSchoolFilter),
     retry: false,
-    initialData: resolvedSchoolFilter === resolveSchool(initialSchool)
-      ? initialDirectory?.items
-      : undefined,
+    initialData: initialDirectory?.items,
   });
   const clubs = useMemo(() => filterClubs(query.data ?? [], {
     search: submittedSearch.query,
@@ -88,7 +84,7 @@ export function useClubsPage({
     clubs,
     allCategories,
     isLoading: query.isLoading || (isAuthenticated && activeTab === "followed" && !isSavedLoaded),
-    isError: query.isError,
+    isError: query.isLoadingError,
     refresh: () => void query.refetch(),
     toggleCategory,
     totalItems: clubs.length,

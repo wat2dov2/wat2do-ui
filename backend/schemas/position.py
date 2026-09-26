@@ -80,10 +80,8 @@ class PositionResponse(PositionFields):
     club_id: int
     source_url: str = Field(max_length=MAX_URL_LENGTH)
     source_image_url: str | None = Field(default=None, max_length=MAX_URL_LENGTH)
-    ingestion_source: Literal["manual", "instagram_scraper", "seed"]
     is_active: bool
     added_at: datetime
-    updated_at: datetime
     club_name: str
     club_logo_url: str | None = None
     club_type: ClubTypeValue | None = None

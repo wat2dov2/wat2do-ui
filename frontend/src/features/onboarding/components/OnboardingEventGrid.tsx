@@ -1,11 +1,13 @@
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 /**
- * Onboarding event grid: 2×4 grid of event cards from the events store.
+ * Onboarding event grid: 2×4 grid of event cards from the school query cache.
  * Uses the same card style as the auth page hero section.
  * User can multi-select (optional).
  */
 
 import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { resolveSchool } from "@/shared/constants/schools";
 import { useTranslation } from "react-i18next";
 import {
   PreviewStyleEventCard,
@@ -13,7 +15,7 @@ import {
   eventToPreview,
   shuffle,
 } from "@/features/auth";
-import { useEventsStore } from "@/features/events";
+import { eventFeedQueryOptions, useEventsStore } from "@/features/events";
 import { cn } from "@/shared/lib/utils";
 
 interface OnboardingEventGridProps {
@@ -30,14 +32,13 @@ export function OnboardingEventGrid({
   const { t, i18n } = useTranslation();
   const { getSchoolTimezone } = useSchoolDirectory();
 
-  // Same store data as the events page - no duplicate fetch.
-  const allEvents = useEventsStore((s) => s.events);
-  const loading = useEventsStore((s) => s.isLoading);
+  const school = useEventsStore((state) => state.schoolFilter);
+  const { data, isLoading: loading } = useQuery(eventFeedQueryOptions(resolveSchool(school)));
 
   const locale = i18n.language || "en-US";
 
   // Recompute only when events change, not on locale/translation updates.
-  const topEvents = useMemo(() => shuffle(allEvents).slice(0, 8), [allEvents]);
+  const topEvents = useMemo(() => shuffle(data?.items ?? []).slice(0, 8), [data]);
 
   const previewEvents = useMemo(
     () => topEvents.map((e) => ({ event: e, preview: eventToPreview(e, getSchoolTimezone(e.school), locale, t) })),

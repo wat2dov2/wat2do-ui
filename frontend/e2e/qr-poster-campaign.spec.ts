@@ -723,12 +723,7 @@ test.describe("Promoter poster campaign", () => {
     const session = await installSessionMock(page);
     const promoterApi = await installPromoterApiMocks(page);
 
-    await page.goto(`${BASE_URL}/`);
-    await expect(page.getByTestId("promoter-recruitment-banner")).toBeVisible();
-    await page
-      .getByTestId("promoter-recruitment-banner")
-      .getByRole("link")
-      .click();
+    await page.goto(`${BASE_URL}/promote`);
 
     await expect(page).toHaveURL(/\/promote$/);
     await expect(page.getByTestId("promote-page")).toBeVisible();
@@ -833,12 +828,7 @@ test.describe("Promoter poster campaign", () => {
     });
     await installPromoterApiMocks(page);
 
-    await page.goto(`${BASE_URL}/`);
-    await expect(page.getByTestId("promoter-recruitment-banner")).toBeVisible();
-    await page
-      .getByTestId("promoter-recruitment-banner")
-      .getByRole("link")
-      .click();
+    await page.goto(`${BASE_URL}/promote`);
 
     await expect(page).toHaveURL(/\/promote$/);
     await expect(page.getByTestId("promote-page")).toBeVisible();

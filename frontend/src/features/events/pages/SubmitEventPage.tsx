@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useAuthState } from "@/features/auth";
 import { SubmitEventFlow } from "@/features/events/components/SubmitEventModal";
 import { useEventsStore } from "@/features/events/store/events.store";
+import { createEventAPI } from "@/features/events/api/events.api";
 import { submitEventForReview } from "@/shared/api/submissions.api";
 import { ROUTES } from "@/shared/constants/routes";
 import {
@@ -21,7 +22,6 @@ export function SubmitEventPage() {
   const router = useRouter();
   const { isAdmin, hasClub } = useAuthState();
   const canCreateEvents = hasClub || isAdmin;
-  const addEvent = useEventsStore((state) => state.addEvent);
   const schoolFilter = useEventsStore((state) => state.schoolFilter);
   const school = resolveWritableSchool(
     schoolFilter,
@@ -39,13 +39,13 @@ export function SubmitEventPage() {
         throw new Error(t("events.clubRequired"));
       }
       if (canCreateEvents) {
-        const eventId = await addEvent(eventData);
-        return { type: "event" as const, eventId };
+        const event = await createEventAPI(eventData);
+        return { type: "event" as const, eventId: event.id };
       }
       await submitEventForReview(eventData);
       return { type: "submission" as const };
     },
-    [addEvent, canCreateEvents, t],
+    [canCreateEvents, t],
   );
 
   return (

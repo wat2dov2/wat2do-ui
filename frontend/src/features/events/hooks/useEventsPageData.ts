@@ -1,10 +1,9 @@
 import { useMemo, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import { useDiscoveryQueryTracking } from "@/shared/hooks/useDiscoveryQueryTracking";
 import { storeStatesToFilterState } from "@/features/search/api/filterService";
 import { useSearchStore } from "@/features/search/store/search.store";
 import { useSearch } from "@/features/search/hooks/useSearch";
-import { useEventsStore } from "@/features/events/store/events.store";
 import { useEventStats } from "@/features/events/hooks/useEventStats";
 import {
   useCurrentTime,
@@ -14,66 +13,12 @@ import { resolveSchool } from "@/shared/constants/schools";
 import { getUniqueEvents } from "@/shared/utils/event";
 import { hasActiveEventOccurrence } from "@/shared/utils/date";
 import i18n from "@/shared/lib/i18n";
-import type { LatestAddedEvent } from "@/features/events/api/events.api";
-import type { SchoolBrowseSnapshot } from "@/features/events/api/eventFeed.server";
-import type { Event } from "@/shared/types";
+import { eventFeedQueryOptions, type PaginatedEventsResponse } from "@/features/events/api/events.api";
 
 interface UseEventsPageDataOptions {
   /** The server's browse snapshot, or null when that fetch failed. */
-  initialSnapshot: SchoolBrowseSnapshot | null;
+  initialSnapshot: PaginatedEventsResponse | null;
   initialSchool: string;
-}
-
-interface EventFeedSource {
-  events: Event[];
-  latestAddedEvent: LatestAddedEvent;
-  isLoading: boolean;
-  error: string | null;
-  schoolFilter: string;
-}
-
-/** Render the server snapshot until store hydration to avoid an empty-feed flash. */
-function useEventFeedSource(
-  initialSnapshot: SchoolBrowseSnapshot | null,
-  initialSchool: string,
-): EventFeedSource {
-  const hasHydrated = useEventsStore((s) => s.hasHydratedInitialFeed);
-  const storeEvents = useEventsStore((s) => s.events);
-  const storeLatestAddedEvent = useEventsStore((s) => s.latestAddedEvent);
-  const storeIsLoading = useEventsStore((s) => s.isLoading);
-  const storeError = useEventsStore((s) => s.error);
-  const storeSchoolFilter = useEventsStore((s) => s.schoolFilter);
-
-  return useMemo(() => {
-    if (hasHydrated) {
-      return {
-        events: storeEvents,
-        latestAddedEvent: storeLatestAddedEvent,
-        isLoading: storeIsLoading,
-        error: storeError,
-        schoolFilter: resolveSchool(storeSchoolFilter),
-      };
-    }
-
-    return {
-      events: initialSnapshot?.feed.items ?? [],
-      latestAddedEvent: initialSnapshot?.feed.latest_added_event ?? null,
-      // The snapshot is the data, so nothing is pending; a missing snapshot
-      // means the server's fetch failed and there is nothing more coming.
-      isLoading: false,
-      error: initialSnapshot ? null : i18n.t("events.loadFailed"),
-      schoolFilter: resolveSchool(initialSchool),
-    };
-  }, [
-    hasHydrated,
-    initialSchool,
-    initialSnapshot,
-    storeError,
-    storeEvents,
-    storeIsLoading,
-    storeLatestAddedEvent,
-    storeSchoolFilter,
-  ]);
 }
 
 /**
@@ -85,14 +30,15 @@ export function useEventsPageData({
   initialSnapshot,
   initialSchool,
 }: UseEventsPageDataOptions) {
-  const router = useRouter();
-  const {
-    events,
-    latestAddedEvent,
-    isLoading,
-    error,
-    schoolFilter,
-  } = useEventFeedSource(initialSnapshot, initialSchool);
+  const schoolFilter = resolveSchool(initialSchool);
+  const query = useQuery({
+    ...eventFeedQueryOptions(schoolFilter),
+    initialData: initialSnapshot ?? undefined,
+  });
+  const events = useMemo(() => query.data?.items ?? [], [query.data]);
+  const latestAddedEvent = query.data?.latest_added_event ?? null;
+  const isLoading = query.isLoading;
+  const error = query.isLoadingError ? i18n.t("events.loadFailed") : null;
   const { data: goingSelections = [] } = useGoingEvents();
   const currentTimeMs = useCurrentTime();
   const goingEventIds = useMemo(
@@ -134,8 +80,8 @@ export function useEventsPageData({
   }, queryRevision);
 
   const refreshEvents = useCallback(() => {
-    router.refresh();
-  }, [router]);
+    void query.refetch();
+  }, [query]);
 
   return {
     isLoading,

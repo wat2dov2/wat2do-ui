@@ -82,8 +82,9 @@ export const queryKeys = {
     stats: (school: string) =>
       [...queryKeys.events.all, "stats", school] as const,
     lists: () => [...queryKeys.events.all, "list"] as const,
+    feeds: () => [...queryKeys.events.all, "feed"] as const,
     bySchool: (school: string) =>
-      [...queryKeys.events.lists(), "by-school", school] as const,
+      [...queryKeys.events.feeds(), school] as const,
     byClub: (clubId: number, school: string) =>
       [
         ...queryKeys.events.lists(),

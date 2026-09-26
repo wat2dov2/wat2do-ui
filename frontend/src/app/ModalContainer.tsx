@@ -5,7 +5,7 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
-import { useEventsStore } from "@/features/events/store/events.store";
+import { updateEventAPI } from "@/features/events/api/events.api";
 import { useUIStore } from "@/shared/store/ui.store";
 import { useFilterActions } from "@/features/search/hooks/useFilterState";
 import { useAuthState } from "@/features/auth/hooks/useAuthState";
@@ -31,8 +31,6 @@ export function ModalContainer() {
     useState<SubmitEventModalComponent | null>(null);
   const [CommandPalette, setCommandPalette] =
     useState<CommandPaletteComponent | null>(null);
-
-  const updateEvent = useEventsStore((s) => s.updateEvent);
 
   const { clearAllFilters } = useFilterActions();
 
@@ -83,7 +81,7 @@ export function ModalContainer() {
           initialData={"title" in editingEvent ? eventToFormData(editingEvent, getSchoolTimezone(editingEvent.school)) : undefined}
           loadEventForEdit={loadEventForEdit}
           onUpdate={async (eventId, eventData) => {
-            await updateEvent(eventId, eventData);
+            await updateEventAPI(eventId, eventData);
             handleSubmitEventClose();
           }}
         />

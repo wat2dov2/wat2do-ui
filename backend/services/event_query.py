@@ -164,35 +164,12 @@ def load_upcoming_events(
     events survive if a school has more upcoming than the cap. ``model`` selects
     the response shape (and, with it, how many event columns we fetch).
     """
-    return load_events_in_window(
-        start_utc=since,
-        end_utc=None,
-        school=school,
-        cap=cap,
-        model=model,
-    )
-
-
-@supabase_retry
-def load_events_in_window(
-    *,
-    start_utc: datetime | None,
-    end_utc: datetime | None,
-    school: str | None,
-    cap: int,
-    model: type[T],
-) -> list[T]:
-    """Events with an occurrence inside the requested UTC window.
-
-    ``None`` bounds are open-ended. Results are deduped to one row per event,
-    keeping the earliest matching occurrence for ordering and capping.
-    """
     school_id = school_service.get_school_id(school) if school else None
     if school and school_id is None:
         return []
     event_ids = _load_lightweight_date_page_ids(
-        start_utc=start_utc,
-        end_utc=end_utc,
+        start_utc=since,
+        end_utc=None,
         school_id=school_id,
         offset=0,
         limit=cap,

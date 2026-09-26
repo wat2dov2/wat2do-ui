@@ -6,7 +6,7 @@
  *
  * Allowed per AGENTS.md localStorage policy:
  *   theme, userEmail, userProfile, viewMode,
- *   i18n-language, notificationPreferences, event visits,
+ *   i18n-language,
  *   wat2do-app-prefs (viewMode via Zustand persist)
  */
 
@@ -18,14 +18,6 @@ export const STORAGE_KEYS = {
   // Appearance / device preferences
   THEME: "theme",
   LANGUAGE: "i18n-language",
-
-  // Settings
-  NOTIFICATION_PREFS: "notificationPreferences",
-
-  // Signed-in event discovery history
-
-  // Promoter campaign UI preference
-  PROMOTER_BANNER_DISMISSED_UNTIL: "wat2do:promoter-banner-dismissed-until",
 
   // Session (sessionStorage, not localStorage)
   SESSION_ID: "wat2do_session_id",

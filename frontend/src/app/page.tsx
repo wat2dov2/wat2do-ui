@@ -3,7 +3,7 @@ import { headers } from "next/headers";
 import { EventRoutePage } from "@/app/event-route-page";
 import imgContactHero from "@/assets/contact_hero.png";
 import { getSchoolBrowseSnapshot } from "@/features/events/api/eventFeed.server";
-import type { SchoolBrowseSnapshot } from "@/features/events/api/eventFeed.server";
+import type { PaginatedEventsResponse } from "@/features/events/api/events.api";
 import { getSchool } from "@/shared/api/schools.server";
 import { controlBox } from "@/shared/config/controlBox";
 import { getSchoolFromRequestHost } from "@/shared/constants/schools";
@@ -17,7 +17,7 @@ export const revalidate = 0;
 
 async function loadInitialSnapshot(
   school: string,
-): Promise<SchoolBrowseSnapshot | null> {
+): Promise<PaginatedEventsResponse | null> {
   try {
     return await getSchoolBrowseSnapshot(school);
   } catch (err) {
@@ -44,7 +44,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const title = `${schoolName} Events and Things to Do | Wat2Do`;
   const description = `Discover current events, activities, and things to do for students at ${schoolName}. Explore campus events by date, category, cost, and more.`;
   const featuredEvent =
-    snapshot?.feed.items.find((event) => event.source_image_url);
+    snapshot?.items.find((event) => event.source_image_url);
   const fallbackImage = selectSeoImage(
     featuredEvent?.source_image_url,
     featuredEvent ? `${featuredEvent.title} event poster` : "",
@@ -72,7 +72,7 @@ export async function generateMetadata(): Promise<Metadata> {
     description,
     canonicalUrl: getSchoolCanonicalUrl(school, "/"),
     image,
-    index: Boolean(snapshot && snapshot.feed.items.length > 0),
+    index: Boolean(snapshot && snapshot.items.length > 0),
   });
 }
 

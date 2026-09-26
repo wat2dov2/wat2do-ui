@@ -21,7 +21,6 @@ interface PublicPromoterProgram {
   landingConfirmationSeconds: number;
   payoutDayOfMonth: number;
   quietPosterDays: number;
-  bannerDismissalDays: number;
   discordInviteUrl: string;
   approvedTemplates: ApprovedPosterTemplate[];
 }

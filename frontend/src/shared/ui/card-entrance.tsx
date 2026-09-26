@@ -1,7 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import { useEffect, useRef, type ReactNode } from "react";
 
 /**
  * The entrance a card makes when it first appears in a grid.
@@ -12,7 +11,7 @@ import { motion, useReducedMotion } from "framer-motion";
  */
 const ENTRANCE_DURATION_SECONDS = 0.5;
 const STAGGER_STEP_SECONDS = 0.033;
-const ENTRANCE_EASE = [0.18, 0.39, 0.14, 0.9] as const;
+const ENTRANCE_EASE = "cubic-bezier(0.18, 0.39, 0.14, 0.9)";
 
 /**
  * How many cards a sweep runs across before starting over.
@@ -35,16 +34,9 @@ interface CardEntranceProps {
 }
 
 /**
- * A card arrives when it is scrolled into view, not when it is rendered.
- *
- * Animating on mount meant the whole list ran at once - so everything below
- * the fold had finished long before the reader got there, and scrolling caught
- * at most the tail of it. Tying the entrance to the viewport instead means each
- * card is animating exactly when it is being looked at, and it applies equally
- * to the first screen and to every batch paged in afterwards.
- *
- * `once` keeps it to a single arrival: cards do not replay every time they pass
- * back through the viewport.
+ * Server-rendered cards are visible immediately, including without JavaScript.
+ * Only cards below the first viewport animate as they scroll into view.
+ * The browser owns this optional effect, so animation never delays first paint.
  */
 export function CardEntrance({
   children,
@@ -52,33 +44,60 @@ export function CardEntrance({
   className,
   role,
 }: CardEntranceProps) {
-  const prefersReducedMotion = useReducedMotion();
+  const elementRef = useRef<HTMLDivElement>(null);
+  const hasEntered = useRef(false);
 
-  // This element is the grid cell, so it stretches to the row's height and the
-  // card inside can fill it. Anything nested in between would be the auto-height
-  // box a card's `h-full` measured itself against, leaving a short row ragged.
-  if (prefersReducedMotion) {
-    return (
-      <div className={className} role={role}>
-        {children}
-      </div>
-    );
-  }
+  useEffect(() => {
+    const element = elementRef.current;
+    if (!element || hasEntered.current) return;
+
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const bounds = element.getBoundingClientRect();
+    if (reducedMotion.matches || bounds.top < window.innerHeight) {
+      hasEntered.current = true;
+      return;
+    }
+
+    let animation: Animation | undefined;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting) return;
+      hasEntered.current = true;
+      observer.disconnect();
+      animation = element.animate(
+        [{ opacity: 0, transform: "translateY(20px)" }, { opacity: 1, transform: "translateY(0)" }],
+        {
+          duration: ENTRANCE_DURATION_SECONDS * 1000,
+          delay: (index % STAGGER_CYCLE) * STAGGER_STEP_SECONDS * 1000,
+          easing: ENTRANCE_EASE,
+          fill: "backwards",
+        },
+      );
+    }, { threshold: 0.1 });
+    const stop = () => {
+      observer.disconnect();
+      animation?.cancel();
+    };
+    const handleMotionChange = () => {
+      if (reducedMotion.matches) {
+        hasEntered.current = true;
+        stop();
+      }
+    };
+    observer.observe(element);
+    reducedMotion.addEventListener("change", handleMotionChange);
+    return () => {
+      stop();
+      reducedMotion.removeEventListener("change", handleMotionChange);
+    };
+  }, [index]);
 
   return (
-    <motion.div
+    <div
+      ref={elementRef}
       className={className}
       role={role}
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.1 }}
-      transition={{
-        duration: ENTRANCE_DURATION_SECONDS,
-        delay: (index % STAGGER_CYCLE) * STAGGER_STEP_SECONDS,
-        ease: ENTRANCE_EASE,
-      }}
     >
       {children}
-    </motion.div>
+    </div>
   );
 }

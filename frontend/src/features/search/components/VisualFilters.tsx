@@ -6,7 +6,6 @@ import { Switch } from "@/shared/ui/switch";
 import { Input } from "@/shared/ui/input";
 import { FormGrid } from "@/shared/layout";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
-import { useEventsStore } from "@/features/events/store/events.store";
 
 interface SingleValueFilterInputProps {
   value: string;
@@ -48,12 +47,12 @@ export interface VisualFilterControls {
 }
 
 interface VisualFiltersProps {
+  school: string;
   filters: VisualFilterControls;
 }
 
-export function VisualFilters({ filters }: VisualFiltersProps) {
+export function VisualFilters({ school, filters }: VisualFiltersProps) {
   const { t } = useTranslation();
-  const school = useEventsStore(state => state.schoolFilter);
   const { schoolBySlug } = useSchoolDirectory();
   const locationPlaceholder = schoolBySlug.get(school)?.location_examples?.join(", ") || t("filters.location");
 

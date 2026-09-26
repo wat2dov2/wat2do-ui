@@ -29,7 +29,7 @@ async function loadPreviewEvents(school: string): Promise<Event[]> {
     const snapshot = await getSchoolBrowseSnapshot(school);
     const seenTitles = new Set<string>();
     const previewEvents: Event[] = [];
-    for (const event of snapshot.feed.items) {
+    for (const event of snapshot.items) {
       if (seenTitles.has(event.title)) continue;
       seenTitles.add(event.title);
       previewEvents.push(event);

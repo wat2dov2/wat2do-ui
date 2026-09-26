@@ -3,12 +3,6 @@
     "download": "Pobierz",
     "downloadPdf": "PDF",
     "downloadPng": "PNG",
-    "recruitment": {
-      "title": "Pomóż większej liczbie uczniów odkrywać wydarzenia w {{school}}.",
-      "description": "Umieść oficjalne plakaty Wat2Do i zarabiaj {{rate}} za każdego kwalifikującego się nowego odwiedzającego.",
-      "seeHowItWorks": "Zobacz jak to działa",
-      "dismiss": "Ukryj tę wiadomość na {{days}} dni"
-    },
     "promote": {
       "title": "Przynieś Wat2Do do {{school}}",
       "description": "Umieść oficjalne plakaty na terenie kampusu i zarabiaj {{rate}} za każdego kwalifikującego się nowego odwiedzającego, którego przyciągną.",

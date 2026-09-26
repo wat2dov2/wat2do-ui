@@ -6,7 +6,6 @@
   "confirmation_token_minutes": 15,
   "payout_day_of_month": 1,
   "quiet_poster_days": 30,
-  "banner_dismissal_days": 30,
   "discord_invite_url": "https://discord.gg/uVcZcp4q8R",
   "map_coordinate_decimal_places": 3,
   "map_visitor_bucket_maximums": [0, 9, 49],

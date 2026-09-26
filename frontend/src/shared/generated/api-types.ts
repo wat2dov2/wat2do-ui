@@ -2812,11 +2812,6 @@ export interface components {
             duration?: string | null;
             /** Tz */
             tz?: string | null;
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
         };
         /**
          * OccurrenceUpdate
@@ -3192,11 +3187,6 @@ export interface components {
             source_url: string;
             /** Source Image Url */
             source_image_url?: string | null;
-            /**
-             * Ingestion Source
-             * @enum {string}
-             */
-            ingestion_source: "manual" | "instagram_scraper" | "seed";
             /** Is Active */
             is_active: boolean;
             /**
@@ -3204,11 +3194,6 @@ export interface components {
              * Format: date-time
              */
             added_at: string;
-            /**
-             * Updated At
-             * Format: date-time
-             */
-            updated_at: string;
             /** Club Name */
             club_name: string;
             /** Club Logo Url */

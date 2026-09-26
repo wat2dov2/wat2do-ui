@@ -1,4 +1,5 @@
 import { createRequire } from "node:module";
+import { collectPaginatedPages } from "../src/shared/lib/pagination";
 import type { Position } from "../src/shared/types";
 import { expect, test as dataTest } from "@playwright/test";
 import { test } from "next/experimental/testmode/playwright.js";
@@ -24,10 +25,8 @@ const MOCK_POSITIONS = [
     deadline_at: null,
     source_url: "https://instagram.com/p/design/",
     source_image_url: MOCK_POSITION_IMAGE,
-    ingestion_source: "seed",
     is_active: true,
     added_at: "2026-08-01T12:00:00Z",
-    updated_at: "2026-08-01T12:00:00Z",
     club_name: "UW Design Club",
     club_logo_url: null,
     club_ig: "uwdesign",
@@ -49,10 +48,8 @@ const MOCK_POSITIONS = [
     deadline_at: null,
     source_url: "https://instagram.com/p/operations/",
     source_image_url: MOCK_POSITION_IMAGE,
-    ingestion_source: "seed",
     is_active: true,
     added_at: "2026-08-02T12:00:00Z",
-    updated_at: "2026-08-02T12:00:00Z",
     club_name: "UW Operations Club",
     club_logo_url: null,
     club_ig: "uwoperations",
@@ -211,39 +208,23 @@ test.describe("Positions UI", () => {
     await page.screenshot({ path: testInfo.outputPath("positions-mobile.png"), fullPage: true });
   });
 
-  test("keeps the latest-added link visible while filters refresh, including empty results", async ({ page, next }) => {
+  test("keeps the latest-added link visible while cached search returns no results", async ({ page }) => {
     await page.goto("/positions");
     const latest = page.getByRole("button").filter({ hasText: "Operations Assistant" }).filter({ hasText: "ago" });
     await expect(latest).toBeVisible();
-
-    let releaseResponse!: () => void;
-    const responseGate = new Promise<void>(resolve => { releaseResponse = resolve; });
-    await mockApi(page, next, url => apiPath(url) === "/positions" && url.searchParams.get("search") === "no matching role", async () => {
-      await responseGate;
-      return { json: {
-        items: [], total: 0, page: 1, page_size: 50, total_pages: 0,
-        latest_added_position: { title: MOCK_POSITIONS[1].title, added_at: MOCK_POSITIONS[1].added_at },
-      } };
+    const filterRequests: string[] = [];
+    page.on("request", request => {
+      if (apiPath(new URL(request.url())) === "/positions") filterRequests.push(request.url());
     });
-
-    const requestStarted = page.waitForRequest(request => new URL(request.url()).searchParams.get("search") === "no matching role");
     await page.getByPlaceholder("Search roles, skills, or locations...").fill("no matching role");
     await page.getByRole("button", { name: "Search", exact: true }).click();
-    await requestStarted;
-    try {
-      await expect(latest).toBeVisible();
-      await expect(page.getByRole("heading", { name: "2 positions", exact: true })).toBeVisible();
-      await expect(page.locator('[aria-busy="true"]')).toBeVisible();
-      await expect(page.getByRole("button", { name: "View Design Lead position details" })).toHaveCount(0);
-      await expect(page.getByRole("button", { name: "View Operations Assistant position details" })).toHaveCount(0);
-    } finally {
-      releaseResponse();
-    }
     await expect(page.getByRole("heading", { name: "0 positions", exact: true })).toBeVisible();
+    await expect(page.locator('[aria-busy="true"]')).toHaveCount(0);
     await expect(latest).toBeVisible();
     await latest.click();
     await expect(page.getByPlaceholder("Search roles, skills, or locations...")).toHaveValue("Operations Assistant");
     await expect(page.getByRole("heading", { name: "1 position", exact: true })).toBeVisible();
+    expect(filterRequests).toEqual([]);
   });
 
   test("aligns the latest-added badge and text on desktop and mobile", async ({ page }) => {
@@ -262,55 +243,41 @@ test.describe("Positions UI", () => {
     }
   });
 
-  test("shows loading while changing position type, then renders the matching roles", async ({ page, next }) => {
+  test("changes position type from the cached directory without loading or requests", async ({ page }) => {
     await page.goto("/positions");
     await expect(page.getByRole("button", { name: "View Design Lead position details" })).toBeVisible();
-    let releaseResponse!: () => void;
-    const responseGate = new Promise<void>(resolve => { releaseResponse = resolve; });
-    await mockApi(page, next, url => apiPath(url) === "/positions" && url.searchParams.get("position_type") === "staff", async () => {
-      await responseGate;
-      return { json: {
-        items: [MOCK_POSITIONS[1]], total: 1, page: 1, page_size: 50, total_pages: 1,
-        latest_added_position: { title: MOCK_POSITIONS[1].title, added_at: MOCK_POSITIONS[1].added_at },
-      } };
-    });
-
     const filterRequests: string[] = [];
     page.on("request", request => {
       if (apiPath(new URL(request.url())) === "/positions") filterRequests.push(request.url());
     });
     await page.getByRole("button", { name: "Paid", exact: true }).click();
-    try {
-      await expect(page.locator('[aria-busy="true"]')).toBeVisible();
-      await expect(page.getByRole("button", { name: "View Design Lead position details" })).toHaveCount(0);
-    } finally {
-      releaseResponse();
-    }
     await expect(page.getByRole("button", { name: "View Operations Assistant position details" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "View Design Lead position details" })).toHaveCount(0);
     await expect(page.locator('[aria-busy="true"]')).toHaveCount(0);
     await expect(page.getByRole("heading", { name: "1 position", exact: true })).toBeVisible();
+    expect(filterRequests).toEqual([]);
   });
 
-  test("offers retry instead of stale results or an empty state when a filter request fails", async ({ page, next }) => {
-    await page.goto("/positions");
+  test("retries a failed initial directory request and resumes local filtering", async ({ page, next }) => {
     let failed = true;
-    await mockApi(page, next, url => apiPath(url) === "/positions" && url.searchParams.get("position_type") === "committee", async () => {
+    await mockApi(page, next, url => apiPath(url) === "/positions", async () => {
       if (failed) return { status: 503, json: { detail: "Temporarily unavailable" } };
       return { json: {
-        items: [MOCK_POSITIONS[0]], total: 1, page: 1, page_size: 50, total_pages: 1,
+        items: MOCK_POSITIONS, total: 2, page: 1, page_size: 50, total_pages: 1,
         latest_added_position: { title: MOCK_POSITIONS[1].title, added_at: MOCK_POSITIONS[1].added_at },
       } };
     });
-
-    await page.getByRole("button", { name: "Committee", exact: true }).click();
+    await page.goto("/positions");
     const error = page.getByRole("alert");
     await expect(error).toContainText("Something went wrong");
     await expect(page.locator('[aria-busy="true"]')).toHaveCount(0);
-    await expect(page.getByRole("button", { name: "View Operations Assistant position details" })).toHaveCount(0);
     failed = false;
     await error.getByRole("button", { name: "Try again", exact: true }).click();
     await expect(error).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: "2 positions", exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Committee", exact: true }).click();
     await expect(page.getByRole("button", { name: "View Design Lead position details" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "1 position", exact: true })).toBeVisible();
   });
 
   test("navigates position drawers by keyboard and resets scroll for the next role", async ({ page }, testInfo) => {
@@ -459,14 +426,14 @@ test.describe("Positions UI", () => {
   });
 });
 
-const { collectPositionPages, filterPositions }: typeof import("../src/features/positions/api/positionService") =
+const { filterPositions }: typeof import("../src/features/positions/api/positionService") =
   createRequire(import.meta.url)("../src/features/positions/api/positionService");
 
 // These regressions exercise the real data helpers without a browser or server.
 dataTest("cached position directory loads every page and filters without another fetch", async () => {
   const calls: number[] = [];
   const allPositions = MOCK_POSITIONS as Position[];
-  const directory = await collectPositionPages(async page => {
+  const directory = await collectPaginatedPages(async page => {
     calls.push(page);
     return { items: [allPositions[page - 1]], total: 2, page, page_size: 1, total_pages: 2,
       latest_added_position: { title: "Operations Assistant", added_at: "2026-08-02T12:00:00Z" } };
@@ -486,7 +453,7 @@ dataTest("cached position directory loads every page and filters without another
 });
 
 dataTest("cached position directory rejects incomplete snapshots", async () => {
-  await expect(collectPositionPages(async page => {
+  await expect(collectPaginatedPages(async page => {
     if (page === 2) throw new Error("Backend unavailable");
     return { items: [], total: 2, page, page_size: 1, total_pages: 2 };
   })).rejects.toThrow("Backend unavailable");

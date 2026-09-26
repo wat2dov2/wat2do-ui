@@ -16,7 +16,7 @@ import {
   TableCell,
   TableRow,
 } from "@/shared/ui/table";
-import { EventDetailsModal, useEventsStore } from "@/features/events";
+import { EventDetailsModal, deleteEventAPI } from "@/features/events";
 import { getEventSubmission } from "@/features/admin/api/admin.api";
 import { useAdminPendingCounts } from "@/features/admin/hooks/useAdminList";
 import { queryKeys } from "@/shared/lib/queryKeys";
@@ -66,7 +66,6 @@ export function AdminEventsPage({
     ? "submissions" : searchParams.get("tab") === "reports" ? "reports" : "events";
   const [activeTab, setActiveTab] = useState<"events" | "submissions" | "reports">(initialTab);
 
-  const deleteEvent = useEventsStore((s) => s.deleteEvent);
   const setEditingEvent = useUIStore((s) => s.setEditingEvent);
 
   const onEditEvent = (event: Event) => {
@@ -97,7 +96,7 @@ export function AdminEventsPage({
   const handleDelete = async (eventId: number) => {
     setIsDeleting(true);
     try {
-      await deleteEvent(eventId);
+      await deleteEventAPI(eventId);
       setDeleteConfirmId(null);
     } catch {
       toast({ description: t("events.deleteFailed"), variant: "destructive" });

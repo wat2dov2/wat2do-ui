@@ -3,12 +3,6 @@
     "download": "I-download",
     "downloadPdf": "PDF",
     "downloadPng": "PNG",
-    "recruitment": {
-      "title": "Tulungan ang mas maraming estudyante na matuklasan ang mga kaganapan sa {{school}}.",
-      "description": "Maglagay ng mga opisyal na poster ng Wat2Do at kumita ng {{rate}} para sa bawat kwalipikadong bagong bisita.",
-      "seeHowItWorks": "Tingnan kung paano ito gumagana",
-      "dismiss": "Itago ang mensaheng ito sa loob ng {{days}} na araw"
-    },
     "promote": {
       "title": "Dalhin ang Wat2Do sa {{school}}",
       "description": "Maglagay ng mga opisyal na poster sa paligid ng kampus at kumita ng {{rate}} para sa bawat kwalipikadong bagong bisita na kanilang nadadala.",

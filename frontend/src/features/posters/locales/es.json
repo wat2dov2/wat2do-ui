@@ -3,12 +3,6 @@
     "download": "Descargar",
     "downloadPdf": "PDF",
     "downloadPng": "PNG",
-    "recruitment": {
-      "title": "Ayuda a más estudiantes a descubrir eventos en {{school}}.",
-      "description": "Coloca carteles oficiales de Wat2Do y gana {{rate}} por cada nuevo visitante que califique.",
-      "seeHowItWorks": "Ver cómo funciona",
-      "dismiss": "Ocultar este mensaje por {{days}} días"
-    },
     "promote": {
       "title": "Trae Wat2Do a {{school}}",
       "description": "Coloca carteles oficiales alrededor del campus y gana {{rate}} por cada nuevo visitante que califiquen traigan.",

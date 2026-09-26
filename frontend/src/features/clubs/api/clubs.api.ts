@@ -5,17 +5,18 @@
 
 import type { Club } from "@/shared/types";
 import type { ApiClubResponse, ApiPaginatedClubsResponse } from "@/shared/generated";
-import { api, getPaginatedItems } from "@/shared/services/apiClient";
+import { api } from "@/shared/services/apiClient";
 import { normalizeClub } from "@/features/clubs/api/clubService";
+import { collectPaginatedPages } from "@/shared/lib/pagination";
+import { controlBox } from "@/shared/config/controlBox";
 
 export async function getAllClubs(school?: string): Promise<Club[]> {
-  const params = new URLSearchParams();
-  if (school) {
-    params.set("school", school);
-  }
-  const url = `/clubs/${params.toString() ? `?${params.toString()}` : ""}`;
-  const rawOrgs = await getPaginatedItems<ApiClubResponse>(url);
-  return rawOrgs.map(normalizeClub);
+  const directory = await collectPaginatedPages((page) => getClubsPaginated({
+    page,
+    school,
+    limit: controlBox.clubManagement.directoryPageSize,
+  }));
+  return directory.items;
 }
 
 export type PaginatedClubsResponse = Omit<ApiPaginatedClubsResponse, "items"> & {
@@ -25,12 +26,14 @@ export type PaginatedClubsResponse = Omit<ApiPaginatedClubsResponse, "items"> & 
 export async function getClubsPaginated(options: {
   page: number;
   limit: number;
+  school?: string;
   search?: string;
   clubType?: string;
 }): Promise<PaginatedClubsResponse> {
   const params = new URLSearchParams();
   params.set("page", String(options.page));
   params.set("page_size", String(options.limit));
+  if (options.school) params.set("school", options.school);
   if (options.search) {
     params.set("search", options.search);
   }

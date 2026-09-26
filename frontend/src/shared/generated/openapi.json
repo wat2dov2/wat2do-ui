@@ -9976,19 +9976,13 @@
               }
             ],
             "title": "Tz"
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Created At"
           }
         },
         "type": "object",
         "required": [
           "id",
           "event_id",
-          "dtstart_utc",
-          "created_at"
+          "dtstart_utc"
         ],
         "title": "OccurrenceResponse"
       },
@@ -11156,15 +11150,6 @@
             ],
             "title": "Source Image Url"
           },
-          "ingestion_source": {
-            "type": "string",
-            "enum": [
-              "manual",
-              "instagram_scraper",
-              "seed"
-            ],
-            "title": "Ingestion Source"
-          },
           "is_active": {
             "type": "boolean",
             "title": "Is Active"
@@ -11173,11 +11158,6 @@
             "type": "string",
             "format": "date-time",
             "title": "Added At"
-          },
-          "updated_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Updated At"
           },
           "club_name": {
             "type": "string",
@@ -11252,10 +11232,8 @@
           "id",
           "club_id",
           "source_url",
-          "ingestion_source",
           "is_active",
           "added_at",
-          "updated_at",
           "club_name",
           "school"
         ],

@@ -1,3 +1,4 @@
+from concurrent.futures import ThreadPoolExecutor
 from typing import Literal
 
 from fastapi import APIRouter, Depends, Query
@@ -25,21 +26,24 @@ def list_positions(
     sort_order: Literal["asc", "desc"] = Query(default="asc"),
     pagination: PaginationParams = Depends(),
 ):
-    items, total = position_service.list_positions(
-        skip=pagination.offset,
-        limit=pagination.page_size,
-        school=school,
-        search=search,
-        position_type=position_type,
-        club_id=club_id,
-        include_closed=include_closed,
-        added_since=added_since,
-        paid_only=paid_only,
-        sort_order=sort_order,
-    )
+    with ThreadPoolExecutor(max_workers=1) as pool:
+        latest_position_future = pool.submit(position_service.get_latest_added_position, school)
+        items, total = position_service.list_positions(
+            skip=pagination.offset,
+            limit=pagination.page_size,
+            school=school,
+            search=search,
+            position_type=position_type,
+            club_id=club_id,
+            include_closed=include_closed,
+            added_since=added_since,
+            paid_only=paid_only,
+            sort_order=sort_order,
+        )
+        latest_position = latest_position_future.result()
     return {
         **paginated_response(items, total, pagination),
-        "latest_added_position": position_service.get_latest_added_position(school),
+        "latest_added_position": latest_position,
     }
 
 

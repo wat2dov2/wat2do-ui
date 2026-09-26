@@ -1,8 +1,10 @@
+import threading
 from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock
 
 import pytest
 
+from core.pagination import LatestAddedItem
 from schemas.position import PositionResponse
 from services import position_service
 
@@ -29,10 +31,8 @@ def _position(position_id: int = 1) -> PositionResponse:
         deadline_at=None,
         source_url="https://instagram.com/p/example/",
         source_image_url="https://example.com/post.jpg",
-        ingestion_source="seed",
         is_active=True,
         added_at=now,
-        updated_at=now,
         club_name="UW Design Club",
         club_logo_url="https://example.com/logo.png",
         club_ig="uwdesign",
@@ -56,6 +56,8 @@ def test_list_positions_is_public_and_paginated(client, monkeypatch):
     assert body["page_size"] == 5
     assert body["total_pages"] == 3
     assert body["items"][0]["title"] == "Design Lead"
+    assert "ingestion_source" not in body["items"][0]
+    assert "updated_at" not in body["items"][0]
     list_positions.assert_called_once_with(
         skip=5,
         limit=5,
@@ -68,6 +70,31 @@ def test_list_positions_is_public_and_paginated(client, monkeypatch):
         paid_only=False,
         sort_order="asc",
     )
+
+
+def test_list_positions_overlaps_directory_and_latest_queries(client, monkeypatch):
+    barrier = threading.Barrier(2, timeout=2)
+    latest = LatestAddedItem(
+        title="Newest position", added_at=datetime(2026, 9, 25, tzinfo=timezone.utc)
+    )
+
+    def list_positions(**_kwargs):
+        barrier.wait()
+        return [_position()], 1
+
+    def get_latest_added_position(school):
+        assert school == "uwaterloo"
+        barrier.wait()
+        return latest
+
+    monkeypatch.setattr(position_service, "list_positions", list_positions)
+    monkeypatch.setattr(position_service, "get_latest_added_position", get_latest_added_position)
+
+    response = client.get("/positions/?school=uwaterloo")
+
+    assert response.status_code == 200
+    assert response.json()["items"][0]["title"] == "Design Lead"
+    assert response.json()["latest_added_position"] == latest.model_dump(mode="json")
 
 
 def test_list_positions_passes_aware_added_since(client, monkeypatch):

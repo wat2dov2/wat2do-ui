@@ -48,7 +48,7 @@ import { ClubBadgeDropdown } from "@/features/clubs";
 import { AvatarStack } from "@/shared/ui/avatar-stack";
 import { GoingOccurrencePickerContent } from "@/features/events/components/GoingOccurrencePickerContent";
 import { fetchEventAttendees } from "@/features/events/api/events.api";
-import { useEventsStore } from "@/features/events/store/events.store";
+import { deleteEventAPI } from "@/features/events/api/events.api";
 import { useEventStats } from "@/features/events/hooks/useEventStats";
 import { useCurrentTime, useGoingEventSelection } from "@/features/events/hooks/useGoingEvents";
 import { EmailOtpForm } from "@/features/auth/components/EmailOtpForm";
@@ -476,7 +476,6 @@ export function EventActions({
   const [isDeleting, setIsDeleting] = useState(false);
   const { isAdmin } = useAuthState();
   const setEditingEvent = useUIStore((s) => s.setEditingEvent);
-  const deleteEvent = useEventsStore((s) => s.deleteEvent);
 
   const handleEdit = useCallback(() => {
     onBeforeEdit?.();
@@ -486,7 +485,7 @@ export function EventActions({
   const handleDelete = useCallback(async () => {
     setIsDeleting(true);
     try {
-      await deleteEvent(event.id);
+      await deleteEventAPI(event.id);
       setDeleteOpen(false);
       if (onDeleted) {
         onDeleted();
@@ -502,7 +501,7 @@ export function EventActions({
     } finally {
       setIsDeleting(false);
     }
-  }, [deleteEvent, event.id, onDeleted, router, t]);
+  }, [event.id, onDeleted, router, t]);
 
   return (
     <Stack direction="horizontal" gap={2} wrap data-slot="event-actions">

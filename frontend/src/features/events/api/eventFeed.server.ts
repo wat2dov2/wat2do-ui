@@ -1,13 +1,10 @@
+import { collectPaginatedPages } from "@/shared/lib/pagination";
 import type { Event } from "@/shared/types";
 import type { PaginatedEventsResponse } from "@/features/events/api/events.api";
 import { orderClubEvents } from "@/features/events/lib/clubEventOrder";
 import { controlBox } from "@/shared/config/controlBox";
 import { resolveSchool } from "@/shared/constants/schools";
 import { getServerApiBaseUrl } from "@/shared/services/serverApi";
-
-export interface SchoolBrowseSnapshot {
-  feed: PaginatedEventsResponse;
-}
 
 export function eventFeedTag(school: string): string {
   return `event-feed-${resolveSchool(school)}`;
@@ -72,69 +69,28 @@ export async function getClubEventsSnapshot(
   school: string,
 ): Promise<Event[]> {
   const resolvedSchool = resolveSchool(school);
-  const fetchOptions: RequestInit = {
-    next: {
-      revalidate:
-        process.env.NODE_ENV === "development"
-          ? 0
-          : controlBox.eventDiscovery.feedRevalidateSeconds,
-      tags: [eventFeedTag(resolvedSchool)],
-    },
-  };
+  const fetchOptions = eventFeedFetchOptions(resolvedSchool);
   const options = { clubId, includePast: true };
-  const firstPage = await fetchEventsPage(
-    resolvedSchool,
-    1,
-    fetchOptions,
-    options,
+  const directory = await collectPaginatedPages((page) =>
+    fetchEventsPage(resolvedSchool, page, fetchOptions, options),
   );
-  const remainingPages = await Promise.all(
-    Array.from(
-      { length: Math.max(firstPage.total_pages - 1, 0) },
-      (_, index) =>
-        fetchEventsPage(
-          resolvedSchool,
-          index + 2,
-          fetchOptions,
-          options,
-        ),
-    ),
-  );
-
-  return orderClubEvents(
-    [firstPage, ...remainingPages].flatMap((page) => page.items),
-    Date.now(),
-  );
+  return orderClubEvents(directory.items, Date.now());
 }
 
-export async function getSchoolBrowseSnapshot(school: string): Promise<SchoolBrowseSnapshot> {
-  const resolvedSchool = resolveSchool(school);
-  const fetchOptions: RequestInit = {
+function eventFeedFetchOptions(school: string): RequestInit {
+  return {
     next: {
       revalidate:
         process.env.NODE_ENV === "development"
           ? 0
           : controlBox.eventDiscovery.feedRevalidateSeconds,
-      tags: [eventFeedTag(resolvedSchool)],
+      tags: [eventFeedTag(school)],
     },
   };
+}
 
-  const firstPage = await fetchEventsPage(resolvedSchool, 1, fetchOptions);
-  const remainingPages = await Promise.all(
-    Array.from({ length: Math.max(firstPage.total_pages - 1, 0) }, (_, index) =>
-      fetchEventsPage(resolvedSchool, index + 2, fetchOptions),
-    ),
-  );
-  const allItems = [firstPage, ...remainingPages].flatMap((page) => page.items);
-
-  const feed: PaginatedEventsResponse = {
-    items: allItems,
-    total: firstPage.total,
-    page: 1,
-    page_size: allItems.length || controlBox.eventDiscovery.serverFeedPageSize,
-    total_pages: 1,
-    latest_added_event: firstPage.latest_added_event ?? null,
-  };
-
-  return { feed };
+export async function getSchoolBrowseSnapshot(school: string): Promise<PaginatedEventsResponse> {
+  const resolvedSchool = resolveSchool(school);
+  const fetchOptions = eventFeedFetchOptions(resolvedSchool);
+  return collectPaginatedPages((page) => fetchEventsPage(resolvedSchool, page, fetchOptions));
 }

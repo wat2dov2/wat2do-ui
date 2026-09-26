@@ -176,7 +176,7 @@ export function refreshAccessToken(): Promise<RefreshOutcome> {
  * refresh failure) - bouncing an anonymous visitor from a public page to
  * /login on the first auth-gated fetch is a bad UX.
  */
-export function handleAuthFailure(): void {
+function handleAuthFailure(): void {
   authSessionInvalid = true;
   clearAccessToken();
   StorageService.removeItem(STORAGE_KEYS.USER_EMAIL);

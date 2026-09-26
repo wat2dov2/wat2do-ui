@@ -113,7 +113,6 @@ def get_latest_added_event(school: str | None = None) -> LatestAddedItem | None:
 
 
 @supabase_retry
-@supabase_retry
 def get_event(event_id: int) -> EventResponse | None:
     r = (
         get_sb()
@@ -401,7 +400,7 @@ def _jsonable(value: object) -> object | None:
 def _occurrence_jsonable(occ: OccurrenceResponse) -> dict:
     """Stable, comparable shape for occurrence diffs.
 
-    Strips ``id`` and ``created_at`` because they are database metadata.
+    Omits occurrence identity because only material date changes belong in the diff.
     The remaining fields (dtstart_utc, dtend_utc, duration, tz) are what
     users actually care about being notified on.
     """

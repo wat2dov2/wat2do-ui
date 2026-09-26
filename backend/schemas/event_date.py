@@ -57,6 +57,5 @@ class OccurrenceResponse(BaseModel):
     dtend_utc: datetime | None = None
     duration: str | None = None
     tz: str | None = None
-    created_at: datetime
 
     model_config = {"from_attributes": True}

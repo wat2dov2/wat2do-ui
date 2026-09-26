@@ -42,7 +42,6 @@ const rawPromoterProgram = JSON.parse(
   landing_confirmation_seconds: number;
   payout_day_of_month: number;
   quiet_poster_days: number;
-  banner_dismissal_days: number;
   tos_version: string;
   discord_invite_url: string;
   approved_templates: Array<{
@@ -69,7 +68,6 @@ const publicPromoterProgram = {
     rawPromoterProgram.landing_confirmation_seconds,
   payoutDayOfMonth: rawPromoterProgram.payout_day_of_month,
   quietPosterDays: rawPromoterProgram.quiet_poster_days,
-  bannerDismissalDays: rawPromoterProgram.banner_dismissal_days,
   discordInviteUrl: rawPromoterProgram.discord_invite_url,
   approvedTemplates: rawPromoterProgram.approved_templates.map((template) => ({
     id: template.id,

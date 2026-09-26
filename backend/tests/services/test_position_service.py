@@ -147,6 +147,29 @@ def test_get_position_returns_hydrated_position(fake_sb, patch_sb):
     assert position.club_ig == "uwdesign"
 
 
+@pytest.mark.parametrize("read", ["list", "detail"])
+def test_position_reads_exclude_unused_database_metadata(fake_sb, patch_sb, read):
+    patch_sb("services.position_service")
+    fake_sb.set_response(data=[_position_row()], count=1)
+
+    if read == "list":
+        [position], _ = position_service.list_positions()
+    else:
+        position = position_service.get_position(1)
+
+    columns = fake_sb.select.call_args.args[0]
+    assert "*" not in columns
+    assert "ingestion_source" not in columns
+    assert "updated_at" not in columns
+    assert position is not None
+    response = position.model_dump(mode="json")
+    assert "ingestion_source" not in response
+    assert "updated_at" not in response
+    assert response["requirements"] == ["Portfolio"]
+    assert response["source_url"] == "https://instagram.com/p/example/"
+    assert response["club_discord"] == "https://discord.gg/example"
+
+
 def test_get_club_position_counts_aggregates_open_count(fake_sb, patch_sb):
     patch_sb("services.position_service")
     fake_sb.set_response(

@@ -3,12 +3,6 @@
     "download": "Scarica",
     "downloadPdf": "PDF",
     "downloadPng": "PNG",
-    "recruitment": {
-      "title": "Aiuta più studenti a scoprire gli eventi a {{school}}.",
-      "description": "Pubblica manifesti ufficiali Wat2Do e guadagna {{rate}} per ogni nuovo visitatore idoneo.",
-      "seeHowItWorks": "Scopri come funziona",
-      "dismiss": "Nascondi questo messaggio per {{days}} giorni"
-    },
     "promote": {
       "title": "Porta Wat2Do a {{school}}",
       "description": "Posiziona manifesti ufficiali in tutto il campus e guadagna {{rate}} per ogni nuovo visitatore idoneo che attirano.",

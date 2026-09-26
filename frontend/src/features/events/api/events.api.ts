@@ -3,6 +3,7 @@
  * All events come from the backend. No mock/static data.
  */
 
+import { queryOptions } from "@tanstack/react-query";
 import type { Event, EventFormData } from "@/shared/types";
 import type {
   ApiEventAttendeesResponse,
@@ -19,9 +20,12 @@ import {
   buildEventPayload,
   buildEventUpdatePayload,
 } from "@/shared/api/eventPayload";
-import { api, getPaginatedItems, isApiError, type PaginatedApiResponse } from "@/shared/services/apiClient";
+import { api, isApiError, type PaginatedApiResponse } from "@/shared/services/apiClient";
 import { getQueryClient } from "@/shared/lib/queryClient";
 import { queryKeys } from "@/shared/lib/queryKeys";
+import { collectPaginatedPages } from "@/shared/lib/pagination";
+import { orderClubEvents } from "@/features/events/lib/clubEventOrder";
+import { controlBox } from "@/shared/config/controlBox";
 
 export type LatestAddedEvent = ApiLatestAddedItem | null;
 
@@ -37,46 +41,42 @@ export async function fetchEventById(id: number): Promise<Event> {
   return api.get<ApiEventPublicResponse>(`/events/${id}`);
 }
 
-export async function fetchEventFeed(
-  school?: string,
-  { clubId, includePast = false }: EventFeedOptions = {},
-): Promise<Event[]> {
-  const params = new URLSearchParams({
-    sort_by: "date",
-    sort_order: "asc",
-  });
-  if (school) params.append("school", school);
-  if (clubId != null) {
-    params.append("club_ids", String(clubId));
-  }
-  if (includePast) {
-    params.append("include_past", "true");
-  }
-  return getPaginatedItems<Event>(`/events/?${params.toString()}`);
-}
-
-interface EventFeedOptions {
-  clubId?: number;
-  /** Drop the server's start-of-today lower bound and return past events too. */
-  includePast?: boolean;
-}
-
-/**
- * Every event a host has ever run, past included.
- *
- * The club page is the host's whole record, not just what is still to
- * come, so it opts out of the feed's default start-of-today lower bound.
- */
-export async function fetchClubEvents(
-  clubId: number,
+async function fetchEventFeed(
   school: string,
-): Promise<Event[]> {
-  return fetchEventFeed(school, { clubId, includePast: true });
+  clubId?: number,
+): Promise<PaginatedEventsResponse> {
+  return collectPaginatedPages((page) => {
+    const params = new URLSearchParams({
+      school,
+      page: String(page),
+      page_size: String(controlBox.eventDiscovery.serverFeedPageSize),
+    });
+    if (clubId != null) {
+      params.set("club_ids", String(clubId));
+      params.set("include_past", "true");
+    }
+    return api.get<PaginatedEventsResponse>(`/events/?${params.toString()}`);
+  });
+}
+
+/** The complete school feed is shared by browsing and related-event surfaces. */
+export function eventFeedQueryOptions(school: string) {
+  return queryOptions({
+    queryKey: queryKeys.events.bySchool(school),
+    queryFn: () => fetchEventFeed(school),
+    retry: false,
+  });
+}
+
+/** Every event a host has ever run, past included. */
+export async function fetchClubEvents(clubId: number, school: string): Promise<Event[]> {
+  return (await fetchEventFeed(school, clubId)).items;
 }
 
 export async function createEventAPI(eventData: EventFormData): Promise<Event> {
   const event = await api.post<ApiEventResponse>("/events/", buildEventPayload(eventData));
-  await invalidateEventQueries();
+  await writeEventToQueries(event);
+  void invalidateEventQueries();
   return event;
 }
 
@@ -88,8 +88,8 @@ export async function updateEventAPI(
     `/events/${eventId}`,
     buildEventUpdatePayload(eventData),
   );
-  getQueryClient().setQueryData(queryKeys.events.detail(eventId), event);
-  await invalidateEventQueries();
+  await writeEventToQueries(event);
+  void invalidateEventQueries();
   return event;
 }
 
@@ -107,6 +107,64 @@ export async function deleteEventAPI(eventId: number): Promise<void> {
   void invalidateEventQueries();
 }
 
+/** Apply confirmed writes before refreshing so read latency never delays the UI. */
+async function writeEventToQueries(event: Event): Promise<void> {
+  const queryClient = getQueryClient();
+  await queryClient.cancelQueries({ queryKey: queryKeys.events.all });
+  queryClient.setQueryData(queryKeys.events.detail(event.id), event);
+  for (const [key, feed] of queryClient.getQueriesData<PaginatedEventsResponse>({ queryKey: queryKeys.events.feeds() })) {
+    if (!feed) continue;
+    const existing = feed.items.find(item => item.id === event.id);
+    const belongsToSchool = key.at(-1) === event.school;
+    if (!existing && !belongsToSchool) continue;
+    const items = feed.items.filter(item => item.id !== event.id);
+    if (belongsToSchool) items.push(mergeEventSummary(existing, event));
+    let latest = feed.latest_added_event;
+    if (isLatestEvent(latest, existing)) latest = null;
+    if (belongsToSchool && (!latest || Date.parse(event.added_at) >= Date.parse(latest.added_at))) {
+      latest = { title: event.title, added_at: event.added_at };
+    }
+    queryClient.setQueryData(key, withFeedItems(feed, items, latest));
+  }
+  for (const [key, events] of queryClient.getQueriesData<Event[]>({ queryKey: queryKeys.events.lists() })) {
+    if (!events) continue;
+    const existing = events.find(item => item.id === event.id);
+    const belongsToClub = key.at(-2) === event.club_id && key.at(-1) === event.school;
+    if (!existing && !belongsToClub) continue;
+    const items = events.filter(item => item.id !== event.id);
+    if (belongsToClub) items.push(mergeEventSummary(existing, event));
+    queryClient.setQueryData(key, orderClubEvents(items, Date.now()));
+  }
+  if (event.school) {
+    const schoolFeed = queryClient.getQueryState(queryKeys.events.bySchool(event.school));
+    if (!schoolFeed?.data && schoolFeed?.fetchStatus !== "fetching") {
+      // Direct submission can happen before browsing. Keep a complete post-write
+      // read active when returning to a route with an older prefetched snapshot.
+      void queryClient.prefetchQuery(eventFeedQueryOptions(event.school));
+    }
+  }
+}
+
+function mergeEventSummary(existing: Event | undefined, event: Event): Event {
+  // The write response omits summary-only social links. Preserve them only if
+  // the host is unchanged; reassignment must never retain another club's links.
+  const sameHost = existing?.school === event.school && existing.club === event.club &&
+    existing.club_id != null && existing.club_id === event.club_id;
+  return sameHost ? { ...existing, ...event } : event;
+}
+
+function isLatestEvent(latest: LatestAddedEvent, event: Event | undefined): boolean {
+  return Boolean(latest && event && latest.added_at === event.added_at && latest.title === event.title);
+}
+
+function withFeedItems(
+  feed: PaginatedEventsResponse,
+  items: Event[],
+  latestAddedEvent: LatestAddedEvent,
+): PaginatedEventsResponse {
+  return { ...feed, items, total: items.length, page_size: items.length, latest_added_event: latestAddedEvent };
+}
+
 async function removeDeletedEventFromQueries(eventId: number): Promise<void> {
   const queryClient = getQueryClient();
   // Cancel old reads before applying the confirmed deletion so their responses
@@ -118,6 +176,15 @@ async function removeDeletedEventFromQueries(eventId: number): Promise<void> {
   ]);
   queryClient.removeQueries({ queryKey: queryKeys.events.detail(eventId) });
   queryClient.removeQueries({ queryKey: queryKeys.events.attendees(eventId) });
+  queryClient.setQueriesData<PaginatedEventsResponse>(
+    { queryKey: queryKeys.events.feeds() },
+    (feed) => {
+      const removed = feed?.items.find(event => event.id === eventId);
+      if (!feed || !removed) return feed;
+      return withFeedItems(feed, feed.items.filter(event => event.id !== eventId),
+        isLatestEvent(feed.latest_added_event, removed) ? null : feed.latest_added_event);
+    },
+  );
   queryClient.setQueriesData<Event[]>(
     { queryKey: queryKeys.events.lists() },
     (events) => events?.filter((event) => event.id !== eventId),

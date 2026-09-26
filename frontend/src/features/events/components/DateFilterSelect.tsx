@@ -11,9 +11,9 @@ import {
 import type { EventDateFilter } from "@/shared/types";
 import { parseLocalDateValue, schoolCalendarDate } from "@/shared/utils/date";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
-import { useEventsStore } from "@/features/events/store/events.store";
 
 interface DateFilterSelectProps {
+  school: string;
   value: EventDateFilter;
   customDate: string;
   onChange: (value: EventDateFilter, customDate?: string) => void;
@@ -30,16 +30,17 @@ const DATE_FILTER_OPTIONS: EventDateFilter[] = [
 ];
 
 export function DateFilterSelect({
+  school,
   value,
   customDate,
   onChange,
 }: DateFilterSelectProps) {
   const { t, i18n } = useTranslation();
-  const school = useEventsStore(state => state.schoolFilter);
-  const { schools } = useSchoolDirectory();
-  const calendarDays = schools.filter(item => !school || item.slug === school)
-    .map(item => schoolCalendarDate(new Date(), item.timezone).toISOString().slice(0, 10));
-  const firstSelectableDate = calendarDays.length ? parseLocalDateValue(calendarDays.sort()[0]) : undefined;
+  const { schoolBySlug } = useSchoolDirectory();
+  const timeZone = schoolBySlug.get(school)?.timezone;
+  const firstSelectableDate = timeZone
+    ? parseLocalDateValue(schoolCalendarDate(new Date(), timeZone).toISOString().slice(0, 10))
+    : undefined;
   const [open, setOpen] = useState(false);
   const [showCustomPicker, setShowCustomPicker] = useState(false);
   const selectedCustomDate = useMemo(

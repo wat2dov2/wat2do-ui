@@ -3,12 +3,6 @@
     "download": "下载",
     "downloadPdf": "PDF",
     "downloadPng": "PNG",
-    "recruitment": {
-      "title": "帮助更多学生发现 {{school}} 的活动。",
-      "description": "张贴 Wat2Do 官方海报，每带来一位符合条件的新访客即可获得 {{rate}}。",
-      "seeHowItWorks": "了解运作方式",
-      "dismiss": "{{days}} 天内隐藏此消息"
-    },
     "promote": {
       "title": "把 Wat2Do 带到 {{school}}",
       "description": "在校园张贴官方海报，每带来一位符合条件的新访客即可获得 {{rate}}。",

@@ -3,12 +3,6 @@
     "download": "ਡਾਊਨਲੋਡ ਕਰੋ",
     "downloadPdf": "PDF",
     "downloadPng": "PNG",
-    "recruitment": {
-      "title": "{{school}} 'ਤੇ ਇਵੈਂਟ ਖੋਜਣ ਵਿੱਚ ਹੋਰ ਵਿਦਿਆਰਥੀਆਂ ਦੀ ਮਦਦ ਕਰੋ।",
-      "description": "ਅਧਿਕਾਰਤ Wat2Do ਪੋਸਟਰ ਲਗਾਓ ਅਤੇ ਹਰੇਕ ਯੋਗ ਨਵੇਂ ਵਿਜ਼ਟਰ ਲਈ {{rate}} ਕਮਾਓ।",
-      "seeHowItWorks": "ਦੇਖੋ ਕਿ ਇਹ ਕਿਵੇਂ ਕੰਮ ਕਰਦਾ ਹੈ",
-      "dismiss": "ਇਸ ਸੁਨੇਹੇ ਨੂੰ {{days}} ਦਿਨਾਂ ਲਈ ਲੁਕਾਓ"
-    },
     "promote": {
       "title": "Wat2Do ਨੂੰ {{school}} ਵਿੱਚ ਲਿਆਓ",
       "description": "ਕੈਂਪਸ ਦੇ ਆਲੇ-ਦੁਆਲੇ ਅਧਿਕਾਰਤ ਪੋਸਟਰ ਲਗਾਓ ਅਤੇ ਹਰ ਯੋਗ ਨਵੇਂ ਵਿਜ਼ਟਰ ਲਈ {{rate}} ਕਮਾਓ।",

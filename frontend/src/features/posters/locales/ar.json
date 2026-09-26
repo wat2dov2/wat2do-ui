@@ -3,12 +3,6 @@
     "download": "تنزيل",
     "downloadPdf": "PDF",
     "downloadPng": "PNG",
-    "recruitment": {
-      "title": "ساعد المزيد من الطلاب على اكتشاف الفعاليات في {{school}}.",
-      "description": "علق ملصقات Wat2Do الرسمية واكسب {{rate}} عن كل زائر جديد مؤهل.",
-      "seeHowItWorks": "شاهد كيف يعمل",
-      "dismiss": "إخفاء هذه الرسالة لمدة {{days}} أيام"
-    },
     "promote": {
       "title": "اجلب Wat2Do إلى {{school}}",
       "description": "قم بوضع ملصقات رسمية حول الحرم الجامعي واكسب {{rate}} عن كل زائر جديد مؤهل يجلبونه.",

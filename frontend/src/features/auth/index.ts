@@ -14,16 +14,13 @@ export { PreviewStyleEventCard } from "./components/PreviewStyleEventCard";
 export {
   useAuthState,
   useUserEmail,
-  useProfileCompleted,
 } from "./hooks/useAuthState";
 
 // API (public interface)
 export {
   getSessionEmail,
   getUserProfile,
-  getUserId,
   updateUserProfile,
-  isAuthenticated,
   fetchProfileAPI,
   updateProfileAPI,
   getLastProfileFetchAt,
@@ -38,4 +35,4 @@ export {
 // Utilities (shared)
 export { eventToPreview } from "./utils/eventPreview";
 export { shuffle } from "./utils/shuffle";
-export { appendSafeReturnTo, getSafeReturnTo } from "./utils/returnTo";
+export { appendSafeReturnTo } from "./utils/returnTo";

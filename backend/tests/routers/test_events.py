@@ -594,6 +594,14 @@ def test_list_events_public_hides_created_by(client, monkeypatch):
         _mock_event(
             created_by="secret-uid-1234",
             source_url="https://example.com/events/test-event",
+            occurrences=[
+                {
+                    "id": UUID(int=1),
+                    "event_id": 1,
+                    "dtstart_utc": datetime(2026, 9, 25, 18, tzinfo=timezone.utc),
+                    "created_at": datetime(2026, 9, 24, tzinfo=timezone.utc),
+                }
+            ],
         )
     ]
     monkeypatch.setattr(event_service, "list_events", MagicMock(return_value=(events, 1)))
@@ -604,6 +612,16 @@ def test_list_events_public_hides_created_by(client, monkeypatch):
     body = resp.json()
     assert all("created_by" not in item for item in body["items"])
     assert body["items"][0]["source_url"] == "https://example.com/events/test-event"
+    assert body["items"][0]["occurrences"] == [
+        {
+            "id": str(UUID(int=1)),
+            "event_id": 1,
+            "dtstart_utc": "2026-09-25T18:00:00Z",
+            "dtend_utc": None,
+            "duration": None,
+            "tz": None,
+        }
+    ]
 
 
 # ---------------------------------------------------------------------------

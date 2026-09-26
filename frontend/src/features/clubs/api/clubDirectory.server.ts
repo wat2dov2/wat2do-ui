@@ -1,3 +1,4 @@
+import { collectPaginatedPages } from "@/shared/lib/pagination";
 import type { ApiClubResponse, ApiPaginatedClubsResponse } from "@/shared/generated";
 import { controlBox } from "@/shared/config/controlBox";
 import { resolveSchool } from "@/shared/constants/schools";
@@ -42,14 +43,7 @@ export async function getClubDirectorySnapshot(
   school: string,
 ): Promise<PaginatedClubsResponse> {
   const resolvedSchool = resolveSchool(school);
-  const firstPage = await fetchClubDirectoryPage(resolvedSchool, 1);
-  const remainingPages = await Promise.all(
-    Array.from({ length: Math.max(firstPage.total_pages - 1, 0) }, (_, index) =>
-      fetchClubDirectoryPage(resolvedSchool, index + 2),
-    ),
-  );
-  const items = [firstPage, ...remainingPages].flatMap((page) => page.items);
-  return { items, total: items.length, page: 1, page_size: items.length, total_pages: 1 };
+  return collectPaginatedPages((page) => fetchClubDirectoryPage(resolvedSchool, page));
 }
 
 async function fetchClubDirectoryPage(

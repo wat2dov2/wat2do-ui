@@ -5,10 +5,12 @@ import {
 } from "@/features/search/components/VisualFilters";
 
 interface FilterDropdownProps {
+  school: string;
   filters: VisualFilterControls;
 }
 
 export function FilterDropdown({
+  school,
   filters,
 }: FilterDropdownProps) {
   const { t } = useTranslation();
@@ -20,6 +22,7 @@ export function FilterDropdown({
       </div>
 
       <VisualFilters
+        school={school}
         filters={filters}
       />
     </>

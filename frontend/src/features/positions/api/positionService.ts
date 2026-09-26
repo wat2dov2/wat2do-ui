@@ -1,36 +1,10 @@
 import type { ApiPositionResponse } from "@/shared/generated";
-import type { PaginatedPositionsResponse } from "@/features/positions/api/positions.api";
 import type { Position, PositionType } from "@/shared/types";
 
 export function normalizePosition(raw: ApiPositionResponse): Position {
   return {
     ...raw,
     requirements: raw.requirements ?? [],
-  };
-}
-
-/** One complete directory for both server hydration and browser cache reads. */
-export async function collectPositionPages(
-  fetchPage: (page: number) => Promise<PaginatedPositionsResponse>,
-): Promise<PaginatedPositionsResponse> {
-  const firstPage = await fetchPage(1);
-  const remainingPages = await Promise.all(
-    Array.from({ length: Math.max(firstPage.total_pages - 1, 0) }, (_, index) =>
-      fetchPage(index + 2),
-    ),
-  );
-  const items = [...new Map(
-    [firstPage, ...remainingPages]
-      .flatMap((page) => page.items)
-      .map((item) => [item.id, item]),
-  ).values()];
-  return {
-    ...firstPage,
-    items,
-    total: items.length,
-    page: 1,
-    page_size: items.length,
-    total_pages: 1,
   };
 }
 

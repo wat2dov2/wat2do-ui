@@ -31,6 +31,33 @@ def test_list_by_ids_fetches_only_selected_occurrences(fake_sb, patch_sb):
     fake_sb.in_.assert_called_once_with("id", (occurrence_id,))
 
 
+@pytest.mark.parametrize("read", ["event", "events", "occurrences"])
+def test_occurrence_reads_exclude_unused_database_metadata(fake_sb, patch_sb, read):
+    patch_sb("services.event_date_service")
+    row = _occ_row(42, "2026-05-01T18:00:00+00:00", 99)
+    fake_sb.set_response(data=[row])
+
+    if read == "event":
+        [occurrence] = event_date_service.list_for_event(42)
+    elif read == "events":
+        [occurrence] = event_date_service.list_for_events([42])[42]
+    else:
+        [occurrence] = event_date_service.list_by_ids([row["id"]])
+
+    columns = fake_sb.select.call_args.args[0].split(",")
+    assert "*" not in columns
+    assert "created_at" not in columns
+    assert {"id", "event_id", "dtstart_utc", "dtend_utc", "duration", "tz"} == set(columns)
+    assert occurrence.model_dump(mode="json") == {
+        "id": row["id"],
+        "event_id": 42,
+        "dtstart_utc": "2026-05-01T18:00:00Z",
+        "dtend_utc": None,
+        "duration": None,
+        "tz": None,
+    }
+
+
 @pytest.mark.parametrize("count", [0, 1, 499, 500, 501, 1200])
 @pytest.mark.parametrize("by_occurrence", [False, True])
 def test_occurrence_reads_preserve_batch_boundaries(fake_sb, patch_sb, count, by_occurrence):

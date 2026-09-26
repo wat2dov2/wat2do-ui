@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo } from "react";
+import { useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
@@ -12,10 +12,9 @@ import {
 } from "@/features/events/components/EventDetailsSections";
 import {
   fetchEventById,
-  fetchEventFeed,
+  eventFeedQueryOptions,
 } from "@/features/events/api/events.api";
 import { eventPagePath } from "@/features/events/lib/eventUrls";
-import { useEventsStore } from "@/features/events/store/events.store";
 import { controlBox } from "@/shared/config/controlBox";
 import { ROUTES } from "@/shared/constants/routes";
 import { queryKeys } from "@/shared/lib/queryKeys";
@@ -34,7 +33,6 @@ export function EventDetailsPageContainer({
 }: EventDetailsPageContainerProps) {
   const { t } = useTranslation();
   const router = useRouter();
-  const storeEvents = useEventsStore((state) => state.events);
   const { data: event, isPending, isError } = useQuery({
     queryKey: queryKeys.events.detail(eventId),
     queryFn: () => fetchEventById(eventId),
@@ -42,26 +40,10 @@ export function EventDetailsPageContainer({
     initialData: initialEvent,
     staleTime: controlBox.clientCache.liveEventDataStaleMs,
   });
-  const storeEventsForSchool = useMemo(
-    () =>
-      event
-        ? storeEvents.filter((candidate) => candidate.school === event.school)
-        : [],
-    [event, storeEvents],
-  );
-  const hasStoreSimilarEvents = storeEventsForSchool.some(
-    (candidate) => candidate.id !== event?.id,
-  );
-  const { data: fetchedSchoolEvents = [] } = useQuery({
-    queryKey: queryKeys.events.bySchool(event?.school ?? ""),
-    queryFn: () => fetchEventFeed(event!.school),
-    enabled: Boolean(event?.school) && !hasStoreSimilarEvents,
-    staleTime: controlBox.clientCache.liveEventDataStaleMs,
+  const { data: schoolFeed } = useQuery({
+    ...eventFeedQueryOptions(event?.school ?? ""),
+    enabled: Boolean(event?.school),
   });
-  const similarEventCandidates =
-    hasStoreSimilarEvents
-      ? storeEventsForSchool
-      : fetchedSchoolEvents;
   const handleSimilarEventClick = useCallback(
     (similarEvent: Event) => {
       router.push(eventPagePath(similarEvent.id));
@@ -96,7 +78,7 @@ export function EventDetailsPageContainer({
         <EventDetailsBody event={event} school={event.school} />
         <EventDetailsSimilarEvents
           event={event}
-          events={similarEventCandidates}
+          events={schoolFeed?.items ?? []}
           onEventClick={handleSimilarEventClick}
         />
       </Stack>

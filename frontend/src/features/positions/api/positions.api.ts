@@ -1,10 +1,11 @@
+import { collectPaginatedPages } from "@/shared/lib/pagination";
 import type {
   ApiPaginatedPositionResponse,
   ApiPositionCreate,
   ApiPositionSubmissionResponse,
 } from "@/shared/generated";
 import type { Position, PositionType } from "@/shared/types";
-import { collectPositionPages, normalizePosition } from "@/features/positions/api/positionService";
+import { normalizePosition } from "@/features/positions/api/positionService";
 import { controlBox } from "@/shared/config/controlBox";
 import { api } from "@/shared/services/apiClient";
 export { parsePositionImage } from "@/shared/services/uploadService";
@@ -57,12 +58,12 @@ export async function getClubPositions(
   clubId: number,
   school: string,
 ): Promise<Position[]> {
-  const directory = await collectPositionPages((page) =>
+  const directory = await collectPaginatedPages((page) =>
     getPositionsPage({ clubId, school, page }),
   );
   return directory.items;
 }
 
 export function getPositionDirectory(school: string): Promise<PaginatedPositionsResponse> {
-  return collectPositionPages((page) => getPositionsPage({ school, page }));
+  return collectPaginatedPages((page) => getPositionsPage({ school, page }));
 }

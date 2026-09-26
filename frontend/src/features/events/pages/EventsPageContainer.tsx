@@ -1,4 +1,4 @@
-import { useMemo, useCallback, useState } from "react";
+import { lazy, Suspense, useMemo, useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { EventFormatFilterSelect } from "@/features/events/components/EventFormatFilterSelect";
@@ -14,7 +14,6 @@ import { useAuthState } from "@/features/auth/hooks/useAuthState";
 import { FilterBar } from "@/shared/layout/filter-bar";
 import { Button } from "@/shared/ui/button";
 import { useEventsPageData } from "@/features/events/hooks/useEventsPageData";
-import { EventDetailsModal } from "@/features/events/components/EventDetailsModal";
 import {
   NewlyAddedFilterButton,
 } from "@/shared/ui/newly-added-filter-button";
@@ -23,7 +22,14 @@ import { ROUTES } from "@/shared/constants/routes";
 import type { Event } from "@/shared/types";
 import { usePosterLandingConfirmation } from "@/features/qrcode/hooks/usePosterLandingConfirmation";
 import { PageHeader, Stack } from "@/shared/layout";
-import type { SchoolBrowseSnapshot } from "@/features/events/api/eventFeed.server";
+import type { PaginatedEventsResponse } from "@/features/events/api/events.api";
+import { LoadingPage } from "@/shared/ui/loading-page";
+
+const EventDetailsModal = lazy(() =>
+  import("@/features/events/components/EventDetailsModal").then((module) => ({
+    default: module.EventDetailsModal,
+  })),
+);
 
 interface QuickFilterButtonConfig {
   id: string;
@@ -34,7 +40,7 @@ interface QuickFilterButtonConfig {
 
 interface EventsPageContainerProps {
   /** The server's browse snapshot, or null when that fetch failed. */
-  initialSnapshot: SchoolBrowseSnapshot | null;
+  initialSnapshot: PaginatedEventsResponse | null;
   initialSchool: string;
 }
 
@@ -67,6 +73,7 @@ export function EventsPageContainer({
     initialSchool,
   });
   const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
+  const [hasOpenedDetails, setHasOpenedDetails] = useState(false);
 
   const selectedEvent = useMemo(() => {
     if (selectedEventId == null) return null;
@@ -74,6 +81,7 @@ export function EventsPageContainer({
   }, [selectedEventId, allEvents]);
 
   const handleEventClick = useCallback((event: Event) => {
+    setHasOpenedDetails(true);
     setSelectedEventId(event.id);
   }, []);
 
@@ -167,6 +175,7 @@ export function EventsPageContainer({
               >
                 {showFilterDropdown ? (
                   <FilterDropdown
+                    school={initialSchool}
                     filters={filters}
                   />
                 ) : null}
@@ -197,6 +206,7 @@ export function EventsPageContainer({
                   inputLabel={t("filters.price")}
                 />
                 <DateFilterSelect
+                  school={initialSchool}
                   value={filters.dateFilter}
                   customDate={filters.customDate}
                   onChange={filters.setDateFilter}
@@ -266,12 +276,16 @@ export function EventsPageContainer({
           )}
         </main>
       </div>
-      <EventDetailsModal
-        eventId={selectedEventId}
-        event={selectedEvent}
-        onClose={handleCloseEventDetails}
-        allEvents={orderedEvents}
-      />
+      {hasOpenedDetails ? (
+        <Suspense fallback={<LoadingPage />}>
+          <EventDetailsModal
+            eventId={selectedEventId}
+            event={selectedEvent}
+            onClose={handleCloseEventDetails}
+            allEvents={orderedEvents}
+          />
+        </Suspense>
+      ) : null}
     </>
   );
 }

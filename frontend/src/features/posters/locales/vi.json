@@ -3,12 +3,6 @@
     "download": "Tải xuống",
     "downloadPdf": "PDF",
     "downloadPng": "PNG",
-    "recruitment": {
-      "title": "Giúp nhiều sinh viên hơn khám phá các sự kiện tại {{school}}.",
-      "description": "Đăng các poster chính thức của Wat2Do và nhận {{rate}} cho mỗi khách mới đủ điều kiện.",
-      "seeHowItWorks": "Xem cách nó hoạt động",
-      "dismiss": "Ẩn thông báo này trong {{days}} ngày"
-    },
     "promote": {
       "title": "Mang Wat2Do đến {{school}}",
       "description": "Đặt các poster chính thức xung quanh khuôn viên và nhận {{rate}} cho mỗi khách mới họ mang đến đủ điều kiện.",

@@ -13,8 +13,21 @@ from core.tables import POSITIONS
 from schemas.position import PositionResponse, PositionType
 from services import school_service
 
+_POSITION_COMPUTED_FIELDS = {
+    "club_name",
+    "club_logo_url",
+    "club_type",
+    "club_page",
+    "club_ig",
+    "club_discord",
+    "school",
+}
+_POSITION_COLUMNS = ",".join(
+    field for field in PositionResponse.model_fields if field not in _POSITION_COMPUTED_FIELDS
+)
 _POSITION_SELECT = (
-    f"*,clubs(club_name,logo_url,club_type,club_page,ig,discord),{school_service.SCHOOL_SLUG_EMBED}"
+    f"{_POSITION_COLUMNS},clubs(club_name,logo_url,club_type,club_page,ig,discord),"
+    f"{school_service.SCHOOL_SLUG_EMBED}"
 )
 
 

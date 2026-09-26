@@ -1549,7 +1549,54 @@ test.describe("Club Integrations", () => {
 
 // ── Workflow 2: Home / Events Page ────────────────────────────────────
 
+test.describe("Discovery before hydration", () => {
+  test.use({ javaScriptEnabled: false });
+
+  for (const path of ["/", "/clubs", "/positions"]) {
+    test(`renders visible cards without JavaScript on ${path}`, async ({ page, next }) => {
+      await mockApi(page, next, url => apiPath(url) === "/positions", async () => ({ json: {
+        items: [{
+          id: 1, title: "Campus volunteer", club_id: 1, club_name: "UW Tech Club",
+          school: "uwaterloo", position_type: "volunteer", requirements: [],
+          description: "Help run campus events", added_at: new Date().toISOString(),
+        }],
+        total: 1, page: 1, page_size: 1, total_pages: 1,
+      } }));
+      await page.goto(`${BASE}${path}`);
+      const firstCard = page.locator('[data-slot="card-grid"] > [role="listitem"]').first();
+      await expect(firstCard).toBeVisible();
+      await expect(firstCard).toHaveCSS("opacity", "1");
+      await expect(firstCard).toHaveCSS("transform", "none");
+      await expect(firstCard.locator("article")).toBeVisible();
+    });
+  }
+});
+
 test.describe("Events Page", () => {
+  test("keeps first-screen cards visible and honors reduced motion while scrolling", async ({ page, next }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.setViewportSize({ width: 390, height: 844 });
+    const events = Array.from({ length: 8 }, (_, index) => ({
+      id: index + 1, title: `Campus event ${index + 1}`, location: "SLC", price: 0,
+      food: [], registration: false, category: "Career", club_id: 1, club: "UW Tech Club",
+      club_type: "independent", school: "uwaterloo", added_at: new Date().toISOString(),
+      occurrences: [{ id: String(index + 1), event_id: index + 1,
+        dtstart_utc: new Date(Date.now() + 86_400_000).toISOString(), dtend_utc: null }],
+    }));
+    await mockApi(page, next, url => apiPath(url) === "/events", async () => ({ json: {
+      items: events, total: events.length, page: 1, page_size: 100, total_pages: 1,
+    } }));
+    await page.goto(BASE);
+    const cards = page.locator('[data-slot="card-grid"] > [role="listitem"]');
+    await expect(cards).toHaveCount(events.length);
+    for (const card of [cards.first(), cards.last()]) {
+      await card.scrollIntoViewIfNeeded();
+      await expect(card).toHaveCSS("opacity", "1");
+      await expect(card).toHaveCSS("transform", "none");
+      expect(await card.evaluate(element => element.getAnimations().length)).toBe(0);
+    }
+  });
+
   test("keeps mobile event controls fixed, preserves latest time, and navigates attendee drawers", async ({ page, next }, testInfo) => {
     const title = "A very long campus event title that must truncate before the added time on a small mobile screen";
     const addedAt = new Date(Date.now() - 3_600_000).toISOString();

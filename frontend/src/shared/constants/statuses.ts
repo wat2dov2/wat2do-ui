@@ -8,7 +8,7 @@
  */
 
 // -- Report statuses -------------------------------------------------------
-export const REPORT_PENDING = "pending" as const;
+const REPORT_PENDING = "pending" as const;
 const REPORT_RESOLVED = "resolved" as const;
 const REPORT_DISMISSED = "dismissed" as const;
 

@@ -3,12 +3,6 @@
     "download": "다운로드",
     "downloadPdf": "PDF",
     "downloadPng": "PNG",
-    "recruitment": {
-      "title": "더 많은 학생들이 {{school}}에서 열리는 이벤트를 발견하도록 도와주세요.",
-      "description": "공식 Wat2Do 포스터를 게시하고 적격 신규 방문자마다 {{rate}}를 적립하세요.",
-      "seeHowItWorks": "작동 방식 보기",
-      "dismiss": "이 메시지를 {{days}}일 동안 숨기기"
-    },
     "promote": {
       "title": "Wat2Do을(를) {{school}}로 가져오기",
       "description": "캠퍼스 주위에 공식 포스터를 배치하고 포스터가 데려오는 적격 신규 방문자마다 {{rate}}를 적립하세요.",

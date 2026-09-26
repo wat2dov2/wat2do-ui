@@ -16,7 +16,6 @@ import {
   EventDetailsSimilarEvents,
 } from "@/features/events/components/EventDetailsSections";
 import { DrawerBody, Stack } from "@/shared/layout";
-import { useEventsStore } from "@/features/events/store/events.store";
 import { fetchEventById } from "@/features/events/api/events.api";
 import { controlBox } from "@/shared/config/controlBox";
 import { queryKeys } from "@/shared/lib/queryKeys";
@@ -26,7 +25,7 @@ interface EventDetailsModalProps {
   eventId?: number | null;
   event: Event | null;
   onClose: () => void;
-  allEvents?: Event[];
+  allEvents: Event[];
   /** When true, the Similar Events section is hidden (e.g. in admin panel). */
   hideSimilarEvents?: boolean;
 }
@@ -39,8 +38,6 @@ export function EventDetailsModal({
   hideSimilarEvents = false,
 }: EventDetailsModalProps) {
   const { t } = useTranslation();
-  const storeEvents = useEventsStore((s) => s.events);
-  const schoolFilter = useEventsStore((s) => s.schoolFilter);
   const [overrideEvent, setOverrideEvent] = useState<Event | null>(null);
   const [overrideForEventId, setOverrideForEventId] = useState<number | null>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -93,7 +90,7 @@ export function EventDetailsModal({
     },
     [onClose],
   );
-  const navigationEvents = allEvents ?? storeEvents;
+  const navigationEvents = allEvents;
   const navigationIndex = navigationEvents.findIndex((item) => item.id === displayedEvent?.id);
   const previousEvent = navigationIndex > 0 ? navigationEvents[navigationIndex - 1] : undefined;
   const nextEvent = navigationIndex >= 0 ? navigationEvents[navigationIndex + 1] : undefined;
@@ -137,7 +134,7 @@ export function EventDetailsModal({
 
                 <EventDetailsBody
                   event={displayedEvent}
-                  school={schoolFilter}
+                  school={displayedEvent.school}
                   isFetchingDetails={isFetchingEvent}
                   onClubFilterSelect={onClose}
                   renderTitle={(title) => (
@@ -150,7 +147,7 @@ export function EventDetailsModal({
                 {!hideSimilarEvents && (
                   <EventDetailsSimilarEvents
                     event={displayedEvent}
-                    events={allEvents ?? storeEvents}
+                    events={allEvents}
                     onEventClick={handleSimilarEventClick}
                   />
                 )}

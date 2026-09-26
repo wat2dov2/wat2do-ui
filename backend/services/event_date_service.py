@@ -10,6 +10,8 @@ from core.database import get_sb
 from core.tables import EVENT_DATES
 from schemas.event_date import OccurrenceCreate, OccurrenceResponse
 
+_OCCURRENCE_COLUMNS = ",".join(OccurrenceResponse.model_fields)
+
 
 def create_occurrences(
     event_id: int, occurrences: list[OccurrenceCreate]
@@ -36,7 +38,7 @@ def list_for_event(event_id: int) -> list[OccurrenceResponse]:
     r = (
         get_sb()
         .table(EVENT_DATES)
-        .select("*")
+        .select(_OCCURRENCE_COLUMNS)
         .eq("event_id", event_id)
         .order("dtstart_utc", desc=False)
         .execute()
@@ -57,7 +59,7 @@ def list_for_events(event_ids: list[int]) -> dict[int, list[OccurrenceResponse]]
         r = (
             get_sb()
             .table(EVENT_DATES)
-            .select("*")
+            .select(_OCCURRENCE_COLUMNS)
             .in_("event_id", chunk)
             .order("dtstart_utc", desc=False)
             .execute()
@@ -78,7 +80,12 @@ def list_by_ids(occurrence_ids: list[str]) -> list[OccurrenceResponse]:
     occurrences: list[OccurrenceResponse] = []
     for chunk in batched(unique_ids, 500):
         response = (
-            get_sb().table(EVENT_DATES).select("*").in_("id", chunk).order("dtstart_utc").execute()
+            get_sb()
+            .table(EVENT_DATES)
+            .select(_OCCURRENCE_COLUMNS)
+            .in_("id", chunk)
+            .order("dtstart_utc")
+            .execute()
         )
         occurrences.extend(OccurrenceResponse.model_validate(row) for row in (response.data or []))
     return occurrences

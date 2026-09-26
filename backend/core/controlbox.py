@@ -456,7 +456,6 @@ class PromoterProgramControl(_ControlModel):
     confirmation_token_minutes: int = Field(gt=0)
     payout_day_of_month: int = Field(ge=1, le=28)
     quiet_poster_days: int = Field(gt=0)
-    banner_dismissal_days: int = Field(gt=0)
     discord_invite_url: HttpUrl
     map_coordinate_decimal_places: int = Field(ge=1, le=5)
     map_visitor_bucket_maximums: tuple[int, int, int]

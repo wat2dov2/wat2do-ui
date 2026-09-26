@@ -1,6 +1,7 @@
+import { collectPaginatedPages } from "@/shared/lib/pagination";
 import type { ApiPaginatedPositionResponse } from "@/shared/generated";
 import type { PaginatedPositionsResponse } from "@/features/positions/api/positions.api";
-import { collectPositionPages, normalizePosition } from "@/features/positions/api/positionService";
+import { normalizePosition } from "@/features/positions/api/positionService";
 import { controlBox } from "@/shared/config/controlBox";
 import { resolveSchool } from "@/shared/constants/schools";
 import { getServerApiBaseUrl } from "@/shared/services/serverApi";
@@ -47,7 +48,7 @@ export async function getPositionDirectorySnapshot(
 ): Promise<PaginatedPositionsResponse> {
   const resolvedSchool = resolveSchool(school);
   const fetchOptions = positionDirectoryFetchOptions(resolvedSchool);
-  return collectPositionPages((page) => fetchPositionsPage(resolvedSchool, page, fetchOptions));
+  return collectPaginatedPages((page) => fetchPositionsPage(resolvedSchool, page, fetchOptions));
 }
 
 function positionDirectoryFetchOptions(school: string): RequestInit {
@@ -69,7 +70,7 @@ export async function getClubPositionsSnapshot(
 ): Promise<Position[]> {
   const resolvedSchool = resolveSchool(school);
   const fetchOptions = positionDirectoryFetchOptions(resolvedSchool);
-  const directory = await collectPositionPages((page) =>
+  const directory = await collectPaginatedPages((page) =>
     fetchPositionsPage(resolvedSchool, page, fetchOptions, clubId),
   );
   return directory.items;
