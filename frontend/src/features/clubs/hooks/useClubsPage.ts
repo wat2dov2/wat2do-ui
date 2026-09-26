@@ -6,9 +6,11 @@ import { useAppConstants } from "@/shared/hooks/useAppConstants";
 import { resolveSchool } from "@/shared/constants/schools";
 import { useSavedClubsStore } from "@/features/clubs/store/savedClubs.store";
 import { useAuthState } from "@/features/auth/hooks/useAuthState";
-import { useClubsList } from "@/features/clubs/hooks/useClubsList";
+import { useQuery } from "@tanstack/react-query";
+import { getAllClubs } from "@/features/clubs/api/clubs.api";
+import { filterClubs } from "@/features/clubs/api/clubService";
+import { queryKeys } from "@/shared/lib/queryKeys";
 import type { PaginatedClubsResponse } from "@/features/clubs/api/clubs.api";
-import { controlBox } from "@/shared/config/controlBox";
 
 interface UseClubsPageOptions {
   initialDirectory: PaginatedClubsResponse | null;
@@ -35,36 +37,27 @@ export function useClubsPage({
 
   const isSavedLoaded = useSavedClubsStore((s) => s.hasLoaded);
 
-  const {
-    clubs,
-    totalItems,
-    currentPage,
-    isLoading,
-    isError,
-    isLoadingMore,
-    hasMore,
-    loadMore,
-    refresh,
-  } = useClubsList({
-    mode: "infinite",
-    limit: controlBox.clubManagement.directoryPageSize,
-    school: resolvedSchoolFilter,
+  const query = useQuery({
+    queryKey: queryKeys.clubs.allForSchool(resolvedSchoolFilter),
+    queryFn: () => getAllClubs(resolvedSchoolFilter),
+    retry: false,
+    initialData: resolvedSchoolFilter === resolveSchool(initialSchool)
+      ? initialDirectory?.items
+      : undefined,
+  });
+  const clubs = useMemo(() => filterClubs(query.data ?? [], {
     search: submittedSearch.query,
     categories: selectedCategories,
     minEvents,
-    ids: activeTab === "followed" ? savedClubIds : (activeTab === "claimed" ? claimedClubIds : undefined),
-    isAuthenticated,
-    activeTab,
-    isSavedLoaded: activeTab === "followed" ? isSavedLoaded : true,
-    initialDirectory,
-    initialSchool,
-  });
+    ids: activeTab === "all" ? undefined : !isAuthenticated ? []
+      : activeTab === "followed" ? savedClubIds : claimedClubIds,
+  }), [query.data, submittedSearch.query, selectedCategories, minEvents, activeTab, isAuthenticated, savedClubIds, claimedClubIds]);
 
   useDiscoveryQueryTracking({
     school: resolvedSchoolFilter,
     surface: "clubs",
     search_query: submittedSearch.query,
-    filters: { categories: selectedCategories, minEvents, tab: activeTab, page: currentPage },
+    filters: { categories: selectedCategories, minEvents, tab: activeTab },
   }, submittedSearch.revision);
 
   const submitSearchQuery = useCallback(() => {
@@ -94,14 +87,11 @@ export function useClubsPage({
     selectedCategories,
     clubs,
     allCategories,
-    isLoading,
-    isError,
-    isLoadingMore,
-    hasMore,
-    loadMore,
-    refresh,
+    isLoading: query.isLoading || (isAuthenticated && activeTab === "followed" && !isSavedLoaded),
+    isError: query.isError,
+    refresh: () => void query.refetch(),
     toggleCategory,
-    totalItems,
+    totalItems: clubs.length,
     activeTab,
     setActiveTab,
   };

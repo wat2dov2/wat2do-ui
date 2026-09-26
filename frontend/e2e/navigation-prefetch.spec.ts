@@ -15,22 +15,24 @@ function recordingRouter() {
   };
 }
 
-test("warms full Events and Positions payloads without depending on visible links", () => {
+test("warms full Events, Positions and Clubs payloads without visible links", () => {
   const router = recordingRouter();
   warmDiscoveryRoutes(router);
-  expect(router.calls.map(({ href }) => href)).toEqual(["/", "/positions"]);
+  expect(router.calls.map(({ href }) => href)).toEqual(["/", "/positions", "/clubs"]);
   for (const call of router.calls) expect(call.options?.kind).toBe("full");
 });
 
-test("refreshes each stale discovery route independently instead of leaving a one-shot warmup", () => {
+test("refreshes each stale discovery route independently and repeatedly", () => {
   const router = recordingRouter();
   warmDiscoveryRoutes(router);
-  router.calls[1].options?.onInvalidate?.();
-  expect(router.calls.map(({ href }) => href)).toEqual(["/", "/positions", "/positions"]);
-  router.calls[2].options?.onInvalidate?.();
-  expect(router.calls[3].href).toBe("/positions");
-  router.calls[0].options?.onInvalidate?.();
-  expect(router.calls[4].href).toBe("/");
+  for (const initial of [...router.calls]) {
+    initial.options?.onInvalidate?.();
+    const refreshed = router.calls.at(-1)!;
+    expect(refreshed.href).toBe(initial.href);
+    refreshed.options?.onInvalidate?.();
+    expect(router.calls.at(-1)?.href).toBe(initial.href);
+  }
+  expect(router.calls).toHaveLength(9);
   for (const call of router.calls) expect(call.options?.kind).toBe("full");
 });
 
@@ -40,13 +42,13 @@ test("stops invalidation callbacks after cleanup, including replaced StrictMode 
   const oldCalls = [...router.calls];
   stop();
   for (const call of oldCalls) call.options?.onInvalidate?.();
-  expect(router.calls).toHaveLength(2);
+  expect(router.calls).toHaveLength(3);
   const stopReplacement = warmDiscoveryRoutes(router);
   for (const call of oldCalls) call.options?.onInvalidate?.();
-  expect(router.calls).toHaveLength(4);
-  router.calls[3].options?.onInvalidate?.();
-  expect(router.calls).toHaveLength(5);
+  expect(router.calls).toHaveLength(6);
+  router.calls[5].options?.onInvalidate?.();
+  expect(router.calls).toHaveLength(7);
   stopReplacement();
-  router.calls[4].options?.onInvalidate?.();
-  expect(router.calls).toHaveLength(5);
+  router.calls[6].options?.onInvalidate?.();
+  expect(router.calls).toHaveLength(7);
 });

@@ -4,7 +4,7 @@ import { headers } from "next/headers";
 import { getSchoolBrowseSnapshot } from "@/features/events/api/eventFeed.server";
 import { isEventIndexable } from "@/features/events/lib/eventSeo";
 import { eventPagePath } from "@/features/events/lib/eventUrls";
-import { getAllClubDirectorySnapshot } from "@/features/clubs/api/clubDirectory.server";
+import { getClubDirectorySnapshot } from "@/features/clubs/api/clubDirectory.server";
 import { isClubIndexable } from "@/features/clubs/lib/clubSeo";
 import { getPositionDirectorySnapshot } from "@/features/positions/api/positionDirectory.server";
 import { getSchoolFromRequestHost } from "@/shared/constants/schools";
@@ -29,9 +29,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const rootUrl = getSchoolCanonicalUrl(school, "/");
 
   try {
-    const [snapshot, clubs, positions] = await Promise.all([
+    const [snapshot, { items: clubs }, positions] = await Promise.all([
       getSchoolBrowseSnapshot(school),
-      getAllClubDirectorySnapshot(school),
+      getClubDirectorySnapshot(school),
       getPositionDirectorySnapshot(school),
     ]);
     const eventEntries: MetadataRoute.Sitemap = snapshot.feed.items

@@ -25,31 +25,17 @@ export type PaginatedClubsResponse = Omit<ApiPaginatedClubsResponse, "items"> & 
 export async function getClubsPaginated(options: {
   page: number;
   limit: number;
-  school?: string;
   search?: string;
-  categories?: string[];
   clubType?: string;
-  minEvents?: number;
-  ids?: number[];
 }): Promise<PaginatedClubsResponse> {
   const params = new URLSearchParams();
   params.set("page", String(options.page));
-  if (options.minEvents) params.set("min_events", String(options.minEvents));
   params.set("page_size", String(options.limit));
-  if (options.school) {
-    params.set("school", options.school);
-  }
   if (options.search) {
     params.set("search", options.search);
   }
   if (options.clubType) {
     params.set("club_type", options.clubType);
-  }
-  if (options.categories && options.categories.length > 0) {
-    options.categories.forEach((cat) => params.append("categories", cat));
-  }
-  if (options.ids && options.ids.length > 0) {
-    options.ids.forEach((id) => params.append("ids", String(id)));
   }
 
   const response = await api.get<ApiPaginatedClubsResponse>(`/clubs/?${params.toString()}`);

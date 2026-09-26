@@ -42,7 +42,14 @@ export async function getClubDirectorySnapshot(
   school: string,
 ): Promise<PaginatedClubsResponse> {
   const resolvedSchool = resolveSchool(school);
-  return fetchClubDirectoryPage(resolvedSchool, 1);
+  const firstPage = await fetchClubDirectoryPage(resolvedSchool, 1);
+  const remainingPages = await Promise.all(
+    Array.from({ length: Math.max(firstPage.total_pages - 1, 0) }, (_, index) =>
+      fetchClubDirectoryPage(resolvedSchool, index + 2),
+    ),
+  );
+  const items = [firstPage, ...remainingPages].flatMap((page) => page.items);
+  return { items, total: items.length, page: 1, page_size: items.length, total_pages: 1 };
 }
 
 async function fetchClubDirectoryPage(
@@ -78,18 +85,4 @@ async function fetchClubDirectoryPage(
     ...directory,
     items: directory.items.map(normalizeClub),
   };
-}
-
-/** Every approved club for server-rendered public discovery surfaces. */
-export async function getAllClubDirectorySnapshot(
-  school: string,
-): Promise<Club[]> {
-  const resolvedSchool = resolveSchool(school);
-  const firstPage = await fetchClubDirectoryPage(resolvedSchool, 1);
-  const remainingPages = await Promise.all(
-    Array.from({ length: Math.max(firstPage.total_pages - 1, 0) }, (_, index) =>
-      fetchClubDirectoryPage(resolvedSchool, index + 2),
-    ),
-  );
-  return [firstPage, ...remainingPages].flatMap((page) => page.items);
 }

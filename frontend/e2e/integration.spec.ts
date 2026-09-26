@@ -3853,7 +3853,12 @@ test("New toggles directly without a dropdown or All button", async ({ page }) =
 });
 
 test.describe("Clubs Page", () => {
-  test("keeps the server-rendered campus scope while hydrating", async ({ page }) => {
+  test("keeps the server-rendered campus scope while hydrating", async ({ page, next }) => {
+    const serverSchools: Array<string | null> = [];
+    await mockApi(page, next, url => apiPath(url) === "/clubs", async request => {
+      serverSchools.push(new URL(request.url).searchParams.get("school"));
+      return { json: { items: MOCK_CLUBS, total: 3, page: 1, page_size: 20, total_pages: 1 } };
+    });
     const directoryRequests: URL[] = [];
     page.on("request", request => {
       const url = new URL(request.url());
@@ -3863,29 +3868,19 @@ test.describe("Clubs Page", () => {
     await expect(page.locator("[data-club-id]")).toHaveCount(3);
     await page.getByTestId("club-category-filter-scroll").getByRole("button", { name: "Technology", exact: true }).click();
     await expect(page.locator("[data-club-id]")).toHaveCount(2);
-    expect(directoryRequests.length).toBeGreaterThan(0);
-    expect(directoryRequests.every(url => url.searchParams.get("school") === "uwaterloo")).toBe(true);
+    expect(directoryRequests).toHaveLength(0);
+    expect(serverSchools.length).toBeGreaterThan(0);
+    expect(serverSchools.every(school => school === "uwaterloo")).toBe(true);
   });
 
-  test("shows loading while categories change and combines categories with search", async ({ page, next }) => {
+  test("filters the cached directory immediately without category or search requests", async ({ page }) => {
+    const directoryRequests: string[] = [];
+    page.on("request", request => {
+      if (apiPath(new URL(request.url())) === "/clubs") directoryRequests.push(request.url());
+    });
     await page.goto(`${BASE}/clubs`);
     await expect(page.locator("[data-club-id]")).toHaveCount(3);
-    let releaseResponse!: () => void;
-    const responseGate = new Promise<void>(resolve => { releaseResponse = resolve; });
-    await mockApi(page, next,
-      url => apiPath(url) === "/clubs" && url.searchParams.getAll("categories").length === 1 && url.searchParams.get("categories") === "Technology",
-      async () => {
-        await responseGate;
-        return { json: { items: [MOCK_CLUBS[0], MOCK_CLUBS[2]], total: 2, page: 1, page_size: 20, total_pages: 1 } };
-      },
-    );
     await page.getByTestId("club-category-filter-scroll").getByRole("button", { name: "Technology", exact: true }).click();
-    try {
-      await expect(page.locator('[aria-busy="true"]')).toBeVisible();
-      await expect(page.locator("[data-club-id]")).toHaveCount(0);
-    } finally {
-      releaseResponse();
-    }
     await expect(page.locator("[data-club-id]")).toHaveCount(2);
     await expect(page.locator('[aria-busy="true"]')).toHaveCount(0);
     await page.getByTestId("club-category-filter-scroll").getByRole("button", { name: "Social", exact: true }).click();
@@ -3894,13 +3889,14 @@ test.describe("Clubs Page", () => {
     await page.getByRole("button", { name: "Search", exact: true }).click();
     await expect(page.locator("[data-club-id]")).toHaveCount(1);
     await expect(page.locator('[data-club-id="2"]')).toBeVisible();
+    expect(directoryRequests).toHaveLength(0);
   });
 
-  test("shows a retry action after a failed club category request", async ({ page, next }) => {
+  test("shows a retry action after a failed complete directory request", async ({ page, next }) => {
     let fail = true;
     let attempts = 0;
     await mockApi(page, next,
-      url => apiPath(url) === "/clubs" && url.searchParams.has("categories"),
+      url => apiPath(url) === "/clubs",
       async () => {
         attempts += 1;
         return fail
@@ -3909,20 +3905,20 @@ test.describe("Clubs Page", () => {
       },
     );
     await page.goto(`${BASE}/clubs`);
-    await page.getByTestId("club-category-filter-scroll").getByRole("button", { name: "Technology", exact: true }).click();
     const error = page.getByRole("alert");
     await expect(error.getByText("Something went wrong", { exact: true })).toBeVisible();
     await expect(page.locator('[aria-busy="true"]')).toHaveCount(0);
     await expect(page.getByText("No clubs found", { exact: true })).toHaveCount(0);
-    expect(attempts).toBe(1);
+    const failedAttempts = attempts;
+    expect(failedAttempts).toBeGreaterThan(0);
     fail = false;
     await error.getByRole("button", { name: "Try again", exact: true }).click();
     await expect(page.locator('[data-club-id="1"]')).toBeVisible();
     await expect(error).toHaveCount(0);
-    expect(attempts).toBe(2);
+    expect(attempts).toBeGreaterThan(failedAttempts);
   });
 
-  test("stops infinite-scroll requests after a page fails", async ({ page, next }) => {
+  test("rejects an incomplete directory when a later page fails", async ({ page, next }) => {
     let pageTwoAttempts = 0;
     await mockApi(page, next, url => apiPath(url) === "/clubs", async request => {
       if (new URL(request.url).searchParams.get("page") === "2") {
@@ -3939,7 +3935,7 @@ test.describe("Clubs Page", () => {
     await expect(error.getByRole("button", { name: "Try again", exact: true })).toBeVisible();
     await expect(page.locator('[aria-busy="true"]')).toHaveCount(0);
     await expect(page.locator("[data-club-id]")).toHaveCount(0);
-    expect(pageTwoAttempts).toBe(1);
+    expect(pageTwoAttempts).toBeGreaterThan(0);
   });
 
   test("uses club URLs and puts Positions before Clubs", async ({ page }) => {
@@ -3954,18 +3950,9 @@ test.describe("Clubs Page", () => {
   test("filters clubs by minimum event count and restores zero-event clubs", async ({ page }) => {
     await page.goto(`${BASE}/clubs`);
     await expect(page.locator("[data-club-id]")).toHaveCount(3);
-    const minimum = page.getByRole("spinbutton", { name: "Minimum events" });
-    expect(await minimum.evaluate(element => {
-      const input = element as HTMLInputElement;
-      const canvas = document.createElement("canvas");
-      const context = canvas.getContext("2d")!;
-      const style = getComputedStyle(input);
-      context.font = style.font;
-      return input.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight) - 20 >= context.measureText(input.placeholder).width;
-    })).toBe(true);
-    const request = page.waitForRequest(request => new URL(request.url()).searchParams.get("min_events") === "1");
+    await page.getByRole("button", { name: ">0 events", exact: true }).click();
+    const minimum = page.getByRole("textbox", { name: "Minimum events" });
     await minimum.fill("1");
-    await request;
     await expect(page.locator("[data-club-id]")).toHaveCount(2);
     await expect(page.locator('[data-club-id="3"]')).toHaveCount(0);
     await minimum.fill("0");
@@ -4850,16 +4837,27 @@ test.describe("Navigation", () => {
         response.request().headers().rsc === "1" &&
         (await response.text()).includes('"initialDirectory":{');
     });
+    const warmedClubs = page.waitForResponse(async response => {
+      const url = new URL(response.url());
+      return url.pathname === "/clubs" && url.searchParams.has("_rsc") &&
+        response.request().headers().rsc === "1" &&
+        (await response.text()).includes('"initialDirectory":{');
+    });
     await page.goto(BASE);
     await expect(page.getByRole("dialog", { name: "Primary navigation" })).toHaveCount(0);
     const response = await warmedPositions;
     expect(response.status()).toBe(200);
+    expect((await warmedClubs).status()).toBe(200);
     // A shell-only prefetch does not include the Positions page's initial directory.
     expect(await response.text()).toContain('"initialDirectory":{');
     await page.getByRole("button", { name: "Open navigation menu" }).click();
     await page.getByRole("dialog", { name: "Primary navigation" }).getByRole("link", { name: "Positions", exact: true }).click();
     await expect(page).toHaveURL(/\/positions$/);
     await expect(page.getByRole("heading", { name: "0 positions", exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Open navigation menu" }).click();
+    await page.getByRole("dialog", { name: "Primary navigation" }).getByRole("link", { name: "Clubs", exact: true }).click();
+    await expect(page).toHaveURL(/\/clubs$/);
+    await expect(page.locator("[data-club-id]")).toHaveCount(3);
     await page.getByRole("button", { name: "Open navigation menu" }).click();
     await page.getByRole("dialog", { name: "Primary navigation" }).getByRole("link", { name: "Events", exact: true }).click();
     await expect(page.getByRole("button", { name: "Event: Tech Career Fair", exact: true })).toBeVisible();

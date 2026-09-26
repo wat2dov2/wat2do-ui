@@ -58,9 +58,6 @@ export function ClubsPage({
     clubs,
     isLoading,
     isError,
-    isLoadingMore,
-    hasMore,
-    loadMore,
     refresh,
     totalItems,
     activeTab,
@@ -216,9 +213,6 @@ export function ClubsPage({
           clubs={clubs}
           savedClubIds={savedClubIds}
           isLoading={isLoading}
-          isLoadingMore={isLoadingMore}
-          hasMore={hasMore}
-          onLoadMore={loadMore}
           onClubClick={(club) =>
             router.push(clubPagePath(club.id))
           }

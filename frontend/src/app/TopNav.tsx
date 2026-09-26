@@ -35,7 +35,7 @@ import { DrawerBody, Stack } from "@/shared/layout";
 import { useAuthState, type AuthState } from "@/features/auth/hooks/useAuthState";
 import { useRequestSchool } from "@/app/client-providers";
 import { getUserProfile, logoutAPI, updateUserProfile } from "@/features/auth/api/auth.api";
-import { ROUTES } from "@/shared/constants/routes";
+import { DISCOVERY_ROUTES, ROUTES } from "@/shared/constants/routes";
 import { getSchoolOrigin } from "@/shared/constants/schools";
 import imgImage1 from "@/assets/38e8096a28295e8dcc0e5020d0a5f3dd85d5f019.png";
 
@@ -175,7 +175,7 @@ export function TopNav() {
                 variant={active ? "outline" : "ghost"}
                 size="sm"
               >
-                <NextLink href={href} prefetch={href === ROUTES.HOME || href === ROUTES.POSITIONS ? true : undefined} aria-current={active ? "page" : undefined}>
+                <NextLink href={href} prefetch={DISCOVERY_ROUTES.includes(href) ? true : undefined} aria-current={active ? "page" : undefined}>
                   {t(labelKey)}
                 </NextLink>
               </Button>
@@ -246,7 +246,7 @@ export function TopNav() {
                     >
                       <NextLink
                         href={href}
-                        prefetch={href === ROUTES.HOME || href === ROUTES.POSITIONS ? true : undefined}
+                        prefetch={DISCOVERY_ROUTES.includes(href) ? true : undefined}
                         aria-current={active ? "page" : undefined}
                         onClick={() => setNavigationOpen(false)}
                       >

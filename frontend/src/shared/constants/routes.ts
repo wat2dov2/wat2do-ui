@@ -45,6 +45,8 @@ export const ROUTES = {
   CLUB_PANEL_MEMBERS: "/club-panel/members",
 } as const;
 
+export const DISCOVERY_ROUTES: readonly string[] = [ROUTES.HOME, ROUTES.POSITIONS, ROUTES.CLUBS];
+
 export function clubPagePath(clubId: number): string {
   return `${ROUTES.CLUBS}/${clubId}`;
 }

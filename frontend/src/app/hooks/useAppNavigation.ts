@@ -7,7 +7,7 @@ import { useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PrefetchKind } from "next/dist/client/components/router-reducer/router-reducer-types";
 import { QP } from "@/shared/constants/queryParams";
-import { ROUTES } from "@/shared/constants/routes";
+import { DISCOVERY_ROUTES, ROUTES } from "@/shared/constants/routes";
 import { consumePendingFilterState } from "@/features/search/api/filterService";
 import { useSearchStore } from "@/features/search/store/search.store";
 
@@ -18,7 +18,7 @@ interface UseAppNavigationOptions {
 /** Keep full discovery payloads warm even when their navigation links are hidden. */
 export function warmDiscoveryRoutes(router: Pick<ReturnType<typeof useRouter>, "prefetch">): () => void {
   let cancelled = false;
-  for (const href of [ROUTES.HOME, ROUTES.POSITIONS]) {
+  for (const href of DISCOVERY_ROUTES) {
     const warm = () => {
       if (cancelled) return;
       // Next's AUTO mode only warms the loading boundary for these dynamic pages.

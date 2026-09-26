@@ -1,9 +1,11 @@
 import { revalidateTag } from "next/cache";
 import { after, NextRequest, NextResponse } from "next/server";
 import { eventDetailTag, eventFeedTag, getSchoolBrowseSnapshot } from "@/features/events/api/eventFeed.server";
-import { clubDirectoryTag } from "@/features/clubs/api/clubDirectory.server";
+import { clubDirectoryTag, getClubDirectorySnapshot } from "@/features/clubs/api/clubDirectory.server";
 import { getPositionDirectorySnapshot, positionDirectoryTag } from "@/features/positions/api/positionDirectory.server";
 import {
+  getSchool,
+  getSchoolDirectory,
   SCHOOL_DIRECTORY_TAG,
   schoolBrandingTag,
 } from "@/shared/api/schools.server";
@@ -49,22 +51,23 @@ export async function POST(request: NextRequest) {
 
   // Public discovery renders per-host, so tagged fetch caches are the only
   // school-specific surfaces to invalidate - there is no per-school pathname.
-  // Event writes must be visible on the very next read, including hard refresh.
-  revalidateTag(eventFeedTag(school), { expire: 0 });
   if (typeof body.event_id === "number" && Number.isSafeInteger(body.event_id) && body.event_id > 0) {
     revalidateTag(eventDetailTag(body.event_id), { expire: 0 });
   }
-  revalidateTag(clubDirectoryTag(school), "max");
-  revalidateTag(positionDirectoryTag(school), "max");
-  revalidateTag(schoolBrandingTag(school), "max");
-  revalidateTag(SCHOOL_DIRECTORY_TAG, "max");
 
-  // Warm after invalidation finishes so the next visitor can use fresh cached data.
-  // Separate tasks let either directory finish warming if the other fails.
-  for (const warm of [getSchoolBrowseSnapshot, getPositionDirectorySnapshot]) {
-    after(async () => {
-      await warm(school);
-    });
+  // Keep the previous snapshot available while its replacement warms.
+  // Pair each tag with its loader so no invalidated directory is left cold.
+  const snapshots = [
+    { tag: eventFeedTag(school), warm: () => getSchoolBrowseSnapshot(school) },
+    { tag: positionDirectoryTag(school), warm: () => getPositionDirectorySnapshot(school) },
+    { tag: clubDirectoryTag(school), warm: () => getClubDirectorySnapshot(school) },
+    { tag: schoolBrandingTag(school), warm: () => getSchool(school) },
+    { tag: SCHOOL_DIRECTORY_TAG, warm: () => getSchoolDirectory() },
+  ];
+  for (const { tag, warm } of snapshots) {
+    revalidateTag(tag, "max");
+    // Independent tasks keep an upstream failure from skipping other snapshots.
+    after(async () => { await warm(); });
   }
 
   return NextResponse.json({ revalidated: true, school });
