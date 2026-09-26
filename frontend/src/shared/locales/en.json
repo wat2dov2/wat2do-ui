@@ -100,8 +100,8 @@
   },
   "siteBanner": {
     "founderStory": {
-      "message": "We’ve scraped 18,000+ events across campuses. Find your next experience.",
-      "cta": "Read our story"
+      "message": "We’ve scraped 18,000+ events across campuses.",
+      "cta": "Read about our story"
     }
   },
   "modals": {
