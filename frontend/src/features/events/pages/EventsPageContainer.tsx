@@ -203,7 +203,8 @@ export function EventsPageContainer({
                   active={filters.priceFilterValue !== ""}
                   onChange={filters.setPriceFilter}
                   label={Number(filters.priceFilterValue) > 0 ? `> $${Number(filters.priceFilterValue)}` : t("common.free")}
-                  inputLabel={t("filters.price")}
+                  inputLabel={t("filters.minimumPrice")}
+                  preset={{ label: t("common.free"), value: "0" }}
                 />
                 <DateFilterSelect
                   school={initialSchool}

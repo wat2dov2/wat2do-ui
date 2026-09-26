@@ -3752,8 +3752,10 @@ test.describe("Events Page", () => {
 
     const quickFilters = page.getByTestId("event-quick-filter-scroll");
     await quickFilters.getByRole("button", { name: "Free", exact: true }).click();
-    const quickPrice = page.getByRole("textbox", { name: "Price", exact: true });
-    await quickPrice.fill("0");
+    await page.getByRole("option", { name: "Free", exact: true }).click();
+    await quickFilters.getByRole("button", { name: "Free", exact: true }).click();
+    await page.getByRole("option", { name: "Min price", exact: true }).click();
+    const quickPrice = page.getByRole("textbox", { name: "Min price", exact: true });
     await expect(page.locator("article[data-event-id]:visible")).toHaveCount(2);
     await quickPrice.fill("11");
     await expect(page.locator("article[data-event-id]:visible")).toHaveCount(1);
@@ -3868,8 +3870,13 @@ test("price dropdown accepts integers and stays independent of Food", async ({ p
   await expect(food).toHaveAttribute("aria-pressed", "true");
   await expect(free).toHaveAttribute("aria-pressed", "false");
   await free.click();
-  const price = page.getByRole("textbox", { name: "Price", exact: true });
-  await price.fill("0");
+  await expect(page.getByRole("option", { name: "Free", exact: true })).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByRole("textbox", { name: "Min price", exact: true })).toHaveCount(0);
+  await page.getByRole("option", { name: "Free", exact: true }).click();
+  await free.click();
+  await page.getByRole("option", { name: "Min price", exact: true }).click();
+  const price = page.getByRole("textbox", { name: "Min price", exact: true });
+  await expect(price).toBeFocused();
   await expect(free).toHaveAttribute("aria-pressed", "true");
   await price.fill("5");
   await expect(filters.getByRole("button", { name: "> $5", exact: true })).toHaveAttribute("aria-pressed", "true");
@@ -3877,6 +3884,11 @@ test("price dropdown accepts integers and stays independent of Food", async ({ p
     await price.fill(invalid);
     await expect(price).toHaveValue("5");
   }
+  await page.keyboard.press("Escape");
+  await filters.getByRole("button", { name: "> $5", exact: true }).click();
+  await expect(page.getByRole("option", { name: "Min price", exact: true })).toHaveAttribute("aria-selected", "true");
+  await page.getByRole("option", { name: "Min price", exact: true }).click();
+  await expect(price).toHaveValue("5");
   await price.clear();
   await expect(free).toHaveAttribute("aria-pressed", "false");
   await price.fill("0");

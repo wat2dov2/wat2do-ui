@@ -154,6 +154,7 @@
     "title": "શીર્ષક",
     "location": "સ્થળ",
     "price": "કિંમત",
+    "minimumPrice": "ન્યૂનતમ કિંમત",
     "added_at": "નવી ઉમેરાઈ",
     "category": "શ્રેણી",
     "food": "ખોરાક",

@@ -154,6 +154,7 @@
     "title": "عنوان",
     "location": "مقام",
     "price": "قیمت",
+    "minimumPrice": "کم از کم قیمت",
     "added_at": "نئی شامل شدہ",
     "category": "زمرہ",
     "food": "خوراک",

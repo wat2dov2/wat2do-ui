@@ -151,6 +151,7 @@
     "title": "標題",
     "location": "地點",
     "price": "價格",
+    "minimumPrice": "最低價格",
     "added_at": "最新加入",
     "category": "類別",
     "food": "食物",

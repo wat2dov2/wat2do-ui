@@ -154,6 +154,7 @@
     "title": "शीर्षक",
     "location": "जगह",
     "price": "कीमत",
+    "minimumPrice": "न्यूनतम कीमत",
     "added_at": "नई तौर पर जोड़ा गया",
     "category": "श्रेणी",
     "food": "भोजन",

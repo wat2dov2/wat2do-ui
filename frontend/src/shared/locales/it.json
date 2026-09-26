@@ -157,6 +157,7 @@
     "title": "Titolo",
     "location": "Luogo",
     "price": "Prezzo",
+    "minimumPrice": "Prezzo minimo",
     "added_at": "Appena aggiunti",
     "category": "Categoria",
     "food": "Cibo",

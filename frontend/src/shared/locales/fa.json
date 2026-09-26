@@ -154,6 +154,7 @@
     "title": "عنوان",
     "location": "مکان",
     "price": "قیمت",
+    "minimumPrice": "حداقل قیمت",
     "added_at": "جدیدترین‌ها",
     "category": "دسته‌بندی",
     "food": "غذا",

@@ -154,6 +154,7 @@
     "title": "Pamagat",
     "location": "Lokasyon",
     "price": "Presyo",
+    "minimumPrice": "Minimum na presyo",
     "added_at": "Kamakailan lang idinagdag",
     "category": "Kategorya",
     "food": "Pagkain",

@@ -154,6 +154,7 @@
     "title": "Titel",
     "location": "Ort",
     "price": "Preis",
+    "minimumPrice": "Mindestpreis",
     "added_at": "Neu hinzugefügt",
     "category": "Kategorie",
     "food": "Essen",
