@@ -43,13 +43,6 @@
       "retry": "ફરી પ્રયાસ કરો"
     },
     "appearance": {
-      "viewPreferences": "પસંદગીઓ જુઓ",
-      "viewPreferencesDesc": "ઈવેન્ટ કેવી રીતે દર્શાવવામાં આવે તે કસ્ટમાઇઝ કરો",
-      "defaultViewMode": "ડિફોલ્ટ દર્શન મોડ",
-      "defaultViewModeDesc": "ડિફોલ્ટ તરીકે ઈવેન્ટ કેવી રીતે દર્શાવવામાં આવે તે પસંદ કરો",
-      "grid": "ગ્રિડ",
-      "calendar": "કેલેન્ડર",
-      "map": "માન્ચિત્ર",
       "language": "ભાષા",
       "languageDescription": "તમારી પસંદીદ ભાષા પસંદ કરો"
     }

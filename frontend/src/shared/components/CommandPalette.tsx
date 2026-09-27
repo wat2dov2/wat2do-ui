@@ -3,8 +3,6 @@ import { useRouter } from "next/navigation";
 import {
   Search,
   SlidersHorizontal,
-  Grid3x3,
-  Calendar,
   Plus,
   X,
   User,
@@ -24,7 +22,6 @@ import {
   CommandSeparator,
   CommandShortcut,
 } from "@/shared/ui/command";
-import { useUIStore } from "@/shared/store/ui.store";
 import { toast } from "@/shared/hooks/use-toast";
 import { settingsTabPath, SETTINGS_TABS, ROUTES } from "@/shared/constants/routes";
 import { focusSearchInput } from "@/shared/utils/searchInput";
@@ -46,7 +43,6 @@ export function CommandPalette({
 }: CommandPaletteProps) {
   const { t } = useTranslation();
   const router = useRouter();
-  const setViewMode = useUIStore((s) => s.setViewMode);
 
   return (
     <CommandDialog open={isOpen} onOpenChange={onOpenChange} title={t("commands.commandPalette")} description={t("commands.commandPaletteDescription")}>
@@ -79,27 +75,6 @@ export function CommandPalette({
             <SlidersHorizontal className="mr-2 size-4" />
             <span>{t("commands.openFilters")}</span>
             <CommandShortcut>F</CommandShortcut>
-          </CommandItem>
-          <CommandItem
-            onSelect={() => {
-              setViewMode("grid");
-              onOpenChange(false);
-            }}
-          >
-            <Grid3x3 className="mr-2 size-4" />
-            <span>{t("commands.gridView")}</span>
-            <CommandShortcut>G</CommandShortcut>
-          </CommandItem>
-
-          <CommandItem
-            onSelect={() => {
-              setViewMode("calendar");
-              onOpenChange(false);
-            }}
-          >
-            <Calendar className="mr-2 size-4" />
-            <span>{t("commands.calendarView")}</span>
-            <CommandShortcut>C</CommandShortcut>
           </CommandItem>
         </CommandGroup>
 

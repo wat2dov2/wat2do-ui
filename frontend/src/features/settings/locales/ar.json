@@ -43,13 +43,6 @@
       "retry": "إعادة المحاولة"
     },
     "appearance": {
-      "viewPreferences": "عرض التفضيلات",
-      "viewPreferencesDesc": "تخصيص طريقة عرض الأحداث",
-      "defaultViewMode": "وضع العرض الافتراضي",
-      "defaultViewModeDesc": "اختر كيفية عرض الأحداث بشكل افتراضي",
-      "grid": "شبكة",
-      "calendar": "تقويم",
-      "map": "خريطة",
       "language": "اللغة",
       "languageDescription": "اختر لغتك المفضلة"
     }

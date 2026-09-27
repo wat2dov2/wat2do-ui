@@ -1,7 +1,5 @@
 import type { ApiClubResponse } from "@/shared/generated";
 
-export type ViewMode = "grid" | "calendar" | "map";
-
 /** Admin review state. Only approved clubs are listed publicly. */
 export type ClubStatus = ApiClubResponse["status"];
 

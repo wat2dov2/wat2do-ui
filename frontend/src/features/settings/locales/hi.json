@@ -43,13 +43,6 @@
       "retry": "फिर से प्रयास करें"
     },
     "appearance": {
-      "viewPreferences": "प्राथमिकताएँ देखें",
-      "viewPreferencesDesc": "घटनाओं को दिखाने के तरीके को अनुकूलित करें",
-      "defaultViewMode": "डिफ़ॉल्ट दृश्य मोड",
-      "defaultViewModeDesc": "डिफ़ॉल्ट रूप से घटनाओं को कैसे दिखाया जाए, चुनें",
-      "grid": "ग्रिड",
-      "calendar": "कैलेंडर",
-      "map": "मानचित्र",
       "language": "भाषा",
       "languageDescription": "अपनी पसंदीदा भाषा चुनें"
     }

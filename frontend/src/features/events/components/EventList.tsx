@@ -24,7 +24,6 @@ import imageDelivery from "../../../../../backend/controlbox/image_delivery.json
 
 interface EventListProps {
   events: Event[];
-  viewMode: "grid" | "calendar" | "map";
   onEventClick?: (event: Event) => void;
   /** Called when the empty-state "Clear filters" button is pressed. */
   onClearFilters?: () => void;
@@ -114,7 +113,6 @@ function groupEventsByDateSection(events: Event[], getSchoolTimezone: ReturnType
  */
 export function EventList({
   events,
-  viewMode,
   onEventClick,
   onClearFilters,
   hasActiveFilters = false,
@@ -222,22 +220,6 @@ export function EventList({
             ))}
           </div>
         </section>
-      </div>
-    );
-  }
-
-  if (viewMode === "calendar") {
-    return (
-      <div className="text-center py-32 text-muted-foreground">
-        {t("events.calendarViewComingSoon")}
-      </div>
-    );
-  }
-
-  if (viewMode === "map") {
-    return (
-      <div className="text-center py-32 text-muted-foreground">
-        {t("events.mapViewComingSoon")}
       </div>
     );
   }

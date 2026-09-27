@@ -64,8 +64,6 @@
       "custom": "Выбрать дату"
     },
     "clearAllFilters": "Сбросить все фильтры",
-    "calendarViewComingSoon": "Вид календаря скоро будет доступен...",
-    "mapViewComingSoon": "Вид карты скоро будет доступен...",
     "dateSections": {
       "today": "Сегодня",
       "tomorrow": "Завтра",

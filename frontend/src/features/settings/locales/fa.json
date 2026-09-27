@@ -43,13 +43,6 @@
       "retry": "تلاش دوباره"
     },
     "appearance": {
-      "viewPreferences": "مشاهده تنظیمات",
-      "viewPreferencesDesc": "سفارشی کردن نحوه نمایش رویدادها",
-      "defaultViewMode": "حالت نمایش پیش‌فرض",
-      "defaultViewModeDesc": "انتخاب نحوه نمایش رویدادها به صورت پیش‌فرض",
-      "grid": "شبکه‌ای",
-      "calendar": "تقویم",
-      "map": "نقشه",
       "language": "زبان",
       "languageDescription": "زبان موردنظر خود را انتخاب کنید"
     }

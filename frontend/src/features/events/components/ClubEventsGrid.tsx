@@ -66,7 +66,6 @@ export function ClubEventsGrid({
     <>
       <EventList
         events={clubEvents}
-        viewMode="grid"
         onEventClick={handleEventClick}
         eventStats={eventStatsReady ? (eventStatsData ?? {}) : null}
         isLoading={isPending}

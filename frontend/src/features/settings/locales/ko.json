@@ -43,13 +43,6 @@
       "retry": "다시 시도"
     },
     "appearance": {
-      "viewPreferences": "환경설정 보기",
-      "viewPreferencesDesc": "이벤트 표시 방식을 사용자화",
-      "defaultViewMode": "기본 보기 모드",
-      "defaultViewModeDesc": "기본적으로 이벤트가 표시되는 방식을 선택하세요",
-      "grid": "그리드",
-      "calendar": "달력",
-      "map": "지도",
       "language": "언어",
       "languageDescription": "선호하는 언어 선택"
     }

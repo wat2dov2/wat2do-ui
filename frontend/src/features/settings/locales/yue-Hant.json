@@ -43,13 +43,6 @@
       "retry": "重試"
     },
     "appearance": {
-      "viewPreferences": "查看偏好設定",
-      "viewPreferencesDesc": "自訂活動顯示方式",
-      "defaultViewMode": "預設檢視模式",
-      "defaultViewModeDesc": "選擇活動預設的顯示方式",
-      "grid": "格子",
-      "calendar": "日曆",
-      "map": "地圖",
       "language": "語言",
       "languageDescription": "選擇你喜愛的語言"
     }

@@ -50,7 +50,6 @@ export function EventsPageContainer({
 }: EventsPageContainerProps) {
   usePosterLandingConfirmation();
 
-  const viewMode = useUIStore((s) => s.viewMode);
   const showFilterDropdown = useUIStore((s) => s.showFilterDropdown);
   const setShowFilterDropdown = useUIStore((s) => s.setShowFilterDropdown);
   const { profileCompleted } = useAuthState();
@@ -264,7 +263,6 @@ export function EventsPageContainer({
           ) : (
             <EventList
               events={orderedEvents}
-              viewMode={viewMode}
               onEventClick={handleEventClick}
               onClearFilters={filters.clearAllFilters}
               hasActiveFilters={filters.filterCount > 0}

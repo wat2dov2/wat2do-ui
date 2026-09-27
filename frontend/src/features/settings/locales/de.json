@@ -43,13 +43,6 @@
       "retry": "Erneut versuchen"
     },
     "appearance": {
-      "viewPreferences": "Einstellungen anzeigen",
-      "viewPreferencesDesc": "Anpassen, wie Ereignisse angezeigt werden",
-      "defaultViewMode": "Standardanzeigemodus",
-      "defaultViewModeDesc": "Wählen Sie aus, wie Ereignisse standardmäßig angezeigt werden",
-      "grid": "Raster",
-      "calendar": "Kalender",
-      "map": "Karte",
       "language": "Sprache",
       "languageDescription": "Wählen Sie Ihre bevorzugte Sprache"
     }

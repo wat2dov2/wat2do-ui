@@ -1573,6 +1573,55 @@ test.describe("Discovery before hydration", () => {
 });
 
 test.describe("Events Page", () => {
+  for (const mode of ["calendar", "map"]) {
+    test(`keeps UTSG mobile events visible with a saved ${mode} preference`, async ({ page, next }) => {
+      await page.setViewportSize({ width: 390, height: 844 });
+      await page.addInitScript((viewMode) => {
+        window.localStorage.setItem("wat2do-app-prefs", JSON.stringify({ state: { viewMode }, version: 1 }));
+      }, mode);
+      const title = "UTSG campus event";
+      const snapshot = {
+        items: [{
+          id: 316, title, location: "St. George campus", price: 0, food: [],
+          registration: false, category: "Career", club_id: 1, club: "U of T Club",
+          club_type: "independent", school: "utsg", added_at: new Date().toISOString(),
+          occurrences: [{ id: 316, event_id: 316,
+            dtstart_utc: new Date(Date.now() + 86_400_000).toISOString(), dtend_utc: null }],
+        }],
+        total: 1, page: 1, page_size: 100, total_pages: 1,
+        latest_added_event: null,
+      };
+      await mockApi(page, next, url => apiPath(url) === "/events" ||
+        (apiPath(url) === "/discovery" && url.searchParams.get("resource") === "events"),
+      async () => ({ json: snapshot }));
+
+      // Campus feeds are scoped by hostname, not a school query parameter.
+      await page.goto("http://utsg.wat2do.localhost:3000/");
+      const card = page.getByRole("button", { name: `Event: ${title}`, exact: true });
+      const placeholders = page.getByText(/(?:Calendar|Map) view coming soon/);
+      const search = page.getByPlaceholder("Search events");
+      await expect(card).toBeVisible();
+
+      // A real filter transition verifies hydrated handlers, not just SSR HTML.
+      await search.fill("no matching event");
+      await search.press("Enter");
+      await expect(card).toHaveCount(0);
+      await search.fill(title);
+      await search.press("Enter");
+      await expect(card).toBeVisible();
+      await expect(placeholders).toHaveCount(0);
+
+      await page.reload();
+      await page.getByRole("button", { name: "Open navigation menu" }).click();
+      const navigation = page.getByRole("dialog", { name: "Primary navigation" });
+      await expect(navigation).toBeVisible();
+      await page.keyboard.press("Escape");
+      await expect(navigation).toHaveCount(0);
+      await expect(card).toBeVisible();
+      await expect(placeholders).toHaveCount(0);
+    });
+  }
+
   test("keeps first-screen cards visible and honors reduced motion while scrolling", async ({ page, next }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.setViewportSize({ width: 390, height: 844 });

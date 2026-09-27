@@ -31,8 +31,6 @@ import { loadLanguage } from "@/shared/lib/loadLanguage";
 import { saveLanguage } from "@/shared/services/preferencesStorage";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import { uploadAvatar } from "@/shared/services/uploadService";
-import { useUIStore } from "@/shared/store/ui.store";
-import type { ViewMode } from "@/shared/types";
 
 const DEFAULT_PROFILE: UserProfile = {
   id: "",
@@ -60,7 +58,6 @@ const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
 
 export interface AppearanceSettingsDraft {
   language: SupportedLanguage;
-  viewMode: ViewMode;
 }
 
 interface SettingsFormValues {
@@ -84,12 +81,9 @@ export function useSettingsForm() {
   const { i18n, t } = useTranslation();
   const auth = useAuthState();
   const queryClient = useQueryClient();
-  const persistedViewMode = useUIStore((state) => state.viewMode);
-  const setPersistedViewMode = useUIStore((state) => state.setViewMode);
   const [cachedProfile] = useState(() => loadProfile());
   const [initialAppearance] = useState<AppearanceSettingsDraft>(() => ({
     language: resolveLanguage(i18n.resolvedLanguage ?? i18n.language),
-    viewMode: persistedViewMode,
   }));
   const [initialValues] = useState<SettingsFormValues>(() => ({
     profile: cachedProfile ?? DEFAULT_PROFILE,
@@ -199,7 +193,6 @@ export function useSettingsForm() {
         await loadLanguage(nextValues.appearance.language);
         await i18n.changeLanguage(nextValues.appearance.language);
         saveLanguage(nextValues.appearance.language);
-        setPersistedViewMode(nextValues.appearance.viewMode);
       }
 
       return {

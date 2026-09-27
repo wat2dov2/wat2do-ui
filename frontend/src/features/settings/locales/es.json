@@ -43,13 +43,6 @@
       "retry": "Reintentar"
     },
     "appearance": {
-      "viewPreferences": "Ver preferencias",
-      "viewPreferencesDesc": "Personaliza cómo se muestran los eventos",
-      "defaultViewMode": "Modo de vista predeterminado",
-      "defaultViewModeDesc": "Elige cómo se muestran los eventos por defecto",
-      "grid": "Cuadrícula",
-      "calendar": "Calendario",
-      "map": "Mapa",
       "language": "Idioma",
       "languageDescription": "Elige tu idioma preferido"
     }

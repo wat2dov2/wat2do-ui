@@ -43,13 +43,6 @@
       "retry": "Повторить попытку"
     },
     "appearance": {
-      "viewPreferences": "Просмотреть настройки",
-      "viewPreferencesDesc": "Настройте, как отображаются события",
-      "defaultViewMode": "Режим просмотра по умолчанию",
-      "defaultViewModeDesc": "Выберите, как события отображаются по умолчанию",
-      "grid": "Сетка",
-      "calendar": "Календарь",
-      "map": "Карта",
       "language": "Язык",
       "languageDescription": "Выберите предпочитаемый язык"
     }

@@ -43,13 +43,6 @@
       "retry": "Subukan muli"
     },
     "appearance": {
-      "viewPreferences": "Tingnan ang Mga Kagustuhan",
-      "viewPreferencesDesc": "I-customize kung paano ipinapakita ang mga kaganapan",
-      "defaultViewMode": "Default na Mode ng Pagtingin",
-      "defaultViewModeDesc": "Piliin kung paano ipinapakita ang mga kaganapan bilang default",
-      "grid": "Grid",
-      "calendar": "Kalendaryo",
-      "map": "Mapa",
       "language": "Wika",
       "languageDescription": "Piliin ang iyong gustong wika"
     }

@@ -694,8 +694,10 @@ test.describe("Promoter poster campaign", () => {
 
     await appearanceTab.click();
     await expect(page).toHaveURL(/\/settings\?tab=appearance$/);
-    await expect(page.getByRole("tabpanel", { name: "Appearance" })
-      .getByRole("combobox", { name: "Default View Mode", exact: true })).toBeVisible();
+    const appearance = page.getByRole("tabpanel", { name: "Appearance" });
+    await expect(appearance.getByText("Language", { exact: true })).toBeVisible();
+    await expect(appearance.getByRole("combobox")).toHaveText("English");
+    await expect(appearance.getByRole("combobox", { name: "Default View Mode", exact: true })).toHaveCount(0);
     expect(insertionEffectWarnings).toEqual([]);
   });
 

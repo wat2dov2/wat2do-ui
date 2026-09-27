@@ -43,13 +43,6 @@
       "retry": "Thử lại"
     },
     "appearance": {
-      "viewPreferences": "Xem Tùy chọn",
-      "viewPreferencesDesc": "Tùy chỉnh cách hiển thị sự kiện",
-      "defaultViewMode": "Chế độ xem mặc định",
-      "defaultViewModeDesc": "Chọn cách hiển thị sự kiện theo mặc định",
-      "grid": "Lưới",
-      "calendar": "Lịch",
-      "map": "Bản đồ",
       "language": "Ngôn ngữ",
       "languageDescription": "Chọn ngôn ngữ ưa thích của bạn"
     }

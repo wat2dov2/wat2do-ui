@@ -43,13 +43,6 @@
       "retry": "Ponów próbę"
     },
     "appearance": {
-      "viewPreferences": "Zobacz ustawienia",
-      "viewPreferencesDesc": "Dostosuj sposób wyświetlania wydarzeń",
-      "defaultViewMode": "Domyślny tryb widoku",
-      "defaultViewModeDesc": "Wybierz sposób domyślnego wyświetlania wydarzeń",
-      "grid": "Siatka",
-      "calendar": "Kalendarz",
-      "map": "Mapa",
       "language": "Język",
       "languageDescription": "Wybierz preferowany język"
     }

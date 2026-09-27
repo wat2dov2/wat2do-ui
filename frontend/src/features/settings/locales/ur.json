@@ -43,13 +43,6 @@
       "retry": "دوبارہ کوشش کریں"
     },
     "appearance": {
-      "viewPreferences": "ترجیحات دیکھیں",
-      "viewPreferencesDesc": "تقریبات کے دکھائے جانے کا طریقہ حسب ضرورت بنائیں",
-      "defaultViewMode": "ڈیفالٹ دیکھنے کا موڈ",
-      "defaultViewModeDesc": "منتخب کریں کہ تقریبات بطور ڈیفالٹ کیسے دکھائی جائیں",
-      "grid": "گرڈ",
-      "calendar": "کیلنڈر",
-      "map": "نقشہ",
       "language": "زبان",
       "languageDescription": "اپنی پسندیدہ زبان منتخب کریں"
     }
