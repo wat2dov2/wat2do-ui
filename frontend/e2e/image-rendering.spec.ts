@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { createElement, type ReactElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { readFileSync, readdirSync } from "node:fs";
+import { readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { runInNewContext } from "node:vm";
 import ts from "typescript";
@@ -9,7 +9,7 @@ import sharp from "sharp";
 import imageDelivery from "../../backend/controlbox/image_delivery.json" with { type: "json" };
 import instagramPublishing from "../../backend/controlbox/instagram_publishing.json" with { type: "json" };
 
-let renderedSlide: ReactElement<{ model: { imageSrc?: string; tiles?: string[] } }> | undefined;
+let renderedSlide: ReactElement<{ model: { imageSrc?: string; avatarSrc?: string; description?: string; siteName?: string; tiles?: string[] } }> | undefined;
 
 // Match the existing server-rendering specs: use React's JSX runtime rather
 // than Playwright's browser component-test descriptors. No browser is needed.
@@ -229,10 +229,182 @@ test.describe("Instagram raster preparation", () => {
       const output = Buffer.from(await response.arrayBuffer());
       const pixels = await sharp(output).extract({ left: 540, top: 400, width: 1, height: 1 }).removeAlpha().raw().toBuffer();
       for (const [channel, expected] of [240, 80, 20].entries()) expect(Math.abs(pixels[channel] - expected)).toBeLessThanOrEqual(3);
+      expect(renderedSlide!.props.model.avatarSrc).toBe("");
       const final = await sharp(output).metadata();
       expect([final.width, final.height]).toEqual([1080, 1350]);
     });
   }
+
+  for (const { kind, width, height, preparedWidth, preparedHeight } of [
+    { kind: "portrait", width: 1600, height: 2000, preparedWidth: 672, preparedHeight: 840 },
+    { kind: "landscape", width: 1800, height: 1200, preparedWidth: 1080, preparedHeight: 720 },
+  ]) {
+    test(`${kind} event artwork preserves every corner inside the full-width image area`, async () => {
+      const corners = [
+        { right: false, bottom: false, color: [220, 20, 30] },
+        { right: true, bottom: false, color: [20, 160, 40] },
+        { right: false, bottom: true, color: [30, 70, 210] },
+        { right: true, bottom: true, color: [170, 30, 190] },
+      ];
+      const poster = await sharp({ create: { width, height, channels: 3, background: "#ef5014" } }).composite(corners.map(({ right, bottom, color }) => ({
+        input: Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120"><rect width="120" height="120" fill="rgb(${color.join(",")})"/></svg>`),
+        left: right ? width - 120 : 0,
+        top: bottom ? height - 120 : 0,
+      }))).png().toBuffer();
+      globalThis.fetch = async () => new Response(poster, { headers: { "content-type": "image/png" } });
+      const response = await POST(request({
+        kind: "event", school: "uwaterloo",
+        event: { id: 42, tz: "America/Toronto", category: "Arts & Culture", title: "Complete flyer", source_image_url: posterUrl },
+      }));
+      expect(response.status).toBe(200);
+      const prepared = Buffer.from(renderedSlide!.props.model.imageSrc!.split(",")[1], "base64");
+      const metadata = await sharp(prepared).metadata();
+      expect([metadata.width, metadata.height]).toEqual([preparedWidth, preparedHeight]);
+      const output = Buffer.from(await response.arrayBuffer());
+      for (const { right, bottom, color } of corners) {
+        const left = right ? preparedWidth - 6 : 5;
+        const top = bottom ? preparedHeight - 6 : 5;
+        const preparedPixel = await sharp(prepared).extract({ left, top, width: 1, height: 1 }).removeAlpha().raw().toBuffer();
+        expect([...preparedPixel]).toEqual(color);
+        const publishedPixel = await sharp(output).extract({ left: (1080 - preparedWidth) / 2 + left, top: 156 + (840 - preparedHeight) / 2 + top, width: 1, height: 1 }).removeAlpha().raw().toBuffer();
+        expect([...publishedPixel]).toEqual(color);
+      }
+      if (kind === "landscape") {
+        for (const left of [0, 1079]) {
+          const edgePixel = await sharp(output).extract({ left, top: 576, width: 1, height: 1 }).removeAlpha().raw().toBuffer();
+          expect([...edgePixel]).toEqual([239, 80, 20]);
+        }
+      }
+    });
+  }
+
+  test("club avatars and event descriptions survive the actual published PNG render", async () => {
+    const avatarUrl = "https://wat2do.io/media/club-logos/film-club.webp";
+    const poster = await sharp({ create: { width: 1600, height: 2000, channels: 3, background: "#ef5014" } }).webp().toBuffer();
+    const avatar = await sharp({ create: { width: 320, height: 320, channels: 3, background: "#2e5ac8" } }).webp().toBuffer();
+    const fetched: string[] = [];
+    globalThis.fetch = async (url, options) => {
+      fetched.push(String(url));
+      expect(options?.redirect).toBe("error");
+      return new Response(String(url) === avatarUrl ? avatar : poster, { headers: { "content-type": "image/webp" } });
+    };
+    const description = "Join the campus film club for an evening of short films and conversation.";
+    const response = await POST(request({
+      kind: "event", school: "uwaterloo",
+      event: {
+        id: 42, tz: "America/Toronto", category: "Arts & Culture", title: "Campus Film Night",
+        club: "Campus Film Club", club_ig: "campusfilm", description,
+        source_image_url: posterUrl, club_logo_url: avatarUrl, location: "Student Life Centre",
+        dtstart_utc: "2026-10-02T23:00:00Z", dtend_utc: "2026-10-03T01:00:00Z",
+      },
+    }));
+    expect(response.status).toBe(200);
+    expect(fetched.sort()).toEqual([posterUrl, avatarUrl].sort());
+    const model = renderedSlide!.props.model;
+    expect(model.description).toBe(description);
+    expect(model.siteName).toContain("uwaterloo.wat2do.io");
+    const prepared = Buffer.from(model.avatarSrc!.split(",")[1], "base64");
+    const metadata = await sharp(prepared).metadata();
+    expect(metadata.format).toBe("png");
+    expect([metadata.width, metadata.height]).toEqual([88, 88]);
+    const output = Buffer.from(await response.arrayBuffer());
+    const artifact = test.info().outputPath("published-event-slide.png");
+    writeFileSync(artifact, output);
+    await test.info().attach("published-event-slide", { path: artifact, contentType: "image/png" });
+    const header = await sharp(output).extract({ left: 0, top: 0, width: 1080, height: 160 }).removeAlpha().raw().toBuffer();
+    let avatarPixels = 0;
+    for (let index = 0; index < header.length; index += 3) {
+      if ([46, 90, 200].every((value, channel) => Math.abs(header[index + channel] - value) <= 3)) avatarPixels++;
+    }
+    expect(avatarPixels).toBeGreaterThan(1000);
+    expect(renderToStaticMarkup(renderedSlide!)).toContain(description);
+  });
+
+  for (const [kind, visiblePrefix] of Object.entries({
+    paragraph: "Join the campus film club for an evening of short films, good conversation, and new friends. ".repeat(8),
+    unbroken: "campusfilm".repeat(100),
+  })) {
+    test(`long ${kind} descriptions truncate without shifting the event-details comment`, async () => {
+      const poster = await sharp({ create: { width: 1080, height: 840, channels: 3, background: "#ef5014" } }).png().toBuffer();
+      globalThis.fetch = async () => new Response(poster, { headers: { "content-type": "image/png" } });
+      const renderDescription = async (description: string) => {
+        const response = await POST(request({
+          kind: "event", school: "uwaterloo",
+          event: {
+            id: 42, tz: "America/Toronto", category: "Arts & Culture", title: "Campus Film Night",
+            club: "Campus Film Club", club_ig: "campusfilm", description, source_image_url: posterUrl,
+            location: "Student Life Centre", dtstart_utc: "2026-10-02T23:00:00Z", dtend_utc: "2026-10-03T01:00:00Z",
+          },
+        }));
+        expect(response.status).toBe(200);
+        return Buffer.from(await response.arrayBuffer());
+      };
+      const original = await renderDescription(`${visiblePrefix}A hidden closing sentence.`);
+      const changedEnding = await renderDescription(`${visiblePrefix}A different hidden ending that must not move the event details.`);
+      expect(changedEnding.equals(original)).toBe(true);
+      const artifact = test.info().outputPath("long-caption-event-slide.png");
+      writeFileSync(artifact, original);
+      await test.info().attach("long-caption-event-slide", { path: artifact, contentType: "image/png" });
+    });
+  }
+
+  for (const avatarUrl of [
+    "https://outside.example/avatar.png",
+    "http://127.0.0.1/avatar.png",
+    "https://wat2do.io/private/avatar.png",
+  ]) {
+    test(`avatar preparation falls back without fetching outside storage: ${avatarUrl}`, async () => {
+      const fetched: string[] = [];
+      globalThis.fetch = async url => {
+        fetched.push(String(url));
+        throw new Error("Unexpected network request");
+      };
+      const response = await POST(request({
+        kind: "event", school: "uwaterloo",
+        event: { id: 42, tz: "America/Toronto", category: "Arts & Culture", club_ig: "campusfilm", club_logo_url: avatarUrl },
+      }));
+      expect(response.status).toBe(200);
+      expect(renderedSlide!.props.model.avatarSrc).toBe("");
+      expect(renderToStaticMarkup(renderedSlide!)).toContain("CA</div>");
+      expect(fetched).toEqual([]);
+    });
+  }
+
+  for (const failure of ["404", "non-image"] as const) {
+    test(`an optional avatar ${failure} preserves the event poster`, async () => {
+      const avatarUrl = "https://wat2do.io/media/club-logos/missing.png";
+      const poster = await sharp({ create: { width: 1080, height: 840, channels: 3, background: "#ef5014" } }).png().toBuffer();
+      const fetched: string[] = [];
+      globalThis.fetch = async url => {
+        fetched.push(String(url));
+        if (String(url) === avatarUrl) {
+          return failure === "404"
+            ? new Response(null, { status: 404 })
+            : new Response("Not an image", { headers: { "content-type": "text/html" } });
+        }
+        return new Response(poster, { headers: { "content-type": "image/png" } });
+      };
+      const response = await POST(request({
+        kind: "event", school: "uwaterloo",
+        event: { id: 42, tz: "America/Toronto", category: "Arts & Culture", club_ig: "campusfilm", club_logo_url: avatarUrl, source_image_url: posterUrl },
+      }));
+      expect(response.status).toBe(200);
+      expect(fetched.sort()).toEqual([posterUrl, avatarUrl].sort());
+      expect(renderedSlide!.props.model.avatarSrc).toBe("");
+      expect(renderToStaticMarkup(renderedSlide!)).toContain("CA</div>");
+      const output = Buffer.from(await response.arrayBuffer());
+      const pixels = await sharp(output).extract({ left: 540, top: 400, width: 1, height: 1 }).removeAlpha().raw().toBuffer();
+      expect([...pixels]).toEqual([239, 80, 20]);
+    });
+  }
+
+  test("a failed event poster still rejects slide rendering", async () => {
+    globalThis.fetch = async () => new Response(null, { status: 404 });
+    await expect(POST(request({
+      kind: "event", school: "uwaterloo",
+      event: { id: 42, tz: "America/Toronto", category: "Arts & Culture", source_image_url: posterUrl },
+    }))).rejects.toThrow("Slide image download failed: HTTP 404");
+  });
 
   test("cover preparation downloads repeated posters once and omits tiles beyond the carousel limit", async () => {
     const poster = await sharp({ create: { width: 1600, height: 2000, channels: 3, background: "#ef5014" } }).webp().toBuffer();

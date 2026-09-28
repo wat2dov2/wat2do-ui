@@ -116,13 +116,13 @@ export function LibraryEventSlide({ model, template }: { model: EventSlideModel;
     <Poster src={model.imageSrc} width={width} height={isEditorial ? 680 : 720} style={{ position: "absolute", top: 130, left: inset, borderRadius: isTicket ? 26 : template === "signal" ? 16 : 0, border: template === "noticeboard" ? "14px solid #FFFFFF" : "none" }} />
     <div style={{ ...column, position: "absolute", top: isEditorial ? 839 : 880, left: inset, width, borderTop: isTicket ? `3px dashed ${palette.ink}` : "none", paddingTop: isTicket ? 22 : 0, gap: 12 }}>
       <div style={{ ...flex, fontSize: model.title.length > 65 ? 43 : 54, fontWeight: 700, lineHeight: 1.03, maxHeight: 112, overflow: "hidden", letterSpacing: -1 }}>{model.title}</div>
-      {model.clubLine ? <div style={{ ...flex, fontSize: 26, maxHeight: 32, overflow: "hidden", color: palette.muted }}>{model.clubLine}</div> : null}
+      {model.author ? <div style={{ ...flex, fontSize: 26, maxHeight: 32, overflow: "hidden", color: palette.muted }}>{model.author}</div> : null}
       <div style={{ ...column, gap: 4, fontSize: 29, lineHeight: 1.2, marginTop: 10 }}>
         <div style={{ ...flex, fontWeight: 700 }}>{model.dateLine}</div>
         <div style={flex}>{model.timeLine}</div>
         <div style={{ ...flex, maxHeight: 36, overflow: "hidden", color: palette.muted }}>{model.location}</div>
       </div>
     </div>
-    <div style={{ ...flex, position: "absolute", left: inset, bottom: 38, width, paddingTop: 17, borderTop: `1px solid ${palette.muted}`, fontSize: 21, color: palette.muted }}>{model.addedLine}</div>
+    <div style={{ ...flex, position: "absolute", left: inset, bottom: 38, width, paddingTop: 17, borderTop: `1px solid ${palette.muted}`, fontSize: 21, color: palette.muted }}>{model.siteName}</div>
   </Frame>;
 }

@@ -27,21 +27,24 @@ export const SLIDE_WIDTH = 1080;
 export const SLIDE_HEIGHT = 1350;
 /** Raster preparation and template layout use the same physical image bounds. */
 export const SLIDE_POSTER_REGIONS = {
-  event: { width: 1000, height: 840 },
+  event: { width: SLIDE_WIDTH, height: 840 },
   cover: { width: 220, height: 308 },
+  avatar: { width: 88, height: 88 },
 } as const;
 
 /** Event fields a slide reads. Mirrors the backend's stored event snapshot. */
 export interface SlideEvent {
   id: number;
   title?: string | null;
+  description?: string | null;
   category?: string | null;
   location?: string | null;
   club?: string | null;
   ig_handle?: string | null;
+  club_ig?: string | null;
+  club_logo_url?: string | null;
   school?: string | null;
   source_image_url?: string | null;
-  added_at?: string | null;
   dtstart_utc?: string | null;
   dtend_utc?: string | null;
   /** IANA zone resolved server-side; slides print local times. */
@@ -53,19 +56,21 @@ export interface SlideEvent {
 }
 
 export interface EventSlideModel {
-  eventId: number;
-  /** Category chip, coloured from the shared category registry. */
+  /** Localized event category, also used by the artwork review library. */
   category: { label: string; color: string };
   title: string;
   dateLine: string;
   timeLine: string;
   location: string;
-  /** Club attribution below the title. */
-  clubLine: string;
-  /** Price / free-food chips, mirroring the event card's badge column. */
+  /** Instagram handle, or the club name when no handle is known. */
+  author: string;
+  avatarSrc: string;
+  description: string;
+  /** The school's public domain authors the event-details comment. */
+  siteName: string;
+  /** Event facts use the same localized labels as the website's cards. */
   badges: string[];
   imageSrc: string;
-  addedLine: string;
 }
 
 export interface CoverSlideModel {
@@ -120,6 +125,15 @@ function text(value: string | null | undefined, fallback = ""): string {
   return cleaned || fallback;
 }
 
+/** Stored accounts can be handles or Instagram profile links. */
+function instagramHandle(value: string | null | undefined): string {
+  const handle = text(value)
+    .replace(/^(?:https?:\/\/)?(?:www\.)?instagram\.com\//i, "")
+    .replace(/^@+/, "")
+    .replace(/[/?#].*$/, "");
+  return /^[a-z0-9_.]{1,30}$/i.test(handle) ? handle : "";
+}
+
 /**
  * Absolute dates survive publication; times share the event card's range formatter.
  *
@@ -148,6 +162,7 @@ export async function buildEventSlideModel(
   event: SlideEvent,
   language: School["language"],
   imageSrc = event.source_image_url ?? "",
+  avatarSrc = event.club_logo_url ?? "",
 ): Promise<EventSlideModel> {
   if (!event.tz) throw new Error("School timezone is required for event slides");
   const categoryName = event.category?.trim() ?? "";
@@ -157,22 +172,20 @@ export async function buildEventSlideModel(
   const { t } = await getInstagramSlideLocale(language);
   const { dateLine, timeLine } = formatSlideDate(event, language);
   const category = getClubCategoryConfig(categoryName);
-  const addedAt = event.added_at ? new Date(event.added_at) : null;
-  const addedLine = addedAt && Number.isFinite(addedAt.getTime())
-    ? t("events.slideAddedAt", { date: new Intl.DateTimeFormat(language, {
-      year: "numeric", month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: event.tz,
-    }).format(addedAt) }) : "";
+  const siteName = getSchoolPublicUrl(event.school);
+  const handle = instagramHandle(event.ig_handle) || instagramHandle(event.club_ig);
   return {
-    eventId: event.id,
     category: { label: translateCategory(categoryName, t), color: category.color },
     title: text(event.title),
     dateLine: text(dateLine),
     timeLine: text(timeLine),
     location: text(event.location),
-    clubLine: text(event.club),
+    author: handle || text(event.club, siteName),
+    avatarSrc,
+    description: text(event.description, text(event.title)),
+    siteName,
     badges: computeEventBadges({ ...event, food: event.food ?? [], cancelled: event.cancelled ?? false, registration: event.registration ?? false }, t).map(badge => badge.text),
     imageSrc,
-    addedLine: text(addedLine),
   };
 }
 

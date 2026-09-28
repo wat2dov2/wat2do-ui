@@ -17,6 +17,7 @@ process.env.NEXT_PUBLIC_CLUB_CATEGORY_DOODLE_SVGS = JSON.stringify(Object.fromEn
   ]),
 )));
 const { CAROUSEL_TEMPLATES, LibraryCoverSlide, LibraryEventSlide } = await import("../src/features/admin/components/instagram/slides/CarouselTemplateLibrary");
+const { EventSlideTemplate } = await import("../src/features/admin/components/instagram/slides/SlideTemplates");
 const { SLIDE_WIDTH, SLIDE_HEIGHT, buildCoverSlideModel, buildEventSlideModel } = await import("../src/features/admin/lib/instagramSlides");
 const output = path.resolve(process.argv[2] ?? path.join(frontendRoot, "verify-out/instagram-library"));
 await mkdir(output, { recursive: true });
@@ -36,26 +37,33 @@ async function png(element: ReactElement, width = SLIDE_WIDTH, height = SLIDE_HE
 }
 
 // Original sample artwork, explicitly labelled as examples in the review sheet.
-const tiles = await Promise.all([
-  { title: "AFTER CLASS", detail: "Film night + conversation", color: "#ECC2F0", ink: "#31204C" },
-  { title: "MAKE SOMETHING", detail: "A campus creative workshop", color: "#EB602E", ink: "#FFF2D7" },
-  { title: "MEET YOUR PEOPLE", detail: "Clubs. Friends. New plans.", color: "#D1ECF5", ink: "#23393D" },
-].map(async ({ title, detail, color, ink }) => {
-  const element = createElement("div", { style: { display: "flex", flexDirection: "column", justifyContent: "space-between", width: 700, height: 900, backgroundColor: color, color: ink, padding: 48, fontFamily: "Satoshi" } },
+const posters = await Promise.all([
+  { title: "AFTER CLASS", detail: "Film night + conversation", color: "#ECC2F0", ink: "#31204C", width: 700, height: 900 },
+  { title: "MAKE SOMETHING", detail: "A campus creative workshop", color: "#EB602E", ink: "#FFF2D7", width: 700, height: 900 },
+  { title: "MEET YOUR PEOPLE", detail: "Clubs. Friends. New plans.", color: "#D1ECF5", ink: "#23393D", width: 700, height: 900 },
+  { title: "AFTER CLASS", detail: "Film night + conversation", color: "#ECC2F0", ink: "#31204C", width: 1200, height: 800 },
+].map(async ({ title, detail, color, ink, width, height }) => {
+  const element = createElement("div", { style: { display: "flex", flexDirection: "column", justifyContent: "space-between", width, height, backgroundColor: color, color: ink, padding: 48, fontFamily: "Satoshi" } },
     createElement("div", { style: { display: "flex", fontSize: 25, letterSpacing: 5 } }, "CAMPUS / SAMPLE"),
     createElement("div", { style: { display: "flex", width: 260, height: 260, border: `45px solid ${ink}`, borderRadius: 130 } }),
     createElement("div", { style: { display: "flex", fontSize: 94, fontWeight: 700, lineHeight: 0.98, letterSpacing: -5 } }, title),
     createElement("div", { style: { display: "flex", fontSize: 29 } }, detail));
-  return `data:image/png;base64,${(await png(element, 700, 900)).toString("base64")}`;
+  return `data:image/png;base64,${(await png(element, width, height)).toString("base64")}`;
 }));
+const tiles = posters.slice(0, 3);
+const avatar = `data:image/png;base64,${(await png(createElement("div", {
+  style: { display: "flex", alignItems: "center", justifyContent: "center", width: 176, height: 176, backgroundColor: "#31204C", color: "#ECC2F0", fontFamily: "Satoshi", fontSize: 64, fontWeight: 700 },
+}, "CF"), 176, 176)).toString("base64")}`;
 
 const event = {
   id: 1, title: "Film night, then the conversation", category: "Arts & Culture",
-  club: "Campus Film Society", school: "uwaterloo", tz: "America/Toronto",
+  club: "Campus Film Society", ig_handle: "@campus.film", club_logo_url: avatar, school: "uwaterloo", tz: "America/Toronto",
+  description: "Meet us after class for a film and a conversation. Bring a friend, or find your next film buddy here.",
   dtstart_utc: "2026-10-02T23:00:00Z", dtend_utc: "2026-10-03T01:00:00Z",
-  location: "Student Life Centre · Room 210", source_image_url: tiles[0], added_at: "2026-09-25T14:00:00Z",
+  location: "Student Life Centre · Room 210", source_image_url: tiles[0],
 };
 const outputs: Buffer[] = [];
+const productionOutputs: Buffer[] = [];
 for (const language of ["en", "fr"] as const) {
   const cover = buildCoverSlideModel({
     school: "uwaterloo", language, colors: { primary: "#FFD54A", secondary: "#171A16" },
@@ -73,13 +81,29 @@ for (const language of ["en", "fr"] as const) {
       if (language === "en") outputs.push(bytes);
     }
     await png(createElement(LibraryCoverSlide, { model: { ...cover, tiles: [], newEventCount: 125 }, template: template.id }));
-    await png(createElement(LibraryEventSlide, { model: { ...slide, imageSrc: "", clubLine: "", addedLine: "", badges: [] }, template: template.id }));
+    await png(createElement(LibraryEventSlide, { model: { ...slide, imageSrc: "", author: "", siteName: "", badges: [] }, template: template.id }));
+  }
+  const caption = language === "en" ? event.description : "Après les cours, retrouvons-nous pour un film et une discussion. Venez avec des amis ou rencontrez d’autres cinéphiles sur place.";
+  const productionEvent = { ...event, description: caption };
+  const productionExamples = [
+    ["landscape", await buildEventSlideModel({ ...productionEvent, source_image_url: posters[3] }, language)],
+    ["portrait", await buildEventSlideModel(productionEvent, language)],
+    ["long-caption", await buildEventSlideModel({ ...productionEvent, source_image_url: posters[3], description: Array(12).fill(caption).join(" ") }, language)],
+    ["sparse", await buildEventSlideModel({ id: 2, title: "A campus gathering", category: "Arts & Culture", school: "uwaterloo", tz: "America/Toronto" }, language)],
+  ] as const;
+  for (const [kind, model] of productionExamples) {
+    const bytes = await png(createElement(EventSlideTemplate, { model }));
+    await writeFile(path.join(output, `production-event-${kind}-${language}.png`), bytes);
+    productionOutputs.push(bytes);
   }
 }
 assert.equal(new Set(outputs.map(bytes => bytes.toString("base64"))).size, 8, "Every design must produce distinct artwork");
-const thumbs = await Promise.all(outputs.map(input => sharp(input).resize(270, 338).png().toBuffer()));
-await sharp({ create: { width: 1128, height: 716, channels: 4, background: "#DADAD5" } })
-  .composite(thumbs.map((input, index) => ({ input, left: 12 + Math.floor(index / 2) * 282, top: 12 + (index % 2) * 354 })))
-  .png().toFile(path.join(output, "contact-sheet.png"));
-await writeFile(path.join(output, "README.md"), `# Wat2Do carousel template library\n\nSample event data and original demonstration posters.\nNot real event announcements.\n\n${CAROUSEL_TEMPLATES.map(template => `- **${template.name}** (${template.id}): ${template.use}`).join("\n")}\n\nEach family has English and French cover and event PNGs, all 1080 × 1350.\n\nThese are reviewable renderer components; the live publishing editor still uses its current template.\n`);
-process.stdout.write(`Rendered 16 review PNGs; 16 additional sparse-data renders passed.\n${output}\n`);
+const libraryRows = [0, 1].flatMap(row => outputs.filter((_, index) => index % 2 === row));
+for (const [filename, slides] of [["contact-sheet.png", libraryRows], ["production-contact-sheet.png", productionOutputs]] as const) {
+  const thumbs = await Promise.all(slides.map(input => sharp(input).resize(270, 338).png().toBuffer()));
+  await sharp({ create: { width: 1128, height: 716, channels: 4, background: "#DADAD5" } })
+    .composite(thumbs.map((input, index) => ({ input, left: 12 + (index % 4) * 282, top: 12 + Math.floor(index / 4) * 354 })))
+    .png().toFile(path.join(output, filename));
+}
+await writeFile(path.join(output, "README.md"), `# Wat2Do carousel template library\n\nSample event data and original demonstration posters.\nNot real event announcements.\n\n${CAROUSEL_TEMPLATES.map(template => `- **${template.name}** (${template.id}): ${template.use}`).join("\n")}\n\nEach library family has English and French cover and event PNGs, all 1080 × 1350.\nThe library contact sheet preserves the four alternative design families.\n\nThe eight production-event PNGs use the same EventSlideTemplate as the publishing preview and render route.\nThey show landscape posters, portrait posters, long captions, and sparse data in English and French.\nThe production contact sheet has English examples in the first row and French examples in the second row.\nAll sample artwork, including the club avatar, is generated offline.\n`);
+process.stdout.write(`Rendered 16 library PNGs and 8 production PNGs; 16 additional sparse-data library renders passed.\n${output}\n`);

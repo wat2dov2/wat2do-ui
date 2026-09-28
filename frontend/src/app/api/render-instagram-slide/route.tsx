@@ -94,13 +94,13 @@ function getBearerSecret(request: NextRequest): string | null {
 }
 
 /**
- * Inline a poster as a data URI.
+ * Inline slide artwork as a data URI.
  *
  * Slide images are only ever our own CloudFront storage objects; anything else is
  * rejected rather than fetched, so this route can never be pointed at an
  * internal host.
  */
-async function inlineImage(sourceUrl: string | null | undefined, kind: SlideRequest["kind"]): Promise<string> {
+async function inlineImage(sourceUrl: string | null | undefined, kind: keyof typeof SLIDE_POSTER_REGIONS): Promise<string> {
   if (!sourceUrl) return "";
   const storageBase = (() => {
     try {
@@ -115,7 +115,7 @@ async function inlineImage(sourceUrl: string | null | undefined, kind: SlideRequ
   try {
     parsed = new URL(sourceUrl);
   } catch {
-    throw new Error("Poster URL is invalid");
+    throw new Error("Slide image URL is invalid");
   }
   const storagePathPrefix = `${storageBase.pathname.replace(/\/$/, "")}/`;
   if (
@@ -123,19 +123,19 @@ async function inlineImage(sourceUrl: string | null | undefined, kind: SlideRequ
     parsed.origin !== storageBase.origin ||
     !parsed.pathname.startsWith(storagePathPrefix)
   ) {
-    throw new Error("Poster URL is outside the configured storage origin");
+    throw new Error("Slide image URL is outside the configured storage origin");
   }
 
   const response = await fetch(parsed, { redirect: "error" });
-  if (!response.ok) throw new Error(`Poster download failed: HTTP ${response.status}`);
+  if (!response.ok) throw new Error(`Slide image download failed: HTTP ${response.status}`);
   const contentType = response.headers.get("content-type") ?? "";
-  if (!contentType.startsWith("image/")) throw new Error("Poster download did not return an image");
+  if (!contentType.startsWith("image/")) throw new Error("Slide image download did not return an image");
 
   const bytes = Buffer.from(await response.arrayBuffer());
   if (bytes.byteLength === 0 || bytes.byteLength > MAX_SOURCE_IMAGE_BYTES) {
-    throw new Error("Poster download is empty or exceeds the image size limit");
+    throw new Error("Slide image download is empty or exceeds the image size limit");
   }
-  // Resvg's WASM rasterizer silently omits WebP images. Decode every poster
+  // Resvg's WASM rasterizer silently omits WebP images. Decode every image
   // before embedding it so unsupported formats cannot publish as blank slides.
   const png = await sharp(bytes).autoOrient().resize({
     ...SLIDE_POSTER_REGIONS[kind],
@@ -153,8 +153,12 @@ async function buildSlide(slide: SlideRequest): Promise<React.ReactElement> {
   if (!schoolRecord) throw new Error(`School not found for slide rendering: ${school}`);
 
   if (slide.kind === "event") {
-    const imageSrc = await inlineImage(slide.event.source_image_url, "event");
-    return <EventSlideTemplate model={await buildEventSlideModel(slide.event, schoolRecord.language, imageSrc)} />;
+    const [imageSrc, avatarSrc] = await Promise.all([
+      inlineImage(slide.event.source_image_url, "event"),
+      // An unavailable optional club logo uses the template's initials.
+      inlineImage(slide.event.club_logo_url, "avatar").catch(() => ""),
+    ]);
+    return <EventSlideTemplate model={await buildEventSlideModel({ ...slide.event, school }, schoolRecord.language, imageSrc, avatarSrc)} />;
   }
 
   const posterUrls = slide.events

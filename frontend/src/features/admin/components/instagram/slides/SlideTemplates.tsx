@@ -5,7 +5,7 @@
  * instead of design-system primitives: they are rasterized by satori in
  * `/api/render-instagram-slide`, which supports flexbox and inline styles only.
  * That constraint - no hooks, no measurement, no CSS variables - is why the
- * event slide restates the event card instead of rendering it.
+ * slide templates own their print layout instead of rendering app components.
  */
 
 import {
@@ -16,16 +16,13 @@ import {
   type EventSlideModel,
 } from "@/features/admin/lib/instagramSlides";
 
-// Dark-theme functional tokens, resolved from styles/functional-tokens.css.
-// satori has no CSS variables, so the event slide carries the same values the
-// app's dark mode computes.
-const DARK = {
-  background: "#0f0f0f",
-  surface: "#171717",
-  secondary: "#242424",
-  foreground: "#f5f5f5",
-  mutedForeground: "#949494",
-  categoryInk: "#1A1A1A",
+// Light-theme functional tokens, resolved from styles/functional-tokens.css.
+// Satori cannot resolve CSS variables, so artwork uses their concrete values.
+const LIGHT = {
+  surface: "#ffffff",
+  secondary: "#e9e9e9",
+  foreground: "#171717",
+  mutedForeground: "#5c5c5c",
 } as const;
 
 /** Both slides fill the frame and set their own colours on top of it. */
@@ -38,15 +35,29 @@ const slideFrame: React.CSSProperties = {
   position: "relative",
 };
 
-const CARD_WIDTH = SLIDE_POSTER_REGIONS.event.width;
-const CARD_INSET = (SLIDE_WIDTH - CARD_WIDTH) / 2;
-const CARD_IMAGE_HEIGHT = SLIDE_POSTER_REGIONS.event.height;
+const EVENT_HEADER_HEIGHT = 156;
+const EVENT_CONTENT_INSET = 32;
+
+/** The browser preview and Satori both support this exact ellipsis contract. */
+function clampText(lines: number): React.CSSProperties {
+  return {
+    display: "-webkit-box",
+    WebkitBoxOrient: "vertical",
+    WebkitLineClamp: lines,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    wordBreak: "break-word",
+    margin: 0,
+    flexShrink: 0,
+  };
+}
 
 export interface SlidePosterProps {
   src: string;
   width: number;
   height: number;
   fit: "contain" | "cover";
+  fallback?: React.ReactNode;
 }
 
 type PosterRenderer = (props: SlidePosterProps) => React.ReactNode;
@@ -56,35 +67,44 @@ const renderSlidePoster: PosterRenderer = ({ src, width, height, fit }) => (
   <img src={src} width={width} height={height} style={{ width, height, objectFit: fit }} alt="" />
 );
 
-/** The complete poster stays unobscured; labels belong in the bounded caption. */
+/** An Instagram-style post with an edge-to-edge image area and readable flyers. */
 export function EventSlideTemplate({ model, renderPoster = renderSlidePoster }: { model: EventSlideModel; renderPoster?: PosterRenderer }) {
+  const poster = SLIDE_POSTER_REGIONS.event;
+  const avatar = SLIDE_POSTER_REGIONS.avatar;
+  const initials = model.author.slice(0, 2).toUpperCase();
+  const schedule = [model.dateLine, model.timeLine].filter(Boolean).join(" · ");
+  const facts = [model.category.label, ...model.badges].join(" · ");
+
   return (
-    <div style={{ ...slideFrame, backgroundColor: DARK.background, color: DARK.foreground, padding: CARD_INSET }}>
-      <div style={{ display: "flex", flexDirection: "column", width: CARD_WIDTH, height: SLIDE_HEIGHT - CARD_INSET * 2, borderRadius: 36, backgroundColor: DARK.surface, overflow: "hidden" }}>
-        <div style={{ display: "flex", width: CARD_WIDTH, height: CARD_IMAGE_HEIGHT, flexShrink: 0, backgroundColor: DARK.secondary }}>
-          {model.imageSrc ? (
-            renderPoster({ src: model.imageSrc, width: CARD_WIDTH, height: CARD_IMAGE_HEIGHT, fit: "contain" })
-          ) : null}
+    <div style={{ ...slideFrame, backgroundColor: LIGHT.surface, color: LIGHT.foreground, overflow: "hidden" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 24, height: EVENT_HEADER_HEIGHT, padding: `20px ${EVENT_CONTENT_INSET}px`, flexShrink: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", ...avatar, borderRadius: avatar.width / 2, overflow: "hidden", flexShrink: 0, backgroundColor: LIGHT.secondary, fontSize: 32, fontWeight: 700 }}>
+          {model.avatarSrc
+            ? renderPoster({ src: model.avatarSrc, ...avatar, fit: "cover", fallback: initials })
+            : initials}
         </div>
-        <div style={{ display: "flex", flexDirection: "column", flex: 1, padding: "20px 32px", overflow: "hidden" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", height: 36, flexShrink: 0 }}>
-            <div style={{ display: "flex", backgroundColor: model.category.color, color: DARK.categoryInk, borderRadius: 12, padding: "4px 12px", fontSize: 24, fontWeight: 700 }}>
-              {model.category.label}
-            </div>
-            <div style={{ display: "flex", gap: 12, fontSize: 24 }}>
-              {model.badges.map(badge => <div key={badge} style={{ display: "flex" }}>{badge}</div>)}
-            </div>
+        <div style={{ display: "flex", flexDirection: "column", flex: 1, minWidth: 0, gap: 4 }}>
+          <p style={{ ...clampText(1), fontSize: 34, fontWeight: 700, lineHeight: 1.2, maxHeight: 41 }}>{model.author}</p>
+          {model.location ? <p style={{ ...clampText(1), fontSize: 26, lineHeight: 1.2, maxHeight: 32 }}>{model.location}</p> : null}
+          {schedule ? <p style={{ ...clampText(1), fontSize: 26, lineHeight: 1.2, maxHeight: 32, color: LIGHT.mutedForeground }}>{schedule}</p> : null}
+        </div>
+      </div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", ...poster, flexShrink: 0, overflow: "hidden", backgroundColor: LIGHT.secondary }}>
+        {model.imageSrc
+          ? renderPoster({ src: model.imageSrc, ...poster, fit: "contain" })
+          : <p style={{ ...clampText(4), margin: EVENT_CONTENT_INSET * 2, fontSize: 64, fontWeight: 700, lineHeight: 1.15 }}>{model.title}</p>}
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", padding: `20px ${EVENT_CONTENT_INSET}px`, flex: 1, overflow: "hidden" }}>
+        <p style={{ ...clampText(1), fontSize: 30, fontWeight: 700, lineHeight: 1.2, maxHeight: 36 }}>{model.author}</p>
+        <p style={{ ...clampText(2), fontSize: 30, lineHeight: 1.2, maxHeight: 72 }}>{model.description}</p>
+        <div style={{ display: "flex", flexDirection: "column", marginTop: 12, gap: 4, fontSize: 28, lineHeight: 1.2 }}>
+          <div style={{ display: "flex", gap: 8, alignItems: "baseline" }}>
+            <p style={{ ...clampText(1), fontWeight: 700, maxWidth: "55%", maxHeight: 34 }}>{model.siteName}</p>
+            <p style={{ ...clampText(1), flex: 1, minWidth: 0, maxHeight: 34 }}>{model.title}</p>
           </div>
-          <div style={{ display: "flex", fontSize: 48, fontWeight: 600, lineHeight: 1.05, maxHeight: 102, overflow: "hidden", marginTop: 12, flexShrink: 0 }}>
-            {model.title}
-          </div>
-          {model.clubLine ? <div style={{ display: "flex", fontSize: 28, lineHeight: 1.15, maxHeight: 33, overflow: "hidden", marginTop: 6, flexShrink: 0 }}>{model.clubLine}</div> : null}
-          <div style={{ display: "flex", flexDirection: "column", fontSize: 30, lineHeight: 1.15, color: DARK.mutedForeground, marginTop: 12 }}>
-            {model.dateLine ? <div style={{ display: "flex" }}>{model.dateLine}</div> : null}
-            {model.timeLine ? <div style={{ display: "flex" }}>{model.timeLine}</div> : null}
-            {model.location ? <div style={{ display: "flex", maxHeight: 35, overflow: "hidden" }}>{model.location}</div> : null}
-          </div>
-          {model.addedLine ? <div style={{ display: "flex", fontSize: 24, color: DARK.mutedForeground, marginTop: "auto", paddingTop: 12, flexShrink: 0 }}>{model.addedLine}</div> : null}
+          {schedule ? <p style={{ ...clampText(2), maxHeight: 68 }}>{schedule}</p> : null}
+          {model.location ? <p style={{ ...clampText(1), maxHeight: 34 }}>{model.location}</p> : null}
+          <p style={{ ...clampText(1), fontSize: 26, maxHeight: 32, color: LIGHT.mutedForeground }}>{facts}</p>
         </div>
       </div>
     </div>

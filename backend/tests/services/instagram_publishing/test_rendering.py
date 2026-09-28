@@ -9,13 +9,18 @@ def _event(event_id: int) -> dict[str, object]:
     return {
         "id": event_id,
         "title": f"Campus Event {event_id}",
+        "description": "An evening of games.\nBring a friend!",
         "category": "Games & Recreation",
         "club": "Wat2Do Club",
+        "club_logo_url": "https://example.com/club-avatar.jpg",
+        "club_ig": "wat2do_club",
         "ig_handle": "wat2do",
         "location": "Student Life Centre",
         "school": "uwaterloo",
         "source_image_url": f"https://example.com/{event_id}.jpg",
         "dtstart_utc": "2026-07-25T23:30:00+00:00",
+        "dtend_utc": "2026-07-26T01:30:00+00:00",
+        "tz": "America/Toronto",
     }
 
 
@@ -60,12 +65,13 @@ def _capture_render(
 
 def test_render_event_asset_posts_the_event_and_uploads_the_png(monkeypatch: pytest.MonkeyPatch):
     requests, uploads = _capture_render(monkeypatch)
+    event = _event(1)
 
-    assert rendering.render_event_asset(_event(1)) == "https://asset.test/slide.png"
+    assert rendering.render_event_asset(event) == "https://asset.test/slide.png"
 
     assert requests[0]["url"] == "https://web.test/render"
     assert requests[0]["json"]["kind"] == "event"
-    assert requests[0]["json"]["event"]["id"] == 1
+    assert requests[0]["json"]["event"] == event
     assert requests[0]["json"]["school"] == "uwaterloo"
     assert requests[0]["headers"]["Authorization"] == "Bearer shared-secret"
     assert uploads[0] == b"\x89PNG rendered"

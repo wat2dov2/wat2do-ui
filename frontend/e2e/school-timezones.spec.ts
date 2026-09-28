@@ -117,12 +117,39 @@ test("ordinary ranges use compact localized times without redundant zone labels"
   expect(formatCardTime(input, "America/Toronto", "fr")).toBe("18:00-20:00");
 });
 
-test("published slides preserve the school-local added timestamp and omit missing dates", async () => {
-  const input = { id: 1, category: "Business", tz: timeZone, added_at: "2026-09-15T05:30:00Z" };
-  expect((await buildEventSlideModel(input, "en")).addedLine).toBe("Added Sep 14, 2026, 11:30 PM");
-  expect((await buildEventSlideModel(input, "fr")).addedLine).toContain("Ajouté le 14 sept. 2026");
-  expect((await buildEventSlideModel({ ...input, added_at: null }, "en")).addedLine).toBe("");
-  expect((await buildEventSlideModel({ ...input, added_at: "invalid" }, "en")).addedLine).toBe("");
+test("published slides use the posting account before club or school identity", async () => {
+  const input = {
+    id: 1, category: "Business", tz: timeZone, school: "ualberta",
+    ig_handle: "  @@posting.account  ", club_ig: "@club.account", club: "Campus Club",
+  };
+  expect((await buildEventSlideModel(input, "en")).author).toBe("posting.account");
+  expect((await buildEventSlideModel({ ...input, ig_handle: "https://www.instagram.com/posting.account/?hl=en" }, "en")).author).toBe("posting.account");
+  expect((await buildEventSlideModel({ ...input, ig_handle: null, club_ig: "https://instagram.com/club.account/" }, "en")).author).toBe("club.account");
+  expect((await buildEventSlideModel({ ...input, ig_handle: "https://outside.example/account" }, "en")).author).toBe("club.account");
+  expect((await buildEventSlideModel({ ...input, ig_handle: " @ " }, "fr")).author).toBe("club.account");
+  expect((await buildEventSlideModel({ ...input, ig_handle: null, club_ig: " " }, "en")).author).toBe("Campus Club");
+  expect((await buildEventSlideModel({ ...input, ig_handle: null, club_ig: null, club: " " }, "en")).author).toBe("ualberta.wat2do.io");
+});
+
+test("published slides preserve the caption, host avatar, and owning school's comment identity", async () => {
+  const input = {
+    id: 1, category: "Business", tz: timeZone, school: "ualberta", title: "Campus event",
+    description: " Meet the team.\n\nBring your questions. ",
+    club_logo_url: "https://example.com/club.png", source_image_url: "https://example.com/event.png",
+  };
+  for (const language of ["en", "fr"] as const) {
+    const slide = await buildEventSlideModel(input, language);
+    expect(slide.description).toBe("Meet the team. Bring your questions.");
+    expect(slide.avatarSrc).toBe(input.club_logo_url);
+    expect(slide.imageSrc).toBe(input.source_image_url);
+    expect(slide.siteName).toBe("ualberta.wat2do.io");
+    const prepared = await buildEventSlideModel(input, language, "data:image/png;base64,poster", "data:image/png;base64,avatar");
+    expect(prepared.imageSrc).toBe("data:image/png;base64,poster");
+    expect(prepared.avatarSrc).toBe("data:image/png;base64,avatar");
+    const sparse = await buildEventSlideModel({ ...input, description: null, club_logo_url: null }, language);
+    expect(sparse.description).toBe(input.title);
+    expect(sparse.avatarSrc).toBe("");
+  }
 });
 
 

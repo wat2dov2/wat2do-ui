@@ -1655,9 +1655,12 @@ test.describe("Admin Instagram publishing", () => {
     await expect(drawer.getByLabel("Saved caption preview (event details appended automatically)", { exact: true })).toHaveCount(0);
 
     const firstPreview = drawer.locator("figure").filter({ hasText: "First Carousel Event" });
+    await expect(firstPreview.getByText("uwtechclub", { exact: true })).toHaveCount(2);
+    await expect(firstPreview.getByText("First Carousel Event description", { exact: true })).toBeVisible();
+    await expect(firstPreview.getByText(`${school}.wat2do.io`, { exact: true })).toBeVisible();
+    await expect(firstPreview.getByText(/^(Added |Ajouté le )/)).toHaveCount(0);
     if (school === "ulaval" || school === "mun") {
-      await expect(firstPreview.getByText("Inscription", { exact: true })).toBeVisible();
-      await expect(firstPreview.getByText(/^Ajouté le /)).toBeVisible();
+      await expect(firstPreview.getByText("Technology · Inscription", { exact: true })).toBeVisible();
       await expect(drawer.getByRole("button", { name: "Save draft", exact: true })).toBeVisible();
     }
     await firstPreview.click();

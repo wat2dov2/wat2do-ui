@@ -748,6 +748,59 @@ def test_slide_payload_flattens_the_first_occurrence_for_the_renderer():
     assert "occurrences" not in payload
 
 
+@pytest.mark.parametrize("club_logo_url", ["https://example.com/club-avatar.jpg", None])
+def test_slide_payload_keeps_live_club_profile_and_event_copy(monkeypatch, club_logo_url):
+    calls: list[tuple] = []
+    row = {
+        "id": 7,
+        "title": "Games night",
+        "description": "Join us for board games.\nSnacks are provided!",
+        "location": "Student Life Centre",
+        "club": "Games Club",
+        "ig_handle": "gamesclub_events",
+        "source_image_url": "https://example.com/poster.jpg",
+        "category": "Games & Recreation",
+        "added_at": "2099-07-26T12:30:00+00:00",
+        "school_record": {"slug": "uwaterloo", "timezone": "America/Toronto"},
+        "clubs": {"logo_url": club_logo_url, "ig": "gamesclub"},
+    }
+    monkeypatch.setattr(
+        service.event_query,
+        "get_sb",
+        lambda: SimpleNamespace(table=lambda _name: _FakeQuery([row], calls)),
+    )
+    occurrence = (
+        _event(7)
+        .occurrences[0]
+        .model_copy(update={"dtend_utc": datetime(2099, 7, 28, 0, tzinfo=timezone.utc)})
+    )
+    monkeypatch.setattr(
+        service.event_query.event_date_service,
+        "list_for_events",
+        lambda _ids: {7: [occurrence]},
+    )
+
+    event = service._load_slide_events([7])[7]
+    payload = service._slide_payload(event)
+
+    # Exercise the shared database hydration, not a pre-populated slide model.
+    selected = next(args[0] for name, args, _ in calls if name == "select")
+    assert "description" in selected.split(",")
+    assert service.event_query.CLUB_EMBED in selected
+    assert service.event_query.SCHOOL_EMBED in selected
+    assert payload["description"] == row["description"]
+    assert payload["club_logo_url"] == club_logo_url
+    assert payload["club"] == "Games Club"
+    assert payload["ig_handle"] == "gamesclub_events"
+    assert payload["club_ig"] == "gamesclub"
+    assert payload["school"] == "uwaterloo"
+    assert payload["location"] == "Student Life Centre"
+    assert payload["source_image_url"] == row["source_image_url"]
+    assert payload["dtstart_utc"] == "2099-07-27T22:00:00+00:00"
+    assert payload["dtend_utc"] == "2099-07-28T00:00:00+00:00"
+    assert payload["tz"] == "America/Toronto"
+
+
 @pytest.mark.parametrize("occurrence_timezone", [None, "America/Toronto", "UTC"])
 def test_slide_payload_uses_school_timezone_even_when_occurrence_disagrees(
     monkeypatch, occurrence_timezone
