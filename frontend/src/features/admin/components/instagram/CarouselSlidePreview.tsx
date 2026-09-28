@@ -71,13 +71,12 @@ export function CarouselSlidePreview({
   const currentResult = modelResult?.event === event && modelResult?.language === cover.language ? modelResult : null;
   const slideModel = currentResult?.model;
   const modelError = currentResult && !slideModel;
-  const renderPoster = ({ src, width, height, fit, fallback }: SlidePosterProps) => (
+  const renderPoster = ({ src, width, height, fallback }: SlidePosterProps) => (
     <div style={{ position: "relative", width, height }}>
       <LazyImage
         src={src}
         alt=""
         sizes={`${Math.ceil(width * previewScale)}px`}
-        fit={fit}
         fallback={fallback}
         className="absolute inset-0"
       />

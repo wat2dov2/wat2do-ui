@@ -56,18 +56,17 @@ export interface SlidePosterProps {
   src: string;
   width: number;
   height: number;
-  fit: "contain" | "cover";
   fallback?: React.ReactNode;
 }
 
 type PosterRenderer = (props: SlidePosterProps) => React.ReactNode;
 
 /** Publishing consumes prepared PNGs; the browser preview supplies native lazy images. */
-const renderSlidePoster: PosterRenderer = ({ src, width, height, fit }) => (
-  <img src={src} width={width} height={height} style={{ width, height, objectFit: fit }} alt="" />
+const renderSlidePoster: PosterRenderer = ({ src, width, height }) => (
+  <img src={src} width={width} height={height} style={{ width, height, objectFit: "cover" }} alt="" />
 );
 
-/** An Instagram-style post with an edge-to-edge image area and readable flyers. */
+/** An Instagram-style post with a full-bleed photo and a bounded caption. */
 export function EventSlideTemplate({ model, renderPoster = renderSlidePoster }: { model: EventSlideModel; renderPoster?: PosterRenderer }) {
   const poster = SLIDE_POSTER_REGIONS.event;
   const avatar = SLIDE_POSTER_REGIONS.avatar;
@@ -80,7 +79,7 @@ export function EventSlideTemplate({ model, renderPoster = renderSlidePoster }: 
       <div style={{ display: "flex", alignItems: "center", gap: 24, height: EVENT_HEADER_HEIGHT, padding: `20px ${EVENT_CONTENT_INSET}px`, flexShrink: 0 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", ...avatar, borderRadius: avatar.width / 2, overflow: "hidden", flexShrink: 0, backgroundColor: LIGHT.secondary, fontSize: 32, fontWeight: 700 }}>
           {model.avatarSrc
-            ? renderPoster({ src: model.avatarSrc, ...avatar, fit: "cover", fallback: initials })
+            ? renderPoster({ src: model.avatarSrc, ...avatar, fallback: initials })
             : initials}
         </div>
         <div style={{ display: "flex", flexDirection: "column", flex: 1, minWidth: 0, gap: 4 }}>
@@ -91,7 +90,7 @@ export function EventSlideTemplate({ model, renderPoster = renderSlidePoster }: 
       </div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", ...poster, flexShrink: 0, overflow: "hidden", backgroundColor: LIGHT.secondary }}>
         {model.imageSrc
-          ? renderPoster({ src: model.imageSrc, ...poster, fit: "contain" })
+          ? renderPoster({ src: model.imageSrc, ...poster })
           : <p style={{ ...clampText(4), margin: EVENT_CONTENT_INSET * 2, fontSize: 64, fontWeight: 700, lineHeight: 1.15 }}>{model.title}</p>}
       </div>
       <div style={{ display: "flex", flexDirection: "column", padding: `20px ${EVENT_CONTENT_INSET}px`, flex: 1, overflow: "hidden" }}>
@@ -181,7 +180,7 @@ function CoverPosterFan({ tiles, secondary, renderPoster }: { tiles: string[]; s
               transform: `rotate(${(offset * FAN_MAX_TILT).toFixed(2)}deg)`,
             }}
           >
-            {renderPoster({ src: tile, width: FAN_CARD_WIDTH, height: FAN_CARD_HEIGHT, fit: "cover" })}
+            {renderPoster({ src: tile, width: FAN_CARD_WIDTH, height: FAN_CARD_HEIGHT })}
           </div>
         );
       })}

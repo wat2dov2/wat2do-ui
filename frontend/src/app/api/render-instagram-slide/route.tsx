@@ -139,7 +139,7 @@ async function inlineImage(sourceUrl: string | null | undefined, kind: keyof typ
   // before embedding it so unsupported formats cannot publish as blank slides.
   const png = await sharp(bytes).autoOrient().resize({
     ...SLIDE_POSTER_REGIONS[kind],
-    fit: kind === "event" ? "inside" : "cover",
+    fit: "cover",
     withoutEnlargement: true,
   }).png().toBuffer();
   return `data:image/png;base64,${png.toString("base64")}`;

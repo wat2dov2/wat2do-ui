@@ -225,7 +225,7 @@ test.describe("Instagram raster preparation", () => {
       const prepared = Buffer.from(renderedSlide!.props.model.imageSrc!.split(",")[1], "base64");
       const metadata = await sharp(prepared).metadata();
       expect(metadata.format).toBe("png");
-      expect([metadata.width, metadata.height]).toEqual([672, 840]);
+      expect([metadata.width, metadata.height]).toEqual([1080, 840]);
       const output = Buffer.from(await response.arrayBuffer());
       const pixels = await sharp(output).extract({ left: 540, top: 400, width: 1, height: 1 }).removeAlpha().raw().toBuffer();
       for (const [channel, expected] of [240, 80, 20].entries()) expect(Math.abs(pixels[channel] - expected)).toBeLessThanOrEqual(3);
@@ -235,46 +235,43 @@ test.describe("Instagram raster preparation", () => {
     });
   }
 
-  for (const { kind, width, height, preparedWidth, preparedHeight } of [
-    { kind: "portrait", width: 1600, height: 2000, preparedWidth: 672, preparedHeight: 840 },
-    { kind: "landscape", width: 1800, height: 1200, preparedWidth: 1080, preparedHeight: 720 },
+  for (const { kind, width, height } of [
+    { kind: "portrait", width: 1600, height: 2000 },
+    { kind: "landscape", width: 1800, height: 1200 },
   ]) {
-    test(`${kind} event artwork preserves every corner inside the full-width image area`, async () => {
+    test(`${kind} event artwork fills every image edge with a centered crop`, async () => {
       const corners = [
         { right: false, bottom: false, color: [220, 20, 30] },
         { right: true, bottom: false, color: [20, 160, 40] },
         { right: false, bottom: true, color: [30, 70, 210] },
         { right: true, bottom: true, color: [170, 30, 190] },
       ];
-      const poster = await sharp({ create: { width, height, channels: 3, background: "#ef5014" } }).composite(corners.map(({ right, bottom, color }) => ({
-        input: Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120"><rect width="120" height="120" fill="rgb(${color.join(",")})"/></svg>`),
-        left: right ? width - 120 : 0,
-        top: bottom ? height - 120 : 0,
-      }))).png().toBuffer();
+      // The outer magenta strips should be cropped away, never stretched or
+      // letterboxed. Four quadrants expose a crop biased away from the center.
+      const quadrants = corners.map(({ right, bottom, color }) => `<rect x="${right ? width / 2 : 0}" y="${bottom ? height / 2 : 0}" width="${width / 2}" height="${height / 2}" fill="rgb(${color.join(",")})"/>`).join("");
+      const strips = kind === "portrait"
+        ? `<rect width="${width}" height="100" fill="#ff00ff"/><rect y="${height - 100}" width="${width}" height="100" fill="#ff00ff"/>`
+        : `<rect width="100" height="${height}" fill="#ff00ff"/><rect x="${width - 100}" width="100" height="${height}" fill="#ff00ff"/>`;
+      const poster = await sharp(Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">${quadrants}${strips}</svg>`)).png().toBuffer();
       globalThis.fetch = async () => new Response(poster, { headers: { "content-type": "image/png" } });
       const response = await POST(request({
         kind: "event", school: "uwaterloo",
-        event: { id: 42, tz: "America/Toronto", category: "Arts & Culture", title: "Complete flyer", source_image_url: posterUrl },
+        event: { id: 42, tz: "America/Toronto", category: "Arts & Culture", title: "Edge-to-edge poster", source_image_url: posterUrl },
       }));
       expect(response.status).toBe(200);
       const prepared = Buffer.from(renderedSlide!.props.model.imageSrc!.split(",")[1], "base64");
       const metadata = await sharp(prepared).metadata();
-      expect([metadata.width, metadata.height]).toEqual([preparedWidth, preparedHeight]);
       const output = Buffer.from(await response.arrayBuffer());
       for (const { right, bottom, color } of corners) {
-        const left = right ? preparedWidth - 6 : 5;
-        const top = bottom ? preparedHeight - 6 : 5;
-        const preparedPixel = await sharp(prepared).extract({ left, top, width: 1, height: 1 }).removeAlpha().raw().toBuffer();
-        expect([...preparedPixel]).toEqual(color);
-        const publishedPixel = await sharp(output).extract({ left: (1080 - preparedWidth) / 2 + left, top: 156 + (840 - preparedHeight) / 2 + top, width: 1, height: 1 }).removeAlpha().raw().toBuffer();
-        expect([...publishedPixel]).toEqual(color);
-      }
-      if (kind === "landscape") {
-        for (const left of [0, 1079]) {
-          const edgePixel = await sharp(output).extract({ left, top: 576, width: 1, height: 1 }).removeAlpha().raw().toBuffer();
-          expect([...edgePixel]).toEqual([239, 80, 20]);
+        for (const { left, top } of [
+          { left: right ? 1079 : 0, top: bottom ? 839 : 0 },
+          { left: right ? 550 : 530, top: bottom ? 430 : 410 },
+        ]) {
+          const publishedPixel = await sharp(output).extract({ left, top: 156 + top, width: 1, height: 1 }).removeAlpha().raw().toBuffer();
+          expect([...publishedPixel]).toEqual(color);
         }
       }
+      expect([metadata.width, metadata.height]).toEqual([1080, 840]);
     });
   }
 
