@@ -277,12 +277,15 @@ def test_confident_duplicate_rejects_distinct_campuses():
 
 def test_collapse_duplicate_extractions_merges_supplied_details():
     events = [
-        _duplicate_event(description="Photo session", price=None, sports_game=False),
+        _duplicate_event(
+            description="Photo session", price=None, sports_game=False, campus_season_ids=["hoco"]
+        ),
         _duplicate_event(
             description="Campus photo session with professional headshots",
             employers_on_campus=True,
             free_food_on_campus=False,
             sports_game=None,
+            campus_season_ids=["hoco", "holidays"],
             price=5,
             food=["Snacks"],
             registration=True,
@@ -305,6 +308,7 @@ def test_collapse_duplicate_extractions_merges_supplied_details():
     assert collapsed[0]["employers_on_campus"] is True
     assert collapsed[0]["free_food_on_campus"] is False
     assert collapsed[0]["sports_game"] is False
+    assert collapsed[0]["campus_season_ids"] == ["hoco", "holidays"]
 
 
 def test_find_candidates_returns_empty_without_occurrences_or_handle():

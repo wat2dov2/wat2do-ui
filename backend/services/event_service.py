@@ -90,7 +90,29 @@ def _resolve_club_fields(club_id: int) -> dict[str, str | int | None]:
     return {
         "club": club.club_name,
         "school_id": school_id,
+        "school": club.school,
     }
+
+
+def normalize_campus_season_ids(
+    value: object, school: str | None, *, strict: bool = False
+) -> list[str] | None:
+    """Validate school-owned IDs, preserving unknown versus reviewed-empty metadata.
+
+    API edits reject invalid IDs. Extraction drops invalid model output without
+    dropping an otherwise valid event or claiming that it was reviewed negative.
+    """
+    if value is None:
+        return None
+    if not isinstance(value, list):
+        if strict:
+            raise ValidationError("Campus season IDs must be an array")
+        return None
+    allowed = school_service.campus_season_ids(school or "")
+    valid = sorted({item for item in value if isinstance(item, str) and item in allowed})
+    if strict and any(not isinstance(item, str) or item not in allowed for item in value):
+        raise ValidationError("Campus season IDs must be configured for the event's school")
+    return valid if valid or not value else None
 
 
 # ── Public functions ──────────────────────────────────────────────────
@@ -233,7 +255,12 @@ def list_events(
 def create_event(data: EventCreate, *, created_by: str) -> EventResponse:
     payload = data.model_dump(mode="json")
     payload.pop("occurrences", None)
-    payload.update(_resolve_club_fields(data.club_id))
+    club_fields = _resolve_club_fields(data.club_id)
+    school = club_fields.pop("school")
+    payload.update(club_fields)
+    payload["campus_season_ids"] = normalize_campus_season_ids(
+        data.campus_season_ids, str(school) if school else None, strict=True
+    )
     payload["created_by"] = created_by
     r = get_sb().table(EVENTS).insert(payload).execute()
     new_row = r.data[0]
@@ -295,8 +322,18 @@ def update_event(event_id: int, data: EventUpdate) -> EventUpdateResult | None:
 
     # Reassigning the club re-derives the denormalized display fields so the
     # event row never drifts from its owning club.
+    school = existing.school
     if payload.get("club_id") is not None:
-        payload.update(_resolve_club_fields(payload["club_id"]))
+        club_fields = _resolve_club_fields(payload["club_id"])
+        resolved_school = club_fields.pop("school")
+        school = str(resolved_school) if resolved_school else None
+        payload.update(club_fields)
+        if school != existing.school and "campus_season_ids" not in payload:
+            payload["campus_season_ids"] = None
+    if "campus_season_ids" in payload:
+        payload["campus_season_ids"] = normalize_campus_season_ids(
+            payload["campus_season_ids"], school, strict=True
+        )
 
     recipient_ids = update_event_and_occurrences(
         event_id,

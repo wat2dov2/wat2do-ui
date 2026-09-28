@@ -121,6 +121,15 @@ The backend validates the complete directory at startup, rejects missing or unkn
 Environment-specific credentials, infrastructure sizing, database constraints, and UI constants intentionally stay with their owning systems.
 Changes take effect after rebuilding the applications or restarting a scheduled Python job.
 
+Campus-season event filters are configured in `backend/controlbox/event_discovery.json` under `campus_seasons`.
+Definitions own translated labels and thematic classification guidance; each school's entry chooses its season IDs, adds school-specific prompt guidance, and supplies inclusive `start_date`/`end_date` display windows in that school's local timezone.
+The initial windows cover fall 2026 and are editorial discovery periods anchored to the official calendar linked by each window's `source_url`, not claims that every day is an official campus event.
+Add explicitly dated windows for later terms after checking that school's calendar; windows do not repeat automatically, and an empty window list keeps a season hidden.
+The public school snapshot exposes labels and windows, while both extraction passes receive the school-specific prompt guidance.
+Event content must establish the theme regardless of today's filter visibility; `campus_season_ids: null` means unreviewed and `[]` means reviewed with no match.
+Existing event rows remain unreviewed until explicitly classified or processed again; the schema migration does not guess season tags from event dates.
+Employer recruiting continues to use `employers_on_campus` independently of these seasonal filters.
+
 ## Operating playbooks
 
 - [`docs/seo_playbook.md`](docs/seo_playbook.md) is the maintained source of truth for SEO rules, page-quality gates, prioritization, measurement, and implementation TODOs.

@@ -1,21 +1,16 @@
 /** Offline artwork review. No browser, server, credentials, or remote images. */
 import assert from "node:assert/strict";
-import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createElement, type ReactElement } from "react";
 import satori from "satori";
 import { initWasm, Resvg } from "@resvg/resvg-wasm";
 import sharp from "sharp";
+import nextConfig from "../next.config";
 
 const frontendRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-process.env.NEXT_PUBLIC_INSTAGRAM_COVER_LOGO_SVG = await readFile(path.join(frontendRoot, "public/instagram-cover-logo.svg"), "utf8");
-const doodleDirectory = path.join(frontendRoot, "public/icons/club-categories");
-process.env.NEXT_PUBLIC_CLUB_CATEGORY_DOODLE_SVGS = JSON.stringify(Object.fromEntries(await Promise.all(
-  (await readdir(doodleDirectory)).filter(file => file.endsWith(".svg")).map(async file => [
-    `/icons/club-categories/${file}`, await readFile(path.join(doodleDirectory, file), "utf8"),
-  ]),
-)));
+Object.assign(process.env, nextConfig.env);
 const { CAROUSEL_TEMPLATES, LibraryCoverSlide, LibraryEventSlide } = await import("../src/features/admin/components/instagram/slides/CarouselTemplateLibrary");
 const { EventSlideTemplate } = await import("../src/features/admin/components/instagram/slides/SlideTemplates");
 const { SLIDE_WIDTH, SLIDE_HEIGHT, buildCoverSlideModel, buildEventSlideModel } = await import("../src/features/admin/lib/instagramSlides");

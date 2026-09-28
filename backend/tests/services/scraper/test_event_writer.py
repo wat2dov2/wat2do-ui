@@ -149,6 +149,24 @@ def test_merge_discovery_metadata_preserves_unknown_but_applies_explicit_correct
     )
 
 
+@pytest.mark.parametrize(
+    ("previous", "incoming", "expected"),
+    [
+        (["hoco"], None, ["hoco"]),
+        ([], None, []),
+        (["hoco"], [], []),
+        (["hoco"], ["finals-prep"], ["finals-prep"]),
+        (None, [], []),
+    ],
+)
+def test_season_overwrite_distinguishes_unknown_from_explicit_empty(previous, incoming, expected):
+    old = SimpleNamespace(campus_season_ids=previous, registration=False, cancelled=False)
+    assert (
+        _merge_overwrite_payload({"campus_season_ids": incoming}, old)["campus_season_ids"]
+        == expected
+    )
+
+
 def test_merge_overwrite_occurrences_patches_exact_start_and_keeps_unmentioned_dates():
     first_start = datetime(2026, 9, 10, 22, tzinfo=timezone.utc)
     second_start = datetime(2026, 9, 17, 22, tzinfo=timezone.utc)
@@ -381,6 +399,9 @@ def test_write_event_links_auto_created_club(fake_sb, patch_sb, monkeypatch):
 
 
 def test_write_event_inserts_one_event_row_plus_occurrences(fake_sb, patch_sb, monkeypatch):
+    monkeypatch.setattr(
+        event_writer.school_service, "campus_season_ids", lambda _: frozenset({"hoco"})
+    )
     """Multi-occurrence post -> ONE events row + N event_dates rows."""
     patch_sb("services.scraper.event_writer")
     patch_sb("services.event_date_service")
@@ -429,6 +450,7 @@ def test_write_event_inserts_one_event_row_plus_occurrences(fake_sb, patch_sb, m
         employers_on_campus=True,
         free_food_on_campus=True,
         sports_game=False,
+        campus_season_ids=["foreign-school", "hoco", "hoco"],
         occurrences=[
             {"dtstart_utc": _future(2), "dtend_utc": "", "duration": "", "tz": "UTC"},
             {"dtstart_utc": _future(9), "dtend_utc": "", "duration": "", "tz": "UTC"},
@@ -448,6 +470,7 @@ def test_write_event_inserts_one_event_row_plus_occurrences(fake_sb, patch_sb, m
     assert payload["employers_on_campus"] is True
     assert payload["free_food_on_campus"] is True
     assert payload["sports_game"] is False
+    assert payload["campus_season_ids"] == ["hoco"]
     assert "dtstart_utc" not in payload  # dates do NOT belong on the events row anymore
 
     # The event_dates insert should have received THREE rows (one per occurrence).

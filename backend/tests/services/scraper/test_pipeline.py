@@ -196,3 +196,41 @@ def test_pipeline_routes_hiring_post_to_position_writer(monkeypatch):
 
 def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+def test_cross_school_copies_do_not_inherit_source_seasons_when_reconciliation_fails(monkeypatch):
+    from services.scraper.pipeline import ScrapeResult
+
+    source = {"title": "Tea", "location": "Campus", "campus_season_ids": ["hoco"]}
+    reviewed = []
+    written = []
+    monkeypatch.setattr(
+        pipeline_module,
+        "resolve_club_for_scrape",
+        lambda **_: ResolvedClub(club_id=7, club_name="Tea Club", ig_handle="tea"),
+    )
+    monkeypatch.setattr(pipeline_module, "find_candidates", lambda **_: [])
+    monkeypatch.setattr(
+        pipeline_module,
+        "reconcile_events",
+        lambda **kwargs: reviewed.append(kwargs["extracted_events"][0]) or None,
+    )
+    monkeypatch.setattr(
+        pipeline_module, "write_event", lambda event, **_: written.append(event) or "inserted"
+    )
+    for school in ("uwaterloo", "mit"):
+        pipeline_module._process_events_for_school(
+            [source],
+            target_school=school,
+            source_school="uwaterloo",
+            candidate_handles=["tea"],
+            caption="Tea",
+            source_url="https://instagram.com/p/tea",
+            handle="tea",
+            result=ScrapeResult(ig_handle="tea"),
+            allow_past_events=False,
+        )
+    assert reviewed[0]["campus_season_ids"] == ["hoco"]
+    assert reviewed[1]["campus_season_ids"] is None
+    assert written[1]["campus_season_ids"] is None
+    assert source["campus_season_ids"] == ["hoco"]

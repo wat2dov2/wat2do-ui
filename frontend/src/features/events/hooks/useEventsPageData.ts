@@ -1,9 +1,7 @@
 import { useMemo, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useDiscoveryQueryTracking } from "@/shared/hooks/useDiscoveryQueryTracking";
-import { storeStatesToFilterState } from "@/features/search/api/filterService";
-import { useSearchStore } from "@/features/search/store/search.store";
-import { useSearch } from "@/features/search/hooks/useSearch";
+import { storeStatesToFilterState, useSearchStore, useSearch } from "@/features/search";
 import { useEventStats } from "@/features/events/hooks/useEventStats";
 import {
   useCurrentTime,
@@ -63,6 +61,8 @@ export function useEventsPageData({
     events: visibleEvents,
     goingEventIds,
     goingCounts: eventStats,
+    school: schoolFilter,
+    currentTimeMs,
   });
 
   const orderedEvents = useMemo(

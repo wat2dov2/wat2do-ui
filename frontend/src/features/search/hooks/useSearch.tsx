@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useFilterState } from "@/features/search/hooks/useFilterState";
 import { filterEvents, sortEvents } from "@/features/search/api/searchService";
@@ -8,6 +8,7 @@ import { availableDays } from "@/shared/constants/eventFilters";
 import { translateCategory } from "@/shared/utils/event";
 import type { Event } from "@/shared/types";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
+import { resolveCampusSeasonFilters } from "@/features/search/api/filterService";
 
 /**
  * Search/filter orchestration: useFilterState for store state, searchService for logic.
@@ -17,18 +18,34 @@ interface UseSearchOptions {
   events: Event[];
   goingEventIds: number[];
   goingCounts: Readonly<Record<string, { going_count: number }>> | null;
+  school: string;
+  currentTimeMs: number | null;
 }
 
 export function useSearch({
   events,
   goingEventIds,
   goingCounts,
+  school,
+  currentTimeMs,
 }: UseSearchOptions) {
-  const { getSchoolTimezone } = useSchoolDirectory();
-  const { t } = useTranslation();
+  const { getSchoolTimezone, schoolBySlug } = useSchoolDirectory();
+  const { t, i18n } = useTranslation();
   const { event_categories: eventCategories } = useAppConstants();
 
   const filterState = useFilterState();
+  const schoolRecord = schoolBySlug.get(school);
+  const language = i18n.resolvedLanguage ?? i18n.language;
+  const campusSeasons = useMemo(
+    () => resolveCampusSeasonFilters(schoolRecord, currentTimeMs, language, filterState.campusSeasonIds),
+    [schoolRecord, currentTimeMs, language, filterState.campusSeasonIds],
+  );
+  const { setCampusSeasonIds } = filterState;
+  useEffect(() => {
+    if (campusSeasons.ready && campusSeasons.selectedIds.length !== filterState.campusSeasonIds.length) {
+      setCampusSeasonIds(campusSeasons.selectedIds, "normalization");
+    }
+  }, [campusSeasons, filterState.campusSeasonIds, setCampusSeasonIds]);
 
   const filteredEvents = useMemo(() => {
     const filtered = filterEvents(events, {
@@ -38,6 +55,7 @@ export function useSearch({
       employersOnCampus: filterState.employersOnCampus,
       freeFoodOnCampus: filterState.freeFoodOnCampus,
       sportsGame: filterState.sportsGame,
+      campusSeasonIds: campusSeasons.selectedIds,
       selectedDays: filterState.selectedDays,
       minPrice: filterState.minPrice,
       maxPrice: filterState.maxPrice,
@@ -62,6 +80,7 @@ export function useSearch({
     filterState.employersOnCampus,
     filterState.freeFoodOnCampus,
     filterState.sportsGame,
+    campusSeasons.selectedIds,
     filterState.selectedDays,
     filterState.minPrice,
     filterState.maxPrice,
@@ -82,7 +101,7 @@ export function useSearch({
     filterState.customDate,
   ]);
 
-  const filterCount = getFilterCounts(filterState);
+  const filterCount = getFilterCounts({ ...filterState, campusSeasonIds: campusSeasons.selectedIds });
 
   const categoryOptions = useMemo(
     () =>
@@ -108,6 +127,8 @@ export function useSearch({
 
   return {
     ...filterState,
+    campusSeasonIds: campusSeasons.selectedIds,
+    campusSeasonOptions: campusSeasons.options,
     categoryOptions,
     dayOptions,
     filteredEvents,

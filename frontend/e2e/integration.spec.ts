@@ -3412,6 +3412,55 @@ test.describe("Events Page", () => {
     expect(statsRequests).toBe(loadedStatsRequests);
   });
 
+  test("seasonal event filters combine locally and clear when the school's display window closes", async ({ page, next }) => {
+    await page.clock.install({ time: new Date("2026-09-29T03:59:00Z") });
+    const seasons = [
+      { id: "homecoming", labels: { en: "HOCO" }, display_windows: [{ start_date: "2026-09-28", end_date: "2026-09-28" }] },
+      { id: "holidays", labels: { en: "Holidays" }, display_windows: [{ start_date: "2026-09-28", end_date: "2026-09-28" }] },
+      { id: "orientation", labels: { en: "O-Week" }, display_windows: [{ start_date: "2026-09-01", end_date: "2026-09-07" }] },
+    ];
+    const schools = MOCK_SCHOOLS.map(school => ({ ...school, event_seasons: school.slug === "uwaterloo" ? seasons : [] }));
+    await mockApi(page, next, url => apiPath(url) === "/schools" || apiPath(url) === "/schools/uwaterloo", async request => ({
+      json: apiPath(new URL(request.url)) === "/schools" ? schools : schools[0],
+    }));
+    const items = [
+      { id: 1, title: "Homecoming social", campus_season_ids: ["homecoming"] },
+      { id: 2, title: "Holiday gathering", campus_season_ids: ["holidays"] },
+      { id: 3, title: "Regular club meeting", campus_season_ids: null },
+    ].map(item => ({
+      ...item, school: "uwaterloo", club: "UW Tech Club", location: "SLC", category: "Career",
+      price: 0, food: [], registration: false, source_image_url: null, added_at: "2026-09-28T12:00:00Z",
+      occurrences: [{ id: item.id, event_id: item.id, dtstart_utc: "2026-09-30T16:00:00Z", dtend_utc: null }],
+    }));
+    let feedRequests = 0;
+    await mockApi(page, next, url => apiPath(url) === "/events", async () => {
+      feedRequests++;
+      return { json: { items, total: items.length, page: 1, page_size: items.length, total_pages: 1 } };
+    });
+    const queries: components["schemas"]["DiscoveryQueryCreate"][] = [];
+    await mockApi(page, next, url => apiPath(url) === "/discovery-queries", async request => {
+      queries.push(await request.json());
+      return { status: 204 };
+    });
+    await page.goto(BASE);
+    const cards = page.locator("article[data-event-id]");
+    await expect(cards).toHaveCount(3);
+    const loadedFeedRequests = feedRequests;
+    await expect(page.getByRole("button", { name: "O-Week", exact: true })).toHaveCount(0);
+    await page.getByRole("button", { name: "HOCO", exact: true }).click();
+    await expect(cards).toHaveCount(1);
+    await expect(cards.first()).toContainText("Homecoming social");
+    await page.getByRole("button", { name: "Holidays", exact: true }).click();
+    await expect(cards).toHaveCount(2);
+    await expect.poll(() => queries.at(-1)?.filters.campusSeasonIds).toEqual(["homecoming", "holidays"]);
+    await page.clock.fastForward(60_000);
+    await expect(page.getByRole("button", { name: "HOCO", exact: true })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Holidays", exact: true })).toHaveCount(0);
+    await expect(cards).toHaveCount(3);
+    await expect.poll(() => queries.at(-1)?.filters.campusSeasonIds).toEqual([]);
+    expect(feedRequests).toBe(loadedFeedRequests);
+  });
+
   test("opens minimum going on mouse down and applies integer input changes", async ({ page, next }) => {
     await mockApi(page, next, url => apiPath(url) === "/events/stats", async () => {
       return ({

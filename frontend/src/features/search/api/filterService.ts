@@ -1,5 +1,6 @@
 import type { EventDateFilter, FilterState } from "@/shared/types";
-import { parseLocalDateValue } from "@/shared/utils/date";
+import type { SchoolSummary } from "@/shared/api/schools.api";
+import { parseLocalDateValue, schoolCalendarDate } from "@/shared/utils/date";
 
 // Shared normalization for visual filters and QR handoff.
 
@@ -22,6 +23,7 @@ export const EMPTY_FILTER_STATE: FilterState = {
   employersOnCampus: false,
   freeFoodOnCampus: false,
   sportsGame: false,
+  campusSeasonIds: [],
   going: false,
   sortBy: DEFAULT_FILTER_SORT_BY,
   sortOrder: DEFAULT_FILTER_SORT_ORDER,
@@ -114,6 +116,7 @@ export function normalizeFilterState(filters: FilterStateInput): FilterState {
     employersOnCampus: filters.employersOnCampus === true,
     freeFoodOnCampus: filters.freeFoodOnCampus === true,
     sportsGame: filters.sportsGame === true,
+    campusSeasonIds: [...new Set(stringArray(filters.campusSeasonIds).map(id => id.trim()).filter(Boolean))],
     going: filters.going === true,
     sortBy: stringFrom(filters.sortBy) || DEFAULT_FILTER_SORT_BY,
     sortOrder: sortOrderFrom(filters.sortOrder),
@@ -143,6 +146,7 @@ export function storeStatesToFilterState(
     employersOnCampus: values.employersOnCampus,
     freeFoodOnCampus: values.freeFoodOnCampus,
     sportsGame: values.sportsGame,
+    campusSeasonIds: values.campusSeasonIds,
     going: values.goingFilter,
     sortBy: values.sortBy,
     sortOrder: values.sortOrder,
@@ -163,6 +167,27 @@ export function clearNarrowingFilterState(current: FilterState): FilterState {
 /** Normalized states have stable key order and value shapes. */
 export function isSameFilterState(a: FilterState, b: FilterState): boolean {
   return JSON.stringify(normalizeFilterState(a)) === JSON.stringify(normalizeFilterState(b));
+}
+
+/** Window visibility and applied selections share the current school's calendar. */
+export function resolveCampusSeasonFilters(
+  school: SchoolSummary | undefined,
+  currentTimeMs: number | null,
+  language: string,
+  selectedIds: readonly string[],
+) {
+  if (!school || school.event_seasons === undefined || currentTimeMs === null) {
+    return { ready: false, options: [], selectedIds: [] };
+  }
+  const today = schoolCalendarDate(currentTimeMs, school.timezone).toISOString().slice(0, 10);
+  const options = school.event_seasons
+    .filter(season => season.display_windows.some(window => window.start_date <= today && today <= window.end_date))
+    .map(season => ({
+      id: season.id,
+      label: season.labels[language] ?? season.labels[language.split("-")[0]] ?? season.labels.en,
+    }));
+  const activeIds = new Set(options.map(option => option.id));
+  return { ready: true, options, selectedIds: selectedIds.filter(id => activeIds.has(id)) };
 }
 
 const PENDING_FILTERS_SESSION_KEY = "wat2do:pending-filters";

@@ -144,6 +144,20 @@ class EventDiscoveryFields(BaseModel):
             "Use null when official varsity participation is unconfirmed."
         ),
     )
+    campus_season_ids: list[str] | None = Field(
+        default=None,
+        description=(
+            "School-configured campus season IDs established by the event's theme or "
+            "purpose. Null means unreviewed or uncertain; an empty array means reviewed "
+            "with no matching season. Display windows control filter visibility, not "
+            "classification. Event dates alone do not prove thematic membership."
+        ),
+    )
+
+    @field_validator("campus_season_ids")
+    @classmethod
+    def _unique_campus_seasons(cls, value: list[str] | None) -> list[str] | None:
+        return sorted(set(value)) if value is not None else None
 
 
 class EventCreate(EventDiscoveryFields):

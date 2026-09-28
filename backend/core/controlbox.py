@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import json
+from datetime import date
 from pathlib import Path
-from typing import Literal
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, HttpUrl, model_validator
 
@@ -133,12 +134,76 @@ class RecommendationControl(_ControlModel):
         return self
 
 
+class CampusSeasonWindowControl(_ControlModel):
+    start_date: date
+    end_date: date
+    source_url: HttpUrl
+
+    @model_validator(mode="after")
+    def validate_dates(self) -> "CampusSeasonWindowControl":
+        if self.end_date < self.start_date:
+            raise ValueError("campus season windows must end on or after their start")
+        return self
+
+
+class CampusSeasonDefinitionControl(_ControlModel):
+    labels: dict[str, str]
+    instructions: str = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def validate_labels(self) -> "CampusSeasonDefinitionControl":
+        if not self.labels.get("en") or any(not label.strip() for label in self.labels.values()):
+            raise ValueError("campus season labels require English and nonempty translations")
+        return self
+
+
+class SchoolSeasonControl(_ControlModel):
+    id: str = Field(pattern=r"^[a-z][a-z0-9_]*$", max_length=64)
+    instructions: str = ""
+    display_windows: tuple[CampusSeasonWindowControl, ...]
+
+    @model_validator(mode="after")
+    def validate_windows(self) -> "SchoolSeasonControl":
+        for previous, following in zip(self.display_windows, self.display_windows[1:]):
+            if previous.end_date >= following.start_date:
+                raise ValueError("campus season windows must be ordered and nonoverlapping")
+        return self
+
+
+class SchoolSeasonsControl(_ControlModel):
+    instructions: str = Field(min_length=1)
+    seasons: tuple[SchoolSeasonControl, ...]
+
+    @model_validator(mode="after")
+    def validate_ids(self) -> "SchoolSeasonsControl":
+        ids = [season.id for season in self.seasons]
+        if len(set(ids)) != len(ids):
+            raise ValueError("school campus season IDs must be unique")
+        return self
+
+
+class CampusSeasonsControl(_ControlModel):
+    definitions: dict[
+        Annotated[str, Field(pattern=r"^[a-z][a-z0-9_]*$", max_length=64)],
+        CampusSeasonDefinitionControl,
+    ] = Field(min_length=1)
+    schools: dict[Annotated[str, Field(pattern=r"^[a-z][a-z0-9-]*$")], SchoolSeasonsControl]
+
+    @model_validator(mode="after")
+    def validate_references(self) -> "CampusSeasonsControl":
+        for school in self.schools.values():
+            if any(season.id not in self.definitions for season in school.seasons):
+                raise ValueError("school campus season IDs must reference a definition")
+        return self
+
+
 class EventDiscoveryControl(_ControlModel):
     new_event_window_hours: int = Field(gt=0)
     event_without_end_visibility_minutes: int = Field(gt=0)
     initial_render_count: int = Field(gt=0, le=100)
     preview_event_count: int = Field(gt=0, le=100)
     server_feed_page_size: int = Field(gt=0, le=100)
+    campus_seasons: CampusSeasonsControl
 
 
 class DatabaseControl(_ControlModel):

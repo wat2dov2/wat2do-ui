@@ -42,6 +42,14 @@ def test_checked_in_controlbox_is_valid() -> None:
     assert controlbox.event_discovery.event_without_end_visibility_minutes == 60
     assert controlbox.event_discovery.initial_render_count == 24
     assert controlbox.event_discovery.preview_event_count == 4
+    assert set(controlbox.event_discovery.campus_seasons.definitions) == {
+        "homecoming",
+        "holidays",
+        "orientation",
+        "midterm_prep",
+        "exam_destress",
+        "finals_prep",
+    }
     assert controlbox.social_previews.notification_page_size == 500
     assert controlbox.social_previews.capture_path == "/"
     assert controlbox.social_previews.viewport_width == 1200
@@ -438,5 +446,51 @@ def test_discovery_controls_load_checked_in_feature_sources():
 )
 def test_discovery_control_limits_reject_unsafe_configuration(tmp_path, feature, patch):
     directory = _write_control(tmp_path, feature, lambda payload: payload.update(patch))
+    with pytest.raises(ValidationError):
+        load_controlbox(directory)
+
+
+@pytest.mark.parametrize(
+    "mutate",
+    [
+        lambda seasons: seasons["definitions"]["homecoming"].update(labels={"fr": "HOCO"}),
+        lambda seasons: seasons["definitions"]["homecoming"].update(labels={"en": " "}),
+        lambda seasons: seasons["schools"].update(
+            {"Bad Slug": {"instructions": "test", "seasons": []}}
+        ),
+        lambda seasons: seasons["schools"]["uwaterloo"]["seasons"][0].update(id="unknown"),
+        lambda seasons: seasons["schools"]["uwaterloo"]["seasons"].append(
+            seasons["schools"]["uwaterloo"]["seasons"][0]
+        ),
+        lambda seasons: seasons["schools"]["uwaterloo"]["seasons"][0].update(
+            display_windows=[
+                {
+                    "start_date": "2026-10-02",
+                    "end_date": "2026-10-01",
+                    "source_url": "https://uwaterloo.ca/calendar",
+                }
+            ]
+        ),
+        lambda seasons: seasons["schools"]["uwaterloo"]["seasons"][0].update(
+            display_windows=[
+                {"start_date": "2026-10-01", "end_date": "2026-10-02", "source_url": "not-a-url"}
+            ]
+        ),
+        lambda seasons: seasons["schools"]["uwaterloo"]["seasons"][0].update(
+            display_windows=[
+                {
+                    "start_date": "2026-10-01",
+                    "end_date": "2026-10-02",
+                    "source_url": "https://uwaterloo.ca/calendar",
+                }
+            ]
+            * 2
+        ),
+    ],
+)
+def test_campus_seasons_reject_invalid_configuration(tmp_path, mutate):
+    directory = _write_control(
+        tmp_path, "event_discovery", lambda payload: mutate(payload["campus_seasons"])
+    )
     with pytest.raises(ValidationError):
         load_controlbox(directory)

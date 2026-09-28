@@ -158,7 +158,7 @@ export function EventsPageContainer({
             </Button>
           </Stack>
 
-          <FilterBar refreshKey={`${filterConfigs.length + 4}:${filters.categoryOptions.length}`} data-testid="event-quick-filter-scroll" trailing={<>
+          <FilterBar refreshKey={`${filterConfigs.length + 4}:${filters.categoryOptions.length}:${filters.campusSeasonOptions.map(season => season.id).join(",")}`} data-testid="event-quick-filter-scroll" trailing={<>
               <MoreFiltersButton
                 open={showFilterDropdown}
                 onOpenChange={setShowFilterDropdown}
@@ -188,6 +188,17 @@ export function EventsPageContainer({
                     aria-pressed={config.active}
                   >
                     {t(config.labelKey)}
+                  </Button>
+                ))}
+                {filters.campusSeasonOptions.map((season) => (
+                  <Button
+                    key={season.id}
+                    variant={filters.campusSeasonIds.includes(season.id) ? "primary" : "outline"}
+                    size="sm"
+                    onClick={() => filters.toggleCampusSeason(season.id)}
+                    aria-pressed={filters.campusSeasonIds.includes(season.id)}
+                  >
+                    {season.label}
                   </Button>
                 ))}
                 <IntegerFilter

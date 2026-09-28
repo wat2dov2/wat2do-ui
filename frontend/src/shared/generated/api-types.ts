@@ -1733,6 +1733,19 @@ export interface components {
             /** Cells */
             cells: components["schemas"]["CampusCoverageCell"][];
         };
+        /** CampusSeasonWindow */
+        CampusSeasonWindow: {
+            /**
+             * Start Date
+             * Format: date
+             */
+            start_date: string;
+            /**
+             * End Date
+             * Format: date
+             */
+            end_date: string;
+        };
         /** ClubClaimCreate */
         ClubClaimCreate: {
             /** Executive Role */
@@ -2117,6 +2130,11 @@ export interface components {
              * @description An actual scheduled athletic game, match, meet, or tournament involving an official school varsity team. Intramural, club-team, and recreational competitions, practices, tryouts, fitness classes, sports-club meetings, video games, and watch parties do not qualify. School affiliation or posting from an athletics account alone does not establish varsity participation. Use null when official varsity participation is unconfirmed.
              */
             sports_game?: boolean | null;
+            /**
+             * Campus Season Ids
+             * @description School-configured campus season IDs established by the event's theme or purpose. Null means unreviewed or uncertain; an empty array means reviewed with no matching season. Display windows control filter visibility, not classification. Event dates alone do not prove thematic membership.
+             */
+            campus_season_ids?: string[] | null;
             /** Title */
             title: string;
             /** Description */
@@ -2241,6 +2259,11 @@ export interface components {
              * @description An actual scheduled athletic game, match, meet, or tournament involving an official school varsity team. Intramural, club-team, and recreational competitions, practices, tryouts, fitness classes, sports-club meetings, video games, and watch parties do not qualify. School affiliation or posting from an athletics account alone does not establish varsity participation. Use null when official varsity participation is unconfirmed.
              */
             sports_game?: boolean | null;
+            /**
+             * Campus Season Ids
+             * @description School-configured campus season IDs established by the event's theme or purpose. Null means unreviewed or uncertain; an empty array means reviewed with no matching season. Display windows control filter visibility, not classification. Event dates alone do not prove thematic membership.
+             */
+            campus_season_ids?: string[] | null;
             /** Id */
             id: number;
             /** Club Id */
@@ -2317,6 +2340,11 @@ export interface components {
              * @description An actual scheduled athletic game, match, meet, or tournament involving an official school varsity team. Intramural, club-team, and recreational competitions, practices, tryouts, fitness classes, sports-club meetings, video games, and watch parties do not qualify. School affiliation or posting from an athletics account alone does not establish varsity participation. Use null when official varsity participation is unconfirmed.
              */
             sports_game?: boolean | null;
+            /**
+             * Campus Season Ids
+             * @description School-configured campus season IDs established by the event's theme or purpose. Null means unreviewed or uncertain; an empty array means reviewed with no matching season. Display windows control filter visibility, not classification. Event dates alone do not prove thematic membership.
+             */
+            campus_season_ids?: string[] | null;
             /** Id */
             id: number;
             /** Club Id */
@@ -2417,6 +2445,11 @@ export interface components {
              * @description An actual scheduled athletic game, match, meet, or tournament involving an official school varsity team. Intramural, club-team, and recreational competitions, practices, tryouts, fitness classes, sports-club meetings, video games, and watch parties do not qualify. School affiliation or posting from an athletics account alone does not establish varsity participation. Use null when official varsity participation is unconfirmed.
              */
             sports_game?: boolean | null;
+            /**
+             * Campus Season Ids
+             * @description School-configured campus season IDs established by the event's theme or purpose. Null means unreviewed or uncertain; an empty array means reviewed with no matching season. Display windows control filter visibility, not classification. Event dates alone do not prove thematic membership.
+             */
+            campus_season_ids?: string[] | null;
             /** Id */
             id: number;
             /** Title */
@@ -2486,6 +2519,11 @@ export interface components {
              * @description An actual scheduled athletic game, match, meet, or tournament involving an official school varsity team. Intramural, club-team, and recreational competitions, practices, tryouts, fitness classes, sports-club meetings, video games, and watch parties do not qualify. School affiliation or posting from an athletics account alone does not establish varsity participation. Use null when official varsity participation is unconfirmed.
              */
             sports_game?: boolean | null;
+            /**
+             * Campus Season Ids
+             * @description School-configured campus season IDs established by the event's theme or purpose. Null means unreviewed or uncertain; an empty array means reviewed with no matching season. Display windows control filter visibility, not classification. Event dates alone do not prove thematic membership.
+             */
+            campus_season_ids?: string[] | null;
             /** Title */
             title?: string | null;
             /** Description */
@@ -3765,6 +3803,8 @@ export interface components {
             faculties?: string[];
             /** Location Examples */
             location_examples?: string[];
+            /** Event Seasons */
+            event_seasons?: components["schemas"]["SchoolEventSeason"][];
             /** Recipient Id */
             recipient_id?: string | null;
             /** Semester Start */
@@ -3773,6 +3813,17 @@ export interface components {
             semester_end?: string | null;
             /** Social Preview Image Url */
             social_preview_image_url?: string | null;
+        };
+        /** SchoolEventSeason */
+        SchoolEventSeason: {
+            /** Id */
+            id: string;
+            /** Labels */
+            labels: {
+                [key: string]: string;
+            };
+            /** Display Windows */
+            display_windows: components["schemas"]["CampusSeasonWindow"][];
         };
         /** SchoolSummary */
         SchoolSummary: {
@@ -3796,6 +3847,8 @@ export interface components {
             faculties?: string[];
             /** Location Examples */
             location_examples?: string[];
+            /** Event Seasons */
+            event_seasons?: components["schemas"]["SchoolEventSeason"][];
             /** Email Domains */
             email_domains?: string[];
         };

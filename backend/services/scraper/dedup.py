@@ -298,6 +298,15 @@ def _merge_extracted_duplicates(existing: dict, incoming: dict) -> dict:
             merged[field] = incoming[field]
 
     for field in ("price", "category", "source_image_url", *EventDiscoveryFields.model_fields):
+        if field == "campus_season_ids":
+            arrays = [
+                value
+                for value in (existing.get(field), incoming.get(field))
+                if isinstance(value, list)
+            ]
+            if arrays:
+                merged[field] = sorted({season for value in arrays for season in value})
+            continue
         if merged.get(field) in (None, "") and incoming.get(field) not in (None, ""):
             merged[field] = incoming[field]
 

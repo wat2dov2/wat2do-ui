@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "storage_prefix": "media/discovery-cache",
   "refresh_interval_seconds": 300,
   "worker_interval_seconds": 15,

@@ -269,6 +269,7 @@ def test_resolve_club_fields_derives_from_club(monkeypatch):
     assert event_service._resolve_club_fields(7) == {
         "club": "UW Tea Club",
         "school_id": 1,
+        "school": "uwaterloo",
     }
 
 
@@ -1078,3 +1079,109 @@ def test_event_edit_refreshes_both_school_snapshots_after_commit(monkeypatch):
         ["uwaterloo", "western"],
         resources=("events", "clubs"),
     )
+
+
+@pytest.mark.parametrize("season_ids", [["foreign-school"], ["hoco", "foreign-school"]])
+def test_create_rejects_seasons_outside_resolved_club_school(monkeypatch, season_ids):
+    from core.exceptions import ValidationError
+    from schemas.event import EventCreate
+
+    monkeypatch.setattr(club_service, "get_club", lambda _: _club(school="uwaterloo"))
+    monkeypatch.setattr(
+        event_service.school_service,
+        "campus_season_ids",
+        lambda school: frozenset({"hoco"}) if school == "uwaterloo" else frozenset(),
+    )
+    database = MagicMock()
+    monkeypatch.setattr(event_service, "get_sb", database)
+    with pytest.raises(ValidationError, match="event's school"):
+        event_service.create_event(
+            EventCreate(
+                title="Homecoming",
+                location="Campus",
+                club_id=7,
+                campus_season_ids=season_ids,
+                occurrences=[{"dtstart_utc": "2099-09-01T12:00:00Z"}],
+            ),
+            created_by="11111111-1111-1111-1111-111111111111",
+        )
+    database.assert_not_called()
+
+
+@pytest.mark.parametrize("season_ids", [None, [], ["hoco", "hoco"]])
+def test_create_preserves_valid_season_metadata_and_keeps_school_slug_out_of_db(
+    monkeypatch, season_ids
+):
+    from schemas.event import EventCreate
+
+    monkeypatch.setattr(club_service, "get_club", lambda _: _club())
+    monkeypatch.setattr(
+        event_service.school_service, "campus_season_ids", lambda _: frozenset({"hoco"})
+    )
+    sb = MagicMock()
+    sb.table.return_value.insert.return_value.execute.return_value.data = [{"id": 42}]
+    monkeypatch.setattr(event_service, "get_sb", lambda: sb)
+    monkeypatch.setattr(event_service.event_date_service, "create_occurrences", MagicMock())
+    monkeypatch.setattr(event_service, "get_event", lambda _: _event(id=42, school="uwaterloo"))
+    monkeypatch.setattr(
+        event_service.event_feed_revalidation_service, "revalidate_school", MagicMock()
+    )
+
+    event_service.create_event(
+        EventCreate(
+            title="Homecoming",
+            location="Campus",
+            club_id=7,
+            campus_season_ids=season_ids,
+            occurrences=[{"dtstart_utc": "2099-09-01T12:00:00Z"}],
+        ),
+        created_by="11111111-1111-1111-1111-111111111111",
+    )
+    payload = sb.table.return_value.insert.call_args.args[0]
+    assert payload["campus_season_ids"] == (
+        sorted(set(season_ids)) if season_ids is not None else None
+    )
+    assert payload["school_id"] == 1
+    assert "school" not in payload
+
+
+@pytest.mark.parametrize(
+    ("patch", "expected", "invalid"),
+    [
+        ({"campus_season_ids": None}, None, False),
+        ({"campus_season_ids": []}, [], False),
+        ({"campus_season_ids": ["hoco", "hoco"]}, ["hoco"], False),
+        ({"campus_season_ids": ["foreign-school"]}, None, True),
+        ({"club_id": 8}, None, False),
+        ({"club_id": 8, "campus_season_ids": ["hoco"]}, None, True),
+        ({"club_id": 8, "campus_season_ids": ["holidays"]}, ["holidays"], False),
+    ],
+)
+def test_edit_validates_or_clears_seasons_for_destination_school(
+    monkeypatch, patch, expected, invalid
+):
+    from core.exceptions import ValidationError
+    from schemas.event import EventUpdate
+
+    existing = _event(id=42, club_id=7, school="uwaterloo", campus_season_ids=["hoco"])
+    monkeypatch.setattr(event_service, "get_event", lambda _: existing)
+    monkeypatch.setattr(event_service, "has_ended", lambda _: False)
+    monkeypatch.setattr(club_service, "get_club", lambda _: _club(id=8, school="mit", school_id=2))
+    monkeypatch.setattr(
+        event_service.school_service,
+        "campus_season_ids",
+        lambda school: frozenset({"hoco"}) if school == "uwaterloo" else frozenset({"holidays"}),
+    )
+    commit = MagicMock(return_value=[])
+    monkeypatch.setattr(event_service, "update_event_and_occurrences", commit)
+    monkeypatch.setattr(
+        event_service.event_feed_revalidation_service, "revalidate_schools", MagicMock()
+    )
+    if invalid:
+        with pytest.raises(ValidationError, match="event's school"):
+            event_service.update_event(42, EventUpdate(**patch))
+        commit.assert_not_called()
+    else:
+        event_service.update_event(42, EventUpdate(**patch))
+        assert commit.call_args.args[1]["campus_season_ids"] == expected
+        assert "school" not in commit.call_args.args[1]

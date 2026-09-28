@@ -3,5 +3,3225 @@
   "event_without_end_visibility_minutes": 60,
   "initial_render_count": 24,
   "preview_event_count": 4,
-  "server_feed_page_size": 100
+  "server_feed_page_size": 100,
+  "campus_seasons": {
+    "definitions": {
+      "homecoming": {
+        "labels": {
+          "en": "HOCO",
+          "fr": "Retrouvailles",
+          "es": "Reencuentro universitario",
+          "zh": "返校庆典",
+          "pa-Guru": "ਸਾਬਕਾ ਵਿਦਿਆਰਥੀ ਮਿਲਣੀ",
+          "ar": "لقاء الخريجين",
+          "hi": "पूर्व छात्र मिलन",
+          "fil": "Homecoming",
+          "yue-Hant": "返校慶典",
+          "it": "Ritrovo degli ex studenti",
+          "de": "Alumni-Treffen",
+          "ur": "سابق طلبہ کا اجتماع",
+          "pt": "Encontro de ex-alunos",
+          "ru": "Встреча выпускников",
+          "ta": "முன்னாள் மாணவர் சந்திப்பு",
+          "vi": "Họp mặt cựu sinh viên",
+          "fa": "گردهمایی دانش‌آموختگان",
+          "gu": "ભૂતપૂર્વ વિદ્યાર્થીઓનું મિલન",
+          "pl": "Zjazd absolwentów",
+          "ko": "동문 행사"
+        },
+        "instructions": "Official school homecoming, HOCO, alumni reunion or explicitly associated campus spirit celebrations. Include a varsity game only when the source explicitly associates it with homecoming. A regular game or unrelated party does not qualify."
+      },
+      "holidays": {
+        "labels": {
+          "en": "Holidays",
+          "fr": "Fêtes",
+          "es": "Festividades",
+          "zh": "节日活动",
+          "pa-Guru": "ਤਿਉਹਾਰ",
+          "ar": "الأعياد",
+          "hi": "त्योहार",
+          "fil": "Mga pagdiriwang",
+          "yue-Hant": "節日活動",
+          "it": "Festività",
+          "de": "Feiertage",
+          "ur": "تہوار",
+          "pt": "Festas",
+          "ru": "Праздники",
+          "ta": "பண்டிகைகள்",
+          "vi": "Ngày lễ",
+          "fa": "جشن‌ها",
+          "gu": "તહેવારો",
+          "pl": "Święta",
+          "ko": "명절 행사"
+        },
+        "instructions": "Campus or student-community events explicitly themed around a named holiday, such as Halloween, Thanksgiving, Friendsgiving or winter holidays. A break in classes or a date near a holiday alone does not qualify. Follow the school-specific country and cultural context."
+      },
+      "orientation": {
+        "labels": {
+          "en": "O-Week",
+          "fr": "Semaine d’accueil",
+          "es": "Semana de bienvenida",
+          "zh": "迎新周",
+          "pa-Guru": "ਸਵਾਗਤ ਹਫ਼ਤਾ",
+          "ar": "أسبوع الترحيب",
+          "hi": "स्वागत सप्ताह",
+          "fil": "Linggo ng oryentasyon",
+          "yue-Hant": "迎新週",
+          "it": "Settimana di orientamento",
+          "de": "Orientierungswoche",
+          "ur": "استقبالیہ ہفتہ",
+          "pt": "Semana de orientação",
+          "ru": "Неделя знакомства с кампусом",
+          "ta": "வரவேற்பு வாரம்",
+          "vi": "Tuần định hướng",
+          "fa": "هفته آشنایی",
+          "gu": "સ્વાગત સપ્તાહ",
+          "pl": "Tydzień orientacyjny",
+          "ko": "오리엔테이션 주간"
+        },
+        "instructions": "New-student orientation, frosh, O-Week or explicitly designated beginning-of-term orientation/welcome programming. An ordinary club meeting, recruitment drive or generic party does not qualify without orientation or welcome-week context."
+      },
+      "midterm_prep": {
+        "labels": {
+          "en": "Midterm prep",
+          "fr": "Préparation aux examens de mi-session",
+          "es": "Preparación de parciales",
+          "zh": "期中备考",
+          "pa-Guru": "ਮਿਡਟਰਮ ਦੀ ਤਿਆਰੀ",
+          "ar": "الاستعداد لاختبارات منتصف الفصل",
+          "hi": "मध्यावधि परीक्षा की तैयारी",
+          "fil": "Paghahanda sa midterms",
+          "yue-Hant": "期中備考",
+          "it": "Preparazione agli esami intermedi",
+          "de": "Vorbereitung auf Zwischenprüfungen",
+          "ur": "وسط مدتی امتحانات کی تیاری",
+          "pt": "Preparação para provas parciais",
+          "ru": "Подготовка к промежуточным экзаменам",
+          "ta": "இடைப்பருவத் தேர்வுத் தயாரிப்பு",
+          "vi": "Ôn thi giữa kỳ",
+          "fa": "آمادگی میان‌ترم",
+          "gu": "મધ્યસત્ર પરીક્ષાની તૈયારી",
+          "pl": "Przygotowanie do kolokwiów",
+          "ko": "중간고사 준비"
+        },
+        "instructions": "Study sessions, tutoring, review workshops or practice tests explicitly preparing for midterm exams. General academic talks and ordinary classes do not qualify."
+      },
+      "exam_destress": {
+        "labels": {
+          "en": "Exam de-stress",
+          "fr": "Détente pendant les examens",
+          "es": "Relajación en exámenes",
+          "zh": "考试减压",
+          "pa-Guru": "ਪ੍ਰੀਖਿਆ ਤਣਾਅ ਤੋਂ ਰਾਹਤ",
+          "ar": "تخفيف توتر الاختبارات",
+          "hi": "परीक्षा तनाव से राहत",
+          "fil": "Pampawala ng stress sa pagsusulit",
+          "yue-Hant": "考試減壓",
+          "it": "Relax durante gli esami",
+          "de": "Entspannung in der Prüfungszeit",
+          "ur": "امتحانی تناؤ سے نجات",
+          "pt": "Relaxamento nos exames",
+          "ru": "Снятие экзаменационного стресса",
+          "ta": "தேர்வு மனஅழுத்த நிவாரணம்",
+          "vi": "Giảm căng thẳng mùa thi",
+          "fa": "کاهش استرس امتحانات",
+          "gu": "પરીક્ષાના તણાવમાંથી રાહત",
+          "pl": "Relaks w czasie egzaminów",
+          "ko": "시험 스트레스 해소"
+        },
+        "instructions": "Wellness, therapy animals, snack breaks, crafts or relaxation explicitly intended to ease midterm/final exam stress. Ordinary free food or wellness events do not qualify without an exam connection."
+      },
+      "finals_prep": {
+        "labels": {
+          "en": "Finals prep",
+          "fr": "Préparation aux examens finaux",
+          "es": "Preparación de finales",
+          "zh": "期末备考",
+          "pa-Guru": "ਫਾਈਨਲ ਪ੍ਰੀਖਿਆ ਦੀ ਤਿਆਰੀ",
+          "ar": "الاستعداد للاختبارات النهائية",
+          "hi": "अंतिम परीक्षा की तैयारी",
+          "fil": "Paghahanda sa finals",
+          "yue-Hant": "期末備考",
+          "it": "Preparazione agli esami finali",
+          "de": "Vorbereitung auf Abschlussprüfungen",
+          "ur": "آخری امتحانات کی تیاری",
+          "pt": "Preparação para provas finais",
+          "ru": "Подготовка к итоговым экзаменам",
+          "ta": "இறுதித் தேர்வுத் தயாரிப்பு",
+          "vi": "Ôn thi cuối kỳ",
+          "fa": "آمادگی پایان‌ترم",
+          "gu": "અંતિમ પરીક્ષાની તૈયારી",
+          "pl": "Przygotowanie do egzaminów końcowych",
+          "ko": "기말고사 준비"
+        },
+        "instructions": "Review sessions, study groups, tutoring, practice exams or exam-skills workshops explicitly preparing for final exams. General academic talks, midterm preparation and ordinary classes do not qualify."
+      }
+    },
+    "schools": {
+      "uwaterloo": {
+        "instructions": "University of Waterloo. Use this school's America/Toronto local dates. Fall 2026 anchors below describe general undergraduate dates unless noted; professional programs can differ. Display windows are editorial only. Never infer a seasonal event tag from its date alone.",
+        "seasons": [
+          {
+            "id": "homecoming",
+            "instructions": "Waterloo Homecoming: 2026-09-18 to 2026-09-19. The filter begins 14 days earlier as an editorial discovery window. Tag only an explicit homecoming, school reunion celebration, or named official homecoming program; generic football games and unrelated alumni talks do not qualify.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-04",
+                "end_date": "2026-09-19",
+                "source_url": "https://uwaterloo.ca/alumni/homecoming-2026-plan-your-visit"
+              }
+            ]
+          },
+          {
+            "id": "holidays",
+            "instructions": "This school is in Canada; local Thanksgiving is 2026-10-12. Windows are editorial discovery periods, not school closure dates. Tag explicit holiday celebrations, meals, parties or seasonal cultural gatherings only; do not tag generic autumn or December events. Halloween is October 31; its October 17-November 2 display window is editorial and does not assert a campus event or closure.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-28",
+                "end_date": "2026-10-14",
+                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html"
+              },
+              {
+                "start_date": "2026-10-17",
+                "end_date": "2026-11-02",
+                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween"
+              },
+              {
+                "start_date": "2026-12-01",
+                "end_date": "2026-12-23",
+                "source_url": "https://uwaterloo.ca/important-dates/undergraduate"
+              }
+            ]
+          },
+          {
+            "id": "orientation",
+            "instructions": "International Orientation September 3-4 and First Year Orientation September 6-12: 2026-09-03 to 2026-09-12. The filter begins 14 days earlier as an editorial discovery window. Tag only an explicit new-student welcome, orientation, frosh or campus transition activity; generic early-term events do not qualify.",
+            "display_windows": [
+              {
+                "start_date": "2026-08-20",
+                "end_date": "2026-09-12",
+                "source_url": "https://uwaterloo.ca/welcome-warriors/orientation/international-orientation"
+              }
+            ]
+          },
+          {
+            "id": "midterm_prep",
+            "instructions": "Fall 2026 classes begin 2026-09-09. The display period is editorial term days 22-70, not official midterm dates. Tag only explicit midterm preparation, review or study support.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-30",
+                "end_date": "2026-11-17",
+                "source_url": "https://uwaterloo.ca/important-dates/undergraduate"
+              }
+            ]
+          },
+          {
+            "id": "exam_destress",
+            "instructions": "Editorial visibility during this school's verified-term preparation periods. Tag only explicit exam or midterm stress relief, not generic wellness.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-30",
+                "end_date": "2026-11-17",
+                "source_url": "https://uwaterloo.ca/important-dates/undergraduate"
+              },
+              {
+                "start_date": "2026-11-26",
+                "end_date": "2026-12-23",
+                "source_url": "https://uwaterloo.ca/important-dates/undergraduate"
+              }
+            ]
+          },
+          {
+            "id": "finals_prep",
+            "instructions": "Fall 2026 general finals or formal assessments run 2026-12-10 to 2026-12-23. The editorial filter begins 14 days earlier. Tag only explicit final-exam or end-of-term assessment preparation.",
+            "display_windows": [
+              {
+                "start_date": "2026-11-26",
+                "end_date": "2026-12-23",
+                "source_url": "https://uwaterloo.ca/important-dates/undergraduate"
+              }
+            ]
+          }
+        ]
+      },
+      "utsg": {
+        "instructions": "University of Toronto St. George. Use this school's America/Toronto local dates. Fall 2026 anchors below describe general undergraduate dates unless noted; professional programs can differ. Display windows are editorial only. Never infer a seasonal event tag from its date alone.",
+        "seasons": [
+          {
+            "id": "homecoming",
+            "instructions": "No verified Fall 2026 display window; classification still follows explicit source content.",
+            "display_windows": []
+          },
+          {
+            "id": "holidays",
+            "instructions": "This school is in Canada; local Thanksgiving is 2026-10-12. Windows are editorial discovery periods, not school closure dates. Tag explicit holiday celebrations, meals, parties or seasonal cultural gatherings only; do not tag generic autumn or December events. Halloween is October 31; its October 17-November 2 display window is editorial and does not assert a campus event or closure.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-28",
+                "end_date": "2026-10-14",
+                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html"
+              },
+              {
+                "start_date": "2026-10-17",
+                "end_date": "2026-11-02",
+                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween"
+              },
+              {
+                "start_date": "2026-12-01",
+                "end_date": "2026-12-22",
+                "source_url": "https://www.trinity.utoronto.ca/news-and-events/important-dates/"
+              }
+            ]
+          },
+          {
+            "id": "orientation",
+            "instructions": "Trinity College orientation; other St. George colleges can differ: 2026-08-31 to 2026-09-06. The filter begins 14 days earlier as an editorial discovery window. Tag only an explicit new-student welcome, orientation, frosh or campus transition activity; generic early-term events do not qualify.",
+            "display_windows": [
+              {
+                "start_date": "2026-08-17",
+                "end_date": "2026-09-06",
+                "source_url": "https://www.trinity.utoronto.ca/news-and-events/important-dates/"
+              }
+            ]
+          },
+          {
+            "id": "midterm_prep",
+            "instructions": "Fall 2026 classes begin 2026-09-08. The display period is editorial term days 22-70, not official midterm dates. Tag only explicit midterm preparation, review or study support.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-29",
+                "end_date": "2026-11-16",
+                "source_url": "https://www.trinity.utoronto.ca/news-and-events/important-dates/"
+              }
+            ]
+          },
+          {
+            "id": "exam_destress",
+            "instructions": "Editorial visibility during this school's verified-term preparation periods. Tag only explicit exam or midterm stress relief, not generic wellness.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-29",
+                "end_date": "2026-11-16",
+                "source_url": "https://www.trinity.utoronto.ca/news-and-events/important-dates/"
+              },
+              {
+                "start_date": "2026-11-26",
+                "end_date": "2026-12-22",
+                "source_url": "https://www.trinity.utoronto.ca/news-and-events/important-dates/"
+              }
+            ]
+          },
+          {
+            "id": "finals_prep",
+            "instructions": "Fall 2026 general finals or formal assessments run 2026-12-10 to 2026-12-22. The editorial filter begins 14 days earlier. Tag only explicit final-exam or end-of-term assessment preparation.",
+            "display_windows": [
+              {
+                "start_date": "2026-11-26",
+                "end_date": "2026-12-22",
+                "source_url": "https://www.trinity.utoronto.ca/news-and-events/important-dates/"
+              }
+            ]
+          }
+        ]
+      },
+      "utsc": {
+        "instructions": "University of Toronto Scarborough. Use this school's America/Toronto local dates. Fall 2026 anchors below describe general undergraduate dates unless noted; professional programs can differ. Display windows are editorial only. Never infer a seasonal event tag from its date alone.",
+        "seasons": [
+          {
+            "id": "homecoming",
+            "instructions": "No verified Fall 2026 display window; classification still follows explicit source content.",
+            "display_windows": []
+          },
+          {
+            "id": "holidays",
+            "instructions": "This school is in Canada; local Thanksgiving is 2026-10-12. Windows are editorial discovery periods, not school closure dates. Tag explicit holiday celebrations, meals, parties or seasonal cultural gatherings only; do not tag generic autumn or December events. Halloween is October 31; its October 17-November 2 display window is editorial and does not assert a campus event or closure.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-28",
+                "end_date": "2026-10-14",
+                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html"
+              },
+              {
+                "start_date": "2026-10-17",
+                "end_date": "2026-11-02",
+                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween"
+              },
+              {
+                "start_date": "2026-12-01",
+                "end_date": "2026-12-22",
+                "source_url": "https://www.utsc.utoronto.ca/registrar/fall-2026-winter-2027-academic-dates"
+              }
+            ]
+          },
+          {
+            "id": "orientation",
+            "instructions": "Published Fall Orientation opening day; full program end was not confirmed. Verified anchors lie between 2026-09-03 and 2026-09-03; the editorial display span starts 14 days before the first anchor. Classification requires explicit seasonal source content, not just an event date.",
+            "display_windows": [
+              {
+                "start_date": "2026-08-20",
+                "end_date": "2026-09-03",
+                "source_url": "https://www.utsc.utoronto.ca/orientation/get-ready-fall-orientation"
+              }
+            ]
+          },
+          {
+            "id": "midterm_prep",
+            "instructions": "Fall 2026 classes begin 2026-09-08. The display period is editorial term days 22-70, not official midterm dates. Tag only explicit midterm preparation, review or study support.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-29",
+                "end_date": "2026-11-16",
+                "source_url": "https://www.utsc.utoronto.ca/registrar/fall-2026-winter-2027-academic-dates"
+              }
+            ]
+          },
+          {
+            "id": "exam_destress",
+            "instructions": "Editorial visibility during this school's verified-term preparation periods. Tag only explicit exam or midterm stress relief, not generic wellness.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-29",
+                "end_date": "2026-11-16",
+                "source_url": "https://www.utsc.utoronto.ca/registrar/fall-2026-winter-2027-academic-dates"
+              },
+              {
+                "start_date": "2026-11-26",
+                "end_date": "2026-12-22",
+                "source_url": "https://www.utsc.utoronto.ca/registrar/fall-2026-winter-2027-academic-dates"
+              }
+            ]
+          },
+          {
+            "id": "finals_prep",
+            "instructions": "Fall 2026 general finals or formal assessments run 2026-12-10 to 2026-12-22. The editorial filter begins 14 days earlier. Tag only explicit final-exam or end-of-term assessment preparation.",
+            "display_windows": [
+              {
+                "start_date": "2026-11-26",
+                "end_date": "2026-12-22",
+                "source_url": "https://www.utsc.utoronto.ca/registrar/fall-2026-winter-2027-academic-dates"
+              }
+            ]
+          }
+        ]
+      },
+      "utm": {
+        "instructions": "University of Toronto Mississauga. Use this school's America/Toronto local dates. Fall 2026 anchors below describe general undergraduate dates unless noted; professional programs can differ. Display windows are editorial only. Never infer a seasonal event tag from its date alone.",
+        "seasons": [
+          {
+            "id": "homecoming",
+            "instructions": "No verified Fall 2026 display window; classification still follows explicit source content.",
+            "display_windows": []
+          },
+          {
+            "id": "holidays",
+            "instructions": "This school is in Canada; local Thanksgiving is 2026-10-12. Windows are editorial discovery periods, not school closure dates. Tag explicit holiday celebrations, meals, parties or seasonal cultural gatherings only; do not tag generic autumn or December events. Halloween is October 31; its October 17-November 2 display window is editorial and does not assert a campus event or closure.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-28",
+                "end_date": "2026-10-14",
+                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html"
+              },
+              {
+                "start_date": "2026-10-17",
+                "end_date": "2026-11-02",
+                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween"
+              },
+              {
+                "start_date": "2026-12-01",
+                "end_date": "2026-12-22",
+                "source_url": "https://www.utm.utoronto.ca/hospitality/ImportantSMPDatesDeadlines"
+              }
+            ]
+          },
+          {
+            "id": "orientation",
+            "instructions": "UTM Orientation: 2026-09-04 to 2026-09-11. The filter begins 14 days earlier as an editorial discovery window. Tag only an explicit new-student welcome, orientation, frosh or campus transition activity; generic early-term events do not qualify.",
+            "display_windows": [
+              {
+                "start_date": "2026-08-21",
+                "end_date": "2026-09-11",
+                "source_url": "https://www.utm.utoronto.ca/new-students/"
+              }
+            ]
+          },
+          {
+            "id": "midterm_prep",
+            "instructions": "Fall 2026 classes begin 2026-09-08. The display period is editorial term days 22-70, not official midterm dates. Tag only explicit midterm preparation, review or study support.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-29",
+                "end_date": "2026-11-16",
+                "source_url": "https://www.utm.utoronto.ca/hospitality/ImportantSMPDatesDeadlines"
+              }
+            ]
+          },
+          {
+            "id": "exam_destress",
+            "instructions": "Editorial visibility during this school's verified-term preparation periods. Tag only explicit exam or midterm stress relief, not generic wellness.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-29",
+                "end_date": "2026-11-16",
+                "source_url": "https://www.utm.utoronto.ca/hospitality/ImportantSMPDatesDeadlines"
+              },
+              {
+                "start_date": "2026-11-26",
+                "end_date": "2026-12-22",
+                "source_url": "https://www.utm.utoronto.ca/hospitality/ImportantSMPDatesDeadlines"
+              }
+            ]
+          },
+          {
+            "id": "finals_prep",
+            "instructions": "Fall 2026 general finals or formal assessments run 2026-12-10 to 2026-12-22. The editorial filter begins 14 days earlier. Tag only explicit final-exam or end-of-term assessment preparation.",
+            "display_windows": [
+              {
+                "start_date": "2026-11-26",
+                "end_date": "2026-12-22",
+                "source_url": "https://www.utm.utoronto.ca/hospitality/ImportantSMPDatesDeadlines"
+              }
+            ]
+          }
+        ]
+      },
+      "mcgill": {
+        "instructions": "McGill University. Use this school's America/Toronto local dates. Fall 2026 anchors below describe general undergraduate dates unless noted; professional programs can differ. Display windows are editorial only. Never infer a seasonal event tag from its date alone.",
+        "seasons": [
+          {
+            "id": "homecoming",
+            "instructions": "McGill Homecoming: 2026-10-22 to 2026-10-24. The filter begins 14 days earlier as an editorial discovery window. Tag only an explicit homecoming, school reunion celebration, or named official homecoming program; generic football games and unrelated alumni talks do not qualify.",
+            "display_windows": [
+              {
+                "start_date": "2026-10-08",
+                "end_date": "2026-10-24",
+                "source_url": "https://www.mcgill.ca/education/channels/event/homecoming-weekend-374168"
+              }
+            ]
+          },
+          {
+            "id": "holidays",
+            "instructions": "This school is in Canada; local Thanksgiving is 2026-10-12. Windows are editorial discovery periods, not school closure dates. Tag explicit holiday celebrations, meals, parties or seasonal cultural gatherings only; do not tag generic autumn or December events. Halloween is October 31; its October 17-November 2 display window is editorial and does not assert a campus event or closure.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-28",
+                "end_date": "2026-10-14",
+                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html"
+              },
+              {
+                "start_date": "2026-10-17",
+                "end_date": "2026-11-02",
+                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween"
+              },
+              {
+                "start_date": "2026-12-01",
+                "end_date": "2026-12-22",
+                "source_url": "https://www.mcgill.ca/importantdates/key-dates"
+              }
+            ]
+          },
+          {
+            "id": "orientation",
+            "instructions": "Published welcome events August 21 onward, faculty orientations August 24-25, Frosh August 26/27-30 and Queer Orientation September 8. Verified anchors lie between 2026-08-21 and 2026-09-08; the editorial display span starts 14 days before the first anchor. Classification requires explicit seasonal source content, not just an event date.",
+            "display_windows": [
+              {
+                "start_date": "2026-08-07",
+                "end_date": "2026-09-08",
+                "source_url": "https://www.mcgill.ca/getready/orientation/undergraduate"
+              }
+            ]
+          },
+          {
+            "id": "midterm_prep",
+            "instructions": "Fall 2026 classes begin 2026-08-31. The display period is editorial term days 22-70, not official midterm dates. Tag only explicit midterm preparation, review or study support.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-21",
+                "end_date": "2026-11-08",
+                "source_url": "https://www.mcgill.ca/importantdates/key-dates"
+              }
+            ]
+          },
+          {
+            "id": "exam_destress",
+            "instructions": "Editorial visibility during this school's verified-term preparation periods. Tag only explicit exam or midterm stress relief, not generic wellness.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-21",
+                "end_date": "2026-11-08",
+                "source_url": "https://www.mcgill.ca/importantdates/key-dates"
+              },
+              {
+                "start_date": "2026-11-23",
+                "end_date": "2026-12-22",
+                "source_url": "https://www.mcgill.ca/importantdates/key-dates"
+              }
+            ]
+          },
+          {
+            "id": "finals_prep",
+            "instructions": "Fall 2026 general finals or formal assessments run 2026-12-07 to 2026-12-22. The editorial filter begins 14 days earlier. Tag only explicit final-exam or end-of-term assessment preparation.",
+            "display_windows": [
+              {
+                "start_date": "2026-11-23",
+                "end_date": "2026-12-22",
+                "source_url": "https://www.mcgill.ca/importantdates/key-dates"
+              }
+            ]
+          }
+        ]
+      },
+      "mcmaster": {
+        "instructions": "McMaster University. Use this school's America/Toronto local dates. Fall 2026 anchors below describe general undergraduate dates unless noted; professional programs can differ. Display windows are editorial only. Never infer a seasonal event tag from its date alone.",
+        "seasons": [
+          {
+            "id": "homecoming",
+            "instructions": "McMaster Homecoming: 2026-09-19 to 2026-09-19. The filter begins 14 days earlier as an editorial discovery window. Tag only an explicit homecoming, school reunion celebration, or named official homecoming program; generic football games and unrelated alumni talks do not qualify.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-05",
+                "end_date": "2026-09-19",
+                "source_url": "https://news.mcmaster.ca/homecoming-2026-have-fun-and-stay-safe/"
+              }
+            ]
+          },
+          {
+            "id": "holidays",
+            "instructions": "This school is in Canada; local Thanksgiving is 2026-10-12. Windows are editorial discovery periods, not school closure dates. Tag explicit holiday celebrations, meals, parties or seasonal cultural gatherings only; do not tag generic autumn or December events. Halloween is October 31; its October 17-November 2 display window is editorial and does not assert a campus event or closure.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-28",
+                "end_date": "2026-10-14",
+                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html"
+              },
+              {
+                "start_date": "2026-10-17",
+                "end_date": "2026-11-02",
+                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween"
+              },
+              {
+                "start_date": "2026-12-01",
+                "end_date": "2026-12-23",
+                "source_url": "https://registrar.mcmaster.ca/dates-and-deadlines/"
+              }
+            ]
+          },
+          {
+            "id": "orientation",
+            "instructions": "McMaster Welcome Week. Verified anchors lie between 2026-08-31 and 2026-09-04; the editorial display span starts 14 days before the first anchor. Classification requires explicit seasonal source content, not just an event date.",
+            "display_windows": [
+              {
+                "start_date": "2026-08-17",
+                "end_date": "2026-09-04",
+                "source_url": "https://www.humanities.mcmaster.ca/events/welcome-week-2026/"
+              }
+            ]
+          },
+          {
+            "id": "midterm_prep",
+            "instructions": "Fall 2026 classes begin 2026-09-08. The display period is editorial term days 22-70, not official midterm dates. Tag only explicit midterm preparation, review or study support.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-29",
+                "end_date": "2026-11-16",
+                "source_url": "https://registrar.mcmaster.ca/dates-and-deadlines/"
+              }
+            ]
+          },
+          {
+            "id": "exam_destress",
+            "instructions": "Editorial visibility during this school's verified-term preparation periods. Tag only explicit exam or midterm stress relief, not generic wellness.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-29",
+                "end_date": "2026-11-16",
+                "source_url": "https://registrar.mcmaster.ca/dates-and-deadlines/"
+              },
+              {
+                "start_date": "2026-11-27",
+                "end_date": "2026-12-23",
+                "source_url": "https://registrar.mcmaster.ca/dates-and-deadlines/"
+              }
+            ]
+          },
+          {
+            "id": "finals_prep",
+            "instructions": "Fall 2026 general finals or formal assessments run 2026-12-11 to 2026-12-23. The editorial filter begins 14 days earlier. Tag only explicit final-exam or end-of-term assessment preparation.",
+            "display_windows": [
+              {
+                "start_date": "2026-11-27",
+                "end_date": "2026-12-23",
+                "source_url": "https://registrar.mcmaster.ca/dates-and-deadlines/"
+              }
+            ]
+          }
+        ]
+      },
+      "uwo": {
+        "instructions": "University of Western Ontario. Use this school's America/Toronto local dates. Fall 2026 anchors below describe general undergraduate dates unless noted; professional programs can differ. Display windows are editorial only. Never infer a seasonal event tag from its date alone.",
+        "seasons": [
+          {
+            "id": "homecoming",
+            "instructions": "Western Homecoming: 2026-09-25 to 2026-09-27. The filter begins 14 days earlier as an editorial discovery window. Tag only an explicit homecoming, school reunion celebration, or named official homecoming program; generic football games and unrelated alumni talks do not qualify.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-11",
+                "end_date": "2026-09-27",
+                "source_url": "https://www.uwo.ca/events/2026/09/homecoming-2026.html"
+              }
+            ]
+          },
+          {
+            "id": "holidays",
+            "instructions": "This school is in Canada; local Thanksgiving is 2026-10-12. Windows are editorial discovery periods, not school closure dates. Tag explicit holiday celebrations, meals, parties or seasonal cultural gatherings only; do not tag generic autumn or December events. Halloween is October 31; its October 17-November 2 display window is editorial and does not assert a campus event or closure.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-28",
+                "end_date": "2026-10-14",
+                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html"
+              },
+              {
+                "start_date": "2026-10-17",
+                "end_date": "2026-11-02",
+                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween"
+              },
+              {
+                "start_date": "2026-12-01",
+                "end_date": "2026-12-22",
+                "source_url": "https://www.uwo.ca/philosophy/undergraduate/important%20dates.html"
+              }
+            ]
+          },
+          {
+            "id": "orientation",
+            "instructions": "Residence welcome September 5-7 and OWeek September 7-12. Verified anchors lie between 2026-09-05 and 2026-09-12; the editorial display span starts 14 days before the first anchor. Classification requires explicit seasonal source content, not just an event date.",
+            "display_windows": [
+              {
+                "start_date": "2026-08-22",
+                "end_date": "2026-09-12",
+                "source_url": "https://www.residence.uwo.ca/resources/movein_planning_guide"
+              }
+            ]
+          },
+          {
+            "id": "midterm_prep",
+            "instructions": "Fall 2026 classes begin 2026-09-09. The display period is editorial term days 22-70, not official midterm dates. Tag only explicit midterm preparation, review or study support.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-30",
+                "end_date": "2026-11-17",
+                "source_url": "https://www.uwo.ca/philosophy/undergraduate/important%20dates.html"
+              }
+            ]
+          },
+          {
+            "id": "exam_destress",
+            "instructions": "Editorial visibility during this school's verified-term preparation periods. Tag only explicit exam or midterm stress relief, not generic wellness.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-30",
+                "end_date": "2026-11-17",
+                "source_url": "https://www.uwo.ca/philosophy/undergraduate/important%20dates.html"
+              },
+              {
+                "start_date": "2026-11-27",
+                "end_date": "2026-12-22",
+                "source_url": "https://www.uwo.ca/philosophy/undergraduate/important%20dates.html"
+              }
+            ]
+          },
+          {
+            "id": "finals_prep",
+            "instructions": "Fall 2026 general finals or formal assessments run 2026-12-11 to 2026-12-22. The editorial filter begins 14 days earlier. Tag only explicit final-exam or end-of-term assessment preparation.",
+            "display_windows": [
+              {
+                "start_date": "2026-11-27",
+                "end_date": "2026-12-22",
+                "source_url": "https://www.uwo.ca/philosophy/undergraduate/important%20dates.html"
+              }
+            ]
+          }
+        ]
+      },
+      "queensu": {
+        "instructions": "Queen's University. Use this school's America/Toronto local dates. Fall 2026 anchors below describe general undergraduate dates unless noted; professional programs can differ. Display windows are editorial only. Never infer a seasonal event tag from its date alone.",
+        "seasons": [
+          {
+            "id": "homecoming",
+            "instructions": "Queen's Homecoming centenary: 2026-10-16 to 2026-10-18. The filter begins 14 days earlier as an editorial discovery window. Tag only an explicit homecoming, school reunion celebration, or named official homecoming program; generic football games and unrelated alumni talks do not qualify.",
+            "display_windows": [
+              {
+                "start_date": "2026-10-02",
+                "end_date": "2026-10-18",
+                "source_url": "https://www.queensu.ca/alumnireview/sites/alumnireview/files/2025-11/QAR-ISS03-25.pdf"
+              }
+            ]
+          },
+          {
+            "id": "holidays",
+            "instructions": "This school is in Canada; local Thanksgiving is 2026-10-12. Windows are editorial discovery periods, not school closure dates. Tag explicit holiday celebrations, meals, parties or seasonal cultural gatherings only; do not tag generic autumn or December events. Halloween is October 31; its October 17-November 2 display window is editorial and does not assert a campus event or closure.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-28",
+                "end_date": "2026-10-14",
+                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html"
+              },
+              {
+                "start_date": "2026-10-17",
+                "end_date": "2026-11-02",
+                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween"
+              },
+              {
+                "start_date": "2026-12-01",
+                "end_date": "2026-12-23",
+                "source_url": "https://www.queensu.ca/registrar/key-dates"
+              }
+            ]
+          },
+          {
+            "id": "orientation",
+            "instructions": "QUIC International Welcome August 31-September 4, followed by faculty orientation including Engineering September 6-7 and 12-13. Verified anchors lie between 2026-08-31 and 2026-09-13; the editorial display span starts 14 days before the first anchor. Classification requires explicit seasonal source content, not just an event date.",
+            "display_windows": [
+              {
+                "start_date": "2026-08-17",
+                "end_date": "2026-09-13",
+                "source_url": "https://www.engsoc.queensu.ca/get-involved/orientation-week/"
+              }
+            ]
+          },
+          {
+            "id": "midterm_prep",
+            "instructions": "Fall 2026 classes begin 2026-09-08. The display period is editorial term days 22-70, not official midterm dates. Tag explicit midterm preparation, review or study support.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-29",
+                "end_date": "2026-11-16",
+                "source_url": "https://www.queensu.ca/registrar/sites/uregwww/files/uploaded_files/pdfs/Sessional%20Dates/2026-27/OURCoreAcadSessionalDates_2026_27.pdf"
+              }
+            ]
+          },
+          {
+            "id": "exam_destress",
+            "instructions": "Editorial visibility during this school's verified-term preparation periods. Tag only explicit exam or midterm stress relief, not generic wellness.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-29",
+                "end_date": "2026-11-16",
+                "source_url": "https://www.queensu.ca/registrar/sites/uregwww/files/uploaded_files/pdfs/Sessional%20Dates/2026-27/OURCoreAcadSessionalDates_2026_27.pdf"
+              },
+              {
+                "start_date": "2026-11-26",
+                "end_date": "2026-12-23",
+                "source_url": "https://www.queensu.ca/registrar/key-dates"
+              }
+            ]
+          },
+          {
+            "id": "finals_prep",
+            "instructions": "Fall 2026 general finals or formal assessments run 2026-12-10 to 2026-12-23. The editorial filter begins 14 days earlier. Tag only explicit final-exam or end-of-term assessment preparation.",
+            "display_windows": [
+              {
+                "start_date": "2026-11-26",
+                "end_date": "2026-12-23",
+                "source_url": "https://www.queensu.ca/registrar/key-dates"
+              }
+            ]
+          }
+        ]
+      },
+      "carleton": {
+        "instructions": "Carleton University. Use this school's America/Toronto local dates. Fall 2026 anchors below describe general undergraduate dates unless noted; professional programs can differ. Display windows are editorial only. Never infer a seasonal event tag from its date alone.",
+        "seasons": [
+          {
+            "id": "homecoming",
+            "instructions": "Throwback, the school's named homecoming celebration: 2026-10-01 to 2026-10-04. The filter begins 14 days earlier as an editorial discovery window. Tag only an explicit homecoming, school reunion celebration, or named official homecoming program; generic football games and unrelated alumni talks do not qualify.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-17",
+                "end_date": "2026-10-04",
+                "source_url": "https://alumni.carleton.ca/homepage/events/throwback/"
+              }
+            ]
+          },
+          {
+            "id": "holidays",
+            "instructions": "This school is in Canada; local Thanksgiving is 2026-10-12. Windows are editorial discovery periods, not school closure dates. Tag explicit holiday celebrations, meals, parties or seasonal cultural gatherings only; do not tag generic autumn or December events. Halloween is October 31; its October 17-November 2 display window is editorial and does not assert a campus event or closure.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-28",
+                "end_date": "2026-10-14",
+                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html"
+              },
+              {
+                "start_date": "2026-10-17",
+                "end_date": "2026-11-02",
+                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween"
+              },
+              {
+                "start_date": "2026-12-01",
+                "end_date": "2026-12-23",
+                "source_url": "https://calendar.carleton.ca/academicyear/"
+              }
+            ]
+          },
+          {
+            "id": "orientation",
+            "instructions": "Academic orientation day: 2026-09-08 to 2026-09-08. The filter begins 14 days earlier as an editorial discovery window. Tag only an explicit new-student welcome, orientation, frosh or campus transition activity; generic early-term events do not qualify.",
+            "display_windows": [
+              {
+                "start_date": "2026-08-25",
+                "end_date": "2026-09-08",
+                "source_url": "https://calendar.carleton.ca/academicyear/"
+              }
+            ]
+          },
+          {
+            "id": "midterm_prep",
+            "instructions": "Fall 2026 classes begin 2026-09-09. The display period is editorial term days 22-70, not official midterm dates. Tag only explicit midterm preparation, review or study support.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-30",
+                "end_date": "2026-11-17",
+                "source_url": "https://calendar.carleton.ca/academicyear/"
+              }
+            ]
+          },
+          {
+            "id": "exam_destress",
+            "instructions": "Editorial visibility during this school's verified-term preparation periods. Tag only explicit exam or midterm stress relief, not generic wellness.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-30",
+                "end_date": "2026-11-17",
+                "source_url": "https://calendar.carleton.ca/academicyear/"
+              },
+              {
+                "start_date": "2026-11-28",
+                "end_date": "2026-12-23",
+                "source_url": "https://calendar.carleton.ca/academicyear/"
+              }
+            ]
+          },
+          {
+            "id": "finals_prep",
+            "instructions": "Fall 2026 general finals or formal assessments run 2026-12-12 to 2026-12-23. The editorial filter begins 14 days earlier. Tag only explicit final-exam or end-of-term assessment preparation.",
+            "display_windows": [
+              {
+                "start_date": "2026-11-28",
+                "end_date": "2026-12-23",
+                "source_url": "https://calendar.carleton.ca/academicyear/"
+              }
+            ]
+          }
+        ]
+      },
+      "brocku": {
+        "instructions": "Brock University. Use this school's America/Toronto local dates. Fall 2026 anchors below describe general undergraduate dates unless noted; professional programs can differ. Display windows are editorial only. Never infer a seasonal event tag from its date alone.",
+        "seasons": [
+          {
+            "id": "homecoming",
+            "instructions": "Brock Homecoming: 2026-09-18 to 2026-09-20. The filter begins 14 days earlier as an editorial discovery window. Tag only an explicit homecoming, school reunion celebration, or named official homecoming program; generic football games and unrelated alumni talks do not qualify.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-04",
+                "end_date": "2026-09-20",
+                "source_url": "https://brocku.ca/homecoming/"
+              }
+            ]
+          },
+          {
+            "id": "holidays",
+            "instructions": "This school is in Canada; local Thanksgiving is 2026-10-12. Windows are editorial discovery periods, not school closure dates. Tag explicit holiday celebrations, meals, parties or seasonal cultural gatherings only; do not tag generic autumn or December events. Halloween is October 31; its October 17-November 2 display window is editorial and does not assert a campus event or closure.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-28",
+                "end_date": "2026-10-14",
+                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html"
+              },
+              {
+                "start_date": "2026-10-17",
+                "end_date": "2026-11-02",
+                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween"
+              },
+              {
+                "start_date": "2026-12-01",
+                "end_date": "2026-12-23",
+                "source_url": "https://brocku.ca/important-dates/academic-term/"
+              }
+            ]
+          },
+          {
+            "id": "orientation",
+            "instructions": "Brock Welcome Weekend and Welcome Week. Verified anchors lie between 2026-09-05 and 2026-09-12; the editorial display span starts 14 days before the first anchor. Classification requires explicit seasonal source content, not just an event date.",
+            "display_windows": [
+              {
+                "start_date": "2026-08-22",
+                "end_date": "2026-09-12",
+                "source_url": "https://brocku.ca/brock-news/2026/09/week-of-events-to-welcome-badgers-back-to-campus/"
+              }
+            ]
+          },
+          {
+            "id": "midterm_prep",
+            "instructions": "Fall 2026 classes begin 2026-09-09. The display period is editorial term days 22-70, not official midterm dates. Tag only explicit midterm preparation, review or study support.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-30",
+                "end_date": "2026-11-17",
+                "source_url": "https://brocku.ca/important-dates/academic-term/"
+              }
+            ]
+          },
+          {
+            "id": "exam_destress",
+            "instructions": "Editorial visibility during this school's verified-term preparation periods. Tag only explicit exam or midterm stress relief, not generic wellness.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-30",
+                "end_date": "2026-11-17",
+                "source_url": "https://brocku.ca/important-dates/academic-term/"
+              },
+              {
+                "start_date": "2026-11-27",
+                "end_date": "2026-12-23",
+                "source_url": "https://brocku.ca/important-dates/academic-term/"
+              }
+            ]
+          },
+          {
+            "id": "finals_prep",
+            "instructions": "Fall 2026 general finals or formal assessments run 2026-12-11 to 2026-12-23. The editorial filter begins 14 days earlier. Tag only explicit final-exam or end-of-term assessment preparation.",
+            "display_windows": [
+              {
+                "start_date": "2026-11-27",
+                "end_date": "2026-12-23",
+                "source_url": "https://brocku.ca/important-dates/academic-term/"
+              }
+            ]
+          }
+        ]
+      },
+      "wlu": {
+        "instructions": "Wilfrid Laurier University. Use this school's America/Toronto local dates. Fall 2026 anchors below describe general undergraduate dates unless noted; professional programs can differ. Display windows are editorial only. Never infer a seasonal event tag from its date alone.",
+        "seasons": [
+          {
+            "id": "homecoming",
+            "instructions": "Laurier Waterloo Homecoming; do not assume Brantford shares these dates: 2026-09-23 to 2026-09-27. The filter begins 14 days earlier as an editorial discovery window. Tag only an explicit homecoming, school reunion celebration, or named official homecoming program; generic football games and unrelated alumni talks do not qualify.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-09",
+                "end_date": "2026-09-27",
+                "source_url": "https://students.wlu.ca/news/2026/fall/homecoming-events-for-students-and-reminders.html"
+              }
+            ]
+          },
+          {
+            "id": "holidays",
+            "instructions": "This school is in Canada; local Thanksgiving is 2026-10-12. Windows are editorial discovery periods, not school closure dates. Tag explicit holiday celebrations, meals, parties or seasonal cultural gatherings only; do not tag generic autumn or December events. Halloween is October 31; its October 17-November 2 display window is editorial and does not assert a campus event or closure.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-28",
+                "end_date": "2026-10-14",
+                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html"
+              },
+              {
+                "start_date": "2026-10-17",
+                "end_date": "2026-11-02",
+                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween"
+              },
+              {
+                "start_date": "2026-12-01",
+                "end_date": "2026-12-23",
+                "source_url": "https://students.wlu.ca/academics/support-and-advising/calendars-and-petitions/important-dates-and-deadlines.html"
+              }
+            ]
+          },
+          {
+            "id": "orientation",
+            "instructions": "Waterloo and Brantford orientation September 7-12; Milton September 9-10 falls within this span. Verified anchors lie between 2026-09-07 and 2026-09-12; the editorial display span starts 14 days before the first anchor. Classification requires explicit seasonal source content, not just an event date.",
+            "display_windows": [
+              {
+                "start_date": "2026-08-24",
+                "end_date": "2026-09-12",
+                "source_url": "https://students.wlu.ca/support-and-wellness/orientation/undergraduate.html"
+              }
+            ]
+          },
+          {
+            "id": "midterm_prep",
+            "instructions": "Fall 2026 classes begin 2026-09-10. The display period is editorial term days 22-70, not official midterm dates. Tag only explicit midterm preparation, review or study support.",
+            "display_windows": [
+              {
+                "start_date": "2026-10-01",
+                "end_date": "2026-11-18",
+                "source_url": "https://students.wlu.ca/academics/support-and-advising/calendars-and-petitions/important-dates-and-deadlines.html"
+              }
+            ]
+          },
+          {
+            "id": "exam_destress",
+            "instructions": "Editorial visibility during this school's verified-term preparation periods. Tag only explicit exam or midterm stress relief, not generic wellness.",
+            "display_windows": [
+              {
+                "start_date": "2026-10-01",
+                "end_date": "2026-11-18",
+                "source_url": "https://students.wlu.ca/academics/support-and-advising/calendars-and-petitions/important-dates-and-deadlines.html"
+              },
+              {
+                "start_date": "2026-11-28",
+                "end_date": "2026-12-23",
+                "source_url": "https://students.wlu.ca/academics/support-and-advising/calendars-and-petitions/important-dates-and-deadlines.html"
+              }
+            ]
+          },
+          {
+            "id": "finals_prep",
+            "instructions": "Fall 2026 general finals or formal assessments run 2026-12-12 to 2026-12-23. The editorial filter begins 14 days earlier. Tag only explicit final-exam or end-of-term assessment preparation.",
+            "display_windows": [
+              {
+                "start_date": "2026-11-28",
+                "end_date": "2026-12-23",
+                "source_url": "https://students.wlu.ca/academics/support-and-advising/calendars-and-petitions/important-dates-and-deadlines.html"
+              }
+            ]
+          }
+        ]
+      },
+      "yorku": {
+        "instructions": "York University. Use this school's America/Toronto local dates. Fall 2026 anchors below describe general undergraduate dates unless noted; professional programs can differ. Display windows are editorial only. Never infer a seasonal event tag from its date alone.",
+        "seasons": [
+          {
+            "id": "homecoming",
+            "instructions": "No verified Fall 2026 display window; classification still follows explicit source content.",
+            "display_windows": []
+          },
+          {
+            "id": "holidays",
+            "instructions": "This school is in Canada; local Thanksgiving is 2026-10-12. Windows are editorial discovery periods, not school closure dates. Tag explicit holiday celebrations, meals, parties or seasonal cultural gatherings only; do not tag generic autumn or December events. Halloween is October 31; its October 17-November 2 display window is editorial and does not assert a campus event or closure.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-28",
+                "end_date": "2026-10-14",
+                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html"
+              },
+              {
+                "start_date": "2026-10-17",
+                "end_date": "2026-11-02",
+                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween"
+              },
+              {
+                "start_date": "2026-12-01",
+                "end_date": "2026-12-23",
+                "source_url": "https://registrar.yorku.ca/enrol/dates/2026-2027/fall-winter"
+              }
+            ]
+          },
+          {
+            "id": "orientation",
+            "instructions": "York social orientation; Lassonde and Glendon separately confirm the same August 30-September 6 dates. Verified anchors lie between 2026-08-30 and 2026-09-06; the editorial display span starts 14 days before the first anchor. Classification requires explicit seasonal source content, not just an event date.",
+            "display_windows": [
+              {
+                "start_date": "2026-08-16",
+                "end_date": "2026-09-06",
+                "source_url": "https://www.yorku.ca/colleges/bethune/orientation/"
+              }
+            ]
+          },
+          {
+            "id": "midterm_prep",
+            "instructions": "Fall 2026 classes begin 2026-09-09. The display period is editorial term days 22-70, not official midterm dates. Tag only explicit midterm preparation, review or study support.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-30",
+                "end_date": "2026-11-17",
+                "source_url": "https://registrar.yorku.ca/enrol/dates/2026-2027/fall-winter"
+              }
+            ]
+          },
+          {
+            "id": "exam_destress",
+            "instructions": "Editorial visibility during this school's verified-term preparation periods. Tag only explicit exam or midterm stress relief, not generic wellness.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-30",
+                "end_date": "2026-11-17",
+                "source_url": "https://registrar.yorku.ca/enrol/dates/2026-2027/fall-winter"
+              },
+              {
+                "start_date": "2026-11-26",
+                "end_date": "2026-12-23",
+                "source_url": "https://registrar.yorku.ca/enrol/dates/2026-2027/fall-winter"
+              }
+            ]
+          },
+          {
+            "id": "finals_prep",
+            "instructions": "Fall 2026 general finals or formal assessments run 2026-12-10 to 2026-12-23. The editorial filter begins 14 days earlier. Tag only explicit final-exam or end-of-term assessment preparation.",
+            "display_windows": [
+              {
+                "start_date": "2026-11-26",
+                "end_date": "2026-12-23",
+                "source_url": "https://registrar.yorku.ca/enrol/dates/2026-2027/fall-winter"
+              }
+            ]
+          }
+        ]
+      },
+      "tmu": {
+        "instructions": "Toronto Metropolitan University. Use this school's America/Toronto local dates. Fall 2026 anchors below describe general undergraduate dates unless noted; professional programs can differ. Display windows are editorial only. Never infer a seasonal event tag from its date alone.",
+        "seasons": [
+          {
+            "id": "homecoming",
+            "instructions": "No verified Fall 2026 display window; classification still follows explicit source content.",
+            "display_windows": []
+          },
+          {
+            "id": "holidays",
+            "instructions": "This school is in Canada; local Thanksgiving is 2026-10-12. Windows are editorial discovery periods, not school closure dates. Tag explicit holiday celebrations, meals, parties or seasonal cultural gatherings only; do not tag generic autumn or December events. Halloween is October 31; its October 17-November 2 display window is editorial and does not assert a campus event or closure.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-28",
+                "end_date": "2026-10-14",
+                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html"
+              },
+              {
+                "start_date": "2026-10-17",
+                "end_date": "2026-11-02",
+                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween"
+              },
+              {
+                "start_date": "2026-12-01",
+                "end_date": "2026-12-20",
+                "source_url": "https://www.torontomu.ca/calendar/2026-2027/dates/"
+              }
+            ]
+          },
+          {
+            "id": "orientation",
+            "instructions": "RoadToTMU orientation. Verified anchors lie between 2026-08-30 and 2026-09-07; the editorial display span starts 14 days before the first anchor. Classification requires explicit seasonal source content, not just an event date.",
+            "display_windows": [
+              {
+                "start_date": "2026-08-16",
+                "end_date": "2026-09-07",
+                "source_url": "https://www.torontomu.ca/student-life-and-learning/first-year/orientation/"
+              }
+            ]
+          },
+          {
+            "id": "midterm_prep",
+            "instructions": "Fall 2026 classes begin 2026-09-08. The display period is editorial term days 22-70, not official midterm dates. Tag only explicit midterm preparation, review or study support.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-29",
+                "end_date": "2026-11-16",
+                "source_url": "https://www.torontomu.ca/calendar/2026-2027/dates/"
+              }
+            ]
+          },
+          {
+            "id": "exam_destress",
+            "instructions": "Editorial visibility during this school's verified-term preparation periods. Tag only explicit exam or midterm stress relief, not generic wellness.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-29",
+                "end_date": "2026-11-16",
+                "source_url": "https://www.torontomu.ca/calendar/2026-2027/dates/"
+              },
+              {
+                "start_date": "2026-11-25",
+                "end_date": "2026-12-20",
+                "source_url": "https://www.torontomu.ca/calendar/2026-2027/dates/"
+              }
+            ]
+          },
+          {
+            "id": "finals_prep",
+            "instructions": "Fall 2026 general finals or formal assessments run 2026-12-09 to 2026-12-20. The editorial filter begins 14 days earlier. Tag only explicit final-exam or end-of-term assessment preparation.",
+            "display_windows": [
+              {
+                "start_date": "2026-11-25",
+                "end_date": "2026-12-20",
+                "source_url": "https://www.torontomu.ca/calendar/2026-2027/dates/"
+              }
+            ]
+          }
+        ]
+      },
+      "ottawa": {
+        "instructions": "University of Ottawa. Use this school's America/Toronto local dates. Fall 2026 anchors below describe general undergraduate dates unless noted; professional programs can differ. Display windows are editorial only. Never infer a seasonal event tag from its date alone.",
+        "seasons": [
+          {
+            "id": "homecoming",
+            "instructions": "uOttawa Homecoming: 2026-10-01 to 2026-10-04. The filter begins 14 days earlier as an editorial discovery window. Tag only an explicit homecoming, school reunion celebration, or named official homecoming program; generic football games and unrelated alumni talks do not qualify.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-17",
+                "end_date": "2026-10-04",
+                "source_url": "https://www.uottawa.ca/alumni/homecoming-2026"
+              }
+            ]
+          },
+          {
+            "id": "holidays",
+            "instructions": "This school is in Canada; local Thanksgiving is 2026-10-12. Windows are editorial discovery periods, not school closure dates. Tag explicit holiday celebrations, meals, parties or seasonal cultural gatherings only; do not tag generic autumn or December events. Halloween is October 31; its October 17-November 2 display window is editorial and does not assert a campus event or closure.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-28",
+                "end_date": "2026-10-14",
+                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html"
+              },
+              {
+                "start_date": "2026-10-17",
+                "end_date": "2026-11-02",
+                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween"
+              },
+              {
+                "start_date": "2026-12-01",
+                "end_date": "2026-12-22",
+                "source_url": "https://www.uottawa.ca/study/important-academic-dates-deadlines"
+              }
+            ]
+          },
+          {
+            "id": "orientation",
+            "instructions": "Published Faculty of Education welcome program; university and Social Sciences academic orientation September 8. Verified anchors lie between 2026-09-01 and 2026-09-08; the editorial display span starts 14 days before the first anchor. Classification requires explicit seasonal source content, not just an event date.",
+            "display_windows": [
+              {
+                "start_date": "2026-08-18",
+                "end_date": "2026-09-08",
+                "source_url": "https://www.uottawa.ca/en/events-all/faculty-education-welcome-week-2026"
+              }
+            ]
+          },
+          {
+            "id": "midterm_prep",
+            "instructions": "Fall 2026 classes begin 2026-09-09. The display period is editorial term days 22-70, not official midterm dates. Tag only explicit midterm preparation, review or study support.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-30",
+                "end_date": "2026-11-17",
+                "source_url": "https://www.uottawa.ca/study/important-academic-dates-deadlines"
+              }
+            ]
+          },
+          {
+            "id": "exam_destress",
+            "instructions": "Editorial visibility during this school's verified-term preparation periods. Tag only explicit exam or midterm stress relief, not generic wellness.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-30",
+                "end_date": "2026-11-17",
+                "source_url": "https://www.uottawa.ca/study/important-academic-dates-deadlines"
+              },
+              {
+                "start_date": "2026-11-26",
+                "end_date": "2026-12-22",
+                "source_url": "https://www.uottawa.ca/study/important-academic-dates-deadlines"
+              }
+            ]
+          },
+          {
+            "id": "finals_prep",
+            "instructions": "General final examination period: 2026-12-10 to 2026-12-22. Display begins 14 days before the first listed exam date and does not override program schedules.",
+            "display_windows": [
+              {
+                "start_date": "2026-11-26",
+                "end_date": "2026-12-22",
+                "source_url": "https://www.uottawa.ca/study/important-academic-dates-deadlines"
+              }
+            ]
+          }
+        ]
+      },
+      "ocadu": {
+        "instructions": "OCAD University. Use this school's America/Toronto local dates. Fall 2026 anchors below describe general undergraduate dates unless noted; professional programs can differ. Display windows are editorial only. Never infer a seasonal event tag from its date alone.",
+        "seasons": [
+          {
+            "id": "homecoming",
+            "instructions": "No verified Fall 2026 display window; classification still follows explicit source content.",
+            "display_windows": []
+          },
+          {
+            "id": "holidays",
+            "instructions": "This school is in Canada; local Thanksgiving is 2026-10-12. Windows are editorial discovery periods, not school closure dates. Tag explicit holiday celebrations, meals, parties or seasonal cultural gatherings only; do not tag generic autumn or December events. Halloween is October 31; its October 17-November 2 display window is editorial and does not assert a campus event or closure.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-28",
+                "end_date": "2026-10-14",
+                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html"
+              },
+              {
+                "start_date": "2026-10-17",
+                "end_date": "2026-11-02",
+                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween"
+              },
+              {
+                "start_date": "2026-12-01",
+                "end_date": "2026-12-20",
+                "source_url": "https://www.ocadu.ca/student-services/office-registrar/dates-and-deadlines"
+              }
+            ]
+          },
+          {
+            "id": "orientation",
+            "instructions": "OCAD Welcome Day: 2026-09-08 to 2026-09-08. The filter begins 14 days earlier as an editorial discovery window. Tag only an explicit new-student welcome, orientation, frosh or campus transition activity; generic early-term events do not qualify.",
+            "display_windows": [
+              {
+                "start_date": "2026-08-25",
+                "end_date": "2026-09-08",
+                "source_url": "https://www.ocadu.ca/student-services/office-registrar/dates-and-deadlines"
+              }
+            ]
+          },
+          {
+            "id": "midterm_prep",
+            "instructions": "Fall 2026 classes begin 2026-09-09. The display period is editorial term days 22-70, not official midterm dates. Tag only explicit midterm preparation, review or study support.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-30",
+                "end_date": "2026-11-17",
+                "source_url": "https://www.ocadu.ca/student-services/office-registrar/dates-and-deadlines"
+              }
+            ]
+          },
+          {
+            "id": "exam_destress",
+            "instructions": "Editorial visibility during this school's verified-term preparation periods. Tag only explicit exam or midterm stress relief, not generic wellness.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-30",
+                "end_date": "2026-11-17",
+                "source_url": "https://www.ocadu.ca/student-services/office-registrar/dates-and-deadlines"
+              },
+              {
+                "start_date": "2026-11-27",
+                "end_date": "2026-12-20",
+                "source_url": "https://www.ocadu.ca/student-services/office-registrar/dates-and-deadlines"
+              }
+            ]
+          },
+          {
+            "id": "finals_prep",
+            "instructions": "Fall 2026 general finals or formal assessments run 2026-12-11 to 2026-12-20. The editorial filter begins 14 days earlier. Tag only explicit final-exam or end-of-term assessment preparation.",
+            "display_windows": [
+              {
+                "start_date": "2026-11-27",
+                "end_date": "2026-12-20",
+                "source_url": "https://www.ocadu.ca/student-services/office-registrar/dates-and-deadlines"
+              }
+            ]
+          }
+        ]
+      },
+      "ualberta": {
+        "instructions": "University of Alberta. Use this school's America/Edmonton local dates. Fall 2026 anchors below describe general undergraduate dates unless noted; professional programs can differ. Display windows are editorial only. Never infer a seasonal event tag from its date alone.",
+        "seasons": [
+          {
+            "id": "homecoming",
+            "instructions": "No verified Fall 2026 display window; classification still follows explicit source content.",
+            "display_windows": []
+          },
+          {
+            "id": "holidays",
+            "instructions": "This school is in Canada; local Thanksgiving is 2026-10-12. Windows are editorial discovery periods, not school closure dates. Tag explicit holiday celebrations, meals, parties or seasonal cultural gatherings only; do not tag generic autumn or December events. Halloween is October 31; its October 17-November 2 display window is editorial and does not assert a campus event or closure.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-28",
+                "end_date": "2026-10-14",
+                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html"
+              },
+              {
+                "start_date": "2026-10-17",
+                "end_date": "2026-11-02",
+                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween"
+              },
+              {
+                "start_date": "2026-12-01",
+                "end_date": "2026-12-22",
+                "source_url": "https://www.ualberta.ca/en/registrar/examinations/exam-schedules/exam-schedule-change-faq.html"
+              }
+            ]
+          },
+          {
+            "id": "orientation",
+            "instructions": "Central admissions handbook orientation August 30-31 and Week of Welcome September 1-4. Verified anchors lie between 2026-08-30 and 2026-09-04; the editorial display span starts 14 days before the first anchor. Classification requires explicit seasonal source content, not just an event date.",
+            "display_windows": [
+              {
+                "start_date": "2026-08-16",
+                "end_date": "2026-09-04",
+                "source_url": "https://www.ualberta.ca/en/admissions/media-library/uai-assets/docs/viewbook-2026-27/handbook-parents-2026-27-web.pdf"
+              }
+            ]
+          },
+          {
+            "id": "midterm_prep",
+            "instructions": "Fall 2026 classes begin 2026-09-01. The display period is editorial term days 22-70, not official midterm dates. Tag explicit midterm preparation, review or study support.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-22",
+                "end_date": "2026-11-09",
+                "source_url": "https://www.ualberta.ca/en/admissions/media-library/uai-assets/docs/viewbook-2026-27/handbook-parents-2026-27-web.pdf"
+              }
+            ]
+          },
+          {
+            "id": "exam_destress",
+            "instructions": "Editorial visibility during this school's verified-term preparation periods. Tag only explicit exam or midterm stress relief, not generic wellness.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-22",
+                "end_date": "2026-11-09",
+                "source_url": "https://www.ualberta.ca/en/admissions/media-library/uai-assets/docs/viewbook-2026-27/handbook-parents-2026-27-web.pdf"
+              },
+              {
+                "start_date": "2026-11-25",
+                "end_date": "2026-12-22",
+                "source_url": "https://www.ualberta.ca/en/registrar/examinations/exam-schedules/exam-schedule-change-faq.html"
+              }
+            ]
+          },
+          {
+            "id": "finals_prep",
+            "instructions": "Current central Registrar final examination period; evening-course exams may remain in the last regular class period: 2026-12-09 to 2026-12-22. Display begins 14 days before the first listed exam date and does not override program schedules.",
+            "display_windows": [
+              {
+                "start_date": "2026-11-25",
+                "end_date": "2026-12-22",
+                "source_url": "https://www.ualberta.ca/en/registrar/examinations/exam-schedules/exam-schedule-change-faq.html"
+              }
+            ]
+          }
+        ]
+      },
+      "ulaval": {
+        "instructions": "Université Laval. Use this school's America/Toronto local dates. Fall 2026 anchors below describe general undergraduate dates unless noted; professional programs can differ. Display windows are editorial only. Never infer a seasonal event tag from its date alone.",
+        "seasons": [
+          {
+            "id": "homecoming",
+            "instructions": "No verified Fall 2026 display window; classification still follows explicit source content.",
+            "display_windows": []
+          },
+          {
+            "id": "holidays",
+            "instructions": "This school is in Canada; local Thanksgiving is 2026-10-12. Windows are editorial discovery periods, not school closure dates. Tag explicit holiday celebrations, meals, parties or seasonal cultural gatherings only; do not tag generic autumn or December events. Halloween is October 31; its October 17-November 2 display window is editorial and does not assert a campus event or closure.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-28",
+                "end_date": "2026-10-14",
+                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html"
+              },
+              {
+                "start_date": "2026-10-17",
+                "end_date": "2026-11-02",
+                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween"
+              },
+              {
+                "start_date": "2026-12-01",
+                "end_date": "2026-12-20",
+                "source_url": "https://www.ulaval.ca/sites/default/files/notre-universite/direction-gouv/Documents_officiels/Calendrier_universitaire/Calendrier_universitaire_2026-2027.pdf"
+              }
+            ]
+          },
+          {
+            "id": "orientation",
+            "instructions": "Published graduate welcome days; undergraduate programs can differ: 2026-08-31 to 2026-09-01. The filter begins 14 days earlier as an editorial discovery window. Tag only an explicit new-student welcome, orientation, frosh or campus transition activity; generic early-term events do not qualify.",
+            "display_windows": [
+              {
+                "start_date": "2026-08-17",
+                "end_date": "2026-09-01",
+                "source_url": "https://www.fesp.ulaval.ca/evenements/rentree-ulaval-automne-2026"
+              }
+            ]
+          },
+          {
+            "id": "midterm_prep",
+            "instructions": "Fall 2026 classes begin 2026-08-31. The display period is editorial term days 22-70, not official midterm dates. Tag only explicit midterm preparation, review or study support.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-21",
+                "end_date": "2026-11-08",
+                "source_url": "https://www.ulaval.ca/calendrier-ulaval/session-dautomne-2026-du-31-aout-au-11-decembre-excluant-la-semaine-dexamens-prevue-au-calendrier"
+              }
+            ]
+          },
+          {
+            "id": "exam_destress",
+            "instructions": "Editorial visibility during this school's verified-term preparation periods. Tag only explicit exam or midterm stress relief, not generic wellness.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-21",
+                "end_date": "2026-11-08",
+                "source_url": "https://www.ulaval.ca/calendrier-ulaval/session-dautomne-2026-du-31-aout-au-11-decembre-excluant-la-semaine-dexamens-prevue-au-calendrier"
+              },
+              {
+                "start_date": "2026-11-30",
+                "end_date": "2026-12-20",
+                "source_url": "https://www.ulaval.ca/sites/default/files/notre-universite/direction-gouv/Documents_officiels/Calendrier_universitaire/Calendrier_universitaire_2026-2027.pdf"
+              }
+            ]
+          },
+          {
+            "id": "finals_prep",
+            "instructions": "Reserved examination week for exams outside normal class times and rooms; in-class and faculty assessments can occur earlier: 2026-12-14 to 2026-12-20. Display begins 14 days before the first listed exam date and does not override program schedules.",
+            "display_windows": [
+              {
+                "start_date": "2026-11-30",
+                "end_date": "2026-12-20",
+                "source_url": "https://www.ulaval.ca/sites/default/files/notre-universite/direction-gouv/Documents_officiels/Calendrier_universitaire/Calendrier_universitaire_2026-2027.pdf"
+              }
+            ]
+          }
+        ]
+      },
+      "mun": {
+        "instructions": "Memorial University of Newfoundland. Use this school's America/St_Johns local dates. Fall 2026 anchors below describe general undergraduate dates unless noted; professional programs can differ. Display windows are editorial only. Never infer a seasonal event tag from its date alone.",
+        "seasons": [
+          {
+            "id": "homecoming",
+            "instructions": "No verified Fall 2026 display window; classification still follows explicit source content.",
+            "display_windows": []
+          },
+          {
+            "id": "holidays",
+            "instructions": "This school is in Canada; local Thanksgiving is 2026-10-12. Windows are editorial discovery periods, not school closure dates. Tag explicit holiday celebrations, meals, parties or seasonal cultural gatherings only; do not tag generic autumn or December events. Halloween is October 31; its October 17-November 2 display window is editorial and does not assert a campus event or closure.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-28",
+                "end_date": "2026-10-14",
+                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html"
+              },
+              {
+                "start_date": "2026-10-17",
+                "end_date": "2026-11-02",
+                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween"
+              },
+              {
+                "start_date": "2026-12-01",
+                "end_date": "2026-12-18",
+                "source_url": "https://www.mun.ca/university-calendar/diary-of-important-dates/"
+              }
+            ]
+          },
+          {
+            "id": "orientation",
+            "instructions": "Memorial Fall Welcome weeks 1 and 2; academic orientation September 8. Verified anchors lie between 2026-09-06 and 2026-09-19; the editorial display span starts 14 days before the first anchor. Classification requires explicit seasonal source content, not just an event date.",
+            "display_windows": [
+              {
+                "start_date": "2026-08-23",
+                "end_date": "2026-09-19",
+                "source_url": "https://www.mun.ca/student/new-students/welcome-and-orientation/fall-welcome-2026/"
+              }
+            ]
+          },
+          {
+            "id": "midterm_prep",
+            "instructions": "Fall 2026 classes begin 2026-09-09. The display period is editorial term days 22-70, not official midterm dates. Tag only explicit midterm preparation, review or study support.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-30",
+                "end_date": "2026-11-17",
+                "source_url": "https://www.mun.ca/university-calendar/diary-of-important-dates/"
+              }
+            ]
+          },
+          {
+            "id": "exam_destress",
+            "instructions": "Editorial visibility during this school's verified-term preparation periods. Tag only explicit exam or midterm stress relief, not generic wellness.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-30",
+                "end_date": "2026-11-17",
+                "source_url": "https://www.mun.ca/university-calendar/diary-of-important-dates/"
+              },
+              {
+                "start_date": "2026-11-26",
+                "end_date": "2026-12-18",
+                "source_url": "https://www.mun.ca/university-calendar/diary-of-important-dates/"
+              }
+            ]
+          },
+          {
+            "id": "finals_prep",
+            "instructions": "Fall 2026 general finals or formal assessments run 2026-12-10 to 2026-12-18. The editorial filter begins 14 days earlier. Tag only explicit final-exam or end-of-term assessment preparation.",
+            "display_windows": [
+              {
+                "start_date": "2026-11-26",
+                "end_date": "2026-12-18",
+                "source_url": "https://www.mun.ca/university-calendar/diary-of-important-dates/"
+              }
+            ]
+          }
+        ]
+      },
+      "sfu": {
+        "instructions": "Simon Fraser University. Use this school's America/Vancouver local dates. Fall 2026 anchors below describe general undergraduate dates unless noted; professional programs can differ. Display windows are editorial only. Never infer a seasonal event tag from its date alone.",
+        "seasons": [
+          {
+            "id": "homecoming",
+            "instructions": "No verified Fall 2026 display window; classification still follows explicit source content.",
+            "display_windows": []
+          },
+          {
+            "id": "holidays",
+            "instructions": "This school is in Canada; local Thanksgiving is 2026-10-12. Windows are editorial discovery periods, not school closure dates. Tag explicit holiday celebrations, meals, parties or seasonal cultural gatherings only; do not tag generic autumn or December events. Halloween is October 31; its October 17-November 2 display window is editorial and does not assert a campus event or closure.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-28",
+                "end_date": "2026-10-14",
+                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html"
+              },
+              {
+                "start_date": "2026-10-17",
+                "end_date": "2026-11-02",
+                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween"
+              },
+              {
+                "start_date": "2026-12-01",
+                "end_date": "2026-12-20",
+                "source_url": "https://www.sfu.ca/students/calendar/2026/fall.html"
+              }
+            ]
+          },
+          {
+            "id": "orientation",
+            "instructions": "SFU Welcome Day: 2026-09-08 to 2026-09-08. The filter begins 14 days earlier as an editorial discovery window. Tag only an explicit new-student welcome, orientation, frosh or campus transition activity; generic early-term events do not qualify.",
+            "display_windows": [
+              {
+                "start_date": "2026-08-25",
+                "end_date": "2026-09-08",
+                "source_url": "https://www.sfu.ca/students/calendar/2026/fall.html"
+              }
+            ]
+          },
+          {
+            "id": "midterm_prep",
+            "instructions": "Fall 2026 classes begin 2026-09-09. The display period is editorial term days 22-70, not official midterm dates. Tag only explicit midterm preparation, review or study support.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-30",
+                "end_date": "2026-11-17",
+                "source_url": "https://www.sfu.ca/students/calendar/2026/fall.html"
+              }
+            ]
+          },
+          {
+            "id": "exam_destress",
+            "instructions": "Editorial visibility during this school's verified-term preparation periods. Tag only explicit exam or midterm stress relief, not generic wellness.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-30",
+                "end_date": "2026-11-17",
+                "source_url": "https://www.sfu.ca/students/calendar/2026/fall.html"
+              },
+              {
+                "start_date": "2026-11-25",
+                "end_date": "2026-12-20",
+                "source_url": "https://www.sfu.ca/students/calendar/2026/fall.html"
+              }
+            ]
+          },
+          {
+            "id": "finals_prep",
+            "instructions": "Fall 2026 general finals or formal assessments run 2026-12-09 to 2026-12-20. The editorial filter begins 14 days earlier. Tag only explicit final-exam or end-of-term assessment preparation.",
+            "display_windows": [
+              {
+                "start_date": "2026-11-25",
+                "end_date": "2026-12-20",
+                "source_url": "https://www.sfu.ca/students/calendar/2026/fall.html"
+              }
+            ]
+          }
+        ]
+      },
+      "udem": {
+        "instructions": "Université de Montréal. Use this school's America/Toronto local dates. Fall 2026 anchors below describe general undergraduate dates unless noted; professional programs can differ. Display windows are editorial only. Never infer a seasonal event tag from its date alone.",
+        "seasons": [
+          {
+            "id": "homecoming",
+            "instructions": "No verified Fall 2026 display window; classification still follows explicit source content.",
+            "display_windows": []
+          },
+          {
+            "id": "holidays",
+            "instructions": "This school is in Canada; local Thanksgiving is 2026-10-12. Windows are editorial discovery periods, not school closure dates. Tag explicit holiday celebrations, meals, parties or seasonal cultural gatherings only; do not tag generic autumn or December events. Halloween is October 31; its October 17-November 2 display window is editorial and does not assert a campus event or closure.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-28",
+                "end_date": "2026-10-14",
+                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html"
+              },
+              {
+                "start_date": "2026-10-17",
+                "end_date": "2026-11-02",
+                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween"
+              },
+              {
+                "start_date": "2026-12-01",
+                "end_date": "2026-12-23",
+                "source_url": "https://registraire.umontreal.ca/dates-importantes/calendriers-universitaires/"
+              }
+            ]
+          },
+          {
+            "id": "orientation",
+            "instructions": "Verified institutional student welcome celebration on August 26; not an invented full welcome-week range. Verified anchors lie between 2026-08-26 and 2026-08-26; the editorial display span starts 14 days before the first anchor. Classification requires explicit seasonal source content, not just an event date.",
+            "display_windows": [
+              {
+                "start_date": "2026-08-12",
+                "end_date": "2026-08-26",
+                "source_url": "https://nouvelles.umontreal.ca/article/2026/08/31/retour-en-images-sur-la-fete-de-la-rentree"
+              }
+            ]
+          },
+          {
+            "id": "midterm_prep",
+            "instructions": "Fall 2026 classes begin 2026-09-01. The display period is editorial term days 22-70, not official midterm dates. Tag only explicit midterm preparation, review or study support.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-22",
+                "end_date": "2026-11-09",
+                "source_url": "https://registraire.umontreal.ca/dates-importantes/calendriers-universitaires/"
+              }
+            ]
+          },
+          {
+            "id": "exam_destress",
+            "instructions": "Editorial visibility during this school's verified-term preparation periods. Tag only explicit exam or midterm stress relief, not generic wellness.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-22",
+                "end_date": "2026-11-09",
+                "source_url": "https://registraire.umontreal.ca/dates-importantes/calendriers-universitaires/"
+              }
+            ]
+          },
+          {
+            "id": "finals_prep",
+            "instructions": "No verified Fall 2026 display window; classification still follows explicit source content.",
+            "display_windows": []
+          }
+        ]
+      },
+      "umanitoba": {
+        "instructions": "University of Manitoba. Use this school's America/Winnipeg local dates. Fall 2026 anchors below describe general undergraduate dates unless noted; professional programs can differ. Display windows are editorial only. Never infer a seasonal event tag from its date alone.",
+        "seasons": [
+          {
+            "id": "homecoming",
+            "instructions": "UM Homecoming: 2026-09-18 to 2026-09-26. The filter begins 14 days earlier as an editorial discovery window. Tag only an explicit homecoming, school reunion celebration, or named official homecoming program; generic football games and unrelated alumni talks do not qualify.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-04",
+                "end_date": "2026-09-26",
+                "source_url": "https://umanitoba.ca/community/alumni/homecoming"
+              }
+            ]
+          },
+          {
+            "id": "holidays",
+            "instructions": "This school is in Canada; local Thanksgiving is 2026-10-12. Windows are editorial discovery periods, not school closure dates. Tag explicit holiday celebrations, meals, parties or seasonal cultural gatherings only; do not tag generic autumn or December events. Halloween is October 31; its October 17-November 2 display window is editorial and does not assert a campus event or closure.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-28",
+                "end_date": "2026-10-14",
+                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html"
+              },
+              {
+                "start_date": "2026-10-17",
+                "end_date": "2026-11-02",
+                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween"
+              },
+              {
+                "start_date": "2026-12-01",
+                "end_date": "2026-12-23",
+                "source_url": "https://catalog.umanitoba.ca/undergraduate-studies/academic-schedule/"
+              }
+            ]
+          },
+          {
+            "id": "orientation",
+            "instructions": "UM Welcome Day: 2026-09-08 to 2026-09-08. The filter begins 14 days earlier as an editorial discovery window. Tag only an explicit new-student welcome, orientation, frosh or campus transition activity; generic early-term events do not qualify.",
+            "display_windows": [
+              {
+                "start_date": "2026-08-25",
+                "end_date": "2026-09-08",
+                "source_url": "https://catalog.umanitoba.ca/undergraduate-studies/academic-schedule/"
+              }
+            ]
+          },
+          {
+            "id": "midterm_prep",
+            "instructions": "Fall 2026 classes begin 2026-09-09. The display period is editorial term days 22-70, not official midterm dates. Tag only explicit midterm preparation, review or study support.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-30",
+                "end_date": "2026-11-17",
+                "source_url": "https://catalog.umanitoba.ca/undergraduate-studies/academic-schedule/"
+              }
+            ]
+          },
+          {
+            "id": "exam_destress",
+            "instructions": "Editorial visibility during this school's verified-term preparation periods. Tag only explicit exam or midterm stress relief, not generic wellness.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-30",
+                "end_date": "2026-11-17",
+                "source_url": "https://catalog.umanitoba.ca/undergraduate-studies/academic-schedule/"
+              },
+              {
+                "start_date": "2026-11-28",
+                "end_date": "2026-12-23",
+                "source_url": "https://catalog.umanitoba.ca/undergraduate-studies/academic-schedule/"
+              }
+            ]
+          },
+          {
+            "id": "finals_prep",
+            "instructions": "Fall 2026 general finals or formal assessments run 2026-12-12 to 2026-12-23. The editorial filter begins 14 days earlier. Tag only explicit final-exam or end-of-term assessment preparation.",
+            "display_windows": [
+              {
+                "start_date": "2026-11-28",
+                "end_date": "2026-12-23",
+                "source_url": "https://catalog.umanitoba.ca/undergraduate-studies/academic-schedule/"
+              }
+            ]
+          }
+        ]
+      },
+      "concordia": {
+        "instructions": "Concordia University. Use this school's America/Toronto local dates. Fall 2026 anchors below describe general undergraduate dates unless noted; professional programs can differ. Display windows are editorial only. Never infer a seasonal event tag from its date alone.",
+        "seasons": [
+          {
+            "id": "homecoming",
+            "instructions": "Concordia Homecoming: 2026-09-17 to 2026-09-19. The filter begins 14 days earlier as an editorial discovery window. Tag only an explicit homecoming, school reunion celebration, or named official homecoming program; generic football games and unrelated alumni talks do not qualify.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-03",
+                "end_date": "2026-09-19",
+                "source_url": "https://www.concordia.ca/cunews/offices/advancement/2026/09/10/celebrate-concordia-at-homecoming-2026.html"
+              }
+            ]
+          },
+          {
+            "id": "holidays",
+            "instructions": "This school is in Canada; local Thanksgiving is 2026-10-12. Windows are editorial discovery periods, not school closure dates. Tag explicit holiday celebrations, meals, parties or seasonal cultural gatherings only; do not tag generic autumn or December events. Halloween is October 31; its October 17-November 2 display window is editorial and does not assert a campus event or closure.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-28",
+                "end_date": "2026-10-14",
+                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html"
+              },
+              {
+                "start_date": "2026-10-17",
+                "end_date": "2026-11-02",
+                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween"
+              },
+              {
+                "start_date": "2026-12-01",
+                "end_date": "2026-12-22",
+                "source_url": "https://www.concordia.ca/students/registration/term-dates-deadlines.html"
+              }
+            ]
+          },
+          {
+            "id": "orientation",
+            "instructions": "Undergraduate CONNECT September 2 and graduate CONNECT September 3. Verified anchors lie between 2026-09-02 and 2026-09-03; the editorial display span starts 14 days before the first anchor. Classification requires explicit seasonal source content, not just an event date.",
+            "display_windows": [
+              {
+                "start_date": "2026-08-19",
+                "end_date": "2026-09-03",
+                "source_url": "https://www.concordia.ca/students/new/orientation/connect.html"
+              }
+            ]
+          },
+          {
+            "id": "midterm_prep",
+            "instructions": "Fall 2026 classes begin 2026-09-08. The display period is editorial term days 22-70, not official midterm dates. Tag only explicit midterm preparation, review or study support.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-29",
+                "end_date": "2026-11-16",
+                "source_url": "https://www.concordia.ca/students/registration/term-dates-deadlines.html"
+              }
+            ]
+          },
+          {
+            "id": "exam_destress",
+            "instructions": "Editorial visibility during this school's verified-term preparation periods. Tag only explicit exam or midterm stress relief, not generic wellness.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-29",
+                "end_date": "2026-11-16",
+                "source_url": "https://www.concordia.ca/students/registration/term-dates-deadlines.html"
+              },
+              {
+                "start_date": "2026-11-25",
+                "end_date": "2026-12-22",
+                "source_url": "https://www.concordia.ca/students/registration/term-dates-deadlines.html"
+              }
+            ]
+          },
+          {
+            "id": "finals_prep",
+            "instructions": "Fall 2026 general finals or formal assessments run 2026-12-09 to 2026-12-22. The editorial filter begins 14 days earlier. Tag only explicit final-exam or end-of-term assessment preparation.",
+            "display_windows": [
+              {
+                "start_date": "2026-11-25",
+                "end_date": "2026-12-22",
+                "source_url": "https://www.concordia.ca/students/registration/term-dates-deadlines.html"
+              }
+            ]
+          }
+        ]
+      },
+      "dalhousie": {
+        "instructions": "Dalhousie University. Use this school's America/Halifax local dates. Fall 2026 anchors below describe general undergraduate dates unless noted; professional programs can differ. Display windows are editorial only. Never infer a seasonal event tag from its date alone.",
+        "seasons": [
+          {
+            "id": "homecoming",
+            "instructions": "Dal Homecoming in Halifax; Agriculture campus has its own October program: 2026-09-26 to 2026-09-26. The filter begins 14 days earlier as an editorial discovery window. Tag only an explicit homecoming, school reunion celebration, or named official homecoming program; generic football games and unrelated alumni talks do not qualify.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-12",
+                "end_date": "2026-09-26",
+                "source_url": "https://events.dal.ca/"
+              }
+            ]
+          },
+          {
+            "id": "holidays",
+            "instructions": "This school is in Canada; local Thanksgiving is 2026-10-12. Windows are editorial discovery periods, not school closure dates. Tag explicit holiday celebrations, meals, parties or seasonal cultural gatherings only; do not tag generic autumn or December events. Halloween is October 31; its October 17-November 2 display window is editorial and does not assert a campus event or closure.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-28",
+                "end_date": "2026-10-14",
+                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html"
+              },
+              {
+                "start_date": "2026-10-17",
+                "end_date": "2026-11-02",
+                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween"
+              },
+              {
+                "start_date": "2026-12-01",
+                "end_date": "2026-12-20",
+                "source_url": "https://www.dal.ca/study/plan-your-degree/important-dates.html"
+              }
+            ]
+          },
+          {
+            "id": "orientation",
+            "instructions": "Halifax orientation September 3-12; Truro September 4-11 lies within the same display span: 2026-09-03 to 2026-09-12. The filter begins 14 days earlier as an editorial discovery window. Tag only an explicit new-student welcome, orientation, frosh or campus transition activity; generic early-term events do not qualify.",
+            "display_windows": [
+              {
+                "start_date": "2026-08-20",
+                "end_date": "2026-09-12",
+                "source_url": "https://www.dal.ca/study/plan-your-degree/important-dates.html"
+              }
+            ]
+          },
+          {
+            "id": "midterm_prep",
+            "instructions": "Fall 2026 classes begin 2026-09-08. The display period is editorial term days 22-70, not official midterm dates. Tag only explicit midterm preparation, review or study support.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-29",
+                "end_date": "2026-11-16",
+                "source_url": "https://www.dal.ca/study/plan-your-degree/important-dates.html"
+              }
+            ]
+          },
+          {
+            "id": "exam_destress",
+            "instructions": "Editorial visibility during this school's verified-term preparation periods. Tag only explicit exam or midterm stress relief, not generic wellness.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-29",
+                "end_date": "2026-11-16",
+                "source_url": "https://www.dal.ca/study/plan-your-degree/important-dates.html"
+              },
+              {
+                "start_date": "2026-11-27",
+                "end_date": "2026-12-20",
+                "source_url": "https://www.dal.ca/study/plan-your-degree/important-dates.html"
+              }
+            ]
+          },
+          {
+            "id": "finals_prep",
+            "instructions": "Fall 2026 general finals or formal assessments run 2026-12-11 to 2026-12-20. The editorial filter begins 14 days earlier. Tag only explicit final-exam or end-of-term assessment preparation.",
+            "display_windows": [
+              {
+                "start_date": "2026-11-27",
+                "end_date": "2026-12-20",
+                "source_url": "https://www.dal.ca/study/plan-your-degree/important-dates.html"
+              }
+            ]
+          }
+        ]
+      },
+      "guelph": {
+        "instructions": "University of Guelph. Use this school's America/Toronto local dates. Fall 2026 anchors below describe general undergraduate dates unless noted; professional programs can differ. Display windows are editorial only. Never infer a seasonal event tag from its date alone.",
+        "seasons": [
+          {
+            "id": "homecoming",
+            "instructions": "Guelph Homecoming: 2026-09-26 to 2026-09-26. The filter begins 14 days earlier as an editorial discovery window. Tag only an explicit homecoming, school reunion celebration, or named official homecoming program; generic football games and unrelated alumni talks do not qualify.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-12",
+                "end_date": "2026-09-26",
+                "source_url": "https://alumni.uoguelph.ca/events/alumni-end-zone-party-at-homecoming/"
+              }
+            ]
+          },
+          {
+            "id": "holidays",
+            "instructions": "This school is in Canada; local Thanksgiving is 2026-10-12. Windows are editorial discovery periods, not school closure dates. Tag explicit holiday celebrations, meals, parties or seasonal cultural gatherings only; do not tag generic autumn or December events. Halloween is October 31; its October 17-November 2 display window is editorial and does not assert a campus event or closure.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-28",
+                "end_date": "2026-10-14",
+                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html"
+              },
+              {
+                "start_date": "2026-10-17",
+                "end_date": "2026-11-02",
+                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween"
+              },
+              {
+                "start_date": "2026-12-01",
+                "end_date": "2026-12-22",
+                "source_url": "https://calendar.uoguelph.ca/undergraduate-calendar/schedule-dates/fall-semester/"
+              }
+            ]
+          },
+          {
+            "id": "orientation",
+            "instructions": "Student Experience O-Week dates; campus news and housing give longer spans, so use program owner's range. Verified anchors lie between 2026-09-04 and 2026-09-12; the editorial display span starts 14 days before the first anchor. Classification requires explicit seasonal source content, not just an event date.",
+            "display_windows": [
+              {
+                "start_date": "2026-08-21",
+                "end_date": "2026-09-12",
+                "source_url": "https://www.uoguelph.ca/studentexperience/oweek"
+              }
+            ]
+          },
+          {
+            "id": "midterm_prep",
+            "instructions": "Fall 2026 classes begin 2026-09-10. The display period is editorial term days 22-70, not official midterm dates. Tag only explicit midterm preparation, review or study support.",
+            "display_windows": [
+              {
+                "start_date": "2026-10-01",
+                "end_date": "2026-11-18",
+                "source_url": "https://calendar.uoguelph.ca/undergraduate-calendar/schedule-dates/fall-semester/"
+              }
+            ]
+          },
+          {
+            "id": "exam_destress",
+            "instructions": "Editorial visibility during this school's verified-term preparation periods. Tag only explicit exam or midterm stress relief, not generic wellness.",
+            "display_windows": [
+              {
+                "start_date": "2026-10-01",
+                "end_date": "2026-11-18",
+                "source_url": "https://calendar.uoguelph.ca/undergraduate-calendar/schedule-dates/fall-semester/"
+              },
+              {
+                "start_date": "2026-11-23",
+                "end_date": "2026-12-22",
+                "source_url": "https://calendar.uoguelph.ca/undergraduate-calendar/schedule-dates/fall-semester/"
+              }
+            ]
+          },
+          {
+            "id": "finals_prep",
+            "instructions": "Fall 2026 general finals or formal assessments run 2026-12-07 to 2026-12-22. The editorial filter begins 14 days earlier. Tag only explicit final-exam or end-of-term assessment preparation.",
+            "display_windows": [
+              {
+                "start_date": "2026-11-23",
+                "end_date": "2026-12-22",
+                "source_url": "https://calendar.uoguelph.ca/undergraduate-calendar/schedule-dates/fall-semester/"
+              }
+            ]
+          }
+        ]
+      },
+      "ucalgary": {
+        "instructions": "University of Calgary. Use this school's America/Edmonton local dates. Fall 2026 anchors below describe general undergraduate dates unless noted; professional programs can differ. Display windows are editorial only. Never infer a seasonal event tag from its date alone.",
+        "seasons": [
+          {
+            "id": "homecoming",
+            "instructions": "No verified Fall 2026 display window; classification still follows explicit source content.",
+            "display_windows": []
+          },
+          {
+            "id": "holidays",
+            "instructions": "This school is in Canada; local Thanksgiving is 2026-10-12. Windows are editorial discovery periods, not school closure dates. Tag explicit holiday celebrations, meals, parties or seasonal cultural gatherings only; do not tag generic autumn or December events. Halloween is October 31; its October 17-November 2 display window is editorial and does not assert a campus event or closure.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-28",
+                "end_date": "2026-10-14",
+                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html"
+              },
+              {
+                "start_date": "2026-10-17",
+                "end_date": "2026-11-02",
+                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween"
+              },
+              {
+                "start_date": "2026-12-01",
+                "end_date": "2026-12-18",
+                "source_url": "https://ucalgary.ca/registrar/dates"
+              }
+            ]
+          },
+          {
+            "id": "orientation",
+            "instructions": "Verified Graduate Orientation day; undergraduate orientation date range not confirmed. Verified anchors lie between 2026-08-26 and 2026-08-26; the editorial display span starts 14 days before the first anchor. Classification requires explicit seasonal source content, not just an event date.",
+            "display_windows": [
+              {
+                "start_date": "2026-08-12",
+                "end_date": "2026-08-26",
+                "source_url": "https://grad.ucalgary.ca/current-students/grad-student-orientation-portal"
+              }
+            ]
+          },
+          {
+            "id": "midterm_prep",
+            "instructions": "Fall 2026 classes begin 2026-09-01. The display period is editorial term days 22-70, not official midterm dates. Tag only explicit midterm preparation, review or study support.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-22",
+                "end_date": "2026-11-09",
+                "source_url": "https://ucalgary.ca/registrar/dates"
+              }
+            ]
+          },
+          {
+            "id": "exam_destress",
+            "instructions": "Editorial visibility during this school's verified-term preparation periods. Tag only explicit exam or midterm stress relief, not generic wellness.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-22",
+                "end_date": "2026-11-09",
+                "source_url": "https://ucalgary.ca/registrar/dates"
+              },
+              {
+                "start_date": "2026-11-24",
+                "end_date": "2026-12-18",
+                "source_url": "https://ucalgary.ca/registrar/dates"
+              }
+            ]
+          },
+          {
+            "id": "finals_prep",
+            "instructions": "Fall 2026 general finals or formal assessments run 2026-12-08 to 2026-12-18. The editorial filter begins 14 days earlier. Tag only explicit final-exam or end-of-term assessment preparation.",
+            "display_windows": [
+              {
+                "start_date": "2026-11-24",
+                "end_date": "2026-12-18",
+                "source_url": "https://ucalgary.ca/registrar/dates"
+              }
+            ]
+          }
+        ]
+      },
+      "usask": {
+        "instructions": "University of Saskatchewan. Use this school's America/Regina local dates. Fall 2026 anchors below describe general undergraduate dates unless noted; professional programs can differ. Display windows are editorial only. Never infer a seasonal event tag from its date alone.",
+        "seasons": [
+          {
+            "id": "homecoming",
+            "instructions": "USask Homecoming: 2026-09-11 to 2026-09-11. The filter begins 14 days earlier as an editorial discovery window. Tag only an explicit homecoming, school reunion celebration, or named official homecoming program; generic football games and unrelated alumni talks do not qualify.",
+            "display_windows": [
+              {
+                "start_date": "2026-08-28",
+                "end_date": "2026-09-11",
+                "source_url": "https://students.usask.ca/events-calendar/2026/09/usask-homecoming.php"
+              }
+            ]
+          },
+          {
+            "id": "holidays",
+            "instructions": "This school is in Canada; local Thanksgiving is 2026-10-12. Windows are editorial discovery periods, not school closure dates. Tag explicit holiday celebrations, meals, parties or seasonal cultural gatherings only; do not tag generic autumn or December events. Halloween is October 31; its October 17-November 2 display window is editorial and does not assert a campus event or closure.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-28",
+                "end_date": "2026-10-14",
+                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html"
+              },
+              {
+                "start_date": "2026-10-17",
+                "end_date": "2026-11-02",
+                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween"
+              },
+              {
+                "start_date": "2026-12-01",
+                "end_date": "2026-12-23",
+                "source_url": "https://students.usask.ca/academic-calendar/documents/academic-calendar-2026-2027.pdf"
+              }
+            ]
+          },
+          {
+            "id": "orientation",
+            "instructions": "USask Fall Welcome and college orientations September 1. Verified anchors lie between 2026-09-01 and 2026-09-01; the editorial display span starts 14 days before the first anchor. Classification requires explicit seasonal source content, not just an event date.",
+            "display_windows": [
+              {
+                "start_date": "2026-08-18",
+                "end_date": "2026-09-01",
+                "source_url": "https://students.usask.ca/events-calendar/2026/index.php"
+              }
+            ]
+          },
+          {
+            "id": "midterm_prep",
+            "instructions": "Fall 2026 classes begin 2026-09-02. The display period is editorial term days 22-70, not official midterm dates. Tag only explicit midterm preparation, review or study support.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-23",
+                "end_date": "2026-11-10",
+                "source_url": "https://students.usask.ca/academic-calendar/documents/academic-calendar-2026-2027.pdf"
+              }
+            ]
+          },
+          {
+            "id": "exam_destress",
+            "instructions": "Editorial visibility during this school's verified-term preparation periods. Tag only explicit exam or midterm stress relief, not generic wellness.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-23",
+                "end_date": "2026-11-10",
+                "source_url": "https://students.usask.ca/academic-calendar/documents/academic-calendar-2026-2027.pdf"
+              },
+              {
+                "start_date": "2026-11-24",
+                "end_date": "2026-12-23",
+                "source_url": "https://students.usask.ca/academic-calendar/documents/academic-calendar-2026-2027.pdf"
+              }
+            ]
+          },
+          {
+            "id": "finals_prep",
+            "instructions": "Fall 2026 general finals or formal assessments run 2026-12-08 to 2026-12-23. The editorial filter begins 14 days earlier. Tag only explicit final-exam or end-of-term assessment preparation.",
+            "display_windows": [
+              {
+                "start_date": "2026-11-24",
+                "end_date": "2026-12-23",
+                "source_url": "https://students.usask.ca/academic-calendar/documents/academic-calendar-2026-2027.pdf"
+              }
+            ]
+          }
+        ]
+      },
+      "uwindsor": {
+        "instructions": "University of Windsor. Use this school's America/Toronto local dates. Fall 2026 anchors below describe general undergraduate dates unless noted; professional programs can differ. Display windows are editorial only. Never infer a seasonal event tag from its date alone.",
+        "seasons": [
+          {
+            "id": "homecoming",
+            "instructions": "No verified Fall 2026 display window; classification still follows explicit source content.",
+            "display_windows": []
+          },
+          {
+            "id": "holidays",
+            "instructions": "This school is in Canada; local Thanksgiving is 2026-10-12. Windows are editorial discovery periods, not school closure dates. Tag explicit holiday celebrations, meals, parties or seasonal cultural gatherings only; do not tag generic autumn or December events. Halloween is October 31; its October 17-November 2 display window is editorial and does not assert a campus event or closure.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-28",
+                "end_date": "2026-10-14",
+                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html"
+              },
+              {
+                "start_date": "2026-10-17",
+                "end_date": "2026-11-02",
+                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween"
+              },
+              {
+                "start_date": "2026-12-01",
+                "end_date": "2026-12-22",
+                "source_url": "https://www.uwindsor.ca/registrar/event-calendar/2026-12"
+              }
+            ]
+          },
+          {
+            "id": "orientation",
+            "instructions": "Published Welcome Week event range; organizer planning pages extend to September 12. Verified anchors lie between 2026-09-06 and 2026-09-11; the editorial display span starts 14 days before the first anchor. Classification requires explicit seasonal source content, not just an event date.",
+            "display_windows": [
+              {
+                "start_date": "2026-08-23",
+                "end_date": "2026-09-11",
+                "source_url": "https://www.future.uwindsor.ca/event/welcome-week-2026/"
+              }
+            ]
+          },
+          {
+            "id": "midterm_prep",
+            "instructions": "Fall 2026 classes begin 2026-09-10. The display period is editorial term days 22-70, not official midterm dates. Tag only explicit midterm preparation, review or study support.",
+            "display_windows": [
+              {
+                "start_date": "2026-10-01",
+                "end_date": "2026-11-18",
+                "source_url": "https://www.uwindsor.ca/registrar/event-calendar/2026-12"
+              }
+            ]
+          },
+          {
+            "id": "exam_destress",
+            "instructions": "Editorial visibility during this school's verified-term preparation periods. Tag only explicit exam or midterm stress relief, not generic wellness.",
+            "display_windows": [
+              {
+                "start_date": "2026-10-01",
+                "end_date": "2026-11-18",
+                "source_url": "https://www.uwindsor.ca/registrar/event-calendar/2026-12"
+              },
+              {
+                "start_date": "2026-11-27",
+                "end_date": "2026-12-22",
+                "source_url": "https://www.uwindsor.ca/registrar/event-calendar/2026-12"
+              }
+            ]
+          },
+          {
+            "id": "finals_prep",
+            "instructions": "Fall 2026 general finals or formal assessments run 2026-12-11 to 2026-12-22. The editorial filter begins 14 days earlier. Tag only explicit final-exam or end-of-term assessment preparation.",
+            "display_windows": [
+              {
+                "start_date": "2026-11-27",
+                "end_date": "2026-12-22",
+                "source_url": "https://www.uwindsor.ca/registrar/event-calendar/2026-12"
+              }
+            ]
+          }
+        ]
+      },
+      "uqam": {
+        "instructions": "Université du Québec à Montréal. Use this school's America/Toronto local dates. Fall 2026 anchors below describe general undergraduate dates unless noted; professional programs can differ. Display windows are editorial only. Never infer a seasonal event tag from its date alone.",
+        "seasons": [
+          {
+            "id": "homecoming",
+            "instructions": "No verified Fall 2026 display window; classification still follows explicit source content.",
+            "display_windows": []
+          },
+          {
+            "id": "holidays",
+            "instructions": "This school is in Canada; local Thanksgiving is 2026-10-12. Windows are editorial discovery periods, not school closure dates. Tag explicit holiday celebrations, meals, parties or seasonal cultural gatherings only; do not tag generic autumn or December events. Halloween is October 31; its October 17-November 2 display window is editorial and does not assert a campus event or closure.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-28",
+                "end_date": "2026-10-14",
+                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html"
+              },
+              {
+                "start_date": "2026-10-17",
+                "end_date": "2026-11-02",
+                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween"
+              },
+              {
+                "start_date": "2026-12-01",
+                "end_date": "2026-12-23",
+                "source_url": "https://etudier.uqam.ca/calendriers"
+              }
+            ]
+          },
+          {
+            "id": "orientation",
+            "instructions": "UQAM Festival de la rentrée, a campus welcome celebration for the new term. Verified anchors lie between 2026-09-08 and 2026-09-10; the editorial display span starts 14 days before the first anchor. Classification requires explicit seasonal source content, not just an event date.",
+            "display_windows": [
+              {
+                "start_date": "2026-08-25",
+                "end_date": "2026-09-10",
+                "source_url": "https://actualites.uqam.ca/2026/festival-de-la-rentree-de-lautomne-2026/"
+              }
+            ]
+          },
+          {
+            "id": "midterm_prep",
+            "instructions": "Fall 2026 classes begin 2026-09-08. The display period is editorial term days 22-70, not official midterm dates. Tag only explicit midterm preparation, review or study support.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-29",
+                "end_date": "2026-11-16",
+                "source_url": "https://etudier.uqam.ca/calendriers"
+              }
+            ]
+          },
+          {
+            "id": "exam_destress",
+            "instructions": "Editorial visibility during this school's verified-term preparation periods. Tag only explicit exam or midterm stress relief, not generic wellness.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-29",
+                "end_date": "2026-11-16",
+                "source_url": "https://etudier.uqam.ca/calendriers"
+              }
+            ]
+          },
+          {
+            "id": "finals_prep",
+            "instructions": "No verified Fall 2026 display window; classification still follows explicit source content.",
+            "display_windows": []
+          }
+        ]
+      },
+      "ontariotech": {
+        "instructions": "Ontario Tech University. Use this school's America/Toronto local dates. Fall 2026 anchors below describe general undergraduate dates unless noted; professional programs can differ. Display windows are editorial only. Never infer a seasonal event tag from its date alone.",
+        "seasons": [
+          {
+            "id": "homecoming",
+            "instructions": "Ontario Tech Community Day featuring Homecoming: 2026-10-03 to 2026-10-03. The filter begins 14 days earlier as an editorial discovery window. Tag only an explicit homecoming, school reunion celebration, or named official homecoming program; generic football games and unrelated alumni talks do not qualify.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-19",
+                "end_date": "2026-10-03",
+                "source_url": "https://events.ontariotechu.ca/2026/10/ontario-tech-community-day-feat-chancellors-challenge-and-homecoming.php"
+              }
+            ]
+          },
+          {
+            "id": "holidays",
+            "instructions": "This school is in Canada; local Thanksgiving is 2026-10-12. Windows are editorial discovery periods, not school closure dates. Tag explicit holiday celebrations, meals, parties or seasonal cultural gatherings only; do not tag generic autumn or December events. Halloween is October 31; its October 17-November 2 display window is editorial and does not assert a campus event or closure.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-28",
+                "end_date": "2026-10-14",
+                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html"
+              },
+              {
+                "start_date": "2026-10-17",
+                "end_date": "2026-11-02",
+                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween"
+              },
+              {
+                "start_date": "2026-12-01",
+                "end_date": "2026-12-19",
+                "source_url": "https://registrar.ontariotechu.ca/academic-schedule/ug-academic-schedule.php"
+              }
+            ]
+          },
+          {
+            "id": "orientation",
+            "instructions": "Fall semester orientation: 2026-09-05 to 2026-09-07. The filter begins 14 days earlier as an editorial discovery window. Tag only an explicit new-student welcome, orientation, frosh or campus transition activity; generic early-term events do not qualify.",
+            "display_windows": [
+              {
+                "start_date": "2026-08-22",
+                "end_date": "2026-09-07",
+                "source_url": "https://registrar.ontariotechu.ca/academic-schedule/ug-academic-schedule.php"
+              }
+            ]
+          },
+          {
+            "id": "midterm_prep",
+            "instructions": "Fall 2026 classes begin 2026-09-08. The display period is editorial term days 22-70, not official midterm dates. Tag explicit midterm preparation, review or study support.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-29",
+                "end_date": "2026-11-16",
+                "source_url": "https://registrar.ontariotechu.ca/academic-schedule/ug-academic-schedule.php"
+              }
+            ]
+          },
+          {
+            "id": "exam_destress",
+            "instructions": "Editorial visibility during this school's verified-term preparation periods. Tag only explicit exam or midterm stress relief, not generic wellness.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-29",
+                "end_date": "2026-11-16",
+                "source_url": "https://registrar.ontariotechu.ca/academic-schedule/ug-academic-schedule.php"
+              },
+              {
+                "start_date": "2026-11-25",
+                "end_date": "2026-12-19",
+                "source_url": "https://registrar.ontariotechu.ca/academic-schedule/ug-academic-schedule.php"
+              }
+            ]
+          },
+          {
+            "id": "finals_prep",
+            "instructions": "Fall 2026 general finals or formal assessments run 2026-12-09 to 2026-12-19. The editorial filter begins 14 days earlier. Tag only explicit final-exam or end-of-term assessment preparation.",
+            "display_windows": [
+              {
+                "start_date": "2026-11-25",
+                "end_date": "2026-12-19",
+                "source_url": "https://registrar.ontariotechu.ca/academic-schedule/ug-academic-schedule.php"
+              }
+            ]
+          }
+        ]
+      },
+      "cornell": {
+        "instructions": "Cornell University. Use this school's America/New_York local dates. Fall 2026 anchors below describe general undergraduate dates unless noted; professional programs can differ. Display windows are editorial only. Never infer a seasonal event tag from its date alone.",
+        "seasons": [
+          {
+            "id": "homecoming",
+            "instructions": "Cornell Homecoming: 2026-10-16 to 2026-10-18. The filter begins 14 days earlier as an editorial discovery window. Tag only an explicit homecoming, school reunion celebration, or named official homecoming program; generic football games and unrelated alumni talks do not qualify.",
+            "display_windows": [
+              {
+                "start_date": "2026-10-02",
+                "end_date": "2026-10-18",
+                "source_url": "https://alumni.cornell.edu/come-back/homecoming/faq/"
+              }
+            ]
+          },
+          {
+            "id": "holidays",
+            "instructions": "This school is in the United States; local Thanksgiving is 2026-11-26. Windows are editorial discovery periods, not school closure dates. Tag explicit holiday celebrations, meals, parties or seasonal cultural gatherings only; do not tag generic autumn or December events. Halloween is October 31; its October 17-November 2 display window is editorial and does not assert a campus event or closure.",
+            "display_windows": [
+              {
+                "start_date": "2026-10-17",
+                "end_date": "2026-11-02",
+                "source_url": "https://www.census.gov/newsroom/facts-for-features/2025/halloween.html"
+              },
+              {
+                "start_date": "2026-11-12",
+                "end_date": "2026-11-28",
+                "source_url": "https://www.opm.gov/policy-data-oversight/pay-leave/federal-holidays/"
+              },
+              {
+                "start_date": "2026-12-01",
+                "end_date": "2026-12-19",
+                "source_url": "https://catalog.cornell.edu/enrollment-credit-requirements/academic-calendar/"
+              }
+            ]
+          },
+          {
+            "id": "orientation",
+            "instructions": "Cornell New Student Orientation. Verified anchors lie between 2026-08-18 and 2026-08-23; the editorial display span starts 14 days before the first anchor. Classification requires explicit seasonal source content, not just an event date.",
+            "display_windows": [
+              {
+                "start_date": "2026-08-04",
+                "end_date": "2026-08-23",
+                "source_url": "https://scl.cornell.edu/get-involved/tatkon-center-new-students/new-student-orientation"
+              }
+            ]
+          },
+          {
+            "id": "midterm_prep",
+            "instructions": "Fall 2026 classes begin 2026-08-24. The display period is editorial term days 22-70, not official midterm dates. Tag only explicit midterm preparation, review or study support.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-14",
+                "end_date": "2026-11-01",
+                "source_url": "https://catalog.cornell.edu/enrollment-credit-requirements/academic-calendar/"
+              }
+            ]
+          },
+          {
+            "id": "exam_destress",
+            "instructions": "Editorial visibility during this school's verified-term preparation periods. Tag only explicit exam or midterm stress relief, not generic wellness.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-14",
+                "end_date": "2026-11-01",
+                "source_url": "https://catalog.cornell.edu/enrollment-credit-requirements/academic-calendar/"
+              },
+              {
+                "start_date": "2026-11-27",
+                "end_date": "2026-12-19",
+                "source_url": "https://catalog.cornell.edu/enrollment-credit-requirements/academic-calendar/"
+              }
+            ]
+          },
+          {
+            "id": "finals_prep",
+            "instructions": "Fall 2026 general finals or formal assessments run 2026-12-11 to 2026-12-19. The editorial filter begins 14 days earlier. Tag only explicit final-exam or end-of-term assessment preparation.",
+            "display_windows": [
+              {
+                "start_date": "2026-11-27",
+                "end_date": "2026-12-19",
+                "source_url": "https://catalog.cornell.edu/enrollment-credit-requirements/academic-calendar/"
+              }
+            ]
+          }
+        ]
+      },
+      "nyu": {
+        "instructions": "New York University. Use this school's America/New_York local dates. Fall 2026 anchors below describe general undergraduate dates unless noted; professional programs can differ. Display windows are editorial only. Never infer a seasonal event tag from its date alone.",
+        "seasons": [
+          {
+            "id": "homecoming",
+            "instructions": "No verified Fall 2026 display window; classification still follows explicit source content.",
+            "display_windows": []
+          },
+          {
+            "id": "holidays",
+            "instructions": "This school is in the United States; local Thanksgiving is 2026-11-26. Windows are editorial discovery periods, not school closure dates. Tag explicit holiday celebrations, meals, parties or seasonal cultural gatherings only; do not tag generic autumn or December events. Halloween is October 31; its October 17-November 2 display window is editorial and does not assert a campus event or closure.",
+            "display_windows": [
+              {
+                "start_date": "2026-10-17",
+                "end_date": "2026-11-02",
+                "source_url": "https://www.census.gov/newsroom/facts-for-features/2025/halloween.html"
+              },
+              {
+                "start_date": "2026-11-12",
+                "end_date": "2026-11-28",
+                "source_url": "https://www.opm.gov/policy-data-oversight/pay-leave/federal-holidays/"
+              },
+              {
+                "start_date": "2026-12-01",
+                "end_date": "2026-12-22",
+                "source_url": "https://bulletins.nyu.edu/nyu/academic-calendar/"
+              }
+            ]
+          },
+          {
+            "id": "orientation",
+            "instructions": "Tisch Orientation, explicitly concurrent with NYU Welcome; other New York programs can differ. Verified anchors lie between 2026-08-29 and 2026-09-01; the editorial display span starts 14 days before the first anchor. Classification requires explicit seasonal source content, not just an event date.",
+            "display_windows": [
+              {
+                "start_date": "2026-08-15",
+                "end_date": "2026-09-01",
+                "source_url": "https://tisch.nyu.edu/student-affairs/tisch-orientation"
+              }
+            ]
+          },
+          {
+            "id": "midterm_prep",
+            "instructions": "Fall 2026 classes begin 2026-09-02. The display period is editorial term days 22-70, not official midterm dates. Tag only explicit midterm preparation, review or study support.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-23",
+                "end_date": "2026-11-10",
+                "source_url": "https://bulletins.nyu.edu/nyu/academic-calendar/"
+              }
+            ]
+          },
+          {
+            "id": "exam_destress",
+            "instructions": "Editorial visibility during this school's verified-term preparation periods. Tag only explicit exam or midterm stress relief, not generic wellness.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-23",
+                "end_date": "2026-11-10",
+                "source_url": "https://bulletins.nyu.edu/nyu/academic-calendar/"
+              },
+              {
+                "start_date": "2026-12-02",
+                "end_date": "2026-12-22",
+                "source_url": "https://bulletins.nyu.edu/nyu/academic-calendar/"
+              }
+            ]
+          },
+          {
+            "id": "finals_prep",
+            "instructions": "Fall 2026 general finals or formal assessments run 2026-12-16 to 2026-12-22. The editorial filter begins 14 days earlier. Tag only explicit final-exam or end-of-term assessment preparation.",
+            "display_windows": [
+              {
+                "start_date": "2026-12-02",
+                "end_date": "2026-12-22",
+                "source_url": "https://bulletins.nyu.edu/nyu/academic-calendar/"
+              }
+            ]
+          }
+        ]
+      },
+      "upenn": {
+        "instructions": "University of Pennsylvania. Use this school's America/New_York local dates. Fall 2026 anchors below describe general undergraduate dates unless noted; professional programs can differ. Display windows are editorial only. Never infer a seasonal event tag from its date alone.",
+        "seasons": [
+          {
+            "id": "homecoming",
+            "instructions": "Penn Homecoming: 2026-11-14 to 2026-11-14. The filter begins 14 days earlier as an editorial discovery window. Tag only an explicit homecoming, school reunion celebration, or named official homecoming program; generic football games and unrelated alumni talks do not qualify.",
+            "display_windows": [
+              {
+                "start_date": "2026-10-31",
+                "end_date": "2026-11-14",
+                "source_url": "https://almanac.upenn.edu/penn-academic-calendar"
+              }
+            ]
+          },
+          {
+            "id": "holidays",
+            "instructions": "This school is in the United States; local Thanksgiving is 2026-11-26. Windows are editorial discovery periods, not school closure dates. Tag explicit holiday celebrations, meals, parties or seasonal cultural gatherings only; do not tag generic autumn or December events. Halloween is October 31; its October 17-November 2 display window is editorial and does not assert a campus event or closure.",
+            "display_windows": [
+              {
+                "start_date": "2026-10-17",
+                "end_date": "2026-11-02",
+                "source_url": "https://www.census.gov/newsroom/facts-for-features/2025/halloween.html"
+              },
+              {
+                "start_date": "2026-11-12",
+                "end_date": "2026-11-28",
+                "source_url": "https://www.opm.gov/policy-data-oversight/pay-leave/federal-holidays/"
+              },
+              {
+                "start_date": "2026-12-01",
+                "end_date": "2026-12-17",
+                "source_url": "https://almanac.upenn.edu/penn-academic-calendar"
+              }
+            ]
+          },
+          {
+            "id": "orientation",
+            "instructions": "New student orientation August 19-24 and second-year orientation August 23-28: 2026-08-19 to 2026-08-28. The filter begins 14 days earlier as an editorial discovery window. Tag only an explicit new-student welcome, orientation, frosh or campus transition activity; generic early-term events do not qualify.",
+            "display_windows": [
+              {
+                "start_date": "2026-08-05",
+                "end_date": "2026-08-28",
+                "source_url": "https://almanac.upenn.edu/penn-academic-calendar"
+              }
+            ]
+          },
+          {
+            "id": "midterm_prep",
+            "instructions": "Fall 2026 classes begin 2026-08-25. The display period is editorial term days 22-70, not official midterm dates. Tag only explicit midterm preparation, review or study support.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-15",
+                "end_date": "2026-11-02",
+                "source_url": "https://almanac.upenn.edu/penn-academic-calendar"
+              }
+            ]
+          },
+          {
+            "id": "exam_destress",
+            "instructions": "Editorial visibility during this school's verified-term preparation periods. Tag only explicit exam or midterm stress relief, not generic wellness.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-15",
+                "end_date": "2026-11-02",
+                "source_url": "https://almanac.upenn.edu/penn-academic-calendar"
+              },
+              {
+                "start_date": "2026-11-26",
+                "end_date": "2026-12-17",
+                "source_url": "https://almanac.upenn.edu/penn-academic-calendar"
+              }
+            ]
+          },
+          {
+            "id": "finals_prep",
+            "instructions": "Fall 2026 general finals or formal assessments run 2026-12-10 to 2026-12-17. The editorial filter begins 14 days earlier. Tag only explicit final-exam or end-of-term assessment preparation.",
+            "display_windows": [
+              {
+                "start_date": "2026-11-26",
+                "end_date": "2026-12-17",
+                "source_url": "https://almanac.upenn.edu/penn-academic-calendar"
+              }
+            ]
+          }
+        ]
+      },
+      "columbia": {
+        "instructions": "Columbia University. Use this school's America/New_York local dates. Fall 2026 anchors below describe general undergraduate dates unless noted; professional programs can differ. Display windows are editorial only. Never infer a seasonal event tag from its date alone.",
+        "seasons": [
+          {
+            "id": "homecoming",
+            "instructions": "Columbia Homecoming; use dates only because opponent text conflicts with ISSO listing: 2026-10-23 to 2026-10-24. The filter begins 14 days earlier as an editorial discovery window. Tag only an explicit homecoming, school reunion celebration, or named official homecoming program; generic football games and unrelated alumni talks do not qualify.",
+            "display_windows": [
+              {
+                "start_date": "2026-10-09",
+                "end_date": "2026-10-24",
+                "source_url": "https://www.engineering.columbia.edu/about/events/columbia-homecoming-weekend-2026"
+              }
+            ]
+          },
+          {
+            "id": "holidays",
+            "instructions": "This school is in the United States; local Thanksgiving is 2026-11-26. Windows are editorial discovery periods, not school closure dates. Tag explicit holiday celebrations, meals, parties or seasonal cultural gatherings only; do not tag generic autumn or December events. Halloween is October 31; its October 17-November 2 display window is editorial and does not assert a campus event or closure.",
+            "display_windows": [
+              {
+                "start_date": "2026-10-17",
+                "end_date": "2026-11-02",
+                "source_url": "https://www.census.gov/newsroom/facts-for-features/2025/halloween.html"
+              },
+              {
+                "start_date": "2026-11-12",
+                "end_date": "2026-11-28",
+                "source_url": "https://www.opm.gov/policy-data-oversight/pay-leave/federal-holidays/"
+              },
+              {
+                "start_date": "2026-12-01",
+                "end_date": "2026-12-23",
+                "source_url": "https://bulletin.columbia.edu/columbia-college/academic-calendar/"
+              }
+            ]
+          },
+          {
+            "id": "orientation",
+            "instructions": "Published NSOP student-program dates, excluding August 25-28 leader training. Verified anchors lie between 2026-08-29 and 2026-09-07; the editorial display span starts 14 days before the first anchor. Classification requires explicit seasonal source content, not just an event date.",
+            "display_windows": [
+              {
+                "start_date": "2026-08-15",
+                "end_date": "2026-09-07",
+                "source_url": "https://www.cc-seas.columbia.edu/node/442643"
+              }
+            ]
+          },
+          {
+            "id": "midterm_prep",
+            "instructions": "Fall 2026 classes begin 2026-09-08. The display period is editorial term days 22-70, not official midterm dates. Tag only explicit midterm preparation, review or study support.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-29",
+                "end_date": "2026-11-16",
+                "source_url": "https://bulletin.columbia.edu/columbia-college/academic-calendar/"
+              }
+            ]
+          },
+          {
+            "id": "exam_destress",
+            "instructions": "Editorial visibility during this school's verified-term preparation periods. Tag only explicit exam or midterm stress relief, not generic wellness.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-29",
+                "end_date": "2026-11-16",
+                "source_url": "https://bulletin.columbia.edu/columbia-college/academic-calendar/"
+              },
+              {
+                "start_date": "2026-12-03",
+                "end_date": "2026-12-23",
+                "source_url": "https://bulletin.columbia.edu/columbia-college/academic-calendar/"
+              }
+            ]
+          },
+          {
+            "id": "finals_prep",
+            "instructions": "Fall 2026 general finals or formal assessments run 2026-12-17 to 2026-12-23. The editorial filter begins 14 days earlier. Tag only explicit final-exam or end-of-term assessment preparation.",
+            "display_windows": [
+              {
+                "start_date": "2026-12-03",
+                "end_date": "2026-12-23",
+                "source_url": "https://bulletin.columbia.edu/columbia-college/academic-calendar/"
+              }
+            ]
+          }
+        ]
+      },
+      "mit": {
+        "instructions": "Massachusetts Institute of Technology. Use this school's America/New_York local dates. Fall 2026 anchors below describe general undergraduate dates unless noted; professional programs can differ. Display windows are editorial only. Never infer a seasonal event tag from its date alone.",
+        "seasons": [
+          {
+            "id": "homecoming",
+            "instructions": "No verified Fall 2026 display window; classification still follows explicit source content.",
+            "display_windows": []
+          },
+          {
+            "id": "holidays",
+            "instructions": "This school is in the United States; local Thanksgiving is 2026-11-26. Windows are editorial discovery periods, not school closure dates. Tag explicit holiday celebrations, meals, parties or seasonal cultural gatherings only; do not tag generic autumn or December events. Halloween is October 31; its October 17-November 2 display window is editorial and does not assert a campus event or closure.",
+            "display_windows": [
+              {
+                "start_date": "2026-10-17",
+                "end_date": "2026-11-02",
+                "source_url": "https://www.census.gov/newsroom/facts-for-features/2025/halloween.html"
+              },
+              {
+                "start_date": "2026-11-12",
+                "end_date": "2026-11-28",
+                "source_url": "https://www.opm.gov/policy-data-oversight/pay-leave/federal-holidays/"
+              },
+              {
+                "start_date": "2026-12-01",
+                "end_date": "2026-12-18",
+                "source_url": "https://registrar.mit.edu/calendar/current-key-dates"
+              }
+            ]
+          },
+          {
+            "id": "orientation",
+            "instructions": "Verified family welcome August 29-30 and international orientation August 29; full student orientation end not confirmed. Verified anchors lie between 2026-08-29 and 2026-08-30; the editorial display span starts 14 days before the first anchor. Classification requires explicit seasonal source content, not just an event date.",
+            "display_windows": [
+              {
+                "start_date": "2026-08-15",
+                "end_date": "2026-08-30",
+                "source_url": "https://firstyear.mit.edu/orientation/for-parents-and-families/"
+              }
+            ]
+          },
+          {
+            "id": "midterm_prep",
+            "instructions": "Fall 2026 classes begin 2026-09-09. The display period is editorial term days 22-70, not official midterm dates. Tag only explicit midterm preparation, review or study support.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-30",
+                "end_date": "2026-11-17",
+                "source_url": "https://registrar.mit.edu/calendar/current-key-dates"
+              }
+            ]
+          },
+          {
+            "id": "exam_destress",
+            "instructions": "Editorial visibility during this school's verified-term preparation periods. Tag only explicit exam or midterm stress relief, not generic wellness.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-30",
+                "end_date": "2026-11-17",
+                "source_url": "https://registrar.mit.edu/calendar/current-key-dates"
+              },
+              {
+                "start_date": "2026-11-30",
+                "end_date": "2026-12-18",
+                "source_url": "https://registrar.mit.edu/calendar/current-key-dates"
+              }
+            ]
+          },
+          {
+            "id": "finals_prep",
+            "instructions": "Fall 2026 general finals or formal assessments run 2026-12-14 to 2026-12-18. The editorial filter begins 14 days earlier. Tag only explicit final-exam or end-of-term assessment preparation.",
+            "display_windows": [
+              {
+                "start_date": "2026-11-30",
+                "end_date": "2026-12-18",
+                "source_url": "https://registrar.mit.edu/calendar/current-key-dates"
+              }
+            ]
+          }
+        ]
+      },
+      "ubc": {
+        "instructions": "University of British Columbia. Use this school's America/Vancouver local dates. Fall 2026 anchors below describe general undergraduate dates unless noted; professional programs can differ. Display windows are editorial only. Never infer a seasonal event tag from its date alone.",
+        "seasons": [
+          {
+            "id": "homecoming",
+            "instructions": "UBC Homecoming; classify Vancouver events for this school rather than assuming Okanagan events belong here: 2026-09-14 to 2026-09-20. The filter begins 14 days earlier as an editorial discovery window. Tag only an explicit homecoming, school reunion celebration, or named official homecoming program; generic football games and unrelated alumni talks do not qualify.",
+            "display_windows": [
+              {
+                "start_date": "2026-08-31",
+                "end_date": "2026-09-20",
+                "source_url": "https://alumni.ubc.ca/ubc-homecoming/"
+              }
+            ]
+          },
+          {
+            "id": "holidays",
+            "instructions": "This school is in Canada; local Thanksgiving is 2026-10-12. Windows are editorial discovery periods, not school closure dates. Tag explicit holiday celebrations, meals, parties or seasonal cultural gatherings only; do not tag generic autumn or December events. Halloween is October 31; its October 17-November 2 display window is editorial and does not assert a campus event or closure.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-28",
+                "end_date": "2026-10-14",
+                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html"
+              },
+              {
+                "start_date": "2026-10-17",
+                "end_date": "2026-11-02",
+                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween"
+              },
+              {
+                "start_date": "2026-12-01",
+                "end_date": "2026-12-22",
+                "source_url": "https://students.ubc.ca/enrolment/dates-deadlines/"
+              }
+            ]
+          },
+          {
+            "id": "orientation",
+            "instructions": "Imagine UBC orientation day: 2026-09-08 to 2026-09-08. The filter begins 14 days earlier as an editorial discovery window. Tag only an explicit new-student welcome, orientation, frosh or campus transition activity; generic early-term events do not qualify.",
+            "display_windows": [
+              {
+                "start_date": "2026-08-25",
+                "end_date": "2026-09-08",
+                "source_url": "https://students.ubc.ca/enrolment/dates-deadlines/"
+              }
+            ]
+          },
+          {
+            "id": "midterm_prep",
+            "instructions": "Fall 2026 classes begin 2026-09-08. The display period is editorial term days 22-70, not official midterm dates. Tag only explicit midterm preparation, review or study support.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-29",
+                "end_date": "2026-11-16",
+                "source_url": "https://students.ubc.ca/enrolment/dates-deadlines/"
+              }
+            ]
+          },
+          {
+            "id": "exam_destress",
+            "instructions": "Editorial visibility during this school's verified-term preparation periods. Tag only explicit exam or midterm stress relief, not generic wellness.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-29",
+                "end_date": "2026-11-16",
+                "source_url": "https://students.ubc.ca/enrolment/dates-deadlines/"
+              },
+              {
+                "start_date": "2026-11-27",
+                "end_date": "2026-12-22",
+                "source_url": "https://students.ubc.ca/enrolment/dates-deadlines/"
+              }
+            ]
+          },
+          {
+            "id": "finals_prep",
+            "instructions": "Fall 2026 general finals or formal assessments run 2026-12-11 to 2026-12-22. The editorial filter begins 14 days earlier. Tag only explicit final-exam or end-of-term assessment preparation.",
+            "display_windows": [
+              {
+                "start_date": "2026-11-27",
+                "end_date": "2026-12-22",
+                "source_url": "https://students.ubc.ca/enrolment/dates-deadlines/"
+              }
+            ]
+          }
+        ]
+      },
+      "berkeley": {
+        "instructions": "University of California, Berkeley. Use this school's America/Los_Angeles local dates. Fall 2026 anchors below describe general undergraduate dates unless noted; professional programs can differ. Display windows are editorial only. Never infer a seasonal event tag from its date alone.",
+        "seasons": [
+          {
+            "id": "homecoming",
+            "instructions": "Berkeley Alumni and Parents Weekend at Homecoming: 2026-10-09 to 2026-10-10. The filter begins 14 days earlier as an editorial discovery window. Tag only an explicit homecoming, school reunion celebration, or named official homecoming program; generic football games and unrelated alumni talks do not qualify.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-25",
+                "end_date": "2026-10-10",
+                "source_url": "https://homecoming.berkeley.edu/faq/"
+              }
+            ]
+          },
+          {
+            "id": "holidays",
+            "instructions": "This school is in the United States; local Thanksgiving is 2026-11-26. Windows are editorial discovery periods, not school closure dates. Tag explicit holiday celebrations, meals, parties or seasonal cultural gatherings only; do not tag generic autumn or December events. Halloween is October 31; its October 17-November 2 display window is editorial and does not assert a campus event or closure.",
+            "display_windows": [
+              {
+                "start_date": "2026-10-17",
+                "end_date": "2026-11-02",
+                "source_url": "https://www.census.gov/newsroom/facts-for-features/2025/halloween.html"
+              },
+              {
+                "start_date": "2026-11-12",
+                "end_date": "2026-11-28",
+                "source_url": "https://www.opm.gov/policy-data-oversight/pay-leave/federal-holidays/"
+              },
+              {
+                "start_date": "2026-12-01",
+                "end_date": "2026-12-18",
+                "source_url": "https://registrar.berkeley.edu/wp-content/uploads/UCB_AcademicCalendar_2026-27.pdf"
+              }
+            ]
+          },
+          {
+            "id": "orientation",
+            "instructions": "Golden Bear check-in August 19, Orientation August 20-24 and Getting Your Bearings August 25-September 13. Verified anchors lie between 2026-08-19 and 2026-09-13; the editorial display span starts 14 days before the first anchor. Classification requires explicit seasonal source content, not just an event date.",
+            "display_windows": [
+              {
+                "start_date": "2026-08-05",
+                "end_date": "2026-09-13",
+                "source_url": "https://orientation.berkeley.edu/dates-and-deadlines/"
+              }
+            ]
+          },
+          {
+            "id": "midterm_prep",
+            "instructions": "Fall 2026 classes begin 2026-08-26. The display period is editorial term days 22-70, not official midterm dates. Tag only explicit midterm preparation, review or study support.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-16",
+                "end_date": "2026-11-03",
+                "source_url": "https://registrar.berkeley.edu/wp-content/uploads/UCB_AcademicCalendar_2026-27.pdf"
+              }
+            ]
+          },
+          {
+            "id": "exam_destress",
+            "instructions": "Editorial visibility during this school's verified-term preparation periods. Tag only explicit exam or midterm stress relief, not generic wellness.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-16",
+                "end_date": "2026-11-03",
+                "source_url": "https://registrar.berkeley.edu/wp-content/uploads/UCB_AcademicCalendar_2026-27.pdf"
+              },
+              {
+                "start_date": "2026-11-30",
+                "end_date": "2026-12-18",
+                "source_url": "https://registrar.berkeley.edu/wp-content/uploads/UCB_AcademicCalendar_2026-27.pdf"
+              }
+            ]
+          },
+          {
+            "id": "finals_prep",
+            "instructions": "Fall 2026 general finals or formal assessments run 2026-12-14 to 2026-12-18. The editorial filter begins 14 days earlier. Tag only explicit final-exam or end-of-term assessment preparation.",
+            "display_windows": [
+              {
+                "start_date": "2026-11-30",
+                "end_date": "2026-12-18",
+                "source_url": "https://registrar.berkeley.edu/wp-content/uploads/UCB_AcademicCalendar_2026-27.pdf"
+              }
+            ]
+          }
+        ]
+      },
+      "umich": {
+        "instructions": "University of Michigan, Ann Arbor. Use America/Detroit local dates. Fall 2026 classes begin August 31 and exams run December 14-18 plus December 21. These are Ann Arbor dates; do not apply Flint or Dearborn calendars. Display windows are editorial only and do not prove an event theme.",
+        "seasons": [
+          {
+            "id": "homecoming",
+            "instructions": "Michigan Ann Arbor Homecoming. Verified anchors lie between 2026-10-16 and 2026-10-18; the editorial display span starts 14 days before the first anchor. Classification requires explicit seasonal source content, not just an event date.",
+            "display_windows": [
+              {
+                "start_date": "2026-10-02",
+                "end_date": "2026-10-18",
+                "source_url": "https://alumni.umich.edu/homecoming/"
+              }
+            ]
+          },
+          {
+            "id": "holidays",
+            "instructions": "This school is in the United States; local Thanksgiving is November 26, 2026. Windows are editorial discovery periods, not school closure dates. Tag explicit holiday celebrations rather than generic autumn or December events. Halloween is October 31; its October 17-November 2 display window is editorial and does not assert a campus event or closure.",
+            "display_windows": [
+              {
+                "start_date": "2026-10-17",
+                "end_date": "2026-11-02",
+                "source_url": "https://www.census.gov/newsroom/facts-for-features/2025/halloween.html"
+              },
+              {
+                "start_date": "2026-11-12",
+                "end_date": "2026-11-28",
+                "source_url": "https://www.opm.gov/policy-data-oversight/pay-leave/federal-holidays/"
+              },
+              {
+                "start_date": "2026-12-01",
+                "end_date": "2026-12-21",
+                "source_url": "https://bulletin.engin.umich.edu/academic-calendar-and-deadlines/academic-calendar/"
+              }
+            ]
+          },
+          {
+            "id": "orientation",
+            "instructions": "Trotter welcome August 23-25, International Welcome August 24 and published Welcome Week events through August 31; an editorial span covering confirmed anchors. Verified anchors lie between 2026-08-23 and 2026-08-31; the editorial display span starts 14 days before the first anchor. Classification requires explicit seasonal source content, not just an event date.",
+            "display_windows": [
+              {
+                "start_date": "2026-08-09",
+                "end_date": "2026-08-31",
+                "source_url": "https://trotter.umich.edu/events-programs/welcome-programs"
+              }
+            ]
+          },
+          {
+            "id": "midterm_prep",
+            "instructions": "Fall 2026 classes begin 2026-08-31. The display period is editorial term days 22-70, not official midterm dates. Tag explicit midterm preparation, review or study support.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-21",
+                "end_date": "2026-11-08",
+                "source_url": "https://bulletin.engin.umich.edu/academic-calendar-and-deadlines/academic-calendar/"
+              }
+            ]
+          },
+          {
+            "id": "exam_destress",
+            "instructions": "Editorial visibility during this school's verified-term preparation periods. Tag only explicit exam or midterm stress relief, not generic wellness.",
+            "display_windows": [
+              {
+                "start_date": "2026-09-21",
+                "end_date": "2026-11-08",
+                "source_url": "https://bulletin.engin.umich.edu/academic-calendar-and-deadlines/academic-calendar/"
+              },
+              {
+                "start_date": "2026-11-30",
+                "end_date": "2026-12-21",
+                "source_url": "https://bulletin.engin.umich.edu/academic-calendar-and-deadlines/academic-calendar/"
+              }
+            ]
+          },
+          {
+            "id": "finals_prep",
+            "instructions": "Ann Arbor examinations December 14-18 and December 21; December 19-20 are included only for continuous editorial visibility: 2026-12-14 to 2026-12-21. Display begins 14 days before the first listed exam date and does not override program schedules.",
+            "display_windows": [
+              {
+                "start_date": "2026-11-30",
+                "end_date": "2026-12-21",
+                "source_url": "https://bulletin.engin.umich.edu/academic-calendar-and-deadlines/academic-calendar/"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
 }

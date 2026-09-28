@@ -179,6 +179,7 @@ export function filterEvents(
     if (filters.employersOnCampus && event.employers_on_campus !== true) return false;
     if (filters.freeFoodOnCampus && event.free_food_on_campus !== true) return false;
     if (filters.sportsGame && event.sports_game !== true) return false;
+    if (filters.campusSeasonIds.length > 0 && !filters.campusSeasonIds.some(id => event.campus_season_ids?.includes(id))) return false;
 
     if (filters.hasFoodFilter && food.length === 0) {
       return false;

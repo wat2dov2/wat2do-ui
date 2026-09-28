@@ -7,6 +7,7 @@ from urllib.parse import urlsplit, urlunsplit
 from zoneinfo import ZoneInfo
 
 from core.config import settings
+from core.controlbox import controlbox
 from services import school_service
 
 log = logging.getLogger(__name__)
@@ -33,6 +34,31 @@ def school_from_frontend_url(url: str) -> str | None:
 def canonical_school_key(school: str | None) -> str:
     """Return the normalized school slug."""
     return school_service.normalize_school_slug(school)
+
+
+def campus_season_prompt(school: str) -> str:
+    """Render one school's classification guidance into both extraction passes."""
+    configuration = controlbox.event_discovery.campus_seasons
+    configured = configuration.schools.get(canonical_school_key(school))
+    if configured is None or not configured.seasons:
+        return "CAMPUS SEASONS: This school has no configured season IDs. Return campus_season_ids: []."
+    lines = [
+        f"CAMPUS SEASONS FOR {canonical_school_key(school)}:",
+        configured.instructions,
+        "Set campus_season_ids to all matching IDs below, or [] when none match. "
+        "Use explicit event content and school context, never a date alone. "
+        "Display windows control filter visibility only; they are not classification rules. "
+        "Classify announced future events even when a display window is not currently open. "
+        "Do not copy season classifications from another school. "
+        "Employer recruiting belongs in employers_on_campus, not a campus-season ID.",
+    ]
+    for season in configured.seasons:
+        definition = configuration.definitions[season.id]
+        lines.append(
+            f"- {season.id} ({definition.labels['en']}): {definition.instructions} "
+            f"{season.instructions}".rstrip()
+        )
+    return "\n".join(lines)
 
 
 def resolve_school_timezone(school: str | None) -> str:

@@ -4,6 +4,82 @@ from core.tables import SCHOOLS
 from schemas.school import SchoolSummary
 from services import school_service
 
+
+def test_season_projection_is_school_scoped_static_and_public(fake_sb, patch_sb, monkeypatch):
+    from core.controlbox import CampusSeasonsControl
+
+    configuration = CampusSeasonsControl.model_validate(
+        {
+            "definitions": {
+                "homecoming": {
+                    "labels": {"en": "HOCO", "fr": "Retrouvailles"},
+                    "instructions": "Private base prompt",
+                }
+            },
+            "schools": {
+                "uwaterloo": {
+                    "instructions": "Private school prompt",
+                    "seasons": [
+                        {
+                            "id": "homecoming",
+                            "instructions": "Private override",
+                            "display_windows": [
+                                {
+                                    "start_date": "2026-09-20",
+                                    "end_date": "2026-09-27",
+                                    "source_url": "https://uwaterloo.ca/calendar",
+                                },
+                                {
+                                    "start_date": "2027-09-20",
+                                    "end_date": "2027-09-27",
+                                    "source_url": "https://uwaterloo.ca/calendar",
+                                },
+                            ],
+                        }
+                    ],
+                }
+            },
+        }
+    )
+    monkeypatch.setattr(
+        school_service,
+        "controlbox",
+        school_service.controlbox.model_copy(
+            update={
+                "event_discovery": school_service.controlbox.event_discovery.model_copy(
+                    update={"campus_seasons": configuration}
+                )
+            }
+        ),
+    )
+    patch_sb("services.school_service")
+    fake_sb.set_response(data=SCHOOL_ROWS)
+    schools = {school.slug: school for school in school_service.search_schools("")}
+    expected = [
+        {
+            "id": "homecoming",
+            "labels": {"en": "HOCO", "fr": "Retrouvailles"},
+            "display_windows": [
+                {"start_date": "2026-09-20", "end_date": "2026-09-27"},
+                {"start_date": "2027-09-20", "end_date": "2027-09-27"},
+            ],
+        }
+    ]
+    assert schools["uwaterloo"].model_dump(mode="json")["event_seasons"] == expected
+    assert schools["mit"].event_seasons == []
+    assert school_service.campus_season_ids(" UWATERLOO ") == frozenset({"homecoming"})
+    assert school_service.campus_season_ids("mit") == frozenset()
+
+    fake_sb.set_response(data=[{**SCHOOL_ROWS[0], "id": 1}])
+    for lookup, argument in [
+        (school_service.get_school, "uwaterloo"),
+        (school_service.get_school_by_name, "University of Waterloo"),
+        (school_service.get_school_by_recipient_id, "12345"),
+    ]:
+        school = lookup(argument)
+        assert school.model_dump(mode="json")["event_seasons"] == expected
+
+
 SCHOOL_ROWS = [
     {
         "slug": "uwaterloo",
@@ -57,7 +133,10 @@ def test_search_schools_matches_domain_fragment(fake_sb, patch_sb):
     patch_sb("services.school_service")
     fake_sb.set_response(data=SCHOOL_ROWS)
 
-    assert school_service.search_schools("mit.edu") == [
+    assert [
+        school.model_copy(update={"event_seasons": []})
+        for school in school_service.search_schools("mit.edu")
+    ] == [
         SchoolSummary(
             slug="mit",
             name="Massachusetts Institute of Technology",
@@ -74,7 +153,10 @@ def test_search_schools_matches_display_name_fragment(fake_sb, patch_sb):
     patch_sb("services.school_service")
     fake_sb.set_response(data=SCHOOL_ROWS)
 
-    assert school_service.search_schools("waterloo") == [
+    assert [
+        school.model_copy(update={"event_seasons": []})
+        for school in school_service.search_schools("waterloo")
+    ] == [
         SchoolSummary(
             slug="uwaterloo",
             name="University of Waterloo",
@@ -90,7 +172,10 @@ def test_search_schools_returns_directory_for_blank_query(fake_sb, patch_sb):
     patch_sb("services.school_service")
     fake_sb.set_response(data=SCHOOL_ROWS)
 
-    assert school_service.search_schools("   ") == [
+    assert [
+        school.model_copy(update={"event_seasons": []})
+        for school in school_service.search_schools("   ")
+    ] == [
         SchoolSummary(
             slug="mit",
             name="Massachusetts Institute of Technology",

@@ -21,10 +21,12 @@ import {
   type SearchStoreFilterValues,
 } from "@/features/search/api/filterService";
 
+export type FilterUpdateSource = "user" | "normalization";
+
 interface SearchStoreState extends SearchStoreFilterValues {
   queryRevision: number;
   // Bulk operations
-  setFilterState: (filters: FilterState) => void;
+  setFilterState: (filters: FilterState, source?: FilterUpdateSource) => void;
   clearAllFilters: () => void;
 }
 
@@ -46,6 +48,7 @@ function toStoreValues(filters: FilterState): SearchStoreFilterValues {
     employersOnCampus: normalized.employersOnCampus,
     freeFoodOnCampus: normalized.freeFoodOnCampus,
     sportsGame: normalized.sportsGame,
+    campusSeasonIds: normalized.campusSeasonIds,
     goingFilter: normalized.going,
     sortBy: normalized.sortBy,
     sortOrder: normalized.sortOrder,
@@ -60,8 +63,8 @@ const emptyFilters = toStoreValues(EMPTY_FILTER_STATE);
 export const useSearchStore = create<SearchStoreState>((set) => ({
   ...emptyFilters,
   queryRevision: 0,
-  setFilterState: (filters) => set((state) => ({
-    ...toStoreValues(filters), queryRevision: state.queryRevision + 1,
+  setFilterState: (filters, source = "user") => set((state) => ({
+    ...toStoreValues(filters), queryRevision: state.queryRevision + (source === "user" ? 1 : 0),
   })),
   clearAllFilters: () => startTransition(() => set((state) => ({
     ...emptyFilters, queryRevision: state.queryRevision + 1,

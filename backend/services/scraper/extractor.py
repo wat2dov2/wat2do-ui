@@ -29,7 +29,9 @@ from core.constants.positions import (
 from core.sanitize import normalize_scraped_text
 from schemas.event import EventDiscoveryFields
 from schemas.position import PositionType
+from services.event_service import normalize_campus_season_ids
 from services.school_context import (
+    campus_season_prompt,
     canonical_school_key,
     current_semester_end,
     resolve_school_timezone,
@@ -43,13 +45,14 @@ _SYSTEM_MESSAGE = (
 )
 
 EVENT_DISCOVERY_JSON_FIELDS = "\n".join(
-    f'"{name}": boolean or null,' for name in EventDiscoveryFields.model_fields
+    f'"{name}": {"string[]" if name == "campus_season_ids" else "boolean"} or null,'
+    for name in EventDiscoveryFields.model_fields
 )
 EVENT_DISCOVERY_RULES = "\n".join(
     [
         "EVENT DISCOVERY METADATA:",
-        "These independent flags may overlap and do not replace the event category.",
-        "Use true only when the source establishes the fact, false when it explicitly "
+        "These independent facts may overlap and do not replace the event category.",
+        "For boolean flags, use true only when the source establishes the fact, false when it explicitly "
         "rules it out, and null when evidence is missing or uncertain. Never guess from "
         "the category, host, or the word 'free' alone.",
         *(
@@ -442,6 +445,7 @@ ADDITIONAL EVENT RULES:
 - If information is not available, use empty string for strings, null for price and discovery metadata, and false for registration.
 - Event category must be one of the canonical categories or null: {categories_str}
 {EVENT_DISCOVERY_RULES}
+{campus_season_prompt(school)}
 - Return ONLY the JSON object, with no extra commentary.
 """
 
@@ -559,7 +563,14 @@ def _clean_event(event: dict) -> dict:
     model output.
     """
     try:
-        validated = ExtractedEvent.model_validate(event)
+        validated = ExtractedEvent.model_validate(
+            {
+                **event,
+                "campus_season_ids": normalize_campus_season_ids(
+                    event.get("campus_season_ids"), event.get("school")
+                ),
+            }
+        )
         return _normalize_extracted_strings(validated.model_dump(mode="json"))
     except Exception as e:
         log.warning("Validation failed for event payload: %s", e)

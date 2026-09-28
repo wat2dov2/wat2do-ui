@@ -1,4 +1,5 @@
 import imageDelivery from "../backend/controlbox/image_delivery.json" with { type: "json" };
+import eventDiscovery from "../backend/controlbox/event_discovery.json" with { type: "json" };
 import type { NextConfig } from "next";
 import { readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -117,6 +118,13 @@ const nextConfig: NextConfig = {
     ],
   },
   env: {
+    NEXT_PUBLIC_EVENT_DISCOVERY: JSON.stringify({
+      new_event_window_hours: eventDiscovery.new_event_window_hours,
+      event_without_end_visibility_minutes: eventDiscovery.event_without_end_visibility_minutes,
+      initial_render_count: eventDiscovery.initial_render_count,
+      preview_event_count: eventDiscovery.preview_event_count,
+      server_feed_page_size: eventDiscovery.server_feed_page_size,
+    }),
     NEXT_PUBLIC_INSTAGRAM_COVER_LOGO_SVG: instagramCoverLogoSvg,
     NEXT_PUBLIC_CLUB_CATEGORY_DOODLE_SVGS: JSON.stringify(
       clubCategoryDoodleSvgs,

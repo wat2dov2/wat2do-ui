@@ -7,9 +7,16 @@ import unicodedata
 from functools import lru_cache
 from typing import Final, cast
 
+from core.controlbox import controlbox
 from core.database import get_sb
 from core.tables import SCHOOLS
-from schemas.school import SchoolRecord, SchoolSummary, validate_recipient_id
+from schemas.school import (
+    CampusSeasonWindow,
+    SchoolEventSeason,
+    SchoolRecord,
+    SchoolSummary,
+    validate_recipient_id,
+)
 
 DEFAULT_SEARCH_LIMIT: Final[int] = 10
 SCHOOL_COLUMNS: Final[str] = (
@@ -32,6 +39,36 @@ def normalize_school_slug(value: str | None) -> str:
     return (value or "").strip().lower()
 
 
+def campus_season_ids(school: str) -> frozenset[str]:
+    configured = controlbox.event_discovery.campus_seasons.schools.get(
+        normalize_school_slug(school)
+    )
+    return frozenset(season.id for season in configured.seasons) if configured else frozenset()
+
+
+def _event_seasons(slug: str) -> list[SchoolEventSeason]:
+    """Project static school configuration without exposing prompt instructions."""
+    configuration = controlbox.event_discovery.campus_seasons
+    school = configuration.schools.get(normalize_school_slug(slug))
+    if school is None:
+        return []
+    return [
+        SchoolEventSeason(
+            id=season.id,
+            labels=configuration.definitions[season.id].labels,
+            display_windows=[
+                CampusSeasonWindow(start_date=window.start_date, end_date=window.end_date)
+                for window in season.display_windows
+            ],
+        )
+        for season in school.seasons
+    ]
+
+
+def _school_record(row: dict) -> SchoolRecord:
+    return SchoolRecord.model_validate({**row, "event_seasons": _event_seasons(row["slug"])})
+
+
 @lru_cache(maxsize=128)
 def get_school(slug: str | None) -> SchoolRecord | None:
     normalized_slug = normalize_school_slug(slug)
@@ -47,7 +84,7 @@ def get_school(slug: str | None) -> SchoolRecord | None:
     )
     if not response.data:
         return None
-    return SchoolRecord.model_validate(response.data[0])
+    return _school_record(response.data[0])
 
 
 @lru_cache(maxsize=128)
@@ -69,7 +106,7 @@ def get_school_by_recipient_id(recipient_id: str | None) -> SchoolRecord | None:
     )
     if not response.data:
         return None
-    return SchoolRecord.model_validate(response.data[0])
+    return _school_record(response.data[0])
 
 
 def get_school_id(slug_or_name: str | None) -> int | None:
@@ -152,6 +189,7 @@ def search_schools(query: str, limit: int = DEFAULT_SEARCH_LIMIT) -> list[School
             {
                 **row,
                 "email_domains": email_domains,
+                "event_seasons": _event_seasons(row["slug"]),
             }
         )
         name_key = school.name.casefold()
@@ -197,10 +235,11 @@ def get_school_by_name(name: str | None) -> SchoolRecord | None:
     )
     if not response.data:
         return None
-    return SchoolRecord.model_validate(response.data[0])
+    return _school_record(response.data[0])
 
 
 __all__ = [
+    "campus_season_ids",
     "DEFAULT_SEARCH_LIMIT",
     "get_school",
     "get_school_by_recipient_id",

@@ -25,6 +25,7 @@ export interface FilterState {
   employersOnCampus: boolean;
   freeFoodOnCampus: boolean;
   sportsGame: boolean;
+  campusSeasonIds: string[];
   going: boolean;
   sortBy: string;
   sortOrder: "asc" | "desc";

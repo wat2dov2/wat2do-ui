@@ -17,6 +17,17 @@ def validate_recipient_id(value: Any) -> str:
     return value
 
 
+class CampusSeasonWindow(BaseModel):
+    start_date: date
+    end_date: date
+
+
+class SchoolEventSeason(BaseModel):
+    id: str
+    labels: dict[str, str]
+    display_windows: list[CampusSeasonWindow]
+
+
 class School(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
@@ -28,6 +39,7 @@ class School(BaseModel):
     language: Literal["en", "fr"] = "en"
     faculties: list[str] = Field(default_factory=list)
     location_examples: list[str] = Field(default_factory=list)
+    event_seasons: list[SchoolEventSeason] = Field(default_factory=list)
     recipient_id: str | None = None
     semester_start: date | None = None
     semester_end: date | None = None
@@ -57,4 +69,5 @@ class SchoolSummary(BaseModel):
     language: Literal["en", "fr"] = "en"
     faculties: list[str] = Field(default_factory=list)
     location_examples: list[str] = Field(default_factory=list)
+    event_seasons: list[SchoolEventSeason] = Field(default_factory=list)
     email_domains: list[str] = Field(default_factory=list)

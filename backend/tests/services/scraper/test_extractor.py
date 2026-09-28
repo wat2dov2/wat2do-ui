@@ -159,7 +159,7 @@ def test_extraction_prompt_uses_school_slug(monkeypatch):
 
     prompt = calls[0]["messages"][1]["content"][0]["text"]
     assert "Campus context: ubc." in prompt
-    assert "University of British Columbia" not in prompt
+    assert "Campus context: University of British Columbia" not in prompt
     assert '"content_type": "event" | "hiring"' in prompt
     assert '"positions": [' in prompt
     assert "OFFICIAL DIRECTORY PUBLISHER:" in prompt
@@ -170,6 +170,7 @@ def test_extraction_prompt_uses_school_slug(monkeypatch):
 
 def test_extraction_prompt_has_strict_event_and_position_eligibility_gates(monkeypatch):
     calls = []
+    monkeypatch.setattr(extractor, "campus_season_prompt", lambda school: f"SEASONS FOR {school}")
     monkeypatch.setattr(extractor, "resolve_school_timezone", lambda _school: "America/Toronto")
     monkeypatch.setattr(extractor, "current_semester_end", lambda *_args, **_kwargs: None)
 
@@ -204,6 +205,7 @@ def test_extraction_prompt_has_strict_event_and_position_eligibility_gates(monke
     )
 
     prompt = calls[0]["messages"][1]["content"][0]["text"]
+    assert "SEASONS FOR uwaterloo" in prompt
     assert "POSITION ELIGIBILITY GATE (CRITICAL):" in prompt
     assert "Election voting posts are not hiring." in prompt
     assert "Candidate lists or slates" in prompt
@@ -231,7 +233,8 @@ def test_extraction_prompt_has_strict_event_and_position_eligibility_gates(monke
     assert "watch parties do not qualify" in prompt
     assert "Use null when official varsity participation is unconfirmed" in prompt
     for name in extractor.EventDiscoveryFields.model_fields:
-        assert f'"{name}": boolean or null' in prompt
+        kind = "string[]" if name == "campus_season_ids" else "boolean"
+        assert f'"{name}": {kind} or null' in prompt
     assert 'Use ["Food"] for a generic food mention.' in prompt
     assert 'Never return "Yes" or "Yes!" as a food label.' in prompt
     assert '"Executive elections start today. Read the candidate speeches and vote' in prompt
@@ -430,7 +433,7 @@ def test_clean_event_free_food_does_not_determine_admission_price(price):
 
 @pytest.mark.parametrize("value", [True, False, None])
 def test_clean_event_preserves_discovery_evidence(value):
-    facts = dict.fromkeys(extractor.EventDiscoveryFields.model_fields, value)
+    facts = dict.fromkeys(("employers_on_campus", "free_food_on_campus", "sports_game"), value)
     cleaned = _clean_event({"title": "Campus event", **facts})
     assert {name: cleaned[name] for name in facts} == facts
 
@@ -438,6 +441,34 @@ def test_clean_event_preserves_discovery_evidence(value):
 def test_clean_event_does_not_guess_discovery_metadata_from_category_or_food():
     cleaned = _clean_event({"title": "Career fair", "food": ["Pizza"], "price": 0})
     assert all(cleaned[name] is None for name in extractor.EventDiscoveryFields.model_fields)
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        (None, None),
+        ([], []),
+        (["hoco", "hoco", "finals-prep"], ["finals-prep", "hoco"]),
+        (["other-school", "hoco", 7, None], ["hoco"]),
+        (["other-school"], None),
+        ("hoco", None),
+        (True, None),
+        ({"hoco": True}, None),
+    ],
+)
+def test_clean_event_filters_invalid_season_metadata_without_losing_event(
+    monkeypatch, value, expected
+):
+    from services import school_service
+
+    monkeypatch.setattr(
+        school_service,
+        "campus_season_ids",
+        lambda school: frozenset({"hoco", "finals-prep"}) if school == "uwaterloo" else frozenset(),
+    )
+    event = _clean_event({"title": "Review", "school": "uwaterloo", "campus_season_ids": value})
+    assert event["title"] == "Review"
+    assert event["campus_season_ids"] == expected
 
 
 def test_clean_event_does_not_overwrite_explicit_price():

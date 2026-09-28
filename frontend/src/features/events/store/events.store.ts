@@ -9,6 +9,7 @@ import {
 } from "@/shared/constants/schools";
 import { QP } from "@/shared/constants/queryParams";
 import { AUTH_STATE_REFRESH_EVENT, loadUserProfile } from "@/features/auth/api/userRepository";
+import { storeStatesToFilterState, useSearchStore } from "@/features/search";
 
 interface EventsState {
   schoolFilter: string | null;
@@ -37,7 +38,12 @@ export const useEventsStore = create<EventsState>((set, get) => ({
   schoolFilter: getInitialSchoolFilter(),
   setSchoolFilter: (school: string) => {
     const nextSchool = resolveSchool(school);
-    if (get().schoolFilter !== nextSchool) set({ schoolFilter: nextSchool });
+    if (get().schoolFilter === nextSchool) return;
+    const filters = useSearchStore.getState();
+    if (filters.campusSeasonIds.length > 0) {
+      filters.setFilterState({ ...storeStatesToFilterState(filters), campusSeasonIds: [] });
+    }
+    set({ schoolFilter: nextSchool });
   },
 }));
 

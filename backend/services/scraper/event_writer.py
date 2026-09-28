@@ -108,7 +108,14 @@ def write_event(
     # Truncations mirror the API's ``EventCreate`` schema caps so a row written
     # by the scraper round-trips through the Pydantic boundary.
     event_row = {
-        **EventDiscoveryFields.model_validate(event).model_dump(),
+        **EventDiscoveryFields.model_validate(
+            {
+                **event,
+                "campus_season_ids": event_service.normalize_campus_season_ids(
+                    event.get("campus_season_ids"), school.slug
+                ),
+            }
+        ).model_dump(),
         "title": title[:MAX_EVENT_TITLE_LENGTH],
         "description": (event.get("description") or "")[:MAX_EVENT_DESCRIPTION_LENGTH] or None,
         "location": location[:MAX_EVENT_LOCATION_LENGTH],
@@ -246,6 +253,11 @@ def _overwrite_event(
         return "inserted"
 
     merged = _merge_overwrite_payload(event_row, old_event)
+    if old_event.school != school_slug and event_row.get("campus_season_ids") is None:
+        merged["campus_season_ids"] = None
+    merged["campus_season_ids"] = event_service.normalize_campus_season_ids(
+        merged.get("campus_season_ids"), school_slug
+    )
 
     log.info(
         "[%s] overwriting event id=%s for %r",
@@ -405,7 +417,11 @@ def _merge_overwrite_payload(incoming: dict, old_event) -> dict:
         "source_url",
         "source_image_url",
     ):
-        if merged.get(field) in (None, "", []):
+        if field == "campus_season_ids":
+            old_seasons = getattr(old_event, field, None)
+            if merged.get(field) is None and old_seasons is not None:
+                merged[field] = old_seasons
+        elif merged.get(field) in (None, "", []):
             old_value = getattr(old_event, field, None)
             if old_value not in (None, "", []):
                 merged[field] = old_value

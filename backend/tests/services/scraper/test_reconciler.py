@@ -41,7 +41,10 @@ def test_reconcile_events_empty_input_returns_empty(monkeypatch):
     )
 
 
-def test_reconcile_prompt_reuses_same_occurrence_reposts_but_not_new_occurrences():
+def test_reconcile_prompt_reuses_same_occurrence_reposts_but_not_new_occurrences(monkeypatch):
+    monkeypatch.setattr(
+        "services.scraper.reconciler.campus_season_prompt", lambda school: f"SEASONS FOR {school}"
+    )
     prompt = _build_reconcile_prompt(
         extracted_events=[{"title": "Tea Tasting", "occurrences": []}],
         candidates_by_index=[[{"id": 42, "title": "Tea Tasting"}]],
@@ -54,6 +57,9 @@ def test_reconcile_prompt_reuses_same_occurrence_reposts_but_not_new_occurrences
     assert "distinct occurrence, session, edition, or new week" in prompt
     assert "matching titles alone as insufficient" in prompt
     assert "replace_occurrences" in prompt
+    assert "SEASONS FOR uwaterloo" in prompt
+    assert '"campus_season_ids": string[] or null' in prompt
+    assert "including [] to clear prior season classifications" in prompt
     assert EVENT_DISCOVERY_RULES in prompt
     assert "official school varsity team" in prompt
     assert "Intramural, club-team, and recreational competitions, practices, tryouts" in prompt
@@ -246,3 +252,42 @@ def test_location_correction_reuses_event_when_model_is_unavailable(monkeypatch)
     assert result is not None
     assert result[0]["id"] == 42
     assert result[0]["location"] == extracted["location"]
+
+
+def test_reconciliation_discards_invalid_season_ids_without_losing_event(monkeypatch):
+    import json
+
+    from services import school_service
+
+    extracted, _ = _matching_event_data()
+    monkeypatch.setattr(school_service, "campus_season_ids", lambda _: frozenset({"hoco"}))
+    _mock_client(
+        monkeypatch, json.dumps([{**extracted, "campus_season_ids": ["foreign-school", "hoco", 7]}])
+    )
+    result = reconcile_events(
+        extracted_events=[extracted],
+        candidates_by_index=[[]],
+        caption_text="Homecoming tea",
+        school="uwaterloo",
+    )
+    assert len(result) == 1
+    assert result[0]["campus_season_ids"] == ["hoco"]
+
+
+def test_reconciliation_fallback_validates_school_seasons(monkeypatch):
+    from services import school_service
+
+    extracted, candidate = _matching_event_data()
+    extracted["campus_season_ids"] = ["foreign-school"]
+    monkeypatch.setattr("services.scraper.reconciler._client", lambda: None)
+    monkeypatch.setattr(school_service, "campus_season_ids", lambda _: frozenset({"hoco"}))
+    result = reconcile_events(
+        extracted_events=[extracted],
+        candidates_by_index=[[candidate]],
+        caption_text="Reminder",
+        school="uwaterloo",
+        resolved_club_ids=[7],
+        resolved_ig_handles=["uwtea"],
+    )
+    assert result[0]["id"] == 42
+    assert result[0]["campus_season_ids"] is None

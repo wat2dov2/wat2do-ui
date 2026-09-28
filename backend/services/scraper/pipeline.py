@@ -305,6 +305,11 @@ def _process_events_for_school(
         return
 
     events_copy = [{**event, "school": target_school} for event in events]
+    if target_school != source_school:
+        # Pass 1 saw only the source school's guidance. Pass 2 can classify the
+        # destination independently; its failure fallback must remain unknown.
+        for event in events_copy:
+            event["campus_season_ids"] = None
     resolved_orgs = [
         resolve_club_for_scrape(
             ig_handle=candidate_handles,

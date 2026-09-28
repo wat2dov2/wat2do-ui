@@ -16,6 +16,7 @@ export function getFilterCounts(filters: {
   employersOnCampus: boolean;
   freeFoodOnCampus: boolean;
   sportsGame: boolean;
+  campusSeasonIds: string[];
   goingFilter: boolean;
   addedSince?: string;
   dateFilter?: EventDateFilter;
@@ -35,6 +36,7 @@ export function getFilterCounts(filters: {
     (filters.employersOnCampus ? 1 : 0) +
     (filters.freeFoodOnCampus ? 1 : 0) +
     (filters.sportsGame ? 1 : 0) +
+    filters.campusSeasonIds.length +
     (filters.goingFilter ? 1 : 0) +
     (filters.addedSince ? 1 : 0) +
     (filters.dateFilter && filters.dateFilter !== "any" ? 1 : 0)

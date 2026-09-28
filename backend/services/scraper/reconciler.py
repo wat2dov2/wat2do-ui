@@ -16,6 +16,8 @@ from pydantic import BeforeValidator, Field, field_validator, model_validator
 from core.config import settings
 from core.constants import EVENT_CATEGORIES
 from schemas.event import EventDiscoveryFields
+from services.event_service import normalize_campus_season_ids
+from services.school_context import campus_season_prompt
 from services.scraper.dedup import confident_duplicate_id
 from services.scraper.extractor import (
     EVENT_DISCOVERY_JSON_FIELDS,
@@ -106,7 +108,7 @@ def reconcile_events(
     client = _client()
     if client is None:
         log.warning("OpenAI key not configured; skipping Pass 2 reconcile for %s", school)
-        return _confident_match_fallback(extracted_events, confident_ids)
+        return _confident_match_fallback(extracted_events, confident_ids, school)
 
     prompt = _build_reconcile_prompt(
         extracted_events=extracted_events,
@@ -128,7 +130,7 @@ def reconcile_events(
         )
     except Exception as e:
         log.exception("Pass 2 reconcile OpenAI call failed: %s", e)
-        return _confident_match_fallback(extracted_events, confident_ids)
+        return _confident_match_fallback(extracted_events, confident_ids, school)
 
     raw = (response.choices[0].message.content or "").strip()
     parsed = _parse_model_json(raw)
@@ -138,7 +140,7 @@ def reconcile_events(
         events = parsed
     else:
         log.warning("Pass 2 reconcile returned non-array JSON: %r", type(parsed).__name__)
-        return _confident_match_fallback(extracted_events, confident_ids)
+        return _confident_match_fallback(extracted_events, confident_ids, school)
 
     candidates_by_id: dict[int, dict] = {}
     for candidates in candidates_by_index:
@@ -153,7 +155,14 @@ def reconcile_events(
         if not isinstance(raw_event, dict):
             continue
         try:
-            validated = ReconciledEvent.model_validate(raw_event)
+            validated = ReconciledEvent.model_validate(
+                {
+                    **raw_event,
+                    "campus_season_ids": normalize_campus_season_ids(
+                        raw_event.get("campus_season_ids"), school
+                    ),
+                }
+            )
         except Exception as err:
             log.warning("Pass 2 event validation failed: %s", err)
             continue
@@ -195,13 +204,14 @@ def reconcile_events(
 
     if not cleaned and extracted_events:
         log.warning("Pass 2 produced zero valid events; caller should fall back")
-        return _confident_match_fallback(extracted_events, confident_ids)
+        return _confident_match_fallback(extracted_events, confident_ids, school)
     return cleaned
 
 
 def _confident_match_fallback(
     extracted_events: list[dict],
     confident_ids: list[int | None],
+    school: str,
 ) -> list[dict] | None:
     """Preserve deterministic duplicate IDs when the gray-zone model fails."""
     if not any(event_id is not None for event_id in confident_ids):
@@ -216,6 +226,9 @@ def _confident_match_fallback(
                     **event,
                     "id": event_id,
                     "replace_occurrences": False,
+                    "campus_season_ids": normalize_campus_season_ids(
+                        event.get("campus_season_ids"), school
+                    ),
                 }
             )
         except Exception as err:
@@ -350,11 +363,13 @@ RULES:
 - If the caption says the event is cancelled / canceled, return the matched candidate object with "cancelled": true and keep other fields from the candidate unless the caption also corrects them. Cancel requires an id.
 - New overlapping fields from the extracted event win, including a shorter description.
 - Preserve each candidate's discovery metadata when new evidence is null or absent. An explicit new true or false replaces the old value. Do not turn missing evidence into false.
+- An explicit campus_season_ids array replaces the old array, including [] to clear prior season classifications. Reassess themes against this school's guidance; never copy another school's classification.
 - Set `replace_occurrences` to false for ordinary reposts, reminders, cancellations, and partial details. Set it to true only when the source explicitly replaces or reschedules the complete occurrence schedule.
 - Rebuild "occurrences" correctly from the new source. The writer preserves unmentioned existing occurrences unless `replace_occurrences` is true.
 - Only use an "id" that appears in the provided candidates for that extracted event.
 - Candidates include club_id, club, and ig_handle - use them for ownership decisions.
 - Omitted candidates are left unchanged. Never delete. Never merge two existing database events into one.
 {EVENT_DISCOVERY_RULES}
+{campus_season_prompt(school)}
 - Return ONLY the JSON array text, no commentary.
 """.strip()

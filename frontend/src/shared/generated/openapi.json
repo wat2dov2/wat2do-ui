@@ -7123,6 +7123,26 @@
         ],
         "title": "CampusCoverageResponse"
       },
+      "CampusSeasonWindow": {
+        "properties": {
+          "start_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Start Date"
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date",
+            "title": "End Date"
+          }
+        },
+        "type": "object",
+        "required": [
+          "start_date",
+          "end_date"
+        ],
+        "title": "CampusSeasonWindow"
+      },
       "ClubClaimCreate": {
         "properties": {
           "executive_role": {
@@ -8139,6 +8159,21 @@
             "title": "Sports Game",
             "description": "An actual scheduled athletic game, match, meet, or tournament involving an official school varsity team. Intramural, club-team, and recreational competitions, practices, tryouts, fitness classes, sports-club meetings, video games, and watch parties do not qualify. School affiliation or posting from an athletics account alone does not establish varsity participation. Use null when official varsity participation is unconfirmed."
           },
+          "campus_season_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Campus Season Ids",
+            "description": "School-configured campus season IDs established by the event's theme or purpose. Null means unreviewed or uncertain; an empty array means reviewed with no matching season. Display windows control filter visibility, not classification. Event dates alone do not prove thematic membership."
+          },
           "title": {
             "type": "string",
             "maxLength": 300,
@@ -8438,6 +8473,21 @@
             "title": "Sports Game",
             "description": "An actual scheduled athletic game, match, meet, or tournament involving an official school varsity team. Intramural, club-team, and recreational competitions, practices, tryouts, fitness classes, sports-club meetings, video games, and watch parties do not qualify. School affiliation or posting from an athletics account alone does not establish varsity participation. Use null when official varsity participation is unconfirmed."
           },
+          "campus_season_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Campus Season Ids",
+            "description": "School-configured campus season IDs established by the event's theme or purpose. Null means unreviewed or uncertain; an empty array means reviewed with no matching season. Display windows control filter visibility, not classification. Event dates alone do not prove thematic membership."
+          },
           "id": {
             "type": "integer",
             "title": "Id"
@@ -8662,6 +8712,21 @@
             ],
             "title": "Sports Game",
             "description": "An actual scheduled athletic game, match, meet, or tournament involving an official school varsity team. Intramural, club-team, and recreational competitions, practices, tryouts, fitness classes, sports-club meetings, video games, and watch parties do not qualify. School affiliation or posting from an athletics account alone does not establish varsity participation. Use null when official varsity participation is unconfirmed."
+          },
+          "campus_season_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Campus Season Ids",
+            "description": "School-configured campus season IDs established by the event's theme or purpose. Null means unreviewed or uncertain; an empty array means reviewed with no matching season. Display windows control filter visibility, not classification. Event dates alone do not prove thematic membership."
           },
           "id": {
             "type": "integer",
@@ -8916,6 +8981,21 @@
             "title": "Sports Game",
             "description": "An actual scheduled athletic game, match, meet, or tournament involving an official school varsity team. Intramural, club-team, and recreational competitions, practices, tryouts, fitness classes, sports-club meetings, video games, and watch parties do not qualify. School affiliation or posting from an athletics account alone does not establish varsity participation. Use null when official varsity participation is unconfirmed."
           },
+          "campus_season_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Campus Season Ids",
+            "description": "School-configured campus season IDs established by the event's theme or purpose. Null means unreviewed or uncertain; an empty array means reviewed with no matching season. Display windows control filter visibility, not classification. Event dates alone do not prove thematic membership."
+          },
           "id": {
             "type": "integer",
             "title": "Id"
@@ -9162,6 +9242,21 @@
             ],
             "title": "Sports Game",
             "description": "An actual scheduled athletic game, match, meet, or tournament involving an official school varsity team. Intramural, club-team, and recreational competitions, practices, tryouts, fitness classes, sports-club meetings, video games, and watch parties do not qualify. School affiliation or posting from an athletics account alone does not establish varsity participation. Use null when official varsity participation is unconfirmed."
+          },
+          "campus_season_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Campus Season Ids",
+            "description": "School-configured campus season IDs established by the event's theme or purpose. Null means unreviewed or uncertain; an empty array means reviewed with no matching season. Display windows control filter visibility, not classification. Event dates alone do not prove thematic membership."
           },
           "title": {
             "anyOf": [
@@ -12721,6 +12816,13 @@
             "type": "array",
             "title": "Location Examples"
           },
+          "event_seasons": {
+            "items": {
+              "$ref": "#/components/schemas/SchoolEventSeason"
+            },
+            "type": "array",
+            "title": "Event Seasons"
+          },
           "recipient_id": {
             "anyOf": [
               {
@@ -12778,6 +12880,35 @@
         ],
         "title": "School"
       },
+      "SchoolEventSeason": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "labels": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Labels"
+          },
+          "display_windows": {
+            "items": {
+              "$ref": "#/components/schemas/CampusSeasonWindow"
+            },
+            "type": "array",
+            "title": "Display Windows"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "labels",
+          "display_windows"
+        ],
+        "title": "SchoolEventSeason"
+      },
       "SchoolSummary": {
         "properties": {
           "slug": {
@@ -12822,6 +12953,13 @@
             },
             "type": "array",
             "title": "Location Examples"
+          },
+          "event_seasons": {
+            "items": {
+              "$ref": "#/components/schemas/SchoolEventSeason"
+            },
+            "type": "array",
+            "title": "Event Seasons"
           },
           "email_domains": {
             "items": {

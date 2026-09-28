@@ -306,7 +306,7 @@ WITH hourly_seed AS (
 ), inserted AS (
     INSERT INTO public.events (
         title, description, location, price, food, registration,
-        employers_on_campus, free_food_on_campus, sports_game,
+        employers_on_campus, free_food_on_campus, sports_game, campus_season_ids,
         source_image_url, school_id, source_url, category, club, club_id,
         added_at, ingestion_source
     )
@@ -335,6 +335,7 @@ WITH hourly_seed AS (
             THEN '["Pizza", "Snacks"]'::jsonb ELSE '[]'::jsonb END,
         slot % 3 = 0,
         slot % 8 IN (4, 7), slot % 8 IN (5, 7), slot % 8 = 6,
+        ARRAY[]::text[], -- These synthetic activities have no campus-season theme.
         format('https://picsum.photos/seed/wat2do-hourly-%s/1200/630', slot),
         school_id, source_url,
         (ARRAY['Games & Recreation', 'Arts & Culture', 'Business', 'Health',

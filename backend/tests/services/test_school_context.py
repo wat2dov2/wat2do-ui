@@ -62,6 +62,55 @@ def test_canonical_school_key_normalizes_slug():
     assert school_context.canonical_school_key("   ") == ""
 
 
+def test_campus_season_prompt_is_school_specific_and_not_clock_gated(monkeypatch):
+    from core.controlbox import CampusSeasonsControl
+
+    configuration = CampusSeasonsControl.model_validate(
+        {
+            "definitions": {
+                "homecoming": {
+                    "labels": {"en": "HOCO"},
+                    "instructions": "Explicit homecoming theme required.",
+                }
+            },
+            "schools": {
+                "uwaterloo": {
+                    "instructions": "Waterloo school context.",
+                    "seasons": [
+                        {
+                            "id": "homecoming",
+                            "instructions": "Waterloo special guidance.",
+                            "display_windows": [],
+                        }
+                    ],
+                },
+                "mit": {"instructions": "MIT school context.", "seasons": []},
+            },
+        }
+    )
+    monkeypatch.setattr(
+        school_context,
+        "controlbox",
+        school_context.controlbox.model_copy(
+            update={
+                "event_discovery": school_context.controlbox.event_discovery.model_copy(
+                    update={"campus_seasons": configuration}
+                )
+            }
+        ),
+    )
+    prompt = school_context.campus_season_prompt(" UWATERLOO ")
+    assert "Waterloo school context." in prompt
+    assert "Waterloo special guidance." in prompt
+    assert "Explicit homecoming theme required." in prompt
+    assert "MIT school context" not in prompt
+    assert "never a date alone" in prompt
+    assert "Employer recruiting belongs in employers_on_campus" in prompt
+    assert "Classify announced future events" in prompt
+    assert "Return campus_season_ids: []" in school_context.campus_season_prompt("mit")
+    assert "Return campus_season_ids: []" in school_context.campus_season_prompt("unknown")
+
+
 def test_school_frontend_url_scopes_wat2do_io_to_school(monkeypatch):
     monkeypatch.setattr(school_context.settings, "frontend_url", "https://wat2do.io")
 

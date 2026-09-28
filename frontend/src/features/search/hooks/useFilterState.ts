@@ -4,7 +4,7 @@ import {
   storeStatesToFilterState,
   clearNarrowingFilterState,
 } from "@/features/search/api/filterService";
-import { useSearchStore } from "@/features/search/store/search.store";
+import { useSearchStore, type FilterUpdateSource } from "@/features/search/store/search.store";
 import type { EventDateFilter, EventFormatFilter, FilterState } from "@/shared/types";
 
 type FilterStateUpdater = FilterState | ((current: FilterState) => FilterState);
@@ -14,24 +14,24 @@ function readCurrentFilterState(): FilterState {
 }
 
 export function useFilterActions() {
-  const setFilterState = useCallback((updater: FilterStateUpdater) => {
+  const setFilterState = useCallback((updater: FilterStateUpdater, source?: FilterUpdateSource) => {
     const nextFilters = typeof updater === "function"
       ? updater(readCurrentFilterState())
       : updater;
     startTransition(() => {
-      useSearchStore.getState().setFilterState(nextFilters);
+      useSearchStore.getState().setFilterState(nextFilters, source);
     });
   }, []);
 
   const updateFilterState = useCallback(
-    (patch: Partial<FilterState>) => {
-      setFilterState((current) => ({ ...current, ...patch }));
+    (patch: Partial<FilterState>, source?: FilterUpdateSource) => {
+      setFilterState((current) => ({ ...current, ...patch }), source);
     },
     [setFilterState],
   );
 
   const toggleFilterValue = useCallback(
-    (key: "categories" | "locations" | "foods" | "days", value: string) => {
+    (key: "categories" | "locations" | "foods" | "days" | "campusSeasonIds", value: string) => {
       setFilterState((current) => {
         const currentValues = current[key];
         return {
@@ -73,6 +73,7 @@ export function useFilterState() {
       employersOnCampus: s.employersOnCampus,
       freeFoodOnCampus: s.freeFoodOnCampus,
       sportsGame: s.sportsGame,
+      campusSeasonIds: s.campusSeasonIds,
       selectedClubs: s.selectedClubs,
       goingFilter: s.goingFilter,
       sortBy: s.sortBy,
@@ -149,6 +150,10 @@ export function useFilterState() {
     (value: boolean) => updateFilterState({ sportsGame: value }),
     [updateFilterState],
   );
+  const setCampusSeasonIds = useCallback(
+    (value: string[], source?: FilterUpdateSource) => updateFilterState({ campusSeasonIds: value }, source),
+    [updateFilterState],
+  );
   const setPriceFilter = useCallback(
     (value: string) => updateFilterState({
       minPrice: value !== "" && Number(value) > 0 ? value : "",
@@ -177,6 +182,10 @@ export function useFilterState() {
     (day: string) => toggleFilterValue("days", day),
     [toggleFilterValue],
   );
+  const toggleCampusSeason = useCallback(
+    (id: string) => toggleFilterValue("campusSeasonIds", id),
+    [toggleFilterValue],
+  );
   return {
     ...values,
     setSearchQuery,
@@ -194,6 +203,8 @@ export function useFilterState() {
     setEmployersOnCampus,
     setFreeFoodOnCampus,
     setSportsGame,
+    setCampusSeasonIds,
+    toggleCampusSeason,
     priceFilterValue,
     setPriceFilter,
     setGoingFilter,
