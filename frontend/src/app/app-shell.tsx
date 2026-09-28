@@ -51,7 +51,7 @@ function routeOwnsServerMetadata(pathname: string): boolean {
   return (
     pathname === ROUTES.HOME ||
     pathname === ROUTES.LOGIN ||
-    pathname === ROUTES.CONTACT ||
+    pathname === ROUTES.ABOUT ||
     pathname === ROUTES.CLUBS ||
     pathname === ROUTES.POSITIONS ||
     pathname === ROUTES.PROMOTE ||

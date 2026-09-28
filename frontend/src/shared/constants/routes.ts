@@ -17,7 +17,7 @@ export const ROUTES = {
   AUTH_CALLBACK: "/auth/callback",
   ONBOARDING: "/onboarding",
   ONBOARDING_DEMO: "/onboarding-demo",
-  CONTACT: "/contact",
+  ABOUT: "/about",
   CLUBS: "/clubs",
   POSITIONS: "/positions",
   CLUB_CREATE: "/clubs/new",
@@ -50,7 +50,7 @@ export const PUBLIC_PAGE_ROUTES: readonly string[] = [
   ROUTES.HOME,
   ROUTES.POSITIONS,
   ROUTES.CLUBS,
-  ROUTES.CONTACT,
+  ROUTES.ABOUT,
   ROUTES.LOGIN,
 ];
 
@@ -68,7 +68,7 @@ const ROUTE_PAGE_TITLES: Partial<
   [ROUTES.AUTH_CALLBACK]: "Signing In",
   [ROUTES.ONBOARDING]: "Onboarding",
   [ROUTES.ONBOARDING_DEMO]: "Onboarding Demo",
-  [ROUTES.CONTACT]: "Contact",
+  [ROUTES.ABOUT]: "About",
   [ROUTES.CLUBS]: "Clubs",
   [ROUTES.POSITIONS]: "Positions",
   [ROUTES.CLUB_CREATE]: "Add a Club",

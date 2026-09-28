@@ -154,7 +154,7 @@ For a read-only live retrieval check, run `cd backend && python scripts/probe_in
 
 ## 🤝 Support
 
-If you have questions or feedback, please reach out at <a href="https://wat2do.io/contact" target="_blank">wat2do.io/contact</a> or add a <a href="https://github.com/wat2dov2/wat2do-ui/issues" target="_blank">GitHub issue</a>.
+If you have questions or feedback, please reach out through the <a href="https://wat2do.io/about" target="_blank">About page</a> or add a <a href="https://github.com/wat2dov2/wat2do-ui/issues" target="_blank">GitHub issue</a>.
 
 Enjoy discovering events!
 

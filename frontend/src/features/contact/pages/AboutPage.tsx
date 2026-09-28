@@ -40,7 +40,7 @@ const CornerMask = ({ className }: { className?: string }) => (
  * founder's own story, so they point at the event page rather than a search
  * that may stop matching. Anything with no event of its own stays plain text.
  */
-function ContactEventLink({
+function AboutEventLink({
   eventId,
   children,
 }: {
@@ -50,7 +50,7 @@ function ContactEventLink({
   return <Link href={eventPagePath(eventId)}>{children}</Link>;
 }
 
-function ContactSearchLink({
+function AboutSearchLink({
   query,
   club = false,
   children,
@@ -78,7 +78,7 @@ function ContactSearchLink({
   );
 }
 
-export function ContactPage() {
+export function AboutPage() {
   const { t } = useTranslation();
 
   return (
@@ -221,17 +221,17 @@ export function ContactPage() {
               <CardContent>
                 <CardDescription>
                   {t("contact.tips.random.desc")}
-                  <ContactSearchLink query="Repair Club" club>
+                  <AboutSearchLink query="Repair Club" club>
                     {t("contact.tips.random.repair")}
-                  </ContactSearchLink>
+                  </AboutSearchLink>
                   {t("contact.tips.random.repairSuffix")}
-                  <ContactEventLink eventId={13204}>
+                  <AboutEventLink eventId={13204}>
                     {t("contact.tips.random.zumba")}
-                  </ContactEventLink>
+                  </AboutEventLink>
                   {t("contact.tips.random.zumbaSuffix")}
-                  <ContactEventLink eventId={11009}>
+                  <AboutEventLink eventId={11009}>
                     {t("contact.tips.random.barbells")}
-                  </ContactEventLink>
+                  </AboutEventLink>
                   .
                 </CardDescription>
               </CardContent>
@@ -248,17 +248,17 @@ export function ContactPage() {
                   </CardDescription>
                   <CardDescription>
                     {t("contact.tips.search.friendsIntro")}
-                    <ContactEventLink eventId={11216}>
+                    <AboutEventLink eventId={11216}>
                       {t("contact.tips.search.pho")}
-                    </ContactEventLink>
+                    </AboutEventLink>
                     ,{" "}
-                    <ContactEventLink eventId={11590}>
+                    <AboutEventLink eventId={11590}>
                       {t("contact.tips.search.campfire")}
-                    </ContactEventLink>
+                    </AboutEventLink>
                     {t("contact.tips.search.or")}
-                    <ContactEventLink eventId={11535}>
+                    <AboutEventLink eventId={11535}>
                       {t("contact.tips.search.global")}
-                    </ContactEventLink>
+                    </AboutEventLink>
                     .
                   </CardDescription>
                 </Stack>

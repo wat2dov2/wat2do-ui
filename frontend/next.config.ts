@@ -83,6 +83,7 @@ const publicPromoterProgram = {
   })),
 };
 const apiCollectionPaths = [
+  "contact",
   "discovery-queries",
   "events",
   "instagram-publishing/batches",

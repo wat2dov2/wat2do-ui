@@ -80,7 +80,7 @@ Hover, focus, and touch intent can prefetch immediately.
 Hidden/offline/data-saver contexts avoid unsolicited background work.
 The perpetual invalidation/prefetch loop was removed.
 
-About (`/contact`) and plain `/login` also use that full-payload navigation cache, including their navigation and banner links.
+About (`/about`) and plain `/login` also use that full-payload navigation cache, including their navigation and banner links.
 Only exact public route URLs are warmed; login links carrying email, invitation tokens, or redirect parameters remain separate requests.
 About's content is already bundled, and its banner now shares the durable global snapshot worker instead of a separate task-local Next fetch cache.
 The root layout passes its school name into the banner, and a dismissed banner skips the snapshot read entirely.

@@ -170,7 +170,7 @@ export function CommandPalette({
           </CommandItem>
           <CommandItem
             onSelect={() => {
-              router.push(ROUTES.CONTACT);
+              router.push(ROUTES.ABOUT);
               onOpenChange(false);
             }}
           >

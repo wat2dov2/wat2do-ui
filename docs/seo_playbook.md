@@ -495,7 +495,7 @@ This matrix is the intended default policy and must be finalized before implemen
 | `/organizations` | Index | Self on the owning school host | Server-rendered directory, crawlable pagination, unique school metadata |
 | `/organizations/{id}` | Conditional index | Self on the organization's school host | Approved public organization with useful visible data |
 | `/promote` | Conditional index | One global canonical or meaningfully school-specific canonical | Program active, public, substantial content, no duplicate subdomain copies |
-| `/contact` | Index only on the chosen brand host | One global canonical | Useful support and brand information |
+| `/about` | Index only on the chosen brand host | One global canonical | Useful support and brand information |
 | Search, sort, and filter parameters | No index by default | Canonical to the unfiltered directory when content is substantially duplicate | Dedicated pages require proven demand and unique value |
 | Login, auth callback, onboarding, settings | No index | None | Must remain reachable to users |
 | Admin, diagnostics, marketing operations | No index | None | Access control remains primary protection |

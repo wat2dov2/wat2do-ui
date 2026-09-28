@@ -211,7 +211,7 @@ const {
 }: typeof import("../src/shared/api/siteBanner.server") = require("../src/shared/api/siteBanner.server");
 const banner = {
   message_translation_key: "navigation.siteBannerMessage",
-  cta_href: "/contact",
+  cta_href: "/about",
   cta_label_translation_key: "navigation.siteBannerAction",
 };
 const originalFetch = globalThis.fetch;

@@ -10,7 +10,7 @@ def test_get_site_banner_returns_translation_keys(fake_sb, patch_sb):
                 "enabled": True,
                 "message_translation_key": "siteBanner.founderStory.message",
                 "cta_label_translation_key": "siteBanner.founderStory.cta",
-                "cta_href": "/contact",
+                "cta_href": "/about",
             }
         ]
     )
@@ -18,7 +18,7 @@ def test_get_site_banner_returns_translation_keys(fake_sb, patch_sb):
     assert site_banner_service.get_site_banner() == SiteBannerResponse(
         message_translation_key="siteBanner.founderStory.message",
         cta_label_translation_key="siteBanner.founderStory.cta",
-        cta_href="/contact",
+        cta_href="/about",
     )
 
 
@@ -30,7 +30,7 @@ def test_get_site_banner_hides_disabled_row(fake_sb, patch_sb):
                 "enabled": False,
                 "message_translation_key": "siteBanner.founderStory.message",
                 "cta_label_translation_key": "siteBanner.founderStory.cta",
-                "cta_href": "/contact",
+                "cta_href": "/about",
             }
         ]
     )

@@ -1,5 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { createRequire } from "node:module";
+import { getRedirectUrl, getRewrittenUrl, unstable_getResponseFromNextConfig } from "next/experimental/testing/server.js";
+import nextConfig from "../next.config";
 
 const { warmPublicPages, prefetchPublicPage }: typeof import("../src/app/hooks/useAppNavigation") =
   createRequire(import.meta.url)("../src/app/hooks/useAppNavigation");
@@ -63,6 +65,19 @@ test.afterEach(() => {
   }
 });
 
+for (const host of ["wat2do.io", "uwaterloo.wat2do.io"]) {
+  test(`contact submissions on ${host} keep the upstream collection slash`, async () => {
+    const response = await unstable_getResponseFromNextConfig({
+      url: `https://${host}/api/contact/`,
+      nextConfig,
+    });
+    expect(getRedirectUrl(response)).toBeNull();
+    const destination = getRewrittenUrl(response);
+    expect(destination).not.toBeNull();
+    expect(new URL(destination!).pathname).toBe("/contact/");
+  });
+}
+
 test("waits for page resources, then warms each adjacent full page once during idle time", () => {
   const browser = browserScheduler();
   browser.document.readyState = "loading";
@@ -85,7 +100,7 @@ test("waits for page resources, then warms each adjacent full page once during i
   expect(router.calls).toEqual([
     { href: "/positions", options: { kind: "full" } },
     { href: "/clubs", options: { kind: "full" } },
-    { href: "/contact", options: { kind: "full" } },
+    { href: "/about", options: { kind: "full" } },
     { href: "/login", options: { kind: "full" } },
   ]);
   browser.window.dispatchEvent(new Event("online"));
@@ -126,11 +141,11 @@ test("respects data saver and slow connections while explicit intent can still p
   browser.window.dispatchEvent(new Event("online"));
   expect(browser.timers.size).toBe(0);
   prefetchPublicPage(router, "/positions");
-  prefetchPublicPage(router, "/contact");
+  prefetchPublicPage(router, "/about");
   prefetchPublicPage(router, "/login");
   expect(router.calls).toEqual([
     { href: "/positions", options: { kind: "full" } },
-    { href: "/contact", options: { kind: "full" } },
+    { href: "/about", options: { kind: "full" } },
     { href: "/login", options: { kind: "full" } },
   ]);
   stop();
@@ -160,7 +175,7 @@ test("uses bounded deferred work when requestIdleCallback is unavailable", () =>
   browser.runTimer();
   browser.runTimer();
   browser.runTimer();
-  expect(router.calls.map(({ href }) => href)).toEqual(["/", "/positions", "/contact", "/login"]);
+  expect(router.calls.map(({ href }) => href)).toEqual(["/", "/positions", "/about", "/login"]);
   expect(browser.timers.size).toBe(0);
   stop();
 });
@@ -178,7 +193,7 @@ test("only exact public page URLs are warmed on intent", () => {
     "/admin",
     "/club-panel",
     "/invite/club-invitation",
-    "/contact?email=visitor%40example.com",
+    "/about?email=visitor%40example.com",
     "/?token=sign-in-token",
     "https://another-school.wat2do.io/login",
     "//another-school.wat2do.io/login",
@@ -187,10 +202,10 @@ test("only exact public page URLs are warmed on intent", () => {
   }
   expect(router.calls).toEqual([]);
   prefetchPublicPage(router, "/login");
-  prefetchPublicPage(router, "/contact");
+  prefetchPublicPage(router, "/about");
   expect(router.calls).toEqual([
     { href: "/login", options: { kind: "full" } },
-    { href: "/contact", options: { kind: "full" } },
+    { href: "/about", options: { kind: "full" } },
   ]);
 });
 
@@ -198,7 +213,7 @@ test("the public page warmer skips the current login page and never selects priv
   const browser = browserScheduler();
   const router = recordingRouter();
   const stop = warmPublicPages(router, "/login");
-  for (const href of ["/", "/positions", "/clubs", "/contact"]) {
+  for (const href of ["/", "/positions", "/clubs", "/about"]) {
     const previousCount = router.calls.length;
     browser.runTimer();
     browser.runIdle();

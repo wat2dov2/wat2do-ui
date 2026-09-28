@@ -9,7 +9,7 @@
  * Standard image-area height (px) for full-size browse cards
  * (event and position cards plus their previews and skeletons).
  */
-export const EVENT_CARD_IMAGE_HEIGHT = 208;
+export const EVENT_CARD_IMAGE_HEIGHT = 256;
 
 /** Standard responsive grid for event, position, and club card lists. */
 export const CARD_GRID_CLASS =

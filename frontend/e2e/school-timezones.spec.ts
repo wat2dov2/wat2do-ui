@@ -82,10 +82,10 @@ test("Instagram translations stay school-scoped across concurrent English and Fr
   expect(french.dateLine).toBe("vendredi 18 septembre");
   expect(french.timeLine).toContain("18:30");
   expect(french.timeLine).toContain("20:00");
-  expect(french.category.label).toBe("Arts et culture");
+  expect(french.category.label).toBe("Arts");
   expect(french.badges).toEqual(["Annulé", "Nourriture", "Inscription"]);
   expect(french.title).toBe(input.title);
-  expect(english.category.label).toBe("Arts & Culture");
+  expect(english.category.label).toBe("Arts");
   expect(english.badges).toEqual(["Cancelled", "Food", "Registration"]);
   await expect(buildEventSlideModel({ ...input, category: null }, "fr")).rejects.toThrow("valid category");
   expect(locale.language).toBe("fr");

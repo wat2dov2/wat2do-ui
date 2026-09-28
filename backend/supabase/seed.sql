@@ -32,7 +32,7 @@ UPDATE public.site_banner
 SET
     message_translation_key = 'siteBanner.founderStory.message',
     cta_label_translation_key = 'siteBanner.founderStory.cta',
-    cta_href = '/contact',
+    cta_href = '/about',
     updated_at = now()
 WHERE id = 1;
 

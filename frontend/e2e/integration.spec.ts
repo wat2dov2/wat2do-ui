@@ -289,8 +289,8 @@ test.describe("Language loading", () => {
     await expect(documentElement).toHaveAttribute("dir", "rtl");
     await expect(
       page.getByRole("link", {
-        name: arTranslations.navigation.goToEvents,
-      }),
+        name: arTranslations.navigation.about,
+      }).first(),
     ).toBeVisible();
     await expect
       .poll(() =>
@@ -576,7 +576,7 @@ test.describe("Loading shells", () => {
       try {
         await page.goto(`${BASE}${listing.path}`, { waitUntil: "commit" });
         await expect.poll(() => requested).toBe(true);
-        await expect(page.getByRole("link", { name: "Go to events", exact: true })).toBeVisible();
+        await expect(page.getByRole("banner").getByRole("link", { name: "About", exact: true }).first()).toBeVisible();
         await expect(page.getByRole("button", { name: "Open navigation menu", exact: true })).toBeVisible();
         const shell = page.locator('[data-slot="discovery-loading"]');
         await expect(shell).toBeVisible();
@@ -692,7 +692,7 @@ test.describe("Loading shells", () => {
 
 test.describe("Navigation progress", () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto(`${BASE}/contact`);
+    await page.goto(`${BASE}/about`);
     await expect(page.locator('[data-slot="loading-page"], [aria-busy="true"]')).toHaveCount(0);
     await expect(page.locator('[data-slot="navigation-progress"]')).toHaveAttribute("data-state", "idle");
   });
@@ -766,16 +766,16 @@ test.describe("Navigation progress", () => {
       return document.querySelector('[data-slot="navigation-progress"]')?.getAttribute("data-state");
     });
     expect(clickState).toBe("idle");
-    await expect(page).toHaveURL(`${BASE}/contact`);
+    await expect(page).toHaveURL(`${BASE}/about`);
 
     await page.evaluate(() => {
       window.history.pushState({}, "", "#first");
       window.history.pushState({}, "", "#second");
     });
     await page.goBack();
-    await expect(page).toHaveURL(`${BASE}/contact#first`);
+    await expect(page).toHaveURL(`${BASE}/about#first`);
     await page.goForward();
-    await expect(page).toHaveURL(`${BASE}/contact#second`);
+    await expect(page).toHaveURL(`${BASE}/about#second`);
     await page.evaluate(() => new Promise<void>((resolve) => {
       requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
     }));
@@ -2893,7 +2893,7 @@ test.describe("Events Page", () => {
 
     const drawer = page.getByRole("dialog", { name: "Tech Career Fair" });
     await expect(drawer.getByText("Full detail loaded", { exact: true })).toBeVisible();
-    await expect(drawer.getByText("Arts & Culture", { exact: true })).toHaveCount(0);
+    await expect(drawer.getByText("Arts", { exact: true })).toHaveCount(0);
     const newBadge = drawer.getByText("NEW", { exact: true });
     await expect(newBadge).toBeVisible();
     await expect(
@@ -3915,13 +3915,13 @@ test.describe("Events Page", () => {
       } };
     });
     await page.goto(BASE, { waitUntil: "domcontentloaded" });
-    await expect(page.getByRole("button", { name: "Arts & Culture", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Arts", exact: true })).toBeVisible();
     const response = page.waitForResponse(response => new URL(response.url()).pathname === "/api/meta/constants");
     releaseConstants();
     await response;
     const categoryButton = page.getByRole("button", { name: "Career", exact: true });
     await expect(categoryButton).toBeVisible();
-    await expect(page.getByRole("button", { name: "Arts & Culture", exact: true })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Arts", exact: true })).toHaveCount(0);
     expect(constantsRequests).toBe(1);
     await categoryButton.click();
     await expect(categoryButton).toHaveAttribute("aria-pressed", "true");
@@ -5161,7 +5161,7 @@ test.describe("Navigation", () => {
   }
 
   test("main pages load without errors", async ({ page }) => {
-    const routes = ["/", "/login", "/onboarding", "/clubs", "/contact", "/settings"];
+    const routes = ["/", "/login", "/onboarding", "/clubs", "/about", "/settings"];
     for (const route of routes) {
       const res = await page.goto(`${BASE}${route}`);
       expect(res?.status()).toBe(200);
@@ -5277,7 +5277,7 @@ test.describe("Navigation", () => {
     await expect(page).toHaveURL(/\/positions$/);
   });
 
-  test("uses the top navigation and exposes poster help through About us", async ({
+  test("uses the top navigation and exposes poster help through About", async ({
     page,
   }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
@@ -5290,7 +5290,7 @@ test.describe("Navigation", () => {
       "Events",
       "Clubs",
       "Positions",
-      "About us",
+      "About",
     ]) {
       await expect(
         navigation.getByRole("link", { name: linkName, exact: true }),
@@ -5306,10 +5306,13 @@ test.describe("Navigation", () => {
       navigation.getByRole("link", { name: "Posters", exact: true }),
     ).toHaveCount(0);
 
-    await navigation
-      .getByRole("link", { name: "About us", exact: true })
-      .click();
-    await expect(page).toHaveURL(/\/contact$/);
+    await expect(navigation.getByRole("link", { name: "About", exact: true }))
+      .toHaveAttribute("href", "/about");
+    const logo = page.getByRole("banner").getByRole("link", { name: "About", exact: true }).first();
+    await expect(logo).toHaveAttribute("href", "/about");
+    await logo.click();
+    await expect(page).toHaveURL(/\/about$/);
+    await expect(page).toHaveTitle("About Wat2Do | Campus Event Discovery");
     await expect(page.getByText("How you can help us", { exact: true })).toBeVisible();
     await expect(
       page.getByRole("link", {
@@ -5317,6 +5320,34 @@ test.describe("Navigation", () => {
         exact: true,
       }),
     ).toHaveAttribute("href", "/promote");
+  });
+
+  test("sends an About message through the API proxy without a redirect", async ({ page, next }) => {
+    const submissions: unknown[] = [];
+    next.onFetch(async request => {
+      const path = new URL(request.url).pathname;
+      if (request.method !== "POST") return undefined;
+      // Let the browser use the real Next rewrite, but mock delivery upstream.
+      if (path === "/api/contact/") return "continue";
+      if (path === "/contact/") {
+        submissions.push(await request.json());
+        return Response.json({ message: "Contact message accepted" }, { status: 202 });
+      }
+      if (path === "/contact") return "abort";
+      return undefined;
+    });
+    await page.goto(`${BASE}/about`);
+    await page.getByLabel("Email address", { exact: true }).fill("student@uwaterloo.ca");
+    await page.getByLabel("Message", { exact: true }).fill("A suggestion for campus discovery.");
+    await page.getByRole("button", { name: "Send message", exact: true }).click();
+    await expect(page.getByText("Thanks for reaching out. Your message has been sent.", { exact: true }))
+      .toBeVisible();
+    expect(submissions).toEqual([{
+      email: "student@uwaterloo.ca",
+      message: "A suggestion for campus discovery.",
+    }]);
+    await page.getByRole("button", { name: "Send another message", exact: true }).click();
+    await expect(page.getByLabel("Message", { exact: true })).toHaveValue("");
   });
 
   test("moves compact navigation controls into the drawer", async ({
@@ -5349,7 +5380,7 @@ test.describe("Navigation", () => {
     const drawerBody = navigationDrawer.locator('[data-slot="drawer-body"]');
     await expect(drawerBody).toHaveCSS("padding-top", "16px");
     await expect(
-      drawerBody.getByRole("link", { name: "Go to events", exact: true }),
+      drawerBody.getByRole("link", { name: "About", exact: true }).first(),
     ).toBeVisible();
     await expect(
       drawerBody.locator(":scope > [data-slot=separator]"),
