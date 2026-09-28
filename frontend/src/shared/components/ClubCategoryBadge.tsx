@@ -1,6 +1,8 @@
 import type { ComponentProps, ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 
 import { Badge } from "@/shared/ui/badge";
+import { translateCategory } from "@/shared/utils/event";
 import {
   getClubCategoryConfig,
   clubCategoryInk,
@@ -38,6 +40,7 @@ export function ClubCategoryBadge({
   size = "md",
   className,
 }: ClubCategoryBadgeProps) {
+  const { t } = useTranslation();
   const config = getClubCategoryConfig(type);
   const iconSize = ICON_SIZE[size];
 
@@ -56,7 +59,7 @@ export function ClubCategoryBadge({
         height={iconSize}
         className="shrink-0"
       />
-      <span className="truncate">{config.label}</span>
+      <span className="truncate">{translateCategory(config.label, t)}</span>
     </Badge>
   );
 
