@@ -38,6 +38,7 @@ def test_checked_in_controlbox_is_valid() -> None:
     assert controlbox.event_discovery.new_event_window_hours == 24
     assert controlbox.event_discovery.event_without_end_visibility_minutes == 60
     assert controlbox.event_discovery.initial_render_count == 24
+    assert controlbox.event_discovery.preview_event_count == 4
     assert controlbox.social_previews.notification_page_size == 500
     assert controlbox.social_previews.capture_path == "/"
     assert controlbox.social_previews.viewport_width == 1200
@@ -52,7 +53,6 @@ def test_checked_in_controlbox_is_valid() -> None:
     assert str(controlbox.contact.recipient_email) == "contact@wat2do.io"
     assert controlbox.contact.rate_limit.maximum_requests == 5
     assert controlbox.site_banner.dismissal_days == 30
-    assert controlbox.site_banner.refresh_seconds == 259200
     # Publishing accounts are not configured here at all: which accounts exist,
     # which school each serves, and whether each runs all come from the row
     # written when the account is connected.
@@ -378,6 +378,9 @@ def test_discovery_controls_load_checked_in_feature_sources():
 @pytest.mark.parametrize(
     "feature,patch",
     [
+        ("event_discovery", {"preview_event_count": 0}),
+        ("event_discovery", {"preview_event_count": 101}),
+        ("site_banner", {"refresh_seconds": 259200}),
         ("database", {"read_attempts": 0}),
         ("database", {"read_attempts": 6}),
         ("database", {"read_backoff_initial_seconds": -1}),

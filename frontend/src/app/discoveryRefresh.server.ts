@@ -6,6 +6,7 @@ import {
   buildSchoolSnapshot,
   buildSchoolDirectorySnapshot,
 } from "@/shared/api/schools.server";
+import { buildSiteBannerSnapshot } from "@/shared/api/siteBanner.server";
 import { warmDiscoveryImages } from "@/shared/services/discoveryImages.server";
 import { discoveryStore } from "@/shared/services/discoveryCache.server";
 import type { DiscoveryResource } from "@/shared/services/discoverySnapshotStore";
@@ -23,6 +24,13 @@ const builders = {
   clubs: buildClubDirectorySnapshot,
   branding: buildSchoolSnapshot,
 };
+const globalBuilders = {
+  schools: buildSchoolDirectorySnapshot,
+  "site-banner": buildSiteBannerSnapshot,
+};
+const globalResources = Object.keys(globalBuilders) as Array<
+  keyof typeof globalBuilders
+>;
 // Instrumentation and route handlers can load separate server bundles.
 // Share only scheduling state so each process still has one catalog worker.
 const processState = globalThis as typeof globalThis & {
@@ -44,11 +52,21 @@ export function reconcileDiscoverySnapshots(): Promise<void> {
 
 async function reconcile(): Promise<void> {
   if (!discoveryStore) return;
-  await discoveryStore.refresh(
-    "_global",
-    "schools",
-    buildSchoolDirectorySnapshot,
-  );
+  for (const resource of globalResources) {
+    try {
+      await discoveryStore.refresh<unknown>(
+        "_global",
+        resource,
+        globalBuilders[resource],
+      );
+    } catch (error) {
+      console.error("discovery_reconcile_failed", {
+        school: "_global",
+        resource,
+        error,
+      });
+    }
+  }
   const schools = await getSchoolDirectory();
   // Serve never-visited schools first, followed by dirty and age-expired entries.
   const states = await Promise.all(
@@ -95,8 +113,10 @@ export async function queueDiscoveryRefresh(
 ) {
   if (!discoveryStore) return;
   for (const resource of resources) {
-    if (resource in builders) await discoveryStore.invalidate(school, resource);
-    else await discoveryStore.invalidate("_global", "schools");
+    await discoveryStore.invalidate(
+      resource in builders ? school : "_global",
+      resource,
+    );
   }
 }
 
@@ -104,13 +124,16 @@ export async function discoveryReadiness() {
   if (!discoveryStore)
     return { ready: false, schools: 0, missing: ["storage-not-configured"] };
   const schools = await getSchoolDirectory();
-  const states = await Promise.all(
-    schools.flatMap((school) =>
+  const states = await Promise.all([
+    ...globalResources.map((resource) =>
+      discoveryStore!.inspect("_global", resource),
+    ),
+    ...schools.flatMap((school) =>
       discoveryResources.map((resource) =>
         discoveryStore!.inspect(school.slug, resource),
       ),
     ),
-  );
+  ]);
   return {
     ready: schools.length > 0 && states.every((state) => state.ready),
     schools: schools.length,
@@ -131,7 +154,7 @@ function startDiscoveryWorker() {
   worker.timer.unref();
 }
 
-/** Hold Next startup until every school has a usable published generation. */
+/** Hold Next startup until global content and every school have published generations. */
 export async function initializeDiscoverySnapshots(): Promise<void> {
   if (!discoveryStore) throw new Error("Discovery storage is not configured");
   const deadline = Date.now() + controls.readiness_timeout_seconds * 1000;

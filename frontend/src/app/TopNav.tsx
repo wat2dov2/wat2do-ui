@@ -34,9 +34,9 @@ import {
 import { DrawerBody, Stack } from "@/shared/layout";
 import { useAuthState, type AuthState } from "@/features/auth/hooks/useAuthState";
 import { useRequestSchool } from "@/app/client-providers";
-import { prefetchDiscoveryRoute } from "@/app/hooks/useAppNavigation";
+import { prefetchPublicPage } from "@/app/hooks/useAppNavigation";
 import { getUserProfile, logoutAPI, updateUserProfile } from "@/features/auth/api/auth.api";
-import { DISCOVERY_ROUTES, ROUTES } from "@/shared/constants/routes";
+import { PUBLIC_PAGE_ROUTES, ROUTES } from "@/shared/constants/routes";
 import { getSchoolOrigin } from "@/shared/constants/schools";
 import imgImage1 from "@/assets/38e8096a28295e8dcc0e5020d0a5f3dd85d5f019.png";
 
@@ -49,7 +49,7 @@ interface Wat2DoLogoLinkProps {
 
 function Wat2DoLogoLink({ label, onNavigate }: Wat2DoLogoLinkProps) {
   const router = useRouter();
-  const prefetch = () => prefetchDiscoveryRoute(router, ROUTES.HOME);
+  const prefetch = () => prefetchPublicPage(router, ROUTES.HOME);
   return (
     <NextLink
       href={ROUTES.HOME}
@@ -147,6 +147,10 @@ export function TopNav() {
     router.push(ROUTES.LOGIN);
   }, [router]);
 
+  const prefetchSignIn = useCallback(() => {
+    prefetchPublicPage(router, ROUTES.LOGIN);
+  }, [router]);
+
   const handleSchoolChange = useCallback(
     (school: string) => {
       // Every school lives on its own origin, so switching is a cross-origin navigation.
@@ -183,10 +187,10 @@ export function TopNav() {
               >
                 <NextLink
                   href={href}
-                  prefetch={DISCOVERY_ROUTES.includes(href) ? false : undefined}
-                  onPointerEnter={() => prefetchDiscoveryRoute(router, href)}
-                  onFocus={() => prefetchDiscoveryRoute(router, href)}
-                  onTouchStart={() => prefetchDiscoveryRoute(router, href)}
+                  prefetch={PUBLIC_PAGE_ROUTES.includes(href) ? false : undefined}
+                  onPointerEnter={() => prefetchPublicPage(router, href)}
+                  onFocus={() => prefetchPublicPage(router, href)}
+                  onTouchStart={() => prefetchPublicPage(router, href)}
                   aria-current={active ? "page" : undefined}
                 >
                   {t(labelKey)}
@@ -234,6 +238,9 @@ export function TopNav() {
                 <>
                   <Button
                     className="w-full"
+                    onPointerEnter={prefetchSignIn}
+                    onFocus={prefetchSignIn}
+                    onTouchStart={prefetchSignIn}
                     onClick={() => {
                       setNavigationOpen(false);
                       handleSignIn();
@@ -259,10 +266,10 @@ export function TopNav() {
                     >
                       <NextLink
                         href={href}
-                        prefetch={DISCOVERY_ROUTES.includes(href) ? false : undefined}
-                        onPointerEnter={() => prefetchDiscoveryRoute(router, href)}
-                        onFocus={() => prefetchDiscoveryRoute(router, href)}
-                        onTouchStart={() => prefetchDiscoveryRoute(router, href)}
+                        prefetch={PUBLIC_PAGE_ROUTES.includes(href) ? false : undefined}
+                        onPointerEnter={() => prefetchPublicPage(router, href)}
+                        onFocus={() => prefetchPublicPage(router, href)}
+                        onTouchStart={() => prefetchPublicPage(router, href)}
                         aria-current={active ? "page" : undefined}
                         onClick={() => setNavigationOpen(false)}
                       >
@@ -332,6 +339,9 @@ export function TopNav() {
               <Button
                 size="sm"
                 className="hidden md:inline-flex"
+                onPointerEnter={prefetchSignIn}
+                onFocus={prefetchSignIn}
+                onTouchStart={prefetchSignIn}
                 onMouseDown={handleSignIn}
               >
                 {t("events.signIn")}

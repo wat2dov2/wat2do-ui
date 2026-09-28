@@ -6,7 +6,7 @@ Western's canonical school slug is `uwo`.
 
 ## Implemented design
 
-Events, Positions, Clubs, school branding, and the school directory use complete snapshots in the existing application S3 bucket.
+Events, Positions, Clubs, school branding, the school directory, and the site-wide banner use complete snapshots in the existing application S3 bucket.
 Server rendering and browser directory refreshes read the same published data.
 Snapshot ownership lives in `discoverySnapshotStore.ts`; feature server loaders own source assembly; `app/discoveryRefresh.server.ts` composes the all-school worker.
 The old directory fetch-cache tags, unconditional five-resource invalidation, and recursive navigation warmer have been removed.
@@ -79,6 +79,16 @@ Adjacent-route prefetch waits for initial loading and idle time, with one reques
 Hover, focus, and touch intent can prefetch immediately.
 Hidden/offline/data-saver contexts avoid unsolicited background work.
 The perpetual invalidation/prefetch loop was removed.
+
+About (`/contact`) and plain `/login` also use that full-payload navigation cache, including their navigation and banner links.
+Only exact public route URLs are warmed; login links carrying email, invitation tokens, or redirect parameters remain separate requests.
+About's content is already bundled, and its banner now shares the durable global snapshot worker instead of a separate task-local Next fetch cache.
+The root layout passes its school name into the banner, and a dismissed banner skips the snapshot read entirely.
+Banner refresh failures preserve the last good generation; a confirmed disabled banner is a valid cached null.
+Startup requires that global generation alongside school coverage, so a new deployment cannot serve a cold banner.
+Login selects four distinct active or upcoming events from the same school Events snapshot and reuses one request-scoped lookup for metadata and page rendering.
+There is no independent preview cache to invalidate or rebuild.
+These changes cache public data and browser navigation payloads; document rendering still respects request-specific login parameters and banner cookies.
 
 ## Images and Instagram
 

@@ -1,8 +1,9 @@
+import { cache } from "react";
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import imgAuthLogo from "@/assets/38e8096a28295e8dcc0e5020d0a5f3dd85d5f019.png";
 import { AuthEntryPage } from "@/features/auth/pages/AuthEntryPage";
-import { getSchoolBrowseSnapshot } from "@/features/events/api/eventFeed.server";
+import { getSchoolPreviewEvents } from "@/features/events/api/eventFeed.server";
 import { getSchoolFromRequestHost } from "@/shared/constants/schools";
 import { QP } from "@/shared/constants/queryParams";
 import {
@@ -12,7 +13,6 @@ import {
 import type { Event } from "@/shared/types";
 
 export const revalidate = 0;
-const LOGIN_PREVIEW_EVENT_COUNT = 4;
 
 interface LoginPageProps {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -24,23 +24,14 @@ function firstSearchParam(
   return Array.isArray(value) ? value[0] : value;
 }
 
-async function loadPreviewEvents(school: string): Promise<Event[]> {
+const loadPreviewEvents = cache(async (school: string): Promise<Event[]> => {
   try {
-    const snapshot = await getSchoolBrowseSnapshot(school);
-    const seenTitles = new Set<string>();
-    const previewEvents: Event[] = [];
-    for (const event of snapshot.items) {
-      if (seenTitles.has(event.title)) continue;
-      seenTitles.add(event.title);
-      previewEvents.push(event);
-      if (previewEvents.length === LOGIN_PREVIEW_EVENT_COUNT) break;
-    }
-    return previewEvents;
+    return await getSchoolPreviewEvents(school);
   } catch (err) {
     console.error("Login preview feed fetch failed:", err);
     return [];
   }
-}
+});
 
 export async function generateMetadata(): Promise<Metadata> {
   const requestHeaders = await headers();

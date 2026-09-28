@@ -7,7 +7,7 @@ import { useEffect, useRef } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { PrefetchKind } from "next/dist/client/components/router-reducer/router-reducer-types";
 import { QP } from "@/shared/constants/queryParams";
-import { DISCOVERY_ROUTES, ROUTES } from "@/shared/constants/routes";
+import { PUBLIC_PAGE_ROUTES, ROUTES } from "@/shared/constants/routes";
 import { consumePendingFilterState } from "@/features/search/api/filterService";
 import { useSearchStore } from "@/features/search/store/search.store";
 import { controlBox } from "@/shared/config/controlBox";
@@ -16,18 +16,20 @@ interface UseAppNavigationOptions {
   setSchoolFilter: (school: string) => void;
 }
 
-type DiscoveryRouter = Pick<ReturnType<typeof useRouter>, "prefetch">;
+type PublicPageRouter = Pick<ReturnType<typeof useRouter>, "prefetch">;
 
 /** Intent and idle warming share Next's full-payload router cache. */
-export function prefetchDiscoveryRoute(router: DiscoveryRouter, href: string): void {
-  if (DISCOVERY_ROUTES.includes(href)) {
+export function prefetchPublicPage(router: PublicPageRouter, href: string): void {
+  // Match the full href so auth links with tokens, emails, or redirect state
+  // never enter the shared public-page warming path.
+  if (PUBLIC_PAGE_ROUTES.includes(href)) {
     router.prefetch(href, { kind: PrefetchKind.FULL });
   }
 }
 
 /** Warm adjacent pages once, after page resources load, without recurring work. */
-export function warmDiscoveryRoutes(router: DiscoveryRouter, pathname: string): () => void {
-  const routes = DISCOVERY_ROUTES.filter((href) => href !== pathname);
+export function warmPublicPages(router: PublicPageRouter, pathname: string): () => void {
+  const routes = PUBLIC_PAGE_ROUTES.filter((href) => href !== pathname);
   let cancelled = false;
   let timer: number | undefined;
   let idle: number | undefined;
@@ -50,7 +52,7 @@ export function warmDiscoveryRoutes(router: DiscoveryRouter, pathname: string): 
     idle = undefined;
     if (!canWarm()) return;
     const href = routes.shift();
-    if (href) prefetchDiscoveryRoute(router, href);
+    if (href) prefetchPublicPage(router, href);
     schedule();
   };
   const schedule = () => {
@@ -94,7 +96,7 @@ export function useAppNavigation({
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  useEffect(() => warmDiscoveryRoutes(router, pathname), [router, pathname]);
+  useEffect(() => warmPublicPages(router, pathname), [router, pathname]);
 
   const hasProcessedInitialRouteMode = useRef(false);
   const hasProcessedInitialSchool = useRef(false);

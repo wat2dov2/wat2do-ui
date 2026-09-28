@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 
+import { prefetchPublicPage } from "@/app/hooks/useAppNavigation";
 import { controlBox } from "@/shared/config/controlBox";
 import { Button } from "@/shared/ui/button";
 import { X } from "@/shared/ui/doodle-icons";
@@ -45,6 +47,7 @@ export function SiteBannerStrip({
   ctaLabelTranslationKey,
 }: SiteBannerStripProps) {
   const { t } = useTranslation();
+  const router = useRouter();
   const [dismissed, setDismissed] = useState(false);
 
   if (dismissed) return null;
@@ -59,6 +62,10 @@ export function SiteBannerStrip({
       </span>
       <Link
         href={ctaHref}
+        prefetch={false}
+        onPointerEnter={() => prefetchPublicPage(router, ctaHref)}
+        onFocus={() => prefetchPublicPage(router, ctaHref)}
+        onTouchStart={() => prefetchPublicPage(router, ctaHref)}
         className="shrink-0 font-semibold underline underline-offset-4"
       >
         {t(ctaLabelTranslationKey)}

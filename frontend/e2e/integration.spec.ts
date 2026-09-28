@@ -856,6 +856,84 @@ test.describe("Auth Page", () => {
     await expect(page.getByRole("button", { name: "Continue without signing in" })).toBeVisible();
   });
 
+  test("login sends four upcoming school previews in its initial HTML", async ({ page, next }) => {
+    const now = Date.now();
+    await mockApi(page, next, url => apiPath(url) === "/events", async request => {
+      const school = new URL(request.url).searchParams.get("school");
+      const firstId = school === "utsg" ? 200 : 100;
+      const items = Array.from({ length: 7 }, (_, index) => ({
+        id: firstId + index,
+        title: `${school} preview ${index === 2 ? 1 : index}`,
+        school, club_id: 1, club: "Campus Club", location: "Campus", category: "Career",
+        price: 0, food: [], registration: false, source_image_url: null,
+        added_at: new Date(now).toISOString(),
+        occurrences: [{ id: String(firstId + index), event_id: firstId + index,
+          dtstart_utc: new Date(now + (index - 1) * 86_400_000).toISOString(),
+          dtend_utc: new Date(now + (index - 1) * 86_400_000 + 3_600_000).toISOString() }],
+      }));
+      return { json: { items, total: items.length, page: 1, page_size: 20, total_pages: 1 } };
+    });
+
+    for (const { origin, school } of [
+      { origin: BASE, school: "uwaterloo" },
+      { origin: "http://utsg.wat2do.localhost:3000", school: "utsg" },
+    ]) {
+      const response = await page.goto(`${origin}/login`);
+      expect(response?.ok()).toBe(true);
+      const html = await response!.text();
+      const articles = [...html.matchAll(/<article\b[^>]*>[\s\S]*?<\/article>/g)].map(match => match[0]);
+      const titles = [1, 3, 4, 5].map(index => `${school} preview ${index}`);
+      expect(articles).toHaveLength(4);
+      for (const [index, title] of titles.entries()) expect(articles[index]).toContain(title);
+      const preview = page.getByTestId("auth-preview-events");
+      await expect(preview.locator("article")).toHaveCount(4);
+      await expect(preview.locator("article")).toContainText(titles);
+      await expect(preview).not.toContainText(`${school} preview 0`);
+      await expect(preview).not.toContainText(`${school} preview 6`);
+    }
+  });
+
+  test("cached login previews never share invitation email or return paths across requests", async ({ page, next }) => {
+    const sent: Array<{ email: string; token?: string; return_to?: string }> = [];
+    await mockApi(page, next, url => apiPath(url) === "/auth/send-otp", async request => {
+      sent.push(await request.json());
+      return { json: { message: "sent" } };
+    });
+    const invitations = [
+      { email: "first-visitor@uwaterloo.ca", token: "first-invitation", return_to: "/positions" },
+      { email: "second-visitor@uwaterloo.ca", token: "second-invitation", return_to: "/clubs" },
+    ];
+    for (const [index, invitation] of invitations.entries()) {
+      const query = new URLSearchParams({
+        email: invitation.email, token: invitation.token, returnTo: invitation.return_to,
+      });
+      const response = await page.goto(`${BASE}/login?${query}`);
+      expect(response?.ok()).toBe(true);
+      const html = await response!.text();
+      expect(html).toContain(invitation.email);
+      expect(html).not.toContain(invitations[1 - index]!.email);
+      expect(html).not.toContain(invitations[1 - index]!.token);
+      await expect(page.getByRole("textbox", { name: "Email address" })).toHaveValue(invitation.email);
+      await expect(page.getByRole("textbox", { name: "Email address" })).toBeDisabled();
+      await page.getByRole("button", { name: "Continue", exact: true }).click();
+      await expect.poll(() => sent[index]).toEqual(invitation);
+    }
+
+    const plain = await page.goto(`${BASE}/login`);
+    expect(plain?.ok()).toBe(true);
+    const html = await plain!.text();
+    for (const invitation of invitations) {
+      expect(html).not.toContain(invitation.email);
+      expect(html).not.toContain(invitation.token);
+    }
+    const email = page.getByRole("textbox", { name: "Email address" });
+    await expect(email).toHaveValue("");
+    await expect(email).toBeEditable();
+    await email.fill(TEST_EMAIL);
+    await page.getByRole("button", { name: "Continue", exact: true }).click();
+    await expect.poll(() => sent[2]).toEqual({ email: TEST_EMAIL });
+  });
+
   test("starts Google OAuth with the same-origin backend callback", async ({
     page,
   }) => {

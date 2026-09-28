@@ -137,6 +137,7 @@ class EventDiscoveryControl(_ControlModel):
     new_event_window_hours: int = Field(gt=0)
     event_without_end_visibility_minutes: int = Field(gt=0)
     initial_render_count: int = Field(gt=0, le=100)
+    preview_event_count: int = Field(gt=0, le=100)
     server_feed_page_size: int = Field(gt=0, le=100)
 
 
@@ -356,9 +357,8 @@ class ContactControl(_ControlModel):
 
 
 class SiteBannerControl(_ControlModel):
-    """Refresh cadence and dismissal duration for the site-wide banner."""
+    """Dismissal duration for the site-wide banner."""
 
-    refresh_seconds: int = Field(gt=0)
     dismissal_days: int = Field(gt=0, le=365)
 
 

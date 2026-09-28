@@ -9,6 +9,27 @@ import { queryKeys } from "../src/shared/lib/queryKeys";
 const require = createRequire(import.meta.url);
 const { getQueryClient }: typeof import("../src/shared/lib/queryClient") = require("../src/shared/lib/queryClient");
 const { eventFeedQueryOptions, createEventAPI, updateEventAPI, deleteEventAPI }: typeof import("../src/features/events/api/events.api") = require("../src/features/events/api/events.api");
+require("../src/shared/services/discoveryCache.server");
+const discoveryModule = require.cache[require.resolve("../src/shared/services/discoveryCache.server")]!;
+const discovery = discoveryModule.exports;
+const previewSnapshots = new Map<string, PaginatedEventsResponse>();
+const previewReads: Array<{ school: string; resource: string }> = [];
+discoveryModule.exports = {
+  ...discovery,
+  readDiscoverySnapshot: async (school: string, resource: string) => {
+    previewReads.push({ school, resource });
+    const snapshot = previewSnapshots.get(school);
+    if (!snapshot) throw new Error(`No test snapshot for ${school}`);
+    return snapshot;
+  },
+};
+const eventFeedModulePath = require.resolve("../src/features/events/api/eventFeed.server");
+const originalEventFeedModule = require.cache[eventFeedModulePath];
+delete require.cache[eventFeedModulePath];
+const { getSchoolPreviewEvents, getSchoolBrowseSnapshot }: typeof import("../src/features/events/api/eventFeed.server") = require(eventFeedModulePath);
+discoveryModule.exports = discovery;
+if (originalEventFeedModule) require.cache[eventFeedModulePath] = originalEventFeedModule;
+else delete require.cache[eventFeedModulePath];
 const originalFetch = globalThis.fetch;
 const originalNow = Date.now;
 const originalWindow = Object.getOwnPropertyDescriptor(globalThis, "window");
@@ -34,6 +55,8 @@ test.beforeEach(() => {
   // Exercise the browser's shared QueryClient without launching a browser.
   Object.defineProperty(globalThis, "window", { configurable: true, value: { location: { origin: "http://localhost" } } });
   getQueryClient().clear();
+  previewSnapshots.clear();
+  previewReads.length = 0;
 });
 test.afterEach(() => {
   getQueryClient().clear();
@@ -339,4 +362,56 @@ test("Positions and Clubs browser consumers reuse complete public snapshots with
   expect(form.getCurrentResult().data).toEqual(directory.items);
   expect(client.getQueryData(queryKeys.clubs.allForSchool("uwo"))).toEqual(directory);
   form.destroy();
+});
+
+test("login previews retain four distinct upcoming titles in canonical feed order", async () => {
+  const now = Date.parse("2035-01-01T12:00:00Z");
+  Date.now = () => now;
+  const scheduled = (id: number, title: string, startOffset: number, endOffset: number): Event => ({
+    ...event(id), title,
+    occurrences: [{ id: String(id), dtstart_utc: new Date(now + startOffset).toISOString(),
+      dtend_utc: new Date(now + endOffset).toISOString() }],
+  } as Event);
+  const expired = scheduled(1, "Campus welcome", -120_000, -60_000);
+  const ongoing = scheduled(2, "Campus welcome", -60_000, 60_000);
+  const duplicate = scheduled(3, "Campus welcome", 60_000, 120_000);
+  const soonest = scheduled(4, "Design workshop", 120_000, 180_000);
+  const next = scheduled(5, "Games night", 180_000, 240_000);
+  const fourth = scheduled(6, "Campus concert", 240_000, 300_000);
+  const beyondPreview = scheduled(7, "Weekend hike", 300_000, 360_000);
+  const snapshot = feed([expired, ongoing, duplicate, soonest, next, fourth, beyondPreview]);
+  previewSnapshots.set("uwaterloo", snapshot);
+  globalThis.fetch = async () => { throw new Error("Preview must read the published feed, not fetch another feed"); };
+
+  expect(await getSchoolPreviewEvents(" UWATERLOO ")).toEqual([ongoing, soonest, next, fourth]);
+  expect(previewReads).toEqual([{ school: "uwaterloo", resource: "events" }]);
+  expect(snapshot.items).toEqual([expired, ongoing, duplicate, soonest, next, fourth, beyondPreview]);
+});
+
+test("login previews use the refreshed school snapshot and recheck expiry without a second cache", async () => {
+  const now = Date.parse("2035-01-01T12:00:00Z");
+  Date.now = () => now;
+  const upcoming = (id: number, school: string): Event => ({
+    ...event(id, school), occurrences: [{ id: String(id),
+      dtstart_utc: new Date(now + 60_000).toISOString(), dtend_utc: new Date(now + 120_000).toISOString() }],
+  } as Event);
+  const waterloo = upcoming(1, "uwaterloo");
+  const toronto = upcoming(2, "utsg");
+  const updatedWaterloo = upcoming(3, "uwaterloo");
+  previewSnapshots.set("uwaterloo", feed([waterloo]));
+  previewSnapshots.set("utsg", feed([toronto]));
+  expect(await getSchoolPreviewEvents("uwaterloo")).toEqual([waterloo]);
+  expect(await getSchoolPreviewEvents("utsg")).toEqual([toronto]);
+
+  const refreshed = { ...feed([updatedWaterloo]), generated_at: now + 1 };
+  previewSnapshots.set("uwaterloo", refreshed);
+  expect(await getSchoolBrowseSnapshot("uwaterloo")).toEqual(refreshed);
+  expect(await getSchoolPreviewEvents("uwaterloo")).toEqual([updatedWaterloo]);
+  expect(await getSchoolPreviewEvents("utsg")).toEqual([toronto]);
+
+  Date.now = () => now + 180_000;
+  expect(await getSchoolPreviewEvents("uwaterloo")).toEqual([]);
+  previewSnapshots.set("utsg", feed([]));
+  expect(await getSchoolPreviewEvents("utsg")).toEqual([]);
+  expect(previewReads.every(({ resource }) => resource === "events")).toBe(true);
 });

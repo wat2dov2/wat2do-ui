@@ -1,9 +1,9 @@
 import { expect, test } from "@playwright/test";
 import { createRequire } from "node:module";
 
-const { warmDiscoveryRoutes, prefetchDiscoveryRoute }: typeof import("../src/app/hooks/useAppNavigation") =
+const { warmPublicPages, prefetchPublicPage }: typeof import("../src/app/hooks/useAppNavigation") =
   createRequire(import.meta.url)("../src/app/hooks/useAppNavigation");
-type PrefetchOptions = Parameters<Parameters<typeof warmDiscoveryRoutes>[0]["prefetch"]>[1];
+type PrefetchOptions = Parameters<Parameters<typeof warmPublicPages>[0]["prefetch"]>[1];
 
 function recordingRouter() {
   const calls: Array<{ href: string; options: PrefetchOptions }> = [];
@@ -67,7 +67,7 @@ test("waits for page resources, then warms each adjacent full page once during i
   const browser = browserScheduler();
   browser.document.readyState = "loading";
   const router = recordingRouter();
-  const stop = warmDiscoveryRoutes(router, "/");
+  const stop = warmPublicPages(router, "/");
   expect(browser.timers.size).toBe(0);
   browser.document.readyState = "complete";
   browser.window.dispatchEvent(new Event("load"));
@@ -78,9 +78,15 @@ test("waits for page resources, then warms each adjacent full page once during i
   expect(router.calls.map(({ href }) => href)).toEqual(["/positions"]);
   browser.runTimer();
   browser.runIdle();
+  browser.runTimer();
+  browser.runIdle();
+  browser.runTimer();
+  browser.runIdle();
   expect(router.calls).toEqual([
     { href: "/positions", options: { kind: "full" } },
     { href: "/clubs", options: { kind: "full" } },
+    { href: "/contact", options: { kind: "full" } },
+    { href: "/login", options: { kind: "full" } },
   ]);
   browser.window.dispatchEvent(new Event("online"));
   browser.document.dispatchEvent(new Event("visibilitychange"));
@@ -91,7 +97,7 @@ test("waits for page resources, then warms each adjacent full page once during i
 test("pauses hidden or offline tabs and resumes the remaining routes", () => {
   const browser = browserScheduler();
   const router = recordingRouter();
-  const stop = warmDiscoveryRoutes(router, "/positions");
+  const stop = warmPublicPages(router, "/positions");
   browser.document.visibilityState = "hidden";
   browser.document.dispatchEvent(new Event("visibilitychange"));
   expect(browser.timers.size).toBe(0);
@@ -113,22 +119,27 @@ test("respects data saver and slow connections while explicit intent can still p
   const browser = browserScheduler();
   const router = recordingRouter();
   browser.navigator.connection.saveData = true;
-  const stop = warmDiscoveryRoutes(router, "/");
+  const stop = warmPublicPages(router, "/");
   expect(browser.timers.size).toBe(0);
   browser.navigator.connection.saveData = false;
   browser.navigator.connection.effectiveType = "2g";
   browser.window.dispatchEvent(new Event("online"));
   expect(browser.timers.size).toBe(0);
-  prefetchDiscoveryRoute(router, "/positions");
-  prefetchDiscoveryRoute(router, "/contact");
-  expect(router.calls).toEqual([{ href: "/positions", options: { kind: "full" } }]);
+  prefetchPublicPage(router, "/positions");
+  prefetchPublicPage(router, "/contact");
+  prefetchPublicPage(router, "/login");
+  expect(router.calls).toEqual([
+    { href: "/positions", options: { kind: "full" } },
+    { href: "/contact", options: { kind: "full" } },
+    { href: "/login", options: { kind: "full" } },
+  ]);
   stop();
 });
 
 test("cancels scheduled work on cleanup, including callbacks already queued", () => {
   const browser = browserScheduler();
   const router = recordingRouter();
-  const stop = warmDiscoveryRoutes(router, "/");
+  const stop = warmPublicPages(router, "/");
   browser.runTimer();
   const callback = [...browser.idleCallbacks.values()][0]!;
   stop();
@@ -143,11 +154,58 @@ test("uses bounded deferred work when requestIdleCallback is unavailable", () =>
   const browser = browserScheduler();
   browser.window.requestIdleCallback = undefined;
   const router = recordingRouter();
-  const stop = warmDiscoveryRoutes(router, "/clubs");
+  const stop = warmPublicPages(router, "/clubs");
   expect(router.calls).toEqual([]);
   browser.runTimer();
   browser.runTimer();
-  expect(router.calls.map(({ href }) => href)).toEqual(["/", "/positions"]);
+  browser.runTimer();
+  browser.runTimer();
+  expect(router.calls.map(({ href }) => href)).toEqual(["/", "/positions", "/contact", "/login"]);
   expect(browser.timers.size).toBe(0);
+  stop();
+});
+
+test("only exact public page URLs are warmed on intent", () => {
+  const router = recordingRouter();
+  for (const href of [
+    "/login?token=sign-in-token",
+    "/login?email=visitor%40example.com",
+    "/login?returnTo=%2Fsettings",
+    "/login?redirect=%2Fclub-panel",
+    "/auth/callback?code=sign-in-code",
+    "/onboarding",
+    "/settings",
+    "/admin",
+    "/club-panel",
+    "/invite/club-invitation",
+    "/contact?email=visitor%40example.com",
+    "/?token=sign-in-token",
+    "https://another-school.wat2do.io/login",
+    "//another-school.wat2do.io/login",
+  ]) {
+    prefetchPublicPage(router, href);
+  }
+  expect(router.calls).toEqual([]);
+  prefetchPublicPage(router, "/login");
+  prefetchPublicPage(router, "/contact");
+  expect(router.calls).toEqual([
+    { href: "/login", options: { kind: "full" } },
+    { href: "/contact", options: { kind: "full" } },
+  ]);
+});
+
+test("the public page warmer skips the current login page and never selects private routes", () => {
+  const browser = browserScheduler();
+  const router = recordingRouter();
+  const stop = warmPublicPages(router, "/login");
+  for (const href of ["/", "/positions", "/clubs", "/contact"]) {
+    const previousCount = router.calls.length;
+    browser.runTimer();
+    browser.runIdle();
+    expect(router.calls).toHaveLength(previousCount + 1);
+    expect(router.calls.at(-1)).toEqual({ href, options: { kind: "full" } });
+  }
+  expect(browser.timers.size).toBe(0);
+  expect(browser.idleCallbacks.size).toBe(0);
   stop();
 });

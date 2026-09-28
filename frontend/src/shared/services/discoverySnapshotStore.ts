@@ -6,7 +6,8 @@ export type DiscoveryResource =
   | "positions"
   | "clubs"
   | "branding"
-  | "schools";
+  | "schools"
+  | "site-banner";
 export interface Snapshot<T> {
   data: T;
   generatedAt: number;

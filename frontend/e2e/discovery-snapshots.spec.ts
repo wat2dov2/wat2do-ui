@@ -206,11 +206,79 @@ const {
 const {
   getClubDirectorySnapshot,
 }: typeof import("../src/features/clubs/api/clubDirectory.server") = require("../src/features/clubs/api/clubDirectory.server");
+const {
+  buildSiteBannerSnapshot,
+}: typeof import("../src/shared/api/siteBanner.server") = require("../src/shared/api/siteBanner.server");
+const banner = {
+  message_translation_key: "navigation.siteBannerMessage",
+  cta_href: "/contact",
+  cta_label_translation_key: "navigation.siteBannerAction",
+};
 const originalFetch = globalThis.fetch;
 const originalAbortTimeout = AbortSignal.timeout;
 test.afterEach(() => {
   globalThis.fetch = originalFetch;
   AbortSignal.timeout = originalAbortTimeout;
+});
+
+test("banner source distinguishes disabled content from failed refreshes", async () => {
+  globalThis.fetch = async (_input, init) => {
+    expect(init?.cache).toBe("no-store");
+    expect(init?.signal).toBeInstanceOf(AbortSignal);
+    return new Response(null, { status: 204 });
+  };
+  expect(await buildSiteBannerSnapshot()).toBeNull();
+  globalThis.fetch = async () => new Response(null, { status: 503 });
+  await expect(buildSiteBannerSnapshot()).rejects.toThrow("503");
+  globalThis.fetch = async () => new Response("invalid json");
+  await expect(buildSiteBannerSnapshot()).rejects.toThrow();
+  globalThis.fetch = async () => {
+    throw new Error("source unavailable");
+  };
+  await expect(buildSiteBannerSnapshot()).rejects.toThrow("source unavailable");
+});
+
+test("published banners survive replacement readers and failed refresh without a page-time API call", async () => {
+  const store = new DiscoverySnapshotStore(new MemoryStorage());
+  await store.refresh("_global", "site-banner", async () => banner);
+  const cachePath = require.resolve("../src/shared/services/discoveryCache.server");
+  const bannerPath = require.resolve("../src/shared/api/siteBanner.server");
+  const previousCache = require.cache[cachePath];
+  const previousBanner = require.cache[bannerPath];
+  const previousBucket = process.env.STORAGE_BUCKET_NAME;
+  let getSiteBanner: typeof import("../src/shared/api/siteBanner.server")["getSiteBanner"];
+  try {
+    process.env.STORAGE_BUCKET_NAME = "discovery-test";
+    delete require.cache[cachePath];
+    delete require.cache[bannerPath];
+    const adapter: typeof import("../src/shared/services/discoveryCache.server") = require(cachePath);
+    adapter.discoveryStore!.read = store.read.bind(store);
+    adapter.discoveryStore!.refresh = store.refresh.bind(store);
+    getSiteBanner = require(bannerPath).getSiteBanner;
+  } finally {
+    if (previousCache) require.cache[cachePath] = previousCache;
+    else delete require.cache[cachePath];
+    if (previousBanner) require.cache[bannerPath] = previousBanner;
+    else delete require.cache[bannerPath];
+    if (previousBucket === undefined) delete process.env.STORAGE_BUCKET_NAME;
+    else process.env.STORAGE_BUCKET_NAME = previousBucket;
+  }
+  let sourceReads = 0;
+  globalThis.fetch = async () => {
+    sourceReads++;
+    return new Response(null, { status: 503 });
+  };
+  expect(await getSiteBanner()).toMatchObject(banner);
+  expect(sourceReads).toBe(0);
+  await store.invalidate("_global", "site-banner");
+  expect(await store.refresh("_global", "site-banner", buildSiteBannerSnapshot)).toBe(false);
+  expect(sourceReads).toBe(1);
+  expect(await getSiteBanner()).toMatchObject(banner);
+  expect(sourceReads).toBe(1);
+  await store.invalidate("_global", "site-banner");
+  await store.refresh("_global", "site-banner", async () => null);
+  expect(await getSiteBanner()).toBeNull();
+  expect(sourceReads).toBe(1);
 });
 
 function storageWithHandler(
@@ -444,6 +512,7 @@ test("readiness covers every school, waits for a failed dataset, and retains cov
       return Response.json([{ slug: "uwo" }, { slug: "uwaterloo" }]);
     if (url.pathname.startsWith("/schools/"))
       return Response.json({ slug: url.pathname.split("/").pop() });
+    if (url.pathname === "/site-banner") return Response.json(banner);
     if (
       url.pathname === "/events/" &&
       url.searchParams.get("school") === "uwo" &&
@@ -483,9 +552,38 @@ test("readiness covers every school, waits for a failed dataset, and retains cov
   });
 });
 
+test("the banner is warmed globally and invalidation leaves school data untouched", async () => {
+  workerStorage.objects.clear();
+  await workerStore.refresh("_global", "schools", async () => [{ slug: "uwo" }, { slug: "uwaterloo" }]);
+  for (const school of ["uwo", "uwaterloo"]) {
+    for (const resource of worker.discoveryResources)
+      await workerStore.refresh(school, resource, async () => ({ items: [] }));
+  }
+  expect(await worker.discoveryReadiness()).toEqual({
+    ready: false,
+    schools: 2,
+    missing: ["_global/site-banner"],
+  });
+  const requests: string[] = [];
+  globalThis.fetch = async (input) => {
+    requests.push(new URL(String(input)).pathname);
+    return new Response(null, { status: 204 });
+  };
+  await worker.reconcileDiscoverySnapshots();
+  expect(requests).toEqual(["/site-banner"]);
+  expect((await worker.discoveryReadiness()).ready).toBe(true);
+  expect((await workerStore.read("_global", "site-banner"))?.data).toBeNull();
+  await worker.queueDiscoveryRefresh("uwo", ["site-banner"]);
+  expect((await workerStore.inspect("_global", "site-banner")).dirty).toBe(true);
+  expect((await workerStore.inspect("_global", "schools")).dirty).toBe(false);
+  expect((await workerStore.inspect("uwo", "events")).dirty).toBe(false);
+  expect(await workerStore.read("uwo", "site-banner")).toBeNull();
+});
+
 test("persisted usable snapshots admit a replacement task before stalled upstream refreshes finish", async () => {
   workerStorage.objects.clear();
   await workerStore.refresh("_global", "schools", async () => [{ slug: "uwo" }, { slug: "uwaterloo" }]);
+  await workerStore.refresh("_global", "site-banner", async () => null);
   for (const school of ["uwo", "uwaterloo"]) {
     for (const resource of worker.discoveryResources) await workerStore.refresh(school, resource, async () => ({ items: [] }));
   }
@@ -500,6 +598,7 @@ test("persisted usable snapshots admit a replacement task before stalled upstrea
     const url = new URL(String(input));
     if (url.pathname === "/schools") return Response.json([{ slug: "uwo" }, { slug: "uwaterloo" }]);
     if (url.pathname.startsWith("/schools/")) return Response.json({ slug: url.pathname.split("/").pop() });
+    if (url.pathname === "/site-banner") return new Response(null, { status: 204 });
     return Response.json({ items: [], total: 0, page: 1, page_size: 20, total_pages: 0 });
   };
   try {

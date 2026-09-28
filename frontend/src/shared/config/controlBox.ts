@@ -25,6 +25,7 @@ export const controlBox = {
       eventDiscovery.event_without_end_visibility_minutes,
     ),
     initialRenderCount: eventDiscovery.initial_render_count,
+    previewEventCount: eventDiscovery.preview_event_count,
     serverFeedPageSize: eventDiscovery.server_feed_page_size,
   },
   clubManagement: {
@@ -52,7 +53,6 @@ export const controlBox = {
     flushDebounceMs: interactionTracking.flush_debounce_milliseconds,
   },
   siteBanner: {
-    refreshSeconds: siteBanner.refresh_seconds,
     dismissalDays: siteBanner.dismissal_days,
   },
   admin: {

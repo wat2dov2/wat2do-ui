@@ -6,6 +6,7 @@ import { orderClubEvents } from "@/features/events/lib/clubEventOrder";
 import { controlBox } from "@/shared/config/controlBox";
 import { resolveSchool } from "@/shared/constants/schools";
 import { fetchServerSnapshot, getServerApiBaseUrl } from "@/shared/services/serverApi";
+import { hasActiveEventOccurrence } from "@/shared/utils/date";
 
 /** Public event detail shared by route metadata, initial HTML, and hydration. */
 export async function getEventDetailSnapshot(eventId: number): Promise<Event | null> {
@@ -71,4 +72,19 @@ export async function buildSchoolBrowseSnapshot(school: string): Promise<Paginat
 export async function getSchoolBrowseSnapshot(school: string) {
   const slug = resolveSchool(school);
   return readDiscoverySnapshot(slug, "events", () => buildSchoolBrowseSnapshot(slug));
+}
+
+/** Login uses the same published feed and refresh lifecycle as Events. */
+export async function getSchoolPreviewEvents(school: string): Promise<Event[]> {
+  const snapshot = await getSchoolBrowseSnapshot(school);
+  const now = Date.now();
+  const seenTitles = new Set<string>();
+  const previewEvents: Event[] = [];
+  for (const event of snapshot.items) {
+    if (seenTitles.has(event.title) || !hasActiveEventOccurrence(event, now)) continue;
+    seenTitles.add(event.title);
+    previewEvents.push(event);
+    if (previewEvents.length === controlBox.eventDiscovery.previewEventCount) break;
+  }
+  return previewEvents;
 }

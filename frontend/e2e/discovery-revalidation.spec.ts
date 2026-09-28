@@ -79,6 +79,13 @@ test("failed durable writes are errors, not successful warming responses", async
   expect(callbacks).toEqual([]);
 });
 
+test("accepts a banner refresh through the shared durable worker", async () => {
+  const response = await POST(request({ school: "uwo", resources: ["site-banner"] }));
+  expect(response.status).toBe(202);
+  expect(queued).toEqual([{ school: "uwo", resources: ["site-banner"] }]);
+  expect(callbacks).toHaveLength(1);
+});
+
 test("invalid and unauthorized requests never schedule work", async () => {
   expect((await POST(request(eventRequest, "wrong"))).status).toBe(401);
   for (const body of [

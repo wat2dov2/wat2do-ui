@@ -1,11 +1,9 @@
-import { cookies, headers } from "next/headers";
+import { cookies } from "next/headers";
 import {
   SITE_BANNER_DISMISSED_COOKIE,
   SiteBannerStrip,
 } from "@/app/SiteBannerStrip";
-import { getSchool } from "@/shared/api/schools.server";
 import { getSiteBanner } from "@/shared/api/siteBanner.server";
-import { getHostnameSchoolStatus } from "@/shared/constants/schools";
 import { sanitizeHref } from "@/shared/utils/url";
 
 /**
@@ -32,26 +30,20 @@ function resolveCtaHref(href: string): string {
  * The navigation is fixed to the top, so this is too, and `index.css` offsets
  * the nav and the page below it whenever this strip is present.
  */
-export async function SiteBanner() {
+export async function SiteBanner({ schoolName }: { schoolName: string }) {
+  const cookieStore = await cookies();
+  if (cookieStore.has(SITE_BANNER_DISMISSED_COOKIE)) return null;
+
   const banner = await getSiteBanner();
   if (!banner) return null;
 
   const href = resolveCtaHref(banner.cta_href);
   if (!href) return null;
 
-  const cookieStore = await cookies();
-  if (cookieStore.has(SITE_BANNER_DISMISSED_COOKIE)) return null;
-
-  const requestHeaders = await headers();
-  const hostname =
-    requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host") ?? "";
-  const { school } = getHostnameSchoolStatus(hostname.split(":")[0] ?? "");
-  const schoolRecord = await getSchool(school);
-
   return (
     <SiteBannerStrip
       messageTranslationKey={banner.message_translation_key}
-      schoolName={schoolRecord?.name ?? school}
+      schoolName={schoolName}
       ctaHref={href}
       ctaLabelTranslationKey={banner.cta_label_translation_key}
     />

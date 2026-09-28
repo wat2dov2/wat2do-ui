@@ -17,7 +17,7 @@ import httpx
 from core.config import settings
 
 log = logging.getLogger(__name__)
-DiscoveryResource = Literal["events", "positions", "clubs", "branding", "schools"]
+DiscoveryResource = Literal["events", "positions", "clubs", "branding", "schools", "site-banner"]
 
 
 class EventFeedRevalidationService:

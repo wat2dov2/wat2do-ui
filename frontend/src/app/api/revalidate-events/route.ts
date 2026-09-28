@@ -13,6 +13,7 @@ const resources: DiscoveryResource[] = [
   "clubs",
   "branding",
   "schools",
+  "site-banner",
 ];
 
 export async function POST(request: NextRequest) {

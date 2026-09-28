@@ -45,7 +45,14 @@ export const ROUTES = {
   CLUB_PANEL_MEMBERS: "/club-panel/members",
 } as const;
 
-export const DISCOVERY_ROUTES: readonly string[] = [ROUTES.HOME, ROUTES.POSITIONS, ROUTES.CLUBS];
+/** Only plain public URLs are eligible for full-page navigation warming. */
+export const PUBLIC_PAGE_ROUTES: readonly string[] = [
+  ROUTES.HOME,
+  ROUTES.POSITIONS,
+  ROUTES.CLUBS,
+  ROUTES.CONTACT,
+  ROUTES.LOGIN,
+];
 
 export function clubPagePath(clubId: number): string {
   return `${ROUTES.CLUBS}/${clubId}`;
