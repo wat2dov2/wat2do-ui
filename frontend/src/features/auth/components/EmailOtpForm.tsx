@@ -23,22 +23,15 @@ import {
   FieldSet,
 } from "@/shared/ui/field";
 import { Input } from "@/shared/ui/input";
-import {
-  InputOTP,
-  InputOTPGroup,
-  InputOTPSlot,
-} from "@/shared/ui/input-otp";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/shared/ui/input-otp";
 import { LoadingButton } from "@/shared/ui/loading-button";
 import { cn } from "@/shared/lib/utils";
-import {
-  getCurrentSchool,
-  resolveSchool,
-} from "@/shared/constants/schools";
+import { getCurrentSchool, resolveSchool } from "@/shared/constants/schools";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 import { useCoarsePointer } from "@/shared/hooks/useCoarsePointer";
 
-interface EmailOtpFormProps
-  extends Omit<ComponentProps<"form">, "onSubmit"> {
+interface EmailOtpFormProps extends Omit<ComponentProps<"form">, "onSubmit"> {
+  disabled?: boolean;
   actionLabel?: string;
   requestCodeLabel?: string;
   initialEmail?: string;
@@ -63,6 +56,7 @@ interface EmailOtpFormProps
 }
 
 export function EmailOtpForm({
+  disabled = false,
   actionLabel,
   requestCodeLabel,
   initialEmail,
@@ -99,10 +93,16 @@ export function EmailOtpForm({
       submittedOtpRef.current = null;
       return;
     }
-    if (isBusy || isSubmitDisabled || submittedOtpRef.current === flow.otpToken) return;
+    if (
+      disabled ||
+      isBusy ||
+      isSubmitDisabled ||
+      submittedOtpRef.current === flow.otpToken
+    )
+      return;
     submittedOtpRef.current = flow.otpToken;
     formRef.current?.requestSubmit();
-  }, [flow.emailSent, flow.otpToken, isBusy, isSubmitDisabled]);
+  }, [flow.emailSent, flow.otpToken, disabled, isBusy, isSubmitDisabled]);
   const resolvedRequestCodeLabel = requestCodeLabel ?? t("auth.continue");
   const resolvedActionLabel = actionLabel ?? t("auth.verifyOtp");
   const schoolSlug =
@@ -124,7 +124,7 @@ export function EmailOtpForm({
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (isBusy || isSubmitDisabled) {
+    if (disabled || isBusy || isSubmitDisabled) {
       return;
     }
 
@@ -149,7 +149,7 @@ export function EmailOtpForm({
       onSubmit={(event) => void handleSubmit(event)}
       {...props}
     >
-      <FieldSet disabled={isBusy} className="gap-4">
+      <FieldSet disabled={disabled || isBusy} className="gap-4">
         {!flow.emailSent ? (
           <Field>
             <FieldLabel htmlFor={emailId}>{t("auth.emailLabel")}</FieldLabel>
@@ -204,9 +204,7 @@ export function EmailOtpForm({
           isLoading={isBusy}
           className="w-full"
         >
-          {flow.emailSent
-            ? resolvedActionLabel
-            : resolvedRequestCodeLabel}
+          {flow.emailSent ? resolvedActionLabel : resolvedRequestCodeLabel}
         </LoadingButton>
 
         {flow.emailSent ? (

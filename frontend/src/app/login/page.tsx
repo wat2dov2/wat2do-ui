@@ -7,10 +7,7 @@ import { AuthHeroPanel } from "@/features/auth/components/AuthHeroPanel";
 import { getSchoolPreviewEvents } from "@/features/events/api/eventFeed.server";
 import { getSchoolFromRequestHost } from "@/shared/constants/schools";
 import { QP } from "@/shared/constants/queryParams";
-import {
-  buildNoIndexPageMetadata,
-  selectSeoImage,
-} from "@/shared/lib/seo";
+import { buildNoIndexPageMetadata } from "@/shared/lib/seo";
 import type { Event } from "@/shared/types";
 
 export const revalidate = 0;
@@ -34,33 +31,18 @@ const loadPreviewEvents = cache(async (school: string): Promise<Event[]> => {
   }
 });
 
-export async function generateMetadata(): Promise<Metadata> {
-  const requestHeaders = await headers();
-  const school = getSchoolFromRequestHost(
-    requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host"),
-  );
-  const previewEvents = await loadPreviewEvents(school);
-  const featuredEvent = previewEvents.find((event) => event.source_image_url);
-  const title = "Sign In to Wat2Do";
-  const description =
-    "Sign in or create a Wat2Do account to save campus events, follow student clubs, and personalize your event feed.";
-
-  return buildNoIndexPageMetadata({
-    title,
-    description,
-    image: selectSeoImage(
-      featuredEvent?.source_image_url,
-      featuredEvent ? `${featuredEvent.title} event poster` : "",
-      {
-        url: imgAuthLogo.src,
-        alt: "Wat2Do campus event discovery",
-        width: imgAuthLogo.width,
-        height: imgAuthLogo.height,
-        type: "image/png",
-      },
-    ),
-  });
-}
+export const metadata: Metadata = buildNoIndexPageMetadata({
+  title: "Sign In to Wat2Do",
+  description:
+    "Sign in or create a Wat2Do account to save campus events, follow student clubs, and personalize your event feed.",
+  image: {
+    url: imgAuthLogo.src,
+    alt: "Wat2Do campus event discovery",
+    width: imgAuthLogo.width,
+    height: imgAuthLogo.height,
+    type: "image/png",
+  },
+});
 
 async function LoginPreview({ school }: { school: string }) {
   return <AuthHeroPanel events={await loadPreviewEvents(school)} />;

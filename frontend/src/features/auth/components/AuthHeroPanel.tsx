@@ -3,7 +3,8 @@
 import Image from "next/image";
 import { useTranslation } from "react-i18next";
 import imgLogo from "@/assets/38e8096a28295e8dcc0e5020d0a5f3dd85d5f019.png";
-import { EventCard, EventCardSkeleton } from "@/features/events";
+import { EventCard } from "@/features/events/components/EventCard";
+import { EventCardSkeleton } from "@/features/events/components/EventCardSkeleton";
 import { controlBox } from "@/shared/config/controlBox";
 import type { Event } from "@/shared/types";
 
@@ -35,7 +36,7 @@ export function AuthHeroPanel({ events = [], isLoading = false }: AuthHeroPanelP
               {isLoading ? Array.from({ length: controlBox.eventDiscovery.previewEventCount }, (_, index) => (
                 <EventCardSkeleton key={index} />
               )) : events.map((event) => (
-                <EventCard key={event.id} event={event} interactive={false} />
+                <EventCard key={event.id} event={event} interactive={false} imagePriority />
               ))}
             </div>
           </>

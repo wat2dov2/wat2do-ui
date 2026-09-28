@@ -59,6 +59,7 @@ async function reconcile(): Promise<void> {
         resource,
         globalBuilders[resource],
       );
+      await discoveryStore.read("_global", resource);
     } catch (error) {
       console.error("discovery_reconcile_failed", {
         school: "_global",
@@ -84,19 +85,12 @@ async function reconcile(): Promise<void> {
   );
   for (const state of states) {
     try {
-      let generation: unknown;
-      const published = await discoveryStore.refresh<unknown>(
-        state.school,
-        state.resource,
-        async () => {
-          generation = await builders[state.resource as keyof typeof builders](
-            state.school,
-          );
-          return generation;
-        },
+      await discoveryStore.refresh<unknown>(state.school, state.resource, () =>
+        builders[state.resource as keyof typeof builders](state.school),
       );
-      if (published)
-        warmDiscoveryImages(state.school, state.resource, generation);
+      const snapshot = await discoveryStore.read(state.school, state.resource);
+      if (snapshot)
+        warmDiscoveryImages(state.school, state.resource, snapshot.data);
     } catch (error) {
       console.error("discovery_reconcile_failed", {
         school: state.school,
@@ -126,11 +120,23 @@ export async function discoveryReadiness() {
   const schools = await getSchoolDirectory();
   const states = await Promise.all([
     ...globalResources.map((resource) =>
-      discoveryStore!.inspect("_global", resource),
+      discoveryStore!
+        .read("_global", resource)
+        .then((snapshot) => ({
+          school: "_global",
+          resource,
+          ready: snapshot !== null,
+        })),
     ),
     ...schools.flatMap((school) =>
       discoveryResources.map((resource) =>
-        discoveryStore!.inspect(school.slug, resource),
+        discoveryStore!
+          .read(school.slug, resource)
+          .then((snapshot) => ({
+            school: school.slug,
+            resource,
+            ready: snapshot !== null,
+          })),
       ),
     ),
   ]);

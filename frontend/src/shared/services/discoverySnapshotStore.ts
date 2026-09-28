@@ -2,12 +2,7 @@ import { randomUUID } from "node:crypto";
 import control from "../../../../backend/controlbox/discovery_cache.json" with { type: "json" };
 
 export type DiscoveryResource =
-  | "events"
-  | "positions"
-  | "clubs"
-  | "branding"
-  | "schools"
-  | "site-banner";
+  "events" | "positions" | "clubs" | "branding" | "schools" | "site-banner";
 export interface Snapshot<T> {
   data: T;
   generatedAt: number;
@@ -33,6 +28,11 @@ export interface SnapshotStorage {
 
 /** One durable state record publishes immutable, complete generations with CAS. */
 export class DiscoverySnapshotStore {
+  private snapshots = new Map<
+    string,
+    { snapshot: Snapshot<unknown>; payloadKey: string; checkedAt: number }
+  >();
+  private reads = new Map<string, Promise<Snapshot<unknown> | null>>();
   constructor(
     private storage: SnapshotStorage,
     private now = Date.now,
@@ -90,20 +90,63 @@ export class DiscoverySnapshotStore {
     school: string,
     resource: DiscoveryResource,
   ): Promise<Snapshot<T> | null> {
+    const key = this.key(school, resource);
+    const cached = this.snapshots.get(key);
+    const now = this.now();
+    if (
+      cached &&
+      now - cached.checkedAt < control.worker_interval_seconds * 1000 &&
+      now - cached.snapshot.generatedAt <
+        control.maximum_snapshot_age_seconds * 1000
+    )
+      return cached.snapshot as Snapshot<T>;
+
+    let pending = this.reads.get(key);
+    if (!pending) {
+      pending = this.load(school, resource, key).finally(() =>
+        this.reads.delete(key),
+      );
+      this.reads.set(key, pending);
+    }
+    return pending as Promise<Snapshot<T> | null>;
+  }
+
+  private async load(
+    school: string,
+    resource: DiscoveryResource,
+    key: string,
+  ): Promise<Snapshot<unknown> | null> {
+    const cached = this.snapshots.get(key);
     const { state } = await this.state(school, resource);
+    const published = this.snapshots.get(key);
+    if (published && published !== cached) return published.snapshot;
     if (
       !state?.payloadKey ||
       this.now() - state.generatedAt! >=
         control.maximum_snapshot_age_seconds * 1000
-    )
+    ) {
+      this.snapshots.delete(key);
       return null;
+    }
+    if (cached?.payloadKey === state.payloadKey) {
+      cached.checkedAt = this.now();
+      return cached.snapshot;
+    }
     const payload = await this.storage.get(state.payloadKey);
+    const latest = this.snapshots.get(key);
+    if (latest && latest !== cached) return latest.snapshot;
     if (!payload) throw new Error("Published discovery payload is missing");
-    return {
-      data: JSON.parse(payload.value) as T,
+    const snapshot = {
+      data: JSON.parse(payload.value) as unknown,
       generatedAt: state.generatedAt!,
       revision: state.completed!,
     };
+    this.snapshots.set(key, {
+      snapshot,
+      payloadKey: state.payloadKey,
+      checkedAt: this.now(),
+    });
+    return snapshot;
   }
 
   async refresh<T>(
@@ -186,6 +229,13 @@ export class DiscoverySnapshotStore {
         },
       );
       const published = updated && currentRevision;
+      if (published) {
+        this.snapshots.set(this.key(school, resource), {
+          snapshot: { data, generatedAt, revision: requested },
+          payloadKey,
+          checkedAt: this.now(),
+        });
+      }
       console.info("discovery_refresh", {
         school,
         resource,

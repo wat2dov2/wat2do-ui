@@ -3,6 +3,8 @@
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
+import { AuthEntryPage } from "@/features/auth/pages/AuthEntryPage";
+import { AuthHeroPanel } from "@/features/auth/components/AuthHeroPanel";
 import { EventCardSkeleton } from "@/features/events/components/EventCardSkeleton";
 import { ClubCardSkeleton } from "@/features/clubs/components/ClubCardSkeleton";
 import { POSITION_TYPES } from "@/features/positions/api/positions.api";
@@ -68,6 +70,7 @@ function DiscoveryLoading({ resource }: { resource: "events" | "clubs" | "positi
 export function RouteLoading() {
   const pathname = usePathname();
   const { t } = useTranslation();
+  if (pathname === ROUTES.LOGIN) return <AuthEntryPage isPending preview={<AuthHeroPanel isLoading />} />;
   if (pathname === ROUTES.HOME) return <DiscoveryLoading resource="events" />;
   if (pathname === ROUTES.CLUBS) return <DiscoveryLoading resource="clubs" />;
   if (pathname === ROUTES.POSITIONS) return <DiscoveryLoading resource="positions" />;

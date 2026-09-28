@@ -18,6 +18,7 @@ import { Button } from "@/shared/ui/button";
 
 interface AuthEntryPageProps {
   preview: ReactNode;
+  isPending?: boolean;
   initialEmail?: string;
   invitationToken?: string;
   initialReturnTo?: string;
@@ -26,6 +27,7 @@ interface AuthEntryPageProps {
 
 export function AuthEntryPage({
   preview,
+  isPending = false,
   initialEmail,
   invitationToken,
   initialReturnTo,
@@ -40,10 +42,10 @@ export function AuthEntryPage({
   );
 
   useEffect(() => {
-    if (isAuthenticated) {
+    if (!isPending && isAuthenticated) {
       router.replace(returnTo ?? ROUTES.HOME);
     }
-  }, [isAuthenticated, returnTo, router]);
+  }, [isPending, isAuthenticated, returnTo, router]);
 
   return (
     <AuthPageLayout
@@ -52,10 +54,13 @@ export function AuthEntryPage({
       preview={preview}
     >
       <GoogleSignInButton
+        disabled={isPending}
         returnTo={returnTo ?? undefined}
         hasError={initialOAuthError === "google"}
       />
       <EmailOtpForm
+        disabled={isPending}
+        focusOnMount={!isPending}
         className="mt-4"
         initialEmail={initialEmail}
         invitationToken={invitationToken}
@@ -80,6 +85,7 @@ export function AuthEntryPage({
         requestFooter={
           <Button
             type="button"
+            disabled={isPending}
             variant="outline"
             onClick={() =>
               router.push(appendSafeReturnTo(ROUTES.ONBOARDING, returnTo))

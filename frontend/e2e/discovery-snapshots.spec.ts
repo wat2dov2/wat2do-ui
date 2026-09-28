@@ -11,7 +11,9 @@ import {
 class MemoryStorage implements SnapshotStorage {
   objects = new Map<string, { value: string; etag: string }>();
   version = 0;
+  gets: string[] = [];
   async get(key: string) {
+    this.gets.push(key);
     return this.objects.get(key) ?? null;
   }
   async put(key: string, value: string, etag?: string) {
@@ -241,17 +243,20 @@ test("banner source distinguishes disabled content from failed refreshes", async
 test("published banners survive replacement readers and failed refresh without a page-time API call", async () => {
   const store = new DiscoverySnapshotStore(new MemoryStorage());
   await store.refresh("_global", "site-banner", async () => banner);
-  const cachePath = require.resolve("../src/shared/services/discoveryCache.server");
+  const cachePath =
+    require.resolve("../src/shared/services/discoveryCache.server");
   const bannerPath = require.resolve("../src/shared/api/siteBanner.server");
   const previousCache = require.cache[cachePath];
   const previousBanner = require.cache[bannerPath];
   const previousBucket = process.env.STORAGE_BUCKET_NAME;
-  let getSiteBanner: typeof import("../src/shared/api/siteBanner.server")["getSiteBanner"];
+  let getSiteBanner: (typeof import("../src/shared/api/siteBanner.server"))["getSiteBanner"];
   try {
     process.env.STORAGE_BUCKET_NAME = "discovery-test";
     delete require.cache[cachePath];
     delete require.cache[bannerPath];
-    const adapter: typeof import("../src/shared/services/discoveryCache.server") = require(cachePath);
+    const adapter: typeof import("../src/shared/services/discoveryCache.server") = require(
+      cachePath,
+    );
     adapter.discoveryStore!.read = store.read.bind(store);
     adapter.discoveryStore!.refresh = store.refresh.bind(store);
     getSiteBanner = require(bannerPath).getSiteBanner;
@@ -271,7 +276,9 @@ test("published banners survive replacement readers and failed refresh without a
   expect(await getSiteBanner()).toMatchObject(banner);
   expect(sourceReads).toBe(0);
   await store.invalidate("_global", "site-banner");
-  expect(await store.refresh("_global", "site-banner", buildSiteBannerSnapshot)).toBe(false);
+  expect(
+    await store.refresh("_global", "site-banner", buildSiteBannerSnapshot),
+  ).toBe(false);
   expect(sourceReads).toBe(1);
   expect(await getSiteBanner()).toMatchObject(banner);
   expect(sourceReads).toBe(1);
@@ -497,14 +504,18 @@ schoolModule.exports = {
 const workerModulePath = require.resolve("../src/app/discoveryRefresh.server");
 const originalWorkerModule = require.cache[workerModulePath];
 delete require.cache[workerModulePath];
-const worker: typeof import("../src/app/discoveryRefresh.server") = require(workerModulePath);
-if (originalWorkerModule) require.cache[workerModulePath] = originalWorkerModule;
+const worker: typeof import("../src/app/discoveryRefresh.server") = require(
+  workerModulePath,
+);
+if (originalWorkerModule)
+  require.cache[workerModulePath] = originalWorkerModule;
 else delete require.cache[workerModulePath];
 cacheModule.exports = originalCacheModule;
 schoolModule.exports = originalSchoolModule;
 
 test("readiness covers every school, waits for a failed dataset, and retains coverage during refresh failure", async () => {
   workerStorage.objects.clear();
+  workerNow += discoveryControls.worker_interval_seconds * 1000;
   let failWesternEvents = true;
   globalThis.fetch = async (input) => {
     const url = new URL(String(input));
@@ -554,7 +565,11 @@ test("readiness covers every school, waits for a failed dataset, and retains cov
 
 test("the banner is warmed globally and invalidation leaves school data untouched", async () => {
   workerStorage.objects.clear();
-  await workerStore.refresh("_global", "schools", async () => [{ slug: "uwo" }, { slug: "uwaterloo" }]);
+  workerNow += discoveryControls.worker_interval_seconds * 1000;
+  await workerStore.refresh("_global", "schools", async () => [
+    { slug: "uwo" },
+    { slug: "uwaterloo" },
+  ]);
   for (const school of ["uwo", "uwaterloo"]) {
     for (const resource of worker.discoveryResources)
       await workerStore.refresh(school, resource, async () => ({ items: [] }));
@@ -574,7 +589,9 @@ test("the banner is warmed globally and invalidation leaves school data untouche
   expect((await worker.discoveryReadiness()).ready).toBe(true);
   expect((await workerStore.read("_global", "site-banner"))?.data).toBeNull();
   await worker.queueDiscoveryRefresh("uwo", ["site-banner"]);
-  expect((await workerStore.inspect("_global", "site-banner")).dirty).toBe(true);
+  expect((await workerStore.inspect("_global", "site-banner")).dirty).toBe(
+    true,
+  );
   expect((await workerStore.inspect("_global", "schools")).dirty).toBe(false);
   expect((await workerStore.inspect("uwo", "events")).dirty).toBe(false);
   expect(await workerStore.read("uwo", "site-banner")).toBeNull();
@@ -582,24 +599,42 @@ test("the banner is warmed globally and invalidation leaves school data untouche
 
 test("persisted usable snapshots admit a replacement task before stalled upstream refreshes finish", async () => {
   workerStorage.objects.clear();
-  await workerStore.refresh("_global", "schools", async () => [{ slug: "uwo" }, { slug: "uwaterloo" }]);
+  workerNow += discoveryControls.worker_interval_seconds * 1000;
+  await workerStore.refresh("_global", "schools", async () => [
+    { slug: "uwo" },
+    { slug: "uwaterloo" },
+  ]);
   await workerStore.refresh("_global", "site-banner", async () => null);
   for (const school of ["uwo", "uwaterloo"]) {
-    for (const resource of worker.discoveryResources) await workerStore.refresh(school, resource, async () => ({ items: [] }));
+    for (const resource of worker.discoveryResources)
+      await workerStore.refresh(school, resource, async () => ({ items: [] }));
   }
   workerNow += 600_000;
   let release!: () => void;
   let started!: () => void;
-  const pending = new Promise<void>(resolve => { release = resolve; });
-  const entered = new Promise<void>(resolve => { started = resolve; });
-  globalThis.fetch = async input => {
+  const pending = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const entered = new Promise<void>((resolve) => {
+    started = resolve;
+  });
+  globalThis.fetch = async (input) => {
     started();
     await pending;
     const url = new URL(String(input));
-    if (url.pathname === "/schools") return Response.json([{ slug: "uwo" }, { slug: "uwaterloo" }]);
-    if (url.pathname.startsWith("/schools/")) return Response.json({ slug: url.pathname.split("/").pop() });
-    if (url.pathname === "/site-banner") return new Response(null, { status: 204 });
-    return Response.json({ items: [], total: 0, page: 1, page_size: 20, total_pages: 0 });
+    if (url.pathname === "/schools")
+      return Response.json([{ slug: "uwo" }, { slug: "uwaterloo" }]);
+    if (url.pathname.startsWith("/schools/"))
+      return Response.json({ slug: url.pathname.split("/").pop() });
+    if (url.pathname === "/site-banner")
+      return new Response(null, { status: 204 });
+    return Response.json({
+      items: [],
+      total: 0,
+      page: 1,
+      page_size: 20,
+      total_pages: 0,
+    });
   };
   try {
     // This resolves before the deferred source response. A reconciliation-first
@@ -610,8 +645,46 @@ test("persisted usable snapshots admit a replacement task before stalled upstrea
   } finally {
     release();
     await worker.reconcileDiscoverySnapshots();
-    const processState = globalThis as typeof globalThis & { discoveryWorker?: { timer?: ReturnType<typeof setInterval> } };
+    const processState = globalThis as typeof globalThis & {
+      discoveryWorker?: { timer?: ReturnType<typeof setInterval> };
+    };
     clearInterval(processState.discoveryWorker?.timer);
-    if (processState.discoveryWorker) processState.discoveryWorker.timer = undefined;
+    if (processState.discoveryWorker)
+      processState.discoveryWorker.timer = undefined;
   }
+});
+
+
+test("published and startup-warmed snapshots serve concurrent visitors without storage reads", async () => {
+  const storage = new MemoryStorage();
+  const store = new DiscoverySnapshotStore(storage);
+  await store.refresh("uwo", "events", async () => ({ items: [1] }));
+  storage.gets = [];
+  await Promise.all(Array.from({ length: 20 }, () => store.read("uwo", "events")));
+  expect(storage.gets).toEqual([]);
+  const replacement = new DiscoverySnapshotStore(storage);
+  await Promise.all(Array.from({ length: 20 }, () => replacement.read("uwo", "events")));
+  expect(storage.gets).toHaveLength(2);
+  storage.gets = [];
+  expect((await replacement.read("uwo", "events"))?.data).toEqual({ items: [1] });
+  expect(storage.gets).toEqual([]);
+});
+
+test("warm reads detect another task's published revision without redownloading unchanged payloads", async () => {
+  let now = 1000;
+  const storage = new MemoryStorage();
+  const writer = new DiscoverySnapshotStore(storage, () => now);
+  const reader = new DiscoverySnapshotStore(storage, () => now);
+  await writer.refresh("uwo", "events", async () => [1]);
+  await reader.read("uwo", "events");
+  storage.gets = [];
+  now += discoveryControls.worker_interval_seconds * 1000;
+  expect((await reader.read("uwo", "events"))?.data).toEqual([1]);
+  expect(storage.gets).toHaveLength(1);
+  await writer.invalidate("uwo", "events");
+  await writer.refresh("uwo", "events", async () => [2]);
+  now += discoveryControls.worker_interval_seconds * 1000;
+  expect((await reader.read("uwo", "events"))?.data).toEqual([2]);
+  now += discoveryControls.maximum_snapshot_age_seconds * 1000;
+  expect(await reader.read("uwo", "events")).toBeNull();
 });

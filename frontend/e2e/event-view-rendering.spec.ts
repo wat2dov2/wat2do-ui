@@ -31,11 +31,17 @@ function loadComponent(path: string): object {
   runInNewContext(outputText, {
     exports: componentModule.exports,
     require: (id: string) => {
+      if (id === "next/navigation") return { useRouter: () => ({ replace() {}, push() {} }) };
+      if (id.endsWith(".png")) return { src: "/logo.png", width: 57, height: 40 };
+      if (id === "@/features/auth/hooks/useAuthState") return { useAuthState: () => ({ isAuthenticated: false }) };
+      if (id === "@/features/auth/hooks/useEmailOtpFlow") return {
+        useEmailOtpFlow: () => ({ email: "", otpToken: "", emailSent: false, isLoading: false, isFormValid: false }),
+      };
       if (id === "react-i18next") return {
         useTranslation: () => ({ t: (key: string) => key, i18n: { language: "en" } }),
       };
       if (id === "@/shared/hooks/useSchoolDirectory") return {
-        useSchoolDirectory: () => ({ getSchoolTimezone: () => "America/Toronto" }),
+        useSchoolDirectory: () => ({ getSchoolTimezone: () => "America/Toronto", schoolBySlug: new Map() }),
       };
       if (id === "@/features/events/components/EventCard") return {
         EventCard: ({ event }: { event: Event }) => createElement("article", { "data-event-id": event.id }, event.title),
@@ -124,3 +130,25 @@ for (const mode of ["calendar", "map"]) {
     });
   }
 }
+
+
+test("login loading preserves the real form structure and disables unfinished route actions", () => {
+  const { AuthEntryPage } = loadComponent("features/auth/pages/AuthEntryPage") as typeof import("../src/features/auth/pages/AuthEntryPage");
+  const render = (isPending: boolean) => renderToStaticMarkup(createElement(AuthEntryPage, {
+    isPending,
+    preview: createElement("aside", { "data-preview": true }),
+  }));
+  const pending = render(true);
+  const loaded = render(false);
+  for (const html of [pending, loaded]) {
+    expect(html).toContain("auth.heading");
+    expect(html).toContain("auth.continueWithGoogle");
+    expect(html).toContain('type="email"');
+    expect(html).toContain("auth.skipToOnboarding");
+    expect(html).toContain('data-preview="true"');
+  }
+  expect(pending).toMatch(/<fieldset[^>]*disabled=""/);
+  expect(pending).not.toContain('autofocus=""');
+  const structure = (html: string) => html.replace(/ disabled=""| autofocus=""/g, "");
+  expect(structure(pending)).toBe(structure(loaded));
+});

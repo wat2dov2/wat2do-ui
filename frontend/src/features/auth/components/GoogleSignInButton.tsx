@@ -7,12 +7,14 @@ import { Separator } from "@/shared/ui/separator";
 
 interface GoogleSignInButtonProps {
   returnTo?: string;
+  disabled?: boolean;
   hasError?: boolean;
 }
 
 export function GoogleSignInButton({
   returnTo,
   hasError = false,
+  disabled = false,
 }: GoogleSignInButtonProps) {
   const { t } = useTranslation();
   const [isLoading, setIsLoading] = useState(false);
@@ -26,6 +28,7 @@ export function GoogleSignInButton({
     <div className="space-y-4">
       <LoadingButton
         type="button"
+        disabled={disabled}
         variant="outline"
         className="w-full"
         isLoading={isLoading}

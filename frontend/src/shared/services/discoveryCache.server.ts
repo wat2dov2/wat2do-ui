@@ -82,8 +82,14 @@ export class S3SnapshotStorage implements SnapshotStorage {
   }
 }
 const bucket = process.env.STORAGE_BUCKET_NAME;
+// Instrumentation and routes are separate Next bundles, but share one warm store.
+const processState = globalThis as typeof globalThis & {
+  discoverySnapshotStore?: DiscoverySnapshotStore;
+};
 export const discoveryStore = bucket
-  ? new DiscoverySnapshotStore(new S3SnapshotStorage(bucket))
+  ? (processState.discoverySnapshotStore ??= new DiscoverySnapshotStore(
+      new S3SnapshotStorage(bucket),
+    ))
   : null;
 
 export async function readDiscoverySnapshot<T>(
