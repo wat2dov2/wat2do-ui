@@ -46,6 +46,7 @@ import { EventCardImage } from "@/features/events/components/EventCardImage";
 import { EventLocationMap } from "@/features/events/components/EventLocationMap";
 import { ClubBadgeDropdown } from "@/features/clubs";
 import { AvatarStack } from "@/shared/ui/avatar-stack";
+import { LazyImage } from "@/shared/ui/lazy-image";
 import { GoingOccurrencePickerContent } from "@/features/events/components/GoingOccurrencePickerContent";
 import { fetchEventAttendees } from "@/features/events/api/events.api";
 import { deleteEventAPI } from "@/features/events/api/events.api";
@@ -275,7 +276,7 @@ function EventRegistrationCard({
         <CardContent>
           <Stack gap={3}>
             {userAvatarUrl ? (
-              <img src={userAvatarUrl} alt="" width={48} height={48} />
+              <LazyImage src={userAvatarUrl} alt="" width={48} height={48} className="size-12" fallback={null} />
             ) : null}
             <Stack direction="horizontal" gap={2}>
               <EventCalendarDownloadMenu event={event}>
@@ -336,7 +337,7 @@ function EventRegistrationCard({
             {profileCompleted ? (
               <Stack direction="horizontal" gap={2} align="center">
                 {userAvatarUrl ? (
-                  <img src={userAvatarUrl} alt="" width={24} height={24} />
+                  <LazyImage src={userAvatarUrl} alt="" width={24} height={24} className="size-6" fallback={null} />
                 ) : null}
                 <Stack gap={1}>
                   <CardTitle>{displayName}</CardTitle>

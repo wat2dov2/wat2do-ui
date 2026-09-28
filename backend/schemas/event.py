@@ -106,7 +106,47 @@ def _validate_category(v: str | None) -> str | None:
 PriceField = Annotated[float, Field(ge=0, le=MAX_EVENT_PRICE, allow_inf_nan=False)]
 
 
-class EventCreate(BaseModel):
+class EventDiscoveryFields(BaseModel):
+    """Independent discovery facts; null means the source has not established the fact."""
+
+    employers_on_campus: bool | None = Field(
+        default=None,
+        strict=True,
+        description=(
+            "Employer representatives or recruiters will be physically present on the "
+            "event's school campus for recruiting, a career fair, an employer information "
+            "session, or networking. General career workshops, alumni talks without "
+            "employer recruiting, student-club hiring, online sessions, and off-campus "
+            "employer events do not qualify. School affiliation alone does not prove "
+            "an on-campus location."
+        ),
+    )
+    free_food_on_campus: bool | None = Field(
+        default=None,
+        strict=True,
+        description=(
+            "Food or refreshments are explicitly offered at no charge at a physical "
+            "location on the event's school campus. Free admission with food for sale, "
+            "discounted food, prizes, and unspecified food pricing do not qualify. "
+            "School affiliation alone does not prove an on-campus location. "
+            "Complimentary food does not establish the event's admission price."
+        ),
+    )
+    sports_game: bool | None = Field(
+        default=None,
+        strict=True,
+        description=(
+            "An actual scheduled athletic game, match, meet, or tournament involving an "
+            "official school varsity team. Intramural, club-team, and recreational "
+            "competitions, practices, tryouts, fitness classes, sports-club meetings, "
+            "video games, and watch parties do not qualify. School affiliation or posting "
+            "from an athletics account alone does not establish varsity participation. "
+            "Use null when official varsity participation is unconfirmed."
+        ),
+    )
+
+
+class EventCreate(EventDiscoveryFields):
     model_config = ConfigDict(extra="forbid")
 
     title: str = Field(..., min_length=1, max_length=MAX_EVENT_TITLE_LENGTH)
@@ -148,7 +188,7 @@ class EventCreate(BaseModel):
         return _validate_optional_handle(v)
 
 
-class EventUpdate(BaseModel):
+class EventUpdate(EventDiscoveryFields):
     model_config = ConfigDict(extra="forbid")
 
     title: str | None = Field(default=None, max_length=MAX_EVENT_TITLE_LENGTH)
@@ -200,7 +240,7 @@ class EventTimeMeta(BaseModel):
     added_at: str | None = None
 
 
-class EventSummaryResponse(BaseModel):
+class EventSummaryResponse(EventDiscoveryFields):
     """Payload for list/card views.
 
     Description is included because the feed search matches event copy as well
@@ -258,7 +298,7 @@ class EventStatsResponse(BaseModel):
     going_count: int = 0
 
 
-class EventResponse(BaseModel):
+class EventResponse(EventDiscoveryFields):
     """Full event payload returned from GET /events/{id} and used internally
     for ownership checks.
 
@@ -294,7 +334,7 @@ class EventResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
-class EventPublicResponse(BaseModel):
+class EventPublicResponse(EventDiscoveryFields):
     """Like EventResponse but without ``created_by``, so public detail
     views do not leak creator UUIDs to unauthenticated callers.
     """

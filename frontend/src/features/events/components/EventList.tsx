@@ -15,7 +15,6 @@ import { EventCardSkeleton } from "@/features/events/components/EventCardSkeleto
 import type { EventStats } from "@/features/events/api/events.api";
 import { EmptyState } from "@/shared/feedback";
 import { Button } from "@/shared/ui/button";
-import { Spinner } from "@/shared/ui/spinner";
 import { CARD_GRID_CLASS } from "@/shared/constants/ui";
 import { CardEntrance } from "@/shared/ui/card-entrance";
 import { controlBox } from "@/shared/config/controlBox";
@@ -287,14 +286,12 @@ export function EventList({
         <div
           ref={loadMoreRef}
           data-testid="event-list-sentinel"
-          className="flex justify-center py-8"
+          className={CARD_GRID_CLASS}
           role="status"
           aria-live="polite"
+          aria-label={t("common.loading")}
         >
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Spinner className="size-5" />
-            <span>{t("common.loading")}</span>
-          </div>
+          {Array.from({ length: 4 }, (_, index) => <EventCardSkeleton key={index} />)}
         </div>
       ) : null}
     </div>

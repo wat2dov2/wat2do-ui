@@ -1,6 +1,7 @@
 """Unit tests for Pass 2 reconciler schema, prompt, and id handling."""
 
 from services.scraper.reconciler import (
+    EVENT_DISCOVERY_RULES,
     ReconciledEvent,
     _build_reconcile_prompt,
     reconcile_events,
@@ -53,6 +54,15 @@ def test_reconcile_prompt_reuses_same_occurrence_reposts_but_not_new_occurrences
     assert "distinct occurrence, session, edition, or new week" in prompt
     assert "matching titles alone as insufficient" in prompt
     assert "replace_occurrences" in prompt
+    assert EVENT_DISCOVERY_RULES in prompt
+    assert "official school varsity team" in prompt
+    assert "Intramural, club-team, and recreational competitions, practices, tryouts" in prompt
+    assert "watch parties do not qualify" in prompt
+    assert "Use null when official varsity participation is unconfirmed" in prompt
+    assert "explicit new true or false replaces the old value" in prompt
+    facts = {"employers_on_campus": True, "free_food_on_campus": False, "sports_game": None}
+    event = ReconciledEvent.model_validate(facts)
+    assert {name: getattr(event, name) for name in facts} == facts
 
 
 def _matching_event_data() -> tuple[dict, dict]:

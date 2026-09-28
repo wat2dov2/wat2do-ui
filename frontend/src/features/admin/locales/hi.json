@@ -25,7 +25,6 @@
       "automateLogs": {
         "title": "Automate लॉग",
         "description": "प्रक्रिया-एकल-उपयोगकर्ता वर्कफ़्लो के लिए Android Automate ऐप से टेक्स्ट आउटपुट।",
-        "loading": "लॉग लोड हो रहे हैं...",
         "placeholder": "Automate लॉग आउटपुट यहां दिखाई देगा।"
       },
       "queries": {

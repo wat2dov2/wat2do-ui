@@ -20,7 +20,7 @@ Going is occurrence-aware so the reminder targets the showing the user intends t
 - Keep old `notifications_log` rows as inert history.
 - Use `morning_email` as the new type.
 - Use `event_reminder` as the one-hour Going reminder type.
-- Default `morning_email` to enabled.
+- Default `morning_email` to disabled and require an explicit settings opt-in.
 - Default `event_reminder` to enabled.
 - Send a morning email only when at least one recommendation qualifies.
 - Use the user's school timezone.
@@ -32,6 +32,10 @@ Going is occurrence-aware so the reminder targets the showing the user intends t
 - Use a fixed 24-hour recent-event window.
 - Do not apply a separate email item cap.
 - Keep one preference per active notification type, shared by settings and unsubscribe.
+- Save only changed settings preferences and record every submitted choice atomically in `notification_consent_history`.
+- Consent evidence contains the internal user ID, notification type, choice, server timestamp, settings/unsubscribe source, and notice version.
+- Notice version `2026-09` refers to the localized notification descriptions and explicit toggle-and-save interaction in Settings.
+- Deploy the consent migration before code that calls `set_notification_preferences`; do not synthesize historical opt-in evidence.
 - Keep one canonical write path for Going selections.
 - Do not add compatibility shims or parallel APIs.
 
@@ -312,7 +316,7 @@ For one event change:
 
 - Fetch recipient users in chunks.
 - Fetch explicit `event_change` preferences for all recipients in chunks.
-- Apply default-enabled behavior in memory.
+- Resolve each type's control-box default in memory; the morning email defaults off.
 - Pass the already-loaded event summary into fanout.
 - Do not re-fetch the event.
 - Do not call `is_enabled` once per recipient.

@@ -7,7 +7,6 @@ import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 import { useRouter } from "next/navigation";
 import {
   Users,
-  Loader2,
   UserMinus,
   UserPlus,
   ShieldAlert,
@@ -15,6 +14,9 @@ import {
   MailOpen,
 } from "@/shared/ui/doodle-icons";
 import { Button } from "@/shared/ui/button";
+import { LazyImage } from "@/shared/ui/lazy-image";
+import { TableSkeletonRows } from "@/shared/ui/table";
+import { Spinner } from "@/shared/ui/spinner";
 import { ROUTES } from "@/shared/constants/routes";
 import { PageHeader, Stack } from "@/shared/layout";
 import { EmptyState } from "@/shared/feedback";
@@ -68,9 +70,16 @@ export function ClubPanelMembersPage() {
     ? new Date(value).toLocaleDateString(i18n.language, { dateStyle: "medium", timeZone: getSchoolTimezone(club.school) })
     : "";
 
-  const [managers, setManagers] = useState<ClubMember[]>([]);
-  const [invitations, setInvitations] = useState<ClubInvitation[]>([]);
-  const [managementLoading, setManagementLoading] = useState(false);
+  const [management, setManagement] = useState<{
+    clubId: number | null;
+    managers: ClubMember[];
+    invitations: ClubInvitation[];
+    loading: boolean;
+  }>({ clubId: null, managers: [], invitations: [], loading: false });
+  const [managementRevision, setManagementRevision] = useState(0);
+  const managers = management.clubId === clubId ? management.managers : [];
+  const invitations = management.clubId === clubId ? management.invitations : [];
+  const managementLoading = management.clubId !== clubId || management.loading;
 
   const [emailInput, setEmailInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -78,17 +87,25 @@ export function ClubPanelMembersPage() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   const fetchManagement = useCallback(() => {
+    setManagementRevision((revision) => revision + 1);
+  }, []);
+
+  useEffect(() => {
     if (!clubId) return;
-    setManagementLoading(true);
+    let cancelled = false;
+    setManagement((current) => current.clubId === clubId
+      ? { ...current, loading: true }
+      : { clubId, managers: [], invitations: [], loading: true });
     Promise.all([
       fetchClubMembers(clubId),
       fetchClubInvitations(clubId),
     ])
       .then(([membersData, invitesData]) => {
-        setManagers(membersData);
-        setInvitations(invitesData);
+        if (cancelled) return;
+        setManagement({ clubId, managers: membersData, invitations: invitesData, loading: false });
       })
       .catch((err) => {
+        if (cancelled) return;
         console.error("Failed to load management team:", err);
         toast({
           description: t("clubPanel.loadManagementFailed"),
@@ -96,15 +113,10 @@ export function ClubPanelMembersPage() {
         });
       })
       .finally(() => {
-        setManagementLoading(false);
+        if (!cancelled) setManagement((current) => ({ ...current, loading: false }));
       });
-  }, [clubId, t]);
-
-  useEffect(() => {
-    if (clubId) {
-      fetchManagement();
-    }
-  }, [clubId, fetchManagement]);
+    return () => { cancelled = true; };
+  }, [clubId, managementRevision, t]);
 
   const handleAddManager = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -287,7 +299,7 @@ export function ClubPanelMembersPage() {
                 <Button type="submit" disabled={submitting || !emailInput.trim()}>
                   {submitting ? (
                     <>
-                      <Loader2 className="size-4 animate-spin mr-2" />
+                      <Spinner />
                       {t("clubPanel.sending")}
                     </>
                   ) : (
@@ -322,11 +334,11 @@ export function ClubPanelMembersPage() {
             </CardHeader>
             <CardContent className="p-0">
               {managementLoading ? (
-                <div className="flex flex-col items-center justify-center py-16">
-                  <Loader2 className="size-8 animate-spin text-primary mb-3" />
-                  <span className="text-muted-foreground text-sm">
-                    {t("clubPanel.loadingClubMembers")}
-                  </span>
+                <div className="overflow-x-auto" role="status" aria-busy="true" aria-label={t("clubPanel.loadingClubMembers")}>
+                  <table className="w-full border-collapse text-left">
+                    <RosterTableHeader columns={["name", "email", "role", "joined"]} />
+                    <tbody><TableSkeletonRows columns={5} /></tbody>
+                  </table>
                 </div>
               ) : filteredManagers.length > 0 ? (
                 <div className="overflow-x-auto">
@@ -339,10 +351,13 @@ export function ClubPanelMembersPage() {
                             <div className="flex items-center gap-3">
                               <div className="size-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary text-xs font-bold uppercase overflow-hidden shrink-0">
                                 {member.avatar_url ? (
-                                  <img
+                                  <LazyImage
                                     src={member.avatar_url}
                                     alt={member.full_name || ""}
-                                    className="size-full object-cover"
+                                    width={32}
+                                    height={32}
+                                    className="size-full"
+                                    fallback={getInitials(member.full_name, member.email)}
                                   />
                                 ) : (
                                   getInitials(member.full_name, member.email)
@@ -368,7 +383,7 @@ export function ClubPanelMembersPage() {
                                 className="text-destructive hover:bg-surface-hover shrink-0"
                               >
                                 {actionLoading === member.user_id ? (
-                                  <Loader2 className="size-4 animate-spin mr-1" />
+                                  <Spinner />
                                 ) : (
                                   <UserMinus className="size-4 mr-1" />
                                 )}
@@ -444,7 +459,7 @@ export function ClubPanelMembersPage() {
                               className="text-destructive hover:bg-surface-hover shrink-0"
                             >
                               {actionLoading === invite.id ? (
-                                <Loader2 className="size-4 animate-spin mr-1" />
+                                <Spinner />
                               ) : (
                                 <UserMinus className="size-4 mr-1" />
                               )}

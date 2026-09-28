@@ -23,7 +23,8 @@ import type { Event } from "@/shared/types";
 import { usePosterLandingConfirmation } from "@/features/qrcode/hooks/usePosterLandingConfirmation";
 import { PageHeader, Stack } from "@/shared/layout";
 import type { PaginatedEventsResponse } from "@/features/events/api/events.api";
-import { LoadingPage } from "@/shared/ui/loading-page";
+import { LoadingDrawer } from "@/shared/ui/drawer";
+import { eventQuickFilters } from "@/shared/constants/eventFilters";
 
 const EventDetailsModal = lazy(() =>
   import("@/features/events/components/EventDetailsModal").then((module) => ({
@@ -101,22 +102,14 @@ export function EventsPageContainer({
   }, [filters, latestAddedEvent]);
 
   const filterConfigs: QuickFilterButtonConfig[] = useMemo(
-    () =>
-      [
-        {
-          id: "going",
-          labelKey: "filters.going",
-          active: filters.goingFilter,
-          onClick: () => filters.setGoingFilter(!filters.goingFilter),
-          visible: profileCompleted,
-        },
-        {
-          id: "hasFood",
-          labelKey: "filters.food",
-          active: filters.hasFoodFilter,
-          onClick: () => filters.setHasFoodFilter(!filters.hasFoodFilter),
-        },
-      ].filter((config) => config.visible !== false),
+    () => eventQuickFilters
+      .filter(config => !("requiresProfile" in config) || profileCompleted)
+      .map(config => ({
+        id: config.id,
+        labelKey: config.labelKey,
+        active: filters[config.value],
+        onClick: () => filters[config.action](!filters[config.value]),
+      })),
     [filters, profileCompleted],
   );
 
@@ -140,7 +133,7 @@ export function EventsPageContainer({
       <div className="space-y-2">
         <PageHeader variant="listing">
           <PageCountHeading
-            count={totalEvents}
+            count={isLoading ? null : totalEvents}
             label={t("events.upcomingEventCount", { count: totalEvents })}
             latest={latestAddedEvent ? { item: latestAddedEvent, onSelect: handleLatestAddedEventSearch } : null}
           />
@@ -276,7 +269,7 @@ export function EventsPageContainer({
         </main>
       </div>
       {hasOpenedDetails ? (
-        <Suspense fallback={<LoadingPage />}>
+        <Suspense fallback={<LoadingDrawer open={selectedEventId !== null} onClose={handleCloseEventDetails} title={selectedEvent?.title} size="detail" />}>
           <EventDetailsModal
             eventId={selectedEventId}
             event={selectedEvent}

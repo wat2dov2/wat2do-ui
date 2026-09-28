@@ -33,7 +33,6 @@ import { AdminTableFilters } from "@/features/admin/components/shared/AdminTable
 import { AdminEmptyState } from "@/features/admin/components/shared/AdminEmptyState";
 import { AdminDeleteDialog } from "@/features/admin/components/shared/AdminDeleteDialog";
 import { AdminTable } from "@/features/admin/components/shared/AdminTable";
-import { LoadingPage } from "@/shared/ui/loading-page";
 import { toast } from "@/shared/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/shared/ui/dialog";
 import { Textarea } from "@/shared/ui/textarea";
@@ -299,10 +298,8 @@ export function AdminClubsPage({
 
       {activeTab === "submissions" ? (
         <>
-          {submissionList.isError ? <Button onClick={() => void submissionList.refetch()}>{t("common.tryAgain")}</Button> : submissionList.isPending ? (
-            <LoadingPage />
-          ) : submissionList.total > 0 ? (
-            <AdminTable pagination={submissionList.pagination} count={submissionList.total} label={submissionList.total === 1 ? t("admin.submission") : t("admin.submissions")}
+          {submissionList.isError && !submissionList.data ? <Button onClick={() => void submissionList.refetch()}>{t("common.tryAgain")}</Button> : submissionList.isPending || submissionList.total > 0 ? (
+            <AdminTable isLoading={submissionList.isPending} pagination={submissionList.pagination} count={submissionList.total} label={submissionList.total === 1 ? t("admin.submission") : t("admin.submissions")}
               headers={[
                 { label: t("forms.clubName") },
                 { label: t("schools.school") },
@@ -370,10 +367,8 @@ export function AdminClubsPage({
         </>
       ) : activeTab === "clubs" ? (
         <>
-          {isLoading ? (
-            <LoadingPage />
-          ) : totalItems > 0 ? (
-            <AdminTable count={totalItems} label={totalItems === 1 ? t("admin.club") : t("navigation.clubs")}
+          {isLoading || totalItems > 0 ? (
+            <AdminTable isLoading={isLoading} count={totalItems} label={totalItems === 1 ? t("admin.club") : t("navigation.clubs")}
               pagination={{ currentPage, totalPages, onPageChange: setCurrentPage }}
               headers={[
                 { label: t("forms.clubName") },
@@ -467,11 +462,9 @@ export function AdminClubsPage({
         </>
       ) : (
         <>
-          {claimList.isError ? <Button onClick={() => void claimList.refetch()}>{t("common.tryAgain")}</Button> : claimList.isPending ? (
-            <LoadingPage />
-          ) : claimList.total > 0 ? (
+          {claimList.isError && !claimList.data ? <Button onClick={() => void claimList.refetch()}>{t("common.tryAgain")}</Button> : claimList.isPending || claimList.total > 0 ? (
             <>
-              <AdminTable count={claimList.total} label={claimList.total === 1 ? t("admin.claimRequest") : t("admin.claimRequests")}
+              <AdminTable isLoading={claimList.isPending} count={claimList.total} label={claimList.total === 1 ? t("admin.claimRequest") : t("admin.claimRequests")}
               pagination={{ currentPage: claimsPagination.currentPage, totalPages: claimsPagination.totalPages, onPageChange: claimsPagination.onPageChange }}
                 headers={[
                   { label: t("forms.clubName") },

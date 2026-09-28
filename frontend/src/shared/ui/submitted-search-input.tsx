@@ -15,6 +15,7 @@ interface SubmittedSearchInputProps {
   size?: "default" | "lg";
   className?: string;
   onKeyDown?: (event: KeyboardEvent<HTMLInputElement>) => void;
+  disabled?: boolean;
 }
 
 export function SubmittedSearchInput({
@@ -28,6 +29,7 @@ export function SubmittedSearchInput({
   size = "lg",
   className,
   onKeyDown,
+  disabled = false,
 }: SubmittedSearchInputProps) {
   const handleEnterSubmit = useEnterKeySubmit<HTMLInputElement>({
     onSubmit,
@@ -46,6 +48,7 @@ export function SubmittedSearchInput({
     >
       <input
         type="text"
+        disabled={disabled}
         data-search-input=""
         placeholder={placeholder}
         value={value}
@@ -63,6 +66,7 @@ export function SubmittedSearchInput({
       {value && (
         <button
           type="button"
+          disabled={disabled}
           onMouseDown={(event) => {
             event.preventDefault();
             onClear();
@@ -75,6 +79,7 @@ export function SubmittedSearchInput({
       )}
       <button
         type="button"
+        disabled={disabled}
         onMouseDown={(event) => {
           event.preventDefault();
           onSubmit();

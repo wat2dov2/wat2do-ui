@@ -35,7 +35,11 @@ def create_unsubscribe_token(user_id: str, notification_type: NotificationType) 
 def verify_unsubscribe_token(token: str) -> UnsubscribeTarget | None:
     try:
         decoded = _decode(token)
-        payload_bytes, supplied_signature = decoded.rsplit(b".", 1)
+        signature_size = hashlib.sha256().digest_size
+        if len(decoded) <= signature_size + 1 or decoded[-signature_size - 1] != ord("."):
+            return None
+        payload_bytes = decoded[: -signature_size - 1]
+        supplied_signature = decoded[-signature_size:]
         expected_signature = hmac.new(
             _secret(),
             payload_bytes,
@@ -69,6 +73,7 @@ def unsubscribe(token: str) -> bool:
                 enabled=False,
             )
         ],
+        source="unsubscribe",
     )
     return True
 

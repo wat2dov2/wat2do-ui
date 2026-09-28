@@ -25,7 +25,6 @@
       "automateLogs": {
         "title": "Logs Automatisés",
         "description": "Sortie texte de l'application Android Automate pour le flux de travail process-single-user.",
-        "loading": "Chargement des logs...",
         "placeholder": "La sortie des logs automatiques apparaîtra ici."
       },
       "queries": {

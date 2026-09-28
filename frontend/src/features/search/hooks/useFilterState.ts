@@ -70,6 +70,9 @@ export function useFilterState() {
       eventFormat: s.eventFormat,
       registration: s.registration,
       hasFoodFilter: s.hasFoodFilter,
+      employersOnCampus: s.employersOnCampus,
+      freeFoodOnCampus: s.freeFoodOnCampus,
+      sportsGame: s.sportsGame,
       selectedClubs: s.selectedClubs,
       goingFilter: s.goingFilter,
       sortBy: s.sortBy,
@@ -134,6 +137,18 @@ export function useFilterState() {
     (value: boolean) => updateFilterState({ hasFood: value }),
     [updateFilterState],
   );
+  const setEmployersOnCampus = useCallback(
+    (value: boolean) => updateFilterState({ employersOnCampus: value }),
+    [updateFilterState],
+  );
+  const setFreeFoodOnCampus = useCallback(
+    (value: boolean) => updateFilterState({ freeFoodOnCampus: value }),
+    [updateFilterState],
+  );
+  const setSportsGame = useCallback(
+    (value: boolean) => updateFilterState({ sportsGame: value }),
+    [updateFilterState],
+  );
   const setPriceFilter = useCallback(
     (value: string) => updateFilterState({
       minPrice: value !== "" && Number(value) > 0 ? value : "",
@@ -176,6 +191,9 @@ export function useFilterState() {
     setRegistration,
     setSelectedClubs,
     setHasFoodFilter,
+    setEmployersOnCampus,
+    setFreeFoodOnCampus,
+    setSportsGame,
     priceFilterValue,
     setPriceFilter,
     setGoingFilter,

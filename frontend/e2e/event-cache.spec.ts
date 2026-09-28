@@ -1,6 +1,9 @@
 import { expect, test } from "@playwright/test";
 import { QueryObserver } from "@tanstack/react-query";
 import { createRequire } from "node:module";
+import { readFileSync } from "node:fs";
+import { runInNewContext } from "node:vm";
+import ts from "typescript";
 import type { Event, EventFormData } from "../src/shared/types";
 import type { PaginatedEventsResponse } from "../src/features/events/api/events.api";
 import { orderClubEvents } from "../src/features/events/lib/clubEventOrder";
@@ -65,6 +68,70 @@ test.afterEach(() => {
   if (originalWindow) Object.defineProperty(globalThis, "window", originalWindow);
   else Reflect.deleteProperty(globalThis, "window");
 });
+
+for (const transition of ["explicit logout", "rejected session", "cross-tab logout", "account change"] as const) {
+  test(`private poster scan caches are cleared on ${transition} while public discovery stays warm`, () => {
+    const client = getQueryClient();
+    const publicKey = queryKeys.events.bySchool("uwaterloo");
+    const publicEvents = feed([event(1)]);
+    const detailKey = queryKeys.scans.byPoster("poster-a");
+    client.setQueryData(publicKey, publicEvents);
+    client.setQueryData(queryKeys.scans.list(), [{ id: "private-list-scan" }]);
+    client.setQueryData(detailKey, [{ id: "private-detail-scan" }]);
+
+    let session: { email: string | null; id: string | null } = { email: "first@uwaterloo.ca", id: "first" };
+    const listeners = new Map<string, () => void>();
+    const effects: Array<() => void | (() => void)> = [];
+    const filename = new URL("../src/app/client-providers.tsx", import.meta.url);
+    const { outputText } = ts.transpileModule(readFileSync(filename, "utf8"), {
+      compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true },
+    });
+    const providerModule = { exports: {} as typeof import("../src/app/client-providers") };
+    runInNewContext(outputText, {
+      exports: providerModule.exports,
+      process: { env: { NODE_ENV: "production" } },
+      window: {
+        addEventListener: (name: string, callback: () => void) => listeners.set(name, callback),
+        removeEventListener: (name: string) => listeners.delete(name),
+      },
+      require: (id: string) => {
+        if (id === "react") return {
+          ...require("react"),
+          useState: (initial: unknown) => [typeof initial === "function" ? initial() : initial, () => undefined],
+          useEffect: (callback: () => void | (() => void)) => effects.push(callback),
+        };
+        if (id === "react/jsx-runtime") return { jsx: () => null, jsxs: () => null };
+        if (id === "@/shared/lib/queryClient") return { getQueryClient: () => client };
+        if (id === "@/shared/lib/queryKeys") return { queryKeys };
+        if (id === "@/shared/services/apiClient") return { setOnAfterRefresh: () => undefined };
+        if (id === "@/features/auth/api/userRepository") return { AUTH_STATE_REFRESH_EVENT: "auth-state-refresh" };
+        if (id === "@/features/auth/api/auth.api") return {
+          getSessionEmail: () => session.email,
+          getUserProfile: () => session.id ? { id: session.id } : null,
+        };
+        return {};
+      },
+    });
+    providerModule.exports.ClientProviders({ initialSchool: "uwaterloo", children: null });
+    const cleanup = effects[0]();
+
+    // A profile refresh for the same identity must not throw useful cached data away.
+    listeners.get("auth-state-refresh")?.();
+    expect(client.getQueryData(detailKey)).toEqual([{ id: "private-detail-scan" }]);
+    session = transition === "account change"
+      ? { email: "second@uwaterloo.ca", id: "second" }
+      : { email: null, id: null };
+    const eventName = transition === "explicit logout" ? "auth-user-logout"
+      : transition === "rejected session" ? "auth-state-refresh" : "storage";
+    listeners.get(eventName)?.();
+
+    expect(client.getQueryData(queryKeys.scans.list())).toBeUndefined();
+    expect(client.getQueryData(detailKey)).toBeUndefined();
+    expect(client.getQueryData(publicKey)).toEqual(publicEvents);
+    if (cleanup) cleanup();
+    expect(listeners.size).toBe(0);
+  });
+}
 
 test("school feed reads one complete canonical snapshot with all results and freshness metadata", async () => {
   const urls: URL[] = [];

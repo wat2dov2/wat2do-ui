@@ -33,7 +33,7 @@ export function EventDetailsPageContainer({
 }: EventDetailsPageContainerProps) {
   const { t } = useTranslation();
   const router = useRouter();
-  const { data: event, isPending, isError } = useQuery({
+  const { data: event, isPending } = useQuery({
     queryKey: queryKeys.events.detail(eventId),
     queryFn: () => fetchEventById(eventId),
     enabled: Number.isFinite(eventId),
@@ -51,20 +51,6 @@ export function EventDetailsPageContainer({
     [router],
   );
 
-  if (isPending && !isError) {
-    return <LoadingPage className="min-h-[60dvh]" />;
-  }
-
-  if (isError || !event) {
-    return (
-      <Container size="lg">
-        <p className="text-center text-sm text-muted-foreground">
-          {t("common.error")}
-        </p>
-      </Container>
-    );
-  }
-
   return (
     <Container size="lg">
       <Stack gap={6}>
@@ -73,14 +59,22 @@ export function EventDetailsPageContainer({
             href: ROUTES.HOME,
             label: t("events.allEvents"),
           }}
-          actions={<EventActions event={event} />}
+          actions={event ? <EventActions event={event} /> : undefined}
         />
-        <EventDetailsBody event={event} school={event.school} />
-        <EventDetailsSimilarEvents
-          event={event}
-          events={schoolFeed?.items ?? []}
-          onEventClick={handleSimilarEventClick}
-        />
+        {event ? (
+          <>
+            <EventDetailsBody event={event} school={event.school} />
+            <EventDetailsSimilarEvents
+              event={event}
+              events={schoolFeed?.items ?? []}
+              onEventClick={handleSimilarEventClick}
+            />
+          </>
+        ) : isPending ? (
+          <LoadingPage variant="detail" />
+        ) : (
+          <p role="alert">{t("common.error")}</p>
+        )}
       </Stack>
     </Container>
   );

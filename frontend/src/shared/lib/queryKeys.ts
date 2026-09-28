@@ -69,6 +69,7 @@ export const queryKeys = {
   scans: {
     all: ["scans"] as const,
     list: () => [...queryKeys.scans.all, "list"] as const,
+    byPoster: (posterId: string) => [...queryKeys.scans.all, "poster", posterId] as const,
   },
   user: {
     all: ["user"] as const,

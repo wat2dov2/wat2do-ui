@@ -25,7 +25,6 @@
       "automateLogs": {
         "title": "Log di Automate",
         "description": "Output di testo dall'app Android Automate per il flusso di lavoro process-single-user.",
-        "loading": "Caricamento log...",
         "placeholder": "L'output del log di Automate apparirà qui."
       },
       "queries": {

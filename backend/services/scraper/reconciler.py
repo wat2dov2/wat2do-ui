@@ -11,12 +11,15 @@ import json
 import logging
 from typing import Annotated, Any
 
-from pydantic import BaseModel, BeforeValidator, Field, field_validator, model_validator
+from pydantic import BeforeValidator, Field, field_validator, model_validator
 
 from core.config import settings
 from core.constants import EVENT_CATEGORIES
+from schemas.event import EventDiscoveryFields
 from services.scraper.dedup import confident_duplicate_id
 from services.scraper.extractor import (
+    EVENT_DISCOVERY_JSON_FIELDS,
+    EVENT_DISCOVERY_RULES,
     ExtractedOccurrence,
     _client,
     _parse_model_json,
@@ -33,7 +36,7 @@ _SYSTEM_MESSAGE = (
 OptionalStr = Annotated[str | None, BeforeValidator(empty_str_to_none)]
 
 
-class ReconciledEvent(BaseModel):
+class ReconciledEvent(EventDiscoveryFields):
     """Final event object Pass 2 returns for upsert."""
 
     id: int | None = None
@@ -320,6 +323,7 @@ Each object must use this shape:
   "price": number or null,
   "food": string[],
   "registration": boolean,
+  {EVENT_DISCOVERY_JSON_FIELDS}
   "image_index": integer,
   "occurrences": [
     {{
@@ -345,10 +349,12 @@ RULES:
 - Only set "id" to a candidate id from the matching extracted event's provided candidates. Never link two merely similar recurring events just to avoid an insert.
 - If the caption says the event is cancelled / canceled, return the matched candidate object with "cancelled": true and keep other fields from the candidate unless the caption also corrects them. Cancel requires an id.
 - New overlapping fields from the extracted event win, including a shorter description.
+- Preserve each candidate's discovery metadata when new evidence is null or absent. An explicit new true or false replaces the old value. Do not turn missing evidence into false.
 - Set `replace_occurrences` to false for ordinary reposts, reminders, cancellations, and partial details. Set it to true only when the source explicitly replaces or reschedules the complete occurrence schedule.
 - Rebuild "occurrences" correctly from the new source. The writer preserves unmentioned existing occurrences unless `replace_occurrences` is true.
 - Only use an "id" that appears in the provided candidates for that extracted event.
 - Candidates include club_id, club, and ig_handle - use them for ownership decisions.
 - Omitted candidates are left unchanged. Never delete. Never merge two existing database events into one.
+{EVENT_DISCOVERY_RULES}
 - Return ONLY the JSON array text, no commentary.
 """.strip()

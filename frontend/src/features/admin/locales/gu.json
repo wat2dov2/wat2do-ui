@@ -25,7 +25,6 @@
       "automateLogs": {
         "title": "Automate લોગ્સ",
         "description": "process-single-user વર્કફ્લો માટે Android Automate ઍપનું ટેક્સ્ટ આઉટપુટ.",
-        "loading": "લોગ્સ લોડ થઈ રહ્યું છે...",
         "placeholder": "Automate લોગ આઉટપુટ અહીં દેખાશે."
       },
       "queries": {

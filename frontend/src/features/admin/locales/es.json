@@ -25,7 +25,6 @@
       "automateLogs": {
         "title": "Automatizar registros",
         "description": "Salida de texto de la aplicación Android Automate para el flujo de trabajo de un solo usuario.",
-        "loading": "Cargando registros...",
         "placeholder": "La salida de registros de Automate aparecerá aquí."
       },
       "queries": {

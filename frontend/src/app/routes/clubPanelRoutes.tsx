@@ -11,7 +11,7 @@ import { lazy, Suspense, useCallback } from "react";
 import type { ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { ROUTES, CLUB_PANEL_ROUTE_MAP, type ClubPanelRouteKey } from "@/shared/constants/routes";
-import { LoadingPage } from "@/shared/ui/loading-page";
+import { RouteLoading } from "@/app/routes/RouteLoading";
 
 const ClubPanel = lazy(() =>
   import("@/features/club-panel").then((m) => ({ default: m.ClubPanel }))
@@ -39,7 +39,7 @@ function useClubPanelNavigation() {
 
 function ClubPanelSuspense({ children }: { children: ReactNode }) {
   return (
-    <Suspense fallback={<LoadingPage className="min-h-[400px]" />}>
+    <Suspense fallback={<RouteLoading />}>
       {children}
     </Suspense>
   );

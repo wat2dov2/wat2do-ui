@@ -10,14 +10,17 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  TableSkeletonRows,
 } from "@/shared/ui/table";
 
 interface PromoterPayoutHistoryProps {
   payouts: PromoterPayout[];
+  isLoading?: boolean;
 }
 
 export function PromoterPayoutHistory({
   payouts,
+  isLoading = false,
 }: PromoterPayoutHistoryProps) {
   const { t, i18n } = useTranslation();
 
@@ -25,8 +28,9 @@ export function PromoterPayoutHistory({
     <div
       className="overflow-hidden rounded-xl border border-border"
       data-testid="payout-history"
+      aria-busy={isLoading}
     >
-      <Table>
+      <Table aria-label={isLoading ? t("posters.payouts.loading") : undefined}>
         <TableHeader>
           <TableRow>
             <TableHead>{t("posters.payouts.period")}</TableHead>
@@ -38,7 +42,7 @@ export function PromoterPayoutHistory({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {payouts.length === 0 ? (
+          {isLoading ? <TableSkeletonRows columns={6} /> : payouts.length === 0 ? (
             <TableRow>
               <TableCell
                 colSpan={6}

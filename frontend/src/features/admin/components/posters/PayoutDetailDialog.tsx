@@ -112,8 +112,8 @@ export function PayoutDetailDialog({
         </DialogHeader>
 
         {isLoading ? (
-          <LoadingPage className="min-h-[360px]" />
-        ) : error || !detail || !payout ? (
+          <LoadingPage variant="form" />
+        ) : !detail || !payout ? (
           <Stack align="center" gap={4} className="min-h-[280px] justify-center px-6 pb-6">
             <p className="text-sm text-destructive">
               {t("admin.posterPayouts.detail.loadError")}
@@ -124,6 +124,7 @@ export function PayoutDetailDialog({
           </Stack>
         ) : (
           <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-6 pb-6 pt-2">
+            {error ? <p role="alert">{t("admin.posterPayouts.detail.loadError")}</p> : null}
             <Section variant="surface">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <Stack gap={1}>

@@ -25,7 +25,7 @@ from core.constants import (
 from core.database import get_sb
 from core.sanitize import parse_iso_datetime, remove_surrogates
 from core.tables import CLUBS, EVENTS
-from schemas.event import normalize_category
+from schemas.event import EventDiscoveryFields, normalize_category
 from schemas.event_date import OccurrenceCreate, OccurrenceResponse, OccurrenceUpdate
 from services import event_date_service, event_service, school_service
 from services.event_feed_revalidation import event_feed_revalidation_service
@@ -108,6 +108,7 @@ def write_event(
     # Truncations mirror the API's ``EventCreate`` schema caps so a row written
     # by the scraper round-trips through the Pydantic boundary.
     event_row = {
+        **EventDiscoveryFields.model_validate(event).model_dump(),
         "title": title[:MAX_EVENT_TITLE_LENGTH],
         "description": (event.get("description") or "")[:MAX_EVENT_DESCRIPTION_LENGTH] or None,
         "location": location[:MAX_EVENT_LOCATION_LENGTH],
@@ -394,6 +395,7 @@ def _merge_overwrite_payload(incoming: dict, old_event) -> dict:
     merged = dict(incoming)
 
     for field in (
+        *EventDiscoveryFields.model_fields,
         "description",
         "price",
         "food",

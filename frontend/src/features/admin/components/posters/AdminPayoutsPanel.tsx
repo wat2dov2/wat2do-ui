@@ -33,7 +33,6 @@ import {
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { LoadingButton } from "@/shared/ui/loading-button";
-import { LoadingPage } from "@/shared/ui/loading-page";
 import {
   Select,
   SelectContent,
@@ -546,9 +545,7 @@ export function AdminPayoutsPanel() {
         </Section>
       ) : null}
 
-      {isLoading ? (
-        <LoadingPage className="min-h-[360px]" />
-      ) : error ? (
+      {error && !page ? (
         <Section variant="surface" className="text-center">
           <Stack gap={4} align="center">
             <p className="text-sm text-destructive">
@@ -562,7 +559,7 @@ export function AdminPayoutsPanel() {
             </Button>
           </Stack>
         </Section>
-      ) : payouts.length === 0 ? (
+      ) : !isLoading && payouts.length === 0 ? (
         <Section variant="surface" className="text-center">
           <p className="text-sm text-muted-foreground">
             {t("admin.posterPayouts.empty")}
@@ -570,7 +567,7 @@ export function AdminPayoutsPanel() {
         </Section>
       ) : (
         <Stack gap={3}>
-            <AdminTable count={page?.total ?? 0} label={t("admin.posterPayouts.tabs.payouts")}
+            <AdminTable isLoading={isLoading} count={page?.total ?? 0} label={t("admin.posterPayouts.tabs.payouts")}
               pagination={{
                 currentPage: page?.page ?? 1,
                 totalPages: page?.total_pages ?? 1,

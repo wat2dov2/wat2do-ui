@@ -306,14 +306,24 @@ WITH hourly_seed AS (
 ), inserted AS (
     INSERT INTO public.events (
         title, description, location, price, food, registration,
+        employers_on_campus, free_food_on_campus, sports_game,
         source_image_url, school_id, source_url, category, club, club_id,
         added_at, ingestion_source
     )
     SELECT
         format('%s Mock %s - %s', CASE slug WHEN 'uwaterloo' THEN 'Waterloo' WHEN 'ualberta' THEN 'Alberta' ELSE 'ULaval' END,
             to_char(local_start, 'Mon DD HH24:MI'),
-            (ARRAY['Study Social', 'Board Games', 'Coffee Meetup', 'Campus Workshop'])[slot % 4 + 1]),
-        format('Synthetic local event for calendar and filter testing. Expected school-local start: %s (%s).',
+            (ARRAY['Study Social', 'Board Games', 'Coffee Meetup', 'Campus Workshop',
+                'Employer Recruiting Booth', 'Free Campus Lunch', 'Basketball Game',
+                'Employer Networking With Free Pizza'])[slot % 8 + 1]),
+        format('Synthetic local event for calendar and filter testing. %s Expected school-local start: %s (%s).',
+            CASE slot % 8
+                WHEN 4 THEN 'Meet employer recruiters in person on campus.'
+                WHEN 5 THEN 'Complimentary lunch on campus; admission is free.'
+                WHEN 6 THEN 'Attend a scheduled official school varsity basketball match on campus.'
+                WHEN 7 THEN 'Meet employer recruiters on campus. Admission is $5; pizza is complimentary.'
+                ELSE 'Food, if listed, is sold separately.'
+            END,
             to_char(local_start, 'YYYY-MM-DD HH24:MI'), timezone),
         CASE WHEN slug = 'uwaterloo'
             THEN (ARRAY['Student Life Centre', 'Dana Porter Library', 'Engineering 5', 'Mathematics 3'])[slot % 4 + 1]
@@ -321,11 +331,14 @@ WITH hourly_seed AS (
             ELSE (ARRAY['Pavillon Alphonse-Desjardins', 'Pavillon Jean-Charles-Bonenfant', 'PEPS', 'Pavillon Maurice-Pollack'])[slot % 4 + 1]
         END,
         CASE WHEN slot % 4 IN (2, 3) THEN 5 ELSE 0 END,
-        CASE WHEN slot % 2 = 0 THEN '["Pizza", "Snacks"]'::jsonb ELSE '[]'::jsonb END,
+        CASE WHEN slot % 2 = 0 OR slot % 8 IN (5, 7)
+            THEN '["Pizza", "Snacks"]'::jsonb ELSE '[]'::jsonb END,
         slot % 3 = 0,
+        slot % 8 IN (4, 7), slot % 8 IN (5, 7), slot % 8 = 6,
         format('https://picsum.photos/seed/wat2do-hourly-%s/1200/630', slot),
         school_id, source_url,
-        (ARRAY['Games & Recreation', 'Arts & Culture', 'Business', 'Health'])[slot % 4 + 1],
+        (ARRAY['Games & Recreation', 'Arts & Culture', 'Business', 'Health',
+            'Business', 'Games & Recreation', 'Health', 'Business'])[slot % 8 + 1],
         coalesce((SELECT club_name FROM public.clubs WHERE id = prepared.club_id), 'Local campus events'),
         club_id, now() - make_interval(hours => slot % 36), 'seed'
     FROM prepared
@@ -629,6 +642,9 @@ END;
 $$;
 
 ANALYZE public.events;
+-- Do not fabricate notification consent for seeded users.
+-- Missing morning-email preferences resolve to disabled; evidence is recorded
+-- only when a user saves an explicit preference or follows an unsubscribe link.
 ANALYZE public.event_dates;
 ANALYZE public.positions;
 

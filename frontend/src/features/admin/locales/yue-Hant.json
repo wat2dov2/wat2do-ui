@@ -25,7 +25,6 @@
       "automateLogs": {
         "title": "Automate 日誌",
         "description": "Android Automate 應用程式的單用戶流程文字輸出。",
-        "loading": "正在載入日誌...",
         "placeholder": "Automate 日誌輸出將會顯示在此。"
       },
       "queries": {

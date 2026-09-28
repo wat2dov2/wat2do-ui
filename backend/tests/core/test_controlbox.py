@@ -32,6 +32,9 @@ def test_google_analytics_rejects_invalid_measurement_ids(measurement_id):
 
 
 def test_checked_in_controlbox_is_valid() -> None:
+    assert controlbox.notification_defaults.morning_email is False
+    assert controlbox.email_delivery.notification_consent_version == "2026-09"
+    assert controlbox.reel_transcription.model == "gpt-4o-mini-transcribe"
     assert controlbox.recommendations.snapshot.candidate_events_per_school == 1000
     assert controlbox.morning_email.new_event_window_hours == 24
     assert controlbox.event_reminder.lead_minutes == 60
@@ -91,6 +94,15 @@ def test_checked_in_controlbox_is_valid() -> None:
         template.qr_placement.width == pytest.approx(0.470588)
         for template in controlbox.promoter_program.approved_templates
     )
+
+
+@pytest.mark.parametrize("limit", [0, 25_000_000])
+def test_reel_transcription_rejects_unsafe_upload_limits(tmp_path: Path, limit: int) -> None:
+    directory = _write_control(
+        tmp_path, "reel_transcription", lambda payload: payload.update(maximum_media_bytes=limit)
+    )
+    with pytest.raises(ValidationError):
+        load_controlbox(directory)
 
 
 def test_upload_contract_matches_event_image_bucket() -> None:

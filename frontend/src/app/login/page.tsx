@@ -1,8 +1,9 @@
-import { cache } from "react";
+import { cache, Suspense } from "react";
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import imgAuthLogo from "@/assets/38e8096a28295e8dcc0e5020d0a5f3dd85d5f019.png";
 import { AuthEntryPage } from "@/features/auth/pages/AuthEntryPage";
+import { AuthHeroPanel } from "@/features/auth/components/AuthHeroPanel";
 import { getSchoolPreviewEvents } from "@/features/events/api/eventFeed.server";
 import { getSchoolFromRequestHost } from "@/shared/constants/schools";
 import { QP } from "@/shared/constants/queryParams";
@@ -61,19 +62,24 @@ export async function generateMetadata(): Promise<Metadata> {
   });
 }
 
+async function LoginPreview({ school }: { school: string }) {
+  return <AuthHeroPanel events={await loadPreviewEvents(school)} />;
+}
+
 export default async function LoginPage({ searchParams }: LoginPageProps) {
   const requestHeaders = await headers();
   const school = getSchoolFromRequestHost(
     requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host"),
   );
-  const [previewEvents, query] = await Promise.all([
-    loadPreviewEvents(school),
-    searchParams,
-  ]);
+  const query = await searchParams;
 
   return (
     <AuthEntryPage
-      previewEvents={previewEvents}
+      preview={
+        <Suspense fallback={<AuthHeroPanel isLoading />}>
+          <LoginPreview school={school} />
+        </Suspense>
+      }
       initialEmail={firstSearchParam(query.email)}
       invitationToken={firstSearchParam(query.token)}
       initialReturnTo={firstSearchParam(query[QP.RETURN_TO])}

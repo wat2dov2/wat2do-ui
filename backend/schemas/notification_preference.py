@@ -60,7 +60,7 @@ class NotificationPreferencesBulkUpdate(BaseModel):
 class NotificationPreferencesListResponse(BaseModel):
     """Every notification type's resolved enabled state for the user.
 
-    Includes types for which the user has no row (default-on); the
+    Includes types for which the user has no row; the
     ``enabled`` value is the resolved default in that case. Clients
     render one toggle per entry.
     """

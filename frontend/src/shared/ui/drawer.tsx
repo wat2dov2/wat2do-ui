@@ -6,6 +6,8 @@ import { cn } from "@/shared/lib/utils"
 import { useTranslation } from "react-i18next"
 import { Button } from "@/shared/ui/button"
 import { ChevronLeft, ChevronRight, type LucideIcon } from "@/shared/ui/doodle-icons"
+import { DrawerBody } from "@/shared/layout/drawer-body"
+import { LoadingPage } from "@/shared/ui/loading-page"
 
 /**
  * The open drawer's content element, or null outside a drawer.
@@ -57,7 +59,7 @@ DrawerOverlay.displayName = "DrawerOverlay"
 
 const DrawerContent = React.forwardRef<
   React.ElementRef<typeof DrawerPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Content> & { size?: "default" | "wide" }
+  React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Content> & { size?: "default" | "wide" | "detail" }
 >(({ className, children, size = "default", ...props }, ref) => {
   // Opening a drawer moves focus to the first focusable child. When that is a
   // text field on a touch device, the keyboard opens and the browser scales the
@@ -95,6 +97,7 @@ const DrawerContent = React.forwardRef<
             "data-[vaul-drawer-direction=right]:inset-y-0 data-[vaul-drawer-direction=right]:right-0 data-[vaul-drawer-direction=right]:w-3/4 data-[vaul-drawer-direction=right]:border-l data-[vaul-drawer-direction=right]:sm:max-w-sm",
             "data-[vaul-drawer-direction=left]:inset-y-0 data-[vaul-drawer-direction=left]:left-0 data-[vaul-drawer-direction=left]:w-3/4 data-[vaul-drawer-direction=left]:border-r data-[vaul-drawer-direction=left]:sm:max-w-sm",
             size === "wide" && "data-[vaul-drawer-direction=bottom]:max-w-screen-2xl lg:data-[vaul-drawer-direction=bottom]:h-[85dvh]",
+            size === "detail" && "p-0 [&_[data-slot=drawer-handle]]:hidden data-[vaul-drawer-direction=bottom]:max-w-screen-lg",
             className
           )}
           {...props}
@@ -195,6 +198,27 @@ function DrawerDescription({
   )
 }
 
+/** Keep the modal interaction and close action available while its chunk loads. */
+function LoadingDrawer({ open, onClose, title, size = "default" }: {
+  open: boolean
+  onClose: () => void
+  title?: string
+  size?: React.ComponentProps<typeof DrawerContent>["size"]
+}) {
+  const { t } = useTranslation()
+  return (
+    <Drawer open={open} onOpenChange={(nextOpen) => { if (!nextOpen) onClose() }}>
+      <DrawerContent size={size} aria-describedby={undefined}>
+        <DrawerHeader>
+          <DrawerTitle>{title ?? t("common.loading")}</DrawerTitle>
+        </DrawerHeader>
+        <DrawerBody><LoadingPage variant="detail" /></DrawerBody>
+        <DrawerFooter><Button variant="outline" onClick={onClose}>{t("common.close")}</Button></DrawerFooter>
+      </DrawerContent>
+    </Drawer>
+  )
+}
+
 export {
   Drawer,
   DrawerContent,
@@ -202,4 +226,5 @@ export {
   DrawerFooter,
   DrawerTitle,
   DrawerDescription,
+  LoadingDrawer,
 }

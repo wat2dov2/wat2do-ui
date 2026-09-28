@@ -356,7 +356,7 @@ def accept_invitation(
     token: str,
     db_user: UserResponse = Depends(get_db_user),
 ):
-    success = club_service.accept_invitation(token, db_user.id)
+    success = club_service.accept_invitation(token, db_user.id, email=db_user.email)
     if not success:
         raise NotFoundError("Invitation not found or has expired")
 

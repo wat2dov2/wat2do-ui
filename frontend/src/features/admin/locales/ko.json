@@ -25,7 +25,6 @@
       "automateLogs": {
         "title": "자동화 로그",
         "description": "단일 사용자 워크플로우를 위한 Android Automate 앱의 텍스트 출력",
-        "loading": "로그 로딩 중...",
         "placeholder": "자동화 로그 출력이 여기에 표시됩니다."
       },
       "queries": {

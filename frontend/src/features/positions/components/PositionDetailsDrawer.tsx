@@ -88,7 +88,7 @@ export function PositionDetailsDrawer({
         if (!open) onClose();
       }}
     >
-      <DrawerContent className="overflow-hidden p-0 [&_[data-slot=drawer-handle]]:hidden data-[vaul-drawer-direction=bottom]:max-w-screen-lg">
+      <DrawerContent size="detail">
         {position ? (
           <>
             <DrawerHeader className="text-left" navigation={{ previous: previous ? () => onSelect(previous) : undefined, next: next ? () => onSelect(next) : undefined }}>

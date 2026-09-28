@@ -11,7 +11,7 @@ import { lazy, Suspense, useCallback } from "react";
 import type { ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { ROUTES, ADMIN_ROUTE_MAP, type AdminRouteKey } from "@/shared/constants/routes";
-import { LoadingPage } from "@/shared/ui/loading-page";
+import { RouteLoading } from "@/app/routes/RouteLoading";
 
 const AdminPanel = lazy(() =>
   import("@/features/admin/pages/AdminPanel").then((m) => ({ default: m.AdminPanel }))
@@ -54,7 +54,7 @@ function useAdminNavigation() {
 
 function AdminSuspense({ children }: { children: ReactNode }) {
   return (
-    <Suspense fallback={<LoadingPage className="min-h-[400px]" />}>
+    <Suspense fallback={<RouteLoading />}>
       {children}
     </Suspense>
   );

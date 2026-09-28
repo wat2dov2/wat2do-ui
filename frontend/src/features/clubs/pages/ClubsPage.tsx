@@ -87,7 +87,7 @@ export function ClubsPage({
     <Stack gap={2}>
       <PageHeader variant="listing">
         <PageCountHeading
-          count={totalItems}
+          count={isLoading ? null : totalItems}
           label={
             totalItems === 1
               ? t("clubs.clubLabel")

@@ -2,7 +2,7 @@ import { Suspense, useMemo } from "react";
 import type { ComponentType } from "react";
 import { useTranslation } from "react-i18next";
 import { MapPin } from "@/shared/ui/doodle-icons";
-import { Spinner } from "@/shared/ui/spinner";
+import { PosterMapSkeleton } from "@/features/posters/components/PosterMapSkeleton";
 import { FormGrid, Stack } from "@/shared/layout";
 import { Card, CardContent } from "@/shared/ui/card";
 import {
@@ -19,6 +19,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  TableSkeletonRows,
 } from "@/shared/ui/table";
 import { useBackendScans } from "@/features/posters/hooks/useBackendScans";
 import { useBackendPosters } from "@/features/posters/hooks/useBackendPosters";
@@ -151,29 +152,11 @@ export function PostersPageContent({
         <FormGrid columns={2}>
           <div ref={mapContainerRef}>
             <Stack gap={3}>
-              {hasIntersected ? (
+              {hasIntersected && isLoading ? (
+                <PosterMapSkeleton height={POSTER_MAP_HEIGHT} />
+              ) : hasIntersected ? (
                 <Suspense
-                  fallback={
-                    <Stack
-                      align="center"
-                      justify="center"
-                      className="w-full rounded-lg border border-border bg-secondary"
-                      style={{ height: POSTER_MAP_HEIGHT }}
-                    >
-                      <Stack
-                        direction="horizontal"
-                        align="center"
-                        justify="center"
-                        gap={2}
-                        className="p-8"
-                      >
-                        <Spinner className="size-4" />
-                        <p className="text-sm text-muted-foreground">
-                          {t("common.loadingMap")}
-                        </p>
-                      </Stack>
-                    </Stack>
-                  }
+                  fallback={<PosterMapSkeleton height={POSTER_MAP_HEIGHT} />}
                 >
                   <ScanMapComponent
                     markers={mapMarkers}
@@ -211,7 +194,7 @@ export function PostersPageContent({
           </div>
 
           <Stack gap={3}>
-            <Table pagination={{ currentPage: scansPagination.currentPage, totalPages: scansPagination.totalPages, onPageChange: scansPagination.setCurrentPage }}>
+            <Table aria-busy={isLoading} pagination={{ currentPage: scansPagination.currentPage, totalPages: scansPagination.totalPages, onPageChange: scansPagination.setCurrentPage }}>
               <TableHeader>
                 <TableRow>
                   <TableHead>{t("admin.timestamp")}</TableHead>
@@ -222,22 +205,7 @@ export function PostersPageContent({
               </TableHeader>
               <TableBody>
                 {isLoading ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={4}
-                      className="text-center py-8 text-muted-foreground"
-                    >
-                      <Stack
-                        direction="horizontal"
-                        align="center"
-                        justify="center"
-                        gap={2}
-                      >
-                        <Spinner className="size-4" />
-                        <span>{t("common.loading")}</span>
-                      </Stack>
-                    </TableCell>
-                  </TableRow>
+                  <TableSkeletonRows columns={4} />
                 ) : scansPagination.paginatedItems.length > 0 ? (
                   scansPagination.paginatedItems.map((scan) => (
                     <TableRow key={scan.id}>

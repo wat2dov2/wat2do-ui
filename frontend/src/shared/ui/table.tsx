@@ -3,6 +3,7 @@ import * as React from "react"
 import { cn } from "@/shared/lib/utils"
 import { Stack } from "@/shared/layout/stack"
 import { Pagination } from "@/shared/ui/Pagination"
+import { Skeleton } from "@/shared/ui/skeleton"
 
 type TableProps = React.ComponentProps<"table"> & {
   pagination?: React.ComponentProps<typeof Pagination>
@@ -106,6 +107,19 @@ function TableCell({ className, variant = "default", ...props }: TableCellProps)
 }
 
 
+/** Keep the real column headings while only the unknown rows are loading. */
+function TableSkeletonRows({ columns, rows = 5 }: { columns: number; rows?: number }) {
+  return <>{Array.from({ length: rows }, (_, row) => (
+    <TableRow key={row} aria-hidden="true" data-slot="table-skeleton-row">
+      {Array.from({ length: columns }, (_, column) => (
+        <TableCell key={column}>
+          <Skeleton className="my-2 h-4 w-3/4 min-w-12" />
+        </TableCell>
+      ))}
+    </TableRow>
+  ))}</>
+}
+
 export {
   Table,
   TableHeader,
@@ -113,4 +127,5 @@ export {
   TableHead,
   TableRow,
   TableCell,
+  TableSkeletonRows,
 }

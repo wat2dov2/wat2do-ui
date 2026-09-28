@@ -58,6 +58,27 @@ def test_admin_listing_rejects_non_admin(authenticated_client):
     assert response.status_code == 403
 
 
+def test_all_payout_admin_operations_reject_ordinary_user(authenticated_client, monkeypatch):
+    operations = [
+        ("GET", "/payouts/admin", None, "list_admin_payouts"),
+        ("GET", f"/payouts/admin/{UUID(int=1)}", None, "get_admin_payout_detail"),
+        (
+            "POST",
+            "/payouts/admin/export",
+            {"payout_ids": [str(UUID(int=1))]},
+            "get_pending_payouts_for_export",
+        ),
+        ("POST", "/payouts/admin/mark-paid", {"payout_ids": [str(UUID(int=1))]}, "bulk_mark_paid"),
+        ("PATCH", f"/payouts/admin/{UUID(int=1)}/status", {"status": "paid"}, "transition_payout"),
+    ]
+    for method, path, payload, name in operations:
+        operation = MagicMock()
+        monkeypatch.setattr(poster_payout_service, name, operation)
+        response = authenticated_client.request(method, path, json=payload)
+        assert response.status_code == 403
+        operation.assert_not_called()
+
+
 def test_admin_can_list_and_filter_payouts(admin_client, monkeypatch):
     listing = MagicMock(return_value=([_payout()], 1))
     monkeypatch.setattr(poster_payout_service, "list_admin_payouts", listing)

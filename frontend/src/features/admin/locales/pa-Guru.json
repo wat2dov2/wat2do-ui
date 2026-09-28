@@ -25,7 +25,6 @@
       "automateLogs": {
         "title": "Automate ਲੌਗਸ",
         "description": "ਪ੍ਰਕਿਰਿਆ-ਸਿੰਗਲ-ਯੂਜ਼ਰ ਵਰਕਫਲੋ ਲਈ Android Automate ਐਪ ਤੋਂ ਟੈਕਸਟ ਆਉਟਪੁੱਟ।",
-        "loading": "ਲੌਗ ਲੋਡ ਕੀਤੇ ਜਾ ਰਹੇ ਹਨ...",
         "placeholder": "Automate ਲਾਗ ਆਉਟਪੁੱਟ ਇੱਥੇ ਦਿਖਾਈ ਦੇਵੇਗੀ।"
       },
       "queries": {

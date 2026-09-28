@@ -8,6 +8,7 @@ from schemas.club import ClubMemberResponse, ClubResponse
 from schemas.user import UserResponse
 from services import club_service
 from tests.conftest import ADMIN_USER, FAKE_USER, OTHER_USER
+from tests.services.conftest import FakeSupabase
 
 
 def _mock_club(**overrides) -> ClubResponse:
@@ -162,6 +163,12 @@ def test_update_club_owner_allowed(authenticated_client, monkeypatch):
             "upsert_platform_integration",
         ),
         ("DELETE", "/clubs/1/integrations/discord", None, "disconnect_platform_integration"),
+        ("GET", "/clubs/1/members", None, "list_club_members"),
+        ("POST", "/clubs/1/members", {"email": "target@example.com"}, "add_club_member"),
+        ("DELETE", f"/clubs/1/members/{FAKE_USER['id']}", None, "remove_club_member"),
+        ("GET", "/clubs/1/invitations", None, "list_invitations"),
+        ("POST", "/clubs/1/invitations", {"email": "target@example.com"}, "create_invitation"),
+        ("DELETE", "/clubs/1/invitations/invitation-id", None, "revoke_invitation"),
     ],
 )
 def test_club_management_requires_membership(
@@ -405,6 +412,31 @@ def test_accept_invitation(authenticated_client, monkeypatch):
         "/clubs/invitations/22222222-2222-2222-2222-222222222222/accept"
     )
     assert resp.status_code == 204
+
+
+@pytest.mark.parametrize("recipient", [OTHER_USER["email"], FAKE_USER["email"].upper()])
+def test_invitation_only_accepts_intended_recipient(authenticated_client, monkeypatch, recipient):
+    fake_sb = FakeSupabase()
+    monkeypatch.setattr(club_service, "get_sb", lambda: fake_sb)
+    fake_sb.set_response(
+        data=[
+            {
+                "id": "invitation-id",
+                "club_id": 1,
+                "email": recipient,
+            }
+        ]
+    )
+    add_member = MagicMock()
+    monkeypatch.setattr(club_service, "add_club_member", add_member)
+    response = authenticated_client.post("/clubs/invitations/valid-token/accept")
+    if recipient.casefold() == FAKE_USER["email"].casefold():
+        assert response.status_code == 204
+        add_member.assert_called_once_with(1, UUID(FAKE_USER["id"]))
+    else:
+        assert response.status_code == 403
+        add_member.assert_not_called()
+        fake_sb.update.assert_not_called()
 
 
 def test_create_club_from_normal_user_requires_review(authenticated_client, monkeypatch):

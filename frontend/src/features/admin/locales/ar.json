@@ -25,7 +25,6 @@
       "automateLogs": {
         "title": "Automate السجلات",
         "description": "المخرجات النصية من تطبيق Android Automate لعملية سير العمل لمستخدم واحد.",
-        "loading": "جارٍ تحميل السجلات...",
         "placeholder": "Automate مخرجات السجل ستظهر هنا."
       },
       "queries": {

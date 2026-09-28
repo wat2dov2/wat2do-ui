@@ -25,7 +25,6 @@
       "automateLogs": {
         "title": "Automate Mga log",
         "description": "Tekstong output mula sa Android Automate app para sa proseso ng workflow ng single-user.",
-        "loading": "Naglo-load ng mga log...",
         "placeholder": "Automate output ng log ay lilitaw dito."
       },
       "queries": {

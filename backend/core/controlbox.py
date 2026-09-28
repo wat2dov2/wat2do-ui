@@ -298,6 +298,13 @@ class RateLimitsControl(_ControlModel):
     maximum_saved_clubs_per_user: int = Field(gt=0)
 
 
+class ReelTranscriptionControl(_ControlModel):
+    model: str = Field(min_length=1)
+    maximum_media_bytes: int = Field(gt=0, le=24_000_000)
+    download_timeout_seconds: int = Field(gt=0)
+    transcription_timeout_seconds: int = Field(gt=0)
+
+
 class ScrapingControl(_ControlModel):
     apify_timeout_seconds: int = Field(gt=0)
     poll_interval_seconds: int = Field(gt=0)
@@ -348,6 +355,7 @@ class SocialPreviewsControl(_ControlModel):
 
 class EmailDeliveryControl(_ControlModel):
     provider_timeout_seconds: float = Field(gt=0)
+    notification_consent_version: str = Field(min_length=1)
 
 
 class ContactControl(_ControlModel):
@@ -599,6 +607,7 @@ class ControlBox(_ControlModel):
     interaction_ingestion: InteractionIngestionControl
     rate_limits: RateLimitsControl
     scraping: ScrapingControl
+    reel_transcription: ReelTranscriptionControl
     email_delivery: EmailDeliveryControl
     contact: ContactControl
     site_banner: SiteBannerControl

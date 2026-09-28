@@ -6,13 +6,17 @@
 
 import { useQRRedirect } from "@/features/qrcode/hooks/useQRRedirect";
 import { LoadingPage } from "@/shared/ui/loading-page";
+import { Container, PageFrame, PageHeader } from "@/shared/layout";
 
 export function QRRedirectPage() {
   const { message } = useQRRedirect();
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <LoadingPage label={message} className="py-24" />
-    </div>
+    <PageFrame>
+      <Container size="sm">
+        <PageHeader title={message} />
+        <LoadingPage label={message} />
+      </Container>
+    </PageFrame>
   );
 }

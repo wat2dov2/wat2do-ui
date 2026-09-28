@@ -30,7 +30,8 @@ import {
   EventFormProvider,
   type EventFormContextValue,
 } from "@/features/events/components/EventForm/EventForm/EventFormContext";
-import { Section, Stack } from "@/shared/layout";
+import { DrawerBody, Section, Stack } from "@/shared/layout";
+import { LoadingPage } from "@/shared/ui/loading-page";
 import type { Event, EventFormData } from "@/shared/types";
 
 // The picker, the paste handler, and the server all read the same control-box
@@ -412,9 +413,11 @@ function SubmitEventModalContent({
         </DrawerHeader>
 
         {isLoading ? (
-          <div className="flex flex-1 items-center justify-center text-muted-foreground">
-            {t("common.loading")}
-          </div>
+          <DrawerBody>
+            <Section title={t("events.updateEvent")}>
+              <LoadingPage variant="form" />
+            </Section>
+          </DrawerBody>
         ) : (
           <SubmitEventFlow
             key={formKey}

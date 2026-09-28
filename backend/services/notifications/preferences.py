@@ -1,9 +1,10 @@
 """Notification preference CRUD and default resolution."""
 
-from datetime import datetime, timezone
 from itertools import batched
+from typing import Literal
 
 from core.constants import NOTIFICATION_DEFAULT_ENABLED, NOTIFICATION_TYPES
+from core.controlbox import controlbox
 from core.database import get_sb
 from core.tables import NOTIFICATION_PREFERENCES
 from schemas.notification_preference import (
@@ -43,24 +44,26 @@ def get_preferences(user_id: str) -> list[NotificationPreferenceResponse]:
     return prefs
 
 
-def set_preferences(user_id: str, updates: list[NotificationPreferenceUpdate]) -> None:
-    """Upsert one row per (user, type) pair from ``updates``."""
+def set_preferences(
+    user_id: str,
+    updates: list[NotificationPreferenceUpdate],
+    *,
+    source: Literal["settings", "unsubscribe"],
+) -> None:
+    """Commit preference choices and their consent evidence in one transaction."""
     if not updates:
         return
-    now_iso = datetime.now(timezone.utc).isoformat()
-    payload = [
-        {
-            "user_id": user_id,
-            "notification_type": u.notification_type,
-            "enabled": u.enabled,
-            "updated_at": now_iso,
-        }
-        for u in updates
-    ]
     (
         get_sb()
-        .table(NOTIFICATION_PREFERENCES)
-        .upsert(payload, on_conflict="user_id,notification_type")
+        .rpc(
+            "set_notification_preferences",
+            {
+                "p_user_id": user_id,
+                "p_updates": [update.model_dump() for update in updates],
+                "p_source": source,
+                "p_notice_version": controlbox.email_delivery.notification_consent_version,
+            },
+        )
         .execute()
     )
 

@@ -1,5 +1,9 @@
 import { expect, test } from "@playwright/test";
 import { createRequire } from "node:module";
+import { readFileSync } from "node:fs";
+import { runInNewContext } from "node:vm";
+import ts from "typescript";
+import { queryKeys } from "../src/shared/lib/queryKeys";
 import { filterClubs, normalizeClub } from "../src/features/clubs/api/clubService";
 import type { ApiClubResponse } from "../src/shared/generated";
 
@@ -43,4 +47,80 @@ test("combines cached search, OR categories, minimum count and membership withou
   expect(filterClubs(clubs, { ...filters, minEvents: 0, ids: [3] }).map(club => club.id)).toEqual([3]);
   expect(filterClubs(clubs, { search: "", categories: [], minEvents: 0 })).toEqual(clubs);
   expect(clubs.map(club => club.id)).toEqual([1, 2, 3]);
+});
+
+test("switching managed clubs hides old rows immediately and ignores late roster responses", async () => {
+  let clubId = 1;
+  const state: unknown[] = [];
+  let stateIndex = 0;
+  let effect: (() => void | (() => void)) | undefined;
+  const pending = new Map<number, (members: unknown[]) => void>();
+  const t = (key: string) => key;
+  const filename = new URL("../src/features/club-panel/pages/ClubPanelMembersPage.tsx", import.meta.url);
+  const { outputText } = ts.transpileModule(readFileSync(filename, "utf8"), {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX },
+  });
+  const pageModule = { exports: {} as typeof import("../src/features/club-panel/pages/ClubPanelMembersPage") };
+  runInNewContext(outputText, {
+    exports: pageModule.exports,
+    require: (id: string) => {
+      if (id === "react") return {
+        useState: (initial: unknown) => {
+          const index = stateIndex++;
+          if (!(index in state)) state[index] = initial;
+          return [state[index], (next: unknown) => {
+            state[index] = typeof next === "function" ? next(state[index]) : next;
+          }];
+        },
+        useEffect: (callback: () => void | (() => void)) => { effect = callback; },
+        useCallback: (callback: unknown) => callback,
+      };
+      if (id === "react/jsx-runtime") return {
+        jsx: (_type: unknown, props: unknown) => props,
+        jsxs: (_type: unknown, props: unknown) => props,
+      };
+      if (id === "react-i18next") return { useTranslation: () => ({ t, i18n: { language: "en" } }) };
+      if (id === "@/features/auth") return { useAuthState: () => ({ clubId }) };
+      if (id === "next/navigation") return { useRouter: () => ({ push: () => undefined }) };
+      if (id === "@tanstack/react-query") return { useQuery: () => ({ data: { school: "uwaterloo" } }) };
+      if (id === "@/shared/lib/queryKeys") return { queryKeys };
+      if (id === "@/shared/hooks/useSchoolDirectory") return { useSchoolDirectory: () => ({ getSchoolTimezone: () => "America/Toronto" }) };
+      if (id === "../api/members.api") return {
+        fetchClubMembers: (requestedClubId: number) => new Promise((resolve) => pending.set(requestedClubId, resolve)),
+        fetchClubInvitations: async () => [],
+      };
+      return {};
+    },
+  });
+  const render = () => {
+    stateIndex = 0;
+    return JSON.stringify(pageModule.exports.ClubPanelMembersPage());
+  };
+  const members = (id: number) => [{ user_id: String(id), email: `manager-${id}@example.test`, full_name: `Manager ${id}`, role: "owner", joined_at: "2026-01-01" }];
+  const settle = () => new Promise<void>((resolve) => setImmediate(resolve));
+
+  render();
+  let cleanup = effect?.();
+  pending.get(1)?.(members(1));
+  await settle();
+  expect(render()).toContain("manager-1@example.test");
+
+  clubId = 2;
+  expect(render()).not.toContain("manager-1@example.test");
+  if (cleanup) cleanup();
+  cleanup = effect?.();
+  clubId = 3;
+  expect(render()).not.toContain("manager-1@example.test");
+  if (cleanup) cleanup();
+  cleanup = effect?.();
+
+  pending.get(2)?.(members(2));
+  await settle();
+  const awaitingCurrentClub = render();
+  expect(awaitingCurrentClub).not.toContain("manager-2@example.test");
+  expect(awaitingCurrentClub).toContain('"aria-busy":"true"');
+  pending.get(3)?.(members(3));
+  await settle();
+  expect(render()).toContain("manager-3@example.test");
+  if (cleanup) cleanup();
 });

@@ -15,8 +15,12 @@ export const EVENT_CARD_IMAGE_HEIGHT = 208;
 export const CARD_GRID_CLASS =
   "grid grid-cols-2 gap-x-4 gap-y-2 sm:gap-x-5 sm:gap-y-2.5 min-[480px]:grid-cols-[repeat(auto-fill,minmax(13rem,1fr))]";
 
-/** Match the two mobile columns and the auto-filled desktop card tracks. */
-export const CARD_GRID_IMAGE_SIZES = "(max-width: 479px) 50vw, 320px";
+/**
+ * Two mobile columns share the 16px page gutter and 16px grid gap.
+ * The desktop bound also covers nested grids; lazy images use their actual
+ * layout width through LazyImage's native auto sizing.
+ */
+export const CARD_GRID_IMAGE_SIZES = "(max-width: 639px) calc(50vw - 16px), 320px";
 
 
 /** Small delay (ms) to allow DOM updates before scrolling to an element. */

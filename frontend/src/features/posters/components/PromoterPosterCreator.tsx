@@ -46,7 +46,11 @@ import {
 } from "@/shared/ui/field";
 import { Input } from "@/shared/ui/input";
 import { LoadingButton } from "@/shared/ui/loading-button";
+import { LazyImage } from "@/shared/ui/lazy-image";
 import { toast } from "@/shared/hooks/use-toast";
+
+/** The three-column form grid is capped by the poster dialog's width. */
+const POSTER_PREVIEW_SIZES = "(max-width: 767px) 100vw, (max-width: 1023px) 50vw, 384px";
 
 interface PromoterPosterCreatorProps {
   school: string;
@@ -74,10 +78,12 @@ function PosterPreview({
   return (
     <Stack gap={2}>
       <div className="relative aspect-[8.5/11] overflow-hidden rounded-lg border border-border bg-secondary">
-        <img
+        <LazyImage
           src={template.assetPath}
           alt={template.name}
-          className="h-full w-full object-contain"
+          sizes={POSTER_PREVIEW_SIZES}
+          fit="contain"
+          className="absolute inset-0"
         />
         <Stack
           align="center"
@@ -299,10 +305,11 @@ export function PromoterPosterCreator({
                         className="overflow-hidden py-0"
                         data-testid={`poster-template-${template.id}`}
                       >
-                        <img
+                        <LazyImage
                           src={template.assetPath}
                           alt={template.name}
-                          className="aspect-[8.5/11] w-full bg-secondary object-cover"
+                          sizes={POSTER_PREVIEW_SIZES}
+                          className="aspect-[8.5/11] w-full bg-secondary"
                         />
                         <CardHeader>
                           <CardTitle>{template.name}</CardTitle>

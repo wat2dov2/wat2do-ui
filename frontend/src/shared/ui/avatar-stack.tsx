@@ -1,4 +1,4 @@
-import { Avatar as AvatarPrimitive } from "radix-ui";
+import { LazyImage } from "@/shared/ui/lazy-image";
 
 interface AvatarStackProps {
   avatars: { src: string; name: string }[];
@@ -11,17 +11,20 @@ export function AvatarStack({ avatars, overflowCount = 0, overflowLabel }: Avata
   return (
     <div data-slot="avatar-stack" className="flex items-center -space-x-2">
       {avatars.map((avatar, index) => (
-        <AvatarPrimitive.Root
+        <div
           key={index}
           title={avatar.name}
           className="relative flex size-9 shrink-0 overflow-hidden rounded-full border-2 border-background bg-muted"
         >
-          <AvatarPrimitive.Image src={avatar.src} alt={avatar.name} className="size-full object-cover" />
-          <AvatarPrimitive.Fallback className="flex size-full items-center justify-center text-xs text-muted-foreground">
-            <span aria-hidden="true">{avatar.name.slice(0, 1)}</span>
-            <span className="sr-only">{avatar.name}</span>
-          </AvatarPrimitive.Fallback>
-        </AvatarPrimitive.Root>
+          <LazyImage
+            src={avatar.src}
+            alt={avatar.name}
+            width={32}
+            height={32}
+            className="size-full"
+            fallback={<span aria-hidden="true" className="text-xs">{avatar.name.slice(0, 1)}</span>}
+          />
+        </div>
       ))}
       {overflowCount > 0 ? (
         <span title={overflowLabel} aria-label={overflowLabel} className="relative flex size-9 shrink-0 items-center justify-center rounded-full border-2 border-background bg-muted text-xs font-medium text-muted-foreground">

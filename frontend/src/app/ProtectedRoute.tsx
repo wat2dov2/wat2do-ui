@@ -9,7 +9,7 @@ import {
 } from "@/features/auth";
 import { ROLE_ADMIN, ROLE_CLUB, type Role } from "@/shared/constants/roles";
 import { ROUTES } from "@/shared/constants/routes";
-import { LoadingPage } from "@/shared/ui/loading-page";
+import { RouteLoading } from "@/app/routes/RouteLoading";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -79,7 +79,7 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
   }, [redirectTarget, router]);
 
   if (!authReady || redirectTarget || !authed || (needsFreshRole && refreshing)) {
-    return <LoadingPage />;
+    return <RouteLoading />;
   }
 
   return <>{children}</>;

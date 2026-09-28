@@ -14,7 +14,8 @@ from postgrest.exceptions import APIError
 from core.constants import DEFAULT_LIST_LIMIT, DEFAULT_PAGE_SIZE
 from core.controlbox import controlbox
 from core.database import get_sb
-from core.exceptions import ConflictError, NotFoundError, ValidationError
+from core.errors import NOT_AUTHORIZED
+from core.exceptions import AuthorizationError, ConflictError, NotFoundError, ValidationError
 from core.pagination import apply_stable_order
 from core.sanitize import sanitize_postgrest_value
 from core.tables import (
@@ -815,7 +816,7 @@ def get_invitation_by_token(token: str) -> dict:
     }
 
 
-def accept_invitation(token: str, user_id: UUID) -> bool:
+def accept_invitation(token: str, user_id: UUID, *, email: str) -> bool:
     """Accept an invitation by token and add the user to the club."""
     now = datetime.now(timezone.utc).isoformat()
 
@@ -832,6 +833,8 @@ def accept_invitation(token: str, user_id: UUID) -> bool:
         raise NotFoundError("Invitation not found or has expired")
 
     inv = r.data[0]
+    if not email or email.strip().casefold() != inv["email"].strip().casefold():
+        raise AuthorizationError(NOT_AUTHORIZED)
     club_id = inv["club_id"]
 
     try:

@@ -25,7 +25,6 @@ import type { Event, SubmissionStatus } from "@/shared/types";
 import { AdminPageHeader } from "@/features/admin/components/shared/AdminPageHeader";
 import { AdminSearchBar } from "@/features/admin/components/shared/AdminSearchBar";
 import { AdminEmptyState } from "@/features/admin/components/shared/AdminEmptyState";
-import { LoadingState } from "@/shared/feedback";
 import { AdminDeleteDialog } from "@/features/admin/components/shared/AdminDeleteDialog";
 import { AdminTable } from "@/features/admin/components/shared/AdminTable";
 import { QP } from "@/shared/constants/queryParams";
@@ -184,8 +183,8 @@ export function AdminEventsPage({
               </Select>
             </Stack>
 
-            {eventsError ? <Button onClick={retryEvents}>{t("common.tryAgain")}</Button> : isLoadingEvents ? <LoadingState label={t("common.loading")} /> : total > 0 ? (
-              <AdminTable count={total} label={total === 1 ? t("common.event") : t("common.events")}
+            {eventsError && events.length === 0 ? <Button onClick={retryEvents}>{t("common.tryAgain")}</Button> : isLoadingEvents || total > 0 ? (
+              <AdminTable isLoading={isLoadingEvents} count={total} label={total === 1 ? t("common.event") : t("common.events")}
                 pagination={{ currentPage, totalPages, onPageChange: setCurrentPage }}
                 headers={[
                   { label: t("events.eventTitle") },
@@ -318,8 +317,8 @@ export function AdminEventsPage({
               </Select>
             </AdminTableFilters>
 
-            {submissionFilters.isError ? <Button onClick={() => void submissionFilters.refetch()}>{t("common.tryAgain")}</Button> : submissionFilters.isPending ? <LoadingState label={t("common.loading")} /> : submissionFilters.total > 0 ? (
-              <AdminTable count={submissionFilters.total} label={submissionFilters.total === 1 ? t("admin.submission") : t("admin.submissions")}
+            {submissionFilters.isError && !submissionFilters.data ? <Button onClick={() => void submissionFilters.refetch()}>{t("common.tryAgain")}</Button> : submissionFilters.isPending || submissionFilters.total > 0 ? (
+              <AdminTable isLoading={submissionFilters.isPending} count={submissionFilters.total} label={submissionFilters.total === 1 ? t("admin.submission") : t("admin.submissions")}
                 pagination={{ currentPage: submissionPagination.currentPage, totalPages: submissionPagination.totalPages, onPageChange: submissionPagination.onPageChange }}
                 headers={[
                   { label: t("events.eventTitle") },

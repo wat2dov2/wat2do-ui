@@ -136,6 +136,19 @@ def test_merge_overwrite_payload_uses_new_nonempty_values():
     assert _merge_overwrite_payload(incoming, old) == incoming
 
 
+@pytest.mark.parametrize("previous", [True, False, None])
+@pytest.mark.parametrize("incoming", [True, False, None])
+def test_merge_discovery_metadata_preserves_unknown_but_applies_explicit_corrections(
+    previous, incoming
+):
+    names = ("employers_on_campus", "free_food_on_campus", "sports_game")
+    old = SimpleNamespace(**dict.fromkeys(names, previous), registration=False, cancelled=False)
+    merged = _merge_overwrite_payload(dict.fromkeys(names, incoming), old)
+    assert {name: merged[name] for name in names} == dict.fromkeys(
+        names, previous if incoming is None else incoming
+    )
+
+
 def test_merge_overwrite_occurrences_patches_exact_start_and_keeps_unmentioned_dates():
     first_start = datetime(2026, 9, 10, 22, tzinfo=timezone.utc)
     second_start = datetime(2026, 9, 17, 22, tzinfo=timezone.utc)
@@ -413,6 +426,9 @@ def test_write_event_inserts_one_event_row_plus_occurrences(fake_sb, patch_sb, m
     )
 
     event = _event(
+        employers_on_campus=True,
+        free_food_on_campus=True,
+        sports_game=False,
         occurrences=[
             {"dtstart_utc": _future(2), "dtend_utc": "", "duration": "", "tz": "UTC"},
             {"dtstart_utc": _future(9), "dtend_utc": "", "duration": "", "tz": "UTC"},
@@ -429,6 +445,9 @@ def test_write_event_inserts_one_event_row_plus_occurrences(fake_sb, patch_sb, m
     payload = insert_calls[0][0][0]
     assert payload["title"] == "Tea Tasting"
     assert payload["ingestion_source"] == "instagram_scraper"
+    assert payload["employers_on_campus"] is True
+    assert payload["free_food_on_campus"] is True
+    assert payload["sports_game"] is False
     assert "dtstart_utc" not in payload  # dates do NOT belong on the events row anymore
 
     # The event_dates insert should have received THREE rows (one per occurrence).

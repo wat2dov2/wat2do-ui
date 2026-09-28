@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 
@@ -15,10 +15,9 @@ import { GoogleSignInButton } from "@/features/auth/components/GoogleSignInButto
 import { ROUTES } from "@/shared/constants/routes";
 import { QP } from "@/shared/constants/queryParams";
 import { Button } from "@/shared/ui/button";
-import type { Event } from "@/shared/types";
 
 interface AuthEntryPageProps {
-  previewEvents?: Event[];
+  preview: ReactNode;
   initialEmail?: string;
   invitationToken?: string;
   initialReturnTo?: string;
@@ -26,7 +25,7 @@ interface AuthEntryPageProps {
 }
 
 export function AuthEntryPage({
-  previewEvents = [],
+  preview,
   initialEmail,
   invitationToken,
   initialReturnTo,
@@ -50,7 +49,7 @@ export function AuthEntryPage({
     <AuthPageLayout
       heading={t("auth.heading")}
       description={t("auth.description")}
-      previewEvents={previewEvents}
+      preview={preview}
     >
       <GoogleSignInButton
         returnTo={returnTo ?? undefined}

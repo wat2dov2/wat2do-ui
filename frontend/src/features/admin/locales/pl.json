@@ -25,7 +25,6 @@
       "automateLogs": {
         "title": "Automate logi",
         "description": "Wyjście tekstowe z aplikacji Android Automate dla procesu pojedynczego użytkownika.",
-        "loading": "Ładowanie logów...",
         "placeholder": "Tutaj pojawi się wyjście logów Automate."
       },
       "queries": {

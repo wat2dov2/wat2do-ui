@@ -27,6 +27,7 @@ from core.constants.positions import (
     MAX_POSITION_TITLE_LENGTH,
 )
 from core.sanitize import normalize_scraped_text
+from schemas.event import EventDiscoveryFields
 from schemas.position import PositionType
 from services.school_context import (
     canonical_school_key,
@@ -39,6 +40,23 @@ log = logging.getLogger(__name__)
 _SYSTEM_MESSAGE = (
     "You triage social media posts and extract campus event and hiring information. "
     "Always return valid JSON with the exact structure requested."
+)
+
+EVENT_DISCOVERY_JSON_FIELDS = "\n".join(
+    f'"{name}": boolean or null,' for name in EventDiscoveryFields.model_fields
+)
+EVENT_DISCOVERY_RULES = "\n".join(
+    [
+        "EVENT DISCOVERY METADATA:",
+        "These independent flags may overlap and do not replace the event category.",
+        "Use true only when the source establishes the fact, false when it explicitly "
+        "rules it out, and null when evidence is missing or uncertain. Never guess from "
+        "the category, host, or the word 'free' alone.",
+        *(
+            f"- {name}: {field.description}"
+            for name, field in EventDiscoveryFields.model_fields.items()
+        ),
+    ]
 )
 
 
@@ -317,13 +335,13 @@ EVENT POLICY:
 - ONLY extract an attendee-facing activity if the post is clearly announcing or describing a real-world event. The activity itself must be named and something a person can attend, participate in, or watch.
 - A ticketed, paid, RSVP-only, or registration-required activity is still an event when the actual activity is clearly named. Do not reject an event merely because it has tickets or registration.
 - Closure notices, holiday hours, cancellations, and "no meeting today" announcements are not events. A closure or reopening date does not describe a gathering. Only extract an independently advertised gathering, such as a holiday BBQ, not the closure itself.
-- Ideally, the post should have BOTH a specific date AND a specific start time.
+- Ideally, the post should have BOTH a specific date AND a specific start time. An explicitly advertised recurring schedule with a resolvable start date also qualifies under EXPLICIT RECURRING SCHEDULES below.
 - EXCEPTION: For major events (e.g., full-day, multi-day, overnight), you MAY extract the event even if a specific start time is not explicitly stated, provided there is a specific DATE or date range.
 - For these major events ONLY, if no time is given, you may default the start time to 00:00 (midnight) or a logical start time implied by the context.
 - DO NOT extract an event if:
     * The post is a meme, personal photo dump, or generic post with no time/place.
     * The post is inappropriate (nudity, explicit sexual content, or graphic violence).
-    * There is NO mention of a date at all.
+    * There is NO mention of a date, relative date, or resolvable recurring schedule at all.
     * The post only introduces people or some topic, UNLESS there is a clear call to attend or participate in an actual event (such as a meeting, workshop, performance, or competition).
     * It only announces ticket or registration release, a presale, a giveaway, merchandise, a waitlist, an application, a submission period, a placement test, or another administrative deadline rather than the activity itself.
     * It only promotes a trailer, teaser, behind-the-scenes content, a campaign, a vote, election results, a call for artists or volunteers, or a program reveal.
@@ -340,6 +358,7 @@ Return exactly one JSON object with this structure:
       "price": number or null,
       "food": string[],
       "registration": boolean,
+      {EVENT_DISCOVERY_JSON_FIELDS}
       "image_index": integer,
       "occurrences": [
         {{
@@ -378,13 +397,24 @@ IMAGE MAPPING RULES:
 
 OCCURRENCE RULES (CRITICAL):
 - Every event MUST include at least one occurrence with a concrete UTC start time.
-- Return explicit dates and times that correspond to events as separate entries in the occurrences array.
+- Return each advertised event date/time as a separate entry in the occurrences array, including dates expanded from an explicit recurring schedule below.
 - DO NOT include registration, signup, RSVP, or application deadlines as occurrences.
-- Do NOT infer or compress recurrence patterns. List each event date/time exactly as given.
-- Always convert local times to UTC. The JSON must use ISO 8601 format with a trailing "Z" (e.g., "2025-11-05T22:00:00Z").
+- Do not invent recurrence from a club's usual habits, an event title, or "first meeting" alone. Do not compress multiple occurrences into one long date range or a recurrence-rule string.
+- Always convert each occurrence's local time to UTC using the timezone offset on THAT date, including daylight-saving changes. A weekly 6 PM meeting stays at 6 PM local time even when its UTC hour changes. The JSON must use ISO 8601 format with a trailing "Z" (e.g., "2025-11-05T22:00:00Z").
 - If an end time is not provided, leave "dtend_utc" as an empty string.
 - If duration is not explicitly available, leave "duration" as an empty string.
 - Use the timezone context from the caption/image (default to "{local_tz_key}" for {school}) for the "tz" field.
+
+EXPLICIT RECURRING SCHEDULES:
+- Read the caption AND every image for schedule details, including small-print panels such as "Weekly Meetings". A caption advertising the first meeting does not cancel an image's explicit weekly schedule. Resolve actual contradictions in favor of an explicit update; silence about recurrence is not a contradiction.
+- Wording such as "weekly", "every Tuesday", "Tuesdays", "every other week", or "the first Monday of each month" explicitly advertises recurrence. Expand a sufficiently specified schedule into ALL concrete occurrences within its supported bounds, not just the first or next date.
+- Anchor the series to its advertised first date. If no first date is given, use the first matching weekday on or after the POST CREATION DATE ({post_date}); do not shift the series to today's date. An interval such as every other week needs a clear starting date, and ambiguous wording such as "biweekly" must not be guessed.
+- Use the source's explicit end date, date range, or session count when provided. Include the last matching date within those bounds. Respect stated skipped dates, cancellations, breaks, and different hours for particular sessions. Do not invent holiday exceptions that the source does not announce.
+- If a campus series has no explicit end date or count, expand it through the supplied Current semester end date only when the series belongs to that same semester. Never carry a past-term or future-term series into a different current semester, and never extend beyond the applicable semester as a fallback.
+- If neither an explicit bound nor an applicable semester end is available, keep the individually stated dates only; do not invent a cutoff or an unlimited series. Do not fabricate a weekday, interval, start time, or missing anchor.
+- For a first meeting followed by weekly meetings of the same activity, return ONE logical event with the first meeting and every later session in its occurrences array. Deduplicate the first date if it also matches the weekly rule. Give genuinely separate activities separate event objects.
+- Example: "First meeting Tuesday September 29, 2026, 6-7 PM in MC 4045. Weekly meetings Tuesdays 6-7 PM in MC 4045" with a semester end of December 22, 2026 means 13 occurrences: September 29; October 6, 13, 20, 27; November 3, 10, 17, 24; December 1, 8, 15, 22. In America/Toronto, the starts are 22:00Z before the November daylight-saving change and 23:00Z afterwards.
+- Counterexample: "First meeting September 29, 2026, 6-7 PM" with no recurring schedule means exactly one occurrence, even if a semester end is supplied.
 
 POSITION RULES:
 - Extract one position object per distinct advertised role. If a post recruits several roles, do not collapse them into one generic position.
@@ -400,7 +430,7 @@ POSITION RULES:
 
 ADDITIONAL EVENT RULES:
 - Prioritize caption text; use image text if missing details.
-- Extract one object per logical event, even when the caption and several images repeat it. Combine all explicitly advertised occurrences for that same activity into that object's occurrences array. Do not create event objects for its ticket, registration, check-in, application, campaign, or other administrative milestones.
+- Extract one object per logical event, even when the caption and several images repeat it. Combine all explicitly advertised occurrences, including expanded recurring dates, for that same activity into that object's occurrences array. Do not create event objects for its ticket, registration, check-in, application, campaign, or other administrative milestones.
 - Title-case event titles.
 - For "club": this is the club / society / faculty hosting the event. Prefer the most specific named entity from the caption or image (e.g., "UW Tea Club"); if none is named, use the Instagram handle as a fallback.
 - If year not found, infer the NEXT occurrence of that date relative to the post creation date ({post_date}). If end time < start time (e.g., 7pm-12am), set end to the next day.
@@ -409,8 +439,9 @@ ADDITIONAL EVENT RULES:
 - For price: REGISTRATION COST ONLY. Prefer non-member / general admission price if multiple are listed. Free events are 0.0. Use null if price is not mentioned.
 - For food: Return an array. Use specific items when named (e.g., ["Pizza", "Bubble tea"]). Use ["Food"] for a generic food mention. Never return "Yes" or "Yes!" as a food label. Use [] when no food is mentioned.
 - For registration: only true if there is a clear instruction to register, RSVP, or sign up.
-- If information is not available, use empty string for strings, null for price, and false for booleans.
+- If information is not available, use empty string for strings, null for price and discovery metadata, and false for registration.
 - Event category must be one of the canonical categories or null: {categories_str}
+{EVENT_DISCOVERY_RULES}
 - Return ONLY the JSON object, with no extra commentary.
 """
 
@@ -433,7 +464,7 @@ class ExtractedOccurrence(BaseModel):
     tz: OptionalStr = None
 
 
-class ExtractedEvent(BaseModel):
+class ExtractedEvent(EventDiscoveryFields):
     title: str = Field(default="")
     description: str = Field(default="")
     location: str = Field(default="")
@@ -445,16 +476,6 @@ class ExtractedEvent(BaseModel):
     occurrences: list[ExtractedOccurrence] = Field(default_factory=list)
     school: str = Field(default="")
     category: str | None = None
-
-    @model_validator(mode="after")
-    def coerce_free_price(self) -> ExtractedEvent:
-        if self.price is None:
-            haystack = " ".join(
-                str(v) for v in (self.title, self.description, " ".join(self.food)) if v
-            ).lower()
-            if "free" in haystack:
-                self.price = 0.0
-        return self
 
     @model_validator(mode="after")
     def sort_occurrences(self) -> ExtractedEvent:

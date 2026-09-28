@@ -19,6 +19,7 @@ import { formatRelativeTimeCompact } from "@/shared/utils/relativeTime";
 import { formatCadCents } from "@/shared/utils/currency";
 import { toast } from "@/shared/hooks/use-toast";
 import { Badge } from "@/shared/ui/badge";
+import { LazyImage } from "@/shared/ui/lazy-image";
 import {
   Card,
   CardContent,
@@ -139,10 +140,11 @@ export function PromoterPosterInventory({
               <Stack direction="horizontal" align="start" gap={4}>
                 <div className="aspect-[8.5/11] w-20 shrink-0 overflow-hidden rounded-lg border border-border bg-secondary">
                   {poster.templatePreviewUrl || template?.assetPath ? (
-                    <img
+                    <LazyImage
                       src={poster.templatePreviewUrl ?? template?.assetPath}
                       alt={template?.name ?? poster.name}
-                      className="h-full w-full object-cover"
+                      sizes="80px"
+                      className="size-full"
                     />
                   ) : (
                     <Stack align="center" justify="center" className="h-full">

@@ -97,7 +97,7 @@ export function EventDetailsModal({
 
   return (
     <Drawer open={drawerOpen} onOpenChange={handleDrawerOpenChange}>
-      <DrawerContent className="overflow-hidden p-0 [&_[data-slot=drawer-handle]]:hidden data-[vaul-drawer-direction=bottom]:max-w-screen-lg">
+      <DrawerContent size="detail">
         <div
           ref={contentRef}
           className="flex min-h-0 flex-1 flex-col"

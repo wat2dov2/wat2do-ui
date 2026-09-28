@@ -6,7 +6,6 @@ import { AdminTableFilters } from "@/features/admin/components/shared/AdminTable
 import { Stack } from "@/shared/layout";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 import { Button } from "@/shared/ui/button";
-import { LoadingPage } from "@/shared/ui/loading-page";
 import { TableCell, TableRow } from "@/shared/ui/table";
 
 export function DiscoveryQueries() {
@@ -22,10 +21,11 @@ export function DiscoveryQueries() {
         school={list.filters.school ?? ""}
         onSchoolChange={school => list.setFilters({ school })}
       />
-      {list.isLoading ? <LoadingPage /> : list.isError ? (
+      {list.isError && !list.data ? (
         <Button onClick={() => void list.refetch()}>{t("common.tryAgain")}</Button>
       ) : (
         <AdminTable
+          isLoading={list.isPending}
           count={list.total}
           label={t("admin.diagnostics.queries.title")}
           pagination={list.pagination}

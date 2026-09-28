@@ -6,6 +6,7 @@ import { Button } from "@/shared/ui/button";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerFooter } from "@/shared/ui/drawer";
 import { DrawerBody, Section, Stack } from "@/shared/layout";
 import { FieldError } from "@/shared/ui/field";
+import { Skeleton } from "@/shared/ui/skeleton";
 import { Link } from "@/shared/ui/link";
 import { getApiErrorMessage } from "@/shared/services/apiClient";
 import type { ApiPositionSubmissionResponse } from "@/shared/generated";
@@ -40,7 +41,7 @@ export function PositionSubmissionDrawer({ submission: selected, onClose }: Posi
           <DrawerBody>
             <Stack gap={4}>
               <Section title={t("navigation.clubs")}>
-                {club.isPending ? <p>{t("common.loading")}</p> : club.isError ? <Button variant="outline" onClick={() => void club.refetch()}>{t("common.tryAgain")}</Button> : <p>{club.data.club_name} ({club.data.school})</p>}
+                {club.isPending ? <Skeleton className="h-5 w-2/3" role="status" aria-busy="true" aria-label={t("common.loading")} /> : club.isError && !club.data ? <Button variant="outline" onClick={() => void club.refetch()}>{t("common.tryAgain")}</Button> : <p>{club.data?.club_name} ({club.data?.school})</p>}
               </Section>
               <p>{data.description}</p>
               <p>{t(`positions.types.${data.position_type}`)}</p>

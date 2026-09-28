@@ -75,6 +75,7 @@ export function SettingsPage() {
                 userEmail={userEmail}
                 profile={settings.values.profile}
                 avatarPreviewUrl={settings.avatarPreviewUrl}
+                isLoading={settings.isProfileLoading}
                 disabled={settings.isSaving}
                 onProfileChange={settings.updateProfile}
                 onAvatarChange={settings.selectAvatar}
@@ -83,7 +84,7 @@ export function SettingsPage() {
             <TabsContent value={SETTINGS_TABS.NOTIFICATIONS}>
               <NotificationsTab
                 preferences={settings.values.notifications}
-                isLoading={settings.isLoading}
+                isLoading={settings.isNotificationLoading}
                 isError={settings.isNotificationError}
                 disabled={settings.isSaving}
                 onRetry={() => void settings.retryNotifications()}

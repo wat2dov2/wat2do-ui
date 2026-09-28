@@ -25,7 +25,6 @@
       "automateLogs": {
         "title": "Automate Nhật ký",
         "description": "Kết quả văn bản từ ứng dụng Android Automate cho quy trình xử lý một người dùng.",
-        "loading": "Đang tải nhật ký...",
         "placeholder": "Automate kết quả nhật ký sẽ xuất hiện ở đây."
       },
       "queries": {

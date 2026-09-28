@@ -3,11 +3,12 @@ import { Trans, useTranslation } from "react-i18next";
 import { Stack } from "@/shared/layout/stack";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
+import { Skeleton } from "@/shared/ui/skeleton";
 import { formatRelativeTime } from "@/shared/utils/relativeTime";
 import type { ApiLatestAddedItem } from "@/shared/generated";
 
 interface PageCountHeadingProps {
-  count: number;
+  count: number | null;
   label: string;
   level?: 1 | 2;
   latest?: { item: ApiLatestAddedItem; onSelect: () => void } | null;
@@ -18,8 +19,8 @@ export function PageCountHeading({ count, label, latest, level = 1 }: PageCountH
   const Heading = level === 1 ? "h1" : "h2";
   return (
     <Stack gap={1} className="sm:gap-2">
-    <Heading aria-label={`${count.toLocaleString(i18n.language)} ${label}`} className="inline-flex items-baseline gap-2 text-left text-2xl font-bold text-foreground sm:text-3xl">
-      <NumberFlow value={count} respectMotionPreference={false} />
+    <Heading aria-busy={count === null} aria-label={count === null ? label : `${count.toLocaleString(i18n.language)} ${label}`} className="inline-flex items-baseline gap-2 text-left text-2xl font-bold text-foreground sm:text-3xl">
+      {count === null ? <Skeleton className="h-7 w-12 self-center" aria-hidden="true" /> : <NumberFlow value={count} respectMotionPreference />}
       <span>{label}</span>
     </Heading>
     {latest ? (

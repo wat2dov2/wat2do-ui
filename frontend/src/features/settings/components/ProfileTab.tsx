@@ -19,11 +19,14 @@ import { SchoolCombobox } from "@/shared/ui/school-combobox";
 import { useAppConstants } from "@/shared/hooks/useAppConstants";
 import { toFacultyTranslationKey } from "@/shared/utils/string";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
+import { LazyImage } from "@/shared/ui/lazy-image";
+import { Skeleton } from "@/shared/ui/skeleton";
 
 interface ProfileTabProps {
   userEmail: string | null;
   profile: UserProfile;
   avatarPreviewUrl: string | null;
+  isLoading: boolean;
   disabled: boolean;
   onProfileChange: (updates: Partial<UserProfile>) => void;
   onAvatarChange: (file: File) => void;
@@ -33,6 +36,7 @@ export function ProfileTab({
   userEmail,
   profile,
   avatarPreviewUrl,
+  isLoading,
   disabled,
   onProfileChange,
   onAvatarChange,
@@ -43,17 +47,27 @@ export function ProfileTab({
   const faculties = schoolBySlug.get(profile.school ?? "")?.faculties ?? [];
   const fileRef = useRef<HTMLInputElement>(null);
   const avatarUrl = avatarPreviewUrl ?? profile.avatarUrl;
+  const controlsDisabled = isLoading || disabled;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" aria-busy={isLoading}>
       {userEmail && (
         <Card>
           <CardContent className="space-y-4">
             <div className="flex items-center gap-4">
               <div className="relative">
                 <div className="size-16 rounded-full bg-secondary flex items-center justify-center overflow-hidden border-2 border-border">
-                  {avatarUrl ? (
-                    <img src={avatarUrl} alt={t("settings.profile.avatarAlt")} className="w-full h-full object-cover" />
+                  {isLoading ? (
+                    <Skeleton className="size-full rounded-full" />
+                  ) : avatarUrl ? (
+                    <LazyImage
+                      src={avatarUrl}
+                      alt={t("settings.profile.avatarAlt")}
+                      width={64}
+                      height={64}
+                      className="size-full"
+                      fallback={(userEmail[0] ?? "?").toUpperCase()}
+                    />
                   ) : (
                     <span className="text-xl font-semibold text-muted-foreground">
                       {(userEmail?.[0] ?? "?").toUpperCase()}
@@ -66,7 +80,7 @@ export function ProfileTab({
                   variant="outline"
                   className="absolute -bottom-1 -right-1 rounded-full size-7 p-0"
                   onClick={() => fileRef.current?.click()}
-                  disabled={disabled}
+                  disabled={controlsDisabled}
                   aria-label={t("settings.profile.changeAvatar")}
                 >
                   <Camera className="size-3.5" />
@@ -102,23 +116,23 @@ export function ProfileTab({
             <Label htmlFor="school" className="text-base font-medium">
               {t("settings.profile.school")}
             </Label>
-            <SchoolCombobox
+            {isLoading ? <Skeleton className="h-9 w-full" /> : <SchoolCombobox
               id="school"
               value={profile.school || ""}
               onChange={(value) => onProfileChange({ school: value, faculty: "" })}
               variant="field"
               placeholder={t("settings.profile.selectSchool")}
-            />
+            />}
           </div>
           <Separator />
           <div className="space-y-2">
             <Label htmlFor="faculty" className="text-base font-medium">
               {t("settings.profile.faculty")}
             </Label>
-            <Select
+            {isLoading ? <Skeleton className="h-9 w-full" /> : <Select
               value={profile.faculty}
               onValueChange={(value) => onProfileChange({ faculty: value })}
-              disabled={disabled}
+              disabled={controlsDisabled}
             >
               <SelectTrigger id="faculty" className="w-full">
                 <SelectValue placeholder={t("settings.profile.selectFaculty")} />
@@ -134,7 +148,7 @@ export function ProfileTab({
                   </SelectItem>
                 ))}
               </SelectContent>
-            </Select>
+            </Select>}
           </div>
           <Separator />
           <div className="space-y-2">
@@ -145,13 +159,13 @@ export function ProfileTab({
               <p className="text-sm text-muted-foreground">
                 {t("modals.profile.firstYearQuestion")}
               </p>
-              <Switch
+              {isLoading ? <Skeleton className="h-6 w-11 rounded-full" /> : <Switch
                 checked={profile.isFirstYear}
-                disabled={disabled}
+                disabled={controlsDisabled}
                 onCheckedChange={(checked) =>
                   onProfileChange({ isFirstYear: checked })
                 }
-              />
+              />}
             </div>
           </div>
           <Separator />
@@ -162,7 +176,7 @@ export function ProfileTab({
             <p className="text-sm text-muted-foreground">
               {t("settings.profile.selectInterests")}
             </p>
-            <MultiSelect
+            {isLoading ? <Skeleton className="h-20 w-full" /> : <MultiSelect
               options={interests}
               selected={profile.interests}
               onToggle={(interest) => {
@@ -172,7 +186,7 @@ export function ProfileTab({
                 onProfileChange({ interests: next });
               }}
               translationKeyPrefix="categories"
-            />
+            />}
           </div>
         </CardContent>
       </Card>

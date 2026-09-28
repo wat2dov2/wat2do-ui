@@ -67,3 +67,51 @@ test("price thresholds exclude the boundary, combine with other filters, and cle
   expect(visibleEvents()).toEqual([1, 2, 3, 4, 5]);
   expect(getFilterCounts(useSearchStore.getState())).toBe(0);
 });
+
+const discoveryEvents = [
+  { id: 11, title: "Employer booth with free pizza", employers_on_campus: true, free_food_on_campus: true, sports_game: false, price: 10, food: ["Pizza"] },
+  { id: 12, title: "Free campus lunch", employers_on_campus: false, free_food_on_campus: true, sports_game: false, price: 0 },
+  { id: 13, title: "Official varsity basketball match", employers_on_campus: false, free_food_on_campus: false, sports_game: true },
+  { id: 14, title: "Free career workshop", category: "Business", price: 0, food: ["Pizza"], employers_on_campus: null, free_food_on_campus: null, sports_game: null },
+  { id: 15, title: "Sports watch party", category: "Health", sports_game: false },
+  { id: 16, title: "Unclassified event" },
+  { id: 17, title: "Intramural basketball match", sports_game: false },
+  { id: 18, title: "Club-team basketball tournament", sports_game: false },
+  { id: 19, title: "Recreational basketball game", sports_game: false },
+  { id: 20, title: "Varsity basketball practice", sports_game: false },
+  { id: 21, title: "Varsity basketball tryouts", sports_game: false },
+  { id: 22, title: "Basketball match with unconfirmed varsity participation", sports_game: null },
+].map(event => ({ ...event, location: "Student Centre", school: "uwaterloo", occurrences: [] }) as unknown as Event);
+
+function discoveryResults() {
+  return filterEvents(discoveryEvents, { ...useSearchStore.getState(), goingEventIds: [] }, () => "America/Toronto")
+    .map(event => event.id);
+}
+
+for (const [filter, expected] of [
+  ["employersOnCampus", [11]],
+  ["freeFoodOnCampus", [11, 12]],
+  ["sportsGame", [13]],
+] as const) {
+  test(`${filter} uses explicit metadata and survives filter handoff and clearing`, () => {
+    useSearchStore.getState().setFilterState(normalizeFilterState({ [filter]: true }));
+    expect(discoveryResults()).toEqual(expected);
+    expect(getFilterCounts(useSearchStore.getState())).toBe(1);
+    const handoff = storeStatesToFilterState(useSearchStore.getState());
+    expect(normalizeFilterState(JSON.parse(JSON.stringify(handoff)))[filter]).toBe(true);
+    useSearchStore.getState().setFilterState(clearNarrowingFilterState(handoff));
+    expect(discoveryResults()).toHaveLength(discoveryEvents.length);
+    expect(getFilterCounts(useSearchStore.getState())).toBe(0);
+    expect(normalizeFilterState({ [filter]: "true" })[filter]).toBe(false);
+  });
+}
+
+test("discovery filters intersect independently of category, food labels, and admission price", () => {
+  useSearchStore.getState().setFilterState({ ...EMPTY_FILTER_STATE, employersOnCampus: true, freeFoodOnCampus: true });
+  expect(discoveryResults()).toEqual([11]);
+  expect(getFilterCounts(useSearchStore.getState())).toBe(2);
+  useSearchStore.getState().setFilterState({ ...EMPTY_FILTER_STATE, freeFoodOnCampus: true, maxPrice: "0" });
+  expect(discoveryResults()).toEqual([12]);
+  useSearchStore.getState().setFilterState({ ...EMPTY_FILTER_STATE, employersOnCampus: true, sportsGame: true });
+  expect(discoveryResults()).toEqual([]);
+});

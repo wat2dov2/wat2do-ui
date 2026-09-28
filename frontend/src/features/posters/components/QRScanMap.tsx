@@ -8,6 +8,7 @@ import { MapPin } from "@/shared/ui/doodle-icons";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/shared/lib/utils";
 import { Stack } from "@/shared/layout";
+import { LazyImage } from "@/shared/ui/lazy-image";
 
 interface QRScanMapProps {
   markers: PosterMapMarker[];
@@ -110,10 +111,11 @@ function ExactMarker({
         <div className="pointer-events-none absolute bottom-full left-1/2 z-dropdown mb-2 min-w-44 -translate-x-1/2 rounded-lg border border-border bg-surface p-2 text-xs shadow-xl">
           <Stack gap={2}>
             {marker.imageUrl && (
-              <img
+              <LazyImage
                 src={marker.imageUrl}
                 alt={marker.name}
-                className="aspect-[8.5/11] max-h-48 w-full rounded-md object-cover"
+                sizes="176px"
+                className="aspect-[8.5/11] max-h-48 w-full rounded-md"
               />
             )}
             <Stack gap={1}>

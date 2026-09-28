@@ -1,0 +1,6 @@
+{
+  "model": "gpt-4o-mini-transcribe",
+  "maximum_media_bytes": 24000000,
+  "download_timeout_seconds": 60,
+  "transcription_timeout_seconds": 180
+}

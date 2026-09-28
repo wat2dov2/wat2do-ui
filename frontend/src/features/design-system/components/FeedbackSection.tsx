@@ -1,5 +1,6 @@
 import { Section, Stack } from "@/shared/layout";
-import { EmptyState, LoadingState } from "@/shared/feedback";
+import { EmptyState } from "@/shared/feedback";
+import { LoadingPage } from "@/shared/ui/loading-page";
 import { Button } from "@/shared/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert";
 import { Search } from "@/shared/ui/doodle-icons";
@@ -44,9 +45,11 @@ export function FeedbackSection() {
           />
         </ShowcaseBlock>
 
-        <ShowcaseBlock label="LoadingState">
-          <LoadingState label="Loading events..." />
-        </ShowcaseBlock>
+        {(["content", "cards", "table", "form", "detail"] as const).map((variant) => (
+          <ShowcaseBlock key={variant} label={`Loading skeleton: ${variant}`}>
+            <LoadingPage variant={variant} />
+          </ShowcaseBlock>
+        ))}
       </Stack>
     </Section>
   );

@@ -5,7 +5,7 @@ export function EventCardSkeleton() {
   return (
     <article
       data-event-card-skeleton
-      className="flex h-full flex-col overflow-hidden rounded-xl animate-pulse"
+      className="flex h-full flex-col overflow-hidden rounded-xl"
     >
       <div
         className="relative shrink-0 overflow-hidden rounded-t-xl rounded-br-xl bg-muted/30"

@@ -25,7 +25,6 @@
       "automateLogs": {
         "title": "Automate பதிவுகள்",
         "description": "ஒரே பயனர் செயல்முறை வார்க்ஃப்ளோவுக்கான Android Automate பயன்பாட்டின் உரை வெளியீடு.",
-        "loading": "பதிவுகள் ஏற்றுகிறது...",
         "placeholder": "Automate பதிவு வெளியீடு இங்கே தோன்றும்."
       },
       "queries": {

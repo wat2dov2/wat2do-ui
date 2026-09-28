@@ -11,6 +11,7 @@ type Batch = ApiInstagramPublishBatchSummaryResponse;
 interface InstagramRunsTableProps {
   batches: Batch[];
   total: number;
+  isLoading: boolean;
   onOpenRun: (batchId: string) => void;
   onPrefetchRun: (batchId: string) => void;
   pagination: ComponentProps<typeof AdminTable>["pagination"];
@@ -32,13 +33,14 @@ function statusBadgeVariant(status: Batch["status"]) {
   }
 }
 
-export function InstagramRunsTable({ batches, total, onOpenRun, onPrefetchRun, pagination }: InstagramRunsTableProps) {
+export function InstagramRunsTable({ batches, total, isLoading, onOpenRun, onPrefetchRun, pagination }: InstagramRunsTableProps) {
   const { t, i18n } = useTranslation();
   const { getSchoolTimezone } = useSchoolDirectory();
   const locale = i18n.language || "en-US";
 
   return (
     <AdminTable
+      isLoading={isLoading}
       count={total}
       label={t("admin.instagramPublishing.batches")}
       pagination={pagination}

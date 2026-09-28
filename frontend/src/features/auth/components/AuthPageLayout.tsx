@@ -6,12 +6,11 @@ import { AuthHeroPanel } from "@/features/auth/components/AuthHeroPanel";
 import { Card, CardContent } from "@/shared/ui/card";
 import { PageHeader, type PageHeaderBack } from "@/shared/layout";
 import { ShineBorder } from "@/registry/magicui/shine-border";
-import type { Event } from "@/shared/types";
 
 interface AuthPageLayoutProps {
   heading: string;
   description: string;
-  previewEvents?: Event[];
+  preview?: ReactNode;
   back?: PageHeaderBack;
   children: ReactNode;
 }
@@ -19,7 +18,7 @@ interface AuthPageLayoutProps {
 export function AuthPageLayout({
   heading,
   description,
-  previewEvents = [],
+  preview,
   back,
   children,
 }: AuthPageLayoutProps) {
@@ -56,7 +55,7 @@ export function AuthPageLayout({
           </Card>
         </section>
 
-        <AuthHeroPanel events={previewEvents} />
+        {preview ?? <AuthHeroPanel />}
       </div>
     </main>
   );

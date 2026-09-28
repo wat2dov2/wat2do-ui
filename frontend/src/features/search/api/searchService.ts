@@ -176,6 +176,10 @@ export function filterEvents(
       if (!location || isVirtualLocation(location) !== (filters.eventFormat === "online")) return false;
     }
 
+    if (filters.employersOnCampus && event.employers_on_campus !== true) return false;
+    if (filters.freeFoodOnCampus && event.free_food_on_campus !== true) return false;
+    if (filters.sportsGame && event.sports_game !== true) return false;
+
     if (filters.hasFoodFilter && food.length === 0) {
       return false;
     }

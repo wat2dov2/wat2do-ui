@@ -22,6 +22,9 @@ export interface FilterState {
   registration: boolean;
   clubs: string[];
   hasFood: boolean;
+  employersOnCampus: boolean;
+  freeFoodOnCampus: boolean;
+  sportsGame: boolean;
   going: boolean;
   sortBy: string;
   sortOrder: "asc" | "desc";

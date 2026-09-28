@@ -15,7 +15,7 @@ import { Button } from "@/shared/ui/button";
 import { NewlyAddedFilterButton } from "@/shared/ui/newly-added-filter-button";
 import { POSITION_TYPES } from "@/features/positions/api/positions.api";
 import { EmptyState } from "@/shared/feedback/empty-state";
-import { LoadingPage } from "@/shared/ui/loading-page";
+import { LoadingDrawer } from "@/shared/ui/drawer";
 
 const PositionDetailsDrawer = lazy(() =>
   import("@/features/positions/components/PositionDetailsDrawer").then((module) => ({
@@ -40,7 +40,7 @@ export function PositionsPage({
     <Stack gap={2}>
       <PageHeader variant="listing">
         <PageCountHeading
-          count={positionsPage.total}
+          count={positionsPage.isLoading ? null : positionsPage.total}
           label={t("positions.position", { count: positionsPage.total })}
           latest={positionsPage.latestAddedPosition ? { item: positionsPage.latestAddedPosition, onSelect: positionsPage.searchLatest } : null}
         />
@@ -100,7 +100,7 @@ export function PositionsPage({
       )}
 
       {hasOpenedDetails ? (
-        <Suspense fallback={<LoadingPage />}>
+        <Suspense fallback={<LoadingDrawer open={positionsPage.selectedPosition !== null} onClose={positionsPage.closePosition} title={positionsPage.selectedPosition?.title} size="detail" />}>
           <PositionDetailsDrawer
             positions={positionsPage.positions}
             onSelect={positionsPage.openPosition}

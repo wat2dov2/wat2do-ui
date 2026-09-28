@@ -15,6 +15,7 @@ import {
 } from "@/features/posters";
 import type { Event } from "@/shared/types";
 import { LoadingPage } from "@/shared/ui/loading-page";
+import { LazyImage } from "@/shared/ui/lazy-image";
 import { useMarketingData } from "@/features/marketing/hooks/useMarketingData";
 
 interface MarketingPageProps {
@@ -37,10 +38,6 @@ export function MarketingPage({ events }: MarketingPageProps) {
     setShowCreateModal(false);
   };
 
-  if (loading) {
-    return <LoadingPage className="min-h-[200px]" />;
-  }
-
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
@@ -61,7 +58,9 @@ export function MarketingPage({ events }: MarketingPageProps) {
         </Button>
       </div>
 
-      {qrCodesWithStats.length > 0 ? (
+      {loading ? (
+        <LoadingPage variant="cards" />
+      ) : qrCodesWithStats.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {qrCodesWithStats.map((qr) => (
             <div
@@ -80,10 +79,11 @@ export function MarketingPage({ events }: MarketingPageProps) {
             >
               <div className="w-full h-64 bg-linear-to-br from-primary/20 to-primary/5 flex items-center justify-center">
                 {qr.imageUrl ? (
-                  <img
+                  <LazyImage
                     src={qr.imageUrl}
                     alt={qr.name}
-                    className="w-full h-full object-cover"
+                    sizes="(max-width: 767px) 100vw, (max-width: 1023px) 50vw, 33vw"
+                    className="size-full"
                   />
                 ) : (
                   <div className="text-center p-8">

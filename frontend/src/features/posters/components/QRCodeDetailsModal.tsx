@@ -29,6 +29,9 @@ import { generateQRCodeUrl } from "@/shared/utils/qrGenerator";
 import { getQRImageUrl } from "@/features/posters/api/posters.api";
 import { DrawerBody } from "@/shared/layout";
 import { EmptyState } from "@/shared/ui/modal-components";
+import { LoadingPage } from "@/shared/ui/loading-page";
+import { Button } from "@/shared/ui/button";
+import { LazyImage } from "@/shared/ui/lazy-image";
 
 interface QRCodeDetailsModalProps {
   isOpen: boolean;
@@ -68,10 +71,11 @@ export function QRCodeDetailsModal({ isOpen, onClose, qrCode }: QRCodeDetailsMod
                 style={{ width: previewSize, height: previewSize }}
               >
                 {posterImageSrc ? (
-                  <img
+                  <LazyImage
                     src={posterImageSrc}
                     alt={qrCode.name}
-                    className="w-full h-full object-cover"
+                    sizes={`${previewSize}px`}
+                    className="size-full"
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-muted-foreground/50">
@@ -91,14 +95,19 @@ export function QRCodeDetailsModal({ isOpen, onClose, qrCode }: QRCodeDetailsMod
             </div>
 
             {/* Stats */}
-            <QRCodeStatsDisplay
+            {qrCodeScans.isError ? (
+              <Button variant="outline" onClick={() => void qrCodeScans.refetch()}>
+                {t("common.tryAgain")}
+              </Button>
+            ) : <QRCodeStatsDisplay
               totalScans={qrCodeStats.stats.totalScans}
               uniqueScans={qrCodeStats.stats.uniqueScans}
-            />
+              isLoading={qrCodeScans.loading}
+            />}
 
             {/* Chart */}
-            {qrCodeStats.stats.totalScansData && qrCodeStats.stats.totalScansData.length > 0 ? (
-              <Suspense fallback={<div className="h-48" aria-hidden />}>
+            {qrCodeScans.loading ? <LoadingPage /> : qrCodeScans.isError ? null : qrCodeStats.stats.totalScansData && qrCodeStats.stats.totalScansData.length > 0 ? (
+              <Suspense fallback={<LoadingPage />}>
                 <QRCodeScansChart
                   timeRange={qrCodeScans.timeRange}
                   onTimeRangeChange={qrCodeScans.setTimeRange}

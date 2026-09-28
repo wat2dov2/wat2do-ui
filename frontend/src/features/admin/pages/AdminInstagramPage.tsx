@@ -4,9 +4,10 @@ import { InstagramCarouselDrawer } from "@/features/admin/components/instagram/I
 import { InstagramRunsTable } from "@/features/admin/components/instagram/InstagramRunsTable";
 import { AdminPageHeader } from "@/features/admin/components/shared/AdminPageHeader";
 import { useInstagramPublishing } from "@/features/admin/hooks/useInstagramPublishing";
-import { Container, Section, Stack } from "@/shared/layout";
+import { Container, DrawerBody, Section, Stack } from "@/shared/layout";
 import { getApiErrorMessage } from "@/shared/services/apiClient";
 import { Button } from "@/shared/ui/button";
+import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from "@/shared/ui/drawer";
 import { Instagram } from "@/shared/ui/doodle-icons";
 import { LoadingPage } from "@/shared/ui/loading-page";
 import { toast } from "@/shared/hooks/use-toast";
@@ -37,6 +38,7 @@ export function AdminInstagramPage({ onBack }: AdminInstagramPageProps) {
     publishingBatchId,
   } = useInstagramPublishing(pageNumber, BATCHES_PER_PAGE, openBatchId);
   const batches = page?.items ?? [];
+  const selectedBatch = batches.find(batch => batch.id === openBatchId);
 
   return (
     <Container size="lg">
@@ -48,9 +50,7 @@ export function AdminInstagramPage({ onBack }: AdminInstagramPageProps) {
           onBack={onBack}
         />
 
-        {isLoading ? (
-          <LoadingPage className="min-h-[360px]" />
-        ) : error ? (
+        {error && !page ? (
           <Section variant="surface" className="text-center">
             <Stack gap={4} align="center">
               <p className="text-sm text-destructive">
@@ -61,7 +61,7 @@ export function AdminInstagramPage({ onBack }: AdminInstagramPageProps) {
               </Button>
             </Stack>
           </Section>
-        ) : batches.length === 0 ? (
+        ) : !isLoading && batches.length === 0 ? (
           <Section variant="surface" className="text-center">
             <p className="text-sm text-muted-foreground">
               {t("admin.instagramPublishing.noBatches")}
@@ -69,6 +69,7 @@ export function AdminInstagramPage({ onBack }: AdminInstagramPageProps) {
           </Section>
         ) : (
           <InstagramRunsTable
+            isLoading={isLoading}
             batches={batches}
             total={page?.total ?? 0}
             onOpenRun={setOpenBatchId}
@@ -84,21 +85,34 @@ export function AdminInstagramPage({ onBack }: AdminInstagramPageProps) {
           />
         )}
 
-        {openBatchId && isDetailLoading ? (
-          <LoadingPage className="min-h-[240px]" />
-        ) : openBatchId && detailError ? (
-          <Section variant="surface" className="text-center">
-            <Stack gap={4} align="center">
-              <p className="text-sm text-destructive">
-                {getApiErrorMessage(detailError, t("admin.instagramPublishing.loadError"))}
-              </p>
-              <Button variant="outline" onClick={() => retryDetail()}>
-                {t("admin.instagramPublishing.retry")}
-              </Button>
-            </Stack>
-          </Section>
-        ) : null}
       </Stack>
+
+      {openBatchId && !openBatch ? (
+        <Drawer open onOpenChange={open => { if (!open) setOpenBatchId(null); }}>
+          <DrawerContent size="wide">
+            <DrawerHeader>
+              <Stack gap={1}>
+                <DrawerTitle>{selectedBatch?.school ?? t("admin.instagramPublishing.title")}</DrawerTitle>
+                <DrawerDescription>{selectedBatch?.local_date ?? t("admin.instagramPublishing.description")}</DrawerDescription>
+              </Stack>
+            </DrawerHeader>
+            <DrawerBody>
+              {isDetailLoading || !detailError ? (
+                <LoadingPage variant="detail" />
+              ) : (
+                <Stack gap={4} align="center">
+                  <p role="alert">
+                    {getApiErrorMessage(detailError, t("admin.instagramPublishing.loadError"))}
+                  </p>
+                  <Button variant="outline" onClick={() => retryDetail()}>
+                    {t("admin.instagramPublishing.retry")}
+                  </Button>
+                </Stack>
+              )}
+            </DrawerBody>
+          </DrawerContent>
+        </Drawer>
+      ) : null}
 
       {openBatch ? (
         <InstagramCarouselDrawer

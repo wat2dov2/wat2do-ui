@@ -809,7 +809,7 @@ export interface paths {
          *
          *     Always one entry per supported type - untouched types come back with
          *     their default and ``updated_at=None`` so the client can distinguish
-         *     default-on from explicitly opted in.
+         *     a default from an explicit choice.
          */
         get: operations["get_my_preferences_notification_preferences_get"];
         put?: never;
@@ -2102,6 +2102,21 @@ export interface components {
         };
         /** EventCreate */
         EventCreate: {
+            /**
+             * Employers On Campus
+             * @description Employer representatives or recruiters will be physically present on the event's school campus for recruiting, a career fair, an employer information session, or networking. General career workshops, alumni talks without employer recruiting, student-club hiring, online sessions, and off-campus employer events do not qualify. School affiliation alone does not prove an on-campus location.
+             */
+            employers_on_campus?: boolean | null;
+            /**
+             * Free Food On Campus
+             * @description Food or refreshments are explicitly offered at no charge at a physical location on the event's school campus. Free admission with food for sale, discounted food, prizes, and unspecified food pricing do not qualify. School affiliation alone does not prove an on-campus location. Complimentary food does not establish the event's admission price.
+             */
+            free_food_on_campus?: boolean | null;
+            /**
+             * Sports Game
+             * @description An actual scheduled athletic game, match, meet, or tournament involving an official school varsity team. Intramural, club-team, and recreational competitions, practices, tryouts, fitness classes, sports-club meetings, video games, and watch parties do not qualify. School affiliation or posting from an athletics account alone does not establish varsity participation. Use null when official varsity participation is unconfirmed.
+             */
+            sports_game?: boolean | null;
             /** Title */
             title: string;
             /** Description */
@@ -2211,6 +2226,21 @@ export interface components {
          *     views do not leak creator UUIDs to unauthenticated callers.
          */
         EventPublicResponse: {
+            /**
+             * Employers On Campus
+             * @description Employer representatives or recruiters will be physically present on the event's school campus for recruiting, a career fair, an employer information session, or networking. General career workshops, alumni talks without employer recruiting, student-club hiring, online sessions, and off-campus employer events do not qualify. School affiliation alone does not prove an on-campus location.
+             */
+            employers_on_campus?: boolean | null;
+            /**
+             * Free Food On Campus
+             * @description Food or refreshments are explicitly offered at no charge at a physical location on the event's school campus. Free admission with food for sale, discounted food, prizes, and unspecified food pricing do not qualify. School affiliation alone does not prove an on-campus location. Complimentary food does not establish the event's admission price.
+             */
+            free_food_on_campus?: boolean | null;
+            /**
+             * Sports Game
+             * @description An actual scheduled athletic game, match, meet, or tournament involving an official school varsity team. Intramural, club-team, and recreational competitions, practices, tryouts, fitness classes, sports-club meetings, video games, and watch parties do not qualify. School affiliation or posting from an athletics account alone does not establish varsity participation. Use null when official varsity participation is unconfirmed.
+             */
+            sports_game?: boolean | null;
             /** Id */
             id: number;
             /** Club Id */
@@ -2272,6 +2302,21 @@ export interface components {
          *     ``occurrences`` is the canonical date list.
          */
         EventResponse: {
+            /**
+             * Employers On Campus
+             * @description Employer representatives or recruiters will be physically present on the event's school campus for recruiting, a career fair, an employer information session, or networking. General career workshops, alumni talks without employer recruiting, student-club hiring, online sessions, and off-campus employer events do not qualify. School affiliation alone does not prove an on-campus location.
+             */
+            employers_on_campus?: boolean | null;
+            /**
+             * Free Food On Campus
+             * @description Food or refreshments are explicitly offered at no charge at a physical location on the event's school campus. Free admission with food for sale, discounted food, prizes, and unspecified food pricing do not qualify. School affiliation alone does not prove an on-campus location. Complimentary food does not establish the event's admission price.
+             */
+            free_food_on_campus?: boolean | null;
+            /**
+             * Sports Game
+             * @description An actual scheduled athletic game, match, meet, or tournament involving an official school varsity team. Intramural, club-team, and recreational competitions, practices, tryouts, fitness classes, sports-club meetings, video games, and watch parties do not qualify. School affiliation or posting from an athletics account alone does not establish varsity participation. Use null when official varsity participation is unconfirmed.
+             */
+            sports_game?: boolean | null;
             /** Id */
             id: number;
             /** Club Id */
@@ -2357,6 +2402,21 @@ export interface components {
          *     auth UID to anonymous callers.
          */
         EventSummaryResponse: {
+            /**
+             * Employers On Campus
+             * @description Employer representatives or recruiters will be physically present on the event's school campus for recruiting, a career fair, an employer information session, or networking. General career workshops, alumni talks without employer recruiting, student-club hiring, online sessions, and off-campus employer events do not qualify. School affiliation alone does not prove an on-campus location.
+             */
+            employers_on_campus?: boolean | null;
+            /**
+             * Free Food On Campus
+             * @description Food or refreshments are explicitly offered at no charge at a physical location on the event's school campus. Free admission with food for sale, discounted food, prizes, and unspecified food pricing do not qualify. School affiliation alone does not prove an on-campus location. Complimentary food does not establish the event's admission price.
+             */
+            free_food_on_campus?: boolean | null;
+            /**
+             * Sports Game
+             * @description An actual scheduled athletic game, match, meet, or tournament involving an official school varsity team. Intramural, club-team, and recreational competitions, practices, tryouts, fitness classes, sports-club meetings, video games, and watch parties do not qualify. School affiliation or posting from an athletics account alone does not establish varsity participation. Use null when official varsity participation is unconfirmed.
+             */
+            sports_game?: boolean | null;
             /** Id */
             id: number;
             /** Title */
@@ -2411,6 +2471,21 @@ export interface components {
         };
         /** EventUpdate */
         EventUpdate: {
+            /**
+             * Employers On Campus
+             * @description Employer representatives or recruiters will be physically present on the event's school campus for recruiting, a career fair, an employer information session, or networking. General career workshops, alumni talks without employer recruiting, student-club hiring, online sessions, and off-campus employer events do not qualify. School affiliation alone does not prove an on-campus location.
+             */
+            employers_on_campus?: boolean | null;
+            /**
+             * Free Food On Campus
+             * @description Food or refreshments are explicitly offered at no charge at a physical location on the event's school campus. Free admission with food for sale, discounted food, prizes, and unspecified food pricing do not qualify. School affiliation alone does not prove an on-campus location. Complimentary food does not establish the event's admission price.
+             */
+            free_food_on_campus?: boolean | null;
+            /**
+             * Sports Game
+             * @description An actual scheduled athletic game, match, meet, or tournament involving an official school varsity team. Intramural, club-team, and recreational competitions, practices, tryouts, fitness classes, sports-club meetings, video games, and watch parties do not qualify. School affiliation or posting from an athletics account alone does not establish varsity participation. Use null when official varsity participation is unconfirmed.
+             */
+            sports_game?: boolean | null;
             /** Title */
             title?: string | null;
             /** Description */
@@ -2768,7 +2843,7 @@ export interface components {
          * NotificationPreferencesListResponse
          * @description Every notification type's resolved enabled state for the user.
          *
-         *     Includes types for which the user has no row (default-on); the
+         *     Includes types for which the user has no row; the
          *     ``enabled`` value is the resolved default in that case. Clients
          *     render one toggle per entry.
          */

@@ -17,7 +17,6 @@ import { Stack } from "@/shared/layout";
 import { Users } from "@/shared/ui/doodle-icons";
 import { Button } from "@/shared/ui/button";
 import { TableCell, TableRow } from "@/shared/ui/table";
-import { LoadingPage } from "@/shared/ui/loading-page";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/ui/tabs";
 import type { Position } from "@/shared/types";
 
@@ -54,9 +53,9 @@ export function AdminPositionsPage({ onBack }: { onBack: () => void }) {
               onClear={() => { setSearch(""); setSubmittedSearch(""); setPage(1); }}
               submitLabel={t("common.search")} clearLabel={t("positions.clearSearch")}
             />
-            {isPending ? <LoadingPage /> : isError ? <Button onClick={() => void refetch()}>{t("common.tryAgain")}</Button> : (
-              <AdminTable count={data.total} label={t("positions.position", { count: data.total })} pagination={{ currentPage: page, totalPages: data.total_pages, onPageChange: setPage }} headers={[{ label: t("navigation.positions") }, { label: t("navigation.clubs") }, { label: t("schools.school") }, { label: t("positions.deadlineLabel") }, { label: t("common.actions") }]}>
-                {data.items.map((position) => (
+            {isError && !data ? <Button onClick={() => void refetch()}>{t("common.tryAgain")}</Button> : (
+              <AdminTable isLoading={isPending} count={data?.total ?? 0} label={t("positions.position", { count: data?.total ?? 0 })} pagination={{ currentPage: page, totalPages: data?.total_pages ?? 1, onPageChange: setPage }} headers={[{ label: t("navigation.positions") }, { label: t("navigation.clubs") }, { label: t("schools.school") }, { label: t("positions.deadlineLabel") }, { label: t("common.actions") }]}>
+                {data?.items.map((position) => (
                   <TableRow key={position.id}>
                     <TableCell>{position.title}</TableCell>
                     <TableCell>{position.club_name}</TableCell>

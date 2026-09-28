@@ -214,7 +214,6 @@ export function ClubDetailsPage({
   const {
     data: club,
     isPending,
-    isError,
   } = useQuery({
     queryKey: queryKeys.clubs.detail(clubId),
     queryFn: () => getClubById(clubId),
@@ -222,16 +221,19 @@ export function ClubDetailsPage({
     initialData: initialClub,
   });
 
-  if (isPending && !isError) {
-    return <LoadingPage className="min-h-[60dvh]" />;
-  }
-
-  if (isError || !club) {
+  if (!club) {
     return (
-      <Container size="sm" className="text-center">
-        <p className="text-sm text-muted-foreground">
-          {t("clubs.loadFailed")}
-        </p>
+      <Container size="lg">
+        <Stack gap={6}>
+          <PageHeader
+            back={{ href: ROUTES.CLUBS, label: t("clubs.allClubs") }}
+          />
+          {isPending ? (
+            <LoadingPage variant="detail" />
+          ) : (
+            <p role="alert">{t("clubs.loadFailed")}</p>
+          )}
+        </Stack>
       </Container>
     );
   }

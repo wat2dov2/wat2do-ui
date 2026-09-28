@@ -29,6 +29,7 @@ from core.database import get_sb
 from core.pagination import fetch_all_pages
 from core.sanitize import parse_iso_datetime
 from core.tables import EVENT_DATES, EVENTS
+from schemas.event import EventDiscoveryFields
 from services import school_service
 from services.club_service import _normalize_club_name
 
@@ -47,6 +48,7 @@ _TITLE_NUMBER_RE = re.compile(r"\b\d+[a-z]*\b")
 
 _CANDIDATE_EVENT_SELECT = (
     "id,title,description,location,price,food,registration,category,"
+    f"{','.join(EventDiscoveryFields.model_fields)},"
     "club,club_id,ig_handle,school_id,cancelled,source_url,source_image_url,"
     f"{school_service.SCHOOL_SLUG_EMBED},"
     "event_dates(dtstart_utc,dtend_utc,duration,tz)"
@@ -295,7 +297,7 @@ def _merge_extracted_duplicates(existing: dict, incoming: dict) -> dict:
         if new_value and len(new_value) > len(old_value):
             merged[field] = incoming[field]
 
-    for field in ("price", "category", "source_image_url"):
+    for field in ("price", "category", "source_image_url", *EventDiscoveryFields.model_fields):
         if merged.get(field) in (None, "") and incoming.get(field) not in (None, ""):
             merged[field] = incoming[field]
 

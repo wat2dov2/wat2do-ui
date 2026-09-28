@@ -23,7 +23,9 @@ import {
   Section,
   Stack,
 } from "@/shared/layout";
-import { EmptyState, LoadingState } from "@/shared/feedback";
+import { EmptyState } from "@/shared/feedback";
+import { PosterMapSkeleton } from "@/features/posters/components/PosterMapSkeleton";
+import { Skeleton } from "@/shared/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert";
 import { Button } from "@/shared/ui/button";
 import { Link } from "@/shared/ui/link";
@@ -75,71 +77,45 @@ export function PromoterPostersPage() {
     );
   }
 
-  if (dashboard.earnings.isLoading) {
-    return <LoadingPage className="min-h-[60dvh]" />;
-  }
-
-  if (dashboard.earnings.isError || !dashboard.earnings.data) {
-    return (
-      <Container size="sm" data-testid="promoter-dashboard">
-        <Alert variant="destructive">
-          <QrCode />
-          <AlertTitle>{t("posters.dashboard.loadErrorTitle")}</AlertTitle>
-          <AlertDescription>
-            <p>{t("posters.dashboard.loadErrorDescription")}</p>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => void dashboard.earnings.refetch()}
-            >
-              {t("common.tryAgain")}
-            </Button>
-          </AlertDescription>
-        </Alert>
-      </Container>
-    );
-  }
-
   const earnings = dashboard.earnings.data;
-  const programEnabled = promoter.isProgramEnabled && earnings.programEnabled;
-  const canCreatePosters =
-    programEnabled &&
-    Boolean(promoter.school) &&
-    earnings.activeSlotsUsed < earnings.activeSlotsLimit;
+  const programEnabled = promoter.isProgramEnabled && earnings?.programEnabled;
+  const canCreatePosters = Boolean(
+    earnings && programEnabled && promoter.school &&
+    earnings.activeSlotsUsed < earnings.activeSlotsLimit,
+  );
   const summary = [
     {
       key: "pending",
       icon: DollarSign,
       label: t("posters.dashboard.pendingEarnings"),
-      value: formatCadCents(earnings.pendingCents, i18n.language),
+      value: earnings ? formatCadCents(earnings.pendingCents, i18n.language) : null,
     },
     {
       key: "visitors",
       icon: Users,
       label: t("posters.dashboard.creditableVisitors"),
-      value: String(earnings.periodCreditableVisitors),
+      value: earnings ? String(earnings.periodCreditableVisitors) : null,
     },
     {
       key: "unqualified",
       icon: ShieldAlert,
       label: t("posters.dashboard.unqualifiedScans"),
-      value: String(earnings.periodUnqualifiedScans),
+      value: earnings ? String(earnings.periodUnqualifiedScans) : null,
     },
     {
       key: "paid",
       icon: Coins,
       label: t("posters.dashboard.lifetimePaid"),
-      value: formatCadCents(earnings.lifetimePaidCents, i18n.language),
+      value: earnings ? formatCadCents(earnings.lifetimePaidCents, i18n.language) : null,
     },
     {
       key: "slots",
       icon: QrCode,
       label: t("posters.dashboard.activeSlots"),
-      value: t("posters.dashboard.slotValue", {
+      value: earnings ? t("posters.dashboard.slotValue", {
         used: earnings.activeSlotsUsed,
         limit: earnings.activeSlotsLimit,
-      }),
+      }) : null,
     },
   ];
 
@@ -168,7 +144,7 @@ export function PromoterPostersPage() {
             </>
           }
           actions={
-            earnings.posters.length > 0 && canCreatePosters ? (
+            earnings && earnings.posters.length > 0 && canCreatePosters ? (
               <PromoterPosterCreator
                 school={promoter.school ?? ""}
                 activeSlotsUsed={earnings.activeSlotsUsed}
@@ -178,7 +154,25 @@ export function PromoterPostersPage() {
           }
         />
 
-        {!programEnabled && (
+        {dashboard.earnings.isError && (
+          <Alert variant="destructive">
+            <QrCode />
+            <AlertTitle>{t("posters.dashboard.loadErrorTitle")}</AlertTitle>
+            <AlertDescription>
+              <p>{t("posters.dashboard.loadErrorDescription")}</p>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => void dashboard.earnings.refetch()}
+              >
+                {t("common.tryAgain")}
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {earnings && !programEnabled && (
           <Alert variant="info" data-testid="promoter-program-paused">
             <QrCode />
             <AlertTitle>{t("posters.dashboard.pausedTitle")}</AlertTitle>
@@ -188,7 +182,7 @@ export function PromoterPostersPage() {
           </Alert>
         )}
 
-        <FormGrid columns={2} collapse={false}>
+        {(earnings || dashboard.earnings.isLoading) && <FormGrid columns={2} collapse={false}>
           {summary.map(({ key, icon: Icon, label, value }) => (
             <Card key={key}>
               <CardHeader>
@@ -199,9 +193,13 @@ export function PromoterPostersPage() {
               </CardHeader>
               <CardContent>
                 <Stack gap={1}>
-                  <p className="text-2xl font-semibold text-foreground">
-                    {value}
-                  </p>
+                  {value === null ? (
+                    <Skeleton className="h-8 w-24" aria-busy={dashboard.earnings.isLoading} />
+                  ) : (
+                    <p className="text-2xl font-semibold text-foreground">
+                      {value}
+                    </p>
+                  )}
                   {key !== "slots" && (
                     <p className="text-xs text-muted-foreground">
                       {t("posters.dashboard.updatedDaily")}
@@ -211,7 +209,7 @@ export function PromoterPostersPage() {
               </CardContent>
             </Card>
           ))}
-        </FormGrid>
+        </FormGrid>}
 
         <Section
           title={t("posters.inventory.title")}
@@ -219,7 +217,9 @@ export function PromoterPostersPage() {
             days: promoterProgram.quietPosterDays,
           })}
         >
-          {earnings.posters.length === 0 ? (
+          {!earnings ? (
+            dashboard.earnings.isLoading ? <LoadingPage variant="cards" /> : null
+          ) : earnings.posters.length === 0 ? (
             <EmptyState
               icon={<MapPin />}
               title={t("posters.inventory.emptyTitle")}
@@ -244,7 +244,7 @@ export function PromoterPostersPage() {
           description={t("posters.dashboard.mapDescription")}
         >
           {coverage.isLoading ? (
-            <LoadingState label={t("posters.map.loading")} />
+            <PosterMapSkeleton height="480px" />
           ) : (
             <QRScanMap
               markers={markers}
@@ -258,9 +258,7 @@ export function PromoterPostersPage() {
           title={t("posters.payouts.title")}
           description={t("posters.payouts.description")}
         >
-          {dashboard.payouts.isLoading ? (
-            <LoadingState label={t("posters.payouts.loading")} />
-          ) : dashboard.payouts.isError ? (
+          {dashboard.payouts.isError ? (
             <Alert variant="warning">
               <Coins />
               <AlertTitle>{t("posters.payouts.loadErrorTitle")}</AlertTitle>
@@ -269,7 +267,7 @@ export function PromoterPostersPage() {
               </AlertDescription>
             </Alert>
           ) : (
-            <PromoterPayoutHistory payouts={dashboard.payouts.data ?? []} />
+            <PromoterPayoutHistory payouts={dashboard.payouts.data ?? []} isLoading={dashboard.payouts.isLoading} />
           )}
         </Section>
       </Stack>

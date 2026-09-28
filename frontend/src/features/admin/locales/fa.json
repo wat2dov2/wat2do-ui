@@ -25,7 +25,6 @@
       "automateLogs": {
         "title": "Automate گزارش‌ها",
         "description": "خروجی متنی برنامه Android Automate برای گردش‌کار process-single-user.",
-        "loading": "در حال بارگذاری گزارش‌ها...",
         "placeholder": "Automate خروجی گزارش در اینجا ظاهر خواهد شد."
       },
       "queries": {

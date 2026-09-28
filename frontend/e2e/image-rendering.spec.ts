@@ -62,6 +62,7 @@ const imageConfig = {
 };
 const { EventImageCutout } = loadComponent("shared/ui/event-image-cutout");
 const { LazyImage } = loadComponent("shared/ui/lazy-image");
+const { AvatarStack } = loadComponent("shared/ui/avatar-stack");
 const posterUrl = "https://wat2do.io/media/event-images/poster.jpg";
 function render(component: React.ComponentType<Record<string, unknown>>, props: Record<string, unknown>) {
   return renderToStaticMarkup(createElement(ImageConfigContext.Provider, { value: imageConfig }, createElement(component, props)));
@@ -77,7 +78,7 @@ test("lazy posters have responsive native image URLs before hydration or measure
   expect(html).toContain('decoding="async"');
   expect(html).toContain('srcSet="/_next/image?url=');
   expect(html).toContain(`&amp;q=${imageDelivery.quality}`);
-  expect(html).toContain('sizes="(max-width: 479px)');
+  expect(html).toContain('sizes="auto, (max-width: 639px) calc(50vw - 16px), 320px"');
   expect(html).not.toContain("<image ");
   expect(html).not.toContain("opacity-0");
 });
@@ -126,6 +127,33 @@ test("measured cutouts mask the HTML image face and eager posters receive priori
   expect(html).toContain("mask-image:url(&quot;#");
   expect(html).toContain('loading="eager"');
   expect(html).toContain('fetchpriority="high"');
+  expect(html).toContain('sizes="(max-width: 639px) calc(50vw - 16px), 320px"');
+  expect(html).not.toContain('sizes="auto,');
+});
+
+test("attendee avatars are discoverable before hydration and request avatar-sized candidates", () => {
+  const html = render(AvatarStack, {
+    avatars: [{ src: "https://wat2do.io/media/avatars/student.jpg", name: "Taylor Q." }],
+    overflowCount: 2,
+    overflowLabel: "2 more attendees",
+  });
+  expect(html).toContain('data-slot="avatar-stack"');
+  expect(html).toContain('<img alt="Taylor Q."');
+  expect(html).toContain('loading="lazy"');
+  expect(html).toContain('width="32" height="32"');
+  expect(html).toContain(`&amp;w=32&amp;q=${imageDelivery.quality} 1x`);
+  expect(html).toContain(`&amp;w=64&amp;q=${imageDelivery.quality} 2x`);
+  expect(html).not.toContain("&amp;w=1080");
+  expect(html).toContain('aria-label="2 more attendees"');
+});
+
+test("stored poster templates use responsive thumbnails without requesting the full print image", () => {
+  const src = "/poster-templates/campus-colour-v1.png";
+  const html = render(LazyImage, { src, alt: "Campus Colour", sizes: "80px" });
+  expect(html).toContain('sizes="auto, 80px"');
+  expect(html).toContain('loading="lazy"');
+  expect(html).toContain(`srcSet="/_next/image?url=${encodeURIComponent(src)}`);
+  expect(html).not.toContain(`src="${src}"`);
 });
 
 test("tiny owned logos get tiny candidates while external and local preview sources remain usable", () => {

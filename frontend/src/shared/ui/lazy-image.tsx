@@ -68,7 +68,9 @@ function ImageContent({
             fill={width === undefined}
             width={width}
             height={height}
-            sizes={sizes}
+            // Lazy images can select a candidate from their actual rendered
+            // width; eager images still need the supplied size before layout.
+            sizes={sizes && loading === "lazy" ? `auto, ${sizes}` : sizes}
             quality={imageDelivery.quality}
             unoptimized={!canOptimizeImage(src)}
             loading={loading}

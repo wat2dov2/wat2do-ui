@@ -1,6 +1,7 @@
 from unittest.mock import MagicMock
 
 from services import event_service, v1_saved_event_service
+from tests.conftest import FAKE_USER, OTHER_USER
 
 
 def test_list_saved_events_requires_auth(client):
@@ -55,3 +56,22 @@ def test_unsave_event_succeeds(authenticated_client, monkeypatch):
     assert response.json() == {"status": "unsaved"}
     unsave.assert_called_once()
     assert unsave.call_args.args[1] == 42
+
+
+def test_saved_events_remain_scoped_when_another_user_is_supplied(
+    authenticated_client, monkeypatch
+):
+    listing = MagicMock(return_value=[])
+    saving = MagicMock()
+    deleting = MagicMock(return_value=True)
+    monkeypatch.setattr(v1_saved_event_service, "get_saved_event_ids", listing)
+    monkeypatch.setattr(v1_saved_event_service, "save_event", saving)
+    monkeypatch.setattr(v1_saved_event_service, "unsave_event", deleting)
+    monkeypatch.setattr(event_service, "get_event", MagicMock(return_value=object()))
+    suffix = f"?user_id={OTHER_USER['id']}"
+    assert authenticated_client.get("/v1/saved-events/" + suffix).status_code == 200
+    assert authenticated_client.put("/v1/saved-events/42" + suffix).status_code == 200
+    assert authenticated_client.delete("/v1/saved-events/42" + suffix).status_code == 200
+    listing.assert_called_once_with(FAKE_USER["id"])
+    saving.assert_called_once_with(FAKE_USER["id"], 42)
+    deleting.assert_called_once_with(FAKE_USER["id"], 42)

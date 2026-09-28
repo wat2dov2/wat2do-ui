@@ -4,6 +4,7 @@
  */
 
 export { EventCard } from "./components/EventCard";
+export { EventCardSkeleton } from "./components/EventCardSkeleton";
 export { EventDetailsModal } from "./components/EventDetailsModal";
 export { useEventsStore } from "./store/events.store";
 

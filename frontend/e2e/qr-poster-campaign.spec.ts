@@ -60,7 +60,7 @@ async function installCommonApiMocks(page: Page): Promise<void> {
   );
   await page.route(
     (url) => apiPath(url) === "/notification-preferences",
-    (route) => fulfillJson(route, {}),
+    (route) => fulfillJson(route, { preferences: [] }),
   );
   await page.route(
     (url) => apiPath(url) === "/events/stats",
@@ -538,7 +538,7 @@ async function installActivationDedupeMocks(page: Page) {
 }
 
 test.describe("Promoter poster campaign", () => {
-  test("shows only the standard goose while the poster dashboard loads", async ({
+  test("keeps poster dashboard headings and independent sections visible while earnings load", async ({
     page,
   }) => {
     await installCommonApiMocks(page);
@@ -560,17 +560,57 @@ test.describe("Promoter poster campaign", () => {
     await page.goto(`${BASE_URL}/posters`);
     await expect.poll(() => releaseEarnings !== undefined).toBe(true);
 
-    const loadingStatus = page.getByRole("status", { name: "Loading..." });
-    await expect(loadingStatus).toBeVisible();
-    await expect(
-      loadingStatus.locator('[data-slot="goose-loading-animation"]'),
-    ).toBeVisible();
-    await expect(
-      page.getByText("Loading your poster dashboard..."),
-    ).toHaveCount(0);
+    const dashboard = page.getByTestId("promoter-dashboard");
+    await expect(dashboard).toBeVisible();
+    await expect(dashboard.getByRole("heading", { name: "My posters", exact: true })).toBeVisible();
+    await expect(dashboard.getByText("Pending this month", { exact: true })).toBeVisible();
+    await expect(dashboard.getByRole("heading", { name: "Poster inventory" })).toBeVisible();
+    await expect(dashboard.getByRole("heading", { name: "Campus poster map" })).toBeVisible();
+    await expect(dashboard.getByRole("heading", { name: "Payout history" })).toBeVisible();
+    await expect(dashboard.getByTestId("payout-history")).toBeVisible();
+    await expect(dashboard.locator('[data-slot="skeleton"][aria-busy="true"]')).toHaveCount(5);
+    await expect(page.locator('[data-slot="goose-loading-animation"]')).toHaveCount(0);
 
     releaseEarnings?.();
-    await expect(page.getByTestId("promoter-dashboard")).toBeVisible();
+    await expect(dashboard.getByText("Create your first official Wat2Do poster")).toBeVisible();
+    await expect(dashboard.locator('[data-slot="skeleton"][aria-busy="true"]')).toHaveCount(0);
+  });
+
+  test("keeps settings labels visible without guessing notification values during loading", async ({ page }) => {
+    await installCommonApiMocks(page);
+    await installSessionMock(page);
+
+    let releasePreferences: (() => void) | undefined;
+    const pendingPreferences = new Promise<void>((resolve) => { releasePreferences = resolve; });
+    await page.route(
+      (url) => apiPath(url) === "/notification-preferences",
+      async (route) => {
+        await pendingPreferences;
+        await fulfillJson(route, {
+          preferences: [
+            { notification_type: "morning_email", enabled: false },
+            { notification_type: "event_reminder", enabled: true },
+            { notification_type: "event_change", enabled: false },
+          ],
+        });
+      },
+    );
+
+    await page.goto(`${BASE_URL}/settings?tab=notifications`);
+    await expect(page.getByRole("heading", { name: "Settings", exact: true })).toBeVisible();
+    const panel = page.getByRole("tabpanel");
+    await expect(panel.getByText("Morning email", { exact: true })).toBeVisible();
+    await expect(panel.getByText("Event reminders", { exact: true })).toBeVisible();
+    await expect(panel.locator('[data-slot="skeleton"]')).toHaveCount(3);
+    await expect(panel.getByRole("switch")).toHaveCount(0);
+
+    await page.getByRole("tab", { name: "Profile", exact: true }).click();
+    await expect(page.getByRole("combobox", { name: "Faculty", exact: true })).toContainText("Mathematics");
+    await page.getByRole("tab", { name: "Notifications", exact: true }).click();
+    releasePreferences?.();
+    await expect(page.getByRole("switch", { name: "Morning email", exact: true })).not.toBeChecked();
+    await expect(page.getByRole("switch", { name: "Event reminders", exact: true })).toBeChecked();
+    await expect(panel.locator('[data-slot="skeleton"]')).toHaveCount(0);
   });
 
   test("keeps settings tabs content-hugging without narrow-screen overflow", async ({
@@ -699,6 +739,43 @@ test.describe("Promoter poster campaign", () => {
     await expect(appearance.getByRole("combobox")).toHaveText("English");
     await expect(appearance.getByRole("combobox", { name: "Default View Mode", exact: true })).toHaveCount(0);
     expect(insertionEffectWarnings).toEqual([]);
+  });
+
+  test("email opt-in requires its own saved choice", async ({ page }) => {
+    await installCommonApiMocks(page);
+    await installSessionMock(page, { hasPromoterProfile: false });
+    const choices = { morning_email: false, event_reminder: true, event_change: true };
+    const writes: unknown[] = [];
+    await page.route((url) => apiPath(url) === "/notification-preferences", async (route) => {
+      if (route.request().method() === "PATCH") {
+        const payload = route.request().postDataJSON() as {
+          preferences: { notification_type: keyof typeof choices; enabled: boolean }[];
+        };
+        writes.push(payload);
+        for (const choice of payload.preferences) choices[choice.notification_type] = choice.enabled;
+        await route.fulfill({ status: 204 });
+        return;
+      }
+      await fulfillJson(route, { preferences: Object.entries(choices).map(
+        ([notification_type, enabled]) => ({ notification_type, enabled }),
+      ) });
+    });
+    await page.goto(`${BASE_URL}/settings?tab=notifications`);
+    const morning = page.getByRole("switch", { name: "Morning email", exact: true });
+    await expect(morning).not.toBeChecked();
+    await page.getByRole("switch", { name: "Event reminders", exact: true }).click();
+    await page.getByTestId("settings-save-bar").getByRole("button", { name: /save/i }).click();
+    await expect.poll(() => writes.length).toBe(1);
+    expect(writes[0]).toEqual({ preferences: [{ notification_type: "event_reminder", enabled: false }] });
+    await expect(morning).not.toBeChecked();
+    await expect(page.getByTestId("settings-save-bar")).toHaveCount(0);
+    await morning.click();
+    await page.getByTestId("settings-save-bar").getByRole("button", { name: /save/i }).click();
+    await expect.poll(() => writes.length).toBe(2);
+    expect(writes[1]).toEqual({ preferences: [{ notification_type: "morning_email", enabled: true }] });
+    await expect(page.getByTestId("settings-save-bar")).toHaveCount(0);
+    await page.reload();
+    await expect(morning).toBeChecked();
   });
 
   test("hides promoter settings from users who are not enrolled", async ({

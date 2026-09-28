@@ -1,8 +1,11 @@
 from datetime import datetime, timezone
 from unittest.mock import MagicMock
 
+import pytest
+
 from schemas.notification_preference import NotificationPreferenceResponse
 from services.notifications import preferences, unsubscribe
+from tests.conftest import FAKE_USER, OTHER_USER
 
 
 def _preference(notification_type: str, enabled: bool):
@@ -58,12 +61,49 @@ def test_patch_accepts_active_preferences(authenticated_client, monkeypatch):
     )
 
     assert response.status_code == 204
+    assert setter.call_args.args[0] == FAKE_USER["id"]
+    assert setter.call_args.kwargs == {"source": "settings"}
     updates = setter.call_args.args[1]
     assert [update.notification_type for update in updates] == [
         "morning_email",
         "event_reminder",
         "event_change",
     ]
+
+
+def test_preference_read_ignores_attempt_to_select_another_user(authenticated_client, monkeypatch):
+    getter = MagicMock(return_value=[])
+    monkeypatch.setattr(preferences, "get_preferences", getter)
+    response = authenticated_client.get(f"/notification-preferences?user_id={OTHER_USER['id']}")
+    assert response.status_code == 200
+    getter.assert_called_once_with(FAKE_USER["id"])
+
+
+@pytest.mark.parametrize("extra", [{"user_id": OTHER_USER["id"]}, {"source": "unsubscribe"}])
+def test_preference_write_rejects_forged_identity(authenticated_client, monkeypatch, extra):
+    setter = MagicMock()
+    monkeypatch.setattr(preferences, "set_preferences", setter)
+    response = authenticated_client.patch(
+        "/notification-preferences",
+        json={
+            "preferences": [{"notification_type": "morning_email", "enabled": True}],
+            **extra,
+        },
+    )
+    assert response.status_code == 422
+    setter.assert_not_called()
+
+
+def test_preference_write_requires_auth(client):
+    assert (
+        client.patch(
+            "/notification-preferences",
+            json={
+                "preferences": [{"notification_type": "morning_email", "enabled": True}],
+            },
+        ).status_code
+        == 401
+    )
 
 
 def test_patch_rejects_removed_digest_type(authenticated_client):

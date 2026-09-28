@@ -4,7 +4,6 @@ import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 import { useTranslation } from "react-i18next";
 import { AdminTable } from "@/features/admin/components/shared/AdminTable";
 import { AdminEmptyState } from "@/features/admin/components/shared/AdminEmptyState";
-import { LoadingState } from "@/shared/feedback";
 import { Stack } from "@/shared/layout/stack";
 import { Button } from "@/shared/ui/button";
 import { AlertTriangle } from "@/shared/ui/doodle-icons";
@@ -24,13 +23,11 @@ export function AdminEventReports({ onViewEvent }: { onViewEvent: (eventId: numb
         onSearchChange={search => list.setFilters({ search })}
         onSchoolChange={school => list.setFilters({ school })}
       />
-      {list.isError ? (
+      {list.isError && !list.data ? (
         <Button variant="outline" onClick={() => void list.refetch()}>
           {t("common.tryAgain")}
         </Button>
-      ) : list.isPending ? (
-        <LoadingState label={t("common.loading")} />
-      ) : list.total === 0 ? (
+      ) : !list.isPending && list.total === 0 ? (
         <AdminEmptyState
           icon={AlertTriangle}
           title={t("admin.noPendingReports")}
@@ -38,6 +35,7 @@ export function AdminEventReports({ onViewEvent }: { onViewEvent: (eventId: numb
         />
       ) : (
         <AdminTable
+          isLoading={list.isPending}
           count={list.total}
           label={t(list.total === 1 ? "admin.eventReport" : "admin.eventReports")}
           pagination={list.pagination}

@@ -1,5 +1,4 @@
-"""Unit tests for the parts of services/scraper/extractor that don't
-need the OpenAI client.
+"""Unit tests and optional live-model regressions for event extraction.
 
 The full extraction round-trip is exercised by the pipeline integration
 test with a mocked extractor; these tests pin JSON parsing, triage, and
@@ -7,7 +6,9 @@ the validated defaults that matter when the model returns unexpected shapes.
 """
 
 import json
+from datetime import datetime
 from types import SimpleNamespace
+from zoneinfo import ZoneInfo
 
 import pytest
 
@@ -208,6 +209,9 @@ def test_extraction_prompt_has_strict_event_and_position_eligibility_gates(monke
     assert "Candidate lists or slates" in prompt
     assert "invitations to run for elected office are not hiring" in prompt
     assert "Closure notices, holiday hours" in prompt
+    assert "EXPLICIT RECURRING SCHEDULES:" in prompt
+    assert "Do NOT infer or compress recurrence patterns" not in prompt
+    assert "daylight-saving" in prompt
     assert "current-board rosters" in prompt
     assert "generic club membership" in prompt
     assert "independently pass BOTH tests" in prompt
@@ -221,6 +225,13 @@ def test_extraction_prompt_has_strict_event_and_position_eligibility_gates(monke
     assert "ticket or registration release" in prompt
     assert "a program reveal" in prompt
     assert "one object per logical event" in prompt
+    assert extractor.EVENT_DISCOVERY_RULES in prompt
+    assert "official school varsity team" in prompt
+    assert "Intramural, club-team, and recreational competitions, practices, tryouts" in prompt
+    assert "watch parties do not qualify" in prompt
+    assert "Use null when official varsity participation is unconfirmed" in prompt
+    for name in extractor.EventDiscoveryFields.model_fields:
+        assert f'"{name}": boolean or null' in prompt
     assert 'Use ["Food"] for a generic food mention.' in prompt
     assert 'Never return "Yes" or "Yes!" as a food label.' in prompt
     assert '"Executive elections start today. Read the candidate speeches and vote' in prompt
@@ -230,6 +241,117 @@ def test_extraction_prompt_has_strict_event_and_position_eligibility_gates(monke
     assert '"Applications are open for our eight-week equity research training program"' in prompt
     assert '"Volunteers needed for our Welcome Week events; sign up below"' in prompt
     assert '"Try out for our varsity esports team"' in prompt
+
+
+@pytest.mark.live_llm
+@pytest.mark.skipif(not extractor.settings.openai_api_key, reason="OPENAI_API_KEY not configured")
+@pytest.mark.parametrize(
+    ("caption", "semester_end", "expected_dates"),
+    [
+        pytest.param(
+            "Stocks Club, University of Waterloo. JOIN OUR FIRST MEETING, FALL 2026. "
+            "First Meeting: Tuesday, September 29th at 6:00 PM-7:00 PM in MC 4045. "
+            "Weekly Meetings: Tuesdays at 6:00 PM-7:00 PM in MC 4045.",
+            "20261222T235959Z",
+            [
+                "2026-09-29",
+                "2026-10-06",
+                "2026-10-13",
+                "2026-10-20",
+                "2026-10-27",
+                "2026-11-03",
+                "2026-11-10",
+                "2026-11-17",
+                "2026-11-24",
+                "2026-12-01",
+                "2026-12-08",
+                "2026-12-15",
+                "2026-12-22",
+            ],
+            id="stocks-club-poster-transcript-includes-future-weeks-and-dst",
+        ),
+        pytest.param(
+            "Join our study sessions in MC 4045 every Monday and Thursday, "
+            "October 5-16, 2026, 6-7 PM. No session October 12. RSVP by October 1.",
+            "20261222T235959Z",
+            ["2026-10-05", "2026-10-08", "2026-10-15"],
+            id="bounded-multiple-weekdays-with-exclusion-and-rsvp",
+        ),
+        pytest.param(
+            "Join our four investing workshops, every other Tuesday starting "
+            "October 20, 2026, 6-7 PM in MC 4045.",
+            "20261222T235959Z",
+            ["2026-10-20", "2026-11-03", "2026-11-17", "2026-12-01"],
+            id="fortnightly-schedule-with-explicit-count",
+        ),
+        pytest.param(
+            "Join Stocks Club for our first meeting of Fall 2026 on "
+            "September 29, 6-7 PM in MC 4045.",
+            "20261222T235959Z",
+            ["2026-09-29"],
+            id="first-meeting-alone-does-not-imply-recurrence",
+        ),
+        pytest.param(
+            "Join our weekly investing meetings this term, every Tuesday 6-7 PM in MC 4045.",
+            "20261013T235959Z",
+            ["2026-09-29", "2026-10-06", "2026-10-13"],
+            id="weekday-schedule-anchors-to-post-date",
+        ),
+        pytest.param(
+            "Join our investing meetings starting September 29, 2026, "
+            "every Tuesday 6-7 PM in MC 4045.",
+            None,
+            ["2026-09-29"],
+            id="no-invented-horizon-without-semester-context",
+        ),
+        pytest.param(
+            "Stocks Club Fall 2025 meetings. First meeting September 30, 2025, "
+            "then every Tuesday 6-7 PM in MC 4045.",
+            "20261222T235959Z",
+            ["2025-09-30"],
+            id="old-term-series-does-not-extend-into-current-term",
+        ),
+    ],
+)
+def test_live_extraction_expands_only_advertised_recurrence(
+    monkeypatch, caption, semester_end, expected_dates
+):
+    """Exercise the real prompt/model/parser with a frozen academic context."""
+    local_tz = ZoneInfo("America/Toronto")
+
+    class FrozenDatetime(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return cls(2026, 9, 28, 12, tzinfo=local_tz).astimezone(tz)
+
+    monkeypatch.setattr(extractor, "datetime", FrozenDatetime)
+    monkeypatch.setattr(extractor, "resolve_school_timezone", lambda _: local_tz.key)
+    monkeypatch.setattr(extractor, "current_semester_end", lambda *args, **kwargs: semester_end)
+    result = extractor.extract_post_content(
+        caption_text=caption,
+        image_urls=[],
+        post_created_at=FrozenDatetime(2026, 9, 23, 12, tzinfo=local_tz),
+        school="uwaterloo",
+    )
+
+    assert result.content_type == "event"
+    assert len(result.events) == 1
+    occurrences = result.events[0]["occurrences"]
+    assert [occurrence["dtstart_utc"] for occurrence in occurrences] == [
+        datetime.fromisoformat(f"{day}T18:00:00")
+        .replace(tzinfo=local_tz)
+        .astimezone(ZoneInfo("UTC"))
+        .strftime("%Y-%m-%dT%H:%M:%SZ")
+        for day in expected_dates
+    ]
+    assert [occurrence["dtend_utc"] for occurrence in occurrences] == [
+        datetime.fromisoformat(f"{day}T19:00:00")
+        .replace(tzinfo=local_tz)
+        .astimezone(ZoneInfo("UTC"))
+        .strftime("%Y-%m-%dT%H:%M:%SZ")
+        for day in expected_dates
+    ]
+    assert all(occurrence["tz"] == local_tz.key for occurrence in occurrences)
 
 
 def test_clean_extracted_content_triages_hiring_positions():
@@ -291,18 +413,31 @@ def test_clean_event_fills_defaults_for_missing_fields():
     assert cleaned["image_index"] == 0
 
 
-def test_clean_event_free_event_coercion_on_title():
-    """Free-event coercion: when the model returns ``price=null`` but
-    the title contains "free", coerce price to 0.0. Pre-fix this only
-    looked at description/food, missing posts where the FREE keyword
-    sits in the title only."""
-    cleaned = _clean_event({"title": "Free Pizza Friday", "price": None})
-    assert cleaned["price"] == 0.0
+@pytest.mark.parametrize("price", [None, 0, 15])
+def test_clean_event_free_food_does_not_determine_admission_price(price):
+    cleaned = _clean_event(
+        {
+            "title": "Free Pizza Friday",
+            "description": "Free pizza on campus",
+            "food": ["Free pizza"],
+            "free_food_on_campus": True,
+            "price": price,
+        }
+    )
+    assert cleaned["price"] == price
+    assert cleaned["free_food_on_campus"] is True
 
 
-def test_clean_event_free_event_coercion_on_description():
-    cleaned = _clean_event({"title": "X", "description": "this event is free"})
-    assert cleaned["price"] == 0.0
+@pytest.mark.parametrize("value", [True, False, None])
+def test_clean_event_preserves_discovery_evidence(value):
+    facts = dict.fromkeys(extractor.EventDiscoveryFields.model_fields, value)
+    cleaned = _clean_event({"title": "Campus event", **facts})
+    assert {name: cleaned[name] for name in facts} == facts
+
+
+def test_clean_event_does_not_guess_discovery_metadata_from_category_or_food():
+    cleaned = _clean_event({"title": "Career fair", "food": ["Pizza"], "price": 0})
+    assert all(cleaned[name] is None for name in extractor.EventDiscoveryFields.model_fields)
 
 
 def test_clean_event_does_not_overwrite_explicit_price():

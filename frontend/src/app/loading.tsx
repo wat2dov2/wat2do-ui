@@ -1,6 +1,6 @@
-import { LoadingPage } from "@/shared/ui/loading-page";
+import { RouteLoading } from "@/app/routes/RouteLoading";
 
 /** One loading boundary for every route rendered inside the persistent shell. */
 export default function Loading() {
-  return <LoadingPage className="min-h-[60dvh]" />;
+  return <RouteLoading />;
 }

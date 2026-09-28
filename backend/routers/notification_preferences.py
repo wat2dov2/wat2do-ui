@@ -27,7 +27,7 @@ def get_my_preferences(
 
     Always one entry per supported type - untouched types come back with
     their default and ``updated_at=None`` so the client can distinguish
-    default-on from explicitly opted in.
+    a default from an explicit choice.
     """
     prefs = preferences.get_preferences(str(db_user.id))
     return NotificationPreferencesListResponse(preferences=prefs)
@@ -38,7 +38,7 @@ def update_my_preferences(
     payload: NotificationPreferencesBulkUpdate,
     db_user: UserResponse = Depends(get_db_user),
 ) -> None:
-    preferences.set_preferences(str(db_user.id), payload.preferences)
+    preferences.set_preferences(str(db_user.id), payload.preferences, source="settings")
 
 
 @router.get("/unsubscribe", response_class=HTMLResponse)

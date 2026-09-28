@@ -8,8 +8,11 @@ import { loadLanguage } from "@/shared/lib/loadLanguage";
 import ErrorBoundary from "@/app/ErrorBoundary";
 import {
   fetchProfileAPI,
+  getSessionEmail,
+  getUserProfile,
   initializeAuth,
 } from "@/features/auth/api/auth.api";
+import { AUTH_STATE_REFRESH_EVENT } from "@/features/auth/api/userRepository";
 import { setOnAfterRefresh } from "@/shared/services/apiClient";
 import { appConstantsQueryOptions } from "@/shared/api/metaApi";
 import { TooltipProvider } from "@/shared/ui/tooltip";
@@ -93,6 +96,8 @@ export function ClientProviders({
   });
 
   useEffect(() => {
+    let sessionEmail = getSessionEmail();
+    let sessionUserId = getUserProfile()?.id ?? null;
     const handleLogin = () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.user.all });
     };
@@ -105,12 +110,26 @@ export function ClientProviders({
       });
       queryClient.removeQueries({ queryKey: queryKeys.posters.all });
       queryClient.removeQueries({ queryKey: queryKeys.posterPayouts.all });
+      queryClient.removeQueries({ queryKey: queryKeys.scans.all });
+    };
+    const handleIdentityChange = () => {
+      const nextEmail = getSessionEmail();
+      const nextUserId = getUserProfile()?.id ?? null;
+      if (nextEmail !== sessionEmail || nextUserId !== sessionUserId) {
+        handleLogout();
+        sessionEmail = nextEmail;
+        sessionUserId = nextUserId;
+      }
     };
     window.addEventListener("auth-user-login", handleLogin);
     window.addEventListener("auth-user-logout", handleLogout);
+    window.addEventListener(AUTH_STATE_REFRESH_EVENT, handleIdentityChange);
+    window.addEventListener("storage", handleIdentityChange);
     return () => {
       window.removeEventListener("auth-user-login", handleLogin);
       window.removeEventListener("auth-user-logout", handleLogout);
+      window.removeEventListener(AUTH_STATE_REFRESH_EVENT, handleIdentityChange);
+      window.removeEventListener("storage", handleIdentityChange);
     };
   }, [queryClient]);
 

@@ -19,6 +19,7 @@ import {
   TooltipContent,
 } from "@/shared/ui/tooltip";
 import { Button } from "@/shared/ui/button";
+import { LazyImage } from "@/shared/ui/lazy-image";
 import { SchoolCombobox } from "@/shared/ui/school-combobox";
 import { SearchCombobox } from "@/shared/ui/search-combobox";
 import { LanguageSelector } from "@/shared/ui/language-selector";
@@ -108,9 +109,10 @@ export function TopNav() {
   const pathname = usePathname();
   const activeClub = clubs.find((club) => club.id === clubId) ?? clubs[0];
   const canOpenClubPanel = profileCompleted && Boolean(activeClub);
+  const userInitial = (userEmail?.[0] ?? "?").toUpperCase();
   const userAvatar = userAvatarUrl ? (
-    <img src={userAvatarUrl} alt="" />
-  ) : (userEmail?.[0] ?? "?").toUpperCase();
+    <LazyImage src={userAvatarUrl} alt="" width={32} height={32} fallback={userInitial} className="size-full" />
+  ) : userInitial;
   const navigationItems = isAuthenticated
     ? [...PRIMARY_NAV_ITEMS, SETTINGS_NAV_ITEM]
     : PRIMARY_NAV_ITEMS;

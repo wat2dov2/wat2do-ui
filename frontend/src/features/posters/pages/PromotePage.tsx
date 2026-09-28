@@ -29,7 +29,7 @@ import {
   CardTitle,
 } from "@/shared/ui/card";
 import { DollarSign, MapPin, QrCode } from "@/shared/ui/doodle-icons";
-import { LoadingState } from "@/shared/feedback";
+import { PosterMapSkeleton } from "@/features/posters/components/PosterMapSkeleton";
 import { formatCadCents } from "@/shared/utils/currency";
 
 const STEP_ICONS = [QrCode, MapPin, DollarSign] as const;
@@ -98,7 +98,7 @@ export function PromotePage() {
               description={t("posters.promote.coverageDescription")}
             >
               {coverage.isLoading ? (
-                <LoadingState label={t("posters.map.loading")} />
+                <PosterMapSkeleton height="440px" />
               ) : coverage.isError ? (
                 <Alert variant="warning">
                   <MapPin />

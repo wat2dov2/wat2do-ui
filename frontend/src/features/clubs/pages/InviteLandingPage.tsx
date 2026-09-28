@@ -3,7 +3,9 @@ import { useParams, useRouter } from "next/navigation";
 import { ShieldAlert, CheckCircle, MailOpen, ArrowRight, UserCheck } from "@/shared/ui/doodle-icons";
 import { Button } from "@/shared/ui/button";
 import { Card, CardTitle, CardDescription, CardContent } from "@/shared/ui/card";
-import { Spinner } from "@/shared/ui/spinner";
+import { LoadingButton } from "@/shared/ui/loading-button";
+import { Skeleton } from "@/shared/ui/skeleton";
+import { Stack } from "@/shared/layout";
 import { ROUTES } from "@/shared/constants/routes";
 import { useAuthState } from "@/features/auth";
 import { getInvitationByToken, acceptInvitationByToken, type ClubInvitationPublic } from "@/features/club-panel/api/members.api";
@@ -81,17 +83,6 @@ export function InviteLandingPage() {
     router.push(`${ROUTES.LOGIN}?${searchParams.toString()}`);
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-radial-gradient from-secondary/30 via-background to-background px-4">
-        <div className="text-center space-y-4">
-          <Spinner className="size-10 text-primary mx-auto" />
-          <p className="text-muted-foreground animate-pulse font-medium">{t("inviteLanding.validating")}</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-[80vh] flex items-center justify-center px-4 py-12 relative overflow-hidden">
       <div className="absolute top-1/4 left-1/4 size-72 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
@@ -128,15 +119,19 @@ export function InviteLandingPage() {
               </p>
             </div>
           ) : (
-            <div className="space-y-5 animate-in fade-in zoom-in duration-200">
+            <div className="space-y-5 animate-in fade-in zoom-in duration-200" aria-busy={loading} aria-label={loading ? t("inviteLanding.validating") : undefined}>
               <div className="size-16 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto text-primary">
                 <MailOpen className="size-8" />
               </div>
 
               <div className="space-y-2">
-                <CardTitle className="text-2xl font-bold tracking-tight text-foreground">
-                  {t("inviteLanding.manageTitle", { clubName: inviteInfo?.club_name })}
-                </CardTitle>
+                {loading ? (
+                  <Skeleton className="mx-auto h-8 w-3/4" />
+                ) : (
+                  <CardTitle className="text-2xl font-bold tracking-tight text-foreground">
+                    {t("inviteLanding.manageTitle", { clubName: inviteInfo?.club_name })}
+                  </CardTitle>
+                )}
                 <CardDescription className="text-sm">
                   {t("inviteLanding.description")}
                 </CardDescription>
@@ -144,7 +139,9 @@ export function InviteLandingPage() {
 
               <div className="p-3 bg-secondary/40 border border-border rounded-xl">
                 <p className="text-xs text-muted-foreground font-medium mb-1">{t("inviteLanding.emailBadgeLabel")}</p>
-                <p className="text-sm font-semibold text-foreground break-all">{inviteInfo?.email}</p>
+                {loading ? <Skeleton className="mx-auto h-5 w-2/3" /> : (
+                  <p className="text-sm font-semibold text-foreground break-all">{inviteInfo?.email}</p>
+                )}
               </div>
 
               {isAuthenticated && userEmail && inviteInfo && userEmail.toLowerCase() !== inviteInfo.email.toLowerCase() && (
@@ -159,24 +156,21 @@ export function InviteLandingPage() {
                 </div>
               )}
 
-              <div className="space-y-3 pt-2">
+              <Stack gap={3}>
                 {isAuthenticated ? (
-                  <Button onMouseDown={handleAccept} className="w-full h-11 text-sm font-medium" disabled={accepting}>
-                    {accepting ? (
-                      <>
-                        <Spinner className="size-4 mr-2" />
-                        {t("inviteLanding.joining")}
-                      </>
-                    ) : (
-                      <>
-                        <UserCheck className="size-4 mr-2" />
-                        {t("inviteLanding.acceptButton")}
-                      </>
-                    )}
-                  </Button>
+                  <LoadingButton
+                    onMouseDown={handleAccept}
+                    size="lg"
+                    disabled={loading}
+                    isLoading={accepting}
+                    loadingText={t("inviteLanding.joining")}
+                  >
+                    <UserCheck />
+                    {t("inviteLanding.acceptButton")}
+                  </LoadingButton>
                 ) : (
                   <div className="space-y-3">
-                    <Button onMouseDown={() => handleAuthRedirect("signup")} className="w-full h-11 text-sm font-medium group">
+                    <Button disabled={loading} onMouseDown={() => handleAuthRedirect("signup")} className="w-full h-11 text-sm font-medium group">
                       {t("inviteLanding.signUpButton")}
                       <ArrowRight className="size-4 ml-2 transition-transform group-hover:translate-x-1" />
                     </Button>
@@ -186,6 +180,7 @@ export function InviteLandingPage() {
                         type="button"
                         variant="ghost"
                         size="sm"
+                        disabled={loading}
                         onMouseDown={() => handleAuthRedirect("login")}
                       >
                         {t("inviteLanding.logIn")}
@@ -193,7 +188,7 @@ export function InviteLandingPage() {
                     </div>
                   </div>
                 )}
-              </div>
+              </Stack>
             </div>
           )}
         </CardContent>

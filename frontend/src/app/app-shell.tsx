@@ -18,7 +18,6 @@ import {
   type HostnameSchoolStatus,
 } from "@/shared/constants/schools";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
-import { LoadingPage } from "@/shared/ui/loading-page";
 import { Toaster } from "@/shared/ui/sonner";
 
 const CHROMELESS_ROUTES = new Set<string>([
@@ -61,26 +60,22 @@ function routeOwnsServerMetadata(pathname: string): boolean {
   );
 }
 
-/**
- * Persistent client shell for every route.
- *
- * Root layout owns this component, so the app chrome, global subscriptions,
- * and account preloads survive client navigation. Route pages own only their
- * server data and feature content.
- */
-export function AppShell({ children }: { children: ReactNode }) {
-  return (
-    <Suspense fallback={<LoadingPage className="min-h-dvh" />}>
-      <AppShellContent>{children}</AppShellContent>
-    </Suspense>
-  );
+/** Query-string effects suspend independently of the visible app shell. */
+function AppNavigation() {
+  const setSchoolFilter = useEventsStore((state) => state.setSchoolFilter);
+  useAppNavigation({ setSchoolFilter });
+  return null;
 }
 
-function AppShellContent({ children }: { children: ReactNode }) {
+/**
+ * Persistent client shell for every route.
+ * Root layout keeps chrome and subscriptions mounted across navigation.
+ * Route pages own only their server data and feature content.
+ */
+export function AppShell({ children }: { children: ReactNode }) {
   const authReady = useAuthReady();
   const pathname = usePathname();
   const userEmail = useUserEmail();
-  const setSchoolFilter = useEventsStore((state) => state.setSchoolFilter);
   const {
     schoolBySlug,
     isPending: isSchoolDirectoryPending,
@@ -106,8 +101,6 @@ function AppShellContent({ children }: { children: ReactNode }) {
     void useSavedClubsStore.getState().fetchSavedClubs();
   }, [authReady, isAuthFlow, userEmail]);
 
-  useAppNavigation({ setSchoolFilter });
-
   const needsSchoolValidation =
     !skipSchoolCheck && hostnameSchoolStatus.candidate !== null;
   if (
@@ -121,6 +114,9 @@ function AppShellContent({ children }: { children: ReactNode }) {
 
   return (
     <>
+      <Suspense fallback={null}>
+        <AppNavigation />
+      </Suspense>
       {routeUsesChrome(pathname) ? (
         <AppLayout>{children}</AppLayout>
       ) : (

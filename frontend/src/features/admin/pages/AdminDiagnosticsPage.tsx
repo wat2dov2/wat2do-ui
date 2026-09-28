@@ -10,6 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/shared/ui/card";
+import { LoadingPage } from "@/shared/ui/loading-page";
 import { Settings } from "@/shared/ui/doodle-icons";
 import {
   Tabs,
@@ -18,7 +19,7 @@ import {
   TabsTrigger,
 } from "@/shared/ui/tabs";
 import { DiscoveryQueries } from "@/features/admin/components/DiscoveryQueries";
-import { useAutomateLogs } from "../api/automateLogsApi";
+import { useAutomateLogs } from "@/features/admin/api/automateLogsApi";
 
 interface AdminDiagnosticsPageProps {
   onBack: () => void;
@@ -68,9 +69,7 @@ export function AdminDiagnosticsPage({ onBack }: AdminDiagnosticsPageProps) {
                 </CardHeader>
                 <CardContent>
                   {isLoading ? (
-                    <p className="text-sm text-muted-foreground">
-                      {t("admin.diagnostics.automateLogs.loading")}
-                    </p>
+                    <LoadingPage />
                   ) : logs.length === 0 ? (
                     <p className="text-sm text-muted-foreground">
                       {t("admin.diagnostics.automateLogs.placeholder")}

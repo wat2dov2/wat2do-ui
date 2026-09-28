@@ -25,7 +25,6 @@
       "automateLogs": {
         "title": "Automate-Protokolle",
         "description": "Textausgabe aus der Android-Automate-App für den Workflow 'single-user'",
-        "loading": "Protokolle werden geladen...",
         "placeholder": "Automate-Protokollausgaben erscheinen hier."
       },
       "queries": {

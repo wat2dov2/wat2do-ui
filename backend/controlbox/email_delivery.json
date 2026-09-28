@@ -1,3 +1,4 @@
 {
-  "provider_timeout_seconds": 10
+  "provider_timeout_seconds": 10,
+  "notification_consent_version": "2026-09"
 }

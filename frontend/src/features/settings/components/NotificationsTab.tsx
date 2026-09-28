@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/shared/ui/card";
 import { Label } from "@/shared/ui/label";
 import { Separator } from "@/shared/ui/separator";
 import { Switch } from "@/shared/ui/switch";
+import { Skeleton } from "@/shared/ui/skeleton";
 
 interface NotificationsTabProps {
   preferences: NotificationPreferences;
@@ -49,12 +50,13 @@ export function NotificationsTab({
   const controlsDisabled = isLoading || disabled;
   return (
     <Card>
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-6" aria-busy={isLoading}>
         <PreferenceToggle
           id="morning-email"
           label={t("settings.notifications.morningEmail")}
           description={t("settings.notifications.morningEmailDesc")}
           checked={preferences.morningEmail}
+          isLoading={isLoading}
           disabled={controlsDisabled}
           onCheckedChange={(checked) =>
             onPreferenceChange("morningEmail", checked)
@@ -66,6 +68,7 @@ export function NotificationsTab({
           label={t("settings.notifications.eventReminder")}
           description={t("settings.notifications.eventReminderDesc")}
           checked={preferences.eventReminder}
+          isLoading={isLoading}
           disabled={controlsDisabled}
           onCheckedChange={(checked) =>
             onPreferenceChange("eventReminder", checked)
@@ -77,6 +80,7 @@ export function NotificationsTab({
           label={t("settings.notifications.eventChange")}
           description={t("settings.notifications.eventChangeDesc")}
           checked={preferences.eventChange}
+          isLoading={isLoading}
           disabled={controlsDisabled}
           onCheckedChange={(checked) =>
             onPreferenceChange("eventChange", checked)
@@ -92,6 +96,7 @@ function PreferenceToggle({
   label,
   description,
   checked,
+  isLoading,
   disabled,
   onCheckedChange,
 }: {
@@ -99,6 +104,7 @@ function PreferenceToggle({
   label: string;
   description: string;
   checked: boolean;
+  isLoading: boolean;
   disabled: boolean;
   onCheckedChange: (checked: boolean) => void;
 }) {
@@ -110,12 +116,14 @@ function PreferenceToggle({
         </Label>
         <p className="text-sm text-muted-foreground">{description}</p>
       </div>
-      <Switch
-        id={id}
-        checked={checked}
-        disabled={disabled}
-        onCheckedChange={onCheckedChange}
-      />
+      {isLoading ? <Skeleton className="h-6 w-11 rounded-full" /> : (
+        <Switch
+          id={id}
+          checked={checked}
+          disabled={disabled}
+          onCheckedChange={onCheckedChange}
+        />
+      )}
     </div>
   );
 }

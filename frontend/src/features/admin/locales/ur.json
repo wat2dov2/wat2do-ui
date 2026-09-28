@@ -25,7 +25,6 @@
       "automateLogs": {
         "title": "Automate لاگز",
         "description": "پروسیس-سنگل-یوزر ورک فلو کے لیے Android Automate ایپ سے متنی نتائج۔",
-        "loading": "لاگز لوڈ ہو رہے ہیں...",
         "placeholder": "Automate لاگ کا نتیجہ یہاں ظاہر ہوگا۔"
       },
       "queries": {

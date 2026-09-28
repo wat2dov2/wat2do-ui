@@ -11,6 +11,7 @@ import {
   type UserProfile,
 } from "@/features/auth";
 import {
+  DEFAULT_NOTIFICATION_PREFERENCES,
   fetchNotificationPreferences,
   saveNotificationPreferences,
   type NotificationPreferenceKey,
@@ -48,12 +49,6 @@ const DEFAULT_PROFILE: UserProfile = {
   payoutEmail: null,
   promoterTosAcceptedAt: null,
   promoterTosVersion: null,
-};
-
-const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
-  morningEmail: true,
-  eventReminder: true,
-  eventChange: true,
 };
 
 export interface AppearanceSettingsDraft {
@@ -115,6 +110,7 @@ export function useSettingsForm() {
   const form = useForm<SettingsFormValues>({
     defaultValues: initialValues,
   });
+  const { isDirty, dirtyFields } = form.formState;
   const profile = useWatch({ control: form.control, name: "profile" });
   const notifications = useWatch({
     control: form.control,
@@ -142,31 +138,22 @@ export function useSettingsForm() {
   }, []);
 
   useEffect(() => {
-    if (
-      !profileQuery.data ||
-      !notificationQuery.data ||
-      form.formState.isDirty
-    ) {
-      return;
-    }
+    if (!profileQuery.data && !notificationQuery.data) return;
     const hydratedValues: SettingsFormValues = {
-      profile: profileQuery.data,
-      notifications: notificationQuery.data,
-      appearance: initialValuesRef.current.appearance,
-      avatarFile: null,
+      ...initialValuesRef.current,
+      profile: profileQuery.data ?? initialValuesRef.current.profile,
+      notifications: notificationQuery.data ?? initialValuesRef.current.notifications,
     };
     initialValuesRef.current = hydratedValues;
-    form.reset(hydratedValues);
+    form.reset(hydratedValues, { keepDirtyValues: true });
   }, [
     form,
-    form.formState.isDirty,
     notificationQuery.data,
     profileQuery.data,
   ]);
 
   const saveMutation = useMutation({
     mutationFn: async (nextValues: SettingsFormValues): Promise<SavedSettings> => {
-      const dirtyFields = form.formState.dirtyFields;
       const profileChanged = Boolean(dirtyFields.profile);
       const notificationsChanged = Boolean(dirtyFields.notifications);
       const appearanceChanged = Boolean(dirtyFields.appearance);
@@ -177,7 +164,10 @@ export function useSettingsForm() {
         requests.push(updateProfileAPI(nextValues.profile));
       }
       if (notificationsChanged) {
-        requests.push(saveNotificationPreferences(nextValues.notifications));
+        requests.push(saveNotificationPreferences(
+          nextValues.notifications,
+          initialValuesRef.current.notifications,
+        ));
       }
       if (nextValues.avatarFile) {
         requests.push(
@@ -293,8 +283,9 @@ export function useSettingsForm() {
       appearance,
     },
     avatarPreviewUrl,
-    isDirty: form.formState.isDirty,
-    isLoading: profileQuery.isLoading || notificationQuery.isLoading,
+    isDirty,
+    isProfileLoading: profileQuery.isLoading,
+    isNotificationLoading: notificationQuery.isLoading,
     isNotificationError: notificationQuery.isError,
     isSaving: saveMutation.isPending,
     updateProfile,

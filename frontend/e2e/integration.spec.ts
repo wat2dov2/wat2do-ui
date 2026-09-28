@@ -550,6 +550,144 @@ async function seedQrData(
   );
 }
 
+test.describe("Loading shells", () => {
+  for (const listing of [
+    { resource: "events", path: "/", heading: "upcoming events", search: "Search events", add: "Add event", empty: "No events scheduled" },
+    { resource: "clubs", path: "/clubs", heading: "clubs", search: "Search clubs...", add: "Add club", empty: "No clubs found" },
+    { resource: "positions", path: "/positions", heading: "positions", search: "Search roles, skills, or locations...", add: "Add position", empty: "No open positions found" },
+  ]) {
+    test(`${listing.resource} renders navigation and listing controls before its data arrives`, async ({ page, next }) => {
+      await seedAuthenticatedSession(page, next);
+      let release = () => {};
+      const responseReady = new Promise<void>(resolve => { release = resolve; });
+      let requested = false;
+      await mockApi(page, next, url =>
+        apiPath(url) === `/${listing.resource}` ||
+        (apiPath(url) === "/discovery" && url.searchParams.get("resource") === listing.resource),
+      async () => {
+        requested = true;
+        await responseReady;
+        return { json: {
+          items: [], total: 0, page: 1, page_size: 20, total_pages: 1,
+          generated_at: Date.now(),
+        } };
+      });
+
+      try {
+        await page.goto(`${BASE}${listing.path}`, { waitUntil: "commit" });
+        await expect.poll(() => requested).toBe(true);
+        await expect(page.getByRole("link", { name: "Go to events", exact: true })).toBeVisible();
+        await expect(page.getByRole("button", { name: "Open navigation menu", exact: true })).toBeVisible();
+        const shell = page.locator('[data-slot="discovery-loading"]');
+        await expect(shell).toBeVisible();
+        const heading = shell.getByRole("heading", { name: listing.heading, exact: true });
+        await expect(heading).toBeVisible();
+        await expect(heading).toHaveAttribute("aria-busy", "true");
+        await expect(heading.locator('[data-slot="skeleton"]')).toBeVisible();
+        await expect(shell.getByPlaceholder(listing.search, { exact: true })).toBeVisible();
+        await expect(shell.getByRole("link", { name: listing.add, exact: true })).toBeVisible();
+        await expect(shell.locator('[aria-hidden="true"] [data-slot="skeleton"]').first()).toBeVisible();
+        await expect(page.getByRole("heading", { name: `0 ${listing.heading}`, exact: true })).toHaveCount(0);
+        await expect(page.getByRole("heading", { name: listing.empty, exact: true })).toHaveCount(0);
+      } finally {
+        release();
+      }
+
+      await expect(page.locator('[data-slot="discovery-loading"]')).toHaveCount(0);
+      await expect(page.getByRole("heading", { name: `0 ${listing.heading}`, exact: true })).toHaveAttribute("aria-busy", "false");
+      await expect(page.getByRole("heading", { name: listing.empty, exact: true })).toBeVisible();
+      await expect(page.getByPlaceholder(listing.search, { exact: true })).toBeEnabled();
+      await expect(page.locator('[aria-busy="true"]')).toHaveCount(0);
+    });
+  }
+
+  test("login can request an email code before preview events arrive", async ({ page, next }) => {
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    let release = () => {};
+    const responseReady = new Promise<void>(resolve => { release = resolve; });
+    const now = Date.now();
+    const event = {
+      id: 988, title: "Delayed login preview", club: "UW Tech Club", club_id: 1,
+      school: "uwaterloo", location: "SLC", category: "Career", price: 0,
+      food: [], registration: false, source_image_url: null,
+      added_at: new Date(now).toISOString(),
+      occurrences: [{ id: 988, event_id: 988,
+        dtstart_utc: new Date(now + 86_400_000).toISOString(),
+        dtend_utc: new Date(now + 90_000_000).toISOString() }],
+    };
+    await mockApi(page, next, url => apiPath(url) === "/events", async () => {
+      await responseReady;
+      return { json: { items: [event], total: 1, page: 1, page_size: 20, total_pages: 1 } };
+    });
+    await mockApi(page, next, url => apiPath(url) === "/auth/send-otp", async () => ({
+      json: { message: "sent" },
+    }));
+    const preview = page.getByTestId("auth-preview-events");
+
+    try {
+      await page.goto(`${BASE}/login`, { waitUntil: "commit" });
+      await expect(page.getByRole("heading", { name: "Happening this week", exact: true })).toBeVisible();
+      await expect(preview).toHaveAttribute("aria-busy", "true");
+      await expect(preview.locator('[data-slot="skeleton"]').first()).toBeVisible();
+      await expect(page.getByRole("button", { name: "Continue with Google", exact: true })).toBeVisible();
+      const email = page.getByRole("textbox", { name: "Email address", exact: true });
+      await expect(email).toBeEditable();
+      await email.fill(TEST_EMAIL);
+      await page.getByRole("button", { name: "Continue", exact: true }).click();
+      await expect(page.getByText(/6-digit login code/i)).toBeVisible();
+      await expect(page.getByRole("textbox", { name: "Verification code", exact: true })).toBeEditable();
+      await expect(preview).toHaveAttribute("aria-busy", "true");
+      await expect(preview.getByText(event.title, { exact: true })).toHaveCount(0);
+    } finally {
+      release();
+    }
+
+    await expect(preview).toHaveAttribute("aria-busy", "false");
+    await expect(preview.locator("article")).toHaveCount(1);
+    await expect(preview.locator("article")).toContainText(event.title);
+    await expect(page.getByRole("textbox", { name: "Verification code", exact: true })).toBeEditable();
+  });
+
+  test("admin events keeps its back control, search, and table headers while rows load", async ({ page, next }) => {
+    await seedAuthenticatedSession(page, next);
+    let release = () => {};
+    const responseReady = new Promise<void>(resolve => { release = resolve; });
+    const event = {
+      id: 987, title: "Delayed admin event", club: "UW Tech Club", club_id: 1,
+      location: "SLC", school: "uwaterloo", category: "Career",
+      added_at: new Date().toISOString(), occurrences: [], food: [], price: 0,
+      registration: false,
+    };
+    await mockApi(page, next, url => apiPath(url) === "/events/admin", async () => {
+      await responseReady;
+      return { json: { items: [event], total: 1, page: 1, page_size: 20, total_pages: 1 } };
+    });
+    await mockApi(page, next, url => ["/reports", "/submissions"].includes(apiPath(url)), async () => ({
+      json: { items: [], total: 0, page: 1, page_size: 1, total_pages: 1 },
+    }));
+
+    try {
+      await page.goto(`${BASE}/admin/events`, { waitUntil: "commit" });
+      await expect(page.getByRole("heading", { name: "Manage Events", exact: true })).toBeVisible();
+      await expect(page.getByRole("button", { name: "Back to admin dashboard", exact: true })).toBeVisible();
+      await expect(page.getByPlaceholder("Search events...", { exact: true })).toBeVisible();
+      const table = page.getByRole("table");
+      await expect(table).toHaveAttribute("aria-busy", "true");
+      await expect(table.getByRole("columnheader", { name: "Event Title", exact: true })).toBeVisible();
+      await expect(table.getByRole("columnheader", { name: "Actions", exact: true })).toBeVisible();
+      await expect(table.locator('[data-slot="table-skeleton-row"]').first()).toBeVisible();
+      await expect(page.getByRole("cell", { name: event.title, exact: true })).toHaveCount(0);
+    } finally {
+      release();
+    }
+
+    await expect(page.getByRole("table")).toHaveAttribute("aria-busy", "false");
+    await expect(page.locator('[data-slot="table-skeleton-row"]')).toHaveCount(0);
+    await expect(page.getByRole("cell", { name: event.title, exact: true })).toBeVisible();
+    await expect(page.getByPlaceholder("Search events...", { exact: true })).toBeEnabled();
+  });
+});
+
 // ── Global navigation progress ────────────────────────────────────────
 
 test.describe("Navigation progress", () => {
@@ -699,7 +837,7 @@ test.describe("Auth Page", () => {
       });
     });
 
-    const profile = page.waitForResponse(url => apiPath(url.url()) === "/users/me");
+    const profile = page.waitForResponse(url => apiPath(new URL(url.url())) === "/users/me");
     await page.goto(BASE);
     expect((await profile).status()).toBe(503);
     await expect(page.getByRole("main", { name: "Events list" })).toBeVisible();
@@ -724,7 +862,7 @@ test.describe("Auth Page", () => {
         { emailKey: STORAGE_KEYS.USER_EMAIL, email: TEST_EMAIL },
       );
 
-      const refresh = page.waitForResponse(url => apiPath(url.url()) === "/auth/refresh");
+      const refresh = page.waitForResponse(url => apiPath(new URL(url.url())) === "/auth/refresh");
       await page.goto(BASE);
       expect((await refresh).status()).toBe(status);
       await expect(page.getByRole("main", { name: "Events list" })).toBeVisible();
@@ -745,7 +883,7 @@ test.describe("Auth Page", () => {
           }),
         });
       });
-      const recovered = page.waitForResponse(url => apiPath(url.url()) === "/auth/refresh");
+      const recovered = page.waitForResponse(url => apiPath(new URL(url.url())) === "/auth/refresh");
       await page.reload();
       expect((await recovered).status()).toBe(200);
       await expect(page.getByRole("main", { name: "Events list" })).toBeVisible();
@@ -3328,6 +3466,54 @@ test.describe("Events Page", () => {
     await expect(tomorrow).toBeVisible();
     await tomorrow.click();
     await expect(page.getByRole("combobox", { name: "Event date" })).toContainText("Tomorrow");
+  });
+
+  test("filters campus employers, complimentary food, and varsity games from event metadata", async ({ page, next }) => {
+    let feedRequests = 0;
+    await mockApi(page, next, url => apiPath(url) === "/events", async () => {
+      feedRequests += 1;
+      const startsAt = new Date(Date.now() + 86_400_000).toISOString();
+      const items = [
+        { id: 911, title: "Employer networking with pizza", employers_on_campus: true, free_food_on_campus: true, sports_game: false, price: 10 },
+        { id: 912, title: "Complimentary campus lunch", employers_on_campus: false, free_food_on_campus: true, sports_game: false, price: 0 },
+        { id: 913, title: "Varsity basketball match", employers_on_campus: false, free_food_on_campus: false, sports_game: true, price: 5 },
+        { id: 914, title: "Free career workshop with food for sale", employers_on_campus: false, free_food_on_campus: false, sports_game: false, price: 0 },
+        { id: 915, title: "Unclassified campus event", price: 0 },
+        { id: 916, title: "Intramural basketball match", sports_game: false, price: 0 },
+        { id: 917, title: "Varsity basketball tryouts", sports_game: false, price: 0 },
+      ].map(event => ({
+        ...event, location: "Student Centre", food: ["Pizza"], registration: false,
+        category: "Business", school: "uwaterloo", added_at: new Date().toISOString(),
+        source_image_url: null,
+        occurrences: [{ id: event.id, event_id: event.id, dtstart_utc: startsAt, dtend_utc: null }],
+      }));
+      return { json: { items, total: items.length, page: 1, page_size: 20, total_pages: 1 } };
+    });
+    await page.goto(BASE);
+    const cards = page.locator("article[data-event-id]");
+    const filters = page.getByTestId("event-quick-filter-scroll");
+    const employers = filters.getByRole("button", { name: "Employers on campus", exact: true });
+    const food = filters.getByRole("button", { name: "Free food on campus", exact: true });
+    const varsity = filters.getByRole("button", { name: "Varsity games", exact: true });
+    await expect(cards).toHaveCount(7);
+    const initialRequests = feedRequests;
+
+    await food.click();
+    await expect(food).toHaveAttribute("aria-pressed", "true");
+    await expect(cards).toHaveCount(2);
+    await employers.click();
+    await expect(cards).toHaveCount(1);
+    await expect(cards.first()).toContainText("Employer networking with pizza");
+    await page.getByRole("button", { name: "Clear filters", exact: true }).click();
+    await expect(cards).toHaveCount(7);
+    await expect(food).toHaveAttribute("aria-pressed", "false");
+    await expect(employers).toHaveAttribute("aria-pressed", "false");
+    await varsity.click();
+    await expect(cards).toHaveCount(1);
+    await expect(cards.first()).toContainText("Varsity basketball match");
+    await varsity.click();
+    await expect(cards).toHaveCount(7);
+    expect(feedRequests).toBe(initialRequests);
   });
 
   test("filters event formats locally and resets to Any format", async ({ page, next }) => {

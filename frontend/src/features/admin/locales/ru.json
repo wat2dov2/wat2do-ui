@@ -25,7 +25,6 @@
       "automateLogs": {
         "title": "Журналы Automate",
         "description": "Текстовый вывод из приложения Android Automate для рабочего процесса process-single-user.",
-        "loading": "Загрузка журналов...",
         "placeholder": "Вывод журналов Automate появится здесь."
       },
       "queries": {

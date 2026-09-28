@@ -1,21 +1,25 @@
+"use client";
+
 import Image from "next/image";
 import { useTranslation } from "react-i18next";
 import imgLogo from "@/assets/38e8096a28295e8dcc0e5020d0a5f3dd85d5f019.png";
-import { EventCard } from "@/features/events";
+import { EventCard, EventCardSkeleton } from "@/features/events";
+import { controlBox } from "@/shared/config/controlBox";
 import type { Event } from "@/shared/types";
 
 interface AuthHeroPanelProps {
   /** Upcoming events for the preview collage (server-fetched; empty shows the brand fallback). */
   events?: Event[];
+  isLoading?: boolean;
 }
 
-export function AuthHeroPanel({ events = [] }: AuthHeroPanelProps) {
+export function AuthHeroPanel({ events = [], isLoading = false }: AuthHeroPanelProps) {
   const { t } = useTranslation();
 
   return (
     <section className="hidden lg:flex flex-1 min-h-full bg-gradient-to-br from-primary/[0.06] via-secondary/30 to-secondary/60 border-l border-border px-8 py-10 justify-center items-center overflow-hidden">
       <div className="w-full max-w-[520px] space-y-6">
-        {events.length > 0 ? (
+        {isLoading || events.length > 0 ? (
           <>
             <header className="space-y-1">
               <h2 className="text-lg font-semibold text-foreground">
@@ -26,8 +30,11 @@ export function AuthHeroPanel({ events = [] }: AuthHeroPanelProps) {
             <div
               className="grid grid-cols-2 gap-4"
               data-testid="auth-preview-events"
+              aria-busy={isLoading}
             >
-              {events.map((event) => (
+              {isLoading ? Array.from({ length: controlBox.eventDiscovery.previewEventCount }, (_, index) => (
+                <EventCardSkeleton key={index} />
+              )) : events.map((event) => (
                 <EventCard key={event.id} event={event} interactive={false} />
               ))}
             </div>
