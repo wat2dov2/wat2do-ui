@@ -242,7 +242,10 @@ jobs:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         run: |
           frontend_image="$ECR_REGISTRY/wat2do/frontend:${{ github.sha }}"
-          container_id="$(docker run --detach --platform linux/arm64 --publish 127.0.0.1::3000 "$frontend_image")"
+          # This isolated liveness check has no backend or AWS task credentials.
+          # Use the existing test mode; ECS startup and the readiness check below
+          # still require production discovery snapshots to initialize successfully.
+          container_id="$(docker run --detach --platform linux/arm64 --env PLAYWRIGHT_TEST=1 --publish 127.0.0.1::3000 "$frontend_image")"
           cleanup() {
             docker rm --force "$container_id" >/dev/null 2>&1 || true
           }
