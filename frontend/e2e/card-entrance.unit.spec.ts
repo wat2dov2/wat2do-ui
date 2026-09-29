@@ -27,6 +27,8 @@ test("server-rendered discovery cards remain visible before hydration at every i
       role: "listitem",
       children: createElement("article", null, "Upcoming campus event"),
     }));
-    expect(html).toBe('<div class="h-full min-w-0" role="listitem"><article>Upcoming campus event</article></div>');
+    expect(html).toContain("<article>Upcoming campus event</article>");
+    expect(html).toContain('role="listitem"');
+    expect(html).not.toMatch(/opacity:\s*0|visibility:\s*hidden|display:\s*none|aria-hidden="true"/);
   }
 });

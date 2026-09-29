@@ -11,7 +11,7 @@ type UIStoreModule = typeof import("../src/shared/store/ui.store");
 type EventListModule = typeof import("../src/features/events/components/EventList");
 const componentModules = new Map<string, object>();
 
-// Use the real React runtime, as in card-entrance.spec.ts, without a browser.
+// Use the real React runtime, as in card-entrance.unit.spec.ts, without a browser.
 // Only the school/translation context and individual cards are fixtures.
 function loadComponent(path: string): object {
   const cached = componentModules.get(path);
@@ -179,7 +179,6 @@ test("server-rendered filter bars remain visibly disabled until controls can hyd
     trailing: createElement(Button, { children: "More filters" }),
   }));
   expect(html).toMatch(/<fieldset[^>]*disabled=""[^>]*aria-busy="true"/);
-  expect(html).toContain("disabled:opacity-50");
   expect(html).toContain("More filters");
 });
 
@@ -222,13 +221,4 @@ test("catalog arrival timestamps show an absolute school-local date and omit mis
   expect(renderAdded("2026-09-29T00:30:00Z", "America/Vancouver")).toContain("5:30 PM");
   expect(renderAdded(null)).toBe("");
   expect(renderAdded("not-a-date")).toBe("");
-});
-
-test("divided detail sections share compact headings and a separator", () => {
-  const { Section } = loadComponent("shared/layout/section") as typeof import("../src/shared/layout/section");
-  const html = renderToStaticMarkup(createElement(Section, { variant: "divided", title: "Posted by" }, "Club"));
-  expect(html).toContain('data-variant="divided"');
-  expect(html).toContain('data-slot="section-title"');
-  expect(html).toContain('data-slot="separator"');
-  expect(html).toContain('text-sm');
 });

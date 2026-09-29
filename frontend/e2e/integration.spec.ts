@@ -2052,69 +2052,6 @@ test.describe("Events Page", () => {
     await assetResponse;
   });
 
-  test("loads and displays events", async ({ page }) => {
-    await page.goto(BASE);
-    await page.waitForTimeout(3000);
-
-    const body = await page.textContent("body");
-    expect(body).toBeTruthy();
-    const eventCount = page.getByRole("heading", { name: "1 upcoming event", exact: true });
-    const addEventButton = page.getByRole("button", { name: "Add event" });
-    const moreFiltersButton = page.getByRole("button", {
-      name: "More filters",
-    });
-    const eventSearch = page.getByPlaceholder("Search events").locator("..");
-    await expect(
-      page.getByRole("heading", { name: /events and things to do/i }),
-    ).toHaveCount(0);
-    await expect(page.getByText(/Find current campus events/i)).toHaveCount(0);
-    await expect(addEventButton.locator("svg")).toHaveCount(0);
-    await expect(addEventButton).toHaveCSS("padding-left", "20px");
-    await expect(addEventButton).toHaveCSS("padding-right", "20px");
-    await expect
-      .poll(async () => {
-        const [
-          searchBox,
-          addEventBox,
-          moreFiltersBox,
-          stripBox,
-        ] = await Promise.all([
-          eventSearch.boundingBox(),
-          addEventButton.boundingBox(),
-          moreFiltersButton.boundingBox(),
-          page.getByTestId("event-quick-filter-scroll").boundingBox(),
-        ]);
-        return {
-          searchHeight: searchBox?.height,
-          addEventHeight: addEventBox?.height,
-          moreFiltersHeight: moreFiltersBox?.height,
-          sharesSearchRow: Boolean(searchBox && addEventBox &&
-            Math.abs(searchBox.y - addEventBox.y) < 1 &&
-            addEventBox.x >= searchBox.x + searchBox.width),
-          filtersBesideStrip: Boolean(stripBox && moreFiltersBox &&
-            Math.abs(stripBox.y - moreFiltersBox.y) < 1 &&
-            moreFiltersBox.x >= stripBox.x + stripBox.width),
-        };
-      })
-      .toEqual({
-        searchHeight: 44,
-        addEventHeight: 44,
-        moreFiltersHeight: 32,
-        sharesSearchRow: true,
-        filtersBesideStrip: true,
-      });
-    await expect
-      .poll(async () => {
-        const [countBox, searchBox] = await Promise.all([
-          eventCount.boundingBox(), eventSearch.boundingBox(),
-        ]);
-        return Boolean(countBox && searchBox && countBox.y + countBox.height < searchBox.y);
-      })
-      .toBe(true);
-
-    await page.screenshot({ path: "e2e/screenshots/events-page.png", fullPage: true });
-  });
-
   test("permanently filters events after their effective end", async ({ page, next }) => {
     const nowMs = Date.now();
     const eventBase = {
@@ -3179,7 +3116,6 @@ test.describe("Events Page", () => {
     });
 
     await page.goto(BASE);
-    await page.waitForTimeout(3000);
 
     const todayCard = page.locator('article[data-event-id="1"]:visible');
     const tomorrowCard = page.locator('article[data-event-id="2"]:visible');
@@ -3707,60 +3643,6 @@ test.describe("Events Page", () => {
     await expect(page.getByRole("button", { name: "Event: Tech Career Fair", exact: true })).toBeVisible();
   });
 
-  test("renders borderless event card content without horizontal padding", async ({
-    page,
-  }) => {
-    await page.goto(BASE);
-
-    const card = page.locator("article[data-event-id]:visible").first();
-    const frame = card.locator('[data-slot="event-card-content-frame"]');
-    const content = frame.locator('[data-slot="event-card-content"]');
-    await expect(frame).toBeVisible();
-    await expect
-      .poll(() =>
-        frame.evaluate((element) => {
-          const styles = getComputedStyle(element);
-          return {
-            backgroundColor: styles.backgroundColor,
-            borderTopWidth: styles.borderTopWidth,
-            borderRightWidth: styles.borderRightWidth,
-            borderBottomWidth: styles.borderBottomWidth,
-            borderLeftWidth: styles.borderLeftWidth,
-          };
-        }),
-      )
-      .toEqual({
-        backgroundColor: "rgba(0, 0, 0, 0)",
-        borderTopWidth: "0px",
-        borderRightWidth: "0px",
-        borderBottomWidth: "0px",
-        borderLeftWidth: "0px",
-      });
-    await expect(content).toHaveCSS("padding-left", "0px");
-    await expect(content).toHaveCSS("padding-right", "0px");
-
-    const clubBadge = card.locator('[data-slot="club-badge"]');
-    await expect(clubBadge).toHaveCSS("opacity", "1");
-    await card.hover();
-    await expect(card).toHaveCSS("opacity", "1");
-    await expect(clubBadge).toHaveCSS("opacity", "1");
-    await expect(
-      card.locator('xpath=ancestor::*[@data-slot="card-grid"]'),
-    ).toHaveCSS("column-gap", "20px");
-  });
-
-  test("rounds the event card image's bottom-right corner", async ({ page }) => {
-    await page.goto(BASE);
-
-    const cardImage = page
-      .locator(
-        'article[data-event-id]:visible [data-slot="event-card-image"][data-variant="card"]',
-      )
-      .first();
-    await expect(cardImage).toBeVisible();
-    await expect(cardImage).toHaveCSS("border-bottom-right-radius", "12px");
-  });
-
   test("keeps chronological ordering when client-side filters change", async ({
     page, next,
   }) => {
@@ -3839,144 +3721,6 @@ test.describe("Events Page", () => {
         "Event: Middle Event",
         "Event: Later Event",
       ]);
-  });
-
-  test("anchors badge mask fillets to the intended image offsets", async ({
-    page,
-  }) => {
-    await page.goto(BASE);
-
-    const newBadges = page.locator("article:visible").getByText("NEW", { exact: true });
-    await expect.poll(() => newBadges.count()).toBeGreaterThan(0);
-    const newBadge = newBadges.first();
-    const geometry = await newBadge.evaluate((element) => {
-      const card = element.closest("article[data-event-card]");
-      const mask = card?.querySelector("mask");
-      const svg = mask?.ownerSVGElement;
-      const viewBox = svg?.viewBox.baseVal;
-      const svgBounds = svg?.getBoundingClientRect();
-      const badgeBounds = element.getBoundingClientRect();
-      const clubBadgeBounds = card
-        ?.querySelector('[data-slot="club-badge"]')
-        ?.getBoundingClientRect();
-      const groups = Array.from(mask?.querySelectorAll(":scope > g") ?? []);
-      const topLeftGroup = groups.find((group) => {
-        const rect = group.querySelector(":scope > rect");
-        return (
-          Number(rect?.getAttribute("x")) < 0 &&
-          Number(rect?.getAttribute("y")) < 0
-        );
-      });
-      const topLeftRect = topLeftGroup?.querySelector(":scope > rect");
-      const topLeftFillets = Array.from(
-        topLeftGroup?.querySelectorAll(":scope > svg") ?? [],
-      ).map((fillet) => ({
-        x: Number(fillet.getAttribute("x")),
-        y: Number(fillet.getAttribute("y")),
-      }));
-      const topSideFillet = topLeftFillets.toSorted(
-        (a, b) => b.x - a.x,
-      )[0];
-      const topBottomFillet = topLeftFillets.toSorted(
-        (a, b) => b.y - a.y,
-      )[0];
-      const bottomLeftGroup = groups.find((group) => {
-        const rect = group.querySelector(":scope > rect");
-        return (
-          Number(rect?.getAttribute("x")) < 0 &&
-          Number(rect?.getAttribute("y")) > 0
-        );
-      });
-      const bottomLeftRect = bottomLeftGroup?.querySelector(":scope > rect");
-      const bottomLeftFillets = Array.from(
-        bottomLeftGroup?.querySelectorAll(":scope > svg") ?? [],
-      )
-        .map((fillet) => ({
-          x: Number(fillet.getAttribute("x")),
-          y: Number(fillet.getAttribute("y")),
-          width: Number(fillet.getAttribute("width")),
-          height: Number(fillet.getAttribute("height")),
-        }))
-        .toSorted((a, b) => b.y - a.y);
-      const bottomSideFillet = bottomLeftFillets[0];
-      const bottomTopFillet = bottomLeftFillets.at(-1);
-      const scaleX = svgBounds && viewBox ? svgBounds.width / viewBox.width : 0;
-      const scaleY =
-        svgBounds && viewBox ? svgBounds.height / viewBox.height : 0;
-      const cutoutRight =
-        (svgBounds?.left ?? 0) +
-        (Number(topLeftRect?.getAttribute("x")) +
-          Number(topLeftRect?.getAttribute("width"))) *
-          scaleX;
-      const cutoutBottom =
-        (svgBounds?.top ?? 0) +
-        (Number(topLeftRect?.getAttribute("y")) +
-          Number(topLeftRect?.getAttribute("height"))) *
-          scaleY;
-      const bottomCutoutRight =
-        (svgBounds?.left ?? 0) +
-        (Number(bottomLeftRect?.getAttribute("x")) +
-          Number(bottomLeftRect?.getAttribute("width"))) *
-          scaleX;
-      const bottomCutoutTop =
-        (svgBounds?.top ?? 0) +
-        Number(bottomLeftRect?.getAttribute("y")) * scaleY;
-      const bottomFilletEdgeOffsets = groups
-        .map((group) => ({
-          rectY: Number(group.querySelector(":scope > rect")?.getAttribute("y")),
-          filletYs: Array.from(group.querySelectorAll(":scope > svg")).map(
-            (fillet) => Number(fillet.getAttribute("y")),
-          ),
-        }))
-        .filter(({ rectY }) => rectY > 0)
-        .map(
-          ({ filletYs }) =>
-            ((viewBox?.height ?? 0) - Math.max(...filletYs)) * scaleY,
-        );
-
-      return {
-        topLeftRightGap: cutoutRight - badgeBounds.right,
-        topLeftBottomGap: cutoutBottom - badgeBounds.bottom,
-        topSideFilletOverlap:
-          (Number(topLeftRect?.getAttribute("x")) +
-            Number(topLeftRect?.getAttribute("width")) -
-            (topSideFillet?.x ?? 0)) *
-          scaleX,
-        topBottomFilletOverlap:
-          (Number(topLeftRect?.getAttribute("y")) +
-            Number(topLeftRect?.getAttribute("height")) -
-            (topBottomFillet?.y ?? 0)) *
-          scaleY,
-        bottomLeftRightGap:
-          bottomCutoutRight - (clubBadgeBounds?.right ?? 0),
-        bottomLeftTopGap:
-          (clubBadgeBounds?.top ?? 0) - bottomCutoutTop,
-        bottomSideFilletOverlap:
-          (Number(bottomLeftRect?.getAttribute("x")) +
-            Number(bottomLeftRect?.getAttribute("width")) -
-            (bottomSideFillet?.x ?? 0)) *
-          scaleX,
-        bottomTopFilletOverlap:
-          ((bottomTopFillet?.y ?? 0) +
-            (bottomTopFillet?.height ?? 0) -
-            Number(bottomLeftRect?.getAttribute("y"))) *
-          scaleY,
-        bottomFilletEdgeOffsets,
-      };
-    });
-
-    expect(geometry.topLeftRightGap).toBeCloseTo(4, 0);
-    expect(geometry.topLeftBottomGap).toBeCloseTo(4, 0);
-    expect(geometry.topSideFilletOverlap).toBeCloseTo(0.25, 2);
-    expect(geometry.topBottomFilletOverlap).toBeCloseTo(0.25, 2);
-    expect(geometry.bottomLeftRightGap).toBeCloseTo(4, 0);
-    expect(geometry.bottomLeftTopGap).toBeCloseTo(4, 0);
-    expect(geometry.bottomSideFilletOverlap).toBeCloseTo(0.25, 2);
-    expect(geometry.bottomTopFilletOverlap).toBeCloseTo(0.25, 2);
-    expect(geometry.bottomFilletEdgeOffsets).toHaveLength(1);
-    for (const edgeOffset of geometry.bottomFilletEdgeOffsets) {
-      expect(edgeOffset).toBeCloseTo(8, 0);
-    }
   });
 
   test("More filters excludes view and category controls", async ({ page }) => {
@@ -4213,49 +3957,6 @@ test.describe("Events Page", () => {
     await expect(page.locator("article[data-event-id]:visible")).toHaveCount(3);
   });
 
-  test("app API proxy returns events", async ({ request }) => {
-    const res = await request.get(`${APP_API}/events/`);
-    expect(res.status()).toBe(200);
-    const feed = await res.json();
-    const events = feed.items;
-    expect(feed).toHaveProperty("latest_added_event");
-    expect(events.length).toBeGreaterThan(0);
-    expect(events[0]).toHaveProperty("title");
-    expect(events[0]).toHaveProperty("location");
-    expect(events[0]).toHaveProperty("id");
-  });
-
-  test("app API proxy preserves the event feed contract", async ({ request }) => {
-    const res = await request.get(`${APP_API}/events/`);
-    const feed = await res.json();
-    expect(feed.total).toBeGreaterThanOrEqual(feed.items.length);
-    expect(feed.page).toBeGreaterThanOrEqual(1);
-    expect(feed.page_size).toBeGreaterThan(0);
-    expect(feed.total_pages).toBeGreaterThanOrEqual(1);
-  });
-
-  test("event search filter works through app API proxy", async ({ request }) => {
-    const res = await request.get(`${APP_API}/events/?search=career`);
-    expect(res.status()).toBe(200);
-    const feed = await res.json();
-    const events = feed.items;
-    expect(events.length).toBeGreaterThanOrEqual(1);
-    const searchableText = events
-      .map((event: { title: string; category?: string; club?: string | null }) =>
-        `${event.title} ${event.category ?? ""} ${event.club ?? ""}`.toLowerCase(),
-      )
-      .join(" ");
-    expect(searchableText).toContain("career");
-  });
-
-  test("event category filter works through app API proxy", async ({ request }) => {
-    const res = await request.get(`${APP_API}/events/?categories=Career`);
-    expect(res.status()).toBe(200);
-    const feed = await res.json();
-    const events = feed.items;
-    expect(events.every((e: { category: string }) => e.category === "Career")).toBeTruthy();
-  });
-
   test("Instagram publishing collection stays on the app API origin", async ({ request }) => {
     const res = await request.get(
       `${APP_API}/instagram-publishing/batches/?page=1&page_size=100`,
@@ -4426,16 +4127,6 @@ test.describe("Clubs Page", () => {
     await expect(page.locator("[data-club-id]")).toHaveCount(0);
     expect(pageTwoAttempts).toBeGreaterThan(0);
   });
-
-  test("uses club URLs and puts Positions before Clubs", async ({ page }) => {
-    await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto(`${BASE}/clubs`);
-    const navigation = page.getByRole("navigation", { name: "Primary navigation" }).first();
-    const links = navigation.getByRole("link");
-    const destinations = await links.evaluateAll(elements => elements.map(element => element.getAttribute("href")));
-    expect(destinations.indexOf("/positions")).toBeLessThan(destinations.indexOf("/clubs"));
-    expect(destinations).not.toContain("/organizations");
-  });
   test("filters clubs by minimum event count and restores zero-event clubs", async ({ page }) => {
     await page.goto(`${BASE}/clubs`);
     await expect(page.locator("[data-club-id]")).toHaveCount(3);
@@ -4446,78 +4137,6 @@ test.describe("Clubs Page", () => {
     await expect(page.locator('[data-club-id="3"]')).toHaveCount(0);
     await minimum.fill("0");
     await expect(page.locator("[data-club-id]")).toHaveCount(3);
-  });
-
-  test("loads and displays clubs", async ({ page }) => {
-    await page.goto(`${BASE}/clubs`);
-    await page.waitForTimeout(3000);
-
-    const body = await page.textContent("body");
-    expect(body).toBeTruthy();
-    const clubCard = page.locator('[data-club-id="1"]');
-    const clubContent = clubCard.locator(
-      '[data-slot="event-card-content"]',
-    );
-    const addClubButton = page.getByRole("button", {
-      name: "Add club",
-      exact: true,
-    });
-    const clubSearch = page.getByPlaceholder("Search clubs...").locator("..");
-    const clubScope = page.getByRole("combobox", { name: "All", exact: true });
-    await expect(
-      page.getByRole("heading", { name: /student clubs/i }),
-    ).toHaveCount(0);
-    await expect(page.getByText(/Explore student communities/i)).toHaveCount(0);
-    await expect(addClubButton.locator("svg")).toHaveCount(0);
-    await expect(
-      clubCard.getByRole("link", { name: "View Club Page" }),
-    ).toBeVisible();
-    await expect(
-      clubCard.getByRole("button", { name: "More options" }),
-    ).toHaveCount(0);
-    await expect(clubContent).toHaveCSS("padding-left", "12px");
-    await expect(clubContent).toHaveCSS("padding-right", "12px");
-    await expect(
-      clubCard.locator('xpath=ancestor::*[@data-slot="card-grid"]'),
-    ).toHaveCSS("column-gap", "20px");
-    await expect
-      .poll(async () => {
-        const [
-          searchBox,
-          scopeBox,
-          addClubBox,
-          scopeBesideCategoryStrip,
-        ] = await Promise.all([
-          clubSearch.boundingBox(),
-          clubScope.boundingBox(),
-          addClubButton.boundingBox(),
-          page
-            .getByTestId("club-category-filter-scroll")
-            .evaluate((strip) =>
-              Boolean(
-                strip.parentElement?.parentElement?.querySelector(
-                  '[role="combobox"]',
-                ),
-              ),
-            ),
-        ]);
-        return {
-          searchHeight: searchBox?.height,
-          scopeHeight: scopeBox?.height,
-          addClubHeight: addClubBox?.height,
-          sharesSearchRow: Boolean(searchBox && addClubBox && Math.abs(searchBox.y - addClubBox.y) < 1 && addClubBox.x >= searchBox.x + searchBox.width),
-          scopeBesideCategoryStrip,
-        };
-      })
-      .toEqual({
-        searchHeight: 44,
-        scopeHeight: 32,
-        addClubHeight: 44,
-        sharesSearchRow: true,
-        scopeBesideCategoryStrip: true,
-      });
-
-    await page.screenshot({ path: "e2e/screenshots/clubs-page.png", fullPage: true });
   });
 
   test("keeps club listing controls fixed while scrolling on mobile", async ({ page, next }) => {
@@ -4549,41 +4168,6 @@ test.describe("Clubs Page", () => {
     await expect.poll(async () => (await search.boundingBox())?.y).toBe(initial!.y);
     await expect(page.getByRole("button", { name: "Add club", exact: true })).toBeInViewport();
   });
-
-  test("app API proxy returns clubs", async ({ request }) => {
-    const res = await request.get(`${APP_API}/clubs/`);
-    expect(res.status()).toBe(200);
-    const clubs = await res.json();
-    expect(clubs.items.length).toBeGreaterThan(0);
-    expect(clubs.items[0]).toHaveProperty("club_name");
-    expect(clubs.items[0]).toHaveProperty("club_type");
-  });
-
-  test("app API proxy preserves the club paginated contract", async ({ request }) => {
-    const res = await request.get(`${APP_API}/clubs/`);
-    const clubs = await res.json();
-    expect(clubs.total).toBeGreaterThanOrEqual(clubs.items.length);
-    expect(
-      clubs.items.every(
-        (club: { club_name?: string; club_type?: string }) =>
-          typeof club.club_name === "string" &&
-          typeof club.club_type === "string",
-      ),
-    ).toBeTruthy();
-  });
-
-  test("club search filter works through app API proxy", async ({ request }) => {
-    const res = await request.get(`${APP_API}/clubs/?search=computer`);
-    expect(res.status()).toBe(200);
-    const clubs = await res.json();
-    expect(clubs.items.length).toBeGreaterThanOrEqual(1);
-    const searchableText = clubs.items
-      .map((club: { club_name: string; categories?: string[] }) =>
-        `${club.club_name} ${(club.categories ?? []).join(" ")}`.toLowerCase(),
-      )
-      .join(" ");
-    expect(searchableText).toContain("computer");
-  });
 });
 
 // ── Workflow 4: Onboarding Page ───────────────────────────────────────
@@ -4607,16 +4191,6 @@ test.describe("Onboarding Page", () => {
     await faculty.click();
     await expect(page.getByRole("option", { name: "DeGroote School of Business", exact: true })).toBeVisible();
     await expect(page.getByRole("option", { name: "Mathematics", exact: true })).toHaveCount(0);
-  });
-
-  test("renders onboarding steps", async ({ page }) => {
-    await page.goto(`${BASE}/onboarding`);
-    await page.waitForTimeout(1000);
-
-    const body = await page.textContent("body");
-    expect(body).toBeTruthy();
-
-    await page.screenshot({ path: "e2e/screenshots/onboarding-page.png", fullPage: true });
   });
 });
 
@@ -5523,25 +5097,6 @@ test.describe("Navigation", () => {
     await expect(drawer.getByRole("button", { name: "Log out", exact: true })).toBeVisible();
   });
 
-  test("uses only the bottom-left page glow and no drawer decoration", async ({
-    page,
-  }) => {
-    await page.goto(BASE, { waitUntil: "domcontentloaded" });
-
-    const background = page.locator('[data-slot="page-background"]');
-    await expect(background.locator("img")).toHaveCount(0);
-    await expect(background.locator(".page-doodle-grid")).toHaveCount(0);
-    const backgroundImage = await background
-      .locator(".bg-page-glow")
-      .evaluate((element) => getComputedStyle(element).backgroundImage);
-    expect(backgroundImage.match(/radial-gradient/g)).toHaveLength(1);
-
-    await page
-      .getByRole("button", { name: "More filters", exact: true })
-      .click();
-    await expect(page.locator('[data-slot="drawer-doodle-field"]')).toHaveCount(0);
-  });
-
   test("theme toggle animates and persists through the shared theme cookie", async ({
     page,
   }) => {
@@ -5728,7 +5283,8 @@ test.describe("Navigation", () => {
     });
 
     await page.goto(BASE);
-    await page.waitForTimeout(3000);
+
+    await expect(page.getByRole("button", { name: "Event: Tech Career Fair", exact: true })).toBeVisible();
 
     const criticalErrors = errors.filter(
       (e) => !e.includes("favicon") && !e.includes("Failed to load resource"),

@@ -14,7 +14,12 @@ export default defineConfig({
   },
   projects: [
     {
+      name: "unit",
+      testMatch: "**/*.unit.spec.ts",
+    },
+    {
       name: "chromium",
+      testIgnore: "**/*.unit.spec.ts",
       use: { browserName: "chromium" },
     },
   ],

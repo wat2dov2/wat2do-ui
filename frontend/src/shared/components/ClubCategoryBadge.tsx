@@ -12,6 +12,7 @@ type BadgeSize = NonNullable<ComponentProps<typeof Badge>["size"]>;
 
 /** Icon scales with the badge so the chip stays balanced at every size. */
 const ICON_SIZE: Record<BadgeSize, number> = {
+  inline: 14,
   sm: 10,
   md: 14,
   lg: 16,

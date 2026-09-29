@@ -87,9 +87,9 @@ jobs:
         working-directory: frontend
         run: npm run type-check
 
-      - name: Test discovery cache and image delivery without a browser
+      - name: Test frontend behavior without a browser
         working-directory: frontend
-        run: npm run test:discovery
+        run: npm test
 
       - name: Build
         working-directory: frontend

@@ -130,7 +130,7 @@ The initial performance targets remain targets until measured: lower first-scree
 ## Pre-push verification
 
 - Backend: `ruff format --check .`, `ruff check .`, `mypy .`, and the testing-environment `pytest -q` gate passed with 1,789 tests.
-- Frontend: `npm run check`, `npm run test:discovery` (59 browser-free tests), and `NEXT_PUBLIC_API_URL=/api npm run build` passed.
+- Frontend: `npm run check`, `npm test` (59 browser-free tests), and `NEXT_PUBLIC_API_URL=/api npm run build` passed.
 - Terraform: recursive formatting, initialization without the backend, and validation passed for both roots using CI's Terraform 1.9.6.
 - Workflow YAML parsed and all 34 shell blocks passed `bash -n`; mocked deployment success/failure/rollback/deadline cases passed.
 - All 120 linked database migrations match production; this change adds no migration.

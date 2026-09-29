@@ -16,7 +16,7 @@ git status
 
 - Resolve or discard unrelated local changes before committing.
 - Do **not** commit secrets (`.env`, credentials), Playwright artifacts, or local-only files.
-- Restore generated noise (e.g. `frontend/test-results/`) instead of committing it.
+- Keep generated output in ignored directories such as `frontend/test-results/`.
 
 Optional codebase health scan (fix major issues; do not block on pre-existing complexity debt):
 
@@ -66,7 +66,7 @@ Run **all five** commands. Each must exit 0:
 npm run lint
 npm run audit:i18n
 npm run type-check
-npm run test:discovery
+npm test
 NEXT_PUBLIC_API_URL=/api npm run build
 ```
 
@@ -176,7 +176,7 @@ Agent handoff after a successful push:
   npm run lint && \
   npm run audit:i18n && \
   npm run type-check && \
-  npm run test:discovery && \
+  npm test && \
   NEXT_PUBLIC_API_URL=/api npm run build)
 
 # Social-preview worker

@@ -90,9 +90,9 @@ export function ClubBadgeDropdown({
     return (
       <Badge
         asChild
-        variant="outline"
-        size="md"
-        className="tracking-normal bg-background border-foreground text-foreground flex min-w-0 max-w-full items-center gap-1.5"
+        variant="plain"
+        size="inline"
+        className="tracking-normal flex min-w-0 max-w-full items-center gap-1.5"
         onMouseDown={onMouseDown}
         onClick={onClick}
       >
@@ -119,9 +119,9 @@ export function ClubBadgeDropdown({
       <DropdownMenuTrigger asChild>
         <Badge
           asChild
-          variant="outline"
-          size="md"
-          className="tracking-normal bg-background border-foreground text-foreground flex min-w-0 max-w-full items-center gap-1.5 transition-[background-color,transform] hover:bg-surface-hover active:scale-95 cursor-pointer"
+          variant="plain"
+          size="inline"
+          className="tracking-normal flex min-w-0 max-w-full items-center gap-1.5 transition-[background-color,transform] hover:bg-surface-hover active:scale-95 cursor-pointer"
           onMouseDown={onMouseDown}
           onClick={onClick}
         >
