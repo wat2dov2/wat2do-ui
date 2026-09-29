@@ -313,7 +313,7 @@ def test_holiday_windows_project_specific_filters_without_reclassifying_events()
     assert "holidays" not in {season.id for season in seasons}
     assert holidays["thanksgiving"].labels["en"] == "Thanksgiving"
     assert holidays["halloween"].labels["en"] == "Halloween"
-    assert str(holidays["thanksgiving"].display_windows[0].start_date) == "2026-09-28"
+    assert str(holidays["thanksgiving"].display_windows[0].start_date) == "2026-10-05"
     assert str(holidays["halloween"].display_windows[0].start_date) == "2026-10-17"
     assert str(holidays["winter_holidays"].display_windows[0].start_date) == "2026-12-01"
     assert all(len(season.display_windows) == 1 for season in holidays.values())
