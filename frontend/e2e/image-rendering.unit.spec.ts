@@ -299,7 +299,7 @@ test.describe("Instagram raster preparation", () => {
       const prepared = Buffer.from(renderedSlide!.props.model.imageSrc!.split(",")[1], "base64");
       const metadata = await sharp(prepared).metadata();
       expect(metadata.format).toBe("png");
-      expect([metadata.width, metadata.height]).toEqual([952, 880]);
+      expect([metadata.width, metadata.height]).toEqual([952, 1000]);
       const output = Buffer.from(await response.arrayBuffer());
       const pixels = await sharp(output).extract({ left: 540, top: 400, width: 1, height: 1 }).removeAlpha().raw().toBuffer();
       for (const [channel, expected] of [240, 80, 20].entries()) expect(Math.abs(pixels[channel] - expected)).toBeLessThanOrEqual(3);
@@ -338,14 +338,14 @@ test.describe("Instagram raster preparation", () => {
       const output = Buffer.from(await response.arrayBuffer());
       for (const { right, bottom, color } of corners) {
         for (const { left, top } of [
-          { left: right ? 950 : 1, top: bottom ? 878 : 1 },
-          { left: right ? 486 : 466, top: bottom ? 450 : 430 },
+          { left: right ? 950 : 1, top: bottom ? 998 : 1 },
+          { left: right ? 486 : 466, top: bottom ? 510 : 490 },
         ]) {
           const publishedPixel = await sharp(output).extract({ left: 64 + left, top: 196 + top, width: 1, height: 1 }).removeAlpha().raw().toBuffer();
           expect([...publishedPixel]).toEqual(color);
         }
       }
-      expect([metadata.width, metadata.height]).toEqual([952, 880]);
+      expect([metadata.width, metadata.height]).toEqual([952, 1000]);
     });
   }
 
@@ -410,7 +410,8 @@ test.describe("Instagram raster preparation", () => {
     expect(markup).not.toContain("REMOVED FOOTER TEXT");
     const pixel = async (left: number, top: number) => [...await sharp(output).extract({ left, top, width: 1, height: 1 }).removeAlpha().raw().toBuffer()];
     expect(await pixel(540, 600)).toEqual([239, 80, 20]);
-    expect(await pixel(540, 1100)).toEqual([255, 255, 255]);
+    expect(await pixel(540, 1100)).toEqual([239, 80, 20]);
+    expect(await pixel(980, 1240)).toEqual([255, 255, 255]);
     for (const [left, top] of [[10, 10], [1070, 600], [10, 600], [540, 1340]]) {
       expect(await pixel(left, top)).not.toEqual([255, 255, 255]);
     }
