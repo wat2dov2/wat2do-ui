@@ -9022,6 +9022,17 @@
             "type": "integer",
             "title": "Id"
           },
+          "club_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Club Id"
+          },
           "title": {
             "type": "string",
             "title": "Title"

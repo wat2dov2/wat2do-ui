@@ -149,6 +149,9 @@ const nextConfig: NextConfig = {
     root: repositoryRoot,
   },
   generateBuildId: () => process.env.APP_VERSION || "development",
+  async redirects() {
+    return [{ source: "/", destination: "/events", permanent: true }];
+  },
   async rewrites() {
     return [
       ...apiCollectionPaths.map((path) => ({

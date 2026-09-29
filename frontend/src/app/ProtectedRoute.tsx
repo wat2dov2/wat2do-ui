@@ -67,9 +67,9 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
         `${pathname}${searchParams.size > 0 ? `?${searchParams.toString()}` : ""}`,
       )
     : requiredRole === ROLE_ADMIN && role !== "admin"
-      ? ROUTES.HOME
+      ? ROUTES.EVENTS
       : requiredRole === ROLE_CLUB && !hasClub && role !== "admin"
-        ? ROUTES.HOME
+        ? ROUTES.EVENTS
         : null;
 
   useEffect(() => {

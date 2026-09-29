@@ -48,7 +48,7 @@ export function AuthCallbackPage() {
 
       router.replace(
         returnTo ??
-          `${ROUTES.HOME}?${new URLSearchParams({ [QP.SCHOOL]: school })}`,
+          `${ROUTES.EVENTS}?${new URLSearchParams({ [QP.SCHOOL]: school })}`,
       );
     },
     [returnTo, router],

@@ -64,3 +64,30 @@ def test_video_storage_validates_container_and_retains_mp4_content_type():
     assert "ContentDisposition" not in s3.put_object.call_args.kwargs
     with pytest.raises(ValidationError, match="not an MP4"):
         storage.validate_and_prepare(BUCKET_EVENT_VIDEOS, b"<html>no video</html>", "video/mp4")
+
+
+def test_owned_asset_download_is_bounded_and_closes_stream_on_failure():
+    from io import BytesIO
+    from unittest.mock import MagicMock
+
+    import pytest
+
+    from core.exceptions import ValidationError
+    from services.storage_service import StorageService
+
+    client = MagicMock()
+    body = BytesIO(b"12345")
+    client.get_object.return_value = {"Body": body, "ContentType": "image/jpeg"}
+    storage = StorageService(
+        client,
+        bucket_name="test",
+        public_base_url="https://wat2do.io/media",
+        buckets={"event-images": {"file_size_limit": 4}},
+    )
+    with pytest.raises(ValidationError, match="media size limit"):
+        storage.download_file("event-images", "original.jpg")
+    assert body.closed
+    for bucket, path in [("unknown", "image.jpg"), ("event-images", "../private")]:
+        with pytest.raises(ValidationError, match="asset path"):
+            storage.download_file(bucket, path)
+    assert client.get_object.call_count == 1

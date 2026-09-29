@@ -72,13 +72,13 @@ export function RouteLoading() {
   const { t } = useTranslation();
   if (pathname === ROUTES.ABOUT) return <AboutPage isLoading />;
   if (pathname === ROUTES.LOGIN) return <AuthEntryPage isPending preview={<AuthHeroPanel isLoading />} />;
-  if (pathname === ROUTES.HOME) return <DiscoveryLoading resource="events" />;
+  if (pathname === ROUTES.EVENTS) return <DiscoveryLoading resource="events" />;
   if (pathname === ROUTES.CLUBS) return <DiscoveryLoading resource="clubs" />;
   if (pathname === ROUTES.POSITIONS) return <DiscoveryLoading resource="positions" />;
   if (/^\/(events|clubs)\/\d+\/?$/.test(pathname)) {
     const isEvent = pathname.startsWith("/events/");
     return <Container size="lg"><Stack gap={6}>
-      <PageHeader back={{ href: isEvent ? ROUTES.HOME : ROUTES.CLUBS, label: t(isEvent ? "events.allEvents" : "clubs.allClubs") }} />
+      <PageHeader back={{ href: isEvent ? ROUTES.EVENTS : ROUTES.CLUBS, label: t(isEvent ? "events.allEvents" : "clubs.allClubs") }} />
       <LoadingPage variant="detail" />
     </Stack></Container>;
   }

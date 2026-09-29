@@ -152,6 +152,19 @@ class MediaDownloadError(RuntimeError):
     """A safe explanation of why an Instagram media download failed."""
 
 
+def is_carousel_post(post: dict) -> bool:
+    """A declared carousel stays ambiguous when the provider omits its children."""
+    return str(post.get("type") or "").casefold() == "sidecar" or bool(post.get("childPosts"))
+
+
+def single_post_video_url(post: dict) -> str | None:
+    """A standalone video's posters all describe the same media, unlike a carousel."""
+    if is_carousel_post(post):
+        return None
+    value = post.get("videoUrl")
+    return value if isinstance(value, str) and value else None
+
+
 def download_video(url: object, *, maximum_bytes: int, timeout_seconds: int) -> bytes:
     """Download bounded MP4 bytes from the same trusted CDN as post images."""
     if not isinstance(url, str) or not url:

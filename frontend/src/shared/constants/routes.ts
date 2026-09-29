@@ -13,6 +13,7 @@ import { QP } from "@/shared/constants/queryParams";
 // ── Top-level routes ───────────────────────────────────────────────
 export const ROUTES = {
   HOME: "/",
+  EVENTS: "/events",
   LOGIN: "/login",
   AUTH_CALLBACK: "/auth/callback",
   ONBOARDING: "/onboarding",
@@ -48,7 +49,7 @@ export const ROUTES = {
 
 /** Only plain public URLs are eligible for full-page navigation warming. */
 export const PUBLIC_PAGE_ROUTES: readonly string[] = [
-  ROUTES.HOME,
+  ROUTES.EVENTS,
   ROUTES.POSITIONS,
   ROUTES.CLUBS,
   ROUTES.ABOUT,
@@ -65,7 +66,7 @@ const APP_NAME = "Wat2Do";
 const ROUTE_PAGE_TITLES: Partial<
   Record<(typeof ROUTES)[keyof typeof ROUTES], string>
 > = {
-  [ROUTES.HOME]: "Campus Events",
+  [ROUTES.EVENTS]: "Campus Events",
   [ROUTES.LOGIN]: "Sign In",
   [ROUTES.AUTH_CALLBACK]: "Signing In",
   [ROUTES.ONBOARDING]: "Onboarding",

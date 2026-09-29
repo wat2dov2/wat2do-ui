@@ -8,7 +8,7 @@ import { getClubDirectorySnapshot } from "@/features/clubs/api/clubDirectory.ser
 import { isClubIndexable } from "@/features/clubs/lib/clubSeo";
 import { getPositionDirectorySnapshot } from "@/features/positions/api/positionDirectory.server";
 import { getSchoolFromRequestHost } from "@/shared/constants/schools";
-import { clubPagePath } from "@/shared/constants/routes";
+import { clubPagePath, ROUTES } from "@/shared/constants/routes";
 import { getSchoolCanonicalUrl } from "@/shared/lib/seo";
 
 export const dynamic = "force-dynamic";
@@ -26,7 +26,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const school = getSchoolFromRequestHost(
     requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host"),
   );
-  const rootUrl = getSchoolCanonicalUrl(school, "/");
+  const eventsUrl = getSchoolCanonicalUrl(school, ROUTES.EVENTS);
 
   try {
     const [snapshot, { items: clubs }, positions] = await Promise.all([
@@ -55,7 +55,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
     return [
       {
-        url: rootUrl,
+        url: eventsUrl,
         lastModified: validLastModified(snapshot.latest_added_event?.added_at),
         changeFrequency: "daily",
         priority: 1,
@@ -83,6 +83,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ];
   } catch (error) {
     console.error("School sitemap generation failed:", error);
-    return [{ url: rootUrl, changeFrequency: "daily", priority: 1 }];
+    return [{ url: eventsUrl, changeFrequency: "daily", priority: 1 }];
   }
 }

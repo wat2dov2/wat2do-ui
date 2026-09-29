@@ -5,6 +5,39 @@ When Instagram collapses several posts into one digest, the GitHub processing jo
 The same worker likes, saves, and natively reposts the original event posts selected in newly published Instagram carousels.
 Both queues share one existing Brave Instagram tab, with credentials remaining inside the browser.
 
+## Repair an existing poster or scraped video
+
+New scraped videos are copied to owned S3 storage and played on event and position detail views, with their images retained as posters.
+Previously processed posts remain deduplicated during ordinary scraping, so deploying video support does not redownload historical posts or rerun AI extraction.
+Use the targeted media repair command for an existing event or position.
+It replaces the obsolete Supabase-only image-resize command and uses the same S3 storage, limits, and rendition rules as new uploads.
+Configure the intended database, `STORAGE_BUCKET_NAME`, `STORAGE_PUBLIC_BASE_URL`, and discovery revalidation settings in the command's environment before applying a repair.
+
+```sh
+cd backend
+python scripts/repair_stored_media.py image --event-id 29122
+python scripts/repair_stored_media.py video --event-id 29122
+```
+
+Both commands default to a preview and require exactly one `--event-id` or `--position-id`.
+An image preview reads the owned asset and reports its dimensions and proposed rendition size without uploading or updating the database.
+A video preview without provider data reports the exact original post that must be retrieved.
+Supply `--post-json /path/to/post.json` to reuse one exact-post provider object, or add `--fetch` to explicitly retrieve only that original post through the configured Apify adapter.
+The provider lookup can incur its normal charge; the command never starts a broad scrape or AI extraction.
+
+```sh
+python scripts/repair_stored_media.py video --event-id 29122 --fetch
+python scripts/repair_stored_media.py video --event-id 29122 --post-json /path/to/post.json --apply
+python scripts/repair_stored_media.py image --position-id 123 --apply
+```
+
+Review the preview before adding `--apply`.
+Video repairs verify the exact source post, skip an existing stored video, and refuse carousels whose original slide association cannot be proven.
+Reports omit signed provider CDN query strings.
+Image repairs write a new immutable URL instead of replacing a cached file in place.
+Each update is conditional on the selected row retaining the original media reference, and successful updates refresh that school's discovery data.
+Existing assets remain available to other references and cached pages.
+
 ## Single-node Instagram notification farm
 
 `backend/controlbox/emulator_farm.json` is the single source of truth for the farm.

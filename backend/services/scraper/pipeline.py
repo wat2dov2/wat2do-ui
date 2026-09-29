@@ -33,7 +33,12 @@ from services.scraper.dedup import (
 )
 from services.scraper.event_writer import _lookup_club_by_ig, write_event
 from services.scraper.extractor import extract_post_content
-from services.scraper.image_uploader import upload_post_images, upload_video_from_url
+from services.scraper.image_uploader import (
+    is_carousel_post,
+    single_post_video_url,
+    upload_post_images,
+    upload_video_from_url,
+)
 from services.scraper.org_resolve import resolve_club_for_scrape
 from services.scraper.position_writer import write_position
 from services.scraper.reconciler import reconcile_events
@@ -237,8 +242,10 @@ def _process_one_post(
         source: upload_video_from_url(source) for source in dict.fromkeys(video_sources.values())
     }
     videos = [stored_videos.get(video_sources.get(image, "")) for image in source_images]
-    # A reel can still be useful when only its caption could be extracted.
-    fallback_video = stored_videos.get(post.get("videoUrl") or "") if not uploaded else None
+    # A standalone Reel can provide alternate poster URLs in `images` and
+    # `displayUrl`. Its video still belongs to that poster (or caption alone).
+    # A carousel must retain the exact per-slide association instead.
+    fallback_video = stored_videos.get(single_post_video_url(post) or "")
     _attach_source_metadata(
         events, uploaded=uploaded, videos=videos, fallback_video=fallback_video, school=school
     )
@@ -311,7 +318,7 @@ def _attach_source_metadata(
         if uploaded:
             selected = index if 0 <= index < len(uploaded) else 0
             item["source_image_url"] = uploaded[selected]
-            item["source_video_url"] = videos[selected]
+            item["source_video_url"] = videos[selected] or fallback_video
         elif fallback_video:
             item["source_video_url"] = fallback_video
         item["school"] = school
@@ -492,7 +499,7 @@ def _extract_video_urls(post: dict) -> dict[str, str]:
     """Associate each carousel video's poster with its downloadable source."""
     videos: dict[str, str] = {}
     children = post.get("childPosts")
-    records = [post, *(children if isinstance(children, list) else [])]
+    records = (children if isinstance(children, list) else []) if is_carousel_post(post) else [post]
     for record in records:
         if not isinstance(record, dict):
             continue

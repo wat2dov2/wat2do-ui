@@ -42,7 +42,6 @@ function toStoreValues(filters: FilterState): SearchStoreFilterValues {
     minPrice: normalized.minPrice,
     maxPrice: normalized.maxPrice,
     minGoing: normalized.minGoing,
-    eventFormat: normalized.eventFormat,
     registration: normalized.registration,
     hasFoodFilter: normalized.hasFood,
     employersOnCampus: normalized.employersOnCampus,

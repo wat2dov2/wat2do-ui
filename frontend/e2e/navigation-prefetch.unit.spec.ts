@@ -66,6 +66,30 @@ test.afterEach(() => {
 });
 
 for (const host of ["wat2do.io", "uwaterloo.wat2do.io"]) {
+  test(`root links on ${host} redirect to the canonical events page without losing query state`, async () => {
+    const params = new URLSearchParams([
+      ["event", "42"], ["school", "uwaterloo"], ["query", "free food"], ["returnTo", "/events?tab=new"],
+    ]);
+    const response = await unstable_getResponseFromNextConfig({
+      url: `https://${host}/?${params}`,
+      nextConfig,
+    });
+    expect(response.status).toBe(308);
+    const destination = new URL(getRedirectUrl(response)!);
+    expect(destination.origin).toBe(`https://${host}`);
+    expect(destination.pathname).toBe("/events");
+    expect([...destination.searchParams]).toEqual([...params]);
+  });
+
+  test(`the canonical events page on ${host} does not redirect or rewrite`, async () => {
+    const response = await unstable_getResponseFromNextConfig({
+      url: `https://${host}/events?event=42`,
+      nextConfig,
+    });
+    expect(getRedirectUrl(response)).toBeNull();
+    expect(getRewrittenUrl(response)).toBeNull();
+  });
+
   test(`contact submissions on ${host} keep the upstream collection slash`, async () => {
     const response = await unstable_getResponseFromNextConfig({
       url: `https://${host}/api/contact/`,
@@ -82,7 +106,7 @@ test("waits for page resources, then warms each adjacent full page once during i
   const browser = browserScheduler();
   browser.document.readyState = "loading";
   const router = recordingRouter();
-  const stop = warmPublicPages(router, "/");
+  const stop = warmPublicPages(router, "/events");
   expect(browser.timers.size).toBe(0);
   browser.document.readyState = "complete";
   browser.window.dispatchEvent(new Event("load"));
@@ -129,7 +153,7 @@ test("pauses hidden or offline tabs and resumes the remaining routes", () => {
   browser.window.dispatchEvent(new Event("online"));
   browser.runTimer();
   browser.runIdle();
-  expect(router.calls.map(({ href }) => href)).toEqual(["/"]);
+  expect(router.calls.map(({ href }) => href)).toEqual(["/events"]);
   stop();
 });
 
@@ -137,7 +161,7 @@ test("respects data saver and slow connections while explicit intent can still p
   const browser = browserScheduler();
   const router = recordingRouter();
   browser.navigator.connection.saveData = true;
-  const stop = warmPublicPages(router, "/");
+  const stop = warmPublicPages(router, "/events");
   expect(browser.timers.size).toBe(0);
   browser.navigator.connection.saveData = false;
   browser.navigator.connection.effectiveType = "2g";
@@ -157,7 +181,7 @@ test("respects data saver and slow connections while explicit intent can still p
 test("cancels scheduled work on cleanup, including callbacks already queued", () => {
   const browser = browserScheduler();
   const router = recordingRouter();
-  const stop = warmPublicPages(router, "/");
+  const stop = warmPublicPages(router, "/events");
   browser.runTimer();
   const callback = [...browser.idleCallbacks.values()][0]!;
   stop();
@@ -179,7 +203,7 @@ test("uses bounded deferred work when requestIdleCallback is unavailable", () =>
   browser.runTimer();
   browser.runTimer();
   browser.runTimer();
-  expect(router.calls.map(({ href }) => href)).toEqual(["/", "/positions", "/about", "/support-local", "/login"]);
+  expect(router.calls.map(({ href }) => href)).toEqual(["/events", "/positions", "/about", "/support-local", "/login"]);
   expect(browser.timers.size).toBe(0);
   stop();
 });
@@ -217,7 +241,7 @@ test("the public page warmer skips the current login page and never selects priv
   const browser = browserScheduler();
   const router = recordingRouter();
   const stop = warmPublicPages(router, "/login");
-  for (const href of ["/", "/positions", "/clubs", "/about", "/support-local"]) {
+  for (const href of ["/events", "/positions", "/clubs", "/about", "/support-local"]) {
     const previousCount = router.calls.length;
     browser.runTimer();
     browser.runIdle();

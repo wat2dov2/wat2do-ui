@@ -48,7 +48,7 @@ function AboutSearchLink({
   club?: boolean;
   children: ReactNode;
 }) {
-  const href = club ? ROUTES.CLUBS : ROUTES.HOME;
+  const href = club ? ROUTES.CLUBS : ROUTES.EVENTS;
 
   return (
     <Link
@@ -245,7 +245,7 @@ export function AboutPage({ isLoading = false }: { isLoading?: boolean }) {
 
         <Stack direction="horizontal" gap={4}>
           <Button asChild variant="outline">
-            <NextLink href={ROUTES.HOME}>
+            <NextLink href={ROUTES.EVENTS}>
               {t("contact.actions.browse")}
             </NextLink>
           </Button>

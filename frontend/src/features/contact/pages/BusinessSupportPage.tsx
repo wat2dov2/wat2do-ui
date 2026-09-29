@@ -19,7 +19,7 @@ export function BusinessSupportPage() {
     <Container size="sm">
       <Stack gap={6}>
         <PageHeader
-          back={{ href: ROUTES.HOME, label: t("events.allEvents") }}
+          back={{ href: ROUTES.EVENTS, label: t("events.allEvents") }}
           title={city
             ? t("contact.businessSupport.titleCity", { city })
             : t("contact.businessSupport.title")}

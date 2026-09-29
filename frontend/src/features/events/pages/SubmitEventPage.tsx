@@ -30,7 +30,7 @@ export function SubmitEventPage() {
   );
 
   const close = useCallback(() => {
-    router.push(ROUTES.HOME);
+    router.push(ROUTES.EVENTS);
   }, [router]);
 
   const submit = useCallback(
@@ -52,7 +52,7 @@ export function SubmitEventPage() {
     <Container size="lg">
       <Stack gap={6}>
         <PageHeader
-          back={{ href: ROUTES.HOME, label: t("events.allEvents") }}
+          back={{ href: ROUTES.EVENTS, label: t("events.allEvents") }}
           title={t("events.createEvent")}
           description={t("events.submitEventSchoolDescription", {
             school: getSchoolName(school),

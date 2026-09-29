@@ -43,7 +43,7 @@ export function AuthEntryPage({
 
   useEffect(() => {
     if (!isPending && isAuthenticated) {
-      router.replace(returnTo ?? ROUTES.HOME);
+      router.replace(returnTo ?? ROUTES.EVENTS);
     }
   }, [isPending, isAuthenticated, returnTo, router]);
 
@@ -77,7 +77,7 @@ export function AuthEntryPage({
 
           router.push(
             returnTo ??
-              `${ROUTES.HOME}?${new URLSearchParams({
+              `${ROUTES.EVENTS}?${new URLSearchParams({
                 [QP.SCHOOL]: session.school,
               })}`,
           );

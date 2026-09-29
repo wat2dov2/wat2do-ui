@@ -56,7 +56,7 @@ export function EventDetailsPageContainer({
       <Stack gap={6}>
         <PageHeader
           back={{
-            href: ROUTES.HOME,
+            href: ROUTES.EVENTS,
             label: t("events.allEvents"),
           }}
           actions={event ? <EventActions event={event} /> : undefined}

@@ -30,7 +30,7 @@ fail() {
 
 fetch() {
   # Prints the body; non-zero exit means the request itself failed or timed out.
-  curl -fsS --max-time "$TIMEOUT" "https://$1/"
+  curl -fsS --max-time "$TIMEOUT" "https://$1/events"
 }
 
 echo "Smoke testing subdomain scoping (apex=$APEX school=$SCHOOL_HOST)"

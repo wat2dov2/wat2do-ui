@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { usePathname, useRouter } from "next/navigation";
+import { ROUTES } from "@/shared/constants/routes";
 import { useFilterActions } from "@/features/search/hooks/useFilterState";
 import { ClubTypeIcon } from "@/shared/components/ClubTypeIcon";
 import {
@@ -70,8 +71,8 @@ export function ClubBadgeDropdown({
     if (clubName) {
       filterActions.updateFilterState({ clubs: [clubName] });
       onFilterSelect?.();
-      if (pathname !== "/") {
-        router.push("/");
+      if (pathname !== ROUTES.EVENTS) {
+        router.push(ROUTES.EVENTS);
       }
     }
   }, [clubName, filterActions, onFilterSelect, pathname, router]);

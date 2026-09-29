@@ -8,6 +8,8 @@ in filtering fails fast in unit tests.
 from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 
+import pytest
+
 from services.scraper import pipeline as pipeline_module
 from services.scraper.org_resolve import ResolvedClub
 from services.scraper.pipeline import (
@@ -285,3 +287,87 @@ def test_failed_video_download_retains_extracted_event_and_poster(monkeypatch):
     assert items[0]["source_image_url"] == "stored.jpg"
     assert items[0]["source_video_url"] is None
     assert result.events_saved == 1
+
+
+def test_single_reel_keeps_video_when_provider_poster_urls_differ(monkeypatch):
+    events = [{"title": "Video event", "image_index": 0}]
+    positions = [{"title": "Video position", "image_index": 0}]
+    monkeypatch.setattr(pipeline_module, "upload_post_images", lambda urls: ["stored.jpg"])
+    monkeypatch.setattr(pipeline_module, "upload_video_from_url", lambda url: "stored.mp4")
+    monkeypatch.setattr(
+        pipeline_module,
+        "extract_post_content",
+        lambda **kwargs: SimpleNamespace(events=events, positions=positions),
+    )
+    pipeline_module._process_one_post(
+        {
+            "images": ["https://cdn/alternate-poster.jpg"],
+            "displayUrl": "https://cdn/display-poster.jpg",
+            "videoUrl": "https://cdn/reel.mp4",
+        },
+        handle="club",
+        school="uwaterloo",
+        dry_run=True,
+        result=SimpleNamespace(
+            events_extracted=0, positions_extracted=0, events_saved=0, positions_saved=0
+        ),
+    )
+    for item in [*events, *positions]:
+        assert item["source_image_url"] == "stored.jpg"
+        assert item["source_video_url"] == "stored.mp4"
+
+
+def test_carousel_root_video_is_not_attached_to_a_different_slide(monkeypatch):
+    items = [{"title": "Image event", "image_index": 1}]
+    monkeypatch.setattr(pipeline_module, "upload_post_images", lambda urls: list(urls))
+    monkeypatch.setattr(pipeline_module, "upload_video_from_url", lambda url: "stored.mp4")
+    monkeypatch.setattr(
+        pipeline_module,
+        "extract_post_content",
+        lambda **kwargs: SimpleNamespace(events=items, positions=[]),
+    )
+    pipeline_module._process_one_post(
+        {
+            "displayUrl": "video-poster.jpg",
+            "videoUrl": "cdn.mp4",
+            "childPosts": [
+                {"displayUrl": "video-poster.jpg", "videoUrl": "cdn.mp4"},
+                {"displayUrl": "image.jpg"},
+            ],
+        },
+        handle="club",
+        school="uwaterloo",
+        dry_run=True,
+        result=SimpleNamespace(events_extracted=0, positions_extracted=0, events_saved=0),
+    )
+    assert items[0]["source_image_url"] == "image.jpg"
+    assert items[0]["source_video_url"] is None
+
+
+@pytest.mark.parametrize("children", [None, []])
+def test_declared_carousel_without_children_never_uses_its_root_video(monkeypatch, children):
+    from unittest.mock import MagicMock
+
+    items = [{"title": "Uncertain carousel", "image_index": 0}]
+    monkeypatch.setattr(pipeline_module, "upload_post_images", lambda urls: list(urls))
+    upload = MagicMock(return_value="stored.mp4")
+    monkeypatch.setattr(pipeline_module, "upload_video_from_url", upload)
+    monkeypatch.setattr(
+        pipeline_module,
+        "extract_post_content",
+        lambda **kwargs: SimpleNamespace(events=items, positions=[]),
+    )
+    pipeline_module._process_one_post(
+        {
+            "type": "Sidecar",
+            "displayUrl": "poster.jpg",
+            "videoUrl": "wrong.mp4",
+            "childPosts": children,
+        },
+        handle="club",
+        school="uwaterloo",
+        dry_run=True,
+        result=SimpleNamespace(events_extracted=0, positions_extracted=0, events_saved=0),
+    )
+    assert items[0]["source_video_url"] is None
+    upload.assert_not_called()

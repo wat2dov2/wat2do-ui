@@ -2456,6 +2456,8 @@ export interface components {
             campus_season_ids?: string[] | null;
             /** Id */
             id: number;
+            /** Club Id */
+            club_id?: number | null;
             /** Title */
             title: string;
             /** Description */

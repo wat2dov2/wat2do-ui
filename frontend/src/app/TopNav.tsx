@@ -50,10 +50,10 @@ interface Wat2DoLogoLinkProps {
 
 function Wat2DoLogoLink({ label, onNavigate }: Wat2DoLogoLinkProps) {
   const router = useRouter();
-  const prefetch = () => prefetchPublicPage(router, ROUTES.HOME);
+  const prefetch = () => prefetchPublicPage(router, ROUTES.EVENTS);
   return (
     <NextLink
-      href={ROUTES.HOME}
+      href={ROUTES.EVENTS}
       prefetch={false}
       onPointerEnter={prefetch}
       onFocus={prefetch}
@@ -74,7 +74,7 @@ function Wat2DoLogoLink({ label, onNavigate }: Wat2DoLogoLinkProps) {
 }
 
 const PRIMARY_NAV_ITEMS = [
-  { labelKey: "navigation.events", href: ROUTES.HOME, Icon: Ticket },
+  { labelKey: "navigation.events", href: ROUTES.EVENTS, Icon: Ticket },
   {
     labelKey: "navigation.positions",
     href: ROUTES.POSITIONS,
@@ -95,7 +95,7 @@ const SETTINGS_NAV_ITEM = {
 } as const;
 
 function isRouteActive(pathname: string, href: string): boolean {
-  if (href === ROUTES.HOME) return pathname === ROUTES.HOME;
+  if (href === ROUTES.EVENTS) return pathname === ROUTES.EVENTS;
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 

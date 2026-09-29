@@ -6,6 +6,7 @@ import imgContactHero from "@/assets/contact_hero.png";
 import { getSchoolBrowseSnapshot } from "@/features/events/api/eventFeed.server";
 import type { PaginatedEventsResponse } from "@/features/events/api/events.api";
 import { getSchool } from "@/shared/api/schools.server";
+import { ROUTES } from "@/shared/constants/routes";
 import { controlBox } from "@/shared/config/controlBox";
 import { getSchoolFromRequestHost } from "@/shared/constants/schools";
 import {
@@ -71,13 +72,13 @@ export async function generateMetadata(): Promise<Metadata> {
   return buildPublicPageMetadata({
     title,
     description,
-    canonicalUrl: getSchoolCanonicalUrl(school, "/"),
+    canonicalUrl: getSchoolCanonicalUrl(school, ROUTES.EVENTS),
     image,
     index: Boolean(snapshot && snapshot.items.length > 0),
   });
 }
 
-export default async function HomePage() {
+export default async function EventsPage() {
   const school = await resolveRequestSchool();
   const snapshot = await loadInitialSnapshot(school);
 

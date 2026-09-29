@@ -24,7 +24,6 @@ interface EventViewOnlyFields {
   /** Live/upcoming/past flag derived elsewhere. */
   isLive?: boolean;
   /** Full-detail/admin-only fields are absent from list summaries. */
-  club_id?: ApiEventResponse["club_id"];
   description?: ApiEventResponse["description"];
   source_url?: ApiEventResponse["source_url"];
   club_logo_url?: ApiEventResponse["club_logo_url"];

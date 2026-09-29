@@ -57,7 +57,7 @@ export function OnboardingPage() {
       faculty: string;
       isFirstYear: boolean;
     }) => {
-      const homeWithSchool = `${ROUTES.HOME}?${new URLSearchParams({ [QP.SCHOOL]: data.school })}`;
+      const homeWithSchool = `${ROUTES.EVENTS}?${new URLSearchParams({ [QP.SCHOOL]: data.school })}`;
 
       // Anonymous preview (reached via the "continue without signing in" path):
       // there is no account to attach preferences to, so send them straight to

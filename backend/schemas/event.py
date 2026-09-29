@@ -273,6 +273,7 @@ class EventSummaryResponse(EventDiscoveryFields):
     """
 
     id: int
+    club_id: int | None = None
     title: str
     description: str | None = None
     location: str | None = None

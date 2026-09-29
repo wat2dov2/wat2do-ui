@@ -489,8 +489,8 @@ This matrix is the intended default policy and must be finalized before implemen
 
 | Surface | Default policy | Canonical policy | Required quality gate |
 | --- | --- | --- | --- |
-| Root `/` | Index as the resolved school feed when inventory is useful | Canonical to the resolved school host, with the bare root defaulting to Waterloo | Must not compete with the owning school URL |
-| School home `/` | Index | Self on the owning school host | Server-rendered heading, intro, current event links, unique school metadata |
+| Root `/` | Permanent redirect to `/events`, preserving query parameters | Redirect on the current host; the destination declares the owning school canonical | Must not appear in the sitemap or compete with the event feed |
+| School event feed `/events` | Index when inventory is useful | Self on the owning school host, with the bare brand host defaulting to Waterloo | Server-rendered heading, intro, current event links, unique school metadata |
 | `/events/{id}` | Conditional index | Self on the event's school host | Valid event, unique record, useful visible data, correct 200 or 404 behavior |
 | `/organizations` | Index | Self on the owning school host | Server-rendered directory, crawlable pagination, unique school metadata |
 | `/organizations/{id}` | Conditional index | Self on the organization's school host | Approved public organization with useful visible data |

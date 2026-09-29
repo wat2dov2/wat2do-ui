@@ -67,7 +67,6 @@ export function useFilterState() {
       minPrice: s.minPrice,
       maxPrice: s.maxPrice,
       minGoing: s.minGoing,
-      eventFormat: s.eventFormat,
       registration: s.registration,
       hasFoodFilter: s.hasFoodFilter,
       employersOnCampus: s.employersOnCampus,

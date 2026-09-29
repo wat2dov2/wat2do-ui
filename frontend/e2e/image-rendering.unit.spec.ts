@@ -9,7 +9,8 @@ import sharp from "sharp";
 import imageDelivery from "../../backend/controlbox/image_delivery.json" with { type: "json" };
 import instagramPublishing from "../../backend/controlbox/instagram_publishing.json" with { type: "json" };
 
-let renderedSlide: ReactElement<{ model: { imageSrc?: string; avatarSrc?: string; description?: string; siteName?: string; tiles?: string[] } }> | undefined;
+let renderedSlide: ReactElement<{ model: { imageSrc?: string; avatarSrc?: string; description?: string; siteName?: string; mapSrc?: string; hiringLine?: string; tiles?: string[] } }> | undefined;
+const clubPositionRequests: [number, string][] = [];
 
 // Match the existing server-rendering specs: use React's JSX runtime rather
 // than Playwright's browser component-test descriptors. No browser is needed.
@@ -28,13 +29,18 @@ function loadComponent(path: string): Record<string, React.ComponentType<Record<
     exports: componentModule.exports,
     URL,
     Buffer,
+    AbortSignal,
     process,
     fetch: (...args: Parameters<typeof fetch>) => globalThis.fetch(...args),
     require: (id: string) => {
       if (id.endsWith(".webp")) return { src: `/_next/static/media/${id.split("/").pop()}`, width: 1280, height: 960, blurDataURL: "data:image/webp;base64,UklGRg==" };
       if (id === "react-i18next") return { useTranslation: () => ({ t: (key: string) => key }) };
       if (id === "@/shared/layout") return loadComponent("shared/layout/stack");
-      if (id === "@/shared/api/schools.server") return { getSchool: async () => ({ slug: "uwaterloo", language: "en", primary_color: "#6b238e", secondary_color: "#ffd54f" }) };
+      if (id === "@/shared/api/schools.server") return { getSchool: async () => ({ slug: "uwaterloo", name: "University of Waterloo", language: "en", primary_color: "#6b238e", secondary_color: "#ffd54f" }) };
+      if (id === "@/features/positions/api/positionDirectory.server") return { getClubPositionsSnapshot: async (clubId: number, school: string) => {
+        clubPositionRequests.push([clubId, school]);
+        return [{ title: "Community Outreach Coordinator" }, { title: "Events and Marketing Director" }];
+      } };
       if (id === "@/features/admin/components/instagram/slides/SlideTemplates") return loadComponent(id.slice(2));
       if (id === "satori") {
         const satori = require(id).default;
@@ -213,6 +219,7 @@ test.describe("Instagram raster preparation", () => {
   const originalStorageBase = process.env.STORAGE_PUBLIC_BASE_URL;
   const originalLogo = process.env.NEXT_PUBLIC_INSTAGRAM_COVER_LOGO_SVG;
   const originalDoodles = process.env.NEXT_PUBLIC_CLUB_CATEGORY_DOODLE_SVGS;
+  const originalMapKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
   let POST: typeof import("../src/app/api/render-instagram-slide/route").POST;
 
   test.beforeAll(() => {
@@ -232,11 +239,15 @@ test.describe("Instagram raster preparation", () => {
   });
   test.beforeEach(() => {
     process.env.STORAGE_PUBLIC_BASE_URL = "https://wat2do.io/media";
+    delete process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+    clubPositionRequests.length = 0;
   });
   test.afterEach(() => {
     globalThis.fetch = originalFetch;
     if (originalStorageBase === undefined) delete process.env.STORAGE_PUBLIC_BASE_URL;
     else process.env.STORAGE_PUBLIC_BASE_URL = originalStorageBase;
+    if (originalMapKey === undefined) delete process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+    else process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY = originalMapKey;
   });
 
   function request(body: object) {
@@ -349,6 +360,55 @@ test.describe("Instagram raster preparation", () => {
     }
     expect(avatarPixels).toBeGreaterThan(1000);
     expect(renderToStaticMarkup(renderedSlide!)).toContain(description);
+  });
+
+  test("published event artwork includes the map, open roles, both comment avatars and the school like badge", async () => {
+    process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY = "test-maps-key";
+    const avatarUrl = "https://wat2do.io/media/club-logos/film-club.webp";
+    const poster = await sharp({ create: { width: 1080, height: 1350, channels: 3, background: "#ef5014" } }).png().toBuffer();
+    const avatar = await sharp({ create: { width: 88, height: 88, channels: 3, background: "#2e5ac8" } }).png().toBuffer();
+    const map = await sharp({ create: { width: 640, height: 200, channels: 3, background: "#20b070" } }).png().toBuffer();
+    const mapRequests: URL[] = [];
+    globalThis.fetch = async url => {
+      const parsed = new URL(String(url));
+      if (parsed.hostname === "maps.googleapis.com") mapRequests.push(parsed);
+      return new Response(parsed.hostname === "maps.googleapis.com" ? map : String(url) === avatarUrl ? avatar : poster, { headers: { "content-type": "image/png" } });
+    };
+    const response = await POST(request({
+      kind: "event", school: "uwaterloo",
+      event: {
+        id: 42, club_id: 7, tz: "America/Toronto", category: "Arts & Culture", title: "Campus Film Night",
+        club: "Campus Film Club", club_ig: "campusfilm", club_logo_url: avatarUrl,
+        description: "Join the campus film club for an evening of short films, good conversation, and new friends. ".repeat(4),
+        source_image_url: posterUrl, location: "Student Life Centre", price: 5, registration: true,
+        dtstart_utc: "2026-10-02T23:00:00Z", dtend_utc: "2026-10-03T01:00:00Z",
+      },
+    }));
+    expect(response.status).toBe(200);
+    expect(clubPositionRequests).toEqual([[7, "uwaterloo"]]);
+    expect(mapRequests).toHaveLength(1);
+    expect(mapRequests[0].searchParams.get("markers")).toBe("Student Life Centre, University of Waterloo");
+    expect(renderedSlide!.props.model.mapSrc).toMatch(/^data:image\/png;base64,/);
+    expect(renderedSlide!.props.model.hiringLine).toBe("Hiring: Community Outreach Coordinator, Events and Marketing Director");
+    expect(renderToStaticMarkup(renderedSlide!)).not.toContain("Arts &amp; Culture");
+    const output = Buffer.from(await response.arrayBuffer());
+    const artifact = test.info().outputPath("complete-event-slide.png");
+    writeFileSync(artifact, output);
+    await test.info().attach("complete-event-slide", { path: artifact, contentType: "image/png" });
+    const pixelCount = async (region: { left: number; top: number; width: number; height: number }, color: number[]) => {
+      const pixels = await sharp(output).extract(region).removeAlpha().raw().toBuffer();
+      let count = 0;
+      for (let index = 0; index < pixels.length; index += 3) {
+        if (color.every((value, channel) => Math.abs(pixels[index + channel] - value) <= 3)) count++;
+      }
+      return count;
+    };
+    // Count rendered pixels, so a correct view model cannot hide missing artwork.
+    expect(await pixelCount({ left: 32, top: 950, width: 88, height: 100 }, [107, 35, 142])).toBeGreaterThan(2000);
+    expect(await pixelCount({ left: 80, top: 1000, width: 40, height: 50 }, [237, 73, 86])).toBeGreaterThan(100);
+    expect(await pixelCount({ left: 32, top: 1070, width: 52, height: 70 }, [46, 90, 200])).toBeGreaterThan(1000);
+    expect(await pixelCount({ left: 32, top: 1170, width: 52, height: 70 }, [107, 35, 142])).toBeGreaterThan(1000);
+    expect(await pixelCount({ left: 100, top: 1200, width: 320, height: 150 }, [32, 176, 112])).toBeGreaterThan(30000);
   });
 
   for (const [kind, visiblePrefix] of Object.entries({

@@ -476,7 +476,7 @@ export function EventActions({
       if (onDeleted) {
         onDeleted();
       } else {
-        router.replace(ROUTES.HOME);
+        router.replace(ROUTES.EVENTS);
         router.refresh();
       }
     } catch {

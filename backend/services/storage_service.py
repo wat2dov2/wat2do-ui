@@ -229,6 +229,25 @@ class StorageService:
 
         return f"{self._public_base_url}/{bucket}/{path}"
 
+    def download_file(self, bucket: str, path: str) -> tuple[bytes, str]:
+        """Read one owned asset for repair through the same S3 configuration as uploads."""
+        if bucket not in self.BUCKETS or not _is_safe_storage_path(path):
+            raise ValidationError("Invalid storage asset path")
+        self._require_configuration()
+        response = self._get_s3_client().get_object(
+            Bucket=self._bucket_name, Key=self._object_key(bucket, path)
+        )
+        body = response["Body"]
+        try:
+            # Repairs must obey the same bounded media contract as new uploads.
+            limit = self.get_file_size_limit(bucket)
+            data = body.read(limit + 1)
+            if len(data) > limit:
+                raise ValidationError("Stored asset exceeds the configured media size limit")
+            return data, response.get("ContentType", "")
+        finally:
+            body.close()
+
     def delete_file(self, bucket: str, path: str) -> None:
         """Delete a file by its path within a bucket.
 

@@ -120,7 +120,7 @@ test.describe("Onboarding Wizard", () => {
       await expect(done).toBeEnabled();
       await done.click();
 
-      await expect(page).toHaveURL(`${BASE}/?school=uwaterloo`);
+      await expect(page).toHaveURL(`${BASE}/events?school=uwaterloo`);
       await expect.poll(() => profileUpdates).toEqual([{
         faculty: answerQuestions ? "Mathematics" : null,
         school: "uwaterloo",

@@ -752,10 +752,12 @@ def test_slide_payload_flattens_the_first_occurrence_for_the_renderer():
 
 
 @pytest.mark.parametrize("club_logo_url", ["https://example.com/club-avatar.jpg", None])
-def test_slide_payload_keeps_live_club_profile_and_event_copy(monkeypatch, club_logo_url):
+@pytest.mark.parametrize("club_id", [17, None])
+def test_slide_payload_keeps_live_club_profile_and_event_copy(monkeypatch, club_logo_url, club_id):
     calls: list[tuple] = []
     row = {
         "id": 7,
+        "club_id": club_id,
         "title": "Games night",
         "description": "Join us for board games.\nSnacks are provided!",
         "location": "Student Life Centre",
@@ -789,9 +791,13 @@ def test_slide_payload_keeps_live_club_profile_and_event_copy(monkeypatch, club_
     # Exercise the shared database hydration, not a pre-populated slide model.
     selected = next(args[0] for name, args, _ in calls if name == "select")
     assert "description" in selected.split(",")
+    assert "club_id" in selected.split(",")
     assert service.event_query.CLUB_EMBED in selected
     assert service.event_query.SCHOOL_EMBED in selected
     assert payload["description"] == row["description"]
+    # The batch preview and renderer must identify the host for its hiring lookup.
+    assert event.club_id == club_id
+    assert payload["club_id"] == club_id
     assert payload["club_logo_url"] == club_logo_url
     assert payload["club"] == "Games Club"
     assert payload["ig_handle"] == "gamesclub_events"

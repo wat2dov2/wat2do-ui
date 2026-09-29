@@ -552,7 +552,7 @@ async function seedQrData(
 
 test.describe("Loading shells", () => {
   for (const listing of [
-    { resource: "events", path: "/", heading: "upcoming events", search: "Search events", add: "Add event", empty: "No events scheduled" },
+    { resource: "events", path: "/events", heading: "upcoming events", search: "Search events", add: "Add event", empty: "No events scheduled" },
     { resource: "clubs", path: "/clubs", heading: "clubs", search: "Search clubs...", add: "Add club", empty: "No clubs found" },
     { resource: "positions", path: "/positions", heading: "positions", search: "Search roles, skills, or locations...", add: "Add position", empty: "No open positions found" },
   ]) {
@@ -1797,7 +1797,7 @@ test.describe("Club Integrations", () => {
 test.describe("Discovery before hydration", () => {
   test.use({ javaScriptEnabled: false });
 
-  for (const path of ["/", "/clubs", "/positions"]) {
+  for (const path of ["/events", "/clubs", "/positions"]) {
     test(`renders visible cards without JavaScript on ${path}`, async ({ page, next }) => {
       await mockApi(page, next, url => apiPath(url) === "/positions", async () => ({ json: {
         items: [{
@@ -1995,7 +1995,7 @@ test.describe("Events Page", () => {
         response.url().endsWith("/icons/club-types/utsc-scsu.svg") &&
         response.status() === 200,
     );
-    await page.goto("http://utsc.wat2do.localhost:3000/school/utsc");
+    await page.goto("http://utsc.wat2do.localhost:3000/events");
 
     await expect(
       page.getByRole("heading", { name: "UTSC Eats SCSU Logo Preview" }),
@@ -2146,7 +2146,7 @@ test.describe("Events Page", () => {
     await expect(card).toBeVisible();
     await card.click();
     await expect(page.getByRole("dialog", { name: "Tech Career Fair" })).toBeVisible();
-    await expect(page).toHaveURL(`${BASE}/`);
+    await expect(page).toHaveURL(`${BASE}/events`);
 
     const eventDrawer = page.getByRole("dialog", { name: "Tech Career Fair" });
     const hostSection = eventDrawer.locator('[data-slot="event-host"]');
@@ -2396,7 +2396,7 @@ test.describe("Events Page", () => {
       .click();
 
     await expect(eventDrawer).not.toBeVisible();
-    await expect(page).toHaveURL(BASE + "/");
+    await expect(page).toHaveURL(BASE + "/events");
     await expect(page.locator('article[data-event-id="1"]:visible')).toBeVisible();
   });
 
@@ -2469,7 +2469,7 @@ test.describe("Events Page", () => {
     await pageDeleteDialog.getByRole("button", { name: "Delete" }).click();
 
     await expect.poll(() => deleteRequests).toBe(1);
-    await expect(page).toHaveURL(`${BASE}/`);
+    await expect(page).toHaveURL(`${BASE}/events`);
   });
 
   for (const deleteStatus of [204, 404, 403, 504]) {
@@ -3586,7 +3586,7 @@ test.describe("Events Page", () => {
     await expect(page.getByRole("combobox", { name: "Event format" })).toHaveCount(0);
     await expect(filters.getByRole("button", { name: "Holidays", exact: true })).toHaveCount(0);
     const logo = page.getByRole("banner").getByRole("link", { name: "Events", exact: true }).first();
-    await expect(logo).toHaveAttribute("href", "/");
+    await expect(logo).toHaveAttribute("href", "/events");
   });
 
   test("filters events by preset or custom date from the quick-filter strip", async ({
@@ -4319,7 +4319,7 @@ for (const [detail, message] of [
   });
 }
 
-for (const route of ["/", "/positions", "/clubs"]) {
+for (const route of ["/events", "/positions", "/clubs"]) {
   test(`listing header background spans the viewport on ${route}`, async ({ page }) => {
     for (const width of [390, 1280]) {
       await page.setViewportSize({ width, height: 844 });
@@ -4832,25 +4832,29 @@ test.describe("Navigation", () => {
   }
 
   test("main pages load without errors", async ({ page }) => {
-    const routes = ["/", "/login", "/onboarding", "/clubs", "/about", "/settings"];
+    const routes = ["/events", "/login", "/onboarding", "/clubs", "/about", "/settings"];
     for (const route of routes) {
       const res = await page.goto(`${BASE}${route}`);
       expect(res?.status()).toBe(200);
     }
   });
 
-  test("root rewrite serves the same runtime as direct school route", async ({ request }) => {
-    const rootResponse = await request.get(`${BASE}/`);
-    const schoolResponse = await request.get(`${BASE}/school/uwaterloo`);
-    const rootHtml = await rootResponse.text();
-    const schoolHtml = await schoolResponse.text();
+  test("root redirects preserve query state and the events page owns canonical metadata", async ({ request }) => {
+    const params = new URLSearchParams([
+      ["event", "1"], ["school", "uwaterloo"], ["tag", "free food"], ["tag", "new"],
+    ]);
+    const rootResponse = await request.get(`${BASE}/?${params}`, { maxRedirects: 0 });
+    expect(rootResponse.status()).toBe(308);
+    const destination = new URL(rootResponse.headers().location, BASE);
+    expect(destination.origin).toBe(BASE);
+    expect(destination.pathname).toBe("/events");
+    expect([...destination.searchParams]).toEqual([...params]);
 
-    expect(rootResponse.status()).toBe(200);
-    expect(schoolResponse.status()).toBe(200);
-    expect(rootHtml).not.toContain("server-event-feed");
-    expect(schoolHtml).not.toContain("server-event-feed");
-    expect(rootHtml.includes("hmr-client")).toBe(schoolHtml.includes("hmr-client"));
-    expect(rootHtml.includes("next-devtools")).toBe(schoolHtml.includes("next-devtools"));
+    const response = await request.get(destination.toString());
+    expect(response.status()).toBe(200);
+    const html = await response.text();
+    expect(html).toContain('rel="canonical" href="https://uwaterloo.wat2do.io/events"');
+    expect(html).toContain('property="og:url" content="https://uwaterloo.wat2do.io/events"');
   });
 
   test("default and alternate school routes load without event feed errors", async ({ page }) => {
@@ -4979,9 +4983,7 @@ test.describe("Navigation", () => {
 
     await expect(navigation.getByRole("link", { name: "About", exact: true }))
       .toHaveAttribute("href", "/about");
-    const logo = page.getByRole("banner").getByRole("link", { name: "About", exact: true }).first();
-    await expect(logo).toHaveAttribute("href", "/about");
-    await logo.click();
+    await navigation.getByRole("link", { name: "About", exact: true }).click();
     await expect(page).toHaveURL(/\/about$/);
     await expect(page).toHaveTitle("About Wat2Do | Campus Event Discovery");
     await expect(page.getByText("How you can help us", { exact: true })).toBeVisible();
@@ -4991,6 +4993,11 @@ test.describe("Navigation", () => {
         exact: true,
       }),
     ).toHaveAttribute("href", "/promote");
+    const logo = page.getByRole("banner").getByRole("link", { name: "Events", exact: true }).first();
+    await expect(logo).toHaveAttribute("href", "/events");
+    await logo.click();
+    await expect(page).toHaveURL(`${BASE}/events`);
+    await expect(page.locator('article[data-event-id="1"]:visible')).toBeVisible();
   });
 
   test("sends an About message through the API proxy without a redirect", async ({ page, next }) => {
@@ -5385,7 +5392,7 @@ test.describe("Position submissions", () => {
 
 test.describe("Discovery query diagnostics", () => {
   for (const listing of [
-    { surface: "events", path: "/", placeholder: "Search events", filter: "Free", filters: { maxPrice: "0" } },
+    { surface: "events", path: "/events", placeholder: "Search events", filter: "Free", filters: { maxPrice: "0" } },
     { surface: "clubs", path: "/clubs", placeholder: "Search clubs...", filter: "Technology", filters: { categories: ["Technology"] } },
   ]) {
     test(`${listing.surface} records applied queries without waiting for telemetry`, async ({ page }) => {

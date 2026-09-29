@@ -28,35 +28,26 @@ test.beforeEach(() => {
 });
 test.afterEach(() => { Date.now = originalNow; });
 
-test("format selection uses the existing venue classifier and excludes unknown venues only when narrowed", () => {
+test("removed format filters in legacy handoffs cannot silently narrow the event list", () => {
+  const legacyFilters = JSON.parse('{"eventFormat":"online","sortOrder":"desc"}');
+  useSearchStore.getState().setFilterState(normalizeFilterState(legacyFilters));
   expect(visibleEvents()).toEqual([1, 2, 3, 4, 5]);
-  useSearchStore.getState().setFilterState({ ...EMPTY_FILTER_STATE, eventFormat: "online" });
-  expect(visibleEvents()).toEqual([2, 3]);
-  useSearchStore.getState().setFilterState({ ...EMPTY_FILTER_STATE, eventFormat: "inPerson" });
-  expect(visibleEvents()).toEqual([1]);
-});
-
-test("format combines with existing Free, Food and minimum Going filters", () => {
-  useSearchStore.getState().setFilterState({ ...EMPTY_FILTER_STATE, eventFormat: "online", maxPrice: "0", minGoing: 2 });
-  expect(visibleEvents()).toEqual([2]);
-  useSearchStore.getState().setFilterState({ ...EMPTY_FILTER_STATE, eventFormat: "inPerson", maxPrice: "0", hasFood: true, minGoing: 5 });
-  expect(visibleEvents()).toEqual([1]);
-  expect(getFilterCounts(useSearchStore.getState())).toBe(4);
-});
-
-test("format survives filter handoff and resets through the shared Clear all action", () => {
-  useSearchStore.getState().setFilterState(normalizeFilterState({ eventFormat: "online", sortOrder: "desc" }));
-  const handoff = storeStatesToFilterState(useSearchStore.getState());
-  expect(normalizeFilterState(JSON.parse(JSON.stringify(handoff))).eventFormat).toBe("online");
-  useSearchStore.getState().setFilterState(clearNarrowingFilterState(handoff));
-  expect(useSearchStore.getState().eventFormat).toBe("any");
-  expect(useSearchStore.getState().sortOrder).toBe("desc");
   expect(getFilterCounts(useSearchStore.getState())).toBe(0);
-  expect(visibleEvents()).toHaveLength(5);
-  expect(normalizeFilterState({ eventFormat: "invalid" }).eventFormat).toBe("any");
-  expect(normalizeFilterState({}).eventFormat).toBe("any");
+  const handoff = storeStatesToFilterState(useSearchStore.getState());
+  expect(handoff).not.toHaveProperty("eventFormat");
+  expect(handoff.sortOrder).toBe("desc");
 });
 
+test("Free, Food and minimum Going filters still combine and clear", () => {
+  useSearchStore.getState().setFilterState({ ...EMPTY_FILTER_STATE, maxPrice: "0", minGoing: 2 });
+  expect(visibleEvents()).toEqual([1, 2]);
+  useSearchStore.getState().setFilterState({ ...EMPTY_FILTER_STATE, maxPrice: "0", hasFood: true, minGoing: 5 });
+  expect(visibleEvents()).toEqual([1]);
+  expect(getFilterCounts(useSearchStore.getState())).toBe(3);
+  useSearchStore.getState().setFilterState(clearNarrowingFilterState(storeStatesToFilterState(useSearchStore.getState())));
+  expect(visibleEvents()).toHaveLength(5);
+  expect(getFilterCounts(useSearchStore.getState())).toBe(0);
+});
 
 test("price thresholds exclude the boundary, combine with other filters, and clear through shared state", () => {
   useSearchStore.getState().setFilterState({ ...EMPTY_FILTER_STATE, minPrice: "9" });

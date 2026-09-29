@@ -16,7 +16,6 @@ export const EMPTY_FILTER_STATE: FilterState = {
   minPrice: "",
   maxPrice: "",
   minGoing: 0,
-  eventFormat: "any",
   registration: false,
   clubs: [],
   hasFood: false,
@@ -107,9 +106,6 @@ export function normalizeFilterState(filters: FilterStateInput): FilterState {
     minGoing: typeof filters.minGoing === "number" && Number.isFinite(filters.minGoing)
       ? Math.max(0, Math.floor(filters.minGoing))
       : 0,
-    eventFormat: filters.eventFormat === "online" || filters.eventFormat === "inPerson"
-      ? filters.eventFormat
-      : "any",
     registration: filters.registration === true,
     clubs: stringArray(filters.clubs),
     hasFood: filters.hasFood === true,
@@ -139,7 +135,6 @@ export function storeStatesToFilterState(
     minPrice: values.minPrice,
     maxPrice: values.maxPrice,
     minGoing: values.minGoing,
-    eventFormat: values.eventFormat,
     registration: values.registration,
     clubs: values.selectedClubs,
     hasFood: values.hasFoodFilter,

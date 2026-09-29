@@ -77,15 +77,15 @@ function appendRedirectQueryParams(
 
 function eventsListDestination(filters: QrRedirectConfig["filters"]): string {
   if (!filters || typeof filters !== "object" || Array.isArray(filters)) {
-    return ROUTES.HOME;
+    return ROUTES.EVENTS;
   }
 
   const school = (filters as Record<string, unknown>).school;
   if (typeof school !== "string" || !school.trim()) {
-    return ROUTES.HOME;
+    return ROUTES.EVENTS;
   }
 
-  return `${ROUTES.HOME}?${new URLSearchParams({
+  return `${ROUTES.EVENTS}?${new URLSearchParams({
     [QP.SCHOOL]: school.trim(),
   })}`;
 }
@@ -158,11 +158,11 @@ export function redirectFromConfig(config: QrRedirectConfig): void {
           );
         } else {
           console.error("Blocked unsafe redirect URL:", config.destination_id);
-          window.location.href = ROUTES.HOME;
+          window.location.href = ROUTES.EVENTS;
         }
       }
       break;
     default:
-      window.location.href = ROUTES.HOME;
+      window.location.href = ROUTES.EVENTS;
   }
 }

@@ -111,7 +111,7 @@ export function useAppNavigation({
         if (pageModeParam === "marketing") {
           router.replace(ROUTES.MARKETING);
         } else if (pageModeParam === "events") {
-          router.replace(ROUTES.HOME);
+          router.replace(ROUTES.EVENTS);
         }
         hasProcessedInitialRouteMode.current = true;
         return;

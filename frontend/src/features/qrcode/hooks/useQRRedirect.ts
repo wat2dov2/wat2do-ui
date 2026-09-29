@@ -50,7 +50,7 @@ export function useQRRedirect(): { message: string } {
 
   useEffect(() => {
     if (!qrCodeId) {
-      router.replace(ROUTES.HOME);
+      router.replace(ROUTES.EVENTS);
       return;
     }
 
@@ -63,7 +63,7 @@ export function useQRRedirect(): { message: string } {
       .then((result) => {
         if (cancelled) return;
         if (result === null) {
-          router.replace(ROUTES.HOME);
+          router.replace(ROUTES.EVENTS);
           return;
         }
         if ("requires_location" in result && result.requires_location) {
@@ -75,7 +75,7 @@ export function useQRRedirect(): { message: string } {
               })
               .catch((err) => {
                 console.error("QR redirect failed:", err);
-                if (!cancelled) router.replace(ROUTES.HOME);
+                if (!cancelled) router.replace(ROUTES.EVENTS);
               })
           );
           return;
@@ -89,7 +89,7 @@ export function useQRRedirect(): { message: string } {
       })
       .catch((err) => {
         console.error("QR redirect failed:", err);
-        if (!cancelled) router.replace(ROUTES.HOME);
+        if (!cancelled) router.replace(ROUTES.EVENTS);
       });
     return () => {
       cancelled = true;

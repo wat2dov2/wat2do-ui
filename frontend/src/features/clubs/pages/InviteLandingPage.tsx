@@ -101,7 +101,7 @@ export function InviteLandingPage() {
               <CardDescription className="text-sm text-muted-foreground">
                 {error}
               </CardDescription>
-              <Button onMouseDown={() => router.push(ROUTES.HOME)} className="w-full mt-2">
+              <Button onMouseDown={() => router.push(ROUTES.EVENTS)} className="w-full mt-2">
                 {t("inviteLanding.goHome")}
               </Button>
             </div>
