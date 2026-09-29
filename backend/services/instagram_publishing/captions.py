@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import re
 from datetime import datetime
 from typing import Any
 from zoneinfo import ZoneInfo
@@ -43,7 +42,7 @@ def build_caption(events: list[dict[str, Any]], school: str, intro: str = "") ->
     lines = []
     for index, event in enumerate(events, start=1):
         start = _parse_datetime(event["dtstart_utc"]).astimezone(timezone)
-        handle = event_instagram_handle(event)
+        handle = str(event.get("ig_handle") or "").strip().lstrip("@")
         club = f"@{handle}" if handle else str(event.get("club") or "")
         title = _truncate(
             str(event.get("title") or ("Événement sans titre" if french else "Untitled event")), 90
@@ -111,28 +110,3 @@ def _truncate(value: str, length: int) -> str:
     if len(cleaned) <= length:
         return cleaned
     return f"{cleaned[: max(1, length - 1)].rstrip()}…"
-
-
-def event_instagram_handle(event: dict[str, Any]) -> str:
-    """Resolve the same event-first, club-second profile used by slide artwork."""
-    for value in (event.get("ig_handle"), event.get("club_ig")):
-        value = str(value or "").strip()
-        profile = re.fullmatch(
-            r"(?:https?://)?(?:www\.)?instagram\.com/([a-zA-Z0-9_.]{1,30})/?(?:[?#][^\s]*)?",
-            value,
-            flags=re.I,
-        )
-        if profile and profile.group(1).lower() in {
-            "p",
-            "reel",
-            "reels",
-            "stories",
-            "explore",
-            "accounts",
-            "direct",
-        }:
-            continue
-        handle = profile.group(1) if profile else value.lstrip("@")
-        if re.fullmatch(r"[a-zA-Z0-9_.]{1,30}", handle):
-            return handle
-    return ""

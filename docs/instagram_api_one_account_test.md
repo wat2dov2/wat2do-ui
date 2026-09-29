@@ -203,11 +203,6 @@ Copy the returned ID:
 export CHILD_TWO_ID='SECOND_CONTAINER_ID'
 ```
 
-The application publisher tags each event image with its event Instagram handle, falling back to the club profile when needed.
-It passes `user_tags` with the username and normalized image coordinates on that image's container; the cover has no user tags.
-[Meta's media reference](https://developers.facebook.com/docs/instagram-platform/instagram-graph-api/reference/ig-user/media/) supports these per-image tags but explicitly excludes `location_id` on carousel images and videos.
-Each event's location remains in the rendered slide and caption; a separate native location tag for each event cannot be set through this API.
-
 ## 10. Create the carousel
 
 ```bash

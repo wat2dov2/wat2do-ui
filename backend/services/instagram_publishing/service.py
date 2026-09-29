@@ -50,11 +50,7 @@ from schemas.instagram_publishing import (
 )
 from services import event_query, school_service
 from services.event_service import has_ended
-from services.instagram_publishing.captions import (
-    build_caption,
-    default_caption_intro,
-    event_instagram_handle,
-)
+from services.instagram_publishing.captions import build_caption, default_caption_intro
 from services.instagram_publishing.credentials import load_account_credentials
 from services.instagram_publishing.meta import MetaInstagramClient
 from services.instagram_publishing.rendering import render_cover_asset, render_event_asset
@@ -587,9 +583,7 @@ def _publish_claimed_batch(
     for event in events:
         asset_url = render_event_asset(event)
         asset_urls[int(event["id"])] = asset_url
-        child_id = client.create_image_container(
-            user_id, asset_url, username=event_instagram_handle(event)
-        )
+        child_id = client.create_image_container(user_id, asset_url)
         client.wait_until_ready(child_id)
         child_ids.append(child_id)
 

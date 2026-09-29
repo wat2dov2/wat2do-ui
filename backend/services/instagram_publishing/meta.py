@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import time
 from typing import Any
 
@@ -44,14 +43,14 @@ class MetaInstagramClient:
             raise RuntimeError("Instagram token refresh did not include a valid expiry")
         return payload
 
-    def create_image_container(
-        self, instagram_user_id: str, image_url: str, *, username: str = ""
-    ) -> str:
-        data = {"image_url": image_url, "is_carousel_item": "true"}
-        if username:
-            data["user_tags"] = json.dumps([{"username": username, "x": 0.5, "y": 0.5}])
-        # Meta supports user tags on children, but location_id only on the parent.
-        payload = self._post(f"/{instagram_user_id}/media", data)
+    def create_image_container(self, instagram_user_id: str, image_url: str) -> str:
+        payload = self._post(
+            f"/{instagram_user_id}/media",
+            {
+                "image_url": image_url,
+                "is_carousel_item": "true",
+            },
+        )
         return _required_id(payload)
 
     def create_carousel_container(

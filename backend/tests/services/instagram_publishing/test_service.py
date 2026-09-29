@@ -617,7 +617,6 @@ def test_count_new_events_without_a_carousel_returns_only_the_recent_count(monke
 def test_publish_batch_renders_the_slides_from_live_event_data(monkeypatch, batch_kind):
     rendered: list = []
     containers: list[str] = []
-    tagged: list[str] = []
     table_calls: list[tuple] = []
 
     monkeypatch.setattr(service, "_enabled_account_keys", lambda: ["dalhousie"])
@@ -664,8 +663,7 @@ def test_publish_batch_renders_the_slides_from_live_event_data(monkeypatch, batc
         def __init__(self, access_token):
             assert access_token == "dalhousie-token"
 
-        def create_image_container(self, user_id, image_url, *, username=""):
-            tagged.append(username)
+        def create_image_container(self, user_id, image_url):
             containers.append(image_url)
             return f"container-{len(containers)}"
 
@@ -684,13 +682,8 @@ def test_publish_batch_renders_the_slides_from_live_event_data(monkeypatch, batc
     batch = service.claim_batch_for_publishing("batch-1", InstagramPublishBatchPublish(version=3))
     assert rendered == []
     assert containers == []
-    batch["items"][0]["event"] = _event(7).model_copy(update={"ig_handle": "@event7"})
-    batch["items"][1]["event"] = _event(8).model_copy(
-        update={"club_ig": "https://instagram.com/club8/"}
-    )
     service.publish_claimed_batch(batch)
 
-    assert tagged == ["", "event7", "club8"]
     assert ("delete", (), {}) in table_calls
     assert ("or_", ("event_id.is.null,event_id.not.in.(7,8)",), {}) in table_calls
     assert ("is_", ("published_at", "null"), {}) in table_calls
