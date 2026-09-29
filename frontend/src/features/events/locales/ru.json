@@ -129,7 +129,7 @@
     "moreDatesCount_other": "+{{count}} даты",
     "deleteEventTitle": "Удалить событие",
     "deleteEventConfirm": "Вы уверены, что хотите удалить \"{{title}}\"? Это действие нельзя отменить.",
-    "similarEvents": "Похожие события",
+    "moreEvents": "Больше событий",
     "submitEvent": "Добавить событие",
     "allEvents": "Все события",
     "going": "Я пойду",

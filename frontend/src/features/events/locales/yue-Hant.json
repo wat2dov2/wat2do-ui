@@ -128,7 +128,7 @@
     "moreDatesCount_other": "+{{count}} 日子",
     "deleteEventTitle": "刪除活動",
     "deleteEventConfirm": "你確定要刪除「{{title}}」嗎？此操作無法復原。",
-    "similarEvents": "相似活動",
+    "moreEvents": "更多活動",
     "submitEvent": "新增活動",
     "allEvents": "所有活動",
     "going": "會參加"

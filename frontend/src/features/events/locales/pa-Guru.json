@@ -129,7 +129,7 @@
     "moreDatesCount_other": "+{{count}} ਮਿਤੀਆਂ",
     "deleteEventTitle": "ਇਵੈਂਟ ਮਿਟਾਓ",
     "deleteEventConfirm": "ਕੀ ਤੁਸੀਂ ਯਕੀਨੀ ਤੌਰ 'ਤੇ \"{{title}}\" ਨੂੰ ਮਿਟਾਉਣਾ ਚਾਹੁੰਦੇ ਹੋ? ਇਸ ਕਾਰਵਾਈ ਨੂੰ ਅਣਕੀਤਾ ਨਹੀਂ ਕੀਤਾ ਜਾ ਸਕਦਾ।",
-    "similarEvents": "ਮਿਲਦੇ-ਜੁਲਦੇ ਇਵੈਂਟਸ",
+    "moreEvents": "ਹੋਰ ਇਵੈਂਟਸ",
     "submitEvent": "ਇਵੈਂਟ ਸ਼ਾਮਲ ਕਰੋ",
     "allEvents": "ਸਾਰੀਆਂ ਘਟਨਾਵਾਂ",
     "going": "ਜਾ ਰਹੇ ਹੋ",

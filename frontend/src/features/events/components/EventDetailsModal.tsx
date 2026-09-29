@@ -26,7 +26,7 @@ interface EventDetailsModalProps {
   event: Event | null;
   onClose: () => void;
   allEvents: Event[];
-  /** When true, the Similar Events section is hidden (e.g. in admin panel). */
+  /** When true, the More events section is hidden (e.g. in admin panel). */
   hideSimilarEvents?: boolean;
 }
 

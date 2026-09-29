@@ -12,7 +12,7 @@ import { POSITION_TYPES } from "@/features/positions/api/positions.api";
 import { Container, PageHeader, Stack } from "@/shared/layout";
 import { FilterBar } from "@/shared/layout/filter-bar";
 import { CARD_GRID_CLASS } from "@/shared/constants/ui";
-import { eventQuickFilters } from "@/shared/constants/eventFilters";
+import { eventQuickFilters, getEventFilterCategories } from "@/shared/constants/eventFilters";
 import { ROUTES } from "@/shared/constants/routes";
 import { LoadingPage } from "@/shared/ui/loading-page";
 import { PageCountHeading } from "@/shared/ui/page-count-heading";
@@ -33,7 +33,7 @@ function DiscoveryLoading({ resource }: { resource: "events" | "clubs" | "positi
     : isClubs ? t("clubs.clubLabel", { count: 2 }) : t("positions.position", { count: 2 });
   const addLabel = isEvents ? t("events.submitEvent") : isClubs ? t("clubs.addClub") : t("positions.addPosition");
   const addHref = isEvents ? ROUTES.EVENT_SUBMIT : isClubs ? ROUTES.CLUB_CREATE : ROUTES.POSITION_SUBMIT;
-  const categories = isClubs ? constants.club_categories : constants.event_categories;
+  const categories = isClubs ? constants.club_categories : getEventFilterCategories(constants.event_categories);
 
   return (
     <Stack gap={2} data-slot="discovery-loading" aria-busy="true">

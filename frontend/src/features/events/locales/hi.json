@@ -129,7 +129,7 @@
     "moreDatesCount_other": "+{{count}} तारीखें",
     "deleteEventTitle": "ईवेंट हटाएँ",
     "deleteEventConfirm": "क्या आप वाकई \"{{title}}\" को हटाना चाहते हैं? इस एक्शन को वापस नहीं किया जा सकता।",
-    "similarEvents": "समान घटनाएँ",
+    "moreEvents": "और कार्यक्रम",
     "submitEvent": "कार्यक्रम जोड़ें",
     "allEvents": "सभी घटनाएँ",
     "going": "जा रहे हैं",

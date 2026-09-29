@@ -129,7 +129,7 @@
     "moreDatesCount_other": "+{{count}} تاريخ",
     "deleteEventTitle": "حذف الحدث",
     "deleteEventConfirm": "هل أنت متأكد أنك تريد حذف \"{{title}}\"؟ هذا الإجراء لا يمكن التراجع عنه.",
-    "similarEvents": "أحداث مشابهة",
+    "moreEvents": "المزيد من الفعاليات",
     "submitEvent": "إضافة حدث",
     "allEvents": "جميع الأحداث",
     "going": "سأحضر",

@@ -7,7 +7,7 @@ import {
   EventCardContentFrame,
 } from "@/shared/ui/event-card-content";
 import { EventCardImage } from "@/features/events/components/EventCardImage";
-import { formatCardDate, formatCardTime, getPrimaryOccurrence, schoolCalendarDate } from "@/shared/utils/date";
+import { formatCardDate, formatCardTime, eventCalendarDate } from "@/shared/utils/date";
 import { useEventBadges } from "@/features/events/hooks/useEventBadges";
 import { useMouseDownAction, useMobileGridClickActivation } from "@/shared/hooks";
 import { cn } from "@/shared/lib/utils";
@@ -105,7 +105,6 @@ function EventCardComponent({
   const { getSchoolTimezone } = useSchoolDirectory();
 
   const badges = useEventBadges(event);
-  const occurrence = getPrimaryOccurrence(event);
 
   const cardDate = formatCardDate(event, getSchoolTimezone(event.school), i18n.language || "en-US");
   const cardTime = formatCardTime(event, getSchoolTimezone(event.school), i18n.language);
@@ -151,7 +150,7 @@ function EventCardComponent({
     ? {
         "data-event-card": true,
         "data-event-id": event.id,
-        "data-scroll-date": occurrence ? schoolCalendarDate(occurrence.dtstart_utc, getSchoolTimezone(event.school)).toISOString().slice(0, 10) : "",
+        "data-scroll-date": eventCalendarDate(event, getSchoolTimezone(event.school)),
         role: "button",
         tabIndex: 0,
         "aria-label": `Event: ${event.title}`,

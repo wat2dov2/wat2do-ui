@@ -676,8 +676,8 @@ export function EventDetailsSimilarEvents({
   return (
     <>
       <Separator />
-      <Section title={t("events.similarEvents")}>
-        {/* Similar events use the same shared card grid as the main feed. */}
+      <Section title={t("events.moreEvents")}>
+        {/* More events use the same shared card grid as the main feed. */}
         <div className={CARD_GRID_CLASS}>
           {similarEvents.map((similarEvent) => (
             <EventCard

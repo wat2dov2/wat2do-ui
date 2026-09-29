@@ -1,4 +1,3 @@
-import { ScrollDateWheel } from "@/shared/ui/scroll-date-wheel";
 import { useMemo, useCallback, useState, Fragment } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
@@ -110,7 +109,6 @@ export function EventsPageContainer({
 
   return (
     <>
-      <ScrollDateWheel undatedLabel={t("events.upcoming")} />
       <div className="space-y-2">
         <PageHeader variant="listing">
           <PageCountHeading
@@ -219,7 +217,8 @@ export function EventsPageContainer({
               events={orderedEvents}
               onEventClick={handleEventClick}
               onClearFilters={filters.clearAllFilters}
-              hasActiveFilters={filters.filterCount > 0}
+              hasActiveFilters={filters.filterCount > 0 || filters.searchQuery.trim().length > 0}
+              showDateWheel
               eventStats={eventStats}
               isLoading={isLoading}
               groupByDateSections={

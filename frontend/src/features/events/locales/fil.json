@@ -129,7 +129,7 @@
     "moreDatesCount_other": "+{{count}} mga petsa",
     "deleteEventTitle": "Tanggalin ang Kaganapan",
     "deleteEventConfirm": "Sigurado ka ba na gusto mong tanggalin ang \"{{title}}\"? Hindi na ito maaaring bawiin.",
-    "similarEvents": "Magkakatulad na mga Kaganapan",
+    "moreEvents": "Higit pang mga kaganapan",
     "submitEvent": "Magdagdag ng kaganapan",
     "allEvents": "Lahat ng mga kaganapan",
     "going": "Pupunta",

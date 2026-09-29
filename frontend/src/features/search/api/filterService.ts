@@ -1,6 +1,7 @@
 import type { EventDateFilter, FilterState } from "@/shared/types";
 import type { SchoolSummary } from "@/shared/api/schools.api";
 import { parseLocalDateValue, schoolCalendarDate } from "@/shared/utils/date";
+import { getEventFilterCategories } from "@/shared/constants/eventFilters";
 
 // Shared normalization for visual filters and QR handoff.
 
@@ -97,7 +98,7 @@ export function normalizeFilterState(filters: FilterStateInput): FilterState {
   const dateFilter = dateFilterFrom(filters.dateFilter, customDate);
   return {
     searchQuery: stringFrom(filters.searchQuery),
-    categories: stringArray(filters.categories),
+    categories: getEventFilterCategories(stringArray(filters.categories)),
     locations: stringArray(filters.locations),
     foods: stringArray(filters.foods),
     days: stringArray(filters.days),

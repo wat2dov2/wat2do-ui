@@ -6,6 +6,7 @@ import { clearNarrowingFilterState, EMPTY_FILTER_STATE, normalizeFilterState, re
 import { useSearchStore } from "../src/features/search/store/search.store";
 import { useEventsStore } from "../src/features/events/store/events.store";
 import { getFilterCounts } from "../src/shared/utils/filter";
+import { getEventFilterCategories } from "../src/shared/constants/eventFilters";
 
 const events = [
   { id: 1, location: "Student Centre", price: 0, food: ["Pizza"] },
@@ -36,6 +37,17 @@ test("removed format filters in legacy handoffs cannot silently narrow the event
   const handoff = storeStatesToFilterState(useSearchStore.getState());
   expect(handoff).not.toHaveProperty("eventFormat");
   expect(handoff.sortOrder).toBe("desc");
+});
+
+test("removed Media category filters cannot survive a saved handoff and silently narrow events", () => {
+  const categories = ["Business", "Media & Web", "Arts & Culture"];
+  expect(getEventFilterCategories(categories)).toEqual(["Business", "Arts & Culture"]);
+  expect(categories).toContain("Media & Web");
+  useSearchStore.getState().setFilterState(normalizeFilterState({ categories: ["Media & Web"] }));
+  expect(visibleEvents()).toEqual([1, 2, 3, 4, 5]);
+  expect(getFilterCounts(useSearchStore.getState())).toBe(0);
+  expect(storeStatesToFilterState(useSearchStore.getState()).categories).toEqual([]);
+  expect(normalizeFilterState({ categories }).categories).toEqual(["Business", "Arts & Culture"]);
 });
 
 test("Free, Food and minimum Going filters still combine and clear", () => {

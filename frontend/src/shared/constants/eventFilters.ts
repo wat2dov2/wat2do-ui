@@ -8,6 +8,11 @@ export const availableDays = [
   "Sunday",
 ];
 
+/** Event metadata may retain categories that are no longer offered as filters. */
+export function getEventFilterCategories(categories: readonly string[]): string[] {
+  return categories.filter(category => category !== "Media & Web");
+}
+
 /** Shared by the live filter controls and their initial loading shell. */
 export const eventQuickFilters = [
   { id: "going", labelKey: "filters.going", value: "goingFilter", action: "setGoingFilter", requiresProfile: true },

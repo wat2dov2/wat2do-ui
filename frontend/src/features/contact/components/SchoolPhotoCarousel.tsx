@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
+import { useRequestSchool } from "@/app/client-providers";
 import { useTranslation } from "react-i18next";
 import { Stack } from "@/shared/layout";
 import { Button } from "@/shared/ui/button";
@@ -33,33 +34,39 @@ import photo19 from "@/assets/york-sculpture-detail.webp";
 // Image placeholder mode, not user-facing input placeholder text.
 const imagePlaceholder = "blur" as const;
 
-const photos = [
-  { image: photo0, school: "University of Toronto St. George" },
-  { image: photo1, school: "York University" },
-  { image: photo2, school: "OCAD University" },
-  { image: photo3, school: "Toronto Metropolitan University" },
-  { image: photo4, school: "University of Toronto Scarborough" },
-  { image: photo5, school: "OCAD University" },
-  { image: photo6, school: "OCAD University" },
-  { image: photo7, school: "OCAD University" },
-  { image: photo8, school: "Toronto Metropolitan University" },
-  { image: photo9, school: "Toronto Metropolitan University" },
-  { image: photo10, school: "Toronto Metropolitan University" },
-  { image: photo11, school: "University of Toronto Scarborough" },
-  { image: photo12, school: "University of Toronto Scarborough" },
-  { image: photo13, school: "University of Toronto St. George" },
-  { image: photo14, school: "University of Toronto St. George" },
-  { image: photo15, school: "York University" },
-  { image: photo16, school: "York University" },
-  { image: photo17, school: "York University" },
-  { image: photo18, school: "York University" },
-  { image: photo19, school: "York University" },
+const schoolPhotos = [
+  { image: photo0, school: "University of Toronto St. George", schoolSlug: "utsg" },
+  { image: photo1, school: "York University", schoolSlug: "yorku" },
+  { image: photo2, school: "OCAD University", schoolSlug: "ocadu" },
+  { image: photo3, school: "Toronto Metropolitan University", schoolSlug: "tmu" },
+  { image: photo4, school: "University of Toronto Scarborough", schoolSlug: "utsc" },
+  { image: photo5, school: "OCAD University", schoolSlug: "ocadu" },
+  { image: photo6, school: "OCAD University", schoolSlug: "ocadu" },
+  { image: photo7, school: "OCAD University", schoolSlug: "ocadu" },
+  { image: photo8, school: "Toronto Metropolitan University", schoolSlug: "tmu" },
+  { image: photo9, school: "Toronto Metropolitan University", schoolSlug: "tmu" },
+  { image: photo10, school: "Toronto Metropolitan University", schoolSlug: "tmu" },
+  { image: photo11, school: "University of Toronto Scarborough", schoolSlug: "utsc" },
+  { image: photo12, school: "University of Toronto Scarborough", schoolSlug: "utsc" },
+  { image: photo13, school: "University of Toronto St. George", schoolSlug: "utsg" },
+  { image: photo14, school: "University of Toronto St. George", schoolSlug: "utsg" },
+  { image: photo15, school: "York University", schoolSlug: "yorku" },
+  { image: photo16, school: "York University", schoolSlug: "yorku" },
+  { image: photo17, school: "York University", schoolSlug: "yorku" },
+  { image: photo18, school: "York University", schoolSlug: "yorku" },
+  { image: photo19, school: "York University", schoolSlug: "yorku" },
 ];
 
 /** Manual navigation keeps photos still for reading and avoids autoplay downloads. */
 export function SchoolPhotoCarousel({ isLoading = false }: { isLoading?: boolean }) {
   const { t } = useTranslation();
-  const [index, setIndex] = useState(0);
+  const school = useRequestSchool();
+  const photos = useMemo(() => [
+    ...schoolPhotos.filter(photo => photo.schoolSlug === school),
+    ...schoolPhotos.filter(photo => photo.schoolSlug !== school),
+  ], [school]);
+  const [position, setPosition] = useState({ school, index: 0 });
+  const index = position.school === school ? position.index : 0;
   const touchStart = useRef<number | null>(null);
   const { surfaceRef, registerCorner, cutouts, box } = useEventImageCutouts();
   const [loadedSrc, setLoadedSrc] = useState<string | null>(null);
@@ -74,10 +81,10 @@ export function SchoolPhotoCarousel({ isLoading = false }: { isLoading?: boolean
       adjacent.fetchPriority = "low";
       adjacent.src = photos[(index + offset + photos.length) % photos.length].image.src;
     }
-  }, [index, isLoading, loadedSrc, photo.image.src]);
+  }, [index, isLoading, loadedSrc, photo.image.src, photos]);
 
   const navigate = (offset: number) => {
-    if (!isLoading) setIndex((current) => (current + offset + photos.length) % photos.length);
+    if (!isLoading) setPosition({ school, index: (index + offset + photos.length) % photos.length });
   };
 
   return (

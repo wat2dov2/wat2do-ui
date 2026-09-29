@@ -129,7 +129,7 @@
     "moreDatesCount_other": "+{{count}} تاریخ",
     "deleteEventTitle": "حذف رویداد",
     "deleteEventConfirm": "آیا مطمئن هستید که می‌خواهید \"{{title}}\" را حذف کنید؟ این عمل قابل بازگردانی نیست.",
-    "similarEvents": "رویدادهای مشابه",
+    "moreEvents": "رویدادهای بیشتر",
     "submitEvent": "افزودن رویداد",
     "allEvents": "تمام رویدادها",
     "going": "شرکت می‌کنم",

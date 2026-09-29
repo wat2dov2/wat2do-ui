@@ -4,7 +4,7 @@ import { useFilterState } from "@/features/search/hooks/useFilterState";
 import { filterEvents, sortEvents } from "@/features/search/api/searchService";
 import { getFilterCounts } from "@/shared/utils/filter";
 import { useAppConstants } from "@/shared/hooks/useAppConstants";
-import { availableDays } from "@/shared/constants/eventFilters";
+import { availableDays, getEventFilterCategories } from "@/shared/constants/eventFilters";
 import { translateCategory } from "@/shared/utils/event";
 import type { Event } from "@/shared/types";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
@@ -105,7 +105,7 @@ export function useSearch({
 
   const categoryOptions = useMemo(
     () =>
-      eventCategories.map((cat) => ({
+      getEventFilterCategories(eventCategories).map((cat) => ({
         id: cat,
         label: translateCategory(cat, t),
       })),

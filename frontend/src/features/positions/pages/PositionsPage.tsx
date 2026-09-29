@@ -1,6 +1,5 @@
 "use client";
 
-import { ScrollDateWheel } from "@/shared/ui/scroll-date-wheel";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import Link from "next/link";
@@ -33,7 +32,6 @@ export function PositionsPage({
 
   return (
     <Stack gap={2}>
-      <ScrollDateWheel undatedLabel={t("positions.noDeadline")} />
       <PageHeader variant="listing">
         <PageCountHeading
           count={positionsPage.isLoading ? null : positionsPage.total}
@@ -87,6 +85,8 @@ export function PositionsPage({
       ) : (
         <PositionList
           positions={positionsPage.positions}
+          hasActiveFilters={positionsPage.hasActiveFilters}
+          showDateWheel
           isLoading={positionsPage.isLoading}
           onPositionClick={(position) => {
             setHasOpenedDetails(true);

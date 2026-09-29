@@ -10,6 +10,8 @@ import imageDelivery from "../../backend/controlbox/image_delivery.json" with { 
 import instagramPublishing from "../../backend/controlbox/instagram_publishing.json" with { type: "json" };
 
 let renderedSlide: ReactElement<{ model: { imageSrc?: string; avatarSrc?: string; description?: string; siteName?: string; tiles?: string[] } }> | undefined;
+let requestSchool = "uwaterloo";
+let goingSelections: { event_id: number }[] = [];
 
 // Match the existing server-rendering specs: use React's JSX runtime rather
 // than Playwright's browser component-test descriptors. No browser is needed.
@@ -32,6 +34,10 @@ function loadComponent(path: string): Record<string, React.ComponentType<Record<
     process,
     fetch: (...args: Parameters<typeof fetch>) => globalThis.fetch(...args),
     require: (id: string) => {
+      if (id === "@/app/client-providers") return { useRequestSchool: () => requestSchool };
+      if (id === "@/features/events/hooks/useGoingEvents") return { useGoingEvents: () => ({ data: goingSelections }) };
+      if (id === "@/features/clubs/components/ClubBadgeDropdown") return { ClubBadgeDropdown: () => null };
+      if (id.endsWith(".png")) return { src: "/logo.png", width: 136, height: 96 };
       if (id.endsWith(".webp")) return { src: `/_next/static/media/${id.split("/").pop()}`, width: 1280, height: 960, blurDataURL: "data:image/webp;base64,UklGRg==" };
       if (id === "react-i18next") return { useTranslation: () => ({ t: (key: string) => key }) };
       if (id === "@/shared/layout") return loadComponent("shared/layout/stack");
@@ -71,6 +77,7 @@ const { EventImageCutout } = loadComponent("shared/ui/event-image-cutout");
 const { LazyImage } = loadComponent("shared/ui/lazy-image");
 const { AvatarStack } = loadComponent("shared/ui/avatar-stack");
 const { SchoolPhotoCarousel } = loadComponent("features/contact/components/SchoolPhotoCarousel");
+const { EventCardImage } = loadComponent("features/events/components/EventCardImage");
 const posterUrl = "https://wat2do.io/media/event-images/poster.jpg";
 function render(component: React.ComponentType<Record<string, unknown>>, props: Record<string, unknown>) {
   return renderToStaticMarkup(createElement(ImageConfigContext.Provider, { value: imageConfig }, createElement(component, props)));
@@ -542,6 +549,48 @@ test("school carousel loads the cached static photo directly with accessible nav
   expect(html).toContain('data-slot="event-image-face"');
   expect(html).not.toContain('text-background');
   expect(html).not.toMatch(/<div[^>]*class="[^"]*bg-background[^"]*"[^>]*><h1/);
+});
+
+test("school carousel prioritizes matching campus photos without a data request", () => {
+  for (const [school, photo] of Object.entries({
+    utsg: "utsg-university-college", yorku: "york-stadium-selfie", ocadu: "ocad-sharp-centre",
+    tmu: "tmu-recreation-centre", utsc: "utsc-welcome-sign", uwaterloo: "utsg-university-college",
+  })) {
+    requestSchool = school;
+    try {
+      const html = render(SchoolPhotoCarousel, {});
+      expect(html).toContain(`src="/_next/static/media/${photo}.webp"`);
+      expect(html.match(/<img /g)).toHaveLength(1);
+    } finally {
+      requestSchool = "uwaterloo";
+    }
+  }
+});
+
+test("Going uses the top-left badge without obscuring posters or detail videos", () => {
+  goingSelections = [{ event_id: 42 }];
+  try {
+    for (const variant of ["card", "detail"]) {
+      const html = render(EventCardImage, { event: {
+        id: 42, title: "Campus event", occurrences: [], source_image_url: posterUrl,
+        source_video_url: variant === "detail" ? "https://wat2do.io/media/event.mp4" : undefined,
+        added_at: new Date().toISOString(),
+      }, variant });
+      expect(html).toContain("events.going");
+      expect(html).toContain("absolute top-0 left-0");
+      expect(html).not.toContain("events.new");
+      expect(html).not.toContain("bg-image-scrim");
+      expect(html).toContain('data-slot="event-image-face"');
+    }
+  } finally {
+    goingSelections = [];
+  }
+  const fresh = render(EventCardImage, { event: {
+    id: 42, title: "Campus event", occurrences: [], source_image_url: posterUrl,
+    added_at: new Date().toISOString(),
+  }, variant: "card" });
+  expect(fresh).toContain("events.new");
+  expect(fresh).not.toContain("events.going");
 });
 
 test("school photos are compact, correctly oriented WebP assets without embedded metadata", async () => {

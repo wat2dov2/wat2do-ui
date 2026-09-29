@@ -2,7 +2,6 @@ import { useMemo, useState } from "react";
 import Image from "next/image";
 import { useTranslation } from "react-i18next";
 import imgLogo from "@/assets/38e8096a28295e8dcc0e5020d0a5f3dd85d5f019.png";
-import { Check } from "@/shared/ui/doodle-icons";
 import { BadgeMask } from "@/shared/ui/badge-mask";
 import { EventImageCutout, useEventImageCutouts } from "@/shared/ui/event-image-cutout";
 import { Badge } from "@/shared/ui/badge";
@@ -35,7 +34,7 @@ interface EventCardImageProps {
 }
 
 /**
- * Event poster with its corner badges: new, live, and club.
+ * Event poster with its corner badges: going or new, live, and club.
  *
  * Every surface that shows an event's artwork shows the same badges in the same
  * corners, so the grid card, the details drawer, and the event page all render
@@ -112,19 +111,10 @@ export function EventCardImage({
           ) : null}
         </EventImageCutout>
 
-        {isGoing && !(variant === "detail" && event.source_video_url) && (
-          <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-image-scrim">
-            <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-image-scrim-foreground">
-              {t("events.going")}
-              <Check className="size-4" />
-            </span>
-          </div>
-        )}
-
-        {isNew && (
+        {(isGoing || isNew) && (
           <BadgeMask variant="top-left" cutout containerRef={registerCorner("top-left")}>
-            <Badge variant="new" size="md" className="flex items-center">
-              {t("events.new")}
+            <Badge variant={isGoing ? "success" : "new"} size="md">
+              {t(isGoing ? "events.going" : "events.new")}
             </Badge>
           </BadgeMask>
         )}

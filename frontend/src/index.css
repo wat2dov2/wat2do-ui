@@ -47,8 +47,6 @@
   --color-info: var(--info);
   --color-info-foreground: var(--info-foreground);
 
-  --color-image-scrim: var(--image-scrim);
-  --color-image-scrim-foreground: var(--image-scrim-foreground);
 
   /* The primary school color marks the name; its paired secondary color inks it. */
   --color-school-marker: var(--school-marker);

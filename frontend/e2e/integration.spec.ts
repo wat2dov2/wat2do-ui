@@ -2676,7 +2676,7 @@ test.describe("Events Page", () => {
     await page.goto(`${BASE}/events/1`);
 
     await expect(
-      page.getByRole("heading", { name: "Similar Events" }),
+      page.getByRole("heading", { name: "More events" }),
     ).toBeVisible();
     const similarEvent = page.getByRole("button", {
       name: "Event: Board Game Night",
@@ -3278,6 +3278,16 @@ test.describe("Events Page", () => {
     await expect.poll(() => goingCount).toBe(1);
     await page.keyboard.press("Escape");
     await expect(card).toContainText("1 click · 1 going");
+    const poster = card.locator('[data-slot="event-card-image"]');
+    const goingBadge = poster.getByText("Going", { exact: true });
+    await expect(goingBadge).toBeVisible();
+    const posterBox = await poster.boundingBox();
+    const badgeBox = await goingBadge.boundingBox();
+    expect(posterBox).not.toBeNull();
+    expect(badgeBox).not.toBeNull();
+    expect(Math.abs(badgeBox!.x - posterBox!.x)).toBeLessThan(3);
+    expect(Math.abs(badgeBox!.y - posterBox!.y)).toBeLessThan(3);
+    expect(badgeBox!.height).toBeLessThan(posterBox!.height / 4);
 
     await page.reload();
     const refreshedCard = page.locator(`article[data-event-id="${eventId}"]:visible`).first();

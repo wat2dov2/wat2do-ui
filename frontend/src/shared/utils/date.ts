@@ -107,6 +107,12 @@ export function getPrimaryOccurrence(event: { occurrences?: Occurrence[] }, curr
   return sorted[0] || null;
 }
 
+/** Calendar date shared by feed cards and the scroll wheel's cached forecast. */
+export function eventCalendarDate(event: { occurrences?: Occurrence[] }, timeZone: string): string {
+  const occurrence = getPrimaryOccurrence(event);
+  return occurrence ? schoolCalendarDate(occurrence.dtstart_utc, timeZone).toISOString().slice(0, 10) : "";
+}
+
 /** Compact time-until label ("3d 4h", "15h 34m", "12m"); null once the start has passed. */
 export function formatCountdown(startMs: number, nowMs: number): string | null {
   const diff = startMs - nowMs;

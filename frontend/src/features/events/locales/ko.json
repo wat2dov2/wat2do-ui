@@ -128,7 +128,7 @@
     "moreDatesCount_other": "+{{count}} 날짜들",
     "deleteEventTitle": "이벤트 삭제",
     "deleteEventConfirm": "“{{title}}”을(를) 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.",
-    "similarEvents": "유사 이벤트",
+    "moreEvents": "더 많은 이벤트",
     "submitEvent": "이벤트 추가",
     "allEvents": "모든 이벤트",
     "going": "참여 예정"

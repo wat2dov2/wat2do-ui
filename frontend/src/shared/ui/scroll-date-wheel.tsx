@@ -3,12 +3,17 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { createPortal } from "react-dom";
-import { useScrollDateWheel } from "@/shared/hooks/useScrollDateWheel";
+import { Button } from "@/shared/ui/button";
+import { X } from "@/shared/ui/doodle-icons";
+import { useScrollDateWheel, type ScrollDateGroup } from "@/shared/hooks/useScrollDateWheel";
 
-/** A pointer-transparent half dial follows the feed without taking over scrolling. */
-export function ScrollDateWheel({ undatedLabel }: { undatedLabel: string }) {
-  const { i18n } = useTranslation();
-  const { visible, rotation, dates, active } = useScrollDateWheel();
+/** The dial lets scrolling pass through; only its dismiss button accepts clicks. */
+export function ScrollDateWheel({ undatedLabel, groups }: {
+  undatedLabel: string;
+  groups?: readonly ScrollDateGroup[];
+}) {
+  const { t, i18n } = useTranslation();
+  const { visible, rotation, dates, active, dismissed, dismiss } = useScrollDateWheel(groups);
   const locale = i18n.language || "en";
   const labels = useMemo(() => {
     const dayFormat = new Intl.DateTimeFormat(locale, { day: "numeric", timeZone: "UTC" });
@@ -20,18 +25,27 @@ export function ScrollDateWheel({ undatedLabel }: { undatedLabel: string }) {
       return { day: dayFormat.format(date), month: monthFormat.format(date), full: fullFormat.format(date) };
     });
   }, [dates, locale, undatedLabel]);
-  if (typeof document === "undefined" || dates.length === 0) return null;
+  if (typeof document === "undefined" || dates.length === 0 || dismissed) return null;
 
   return createPortal(
     <div
       data-slot="scroll-date-wheel"
       data-visible={visible}
       data-date={dates[active] ?? ""}
-      aria-hidden="true"
-      className="pointer-events-none fixed -left-7 top-[70%] z-30 h-40 w-16 origin-left -translate-y-1/2 scale-110 overflow-hidden transition-opacity duration-150 motion-reduce:transition-none lg:scale-150"
+      aria-hidden={!visible}
+      className="pointer-events-none fixed -left-7 top-[78%] z-30 h-40 w-16 origin-left -translate-y-1/2 scale-110 overflow-hidden transition-opacity duration-150 motion-reduce:transition-none lg:scale-150"
       style={{ opacity: visible ? 0.8 : 0 }}
     >
-      <div className="absolute -left-20 top-2 size-36 rounded-full border border-border bg-surface/95 shadow-lg backdrop-blur-sm">
+      {visible ? <Button
+        variant="ghost"
+        size="icon-sm"
+        className="pointer-events-auto absolute right-0 top-0 z-10"
+        aria-label={t("common.close")}
+        onClick={dismiss}
+      >
+        <X aria-hidden="true" className="size-3" />
+      </Button> : null}
+      <div aria-hidden="true" className="absolute -left-20 top-2 size-36 rounded-full border border-border bg-surface/95 shadow-lg backdrop-blur-sm">
         <svg
           viewBox="0 0 272 272"
           className="size-full text-muted-foreground/40 motion-reduce:hidden"
@@ -52,6 +66,7 @@ export function ScrollDateWheel({ undatedLabel }: { undatedLabel: string }) {
         return (
           <div
             key={index}
+            aria-hidden="true"
             data-active={offset === 0}
             className="absolute flex w-12 -translate-x-1/2 -translate-y-1/2 flex-col items-center text-center text-muted-foreground data-[active=true]:text-foreground"
             style={{ left: 4 + Math.cos(angle) * 34, top: 80 + Math.sin(angle) * 58, opacity: offset === 0 ? 1 : Math.max(0, 1 - Math.abs(distance) / 2.5) }}

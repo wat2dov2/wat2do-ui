@@ -129,7 +129,7 @@
     "moreDatesCount_other": "+{{count}} dates",
     "deleteEventTitle": "Delete Event",
     "deleteEventConfirm": "Are you sure you want to delete \"{{title}}\"? This action cannot be undone.",
-    "similarEvents": "Similar Events",
+    "moreEvents": "More events",
     "submitEvent": "Add event",
     "allEvents": "All events",
     "going": "Going"

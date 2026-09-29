@@ -129,7 +129,7 @@
     "moreDatesCount_other": "+{{count}} તારીખો",
     "deleteEventTitle": "ઇવેન્ટ મટાડો",
     "deleteEventConfirm": "શું તમે ખરેખર \"{{title}}\" મટાડવા માંગો છો? આ કાર્ય પાછું ન કરી શકાય તેવું છે.",
-    "similarEvents": "સમાન ઇવેન્ટ્સ",
+    "moreEvents": "વધુ ઇવેન્ટ્સ",
     "submitEvent": "ઇવેન્ટ ઉમેરો",
     "allEvents": "બધા ઇવેન્ટ્સ",
     "going": "જઈ રહ્યાં છો",

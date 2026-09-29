@@ -129,7 +129,7 @@
     "moreDatesCount_other": "+{{count}} تاریخیں",
     "deleteEventTitle": "ایونٹ حذف کریں",
     "deleteEventConfirm": "کیا آپ واقعی \"{{title}}\" کو حذف کرنا چاہتے ہیں؟ یہ کارروائی واپس نہیں کی جا سکتی۔",
-    "similarEvents": "مشابہ ایونٹس",
+    "moreEvents": "مزید ایونٹس",
     "submitEvent": "ایونٹ شامل کریں",
     "allEvents": "تمام ایونٹس",
     "going": "شریک ہوں",
