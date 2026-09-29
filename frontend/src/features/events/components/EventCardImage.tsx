@@ -113,7 +113,7 @@ export function EventCardImage({
 
         {(isGoing || isNew) && (
           <BadgeMask variant="top-left" cutout containerRef={registerCorner("top-left")}>
-            <Badge variant={isGoing ? "success" : "new"} size="md">
+            <Badge variant={isGoing ? "going" : "new"} size="md">
               {t(isGoing ? "events.going" : "events.new")}
             </Badge>
           </BadgeMask>

@@ -14,7 +14,7 @@ export function getEventFilterCategories(categories: readonly string[]): string[
 }
 
 /** Shared by the live filter controls and their initial loading shell. */
-export const eventQuickFilters = [
+const eventQuickFilters = [
   { id: "going", labelKey: "filters.going", value: "goingFilter", action: "setGoingFilter", requiresProfile: true },
   { id: "new", labelKey: "common.newlyAddedFilter.last24Hours" },
   { id: "employersOnCampus", labelKey: "filters.employersOnCampus", value: "employersOnCampus", action: "setEmployersOnCampus" },
@@ -26,3 +26,14 @@ export const eventQuickFilters = [
   { id: "minGoing", labelKey: "events.goingCount" },
   { id: "hasFood", labelKey: "filters.food", value: "hasFoodFilter", action: "setHasFoodFilter" },
 ] as const;
+
+/** Loading shells only show controls whose availability is already established. */
+export function getEventQuickFilters({
+  profileCompleted = false,
+  sportsGameAvailable = false,
+}: { profileCompleted?: boolean; sportsGameAvailable?: boolean } = {}) {
+  return eventQuickFilters.filter(config =>
+    (!("requiresProfile" in config) || profileCompleted) &&
+    (config.id !== "sportsGame" || sportsGameAvailable),
+  );
+}

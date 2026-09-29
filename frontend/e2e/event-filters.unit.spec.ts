@@ -2,11 +2,11 @@ import { expect, test } from "@playwright/test";
 import type { Event } from "../src/shared/types";
 import type { SchoolSummary } from "../src/shared/api/schools.api";
 import { filterEvents } from "../src/features/search/api/searchService";
-import { clearNarrowingFilterState, EMPTY_FILTER_STATE, normalizeFilterState, resolveCampusSeasonFilters, storeStatesToFilterState } from "../src/features/search/api/filterService";
+import { clearNarrowingFilterState, EMPTY_FILTER_STATE, normalizeFilterState, resolveCampusSeasonFilters, resolveVarsityGamesFilter, storeStatesToFilterState } from "../src/features/search/api/filterService";
 import { useSearchStore } from "../src/features/search/store/search.store";
 import { useEventsStore } from "../src/features/events/store/events.store";
 import { getFilterCounts } from "../src/shared/utils/filter";
-import { getEventFilterCategories } from "../src/shared/constants/eventFilters";
+import { getEventFilterCategories, getEventQuickFilters } from "../src/shared/constants/eventFilters";
 
 const events = [
   { id: 1, location: "Student Centre", price: 0, food: ["Pizza"] },
@@ -124,6 +124,68 @@ test("discovery filters intersect independently of category, food labels, and ad
   expect(discoveryResults()).toEqual([12]);
   useSearchStore.getState().setFilterState({ ...EMPTY_FILTER_STATE, employersOnCampus: true, sportsGame: true });
   expect(discoveryResults()).toEqual([]);
+});
+
+const upcomingVarsityGame = {
+  ...discoveryEvents[2],
+  occurrences: [{ dtstart_utc: "2026-09-29T16:00:00Z", dtend_utc: "2026-09-29T18:00:00Z" }],
+} as Event;
+
+test("Varsity games availability requires an active or upcoming classified game at the current school", () => {
+  const unrelated = [
+    { ...upcomingVarsityGame, school: "mit" },
+    { ...upcomingVarsityGame, sports_game: false },
+    { ...upcomingVarsityGame, sports_game: null },
+    { ...upcomingVarsityGame, occurrences: [{ dtstart_utc: "2026-09-27T16:00:00Z", dtend_utc: "2026-09-27T18:00:00Z" }] },
+  ] as Event[];
+  expect(resolveVarsityGamesFilter(unrelated, "uwaterloo", Date.now(), true))
+    .toEqual({ ready: true, available: false, selected: false });
+  expect(resolveVarsityGamesFilter([upcomingVarsityGame], "uwaterloo", Date.now(), true))
+    .toEqual({ ready: true, available: true, selected: true });
+  expect(resolveVarsityGamesFilter([upcomingVarsityGame], "uwaterloo", Date.parse("2026-09-29T17:00:00Z"), false).available).toBe(true);
+  expect(resolveVarsityGamesFilter([upcomingVarsityGame], "uwaterloo", Date.parse("2026-09-29T18:00:01Z"), true).available).toBe(false);
+});
+
+test("Varsity availability uses all cached events and stays visible when another filter excludes games", () => {
+  const cachedEvents = [...Array.from({ length: 100 }, (_, index) => ({ ...events[0], id: index + 100 })), upcomingVarsityGame];
+  useSearchStore.getState().setFilterState({ ...EMPTY_FILTER_STATE, hasFood: true });
+  const filtered = filterEvents(cachedEvents, {
+    ...useSearchStore.getState(), goingEventIds: [], campusSeasonOptions: [],
+  }, () => "America/Toronto");
+  expect(filtered).not.toContain(upcomingVarsityGame);
+  const availability = resolveVarsityGamesFilter(cachedEvents, "uwaterloo", Date.now(), false);
+  expect(availability.available).toBe(true);
+  expect(getEventQuickFilters({ sportsGameAvailable: availability.available }).map(filter => filter.id)).toContain("sportsGame");
+});
+
+test("pending feeds and hydration clocks hide Varsity without clearing staged selections", () => {
+  useSearchStore.getState().setFilterState({ ...EMPTY_FILTER_STATE, sportsGame: true });
+  const selected = useSearchStore.getState().sportsGame;
+  expect(resolveVarsityGamesFilter(null, "uwaterloo", Date.now(), selected))
+    .toEqual({ ready: false, available: false, selected: false });
+  expect(resolveVarsityGamesFilter([upcomingVarsityGame], "uwaterloo", null, selected))
+    .toEqual({ ready: false, available: false, selected: false });
+  expect(useSearchStore.getState().sportsGame).toBe(true);
+  expect(getEventQuickFilters().map(filter => filter.id)).not.toContain("sportsGame");
+  expect(resolveVarsityGamesFilter([upcomingVarsityGame], "uwaterloo", Date.now(), selected).selected).toBe(true);
+});
+
+test("a school without Varsity games clears stale narrowing and telemetry without a new user query", () => {
+  useSearchStore.getState().setFilterState({ ...EMPTY_FILTER_STATE, sportsGame: true });
+  const state = useSearchStore.getState();
+  const varsity = resolveVarsityGamesFilter(events, "uwaterloo", Date.now(), state.sportsGame);
+  expect(varsity.ready).toBe(true);
+  const effective = { ...state, sportsGame: varsity.selected };
+  expect(filterEvents(events, { ...effective, goingEventIds: [], campusSeasonOptions: [] }, () => "America/Toronto")).toHaveLength(events.length);
+  expect(getFilterCounts(effective)).toBe(0);
+  expect(storeStatesToFilterState(effective).sportsGame).toBe(false);
+  state.setFilterState(storeStatesToFilterState(effective), "normalization");
+  expect(useSearchStore.getState().sportsGame).toBe(false);
+  expect(useSearchStore.getState().queryRevision).toBe(state.queryRevision);
+  expect(getEventQuickFilters({ profileCompleted: true, sportsGameAvailable: varsity.available }).map(filter => filter.id))
+    .toContain("going");
+  expect(getEventQuickFilters({ profileCompleted: true, sportsGameAvailable: varsity.available }).map(filter => filter.id))
+    .not.toContain("sportsGame");
 });
 
 const campusSchool: SchoolSummary = {

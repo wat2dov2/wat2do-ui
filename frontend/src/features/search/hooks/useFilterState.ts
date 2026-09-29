@@ -142,7 +142,7 @@ export function useFilterState() {
     [updateFilterState],
   );
   const setSportsGame = useCallback(
-    (value: boolean) => updateFilterState({ sportsGame: value }),
+    (value: boolean, source?: FilterUpdateSource) => updateFilterState({ sportsGame: value }, source),
     [updateFilterState],
   );
   const setCampusSeasonIds = useCallback(

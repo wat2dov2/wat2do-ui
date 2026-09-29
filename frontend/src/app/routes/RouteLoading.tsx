@@ -12,7 +12,7 @@ import { POSITION_TYPES } from "@/features/positions/api/positions.api";
 import { Container, PageHeader, Stack } from "@/shared/layout";
 import { FilterBar } from "@/shared/layout/filter-bar";
 import { CARD_GRID_CLASS } from "@/shared/constants/ui";
-import { eventQuickFilters, getEventFilterCategories } from "@/shared/constants/eventFilters";
+import { getEventQuickFilters, getEventFilterCategories } from "@/shared/constants/eventFilters";
 import { ROUTES } from "@/shared/constants/routes";
 import { LoadingPage } from "@/shared/ui/loading-page";
 import { PageCountHeading } from "@/shared/ui/page-count-heading";
@@ -48,7 +48,7 @@ function DiscoveryLoading({ resource }: { resource: "events" | "clubs" | "positi
           <Button asChild variant="outline" size="lg"><Link href={addHref}>{addLabel}</Link></Button>
         </Stack>
         <FilterBar disabled>
-          {isEvents ? eventQuickFilters.filter(config => !("requiresProfile" in config)).map(config => (
+          {isEvents ? getEventQuickFilters().map(config => (
             "labelKey" in config ? <Button key={config.id} variant="outline" size="sm" disabled>{config.id === "minGoing" ? `>${t(config.labelKey, { count: 0 })}` : t(config.labelKey)}</Button> : null
           )) : !isClubs ? <Button variant="outline" size="sm" disabled>{t("common.newlyAddedFilter.last24Hours")}</Button> : null}
           {resource === "positions" ? POSITION_TYPES.map(type => (

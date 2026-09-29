@@ -8,7 +8,7 @@ import { availableDays, getEventFilterCategories } from "@/shared/constants/even
 import { translateCategory } from "@/shared/utils/event";
 import type { Event } from "@/shared/types";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
-import { resolveCampusSeasonFilters } from "@/features/search/api/filterService";
+import { resolveCampusSeasonFilters, resolveVarsityGamesFilter } from "@/features/search/api/filterService";
 
 /**
  * Search/filter orchestration: useFilterState for store state, searchService for logic.
@@ -16,6 +16,7 @@ import { resolveCampusSeasonFilters } from "@/features/search/api/filterService"
  */
 interface UseSearchOptions {
   events: Event[];
+  eventsReady: boolean;
   goingEventIds: number[];
   goingCounts: Readonly<Record<string, { going_count: number }>> | null;
   school: string;
@@ -24,6 +25,7 @@ interface UseSearchOptions {
 
 export function useSearch({
   events,
+  eventsReady,
   goingEventIds,
   goingCounts,
   school,
@@ -34,18 +36,27 @@ export function useSearch({
   const { event_categories: eventCategories } = useAppConstants();
 
   const filterState = useFilterState();
+  const varsityGames = useMemo(
+    () => resolveVarsityGamesFilter(eventsReady ? events : null, school, currentTimeMs, filterState.sportsGame),
+    [events, eventsReady, school, currentTimeMs, filterState.sportsGame],
+  );
   const schoolRecord = schoolBySlug.get(school);
   const language = i18n.resolvedLanguage ?? i18n.language;
   const campusSeasons = useMemo(
     () => resolveCampusSeasonFilters(schoolRecord, currentTimeMs, language, filterState.campusSeasonIds),
     [schoolRecord, currentTimeMs, language, filterState.campusSeasonIds],
   );
-  const { setCampusSeasonIds } = filterState;
+  const { setCampusSeasonIds, setSportsGame } = filterState;
   useEffect(() => {
     if (campusSeasons.ready && campusSeasons.selectedIds.length !== filterState.campusSeasonIds.length) {
       setCampusSeasonIds(campusSeasons.selectedIds, "normalization");
     }
   }, [campusSeasons, filterState.campusSeasonIds, setCampusSeasonIds]);
+  useEffect(() => {
+    if (varsityGames.ready && filterState.sportsGame && !varsityGames.available) {
+      setSportsGame(false, "normalization");
+    }
+  }, [varsityGames, filterState.sportsGame, setSportsGame]);
 
   const filteredEvents = useMemo(() => {
     const filtered = filterEvents(events, {
@@ -54,7 +65,7 @@ export function useSearch({
       hasFoodFilter: filterState.hasFoodFilter,
       employersOnCampus: filterState.employersOnCampus,
       freeFoodOnCampus: filterState.freeFoodOnCampus,
-      sportsGame: filterState.sportsGame,
+      sportsGame: varsityGames.selected,
       campusSeasonIds: campusSeasons.selectedIds,
       campusSeasonOptions: campusSeasons.options,
       selectedDays: filterState.selectedDays,
@@ -79,7 +90,7 @@ export function useSearch({
     filterState.hasFoodFilter,
     filterState.employersOnCampus,
     filterState.freeFoodOnCampus,
-    filterState.sportsGame,
+    varsityGames.selected,
     campusSeasons.selectedIds,
     campusSeasons.options,
     filterState.selectedDays,
@@ -101,7 +112,7 @@ export function useSearch({
     filterState.customDate,
   ]);
 
-  const filterCount = getFilterCounts({ ...filterState, campusSeasonIds: campusSeasons.selectedIds });
+  const filterCount = getFilterCounts({ ...filterState, sportsGame: varsityGames.selected, campusSeasonIds: campusSeasons.selectedIds });
 
   const categoryOptions = useMemo(
     () =>
@@ -127,6 +138,8 @@ export function useSearch({
 
   return {
     ...filterState,
+    sportsGame: varsityGames.selected,
+    sportsGameAvailable: varsityGames.available,
     campusSeasonIds: campusSeasons.selectedIds,
     campusSeasonOptions: campusSeasons.options,
     categoryOptions,

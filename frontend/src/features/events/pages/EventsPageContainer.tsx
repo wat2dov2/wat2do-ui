@@ -23,7 +23,7 @@ import { usePosterLandingConfirmation } from "@/features/qrcode/hooks/usePosterL
 import { PageHeader, Stack } from "@/shared/layout";
 import type { PaginatedEventsResponse } from "@/features/events/api/events.api";
 import { EventDetailsModal } from "@/features/events/components/EventDetailsModal";
-import { eventQuickFilters } from "@/shared/constants/eventFilters";
+import { getEventQuickFilters } from "@/shared/constants/eventFilters";
 
 interface EventsPageContainerProps {
   /** The server's browse snapshot, or null when that fetch failed. */
@@ -88,9 +88,7 @@ export function EventsPageContainer({
     filters.setSearchQuery(latestAddedEvent.title);
   }, [filters, latestAddedEvent]);
 
-  const quickFilters = eventQuickFilters.filter(
-    config => !("requiresProfile" in config) || profileCompleted,
-  );
+  const quickFilters = getEventQuickFilters({ profileCompleted, sportsGameAvailable: filters.sportsGameAvailable });
 
   // Submitting an event requires an account, so gate before navigating.
   const handleSubmitEventClick = useCallback(() => {

@@ -7,7 +7,7 @@ interface WheelGroup { key: string; dates: string[] }
 interface WheelRow { top: number; date: string; height?: number; group?: string }
 
 function mountWheel(initialGroups?: WheelGroup[]) {
-  type WheelState = { visible: boolean; rotation: number; dates: string[]; active: number; dismissed: boolean; dismiss: () => void };
+  type WheelState = { visible: boolean; rotation: number; dates: string[]; active: number };
   let state: WheelState;
   let groups = initialGroups;
   let pendingFrame: (() => void) | undefined;
@@ -103,7 +103,6 @@ function mountWheel(initialGroups?: WheelGroup[]) {
     replace(next: WheelRow[]) { rows = next; mutation(); flush(); },
     resize(nextColumns: number, nextRows: WheelRow[]) { columns = nextColumns; rows = nextRows; windowListeners.get("resize")?.(); flush(); },
     setGroups(nextGroups?: WheelGroup[]) { groups = nextGroups; render(); flush(); },
-    dismiss() { state.dismiss(); flush(); },
     idle() { timeout?.(); flush(); },
     cleanup() { cleanup?.(); },
     listeners,
@@ -212,19 +211,6 @@ test("filter changes switch forecasts back to actual rows and empty lists clear 
   wheel.replace([]);
   expect(wheel.state.dates).toEqual([]);
   wheel.setGroups([]);
-  expect(wheel.state.visible).toBe(false);
-  wheel.cleanup();
-});
-
-test("dismissal hides the wheel and releases scroll tracking for the mounted list", () => {
-  const wheel = mountWheel();
-  wheel.scroll(400);
-  expect(wheel.state.visible).toBe(true);
-  wheel.dismiss();
-  expect(wheel.state.visible).toBe(false);
-  expect(wheel.state.dismissed).toBe(true);
-  expect(wheel.listeners.size).toBe(0);
-  wheel.scroll(800);
   expect(wheel.state.visible).toBe(false);
   wheel.cleanup();
 });

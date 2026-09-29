@@ -18,6 +18,7 @@ const BADGE_VARIANTS = [
   "live",
   "soon",
   "new",
+  "going",
 ] as const;
 
 export function BadgesSection() {

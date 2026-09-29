@@ -580,6 +580,9 @@ test.describe("Loading shells", () => {
         await expect(page.getByRole("button", { name: "Open navigation menu", exact: true })).toBeVisible();
         const shell = page.locator('[data-slot="discovery-loading"]');
         await expect(shell).toBeVisible();
+        if (listing.resource === "events") {
+          await expect(shell.getByRole("button", { name: "Varsity games", exact: true })).toHaveCount(0);
+        }
         const heading = shell.getByRole("heading", { name: listing.heading, exact: true });
         await expect(heading).toBeVisible();
         await expect(heading).toHaveAttribute("aria-busy", "true");
@@ -3577,6 +3580,7 @@ test.describe("Events Page", () => {
     await employers.click();
     await expect(cards).toHaveCount(1);
     await expect(cards.first()).toContainText("Employer networking with pizza");
+    await expect(varsity).toBeVisible();
     await page.getByRole("button", { name: "Clear filters", exact: true }).click();
     await expect(cards).toHaveCount(7);
     await expect(food).toHaveAttribute("aria-pressed", "false");
@@ -3595,12 +3599,13 @@ test.describe("Events Page", () => {
     const filters = page.getByTestId("event-quick-filter-scroll");
     await expect(filters.getByRole("button", { name: "Going", exact: true })).toBeEnabled();
     const labels = await filters.locator('button').allTextContents();
-    const expected = ["Going", "New", "Employers on campus", "Free food on campus", "Free", "Varsity games", "Any day", ">0 going"];
+    const expected = ["Going", "New", "Employers on campus", "Free food on campus", "Free", "Any day", ">0 going"];
     const indices = expected.map(label => labels.indexOf(label));
     expect(indices.every(index => index >= 0)).toBe(true);
     expect(indices).toEqual([...indices].sort((a, b) => a - b));
     await expect(page.getByRole("combobox", { name: "Event format" })).toHaveCount(0);
     await expect(filters.getByRole("button", { name: "Holidays", exact: true })).toHaveCount(0);
+    await expect(filters.getByRole("button", { name: "Varsity games", exact: true })).toHaveCount(0);
     const logo = page.getByRole("banner").getByRole("link", { name: "Events", exact: true }).first();
     await expect(logo).toHaveAttribute("href", "/events");
   });

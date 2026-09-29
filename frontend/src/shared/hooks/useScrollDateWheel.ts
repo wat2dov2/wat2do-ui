@@ -77,7 +77,6 @@ function measureFeedAnchors(root: HTMLElement, groups?: readonly ScrollDateGroup
 
 /** Cached feed forecasts are optional: filtered lists continue to follow actual DOM rows. */
 export function useScrollDateWheel(groups?: readonly ScrollDateGroup[]) {
-  const [dismissed, setDismissed] = useState(false);
   const [state, setState] = useState({
     visible: false,
     rotation: 0,
@@ -86,7 +85,6 @@ export function useScrollDateWheel(groups?: readonly ScrollDateGroup[]) {
   });
 
   useEffect(() => {
-    if (dismissed) return;
     const root = document.querySelector<HTMLElement>(MAIN_CONTENT_SCROLL_ROOT_SELECTOR);
     if (!root) return;
     let anchors: DateAnchor[] = [];
@@ -156,7 +154,7 @@ export function useScrollDateWheel(groups?: readonly ScrollDateGroup[]) {
       cancelAnimationFrame(frame);
       clearTimeout(hideTimer);
     };
-  }, [groups, dismissed]);
+  }, [groups]);
 
-  return { ...state, visible: state.visible && !dismissed, dismissed, dismiss: () => setDismissed(true) };
+  return state;
 }

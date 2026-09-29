@@ -59,6 +59,7 @@ export function useEventsPageData({
 
   const filters = useSearch({
     events: visibleEvents,
+    eventsReady: query.data !== undefined,
     goingEventIds,
     goingCounts: eventStats,
     school: schoolFilter,

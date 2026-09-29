@@ -1,6 +1,6 @@
-import type { EventDateFilter, FilterState } from "@/shared/types";
+import type { Event, EventDateFilter, FilterState } from "@/shared/types";
 import type { SchoolSummary } from "@/shared/api/schools.api";
-import { parseLocalDateValue, schoolCalendarDate } from "@/shared/utils/date";
+import { hasActiveEventOccurrence, parseLocalDateValue, schoolCalendarDate } from "@/shared/utils/date";
 import { getEventFilterCategories } from "@/shared/constants/eventFilters";
 
 // Shared normalization for visual filters and QR handoff.
@@ -163,6 +163,21 @@ export function clearNarrowingFilterState(current: FilterState): FilterState {
 /** Normalized states have stable key order and value shapes. */
 export function isSameFilterState(a: FilterState, b: FilterState): boolean {
   return JSON.stringify(normalizeFilterState(a)) === JSON.stringify(normalizeFilterState(b));
+}
+
+/** Availability comes from the complete school feed, before any narrowing filters. */
+export function resolveVarsityGamesFilter(
+  events: readonly Event[] | null,
+  school: string,
+  currentTimeMs: number | null,
+  selected: boolean,
+) {
+  const ready = events !== null && currentTimeMs !== null;
+  const available = ready && events.some(event =>
+    event.school === school && event.sports_game === true &&
+    hasActiveEventOccurrence(event, currentTimeMs),
+  );
+  return { ready, available, selected: selected && available };
 }
 
 export interface CampusSeasonFilterOption {

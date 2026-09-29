@@ -226,7 +226,6 @@ export function EventList({
     ? <ScrollDateWheel undatedLabel={t("events.upcoming")} groups={wheelGroups} />
     : null;
 
-  // Keep the wheel mounted through loading/empty results so dismissal lasts this visit.
   // Early returns AFTER all hooks
   if (isLoading) {
     return (

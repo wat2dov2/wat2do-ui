@@ -31,6 +31,8 @@ const badgeVariants = cva(
           "border-0 bg-warning text-warning-foreground",
         new:
           "border-badge-new bg-badge-new",
+        going:
+          "border-badge-going bg-badge-going text-badge-going-foreground",
         category:
           "border-transparent gap-1.5 leading-none",
       },
