@@ -28,7 +28,7 @@ export function ScrollDateWheel({ undatedLabel }: { undatedLabel: string }) {
       data-visible={visible}
       data-date={dates[active] ?? ""}
       aria-hidden="true"
-      className="pointer-events-none fixed left-0 top-[70%] z-30 h-40 w-16 -translate-y-1/2 overflow-hidden transition-opacity duration-150 motion-reduce:transition-none"
+      className="pointer-events-none fixed -left-4 top-[70%] z-30 h-40 w-16 -translate-y-1/2 overflow-hidden transition-opacity duration-150 motion-reduce:transition-none"
       style={{ opacity: visible ? 1 : 0 }}
     >
       <div className="absolute -left-20 top-2 size-36 rounded-full border border-border bg-surface/95 shadow-lg backdrop-blur-sm">
