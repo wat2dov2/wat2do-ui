@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useTranslation } from "react-i18next";
 import { Stack } from "@/shared/layout";
 import { Button } from "@/shared/ui/button";
+import { BadgeMask } from "@/shared/ui/badge-mask";
 import { ChevronLeft, ChevronRight } from "@/shared/ui/doodle-icons";
 import photo0 from "@/assets/utsg-university-college.webp";
 import photo1 from "@/assets/york-stadium-selfie.webp";
@@ -64,9 +65,6 @@ export function SchoolPhotoCarousel() {
 
   return (
     <Stack gap={4}>
-      <h1 className="font-sans text-3xl font-bold tracking-tight text-foreground sm:text-5xl">
-        {t("contact.hero.line1")} {t("contact.hero.line2")}
-      </h1>
       <Stack
         role="region"
         aria-label={t("contact.photos.label")}
@@ -98,6 +96,11 @@ export function SchoolPhotoCarousel() {
             placeholder={imagePlaceholder}
             className="select-none object-contain"
           />
+          <BadgeMask variant="bottom-left">
+            <h1 className="min-w-0 break-words px-3 py-2 font-sans text-lg font-bold leading-snug tracking-tight text-foreground sm:text-xl">
+              {t("contact.hero.line1")} {t("contact.hero.line2")}
+            </h1>
+          </BadgeMask>
         </div>
         <Stack direction="horizontal" align="center" justify="between" gap={3}>
           <Button variant="outline" size="icon-lg" aria-label={t("contact.photos.previous")} onClick={() => navigate(-1)}>

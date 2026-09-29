@@ -466,6 +466,10 @@ test("school carousel renders just the first responsive photo with accessible na
   expect(html).toContain('aria-label="contact.photos.next"');
   expect(html).toContain('aria-live="polite"');
   expect(html).toContain('object-contain');
+  expect(html.match(/<h1 /g)).toHaveLength(1);
+  expect(html).toMatch(/<h1[^>]*>contact\.hero\.line1 contact\.hero\.line2<\/h1>/);
+  // One content-sized corner background replaces the two independent text tiers.
+  expect(html.match(/viewBox="0 0 64 64"/g)).toHaveLength(2);
 });
 
 test("school photos are compact, correctly oriented WebP assets without embedded metadata", async () => {
