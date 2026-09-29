@@ -21,6 +21,7 @@ WHERE schools.slug = examples.slug;
 UPDATE public.schools
 SET
     name = 'University of Waterloo',
+    city = 'Waterloo',
     timezone = 'America/Toronto',
     language = 'en',
     faculties = ARRAY['Arts', 'Engineering', 'Environment', 'Health', 'Mathematics', 'Science'],
@@ -31,9 +32,9 @@ WHERE slug = 'uwaterloo';
 
 UPDATE public.site_banner
 SET
-    message_translation_key = 'siteBanner.founderStory.message',
-    cta_label_translation_key = 'siteBanner.founderStory.cta',
-    cta_href = '/about',
+    message_translation_key = 'siteBanner.businessSupport.message',
+    cta_label_translation_key = 'siteBanner.businessSupport.cta',
+    cta_href = '/support-local',
     updated_at = now()
 WHERE id = 1;
 

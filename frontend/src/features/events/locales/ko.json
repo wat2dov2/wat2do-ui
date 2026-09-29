@@ -1,5 +1,6 @@
 {
   "events": {
+    "instagramHiring": "모집 중: {{positions}}",
     "minimumGoing": "최소 참석자",
     "eventTitle": "이벤트 제목",
     "loadFailed": "이벤트를 불러오지 못했습니다. 다시 시도해 주세요.",

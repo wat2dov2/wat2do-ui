@@ -34,6 +34,7 @@ class School(BaseModel):
 
     slug: str
     name: str
+    city: str | None = None
     primary_color: str
     secondary_color: str
     timezone: str
@@ -64,6 +65,7 @@ class SchoolSummary(BaseModel):
 
     slug: str
     name: str
+    city: str | None = None
     primary_color: str
     secondary_color: str
     timezone: str

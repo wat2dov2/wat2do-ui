@@ -35,7 +35,7 @@ const slideFrame: React.CSSProperties = {
   position: "relative",
 };
 
-const EVENT_HEADER_HEIGHT = 156;
+const EVENT_HEADER_HEIGHT = 132;
 const EVENT_CONTENT_INSET = 32;
 
 /** The browser preview and Satori both support this exact ellipsis contract. */
@@ -66,44 +66,57 @@ const renderSlidePoster: PosterRenderer = ({ src, width, height }) => (
   <img src={src} width={width} height={height} style={{ width, height, objectFit: "cover" }} alt="" />
 );
 
-/** An Instagram-style post with a full-bleed photo and a bounded caption. */
+/** Avatars share one crop and initials fallback in headers and comments. */
+function SlideAvatar({ src, author, size, renderPoster }: { src: string; author: string; size: number; renderPoster: PosterRenderer }) {
+  const initials = author.slice(0, 2).toUpperCase();
+  return <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: size, height: size, borderRadius: size / 2, overflow: "hidden", flexShrink: 0, backgroundColor: LIGHT.secondary, fontSize: size / 3, fontWeight: 700 }}>
+    {src ? renderPoster({ src, width: size, height: size, fallback: initials }) : initials}
+  </div>;
+}
+
+/** An Instagram-style post with a taller photo and two compact comments. */
 export function EventSlideTemplate({ model, renderPoster = renderSlidePoster }: { model: EventSlideModel; renderPoster?: PosterRenderer }) {
   const poster = SLIDE_POSTER_REGIONS.event;
-  const avatar = SLIDE_POSTER_REGIONS.avatar;
-  const initials = model.author.slice(0, 2).toUpperCase();
   const schedule = [model.dateLine, model.timeLine].filter(Boolean).join(" · ");
-  const facts = [model.category.label, ...model.badges].join(" · ");
-
   return (
     <div style={{ ...slideFrame, backgroundColor: LIGHT.surface, color: LIGHT.foreground, overflow: "hidden" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 24, height: EVENT_HEADER_HEIGHT, padding: `20px ${EVENT_CONTENT_INSET}px`, flexShrink: 0 }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", ...avatar, borderRadius: avatar.width / 2, overflow: "hidden", flexShrink: 0, backgroundColor: LIGHT.secondary, fontSize: 32, fontWeight: 700 }}>
-          {model.avatarSrc
-            ? renderPoster({ src: model.avatarSrc, ...avatar, fallback: initials })
-            : initials}
-        </div>
-        <div style={{ display: "flex", flexDirection: "column", flex: 1, minWidth: 0, gap: 4 }}>
-          <p style={{ ...clampText(1), fontSize: 34, fontWeight: 700, lineHeight: 1.2, maxHeight: 41 }}>{model.author}</p>
-          {model.location ? <p style={{ ...clampText(1), fontSize: 26, lineHeight: 1.2, maxHeight: 32 }}>{model.location}</p> : null}
-          {schedule ? <p style={{ ...clampText(1), fontSize: 26, lineHeight: 1.2, maxHeight: 32, color: LIGHT.mutedForeground }}>{schedule}</p> : null}
+      <div style={{ display: "flex", alignItems: "center", gap: 24, height: EVENT_HEADER_HEIGHT, padding: `12px ${EVENT_CONTENT_INSET}px`, flexShrink: 0 }}>
+        <SlideAvatar src={model.avatarSrc} author={model.author} size={SLIDE_POSTER_REGIONS.avatar.width} renderPoster={renderPoster} />
+        <div style={{ display: "flex", flexDirection: "column", flex: 1, minWidth: 0, gap: 3 }}>
+          <p style={{ ...clampText(1), fontSize: 32, fontWeight: 700, lineHeight: 1.2, maxHeight: 39 }}>{model.author}</p>
+          {model.location ? <p style={{ ...clampText(1), fontSize: 24, lineHeight: 1.2, maxHeight: 29 }}>{model.location}</p> : null}
+          {schedule ? <p style={{ ...clampText(1), fontSize: 24, lineHeight: 1.2, maxHeight: 29, color: LIGHT.mutedForeground }}>{schedule}</p> : null}
         </div>
       </div>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", ...poster, flexShrink: 0, overflow: "hidden", backgroundColor: LIGHT.secondary }}>
-        {model.imageSrc
-          ? renderPoster({ src: model.imageSrc, ...poster })
+      <div style={{ display: "flex", position: "relative", alignItems: "center", justifyContent: "center", ...poster, flexShrink: 0, overflow: "hidden", backgroundColor: LIGHT.secondary }}>
+        {model.imageSrc ? renderPoster({ src: model.imageSrc, ...poster })
           : <p style={{ ...clampText(4), margin: EVENT_CONTENT_INSET * 2, fontSize: 64, fontWeight: 700, lineHeight: 1.15 }}>{model.title}</p>}
+        <div style={{ display: "flex", position: "absolute", bottom: 20, left: EVENT_CONTENT_INSET, padding: 5, borderRadius: 48, backgroundColor: LIGHT.surface }}>
+          <SlideAvatar src={model.siteAvatarSrc} author={model.siteName} size={72} renderPoster={renderSlidePoster} />
+          <svg width="30" height="30" viewBox="0 0 24 24" style={{ position: "absolute", right: -6, bottom: -2 }}><path d="M12 21 3 12C-3 5 6-1 12 6 18-1 27 5 21 12Z" fill="#ed4956" stroke="white" strokeWidth="2" /></svg>
+        </div>
       </div>
-      <div style={{ display: "flex", flexDirection: "column", padding: `20px ${EVENT_CONTENT_INSET}px`, flex: 1, overflow: "hidden" }}>
-        <p style={{ ...clampText(1), fontSize: 30, fontWeight: 700, lineHeight: 1.2, maxHeight: 36 }}>{model.author}</p>
-        <p style={{ ...clampText(2), fontSize: 30, lineHeight: 1.2, maxHeight: 72 }}>{model.description}</p>
-        <div style={{ display: "flex", flexDirection: "column", marginTop: 12, gap: 4, fontSize: 28, lineHeight: 1.2 }}>
-          <div style={{ display: "flex", gap: 8, alignItems: "baseline" }}>
-            <p style={{ ...clampText(1), fontWeight: 700, maxWidth: "55%", maxHeight: 34 }}>{model.siteName}</p>
-            <p style={{ ...clampText(1), flex: 1, minWidth: 0, maxHeight: 34 }}>{model.title}</p>
+      <div style={{ display: "flex", flexDirection: "column", padding: `12px ${EVENT_CONTENT_INSET}px`, gap: 12, flex: 1, overflow: "hidden" }}>
+        <div style={{ display: "flex", gap: 16 }}>
+          <SlideAvatar src={model.avatarSrc} author={model.author} size={52} renderPoster={renderPoster} />
+          <div style={{ display: "flex", flexDirection: "column", flex: 1, minWidth: 0 }}>
+            <p style={{ ...clampText(1), fontSize: 26, fontWeight: 700, lineHeight: 1.2, maxHeight: 32 }}>{model.author}</p>
+            <p style={{ ...clampText(2), fontSize: 26, lineHeight: 1.2, maxHeight: 63 }}>{model.description}</p>
           </div>
-          {schedule ? <p style={{ ...clampText(2), maxHeight: 68 }}>{schedule}</p> : null}
-          {model.location ? <p style={{ ...clampText(1), maxHeight: 34 }}>{model.location}</p> : null}
-          <p style={{ ...clampText(1), fontSize: 26, maxHeight: 32, color: LIGHT.mutedForeground }}>{facts}</p>
+        </div>
+        <div style={{ display: "flex", gap: 16 }}>
+          <SlideAvatar src={model.siteAvatarSrc} author={model.siteName} size={52} renderPoster={renderSlidePoster} />
+          <div style={{ display: "flex", flexDirection: "column", flex: 1, minWidth: 0, gap: 4 }}>
+            <p style={{ ...clampText(1), fontSize: 26, fontWeight: 700, lineHeight: 1.2, height: 32, width: "100%", maxHeight: 32 }}>{model.siteName}</p>
+            <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
+              {model.mapSrc ? <img src={model.mapSrc} {...SLIDE_POSTER_REGIONS.map} alt="" style={{ ...SLIDE_POSTER_REGIONS.map, objectFit: "cover", borderRadius: 12 }} /> : null}
+              <div style={{ display: "flex", flexDirection: "column", flex: 1, minWidth: 0, gap: 4, fontSize: 24, lineHeight: 1.2 }}>
+                {model.location ? <p style={{ ...clampText(1), maxHeight: 29 }}>{model.location}</p> : null}
+                {model.hiringLine ? <p style={{ ...clampText(2), maxHeight: 58 }}>{model.hiringLine}</p> : null}
+                {model.badges.length ? <p style={{ ...clampText(1), maxHeight: 29, color: LIGHT.mutedForeground }}>{model.badges.join(" · ")}</p> : null}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

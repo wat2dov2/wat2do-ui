@@ -1,3 +1,6 @@
+import { useQuery } from "@tanstack/react-query";
+import { getClubPositions } from "@/features/positions/api/positions.api";
+import { queryKeys } from "@/shared/lib/queryKeys";
 import { useTranslation } from "react-i18next";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/shared/ui/button";
@@ -60,17 +63,25 @@ export function CarouselSlidePreview({
   removeDisabled,
 }: CarouselSlidePreviewProps) {
   const { t } = useTranslation();
-  const { getSchoolTimezone } = useSchoolDirectory();
+  const { getSchoolTimezone, schoolBySlug } = useSchoolDirectory();
+  const school = schoolBySlug.get(event?.school ?? cover.school);
+  const clubId = event?.club_id ?? 0;
+  const positionSchool = event?.school ?? cover.school;
+  const { data: positions, isError: positionsError } = useQuery({
+    queryKey: queryKeys.positions.byClub(clubId, positionSchool),
+    queryFn: () => getClubPositions(clubId, positionSchool),
+    enabled: clubId > 0 && Boolean(positionSchool) && !publishedAssetUrl,
+  });
   const isCover = slideIndex === COVER_INDEX;
   const previewRef = useRef<HTMLDivElement>(null);
   const [previewWidth, setPreviewWidth] = useState(PREVIEW_WIDTH);
   const previewScale = previewWidth / SLIDE_WIDTH;
   const [modelResult, setModelResult] = useState<{
-    event: Event; language: typeof cover.language; model: EventSlideModel | null;
+    event: Event; language: typeof cover.language; school: typeof school; positions: typeof positions; model: EventSlideModel | null;
   } | null>(null);
-  const currentResult = modelResult?.event === event && modelResult?.language === cover.language ? modelResult : null;
+  const currentResult = modelResult?.event === event && modelResult?.language === cover.language && modelResult.school === school && modelResult.positions === positions ? modelResult : null;
   const slideModel = currentResult?.model;
-  const modelError = currentResult && !slideModel;
+  const modelError = positionsError || (currentResult && !slideModel);
   const renderPoster = ({ src, width, height, fallback }: SlidePosterProps) => (
     <div style={{ position: "relative", width, height }}>
       <LazyImage
@@ -84,15 +95,15 @@ export function CarouselSlidePreview({
   );
 
   useEffect(() => {
-    if (isCover || publishedAssetUrl || !event) return;
+    if (isCover || publishedAssetUrl || !event || !school || (clubId > 0 && !positions)) return;
     let active = true;
     // Publishing uses the first stored occurrence, including for recurring events.
-    buildEventSlideModel({ ...event, ...event.occurrences[0], id: event.id, tz: getSchoolTimezone(event.school) }, cover.language).then(
-      model => { if (active) setModelResult({ event, language: cover.language, model }); },
-      () => { if (active) setModelResult({ event, language: cover.language, model: null }); },
+    buildEventSlideModel({ ...event, ...event.occurrences[0], id: event.id, tz: getSchoolTimezone(event.school) }, cover.language, undefined, undefined, { school, positionTitles: positions?.map(position => position.title) ?? [] }).then(
+      model => { if (active) setModelResult({ event, language: cover.language, school, positions, model }); },
+      () => { if (active) setModelResult({ event, language: cover.language, school, positions, model: null }); },
     );
     return () => { active = false; };
-  }, [event, cover.language, getSchoolTimezone, isCover, publishedAssetUrl]);
+  }, [event, cover.language, getSchoolTimezone, isCover, publishedAssetUrl, school, clubId, positions]);
 
   useEffect(() => {
     const node = previewRef.current;

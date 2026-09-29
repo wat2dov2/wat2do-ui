@@ -96,13 +96,13 @@
     "primary": "Pangunahing nabigasyon",
     "openMenu": "Buksan ang menu ng nabigasyon",
     "switchToLightMode": "Lumipat sa light mode",
-    "switchToDarkMode": "Lumipat sa dark mode",
-    "dismissAnnouncement": "Isara ang anunsyo"
+    "switchToDarkMode": "Lumipat sa dark mode"
   },
   "siteBanner": {
-    "founderStory": {
-      "message": "Nakakalap na kami ng 18,000+ event sa mga campus.",
-      "cta": "Basahin ang kuwento namin"
+    "localArea": "iyong komunidad",
+    "businessSupport": {
+      "message": "Nais naming suportahan ang isang nahihirapang lokal na negosyo sa {{city}} sa pamamagitan ng pag-advertise nito rito.",
+      "cta": "Magsumite ng form"
     }
   },
   "modals": {
@@ -490,6 +490,53 @@
       "previous": "Nakaraang larawan",
       "next": "Susunod na larawan",
       "position": "{{current}} sa {{total}}"
+    },
+    "businessSupport": {
+      "title": "Suportahan ang isang lokal na negosyo",
+      "titleCity": "Suportahan ang isang lokal na negosyo sa {{city}}",
+      "description": "May alam ka bang lokal na negosyong nangangailangan ng tulong? Imungkahi ito para maitampok sa banner ng Wat2Do.",
+      "formTitle": "Magmungkahi ng negosyo",
+      "formDescription": "Sabihin kung bakit ito karapat-dapat suportahan. Sinusuri namin ang bawat mungkahi bago magtampok ng negosyo.",
+      "fields": {
+        "businessName": {
+          "label": "Pangalan ng negosyo"
+        },
+        "location": {
+          "label": "Lokasyon o address ng negosyo"
+        },
+        "website": {
+          "label": "Website o link sa social media (opsyonal)",
+          "hint": "Ilagay ang https:// o http:// sa simula ng kumpletong link."
+        },
+        "reasonForSupport": {
+          "label": "Bakit kailangan ng negosyong ito ng suporta?"
+        },
+        "proposedBannerText": {
+          "label": "Ano ang dapat sabihin ng banner?",
+          "hint": "Magmungkahi ng maikling mensaheng hihikayat sa mga estudyanteng bumisita."
+        },
+        "studentTrafficPerWeek": {
+          "label": "Tinatayang pagbisita ng mga estudyante bawat linggo",
+          "hint": "Sapat na ang tantiyang bilang. Kung hindi mo alam, ilagay ang “Hindi sigurado”."
+        },
+        "email": {
+          "label": "Iyong email address",
+          "hint": "Gagamitin lang namin ito para makipag-ugnayan tungkol sa iyong mungkahi."
+        }
+      },
+      "submit": "Ipadala ang mungkahi",
+      "sending": "Ipinapadala ang mungkahi...",
+      "successTitle": "Natanggap ang mungkahi",
+      "success": "Salamat sa pagtulong sa iyong komunidad. Susuriin namin ang iyong mungkahi at makikipag-ugnayan kung kailangan namin ng higit pang detalye.",
+      "sendAnother": "Magmungkahi ng ibang negosyo",
+      "error": "Hindi namin maipadala ang iyong mungkahi. Nananatili rito ang iyong mga sagot para makasubok kang muli.",
+      "validation": {
+        "required": "Pakisagutan ang bahaging ito.",
+        "email": "Maglagay ng wastong email address.",
+        "website": "Maglagay ng wastong link na may http:// o https:// sa simula.",
+        "tooLong": "Gumamit ng {{maximum}} character o mas kaunti.",
+        "messageTooLong": "Masyadong mahaba ang iyong mungkahi. Pakipaikli ang iyong mga sagot."
+      }
     }
   }
 }

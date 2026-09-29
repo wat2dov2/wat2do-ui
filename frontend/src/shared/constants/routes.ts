@@ -18,6 +18,7 @@ export const ROUTES = {
   ONBOARDING: "/onboarding",
   ONBOARDING_DEMO: "/onboarding-demo",
   ABOUT: "/about",
+  SUPPORT_LOCAL: "/support-local",
   CLUBS: "/clubs",
   POSITIONS: "/positions",
   CLUB_CREATE: "/clubs/new",
@@ -51,6 +52,7 @@ export const PUBLIC_PAGE_ROUTES: readonly string[] = [
   ROUTES.POSITIONS,
   ROUTES.CLUBS,
   ROUTES.ABOUT,
+  ROUTES.SUPPORT_LOCAL,
   ROUTES.LOGIN,
 ];
 
@@ -69,6 +71,7 @@ const ROUTE_PAGE_TITLES: Partial<
   [ROUTES.ONBOARDING]: "Onboarding",
   [ROUTES.ONBOARDING_DEMO]: "Onboarding Demo",
   [ROUTES.ABOUT]: "About",
+  [ROUTES.SUPPORT_LOCAL]: "Support a Local Business",
   [ROUTES.CLUBS]: "Clubs",
   [ROUTES.POSITIONS]: "Positions",
   [ROUTES.CLUB_CREATE]: "Add a Club",

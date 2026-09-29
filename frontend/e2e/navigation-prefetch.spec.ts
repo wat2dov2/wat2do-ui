@@ -97,10 +97,13 @@ test("waits for page resources, then warms each adjacent full page once during i
   browser.runIdle();
   browser.runTimer();
   browser.runIdle();
+  browser.runTimer();
+  browser.runIdle();
   expect(router.calls).toEqual([
     { href: "/positions", options: { kind: "full" } },
     { href: "/clubs", options: { kind: "full" } },
     { href: "/about", options: { kind: "full" } },
+    { href: "/support-local", options: { kind: "full" } },
     { href: "/login", options: { kind: "full" } },
   ]);
   browser.window.dispatchEvent(new Event("online"));
@@ -175,7 +178,8 @@ test("uses bounded deferred work when requestIdleCallback is unavailable", () =>
   browser.runTimer();
   browser.runTimer();
   browser.runTimer();
-  expect(router.calls.map(({ href }) => href)).toEqual(["/", "/positions", "/about", "/login"]);
+  browser.runTimer();
+  expect(router.calls.map(({ href }) => href)).toEqual(["/", "/positions", "/about", "/support-local", "/login"]);
   expect(browser.timers.size).toBe(0);
   stop();
 });
@@ -213,7 +217,7 @@ test("the public page warmer skips the current login page and never selects priv
   const browser = browserScheduler();
   const router = recordingRouter();
   const stop = warmPublicPages(router, "/login");
-  for (const href of ["/", "/positions", "/clubs", "/about"]) {
+  for (const href of ["/", "/positions", "/clubs", "/about", "/support-local"]) {
     const previousCount = router.calls.length;
     browser.runTimer();
     browser.runIdle();

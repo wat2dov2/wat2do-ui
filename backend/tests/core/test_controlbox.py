@@ -66,7 +66,10 @@ def test_checked_in_controlbox_is_valid() -> None:
     assert controlbox.club_management.directory_page_size == 20
     assert str(controlbox.contact.recipient_email) == "contact@wat2do.io"
     assert controlbox.contact.rate_limit.maximum_requests == 5
-    assert controlbox.site_banner.dismissal_days == 30
+    assert (
+        controlbox.contact.business_support.proposed_banner_text
+        < controlbox.contact.maximum_message_length
+    )
     # Publishing accounts are not configured here at all: which accounts exist,
     # which school each serves, and whether each runs all come from the row
     # written when the account is connected.
@@ -310,17 +313,6 @@ def test_invalid_cross_field_limits_are_rejected(tmp_path: Path) -> None:
         load_controlbox(path)
 
 
-def test_site_banner_dismissal_must_be_a_positive_number_of_days(tmp_path: Path) -> None:
-    path = _write_control(
-        tmp_path,
-        "site_banner",
-        lambda payload: payload.update({"dismissal_days": 0}),
-    )
-
-    with pytest.raises(ValidationError, match="dismissal_days"):
-        load_controlbox(path)
-
-
 def test_missing_feature_control_is_rejected(tmp_path: Path) -> None:
     path = _write_control(tmp_path, "admin", lambda payload: payload)
     (path / "admin.json").unlink()
@@ -403,7 +395,6 @@ def test_discovery_controls_load_checked_in_feature_sources():
     [
         ("event_discovery", {"preview_event_count": 0}),
         ("event_discovery", {"preview_event_count": 101}),
-        ("site_banner", {"refresh_seconds": 259200}),
         ("database", {"read_attempts": 0}),
         ("database", {"read_attempts": 6}),
         ("database", {"read_backoff_initial_seconds": -1}),
@@ -504,6 +495,73 @@ def test_discovery_control_limits_reject_unsafe_configuration(tmp_path, feature,
 def test_campus_seasons_reject_invalid_configuration(tmp_path, mutate):
     directory = _write_control(
         tmp_path, "event_discovery", lambda payload: mutate(payload["campus_seasons"])
+    )
+    with pytest.raises(ValidationError):
+        load_controlbox(directory)
+
+
+def test_instagram_browser_controls_have_one_shared_timing_source():
+    assert controlbox.instagram_browser.actions == ("like", "save", "repost")
+    assert controlbox.instagram_browser.job_timeout_seconds == 120
+    assert controlbox.instagram_browser.result_timeout_seconds == 300
+    assert controlbox.instagram_browser.engagement_interval_seconds == 10
+    assert controlbox.instagram_browser.source_page_size == 100
+    assert controlbox.instagram_browser.result_timeout_seconds > (
+        controlbox.instagram_browser.job_timeout_seconds
+    )
+    assert not hasattr(controlbox.instagram_digest, "request_timeout_seconds")
+    assert not hasattr(controlbox.instagram_digest, "interaction_timeout_seconds")
+    assert not hasattr(controlbox.instagram_digest, "poll_interval_seconds")
+
+
+@pytest.mark.parametrize(
+    "patch",
+    [
+        {"request_timeout_seconds": 0},
+        {"request_timeout_seconds": 121},
+        {"interaction_timeout_seconds": 0},
+        {"poll_interval_seconds": 0},
+        {"worker_poll_interval_seconds": 0},
+        {"job_timeout_seconds": 0},
+        {"job_timeout_seconds": 301},
+        {"result_timeout_seconds": 120},
+        {"source_poll_interval_seconds": 0},
+        {"source_page_size": 0},
+        {"source_page_size": 1001},
+        {"engagement_interval_seconds": 0},
+        {"actions": []},
+        {"actions": ["like", "like"]},
+        {"actions": ["unlike"]},
+        {"sessionid": "credentials-do-not-belong-in-controlbox"},
+    ],
+)
+def test_instagram_browser_controls_reject_unsafe_worker_configuration(tmp_path, patch):
+    directory = _write_control(
+        tmp_path,
+        "instagram_browser",
+        lambda payload: payload.update(patch),
+    )
+    with pytest.raises(ValidationError):
+        load_controlbox(directory)
+
+
+@pytest.mark.parametrize(
+    "field",
+    [
+        "business_name",
+        "location",
+        "website",
+        "reason_for_support",
+        "proposed_banner_text",
+        "student_traffic_per_week",
+        "email",
+    ],
+)
+def test_business_nomination_limits_must_be_positive(tmp_path: Path, field: str) -> None:
+    directory = _write_control(
+        tmp_path,
+        "contact",
+        lambda payload: payload["business_support"].update({field: 0}),
     )
     with pytest.raises(ValidationError):
         load_controlbox(directory)

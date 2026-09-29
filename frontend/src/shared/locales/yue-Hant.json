@@ -93,13 +93,13 @@
     "primary": "主要導覽",
     "openMenu": "開啟導覽選單",
     "switchToLightMode": "切換至淺色模式",
-    "switchToDarkMode": "切換至深色模式",
-    "dismissAnnouncement": "關閉公告"
+    "switchToDarkMode": "切換至深色模式"
   },
   "siteBanner": {
-    "founderStory": {
-      "message": "我哋已搜集各大校園超過 18,000 個活動。",
-      "cta": "睇我哋嘅故事"
+    "localArea": "你嘅社區",
+    "businessSupport": {
+      "message": "我哋想透過喺呢度宣傳，支持 {{city}} 一間經營遇到困難嘅本地商戶。",
+      "cta": "填寫表格"
     }
   },
   "modals": {
@@ -487,6 +487,53 @@
       "previous": "上一張校園相片",
       "next": "下一張校園相片",
       "position": "第 {{current}} 張，共 {{total}} 張"
+    },
+    "businessSupport": {
+      "title": "支持本地商戶",
+      "titleCity": "支持 {{city}} 嘅本地商戶",
+      "description": "你知唔知道邊間本地商戶需要幫手？推薦佢哋喺 Wat2Do 橫額上亮相啦。",
+      "formTitle": "推薦商戶",
+      "formDescription": "話畀我哋知點解呢間商戶值得支持。我哋會先審核每份推薦，再決定介紹邊間商戶。",
+      "fields": {
+        "businessName": {
+          "label": "商戶名稱"
+        },
+        "location": {
+          "label": "商戶位置或地址"
+        },
+        "website": {
+          "label": "網站或社交媒體連結（選填）",
+          "hint": "請提供以 https:// 或 http:// 開頭嘅完整連結。"
+        },
+        "reasonForSupport": {
+          "label": "點解呢間商戶需要支持？"
+        },
+        "proposedBannerText": {
+          "label": "橫額上應該寫啲咩？",
+          "hint": "建議一句簡短訊息，吸引同學到訪。"
+        },
+        "studentTrafficPerWeek": {
+          "label": "估計每星期有幾多人次學生到訪",
+          "hint": "大概估計就得。如果唔知，可以填「唔肯定」。"
+        },
+        "email": {
+          "label": "你嘅電郵地址",
+          "hint": "我哋只會用呢個地址，就你嘅推薦同你跟進。"
+        }
+      },
+      "submit": "提交推薦",
+      "sending": "正在提交推薦...",
+      "successTitle": "已收到推薦",
+      "success": "多謝你幫助社區。我哋會審核你嘅推薦，如果需要更多資料，就會再聯絡你。",
+      "sendAnother": "推薦另一間商戶",
+      "error": "未能提交你嘅推薦。你填嘅內容仍然保留喺度，可以再試一次。",
+      "validation": {
+        "required": "請填寫呢個欄位。",
+        "email": "請輸入有效嘅電郵地址。",
+        "website": "請輸入有效嘅 http:// 或 https:// 連結。",
+        "tooLong": "請用 {{maximum}} 個字元或以內。",
+        "messageTooLong": "你嘅推薦內容太長，請縮短答案。"
+      }
     }
   }
 }

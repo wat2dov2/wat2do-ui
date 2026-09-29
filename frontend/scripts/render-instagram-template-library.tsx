@@ -87,7 +87,10 @@ for (const language of ["en", "fr"] as const) {
     ["sparse", await buildEventSlideModel({ id: 2, title: "A campus gathering", category: "Arts & Culture", school: "uwaterloo", tz: "America/Toronto" }, language)],
   ] as const;
   for (const [kind, model] of productionExamples) {
-    const bytes = await png(createElement(EventSlideTemplate, { model }));
+    const bytes = await png(createElement(EventSlideTemplate, { model: {
+      ...model, siteAvatarSrc: cover.logoSrc,
+      hiringLine: kind === "sparse" ? "" : (language === "fr" ? "Recrutement : Responsable des événements, Designer" : "Hiring: Events Coordinator, Designer"),
+    } }));
     await writeFile(path.join(output, `production-event-${kind}-${language}.png`), bytes);
     productionOutputs.push(bytes);
   }

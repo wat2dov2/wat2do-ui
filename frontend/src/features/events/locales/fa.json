@@ -1,5 +1,6 @@
 {
   "events": {
+    "instagramHiring": "استخدام: {{positions}}",
     "minimumGoing": "حداقل شرکت‌کننده",
     "eventTitle": "عنوان رویداد",
     "loadFailed": "بارگذاری رویدادها ناموفق بود. لطفاً دوباره تلاش کنید.",

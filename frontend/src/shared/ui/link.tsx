@@ -10,6 +10,8 @@ const linkVariants = cva("transition-colors", {
       default: "text-primary underline-offset-4 hover:underline",
       muted:
         "text-muted-foreground underline-offset-4 hover:text-foreground hover:underline",
+      announcement:
+        "font-semibold text-foreground underline underline-offset-4 hover:text-primary",
     },
   },
   defaultVariants: {

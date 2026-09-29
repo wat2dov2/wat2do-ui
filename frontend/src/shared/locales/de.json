@@ -96,13 +96,13 @@
     "primary": "Hauptnavigation",
     "openMenu": "Navigationsmenü öffnen",
     "switchToLightMode": "Zum hellen Modus wechseln",
-    "switchToDarkMode": "Zum dunklen Modus wechseln",
-    "dismissAnnouncement": "Ankündigung schließen"
+    "switchToDarkMode": "Zum dunklen Modus wechseln"
   },
   "siteBanner": {
-    "founderStory": {
-      "message": "Wir haben über 18.000 Veranstaltungen an Hochschulen gesammelt.",
-      "cta": "Unsere Geschichte lesen"
+    "localArea": "deiner Umgebung",
+    "businessSupport": {
+      "message": "Wir möchten ein lokales Unternehmen in {{city}}, das gerade Schwierigkeiten hat, hier mit Werbung unterstützen.",
+      "cta": "Formular ausfüllen"
     }
   },
   "modals": {
@@ -490,6 +490,53 @@
       "previous": "Vorheriges Campusfoto",
       "next": "Nächstes Campusfoto",
       "position": "{{current}} von {{total}}"
+    },
+    "businessSupport": {
+      "title": "Unterstütze ein lokales Unternehmen",
+      "titleCity": "Unterstütze ein lokales Unternehmen in {{city}}",
+      "description": "Kennst du ein lokales Unternehmen, das Unterstützung braucht? Schlage es für einen Platz im Wat2Do-Banner vor.",
+      "formTitle": "Ein Unternehmen vorschlagen",
+      "formDescription": "Erzähl uns, warum es Unterstützung verdient. Wir prüfen jeden Vorschlag, bevor wir ein Unternehmen vorstellen.",
+      "fields": {
+        "businessName": {
+          "label": "Name des Unternehmens"
+        },
+        "location": {
+          "label": "Standort oder Adresse des Unternehmens"
+        },
+        "website": {
+          "label": "Website oder Social-Media-Link (optional)",
+          "hint": "Gib einen vollständigen Link mit https:// oder http:// am Anfang ein."
+        },
+        "reasonForSupport": {
+          "label": "Warum braucht dieses Unternehmen Unterstützung?"
+        },
+        "proposedBannerText": {
+          "label": "Was soll im Banner stehen?",
+          "hint": "Schlage eine kurze Nachricht vor, die Studierende zu einem Besuch ermutigt."
+        },
+        "studentTrafficPerWeek": {
+          "label": "Geschätzte Besuche von Studierenden pro Woche",
+          "hint": "Eine grobe Schätzung reicht. Wenn du es nicht weißt, schreibe „Nicht sicher“."
+        },
+        "email": {
+          "label": "Deine E-Mail-Adresse",
+          "hint": "Wir verwenden sie nur für Rückfragen zu deinem Vorschlag."
+        }
+      },
+      "submit": "Vorschlag senden",
+      "sending": "Vorschlag wird gesendet...",
+      "successTitle": "Vorschlag erhalten",
+      "success": "Danke, dass du deiner Gemeinschaft hilfst. Wir prüfen deinen Vorschlag und melden uns, falls wir weitere Angaben brauchen.",
+      "sendAnother": "Ein weiteres Unternehmen vorschlagen",
+      "error": "Dein Vorschlag konnte nicht gesendet werden. Deine Antworten bleiben hier erhalten, damit du es erneut versuchen kannst.",
+      "validation": {
+        "required": "Bitte fülle dieses Feld aus.",
+        "email": "Gib eine gültige E-Mail-Adresse ein.",
+        "website": "Gib einen gültigen Link mit http:// oder https:// ein.",
+        "tooLong": "Verwende höchstens {{maximum}} Zeichen.",
+        "messageTooLong": "Dein Vorschlag ist zu lang. Bitte kürze deine Antworten."
+      }
     }
   }
 }

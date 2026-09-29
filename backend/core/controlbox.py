@@ -435,16 +435,21 @@ class EmailDeliveryControl(_ControlModel):
     notification_consent_version: str = Field(min_length=1)
 
 
+class BusinessSupportLimits(_ControlModel):
+    business_name: int = Field(gt=0, le=200)
+    location: int = Field(gt=0, le=500)
+    website: int = Field(gt=0, le=1000)
+    reason_for_support: int = Field(gt=0, le=5000)
+    proposed_banner_text: int = Field(gt=0, le=500)
+    student_traffic_per_week: int = Field(gt=0, le=500)
+    email: int = Field(gt=0, le=254)
+
+
 class ContactControl(_ControlModel):
     recipient_email: EmailStr
     maximum_message_length: int = Field(gt=0, le=20_000)
     rate_limit: RateLimitControl
-
-
-class SiteBannerControl(_ControlModel):
-    """Dismissal duration for the site-wide banner."""
-
-    dismissal_days: int = Field(gt=0, le=365)
+    business_support: BusinessSupportLimits
 
 
 class AdminControl(_ControlModel):
@@ -545,14 +550,32 @@ class EmulatorFarmControl(_ControlModel):
         return self
 
 
+class InstagramBrowserControl(_ControlModel):
+    request_timeout_seconds: float = Field(gt=0, le=120)
+    interaction_timeout_seconds: float = Field(gt=0, le=120)
+    poll_interval_seconds: float = Field(gt=0, le=5)
+    worker_poll_interval_seconds: float = Field(gt=0, le=10)
+    job_timeout_seconds: float = Field(gt=0, le=300)
+    result_timeout_seconds: float = Field(gt=0, le=1800)
+    source_poll_interval_seconds: float = Field(ge=10, le=3600)
+    source_page_size: int = Field(gt=0, le=1000)
+    engagement_interval_seconds: float = Field(ge=1, le=3600)
+    actions: tuple[Literal["like", "save", "repost"], ...] = Field(min_length=1, max_length=3)
+
+    @model_validator(mode="after")
+    def validate_worker(self) -> "InstagramBrowserControl":
+        if len(self.actions) != len(set(self.actions)):
+            raise ValueError("Instagram browser actions must be unique")
+        if self.result_timeout_seconds <= self.job_timeout_seconds:
+            raise ValueError("Instagram browser result timeout must exceed job timeout")
+        return self
+
+
 class InstagramDigestControl(_ControlModel):
     endpoint_url: HttpUrl
     operation_name: Literal["SubscriptionDigestFeedQuery"]
     client_doc_id: str = Field(pattern=r"^[0-9]{20,40}$")
     web_app_id: str = Field(pattern=r"^[0-9]{10,20}$")
-    request_timeout_seconds: float = Field(gt=0, le=120)
-    interaction_timeout_seconds: float = Field(gt=0, le=120)
-    poll_interval_seconds: float = Field(gt=0, le=5)
     maximum_pages: int = Field(gt=0, le=100)
 
     @model_validator(mode="after")
@@ -689,12 +712,12 @@ class ControlBox(_ControlModel):
     reel_transcription: ReelTranscriptionControl
     email_delivery: EmailDeliveryControl
     contact: ContactControl
-    site_banner: SiteBannerControl
     admin: AdminControl
     uploads: UploadsControl
     public_attendance: PublicAttendanceControl
     social_previews: SocialPreviewsControl
     emulator_farm: EmulatorFarmControl
+    instagram_browser: InstagramBrowserControl
     instagram_digest: InstagramDigestControl
     instagram_publishing: InstagramPublishingControl
     workflow_failure_alerts: WorkflowFailureAlertsControl

@@ -21,8 +21,10 @@ from schemas.school import validate_recipient_id  # noqa: E402
 from services import school_service  # noqa: E402
 from services.instagram_notifications.browser_digest import (  # noqa: E402
     BrowserDigestError,
-    BrowserInstagramDigestResolver,
     digest_media_count_shortfall,
+)
+from services.instagram_notifications.browser_queue import (  # noqa: E402
+    QueuedInstagramDigestResolver,
 )
 from services.instagram_notifications.ledger import (  # noqa: E402
     MaterializedMedia,
@@ -209,31 +211,24 @@ def _materialize_media(
     intended_recipient_id: str,
     account_username: str,
     *,
-    resolver: BrowserInstagramDigestResolver | None = None,
+    resolver: QueuedInstagramDigestResolver | None = None,
 ) -> list[MaterializedMedia]:
     materialized = {item.media_id: item for item in notification.explicit_media}
     shortfall = digest_media_count_shortfall(
         len(materialized),
         notification.total_media_count,
     )
-    if notification.cache_ent_id is not None and shortfall:
-        import sys
-
+    if notification.cache_ent_id is not None and (
+        notification.total_media_count is None or shortfall
+    ):
         if sys.platform != "darwin":
             raise BrowserDigestError("CacheEntID expansion requires the browser-capable Mac runner")
 
-        import fcntl
-
-        lock_path = "/tmp/wat2do_instagram_browser.lock"
-        with open(lock_path, "w") as lock_file:
-            log.info("Waiting for exclusive access to the Brave browser...")
-            fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX)
-            log.info("Acquired exclusive browser access.")
-            resolution = (resolver or BrowserInstagramDigestResolver()).resolve(
-                intended_recipient_id,
-                account_username,
-                notification.cache_ent_id,
-            )
+        resolution = (resolver or QueuedInstagramDigestResolver()).resolve(
+            intended_recipient_id,
+            account_username,
+            notification.cache_ent_id,
+        )
 
         for raw_media_id in resolution.media_ids:
             media_id = _parse_media_id(raw_media_id)

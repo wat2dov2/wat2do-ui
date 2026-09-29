@@ -99,13 +99,13 @@
     "primary": "Navigation principale",
     "openMenu": "Ouvrir le menu de navigation",
     "switchToLightMode": "Passer au mode clair",
-    "switchToDarkMode": "Passer au mode sombre",
-    "dismissAnnouncement": "Ignorer l'annonce"
+    "switchToDarkMode": "Passer au mode sombre"
   },
   "siteBanner": {
-    "founderStory": {
-      "message": "Nous avons collecté plus de 18 000 événements sur les campus.",
-      "cta": "Lire notre histoire"
+    "localArea": "proximité de chez vous",
+    "businessSupport": {
+      "message": "Nous souhaitons soutenir un commerce local en difficulté à {{city}} en lui offrant de la visibilité ici.",
+      "cta": "Remplir un formulaire"
     }
   },
   "modals": {
@@ -493,6 +493,53 @@
       "previous": "Photo précédente",
       "next": "Photo suivante",
       "position": "{{current}} sur {{total}}"
+    },
+    "businessSupport": {
+      "title": "Soutenez un commerce local",
+      "titleCity": "Soutenez un commerce local à {{city}}",
+      "description": "Vous connaissez un commerce local qui aurait besoin d’un coup de pouce? Proposez-le pour figurer dans la bannière de Wat2Do.",
+      "formTitle": "Proposer un commerce",
+      "formDescription": "Dites-nous pourquoi il mérite votre soutien. Nous examinons chaque proposition avant de mettre un commerce en avant.",
+      "fields": {
+        "businessName": {
+          "label": "Nom du commerce"
+        },
+        "location": {
+          "label": "Emplacement ou adresse du commerce"
+        },
+        "website": {
+          "label": "Site Web ou lien vers un réseau social (facultatif)",
+          "hint": "Ajoutez https:// ou http:// au début du lien complet."
+        },
+        "reasonForSupport": {
+          "label": "Pourquoi ce commerce a-t-il besoin de soutien?"
+        },
+        "proposedBannerText": {
+          "label": "Que devrait dire la bannière?",
+          "hint": "Proposez un court message qui encouragerait les étudiants à s’y rendre."
+        },
+        "studentTrafficPerWeek": {
+          "label": "Nombre estimé de visites étudiantes par semaine",
+          "hint": "Une estimation approximative suffit. Si vous ne savez pas, écrivez « Je ne sais pas »."
+        },
+        "email": {
+          "label": "Votre adresse courriel",
+          "hint": "Nous l’utiliserons uniquement pour vous contacter au sujet de votre proposition."
+        }
+      },
+      "submit": "Envoyer la proposition",
+      "sending": "Envoi de la proposition...",
+      "successTitle": "Proposition reçue",
+      "success": "Merci de soutenir votre communauté. Nous examinerons votre proposition et vous contacterons si nous avons besoin de précisions.",
+      "sendAnother": "Proposer un autre commerce",
+      "error": "Nous n’avons pas pu envoyer votre proposition. Vos réponses sont conservées ici pour que vous puissiez réessayer.",
+      "validation": {
+        "required": "Veuillez remplir ce champ.",
+        "email": "Saisissez une adresse courriel valide.",
+        "website": "Saisissez un lien http:// ou https:// valide.",
+        "tooLong": "Utilisez au maximum {{maximum}} caractères.",
+        "messageTooLong": "Votre proposition est trop longue. Veuillez raccourcir vos réponses."
+      }
     }
   }
 }

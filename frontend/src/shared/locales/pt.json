@@ -99,13 +99,13 @@
     "primary": "Navegação principal",
     "openMenu": "Abrir menu de navegação",
     "switchToLightMode": "Mudar para o modo claro",
-    "switchToDarkMode": "Mudar para o modo escuro",
-    "dismissAnnouncement": "Dispensar anúncio"
+    "switchToDarkMode": "Mudar para o modo escuro"
   },
   "siteBanner": {
-    "founderStory": {
-      "message": "Reunimos mais de 18.000 eventos em vários campi.",
-      "cta": "Leia nossa história"
+    "localArea": "sua comunidade",
+    "businessSupport": {
+      "message": "Queremos apoiar um negócio local em dificuldades em {{city}}, divulgando-o aqui.",
+      "cta": "Enviar um formulário"
     }
   },
   "modals": {
@@ -493,6 +493,53 @@
       "previous": "Foto anterior",
       "next": "Próxima foto",
       "position": "{{current}} de {{total}}"
+    },
+    "businessSupport": {
+      "title": "Apoie um negócio local",
+      "titleCity": "Apoie um negócio local em {{city}}",
+      "description": "Conhece um negócio local que precisa de uma força? Indique-o para aparecer no banner do Wat2Do.",
+      "formTitle": "Indique um negócio",
+      "formDescription": "Conte por que esse negócio merece apoio. Avaliamos cada indicação antes de destacar um negócio.",
+      "fields": {
+        "businessName": {
+          "label": "Nome do negócio"
+        },
+        "location": {
+          "label": "Localização ou endereço do negócio"
+        },
+        "website": {
+          "label": "Site ou link de rede social (opcional)",
+          "hint": "Inclua https:// ou http:// no início do link."
+        },
+        "reasonForSupport": {
+          "label": "Por que esse negócio precisa de apoio?"
+        },
+        "proposedBannerText": {
+          "label": "O que o banner deve dizer?",
+          "hint": "Sugira uma mensagem curta que incentive os estudantes a visitar o local."
+        },
+        "studentTrafficPerWeek": {
+          "label": "Estimativa de visitas de estudantes por semana",
+          "hint": "Uma estimativa aproximada é suficiente. Se não souber, escreva “Não sei”."
+        },
+        "email": {
+          "label": "Seu endereço de e-mail",
+          "hint": "Usaremos esse endereço apenas para entrar em contato sobre sua indicação."
+        }
+      },
+      "submit": "Enviar indicação",
+      "sending": "Enviando indicação...",
+      "successTitle": "Indicação recebida",
+      "success": "Obrigado por ajudar sua comunidade. Vamos avaliar sua indicação e entrar em contato se precisarmos de mais detalhes.",
+      "sendAnother": "Indicar outro negócio",
+      "error": "Não foi possível enviar sua indicação. Suas respostas continuam aqui para você tentar novamente.",
+      "validation": {
+        "required": "Preencha este campo.",
+        "email": "Digite um endereço de e-mail válido.",
+        "website": "Digite um link http:// ou https:// válido.",
+        "tooLong": "Use no máximo {{maximum}} caracteres.",
+        "messageTooLong": "Sua indicação está muito longa. Encurte suas respostas."
+      }
     }
   }
 }

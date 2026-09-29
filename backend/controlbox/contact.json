@@ -1,6 +1,15 @@
 {
   "recipient_email": "contact@wat2do.io",
   "maximum_message_length": 5000,
+  "business_support": {
+    "business_name": 120,
+    "location": 250,
+    "website": 500,
+    "reason_for_support": 2000,
+    "proposed_banner_text": 180,
+    "student_traffic_per_week": 250,
+    "email": 254
+  },
   "rate_limit": {
     "maximum_requests": 5,
     "window_seconds": 3600

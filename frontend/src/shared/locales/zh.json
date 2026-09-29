@@ -93,13 +93,13 @@
     "primary": "主导航",
     "openMenu": "打开导航菜单",
     "switchToLightMode": "切换到浅色模式",
-    "switchToDarkMode": "切换到深色模式",
-    "dismissAnnouncement": "关闭公告"
+    "switchToDarkMode": "切换到深色模式"
   },
   "siteBanner": {
-    "founderStory": {
-      "message": "我们已收录各大校园的 18,000 多场活动。",
-      "cta": "了解我们的故事"
+    "localArea": "你的社区",
+    "businessSupport": {
+      "message": "我们希望在这里宣传一家在 {{city}} 经营遇到困难的本地商家，为他们提供支持。",
+      "cta": "填写表单"
     }
   },
   "modals": {
@@ -487,6 +487,53 @@
       "previous": "上一张校园照片",
       "next": "下一张校园照片",
       "position": "第 {{current}} 张，共 {{total}} 张"
+    },
+    "businessSupport": {
+      "title": "支持本地商家",
+      "titleCity": "支持 {{city}} 的本地商家",
+      "description": "你知道哪家本地商家需要帮助吗？推荐他们登上 Wat2Do 横幅吧。",
+      "formTitle": "推荐商家",
+      "formDescription": "请告诉我们这家商家为什么值得支持。我们会先审核每份推荐，再决定展示哪些商家。",
+      "fields": {
+        "businessName": {
+          "label": "商家名称"
+        },
+        "location": {
+          "label": "商家位置或地址"
+        },
+        "website": {
+          "label": "网站或社交媒体链接（选填）",
+          "hint": "请提供以 https:// 或 http:// 开头的完整链接。"
+        },
+        "reasonForSupport": {
+          "label": "这家商家为什么需要支持？"
+        },
+        "proposedBannerText": {
+          "label": "横幅上应该写什么？",
+          "hint": "请建议一句简短文案，鼓励同学前去光顾。"
+        },
+        "studentTrafficPerWeek": {
+          "label": "预计每周学生到访人次",
+          "hint": "大致估计即可。如果不清楚，请填写“不确定”。"
+        },
+        "email": {
+          "label": "你的电子邮箱",
+          "hint": "我们只会用这个邮箱联系你，跟进你的推荐。"
+        }
+      },
+      "submit": "提交推荐",
+      "sending": "正在提交推荐...",
+      "successTitle": "已收到推荐",
+      "success": "感谢你帮助社区。我们会审核你的推荐，并在需要更多信息时与你联系。",
+      "sendAnother": "推荐另一家商家",
+      "error": "未能提交你的推荐。你填写的内容仍保留在这里，可以重试。",
+      "validation": {
+        "required": "请填写此项。",
+        "email": "请输入有效的电子邮箱地址。",
+        "website": "请输入有效的 http:// 或 https:// 链接。",
+        "tooLong": "请勿超过 {{maximum}} 个字符。",
+        "messageTooLong": "你的推荐内容过长，请缩短回答。"
+      }
     }
   }
 }

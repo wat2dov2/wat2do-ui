@@ -8,17 +8,17 @@ def test_get_site_banner_returns_translation_keys(fake_sb, patch_sb):
         data=[
             {
                 "enabled": True,
-                "message_translation_key": "siteBanner.founderStory.message",
-                "cta_label_translation_key": "siteBanner.founderStory.cta",
-                "cta_href": "/about",
+                "message_translation_key": "siteBanner.businessSupport.message",
+                "cta_label_translation_key": "siteBanner.businessSupport.cta",
+                "cta_href": "/support-local",
             }
         ]
     )
 
     assert site_banner_service.get_site_banner() == SiteBannerResponse(
-        message_translation_key="siteBanner.founderStory.message",
-        cta_label_translation_key="siteBanner.founderStory.cta",
-        cta_href="/about",
+        message_translation_key="siteBanner.businessSupport.message",
+        cta_label_translation_key="siteBanner.businessSupport.cta",
+        cta_href="/support-local",
     )
 
 
@@ -28,9 +28,9 @@ def test_get_site_banner_hides_disabled_row(fake_sb, patch_sb):
         data=[
             {
                 "enabled": False,
-                "message_translation_key": "siteBanner.founderStory.message",
-                "cta_label_translation_key": "siteBanner.founderStory.cta",
-                "cta_href": "/about",
+                "message_translation_key": "siteBanner.businessSupport.message",
+                "cta_label_translation_key": "siteBanner.businessSupport.cta",
+                "cta_href": "/support-local",
             }
         ]
     )

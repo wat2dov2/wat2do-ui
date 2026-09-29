@@ -278,5 +278,12 @@ body:has([data-slot="site-banner"]) .main-content-grid {
 }
 
 :root {
-  --site-banner-height: 2.25rem;
+  /* Reserve room before hydration; the strip measures wrapped/localized copy. */
+  --site-banner-height: 6rem;
+}
+
+@media (min-width: 640px) {
+  :root {
+    --site-banner-height: 3.5rem;
+  }
 }

@@ -1,5 +1,6 @@
 {
   "events": {
+    "instagramHiring": "بھرتی: {{positions}}",
     "minimumGoing": "کم از کم شرکاء",
     "eventTitle": "ایونٹ کا عنوان",
     "loadFailed": "ایونٹس لوڈ کرنے میں ناکام۔ براہ کرم دوبارہ کوشش کریں۔",

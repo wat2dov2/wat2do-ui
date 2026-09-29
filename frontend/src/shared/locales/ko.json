@@ -93,13 +93,13 @@
     "primary": "기본 탐색",
     "openMenu": "탐색 메뉴 열기",
     "switchToLightMode": "라이트 모드로 전환",
-    "switchToDarkMode": "다크 모드로 전환",
-    "dismissAnnouncement": "공지사항 닫기"
+    "switchToDarkMode": "다크 모드로 전환"
   },
   "siteBanner": {
-    "founderStory": {
-      "message": "여러 캠퍼스에서 18,000개 이상의 이벤트를 모았습니다.",
-      "cta": "우리 이야기 읽기"
+    "localArea": "우리 지역",
+    "businessSupport": {
+      "message": "{{city}}에서 어려움을 겪는 지역 업체를 이곳에 홍보해 도움을 드리고 싶습니다.",
+      "cta": "추천 양식 작성하기"
     }
   },
   "modals": {
@@ -487,6 +487,53 @@
       "previous": "이전 캠퍼스 사진",
       "next": "다음 캠퍼스 사진",
       "position": "{{total}}장 중 {{current}}장"
+    },
+    "businessSupport": {
+      "title": "지역 업체를 응원해 주세요",
+      "titleCity": "{{city}}의 지역 업체를 응원해 주세요",
+      "description": "응원이 필요한 지역 업체를 알고 계신가요? Wat2Do 배너에 소개할 업체를 추천해 주세요.",
+      "formTitle": "업체 추천하기",
+      "formDescription": "이 업체를 응원해야 하는 이유를 알려 주세요. 모든 추천을 검토한 뒤 소개할 업체를 선정합니다.",
+      "fields": {
+        "businessName": {
+          "label": "업체명"
+        },
+        "location": {
+          "label": "업체 위치 또는 주소"
+        },
+        "website": {
+          "label": "웹사이트 또는 소셜 미디어 링크(선택)",
+          "hint": "https:// 또는 http:// 형식으로 시작하는 전체 링크를 입력해 주세요."
+        },
+        "reasonForSupport": {
+          "label": "이 업체에 도움이 필요한 이유는 무엇인가요?"
+        },
+        "proposedBannerText": {
+          "label": "배너에 어떤 문구를 넣으면 좋을까요?",
+          "hint": "학생들의 방문을 유도할 짧은 문구를 제안해 주세요."
+        },
+        "studentTrafficPerWeek": {
+          "label": "예상 주간 학생 방문 수",
+          "hint": "대략적인 수치도 괜찮습니다. 모르면 “잘 모르겠음”이라고 적어 주세요."
+        },
+        "email": {
+          "label": "이메일 주소",
+          "hint": "추천 내용에 관해 추가로 연락드릴 때만 사용합니다."
+        }
+      },
+      "submit": "추천 보내기",
+      "sending": "추천을 보내는 중...",
+      "successTitle": "추천이 접수되었습니다",
+      "success": "지역 사회를 도와주셔서 감사합니다. 추천 내용을 검토한 뒤 추가 정보가 필요하면 연락드리겠습니다.",
+      "sendAnother": "다른 업체 추천하기",
+      "error": "추천을 보내지 못했습니다. 입력한 내용은 여기에 남아 있으니 다시 시도해 주세요.",
+      "validation": {
+        "required": "이 항목을 입력해 주세요.",
+        "email": "올바른 이메일 주소를 입력해 주세요.",
+        "website": "올바른 http:// 또는 https:// 링크를 입력해 주세요.",
+        "tooLong": "{{maximum}}자 이내로 입력해 주세요.",
+        "messageTooLong": "추천 내용이 너무 깁니다. 답변을 줄여 주세요."
+      }
     }
   }
 }

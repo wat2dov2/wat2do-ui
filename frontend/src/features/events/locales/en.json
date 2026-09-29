@@ -1,5 +1,6 @@
 {
   "events": {
+    "instagramHiring": "Hiring: {{positions}}",
     "minimumGoing": "Minimum going",
     "eventTitle": "Event Title",
     "loadFailed": "Failed to load events. Please try again.",

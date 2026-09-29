@@ -12844,6 +12844,17 @@
             "type": "string",
             "title": "Name"
           },
+          "city": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "City"
+          },
           "primary_color": {
             "type": "string",
             "title": "Primary Color"
@@ -12986,6 +12997,17 @@
           "name": {
             "type": "string",
             "title": "Name"
+          },
+          "city": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "City"
           },
           "primary_color": {
             "type": "string",

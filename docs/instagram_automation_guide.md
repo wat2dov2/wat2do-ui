@@ -1,8 +1,9 @@
 # Instagram Automation Commands
 
 The active collection path uses Android Instagram notifications.
-When Instagram collapses several posts into one digest, the GitHub processing job expands that notification through one existing Brave Instagram tab before recording notification media.
-The resolver switches accounts serially and never extracts or persists browser cookies.
+When Instagram collapses several posts into one digest, the GitHub processing job submits a high-priority job to the Mac's shared browser worker before recording notification media.
+The same worker likes, saves, and natively reposts the original event posts selected in newly published Instagram carousels.
+Both queues share one existing Brave Instagram tab, with credentials remaining inside the browser.
 
 ## Single-node Instagram notification farm
 
@@ -23,36 +24,177 @@ It accepts every complete Instagram notification from the node and forwards its 
 The dispatcher forwards an incomplete `subscription_daily_digest` unchanged so `jobs/process_notification.py` remains the single owner of media materialization.
 Its local state stores recipient evidence plus one-way hashes of dispatched push IDs, never notification titles, bodies, raw push IDs, or media metadata.
 
-## One-time Brave setup for collapsed digests
+## Shared Brave browser worker
 
 Keep Brave running with the school accounts logged in and available under More > Switch accounts.
-The resolver reuses an Instagram tab or opens one if it has been closed.
-It waits for account controls to load and retries once from `https://www.instagram.com/` when the page or account switch gets stuck.
-If recovery fails, the notification fails before its media is recorded and can be rerun.
+Open one Instagram tab for the worker to reuse.
+It pins that tab for each operation and fails if the tab closes or changes to another site.
+It never launches Brave, creates a tab, creates a separate browser profile, or logs into an account.
+An authorized human completes login, two-factor prompts, and security challenges.
 In Brave, enable View > Developer > Allow JavaScript from Apple Events.
-This permission lets the local Python process ask the existing Instagram tab to switch accounts and make the digest request in its own authenticated context.
-The Python process receives only the matched username and recovered media IDs.
-It never receives `sessionid`, CSRF, or other cookie values.
+This permission lets the worker switch accounts, verify the active username and recipient, resolve notification digests, and operate visible post controls in the authenticated tab.
+The installed Python worker also needs macOS Automation permission to control Brave Browser.
+Approve the `python3.12` prompt on its first browser job, or enable its Brave Browser entry under System Settings > Privacy & Security > Automation.
+If the prompt times out, the worker pauses before further jobs; after granting permission, inspect the failed job, resume the worker, and explicitly retry that job.
+Browser cookie values, including `sessionid` and CSRF values, never leave the browser.
 
-The resolver does not open Brave and does not log into accounts.
+The worker waits for account controls to load and retries once from `https://www.instagram.com/` when page readiness or an account switch gets stuck.
+If recovery fails, a notification fails before its media ledger entry is created and can be rerun.
+Every engagement action verifies both the intended account and post before clicking, then checks the resulting action state.
+An already liked, saved, or reposted post is left in that state.
+Native reposting requires an explicit readable active/inactive state on Instagram's own control.
+If that control is absent or lacks a readable state, the job reports `unsupported` without clicking it or substituting a Story share.
+Other ambiguous controls fail without an engagement click.
+
+`backend/controlbox/instagram_browser.json` owns the browser deadlines, queue polling, source polling, action pacing, and enabled actions.
+The persistent queue lives under `$XDG_STATE_HOME/wat2do/instagram-browser`, or `~/.local/state/wat2do/instagram-browser` when `XDG_STATE_HOME` is unset.
+All notification callers and the worker must run as the same macOS user with the same state-directory configuration.
+The CLI's global `--state-directory` option supports isolated diagnostics; changing it on the worker alone does not redirect notification clients to that queue.
+The queue stores public identities, post URLs, actions, sanitized results, and scheduling state.
+Do not delete its database to clear an error: that also removes deduplication history and the activation watermark.
+
+### Queue priority and school ordering
+
+The worker checks the high-priority digest queue before every browser action.
+A digest arriving during a like, save, or repost waits for that one bounded operation to finish.
+No account switch or click is interrupted halfway through to start another job.
+An exclusive browser lock covers each complete operation, and a separate worker lock prevents duplicate workers.
+The source collector runs separately so a slow database read does not hold up ready digest jobs.
+
+Engagement work is grouped by school.
+Each school gets one action per round, with the largest pending quantity first among schools waiting for the same turn.
+Like, save, and native repost are separate jobs, so a digest can run between those actions on the same event.
+Failed or unsupported engagement jobs remain visible for operator inspection and are not automatically retried.
+
+### Eligible event posts
+
+The collector reads the existing publishing batches, selected publish items, and each event's original `source_url` from Supabase.
+Only fully published carousels qualify.
+Draft selections, removed draft slides, unpublished batches, and non-Instagram source URLs do not enter the engagement queue.
+It resolves the school's enabled publishing account and notification `recipient_id` from existing records, selecting public identity fields only and never loading or decrypting publishing tokens.
+Missing or mismatched account configuration is skipped and checked again on a later poll.
+
+The first collection saves its activation time locally.
+Only carousels published at or after that time are eligible, so installation does not engage a historical backlog.
+Later polls scan published batches from that activation time in deterministic timestamp/id pages.
+This catches a batch whose final publication update arrives after another batch with a newer timestamp.
+Completed batch markers prevent a later edit to an event's source URL from queuing a different historical post.
+Queue deduplication by account, original post, and action makes an interrupted collection safe to repeat.
+The batch scan grows with the number of carousels published since activation; completed batches do not reload their event items.
+
+### Worker operations
+
+Keep the Mac checkout's existing ignored `backend/.env` configured for the intended Supabase environment.
+Use the repository's Python environment for the commands below.
+Install the persistent worker, then check its heartbeat, queue counts by school/state, source collector status, and recent failures:
+
+```sh
+cd backend
+python scripts/instagram_browser.py install
+python scripts/instagram_browser.py status
+```
+
+The installed LaunchAgent is `io.wat2do.instagram-browser.worker`.
+Its stdout and stderr logs are stored with the queue state.
+Inspect service startup failures with:
+
+```sh
+launchctl print gui/$(id -u)/io.wat2do.instagram-browser.worker
+```
+
+For a foreground worker managed by the terminal instead of the installed service:
+
+```sh
+python scripts/instagram_browser.py worker
+```
+
+`worker --once` processes at most one already queued job and does not collect source posts.
+`worker --no-collect` runs the executor without periodic carousel collection.
+The worker requires an already running Brave tab and a macOS user session.
+It does not replace the Android notification dispatcher or GitHub runner.
+
+Inspect a post's native controls through the queue without liking, saving, or reposting it:
+
+```sh
+python scripts/instagram_browser.py inspect \
+  --school '<school_slug>' \
+  --url '<original_instagram_post_url>' \
+  --action repost
+python scripts/instagram_browser.py status --job-id '<job_id_from_inspect>'
+```
+
+Inspection still switches the browser to the school's account and navigates to the post.
+The command returns queued job IDs immediately, so check each job's status after the worker has processed it.
+Omit `--action` to inspect all configured actions, or repeat `--action` to select several.
+Inspection jobs do not suppress later real engagement on the same post.
+
+To collect eligible published selections immediately, run:
+
+```sh
+python scripts/instagram_browser.py sync
+```
+
+This only reads Supabase and appends work to the local queue.
+A running worker can execute the resulting like, save, and native repost jobs.
+There is no manual command to enqueue live engagement for arbitrary posts.
+
+Before manually logging into or fixing an account in the shared tab, pause new browser work and wait until `status` shows no running jobs:
+
+```sh
+python scripts/instagram_browser.py pause
+python scripts/instagram_browser.py status
+```
+
+Pausing lets the current operation finish and prevents both digest and engagement jobs from starting.
+Source polling can continue to append queued work while paused.
+After resolving the account or browser issue, resume the worker:
+
+```sh
+python scripts/instagram_browser.py resume
+```
+
+After inspecting an uncertain action's browser state and job result, explicitly retry a failed, unsupported, or cancelled job:
+
+```sh
+python scripts/instagram_browser.py status --job-id '<job_id>'
+python scripts/instagram_browser.py retry --job-id '<job_id>'
+```
+
+Retries inspect the current state before attempting an engagement click.
+To remove a pending action from execution without deleting its deduplication record:
+
+```sh
+python scripts/instagram_browser.py cancel --job-id '<job_id>'
+```
+
+Cancellation does not interrupt an operation already running in the browser.
+
+### Notification integration and rollout
+
 CacheEntID workflows always target the single browser-capable Mac runner and wait when it is offline instead of falling back to Ubuntu.
-That runner processes one job at a time, so browser account switching is serialized.
-If the tab is closed, the account needs a security challenge, or the matching account is absent from the switcher, the workflow fails before its notification media ledger entry is created and can be rerun safely.
+Deploy the queued notification integration to the GitHub workflow's checkout and install the browser worker on the same Mac user before relying on priority scheduling.
+The browser lock remains the same lock used by older direct-resolution workflows, so those versions still serialize with the worker during rollout.
+Priority scheduling applies only once notification callers submit through the shared queue.
+An older direct-resolution workflow waiting on the lock does not participate in queue priority.
 
-To test one captured digest without dispatching it, run:
+With the worker running, queue one captured digest without dispatching it to GitHub:
 
 ```sh
 cd backend
 python scripts/emulator_farm.py resolve-digest \
   --recipient-id '<intended_recipient_id>' \
+  --account-username '<school_instagram_username>' \
   --cache-ent-id '<cache_ent_id>' \
   --instagram-action '<full_instagram_action>' \
   --total-media-count '<total_non_mmc_media_count>'
 ```
 
 The command prints the matched account, the complete media ID list, page count, and merged Instagram action.
-The `process-notification` workflow calls the same resolver automatically when it receives a collapsed digest.
+It waits for the shared worker; it does not drive Brave directly.
+The `process-notification` workflow uses the same queued resolver automatically when it receives a collapsed digest.
 The regular `run-cycle` and `monitor` commands only forward the original Android payload.
+
+## Android provisioning and operation
 
 Provision the official Google Play ARM64 image and the persistent AVD:
 

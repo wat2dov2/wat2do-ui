@@ -1,5 +1,6 @@
 {
   "events": {
+    "instagramHiring": "Vagas abertas: {{positions}}",
     "minimumGoing": "Mínimo de participantes",
     "eventTitle": "Título do Evento",
     "loadFailed": "Falha ao carregar eventos. Por favor, tente novamente.",

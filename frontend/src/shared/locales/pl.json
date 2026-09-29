@@ -102,13 +102,13 @@
     "primary": "Główna nawigacja",
     "openMenu": "Otwórz menu nawigacji",
     "switchToLightMode": "Przełącz na tryb jasny",
-    "switchToDarkMode": "Przełącz na tryb ciemny",
-    "dismissAnnouncement": "Zamknij ogłoszenie"
+    "switchToDarkMode": "Przełącz na tryb ciemny"
   },
   "siteBanner": {
-    "founderStory": {
-      "message": "Zebraliśmy ponad 18 000 wydarzeń na kampusach.",
-      "cta": "Przeczytaj naszą historię"
+    "localArea": "Twoja okolica",
+    "businessSupport": {
+      "message": "Chcemy wesprzeć lokalną firmę w trudnej sytuacji ({{city}}), reklamując ją tutaj.",
+      "cta": "Wypełnij formularz"
     }
   },
   "modals": {
@@ -496,6 +496,53 @@
       "previous": "Poprzednie zdjęcie",
       "next": "Następne zdjęcie",
       "position": "{{current}} z {{total}}"
+    },
+    "businessSupport": {
+      "title": "Wesprzyj lokalną firmę",
+      "titleCity": "Wesprzyj lokalną firmę w mieście {{city}}",
+      "description": "Znasz lokalną firmę, której przydałoby się wsparcie? Zgłoś ją do prezentacji na banerze Wat2Do.",
+      "formTitle": "Zgłoś firmę",
+      "formDescription": "Powiedz nam, dlaczego warto ją wesprzeć. Sprawdzamy każde zgłoszenie, zanim przedstawimy firmę na banerze.",
+      "fields": {
+        "businessName": {
+          "label": "Nazwa firmy"
+        },
+        "location": {
+          "label": "Lokalizacja lub adres firmy"
+        },
+        "website": {
+          "label": "Strona internetowa lub link do profilu społecznościowego (opcjonalnie)",
+          "hint": "Link powinien zaczynać się od https:// lub http:// i zawierać pełny adres."
+        },
+        "reasonForSupport": {
+          "label": "Dlaczego ta firma potrzebuje wsparcia?"
+        },
+        "proposedBannerText": {
+          "label": "Co powinno znaleźć się na banerze?",
+          "hint": "Zaproponuj krótką wiadomość, która zachęci studentów do odwiedzin."
+        },
+        "studentTrafficPerWeek": {
+          "label": "Szacunkowa liczba wizyt studentów tygodniowo",
+          "hint": "Wystarczy przybliżona liczba. Jeśli nie wiesz, wpisz „Nie wiem”."
+        },
+        "email": {
+          "label": "Twój adres e-mail",
+          "hint": "Użyjemy go wyłącznie do kontaktu w sprawie Twojego zgłoszenia."
+        }
+      },
+      "submit": "Wyślij zgłoszenie",
+      "sending": "Wysyłanie zgłoszenia...",
+      "successTitle": "Otrzymaliśmy zgłoszenie",
+      "success": "Dziękujemy za wspieranie swojej społeczności. Sprawdzimy Twoje zgłoszenie i skontaktujemy się, jeśli będziemy potrzebować więcej informacji.",
+      "sendAnother": "Zgłoś kolejną firmę",
+      "error": "Nie udało się wysłać zgłoszenia. Twoje odpowiedzi pozostały w formularzu, więc możesz spróbować ponownie.",
+      "validation": {
+        "required": "Wypełnij to pole.",
+        "email": "Wpisz prawidłowy adres e-mail.",
+        "website": "Podaj prawidłowy adres z http:// lub https:// na początku.",
+        "tooLong": "Użyj maksymalnie {{maximum}} znaków.",
+        "messageTooLong": "Twoje zgłoszenie jest za długie. Skróć odpowiedzi."
+      }
     }
   }
 }

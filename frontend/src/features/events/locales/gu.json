@@ -1,5 +1,6 @@
 {
   "events": {
+    "instagramHiring": "ભરતી: {{positions}}",
     "minimumGoing": "ઓછામાં ઓછા હાજર",
     "eventTitle": "ઇવેન્ટ શીર્ષક",
     "loadFailed": "ઇવેન્ટ્સ લોડ કરવાની નિષ્ફળતા. કૃપા કરીને ફરી પ્રયાસ કરો.",

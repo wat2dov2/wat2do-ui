@@ -1,5 +1,6 @@
 {
   "events": {
+    "instagramHiring": "التوظيف: {{positions}}",
     "minimumGoing": "الحد الأدنى للحاضرين",
     "eventTitle": "عنوان الحدث",
     "loadFailed": "فشل تحميل الأحداث. يرجى المحاولة مرة أخرى.",

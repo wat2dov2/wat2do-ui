@@ -32,6 +32,7 @@ NotificationRecord(0x2: pkg=com.instagram.android user=UserHandle{0})
           com.instagram.android.igns.logging.ig_action=clips_home?media_list=123,456,
           cache_ent_id=cache-1,
           total_non_mmc_media_count=4,
+          android.subText=ubc.wat2do.io,
           android.title=Sensitive title,
           android.text=Sensitive body}
 """
@@ -47,6 +48,7 @@ NotificationRecord(0x2: pkg=com.instagram.android user=UserHandle{0})
             total_media_count="4",
             notification_title="Sensitive title",
             notification_text="Sensitive body",
+            account_username="ubc.wat2do.io",
         ),
     )
 
@@ -60,6 +62,7 @@ NotificationRecord(0x2: pkg=com.instagram.android user=UserHandle{0})
           com.instagram.android.igns.logging.push_category=subscription_daily_digest,
           com.instagram.android.igns.logging.ig_action=clips_home?media_list=3970822765943978975%2C3970938492779828361%2C3970464121980272014&notif_type=subscription_daily_digest&cache_ent_id=18068350061541056&total_non_mmc_media_count=70,
           cache_ent_id=18068350061541056&total_non_mmc_media_count=70,
+          android.subText=usask.wat2do.io,
           total_non_mmc_media_count=70}
 """
 
@@ -78,6 +81,7 @@ NotificationRecord(0x2: pkg=com.instagram.android user=UserHandle{0})
             ),
             cache_ent_id="18068350061541056",
             total_media_count="70",
+            account_username="usask.wat2do.io",
         ),
     )
     assert script._notification_dictionary(evidence[0]) == {
@@ -91,6 +95,7 @@ NotificationRecord(0x2: pkg=com.instagram.android user=UserHandle{0})
         ),
         "cache_ent_id": "18068350061541056",
         "total_non_mmc_media_count": "70",
+        "android.subText": "usask.wat2do.io",
     }
 
 
@@ -136,6 +141,7 @@ def test_visible_notifications_include_cache_ent_id() -> None:
         total_media_count="4",
         notification_title="A post title",
         notification_text="A post body",
+        account_username="usask.wat2do.io",
     )
 
     assert script.visible_notifications(
@@ -154,6 +160,7 @@ def test_visible_notifications_include_cache_ent_id() -> None:
             "total_media_count": "4",
             "notification_title": "A post title",
             "notification_text": "A post body",
+            "account_username": "usask.wat2do.io",
         }
     ]
 
@@ -170,6 +177,100 @@ def test_monitor_parser_exposes_live_notification_monitoring() -> None:
     assert arguments.command == "monitor"
 
 
+def test_resolve_digest_parser_requires_the_receiving_account_username() -> None:
+    with pytest.raises(SystemExit) as raised:
+        script._parser().parse_args(
+            [
+                "resolve-digest",
+                "--recipient-id",
+                "46189693055",
+                "--cache-ent-id",
+                "cache-1",
+                "--instagram-action",
+                "clips_home?media_id=123",
+            ]
+        )
+
+    assert raised.value.code == 2
+
+
+def test_resolve_digest_command_waits_for_shared_queue_and_merges_result(
+    monkeypatch,
+    capsys,
+) -> None:
+    calls = []
+
+    class QueuedResolver:
+        def resolve(self, recipient_id, account_username, cache_ent_id):
+            calls.append((recipient_id, account_username, cache_ent_id))
+            return script.DigestResolution(
+                account_username=account_username,
+                media_ids=("123", "456"),
+                page_count=2,
+            )
+
+    monkeypatch.setattr(script, "QueuedInstagramDigestResolver", QueuedResolver)
+    monkeypatch.setattr(
+        script.sys,
+        "argv",
+        [
+            "emulator_farm.py",
+            "resolve-digest",
+            "--recipient-id",
+            "46189693055",
+            "--account-username",
+            "usask.wat2do.io",
+            "--cache-ent-id",
+            "cache-1",
+            "--instagram-action",
+            "clips_home?media_id=123&cache_ent_id=cache-1",
+            "--total-media-count",
+            "2",
+        ],
+    )
+
+    assert script.main() == 0
+
+    assert calls == [("46189693055", "usask.wat2do.io", "cache-1")]
+    assert json.loads(capsys.readouterr().out) == {
+        "account_username": "usask.wat2do.io",
+        "cache_ent_id": "cache-1",
+        "page_count": 2,
+        "media_ids": ["123", "456"],
+        "instagram_action": "clips_home?media_list=123%2C456&cache_ent_id=cache-1",
+    }
+
+
+def test_resolve_digest_command_reports_queue_failure(monkeypatch, capsys) -> None:
+    class UnavailableQueue:
+        def resolve(self, *_args):
+            raise script.BrowserDigestError("Instagram browser worker is unavailable")
+
+    monkeypatch.setattr(script, "QueuedInstagramDigestResolver", UnavailableQueue)
+    monkeypatch.setattr(
+        script.sys,
+        "argv",
+        [
+            "emulator_farm.py",
+            "resolve-digest",
+            "--recipient-id",
+            "46189693055",
+            "--account-username",
+            "usask.wat2do.io",
+            "--cache-ent-id",
+            "cache-1",
+            "--instagram-action",
+            "clips_home?cache_ent_id=cache-1",
+        ],
+    )
+
+    assert script.main() == 1
+
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert captured.err == "error: Instagram browser worker is unavailable\n"
+
+
 def test_monitor_prints_each_notification_once_and_dispatches_immediately(
     monkeypatch,
     tmp_path: Path,
@@ -183,6 +284,7 @@ def test_monitor_prints_each_notification_once_and_dispatches_immediately(
         push_id="live-push",
         push_category="post",
         instagram_action="clips_home?media_id=123",
+        account_username="ubc.wat2do.io",
     )
     monkeypatch.setattr(script, "start_nodes", lambda *_args, **_kwargs: None)
     monkeypatch.setattr(script, "configure_nodes", lambda *_args, **_kwargs: None)
@@ -238,6 +340,7 @@ def test_monitor_prints_each_notification_once_and_dispatches_immediately(
             "total_media_count": None,
             "notification_title": None,
             "notification_text": None,
+            "account_username": "ubc.wat2do.io",
         }
     ]
     assert payload["dispatch"]["dispatched_count"] == 1
@@ -268,7 +371,16 @@ def test_checked_notification_evidence_does_not_store_notification_content(
         "_adb_devices",
         lambda _paths: {script._serial(node): "device" for node in nodes},
     )
-    observed = {nodes[0].name: (script.NotificationEvidence("42518030160", None),)}
+    observed = {
+        nodes[0].name: (
+            script.NotificationEvidence(
+                "42518030160",
+                None,
+                account_username="ubc.wat2do.io",
+                notification_text="Sensitive body",
+            ),
+        )
+    }
     monkeypatch.setattr(
         script,
         "_current_evidence",
@@ -285,6 +397,7 @@ def test_checked_notification_evidence_does_not_store_notification_content(
     assert "45870501433" not in persisted
     assert "title" not in persisted
     assert "body" not in persisted
+    assert "ubc.wat2do.io" not in persisted
 
 
 def test_notification_check_records_any_recipient_on_its_observed_node(
@@ -336,6 +449,7 @@ def test_dispatches_each_complete_push_once_without_persisting_notification_cont
         instagram_action="clips_home?media_list=123,456",
         cache_ent_id="private-cache-id",
         total_media_count="4",
+        account_username="ubc.wat2do.io",
     )
     evidence_by_node = {
         nodes[0].name: (observed, observed),
@@ -375,11 +489,13 @@ def test_dispatches_each_complete_push_once_without_persisting_notification_cont
         "com.instagram.android.igns.logging.ig_action": "clips_home?media_list=123,456",
         "cache_ent_id": "private-cache-id",
         "total_non_mmc_media_count": "4",
+        "android.subText": "ubc.wat2do.io",
     }
     persisted = paths.dispatches.read_text(encoding="utf-8")
     assert "private-push-id" not in persisted
     assert "private-cache-id" not in persisted
     assert recipient_id not in persisted
+    assert "ubc.wat2do.io" not in persisted
 
 
 def test_dispatch_forwards_digest_without_opening_the_browser(
@@ -396,12 +512,13 @@ def test_dispatch_forwards_digest_without_opening_the_browser(
         instagram_action="clips_home?media_list=123,456",
         cache_ent_id="cache-1",
         total_media_count="4",
+        account_username="ubc.wat2do.io",
     )
     requests: list[str] = []
     monkeypatch.setattr(script, "_resolve_tool", lambda *_args: Path("/opt/bin/gh"))
     monkeypatch.setattr(
         script,
-        "BrowserInstagramDigestResolver",
+        "QueuedInstagramDigestResolver",
         lambda: pytest.fail("dispatcher must not open the browser"),
     )
     monkeypatch.setattr(
@@ -438,3 +555,29 @@ def test_dispatch_skips_incomplete_notifications(
 
     assert payload["dispatched_count"] == 0
     assert payload["incomplete_recipient_ids"] == ["42518030160"]
+
+
+def test_dispatch_waits_for_receiving_username_before_recording_delivery(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    paths = _paths(tmp_path)
+    node = script.CONTROL.nodes[0]
+    evidence = script.NotificationEvidence(
+        recipient_id="42518030160",
+        post_time_epoch_seconds=int(script.utc_now().timestamp()),
+        push_id="push-missing-username",
+        push_category="subscription_daily_digest",
+        instagram_action="clips_home?cache_ent_id=cache-1",
+    )
+    monkeypatch.setattr(
+        script,
+        "_resolve_tool",
+        lambda *_args: pytest.fail("An unroutable notification must not be dispatched"),
+    )
+
+    payload = script.dispatch_notifications(paths, (node,), {node.name: (evidence,)})
+
+    assert payload["dispatched_count"] == 0
+    assert payload["incomplete_recipient_ids"] == ["42518030160"]
+    assert not paths.dispatches.exists()

@@ -99,13 +99,13 @@
     "primary": "Navigazione principale",
     "openMenu": "Apri il menu di navigazione",
     "switchToLightMode": "Passa alla modalità chiara",
-    "switchToDarkMode": "Passa alla modalità scura",
-    "dismissAnnouncement": "Chiudi annuncio"
+    "switchToDarkMode": "Passa alla modalità scura"
   },
   "siteBanner": {
-    "founderStory": {
-      "message": "Abbiamo raccolto oltre 18.000 eventi nei campus.",
-      "cta": "Leggi la nostra storia"
+    "localArea": "livello locale",
+    "businessSupport": {
+      "message": "Vogliamo sostenere un’attività locale in difficoltà a {{city}} facendole pubblicità qui.",
+      "cta": "Compila un modulo"
     }
   },
   "modals": {
@@ -493,6 +493,53 @@
       "previous": "Foto precedente",
       "next": "Foto successiva",
       "position": "{{current}} di {{total}}"
+    },
+    "businessSupport": {
+      "title": "Sostieni un’attività locale",
+      "titleCity": "Sostieni un’attività locale a {{city}}",
+      "description": "Conosci un’attività locale che avrebbe bisogno di una mano? Proponila per uno spazio nel banner di Wat2Do.",
+      "formTitle": "Proponi un’attività",
+      "formDescription": "Raccontaci perché merita sostegno. Esaminiamo ogni proposta prima di mettere in evidenza un’attività.",
+      "fields": {
+        "businessName": {
+          "label": "Nome dell’attività"
+        },
+        "location": {
+          "label": "Località o indirizzo dell’attività"
+        },
+        "website": {
+          "label": "Sito web o link ai social (facoltativo)",
+          "hint": "Inserisci https:// o http:// all’inizio del link completo."
+        },
+        "reasonForSupport": {
+          "label": "Perché questa attività ha bisogno di sostegno?"
+        },
+        "proposedBannerText": {
+          "label": "Cosa dovrebbe dire il banner?",
+          "hint": "Proponi un breve messaggio che invogli gli studenti a visitarla."
+        },
+        "studentTrafficPerWeek": {
+          "label": "Visite settimanali stimate da parte degli studenti",
+          "hint": "Basta una stima approssimativa. Se non lo sai, scrivi “Non saprei”."
+        },
+        "email": {
+          "label": "Il tuo indirizzo email",
+          "hint": "Lo useremo solo per contattarti in merito alla tua proposta."
+        }
+      },
+      "submit": "Invia proposta",
+      "sending": "Invio della proposta...",
+      "successTitle": "Proposta ricevuta",
+      "success": "Grazie per aver aiutato la tua comunità. Esamineremo la proposta e ti contatteremo se serviranno altri dettagli.",
+      "sendAnother": "Proponi un’altra attività",
+      "error": "Non siamo riusciti a inviare la proposta. Le tue risposte sono conservate qui, così puoi riprovare.",
+      "validation": {
+        "required": "Compila questo campo.",
+        "email": "Inserisci un indirizzo email valido.",
+        "website": "Inserisci un link http:// o https:// valido.",
+        "tooLong": "Usa al massimo {{maximum}} caratteri.",
+        "messageTooLong": "La proposta è troppo lunga. Accorcia le risposte."
+      }
     }
   }
 }

@@ -1,5 +1,7 @@
 from unittest.mock import MagicMock
 
+import pytest
+
 from services import school_service
 
 
@@ -9,6 +11,7 @@ def test_search_schools_route_is_public_and_delegates(client, monkeypatch):
             {
                 "slug": "mit",
                 "name": "Massachusetts Institute of Technology",
+                "city": "Cambridge",
                 "primary_color": "#A31F34",
                 "secondary_color": "#FFFFFF",
                 "timezone": "America/New_York",
@@ -25,6 +28,7 @@ def test_search_schools_route_is_public_and_delegates(client, monkeypatch):
         {
             "slug": "mit",
             "name": "Massachusetts Institute of Technology",
+            "city": "Cambridge",
             "primary_color": "#A31F34",
             "secondary_color": "#FFFFFF",
             "timezone": "America/New_York",
@@ -38,11 +42,13 @@ def test_search_schools_route_is_public_and_delegates(client, monkeypatch):
     mock.assert_called_once_with("mit", limit=10)
 
 
-def test_get_school_route_is_public_and_delegates(client, monkeypatch):
+@pytest.mark.parametrize("city", ["Cambridge", None])
+def test_get_school_route_is_public_and_delegates(client, monkeypatch, city):
     mock = MagicMock(
         return_value={
             "slug": "mit",
             "name": "Massachusetts Institute of Technology",
+            "city": city,
             "primary_color": "#A31F34",
             "secondary_color": "#FFFFFF",
             "timezone": "America/New_York",
@@ -56,6 +62,7 @@ def test_get_school_route_is_public_and_delegates(client, monkeypatch):
     assert resp.json() == {
         "slug": "mit",
         "name": "Massachusetts Institute of Technology",
+        "city": city,
         "primary_color": "#A31F34",
         "secondary_color": "#FFFFFF",
         "timezone": "America/New_York",

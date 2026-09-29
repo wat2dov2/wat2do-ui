@@ -99,13 +99,13 @@
     "primary": "Navegación principal",
     "openMenu": "Abrir menú de navegación",
     "switchToLightMode": "Cambiar al modo claro",
-    "switchToDarkMode": "Cambiar al modo oscuro",
-    "dismissAnnouncement": "Descartar anuncio"
+    "switchToDarkMode": "Cambiar al modo oscuro"
   },
   "siteBanner": {
-    "founderStory": {
-      "message": "Hemos recopilado más de 18.000 eventos en distintos campus.",
-      "cta": "Lee nuestra historia"
+    "localArea": "tu comunidad",
+    "businessSupport": {
+      "message": "Queremos apoyar a un negocio local de {{city}} que está pasando por dificultades dándole publicidad aquí.",
+      "cta": "Enviar formulario"
     }
   },
   "modals": {
@@ -493,6 +493,53 @@
       "previous": "Foto anterior",
       "next": "Foto siguiente",
       "position": "{{current}} de {{total}}"
+    },
+    "businessSupport": {
+      "title": "Apoya a un negocio local",
+      "titleCity": "Apoya a un negocio local en {{city}}",
+      "description": "¿Conoces un negocio local al que le vendría bien un impulso? Proponlo para aparecer en el banner de Wat2Do.",
+      "formTitle": "Propón un negocio",
+      "formDescription": "Cuéntanos por qué merece apoyo. Revisamos cada propuesta antes de destacar un negocio.",
+      "fields": {
+        "businessName": {
+          "label": "Nombre del negocio"
+        },
+        "location": {
+          "label": "Ubicación o dirección del negocio"
+        },
+        "website": {
+          "label": "Sitio web o enlace a redes sociales (opcional)",
+          "hint": "Incluye https:// o http:// al principio del enlace."
+        },
+        "reasonForSupport": {
+          "label": "¿Por qué necesita apoyo este negocio?"
+        },
+        "proposedBannerText": {
+          "label": "¿Qué debería decir el banner?",
+          "hint": "Propón un mensaje breve que anime a los estudiantes a visitarlo."
+        },
+        "studentTrafficPerWeek": {
+          "label": "Estimación de visitas de estudiantes por semana",
+          "hint": "Basta con una estimación aproximada. Si no lo sabes, escribe «No lo sé»."
+        },
+        "email": {
+          "label": "Tu correo electrónico",
+          "hint": "Solo lo usaremos para contactarte sobre tu propuesta."
+        }
+      },
+      "submit": "Enviar propuesta",
+      "sending": "Enviando propuesta...",
+      "successTitle": "Propuesta recibida",
+      "success": "Gracias por ayudar a tu comunidad. Revisaremos tu propuesta y te contactaremos si necesitamos más detalles.",
+      "sendAnother": "Proponer otro negocio",
+      "error": "No pudimos enviar tu propuesta. Tus respuestas siguen guardadas aquí para que puedas volver a intentarlo.",
+      "validation": {
+        "required": "Completa este campo.",
+        "email": "Introduce un correo electrónico válido.",
+        "website": "Introduce un enlace http:// o https:// válido.",
+        "tooLong": "Usa un máximo de {{maximum}} caracteres.",
+        "messageTooLong": "Tu propuesta es demasiado larga. Acorta tus respuestas."
+      }
     }
   }
 }

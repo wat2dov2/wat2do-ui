@@ -4,7 +4,6 @@ import contact from "../../../../backend/controlbox/contact.json" with { type: "
 import type eventDiscoveryControl from "../../../../backend/controlbox/event_discovery.json";
 import interactionTracking from "../../../../backend/controlbox/interaction_tracking.json" with { type: "json" };
 import clubManagement from "../../../../backend/controlbox/club_management.json" with { type: "json" };
-import siteBanner from "../../../../backend/controlbox/site_banner.json" with { type: "json" };
 import socialPreviews from "../../../../backend/controlbox/social_previews.json" with { type: "json" };
 import uploads from "../../../../backend/controlbox/uploads.json" with { type: "json" };
 
@@ -60,9 +59,6 @@ export const controlBox = {
   },
   interactionTracking: {
     flushDebounceMs: interactionTracking.flush_debounce_milliseconds,
-  },
-  siteBanner: {
-    dismissalDays: siteBanner.dismissal_days,
   },
   admin: {
     itemsPerPage: admin.items_per_page,

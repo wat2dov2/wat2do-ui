@@ -93,13 +93,13 @@
     "primary": "Điều hướng chính",
     "openMenu": "Mở menu điều hướng",
     "switchToLightMode": "Chuyển sang chế độ sáng",
-    "switchToDarkMode": "Chuyển sang chế độ tối",
-    "dismissAnnouncement": "Đóng thông báo"
+    "switchToDarkMode": "Chuyển sang chế độ tối"
   },
   "siteBanner": {
-    "founderStory": {
-      "message": "Chúng tôi đã thu thập hơn 18.000 sự kiện tại các trường đại học.",
-      "cta": "Đọc câu chuyện của chúng tôi"
+    "localArea": "cộng đồng của bạn",
+    "businessSupport": {
+      "message": "Chúng tôi muốn hỗ trợ một doanh nghiệp địa phương đang gặp khó khăn tại {{city}} bằng cách quảng bá họ ở đây.",
+      "cta": "Gửi biểu mẫu"
     }
   },
   "modals": {
@@ -487,6 +487,53 @@
       "previous": "Ảnh trước",
       "next": "Ảnh tiếp theo",
       "position": "{{current}} / {{total}}"
+    },
+    "businessSupport": {
+      "title": "Ủng hộ doanh nghiệp địa phương",
+      "titleCity": "Ủng hộ doanh nghiệp địa phương tại {{city}}",
+      "description": "Bạn biết doanh nghiệp địa phương nào đang cần được tiếp sức? Hãy đề cử để doanh nghiệp đó xuất hiện trên biểu ngữ của Wat2Do.",
+      "formTitle": "Đề cử doanh nghiệp",
+      "formDescription": "Hãy cho chúng tôi biết vì sao doanh nghiệp này xứng đáng được ủng hộ. Chúng tôi xem xét từng đề cử trước khi giới thiệu doanh nghiệp.",
+      "fields": {
+        "businessName": {
+          "label": "Tên doanh nghiệp"
+        },
+        "location": {
+          "label": "Địa điểm hoặc địa chỉ doanh nghiệp"
+        },
+        "website": {
+          "label": "Trang web hoặc liên kết mạng xã hội (không bắt buộc)",
+          "hint": "Thêm https:// hoặc http:// vào đầu liên kết."
+        },
+        "reasonForSupport": {
+          "label": "Vì sao doanh nghiệp này cần được hỗ trợ?"
+        },
+        "proposedBannerText": {
+          "label": "Biểu ngữ nên có nội dung gì?",
+          "hint": "Gợi ý một thông điệp ngắn khuyến khích sinh viên ghé thăm."
+        },
+        "studentTrafficPerWeek": {
+          "label": "Số lượt sinh viên ghé thăm ước tính mỗi tuần",
+          "hint": "Chỉ cần ước tính sơ bộ. Nếu không biết, hãy viết “Không chắc”."
+        },
+        "email": {
+          "label": "Địa chỉ email của bạn",
+          "hint": "Chúng tôi chỉ dùng địa chỉ này để liên hệ về đề cử của bạn."
+        }
+      },
+      "submit": "Gửi đề cử",
+      "sending": "Đang gửi đề cử...",
+      "successTitle": "Đã nhận đề cử",
+      "success": "Cảm ơn bạn đã giúp đỡ cộng đồng. Chúng tôi sẽ xem xét đề cử và liên hệ nếu cần thêm thông tin.",
+      "sendAnother": "Đề cử doanh nghiệp khác",
+      "error": "Không thể gửi đề cử của bạn. Các câu trả lời vẫn được giữ ở đây để bạn có thể thử lại.",
+      "validation": {
+        "required": "Vui lòng điền vào trường này.",
+        "email": "Nhập địa chỉ email hợp lệ.",
+        "website": "Nhập liên kết http:// hoặc https:// hợp lệ.",
+        "tooLong": "Sử dụng tối đa {{maximum}} ký tự.",
+        "messageTooLong": "Đề cử của bạn quá dài. Vui lòng rút ngắn các câu trả lời."
+      }
     }
   }
 }

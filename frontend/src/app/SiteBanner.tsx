@@ -1,8 +1,4 @@
-import { cookies } from "next/headers";
-import {
-  SITE_BANNER_DISMISSED_COOKIE,
-  SiteBannerStrip,
-} from "@/app/SiteBannerStrip";
+import { SiteBannerStrip } from "@/app/SiteBannerStrip";
 import { getSiteBanner } from "@/shared/api/siteBanner.server";
 import { sanitizeHref } from "@/shared/utils/url";
 
@@ -23,17 +19,13 @@ function resolveCtaHref(href: string): string {
  * The site-wide announcement strip, pinned above the navigation on every page.
  *
  * A server component, so the copy is part of the first paint rather than
- * appearing after hydration, and so a visitor who has already dismissed it is
- * simply never sent it. The database stores stable translation keys while the
- * visitor's active locale owns the rendered copy.
+ * appearing after hydration. The database stores stable translation keys while
+ * the visitor's active locale owns the rendered copy.
  *
  * The navigation is fixed to the top, so this is too, and `index.css` offsets
  * the nav and the page below it whenever this strip is present.
  */
-export async function SiteBanner({ schoolName }: { schoolName: string }) {
-  const cookieStore = await cookies();
-  if (cookieStore.has(SITE_BANNER_DISMISSED_COOKIE)) return null;
-
+export async function SiteBanner({ schoolCity }: { schoolCity?: string | null }) {
   const banner = await getSiteBanner();
   if (!banner) return null;
 
@@ -43,7 +35,7 @@ export async function SiteBanner({ schoolName }: { schoolName: string }) {
   return (
     <SiteBannerStrip
       messageTranslationKey={banner.message_translation_key}
-      schoolName={schoolName}
+      schoolCity={schoolCity}
       ctaHref={href}
       ctaLabelTranslationKey={banner.cta_label_translation_key}
     />

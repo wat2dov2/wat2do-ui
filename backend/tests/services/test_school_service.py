@@ -150,6 +150,38 @@ def test_search_schools_matches_domain_fragment(fake_sb, patch_sb):
     fake_sb.table.assert_called_once_with(SCHOOLS)
 
 
+def test_search_schools_exposes_authoritative_city_and_allows_unknown_city(fake_sb, patch_sb):
+    patch_sb("services.school_service")
+    fake_sb.set_response(data=[{**SCHOOL_ROWS[0], "city": "Waterloo"}, SCHOOL_ROWS[1]])
+
+    schools = {school.slug: school for school in school_service.search_schools("")}
+
+    assert schools["uwaterloo"].city == "Waterloo"
+    assert schools["mit"].city is None
+    assert "city" in [column.strip() for column in fake_sb.select.call_args.args[0].split(",")]
+
+
+@pytest.mark.parametrize(
+    "lookup,argument",
+    [
+        ("get_school", "uwaterloo"),
+        ("get_school_by_name", "University of Waterloo"),
+        ("get_school_by_recipient_id", "76214170483"),
+    ],
+)
+def test_school_identity_lookups_include_city(lookup, argument, fake_sb, patch_sb):
+    patch_sb("services.school_service")
+    fake_sb.set_response(
+        data=[{**SCHOOL_ROWS[0], "id": 1, "city": "Waterloo", "recipient_id": "76214170483"}]
+    )
+
+    school = getattr(school_service, lookup)(argument)
+
+    assert school is not None
+    assert school.city == "Waterloo"
+    assert "city" in [column.strip() for column in fake_sb.select.call_args.args[0].split(",")]
+
+
 def test_search_schools_matches_display_name_fragment(fake_sb, patch_sb):
     patch_sb("services.school_service")
     fake_sb.set_response(data=SCHOOL_ROWS)

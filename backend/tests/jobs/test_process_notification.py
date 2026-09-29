@@ -2,11 +2,8 @@ import json
 import logging
 import sys
 from types import SimpleNamespace
-from unittest.mock import MagicMock
 
-# Mock fcntl for Windows test runs so we don't get "No module named 'fcntl'"
-if sys.platform == "win32":
-    sys.modules["fcntl"] = MagicMock()
+import pytest
 
 from jobs import process_notification
 from services.instagram_notifications.browser_digest import DigestResolution
@@ -81,9 +78,7 @@ def _install_digest_resolver(monkeypatch, media_ids: tuple[str, ...]):
                 page_count=1,
             )
 
-    monkeypatch.setattr(process_notification, "BrowserInstagramDigestResolver", _Resolver)
-    import sys
-
+    monkeypatch.setattr(process_notification, "QueuedInstagramDigestResolver", _Resolver)
     monkeypatch.setattr(sys, "platform", "darwin")
     return calls
 
@@ -216,6 +211,28 @@ def test_cache_only_digest_is_expanded_before_validation(monkeypatch) -> None:
     ]
 
 
+@pytest.mark.parametrize("explicit_media", ["", "media_id=123456789&"])
+def test_digest_without_advertised_count_still_uses_shared_queue(
+    monkeypatch,
+    explicit_media: str,
+) -> None:
+    _set_payload(
+        monkeypatch,
+        _actionable_payload(f"clips_home?{explicit_media}cache_ent_id=cache-123"),
+    )
+    _install_school(monkeypatch)
+    resolver_calls = _install_digest_resolver(monkeypatch, ("123456789", "987654321"))
+    record_calls = _capture_ledger(monkeypatch)
+
+    assert process_notification.main() == 0
+
+    assert resolver_calls == [(RECIPIENT_ID, "ubc.wat2do.io", "cache-123")]
+    assert [item.media_id for item in record_calls[0]["media"]] == [
+        "123456789",
+        "987654321",
+    ]
+
+
 def test_digest_resolution_failure_stops_before_ledger_recording(
     monkeypatch,
     caplog,
@@ -227,15 +244,13 @@ def test_digest_resolution_failure_stops_before_ledger_recording(
         ),
     )
     _install_school(monkeypatch)
-    import sys
-
     monkeypatch.setattr(sys, "platform", "darwin")
 
     class _Resolver:
         def resolve(self, *_args):
             raise process_notification.BrowserDigestError("sanitized browser failure")
 
-    monkeypatch.setattr(process_notification, "BrowserInstagramDigestResolver", _Resolver)
+    monkeypatch.setattr(process_notification, "QueuedInstagramDigestResolver", _Resolver)
     monkeypatch.setattr(
         process_notification,
         "record_notification_media",
@@ -281,8 +296,6 @@ def test_terminal_digest_shortfall_processes_every_available_media(
     )
     _install_school(monkeypatch)
     _install_digest_resolver(monkeypatch, ("987654321",))
-    import sys
-
     monkeypatch.setattr(sys, "platform", "darwin")
     record_calls = _capture_ledger(monkeypatch)
     with caplog.at_level(logging.WARNING):
@@ -303,8 +316,6 @@ def test_digest_over_count_stops_before_ledger_recording(monkeypatch, caplog) ->
         ),
     )
     _install_school(monkeypatch)
-    import sys
-
     monkeypatch.setattr(sys, "platform", "darwin")
     monkeypatch.setattr(
         process_notification,

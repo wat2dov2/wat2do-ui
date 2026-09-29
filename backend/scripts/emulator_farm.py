@@ -32,11 +32,13 @@ if str(BACKEND_DIRECTORY) not in sys.path:
 from core.controlbox import EmulatorFarmNodeControl, controlbox  # noqa: E402
 from services.instagram_notifications.browser_digest import (  # noqa: E402
     BrowserDigestError,
-    BrowserInstagramDigestResolver,
     DigestResolution,
     action_media_ids,
     digest_media_count_shortfall,
     merge_action_media_ids,
+)
+from services.instagram_notifications.browser_queue import (  # noqa: E402
+    QueuedInstagramDigestResolver,
 )
 
 CONTROL = controlbox.emulator_farm
@@ -90,6 +92,7 @@ class NotificationEvidence:
     total_media_count: str | None = None
     notification_title: str | None = None
     notification_text: str | None = None
+    account_username: str | None = None
 
 
 _INSTAGRAM_ACTION_KEY = "com.instagram.android.igns.logging.ig_action"
@@ -99,6 +102,7 @@ _CACHE_ID_KEY = "cache_ent_id"
 _TOTAL_MEDIA_COUNT_KEY = "total_non_mmc_media_count"
 _NOTIFICATION_TITLE_KEY = "android.title"
 _NOTIFICATION_TEXT_KEY = "android.text"
+_ACCOUNT_USERNAME_KEY = "android.subText"
 _DIGEST_CATEGORY = "subscription_daily_digest"
 
 
@@ -257,6 +261,7 @@ def _notification_metadata(record: str) -> dict[str, str]:
         _TOTAL_MEDIA_COUNT_KEY,
         _NOTIFICATION_TITLE_KEY,
         _NOTIFICATION_TEXT_KEY,
+        _ACCOUNT_USERNAME_KEY,
     ):
         match = re.search(
             rf"{re.escape(key)}\s*(?:=|:)\s*(?P<value>.*?)"
@@ -301,19 +306,7 @@ def _action_query_metadata_value(action: str | None, key: str) -> str | None:
 def parse_notification_evidence(raw: str) -> tuple[NotificationEvidence, ...]:
     """Extract routing and processing metadata from Instagram notification records."""
     records = re.split(r"(?=NotificationRecord[({])", raw)
-    evidence: set[
-        tuple[
-            str,
-            int | None,
-            str | None,
-            str | None,
-            str | None,
-            str | None,
-            str | None,
-            str | None,
-            str | None,
-        ]
-    ] = set()
+    evidence: set[NotificationEvidence] = set()
     package_pattern = re.compile(rf"\bpkg={re.escape(CONTROL.instagram_package)}\b")
     post_time_pattern = re.compile(r"\bpostTime=(\d{10,13})\b")
 
@@ -331,44 +324,28 @@ def parse_notification_evidence(raw: str) -> tuple[NotificationEvidence, ...]:
             if post_time > 9_999_999_999:
                 post_time //= 1000
         evidence.add(
-            (
-                recipient_id,
-                post_time,
-                metadata.get(_PUSH_ID_KEY),
-                metadata.get(_PUSH_CATEGORY_KEY),
-                metadata.get(_INSTAGRAM_ACTION_KEY),
-                metadata.get(_CACHE_ID_KEY),
-                metadata.get(_TOTAL_MEDIA_COUNT_KEY),
-                metadata.get(_NOTIFICATION_TITLE_KEY),
-                metadata.get(_NOTIFICATION_TEXT_KEY),
+            NotificationEvidence(
+                recipient_id=recipient_id,
+                post_time_epoch_seconds=post_time,
+                push_id=metadata.get(_PUSH_ID_KEY),
+                push_category=metadata.get(_PUSH_CATEGORY_KEY),
+                instagram_action=metadata.get(_INSTAGRAM_ACTION_KEY),
+                cache_ent_id=metadata.get(_CACHE_ID_KEY),
+                total_media_count=metadata.get(_TOTAL_MEDIA_COUNT_KEY),
+                notification_title=metadata.get(_NOTIFICATION_TITLE_KEY),
+                notification_text=metadata.get(_NOTIFICATION_TEXT_KEY),
+                account_username=metadata.get(_ACCOUNT_USERNAME_KEY),
             )
         )
 
     return tuple(
-        NotificationEvidence(
-            recipient_id=recipient_id,
-            post_time_epoch_seconds=post_time,
-            push_id=push_id,
-            push_category=push_category,
-            instagram_action=instagram_action,
-            cache_ent_id=cache_ent_id,
-            total_media_count=total_media_count,
-            notification_title=notification_title,
-            notification_text=notification_text,
-        )
-        for (
-            recipient_id,
-            post_time,
-            push_id,
-            push_category,
-            instagram_action,
-            cache_ent_id,
-            total_media_count,
-            notification_title,
-            notification_text,
-        ) in sorted(
+        sorted(
             evidence,
-            key=lambda item: (item[0], item[1] or 0, item[2] or ""),
+            key=lambda item: (
+                item.recipient_id,
+                item.post_time_epoch_seconds or 0,
+                item.push_id or "",
+            ),
         )
     )
 
@@ -743,13 +720,19 @@ def _read_dispatch_ledger(paths: FarmPaths) -> dict[str, str]:
 
 
 def _notification_dictionary(item: NotificationEvidence) -> dict[str, str] | None:
-    if not item.push_id or not item.push_category or not item.instagram_action:
+    if (
+        not item.push_id
+        or not item.push_category
+        or not item.instagram_action
+        or not item.account_username
+    ):
         return None
     notification = {
         CONTROL.recipient_id_key: item.recipient_id,
         _PUSH_ID_KEY: item.push_id,
         _PUSH_CATEGORY_KEY: item.push_category,
         _INSTAGRAM_ACTION_KEY: item.instagram_action,
+        _ACCOUNT_USERNAME_KEY: item.account_username,
     }
     if item.cache_ent_id:
         notification[_CACHE_ID_KEY] = item.cache_ent_id
@@ -789,7 +772,7 @@ def _dispatch_notification(github: Path, notification: dict[str, str]) -> None:
 
 def _expand_digest_notification(
     notification: dict[str, str],
-    resolver: BrowserInstagramDigestResolver,
+    resolver: QueuedInstagramDigestResolver,
 ) -> tuple[dict[str, str], DigestResolution | None]:
     if notification[_PUSH_CATEGORY_KEY] != _DIGEST_CATEGORY:
         return notification, None
@@ -813,6 +796,7 @@ def _expand_digest_notification(
 
     resolution = resolver.resolve(
         notification[CONTROL.recipient_id_key],
+        notification[_ACCOUNT_USERNAME_KEY],
         cache_ent_id,
     )
     expanded_action = merge_action_media_ids(instagram_action, resolution.media_ids)
@@ -1046,6 +1030,7 @@ def visible_notifications(
             "total_media_count": item.total_media_count,
             "notification_title": item.notification_title,
             "notification_text": item.notification_text,
+            "account_username": item.account_username,
         }
         for node_name, items in evidence_by_node.items()
         for item in items
@@ -1135,14 +1120,16 @@ def monitor(paths: FarmPaths) -> None:
 def resolve_digest(
     *,
     recipient_id: str,
+    account_username: str,
     cache_ent_id: str,
     instagram_action: str,
     total_media_count: int | None,
 ) -> dict[str, Any]:
-    """Run the same serialized browser resolver without dispatching to GitHub."""
+    """Queue one browser digest and return its result without dispatching to GitHub."""
 
     notification = {
         CONTROL.recipient_id_key: recipient_id,
+        _ACCOUNT_USERNAME_KEY: account_username,
         _PUSH_ID_KEY: "manual-digest-resolution",
         _PUSH_CATEGORY_KEY: _DIGEST_CATEGORY,
         _INSTAGRAM_ACTION_KEY: instagram_action,
@@ -1152,7 +1139,7 @@ def resolve_digest(
         notification[_TOTAL_MEDIA_COUNT_KEY] = str(total_media_count)
     expanded, resolution = _expand_digest_notification(
         notification,
-        BrowserInstagramDigestResolver(),
+        QueuedInstagramDigestResolver(),
     )
     return {
         "account_username": resolution.account_username if resolution else None,
@@ -1217,9 +1204,10 @@ def _parser() -> argparse.ArgumentParser:
     )
     digest = subparsers.add_parser(
         "resolve-digest",
-        help="Resolve one CacheEntID through the existing Brave Instagram tab",
+        help="Resolve one CacheEntID through the shared Instagram browser worker",
     )
     digest.add_argument("--recipient-id", required=True)
+    digest.add_argument("--account-username", required=True)
     digest.add_argument("--cache-ent-id", required=True)
     digest.add_argument("--instagram-action", required=True)
     digest.add_argument("--total-media-count", type=int)
@@ -1273,6 +1261,7 @@ def main() -> int:
             _print_payload(
                 resolve_digest(
                     recipient_id=arguments.recipient_id,
+                    account_username=arguments.account_username,
                     cache_ent_id=arguments.cache_ent_id,
                     instagram_action=arguments.instagram_action,
                     total_media_count=arguments.total_media_count,

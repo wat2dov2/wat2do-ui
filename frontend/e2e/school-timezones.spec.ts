@@ -180,3 +180,33 @@ test("every supported Instagram category keeps its localized label and colour", 
     }
   }
 });
+
+
+test("Instagram comments use school branding, physical maps and localized open position titles", async () => {
+  const oldKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+  process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY = "test-maps-key";
+  const { buildEventSlideModel: buildBrandedSlide } = await import("../src/features/admin/lib/instagramSlides");
+  const context = {
+    school: { name: "University of Alberta", primary_color: "#154734", secondary_color: "#FFDB05" },
+    positionTitles: [" Designer ", "Events Coordinator", "Designer", ""],
+  };
+  const input = { id: 1, category: "Business", tz: timeZone, school: "ualberta", location: "Students' Union Building" };
+  try {
+    // The logo source is captured at module initialization, just as in a Next build.
+    const en = await buildBrandedSlide(input, "en", undefined, undefined, context);
+    const fr = await buildBrandedSlide(input, "fr", undefined, undefined, context);
+    const svg = Buffer.from(en.siteAvatarSrc.split(",")[1], "base64").toString();
+    expect(svg).toContain(context.school.primary_color);
+    expect(svg).toContain(context.school.secondary_color);
+    const map = new URL(en.mapSrc);
+    expect(map.origin).toBe("https://maps.googleapis.com");
+    expect(map.searchParams.get("markers")).toBe("Students' Union Building, University of Alberta");
+    expect(en.hiringLine).toBe("Hiring: Designer, Events Coordinator");
+    expect(fr.hiringLine).toBe("Recrutement : Designer, Events Coordinator");
+    expect((await buildBrandedSlide({ ...input, location: "Online" }, "en", undefined, undefined, context)).mapSrc).toBe("");
+    expect((await buildBrandedSlide({ ...input, location: null }, "en", undefined, undefined, { ...context, positionTitles: [] })).hiringLine).toBe("");
+  } finally {
+    if (oldKey === undefined) delete process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+    else process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY = oldKey;
+  }
+});

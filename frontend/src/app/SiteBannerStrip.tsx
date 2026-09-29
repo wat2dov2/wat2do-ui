@@ -1,89 +1,72 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
+import { useLayoutEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 
 import { prefetchPublicPage } from "@/app/hooks/useAppNavigation";
-import { controlBox } from "@/shared/config/controlBox";
-import { Button } from "@/shared/ui/button";
-import { X } from "@/shared/ui/doodle-icons";
-
-/**
- * Set when the visitor dismisses the banner, and read on the server so the
- * banner is never sent again while it holds.
- *
- * A cookie rather than localStorage precisely because the server can read it:
- * a dismissal the server cannot see would mean shipping the strip, painting it,
- * and pulling it away once the client caught up - the nav and the whole page
- * jumping up by its height on every single load.
- */
-export const SITE_BANNER_DISMISSED_COOKIE = "wat2do_site_banner_dismissed";
+import { Link } from "@/shared/ui/link";
 
 interface SiteBannerStripProps {
   messageTranslationKey: string;
-  schoolName: string;
+  schoolCity?: string | null;
   ctaHref: string;
   ctaLabelTranslationKey: string;
 }
 
-function rememberDismissal(): void {
-  const maxAgeSeconds = controlBox.siteBanner.dismissalDays * 24 * 60 * 60;
-  document.cookie = `${SITE_BANNER_DISMISSED_COOKIE}=1; path=/; max-age=${maxAgeSeconds}; samesite=lax`;
-}
-
-/**
- * The announcement strip itself.
- *
- * Starts visible on both sides of hydration - the server only renders this at
- * all when the dismissal cookie is absent - so state here covers just the one
- * case the server cannot: the visitor dismissing it in front of us.
- */
+/** The persistent announcement strip, with navigation offset by its measured height. */
 export function SiteBannerStrip({
   messageTranslationKey,
-  schoolName,
+  schoolCity,
   ctaHref,
   ctaLabelTranslationKey,
 }: SiteBannerStripProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const router = useRouter();
-  const [dismissed, setDismissed] = useState(false);
+  const strip = useRef<HTMLDivElement>(null);
+  // A stale banner snapshot must not expose untranslated internal keys.
+  const isVisible = i18n.exists(messageTranslationKey) && i18n.exists(ctaLabelTranslationKey);
 
-  if (dismissed) return null;
+  useLayoutEffect(() => {
+    if (!isVisible || !strip.current) return;
+    const element = strip.current;
+    const root = document.documentElement;
+    const measure = () => {
+      root.style.setProperty(
+        "--site-banner-height",
+        `${Math.ceil(element.getBoundingClientRect().height)}px`,
+      );
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(element);
+    return () => {
+      observer.disconnect();
+      root.style.removeProperty("--site-banner-height");
+    };
+  }, [isVisible]);
+
+  if (!isVisible) return null;
 
   return (
     <div
+      ref={strip}
       data-slot="site-banner"
-      className="fixed inset-x-0 top-0 z-nav flex h-9 items-center justify-center gap-2 border-b border-border bg-surface px-4 text-xs text-foreground sm:text-sm"
+      className="fixed inset-x-0 top-0 z-nav border-b border-border bg-surface px-4 py-2 text-center text-xs leading-relaxed text-foreground sm:text-sm"
     >
-      <span className="min-w-0 max-w-[calc(100dvw_-_10rem)] truncate">
-        {t(messageTranslationKey, { school: schoolName })}
-      </span>
-      <Link
-        href={ctaHref}
-        prefetch={false}
-        onPointerEnter={() => prefetchPublicPage(router, ctaHref)}
-        onFocus={() => prefetchPublicPage(router, ctaHref)}
-        onTouchStart={() => prefetchPublicPage(router, ctaHref)}
-        className="shrink-0 font-semibold underline underline-offset-4"
-      >
-        {t(ctaLabelTranslationKey)}
-      </Link>
-      <Button
-        variant="ghost"
-        size="icon-sm"
-        // Position only: the message stays optically centred in the strip, so
-        // the dismiss control is pinned to the edge instead of joining the row.
-        className="absolute right-1"
-        aria-label={t("navigation.dismissAnnouncement")}
-        onClick={() => {
-          rememberDismissal();
-          setDismissed(true);
-        }}
-      >
-        <X />
-      </Button>
+      <p>
+        {t(messageTranslationKey, { city: schoolCity?.trim() || t("siteBanner.localArea") })}{" "}
+        <Link
+          variant="announcement"
+          href={ctaHref}
+          prefetch={false}
+          onPointerEnter={() => prefetchPublicPage(router, ctaHref)}
+          onFocus={() => prefetchPublicPage(router, ctaHref)}
+          onTouchStart={() => prefetchPublicPage(router, ctaHref)}
+        >
+          {t(ctaLabelTranslationKey)}
+        </Link>
+      </p>
     </div>
   );
 }

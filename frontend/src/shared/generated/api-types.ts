@@ -3807,6 +3807,8 @@ export interface components {
             slug: string;
             /** Name */
             name: string;
+            /** City */
+            city?: string | null;
             /** Primary Color */
             primary_color: string;
             /** Secondary Color */
@@ -3853,6 +3855,8 @@ export interface components {
             slug: string;
             /** Name */
             name: string;
+            /** City */
+            city?: string | null;
             /** Primary Color */
             primary_color: string;
             /** Secondary Color */

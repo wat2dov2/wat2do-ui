@@ -20,7 +20,7 @@ from schemas.school import (
 
 DEFAULT_SEARCH_LIMIT: Final[int] = 10
 SCHOOL_COLUMNS: Final[str] = (
-    "id, slug, name, primary_color, secondary_color, timezone, language, faculties, location_examples, "
+    "id, slug, name, city, primary_color, secondary_color, timezone, language, faculties, location_examples, "
     "recipient_id, semester_start, semester_end, social_preview_image_url, "
     "social_preview_revision, social_preview_rendered_revision, social_preview_rendered_at"
 )
@@ -188,7 +188,7 @@ def search_schools(query: str, limit: int = DEFAULT_SEARCH_LIMIT) -> list[School
         get_sb()
         .table(SCHOOLS)
         .select(
-            "slug, name, primary_color, secondary_color, timezone, language, faculties, location_examples, school_email_domains(domain, is_primary)"
+            "slug, name, city, primary_color, secondary_color, timezone, language, faculties, location_examples, school_email_domains(domain, is_primary)"
         )
         .order("name")
         .execute()

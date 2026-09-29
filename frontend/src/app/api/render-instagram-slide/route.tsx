@@ -1,3 +1,4 @@
+import { getClubPositionsSnapshot } from "@/features/positions/api/positionDirectory.server";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { NextRequest, NextResponse } from "next/server";
@@ -65,7 +66,11 @@ type SlideFontWeight = (typeof FONT_FILES)[number]["weight"];
 let fontsPromise: Promise<
   { name: string; data: Buffer; weight: SlideFontWeight; style: "normal" }[]
 > | null = null;
-let wasmPromise: Promise<void> | null = null;
+// Next hot reloads this route while retaining the WASM package instance.
+// Keep its one-time initialization promise alive across route reloads too.
+const rendererState = globalThis as typeof globalThis & {
+  instagramSlideRenderer?: Promise<void>;
+};
 
 function loadFonts() {
   fontsPromise ??= Promise.all(
@@ -82,10 +87,10 @@ function loadFonts() {
 }
 
 function loadRenderer() {
-  wasmPromise ??= readFile(
+  rendererState.instagramSlideRenderer ??= readFile(
     path.join(process.cwd(), "node_modules", "@resvg", "resvg-wasm", "index_bg.wasm"),
   ).then((wasm) => initWasm(wasm));
-  return wasmPromise;
+  return rendererState.instagramSlideRenderer;
 }
 
 function getBearerSecret(request: NextRequest): string | null {
@@ -154,12 +159,27 @@ async function buildSlide(slide: SlideRequest): Promise<React.ReactElement> {
   if (!schoolRecord) throw new Error(`School not found for slide rendering: ${school}`);
 
   if (slide.kind === "event") {
-    const [imageSrc, avatarSrc] = await Promise.all([
+    const [imageSrc, avatarSrc, positions] = await Promise.all([
       inlineImage(slide.event.source_image_url, "event"),
       // An unavailable optional club logo uses the template's initials.
       inlineImage(slide.event.club_logo_url, "avatar").catch(() => ""),
+      slide.event.club_id ? getClubPositionsSnapshot(slide.event.club_id, school) : Promise.resolve([]),
     ]);
-    return <EventSlideTemplate model={await buildEventSlideModel({ ...slide.event, school }, schoolRecord.language, imageSrc, avatarSrc)} />;
+    const model = await buildEventSlideModel({ ...slide.event, school }, schoolRecord.language, imageSrc, avatarSrc, {
+      school: schoolRecord, positionTitles: positions.map(position => position.title),
+    });
+    if (model.mapSrc) {
+      // Only the fixed Google Static Maps URL built by our model is downloaded.
+      // Missing map access must not silently publish a slide without its map.
+      const response = await fetch(model.mapSrc, { redirect: "error", signal: AbortSignal.timeout(10_000) });
+      if (!response.ok || !response.headers.get("content-type")?.startsWith("image/")) {
+        throw new Error(`Event map download failed: HTTP ${response.status}`);
+      }
+      const bytes = Buffer.from(await response.arrayBuffer());
+      if (!bytes.length || bytes.length > MAX_SOURCE_IMAGE_BYTES) throw new Error("Event map image exceeds size limits");
+      model.mapSrc = `data:image/png;base64,${(await sharp(bytes).png().toBuffer()).toString("base64")}`;
+    }
+    return <EventSlideTemplate model={model} />;
   }
 
   const posterUrls = slide.events
