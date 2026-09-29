@@ -17,11 +17,16 @@ const events = [
 
 function visibleEvents() {
   return filterEvents(events, {
-    ...useSearchStore.getState(), goingEventIds: [],
+    ...useSearchStore.getState(), goingEventIds: [], campusSeasonOptions: [],
   }, () => "America/Toronto", { 1: { going_count: 5 }, 2: { going_count: 2 } }).map(event => event.id);
 }
 
-test.beforeEach(() => useSearchStore.getState().setFilterState(EMPTY_FILTER_STATE));
+const originalNow = Date.now;
+test.beforeEach(() => {
+  Date.now = () => Date.parse("2026-09-28T04:00:00Z");
+  useSearchStore.getState().setFilterState(EMPTY_FILTER_STATE);
+});
+test.afterEach(() => { Date.now = originalNow; });
 
 test("format selection uses the existing venue classifier and excludes unknown venues only when narrowed", () => {
   expect(visibleEvents()).toEqual([1, 2, 3, 4, 5]);
@@ -86,7 +91,7 @@ const discoveryEvents = [
 ].map(event => ({ ...event, location: "Student Centre", school: "uwaterloo", occurrences: [] }) as unknown as Event);
 
 function discoveryResults() {
-  return filterEvents(discoveryEvents, { ...useSearchStore.getState(), goingEventIds: [] }, () => "America/Toronto")
+  return filterEvents(discoveryEvents, { ...useSearchStore.getState(), goingEventIds: [], campusSeasonOptions: [] }, () => "America/Toronto")
     .map(event => event.id);
 }
 
@@ -122,9 +127,11 @@ const campusSchool: SchoolSummary = {
   slug: "uwaterloo", name: "University of Waterloo", timezone: "America/Toronto", language: "en",
   primary_color: "#000000", secondary_color: "#ffffff", faculties: [], location_examples: [], email_domains: [],
   event_seasons: [
-    { id: "homecoming", labels: { en: "HOCO", fr: "Retrouvailles" }, display_windows: [{ start_date: "2026-09-28", end_date: "2026-09-29" }] },
-    { id: "holidays", labels: { en: "Holidays" }, display_windows: [
+    { id: "homecoming", classification_id: "homecoming", labels: { en: "HOCO", fr: "Retrouvailles" }, display_windows: [{ start_date: "2026-09-28", end_date: "2026-09-29" }] },
+    { id: "thanksgiving", classification_id: "holidays", labels: { en: "Thanksgiving" }, display_windows: [
       { start_date: "2026-09-28", end_date: "2026-09-29" },
+    ] },
+    { id: "winter_holidays", classification_id: "holidays", labels: { en: "Winter holidays" }, display_windows: [
       { start_date: "2026-12-01", end_date: "2026-12-31" },
     ] },
   ],
@@ -133,18 +140,18 @@ const campusSchool: SchoolSummary = {
 test("campus season visibility follows inclusive school-local dates and supports separate windows", () => {
   const visible = (now: string) => resolveCampusSeasonFilters(campusSchool, Date.parse(now), "en", []).options.map(option => option.id);
   expect(visible("2026-09-28T03:59:59Z")).toEqual([]);
-  expect(visible("2026-09-28T04:00:00Z")).toEqual(["homecoming", "holidays"]);
-  expect(visible("2026-09-30T03:59:59Z")).toEqual(["homecoming", "holidays"]);
+  expect(visible("2026-09-28T04:00:00Z")).toEqual(["homecoming", "thanksgiving"]);
+  expect(visible("2026-09-30T03:59:59Z")).toEqual(["homecoming", "thanksgiving"]);
   expect(visible("2026-09-30T04:00:00Z")).toEqual([]);
   expect(visible("2026-12-01T04:59:59Z")).toEqual([]);
-  expect(visible("2026-12-01T05:00:00Z")).toEqual(["holidays"]);
+  expect(visible("2026-12-01T05:00:00Z")).toEqual(["winter_holidays"]);
   expect(resolveCampusSeasonFilters({ ...campusSchool, slug: "ualberta", timezone: "America/Edmonton" }, Date.parse("2026-09-28T04:00:00Z"), "en", []).options).toEqual([]);
 });
 
 test("campus season labels use the current language, its base language, then English", () => {
   const now = Date.parse("2026-09-28T12:00:00Z");
-  expect(resolveCampusSeasonFilters(campusSchool, now, "fr-CA", []).options.map(option => option.label)).toEqual(["Retrouvailles", "Holidays"]);
-  expect(resolveCampusSeasonFilters(campusSchool, now, "de", []).options.map(option => option.label)).toEqual(["HOCO", "Holidays"]);
+  expect(resolveCampusSeasonFilters(campusSchool, now, "fr-CA", []).options.map(option => option.label)).toEqual(["Retrouvailles", "Thanksgiving"]);
+  expect(resolveCampusSeasonFilters(campusSchool, now, "de", []).options.map(option => option.label)).toEqual(["HOCO", "Thanksgiving"]);
 });
 
 test("season selections normalize once and survive filter handoff and Clear all", () => {
@@ -167,9 +174,9 @@ test("season filters OR their metadata IDs and intersect existing discovery filt
     { id: 3, campus_season_ids: null, employers_on_campus: true },
     { id: 4, employers_on_campus: true },
     { id: 5, campus_season_ids: [], employers_on_campus: true },
-  ].map(item => ({ ...events[0], ...item }) as Event);
-  const results = () => filterEvents(seasonalEvents, { ...useSearchStore.getState(), goingEventIds: [] }, () => campusSchool.timezone).map(item => item.id);
-  useSearchStore.getState().setFilterState({ ...EMPTY_FILTER_STATE, campusSeasonIds: ["homecoming", "holidays"] });
+  ].map(item => ({ ...events[0], ...item, occurrences: [{ dtstart_utc: "2026-09-28T16:00:00Z", dtend_utc: null }] }) as Event);
+  const results = () => filterEvents(seasonalEvents, { ...useSearchStore.getState(), goingEventIds: [], campusSeasonOptions: resolveCampusSeasonFilters(campusSchool, Date.parse("2026-09-28T12:00:00Z"), "en", []).options }, () => campusSchool.timezone).map(item => item.id);
+  useSearchStore.getState().setFilterState({ ...EMPTY_FILTER_STATE, campusSeasonIds: ["homecoming", "thanksgiving"] });
   expect(results()).toEqual([1, 2]);
   expect(getFilterCounts(useSearchStore.getState())).toBe(2);
   useSearchStore.getState().setFilterState({ ...storeStatesToFilterState(useSearchStore.getState()), employersOnCampus: true });
@@ -184,7 +191,7 @@ test("expired and other-school selections stop narrowing results, counts, and te
   expect(expired.ready).toBe(true);
   expect(expired.selectedIds).toEqual([]);
   const effective = { ...useSearchStore.getState(), campusSeasonIds: expired.selectedIds };
-  expect(filterEvents(events, { ...effective, goingEventIds: [] }, () => campusSchool.timezone)).toHaveLength(events.length);
+  expect(filterEvents(events, { ...effective, goingEventIds: [], campusSeasonOptions: [] }, () => campusSchool.timezone)).toHaveLength(events.length);
   expect(getFilterCounts(effective)).toBe(0);
   expect(storeStatesToFilterState(effective).campusSeasonIds).toEqual([]);
   const expiredQuery = `${effective.queryRevision}:${JSON.stringify(storeStatesToFilterState(effective))}`;
@@ -232,4 +239,61 @@ test("school transitions clear seasonal selections even when the next school off
   useSearchStore.getState().setFilterState(normalizeFilterState({ campusSeasonIds: ["homecoming"] }));
   useEventsStore.getState().setSchoolFilter("uwo");
   expect(useSearchStore.getState().campusSeasonIds).toEqual(["homecoming"]);
+});
+
+
+test("named holiday filters require classified occurrences within that school's inclusive window", () => {
+  const seasonalEvents = [
+    { id: 1, start: "2026-09-28T03:59:59Z", end: null },
+    { id: 2, start: "2026-09-28T04:00:00Z", end: null },
+    { id: 3, start: "2026-09-30T03:59:59Z", end: null },
+    { id: 4, start: "2026-09-30T04:00:00Z", end: null },
+    { id: 5, start: "2026-12-15T16:00:00Z", end: null },
+    { id: 6, start: "2026-09-28T03:00:00Z", end: "2026-09-28T05:00:00Z" },
+  ].map(item => ({ ...events[0], id: item.id, campus_season_ids: ["holidays"], occurrences: [{ dtstart_utc: item.start, dtend_utc: item.end }] }) as Event);
+  seasonalEvents.push({ ...seasonalEvents[1], id: 7, campus_season_ids: [] });
+  const results = (now: string, selection: string) => {
+    const seasons = resolveCampusSeasonFilters(campusSchool, Date.parse(now), "en", [selection]);
+    return filterEvents(seasonalEvents, {
+      ...useSearchStore.getState(), goingEventIds: [], campusSeasonIds: seasons.selectedIds, campusSeasonOptions: seasons.options,
+    }, () => campusSchool.timezone).map(event => event.id);
+  };
+  expect(results("2026-09-28T12:00:00Z", "thanksgiving")).toEqual([2, 3, 6]);
+  expect(results("2026-12-01T12:00:00Z", "winter_holidays")).toEqual([5]);
+});
+
+
+test("named seasonal filters carry only matching sessions into cards and date sections", () => {
+  const seasons = resolveCampusSeasonFilters(campusSchool, Date.parse("2026-09-28T12:00:00Z"), "en", ["thanksgiving"]);
+  const recurring = {
+    ...events[0], campus_season_ids: ["holidays"], occurrences: [
+      { dtstart_utc: "2026-09-27T16:00:00Z", dtend_utc: null },
+      { dtstart_utc: "2026-09-28T16:00:00Z", dtend_utc: null },
+      { dtstart_utc: "2026-12-01T16:00:00Z", dtend_utc: null },
+    ],
+  } as Event;
+  const result = filterEvents([recurring], {
+    ...useSearchStore.getState(), goingEventIds: [], campusSeasonIds: seasons.selectedIds, campusSeasonOptions: seasons.options,
+  }, () => campusSchool.timezone);
+  expect(result).toHaveLength(1);
+  expect(result[0].occurrences).toEqual([recurring.occurrences[1]]);
+  expect(recurring.occurrences).toHaveLength(3);
+});
+
+
+test("a later holiday occurrence cannot keep an expired selected-window occurrence in results", () => {
+  Date.now = () => Date.parse("2026-10-12T16:00:00Z");
+  const recurring = {
+    ...events[0], campus_season_ids: ["holidays"], occurrences: [
+      { dtstart_utc: "2026-10-01T16:00:00Z", dtend_utc: "2026-10-01T18:00:00Z" },
+      { dtstart_utc: "2026-10-25T16:00:00Z", dtend_utc: "2026-10-25T18:00:00Z" },
+    ],
+  } as Event;
+  const result = filterEvents([recurring], {
+    ...useSearchStore.getState(), goingEventIds: [], campusSeasonIds: ["thanksgiving"], campusSeasonOptions: [{
+      id: "thanksgiving", classificationId: "holidays", label: "Thanksgiving",
+      windows: [{ start_date: "2026-09-28", end_date: "2026-10-14" }],
+    }],
+  }, () => campusSchool.timezone);
+  expect(result).toEqual([]);
 });

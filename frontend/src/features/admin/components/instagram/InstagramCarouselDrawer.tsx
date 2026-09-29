@@ -265,7 +265,7 @@ export function InstagramCarouselDrawer({
         <DrawerHeader>
           <Stack gap={1}>
             <DrawerTitle>{batch.school}</DrawerTitle>
-            <DrawerDescription>{batch.local_date}</DrawerDescription>
+            <DrawerDescription>{t(`admin.instagramPublishing.kind.${batch.batch_kind}`)} · {batch.local_date}</DrawerDescription>
           </Stack>
         </DrawerHeader>
 
@@ -287,6 +287,7 @@ export function InstagramCarouselDrawer({
                 coverColors={coverColors}
                 cover={{
                   language: school?.language ?? "en",
+                  batchKind: batch.batch_kind,
                   school: batch.school,
                   localDate: batch.local_date,
                   newEventCount: batch.new_event_count,

@@ -14,6 +14,8 @@ from core.constants import (
 )
 from schemas.event import EventSummaryResponse
 
+InstagramPublishBatchKind = Literal["events", "employers_on_campus"]
+
 InstagramPublishBatchStatus = Literal[
     INSTAGRAM_BATCH_GENERATING,
     INSTAGRAM_BATCH_READY_FOR_REVIEW,
@@ -50,6 +52,7 @@ class InstagramPublishBatchBaseResponse(BaseModel):
     id: UUID
     account_key: str
     instagram_user_id: str
+    batch_kind: InstagramPublishBatchKind = "events"
     school: str
     local_date: date
     window_start: datetime

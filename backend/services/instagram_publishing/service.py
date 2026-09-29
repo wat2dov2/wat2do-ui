@@ -13,7 +13,7 @@ import logging
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime, timedelta, timezone
-from typing import Any
+from typing import Any, get_args
 from uuid import UUID
 from zoneinfo import ZoneInfo
 
@@ -44,12 +44,17 @@ from core.tables import (
 )
 from schemas.event import EventSummaryResponse
 from schemas.instagram_publishing import (
+    InstagramPublishBatchKind,
     InstagramPublishBatchPublish,
     InstagramPublishBatchUpdate,
 )
 from services import event_query, school_service
 from services.event_service import has_ended
-from services.instagram_publishing.captions import build_caption, default_caption_intro
+from services.instagram_publishing.captions import (
+    build_caption,
+    default_caption_intro,
+    event_instagram_handle,
+)
 from services.instagram_publishing.credentials import load_account_credentials
 from services.instagram_publishing.meta import MetaInstagramClient
 from services.instagram_publishing.rendering import render_cover_asset, render_event_asset
@@ -62,7 +67,9 @@ _SUCCESSFUL_CUTOFF_STATUSES = (
     INSTAGRAM_BATCH_PUBLISHED,
     INSTAGRAM_BATCH_EMPTY,
 )
-_EVENT_COLUMNS = "id,title,description,location,club,ig_handle,source_image_url,category"
+_EVENT_COLUMNS = (
+    "id,title,description,location,club,ig_handle,source_image_url,category,employers_on_campus"
+)
 _BATCH_SELECT = f"*,{school_service.SCHOOL_SLUG_EMBED}"
 
 
@@ -73,7 +80,7 @@ def _with_batch_school(row: dict[str, Any]) -> dict[str, Any]:
 def generate_due_batches(
     now_utc: datetime | None = None,
 ) -> dict[str, int]:
-    """Generate at most one daily review batch for each enabled account."""
+    """Generate daily event and employer review batches for each enabled account."""
     now = _aware_utc(now_utc or datetime.now(timezone.utc))
     generation_timezone = ZoneInfo(_CONTROL.generation_timezone)
     local_now = now.astimezone(generation_timezone)
@@ -87,19 +94,21 @@ def generate_due_batches(
         "failed": 0,
     }
     for account_key in enabled:
-        if _batch_exists(account_key, local_now.date()):
-            stats["skipped"] += 1
-            continue
-        try:
-            outcome = _generate_account_batch(account_key, local_now.date(), now)
-        except Exception:
-            log.exception(
-                "Instagram batch generation could not start account=%s",
-                account_key,
-            )
-            stats["failed"] += 1
-            continue
-        stats[outcome] += 1
+        for batch_kind in get_args(InstagramPublishBatchKind):
+            if _batch_exists(account_key, local_now.date(), batch_kind):
+                stats["skipped"] += 1
+                continue
+            try:
+                outcome = _generate_account_batch(account_key, local_now.date(), now, batch_kind)
+            except Exception:
+                log.exception(
+                    "Instagram batch generation could not start account=%s kind=%s",
+                    account_key,
+                    batch_kind,
+                )
+                stats["failed"] += 1
+                continue
+            stats[outcome] += 1
     return stats
 
 
@@ -158,6 +167,10 @@ def update_batch(
     slide_events = _load_slide_events(event_ids)
     if any(event_id not in slide_events for event_id in event_ids):
         raise ValidationError("Every carousel slide must be a dated, existing event")
+    if batch["batch_kind"] == "employers_on_campus" and any(
+        slide_events[event_id].employers_on_campus is not True for event_id in event_ids
+    ):
+        raise ValidationError("Employer carousels only accept employers-on-campus events")
     now = datetime.now(timezone.utc)
     invalid_ids = [
         event_id for event_id in event_ids if not _is_publishable_event(slide_events[event_id], now)
@@ -302,20 +315,22 @@ def _generate_account_batch(
     account_key: str,
     local_date: date,
     now: datetime,
+    batch_kind: InstagramPublishBatchKind = "events",
 ) -> str:
     credentials = load_account_credentials(account_key, now_utc=now)
     if credentials.school_id is None:
         raise ValidationError("Instagram publishing school is not registered")
-    window_start = _last_successful_cutoff(account_key) or (
+    window_start = _last_successful_cutoff(account_key, batch_kind) or (
         now - timedelta(hours=_CONTROL.fallback_window_hours)
     )
-    caption_intro = default_caption_intro(account_key)
+    caption_intro = default_caption_intro(account_key, batch_kind)
     batch_response = (
         get_sb()
         .table(INSTAGRAM_PUBLISH_BATCHES)
         .insert(
             {
                 "account_key": account_key,
+                "batch_kind": batch_kind,
                 "instagram_user_id": credentials.instagram_user_id,
                 "school_id": credentials.school_id,
                 "local_date": local_date.isoformat(),
@@ -337,6 +352,7 @@ def _generate_account_batch(
             school=account_key,
             window_start=window_start,
             window_end=now,
+            batch_kind=batch_kind,
         )
         if not candidates:
             _complete_empty_batch(batch["id"])
@@ -391,6 +407,7 @@ def _load_candidates(
     school: str,
     window_start: datetime,
     window_end: datetime,
+    batch_kind: InstagramPublishBatchKind = "events",
 ) -> list[dict[str, Any]]:
     school_id = school_service.get_school_id(school)
     if school_id is None:
@@ -463,7 +480,8 @@ def _load_candidates(
         event_id = int(event["id"])
         occurrence = first_occurrence.get(event_id)
         if (
-            event_id in published_ids
+            (event.get("employers_on_campus") is True) != (batch_kind == "employers_on_campus")
+            or event_id in published_ids
             or occurrence is None
             or (event.get("category") or "").strip() not in EVENT_CATEGORIES
             or not (event.get("source_image_url") or "").strip()
@@ -486,12 +504,17 @@ def _load_slide_events(event_ids: list[int]) -> dict[int, EventSummaryResponse]:
     return {event_id: event for event_id, event in events.items() if event.occurrences}
 
 
-def _is_publishable_event(event: EventSummaryResponse, now: datetime) -> bool:
+def _is_publishable_event(
+    event: EventSummaryResponse,
+    now: datetime,
+    batch_kind: InstagramPublishBatchKind = "events",
+) -> bool:
     """Draft eligibility is deterministic; published history is never filtered."""
     return (
         (event.category or "").strip() in EVENT_CATEGORIES
         and bool((event.source_image_url or "").strip())
         and not has_ended(event, now=now)
+        and (batch_kind != "employers_on_campus" or event.employers_on_campus is True)
     )
 
 
@@ -554,6 +577,7 @@ def _publish_claimed_batch(
         batch["cover_body"],
         local_date=str(batch["local_date"]),
         new_event_count=int(batch.get("new_event_count") or 0),
+        batch_kind=batch["batch_kind"],
     )
     cover_container_id = client.create_image_container(user_id, cover_url)
     client.wait_until_ready(cover_container_id)
@@ -563,7 +587,9 @@ def _publish_claimed_batch(
     for event in events:
         asset_url = render_event_asset(event)
         asset_urls[int(event["id"])] = asset_url
-        child_id = client.create_image_container(user_id, asset_url)
+        child_id = client.create_image_container(
+            user_id, asset_url, username=event_instagram_handle(event)
+        )
         client.wait_until_ready(child_id)
         child_ids.append(child_id)
 
@@ -622,6 +648,7 @@ def _count_new_events(batch: dict[str, Any]) -> int:
         school=batch["school"],
         window_start=window_start,
         window_end=window_end,
+        batch_kind=batch["batch_kind"],
     )
     if not carousel_event_ids:
         return recent_count
@@ -631,6 +658,7 @@ def _count_new_events(batch: dict[str, Any]) -> int:
         window_start=window_start,
         window_end=window_end,
         event_ids=carousel_event_ids,
+        batch_kind=batch["batch_kind"],
     )
     return recent_count + len(carousel_event_ids) - carousel_overlap_count
 
@@ -641,6 +669,7 @@ def _count_active_events_added_between(
     window_start: datetime,
     window_end: datetime,
     event_ids: set[int] | None = None,
+    batch_kind: InstagramPublishBatchKind = "events",
 ) -> int:
     school_id = school_service.get_school_id(school)
     if school_id is None:
@@ -654,6 +683,10 @@ def _count_active_events_added_between(
         .gte("added_at", window_start.isoformat())
         .lt("added_at", window_end.isoformat())
     )
+    if batch_kind == "employers_on_campus":
+        query = query.eq("employers_on_campus", True)
+    else:
+        query = query.or_("employers_on_campus.is.null,employers_on_campus.eq.false")
     if event_ids is not None:
         query = query.in_("id", sorted(event_ids))
     response = query.limit(1).execute()
@@ -695,7 +728,8 @@ def _hydrate_batch(batch: dict[str, Any]) -> None:
     batch["items"] = []
     for item in items:
         event = slide_events.get(item["event_id"])
-        if (event is not None and (not editable or _is_publishable_event(event, now))) or (
+        eligible = event is not None and _is_publishable_event(event, now, batch["batch_kind"])
+        if (event is not None and (not editable or eligible)) or (
             batch["status"] == INSTAGRAM_BATCH_PUBLISHED and item.get("published_asset_url")
         ):
             batch["items"].append({**item, "event": event})
@@ -715,6 +749,7 @@ def _attach_item_counts(batches: list[dict[str, Any]]) -> None:
         [str(batch["id"]) for batch in batches], "batch_id,event_id,published_asset_url"
     )
 
+    batch_kinds = {str(batch["id"]): batch["batch_kind"] for batch in batches}
     counts: dict[str, int] = defaultdict(int)
     eligible_counts: dict[str, int] = defaultdict(int)
     events = _load_slide_events(
@@ -725,7 +760,9 @@ def _attach_item_counts(batches: list[dict[str, Any]]) -> None:
         if item["event_id"] is not None or item.get("published_asset_url"):
             counts[str(item["batch_id"])] += 1
         event = events.get(item["event_id"])
-        if event is not None and _is_publishable_event(event, now):
+        if event is not None and _is_publishable_event(
+            event, now, batch_kinds[str(item["batch_id"])]
+        ):
             eligible_counts[str(item["batch_id"])] += 1
     for batch in batches:
         batch["item_count"] = counts[str(batch["id"])]
@@ -736,25 +773,31 @@ def _ordered_items(batch: dict[str, Any]) -> list[dict[str, Any]]:
     return sorted(batch["items"], key=lambda item: int(item["position"]))
 
 
-def _batch_exists(account_key: str, local_date: date) -> bool:
+def _batch_exists(
+    account_key: str, local_date: date, batch_kind: InstagramPublishBatchKind = "events"
+) -> bool:
     response = (
         get_sb()
         .table(INSTAGRAM_PUBLISH_BATCHES)
         .select("id")
         .eq("account_key", account_key)
         .eq("local_date", local_date.isoformat())
+        .eq("batch_kind", batch_kind)
         .limit(1)
         .execute()
     )
     return bool(response.data)
 
 
-def _last_successful_cutoff(account_key: str) -> datetime | None:
+def _last_successful_cutoff(
+    account_key: str, batch_kind: InstagramPublishBatchKind = "events"
+) -> datetime | None:
     response = (
         get_sb()
         .table(INSTAGRAM_PUBLISH_BATCHES)
         .select("window_end")
         .eq("account_key", account_key)
+        .eq("batch_kind", batch_kind)
         .in_("status", list(_SUCCESSFUL_CUTOFF_STATUSES))
         .order("window_end", desc=True)
         .limit(1)

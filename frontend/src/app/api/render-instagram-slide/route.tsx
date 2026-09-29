@@ -29,6 +29,7 @@ interface EventSlideRequest {
 }
 
 interface CoverSlideRequest {
+  batch_kind?: Parameters<typeof buildCoverSlideModel>[0]["batchKind"];
   kind: "cover";
   events: SlideEvent[];
   school?: string | null;
@@ -175,6 +176,7 @@ async function buildSlide(slide: SlideRequest): Promise<React.ReactElement> {
         language: schoolRecord.language ?? "en",
         colors: getSchoolColors(schoolRecord),
         localDate: slide.local_date ?? "",
+        batchKind: slide.batch_kind,
         // A cover always has at least one event, so the carousel size is the
         // honest floor when the caller cannot say what the scrape found.
         newEventCount: slide.new_event_count ?? slide.events.length,

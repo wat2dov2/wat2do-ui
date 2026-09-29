@@ -20,6 +20,7 @@ def _position() -> dict:
         "deadline_date": "2026-08-31",
         "deadline_at": None,
         "source_image_url": "https://example.com/design-lead.jpg",
+        "source_video_url": "https://wat2do.io/media/event-videos/reel.mp4",
         "school": "uwaterloo",
     }
 
@@ -53,6 +54,7 @@ def test_write_position_inserts_scraper_payload(fake_sb, patch_sb, monkeypatch):
     assert payload["club_id"] == 7
     assert payload["school_id"] == 9
     assert payload["title"] == "Design Lead"
+    assert payload["source_video_url"] == "https://wat2do.io/media/event-videos/reel.mp4"
     assert payload["is_paid"] is False
     assert payload["requirements"] == ["Portfolio", "Clear communication"]
     assert payload["source_url"] == "https://www.instagram.com/p/HIRING123/"

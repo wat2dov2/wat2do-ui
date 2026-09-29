@@ -39,6 +39,7 @@ function loadComponent(path: string): object {
       };
       if (id === "react-i18next") return {
         useTranslation: () => ({ t: (key: string) => key, i18n: { language: "en" } }),
+        Trans: ({ values }: { values: { title: string } }) => createElement("span", null, values.title),
       };
       if (id === "@/shared/hooks/useSchoolDirectory") return {
         useSchoolDirectory: () => ({ getSchoolTimezone: () => "America/Toronto", schoolBySlug: new Map() }),
@@ -151,4 +152,60 @@ test("login loading preserves the real form structure and disables unfinished ro
   expect(pending).not.toContain('autofocus=""');
   const structure = (html: string) => html.replace(/ disabled=""| autofocus=""/g, "");
   expect(structure(pending)).toBe(structure(loaded));
+});
+
+
+test("discovery headings reserve a font-sized count and both latest-item placeholders", () => {
+  const { PageCountHeading } = loadComponent("shared/ui/page-count-heading") as typeof import("../src/shared/ui/page-count-heading");
+  const render = (count: number | null, latest?: ComponentProps<typeof PageCountHeading>["latest"]) => renderToStaticMarkup(createElement(PageCountHeading, {
+    count, label: "upcoming events", latest,
+  }));
+  const loading = render(null, null);
+  expect(loading).toContain('data-slot="latest-added-item"');
+  expect(loading.match(/data-slot="skeleton"/g)).toHaveLength(3);
+  expect(loading).toContain("h-[1em]");
+  expect(loading).toContain("invisible");
+  expect(render(null)).not.toContain('data-slot="latest-added-item"');
+  expect(render(0, null)).not.toContain('data-slot="latest-added-item"');
+  const loaded = render(12, { item: { title: "Campus lunch", added_at: new Date().toISOString() }, onSelect: () => {} });
+  expect(loaded).toContain("Campus lunch");
+  expect(loaded).not.toContain('data-slot="skeleton"');
+});
+
+test("server-rendered filter bars remain visibly disabled until controls can hydrate", () => {
+  const { FilterBar } = loadComponent("shared/layout/filter-bar") as typeof import("../src/shared/layout/filter-bar");
+  const { Button } = loadComponent("shared/ui/button") as typeof import("../src/shared/ui/button");
+  const html = renderToStaticMarkup(createElement(FilterBar, {
+    children: createElement(Button, { children: "New" }),
+    trailing: createElement(Button, { children: "More filters" }),
+  }));
+  expect(html).toMatch(/<fieldset[^>]*disabled=""[^>]*aria-busy="true"/);
+  expect(html).toContain("disabled:opacity-50");
+  expect(html).toContain("More filters");
+});
+
+
+test("event and position loading cards include the same measured New badge placeholder", () => {
+  const { EventCardSkeleton } = loadComponent("features/events/components/EventCardSkeleton") as typeof import("../src/features/events/components/EventCardSkeleton");
+  const { PositionList } = loadComponent("features/positions/components/PositionList") as typeof import("../src/features/positions/components/PositionList");
+  const eventHtml = renderToStaticMarkup(createElement(EventCardSkeleton));
+  const positionsHtml = renderToStaticMarkup(createElement(PositionList, { positions: [], isLoading: true, onPositionClick: () => {} }));
+  expect(eventHtml.match(/data-slot="card-image-skeleton"/g)).toHaveLength(1);
+  expect(positionsHtml.match(/data-slot="card-image-skeleton"/g)).toHaveLength(8);
+  for (const html of [eventHtml, positionsHtml]) {
+    expect(html).toContain("absolute top-0 left-0");
+    expect(html).toContain("text-[11px]");
+    expect(html).toContain("invisible");
+    expect(html).toContain("events.new");
+    expect(html).toContain('data-slot="event-image-face"');
+  }
+});
+
+test("an unavailable integer filter disables its actual popover trigger", () => {
+  const { IntegerFilter } = loadComponent("shared/ui/integer-filter") as typeof import("../src/shared/ui/integer-filter");
+  const html = renderToStaticMarkup(createElement(IntegerFilter, {
+    value: 0, active: false, disabled: true, onChange: () => {}, label: ">0 going", inputLabel: "Minimum going",
+  }));
+  expect(html).toMatch(/<button[^>]*disabled=""/);
+  expect(html).toContain('aria-expanded="false"');
 });

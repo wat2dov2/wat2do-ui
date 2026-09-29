@@ -1,6 +1,6 @@
 import type { Event } from "@/shared/types";
 import type { EventDateFilter } from "@/shared/types/filter.types";
-import type { SearchStoreFilterValues } from "@/features/search/api/filterService";
+import type { CampusSeasonFilterOption, SearchStoreFilterValues } from "@/features/search/api/filterService";
 import {
   getPrimaryOccurrence,
   isActiveOrUpcomingOccurrence,
@@ -13,6 +13,7 @@ import { getEventCategory, isVirtualLocation } from "@/shared/utils/event";
 
 interface SearchFilters extends Omit<SearchStoreFilterValues, "sortBy" | "sortOrder"> {
   goingEventIds: number[];
+  campusSeasonOptions: readonly CampusSeasonFilterOption[];
 }
 
 type SortOptions = Pick<SearchStoreFilterValues, "sortBy" | "sortOrder">;
@@ -119,6 +120,28 @@ function matchesSearchQuery(event: Event, normalizedQuery: string): boolean {
   );
 }
 
+/** Keep the same matching sessions in cards, date sections, and later filters. */
+function filterCampusSeasonOccurrences(
+  event: Event,
+  selected: readonly CampusSeasonFilterOption[],
+  timeZone: string,
+  currentTimeMs: number,
+): Event[] {
+  const matching = selected.filter(option => event.campus_season_ids?.includes(option.classificationId));
+  if (matching.some(option => option.id === option.classificationId)) return [event];
+  const ranges = matching.flatMap(option => option.windows.map(window => {
+    const end = addCalendarDays(new Date(`${window.end_date}T00:00:00Z`), 1);
+    return {
+      startMs: Date.parse(localDateTimeToUtc(`${window.start_date}T00:00`, timeZone)),
+      endMs: Date.parse(localDateTimeToUtc(end.toISOString().slice(0, 16), timeZone)),
+    };
+  }));
+  const occurrences = event.occurrences.filter(occurrence =>
+    isActiveOrUpcomingOccurrence(occurrence, currentTimeMs) && ranges.some(range => occurrenceOverlapsDateRange(occurrence, range)),
+  );
+  return occurrences.length > 0 ? [{ ...event, occurrences }] : [];
+}
+
 export function filterEvents(
   events: Event[],
   filters: SearchFilters,
@@ -136,11 +159,11 @@ export function filterEvents(
   const addedSinceTime = filters.addedSince
     ? Date.parse(filters.addedSince)
     : Number.NaN;
-  const currentDate = new Date();
+  const currentDate = new Date(Date.now());
   const dateRanges = new Map<string, DateFilterRange | null>();
   // Carry only matching, still-visible sessions into cards and date sections.
   // Returning the original occurrence list could label a Today result Tomorrow.
-  const candidates = filters.dateFilter !== "any"
+  const dateCandidates = filters.dateFilter !== "any"
     ? events.map((event) => {
       const timeZone = getSchoolTimezone(event.school);
       if (!dateRanges.has(timeZone)) {
@@ -157,6 +180,11 @@ export function filterEvents(
       };
     }).filter((event) => event.occurrences.length > 0)
     : events;
+
+  const selectedSeasons = filters.campusSeasonOptions.filter(option => filters.campusSeasonIds.includes(option.id));
+  const candidates = filters.campusSeasonIds.length > 0
+    ? dateCandidates.flatMap(event => filterCampusSeasonOccurrences(event, selectedSeasons, getSchoolTimezone(event.school), currentDate.getTime()))
+    : dateCandidates;
 
   const filtered = candidates.filter((event) => {
     const food = event.food ?? [];
@@ -179,7 +207,7 @@ export function filterEvents(
     if (filters.employersOnCampus && event.employers_on_campus !== true) return false;
     if (filters.freeFoodOnCampus && event.free_food_on_campus !== true) return false;
     if (filters.sportsGame && event.sports_game !== true) return false;
-    if (filters.campusSeasonIds.length > 0 && !filters.campusSeasonIds.some(id => event.campus_season_ids?.includes(id))) return false;
+
 
     if (filters.hasFoodFilter && food.length === 0) {
       return false;

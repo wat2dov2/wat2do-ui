@@ -20,17 +20,21 @@ export function PageCountHeading({ count, label, latest, level = 1 }: PageCountH
   return (
     <Stack gap={1} className="sm:gap-2">
     <Heading aria-busy={count === null} aria-label={count === null ? label : `${count.toLocaleString(i18n.language)} ${label}`} className="inline-flex items-baseline gap-2 text-left text-2xl font-bold text-foreground sm:text-3xl">
-      {count === null ? <Skeleton className="h-7 w-12 self-center" aria-hidden="true" /> : <NumberFlow value={count} respectMotionPreference />}
+      {count === null ? <Skeleton className="h-[1em] w-12 self-center" aria-hidden="true" /> : <NumberFlow value={count} respectMotionPreference />}
       <span>{label}</span>
     </Heading>
-    {latest ? (
-      <Stack direction="horizontal" align="center" gap={2}>
-        <Badge variant="new" size="sm" className="shrink-0">{t("events.new")}</Badge>
-        <Button type="button" variant="link" size="inline" onClick={latest.onSelect} className="min-w-0 shrink text-left leading-tight sm:leading-normal">
+    {latest !== undefined && (count === null || latest) ? (
+      <Stack direction="horizontal" align="center" gap={2} data-slot="latest-added-item">
+        {latest ? <Badge variant="new" size="sm" className="shrink-0">{t("events.new")}</Badge> : (
+          <Skeleton className="shrink-0 rounded-lg" aria-hidden="true">
+            <Badge size="sm" className="invisible">{t("events.new")}</Badge>
+          </Skeleton>
+        )}
+        {latest ? <Button type="button" variant="link" size="inline" onClick={latest.onSelect} className="min-w-0 shrink text-left leading-tight sm:leading-normal">
           <span>
             <Trans i18nKey="common.latestAddedItem" values={{ title: latest.item.title, time: formatRelativeTime(latest.item.added_at, t, { alwaysAgo: true }) }} components={{ addedPrefix: <span />, eventTitle: <span />, addedTime: <span /> }} />
           </span>
-        </Button>
+        </Button> : <Skeleton className="h-4 w-64 max-w-full" aria-hidden="true" />}
       </Stack>
     ) : null}
     </Stack>

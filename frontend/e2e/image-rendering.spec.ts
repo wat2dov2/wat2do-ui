@@ -60,6 +60,9 @@ const imageConfig = {
   qualities: [imageDelivery.quality],
   remotePatterns: [{ protocol: "https", hostname: imageDelivery.optimized_remote_host, pathname: `${imageDelivery.optimized_remote_path}**` }],
 };
+// getImageProps reads the build-injected default rather than React context.
+// Mirror next.config for the browser-free component renderer as well.
+Object.assign(imageConfigDefault, imageConfig);
 const { EventImageCutout } = loadComponent("shared/ui/event-image-cutout");
 const { LazyImage } = loadComponent("shared/ui/lazy-image");
 const { AvatarStack } = loadComponent("shared/ui/avatar-stack");
@@ -172,6 +175,33 @@ test("missing posters render an accessible fallback without an empty network req
   expect(html).toContain('data-image-state="missing"');
   expect(html).toContain('role="img" aria-label="Campus poster"');
   expect(html).not.toContain("<img ");
+});
+
+test("video details keep an optimized poster and defer video bytes until playback", () => {
+  const videoUrl = "https://wat2do.io/media/event-videos/reel.mp4";
+  const html = render(EventImageCutout, {
+    backgroundColor: "var(--surface-elevated)", imageSrc: posterUrl, imageAlt: "Campus reel",
+    videoSrc: videoUrl, cutouts: [], width: 320, height: 320,
+  });
+  expect(html).toContain(`<video src="${videoUrl}"`);
+  expect(html).toContain('poster="/_next/image?url=');
+  expect(html).toContain('preload="none"');
+  expect(html).toContain('controls=""');
+  expect(html).toContain('playsinline=""');
+  expect(html).toContain('data-vaul-no-drag="true"');
+  expect(html).not.toContain("autoplay");
+  expect(html).not.toContain('<img alt="Campus reel"');
+  expect(html).not.toContain('data-slot="event-image-overlay"');
+});
+
+test("poster zoom overlays remain interactive only when the caller supplies a control", () => {
+  const html = render(EventImageCutout, {
+    backgroundColor: "var(--surface-elevated)", imageSrc: posterUrl, imageAlt: "Campus poster",
+    cutouts: [], width: 320, height: 320,
+    children: createElement("button", { type: "button", "aria-label": "View poster" }),
+  });
+  expect(html).toContain('data-slot="event-image-overlay"');
+  expect(html).toContain('<button type="button" aria-label="View poster"');
 });
 
 test.describe("Instagram raster preparation", () => {

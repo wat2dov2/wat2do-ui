@@ -75,6 +75,9 @@ def write_position(
         "source_image_url": _clean_optional(
             position.get("source_image_url"), MAX_POSITION_SOURCE_URL_LENGTH
         ),
+        "source_video_url": _clean_optional(
+            position.get("source_video_url"), MAX_POSITION_SOURCE_URL_LENGTH
+        ),
         "ingestion_source": "instagram_scraper",
     }
 

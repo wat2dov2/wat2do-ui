@@ -106,3 +106,9 @@ def test_render_requires_a_configured_renderer(monkeypatch: pytest.MonkeyPatch):
 
     with pytest.raises(ValueError, match="not configured"):
         rendering.render_event_asset(_event(1))
+
+
+def test_employer_cover_passes_its_kind_to_the_shared_renderer(monkeypatch):
+    requests, _ = _capture_render(monkeypatch)
+    rendering.render_cover_asset([_event(1)], "uwaterloo", batch_kind="employers_on_campus")
+    assert requests[0]["json"]["batch_kind"] == "employers_on_campus"

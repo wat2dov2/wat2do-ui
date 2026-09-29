@@ -58,6 +58,7 @@ def test_season_projection_is_school_scoped_static_and_public(fake_sb, patch_sb,
     expected = [
         {
             "id": "homecoming",
+            "classification_id": "homecoming",
             "labels": {"en": "HOCO", "fr": "Retrouvailles"},
             "display_windows": [
                 {"start_date": "2026-09-20", "end_date": "2026-09-27"},
@@ -271,3 +272,18 @@ def test_search_schools_ranks_exact_then_prefix_then_substring(limit, fake_sb, p
     schools = school_service.search_schools("a b", limit)
 
     assert [school.slug for school in schools] == ["ab", "abc", "xabc"][:limit]
+
+
+def test_holiday_windows_project_specific_filters_without_reclassifying_events():
+    seasons = school_service._event_seasons("uwaterloo")
+    holidays = {season.id: season for season in seasons if season.classification_id == "holidays"}
+    assert set(holidays) == {"thanksgiving", "halloween", "winter_holidays"}
+    assert "holidays" not in {season.id for season in seasons}
+    assert holidays["thanksgiving"].labels["en"] == "Thanksgiving"
+    assert holidays["halloween"].labels["en"] == "Halloween"
+    assert str(holidays["thanksgiving"].display_windows[0].start_date) == "2026-09-28"
+    assert str(holidays["halloween"].display_windows[0].start_date) == "2026-10-17"
+    assert str(holidays["winter_holidays"].display_windows[0].start_date) == "2026-12-01"
+    assert all(len(season.display_windows) == 1 for season in holidays.values())
+    assert "holidays" in school_service.campus_season_ids("uwaterloo")
+    assert "thanksgiving" not in school_service.campus_season_ids("uwaterloo")

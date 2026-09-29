@@ -61,6 +61,7 @@ class ReconciledEvent(EventDiscoveryFields):
     category: str | None = None
     cancelled: bool = False
     source_image_url: OptionalStr = None
+    source_video_url: OptionalStr = None
     replace_occurrences: bool = False
 
     @model_validator(mode="after")
@@ -177,11 +178,26 @@ def reconcile_events(
             )
             validated.id = None
 
+        # Media URLs come from our uploads, never from a model-authored URL.
+        validated.source_video_url = None
         if len(events) == len(extracted_events) and i < len(extracted_events):
             if not validated.source_image_url:
                 validated.source_image_url = extracted_events[i].get("source_image_url")
             if validated.image_index == 0 and "image_index" in extracted_events[i]:
                 validated.image_index = extracted_events[i].get("image_index", 0)
+
+        if validated.source_image_url:
+            videos = {
+                event.get("source_video_url")
+                for event in extracted_events
+                if event.get("source_image_url") == validated.source_image_url
+            }
+            if len(videos) == 1:
+                validated.source_video_url = videos.pop()
+        elif len(events) == len(extracted_events):
+            # Caption-only reels have no poster identity; retain the existing
+            # one-result-per-extract association used for their other metadata.
+            validated.source_video_url = extracted_events[i].get("source_video_url")
 
         # Pair by index when Pass 2 returns one object per extract; otherwise
         # leave scrape org context unset for unpaired trailing objects.

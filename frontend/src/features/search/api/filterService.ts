@@ -169,6 +169,13 @@ export function isSameFilterState(a: FilterState, b: FilterState): boolean {
   return JSON.stringify(normalizeFilterState(a)) === JSON.stringify(normalizeFilterState(b));
 }
 
+export interface CampusSeasonFilterOption {
+  id: string;
+  label: string;
+  classificationId: string;
+  windows: SchoolSummary["event_seasons"][number]["display_windows"];
+}
+
 /** Window visibility and applied selections share the current school's calendar. */
 export function resolveCampusSeasonFilters(
   school: SchoolSummary | undefined,
@@ -177,13 +184,15 @@ export function resolveCampusSeasonFilters(
   selectedIds: readonly string[],
 ) {
   if (!school || school.event_seasons === undefined || currentTimeMs === null) {
-    return { ready: false, options: [], selectedIds: [] };
+    return { ready: false, options: [] as CampusSeasonFilterOption[], selectedIds: [] };
   }
   const today = schoolCalendarDate(currentTimeMs, school.timezone).toISOString().slice(0, 10);
   const options = school.event_seasons
     .filter(season => season.display_windows.some(window => window.start_date <= today && today <= window.end_date))
     .map(season => ({
       id: season.id,
+      classificationId: season.classification_id,
+      windows: season.display_windows,
       label: season.labels[language] ?? season.labels[language.split("-")[0]] ?? season.labels.en,
     }));
   const activeIds = new Set(options.map(option => option.id));

@@ -1,5 +1,6 @@
 import type { TFunction } from "i18next";
 import type { Club } from "@/shared/types";
+import { normalizeInstagramHandle } from "@/shared/utils/url";
 
 export function getClubCountBadges(
   club: Club,
@@ -21,8 +22,9 @@ export function getClubCountBadges(
 export function getClubSocialHandle(
   club: Club,
 ): string | undefined {
-  if (club.ig) {
-    return `@${club.ig}`;
+  const handle = normalizeInstagramHandle(club.ig);
+  if (handle) {
+    return `@${handle}`;
   }
   return undefined;
 }

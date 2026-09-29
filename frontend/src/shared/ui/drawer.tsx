@@ -6,8 +6,6 @@ import { cn } from "@/shared/lib/utils"
 import { useTranslation } from "react-i18next"
 import { Button } from "@/shared/ui/button"
 import { ChevronLeft, ChevronRight, type LucideIcon } from "@/shared/ui/doodle-icons"
-import { DrawerBody } from "@/shared/layout/drawer-body"
-import { LoadingPage } from "@/shared/ui/loading-page"
 
 /**
  * The open drawer's content element, or null outside a drawer.
@@ -198,26 +196,6 @@ function DrawerDescription({
   )
 }
 
-/** Keep the modal interaction and close action available while its chunk loads. */
-function LoadingDrawer({ open, onClose, title, size = "default" }: {
-  open: boolean
-  onClose: () => void
-  title?: string
-  size?: React.ComponentProps<typeof DrawerContent>["size"]
-}) {
-  const { t } = useTranslation()
-  return (
-    <Drawer open={open} onOpenChange={(nextOpen) => { if (!nextOpen) onClose() }}>
-      <DrawerContent size={size} aria-describedby={undefined}>
-        <DrawerHeader>
-          <DrawerTitle>{title ?? t("common.loading")}</DrawerTitle>
-        </DrawerHeader>
-        <DrawerBody><LoadingPage variant="detail" /></DrawerBody>
-        <DrawerFooter><Button variant="outline" onClick={onClose}>{t("common.close")}</Button></DrawerFooter>
-      </DrawerContent>
-    </Drawer>
-  )
-}
 
 export {
   Drawer,
@@ -226,5 +204,4 @@ export {
   DrawerFooter,
   DrawerTitle,
   DrawerDescription,
-  LoadingDrawer,
 }

@@ -332,7 +332,12 @@
         "empty": "Không có sự kiện đủ điều kiện",
         "failed": "Cần chú ý"
       },
+      "kind": {
+        "events": "Sự kiện",
+        "employers_on_campus": "Nhà tuyển dụng tại trường"
+      },
       "columns": {
+        "kind": "Bài đăng nhiều ảnh",
         "school": "Trường học",
         "dateRan": "Ngày chạy",
         "timeRan": "Thời gian chạy",

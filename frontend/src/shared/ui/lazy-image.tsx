@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import Image from "next/image";
+import Image, { getImageProps } from "next/image";
 import imageDelivery from "../../../../backend/controlbox/image_delivery.json" with { type: "json" };
 import { ImageOff } from "@/shared/ui/doodle-icons";
 import { Skeleton } from "@/shared/ui/skeleton";
@@ -10,6 +10,8 @@ import { cn } from "@/shared/lib/utils";
 type LazyImageProps = {
   src?: string | null;
   alt: string;
+  /** Detail media can play a stored video while retaining this image as its poster. */
+  videoSrc?: string | null;
   loading?: "eager" | "lazy";
   className?: string;
   fallback?: ReactNode;
@@ -23,8 +25,7 @@ function canOptimizeImage(src: string): boolean {
   if (src.startsWith("/") && !src.startsWith("//")) return true;
   try {
     const url = new URL(src);
-    return url.protocol === "https:" &&
-      url.hostname === imageDelivery.optimized_remote_host &&
+    return url.origin === `https://${imageDelivery.optimized_remote_host}` &&
       url.pathname.startsWith(imageDelivery.optimized_remote_path);
   } catch {
     return false;
@@ -34,6 +35,7 @@ function canOptimizeImage(src: string): boolean {
 function ImageContent({
   src,
   alt,
+  videoSrc,
   sizes,
   width,
   height,
@@ -43,7 +45,19 @@ function ImageContent({
   fit = "cover",
 }: LazyImageProps) {
   const [status, setStatus] = useState<"loading" | "loaded" | "error">("loading");
-  const unavailable = !src || status === "error";
+  const [videoFailed, setVideoFailed] = useState(false);
+  const showVideo = Boolean(videoSrc) && !videoFailed;
+  const unavailable = !showVideo && (!src || status === "error");
+  // getImageProps selects the 2x candidate for src. Reuse a warmed variant.
+  const posterSize = imageDelivery.warm_widths.at(-1)! / 2;
+  const poster = showVideo && src ? getImageProps({
+    src,
+    alt,
+    width: posterSize,
+    height: posterSize,
+    quality: imageDelivery.quality,
+    unoptimized: !canOptimizeImage(src),
+  }).props.src : undefined;
 
   return (
     <div
@@ -59,11 +73,24 @@ function ImageContent({
         >
           {fallback === undefined ? <ImageOff className="size-8 opacity-40" /> : fallback}
         </div>
+      ) : showVideo ? (
+        <video
+          key={videoSrc}
+          src={videoSrc!}
+          poster={poster}
+          controls
+          data-vaul-no-drag
+          playsInline
+          preload="none"
+          aria-label={alt}
+          onError={() => setVideoFailed(true)}
+          className="absolute inset-0 size-full object-contain"
+        />
       ) : (
         <>
           {status === "loading" ? <Skeleton className="absolute inset-0 rounded-none" /> : null}
           <Image
-            src={src}
+            src={src!}
             alt={alt}
             fill={width === undefined}
             width={width}
@@ -72,7 +99,7 @@ function ImageContent({
             // width; eager images still need the supplied size before layout.
             sizes={sizes && loading === "lazy" ? `auto, ${sizes}` : sizes}
             quality={imageDelivery.quality}
-            unoptimized={!canOptimizeImage(src)}
+            unoptimized={!canOptimizeImage(src!)}
             loading={loading}
             fetchPriority={loading === "eager" ? "high" : undefined}
             decoding="async"
@@ -88,5 +115,5 @@ function ImageContent({
 
 /** Native image discovery and loading, with state scoped to the current URL. */
 export function LazyImage(props: LazyImageProps) {
-  return <ImageContent key={props.src} {...props} />;
+  return <ImageContent key={`${props.src ?? ""}/${props.videoSrc ?? ""}`} {...props} />;
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { lazy, Suspense, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import Link from "next/link";
 import { ROUTES } from "@/shared/constants/routes";
@@ -15,13 +15,7 @@ import { Button } from "@/shared/ui/button";
 import { NewlyAddedFilterButton } from "@/shared/ui/newly-added-filter-button";
 import { POSITION_TYPES } from "@/features/positions/api/positions.api";
 import { EmptyState } from "@/shared/feedback/empty-state";
-import { LoadingDrawer } from "@/shared/ui/drawer";
-
-const PositionDetailsDrawer = lazy(() =>
-  import("@/features/positions/components/PositionDetailsDrawer").then((module) => ({
-    default: module.PositionDetailsDrawer,
-  })),
-);
+import { PositionDetailsDrawer } from "@/features/positions/components/PositionDetailsDrawer";
 
 interface PositionsPageProps {
   initialDirectory: PaginatedPositionsResponse | null;
@@ -57,7 +51,7 @@ export function PositionsPage({
           />
           <Button asChild variant="outline" size="lg"><Link href={ROUTES.POSITION_SUBMIT}>{t("positions.addPosition")}</Link></Button>
         </Stack>
-        <FilterBar data-testid="position-filter-scroll" aria-label={t("positions.filterByType")}>
+        <FilterBar disabled={positionsPage.isLoading || positionsPage.isError} data-testid="position-filter-scroll" aria-label={t("positions.filterByType")}>
           <NewlyAddedFilterButton
             value={positionsPage.addedSince}
 
@@ -100,14 +94,12 @@ export function PositionsPage({
       )}
 
       {hasOpenedDetails ? (
-        <Suspense fallback={<LoadingDrawer open={positionsPage.selectedPosition !== null} onClose={positionsPage.closePosition} title={positionsPage.selectedPosition?.title} size="detail" />}>
-          <PositionDetailsDrawer
-            positions={positionsPage.positions}
-            onSelect={positionsPage.openPosition}
-            position={positionsPage.selectedPosition}
-            onClose={positionsPage.closePosition}
+        <PositionDetailsDrawer
+          positions={positionsPage.positions}
+          onSelect={positionsPage.openPosition}
+          position={positionsPage.selectedPosition}
+          onClose={positionsPage.closePosition}
           />
-        </Suspense>
       ) : null}
     </Stack>
   );

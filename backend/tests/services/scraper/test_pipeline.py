@@ -234,3 +234,54 @@ def test_cross_school_copies_do_not_inherit_source_seasons_when_reconciliation_f
     assert reviewed[1]["campus_season_ids"] is None
     assert written[1]["campus_season_ids"] is None
     assert source["campus_season_ids"] == ["hoco"]
+
+
+def test_carousel_video_stays_with_its_poster_after_an_image_fails(monkeypatch):
+    items = [{"title": "Video event", "image_index": 0}]
+    monkeypatch.setattr(
+        pipeline_module,
+        "upload_post_images",
+        lambda urls: [] if urls == ["bad.jpg"] else ["stored.jpg"],
+    )
+    monkeypatch.setattr(pipeline_module, "upload_video_from_url", lambda url: "stored.mp4")
+    monkeypatch.setattr(
+        pipeline_module,
+        "extract_post_content",
+        lambda **kwargs: SimpleNamespace(events=items, positions=[]),
+    )
+    pipeline_module._process_one_post(
+        {
+            "childPosts": [
+                {"displayUrl": "bad.jpg"},
+                {"displayUrl": "good.jpg", "videoUrl": "cdn.mp4"},
+            ]
+        },
+        handle="club",
+        school="uwaterloo",
+        dry_run=True,
+        result=SimpleNamespace(events_extracted=0, positions_extracted=0, events_saved=0),
+    )
+    assert items[0]["source_image_url"] == "stored.jpg"
+    assert items[0]["source_video_url"] == "stored.mp4"
+
+
+def test_failed_video_download_retains_extracted_event_and_poster(monkeypatch):
+    items = [{"title": "Video event", "image_index": 0}]
+    monkeypatch.setattr(pipeline_module, "upload_post_images", lambda urls: ["stored.jpg"])
+    monkeypatch.setattr(pipeline_module, "upload_video_from_url", lambda url: None)
+    monkeypatch.setattr(
+        pipeline_module,
+        "extract_post_content",
+        lambda **kwargs: SimpleNamespace(events=items, positions=[]),
+    )
+    result = SimpleNamespace(events_extracted=0, positions_extracted=0, events_saved=0)
+    pipeline_module._process_one_post(
+        {"displayUrl": "good.jpg", "videoUrl": "cdn.mp4"},
+        handle="club",
+        school="uwaterloo",
+        dry_run=True,
+        result=result,
+    )
+    assert items[0]["source_image_url"] == "stored.jpg"
+    assert items[0]["source_video_url"] is None
+    assert result.events_saved == 1

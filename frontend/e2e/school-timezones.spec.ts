@@ -57,7 +57,7 @@ test("a cross-school date filter evaluates each event in its own school", () => 
   const filtered = filterEvents(events, {
     ...EMPTY_FILTER_STATE, dateFilter: "custom", customDate: "2035-01-14",
     selectedCategories: [], selectedLocations: [], selectedFoods: [], selectedDays: [], selectedClubs: [],
-    hasFoodFilter: false, goingFilter: false, goingEventIds: [],
+    hasFoodFilter: false, goingFilter: false, goingEventIds: [], campusSeasonOptions: [],
   }, school => school === "ualberta" ? timeZone : "America/Toronto");
   expect(filtered.map(item => item.school)).toEqual(["ualberta"]);
 });

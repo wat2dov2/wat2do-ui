@@ -1,5 +1,14 @@
 import type { ApiClubResponse } from "@/shared/generated";
 import type { Club } from "@/shared/types";
+import { normalizeInstagramHandle } from "@/shared/utils/url";
+
+/** Ambiguous handles never silently assign a submission to the wrong club. */
+export function resolveClubByInstagramHandle(clubs: Club[], value: string): Club | undefined {
+  const handle = normalizeInstagramHandle(value).toLowerCase();
+  if (!handle) return undefined;
+  const matches = clubs.filter(club => normalizeInstagramHandle(club.ig).toLowerCase() === handle);
+  return matches.length === 1 ? matches[0] : undefined;
+}
 
 export function normalizeClub(
   raw: ApiClubResponse,

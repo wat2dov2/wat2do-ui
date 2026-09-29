@@ -1,3 +1,4 @@
+import { normalizeInstagramHandle } from "@/shared/utils/url";
 /**
  * Slide view models for the published carousel image.
  *
@@ -15,6 +16,7 @@ import type { SchoolColors } from "@/shared/lib/schoolBranding";
 import { buildInstagramCoverLogo } from "@/features/admin/lib/instagramCoverLogo";
 import { createInstance, type i18n } from "i18next";
 import type { School } from "@/shared/api/schools.api";
+import type { ApiInstagramPublishBatchResponse } from "@/shared/generated";
 import { formatCardTime } from "@/shared/utils/date";
 import { computeEventBadges, translateCategory } from "@/shared/utils/event";
 import sharedEnglish from "@/shared/locales/en.json" with { type: "json" };
@@ -125,15 +127,6 @@ function text(value: string | null | undefined, fallback = ""): string {
   return cleaned || fallback;
 }
 
-/** Stored accounts can be handles or Instagram profile links. */
-function instagramHandle(value: string | null | undefined): string {
-  const handle = text(value)
-    .replace(/^(?:https?:\/\/)?(?:www\.)?instagram\.com\//i, "")
-    .replace(/^@+/, "")
-    .replace(/[/?#].*$/, "");
-  return /^[a-z0-9_.]{1,30}$/i.test(handle) ? handle : "";
-}
-
 /**
  * Absolute dates survive publication; times share the event card's range formatter.
  *
@@ -173,7 +166,7 @@ export async function buildEventSlideModel(
   const { dateLine, timeLine } = formatSlideDate(event, language);
   const category = getClubCategoryConfig(categoryName);
   const siteName = getSchoolPublicUrl(event.school);
-  const handle = instagramHandle(event.ig_handle) || instagramHandle(event.club_ig);
+  const handle = normalizeInstagramHandle(event.ig_handle) || normalizeInstagramHandle(event.club_ig);
   return {
     category: { label: translateCategory(categoryName, t), color: category.color },
     title: text(event.title),
@@ -203,6 +196,7 @@ export function buildCoverSlideModel({
   language,
   colors,
   localDate,
+  batchKind = "events",
   newEventCount,
   eventCount,
   body,
@@ -213,6 +207,7 @@ export function buildCoverSlideModel({
   colors: SchoolColors;
   /** The batch's `local_date`, as `YYYY-MM-DD`. */
   localDate: string;
+  batchKind?: ApiInstagramPublishBatchResponse["batch_kind"];
   newEventCount: number;
   /** Number of event IDs in the batch, including events without poster images. */
   eventCount: number;
@@ -226,8 +221,12 @@ export function buildCoverSlideModel({
     dateLine: formatCoverDate(localDate, language),
     newEventCount,
     // Selected events can predate both the batch date and its recent-event window.
-    headline: language === "fr" ? "ÉVÉNEMENTS À DÉCOUVRIR" : "EVENTS TO EXPLORE",
-    body: text(body, defaultCoverBody(eventCount, language)),
+    headline: batchKind === "employers_on_campus"
+      ? (language === "fr" ? "EMPLOYEURS SUR LE CAMPUS" : "EMPLOYERS ON CAMPUS")
+      : (language === "fr" ? "ÉVÉNEMENTS À DÉCOUVRIR" : "EVENTS TO EXPLORE"),
+    body: text(body, batchKind === "employers_on_campus"
+      ? (language === "fr" ? `${eventCount} occasions de rencontrer des employeurs` : `${eventCount} opportunities to meet employers`)
+      : defaultCoverBody(eventCount, language)),
     swipeLine: language === "fr" ? "Voir les événements" : "Swipe to see the events",
     siteLine: `${language === "fr" ? "Plus d’infos sur" : "More info on"} ${getSchoolPublicUrl(school)}`,
     tiles: tiles.slice(0, instagramPublishing.maximum_event_slides),

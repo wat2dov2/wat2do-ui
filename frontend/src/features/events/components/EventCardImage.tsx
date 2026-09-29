@@ -80,6 +80,7 @@ export function EventCardImage({
         <EventImageCutout
           backgroundColor="var(--surface-elevated)"
           imageSrc={event.source_image_url}
+          videoSrc={variant === "detail" ? event.source_video_url : undefined}
           imageAlt={event.title}
           imageLoading={eagerImage ? "eager" : "lazy"}
           imageSizes={variant === "detail" ? "(max-width: 767px) 384px, 320px" : undefined}
@@ -97,7 +98,7 @@ export function EventCardImage({
           height={box.height}
           className="absolute inset-0"
         >
-          {variant === "detail" && event.source_image_url ? (
+          {variant === "detail" && event.source_image_url && !event.source_video_url ? (
             <button
               type="button"
               className="absolute inset-0 cursor-zoom-in"
@@ -111,7 +112,7 @@ export function EventCardImage({
           ) : null}
         </EventImageCutout>
 
-        {isGoing && (
+        {isGoing && !(variant === "detail" && event.source_video_url) && (
           <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-image-scrim">
             <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-image-scrim-foreground">
               {t("events.going")}
@@ -136,7 +137,7 @@ export function EventCardImage({
           </BadgeMask>
         )}
 
-        {event.club && (
+        {event.club && !(variant === "detail" && event.source_video_url) && (
           <BadgeMask variant="bottom-left" cutout containerRef={registerCorner("bottom-left")}>
             <ClubBadgeDropdown
               clubName={event.club}
@@ -155,7 +156,7 @@ export function EventCardImage({
         )}
       </div>
 
-      {variant === "detail" && event.source_image_url ? (
+      {variant === "detail" && event.source_image_url && !event.source_video_url ? (
         <Dialog open={imageOpen} onOpenChange={setImageOpen}>
           <DialogContent size="xl" className="p-2">
             <DialogTitle className="sr-only">{t("events.viewFullImage")}</DialogTitle>

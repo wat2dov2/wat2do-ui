@@ -5,7 +5,7 @@ import {
   clearNarrowingFilterState,
 } from "@/features/search/api/filterService";
 import { useSearchStore, type FilterUpdateSource } from "@/features/search/store/search.store";
-import type { EventDateFilter, EventFormatFilter, FilterState } from "@/shared/types";
+import type { EventDateFilter, FilterState } from "@/shared/types";
 
 type FilterStateUpdater = FilterState | ((current: FilterState) => FilterState);
 
@@ -126,10 +126,6 @@ export function useFilterState() {
     (value: boolean) => updateFilterState({ registration: value }),
     [updateFilterState],
   );
-  const setEventFormat = useCallback(
-    (value: EventFormatFilter) => updateFilterState({ eventFormat: value }),
-    [updateFilterState],
-  );
   const setMinGoing = useCallback(
     (value: number) => updateFilterState({ minGoing: value }),
     [updateFilterState],
@@ -196,7 +192,6 @@ export function useFilterState() {
     setMinPrice,
     setMaxPrice,
     setMinGoing,
-    setEventFormat,
     setRegistration,
     setSelectedClubs,
     setHasFoodFilter,

@@ -332,7 +332,12 @@
         "empty": "Nessun evento idoneo",
         "failed": "Necessita attenzione"
       },
+      "kind": {
+        "events": "Eventi",
+        "employers_on_campus": "Datori di lavoro nel campus"
+      },
       "columns": {
+        "kind": "Carosello",
         "school": "Scuola",
         "dateRan": "Data eseguita",
         "timeRan": "Ora eseguita",

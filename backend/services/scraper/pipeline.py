@@ -33,7 +33,7 @@ from services.scraper.dedup import (
 )
 from services.scraper.event_writer import _lookup_club_by_ig, write_event
 from services.scraper.extractor import extract_post_content
-from services.scraper.image_uploader import upload_post_images
+from services.scraper.image_uploader import upload_post_images, upload_video_from_url
 from services.scraper.org_resolve import resolve_club_for_scrape
 from services.scraper.position_writer import write_position
 from services.scraper.reconciler import reconcile_events
@@ -101,8 +101,11 @@ def run_pipeline(
             _finalize(result)
             return result
 
-        target_shortcodes = {_extract_shortcode(p.get("url") or "") for p in posts}
-        target_shortcodes.discard(None)
+        target_shortcodes = {
+            shortcode
+            for post in posts
+            if (shortcode := _extract_shortcode(post.get("url") or "")) is not None
+        }
         seen_shortcodes: set[str] = set() if dry_run else existing_shortcodes(target_shortcodes)
         cutoff_dt = datetime.now(timezone.utc) - timedelta(days=cutoff_days)
         new_posts = _filter_new_posts(
@@ -202,7 +205,15 @@ def _process_one_post(
     allow_past_events: bool = False,
 ) -> None:
     image_urls = _extract_image_urls(post)
-    uploaded = upload_post_images(image_urls)
+    # Upload one poster at a time to retain its relationship to carousel videos
+    # even when an earlier poster is rejected by storage validation.
+    uploaded: list[str] = []
+    source_images: list[str] = []
+    for image_url in image_urls:
+        stored = upload_post_images([image_url])
+        if stored:
+            uploaded.extend(stored)
+            source_images.append(image_url)
 
     caption = normalize_scraped_text(post.get("caption") or post.get("text")) or ""
     post_dt = parse_iso_datetime(post.get("timestamp"))
@@ -221,8 +232,19 @@ def _process_one_post(
         return
 
     source_url = post.get("url") or ""
-    _attach_source_metadata(events, uploaded=uploaded, school=school)
-    _attach_source_metadata(positions, uploaded=uploaded, school=school)
+    video_sources = _extract_video_urls(post)
+    stored_videos = {
+        source: upload_video_from_url(source) for source in dict.fromkeys(video_sources.values())
+    }
+    videos = [stored_videos.get(video_sources.get(image, "")) for image in source_images]
+    # A reel can still be useful when only its caption could be extracted.
+    fallback_video = stored_videos.get(post.get("videoUrl") or "") if not uploaded else None
+    _attach_source_metadata(
+        events, uploaded=uploaded, videos=videos, fallback_video=fallback_video, school=school
+    )
+    _attach_source_metadata(
+        positions, uploaded=uploaded, videos=videos, fallback_video=fallback_video, school=school
+    )
 
     if dry_run:
         for event in events:
@@ -277,6 +299,8 @@ def _attach_source_metadata(
     items: list[dict],
     *,
     uploaded: list[str],
+    videos: list[str | None],
+    fallback_video: str | None,
     school: str,
 ) -> None:
     for item in items:
@@ -285,7 +309,11 @@ def _attach_source_metadata(
         except (TypeError, ValueError):
             index = 0
         if uploaded:
-            item["source_image_url"] = uploaded[index if 0 <= index < len(uploaded) else 0]
+            selected = index if 0 <= index < len(uploaded) else 0
+            item["source_image_url"] = uploaded[selected]
+            item["source_video_url"] = videos[selected]
+        elif fallback_video:
+            item["source_video_url"] = fallback_video
         item["school"] = school
 
 
@@ -458,3 +486,18 @@ def _extract_image_urls(post: dict) -> list[str]:
             images.append(single)
 
     return images
+
+
+def _extract_video_urls(post: dict) -> dict[str, str]:
+    """Associate each carousel video's poster with its downloadable source."""
+    videos: dict[str, str] = {}
+    children = post.get("childPosts")
+    records = [post, *(children if isinstance(children, list) else [])]
+    for record in records:
+        if not isinstance(record, dict):
+            continue
+        video = record.get("videoUrl")
+        poster = record.get("displayUrl") or ""
+        if isinstance(video, str) and video and isinstance(poster, str):
+            videos[poster] = video
+    return videos

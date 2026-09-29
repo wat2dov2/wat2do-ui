@@ -8,6 +8,24 @@
 /** Protocols that are safe for browser navigation. */
 const SAFE_PROTOCOLS = new Set(["http:", "https:"]);
 
+/** Resolve a bare Instagram handle or a complete Instagram profile URL. */
+export function normalizeInstagramHandle(value: string | null | undefined): string {
+  let handle = value?.trim() ?? "";
+  if (/^(?:https?:\/\/)?(?:www\.)?instagram\.com\//i.test(handle)) {
+    try {
+      const url = new URL(/^https?:\/\//i.test(handle) ? handle : `https://${handle}`);
+      const segments = url.pathname.split("/").filter(Boolean);
+      if (segments.length !== 1 || /^(?:p|reel|reels|stories|explore|accounts|direct)$/i.test(segments[0])) return "";
+      handle = segments[0];
+    } catch {
+      return "";
+    }
+  } else {
+    handle = handle.replace(/^@+/, "");
+  }
+  return /^[a-z0-9_.]{1,30}$/i.test(handle) ? handle : "";
+}
+
 /**
  * Check whether a URL string is safe for browser navigation.
  *

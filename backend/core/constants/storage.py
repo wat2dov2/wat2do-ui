@@ -1,6 +1,7 @@
 """Supabase storage bucket and upload limit constants."""
 
 BUCKET_EVENT_IMAGES = "event-images"
+BUCKET_EVENT_VIDEOS = "event-videos"
 BUCKET_AVATARS = "avatars"
 BUCKET_CLUB_LOGOS = "organization-logos"
 BUCKET_QR_ASSETS = "qr-assets"

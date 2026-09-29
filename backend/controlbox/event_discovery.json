@@ -155,6 +155,27 @@
           "ko": "기말고사 준비"
         },
         "instructions": "Review sessions, study groups, tutoring, practice exams or exam-skills workshops explicitly preparing for final exams. General academic talks, midterm preparation and ordinary classes do not qualify."
+      },
+      "thanksgiving": {
+        "labels": {
+          "en": "Thanksgiving",
+          "fr": "Action de grâce"
+        },
+        "instructions": "Thanksgiving and Friendsgiving celebrations in the school-specific display window."
+      },
+      "halloween": {
+        "labels": {
+          "en": "Halloween",
+          "fr": "Halloween"
+        },
+        "instructions": "Halloween celebrations in the school-specific display window."
+      },
+      "winter_holidays": {
+        "labels": {
+          "en": "Winter holidays",
+          "fr": "Fêtes de fin d’année"
+        },
+        "instructions": "Winter holiday celebrations in the school-specific display window."
       }
     },
     "schools": {
@@ -179,17 +200,20 @@
               {
                 "start_date": "2026-09-28",
                 "end_date": "2026-10-14",
-                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html"
+                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html",
+                "filter_id": "thanksgiving"
               },
               {
                 "start_date": "2026-10-17",
                 "end_date": "2026-11-02",
-                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween"
+                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween",
+                "filter_id": "halloween"
               },
               {
                 "start_date": "2026-12-01",
                 "end_date": "2026-12-23",
-                "source_url": "https://uwaterloo.ca/important-dates/undergraduate"
+                "source_url": "https://uwaterloo.ca/important-dates/undergraduate",
+                "filter_id": "winter_holidays"
               }
             ]
           },
@@ -259,17 +283,20 @@
               {
                 "start_date": "2026-09-28",
                 "end_date": "2026-10-14",
-                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html"
+                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html",
+                "filter_id": "thanksgiving"
               },
               {
                 "start_date": "2026-10-17",
                 "end_date": "2026-11-02",
-                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween"
+                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween",
+                "filter_id": "halloween"
               },
               {
                 "start_date": "2026-12-01",
                 "end_date": "2026-12-22",
-                "source_url": "https://www.trinity.utoronto.ca/news-and-events/important-dates/"
+                "source_url": "https://www.trinity.utoronto.ca/news-and-events/important-dates/",
+                "filter_id": "winter_holidays"
               }
             ]
           },
@@ -339,17 +366,20 @@
               {
                 "start_date": "2026-09-28",
                 "end_date": "2026-10-14",
-                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html"
+                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html",
+                "filter_id": "thanksgiving"
               },
               {
                 "start_date": "2026-10-17",
                 "end_date": "2026-11-02",
-                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween"
+                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween",
+                "filter_id": "halloween"
               },
               {
                 "start_date": "2026-12-01",
                 "end_date": "2026-12-22",
-                "source_url": "https://www.utsc.utoronto.ca/registrar/fall-2026-winter-2027-academic-dates"
+                "source_url": "https://www.utsc.utoronto.ca/registrar/fall-2026-winter-2027-academic-dates",
+                "filter_id": "winter_holidays"
               }
             ]
           },
@@ -419,17 +449,20 @@
               {
                 "start_date": "2026-09-28",
                 "end_date": "2026-10-14",
-                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html"
+                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html",
+                "filter_id": "thanksgiving"
               },
               {
                 "start_date": "2026-10-17",
                 "end_date": "2026-11-02",
-                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween"
+                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween",
+                "filter_id": "halloween"
               },
               {
                 "start_date": "2026-12-01",
                 "end_date": "2026-12-22",
-                "source_url": "https://www.utm.utoronto.ca/hospitality/ImportantSMPDatesDeadlines"
+                "source_url": "https://www.utm.utoronto.ca/hospitality/ImportantSMPDatesDeadlines",
+                "filter_id": "winter_holidays"
               }
             ]
           },
@@ -505,17 +538,20 @@
               {
                 "start_date": "2026-09-28",
                 "end_date": "2026-10-14",
-                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html"
+                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html",
+                "filter_id": "thanksgiving"
               },
               {
                 "start_date": "2026-10-17",
                 "end_date": "2026-11-02",
-                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween"
+                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween",
+                "filter_id": "halloween"
               },
               {
                 "start_date": "2026-12-01",
                 "end_date": "2026-12-22",
-                "source_url": "https://www.mcgill.ca/importantdates/key-dates"
+                "source_url": "https://www.mcgill.ca/importantdates/key-dates",
+                "filter_id": "winter_holidays"
               }
             ]
           },
@@ -591,17 +627,20 @@
               {
                 "start_date": "2026-09-28",
                 "end_date": "2026-10-14",
-                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html"
+                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html",
+                "filter_id": "thanksgiving"
               },
               {
                 "start_date": "2026-10-17",
                 "end_date": "2026-11-02",
-                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween"
+                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween",
+                "filter_id": "halloween"
               },
               {
                 "start_date": "2026-12-01",
                 "end_date": "2026-12-23",
-                "source_url": "https://registrar.mcmaster.ca/dates-and-deadlines/"
+                "source_url": "https://registrar.mcmaster.ca/dates-and-deadlines/",
+                "filter_id": "winter_holidays"
               }
             ]
           },
@@ -677,17 +716,20 @@
               {
                 "start_date": "2026-09-28",
                 "end_date": "2026-10-14",
-                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html"
+                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html",
+                "filter_id": "thanksgiving"
               },
               {
                 "start_date": "2026-10-17",
                 "end_date": "2026-11-02",
-                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween"
+                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween",
+                "filter_id": "halloween"
               },
               {
                 "start_date": "2026-12-01",
                 "end_date": "2026-12-22",
-                "source_url": "https://www.uwo.ca/philosophy/undergraduate/important%20dates.html"
+                "source_url": "https://www.uwo.ca/philosophy/undergraduate/important%20dates.html",
+                "filter_id": "winter_holidays"
               }
             ]
           },
@@ -763,17 +805,20 @@
               {
                 "start_date": "2026-09-28",
                 "end_date": "2026-10-14",
-                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html"
+                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html",
+                "filter_id": "thanksgiving"
               },
               {
                 "start_date": "2026-10-17",
                 "end_date": "2026-11-02",
-                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween"
+                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween",
+                "filter_id": "halloween"
               },
               {
                 "start_date": "2026-12-01",
                 "end_date": "2026-12-23",
-                "source_url": "https://www.queensu.ca/registrar/key-dates"
+                "source_url": "https://www.queensu.ca/registrar/key-dates",
+                "filter_id": "winter_holidays"
               }
             ]
           },
@@ -849,17 +894,20 @@
               {
                 "start_date": "2026-09-28",
                 "end_date": "2026-10-14",
-                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html"
+                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html",
+                "filter_id": "thanksgiving"
               },
               {
                 "start_date": "2026-10-17",
                 "end_date": "2026-11-02",
-                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween"
+                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween",
+                "filter_id": "halloween"
               },
               {
                 "start_date": "2026-12-01",
                 "end_date": "2026-12-23",
-                "source_url": "https://calendar.carleton.ca/academicyear/"
+                "source_url": "https://calendar.carleton.ca/academicyear/",
+                "filter_id": "winter_holidays"
               }
             ]
           },
@@ -935,17 +983,20 @@
               {
                 "start_date": "2026-09-28",
                 "end_date": "2026-10-14",
-                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html"
+                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html",
+                "filter_id": "thanksgiving"
               },
               {
                 "start_date": "2026-10-17",
                 "end_date": "2026-11-02",
-                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween"
+                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween",
+                "filter_id": "halloween"
               },
               {
                 "start_date": "2026-12-01",
                 "end_date": "2026-12-23",
-                "source_url": "https://brocku.ca/important-dates/academic-term/"
+                "source_url": "https://brocku.ca/important-dates/academic-term/",
+                "filter_id": "winter_holidays"
               }
             ]
           },
@@ -1021,17 +1072,20 @@
               {
                 "start_date": "2026-09-28",
                 "end_date": "2026-10-14",
-                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html"
+                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html",
+                "filter_id": "thanksgiving"
               },
               {
                 "start_date": "2026-10-17",
                 "end_date": "2026-11-02",
-                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween"
+                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween",
+                "filter_id": "halloween"
               },
               {
                 "start_date": "2026-12-01",
                 "end_date": "2026-12-23",
-                "source_url": "https://students.wlu.ca/academics/support-and-advising/calendars-and-petitions/important-dates-and-deadlines.html"
+                "source_url": "https://students.wlu.ca/academics/support-and-advising/calendars-and-petitions/important-dates-and-deadlines.html",
+                "filter_id": "winter_holidays"
               }
             ]
           },
@@ -1101,17 +1155,20 @@
               {
                 "start_date": "2026-09-28",
                 "end_date": "2026-10-14",
-                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html"
+                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html",
+                "filter_id": "thanksgiving"
               },
               {
                 "start_date": "2026-10-17",
                 "end_date": "2026-11-02",
-                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween"
+                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween",
+                "filter_id": "halloween"
               },
               {
                 "start_date": "2026-12-01",
                 "end_date": "2026-12-23",
-                "source_url": "https://registrar.yorku.ca/enrol/dates/2026-2027/fall-winter"
+                "source_url": "https://registrar.yorku.ca/enrol/dates/2026-2027/fall-winter",
+                "filter_id": "winter_holidays"
               }
             ]
           },
@@ -1181,17 +1238,20 @@
               {
                 "start_date": "2026-09-28",
                 "end_date": "2026-10-14",
-                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html"
+                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html",
+                "filter_id": "thanksgiving"
               },
               {
                 "start_date": "2026-10-17",
                 "end_date": "2026-11-02",
-                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween"
+                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween",
+                "filter_id": "halloween"
               },
               {
                 "start_date": "2026-12-01",
                 "end_date": "2026-12-20",
-                "source_url": "https://www.torontomu.ca/calendar/2026-2027/dates/"
+                "source_url": "https://www.torontomu.ca/calendar/2026-2027/dates/",
+                "filter_id": "winter_holidays"
               }
             ]
           },
@@ -1267,17 +1327,20 @@
               {
                 "start_date": "2026-09-28",
                 "end_date": "2026-10-14",
-                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html"
+                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html",
+                "filter_id": "thanksgiving"
               },
               {
                 "start_date": "2026-10-17",
                 "end_date": "2026-11-02",
-                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween"
+                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween",
+                "filter_id": "halloween"
               },
               {
                 "start_date": "2026-12-01",
                 "end_date": "2026-12-22",
-                "source_url": "https://www.uottawa.ca/study/important-academic-dates-deadlines"
+                "source_url": "https://www.uottawa.ca/study/important-academic-dates-deadlines",
+                "filter_id": "winter_holidays"
               }
             ]
           },
@@ -1347,17 +1410,20 @@
               {
                 "start_date": "2026-09-28",
                 "end_date": "2026-10-14",
-                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html"
+                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html",
+                "filter_id": "thanksgiving"
               },
               {
                 "start_date": "2026-10-17",
                 "end_date": "2026-11-02",
-                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween"
+                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween",
+                "filter_id": "halloween"
               },
               {
                 "start_date": "2026-12-01",
                 "end_date": "2026-12-20",
-                "source_url": "https://www.ocadu.ca/student-services/office-registrar/dates-and-deadlines"
+                "source_url": "https://www.ocadu.ca/student-services/office-registrar/dates-and-deadlines",
+                "filter_id": "winter_holidays"
               }
             ]
           },
@@ -1427,17 +1493,20 @@
               {
                 "start_date": "2026-09-28",
                 "end_date": "2026-10-14",
-                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html"
+                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html",
+                "filter_id": "thanksgiving"
               },
               {
                 "start_date": "2026-10-17",
                 "end_date": "2026-11-02",
-                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween"
+                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween",
+                "filter_id": "halloween"
               },
               {
                 "start_date": "2026-12-01",
                 "end_date": "2026-12-22",
-                "source_url": "https://www.ualberta.ca/en/registrar/examinations/exam-schedules/exam-schedule-change-faq.html"
+                "source_url": "https://www.ualberta.ca/en/registrar/examinations/exam-schedules/exam-schedule-change-faq.html",
+                "filter_id": "winter_holidays"
               }
             ]
           },
@@ -1507,17 +1576,20 @@
               {
                 "start_date": "2026-09-28",
                 "end_date": "2026-10-14",
-                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html"
+                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html",
+                "filter_id": "thanksgiving"
               },
               {
                 "start_date": "2026-10-17",
                 "end_date": "2026-11-02",
-                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween"
+                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween",
+                "filter_id": "halloween"
               },
               {
                 "start_date": "2026-12-01",
                 "end_date": "2026-12-20",
-                "source_url": "https://www.ulaval.ca/sites/default/files/notre-universite/direction-gouv/Documents_officiels/Calendrier_universitaire/Calendrier_universitaire_2026-2027.pdf"
+                "source_url": "https://www.ulaval.ca/sites/default/files/notre-universite/direction-gouv/Documents_officiels/Calendrier_universitaire/Calendrier_universitaire_2026-2027.pdf",
+                "filter_id": "winter_holidays"
               }
             ]
           },
@@ -1587,17 +1659,20 @@
               {
                 "start_date": "2026-09-28",
                 "end_date": "2026-10-14",
-                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html"
+                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html",
+                "filter_id": "thanksgiving"
               },
               {
                 "start_date": "2026-10-17",
                 "end_date": "2026-11-02",
-                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween"
+                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween",
+                "filter_id": "halloween"
               },
               {
                 "start_date": "2026-12-01",
                 "end_date": "2026-12-18",
-                "source_url": "https://www.mun.ca/university-calendar/diary-of-important-dates/"
+                "source_url": "https://www.mun.ca/university-calendar/diary-of-important-dates/",
+                "filter_id": "winter_holidays"
               }
             ]
           },
@@ -1667,17 +1742,20 @@
               {
                 "start_date": "2026-09-28",
                 "end_date": "2026-10-14",
-                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html"
+                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html",
+                "filter_id": "thanksgiving"
               },
               {
                 "start_date": "2026-10-17",
                 "end_date": "2026-11-02",
-                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween"
+                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween",
+                "filter_id": "halloween"
               },
               {
                 "start_date": "2026-12-01",
                 "end_date": "2026-12-20",
-                "source_url": "https://www.sfu.ca/students/calendar/2026/fall.html"
+                "source_url": "https://www.sfu.ca/students/calendar/2026/fall.html",
+                "filter_id": "winter_holidays"
               }
             ]
           },
@@ -1747,17 +1825,20 @@
               {
                 "start_date": "2026-09-28",
                 "end_date": "2026-10-14",
-                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html"
+                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html",
+                "filter_id": "thanksgiving"
               },
               {
                 "start_date": "2026-10-17",
                 "end_date": "2026-11-02",
-                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween"
+                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween",
+                "filter_id": "halloween"
               },
               {
                 "start_date": "2026-12-01",
                 "end_date": "2026-12-23",
-                "source_url": "https://registraire.umontreal.ca/dates-importantes/calendriers-universitaires/"
+                "source_url": "https://registraire.umontreal.ca/dates-importantes/calendriers-universitaires/",
+                "filter_id": "winter_holidays"
               }
             ]
           },
@@ -1822,17 +1903,20 @@
               {
                 "start_date": "2026-09-28",
                 "end_date": "2026-10-14",
-                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html"
+                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html",
+                "filter_id": "thanksgiving"
               },
               {
                 "start_date": "2026-10-17",
                 "end_date": "2026-11-02",
-                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween"
+                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween",
+                "filter_id": "halloween"
               },
               {
                 "start_date": "2026-12-01",
                 "end_date": "2026-12-23",
-                "source_url": "https://catalog.umanitoba.ca/undergraduate-studies/academic-schedule/"
+                "source_url": "https://catalog.umanitoba.ca/undergraduate-studies/academic-schedule/",
+                "filter_id": "winter_holidays"
               }
             ]
           },
@@ -1908,17 +1992,20 @@
               {
                 "start_date": "2026-09-28",
                 "end_date": "2026-10-14",
-                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html"
+                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html",
+                "filter_id": "thanksgiving"
               },
               {
                 "start_date": "2026-10-17",
                 "end_date": "2026-11-02",
-                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween"
+                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween",
+                "filter_id": "halloween"
               },
               {
                 "start_date": "2026-12-01",
                 "end_date": "2026-12-22",
-                "source_url": "https://www.concordia.ca/students/registration/term-dates-deadlines.html"
+                "source_url": "https://www.concordia.ca/students/registration/term-dates-deadlines.html",
+                "filter_id": "winter_holidays"
               }
             ]
           },
@@ -1994,17 +2081,20 @@
               {
                 "start_date": "2026-09-28",
                 "end_date": "2026-10-14",
-                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html"
+                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html",
+                "filter_id": "thanksgiving"
               },
               {
                 "start_date": "2026-10-17",
                 "end_date": "2026-11-02",
-                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween"
+                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween",
+                "filter_id": "halloween"
               },
               {
                 "start_date": "2026-12-01",
                 "end_date": "2026-12-20",
-                "source_url": "https://www.dal.ca/study/plan-your-degree/important-dates.html"
+                "source_url": "https://www.dal.ca/study/plan-your-degree/important-dates.html",
+                "filter_id": "winter_holidays"
               }
             ]
           },
@@ -2080,17 +2170,20 @@
               {
                 "start_date": "2026-09-28",
                 "end_date": "2026-10-14",
-                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html"
+                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html",
+                "filter_id": "thanksgiving"
               },
               {
                 "start_date": "2026-10-17",
                 "end_date": "2026-11-02",
-                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween"
+                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween",
+                "filter_id": "halloween"
               },
               {
                 "start_date": "2026-12-01",
                 "end_date": "2026-12-22",
-                "source_url": "https://calendar.uoguelph.ca/undergraduate-calendar/schedule-dates/fall-semester/"
+                "source_url": "https://calendar.uoguelph.ca/undergraduate-calendar/schedule-dates/fall-semester/",
+                "filter_id": "winter_holidays"
               }
             ]
           },
@@ -2160,17 +2253,20 @@
               {
                 "start_date": "2026-09-28",
                 "end_date": "2026-10-14",
-                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html"
+                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html",
+                "filter_id": "thanksgiving"
               },
               {
                 "start_date": "2026-10-17",
                 "end_date": "2026-11-02",
-                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween"
+                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween",
+                "filter_id": "halloween"
               },
               {
                 "start_date": "2026-12-01",
                 "end_date": "2026-12-18",
-                "source_url": "https://ucalgary.ca/registrar/dates"
+                "source_url": "https://ucalgary.ca/registrar/dates",
+                "filter_id": "winter_holidays"
               }
             ]
           },
@@ -2246,17 +2342,20 @@
               {
                 "start_date": "2026-09-28",
                 "end_date": "2026-10-14",
-                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html"
+                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html",
+                "filter_id": "thanksgiving"
               },
               {
                 "start_date": "2026-10-17",
                 "end_date": "2026-11-02",
-                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween"
+                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween",
+                "filter_id": "halloween"
               },
               {
                 "start_date": "2026-12-01",
                 "end_date": "2026-12-23",
-                "source_url": "https://students.usask.ca/academic-calendar/documents/academic-calendar-2026-2027.pdf"
+                "source_url": "https://students.usask.ca/academic-calendar/documents/academic-calendar-2026-2027.pdf",
+                "filter_id": "winter_holidays"
               }
             ]
           },
@@ -2326,17 +2425,20 @@
               {
                 "start_date": "2026-09-28",
                 "end_date": "2026-10-14",
-                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html"
+                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html",
+                "filter_id": "thanksgiving"
               },
               {
                 "start_date": "2026-10-17",
                 "end_date": "2026-11-02",
-                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween"
+                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween",
+                "filter_id": "halloween"
               },
               {
                 "start_date": "2026-12-01",
                 "end_date": "2026-12-22",
-                "source_url": "https://www.uwindsor.ca/registrar/event-calendar/2026-12"
+                "source_url": "https://www.uwindsor.ca/registrar/event-calendar/2026-12",
+                "filter_id": "winter_holidays"
               }
             ]
           },
@@ -2406,17 +2508,20 @@
               {
                 "start_date": "2026-09-28",
                 "end_date": "2026-10-14",
-                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html"
+                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html",
+                "filter_id": "thanksgiving"
               },
               {
                 "start_date": "2026-10-17",
                 "end_date": "2026-11-02",
-                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween"
+                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween",
+                "filter_id": "halloween"
               },
               {
                 "start_date": "2026-12-01",
                 "end_date": "2026-12-23",
-                "source_url": "https://etudier.uqam.ca/calendriers"
+                "source_url": "https://etudier.uqam.ca/calendriers",
+                "filter_id": "winter_holidays"
               }
             ]
           },
@@ -2481,17 +2586,20 @@
               {
                 "start_date": "2026-09-28",
                 "end_date": "2026-10-14",
-                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html"
+                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html",
+                "filter_id": "thanksgiving"
               },
               {
                 "start_date": "2026-10-17",
                 "end_date": "2026-11-02",
-                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween"
+                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween",
+                "filter_id": "halloween"
               },
               {
                 "start_date": "2026-12-01",
                 "end_date": "2026-12-19",
-                "source_url": "https://registrar.ontariotechu.ca/academic-schedule/ug-academic-schedule.php"
+                "source_url": "https://registrar.ontariotechu.ca/academic-schedule/ug-academic-schedule.php",
+                "filter_id": "winter_holidays"
               }
             ]
           },
@@ -2567,17 +2675,20 @@
               {
                 "start_date": "2026-10-17",
                 "end_date": "2026-11-02",
-                "source_url": "https://www.census.gov/newsroom/facts-for-features/2025/halloween.html"
+                "source_url": "https://www.census.gov/newsroom/facts-for-features/2025/halloween.html",
+                "filter_id": "halloween"
               },
               {
                 "start_date": "2026-11-12",
                 "end_date": "2026-11-28",
-                "source_url": "https://www.opm.gov/policy-data-oversight/pay-leave/federal-holidays/"
+                "source_url": "https://www.opm.gov/policy-data-oversight/pay-leave/federal-holidays/",
+                "filter_id": "thanksgiving"
               },
               {
                 "start_date": "2026-12-01",
                 "end_date": "2026-12-19",
-                "source_url": "https://catalog.cornell.edu/enrollment-credit-requirements/academic-calendar/"
+                "source_url": "https://catalog.cornell.edu/enrollment-credit-requirements/academic-calendar/",
+                "filter_id": "winter_holidays"
               }
             ]
           },
@@ -2647,17 +2758,20 @@
               {
                 "start_date": "2026-10-17",
                 "end_date": "2026-11-02",
-                "source_url": "https://www.census.gov/newsroom/facts-for-features/2025/halloween.html"
+                "source_url": "https://www.census.gov/newsroom/facts-for-features/2025/halloween.html",
+                "filter_id": "halloween"
               },
               {
                 "start_date": "2026-11-12",
                 "end_date": "2026-11-28",
-                "source_url": "https://www.opm.gov/policy-data-oversight/pay-leave/federal-holidays/"
+                "source_url": "https://www.opm.gov/policy-data-oversight/pay-leave/federal-holidays/",
+                "filter_id": "thanksgiving"
               },
               {
                 "start_date": "2026-12-01",
                 "end_date": "2026-12-22",
-                "source_url": "https://bulletins.nyu.edu/nyu/academic-calendar/"
+                "source_url": "https://bulletins.nyu.edu/nyu/academic-calendar/",
+                "filter_id": "winter_holidays"
               }
             ]
           },
@@ -2733,17 +2847,20 @@
               {
                 "start_date": "2026-10-17",
                 "end_date": "2026-11-02",
-                "source_url": "https://www.census.gov/newsroom/facts-for-features/2025/halloween.html"
+                "source_url": "https://www.census.gov/newsroom/facts-for-features/2025/halloween.html",
+                "filter_id": "halloween"
               },
               {
                 "start_date": "2026-11-12",
                 "end_date": "2026-11-28",
-                "source_url": "https://www.opm.gov/policy-data-oversight/pay-leave/federal-holidays/"
+                "source_url": "https://www.opm.gov/policy-data-oversight/pay-leave/federal-holidays/",
+                "filter_id": "thanksgiving"
               },
               {
                 "start_date": "2026-12-01",
                 "end_date": "2026-12-17",
-                "source_url": "https://almanac.upenn.edu/penn-academic-calendar"
+                "source_url": "https://almanac.upenn.edu/penn-academic-calendar",
+                "filter_id": "winter_holidays"
               }
             ]
           },
@@ -2819,17 +2936,20 @@
               {
                 "start_date": "2026-10-17",
                 "end_date": "2026-11-02",
-                "source_url": "https://www.census.gov/newsroom/facts-for-features/2025/halloween.html"
+                "source_url": "https://www.census.gov/newsroom/facts-for-features/2025/halloween.html",
+                "filter_id": "halloween"
               },
               {
                 "start_date": "2026-11-12",
                 "end_date": "2026-11-28",
-                "source_url": "https://www.opm.gov/policy-data-oversight/pay-leave/federal-holidays/"
+                "source_url": "https://www.opm.gov/policy-data-oversight/pay-leave/federal-holidays/",
+                "filter_id": "thanksgiving"
               },
               {
                 "start_date": "2026-12-01",
                 "end_date": "2026-12-23",
-                "source_url": "https://bulletin.columbia.edu/columbia-college/academic-calendar/"
+                "source_url": "https://bulletin.columbia.edu/columbia-college/academic-calendar/",
+                "filter_id": "winter_holidays"
               }
             ]
           },
@@ -2899,17 +3019,20 @@
               {
                 "start_date": "2026-10-17",
                 "end_date": "2026-11-02",
-                "source_url": "https://www.census.gov/newsroom/facts-for-features/2025/halloween.html"
+                "source_url": "https://www.census.gov/newsroom/facts-for-features/2025/halloween.html",
+                "filter_id": "halloween"
               },
               {
                 "start_date": "2026-11-12",
                 "end_date": "2026-11-28",
-                "source_url": "https://www.opm.gov/policy-data-oversight/pay-leave/federal-holidays/"
+                "source_url": "https://www.opm.gov/policy-data-oversight/pay-leave/federal-holidays/",
+                "filter_id": "thanksgiving"
               },
               {
                 "start_date": "2026-12-01",
                 "end_date": "2026-12-18",
-                "source_url": "https://registrar.mit.edu/calendar/current-key-dates"
+                "source_url": "https://registrar.mit.edu/calendar/current-key-dates",
+                "filter_id": "winter_holidays"
               }
             ]
           },
@@ -2985,17 +3108,20 @@
               {
                 "start_date": "2026-09-28",
                 "end_date": "2026-10-14",
-                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html"
+                "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html",
+                "filter_id": "thanksgiving"
               },
               {
                 "start_date": "2026-10-17",
                 "end_date": "2026-11-02",
-                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween"
+                "source_url": "https://our-languages.canada.ca/en/writing-tips-plus/halloween",
+                "filter_id": "halloween"
               },
               {
                 "start_date": "2026-12-01",
                 "end_date": "2026-12-22",
-                "source_url": "https://students.ubc.ca/enrolment/dates-deadlines/"
+                "source_url": "https://students.ubc.ca/enrolment/dates-deadlines/",
+                "filter_id": "winter_holidays"
               }
             ]
           },
@@ -3071,17 +3197,20 @@
               {
                 "start_date": "2026-10-17",
                 "end_date": "2026-11-02",
-                "source_url": "https://www.census.gov/newsroom/facts-for-features/2025/halloween.html"
+                "source_url": "https://www.census.gov/newsroom/facts-for-features/2025/halloween.html",
+                "filter_id": "halloween"
               },
               {
                 "start_date": "2026-11-12",
                 "end_date": "2026-11-28",
-                "source_url": "https://www.opm.gov/policy-data-oversight/pay-leave/federal-holidays/"
+                "source_url": "https://www.opm.gov/policy-data-oversight/pay-leave/federal-holidays/",
+                "filter_id": "thanksgiving"
               },
               {
                 "start_date": "2026-12-01",
                 "end_date": "2026-12-18",
-                "source_url": "https://registrar.berkeley.edu/wp-content/uploads/UCB_AcademicCalendar_2026-27.pdf"
+                "source_url": "https://registrar.berkeley.edu/wp-content/uploads/UCB_AcademicCalendar_2026-27.pdf",
+                "filter_id": "winter_holidays"
               }
             ]
           },
@@ -3157,17 +3286,20 @@
               {
                 "start_date": "2026-10-17",
                 "end_date": "2026-11-02",
-                "source_url": "https://www.census.gov/newsroom/facts-for-features/2025/halloween.html"
+                "source_url": "https://www.census.gov/newsroom/facts-for-features/2025/halloween.html",
+                "filter_id": "halloween"
               },
               {
                 "start_date": "2026-11-12",
                 "end_date": "2026-11-28",
-                "source_url": "https://www.opm.gov/policy-data-oversight/pay-leave/federal-holidays/"
+                "source_url": "https://www.opm.gov/policy-data-oversight/pay-leave/federal-holidays/",
+                "filter_id": "thanksgiving"
               },
               {
                 "start_date": "2026-12-01",
                 "end_date": "2026-12-21",
-                "source_url": "https://bulletin.engin.umich.edu/academic-calendar-and-deadlines/academic-calendar/"
+                "source_url": "https://bulletin.engin.umich.edu/academic-calendar-and-deadlines/academic-calendar/",
+                "filter_id": "winter_holidays"
               }
             ]
           },

@@ -138,3 +138,43 @@ def test_upload_validates_bytes_for_requested_bucket(monkeypatch):
         b"clean-image",
         content_type="image/jpeg",
     )
+
+
+def test_video_download_bounds_stream_and_does_not_follow_redirects(monkeypatch):
+    import pytest
+
+    response = MagicMock()
+    response.headers = {"content-type": "video/mp4"}
+    response.iter_bytes.return_value = [b"1234", b"5678"]
+    stream = MagicMock()
+    stream.return_value.__enter__.return_value = response
+    monkeypatch.setattr(image_uploader.httpx, "stream", stream)
+    monkeypatch.setattr(image_uploader.socket, "getaddrinfo", _mock_addrinfo)
+    url = "https://scontent.cdninstagram.com/video.mp4"
+    with pytest.raises(image_uploader.MediaDownloadError, match="media limit"):
+        image_uploader.download_video(url, maximum_bytes=6, timeout_seconds=10)
+    assert stream.call_args.kwargs["follow_redirects"] is False
+
+
+def test_failed_video_upload_is_optional_and_does_not_expose_signed_url(monkeypatch, caplog):
+    monkeypatch.setattr(
+        image_uploader, "download_video", MagicMock(side_effect=RuntimeError("secret-url"))
+    )
+    assert (
+        image_uploader.upload_video_from_url("https://scontent.cdninstagram.com/video?secret")
+        is None
+    )
+    assert "secret" not in caplog.text
+
+
+def test_video_rejects_nonpublic_addresses_and_embedded_credentials():
+    import pytest
+
+    with patch("services.scraper.image_uploader.socket.getaddrinfo", _mock_addrinfo_private):
+        for url in [
+            "https://scontent.cdninstagram.com/video.mp4",
+            "https://user@scontent.cdninstagram.com/video.mp4",
+            "https://scontent.cdninstagram.com:8443/video.mp4",
+        ]:
+            with pytest.raises(image_uploader.MediaDownloadError, match="unsupported video host"):
+                image_uploader.download_video(url, maximum_bytes=100, timeout_seconds=10)

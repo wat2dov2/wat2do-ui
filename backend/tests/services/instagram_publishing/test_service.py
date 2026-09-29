@@ -41,12 +41,12 @@ def test_generate_due_batches_uses_enabled_connected_accounts(monkeypatch):
 
     assert result == {
         "accounts": len(enabled_accounts),
-        "generated": len(enabled_accounts),
+        "generated": len(enabled_accounts) * 2,
         "empty": 0,
         "skipped": 0,
         "failed": 0,
     }
-    assert generated_accounts == enabled_accounts
+    assert generated_accounts == [account for account in enabled_accounts for _ in range(2)]
     assert "dalhousie" in generated_accounts
 
 
@@ -62,7 +62,7 @@ def test_generate_due_batches_runs_when_the_scheduler_starts_late(monkeypatch):
     )
 
     assert result["accounts"] == enabled_account_count
-    assert generate.call_count == enabled_account_count
+    assert generate.call_count == enabled_account_count * 2
 
 
 class _FakeQuery:
@@ -102,8 +102,8 @@ def test_list_batches_attaches_item_counts_without_hydrating_details(monkeypatch
     batch_calls: list[tuple] = []
     item_calls: list[tuple] = []
     batches = [
-        {"id": "batch-1", "school_record": {"slug": "uwaterloo"}},
-        {"id": "batch-2", "school_record": {"slug": "wlu"}},
+        {"id": "batch-1", "batch_kind": "events", "school_record": {"slug": "uwaterloo"}},
+        {"id": "batch-2", "batch_kind": "events", "school_record": {"slug": "wlu"}},
     ]
     items = [
         {"batch_id": "batch-1", "event_id": 1},
@@ -275,7 +275,7 @@ def test_batch_item_counts_include_every_page(monkeypatch):
             table=lambda _name: _FakeQuery(rows, calls),
         ),
     )
-    batches = [{"id": "batch-1"}]
+    batches = [{"id": "batch-1", "batch_kind": "events"}]
 
     service._attach_item_counts(batches)
 
@@ -309,6 +309,7 @@ def _batch(event_ids: list[int], **overrides) -> dict:
     return {
         "id": "batch-1",
         "account_key": "uwaterloo",
+        "batch_kind": "events",
         "instagram_user_id": "17841476154506771",
         "school": "uwaterloo",
         "local_date": "2026-07-26",
@@ -416,7 +417,7 @@ def test_deleted_event_does_not_block_batch_and_preserves_published_image(monkey
 
 
 def test_batch_counts_keep_published_images_but_ignore_deleted_draft_events(monkeypatch):
-    batches = [{"id": "draft"}, {"id": "published"}]
+    batches = [{"id": "draft", "batch_kind": "events"}, {"id": "published", "batch_kind": "events"}]
     monkeypatch.setattr(
         service,
         "_load_batch_items",
@@ -612,9 +613,11 @@ def test_count_new_events_without_a_carousel_returns_only_the_recent_count(monke
     assert not any(name == "in_" for name, _args, _kwargs in calls)
 
 
-def test_publish_batch_renders_the_slides_from_live_event_data(monkeypatch):
+@pytest.mark.parametrize("batch_kind", ["events", "employers_on_campus"])
+def test_publish_batch_renders_the_slides_from_live_event_data(monkeypatch, batch_kind):
     rendered: list = []
     containers: list[str] = []
+    tagged: list[str] = []
     table_calls: list[tuple] = []
 
     monkeypatch.setattr(service, "_enabled_account_keys", lambda: ["dalhousie"])
@@ -633,6 +636,7 @@ def test_publish_batch_renders_the_slides_from_live_event_data(monkeypatch):
             account_key="dalhousie",
             instagram_user_id="37640733598873542",
             school="dalhousie",
+            batch_kind=batch_kind,
         ),
     )
     monkeypatch.setattr(
@@ -648,7 +652,7 @@ def test_publish_batch_renders_the_slides_from_live_event_data(monkeypatch):
     monkeypatch.setattr(
         service,
         "render_cover_asset",
-        lambda events, school, body, *, local_date, new_event_count: (
+        lambda events, school, body, *, local_date, new_event_count, batch_kind: (
             rendered.append(
                 ("cover", [int(e["id"]) for e in events], school, body, local_date, new_event_count)
             )
@@ -660,7 +664,8 @@ def test_publish_batch_renders_the_slides_from_live_event_data(monkeypatch):
         def __init__(self, access_token):
             assert access_token == "dalhousie-token"
 
-        def create_image_container(self, user_id, image_url):
+        def create_image_container(self, user_id, image_url, *, username=""):
+            tagged.append(username)
             containers.append(image_url)
             return f"container-{len(containers)}"
 
@@ -679,8 +684,13 @@ def test_publish_batch_renders_the_slides_from_live_event_data(monkeypatch):
     batch = service.claim_batch_for_publishing("batch-1", InstagramPublishBatchPublish(version=3))
     assert rendered == []
     assert containers == []
+    batch["items"][0]["event"] = _event(7).model_copy(update={"ig_handle": "@event7"})
+    batch["items"][1]["event"] = _event(8).model_copy(
+        update={"club_ig": "https://instagram.com/club8/"}
+    )
     service.publish_claimed_batch(batch)
 
+    assert tagged == ["", "event7", "club8"]
     assert ("delete", (), {}) in table_calls
     assert ("or_", ("event_id.is.null,event_id.not.in.(7,8)",), {}) in table_calls
     assert ("is_", ("published_at", "null"), {}) in table_calls
@@ -831,7 +841,7 @@ def test_get_batch_recovers_from_database_disconnect(monkeypatch):
 
     from core.retry import SupabaseReadTransport
 
-    batch = {"id": "batch-1", "school_record": {"slug": "uwaterloo"}}
+    batch = {"id": "batch-1", "batch_kind": "events", "school_record": {"slug": "uwaterloo"}}
     send = Mock(
         side_effect=[
             httpx.RemoteProtocolError("Server disconnected"),
@@ -899,3 +909,174 @@ def test_publishable_event_requires_category(category):
 def test_publishable_event_accepts_every_canonical_category(category):
     event = _event(1).model_copy(update={"category": category})
     assert service._is_publishable_event(event, datetime(2026, 9, 10, tzinfo=timezone.utc))
+
+
+def test_generation_tracks_each_daily_carousel_kind_independently(monkeypatch):
+    monkeypatch.setattr(service, "_enabled_account_keys", lambda: ["uwaterloo"])
+    monkeypatch.setattr(service, "_batch_exists", lambda account, date, kind: kind == "events")
+    generate = Mock(return_value="generated")
+    monkeypatch.setattr(service, "_generate_account_batch", generate)
+    result = service.generate_due_batches(datetime(2026, 9, 28, 14, tzinfo=timezone.utc))
+    assert result["skipped"] == 1
+    assert result["generated"] == 1
+    assert generate.call_args.args[-1] == "employers_on_campus"
+
+
+@pytest.mark.parametrize(
+    ("batch_kind", "expected_ids"),
+    [
+        ("events", [1, 3]),
+        ("employers_on_campus", [2]),
+    ],
+)
+def test_candidates_split_employers_from_general_events(monkeypatch, batch_kind, expected_ids):
+    events = [
+        {
+            "id": i,
+            "title": "Event",
+            "category": "Business",
+            "source_image_url": "https://asset.test/poster.jpg",
+            "employers_on_campus": flag,
+        }
+        for i, flag in [(1, False), (2, True), (3, None)]
+    ]
+    occurrences = [
+        {
+            "event_id": i,
+            "dtstart_utc": f"2026-10-0{i}T19:00:00Z",
+            "dtend_utc": None,
+            "tz": "America/Toronto",
+        }
+        for i in [1, 2, 3]
+    ]
+    data = {
+        service.EVENTS: events,
+        service.EVENT_DATES: occurrences,
+        service.INSTAGRAM_PUBLISH_ITEMS: [],
+    }
+    monkeypatch.setattr(
+        service, "get_sb", lambda: SimpleNamespace(table=lambda name: _FakeQuery(data[name], []))
+    )
+    result = service._load_candidates(
+        account_key="uwaterloo",
+        school="uwaterloo",
+        window_start=datetime(2026, 9, 27, tzinfo=timezone.utc),
+        window_end=datetime(2026, 9, 28, tzinfo=timezone.utc),
+        batch_kind=batch_kind,
+    )
+    assert [event["id"] for event in result] == expected_ids
+
+
+def test_employer_draft_rejects_an_unclassified_event(monkeypatch, draft_editor):
+    monkeypatch.setattr(
+        service, "get_batch", lambda _: _batch([1], batch_kind="employers_on_campus")
+    )
+    monkeypatch.setattr(service, "_load_slide_events", lambda _: {1: _event(1)})
+    with pytest.raises(service.ValidationError, match="only accept employers-on-campus"):
+        service.update_batch("batch-1", InstagramPublishBatchUpdate(version=3, event_ids=[1]))
+    assert draft_editor["rpc"] == []
+
+
+@pytest.mark.parametrize("status", ["ready_for_review", "published"])
+def test_employer_hydration_filters_reclassified_events_only_before_publication(
+    monkeypatch, status
+):
+    batch = _batch([1, 2], batch_kind="employers_on_campus", status=status)
+    monkeypatch.setattr(service, "_load_batch_items", lambda *_: batch["items"])
+    monkeypatch.setattr(
+        service,
+        "_load_slide_events",
+        lambda _: {
+            1: _event(1).model_copy(update={"employers_on_campus": True}),
+            2: _event(2),
+        },
+    )
+    monkeypatch.setattr(service, "_count_new_events", lambda _: 1)
+    monkeypatch.setattr(service, "build_caption", lambda *_: "Caption")
+    service._hydrate_batch(batch)
+    assert [item["event_id"] for item in batch["items"]] == (
+        [1] if status == "ready_for_review" else [1, 2]
+    )
+
+
+def test_employer_cover_counts_only_employer_events(monkeypatch):
+    calls = []
+    monkeypatch.setattr(
+        service, "get_sb", lambda: SimpleNamespace(table=lambda _: _FakeQuery([], calls, count=3))
+    )
+    assert service._count_new_events(_batch([], batch_kind="employers_on_campus")) == 3
+    assert ("eq", ("employers_on_campus", True), {}) in calls
+
+
+def test_batch_cutoffs_and_daily_existence_are_scoped_to_kind(monkeypatch):
+    calls = []
+    monkeypatch.setattr(
+        service, "get_sb", lambda: SimpleNamespace(table=lambda _: _FakeQuery([], calls))
+    )
+    assert not service._batch_exists(
+        "uwaterloo", datetime(2026, 9, 28).date(), "employers_on_campus"
+    )
+    assert service._last_successful_cutoff("uwaterloo", "employers_on_campus") is None
+    assert calls.count(("eq", ("batch_kind", "employers_on_campus"), {})) == 2
+
+
+def test_employer_generation_persists_kind_and_uses_its_own_cutoff(monkeypatch):
+    batch_calls = []
+    item_calls = []
+    now = datetime(2026, 9, 28, 14, tzinfo=timezone.utc)
+    cutoff = datetime(2026, 9, 27, 14, tzinfo=timezone.utc)
+    monkeypatch.setattr(
+        service,
+        "load_account_credentials",
+        lambda *_args, **_kwargs: SimpleNamespace(
+            school_id=1,
+            instagram_user_id="campus-id",
+        ),
+    )
+    previous = Mock(return_value=cutoff)
+    candidates = Mock(return_value=[{"id": 17}])
+    monkeypatch.setattr(service, "_last_successful_cutoff", previous)
+    monkeypatch.setattr(service, "_load_candidates", candidates)
+    monkeypatch.setattr(service, "default_caption_intro", lambda school, kind: f"{school} {kind}")
+    monkeypatch.setattr(service, "build_caption", lambda *_: "Employer details")
+    monkeypatch.setattr(
+        service,
+        "get_sb",
+        lambda: SimpleNamespace(
+            table=lambda name: _FakeQuery(
+                [{"id": "employer-batch"}],
+                batch_calls if name == service.INSTAGRAM_PUBLISH_BATCHES else item_calls,
+            )
+        ),
+    )
+
+    assert (
+        service._generate_account_batch("uwaterloo", now.date(), now, "employers_on_campus")
+        == "generated"
+    )
+
+    previous.assert_called_once_with("uwaterloo", "employers_on_campus")
+    candidates.assert_called_once_with(
+        account_key="uwaterloo",
+        school="uwaterloo",
+        window_start=cutoff,
+        window_end=now,
+        batch_kind="employers_on_campus",
+    )
+    inserted = next(args[0] for name, args, _ in batch_calls if name == "insert")
+    assert inserted["batch_kind"] == "employers_on_campus"
+    assert inserted["caption_intro"] == "uwaterloo employers_on_campus"
+    assert (
+        "insert",
+        (
+            [
+                {
+                    "batch_id": "employer-batch",
+                    "account_key": "uwaterloo",
+                    "event_id": 17,
+                    "position": 1,
+                }
+            ],
+        ),
+        {},
+    ) in item_calls

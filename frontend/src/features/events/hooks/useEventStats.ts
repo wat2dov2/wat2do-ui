@@ -36,7 +36,9 @@ export function useEventView(eventId: number, school: string) {
     tracker.track(eventId, "click");
     tracker.track(eventId, "detail_view");
     queryClient.setQueryData<EventStatsMap>(queryKeys.events.stats(school), (previous) => {
-      const current = previous?.[String(eventId)] ?? EMPTY_EVENT_STATS;
+      // A one-event update cannot stand in for the school's full stats response.
+      if (!previous) return previous;
+      const current = previous[String(eventId)] ?? EMPTY_EVENT_STATS;
       return {
         ...previous,
         [String(eventId)]: { ...current, click_count: current.click_count + 1 },

@@ -1,3 +1,4 @@
+-- Scraped source_video_url columns are nullable; image-only fixtures intentionally omit them.
 -- Deterministic, production-scale local data for API and query profiling.
 -- Current production cardinalities at creation: 398 Waterloo clubs,
 -- 117 Waterloo events in total, and 45 upcoming Waterloo events.
@@ -438,7 +439,7 @@ WITH scenarios(day_offset, status, error_message) AS (
     CROSS JOIN (VALUES ('Fresh events at uwaterloo, added to Wat2Do in the last 24 hours 👀')) AS intro(value)
     WHERE school.slug IN ('uwaterloo', 'ulaval')
       AND (school.slug = 'uwaterloo' OR scenario.day_offset = 0)
-    ON CONFLICT (account_key, local_date) DO NOTHING
+    ON CONFLICT (account_key, local_date, batch_kind) DO NOTHING
     RETURNING id, account_key, school_id
 ), candidates AS (
     SELECT event.id, event.school_id,
@@ -546,7 +547,7 @@ WITH new_batches AS (
         'Both events should show Edmonton time: 6 PM and 11:30 PM on the same day.'
     FROM public.schools school
     WHERE school.slug = 'ualberta'
-    ON CONFLICT (account_key, local_date) DO NOTHING
+    ON CONFLICT (account_key, local_date, batch_kind) DO NOTHING
     RETURNING id, account_key, school_id, local_date
 )
 INSERT INTO public.instagram_publish_items (batch_id, account_key, event_id, position)

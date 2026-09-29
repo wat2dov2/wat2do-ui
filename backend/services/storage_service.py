@@ -15,6 +15,7 @@ from core.constants import (
     BUCKET_CLAIM_PROOFS,
     BUCKET_CLUB_LOGOS,
     BUCKET_EVENT_IMAGES,
+    BUCKET_EVENT_VIDEOS,
     BUCKET_QR_ASSETS,
     MAX_AVATAR_SIZE_BYTES,
     MAX_IMAGE_SIZE_BYTES,
@@ -46,6 +47,10 @@ _DEFAULT_BUCKETS: dict[str, dict] = {
         "file_size_limit": controlbox.uploads.event_image_max_size_bytes,
         "allowed_mime_types": list(controlbox.uploads.event_image_allowed_mime_types),
     },
+    BUCKET_EVENT_VIDEOS: {
+        "file_size_limit": controlbox.uploads.event_video_max_size_bytes,
+        "allowed_mime_types": ["video/mp4"],
+    },
     BUCKET_AVATARS: {
         "file_size_limit": MAX_AVATAR_SIZE_BYTES,
         "allowed_mime_types": ["image/jpeg", "image/png", "image/webp"],
@@ -65,6 +70,7 @@ _DEFAULT_BUCKETS: dict[str, dict] = {
 }
 
 _MIME_TO_EXT = {
+    "video/mp4": ".mp4",
     "image/jpeg": ".jpg",
     "image/png": ".png",
     "image/webp": ".webp",
@@ -142,6 +148,13 @@ class StorageService:
                 f"File too large. Max {limit // (1024 * 1024)} MB.",
                 code="file_too_large",
             )
+
+        if content_type == "video/mp4":
+            # ISO base media files identify their container with an ftyp box.
+            # Do not serve arbitrary HTML or bytes merely labelled video/mp4.
+            if len(data) < 16 or data[4:8] != b"ftyp":
+                raise ValidationError("Uploaded file is not an MP4 video.")
+            return data, content_type
 
         # SVG detection: inspect actual file bytes, not the client-declared
         # Content-Type.  An attacker could upload a malicious SVG as

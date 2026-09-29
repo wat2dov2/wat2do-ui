@@ -482,3 +482,88 @@ test("login previews use the refreshed school snapshot and recheck expiry withou
   expect(await getSchoolPreviewEvents("utsg")).toEqual([]);
   expect(previewReads.every(({ resource }) => resource === "events")).toBe(true);
 });
+
+
+test("viewing an event cannot make an unfinished stats collection ready", () => {
+  const client = getQueryClient();
+  const key = queryKeys.events.stats("uwaterloo");
+  const observer = new QueryObserver(client, { queryKey: key, enabled: false });
+  const effects: Array<() => void> = [];
+  const filename = new URL("../src/features/events/hooks/useEventStats.ts", import.meta.url);
+  const { outputText } = ts.transpileModule(readFileSync(filename, "utf8"), {
+    compilerOptions: { module: ts.ModuleKind.CommonJS },
+  });
+  const hooks = { exports: {} as typeof import("../src/features/events/hooks/useEventStats") };
+  runInNewContext(outputText, {
+    exports: hooks.exports,
+    require: (id: string) => {
+      if (id === "react") return { useEffect: (effect: () => void) => effects.push(effect), useRef: () => ({ current: null }) };
+      if (id === "@tanstack/react-query") return { useQueryClient: () => client };
+      if (id === "@/shared/lib/queryKeys") return { queryKeys };
+      if (id === "@/shared/services/trackingService") return { tracker: { track: () => {} } };
+      return {};
+    },
+  });
+  hooks.exports.useEventView(1, "uwaterloo");
+  effects.pop()!();
+  expect(client.getQueryData(key)).toBeUndefined();
+  expect(observer.getCurrentResult().isSuccess).toBe(false);
+  client.setQueryData(key, { 1: { click_count: 3, going_count: 2 }, 2: { click_count: 8, going_count: 5 } });
+  hooks.exports.useEventView(1, "uwaterloo");
+  effects.pop()!();
+  expect(client.getQueryData(key)).toEqual({ 1: { click_count: 4, going_count: 2 }, 2: { click_count: 8, going_count: 5 } });
+  observer.destroy();
+});
+
+test("Going mutations wait for the whole selection collection and do not manufacture school stats", async () => {
+  const client = getQueryClient();
+  const queryKey = queryKeys.goingEvents.byUser("viewer");
+  const statsKey = queryKeys.events.stats("uwaterloo");
+  let release!: (selections: Array<{ event_id: number; occurrence_ids: string[] }>) => void;
+  const completeSelections = new Promise<Array<{ event_id: number; occurrence_ids: string[] }>>(resolve => { release = resolve; });
+  const variables = { eventId: 1, occurrenceIds: ["occurrence-1"], userId: "viewer" };
+  type MutationContext = { queryKey: readonly unknown[]; attendeesKey: readonly unknown[]; previous: Array<{ event_id: number; occurrence_ids: string[] }> };
+  let mutation!: {
+    onMutate: (input: typeof variables) => Promise<MutationContext>;
+    onSuccess: (response: object, input: typeof variables, context: MutationContext) => void;
+  };
+  const filename = new URL("../src/features/events/hooks/useGoingEvents.ts", import.meta.url);
+  const { outputText } = ts.transpileModule(readFileSync(filename, "utf8"), {
+    compilerOptions: { module: ts.ModuleKind.CommonJS },
+  });
+  const hooks = { exports: {} as typeof import("../src/features/events/hooks/useGoingEvents") };
+  runInNewContext(outputText, {
+    exports: hooks.exports,
+    require: (id: string) => {
+      if (id === "react") return { useEffect: () => {}, useState: () => [null, () => {}], useMemo: (callback: () => unknown) => callback() };
+      if (id === "@tanstack/react-query") return {
+        useQueryClient: () => client, useQuery: () => ({ data: undefined }),
+        useMutation: (options: typeof mutation) => { mutation = options; return {}; },
+      };
+      if (id === "react-i18next") return { useTranslation: () => ({ t: (key: string) => key }) };
+      if (id === "@/features/auth/hooks/useAuthState") return { useAuthState: () => ({ isAuthenticated: true }) };
+      if (id === "@/features/auth/api/auth.api") return { getUserId: () => "viewer" };
+      if (id === "@/features/events/api/events.api") return { fetchGoingEvents: () => completeSelections };
+      if (id === "@/shared/lib/queryKeys") return { queryKeys };
+      if (id === "@/shared/config/controlBox") return { controlBox: { clientCache: { liveEventDataStaleMs: 60_000 } } };
+      if (id === "@/shared/services/trackingService") return { tracker: { track: () => {} } };
+      return {};
+    },
+  });
+  hooks.exports.useGoingEventSelection(event(1), "uwaterloo");
+  const pending = mutation.onMutate(variables);
+  await Promise.resolve();
+  expect(client.getQueryData(queryKey)).toBeUndefined();
+  release([{ event_id: 2, occurrence_ids: ["occurrence-2"] }]);
+  const context = await pending;
+  const response = { event_id: 1, occurrence_ids: ["occurrence-1"], going_count: 3, status: "going" };
+  mutation.onSuccess(response, variables, context);
+  expect(client.getQueryData(queryKey)).toEqual([
+    { event_id: 2, occurrence_ids: ["occurrence-2"] },
+    { event_id: 1, occurrence_ids: ["occurrence-1"] },
+  ]);
+  expect(client.getQueryData(statsKey)).toBeUndefined();
+  client.setQueryData(statsKey, { 1: { click_count: 4, going_count: 2 }, 2: { click_count: 8, going_count: 5 } });
+  mutation.onSuccess(response, variables, context);
+  expect(client.getQueryData(statsKey)).toEqual({ 1: { click_count: 4, going_count: 3 }, 2: { click_count: 8, going_count: 5 } });
+});

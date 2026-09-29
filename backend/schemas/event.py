@@ -281,6 +281,7 @@ class EventSummaryResponse(EventDiscoveryFields):
     food: list[str] | None = None
     registration: bool = False
     source_image_url: str | None = None
+    source_video_url: str | None = None
     source_url: str | None = None
     category: str | None = None
     club: str | None = None
@@ -334,6 +335,7 @@ class EventResponse(EventDiscoveryFields):
     food: list[str] | None = None
     registration: bool = False
     source_image_url: str | None = None
+    source_video_url: str | None = None
     club_logo_url: str | None = None
     club_type: ClubTypeValue | None = None
     school: str | None = None
@@ -363,6 +365,7 @@ class EventPublicResponse(EventDiscoveryFields):
     food: list[str] | None = None
     registration: bool = False
     source_image_url: str | None = None
+    source_video_url: str | None = None
     club_logo_url: str | None = None
     club_type: ClubTypeValue | None = None
     school: str | None = None

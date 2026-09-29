@@ -82,6 +82,8 @@ export function useGoingEventSelection(
     onMutate: async ({ eventId, occurrenceIds, userId: mutationUserId }) => {
       const queryKey = queryKeys.goingEvents.byUser(mutationUserId ?? "");
       const attendeesKey = queryKeys.events.attendees(eventId);
+      // Optimistic selection updates must start from the complete collection.
+      await queryClient.ensureQueryData({ queryKey, queryFn: fetchGoingEvents });
       await Promise.all([
         queryClient.cancelQueries({ queryKey }),
         queryClient.cancelQueries({ queryKey: attendeesKey }),
@@ -129,13 +131,13 @@ export function useGoingEventSelection(
       if (school) {
         queryClient.setQueryData<EventStatsMap>(
           queryKeys.events.stats(school),
-          (current = {}) => ({
+          current => current ? ({
             ...current,
             [String(response.event_id)]: {
               click_count: current[String(response.event_id)]?.click_count ?? 0,
               going_count: response.going_count,
             },
-          }),
+          }) : current,
         );
       }
       const wasGoing = Boolean(

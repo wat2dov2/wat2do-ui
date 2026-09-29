@@ -135,12 +135,6 @@
     "upcomingEventCount_one": "آنے والا ایونٹ",
     "clickCount_one": "{{count}} کلک",
     "andOthersCount_one": "اور {{count}} دیگر",
-    "moreDatesCount_one": "+{{count}} تاریخ",
-    "formatFilter": {
-      "label": "تقریب کی نوعیت",
-      "any": "کوئی بھی نوعیت",
-      "inPerson": "بالمشافہ",
-      "online": "آن لائن"
-    }
+    "moreDatesCount_one": "+{{count}} تاریخ"
   }
 }

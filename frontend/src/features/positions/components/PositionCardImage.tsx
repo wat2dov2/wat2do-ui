@@ -50,6 +50,7 @@ export function PositionCardImage({
       <EventImageCutout
         backgroundColor="var(--surface-elevated)"
         imageSrc={position.source_image_url}
+        videoSrc={variant === "detail" ? position.source_video_url : undefined}
         imageAlt={position.title}
         imageLoading={variant === "detail" || priority ? "eager" : "lazy"}
         imageSizes={variant === "detail" ? "(max-width: 767px) calc(100vw - 48px), 480px" : undefined}
@@ -89,7 +90,7 @@ export function PositionCardImage({
         </BadgeMask>
       ) : null}
 
-      <BadgeMask
+      {variant === "detail" && position.source_video_url ? null : <BadgeMask
         variant="bottom-left"
         cutout
         containerRef={registerCorner("bottom-left")}
@@ -106,7 +107,7 @@ export function PositionCardImage({
           onMouseDown={(event) => event.stopPropagation()}
           onClick={(event) => event.stopPropagation()}
         />
-      </BadgeMask>
+      </BadgeMask>}
     </div>
   );
 }

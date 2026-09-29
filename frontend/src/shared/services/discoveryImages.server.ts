@@ -11,11 +11,11 @@ interface ImageJob {
   nextAt: number;
 }
 
-/** Serial, best-effort warming of the current first screen at the public CDN. */
+/** Bounded, best-effort warming of the current first screen at the public CDN. */
 export class DiscoveryImageWarmer {
   private registrations = new Map<string, Registration>();
   private jobs = new Map<string, ImageJob>();
-  private running?: Promise<void>;
+  private workers = new Set<Promise<void>>();
   private timer?: ReturnType<typeof setTimeout>;
   private disposed = false;
 
@@ -97,18 +97,21 @@ export class DiscoveryImageWarmer {
             this.jobs.set(variant, { source, width, nextAt: now });
         }
     }
-    for (const url of this.jobs.keys())
-      if (!desired.has(url)) this.jobs.delete(url);
+    for (const [url, job] of this.jobs)
+      if (!desired.has(url) && job.nextAt !== Number.POSITIVE_INFINITY) this.jobs.delete(url);
   }
 
   private drain(): Promise<void> {
-    if (this.running) return this.running;
     clearTimeout(this.timer);
-    this.running = this.processJobs().finally(() => {
-      this.running = undefined;
-      this.schedule();
-    });
-    return this.running;
+    // A later school can fill idle slots even while an earlier image is slow.
+    while (!this.disposed && this.workers.size < controls.warm_concurrency) {
+      const worker = this.processJobs().finally(() => {
+        this.workers.delete(worker);
+        if (!this.workers.size) this.schedule();
+      });
+      this.workers.add(worker);
+    }
+    return Promise.all([...this.workers]).then(() => undefined);
   }
 
   private async processJobs(): Promise<void> {
@@ -117,6 +120,8 @@ export class DiscoveryImageWarmer {
       const next = [...this.jobs].find(([, job]) => job.nextAt <= this.now());
       if (!next || this.disposed) return;
       const [url, job] = next;
+      // Claim before awaiting, so workers cannot fetch the same variant twice.
+      job.nextAt = Number.POSITIVE_INFINITY;
       const started = this.now();
       try {
         const response = await this.fetchImage(url, {

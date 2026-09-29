@@ -37,7 +37,7 @@ function DiscoveryLoading({ resource }: { resource: "events" | "clubs" | "positi
   return (
     <Stack gap={2} data-slot="discovery-loading" aria-busy="true">
       <PageHeader variant="listing">
-        <PageCountHeading count={null} label={label} />
+        <PageCountHeading count={null} label={label} latest={isClubs ? undefined : null} />
         <Stack direction="horizontal" gap={2} align="center">
           <SubmittedSearchInput
             size="lg" value="" onChange={ignoreInput} onSubmit={ignoreInput} onClear={ignoreInput} disabled
@@ -46,11 +46,10 @@ function DiscoveryLoading({ resource }: { resource: "events" | "clubs" | "positi
           />
           <Button asChild variant="outline" size="lg"><Link href={addHref}>{addLabel}</Link></Button>
         </Stack>
-        <FilterBar>
-          <Button variant="outline" size="sm" disabled>{t("common.newlyAddedFilter.last24Hours")}</Button>
+        <FilterBar disabled>
           {isEvents ? eventQuickFilters.filter(config => !("requiresProfile" in config)).map(config => (
-            <Button key={config.id} variant="outline" size="sm" disabled>{t(config.labelKey)}</Button>
-          )) : null}
+            "labelKey" in config ? <Button key={config.id} variant="outline" size="sm" disabled>{config.id === "minGoing" ? `>${t(config.labelKey, { count: 0 })}` : t(config.labelKey)}</Button> : null
+          )) : !isClubs ? <Button variant="outline" size="sm" disabled>{t("common.newlyAddedFilter.last24Hours")}</Button> : null}
           {resource === "positions" ? POSITION_TYPES.map(type => (
             <Button key={type} variant="outline" size="sm" disabled>{t(`positions.types.${type}`)}</Button>
           )) : categories.map(category => (

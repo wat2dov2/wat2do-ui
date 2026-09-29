@@ -17,7 +17,7 @@ import { translateCategory } from "@/shared/utils/event";
 import { FormDateTimePicker, FormInput, FormSelect, FormTextarea } from "@/shared/ui/form-field";
 import { TagInput } from "@/shared/ui/tag-input";
 import { ImageUploadField } from "@/shared/ui/image-upload-field";
-import { ClubInput } from "@/features/events/components/ClubInput";
+import { ClubInput } from "@/features/clubs";
 import { useEventFormContext } from "@/features/events/components/EventForm/EventForm/EventFormContext";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 

@@ -8577,6 +8577,17 @@
             ],
             "title": "Source Image Url"
           },
+          "source_video_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Video Url"
+          },
           "club_logo_url": {
             "anyOf": [
               {
@@ -8816,6 +8827,17 @@
               }
             ],
             "title": "Source Image Url"
+          },
+          "source_video_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Video Url"
           },
           "club_logo_url": {
             "anyOf": [
@@ -9073,6 +9095,17 @@
               }
             ],
             "title": "Source Image Url"
+          },
+          "source_video_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Video Url"
           },
           "source_url": {
             "anyOf": [
@@ -9547,6 +9580,15 @@
             "type": "string",
             "title": "Instagram User Id"
           },
+          "batch_kind": {
+            "type": "string",
+            "enum": [
+              "events",
+              "employers_on_campus"
+            ],
+            "title": "Batch Kind",
+            "default": "events"
+          },
           "school": {
             "type": "string",
             "title": "School"
@@ -9696,6 +9738,15 @@
           "instagram_user_id": {
             "type": "string",
             "title": "Instagram User Id"
+          },
+          "batch_kind": {
+            "type": "string",
+            "enum": [
+              "events",
+              "employers_on_campus"
+            ],
+            "title": "Batch Kind",
+            "default": "events"
           },
           "school": {
             "type": "string",
@@ -11435,6 +11486,18 @@
             ],
             "title": "Deadline At"
           },
+          "source_video_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2048
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Video Url"
+          },
           "id": {
             "type": "integer",
             "title": "Id"
@@ -12886,6 +12949,10 @@
             "type": "string",
             "title": "Id"
           },
+          "classification_id": {
+            "type": "string",
+            "title": "Classification Id"
+          },
           "labels": {
             "additionalProperties": {
               "type": "string"
@@ -12904,6 +12971,7 @@
         "type": "object",
         "required": [
           "id",
+          "classification_id",
           "labels",
           "display_windows"
         ],

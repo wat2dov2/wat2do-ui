@@ -332,7 +332,12 @@
         "empty": "Keine berechtigten Ereignisse",
         "failed": "Benötigt Aufmerksamkeit"
       },
+      "kind": {
+        "events": "Veranstaltungen",
+        "employers_on_campus": "Arbeitgeber auf dem Campus"
+      },
       "columns": {
+        "kind": "Karussell",
         "school": "Schule",
         "dateRan": "Datum durchgeführt",
         "timeRan": "Uhrzeit durchgeführt",

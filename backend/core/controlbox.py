@@ -135,6 +135,7 @@ class RecommendationControl(_ControlModel):
 
 
 class CampusSeasonWindowControl(_ControlModel):
+    filter_id: str | None = Field(default=None, pattern=r"^[a-z][a-z0-9_]*$", max_length=64)
     start_date: date
     end_date: date
     source_url: HttpUrl
@@ -194,6 +195,16 @@ class CampusSeasonsControl(_ControlModel):
         for school in self.schools.values():
             if any(season.id not in self.definitions for season in school.seasons):
                 raise ValueError("school campus season IDs must reference a definition")
+            for season in school.seasons:
+                if any(
+                    window.filter_id is not None and window.filter_id not in self.definitions
+                    for window in season.display_windows
+                ):
+                    raise ValueError("campus season window filter IDs must reference a definition")
+                if any(window.filter_id for window in season.display_windows) and not all(
+                    window.filter_id for window in season.display_windows
+                ):
+                    raise ValueError("named campus season windows must all have filter IDs")
         return self
 
 
@@ -228,6 +239,7 @@ class ImageDeliveryControl(_ControlModel):
     optimized_remote_host: str = Field(min_length=1)
     optimized_remote_path: str = Field(pattern=r"^/.*\/$")
     warm_widths: tuple[int, ...] = Field(min_length=1)
+    warm_concurrency: int = Field(ge=1, le=8)
     warm_request_timeout_seconds: int = Field(gt=0)
     warm_retry_seconds: int = Field(gt=0)
     warm_success_ttl_seconds: int = Field(gt=0)
@@ -444,6 +456,8 @@ class UploadsControl(_ControlModel):
 
     event_image_allowed_mime_types: list[str] = Field(min_length=1)
     event_image_max_size_bytes: int = Field(gt=0)
+    event_video_max_size_bytes: int = Field(gt=0)
+    event_video_download_timeout_seconds: int = Field(gt=0)
     # Posters are stored at this width, so it is the width every viewer gets.
     # 1080 is where the Instagram sources top out; asking for more would store
     # upscaled pixels, and the detail view is the widest place one is shown.

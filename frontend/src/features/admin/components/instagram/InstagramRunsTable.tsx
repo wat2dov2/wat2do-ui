@@ -46,6 +46,7 @@ export function InstagramRunsTable({ batches, total, isLoading, onOpenRun, onPre
       pagination={pagination}
       headers={[
         { label: t("admin.instagramPublishing.columns.school") },
+        { label: t("admin.instagramPublishing.columns.kind") },
         { label: t("admin.instagramPublishing.columns.dateRan") },
         { label: t("admin.instagramPublishing.columns.timeRan") },
         { label: t("admin.instagramPublishing.columns.events") },
@@ -61,7 +62,7 @@ export function InstagramRunsTable({ batches, total, isLoading, onOpenRun, onPre
             interactive
             role="button"
             tabIndex={0}
-            aria-label={batch.account_key}
+            aria-label={`${batch.account_key}: ${t(`admin.instagramPublishing.kind.${batch.batch_kind}`)}`}
             onClick={() => onOpenRun(batch.id)}
             onMouseEnter={() => onPrefetchRun(batch.id)}
             onFocus={() => onPrefetchRun(batch.id)}
@@ -73,6 +74,7 @@ export function InstagramRunsTable({ batches, total, isLoading, onOpenRun, onPre
             }}
           >
             <TableCell>{batch.school}</TableCell>
+            <TableCell>{t(`admin.instagramPublishing.kind.${batch.batch_kind}`)}</TableCell>
             <TableCell>{batch.local_date}</TableCell>
             <TableCell>
               {ran.toLocaleTimeString(locale, { hour: "numeric", minute: "2-digit", timeZone: getSchoolTimezone(batch.school), timeZoneName: "short" })}

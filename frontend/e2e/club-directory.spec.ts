@@ -4,7 +4,8 @@ import { readFileSync } from "node:fs";
 import { runInNewContext } from "node:vm";
 import ts from "typescript";
 import { queryKeys } from "../src/shared/lib/queryKeys";
-import { filterClubs, normalizeClub } from "../src/features/clubs/api/clubService";
+import { filterClubs, normalizeClub, resolveClubByInstagramHandle } from "../src/features/clubs/api/clubService";
+import { normalizeInstagramHandle } from "../src/shared/utils/url";
 import type { ApiClubResponse } from "../src/shared/generated";
 
 const { getClubDirectorySnapshot }: typeof import("../src/features/clubs/api/clubDirectory.server") =
@@ -123,4 +124,75 @@ test("switching managed clubs hides old rows immediately and ignores late roster
   await settle();
   expect(render()).toContain("manager-3@example.test");
   if (cleanup) cleanup();
+});
+
+
+test("organization input resolves only unambiguous Instagram identities, not display names", () => {
+  const directory = [
+    { ...clubs[0], club_name: "Same club name", ig: "@UW.Tech" },
+    { ...clubs[1], club_name: "Same club name", ig: "https://www.instagram.com/board_games/?hl=en" },
+  ];
+  for (const handle of ["uw.tech", "@UW.TECH", "@@uw.tech", " https://instagram.com/uw.tech/?hl=en "]) {
+    expect(resolveClubByInstagramHandle(directory, handle)?.id).toBe(1);
+  }
+  expect(resolveClubByInstagramHandle(directory, "@board_games")?.id).toBe(2);
+  for (const value of ["", "Same club name", "missing", "https://example.com/uw.tech", "https://instagram.com/p/123/", "uw.tech/extra"]) {
+    expect(resolveClubByInstagramHandle(directory, value)).toBeUndefined();
+  }
+  expect(resolveClubByInstagramHandle([...directory, { ...clubs[2], ig: "uw.tech" }], "@uw.tech")).toBeUndefined();
+});
+
+test("Instagram identity parsing keeps profile handles and rejects non-profile URLs", () => {
+  expect(normalizeInstagramHandle("https://www.instagram.com/UW.Tech/?hl=en")).toBe("UW.Tech");
+  expect(normalizeInstagramHandle("instagram.com/uw.tech/")).toBe("uw.tech");
+  expect(normalizeInstagramHandle(" @uw.tech ")).toBe("uw.tech");
+  expect(normalizeInstagramHandle("@@uw.tech")).toBe("uw.tech");
+  for (const input of [null, undefined, "https://instagram.com/", "https://instagram.com/reels/", "https://instagram.com/user/post", "javascript:alert(1)", "https://instagram.com.evil.test/user"]) {
+    expect(normalizeInstagramHandle(input)).toBe("");
+  }
+});
+
+
+test("organization field submits canonical IDs while displaying the typed handle", () => {
+  const directory = [{ ...clubs[0], ig: "uw.tech" }, { ...clubs[1], ig: "board_games" }];
+  let value: number | null = null;
+  let draft: unknown;
+  const filename = new URL("../src/features/clubs/components/ClubInput.tsx", import.meta.url);
+  const { outputText } = ts.transpileModule(readFileSync(filename, "utf8"), {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX },
+  });
+  const component = { exports: {} as typeof import("../src/features/clubs/components/ClubInput") };
+  runInNewContext(outputText, {
+    exports: component.exports,
+    require: (id: string) => {
+      if (id === "react") return { useState: (initial: unknown) => {
+        draft ??= initial;
+        return [draft, (next: unknown) => { draft = next; }];
+      } };
+      if (id === "react/jsx-runtime") return { jsx: (_type: unknown, props: unknown) => props };
+      if (id === "react-i18next") return { useTranslation: () => ({ t: (key: string) => key }) };
+      if (id.endsWith("/clubService")) return { resolveClubByInstagramHandle };
+      if (id.endsWith("/clubCardContent")) return { getClubSocialHandle: (club: { ig: string }) => `@${normalizeInstagramHandle(club.ig)}` };
+      return {};
+    },
+  });
+  const render = (availableClubs = directory) => component.exports.ClubInput({
+    value, clubs: availableClubs, onChange: next => { value = next; }, touched: true,
+  }) as unknown as { label: string; value: string; disabled: boolean; error?: string; onChange: (text: string) => void };
+  expect(render([]).disabled).toBe(true);
+  expect(render().disabled).toBe(false);
+  expect(render().label).toBe("forms.instagramHandle");
+  render().onChange("@UW.Tech");
+  expect(value).toBe(1);
+  expect(render().value).toBe("@UW.Tech");
+  render().onChange("Tech Club");
+  expect(value).toBeNull();
+  expect(render().error).toBe("clubs.noClubsFound");
+  render().onChange("https://instagram.com/board_games/");
+  expect(value).toBe(2);
+  render().onChange("");
+  expect(value).toBeNull();
+  expect(render().value).toBe("");
+  value = 1;
+  expect(render().value).toBe("@uw.tech");
 });

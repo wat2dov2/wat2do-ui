@@ -52,17 +52,29 @@ def _event_seasons(slug: str) -> list[SchoolEventSeason]:
     school = configuration.schools.get(normalize_school_slug(slug))
     if school is None:
         return []
-    return [
-        SchoolEventSeason(
-            id=season.id,
-            labels=configuration.definitions[season.id].labels,
-            display_windows=[
-                CampusSeasonWindow(start_date=window.start_date, end_date=window.end_date)
-                for window in season.display_windows
-            ],
+    result: list[SchoolEventSeason] = []
+    for season in school.seasons:
+        # Named windows share the event classification, but each exposes only its
+        # own dates and label as a selectable discovery filter.
+        filter_ids = list(
+            dict.fromkeys(window.filter_id or season.id for window in season.display_windows)
         )
-        for season in school.seasons
-    ]
+        if not filter_ids:
+            filter_ids = [season.id]
+        for filter_id in filter_ids:
+            result.append(
+                SchoolEventSeason(
+                    id=filter_id,
+                    classification_id=season.id,
+                    labels=configuration.definitions[filter_id].labels,
+                    display_windows=[
+                        CampusSeasonWindow(start_date=window.start_date, end_date=window.end_date)
+                        for window in season.display_windows
+                        if (window.filter_id or season.id) == filter_id
+                    ],
+                )
+            )
+    return result
 
 
 def _school_record(row: dict) -> SchoolRecord:

@@ -332,7 +332,12 @@
         "empty": "沒有合資格的活動",
         "failed": "需要注意"
       },
+      "kind": {
+        "events": "活動",
+        "employers_on_campus": "校園招聘僱主"
+      },
       "columns": {
+        "kind": "輪播貼文",
         "school": "學校",
         "dateRan": "舉行日期",
         "timeRan": "舉行時間",

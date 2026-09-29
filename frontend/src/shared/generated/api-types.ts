@@ -2287,6 +2287,8 @@ export interface components {
             registration: boolean;
             /** Source Image Url */
             source_image_url?: string | null;
+            /** Source Video Url */
+            source_video_url?: string | null;
             /** Club Logo Url */
             club_logo_url?: string | null;
             /** Club Type */
@@ -2368,6 +2370,8 @@ export interface components {
             registration: boolean;
             /** Source Image Url */
             source_image_url?: string | null;
+            /** Source Video Url */
+            source_video_url?: string | null;
             /** Club Logo Url */
             club_logo_url?: string | null;
             /** Club Type */
@@ -2471,6 +2475,8 @@ export interface components {
             registration: boolean;
             /** Source Image Url */
             source_image_url?: string | null;
+            /** Source Video Url */
+            source_video_url?: string | null;
             /** Source Url */
             source_url?: string | null;
             /** Category */
@@ -2601,6 +2607,12 @@ export interface components {
             account_key: string;
             /** Instagram User Id */
             instagram_user_id: string;
+            /**
+             * Batch Kind
+             * @default events
+             * @enum {string}
+             */
+            batch_kind: "events" | "employers_on_campus";
             /** School */
             school: string;
             /**
@@ -2674,6 +2686,12 @@ export interface components {
             account_key: string;
             /** Instagram User Id */
             instagram_user_id: string;
+            /**
+             * Batch Kind
+             * @default events
+             * @enum {string}
+             */
+            batch_kind: "events" | "employers_on_campus";
             /** School */
             school: string;
             /**
@@ -3312,6 +3330,8 @@ export interface components {
             deadline_date?: string | null;
             /** Deadline At */
             deadline_at?: string | null;
+            /** Source Video Url */
+            source_video_url?: string | null;
             /** Id */
             id: number;
             /** Club Id */
@@ -3818,6 +3838,8 @@ export interface components {
         SchoolEventSeason: {
             /** Id */
             id: string;
+            /** Classification Id */
+            classification_id: string;
             /** Labels */
             labels: {
                 [key: string]: string;

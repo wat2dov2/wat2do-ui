@@ -5,7 +5,7 @@ import pytest
 from openai import APIConnectionError
 
 from core.config import settings
-from services.scraper import transcription
+from services.scraper import image_uploader, transcription
 
 URL = "https://www.instagram.com/reel/DdyqycEINNe/"
 VIDEO = "https://scontent.cdninstagram.com/video.mp4"
@@ -19,7 +19,10 @@ def providers(monkeypatch):
     response.iter_bytes.return_value = [b"video", b"-data"]
     stream = MagicMock()
     stream.return_value.__enter__.return_value = response
-    monkeypatch.setattr(transcription.httpx, "stream", stream)
+    monkeypatch.setattr(image_uploader.httpx, "stream", stream)
+    monkeypatch.setattr(
+        image_uploader.socket, "getaddrinfo", lambda *_: [(2, 1, 6, "", ("157.240.0.1", 0))]
+    )
     factory = MagicMock()
     client = factory.return_value.__enter__.return_value
     client.audio.transcriptions.create.return_value.text = " Spoken words. "

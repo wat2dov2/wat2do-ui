@@ -7,13 +7,14 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
 interface IntegerFilterProps {
   value: string | number;
   active: boolean;
+  disabled?: boolean;
   onChange: (value: string) => void;
   label: string;
   inputLabel: string;
   preset?: { label: string; value: string };
 }
 
-export function IntegerFilter({ value, active, onChange, label, inputLabel, preset }: IntegerFilterProps) {
+export function IntegerFilter({ value, active, disabled = false, onChange, label, inputLabel, preset }: IntegerFilterProps) {
   const inputId = useId();
   const [open, setOpen] = useState(false);
   const [showInput, setShowInput] = useState(false);
@@ -24,8 +25,8 @@ export function IntegerFilter({ value, active, onChange, label, inputLabel, pres
       setOpen(nextOpen);
       if (!nextOpen) setShowInput(false);
     }}>
-      <PopoverTrigger asChild>
-        <Button size="sm" variant={active && !preset ? "primary" : "outline"} aria-pressed={active} aria-expanded={open}>
+      <PopoverTrigger asChild disabled={disabled}>
+        <Button disabled={disabled} size="sm" variant={active && !preset ? "primary" : "outline"} aria-pressed={active} aria-expanded={open}>
           {label}
         </Button>
       </PopoverTrigger>

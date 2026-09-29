@@ -332,7 +332,12 @@
         "empty": "Walang kwalipikadong mga kaganapan",
         "failed": "Kailangang pansin"
       },
+      "kind": {
+        "events": "Mga kaganapan",
+        "employers_on_campus": "Mga employer sa campus"
+      },
       "columns": {
+        "kind": "Carousel",
         "school": "Paaralan",
         "dateRan": "Petsa ng pagsasagawa",
         "timeRan": "Oras ng pagsasagawa",

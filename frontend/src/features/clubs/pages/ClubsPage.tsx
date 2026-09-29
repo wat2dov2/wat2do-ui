@@ -129,7 +129,7 @@ export function ClubsPage({
           </Button>
         </Stack>
 
-        <FilterBar refreshKey={allCategories.length} data-testid="club-category-filter-scroll" trailing={<>
+        <FilterBar disabled={isLoading || isError} refreshKey={allCategories.length} data-testid="club-category-filter-scroll" trailing={<>
             <Select
               value={activeTab}
               onValueChange={(value) =>

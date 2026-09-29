@@ -24,6 +24,7 @@ class CampusSeasonWindow(BaseModel):
 
 class SchoolEventSeason(BaseModel):
     id: str
+    classification_id: str
     labels: dict[str, str]
     display_windows: list[CampusSeasonWindow]
 

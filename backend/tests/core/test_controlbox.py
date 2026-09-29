@@ -45,6 +45,9 @@ def test_checked_in_controlbox_is_valid() -> None:
     assert set(controlbox.event_discovery.campus_seasons.definitions) == {
         "homecoming",
         "holidays",
+        "thanksgiving",
+        "halloween",
+        "winter_holidays",
         "orientation",
         "midterm_prep",
         "exam_destress",
@@ -430,6 +433,10 @@ def test_discovery_controls_load_checked_in_feature_sources():
         ("image_delivery", {"image_sizes": [0, 16]}),
         ("image_delivery", {"image_sizes": [256]}),
         ("image_delivery", {"warm_widths": []}),
+        ("image_delivery", {"warm_concurrency": 0}),
+        ("image_delivery", {"warm_concurrency": 9}),
+        ("uploads", {"event_video_max_size_bytes": 0}),
+        ("uploads", {"event_video_download_timeout_seconds": 0}),
         ("image_delivery", {"warm_widths": [385]}),
         ("image_delivery", {"warm_widths": [640, 384]}),
         ("image_delivery", {"warm_request_timeout_seconds": 0}),
@@ -459,6 +466,12 @@ def test_discovery_control_limits_reject_unsafe_configuration(tmp_path, feature,
             {"Bad Slug": {"instructions": "test", "seasons": []}}
         ),
         lambda seasons: seasons["schools"]["uwaterloo"]["seasons"][0].update(id="unknown"),
+        lambda seasons: seasons["schools"]["uwaterloo"]["seasons"][0]["display_windows"][0].update(
+            filter_id="unknown"
+        ),
+        lambda seasons: seasons["schools"]["uwaterloo"]["seasons"][1]["display_windows"][0].pop(
+            "filter_id"
+        ),
         lambda seasons: seasons["schools"]["uwaterloo"]["seasons"].append(
             seasons["schools"]["uwaterloo"]["seasons"][0]
         ),

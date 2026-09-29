@@ -4,6 +4,7 @@
  */
 
 // Components
+export { ClubInput } from "./components/ClubInput";
 export { AddClubModal } from "./components/AddClubModal";
 export { ClubBadgeDropdown } from "./components/ClubBadgeDropdown";
 

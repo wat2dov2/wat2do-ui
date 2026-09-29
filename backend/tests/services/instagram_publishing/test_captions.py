@@ -2,7 +2,11 @@ from types import SimpleNamespace
 
 import pytest
 
-from services.instagram_publishing.captions import build_caption, default_caption_intro
+from services.instagram_publishing.captions import (
+    build_caption,
+    default_caption_intro,
+    event_instagram_handle,
+)
 
 
 @pytest.fixture(autouse=True)
@@ -116,3 +120,31 @@ def test_memorial_caption_uses_french_and_newfoundland_time(monkeypatch):
     assert "23/09/2026 · 19 h 30" in caption
     assert "À quel événement" in caption
     assert "mun.wat2do.io" in caption
+
+
+@pytest.mark.parametrize(
+    ("event", "expected"),
+    [
+        ({"ig_handle": "@Event.Club", "club_ig": "other"}, "Event.Club"),
+        ({"ig_handle": "https://www.instagram.com/Event.Club/?utm_source=site"}, "Event.Club"),
+        ({"ig_handle": "", "club_ig": "https://instagram.com/campus_club/"}, "campus_club"),
+        ({"ig_handle": "https://instagram.com/p/post123/", "club_ig": "@club"}, "club"),
+        ({"ig_handle": "not a handle", "club_ig": "https://example.com/club"}, ""),
+        ({"ig_handle": "a" * 31}, ""),
+        ({"ig_handle": "@@club"}, "club"),
+        ({"ig_handle": "https://instagram.com/reels/"}, ""),
+        ({}, ""),
+    ],
+)
+def test_event_instagram_handle_resolves_valid_event_and_club_profiles(event, expected):
+    assert event_instagram_handle(event) == expected
+
+
+def test_employer_carousel_caption_intro_identifies_the_topic_in_both_languages():
+    assert (
+        default_caption_intro("uwaterloo", "employers_on_campus")
+        == "Employers on campus at uwaterloo 👀"
+    )
+    assert (
+        default_caption_intro("uqam", "employers_on_campus") == "Employeurs sur le campus à uqam 👀"
+    )

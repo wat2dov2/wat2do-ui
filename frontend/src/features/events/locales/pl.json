@@ -145,12 +145,6 @@
     "andOthersCount_many": "i {{count}} innych osób",
     "moreDatesCount_one": "+{{count}} data",
     "moreDatesCount_few": "+{{count}} daty",
-    "moreDatesCount_many": "+{{count}} dat",
-    "formatFilter": {
-      "label": "Format wydarzenia",
-      "any": "Dowolny format",
-      "inPerson": "Stacjonarnie",
-      "online": "Online"
-    }
+    "moreDatesCount_many": "+{{count}} dat"
   }
 }

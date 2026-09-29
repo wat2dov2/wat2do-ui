@@ -61,7 +61,7 @@ test("warms only current first-screen owned posters, deduplicates variants, and 
     ),
     warmer.warm("uwo", "clubs", snapshot(source("club"))),
   ]);
-  expect(maximumActive).toBe(1);
+  expect(maximumActive).toBe(controls.warm_concurrency);
   expect(requests).toHaveLength(
     controls.first_row_image_count * controls.warm_widths.length,
   );
@@ -97,7 +97,7 @@ test("replacing a snapshot drops obsolete queued posters and retains posters ref
   });
   const warmer = createWarmer(async (input) => {
     requests.push(new URL(String(input)).searchParams.get("url")!);
-    if (requests.length === 1) {
+    if (requests.length <= controls.warm_concurrency) {
       started();
       await pending;
     }
@@ -106,7 +106,7 @@ test("replacing a snapshot drops obsolete queued posters and retains posters ref
   const original = warmer.warm(
     "uwo",
     "events",
-    snapshot(source("old"), source("shared")),
+    snapshot(source("old"), source("shared"), source("obsolete")),
   );
   await entered;
   const shared = warmer.warm(
@@ -117,7 +117,8 @@ test("replacing a snapshot drops obsolete queued posters and retains posters ref
   const replacement = warmer.warm("uwo", "events", snapshot(source("new")));
   release();
   await Promise.all([original, shared, replacement]);
-  expect(requests.filter((url) => url === source("old"))).toHaveLength(1);
+  expect(requests).not.toContain(source("obsolete"));
+  expect(requests.filter((url) => url === source("old"))).toHaveLength(controls.warm_widths.length);
   expect(requests.filter((url) => url === source("new"))).toHaveLength(
     controls.warm_widths.length,
   );
@@ -127,7 +128,7 @@ test("replacing a snapshot drops obsolete queued posters and retains posters ref
   // Removed URLs are not retained as an ever-growing successful-image history.
   await warmer.warm("uwo", "events", snapshot(source("old")));
   expect(requests.filter((url) => url === source("old"))).toHaveLength(
-    1 + controls.warm_widths.length,
+    controls.warm_widths.length * 2,
   );
 });
 
@@ -184,4 +185,43 @@ test("empty replacement and expired school registrations do not keep retrying ol
   expect(requests.filter((url) => url === source("current"))).toHaveLength(
     controls.warm_widths.length,
   );
+});
+
+
+test("a stalled optimizer request does not block other visible posters", async () => {
+  let release!: () => void;
+  const stalled = new Promise<void>((resolve) => { release = resolve; });
+  const fetched: string[] = [];
+  const warmer = createWarmer(async (input) => {
+    const url = new URL(String(input)).searchParams.get("url")!;
+    fetched.push(url);
+    if (url === source("stalled")) await stalled;
+    return imageResponse();
+  });
+  const pending = warmer.warm("uwo", "events", snapshot(source("stalled"), source("ready")));
+  // Other workers can finish while the first poster has not responded.
+  await expect.poll(() => fetched.filter((url) => url === source("ready")).length).toBe(controls.warm_widths.length);
+  release();
+  await pending;
+  expect(fetched).toHaveLength(controls.warm_widths.length * 2);
+});
+
+
+test("new schools use idle workers while an older school's image is still pending", async () => {
+  let release!: () => void;
+  const stalled = new Promise<void>((resolve) => { release = resolve; });
+  const fetched: string[] = [];
+  const warmer = createWarmer(async (input) => {
+    const url = new URL(String(input)).searchParams.get("url")!;
+    fetched.push(url);
+    if (url === source("earlier")) await stalled;
+    return imageResponse();
+  });
+  const earlier = warmer.warm("uwo", "events", snapshot(source("earlier")));
+  // The initial spare workers have exited before another school arrives.
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  const later = warmer.warm("uwaterloo", "positions", snapshot(source("later")));
+  await expect.poll(() => fetched.filter((url) => url === source("later")).length).toBe(controls.warm_widths.length);
+  release();
+  await Promise.all([earlier, later]);
 });

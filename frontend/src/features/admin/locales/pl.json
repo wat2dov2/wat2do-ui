@@ -332,7 +332,12 @@
         "empty": "Brak kwalifikujących się wydarzeń",
         "failed": "Wymaga uwagi"
       },
+      "kind": {
+        "events": "Wydarzenia",
+        "employers_on_campus": "Pracodawcy na kampusie"
+      },
       "columns": {
+        "kind": "Karuzela",
         "school": "Szkoła",
         "dateRan": "Data przeprowadzenia",
         "timeRan": "Czas przeprowadzenia",

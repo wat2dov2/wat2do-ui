@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Children,
   useCallback,
   useEffect,
   useId,
@@ -201,6 +202,7 @@ interface EventImageCutoutProps {
   /** Optional photo, drawn inside the mask so it is cut by the notches too. */
   imageSrc?: string | null;
   imageAlt?: string;
+  videoSrc?: string | null;
   /** Load the poster immediately for LCP candidates; defer off-screen cards. */
   imageLoading?: "eager" | "lazy";
   imageSizes?: string;
@@ -230,6 +232,7 @@ export function EventImageCutout({
   backgroundColor,
   imageSrc,
   imageAlt = "",
+  videoSrc,
   imageLoading = "eager",
   imageSizes = CARD_GRID_IMAGE_SIZES,
   imageFallback,
@@ -311,6 +314,7 @@ export function EventImageCutout({
         <LazyImage
           src={imageSrc}
           alt={imageAlt}
+          videoSrc={videoSrc}
           sizes={imageSizes}
           loading={imageLoading}
           fallback={imageFallback}
@@ -318,7 +322,9 @@ export function EventImageCutout({
         />
       </div>
 
-      <div className="relative z-10 size-full">{children}</div>
+      {Children.toArray(children).length ? (
+        <div data-slot="event-image-overlay" className="relative z-10 size-full">{children}</div>
+      ) : null}
     </div>
   );
 }

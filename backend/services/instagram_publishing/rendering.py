@@ -16,6 +16,7 @@ import httpx
 
 from core.config import settings
 from core.constants import BUCKET_EVENT_IMAGES
+from schemas.instagram_publishing import InstagramPublishBatchKind
 from services.storage_service import storage
 
 _MAX_RENDERED_IMAGE_BYTES = 15 * 1024 * 1024
@@ -33,6 +34,7 @@ def render_cover_asset(
     *,
     local_date: str = "",
     new_event_count: int = 0,
+    batch_kind: InstagramPublishBatchKind = "events",
 ) -> str:
     """Render and upload the cover slide compiled from the selected events."""
     if not events:
@@ -41,6 +43,7 @@ def render_cover_asset(
         _render(
             {
                 "kind": "cover",
+                "batch_kind": batch_kind,
                 "events": events,
                 "school": school,
                 "body": body,

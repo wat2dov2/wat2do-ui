@@ -332,7 +332,12 @@
         "empty": "无符合条件的活动",
         "failed": "需要处理"
       },
+      "kind": {
+        "events": "活动",
+        "employers_on_campus": "校园招聘雇主"
+      },
       "columns": {
+        "kind": "轮播",
         "school": "学校",
         "dateRan": "运行日期",
         "timeRan": "运行时间",

@@ -28,6 +28,7 @@ interface BaseFormFieldProps {
 }
 
 interface FormInputProps extends BaseFormFieldProps {
+  disabled?: boolean;
   type?: "text" | "email" | "number" | "time" | "tel" | "url";
   value: string | number;
   onChange: (value: string | number) => void;
@@ -63,6 +64,7 @@ export function FormInput({
   name,
   label,
   required = false,
+  disabled = false,
   error,
   touched,
   onBlur,
@@ -84,6 +86,7 @@ export function FormInput({
   const inputElement = (
     <Input
       id={id}
+      disabled={disabled}
       type={type}
       value={value}
       onChange={(e) => {

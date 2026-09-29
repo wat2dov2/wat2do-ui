@@ -21,8 +21,12 @@
   "optimized_format": "image/webp",
   "optimized_remote_host": "wat2do.io",
   "optimized_remote_path": "/media/",
-  "warm_widths": [384, 640],
+  "warm_widths": [
+    384,
+    640
+  ],
   "warm_request_timeout_seconds": 10,
   "warm_retry_seconds": 60,
-  "warm_success_ttl_seconds": 86400
+  "warm_success_ttl_seconds": 86400,
+  "warm_concurrency": 4
 }

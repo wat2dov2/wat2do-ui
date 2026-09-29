@@ -76,6 +76,7 @@ class PositionCreate(PositionFields):
 
 
 class PositionResponse(PositionFields):
+    source_video_url: str | None = Field(default=None, max_length=MAX_URL_LENGTH)
     id: int
     club_id: int
     source_url: str = Field(max_length=MAX_URL_LENGTH)

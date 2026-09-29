@@ -1,13 +1,11 @@
 import { useTranslation } from "react-i18next";
 import { CardEntrance } from "@/shared/ui/card-entrance";
 import { Skeleton } from "@/shared/ui/skeleton";
+import { CardImageSkeleton } from "@/shared/ui/card-image-skeleton";
 import { EventCardContentFrame } from "@/shared/ui/event-card-content";
 import { Users } from "@/shared/ui/doodle-icons";
 import { EmptyState } from "@/shared/feedback/empty-state";
-import {
-  CARD_GRID_CLASS,
-  EVENT_CARD_IMAGE_HEIGHT,
-} from "@/shared/constants/ui";
+import { CARD_GRID_CLASS } from "@/shared/constants/ui";
 import { PositionCard } from "@/features/positions/components/PositionCard";
 import type { Position } from "@/shared/types";
 import imageDelivery from "../../../../../backend/controlbox/image_delivery.json" with { type: "json" };
@@ -23,10 +21,7 @@ interface PositionListProps {
 function PositionCardSkeleton() {
   return (
     <div className="flex h-full flex-col overflow-hidden rounded-xl">
-      <Skeleton
-        className="w-full rounded-t-xl rounded-br-xl"
-        style={{ height: EVENT_CARD_IMAGE_HEIGHT }}
-      />
+      <CardImageSkeleton />
       <EventCardContentFrame className="gap-3 py-4">
         <Skeleton className="h-5 w-24" />
         <Skeleton className="h-6 w-4/5" />

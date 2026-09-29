@@ -50,10 +50,10 @@ interface Wat2DoLogoLinkProps {
 
 function Wat2DoLogoLink({ label, onNavigate }: Wat2DoLogoLinkProps) {
   const router = useRouter();
-  const prefetch = () => prefetchPublicPage(router, ROUTES.ABOUT);
+  const prefetch = () => prefetchPublicPage(router, ROUTES.HOME);
   return (
     <NextLink
-      href={ROUTES.ABOUT}
+      href={ROUTES.HOME}
       prefetch={false}
       onPointerEnter={prefetch}
       onFocus={prefetch}
@@ -164,7 +164,7 @@ export function TopNav() {
   return (
     <header data-slot="top-nav" className="fixed top-0 left-0 right-0 z-nav flex h-12 items-center justify-between gap-1.5 border-b border-border bg-surface px-2 sm:gap-2 sm:px-4">
       <div className="flex min-w-0 flex-1 items-center gap-1.5 sm:gap-2.5">
-        <Wat2DoLogoLink label={t("navigation.about")} />
+        <Wat2DoLogoLink label={t("navigation.events")} />
         <span className="hidden text-muted-foreground text-lg font-light sm:inline">/</span>
         <SchoolCombobox
           value={requestSchool}
@@ -227,7 +227,7 @@ export function TopNav() {
             <DrawerBody className="gap-3">
               <Stack direction="horizontal" align="center" justify="between" gap={2}>
                 <Wat2DoLogoLink
-                  label={t("navigation.about")}
+                  label={t("navigation.events")}
                   onNavigate={() => setNavigationOpen(false)}
                 />
                 <Stack direction="horizontal" align="center" gap={2}>

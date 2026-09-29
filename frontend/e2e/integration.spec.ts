@@ -584,6 +584,10 @@ test.describe("Loading shells", () => {
         await expect(heading).toBeVisible();
         await expect(heading).toHaveAttribute("aria-busy", "true");
         await expect(heading.locator('[data-slot="skeleton"]')).toBeVisible();
+        await expect(shell.locator("fieldset")).toBeDisabled();
+        if (listing.resource !== "clubs") {
+          await expect(shell.locator('[data-slot="latest-added-item"] [data-slot="skeleton"]')).toHaveCount(2);
+        }
         await expect(shell.getByPlaceholder(listing.search, { exact: true })).toBeVisible();
         await expect(shell.getByRole("link", { name: listing.add, exact: true })).toBeVisible();
         await expect(shell.locator('[aria-hidden="true"] [data-slot="skeleton"]').first()).toBeVisible();
@@ -2287,6 +2291,49 @@ test.describe("Events Page", () => {
     });
   });
 
+  test("scraped video controls receive pointer input and a failed video retains the poster", async ({ page, next }) => {
+    const posterUrl = "https://wat2do.io/media/event-images/video-poster.png";
+    const videoUrl = "https://wat2do.io/media/event-videos/event.mp4";
+    const event = {
+      id: 1, club_id: 1, title: "Campus video", description: "A recorded invitation",
+      location: "SLC", school: "uwaterloo", club: "UW Tech Club", category: "Career",
+      occurrences: [{ id: 1, event_id: 1, dtstart_utc: new Date(Date.now() + 86_400_000).toISOString(), dtend_utc: null }],
+      source_image_url: posterUrl, source_video_url: videoUrl,
+      price: 0, food: [], registration: false, cancelled: false, added_at: new Date().toISOString(),
+    };
+    const posterBytes = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=", "base64");
+    await page.route(url => url.pathname === "/_next/image" && url.searchParams.get("url") === posterUrl,
+      route => route.fulfill({ status: 200, contentType: "image/png", body: posterBytes }));
+    let videoRequests = 0;
+    await page.route(videoUrl, route => {
+      videoRequests++;
+      return route.fulfill({ status: 404, body: "Unavailable" });
+    });
+    await mockApi(page, next, url => apiPath(url) === "/events", async () => ({
+      status: 200, contentType: "application/json", body: JSON.stringify({ items: [event], total: 1, page: 1, page_size: 20, total_pages: 1, latest_added_event: null }),
+    }));
+    await mockApi(page, next, url => apiPath(url) === "/events/1", async () => ({
+      status: 200, contentType: "application/json", body: JSON.stringify(event),
+    }));
+    await page.goto(BASE);
+    const card = page.locator('article[data-event-id="1"]:visible');
+    await expect(card.locator("video")).toHaveCount(0);
+    await card.click();
+    const drawer = page.getByRole("dialog", { name: "Campus video" });
+    const video = drawer.locator("video");
+    await expect(video).toBeVisible();
+    await expect(video).toHaveAttribute("preload", "none");
+    expect(videoRequests).toBe(0);
+    await expect.poll(() => video.evaluate(element => {
+      const box = element.getBoundingClientRect();
+      return document.elementFromPoint(box.x + box.width / 2, box.bottom - 12) === element;
+    })).toBe(true);
+    await video.evaluate(element => (element as HTMLVideoElement).play().catch(() => undefined));
+    await expect(drawer.locator("video")).toHaveCount(0);
+    await expect(drawer.locator('[data-slot="event-image-face"] img')).toBeVisible();
+    expect(videoRequests).toBeGreaterThan(0);
+  });
+
   test("opens the event poster in-app and closes the drawer after filtering by host", async ({
     page, next,
   }) => {
@@ -3415,9 +3462,9 @@ test.describe("Events Page", () => {
   test("seasonal event filters combine locally and clear when the school's display window closes", async ({ page, next }) => {
     await page.clock.install({ time: new Date("2026-09-29T03:59:00Z") });
     const seasons = [
-      { id: "homecoming", labels: { en: "HOCO" }, display_windows: [{ start_date: "2026-09-28", end_date: "2026-09-28" }] },
-      { id: "holidays", labels: { en: "Holidays" }, display_windows: [{ start_date: "2026-09-28", end_date: "2026-09-28" }] },
-      { id: "orientation", labels: { en: "O-Week" }, display_windows: [{ start_date: "2026-09-01", end_date: "2026-09-07" }] },
+      { id: "homecoming", classification_id: "homecoming", labels: { en: "HOCO" }, display_windows: [{ start_date: "2026-09-28", end_date: "2026-09-28" }] },
+      { id: "thanksgiving", classification_id: "holidays", labels: { en: "Thanksgiving" }, display_windows: [{ start_date: "2026-09-28", end_date: "2026-09-28" }] },
+      { id: "orientation", classification_id: "orientation", labels: { en: "O-Week" }, display_windows: [{ start_date: "2026-09-01", end_date: "2026-09-07" }] },
     ];
     const schools = MOCK_SCHOOLS.map(school => ({ ...school, event_seasons: school.slug === "uwaterloo" ? seasons : [] }));
     await mockApi(page, next, url => apiPath(url) === "/schools" || apiPath(url) === "/schools/uwaterloo", async request => ({
@@ -3430,7 +3477,7 @@ test.describe("Events Page", () => {
     ].map(item => ({
       ...item, school: "uwaterloo", club: "UW Tech Club", location: "SLC", category: "Career",
       price: 0, food: [], registration: false, source_image_url: null, added_at: "2026-09-28T12:00:00Z",
-      occurrences: [{ id: item.id, event_id: item.id, dtstart_utc: "2026-09-30T16:00:00Z", dtend_utc: null }],
+      occurrences: [{ id: item.id, event_id: item.id, dtstart_utc: "2026-09-29T03:59:30Z", dtend_utc: "2026-09-29T05:00:00Z" }],
     }));
     let feedRequests = 0;
     await mockApi(page, next, url => apiPath(url) === "/events", async () => {
@@ -3450,12 +3497,12 @@ test.describe("Events Page", () => {
     await page.getByRole("button", { name: "HOCO", exact: true }).click();
     await expect(cards).toHaveCount(1);
     await expect(cards.first()).toContainText("Homecoming social");
-    await page.getByRole("button", { name: "Holidays", exact: true }).click();
+    await page.getByRole("button", { name: "Thanksgiving", exact: true }).click();
     await expect(cards).toHaveCount(2);
-    await expect.poll(() => queries.at(-1)?.filters.campusSeasonIds).toEqual(["homecoming", "holidays"]);
+    await expect.poll(() => queries.at(-1)?.filters.campusSeasonIds).toEqual(["homecoming", "thanksgiving"]);
     await page.clock.fastForward(60_000);
     await expect(page.getByRole("button", { name: "HOCO", exact: true })).toHaveCount(0);
-    await expect(page.getByRole("button", { name: "Holidays", exact: true })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Thanksgiving", exact: true })).toHaveCount(0);
     await expect(cards).toHaveCount(3);
     await expect.poll(() => queries.at(-1)?.filters.campusSeasonIds).toEqual([]);
     expect(feedRequests).toBe(loadedFeedRequests);
@@ -3568,44 +3615,20 @@ test.describe("Events Page", () => {
     expect(feedRequests).toBe(initialRequests);
   });
 
-  test("filters event formats locally and resets to Any format", async ({ page, next }) => {
-    let feedRequests = 0;
-    await mockApi(page, next, url => apiPath(url) === "/events", async () => {
-      feedRequests += 1;
-      const now = new Date().toISOString();
-      const startsAt = new Date(Date.now() + 86_400_000).toISOString();
-      const items = [
-        { id: 901, title: "Campus workshop", location: "Student Centre" },
-        { id: 902, title: "Remote workshop", location: "Online via Zoom" },
-        { id: 903, title: "Unannounced workshop", location: null },
-      ].map(event => ({
-        ...event, price: 0, food: [], registration: false, category: "Career",
-        school: "uwaterloo", added_at: now, source_image_url: null,
-        occurrences: [{ id: event.id, event_id: event.id, dtstart_utc: startsAt, dtend_utc: null }],
-      }));
-      return { json: { items, total: 3, page: 1, page_size: 20, total_pages: 1 } };
-    });
+  test("event quick filters follow discovery priority and omit the format selector", async ({ page, next }) => {
+    await seedAuthenticatedSession(page, next);
     await page.goto(BASE);
-    const format = page.getByRole("combobox", { name: "Event format" });
-    const cards = page.locator("article[data-event-id]");
-    await expect(format).toHaveText("Any format");
-    await expect(cards).toHaveCount(3);
-    const initialRequests = feedRequests;
-
-    await format.click();
-    await page.getByRole("option", { name: "Online", exact: true }).click();
-    await expect(cards).toHaveCount(1);
-    await expect(cards.first()).toContainText("Remote workshop");
-
-    await format.click();
-    await page.getByRole("option", { name: "In person", exact: true }).click();
-    await expect(cards).toHaveCount(1);
-    await expect(cards.first()).toContainText("Campus workshop");
-
-    await format.click();
-    await page.getByRole("option", { name: "Any format", exact: true }).click();
-    await expect(cards).toHaveCount(3);
-    expect(feedRequests).toBe(initialRequests);
+    const filters = page.getByTestId("event-quick-filter-scroll");
+    await expect(filters.getByRole("button", { name: "Going", exact: true })).toBeEnabled();
+    const labels = await filters.locator('button').allTextContents();
+    const expected = ["Going", "New", "Employers on campus", "Free food on campus", "Free", "Varsity games", "Any day", ">0 going"];
+    const indices = expected.map(label => labels.indexOf(label));
+    expect(indices.every(index => index >= 0)).toBe(true);
+    expect(indices).toEqual([...indices].sort((a, b) => a - b));
+    await expect(page.getByRole("combobox", { name: "Event format" })).toHaveCount(0);
+    await expect(filters.getByRole("button", { name: "Holidays", exact: true })).toHaveCount(0);
+    const logo = page.getByRole("banner").getByRole("link", { name: "Events", exact: true }).first();
+    await expect(logo).toHaveAttribute("href", "/");
   });
 
   test("filters events by preset or custom date from the quick-filter strip", async ({

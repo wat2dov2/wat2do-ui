@@ -123,6 +123,7 @@ def write_event(
         "food": _clean_food(event.get("food")),
         "registration": bool(event.get("registration", False)),
         "source_image_url": (event.get("source_image_url") or None),
+        "source_video_url": (event.get("source_video_url") or None),
         "source_url": source_url or None,
         "club_id": resolved_org.club_id,
         "school_id": school.id,
@@ -416,6 +417,7 @@ def _merge_overwrite_payload(incoming: dict, old_event) -> dict:
         "club_id",
         "source_url",
         "source_image_url",
+        "source_video_url",
     ):
         if field == "campus_season_ids":
             old_seasons = getattr(old_event, field, None)

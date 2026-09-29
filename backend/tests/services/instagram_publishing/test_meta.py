@@ -1,3 +1,5 @@
+import json
+
 import httpx
 
 from services.instagram_publishing import meta
@@ -76,3 +78,26 @@ def test_refresh_access_token_uses_unversioned_refresh_endpoint(monkeypatch):
             {"timeout": 30.0},
         )
     ]
+
+
+def test_carousel_children_have_individual_user_tags_and_cover_is_untagged(monkeypatch):
+    requests = []
+    client = meta.MetaInstagramClient("token")
+    monkeypatch.setattr(
+        client, "_post", lambda path, data: requests.append((path, data)) or {"id": "1"}
+    )
+
+    client.create_image_container("campus", "https://asset.test/cover.png")
+    client.create_image_container("campus", "https://asset.test/event.png", username="campus.club")
+
+    assert requests[0] == (
+        "/campus/media",
+        {
+            "image_url": "https://asset.test/cover.png",
+            "is_carousel_item": "true",
+        },
+    )
+    assert json.loads(requests[1][1]["user_tags"]) == [
+        {"username": "campus.club", "x": 0.5, "y": 0.5}
+    ]
+    assert all("location_id" not in data for _, data in requests)

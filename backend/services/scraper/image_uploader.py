@@ -15,7 +15,8 @@ from urllib.parse import urlparse
 
 import httpx
 
-from core.constants import BUCKET_EVENT_IMAGES
+from core.constants import BUCKET_EVENT_IMAGES, BUCKET_EVENT_VIDEOS
+from core.controlbox import controlbox
 from services.storage_service import storage
 
 log = logging.getLogger(__name__)
@@ -52,7 +53,12 @@ def _is_safe_image_url(url: str, allow_all_domains: bool = False) -> bool:
         parsed = urlparse(url)
     except ValueError:
         return False
-    if parsed.scheme != "https":
+    if parsed.scheme != "https" or parsed.username or parsed.password:
+        return False
+    try:
+        if parsed.port is not None:
+            return False
+    except ValueError:
         return False
     host = (parsed.hostname or "").lower()
     if not host:
@@ -140,3 +146,59 @@ def upload_post_images(image_urls: Iterable[str], allow_all_domains: bool = Fals
         if result is not None:
             uploaded.append(result)
     return uploaded
+
+
+class MediaDownloadError(RuntimeError):
+    """A safe explanation of why an Instagram media download failed."""
+
+
+def download_video(url: object, *, maximum_bytes: int, timeout_seconds: int) -> bytes:
+    """Download bounded MP4 bytes from the same trusted CDN as post images."""
+    if not isinstance(url, str) or not url:
+        raise MediaDownloadError("Instagram did not return a downloadable video for this post.")
+    if not _is_safe_image_url(url):
+        raise MediaDownloadError("Instagram returned an unsupported video host.")
+    payload = bytearray()
+    try:
+        with httpx.stream(
+            "GET",
+            url,
+            timeout=timeout_seconds,
+            follow_redirects=False,
+            headers={"User-Agent": _USER_AGENT},
+        ) as response:
+            response.raise_for_status()
+            content_type = response.headers.get("content-type", "").split(";", 1)[0].lower()
+            if content_type not in {"video/mp4", "application/octet-stream"}:
+                raise MediaDownloadError("Instagram did not return an MP4 video.")
+            for chunk in response.iter_bytes():
+                if len(payload) + len(chunk) > maximum_bytes:
+                    raise MediaDownloadError(
+                        f"Video exceeds the {maximum_bytes:,}-byte media limit; use a smaller video."
+                    )
+                payload.extend(chunk)
+    except httpx.HTTPError:
+        raise MediaDownloadError(
+            "Video download failed. Retry the command to obtain a fresh Instagram video link."
+        ) from None
+    if not payload:
+        raise MediaDownloadError("Instagram returned an empty video.")
+    return bytes(payload)
+
+
+def upload_video_from_url(url: str) -> str | None:
+    """Persist a retrieved video; failed video downloads retain the image poster."""
+    try:
+        data = download_video(
+            url,
+            maximum_bytes=controlbox.uploads.event_video_max_size_bytes,
+            timeout_seconds=controlbox.uploads.event_video_download_timeout_seconds,
+        )
+        prepared, content_type = storage.validate_and_prepare(
+            BUCKET_EVENT_VIDEOS, data, "video/mp4"
+        )
+        return storage.upload_file(BUCKET_EVENT_VIDEOS, prepared, content_type=content_type)
+    except Exception:
+        # Signed provider URLs and storage credentials must not reach workflow output.
+        log.warning("Unable to persist Instagram video; retaining its image poster.")
+        return None

@@ -332,7 +332,12 @@
         "empty": "No hay eventos elegibles",
         "failed": "Necesita atención"
       },
+      "kind": {
+        "events": "Eventos",
+        "employers_on_campus": "Empleadores en el campus"
+      },
       "columns": {
+        "kind": "Carrusel",
         "school": "Escuela",
         "dateRan": "Fecha de ejecución",
         "timeRan": "Hora de ejecución",

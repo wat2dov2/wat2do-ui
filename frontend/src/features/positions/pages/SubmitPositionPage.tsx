@@ -9,7 +9,7 @@ import { LoadingButton } from "@/shared/ui/loading-button";
 import { FormInput, FormSelect, FormTextarea } from "@/shared/ui/form-field";
 import { Field, FieldError, FieldLabel } from "@/shared/ui/field";
 import { Input } from "@/shared/ui/input";
-import { SearchCombobox } from "@/shared/ui/search-combobox";
+import { ClubInput } from "@/features/clubs";
 import { ImageUploadField } from "@/shared/ui/image-upload-field";
 import { ROUTES } from "@/shared/constants/routes";
 import { QP } from "@/shared/constants/queryParams";
@@ -33,8 +33,7 @@ export function SubmitPositionPage() {
               <Stack gap={5}>
                 <ImageUploadField label={t("forms.clickToUploadImage")} imagePreview={data.source_image_url ?? undefined} onImageUpload={form.upload} onRemoveImage={() => form.edit({ source_image_url: null })} previewVariant="poster" />
                 <Field>
-                  <FieldLabel htmlFor="position-club">{t("navigation.clubs")}</FieldLabel>
-                  <SearchCombobox id="position-club" selectedKey={data.club_id} items={clubs} getKey={club => club.id} getLabel={club => club.club_name} displayValue={clubs.find(club => club.id === data.club_id)?.club_name ?? t("forms.selectClub")} onSelect={club => form.edit({ club_id: club.id })} searchPlaceholder={t("clubs.searchPlaceholder")} emptyLabel={t("clubs.noClubsFound")} />
+                  <ClubInput value={data.club_id || null} clubs={clubs} onChange={clubId => form.edit({ club_id: clubId ?? 0 })} touched />
                   {form.clubs.isError ? <Button type="button" variant="outline" onClick={() => void form.clubs.refetch()}>{t("common.tryAgain")}</Button> : null}
                 </Field>
                 <FormInput name="position-title" placeholder={t("positions.placeholders.title")} label={t("positions.title")} required value={data.title} onChange={title => form.edit({ title: String(title) })} />

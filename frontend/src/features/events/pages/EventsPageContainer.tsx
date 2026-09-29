@@ -1,10 +1,9 @@
-import { lazy, Suspense, useMemo, useCallback, useState } from "react";
+import { useMemo, useCallback, useState, Fragment } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
-import { EventFormatFilterSelect } from "@/features/events/components/EventFormatFilterSelect";
 import { IntegerFilter } from "@/shared/ui/integer-filter";
 import { toast } from "@/shared/hooks/use-toast";
-import { EventList } from "../components/EventList";
+import { EventList } from "@/features/events/components/EventList";
 import { PageCountHeading } from "@/shared/ui/page-count-heading";
 import { SearchBar } from "@/features/search/components/SearchBar";
 import { MoreFiltersButton } from "@/features/search/components/MoreFiltersButton";
@@ -23,21 +22,8 @@ import type { Event } from "@/shared/types";
 import { usePosterLandingConfirmation } from "@/features/qrcode/hooks/usePosterLandingConfirmation";
 import { PageHeader, Stack } from "@/shared/layout";
 import type { PaginatedEventsResponse } from "@/features/events/api/events.api";
-import { LoadingDrawer } from "@/shared/ui/drawer";
+import { EventDetailsModal } from "@/features/events/components/EventDetailsModal";
 import { eventQuickFilters } from "@/shared/constants/eventFilters";
-
-const EventDetailsModal = lazy(() =>
-  import("@/features/events/components/EventDetailsModal").then((module) => ({
-    default: module.EventDetailsModal,
-  })),
-);
-
-interface QuickFilterButtonConfig {
-  id: string;
-  labelKey: string;
-  active: boolean;
-  onClick: () => void;
-}
 
 interface EventsPageContainerProps {
   /** The server's browse snapshot, or null when that fetch failed. */
@@ -63,6 +49,7 @@ export function EventsPageContainer({
     refreshEvents,
     totalEvents,
     eventStats,
+    goingEventsReady,
     latestAddedEvent,
 
     filters,
@@ -101,16 +88,8 @@ export function EventsPageContainer({
     filters.setSearchQuery(latestAddedEvent.title);
   }, [filters, latestAddedEvent]);
 
-  const filterConfigs: QuickFilterButtonConfig[] = useMemo(
-    () => eventQuickFilters
-      .filter(config => !("requiresProfile" in config) || profileCompleted)
-      .map(config => ({
-        id: config.id,
-        labelKey: config.labelKey,
-        active: filters[config.value],
-        onClick: () => filters[config.action](!filters[config.value]),
-      })),
-    [filters, profileCompleted],
+  const quickFilters = eventQuickFilters.filter(
+    config => !("requiresProfile" in config) || profileCompleted,
   );
 
   // Submitting an event requires an account, so gate before navigating.
@@ -158,7 +137,7 @@ export function EventsPageContainer({
             </Button>
           </Stack>
 
-          <FilterBar refreshKey={`${filterConfigs.length + 4}:${filters.categoryOptions.length}:${filters.campusSeasonOptions.map(season => season.id).join(",")}`} data-testid="event-quick-filter-scroll" trailing={<>
+          <FilterBar disabled={isLoading || Boolean(error)} refreshKey={`${quickFilters.length}:${filters.categoryOptions.length}:${filters.campusSeasonOptions.map(season => season.id).join(",")}`} data-testid="event-quick-filter-scroll" trailing={<>
               <MoreFiltersButton
                 open={showFilterDropdown}
                 onOpenChange={setShowFilterDropdown}
@@ -173,59 +152,28 @@ export function EventsPageContainer({
                 ) : null}
               </MoreFiltersButton>
             </>}>
-                <NewlyAddedFilterButton
-                  value={filters.addedSince || null}
-
-                  onValueChange={filters.setAddedSince}
-                  onClear={handleNewlyAddedFilterClear}
-                />
-                {filterConfigs.map((config) => (
-                  <Button
-                    key={config.id}
-                    variant={config.active ? "primary" : "outline"}
-                    size="sm"
-                    onClick={config.onClick}
-                    aria-pressed={config.active}
-                  >
-                    {t(config.labelKey)}
-                  </Button>
-                ))}
-                {filters.campusSeasonOptions.map((season) => (
-                  <Button
-                    key={season.id}
-                    variant={filters.campusSeasonIds.includes(season.id) ? "primary" : "outline"}
-                    size="sm"
-                    onClick={() => filters.toggleCampusSeason(season.id)}
-                    aria-pressed={filters.campusSeasonIds.includes(season.id)}
-                  >
-                    {season.label}
-                  </Button>
-                ))}
-                <IntegerFilter
-                  value={filters.priceFilterValue}
-                  active={filters.priceFilterValue !== ""}
-                  onChange={filters.setPriceFilter}
-                  label={Number(filters.priceFilterValue) > 0 ? `> $${Number(filters.priceFilterValue)}` : t("common.free")}
-                  inputLabel={t("filters.minimumPrice")}
-                  preset={{ label: t("common.free"), value: "0" }}
-                />
-                <DateFilterSelect
-                  school={initialSchool}
-                  value={filters.dateFilter}
-                  customDate={filters.customDate}
-                  onChange={filters.setDateFilter}
-                />
-                <IntegerFilter
-                  value={filters.minGoing}
-                  active={filters.minGoing > 0}
-                  onChange={(value) => filters.setMinGoing(Number(value))}
-                  label={`>${t("events.goingCount", { count: filters.minGoing })}`}
-                  inputLabel={t("events.minimumGoing")}
-                />
-                <EventFormatFilterSelect
-                  value={filters.eventFormat}
-                  onChange={filters.setEventFormat}
-                />
+                {quickFilters.map(config => {
+                  switch (config.id) {
+                    case "new":
+                      return <NewlyAddedFilterButton key={config.id} value={filters.addedSince || null} onValueChange={filters.setAddedSince} onClear={handleNewlyAddedFilterClear} />;
+                    case "price":
+                      return <IntegerFilter key={config.id} value={filters.priceFilterValue} active={filters.priceFilterValue !== ""} onChange={filters.setPriceFilter} label={Number(filters.priceFilterValue) > 0 ? `> $${Number(filters.priceFilterValue)}` : t("common.free")} inputLabel={t("filters.minimumPrice")} preset={{ label: t("common.free"), value: "0" }} />;
+                    case "campusSeasons":
+                      return <Fragment key={config.id}>{filters.campusSeasonOptions.map(season => (
+                        <Button key={season.id} variant={filters.campusSeasonIds.includes(season.id) ? "primary" : "outline"} size="sm" onClick={() => filters.toggleCampusSeason(season.id)} aria-pressed={filters.campusSeasonIds.includes(season.id)}>
+                          {season.label}
+                        </Button>
+                      ))}</Fragment>;
+                    case "date":
+                      return <DateFilterSelect key={config.id} school={initialSchool} value={filters.dateFilter} customDate={filters.customDate} onChange={filters.setDateFilter} />;
+                    case "minGoing":
+                      return <IntegerFilter key={config.id} disabled={eventStats === null} value={filters.minGoing} active={filters.minGoing > 0} onChange={value => filters.setMinGoing(Number(value))} label={`>${t("events.goingCount", { count: filters.minGoing })}`} inputLabel={t("events.minimumGoing")} />;
+                    default:
+                      return <Button key={config.id} disabled={config.id === "going" && !goingEventsReady} variant={filters[config.value] ? "primary" : "outline"} size="sm" onClick={() => filters[config.action](!filters[config.value])} aria-pressed={filters[config.value]}>
+                        {t(config.labelKey)}
+                      </Button>;
+                  }
+                })}
                 {filters.categoryOptions.map((category) => (
                   <Button
                     key={category.id}
@@ -280,14 +228,12 @@ export function EventsPageContainer({
         </main>
       </div>
       {hasOpenedDetails ? (
-        <Suspense fallback={<LoadingDrawer open={selectedEventId !== null} onClose={handleCloseEventDetails} title={selectedEvent?.title} size="detail" />}>
-          <EventDetailsModal
-            eventId={selectedEventId}
-            event={selectedEvent}
-            onClose={handleCloseEventDetails}
-            allEvents={orderedEvents}
+        <EventDetailsModal
+          eventId={selectedEventId}
+          event={selectedEvent}
+          onClose={handleCloseEventDetails}
+          allEvents={orderedEvents}
           />
-        </Suspense>
       ) : null}
     </>
   );

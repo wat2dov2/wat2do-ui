@@ -291,3 +291,56 @@ def test_reconciliation_fallback_validates_school_seasons(monkeypatch):
     )
     assert result[0]["id"] == 42
     assert result[0]["campus_season_ids"] is None
+
+
+def test_reconciliation_retains_uploaded_video_instead_of_model_url(monkeypatch):
+    _mock_client(
+        monkeypatch,
+        '[{"title":"Tea","source_video_url":"https://untrusted.test/fake.mp4","occurrences":[{"dtstart_utc":"2026-10-01T12:00:00Z"}]}]',
+    )
+    result = reconcile_events(
+        extracted_events=[
+            {"title": "Tea", "source_video_url": "https://wat2do.io/media/event-videos/reel.mp4"}
+        ],
+        candidates_by_index=[[]],
+        caption_text="Tea",
+        school="uwaterloo",
+    )
+    assert result is not None
+    assert result[0]["source_video_url"] == "https://wat2do.io/media/event-videos/reel.mp4"
+
+
+def test_reconciliation_pairs_video_by_owned_poster_when_results_are_collapsed(monkeypatch):
+    import json
+
+    first = {
+        "title": "Tea",
+        "source_image_url": "https://wat2do.io/media/event-images/tea.jpg",
+        "source_video_url": "https://wat2do.io/media/event-videos/tea.mp4",
+    }
+    second = {
+        "title": "Coffee",
+        "source_image_url": "https://wat2do.io/media/event-images/coffee.jpg",
+        "source_video_url": "https://wat2do.io/media/event-videos/coffee.mp4",
+    }
+    _mock_client(
+        monkeypatch,
+        json.dumps(
+            [
+                {
+                    **first,
+                    "source_video_url": "https://untrusted.test/fake.mp4",
+                    "occurrences": [{"dtstart_utc": "2026-10-01T12:00:00Z"}],
+                }
+            ]
+        ),
+    )
+    result = reconcile_events(
+        extracted_events=[first, second],
+        candidates_by_index=[[], []],
+        caption_text="Tea and coffee",
+        school="uwaterloo",
+    )
+    assert result is not None
+    assert len(result) == 1
+    assert result[0]["source_video_url"] == first["source_video_url"]

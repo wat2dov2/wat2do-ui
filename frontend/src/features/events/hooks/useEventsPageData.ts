@@ -38,7 +38,7 @@ export function useEventsPageData({
   const latestAddedEvent = query.data?.latest_added_event ?? null;
   const isLoading = query.isLoading;
   const error = query.isLoadingError ? i18n.t("events.loadFailed") : null;
-  const { data: goingSelections = [] } = useGoingEvents();
+  const { data: goingSelections = [], isSuccess: goingEventsReady } = useGoingEvents();
   const currentTimeMs = useCurrentTime();
   const goingEventIds = useMemo(
     () => goingSelections.map((selection) => selection.event_id),
@@ -90,6 +90,7 @@ export function useEventsPageData({
     refreshEvents,
     totalEvents,
     eventStats,
+    goingEventsReady,
     latestAddedEvent,
     filters,
     orderedEvents,
