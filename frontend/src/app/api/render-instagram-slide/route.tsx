@@ -1,4 +1,3 @@
-import { getClubPositionsSnapshot } from "@/features/positions/api/positionDirectory.server";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { NextRequest, NextResponse } from "next/server";
@@ -159,26 +158,14 @@ async function buildSlide(slide: SlideRequest): Promise<React.ReactElement> {
   if (!schoolRecord) throw new Error(`School not found for slide rendering: ${school}`);
 
   if (slide.kind === "event") {
-    const [imageSrc, avatarSrc, positions] = await Promise.all([
+    const [imageSrc, avatarSrc] = await Promise.all([
       inlineImage(slide.event.source_image_url, "event"),
       // An unavailable optional club logo uses the template's initials.
       inlineImage(slide.event.club_logo_url, "avatar").catch(() => ""),
-      slide.event.club_id ? getClubPositionsSnapshot(slide.event.club_id, school) : Promise.resolve([]),
     ]);
     const model = await buildEventSlideModel({ ...slide.event, school }, schoolRecord.language, imageSrc, avatarSrc, {
-      school: schoolRecord, positionTitles: positions.map(position => position.title),
+      school: schoolRecord,
     });
-    if (model.mapSrc) {
-      // Only the fixed Google Static Maps URL built by our model is downloaded.
-      // Missing map access must not silently publish a slide without its map.
-      const response = await fetch(model.mapSrc, { redirect: "error", signal: AbortSignal.timeout(10_000) });
-      if (!response.ok || !response.headers.get("content-type")?.startsWith("image/")) {
-        throw new Error(`Event map download failed: HTTP ${response.status}`);
-      }
-      const bytes = Buffer.from(await response.arrayBuffer());
-      if (!bytes.length || bytes.length > MAX_SOURCE_IMAGE_BYTES) throw new Error("Event map image exceeds size limits");
-      model.mapSrc = `data:image/png;base64,${(await sharp(bytes).png().toBuffer()).toString("base64")}`;
-    }
     return <EventSlideTemplate model={model} />;
   }
 

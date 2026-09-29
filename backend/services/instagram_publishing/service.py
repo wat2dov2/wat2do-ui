@@ -1,8 +1,8 @@
 """Daily Instagram carousels, built from event data.
 
 A batch records one scrape run - its window, school, and account - plus the
-copy an admin writes and the events on the carousel, in order. That is all it
-stores. Slide images are generated from the events at publish time and handed
+copy an admin writes, the selected events, and their editorial sticker choices.
+Slide images are generated from the events at publish time and handed
 to Meta, so the events table stays the single source of truth for everything a
 slide shows.
 """
@@ -54,6 +54,7 @@ from services.instagram_publishing.captions import build_caption, default_captio
 from services.instagram_publishing.credentials import load_account_credentials
 from services.instagram_publishing.meta import MetaInstagramClient
 from services.instagram_publishing.rendering import render_cover_asset, render_event_asset
+from services.instagram_publishing.selection import eligible_sticker_ids, select_carousel
 from services.school_context import resolve_school_timezone
 
 log = logging.getLogger(__name__)
@@ -63,9 +64,7 @@ _SUCCESSFUL_CUTOFF_STATUSES = (
     INSTAGRAM_BATCH_PUBLISHED,
     INSTAGRAM_BATCH_EMPTY,
 )
-_EVENT_COLUMNS = (
-    "id,title,description,location,club,ig_handle,source_image_url,category,employers_on_campus"
-)
+_EVENT_COLUMNS = "id,title,description,location,club,ig_handle,source_image_url,category,employers_on_campus,price,food,registration"
 _BATCH_SELECT = f"*,{school_service.SCHOOL_SLUG_EMBED}"
 
 
@@ -354,6 +353,12 @@ def _generate_account_batch(
             _complete_empty_batch(batch["id"])
             return "empty"
 
+        selections = select_carousel(candidates, now)
+        by_id = {candidate["id"]: candidate for candidate in candidates}
+        candidates = [by_id[selection.event_id] for selection in selections]
+        sticker_selections = {
+            str(selection.event_id): selection.sticker_ids for selection in selections
+        }
         item_rows = [
             {
                 "batch_id": batch["id"],
@@ -371,6 +376,7 @@ def _generate_account_batch(
                 {
                     "status": INSTAGRAM_BATCH_READY_FOR_REVIEW,
                     "caption": build_caption(candidates, account_key, caption_intro),
+                    "sticker_selections": sticker_selections,
                     "error_message": None,
                     "updated_at": _iso_now(),
                 }
@@ -566,6 +572,16 @@ def _publish_claimed_batch(
     user_id = batch["instagram_user_id"]
     batch_id = batch["id"]
     events = [_slide_payload(item["event"]) for item in items]
+    now = datetime.now(timezone.utc)
+    for event in events:
+        if str(event["id"]) not in batch.get("sticker_selections", {}):
+            continue
+        allowed = eligible_sticker_ids(event, now)
+        event["sticker_ids"] = [
+            sticker
+            for sticker in batch.get("sticker_selections", {}).get(str(event["id"]), [])
+            if sticker in allowed
+        ][: _CONTROL.maximum_stickers_per_event]
 
     cover_url = render_cover_asset(
         events,
@@ -728,6 +744,16 @@ def _hydrate_batch(batch: dict[str, Any]) -> None:
         ):
             batch["items"].append({**item, "event": event})
     if editable:
+        stored_stickers = batch.get("sticker_selections", {})
+        batch["sticker_selections"] = {
+            str(item["event_id"]): [
+                sticker
+                for sticker in stored_stickers.get(str(item["event_id"]), [])
+                if sticker in eligible_sticker_ids(_slide_payload(item["event"]), now)
+            ][: _CONTROL.maximum_stickers_per_event]
+            for item in batch["items"]
+            if str(item["event_id"]) in stored_stickers
+        }
         batch["caption"] = build_caption(
             [_slide_payload(item["event"]) for item in batch["items"]],
             batch["school"],

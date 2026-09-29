@@ -74,51 +74,54 @@ function SlideAvatar({ src, author, size, renderPoster }: { src: string; author:
   </div>;
 }
 
-/** An Instagram-style post with a taller photo and two compact comments. */
+/** One reusable, deliberately playful sticker silhouette, chosen by a stable seed. */
+function SlideSticker({ sticker, index }: { sticker: EventSlideModel["stickers"][number]; index: number }) {
+  const colors = ["#FFE45E", "#C5EDFF", "#FFB8D2", "#CFF5B2", "#DDD0FF"];
+  const shape = sticker.seed % 5;
+  const fill = colors[sticker.seed % colors.length];
+  const rotation = (sticker.seed % 19) - 9;
+  const positions = [{ left: 94, top: 1156 }, { left: 674, top: 1138 }, { left: 360, top: 1180 }];
+  const position = positions[index % positions.length];
+  const star = Array.from({ length: 24 }, (_, i) => {
+    const angle = i * Math.PI / 12;
+    const radius = i % 2 ? 0.84 : 1;
+    return `${130 + Math.cos(angle) * 124 * radius},${54 + Math.sin(angle) * 48 * radius}`;
+  }).join(" ");
+  return <div style={{ display: "flex", position: "absolute", left: position.left + (sticker.seed % 17) - 8, top: position.top + (sticker.seed % 13) - 6, width: 260, height: 108, alignItems: "center", justifyContent: "center", transform: `rotate(${rotation}deg)` }}>
+    <svg width="260" height="108" viewBox="0 0 260 108" style={{ position: "absolute", left: 0, top: 0 }}>
+      {shape === 0 ? <rect x="4" y="4" width="252" height="100" rx="50" fill={fill} stroke="white" strokeWidth="6" />
+        : shape === 1 ? <polygon points={star} fill={fill} stroke="white" strokeWidth="6" />
+        : shape === 2 ? <path d="M14 4H246V30Q220 54 246 78V104H14V78Q40 54 14 30Z" fill={fill} stroke="white" strokeWidth="6" />
+        : shape === 3 ? <path d="M28 12Q82-3 130 10Q211-4 241 30Q266 73 220 95Q162 110 128 96Q56 115 18 83Q-6 40 28 12Z" fill={fill} stroke="white" strokeWidth="6" />
+        : <rect x="5" y="8" width="250" height="92" rx="10" fill={fill} stroke="white" strokeWidth="6" />}
+    </svg>
+    <div style={{ display: "flex", width: 212, justifyContent: "center", textAlign: "center", fontSize: sticker.label.length > 18 ? 26 : 30, lineHeight: 1.05, fontWeight: 700, color: LIGHT.foreground }}>{sticker.label}</div>
+  </div>;
+}
+
+/** Inset Instagram post on the cover's shared school-colored doodle backdrop. */
 export function EventSlideTemplate({ model, renderPoster = renderSlidePoster }: { model: EventSlideModel; renderPoster?: PosterRenderer }) {
   const poster = SLIDE_POSTER_REGIONS.event;
   const schedule = [model.dateLine, model.timeLine].filter(Boolean).join(" · ");
   return (
-    <div style={{ ...slideFrame, backgroundColor: LIGHT.surface, color: LIGHT.foreground, overflow: "hidden" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 24, height: EVENT_HEADER_HEIGHT, padding: `12px ${EVENT_CONTENT_INSET}px`, flexShrink: 0 }}>
-        <SlideAvatar src={model.avatarSrc} author={model.author} size={SLIDE_POSTER_REGIONS.avatar.width} renderPoster={renderPoster} />
-        <div style={{ display: "flex", flexDirection: "column", flex: 1, minWidth: 0, gap: 3 }}>
-          <p style={{ ...clampText(1), fontSize: 32, fontWeight: 700, lineHeight: 1.2, maxHeight: 39 }}>{model.author}</p>
-          {model.location ? <p style={{ ...clampText(1), fontSize: 24, lineHeight: 1.2, maxHeight: 29 }}>{model.location}</p> : null}
-          {schedule ? <p style={{ ...clampText(1), fontSize: 24, lineHeight: 1.2, maxHeight: 29, color: LIGHT.mutedForeground }}>{schedule}</p> : null}
-        </div>
-      </div>
-      <div style={{ display: "flex", position: "relative", alignItems: "center", justifyContent: "center", ...poster, flexShrink: 0, overflow: "hidden", backgroundColor: LIGHT.secondary }}>
-        {model.imageSrc ? renderPoster({ src: model.imageSrc, ...poster })
-          : <p style={{ ...clampText(4), margin: EVENT_CONTENT_INSET * 2, fontSize: 64, fontWeight: 700, lineHeight: 1.15 }}>{model.title}</p>}
-        <div style={{ display: "flex", position: "absolute", bottom: 20, left: EVENT_CONTENT_INSET, padding: 5, borderRadius: 48, backgroundColor: LIGHT.surface }}>
-          <SlideAvatar src={model.siteAvatarSrc} author={model.siteName} size={72} renderPoster={renderSlidePoster} />
-          <svg width="30" height="30" viewBox="0 0 24 24" style={{ position: "absolute", right: -6, bottom: -2 }}><path d="M12 21 3 12C-3 5 6-1 12 6 18-1 27 5 21 12Z" fill="#ed4956" stroke="white" strokeWidth="2" /></svg>
-        </div>
-      </div>
-      <div style={{ display: "flex", flexDirection: "column", padding: `12px ${EVENT_CONTENT_INSET}px`, gap: 12, flex: 1, overflow: "hidden" }}>
-        <div style={{ display: "flex", gap: 16 }}>
-          <SlideAvatar src={model.avatarSrc} author={model.author} size={52} renderPoster={renderPoster} />
-          <div style={{ display: "flex", flexDirection: "column", flex: 1, minWidth: 0 }}>
-            <p style={{ ...clampText(1), fontSize: 26, fontWeight: 700, lineHeight: 1.2, maxHeight: 32 }}>{model.author}</p>
-            <p style={{ ...clampText(2), fontSize: 26, lineHeight: 1.2, maxHeight: 63 }}>{model.description}</p>
+    <div style={{ ...slideFrame, backgroundColor: model.colors.primary, color: LIGHT.foreground, overflow: "hidden", padding: 64 }}>
+      <CoverDoodleField icons={model.doodleIcons} />
+      <div style={{ display: "flex", flexDirection: "column", position: "relative", width: poster.width, height: SLIDE_HEIGHT - 128, backgroundColor: LIGHT.surface, borderRadius: 28, overflow: "hidden" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 20, height: EVENT_HEADER_HEIGHT, padding: `12px ${EVENT_CONTENT_INSET}px`, flexShrink: 0 }}>
+          <SlideAvatar src={model.avatarSrc} author={model.author} size={SLIDE_POSTER_REGIONS.avatar.width} renderPoster={renderPoster} />
+          <div style={{ display: "flex", flexDirection: "column", flex: 1, minWidth: 0, gap: 3 }}>
+            <p style={{ ...clampText(1), fontSize: 32, fontWeight: 700, lineHeight: 1.2, maxHeight: 39 }}>{model.author}</p>
+            {model.location ? <p style={{ ...clampText(1), fontSize: 24, lineHeight: 1.2, maxHeight: 29 }}>{model.location}</p> : null}
+            {schedule ? <p style={{ ...clampText(1), fontSize: 24, lineHeight: 1.2, maxHeight: 29, color: LIGHT.mutedForeground }}>{schedule}</p> : null}
           </div>
         </div>
-        <div style={{ display: "flex", gap: 16 }}>
-          <SlideAvatar src={model.siteAvatarSrc} author={model.siteName} size={52} renderPoster={renderSlidePoster} />
-          <div style={{ display: "flex", flexDirection: "column", flex: 1, minWidth: 0, gap: 4 }}>
-            <p style={{ ...clampText(1), fontSize: 26, fontWeight: 700, lineHeight: 1.2, height: 32, width: "100%", maxHeight: 32 }}>{model.siteName}</p>
-            <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
-              {model.mapSrc ? <img src={model.mapSrc} {...SLIDE_POSTER_REGIONS.map} alt="" style={{ ...SLIDE_POSTER_REGIONS.map, objectFit: "cover", borderRadius: 12 }} /> : null}
-              <div style={{ display: "flex", flexDirection: "column", flex: 1, minWidth: 0, gap: 4, fontSize: 24, lineHeight: 1.2 }}>
-                {model.location ? <p style={{ ...clampText(1), maxHeight: 29 }}>{model.location}</p> : null}
-                {model.hiringLine ? <p style={{ ...clampText(2), maxHeight: 58 }}>{model.hiringLine}</p> : null}
-                {model.badges.length ? <p style={{ ...clampText(1), maxHeight: 29, color: LIGHT.mutedForeground }}>{model.badges.join(" · ")}</p> : null}
-              </div>
-            </div>
-          </div>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", ...poster, flexShrink: 0, overflow: "hidden", backgroundColor: LIGHT.secondary }}>
+          {model.imageSrc ? renderPoster({ src: model.imageSrc, ...poster })
+            : <p style={{ ...clampText(4), margin: EVENT_CONTENT_INSET * 2, fontSize: 64, fontWeight: 700, lineHeight: 1.15 }}>{model.title}</p>}
         </div>
+        <div style={{ display: "flex", flex: 1, backgroundColor: LIGHT.surface }} />
       </div>
+      {model.stickers.map((sticker, index) => <SlideSticker key={sticker.id} sticker={sticker} index={index} />)}
     </div>
   );
 }

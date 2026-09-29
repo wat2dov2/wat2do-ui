@@ -18,7 +18,7 @@ import { createInstance, type i18n } from "i18next";
 import type { School } from "@/shared/api/schools.api";
 import type { ApiInstagramPublishBatchResponse } from "@/shared/generated";
 import { formatCardTime } from "@/shared/utils/date";
-import { computeEventBadges, isVirtualLocation, translateCategory } from "@/shared/utils/event";
+import { computeEventBadges, translateCategory } from "@/shared/utils/event";
 import sharedEnglish from "@/shared/locales/en.json" with { type: "json" };
 import eventsEnglish from "@/features/events/locales/en.json" with { type: "json" };
 import clubsEnglish from "@/features/clubs/locales/en.json" with { type: "json" };
@@ -29,15 +29,15 @@ export const SLIDE_WIDTH = 1080;
 export const SLIDE_HEIGHT = 1350;
 /** Raster preparation and template layout use the same physical image bounds. */
 export const SLIDE_POSTER_REGIONS = {
-  event: { width: SLIDE_WIDTH, height: 930 },
+  event: { width: SLIDE_WIDTH - 128, height: 880 },
   cover: { width: 220, height: 308 },
   avatar: { width: 88, height: 88 },
-  map: { width: 320, height: 100 },
 } as const;
 
 /** Event fields a slide reads. Mirrors the backend's stored event snapshot. */
 export interface SlideEvent {
   id: number;
+  sticker_ids?: string[];
   club_id?: number | null;
   title?: string | null;
   description?: string | null;
@@ -69,12 +69,11 @@ export interface EventSlideModel {
   /** Instagram handle, or the club name when no handle is known. */
   author: string;
   avatarSrc: string;
-  description: string;
-  /** The school's public domain authors the event-details comment. */
+  /** The school's public domain, also used in the artwork review library. */
   siteName: string;
-  siteAvatarSrc: string;
-  mapSrc: string;
-  hiringLine: string;
+  colors: SchoolColors;
+  doodleIcons: string[];
+  stickers: { id: string; label: string; seed: number }[];
   /** Event facts use the same localized labels as the website's cards. */
   badges: string[];
   imageSrc: string;
@@ -161,7 +160,7 @@ export async function buildEventSlideModel(
   language: School["language"],
   imageSrc = event.source_image_url ?? "",
   avatarSrc = event.club_logo_url ?? "",
-  context?: { school: Pick<School, "name" | "primary_color" | "secondary_color">; positionTitles: string[] },
+  context?: { school: Pick<School, "name" | "primary_color" | "secondary_color"> },
 ): Promise<EventSlideModel> {
   if (!event.tz) throw new Error("School timezone is required for event slides");
   const categoryName = event.category?.trim() ?? "";
@@ -172,13 +171,14 @@ export async function buildEventSlideModel(
   const { dateLine, timeLine } = formatSlideDate(event, language);
   const category = getClubCategoryConfig(categoryName);
   const siteName = getSchoolPublicUrl(event.school);
-  const locationQuery = [text(event.location), context?.school.name].filter(Boolean).join(", ");
-  const mapKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-  const mapParams = new URLSearchParams({
-    center: locationQuery, zoom: "15", size: `${SLIDE_POSTER_REGIONS.map.width}x${SLIDE_POSTER_REGIONS.map.height}`, scale: "2", language,
-    markers: locationQuery, key: mapKey ?? "",
-  });
-  const positionTitles = [...new Set(context?.positionTitles.map(title => text(title)).filter(Boolean) ?? [])];
+  const colors = context ? getSchoolColors(context.school) : { primary: "#FFD54A", secondary: "#171A16" };
+  const stickers = [...new Set(event.sticker_ids ?? [])].slice(0, instagramPublishing.maximum_stickers_per_event)
+    .flatMap(id => {
+      const sticker = instagramPublishing.sticker_catalog.find(entry => entry.id === id);
+      if (!sticker) return [];
+      const seed = [...`${event.id}:${id}`].reduce((hash, char) => (Math.imul(hash, 31) + char.charCodeAt(0)) >>> 0, 0);
+      return [{ id, label: language === "fr" ? sticker.fr : sticker.label, seed }];
+    });
   const handle = normalizeInstagramHandle(event.ig_handle) || normalizeInstagramHandle(event.club_ig);
   return {
     category: { label: translateCategory(categoryName, t), color: category.color },
@@ -188,12 +188,10 @@ export async function buildEventSlideModel(
     location: text(event.location),
     author: handle || text(event.club, siteName),
     avatarSrc,
-    description: text(event.description, text(event.title)),
     siteName,
-    siteAvatarSrc: context ? buildInstagramCoverLogo(getSchoolColors(context.school)) : "",
-    mapSrc: mapKey && text(event.location) && !isVirtualLocation(event.location)
-      ? `https://maps.googleapis.com/maps/api/staticmap?${mapParams}` : "",
-    hiringLine: positionTitles.length ? t("events.instagramHiring", { positions: positionTitles.join(", ") }) : "",
+    colors,
+    doodleIcons: getClubCategoryDoodleDataUris(colors.secondary, 42),
+    stickers,
     badges: computeEventBadges({ ...event, food: event.food ?? [], cancelled: event.cancelled ?? false, registration: event.registration ?? false }, t).map(badge => badge.text),
     imageSrc,
   };

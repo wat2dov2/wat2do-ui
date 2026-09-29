@@ -11,5 +11,959 @@
   "meta_poll_interval_seconds": 2,
   "meta_request_timeout_seconds": 30,
   "token_lifetime_days": 60,
-  "token_refresh_lead_days": 14
+  "token_refresh_lead_days": 14,
+  "selection_model": "gpt-6-luna",
+  "selection_timeout_seconds": 90,
+  "maximum_selection_candidates": 200,
+  "maximum_stickers_per_event": 3,
+  "sticker_catalog": [
+    {
+      "id": "free-entry",
+      "label": "Free entry",
+      "fr": "Entrée gratuite",
+      "rule": "free",
+      "keywords": []
+    },
+    {
+      "id": "free-food",
+      "label": "Free food",
+      "fr": "Repas gratuit",
+      "rule": "free_food",
+      "keywords": []
+    },
+    {
+      "id": "happening-today",
+      "label": "Happening today",
+      "fr": "Aujourd’hui",
+      "rule": "today",
+      "keywords": []
+    },
+    {
+      "id": "tomorrow-s-plan",
+      "label": "Tomorrow’s plan",
+      "fr": "Demain",
+      "rule": "tomorrow",
+      "keywords": []
+    },
+    {
+      "id": "this-weekend",
+      "label": "This weekend",
+      "fr": "Ce week-end",
+      "rule": "weekend",
+      "keywords": []
+    },
+    {
+      "id": "food-available",
+      "label": "Food available",
+      "fr": "À manger sur place",
+      "rule": "food",
+      "keywords": []
+    },
+    {
+      "id": "bring-a-friend",
+      "label": "Bring a friend",
+      "fr": "Viens avec un ami",
+      "rule": "any",
+      "keywords": []
+    },
+    {
+      "id": "campus-pick",
+      "label": "Campus pick",
+      "fr": "À découvrir",
+      "rule": "any",
+      "keywords": []
+    },
+    {
+      "id": "after-class-plans",
+      "label": "After class plans",
+      "fr": "Après les cours",
+      "rule": "any",
+      "keywords": []
+    },
+    {
+      "id": "see-you-there",
+      "label": "See you there",
+      "fr": "On s’y retrouve",
+      "rule": "any",
+      "keywords": []
+    },
+    {
+      "id": "save-the-date",
+      "label": "Save the date",
+      "fr": "À vos agendas",
+      "rule": "any",
+      "keywords": []
+    },
+    {
+      "id": "try-something-new",
+      "label": "Try something new",
+      "fr": "Essaie autre chose",
+      "rule": "any",
+      "keywords": []
+    },
+    {
+      "id": "make-a-memory",
+      "label": "Make a memory",
+      "fr": "Un bon souvenir",
+      "rule": "any",
+      "keywords": []
+    },
+    {
+      "id": "meet-your-people",
+      "label": "Meet your people",
+      "fr": "Trouve ta communauté",
+      "rule": "any",
+      "keywords": []
+    },
+    {
+      "id": "group-chat-plans",
+      "label": "Group chat plans",
+      "fr": "À partager",
+      "rule": "any",
+      "keywords": []
+    },
+    {
+      "id": "worth-a-look",
+      "label": "Worth a look",
+      "fr": "Ça vaut le détour",
+      "rule": "any",
+      "keywords": []
+    },
+    {
+      "id": "your-next-plan",
+      "label": "Your next plan",
+      "fr": "Ta prochaine sortie",
+      "rule": "any",
+      "keywords": []
+    },
+    {
+      "id": "campus-vibes",
+      "label": "Campus vibes",
+      "fr": "Ambiance campus",
+      "rule": "any",
+      "keywords": []
+    },
+    {
+      "id": "robotics",
+      "label": "Robotics",
+      "fr": "Robotique",
+      "rule": "topic",
+      "keywords": [
+        "robot",
+        "robotics"
+      ]
+    },
+    {
+      "id": "ai-curious",
+      "label": "AI curious",
+      "fr": "Curieux d’IA",
+      "rule": "topic",
+      "keywords": [
+        "artificial intelligence",
+        "machine learning",
+        "ai workshop"
+      ]
+    },
+    {
+      "id": "code-together",
+      "label": "Code together",
+      "fr": "Codons ensemble",
+      "rule": "topic",
+      "keywords": [
+        "coding",
+        "programming",
+        "hackathon"
+      ]
+    },
+    {
+      "id": "hackathon",
+      "label": "Hackathon",
+      "fr": "Hackathon",
+      "rule": "topic",
+      "keywords": [
+        "hackathon"
+      ]
+    },
+    {
+      "id": "build-something",
+      "label": "Build something",
+      "fr": "Crée quelque chose",
+      "rule": "topic",
+      "keywords": [
+        "maker",
+        "build",
+        "engineering",
+        "workshop"
+      ]
+    },
+    {
+      "id": "game-night",
+      "label": "Game night",
+      "fr": "Soirée jeux",
+      "rule": "topic",
+      "keywords": [
+        "game night",
+        "board game"
+      ]
+    },
+    {
+      "id": "board-games",
+      "label": "Board games",
+      "fr": "Jeux de société",
+      "rule": "topic",
+      "keywords": [
+        "board game",
+        "tabletop"
+      ]
+    },
+    {
+      "id": "video-games",
+      "label": "Video games",
+      "fr": "Jeux vidéo",
+      "rule": "topic",
+      "keywords": [
+        "video game",
+        "gaming",
+        "esports"
+      ]
+    },
+    {
+      "id": "chess-club",
+      "label": "Chess club",
+      "fr": "Échecs",
+      "rule": "topic",
+      "keywords": [
+        "chess"
+      ]
+    },
+    {
+      "id": "trivia-time",
+      "label": "Trivia time",
+      "fr": "Quiz",
+      "rule": "topic",
+      "keywords": [
+        "trivia",
+        "quiz"
+      ]
+    },
+    {
+      "id": "movie-night",
+      "label": "Movie night",
+      "fr": "Soirée cinéma",
+      "rule": "topic",
+      "keywords": [
+        "movie",
+        "film",
+        "cinema"
+      ]
+    },
+    {
+      "id": "live-music",
+      "label": "Live music",
+      "fr": "Musique en direct",
+      "rule": "topic",
+      "keywords": [
+        "live music",
+        "concert"
+      ]
+    },
+    {
+      "id": "open-mic",
+      "label": "Open mic",
+      "fr": "Micro ouvert",
+      "rule": "topic",
+      "keywords": [
+        "open mic"
+      ]
+    },
+    {
+      "id": "karaoke",
+      "label": "Karaoke",
+      "fr": "Karaoké",
+      "rule": "topic",
+      "keywords": [
+        "karaoke"
+      ]
+    },
+    {
+      "id": "dance-floor",
+      "label": "Dance floor",
+      "fr": "Piste de danse",
+      "rule": "topic",
+      "keywords": [
+        "dance",
+        "dancing"
+      ]
+    },
+    {
+      "id": "dance-workshop",
+      "label": "Dance workshop",
+      "fr": "Atelier danse",
+      "rule": "topic",
+      "keywords": [
+        "dance workshop",
+        "dance class"
+      ]
+    },
+    {
+      "id": "art-break",
+      "label": "Art break",
+      "fr": "Pause artistique",
+      "rule": "topic",
+      "keywords": [
+        "art",
+        "painting",
+        "drawing"
+      ]
+    },
+    {
+      "id": "paint-night",
+      "label": "Paint night",
+      "fr": "Soirée peinture",
+      "rule": "topic",
+      "keywords": [
+        "paint"
+      ]
+    },
+    {
+      "id": "craft-time",
+      "label": "Craft time",
+      "fr": "Création manuelle",
+      "rule": "topic",
+      "keywords": [
+        "craft",
+        "knitting",
+        "crochet"
+      ]
+    },
+    {
+      "id": "pottery",
+      "label": "Pottery",
+      "fr": "Poterie",
+      "rule": "topic",
+      "keywords": [
+        "pottery",
+        "ceramics"
+      ]
+    },
+    {
+      "id": "photo-walk",
+      "label": "Photo walk",
+      "fr": "Balade photo",
+      "rule": "topic",
+      "keywords": [
+        "photography",
+        "photo walk"
+      ]
+    },
+    {
+      "id": "poetry",
+      "label": "Poetry",
+      "fr": "Poésie",
+      "rule": "topic",
+      "keywords": [
+        "poetry",
+        "poem"
+      ]
+    },
+    {
+      "id": "book-lovers",
+      "label": "Book lovers",
+      "fr": "Passion lecture",
+      "rule": "topic",
+      "keywords": [
+        "book",
+        "literature",
+        "reading"
+      ]
+    },
+    {
+      "id": "creative-writing",
+      "label": "Creative writing",
+      "fr": "Écriture créative",
+      "rule": "topic",
+      "keywords": [
+        "creative writing",
+        "writing workshop"
+      ]
+    },
+    {
+      "id": "theatre-night",
+      "label": "Theatre night",
+      "fr": "Soirée théâtre",
+      "rule": "topic",
+      "keywords": [
+        "theatre",
+        "theater",
+        "drama"
+      ]
+    },
+    {
+      "id": "comedy",
+      "label": "Comedy",
+      "fr": "Humour",
+      "rule": "topic",
+      "keywords": [
+        "comedy",
+        "stand-up"
+      ]
+    },
+    {
+      "id": "culture-night",
+      "label": "Culture night",
+      "fr": "Soirée culturelle",
+      "rule": "topic",
+      "keywords": [
+        "culture",
+        "cultural"
+      ]
+    },
+    {
+      "id": "language-exchange",
+      "label": "Language exchange",
+      "fr": "Échange linguistique",
+      "rule": "topic",
+      "keywords": [
+        "language exchange",
+        "conversation practice"
+      ]
+    },
+    {
+      "id": "international-vibes",
+      "label": "International vibes",
+      "fr": "Rencontres internationales",
+      "rule": "topic",
+      "keywords": [
+        "international",
+        "exchange student"
+      ]
+    },
+    {
+      "id": "community",
+      "label": "Community",
+      "fr": "Communauté",
+      "rule": "topic",
+      "keywords": [
+        "community"
+      ]
+    },
+    {
+      "id": "volunteering",
+      "label": "Volunteering",
+      "fr": "Bénévolat",
+      "rule": "topic",
+      "keywords": [
+        "volunteer",
+        "volunteering"
+      ]
+    },
+    {
+      "id": "give-back",
+      "label": "Give back",
+      "fr": "Solidarité",
+      "rule": "topic",
+      "keywords": [
+        "charity",
+        "fundraiser",
+        "volunteer"
+      ]
+    },
+    {
+      "id": "sustainability",
+      "label": "Sustainability",
+      "fr": "Développement durable",
+      "rule": "topic",
+      "keywords": [
+        "sustainability",
+        "sustainable",
+        "environment"
+      ]
+    },
+    {
+      "id": "plant-people",
+      "label": "Plant people",
+      "fr": "Passion plantes",
+      "rule": "topic",
+      "keywords": [
+        "plant",
+        "gardening"
+      ]
+    },
+    {
+      "id": "outdoor-plans",
+      "label": "Outdoor plans",
+      "fr": "Plein air",
+      "rule": "topic",
+      "keywords": [
+        "outdoor",
+        "hike",
+        "hiking"
+      ]
+    },
+    {
+      "id": "hiking",
+      "label": "Hiking",
+      "fr": "Randonnée",
+      "rule": "topic",
+      "keywords": [
+        "hike",
+        "hiking"
+      ]
+    },
+    {
+      "id": "run-club",
+      "label": "Run club",
+      "fr": "Course à pied",
+      "rule": "topic",
+      "keywords": [
+        "running",
+        "run club"
+      ]
+    },
+    {
+      "id": "yoga",
+      "label": "Yoga",
+      "fr": "Yoga",
+      "rule": "topic",
+      "keywords": [
+        "yoga"
+      ]
+    },
+    {
+      "id": "mindful-moment",
+      "label": "Mindful moment",
+      "fr": "Pleine conscience",
+      "rule": "topic",
+      "keywords": [
+        "mindfulness",
+        "meditation"
+      ]
+    },
+    {
+      "id": "wellness-break",
+      "label": "Wellness break",
+      "fr": "Pause bien-être",
+      "rule": "topic",
+      "keywords": [
+        "wellness",
+        "wellbeing",
+        "well-being"
+      ]
+    },
+    {
+      "id": "fitness",
+      "label": "Fitness",
+      "fr": "En forme",
+      "rule": "topic",
+      "keywords": [
+        "fitness",
+        "workout"
+      ]
+    },
+    {
+      "id": "basketball",
+      "label": "Basketball",
+      "fr": "Basketball",
+      "rule": "topic",
+      "keywords": [
+        "basketball"
+      ]
+    },
+    {
+      "id": "soccer",
+      "label": "Soccer",
+      "fr": "Soccer",
+      "rule": "topic",
+      "keywords": [
+        "soccer",
+        "football"
+      ]
+    },
+    {
+      "id": "volleyball",
+      "label": "Volleyball",
+      "fr": "Volleyball",
+      "rule": "topic",
+      "keywords": [
+        "volleyball"
+      ]
+    },
+    {
+      "id": "badminton",
+      "label": "Badminton",
+      "fr": "Badminton",
+      "rule": "topic",
+      "keywords": [
+        "badminton"
+      ]
+    },
+    {
+      "id": "climbing",
+      "label": "Climbing",
+      "fr": "Escalade",
+      "rule": "topic",
+      "keywords": [
+        "climbing",
+        "bouldering"
+      ]
+    },
+    {
+      "id": "skating",
+      "label": "Skating",
+      "fr": "Patinage",
+      "rule": "topic",
+      "keywords": [
+        "skating"
+      ]
+    },
+    {
+      "id": "swimming",
+      "label": "Swimming",
+      "fr": "Natation",
+      "rule": "topic",
+      "keywords": [
+        "swimming"
+      ]
+    },
+    {
+      "id": "cycling",
+      "label": "Cycling",
+      "fr": "Vélo",
+      "rule": "topic",
+      "keywords": [
+        "cycling",
+        "biking"
+      ]
+    },
+    {
+      "id": "table-tennis",
+      "label": "Table tennis",
+      "fr": "Tennis de table",
+      "rule": "topic",
+      "keywords": [
+        "table tennis",
+        "ping pong"
+      ]
+    },
+    {
+      "id": "tennis",
+      "label": "Tennis",
+      "fr": "Tennis",
+      "rule": "topic",
+      "keywords": [
+        "tennis"
+      ]
+    },
+    {
+      "id": "martial-arts",
+      "label": "Martial arts",
+      "fr": "Arts martiaux",
+      "rule": "topic",
+      "keywords": [
+        "martial",
+        "karate",
+        "taekwondo",
+        "judo"
+      ]
+    },
+    {
+      "id": "coffee-time",
+      "label": "Coffee time",
+      "fr": "Pause café",
+      "rule": "topic",
+      "keywords": [
+        "coffee",
+        "café",
+        "cafe"
+      ]
+    },
+    {
+      "id": "tea-time",
+      "label": "Tea time",
+      "fr": "Pause thé",
+      "rule": "topic",
+      "keywords": [
+        "tea"
+      ]
+    },
+    {
+      "id": "pizza-plans",
+      "label": "Pizza plans",
+      "fr": "Pizza au menu",
+      "rule": "topic",
+      "keywords": [
+        "pizza"
+      ]
+    },
+    {
+      "id": "sweet-treat",
+      "label": "Sweet treat",
+      "fr": "Pause sucrée",
+      "rule": "topic",
+      "keywords": [
+        "dessert",
+        "cookie",
+        "cake",
+        "bake"
+      ]
+    },
+    {
+      "id": "boba-break",
+      "label": "Boba break",
+      "fr": "Pause bubble tea",
+      "rule": "topic",
+      "keywords": [
+        "boba",
+        "bubble tea"
+      ]
+    },
+    {
+      "id": "cooking",
+      "label": "Cooking",
+      "fr": "Cuisine",
+      "rule": "topic",
+      "keywords": [
+        "cooking",
+        "culinary"
+      ]
+    },
+    {
+      "id": "baking",
+      "label": "Baking",
+      "fr": "Pâtisserie",
+      "rule": "topic",
+      "keywords": [
+        "baking",
+        "bake"
+      ]
+    },
+    {
+      "id": "potluck",
+      "label": "Potluck",
+      "fr": "Repas partagé",
+      "rule": "topic",
+      "keywords": [
+        "potluck"
+      ]
+    },
+    {
+      "id": "networking",
+      "label": "Networking",
+      "fr": "Réseautage",
+      "rule": "topic",
+      "keywords": [
+        "networking"
+      ]
+    },
+    {
+      "id": "meet-employers",
+      "label": "Meet employers",
+      "fr": "Rencontre employeurs",
+      "rule": "topic",
+      "keywords": [
+        "employer",
+        "career fair",
+        "recruiter"
+      ]
+    },
+    {
+      "id": "career-boost",
+      "label": "Career boost",
+      "fr": "Coup de pouce carrière",
+      "rule": "topic",
+      "keywords": [
+        "career",
+        "resume",
+        "interview"
+      ]
+    },
+    {
+      "id": "resume-workshop",
+      "label": "Resume workshop",
+      "fr": "Atelier CV",
+      "rule": "topic",
+      "keywords": [
+        "resume",
+        "cv workshop"
+      ]
+    },
+    {
+      "id": "interview-prep",
+      "label": "Interview prep",
+      "fr": "Préparation entretien",
+      "rule": "topic",
+      "keywords": [
+        "interview"
+      ]
+    },
+    {
+      "id": "research-talk",
+      "label": "Research talk",
+      "fr": "Conférence recherche",
+      "rule": "topic",
+      "keywords": [
+        "research",
+        "seminar"
+      ]
+    },
+    {
+      "id": "science",
+      "label": "Science",
+      "fr": "Sciences",
+      "rule": "topic",
+      "keywords": [
+        "science",
+        "biology",
+        "chemistry",
+        "physics"
+      ]
+    },
+    {
+      "id": "engineering",
+      "label": "Engineering",
+      "fr": "Génie",
+      "rule": "topic",
+      "keywords": [
+        "engineering"
+      ]
+    },
+    {
+      "id": "business",
+      "label": "Business",
+      "fr": "Affaires",
+      "rule": "topic",
+      "keywords": [
+        "business",
+        "entrepreneur"
+      ]
+    },
+    {
+      "id": "startups",
+      "label": "Startups",
+      "fr": "Startups",
+      "rule": "topic",
+      "keywords": [
+        "startup",
+        "founder"
+      ]
+    },
+    {
+      "id": "design",
+      "label": "Design",
+      "fr": "Design",
+      "rule": "topic",
+      "keywords": [
+        "design"
+      ]
+    },
+    {
+      "id": "finance",
+      "label": "Finance",
+      "fr": "Finance",
+      "rule": "topic",
+      "keywords": [
+        "finance",
+        "investment"
+      ]
+    },
+    {
+      "id": "math-minds",
+      "label": "Math minds",
+      "fr": "Passion maths",
+      "rule": "topic",
+      "keywords": [
+        "math",
+        "mathematics"
+      ]
+    },
+    {
+      "id": "debate",
+      "label": "Debate",
+      "fr": "Débat",
+      "rule": "topic",
+      "keywords": [
+        "debate"
+      ]
+    },
+    {
+      "id": "politics",
+      "label": "Politics",
+      "fr": "Politique",
+      "rule": "topic",
+      "keywords": [
+        "politics",
+        "political"
+      ]
+    },
+    {
+      "id": "history",
+      "label": "History",
+      "fr": "Histoire",
+      "rule": "topic",
+      "keywords": [
+        "history",
+        "historical"
+      ]
+    },
+    {
+      "id": "astronomy",
+      "label": "Astronomy",
+      "fr": "Astronomie",
+      "rule": "topic",
+      "keywords": [
+        "astronomy",
+        "stargazing",
+        "space"
+      ]
+    },
+    {
+      "id": "study-session",
+      "label": "Study session",
+      "fr": "Séance d’étude",
+      "rule": "topic",
+      "keywords": [
+        "study",
+        "exam prep"
+      ]
+    },
+    {
+      "id": "workshop",
+      "label": "Workshop",
+      "fr": "Atelier",
+      "rule": "topic",
+      "keywords": [
+        "workshop"
+      ]
+    },
+    {
+      "id": "panel-talk",
+      "label": "Panel talk",
+      "fr": "Table ronde",
+      "rule": "topic",
+      "keywords": [
+        "panel"
+      ]
+    },
+    {
+      "id": "meet-greet",
+      "label": "Meet & greet",
+      "fr": "Faisons connaissance",
+      "rule": "topic",
+      "keywords": [
+        "meet and greet",
+        "meet & greet",
+        "mixer"
+      ]
+    },
+    {
+      "id": "club-social",
+      "label": "Club social",
+      "fr": "Rencontre du club",
+      "rule": "topic",
+      "keywords": [
+        "social",
+        "mixer"
+      ]
+    }
+  ]
 }

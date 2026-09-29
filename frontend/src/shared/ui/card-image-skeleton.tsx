@@ -26,7 +26,7 @@ export function CardImageSkeleton() {
         className="absolute inset-0"
       />
       <BadgeMask variant="top-left" cutout containerRef={registerCorner("top-left")}>
-        <Skeleton className="rounded-xl">
+        <Skeleton className="my-1 rounded-xl">
           <Badge size="md" className="invisible">{t("events.new")}</Badge>
         </Skeleton>
       </BadgeMask>

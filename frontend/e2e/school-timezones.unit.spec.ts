@@ -1,7 +1,7 @@
 import { DEFAULT_APP_CONSTANTS } from "../src/shared/api/metaApi";
 import { getClubCategoryConfig } from "../src/shared/data/clubCategoryStyles";
 import { test, expect } from "@playwright/test";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { createRequire } from "node:module";
 import { formatCardDate, formatCardTime, getEventDateSection, isEventHappeningNow, localDateTimeToUtc, toLocalDateTimeInput } from "../src/shared/utils/date";
 import { eventToFormData } from "../src/shared/utils/event";
@@ -14,7 +14,16 @@ import { EMPTY_FILTER_STATE } from "../src/features/search/api/filterService";
 let buildEventSlideModel: typeof import("../src/features/admin/lib/instagramSlides").buildEventSlideModel;
 let getInstagramSlideLocale: typeof import("../src/features/admin/lib/instagramSlides").getInstagramSlideLocale;
 
+const originalDoodles = process.env.NEXT_PUBLIC_CLUB_CATEGORY_DOODLE_SVGS;
+test.afterAll(() => {
+  if (originalDoodles === undefined) delete process.env.NEXT_PUBLIC_CLUB_CATEGORY_DOODLE_SVGS;
+  else process.env.NEXT_PUBLIC_CLUB_CATEGORY_DOODLE_SVGS = originalDoodles;
+});
 test.beforeAll(() => {
+  const directory = new URL("../public/icons/club-categories/", import.meta.url);
+  process.env.NEXT_PUBLIC_CLUB_CATEGORY_DOODLE_SVGS = JSON.stringify(Object.fromEntries(
+    readdirSync(directory).filter(name => name.endsWith(".svg")).map(name => [`/icons/club-categories/${name}`, readFileSync(new URL(name, directory), "utf8")]),
+  ));
   const originalLogo = process.env.NEXT_PUBLIC_INSTAGRAM_COVER_LOGO_SVG;
   try {
     // The module captures the real build asset during import. Keep its large
@@ -149,7 +158,7 @@ test("published slides use the posting account before club or school identity", 
   expect((await buildEventSlideModel({ ...input, ig_handle: null, club_ig: null, club: " " }, "en")).author).toBe("ualberta.wat2do.io");
 });
 
-test("published slides preserve the caption, host avatar, and owning school's comment identity", async () => {
+test("published slides preserve host attribution and omit removed comment text", async () => {
   const input = {
     id: 1, category: "Business", tz: timeZone, school: "ualberta", title: "Campus event",
     description: " Meet the team.\n\nBring your questions. ",
@@ -157,7 +166,7 @@ test("published slides preserve the caption, host avatar, and owning school's co
   };
   for (const language of ["en", "fr"] as const) {
     const slide = await buildEventSlideModel(input, language);
-    expect(slide.description).toBe("Meet the team. Bring your questions.");
+    expect(slide).not.toHaveProperty("description");
     expect(slide.avatarSrc).toBe(input.club_logo_url);
     expect(slide.imageSrc).toBe(input.source_image_url);
     expect(slide.siteName).toBe("ualberta.wat2do.io");
@@ -165,7 +174,7 @@ test("published slides preserve the caption, host avatar, and owning school's co
     expect(prepared.imageSrc).toBe("data:image/png;base64,poster");
     expect(prepared.avatarSrc).toBe("data:image/png;base64,avatar");
     const sparse = await buildEventSlideModel({ ...input, description: null, club_logo_url: null }, language);
-    expect(sparse.description).toBe(input.title);
+    expect(sparse.title).toBe(input.title);
     expect(sparse.avatarSrc).toBe("");
   }
 });
@@ -200,30 +209,14 @@ test("every supported Instagram category keeps its localized label and colour", 
 });
 
 
-test("Instagram comments use school branding, physical maps and localized open position titles", async () => {
-  const oldKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-  process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY = "test-maps-key";
-  const context = {
-    school: { name: "University of Alberta", primary_color: "#154734", secondary_color: "#FFDB05" },
-    positionTitles: [" Designer ", "Events Coordinator", "Designer", ""],
-  };
-  const input = { id: 1, category: "Business", tz: timeZone, school: "ualberta", location: "Students' Union Building" };
-  try {
-    // The logo source is captured at module initialization, just as in a Next build.
-    const en = await buildEventSlideModel(input, "en", undefined, undefined, context);
-    const fr = await buildEventSlideModel(input, "fr", undefined, undefined, context);
-    const svg = Buffer.from(en.siteAvatarSrc.split(",")[1], "base64").toString();
-    expect(svg).toContain(context.school.primary_color);
-    expect(svg).toContain(context.school.secondary_color);
-    const map = new URL(en.mapSrc);
-    expect(map.origin).toBe("https://maps.googleapis.com");
-    expect(map.searchParams.get("markers")).toBe("Students' Union Building, University of Alberta");
-    expect(en.hiringLine).toBe("Hiring: Designer, Events Coordinator");
-    expect(fr.hiringLine).toBe("Recrutement : Designer, Events Coordinator");
-    expect((await buildEventSlideModel({ ...input, location: "Online" }, "en", undefined, undefined, context)).mapSrc).toBe("");
-    expect((await buildEventSlideModel({ ...input, location: null }, "en", undefined, undefined, { ...context, positionTitles: [] })).hiringLine).toBe("");
-  } finally {
-    if (oldKey === undefined) delete process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-    else process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY = oldKey;
-  }
+test("Instagram artwork shares school colors and localizes stable sticker choices", async () => {
+  const context = { school: { name: "University of Alberta", primary_color: "#154734", secondary_color: "#FFDB05" } };
+  const input = { id: 1, category: "Business", tz: timeZone, school: "ualberta", sticker_ids: ["campus-pick", "free-food", "unknown"] };
+  const en = await buildEventSlideModel(input, "en", undefined, undefined, context);
+  const fr = await buildEventSlideModel(input, "fr", undefined, undefined, context);
+  expect(en.colors).toEqual({ primary: "#154734", secondary: "#FFDB05" });
+  expect(en.doodleIcons).toHaveLength(42);
+  expect(en.stickers.map(sticker => sticker.label)).toEqual(["Campus pick", "Free food"]);
+  expect(fr.stickers.map(sticker => sticker.label)).toEqual(["À découvrir", "Repas gratuit"]);
+  expect(en.stickers.map(sticker => sticker.seed)).toEqual(fr.stickers.map(sticker => sticker.seed));
 });

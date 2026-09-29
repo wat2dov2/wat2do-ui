@@ -93,7 +93,7 @@ export function ClubBadgeDropdown({
         asChild
         variant="plain"
         size="inline"
-        className="tracking-normal flex min-w-0 max-w-full items-center gap-1.5"
+        className="tracking-normal flex min-w-0 max-w-full items-center gap-1"
         onMouseDown={onMouseDown}
         onClick={onClick}
       >
@@ -122,7 +122,7 @@ export function ClubBadgeDropdown({
           asChild
           variant="plain"
           size="inline"
-          className="tracking-normal flex min-w-0 max-w-full items-center gap-1.5 transition-[background-color,transform] hover:bg-surface-hover active:scale-95 cursor-pointer"
+          className="tracking-normal flex min-w-0 max-w-full items-center gap-1 transition-[background-color,transform] hover:bg-surface-hover active:scale-95 cursor-pointer"
           onMouseDown={onMouseDown}
           onClick={onClick}
         >

@@ -1,6 +1,3 @@
-import { useQuery } from "@tanstack/react-query";
-import { getClubPositions } from "@/features/positions/api/positions.api";
-import { queryKeys } from "@/shared/lib/queryKeys";
 import { useTranslation } from "react-i18next";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/shared/ui/button";
@@ -32,6 +29,7 @@ interface CarouselSlidePreviewProps {
   slideCount: number;
   /** The slide's event, or `null` on the cover and on an unloadable slide. */
   event: Event | null;
+  stickerIds?: string[];
   cover: Omit<Parameters<typeof buildCoverSlideModel>[0], "colors">;
   coverColors: SchoolColors | null;
   /**
@@ -52,6 +50,7 @@ export function CarouselSlidePreview({
   slideIndex,
   slideCount,
   event,
+  stickerIds,
   cover,
   coverColors,
   publishedAssetUrl,
@@ -65,23 +64,16 @@ export function CarouselSlidePreview({
   const { t } = useTranslation();
   const { getSchoolTimezone, schoolBySlug } = useSchoolDirectory();
   const school = schoolBySlug.get(event?.school ?? cover.school);
-  const clubId = event?.club_id ?? 0;
-  const positionSchool = event?.school ?? cover.school;
-  const { data: positions, isError: positionsError } = useQuery({
-    queryKey: queryKeys.positions.byClub(clubId, positionSchool),
-    queryFn: () => getClubPositions(clubId, positionSchool),
-    enabled: clubId > 0 && Boolean(positionSchool) && !publishedAssetUrl,
-  });
   const isCover = slideIndex === COVER_INDEX;
   const previewRef = useRef<HTMLDivElement>(null);
   const [previewWidth, setPreviewWidth] = useState(PREVIEW_WIDTH);
   const previewScale = previewWidth / SLIDE_WIDTH;
   const [modelResult, setModelResult] = useState<{
-    event: Event; language: typeof cover.language; school: typeof school; positions: typeof positions; model: EventSlideModel | null;
+    event: Event; language: typeof cover.language; school: typeof school; stickerIds: typeof stickerIds; model: EventSlideModel | null;
   } | null>(null);
-  const currentResult = modelResult?.event === event && modelResult?.language === cover.language && modelResult.school === school && modelResult.positions === positions ? modelResult : null;
+  const currentResult = modelResult?.event === event && modelResult?.language === cover.language && modelResult.school === school && modelResult.stickerIds === stickerIds ? modelResult : null;
   const slideModel = currentResult?.model;
-  const modelError = positionsError || (currentResult && !slideModel);
+  const modelError = currentResult && !slideModel;
   const renderPoster = ({ src, width, height, fallback }: SlidePosterProps) => (
     <div style={{ position: "relative", width, height }}>
       <LazyImage
@@ -95,15 +87,15 @@ export function CarouselSlidePreview({
   );
 
   useEffect(() => {
-    if (isCover || publishedAssetUrl || !event || !school || (clubId > 0 && !positions)) return;
+    if (isCover || publishedAssetUrl || !event || !school) return;
     let active = true;
     // Publishing uses the first stored occurrence, including for recurring events.
-    buildEventSlideModel({ ...event, ...event.occurrences[0], id: event.id, tz: getSchoolTimezone(event.school) }, cover.language, undefined, undefined, { school, positionTitles: positions?.map(position => position.title) ?? [] }).then(
-      model => { if (active) setModelResult({ event, language: cover.language, school, positions, model }); },
-      () => { if (active) setModelResult({ event, language: cover.language, school, positions, model: null }); },
+    buildEventSlideModel({ ...event, ...event.occurrences[0], id: event.id, sticker_ids: stickerIds, tz: getSchoolTimezone(event.school) }, cover.language, undefined, undefined, { school }).then(
+      model => { if (active) setModelResult({ event, language: cover.language, school, stickerIds, model }); },
+      () => { if (active) setModelResult({ event, language: cover.language, school, stickerIds, model: null }); },
     );
     return () => { active = false; };
-  }, [event, cover.language, getSchoolTimezone, isCover, publishedAssetUrl, school, clubId, positions]);
+  }, [event, cover.language, getSchoolTimezone, isCover, publishedAssetUrl, school, stickerIds]);
 
   useEffect(() => {
     const node = previewRef.current;

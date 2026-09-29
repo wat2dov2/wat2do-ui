@@ -1034,6 +1034,11 @@ def test_employer_generation_persists_kind_and_uses_its_own_cutoff(monkeypatch):
     )
     previous = Mock(return_value=cutoff)
     candidates = Mock(return_value=[{"id": 17}])
+    monkeypatch.setattr(
+        service,
+        "select_carousel",
+        lambda *_: [SimpleNamespace(event_id=17, sticker_ids=["campus-pick"])],
+    )
     monkeypatch.setattr(service, "_last_successful_cutoff", previous)
     monkeypatch.setattr(service, "_load_candidates", candidates)
     monkeypatch.setattr(service, "default_caption_intro", lambda school, kind: f"{school} {kind}")

@@ -9,7 +9,7 @@ import {
 
 import { cn } from "@/shared/lib/utils"
 import { Button, buttonVariants } from "@/shared/ui/button"
-import { ChevronLeftIcon, ChevronRightIcon, ChevronDownIcon } from "@/shared/ui/doodle-icons"
+import { ChevronLeftIcon, ChevronRightIcon, ChevronDown } from "@/shared/ui/doodle-icons"
 
 function Calendar({
   className,
@@ -107,7 +107,7 @@ function Calendar({
           }
 
           return (
-            <ChevronDownIcon className={cn("size-4", className)} {...props} />
+            <ChevronDown className={cn("size-4", className)} {...props} />
           )
         },
         DayButton: CalendarDayButton,

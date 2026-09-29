@@ -9922,6 +9922,16 @@
             ],
             "title": "Published At"
           },
+          "sticker_selections": {
+            "additionalProperties": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "type": "object",
+            "title": "Sticker Selections"
+          },
           "new_event_count": {
             "type": "integer",
             "title": "New Event Count",

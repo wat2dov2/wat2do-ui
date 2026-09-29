@@ -79,7 +79,7 @@ for (const language of ["en", "fr"] as const) {
     await png(createElement(LibraryEventSlide, { model: { ...slide, imageSrc: "", author: "", siteName: "", badges: [] }, template: template.id }));
   }
   const caption = language === "en" ? event.description : "Après les cours, retrouvons-nous pour un film et une discussion. Venez avec des amis ou rencontrez d’autres cinéphiles sur place.";
-  const productionEvent = { ...event, description: caption };
+  const productionEvent = { ...event, description: caption, sticker_ids: ["movie-night", "bring-a-friend", "campus-pick"] };
   const productionExamples = [
     ["landscape", await buildEventSlideModel({ ...productionEvent, source_image_url: posters[3] }, language)],
     ["portrait", await buildEventSlideModel(productionEvent, language)],
@@ -88,8 +88,7 @@ for (const language of ["en", "fr"] as const) {
   ] as const;
   for (const [kind, model] of productionExamples) {
     const bytes = await png(createElement(EventSlideTemplate, { model: {
-      ...model, siteAvatarSrc: cover.logoSrc,
-      hiringLine: kind === "sparse" ? "" : (language === "fr" ? "Recrutement : Responsable des événements, Designer" : "Hiring: Events Coordinator, Designer"),
+      ...model, colors: cover.colors, doodleIcons: cover.doodleIcons,
     } }));
     await writeFile(path.join(output, `production-event-${kind}-${language}.png`), bytes);
     productionOutputs.push(bytes);

@@ -659,3 +659,11 @@ FROM public.schools WHERE slug = 'uwaterloo'
 ON CONFLICT (id) DO NOTHING;
 
 COMMIT;
+
+-- Give seeded draft carousels a safe, non-time-sensitive example sticker.
+UPDATE public.instagram_publish_batches AS batch
+SET sticker_selections = (
+    SELECT coalesce(jsonb_object_agg(item.event_id::text, '["campus-pick"]'::jsonb), '{}'::jsonb)
+    FROM public.instagram_publish_items AS item WHERE item.batch_id = batch.id
+)
+WHERE batch.status = 'ready_for_review' AND batch.sticker_selections = '{}'::jsonb;

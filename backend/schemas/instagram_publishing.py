@@ -78,6 +78,7 @@ class InstagramPublishBatchSummaryResponse(InstagramPublishBatchBaseResponse):
 class InstagramPublishBatchResponse(InstagramPublishBatchBaseResponse):
     # Unique events from the school's configured lookback ending at window_end,
     # plus every event currently selected for the carousel.
+    sticker_selections: dict[str, list[str]] = Field(default_factory=dict)
     new_event_count: int = 0
     items: list[InstagramPublishItemResponse]
 

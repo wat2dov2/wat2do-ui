@@ -2704,6 +2704,10 @@ export interface components {
             updated_at: string;
             /** Published At */
             published_at?: string | null;
+            /** Sticker Selections */
+            sticker_selections?: {
+                [key: string]: string[];
+            };
             /**
              * New Event Count
              * @default 0

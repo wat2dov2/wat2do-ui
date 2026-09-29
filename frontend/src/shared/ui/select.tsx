@@ -1,6 +1,6 @@
 import * as React from "react"
 import * as SelectPrimitive from "@radix-ui/react-select"
-import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from "@/shared/ui/doodle-icons"
+import { CheckIcon, ChevronDown, ChevronUpIcon } from "@/shared/ui/doodle-icons"
 
 import { useDrawerPortalContainer } from "@/shared/ui/drawer"
 import { cn } from "@/shared/lib/utils"
@@ -165,7 +165,7 @@ function SelectScrollDownButton({
       )}
       {...props}
     >
-      <ChevronDownIcon className="size-4" />
+      <ChevronDown className="size-4" />
     </SelectPrimitive.ScrollDownButton>
   )
 }

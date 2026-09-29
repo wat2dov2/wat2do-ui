@@ -303,3 +303,22 @@ python scripts/emulator_farm.py check --json
 
 Use `python scripts/emulator_farm.py doctor` for host readiness and `python scripts/emulator_farm.py status --json` for AVD, package, notification-access, and routing status.
 The scheduled `run-cycle` exits nonzero while either app is missing, Automate lacks notification access, or GitHub dispatch fails, so `launchctl print gui/$(id -u)/io.wat2do.emulator-farm.check` exposes incomplete setup through its last exit code.
+
+## Carousel draft selection and artwork
+
+The scheduled draft generator uses `gpt-6-luna` to choose up to nine events from the eligible candidate pool.
+It requires the existing `OPENAI_API_KEY`; `backend/controlbox/instagram_publishing.json` owns the model, timeout, candidate limit, sticker limit, and 100 bilingual sticker definitions.
+Source descriptions are treated as data, and the response is validated against the eligible event IDs and sticker choices.
+Model errors leave a failed draft rather than silently selecting or publishing other events.
+
+Sticker choices are saved in `instagram_publish_batches.sticker_selections` by event ID, so reordering a draft preserves them.
+Apply migration `20260929040000_instagram_sticker_selections.sql` before deploying this code.
+Existing drafts default to no stickers; new generated drafts receive model-selected stickers.
+Date-sensitive and factual labels are checked again when loading drafts and publishing them.
+Manually added events have no stickers unless they were already selected for that draft.
+The admin still reviews the selected events and explicitly publishes the carousel.
+
+The event artwork and cover share school colors and the translucent doodle field.
+Event frames are inset on all four sides, and the former comment footer remains white with only the selected stickers.
+Sticker shape, tilt, and placement are deterministic per event and sticker, so preview and published images match.
+The renderer no longer requests maps or club hiring data.

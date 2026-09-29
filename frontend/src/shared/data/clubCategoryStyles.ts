@@ -123,9 +123,6 @@ export const CLUB_CATEGORY_STYLE_SLUGS = Object.keys(
   clubCategoryStyles,
 ) as ClubCategoryStyle[];
 
-const rawDoodleSvgs = JSON.parse(
-  process.env.NEXT_PUBLIC_CLUB_CATEGORY_DOODLE_SVGS ?? "{}",
-) as Record<string, string>;
 const doodleIconSequenceCache = new Map<number, string[]>();
 const doodleIconDataUriCache = new Map<string, string[]>();
 
@@ -173,6 +170,10 @@ export function getClubCategoryDoodleDataUris(
   const cacheKey = `${color}:${count}`;
   const cachedIcons = doodleIconDataUriCache.get(cacheKey);
   if (cachedIcons) return cachedIcons;
+
+  const rawDoodleSvgs = JSON.parse(
+    process.env.NEXT_PUBLIC_CLUB_CATEGORY_DOODLE_SVGS ?? "{}",
+  ) as Record<string, string>;
 
   const icons = getClubCategoryDoodleIcons(count).map((iconPath) => {
     const sourceSvg = rawDoodleSvgs[iconPath];

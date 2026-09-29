@@ -28,10 +28,10 @@ export function ScrollDateWheel({ undatedLabel }: { undatedLabel: string }) {
       data-visible={visible}
       data-date={dates[active] ?? ""}
       aria-hidden="true"
-      className="pointer-events-none fixed left-0 top-1/2 z-30 h-72 w-32 -translate-y-1/2 overflow-hidden transition-opacity duration-300 motion-reduce:transition-none"
+      className="pointer-events-none fixed left-0 top-[70%] z-30 h-40 w-16 -translate-y-1/2 overflow-hidden transition-opacity duration-300 motion-reduce:transition-none"
       style={{ opacity: visible ? 1 : 0 }}
     >
-      <div className="absolute -left-36 top-2 size-68 rounded-full border border-border bg-surface/95 shadow-lg backdrop-blur-sm">
+      <div className="absolute -left-20 top-2 size-36 rounded-full border border-border bg-surface/95 shadow-lg backdrop-blur-sm">
         <svg
           viewBox="0 0 272 272"
           className="size-full text-muted-foreground/40 motion-reduce:hidden"
@@ -50,16 +50,16 @@ export function ScrollDateWheel({ undatedLabel }: { undatedLabel: string }) {
           <div
             key={offset}
             data-active={offset === 0}
-            className="absolute flex w-20 -translate-x-1/2 -translate-y-1/2 flex-col items-center text-center text-muted-foreground data-[active=true]:text-foreground"
-            style={{ left: 12 + Math.cos(angle) * 60, top: 144 + Math.sin(angle) * 110, opacity: offset === 0 ? 1 : Math.abs(offset) === 1 ? 0.55 : 0.25 }}
+            className="absolute flex w-12 -translate-x-1/2 -translate-y-1/2 flex-col items-center text-center text-muted-foreground data-[active=true]:text-foreground"
+            style={{ left: 4 + Math.cos(angle) * 34, top: 80 + Math.sin(angle) * 58, opacity: offset === 0 ? 1 : Math.abs(offset) === 1 ? 0.55 : 0.25 }}
             title={label.full}
           >
-            <span className={offset === 0 ? "text-3xl font-bold tabular-nums leading-none" : "text-sm font-medium tabular-nums leading-none"}>{label.day}</span>
-            <span className="mt-1 text-[10px] font-medium leading-tight">{label.month}</span>
+            <span className={offset === 0 ? "text-lg font-bold tabular-nums leading-none" : "text-[10px] font-medium tabular-nums leading-none"}>{label.day}</span>
+            <span className="mt-0.5 text-[8px] font-medium leading-tight">{label.month}</span>
           </div>
         );
       })}
-      <span className="absolute right-0 top-1/2 h-px w-3 bg-primary" />
+      <span className="absolute right-0 top-1/2 h-px w-2 bg-primary" />
     </div>,
     document.body,
   );
