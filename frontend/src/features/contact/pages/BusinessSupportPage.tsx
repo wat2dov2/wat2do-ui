@@ -14,6 +14,7 @@ export function BusinessSupportPage() {
   const { schoolBySlug } = useSchoolDirectory();
   const school = schoolBySlug.get(requestSchool);
   const city = school?.city?.trim();
+  const schoolName = school?.name?.trim() || t("siteBanner.localUniversity");
 
   return (
     <Container size="sm">
@@ -21,8 +22,8 @@ export function BusinessSupportPage() {
         <PageHeader
           back={{ href: ROUTES.EVENTS, label: t("events.allEvents") }}
           title={city
-            ? t("contact.businessSupport.titleCity", { city })
-            : t("contact.businessSupport.title")}
+            ? t("contact.businessSupport.titleCity", { city, schoolName })
+            : t("contact.businessSupport.title", { schoolName })}
           description={t("contact.businessSupport.description")}
         />
         <BusinessSupportForm school={school} />

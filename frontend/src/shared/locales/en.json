@@ -100,9 +100,10 @@
   "siteBanner": {
     "localArea": "your community",
     "businessSupport": {
-      "message": "We want to support a struggling local business in {{city}} by advertising them here.",
+      "message": "We want to support a struggling business in {{city}}, near {{schoolName}}, by advertising it here.",
       "cta": "Submit a form"
-    }
+    },
+    "localUniversity": "your university"
   },
   "modals": {
     "welcome": {
@@ -491,8 +492,8 @@
       "position": "{{current}} of {{total}}"
     },
     "businessSupport": {
-      "title": "Support a local business",
-      "titleCity": "Support a local business in {{city}}",
+      "title": "Support a struggling business near {{schoolName}}",
+      "titleCity": "Support a struggling business in {{city}}, near {{schoolName}}",
       "description": "Know a local business that could use a boost? Nominate them for a spot in the Wat2Do banner.",
       "formTitle": "Nominate a business",
       "formDescription": "Tell us what makes them worth supporting. We review every nomination before featuring a business.",

@@ -31,9 +31,9 @@ test.afterAll(() => {
   bannerModule.exports = bannerApi;
 });
 
-test("the current school's city and form link reach the banner", async () => {
-  const element = await SiteBanner({ schoolCity: "Montréal" });
-  expect(element?.props).toMatchObject({ schoolCity: "Montréal", ctaHref: "/support-local" });
+test("the current school's full name, city and form link reach the banner", async () => {
+  const element = await SiteBanner({ schoolCity: "Montréal", schoolName: "McGill University" });
+  expect(element?.props).toMatchObject({ schoolCity: "Montréal", schoolName: "McGill University", ctaHref: "/support-local" });
 });
 
 test("the enabled banner stays visible on every render without reading cookies", async () => {

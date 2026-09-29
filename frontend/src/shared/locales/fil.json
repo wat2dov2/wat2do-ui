@@ -103,9 +103,10 @@
   "siteBanner": {
     "localArea": "iyong komunidad",
     "businessSupport": {
-      "message": "Nais naming suportahan ang isang nahihirapang lokal na negosyo sa {{city}} sa pamamagitan ng pag-advertise nito rito.",
+      "message": "Gusto naming suportahan ang isang negosyong nahihirapan sa {{city}}, malapit sa {{schoolName}}, sa pamamagitan ng pag-advertise rito.",
       "cta": "Magsumite ng form"
-    }
+    },
+    "localUniversity": "iyong unibersidad"
   },
   "modals": {
     "welcome": {
@@ -494,8 +495,8 @@
       "position": "{{current}} sa {{total}}"
     },
     "businessSupport": {
-      "title": "Suportahan ang isang lokal na negosyo",
-      "titleCity": "Suportahan ang isang lokal na negosyo sa {{city}}",
+      "title": "Suportahan ang isang negosyong nahihirapan malapit sa {{schoolName}}",
+      "titleCity": "Suportahan ang isang negosyong nahihirapan sa {{city}}, malapit sa {{schoolName}}",
       "description": "May alam ka bang lokal na negosyong nangangailangan ng tulong? Imungkahi ito para maitampok sa banner ng Wat2Do.",
       "formTitle": "Magmungkahi ng negosyo",
       "formDescription": "Sabihin kung bakit ito karapat-dapat suportahan. Sinusuri namin ang bawat mungkahi bago magtampok ng negosyo.",

@@ -8,7 +8,7 @@ async function openNomination(page: Page) {
     localStorage.setItem(languageKey, "en");
   }, STORAGE_KEYS.LANGUAGE);
   await page.goto("/support-local");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^Support a local business(?: in .+)?$/);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^Support a struggling business (?:in .+, )?near .+$/);
 }
 
 async function fillNomination(page: Page) {

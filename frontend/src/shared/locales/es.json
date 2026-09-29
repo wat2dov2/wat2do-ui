@@ -106,9 +106,10 @@
   "siteBanner": {
     "localArea": "tu comunidad",
     "businessSupport": {
-      "message": "Queremos apoyar a un negocio local de {{city}} que está pasando por dificultades dándole publicidad aquí.",
+      "message": "Queremos apoyar a un negocio en dificultades en {{city}}, cerca de {{schoolName}}, anunciándolo aquí.",
       "cta": "Enviar formulario"
-    }
+    },
+    "localUniversity": "tu universidad"
   },
   "modals": {
     "welcome": {
@@ -497,8 +498,8 @@
       "position": "{{current}} de {{total}}"
     },
     "businessSupport": {
-      "title": "Apoya a un negocio local",
-      "titleCity": "Apoya a un negocio local en {{city}}",
+      "title": "Apoya a un negocio en dificultades cerca de {{schoolName}}",
+      "titleCity": "Apoya a un negocio en dificultades en {{city}}, cerca de {{schoolName}}",
       "description": "¿Conoces un negocio local al que le vendría bien un impulso? Proponlo para aparecer en el banner de Wat2Do.",
       "formTitle": "Propón un negocio",
       "formDescription": "Cuéntanos por qué merece apoyo. Revisamos cada propuesta antes de destacar un negocio.",

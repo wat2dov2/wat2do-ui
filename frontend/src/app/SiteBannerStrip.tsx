@@ -10,6 +10,7 @@ import { Link } from "@/shared/ui/link";
 interface SiteBannerStripProps {
   messageTranslationKey: string;
   schoolCity?: string | null;
+  schoolName?: string | null;
   ctaHref: string;
   ctaLabelTranslationKey: string;
 }
@@ -18,6 +19,7 @@ interface SiteBannerStripProps {
 export function SiteBannerStrip({
   messageTranslationKey,
   schoolCity,
+  schoolName,
   ctaHref,
   ctaLabelTranslationKey,
 }: SiteBannerStripProps) {
@@ -55,7 +57,7 @@ export function SiteBannerStrip({
       className="fixed inset-x-0 top-0 z-nav border-b border-border bg-surface px-4 py-2 text-center text-xs leading-relaxed text-foreground sm:text-sm"
     >
       <p>
-        {t(messageTranslationKey, { city: schoolCity?.trim() || t("siteBanner.localArea") })}{" "}
+        {t(messageTranslationKey, { city: schoolCity?.trim() || t("siteBanner.localArea"), schoolName: schoolName?.trim() || t("siteBanner.localUniversity") })}{" "}
         <Link
           variant="announcement"
           href={ctaHref}

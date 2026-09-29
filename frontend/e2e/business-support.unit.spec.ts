@@ -32,7 +32,7 @@ test.describe("message contract", () => {
     expect(payload.message).toContain("Why support is needed:\nRoad construction");
     expect(payload.message).toContain("Suggested banner text:\nYour next coffee break");
     expect(payload.message).toContain("Estimated student visits per week: Not sure");
-    expect(payload.message).toContain("Campus: University of Waterloo (uwaterloo)");
+    expect(payload.message).toContain("Campus: University of Waterloo");
     expect(payload.message).toContain("City: Waterloo");
     expect(payload.message).not.toContain("  ");
   });

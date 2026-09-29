@@ -38,7 +38,7 @@ export function buildBusinessSupportMessage(
     `Why support is needed:\n${nomination.reasonForSupport.trim()}`,
     `Suggested banner text:\n${nomination.proposedBannerText.trim()}`,
     `Estimated student visits per week: ${nomination.studentTrafficPerWeek.trim()}`,
-    `Campus: ${school ? `${school.name} (${school.slug})` : "Not selected"}`,
+    `Campus: ${school ? school.name : "Not selected"}`,
     `City: ${school?.city?.trim() || "Not specified"}`,
   ].join("\n\n");
 

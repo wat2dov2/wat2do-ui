@@ -106,9 +106,10 @@
   "siteBanner": {
     "localArea": "proximité de chez vous",
     "businessSupport": {
-      "message": "Nous souhaitons soutenir un commerce local en difficulté à {{city}} en lui offrant de la visibilité ici.",
+      "message": "Nous souhaitons soutenir un commerce en difficulté à {{city}}, près de {{schoolName}}, en lui offrant de la visibilité ici.",
       "cta": "Remplir un formulaire"
-    }
+    },
+    "localUniversity": "votre université"
   },
   "modals": {
     "welcome": {
@@ -497,8 +498,8 @@
       "position": "{{current}} sur {{total}}"
     },
     "businessSupport": {
-      "title": "Soutenez un commerce local",
-      "titleCity": "Soutenez un commerce local à {{city}}",
+      "title": "Soutenez un commerce en difficulté près de {{schoolName}}",
+      "titleCity": "Soutenez un commerce en difficulté à {{city}}, près de {{schoolName}}",
       "description": "Vous connaissez un commerce local qui aurait besoin d’un coup de pouce? Proposez-le pour figurer dans la bannière de Wat2Do.",
       "formTitle": "Proposer un commerce",
       "formDescription": "Dites-nous pourquoi il mérite votre soutien. Nous examinons chaque proposition avant de mettre un commerce en avant.",

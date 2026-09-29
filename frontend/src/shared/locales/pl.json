@@ -109,9 +109,10 @@
   "siteBanner": {
     "localArea": "Twoja okolica",
     "businessSupport": {
-      "message": "Chcemy wesprzeć lokalną firmę w trudnej sytuacji ({{city}}), reklamując ją tutaj.",
+      "message": "Chcemy wesprzeć firmę w trudnej sytuacji w mieście {{city}}, w pobliżu uczelni {{schoolName}}, reklamując ją tutaj.",
       "cta": "Wypełnij formularz"
-    }
+    },
+    "localUniversity": "Twojej uczelni"
   },
   "modals": {
     "welcome": {
@@ -500,8 +501,8 @@
       "position": "{{current}} z {{total}}"
     },
     "businessSupport": {
-      "title": "Wesprzyj lokalną firmę",
-      "titleCity": "Wesprzyj lokalną firmę w mieście {{city}}",
+      "title": "Wesprzyj firmę w trudnej sytuacji w pobliżu {{schoolName}}",
+      "titleCity": "Wesprzyj firmę w trudnej sytuacji w mieście {{city}}, w pobliżu uczelni {{schoolName}}",
       "description": "Znasz lokalną firmę, której przydałoby się wsparcie? Zgłoś ją do prezentacji na banerze Wat2Do.",
       "formTitle": "Zgłoś firmę",
       "formDescription": "Powiedz nam, dlaczego warto ją wesprzeć. Sprawdzamy każde zgłoszenie, zanim przedstawimy firmę na banerze.",

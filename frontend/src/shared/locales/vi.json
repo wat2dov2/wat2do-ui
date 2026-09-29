@@ -100,9 +100,10 @@
   "siteBanner": {
     "localArea": "cộng đồng của bạn",
     "businessSupport": {
-      "message": "Chúng tôi muốn hỗ trợ một doanh nghiệp địa phương đang gặp khó khăn tại {{city}} bằng cách quảng bá họ ở đây.",
+      "message": "Chúng tôi muốn hỗ trợ một doanh nghiệp đang gặp khó khăn tại {{city}}, gần {{schoolName}}, bằng cách quảng bá tại đây.",
       "cta": "Gửi biểu mẫu"
-    }
+    },
+    "localUniversity": "trường đại học của bạn"
   },
   "modals": {
     "welcome": {
@@ -491,8 +492,8 @@
       "position": "{{current}} / {{total}}"
     },
     "businessSupport": {
-      "title": "Ủng hộ doanh nghiệp địa phương",
-      "titleCity": "Ủng hộ doanh nghiệp địa phương tại {{city}}",
+      "title": "Hỗ trợ một doanh nghiệp đang gặp khó khăn gần {{schoolName}}",
+      "titleCity": "Hỗ trợ một doanh nghiệp đang gặp khó khăn tại {{city}}, gần {{schoolName}}",
       "description": "Bạn biết doanh nghiệp địa phương nào đang cần được tiếp sức? Hãy đề cử để doanh nghiệp đó xuất hiện trên biểu ngữ của Wat2Do.",
       "formTitle": "Đề cử doanh nghiệp",
       "formDescription": "Hãy cho chúng tôi biết vì sao doanh nghiệp này xứng đáng được ủng hộ. Chúng tôi xem xét từng đề cử trước khi giới thiệu doanh nghiệp.",

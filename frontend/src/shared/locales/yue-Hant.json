@@ -100,9 +100,10 @@
   "siteBanner": {
     "localArea": "你嘅社區",
     "businessSupport": {
-      "message": "我哋想透過喺呢度宣傳，支持 {{city}} 一間經營遇到困難嘅本地商戶。",
+      "message": "我哋想透過喺呢度宣傳，支持{{city}}市{{schoolName}}附近經營困難嘅商戶。",
       "cta": "填寫表格"
-    }
+    },
+    "localUniversity": "你嘅大學"
   },
   "modals": {
     "welcome": {
@@ -491,8 +492,8 @@
       "position": "第 {{current}} 張，共 {{total}} 張"
     },
     "businessSupport": {
-      "title": "支持本地商戶",
-      "titleCity": "支持 {{city}} 嘅本地商戶",
+      "title": "支持{{schoolName}}附近經營困難嘅商戶",
+      "titleCity": "支持{{city}}市{{schoolName}}附近經營困難嘅商戶",
       "description": "你知唔知道邊間本地商戶需要幫手？推薦佢哋喺 Wat2Do 橫額上亮相啦。",
       "formTitle": "推薦商戶",
       "formDescription": "話畀我哋知點解呢間商戶值得支持。我哋會先審核每份推薦，再決定介紹邊間商戶。",

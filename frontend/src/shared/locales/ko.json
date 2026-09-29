@@ -100,9 +100,10 @@
   "siteBanner": {
     "localArea": "우리 지역",
     "businessSupport": {
-      "message": "{{city}}에서 어려움을 겪는 지역 업체를 이곳에 홍보해 도움을 드리고 싶습니다.",
+      "message": "{{city}}의 {{schoolName}} 근처에서 어려움을 겪는 가게를 이곳에 홍보하여 돕고 싶습니다.",
       "cta": "추천 양식 작성하기"
-    }
+    },
+    "localUniversity": "여러분의 대학교"
   },
   "modals": {
     "welcome": {
@@ -491,8 +492,8 @@
       "position": "{{total}}장 중 {{current}}장"
     },
     "businessSupport": {
-      "title": "지역 업체를 응원해 주세요",
-      "titleCity": "{{city}}의 지역 업체를 응원해 주세요",
+      "title": "{{schoolName}} 근처에서 어려움을 겪는 가게를 도와주세요",
+      "titleCity": "{{city}}의 {{schoolName}} 근처에서 어려움을 겪는 가게를 도와주세요",
       "description": "응원이 필요한 지역 업체를 알고 계신가요? Wat2Do 배너에 소개할 업체를 추천해 주세요.",
       "formTitle": "업체 추천하기",
       "formDescription": "이 업체를 응원해야 하는 이유를 알려 주세요. 모든 추천을 검토한 뒤 소개할 업체를 선정합니다.",

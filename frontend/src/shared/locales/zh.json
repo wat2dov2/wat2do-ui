@@ -100,9 +100,10 @@
   "siteBanner": {
     "localArea": "你的社区",
     "businessSupport": {
-      "message": "我们希望在这里宣传一家在 {{city}} 经营遇到困难的本地商家，为他们提供支持。",
+      "message": "我们希望通过在这里宣传，支持{{city}}市{{schoolName}}附近经营困难的商家。",
       "cta": "填写表单"
-    }
+    },
+    "localUniversity": "你的大学"
   },
   "modals": {
     "welcome": {
@@ -491,8 +492,8 @@
       "position": "第 {{current}} 张，共 {{total}} 张"
     },
     "businessSupport": {
-      "title": "支持本地商家",
-      "titleCity": "支持 {{city}} 的本地商家",
+      "title": "支持{{schoolName}}附近经营困难的商家",
+      "titleCity": "支持{{city}}市{{schoolName}}附近经营困难的商家",
       "description": "你知道哪家本地商家需要帮助吗？推荐他们登上 Wat2Do 横幅吧。",
       "formTitle": "推荐商家",
       "formDescription": "请告诉我们这家商家为什么值得支持。我们会先审核每份推荐，再决定展示哪些商家。",
