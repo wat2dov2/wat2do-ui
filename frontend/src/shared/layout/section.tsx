@@ -1,12 +1,13 @@
 import * as React from "react"
 
 import { Stack } from "@/shared/layout/stack"
+import { Separator } from "@/shared/ui/separator"
 import { cn } from "@/shared/lib/utils"
 
 type SectionProps = React.ComponentProps<"section"> & {
   title?: React.ReactNode
   description?: React.ReactNode
-  variant?: "plain" | "surface"
+  variant?: "plain" | "surface" | "divided"
 }
 
 function Section({
@@ -32,15 +33,16 @@ function Section({
       {...props}
     >
       {hasHeader ? (
-        <Stack direction="vertical" gap={1}>
+        <Stack direction="vertical" gap={variant === "divided" ? 2 : 1}>
           {title ? (
             <h2
               data-slot="section-title"
-              className="text-lg font-semibold text-foreground"
+              className={cn("font-semibold text-foreground", variant === "divided" ? "text-sm" : "text-lg")}
             >
               {title}
             </h2>
           ) : null}
+          {variant === "divided" && title ? <Separator /> : null}
           {description ? (
             <p
               data-slot="section-description"

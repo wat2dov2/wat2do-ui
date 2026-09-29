@@ -84,7 +84,9 @@
     "latestAddedItem": "<addedPrefix>تمت إضافة</addedPrefix> <eventTitle>{{title}}</eventTitle> <addedTime>{{time}}</addedTime>",
     "newlyAddedFilter": {
       "last24Hours": "جديد"
-    }
+    },
+    "addedToWat2Do": "أُضيف إلى Wat2Do",
+    "postedBy": "نُشر بواسطة"
   },
   "errorBoundary": {
     "title": "حدث خطأ ما",

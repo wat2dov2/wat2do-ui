@@ -78,7 +78,9 @@
     "latestAddedItem": "<addedPrefix></addedPrefix><eventTitle>{{title}}</eventTitle> <addedTime>dodano {{time}}</addedTime>",
     "newlyAddedFilter": {
       "last24Hours": "Nowe"
-    }
+    },
+    "addedToWat2Do": "Dodano do Wat2Do",
+    "postedBy": "Opublikowane przez"
   },
   "errorBoundary": {
     "title": "Coś poszło nie tak",

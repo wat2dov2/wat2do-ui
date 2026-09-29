@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useTranslation } from "react-i18next";
 import { Stack } from "@/shared/layout";
 import { Button } from "@/shared/ui/button";
+import { Skeleton } from "@/shared/ui/skeleton";
 import { BadgeMask } from "@/shared/ui/badge-mask";
 import { ChevronLeft, ChevronRight } from "@/shared/ui/doodle-icons";
 import photo0 from "@/assets/utsg-university-college.webp";
@@ -55,18 +56,20 @@ const photos = [
 ];
 
 /** Manual navigation keeps photos still for reading and avoids autoplay downloads. */
-export function SchoolPhotoCarousel() {
+export function SchoolPhotoCarousel({ isLoading = false }: { isLoading?: boolean }) {
   const { t } = useTranslation();
   const [index, setIndex] = useState(0);
   const touchStart = useRef<number | null>(null);
   const photo = photos[index];
-  const navigate = (offset: number) =>
-    setIndex((current) => (current + offset + photos.length) % photos.length);
+  const navigate = (offset: number) => {
+    if (!isLoading) setIndex((current) => (current + offset + photos.length) % photos.length);
+  };
 
   return (
     <Stack gap={4}>
       <Stack
         role="region"
+        aria-busy={isLoading}
         aria-label={t("contact.photos.label")}
         gap={3}
         onKeyDown={(event) => {
@@ -86,7 +89,7 @@ export function SchoolPhotoCarousel() {
             if (Math.abs(distance) > 50) navigate(distance > 0 ? 1 : -1);
           }}
         >
-          <Image
+          {isLoading ? <Skeleton className="absolute inset-0 rounded-none" /> : <Image
             key={photo.image.src}
             src={photo.image}
             alt={t("contact.photos.alt", { school: photo.school })}
@@ -95,7 +98,7 @@ export function SchoolPhotoCarousel() {
             preload={index === 0}
             placeholder={imagePlaceholder}
             className="select-none object-contain"
-          />
+          />}
           <BadgeMask variant="bottom-left">
             <h1 className="min-w-0 break-words px-3 py-2 font-sans text-lg font-bold leading-snug tracking-tight text-foreground sm:text-xl">
               {t("contact.hero.line1")} {t("contact.hero.line2")}
@@ -103,7 +106,7 @@ export function SchoolPhotoCarousel() {
           </BadgeMask>
         </div>
         <Stack direction="horizontal" align="center" justify="between" gap={3}>
-          <Button variant="outline" size="icon-lg" aria-label={t("contact.photos.previous")} onClick={() => navigate(-1)}>
+          <Button variant="outline" size="icon-lg" disabled={isLoading} aria-label={t("contact.photos.previous")} onClick={() => navigate(-1)}>
             <ChevronLeft aria-hidden="true" />
           </Button>
           <Stack gap={1} align="center" aria-live="polite" aria-atomic="true">
@@ -112,7 +115,7 @@ export function SchoolPhotoCarousel() {
               {t("contact.photos.position", { current: index + 1, total: photos.length })}
             </p>
           </Stack>
-          <Button variant="outline" size="icon-lg" aria-label={t("contact.photos.next")} onClick={() => navigate(1)}>
+          <Button variant="outline" size="icon-lg" disabled={isLoading} aria-label={t("contact.photos.next")} onClick={() => navigate(1)}>
             <ChevronRight aria-hidden="true" />
           </Button>
         </Stack>

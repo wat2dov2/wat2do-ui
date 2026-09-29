@@ -72,7 +72,9 @@
     "latestAddedItem": "<addedPrefix></addedPrefix><eventTitle>{{title}}</eventTitle> <addedTime>சேர்த்தது {{time}}</addedTime>",
     "newlyAddedFilter": {
       "last24Hours": "புதியது"
-    }
+    },
+    "addedToWat2Do": "Wat2Do இல் சேர்க்கப்பட்டது",
+    "postedBy": "பதிவிட்டவர்"
   },
   "errorBoundary": {
     "title": "ஏதோ தவறு நடந்துவிட்டது",

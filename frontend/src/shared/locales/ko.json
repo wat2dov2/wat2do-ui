@@ -69,7 +69,9 @@
     "latestAddedItem": "<addedPrefix></addedPrefix><eventTitle>{{title}}</eventTitle> <addedTime>이(가) {{time}}에 추가되었습니다</addedTime>",
     "newlyAddedFilter": {
       "last24Hours": "신규"
-    }
+    },
+    "addedToWat2Do": "Wat2Do에 추가됨",
+    "postedBy": "게시자"
   },
   "errorBoundary": {
     "title": "문제가 발생했습니다",

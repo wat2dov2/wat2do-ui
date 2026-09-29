@@ -72,7 +72,9 @@
     "latestAddedItem": "<addedPrefix></addedPrefix><eventTitle>{{title}}</eventTitle> <addedTime>افزوده شد {{time}}</addedTime>",
     "newlyAddedFilter": {
       "last24Hours": "جدید"
-    }
+    },
+    "addedToWat2Do": "اضافه‌شده به Wat2Do",
+    "postedBy": "منتشرشده توسط"
   },
   "errorBoundary": {
     "title": "مشکلی پیش آمد",

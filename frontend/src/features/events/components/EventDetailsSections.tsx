@@ -36,6 +36,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/shared/ui/card";
+import { AddedAt } from "@/shared/ui/added-at";
 import { Separator } from "@/shared/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/ui/tooltip";
 import { FormGrid, Section, Stack } from "@/shared/layout";
@@ -82,18 +83,6 @@ const AdminDeleteDialog = lazy(() =>
  * Sections shared between the event details drawer and the dedicated
  * /events/[id] page so both surfaces render event data one way.
  */
-
-/**
- * Section heading with divider.
- */
-function EventSectionHeader({ children }: { children: React.ReactNode }) {
-  return (
-    <Stack gap={2}>
-      <h3 className="text-sm font-semibold text-foreground">{children}</h3>
-      <Separator />
-    </Stack>
-  );
-}
 
 function EventDateTile({
   dtstartUtc,
@@ -390,8 +379,7 @@ function EventAboutSection({
   const { t } = useTranslation();
   const sourceHref = event.source_url ? sanitizeHref(event.source_url) : undefined;
   return (
-    <Stack gap={3}>
-      <EventSectionHeader>{t("events.aboutEvent")}</EventSectionHeader>
+    <Section variant="divided" title={t("events.aboutEvent")}>
       <p className="whitespace-pre-line text-sm text-muted-foreground">
         {event.description ||
           t(isFetchingDetails ? "events.fetchingDetails" : "common.noDescription")}
@@ -407,7 +395,7 @@ function EventAboutSection({
           <span className="truncate">{event.source_url}</span>
         </a>
       )}
-    </Stack>
+    </Section>
   );
 }
 
@@ -437,10 +425,7 @@ function EventAttendeesSection({ eventId }: { eventId: number }) {
     ? Math.max(0, attendees.going_count - profiles.length)
     : 0;
   return (
-    <Stack gap={3}>
-      <EventSectionHeader>
-        {t("events.goingCount", { count: attendees.going_count })}
-      </EventSectionHeader>
+    <Section variant="divided" title={t("events.goingCount", { count: attendees.going_count })}>
       <AvatarStack
         avatars={profiles.map((attendee) => ({
           name: attendee.name || t("events.going"),
@@ -449,7 +434,7 @@ function EventAttendeesSection({ eventId }: { eventId: number }) {
         overflowCount={overflowCount}
         overflowLabel={t("events.andOthersCount", { count: overflowCount })}
       />
-    </Stack>
+    </Section>
   );
 }
 
@@ -590,6 +575,7 @@ export function EventDetailsBody({
 }) {
   useEventView(event.id, event.school);
   const { t } = useTranslation();
+  const { getSchoolTimezone } = useSchoolDirectory();
   return (
     <div className="grid grid-cols-1 gap-6 md:grid-cols-[320px_minmax(0,1fr)] md:grid-rows-[auto_1fr] md:items-start md:gap-x-8">
       <div
@@ -604,13 +590,14 @@ export function EventDetailsBody({
       </div>
 
       <div className="contents md:col-start-2 md:row-span-2 md:row-start-1 md:flex md:flex-col md:gap-6">
-        <div className="order-1">
+        <Stack gap={2} className="order-1">
           {renderTitle ? (
             renderTitle(event.title)
           ) : (
             <h1 className="text-2xl font-bold leading-tight sm:text-3xl">{event.title}</h1>
           )}
-        </div>
+          <AddedAt value={event.added_at} timeZone={getSchoolTimezone(event.school)} />
+        </Stack>
 
         <Stack gap={6} className="order-3">
           <FormGrid columns={2} collapse={false}>
@@ -631,8 +618,7 @@ export function EventDetailsBody({
       </div>
 
       <Stack gap={6} className="order-2 md:col-start-1">
-        <Stack gap={3} data-slot="event-host">
-          <EventSectionHeader>{t("events.hostedBy")}</EventSectionHeader>
+        <Section variant="divided" title={t("events.hostedBy")} data-slot="event-host">
             <ClubBadgeDropdown
               clubName={event.club}
               clubLogoUrl={event.club_logo_url}
@@ -643,7 +629,7 @@ export function EventDetailsBody({
               clubDiscord={event.club_discord}
               onFilterSelect={onClubFilterSelect}
             />
-        </Stack>
+        </Section>
 
         <EventAttendeesSection eventId={event.id} />
       </Stack>

@@ -72,7 +72,9 @@
     "latestAddedItem": "<addedPrefix></addedPrefix><eventTitle>{{title}}</eventTitle> <addedTime>ਨੇ {{time}} ਸ਼ਾਮਲ ਕੀਤਾ</addedTime>",
     "newlyAddedFilter": {
       "last24Hours": "ਨਵਾਂ"
-    }
+    },
+    "addedToWat2Do": "Wat2Do ਵਿੱਚ ਸ਼ਾਮਲ ਕੀਤਾ",
+    "postedBy": "ਪੋਸਟ ਕਰਨ ਵਾਲਾ"
   },
   "errorBoundary": {
     "title": "ਕੁਝ ਗਲਤ ਹੋ ਗਿਆ",

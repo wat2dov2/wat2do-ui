@@ -67,13 +67,13 @@ function AboutSearchLink({
   );
 }
 
-export function AboutPage() {
+export function AboutPage({ isLoading = false }: { isLoading?: boolean }) {
   const { t } = useTranslation();
 
   return (
     <Container size="sm">
       <Stack gap={12}>
-        <SchoolPhotoCarousel />
+        <SchoolPhotoCarousel isLoading={isLoading} />
 
         <Card>
           <CardHeader>

@@ -486,3 +486,15 @@ test("school photos are compact, correctly oriented WebP assets without embedded
     expect(metadata.orientation).toBeUndefined();
   }
 });
+
+
+test("About loading preserves the carousel frame, greeting, caption and controls", () => {
+  const html = render(SchoolPhotoCarousel, { isLoading: true });
+  expect(html).toContain('aria-busy="true"');
+  expect(html).toContain('aspect-[4/3]');
+  expect(html).toContain('data-slot="skeleton"');
+  expect(html).not.toContain('<img ');
+  expect(html.match(/<h1 /g)).toHaveLength(1);
+  expect(html).toContain('University of Toronto St. George');
+  expect(html.match(/disabled=""/g)).toHaveLength(2);
+});

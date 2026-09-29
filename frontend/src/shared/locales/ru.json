@@ -78,7 +78,9 @@
     "latestAddedItem": "<addedPrefix></addedPrefix><eventTitle>{{title}}</eventTitle> <addedTime>добавлено {{time}}</addedTime>",
     "newlyAddedFilter": {
       "last24Hours": "Новое"
-    }
+    },
+    "addedToWat2Do": "Добавлено в Wat2Do",
+    "postedBy": "Опубликовано"
   },
   "errorBoundary": {
     "title": "Что-то пошло не так",

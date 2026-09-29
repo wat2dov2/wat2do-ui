@@ -28,6 +28,7 @@ import {
   ItemTitle,
 } from "@/shared/ui/item";
 import { ClubBadgeDropdown } from "@/features/clubs";
+import { AddedAt } from "@/shared/ui/added-at";
 import { Separator } from "@/shared/ui/separator";
 import { DrawerBody, FormGrid, Section, Stack } from "@/shared/layout";
 import { sanitizeHref } from "@/shared/utils/url";
@@ -130,6 +131,10 @@ export function PositionDetailsDrawer({
                     <DrawerTitle className="text-left text-2xl font-bold leading-tight sm:text-3xl">
                       {position.title}
                     </DrawerTitle>
+                    <AddedAt value={position.added_at} timeZone={getSchoolTimezone(position.school)} />
+                  </Stack>
+
+                  <Section variant="divided" title={t("common.postedBy")}>
                     <ClubBadgeDropdown
                       clubName={position.club_name}
                       clubLogoUrl={position.club_logo_url}
@@ -140,7 +145,7 @@ export function PositionDetailsDrawer({
                       clubDiscord={position.club_discord}
                       onFilterSelect={onClose}
                     />
-                  </Stack>
+                  </Section>
 
                   <FormGrid columns={2} collapse={false}>
                     {deadline ? (
@@ -180,14 +185,14 @@ export function PositionDetailsDrawer({
                     ) : null}
                   </FormGrid>
 
-                  <Section title={t("positions.aboutPosition")}>
-                    <p className="text-sm leading-relaxed text-muted-foreground">
+                  <Section variant="divided" title={t("positions.aboutPosition")}>
+                    <p className="whitespace-pre-line text-sm text-muted-foreground">
                       {position.description}
                     </p>
                   </Section>
 
                   {position.requirements.length > 0 ? (
-                    <Section title={t("positions.requirements")}>
+                    <Section variant="divided" title={t("positions.requirements")}>
                       <ul className="list-disc space-y-2 pl-5 text-sm text-muted-foreground">
                         {position.requirements.map((requirement) => (
                           <li key={requirement}>{requirement}</li>

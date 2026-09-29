@@ -72,7 +72,9 @@
     "latestAddedItem": "<addedPrefix></addedPrefix><eventTitle>{{title}}</eventTitle> <addedTime>نے {{time}} کو شامل کیا</addedTime>",
     "newlyAddedFilter": {
       "last24Hours": "نیا"
-    }
+    },
+    "addedToWat2Do": "Wat2Do میں شامل کیا گیا",
+    "postedBy": "شائع کنندہ"
   },
   "errorBoundary": {
     "title": "کچھ غلط ہو گیا",

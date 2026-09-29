@@ -72,7 +72,9 @@
     "latestAddedItem": "<addedPrefix></addedPrefix><eventTitle>{{title}}</eventTitle> <addedTime>जोड़ा गया {{time}}</addedTime>",
     "newlyAddedFilter": {
       "last24Hours": "नया"
-    }
+    },
+    "addedToWat2Do": "Wat2Do पर जोड़ा गया",
+    "postedBy": "पोस्ट किया गया द्वारा"
   },
   "errorBoundary": {
     "title": "कहीं कुछ गलती हो गई",

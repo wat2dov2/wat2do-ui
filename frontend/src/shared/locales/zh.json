@@ -69,7 +69,9 @@
     "latestAddedItem": "<addedPrefix></addedPrefix><eventTitle>{{title}}</eventTitle> <addedTime>添加于 {{time}}</addedTime>",
     "newlyAddedFilter": {
       "last24Hours": "新增"
-    }
+    },
+    "addedToWat2Do": "添加到 Wat2Do",
+    "postedBy": "发布者"
   },
   "errorBoundary": {
     "title": "出错了",

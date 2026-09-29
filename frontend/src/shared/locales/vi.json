@@ -69,7 +69,9 @@
     "latestAddedItem": "<addedPrefix></addedPrefix><eventTitle>{{title}}</eventTitle> <addedTime>đã thêm {{time}}</addedTime>",
     "newlyAddedFilter": {
       "last24Hours": "Mới"
-    }
+    },
+    "addedToWat2Do": "Đã thêm vào Wat2Do",
+    "postedBy": "Đăng bởi"
   },
   "errorBoundary": {
     "title": "Đã xảy ra sự cố",

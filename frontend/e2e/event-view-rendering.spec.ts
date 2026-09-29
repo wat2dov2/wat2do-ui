@@ -208,3 +208,27 @@ test("an unavailable integer filter disables its actual popover trigger", () => 
   expect(html).toMatch(/<button[^>]*disabled=""/);
   expect(html).toContain('aria-expanded="false"');
 });
+
+
+test("catalog arrival timestamps show an absolute school-local date and omit missing or invalid values", () => {
+  const { AddedAt } = loadComponent("shared/ui/added-at") as typeof import("../src/shared/ui/added-at");
+  const renderAdded = (value: string | null, timeZone = "America/Toronto") =>
+    renderToStaticMarkup(createElement(AddedAt, { value, timeZone }));
+  const html = renderAdded("2026-09-29T00:30:00Z");
+  expect(html).toContain('dateTime="2026-09-29T00:30:00.000Z"');
+  expect(html).toContain("Sep 28, 2026");
+  expect(html).toContain("8:30 PM");
+  expect(html).toContain("EDT");
+  expect(renderAdded("2026-09-29T00:30:00Z", "America/Vancouver")).toContain("5:30 PM");
+  expect(renderAdded(null)).toBe("");
+  expect(renderAdded("not-a-date")).toBe("");
+});
+
+test("divided detail sections share compact headings and a separator", () => {
+  const { Section } = loadComponent("shared/layout/section") as typeof import("../src/shared/layout/section");
+  const html = renderToStaticMarkup(createElement(Section, { variant: "divided", title: "Posted by" }, "Club"));
+  expect(html).toContain('data-variant="divided"');
+  expect(html).toContain('data-slot="section-title"');
+  expect(html).toContain('data-slot="separator"');
+  expect(html).toContain('text-sm');
+});

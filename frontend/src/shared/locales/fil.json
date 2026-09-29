@@ -72,7 +72,9 @@
     "latestAddedItem": "<addedPrefix></addedPrefix><eventTitle>{{title}}</eventTitle> <addedTime>nagdagdag ng {{time}}</addedTime>",
     "newlyAddedFilter": {
       "last24Hours": "Bago"
-    }
+    },
+    "addedToWat2Do": "Idinagdag sa Wat2Do",
+    "postedBy": "Ipinaskil ni"
   },
   "errorBoundary": {
     "title": "May mali",

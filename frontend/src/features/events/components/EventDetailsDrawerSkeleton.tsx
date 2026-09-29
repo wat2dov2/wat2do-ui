@@ -25,7 +25,10 @@ export function EventDetailsDrawerSkeleton() {
           <Skeleton className="mx-auto aspect-square w-full max-w-sm rounded-xl md:mx-0" />
 
           <Stack gap={6}>
-            <Skeleton className="h-8 w-4/5 rounded-lg" />
+            <Stack gap={2}>
+              <Skeleton className="h-8 w-4/5 rounded-lg" />
+              <Skeleton className="h-4 w-48 rounded-lg" />
+            </Stack>
 
             <FormGrid columns={2} collapse={false}>
               <Skeleton className="h-24 w-full rounded-xl" />

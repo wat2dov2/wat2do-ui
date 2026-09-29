@@ -75,7 +75,9 @@
     "latestAddedItem": "<addedPrefix></addedPrefix><eventTitle>{{title}}</eventTitle> <addedTime>ajouté(e) {{time}}</addedTime>",
     "newlyAddedFilter": {
       "last24Hours": "Nouveau"
-    }
+    },
+    "addedToWat2Do": "Ajouté à Wat2Do",
+    "postedBy": "Publié par"
   },
   "errorBoundary": {
     "title": "Quelque chose a mal tourné",
