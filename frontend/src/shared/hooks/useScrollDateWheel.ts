@@ -49,9 +49,14 @@ export function useScrollDateWheel() {
         if (anchors[index].top > readingLine) break;
         active = index;
       }
+      const current = anchors[active];
+      const next = anchors[active + 1];
+      const progress = current && next
+        ? Math.max(0, Math.min(1, (readingLine - current.top) / (next.top - current.top)))
+        : 0;
       setState({
         visible: scrolling && root.scrollTop > 12 && anchors.length > 0,
-        rotation: root.scrollTop / 4,
+        rotation: (active + progress) * 36,
         dates,
         active,
       });

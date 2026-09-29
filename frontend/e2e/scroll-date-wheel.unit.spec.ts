@@ -88,3 +88,27 @@ test("filtered, empty and newly appended results replace stale wheel dates", () 
   expect(wheel.state.dates[wheel.state.active]).toBe("2026-11-13");
   wheel.cleanup();
 });
+
+test("wheel rotation interpolates actual date distances and clamps at the ends", () => {
+  const wheel = mountWheel();
+  wheel.replace([{ top: 300, date: "2026-10-01" }, { top: 700, date: "2026-10-02" }, { top: 1500, date: "2026-10-03" }]);
+  wheel.scroll(0);
+  expect(wheel.state.rotation).toBe(0);
+  wheel.scroll(248); // Reading line at 500, halfway through the first date interval.
+  expect(wheel.state.rotation).toBe(18);
+  expect(wheel.state.active).toBe(0);
+  wheel.scroll(448);
+  expect(wheel.state.rotation).toBe(36);
+  expect(wheel.state.active).toBe(1);
+  wheel.scroll(848); // The second interval is twice as tall.
+  expect(wheel.state.rotation).toBe(54);
+  expect(wheel.state.active).toBe(1);
+  wheel.scroll(1500);
+  expect(wheel.state.rotation).toBe(72);
+  expect(wheel.state.active).toBe(2);
+  wheel.scroll(248);
+  expect(wheel.state.rotation).toBe(18);
+  wheel.replace([]);
+  expect(wheel.state.rotation).toBe(0);
+  wheel.cleanup();
+});

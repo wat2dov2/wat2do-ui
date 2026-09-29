@@ -28,34 +28,37 @@ export function ScrollDateWheel({ undatedLabel }: { undatedLabel: string }) {
       data-visible={visible}
       data-date={dates[active] ?? ""}
       aria-hidden="true"
-      className="pointer-events-none fixed -left-7 top-[70%] z-30 h-40 w-16 -translate-y-1/2 overflow-hidden transition-opacity duration-150 motion-reduce:transition-none"
-      style={{ opacity: visible ? 0.45 : 0 }}
+      className="pointer-events-none fixed -left-7 top-[70%] z-30 h-40 w-16 origin-left -translate-y-1/2 scale-110 overflow-hidden transition-opacity duration-150 motion-reduce:transition-none"
+      style={{ opacity: visible ? 0.5 : 0 }}
     >
       <div className="absolute -left-20 top-2 size-36 rounded-full border border-border bg-surface/95 shadow-lg backdrop-blur-sm">
         <svg
           viewBox="0 0 272 272"
           className="size-full text-muted-foreground/40 motion-reduce:hidden"
-          style={{ transform: `rotate(${rotation}deg)` }}
+          style={{ transform: `rotate(${-rotation}deg)` }}
         >
           {Array.from({ length: 60 }, (_, index) => (
             <line key={index} x1="136" y1="9" x2="136" y2={index % 5 === 0 ? 24 : 16} stroke="currentColor" strokeWidth={index % 5 === 0 ? 1.5 : 1} transform={`rotate(${index * 6} 136 136)`} />
           ))}
         </svg>
       </div>
-      {[-2, -1, 0, 1, 2].map(offset => {
-        const label = labels[active + offset];
+      {[-2, -1, 0, 1, 2, 3].map(offset => {
+        const index = active + offset;
+        const label = labels[index];
         if (!label) return null;
-        const angle = offset * Math.PI / 5;
+        const distance = index - rotation / 36;
+        if (Math.abs(distance) > 2.5) return null;
+        const angle = distance * Math.PI / 5;
         return (
           <div
-            key={offset}
+            key={index}
             data-active={offset === 0}
             className="absolute flex w-12 -translate-x-1/2 -translate-y-1/2 flex-col items-center text-center text-muted-foreground data-[active=true]:text-foreground"
-            style={{ left: 4 + Math.cos(angle) * 34, top: 80 + Math.sin(angle) * 58, opacity: offset === 0 ? 1 : Math.abs(offset) === 1 ? 0.55 : 0.25 }}
+            style={{ left: 4 + Math.cos(angle) * 34, top: 80 + Math.sin(angle) * 58, opacity: offset === 0 ? 1 : Math.max(0, 1 - Math.abs(distance) / 2.5) }}
             title={label.full}
           >
             <span className={offset === 0 ? "text-lg font-bold tabular-nums leading-none" : "text-[10px] font-medium tabular-nums leading-none"}>{label.day}</span>
-            <span className="mt-0.5 text-[8px] font-medium leading-tight">{label.month}</span>
+            <span className={`mt-0.5 text-[8px] leading-tight ${offset === 0 ? "font-bold" : "font-medium"}`}>{label.month}</span>
           </div>
         );
       })}
