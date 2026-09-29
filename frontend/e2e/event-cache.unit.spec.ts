@@ -8,6 +8,7 @@ import type { Event, EventFormData } from "../src/shared/types";
 import type { PaginatedEventsResponse } from "../src/features/events/api/events.api";
 import { orderClubEvents } from "../src/features/events/lib/clubEventOrder";
 import { queryKeys } from "../src/shared/lib/queryKeys";
+import clientCache from "../../backend/controlbox/client_cache.json" with { type: "json" };
 
 const require = createRequire(import.meta.url);
 const { getQueryClient }: typeof import("../src/shared/lib/queryClient") = require("../src/shared/lib/queryClient");
@@ -566,4 +567,58 @@ test("Going mutations wait for the whole selection collection and do not manufac
   client.setQueryData(statsKey, { 1: { click_count: 4, going_count: 2 }, 2: { click_count: 8, going_count: 5 } });
   mutation.onSuccess(response, variables, context);
   expect(client.getQueryData(statsKey)).toEqual({ 1: { click_count: 4, going_count: 3 }, 2: { click_count: 8, going_count: 5 } });
+});
+
+
+test("SSR query clients release request ownership without browser-length garbage-collection timers", () => {
+  const browser = getQueryClient();
+  const browserWindow = Object.getOwnPropertyDescriptor(globalThis, "window")!;
+  const originalSetTimeout = globalThis.setTimeout;
+  const originalClearTimeout = globalThis.clearTimeout;
+  const retentionMs = clientCache.default_query_garbage_collection_seconds * 1000;
+  const retainedTimers = new Set<ReturnType<typeof setTimeout>>();
+  globalThis.setTimeout = ((callback, delay, ...args) => {
+    const timer = originalSetTimeout(callback, delay, ...args);
+    if (delay === retentionMs) retainedTimers.add(timer);
+    return timer;
+  }) as typeof setTimeout;
+  globalThis.clearTimeout = ((timer) => {
+    retainedTimers.delete(timer as ReturnType<typeof setTimeout>);
+    originalClearTimeout(timer);
+  }) as typeof clearTimeout;
+  try {
+    Reflect.deleteProperty(globalThis, "window");
+    const schoolKey = queryKeys.schools.directory();
+    const feedKey = queryKeys.events.bySchool("uwaterloo");
+    // Reproduce repeated server renders using real cache/observer code, without
+    // a browser or server. Each completed request drops its local client owner.
+    for (let request = 0; request < 64; request++) {
+      const client = getQueryClient();
+      expect(client).not.toBe(browser);
+      expect(client.getQueryData(schoolKey)).toBeUndefined();
+      client.setQueryData(schoolKey, [{ slug: "uwaterloo", name: `Request ${request}` }]);
+      const snapshot = feed([event(request + 1)]);
+      const observer = new QueryObserver(client, { ...eventFeedQueryOptions("uwaterloo"), initialData: snapshot });
+      expect(observer.getCurrentResult().data).toEqual(snapshot);
+      expect(client.getQueryData(feedKey)).toEqual(snapshot);
+      observer.destroy();
+    }
+    // A finite server gcTime creates two retaining timers per completed render.
+    // Infinity prevents those timers; it does not turn server clients into a singleton.
+    expect(retainedTimers.size).toBe(0);
+    Object.defineProperty(globalThis, "window", browserWindow);
+    expect(getQueryClient()).toBe(browser);
+    expect(browser.getQueryData(schoolKey)).toBeUndefined();
+    browser.setQueryData(feedKey, feed([event(1)]));
+    expect(retainedTimers.size).toBe(1);
+    expect(getQueryClient().getQueryData(feedKey)).toEqual(feed([event(1)]));
+    browser.clear();
+    expect(retainedTimers.size).toBe(0);
+  } finally {
+    for (const timer of retainedTimers) originalClearTimeout(timer);
+    globalThis.setTimeout = originalSetTimeout;
+    globalThis.clearTimeout = originalClearTimeout;
+    Object.defineProperty(globalThis, "window", browserWindow);
+    browser.clear();
+  }
 });

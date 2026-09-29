@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
-from core.controlbox import GoogleAnalyticsControl, controlbox, load_controlbox
+from core.controlbox import EcsRuntimeControl, GoogleAnalyticsControl, controlbox, load_controlbox
 
 _SOURCE = Path(__file__).resolve().parents[2] / "controlbox"
 
@@ -388,6 +388,67 @@ def test_discovery_controls_load_checked_in_feature_sources():
     assert controlbox.image_delivery.optimized_format == "image/webp"
     assert controlbox.image_delivery.optimized_remote_host == "wat2do.io"
     assert controlbox.image_delivery.optimized_remote_path == "/media/"
+
+
+def test_ecs_runtime_keeps_redundancy_and_memory_headroom():
+    runtime = controlbox.ecs_runtime
+    assert runtime.desired_count == 2
+    assert runtime.task_cpu == runtime.frontend_cpu + runtime.backend_cpu == 1024
+    assert runtime.task_memory_mib == 2048
+    assert runtime.frontend_heap_mib == 768
+    assert runtime.frontend_memory_reservation_mib - runtime.frontend_heap_mib == 256
+    assert (
+        runtime.frontend_memory_reservation_mib
+        + runtime.backend_memory_reservation_mib
+        + runtime.cache_init_memory_reservation_mib
+    ) < runtime.task_memory_mib
+
+
+@pytest.mark.parametrize(
+    "patch,message",
+    [
+        ({"desired_count": 1}, "desired_count"),
+        ({"frontend_heap_mib": 0}, "frontend_heap_mib"),
+        ({"frontend_heap_mib": 1024}, "headroom"),
+        ({"frontend_heap_mib": 1025}, "headroom"),
+        ({"frontend_cpu": 513}, "CPU shares"),
+        ({"backend_cpu": 0}, "backend_cpu"),
+        ({"backend_memory_reservation_mib": 993}, "memory reservations"),
+        ({"cache_init_memory_reservation_mib": 513}, "memory reservations"),
+        ({"cache_init_memory_reservation_mib": 0}, "cache_init_memory_reservation_mib"),
+        ({"task_cpu": 1000}, "Fargate combination"),
+        ({"task_memory_mib": 1024}, "Fargate combination"),
+        ({"task_memory_mib": 2049}, "Fargate combination"),
+        ({"task_memory_mib": 9216}, "Fargate combination"),
+        ({"task_cpu": 8192, "task_memory_mib": 17408}, "Fargate combination"),
+        ({"task_cpu": 16384, "task_memory_mib": 36864}, "Fargate combination"),
+    ],
+)
+def test_ecs_runtime_rejects_unsafe_capacity(tmp_path, patch, message):
+    directory = _write_control(tmp_path, "ecs_runtime", lambda payload: payload.update(patch))
+    with pytest.raises(ValidationError, match=message):
+        load_controlbox(directory)
+
+
+@pytest.mark.parametrize(
+    "cpu,memory_mib",
+    [
+        (256, 2048),
+        (512, 4096),
+        (1024, 8192),
+        (2048, 16384),
+        (4096, 30720),
+        (8192, 61440),
+        (16384, 122880),
+        (32768, 249856),
+    ],
+)
+def test_ecs_runtime_accepts_supported_fargate_sizes(cpu, memory_mib):
+    values = controlbox.ecs_runtime.model_dump()
+    values.update(
+        task_cpu=cpu, task_memory_mib=memory_mib, frontend_cpu=cpu // 2, backend_cpu=cpu // 2
+    )
+    assert EcsRuntimeControl.model_validate(values).task_memory_mib == memory_mib
 
 
 @pytest.mark.parametrize(

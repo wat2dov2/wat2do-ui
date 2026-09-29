@@ -1,0 +1,11 @@
+{
+  "task_cpu": 1024,
+  "task_memory_mib": 2048,
+  "desired_count": 2,
+  "frontend_cpu": 512,
+  "backend_cpu": 512,
+  "frontend_memory_reservation_mib": 1024,
+  "backend_memory_reservation_mib": 512,
+  "cache_init_memory_reservation_mib": 32,
+  "frontend_heap_mib": 768
+}

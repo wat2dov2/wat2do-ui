@@ -8,7 +8,11 @@ function createAppQueryClient(): QueryClient {
       queries: {
         refetchOnWindowFocus: false,
         staleTime: controlBox.clientCache.defaultQueryStaleMs,
-        gcTime: controlBox.clientCache.defaultQueryGarbageCollectionMs,
+        // SSR clients belong to one request. Finite GC timers retain their query
+        // graphs after rendering; Infinity disables timers so normal GC can collect them.
+        gcTime: typeof window === "undefined"
+          ? Infinity
+          : controlBox.clientCache.defaultQueryGarbageCollectionMs,
       },
     },
   });

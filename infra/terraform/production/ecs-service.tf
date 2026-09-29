@@ -2,7 +2,7 @@ resource "aws_ecs_service" "application" {
   name                               = "wat2do-production-app"
   cluster                            = aws_ecs_cluster.main.id
   task_definition                    = aws_ecs_task_definition.application.arn
-  desired_count                      = 1
+  desired_count                      = local.ecs_runtime_control.desired_count
   enable_ecs_managed_tags            = true
   enable_execute_command             = false
   health_check_grace_period_seconds  = local.discovery_cache_control.readiness_timeout_seconds + local.discovery_cache_control.startup_grace_seconds

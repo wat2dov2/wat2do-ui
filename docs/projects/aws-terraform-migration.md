@@ -33,7 +33,7 @@ There is no staging environment, canary deployment, blue-green deployment, paral
 - Use Amazon ECR for frontend and backend images.
 - Use Amazon ECS with the Fargate capacity provider.
 - Use Linux ARM64 containers.
-- Run exactly one ECS service task.
+- Keep at least two ECS service tasks running, sized through `backend/controlbox/ecs_runtime.json`.
 - Run the frontend and backend as two containers in the same task.
 - Route public traffic only to the frontend container.
 - Let the frontend proxy `/api/*` requests to the backend over `127.0.0.1`.
@@ -42,7 +42,7 @@ There is no staging environment, canary deployment, blue-green deployment, paral
 - Use CloudFront in front of the Application Load Balancer.
 - Cache immutable Next.js assets at CloudFront.
 - Do not cache HTML or API responses at CloudFront.
-- Let the single Next.js process own ISR state.
+- Let each Next.js process own its local ISR state while discovery snapshots use the existing shared S3 store.
 - Do not add Redis, ElastiCache, EFS, DynamoDB, or a custom Next.js cache handler.
 - Do not configure ECS autoscaling.
 - Use Route 53 for authoritative DNS.
@@ -66,7 +66,6 @@ There is no staging environment, canary deployment, blue-green deployment, paral
 - Adding multiple AWS accounts.
 - Adding multi-region deployment.
 - Adding ECS autoscaling.
-- Adding more than one frontend instance.
 - Adding a shared Next.js cache.
 - Adding AWS WAF.
 - Adding Global Accelerator.
@@ -140,13 +139,13 @@ The Application Load Balancer runs in public subnets.
 
 The task security group accepts inbound traffic only from the Application Load Balancer and uses the internet gateway for Supabase, ECR, OpenAI, Apify, Resend, and other outbound HTTPS traffic.
 
-The ECS service keeps one task running.
+The ECS service keeps the configured task count running, with a minimum of two tasks.
 
 The ECS deployment configuration uses `minimumHealthyPercent = 100` and `maximumPercent = 200`.
 
-This start-before-stop deployment strategy keeps one healthy task available during releases.
+This start-before-stop deployment strategy retains the configured healthy capacity during releases.
 
-The single steady-state task remains the only long-running application task.
+Two steady-state tasks allow one task to keep serving while ECS replaces a failed peer.
 
 ## 6. Proposed Terraform layout
 
@@ -567,10 +566,10 @@ Do not configure Fargate Spot for the continuously running application task.
 
 Create one ARM64 Linux Fargate task definition.
 
-Production task sizing:
+Production task sizing comes from `backend/controlbox/ecs_runtime.json`, validated by the backend control-box schema and consumed by both Terraform and the normal CI release renderer:
 
-- Task CPU: 512 units.
-- Task memory: 1,024 MiB.
+- Task CPU: 1,024 units.
+- Task memory: 2,048 MiB.
 - Ephemeral storage: default 20 GiB.
 
 Define two essential containers:
@@ -578,13 +577,17 @@ Define two essential containers:
 - `frontend`
 - `backend`
 
-Allocate 256 CPU units to each long-running container.
+Allocate 512 CPU units to each long-running container.
 
-Reserve 256 MiB for the backend and 512 MiB for the frontend without container-level hard memory limits.
+Reserve 512 MiB for the backend and 1,024 MiB for the frontend without container-level hard memory limits.
 
-This leaves 256 MiB of task memory available as shared burst headroom while both long-running containers are active.
+This leaves 512 MiB of task memory available as shared burst headroom while both long-running containers are active.
 
 Reserve 32 MiB for the one-time cache initialization container, which finishes before the frontend starts.
+
+Set the frontend's `NODE_OPTIONS` from `frontend_heap_mib`, currently `--max-old-space-size=768`.
+The explicit V8 old-space budget prevents the low automatic heap ceiling observed during WAT-343, while leaving room within the frontend reservation for native allocations, buffers, and other V8 spaces.
+The heap value is not a process RSS limit.
 
 Use `awsvpc` network mode.
 
@@ -621,20 +624,20 @@ Configure:
 
 Create one ECS service with:
 
-- Desired count: 1.
+- Desired count: `ecs_runtime.json`'s `desired_count`, currently 2.
 - Fargate capacity provider.
-- Private subnets.
-- Public IP assignment disabled.
+- Public subnets across two Availability Zones.
+- Public IP assignment enabled for outbound access, with inbound traffic restricted to the load balancer.
 - Frontend target-group registration.
 - ECS managed tags enabled.
 - Deployment circuit breaker enabled.
 - Automatic rollback enabled.
 - Health-check grace period configured.
-- `minimumHealthyPercent = 0`.
-- `maximumPercent = 100`.
+- `minimumHealthyPercent = 100`.
+- `maximumPercent = 200`.
 - ECS Exec disabled by default.
 
-The stop-before-start policy prevents transient duplicate frontend cache owners.
+The start-before-stop policy keeps healthy tasks serving during discovery bootstrap on replacements.
 
 If ECS Exec is later required for diagnosis, add it intentionally with a dedicated IAM policy and audit logging.
 
@@ -662,7 +665,11 @@ Configure the Terraform ECS service to ignore drift only for the active task-def
 
 Do not ignore changes to desired count, networking, target groups, deployment configuration, or tags.
 
-When Terraform changes the task-definition structure, the infrastructure workflow must register the updated base revision and then trigger the normal application deployment workflow so the service receives both current images and current infrastructure settings.
+For resource-budget changes, the normal application release renderer reads `ecs_runtime.json` and sets task CPU, task memory, container CPU and memory reservations, and the frontend heap before registering the immutable release revision.
+The same release sets the ECS service's desired count from that file.
+These changes therefore activate in that release even though the Terraform production apply waits for the application release to finish.
+Terraform continues to record the matching base structure without replacing the active release revision.
+Other Terraform-only task-definition structure changes still require a subsequent normal application release after the updated base revision is registered.
 
 ## 14. IAM runtime roles
 
@@ -842,10 +849,10 @@ Do not log secret values, authorization headers, refresh cookies, Supabase servi
 
 Create alarms for:
 
-- ECS service running task count below one.
-- Application Load Balancer unhealthy host count above zero.
+- Application Load Balancer healthy target count below the configured service count.
+- Application Load Balancer generated 5xx responses above a small threshold, including 503s when targets are unavailable.
 - Application Load Balancer target 5xx responses above a small threshold.
-- Frontend container CPU above 85 percent for a sustained window.
+- ECS service CPU above 80 percent for a sustained window.
 - Task memory above 85 percent for a sustained window.
 
 Create the alarms even if no notification endpoint is configured initially.
@@ -860,10 +867,9 @@ Create one small CloudWatch dashboard containing:
 
 - ECS CPU.
 - ECS memory.
-- Running task count.
 - Application Load Balancer request count.
 - Target response time.
-- HTTP 4xx and 5xx counts.
+- Load balancer 4xx and 5xx counts, plus target 5xx counts.
 - Unhealthy target count.
 
 ## 18. Scheduled and triggered jobs
@@ -1021,15 +1027,15 @@ After both pushes succeed:
 1. Download the latest active task definition for the wat2do application family.
 2. Replace the frontend image with the new frontend digest.
 3. Replace the backend image with the new backend digest.
-4. Register one new task-definition revision.
-5. Update the ECS service to that exact revision.
+4. Render the shared runtime resource budget and register one new task-definition revision.
+5. Update the ECS service to that exact revision and the configured desired count.
 6. Wait for ECS service stability.
 7. Query the stopped task if deployment fails.
 8. Surface the stopped reason and recent CloudWatch logs.
 
 The ECS deployment circuit breaker handles service rollback.
 
-Because the service uses stop-before-start, the deployment can briefly make the application unavailable.
+The service retains healthy tasks during rollout and replaces them only as new tasks become healthy.
 
 ### 19.6 ECR cleanup
 
@@ -1194,7 +1200,7 @@ Done when:
 
 Done when:
 
-- One healthy ECS task is running.
+- The configured count of healthy ECS tasks is running, with a minimum of two.
 - CloudFront serves `wat2do.io`.
 - `/api/*` reaches the backend through the frontend.
 - The backend has no public target or public IP.

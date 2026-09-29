@@ -1,19 +1,37 @@
 resource "aws_cloudwatch_metric_alarm" "healthy_targets" {
   alarm_name          = "wat2do-production-healthy-targets"
-  alarm_description   = "The wat2do target group has fewer than one healthy target."
+  alarm_description   = "The wat2do target group has fewer healthy targets than the configured service count."
   comparison_operator = "LessThanThreshold"
   evaluation_periods  = 1
   metric_name         = "HealthyHostCount"
   namespace           = "AWS/ApplicationELB"
   period              = 60
   statistic           = "Minimum"
-  threshold           = 1
+  threshold           = local.ecs_runtime_control.desired_count
   treat_missing_data  = "breaching"
   alarm_actions       = var.alarm_sns_topic_arn == null ? [] : [var.alarm_sns_topic_arn]
 
   dimensions = {
     LoadBalancer = aws_lb.main.arn_suffix
     TargetGroup  = aws_lb_target_group.frontend.arn_suffix
+  }
+}
+
+resource "aws_cloudwatch_metric_alarm" "load_balancer_5xx" {
+  alarm_name          = "wat2do-production-load-balancer-5xx"
+  alarm_description   = "The load balancer is returning 5xx responses, including 503s when no targets are available."
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 1
+  metric_name         = "HTTPCode_ELB_5XX_Count"
+  namespace           = "AWS/ApplicationELB"
+  period              = 300
+  statistic           = "Sum"
+  threshold           = 5
+  treat_missing_data  = "notBreaching"
+  alarm_actions       = var.alarm_sns_topic_arn == null ? [] : [var.alarm_sns_topic_arn]
+
+  dimensions = {
+    LoadBalancer = aws_lb.main.arn_suffix
   }
 }
 
@@ -101,6 +119,7 @@ resource "aws_cloudwatch_dashboard" "main" {
           metrics = [
             ["AWS/ApplicationELB", "RequestCount", "LoadBalancer", aws_lb.main.arn_suffix],
             [".", "HTTPCode_ELB_4XX_Count", ".", "."],
+            [".", "HTTPCode_ELB_5XX_Count", ".", "."],
             [".", "HTTPCode_Target_5XX_Count", ".", "."],
             [".", "UnHealthyHostCount", ".", ".", "TargetGroup", aws_lb_target_group.frontend.arn_suffix],
             [".", "TargetResponseTime", ".", ".", { stat = "Average" }],

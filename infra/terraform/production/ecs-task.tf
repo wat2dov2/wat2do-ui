@@ -9,8 +9,8 @@ resource "aws_ecs_cluster" "main" {
 
 resource "aws_ecs_task_definition" "application" {
   family                   = "wat2do-production-app"
-  cpu                      = "512"
-  memory                   = "1024"
+  cpu                      = tostring(local.ecs_runtime_control.task_cpu)
+  memory                   = tostring(local.ecs_runtime_control.task_memory_mib)
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
   execution_role_arn       = aws_iam_role.ecs_execution.arn
@@ -42,8 +42,8 @@ resource "aws_ecs_task_definition" "application" {
       name                   = "backend"
       image                  = var.backend_image
       essential              = true
-      cpu                    = 256
-      memoryReservation      = 256
+      cpu                    = local.ecs_runtime_control.backend_cpu
+      memoryReservation      = local.ecs_runtime_control.backend_memory_reservation_mib
       readonlyRootFilesystem = true
       portMappings = [{
         containerPort = 8000
@@ -78,7 +78,7 @@ resource "aws_ecs_task_definition" "application" {
       image                  = var.frontend_image
       essential              = false
       cpu                    = 0
-      memoryReservation      = 32
+      memoryReservation      = local.ecs_runtime_control.cache_init_memory_reservation_mib
       readonlyRootFilesystem = true
       user                   = "0"
       command                = ["sh", "-c", "chown 999:999 /app/frontend/.next/cache && chmod 0755 /app/frontend/.next/cache && cp -a /app/frontend/.next/server/app/. /writable-prerender/ && chown -R 999:999 /writable-prerender"]
@@ -107,8 +107,8 @@ resource "aws_ecs_task_definition" "application" {
       name                   = "frontend"
       image                  = var.frontend_image
       essential              = true
-      cpu                    = 256
-      memoryReservation      = 512
+      cpu                    = local.ecs_runtime_control.frontend_cpu
+      memoryReservation      = local.ecs_runtime_control.frontend_memory_reservation_mib
       readonlyRootFilesystem = true
       dependsOn = [
         {

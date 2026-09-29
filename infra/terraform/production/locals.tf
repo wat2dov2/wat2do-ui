@@ -8,10 +8,12 @@ locals {
 
   availability_zones      = slice(data.aws_availability_zones.available.names, 0, 2)
   discovery_cache_control = jsondecode(file("${path.module}/../../../backend/controlbox/discovery_cache.json"))
+  ecs_runtime_control     = jsondecode(file("${path.module}/../../../backend/controlbox/ecs_runtime.json"))
   image_delivery_control  = jsondecode(file("${path.module}/../../../backend/controlbox/image_delivery.json"))
 
   frontend_runtime_environment = {
     NODE_ENV                = "production"
+    NODE_OPTIONS            = "--max-old-space-size=${local.ecs_runtime_control.frontend_heap_mib}"
     AWS_REGION              = var.aws_region
     STORAGE_BUCKET_NAME     = aws_s3_bucket.assets.id
     PORT                    = "3000"
