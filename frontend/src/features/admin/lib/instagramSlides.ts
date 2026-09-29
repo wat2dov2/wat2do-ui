@@ -219,7 +219,8 @@ export function buildCoverSlideModel({
     logoSrc: buildInstagramCoverLogo(colors),
     doodleIcons: getClubCategoryDoodleDataUris(colors.secondary, 42),
     dateLine: formatCoverDate(localDate, language),
-    newEventCount,
+    // Unsaved additions can exceed the count from the last batch response.
+    newEventCount: Math.max(newEventCount, eventCount),
     // Selected events can predate both the batch date and its recent-event window.
     headline: batchKind === "employers_on_campus"
       ? (language === "fr" ? "EMPLOYEURS SUR LE CAMPUS" : "EMPLOYERS ON CAMPUS")
