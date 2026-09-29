@@ -651,4 +651,11 @@ ANALYZE public.events;
 ANALYZE public.event_dates;
 ANALYZE public.positions;
 
+-- A pending local nomination exercises Sponsors independently of contact email.
+INSERT INTO public.sponsor_submissions (id, school_id, business_name, email, message)
+SELECT '77777777-7777-4777-8777-777777777771', id, 'Campus Corner Cafe',
+       'student@example.com', 'A nearby cafe needs student support during road construction.'
+FROM public.schools WHERE slug = 'uwaterloo'
+ON CONFLICT (id) DO NOTHING;
+
 COMMIT;

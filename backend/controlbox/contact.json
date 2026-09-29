@@ -5,6 +5,7 @@
     "business_name": 120,
     "location": 250,
     "website": 500,
+    "discount": 500,
     "reason_for_support": 2000,
     "proposed_banner_text": 180,
     "student_traffic_per_week": 250,

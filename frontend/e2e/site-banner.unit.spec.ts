@@ -31,16 +31,16 @@ test.afterAll(() => {
   bannerModule.exports = bannerApi;
 });
 
-test("the current school's full name, city and form link reach the banner", async () => {
-  const element = await SiteBanner({ schoolCity: "Montréal", schoolName: "McGill University" });
-  expect(element?.props).toMatchObject({ schoolCity: "Montréal", schoolName: "McGill University", ctaHref: "/support-local" });
+test("the current school's full name and form link reach the banner", async () => {
+  const element = await SiteBanner({ schoolName: "McGill University" });
+  expect(element?.props).toMatchObject({ schoolName: "McGill University", ctaHref: "/support-local" });
 });
 
 test("the enabled banner stays visible on every render without reading cookies", async () => {
-  expect(await SiteBanner({ schoolCity: "Waterloo" })).not.toBeNull();
-  expect(await SiteBanner({ schoolCity: "Waterloo" })).not.toBeNull();
+  expect(await SiteBanner({ schoolName: "University of Waterloo" })).not.toBeNull();
+  expect(await SiteBanner({ schoolName: "University of Waterloo" })).not.toBeNull();
   banner = { ...campaign, cta_href: "/another-announcement" };
-  expect(await SiteBanner({ schoolCity: "Waterloo" })).not.toBeNull();
+  expect(await SiteBanner({ schoolName: "University of Waterloo" })).not.toBeNull();
 });
 
 test("disabled banners and unsafe calls to action stay hidden", async () => {

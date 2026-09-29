@@ -439,6 +439,7 @@ class BusinessSupportLimits(_ControlModel):
     business_name: int = Field(gt=0, le=200)
     location: int = Field(gt=0, le=500)
     website: int = Field(gt=0, le=1000)
+    discount: int = Field(gt=0, le=500)
     reason_for_support: int = Field(gt=0, le=5000)
     proposed_banner_text: int = Field(gt=0, le=500)
     student_traffic_per_week: int = Field(gt=0, le=500)

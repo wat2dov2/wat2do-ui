@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { format } from "date-fns";
 import { Button } from "@/shared/ui/button";
+import { ChevronDown } from "@/shared/ui/doodle-icons";
 import { Calendar } from "@/shared/ui/calendar";
 import {
   Popover,
@@ -95,6 +96,7 @@ export function DateFilterSelect({
           aria-haspopup="listbox"
         >
           {selectedLabel}
+          <ChevronDown aria-hidden="true" />
         </Button>
       </PopoverTrigger>
       <PopoverContent

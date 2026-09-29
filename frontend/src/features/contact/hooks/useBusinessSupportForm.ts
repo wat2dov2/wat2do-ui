@@ -3,8 +3,7 @@ import { useTranslation } from "react-i18next";
 
 import {
   BUSINESS_SUPPORT_FIELD_LIMITS,
-  buildBusinessSupportMessage,
-  submitContactMessage,
+  submitBusinessSupportNomination,
   type BusinessSupportNomination,
 } from "@/features/contact/api/contact.api";
 import type { SchoolSummary } from "@/shared/api/schools.api";
@@ -17,6 +16,7 @@ const EMPTY_NOMINATION: BusinessSupportNomination = {
   businessName: "",
   location: "",
   website: "",
+  discount: "",
   reasonForSupport: "",
   proposedBannerText: "",
   studentTrafficPerWeek: "",
@@ -54,7 +54,7 @@ export function useBusinessSupportForm(school: SchoolSummary | undefined) {
     const nextErrors: FieldErrors = {};
     for (const field of Object.keys(BUSINESS_SUPPORT_FIELD_LIMITS) as FieldName[]) {
       const value = form[field].trim();
-      if (field !== "website" && !value) {
+      if (field !== "website" && field !== "discount" && !value) {
         nextErrors[field] = t("contact.businessSupport.validation.required");
       } else if (value.length > BUSINESS_SUPPORT_FIELD_LIMITS[field]) {
         nextErrors[field] = t("contact.businessSupport.validation.tooLong", {
@@ -77,10 +77,14 @@ export function useBusinessSupportForm(school: SchoolSummary | undefined) {
       return;
     }
 
+    if (!school) {
+      setSubmissionError(t("contact.businessSupport.error"));
+      return;
+    }
     submitting.current = true;
     setStatus("submitting");
     try {
-      await submitContactMessage(buildBusinessSupportMessage(form, school));
+      await submitBusinessSupportNomination(form, school);
       setForm(EMPTY_NOMINATION);
       setStatus("submitted");
     } catch (error) {

@@ -42,6 +42,7 @@
     "unknown": "Payment unspecified",
     "addPosition": "Add position",
     "submitted": "Position submitted for review.",
-    "submissions": "Position submissions"
+    "submissions": "Position submissions",
+    "noDeadline": "No deadline"
   }
 }

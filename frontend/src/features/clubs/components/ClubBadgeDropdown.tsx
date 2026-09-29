@@ -24,10 +24,10 @@ function ClubLogo({ src }: { src: string | null | undefined }) {
     <LazyImage
       src={src}
       alt=""
-      width={12}
-      height={12}
+      width={20}
+      height={20}
       fallback={null}
-      className="size-3 shrink-0 rounded-full"
+      className="size-5 shrink-0 rounded-full"
     />
   );
 }

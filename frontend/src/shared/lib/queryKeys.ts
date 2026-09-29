@@ -39,6 +39,10 @@ export const queryKeys = {
         school,
       ] as const,
   },
+  sponsorSubmissions: {
+    all: ["sponsor-submissions"] as const,
+    list: (page: number, status = "", school = "", search = "") => [...queryKeys.sponsorSubmissions.all, page, status, school, search] as const,
+  },
   positionSubmissions: {
     all: ["position-submissions"] as const,
     list: (page: number, status?: string, school = "", search = "") => [...queryKeys.positionSubmissions.all, page, status ?? "", school, search] as const,

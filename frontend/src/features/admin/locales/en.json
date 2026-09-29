@@ -356,6 +356,12 @@
     },
     "clubSubmissions": "Club submissions",
     "noClubSubmissions": "No club submissions",
-    "noClubSubmissionsDesc": "New club submissions will appear here for approval."
+    "noClubSubmissionsDesc": "New club submissions will appear here for approval.",
+    "sponsors": {
+      "title": "Sponsors",
+      "submissions": "Struggling local business submissions",
+      "description": "Review nearby business nominations.",
+      "reviewHelp": "Approval records your review. It does not publish a banner."
+    }
   }
 }

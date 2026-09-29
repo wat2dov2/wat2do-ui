@@ -41,6 +41,7 @@ const FIELDS: readonly BusinessSupportField[] = [
   { name: "businessName", type: "text", autoComplete: "organization" },
   { name: "location", type: "text", autoComplete: "street-address" },
   { name: "website", type: "url", hint: true, autoComplete: "url" },
+  { name: "discount", multiline: true, hint: true },
   { name: "reasonForSupport", multiline: true },
   { name: "proposedBannerText", multiline: true, hint: true },
   { name: "studentTrafficPerWeek", type: "text", hint: true },
@@ -87,7 +88,7 @@ export function BusinessSupportForm({ school }: { school: SchoolSummary | undefi
                     name: field.name,
                     value: form.form[field.name],
                     maxLength: BUSINESS_SUPPORT_FIELD_LIMITS[field.name],
-                    required: field.name !== "website",
+                    required: field.name !== "website" && field.name !== "discount",
                     "aria-invalid": Boolean(error),
                     "aria-describedby": description,
                   };

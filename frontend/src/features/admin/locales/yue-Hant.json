@@ -356,6 +356,12 @@
     },
     "clubSubmissions": "社團提交",
     "noClubSubmissions": "暫無社團提交",
-    "noClubSubmissionsDesc": "新提交嘅社團會喺呢度顯示，等候批准。"
+    "noClubSubmissionsDesc": "新提交嘅社團會喺呢度顯示，等候批准。",
+    "sponsors": {
+      "title": "贊助商",
+      "submissions": "經營困難嘅本地商戶推薦",
+      "description": "審核附近商戶嘅推薦。",
+      "reviewHelp": "批准只會記錄審核決定，唔會發布橫幅。"
+    }
   }
 }

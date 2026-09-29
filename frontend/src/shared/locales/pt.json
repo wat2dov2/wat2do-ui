@@ -104,9 +104,8 @@
     "switchToDarkMode": "Mudar para o modo escuro"
   },
   "siteBanner": {
-    "localArea": "sua comunidade",
     "businessSupport": {
-      "message": "Queremos apoiar um negócio em dificuldades em {{city}}, perto de {{schoolName}}, divulgando-o aqui.",
+      "message": "Queremos apoiar um negócio perto de {{schoolName}}, divulgando-o aqui.",
       "cta": "Enviar um formulário"
     },
     "localUniversity": "sua universidade"
@@ -498,9 +497,8 @@
       "position": "{{current}} de {{total}}"
     },
     "businessSupport": {
-      "title": "Apoie um negócio em dificuldades perto de {{schoolName}}",
-      "titleCity": "Apoie um negócio em dificuldades em {{city}}, perto de {{schoolName}}",
-      "description": "Conhece um negócio local que precisa de uma força? Indique-o para aparecer no banner do Wat2Do.",
+      "title": "Apoie um negócio perto de {{schoolName}}",
+      "description": "Indique um negócio próximo que precise do apoio dos estudantes.",
       "formTitle": "Indique um negócio",
       "formDescription": "Conte por que esse negócio merece apoio. Avaliamos cada indicação antes de destacar um negócio.",
       "fields": {
@@ -513,6 +511,10 @@
         "website": {
           "label": "Site ou link de rede social (opcional)",
           "hint": "Inclua https:// ou http:// no início do link."
+        },
+        "discount": {
+          "label": "Desconto para usuários do wat2do (opcional)",
+          "hint": "Por exemplo, 10% de desconto. Inclua como usar e as condições."
         },
         "reasonForSupport": {
           "label": "Por que esse negócio precisa de apoio?"

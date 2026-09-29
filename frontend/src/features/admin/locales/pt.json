@@ -356,6 +356,12 @@
     },
     "clubSubmissions": "Submissões de clubes",
     "noClubSubmissions": "Nenhuma submissão de clube",
-    "noClubSubmissionsDesc": "Novas submissões de clubes aparecerão aqui para aprovação."
+    "noClubSubmissionsDesc": "Novas submissões de clubes aparecerão aqui para aprovação.",
+    "sponsors": {
+      "title": "Patrocinadores",
+      "submissions": "Indicações de negócios locais em dificuldades",
+      "description": "Analise as indicações de negócios próximos.",
+      "reviewHelp": "A aprovação registra sua decisão. Ela não publica um banner."
+    }
   }
 }

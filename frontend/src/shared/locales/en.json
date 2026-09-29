@@ -98,9 +98,8 @@
     "switchToDarkMode": "Switch to dark mode"
   },
   "siteBanner": {
-    "localArea": "your community",
     "businessSupport": {
-      "message": "We want to support a struggling business in {{city}}, near {{schoolName}}, by advertising it here.",
+      "message": "We want to support a business near {{schoolName}} by advertising it here.",
       "cta": "Submit a form"
     },
     "localUniversity": "your university"
@@ -492,9 +491,8 @@
       "position": "{{current}} of {{total}}"
     },
     "businessSupport": {
-      "title": "Support a struggling business near {{schoolName}}",
-      "titleCity": "Support a struggling business in {{city}}, near {{schoolName}}",
-      "description": "Know a local business that could use a boost? Nominate them for a spot in the Wat2Do banner.",
+      "title": "Support a business near {{schoolName}}",
+      "description": "Nominate a nearby business that could use student support.",
       "formTitle": "Nominate a business",
       "formDescription": "Tell us what makes them worth supporting. We review every nomination before featuring a business.",
       "fields": {
@@ -507,6 +505,10 @@
         "website": {
           "label": "Website or social link (optional)",
           "hint": "Include https:// or http:// at the start of the link."
+        },
+        "discount": {
+          "label": "Discount for wat2do users (optional)",
+          "hint": "For example, 10% off. Include how to redeem it and any conditions."
         },
         "reasonForSupport": {
           "label": "Why does this business need support?"

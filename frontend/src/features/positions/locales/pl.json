@@ -45,6 +45,7 @@
       "commitment": "np. 3–5 godzin tygodniowo, od września do grudnia",
       "contact": "np. hiring@example.com",
       "requirements": "Jedno wymaganie w wierszu, na przykład:\nUmiejętność pracy w zespole\nDostępność na cotygodniowe spotkania"
-    }
+    },
+    "noDeadline": "Bez terminu"
   }
 }

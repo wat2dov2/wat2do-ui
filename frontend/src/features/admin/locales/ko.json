@@ -356,6 +356,12 @@
     },
     "clubSubmissions": "동아리 제출",
     "noClubSubmissions": "동아리 제출 없음",
-    "noClubSubmissionsDesc": "새로운 동아리 제출이 승인을 위해 여기에 표시됩니다."
+    "noClubSubmissionsDesc": "새로운 동아리 제출이 승인을 위해 여기에 표시됩니다.",
+    "sponsors": {
+      "title": "스폰서",
+      "submissions": "어려움을 겪는 지역 가게 추천",
+      "description": "근처 가게 추천을 검토하세요.",
+      "reviewHelp": "승인은 검토 결과를 기록합니다. 배너를 게시하지는 않습니다."
+    }
   }
 }

@@ -356,6 +356,12 @@
     },
     "clubSubmissions": "Zgłoszenia klubów",
     "noClubSubmissions": "Brak zgłoszeń klubów",
-    "noClubSubmissionsDesc": "Nowe zgłoszenia klubów pojawią się tutaj do zatwierdzenia."
+    "noClubSubmissionsDesc": "Nowe zgłoszenia klubów pojawią się tutaj do zatwierdzenia.",
+    "sponsors": {
+      "title": "Sponsorzy",
+      "submissions": "Zgłoszenia lokalnych firm w trudnej sytuacji",
+      "description": "Przejrzyj zgłoszenia pobliskich firm.",
+      "reviewHelp": "Zatwierdzenie zapisuje decyzję. Nie publikuje banera."
+    }
   }
 }

@@ -44,6 +44,7 @@
       "commitment": "ad es. 3-5 ore a settimana, da settembre a dicembre",
       "contact": "ad es. hiring@example.com",
       "requirements": "Un requisito per riga, ad esempio:\nSaper lavorare in squadra\nEssere disponibili per riunioni settimanali"
-    }
+    },
+    "noDeadline": "Senza scadenza"
   }
 }

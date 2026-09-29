@@ -330,3 +330,17 @@ export async function exportAdminPosterPayouts(
     payout_ids: payoutIds,
   });
 }
+
+export type SponsorSubmission = components["schemas"]["SponsorSubmissionResponse"];
+
+export function getSponsorSubmissions(page = 1, status = "", school = "", search = "") {
+  const params = new URLSearchParams({ page: String(page), page_size: String(ADMIN_ITEMS_PER_PAGE) });
+  if (status) params.set("submission_status", status);
+  if (school) params.set("school", school);
+  if (search) params.set("search", search);
+  return api.get<components["schemas"]["PaginatedResponse_SponsorSubmissionResponse_"]>("/sponsor-submissions/?" + params);
+}
+
+export function reviewSponsorSubmission(id: string, status: "approved" | "rejected") {
+  return api.patch<SponsorSubmission>("/sponsor-submissions/" + id, { status });
+}

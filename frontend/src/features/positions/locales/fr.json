@@ -44,6 +44,7 @@
       "commitment": "p. ex. 3 à 5 heures par semaine, de septembre à décembre",
       "contact": "p. ex. hiring@example.com",
       "requirements": "Une exigence par ligne, par exemple :\nAimer travailler en équipe\nÊtre disponible pour les réunions hebdomadaires"
-    }
+    },
+    "noDeadline": "Sans date limite"
   }
 }

@@ -134,3 +134,5 @@ PG_CODE_TO_HTTP: dict[str, tuple[int, str]] = {
 FAILED_TO_GENERATE_TOKEN = "Unable to generate login link. Please try again later."
 FAILED_TO_SAVE_TOKEN = "Unable to save verification token. Please try again later."
 REGISTRATION_FAILED = "Unable to complete registration. Please try again later."
+
+SPONSOR_SUBMISSION_NOT_FOUND = "Sponsor submission not found"

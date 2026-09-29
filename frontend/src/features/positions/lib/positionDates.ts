@@ -1,3 +1,4 @@
+import { schoolCalendarDate } from "@/shared/utils/date";
 import type { Position } from "@/shared/types";
 
 function positionDeadline(position: Position): Date | null {
@@ -39,4 +40,11 @@ export function formatPositionDeadline(
       ? { dateStyle: "medium", timeStyle: "long", timeZone }
       : { dateStyle: "medium", timeZone: "UTC" },
   ).format(deadline);
+}
+
+/** Calendar day for the scroll indicator, preserving date-only deadlines. */
+export function positionDeadlineCalendarDate(position: Position, timeZone: string): string | null {
+  const deadline = positionDeadline(position);
+  if (!deadline) return null;
+  return schoolCalendarDate(deadline, position.deadline_at ? timeZone : "UTC").toISOString().slice(0, 10);
 }

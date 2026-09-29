@@ -1,8 +1,10 @@
+import { api } from "../src/shared/services/apiClient";
 import { expect, test } from "@playwright/test";
 import contactControl from "../../backend/controlbox/contact.json" with { type: "json" };
 import {
   BUSINESS_SUPPORT_FIELD_LIMITS,
   buildBusinessSupportMessage,
+  submitBusinessSupportNomination,
   type BusinessSupportNomination,
 } from "../src/features/contact/api/contact.api";
 import type { SchoolSummary } from "../src/shared/api/schools.api";
@@ -26,6 +28,7 @@ test.describe("message contract", () => {
 
     expect(Object.keys(payload).sort()).toEqual(["email", "message"]);
     expect(payload.email).toBe("nominator@example.com");
+    expect(payload.message).toContain("Discount for wat2do users: 10% off with code WAT2DO");
     expect(payload.message).toContain("Business: Campus Corner Cafe");
     expect(payload.message).toContain("Location or address: 12 Main Street, Waterloo");
     expect(payload.message).toContain("Website or social link: https://example.com/cafe");
@@ -39,9 +42,10 @@ test.describe("message contract", () => {
 
   test("omitted website and unavailable city do not invent a location", () => {
     const withoutCity = buildBusinessSupportMessage(
-      { ...nomination, website: "   " }, { ...school, city: null },
+      { ...nomination, website: "   ", discount: "   " }, { ...school, city: null },
     );
     expect(withoutCity.message).toContain("Website or social link: Not provided");
+    expect(withoutCity.message).toContain("Discount for wat2do users: Not provided");
     expect(withoutCity.message).toContain("City: Not specified");
     expect(buildBusinessSupportMessage(nomination, undefined).message)
       .toContain("Campus: Not selected");
@@ -61,4 +65,22 @@ test.describe("message contract", () => {
       reasonForSupport: "x".repeat(contactControl.maximum_message_length),
     }, school)).toThrow(RangeError);
   });
+});
+
+test("business nominations persist through the sponsor queue with campus identity", async () => {
+  const original = api.post;
+  let sent: { path: string; data: unknown } | undefined;
+  api.post = async <T>(path: string, data?: unknown) => {
+    sent = { path, data };
+    return { message: "received" } as T;
+  };
+  try {
+    await submitBusinessSupportNomination(nomination, school);
+    expect(sent?.path).toBe("/sponsor-submissions/");
+    expect(sent?.data).toMatchObject({
+      school: "uwaterloo", business_name: "Campus Corner Cafe", email: "nominator@example.com",
+    });
+  } finally {
+    api.post = original;
+  }
 });

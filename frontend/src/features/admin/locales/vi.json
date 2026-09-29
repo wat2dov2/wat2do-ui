@@ -356,6 +356,12 @@
     },
     "clubSubmissions": "Đề xuất câu lạc bộ",
     "noClubSubmissions": "Chưa có đề xuất câu lạc bộ",
-    "noClubSubmissionsDesc": "Các đề xuất câu lạc bộ mới sẽ xuất hiện tại đây để phê duyệt."
+    "noClubSubmissionsDesc": "Các đề xuất câu lạc bộ mới sẽ xuất hiện tại đây để phê duyệt.",
+    "sponsors": {
+      "title": "Nhà tài trợ",
+      "submissions": "Đề cử doanh nghiệp địa phương đang gặp khó khăn",
+      "description": "Xem xét các đề cử doanh nghiệp gần trường.",
+      "reviewHelp": "Phê duyệt ghi lại quyết định của bạn, không đăng biểu ngữ."
+    }
   }
 }

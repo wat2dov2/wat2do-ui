@@ -133,6 +133,7 @@ AUTHENTICATED_ENDPOINTS = (
     Endpoint("/saved-clubs/", "/saved-clubs/", True),
     Endpoint("/v1/saved-events/", "/v1/saved-events/", True),
     Endpoint("/position-submissions/", "/position-submissions/?page=1&page_size=10", True),
+    Endpoint("/sponsor-submissions/", "/sponsor-submissions/?page=1&page_size=10", True),
     Endpoint("/submissions/", "/submissions/?page=1&page_size=10", True),
     Endpoint("/users/", "/users/?skip=0&limit=20", True),
     Endpoint("/users/me", "/users/me", True),

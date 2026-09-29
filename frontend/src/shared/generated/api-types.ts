@@ -1248,6 +1248,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/sponsor-submissions/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Submissions */
+        get: operations["list_submissions_sponsor_submissions__get"];
+        put?: never;
+        /** Create Submission */
+        post: operations["create_submission_sponsor_submissions__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sponsor-submissions/{submission_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Review Submission */
+        patch: operations["review_submission_sponsor_submissions__submission_id__patch"];
+        trace?: never;
+    };
     "/submissions/": {
         parameters: {
             query?: never;
@@ -3116,6 +3151,19 @@ export interface components {
             /** Total Pages */
             total_pages: number;
         };
+        /** PaginatedResponse[SponsorSubmissionResponse] */
+        PaginatedResponse_SponsorSubmissionResponse_: {
+            /** Items */
+            items: components["schemas"]["SponsorSubmissionResponse"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+            /** Total Pages */
+            total_pages: number;
+        };
         /** PaginatedResponse[SubmissionResponse] */
         PaginatedResponse_SubmissionResponse_: {
             /** Items */
@@ -3906,6 +3954,56 @@ export interface components {
             cta_label_translation_key: string;
             /** Cta Href */
             cta_href: string;
+        };
+        /** SponsorSubmissionCreate */
+        SponsorSubmissionCreate: {
+            /**
+             * Email
+             * Format: email
+             */
+            email: string;
+            /** Message */
+            message: string;
+            /** School */
+            school: string;
+            /** Business Name */
+            business_name: string;
+        };
+        /** SponsorSubmissionResponse */
+        SponsorSubmissionResponse: {
+            /**
+             * Email
+             * Format: email
+             */
+            email: string;
+            /** Message */
+            message: string;
+            /** School */
+            school: string;
+            /** Business Name */
+            business_name: string;
+            /** Id */
+            id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "approved" | "rejected";
+            /**
+             * Submitted At
+             * Format: date-time
+             */
+            submitted_at: string;
+            /** Reviewed At */
+            reviewed_at?: string | null;
+        };
+        /** SponsorSubmissionReview */
+        SponsorSubmissionReview: {
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "approved" | "rejected";
         };
         /**
          * SubmissionCreate
@@ -6939,6 +7037,111 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SiteBannerResponse"] | null;
+                };
+            };
+        };
+    };
+    list_submissions_sponsor_submissions__get: {
+        parameters: {
+            query?: {
+                submission_status?: ("pending" | "approved" | "rejected") | null;
+                school?: string | null;
+                search?: string | null;
+                /** @description Page number (1-indexed) */
+                page?: number;
+                /** @description Items per page (max 100) */
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_SponsorSubmissionResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_submission_sponsor_submissions__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SponsorSubmissionCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    review_submission_sponsor_submissions__submission_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                submission_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SponsorSubmissionReview"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SponsorSubmissionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

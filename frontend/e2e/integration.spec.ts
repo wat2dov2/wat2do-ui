@@ -1382,6 +1382,10 @@ test.describe("Admin diagnostics", () => {
       expect(new URL(request.url).searchParams.get("submission_status")).toBe("pending");
       return { json: { items: [{ id: "pending-position", status: "pending" }], total: 43, page: 1, page_size: 20, total_pages: 3 } };
     });
+    await mockApi(page, next, url => apiPath(url) === "/sponsor-submissions", async request => {
+      expect(new URL(request.url).searchParams.get("submission_status")).toBe("pending");
+      return { json: { items: [], total: 7, page: 1, page_size: 20, total_pages: 1 } };
+    });
     await mockApi(page, next, url => apiPath(url) === "/payouts/admin", async request => {
       expect(new URL(request.url).searchParams.get("payout_status")).toBe("pending");
       return { json: { items: [{ id: "pending-payout", status: "pending" }], total: 27, page: 1, page_size: 1, total_pages: 27 } };
@@ -1395,6 +1399,8 @@ test.describe("Admin diagnostics", () => {
     } finally {
       releaseSubmissions();
     }
+    await expect(page.getByRole("button").filter({ has: page.getByRole("heading", { name: "Sponsors", exact: true }) }))
+      .toContainText("Struggling local business submissions: 7 pending");
     const events = page.getByRole("button").filter({ has: page.getByRole("heading", { name: "Events", exact: true }) });
     const clubs = page.getByRole("button").filter({ has: page.getByRole("heading", { name: "Clubs", exact: true }) });
     const positions = page.getByRole("button").filter({ has: page.getByRole("heading", { name: "Positions", exact: true }) });
@@ -5464,4 +5470,41 @@ test.describe("Discovery query diagnostics", () => {
     await expect.poll(() => requests.at(-1)?.get("search")).toBe("missing");
     expect(requests.at(-1)?.get("page")).toBe("1");
   });
+});
+
+test("Sponsors reviews a nomination and refreshes the dashboard pending badge", async ({ page, next }) => {
+  await seedAuthenticatedSession(page, next);
+  let status = "pending";
+  const nomination = {
+    id: "77777777-7777-4777-8777-777777777771",
+    business_name: "Campus Corner Cafe",
+    email: "student@example.com",
+    school: "uwaterloo",
+    message: "A nearby cafe needs student support during road construction.",
+    submitted_at: new Date().toISOString(),
+    reviewed_at: null,
+  };
+  await mockApi(page, next, url => apiPath(url) === "/sponsor-submissions", async request => {
+    const filter = new URL(request.url).searchParams.get("submission_status");
+    const items = !filter || filter === status ? [{ ...nomination, status }] : [];
+    return { json: { items, total: items.length, page: 1, page_size: 20, total_pages: 1 } };
+  });
+  await mockApi(page, next, url => apiPath(url) === "/sponsor-submissions/" + nomination.id, async request => {
+    expect(request.method).toBe("PATCH");
+    status = (await request.json()).status;
+    return { json: { ...nomination, status, reviewed_at: new Date().toISOString() } };
+  });
+  await page.goto(BASE + "/admin");
+  const sponsors = page.getByRole("button").filter({ has: page.getByRole("heading", { name: "Sponsors", exact: true }) });
+  await expect(sponsors).toContainText("Struggling local business submissions: 1 pending");
+  await sponsors.click();
+  await expect(page).toHaveURL(/\/admin\/sponsors/);
+  await page.getByRole("row").filter({ hasText: nomination.business_name }).getByRole("button", { name: "View", exact: true }).click();
+  const drawer = page.getByRole("dialog");
+  await expect(drawer).toContainText(nomination.message);
+  await drawer.getByRole("button", { name: "Approve", exact: true }).click();
+  await expect(drawer).not.toBeVisible();
+  await page.goto(BASE + "/admin");
+  await expect(page.getByRole("button").filter({ has: page.getByRole("heading", { name: "Sponsors", exact: true }) }))
+    .toContainText("Struggling local business submissions: 0 pending");
 });

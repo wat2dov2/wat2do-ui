@@ -34,6 +34,7 @@ export const ROUTES = {
   // Admin
   ADMIN: "/admin",
   ADMIN_EVENTS: "/admin/events",
+  ADMIN_SPONSORS: "/admin/sponsors",
   ADMIN_POSITIONS: "/admin/positions",
   ADMIN_CLUBS: "/admin/clubs",
   ADMIN_POSTERS: "/admin/posters",
@@ -139,6 +140,7 @@ export function settingsTabPath(
 // ── Admin sub-route map ────────────────────────────────────────────
 export const ADMIN_ROUTE_MAP = {
   "admin-events": ROUTES.ADMIN_EVENTS,
+  "admin-sponsors": ROUTES.ADMIN_SPONSORS,
   "admin-positions": ROUTES.ADMIN_POSITIONS,
   "admin-clubs": ROUTES.ADMIN_CLUBS,
   "admin-posters": ROUTES.ADMIN_POSTERS,

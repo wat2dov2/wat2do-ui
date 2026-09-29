@@ -25,7 +25,7 @@ function resolveCtaHref(href: string): string {
  * The navigation is fixed to the top, so this is too, and `index.css` offsets
  * the nav and the page below it whenever this strip is present.
  */
-export async function SiteBanner({ schoolCity, schoolName }: { schoolCity?: string | null; schoolName?: string | null }) {
+export async function SiteBanner({ schoolName }: { schoolName?: string | null }) {
   const banner = await getSiteBanner();
   if (!banner) return null;
 
@@ -35,7 +35,6 @@ export async function SiteBanner({ schoolCity, schoolName }: { schoolCity?: stri
   return (
     <SiteBannerStrip
       messageTranslationKey={banner.message_translation_key}
-      schoolCity={schoolCity}
       schoolName={schoolName}
       ctaHref={href}
       ctaLabelTranslationKey={banner.cta_label_translation_key}

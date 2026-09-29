@@ -41,6 +41,10 @@ const AdminDiagnosticsPage = lazy(() =>
   }))
 );
 
+const AdminSponsorsPage = lazy(() =>
+  import("@/features/admin/pages/AdminSponsorsPage").then(m => ({ default: m.AdminSponsorsPage }))
+);
+
 function useAdminNavigation() {
   const router = useRouter();
 
@@ -130,4 +134,10 @@ export function AdminDiagnosticsRoute() {
       <AdminDiagnosticsPage onBack={onBack} />
     </AdminSuspense>
   );
+}
+
+export function AdminSponsorsRoute() {
+  const router = useRouter();
+  const onBack = useCallback(() => router.push(ROUTES.ADMIN), [router]);
+  return <AdminSuspense><AdminSponsorsPage onBack={onBack} /></AdminSuspense>;
 }

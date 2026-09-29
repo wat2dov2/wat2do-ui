@@ -98,9 +98,8 @@
     "switchToDarkMode": "切換至深色模式"
   },
   "siteBanner": {
-    "localArea": "你嘅社區",
     "businessSupport": {
-      "message": "我哋想透過喺呢度宣傳，支持{{city}}市{{schoolName}}附近經營困難嘅商戶。",
+      "message": "我哋想透過喺呢度宣傳，支持{{schoolName}}附近嘅商戶。",
       "cta": "填寫表格"
     },
     "localUniversity": "你嘅大學"
@@ -492,9 +491,8 @@
       "position": "第 {{current}} 張，共 {{total}} 張"
     },
     "businessSupport": {
-      "title": "支持{{schoolName}}附近經營困難嘅商戶",
-      "titleCity": "支持{{city}}市{{schoolName}}附近經營困難嘅商戶",
-      "description": "你知唔知道邊間本地商戶需要幫手？推薦佢哋喺 Wat2Do 橫額上亮相啦。",
+      "title": "支持{{schoolName}}附近嘅商戶",
+      "description": "推薦一間附近需要學生支持嘅商戶。",
       "formTitle": "推薦商戶",
       "formDescription": "話畀我哋知點解呢間商戶值得支持。我哋會先審核每份推薦，再決定介紹邊間商戶。",
       "fields": {
@@ -507,6 +505,10 @@
         "website": {
           "label": "網站或社交媒體連結（選填）",
           "hint": "請提供以 https:// 或 http:// 開頭嘅完整連結。"
+        },
+        "discount": {
+          "label": "wat2do 用戶優惠（選填）",
+          "hint": "例如九折。請說明點樣使用優惠同相關條件。"
         },
         "reasonForSupport": {
           "label": "點解呢間商戶需要支持？"

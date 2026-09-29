@@ -1,3 +1,4 @@
+import contactControl from "../../backend/controlbox/contact.json" with { type: "json" };
 import { expect, test, type Page } from "@playwright/test";
 import type { ContactMessage } from "../src/features/contact/api/contact.api";
 import { STORAGE_KEYS } from "../src/shared/constants/storageKeys";
@@ -8,7 +9,7 @@ async function openNomination(page: Page) {
     localStorage.setItem(languageKey, "en");
   }, STORAGE_KEYS.LANGUAGE);
   await page.goto("/support-local");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^Support a struggling business (?:in .+, )?near .+$/);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^Support a business near .+$/);
 }
 
 async function fillNomination(page: Page) {
@@ -16,6 +17,7 @@ async function fillNomination(page: Page) {
   await page.getByLabel("Business location or address", { exact: true }).fill(nomination.location);
   await page.getByLabel("Website or social link (optional)", { exact: true }).fill(nomination.website);
   await page.getByLabel("Why does this business need support?", { exact: true }).fill(nomination.reasonForSupport);
+  await page.getByLabel("Discount for wat2do users (optional)", { exact: true }).fill(nomination.discount);
   await page.getByLabel("What should the banner say?", { exact: true }).fill(nomination.proposedBannerText);
   await page.getByLabel("Estimated student visits per week", { exact: true }).fill(nomination.studentTrafficPerWeek);
   await page.getByLabel("Your email address", { exact: true }).fill(nomination.email);
@@ -24,7 +26,7 @@ async function fillNomination(page: Page) {
 test.describe("nomination form", () => {
   test("a signed-out visitor can submit and receives confirmation", async ({ page }) => {
     const submitted: ContactMessage[] = [];
-    await page.route(/\/contact\/?(?:\?.*)?$/, async (route) => {
+    await page.route(/\/sponsor-submissions\/?(?:\?.*)?$/, async (route) => {
       submitted.push(route.request().postDataJSON() as ContactMessage);
       await route.fulfill({ json: { message: "sent" } });
     });
@@ -35,6 +37,7 @@ test.describe("nomination form", () => {
     await expect(page.getByRole("status")).toContainText("Nomination received");
     expect(submitted).toHaveLength(1);
     expect(submitted[0].email).toBe("nominator@example.com");
+    expect(submitted[0].message).toContain("Discount for wat2do users: 10% off with code WAT2DO");
     expect(submitted[0].message).toContain("Business: Campus Corner Cafe");
     expect(submitted[0].message).toContain("Estimated student visits per week: Not sure");
     expect(submitted[0].message.length).toBeLessThanOrEqual(contactControl.maximum_message_length);
@@ -46,7 +49,7 @@ test.describe("nomination form", () => {
 
   test("blank answers and invalid links never reach the API", async ({ page }) => {
     let requestCount = 0;
-    await page.route(/\/contact\/?(?:\?.*)?$/, async (route) => {
+    await page.route(/\/sponsor-submissions\/?(?:\?.*)?$/, async (route) => {
       requestCount += 1;
       await route.fulfill({ json: { message: "sent" } });
     });
@@ -67,7 +70,7 @@ test.describe("nomination form", () => {
 
   test("failed submission preserves all answers for retry", async ({ page }) => {
     let requestCount = 0;
-    await page.route(/\/contact\/?(?:\?.*)?$/, async (route) => {
+    await page.route(/\/sponsor-submissions\/?(?:\?.*)?$/, async (route) => {
       requestCount += 1;
       await route.fulfill(requestCount === 1
         ? { status: 503, json: { detail: "Please try again shortly." } }
@@ -90,7 +93,7 @@ test.describe("nomination form", () => {
     let release!: () => void;
     const responseReady = new Promise<void>((resolve) => { release = resolve; });
     let requestCount = 0;
-    await page.route(/\/contact\/?(?:\?.*)?$/, async (route) => {
+    await page.route(/\/sponsor-submissions\/?(?:\?.*)?$/, async (route) => {
       requestCount += 1;
       await responseReady;
       await route.fulfill({ json: { message: "sent" } });

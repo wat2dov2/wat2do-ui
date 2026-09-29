@@ -101,9 +101,8 @@
     "switchToDarkMode": "Lumipat sa dark mode"
   },
   "siteBanner": {
-    "localArea": "iyong komunidad",
     "businessSupport": {
-      "message": "Gusto naming suportahan ang isang negosyong nahihirapan sa {{city}}, malapit sa {{schoolName}}, sa pamamagitan ng pag-advertise rito.",
+      "message": "Gusto naming suportahan ang isang negosyo malapit sa {{schoolName}}, sa pamamagitan ng pag-advertise rito.",
       "cta": "Magsumite ng form"
     },
     "localUniversity": "iyong unibersidad"
@@ -495,9 +494,8 @@
       "position": "{{current}} sa {{total}}"
     },
     "businessSupport": {
-      "title": "Suportahan ang isang negosyong nahihirapan malapit sa {{schoolName}}",
-      "titleCity": "Suportahan ang isang negosyong nahihirapan sa {{city}}, malapit sa {{schoolName}}",
-      "description": "May alam ka bang lokal na negosyong nangangailangan ng tulong? Imungkahi ito para maitampok sa banner ng Wat2Do.",
+      "title": "Suportahan ang isang negosyo malapit sa {{schoolName}}",
+      "description": "Magmungkahi ng kalapit na negosyong nangangailangan ng suporta ng mga estudyante.",
       "formTitle": "Magmungkahi ng negosyo",
       "formDescription": "Sabihin kung bakit ito karapat-dapat suportahan. Sinusuri namin ang bawat mungkahi bago magtampok ng negosyo.",
       "fields": {
@@ -510,6 +508,10 @@
         "website": {
           "label": "Website o link sa social media (opsyonal)",
           "hint": "Ilagay ang https:// o http:// sa simula ng kumpletong link."
+        },
+        "discount": {
+          "label": "Diskuwento para sa mga gumagamit ng wat2do (opsyonal)",
+          "hint": "Halimbawa, 10% diskuwento. Isama kung paano ito makukuha at ang mga kondisyon."
         },
         "reasonForSupport": {
           "label": "Bakit kailangan ng negosyong ito ng suporta?"

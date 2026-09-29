@@ -134,14 +134,36 @@ test("measured cutouts mask the HTML image face and eager posters receive priori
     backgroundColor: "var(--surface-elevated)", imageSrc: posterUrl, imageAlt: "Campus poster",
     imageLoading: "eager", cutouts: [{ corner: "bottom-left", width: 112, height: 32 }], width: 240, height: 208,
   });
-  expect(html).toContain('viewBox="0 0 240 208"');
-  expect(html).toContain('maskUnits="userSpaceOnUse"');
+  expect(html).toContain("clip-path:path(&quot;");
   expect(html).toContain('data-slot="event-image-face"');
-  expect(html).toContain("mask-image:url(&quot;#");
+  expect(html).not.toContain("mask-image:");
   expect(html).toContain('loading="eager"');
   expect(html).toContain('fetchpriority="high"');
   expect(html).toContain('sizes="(max-width: 639px) calc(50vw - 16px), 320px"');
   expect(html).not.toContain('sizes="auto,');
+});
+
+test("direct clipping pixels remove each measured corner while preserving the image face", async () => {
+  for (const corner of ["top-left", "top-right", "bottom-left", "bottom-right"]) {
+    for (const badgeWidth of [72, 160]) {
+      const html = render(EventImageCutout, {
+        backgroundColor: "white", cutouts: [{ corner, width: badgeWidth, height: 32 }],
+        width: 240, height: 208,
+      });
+      const path = html.match(/clip-path:path\(&quot;([^&]+)&quot;\)/)?.[1];
+      expect(path).toBeDefined();
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="240" height="208"><path d="${path}" fill="white"/></svg>`;
+      const { data, info } = await sharp(Buffer.from(svg))
+        .ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+      const alpha = (x: number, y: number) => data[(y * info.width + x) * info.channels + 3];
+      const x = corner.endsWith("left") ? badgeWidth - 20 : 240 - badgeWidth + 20;
+      const y = corner.startsWith("top") ? 8 : 200;
+      expect(alpha(x, y)).toBe(0);
+      expect(alpha(120, 104)).toBe(255);
+      const outsideX = corner.endsWith("left") ? badgeWidth + 12 : 240 - badgeWidth - 12;
+      expect(alpha(outsideX, y)).toBe(255);
+    }
+  }
 });
 
 test("custom carousel photos stay inside the measured transparent face", () => {
@@ -152,8 +174,8 @@ test("custom carousel photos stay inside the measured transparent face", () => {
     width: 640, height: 480,
   });
   expect(html.match(/<img /g)).toHaveLength(1);
-  expect(html).toMatch(/<div[^>]*data-slot="event-image-face"[^>]*mask-image:[^>]*><img /);
-  expect(html).toContain('maskUnits="userSpaceOnUse"');
+  expect(html).toMatch(/<div[^>]*data-slot="event-image-face"[^>]*clip-path:[^>]*><img /);
+  expect(html).toContain("clip-path:path(&quot;");
   expect(html).not.toContain('data-slot="lazy-image"');
 });
 

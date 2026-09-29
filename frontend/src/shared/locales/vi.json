@@ -98,9 +98,8 @@
     "switchToDarkMode": "Chuyển sang chế độ tối"
   },
   "siteBanner": {
-    "localArea": "cộng đồng của bạn",
     "businessSupport": {
-      "message": "Chúng tôi muốn hỗ trợ một doanh nghiệp đang gặp khó khăn tại {{city}}, gần {{schoolName}}, bằng cách quảng bá tại đây.",
+      "message": "Chúng tôi muốn hỗ trợ một doanh nghiệp gần {{schoolName}}, bằng cách quảng bá tại đây.",
       "cta": "Gửi biểu mẫu"
     },
     "localUniversity": "trường đại học của bạn"
@@ -492,9 +491,8 @@
       "position": "{{current}} / {{total}}"
     },
     "businessSupport": {
-      "title": "Hỗ trợ một doanh nghiệp đang gặp khó khăn gần {{schoolName}}",
-      "titleCity": "Hỗ trợ một doanh nghiệp đang gặp khó khăn tại {{city}}, gần {{schoolName}}",
-      "description": "Bạn biết doanh nghiệp địa phương nào đang cần được tiếp sức? Hãy đề cử để doanh nghiệp đó xuất hiện trên biểu ngữ của Wat2Do.",
+      "title": "Hỗ trợ một doanh nghiệp gần {{schoolName}}",
+      "description": "Đề cử một doanh nghiệp gần trường đang cần sự hỗ trợ của sinh viên.",
       "formTitle": "Đề cử doanh nghiệp",
       "formDescription": "Hãy cho chúng tôi biết vì sao doanh nghiệp này xứng đáng được ủng hộ. Chúng tôi xem xét từng đề cử trước khi giới thiệu doanh nghiệp.",
       "fields": {
@@ -507,6 +505,10 @@
         "website": {
           "label": "Trang web hoặc liên kết mạng xã hội (không bắt buộc)",
           "hint": "Thêm https:// hoặc http:// vào đầu liên kết."
+        },
+        "discount": {
+          "label": "Ưu đãi cho người dùng wat2do (không bắt buộc)",
+          "hint": "Ví dụ: giảm 10%. Nêu cách nhận ưu đãi và các điều kiện áp dụng."
         },
         "reasonForSupport": {
           "label": "Vì sao doanh nghiệp này cần được hỗ trợ?"

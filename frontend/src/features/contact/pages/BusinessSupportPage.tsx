@@ -13,7 +13,6 @@ export function BusinessSupportPage() {
   const requestSchool = useRequestSchool();
   const { schoolBySlug } = useSchoolDirectory();
   const school = schoolBySlug.get(requestSchool);
-  const city = school?.city?.trim();
   const schoolName = school?.name?.trim() || t("siteBanner.localUniversity");
 
   return (
@@ -21,9 +20,7 @@ export function BusinessSupportPage() {
       <Stack gap={6}>
         <PageHeader
           back={{ href: ROUTES.EVENTS, label: t("events.allEvents") }}
-          title={city
-            ? t("contact.businessSupport.titleCity", { city, schoolName })
-            : t("contact.businessSupport.title", { schoolName })}
+          title={t("contact.businessSupport.title", { schoolName })}
           description={t("contact.businessSupport.description")}
         />
         <BusinessSupportForm school={school} />

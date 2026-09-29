@@ -44,6 +44,9 @@ export function AdminPanel({ onNavigate }: AdminPanelProps) {
         <AdminCard icon={Megaphone} title={t("admin.posters")} description={t("admin.managePostersDescAlt")}
           pendingCounts={[{ label: t("admin.posterPayouts.tabs.payouts"), count: counts.payouts }]}
           onClick={() => onNavigate("admin-posters")} />
+        <AdminCard icon={Building2} title={t("admin.sponsors.title")} description={t("admin.sponsors.description")}
+          pendingCounts={[{ label: t("admin.sponsors.submissions"), count: counts.sponsorSubmissions }]}
+          onClick={() => onNavigate("admin-sponsors")} />
         <AdminCard icon={Instagram} title={t("admin.instagramPublishing.title")} description={t("admin.instagramPublishing.cardDescription")}
           onClick={() => onNavigate("admin-instagram")} />
         <AdminCard icon={Settings} title={t("admin.diagnostics.title")} description={t("admin.diagnostics.cardDescription")}

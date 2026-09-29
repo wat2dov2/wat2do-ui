@@ -92,6 +92,7 @@ const apiCollectionPaths = [
   "payouts",
   "positions",
   "position-submissions",
+  "sponsor-submissions",
   "qr",
   "reports",
   "going-events",

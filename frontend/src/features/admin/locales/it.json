@@ -356,6 +356,12 @@
     },
     "clubSubmissions": "Proposte di club",
     "noClubSubmissions": "Nessuna proposta di club",
-    "noClubSubmissionsDesc": "Le nuove proposte di club appariranno qui per l’approvazione."
+    "noClubSubmissionsDesc": "Le nuove proposte di club appariranno qui per l’approvazione.",
+    "sponsors": {
+      "title": "Sponsor",
+      "submissions": "Proposte di attività locali in difficoltà",
+      "description": "Esamina le proposte di attività vicine.",
+      "reviewHelp": "L’approvazione registra la tua decisione. Non pubblica un banner."
+    }
   }
 }

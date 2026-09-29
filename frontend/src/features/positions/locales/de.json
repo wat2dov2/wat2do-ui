@@ -43,6 +43,7 @@
       "commitment": "z. B. 3–5 Stunden pro Woche, September bis Dezember",
       "contact": "z. B. hiring@example.com",
       "requirements": "Eine Anforderung pro Zeile, zum Beispiel:\nGerne im Team arbeiten\nFür wöchentliche Treffen verfügbar sein"
-    }
+    },
+    "noDeadline": "Keine Frist"
   }
 }

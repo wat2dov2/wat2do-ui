@@ -1,4 +1,4 @@
-import React, { type SVGProps } from "react";
+import React from "react";
 import { BADGE_MASK_PATHS, type BadgeMaskVariant } from "@/shared/ui/badge-mask-paths";
 
 interface BadgeMaskProps {
@@ -22,23 +22,6 @@ interface MaskSvgProps {
   className?: string;
   outlined?: boolean;
   outlineClassName?: string;
-}
-
-/**
- * The bare corner glyph, reusable as a knockout shape.
- *
- * `fill` defaults to `currentColor` so existing call sites are unchanged; the
- * cutout mask passes `fill="black"`. Same artwork, no duplicated asset.
- */
-export function BadgeMaskShape({
-  variant,
-  ...props
-}: { variant: BadgeMaskVariant } & SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" {...props}>
-      <path d={BADGE_MASK_PATHS[variant].fillPath} fill={props.fill ?? "currentColor"} />
-    </svg>
-  );
 }
 
 function MaskSvg({ variant, className, outlined, outlineClassName }: MaskSvgProps) {

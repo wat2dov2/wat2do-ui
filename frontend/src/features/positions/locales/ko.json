@@ -42,6 +42,7 @@
       "commitment": "예: 9월부터 12월까지 주 3~5시간",
       "contact": "예: hiring@example.com",
       "requirements": "한 줄에 하나씩 입력하세요. 예:\n팀 활동에 익숙한 분\n매주 회의에 참석할 수 있는 분"
-    }
+    },
+    "noDeadline": "마감일 없음"
   }
 }

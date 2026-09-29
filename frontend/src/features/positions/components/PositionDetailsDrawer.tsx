@@ -120,20 +120,12 @@ export function PositionDetailsDrawer({
               </DrawerDescription>
 
               <FormGrid columns={2}>
-                <PositionCardImage
-                  position={position}
-                  variant="detail"
-                  onClubFilterSelect={onClose}
-                />
-
                 <Stack gap={6}>
-                  <Stack gap={2} align="start">
-                    <DrawerTitle className="text-left text-2xl font-bold leading-tight sm:text-3xl">
-                      {position.title}
-                    </DrawerTitle>
-                    <AddedAt value={position.added_at} timeZone={getSchoolTimezone(position.school)} />
-                  </Stack>
-
+                  <PositionCardImage
+                    position={position}
+                    variant="detail"
+                    onClubFilterSelect={onClose}
+                  />
                   <Section variant="divided" title={t("common.postedBy")}>
                     <ClubBadgeDropdown
                       clubName={position.club_name}
@@ -146,6 +138,16 @@ export function PositionDetailsDrawer({
                       onFilterSelect={onClose}
                     />
                   </Section>
+                </Stack>
+
+                <Stack gap={6}>
+                  <Stack gap={2} align="start">
+                    <DrawerTitle className="text-left text-2xl font-bold leading-tight sm:text-3xl">
+                      {position.title}
+                    </DrawerTitle>
+                    <AddedAt value={position.added_at} timeZone={getSchoolTimezone(position.school)} />
+                  </Stack>
+
 
                   <FormGrid columns={2} collapse={false}>
                     {deadline ? (

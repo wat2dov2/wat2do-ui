@@ -1,3 +1,5 @@
+import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
+import { positionDeadlineCalendarDate } from "@/features/positions/lib/positionDates";
 import { memo } from "react";
 import { useTranslation } from "react-i18next";
 import { PositionCardImage } from "@/features/positions/components/PositionCardImage";
@@ -23,6 +25,7 @@ function PositionCardComponent({
   imagePriority = false,
 }: PositionCardProps) {
   const { t } = useTranslation();
+  const { getSchoolTimezone } = useSchoolDirectory();
   const preferClick = useMobileGridClickActivation();
   const pressHandlers = createAdaptivePressHandlers({
     onClick: () => onPositionClick(position),
@@ -31,6 +34,7 @@ function PositionCardComponent({
 
   return (
     <article
+      data-scroll-date={positionDeadlineCalendarDate(position, getSchoolTimezone(position.school)) ?? ""}
       {...pressHandlers}
       role="button"
       tabIndex={0}

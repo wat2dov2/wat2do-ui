@@ -42,6 +42,7 @@
       "commitment": "例如：9月至12月，每星期3至5小時",
       "contact": "例如：hiring@example.com",
       "requirements": "每行填一項要求，例如：\n樂意同團隊合作\n可以參加每星期嘅會議"
-    }
+    },
+    "noDeadline": "冇截止日期"
   }
 }

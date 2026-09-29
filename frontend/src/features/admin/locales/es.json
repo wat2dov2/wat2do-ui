@@ -356,6 +356,12 @@
     },
     "clubSubmissions": "Solicitudes de clubes",
     "noClubSubmissions": "No hay solicitudes de clubes",
-    "noClubSubmissionsDesc": "Las nuevas solicitudes de clubes aparecerán aquí para su aprobación."
+    "noClubSubmissionsDesc": "Las nuevas solicitudes de clubes aparecerán aquí para su aprobación.",
+    "sponsors": {
+      "title": "Patrocinadores",
+      "submissions": "Propuestas de negocios locales en dificultades",
+      "description": "Revisa las propuestas de negocios cercanos.",
+      "reviewHelp": "La aprobación registra tu decisión. No publica un anuncio."
+    }
   }
 }

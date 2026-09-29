@@ -42,6 +42,7 @@
       "commitment": "Ví dụ: 3-5 giờ mỗi tuần, từ tháng 9 đến tháng 12",
       "contact": "Ví dụ: hiring@example.com",
       "requirements": "Mỗi dòng một yêu cầu, ví dụ:\nThoải mái làm việc nhóm\nCó thể tham gia họp hằng tuần"
-    }
+    },
+    "noDeadline": "Không có hạn chót"
   }
 }

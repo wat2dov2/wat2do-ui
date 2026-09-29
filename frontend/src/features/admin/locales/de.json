@@ -356,6 +356,12 @@
     },
     "clubSubmissions": "Club-Einreichungen",
     "noClubSubmissions": "Keine Club-Einreichungen",
-    "noClubSubmissionsDesc": "Neue Club-Einreichungen erscheinen hier zur Genehmigung."
+    "noClubSubmissionsDesc": "Neue Club-Einreichungen erscheinen hier zur Genehmigung.",
+    "sponsors": {
+      "title": "Sponsoren",
+      "submissions": "Vorschläge für lokale Unternehmen in Schwierigkeiten",
+      "description": "Prüfe Vorschläge für Unternehmen in der Nähe.",
+      "reviewHelp": "Die Genehmigung speichert deine Entscheidung. Sie veröffentlicht kein Banner."
+    }
   }
 }

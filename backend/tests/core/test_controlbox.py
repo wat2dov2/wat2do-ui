@@ -554,6 +554,7 @@ def test_instagram_browser_controls_reject_unsafe_worker_configuration(tmp_path,
         "reason_for_support",
         "proposed_banner_text",
         "student_traffic_per_week",
+        "discount",
         "email",
     ],
 )

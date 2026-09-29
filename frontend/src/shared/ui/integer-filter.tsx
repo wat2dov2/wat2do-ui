@@ -1,5 +1,6 @@
 import { useId, useState } from "react";
 import { Button } from "@/shared/ui/button";
+import { ChevronDown } from "@/shared/ui/doodle-icons";
 import { Field, FieldLabel } from "@/shared/ui/field";
 import { Input } from "@/shared/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
@@ -28,6 +29,7 @@ export function IntegerFilter({ value, active, disabled = false, onChange, label
       <PopoverTrigger asChild disabled={disabled}>
         <Button disabled={disabled} size="sm" variant={active && !preset ? "primary" : "outline"} aria-pressed={active} aria-expanded={open}>
           {label}
+          <ChevronDown aria-hidden="true" />
         </Button>
       </PopoverTrigger>
       <PopoverContent align="start" variant={preset && !showInput ? "menu" : "default"}>

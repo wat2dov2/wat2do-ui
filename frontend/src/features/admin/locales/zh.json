@@ -356,6 +356,12 @@
     },
     "clubSubmissions": "社团提交",
     "noClubSubmissions": "暂无社团提交",
-    "noClubSubmissionsDesc": "新提交的社团将在此显示，等待批准。"
+    "noClubSubmissionsDesc": "新提交的社团将在此显示，等待批准。",
+    "sponsors": {
+      "title": "赞助商",
+      "submissions": "经营困难的本地商家推荐",
+      "description": "审核附近商家的推荐。",
+      "reviewHelp": "批准仅记录审核决定，不会发布横幅。"
+    }
   }
 }

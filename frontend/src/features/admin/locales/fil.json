@@ -356,6 +356,12 @@
     },
     "clubSubmissions": "Mga pagsusumite ng club",
     "noClubSubmissions": "Walang pagsusumite ng club",
-    "noClubSubmissionsDesc": "Lalabas dito ang mga bagong pagsusumite ng club para sa pag-apruba."
+    "noClubSubmissionsDesc": "Lalabas dito ang mga bagong pagsusumite ng club para sa pag-apruba.",
+    "sponsors": {
+      "title": "Mga sponsor",
+      "submissions": "Mga mungkahi para sa nahihirapang lokal na negosyo",
+      "description": "Suriin ang mga mungkahi para sa kalapit na negosyo.",
+      "reviewHelp": "Itinatala ng pag-apruba ang desisyon mo. Hindi ito naglalathala ng banner."
+    }
   }
 }

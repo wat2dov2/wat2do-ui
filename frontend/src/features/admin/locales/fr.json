@@ -356,6 +356,12 @@
     },
     "clubSubmissions": "Soumissions de clubs",
     "noClubSubmissions": "Aucune soumission de club",
-    "noClubSubmissionsDesc": "Les nouvelles soumissions de clubs apparaîtront ici pour approbation."
+    "noClubSubmissionsDesc": "Les nouvelles soumissions de clubs apparaîtront ici pour approbation.",
+    "sponsors": {
+      "title": "Commanditaires",
+      "submissions": "Propositions de commerces locaux en difficulté",
+      "description": "Examinez les propositions de commerces à proximité.",
+      "reviewHelp": "L’approbation enregistre votre décision. Elle ne publie pas de bannière."
+    }
   }
 }

@@ -4,7 +4,7 @@ import {
   Children,
   useCallback,
   useEffect,
-  useId,
+  useMemo,
   useLayoutEffect,
   useRef,
   useState,
@@ -12,7 +12,6 @@ import {
 } from "react";
 
 import { cn } from "@/shared/lib/utils";
-import { BadgeMaskShape } from "@/shared/ui/badge-mask";
 import type { BadgeMaskVariant } from "@/shared/ui/badge-mask-paths";
 import { LazyImage } from "@/shared/ui/lazy-image";
 import { CARD_GRID_IMAGE_SIZES } from "@/shared/constants/ui";
@@ -22,12 +21,8 @@ const useSafeLayoutEffect =
 
 /** Size of the corner fillet glyph, matching the `size-2` used by BadgeMask. */
 const FILLET = 8;
-/** Subpixel overlap keeps each fillet visually joined to its badge. */
-const FILLET_BADGE_OVERLAP = 0.25;
 /** Inner-corner radius of the notch, matching BadgeMask's `rounded-*-xl`. */
 const INNER_RADIUS = 12;
-/** Stable coordinate space so the server and hydrated SVG keep identical geometry. */
-const MASK_VIEWBOX_SIZE = 100;
 
 interface MeasuredCutout {
   corner: BadgeMaskVariant;
@@ -48,6 +43,7 @@ export function useEventImageCutouts() {
   const callbacks = useRef(
     new Map<BadgeMaskVariant, (node: HTMLElement | null) => void>(),
   );
+  const resizeObserver = useRef<ResizeObserver | null>(null);
   const [box, setBox] = useState({ width: 0, height: 0 });
   const [cutouts, setCutouts] = useState<MeasuredCutout[]>([]);
 
@@ -91,8 +87,14 @@ export function useEventImageCutouts() {
       const cached = callbacks.current.get(corner);
       if (cached) return cached;
       const callback = (node: HTMLElement | null) => {
-        if (node) nodes.current.set(corner, node);
-        else nodes.current.delete(corner);
+        const previous = nodes.current.get(corner);
+        if (previous) resizeObserver.current?.unobserve(previous);
+        if (node) {
+          nodes.current.set(corner, node);
+          resizeObserver.current?.observe(node);
+        } else {
+          nodes.current.delete(corner);
+        }
         measure();
       };
       callbacks.current.set(corner, callback);
@@ -105,95 +107,16 @@ export function useEventImageCutouts() {
     measure();
     if (typeof ResizeObserver === "undefined") return;
     const observer = new ResizeObserver(measure);
+    resizeObserver.current = observer;
     if (surfaceRef.current) observer.observe(surfaceRef.current);
     nodes.current.forEach((node) => observer.observe(node));
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      resizeObserver.current = null;
+    };
   }, [measure]);
 
   return { surfaceRef, registerCorner, cutouts, box };
-}
-
-/** Notch rect plus its two fillet glyphs, placed for a given corner. */
-function cornerPieces(
-  cutout: MeasuredCutout,
-  surfaceWidth: number,
-  surfaceHeight: number,
-) {
-  // The measured element already includes BadgeMask's own padding, which is the
-  // visual gap - adding more here double-counts it and leaves a dead band.
-  const nw = cutout.width;
-  const nh = cutout.height;
-  const rx = INNER_RADIUS;
-  const ry = INNER_RADIUS;
-  const filletWidth = FILLET;
-  const filletHeight = FILLET;
-  const w = surfaceWidth;
-  const h = surfaceHeight;
-
-  /*
-   * Everything here is in CSS pixels, the same units the badges were measured
-   * in, so a notch lands exactly on its badge. Scaling the measurements into a
-   * fixed square space and letting the browser scale them back left the hole
-   * up to a pixel out of step with the badge it was cut for, which showed as a
-   * hairline of card edge along one side. One radius, not separate x/y ones:
-   * in an unscaled space a corner is round rather than elliptical.
-   *
-   * The knockout rect is overhung on its two outward sides.
-   */
-  switch (cutout.corner) {
-    case "top-left":
-      return {
-        rect: { x: -rx, y: -ry, width: nw + rx, height: nh + ry, rx, ry },
-        fillets: [
-          { x: nw - FILLET_BADGE_OVERLAP, y: 0 },
-          { x: 0, y: nh - FILLET_BADGE_OVERLAP },
-        ],
-        filletWidth,
-        filletHeight,
-      };
-    case "top-right":
-      return {
-        rect: { x: w - nw, y: -ry, width: nw + rx, height: nh + ry, rx, ry },
-        fillets: [
-          {
-            x: w - nw - filletWidth + FILLET_BADGE_OVERLAP,
-            y: 0,
-          },
-          { x: w - filletWidth, y: nh - FILLET_BADGE_OVERLAP },
-        ],
-        filletWidth,
-        filletHeight,
-      };
-    case "bottom-left":
-      return {
-        rect: { x: -rx, y: h - nh, width: nw + rx, height: nh + ry, rx, ry },
-        fillets: [
-          { x: nw - FILLET_BADGE_OVERLAP, y: h - filletHeight },
-          {
-            x: 0,
-            y: h - nh - filletHeight + FILLET_BADGE_OVERLAP,
-          },
-        ],
-        filletWidth,
-        filletHeight,
-      };
-    case "bottom-right":
-      return {
-        rect: { x: w - nw, y: h - nh, width: nw + rx, height: nh + ry, rx, ry },
-        fillets: [
-          {
-            x: w - nw - filletWidth + FILLET_BADGE_OVERLAP,
-            y: h - filletHeight,
-          },
-          {
-            x: w - filletWidth,
-            y: h - nh - filletHeight + FILLET_BADGE_OVERLAP,
-          },
-        ],
-        filletWidth,
-        filletHeight,
-      };
-  }
 }
 
 interface EventImageCutoutProps {
@@ -213,23 +136,49 @@ interface EventImageCutoutProps {
   cutouts: MeasuredCutout[];
   width: number;
   height: number;
-  /** HTML overlaid above the SVG face - text, buttons, links stay real DOM. */
+  /** HTML overlaid above the clipped face - text, buttons, links stay real DOM. */
   children?: ReactNode;
   className?: string;
 }
 
 /**
- * Card image face with an SVG mask, so its notches are genuinely
- * transparent and the page backdrop - dotted grid and radial glow - shows
- * through rather than being simulated with a background-coloured overlay.
- *
- * The knockout reuses the existing `BadgeMaskShape` artwork; nothing here
- * recreates it as path data. Each notch is a plain rect plus that component's
- * two fillet glyphs, positioned per corner.
- *
- * The mask id comes from `useId()`, so any number of cards can share a page
- * without colliding, and it stays stable across SSR and hydration.
+ * Trace the face clockwise, stepping around each measured corner badge.
+ * A direct CSS path clips the photo, video and loading state together without
+ * SVG fragment references, image decoding or alpha-mask compositing.
  */
+function createClipPath(cutouts: MeasuredCutout[], width: number, height: number) {
+  if (width <= 0 || height <= 0) return undefined;
+
+  const corners: BadgeMaskVariant[] = ["top-left", "top-right", "bottom-right", "bottom-left"];
+  const segments = corners.map((corner, index) => {
+    const cutout = cutouts.find((entry) => entry.corner === corner);
+    // Rotate one corner's contour so every corner uses identical roundings.
+    const point = (x: number, y: number) => {
+      const [px, py] = index === 0 ? [x, y]
+        : index === 1 ? [width - y, x]
+        : index === 2 ? [width - x, height - y]
+        : [y, height - x];
+      return `${px} ${py}`;
+    };
+    const start = index === 0 ? "M" : "L";
+    if (!cutout || cutout.width <= 0 || cutout.height <= 0) {
+      return `${start}${point(0, 0)}`;
+    }
+    const horizontal = index % 2 === 0 ? cutout.width : cutout.height;
+    const vertical = index % 2 === 0 ? cutout.height : cutout.width;
+    const radius = Math.min(INNER_RADIUS, horizontal, vertical);
+    return [
+      `${start}${point(0, vertical + FILLET)}`,
+      `A${FILLET} ${FILLET} 0 0 1 ${point(FILLET, vertical)}`,
+      `L${point(horizontal - radius, vertical)}`,
+      `A${radius} ${radius} 0 0 0 ${point(horizontal, vertical - radius)}`,
+      `L${point(horizontal, FILLET)}`,
+      `A${FILLET} ${FILLET} 0 0 1 ${point(horizontal + FILLET, 0)}`,
+    ].join(" ");
+  });
+  return `path("${segments.join(" ")} Z")`;
+}
+
 export function EventImageCutout({
   backgroundColor,
   imageSrc,
@@ -245,74 +194,21 @@ export function EventImageCutout({
   children,
   className,
 }: EventImageCutoutProps) {
-  const maskId = useId();
-  const ready = width > 0 && height > 0;
-  // The SVG holds geometry only. The native image keeps its real aspect ratio
-  // before measurement, and stays mounted when the cutouts become available.
-  const faceWidth = ready ? width : MASK_VIEWBOX_SIZE;
-  const faceHeight = ready ? height : MASK_VIEWBOX_SIZE;
-  const maskImage = ready ? `url("#${maskId}")` : undefined;
+  const clipPath = useMemo(
+    () => createClipPath(cutouts, width, height),
+    [cutouts, width, height],
+  );
 
   return (
     <div className={cn("relative", className)}>
-      <svg
-        aria-hidden="true"
-        focusable="false"
-        className="pointer-events-none absolute inset-0 size-full"
-        viewBox={`0 0 ${faceWidth} ${faceHeight}`}
-        preserveAspectRatio="none"
-      >
-        {ready ? (
-          <defs>
-            <mask
-              id={maskId}
-              maskUnits="userSpaceOnUse"
-              x={0}
-              y={0}
-              width={faceWidth}
-              height={faceHeight}
-            >
-              {/* White keeps the face visible; black removes it. */}
-              <rect
-                x={0}
-                y={0}
-                width={faceWidth}
-                height={faceHeight}
-                fill="white"
-              />
-              {cutouts.map((cutout) => {
-                const { rect, fillets, filletWidth, filletHeight } =
-                  cornerPieces(cutout, width, height);
-                return (
-                  <g key={cutout.corner}>
-                    <rect {...rect} fill="black" />
-                    {fillets.map((f, i) => (
-                      // Nested <svg> so the artwork keeps its own aspect ratio
-                      // instead of stretching with the background rect.
-                      <svg
-                        key={i}
-                        x={f.x}
-                        y={f.y}
-                        width={filletWidth}
-                        height={filletHeight}
-                        viewBox="0 0 64 64"
-                        preserveAspectRatio="xMidYMid meet"
-                      >
-                        <BadgeMaskShape variant={cutout.corner} fill="black" />
-                      </svg>
-                    ))}
-                  </g>
-                );
-              })}
-            </mask>
-          </defs>
-        ) : null}
-      </svg>
-
       <div
         data-slot="event-image-face"
         className="absolute inset-0"
-        style={{ backgroundColor, maskImage, WebkitMaskImage: maskImage }}
+        style={{
+          backgroundColor,
+          clipPath,
+          WebkitClipPath: clipPath,
+        }}
       >
         {imageContent ?? <LazyImage
           src={imageSrc}
