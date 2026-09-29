@@ -1,12 +1,13 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { useTranslation } from "react-i18next";
 import { Stack } from "@/shared/layout";
 import { Button } from "@/shared/ui/button";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { BadgeMask } from "@/shared/ui/badge-mask";
+import { EventImageCutout, useEventImageCutouts } from "@/shared/ui/event-image-cutout";
 import { ChevronLeft, ChevronRight } from "@/shared/ui/doodle-icons";
 import photo0 from "@/assets/utsg-university-college.webp";
 import photo1 from "@/assets/york-stadium-selfie.webp";
@@ -60,7 +61,21 @@ export function SchoolPhotoCarousel({ isLoading = false }: { isLoading?: boolean
   const { t } = useTranslation();
   const [index, setIndex] = useState(0);
   const touchStart = useRef<number | null>(null);
+  const { surfaceRef, registerCorner, cutouts, box } = useEventImageCutouts();
+  const [loadedSrc, setLoadedSrc] = useState<string | null>(null);
   const photo = photos[index];
+  useEffect(() => {
+    if (isLoading || loadedSrc !== photo.image.src) return;
+    const connection = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
+    if (connection?.saveData) return;
+    // Warm only neighboring slides after the visible image has finished.
+    for (const offset of [-1, 1]) {
+      const adjacent = new window.Image();
+      adjacent.fetchPriority = "low";
+      adjacent.src = photos[(index + offset + photos.length) % photos.length].image.src;
+    }
+  }, [index, isLoading, loadedSrc, photo.image.src]);
+
   const navigate = (offset: number) => {
     if (!isLoading) setIndex((current) => (current + offset + photos.length) % photos.length);
   };
@@ -79,7 +94,8 @@ export function SchoolPhotoCarousel({ isLoading = false }: { isLoading?: boolean
         }}
       >
         <div
-          className="relative aspect-[4/3] w-full touch-pan-y overflow-hidden rounded-3xl bg-muted"
+          ref={surfaceRef}
+          className="relative aspect-[4/3] w-full touch-pan-y overflow-hidden rounded-3xl"
           onTouchStart={(event) => { touchStart.current = event.touches[0].clientX; }}
           onTouchCancel={() => { touchStart.current = null; }}
           onTouchEnd={(event) => {
@@ -89,17 +105,31 @@ export function SchoolPhotoCarousel({ isLoading = false }: { isLoading?: boolean
             if (Math.abs(distance) > 50) navigate(distance > 0 ? 1 : -1);
           }}
         >
-          {isLoading ? <Skeleton className="absolute inset-0 rounded-none" /> : <Image
-            key={photo.image.src}
-            src={photo.image}
-            alt={t("contact.photos.alt", { school: photo.school })}
-            fill
-            sizes="(max-width: 672px) calc(100vw - 32px), 640px"
-            preload={index === 0}
-            placeholder={imagePlaceholder}
-            className="select-none object-contain"
-          />}
-          <BadgeMask variant="bottom-left">
+          <EventImageCutout
+            backgroundColor="var(--muted)"
+            cutouts={cutouts}
+            width={box.width}
+            height={box.height}
+            className="absolute inset-0"
+            imageContent={isLoading ? (
+              <Skeleton className="absolute inset-0 rounded-none" />
+            ) : (
+              <Image
+                key={photo.image.src}
+                src={photo.image}
+                alt={t("contact.photos.alt", { school: photo.school })}
+                fill
+                unoptimized
+                loading="eager"
+                fetchPriority={index === 0 ? "high" : "auto"}
+                onLoad={() => setLoadedSrc(photo.image.src)}
+                preload={index === 0}
+                placeholder={imagePlaceholder}
+                className="select-none object-contain"
+              />
+            )}
+          />
+          <BadgeMask variant="bottom-left" cutout containerRef={registerCorner("bottom-left")}>
             <h1 className="min-w-0 break-words px-3 py-2 font-sans text-lg font-bold leading-snug tracking-tight text-foreground sm:text-xl">
               {t("contact.hero.line1")} {t("contact.hero.line2")}
             </h1>

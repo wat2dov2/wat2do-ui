@@ -35,7 +35,7 @@ const badgeVariants = cva(
           "border-transparent gap-1.5 leading-none",
       },
       size: {
-        inline: "m-0 p-0 text-[11px] font-bold",
+        inline: "m-0 p-0 pr-1 rounded-md text-[11px] font-bold",
         sm: "px-1.5 py-px text-[9px] font-medium rounded-lg",
         md: "px-2 py-0.5 text-[11px] font-bold rounded-xl",
         lg: "px-2.5 py-1 text-xs font-bold rounded-xl",

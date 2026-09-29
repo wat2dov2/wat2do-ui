@@ -144,6 +144,19 @@ test("measured cutouts mask the HTML image face and eager posters receive priori
   expect(html).not.toContain('sizes="auto,');
 });
 
+test("custom carousel photos stay inside the measured transparent face", () => {
+  const html = render(EventImageCutout, {
+    backgroundColor: "var(--muted)",
+    imageContent: createElement("img", { src: "/_next/static/media/campus.webp", alt: "Campus" }),
+    cutouts: [{ corner: "bottom-left", width: 240, height: 48 }],
+    width: 640, height: 480,
+  });
+  expect(html.match(/<img /g)).toHaveLength(1);
+  expect(html).toMatch(/<div[^>]*data-slot="event-image-face"[^>]*mask-image:[^>]*><img /);
+  expect(html).toContain('maskUnits="userSpaceOnUse"');
+  expect(html).not.toContain('data-slot="lazy-image"');
+});
+
 test("attendee avatars are discoverable before hydration and request avatar-sized candidates", () => {
   const html = render(AvatarStack, {
     avatars: [{ src: "https://wat2do.io/media/avatars/student.jpg", name: "Taylor Q." }],
@@ -516,11 +529,12 @@ test.describe("Instagram raster preparation", () => {
 });
 
 
-test("school carousel renders just the first responsive photo with accessible navigation", () => {
+test("school carousel loads the cached static photo directly with accessible navigation", () => {
   const html = render(SchoolPhotoCarousel, {});
   expect(html.match(/<img /g)).toHaveLength(1);
   expect(html).toContain("utsg-university-college");
-  expect(html).toContain('srcSet=');
+  expect(html).toMatch(/src="\/_next\/static\/media\/utsg-university-college[^"]*"/);
+  expect(html).not.toContain("/_next/image?");
   expect(html).not.toContain('loading="lazy"');
   expect(html).toContain('aria-label="contact.photos.previous"');
   expect(html).toContain('aria-label="contact.photos.next"');
@@ -528,8 +542,10 @@ test("school carousel renders just the first responsive photo with accessible na
   expect(html).toContain('object-contain');
   expect(html.match(/<h1 /g)).toHaveLength(1);
   expect(html).toMatch(/<h1[^>]*>contact\.hero\.line1 contact\.hero\.line2<\/h1>/);
-  // One content-sized corner background replaces the two independent text tiers.
-  expect(html.match(/viewBox="0 0 64 64"/g)).toHaveLength(2);
+  // The greeting uses the measured transparent face, not painted corner glyphs.
+  expect(html).toContain('data-slot="event-image-face"');
+  expect(html).not.toContain('text-background');
+  expect(html).not.toMatch(/<div[^>]*class="[^"]*bg-background[^"]*"[^>]*><h1/);
 });
 
 test("school photos are compact, correctly oriented WebP assets without embedded metadata", async () => {

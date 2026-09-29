@@ -207,6 +207,8 @@ interface EventImageCutoutProps {
   imageLoading?: "eager" | "lazy";
   imageSizes?: string;
   imageFallback?: ReactNode;
+  /** Custom image content shares the same measured transparent face. */
+  imageContent?: ReactNode;
   /** Measured badge sizes from `useEventImageCutouts`. */
   cutouts: MeasuredCutout[];
   width: number;
@@ -236,6 +238,7 @@ export function EventImageCutout({
   imageLoading = "eager",
   imageSizes = CARD_GRID_IMAGE_SIZES,
   imageFallback,
+  imageContent,
   cutouts,
   width,
   height,
@@ -311,7 +314,7 @@ export function EventImageCutout({
         className="absolute inset-0"
         style={{ backgroundColor, maskImage, WebkitMaskImage: maskImage }}
       >
-        <LazyImage
+        {imageContent ?? <LazyImage
           src={imageSrc}
           alt={imageAlt}
           videoSrc={videoSrc}
@@ -319,7 +322,7 @@ export function EventImageCutout({
           loading={imageLoading}
           fallback={imageFallback}
           className="absolute inset-0"
-        />
+        />}
       </div>
 
       {Children.toArray(children).length ? (
