@@ -31,6 +31,9 @@ function loadComponent(path: string): Record<string, React.ComponentType<Record<
     process,
     fetch: (...args: Parameters<typeof fetch>) => globalThis.fetch(...args),
     require: (id: string) => {
+      if (id.endsWith(".webp")) return { src: `/_next/static/media/${id.split("/").pop()}`, width: 1280, height: 960, blurDataURL: "data:image/webp;base64,UklGRg==" };
+      if (id === "react-i18next") return { useTranslation: () => ({ t: (key: string) => key }) };
+      if (id === "@/shared/layout") return loadComponent("shared/layout/Stack");
       if (id === "@/shared/api/schools.server") return { getSchool: async () => ({ slug: "uwaterloo", language: "en", primary_color: "#6b238e", secondary_color: "#ffd54f" }) };
       if (id === "@/features/admin/components/instagram/slides/SlideTemplates") return loadComponent(id.slice(2));
       if (id === "satori") {
@@ -66,6 +69,7 @@ Object.assign(imageConfigDefault, imageConfig);
 const { EventImageCutout } = loadComponent("shared/ui/event-image-cutout");
 const { LazyImage } = loadComponent("shared/ui/lazy-image");
 const { AvatarStack } = loadComponent("shared/ui/avatar-stack");
+const { SchoolPhotoCarousel } = loadComponent("features/contact/components/SchoolPhotoCarousel");
 const posterUrl = "https://wat2do.io/media/event-images/poster.jpg";
 function render(component: React.ComponentType<Record<string, unknown>>, props: Record<string, unknown>) {
   return renderToStaticMarkup(createElement(ImageConfigContext.Provider, { value: imageConfig }, createElement(component, props)));
@@ -449,4 +453,32 @@ test.describe("Instagram raster preparation", () => {
     const metadata = await sharp(prepared).metadata();
     expect([metadata.width, metadata.height]).toEqual([220, 308]);
   });
+});
+
+
+test("school carousel renders just the first responsive photo with accessible navigation", () => {
+  const html = render(SchoolPhotoCarousel, {});
+  expect(html.match(/<img /g)).toHaveLength(1);
+  expect(html).toContain("utsg-university-college");
+  expect(html).toContain('srcSet=');
+  expect(html).not.toContain('loading="lazy"');
+  expect(html).toContain('aria-label="contact.photos.previous"');
+  expect(html).toContain('aria-label="contact.photos.next"');
+  expect(html).toContain('aria-live="polite"');
+  expect(html).toContain('object-contain');
+});
+
+test("school photos are compact, correctly oriented WebP assets without embedded metadata", async () => {
+  const directory = new URL("../src/assets/", import.meta.url);
+  const files = readdirSync(directory).filter((file) => /^(ocad|tmu|utsc|utsg|york)-.*\.webp$/.test(file));
+  expect(files).toHaveLength(20);
+  for (const file of files) {
+    const bytes = readFileSync(new URL(file, directory));
+    const metadata = await sharp(bytes).metadata();
+    expect(metadata.format).toBe("webp");
+    expect(Math.max(metadata.width!, metadata.height!)).toBeLessThanOrEqual(1280);
+    expect(bytes.length).toBeLessThan(350 * 1024);
+    expect(metadata.exif).toBeUndefined();
+    expect(metadata.orientation).toBeUndefined();
+  }
 });

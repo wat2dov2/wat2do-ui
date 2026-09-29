@@ -416,7 +416,6 @@
     "footerCopyright": "© 2025 Wat2Do · تم بناؤه بواسطة Tony & Erica"
   },
   "contact": {
-    "heroAlt": "شعار Wat2Do",
     "hero": {
       "line1": "سعداء",
       "line2": "بلقائك!"
@@ -496,6 +495,13 @@
       "about": "أنشأنا Wat2Do لربط طلاب واترلو بفعاليات الحياة الجامعية التي لا تحظى بما يكفي من الاهتمام. تواصل معنا لإرسال اقتراحاتك أو ملاحظاتك.",
       "title": "Wat2Do",
       "copyright": "© {{year}} Wat2Do"
+    },
+    "photos": {
+      "label": "زياراتنا للجامعات",
+      "alt": "فريق Wat2Do يزور {{school}}",
+      "previous": "الصورة السابقة",
+      "next": "الصورة التالية",
+      "position": "{{current}} من {{total}}"
     }
   }
 }

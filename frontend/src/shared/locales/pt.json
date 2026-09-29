@@ -407,7 +407,6 @@
     "footerCopyright": "© 2025 Wat2Do · Criado por Tony & Erica"
   },
   "contact": {
-    "heroAlt": "Wat2Do logotipo",
     "hero": {
       "line1": "É um prazer",
       "line2": "conhecer você!"
@@ -487,6 +486,13 @@
       "about": "Construímos Wat2Do para conectar estudantes Waterloo a eventos de vida no campus subestimados. Para sugestões ou feedback, entre em contato.",
       "title": "Wat2Do",
       "copyright": "© {{year}} Wat2Do"
+    },
+    "photos": {
+      "label": "Nossas visitas aos campus",
+      "alt": "A equipe Wat2Do visita {{school}}",
+      "previous": "Foto anterior",
+      "next": "Próxima foto",
+      "position": "{{current}} de {{total}}"
     }
   }
 }

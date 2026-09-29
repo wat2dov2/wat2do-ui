@@ -404,7 +404,6 @@
     "footerCopyright": "© 2025 Wat2Do · Nilikha nina Tony & Erica"
   },
   "contact": {
-    "heroAlt": "Wat2Do logo",
     "hero": {
       "line1": "Ikinalulugod",
       "line2": "kong makilala ka!"
@@ -484,6 +483,13 @@
       "about": "Binuo namin ang Wat2Do upang ikonekta ang mga estudyante ng Waterloo sa mga hindi gaanong napapansin na kaganapan sa campus life. Para sa mga suhestiyon o feedback, makipag-ugnayan lang.",
       "title": "Wat2Do",
       "copyright": "© {{year}} Wat2Do"
+    },
+    "photos": {
+      "label": "Mga pagbisita namin sa campus",
+      "alt": "Bumisita ang Wat2Do team sa {{school}}",
+      "previous": "Nakaraang larawan",
+      "next": "Susunod na larawan",
+      "position": "{{current}} sa {{total}}"
     }
   }
 }

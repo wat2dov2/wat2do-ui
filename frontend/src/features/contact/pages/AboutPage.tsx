@@ -21,19 +21,8 @@ import { eventPagePath } from "@/features/events/lib/eventUrls";
 import { Separator } from "@/shared/ui/separator";
 import { useTranslation } from "react-i18next";
 import imgSlefLogo from "@/assets/slef_logo.png";
-import imgContactHero from "@/assets/contact_hero.png";
+import { SchoolPhotoCarousel } from "@/features/contact/components/SchoolPhotoCarousel";
 import { ContactForm } from "@/features/contact/components/ContactForm";
-
-const CornerMask = ({ className }: { className?: string }) => (
-  <svg
-    viewBox="0 0 64 64"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-    className={className}
-  >
-    <path d="M0 0C0 35.35 28.65 64 64 64H0V0Z" fill="currentColor" />
-  </svg>
-);
 
 /**
  * Link to the event being described. These are specific past events from the
@@ -84,36 +73,7 @@ export function AboutPage() {
   return (
     <Container size="sm">
       <Stack gap={12}>
-        <div className="relative h-[280px] w-full overflow-hidden rounded-3xl bg-muted sm:h-[360px] md:h-[440px]">
-          <Image
-            src={imgContactHero}
-            alt={t("contact.heroAlt")}
-            fill
-            preload
-            sizes="(max-width: 640px) 100vw, 640px"
-            className="pointer-events-none select-none object-cover"
-          />
-
-          <h1 className="absolute bottom-0 left-0 z-10 flex select-none flex-col items-start">
-            <div className="relative w-fit rounded-tr-[16px] bg-background pb-1 pl-4 pr-5 pt-3 md:rounded-tr-[24px] md:pb-1 md:pl-6 md:pr-8 md:pt-4">
-              <CornerMask className="pointer-events-none absolute bottom-full left-0 size-4 text-background md:size-6" />
-
-              <span className="font-sans text-3xl font-bold leading-none tracking-tight text-foreground sm:text-5xl">
-                {t("contact.hero.line1")}
-              </span>
-
-              <CornerMask className="pointer-events-none absolute bottom-0 left-full size-4 text-background md:size-6" />
-            </div>
-
-            <div className="relative w-fit rounded-tr-[16px] bg-background pb-4 pl-4 pr-6 pt-2 md:rounded-tr-[24px] md:pb-6 md:pl-6 md:pr-10 md:pt-3">
-              <span className="font-sans text-3xl font-bold leading-none tracking-tight text-foreground sm:text-5xl">
-                {t("contact.hero.line2")}
-              </span>
-
-              <CornerMask className="pointer-events-none absolute bottom-0 left-full size-4 text-background md:size-6" />
-            </div>
-          </h1>
-        </div>
+        <SchoolPhotoCarousel />
 
         <Card>
           <CardHeader>

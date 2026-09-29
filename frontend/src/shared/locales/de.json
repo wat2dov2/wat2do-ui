@@ -404,7 +404,6 @@
     "footerCopyright": "© 2025 Wat2Do · Erstellt von Tony & Erica"
   },
   "contact": {
-    "heroAlt": "Wat2Do Logo",
     "hero": {
       "line1": "Schön, dich",
       "line2": "kennenzulernen!"
@@ -484,6 +483,13 @@
       "about": "Wir haben Wat2Do entwickelt, um Waterloo Studenten mit unterbewerteten Campus-Veranstaltungen zu verbinden. Für Vorschläge oder Feedback nehmen Sie Kontakt auf.",
       "title": "Wat2Do",
       "copyright": "© {{year}} Wat2Do"
+    },
+    "photos": {
+      "label": "Unsere Campusbesuche",
+      "alt": "Das Wat2Do-Team besucht {{school}}",
+      "previous": "Vorheriges Campusfoto",
+      "next": "Nächstes Campusfoto",
+      "position": "{{current}} von {{total}}"
     }
   }
 }

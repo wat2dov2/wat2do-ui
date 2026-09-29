@@ -410,7 +410,6 @@
     "footerCopyright": "© 2025 Wat2Do · Создано Tony & Erica"
   },
   "contact": {
-    "heroAlt": "Wat2Do логотип",
     "hero": {
       "line1": "Приятно",
       "line2": "познакомиться!"
@@ -490,6 +489,13 @@
       "about": "Мы создали Wat2Do, чтобы соединить студентов Waterloo с недооцененными мероприятиями студенческой жизни. Для предложений или отзывов свяжитесь с нами.",
       "title": "Wat2Do",
       "copyright": "© {{year}} Wat2Do"
+    },
+    "photos": {
+      "label": "Наши поездки по кампусам",
+      "alt": "Команда Wat2Do в {{school}}",
+      "previous": "Предыдущее фото",
+      "next": "Следующее фото",
+      "position": "{{current}} из {{total}}"
     }
   }
 }

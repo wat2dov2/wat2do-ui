@@ -404,7 +404,6 @@
     "footerCopyright": "© 2025 Wat2Do · Tony ਅਤੇ Erica ਦੁਆਰਾ ਬਣਾਇਆ ਗਿਆ"
   },
   "contact": {
-    "heroAlt": "Wat2Do ਲੋਗੋ",
     "hero": {
       "line1": "ਨੂੰ ਚੰਗਾ",
       "line2": "ਤੁਹਾਨੂੰ ਮਿਲੋ!"
@@ -484,6 +483,13 @@
       "about": "ਅਸੀਂ ਵਾਟਰਲੂ ਦੇ ਵਿਦਿਆਰਥੀਆਂ ਨੂੰ ਅੰਡਰਰੇਟਿਡ ਕੈਂਪਸ ਜੀਵਨ ਸਮਾਗਮਾਂ ਨਾਲ ਜੋੜਨ ਲਈ Wat2Do ਬਣਾਇਆ ਹੈ। ਸੁਝਾਵਾਂ ਜਾਂ ਫੀਡਬੈਕ ਲਈ, ਸੰਪਰਕ ਵਿੱਚ ਰਹੋ।",
       "title": "Wat2Do",
       "copyright": "© {{year}} Wat2Do"
+    },
+    "photos": {
+      "label": "ਸਾਡੇ ਕੈਂਪਸ ਦੌਰੇ",
+      "alt": "Wat2Do ਟੀਮ {{school}} ਦਾ ਦੌਰਾ ਕਰਦੀ ਹੋਈ",
+      "previous": "ਪਿਛਲੀ ਕੈਂਪਸ ਫੋਟੋ",
+      "next": "ਅਗਲੀ ਕੈਂਪਸ ਫੋਟੋ",
+      "position": "{{total}} ਵਿੱਚੋਂ {{current}}"
     }
   }
 }

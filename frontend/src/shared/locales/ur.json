@@ -404,7 +404,6 @@
     "footerCopyright": "© 2025 Wat2Do · Tony اور Erica کی جانب سے تیار کردہ"
   },
   "contact": {
-    "heroAlt": "Wat2Do کا لوگو",
     "hero": {
       "line1": "آپ سے مل کر",
       "line2": "خوشی ہوئی!"
@@ -484,6 +483,13 @@
       "about": "ہم نے Wat2Do واٹرلو کے طلبہ کو کیمپس کی کم معروف تقریبات سے جوڑنے کے لیے بنایا۔ تجاویز یا رائے کے لیے ہم سے رابطہ کریں۔",
       "title": "Wat2Do",
       "copyright": "© {{year}} Wat2Do"
+    },
+    "photos": {
+      "label": "ہمارے کیمپس کے دورے",
+      "alt": "Wat2Do ٹیم کا {{school}} کا دورہ",
+      "previous": "پچھلی کیمپس تصویر",
+      "next": "اگلی کیمپس تصویر",
+      "position": "{{total}} میں سے {{current}}"
     }
   }
 }

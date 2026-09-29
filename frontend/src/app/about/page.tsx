@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import imgContactHero from "@/assets/contact_hero.png";
+import imgSchoolVisit from "@/assets/utsg-university-college.webp";
 import { AboutPage as AboutPageContent } from "@/features/contact/pages/AboutPage";
 import { ROUTES } from "@/shared/constants/routes";
 import {
@@ -16,11 +16,11 @@ export const metadata: Metadata = buildPublicPageMetadata({
   description,
   canonicalUrl: getBrandCanonicalUrl(ROUTES.ABOUT),
   image: {
-    url: imgContactHero.src,
+    url: imgSchoolVisit.src,
     alt: "Meet the Wat2Do campus event discovery team",
-    width: imgContactHero.width,
-    height: imgContactHero.height,
-    type: "image/png",
+    width: imgSchoolVisit.width,
+    height: imgSchoolVisit.height,
+    type: "image/webp",
   },
 });
 

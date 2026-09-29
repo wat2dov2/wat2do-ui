@@ -401,7 +401,6 @@
     "footerCopyright": "© 2025 Wat2Do · Tony & Erica 제작"
   },
   "contact": {
-    "heroAlt": "Wat2Do 로고",
     "hero": {
       "line1": "만나서",
       "line2": "반가워요!"
@@ -481,6 +480,13 @@
       "about": "우리는 Wat2Do를 구축하여 Waterloo 학생들을 과소평가된 캠퍼스 생활 이벤트와 연결했습니다. 제안이나 피드백이 있으면 연락주세요.",
       "title": "Wat2Do",
       "copyright": "© {{year}} Wat2Do"
+    },
+    "photos": {
+      "label": "우리의 캠퍼스 방문",
+      "alt": "{{school}}에 방문한 Wat2Do 팀",
+      "previous": "이전 캠퍼스 사진",
+      "next": "다음 캠퍼스 사진",
+      "position": "{{total}}장 중 {{current}}장"
     }
   }
 }
