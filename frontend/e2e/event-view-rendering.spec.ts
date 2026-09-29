@@ -155,15 +155,14 @@ test("login loading preserves the real form structure and disables unfinished ro
 });
 
 
-test("discovery headings reserve a font-sized count and both latest-item placeholders", () => {
+test("discovery headings show one latest-item placeholder without exposing placeholder text", () => {
   const { PageCountHeading } = loadComponent("shared/ui/page-count-heading") as typeof import("../src/shared/ui/page-count-heading");
   const render = (count: number | null, latest?: ComponentProps<typeof PageCountHeading>["latest"]) => renderToStaticMarkup(createElement(PageCountHeading, {
     count, label: "upcoming events", latest,
   }));
   const loading = render(null, null);
   expect(loading).toContain('data-slot="latest-added-item"');
-  expect(loading.match(/data-slot="skeleton"/g)).toHaveLength(3);
-  expect(loading).toContain("h-[1em]");
+  expect(loading.match(/data-slot="skeleton"/g)).toHaveLength(2);
   expect(loading).toContain("invisible");
   expect(render(null)).not.toContain('data-slot="latest-added-item"');
   expect(render(0, null)).not.toContain('data-slot="latest-added-item"');

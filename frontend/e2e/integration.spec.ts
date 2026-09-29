@@ -584,9 +584,31 @@ test.describe("Loading shells", () => {
         await expect(heading).toBeVisible();
         await expect(heading).toHaveAttribute("aria-busy", "true");
         await expect(heading.locator('[data-slot="skeleton"]')).toBeVisible();
+        await page.evaluate(() => document.fonts.ready.then(() => undefined));
+        for (const width of [375, 1440]) {
+          await page.setViewportSize({ width, height: 900 });
+          const countHeights = await heading.evaluate(element => {
+            const style = getComputedStyle(element);
+            const context = document.createElement("canvas").getContext("2d")!;
+            context.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+            const digit = context.measureText("0");
+            return {
+              skeleton: element.querySelector('[data-slot="skeleton"]')!.getBoundingClientRect().height,
+              digit: digit.actualBoundingBoxAscent + digit.actualBoundingBoxDescent,
+            };
+          });
+          expect(Math.abs(countHeights.skeleton - countHeights.digit)).toBeLessThanOrEqual(2);
+          if (listing.resource !== "clubs") {
+            const latestHeights = await shell.locator('[data-slot="latest-added-item"]').evaluate(element => ({
+              skeleton: element.querySelector('[data-slot="skeleton"]')!.getBoundingClientRect().height,
+              button: element.querySelector('[data-slot="button"]')!.getBoundingClientRect().height,
+            }));
+            expect(latestHeights.skeleton).toBe(latestHeights.button);
+          }
+        }
         await expect(shell.locator("fieldset")).toBeDisabled();
         if (listing.resource !== "clubs") {
-          await expect(shell.locator('[data-slot="latest-added-item"] [data-slot="skeleton"]')).toHaveCount(2);
+          await expect(shell.locator('[data-slot="latest-added-item"] [data-slot="skeleton"]')).toHaveCount(1);
         }
         await expect(shell.getByPlaceholder(listing.search, { exact: true })).toBeVisible();
         await expect(shell.getByRole("link", { name: listing.add, exact: true })).toBeVisible();
