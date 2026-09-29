@@ -1,9 +1,8 @@
 import { defineConfig } from "@playwright/test";
 import nextConfig from "./next.config";
 
-// Browser-free checks consume the same public build projection as the application.
+// Share the small public settings projection; load artwork inside test workers.
 process.env.NEXT_PUBLIC_EVENT_DISCOVERY = nextConfig.env?.NEXT_PUBLIC_EVENT_DISCOVERY;
-process.env.NEXT_PUBLIC_INSTAGRAM_COVER_LOGO_SVG = nextConfig.env?.NEXT_PUBLIC_INSTAGRAM_COVER_LOGO_SVG;
 
 export default defineConfig({
   testDir: "./e2e",

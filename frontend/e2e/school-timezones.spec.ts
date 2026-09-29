@@ -1,6 +1,8 @@
 import { DEFAULT_APP_CONSTANTS } from "../src/shared/api/metaApi";
 import { getClubCategoryConfig } from "../src/shared/data/clubCategoryStyles";
 import { test, expect } from "@playwright/test";
+import { readFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import { formatCardDate, formatCardTime, getEventDateSection, isEventHappeningNow, localDateTimeToUtc, toLocalDateTimeInput } from "../src/shared/utils/date";
 import { eventToFormData } from "../src/shared/utils/event";
 import { buildEventUpdatePayload } from "../src/shared/api/eventPayload";
@@ -8,7 +10,23 @@ import { formatPositionDeadlineBadge } from "../src/features/positions/lib/posit
 import type { Event, Position } from "../src/shared/types";
 import { filterEvents } from "../src/features/search/api/searchService";
 import { EMPTY_FILTER_STATE } from "../src/features/search/api/filterService";
-import { buildEventSlideModel, getInstagramSlideLocale } from "../src/features/admin/lib/instagramSlides";
+
+let buildEventSlideModel: typeof import("../src/features/admin/lib/instagramSlides").buildEventSlideModel;
+let getInstagramSlideLocale: typeof import("../src/features/admin/lib/instagramSlides").getInstagramSlideLocale;
+
+test.beforeAll(() => {
+  const originalLogo = process.env.NEXT_PUBLIC_INSTAGRAM_COVER_LOGO_SVG;
+  try {
+    // The module captures the real build asset during import. Keep its large
+    // SVG out of the runner environment inherited by Playwright subprocesses.
+    process.env.NEXT_PUBLIC_INSTAGRAM_COVER_LOGO_SVG = readFileSync(new URL("../public/instagram-cover-logo.svg", import.meta.url), "utf8");
+    const require = createRequire(import.meta.url);
+    ({ buildEventSlideModel, getInstagramSlideLocale } = require("../src/features/admin/lib/instagramSlides"));
+  } finally {
+    if (originalLogo === undefined) delete process.env.NEXT_PUBLIC_INSTAGRAM_COVER_LOGO_SVG;
+    else process.env.NEXT_PUBLIC_INSTAGRAM_COVER_LOGO_SVG = originalLogo;
+  }
+});
 
 const timeZone = "America/Edmonton";
 const event = {
@@ -185,7 +203,6 @@ test("every supported Instagram category keeps its localized label and colour", 
 test("Instagram comments use school branding, physical maps and localized open position titles", async () => {
   const oldKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
   process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY = "test-maps-key";
-  const { buildEventSlideModel: buildBrandedSlide } = await import("../src/features/admin/lib/instagramSlides");
   const context = {
     school: { name: "University of Alberta", primary_color: "#154734", secondary_color: "#FFDB05" },
     positionTitles: [" Designer ", "Events Coordinator", "Designer", ""],
@@ -193,8 +210,8 @@ test("Instagram comments use school branding, physical maps and localized open p
   const input = { id: 1, category: "Business", tz: timeZone, school: "ualberta", location: "Students' Union Building" };
   try {
     // The logo source is captured at module initialization, just as in a Next build.
-    const en = await buildBrandedSlide(input, "en", undefined, undefined, context);
-    const fr = await buildBrandedSlide(input, "fr", undefined, undefined, context);
+    const en = await buildEventSlideModel(input, "en", undefined, undefined, context);
+    const fr = await buildEventSlideModel(input, "fr", undefined, undefined, context);
     const svg = Buffer.from(en.siteAvatarSrc.split(",")[1], "base64").toString();
     expect(svg).toContain(context.school.primary_color);
     expect(svg).toContain(context.school.secondary_color);
@@ -203,8 +220,8 @@ test("Instagram comments use school branding, physical maps and localized open p
     expect(map.searchParams.get("markers")).toBe("Students' Union Building, University of Alberta");
     expect(en.hiringLine).toBe("Hiring: Designer, Events Coordinator");
     expect(fr.hiringLine).toBe("Recrutement : Designer, Events Coordinator");
-    expect((await buildBrandedSlide({ ...input, location: "Online" }, "en", undefined, undefined, context)).mapSrc).toBe("");
-    expect((await buildBrandedSlide({ ...input, location: null }, "en", undefined, undefined, { ...context, positionTitles: [] })).hiringLine).toBe("");
+    expect((await buildEventSlideModel({ ...input, location: "Online" }, "en", undefined, undefined, context)).mapSrc).toBe("");
+    expect((await buildEventSlideModel({ ...input, location: null }, "en", undefined, undefined, { ...context, positionTitles: [] })).hiringLine).toBe("");
   } finally {
     if (oldKey === undefined) delete process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
     else process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY = oldKey;

@@ -33,7 +33,7 @@ function loadComponent(path: string): Record<string, React.ComponentType<Record<
     require: (id: string) => {
       if (id.endsWith(".webp")) return { src: `/_next/static/media/${id.split("/").pop()}`, width: 1280, height: 960, blurDataURL: "data:image/webp;base64,UklGRg==" };
       if (id === "react-i18next") return { useTranslation: () => ({ t: (key: string) => key }) };
-      if (id === "@/shared/layout") return loadComponent("shared/layout/Stack");
+      if (id === "@/shared/layout") return loadComponent("shared/layout/stack");
       if (id === "@/shared/api/schools.server") return { getSchool: async () => ({ slug: "uwaterloo", language: "en", primary_color: "#6b238e", secondary_color: "#ffd54f" }) };
       if (id === "@/features/admin/components/instagram/slides/SlideTemplates") return loadComponent(id.slice(2));
       if (id === "satori") {
