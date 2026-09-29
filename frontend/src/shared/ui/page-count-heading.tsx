@@ -34,7 +34,7 @@ export function PageCountHeading({ count, label, latest, level = 1 }: PageCountH
             </span>
           </Button>
         </> : (
-          <Skeleton className="my-1 flex w-64 max-w-full" aria-hidden="true">
+          <Skeleton className="my-3 flex w-64 max-w-full" aria-hidden="true">
             <Button asChild variant="link" size="inline" className="invisible leading-tight sm:leading-normal">
               <span>{t("events.new")}</span>
             </Button>
