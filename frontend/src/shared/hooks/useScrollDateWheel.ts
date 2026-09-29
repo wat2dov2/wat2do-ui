@@ -70,7 +70,7 @@ export function useScrollDateWheel() {
       hideTimer = setTimeout(() => {
         scrolling = false;
         schedule();
-      }, 1200);
+      }, 400);
     };
     const mutations = new MutationObserver(measure);
     mutations.observe(root, { childList: true, subtree: true, attributes: true, attributeFilter: ["data-scroll-date"] });
