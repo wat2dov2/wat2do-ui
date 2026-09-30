@@ -13,7 +13,7 @@ import logging
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime, timedelta, timezone
-from typing import Any, get_args
+from typing import Any
 from uuid import UUID
 from zoneinfo import ZoneInfo
 
@@ -75,7 +75,7 @@ def _with_batch_school(row: dict[str, Any]) -> dict[str, Any]:
 def generate_due_batches(
     now_utc: datetime | None = None,
 ) -> dict[str, int]:
-    """Generate daily event and employer review batches for each enabled account."""
+    """Generate one daily event review batch for each enabled account."""
     now = _aware_utc(now_utc or datetime.now(timezone.utc))
     generation_timezone = ZoneInfo(_CONTROL.generation_timezone)
     local_now = now.astimezone(generation_timezone)
@@ -89,21 +89,16 @@ def generate_due_batches(
         "failed": 0,
     }
     for account_key in enabled:
-        for batch_kind in get_args(InstagramPublishBatchKind):
-            if _batch_exists(account_key, local_now.date(), batch_kind):
-                stats["skipped"] += 1
-                continue
-            try:
-                outcome = _generate_account_batch(account_key, local_now.date(), now, batch_kind)
-            except Exception:
-                log.exception(
-                    "Instagram batch generation could not start account=%s kind=%s",
-                    account_key,
-                    batch_kind,
-                )
-                stats["failed"] += 1
-                continue
-            stats[outcome] += 1
+        if _batch_exists(account_key, local_now.date(), "events"):
+            stats["skipped"] += 1
+            continue
+        try:
+            outcome = _generate_account_batch(account_key, local_now.date(), now, "events")
+        except Exception:
+            log.exception("Instagram batch generation could not start account=%s", account_key)
+            stats["failed"] += 1
+            continue
+        stats[outcome] += 1
     return stats
 
 
@@ -114,7 +109,12 @@ def list_batches(
     offset: int,
     limit: int,
 ) -> tuple[list[dict[str, Any]], int]:
-    query = get_sb().table(INSTAGRAM_PUBLISH_BATCHES).select(_BATCH_SELECT, count="exact")
+    query = (
+        get_sb()
+        .table(INSTAGRAM_PUBLISH_BATCHES)
+        .select(_BATCH_SELECT, count="exact")
+        .eq("batch_kind", "events")
+    )
     if batch_status:
         query = query.eq("status", batch_status)
     if local_date:

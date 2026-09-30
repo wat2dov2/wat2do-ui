@@ -5,7 +5,7 @@
 
 :root {
   /* Attendance badge: opaque green with white text in both themes. */
-  --badge-going: #15803d;
+  --badge-going: #16a34a;
   --badge-going-foreground: #fff;
 
   /* Brand accent palette */

@@ -41,12 +41,12 @@ def test_generate_due_batches_uses_enabled_connected_accounts(monkeypatch):
 
     assert result == {
         "accounts": len(enabled_accounts),
-        "generated": len(enabled_accounts) * 2,
+        "generated": len(enabled_accounts),
         "empty": 0,
         "skipped": 0,
         "failed": 0,
     }
-    assert generated_accounts == [account for account in enabled_accounts for _ in range(2)]
+    assert generated_accounts == enabled_accounts
     assert "dalhousie" in generated_accounts
 
 
@@ -62,7 +62,7 @@ def test_generate_due_batches_runs_when_the_scheduler_starts_late(monkeypatch):
     )
 
     assert result["accounts"] == enabled_account_count
-    assert generate.call_count == enabled_account_count * 2
+    assert generate.call_count == enabled_account_count
 
 
 class _FakeQuery:
@@ -145,6 +145,7 @@ def test_list_batches_attaches_item_counts_without_hydrating_details(monkeypatch
     assert [batch["eligible_count"] for batch in result] == [1, 0]
     assert ("select", ("batch_id,event_id,published_asset_url",), {}) in item_calls
     assert ("range", (0, 24), {}) in batch_calls
+    assert ("eq", ("batch_kind", "events"), {}) in batch_calls
 
 
 @pytest.mark.parametrize("category", ["Business", None, "", "Events"])
@@ -910,15 +911,15 @@ def test_publishable_event_accepts_every_canonical_category(category):
     assert service._is_publishable_event(event, datetime(2026, 9, 10, tzinfo=timezone.utc))
 
 
-def test_generation_tracks_each_daily_carousel_kind_independently(monkeypatch):
+def test_generation_does_not_create_employer_batches_when_event_batch_exists(monkeypatch):
     monkeypatch.setattr(service, "_enabled_account_keys", lambda: ["uwaterloo"])
     monkeypatch.setattr(service, "_batch_exists", lambda account, date, kind: kind == "events")
     generate = Mock(return_value="generated")
     monkeypatch.setattr(service, "_generate_account_batch", generate)
     result = service.generate_due_batches(datetime(2026, 9, 28, 14, tzinfo=timezone.utc))
     assert result["skipped"] == 1
-    assert result["generated"] == 1
-    assert generate.call_args.args[-1] == "employers_on_campus"
+    assert result["generated"] == 0
+    generate.assert_not_called()
 
 
 @pytest.mark.parametrize(
