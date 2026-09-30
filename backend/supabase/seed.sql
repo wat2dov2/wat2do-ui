@@ -667,3 +667,5 @@ SET sticker_selections = (
     FROM public.instagram_publish_items AS item WHERE item.batch_id = batch.id
 )
 WHERE batch.status = 'ready_for_review' AND batch.sticker_selections = '{}'::jsonb;
+
+-- position_interactions is intentionally empty: seeded position click counts start at zero.

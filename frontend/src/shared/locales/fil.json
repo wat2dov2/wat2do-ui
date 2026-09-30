@@ -180,7 +180,8 @@
     "descending": "Pababang",
     "club": "Organisasyon",
     "searchClub": "Maghanap ng organisasyon...",
-    "noClubs": "Walang magagamit na mga organisasyon"
+    "noClubs": "Walang magagamit na mga organisasyon",
+    "anyPrice": "Anumang presyo"
   },
   "commands": {
     "commands": "Mga Utos",

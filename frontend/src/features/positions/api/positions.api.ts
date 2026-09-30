@@ -2,6 +2,7 @@ import { collectPaginatedPages } from "@/shared/lib/pagination";
 import type {
   ApiPaginatedPositionResponse,
   ApiPositionCreate,
+  ApiPositionStatsResponse,
   ApiPositionSubmissionResponse,
 } from "@/shared/generated";
 import type { Position, PositionType } from "@/shared/types";
@@ -67,4 +68,9 @@ export async function getClubPositions(
 
 export function getPositionDirectory(school: string): Promise<PaginatedPositionsResponse> {
   return fetchDiscoverySnapshot(school, "positions");
+}
+
+
+export function fetchPositionStats(school: string): Promise<Record<string, ApiPositionStatsResponse>> {
+  return api.get(`/positions/stats?${new URLSearchParams({ school })}`);
 }

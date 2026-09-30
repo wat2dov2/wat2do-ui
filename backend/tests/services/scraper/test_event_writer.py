@@ -141,7 +141,7 @@ def test_merge_overwrite_payload_uses_new_nonempty_values():
 def test_merge_discovery_metadata_preserves_unknown_but_applies_explicit_corrections(
     previous, incoming
 ):
-    names = ("employers_on_campus", "free_food_on_campus", "sports_game")
+    names = ("employers_on_campus", "sports_game")
     old = SimpleNamespace(**dict.fromkeys(names, previous), registration=False, cancelled=False)
     merged = _merge_overwrite_payload(dict.fromkeys(names, incoming), old)
     assert {name: merged[name] for name in names} == dict.fromkeys(
@@ -449,7 +449,6 @@ def test_write_event_inserts_one_event_row_plus_occurrences(fake_sb, patch_sb, m
     event = _event(
         source_video_url="https://wat2do.io/media/event-videos/reel.mp4",
         employers_on_campus=True,
-        free_food_on_campus=True,
         sports_game=False,
         campus_season_ids=["foreign-school", "hoco", "hoco"],
         occurrences=[
@@ -470,7 +469,6 @@ def test_write_event_inserts_one_event_row_plus_occurrences(fake_sb, patch_sb, m
     assert payload["source_video_url"] == "https://wat2do.io/media/event-videos/reel.mp4"
     assert payload["ingestion_source"] == "instagram_scraper"
     assert payload["employers_on_campus"] is True
-    assert payload["free_food_on_campus"] is True
     assert payload["sports_game"] is False
     assert payload["campus_season_ids"] == ["hoco"]
     assert "dtstart_utc" not in payload  # dates do NOT belong on the events row anymore

@@ -516,7 +516,7 @@ test("viewing an event cannot make an unfinished stats collection ready", () => 
   observer.destroy();
 });
 
-test("Going mutations wait for the whole selection collection and do not manufacture school stats", async () => {
+test("Going mutations update immediately while collection requests are unresolved and preserve other selections", async () => {
   const client = getQueryClient();
   const queryKey = queryKeys.goingEvents.byUser("viewer");
   const statsKey = queryKeys.events.stats("uwaterloo");
@@ -551,10 +551,14 @@ test("Going mutations wait for the whole selection collection and do not manufac
       return {};
     },
   });
+  client.setQueryData(queryKey, [{ event_id: 2, occurrence_ids: ["occurrence-2"] }]);
   hooks.exports.useGoingEventSelection(event(1), "uwaterloo");
   const pending = mutation.onMutate(variables);
   await Promise.resolve();
-  expect(client.getQueryData(queryKey)).toBeUndefined();
+  expect(client.getQueryData(queryKey)).toEqual([
+    { event_id: 2, occurrence_ids: ["occurrence-2"] },
+    { event_id: 1, occurrence_ids: ["occurrence-1"] },
+  ]);
   release([{ event_id: 2, occurrence_ids: ["occurrence-2"] }]);
   const context = await pending;
   const response = { event_id: 1, occurrence_ids: ["occurrence-1"], going_count: 3, status: "going" };
@@ -621,4 +625,36 @@ test("SSR query clients release request ownership without browser-length garbage
     Object.defineProperty(globalThis, "window", browserWindow);
     browser.clear();
   }
+});
+
+
+test("position views use live stats, count each selected item once, and preserve unrelated counts", () => {
+  const client = getQueryClient();
+  const statsKey = queryKeys.positions.stats("uwaterloo");
+  const tracked: number[] = [];
+  const lastViewed = { current: null as number | null };
+  const filename = new URL("../src/features/positions/hooks/usePositionStats.ts", import.meta.url);
+  const { outputText } = ts.transpileModule(readFileSync(filename, "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS } });
+  const hooks = { exports: {} as typeof import("../src/features/positions/hooks/usePositionStats") };
+  runInNewContext(outputText, {
+    exports: hooks.exports,
+    require: (id: string) => {
+      if (id === "react") return { useEffect: (callback: () => void) => callback(), useRef: () => lastViewed };
+      if (id === "@tanstack/react-query") return { useQueryClient: () => client };
+      if (id === "@/shared/services/trackingService") return { tracker: { trackPosition: (id: number) => tracked.push(id) } };
+      if (id === "@/shared/lib/queryKeys") return { queryKeys };
+      return {};
+    },
+  });
+  hooks.exports.usePositionView(1, "uwaterloo");
+  expect(client.getQueryData(statsKey)).toBeUndefined();
+  client.setQueryData(statsKey, { 1: { click_count: 3 }, 2: { click_count: 5 } });
+  hooks.exports.usePositionView(1, "uwaterloo");
+  expect(tracked).toEqual([1]);
+  hooks.exports.usePositionView(2, "uwaterloo");
+  expect(client.getQueryData(statsKey)).toEqual({ 1: { click_count: 3 }, 2: { click_count: 6 } });
+  hooks.exports.usePositionView(null, "uwaterloo");
+  hooks.exports.usePositionView(1, "uwaterloo");
+  expect(client.getQueryData(statsKey)).toEqual({ 1: { click_count: 4 }, 2: { click_count: 6 } });
+  expect(tracked).toEqual([1, 2, 1]);
 });

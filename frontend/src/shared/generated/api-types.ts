@@ -993,6 +993,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/positions/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Position Stats */
+        get: operations["get_position_stats_positions_stats_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/positions/{position_id}": {
         parameters: {
             query?: never;
@@ -2156,11 +2173,6 @@ export interface components {
              */
             employers_on_campus?: boolean | null;
             /**
-             * Free Food On Campus
-             * @description Food or refreshments are explicitly offered at no charge at a physical location on the event's school campus. Free admission with food for sale, discounted food, prizes, and unspecified food pricing do not qualify. School affiliation alone does not prove an on-campus location. Complimentary food does not establish the event's admission price.
-             */
-            free_food_on_campus?: boolean | null;
-            /**
              * Sports Game
              * @description An actual scheduled athletic game, match, meet, or tournament involving an official school varsity team. Intramural, club-team, and recreational competitions, practices, tryouts, fitness classes, sports-club meetings, video games, and watch parties do not qualify. School affiliation or posting from an athletics account alone does not establish varsity participation. Use null when official varsity participation is unconfirmed.
              */
@@ -2285,11 +2297,6 @@ export interface components {
              */
             employers_on_campus?: boolean | null;
             /**
-             * Free Food On Campus
-             * @description Food or refreshments are explicitly offered at no charge at a physical location on the event's school campus. Free admission with food for sale, discounted food, prizes, and unspecified food pricing do not qualify. School affiliation alone does not prove an on-campus location. Complimentary food does not establish the event's admission price.
-             */
-            free_food_on_campus?: boolean | null;
-            /**
              * Sports Game
              * @description An actual scheduled athletic game, match, meet, or tournament involving an official school varsity team. Intramural, club-team, and recreational competitions, practices, tryouts, fitness classes, sports-club meetings, video games, and watch parties do not qualify. School affiliation or posting from an athletics account alone does not establish varsity participation. Use null when official varsity participation is unconfirmed.
              */
@@ -2367,11 +2374,6 @@ export interface components {
              * @description Employer representatives or recruiters will be physically present on the event's school campus for recruiting, a career fair, an employer information session, or networking. General career workshops, alumni talks without employer recruiting, student-club hiring, online sessions, and off-campus employer events do not qualify. School affiliation alone does not prove an on-campus location.
              */
             employers_on_campus?: boolean | null;
-            /**
-             * Free Food On Campus
-             * @description Food or refreshments are explicitly offered at no charge at a physical location on the event's school campus. Free admission with food for sale, discounted food, prizes, and unspecified food pricing do not qualify. School affiliation alone does not prove an on-campus location. Complimentary food does not establish the event's admission price.
-             */
-            free_food_on_campus?: boolean | null;
             /**
              * Sports Game
              * @description An actual scheduled athletic game, match, meet, or tournament involving an official school varsity team. Intramural, club-team, and recreational competitions, practices, tryouts, fitness classes, sports-club meetings, video games, and watch parties do not qualify. School affiliation or posting from an athletics account alone does not establish varsity participation. Use null when official varsity participation is unconfirmed.
@@ -2475,11 +2477,6 @@ export interface components {
              */
             employers_on_campus?: boolean | null;
             /**
-             * Free Food On Campus
-             * @description Food or refreshments are explicitly offered at no charge at a physical location on the event's school campus. Free admission with food for sale, discounted food, prizes, and unspecified food pricing do not qualify. School affiliation alone does not prove an on-campus location. Complimentary food does not establish the event's admission price.
-             */
-            free_food_on_campus?: boolean | null;
-            /**
              * Sports Game
              * @description An actual scheduled athletic game, match, meet, or tournament involving an official school varsity team. Intramural, club-team, and recreational competitions, practices, tryouts, fitness classes, sports-club meetings, video games, and watch parties do not qualify. School affiliation or posting from an athletics account alone does not establish varsity participation. Use null when official varsity participation is unconfirmed.
              */
@@ -2552,11 +2549,6 @@ export interface components {
              * @description Employer representatives or recruiters will be physically present on the event's school campus for recruiting, a career fair, an employer information session, or networking. General career workshops, alumni talks without employer recruiting, student-club hiring, online sessions, and off-campus employer events do not qualify. School affiliation alone does not prove an on-campus location.
              */
             employers_on_campus?: boolean | null;
-            /**
-             * Free Food On Campus
-             * @description Food or refreshments are explicitly offered at no charge at a physical location on the event's school campus. Free admission with food for sale, discounted food, prizes, and unspecified food pricing do not qualify. School affiliation alone does not prove an on-campus location. Complimentary food does not establish the event's admission price.
-             */
-            free_food_on_campus?: boolean | null;
             /**
              * Sports Game
              * @description An actual scheduled athletic game, match, meet, or tournament involving an official school varsity team. Intramural, club-team, and recreational competitions, practices, tryouts, fitness classes, sports-club meetings, video games, and watch parties do not qualify. School affiliation or posting from an athletics account alone does not establish varsity participation. Use null when official varsity participation is unconfirmed.
@@ -2876,7 +2868,9 @@ export interface components {
         /** InteractionCreate */
         InteractionCreate: {
             /** Event Id */
-            event_id: number;
+            event_id?: number | null;
+            /** Position Id */
+            position_id?: number | null;
             /** Interaction Type */
             interaction_type: string;
             /** Metadata */
@@ -3415,6 +3409,11 @@ export interface components {
             club_discord?: string | null;
             /** School */
             school: string;
+        };
+        /** PositionStatsResponse */
+        PositionStatsResponse: {
+            /** Click Count */
+            click_count: number;
         };
         /** PositionSubmissionCreate */
         PositionSubmissionCreate: {
@@ -6439,6 +6438,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PositionDirectoryResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_position_stats_positions_stats_get: {
+        parameters: {
+            query: {
+                school: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: components["schemas"]["PositionStatsResponse"];
+                    };
                 };
             };
             /** @description Validation Error */

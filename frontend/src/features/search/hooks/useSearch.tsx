@@ -43,8 +43,8 @@ export function useSearch({
   const schoolRecord = schoolBySlug.get(school);
   const language = i18n.resolvedLanguage ?? i18n.language;
   const campusSeasons = useMemo(
-    () => resolveCampusSeasonFilters(schoolRecord, currentTimeMs, language, filterState.campusSeasonIds),
-    [schoolRecord, currentTimeMs, language, filterState.campusSeasonIds],
+    () => resolveCampusSeasonFilters(schoolRecord, currentTimeMs, language, filterState.campusSeasonIds, eventsReady ? events : null),
+    [schoolRecord, currentTimeMs, language, filterState.campusSeasonIds, eventsReady, events],
   );
   const { setCampusSeasonIds, setSportsGame } = filterState;
   useEffect(() => {

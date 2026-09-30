@@ -193,13 +193,19 @@ export function resolveCampusSeasonFilters(
   currentTimeMs: number | null,
   language: string,
   selectedIds: readonly string[],
+  events: readonly Event[] | null,
 ) {
-  if (!school || school.event_seasons === undefined || currentTimeMs === null) {
+  if (!school || school.event_seasons === undefined || currentTimeMs === null || events === null) {
     return { ready: false, options: [] as CampusSeasonFilterOption[], selectedIds: [] };
   }
   const today = schoolCalendarDate(currentTimeMs, school.timezone).toISOString().slice(0, 10);
   const options = school.event_seasons
     .filter(season => season.display_windows.some(window => window.start_date <= today && today <= window.end_date))
+    .filter(season => !["midterm_prep", "exam_destress"].includes(season.classification_id) || events.some(event =>
+      event.school === school.slug && !event.cancelled &&
+      event.campus_season_ids?.includes(season.classification_id) &&
+      hasActiveEventOccurrence(event, currentTimeMs),
+    ))
     .map(season => ({
       id: season.id,
       classificationId: season.classification_id,

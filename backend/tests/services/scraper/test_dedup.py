@@ -283,7 +283,6 @@ def test_collapse_duplicate_extractions_merges_supplied_details():
         _duplicate_event(
             description="Campus photo session with professional headshots",
             employers_on_campus=True,
-            free_food_on_campus=False,
             sports_game=None,
             campus_season_ids=["hoco", "holidays"],
             price=5,
@@ -306,7 +305,6 @@ def test_collapse_duplicate_extractions_merges_supplied_details():
     assert collapsed[0]["food"] == ["Snacks"]
     assert collapsed[0]["registration"] is True
     assert collapsed[0]["employers_on_campus"] is True
-    assert collapsed[0]["free_food_on_campus"] is False
     assert collapsed[0]["sports_game"] is False
     assert collapsed[0]["campus_season_ids"] == ["hoco", "holidays"]
 

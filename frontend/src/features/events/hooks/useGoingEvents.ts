@@ -75,6 +75,7 @@ export function useGoingEventSelection(
   );
 
   const mutation = useMutation({
+    mutationKey: queryKeys.goingEvents.all,
     mutationFn: ({ eventId, occurrenceIds }: GoingMutationVariables) =>
       occurrenceIds.length > 0
         ? setGoingEventOccurrences(eventId, occurrenceIds)
@@ -82,9 +83,7 @@ export function useGoingEventSelection(
     onMutate: async ({ eventId, occurrenceIds, userId: mutationUserId }) => {
       const queryKey = queryKeys.goingEvents.byUser(mutationUserId ?? "");
       const attendeesKey = queryKeys.events.attendees(eventId);
-      // Optimistic selection updates must start from the complete collection.
-      await queryClient.ensureQueryData({ queryKey, queryFn: fetchGoingEvents });
-      await Promise.all([
+      const cancellation = Promise.all([
         queryClient.cancelQueries({ queryKey }),
         queryClient.cancelQueries({ queryKey: attendeesKey }),
       ]);
@@ -104,11 +103,12 @@ export function useGoingEventSelection(
         event_id: eventId,
         occurrence_ids: occurrenceIds,
       });
-      return { previous, queryKey, previousAttendees, attendeesKey };
+      await cancellation;
+      return { previous, queryKey, previousAttendees, attendeesKey, eventId };
     },
     onError: (error, _variables, context) => {
       if (context?.previous) {
-        queryClient.setQueryData(context.queryKey, context.previous);
+        patchGoingSelection(queryClient, context.queryKey, context.previous.find(selection => selection.event_id === context.eventId) ?? { event_id: context.eventId, occurrence_ids: [] });
         if (context.previousAttendees) {
           queryClient.setQueryData(context.attendeesKey, context.previousAttendees);
         } else {
@@ -152,8 +152,12 @@ export function useGoingEventSelection(
         tracker.track(response.event_id, isGoing ? "going" : "ungoing");
       }
     },
-    onSettled: (_response, _error, variables) =>
+    onSettled: (_response, _error, variables) => Promise.all([
       queryClient.invalidateQueries({ queryKey: queryKeys.events.attendees(variables.eventId) }),
+      queryClient.isMutating({ mutationKey: queryKeys.goingEvents.all }) === 1
+        ? queryClient.invalidateQueries({ queryKey: queryKeys.goingEvents.byUser(variables.userId ?? "") })
+        : Promise.resolve(),
+    ]),
   });
 
   return {

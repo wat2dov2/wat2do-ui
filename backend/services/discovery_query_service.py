@@ -34,6 +34,7 @@ def list_queries(
             count="exact",
         )
     )
+    query = query.neq("search_query", "")
     if school:
         school_id = school_service.get_school_id(school)
         if school_id is None:

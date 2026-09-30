@@ -15,11 +15,7 @@ import type { components } from "@/shared/generated/api-types";
 import discoveryQueriesControl from "../../../../backend/controlbox/discovery_queries.json";
 import { STORAGE_KEYS } from "@/shared/constants/storageKeys";
 
-interface QueuedInteraction {
-  event_id: number;
-  interaction_type: string;
-  metadata?: Record<string, unknown>;
-}
+type QueuedInteraction = components["schemas"]["InteractionCreate"];
 
 /** High-signal types flush immediately so SPA navigations don't drop them. */
 const IMMEDIATE_FLUSH_TYPES = new Set(["click", "going", "ungoing", "share", "detail_view"]);
@@ -111,6 +107,11 @@ class Tracker {
       return;
     }
     this.scheduleFlush();
+  }
+
+  trackPosition(positionId: number) {
+    this.queue.push({ position_id: positionId, interaction_type: "click" });
+    this.flush();
   }
 
   private scheduleFlush() {

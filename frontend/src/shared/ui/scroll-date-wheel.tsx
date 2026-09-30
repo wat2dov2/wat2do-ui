@@ -16,11 +16,12 @@ export function ScrollDateWheel({ undatedLabel, groups }: {
   const labels = useMemo(() => {
     const dayFormat = new Intl.DateTimeFormat(locale, { day: "numeric", timeZone: "UTC" });
     const monthFormat = new Intl.DateTimeFormat(locale, { month: "short", timeZone: "UTC" });
+    const weekdayFormat = new Intl.DateTimeFormat(locale, { weekday: "short", timeZone: "UTC" });
     const fullFormat = new Intl.DateTimeFormat(locale, { dateStyle: "full", timeZone: "UTC" });
     return dates.map(value => {
       if (!value) return { day: "", month: undatedLabel, full: undatedLabel };
       const date = new Date(value + "T00:00:00Z");
-      return { day: dayFormat.format(date), month: monthFormat.format(date), full: fullFormat.format(date) };
+      return { day: dayFormat.format(date), month: `${weekdayFormat.format(date)} ${monthFormat.format(date)}`, full: fullFormat.format(date) };
     });
   }, [dates, locale, undatedLabel]);
   if (typeof document === "undefined" || dates.length === 0) return null;
@@ -31,7 +32,7 @@ export function ScrollDateWheel({ undatedLabel, groups }: {
       data-visible={visible}
       data-date={dates[active] ?? ""}
       aria-hidden="true"
-      className="pointer-events-none fixed -left-7 top-[78%] z-30 h-40 w-16 origin-left -translate-y-1/2 scale-110 overflow-hidden transition-opacity duration-150 motion-reduce:transition-none lg:scale-150"
+      className="pointer-events-none fixed -left-7 top-[78%] z-30 h-40 w-16 origin-left -translate-y-1/2 scale-110 overflow-hidden transition-opacity duration-150 motion-reduce:transition-none lg:scale-125"
       style={{ opacity: visible ? 0.8 : 0 }}
     >
       <div className="absolute -left-20 top-2 size-36 rounded-full border border-border bg-surface/95 shadow-lg backdrop-blur-sm">
@@ -60,8 +61,8 @@ export function ScrollDateWheel({ undatedLabel, groups }: {
             style={{ left: 4 + Math.cos(angle) * 34, top: 80 + Math.sin(angle) * 58, opacity: offset === 0 ? 1 : Math.max(0, 1 - Math.abs(distance) / 2.5) }}
             title={label.full}
           >
-            <span className={offset === 0 ? "text-lg font-bold tabular-nums leading-none" : "text-[10px] font-medium tabular-nums leading-none"}>{label.day}</span>
             <span className={`mt-0.5 text-[8px] leading-tight ${offset === 0 ? "font-bold" : "font-medium"}`}>{label.month}</span>
+            <span className={offset === 0 ? "text-lg font-bold tabular-nums leading-none" : "text-[10px] font-medium tabular-nums leading-none"}>{label.day}</span>
           </div>
         );
       })}

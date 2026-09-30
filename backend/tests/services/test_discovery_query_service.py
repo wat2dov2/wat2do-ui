@@ -88,3 +88,13 @@ def test_unknown_school_does_not_return_other_schools(fake_sb, patch_sb, monkeyp
         offset=0, limit=20, school="missing", search=None
     ) == ([], 0)
     fake_sb.execute.assert_not_called()
+
+
+def test_admin_listing_omits_empty_queries_before_count_and_pagination(fake_sb, patch_sb):
+    patch_sb("services.discovery_query_service")
+    fake_sb.set_response(data=[], count=0)
+    assert discovery_query_service.list_queries(offset=0, limit=20, school=None, search=None) == (
+        [],
+        0,
+    )
+    fake_sb.neq.assert_called_once_with("search_query", "")

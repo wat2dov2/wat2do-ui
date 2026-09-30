@@ -12,7 +12,7 @@ DiscoverySurface = Literal["events", "clubs", "positions"]
 
 
 class DiscoveryQueryCreate(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
     id: UUID
     school: str = Field(min_length=1, max_length=MAX_SCHOOL_LENGTH)

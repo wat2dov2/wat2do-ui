@@ -94,6 +94,10 @@ class PositionResponse(PositionFields):
     model_config = {"from_attributes": True}
 
 
+class PositionStatsResponse(BaseModel):
+    click_count: int = Field(ge=0)
+
+
 class PositionDirectoryResponse(PaginatedResponse[PositionResponse]):
     latest_added_position: LatestAddedItem | None = Field(
         default=None, description="School freshness metadata on the first page only."

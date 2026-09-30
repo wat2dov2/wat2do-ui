@@ -177,7 +177,8 @@
     "descending": "Descending",
     "club": "Club",
     "searchClub": "Search club...",
-    "noClubs": "No clubs available"
+    "noClubs": "No clubs available",
+    "anyPrice": "Any price"
   },
   "commands": {
     "commands": "Commands",

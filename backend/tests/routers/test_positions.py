@@ -158,3 +158,12 @@ def test_list_positions_accepts_descending_deadlines(client, monkeypatch):
 
 def test_list_positions_rejects_unknown_sort_order(client):
     assert client.get("/positions/?sort_order=unknown").status_code == 422
+
+
+def test_position_stats_are_public_and_use_the_stats_route_before_id_matching(client, monkeypatch):
+    stats = MagicMock(return_value={"1": {"click_count": 12}})
+    monkeypatch.setattr(position_service, "get_position_stats_for_school", stats)
+    response = client.get("/positions/stats?school=uwaterloo")
+    assert response.status_code == 200
+    assert response.json() == {"1": {"click_count": 12}}
+    stats.assert_called_once_with("uwaterloo")

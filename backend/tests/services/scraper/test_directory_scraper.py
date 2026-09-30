@@ -415,3 +415,27 @@ def test_wusa_pipeline_updates_existing_event_with_canonical_owner(
     assert saved["id"] == 18880
     assert saved["location"] == new_location
     assert write.call_args.kwargs["resolved_org"].club_id == 6943
+
+
+@patch("services.scraper.directory_scraper.httpx.get")
+def test_directory_artwork_prefers_event_metadata_and_lazy_source_over_spinner(mock_get):
+    response = MagicMock()
+    response.text = """<html><script type="application/ld+json">
+    {"@type":"Event","url":"https://example.com/event/1","image":"/z-poster.jpg"}
+    </script><header><img src="/a-header.jpg"></header><main>
+    <h1>Campus lunch</h1><img src="/a-loading.gif" data-src="/b-lunch.jpg">
+    <img src="/spinner.gif"><img src="/logo.png"></main></html>"""
+    mock_get.return_value = response
+    text, images = scrape_event_page("https://example.com/event/1", directory_config())
+    assert "Campus lunch" in text
+    assert images == ["https://example.com/z-poster.jpg", "https://example.com/b-lunch.jpg"]
+
+
+@patch("services.scraper.directory_scraper.httpx.get")
+def test_directory_with_only_body_chrome_does_not_invent_artwork(mock_get):
+    response = MagicMock()
+    response.text = '<body>Event details<img src="/unrelated-photo.jpg"></body>'
+    mock_get.return_value = response
+    text, images = scrape_event_page("https://example.com/event/1", directory_config())
+    assert text
+    assert images == []

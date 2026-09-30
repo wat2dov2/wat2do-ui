@@ -192,7 +192,8 @@
     "descending": "تنازلي",
     "club": "منظمة",
     "searchClub": "البحث عن منظمة...",
-    "noClubs": "لا توجد منظمات متاحة"
+    "noClubs": "لا توجد منظمات متاحة",
+    "anyPrice": "أي سعر"
   },
   "commands": {
     "commands": "الأوامر",

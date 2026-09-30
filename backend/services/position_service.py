@@ -2,16 +2,19 @@
 
 from __future__ import annotations
 
-from datetime import date, datetime
+from datetime import datetime, timezone
 from typing import Any
 
+from dateutil.relativedelta import relativedelta
+
 from core.constants import DEFAULT_LIST_LIMIT
+from core.controlbox import controlbox
 from core.database import get_sb
-from core.pagination import LatestAddedItem
+from core.pagination import LatestAddedItem, fetch_all_pages
 from core.sanitize import sanitize_postgrest_value
 from core.tables import POSITIONS
 from schemas.position import PositionResponse, PositionType
-from services import school_service
+from services import interaction_service, school_service
 
 _POSITION_COMPUTED_FIELDS = {
     "club_name",
@@ -32,8 +35,14 @@ _POSITION_SELECT = (
 
 
 def _apply_open_filter(query: Any) -> Any:
-    today = date.today().isoformat()
-    return query.eq("is_active", True).or_(f"deadline_date.is.null,deadline_date.gte.{today}")
+    now = datetime.now(timezone.utc)
+    today = now.date().isoformat()
+    cutoff = (
+        now - relativedelta(months=controlbox.positions.undated_visibility_months)
+    ).isoformat()
+    return query.eq("is_active", True).or_(
+        f"deadline_date.gte.{today},and(deadline_date.is.null,added_at.gte.{cutoff})"
+    )
 
 
 def _position_response(row: dict) -> PositionResponse:
@@ -148,3 +157,21 @@ def get_position(position_id: int) -> PositionResponse | None:
     if not response.data:
         return None
     return _position_response(response.data[0])
+
+
+def get_position_stats_for_school(school: str) -> dict[str, dict[str, int]]:
+    school_id = school_service.get_school_id(school)
+    if school_id is None:
+        return {}
+    rows = fetch_all_pages(
+        lambda offset, page_size: (
+            _apply_open_filter(get_sb().table(POSITIONS).select("id").eq("school_id", school_id))
+            .order("id")
+            .range(offset, offset + page_size - 1)
+            .execute()
+            .data
+            or []
+        )
+    )
+    counts = interaction_service.get_click_counts_for_positions([row["id"] for row in rows])
+    return {str(item_id): {"click_count": count} for item_id, count in counts.items()}

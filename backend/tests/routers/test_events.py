@@ -579,9 +579,7 @@ def test_list_events_includes_latest_added_metadata(client, monkeypatch):
 
 def test_get_event_public_hides_created_by(client, monkeypatch):
     """GET /events/{id} must not include created_by in the response body."""
-    event = _mock_event(
-        created_by="secret-uid-1234", employers_on_campus=True, free_food_on_campus=False
-    )
+    event = _mock_event(created_by="secret-uid-1234", employers_on_campus=True, sports_game=False)
     monkeypatch.setattr(event_service, "get_event", MagicMock(return_value=event))
 
     resp = client.get("/events/1")
@@ -589,8 +587,8 @@ def test_get_event_public_hides_created_by(client, monkeypatch):
     body = resp.json()
     assert "created_by" not in body
     assert body["employers_on_campus"] is True
-    assert body["free_food_on_campus"] is False
-    assert body["sports_game"] is None
+    assert body["sports_game"] is False
+    assert "free_food_on_campus" not in body
 
 
 def test_list_events_public_hides_created_by(client, monkeypatch):
@@ -599,7 +597,6 @@ def test_list_events_public_hides_created_by(client, monkeypatch):
         _mock_event(
             created_by="secret-uid-1234",
             employers_on_campus=True,
-            free_food_on_campus=True,
             sports_game=False,
             source_url="https://example.com/events/test-event",
             occurrences=[
@@ -620,7 +617,6 @@ def test_list_events_public_hides_created_by(client, monkeypatch):
     body = resp.json()
     assert all("created_by" not in item for item in body["items"])
     assert body["items"][0]["employers_on_campus"] is True
-    assert body["items"][0]["free_food_on_campus"] is True
     assert body["items"][0]["sports_game"] is False
     assert body["items"][0]["source_url"] == "https://example.com/events/test-event"
     assert body["items"][0]["occurrences"] == [
@@ -728,18 +724,18 @@ def test_create_event_rejected_while_club_awaits_review(authenticated_client, mo
 def test_patch_event_accepts_discovery_corrections_without_resetting_other_facts(
     admin_client, monkeypatch
 ):
-    existing = _mock_event(employers_on_campus=True, free_food_on_campus=True)
+    existing = _mock_event(employers_on_campus=True, sports_game=True)
     monkeypatch.setattr(event_service, "get_event", MagicMock(return_value=existing))
     update = MagicMock(return_value=_update_result(existing))
     monkeypatch.setattr(event_service, "update_event", update)
-    response = admin_client.patch("/events/1", json={"free_food_on_campus": False})
+    response = admin_client.patch("/events/1", json={"sports_game": False})
     assert response.status_code == 200
-    assert update.call_args.args[1].model_dump(exclude_unset=True) == {"free_food_on_campus": False}
+    assert update.call_args.args[1].model_dump(exclude_unset=True) == {"sports_game": False}
 
 
 def test_patch_event_rejects_non_boolean_discovery_metadata(admin_client, monkeypatch):
     update = MagicMock()
     monkeypatch.setattr(event_service, "update_event", update)
-    response = admin_client.patch("/events/1", json={"free_food_on_campus": "true"})
+    response = admin_client.patch("/events/1", json={"sports_game": "true"})
     assert response.status_code == 422
     update.assert_not_called()

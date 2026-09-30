@@ -423,17 +423,16 @@ def test_clean_event_free_food_does_not_determine_admission_price(price):
             "title": "Free Pizza Friday",
             "description": "Free pizza on campus",
             "food": ["Free pizza"],
-            "free_food_on_campus": True,
             "price": price,
         }
     )
     assert cleaned["price"] == price
-    assert cleaned["free_food_on_campus"] is True
+    assert "free_food_on_campus" not in cleaned
 
 
 @pytest.mark.parametrize("value", [True, False, None])
 def test_clean_event_preserves_discovery_evidence(value):
-    facts = dict.fromkeys(("employers_on_campus", "free_food_on_campus", "sports_game"), value)
+    facts = dict.fromkeys(("employers_on_campus", "sports_game"), value)
     cleaned = _clean_event({"title": "Campus event", **facts})
     assert {name: cleaned[name] for name in facts} == facts
 

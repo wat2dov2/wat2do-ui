@@ -199,7 +199,8 @@ def test_batch_accepts_max_size(client, monkeypatch):
     )
 
     at_limit = [
-        {"event_id": i, "interaction_type": "click"} for i in range(MAX_INTERACTION_BATCH_SIZE)
+        {"event_id": i, "interaction_type": "click"}
+        for i in range(1, MAX_INTERACTION_BATCH_SIZE + 1)
     ]
     resp = client.post("/interactions/batch", json=_batch_payload(interactions=at_limit))
     assert resp.status_code == 202

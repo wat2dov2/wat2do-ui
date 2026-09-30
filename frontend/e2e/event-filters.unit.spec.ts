@@ -79,10 +79,10 @@ test("price thresholds exclude the boundary, combine with other filters, and cle
 });
 
 const discoveryEvents = [
-  { id: 11, title: "Employer booth with free pizza", employers_on_campus: true, free_food_on_campus: true, sports_game: false, price: 10, food: ["Pizza"] },
-  { id: 12, title: "Free campus lunch", employers_on_campus: false, free_food_on_campus: true, sports_game: false, price: 0 },
-  { id: 13, title: "Official varsity basketball match", employers_on_campus: false, free_food_on_campus: false, sports_game: true },
-  { id: 14, title: "Free career workshop", category: "Business", price: 0, food: ["Pizza"], employers_on_campus: null, free_food_on_campus: null, sports_game: null },
+  { id: 11, title: "Employer booth with free pizza", employers_on_campus: true, sports_game: false, price: 10, food: ["Pizza"] },
+  { id: 12, title: "Free campus lunch", food: ["Lunch"], employers_on_campus: false, sports_game: false, price: 0 },
+  { id: 13, title: "Official varsity basketball match", employers_on_campus: false, sports_game: true },
+  { id: 14, title: "Free career workshop", category: "Business", price: 0, food: ["Pizza"], employers_on_campus: null, sports_game: null },
   { id: 15, title: "Sports watch party", category: "Health", sports_game: false },
   { id: 16, title: "Unclassified event" },
   { id: 17, title: "Intramural basketball match", sports_game: false },
@@ -100,7 +100,7 @@ function discoveryResults() {
 
 for (const [filter, expected] of [
   ["employersOnCampus", [11]],
-  ["freeFoodOnCampus", [11, 12]],
+  ["freeFoodOnCampus", [12, 14]],
   ["sportsGame", [13]],
 ] as const) {
   test(`${filter} uses explicit metadata and survives filter handoff and clearing`, () => {
@@ -116,12 +116,12 @@ for (const [filter, expected] of [
   });
 }
 
-test("discovery filters intersect independently of category, food labels, and admission price", () => {
+test("free food requires free admission and food, and intersects employer/varsity filters", () => {
   useSearchStore.getState().setFilterState({ ...EMPTY_FILTER_STATE, employersOnCampus: true, freeFoodOnCampus: true });
-  expect(discoveryResults()).toEqual([11]);
+  expect(discoveryResults()).toEqual([]);
   expect(getFilterCounts(useSearchStore.getState())).toBe(2);
   useSearchStore.getState().setFilterState({ ...EMPTY_FILTER_STATE, freeFoodOnCampus: true, maxPrice: "0" });
-  expect(discoveryResults()).toEqual([12]);
+  expect(discoveryResults()).toEqual([12, 14]);
   useSearchStore.getState().setFilterState({ ...EMPTY_FILTER_STATE, employersOnCampus: true, sportsGame: true });
   expect(discoveryResults()).toEqual([]);
 });
@@ -203,20 +203,20 @@ const campusSchool: SchoolSummary = {
 };
 
 test("campus season visibility follows inclusive school-local dates and supports separate windows", () => {
-  const visible = (now: string) => resolveCampusSeasonFilters(campusSchool, Date.parse(now), "en", []).options.map(option => option.id);
+  const visible = (now: string) => resolveCampusSeasonFilters(campusSchool, Date.parse(now), "en", [], []).options.map(option => option.id);
   expect(visible("2026-09-28T03:59:59Z")).toEqual([]);
   expect(visible("2026-09-28T04:00:00Z")).toEqual(["homecoming", "thanksgiving"]);
   expect(visible("2026-09-30T03:59:59Z")).toEqual(["homecoming", "thanksgiving"]);
   expect(visible("2026-09-30T04:00:00Z")).toEqual([]);
   expect(visible("2026-12-01T04:59:59Z")).toEqual([]);
   expect(visible("2026-12-01T05:00:00Z")).toEqual(["winter_holidays"]);
-  expect(resolveCampusSeasonFilters({ ...campusSchool, slug: "ualberta", timezone: "America/Edmonton" }, Date.parse("2026-09-28T04:00:00Z"), "en", []).options).toEqual([]);
+  expect(resolveCampusSeasonFilters({ ...campusSchool, slug: "ualberta", timezone: "America/Edmonton" }, Date.parse("2026-09-28T04:00:00Z"), "en", [], []).options).toEqual([]);
 });
 
 test("campus season labels use the current language, its base language, then English", () => {
   const now = Date.parse("2026-09-28T12:00:00Z");
-  expect(resolveCampusSeasonFilters(campusSchool, now, "fr-CA", []).options.map(option => option.label)).toEqual(["Retrouvailles", "Thanksgiving"]);
-  expect(resolveCampusSeasonFilters(campusSchool, now, "de", []).options.map(option => option.label)).toEqual(["HOCO", "Thanksgiving"]);
+  expect(resolveCampusSeasonFilters(campusSchool, now, "fr-CA", [], []).options.map(option => option.label)).toEqual(["Retrouvailles", "Thanksgiving"]);
+  expect(resolveCampusSeasonFilters(campusSchool, now, "de", [], []).options.map(option => option.label)).toEqual(["HOCO", "Thanksgiving"]);
 });
 
 test("season selections normalize once and survive filter handoff and Clear all", () => {
@@ -240,7 +240,7 @@ test("season filters OR their metadata IDs and intersect existing discovery filt
     { id: 4, employers_on_campus: true },
     { id: 5, campus_season_ids: [], employers_on_campus: true },
   ].map(item => ({ ...events[0], ...item, occurrences: [{ dtstart_utc: "2026-09-28T16:00:00Z", dtend_utc: null }] }) as Event);
-  const results = () => filterEvents(seasonalEvents, { ...useSearchStore.getState(), goingEventIds: [], campusSeasonOptions: resolveCampusSeasonFilters(campusSchool, Date.parse("2026-09-28T12:00:00Z"), "en", []).options }, () => campusSchool.timezone).map(item => item.id);
+  const results = () => filterEvents(seasonalEvents, { ...useSearchStore.getState(), goingEventIds: [], campusSeasonOptions: resolveCampusSeasonFilters(campusSchool, Date.parse("2026-09-28T12:00:00Z"), "en", [], []).options }, () => campusSchool.timezone).map(item => item.id);
   useSearchStore.getState().setFilterState({ ...EMPTY_FILTER_STATE, campusSeasonIds: ["homecoming", "thanksgiving"] });
   expect(results()).toEqual([1, 2]);
   expect(getFilterCounts(useSearchStore.getState())).toBe(2);
@@ -252,7 +252,7 @@ test("expired and other-school selections stop narrowing results, counts, and te
   useSearchStore.getState().setFilterState({ ...EMPTY_FILTER_STATE, campusSeasonIds: ["homecoming", "other-school-hoco"] });
   const submitted = useSearchStore.getState();
   const beforeExpiry = `${submitted.queryRevision}:${JSON.stringify(storeStatesToFilterState(submitted))}`;
-  const expired = resolveCampusSeasonFilters(campusSchool, Date.parse("2026-10-01T12:00:00Z"), "en", useSearchStore.getState().campusSeasonIds);
+  const expired = resolveCampusSeasonFilters(campusSchool, Date.parse("2026-10-01T12:00:00Z"), "en", useSearchStore.getState().campusSeasonIds, []);
   expect(expired.ready).toBe(true);
   expect(expired.selectedIds).toEqual([]);
   const effective = { ...useSearchStore.getState(), campusSeasonIds: expired.selectedIds };
@@ -265,7 +265,7 @@ test("expired and other-school selections stop narrowing results, counts, and te
   const cleaned = useSearchStore.getState();
   expect(cleaned.campusSeasonIds).toEqual([]);
   expect(`${cleaned.queryRevision}:${JSON.stringify(storeStatesToFilterState(cleaned))}`).toBe(expiredQuery);
-  expect(resolveCampusSeasonFilters(campusSchool, Date.parse("2026-09-28T12:00:00Z"), "en", useSearchStore.getState().campusSeasonIds).selectedIds).toEqual([]);
+  expect(resolveCampusSeasonFilters(campusSchool, Date.parse("2026-09-28T12:00:00Z"), "en", useSearchStore.getState().campusSeasonIds, []).selectedIds).toEqual([]);
   // An intentional repeated user query still gets its own revision.
   cleaned.setFilterState(storeStatesToFilterState(cleaned));
   expect(useSearchStore.getState().queryRevision).toBe(cleaned.queryRevision + 1);
@@ -273,8 +273,8 @@ test("expired and other-school selections stop narrowing results, counts, and te
 
 test("unavailable school configuration or the initial hydration clock never authorizes clearing stored selections", () => {
   const selected = ["homecoming"];
-  expect(resolveCampusSeasonFilters(campusSchool, null, "en", selected)).toEqual({ ready: false, options: [], selectedIds: [] });
-  expect(resolveCampusSeasonFilters(undefined, Date.now(), "en", selected)).toEqual({ ready: false, options: [], selectedIds: [] });
+  expect(resolveCampusSeasonFilters(campusSchool, null, "en", selected, [])).toEqual({ ready: false, options: [], selectedIds: [] });
+  expect(resolveCampusSeasonFilters(undefined, Date.now(), "en", selected, [])).toEqual({ ready: false, options: [], selectedIds: [] });
   expect(selected).toEqual(["homecoming"]);
 });
 
@@ -283,8 +283,8 @@ test("older school snapshots without season configuration preserve staged select
   delete oldSnapshot.event_seasons;
   const selected = ["homecoming"];
   const now = Date.parse("2026-09-28T12:00:00Z");
-  expect(resolveCampusSeasonFilters(oldSnapshot, now, "en", selected)).toEqual({ ready: false, options: [], selectedIds: [] });
-  expect(resolveCampusSeasonFilters({ ...campusSchool, event_seasons: [] }, now, "en", selected)).toEqual({ ready: true, options: [], selectedIds: [] });
+  expect(resolveCampusSeasonFilters(oldSnapshot, now, "en", selected, [])).toEqual({ ready: false, options: [], selectedIds: [] });
+  expect(resolveCampusSeasonFilters({ ...campusSchool, event_seasons: [] }, now, "en", selected, [])).toEqual({ ready: true, options: [], selectedIds: [] });
   expect(selected).toEqual(["homecoming"]);
 });
 
@@ -297,7 +297,7 @@ test("school transitions clear seasonal selections even when the next school off
   expect(useSearchStore.getState().campusSeasonIds).toEqual([]);
   expect(useSearchStore.getState().employersOnCampus).toBe(true);
   const nextSchool = { ...campusSchool, slug: "uwo" };
-  const next = resolveCampusSeasonFilters(nextSchool, Date.parse("2026-09-28T12:00:00Z"), "en", useSearchStore.getState().campusSeasonIds);
+  const next = resolveCampusSeasonFilters(nextSchool, Date.parse("2026-09-28T12:00:00Z"), "en", useSearchStore.getState().campusSeasonIds, []);
   expect(next.options.map(option => option.id)).toContain("homecoming");
   expect(next.selectedIds).toEqual([]);
   // A QR handoff is applied after the navigation owner selects its school.
@@ -318,7 +318,7 @@ test("named holiday filters require classified occurrences within that school's 
   ].map(item => ({ ...events[0], id: item.id, campus_season_ids: ["holidays"], occurrences: [{ dtstart_utc: item.start, dtend_utc: item.end }] }) as Event);
   seasonalEvents.push({ ...seasonalEvents[1], id: 7, campus_season_ids: [] });
   const results = (now: string, selection: string) => {
-    const seasons = resolveCampusSeasonFilters(campusSchool, Date.parse(now), "en", [selection]);
+    const seasons = resolveCampusSeasonFilters(campusSchool, Date.parse(now), "en", [selection], []);
     return filterEvents(seasonalEvents, {
       ...useSearchStore.getState(), goingEventIds: [], campusSeasonIds: seasons.selectedIds, campusSeasonOptions: seasons.options,
     }, () => campusSchool.timezone).map(event => event.id);
@@ -329,7 +329,7 @@ test("named holiday filters require classified occurrences within that school's 
 
 
 test("named seasonal filters carry only matching sessions into cards and date sections", () => {
-  const seasons = resolveCampusSeasonFilters(campusSchool, Date.parse("2026-09-28T12:00:00Z"), "en", ["thanksgiving"]);
+  const seasons = resolveCampusSeasonFilters(campusSchool, Date.parse("2026-09-28T12:00:00Z"), "en", ["thanksgiving"], []);
   const recurring = {
     ...events[0], campus_season_ids: ["holidays"], occurrences: [
       { dtstart_utc: "2026-09-27T16:00:00Z", dtend_utc: null },
@@ -361,4 +361,20 @@ test("a later holiday occurrence cannot keep an expired selected-window occurren
     }],
   }, () => campusSchool.timezone);
   expect(result).toEqual([]);
+});
+
+
+test("empty seasonal filters wait for the complete feed and hide options with no upcoming school matches", () => {
+  const school = { ...campusSchool, event_seasons: [{
+    id: "midterm_prep", classification_id: "midterm_prep", labels: { en: "Midterm prep" },
+    display_windows: [{ start_date: "2026-09-01", end_date: "2026-11-01" }],
+  }] } as SchoolSummary;
+  const now = Date.parse("2026-09-30T12:00:00Z");
+  expect(resolveCampusSeasonFilters(school, now, "en", ["midterm_prep"], null).ready).toBe(false);
+  const empty = resolveCampusSeasonFilters(school, now, "en", ["midterm_prep"], []);
+  expect(empty.options).toEqual([]);
+  expect(empty.selectedIds).toEqual([]);
+  const matching = { ...events[0], school: school.slug, campus_season_ids: ["midterm_prep"], occurrences: [{ dtstart_utc: "2026-10-01T18:00:00Z" }] } as Event;
+  expect(resolveCampusSeasonFilters(school, now, "en", [], [matching]).options).toHaveLength(1);
+  expect(resolveCampusSeasonFilters(school, now, "en", [], [{ ...matching, cancelled: true }]).options).toEqual([]);
 });

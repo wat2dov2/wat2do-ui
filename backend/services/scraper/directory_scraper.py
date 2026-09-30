@@ -262,39 +262,82 @@ def scrape_event_page(url: str, config: DirectoryConfig) -> tuple[str, list[str]
     content_lines = [line.strip() for line in content_text.splitlines() if line.strip()]
     cleaned_content = "\n".join(content_lines)
 
-    images: set[str] = set()
+    # Preserve semantic priority. Sorting by URL let loading GIFs and unrelated
+    # page chrome become image zero, the default poster chosen by extraction.
+    images: dict[str, None] = {}
 
-    if config.image_selector:
-        img_elements = soup.select(config.image_selector)
-        for img in img_elements:
-            src = img.get("src") or img.get("data-src") or img.get("href")
-            if src:
-                images.add(urljoin(url, src.strip()))
+    def add_image(src: object) -> None:
+        if not isinstance(src, str) or not src.strip():
+            return
+        absolute = urljoin(url, src.strip())
+        parsed = urlparse(absolute)
+        if parsed.scheme != "https":
+            return
+        path = parsed.path.casefold()
+        if any(
+            word in path
+            for word in (
+                "avatar",
+                "logo",
+                "icon",
+                "spacer",
+                "pixel",
+                "tracker",
+                "loading",
+                "spinner",
+                "placeholder",
+            )
+        ):
+            return
+        images.setdefault(absolute, None)
 
-    content_area = None
-    if config.content_selector:
-        content_area = soup.select_one(config.content_selector)
-    if not content_area:
-        content_area = (
-            soup.select_one("article") or soup.select_one("#content") or soup.select_one("body")
+    def event_images(value: object) -> None:
+        if isinstance(value, list):
+            for item in value:
+                event_images(item)
+        elif isinstance(value, dict):
+            types = value.get("@type")
+            if types == "Event" or isinstance(types, list) and "Event" in types:
+                event_url = value.get("url")
+                if not event_url or _clean_event_url(urljoin(url, event_url)) == _clean_event_url(
+                    url
+                ):
+                    artwork = value.get("image")
+                    for item in artwork if isinstance(artwork, list) else [artwork]:
+                        add_image(
+                            item.get("url") or item.get("contentUrl")
+                            if isinstance(item, dict)
+                            else item
+                        )
+            for child in value.values():
+                if isinstance(child, (dict, list)):
+                    event_images(child)
+
+    for script in soup.select('script[type="application/ld+json"]'):
+        try:
+            event_images(json.loads(script.get_text()))
+        except (TypeError, json.JSONDecodeError):
+            continue
+
+    def add_element_image(img) -> None:
+        # Lazy-load attributes hold the real image, src is often a spinner.
+        add_image(
+            img.get("data-src") or img.get("data-lazy-src") or img.get("src") or img.get("href")
         )
 
-    if content_area:
-        for img in content_area.find_all("img"):
-            src = img.get("src") or img.get("data-src")
-            if src:
-                src_abs = urljoin(url, src.strip())
-                parsed_src = urlparse(src_abs)
-                if parsed_src.scheme in ("http", "https"):
-                    # Skip icons/avatars/trackers by URL substring heuristic.
-                    src_lower = src_abs.lower()
-                    if not any(
-                        x in src_lower
-                        for x in ("avatar", "logo", "icon", "spacer", "pixel", "tracker")
-                    ):
-                        images.add(src_abs)
+    if config.image_selector:
+        for img in soup.select(config.image_selector):
+            add_element_image(img)
 
-    return cleaned_content, sorted(list(images))
+    content_area = soup.select_one(config.content_selector) if config.content_selector else None
+    if content_area is None:
+        content_area = soup.select_one(".entry-content, article, main")
+    if content_area is not None:
+        for img in content_area.find_all("img"):
+            if img.find_parent(["header", "footer", "nav", "aside"]) is None:
+                add_element_image(img)
+
+    return cleaned_content, list(images)
 
 
 def run_directory_pipeline(

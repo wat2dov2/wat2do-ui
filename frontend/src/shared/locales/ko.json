@@ -177,7 +177,8 @@
     "descending": "내림차순",
     "club": "조직",
     "searchClub": "조직 검색...",
-    "noClubs": "사용 가능한 조직이 없습니다"
+    "noClubs": "사용 가능한 조직이 없습니다",
+    "anyPrice": "모든 가격"
   },
   "commands": {
     "commands": "명령",

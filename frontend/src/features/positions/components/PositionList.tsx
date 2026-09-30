@@ -1,3 +1,4 @@
+import { usePositionStats } from "@/features/positions/hooks/usePositionStats";
 import { useMemo } from "react";
 import { ScrollDateWheel } from "@/shared/ui/scroll-date-wheel";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
@@ -49,6 +50,7 @@ export function PositionList({
   emptyDescription,
 }: PositionListProps) {
   const { t } = useTranslation();
+  const { data: stats } = usePositionStats(positions[0]?.school ?? "");
   const { getSchoolTimezone } = useSchoolDirectory();
   const wheelGroups = useMemo(
     () => !showDateWheel || hasActiveFilters ? undefined : [{
@@ -106,6 +108,7 @@ export function PositionList({
             <PositionCard
               position={position}
               onPositionClick={onPositionClick}
+              clickCount={stats?.[String(position.id)]?.click_count}
               imagePriority={index < imageDelivery.first_row_image_count}
             />
           </CardEntrance>

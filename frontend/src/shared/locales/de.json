@@ -180,7 +180,8 @@
     "descending": "Absteigend",
     "club": "Organisation",
     "searchClub": "Organisation suchen...",
-    "noClubs": "Keine Organisationen verfügbar"
+    "noClubs": "Keine Organisationen verfügbar",
+    "anyPrice": "Beliebiger Preis"
   },
   "commands": {
     "commands": "Befehle",

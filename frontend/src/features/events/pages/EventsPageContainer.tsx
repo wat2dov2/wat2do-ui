@@ -155,7 +155,7 @@ export function EventsPageContainer({
                     case "new":
                       return <NewlyAddedFilterButton key={config.id} value={filters.addedSince || null} onValueChange={filters.setAddedSince} onClear={handleNewlyAddedFilterClear} />;
                     case "price":
-                      return <IntegerFilter key={config.id} value={filters.priceFilterValue} active={filters.priceFilterValue !== ""} onChange={filters.setPriceFilter} label={Number(filters.priceFilterValue) > 0 ? `> $${Number(filters.priceFilterValue)}` : t("common.free")} inputLabel={t("filters.minimumPrice")} preset={{ label: t("common.free"), value: "0" }} />;
+                      return <IntegerFilter key={config.id} value={filters.priceFilterValue} active={filters.priceFilterValue !== ""} onChange={filters.setPriceFilter} label={Number(filters.priceFilterValue) > 0 ? `> $${Number(filters.priceFilterValue)}` : t(filters.priceFilterValue === "0" ? "common.free" : "filters.anyPrice")} inputLabel={t("filters.minimumPrice")} preset={{ label: t("common.free"), value: "0" }} />;
                     case "campusSeasons":
                       return <Fragment key={config.id}>{filters.campusSeasonOptions.map(season => (
                         <Button key={season.id} variant={filters.campusSeasonIds.includes(season.id) ? "primary" : "outline"} size="sm" onClick={() => filters.toggleCampusSeason(season.id)} aria-pressed={filters.campusSeasonIds.includes(season.id)}>

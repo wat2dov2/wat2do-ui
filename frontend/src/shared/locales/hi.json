@@ -180,7 +180,8 @@
     "descending": "अवरोही क्रम",
     "club": "संगठन",
     "searchClub": "संगठन खोजें...",
-    "noClubs": "कोई संगठन उपलब्ध नहीं"
+    "noClubs": "कोई संगठन उपलब्ध नहीं",
+    "anyPrice": "कोई भी कीमत"
   },
   "commands": {
     "commands": "कमांड",

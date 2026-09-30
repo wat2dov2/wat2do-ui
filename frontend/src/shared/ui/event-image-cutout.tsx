@@ -125,6 +125,7 @@ interface EventImageCutoutProps {
   /** Optional photo, drawn inside the mask so it is cut by the notches too. */
   imageSrc?: string | null;
   imageAlt?: string;
+  imageFit?: "cover" | "contain";
   videoSrc?: string | null;
   /** Load the poster immediately for LCP candidates; defer off-screen cards. */
   imageLoading?: "eager" | "lazy";
@@ -183,6 +184,7 @@ export function EventImageCutout({
   backgroundColor,
   imageSrc,
   imageAlt = "",
+  imageFit = "cover",
   videoSrc,
   imageLoading = "eager",
   imageSizes = CARD_GRID_IMAGE_SIZES,
@@ -213,6 +215,7 @@ export function EventImageCutout({
         {imageContent ?? <LazyImage
           src={imageSrc}
           alt={imageAlt}
+          fit={imageFit}
           videoSrc={videoSrc}
           sizes={imageSizes}
           loading={imageLoading}

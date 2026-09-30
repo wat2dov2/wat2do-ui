@@ -8,7 +8,12 @@ from core.constants import MAX_SCHOOL_LENGTH, MAX_SEARCH_QUERY_LENGTH
 from core.errors import POSITION_NOT_FOUND
 from core.exceptions import get_or_404
 from core.pagination import PaginationParams, paginated_response
-from schemas.position import PositionDirectoryResponse, PositionResponse, PositionType
+from schemas.position import (
+    PositionDirectoryResponse,
+    PositionResponse,
+    PositionStatsResponse,
+    PositionType,
+)
 from services import position_service
 
 router = APIRouter(prefix="/positions", tags=["positions"])
@@ -49,6 +54,11 @@ def list_positions(
         **paginated_response(items, total, pagination),
         "latest_added_position": latest_position,
     }
+
+
+@router.get("/stats", response_model=dict[str, PositionStatsResponse])
+def get_position_stats(school: str = Query(min_length=1, max_length=MAX_SCHOOL_LENGTH)):
+    return position_service.get_position_stats_for_school(school)
 
 
 @router.get("/{position_id}", response_model=PositionResponse)

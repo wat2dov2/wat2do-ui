@@ -177,7 +177,8 @@
     "descending": "降序",
     "club": "组织",
     "searchClub": "搜索组织...",
-    "noClubs": "暂无组织"
+    "noClubs": "暂无组织",
+    "anyPrice": "不限价格"
   },
   "commands": {
     "commands": "命令",

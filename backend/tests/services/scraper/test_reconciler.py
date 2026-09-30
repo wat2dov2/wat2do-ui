@@ -66,7 +66,7 @@ def test_reconcile_prompt_reuses_same_occurrence_reposts_but_not_new_occurrences
     assert "watch parties do not qualify" in prompt
     assert "Use null when official varsity participation is unconfirmed" in prompt
     assert "explicit new true or false replaces the old value" in prompt
-    facts = {"employers_on_campus": True, "free_food_on_campus": False, "sports_game": None}
+    facts = {"employers_on_campus": True, "sports_game": None}
     event = ReconciledEvent.model_validate(facts)
     assert {name: getattr(event, name) for name in facts} == facts
 

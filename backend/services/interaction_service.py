@@ -23,7 +23,7 @@ from core.constants import (
 from core.database import get_sb
 from core.exceptions import AuthenticationError, AuthorizationError, ValidationError
 from core.pagination import fetch_all_pages, iter_all_pages
-from core.tables import USER_INTERACTIONS
+from core.tables import POSITION_INTERACTIONS, USER_INTERACTIONS
 from schemas.interaction import InteractionCreate
 
 log = logging.getLogger(__name__)
@@ -42,30 +42,35 @@ _ANON_DISALLOWED_INTERACTION_TYPES: frozenset[str] = frozenset(
 
 
 def get_click_counts_for_events(event_ids: list[int]) -> dict[int, int]:
-    """Return recorded click counts keyed by event ID."""
-    unique_ids = sorted(set(event_ids))
+    return _get_click_counts(event_ids, "event")
+
+
+def get_click_counts_for_positions(position_ids: list[int]) -> dict[int, int]:
+    return _get_click_counts(position_ids, "position")
+
+
+def _get_click_counts(item_ids: list[int], resource: str) -> dict[int, int]:
+    unique_ids = sorted(set(item_ids))
     if not unique_ids:
         return {}
-
     try:
         rows = (
-            get_sb().rpc("get_event_click_counts", {"p_event_ids": unique_ids}).execute().data or []
+            get_sb()
+            .rpc(f"get_{resource}_click_counts", {f"p_{resource}_ids": unique_ids})
+            .execute()
+            .data
+            or []
         )
     except Exception as exc:
-        log.warning("Failed to fetch event click counts: %s", exc)
+        log.warning("Failed to fetch %s click counts: %s", resource, exc)
         return {}
-
     counts: dict[int, int] = {}
     for row in rows:
         if not isinstance(row, dict):
             continue
-        event_id = row.get("event_id")
-        click_count = row.get("click_count")
-        if event_id is None or click_count is None:
-            continue
         try:
-            counts[int(event_id)] = int(click_count)
-        except (TypeError, ValueError):
+            counts[int(row[f"{resource}_id"])] = int(row["click_count"])
+        except (KeyError, TypeError, ValueError):
             continue
     return counts
 
@@ -78,20 +83,25 @@ def record_interactions(
     """Batch-insert interactions. Returns count inserted."""
     if not interactions:
         return 0
-    rows = []
+    rows_by_table: dict[str, list[dict]] = {}
     for item in interactions:
+        table = POSITION_INTERACTIONS if item.position_id is not None else USER_INTERACTIONS
+        target_field = "position_id" if item.position_id is not None else "event_id"
+        rows = rows_by_table.setdefault(table, [])
         rows.append(
             {
                 "id": str(uuid.uuid4()),
                 "user_id": user_id,
                 "session_id": session_id,
-                "event_id": item.event_id,
+                target_field: item.position_id if item.position_id is not None else item.event_id,
                 "interaction_type": item.interaction_type,
                 "metadata": item.metadata,
             }
         )
-    r = get_sb().table(USER_INTERACTIONS).insert(rows).execute()
-    return len(r.data) if r.data else 0
+    return sum(
+        len(get_sb().table(table).insert(rows).execute().data or [])
+        for table, rows in rows_by_table.items()
+    )
 
 
 def _validate_batch(
@@ -148,15 +158,29 @@ def record_interactions_batch(
         interactions = filtered
         if not interactions:
             return 0
-        interactions = check_duplicate_interactions_for_session(
-            session_id=session_id,
-            interactions=interactions,
-        )
+        interactions = [
+            item
+            for position in (False, True)
+            for item in check_duplicate_interactions_for_session(
+                session_id=session_id,
+                interactions=[
+                    item for item in interactions if (item.position_id is not None) == position
+                ],
+                position=position,
+            )
+        ]
     else:
-        interactions = check_duplicate_interactions(
-            user_id=user_id,
-            interactions=interactions,
-        )
+        interactions = [
+            item
+            for position in (False, True)
+            for item in check_duplicate_interactions(
+                user_id=user_id,
+                interactions=[
+                    item for item in interactions if (item.position_id is not None) == position
+                ],
+                position=position,
+            )
+        ]
     if not interactions:
         return 0
 
@@ -218,9 +242,11 @@ def _filter_duplicate_interactions(
     interactions: list[InteractionCreate],
     *,
     actor: str,
+    position: bool = False,
 ) -> list[InteractionCreate]:
     """Apply per-event/type and global caps, including accepted items in this batch."""
-    counts = Counter((row["event_id"], row["interaction_type"]) for row in existing)
+    target_field = "position_id" if position else "event_id"
+    counts = Counter((row[target_field], row["interaction_type"]) for row in existing)
     total_in_window = len(existing)
     filtered: list[InteractionCreate] = []
     for item in interactions:
@@ -235,7 +261,7 @@ def _filter_duplicate_interactions(
             )
             continue
 
-        key = (item.event_id, item.interaction_type)
+        key = (item.position_id if position else item.event_id, item.interaction_type)
         if counts[key] >= MAX_DUPLICATE_INTERACTIONS:
             log.warning(
                 "Dropping duplicate interaction %s event=%s type=%s (count=%d)",
@@ -255,6 +281,8 @@ def _filter_duplicate_interactions(
 def check_duplicate_interactions(
     user_id: str,
     interactions: list[InteractionCreate],
+    *,
+    position: bool = False,
 ) -> list[InteractionCreate]:
     """Apply per-event/type and total interaction caps within the dedup window.
 
@@ -271,8 +299,12 @@ def check_duplicate_interactions(
             lambda offset, ps: (
                 (
                     get_sb()
-                    .table(USER_INTERACTIONS)
-                    .select("event_id, interaction_type")
+                    .table(POSITION_INTERACTIONS if position else USER_INTERACTIONS)
+                    .select(
+                        "position_id, interaction_type"
+                        if position
+                        else "event_id, interaction_type"
+                    )
                     .eq("user_id", user_id)
                     .gte("created_at", cutoff)
                     .order("created_at")
@@ -286,12 +318,16 @@ def check_duplicate_interactions(
         log.error("Dedup check failed, rejecting batch to prevent gaming: %s", e)
         return []
 
-    return _filter_duplicate_interactions(existing, interactions, actor=f"user={user_id}")
+    return _filter_duplicate_interactions(
+        existing, interactions, actor=f"user={user_id}", position=position
+    )
 
 
 def check_duplicate_interactions_for_session(
     session_id: str,
     interactions: list[InteractionCreate],
+    *,
+    position: bool = False,
 ) -> list[InteractionCreate]:
     """Filter anonymous session interactions that exceed dedup thresholds."""
     if not interactions:
@@ -304,8 +340,12 @@ def check_duplicate_interactions_for_session(
             lambda offset, ps: (
                 (
                     get_sb()
-                    .table(USER_INTERACTIONS)
-                    .select("event_id, interaction_type")
+                    .table(POSITION_INTERACTIONS if position else USER_INTERACTIONS)
+                    .select(
+                        "position_id, interaction_type"
+                        if position
+                        else "event_id, interaction_type"
+                    )
                     .eq("session_id", session_id)
                     .is_("user_id", "null")
                     .gte("created_at", cutoff)
@@ -321,5 +361,5 @@ def check_duplicate_interactions_for_session(
         return []
 
     return _filter_duplicate_interactions(
-        existing, interactions, actor=f"anonymous session={session_id}"
+        existing, interactions, actor=f"anonymous session={session_id}", position=position
     )

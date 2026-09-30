@@ -177,7 +177,8 @@
     "descending": "降序",
     "club": "組織",
     "searchClub": "搜尋組織...",
-    "noClubs": "沒有可用的組織"
+    "noClubs": "沒有可用的組織",
+    "anyPrice": "不限價錢"
   },
   "commands": {
     "commands": "指令",

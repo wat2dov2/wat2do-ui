@@ -197,3 +197,36 @@ def test_list_positions_orders_deadlines_before_pagination(
     fake_sb.order.assert_any_call("deadline_at", desc=descending, nullsfirst=False)
     fake_sb.order.assert_any_call("id", desc=descending)
     fake_sb.range.assert_called_once_with(20, 39)
+
+
+def test_no_deadline_expiry_uses_four_calendar_months_for_all_open_reads(
+    fake_sb, patch_sb, monkeypatch
+):
+    from datetime import datetime as RealDatetime
+
+    class FrozenDatetime:
+        @staticmethod
+        def now(tz):
+            return RealDatetime(2026, 9, 30, 12, tzinfo=tz)
+
+    monkeypatch.setattr(position_service, "datetime", FrozenDatetime)
+    patch_sb("services.position_service")
+    fake_sb.set_response(data=[])
+    position_service.list_positions()
+    fake_sb.or_.assert_called_with(
+        "deadline_date.gte.2026-09-30,and(deadline_date.is.null,added_at.gte.2026-05-30T12:00:00+00:00)"
+    )
+
+
+def test_position_cards_receive_batched_live_click_counts(fake_sb, patch_sb, monkeypatch):
+    from unittest.mock import MagicMock
+
+    patch_sb("services.position_service")
+    monkeypatch.setattr(position_service.school_service, "get_school_id", lambda school: 1)
+    fake_sb.set_response(data=[{"id": 1}, {"id": 2}], count=2)
+    counts = MagicMock(return_value={1: 12})
+    monkeypatch.setattr(
+        position_service.interaction_service, "get_click_counts_for_positions", counts
+    )
+    assert position_service.get_position_stats_for_school("uwaterloo") == {"1": {"click_count": 12}}
+    counts.assert_called_once_with([1, 2])

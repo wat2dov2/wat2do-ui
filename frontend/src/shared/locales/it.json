@@ -183,7 +183,8 @@
     "descending": "Decrescente",
     "club": "Organizzazione",
     "searchClub": "Cerca organizzazione...",
-    "noClubs": "Nessuna organizzazione disponibile"
+    "noClubs": "Nessuna organizzazione disponibile",
+    "anyPrice": "Qualsiasi prezzo"
   },
   "commands": {
     "commands": "Comandi",

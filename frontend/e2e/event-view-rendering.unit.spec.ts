@@ -31,6 +31,7 @@ function loadComponent(path: string): object {
   runInNewContext(outputText, {
     exports: componentModule.exports,
     require: (id: string) => {
+      if (id === "@/features/positions/hooks/usePositionStats") return { usePositionStats: () => ({ data: undefined }) };
       if (id === "next/navigation") return { useRouter: () => ({ replace() {}, push() {} }) };
       if (id.endsWith(".png")) return { src: "/logo.png", width: 57, height: 40 };
       if (id === "@/features/auth/hooks/useAuthState") return { useAuthState: () => ({ isAuthenticated: false }) };

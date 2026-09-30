@@ -177,7 +177,8 @@
     "descending": "Theo thứ tự giảm dần",
     "club": "Tổ chức",
     "searchClub": "Tìm tổ chức...",
-    "noClubs": "Không có tổ chức nào khả dụng"
+    "noClubs": "Không có tổ chức nào khả dụng",
+    "anyPrice": "Mọi mức giá"
   },
   "commands": {
     "commands": "Lệnh",

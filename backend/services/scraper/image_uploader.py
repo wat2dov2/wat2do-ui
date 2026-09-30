@@ -10,10 +10,12 @@ from __future__ import annotations
 import ipaddress
 import logging
 import socket
+from io import BytesIO
 from typing import Iterable
 from urllib.parse import urlparse
 
 import httpx
+from PIL import Image
 
 from core.constants import BUCKET_EVENT_IMAGES, BUCKET_EVENT_VIDEOS
 from core.controlbox import controlbox
@@ -115,6 +117,11 @@ def upload_image_from_url(
         content_type = _CONTENT_TYPE_FALLBACK
 
     try:
+        if allow_all_domains:
+            with Image.open(BytesIO(resp.content)) as image:
+                if min(image.size) < controlbox.scraping.directory_minimum_image_dimension_pixels:
+                    log.info("Dropping undersized directory image")
+                    return None
         prepared, prepared_content_type = storage.validate_and_prepare(
             bucket,
             resp.content,

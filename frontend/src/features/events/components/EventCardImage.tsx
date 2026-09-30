@@ -1,9 +1,8 @@
 import { useMemo, useState } from "react";
-import Image from "next/image";
 import { useTranslation } from "react-i18next";
-import imgLogo from "@/assets/38e8096a28295e8dcc0e5020d0a5f3dd85d5f019.png";
 import { BadgeMask } from "@/shared/ui/badge-mask";
 import { EventImageCutout, useEventImageCutouts } from "@/shared/ui/event-image-cutout";
+import { Calendar } from "@/shared/ui/doodle-icons";
 import { Badge } from "@/shared/ui/badge";
 import {
   Dialog,
@@ -81,16 +80,14 @@ export function EventCardImage({
           imageSrc={event.source_image_url}
           videoSrc={variant === "detail" ? event.source_video_url : undefined}
           imageAlt={event.title}
+          imageFit="contain"
           imageLoading={eagerImage ? "eager" : "lazy"}
           imageSizes={variant === "detail" ? "(max-width: 767px) 384px, 320px" : undefined}
           imageFallback={
-            <Image
-              src={imgLogo}
-              alt=""
-              width={136}
-              height={96}
-              className="h-2/5 w-2/5 object-contain opacity-80"
-            />
+            <div data-slot="event-poster-fallback" className="flex size-full flex-col items-center justify-center gap-3 px-8 py-10 text-center">
+              <Calendar aria-hidden="true" className="size-8 text-primary" />
+              <span className="line-clamp-3 text-lg font-semibold leading-tight text-foreground">{event.title}</span>
+            </div>
           }
           cutouts={cutouts}
           width={box.width}

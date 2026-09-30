@@ -25,7 +25,7 @@ def record_interactions(
     request: Request,
     auth_user: dict | None = Depends(get_optional_user),
 ):
-    """Record a batch of user-event interactions.
+    """Record a batch of event interactions and position clicks.
 
     Auth via ``Authorization: Bearer`` (frontend uses ``fetch`` + ``keepalive``
     so the header works on unload). Authenticated batches are size-capped and

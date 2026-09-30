@@ -4405,6 +4405,54 @@
         }
       }
     },
+    "/positions/stats": {
+      "get": {
+        "tags": [
+          "positions"
+        ],
+        "summary": "Get Position Stats",
+        "operationId": "get_position_stats_positions_stats_get",
+        "parameters": [
+          {
+            "name": "school",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 255,
+              "title": "School"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "$ref": "#/components/schemas/PositionStatsResponse"
+                  },
+                  "title": "Response Get Position Stats Positions Stats Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/positions/{position_id}": {
       "get": {
         "tags": [
@@ -8353,18 +8401,6 @@
             "title": "Employers On Campus",
             "description": "Employer representatives or recruiters will be physically present on the event's school campus for recruiting, a career fair, an employer information session, or networking. General career workshops, alumni talks without employer recruiting, student-club hiring, online sessions, and off-campus employer events do not qualify. School affiliation alone does not prove an on-campus location."
           },
-          "free_food_on_campus": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Free Food On Campus",
-            "description": "Food or refreshments are explicitly offered at no charge at a physical location on the event's school campus. Free admission with food for sale, discounted food, prizes, and unspecified food pricing do not qualify. School affiliation alone does not prove an on-campus location. Complimentary food does not establish the event's admission price."
-          },
           "sports_game": {
             "anyOf": [
               {
@@ -8667,18 +8703,6 @@
             "title": "Employers On Campus",
             "description": "Employer representatives or recruiters will be physically present on the event's school campus for recruiting, a career fair, an employer information session, or networking. General career workshops, alumni talks without employer recruiting, student-club hiring, online sessions, and off-campus employer events do not qualify. School affiliation alone does not prove an on-campus location."
           },
-          "free_food_on_campus": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Free Food On Campus",
-            "description": "Food or refreshments are explicitly offered at no charge at a physical location on the event's school campus. Free admission with food for sale, discounted food, prizes, and unspecified food pricing do not qualify. School affiliation alone does not prove an on-campus location. Complimentary food does not establish the event's admission price."
-          },
           "sports_game": {
             "anyOf": [
               {
@@ -8917,18 +8941,6 @@
             ],
             "title": "Employers On Campus",
             "description": "Employer representatives or recruiters will be physically present on the event's school campus for recruiting, a career fair, an employer information session, or networking. General career workshops, alumni talks without employer recruiting, student-club hiring, online sessions, and off-campus employer events do not qualify. School affiliation alone does not prove an on-campus location."
-          },
-          "free_food_on_campus": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Free Food On Campus",
-            "description": "Food or refreshments are explicitly offered at no charge at a physical location on the event's school campus. Free admission with food for sale, discounted food, prizes, and unspecified food pricing do not qualify. School affiliation alone does not prove an on-campus location. Complimentary food does not establish the event's admission price."
           },
           "sports_game": {
             "anyOf": [
@@ -9196,18 +9208,6 @@
             ],
             "title": "Employers On Campus",
             "description": "Employer representatives or recruiters will be physically present on the event's school campus for recruiting, a career fair, an employer information session, or networking. General career workshops, alumni talks without employer recruiting, student-club hiring, online sessions, and off-campus employer events do not qualify. School affiliation alone does not prove an on-campus location."
-          },
-          "free_food_on_campus": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Free Food On Campus",
-            "description": "Food or refreshments are explicitly offered at no charge at a physical location on the event's school campus. Free admission with food for sale, discounted food, prizes, and unspecified food pricing do not qualify. School affiliation alone does not prove an on-campus location. Complimentary food does not establish the event's admission price."
           },
           "sports_game": {
             "anyOf": [
@@ -9480,18 +9480,6 @@
             ],
             "title": "Employers On Campus",
             "description": "Employer representatives or recruiters will be physically present on the event's school campus for recruiting, a career fair, an employer information session, or networking. General career workshops, alumni talks without employer recruiting, student-club hiring, online sessions, and off-campus employer events do not qualify. School affiliation alone does not prove an on-campus location."
-          },
-          "free_food_on_campus": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Free Food On Campus",
-            "description": "Food or refreshments are explicitly offered at no charge at a physical location on the event's school campus. Free admission with food for sale, discounted food, prizes, and unspecified food pricing do not qualify. School affiliation alone does not prove an on-campus location. Complimentary food does not establish the event's admission price."
           },
           "sports_game": {
             "anyOf": [
@@ -10284,8 +10272,28 @@
       "InteractionCreate": {
         "properties": {
           "event_id": {
-            "type": "integer",
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Event Id"
+          },
+          "position_id": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Position Id"
           },
           "interaction_type": {
             "type": "string",
@@ -10307,7 +10315,6 @@
         "additionalProperties": false,
         "type": "object",
         "required": [
-          "event_id",
           "interaction_type"
         ],
         "title": "InteractionCreate"
@@ -11886,6 +11893,20 @@
           "school"
         ],
         "title": "PositionResponse"
+      },
+      "PositionStatsResponse": {
+        "properties": {
+          "click_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Click Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "click_count"
+        ],
+        "title": "PositionStatsResponse"
       },
       "PositionSubmissionCreate": {
         "properties": {

@@ -222,3 +222,29 @@ def test_loading_target_requires_only_selected_public_media_fields(persistence):
     db.table.assert_called_once_with("positions")
     query.eq.assert_called_once_with("id", 12)
     query.limit.assert_called_once_with(1)
+
+
+@pytest.mark.parametrize("apply", [False, True])
+def test_directory_spinner_is_cleared_only_after_owned_image_validation(
+    target, assets, persistence, monkeypatch, apply
+):
+    from services.scraper import directory_scraper
+
+    storage, client = assets
+    db, query, refresh = persistence
+    selected = replace(target, school="uwaterloo", source_url="https://wusa.ca/event/lunch")
+    stored_poster(client, width=40)
+    monkeypatch.setattr(
+        directory_scraper, "scrape_event_page", lambda url, config: ("Lunch details", [])
+    )
+    result = module.repair_directory_image(selected, apply=apply)
+    assert result["width"] == 40
+    assert result["status"] == ("updated" if apply else "ready")
+    if apply:
+        query.update.assert_called_once_with({"source_image_url": None})
+        query.eq.assert_any_call("source_image_url", selected.source_image_url)
+        query.eq.assert_any_call("source_url", selected.source_url)
+        refresh.assert_called_once_with("uwaterloo", resources=("events", "clubs"))
+    else:
+        query.update.assert_not_called()
+        refresh.assert_not_called()

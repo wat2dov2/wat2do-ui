@@ -178,3 +178,28 @@ def test_video_rejects_nonpublic_addresses_and_embedded_credentials():
         ]:
             with pytest.raises(image_uploader.MediaDownloadError, match="unsupported video host"):
                 image_uploader.download_video(url, maximum_bytes=100, timeout_seconds=10)
+
+
+def test_directory_spinner_bytes_are_rejected_before_storage(monkeypatch):
+    from io import BytesIO
+
+    from PIL import Image
+
+    data = BytesIO()
+    Image.new("RGB", (40, 40)).save(data, format="GIF")
+    response = MagicMock()
+    response.content = data.getvalue()
+    response.headers = {"content-type": "image/gif"}
+    client = MagicMock()
+    client.__enter__.return_value.get.return_value = response
+    monkeypatch.setattr(image_uploader.httpx, "Client", lambda **kwargs: client)
+    monkeypatch.setattr(image_uploader, "_is_safe_image_url", lambda *args, **kwargs: True)
+    upload = MagicMock()
+    monkeypatch.setattr(image_uploader.storage, "upload_file", upload)
+    assert (
+        image_uploader.upload_image_from_url(
+            "https://example.edu/opaque.gif", bucket=BUCKET_EVENT_IMAGES, allow_all_domains=True
+        )
+        is None
+    )
+    upload.assert_not_called()

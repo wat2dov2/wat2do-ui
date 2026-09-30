@@ -1,7 +1,7 @@
 import json
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from core.constants import (
     INTERACTION_TYPES,
@@ -14,9 +14,18 @@ from core.constants import (
 class InteractionCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    event_id: int
+    event_id: int | None = Field(default=None, ge=1)
+    position_id: int | None = Field(default=None, ge=1)
     interaction_type: str
     metadata: dict | None = None
+
+    @model_validator(mode="after")
+    def validate_target(self):
+        if (self.event_id is None) == (self.position_id is None):
+            raise ValueError("Select exactly one event_id or position_id")
+        if self.position_id is not None and self.interaction_type != "click":
+            raise ValueError("Positions support click interactions only")
+        return self
 
     @field_validator("interaction_type")
     @classmethod

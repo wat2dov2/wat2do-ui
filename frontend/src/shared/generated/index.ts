@@ -30,6 +30,7 @@ export type ApiGoingEventStatusResponse =
   components["schemas"]["GoingEventStatusResponse"];
 
 // ── Positions ───────────────────────────────────────────────────────
+export type ApiPositionStatsResponse = components["schemas"]["PositionStatsResponse"];
 export type ApiPositionResponse = components["schemas"]["PositionResponse"];
 export type ApiPaginatedPositionResponse =
   components["schemas"]["PositionDirectoryResponse"];

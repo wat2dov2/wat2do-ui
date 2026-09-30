@@ -19,7 +19,7 @@ const eventQuickFilters = [
   { id: "new", labelKey: "common.newlyAddedFilter.last24Hours" },
   { id: "employersOnCampus", labelKey: "filters.employersOnCampus", value: "employersOnCampus", action: "setEmployersOnCampus" },
   { id: "freeFoodOnCampus", labelKey: "filters.freeFoodOnCampus", value: "freeFoodOnCampus", action: "setFreeFoodOnCampus" },
-  { id: "price", labelKey: "common.free" },
+  { id: "price", labelKey: "filters.anyPrice" },
   { id: "campusSeasons" },
   { id: "sportsGame", labelKey: "filters.sportsGame", value: "sportsGame", action: "setSportsGame" },
   { id: "date", labelKey: "events.dateFilter.any" },

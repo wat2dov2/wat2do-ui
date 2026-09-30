@@ -186,7 +186,8 @@
     "descending": "Malejąco",
     "club": "Organizacja",
     "searchClub": "Szukaj organizacji...",
-    "noClubs": "Brak dostępnych organizacji"
+    "noClubs": "Brak dostępnych organizacji",
+    "anyPrice": "Dowolna cena"
   },
   "commands": {
     "commands": "Polecenia",

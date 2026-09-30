@@ -1,3 +1,4 @@
+import { usePositionView } from "@/features/positions/hooks/usePositionStats";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
@@ -71,6 +72,7 @@ export function PositionDetailsDrawer({
   positions,
   onSelect,
 }: PositionDetailsDrawerProps) {
+  usePositionView(position?.id ?? null, position?.school ?? "");
   const { t, i18n } = useTranslation();
   const { getSchoolTimezone } = useSchoolDirectory();
   const deadline = useMemo(

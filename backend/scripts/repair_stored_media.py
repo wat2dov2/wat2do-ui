@@ -23,6 +23,7 @@ from core.exceptions import NotFoundError, ValidationError  # noqa: E402
 from services.scraper.instagram_scraper import get_scraper  # noqa: E402
 from services.scraper.media_repair import (  # noqa: E402
     load_media_target,
+    repair_directory_image,
     repair_stored_image,
     repair_stored_video,
 )
@@ -31,7 +32,7 @@ from services.scraper.single_user import exact_post_results_match_targets  # noq
 
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("kind", choices=("image", "video"))
+    parser.add_argument("kind", choices=("image", "video", "directory-image"))
     target = parser.add_mutually_exclusive_group(required=True)
     target.add_argument("--event-id", type=int)
     target.add_argument("--position-id", type=int)
@@ -40,7 +41,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     provider.add_argument("--fetch", action="store_true", help="Fetch this one post from Apify")
     parser.add_argument("--apply", action="store_true", help="Upload and save the previewed repair")
     args = parser.parse_args(argv)
-    if args.kind == "image" and (args.post_json or args.fetch):
+    if args.kind != "video" and (args.post_json or args.fetch):
         parser.error("Provider data is only used for video repairs")
     logging.basicConfig(level=logging.WARNING)
     logging.getLogger("httpx").setLevel(logging.WARNING)
@@ -48,7 +49,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         resource = "events" if args.event_id is not None else "positions"
         item_id = args.event_id if args.event_id is not None else args.position_id
         selected = load_media_target(resource, item_id)
-        if args.kind == "image":
+        if args.kind == "directory-image":
+            result = repair_directory_image(selected, apply=args.apply)
+        elif args.kind == "image":
             result = repair_stored_image(selected, apply=args.apply)
         else:
             result = repair_stored_video(selected)

@@ -110,3 +110,49 @@ def test_interaction_dedup_includes_history_from_later_pages(
 
     assert check("actor-1", [InteractionCreate(event_id=1, interaction_type="click")]) == []
     assert [call.args for call in fake_sb.range.call_args_list] == [(0, 999), (1000, 1999)]
+
+
+def test_positions_share_batch_transport_but_do_not_feed_event_recommendations(fake_sb, patch_sb):
+    from core.tables import POSITION_INTERACTIONS, USER_INTERACTIONS
+    from schemas.interaction import InteractionCreate
+    from services.interaction_service import record_interactions
+
+    patch_sb("services.interaction_service")
+    fake_sb.set_response(data=[{"id": "recorded"}])
+    assert (
+        record_interactions(
+            None,
+            "session",
+            [
+                InteractionCreate(event_id=1, interaction_type="click"),
+                InteractionCreate(position_id=1, interaction_type="click"),
+            ],
+        )
+        == 2
+    )
+    assert [call.args[0] for call in fake_sb.table.call_args_list] == [
+        USER_INTERACTIONS,
+        POSITION_INTERACTIONS,
+    ]
+    rows = [call.args[0] for call in fake_sb.insert.call_args_list]
+    assert rows[0][0]["event_id"] == 1
+    assert "position_id" not in rows[0][0]
+    assert rows[1][0]["position_id"] == 1
+    assert "event_id" not in rows[1][0]
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {"interaction_type": "click"},
+        {"event_id": 1, "position_id": 1, "interaction_type": "click"},
+        {"position_id": 1, "interaction_type": "going"},
+    ],
+)
+def test_interaction_target_is_unambiguous(payload):
+    from pydantic import ValidationError
+
+    from schemas.interaction import InteractionCreate
+
+    with pytest.raises(ValidationError):
+        InteractionCreate(**payload)

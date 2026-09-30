@@ -80,6 +80,7 @@ PUBLIC_ENDPOINTS = (
         False,
     ),
     Endpoint("/events/stats", "/events/stats?school={school}", False),
+    Endpoint("/positions/stats", "/positions/stats?school={school}", False),
     Endpoint("/positions/", "/positions/?school={school}&page=1&page_size=20", False),
     Endpoint("/meta/constants", "/meta/constants", False),
     Endpoint(

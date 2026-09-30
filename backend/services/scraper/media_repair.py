@@ -103,6 +103,68 @@ def repair_stored_image(target: MediaRepairTarget, *, apply: bool = False) -> di
     return _save_asset(target, report, "source_image_url", url, BUCKET_EVENT_IMAGES)
 
 
+def repair_directory_image(target: MediaRepairTarget, *, apply: bool = False) -> dict:
+    """Refresh a directory poster using event artwork, or clear a verified tiny asset."""
+    import json
+    from pathlib import Path
+
+    from services.scraper.directory_scraper import (
+        DirectoryConfig,
+        _matches_event_url,
+        scrape_event_page,
+    )
+    from services.scraper.image_uploader import upload_image_from_url
+
+    report = _report(target, "directory-image", "unavailable")
+    if target.resource != EVENTS or not target.source_url:
+        return report
+    configs = json.loads((Path(__file__).parent / "urls" / "directories.json").read_text())
+    config = next(
+        (
+            DirectoryConfig.model_validate(value)
+            for value in configs
+            if value["school"] == target.school
+            and _matches_event_url(target.source_url, DirectoryConfig.model_validate(value))
+        ),
+        None,
+    )
+    if config is None:
+        report["reason"] = "Source does not match a configured school directory"
+        return report
+    path = storage.path_from_url(target.source_image_url or "", BUCKET_EVENT_IMAGES)
+    if path is None:
+        return report
+    original, _content_type = storage.download_file(BUCKET_EVENT_IMAGES, path)
+    with Image.open(BytesIO(original)) as image:
+        report.update(width=image.width, height=image.height)
+        if min(image.size) >= controlbox.scraping.directory_minimum_image_dimension_pixels:
+            report["status"] = "already_sized"
+            return report
+    text, candidates = scrape_event_page(target.source_url, config)
+    report.update(status="ready", candidate_count=len(candidates), source_available=bool(text))
+    if not apply:
+        return report
+    image_url = None
+    for candidate in candidates if text else []:
+        image_url = upload_image_from_url(
+            candidate, bucket=BUCKET_EVENT_IMAGES, allow_all_domains=True
+        )
+        if image_url:
+            break
+    query = get_sb().table(EVENTS).update({"source_image_url": image_url}).eq("id", target.id)
+    query = query.eq("source_image_url", target.source_image_url).eq(
+        "source_url", target.source_url
+    )
+    updated = query.execute().data
+    report["status"] = "updated" if updated else "conflict"
+    report["replacement"] = "event_artwork" if image_url else "fallback"
+    if updated:
+        event_feed_revalidation_service.revalidate_school(
+            target.school, resources=("events", "clubs")
+        )
+    return report
+
+
 def repair_stored_video(
     target: MediaRepairTarget, post: dict | None = None, *, apply: bool = False
 ) -> dict:

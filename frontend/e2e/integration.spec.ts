@@ -3544,21 +3544,21 @@ test.describe("Events Page", () => {
     await expect(page.getByRole("combobox", { name: "Event date" })).toContainText("Tomorrow");
   });
 
-  test("filters campus employers, complimentary food, and varsity games from event metadata", async ({ page, next }) => {
+  test("filters campus employers, free events with food, and varsity games", async ({ page, next }) => {
     let feedRequests = 0;
     await mockApi(page, next, url => apiPath(url) === "/events", async () => {
       feedRequests += 1;
       const startsAt = new Date(Date.now() + 86_400_000).toISOString();
       const items = [
-        { id: 911, title: "Employer networking with pizza", employers_on_campus: true, free_food_on_campus: true, sports_game: false, price: 10 },
-        { id: 912, title: "Complimentary campus lunch", employers_on_campus: false, free_food_on_campus: true, sports_game: false, price: 0 },
-        { id: 913, title: "Varsity basketball match", employers_on_campus: false, free_food_on_campus: false, sports_game: true, price: 5 },
-        { id: 914, title: "Free career workshop with food for sale", employers_on_campus: false, free_food_on_campus: false, sports_game: false, price: 0 },
+        { id: 911, title: "Employer networking with pizza", employers_on_campus: true, sports_game: false, price: 10 },
+        { id: 912, title: "Complimentary campus lunch", employers_on_campus: false, sports_game: false, price: 0 },
+        { id: 913, title: "Varsity basketball match", employers_on_campus: false, sports_game: true, price: 5 },
+        { id: 914, title: "Free career workshop with food for sale", employers_on_campus: false, sports_game: false, price: 0 },
         { id: 915, title: "Unclassified campus event", price: 0 },
         { id: 916, title: "Intramural basketball match", sports_game: false, price: 0 },
         { id: 917, title: "Varsity basketball tryouts", sports_game: false, price: 0 },
       ].map(event => ({
-        ...event, location: "Student Centre", food: ["Pizza"], registration: false,
+        ...event, location: "Student Centre", food: [911, 912].includes(event.id) ? ["Pizza"] : [], registration: false,
         category: "Business", school: "uwaterloo", added_at: new Date().toISOString(),
         source_image_url: null,
         occurrences: [{ id: event.id, event_id: event.id, dtstart_utc: startsAt, dtend_utc: null }],
@@ -3569,17 +3569,16 @@ test.describe("Events Page", () => {
     const cards = page.locator("article[data-event-id]");
     const filters = page.getByTestId("event-quick-filter-scroll");
     const employers = filters.getByRole("button", { name: "Employers on campus", exact: true });
-    const food = filters.getByRole("button", { name: "Free food on campus", exact: true });
+    const food = filters.getByRole("button", { name: "Free food", exact: true });
     const varsity = filters.getByRole("button", { name: "Varsity games", exact: true });
     await expect(cards).toHaveCount(7);
     const initialRequests = feedRequests;
 
     await food.click();
     await expect(food).toHaveAttribute("aria-pressed", "true");
-    await expect(cards).toHaveCount(2);
-    await employers.click();
     await expect(cards).toHaveCount(1);
-    await expect(cards.first()).toContainText("Employer networking with pizza");
+    await employers.click();
+    await expect(cards).toHaveCount(0);
     await expect(varsity).toBeVisible();
     await page.getByRole("button", { name: "Clear filters", exact: true }).click();
     await expect(cards).toHaveCount(7);
@@ -3599,7 +3598,7 @@ test.describe("Events Page", () => {
     const filters = page.getByTestId("event-quick-filter-scroll");
     await expect(filters.getByRole("button", { name: "Going", exact: true })).toBeEnabled();
     const labels = await filters.locator('button').allTextContents();
-    const expected = ["Going", "New", "Employers on campus", "Free food on campus", "Free", "Any day", ">0 going"];
+    const expected = ["Going", "New", "Employers on campus", "Free food", "Any price", "Any day", ">0 going"];
     const indices = expected.map(label => labels.indexOf(label));
     expect(indices.every(index => index >= 0)).toBe(true);
     expect(indices).toEqual([...indices].sort((a, b) => a - b));
@@ -4280,6 +4279,8 @@ for (const surface of ["drawer", "page"]) {
     await seedAuthenticatedSession(page, next);
     const avatar = "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"><circle cx="16" cy="16" r="16" fill="blue"/></svg>');
     let going = false;
+    let releaseGoing!: () => void;
+    const pendingGoing = new Promise<void>(resolve => { releaseGoing = resolve; });
     const occurrenceId = "00000000-0000-4000-8000-000000000001";
     await mockApi(page, next, url => apiPath(url) === "/events/1", async () => ({ json: {
       id: 1, title: "Attendance test", school: "uwaterloo", club_id: 1, club: "UW Tech Club",
@@ -4294,6 +4295,7 @@ for (const surface of ["drawer", "page"]) {
     } }));
     await mockApi(page, next, url => apiPath(url) === "/going-events/1", async request => {
       going = request.method !== "DELETE";
+      if (going) await pendingGoing;
       return { json: { status: going ? "going" : "not_going", event_id: 1,
         occurrence_ids: going ? [occurrenceId] : [], going_count: going ? 1 : 0 } };
     });
@@ -4305,6 +4307,9 @@ for (const surface of ["drawer", "page"]) {
     await expect(content.locator('[data-slot="club-badge"]').last().locator("img")).toHaveAttribute("src", avatar);
     await content.getByRole("button", { name: "Going", exact: true }).click();
     await expect(content.getByRole("heading", { name: "1 going", exact: true })).toBeVisible();
+    // The count and Going control change while the write is still blocked.
+    await expect(content.getByRole("button", { name: /marking yourself not going/i })).toBeVisible();
+    releaseGoing();
     await expect(content.locator('[data-slot="avatar-stack"]').getByRole("img", { name: "Test U." })).toBeVisible();
     const cancel = content.getByRole("button", { name: /marking yourself not going/i });
     await expect(cancel).toHaveCSS("text-decoration-line", "underline");

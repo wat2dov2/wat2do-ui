@@ -1,0 +1,32 @@
+import { expect, test } from "@playwright/test";
+import { filterPositions } from "../src/features/positions/api/positionService";
+import type { Position } from "../src/shared/types";
+
+const filters = { search: "", positionType: "all" as const, addedSince: null };
+const now = Date.parse("2026-09-30T12:00:00Z");
+const position = (added_at: string, deadline_date: string | null = null) => ({
+  id: 1, title: "Design lead", description: "Join our team", position_type: "committee",
+  is_active: true, added_at, deadline_date,
+}) as Position;
+
+test("cached roles without a deadline disappear after four calendar months without inventing deadlines", () => {
+  const stale = position("2026-05-30T11:59:59Z");
+  const boundary = position("2026-05-30T12:00:00Z");
+  expect(filterPositions([stale, boundary], filters, now)).toEqual([boundary]);
+  expect(stale.deadline_date).toBeNull();
+  expect(boundary.deadline_date).toBeNull();
+});
+
+test("known deadlines keep their own expiry rather than inheriting the undated age limit", () => {
+  const open = position("2026-01-01T00:00:00Z", "2026-10-01");
+  const closed = position("2026-09-01T00:00:00Z", "2026-09-29");
+  expect(filterPositions([open, closed], filters, now)).toEqual([open]);
+});
+
+
+test("four-month expiry clamps short months and keeps the same UTC instant across DST", () => {
+  const instant = Date.parse("2026-06-30T12:00:00Z");
+  const before = position("2026-02-28T11:59:59Z");
+  const boundary = position("2026-02-28T12:00:00Z");
+  expect(filterPositions([before, boundary], filters, instant)).toEqual([boundary]);
+});

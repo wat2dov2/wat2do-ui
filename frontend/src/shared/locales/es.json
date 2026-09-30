@@ -183,7 +183,8 @@
     "descending": "Descendente",
     "club": "Organización",
     "searchClub": "Buscar organización...",
-    "noClubs": "No hay organizaciones disponibles"
+    "noClubs": "No hay organizaciones disponibles",
+    "anyPrice": "Cualquier precio"
   },
   "commands": {
     "commands": "Comandos",

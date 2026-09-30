@@ -121,17 +121,6 @@ class EventDiscoveryFields(BaseModel):
             "an on-campus location."
         ),
     )
-    free_food_on_campus: bool | None = Field(
-        default=None,
-        strict=True,
-        description=(
-            "Food or refreshments are explicitly offered at no charge at a physical "
-            "location on the event's school campus. Free admission with food for sale, "
-            "discounted food, prizes, and unspecified food pricing do not qualify. "
-            "School affiliation alone does not prove an on-campus location. "
-            "Complimentary food does not establish the event's admission price."
-        ),
-    )
     sports_game: bool | None = Field(
         default=None,
         strict=True,

@@ -17,12 +17,14 @@ interface PositionCardProps {
   position: Position;
   onPositionClick: (position: Position) => void;
   imagePriority?: boolean;
+  clickCount?: number;
 }
 
 function PositionCardComponent({
   position,
   onPositionClick,
   imagePriority = false,
+  clickCount = 0,
 }: PositionCardProps) {
   const { t } = useTranslation();
   const { getSchoolTimezone } = useSchoolDirectory();
@@ -52,6 +54,7 @@ function PositionCardComponent({
         <EventCardContent
           title={position.title}
           description={position.description}
+          statsLabel={clickCount > 0 ? t("events.clickCount", { count: clickCount }) : undefined}
         />
       </EventCardContentFrame>
     </article>
