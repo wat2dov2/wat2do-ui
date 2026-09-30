@@ -21,7 +21,7 @@ _CONTROL = controlbox.instagram_browser
 _REQUEST_KEY = "__wat2doInstagramBrowserRequest"
 _USERNAME_PATTERN = re.compile(r"^[A-Za-z0-9._]{1,30}$")
 _WAT2DO_ACCOUNT_PATTERN = re.compile(
-    r"^(?:[a-z0-9._]+[.]wat2do[.]io|(?:[a-z0-9._]+[.])?wat2do[.]ca)$"
+    r"^(?:wat2do[.][a-z0-9_]+|[a-z0-9._]+[.]wat2do[.]io|(?:[a-z0-9._]+[.])?wat2do[.]ca)$"
 )
 _POST_PATH = re.compile(r"^/(?:p|reel)/([A-Za-z0-9_-]+)/?$")
 _SELECT_TAB_SCRIPT = """

@@ -84,7 +84,9 @@ def test_matching_username_with_wrong_recipient_never_navigates():
     assert not any("location" in source for source in fake.sources)
 
 
-@pytest.mark.parametrize("username", ["usask.wat2do.io", "wat2do.ca", "utm.wat2do.ca"])
+@pytest.mark.parametrize(
+    "username", ["usask.wat2do.io", "wat2do.ca", "utm.wat2do.ca", "wat2do.usask"]
+)
 def test_accepts_supported_account_names(username):
     fake = AccountBrowser(username=username)
     assert (
