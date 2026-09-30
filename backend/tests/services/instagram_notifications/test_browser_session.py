@@ -324,3 +324,59 @@ def test_post_navigation_reuses_target_and_returns_before_new_navigation(pathnam
         "navigation": [],
         "pending": 0 if pathname == "/p/TARGET/" else 1,
     }
+
+
+@pytest.mark.parametrize(
+    ("labels", "expected"),
+    [
+        (["dalhousie.wat2do.io"], "dalhousie.wat2do.io"),
+        (["dalhousie.wat2do.ca"], "dalhousie.wat2do.ca"),
+        (["other.wat2do.dalhousie"], None),
+        (["wat2do.dalhousie", "wat2do.dalhousie"], None),
+        (["wat2do.dalhousie"], "wat2do.dalhousie"),
+        (["dalhousie.wat2do.io", "wat2do.dalhousie"], "wat2do.dalhousie"),
+        (["other.wat2do.io"], None),
+        (["dalhousie.wat2do.io", "dalhousie.wat2do.io"], None),
+    ],
+)
+def test_renamed_account_selects_saved_school_entry_without_guessing(labels, expected):
+    node = shutil.which("node")
+    if node is None:
+        pytest.skip("Node.js unavailable")
+    script = (
+        "const clicked = []; const labels = " + json.dumps(labels) + ";"
+        "const buttons = labels.map(label => ({innerText: label, "
+        "scrollIntoView() {}, click() {clicked.push(label);}}));"
+        "const dialog = {querySelectorAll: () => buttons};"
+        "const heading = {innerText: 'Switch accounts', closest: () => dialog};"
+        "global.document = {querySelectorAll: () => [heading]};"
+        "const status = " + browser._click_account_source("wat2do.dalhousie") + ";"
+        "console.log(JSON.stringify({status, clicked}));"
+    )
+    completed = subprocess.run([node], input=script, text=True, capture_output=True)
+    assert completed.returncode == 0, completed.stderr
+    result = json.loads(completed.stdout)
+    assert result["clicked"] == ([] if expected is None else [expected])
+    assert (result["status"] == "clicked") == (expected is not None)
+
+
+@pytest.mark.parametrize("recipient_matches", [True, False])
+def test_saved_entry_selection_still_verifies_active_recipient(recipient_matches):
+    class RenamedBrowser(AccountBrowser):
+        def __call__(self, source, timeout):
+            if 'const username = "wat2do.usask"' in source:
+                self.sources.append(source)
+                self.username = "wat2do.usask"
+                self.recipient = recipient_matches
+                self.chooser = False
+                return "clicked"
+            return super().__call__(source, timeout)
+
+    fake = RenamedBrowser(username="wat2do.wlu", recipient=False)
+    session = browser.BrowserInstagramSession(javascript_runner=fake)
+    if recipient_matches:
+        assert session.activate_account("41553815702", "wat2do.usask") == "wat2do.usask"
+    else:
+        with pytest.raises(browser.BrowserSessionError, match="does not match"):
+            session.activate_account("41553815702", "wat2do.usask")
+    assert not any("location" in source for source in fake.sources)
