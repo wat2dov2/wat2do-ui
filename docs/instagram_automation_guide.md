@@ -322,3 +322,23 @@ The event artwork and cover share school colors and the translucent doodle field
 Event frames are inset on all four sides, and the former comment footer remains white with only the selected stickers.
 Sticker shape, tilt, and placement are deterministic per event and sticker, so preview and published images match.
 The renderer no longer requests maps or club hiring data.
+
+### Daily publishing schedule
+
+The Mac mini owns the daily 9 a.m. `America/Toronto` trigger through launchd.
+The GitHub workflow remains the only draft-generation executor and is dispatched manually by the scheduler, avoiding GitHub's delayed cron trigger.
+Install from the stable checkout with its Python environment:
+
+```bash
+cd backend
+.venv/bin/python scripts/schedule_instagram_publishing.py install
+launchctl print gui/$(id -u)/io.wat2do.instagram-publishing.schedule
+```
+
+The Mac must remain awake, logged in, and connected, with `gh` authenticated for this repository.
+The installer verifies the Mac timezone matches the validated Instagram publishing controlbox.
+A calendar trigger runs at 9 a.m., and a one-minute recovery check catches missed starts after wake or restart.
+The scheduler checks existing workflow runs before dispatching, never overlaps an active run, and records an attempt before contacting GitHub.
+Failed dispatches or workflows retry after ten minutes, up to three attempts per Toronto date, while the existing per-account daily batch records prevent regenerating completed drafts.
+GitHub workflow failure notifications remain enabled, and exhausted retries remain visible through launchd's nonzero exit status and scheduler logs under `~/Library/Application Support/Wat2Do/instagram-publishing/`.
+This removes cron-trigger delays; GitHub dispatch, hosted-runner availability, and batch execution still take time, so 9 a.m. is the trigger time rather than a guaranteed completion time.

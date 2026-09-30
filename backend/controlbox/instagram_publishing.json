@@ -965,5 +965,11 @@
         "mixer"
       ]
     }
-  ]
+  ],
+  "generation_hour": 9,
+  "scheduler_check_interval_seconds": 60,
+  "scheduler_retry_interval_seconds": 600,
+  "scheduler_maximum_attempts": 3,
+  "scheduler_request_timeout_seconds": 30,
+  "scheduler_workflow": "daily-instagram-publishing.yml"
 }

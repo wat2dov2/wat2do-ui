@@ -74,6 +74,8 @@ def test_checked_in_controlbox_is_valid() -> None:
     # which school each serves, and whether each runs all come from the row
     # written when the account is connected.
     assert not hasattr(controlbox.instagram_publishing, "accounts")
+    assert controlbox.instagram_publishing.generation_hour == 9
+    assert controlbox.instagram_publishing.scheduler_check_interval_seconds == 60
     assert controlbox.instagram_publishing.new_event_window_hours == 24
     assert controlbox.instagram_publishing.maximum_event_slides == 9
     assert controlbox.instagram_publishing.status_poll_interval_seconds == 3

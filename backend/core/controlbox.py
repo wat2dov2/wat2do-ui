@@ -543,6 +543,12 @@ class InstagramPublishingControl(_ControlModel):
 
     graph_api_version: str = Field(pattern=r"^v[0-9]+\.[0-9]+$")
     generation_timezone: str = Field(min_length=1)
+    generation_hour: int = Field(ge=0, le=23)
+    scheduler_check_interval_seconds: int = Field(ge=30, le=300)
+    scheduler_retry_interval_seconds: int = Field(ge=60, le=3600)
+    scheduler_maximum_attempts: int = Field(ge=1, le=10)
+    scheduler_request_timeout_seconds: int = Field(gt=0, le=120)
+    scheduler_workflow: str = Field(pattern=r"^[a-z0-9-]+[.]yml$")
     fallback_window_hours: int = Field(gt=0)
     new_event_window_hours: int = Field(gt=0)
     minimum_lead_hours: int = Field(ge=0)

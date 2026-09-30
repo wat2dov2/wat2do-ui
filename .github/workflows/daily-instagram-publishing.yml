@@ -1,10 +1,7 @@
 name: Daily Instagram maintenance and publishing drafts
 
 on:
-  schedule:
-    - cron: '0 9 * * *'
-      # Match instagram_publishing.json's generation_timezone, including DST.
-      timezone: 'America/Toronto'
+  # The Mac mini launchd scheduler owns the daily Toronto-time trigger.
   workflow_dispatch:
 
 concurrency:
