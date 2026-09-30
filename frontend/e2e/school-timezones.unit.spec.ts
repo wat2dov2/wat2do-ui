@@ -63,12 +63,12 @@ test("school-local form values round-trip to UTC and reject nonexistent DST time
 
 test("editing an unchanged repeated DST hour preserves its exact instant", () => {
   const repeatedHourEvent = {
-    ...event,
-    occurrences: [{ ...event.occurrences[0], dtstart_utc: "2026-11-01T08:30:25Z", dtend_utc: "2026-11-01T09:30:00Z" }],
+    ...event, school: "utsg",
+    occurrences: [{ ...event.occurrences[0], dtstart_utc: "2026-11-01T06:30:25Z", dtend_utc: "2026-11-01T07:30:00Z" }],
   };
-  const form = eventToFormData(repeatedHourEvent, timeZone);
+  const form = eventToFormData(repeatedHourEvent, "America/Toronto");
   expect(form.occurrences[0].dtstart_local).toBe("2026-11-01T01:30");
-  expect(buildEventUpdatePayload(form).occurrences[0].dtstart_utc).toBe("2026-11-01T08:30:25Z");
+  expect(buildEventUpdatePayload(form).occurrences[0].dtstart_utc).toBe("2026-11-01T06:30:25Z");
 });
 
 test("date-only position deadlines never shift to another calendar date", () => {
@@ -120,11 +120,11 @@ test("Instagram translations stay school-scoped across concurrent English and Fr
 });
 
 test("event time ranges preserve both sides of a repeated DST hour", async () => {
-  const occurrence = { dtstart_utc: "2026-11-01T07:30:00Z", dtend_utc: "2026-11-01T08:30:00Z" };
-  const time = formatCardTime({ occurrences: [occurrence] }, timeZone);
-  expect(time).toContain("1:30 AM MDT");
-  expect(time).toContain("1:30 AM MST");
-  const slide = await buildEventSlideModel({ id: 1, category: "Business", tz: timeZone, ...occurrence }, "en");
+  const occurrence = { dtstart_utc: "2026-11-01T05:30:00Z", dtend_utc: "2026-11-01T06:30:00Z" };
+  const time = formatCardTime({ occurrences: [occurrence] }, "America/Toronto");
+  expect(time).toContain("1:30 AM EDT");
+  expect(time).toContain("1:30 AM EST");
+  const slide = await buildEventSlideModel({ id: 1, category: "Business", tz: "America/Toronto", ...occurrence }, "en");
   expect(slide.timeLine).toBe(time);
 });
 
