@@ -8950,12 +8950,7 @@
           "featured": {
             "type": "boolean",
             "title": "Featured",
-            "default": false
-          },
-          "instagram_selected": {
-            "type": "boolean",
-            "title": "Instagram Selected",
-            "description": "Selected in at least one Instagram publishing batch",
+            "description": "Published to Instagram",
             "default": false
           },
           "is_directory_event": {
@@ -9224,12 +9219,7 @@
           "featured": {
             "type": "boolean",
             "title": "Featured",
-            "default": false
-          },
-          "instagram_selected": {
-            "type": "boolean",
-            "title": "Instagram Selected",
-            "description": "Selected in at least one Instagram publishing batch",
+            "description": "Published to Instagram",
             "default": false
           },
           "is_directory_event": {
@@ -9559,12 +9549,7 @@
           "featured": {
             "type": "boolean",
             "title": "Featured",
-            "default": false
-          },
-          "instagram_selected": {
-            "type": "boolean",
-            "title": "Instagram Selected",
-            "description": "Selected in at least one Instagram publishing batch",
+            "description": "Published to Instagram",
             "default": false
           },
           "is_directory_event": {
@@ -9711,17 +9696,6 @@
             ],
             "title": "Campus Season Ids",
             "description": "School-configured campus season IDs established by the event's theme or purpose. Null means unreviewed or uncertain; an empty array means reviewed with no matching season. Display windows control filter visibility, not classification. Event dates alone do not prove thematic membership."
-          },
-          "featured": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Featured"
           },
           "title": {
             "anyOf": [

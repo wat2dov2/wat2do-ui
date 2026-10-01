@@ -202,14 +202,6 @@ def update_batch(
         raise
     if not response.data:
         raise ConflictError(INSTAGRAM_PUBLISH_BATCH_VERSION_CONFLICT)
-    event_feed_revalidation_service.revalidate_schools(
-        [
-            batch["school"],
-            *(event.school for event in slide_events.values()),
-            *(item["event"].school for item in batch["items"] if item.get("event")),
-        ],
-        resources=["events"],
-    )
     return get_batch(batch_id)
 
 
@@ -278,13 +270,6 @@ def publish_claimed_batch(batch: dict[str, Any]) -> None:
             .or_(f"event_id.is.null,event_id.not.in.({selected_ids})")
             .is_("published_at", "null")
             .execute()
-        )
-        event_feed_revalidation_service.revalidate_schools(
-            [
-                batch["school"],
-                *(item["event"].school for item in batch["items"] if item.get("event")),
-            ],
-            resources=["events"],
         )
         _publish_claimed_batch(credentials.access_token, batch, _ordered_items(batch))
     except Exception as exc:
@@ -400,7 +385,6 @@ def _generate_account_batch(
             .eq("id", batch["id"])
             .execute()
         )
-        event_feed_revalidation_service.revalidate_school(account_key, resources=["events"])
         return "generated"
     except Exception as exc:
         log.exception("Instagram batch generation failed for account=%s", account_key)
@@ -630,31 +614,40 @@ def _publish_claimed_batch(
     published_at = _iso_now()
     # The slides are now history: the events behind them keep changing, so a
     # published batch shows the PNGs that were posted rather than re-rendering.
-    for item in items:
-        (
-            get_sb()
-            .table(INSTAGRAM_PUBLISH_ITEMS)
-            .update(
-                {
-                    "published_at": published_at,
-                    "published_asset_url": asset_urls.get(int(item["event_id"])),
-                    "updated_at": published_at,
-                }
+    try:
+        for item in items:
+            (
+                get_sb()
+                .table(INSTAGRAM_PUBLISH_ITEMS)
+                .update(
+                    {
+                        "published_at": published_at,
+                        "published_asset_url": asset_urls.get(int(item["event_id"])),
+                        "updated_at": published_at,
+                    }
+                )
+                .eq("id", str(item["id"]))
+                .execute()
             )
-            .eq("id", str(item["id"]))
-            .execute()
+        _update_batch_fields(
+            batch_id,
+            {
+                "status": INSTAGRAM_BATCH_PUBLISHED,
+                "meta_media_id": media_id,
+                "published_cover_url": cover_url,
+                "published_at": published_at,
+                "updated_at": published_at,
+                "error_message": None,
+            },
         )
-    _update_batch_fields(
-        batch_id,
-        {
-            "status": INSTAGRAM_BATCH_PUBLISHED,
-            "meta_media_id": media_id,
-            "published_cover_url": cover_url,
-            "published_at": published_at,
-            "updated_at": published_at,
-            "error_message": None,
-        },
-    )
+    finally:
+        event_feed_revalidation_service.revalidate_schools(
+            [
+                batch["school"],
+                *(item["event"].school for item in items if item.get("event")),
+            ],
+            resources=["events"],
+        )
 
 
 def _count_new_events(batch: dict[str, Any]) -> int:

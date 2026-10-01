@@ -526,10 +526,7 @@ def test_update_batch_saves_the_carousel_order_without_rendering(
         ),
     )
 
-    feed_revalidation.revalidate_schools.assert_called_once_with(
-        ["uwaterloo", "uwaterloo", "uwaterloo", "uwaterloo", "uwaterloo"],
-        resources=["events"],
-    )
+    feed_revalidation.revalidate_schools.assert_not_called()
     # Images belong to publishing, not to saving a draft.
     assert draft_editor["renders"] == []
     _, params = draft_editor["rpc"][0]
@@ -628,7 +625,9 @@ def test_count_new_events_without_a_carousel_returns_only_the_recent_count(monke
 
 
 @pytest.mark.parametrize("batch_kind", ["events", "employers_on_campus"])
-def test_publish_batch_renders_the_slides_from_live_event_data(monkeypatch, batch_kind):
+def test_publish_batch_renders_the_slides_from_live_event_data(
+    monkeypatch, batch_kind, feed_revalidation
+):
     rendered: list = []
     containers: list[str] = []
     table_calls: list[tuple] = []
@@ -697,6 +696,9 @@ def test_publish_batch_renders_the_slides_from_live_event_data(monkeypatch, batc
     assert rendered == []
     assert containers == []
     service.publish_claimed_batch(batch)
+    feed_revalidation.revalidate_schools.assert_called_once_with(
+        ["dalhousie", "uwaterloo", "uwaterloo"], resources=["events"]
+    )
 
     assert ("delete", (), {}) in table_calls
     assert ("or_", ("event_id.is.null,event_id.not.in.(7,8)",), {}) in table_calls
@@ -1073,7 +1075,7 @@ def test_employer_generation_persists_kind_and_uses_its_own_cutoff(monkeypatch, 
         == "generated"
     )
 
-    feed_revalidation.revalidate_school.assert_called_once_with("uwaterloo", resources=["events"])
+    feed_revalidation.revalidate_schools.assert_not_called()
     previous.assert_called_once_with("uwaterloo", "employers_on_campus")
     candidates.assert_called_once_with(
         account_key="uwaterloo",
@@ -1101,9 +1103,7 @@ def test_employer_generation_persists_kind_and_uses_its_own_cutoff(monkeypatch, 
     ) in item_calls
 
 
-def test_selection_edits_invalidate_added_and_removed_event_schools(
-    monkeypatch, draft_editor, feed_revalidation
-):
+def test_draft_selection_edits_do_not_change_featured(monkeypatch, draft_editor, feed_revalidation):
     batch = _batch([1])
     batch["items"][0]["event"] = _event(1).model_copy(update={"school": "wlu"})
     monkeypatch.setattr(service, "get_batch", lambda _id: batch)
@@ -1114,9 +1114,7 @@ def test_selection_edits_invalidate_added_and_removed_event_schools(
     )
     monkeypatch.setattr(service, "build_caption", lambda *_args: "New picks")
     service.update_batch("batch-1", InstagramPublishBatchUpdate(version=3, event_ids=[2]))
-    feed_revalidation.revalidate_schools.assert_called_once_with(
-        ["uwaterloo", "cornell", "wlu"], resources=["events"]
-    )
+    feed_revalidation.revalidate_schools.assert_not_called()
 
 
 def test_rejected_selection_does_not_invalidate_feed(monkeypatch, draft_editor, feed_revalidation):

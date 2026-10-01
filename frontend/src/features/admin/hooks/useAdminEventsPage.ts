@@ -1,25 +1,13 @@
-import { useMutation } from "@tanstack/react-query";
-import { updateEventFeaturedAPI } from "@/features/events";
-import { toast } from "@/shared/hooks/use-toast";
-import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { getAdminEventsPage } from "@/features/admin/api/admin.api";
 import { useAdminList } from "@/features/admin/hooks/useAdminList";
 import { getAppConstantsSnapshot } from "@/shared/api/metaApi";
 
 export function useAdminEventsPage(enabled: boolean) {
-  const { t } = useTranslation();
   const list = useAdminList("events", getAdminEventsPage, enabled);
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
   const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
-  const featuredMutation = useMutation({
-    mutationFn: ({ id, featured }: { id: number; featured: boolean }) => updateEventFeaturedAPI(id, featured),
-    onSuccess: () => { void list.refetch(); },
-    onError: () => toast({ description: t("common.error"), variant: "destructive" }),
-  });
   return {
-    setFeatured: featuredMutation.mutate,
-    isSavingFeatured: featuredMutation.isPending,
     events: list.items, total: list.total, isLoadingEvents: list.isPending,
     error: list.isError,
     retry: () => { void list.refetch(); },

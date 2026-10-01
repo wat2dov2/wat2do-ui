@@ -197,7 +197,6 @@ class EventCreate(EventDiscoveryFields):
 
 
 class EventUpdate(EventDiscoveryFields):
-    featured: bool | None = Field(default=None, strict=True)
     model_config = ConfigDict(extra="forbid")
 
     title: str | None = Field(default=None, max_length=MAX_EVENT_TITLE_LENGTH)
@@ -283,10 +282,7 @@ class EventSummaryResponse(EventDiscoveryFields):
     club: str | None = None
     club_logo_url: str | None = None
     cohosts: list[ClubCohostResponse] = Field(default_factory=list)
-    featured: bool = False
-    instagram_selected: bool = Field(
-        default=False, description="Selected in at least one Instagram publishing batch"
-    )
+    featured: bool = Field(default=False, description="Published to Instagram")
     is_directory_event: bool = False
     club_type: ClubTypeValue | None = None
     club_page: str | None = None
@@ -340,10 +336,7 @@ class EventResponse(EventDiscoveryFields):
     source_video_url: str | None = None
     club_logo_url: str | None = None
     cohosts: list[ClubCohostResponse] = Field(default_factory=list)
-    featured: bool = False
-    instagram_selected: bool = Field(
-        default=False, description="Selected in at least one Instagram publishing batch"
-    )
+    featured: bool = Field(default=False, description="Published to Instagram")
     is_directory_event: bool = False
     club_type: ClubTypeValue | None = None
     school: str | None = None
@@ -376,10 +369,7 @@ class EventPublicResponse(EventDiscoveryFields):
     source_video_url: str | None = None
     club_logo_url: str | None = None
     cohosts: list[ClubCohostResponse] = Field(default_factory=list)
-    featured: bool = False
-    instagram_selected: bool = Field(
-        default=False, description="Selected in at least one Instagram publishing batch"
-    )
+    featured: bool = Field(default=False, description="Published to Instagram")
     is_directory_event: bool = False
     club_type: ClubTypeValue | None = None
     school: str | None = None

@@ -202,28 +202,50 @@ def test_hydrate_event_reuses_validated_occurrences_without_json_dump(monkeypatc
 
 
 @pytest.mark.parametrize("model", [EventSummaryResponse, EventResponse, EventPublicResponse])
-@pytest.mark.parametrize("items", [[], [{"event_id": 42}], [{"event_id": 42}, {"event_id": 42}]])
-def test_instagram_selection_is_derived_from_saved_batch_membership(model, items):
+@pytest.mark.parametrize("stored_featured", [False, True])
+@pytest.mark.parametrize(
+    "items,expected",
+    [
+        ([], False),
+        (
+            [{"published_at": None, "instagram_publish_batches": {"status": "ready_for_review"}}],
+            False,
+        ),
+        ([{"published_at": None, "instagram_publish_batches": {"status": "failed"}}], False),
+        ([{"published_at": None, "instagram_publish_batches": {"status": "publishing"}}], False),
+        (
+            [
+                {
+                    "published_at": "2026-09-28T12:00:00Z",
+                    "instagram_publish_batches": {"status": "failed"},
+                }
+            ],
+            True,
+        ),
+        ([{"published_at": None, "instagram_publish_batches": {"status": "published"}}], True),
+        ([{"published_at": None}, {"published_at": "2026-09-28T12:00:00Z"}], True),
+    ],
+)
+def test_featured_requires_instagram_publication(model, stored_featured, items, expected):
     event = event_query.hydrate_event(
         {
-            "id": 42,
+            "id": 29761,
             "title": "Campus night",
             "added_at": datetime(2026, 9, 30, tzinfo=timezone.utc),
-            "featured": False,
+            "featured": stored_featured,
             "instagram_publish_items": items,
         },
         [],
         model,
     )
-    assert event.instagram_selected is bool(items)
-    assert event.featured is False
+    assert event.featured is expected
     assert "instagram_publish_items" not in event.model_dump()
 
 
 def test_summary_columns_exclude_computed_response_fields():
     """Computed API fields must not be requested as physical events columns."""
 
-    assert "instagram_selected" not in event_query._SUMMARY_COLUMNS
+    assert "featured" not in event_query._SUMMARY_COLUMNS
     assert "occurrences" not in event_query._SUMMARY_COLUMNS
     assert "club_logo_url" not in event_query._SUMMARY_COLUMNS
     assert "club_type" not in event_query._SUMMARY_COLUMNS

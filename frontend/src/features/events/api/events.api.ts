@@ -80,16 +80,7 @@ export async function updateEventAPI(
   eventId: number,
   eventData: EventFormData,
 ): Promise<Event> {
-  return patchEvent(eventId, buildEventUpdatePayload(eventData));
-}
-
-/** Admin editorial selection uses the same cache write path as event edits. */
-export async function updateEventFeaturedAPI(eventId: number, featured: boolean): Promise<Event> {
-  return patchEvent(eventId, { featured });
-}
-
-async function patchEvent(eventId: number, payload: ReturnType<typeof buildEventUpdatePayload>): Promise<Event> {
-  const event = await api.patch<ApiEventResponse>(`/events/${eventId}`, payload);
+  const event = await api.patch<ApiEventResponse>(`/events/${eventId}`, buildEventUpdatePayload(eventData));
   await writeEventToQueries(event);
   void invalidateEventQueries();
   return event;

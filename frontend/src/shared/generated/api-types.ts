@@ -2367,15 +2367,10 @@ export interface components {
             cohosts?: components["schemas"]["ClubCohostResponse"][];
             /**
              * Featured
+             * @description Published to Instagram
              * @default false
              */
             featured: boolean;
-            /**
-             * Instagram Selected
-             * @description Selected in at least one Instagram publishing batch
-             * @default false
-             */
-            instagram_selected: boolean;
             /**
              * Is Directory Event
              * @default false
@@ -2468,15 +2463,10 @@ export interface components {
             cohosts?: components["schemas"]["ClubCohostResponse"][];
             /**
              * Featured
+             * @description Published to Instagram
              * @default false
              */
             featured: boolean;
-            /**
-             * Instagram Selected
-             * @description Selected in at least one Instagram publishing batch
-             * @default false
-             */
-            instagram_selected: boolean;
             /**
              * Is Directory Event
              * @default false
@@ -2599,15 +2589,10 @@ export interface components {
             cohosts?: components["schemas"]["ClubCohostResponse"][];
             /**
              * Featured
+             * @description Published to Instagram
              * @default false
              */
             featured: boolean;
-            /**
-             * Instagram Selected
-             * @description Selected in at least one Instagram publishing batch
-             * @default false
-             */
-            instagram_selected: boolean;
             /**
              * Is Directory Event
              * @default false
@@ -2658,8 +2643,6 @@ export interface components {
              * @description School-configured campus season IDs established by the event's theme or purpose. Null means unreviewed or uncertain; an empty array means reviewed with no matching season. Display windows control filter visibility, not classification. Event dates alone do not prove thematic membership.
              */
             campus_season_ids?: string[] | null;
-            /** Featured */
-            featured?: boolean | null;
             /** Title */
             title?: string | null;
             /** Description */

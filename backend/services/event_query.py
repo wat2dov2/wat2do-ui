@@ -44,7 +44,7 @@ _SUMMARY_COMPUTED_FIELDS = {
     "school",
     "club_logo_url",
     "is_directory_event",
-    "instagram_selected",
+    "featured",
     "club_type",
     "club_page",
     "club_ig",
@@ -57,7 +57,7 @@ _SUMMARY_COLUMNS = ",".join(
 # ``events.club_id`` FK, flattened onto the event in ``hydrate_event``.
 CLUB_EMBED = "clubs(logo_url,club_type,club_page,ig,discord),cohosts:event_cohosts(id,club_name,logo_url,club_type,club_page,ig,discord)"
 SCHOOL_EMBED = "school_record:schools(slug,timezone)"
-INSTAGRAM_ITEMS_EMBED = f"{INSTAGRAM_PUBLISH_ITEMS}(event_id)"
+INSTAGRAM_ITEMS_EMBED = f"{INSTAGRAM_PUBLISH_ITEMS}(published_at,instagram_publish_batches(status))"
 _LIGHTWEIGHT_DATE_COLUMNS = "id,event_id,dtstart_utc,events!inner(id)"
 _LIGHTWEIGHT_DATE_SCAN_CHUNK_SIZE = 250
 
@@ -93,7 +93,12 @@ def hydrate_event(row: dict, occurrences: list[OccurrenceResponse], model: type[
     the embed (e.g. the single-event ``select("*")`` path) are left unchanged.
     """
     row = school_service.with_school_slug(row)
-    instagram_selected = bool(row.pop(INSTAGRAM_PUBLISH_ITEMS, None))
+    items = row.pop(INSTAGRAM_PUBLISH_ITEMS, None) or []
+    featured = any(
+        item.get("published_at")
+        or (item.get("instagram_publish_batches") or {}).get("status") == "published"
+        for item in items
+    )
     org = row.pop("clubs", None)
     org_fields = (
         {
@@ -121,7 +126,7 @@ def hydrate_event(row: dict, occurrences: list[OccurrenceResponse], model: type[
             **org_fields,
             "occurrences": occurrences,
             "is_directory_event": directory is not None,
-            "instagram_selected": instagram_selected,
+            "featured": featured,
         }
     )
 

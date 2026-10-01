@@ -78,7 +78,6 @@ export function AdminEventsPage({
     currentPage,
     selectedEvent,
     selectedEventId,
-    setFeatured, isSavingFeatured,
     categories,
     totalPages,
     setSearchQuery,
@@ -235,12 +234,6 @@ export function AdminEventsPage({
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center justify-end gap-2">
-                          <Button variant="outline" size="sm" selected={event.featured} disabled={isSavingFeatured} onClick={e => {
-                            e.stopPropagation();
-                            setFeatured({ id: event.id, featured: !event.featured });
-                          }}>
-                            {t("filters.featured")}
-                          </Button>
                           <Button
                             variant="outline"
                             size="sm"
