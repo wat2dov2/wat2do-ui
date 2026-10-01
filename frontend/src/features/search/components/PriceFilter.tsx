@@ -47,14 +47,14 @@ export function PriceFilter(controls: PriceRangeControls) {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger activation="click" asChild>
-        <Button activation="click" size="sm" variant="outline" selected={active} aria-expanded={open}>
+        <Button activation="click" size="sm" variant="outline" selected={active} selectionIndicator="none" aria-expanded={open}>
           {label}
           <ChevronDown aria-hidden="true" />
         </Button>
       </PopoverTrigger>
       <PopoverContent align="start" aria-label={t("filters.price")}>
         <Stack gap={3}>
-          <Button activation="click" size="sm" variant="outline" selected={freeOnly} onClick={() => {
+          <Button activation="click" size="sm" variant="outline" selected={freeOnly} selectionIndicator="none" onClick={() => {
             setMinPrice("");
             setMaxPrice(freeOnly ? "" : "0");
             setOpen(false);

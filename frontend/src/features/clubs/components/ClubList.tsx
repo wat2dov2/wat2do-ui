@@ -1,4 +1,6 @@
-import type { ReactNode } from "react";
+import { useMemo, type ReactNode } from "react";
+import { useProgressiveList } from "@/shared/hooks/useProgressiveList";
+import { controlBox } from "@/shared/config/controlBox";
 import { CARD_GRID_CLASS } from "@/shared/constants/ui";
 import { CardEntrance } from "@/shared/ui/card-entrance";
 import { ClubCard } from "@/features/clubs/components/ClubCard";
@@ -20,7 +22,8 @@ export function ClubList({
   onClubClick,
   onCategoryClick,
 }: ClubListProps) {
-  const savedSet = new Set(savedClubIds);
+  const savedSet = useMemo(() => new Set(savedClubIds), [savedClubIds]);
+  const { visibleItems, hasMore, loadMoreRef } = useProgressiveList(clubs, controlBox.clubManagement.initialRenderCount);
 
   if (isLoading) {
     return (
@@ -43,7 +46,7 @@ export function ClubList({
       role="list"
       aria-label={`${clubs.length} clubs found`}
     >
-      {clubs.map((club, index) => (
+      {visibleItems.map((club, index) => (
         <CardEntrance
           key={club.id}
           index={index}
@@ -58,6 +61,7 @@ export function ClubList({
           />
         </CardEntrance>
       ))}
+      {hasMore && <div ref={loadMoreRef} data-testid="club-list-sentinel"><ClubCardSkeleton /></div>}
     </div>
   );
 }

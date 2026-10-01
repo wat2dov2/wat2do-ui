@@ -37,6 +37,7 @@ export const controlBox = {
     serverFeedPageSize: eventDiscovery.server_feed_page_size,
   },
   clubManagement: {
+    initialRenderCount: clubManagement.initial_render_count,
     directoryPageSize: clubManagement.directory_page_size,
   },
   clientCache: {

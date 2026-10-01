@@ -124,6 +124,26 @@ resource "aws_cloudfront_cache_policy" "next_image" {
   }
 }
 
+// Public catalog snapshots are identical for every viewer of a school.
+// School and resource are the complete key; authentication never reaches this origin.
+resource "aws_cloudfront_cache_policy" "discovery" {
+  name        = "wat2do-production-discovery"
+  min_ttl     = 0
+  default_ttl = local.discovery_cache_control.cdn_ttl_seconds
+  max_ttl     = local.discovery_cache_control.cdn_ttl_seconds
+
+  parameters_in_cache_key_and_forwarded_to_origin {
+    enable_accept_encoding_brotli = true
+    enable_accept_encoding_gzip   = true
+    cookies_config { cookie_behavior = "none" }
+    headers_config { header_behavior = "none" }
+    query_strings_config {
+      query_string_behavior = "whitelist"
+      query_strings { items = ["school", "resource"] }
+    }
+  }
+}
+
 resource "aws_cloudfront_distribution" "main" {
   enabled             = true
   is_ipv6_enabled     = true
@@ -178,6 +198,17 @@ resource "aws_cloudfront_distribution" "main" {
     allowed_methods          = ["GET", "HEAD", "OPTIONS"]
     cached_methods           = ["GET", "HEAD", "OPTIONS"]
     cache_policy_id          = data.aws_cloudfront_cache_policy.caching_optimized.id
+    origin_request_policy_id = aws_cloudfront_origin_request_policy.none.id
+    compress                 = true
+  }
+
+  ordered_cache_behavior {
+    path_pattern             = "/api/discovery"
+    target_origin_id         = "wat2do-production-alb"
+    viewer_protocol_policy   = "redirect-to-https"
+    allowed_methods          = ["GET", "HEAD", "OPTIONS"]
+    cached_methods           = ["GET", "HEAD"]
+    cache_policy_id          = aws_cloudfront_cache_policy.discovery.id
     origin_request_policy_id = aws_cloudfront_origin_request_policy.none.id
     compress                 = true
   }

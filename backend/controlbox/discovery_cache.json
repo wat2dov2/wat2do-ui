@@ -13,5 +13,6 @@
   "readiness_timeout_seconds": 600,
   "startup_grace_seconds": 90,
   "deployment_timeout_seconds": 1200,
-  "generation_retention_days": 7
+  "generation_retention_days": 7,
+  "cdn_ttl_seconds": 60
 }

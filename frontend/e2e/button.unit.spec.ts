@@ -182,3 +182,10 @@ test("popover filters retain native click while ordinary disclosures toggle on p
   expect(filter.onClick).toBeUndefined();
   expect((filter as Record<string, unknown>)["data-activation"]).toBe("click");
 });
+
+test("selection can retain pressed styling without adding a check glyph", () => {
+  const button = handlers({ selected: true, selectionIndicator: "none", children: "Free" });
+  expect(button["aria-pressed"]).toBe(true);
+  expect(button.children).toBe("Free");
+  expect(button).not.toHaveProperty("selectionIndicator");
+});

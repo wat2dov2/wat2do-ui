@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useMemo } from "react";
 import { Search } from "@/shared/ui/doodle-icons";
 import { useTranslation } from "react-i18next";
 import { EventCard } from "@/features/events/components/EventCard";
@@ -19,6 +19,7 @@ import { EmptyState } from "@/shared/feedback";
 import { Button } from "@/shared/ui/button";
 import { CARD_GRID_CLASS } from "@/shared/constants/ui";
 import { CardEntrance } from "@/shared/ui/card-entrance";
+import { useProgressiveList } from "@/shared/hooks/useProgressiveList";
 import { controlBox } from "@/shared/config/controlBox";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 import imageDelivery from "../../../../../backend/controlbox/image_delivery.json" with { type: "json" };
@@ -127,19 +128,6 @@ export function EventList({
   const { getSchoolTimezone } = useSchoolDirectory();
   const { t, i18n } = useTranslation();
   const locale = i18n.language || "en-US";
-  const [visibleEventCount, setVisibleEventCount] = useState(
-    controlBox.eventDiscovery.initialRenderCount,
-  );
-  const resultKey = useMemo(() => events.map((event) => event.id).join(","), [events]);
-  const [previousResultKey, setPreviousResultKey] = useState(resultKey);
-  // Reset before rendering children: an effect would first mount the entire
-  // previously expanded list on every filter edit. Stats-only updates keep it.
-  if (previousResultKey !== resultKey) {
-    setPreviousResultKey(resultKey);
-    setVisibleEventCount(controlBox.eventDiscovery.initialRenderCount);
-  }
-  const loadMoreRef = useRef<HTMLDivElement>(null);
-
   const dateSectionGroups = useMemo(
     () => groupByDateSections ? groupEventsByDateSection(events, getSchoolTimezone) : [],
     [events, getSchoolTimezone, groupByDateSections],
@@ -160,10 +148,7 @@ export function EventList({
         : events,
     [dateSectionGroups, groupByDateSections, events],
   );
-  const visibleEvents = useMemo(
-    () => sectionOrderedEvents.slice(0, visibleEventCount),
-    [sectionOrderedEvents, visibleEventCount],
-  );
+  const { visibleItems: visibleEvents, visibleCount: visibleEventCount, hasMore: hasMoreEvents, loadMoreRef } = useProgressiveList(sectionOrderedEvents, controlBox.eventDiscovery.initialRenderCount);
   const visibleDateSectionGroups = useMemo(
     () => {
       let remaining = visibleEventCount;
@@ -187,34 +172,6 @@ export function EventList({
       ),
     [visibleEvents],
   );
-  const hasMoreEvents = visibleEvents.length < sectionOrderedEvents.length;
-  const loadMoreEvents = useCallback(() => {
-    setVisibleEventCount((count) =>
-      Math.min(
-        count + controlBox.eventDiscovery.initialRenderCount,
-        sectionOrderedEvents.length,
-      ),
-    );
-  }, [sectionOrderedEvents.length]);
-
-  useEffect(() => {
-    if (!hasMoreEvents) return;
-
-    const sentinel = loadMoreRef.current;
-    if (!sentinel) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry?.isIntersecting) {
-          loadMoreEvents();
-        }
-      },
-      { rootMargin: "400px", threshold: 0.1 },
-    );
-    observer.observe(sentinel);
-    return () => observer.disconnect();
-  }, [hasMoreEvents, loadMoreEvents]);
-
   const sectionLabel = (section: EventDateSection): string => {
     if (section.kind === "today") return t("events.dateSections.today");
     if (section.kind === "tomorrow") return t("events.dateSections.tomorrow");

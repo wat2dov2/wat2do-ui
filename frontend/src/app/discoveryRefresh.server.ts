@@ -37,6 +37,8 @@ const processState = globalThis as typeof globalThis & {
   discoveryWorker?: {
     running?: Promise<void>;
     timer?: ReturnType<typeof setInterval>;
+    warmed?: Map<string, number>;
+    warming?: Promise<void>;
   };
 };
 const worker = (processState.discoveryWorker ??= {});
@@ -83,14 +85,25 @@ async function reconcile(): Promise<void> {
       Number(b.dirty) - Number(a.dirty) ||
       (a.generatedAt ?? 0) - (b.generatedAt ?? 0),
   );
+  const publicOrigin = process.env.STORAGE_PUBLIC_BASE_URL
+    ? new URL(process.env.STORAGE_PUBLIC_BASE_URL).origin : null;
+  const warmUrls: string[] = [];
+  const warmed = (worker.warmed ??= new Map<string, number>());
   for (const state of states) {
     try {
       await discoveryStore.refresh<unknown>(state.school, state.resource, () =>
         builders[state.resource as keyof typeof builders](state.school),
       );
       const snapshot = await discoveryStore.read(state.school, state.resource);
-      if (snapshot)
+      if (snapshot) {
         warmDiscoveryImages(state.school, state.resource, snapshot.data);
+        if (publicOrigin && state.resource !== "branding") {
+          const url = new URL("/api/discovery", publicOrigin);
+          url.search = new URLSearchParams({ school: state.school, resource: state.resource }).toString();
+          if (Date.now() - (warmed.get(url.href) ?? 0) >= controls.cdn_ttl_seconds * 500)
+            warmUrls.push(url.href);
+        }
+      }
     } catch (error) {
       console.error("discovery_reconcile_failed", {
         school: state.school,
@@ -98,6 +111,33 @@ async function reconcile(): Promise<void> {
         error,
       });
     }
+  }
+  // Warming never delays publication, the next school, or startup readiness.
+  if (!worker.warming && warmUrls.length) {
+    worker.warming = warmDiscoveryUrls(warmUrls, warmed).finally(() => {
+      worker.warming = undefined;
+    });
+  }
+}
+
+async function warmDiscoveryUrls(warmUrls: string[], warmed: Map<string, number>): Promise<void> {
+  for (let offset = 0; offset < warmUrls.length; offset += controls.page_concurrency) {
+    await Promise.all(warmUrls.slice(offset, offset + controls.page_concurrency).map(async url => {
+      try {
+        const response = await fetch(url, {
+          credentials: "omit",
+          signal: AbortSignal.timeout(controls.request_timeout_seconds * 1000),
+        });
+        if (!response.ok) {
+          await response.body?.cancel();
+          throw new Error(`Discovery CDN returned ${response.status}`);
+        }
+        await response.arrayBuffer();
+        warmed.set(url, Date.now());
+      } catch (error) {
+        console.error("discovery_cdn_warm_failed", { url, error });
+      }
+    }));
   }
 }
 

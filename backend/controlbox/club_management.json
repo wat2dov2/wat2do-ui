@@ -1,4 +1,5 @@
 {
   "directory_page_size": 20,
-  "invite_expiration_days": 7
+  "invite_expiration_days": 7,
+  "initial_render_count": 24
 }

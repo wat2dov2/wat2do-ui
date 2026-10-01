@@ -275,6 +275,7 @@ def _process_one_post(
         return
 
     candidate_handles = _get_candidate_handles(post, handle)
+    create_stub_if_missing = len(image_urls) <= 1
 
     target_schools = {school}
     for c in candidate_handles:
@@ -288,6 +289,7 @@ def _process_one_post(
             target_school=target_school,
             source_school=school,
             candidate_handles=candidate_handles,
+            create_stub_if_missing=create_stub_if_missing,
             caption=caption,
             source_url=source_url,
             handle=handle,
@@ -299,6 +301,7 @@ def _process_one_post(
             target_school=target_school,
             source_school=school,
             candidate_handles=candidate_handles,
+            create_stub_if_missing=create_stub_if_missing,
             source_url=source_url,
             handle=handle,
             result=result,
@@ -333,6 +336,7 @@ def _process_events_for_school(
     target_school: str,
     source_school: str,
     candidate_handles: list[str],
+    create_stub_if_missing: bool,
     caption: str,
     source_url: str,
     handle: str,
@@ -353,7 +357,7 @@ def _process_events_for_school(
             ig_handle=candidate_handles,
             school=target_school,
             club_name=(event.get("club") or "").strip() or None,
-            create_stub_if_missing=(target_school == source_school),
+            create_stub_if_missing=create_stub_if_missing and target_school == source_school,
         )
         for event in events_copy
     ]
@@ -410,7 +414,7 @@ def _process_events_for_school(
                 ig_handle=candidate_handles,
                 school=target_school,
                 club_name=(event.get("club") or "").strip() or None,
-                create_stub_if_missing=(target_school == source_school),
+                create_stub_if_missing=create_stub_if_missing and target_school == source_school,
             )
         )
         outcome = write_event(
@@ -433,6 +437,7 @@ def _process_positions_for_school(
     target_school: str,
     source_school: str,
     candidate_handles: list[str],
+    create_stub_if_missing: bool,
     source_url: str,
     handle: str,
     result: ScrapeResult,
@@ -443,7 +448,7 @@ def _process_positions_for_school(
             ig_handle=candidate_handles,
             school=target_school,
             club_name=(position.get("club") or "").strip() or None,
-            create_stub_if_missing=(target_school == source_school),
+            create_stub_if_missing=create_stub_if_missing and target_school == source_school,
         )
         outcome = write_position(
             position,

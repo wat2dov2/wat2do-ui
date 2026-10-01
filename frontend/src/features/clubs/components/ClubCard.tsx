@@ -2,15 +2,15 @@ import { memo, useMemo, useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useRouter } from "next/navigation";
 import { Bookmark, Instagram } from "@/shared/ui/doodle-icons";
+import { Badge } from "@/shared/ui/badge";
 import { EventCardContent } from "@/shared/ui/event-card-content";
 import { sanitizeHref } from "@/shared/utils/url";
 import { useSavedClubsStore } from "@/features/clubs/store/savedClubs.store";
-import { useProfileCompleted } from "@/features/auth/hooks/useAuthState";
+import { useAuthState } from "@/features/auth/hooks/useAuthState";
 import { ClubCategoryBadge } from "@/shared/components/ClubCategoryBadge";
 import {
   useCardMouseDownActivate,
   useMobileClickActivation,
-  createAdaptivePressHandlers,
 } from "@/shared/hooks";
 import { ClubOverflowMenu } from "@/features/clubs/components/ClubOverflowMenu";
 import {
@@ -35,9 +35,8 @@ function getClubPrimaryCategory(club: Club): string {
 
 interface FollowClubButtonProps {
   clubId: number;
-  profileCompleted: boolean;
+  isAuthenticated: boolean;
   isSaved: boolean;
-  preferClickPress: boolean;
   onToggleSave: (clubId: number) => void;
   onLoginRequired: () => void;
   t: (key: string, options?: Record<string, unknown>) => string;
@@ -45,28 +44,17 @@ interface FollowClubButtonProps {
 
 function FollowClubButton({
   clubId,
-  profileCompleted,
+  isAuthenticated,
   isSaved,
-  preferClickPress,
   onToggleSave,
   onLoginRequired,
   t,
 }: FollowClubButtonProps) {
-  const pressHandlers = createAdaptivePressHandlers({
-    preferClick: preferClickPress,
-    onClick: () => {
-      if (profileCompleted) {
-        onToggleSave(clubId);
-      } else {
-        onLoginRequired();
-      }
-    },
-  });
-
   return (
     <button
       type="button"
-      {...pressHandlers}
+      aria-pressed={isSaved}
+      onClick={() => isAuthenticated ? onToggleSave(clubId) : onLoginRequired()}
       aria-label={isSaved ? t("clubs.saved") : t("clubs.save")}
       className="flex min-h-12 w-full items-center justify-center rounded-bl-xl bg-transparent px-2 text-muted-foreground transition-colors hover:bg-surface-hover"
     >
@@ -143,7 +131,7 @@ function ClubCardComponent({
 }: ClubCardProps) {
   const { t } = useTranslation();
   const router = useRouter();
-  const profileCompleted = useProfileCompleted();
+  const { isAuthenticated } = useAuthState();
   const toggleSaveClub = useSavedClubsStore(
     (state) => state.toggleSaveClub,
   );
@@ -224,9 +212,8 @@ function ClubCardComponent({
   const followButton = (
     <FollowClubButton
       clubId={club.id}
-      profileCompleted={profileCompleted}
+      isAuthenticated={isAuthenticated}
       isSaved={isSaved}
-      preferClickPress={preferClickPress}
       onToggleSave={toggleSaveClub}
       onLoginRequired={() =>
         toast({
@@ -251,6 +238,7 @@ function ClubCardComponent({
       onMouseDown={handleCardMouseDown}
       onClick={handleCardClick}
       onKeyDown={(event) => {
+        if (event.target !== event.currentTarget) return;
         if (event.key === "Enter" || event.key === " ") {
           event.preventDefault();
           handleCardActivate();
@@ -312,6 +300,12 @@ function ClubCardComponent({
             )}
           </ClubCategoryBadge>
         </div>
+      )}
+
+      {isSaved && (
+        <Badge variant="new" size="md" className="absolute top-0 right-0 z-30">
+          {t("clubs.followedClubs")}
+        </Badge>
       )}
 
       {/* 4. Card Content (rendered on top of background) */}

@@ -68,6 +68,8 @@ const Button = React.forwardRef<
        * have room for one.
        */
       selected?: boolean
+      /** Selection may be conveyed by the label or icon instead of a check. */
+      selectionIndicator?: "check" | "none"
       "data-slot"?: string
     }
 >(
@@ -79,6 +81,7 @@ const Button = React.forwardRef<
       asChild = false,
       activation = "press",
       selected,
+      selectionIndicator = "check",
       children,
       onClick,
       onMouseDown,
@@ -106,7 +109,7 @@ const Button = React.forwardRef<
             : undefined,
         })
     const showSelectedCheck =
-      Boolean(selected) && !asChild && !ICON_ONLY_SIZES.has(size ?? "default")
+      Boolean(selected) && selectionIndicator === "check" && !asChild && !ICON_ONLY_SIZES.has(size ?? "default")
     // A ghost button has no fill, so it has nothing to raise off the page and
     // the control shadow reads as a shadow cast by nothing. Every other variant
     // paints a surface and keeps it.

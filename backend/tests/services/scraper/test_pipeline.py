@@ -7,6 +7,7 @@ in filtering fails fast in unit tests.
 
 from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
+from unittest.mock import Mock
 
 import pytest
 
@@ -226,6 +227,7 @@ def test_cross_school_copies_do_not_inherit_source_seasons_when_reconciliation_f
             target_school=school,
             source_school="uwaterloo",
             candidate_handles=["tea"],
+            create_stub_if_missing=True,
             caption="Tea",
             source_url="https://instagram.com/p/tea",
             handle="tea",
@@ -379,3 +381,68 @@ def test_coauthor_notification_does_not_change_canonical_primary_account():
     post = {"ownerUsername": "OWNER", "coauthors": ["cohost", "owner", "other"]}
     assert _get_candidate_handles(post, "cohost") == _get_candidate_handles(post, "other")
     assert _get_candidate_handles(post, "cohost")[0] == "owner"
+
+
+@pytest.mark.parametrize(
+    "images,coauthors,expected",
+    [
+        (["https://cdn/one.jpg"], [], True),
+        (["https://cdn/one.jpg", "https://cdn/two.jpg"], [], False),
+        (["https://cdn/one.jpg"], ["other"], False),
+        (["https://cdn/one.jpg"], ["@OWNER", "owner"], True),
+    ],
+)
+@pytest.mark.parametrize("reconcile_changes_count", [False, True])
+def test_post_club_creation_policy_reaches_events_positions_and_reconciled_events(
+    monkeypatch, images, coauthors, expected, reconcile_changes_count
+):
+    monkeypatch.setattr(pipeline_module, "upload_post_images", lambda urls: urls)
+    monkeypatch.setattr(pipeline_module, "_lookup_club_by_ig", lambda _: None)
+    event = {"title": "Party", "location": "Campus", "club": "Host"}
+    monkeypatch.setattr(
+        pipeline_module,
+        "extract_post_content",
+        lambda **_: SimpleNamespace(
+            events=[event], positions=[{"title": "Volunteer", "club": "Host"}]
+        ),
+    )
+    from services.scraper import org_resolve
+
+    monkeypatch.setattr(org_resolve.event_writer_mod, "_lookup_club_by_ig", lambda _: None)
+    monkeypatch.setattr(org_resolve.club_service, "lookup_club_by_school_and_name", lambda *_: None)
+    create = Mock(return_value={"id": 7, "club_name": "Host"})
+    monkeypatch.setattr(org_resolve.event_writer_mod, "_ensure_club_by_ig", create)
+    resolve = Mock(wraps=pipeline_module.resolve_club_for_scrape)
+    monkeypatch.setattr(pipeline_module, "resolve_club_for_scrape", resolve)
+    monkeypatch.setattr(pipeline_module, "find_candidates", lambda **_: [])
+    monkeypatch.setattr(
+        pipeline_module,
+        "reconcile_events",
+        lambda **kw: (
+            kw["extracted_events"]
+            + ([{**event, "title": "Second party"}] if reconcile_changes_count else [])
+        ),
+    )
+    monkeypatch.setattr(pipeline_module, "write_event", lambda *_args, **_kw: "inserted")
+    monkeypatch.setattr(pipeline_module, "write_position", lambda *_args, **_kw: "inserted")
+    result = pipeline_module.ScrapeResult(ig_handle="owner")
+    pipeline_module._process_one_post(
+        {
+            "url": "https://instagram.com/p/POST/",
+            "ownerUsername": "owner",
+            "images": images,
+            "coauthors": coauthors,
+        },
+        handle="owner",
+        school="uwaterloo",
+        result=result,
+        dry_run=False,
+    )
+    assert resolve.call_count == (4 if reconcile_changes_count else 2)
+    assert all(
+        call.kwargs["create_stub_if_missing"] is (len(images) <= 1)
+        for call in resolve.call_args_list
+    )
+    assert bool(create.called) is expected
+    assert result.positions_saved == 1
+    assert result.events_saved == (2 if reconcile_changes_count else 1)

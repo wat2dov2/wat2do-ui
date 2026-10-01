@@ -305,6 +305,7 @@ class EcsRuntimeControl(_ControlModel):
 
 
 class DiscoveryCacheControl(_ControlModel):
+    cdn_ttl_seconds: int = Field(gt=0, le=300)
     generation_retention_days: int = Field(ge=2)
     schema_version: int = Field(ge=1)
     storage_prefix: str = Field(min_length=1)
@@ -367,6 +368,7 @@ class AuthenticationControl(_ControlModel):
 
 
 class ClubManagementControl(_ControlModel):
+    initial_render_count: int = Field(gt=0, le=100)
     directory_page_size: int = Field(gt=0, le=100)
     invite_expiration_days: int = Field(gt=0)
 

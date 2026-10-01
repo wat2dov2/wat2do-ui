@@ -1,5 +1,9 @@
 """Unit tests for scrape club resolution."""
 
+from unittest.mock import Mock
+
+import pytest
+
 from services.scraper import org_resolve
 from services.scraper.org_resolve import ResolvedClub, resolve_club_for_scrape
 
@@ -91,3 +95,47 @@ def test_cohosts_include_only_unique_existing_clubs_at_target_school(monkeypatch
     )
     assert result.club_id == 7
     assert result.cohost_club_ids == (9,)
+
+
+@pytest.mark.parametrize("handles", [["venue", "artist"], ["@Venue", "venue", "artist"]])
+def test_multiple_unknown_accounts_never_create_a_club(monkeypatch, handles):
+    monkeypatch.setattr(org_resolve.event_writer_mod, "_lookup_club_by_ig", lambda _: None)
+    monkeypatch.setattr(org_resolve.club_service, "lookup_club_by_school_and_name", lambda *_: None)
+    create = Mock()
+    monkeypatch.setattr(org_resolve.event_writer_mod, "_ensure_club_by_ig", create)
+    resolved = resolve_club_for_scrape(ig_handle=handles, school="uwaterloo", club_name="Artists")
+    assert resolved.club_id is None
+    assert resolved.ig_handle == "venue"
+    create.assert_not_called()
+
+
+@pytest.mark.parametrize("handles", [["venue", "artist"], ["venue"]])
+def test_posts_that_cannot_create_clubs_can_link_an_existing_named_host(monkeypatch, handles):
+    monkeypatch.setattr(org_resolve.event_writer_mod, "_lookup_club_by_ig", lambda _: None)
+    monkeypatch.setattr(
+        org_resolve.club_service,
+        "lookup_club_by_school_and_name",
+        lambda school, name: {"id": 6748, "club_name": name, "ig": "wloonsa"},
+    )
+    create = Mock()
+    monkeypatch.setattr(org_resolve.event_writer_mod, "_ensure_club_by_ig", create)
+    resolved = resolve_club_for_scrape(
+        ig_handle=handles,
+        school="uwaterloo",
+        club_name="Nigerian Students Association",
+        create_stub_if_missing=False,
+    )
+    assert resolved.club_id == 6748
+    assert resolved.ig_handle == "wloonsa"
+    create.assert_not_called()
+
+
+def test_duplicate_account_spellings_still_allow_single_account_creation(monkeypatch):
+    monkeypatch.setattr(org_resolve.event_writer_mod, "_lookup_club_by_ig", lambda _: None)
+    create = Mock(return_value={"id": 7, "club_name": "Tea Club"})
+    monkeypatch.setattr(org_resolve.event_writer_mod, "_ensure_club_by_ig", create)
+    resolved = resolve_club_for_scrape(
+        ig_handle=["@TEA", "tea"], school="uwaterloo", club_name=None
+    )
+    assert resolved.club_id == 7
+    create.assert_called_once()

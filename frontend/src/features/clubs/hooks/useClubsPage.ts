@@ -38,6 +38,7 @@ export function useClubsPage({
     ...clubDirectoryQueryOptions(resolvedSchoolFilter),
     initialData: initialDirectory ?? undefined,
     initialDataUpdatedAt: initialDirectory?.generated_at,
+    refetchOnMount: initialDirectory ? false : true,
   });
   const clubs = useMemo(() => filterClubs(query.data?.items ?? [], {
     search: submittedSearch.query,

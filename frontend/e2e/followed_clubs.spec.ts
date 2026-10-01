@@ -497,7 +497,7 @@ test.describe("Followed Clubs Flow", () => {
     // Assert that we are on All Clubs tab and cards are loaded
     await expect(page.getByRole("combobox", { name: "All" })).toBeVisible();
 
-    const techCard = page.getByRole("article", { name: "Club: UW Tech Club" });
+    const techCard = page.locator('[data-club-card][data-club-id="1"]');
     const instagramMetadata = techCard.locator('[data-slot="event-card-instagram"]');
     await expect(instagramMetadata).toHaveText("@uwtechclub");
     await expect(instagramMetadata.locator('g[clip-path="url(#doodle_Instagram_clip0)"]')).toHaveCount(1);
@@ -509,6 +509,13 @@ test.describe("Followed Clubs Flow", () => {
 
     // Switch back to All Clubs
     await selectClubScope(page, "All");
+
+    // Following on the card updates immediately and never navigates.
+    await techCard.getByRole("button", { name: "Follow club", exact: true }).click();
+    await expect(techCard.getByText("Followed", { exact: true })).toBeVisible();
+    await expect(page).toHaveURL(`${BASE}/clubs`);
+    await techCard.getByRole("button", { name: "Followed club", exact: true }).click();
+    await expect(techCard.getByText("Followed", { exact: true })).toHaveCount(0);
 
     // Open the dedicated details page for the first club.
     await page.getByText("UW Tech Club").click();
