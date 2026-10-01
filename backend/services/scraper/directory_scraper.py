@@ -414,12 +414,14 @@ def run_directory_pipeline(
                 config.id,
                 len(uploaded_images),
             )
+            host = directory_event_host(text)
+            caption_text = text.split("\n", 1)[1] if host and "\n" in text else text
             extracted_events = extract_events_from_post(
-                caption_text=text,
+                caption_text=caption_text,
                 image_urls=uploaded_images,
                 post_created_at=None,  # Extractor falls back to "now" in school TZ
                 school=config.school,
-                source_club=config.default_club if config.default_club_ig else None,
+                source_club=host or (config.default_club if config.default_club_ig else None),
             )
             result.events_extracted += len(extracted_events)
 
@@ -428,8 +430,6 @@ def run_directory_pipeline(
                 continue
 
             for event in extracted_events:
-                if host := directory_event_host(text):
-                    event["club"] = host
                 try:
                     idx = int(event.get("image_index") or 0)
                 except (TypeError, ValueError):

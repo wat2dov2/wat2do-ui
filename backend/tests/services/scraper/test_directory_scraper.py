@@ -549,7 +549,7 @@ def test_directory_fallback_is_student_government(school, handle):
     assert config.default_club_ig == handle
 
 
-def test_directory_parser_host_overrides_extractor_publisher(monkeypatch):
+def test_directory_parser_passes_host_context_without_overriding_extraction(monkeypatch):
     from services.scraper import directory_scraper
 
     monkeypatch.setattr(
@@ -563,11 +563,13 @@ def test_directory_parser_host_overrides_extractor_publisher(monkeypatch):
         lambda *_: ("Directory event host: SWAG\nStudy Jam", []),
     )
     event = {"title": "Study Jam", "club": "University"}
-    monkeypatch.setattr(directory_scraper, "extract_events_from_post", lambda **_: [event])
-    # Dry-run performs the same host assignment before any database write.
+    extract = MagicMock(return_value=[event])
+    monkeypatch.setattr(directory_scraper, "extract_events_from_post", extract)
     result = run_directory_pipeline(directory_config(), dry_run=True)
     assert result.events_saved == 1
-    assert event["club"] == "SWAG"
+    assert extract.call_args.kwargs["source_club"] == "SWAG"
+    assert extract.call_args.kwargs["caption_text"] == "Study Jam"
+    assert event["club"] == "University"
 
 
 @patch("services.scraper.directory_scraper.resolve_club_for_scrape")

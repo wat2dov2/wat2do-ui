@@ -95,7 +95,7 @@ def extract_post_content(
             phrases like "tonight"/"tomorrow"). Falls back to "now" in
             the school's local TZ if missing.
         school: school slug (e.g. "uwaterloo").
-        source_club: trusted publisher of an official directory page.
+        source_club: hosting club from an official directory page, or its student-union fallback.
             When present, the prompt treats it as the default event host.
         model: vision-capable OpenAI model. Defaults to
             ``settings.openai_extraction_model``.
@@ -278,9 +278,9 @@ def _build_prompt(
     source_club_rule = (
         f"""
 OFFICIAL DIRECTORY HOST ATTRIBUTION:
-- The fallback student union / student government for this school is {source_club}.
+- The source club context for this event page is "{source_club}". It comes from the page’s named host, or the school’s student-union fallback when no host is identified.
 - Prefer the named hosting club in the page’s "Hosted By", "by", organizer, or "Directory event host" field. The directory publisher is not automatically the host.
-- Use "{source_club}" only when the page does not identify a distinct host or co-host.
+- Use this context when interpreting the event. Explicit event-specific hosts and co-hosts in the source take precedence; extract the appropriate club normally.
 - Never invent a club from an event title, series name, campaign, service, venue, vendor, or URL slug.
 """
         if source_club
