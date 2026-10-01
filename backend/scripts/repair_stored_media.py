@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Preview or repair one event/position poster or missing Instagram video.
+"""Preview or repair one event/position poster or missing Instagram media.
 
 The default is read-only. Image repairs inspect the owned S3 asset and reuse
-the upload rendition rules. Video repairs require exact-post provider data;
+the upload rendition rules. Missing Instagram image and video repairs require exact-post provider data;
 --fetch explicitly retrieves just the target's original post through Apify.
 --apply stores a new immutable asset, conditionally updates the selected row,
 and refreshes its school's discovery data. It never runs AI extraction.
@@ -24,6 +24,7 @@ from services.scraper.instagram_scraper import get_scraper  # noqa: E402
 from services.scraper.media_repair import (  # noqa: E402
     load_media_target,
     repair_directory_image,
+    repair_instagram_image,
     repair_stored_image,
     repair_stored_video,
 )
@@ -32,7 +33,7 @@ from services.scraper.single_user import exact_post_results_match_targets  # noq
 
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("kind", choices=("image", "video", "directory-image"))
+    parser.add_argument("kind", choices=("image", "instagram-image", "video", "directory-image"))
     target = parser.add_mutually_exclusive_group(required=True)
     target.add_argument("--event-id", type=int)
     target.add_argument("--position-id", type=int)
@@ -41,8 +42,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     provider.add_argument("--fetch", action="store_true", help="Fetch this one post from Apify")
     parser.add_argument("--apply", action="store_true", help="Upload and save the previewed repair")
     args = parser.parse_args(argv)
-    if args.kind != "video" and (args.post_json or args.fetch):
-        parser.error("Provider data is only used for video repairs")
+    if args.kind not in {"video", "instagram-image"} and (args.post_json or args.fetch):
+        parser.error("Provider data is only used for Instagram image and video repairs")
     logging.basicConfig(level=logging.WARNING)
     logging.getLogger("httpx").setLevel(logging.WARNING)
     try:
@@ -54,7 +55,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         elif args.kind == "image":
             result = repair_stored_image(selected, apply=args.apply)
         else:
-            result = repair_stored_video(selected)
+            repair = (
+                repair_instagram_image if args.kind == "instagram-image" else repair_stored_video
+            )
+            result = repair(selected)
             if result["status"] == "needs_source" and (args.post_json or args.fetch):
                 if args.post_json:
                     post = json.loads(args.post_json.read_text())
@@ -65,7 +69,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                     if not exact_post_results_match_targets([selected.source_url], posts):
                         raise ValidationError("Provider did not return the selected exact post")
                     post = posts[0]
-                result = repair_stored_video(selected, post, apply=args.apply)
+                result = repair(selected, post, apply=args.apply)
         print(json.dumps({**result, "apply": args.apply}, indent=2, sort_keys=True))
         return int(
             args.apply and result["status"] not in {"updated", "already_present", "already_sized"}

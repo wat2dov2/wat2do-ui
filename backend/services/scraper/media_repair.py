@@ -19,6 +19,7 @@ from services.event_feed_revalidation import event_feed_revalidation_service
 from services.scraper.image_uploader import (
     is_carousel_post,
     single_post_video_url,
+    upload_image_from_url,
     upload_video_from_url,
 )
 from services.scraper.single_user import exact_post_results_match_targets, is_exact_post_url_target
@@ -100,6 +101,35 @@ def repair_stored_image(target: MediaRepairTarget, *, apply: bool = False) -> di
     if not apply:
         return report
     url = storage.upload_file(BUCKET_EVENT_IMAGES, prepared, prepared_type)
+    return _save_asset(target, report, "source_image_url", url, BUCKET_EVENT_IMAGES)
+
+
+def repair_instagram_image(
+    target: MediaRepairTarget, post: dict | None = None, *, apply: bool = False
+) -> dict:
+    """Restore a missing poster from its exact source post's cover artwork."""
+    report = _report(target, "instagram-image", "needs_source")
+    if target.source_image_url:
+        report["status"] = "already_present"
+        return report
+    if not target.source_url or not is_exact_post_url_target(target.source_url):
+        report.update(status="unavailable", reason="Target has no exact Instagram source post")
+        return report
+    if post is None:
+        return report
+    if not exact_post_results_match_targets([target.source_url], [post]):
+        raise ValidationError("Provider result does not match the target's exact Instagram post")
+    image_url = post.get("displayUrl")
+    if not isinstance(image_url, str) or not image_url:
+        report.update(status="unavailable", reason="Source post has no cover artwork")
+        return report
+    report.update(status="ready", provider_post_url=post["url"])
+    if not apply:
+        return report
+    url = upload_image_from_url(image_url, bucket=BUCKET_EVENT_IMAGES)
+    if not url:
+        report.update(status="failed", reason="Poster could not be downloaded and validated")
+        return report
     return _save_asset(target, report, "source_image_url", url, BUCKET_EVENT_IMAGES)
 
 
@@ -193,6 +223,8 @@ def repair_stored_video(
 def _save_asset(target: MediaRepairTarget, report: dict, field: str, url: str, bucket: str) -> dict:
     query = get_sb().table(target.resource).update({field: url}).eq("id", target.id)
     if field == "source_video_url":
+        query = query.is_(field, "null").eq("source_url", target.source_url)
+    elif target.source_image_url is None:
         query = query.is_(field, "null").eq("source_url", target.source_url)
     else:
         query = query.eq(field, target.source_image_url)

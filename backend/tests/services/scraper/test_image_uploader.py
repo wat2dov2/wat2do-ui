@@ -203,3 +203,36 @@ def test_directory_spinner_bytes_are_rejected_before_storage(monkeypatch):
         is None
     )
     upload.assert_not_called()
+
+
+def test_oversized_instagram_poster_is_resized_before_stored_size_validation(monkeypatch):
+    from io import BytesIO
+
+    from PIL import Image
+
+    from services.storage_service import StorageService
+
+    image = BytesIO()
+    Image.new("RGB", (2160, 1080), "red").save(image, format="JPEG")
+    response = MagicMock()
+    response.headers = {"content-type": "image/jpeg"}
+    response.content = image.getvalue()
+    client = MagicMock()
+    client.__enter__.return_value.get.return_value = response
+    monkeypatch.setattr(image_uploader.httpx, "Client", lambda **kwargs: client)
+    monkeypatch.setattr(image_uploader, "_is_safe_image_url", lambda *args, **kwargs: True)
+    storage = StorageService(
+        MagicMock(), bucket_name="test", public_base_url="https://wat2do.io/media"
+    )
+    monkeypatch.setattr(image_uploader, "storage", storage)
+    monkeypatch.setattr(storage, "get_file_size_limit", lambda *_: 15000)
+    upload = MagicMock(return_value="https://wat2do.io/media/event-images/new.jpg")
+    monkeypatch.setattr(storage, "upload_file", upload)
+
+    assert len(response.content) > 15000
+    assert image_uploader.upload_image_from_url(
+        "https://scontent.cdninstagram.com/poster.jpg", bucket=BUCKET_EVENT_IMAGES
+    )
+    with Image.open(BytesIO(upload.call_args.args[1])) as stored:
+        assert stored.size == (1080, 540)
+    assert len(upload.call_args.args[1]) < 15000

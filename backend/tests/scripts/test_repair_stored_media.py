@@ -96,3 +96,18 @@ def test_cli_requires_one_target_and_rejects_provider_flags_for_images():
     ):
         with pytest.raises(SystemExit):
             script.main(arguments)
+
+
+def test_instagram_image_fetch_uses_existing_exact_post_repair_path(target, monkeypatch, capsys):
+    provider = MagicMock()
+    provider.scrape_posts.return_value = [
+        {"url": target.source_url, "displayUrl": "https://scontent.cdninstagram.com/poster.jpg"}
+    ]
+    monkeypatch.setattr(script, "get_scraper", lambda: provider)
+    repair = MagicMock(side_effect=[{"status": "needs_source"}, {"status": "ready"}])
+    monkeypatch.setattr(script, "repair_instagram_image", repair)
+    assert script.main(["instagram-image", "--event-id", "29122", "--fetch"]) == 0
+    provider.scrape_posts.assert_called_once_with([target.source_url])
+    assert repair.call_args.args == (target, provider.scrape_posts.return_value[0])
+    assert repair.call_args.kwargs == {"apply": False}
+    assert json.loads(capsys.readouterr().out)["status"] == "ready"

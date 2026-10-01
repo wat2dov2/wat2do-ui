@@ -192,7 +192,7 @@ class StorageService:
                 if bucket == BUCKET_EVENT_IMAGES
                 else None
             )
-            data = _strip_image_metadata(data, content_type, max_width=max_width)
+            data = prepare_image_rendition(data, content_type, max_width=max_width)
 
         return data, content_type
 
@@ -332,7 +332,7 @@ def _is_safe_storage_path(path: str) -> bool:
     return True
 
 
-def _strip_image_metadata(
+def prepare_image_rendition(
     data: bytes,
     content_type: str,
     *,
