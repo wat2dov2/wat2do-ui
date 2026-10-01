@@ -239,6 +239,40 @@ test.beforeEach(async ({ page, next }) => {
   });
 });
 
+for (const surface of ["card", "drawer", "page"] as const) {
+  test(`directory event artwork fills the ${surface} instead of showing a compact profile`, async ({ page, next }) => {
+    const poster = "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="640" height="640"><rect width="640" height="640" fill="red"/></svg>');
+    const logo = "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96"><circle cx="48" cy="48" r="48" fill="blue"/></svg>');
+    const event = {
+      id: 1, title: "Sidewalk Sale", school: "uwaterloo", club_id: 1, club: "UW Tech Club",
+      description: "Official thrift sale", location: "SLC", category: "Career", price: 0,
+      food: [], registration: false, cancelled: false, is_directory_event: true,
+      source_url: "https://wusa.ca/event/thrift-sidewalk-sale-october-1",
+      source_image_url: poster, club_logo_url: logo,
+      occurrences: [{ id: "directory-sale", event_id: 1,
+        dtstart_utc: new Date(Date.now() + 86400000).toISOString(), dtend_utc: null }],
+    };
+    await mockApi(page, next, url => apiPath(url) === "/events", async () => ({ json: {
+      items: [event], total: 1, page: 1, page_size: 20, total_pages: 1,
+    } }));
+    await mockApi(page, next, url => apiPath(url) === "/events/1", async () => ({ json: event }));
+    await page.goto(surface === "page" ? `${BASE}/events/1` : BASE);
+    if (surface === "drawer") await page.locator('article[data-event-id="1"]:visible').click();
+    const face = surface === "card"
+      ? page.locator('article[data-event-id="1"]:visible [data-slot="event-card-image"]')
+      : page.locator('[data-slot="event-card-image"][data-variant="detail"]:visible');
+    const artwork = face.getByRole("img", { name: event.title, exact: true });
+    await expect(artwork).toBeVisible();
+    await expect(artwork).toHaveAttribute("src", poster);
+    await expect.poll(async () => (await artwork.boundingBox())?.width ?? 0).toBeGreaterThan(96);
+    await expect.poll(async () => (await artwork.boundingBox())?.height ?? 0).toBeGreaterThan(96);
+    if (surface !== "card") {
+      await face.getByRole("button", { name: "View full event image", exact: true }).click();
+      await expect(page.getByRole("dialog").last().getByRole("img", { name: event.title, exact: true })).toHaveAttribute("src", poster);
+    }
+  });
+}
+
 test.describe("School timezone rendering", () => {
   test.use({ timezoneId: "Asia/Tokyo" });
 

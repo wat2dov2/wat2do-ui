@@ -48,8 +48,9 @@ export function EventCardImage({
 }: EventCardImageProps) {
   const { t } = useTranslation();
   const [imageOpen, setImageOpen] = useState(false);
-  const imageSrc = event.is_directory_event ? event.club_logo_url : event.source_image_url;
-  const canExpandImage = variant === "detail" && imageSrc && !event.source_video_url && !event.is_directory_event;
+  const isProfileFallback = event.is_directory_event && !event.source_image_url;
+  const imageSrc = isProfileFallback ? event.club_logo_url : event.source_image_url;
+  const canExpandImage = variant === "detail" && imageSrc && !event.source_video_url && !isProfileFallback;
   const eagerImage = variant === "detail" || priority;
   const { surfaceRef, registerCorner, cutouts, box } = useEventImageCutouts();
 
@@ -80,7 +81,7 @@ export function EventCardImage({
         <EventImageCutout
           backgroundColor="var(--surface-elevated)"
           imageSrc={imageSrc}
-          imageVariant={event.is_directory_event ? "profile" : "poster"}
+          imageVariant={isProfileFallback ? "profile" : "poster"}
           videoSrc={variant === "detail" ? event.source_video_url : undefined}
           imageAlt={event.title}
           imageLoading={eagerImage ? "eager" : "lazy"}

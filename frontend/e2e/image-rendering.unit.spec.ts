@@ -626,7 +626,7 @@ for (const variant of ["card", "detail"]) {
     const logo = "https://wat2do.io/media/organization-logos/laurier.jpg";
     const html = render(EventCardImage, { variant, event: {
       id: 42, title: "Laurier event", occurrences: [], added_at: "2026-09-01T00:00:00Z",
-      is_directory_event: true, source_image_url: posterUrl, club_logo_url: logo,
+      is_directory_event: true, source_image_url: null, club_logo_url: logo,
     }});
     expect(html).toContain(encodeURIComponent(logo));
     expect(html).not.toContain(encodeURIComponent(posterUrl));
@@ -639,7 +639,7 @@ for (const variant of ["card", "detail"]) {
   test(`directory ${variant} without a profile picture uses the title fallback`, () => {
     const html = render(EventCardImage, { variant, event: {
       id: 42, title: "Laurier event", occurrences: [], added_at: "2026-09-01T00:00:00Z",
-      is_directory_event: true, source_image_url: posterUrl, club_logo_url: null,
+      is_directory_event: true, source_image_url: null, club_logo_url: null,
     }});
     expect(html).toContain('data-slot="event-poster-fallback"');
     expect(html).toContain("Laurier event");
@@ -657,3 +657,17 @@ test("ordinary events retain their event poster even with a club profile picture
   expect(html).toContain(encodeURIComponent(posterUrl));
   expect(html).not.toContain(encodeURIComponent(logo));
 });
+
+for (const variant of ["card", "detail"]) {
+  test(`directory ${variant} prefers event artwork over the club profile picture`, () => {
+    const logo = "https://wat2do.io/media/organization-logos/club.jpg";
+    const html = render(EventCardImage, { variant, event: {
+      id: 19199, title: "Sidewalk Sale", occurrences: [], added_at: "2026-09-01T00:00:00Z",
+      is_directory_event: true, source_image_url: posterUrl, club_logo_url: logo,
+    }});
+    expect(html).toContain(encodeURIComponent(posterUrl));
+    expect(html).not.toContain(encodeURIComponent(logo));
+    expect(html).not.toContain("size-24");
+    expect(html.includes("cursor-zoom-in")).toBe(variant === "detail");
+  });
+}
