@@ -86,6 +86,7 @@ export function useEventsPageData({
   }, [query]);
 
   return {
+    appliedQueryKey: `${queryRevision}:${JSON.stringify({ searchQuery, ...appliedFilters })}`,
     isLoading,
     error,
     refreshEvents,

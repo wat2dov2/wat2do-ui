@@ -45,6 +45,7 @@ export function EventsPageContainer({
   const router = useRouter();
 
   const {
+    appliedQueryKey,
     isLoading,
     error,
     refreshEvents,
@@ -136,7 +137,7 @@ export function EventsPageContainer({
             </Button>
           </Stack>
 
-          <FilterBar disabled={isLoading || Boolean(error)} refreshKey={`${quickFilters.length}:${filters.categoryOptions.length}:${filters.campusSeasonOptions.map(season => season.id).join(",")}`} data-testid="event-quick-filter-scroll" trailing={<>
+          <FilterBar appliedQueryKey={appliedQueryKey} disabled={isLoading || Boolean(error)} refreshKey={`${quickFilters.length}:${filters.categoryOptions.length}:${filters.campusSeasonOptions.map(season => season.id).join(",")}`} data-testid="event-quick-filter-scroll" trailing={<>
               <MoreFiltersButton
                 open={showFilterDropdown}
                 onOpenChange={setShowFilterDropdown}

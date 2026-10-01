@@ -51,7 +51,7 @@ export function PositionsPage({
           />
           <Button asChild variant="outline" size="lg"><Link href={ROUTES.POSITION_SUBMIT}>{t("positions.addPosition")}</Link></Button>
         </Stack>
-        <FilterBar disabled={positionsPage.isLoading || positionsPage.isError} data-testid="position-filter-scroll" aria-label={t("positions.filterByType")}>
+        <FilterBar appliedQueryKey={positionsPage.appliedQueryKey} disabled={positionsPage.isLoading || positionsPage.isError} data-testid="position-filter-scroll" aria-label={t("positions.filterByType")}>
           <NewlyAddedFilterButton
             value={positionsPage.addedSince}
 

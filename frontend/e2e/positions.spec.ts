@@ -183,6 +183,11 @@ test.describe("Positions UI", () => {
       return Math.abs(initialHeaderTop - (headerBox?.y ?? 1000));
     }).toBeLessThan(2);
     await expect(page.getByRole("link", { name: "Add position", exact: true })).toBeVisible();
+    const committee = page.getByTestId("position-filter-scroll").getByRole("button", { name: "Committee", exact: true });
+    await committee.click();
+    await expect(committee).toHaveAttribute("aria-pressed", "true");
+    await expect.poll(() => scrollRoot.evaluate(element => element.scrollTop)).toBe(0);
+
   });
 
   test("filters explicit paid and newly added positions and searches the latest item", async ({ page }, testInfo) => {

@@ -46,6 +46,7 @@ export function ClubsPage({
   const { isAuthenticated: authed } = useAuthState();
 
   const {
+    appliedQueryKey,
     searchQuery,
     minEvents,
     setMinEvents,
@@ -129,7 +130,7 @@ export function ClubsPage({
           </Button>
         </Stack>
 
-        <FilterBar disabled={isLoading || isError} refreshKey={allCategories.length} data-testid="club-category-filter-scroll" trailing={<>
+        <FilterBar appliedQueryKey={appliedQueryKey} disabled={isLoading || isError} refreshKey={allCategories.length} data-testid="club-category-filter-scroll" trailing={<>
             <Select
               value={activeTab}
               onValueChange={(value) =>

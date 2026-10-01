@@ -72,6 +72,7 @@ export function useClubsPage({
   }, []);
 
   return {
+    appliedQueryKey: JSON.stringify({ submittedSearch, selectedCategories, minEvents, activeTab }),
     minEvents,
     setMinEvents: (value: number) => setMinEvents(Number.isFinite(value) ? Math.max(0, Math.floor(value)) : 0),
     searchQuery,

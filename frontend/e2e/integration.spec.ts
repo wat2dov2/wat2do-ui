@@ -1999,7 +1999,14 @@ test.describe("Events Page", () => {
     const pinnedTop = (await header.boundingBox())!.y;
     await scrollRoot.evaluate(element => { element.scrollTop = 700; });
     await expect.poll(async () => Math.abs((await header.boundingBox())!.y - pinnedTop)).toBeLessThan(1);
-    await scrollRoot.evaluate(element => { element.scrollTop = 0; });
+    const category = header.getByRole("button", { name: "Career", exact: true });
+    await category.click();
+    await expect(category).toHaveAttribute("aria-pressed", "true");
+    await expect.poll(() => scrollRoot.evaluate(element => element.scrollTop)).toBe(0);
+    await scrollRoot.evaluate(element => { element.scrollTop = 400; });
+    await expect.poll(() => scrollRoot.evaluate(element => element.scrollTop)).toBeGreaterThan(300);
+    await category.click();
+    await expect.poll(() => scrollRoot.evaluate(element => element.scrollTop)).toBe(0);
     await page.locator('article[data-event-id="1"]:visible').getByText("SLC", { exact: true }).click();
     const drawer = page.getByRole("dialog");
     await expect(drawer.getByRole("img", { name: "Taylor Q." })).toBeVisible();
@@ -4261,6 +4268,11 @@ test.describe("Clubs Page", () => {
     await expect.poll(() => scrollRoot.evaluate(element => element.scrollTop)).toBeGreaterThan(400);
     await expect.poll(async () => (await search.boundingBox())?.y).toBe(initial!.y);
     await expect(page.getByRole("button", { name: "Add club", exact: true })).toBeInViewport();
+    const category = page.getByTestId("club-category-filter-scroll").getByRole("button", { name: "Technology", exact: true });
+    await category.click();
+    await expect(category).toHaveAttribute("aria-pressed", "true");
+    await expect.poll(() => scrollRoot.evaluate(element => element.scrollTop)).toBe(0);
+
   });
 });
 

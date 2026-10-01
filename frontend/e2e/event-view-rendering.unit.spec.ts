@@ -223,3 +223,49 @@ test("catalog arrival timestamps show an absolute school-local date and omit mis
   expect(renderAdded(null)).toBe("");
   expect(renderAdded("not-a-date")).toBe("");
 });
+
+
+test("applied queries reset the main scroller without resetting initial or unchanged renders", () => {
+  const filename = new URL("../src/shared/layout/filter-bar.tsx", import.meta.url);
+  const { outputText } = ts.transpileModule(readFileSync(filename, "utf8"), {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX },
+  });
+  let effect = () => {};
+  let previous: { current: string | undefined } | undefined;
+  const calls: ScrollToOptions[] = [];
+  let rootAvailable = true;
+  const componentModule = { exports: {} as typeof import("../src/shared/layout/filter-bar") };
+  runInNewContext(outputText, {
+    exports: componentModule.exports,
+    document: { querySelector: (selector: string) => {
+      expect(selector).toBe(".main-content-grid");
+      return rootAvailable ? { scrollTo: (options: ScrollToOptions) => calls.push(options) } : null;
+    } },
+    require: (id: string) => {
+      if (id === "react") return {
+        useRef: (initial: string | undefined) => previous ??= { current: initial },
+        useEffect: (callback: () => void) => { effect = callback; },
+        useSyncExternalStore: () => true,
+      };
+      if (id === "@/shared/hooks/useHorizontalScrollFade") return { useHorizontalScrollFade: () => ({}) };
+      if (id === "@/shared/constants/ui") return { MAIN_CONTENT_SCROLL_ROOT_SELECTOR: ".main-content-grid" };
+      if (id === "react/jsx-runtime") return { jsx: () => null, jsxs: () => null };
+      return {};
+    },
+  });
+  const render = (appliedQueryKey?: string) => {
+    componentModule.exports.FilterBar({ children: null, appliedQueryKey });
+    effect();
+  };
+  render("initial");
+  render("initial");
+  expect(calls).toHaveLength(0);
+  render("category");
+  expect(calls).toEqual([{ top: 0, behavior: "instant" }]);
+  render("category");
+  expect(calls).toHaveLength(1);
+  render("cleared");
+  expect(calls).toHaveLength(2);
+  rootAvailable = false;
+  expect(() => render("search")).not.toThrow();
+});

@@ -1,12 +1,15 @@
-import { useSyncExternalStore, type ReactNode } from "react";
+import { useEffect, useRef, useSyncExternalStore, type ReactNode } from "react";
 import { useHorizontalScrollFade } from "@/shared/hooks/useHorizontalScrollFade";
 import { HorizontalScrollFade } from "@/shared/ui/horizontal-scroll-fade";
+import { MAIN_CONTENT_SCROLL_ROOT_SELECTOR } from "@/shared/constants/ui";
 import { Stack } from "@/shared/layout/stack";
 
 interface FilterBarProps {
   children: ReactNode;
   trailing?: ReactNode;
   refreshKey?: unknown;
+  /** Changes only when a search or filter is applied, never when results refresh. */
+  appliedQueryKey?: string;
   disabled?: boolean;
   "aria-label"?: string;
   "data-testid"?: string;
@@ -17,7 +20,15 @@ const clientReady = () => true;
 const serverReady = () => false;
 
 /** One scrolling filter row, with optional controls pinned outside its fade. */
-export function FilterBar({ children, trailing, refreshKey, disabled = false, ...props }: FilterBarProps) {
+export function FilterBar({ children, trailing, refreshKey, appliedQueryKey, disabled = false, ...props }: FilterBarProps) {
+  const previousQueryKey = useRef(appliedQueryKey);
+  useEffect(() => {
+    if (previousQueryKey.current === appliedQueryKey) return;
+    previousQueryKey.current = appliedQueryKey;
+    document.querySelector<HTMLElement>(MAIN_CONTENT_SCROLL_ROOT_SELECTOR)
+      ?.scrollTo({ top: 0, behavior: "instant" });
+  }, [appliedQueryKey]);
+
   const hydrated = useSyncExternalStore(subscribeToHydration, clientReady, serverReady);
   const unavailable = disabled || !hydrated;
   const { scrollRef, scrollEndRef, showScrollFade, syncScrollFade,
