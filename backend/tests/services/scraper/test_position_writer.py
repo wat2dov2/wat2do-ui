@@ -46,12 +46,14 @@ def test_write_position_inserts_scraper_payload(fake_sb, patch_sb, monkeypatch):
             club_id=7,
             club_name="UW Design Club",
             ig_handle="uwdesign",
+            cohost_club_ids=(8, 10),
         ),
     )
 
     assert outcome == "inserted"
     payload = fake_sb.insert.call_args.args[0]
     assert payload["club_id"] == 7
+    assert payload["cohost_club_ids"] == [8, 10]
     assert payload["school_id"] == 9
     assert payload["title"] == "Design Lead"
     assert payload["source_video_url"] == "https://wat2do.io/media/event-videos/reel.mp4"

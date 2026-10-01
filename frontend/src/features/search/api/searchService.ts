@@ -25,6 +25,7 @@ function eventSearchHaystack(event: Event): string[] {
     event.club,
     event.ig_handle,
     event.club_ig,
+    ...(event.cohosts ?? []).flatMap(club => [club.club_name, club.ig]),
     event.description,
     event.location,
     ...(event.food ?? []),
@@ -201,6 +202,8 @@ export function filterEvents(
 
     if (filters.employersOnCampus && event.employers_on_campus !== true) return false;
     if (filters.freeFoodOnCampus && (event.price !== 0 || food.length === 0)) return false;
+    if (filters.competitions && event.competition !== true) return false;
+    if (filters.featured && event.featured !== true) return false;
     if (filters.sportsGame && event.sports_game !== true) return false;
 
 
@@ -246,7 +249,7 @@ export function filterEvents(
     }
 
     if (clubs.length > 0) {
-      const club = (event.club ?? "").toLocaleLowerCase();
+      const club = [event.club, ...(event.cohosts ?? []).map(club => club.club_name)].filter(Boolean).join(" ").toLocaleLowerCase();
       if (!clubs.every((query) => club.includes(query))) return false;
     }
 

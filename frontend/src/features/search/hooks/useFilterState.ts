@@ -71,6 +71,8 @@ export function useFilterState() {
       hasFoodFilter: s.hasFoodFilter,
       employersOnCampus: s.employersOnCampus,
       freeFoodOnCampus: s.freeFoodOnCampus,
+      competitions: s.competitions,
+      featured: s.featured,
       sportsGame: s.sportsGame,
       campusSeasonIds: s.campusSeasonIds,
       selectedClubs: s.selectedClubs,
@@ -140,6 +142,12 @@ export function useFilterState() {
     (value: boolean) => updateFilterState({ freeFoodOnCampus: value }),
     [updateFilterState],
   );
+  const setCompetitions = useCallback(
+    (value: boolean) => updateFilterState({ competitions: value }), [updateFilterState],
+  );
+  const setFeatured = useCallback(
+    (value: boolean) => updateFilterState({ featured: value }), [updateFilterState],
+  );
   const setSportsGame = useCallback(
     (value: boolean, source?: FilterUpdateSource) => updateFilterState({ sportsGame: value }, source),
     [updateFilterState],
@@ -188,6 +196,8 @@ export function useFilterState() {
     setHasFoodFilter,
     setEmployersOnCampus,
     setFreeFoodOnCampus,
+    setCompetitions,
+    setFeatured,
     setSportsGame,
     setCampusSeasonIds,
     toggleCampusSeason,

@@ -669,3 +669,17 @@ SET sticker_selections = (
 WHERE batch.status = 'ready_for_review' AND batch.sticker_selections = '{}'::jsonb;
 
 -- position_interactions is intentionally empty: seeded position click counts start at zero.
+
+-- Shared-club seed fixtures reuse two existing Waterloo clubs.
+UPDATE public.events AS event SET cohost_club_ids = ARRAY[cohost.id]
+FROM public.clubs AS owner, public.clubs AS cohost
+WHERE event.club_id = owner.id AND owner.club_name = 'UW Board Games Club'
+  AND cohost.club_name = 'UW Computer Science Club' AND cohost.school_id = owner.school_id;
+UPDATE public.positions AS position SET cohost_club_ids = ARRAY[cohost.id]
+FROM public.clubs AS owner, public.clubs AS cohost
+WHERE position.club_id = owner.id AND owner.club_name = 'UW Board Games Club'
+  AND cohost.club_name = 'UW Computer Science Club' AND cohost.school_id = owner.school_id;
+
+-- Explicit editorial and competition examples for discovery filters.
+UPDATE public.events SET featured = true, competition = true
+WHERE id = (SELECT id FROM public.events WHERE ingestion_source = 'seed' AND title LIKE '%Board Games%' ORDER BY id LIMIT 1);

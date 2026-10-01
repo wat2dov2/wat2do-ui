@@ -101,6 +101,7 @@ export function PositionCardImage({
         <ClubBadgeDropdown
           clubName={position.club_name}
           clubLogoUrl={position.club_logo_url}
+          cohosts={position.cohosts}
           clubType={position.club_type}
           school={position.school}
           clubPage={position.club_page}

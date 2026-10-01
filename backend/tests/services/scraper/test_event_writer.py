@@ -133,7 +133,7 @@ def test_merge_overwrite_payload_uses_new_nonempty_values():
         "cancelled": True,
     }
 
-    assert _merge_overwrite_payload(incoming, old) == incoming
+    assert _merge_overwrite_payload(incoming, old) == {**incoming, "cohost_club_ids": []}
 
 
 @pytest.mark.parametrize("previous", [True, False, None])
@@ -783,3 +783,12 @@ def test_write_event_preserves_ig_and_org_on_null_incoming(fake_sb, patch_sb, mo
     assert "club_type" not in update_payload
     assert update_payload["source_url"] == "https://instagram.com/p/OLD"
     assert update_payload["source_image_url"] == "https://cdn/old.jpg"
+
+
+def test_overwrite_unions_known_cohosts_without_promoting_them_to_owner():
+    old = SimpleNamespace(
+        cohosts=[SimpleNamespace(id=3), SimpleNamespace(id=7)], registration=False, cancelled=False
+    )
+    result = _merge_overwrite_payload({"club_id": 7, "cohost_club_ids": [9, 3]}, old)
+    assert result["cohost_club_ids"] == [3, 9]
+    assert result["club_id"] == 7

@@ -46,6 +46,8 @@ function toStoreValues(filters: FilterState): SearchStoreFilterValues {
     hasFoodFilter: normalized.hasFood,
     employersOnCampus: normalized.employersOnCampus,
     freeFoodOnCampus: normalized.freeFoodOnCampus,
+    competitions: normalized.competitions,
+    featured: normalized.featured,
     sportsGame: normalized.sportsGame,
     campusSeasonIds: normalized.campusSeasonIds,
     goingFilter: normalized.going,

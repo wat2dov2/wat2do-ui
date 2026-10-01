@@ -1847,6 +1847,26 @@ export interface components {
             /** Rejection Reason */
             rejection_reason?: string | null;
         };
+        /**
+         * ClubCohostResponse
+         * @description An additional existing club sharing an event or position.
+         */
+        ClubCohostResponse: {
+            /** Id */
+            id: number;
+            /** Club Name */
+            club_name: string;
+            /** Logo Url */
+            logo_url?: string | null;
+            /** Club Type */
+            club_type?: string | null;
+            /** Club Page */
+            club_page?: string | null;
+            /** Ig */
+            ig?: string | null;
+            /** Discord */
+            discord?: string | null;
+        };
         /** ClubCreate */
         ClubCreate: {
             /** Club Name */
@@ -2168,6 +2188,11 @@ export interface components {
         /** EventCreate */
         EventCreate: {
             /**
+             * Competition
+             * @description An event where participants compete for rankings, judging, prizes or a winner, including hackathons, case competitions, contests and tournaments. Practice sessions, ordinary workshops and application announcements alone do not qualify. Use null when competition is unconfirmed.
+             */
+            competition?: boolean | null;
+            /**
              * Employers On Campus
              * @description Employer representatives or recruiters will be physically present on the event's school campus for recruiting, a career fair, an employer information session, or networking. General career workshops, alumni talks without employer recruiting, student-club hiring, online sessions, and off-campus employer events do not qualify. School affiliation alone does not prove an on-campus location.
              */
@@ -2292,6 +2317,11 @@ export interface components {
          */
         EventPublicResponse: {
             /**
+             * Competition
+             * @description An event where participants compete for rankings, judging, prizes or a winner, including hackathons, case competitions, contests and tournaments. Practice sessions, ordinary workshops and application announcements alone do not qualify. Use null when competition is unconfirmed.
+             */
+            competition?: boolean | null;
+            /**
              * Employers On Campus
              * @description Employer representatives or recruiters will be physically present on the event's school campus for recruiting, a career fair, an employer information session, or networking. General career workshops, alumni talks without employer recruiting, student-club hiring, online sessions, and off-campus employer events do not qualify. School affiliation alone does not prove an on-campus location.
              */
@@ -2333,6 +2363,13 @@ export interface components {
             source_video_url?: string | null;
             /** Club Logo Url */
             club_logo_url?: string | null;
+            /** Cohosts */
+            cohosts?: components["schemas"]["ClubCohostResponse"][];
+            /**
+             * Featured
+             * @default false
+             */
+            featured: boolean;
             /**
              * Is Directory Event
              * @default false
@@ -2375,6 +2412,11 @@ export interface components {
          */
         EventResponse: {
             /**
+             * Competition
+             * @description An event where participants compete for rankings, judging, prizes or a winner, including hackathons, case competitions, contests and tournaments. Practice sessions, ordinary workshops and application announcements alone do not qualify. Use null when competition is unconfirmed.
+             */
+            competition?: boolean | null;
+            /**
              * Employers On Campus
              * @description Employer representatives or recruiters will be physically present on the event's school campus for recruiting, a career fair, an employer information session, or networking. General career workshops, alumni talks without employer recruiting, student-club hiring, online sessions, and off-campus employer events do not qualify. School affiliation alone does not prove an on-campus location.
              */
@@ -2416,6 +2458,13 @@ export interface components {
             source_video_url?: string | null;
             /** Club Logo Url */
             club_logo_url?: string | null;
+            /** Cohosts */
+            cohosts?: components["schemas"]["ClubCohostResponse"][];
+            /**
+             * Featured
+             * @default false
+             */
+            featured: boolean;
             /**
              * Is Directory Event
              * @default false
@@ -2482,6 +2531,11 @@ export interface components {
          */
         EventSummaryResponse: {
             /**
+             * Competition
+             * @description An event where participants compete for rankings, judging, prizes or a winner, including hackathons, case competitions, contests and tournaments. Practice sessions, ordinary workshops and application announcements alone do not qualify. Use null when competition is unconfirmed.
+             */
+            competition?: boolean | null;
+            /**
              * Employers On Campus
              * @description Employer representatives or recruiters will be physically present on the event's school campus for recruiting, a career fair, an employer information session, or networking. General career workshops, alumni talks without employer recruiting, student-club hiring, online sessions, and off-campus employer events do not qualify. School affiliation alone does not prove an on-campus location.
              */
@@ -2529,6 +2583,13 @@ export interface components {
             club?: string | null;
             /** Club Logo Url */
             club_logo_url?: string | null;
+            /** Cohosts */
+            cohosts?: components["schemas"]["ClubCohostResponse"][];
+            /**
+             * Featured
+             * @default false
+             */
+            featured: boolean;
             /**
              * Is Directory Event
              * @default false
@@ -2560,6 +2621,11 @@ export interface components {
         /** EventUpdate */
         EventUpdate: {
             /**
+             * Competition
+             * @description An event where participants compete for rankings, judging, prizes or a winner, including hackathons, case competitions, contests and tournaments. Practice sessions, ordinary workshops and application announcements alone do not qualify. Use null when competition is unconfirmed.
+             */
+            competition?: boolean | null;
+            /**
              * Employers On Campus
              * @description Employer representatives or recruiters will be physically present on the event's school campus for recruiting, a career fair, an employer information session, or networking. General career workshops, alumni talks without employer recruiting, student-club hiring, online sessions, and off-campus employer events do not qualify. School affiliation alone does not prove an on-campus location.
              */
@@ -2574,6 +2640,8 @@ export interface components {
              * @description School-configured campus season IDs established by the event's theme or purpose. Null means unreviewed or uncertain; an empty array means reviewed with no matching season. Display windows control filter visibility, not classification. Event dates alone do not prove thematic membership.
              */
             campus_season_ids?: string[] | null;
+            /** Featured */
+            featured?: boolean | null;
             /** Title */
             title?: string | null;
             /** Description */
@@ -3414,6 +3482,8 @@ export interface components {
             club_name: string;
             /** Club Logo Url */
             club_logo_url?: string | null;
+            /** Cohosts */
+            cohosts?: components["schemas"]["ClubCohostResponse"][];
             /** Club Type */
             club_type?: string | null;
             /** Club Page */

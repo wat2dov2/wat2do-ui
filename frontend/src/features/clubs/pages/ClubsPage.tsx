@@ -157,6 +157,7 @@ export function ClubsPage({
               />
               {allCategories.map((category) => (
                 <Button
+                  activation="click"
                   key={category}
                   variant={
                     selectedCategories.includes(category)

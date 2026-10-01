@@ -12,6 +12,7 @@ from core.constants import (
     MAX_SEARCH_QUERY_LENGTH,
 )
 from core.errors import (
+    ADMIN_ACCESS_REQUIRED,
     CLUB_EVENT_CREATION_REQUIRED,
     CLUB_NOT_FOUND,
     CLUB_PENDING_REVIEW,
@@ -180,6 +181,8 @@ def update_event(
     data: EventUpdate,
     db_user: UserResponse = Depends(get_db_user),
 ):
+    if "featured" in data.model_fields_set and not is_admin(db_user):
+        raise AuthorizationError(ADMIN_ACCESS_REQUIRED)
     old_event = _get_event_or_404_authorized(event_id, db_user)
     # Reassigning orgs requires management-team membership (or admin), same as create.
     if data.club_id is not None:

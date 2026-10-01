@@ -22,6 +22,8 @@ const eventQuickFilters = [
   { id: "price", labelKey: "filters.anyPrice" },
   { id: "campusSeasons" },
   { id: "sportsGame", labelKey: "filters.sportsGame", value: "sportsGame", action: "setSportsGame" },
+  { id: "competitions", labelKey: "filters.competitions", value: "competitions", action: "setCompetitions" },
+  { id: "featured", labelKey: "filters.featured", value: "featured", action: "setFeatured" },
   { id: "date", labelKey: "events.dateFilter.any" },
   { id: "minGoing", labelKey: "events.goingCount" },
   { id: "hasFood", labelKey: "filters.food", value: "hasFoodFilter", action: "setHasFoodFilter" },

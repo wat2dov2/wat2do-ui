@@ -131,6 +131,7 @@ export function EventCardImage({
             <ClubBadgeDropdown
               clubName={event.club}
               clubLogoUrl={event.club_logo_url}
+              cohosts={event.cohosts}
               clubType={event.club_type}
               school={event.school}
               clubPage={event.club_page}

@@ -11,6 +11,7 @@ import {
   Mail,
 } from "@/shared/ui/doodle-icons";
 import type { LucideIcon } from "@/shared/ui/doodle-icons";
+import { PositionList } from "@/features/positions/components/PositionList";
 import { PositionCardImage } from "@/features/positions/components/PositionCardImage";
 import { formatPositionDeadline } from "@/features/positions/lib/positionDates";
 import { Button } from "@/shared/ui/button";
@@ -79,6 +80,10 @@ export function PositionDetailsDrawer({
     () => (position ? formatPositionDeadline(position, i18n.language, getSchoolTimezone(position.school)) : null),
     [i18n.language, position, getSchoolTimezone],
   );
+  const morePositions = useMemo(
+    () => positions.filter((item) => item.id !== position?.id).slice(0, 4),
+    [position?.id, positions],
+  );
   const sourceHref = sanitizeHref(position?.source_url ?? "");
   const index = positions.findIndex((item) => item.id === position?.id);
   const previous = index > 0 ? positions[index - 1] : undefined;
@@ -132,6 +137,7 @@ export function PositionDetailsDrawer({
                     <ClubBadgeDropdown
                       clubName={position.club_name}
                       clubLogoUrl={position.club_logo_url}
+                      cohosts={position.cohosts}
                       clubType={position.club_type}
                       school={position.school}
                       clubPage={position.club_page}
@@ -206,6 +212,18 @@ export function PositionDetailsDrawer({
                   ) : null}
                 </Stack>
               </FormGrid>
+              {morePositions.length > 0 ? (
+                <>
+                  <Separator />
+                  <Section title={t("positions.morePositions")}>
+                    <PositionList
+                      positions={morePositions}
+                      isLoading={false}
+                      onPositionClick={onSelect}
+                    />
+                  </Section>
+                </>
+              ) : null}
             </DrawerBody>
           </>
         ) : null}

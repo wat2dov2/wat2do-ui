@@ -13,27 +13,14 @@ import {
 import { Badge } from "@/shared/ui/badge";
 import { TruncatedText } from "@/shared/ui/truncated-text";
 import { sanitizeHref } from "@/shared/utils/url";
-import { LazyImage } from "@/shared/ui/lazy-image";
+import { AvatarStack } from "@/shared/ui/avatar-stack";
+import type { ApiEventSummaryResponse } from "@/shared/generated";
 
-const CLUB_NAME_CLASS = "max-w-56 font-bold";
-
-function ClubLogo({ src }: { src: string | null | undefined }) {
-  if (!src) return null;
-
-  return (
-    <LazyImage
-      src={src}
-      alt=""
-      width={20}
-      height={20}
-      fallback={null}
-      className="size-5 shrink-0 rounded-full"
-    />
-  );
-}
+const CLUB_NAME_CLASS = "max-w-56 flex-1 font-bold";
 
 interface ClubBadgeDropdownProps {
   clubName: string;
+  cohosts?: ApiEventSummaryResponse["cohosts"];
   clubLogoUrl?: string | null;
   clubType?: string | null;
   school?: string | null;
@@ -49,6 +36,7 @@ interface ClubBadgeDropdownProps {
 
 export function ClubBadgeDropdown({
   clubName,
+  cohosts = [],
   clubLogoUrl,
   clubType,
   school,
@@ -66,26 +54,27 @@ export function ClubBadgeDropdown({
   const filterActions = useFilterActions();
   const [isOpen, setIsOpen] = useState(false);
 
-  const handleFilterSelect = useCallback(() => {
+  const handleFilterSelect = useCallback((name: string) => {
     setIsOpen(false);
-    if (clubName) {
-      filterActions.updateFilterState({ clubs: [clubName] });
+    if (name) {
+      filterActions.updateFilterState({ clubs: [name] });
       onFilterSelect?.();
       if (pathname !== ROUTES.EVENTS) {
         router.push(ROUTES.EVENTS);
       }
     }
-  }, [clubName, filterActions, onFilterSelect, pathname, router]);
+  }, [filterActions, onFilterSelect, pathname, router]);
 
-  const websiteHref = sanitizeHref(clubPage);
-  const instagramHref = sanitizeHref(
-    clubIg
-      ? clubIg.startsWith("http")
-        ? clubIg
-        : `https://instagram.com/${clubIg.replace(/^@/, "")}`
-      : null,
-  );
-  const discordHref = sanitizeHref(clubDiscord);
+  const clubs = [{
+    club_name: clubName, logo_url: clubLogoUrl, club_page: clubPage,
+    ig: clubIg, discord: clubDiscord,
+  }, ...cohosts];
+  const content = <>
+    <AvatarStack size="sm" avatars={clubs.map(club => ({ name: club.club_name, src: club.logo_url ?? "" }))} />
+    <TruncatedText text={clubName || t("events.club")} className={CLUB_NAME_CLASS} />
+    {cohosts.length > 0 ? <span data-slot="club-cohost-count" className="shrink-0 font-bold">+{cohosts.length}</span> : null}
+    <ClubTypeIcon school={school} clubType={clubType} />
+  </>;
 
   if (disabled || !clubName) {
     return (
@@ -98,18 +87,7 @@ export function ClubBadgeDropdown({
         onClick={onClick}
       >
         <span data-slot="club-badge">
-          <ClubLogo src={clubLogoUrl} />
-          <TruncatedText
-            text={clubName || t("events.club")}
-            className={CLUB_NAME_CLASS}
-          />
-          {clubName &&
-            clubName !== t("events.club") && (
-              <ClubTypeIcon
-                school={school}
-                clubType={clubType}
-              />
-            )}
+          {content}
         </span>
       </Badge>
     );
@@ -127,44 +105,26 @@ export function ClubBadgeDropdown({
           onClick={onClick}
         >
           <button type="button" data-slot="club-badge">
-            <ClubLogo src={clubLogoUrl} />
-            <TruncatedText
-              text={clubName}
-              className={CLUB_NAME_CLASS}
-            />
-            <ClubTypeIcon
-              school={school}
-              clubType={clubType}
-            />
+            {content}
           </button>
         </Badge>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-48" align="start" stopPropagation>
-        <DropdownMenuItem onSelect={handleFilterSelect}>
-          {t("clubs.filterBy", { name: clubName })}
-        </DropdownMenuItem>
-
-        {websiteHref && (
-          <DropdownMenuItem asChild>
-            <a href={websiteHref} target="_blank" rel="noopener noreferrer">
-              {t("clubs.visitWebsite")}
-            </a>
-          </DropdownMenuItem>
-        )}
-        {instagramHref && (
-          <DropdownMenuItem asChild>
-            <a href={instagramHref} target="_blank" rel="noopener noreferrer">
-              {t("clubs.instagram")}
-            </a>
-          </DropdownMenuItem>
-        )}
-        {discordHref && (
-          <DropdownMenuItem asChild>
-            <a href={discordHref} target="_blank" rel="noopener noreferrer">
-              {t("clubs.discord")}
-            </a>
-          </DropdownMenuItem>
-        )}
+        {clubs.map((club) => {
+          const websiteHref = sanitizeHref(club.club_page);
+          const instagramHref = sanitizeHref(club.ig
+            ? club.ig.startsWith("http") ? club.ig : `https://instagram.com/${club.ig.replace(/^@/, "")}`
+            : null);
+          const discordHref = sanitizeHref(club.discord);
+          return <div key={club.club_name}>
+            <DropdownMenuItem onSelect={() => handleFilterSelect(club.club_name)}>
+              {t("clubs.filterBy", { name: club.club_name })}
+            </DropdownMenuItem>
+            {websiteHref ? <DropdownMenuItem asChild><a href={websiteHref} target="_blank" rel="noopener noreferrer">{t("clubs.visitWebsite")}</a></DropdownMenuItem> : null}
+            {instagramHref ? <DropdownMenuItem asChild><a href={instagramHref} target="_blank" rel="noopener noreferrer">{t("clubs.instagram")}</a></DropdownMenuItem> : null}
+            {discordHref ? <DropdownMenuItem asChild><a href={discordHref} target="_blank" rel="noopener noreferrer">{t("clubs.discord")}</a></DropdownMenuItem> : null}
+          </div>;
+        })}
       </DropdownMenuContent>
     </DropdownMenu>
   );

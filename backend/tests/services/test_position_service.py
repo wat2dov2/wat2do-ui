@@ -65,9 +65,9 @@ def test_list_positions_hydrates_club_and_school(fake_sb, patch_sb, monkeypatch)
     assert positions[0].school == "uwaterloo"
     fake_sb.eq.assert_any_call("school_id", 1)
     fake_sb.eq.assert_any_call("position_type", "committee")
-    fake_sb.eq.assert_any_call("club_id", 4)
+    fake_sb.or_.assert_any_call("club_id.eq.4,cohost_club_ids.cs.{4}")
     fake_sb.eq.assert_any_call("is_active", True)
-    assert fake_sb.or_.call_count == 2
+    assert fake_sb.or_.call_count == 3
 
 
 def test_list_positions_applies_added_since_before_pagination(fake_sb, patch_sb):

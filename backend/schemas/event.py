@@ -18,7 +18,7 @@ from core.constants import (
     MAX_URL_LENGTH,
 )
 from core.pagination import LatestAddedItem, PaginatedResponse
-from schemas.club import ClubTypeValue
+from schemas.club import ClubCohostResponse, ClubTypeValue
 from schemas.event_date import (
     OccurrenceCreate,
     OccurrenceResponse,
@@ -109,6 +109,11 @@ PriceField = Annotated[float, Field(ge=0, le=MAX_EVENT_PRICE, allow_inf_nan=Fals
 class EventDiscoveryFields(BaseModel):
     """Independent discovery facts; null means the source has not established the fact."""
 
+    competition: bool | None = Field(
+        default=None,
+        strict=True,
+        description="An event where participants compete for rankings, judging, prizes or a winner, including hackathons, case competitions, contests and tournaments. Practice sessions, ordinary workshops and application announcements alone do not qualify. Use null when competition is unconfirmed.",
+    )
     employers_on_campus: bool | None = Field(
         default=None,
         strict=True,
@@ -192,6 +197,7 @@ class EventCreate(EventDiscoveryFields):
 
 
 class EventUpdate(EventDiscoveryFields):
+    featured: bool | None = Field(default=None, strict=True)
     model_config = ConfigDict(extra="forbid")
 
     title: str | None = Field(default=None, max_length=MAX_EVENT_TITLE_LENGTH)
@@ -276,6 +282,8 @@ class EventSummaryResponse(EventDiscoveryFields):
     category: str | None = None
     club: str | None = None
     club_logo_url: str | None = None
+    cohosts: list[ClubCohostResponse] = Field(default_factory=list)
+    featured: bool = False
     is_directory_event: bool = False
     club_type: ClubTypeValue | None = None
     club_page: str | None = None
@@ -328,6 +336,8 @@ class EventResponse(EventDiscoveryFields):
     source_image_url: str | None = None
     source_video_url: str | None = None
     club_logo_url: str | None = None
+    cohosts: list[ClubCohostResponse] = Field(default_factory=list)
+    featured: bool = False
     is_directory_event: bool = False
     club_type: ClubTypeValue | None = None
     school: str | None = None
@@ -359,6 +369,8 @@ class EventPublicResponse(EventDiscoveryFields):
     source_image_url: str | None = None
     source_video_url: str | None = None
     club_logo_url: str | None = None
+    cohosts: list[ClubCohostResponse] = Field(default_factory=list)
+    featured: bool = False
     is_directory_event: bool = False
     club_type: ClubTypeValue | None = None
     school: str | None = None

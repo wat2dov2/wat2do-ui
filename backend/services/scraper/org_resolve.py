@@ -19,6 +19,7 @@ class ResolvedClub:
     club_id: int | None
     club_name: str | None
     ig_handle: str | None
+    cohost_club_ids: tuple[int, ...] = ()
 
 
 def resolve_club_for_scrape(
@@ -42,23 +43,25 @@ def resolve_club_for_scrape(
 
     cleaned_handles = []
     for h in raw_handles:
-        c = (h or "").strip().lstrip("@")
+        c = (h or "").strip().lstrip("@").lower()
         if c and c not in cleaned_handles:
             cleaned_handles.append(c)
 
-    # 1. Try to find an existing org that matches the target school
-    # (The underlying lookup is LRU cached, so multiple calls are free)
+    # Coauthors link only to registered clubs at the target school.
+    matches = []
     for cleaned in cleaned_handles:
         org = event_writer_mod._lookup_club_by_ig(cleaned)
-        if org is not None:
-            # Check if this org actually belongs to our target school
-            org_school = org.get("schools")
-            if isinstance(org_school, dict) and org_school.get("slug") == school_slug:
-                return ResolvedClub(
-                    club_id=org.get("id"),
-                    club_name=(org.get("club_name") or "").strip() or preferred_name,
-                    ig_handle=cleaned,
-                )
+        if org is not None and (org.get("schools") or {}).get("slug") == school_slug:
+            if not any(existing[1]["id"] == org["id"] for existing in matches):
+                matches.append((cleaned, org))
+    if matches:
+        cleaned, org = matches[0]
+        return ResolvedClub(
+            club_id=org["id"],
+            club_name=(org.get("club_name") or "").strip() or preferred_name,
+            ig_handle=cleaned,
+            cohost_club_ids=tuple(candidate["id"] for _, candidate in matches[1:]),
+        )
 
     # 2. Fallback to the first handle that does NOT conflict with another school
     # (i.e. it doesn't exist in the database yet, so we can safely create a stub for it).

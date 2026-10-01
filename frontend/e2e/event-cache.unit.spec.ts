@@ -658,3 +658,21 @@ test("position views use live stats, count each selected item once, and preserve
   expect(client.getQueryData(statsKey)).toEqual({ 1: { click_count: 4 }, 2: { click_count: 6 } });
   expect(tracked).toEqual([1, 2, 1]);
 });
+
+
+test("event edits synchronize cohost club lists and remove obsolete memberships", async () => {
+  const client = getQueryClient();
+  const cohostKey = queryKeys.events.byClub(12, "uwaterloo");
+  const otherSchoolKey = queryKeys.events.byClub(12, "ubc");
+  client.setQueryData(cohostKey, []);
+  client.setQueryData(otherSchoolKey, []);
+  const shared = { ...event(1), cohosts: [{ id: 12, club_name: "Partner Club" }] };
+  globalThis.fetch = async input => Response.json(String(input).includes("/discovery") ? feed([shared as Event]) : shared);
+  await updateEventAPI(1, form);
+  expect(client.getQueryData<Event[]>(cohostKey)?.map(item => item.id)).toEqual([1]);
+  expect(client.getQueryData(otherSchoolKey)).toEqual([]);
+  const unshared = { ...event(1), cohosts: [] };
+  globalThis.fetch = async input => Response.json(String(input).includes("/discovery") ? feed([unshared]) : unshared);
+  await updateEventAPI(1, form);
+  expect(client.getQueryData(cohostKey)).toEqual([]);
+});

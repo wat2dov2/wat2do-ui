@@ -40,6 +40,7 @@ T = TypeVar("T", bound=BaseModel)
 # ``clubs`` row (see ``CLUB_EMBED``), not real events columns.
 _SUMMARY_COMPUTED_FIELDS = {
     "occurrences",
+    "cohosts",
     "school",
     "club_logo_url",
     "is_directory_event",
@@ -53,7 +54,7 @@ _SUMMARY_COLUMNS = ",".join(
 )
 # Read-time embed of the owning club's display/link/social fields via the
 # ``events.club_id`` FK, flattened onto the event in ``hydrate_event``.
-CLUB_EMBED = "clubs(logo_url,club_type,club_page,ig,discord)"
+CLUB_EMBED = "clubs(logo_url,club_type,club_page,ig,discord),cohosts:event_cohosts(id,club_name,logo_url,club_type,club_page,ig,discord)"
 SCHOOL_EMBED = "school_record:schools(slug,timezone)"
 _LIGHTWEIGHT_DATE_COLUMNS = "id,event_id,dtstart_utc,events!inner(id)"
 _LIGHTWEIGHT_DATE_SCAN_CHUNK_SIZE = 250
@@ -291,9 +292,11 @@ def load_events_page(
     for club in clubs or []:
         term = sanitize_postgrest_value(club.strip())
         if term:
-            q = q.ilike("events.club", f"%{term}%")
+            q = q.ilike("events.club_names", f"%{term}%")
     for club_id in club_ids or []:
-        q = q.eq("events.club_id", club_id)
+        q = q.or_(
+            f"club_id.eq.{club_id},cohost_club_ids.cs.{{{club_id}}}", reference_table="events"
+        )
     if registration is not None:
         q = q.eq("events.registration", registration)
     if min_price is not None:

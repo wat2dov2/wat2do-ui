@@ -80,10 +80,16 @@ export async function updateEventAPI(
   eventId: number,
   eventData: EventFormData,
 ): Promise<Event> {
-  const event = await api.patch<ApiEventResponse>(
-    `/events/${eventId}`,
-    buildEventUpdatePayload(eventData),
-  );
+  return patchEvent(eventId, buildEventUpdatePayload(eventData));
+}
+
+/** Admin editorial selection uses the same cache write path as event edits. */
+export async function updateEventFeaturedAPI(eventId: number, featured: boolean): Promise<Event> {
+  return patchEvent(eventId, { featured });
+}
+
+async function patchEvent(eventId: number, payload: ReturnType<typeof buildEventUpdatePayload>): Promise<Event> {
+  const event = await api.patch<ApiEventResponse>(`/events/${eventId}`, payload);
   await writeEventToQueries(event);
   void invalidateEventQueries();
   return event;
@@ -119,7 +125,7 @@ async function writeEventToQueries(event: Event): Promise<void> {
   for (const [key, events] of queryClient.getQueriesData<Event[]>({ queryKey: queryKeys.events.lists() })) {
     if (!events) continue;
     const existing = events.find(item => item.id === event.id);
-    const belongsToClub = key.at(-2) === event.club_id && key.at(-1) === event.school;
+    const belongsToClub = [event.club_id, ...(event.cohosts ?? []).map(club => club.id)].includes(key.at(-2) as number) && key.at(-1) === event.school;
     if (!existing && !belongsToClub) continue;
     const items = events.filter(item => item.id !== event.id);
     if (belongsToClub) items.push(mergeEventSummary(existing, event));

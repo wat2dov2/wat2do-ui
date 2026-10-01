@@ -159,7 +159,7 @@ export function EventsPageContainer({
                       return <PriceFilter key={config.id} minPrice={filters.minPrice} maxPrice={filters.maxPrice} setMinPrice={filters.setMinPrice} setMaxPrice={filters.setMaxPrice} />;
                     case "campusSeasons":
                       return <Fragment key={config.id}>{filters.campusSeasonOptions.map(season => (
-                        <Button key={season.id} variant={filters.campusSeasonIds.includes(season.id) ? "primary" : "outline"} size="sm" onClick={() => filters.toggleCampusSeason(season.id)} aria-pressed={filters.campusSeasonIds.includes(season.id)}>
+                        <Button activation="click" key={season.id} variant={filters.campusSeasonIds.includes(season.id) ? "primary" : "outline"} size="sm" onClick={() => filters.toggleCampusSeason(season.id)} aria-pressed={filters.campusSeasonIds.includes(season.id)}>
                           {season.label}
                         </Button>
                       ))}</Fragment>;
@@ -168,13 +168,14 @@ export function EventsPageContainer({
                     case "minGoing":
                       return <IntegerFilter key={config.id} disabled={eventStats === null} value={filters.minGoing} active={filters.minGoing > 0} onChange={value => filters.setMinGoing(Number(value))} label={`>${t("events.goingCount", { count: filters.minGoing })}`} inputLabel={t("events.minimumGoing")} />;
                     default:
-                      return <Button key={config.id} disabled={config.id === "going" && !goingEventsReady} variant={filters[config.value] ? "primary" : "outline"} size="sm" onClick={() => filters[config.action](!filters[config.value])} aria-pressed={filters[config.value]}>
+                      return <Button activation="click" key={config.id} disabled={config.id === "going" && !goingEventsReady} variant={filters[config.value] ? "primary" : "outline"} size="sm" onClick={() => filters[config.action](!filters[config.value])} aria-pressed={filters[config.value]}>
                         {t(config.labelKey)}
                       </Button>;
                   }
                 })}
                 {filters.categoryOptions.map((category) => (
                   <Button
+                    activation="click"
                     key={category.id}
                     variant={
                       filters.selectedCategories.includes(category.id)

@@ -192,12 +192,15 @@ def _get_candidate_handles(post: dict, fallback_handle: str) -> list[str]:
     seen = set()
     result = []
     for h in handles:
-        h_clean = h.strip().lstrip("@")
+        h_clean = h.strip().lstrip("@").lower()
         if h_clean and h_clean not in seen:
             seen.add(h_clean)
             result.append(h_clean)
 
-    return result
+    # Resolve the post owner first, regardless of which coauthor triggered ingestion.
+    # Remaining candidates have a stable order when the owner is not registered.
+    owner_handle = owner.strip().lstrip("@").lower() if isinstance(owner, str) else ""
+    return sorted(result, key=lambda candidate: (candidate != owner_handle, candidate))
 
 
 def _process_one_post(

@@ -59,6 +59,7 @@ def write_position(
             break
     row = {
         "club_id": resolved_org.club_id,
+        "cohost_club_ids": list(resolved_org.cohost_club_ids),
         "school_id": school.id,
         "title": title[:MAX_POSITION_TITLE_LENGTH],
         "description": description[:MAX_POSITION_DESCRIPTION_LENGTH],

@@ -37,6 +37,7 @@ export const FilterSection = React.memo(function FilterSection({
           </Tooltip>
           {indicator && (
             <Button
+              activation="click"
               variant="primary"
               size="sm"
               onClick={(e) => {
