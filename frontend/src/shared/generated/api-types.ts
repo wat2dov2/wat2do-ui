@@ -2189,12 +2189,12 @@ export interface components {
         EventCreate: {
             /**
              * Competition
-             * @description An event where participants compete for rankings, judging, prizes or a winner, including hackathons, case competitions, contests and tournaments. Practice sessions, ordinary workshops and application announcements alone do not qualify. Use null when competition is unconfirmed.
+             * @description An event where participants compete for rankings, judging, prizes or a winner, including hackathons, case competitions, contests and tournaments. Classify this individual event, not other events mentioned in a shared caption. Practice sessions, ordinary workshops, application announcements, raffles, ticket giveaways, watch parties and award ceremonies without competitive presentations do not qualify. Use null when competition is unconfirmed.
              */
             competition?: boolean | null;
             /**
              * Employers On Campus
-             * @description Employer representatives or recruiters will be physically present on the event's school campus for recruiting, a career fair, an employer information session, or networking. General career workshops, alumni talks without employer recruiting, student-club hiring, online sessions, and off-campus employer events do not qualify. School affiliation alone does not prove an on-campus location.
+             * @description Employer representatives, or professionals and alumni affiliated with a named company, will be physically present on the event's school campus for networking, recruiting, a career fair, or an employer information session. A named company plus an opportunity to network with its people qualifies even without recruiting or job openings. Company-affiliated speaker panels and alumni networking qualify when attendees can connect with those professionals. A company name or sponsorship alone, generic student networking, career workshops without employer participation, student-club hiring, online sessions, and off-campus events do not qualify. Confirm the on-campus location; school affiliation alone does not prove it. Use null when company participation or the on-campus location is unconfirmed.
              */
             employers_on_campus?: boolean | null;
             /**
@@ -2318,12 +2318,12 @@ export interface components {
         EventPublicResponse: {
             /**
              * Competition
-             * @description An event where participants compete for rankings, judging, prizes or a winner, including hackathons, case competitions, contests and tournaments. Practice sessions, ordinary workshops and application announcements alone do not qualify. Use null when competition is unconfirmed.
+             * @description An event where participants compete for rankings, judging, prizes or a winner, including hackathons, case competitions, contests and tournaments. Classify this individual event, not other events mentioned in a shared caption. Practice sessions, ordinary workshops, application announcements, raffles, ticket giveaways, watch parties and award ceremonies without competitive presentations do not qualify. Use null when competition is unconfirmed.
              */
             competition?: boolean | null;
             /**
              * Employers On Campus
-             * @description Employer representatives or recruiters will be physically present on the event's school campus for recruiting, a career fair, an employer information session, or networking. General career workshops, alumni talks without employer recruiting, student-club hiring, online sessions, and off-campus employer events do not qualify. School affiliation alone does not prove an on-campus location.
+             * @description Employer representatives, or professionals and alumni affiliated with a named company, will be physically present on the event's school campus for networking, recruiting, a career fair, or an employer information session. A named company plus an opportunity to network with its people qualifies even without recruiting or job openings. Company-affiliated speaker panels and alumni networking qualify when attendees can connect with those professionals. A company name or sponsorship alone, generic student networking, career workshops without employer participation, student-club hiring, online sessions, and off-campus events do not qualify. Confirm the on-campus location; school affiliation alone does not prove it. Use null when company participation or the on-campus location is unconfirmed.
              */
             employers_on_campus?: boolean | null;
             /**
@@ -2414,12 +2414,12 @@ export interface components {
         EventResponse: {
             /**
              * Competition
-             * @description An event where participants compete for rankings, judging, prizes or a winner, including hackathons, case competitions, contests and tournaments. Practice sessions, ordinary workshops and application announcements alone do not qualify. Use null when competition is unconfirmed.
+             * @description An event where participants compete for rankings, judging, prizes or a winner, including hackathons, case competitions, contests and tournaments. Classify this individual event, not other events mentioned in a shared caption. Practice sessions, ordinary workshops, application announcements, raffles, ticket giveaways, watch parties and award ceremonies without competitive presentations do not qualify. Use null when competition is unconfirmed.
              */
             competition?: boolean | null;
             /**
              * Employers On Campus
-             * @description Employer representatives or recruiters will be physically present on the event's school campus for recruiting, a career fair, an employer information session, or networking. General career workshops, alumni talks without employer recruiting, student-club hiring, online sessions, and off-campus employer events do not qualify. School affiliation alone does not prove an on-campus location.
+             * @description Employer representatives, or professionals and alumni affiliated with a named company, will be physically present on the event's school campus for networking, recruiting, a career fair, or an employer information session. A named company plus an opportunity to network with its people qualifies even without recruiting or job openings. Company-affiliated speaker panels and alumni networking qualify when attendees can connect with those professionals. A company name or sponsorship alone, generic student networking, career workshops without employer participation, student-club hiring, online sessions, and off-campus events do not qualify. Confirm the on-campus location; school affiliation alone does not prove it. Use null when company participation or the on-campus location is unconfirmed.
              */
             employers_on_campus?: boolean | null;
             /**
@@ -2534,12 +2534,12 @@ export interface components {
         EventSummaryResponse: {
             /**
              * Competition
-             * @description An event where participants compete for rankings, judging, prizes or a winner, including hackathons, case competitions, contests and tournaments. Practice sessions, ordinary workshops and application announcements alone do not qualify. Use null when competition is unconfirmed.
+             * @description An event where participants compete for rankings, judging, prizes or a winner, including hackathons, case competitions, contests and tournaments. Classify this individual event, not other events mentioned in a shared caption. Practice sessions, ordinary workshops, application announcements, raffles, ticket giveaways, watch parties and award ceremonies without competitive presentations do not qualify. Use null when competition is unconfirmed.
              */
             competition?: boolean | null;
             /**
              * Employers On Campus
-             * @description Employer representatives or recruiters will be physically present on the event's school campus for recruiting, a career fair, an employer information session, or networking. General career workshops, alumni talks without employer recruiting, student-club hiring, online sessions, and off-campus employer events do not qualify. School affiliation alone does not prove an on-campus location.
+             * @description Employer representatives, or professionals and alumni affiliated with a named company, will be physically present on the event's school campus for networking, recruiting, a career fair, or an employer information session. A named company plus an opportunity to network with its people qualifies even without recruiting or job openings. Company-affiliated speaker panels and alumni networking qualify when attendees can connect with those professionals. A company name or sponsorship alone, generic student networking, career workshops without employer participation, student-club hiring, online sessions, and off-campus events do not qualify. Confirm the on-campus location; school affiliation alone does not prove it. Use null when company participation or the on-campus location is unconfirmed.
              */
             employers_on_campus?: boolean | null;
             /**
@@ -2625,12 +2625,12 @@ export interface components {
         EventUpdate: {
             /**
              * Competition
-             * @description An event where participants compete for rankings, judging, prizes or a winner, including hackathons, case competitions, contests and tournaments. Practice sessions, ordinary workshops and application announcements alone do not qualify. Use null when competition is unconfirmed.
+             * @description An event where participants compete for rankings, judging, prizes or a winner, including hackathons, case competitions, contests and tournaments. Classify this individual event, not other events mentioned in a shared caption. Practice sessions, ordinary workshops, application announcements, raffles, ticket giveaways, watch parties and award ceremonies without competitive presentations do not qualify. Use null when competition is unconfirmed.
              */
             competition?: boolean | null;
             /**
              * Employers On Campus
-             * @description Employer representatives or recruiters will be physically present on the event's school campus for recruiting, a career fair, an employer information session, or networking. General career workshops, alumni talks without employer recruiting, student-club hiring, online sessions, and off-campus employer events do not qualify. School affiliation alone does not prove an on-campus location.
+             * @description Employer representatives, or professionals and alumni affiliated with a named company, will be physically present on the event's school campus for networking, recruiting, a career fair, or an employer information session. A named company plus an opportunity to network with its people qualifies even without recruiting or job openings. Company-affiliated speaker panels and alumni networking qualify when attendees can connect with those professionals. A company name or sponsorship alone, generic student networking, career workshops without employer participation, student-club hiring, online sessions, and off-campus events do not qualify. Confirm the on-campus location; school affiliation alone does not prove it. Use null when company participation or the on-campus location is unconfirmed.
              */
             employers_on_campus?: boolean | null;
             /**

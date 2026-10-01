@@ -223,6 +223,13 @@ def test_extraction_prompt_has_strict_event_and_position_eligibility_gates(monke
     assert "a program reveal" in prompt
     assert "one object per logical event" in prompt
     assert extractor.EVENT_DISCOVERY_RULES in prompt
+    assert "opportunity to network with its people qualifies even without recruiting" in prompt
+    assert "A company name or sponsorship alone" in prompt
+    assert "off-campus events do not qualify" in prompt
+    assert (
+        "Classify this individual event, not other events mentioned in a shared caption" in prompt
+    )
+    assert "raffles, ticket giveaways, watch parties" in prompt
     assert "official school varsity team" in prompt
     assert "Intramural, club-team, and recreational competitions, practices, tryouts" in prompt
     assert "watch parties do not qualify" in prompt
