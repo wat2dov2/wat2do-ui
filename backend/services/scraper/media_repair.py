@@ -146,15 +146,16 @@ def repair_directory_image(target: MediaRepairTarget, *, apply: bool = False) ->
     if config is None:
         report["reason"] = "Source does not match a configured school directory"
         return report
-    path = storage.path_from_url(target.source_image_url or "", BUCKET_EVENT_IMAGES)
-    if path is None:
-        return report
-    original, _content_type = storage.download_file(BUCKET_EVENT_IMAGES, path)
-    with Image.open(BytesIO(original)) as image:
-        report.update(width=image.width, height=image.height)
-        if min(image.size) >= controlbox.scraping.directory_minimum_image_dimension_pixels:
-            report["status"] = "already_sized"
+    if target.source_image_url:
+        path = storage.path_from_url(target.source_image_url, BUCKET_EVENT_IMAGES)
+        if path is None:
             return report
+        original, _content_type = storage.download_file(BUCKET_EVENT_IMAGES, path)
+        with Image.open(BytesIO(original)) as image:
+            report.update(width=image.width, height=image.height)
+            if min(image.size) >= controlbox.scraping.directory_minimum_image_dimension_pixels:
+                report["status"] = "already_sized"
+                return report
     text, candidates = scrape_event_page(target.source_url, config)
     report.update(status="ready", candidate_count=len(candidates), source_available=bool(text))
     if not apply:
@@ -166,10 +167,15 @@ def repair_directory_image(target: MediaRepairTarget, *, apply: bool = False) ->
         )
         if image_url:
             break
+    if image_url is None and target.source_image_url is None:
+        report.update(status="unavailable", reason="Source page has no usable event artwork")
+        return report
     query = get_sb().table(EVENTS).update({"source_image_url": image_url}).eq("id", target.id)
-    query = query.eq("source_image_url", target.source_image_url).eq(
-        "source_url", target.source_url
-    )
+    query = (
+        query.is_("source_image_url", "null")
+        if target.source_image_url is None
+        else query.eq("source_image_url", target.source_image_url)
+    ).eq("source_url", target.source_url)
     updated = query.execute().data
     report["status"] = "updated" if updated else "conflict"
     report["replacement"] = "event_artwork" if image_url else "fallback"

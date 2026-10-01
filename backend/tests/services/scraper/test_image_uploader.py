@@ -236,3 +236,107 @@ def test_oversized_instagram_poster_is_resized_before_stored_size_validation(mon
     with Image.open(BytesIO(upload.call_args.args[1])) as stored:
         assert stored.size == (1080, 540)
     assert len(upload.call_args.args[1]) < 15000
+
+
+def test_directory_image_redirects_validate_each_destination_before_download(monkeypatch):
+    from io import BytesIO
+
+    import httpx
+    from PIL import Image
+
+    artwork = BytesIO()
+    Image.new("RGB", (400, 500), "red").save(artwork, format="JPEG")
+    visited = []
+
+    def respond(request):
+        visited.append(str(request.url))
+        if request.url.host == "wusa.ca":
+            return httpx.Response(302, headers={"location": "https://assets.example:443/event.jpg"})
+        return httpx.Response(
+            200, content=artwork.getvalue(), headers={"content-type": "image/jpeg"}
+        )
+
+    client_class = httpx.Client
+    monkeypatch.setattr(
+        image_uploader.httpx,
+        "Client",
+        lambda **kwargs: client_class(transport=httpx.MockTransport(respond), **kwargs),
+    )
+    monkeypatch.setattr(image_uploader.socket, "getaddrinfo", _mock_addrinfo)
+    upload = MagicMock(return_value="https://wat2do.io/media/event-images/event.jpg")
+    monkeypatch.setattr(image_uploader.storage, "upload_file", upload)
+    assert image_uploader.upload_image_from_url(
+        "https://wusa.ca/poster", bucket=BUCKET_EVENT_IMAGES, allow_all_domains=True
+    )
+    assert visited == ["https://wusa.ca/poster", "https://assets.example/event.jpg"]
+    upload.assert_called_once()
+
+
+def test_image_redirect_to_private_network_is_never_requested(monkeypatch):
+    import httpx
+
+    visited = []
+
+    def respond(request):
+        visited.append(str(request.url))
+        return httpx.Response(302, headers={"location": "https://internal.example/secret"})
+
+    client_class = httpx.Client
+    monkeypatch.setattr(
+        image_uploader.httpx,
+        "Client",
+        lambda **kwargs: client_class(transport=httpx.MockTransport(respond), **kwargs),
+    )
+    monkeypatch.setattr(
+        image_uploader.socket,
+        "getaddrinfo",
+        lambda host, port: (
+            _mock_addrinfo_private(host, port)
+            if host == "internal.example"
+            else _mock_addrinfo(host, port)
+        ),
+    )
+    assert (
+        image_uploader.upload_image_from_url(
+            "https://wusa.ca/poster", bucket=BUCKET_EVENT_IMAGES, allow_all_domains=True
+        )
+        is None
+    )
+    assert visited == ["https://wusa.ca/poster"]
+
+
+def test_instagram_redirect_cannot_escape_host_allowlist_and_cycles_are_bounded(monkeypatch):
+    import httpx
+
+    client_class = httpx.Client
+    monkeypatch.setattr(image_uploader.socket, "getaddrinfo", _mock_addrinfo)
+    for destination, expected_requests in [
+        ("https://outside.example/art.jpg", 1),
+        ("https://scontent.cdninstagram.com/cycle", 3),
+    ]:
+        visited = []
+
+        def respond(request):
+            visited.append(str(request.url))
+            return httpx.Response(302, headers={"location": destination})
+
+        monkeypatch.setattr(
+            image_uploader.httpx,
+            "Client",
+            lambda **kwargs: client_class(
+                transport=httpx.MockTransport(respond), max_redirects=2, **kwargs
+            ),
+        )
+        assert (
+            image_uploader.upload_image_from_url(
+                "https://scontent.cdninstagram.com/poster", bucket=BUCKET_EVENT_IMAGES
+            )
+            is None
+        )
+        assert len(visited) == expected_requests
+
+
+def test_image_urls_allow_explicit_standard_https_port_only():
+    with patch("services.scraper.image_uploader.socket.getaddrinfo", _mock_addrinfo):
+        assert _is_safe_image_url("https://scontent.cdninstagram.com:443/poster.jpg")
+        assert not _is_safe_image_url("https://scontent.cdninstagram.com:444/poster.jpg")
