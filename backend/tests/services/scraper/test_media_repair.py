@@ -290,3 +290,39 @@ def test_instagram_image_repair_preserves_existing_artwork_and_rejects_wrong_pos
         == "unavailable"
     )
     upload.assert_not_called()
+
+
+def test_directory_repair_restores_a_missing_poster_from_event_artwork(
+    target, assets, persistence, monkeypatch
+):
+    from services.scraper import directory_page, image_uploader
+
+    selected = replace(
+        target, school="uwaterloo", source_url="https://wusa.ca/event/lunch", source_image_url=None
+    )
+    monkeypatch.setattr(
+        directory_page,
+        "scrape_event_page",
+        lambda *_: ("Lunch event details", ["https://wusa.ca/lunch-poster.jpg"]),
+    )
+    upload = MagicMock(return_value="https://wat2do.io/media/event-images/lunch.jpg")
+    monkeypatch.setattr(image_uploader, "upload_image_from_url", upload)
+    assert module.repair_directory_image(selected, apply=True)["status"] == "updated"
+    upload.assert_called_once_with(
+        "https://wusa.ca/lunch-poster.jpg", bucket=BUCKET_EVENT_IMAGES, allow_all_domains=True
+    )
+    persistence[1].is_.assert_called_once_with("source_image_url", "null")
+    assets[1].get_object.assert_not_called()
+
+
+def test_directory_without_original_artwork_does_not_write_a_fake_poster(
+    target, persistence, monkeypatch
+):
+    from services.scraper import directory_page
+
+    selected = replace(
+        target, school="uwaterloo", source_url="https://wusa.ca/event/lunch", source_image_url=None
+    )
+    monkeypatch.setattr(directory_page, "scrape_event_page", lambda *_: ("Lunch details", []))
+    assert module.repair_directory_image(selected, apply=True)["status"] == "unavailable"
+    persistence[1].update.assert_not_called()

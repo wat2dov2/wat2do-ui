@@ -12,7 +12,7 @@ import logging
 import socket
 from io import BytesIO
 from typing import Iterable
-from urllib.parse import urlparse
+from urllib.parse import urljoin, urlparse
 
 import httpx
 from PIL import Image
@@ -58,7 +58,7 @@ def _is_safe_image_url(url: str, allow_all_domains: bool = False) -> bool:
     if parsed.scheme != "https" or parsed.username or parsed.password:
         return False
     try:
-        if parsed.port is not None:
+        if parsed.port not in {None, 443}:
             return False
     except ValueError:
         return False
@@ -97,19 +97,32 @@ def upload_image_from_url(
     Failures are logged and never raised; the caller drops that image.
     """
     if not _is_safe_image_url(url, allow_all_domains=allow_all_domains):
-        log.warning("Refusing to fetch image - URL not allowed by safety check: %s", url)
+        log.warning("Refusing to fetch image - URL not allowed by safety check")
         return None
 
     try:
-        # No redirects: a controlled redirect must not bypass the allowlist.
+        # Every redirect is checked before requesting its destination. Automatic
+        # redirects could bypass the host and private-network restrictions.
         with httpx.Client(timeout=_DOWNLOAD_TIMEOUT_SECONDS, follow_redirects=False) as client:
-            resp = client.get(url, headers={"User-Agent": _USER_AGENT})
-        resp.raise_for_status()
+            current_url = url
+            redirects = 0
+            while True:
+                resp = client.get(current_url, headers={"User-Agent": _USER_AGENT})
+                if resp.status_code not in {301, 302, 303, 307, 308}:
+                    resp.raise_for_status()
+                    break
+                location = resp.headers.get("location")
+                if not location or redirects >= client.max_redirects:
+                    raise MediaDownloadError("Image redirect could not be resolved")
+                current_url = urljoin(current_url, location)
+                if not _is_safe_image_url(current_url, allow_all_domains=allow_all_domains):
+                    raise MediaDownloadError("Image redirect destination is not allowed")
+                redirects += 1
     except httpx.HTTPError as e:
-        log.warning("Failed to download image %s: %s", url, e)
+        log.warning("Failed to download image (%s)", type(e).__name__)
         return None
     except Exception as e:
-        log.warning("Unexpected error downloading image %s: %s", url, e)
+        log.warning("Image download failed (%s)", type(e).__name__)
         return None
 
     content_type = resp.headers.get("content-type", "").split(";")[0].strip()
@@ -134,7 +147,7 @@ def upload_image_from_url(
     except Exception as e:
         # ValidationError (unsupported MIME, oversize, decoding failure)
         # falls in here too; we treat all upload failures as soft drops.
-        log.warning("Failed to upload image %s -> bucket: %s", url, e)
+        log.warning("Failed to prepare image for %s (%s)", bucket, type(e).__name__)
         return None
 
 
