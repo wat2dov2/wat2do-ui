@@ -10,6 +10,7 @@ import json
 import logging
 from dataclasses import dataclass, field
 from datetime import date, datetime, time, timezone
+from html import unescape
 from urllib.parse import urldefrag, urljoin, urlparse, urlsplit, urlunsplit
 
 import httpx
@@ -208,6 +209,53 @@ def crawl_directory_links(config: DirectoryConfig, max_pages: int = 5) -> list[s
     return urls[:maximum_urls]
 
 
+def directory_event_host(text: str) -> str | None:
+    """Read the host explicitly identified by the directory page parser."""
+    prefix = "Directory event host: "
+    first_line = text.split("\n", 1)[0]
+    return (
+        first_line.removeprefix(prefix).strip() or None if first_line.startswith(prefix) else None
+    )
+
+
+def _page_host(soup: BeautifulSoup) -> str | None:
+    # CampusGroups exposes the owning group independently of the description.
+    host = soup.select_one('[aria-label^="Hosted By "] strong, .rsvp__event-org button')
+    if host is not None:
+        return host.get_text(" ", strip=True) or None
+
+    # Other directories (including Penn Clubs) render a host label and group link.
+    for label in soup.find_all(
+        string=lambda text: bool(text) and text.strip().casefold().rstrip(":") == "hosted by"
+    ):
+        parent = label.parent
+        if parent is None:
+            continue
+        link = parent.find("a") or (parent.parent.find("a") if parent.parent else None)
+        if link is not None:
+            return link.get_text(" ", strip=True) or None
+
+    def organizer(value: object) -> str | None:
+        if isinstance(value, list):
+            return next((name for item in value if (name := organizer(item))), None)
+        if not isinstance(value, dict):
+            return None
+        types = value.get("@type") or []
+        if "Event" in ([types] if isinstance(types, str) else types):
+            org = value.get("organizer")
+            if isinstance(org, dict) and isinstance(org.get("name"), str):
+                return unescape(org["name"]).strip() or None
+        return next((name for item in value.values() if (name := organizer(item))), None)
+
+    for script in soup.select('script[type="application/ld+json"]'):
+        try:
+            if name := organizer(json.loads(script.get_text())):
+                return name
+        except (TypeError, json.JSONDecodeError):
+            continue
+    return None
+
+
 def scrape_event_page(url: str, config: DirectoryConfig) -> tuple[str, list[str]]:
     """Fetch an event detail page and extract its main content text and image URLs."""
     headers = {"User-Agent": _USER_AGENT}
@@ -235,6 +283,8 @@ def scrape_event_page(url: str, config: DirectoryConfig) -> tuple[str, list[str]
 
     content_lines = [line.strip() for line in content_text.splitlines() if line.strip()]
     cleaned_content = "\n".join(content_lines)
+    if host := _page_host(soup):
+        cleaned_content = f"Directory event host: {host}\n{cleaned_content}"
 
     # Preserve semantic priority. Sorting by URL let loading GIFs and unrelated
     # page chrome become image zero, the default poster chosen by extraction.
@@ -369,7 +419,7 @@ def run_directory_pipeline(
                 image_urls=uploaded_images,
                 post_created_at=None,  # Extractor falls back to "now" in school TZ
                 school=config.school,
-                source_club=config.default_club,
+                source_club=config.default_club if config.default_club_ig else None,
             )
             result.events_extracted += len(extracted_events)
 
@@ -378,6 +428,8 @@ def run_directory_pipeline(
                 continue
 
             for event in extracted_events:
+                if host := directory_event_host(text):
+                    event["club"] = host
                 try:
                     idx = int(event.get("image_index") or 0)
                 except (TypeError, ValueError):
@@ -460,8 +512,14 @@ def run_directory_pipeline(
 
 
 def _resolve_directory_club(event: dict, config: DirectoryConfig) -> ResolvedClub:
-    """Keep a known explicit host, otherwise use the directory publisher."""
+    """Preserve explicit hosts; use the student union only when no host is named."""
     extracted_name = (event.get("club") or "").strip() or None
+    if (
+        config.publisher_club
+        and extracted_name
+        and extracted_name.casefold() == config.publisher_club.casefold()
+    ):
+        extracted_name = None
     resolved = resolve_club_for_scrape(
         ig_handle=None,
         school=config.school,
@@ -474,7 +532,21 @@ def _resolve_directory_club(event: dict, config: DirectoryConfig) -> ResolvedClu
         event["club"] = resolved.club_name or extracted_name or ""
         return resolved
 
+    union_initials = "".join(
+        word[0]
+        for word in config.default_club.split()
+        if word.casefold() not in {"of", "the", "and", "at"}
+    ).casefold()
+    if extracted_name and extracted_name.casefold() not in {
+        config.default_club.casefold(),
+        union_initials,
+    }:
+        # An unknown named host is still the host. Do not attribute its event to the union.
+        return ResolvedClub(club_id=None, club_name=extracted_name, ig_handle=None)
+
     event["club"] = config.default_club
+    if not config.default_club_ig:
+        return ResolvedClub(club_id=None, club_name=config.default_club, ig_handle=None)
     return resolve_club_for_scrape(
         ig_handle=config.default_club_ig,
         school=config.school,

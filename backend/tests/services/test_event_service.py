@@ -1212,3 +1212,24 @@ def test_directory_event_identity_preserves_original_media(model, source, school
     assert event.source_image_url == "https://example.com/original.jpg"
     assert event.club_logo_url == "https://example.com/club.jpg"
     assert "is_directory_event" not in event_query._SUMMARY_COLUMNS
+
+
+@pytest.mark.parametrize("model", [EventSummaryResponse, EventResponse])
+def test_directory_missing_host_picture_uses_union_without_renaming_host(monkeypatch, model):
+    from services import club_service
+
+    lookup = MagicMock(return_value={"logo_url": "https://example.com/union.jpg"})
+    monkeypatch.setattr(club_service, "lookup_club_by_school_and_ig", lookup)
+    row = {
+        "id": 1,
+        "title": "SWAG Study Jam",
+        "club": "Scholars Working Ambitiously to Graduate",
+        "school": "cornell",
+        "source_url": "https://cornell.campusgroups.com/rsvp?id=2313686",
+        "added_at": datetime(2026, 9, 30, tzinfo=timezone.utc),
+        "clubs": {"logo_url": None},
+    }
+    event = event_query.hydrate_event(row, [], model)
+    assert event.club == "Scholars Working Ambitiously to Graduate"
+    assert event.club_logo_url == "https://example.com/union.jpg"
+    lookup.assert_called_once_with("cornell", "cornell_studentassembly")

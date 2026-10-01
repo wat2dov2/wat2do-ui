@@ -162,9 +162,12 @@ def test_extraction_prompt_uses_school_slug(monkeypatch):
     assert "Campus context: University of British Columbia" not in prompt
     assert '"content_type": "event" | "hiring"' in prompt
     assert '"positions": [' in prompt
-    assert "OFFICIAL DIRECTORY PUBLISHER:" in prompt
-    assert "published by Alma Mater Society of UBC" in prompt
-    assert "unless the page explicitly identifies a distinct student club" in prompt
+    assert "OFFICIAL DIRECTORY HOST ATTRIBUTION:" in prompt
+    assert (
+        "fallback student union / student government for this school is Alma Mater Society of UBC"
+        in prompt
+    )
+    assert "Prefer the named hosting club" in prompt
     assert "Never invent a club from an event title" in prompt
 
 

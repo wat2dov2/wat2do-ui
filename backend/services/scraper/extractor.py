@@ -277,9 +277,10 @@ def _build_prompt(
     )
     source_club_rule = (
         f"""
-OFFICIAL DIRECTORY PUBLISHER:
-- This page comes from the official event directory published by {source_club}.
-- Use "{source_club}" as the event club unless the page explicitly identifies a distinct student club as the host or co-host.
+OFFICIAL DIRECTORY HOST ATTRIBUTION:
+- The fallback student union / student government for this school is {source_club}.
+- Prefer the named hosting club in the page’s "Hosted By", "by", organizer, or "Directory event host" field. The directory publisher is not automatically the host.
+- Use "{source_club}" only when the page does not identify a distinct host or co-host.
 - Never invent a club from an event title, series name, campaign, service, venue, vendor, or URL slug.
 """
         if source_club

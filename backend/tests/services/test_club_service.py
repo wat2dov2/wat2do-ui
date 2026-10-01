@@ -569,3 +569,34 @@ def test_club_directory_pages_use_unique_order_for_identical_names(monkeypatch):
     assert [club.id for club in first + second] == [7, 8]
     assert total == 2
     assert [request.url.params["order"] for request in requests] == ["club_name.asc,id.asc"] * 2
+
+
+@pytest.mark.parametrize(
+    "records,expected",
+    [
+        ([{"id": 1, "ig": "Union", "logo_url": "union.jpg"}], 1),
+        ([{"id": 1, "ig": "union"}, {"id": 2, "ig": "union"}], None),
+        ([{"id": 1, "ig": "other"}], None),
+    ],
+)
+def test_school_handle_lookup_rejects_ambiguous_or_different_handles(
+    monkeypatch, records, expected
+):
+    monkeypatch.setattr(club_service.school_service, "get_school_id", lambda _: 99)
+    lookup = MagicMock(return_value=records)
+    monkeypatch.setattr(club_service, "_get_clubs_for_school_lookup", lookup)
+    result = club_service.lookup_club_by_school_and_ig("cornell", "@UNION")
+    assert (result["id"] if result else None) == expected
+    lookup.assert_called_once_with(99)
+
+
+def test_school_lookup_reads_clubs_beyond_first_page(fake_sb, patch_sb):
+    patch_sb("services.club_service")
+    first_page = [
+        {"id": i, "club_name": f"Club {i}", "ig": None} for i in range(club_service.MAX_PAGE_SIZE)
+    ]
+    fake_sb.queue_responses(
+        [first_page, [{"id": 9999, "club_name": "Students Union", "ig": "official_union"}]]
+    )
+    result = club_service.lookup_club_by_school_and_ig("uwaterloo", "official_union")
+    assert result is not None and result["id"] == 9999

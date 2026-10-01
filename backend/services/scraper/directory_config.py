@@ -16,6 +16,7 @@ class DirectoryConfig(BaseModel):
     name: str
     school: str
     default_club: str
+    publisher_club: str | None = None
     default_club_ig: str | None = None
     source_format: Literal["html", "ical", "json"]
     entry_url: str

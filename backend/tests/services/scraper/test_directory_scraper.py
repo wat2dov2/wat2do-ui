@@ -23,6 +23,7 @@ def directory_config(**overrides) -> DirectoryConfig:
         "name": "Test",
         "school": "test-school",
         "default_club": "Test Students' Union",
+        "default_club_ig": "testunion",
         "source_format": "html",
         "entry_url": "https://example.com/events",
         "event_url_patterns": ["/event/"],
@@ -242,7 +243,7 @@ END:VCALENDAR\r
 
 
 @patch("services.scraper.directory_scraper.resolve_club_for_scrape")
-def test_directory_club_falls_back_to_trusted_publisher(mock_resolve):
+def test_directory_club_preserves_an_unknown_explicit_host(mock_resolve):
     mock_resolve.side_effect = [
         ResolvedClub(None, "WUSAThrift", None),
         ResolvedClub(7, "WUSA", None),
@@ -255,9 +256,10 @@ def test_directory_club_falls_back_to_trusted_publisher(mock_resolve):
 
     resolved = _resolve_directory_club(event, config)
 
-    assert event["club"] == "WUSA"
-    assert resolved.club_id == 7
-    assert mock_resolve.call_count == 2
+    assert event["club"] == "WUSAThrift"
+    assert resolved.club_id is None
+    assert resolved.club_name == "WUSAThrift"
+    assert mock_resolve.call_count == 1
 
 
 @patch("services.scraper.directory_scraper.resolve_club_for_scrape")
@@ -492,3 +494,110 @@ def test_directory_configs_use_registered_school_slugs(directory_id, school):
 
     config = next(row for row in directory_configs() if row.id == directory_id)
     assert config.school == school
+
+
+@patch("services.scraper.directory_scraper.httpx.get")
+def test_campusgroups_explicit_host_survives_a_narrow_content_selector(mock_get):
+    response = MagicMock()
+    response.text = """<body><article>Study session</article>
+    <div aria-label="Hosted By Scholars Working Ambitiously to Graduate">
+    <strong>Scholars Working Ambitiously to Graduate</strong></div></body>"""
+    mock_get.return_value = response
+    text, _ = scrape_event_page(
+        "https://cornell.campusgroups.com/swag/rsvp_boot?id=2313686",
+        directory_config(content_selector="article"),
+    )
+    from services.scraper.directory_scraper import directory_event_host
+
+    assert directory_event_host(text) == "Scholars Working Ambitiously to Graduate"
+    assert "Study session" in text
+
+
+@patch("services.scraper.directory_scraper.httpx.get")
+def test_structured_event_organizer_is_separate_from_publisher(mock_get):
+    response = MagicMock()
+    response.text = (
+        '<article>Event</article><script type="application/ld+json">'
+        + json.dumps(
+            {
+                "@graph": [
+                    {"@type": "Organization", "name": "University"},
+                    {"@type": "Event", "organizer": {"name": "Chess Club"}},
+                ]
+            }
+        )
+        + "</script>"
+    )
+    mock_get.return_value = response
+    text, _ = scrape_event_page("https://example.com/event/1", directory_config())
+    assert text.startswith("Directory event host: Chess Club\n")
+
+
+@pytest.mark.parametrize(
+    "school,handle",
+    [
+        ("cornell", "cornell_studentassembly"),
+        ("wlu", "yourstudentsunion"),
+        ("upenn", "pennua"),
+        ("utsg", "uoftsu"),
+    ],
+)
+def test_directory_fallback_is_student_government(school, handle):
+    from services.scraper.directory_config import directory_configs
+
+    config = next(c for c in directory_configs() if c.school == school)
+    assert config.default_club_ig == handle
+
+
+def test_directory_parser_host_overrides_extractor_publisher(monkeypatch):
+    from services.scraper import directory_scraper
+
+    monkeypatch.setattr(
+        directory_scraper,
+        "crawl_directory_links",
+        lambda *_args, **_kwargs: ["https://example.com/event/1"],
+    )
+    monkeypatch.setattr(
+        directory_scraper,
+        "scrape_event_page",
+        lambda *_: ("Directory event host: SWAG\nStudy Jam", []),
+    )
+    event = {"title": "Study Jam", "club": "University"}
+    monkeypatch.setattr(directory_scraper, "extract_events_from_post", lambda **_: [event])
+    # Dry-run performs the same host assignment before any database write.
+    result = run_directory_pipeline(directory_config(), dry_run=True)
+    assert result.events_saved == 1
+    assert event["club"] == "SWAG"
+
+
+@patch("services.scraper.directory_scraper.resolve_club_for_scrape")
+def test_generic_university_publisher_resolves_to_student_union(mock_resolve):
+    mock_resolve.side_effect = [
+        ResolvedClub(None, None, None),
+        ResolvedClub(42, "Student Assembly", "assembly"),
+    ]
+    event = {"club": "Cornell University"}
+    result = _resolve_directory_club(
+        event,
+        directory_config(
+            publisher_club="Cornell University",
+            default_club="Student Assembly",
+            default_club_ig="assembly",
+        ),
+    )
+    assert event["club"] == "Student Assembly"
+    assert result.club_id == 42
+    assert mock_resolve.call_args.kwargs["ig_handle"] == "assembly"
+
+
+@patch("services.scraper.directory_scraper.httpx.get")
+def test_pennclubs_host_link_survives_description_only_extraction(mock_get):
+    response = MagicMock()
+    response.text = '<h2>Hosted by <a href="/club/shpe/">Society of Hispanic Professional Engineers (SHPE)</a></h2><article>Study break</article>'
+    mock_get.return_value = response
+    text, _ = scrape_event_page(
+        "https://pennclubs.com/events/6038", directory_config(content_selector="article")
+    )
+    assert text.startswith(
+        "Directory event host: Society of Hispanic Professional Engineers (SHPE)\n"
+    )

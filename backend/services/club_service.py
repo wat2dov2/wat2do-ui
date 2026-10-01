@@ -11,7 +11,7 @@ from uuid import UUID
 
 from postgrest.exceptions import APIError
 
-from core.constants import DEFAULT_LIST_LIMIT, DEFAULT_PAGE_SIZE
+from core.constants import DEFAULT_LIST_LIMIT, DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE
 from core.controlbox import controlbox
 from core.database import get_sb
 from core.errors import NOT_AUTHORIZED
@@ -80,16 +80,38 @@ def lookup_club_by_school_and_name(school: str, name: str) -> dict | None:
     return school_service.with_school_slug(matches[0])
 
 
+def lookup_club_by_school_and_ig(school: str, handle: str) -> dict | None:
+    """Look up a verified handle within the same cached school directory."""
+    school_id = school_service.get_school_id(school)
+    if school_id is None:
+        return None
+    target = handle.strip().lstrip("@").casefold()
+    matches = [
+        row
+        for row in _get_clubs_for_school_lookup(school_id)
+        if (row.get("ig") or "").strip().lstrip("@").casefold() == target
+    ]
+    return school_service.with_school_slug(matches[0]) if len(matches) == 1 else None
+
+
 @functools.lru_cache(maxsize=16)
 def _get_clubs_for_school_lookup(school_id: int) -> list[dict]:
-    return (
-        get_sb()
-        .table(CLUBS)
-        .select(f"id,club_name,club_type,ig,{school_service.SCHOOL_SLUG_EMBED}")
-        .eq("school_id", school_id)
-        .order("id", desc=False)
-        .execute()
-    ).data or []
+    rows: list[dict] = []
+    offset = 0
+    while True:
+        page = (
+            get_sb()
+            .table(CLUBS)
+            .select(f"id,club_name,club_type,ig,logo_url,{school_service.SCHOOL_SLUG_EMBED}")
+            .eq("school_id", school_id)
+            .order("id", desc=False)
+            .range(offset, offset + MAX_PAGE_SIZE - 1)
+            .execute()
+        ).data or []
+        rows.extend(page)
+        if len(page) < MAX_PAGE_SIZE:
+            return rows
+        offset += len(page)
 
 
 def _fetch_owner_email(user_id: str | None) -> str | None:

@@ -102,13 +102,21 @@ def hydrate_event(row: dict, occurrences: list[OccurrenceResponse], model: type[
         if isinstance(org, dict)
         else {}
     )
+    directory = directory_for_event(row.get("source_url"), row.get("school"))
+    if directory and directory.default_club_ig and not org_fields.get("club_logo_url"):
+        from services import club_service
+
+        fallback = club_service.lookup_club_by_school_and_ig(
+            directory.school, directory.default_club_ig
+        )
+        if fallback:
+            org_fields["club_logo_url"] = fallback.get("logo_url")
     return model.model_validate(
         {
             **row,
             **org_fields,
             "occurrences": occurrences,
-            "is_directory_event": directory_for_event(row.get("source_url"), row.get("school"))
-            is not None,
+            "is_directory_event": directory is not None,
         }
     )
 
