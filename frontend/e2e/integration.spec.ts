@@ -3627,8 +3627,9 @@ test.describe("Events Page", () => {
         { id: 915, title: "Unclassified campus event", price: 0 },
         { id: 916, title: "Intramural basketball match", sports_game: false, price: 0 },
         { id: 917, title: "Varsity basketball tryouts", sports_game: false, price: 0 },
+        { id: 918, title: "Campus pizza with unlisted admission price", price: null },
       ].map(event => ({
-        ...event, location: "Student Centre", food: [911, 912].includes(event.id) ? ["Pizza"] : [], registration: false,
+        ...event, location: "Student Centre", food: [911, 912, 918].includes(event.id) ? ["Pizza"] : [], registration: false,
         category: "Business", school: "uwaterloo", added_at: new Date().toISOString(),
         source_image_url: null,
         occurrences: [{ id: event.id, event_id: event.id, dtstart_utc: startsAt, dtend_utc: null }],
@@ -3641,24 +3642,35 @@ test.describe("Events Page", () => {
     const employers = filters.getByRole("button", { name: "Employers on campus", exact: true });
     const food = filters.getByRole("button", { name: "Free food", exact: true });
     const varsity = filters.getByRole("button", { name: "Varsity games", exact: true });
-    await expect(cards).toHaveCount(7);
+    await expect(cards).toHaveCount(8);
     const initialRequests = feedRequests;
 
     await food.click();
     await expect(food).toHaveAttribute("aria-pressed", "true");
-    await expect(cards).toHaveCount(1);
+    await expect(cards).toHaveCount(2);
+    const shortcutIds = await cards.evaluateAll(elements => elements.map(element => element.getAttribute("data-event-id")));
+    await expect(filters.getByRole("button", { name: "Food", exact: true })).toHaveAttribute("aria-pressed", "true");
+    await expect(filters.getByRole("button", { name: "Free", exact: true })).toBeVisible();
+    await food.click();
+    await expect(cards).toHaveCount(8);
+    await filters.getByRole("button", { name: "Food", exact: true }).click();
+    await filters.getByRole("button", { name: "Any price", exact: true }).click();
+    await page.locator('[data-slot="popover-content"]').getByRole("button", { name: "Free", exact: true }).click();
+    await expect(cards).toHaveCount(2);
+    expect(await cards.evaluateAll(elements => elements.map(element => element.getAttribute("data-event-id")))).toEqual(shortcutIds);
+    await expect(food).toHaveAttribute("aria-pressed", "true");
     await employers.click();
     await expect(cards).toHaveCount(0);
     await expect(varsity).toBeVisible();
     await page.getByRole("button", { name: "Clear filters", exact: true }).click();
-    await expect(cards).toHaveCount(7);
+    await expect(cards).toHaveCount(8);
     await expect(food).toHaveAttribute("aria-pressed", "false");
     await expect(employers).toHaveAttribute("aria-pressed", "false");
     await varsity.click();
     await expect(cards).toHaveCount(1);
     await expect(cards.first()).toContainText("Varsity basketball match");
     await varsity.click();
-    await expect(cards).toHaveCount(7);
+    await expect(cards).toHaveCount(8);
     expect(feedRequests).toBe(initialRequests);
   });
 

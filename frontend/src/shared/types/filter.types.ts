@@ -20,7 +20,6 @@ export interface FilterState {
   clubs: string[];
   hasFood: boolean;
   employersOnCampus: boolean;
-  freeFoodOnCampus: boolean;
   competitions: boolean;
   featured: boolean;
   sportsGame: boolean;

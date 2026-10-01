@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { runInNewContext } from "node:vm";
+import ts from "typescript";
 import { expect, test } from "@playwright/test";
 import type { Event } from "../src/shared/types";
 import type { SchoolSummary } from "../src/shared/api/schools.api";
@@ -115,7 +118,6 @@ function discoveryResults() {
 
 for (const [filter, expected] of [
   ["employersOnCampus", [11]],
-  ["freeFoodOnCampus", [12, 14]],
   ["sportsGame", [13]],
 ] as const) {
   test(`${filter} uses explicit metadata and survives filter handoff and clearing`, () => {
@@ -131,11 +133,11 @@ for (const [filter, expected] of [
   });
 }
 
-test("free food requires free admission and food, and intersects employer/varsity filters", () => {
-  useSearchStore.getState().setFilterState({ ...EMPTY_FILTER_STATE, employersOnCampus: true, freeFoodOnCampus: true });
+test("Food plus Free intersects employer/varsity filters", () => {
+  useSearchStore.getState().setFilterState({ ...EMPTY_FILTER_STATE, employersOnCampus: true, hasFood: true, maxPrice: "0" });
   expect(discoveryResults()).toEqual([]);
-  expect(getFilterCounts(useSearchStore.getState())).toBe(2);
-  useSearchStore.getState().setFilterState({ ...EMPTY_FILTER_STATE, freeFoodOnCampus: true, maxPrice: "0" });
+  expect(getFilterCounts(useSearchStore.getState())).toBe(3);
+  useSearchStore.getState().setFilterState({ ...EMPTY_FILTER_STATE, hasFood: true, maxPrice: "0" });
   expect(discoveryResults()).toEqual([12, 14]);
   useSearchStore.getState().setFilterState({ ...EMPTY_FILTER_STATE, employersOnCampus: true, sportsGame: true });
   expect(discoveryResults()).toEqual([]);
@@ -442,4 +444,58 @@ test("shared quick-filter order puts Featured before Employers and price and sea
   expect(ids.indexOf("featured")).toBe(ids.indexOf("employersOnCampus") - 1);
   expect(ids.slice(ids.indexOf("minGoing"), ids.indexOf("minGoing") + 4))
     .toEqual(["minGoing", "price", "campusSeasons", "competitions"]);
+});
+
+
+test("Free food matches Food plus Free for missing prices and listed food", () => {
+  const candidates = [
+    { ...events[0], id: 201, price: 0 },
+    { ...events[0], id: 202, price: null },
+    { ...events[0], id: 203, price: undefined },
+    { ...events[0], id: 204, price: 5 },
+    { ...events[0], id: 205, price: 0, food: [] },
+    { ...events[0], id: 206, price: null, food: [] },
+    { ...events[0], id: 207, price: -1 },
+  ] as Event[];
+  const results = () => filterEvents(candidates, { ...useSearchStore.getState(), goingEventIds: [], campusSeasonOptions: [] }, () => "America/Toronto").map(event => event.id);
+  const filename = new URL("../src/features/search/hooks/useFilterState.ts", import.meta.url);
+  const { outputText } = ts.transpileModule(readFileSync(filename, "utf8"), {
+    compilerOptions: { module: ts.ModuleKind.CommonJS },
+  });
+  const hooks = { exports: {} as typeof import("../src/features/search/hooks/useFilterState") };
+  runInNewContext(outputText, {
+    exports: hooks.exports,
+    require: (id: string) => {
+      if (id === "react") return {
+        useCallback: (callback: unknown) => callback,
+        startTransition: (callback: () => void) => callback(),
+      };
+      if (id === "zustand/react/shallow") return { useShallow: (selector: unknown) => selector };
+      if (id === "@/features/search/api/filterService") return { storeStatesToFilterState, clearNarrowingFilterState };
+      if (id === "@/features/search/store/search.store") return {
+        useSearchStore: Object.assign((selector: (state: ReturnType<typeof useSearchStore.getState>) => unknown) => selector(useSearchStore.getState()), { getState: useSearchStore.getState }),
+      };
+      throw new Error(`Unexpected module: ${id}`);
+    },
+  });
+  useSearchStore.getState().setFilterState({ ...EMPTY_FILTER_STATE, minPrice: "10", employersOnCampus: true });
+  const beforeRevision = useSearchStore.getState().queryRevision;
+  hooks.exports.useFilterState().setFreeFood(true);
+  expect(useSearchStore.getState().queryRevision).toBe(beforeRevision + 1);
+  expect(useSearchStore.getState()).toMatchObject({ hasFoodFilter: true, minPrice: "", maxPrice: "0", employersOnCampus: true });
+  expect(hooks.exports.useFilterState().freeFood).toBe(true);
+  hooks.exports.useFilterState().setEmployersOnCampus(false);
+  const shortcut = results();
+  useSearchStore.getState().setFilterState({ ...EMPTY_FILTER_STATE, hasFood: true, maxPrice: "0" });
+  expect(shortcut).toEqual(results());
+  expect(shortcut).toEqual([201, 202, 203, 207]);
+  expect(hooks.exports.useFilterState().freeFood).toBe(true);
+  const handoff = storeStatesToFilterState(useSearchStore.getState());
+  expect(handoff).toMatchObject({ hasFood: true, minPrice: "", maxPrice: "0" });
+  expect(handoff).not.toHaveProperty("freeFoodOnCampus");
+  hooks.exports.useFilterState().setMaxPrice("5");
+  expect(hooks.exports.useFilterState().freeFood).toBe(false);
+  hooks.exports.useFilterState().setFreeFood(false);
+  expect(useSearchStore.getState()).toMatchObject({ hasFoodFilter: false, minPrice: "", maxPrice: "" });
+  expect(results()).toHaveLength(candidates.length);
 });

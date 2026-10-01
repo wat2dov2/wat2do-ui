@@ -13,7 +13,6 @@ export function getFilterCounts(filters: {
   selectedClubs: string[];
   hasFoodFilter: boolean;
   employersOnCampus: boolean;
-  freeFoodOnCampus: boolean;
   competitions: boolean;
   featured: boolean;
   sportsGame: boolean;
@@ -34,7 +33,6 @@ export function getFilterCounts(filters: {
     filters.selectedClubs.length +
     (filters.hasFoodFilter ? 1 : 0) +
     (filters.employersOnCampus ? 1 : 0) +
-    (filters.freeFoodOnCampus ? 1 : 0) +
     (filters.competitions ? 1 : 0) +
     (filters.featured ? 1 : 0) +
     (filters.sportsGame ? 1 : 0) +
