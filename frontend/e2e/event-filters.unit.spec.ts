@@ -437,7 +437,9 @@ test("Featured reads Instagram selections from the cached feed and clears withou
 });
 
 
-test("Featured immediately precedes Employers on campus in the shared quick-filter order", () => {
+test("shared quick-filter order puts Featured before Employers and price and seasonal filters after minimum going", () => {
   const ids = getEventQuickFilters().map(filter => filter.id);
   expect(ids.indexOf("featured")).toBe(ids.indexOf("employersOnCampus") - 1);
+  expect(ids.slice(ids.indexOf("minGoing"), ids.indexOf("minGoing") + 4))
+    .toEqual(["minGoing", "price", "campusSeasons", "competitions"]);
 });

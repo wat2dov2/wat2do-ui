@@ -3668,7 +3668,7 @@ test.describe("Events Page", () => {
     const filters = page.getByTestId("event-quick-filter-scroll");
     await expect(filters.getByRole("button", { name: "Going", exact: true })).toBeEnabled();
     const labels = await filters.locator('button').allTextContents();
-    const expected = ["Going", "New", "Featured", "Employers on campus", "Free food", "Any price", "Any day", ">0 going"];
+    const expected = ["Going", "New", "Featured", "Employers on campus", "Free food", "Any day", ">0 going", "Any price", "Competitions"];
     const indices = expected.map(label => labels.indexOf(label));
     expect(indices.every(index => index >= 0)).toBe(true);
     expect(indices).toEqual([...indices].sort((a, b) => a - b));
