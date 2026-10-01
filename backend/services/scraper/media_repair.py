@@ -106,7 +106,7 @@ def repair_stored_image(target: MediaRepairTarget, *, apply: bool = False) -> di
 def repair_directory_image(target: MediaRepairTarget, *, apply: bool = False) -> dict:
     """Refresh a directory poster using event artwork, or clear a verified tiny asset."""
     from services.scraper.directory_config import directory_for_event
-    from services.scraper.directory_scraper import scrape_event_page
+    from services.scraper.directory_page import scrape_event_page
     from services.scraper.image_uploader import upload_image_from_url
 
     report = _report(target, "directory-image", "unavailable")

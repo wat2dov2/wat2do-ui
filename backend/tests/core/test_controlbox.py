@@ -83,7 +83,6 @@ def test_checked_in_controlbox_is_valid() -> None:
     assert controlbox.scraping.instagram_web_app_id == "936619743392459"
     assert controlbox.positions.undated_visibility_months == 4
     assert controlbox.scraping.directory_minimum_image_dimension_pixels == 160
-    assert controlbox.scraping.directory_maximum_events_per_source == 50
     assert controlbox.emulator_farm.maximum_running_nodes == 1
     assert controlbox.emulator_farm.accounts_per_node == 3
     assert controlbox.emulator_farm.check_interval_seconds == 1800

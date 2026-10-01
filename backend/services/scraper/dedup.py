@@ -682,7 +682,7 @@ def existing_shortcodes(shortcodes: set[str]) -> set[str]:
 def existing_urls(urls: set[str]) -> set[str]:
     """Return which of the provided exact URLs already exist on ``events.source_url``.
 
-    Used by the directory scraper pipeline filter stage to prevent N+1 queries.
+    Batch source identity lookup for directory imports.
     """
     if not urls:
         return set()

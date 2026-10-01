@@ -80,7 +80,6 @@ def extract_post_content(
     image_urls: list[str] | None,
     post_created_at: datetime | None,
     school: str,
-    source_club: str | None = None,
     model: str | None = None,
 ) -> ExtractedPostContent:
     """Triage content and extract zero-or-more events and hiring positions.
@@ -95,8 +94,6 @@ def extract_post_content(
             phrases like "tonight"/"tomorrow"). Falls back to "now" in
             the school's local TZ if missing.
         school: school slug (e.g. "uwaterloo").
-        source_club: hosting club from an official directory page, or its student-union fallback.
-            When present, the prompt treats it as the default event host.
         model: vision-capable OpenAI model. Defaults to
             ``settings.openai_extraction_model``.
 
@@ -143,7 +140,6 @@ def extract_post_content(
         post_time=post_local.strftime("%H:%M"),
         semester_line=semester_line,
         categories_str=categories_str,
-        source_club=source_club,
     )
 
     user_content: list[dict] = [{"type": "text", "text": prompt}]
@@ -194,16 +190,14 @@ def extract_events_from_post(
     image_urls: list[str] | None,
     post_created_at: datetime | None,
     school: str,
-    source_club: str | None = None,
     model: str | None = None,
 ) -> list[dict]:
-    """Extract events for event-only consumers such as directory imports."""
+    """Extract events for event-only consumers such as poster scanning."""
     return extract_post_content(
         caption_text=caption_text,
         image_urls=image_urls,
         post_created_at=post_created_at,
         school=school,
-        source_club=source_club,
         model=model,
     ).events
 
@@ -260,7 +254,6 @@ def _build_prompt(
     post_time: str,
     semester_line: str,
     categories_str: str,
-    source_club: str | None,
 ) -> str:
     """Assemble the extraction prompt.
 
@@ -275,17 +268,6 @@ def _build_prompt(
         if description_field
         else "Do not output description. The application attaches the original caption to every extracted item."
     )
-    source_club_rule = (
-        f"""
-OFFICIAL DIRECTORY HOST ATTRIBUTION:
-- The source club context for this event page is "{source_club}". It comes from the page’s named host, or the school’s student-union fallback when no host is identified.
-- Prefer the named hosting club in the page’s "Hosted By", "by", organizer, or "Directory event host" field. The directory publisher is not automatically the host.
-- Use this context when interpreting the event. Explicit event-specific hosts and co-hosts in the source take precedence; extract the appropriate club normally.
-- Never invent a club from an event title, series name, campaign, service, venue, vendor, or URL slug.
-"""
-        if source_club
-        else ""
-    )
 
     return f"""
 Analyze the following Instagram caption and images. First classify the post, then extract every campus event and every open hiring position it clearly advertises.
@@ -293,7 +275,6 @@ Analyze the following Instagram caption and images. First classify the post, the
 Campus context: {school}. Use this only as a fallback for ambiguous location and timezone information.
 Explicit school, club, location, and timezone information in the caption or image takes precedence over campus context.
 Preserve the school and club names printed in the source, including in descriptions. Never rename a host to match campus context or substitute a similarly named club from another school.
-{source_club_rule}
 Current context: Today is {current_day}, {current_date}
 Post was created on: {post_day}, {post_date} at {post_time}
 {semester_line}

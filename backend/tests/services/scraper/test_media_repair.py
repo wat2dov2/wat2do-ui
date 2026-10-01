@@ -228,14 +228,14 @@ def test_loading_target_requires_only_selected_public_media_fields(persistence):
 def test_directory_spinner_is_cleared_only_after_owned_image_validation(
     target, assets, persistence, monkeypatch, apply
 ):
-    from services.scraper import directory_scraper
+    from services.scraper import directory_page
 
     storage, client = assets
     db, query, refresh = persistence
     selected = replace(target, school="uwaterloo", source_url="https://wusa.ca/event/lunch")
     stored_poster(client, width=40)
     monkeypatch.setattr(
-        directory_scraper, "scrape_event_page", lambda url, config: ("Lunch details", [])
+        directory_page, "scrape_event_page", lambda url, config: ("Lunch details", [])
     )
     result = module.repair_directory_image(selected, apply=apply)
     assert result["width"] == 40

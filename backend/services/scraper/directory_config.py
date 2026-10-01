@@ -1,4 +1,4 @@
-"""Directory identity shared by scraping, media repair and event presentation."""
+"""Directory identity shared by scheduled imports, media repair and event presentation."""
 
 import json
 from functools import lru_cache
@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 
 
 class DirectoryConfig(BaseModel):
-    """Configuration schema for a directory scraper target."""
+    """Official directory source identity and page metadata."""
 
     id: str
     name: str

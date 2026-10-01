@@ -377,7 +377,7 @@ Record the directory home URL, platform, pagination method, estimated club count
 
 Separately identify the official event directory used to seed or supplement the event feed.
 
-Do not confuse an club directory with the event-directory scraper configured in `backend/services/scraper/urls/directories.json`.
+Do not confuse a club directory with the scheduled event-directory prompt sources configured in `backend/services/scraper/urls/directories.json`.
 
 ### 9.2 Inspect the site before choosing a scraper
 

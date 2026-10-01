@@ -882,21 +882,14 @@ Each workflow authenticates through GitHub OIDC, reads only its required values 
 
 Do not provision a separate ECS jobs task definition, task role, or CloudWatch log group.
 
-### 18.2 Daily directory scrape
+### 18.2 Daily directory events
 
-Keep `.github/workflows/daily-directory-scrape.yml` on a GitHub-hosted runner.
-
-Run it daily at 08:00 UTC and retain manual dispatch with max-pages and dry-run inputs.
-
-Run:
-
-```text
-python jobs/scrape_directories.py
-```
-
-Use workflow concurrency, a maximum runtime, and an always-uploaded log artifact.
-
-Authenticate through GitHub OIDC and read the existing runtime secret from Secrets Manager.
+Directory event ingestion now runs as a local Codex scheduled prompt, daily at 04:00 America/Toronto.
+The prompt uses the signed-in ChatGPT plan and the source inventory in `backend/services/scraper/urls/directories.json`.
+It identifies the actual hosting club from each official event page and uses existing database services for deduplication, validated writes, and readback.
+The computer must remain on with Codex running.
+The GitHub workflow and API-backed directory runner have been removed to keep one ingestion path.
+Instagram ingestion retains its existing extraction pipeline.
 
 ### 18.3 Notification dispatcher
 
@@ -1106,7 +1099,6 @@ Expected new files:
 Expected modified files:
 
 - `.github/workflows/ci-cd.yml`
-- `.github/workflows/daily-directory-scrape.yml`
 - `.github/workflows/daily-new-events-email.yml`
 - `.github/workflows/nightly-recs.yml`
 - `.github/workflows/process-single-user.yml`

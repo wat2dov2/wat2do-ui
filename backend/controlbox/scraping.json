@@ -8,7 +8,6 @@
   "location_similarity_threshold": 0.5,
   "description_similarity_threshold": 0.3,
   "directory_minimum_image_dimension_pixels": 160,
-  "directory_maximum_events_per_source": 50,
   "maximum_candidates": 10,
   "maximum_cross_club_candidates": 3
 }
