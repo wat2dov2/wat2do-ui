@@ -87,6 +87,7 @@ export function DateFilterSelect({
     <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
         <Button
+          activation="click"
           type="button"
           size="sm"
           variant={active ? "primary" : "outline"}
@@ -117,6 +118,7 @@ export function DateFilterSelect({
           <div role="listbox" aria-label={t("events.dateFilter.label")}>
             {DATE_FILTER_OPTIONS.map((option) => (
               <Button
+                activation="click"
                 key={option}
                 type="button"
                 role="option"

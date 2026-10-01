@@ -60,6 +60,7 @@ export function PositionsPage({
           />
           {POSITION_TYPES.map((positionType) => (
             <Button
+              activation="click"
               key={positionType}
               size="sm"
               variant={positionsPage.positionType === positionType ? "primary" : "outline"}

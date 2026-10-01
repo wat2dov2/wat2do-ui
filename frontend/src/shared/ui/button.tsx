@@ -1,9 +1,12 @@
+"use client"
+
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { cva, type VariantProps } from "class-variance-authority"
 
 import { Check } from "@/shared/ui/doodle-icons"
 import { cn } from "@/shared/lib/utils"
+import { createAdaptivePressHandlers } from "@/shared/hooks/useMouseDownPress"
 
 const OUTLINE_CONTROL_STYLES =
   "border border-border/60 bg-background text-foreground hover:bg-surface-hover active:bg-surface-active dark:border-secondary dark:bg-secondary dark:text-secondary-foreground dark:hover:bg-secondary-hover dark:active:bg-secondary-active"
@@ -57,6 +60,8 @@ const Button = React.forwardRef<
   React.ComponentProps<"button"> &
     VariantProps<typeof buttonVariants> & {
       asChild?: boolean
+      /** Filters retain native click activation. */
+      activation?: "press" | "click"
       /**
        * Marks a toggleable button as "on": applies the selected styling for the
        * variant, exposes `aria-pressed`, and appends a check glyph on sizes that
@@ -72,6 +77,7 @@ const Button = React.forwardRef<
       variant,
       size,
       asChild = false,
+      activation = "press",
       selected,
       children,
       onClick,
@@ -85,6 +91,16 @@ const Button = React.forwardRef<
     ref,
   ) => {
     const Comp = asChild ? Slot : "button"
+    // Slotted links, form submission, and disclosure triggers keep their native
+    // event ownership. Ordinary actions use the existing adaptive press path.
+    const pressHandlers = activation === "click" || asChild || type !== "button" || onMouseDown || onPointerDown
+      ? { onClick, onMouseDown }
+      : createAdaptivePressHandlers({
+          disabled,
+          onClick: onClick
+            ? event => onClick(event as React.MouseEvent<HTMLButtonElement>)
+            : undefined,
+        })
     const showSelectedCheck =
       Boolean(selected) && !asChild && !ICON_ONLY_SIZES.has(size ?? "default")
     // A ghost button has no fill, so it has nothing to raise off the page and
@@ -102,8 +118,7 @@ const Button = React.forwardRef<
         type={asChild ? undefined : type}
         disabled={disabled}
         className={cn(buttonVariants({ variant, size, className }))}
-        onClick={onClick}
-        onMouseDown={onMouseDown}
+        {...pressHandlers}
         onPointerDown={onPointerDown}
         {...props}
       >

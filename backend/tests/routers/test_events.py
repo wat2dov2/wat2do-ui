@@ -739,3 +739,21 @@ def test_patch_event_rejects_non_boolean_discovery_metadata(admin_client, monkey
     response = admin_client.patch("/events/1", json={"sports_game": "true"})
     assert response.status_code == 422
     update.assert_not_called()
+
+
+def test_event_owner_cannot_feature_their_own_event(authenticated_client, monkeypatch):
+    update = MagicMock()
+    monkeypatch.setattr(event_service, "update_event", update)
+    response = authenticated_client.patch("/events/1", json={"featured": True})
+    assert response.status_code == 403
+    update.assert_not_called()
+
+
+def test_admin_can_select_featured_event(admin_client, monkeypatch):
+    monkeypatch.setattr(event_service, "get_event", lambda _: _mock_event())
+    update = MagicMock(return_value=_update_result(_mock_event(featured=True)))
+    monkeypatch.setattr(event_service, "update_event", update)
+    response = admin_client.patch("/events/1", json={"featured": True})
+    assert response.status_code == 200
+    assert response.json()["featured"] is True
+    assert update.call_args.args[1].featured is True

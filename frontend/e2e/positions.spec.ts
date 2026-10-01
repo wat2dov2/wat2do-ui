@@ -11,6 +11,7 @@ const MOCK_POSITION_IMAGE =
 const MOCK_POSITIONS = [
   {
     id: 1,
+    cohosts: [{ id: 7, club_name: "UW Operations Club", logo_url: null, ig: "uwoperations" }],
     club_id: 4,
     title: "Design Lead",
     description: "Lead the visual direction for student campaigns.",
@@ -241,6 +242,47 @@ test.describe("Positions UI", () => {
       expect(Math.abs(textBox.y + textBox.height / 2 - badgeBox.y - badgeBox.height / 2)).toBeLessThan(1);
       await expect(latest).toHaveCSS("border-bottom-width", "0px");
     }
+  });
+
+  test("shared club badges overlap logos and keep the extra-club count visible", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/positions");
+    const card = page.getByRole("button", { name: "View Design Lead position details" });
+    const badge = card.locator('[data-slot="club-badge"]');
+    await expect(badge.locator('[data-slot="avatar-stack"] > div')).toHaveCount(2);
+    const count = badge.locator('[data-slot="club-cohost-count"]');
+    await expect(count).toHaveText("+1");
+    const badgeBox = (await badge.boundingBox())!;
+    const countBox = (await count.boundingBox())!;
+    expect(countBox.x + countBox.width).toBeLessThanOrEqual(badgeBox.x + badgeBox.width);
+    await badge.click();
+    await expect(page.getByRole("menuitem", { name: /UW Operations Club/ })).toBeVisible();
+  });
+
+  test("keeps filters click-based and navigates more positions on mouse down", async ({ page }) => {
+    await page.goto("/positions");
+    const paid = page.getByRole("button", { name: "Paid", exact: true });
+    await paid.hover();
+    await page.mouse.down();
+    await expect(paid).toHaveAttribute("aria-pressed", "false");
+    await expect(page.getByRole("heading", { name: "2 positions", exact: true })).toBeVisible();
+    await page.mouse.up();
+    await expect(paid).toHaveAttribute("aria-pressed", "true");
+    await paid.click();
+
+    await page.getByRole("button", { name: "View Design Lead position details" }).click();
+    const drawer = page.getByRole("dialog");
+    await expect(drawer.getByRole("heading", { name: "More positions", exact: true })).toBeVisible();
+    await expect(drawer.getByRole("button", { name: "View Design Lead position details" })).toHaveCount(0);
+    await drawer.getByRole("button", { name: "View Operations Assistant position details" }).click();
+    await expect(drawer.getByRole("heading", { name: "Operations Assistant", exact: true })).toBeVisible();
+    await expect(drawer.getByRole("button", { name: "View Design Lead position details" })).toBeVisible();
+
+    await drawer.getByRole("button", { name: "Previous", exact: true }).hover();
+    await page.mouse.down();
+    await expect(drawer.getByRole("heading", { name: "Design Lead", exact: true })).toBeVisible();
+    await page.mouse.up();
+    await expect(drawer.getByRole("heading", { name: "Design Lead", exact: true })).toBeVisible();
   });
 
   test("changes position type from the cached directory without loading or requests", async ({ page }) => {

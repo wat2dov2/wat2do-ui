@@ -296,3 +296,15 @@ class ClubMemberResponse(BaseModel):
 
 class ClubMemberAdd(BaseModel):
     email: str
+
+
+class ClubCohostResponse(BaseModel):
+    """An additional existing club sharing an event or position."""
+
+    id: int
+    club_name: str
+    logo_url: str | None = None
+    club_type: ClubTypeValue | None = None
+    club_page: str | None = None
+    ig: str | None = None
+    discord: str | None = None

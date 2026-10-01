@@ -21,6 +21,8 @@ export interface FilterState {
   hasFood: boolean;
   employersOnCampus: boolean;
   freeFoodOnCampus: boolean;
+  competitions: boolean;
+  featured: boolean;
   sportsGame: boolean;
   campusSeasonIds: string[];
   going: boolean;

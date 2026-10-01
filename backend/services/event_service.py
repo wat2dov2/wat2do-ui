@@ -320,6 +320,8 @@ def update_event(event_id: int, data: EventUpdate) -> EventUpdateResult | None:
         resolved_school = club_fields.pop("school")
         school = str(resolved_school) if resolved_school else None
         payload.update(club_fields)
+        if school != existing.school:
+            payload["cohost_club_ids"] = []
         if school != existing.school and "campus_season_ids" not in payload:
             payload["campus_season_ids"] = None
     if "campus_season_ids" in payload:

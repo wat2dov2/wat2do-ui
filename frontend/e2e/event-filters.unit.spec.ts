@@ -393,3 +393,29 @@ test("empty seasonal filters wait for the complete feed and hide options with no
   expect(resolveCampusSeasonFilters(school, now, "en", [], [matching]).options).toHaveLength(1);
   expect(resolveCampusSeasonFilters(school, now, "en", [], [{ ...matching, cancelled: true }]).options).toEqual([]);
 });
+
+
+test("Competitions and Featured intersect, survive handoff, and clear together", () => {
+  const candidates = [
+    { ...events[0], id: 90, competition: true, featured: true },
+    { ...events[0], id: 91, competition: true, featured: false },
+    { ...events[0], id: 92, competition: null, featured: true },
+  ];
+  useSearchStore.getState().setFilterState({ ...EMPTY_FILTER_STATE, competitions: true, featured: true });
+  const state = useSearchStore.getState();
+  const options = { ...state, goingEventIds: [], campusSeasonOptions: [] };
+  expect(filterEvents(candidates, options, () => "America/Toronto", {}).map(event => event.id)).toEqual([90]);
+  expect(getFilterCounts(state)).toBe(2);
+  const handoff = storeStatesToFilterState(state);
+  expect(normalizeFilterState(handoff)).toMatchObject({ competitions: true, featured: true });
+  expect(getEventQuickFilters().map(filter => filter.id)).toEqual(expect.arrayContaining(["competitions", "featured"]));
+  useSearchStore.getState().clearAllFilters();
+  expect(getFilterCounts(useSearchStore.getState())).toBe(0);
+});
+
+test("cohost names and Instagram handles match cached event search and club filters", () => {
+  const shared = { ...events[0], cohosts: [{ id: 9, club_name: "Campus Makers", ig: "campusmakers" }] };
+  const options = { ...useSearchStore.getState(), goingEventIds: [], campusSeasonOptions: [] };
+  expect(filterEvents([shared], { ...options, searchQuery: "@campusmakers" }, () => "America/Toronto", {})).toHaveLength(1);
+  expect(filterEvents([shared], { ...options, selectedClubs: ["Campus Makers"] }, () => "America/Toronto", {})).toHaveLength(1);
+});

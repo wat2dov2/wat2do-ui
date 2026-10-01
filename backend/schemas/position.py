@@ -20,7 +20,7 @@ from core.constants.positions import (
 )
 from core.constants.validation import MAX_URL_LENGTH
 from core.pagination import LatestAddedItem, PaginatedResponse
-from schemas.club import ClubTypeValue
+from schemas.club import ClubCohostResponse, ClubTypeValue
 
 PositionType = Literal[
     "executive",
@@ -85,6 +85,7 @@ class PositionResponse(PositionFields):
     added_at: datetime
     club_name: str
     club_logo_url: str | None = None
+    cohosts: list[ClubCohostResponse] = Field(default_factory=list)
     club_type: ClubTypeValue | None = None
     club_page: str | None = None
     club_ig: str | None = None

@@ -12,6 +12,7 @@ export function NewlyAddedFilterButton({ value, onValueChange, onClear }: NewlyA
   const { t } = useTranslation();
   return (
     <Button
+      activation="click"
       type="button"
       size="sm"
       variant={value ? "primary" : "outline"}

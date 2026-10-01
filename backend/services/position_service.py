@@ -18,6 +18,7 @@ from services import interaction_service, school_service
 
 _POSITION_COMPUTED_FIELDS = {
     "club_name",
+    "cohosts",
     "club_logo_url",
     "club_type",
     "club_page",
@@ -30,7 +31,7 @@ _POSITION_COLUMNS = ",".join(
 )
 _POSITION_SELECT = (
     f"{_POSITION_COLUMNS},clubs(club_name,logo_url,club_type,club_page,ig,discord),"
-    f"{school_service.SCHOOL_SLUG_EMBED}"
+    f"{school_service.SCHOOL_SLUG_EMBED},cohosts:position_cohosts(id,club_name,logo_url,club_type,club_page,ig,discord)"
 )
 
 
@@ -90,7 +91,7 @@ def list_positions(
     if paid_only:
         query = query.eq("is_paid", True)
     if club_id is not None:
-        query = query.eq("club_id", club_id)
+        query = query.or_(f"club_id.eq.{club_id},cohost_club_ids.cs.{{{club_id}}}")
     if search:
         term = sanitize_postgrest_value(search)
         if term:
@@ -128,13 +129,22 @@ def get_club_position_counts(
 
     counts = {club_id: 0 for club_id in club_ids}
     response = _apply_open_filter(
-        get_sb().table(POSITIONS).select("club_id").in_("club_id", club_ids)
+        get_sb()
+        .table(POSITIONS)
+        .select("club_id,cohost_club_ids")
+        .or_(
+            "club_id.in.("
+            + ",".join(map(str, club_ids))
+            + "),cohost_club_ids.ov.{"
+            + ",".join(map(str, club_ids))
+            + "}"
+        )
     ).execute()
 
     for row in response.data or []:
-        club_id = row.get("club_id")
-        if club_id in counts:
-            counts[club_id] += 1
+        for club_id in {row.get("club_id"), *(row.get("cohost_club_ids") or [])}:
+            if club_id in counts:
+                counts[club_id] += 1
 
     return counts
 

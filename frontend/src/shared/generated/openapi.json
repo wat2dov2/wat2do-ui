@@ -7552,6 +7552,81 @@
         ],
         "title": "ClubClaimUpdate"
       },
+      "ClubCohostResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "club_name": {
+            "type": "string",
+            "title": "Club Name"
+          },
+          "logo_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Logo Url"
+          },
+          "club_type": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Club Type"
+          },
+          "club_page": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Club Page"
+          },
+          "ig": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ig"
+          },
+          "discord": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Discord"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "club_name"
+        ],
+        "title": "ClubCohostResponse",
+        "description": "An additional existing club sharing an event or position."
+      },
       "ClubCreate": {
         "properties": {
           "club_name": {
@@ -8389,6 +8464,18 @@
       },
       "EventCreate": {
         "properties": {
+          "competition": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Competition",
+            "description": "An event where participants compete for rankings, judging, prizes or a winner, including hackathons, case competitions, contests and tournaments. Practice sessions, ordinary workshops and application announcements alone do not qualify. Use null when competition is unconfirmed."
+          },
           "employers_on_campus": {
             "anyOf": [
               {
@@ -8691,6 +8778,18 @@
       },
       "EventPublicResponse": {
         "properties": {
+          "competition": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Competition",
+            "description": "An event where participants compete for rankings, judging, prizes or a winner, including hackathons, case competitions, contests and tournaments. Practice sessions, ordinary workshops and application announcements alone do not qualify. Use null when competition is unconfirmed."
+          },
           "employers_on_campus": {
             "anyOf": [
               {
@@ -8840,6 +8939,18 @@
               }
             ],
             "title": "Club Logo Url"
+          },
+          "cohosts": {
+            "items": {
+              "$ref": "#/components/schemas/ClubCohostResponse"
+            },
+            "type": "array",
+            "title": "Cohosts"
+          },
+          "featured": {
+            "type": "boolean",
+            "title": "Featured",
+            "default": false
           },
           "is_directory_event": {
             "type": "boolean",
@@ -8935,6 +9046,18 @@
       },
       "EventResponse": {
         "properties": {
+          "competition": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Competition",
+            "description": "An event where participants compete for rankings, judging, prizes or a winner, including hackathons, case competitions, contests and tournaments. Practice sessions, ordinary workshops and application announcements alone do not qualify. Use null when competition is unconfirmed."
+          },
           "employers_on_campus": {
             "anyOf": [
               {
@@ -9084,6 +9207,18 @@
               }
             ],
             "title": "Club Logo Url"
+          },
+          "cohosts": {
+            "items": {
+              "$ref": "#/components/schemas/ClubCohostResponse"
+            },
+            "type": "array",
+            "title": "Cohosts"
+          },
+          "featured": {
+            "type": "boolean",
+            "title": "Featured",
+            "default": false
           },
           "is_directory_event": {
             "type": "boolean",
@@ -9207,6 +9342,18 @@
       },
       "EventSummaryResponse": {
         "properties": {
+          "competition": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Competition",
+            "description": "An event where participants compete for rankings, judging, prizes or a winner, including hackathons, case competitions, contests and tournaments. Practice sessions, ordinary workshops and application announcements alone do not qualify. Use null when competition is unconfirmed."
+          },
           "employers_on_campus": {
             "anyOf": [
               {
@@ -9390,6 +9537,18 @@
             ],
             "title": "Club Logo Url"
           },
+          "cohosts": {
+            "items": {
+              "$ref": "#/components/schemas/ClubCohostResponse"
+            },
+            "type": "array",
+            "title": "Cohosts"
+          },
+          "featured": {
+            "type": "boolean",
+            "title": "Featured",
+            "default": false
+          },
           "is_directory_event": {
             "type": "boolean",
             "title": "Is Directory Event",
@@ -9484,6 +9643,18 @@
       },
       "EventUpdate": {
         "properties": {
+          "competition": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Competition",
+            "description": "An event where participants compete for rankings, judging, prizes or a winner, including hackathons, case competitions, contests and tournaments. Practice sessions, ordinary workshops and application announcements alone do not qualify. Use null when competition is unconfirmed."
+          },
           "employers_on_campus": {
             "anyOf": [
               {
@@ -9522,6 +9693,17 @@
             ],
             "title": "Campus Season Ids",
             "description": "School-configured campus season IDs established by the event's theme or purpose. Null means unreviewed or uncertain; an empty array means reviewed with no matching season. Display windows control filter visibility, not classification. Event dates alone do not prove thematic membership."
+          },
+          "featured": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Featured"
           },
           "title": {
             "anyOf": [
@@ -11843,6 +12025,13 @@
               }
             ],
             "title": "Club Logo Url"
+          },
+          "cohosts": {
+            "items": {
+              "$ref": "#/components/schemas/ClubCohostResponse"
+            },
+            "type": "array",
+            "title": "Cohosts"
           },
           "club_type": {
             "anyOf": [

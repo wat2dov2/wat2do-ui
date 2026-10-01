@@ -21,7 +21,7 @@ export function IntegerFilter({ value, active, disabled = false, onChange, label
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild disabled={disabled}>
-        <Button disabled={disabled} size="sm" variant={active ? "primary" : "outline"} aria-pressed={active} aria-expanded={open}>
+        <Button activation="click" disabled={disabled} size="sm" variant={active ? "primary" : "outline"} aria-pressed={active} aria-expanded={open}>
           {label}
           <ChevronDown aria-hidden="true" />
         </Button>

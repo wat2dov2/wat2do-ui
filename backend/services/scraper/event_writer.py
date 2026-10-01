@@ -126,6 +126,7 @@ def write_event(
         "source_video_url": (event.get("source_video_url") or None),
         "source_url": source_url or None,
         "club_id": resolved_org.club_id,
+        "cohost_club_ids": list(resolved_org.cohost_club_ids),
         "school_id": school.id,
         "category": category,
         "club": club_name[:MAX_EVENT_CLUB_LENGTH],
@@ -406,6 +407,13 @@ def _occurrence_signature(occurrence) -> tuple:
 def _merge_overwrite_payload(incoming: dict, old_event) -> dict:
     """Apply newer supplied evidence without erasing older absent fields."""
     merged = dict(incoming)
+    merged["cohost_club_ids"] = sorted(
+        set(
+            incoming.get("cohost_club_ids", [])
+            + [club.id for club in getattr(old_event, "cohosts", [])]
+        )
+        - {incoming.get("club_id")}
+    )
 
     for field in (
         *EventDiscoveryFields.model_fields,

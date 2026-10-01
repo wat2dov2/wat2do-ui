@@ -1,6 +1,7 @@
 import { Section, Stack } from "@/shared/layout";
 import { Badge } from "@/shared/ui/badge";
 import { AvatarStack } from "@/shared/ui/avatar-stack";
+import { ClubBadgeDropdown } from "@/features/clubs";
 import { ClubTypeIcon } from "@/shared/components/ClubTypeIcon";
 import { ClubCategoryBadge } from "@/shared/components/ClubCategoryBadge";
 import { CLUB_CATEGORY_STYLE_SLUGS } from "@/shared/data/clubCategoryStyles";
@@ -36,6 +37,9 @@ export function BadgesSection() {
             overflowCount={3}
             overflowLabel="3 more people"
           />
+        </ShowcaseBlock>
+        <ShowcaseBlock label="Shared club badge with a fixed cohost count">
+          <ClubBadgeDropdown disabled clubName="University Campus Community Club" cohosts={[{ id: 2, club_name: "Second Club", logo_url: null }]} />
         </ShowcaseBlock>
         <ShowcaseBlock label="Variants">
           <Stack direction="horizontal" gap={2} align="center" className="flex-wrap">

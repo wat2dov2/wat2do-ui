@@ -371,3 +371,11 @@ def test_declared_carousel_without_children_never_uses_its_root_video(monkeypatc
     )
     assert items[0]["source_video_url"] is None
     upload.assert_not_called()
+
+
+def test_coauthor_notification_does_not_change_canonical_primary_account():
+    from services.scraper.pipeline import _get_candidate_handles
+
+    post = {"ownerUsername": "OWNER", "coauthors": ["cohost", "owner", "other"]}
+    assert _get_candidate_handles(post, "cohost") == _get_candidate_handles(post, "other")
+    assert _get_candidate_handles(post, "cohost")[0] == "owner"

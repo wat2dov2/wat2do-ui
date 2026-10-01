@@ -70,3 +70,24 @@ def test_resolve_directory_miss_leaves_org_null(monkeypatch):
     assert result.club_id is None
     assert result.club_name == "Noisy Directory Name"
     assert result.ig_handle is None
+
+
+def test_cohosts_include_only_unique_existing_clubs_at_target_school(monkeypatch):
+    known = {
+        "owner": {"id": 7, "club_name": "Owner", "schools": {"slug": "uwaterloo"}},
+        "cohost": {"id": 9, "club_name": "Cohost", "schools": {"slug": "uwaterloo"}},
+        "other": {"id": 11, "club_name": "Other", "schools": {"slug": "ubc"}},
+    }
+    monkeypatch.setattr(org_resolve.event_writer_mod, "_lookup_club_by_ig", known.get)
+    monkeypatch.setattr(
+        org_resolve.event_writer_mod,
+        "_ensure_club_by_ig",
+        lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("must not create cohosts")),
+    )
+    result = resolve_club_for_scrape(
+        ig_handle=["@OWNER", "cohost", "cohost", "unknown", "other"],
+        school="uwaterloo",
+        club_name=None,
+    )
+    assert result.club_id == 7
+    assert result.cohost_club_ids == (9,)

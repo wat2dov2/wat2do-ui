@@ -30,6 +30,7 @@ export function MultiSelect({
           const isSelected = selected.includes(value);
           return (
             <Button
+              activation="click"
               key={value}
               type="button"
               size="sm"
