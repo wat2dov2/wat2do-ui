@@ -19,7 +19,7 @@ from PIL import Image
 
 from core.constants import BUCKET_EVENT_IMAGES, BUCKET_EVENT_VIDEOS
 from core.controlbox import controlbox
-from services.storage_service import storage
+from services.storage_service import prepare_image_rendition, storage
 
 log = logging.getLogger(__name__)
 
@@ -122,11 +122,14 @@ def upload_image_from_url(
                 if min(image.size) < controlbox.scraping.directory_minimum_image_dimension_pixels:
                     log.info("Dropping undersized directory image")
                     return None
-        prepared, prepared_content_type = storage.validate_and_prepare(
-            bucket,
-            resp.content,
-            content_type,
-        )
+        data = resp.content
+        if bucket == BUCKET_EVENT_IMAGES and len(data) > storage.get_file_size_limit(bucket):
+            data = prepare_image_rendition(
+                data,
+                content_type,
+                max_width=controlbox.uploads.event_image_rendition_width_pixels,
+            )
+        prepared, prepared_content_type = storage.validate_and_prepare(bucket, data, content_type)
         return storage.upload_file(bucket, prepared, content_type=prepared_content_type)
     except Exception as e:
         # ValidationError (unsupported MIME, oversize, decoding failure)

@@ -248,3 +248,45 @@ def test_directory_spinner_is_cleared_only_after_owned_image_validation(
     else:
         query.update.assert_not_called()
         refresh.assert_not_called()
+
+
+def test_missing_instagram_image_uses_exact_post_cover_and_conditional_write(
+    target, persistence, monkeypatch
+):
+    target = replace(target, source_image_url=None)
+    upload = MagicMock(return_value="https://wat2do.io/media/event-images/new.jpg")
+    monkeypatch.setattr(module, "upload_image_from_url", upload)
+    post = {
+        "url": target.source_url,
+        "displayUrl": "https://scontent.cdninstagram.com/poster.jpg?secret=hidden",
+    }
+    preview = module.repair_instagram_image(target, post)
+    assert preview["status"] == "ready"
+    assert "secret" not in str(preview)
+    upload.assert_not_called()
+    result = module.repair_instagram_image(target, post, apply=True)
+    assert result["status"] == "updated"
+    persistence[1].is_.assert_called_once_with("source_image_url", "null")
+    assert ("source_url", target.source_url) in [
+        call.args for call in persistence[1].eq.call_args_list
+    ]
+    persistence[2].assert_called_once_with("uwaterloo", resources=("events",))
+
+
+def test_instagram_image_repair_preserves_existing_artwork_and_rejects_wrong_post(
+    target, monkeypatch
+):
+    upload = MagicMock()
+    monkeypatch.setattr(module, "upload_image_from_url", upload)
+    assert module.repair_instagram_image(target, apply=True)["status"] == "already_present"
+    missing = replace(target, source_image_url=None)
+    assert module.repair_instagram_image(missing)["status"] == "needs_source"
+    with pytest.raises(ValidationError, match="exact Instagram post"):
+        module.repair_instagram_image(
+            missing, {"url": "https://instagram.com/p/OTHER/"}, apply=True
+        )
+    assert (
+        module.repair_instagram_image(missing, {"url": missing.source_url}, apply=True)["status"]
+        == "unavailable"
+    )
+    upload.assert_not_called()

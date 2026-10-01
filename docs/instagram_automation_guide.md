@@ -16,12 +16,13 @@ Configure the intended database, `STORAGE_BUCKET_NAME`, `STORAGE_PUBLIC_BASE_URL
 ```sh
 cd backend
 python scripts/repair_stored_media.py image --event-id 29122
+python scripts/repair_stored_media.py instagram-image --event-id 29122 --fetch
 python scripts/repair_stored_media.py video --event-id 29122
 ```
 
-Both commands default to a preview and require exactly one `--event-id` or `--position-id`.
+All repair commands default to a preview and require exactly one `--event-id` or `--position-id`.
 An image preview reads the owned asset and reports its dimensions and proposed rendition size without uploading or updating the database.
-A video preview without provider data reports the exact original post that must be retrieved.
+A missing Instagram poster or video preview without provider data reports the exact original post that must be retrieved.
 Supply `--post-json /path/to/post.json` to reuse one exact-post provider object, or add `--fetch` to explicitly retrieve only that original post through the configured Apify adapter.
 The provider lookup can incur its normal charge; the command never starts a broad scrape or AI extraction.
 
@@ -32,6 +33,8 @@ python scripts/repair_stored_media.py image --position-id 123 --apply
 ```
 
 Review the preview before adding `--apply`.
+Missing Instagram poster repairs use the verified original post’s cover artwork and preserve any poster already saved on the event or position.
+Downloaded event artwork is resized to the shared rendition width before the stored-image size limit is checked, so a large original does not silently lose its poster.
 Video repairs verify the exact source post, skip an existing stored video, and refuse carousels whose original slide association cannot be proven.
 Reports omit signed provider CDN query strings.
 Image repairs write a new immutable URL instead of replacing a cached file in place.
