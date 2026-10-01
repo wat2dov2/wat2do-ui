@@ -26,6 +26,9 @@ from services.instagram_notifications.browser_digest import (  # noqa: E402
 from services.instagram_notifications.browser_queue import (  # noqa: E402
     QueuedInstagramDigestResolver,
 )
+from services.instagram_notifications.browser_session import (  # noqa: E402
+    school_account_username,
+)
 from services.instagram_notifications.ledger import (  # noqa: E402
     MaterializedMedia,
     record_notification_media,
@@ -40,7 +43,6 @@ _RECIPIENT_ID_KEY = "com.instagram.android.igns.logging.intended_recipient_id"
 _MEDIA_QUERY_KEYS = ("media_list", "media_id")
 _CACHE_ID_KEY = "cache_ent_id"
 _TOTAL_MEDIA_COUNT_KEY = "total_non_mmc_media_count"
-_ACCOUNT_USERNAME_KEY = "android.subText"
 _ACTIONABLE_CATEGORIES = frozenset({"post", "subscription_daily_digest"})
 _ACTIONABLE_ACTION_PATH = "clips_home"
 
@@ -303,17 +305,12 @@ def main() -> int:
             "push category",
             maximum_length=100,
         )
-        account_username = _required_payload_text(
-            payload,
-            _ACCOUNT_USERNAME_KEY,
-            "receiving Instagram account",
-            maximum_length=30,
-        )
         school = school_service.get_school_by_recipient_id(intended_recipient_id)
         if school is None:
             raise NotificationPayloadError(
                 "No school mapping exists for the notification recipient."
             )
+        account_username = school_account_username(school.slug)
     except (NotificationPayloadError, BrowserDigestError) as exc:
         log.error("%s", exc)
         return 1

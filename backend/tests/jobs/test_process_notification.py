@@ -73,7 +73,7 @@ def _install_digest_resolver(monkeypatch, media_ids: tuple[str, ...]):
         ):
             calls.append((intended_recipient_id, account_username, cache_ent_id))
             return DigestResolution(
-                account_username="ubc.wat2do.io",
+                account_username=account_username,
                 media_ids=media_ids,
                 page_count=1,
             )
@@ -81,6 +81,35 @@ def _install_digest_resolver(monkeypatch, media_ids: tuple[str, ...]):
     monkeypatch.setattr(process_notification, "QueuedInstagramDigestResolver", _Resolver)
     monkeypatch.setattr(sys, "platform", "darwin")
     return calls
+
+
+@pytest.mark.parametrize(
+    ("school_slug", "notification_label", "expected_username"),
+    [
+        ("ubc", "ubc.wat2do.io", "wat2do.ubc"),
+        ("utsc", "utsc.wat2do.io", "wat2do.utsc"),
+        ("uwaterloo", "wat2do.ca", "wat2do.ca"),
+    ],
+)
+def test_digest_uses_current_school_identity_after_account_rename(
+    monkeypatch, school_slug, notification_label, expected_username
+) -> None:
+    _set_payload(
+        monkeypatch,
+        _actionable_payload(
+            "clips_home?cache_ent_id=cache-123", **{"android.subText": notification_label}
+        ),
+    )
+    monkeypatch.setattr(
+        process_notification.school_service,
+        "get_school_by_recipient_id",
+        lambda recipient_id: SimpleNamespace(id=7, slug=school_slug),
+    )
+    calls = _install_digest_resolver(monkeypatch, ("123456789",))
+    _capture_ledger(monkeypatch)
+
+    assert process_notification.main() == 0
+    assert calls == [(RECIPIENT_ID, expected_username, "cache-123")]
 
 
 def test_media_notification_records_ordered_unique_exact_claims(monkeypatch) -> None:
@@ -141,12 +170,10 @@ def test_digest_expands_hidden_media_before_recording_and_keeps_metadata(
         third_media_id,
         fourth_media_id,
     ]
-    assert resolver_calls == [(RECIPIENT_ID, "ubc.wat2do.io", "cache-123")]
+    assert resolver_calls == [(RECIPIENT_ID, "wat2do.ubc", "cache-123")]
     assert record_calls[0]["cache_ent_id"] == "cache-123"
     assert record_calls[0]["total_non_mmc_media_count"] == 4
-    assert "Expanded Instagram digest through ubc.wat2do.io to 4 exact media target" in (
-        caplog.text
-    )
+    assert "Expanded Instagram digest through wat2do.ubc to 4 exact media target" in (caplog.text)
 
 
 def test_incomplete_digest_is_recorded_and_processes_explicit_media(
@@ -226,7 +253,7 @@ def test_digest_without_advertised_count_still_uses_shared_queue(
 
     assert process_notification.main() == 0
 
-    assert resolver_calls == [(RECIPIENT_ID, "ubc.wat2do.io", "cache-123")]
+    assert resolver_calls == [(RECIPIENT_ID, "wat2do.ubc", "cache-123")]
     assert [item.media_id for item in record_calls[0]["media"]] == [
         "123456789",
         "987654321",

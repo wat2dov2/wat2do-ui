@@ -251,6 +251,13 @@ class BrowserInstagramSession:
         self.poll_until(lambda: self.current_account_username() == username)
 
 
+def school_account_username(school_slug: str) -> str:
+    """Resolve the current account name from its immutable school mapping."""
+    return validate_account_username(
+        _CONTROL.school_username_overrides.get(school_slug, f"wat2do.{school_slug}")
+    )
+
+
 def validate_account_username(value: object) -> str:
     """Normalize one configured school account at every browser admission path."""
     if not isinstance(value, str):

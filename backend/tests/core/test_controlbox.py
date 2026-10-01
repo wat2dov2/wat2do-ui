@@ -565,6 +565,7 @@ def test_campus_seasons_reject_invalid_configuration(tmp_path, mutate):
 
 
 def test_instagram_browser_controls_have_one_shared_timing_source():
+    assert controlbox.instagram_browser.school_username_overrides == {"uwaterloo": "wat2do.ca"}
     assert controlbox.instagram_browser.actions == ("like", "save", "repost")
     assert controlbox.instagram_browser.job_timeout_seconds == 120
     assert controlbox.instagram_browser.result_timeout_seconds == 300
@@ -596,6 +597,9 @@ def test_instagram_browser_controls_have_one_shared_timing_source():
         {"actions": []},
         {"actions": ["like", "like"]},
         {"actions": ["unlike"]},
+        {"school_username_overrides": {"uwaterloo": "someone_else"}},
+        {"school_username_overrides": {"../uwaterloo": "wat2do.ca"}},
+        {"school_username_overrides": {"uwaterloo": "wat2do." + "a" * 30}},
         {"sessionid": "credentials-do-not-belong-in-controlbox"},
     ],
 )

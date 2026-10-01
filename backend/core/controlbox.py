@@ -619,6 +619,10 @@ class EmulatorFarmControl(_ControlModel):
 
 
 class InstagramBrowserControl(_ControlModel):
+    school_username_overrides: dict[
+        Annotated[str, Field(pattern=r"^[a-z0-9_]+$")],
+        Annotated[str, Field(pattern=r"^wat2do\.[a-z0-9_]+$", max_length=30)],
+    ]
     request_timeout_seconds: float = Field(gt=0, le=120)
     interaction_timeout_seconds: float = Field(gt=0, le=120)
     poll_interval_seconds: float = Field(gt=0, le=5)

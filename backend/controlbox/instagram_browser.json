@@ -8,6 +8,9 @@
   "source_poll_interval_seconds": 60,
   "source_page_size": 100,
   "engagement_interval_seconds": 10,
+  "school_username_overrides": {
+    "uwaterloo": "wat2do.ca"
+  },
   "actions": [
     "like",
     "save",
