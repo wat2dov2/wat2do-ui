@@ -439,11 +439,12 @@ test("Featured reads publication metadata from the cached feed and clears withou
 });
 
 
-test("shared quick-filter order puts Featured before Employers and price and seasonal filters after minimum going", () => {
-  const ids = getEventQuickFilters().map(filter => filter.id);
+test("shared quick-filter order places Competitions before Varsity and preserves the other filter groups", () => {
+  const ids = getEventQuickFilters({ sportsGameAvailable: true }).map(filter => filter.id);
+  expect(ids.indexOf("competitions")).toBe(ids.indexOf("sportsGame") - 1);
   expect(ids.indexOf("featured")).toBe(ids.indexOf("employersOnCampus") - 1);
-  expect(ids.slice(ids.indexOf("minGoing"), ids.indexOf("minGoing") + 4))
-    .toEqual(["minGoing", "price", "campusSeasons", "competitions"]);
+  expect(ids.slice(ids.indexOf("minGoing"), ids.indexOf("minGoing") + 3))
+    .toEqual(["minGoing", "price", "campusSeasons"]);
 });
 
 
