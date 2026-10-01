@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { PositionCardImage } from "@/features/positions/components/PositionCardImage";
 import {
   createAdaptivePressHandlers,
-  useMobileGridClickActivation,
+  useMobileClickActivation,
 } from "@/shared/hooks";
 import {
   EventCardContent,
@@ -28,7 +28,7 @@ function PositionCardComponent({
 }: PositionCardProps) {
   const { t } = useTranslation();
   const { getSchoolTimezone } = useSchoolDirectory();
-  const preferClick = useMobileGridClickActivation();
+  const preferClick = useMobileClickActivation();
   const pressHandlers = createAdaptivePressHandlers({
     onClick: () => onPositionClick(position),
     preferClick,

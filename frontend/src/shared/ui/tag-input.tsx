@@ -8,6 +8,7 @@ import {
   FieldError,
 } from "@/shared/ui/field";
 import { cn } from "@/shared/lib/utils";
+import { createAdaptivePressHandlers } from "@/shared/hooks/useMouseDownPress";
 
 interface TagInputProps {
   label: string;
@@ -90,7 +91,7 @@ export function TagInput({
               {item}
               <button
                 type="button"
-                onMouseDown={() => onRemove(index)}
+                {...createAdaptivePressHandlers({ onClick: () => onRemove(index) })}
                 className="bg-foreground/30 text-primary-foreground rounded-full p-0.5 size-4 flex items-center justify-center hover:bg-primary-hover transition-colors"
               >
                 <X className="size-3" />

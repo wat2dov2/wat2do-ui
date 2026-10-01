@@ -27,9 +27,11 @@ function PopoverTrigger({
   onMouseDown,
   onClick,
   disabled,
+  children,
   ...props
 }: React.ComponentProps<typeof PopoverPrimitive.Trigger>) {
   const disclosure = React.useContext(PopoverDisclosureContext)
+  const clickActivation = React.isValidElement<{ activation?: string }>(children) && children.props.activation === "click"
   const pressHandlers = createAdaptivePressHandlers({
     disabled,
     onMouseDown,
@@ -40,7 +42,8 @@ function PopoverTrigger({
       event.preventDefault()
     },
   })
-  return <PopoverPrimitive.Trigger data-slot="popover-trigger" disabled={disabled} {...props} {...pressHandlers} />
+  const handlers = clickActivation ? { onClick, onMouseDown } : pressHandlers
+  return <PopoverPrimitive.Trigger data-slot="popover-trigger" disabled={disabled} {...props} {...handlers}>{children}</PopoverPrimitive.Trigger>
 }
 
 function PopoverContent({

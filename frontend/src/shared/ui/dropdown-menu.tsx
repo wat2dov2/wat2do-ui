@@ -4,12 +4,14 @@ import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu";
 import { useDrawerPortalContainer } from "@/shared/ui/drawer"
 import { cn } from "@/shared/lib/utils";
 import { useExclusiveDisclosure } from "@/shared/hooks/useExclusiveDisclosure";
-import { useMouseSelectDedup, useMobileGridClickActivation } from "@/shared/hooks/useMouseDownPress";
+import { createAdaptivePressHandlers, useMobileClickActivation } from "@/shared/hooks/useMouseDownPress";
 
 const TRAILING_CLICK_SWALLOW_MS = 300;
 
 function registerTrailingClickSwallow() {
   const swallowTrailingClick = (clickEvent: MouseEvent) => {
+    // Native press activation and keyboard clicks have no physical click detail.
+    if (clickEvent.detail === 0) return;
     clickEvent.preventDefault();
     clickEvent.stopPropagation();
     cleanup();
@@ -53,7 +55,7 @@ function DropdownMenuTrigger({
   onClick,
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Trigger>) {
-  const preferClick = useMobileGridClickActivation();
+  const preferClick = useMobileClickActivation();
   const wasOpenRef = React.useRef(false);
 
   const handlePointerDown = React.useCallback(
@@ -153,6 +155,7 @@ function DropdownMenuItem({
   disabled,
   inset,
   onMouseDown,
+  onClick,
   onSelect,
   variant = "default",
   asChild = false,
@@ -161,55 +164,15 @@ function DropdownMenuItem({
   inset?: boolean;
   variant?: "default" | "destructive";
 }) {
-  const { markMouseSelect, shouldSkipSelect } = useMouseSelectDedup();
-
-  const handleMouseDown = React.useCallback(
-    (event: React.MouseEvent<React.ElementRef<typeof DropdownMenuPrimitive.Item>>) => {
-      onMouseDown?.(event);
-      if (asChild || disabled || event.button !== 0 || event.defaultPrevented) {
-        return;
-      }
-
-      event.preventDefault();
-      markMouseSelect();
-      onSelect?.(event.nativeEvent);
-      registerTrailingClickSwallow();
-
-      // Programmatically close the Radix dropdown menu by simulating Escape keydown
-      const escEvent = new KeyboardEvent("keydown", {
-        key: "Escape",
-        code: "Escape",
-        bubbles: true,
-        cancelable: true,
-      });
-      event.currentTarget.dispatchEvent(escEvent);
+  const preferClick = useMobileClickActivation();
+  const pressHandlers = createAdaptivePressHandlers({
+    disabled, preferClick, nativeActivation: true,
+    onClick: onClick ? event => onClick(event as React.MouseEvent<React.ElementRef<typeof DropdownMenuPrimitive.Item>>) : undefined,
+    onMouseDown: event => {
+      onMouseDown?.(event as React.MouseEvent<React.ElementRef<typeof DropdownMenuPrimitive.Item>>);
+      if (!preferClick && !event.defaultPrevented) registerTrailingClickSwallow();
     },
-    [asChild, disabled, markMouseSelect, onMouseDown, onSelect],
-  );
-
-  const handleSelect = React.useCallback(
-    (event: Event) => {
-      if (asChild) {
-        onSelect?.(event);
-        return;
-      }
-      if (shouldSkipSelect()) {
-        return;
-      }
-      onSelect?.(event);
-      registerTrailingClickSwallow();
-    },
-    [asChild, onSelect, shouldSkipSelect],
-  );
-
-  const handleClick = React.useCallback(
-    (event: React.MouseEvent<React.ElementRef<typeof DropdownMenuPrimitive.Item>>) => {
-      if (!asChild) {
-        event.preventDefault();
-      }
-    },
-    [asChild],
-  );
+  });
 
   return (
     <DropdownMenuPrimitive.Item
@@ -218,9 +181,8 @@ function DropdownMenuItem({
       data-inset={inset}
       data-variant={variant}
       asChild={asChild}
-      onMouseDown={handleMouseDown}
-      onClick={handleClick}
-      onSelect={handleSelect}
+      {...pressHandlers}
+      onSelect={onSelect}
       className={cn(
         "focus:bg-surface-hover focus:text-foreground data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive/10 data-[variant=destructive]:focus:text-destructive relative flex cursor-default select-none items-center gap-2 rounded-lg px-2 py-1.5 text-xs outline-hidden transition-colors data-disabled:pointer-events-none data-disabled:opacity-50 data-[inset=true]:pl-8 [&_svg]:pointer-events-none [&_svg]:size-3.5 [&_svg]:shrink-0",
         className,

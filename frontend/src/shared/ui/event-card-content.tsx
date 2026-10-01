@@ -10,7 +10,7 @@ import {
   LocationPin,
   type LucideIcon,
 } from "@/shared/ui/doodle-icons";
-import Link from "next/link";
+import { Link } from "@/shared/ui/link";
 import { cn } from "@/shared/lib/utils";
 import type { ComponentProps } from "react";
 
@@ -122,7 +122,7 @@ export function EventCardContent({
             )}
           >
             {titleHref ? (
-              <Link href={titleHref} prefetch={false}>
+              <Link variant="navigation" href={titleHref} prefetch={false}>
                 {title}
               </Link>
             ) : (

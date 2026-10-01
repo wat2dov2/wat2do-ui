@@ -91,12 +91,16 @@ const Button = React.forwardRef<
     ref,
   ) => {
     const Comp = asChild ? Slot : "button"
-    // Slotted links, form submission, and disclosure triggers keep their native
-    // event ownership. Ordinary actions use the existing adaptive press path.
-    const pressHandlers = activation === "click" || asChild || type !== "button" || onMouseDown || onPointerDown
+    // Radix pointer triggers already activate on press. Other controls share
+    // one press policy, including slotted links and form submission.
+    const pressHandlers = activation === "click" || onPointerDown
       ? { onClick, onMouseDown }
       : createAdaptivePressHandlers({
           disabled,
+          nativeActivation: asChild || type !== "button",
+          onMouseDown: onMouseDown
+            ? event => onMouseDown(event as React.MouseEvent<HTMLButtonElement>)
+            : undefined,
           onClick: onClick
             ? event => onClick(event as React.MouseEvent<HTMLButtonElement>)
             : undefined,

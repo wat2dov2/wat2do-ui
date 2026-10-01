@@ -9,7 +9,7 @@ import { useProfileCompleted } from "@/features/auth/hooks/useAuthState";
 import { ClubCategoryBadge } from "@/shared/components/ClubCategoryBadge";
 import {
   useCardMouseDownActivate,
-  useMobileGridClickActivation,
+  useMobileClickActivation,
   createAdaptivePressHandlers,
 } from "@/shared/hooks";
 import { ClubOverflowMenu } from "@/features/clubs/components/ClubOverflowMenu";
@@ -172,7 +172,7 @@ function ClubCardComponent({
     [],
   );
 
-  const preferClickPress = useMobileGridClickActivation();
+  const preferClickPress = useMobileClickActivation();
 
   const handleCategoryClick = useCallback(
     (event: React.MouseEvent) => {
@@ -207,15 +207,7 @@ function ClubCardComponent({
   const handleCardClick = useCallback(
     (mouseEvent: React.MouseEvent<HTMLElement>) => {
       if (preferClickPress) {
-        if (mouseEvent.button !== 0) return;
-        if (!(mouseEvent.target instanceof Element)) return;
-        if (
-          mouseEvent.target.closest(
-            "button, a, [role='menuitem'], input, textarea, select, [data-no-card-activate], [data-club-card-footer]",
-          )
-        )
-          return;
-        handleCardActivate();
+        runMouseDownActivate(mouseEvent);
         return;
       }
       if (
@@ -226,7 +218,7 @@ function ClubCardComponent({
       }
       mouseEvent.preventDefault();
     },
-    [handleCardActivate, preferClickPress],
+    [runMouseDownActivate, preferClickPress],
   );
 
   const followButton = (

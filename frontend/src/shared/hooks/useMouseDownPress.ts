@@ -1,9 +1,11 @@
-import { useCallback, useRef, useState, useEffect, type MouseEvent as ReactMouseEvent } from "react";
+import { useCallback, useSyncExternalStore, type MouseEvent as ReactMouseEvent } from "react";
+import { COARSE_POINTER_MEDIA } from "@/shared/hooks/useCoarsePointer";
+
+const CLICK_ACTIVATION_MEDIA = `${COARSE_POINTER_MEDIA}, (max-width: 639px)`;
 
 const CARD_INTERACTIVE_SELECTOR =
   "button, a, [role='menuitem'], input, textarea, select, [data-no-card-activate]";
 
-const MOBILE_GRID_CLICK_MEDIA = "(hover: none), (pointer: coarse), (max-width: 639px)";
 
 type PressHandler = (event: ReactMouseEvent<HTMLElement>) => void;
 
@@ -12,43 +14,35 @@ interface MouseDownPressHandlersOptions {
   onClick?: PressHandler;
   disabled?: boolean;
   preferClick?: boolean;
+  /** Delegate to the element for links, form buttons and Radix controls. */
+  nativeActivation?: boolean;
 }
 
-/**
- * Touch/coarse pointers and sub-sm viewports use click instead of mousedown.
- */
+/** Mobile widths and touch use click so scrolling never activates a control. */
 function prefersClickActivation() {
-  if (typeof window === "undefined") return false;
-  return window.matchMedia("(hover: none), (pointer: coarse)").matches;
+  return typeof window !== "undefined" && window.matchMedia(CLICK_ACTIVATION_MEDIA).matches;
 }
 
-export function useMobileGridClickActivation() {
-  const [active, setActive] = useState(false);
+const serverClickActivation = () => false;
+function subscribeToClickActivation(listener: () => void) {
+  const media = window.matchMedia(CLICK_ACTIVATION_MEDIA);
+  media.addEventListener("change", listener);
+  return () => media.removeEventListener("change", listener);
+}
 
-  useEffect(() => {
-    const media = window.matchMedia(MOBILE_GRID_CLICK_MEDIA);
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setActive(media.matches);
-
-    const listener = (event: MediaQueryListEvent) => {
-      setActive(event.matches);
-    };
-
-    media.addEventListener("change", listener);
-    return () => media.removeEventListener("change", listener);
-  }, []);
-
-  return active;
+export function useMobileClickActivation() {
+  return useSyncExternalStore(subscribeToClickActivation, prefersClickActivation, serverClickActivation);
 }
 
 /**
- * Mousedown-first on desktop; native click on touch/coarse pointers or mobile width.
+ * Mousedown-first on desktop; native click on mobile widths and touch/coarse pointers.
  */
 export function createAdaptivePressHandlers({
   onMouseDown,
   onClick,
   disabled = false,
   preferClick = prefersClickActivation(),
+  nativeActivation = false,
 }: MouseDownPressHandlersOptions) {
   if (preferClick) {
     const handleClick: PressHandler = (event) => {
@@ -62,7 +56,7 @@ export function createAdaptivePressHandlers({
     return onClick || onMouseDown ? { onClick: handleClick } : {};
   }
 
-  return createMouseDownPressHandlers({ onMouseDown, onClick, disabled });
+  return createMouseDownPressHandlers({ onMouseDown, onClick, disabled, nativeActivation });
 }
 
 /**
@@ -73,47 +67,52 @@ function createMouseDownPressHandlers({
   onMouseDown,
   onClick,
   disabled = false,
+  nativeActivation = false,
 }: MouseDownPressHandlersOptions) {
   const handleMouseDown: PressHandler = (event) => {
+    if (event.currentTarget?.closest?.('[data-activation="click"]')) return;
+    if (nativeActivation && (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey)) return;
+    if (disabled || event.button !== 0) return;
     onMouseDown?.(event);
-    if (event.defaultPrevented || event.button !== 0 || disabled) {
+    if (event.defaultPrevented) {
       return;
     }
-    onClick?.(event);
+    if (nativeActivation) {
+      if (event.currentTarget.getAttribute("role") === "option") {
+        event.currentTarget.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }));
+      } else {
+        event.currentTarget.click();
+      }
+    } else {
+      onClick?.(event);
+    }
   };
 
   const handleClick: PressHandler = (event) => {
-    if (onClick) {
-      if (!disabled && !event.defaultPrevented && event.button === 0 && event.detail === 0) {
-        onClick(event);
-      }
-      event.preventDefault();
+    if (disabled) { event.preventDefault(); return; }
+    if (event.currentTarget?.closest?.('[data-activation="click"]') ||
+        (nativeActivation && (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey))) {
+      onClick?.(event);
+      return;
     }
+    if (event.detail === 0 && event.button === 0 && !event.defaultPrevented) {
+      onClick?.(event);
+      if (!onClick && !nativeActivation) onMouseDown?.(event);
+      if (nativeActivation) return;
+    }
+    event.preventDefault();
   };
 
   return {
     onMouseDown: handleMouseDown,
-    ...(onClick ? { onClick: handleClick } : {}),
+    onClick: handleClick,
   };
-}
-
-/** Fire an action on left mouse down (used for chips, links, and filter controls). */
-export function useMouseDownAction(action: () => void) {
-  return useCallback(
-    (event: ReactMouseEvent<HTMLElement>) => {
-      if (event.button !== 0) {
-        return;
-      }
-      action();
-    },
-    [action],
-  );
 }
 
 /** Open cards/drawers on mouse down while skipping footer actions and nested controls. */
 export function useCardMouseDownActivate(
   onActivate: () => void,
-  footerSelector: string,
+  footerSelector?: string,
 ) {
   return useCallback(
     (event: ReactMouseEvent<HTMLElement>) => {
@@ -123,7 +122,7 @@ export function useCardMouseDownActivate(
       if (!(event.target instanceof Element)) {
         return;
       }
-      if (event.target.closest(footerSelector)) {
+      if (footerSelector && event.target.closest(footerSelector)) {
         return;
       }
       if (event.target.closest(CARD_INTERACTIVE_SELECTOR)) {
@@ -133,19 +132,4 @@ export function useCardMouseDownActivate(
     },
     [footerSelector, onActivate],
   );
-}
-
-/** Dedup mouse select from the trailing Radix `onSelect` event. */
-export function useMouseSelectDedup() {
-  const lastMouseSelectAt = useRef(0);
-
-  const markMouseSelect = useCallback(() => {
-    lastMouseSelectAt.current = Date.now();
-  }, []);
-
-  const shouldSkipSelect = useCallback(() => {
-    return Date.now() - lastMouseSelectAt.current < 500;
-  }, []);
-
-  return { markMouseSelect, shouldSkipSelect };
 }

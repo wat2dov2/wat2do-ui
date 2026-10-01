@@ -83,6 +83,7 @@ function Calendar({
         ...classNames,
       }}
       components={{
+        Button: CalendarNavigationButton,
         Root: ({ className, rootRef, ...props }) => {
           return (
             <div
@@ -127,6 +128,10 @@ function Calendar({
   )
 }
 
+function CalendarNavigationButton(props: React.ButtonHTMLAttributes<HTMLButtonElement>) {
+  return <Button {...props} variant="ghost" size="icon" />
+}
+
 function CalendarDayButton({
   className,
   day,
@@ -140,7 +145,6 @@ function CalendarDayButton({
 
   return (
     <Button
-      activation="click"
       ref={ref}
       variant="ghost"
       size="icon"

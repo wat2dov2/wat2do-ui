@@ -3,6 +3,7 @@
 import * as React from "react"
 import * as TabsPrimitive from "@radix-ui/react-tabs"
 
+import { useMobileClickActivation } from "@/shared/hooks/useMouseDownPress"
 import { cn } from "@/shared/lib/utils"
 
 function Tabs({
@@ -38,10 +39,22 @@ function TabsList({
 const TabsTrigger = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.Trigger>,
   React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger> & { count?: number }
->(({ className, children, count, ...props }, ref) => (
+>(({ className, children, count, onMouseDown, onClick, ...props }, ref) => {
+  const preferClick = useMobileClickActivation()
+  return (
   <TabsPrimitive.Trigger
     ref={ref}
     data-slot="tabs-trigger"
+    onMouseDown={event => {
+      onMouseDown?.(event)
+      if (preferClick || event.currentTarget.closest('[data-activation="click"]')) event.preventDefault()
+    }}
+    onClick={event => {
+      onClick?.(event)
+      if ((preferClick || event.currentTarget.closest('[data-activation="click"]')) && !event.defaultPrevented) {
+        event.currentTarget.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }))
+      }
+    }}
     data-elevation="control-active"
     className={cn(
       "inline-flex cursor-pointer items-center justify-center whitespace-nowrap rounded-xl px-3 py-1 text-sm font-medium text-foreground/75 ring-offset-background transition-all disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
@@ -57,7 +70,8 @@ const TabsTrigger = React.forwardRef<
       </span>
     ) : null}
   </TabsPrimitive.Trigger>
-))
+)
+})
 TabsTrigger.displayName = TabsPrimitive.Trigger.displayName
 
 function TabsContent({

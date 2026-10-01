@@ -9,7 +9,7 @@ import {
 import { EventCardImage } from "@/features/events/components/EventCardImage";
 import { formatCardDate, formatCardTime, eventCalendarDate } from "@/shared/utils/date";
 import { useEventBadges } from "@/features/events/hooks/useEventBadges";
-import { useMouseDownAction, useMobileGridClickActivation } from "@/shared/hooks";
+import { useCardMouseDownActivate, useMobileClickActivation } from "@/shared/hooks";
 import { cn } from "@/shared/lib/utils";
 import { eventPagePath } from "@/features/events/lib/eventUrls";
 import type { Event } from "@/shared/types";
@@ -20,8 +20,6 @@ interface EventCardProps {
   /** Live card stats. Omit until the stats query succeeds. */
   stats?: EventStats;
   onEventClick?: (event: Event) => void;
-  /** Grid cards: open details on click below the sm breakpoint or on touch. */
-  mobileClickActivation?: boolean;
   /**
    * Renders the card inert: no navigation or badge menu.
    * Preview surfaces - the submit form's live preview, the Instagram carousel
@@ -48,9 +46,6 @@ function buildEventStatsLabel(
 
   return parts.length > 0 ? parts.join(" · ") : undefined;
 }
-
-const CARD_ACTIVATE_IGNORE_SELECTOR =
-  "button, a, [role='menuitem'], input, textarea, select, [data-no-card-activate]";
 
 interface EventCardBodyProps {
   event: Event;
@@ -95,7 +90,6 @@ function EventCardComponent({
   event,
   stats,
   onEventClick,
-  mobileClickActivation = true,
   interactive = true,
   titleHref = interactive ? eventPagePath(event.id) : undefined,
   imagePriority = false,
@@ -111,10 +105,9 @@ function EventCardComponent({
 
   const handleCardActivate = useCallback(() => onEventClick?.(event), [event, onEventClick]);
 
-  const mobileGridClickActivation = useMobileGridClickActivation();
-  const preferClickPress = mobileClickActivation && mobileGridClickActivation;
+  const preferClickPress = useMobileClickActivation();
 
-  const runMouseDownActivate = useMouseDownAction(handleCardActivate);
+  const runMouseDownActivate = useCardMouseDownActivate(handleCardActivate);
 
   const handleCardMouseDown = useCallback(
     (mouseEvent: React.MouseEvent<HTMLElement>) => {
@@ -129,10 +122,7 @@ function EventCardComponent({
   const handleCardClick = useCallback(
     (mouseEvent: React.MouseEvent<HTMLElement>) => {
       if (preferClickPress) {
-        if (mouseEvent.button !== 0) return;
-        if (!(mouseEvent.target instanceof Element)) return;
-        if (mouseEvent.target.closest(CARD_ACTIVATE_IGNORE_SELECTOR)) return;
-        handleCardActivate();
+        runMouseDownActivate(mouseEvent);
         return;
       }
       if (
@@ -143,7 +133,7 @@ function EventCardComponent({
       }
       mouseEvent.preventDefault();
     },
-    [handleCardActivate, preferClickPress],
+    [runMouseDownActivate, preferClickPress],
   );
 
   const activationProps = interactive

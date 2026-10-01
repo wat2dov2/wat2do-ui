@@ -7,13 +7,13 @@ import {
   useState,
   type CSSProperties,
   type KeyboardEvent,
-  type MouseEvent,
   type ReactNode,
 } from "react";
 import { Check, Search } from "@/shared/ui/doodle-icons";
 import { OUTLINE_CONTROL_STYLES } from "@/shared/ui/button";
 import { cn } from "@/shared/lib/utils";
 import { useEnterKeySubmit } from "@/shared/hooks";
+import { createAdaptivePressHandlers, useMobileClickActivation } from "@/shared/hooks/useMouseDownPress";
 import {
   Popover,
   PopoverAnchor,
@@ -88,6 +88,8 @@ export function SearchCombobox<T>({
   triggerClassName,
 }: SearchComboboxProps<T>) {
   const [open, setOpen] = useState(false);
+  const mobileClickActivation = useMobileClickActivation();
+  const [filterClickActivation, setFilterClickActivation] = useState(false);
   const [search, setSearch] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
   const listId = useId();
@@ -122,7 +124,6 @@ export function SearchCombobox<T>({
   }, [allOption, getKey, getLabel, getSearchTerms, items, search]);
 
   const handleOpenChange = useCallback((nextOpen: boolean) => {
-    if (nextOpen && triggerRef.current) setTriggerWidth(triggerRef.current.getBoundingClientRect().width);
     setOpen(nextOpen);
     if (!nextOpen) {
       setSearch("");
@@ -160,25 +161,22 @@ export function SearchCombobox<T>({
     }
   };
 
-  const handleTriggerMouseDown = (e: MouseEvent<HTMLButtonElement>) => {
-    if (e.button !== 0) return;
-
-    e.stopPropagation();
-    setTriggerWidth(e.currentTarget.getBoundingClientRect().width);
-
-    handleOpenChange(true);
-
-    e.preventDefault();
-  };
-
-  const handleTriggerClick = (e: MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault();
-  };
+  const triggerPressHandlers = createAdaptivePressHandlers({
+    preferClick: mobileClickActivation,
+    onClick: (event) => {
+      event.stopPropagation();
+      setTriggerWidth(event.currentTarget.getBoundingClientRect().width);
+      setFilterClickActivation(Boolean(event.currentTarget.closest('[data-activation="click"]')));
+      handleOpenChange(true);
+      event.preventDefault();
+    },
+  });
 
   const handleTriggerKeyDown = (e: KeyboardEvent<HTMLButtonElement>) => {
     if (!["ArrowDown", "ArrowUp", "Enter", " "].includes(e.key)) return;
 
     e.preventDefault();
+    setFilterClickActivation(Boolean(e.currentTarget.closest('[data-activation="click"]')));
     setTriggerWidth(e.currentTarget.getBoundingClientRect().width);
     if (!open) {
       handleOpenChange(true);
@@ -221,14 +219,14 @@ export function SearchCombobox<T>({
           className={triggerClasses}
           aria-expanded={open}
           aria-haspopup="listbox"
-          onMouseDown={handleTriggerMouseDown}
-          onClick={handleTriggerClick}
+          {...triggerPressHandlers}
           onKeyDown={handleTriggerKeyDown}
         >
           {labelNode}
         </button>
       </PopoverAnchor>
       <PopoverContent
+        data-activation={filterClickActivation ? "click" : undefined}
         className={contentStyles}
         align={align}
         style={contentStyle}
@@ -278,7 +276,10 @@ export function SearchCombobox<T>({
                   data-active={index === activeIndex}
                   tabIndex={-1}
                   type="button"
-                  onClick={() => handleSelect(item)}
+                  {...createAdaptivePressHandlers({
+                    preferClick: mobileClickActivation || filterClickActivation,
+                    onClick: () => handleSelect(item),
+                  })}
                   onPointerMove={() => setActiveIndex(index)}
                   className={cn(
                     "w-full flex items-center gap-2 px-2 py-2 text-sm rounded-xl text-left transition-colors",

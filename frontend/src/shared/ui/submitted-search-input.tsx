@@ -1,5 +1,6 @@
 import { Search, X } from "@/shared/ui/doodle-icons";
 import { useEnterKeySubmit } from "@/shared/hooks";
+import { createAdaptivePressHandlers } from "@/shared/hooks/useMouseDownPress";
 import { cn } from "@/shared/lib/utils";
 import { OUTLINE_CONTROL_STYLES } from "@/shared/ui/button";
 import type { KeyboardEvent } from "react";
@@ -67,10 +68,10 @@ export function SubmittedSearchInput({
         <button
           type="button"
           disabled={disabled}
-          onMouseDown={(event) => {
-            event.preventDefault();
-            onClear();
-          }}
+          {...createAdaptivePressHandlers({
+            disabled,
+            onClick: (event) => { event.preventDefault(); onClear(); },
+          })}
           className="absolute right-11 top-0 flex h-full w-8 items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
           aria-label={clearLabel}
         >
@@ -80,10 +81,10 @@ export function SubmittedSearchInput({
       <button
         type="button"
         disabled={disabled}
-        onMouseDown={(event) => {
-          event.preventDefault();
-          onSubmit();
-        }}
+        {...createAdaptivePressHandlers({
+          disabled,
+          onClick: (event) => { event.preventDefault(); onSubmit(); },
+        })}
         className="absolute right-0 top-0 flex h-full w-11 items-center justify-center rounded-l-none rounded-r-xl border-l border-border bg-transparent text-muted-foreground transition-colors hover:bg-surface-hover hover:text-foreground dark:border-secondary dark:hover:bg-secondary-hover dark:hover:text-secondary-foreground"
         aria-label={submitLabel}
       >

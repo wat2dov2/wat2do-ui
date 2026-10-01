@@ -22,7 +22,7 @@ export const FilterSection = React.memo(function FilterSection({
 }: FilterSectionProps) {
 
   return (
-    <div className="space-y-2 relative -mx-4 border-y border-border">
+    <div data-activation="click" className="space-y-2 relative -mx-4 border-y border-border">
       <div className="flex items-center justify-between w-full px-4 py-3">
         <div className="flex items-center gap-2">
           <Tooltip>

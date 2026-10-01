@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 import Image from "next/image";
 import NextLink from "next/link";
+import { Link } from "@/shared/ui/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import {
@@ -52,7 +53,8 @@ function Wat2DoLogoLink({ label, onNavigate }: Wat2DoLogoLinkProps) {
   const router = useRouter();
   const prefetch = () => prefetchPublicPage(router, ROUTES.EVENTS);
   return (
-    <NextLink
+    <Link
+      variant="navigation"
       href={ROUTES.EVENTS}
       prefetch={false}
       onPointerEnter={prefetch}
@@ -69,7 +71,7 @@ function Wat2DoLogoLink({ label, onNavigate }: Wat2DoLogoLinkProps) {
         className="h-6 w-[34px] object-contain"
         src={imgImage1}
       />
-    </NextLink>
+    </Link>
   );
 }
 

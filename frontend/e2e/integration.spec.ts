@@ -1827,6 +1827,33 @@ test.describe("Discovery before hydration", () => {
 });
 
 test.describe("Events Page", () => {
+  for (const width of [390, 1024]) {
+    test(`desktop presses and mobile clicks activate cards and navigation at ${width}px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 844 });
+      await page.goto(BASE);
+      const card = page.getByRole("button", { name: "Event: Tech Career Fair", exact: true });
+      await expect(card).toBeVisible();
+      if (width === 390) {
+        await page.getByRole("button", { name: "Open navigation menu" }).hover();
+        await page.mouse.down();
+        await expect(page.getByRole("dialog", { name: "Primary navigation" })).toHaveCount(0);
+        await page.mouse.up();
+        await expect(page.getByRole("dialog", { name: "Primary navigation" })).toBeVisible();
+        await page.keyboard.press("Escape");
+      }
+      await card.hover({ position: { x: 5, y: 5 } });
+      await page.mouse.down();
+      if (width === 390) {
+        await expect(page.getByRole("dialog")).toHaveCount(0);
+        await page.mouse.up();
+      }
+      await expect(page.getByRole("dialog")).toBeVisible();
+      await expect(page.getByRole("dialog").getByText("Tech Career Fair", { exact: true }).first()).toBeVisible();
+      if (width !== 390) await page.mouse.up();
+      await expect(page.getByRole("dialog")).toBeVisible();
+    });
+  }
+
   for (const mode of ["calendar", "map"]) {
     test(`keeps UTSG mobile events visible with a saved ${mode} preference`, async ({ page, next }) => {
       await page.setViewportSize({ width: 390, height: 844 });
@@ -3485,7 +3512,7 @@ test.describe("Events Page", () => {
     expect(feedRequests).toBe(loadedFeedRequests);
   });
 
-  test("opens minimum going on mouse down and applies integer input changes", async ({ page, next }) => {
+  test("waits for click to open minimum going and applies integer input changes", async ({ page, next }) => {
     await mockApi(page, next, url => apiPath(url) === "/events/stats", async () => {
       return ({
         status: 200,
@@ -3501,8 +3528,9 @@ test.describe("Events Page", () => {
     await page.getByRole("button", { name: ">0 going", exact: true }).hover();
     await expect(minimumGoing).toHaveCount(0);
     await page.mouse.down();
-    await expect(minimumGoing).toBeVisible();
+    await expect(minimumGoing).toHaveCount(0);
     await page.mouse.up();
+    await expect(minimumGoing).toBeVisible();
     await expect(page.getByText("Minimum going", { exact: true })).toBeVisible();
     await expect(minimumGoing).toHaveValue("0");
     await page.keyboard.press("Escape");
@@ -3529,13 +3557,13 @@ test.describe("Events Page", () => {
     await expect(card).toBeVisible();
   });
 
-  test("opens shared date options on mouse down rather than hover", async ({ page }) => {
+  test("waits for click to open shared date options", async ({ page }) => {
     await page.goto(BASE);
     await page.getByRole("combobox", { name: "Event date" }).hover();
     const tomorrow = page.getByRole("option", { name: "Tomorrow", exact: true });
     await expect(tomorrow).toHaveCount(0);
     await page.mouse.down();
-    await expect(tomorrow).toBeVisible();
+    await expect(tomorrow).toHaveCount(0);
     await page.mouse.up();
     await expect(tomorrow).toBeVisible();
     await tomorrow.hover();

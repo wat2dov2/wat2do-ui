@@ -1,14 +1,26 @@
+"use client"
+
 import * as React from "react"
 import { CheckIcon } from "lucide-react"
 import { Checkbox as CheckboxPrimitive } from "radix-ui"
 
 import { OUTLINE_CONTROL_STYLES } from "@/shared/ui/button"
+import { createAdaptivePressHandlers } from "@/shared/hooks/useMouseDownPress"
 import { cn } from "@/shared/lib/utils"
 
 function Checkbox({
   className,
+  disabled,
+  onClick,
+  onMouseDown,
   ...props
 }: React.ComponentProps<typeof CheckboxPrimitive.Root>) {
+  const handlers = createAdaptivePressHandlers({
+    nativeActivation: true,
+    disabled,
+    onClick: onClick ? event => onClick(event as React.MouseEvent<HTMLButtonElement>) : undefined,
+    onMouseDown: onMouseDown ? event => onMouseDown(event as React.MouseEvent<HTMLButtonElement>) : undefined,
+  })
   return (
     <CheckboxPrimitive.Root
       data-slot="checkbox"
@@ -18,6 +30,8 @@ function Checkbox({
         className
       )}
       {...props}
+      {...handlers}
+      disabled={disabled}
     >
       <CheckboxPrimitive.Indicator
         data-slot="checkbox-indicator"

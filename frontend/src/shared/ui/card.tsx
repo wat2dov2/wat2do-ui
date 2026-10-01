@@ -1,8 +1,15 @@
+"use client"
+
 import * as React from "react"
 
+import { createAdaptivePressHandlers } from "@/shared/hooks/useMouseDownPress"
 import { cn } from "@/shared/lib/utils"
 
-function Card({ className, ...props }: React.ComponentProps<"div">) {
+function Card({ className, onClick, onMouseDown, ...props }: React.ComponentProps<"div">) {
+  const handlers = onClick || onMouseDown ? createAdaptivePressHandlers({
+    onClick: onClick ? event => onClick(event as React.MouseEvent<HTMLDivElement>) : undefined,
+    onMouseDown: onMouseDown ? event => onMouseDown(event as React.MouseEvent<HTMLDivElement>) : undefined,
+  }) : {}
   return (
     <div
       data-slot="card"
@@ -11,6 +18,7 @@ function Card({ className, ...props }: React.ComponentProps<"div">) {
         className
       )}
       {...props}
+      {...handlers}
     />
   )
 }

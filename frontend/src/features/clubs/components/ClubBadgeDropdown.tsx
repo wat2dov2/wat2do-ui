@@ -117,7 +117,7 @@ export function ClubBadgeDropdown({
             : null);
           const discordHref = sanitizeHref(club.discord);
           return <div key={club.club_name}>
-            <DropdownMenuItem onSelect={() => handleFilterSelect(club.club_name)}>
+            <DropdownMenuItem data-activation="click" onSelect={() => handleFilterSelect(club.club_name)}>
               {t("clubs.filterBy", { name: club.club_name })}
             </DropdownMenuItem>
             {websiteHref ? <DropdownMenuItem asChild><a href={websiteHref} target="_blank" rel="noopener noreferrer">{t("clubs.visitWebsite")}</a></DropdownMenuItem> : null}

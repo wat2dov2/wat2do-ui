@@ -1,11 +1,16 @@
+"use client"
+
 import * as React from "react"
 import * as SelectPrimitive from "@radix-ui/react-select"
 import { CheckIcon, ChevronDown, ChevronUpIcon } from "@/shared/ui/doodle-icons"
 
 import { useDrawerPortalContainer } from "@/shared/ui/drawer"
+import { createAdaptivePressHandlers, useMobileClickActivation } from "@/shared/hooks/useMouseDownPress"
 import { cn } from "@/shared/lib/utils"
 import { buttonVariants } from "@/shared/ui/button"
 import { useExclusiveDisclosure } from "@/shared/hooks/useExclusiveDisclosure"
+
+const SelectActivationContext = React.createContext<{ clickActivation: boolean; setClickActivation: (value: boolean) => void; setOpen: (value: boolean) => void }>({ clickActivation: false, setClickActivation: () => {}, setOpen: () => {} })
 
 function Select({
   open,
@@ -13,6 +18,7 @@ function Select({
   onOpenChange,
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Root>) {
+  const [clickActivation, setClickActivation] = React.useState(false)
   const [exclusiveOpen, setExclusiveOpen] = useExclusiveDisclosure({
     open,
     defaultOpen,
@@ -20,12 +26,14 @@ function Select({
   })
 
   return (
+    <SelectActivationContext.Provider value={{ clickActivation, setClickActivation, setOpen: setExclusiveOpen }}>
     <SelectPrimitive.Root
       data-slot="select"
       open={exclusiveOpen}
       onOpenChange={setExclusiveOpen}
       {...props}
     />
+    </SelectActivationContext.Provider>
   )
 }
 
@@ -41,14 +49,31 @@ function SelectTrigger({
   size = "default",
   variant = "outline",
   children,
+  onPointerDown,
+  onClick,
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Trigger> & {
   size?: "sm" | "default" | "lg"
   variant?: "primary" | "outline"
 }) {
+  const activation = React.useContext(SelectActivationContext)
+  const preferClick = useMobileClickActivation()
   return (
     <SelectPrimitive.Trigger
       data-slot="select-trigger"
+      onPointerDown={event => {
+        onPointerDown?.(event)
+        const clickActivation = preferClick || Boolean(event.currentTarget.closest('[data-activation="click"]'))
+        activation.setClickActivation(clickActivation)
+        if (clickActivation && event.pointerType === "mouse") event.preventDefault()
+      }}
+      onClick={event => {
+        onClick?.(event)
+        if (activation.clickActivation && !event.defaultPrevented) {
+          activation.setOpen(true)
+          event.preventDefault()
+        }
+      }}
       data-elevation="control"
       data-size={size}
       className={cn(
@@ -72,6 +97,7 @@ function SelectContent({
 }: React.ComponentProps<typeof SelectPrimitive.Content>) {
   // See useDrawerPortalContainer: body-portalled content is unscrollable inside
   // a drawer's scroll lock.
+  const activation = React.useContext(SelectActivationContext);
   const container = useDrawerPortalContainer();
   const position = requestedPosition ?? (container ? "popper" : "item-aligned");
 
@@ -79,6 +105,7 @@ function SelectContent({
     <SelectPrimitive.Portal container={container ?? undefined}>
       <SelectPrimitive.Content
         data-slot="select-content"
+        data-activation={activation.clickActivation ? "click" : undefined}
         className={cn(
           "bg-surface-elevated text-foreground border border-border data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 relative z-toast max-h-(--radix-select-content-available-height) min-w-32 origin-(--radix-select-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-xl shadow-md",
           position === "popper" &&
@@ -109,11 +136,33 @@ function SelectContent({
 function SelectItem({
   className,
   children,
+  disabled,
+  onClick,
+  onMouseDown,
+  onPointerUp,
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Item>) {
+  const activation = React.useContext(SelectActivationContext)
+  const handlers = createAdaptivePressHandlers({
+    disabled, nativeActivation: true,
+    onClick: event => {
+      onClick?.(event as React.MouseEvent<HTMLDivElement>)
+      if (activation.clickActivation && !event.defaultPrevented) {
+        event.currentTarget.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }))
+        event.preventDefault()
+      }
+    },
+    onMouseDown: onMouseDown ? event => onMouseDown(event as React.MouseEvent<HTMLDivElement>) : undefined,
+  })
   return (
     <SelectPrimitive.Item
       data-slot="select-item"
+      disabled={disabled}
+      {...handlers}
+      onPointerUp={event => {
+        onPointerUp?.(event)
+        if (activation.clickActivation) event.preventDefault()
+      }}
       className={cn(
         "focus:bg-surface-hover focus:text-foreground data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground [&_svg:not([class*='text-'])]:text-muted-foreground relative flex w-full cursor-default items-center gap-2 rounded-lg py-1.5 pr-8 pl-2 text-sm outline-hidden select-none data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2",
         className

@@ -65,7 +65,6 @@ function EventCardsGrid({
             stats={eventStats?.[String(event.id)]}
             imagePriority={priorityImageIds.has(event.id)}
             onEventClick={onEventClick}
-            mobileClickActivation
           />
         </CardEntrance>
       ))}
