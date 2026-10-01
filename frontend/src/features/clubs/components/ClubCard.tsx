@@ -319,7 +319,7 @@ function ClubCardComponent({
         <EventCardContent
           title={club.club_name}
           titleHref={clubPagePath(club.id)}
-          location={socialHandle}
+          instagram={socialHandle}
           badges={countBadges}
           horizontalPadding="inset"
           className="pt-8 sm:pt-9"

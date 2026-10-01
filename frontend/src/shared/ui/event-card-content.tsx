@@ -7,6 +7,7 @@ import { Badge } from "@/shared/ui/badge";
 import {
   Calendar,
   Clock,
+  Instagram,
   LocationPin,
   type LucideIcon,
 } from "@/shared/ui/doodle-icons";
@@ -24,7 +25,7 @@ const EMPTY_BADGES: readonly CardBadge[] = [];
 
 interface EventCardMetadataLineProps {
   icon: LucideIcon;
-  slot: "date" | "time" | "location";
+  slot: "date" | "time" | "location" | "instagram";
   text: string;
   textClassName: string;
 }
@@ -79,6 +80,7 @@ interface EventCardContentProps {
   date?: string;
   time?: string;
   location?: string;
+  instagram?: string;
   badges?: readonly CardBadge[];
   /** Popularity line, e.g. "12 clicks · 3 going". */
   statsLabel?: string;
@@ -96,6 +98,7 @@ export function EventCardContent({
   date,
   time,
   location,
+  instagram,
   badges = EMPTY_BADGES,
   statsLabel,
   className,
@@ -145,7 +148,7 @@ export function EventCardContent({
           ) : null}
         </div>
 
-        {date || time || location || badges.length > 0 ? (
+        {date || time || location || instagram || badges.length > 0 ? (
           <div
             data-slot="event-card-metadata"
             className="flex min-w-0 items-end justify-between gap-1"
@@ -164,6 +167,14 @@ export function EventCardContent({
                   icon={Clock}
                   slot="time"
                   text={time}
+                  textClassName={secondaryTextClassName}
+                />
+              ) : null}
+              {instagram ? (
+                <EventCardMetadataLine
+                  icon={Instagram}
+                  slot="instagram"
+                  text={instagram}
                   textClassName={secondaryTextClassName}
                 />
               ) : null}

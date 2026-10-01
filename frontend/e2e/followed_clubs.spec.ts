@@ -11,7 +11,7 @@ const MOCK_CLUBS = [
     club_name: "UW Tech Club",
     club_type: "independent",
     club_page: "https://example.com/tech",
-    ig: null,
+    ig: "uwtechclub",
     discord: null,
     logo_url: null,
     created_by: "owner-user-id",
@@ -496,6 +496,12 @@ test.describe("Followed Clubs Flow", () => {
 
     // Assert that we are on All Clubs tab and cards are loaded
     await expect(page.getByRole("combobox", { name: "All" })).toBeVisible();
+
+    const techCard = page.getByRole("article", { name: "Club: UW Tech Club" });
+    const instagramMetadata = techCard.locator('[data-slot="event-card-instagram"]');
+    await expect(instagramMetadata).toHaveText("@uwtechclub");
+    await expect(instagramMetadata.locator('g[clip-path="url(#doodle_Instagram_clip0)"]')).toHaveCount(1);
+    await expect(techCard.locator('[data-slot="event-card-location"]')).toHaveCount(0);
 
     // Switch to Followed Clubs tab, should show empty state
     await selectClubScope(page, "Followed");
