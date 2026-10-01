@@ -109,7 +109,7 @@ def _fetch_selected_events(
         r = (
             get_sb()
             .table(EVENTS)
-            .select(f"*,{event_query.SCHOOL_EMBED}")
+            .select(f"*,{event_query.SCHOOL_EMBED},{event_query.INSTAGRAM_ITEMS_EMBED}")
             .in_("id", list(batch))
             .execute()
         )

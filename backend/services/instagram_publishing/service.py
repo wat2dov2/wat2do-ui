@@ -49,6 +49,7 @@ from schemas.instagram_publishing import (
     InstagramPublishBatchUpdate,
 )
 from services import event_query, school_service
+from services.event_feed_revalidation import event_feed_revalidation_service
 from services.event_service import has_ended
 from services.instagram_publishing.captions import build_caption, default_caption_intro
 from services.instagram_publishing.credentials import load_account_credentials
@@ -201,6 +202,14 @@ def update_batch(
         raise
     if not response.data:
         raise ConflictError(INSTAGRAM_PUBLISH_BATCH_VERSION_CONFLICT)
+    event_feed_revalidation_service.revalidate_schools(
+        [
+            batch["school"],
+            *(event.school for event in slide_events.values()),
+            *(item["event"].school for item in batch["items"] if item.get("event")),
+        ],
+        resources=["events"],
+    )
     return get_batch(batch_id)
 
 
@@ -269,6 +278,13 @@ def publish_claimed_batch(batch: dict[str, Any]) -> None:
             .or_(f"event_id.is.null,event_id.not.in.({selected_ids})")
             .is_("published_at", "null")
             .execute()
+        )
+        event_feed_revalidation_service.revalidate_schools(
+            [
+                batch["school"],
+                *(item["event"].school for item in batch["items"] if item.get("event")),
+            ],
+            resources=["events"],
         )
         _publish_claimed_batch(credentials.access_token, batch, _ordered_items(batch))
     except Exception as exc:
@@ -384,6 +400,7 @@ def _generate_account_batch(
             .eq("id", batch["id"])
             .execute()
         )
+        event_feed_revalidation_service.revalidate_school(account_key, resources=["events"])
         return "generated"
     except Exception as exc:
         log.exception("Instagram batch generation failed for account=%s", account_key)

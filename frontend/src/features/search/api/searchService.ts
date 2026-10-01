@@ -203,7 +203,7 @@ export function filterEvents(
     if (filters.employersOnCampus && event.employers_on_campus !== true) return false;
     if (filters.freeFoodOnCampus && (event.price !== 0 || food.length === 0)) return false;
     if (filters.competitions && event.competition !== true) return false;
-    if (filters.featured && event.featured !== true) return false;
+    if (filters.featured && event.featured !== true && event.instagram_selected !== true) return false;
     if (filters.sportsGame && event.sports_game !== true) return false;
 
 

@@ -225,7 +225,7 @@ export function EventImageCutout({
               fit={compactProfile ? "contain" : "cover"}
               loading={imageLoading}
               fallback={imageFallback}
-              className={compactProfile ? "size-24" : "absolute inset-0"}
+              className={compactProfile ? "size-24 rounded-md" : "absolute inset-0"}
             />
           </div>
         )}

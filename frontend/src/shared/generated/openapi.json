@@ -8952,6 +8952,12 @@
             "title": "Featured",
             "default": false
           },
+          "instagram_selected": {
+            "type": "boolean",
+            "title": "Instagram Selected",
+            "description": "Selected in at least one Instagram publishing batch",
+            "default": false
+          },
           "is_directory_event": {
             "type": "boolean",
             "title": "Is Directory Event",
@@ -9218,6 +9224,12 @@
           "featured": {
             "type": "boolean",
             "title": "Featured",
+            "default": false
+          },
+          "instagram_selected": {
+            "type": "boolean",
+            "title": "Instagram Selected",
+            "description": "Selected in at least one Instagram publishing batch",
             "default": false
           },
           "is_directory_event": {
@@ -9547,6 +9559,12 @@
           "featured": {
             "type": "boolean",
             "title": "Featured",
+            "default": false
+          },
+          "instagram_selected": {
+            "type": "boolean",
+            "title": "Instagram Selected",
+            "description": "Selected in at least one Instagram publishing batch",
             "default": false
           },
           "is_directory_event": {

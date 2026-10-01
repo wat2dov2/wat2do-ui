@@ -400,11 +400,13 @@ test("Competitions and Featured intersect, survive handoff, and clear together",
     { ...events[0], id: 90, competition: true, featured: true },
     { ...events[0], id: 91, competition: true, featured: false },
     { ...events[0], id: 92, competition: null, featured: true },
+    { ...events[0], id: 93, competition: true, featured: false, instagram_selected: true },
+    { ...events[0], id: 94, competition: true, featured: false, instagram_selected: false },
   ];
   useSearchStore.getState().setFilterState({ ...EMPTY_FILTER_STATE, competitions: true, featured: true });
   const state = useSearchStore.getState();
   const options = { ...state, goingEventIds: [], campusSeasonOptions: [] };
-  expect(filterEvents(candidates, options, () => "America/Toronto", {}).map(event => event.id)).toEqual([90]);
+  expect(filterEvents(candidates, options, () => "America/Toronto", {}).map(event => event.id)).toEqual([90, 93]);
   expect(getFilterCounts(state)).toBe(2);
   const handoff = storeStatesToFilterState(state);
   expect(normalizeFilterState(handoff)).toMatchObject({ competitions: true, featured: true });
@@ -418,4 +420,18 @@ test("cohost names and Instagram handles match cached event search and club filt
   const options = { ...useSearchStore.getState(), goingEventIds: [], campusSeasonOptions: [] };
   expect(filterEvents([shared], { ...options, searchQuery: "@campusmakers" }, () => "America/Toronto", {})).toHaveLength(1);
   expect(filterEvents([shared], { ...options, selectedClubs: ["Campus Makers"] }, () => "America/Toronto", {})).toHaveLength(1);
+});
+
+
+test("Featured reads Instagram selections from the cached feed and clears without another fetch", () => {
+  const cached = [
+    { ...events[0], id: 100, featured: false, instagram_selected: true },
+    { ...events[0], id: 101, featured: false, instagram_selected: false },
+    { ...events[0], id: 102, featured: true, instagram_selected: false },
+  ];
+  const options = { ...useSearchStore.getState(), goingEventIds: [], campusSeasonOptions: [] };
+  expect(filterEvents(cached, { ...options, featured: true }, () => "America/Toronto", {}).map(event => event.id)).toEqual([100, 102]);
+  expect(filterEvents(cached, { ...options, featured: false }, () => "America/Toronto", {}).map(event => event.id)).toEqual([100, 101, 102]);
+  const refreshed = cached.map(event => ({ ...event, instagram_selected: false }));
+  expect(filterEvents(refreshed, { ...options, featured: true }, () => "America/Toronto", {}).map(event => event.id)).toEqual([102]);
 });

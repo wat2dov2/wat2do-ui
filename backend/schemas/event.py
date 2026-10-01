@@ -284,6 +284,9 @@ class EventSummaryResponse(EventDiscoveryFields):
     club_logo_url: str | None = None
     cohosts: list[ClubCohostResponse] = Field(default_factory=list)
     featured: bool = False
+    instagram_selected: bool = Field(
+        default=False, description="Selected in at least one Instagram publishing batch"
+    )
     is_directory_event: bool = False
     club_type: ClubTypeValue | None = None
     club_page: str | None = None
@@ -338,6 +341,9 @@ class EventResponse(EventDiscoveryFields):
     club_logo_url: str | None = None
     cohosts: list[ClubCohostResponse] = Field(default_factory=list)
     featured: bool = False
+    instagram_selected: bool = Field(
+        default=False, description="Selected in at least one Instagram publishing batch"
+    )
     is_directory_event: bool = False
     club_type: ClubTypeValue | None = None
     school: str | None = None
@@ -371,6 +377,9 @@ class EventPublicResponse(EventDiscoveryFields):
     club_logo_url: str | None = None
     cohosts: list[ClubCohostResponse] = Field(default_factory=list)
     featured: bool = False
+    instagram_selected: bool = Field(
+        default=False, description="Selected in at least one Instagram publishing batch"
+    )
     is_directory_event: bool = False
     club_type: ClubTypeValue | None = None
     school: str | None = None

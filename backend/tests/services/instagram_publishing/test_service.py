@@ -65,6 +65,13 @@ def test_generate_due_batches_runs_when_the_scheduler_starts_late(monkeypatch):
     assert generate.call_count == enabled_account_count
 
 
+@pytest.fixture(autouse=True)
+def feed_revalidation(monkeypatch):
+    revalidation = Mock()
+    monkeypatch.setattr(service, "event_feed_revalidation_service", revalidation)
+    return revalidation
+
+
 class _FakeQuery:
     """Supabase query builder stub: every call chains, `execute` ends it."""
 
@@ -501,7 +508,9 @@ def draft_editor(monkeypatch):
     return calls
 
 
-def test_update_batch_saves_the_carousel_order_without_rendering(monkeypatch, draft_editor):
+def test_update_batch_saves_the_carousel_order_without_rendering(
+    monkeypatch, draft_editor, feed_revalidation
+):
     monkeypatch.setattr(
         "services.instagram_publishing.captions.resolve_school_timezone",
         lambda _school: "America/Toronto",
@@ -517,6 +526,10 @@ def test_update_batch_saves_the_carousel_order_without_rendering(monkeypatch, dr
         ),
     )
 
+    feed_revalidation.revalidate_schools.assert_called_once_with(
+        ["uwaterloo", "uwaterloo", "uwaterloo", "uwaterloo", "uwaterloo"],
+        resources=["events"],
+    )
     # Images belong to publishing, not to saving a draft.
     assert draft_editor["renders"] == []
     _, params = draft_editor["rpc"][0]
@@ -1020,7 +1033,7 @@ def test_batch_cutoffs_and_daily_existence_are_scoped_to_kind(monkeypatch):
     assert calls.count(("eq", ("batch_kind", "employers_on_campus"), {})) == 2
 
 
-def test_employer_generation_persists_kind_and_uses_its_own_cutoff(monkeypatch):
+def test_employer_generation_persists_kind_and_uses_its_own_cutoff(monkeypatch, feed_revalidation):
     batch_calls = []
     item_calls = []
     now = datetime(2026, 9, 28, 14, tzinfo=timezone.utc)
@@ -1060,6 +1073,7 @@ def test_employer_generation_persists_kind_and_uses_its_own_cutoff(monkeypatch):
         == "generated"
     )
 
+    feed_revalidation.revalidate_school.assert_called_once_with("uwaterloo", resources=["events"])
     previous.assert_called_once_with("uwaterloo", "employers_on_campus")
     candidates.assert_called_once_with(
         account_key="uwaterloo",
@@ -1085,3 +1099,29 @@ def test_employer_generation_persists_kind_and_uses_its_own_cutoff(monkeypatch):
         ),
         {},
     ) in item_calls
+
+
+def test_selection_edits_invalidate_added_and_removed_event_schools(
+    monkeypatch, draft_editor, feed_revalidation
+):
+    batch = _batch([1])
+    batch["items"][0]["event"] = _event(1).model_copy(update={"school": "wlu"})
+    monkeypatch.setattr(service, "get_batch", lambda _id: batch)
+    monkeypatch.setattr(
+        service,
+        "_load_slide_events",
+        lambda _ids: {2: _event(2).model_copy(update={"school": "cornell"})},
+    )
+    monkeypatch.setattr(service, "build_caption", lambda *_args: "New picks")
+    service.update_batch("batch-1", InstagramPublishBatchUpdate(version=3, event_ids=[2]))
+    feed_revalidation.revalidate_schools.assert_called_once_with(
+        ["uwaterloo", "cornell", "wlu"], resources=["events"]
+    )
+
+
+def test_rejected_selection_does_not_invalidate_feed(monkeypatch, draft_editor, feed_revalidation):
+    monkeypatch.setattr(service, "get_batch", lambda _id: _batch([1]))
+    monkeypatch.setattr(service, "_load_slide_events", lambda _ids: {})
+    with pytest.raises(service.ValidationError):
+        service.update_batch("batch-1", InstagramPublishBatchUpdate(version=3, event_ids=[2]))
+    feed_revalidation.revalidate_schools.assert_not_called()

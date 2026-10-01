@@ -20,7 +20,7 @@ from postgrest.exceptions import APIError
 from core.constants import MAX_LIST_LIMIT
 from core.exceptions import NotFoundError
 from schemas.club import ClubResponse
-from schemas.event import EventResponse, EventSummaryResponse
+from schemas.event import EventPublicResponse, EventResponse, EventSummaryResponse
 from schemas.event_date import OccurrenceResponse
 from services import club_service, event_query, event_service
 
@@ -201,9 +201,29 @@ def test_hydrate_event_reuses_validated_occurrences_without_json_dump(monkeypatc
     assert event.occurrences[0].dtstart_utc == occurrence.dtstart_utc
 
 
+@pytest.mark.parametrize("model", [EventSummaryResponse, EventResponse, EventPublicResponse])
+@pytest.mark.parametrize("items", [[], [{"event_id": 42}], [{"event_id": 42}, {"event_id": 42}]])
+def test_instagram_selection_is_derived_from_saved_batch_membership(model, items):
+    event = event_query.hydrate_event(
+        {
+            "id": 42,
+            "title": "Campus night",
+            "added_at": datetime(2026, 9, 30, tzinfo=timezone.utc),
+            "featured": False,
+            "instagram_publish_items": items,
+        },
+        [],
+        model,
+    )
+    assert event.instagram_selected is bool(items)
+    assert event.featured is False
+    assert "instagram_publish_items" not in event.model_dump()
+
+
 def test_summary_columns_exclude_computed_response_fields():
     """Computed API fields must not be requested as physical events columns."""
 
+    assert "instagram_selected" not in event_query._SUMMARY_COLUMNS
     assert "occurrences" not in event_query._SUMMARY_COLUMNS
     assert "club_logo_url" not in event_query._SUMMARY_COLUMNS
     assert "club_type" not in event_query._SUMMARY_COLUMNS

@@ -136,7 +136,9 @@ def get_event(event_id: int) -> EventResponse | None:
     r = (
         get_sb()
         .table(EVENTS)
-        .select(f"*,{event_query.CLUB_EMBED},{event_query.SCHOOL_EMBED}")
+        .select(
+            f"*,{event_query.CLUB_EMBED},{event_query.SCHOOL_EMBED},{event_query.INSTAGRAM_ITEMS_EMBED}"
+        )
         .eq("id", event_id)
         .execute()
     )

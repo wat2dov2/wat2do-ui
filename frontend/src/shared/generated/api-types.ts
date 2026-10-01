@@ -2371,6 +2371,12 @@ export interface components {
              */
             featured: boolean;
             /**
+             * Instagram Selected
+             * @description Selected in at least one Instagram publishing batch
+             * @default false
+             */
+            instagram_selected: boolean;
+            /**
              * Is Directory Event
              * @default false
              */
@@ -2465,6 +2471,12 @@ export interface components {
              * @default false
              */
             featured: boolean;
+            /**
+             * Instagram Selected
+             * @description Selected in at least one Instagram publishing batch
+             * @default false
+             */
+            instagram_selected: boolean;
             /**
              * Is Directory Event
              * @default false
@@ -2590,6 +2602,12 @@ export interface components {
              * @default false
              */
             featured: boolean;
+            /**
+             * Instagram Selected
+             * @description Selected in at least one Instagram publishing batch
+             * @default false
+             */
+            instagram_selected: boolean;
             /**
              * Is Directory Event
              * @default false

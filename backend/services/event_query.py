@@ -24,7 +24,7 @@ from pydantic import BaseModel
 
 from core.database import get_sb
 from core.sanitize import sanitize_postgrest_value
-from core.tables import EVENT_DATES, EVENTS
+from core.tables import EVENT_DATES, EVENTS, INSTAGRAM_PUBLISH_ITEMS
 from schemas.event import EventSummaryResponse
 from schemas.event_date import OccurrenceResponse
 from services import event_date_service, school_service
@@ -44,6 +44,7 @@ _SUMMARY_COMPUTED_FIELDS = {
     "school",
     "club_logo_url",
     "is_directory_event",
+    "instagram_selected",
     "club_type",
     "club_page",
     "club_ig",
@@ -56,6 +57,7 @@ _SUMMARY_COLUMNS = ",".join(
 # ``events.club_id`` FK, flattened onto the event in ``hydrate_event``.
 CLUB_EMBED = "clubs(logo_url,club_type,club_page,ig,discord),cohosts:event_cohosts(id,club_name,logo_url,club_type,club_page,ig,discord)"
 SCHOOL_EMBED = "school_record:schools(slug,timezone)"
+INSTAGRAM_ITEMS_EMBED = f"{INSTAGRAM_PUBLISH_ITEMS}(event_id)"
 _LIGHTWEIGHT_DATE_COLUMNS = "id,event_id,dtstart_utc,events!inner(id)"
 _LIGHTWEIGHT_DATE_SCAN_CHUNK_SIZE = 250
 
@@ -91,6 +93,7 @@ def hydrate_event(row: dict, occurrences: list[OccurrenceResponse], model: type[
     the embed (e.g. the single-event ``select("*")`` path) are left unchanged.
     """
     row = school_service.with_school_slug(row)
+    instagram_selected = bool(row.pop(INSTAGRAM_PUBLISH_ITEMS, None))
     org = row.pop("clubs", None)
     org_fields = (
         {
@@ -118,6 +121,7 @@ def hydrate_event(row: dict, occurrences: list[OccurrenceResponse], model: type[
             **org_fields,
             "occurrences": occurrences,
             "is_directory_event": directory is not None,
+            "instagram_selected": instagram_selected,
         }
     )
 
@@ -129,7 +133,7 @@ def _load_event_rows_by_ids(event_ids: list[int], *, columns: str) -> list[dict]
         rows = (
             get_sb()
             .table(EVENTS)
-            .select(f"{columns},{CLUB_EMBED},{SCHOOL_EMBED}")
+            .select(f"{columns},{CLUB_EMBED},{SCHOOL_EMBED},{INSTAGRAM_ITEMS_EMBED}")
             .in_("id", list(chunk))
             .execute()
             .data
@@ -270,7 +274,7 @@ def load_events_page(
         get_sb()
         .table(EVENT_DATES)
         .select(
-            f"event_id,dtstart_utc,dtend_utc,tz,events!inner({columns},{CLUB_EMBED},{SCHOOL_EMBED})"
+            f"event_id,dtstart_utc,dtend_utc,tz,events!inner({columns},{CLUB_EMBED},{SCHOOL_EMBED},{INSTAGRAM_ITEMS_EMBED})"
         )
     )
     if start_utc is not None:
