@@ -622,7 +622,7 @@ test("About loading preserves the carousel frame, greeting, caption and controls
 
 
 for (const variant of ["card", "detail"]) {
-  test(`directory ${variant} uses the club profile picture with existing cropping`, () => {
+  test(`directory ${variant} uses a compact club profile picture`, () => {
     const logo = "https://wat2do.io/media/organization-logos/laurier.jpg";
     const html = render(EventCardImage, { variant, event: {
       id: 42, title: "Laurier event", occurrences: [], added_at: "2026-09-01T00:00:00Z",
@@ -630,7 +630,10 @@ for (const variant of ["card", "detail"]) {
     }});
     expect(html).toContain(encodeURIComponent(logo));
     expect(html).not.toContain(encodeURIComponent(posterUrl));
-    expect(html).toContain("object-cover");
+    expect(html).toContain("object-contain");
+    expect(html).toContain("size-24");
+    expect(html).toContain("96px");
+    expect(html).not.toContain("cursor-zoom-in");
   });
 
   test(`directory ${variant} without a profile picture uses the title fallback`, () => {

@@ -26,6 +26,8 @@ export function PositionCardImage({
   onClubFilterSelect,
   priority = false,
 }: PositionCardImageProps) {
+  const imageSrc = position.source_image_url || position.club_logo_url;
+  const usesProfileImage = Boolean(imageSrc && imageSrc === position.club_logo_url);
   const { t, i18n } = useTranslation();
   const { getSchoolTimezone } = useSchoolDirectory();
   const { surfaceRef, registerCorner, cutouts, box } = useEventImageCutouts();
@@ -49,7 +51,8 @@ export function PositionCardImage({
     >
       <EventImageCutout
         backgroundColor="var(--surface-elevated)"
-        imageSrc={position.source_image_url}
+        imageSrc={imageSrc}
+        imageVariant={usesProfileImage ? "profile" : "poster"}
         videoSrc={variant === "detail" ? position.source_video_url : undefined}
         imageAlt={position.title}
         imageLoading={variant === "detail" || priority ? "eager" : "lazy"}

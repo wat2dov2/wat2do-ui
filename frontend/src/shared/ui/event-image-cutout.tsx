@@ -125,6 +125,8 @@ interface EventImageCutoutProps {
   /** Optional photo, drawn inside the mask so it is cut by the notches too. */
   imageSrc?: string | null;
   imageAlt?: string;
+  /** Profile pictures stay compact instead of filling a poster frame. */
+  imageVariant?: "poster" | "profile";
   videoSrc?: string | null;
   /** Load the poster immediately for LCP candidates; defer off-screen cards. */
   imageLoading?: "eager" | "lazy";
@@ -183,6 +185,7 @@ export function EventImageCutout({
   backgroundColor,
   imageSrc,
   imageAlt = "",
+  imageVariant = "poster",
   videoSrc,
   imageLoading = "eager",
   imageSizes = CARD_GRID_IMAGE_SIZES,
@@ -199,6 +202,8 @@ export function EventImageCutout({
     [cutouts, width, height],
   );
 
+  const compactProfile = imageVariant === "profile" && Boolean(imageSrc) && !videoSrc;
+
   return (
     <div className={cn("relative", className)}>
       <div
@@ -210,15 +215,20 @@ export function EventImageCutout({
           WebkitClipPath: clipPath,
         }}
       >
-        {imageContent ?? <LazyImage
-          src={imageSrc}
-          alt={imageAlt}
-          videoSrc={videoSrc}
-          sizes={imageSizes}
-          loading={imageLoading}
-          fallback={imageFallback}
-          className="absolute inset-0"
-        />}
+        {imageContent ?? (
+          <div className={cn("absolute inset-0", compactProfile && "flex items-center justify-center")}>
+            <LazyImage
+              src={imageSrc}
+              alt={imageAlt}
+              videoSrc={videoSrc}
+              sizes={compactProfile ? "96px" : imageSizes}
+              fit={compactProfile ? "contain" : "cover"}
+              loading={imageLoading}
+              fallback={imageFallback}
+              className={compactProfile ? "size-24" : "absolute inset-0"}
+            />
+          </div>
+        )}
       </div>
 
       {Children.toArray(children).length ? (

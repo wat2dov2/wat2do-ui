@@ -49,6 +49,7 @@ export function EventCardImage({
   const { t } = useTranslation();
   const [imageOpen, setImageOpen] = useState(false);
   const imageSrc = event.is_directory_event ? event.club_logo_url : event.source_image_url;
+  const canExpandImage = variant === "detail" && imageSrc && !event.source_video_url && !event.is_directory_event;
   const eagerImage = variant === "detail" || priority;
   const { surfaceRef, registerCorner, cutouts, box } = useEventImageCutouts();
 
@@ -79,6 +80,7 @@ export function EventCardImage({
         <EventImageCutout
           backgroundColor="var(--surface-elevated)"
           imageSrc={imageSrc}
+          imageVariant={event.is_directory_event ? "profile" : "poster"}
           videoSrc={variant === "detail" ? event.source_video_url : undefined}
           imageAlt={event.title}
           imageLoading={eagerImage ? "eager" : "lazy"}
@@ -94,7 +96,7 @@ export function EventCardImage({
           height={box.height}
           className="absolute inset-0"
         >
-          {variant === "detail" && imageSrc && !event.source_video_url ? (
+          {canExpandImage ? (
             <button
               type="button"
               className="absolute inset-0 cursor-zoom-in"
@@ -143,7 +145,7 @@ export function EventCardImage({
         )}
       </div>
 
-      {variant === "detail" && imageSrc && !event.source_video_url ? (
+      {canExpandImage ? (
         <Dialog open={imageOpen} onOpenChange={setImageOpen}>
           <DialogContent size="xl" className="p-2">
             <DialogTitle className="sr-only">{t("events.viewFullImage")}</DialogTitle>
