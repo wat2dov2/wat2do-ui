@@ -134,7 +134,7 @@ export function EventCardContent({
           </h3>
           {statsLabel ? (
             <span
-              className={`mt-0.5 block text-[9px] font-medium leading-none ${badgeClassName}`}
+              className={`mt-0.5 block text-[11px] font-medium leading-none ${badgeClassName}`}
             >
               {statsLabel}
             </span>

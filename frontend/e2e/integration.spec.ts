@@ -3349,6 +3349,7 @@ test.describe("Events Page", () => {
     await expect.poll(() => goingCount).toBe(1);
     await page.keyboard.press("Escape");
     await expect(card).toContainText("1 click · 1 going");
+    await expect(card.getByText("1 click · 1 going", { exact: true })).toHaveCSS("font-size", "11px");
     const poster = card.locator('[data-slot="event-card-image"]');
     const goingBadge = poster.getByText("Going", { exact: true });
     await expect(goingBadge).toBeVisible();
@@ -4100,12 +4101,15 @@ test.describe("Events Page", () => {
 // ── Workflow 3: Clubs Page ────────────────────────────────────
 
 test("price dropdown preserves independent inclusive bounds and stays independent of Food", async ({ page }) => {
+  await page.emulateMedia({ colorScheme: "light" });
   await page.goto(BASE);
   const filters = page.getByTestId("event-quick-filter-scroll");
   const food = filters.getByRole("button", { name: "Food", exact: true });
   await food.click();
   await filters.getByRole("button", { name: "Any price", exact: true }).click();
   const dropdown = page.locator('[data-slot="popover-content"]');
+  const colors = await resolveThemeColors(page, ["--surface"]);
+  await expect(dropdown).toHaveCSS("background-color", colors["--surface"]);
   const min = dropdown.getByRole("spinbutton", { name: "Min price", exact: true });
   const max = dropdown.getByRole("spinbutton", { name: "Max", exact: true });
   await min.fill("5.5");
@@ -4120,11 +4124,13 @@ test("price dropdown preserves independent inclusive bounds and stays independen
   await expect(filters.getByRole("button", { name: "≥ $0", exact: true })).toHaveAttribute("aria-pressed", "true");
   await expect(food).toHaveAttribute("aria-pressed", "true");
   await dropdown.getByRole("button", { name: "Free", exact: true }).click();
+  await expect(filters.getByRole("button", { name: "Free", exact: true })).toHaveAttribute("data-selected", "true");
   await filters.getByRole("button", { name: "Free", exact: true }).click();
   await expect(min).toHaveValue("");
   await expect(max).toHaveValue("0");
   await dropdown.getByRole("button", { name: "Free", exact: true }).click();
   await expect(filters.getByRole("button", { name: "Any price", exact: true })).toHaveAttribute("aria-pressed", "false");
+  await expect(filters.getByRole("button", { name: "Any price", exact: true })).toHaveAttribute("data-selected", "false");
   await expect(food).toHaveAttribute("aria-pressed", "true");
 });
 

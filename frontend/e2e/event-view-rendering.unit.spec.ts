@@ -269,3 +269,14 @@ test("applied queries reset the main scroller without resetting initial or uncha
   rootAvailable = false;
   expect(() => render("search")).not.toThrow();
 });
+
+for (const [minPrice, maxPrice, selected] of [["", "", false], ["", "0", true], ["0", "", true], ["5", "10", true]] as const) {
+  test(`price trigger exposes the shared selected state for ${minPrice || "empty"}/${maxPrice || "empty"}`, () => {
+    const { PriceFilter } = loadComponent("features/search/components/PriceFilter") as typeof import("../src/features/search/components/PriceFilter");
+    const html = renderToStaticMarkup(createElement(PriceFilter, {
+      minPrice, maxPrice, setMinPrice: () => {}, setMaxPrice: () => {},
+    }));
+    expect(html).toContain(`data-selected="${selected}"`);
+    expect(html).toContain(`aria-pressed="${selected}"`);
+  });
+}
