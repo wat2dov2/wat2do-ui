@@ -435,3 +435,9 @@ test("Featured reads Instagram selections from the cached feed and clears withou
   const refreshed = cached.map(event => ({ ...event, instagram_selected: false }));
   expect(filterEvents(refreshed, { ...options, featured: true }, () => "America/Toronto", {}).map(event => event.id)).toEqual([102]);
 });
+
+
+test("Featured immediately precedes Employers on campus in the shared quick-filter order", () => {
+  const ids = getEventQuickFilters().map(filter => filter.id);
+  expect(ids.indexOf("featured")).toBe(ids.indexOf("employersOnCampus") - 1);
+});

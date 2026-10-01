@@ -177,7 +177,8 @@ test("popover filters retain native click while ordinary disclosures toggle on p
   expect(opens).toBe(1);
   ordinary.onClick?.(event());
   expect(opens).toBe(1);
-  const filter = render({ asChild: true, children: require("react").createElement(Button, { activation: "click" }) }).props;
+  const filter = render({ activation: "click", asChild: true, children: require("react").createElement(Button, { activation: "click" }) }).props;
   expect(filter.onMouseDown).toBeUndefined();
   expect(filter.onClick).toBeUndefined();
+  expect((filter as Record<string, unknown>)["data-activation"]).toBe("click");
 });

@@ -85,7 +85,7 @@ export function DateFilterSelect({
 
   return (
     <Popover open={open} onOpenChange={handleOpenChange}>
-      <PopoverTrigger asChild>
+      <PopoverTrigger activation="click" asChild>
         <Button
           activation="click"
           type="button"

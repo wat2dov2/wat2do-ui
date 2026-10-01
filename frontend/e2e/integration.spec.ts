@@ -3626,7 +3626,7 @@ test.describe("Events Page", () => {
     const filters = page.getByTestId("event-quick-filter-scroll");
     await expect(filters.getByRole("button", { name: "Going", exact: true })).toBeEnabled();
     const labels = await filters.locator('button').allTextContents();
-    const expected = ["Going", "New", "Employers on campus", "Free food", "Any price", "Any day", ">0 going"];
+    const expected = ["Going", "New", "Featured", "Employers on campus", "Free food", "Any price", "Any day", ">0 going"];
     const indices = expected.map(label => labels.indexOf(label));
     expect(indices.every(index => index >= 0)).toBe(true);
     expect(indices).toEqual([...indices].sort((a, b) => a - b));
@@ -3635,6 +3635,29 @@ test.describe("Events Page", () => {
     await expect(filters.getByRole("button", { name: "Varsity games", exact: true })).toHaveCount(0);
     const logo = page.getByRole("banner").getByRole("link", { name: "Events", exact: true }).first();
     await expect(logo).toHaveAttribute("href", "/events");
+  });
+
+  test("price, date and minimum-going popovers wait for mouse release", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(BASE);
+    const filters = page.getByTestId("event-quick-filter-scroll");
+    const triggers = [
+      filters.getByRole("button", { name: "Any price", exact: true }),
+      filters.getByRole("combobox", { name: "Event date", exact: true }),
+      filters.getByRole("button", { name: ">0 going", exact: true }),
+    ];
+    for (const trigger of triggers) {
+      await expect(trigger).toBeEnabled();
+      await trigger.hover();
+      await page.mouse.down();
+      await expect(trigger).toHaveAttribute("aria-expanded", "false");
+      await expect(page.locator('[data-slot="popover-content"]')).toHaveCount(0);
+      await page.mouse.up();
+      await expect(trigger).toHaveAttribute("aria-expanded", "true");
+      await expect(page.locator('[data-slot="popover-content"]')).toBeVisible();
+      await page.keyboard.press("Escape");
+      await expect(trigger).toHaveAttribute("aria-expanded", "false");
+    }
   });
 
   test("filters events by preset or custom date from the quick-filter strip", async ({

@@ -46,7 +46,7 @@ export function PriceFilter(controls: PriceRangeControls) {
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
+      <PopoverTrigger activation="click" asChild>
         <Button activation="click" size="sm" variant="outline" aria-pressed={active} aria-expanded={open}>
           {label}
           <ChevronDown aria-hidden="true" />
