@@ -895,10 +895,11 @@ def test_load_hydrated_events_overlaps_rows_and_occurrences(monkeypatch):
 
 
 def test_get_event_stats_for_school_combines_positive_counts(monkeypatch):
+    monkeypatch.setattr(event_service, "resolve_school_timezone", lambda school: "America/Toronto")
     monkeypatch.setattr(
-        event_service,
-        "fetch_all_pages",
-        MagicMock(return_value=[{"id": 1}, {"id": 2}, {"id": 3}]),
+        event_query,
+        "load_upcoming_event_ids",
+        MagicMock(return_value=[1, 2, 3]),
     )
     monkeypatch.setattr(
         event_service.interaction_service,
@@ -921,11 +922,30 @@ def test_get_event_stats_for_school_combines_positive_counts(monkeypatch):
     event_service.going_event_service.get_going_counts_for_events.assert_called_once_with([1, 2, 3])
 
 
+def test_event_stats_use_only_the_school_feed_ids_and_window(monkeypatch):
+    since = datetime(2026, 9, 30, tzinfo=timezone.utc)
+    monkeypatch.setattr(event_service, "_today_start_utc", lambda school: since)
+    load_ids = MagicMock(return_value=[24704, 21001])
+    monkeypatch.setattr(event_query, "load_upcoming_event_ids", load_ids)
+    clicks = MagicMock(return_value={24704: 9})
+    going = MagicMock(return_value={})
+    monkeypatch.setattr(event_service.interaction_service, "get_click_counts_for_events", clicks)
+    monkeypatch.setattr(event_service.going_event_service, "get_going_counts_for_events", going)
+
+    stats = event_service.get_event_stats_for_school("uwaterloo")
+
+    load_ids.assert_called_once_with(since=since, school="uwaterloo", cap=MAX_LIST_LIMIT)
+    clicks.assert_called_once_with([24704, 21001])
+    going.assert_called_once_with([24704, 21001])
+    assert stats["24704"].click_count == 9
+
+
 def test_get_event_stats_for_school_keeps_clicks_when_going_counts_fail(monkeypatch):
+    monkeypatch.setattr(event_service, "resolve_school_timezone", lambda school: "America/Toronto")
     monkeypatch.setattr(
-        event_service,
-        "fetch_all_pages",
-        MagicMock(return_value=[{"id": 1}]),
+        event_query,
+        "load_upcoming_event_ids",
+        MagicMock(return_value=[1]),
     )
     monkeypatch.setattr(
         event_service.interaction_service,

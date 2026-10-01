@@ -4,7 +4,7 @@ import { FilterSection } from "@/features/search/components/FilterSection";
 import { MultiSelect } from "@/shared/ui/multi-select";
 import { Switch } from "@/shared/ui/switch";
 import { Input } from "@/shared/ui/input";
-import { FormGrid } from "@/shared/layout";
+import { PriceRangeFields } from "@/features/search/components/PriceFilter";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 
 interface SingleValueFilterInputProps {
@@ -150,26 +150,7 @@ export function VisualFilters({ school, filters }: VisualFiltersProps) {
           filters.setMaxPrice("");
         }}
       >
-        <FormGrid columns={2} collapse={false} className="gap-2">
-          <Input
-            type="number"
-            min="0"
-            step="0.01"
-            aria-label={t("filters.min")}
-            placeholder={t("filters.min")}
-            value={filters.minPrice}
-            onChange={(event) => filters.setMinPrice(event.target.value)}
-          />
-          <Input
-            type="number"
-            min="0"
-            step="0.01"
-            aria-label={t("filters.max")}
-            placeholder={t("filters.max")}
-            value={filters.maxPrice}
-            onChange={(event) => filters.setMaxPrice(event.target.value)}
-          />
-        </FormGrid>
+        <PriceRangeFields minPrice={filters.minPrice} maxPrice={filters.maxPrice} setMinPrice={filters.setMinPrice} setMaxPrice={filters.setMaxPrice} />
       </FilterSection>
 
       {/* Requires Registration Filter */}

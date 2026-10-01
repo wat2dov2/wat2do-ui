@@ -1,6 +1,7 @@
 import { useMemo, useCallback, useState, Fragment } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
+import { PriceFilter } from "@/features/search";
 import { IntegerFilter } from "@/shared/ui/integer-filter";
 import { toast } from "@/shared/hooks/use-toast";
 import { EventList } from "@/features/events/components/EventList";
@@ -155,7 +156,7 @@ export function EventsPageContainer({
                     case "new":
                       return <NewlyAddedFilterButton key={config.id} value={filters.addedSince || null} onValueChange={filters.setAddedSince} onClear={handleNewlyAddedFilterClear} />;
                     case "price":
-                      return <IntegerFilter key={config.id} value={filters.priceFilterValue} active={filters.priceFilterValue !== ""} onChange={filters.setPriceFilter} label={Number(filters.priceFilterValue) > 0 ? `> $${Number(filters.priceFilterValue)}` : t(filters.priceFilterValue === "0" ? "common.free" : "filters.anyPrice")} inputLabel={t("filters.minimumPrice")} preset={{ label: t("common.free"), value: "0" }} />;
+                      return <PriceFilter key={config.id} minPrice={filters.minPrice} maxPrice={filters.maxPrice} setMinPrice={filters.setMinPrice} setMaxPrice={filters.setMaxPrice} />;
                     case "campusSeasons":
                       return <Fragment key={config.id}>{filters.campusSeasonOptions.map(season => (
                         <Button key={season.id} variant={filters.campusSeasonIds.includes(season.id) ? "primary" : "outline"} size="sm" onClick={() => filters.toggleCampusSeason(season.id)} aria-pressed={filters.campusSeasonIds.includes(season.id)}>

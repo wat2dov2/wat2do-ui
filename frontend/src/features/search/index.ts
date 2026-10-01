@@ -2,3 +2,4 @@
 export { storeStatesToFilterState } from "./api/filterService";
 export { useSearch } from "./hooks/useSearch";
 export { useSearchStore } from "./store/search.store";
+export { PriceFilter } from "./components/PriceFilter";

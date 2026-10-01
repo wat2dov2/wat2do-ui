@@ -54,12 +54,16 @@ def _get_click_counts(item_ids: list[int], resource: str) -> dict[int, int]:
     if not unique_ids:
         return {}
     try:
-        rows = (
-            get_sb()
-            .rpc(f"get_{resource}_click_counts", {f"p_{resource}_ids": unique_ids})
-            .execute()
-            .data
-            or []
+        rows = fetch_all_pages(
+            lambda offset, page_size: (
+                get_sb()
+                .rpc(f"get_{resource}_click_counts", {f"p_{resource}_ids": unique_ids})
+                .order(f"{resource}_id")
+                .range(offset, offset + page_size - 1)
+                .execute()
+                .data
+                or []
+            )
         )
     except Exception as exc:
         log.warning("Failed to fetch %s click counts: %s", resource, exc)

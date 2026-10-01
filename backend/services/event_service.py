@@ -17,7 +17,7 @@ from core.constants import DEFAULT_LIST_LIMIT, MAX_LIST_LIMIT
 from core.database import get_sb
 from core.errors import CLUB_NOT_FOUND, EVENT_ALREADY_PAST
 from core.exceptions import NotFoundError, ValidationError
-from core.pagination import LatestAddedItem, fetch_all_pages
+from core.pagination import LatestAddedItem
 from core.tables import EVENTS
 from schemas.event import (
     EventCreate,
@@ -147,18 +147,10 @@ def get_event(event_id: int) -> EventResponse | None:
 
 
 def get_event_stats_for_school(school: str) -> dict[str, EventStatsResponse]:
-    """Return uncached click and going counts for cards at one school."""
-
-    def _page(offset: int, page_size: int) -> list[dict]:
-        q = get_sb().table(EVENTS).select("id")
-        school_id = school_service.get_school_id(school)
-        if school_id is None:
-            return []
-        q = q.eq("school_id", school_id)
-        return q.range(offset, offset + page_size - 1).execute().data or []
-
-    event_rows = fetch_all_pages(_page)
-    event_ids = [int(row["id"]) for row in event_rows]
+    """Return uncached click and going counts for the school's upcoming feed."""
+    event_ids = event_query.load_upcoming_event_ids(
+        since=_today_start_utc(school), school=school, cap=MAX_LIST_LIMIT
+    )
     click_counts = interaction_service.get_click_counts_for_events(event_ids)
     try:
         going_counts = going_event_service.get_going_counts_for_events(event_ids)

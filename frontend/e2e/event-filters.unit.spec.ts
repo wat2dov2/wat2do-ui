@@ -61,12 +61,12 @@ test("Free, Food and minimum Going filters still combine and clear", () => {
   expect(getFilterCounts(useSearchStore.getState())).toBe(0);
 });
 
-test("price thresholds exclude the boundary, combine with other filters, and clear through shared state", () => {
+test("price thresholds include the boundary, combine with other filters, and clear through shared state", () => {
   useSearchStore.getState().setFilterState({ ...EMPTY_FILTER_STATE, minPrice: "9" });
   expect(visibleEvents()).toEqual([3]);
   expect(getFilterCounts(useSearchStore.getState())).toBe(1);
   useSearchStore.getState().setFilterState({ ...EMPTY_FILTER_STATE, minPrice: "10" });
-  expect(visibleEvents()).toEqual([]);
+  expect(visibleEvents()).toEqual([3]);
   useSearchStore.getState().setFilterState({ ...EMPTY_FILTER_STATE, maxPrice: "0" });
   expect(visibleEvents()).toEqual([1, 2, 4, 5]);
   useSearchStore.getState().setFilterState({ ...EMPTY_FILTER_STATE, maxPrice: "0", hasFood: true });
@@ -76,6 +76,21 @@ test("price thresholds exclude the boundary, combine with other filters, and cle
   useSearchStore.getState().setFilterState(clearNarrowingFilterState(handoff));
   expect(visibleEvents()).toEqual([1, 2, 3, 4, 5]);
   expect(getFilterCounts(useSearchStore.getState())).toBe(0);
+});
+
+test("minimum zero includes every event and both price bounds work independently", () => {
+  useSearchStore.getState().setFilterState({ ...EMPTY_FILTER_STATE, minPrice: "0" });
+  expect(visibleEvents()).toEqual([1, 2, 3, 4, 5]);
+  useSearchStore.getState().setFilterState({ ...EMPTY_FILTER_STATE, minPrice: "0", maxPrice: "0" });
+  expect(visibleEvents()).toEqual([1, 2, 4, 5]);
+  useSearchStore.getState().setFilterState({ ...EMPTY_FILTER_STATE, minPrice: "10", maxPrice: "10" });
+  expect(visibleEvents()).toEqual([3]);
+  useSearchStore.getState().setFilterState({ ...EMPTY_FILTER_STATE, maxPrice: "9.99" });
+  expect(visibleEvents()).toEqual([1, 2, 4, 5]);
+  useSearchStore.getState().setFilterState({ ...EMPTY_FILTER_STATE, minPrice: "10.01" });
+  expect(visibleEvents()).toEqual([]);
+  useSearchStore.getState().setFilterState({ ...EMPTY_FILTER_STATE, minPrice: "11", maxPrice: "10" });
+  expect(visibleEvents()).toEqual([]);
 });
 
 const discoveryEvents = [

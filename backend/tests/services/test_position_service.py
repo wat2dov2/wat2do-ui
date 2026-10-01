@@ -230,3 +230,7 @@ def test_position_cards_receive_batched_live_click_counts(fake_sb, patch_sb, mon
     )
     assert position_service.get_position_stats_for_school("uwaterloo") == {"1": {"click_count": 12}}
     counts.assert_called_once_with([1, 2])
+    fake_sb.eq.assert_any_call("is_active", True)
+    fake_sb.eq.assert_any_call("school_id", 1)
+    assert "deadline_date.gte." in fake_sb.or_.call_args.args[0]
+    assert "added_at.gte." in fake_sb.or_.call_args.args[0]

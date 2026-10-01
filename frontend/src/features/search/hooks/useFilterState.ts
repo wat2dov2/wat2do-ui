@@ -82,7 +82,6 @@ export function useFilterState() {
       customDate: s.customDate,
     })),
   );
-  const priceFilterValue = values.maxPrice === "0" ? "0" : values.minPrice;
   const {
     updateFilterState,
     toggleFilterValue,
@@ -149,13 +148,6 @@ export function useFilterState() {
     (value: string[], source?: FilterUpdateSource) => updateFilterState({ campusSeasonIds: value }, source),
     [updateFilterState],
   );
-  const setPriceFilter = useCallback(
-    (value: string) => updateFilterState({
-      minPrice: value !== "" && Number(value) > 0 ? value : "",
-      maxPrice: value !== "" && Number(value) === 0 ? "0" : "",
-    }),
-    [updateFilterState],
-  );
   const setGoingFilter = useCallback(
     (value: boolean) => updateFilterState({ going: value }),
     [updateFilterState],
@@ -199,8 +191,6 @@ export function useFilterState() {
     setSportsGame,
     setCampusSeasonIds,
     toggleCampusSeason,
-    priceFilterValue,
-    setPriceFilter,
     setGoingFilter,
     setAddedSince,
     setDateFilter,

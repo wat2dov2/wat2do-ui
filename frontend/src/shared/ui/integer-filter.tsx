@@ -12,65 +12,30 @@ interface IntegerFilterProps {
   onChange: (value: string) => void;
   label: string;
   inputLabel: string;
-  preset?: { label: string; value: string };
 }
 
-export function IntegerFilter({ value, active, disabled = false, onChange, label, inputLabel, preset }: IntegerFilterProps) {
+export function IntegerFilter({ value, active, disabled = false, onChange, label, inputLabel }: IntegerFilterProps) {
   const inputId = useId();
   const [open, setOpen] = useState(false);
-  const [showInput, setShowInput] = useState(false);
-  const presetSelected = !active || String(value) === preset?.value;
 
   return (
-    <Popover open={open} onOpenChange={(nextOpen) => {
-      setOpen(nextOpen);
-      if (!nextOpen) setShowInput(false);
-    }}>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild disabled={disabled}>
-        <Button disabled={disabled} size="sm" variant={active && !preset ? "primary" : "outline"} aria-pressed={active} aria-expanded={open}>
+        <Button disabled={disabled} size="sm" variant={active ? "primary" : "outline"} aria-pressed={active} aria-expanded={open}>
           {label}
           <ChevronDown aria-hidden="true" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="start" variant={preset && !showInput ? "menu" : "default"}>
-        {preset && !showInput ? (
-          <div role="listbox" aria-label={label}>
-            <Button
-              size="sm"
-              role="option"
-              variant={presetSelected ? "primary" : "ghost"}
-              aria-selected={presetSelected}
-              className="w-full justify-start"
-              onClick={() => {
-                onChange(active && String(value) === preset.value ? "" : preset.value);
-                setOpen(false);
-              }}
-            >
-              {preset.label}
-            </Button>
-            <Button
-              size="sm"
-              role="option"
-              variant={!presetSelected ? "primary" : "ghost"}
-              aria-selected={!presetSelected}
-              className="w-full justify-start"
-              onClick={() => setShowInput(true)}
-            >
-              {inputLabel}
-            </Button>
-          </div>
-        ) : (
-          <Field>
-            <FieldLabel htmlFor={inputId}>{inputLabel}</FieldLabel>
-            <Input
-              id={inputId}
-              format="integer"
-              autoFocus={Boolean(preset)}
-              defaultValue={preset && presetSelected ? "" : value}
-              onChange={(event) => onChange(event.currentTarget.value)}
-            />
-          </Field>
-        )}
+      <PopoverContent align="start">
+        <Field>
+          <FieldLabel htmlFor={inputId}>{inputLabel}</FieldLabel>
+          <Input
+            id={inputId}
+            format="integer"
+            defaultValue={value}
+            onChange={(event) => onChange(event.currentTarget.value)}
+          />
+        </Field>
       </PopoverContent>
     </Popover>
   );

@@ -179,10 +179,20 @@ def load_upcoming_events(
     events survive if a school has more upcoming than the cap. ``model`` selects
     the response shape (and, with it, how many event columns we fetch).
     """
+    event_ids = load_upcoming_event_ids(since=since, school=school, cap=cap)
+    if not event_ids:
+        return []
+
+    events_by_id = _load_hydrated_events_by_ids(event_ids, model=model)
+    return [events_by_id[event_id] for event_id in event_ids if event_id in events_by_id]
+
+
+def load_upcoming_event_ids(*, since: datetime, school: str | None, cap: int) -> list[int]:
+    """Read the feed's upcoming IDs without hydrating event cards or occurrences."""
     school_id = school_service.get_school_id(school) if school else None
     if school and school_id is None:
         return []
-    event_ids = _load_lightweight_date_page_ids(
+    return _load_lightweight_date_page_ids(
         start_utc=since,
         end_utc=None,
         school_id=school_id,
@@ -190,11 +200,6 @@ def load_upcoming_events(
         limit=cap,
         cap=cap,
     )
-    if not event_ids:
-        return []
-
-    events_by_id = _load_hydrated_events_by_ids(event_ids, model=model)
-    return [events_by_id[event_id] for event_id in event_ids if event_id in events_by_id]
 
 
 def load_events_page(

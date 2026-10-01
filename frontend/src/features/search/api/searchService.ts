@@ -220,7 +220,7 @@ export function filterEvents(
       if (!filters.selectedDays.every((day) => weekdays.has(day))) return false;
     }
 
-    if (price <= minPrice || price > maxPrice) return false;
+    if (price < minPrice || price > maxPrice) return false;
 
     if (locations.length > 0) {
       const location = (event.location ?? "").toLocaleLowerCase();
