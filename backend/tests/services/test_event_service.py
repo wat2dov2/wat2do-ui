@@ -1185,3 +1185,30 @@ def test_edit_validates_or_clears_seasons_for_destination_school(
         event_service.update_event(42, EventUpdate(**patch))
         assert commit.call_args.args[1]["campus_season_ids"] == expected
         assert "school" not in commit.call_args.args[1]
+
+
+@pytest.mark.parametrize("model", [EventSummaryResponse, EventResponse])
+@pytest.mark.parametrize(
+    "source,school,expected",
+    [
+        ("https://events.wlu.ca/2026/oct/campus-event.html", "wlu", True),
+        ("https://events.wlu.ca/2026/oct/campus-event.html", "uwaterloo", False),
+        ("https://www.instagram.com/p/realposter/", "wlu", False),
+        (None, "wlu", False),
+    ],
+)
+def test_directory_event_identity_preserves_original_media(model, source, school, expected):
+    row = {
+        "id": 1,
+        "title": "Campus event",
+        "school": school,
+        "source_url": source,
+        "source_image_url": "https://example.com/original.jpg",
+        "added_at": datetime(2026, 9, 30, tzinfo=timezone.utc),
+        "clubs": {"logo_url": "https://example.com/club.jpg"},
+    }
+    event = event_query.hydrate_event(row, [], model)
+    assert event.is_directory_event is expected
+    assert event.source_image_url == "https://example.com/original.jpg"
+    assert event.club_logo_url == "https://example.com/club.jpg"
+    assert "is_directory_event" not in event_query._SUMMARY_COLUMNS

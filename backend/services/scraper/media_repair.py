@@ -105,29 +105,14 @@ def repair_stored_image(target: MediaRepairTarget, *, apply: bool = False) -> di
 
 def repair_directory_image(target: MediaRepairTarget, *, apply: bool = False) -> dict:
     """Refresh a directory poster using event artwork, or clear a verified tiny asset."""
-    import json
-    from pathlib import Path
-
-    from services.scraper.directory_scraper import (
-        DirectoryConfig,
-        _matches_event_url,
-        scrape_event_page,
-    )
+    from services.scraper.directory_config import directory_for_event
+    from services.scraper.directory_scraper import scrape_event_page
     from services.scraper.image_uploader import upload_image_from_url
 
     report = _report(target, "directory-image", "unavailable")
     if target.resource != EVENTS or not target.source_url:
         return report
-    configs = json.loads((Path(__file__).parent / "urls" / "directories.json").read_text())
-    config = next(
-        (
-            DirectoryConfig.model_validate(value)
-            for value in configs
-            if value["school"] == target.school
-            and _matches_event_url(target.source_url, DirectoryConfig.model_validate(value))
-        ),
-        None,
-    )
+    config = directory_for_event(target.source_url, target.school)
     if config is None:
         report["reason"] = "Source does not match a configured school directory"
         return report

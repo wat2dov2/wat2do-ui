@@ -757,7 +757,7 @@ export interface paths {
         put?: never;
         /**
          * Record Interactions
-         * @description Record a batch of user-event interactions.
+         * @description Record a batch of event interactions and position clicks.
          *
          *     Auth via ``Authorization: Bearer`` (frontend uses ``fetch`` + ``keepalive``
          *     so the header works on unload). Authenticated batches are size-capped and
@@ -2333,6 +2333,11 @@ export interface components {
             source_video_url?: string | null;
             /** Club Logo Url */
             club_logo_url?: string | null;
+            /**
+             * Is Directory Event
+             * @default false
+             */
+            is_directory_event: boolean;
             /** Club Type */
             club_type?: string | null;
             /** School */
@@ -2411,6 +2416,11 @@ export interface components {
             source_video_url?: string | null;
             /** Club Logo Url */
             club_logo_url?: string | null;
+            /**
+             * Is Directory Event
+             * @default false
+             */
+            is_directory_event: boolean;
             /** Club Type */
             club_type?: string | null;
             /** School */
@@ -2519,6 +2529,11 @@ export interface components {
             club?: string | null;
             /** Club Logo Url */
             club_logo_url?: string | null;
+            /**
+             * Is Directory Event
+             * @default false
+             */
+            is_directory_event: boolean;
             /** Club Type */
             club_type?: string | null;
             /** Club Page */

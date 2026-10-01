@@ -3269,7 +3269,7 @@
           "interactions"
         ],
         "summary": "Record Interactions",
-        "description": "Record a batch of user-event interactions.\n\nAuth via ``Authorization: Bearer`` (frontend uses ``fetch`` + ``keepalive``\nso the header works on unload). Authenticated batches are size-capped and\ndeduped; payload ``user_id`` must match the authenticated user.\nAnonymous requests are allowed for basic click tracking and are\nIP-rate-limited; without ``user_id`` they cannot drive personalized signals.",
+        "description": "Record a batch of event interactions and position clicks.\n\nAuth via ``Authorization: Bearer`` (frontend uses ``fetch`` + ``keepalive``\nso the header works on unload). Authenticated batches are size-capped and\ndeduped; payload ``user_id`` must match the authenticated user.\nAnonymous requests are allowed for basic click tracking and are\nIP-rate-limited; without ``user_id`` they cannot drive personalized signals.",
         "operationId": "record_interactions_interactions_batch_post",
         "requestBody": {
           "content": {
@@ -8841,6 +8841,11 @@
             ],
             "title": "Club Logo Url"
           },
+          "is_directory_event": {
+            "type": "boolean",
+            "title": "Is Directory Event",
+            "default": false
+          },
           "club_type": {
             "anyOf": [
               {
@@ -9079,6 +9084,11 @@
               }
             ],
             "title": "Club Logo Url"
+          },
+          "is_directory_event": {
+            "type": "boolean",
+            "title": "Is Directory Event",
+            "default": false
           },
           "club_type": {
             "anyOf": [
@@ -9379,6 +9389,11 @@
               }
             ],
             "title": "Club Logo Url"
+          },
+          "is_directory_event": {
+            "type": "boolean",
+            "title": "Is Directory Event",
+            "default": false
           },
           "club_type": {
             "anyOf": [

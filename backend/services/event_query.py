@@ -28,6 +28,7 @@ from core.tables import EVENT_DATES, EVENTS
 from schemas.event import EventSummaryResponse
 from schemas.event_date import OccurrenceResponse
 from services import event_date_service, school_service
+from services.scraper.directory_config import directory_for_event
 
 log = logging.getLogger(__name__)
 
@@ -41,6 +42,7 @@ _SUMMARY_COMPUTED_FIELDS = {
     "occurrences",
     "school",
     "club_logo_url",
+    "is_directory_event",
     "club_type",
     "club_page",
     "club_ig",
@@ -100,7 +102,15 @@ def hydrate_event(row: dict, occurrences: list[OccurrenceResponse], model: type[
         if isinstance(org, dict)
         else {}
     )
-    return model.model_validate({**row, **org_fields, "occurrences": occurrences})
+    return model.model_validate(
+        {
+            **row,
+            **org_fields,
+            "occurrences": occurrences,
+            "is_directory_event": directory_for_event(row.get("source_url"), row.get("school"))
+            is not None,
+        }
+    )
 
 
 def _load_event_rows_by_ids(event_ids: list[int], *, columns: str) -> list[dict]:

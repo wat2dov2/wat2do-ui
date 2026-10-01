@@ -10,13 +10,11 @@ import json
 import logging
 from dataclasses import dataclass, field
 from datetime import date, datetime, time, timezone
-from typing import Literal
 from urllib.parse import urldefrag, urljoin, urlparse, urlsplit, urlunsplit
 
 import httpx
 from bs4 import BeautifulSoup
 from icalendar import Calendar
-from pydantic import BaseModel, Field
 
 from core.controlbox import controlbox
 from services.scraper.dedup import (
@@ -24,6 +22,7 @@ from services.scraper.dedup import (
     existing_urls,
     find_candidates,
 )
+from services.scraper.directory_config import DirectoryConfig, matches_event_url
 from services.scraper.event_writer import write_event
 from services.scraper.extractor import extract_events_from_post
 from services.scraper.image_uploader import upload_post_images
@@ -36,23 +35,6 @@ log = logging.getLogger(__name__)
 # A minimal command-line user-agent is accepted more consistently.
 _USER_AGENT = "curl/8.7.1"
 _HTTP_TIMEOUT_SECONDS = 30.0
-
-
-class DirectoryConfig(BaseModel):
-    """Configuration schema for a directory scraper target."""
-
-    id: str
-    name: str
-    school: str
-    default_club: str
-    source_format: Literal["html", "ical", "json"]
-    entry_url: str
-    event_url_patterns: list[str]
-    event_url_exclude_patterns: list[str] = Field(default_factory=list)
-    json_url_fields: list[str] = Field(default_factory=lambda: ["url"])
-    next_page_selector: str | None = None
-    content_selector: str | None = None
-    image_selector: str | None = None
 
 
 @dataclass
@@ -78,17 +60,9 @@ def _clean_event_url(url: str) -> str:
     return urlunsplit((parsed.scheme, parsed.netloc, path, parsed.query, ""))
 
 
-def _matches_event_url(url: str, config: DirectoryConfig) -> bool:
-    parsed = urlsplit(url)
-    path_url = urlunsplit((parsed.scheme, parsed.netloc, parsed.path, "", ""))
-    return any(pattern in path_url for pattern in config.event_url_patterns) and not any(
-        pattern in url for pattern in config.event_url_exclude_patterns
-    )
-
-
 def _add_event_url(event_urls: dict[str, None], candidate: str, config: DirectoryConfig) -> None:
     absolute_url = urljoin(config.entry_url, candidate.strip())
-    if not _matches_event_url(absolute_url, config):
+    if not matches_event_url(absolute_url, config):
         return
 
     clean_url = _clean_event_url(absolute_url)
@@ -494,13 +468,15 @@ def _resolve_directory_club(event: dict, config: DirectoryConfig) -> ResolvedClu
         club_name=extracted_name,
         create_stub_if_missing=False,
     )
-    if resolved.club_id is not None:
+    if resolved.club_id is not None and not (
+        config.default_club_ig and extracted_name == config.default_club
+    ):
         event["club"] = resolved.club_name or extracted_name or ""
         return resolved
 
     event["club"] = config.default_club
     return resolve_club_for_scrape(
-        ig_handle=None,
+        ig_handle=config.default_club_ig,
         school=config.school,
         club_name=config.default_club,
         create_stub_if_missing=False,

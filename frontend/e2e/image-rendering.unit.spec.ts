@@ -619,3 +619,38 @@ test("About loading preserves the carousel frame, greeting, caption and controls
   expect(html).toContain('University of Toronto St. George');
   expect(html.match(/disabled=""/g)).toHaveLength(2);
 });
+
+
+for (const variant of ["card", "detail"]) {
+  test(`directory ${variant} uses the club profile picture with existing cropping`, () => {
+    const logo = "https://wat2do.io/media/organization-logos/laurier.jpg";
+    const html = render(EventCardImage, { variant, event: {
+      id: 42, title: "Laurier event", occurrences: [], added_at: "2026-09-01T00:00:00Z",
+      is_directory_event: true, source_image_url: posterUrl, club_logo_url: logo,
+    }});
+    expect(html).toContain(encodeURIComponent(logo));
+    expect(html).not.toContain(encodeURIComponent(posterUrl));
+    expect(html).toContain("object-cover");
+  });
+
+  test(`directory ${variant} without a profile picture uses the title fallback`, () => {
+    const html = render(EventCardImage, { variant, event: {
+      id: 42, title: "Laurier event", occurrences: [], added_at: "2026-09-01T00:00:00Z",
+      is_directory_event: true, source_image_url: posterUrl, club_logo_url: null,
+    }});
+    expect(html).toContain('data-slot="event-poster-fallback"');
+    expect(html).toContain("Laurier event");
+    expect(html).not.toContain(encodeURIComponent(posterUrl));
+    expect(html).not.toContain('cursor-zoom-in');
+  });
+}
+
+test("ordinary events retain their event poster even with a club profile picture", () => {
+  const logo = "https://wat2do.io/media/organization-logos/club.jpg";
+  const html = render(EventCardImage, { variant: "card", event: {
+    id: 42, title: "Real event poster", occurrences: [], added_at: "2026-09-01T00:00:00Z",
+    is_directory_event: false, source_image_url: posterUrl, club_logo_url: logo,
+  }});
+  expect(html).toContain(encodeURIComponent(posterUrl));
+  expect(html).not.toContain(encodeURIComponent(logo));
+});

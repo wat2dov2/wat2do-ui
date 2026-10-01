@@ -276,6 +276,7 @@ class EventSummaryResponse(EventDiscoveryFields):
     category: str | None = None
     club: str | None = None
     club_logo_url: str | None = None
+    is_directory_event: bool = False
     club_type: ClubTypeValue | None = None
     club_page: str | None = None
     club_ig: str | None = None
@@ -327,6 +328,7 @@ class EventResponse(EventDiscoveryFields):
     source_image_url: str | None = None
     source_video_url: str | None = None
     club_logo_url: str | None = None
+    is_directory_event: bool = False
     club_type: ClubTypeValue | None = None
     school: str | None = None
     source_url: str | None = None
@@ -357,6 +359,7 @@ class EventPublicResponse(EventDiscoveryFields):
     source_image_url: str | None = None
     source_video_url: str | None = None
     club_logo_url: str | None = None
+    is_directory_event: bool = False
     club_type: ClubTypeValue | None = None
     school: str | None = None
     source_url: str | None = None

@@ -1,3 +1,5 @@
+from services.scraper.directory_config import DirectoryConfig
+
 """Unit tests for services/scraper/directory_scraper."""
 
 import json
@@ -7,7 +9,6 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from services.scraper.directory_scraper import (
-    DirectoryConfig,
     _resolve_directory_club,
     crawl_directory_links,
     run_directory_pipeline,
@@ -69,15 +70,15 @@ def test_directory_catalog_covers_every_authoritative_school():
         "cornell",
         "dalhousie",
         "guelph",
-        "laval",
+        "ulaval",
         "mcmaster",
         "mcgill",
-        "memorial",
+        "mun",
         "mit",
         "nyu",
-        "ocad",
+        "ocadu",
         "ontariotech",
-        "queens",
+        "queensu",
         "sfu",
         "tmu",
         "ualberta",
@@ -85,18 +86,18 @@ def test_directory_catalog_covers_every_authoritative_school():
         "ucalgary",
         "udem",
         "umanitoba",
-        "uottawa",
+        "ottawa",
         "upenn",
         "uqam",
         "usask",
-        "utoronto",
+        "utsg",
         "utsc",
         "utm",
         "uwaterloo",
-        "western",
-        "windsor",
+        "uwo",
+        "uwindsor",
         "wlu",
-        "york",
+        "yorku",
     }
     assert len({config.id for config in configs}) == len(configs)
     assert all(config.default_club for config in configs)
@@ -369,13 +370,20 @@ def test_wusa_pipeline_updates_existing_event_with_canonical_owner(
     )
     config = DirectoryConfig.model_validate(next(row for row in configs if row["id"] == "wusa"))
     canonical_name = "Waterloo Undergraduate Student Association"
-    club = {"id": 6943, "club_name": canonical_name, "ig": "yourwusa"}
+    club = {
+        "id": 6943,
+        "club_name": canonical_name,
+        "ig": "yourwusa",
+        "schools": {"slug": "uwaterloo"},
+    }
     monkeypatch.setattr(
         club_service,
         "lookup_club_by_school_and_name",
         lambda school, name: club if school == "uwaterloo" and name == canonical_name else None,
     )
-    monkeypatch.setattr(event_writer, "_lookup_club_by_ig", lambda _: None)
+    monkeypatch.setattr(
+        event_writer, "_lookup_club_by_ig", lambda handle: club if handle == "yourwusa" else None
+    )
     occurrence = {"dtstart_utc": "2099-09-23T15:00:00Z", "dtend_utc": "2099-09-23T18:00:00Z"}
     candidate = {
         "id": 18880,
@@ -439,3 +447,48 @@ def test_directory_with_only_body_chrome_does_not_invent_artwork(mock_get):
     text, images = scrape_event_page("https://example.com/event/1", directory_config())
     assert text
     assert images == []
+
+
+@patch("services.scraper.directory_scraper.resolve_club_for_scrape")
+def test_publisher_resolution_uses_verified_handle_over_ambiguous_name(mock_resolve):
+    mock_resolve.side_effect = [
+        ResolvedClub(8, "Wilfrid Laurier University", "unrelated_department"),
+        ResolvedClub(9, "Wilfrid Laurier University", "wilfridlaurieruni"),
+    ]
+    config = directory_config(
+        school="wlu", default_club="Wilfrid Laurier University", default_club_ig="wilfridlaurieruni"
+    )
+    event = {"club": config.default_club}
+    assert _resolve_directory_club(event, config).club_id == 9
+    assert mock_resolve.call_args.kwargs["ig_handle"] == "wilfridlaurieruni"
+
+
+def test_directory_identity_does_not_match_another_host_with_the_same_path():
+    from services.scraper.directory_config import directory_for_event
+
+    assert directory_for_event("https://unrelated.example/event/poster", "uwaterloo") is None
+    assert directory_for_event("https://wusa.ca/event/campus-event", "uwaterloo") is not None
+    assert (
+        directory_for_event("https://wusa.ca.evil.example/event/campus-event", "uwaterloo") is None
+    )
+
+
+@pytest.mark.parametrize(
+    "directory_id, school",
+    [
+        ("utoronto-events", "utsg"),
+        ("western-usc-events", "uwo"),
+        ("queens-ams-events", "queensu"),
+        ("yfs-events", "yorku"),
+        ("uottawa-events", "ottawa"),
+        ("ocad-events", "ocadu"),
+        ("cadeul-events", "ulaval"),
+        ("munsu-events", "mun"),
+        ("uwsa-events", "uwindsor"),
+    ],
+)
+def test_directory_configs_use_registered_school_slugs(directory_id, school):
+    from services.scraper.directory_config import directory_configs
+
+    config = next(row for row in directory_configs() if row.id == directory_id)
+    assert config.school == school

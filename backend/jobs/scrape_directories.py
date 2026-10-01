@@ -25,8 +25,8 @@ from dotenv import load_dotenv  # noqa: E402
 load_dotenv()
 
 import core.logging  # noqa: F401, E402  - triggers basicConfig for standalone execution
+from services.scraper.directory_config import DirectoryConfig  # noqa: E402
 from services.scraper.directory_scraper import (  # noqa: E402
-    DirectoryConfig,
     run_directory_pipeline,
 )
 

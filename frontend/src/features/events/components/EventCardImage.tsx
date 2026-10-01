@@ -48,6 +48,7 @@ export function EventCardImage({
 }: EventCardImageProps) {
   const { t } = useTranslation();
   const [imageOpen, setImageOpen] = useState(false);
+  const imageSrc = event.is_directory_event ? event.club_logo_url : event.source_image_url;
   const eagerImage = variant === "detail" || priority;
   const { surfaceRef, registerCorner, cutouts, box } = useEventImageCutouts();
 
@@ -77,7 +78,7 @@ export function EventCardImage({
         {/* Masked face: notches are real holes, so the page backdrop shows through. */}
         <EventImageCutout
           backgroundColor="var(--surface-elevated)"
-          imageSrc={event.source_image_url}
+          imageSrc={imageSrc}
           videoSrc={variant === "detail" ? event.source_video_url : undefined}
           imageAlt={event.title}
           imageLoading={eagerImage ? "eager" : "lazy"}
@@ -93,7 +94,7 @@ export function EventCardImage({
           height={box.height}
           className="absolute inset-0"
         >
-          {variant === "detail" && event.source_image_url && !event.source_video_url ? (
+          {variant === "detail" && imageSrc && !event.source_video_url ? (
             <button
               type="button"
               className="absolute inset-0 cursor-zoom-in"
@@ -142,7 +143,7 @@ export function EventCardImage({
         )}
       </div>
 
-      {variant === "detail" && event.source_image_url && !event.source_video_url ? (
+      {variant === "detail" && imageSrc && !event.source_video_url ? (
         <Dialog open={imageOpen} onOpenChange={setImageOpen}>
           <DialogContent size="xl" className="p-2">
             <DialogTitle className="sr-only">{t("events.viewFullImage")}</DialogTitle>
@@ -150,7 +151,7 @@ export function EventCardImage({
               {t("events.fullImageDescription", { title: event.title })}
             </DialogDescription>
             <img
-              src={event.source_image_url}
+              src={imageSrc}
               alt={event.title}
               className="max-h-[85dvh] w-full rounded-lg object-contain"
             />
