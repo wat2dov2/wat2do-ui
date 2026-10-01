@@ -80,7 +80,6 @@ export function EventCardImage({
           imageSrc={event.source_image_url}
           videoSrc={variant === "detail" ? event.source_video_url : undefined}
           imageAlt={event.title}
-          imageFit="contain"
           imageLoading={eagerImage ? "eager" : "lazy"}
           imageSizes={variant === "detail" ? "(max-width: 767px) 384px, 320px" : undefined}
           imageFallback={
