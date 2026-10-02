@@ -29,7 +29,7 @@ export const SLIDE_WIDTH = 1080;
 export const SLIDE_HEIGHT = 1350;
 /** Raster preparation and template layout use the same physical image bounds. */
 export const SLIDE_POSTER_REGIONS = {
-  event: { width: SLIDE_WIDTH - 128, height: 1000 },
+  event: { width: SLIDE_WIDTH - 128, height: 850 },
   cover: { width: 220, height: 308 },
   avatar: { width: 88, height: 88 },
 } as const;
@@ -59,8 +59,6 @@ export interface SlideEvent {
   registration?: boolean | null;
 }
 
-/** Reserve room for stickers without changing the prepared poster crop. */
-export const SLIDE_EVENT_POSTER_HEIGHT = 850;
 export const SLIDE_STICKER_SIZE = { width: 228, height: 94 } as const;
 
 export interface EventSlideModel {

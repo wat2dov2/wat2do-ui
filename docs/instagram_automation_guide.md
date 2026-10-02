@@ -333,7 +333,7 @@ The ten sticker silhouettes and ten colors double the former visual variety.
 Similar labels share a silhouette and color across events, including registration, food and entry cost.
 Other labels use their normalized text to choose a consistent style.
 Staggered compositions fill the reserved white footer, with compact stickers, shuffled positions and varied tilt instead of a fixed two-left/two-right arrangement.
-The event poster scales down proportionally to make room, preserving its existing crop.
+The event poster fills the card width using a centered crop, with space reserved below for stickers.
 Preview and published images use the same deterministic layout.
 Labels render as explicit padded lines within their silhouette.
 The renderer no longer requests maps or club hiring data.

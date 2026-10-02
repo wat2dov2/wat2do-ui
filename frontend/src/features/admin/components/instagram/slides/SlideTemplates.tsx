@@ -13,7 +13,6 @@ import {
   SLIDE_WIDTH,
   SLIDE_POSTER_REGIONS,
   SLIDE_STICKER_SIZE,
-  SLIDE_EVENT_POSTER_HEIGHT,
   type CoverSlideModel,
   type EventSlideModel,
 } from "@/features/admin/lib/instagramSlides";
@@ -109,7 +108,6 @@ function SlideSticker({ sticker }: { sticker: EventSlideModel["stickers"][number
 /** Inset Instagram post on the cover's shared school-colored doodle backdrop. */
 export function EventSlideTemplate({ model, renderPoster = renderSlidePoster }: { model: EventSlideModel; renderPoster?: PosterRenderer }) {
   const poster = SLIDE_POSTER_REGIONS.event;
-  const displayedPoster = { width: Math.round(poster.width * SLIDE_EVENT_POSTER_HEIGHT / poster.height), height: SLIDE_EVENT_POSTER_HEIGHT };
   const schedule = [model.dateLine, model.timeLine].filter(Boolean).join(" · ");
   return (
     <div style={{ ...slideFrame, backgroundColor: model.colors.primary, color: LIGHT.foreground, overflow: "hidden", padding: 64 }}>
@@ -123,8 +121,8 @@ export function EventSlideTemplate({ model, renderPoster = renderSlidePoster }: 
             {schedule ? <p style={{ ...clampText(1), fontSize: 24, lineHeight: 1.2, maxHeight: 29, color: LIGHT.mutedForeground }}>{schedule}</p> : null}
           </div>
         </div>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: poster.width, height: displayedPoster.height, flexShrink: 0, overflow: "hidden", backgroundColor: LIGHT.surface }}>
-          {model.imageSrc ? renderPoster({ src: model.imageSrc, ...displayedPoster })
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", ...poster, flexShrink: 0, overflow: "hidden", backgroundColor: LIGHT.surface }}>
+          {model.imageSrc ? renderPoster({ src: model.imageSrc, ...poster })
             : <p style={{ ...clampText(4), margin: EVENT_CONTENT_INSET * 2, fontSize: 64, fontWeight: 700, lineHeight: 1.15 }}>{model.title}</p>}
         </div>
         <div style={{ display: "flex", flex: 1, backgroundColor: LIGHT.surface }} />

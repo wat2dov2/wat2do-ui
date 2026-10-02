@@ -306,7 +306,7 @@ test.describe("Instagram raster preparation", () => {
       const prepared = Buffer.from(renderedSlide!.props.model.imageSrc!.split(",")[1], "base64");
       const metadata = await sharp(prepared).metadata();
       expect(metadata.format).toBe("png");
-      expect([metadata.width, metadata.height]).toEqual([952, 1000]);
+      expect([metadata.width, metadata.height]).toEqual([952, 850]);
       const output = Buffer.from(await response.arrayBuffer());
       const pixels = await sharp(output).extract({ left: 540, top: 400, width: 1, height: 1 }).removeAlpha().raw().toBuffer();
       for (const [channel, expected] of [240, 80, 20].entries()) expect(Math.abs(pixels[channel] - expected)).toBeLessThanOrEqual(3);
@@ -345,14 +345,14 @@ test.describe("Instagram raster preparation", () => {
       const output = Buffer.from(await response.arrayBuffer());
       for (const { right, bottom, color } of corners) {
         for (const { left, top } of [
-          { left: right ? 950 : 1, top: bottom ? 998 : 1 },
-          { left: right ? 486 : 466, top: bottom ? 510 : 490 },
+          { left: right ? 950 : 1, top: bottom ? 848 : 1 },
+          { left: right ? 486 : 466, top: bottom ? 435 : 415 },
         ]) {
-          const publishedPixel = await sharp(output).extract({ left: 136 + Math.round(left * 809 / 952), top: 196 + Math.round(top * 850 / 1000), width: 1, height: 1 }).removeAlpha().raw().toBuffer();
+          const publishedPixel = await sharp(output).extract({ left: 64 + left, top: 196 + top, width: 1, height: 1 }).removeAlpha().raw().toBuffer();
           expect([...publishedPixel]).toEqual(color);
         }
       }
-      expect([metadata.width, metadata.height]).toEqual([952, 1000]);
+      expect([metadata.width, metadata.height]).toEqual([952, 850]);
     });
   }
 
