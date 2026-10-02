@@ -24,47 +24,6 @@ def registered_school(monkeypatch):
     )
 
 
-def test_generate_due_batches_uses_enabled_connected_accounts(monkeypatch):
-    generated_accounts = []
-    enabled_accounts = ["dalhousie", "uwaterloo"]
-    monkeypatch.setattr(service, "_enabled_account_keys", lambda: enabled_accounts)
-    monkeypatch.setattr(service, "_batch_exists", lambda *_: False)
-    monkeypatch.setattr(
-        service,
-        "_generate_account_batch",
-        lambda account, *_: generated_accounts.append(account) or "generated",
-    )
-
-    result = service.generate_due_batches(
-        datetime(2026, 7, 23, 13, tzinfo=timezone.utc),
-    )
-
-    assert result == {
-        "accounts": len(enabled_accounts),
-        "generated": len(enabled_accounts),
-        "empty": 0,
-        "skipped": 0,
-        "failed": 0,
-    }
-    assert generated_accounts == enabled_accounts
-    assert "dalhousie" in generated_accounts
-
-
-def test_generate_due_batches_runs_when_the_scheduler_starts_late(monkeypatch):
-    generate = Mock(return_value="generated")
-    monkeypatch.setattr(service, "_generate_account_batch", generate)
-    monkeypatch.setattr(service, "_batch_exists", lambda *_: False)
-    enabled_account_count = 2
-    monkeypatch.setattr(service, "_enabled_account_keys", lambda: ["dalhousie", "uwaterloo"])
-
-    result = service.generate_due_batches(
-        datetime(2026, 7, 23, 14, 48, tzinfo=timezone.utc),
-    )
-
-    assert result["accounts"] == enabled_account_count
-    assert generate.call_count == enabled_account_count
-
-
 @pytest.fixture(autouse=True)
 def feed_revalidation(monkeypatch):
     revalidation = Mock()
@@ -632,7 +591,7 @@ def test_publish_batch_renders_the_slides_from_live_event_data(
     containers: list[str] = []
     table_calls: list[tuple] = []
 
-    monkeypatch.setattr(service, "_enabled_account_keys", lambda: ["dalhousie"])
+    monkeypatch.setattr(service, "_enabled_accounts", lambda: [{"account_key": "dalhousie"}])
     load_credentials = Mock(
         return_value=SimpleNamespace(
             access_token="dalhousie-token",
@@ -926,17 +885,6 @@ def test_publishable_event_accepts_every_canonical_category(category):
     assert service._is_publishable_event(event, datetime(2026, 9, 10, tzinfo=timezone.utc))
 
 
-def test_generation_does_not_create_employer_batches_when_event_batch_exists(monkeypatch):
-    monkeypatch.setattr(service, "_enabled_account_keys", lambda: ["uwaterloo"])
-    monkeypatch.setattr(service, "_batch_exists", lambda account, date, kind: kind == "events")
-    generate = Mock(return_value="generated")
-    monkeypatch.setattr(service, "_generate_account_batch", generate)
-    result = service.generate_due_batches(datetime(2026, 9, 28, 14, tzinfo=timezone.utc))
-    assert result["skipped"] == 1
-    assert result["generated"] == 0
-    generate.assert_not_called()
-
-
 @pytest.mark.parametrize(
     ("batch_kind", "expected_ids"),
     [
@@ -1028,79 +976,11 @@ def test_batch_cutoffs_and_daily_existence_are_scoped_to_kind(monkeypatch):
     monkeypatch.setattr(
         service, "get_sb", lambda: SimpleNamespace(table=lambda _: _FakeQuery([], calls))
     )
-    assert not service._batch_exists(
+    assert not service._daily_batch(
         "uwaterloo", datetime(2026, 9, 28).date(), "employers_on_campus"
     )
     assert service._last_successful_cutoff("uwaterloo", "employers_on_campus") is None
     assert calls.count(("eq", ("batch_kind", "employers_on_campus"), {})) == 2
-
-
-def test_employer_generation_persists_kind_and_uses_its_own_cutoff(monkeypatch, feed_revalidation):
-    batch_calls = []
-    item_calls = []
-    now = datetime(2026, 9, 28, 14, tzinfo=timezone.utc)
-    cutoff = datetime(2026, 9, 27, 14, tzinfo=timezone.utc)
-    monkeypatch.setattr(
-        service,
-        "load_account_credentials",
-        lambda *_args, **_kwargs: SimpleNamespace(
-            school_id=1,
-            instagram_user_id="campus-id",
-        ),
-    )
-    previous = Mock(return_value=cutoff)
-    candidates = Mock(return_value=[{"id": 17}])
-    monkeypatch.setattr(
-        service,
-        "select_carousel",
-        lambda *_: [SimpleNamespace(event_id=17, sticker_ids=["campus-pick"])],
-    )
-    monkeypatch.setattr(service, "_last_successful_cutoff", previous)
-    monkeypatch.setattr(service, "_load_candidates", candidates)
-    monkeypatch.setattr(service, "default_caption_intro", lambda school, kind: f"{school} {kind}")
-    monkeypatch.setattr(service, "build_caption", lambda *_: "Employer details")
-    monkeypatch.setattr(
-        service,
-        "get_sb",
-        lambda: SimpleNamespace(
-            table=lambda name: _FakeQuery(
-                [{"id": "employer-batch"}],
-                batch_calls if name == service.INSTAGRAM_PUBLISH_BATCHES else item_calls,
-            )
-        ),
-    )
-
-    assert (
-        service._generate_account_batch("uwaterloo", now.date(), now, "employers_on_campus")
-        == "generated"
-    )
-
-    feed_revalidation.revalidate_schools.assert_not_called()
-    previous.assert_called_once_with("uwaterloo", "employers_on_campus")
-    candidates.assert_called_once_with(
-        account_key="uwaterloo",
-        school="uwaterloo",
-        window_start=cutoff,
-        window_end=now,
-        batch_kind="employers_on_campus",
-    )
-    inserted = next(args[0] for name, args, _ in batch_calls if name == "insert")
-    assert inserted["batch_kind"] == "employers_on_campus"
-    assert inserted["caption_intro"] == "uwaterloo employers_on_campus"
-    assert (
-        "insert",
-        (
-            [
-                {
-                    "batch_id": "employer-batch",
-                    "account_key": "uwaterloo",
-                    "event_id": 17,
-                    "position": 1,
-                }
-            ],
-        ),
-        {},
-    ) in item_calls
 
 
 def test_draft_selection_edits_do_not_change_featured(monkeypatch, draft_editor, feed_revalidation):
@@ -1123,3 +1003,143 @@ def test_rejected_selection_does_not_invalidate_feed(monkeypatch, draft_editor, 
     with pytest.raises(service.ValidationError):
         service.update_batch("batch-1", InstagramPublishBatchUpdate(version=3, event_ids=[2]))
     feed_revalidation.revalidate_schools.assert_not_called()
+
+
+@pytest.fixture
+def codex_draft(monkeypatch):
+    from services.instagram_publishing.selection import DraftSelection
+
+    now = datetime(2026, 9, 28, 14, tzinfo=timezone.utc)
+    event = {
+        "id": 17,
+        "title": "Film night",
+        "description": "A film",
+        "price": 5,
+        "food": [],
+        "tz": "America/Toronto",
+        "dtstart_utc": "2026-09-29T22:00:00Z",
+    }
+    monkeypatch.setattr(
+        service,
+        "_enabled_accounts",
+        lambda: [
+            {
+                "account_key": "uwaterloo",
+                "school_id": 1,
+                "instagram_user_id": "campus-id",
+                "requires_reauthorization": True,
+            }
+        ],
+    )
+    monkeypatch.setattr(service, "_daily_batch", lambda *_: None)
+    monkeypatch.setattr(service, "_last_successful_cutoff", lambda *_: None)
+    monkeypatch.setattr(service, "default_caption_intro", lambda *_: "Campus picks")
+    monkeypatch.setattr(service, "_load_candidates", lambda **_: [event])
+    return DraftSelection(
+        account_key="uwaterloo",
+        window_end=now,
+        caption_intro="Your next campus plans",
+        cover_body="Film and conversation",
+        picks=[{"event_id": 17, "sticker_ids": ["movie-night"]}],
+    )
+
+
+def test_codex_reads_candidates_without_writing(monkeypatch, codex_draft):
+    database = Mock()
+    monkeypatch.setattr(service, "get_sb", database)
+    packets = service.list_draft_candidates(codex_draft.window_end)
+    assert packets[0]["account_key"] == "uwaterloo"
+    assert packets[0]["status"] == "needs_review"
+    assert packets[0]["requires_reauthorization"] is True
+    assert "movie-night" in packets[0]["events"][0]["allowed_sticker_ids"]
+    database.assert_not_called()
+
+
+def test_codex_saves_choices_and_reads_back_admin_draft(monkeypatch, codex_draft):
+    calls = []
+    monkeypatch.setattr(
+        service,
+        "get_sb",
+        lambda: SimpleNamespace(table=lambda _: _FakeQuery([{"id": "draft-1"}], calls)),
+    )
+    monkeypatch.setattr(service, "build_caption", lambda *_: "Factual event caption")
+    readback = Mock(return_value={"id": "draft-1", "status": "ready_for_review"})
+    monkeypatch.setattr(service, "get_batch", readback)
+    result = service.save_review_draft(codex_draft)
+    assert result["outcome"] == "saved"
+    readback.assert_called_once_with("draft-1")
+    batch = next(args[0] for name, args, _ in calls if name == "insert")
+    assert batch["cover_body"] == codex_draft.cover_body
+    assert batch["school_id"] == 1
+    updates = [args[0] for name, args, _ in calls if name == "update"]
+    assert updates[-1]["sticker_selections"] == {"17": ["movie-night"]}
+    assert updates[-1]["status"] == "ready_for_review"
+
+
+@pytest.mark.parametrize(
+    "status", ["ready_for_review", "published", "failed", "generating", "empty"]
+)
+def test_codex_never_replaces_existing_daily_batch(monkeypatch, codex_draft, status):
+    monkeypatch.setattr(service, "_daily_batch", lambda *_: {"id": "draft-1", "status": status})
+    monkeypatch.setattr(service, "get_batch", lambda _: {"id": "draft-1", "status": status})
+    database = Mock()
+    monkeypatch.setattr(service, "get_sb", database)
+    assert service.save_review_draft(codex_draft)["outcome"] == "existing"
+    database.assert_not_called()
+
+
+def test_codex_rejects_other_school_choices_before_database_write(monkeypatch, codex_draft):
+    codex_draft.picks[0].event_id = 999
+    database = Mock()
+    monkeypatch.setattr(service, "get_sb", database)
+    with pytest.raises(ValueError):
+        service.save_review_draft(codex_draft)
+    database.assert_not_called()
+
+
+def test_codex_does_not_create_drafts_for_disabled_accounts(monkeypatch, codex_draft):
+    monkeypatch.setattr(service, "_enabled_accounts", lambda: [])
+    with pytest.raises(service.ValidationError, match="not enabled"):
+        service.save_review_draft(codex_draft)
+
+
+def test_codex_empty_pool_saves_an_empty_daily_checkpoint(monkeypatch, codex_draft):
+    monkeypatch.setattr(service, "_load_candidates", lambda **_: [])
+    codex_draft.picks = []
+    calls = []
+    monkeypatch.setattr(
+        service,
+        "get_sb",
+        lambda: SimpleNamespace(table=lambda _: _FakeQuery([{"id": "empty-1"}], calls)),
+    )
+    monkeypatch.setattr(service, "get_batch", lambda _: {"id": "empty-1", "status": "empty"})
+    assert service.save_review_draft(codex_draft)["outcome"] == "empty"
+    assert any(name == "update" and args[0]["status"] == "empty" for name, args, _ in calls)
+
+
+def test_codex_existing_packets_do_not_reselect_events(monkeypatch, codex_draft):
+    monkeypatch.setattr(
+        service, "_daily_batch", lambda *_: {"id": "draft-1", "status": "published"}
+    )
+    candidates = Mock()
+    monkeypatch.setattr(service, "_load_candidates", candidates)
+    packets = service.list_draft_candidates(codex_draft.window_end)
+    assert packets[0]["batch_id"] == "draft-1"
+    assert "events" not in packets[0]
+    candidates.assert_not_called()
+
+
+def test_codex_draft_save_never_reads_publishing_tokens(monkeypatch, codex_draft):
+    credentials = Mock(side_effect=AssertionError("Draft preparation must not decrypt tokens"))
+    monkeypatch.setattr(service, "load_account_credentials", credentials)
+    monkeypatch.setattr(
+        service,
+        "get_sb",
+        lambda: SimpleNamespace(table=lambda _: _FakeQuery([{"id": "draft-1"}], [])),
+    )
+    monkeypatch.setattr(service, "build_caption", lambda *_: "Caption")
+    monkeypatch.setattr(
+        service, "get_batch", lambda _: {"id": "draft-1", "status": "ready_for_review"}
+    )
+    assert service.save_review_draft(codex_draft)["outcome"] == "saved"
+    credentials.assert_not_called()

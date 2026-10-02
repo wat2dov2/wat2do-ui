@@ -309,14 +309,15 @@ The scheduled `run-cycle` exits nonzero while either app is missing, Automate la
 
 ## Carousel draft selection and artwork
 
-The scheduled draft generator uses `gpt-6-luna` to choose up to nine events from the eligible candidate pool.
-It requires the existing `OPENAI_API_KEY`; `backend/controlbox/instagram_publishing.json` owns the model, timeout, candidate limit, sticker limit, and 100 bilingual sticker definitions.
-Source descriptions are treated as data, and the response is validated against the eligible event IDs and sticker choices.
-Model errors leave a failed draft rather than silently selecting or publishing other events.
+A daily Codex automation owns event selection, carousel order, sticker choices, caption introduction, and cover copy.
+It reads candidate packets through `backend/jobs/generate_instagram_posts.py candidates`, reviews the event data itself, and saves its choices with `save <selection.json>`.
+There is no embedded OpenAI API call or GitHub draft-generation workflow.
+The publishing controlbox retains factual sticker definitions, eligibility windows, and publishing limits.
+The service validates Codex's event IDs and sticker choices before writing a draft.
 
 Sticker choices are saved in `instagram_publish_batches.sticker_selections` by event ID, so reordering a draft preserves them.
 Apply migration `20260929040000_instagram_sticker_selections.sql` before deploying this code.
-Existing drafts default to no stickers; new generated drafts receive model-selected stickers.
+Existing drafts default to no stickers; new drafts receive Codex-selected stickers.
 Date-sensitive and factual labels are checked again when loading drafts and publishing them.
 Manually added events have no stickers unless they were already selected for that draft.
 The admin still reviews the selected events and explicitly publishes the carousel.
@@ -328,20 +329,18 @@ The renderer no longer requests maps or club hiring data.
 
 ### Daily publishing schedule
 
-The Mac mini owns the daily 9 a.m. `America/Toronto` trigger through launchd.
-The GitHub workflow remains the only draft-generation executor and is dispatched manually by the scheduler, avoiding GitHub's delayed cron trigger.
-Install from the stable checkout with its Python environment:
+The Codex automation runs daily at 9 a.m. Toronto time in the existing chat.
+The old launchd dispatcher and GitHub workflow have been removed.
+Keep the Mac on and Codex running for this local automation, as described in the [official scheduled-task documentation](https://learn.chatgpt.com/docs/automations?surface=app).
+The automation uses the repository's existing production configuration and authenticated AWS access without printing or persisting credentials.
+It calls `refresh-tokens` before reviewing candidates, so encrypted account token maintenance remains part of the daily operation.
+Token-refresh failures are reported separately and do not prevent reviewing other healthy accounts.
 
-```bash
-cd backend
-.venv/bin/python scripts/schedule_instagram_publishing.py install
-launchctl print gui/$(id -u)/io.wat2do.instagram-publishing.schedule
-```
-
-The Mac must remain awake, logged in, and connected, with `gh` authenticated for this repository.
-The installer verifies the Mac timezone matches the validated Instagram publishing controlbox.
-A calendar trigger runs at 9 a.m., and a one-minute recovery check catches missed starts after wake or restart.
-The scheduler checks existing workflow runs before dispatching, never overlaps an active run, and records an attempt before contacting GitHub.
-Failed dispatches or workflows retry after ten minutes, up to three attempts per Toronto date, while the existing per-account daily batch records prevent regenerating completed drafts.
-GitHub workflow failure notifications remain enabled, and exhausted retries remain visible through launchd's nonzero exit status and scheduler logs under `~/Library/Application Support/Wat2Do/instagram-publishing/`.
-This removes cron-trigger delays; GitHub dispatch, hosted-runner availability, and batch execution still take time, so 9 a.m. is the trigger time rather than a guaranteed completion time.
+The command interface never selects events itself and never publishes them.
+Each selection JSON contains `account_key`, the candidate packet's timezone-aware `window_end`, `caption_intro`, `cover_body`, and ordered `picks` with `event_id` and `sticker_ids`.
+Use an empty `picks` list only when the candidate packet contains no eligible events.
+The database's existing daily account key prevents replacing or duplicating an existing draft.
+Readback uses the same service as the admin review page.
+Failed or interrupted batches are reported for admin recovery and never treated as completed drafts.
+Completed accounts and empty checkpoints are skipped on later runs.
+Publishing remains an explicit action in the admin page.

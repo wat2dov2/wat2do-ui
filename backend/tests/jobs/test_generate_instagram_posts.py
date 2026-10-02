@@ -1,54 +1,46 @@
 import json
+import sys
+from unittest.mock import Mock
 
-from jobs import generate_instagram_posts
+import pytest
+
+from jobs import generate_instagram_posts as job
 
 
-def test_daily_job_refreshes_tokens_before_generating_batches(monkeypatch, capsys):
-    calls = []
-    monkeypatch.setattr(
-        generate_instagram_posts,
-        "refresh_expiring_tokens",
-        lambda now: calls.append(("refresh", now)) or {"due": 1, "refreshed": 1, "failed": 0},
-    )
-    monkeypatch.setattr(
-        generate_instagram_posts,
-        "generate_due_batches",
-        lambda now: (
-            calls.append(("generate", now))
-            or {
-                "accounts": 24,
-                "generated": 24,
-                "empty": 0,
-                "skipped": 0,
-                "failed": 0,
+def test_candidate_command_reads_without_saving(monkeypatch, capsys):
+    monkeypatch.setattr(sys, "argv", ["job", "candidates"])
+    monkeypatch.setattr(job, "list_draft_candidates", lambda: [{"account_key": "uwaterloo"}])
+    save = Mock()
+    monkeypatch.setattr(job, "save_review_draft", save)
+    assert job.main() == 0
+    assert json.loads(capsys.readouterr().out) == [{"account_key": "uwaterloo"}]
+    save.assert_not_called()
+
+
+@pytest.mark.parametrize("failed", [0, 1])
+def test_refresh_command_exposes_counts_only(monkeypatch, capsys, failed):
+    monkeypatch.setattr(sys, "argv", ["job", "refresh-tokens"])
+    monkeypatch.setattr(job, "refresh_expiring_tokens", lambda: {"failed": failed})
+    assert job.main() == failed
+    assert json.loads(capsys.readouterr().out) == {"failed": failed}
+
+
+def test_save_command_validates_external_choices(monkeypatch, tmp_path, capsys):
+    path = tmp_path / "selection.json"
+    path.write_text(
+        json.dumps(
+            {
+                "account_key": "uwaterloo",
+                "window_end": "2026-09-28T14:00:00Z",
+                "caption_intro": "Today's plans",
+                "cover_body": "Campus picks",
+                "picks": [{"event_id": 17, "sticker_ids": ["campus-pick"]}],
             }
-        ),
+        )
     )
-
-    assert generate_instagram_posts.main() == 0
-    assert [name for name, _ in calls] == ["refresh", "generate"]
-    assert calls[0][1] is calls[1][1]
-    output = json.loads(capsys.readouterr().out)
-    assert output["token_refresh"]["refreshed"] == 1
-    assert output["generation"]["generated"] == 24
-
-
-def test_daily_job_alerts_through_failure_exit_after_refresh_error(monkeypatch):
-    monkeypatch.setattr(
-        generate_instagram_posts,
-        "refresh_expiring_tokens",
-        lambda _now: {"due": 1, "refreshed": 0, "failed": 1},
-    )
-    monkeypatch.setattr(
-        generate_instagram_posts,
-        "generate_due_batches",
-        lambda _now: {
-            "accounts": 24,
-            "generated": 24,
-            "empty": 0,
-            "skipped": 0,
-            "failed": 0,
-        },
-    )
-
-    assert generate_instagram_posts.main() == 1
+    monkeypatch.setattr(sys, "argv", ["job", "save", str(path)])
+    saved = Mock(return_value={"outcome": "saved", "batch": {"id": "draft-1"}})
+    monkeypatch.setattr(job, "save_review_draft", saved)
+    assert job.main() == 0
+    assert saved.call_args.args[0].picks[0].event_id == 17
+    assert json.loads(capsys.readouterr().out)["batch"]["id"] == "draft-1"

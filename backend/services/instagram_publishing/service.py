@@ -55,7 +55,11 @@ from services.instagram_publishing.captions import build_caption, default_captio
 from services.instagram_publishing.credentials import load_account_credentials
 from services.instagram_publishing.meta import MetaInstagramClient
 from services.instagram_publishing.rendering import render_cover_asset, render_event_asset
-from services.instagram_publishing.selection import eligible_sticker_ids, select_carousel
+from services.instagram_publishing.selection import (
+    DraftSelection,
+    eligible_sticker_ids,
+    validate_picks,
+)
 from services.school_context import resolve_school_timezone
 
 log = logging.getLogger(__name__)
@@ -73,34 +77,43 @@ def _with_batch_school(row: dict[str, Any]) -> dict[str, Any]:
     return school_service.with_school_slug(row)
 
 
-def generate_due_batches(
-    now_utc: datetime | None = None,
-) -> dict[str, int]:
-    """Generate one daily event review batch for each enabled account."""
+def list_draft_candidates(now_utc: datetime | None = None) -> list[dict[str, Any]]:
+    """Read candidate packets for Codex's daily editorial review, without writing drafts."""
     now = _aware_utc(now_utc or datetime.now(timezone.utc))
-    generation_timezone = ZoneInfo(_CONTROL.generation_timezone)
-    local_now = now.astimezone(generation_timezone)
-
-    enabled = _enabled_account_keys()
-    stats = {
-        "accounts": len(enabled),
-        "generated": 0,
-        "empty": 0,
-        "skipped": 0,
-        "failed": 0,
-    }
-    for account_key in enabled:
-        if _batch_exists(account_key, local_now.date(), "events"):
-            stats["skipped"] += 1
+    local_date = now.astimezone(ZoneInfo(_CONTROL.generation_timezone)).date()
+    packets = []
+    for account in _enabled_accounts():
+        account_key = str(account["account_key"])
+        existing = _daily_batch(account_key, local_date)
+        packet: dict[str, Any] = {
+            "account_key": account_key,
+            "requires_reauthorization": bool(account.get("requires_reauthorization")),
+            "local_date": local_date.isoformat(),
+            "window_end": now.isoformat(),
+            "batch_id": existing["id"] if existing else None,
+            "status": existing["status"] if existing else "needs_review",
+        }
+        if existing:
+            # Existing drafts, including failed publication attempts, remain admin-owned.
+            packets.append(packet)
             continue
-        try:
-            outcome = _generate_account_batch(account_key, local_now.date(), now, "events")
-        except Exception:
-            log.exception("Instagram batch generation could not start account=%s", account_key)
-            stats["failed"] += 1
-            continue
-        stats[outcome] += 1
-    return stats
+        window_start = _draft_window_start(account_key, now)
+        events = _load_candidates(
+            account_key=account_key,
+            school=account_key,
+            window_start=window_start,
+            window_end=now,
+        )
+        packet.update(
+            window_start=window_start.isoformat(),
+            caption_intro=default_caption_intro(account_key, "events"),
+            events=[
+                {**event, "allowed_sticker_ids": eligible_sticker_ids(event, now)}
+                for event in events
+            ],
+        )
+        packets.append(packet)
+    return packets
 
 
 def list_batches(
@@ -214,7 +227,7 @@ def claim_batch_for_publishing(
     _assert_editable(batch)
 
     account_key = str(batch["account_key"])
-    if account_key not in _enabled_account_keys():
+    if not any(row["account_key"] == account_key for row in _enabled_accounts()):
         raise ValidationError("Instagram publishing is disabled for this account")
     credentials = load_account_credentials(account_key)
     if credentials.instagram_user_id != batch["instagram_user_id"]:
@@ -289,7 +302,7 @@ def publish_claimed_batch(batch: dict[str, Any]) -> None:
         )
 
 
-def _enabled_account_keys() -> list[str]:
+def _enabled_accounts() -> list[dict[str, Any]]:
     """Account keys the daily job runs, straight from the connected accounts.
 
     An account exists once it has been connected, and its row says whether it
@@ -299,109 +312,112 @@ def _enabled_account_keys() -> list[str]:
     response = (
         get_sb()
         .table(INSTAGRAM_PUBLISHING_ACCOUNTS)
-        .select("account_key")
+        .select("account_key,instagram_user_id,school_id,requires_reauthorization")
         .eq("enabled", True)
         .order("account_key")
         .execute()
     )
-    return [str(row["account_key"]) for row in response.data or []]
+    return response.data or []
 
 
-def _generate_account_batch(
-    account_key: str,
-    local_date: date,
-    now: datetime,
-    batch_kind: InstagramPublishBatchKind = "events",
-) -> str:
-    credentials = load_account_credentials(account_key, now_utc=now)
-    if credentials.school_id is None:
-        raise ValidationError("Instagram publishing school is not registered")
-    window_start = _last_successful_cutoff(account_key, batch_kind) or (
+def _draft_window_start(account_key: str, now: datetime) -> datetime:
+    return _last_successful_cutoff(account_key, "events") or (
         now - timedelta(hours=_CONTROL.fallback_window_hours)
     )
-    caption_intro = default_caption_intro(account_key, batch_kind)
+
+
+def save_review_draft(selection: DraftSelection) -> dict[str, Any]:
+    """Persist Codex's validated choices and read them back through the admin service.
+
+    The daily database key prevents repeated runs from replacing an existing draft.
+    Failed saves and publication attempts remain visible for admin recovery.
+    """
+    now = _aware_utc(selection.window_end)
+    if now > datetime.now(timezone.utc):
+        raise ValidationError("Draft window cannot end in the future")
+    account_key = selection.account_key
+    account = next((row for row in _enabled_accounts() if row["account_key"] == account_key), None)
+    if account is None:
+        raise ValidationError("Instagram account is not enabled for publishing")
+    local_date = now.astimezone(ZoneInfo(_CONTROL.generation_timezone)).date()
+    existing = _daily_batch(account_key, local_date)
+    if existing:
+        return {"outcome": "existing", "batch": get_batch(existing["id"])}
+
+    window_start = _draft_window_start(account_key, now)
+    candidates = _load_candidates(
+        account_key=account_key,
+        school=account_key,
+        window_start=window_start,
+        window_end=now,
+    )
+    validate_picks(candidates, selection.picks, now)
+    by_id = {event["id"]: event for event in candidates}
+    selected = [by_id[pick.event_id] for pick in selection.picks]
+    school_id = school_service.get_school_id(account_key)
+    if school_id is None or school_id != account["school_id"]:
+        raise ValidationError("Instagram publishing school does not match the account")
     batch_response = (
         get_sb()
         .table(INSTAGRAM_PUBLISH_BATCHES)
         .insert(
             {
                 "account_key": account_key,
-                "batch_kind": batch_kind,
-                "instagram_user_id": credentials.instagram_user_id,
-                "school_id": credentials.school_id,
+                "batch_kind": "events",
+                "instagram_user_id": account["instagram_user_id"],
+                "school_id": school_id,
                 "local_date": local_date.isoformat(),
                 "window_start": window_start.isoformat(),
                 "window_end": now.isoformat(),
                 "status": INSTAGRAM_BATCH_GENERATING,
-                "caption_intro": caption_intro,
+                "caption_intro": selection.caption_intro,
+                "cover_body": selection.cover_body,
             }
         )
         .execute()
     )
     if not batch_response.data:
-        raise RuntimeError(f"Could not create Instagram batch for {account_key}")
-    batch = batch_response.data[0]
-
+        raise RuntimeError(f"Could not create Instagram draft for {account_key}")
+    batch_id = batch_response.data[0]["id"]
     try:
-        candidates = _load_candidates(
-            account_key=account_key,
-            school=account_key,
-            window_start=window_start,
-            window_end=now,
-            batch_kind=batch_kind,
-        )
-        if not candidates:
-            _complete_empty_batch(batch["id"])
-            return "empty"
-
-        selections = select_carousel(candidates, now)
-        by_id = {candidate["id"]: candidate for candidate in candidates}
-        candidates = [by_id[selection.event_id] for selection in selections]
-        sticker_selections = {
-            str(selection.event_id): selection.sticker_ids for selection in selections
-        }
-        item_rows = [
-            {
-                "batch_id": batch["id"],
-                "account_key": account_key,
-                "event_id": candidate["id"],
-                "position": position,
-            }
-            for position, candidate in enumerate(candidates, start=1)
-        ]
-        get_sb().table(INSTAGRAM_PUBLISH_ITEMS).insert(item_rows).execute()
-        (
-            get_sb()
-            .table(INSTAGRAM_PUBLISH_BATCHES)
-            .update(
+        if not selected:
+            _complete_empty_batch(batch_id)
+        else:
+            get_sb().table(INSTAGRAM_PUBLISH_ITEMS).insert(
+                [
+                    {
+                        "batch_id": batch_id,
+                        "account_key": account_key,
+                        "event_id": event["id"],
+                        "position": position,
+                    }
+                    for position, event in enumerate(selected, start=1)
+                ]
+            ).execute()
+            _update_batch_fields(
+                batch_id,
                 {
                     "status": INSTAGRAM_BATCH_READY_FOR_REVIEW,
-                    "caption": build_caption(candidates, account_key, caption_intro),
-                    "sticker_selections": sticker_selections,
+                    "caption": build_caption(selected, account_key, selection.caption_intro),
+                    "sticker_selections": {
+                        str(pick.event_id): pick.sticker_ids for pick in selection.picks
+                    },
                     "error_message": None,
                     "updated_at": _iso_now(),
-                }
+                },
             )
-            .eq("id", batch["id"])
-            .execute()
-        )
-        return "generated"
     except Exception as exc:
-        log.exception("Instagram batch generation failed for account=%s", account_key)
-        (
-            get_sb()
-            .table(INSTAGRAM_PUBLISH_BATCHES)
-            .update(
-                {
-                    "status": INSTAGRAM_BATCH_FAILED,
-                    "error_message": str(exc)[:2000],
-                    "updated_at": _iso_now(),
-                }
-            )
-            .eq("id", batch["id"])
-            .execute()
+        log.exception("Instagram draft save failed for account=%s", account_key)
+        _update_batch_fields(
+            batch_id,
+            {
+                "status": INSTAGRAM_BATCH_FAILED,
+                "error_message": str(exc)[:2000],
+                "updated_at": _iso_now(),
+            },
         )
-        return "failed"
+        raise
+    return {"outcome": "saved" if selected else "empty", "batch": get_batch(batch_id)}
 
 
 def _load_candidates(
@@ -803,20 +819,20 @@ def _ordered_items(batch: dict[str, Any]) -> list[dict[str, Any]]:
     return sorted(batch["items"], key=lambda item: int(item["position"]))
 
 
-def _batch_exists(
+def _daily_batch(
     account_key: str, local_date: date, batch_kind: InstagramPublishBatchKind = "events"
-) -> bool:
+) -> dict[str, Any] | None:
     response = (
         get_sb()
         .table(INSTAGRAM_PUBLISH_BATCHES)
-        .select("id")
+        .select("id,status")
         .eq("account_key", account_key)
         .eq("local_date", local_date.isoformat())
         .eq("batch_kind", batch_kind)
         .limit(1)
         .execute()
     )
-    return bool(response.data)
+    return response.data[0] if response.data else None
 
 
 def _last_successful_cutoff(

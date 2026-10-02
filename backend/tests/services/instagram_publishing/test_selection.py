@@ -1,7 +1,4 @@
-import json
 from datetime import datetime, timezone
-from types import SimpleNamespace
-from unittest.mock import MagicMock
 
 import pytest
 
@@ -24,17 +21,6 @@ def event(event_id=1, **changes):
     }
 
 
-def mock_model(monkeypatch, picks):
-    client = MagicMock()
-    client.__enter__.return_value = client
-    client.chat.completions.create.return_value = SimpleNamespace(
-        choices=[SimpleNamespace(message=SimpleNamespace(content=json.dumps({"picks": picks})))],
-    )
-    monkeypatch.setattr(selection, "OpenAI", lambda **_: client)
-    monkeypatch.setattr(selection.settings, "openai_api_key", "test-key")
-    return client
-
-
 def test_fact_labels_require_evidence_and_expire():
     allowed = selection.eligible_sticker_ids(event(), NOW)
     assert "happening-today" in allowed and "movie-night" in allowed
@@ -48,17 +34,13 @@ def test_fact_labels_require_evidence_and_expire():
     assert "happening-today" not in later
 
 
-def test_model_selects_nine_distinct_events_with_saved_sticker_order(monkeypatch):
+def test_external_choices_preserve_editorial_order_without_model_calls():
     picks = [
-        {"event_id": i, "sticker_ids": ["movie-night", "campus-pick"]} for i in range(10, 1, -1)
+        selection.CarouselPick(event_id=i, sticker_ids=["movie-night", "campus-pick"])
+        for i in [3, 1]
     ]
-    client = mock_model(monkeypatch, picks)
-    result = selection.select_carousel([event(i) for i in range(1, 13)], NOW)
-    assert [pick.event_id for pick in result] == list(range(10, 1, -1))
-    request = client.chat.completions.create.call_args.kwargs
-    assert request["model"] == "gpt-6-luna"
-    assert request["response_format"]["json_schema"]["strict"] is True
-    assert len(selection._CONTROL.sticker_catalog) == 100
+    selection.validate_picks([event(i) for i in range(1, 5)], picks, NOW)
+    assert [pick.event_id for pick in picks] == [3, 1]
 
 
 @pytest.mark.parametrize(
@@ -68,17 +50,18 @@ def test_model_selects_nine_distinct_events_with_saved_sticker_order(monkeypatch
         [{"event_id": 1, "sticker_ids": ["free-food"]}],
         [{"event_id": 1, "sticker_ids": ["invented"]}],
         [{"event_id": 1, "sticker_ids": ["campus-pick", "campus-pick"]}],
+        [{"event_id": 1, "sticker_ids": ["campus-pick"]}] * 2,
         [],
     ],
 )
-def test_invalid_model_choices_fail_instead_of_publishing_invented_facts(monkeypatch, picks):
-    mock_model(monkeypatch, picks)
+def test_invalid_external_choices_fail_before_saving(picks):
     with pytest.raises(ValueError):
-        selection.select_carousel([event()], NOW)
+        selection.validate_picks([event()], [selection.CarouselPick(**pick) for pick in picks], NOW)
 
 
-def test_missing_credentials_fail_clearly_and_empty_pool_needs_no_model(monkeypatch):
-    monkeypatch.setattr(selection.settings, "openai_api_key", "")
-    assert selection.select_carousel([], NOW) == []
-    with pytest.raises(RuntimeError, match="API key"):
-        selection.select_carousel([event()], NOW)
+def test_empty_pool_accepts_only_empty_choices():
+    selection.validate_picks([], [], NOW)
+    with pytest.raises(ValueError):
+        selection.validate_picks(
+            [], [selection.CarouselPick(event_id=1, sticker_ids=["campus-pick"])], NOW
+        )

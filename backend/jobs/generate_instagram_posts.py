@@ -1,41 +1,47 @@
 #!/usr/bin/env python3
-"""Generate daily Instagram carousel drafts for configured campus accounts."""
+"""Read Instagram candidates or save Codex-curated drafts for admin review."""
 
 from __future__ import annotations
 
+import argparse
 import json
 import logging
 import sys
-from datetime import datetime, timezone
 from pathlib import Path
+
+from fastapi.encoders import jsonable_encoder
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from services.instagram_publishing import (  # noqa: E402
-    generate_due_batches,
+    list_draft_candidates,
     refresh_expiring_tokens,
+    save_review_draft,
 )
+from services.instagram_publishing.selection import DraftSelection  # noqa: E402
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s %(levelname)s %(name)s %(message)s",
-)
+logging.basicConfig(level=logging.INFO)
 
 
 def main() -> int:
-    now = datetime.now(timezone.utc)
-    refresh_stats = refresh_expiring_tokens(now)
-    generation_stats = generate_due_batches(now)
-    print(
-        json.dumps(
-            {
-                "generation": generation_stats,
-                "token_refresh": refresh_stats,
-            },
-            sort_keys=True,
-        )
+    parser = argparse.ArgumentParser(description=__doc__)
+    commands = parser.add_subparsers(dest="command", required=True)
+    commands.add_parser("candidates", help="Read enabled accounts and eligible event data")
+    commands.add_parser(
+        "refresh-tokens", help="Refresh expiring tokens without displaying credentials"
     )
-    return 1 if refresh_stats["failed"] or generation_stats["failed"] else 0
+    save = commands.add_parser("save", help="Validate and save one account's editorial choices")
+    save.add_argument("selection_file", type=Path)
+    args = parser.parse_args()
+    if args.command == "candidates":
+        result = list_draft_candidates()
+    elif args.command == "refresh-tokens":
+        result = refresh_expiring_tokens()
+    else:
+        selection = DraftSelection.model_validate_json(args.selection_file.read_text())
+        result = save_review_draft(selection)
+    print(json.dumps(jsonable_encoder(result), sort_keys=True))
+    return 1 if args.command == "refresh-tokens" and result["failed"] else 0
 
 
 if __name__ == "__main__":

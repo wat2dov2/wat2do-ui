@@ -12,9 +12,6 @@
   "meta_request_timeout_seconds": 30,
   "token_lifetime_days": 60,
   "token_refresh_lead_days": 14,
-  "selection_model": "gpt-6-luna",
-  "selection_timeout_seconds": 90,
-  "maximum_selection_candidates": 200,
   "maximum_stickers_per_event": 3,
   "sticker_catalog": [
     {
@@ -965,11 +962,5 @@
         "mixer"
       ]
     }
-  ],
-  "generation_hour": 9,
-  "scheduler_check_interval_seconds": 60,
-  "scheduler_retry_interval_seconds": 600,
-  "scheduler_maximum_attempts": 3,
-  "scheduler_request_timeout_seconds": 30,
-  "scheduler_workflow": "daily-instagram-publishing.yml"
+  ]
 }
