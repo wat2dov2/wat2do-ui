@@ -31,7 +31,6 @@
         "title": "Suchanfragen",
         "surface": "Liste",
         "pageUrl": "Seiten-URL",
-        "filters": "Angewendete Filter",
         "empty": "Noch keine Suchanfragen erfasst.",
         "emptySearch": "Kein Suchtext"
       }

@@ -31,7 +31,6 @@
         "title": "Zapytania wyszukiwania",
         "surface": "Lista",
         "pageUrl": "Adres URL strony",
-        "filters": "Zastosowane filtry",
         "empty": "Nie zapisano jeszcze żadnych zapytań.",
         "emptySearch": "Brak tekstu wyszukiwania"
       }

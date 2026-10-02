@@ -31,7 +31,6 @@
         "title": "Recherches",
         "surface": "Liste",
         "pageUrl": "URL de la page",
-        "filters": "Filtres appliqués",
         "empty": "Aucune recherche enregistrée.",
         "emptySearch": "Aucun texte de recherche"
       }

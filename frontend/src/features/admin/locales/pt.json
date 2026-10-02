@@ -31,7 +31,6 @@
         "title": "Consultas de pesquisa",
         "surface": "Lista",
         "pageUrl": "URL da página",
-        "filters": "Filtros aplicados",
         "empty": "Nenhuma consulta registrada ainda.",
         "emptySearch": "Sem texto de pesquisa"
       }

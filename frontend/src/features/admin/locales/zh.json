@@ -31,7 +31,6 @@
         "title": "搜索记录",
         "surface": "列表类型",
         "pageUrl": "页面网址",
-        "filters": "已应用的筛选条件",
         "empty": "暂无搜索记录。",
         "emptySearch": "无搜索文字"
       }

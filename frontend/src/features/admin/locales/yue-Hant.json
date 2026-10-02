@@ -31,7 +31,6 @@
         "title": "搜尋記錄",
         "surface": "清單類型",
         "pageUrl": "頁面網址",
-        "filters": "已套用嘅篩選條件",
         "empty": "暫時未有搜尋記錄。",
         "emptySearch": "冇搜尋文字"
       }

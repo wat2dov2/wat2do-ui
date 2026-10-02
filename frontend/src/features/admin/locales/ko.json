@@ -31,7 +31,6 @@
         "title": "검색 기록",
         "surface": "목록",
         "pageUrl": "페이지 URL",
-        "filters": "적용된 필터",
         "empty": "아직 기록된 검색이 없습니다.",
         "emptySearch": "검색어 없음"
       }

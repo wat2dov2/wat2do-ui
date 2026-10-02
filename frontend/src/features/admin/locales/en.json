@@ -31,7 +31,6 @@
         "title": "Search queries",
         "surface": "Listing",
         "pageUrl": "Page URL",
-        "filters": "Applied filters",
         "empty": "No queries recorded yet.",
         "emptySearch": "No search text"
       }

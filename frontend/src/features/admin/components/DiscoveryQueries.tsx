@@ -35,11 +35,10 @@ export function DiscoveryQueries() {
             { label: t("admin.diagnostics.queries.surface") },
             { label: t("common.search") },
             { label: t("admin.diagnostics.queries.pageUrl") },
-            { label: t("admin.diagnostics.queries.filters") },
           ]}
         >
           {list.items.length === 0 ? (
-            <TableRow><TableCell colSpan={6}>{t("admin.diagnostics.queries.empty")}</TableCell></TableRow>
+            <TableRow><TableCell colSpan={5}>{t("admin.diagnostics.queries.empty")}</TableCell></TableRow>
           ) : list.items.map(query => (
             <TableRow key={query.id}>
               <TableCell>{new Date(query.created_at).toLocaleString(i18n.language)}</TableCell>
@@ -47,7 +46,6 @@ export function DiscoveryQueries() {
               <TableCell>{t(`navigation.${query.surface}`)}</TableCell>
               <TableCell variant="prose">{query.search_query || t("admin.diagnostics.queries.emptySearch")}</TableCell>
               <TableCell variant="prose">{query.page_url}</TableCell>
-              <TableCell variant="prose"><code>{JSON.stringify(query.filters)}</code></TableCell>
             </TableRow>
           ))}
         </AdminTable>

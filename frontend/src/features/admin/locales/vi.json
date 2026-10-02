@@ -31,7 +31,6 @@
         "title": "Truy vấn tìm kiếm",
         "surface": "Danh sách",
         "pageUrl": "URL trang",
-        "filters": "Bộ lọc đã áp dụng",
         "empty": "Chưa có truy vấn nào được ghi lại.",
         "emptySearch": "Không có nội dung tìm kiếm"
       }
