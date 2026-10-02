@@ -629,3 +629,15 @@ def test_anonymous_club_contact_does_not_grant_membership_or_leak_publicly(
     assert payload["submitted_by_email"] == "visitor@example.com"
     membership.assert_not_called()
     assert "submitted_by_email" not in result.model_dump()
+
+
+def test_public_club_response_preserves_creation_time():
+    from datetime import datetime, timezone
+
+    timestamp = datetime(2026, 10, 2, 12, tzinfo=timezone.utc)
+    club = club_service._club_response(
+        {"id": 1, "club_name": "New Club", "created_at": timestamp.isoformat()}
+    )
+    assert club.created_at == timestamp
+    assert club.model_dump(mode="json")["created_at"] == "2026-10-02T12:00:00Z"
+    assert club_service._club_response({"id": 2, "club_name": "Older Club"}).created_at is None

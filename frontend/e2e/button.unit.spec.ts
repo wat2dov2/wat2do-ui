@@ -189,3 +189,11 @@ test("selection can retain pressed styling without adding a check glyph", () => 
   expect(button.children).toBe("Free");
   expect(button).not.toHaveProperty("selectionIndicator");
 });
+
+
+test("deadline badges keep white text without inheriting the light warning foreground", () => {
+  const { Badge } = loadUI("badge") as unknown as typeof import("../src/shared/ui/badge");
+  const render = (Badge as unknown as { render: (props: ComponentProps<typeof Badge>, ref: null) => { props: ComponentProps<"div"> } }).render;
+  expect(render({ variant: "soon" }, null).props.style?.color).toBe("var(--color-white)");
+  expect(render({ variant: "new" }, null).props.style?.color).toBe("var(--color-white)");
+});

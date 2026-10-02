@@ -196,3 +196,20 @@ test("organization field submits canonical IDs while displaying the typed handle
   value = 1;
   expect(render().value).toBe("@uw.tech");
 });
+
+
+test("New clubs uses creation dates from the cached directory and composes with other filters", () => {
+  const cutoff = "2026-10-01T12:00:00Z";
+  const directory = [
+    { ...clubs[0], created_at: cutoff },
+    { ...clubs[1], created_at: "2026-10-01T11:59:59Z" },
+    { ...clubs[2], created_at: "2026-10-02T11:00:00Z" },
+    { ...clubs[0], id: 4, created_at: null },
+    { ...clubs[0], id: 5, created_at: "invalid" },
+  ];
+  const filters = { search: "", categories: [], minEvents: 0, addedSince: cutoff };
+  expect(filterClubs(directory, filters).map(club => club.id)).toEqual([1, 3]);
+  expect(filterClubs(directory, { ...filters, search: "tech", minEvents: 1, ids: [1, 2] }).map(club => club.id)).toEqual([1]);
+  expect(filterClubs(directory, { ...filters, addedSince: null })).toEqual(directory);
+  expect(normalizeClub({ ...clubs[0], created_at: cutoff } as ApiClubResponse).created_at).toBe(cutoff);
+});

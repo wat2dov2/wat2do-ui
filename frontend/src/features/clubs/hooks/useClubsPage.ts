@@ -27,6 +27,7 @@ export function useClubsPage({
   const [submittedSearch, setSubmittedSearch] = useState({ query: "", revision: 0 });
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [minEvents, setMinEvents] = useState(0);
+  const [addedSince, setAddedSince] = useState<string | null>(null);
 
   const resolvedSchoolFilter = resolveSchool(initialSchool);
 
@@ -44,15 +45,16 @@ export function useClubsPage({
     search: submittedSearch.query,
     categories: selectedCategories,
     minEvents,
+    addedSince,
     ids: activeTab === "all" ? undefined : !isAuthenticated ? []
       : activeTab === "followed" ? savedClubIds : claimedClubIds,
-  }), [query.data, submittedSearch.query, selectedCategories, minEvents, activeTab, isAuthenticated, savedClubIds, claimedClubIds]);
+  }), [query.data, submittedSearch.query, selectedCategories, minEvents, addedSince, activeTab, isAuthenticated, savedClubIds, claimedClubIds]);
 
   useDiscoveryQueryTracking({
     school: resolvedSchoolFilter,
     surface: "clubs",
     search_query: submittedSearch.query,
-    filters: { categories: selectedCategories, minEvents, tab: activeTab },
+    filters: { categories: selectedCategories, minEvents, addedSince, tab: activeTab },
   }, submittedSearch.revision);
 
   const submitSearchQuery = useCallback(() => {
@@ -73,7 +75,10 @@ export function useClubsPage({
   }, []);
 
   return {
-    appliedQueryKey: JSON.stringify({ submittedSearch, selectedCategories, minEvents, activeTab }),
+    appliedQueryKey: JSON.stringify({ submittedSearch, selectedCategories, minEvents, addedSince, activeTab }),
+    addedSince,
+    setAddedSince,
+    clearNew: () => setAddedSince(null),
     minEvents,
     setMinEvents: (value: number) => setMinEvents(Number.isFinite(value) ? Math.max(0, Math.floor(value)) : 0),
     searchQuery,

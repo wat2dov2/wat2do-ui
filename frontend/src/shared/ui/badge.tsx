@@ -66,7 +66,7 @@ const Badge = React.forwardRef<
     <Comp
       ref={ref}
       className={cn(badgeVariants({ variant, size }), className)}
-      style={variant === "new" ? { color: "var(--color-white)", ...style } : style}
+      style={(variant === "new" || variant === "soon") ? { color: "var(--color-white)", ...style } : style}
       {...props}
     />
   )

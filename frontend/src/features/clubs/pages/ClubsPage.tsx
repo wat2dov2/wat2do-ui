@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useShallow } from "zustand/react/shallow";
 import { Bookmark, Building2, Search } from "@/shared/ui/doodle-icons";
 import { Button } from "@/shared/ui/button";
+import { NewlyAddedFilterButton } from "@/shared/ui/newly-added-filter-button";
 import { IntegerFilter } from "@/shared/ui/integer-filter";
 import {
   ClubList,
@@ -46,6 +47,9 @@ export function ClubsPage({
 
   const {
     appliedQueryKey,
+    addedSince,
+    setAddedSince,
+    clearNew,
     searchQuery,
     minEvents,
     setMinEvents,
@@ -138,6 +142,11 @@ export function ClubsPage({
               </SelectContent>
             </Select>
           </>}>
+              <NewlyAddedFilterButton
+                value={addedSince}
+                onValueChange={setAddedSince}
+                onClear={clearNew}
+              />
               <IntegerFilter
                 value={minEvents}
                 active={minEvents > 0}

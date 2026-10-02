@@ -2052,6 +2052,8 @@ export interface components {
             logo_url?: string | null;
             /** Created By */
             created_by?: string | null;
+            /** Created At */
+            created_at?: string | null;
             /** School */
             school?: string | null;
             /** Owner Email */
@@ -2096,6 +2098,8 @@ export interface components {
             logo_url?: string | null;
             /** Created By */
             created_by?: string | null;
+            /** Created At */
+            created_at?: string | null;
             /** School */
             school?: string | null;
             /** Owner Email */

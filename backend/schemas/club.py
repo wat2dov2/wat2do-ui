@@ -189,6 +189,7 @@ class ClubResponse(BaseModel):
     club_type: ClubTypeValue = CLUB_TYPE_INDEPENDENT
     logo_url: str | None = None
     created_by: str | None = None
+    created_at: datetime | None = None
     school: str | None = None
     owner_email: str | None = None
     event_count: int = 0

@@ -8084,6 +8084,18 @@
             ],
             "title": "Created By"
           },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
           "school": {
             "anyOf": [
               {
@@ -8218,6 +8230,18 @@
               }
             ],
             "title": "Created By"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
           },
           "school": {
             "anyOf": [

@@ -33,13 +33,16 @@ export function filterClubs(clubs: Club[], filters: {
   categories: string[];
   minEvents: number;
   ids?: number[];
+  addedSince?: string | null;
 }): Club[] {
   const search = filters.search.trim().toLowerCase();
+  const addedSince = filters.addedSince ? Date.parse(filters.addedSince) : null;
   const ids = filters.ids === undefined ? undefined : new Set(filters.ids);
   return clubs.filter((club) =>
     (!search || club.club_name.toLowerCase().includes(search)) &&
     (!filters.categories.length || filters.categories.some(category => club.categories.includes(category))) &&
     club.event_count >= filters.minEvents &&
-    (!ids || ids.has(club.id)),
+    (!ids || ids.has(club.id)) &&
+    (addedSince === null || Date.parse(club.created_at ?? "") >= addedSince),
   );
 }
