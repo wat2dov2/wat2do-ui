@@ -332,7 +332,9 @@ Event frames are inset on all four sides, and the former comment footer remains 
 The ten sticker silhouettes and ten colors double the former visual variety.
 Similar labels share a silhouette and color across events, including registration, food and entry cost.
 Other labels use their normalized text to choose a consistent style.
-Staggered compositions, shuffled positions and varied tilt avoid a fixed two-left/two-right arrangement while remaining deterministic so preview and published images match.
+Staggered compositions fill the reserved white footer, with compact stickers, shuffled positions and varied tilt instead of a fixed two-left/two-right arrangement.
+The event poster scales down proportionally to make room, preserving its existing crop.
+Preview and published images use the same deterministic layout.
 Labels render as explicit padded lines within their silhouette.
 The renderer no longer requests maps or club hiring data.
 

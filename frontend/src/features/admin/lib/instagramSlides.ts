@@ -59,6 +59,10 @@ export interface SlideEvent {
   registration?: boolean | null;
 }
 
+/** Reserve room for stickers without changing the prepared poster crop. */
+export const SLIDE_EVENT_POSTER_HEIGHT = 850;
+export const SLIDE_STICKER_SIZE = { width: 228, height: 94 } as const;
+
 export interface EventSlideModel {
   /** Localized event category, also used by the artwork review library. */
   category: { label: string; color: string };
@@ -174,15 +178,13 @@ function stickerStyle(label: string): { shape: number; styleSeed: number } {
   return { shape: family?.shape ?? hash % instagramPublishing.sticker_shape_count, styleSeed: family?.shape ?? hash };
 }
 
-/** Staggered compositions keep stickers clear of each other and the header. */
+/** Fill the white footer before covering any event artwork. */
 function stickerPositions(eventId: number) {
   const compositions = [
-    [[52, 1064], [372, 1050], [748, 1040], [588, 1210]],
-    [[66, 1210], [88, 1040], [400, 1086], [744, 1140]],
-    [[60, 1060], [408, 1210], [398, 1040], [750, 1090]],
-    [[52, 1140], [386, 1040], [720, 1210], [738, 1050]],
-    [[68, 1210], [370, 1210], [728, 1172], [276, 1040]],
-    [[70, 1040], [382, 1040], [724, 1080], [250, 1210]],
+    [[90, 1062], [414, 1062], [740, 1062], [550, 1178]],
+    [[90, 1178], [414, 1178], [740, 1178], [240, 1062]],
+    [[90, 1062], [414, 1062], [740, 1062], [180, 1178]],
+    [[90, 1178], [414, 1178], [740, 1178], [620, 1062]],
   ];
   let seed = Math.imul(eventId, 2654435761) >>> 0;
   const random = () => {
@@ -191,9 +193,9 @@ function stickerPositions(eventId: number) {
   };
   const composition = compositions[Math.floor(random() * compositions.length)];
   const positions = composition.map(([left, top]) => ({
-    left: left + Math.floor(random() * 13) - 6,
-    top: top + Math.floor(random() * 13) - 6,
-    rotation: Math.floor(random() * 17) - 8,
+    left: left + Math.floor(random() * 7) - 3,
+    top: top + Math.floor(random() * 7) - 3,
+    rotation: Math.floor(random() * 9) - 4,
   }));
   // Label order does not dictate which side or row gets a practical detail.
   for (let index = positions.length - 1; index > 0; index--) {

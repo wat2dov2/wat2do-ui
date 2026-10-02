@@ -243,16 +243,16 @@ test("Instagram sticker styles follow meaning while placement varies safely by e
     const model = await buildEventSlideModel({ ...base, id, sticker_labels: ["Free", "Free Pizza", "Reg. Required", "Cash Prizes"] }, "en");
     const bounds = model.stickers.map(sticker => {
       const angle = Math.abs(sticker.rotation) * Math.PI / 180;
-      const width = 260 * Math.cos(angle) + 108 * Math.sin(angle);
-      const height = 108 * Math.cos(angle) + 260 * Math.sin(angle);
-      return { left: sticker.left + 130 - width / 2, top: sticker.top + 54 - height / 2, width, height };
+      const width = 228 * Math.cos(angle) + 94 * Math.sin(angle);
+      const height = 94 * Math.cos(angle) + 228 * Math.sin(angle);
+      return { left: sticker.left + 114 - width / 2, top: sticker.top + 47 - height / 2, width, height };
     });
     placements.add(JSON.stringify(model.stickers.map(({ left, top, rotation }) => ({ left, top, rotation }))));
     for (const [index, box] of bounds.entries()) {
-      expect(box.left).toBeGreaterThan(0);
-      expect(box.top).toBeGreaterThan(1000);
-      expect(box.left + box.width).toBeLessThan(1080);
-      expect(box.top + box.height).toBeLessThan(1350);
+      expect(box.left).toBeGreaterThan(64);
+      expect(box.top).toBeGreaterThan(1046);
+      expect(box.left + box.width).toBeLessThan(1016);
+      expect(box.top + box.height).toBeLessThan(1286);
       for (const other of bounds.slice(index + 1)) {
         expect(box.left + box.width <= other.left || other.left + other.width <= box.left || box.top + box.height <= other.top || other.top + other.height <= box.top).toBe(true);
       }

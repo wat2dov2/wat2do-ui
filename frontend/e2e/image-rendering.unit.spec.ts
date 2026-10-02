@@ -348,7 +348,7 @@ test.describe("Instagram raster preparation", () => {
           { left: right ? 950 : 1, top: bottom ? 998 : 1 },
           { left: right ? 486 : 466, top: bottom ? 510 : 490 },
         ]) {
-          const publishedPixel = await sharp(output).extract({ left: 64 + left, top: 196 + top, width: 1, height: 1 }).removeAlpha().raw().toBuffer();
+          const publishedPixel = await sharp(output).extract({ left: 136 + Math.round(left * 809 / 952), top: 196 + Math.round(top * 850 / 1000), width: 1, height: 1 }).removeAlpha().raw().toBuffer();
           expect([...publishedPixel]).toEqual(color);
         }
       }
@@ -416,12 +416,12 @@ test.describe("Instagram raster preparation", () => {
     expect(markup).toContain("Reg.");
     expect(markup).toContain("Required");
     expect(markup).not.toContain("REMOVED FOOTER TEXT");
-    const stickerMarkup = [...markup.matchAll(/left:([\d]+)px;top:([\d]+)px;width:260px;height:108px/g)];
+    const stickerMarkup = [...markup.matchAll(/left:([\d]+)px;top:([\d]+)px;width:228px;height:94px/g)];
     expect(stickerMarkup).toHaveLength(4);
     for (const position of stickerMarkup) {
       const left = Number(position[1]) + 24;
       const top = Number(position[2]) + 20;
-      const label = await sharp(output).extract({ left, top, width: 212, height: 68 }).removeAlpha().raw().toBuffer();
+      const label = await sharp(output).extract({ left, top, width: 180, height: 58 }).removeAlpha().raw().toBuffer();
       let textPixels = 0;
       for (let index = 0; index < label.length; index += 3) {
         if ([0, 1, 2].every(channel => Math.abs(label[index + channel] - 23) <= 3)) textPixels++;

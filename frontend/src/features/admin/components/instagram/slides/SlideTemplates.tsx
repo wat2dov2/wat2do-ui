@@ -12,6 +12,8 @@ import {
   SLIDE_HEIGHT,
   SLIDE_WIDTH,
   SLIDE_POSTER_REGIONS,
+  SLIDE_STICKER_SIZE,
+  SLIDE_EVENT_POSTER_HEIGHT,
   type CoverSlideModel,
   type EventSlideModel,
 } from "@/features/admin/lib/instagramSlides";
@@ -84,8 +86,8 @@ function SlideSticker({ sticker }: { sticker: EventSlideModel["stickers"][number
     const radius = i % 2 ? 0.84 : 1;
     return `${130 + Math.cos(angle) * 124 * radius},${54 + Math.sin(angle) * 48 * radius}`;
   }).join(" ");
-  return <div style={{ display: "flex", position: "absolute", left: sticker.left, top: sticker.top, width: 260, height: 108, alignItems: "center", justifyContent: "center", transform: `rotate(${sticker.rotation}deg)` }}>
-    <svg width="260" height="108" viewBox="0 0 260 108" style={{ position: "absolute", left: 0, top: 0 }}>
+  return <div style={{ display: "flex", position: "absolute", left: sticker.left, top: sticker.top, ...SLIDE_STICKER_SIZE, alignItems: "center", justifyContent: "center", transform: `rotate(${sticker.rotation}deg)` }}>
+    <svg width={SLIDE_STICKER_SIZE.width} height={SLIDE_STICKER_SIZE.height} viewBox="0 0 260 108" style={{ position: "absolute", left: 0, top: 0 }}>
       {shape === 0 ? <rect x="4" y="4" width="252" height="100" rx="50" fill={fill} stroke="white" strokeWidth="6" />
         : shape === 1 ? <polygon points={star} fill={fill} stroke="white" strokeWidth="6" />
         : shape === 2 ? <path d="M14 4H246V30Q220 54 246 78V104H14V78Q40 54 14 30Z" fill={fill} stroke="white" strokeWidth="6" />
@@ -98,7 +100,7 @@ function SlideSticker({ sticker }: { sticker: EventSlideModel["stickers"][number
         : <path d="M4 10H256V94H152L130 104L108 94H4Z" fill={fill} stroke="white" strokeWidth="6" />}
     </svg>
     {/* Keep the label above the positioned silhouette in both preview and artwork. */}
-    <div style={{ display: "flex", position: "relative", flexDirection: "column", width: 196, padding: "14px 8px", alignItems: "center", justifyContent: "center", textAlign: "center", fontSize: 26, lineHeight: 1.15, fontWeight: 700, color: LIGHT.foreground }}>
+    <div style={{ display: "flex", position: "relative", flexDirection: "column", width: 180, padding: "12px 8px", alignItems: "center", justifyContent: "center", textAlign: "center", fontSize: 24, lineHeight: 1.15, fontWeight: 700, color: LIGHT.foreground }}>
       {sticker.lines.map((line, lineIndex) => <div key={lineIndex} style={{ display: "flex", whiteSpace: "nowrap" }}>{line}</div>)}
     </div>
   </div>;
@@ -107,6 +109,7 @@ function SlideSticker({ sticker }: { sticker: EventSlideModel["stickers"][number
 /** Inset Instagram post on the cover's shared school-colored doodle backdrop. */
 export function EventSlideTemplate({ model, renderPoster = renderSlidePoster }: { model: EventSlideModel; renderPoster?: PosterRenderer }) {
   const poster = SLIDE_POSTER_REGIONS.event;
+  const displayedPoster = { width: Math.round(poster.width * SLIDE_EVENT_POSTER_HEIGHT / poster.height), height: SLIDE_EVENT_POSTER_HEIGHT };
   const schedule = [model.dateLine, model.timeLine].filter(Boolean).join(" · ");
   return (
     <div style={{ ...slideFrame, backgroundColor: model.colors.primary, color: LIGHT.foreground, overflow: "hidden", padding: 64 }}>
@@ -120,8 +123,8 @@ export function EventSlideTemplate({ model, renderPoster = renderSlidePoster }: 
             {schedule ? <p style={{ ...clampText(1), fontSize: 24, lineHeight: 1.2, maxHeight: 29, color: LIGHT.mutedForeground }}>{schedule}</p> : null}
           </div>
         </div>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", ...poster, flexShrink: 0, overflow: "hidden", backgroundColor: LIGHT.secondary }}>
-          {model.imageSrc ? renderPoster({ src: model.imageSrc, ...poster })
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: poster.width, height: displayedPoster.height, flexShrink: 0, overflow: "hidden", backgroundColor: LIGHT.surface }}>
+          {model.imageSrc ? renderPoster({ src: model.imageSrc, ...displayedPoster })
             : <p style={{ ...clampText(4), margin: EVENT_CONTENT_INSET * 2, fontSize: 64, fontWeight: 700, lineHeight: 1.15 }}>{model.title}</p>}
         </div>
         <div style={{ display: "flex", flex: 1, backgroundColor: LIGHT.surface }} />
