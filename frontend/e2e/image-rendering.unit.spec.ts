@@ -413,8 +413,16 @@ test.describe("Instagram raster preparation", () => {
     expect(Buffer.from(await again.arrayBuffer()).equals(output)).toBe(true);
     expect(fetched).toEqual([posterUrl, posterUrl]);
     const markup = renderToStaticMarkup(renderedSlide!);
-    expect(markup).toContain("Movie night");
+    expect(markup).toMatch(/<div style="[^"]*position:relative[^"]*">Movie night<\/div>/);
     expect(markup).not.toContain("REMOVED FOOTER TEXT");
+    for (const [left, top] of [[118, 1180], [698, 1162], [384, 1204]]) {
+      const label = await sharp(output).extract({ left, top, width: 212, height: 60 }).removeAlpha().raw().toBuffer();
+      let textPixels = 0;
+      for (let index = 0; index < label.length; index += 3) {
+        if ([0, 1, 2].every(channel => Math.abs(label[index + channel] - 23) <= 3)) textPixels++;
+      }
+      expect(textPixels).toBeGreaterThan(80);
+    }
     const pixel = async (left: number, top: number) => [...await sharp(output).extract({ left, top, width: 1, height: 1 }).removeAlpha().raw().toBuffer()];
     expect(await pixel(540, 600)).toEqual([239, 80, 20]);
     expect(await pixel(540, 1100)).toEqual([239, 80, 20]);

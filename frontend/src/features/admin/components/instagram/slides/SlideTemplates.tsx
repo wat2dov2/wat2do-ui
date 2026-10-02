@@ -95,7 +95,8 @@ function SlideSticker({ sticker, index }: { sticker: EventSlideModel["stickers"]
         : shape === 3 ? <path d="M28 12Q82-3 130 10Q211-4 241 30Q266 73 220 95Q162 110 128 96Q56 115 18 83Q-6 40 28 12Z" fill={fill} stroke="white" strokeWidth="6" />
         : <rect x="5" y="8" width="250" height="92" rx="10" fill={fill} stroke="white" strokeWidth="6" />}
     </svg>
-    <div style={{ display: "flex", width: 212, justifyContent: "center", textAlign: "center", fontSize: sticker.label.length > 18 ? 26 : 30, lineHeight: 1.05, fontWeight: 700, color: LIGHT.foreground }}>{sticker.label}</div>
+    {/* Keep the label above the positioned silhouette in both preview and artwork. */}
+    <div style={{ display: "flex", position: "relative", width: 212, justifyContent: "center", textAlign: "center", fontSize: sticker.label.length > 18 ? 26 : 30, lineHeight: 1.05, fontWeight: 700, color: LIGHT.foreground }}>{sticker.label}</div>
   </div>;
 }
 
