@@ -66,7 +66,8 @@ INSERT INTO public.clubs (
     logo_url,
     school_id,
     club_type,
-    status
+    status,
+    created_at
 )
 SELECT
     club_seed.club_name,
@@ -97,7 +98,8 @@ SELECT
     ),
     (SELECT id FROM public.schools WHERE slug = 'uwaterloo'),
     club_seed.club_type,
-    'approved'
+    'approved',
+    now() - (club_seed.ordinal % 72) * interval '1 hour'
 FROM club_seed
 WHERE NOT EXISTS (
     SELECT 1
