@@ -98,7 +98,7 @@
   },
   "siteBanner": {
     "businessSupport": {
-      "message": "Chúng tôi muốn hỗ trợ một doanh nghiệp gần {{schoolName}}, bằng cách quảng bá tại đây.",
+      "message": "Chúng tôi muốn hỗ trợ một doanh nghiệp gần {{schoolName}} bằng cách quảng bá miễn phí tại đây.",
       "cta": "Gửi biểu mẫu"
     },
     "localUniversity": "trường đại học của bạn"

@@ -101,7 +101,7 @@
   },
   "siteBanner": {
     "businessSupport": {
-      "message": "Wir möchten ein Unternehmen in der Nähe von {{schoolName}}, unterstützen, indem wir hier dafür werben.",
+      "message": "Wir möchten ein Unternehmen in der Nähe von {{schoolName}} unterstützen, indem wir hier kostenlos dafür werben.",
       "cta": "Formular ausfüllen"
     },
     "localUniversity": "deiner Universität"

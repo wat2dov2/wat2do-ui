@@ -113,7 +113,7 @@
   },
   "siteBanner": {
     "businessSupport": {
-      "message": "نريد دعم مشروع بالقرب من {{schoolName}}، عبر الإعلان عنه هنا.",
+      "message": "نريد دعم مشروع بالقرب من {{schoolName}} عبر الإعلان عنه هنا مجانًا.",
       "cta": "إرسال نموذج"
     },
     "localUniversity": "جامعتك"

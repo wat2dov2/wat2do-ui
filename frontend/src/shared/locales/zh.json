@@ -98,7 +98,7 @@
   },
   "siteBanner": {
     "businessSupport": {
-      "message": "我们希望通过在这里宣传，支持{{schoolName}}附近商家。",
+      "message": "我们希望通过在这里免费宣传，支持{{schoolName}}附近商家。",
       "cta": "填写表单"
     },
     "localUniversity": "你的大学"

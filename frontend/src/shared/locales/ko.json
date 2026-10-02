@@ -98,7 +98,7 @@
   },
   "siteBanner": {
     "businessSupport": {
-      "message": "{{schoolName}} 근처의 가게를 이곳에 홍보하여 돕고 싶습니다.",
+      "message": "{{schoolName}} 근처의 가게를 이곳에 무료로 홍보하여 돕고 싶습니다.",
       "cta": "추천 양식 작성하기"
     },
     "localUniversity": "여러분의 대학교"

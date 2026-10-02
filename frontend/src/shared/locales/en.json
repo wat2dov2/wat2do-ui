@@ -98,7 +98,7 @@
   },
   "siteBanner": {
     "businessSupport": {
-      "message": "We want to support a business near {{schoolName}} by advertising it here.",
+      "message": "We want to support a business near {{schoolName}} by advertising it here for free.",
       "cta": "Submit a form"
     },
     "localUniversity": "your university"

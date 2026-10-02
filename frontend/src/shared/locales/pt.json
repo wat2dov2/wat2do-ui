@@ -104,7 +104,7 @@
   },
   "siteBanner": {
     "businessSupport": {
-      "message": "Queremos apoiar um negócio perto de {{schoolName}}, divulgando-o aqui.",
+      "message": "Queremos apoiar um negócio perto de {{schoolName}} divulgando-o aqui gratuitamente.",
       "cta": "Enviar um formulário"
     },
     "localUniversity": "sua universidade"

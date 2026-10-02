@@ -98,7 +98,7 @@
   },
   "siteBanner": {
     "businessSupport": {
-      "message": "我哋想透過喺呢度宣傳，支持{{schoolName}}附近嘅商戶。",
+      "message": "我哋想透過喺呢度免費宣傳，支持{{schoolName}}附近嘅商戶。",
       "cta": "填寫表格"
     },
     "localUniversity": "你嘅大學"

@@ -101,7 +101,7 @@
   },
   "siteBanner": {
     "businessSupport": {
-      "message": "Gusto naming suportahan ang isang negosyo malapit sa {{schoolName}}, sa pamamagitan ng pag-advertise rito.",
+      "message": "Gusto naming suportahan ang isang negosyo malapit sa {{schoolName}} sa pamamagitan ng libreng pag-advertise rito.",
       "cta": "Magsumite ng form"
     },
     "localUniversity": "iyong unibersidad"
