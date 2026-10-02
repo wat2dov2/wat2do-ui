@@ -88,6 +88,7 @@ export function FormInput({
       id={id}
       disabled={disabled}
       type={type}
+      required={required}
       value={value}
       onChange={(e) => {
         if (type === "number") {

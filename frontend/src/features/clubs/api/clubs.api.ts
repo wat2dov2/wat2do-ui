@@ -78,7 +78,7 @@ type ClubCreateInput = Pick<
   | "club_type"
   | "logo_url"
   | "school"
->;
+> & { submitted_by_email: string };
 
 export async function createClubAPI(
   clubData: ClubCreateInput,

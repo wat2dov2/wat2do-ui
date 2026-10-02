@@ -4,11 +4,19 @@ from uuid import UUID
 
 import pytest
 
+from routers.clubs import _submission_limiter
 from schemas.club import ClubMemberResponse, ClubResponse
 from schemas.user import UserResponse
 from services import club_service
 from tests.conftest import ADMIN_USER, FAKE_USER, OTHER_USER
 from tests.services.conftest import FakeSupabase
+
+
+@pytest.fixture(autouse=True)
+def reset_submission_rate_limit():
+    _submission_limiter._requests.clear()
+    yield
+    _submission_limiter._requests.clear()
 
 
 def _mock_club(**overrides) -> ClubResponse:
@@ -22,12 +30,19 @@ def _mock_club(**overrides) -> ClubResponse:
     return ClubResponse.model_validate(defaults)
 
 
-def test_create_club_requires_auth(client):
+def test_create_club_anonymous_remains_pending_without_owner(client, monkeypatch):
+    create = MagicMock(return_value=_mock_club(status="pending", created_by=None))
+    monkeypatch.setattr(club_service, "create_club", create)
     response = client.post(
         "/clubs/",
-        json={"club_name": "Test Club", "club_type": "wusa"},
+        json={
+            "submitted_by_email": "submitter@example.com",
+            "club_name": "Test Club",
+            "club_type": "wusa",
+        },
     )
-    assert response.status_code == 401
+    assert response.status_code == 201
+    assert create.call_args.kwargs == {"created_by": None, "auto_approve": False}
 
 
 def test_club_contract_has_no_organization_aliases(client):
@@ -98,7 +113,11 @@ def test_create_club_sets_current_user_as_owner(authenticated_client, monkeypatc
 
     resp = authenticated_client.post(
         "/clubs/",
-        json={"club_name": "Test Club", "club_type": "wusa"},
+        json={
+            "submitted_by_email": "submitter@example.com",
+            "club_name": "Test Club",
+            "club_type": "wusa",
+        },
     )
     assert resp.status_code == 201
     assert mock_create.call_count == 1
@@ -114,7 +133,11 @@ def test_create_club_sets_admin_as_owner_by_default(admin_client, monkeypatch):
 
     resp = admin_client.post(
         "/clubs/",
-        json={"club_name": "Test Club", "club_type": "wusa"},
+        json={
+            "submitted_by_email": "submitter@example.com",
+            "club_name": "Test Club",
+            "club_type": "wusa",
+        },
     )
     assert resp.status_code == 201
     assert mock_create.call_count == 1
@@ -446,7 +469,11 @@ def test_create_club_from_normal_user_requires_review(authenticated_client, monk
 
     resp = authenticated_client.post(
         "/clubs/",
-        json={"club_name": "Test Club", "club_type": "wusa"},
+        json={
+            "submitted_by_email": "submitter@example.com",
+            "club_name": "Test Club",
+            "club_type": "wusa",
+        },
     )
 
     assert resp.status_code == 201
@@ -461,7 +488,11 @@ def test_create_club_from_admin_is_auto_approved(admin_client, monkeypatch):
 
     resp = admin_client.post(
         "/clubs/",
-        json={"club_name": "Test Club", "club_type": "wusa"},
+        json={
+            "submitted_by_email": "submitter@example.com",
+            "club_name": "Test Club",
+            "club_type": "wusa",
+        },
     )
 
     assert resp.status_code == 201

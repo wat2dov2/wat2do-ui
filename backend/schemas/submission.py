@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 from core.constants import (
     MAX_EVENT_DATA_BYTES,
@@ -26,6 +26,7 @@ class SubmissionCreate(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
+    submitted_by_email: EmailStr
     event_data: EventCreate
 
     @field_validator("event_data")
@@ -64,6 +65,7 @@ class SubmissionResponse(SubmissionMetadata):
 
 class PositionSubmissionCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
+    submitted_by_email: EmailStr
     position_data: PositionCreate
 
 

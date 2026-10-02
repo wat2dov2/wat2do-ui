@@ -81,7 +81,6 @@
   "navigation": {
     "events": "Events",
     "create": "Submit Event",
-    "loginRequiredToSubmit": "Only logged-in users can submit events or clubs.",
     "clubs": "Clubs",
     "positions": "Positions",
     "myEvents": "My Events",

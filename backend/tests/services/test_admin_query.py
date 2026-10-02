@@ -120,7 +120,7 @@ def test_submission_page_batches_club_names_without_full_club_list(fake_sb, patc
             "submitted_at": "2026-09-14T12:00:00Z",
             "event_data": {"title": "Dance", "club_id": 7},
             "school_record": {"slug": "ulaval"},
-            "users": {"email": "person@example.com"},
+            "submitted_by_email": "person@example.com",
         }
     ]
     loader = Mock(return_value=(rows, 123))
@@ -138,3 +138,19 @@ def test_submission_page_batches_club_names_without_full_club_list(fake_sb, patc
     assert loader.call_args.kwargs["offset"] == 20
     fake_sb.in_.assert_called_once_with("id", [7])
     fake_sb.execute.assert_called_once()
+
+
+def test_club_review_reads_private_visitor_contact(monkeypatch):
+    row = {
+        "id": 7,
+        "club_name": "Visitor Club",
+        "status": "pending",
+        "club_type": "independent",
+        "created_by": None,
+        "submitted_by_email": "visitor@example.com",
+    }
+    monkeypatch.setattr(admin_query, "load_page_rows", Mock(return_value=([row], 1)))
+    items, total = club_service.list_club_submissions(offset=0, limit=20)
+    assert total == 1
+    assert items[0].submitted_by_email == "visitor@example.com"
+    assert items[0].created_by is None

@@ -12,7 +12,6 @@ import { Input } from "@/shared/ui/input";
 import { ClubInput } from "@/features/clubs";
 import { ImageUploadField } from "@/shared/ui/image-upload-field";
 import { ROUTES } from "@/shared/constants/routes";
-import { QP } from "@/shared/constants/queryParams";
 import type { PositionType } from "@/shared/types";
 import { POSITION_TYPES } from "@/features/positions/api/positions.api";
 
@@ -25,12 +24,21 @@ export function SubmitPositionPage() {
     <Container size="lg">
       <Stack gap={6}>
         <PageHeader title={t("positions.addPosition")} back={{ href: ROUTES.POSITIONS, label: t("navigation.positions") }} />
-        {!form.isAuthenticated ? <Button asChild><Link href={ROUTES.LOGIN + "?" + QP.RETURN_TO + "=" + encodeURIComponent(ROUTES.POSITION_SUBMIT)}>{t("events.signIn")}</Link></Button> : form.submitted ? (
+        {form.submitted ? (
           <Stack gap={3}><p role="status">{t("positions.submitted")}</p><Button asChild><Link href={ROUTES.POSITIONS}>{t("navigation.positions")}</Link></Button></Stack>
         ) : (
           <form onSubmit={form.submit}>
             <fieldset disabled={form.busy}>
               <Stack gap={5}>
+                <FormInput
+                  name="submitter-email"
+                  type="email"
+                  required
+                  label={t("contact.form.email")}
+                  placeholder={t("contact.form.emailPlaceholder")}
+                  value={form.submittedByEmail}
+                  onChange={value => form.setEmail(String(value))}
+                />
                 <ImageUploadField label={t("forms.clickToUploadImage")} imagePreview={data.source_image_url ?? undefined} onImageUpload={form.upload} onRemoveImage={() => form.edit({ source_image_url: null })} previewVariant="poster" />
                 <Field>
                   <ClubInput value={data.club_id || null} clubs={clubs} onChange={clubId => form.edit({ club_id: clubId ?? 0 })} touched />

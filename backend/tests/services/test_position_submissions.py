@@ -22,6 +22,7 @@ def row(status="pending"):
     return {
         "id": "00000000-0000-4000-9000-000000000001",
         "user_id": None,
+        "submitted_by_email": "submitter@example.com",
         "school_id": 99,
         "position_data": DATA,
         "status": status,
@@ -37,11 +38,15 @@ def test_creation_derives_school_from_club(fake_sb, patch_sb, monkeypatch):
         lambda _id: SimpleNamespace(school_id=99),
     )
     fake_sb.set_response(data=[row()])
-    result = submission_service.create_submission(None, PositionCreate(**DATA), kind="position")
+    result = submission_service.create_submission(
+        None, PositionCreate(**DATA), kind="position", submitted_by_email="submitter@example.com"
+    )
     assert result.position_data.is_paid is True
+    assert result.submitted_by_email == "submitter@example.com"
     fake_sb.table.assert_called_with("position_submissions")
     assert fake_sb.insert.call_args.args[0]["school_id"] == 99
     assert "event_data" not in fake_sb.insert.call_args.args[0]
+    assert fake_sb.insert.call_args.args[0]["submitted_by_email"] == "submitter@example.com"
 
 
 def test_creation_does_not_report_success_without_inserted_row(fake_sb, patch_sb, monkeypatch):
@@ -53,7 +58,12 @@ def test_creation_does_not_report_success_without_inserted_row(fake_sb, patch_sb
     )
     fake_sb.set_response(data=[])
     with pytest.raises(RuntimeError, match="Submission insert returned no row"):
-        submission_service.create_submission(None, PositionCreate(**DATA), kind="position")
+        submission_service.create_submission(
+            None,
+            PositionCreate(**DATA),
+            kind="position",
+            submitted_by_email="submitter@example.com",
+        )
 
 
 def test_list_disambiguates_submitter_from_reviewer(fake_sb, patch_sb):
@@ -63,13 +73,13 @@ def test_list_disambiguates_submitter_from_reviewer(fake_sb, patch_sb):
             {
                 **row(),
                 "school_record": {"slug": "ulaval"},
-                "users": {"email": "student@example.com"},
+                "submitted_by_email": "student@example.com",
             }
         ]
     )
     items, _ = submission_service.get_submissions(kind="position")
     fake_sb.select.assert_called_once_with(
-        f"*, users!user_id(email), {submission_service.school_service.SCHOOL_SLUG_EMBED}",
+        f"*, {submission_service.school_service.SCHOOL_SLUG_EMBED}",
         count="exact",
     )
     assert items[0].submitted_by_email == "student@example.com"
@@ -148,3 +158,24 @@ def test_approved_position_refreshes_positions_and_clubs_after_commit(
     )
 
     refresh.assert_called_once_with("uwaterloo", resources=("positions", "clubs"))
+
+
+@pytest.mark.parametrize(
+    "kind,data_field", [("event", "event_data"), ("position", "position_data")]
+)
+def test_anonymous_submission_preserves_private_contact(
+    fake_sb, patch_sb, monkeypatch, kind, data_field
+):
+    patch_sb("services.submission_service")
+    monkeypatch.setattr(
+        submission_service.club_service, "get_club", lambda _id: SimpleNamespace(school_id=99)
+    )
+    record = {**row(), data_field: DATA, "submitted_by_email": "visitor@example.com"}
+    fake_sb.set_response(data=[record])
+    result = submission_service.create_submission(
+        None, DATA, kind=kind, submitted_by_email="visitor@example.com"
+    )
+    assert result.user_id is None
+    assert result.status == "pending"
+    assert result.submitted_by_email == "visitor@example.com"
+    assert fake_sb.insert.call_args.args[0]["submitted_by_email"] == "visitor@example.com"

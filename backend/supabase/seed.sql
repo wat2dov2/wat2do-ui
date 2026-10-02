@@ -403,8 +403,8 @@ WHERE club.club_name = 'UW Board Games Club'
   )
 ON CONFLICT DO NOTHING;
 
-INSERT INTO public.position_submissions (id, school_id, position_data)
-SELECT '00000000-0000-4000-9000-000000000001'::uuid, club.school_id,
+INSERT INTO public.position_submissions (id, school_id, submitted_by_email, position_data)
+SELECT '00000000-0000-4000-9000-000000000001'::uuid, club.school_id, 'submitter@example.com',
     jsonb_build_object('club_id', club.id, 'title', 'Pending Outreach Lead',
         'description', 'Coordinate outreach activities for the club.', 'position_type', 'executive',
         'is_paid', false, 'source_url', 'https://example.com/positions/pending')
@@ -579,11 +579,11 @@ FROM moderation_seed
 ON CONFLICT DO NOTHING;
 
 INSERT INTO public.clubs (
-    club_name, school_id, categories, club_type, status, created_by, club_page
+    club_name, school_id, categories, club_type, status, created_by, submitted_by_email, club_page
 )
 SELECT format('Demo %s %s Club %s', fixture.slug, kind.label, fixture.slot),
     fixture.school_id, '["Games & Recreation"]'::jsonb, 'independent',
-    kind.status, CASE WHEN kind.status = 'pending' THEN fixture.user_id END,
+    kind.status, CASE WHEN kind.status = 'pending' THEN fixture.user_id END, fixture.email,
     format('https://example.invalid/moderation/%s/%s/%s', fixture.slug, kind.label, fixture.slot)
 FROM moderation_seed fixture
 CROSS JOIN (VALUES ('Submission', 'pending'), ('Claim', 'approved')) AS kind(label, status)
@@ -604,9 +604,9 @@ JOIN public.clubs club ON club.school_id = fixture.school_id
     AND club.club_name = format('Demo %s Claim Club %s', fixture.slug, fixture.slot)
 ON CONFLICT DO NOTHING;
 
-INSERT INTO public.event_submissions (id, user_id, school_id, event_data, submitted_at)
+INSERT INTO public.event_submissions (id, user_id, school_id, submitted_by_email, event_data, submitted_at)
 SELECT md5('wat2do-local-event-submission-' || fixture.slug || '-' || fixture.slot)::uuid,
-    fixture.user_id, fixture.school_id,
+    fixture.user_id, fixture.school_id, fixture.email,
     jsonb_build_object(
         'title', format('Demo %s Event Submission %s', fixture.slug, fixture.slot),
         'description', 'Synthetic local submission for testing cross-school moderation.',

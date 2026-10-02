@@ -84,7 +84,6 @@
   "navigation": {
     "events": "घटनाएँ",
     "create": "इवेंट जमा करें",
-    "loginRequiredToSubmit": "केवल लॉग इन उपयोगकर्ता ही घटनाएँ या संगठन सबमिट कर सकते हैं।",
     "clubs": "संगठन",
     "positions": "पद",
     "myEvents": "मेरे इवेंट",

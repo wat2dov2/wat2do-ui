@@ -1,4 +1,6 @@
 import { useCallback, useState } from "react";
+import { useAuthState } from "@/features/auth";
+import { FormInput } from "@/shared/ui/form-field";
 import { useTranslation } from "react-i18next";
 import {
   Drawer,
@@ -53,6 +55,7 @@ interface ClubFormData {
 
 type SaveClub = (
   club: Club,
+  submittedByEmail: string,
 ) => Club | void | Promise<Club | void>;
 
 interface ClubFormProps {
@@ -78,6 +81,8 @@ export function ClubForm({
   const { club_categories: clubCategories } = useAppConstants();
   const { t } = useTranslation();
   const isEditMode = initialData != null;
+  const { userEmail } = useAuthState();
+  const [submittedByEmail, setSubmittedByEmail] = useState(userEmail ?? "");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const getDefaults = useCallback(
@@ -160,7 +165,7 @@ export function ClubForm({
     setIsSubmitting(true);
     try {
       const savedClub =
-        (await Promise.resolve(onSave(club))) || club;
+        (await Promise.resolve(onSave(club, submittedByEmail.trim()))) || club;
       toast({
         title: isEditMode
           ? t("clubs.clubUpdated")
@@ -222,6 +227,15 @@ export function ClubForm({
       ) : null}
 
       <Stack gap={5}>
+        {!isEditMode ? <FormInput
+                  name="submitter-email"
+                  type="email"
+                  required
+                  label={t("contact.form.email")}
+                  placeholder={t("contact.form.emailPlaceholder")}
+                  value={submittedByEmail}
+                  onChange={value => setSubmittedByEmail(String(value))}
+                /> : null}
         <FormGrid>
           <Field>
             <FieldLabel htmlFor="club-name">

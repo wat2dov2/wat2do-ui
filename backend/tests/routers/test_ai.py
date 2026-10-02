@@ -250,3 +250,23 @@ def test_empty_extraction_is_not_reported_as_success(client, monkeypatch):
     assert response.status_code == 400
     assert response.json()["detail"] == EVENT_IMAGE_NO_EVENT
     upload.assert_not_called()
+
+
+def test_position_image_parsing_accepts_visitors(client, monkeypatch):
+    ai_parse_event_image_rate_limiter._requests.clear()
+    _mock_image_parse(monkeypatch)
+    from routers import ai
+    from schemas.ai import PositionImageResponse
+
+    parsed = PositionImageResponse(title="Lead", description="Join us", position_type="committee")
+
+    async def parse(_file, _parser):
+        return parsed.model_dump()
+
+    monkeypatch.setattr(ai, "_parse_uploaded_image", parse)
+    response = client.post(
+        "/ai/parse-position-image?school=uwaterloo",
+        files={"file": ("poster.png", b"image", "image/png")},
+    )
+    assert response.status_code == 200
+    assert response.json()["title"] == "Lead"

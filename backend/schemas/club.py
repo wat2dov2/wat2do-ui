@@ -8,6 +8,7 @@ from pydantic import (
     BaseModel,
     BeforeValidator,
     ConfigDict,
+    EmailStr,
     Field,
     StringConstraints,
     field_validator,
@@ -114,6 +115,7 @@ def _validate_club_categories(v: list[str] | None) -> list[str] | None:
 class ClubCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
+    submitted_by_email: EmailStr
     club_name: str = Field(..., min_length=1, max_length=MAX_CLUB_NAME_LENGTH)
     categories: list[CategoryStr] | None = Field(default=None, max_length=MAX_CLUB_CATEGORY_COUNT)
     club_page: str | None = Field(default=None, max_length=MAX_URL_LENGTH)
@@ -193,6 +195,10 @@ class ClubResponse(BaseModel):
     position_count: int = 0
 
     model_config = {"from_attributes": True}
+
+
+class ClubSubmissionResponse(ClubResponse):
+    submitted_by_email: str | None = None
 
 
 class DiscordChannelOption(BaseModel):

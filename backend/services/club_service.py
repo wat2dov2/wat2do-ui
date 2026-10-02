@@ -34,6 +34,7 @@ from schemas.club import (
     ClubMemberResponse,
     ClubResponse,
     ClubStatus,
+    ClubSubmissionResponse,
     ClubUpdate,
     IntegrationPlatform,
 )
@@ -317,7 +318,9 @@ def list_clubs(
     return items, r.count or len(items)
 
 
-def create_club(data: ClubCreate, *, created_by: str, auto_approve: bool = False) -> ClubResponse:
+def create_club(
+    data: ClubCreate, *, created_by: str | None, auto_approve: bool = False
+) -> ClubResponse:
     """Create a club. Non-admin submissions land in the review queue."""
     payload = data.model_dump()
     school_record = school_service.get_school(payload.pop("school"))
@@ -330,10 +333,11 @@ def create_club(data: ClubCreate, *, created_by: str, auto_approve: bool = False
     club = get_club(int(r.data[0]["id"]))
     if club is None:
         raise RuntimeError("Created club could not be reloaded")
-    try:
-        add_club_member(club.id, UUID(created_by))
-    except Exception as e:
-        log.warning("Failed to auto-add creator %s to club members: %s", created_by, e)
+    if created_by is not None:
+        try:
+            add_club_member(club.id, UUID(created_by))
+        except Exception as e:
+            log.warning("Failed to auto-add creator %s to club members: %s", created_by, e)
     _get_clubs_for_school_lookup.cache_clear()
     if auto_approve:
         event_feed_revalidation_service.revalidate_school(club.school, resources=("clubs",))
@@ -925,7 +929,7 @@ def list_club_submissions(
     status: str | None = None,
     school: str | None = None,
     search: str | None = None,
-) -> tuple[list[ClubResponse], int]:
+) -> tuple[list[ClubSubmissionResponse], int]:
     rows, total = admin_query.load_page_rows(
         "clubSubmissions",
         CLUBS,
@@ -936,7 +940,12 @@ def list_club_submissions(
         school=school,
         status=status,
     )
-    return _clubs_with_owner_emails(rows), total
+    return [
+        ClubSubmissionResponse.model_validate(
+            {**club.model_dump(), "submitted_by_email": row.get("submitted_by_email")}
+        )
+        for club, row in zip(_clubs_with_owner_emails(rows), rows, strict=True)
+    ], total
 
 
 def _clubs_with_owner_emails(rows: list[dict]) -> list[ClubResponse]:

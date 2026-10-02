@@ -87,7 +87,6 @@
   "navigation": {
     "events": "Événements",
     "create": "Soumettre l'événement",
-    "loginRequiredToSubmit": "Seuls les utilisateurs connectés peuvent soumettre des événements ou des organisations.",
     "clubs": "Organisations",
     "positions": "Postes",
     "myEvents": "Mes Événements",

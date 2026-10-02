@@ -87,7 +87,6 @@
   "navigation": {
     "events": "Eventos",
     "create": "Enviar Evento",
-    "loginRequiredToSubmit": "Solo los usuarios registrados pueden enviar eventos u organizaciones.",
     "clubs": "Organizaciones",
     "positions": "Posiciones",
     "myEvents": "Mis Eventos",

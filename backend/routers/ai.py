@@ -4,12 +4,10 @@ from functools import partial
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 
-from core.auth import get_db_user
 from core.constants import BUCKET_EVENT_IMAGES, MAX_SCHOOL_LENGTH
 from core.exceptions import ValidationError
 from core.rate_limit import ai_parse_event_image_rate_limiter
 from schemas.ai import EventFormDataResponse, PositionImageResponse
-from schemas.user import UserResponse
 from services import school_service
 from services.ai_service import (
     parse_event_image as svc_parse_event_image,
@@ -41,7 +39,6 @@ async def parse_event_image(
 async def parse_position_image(
     file: UploadFile = File(...),
     school: str = Query(min_length=1, max_length=MAX_SCHOOL_LENGTH),
-    _: UserResponse = Depends(get_db_user),
     _rl: None = Depends(ai_parse_event_image_rate_limiter.ip_dependency()),
 ):
     if school_service.get_school(school) is None:

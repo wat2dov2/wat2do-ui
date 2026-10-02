@@ -471,7 +471,7 @@ def test_create_club_refreshes_public_directory_only_when_approved(
     monkeypatch.setattr(club_service.event_feed_revalidation_service, "revalidate_school", refresh)
 
     club_service.create_club(
-        ClubCreate(club_name="Tea Club"),
+        ClubCreate(submitted_by_email="submitter@example.com", club_name="Tea Club"),
         created_by="11111111-1111-1111-1111-111111111111",
         auto_approve=auto_approve,
     )
@@ -600,3 +600,32 @@ def test_school_lookup_reads_clubs_beyond_first_page(fake_sb, patch_sb):
     )
     result = club_service.lookup_club_by_school_and_ig("uwaterloo", "official_union")
     assert result is not None and result["id"] == 9999
+
+
+def test_anonymous_club_contact_does_not_grant_membership_or_leak_publicly(
+    monkeypatch, fake_sb, patch_sb
+):
+    from schemas.club import ClubCreate
+
+    patch_sb("services.club_service")
+    row = {
+        "id": 7,
+        "club_name": "Visitor Club",
+        "school": "uwaterloo",
+        "status": "pending",
+        "submitted_by_email": "visitor@example.com",
+    }
+    fake_sb.set_response(data=[row])
+    monkeypatch.setattr(club_service, "get_club", lambda _: ClubResponse(**row))
+    membership = MagicMock()
+    monkeypatch.setattr(club_service, "add_club_member", membership)
+    result = club_service.create_club(
+        ClubCreate(club_name="Visitor Club", submitted_by_email="visitor@example.com"),
+        created_by=None,
+    )
+    payload = fake_sb.insert.call_args.args[0]
+    assert payload["created_by"] is None
+    assert payload["status"] == "pending"
+    assert payload["submitted_by_email"] == "visitor@example.com"
+    membership.assert_not_called()
+    assert "submitted_by_email" not in result.model_dump()

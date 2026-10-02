@@ -217,7 +217,7 @@ export interface paths {
         put?: never;
         /**
          * Create Club
-         * @description Anyone signed in may submit a club; only admins publish directly.
+         * @description Visitors may submit a club; only authenticated admins publish directly.
          */
         post: operations["create_club_clubs__post"];
         delete?: never;
@@ -1869,6 +1869,11 @@ export interface components {
         };
         /** ClubCreate */
         ClubCreate: {
+            /**
+             * Submitted By Email
+             * Format: email
+             */
+            submitted_by_email: string;
             /** Club Name */
             club_name: string;
             /** Categories */
@@ -2061,6 +2066,52 @@ export interface components {
              * @default 0
              */
             position_count: number;
+        };
+        /** ClubSubmissionResponse */
+        ClubSubmissionResponse: {
+            /** Id */
+            id: number;
+            /** Club Name */
+            club_name: string;
+            /**
+             * Status
+             * @default approved
+             * @enum {string}
+             */
+            status: "pending" | "approved" | "rejected";
+            /** Categories */
+            categories?: string[] | null;
+            /** Club Page */
+            club_page?: string | null;
+            /** Ig */
+            ig?: string | null;
+            /** Discord */
+            discord?: string | null;
+            /**
+             * Club Type
+             * @default independent
+             */
+            club_type: string;
+            /** Logo Url */
+            logo_url?: string | null;
+            /** Created By */
+            created_by?: string | null;
+            /** School */
+            school?: string | null;
+            /** Owner Email */
+            owner_email?: string | null;
+            /**
+             * Event Count
+             * @default 0
+             */
+            event_count: number;
+            /**
+             * Position Count
+             * @default 0
+             */
+            position_count: number;
+            /** Submitted By Email */
+            submitted_by_email?: string | null;
         };
         /** ClubUpdate */
         ClubUpdate: {
@@ -3129,6 +3180,19 @@ export interface components {
             /** Total Pages */
             total_pages: number;
         };
+        /** PaginatedResponse[ClubSubmissionResponse] */
+        PaginatedResponse_ClubSubmissionResponse_: {
+            /** Items */
+            items: components["schemas"]["ClubSubmissionResponse"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+            /** Total Pages */
+            total_pages: number;
+        };
         /** PaginatedResponse[DiscoveryQueryResponse] */
         PaginatedResponse_DiscoveryQueryResponse_: {
             /** Items */
@@ -3503,6 +3567,11 @@ export interface components {
         };
         /** PositionSubmissionCreate */
         PositionSubmissionCreate: {
+            /**
+             * Submitted By Email
+             * Format: email
+             */
+            submitted_by_email: string;
             position_data: components["schemas"]["PositionCreate"];
         };
         /** PositionSubmissionResponse */
@@ -4103,6 +4172,11 @@ export interface components {
          *     shape translation step.
          */
         SubmissionCreate: {
+            /**
+             * Submitted By Email
+             * Format: email
+             */
+            submitted_by_email: string;
             event_data: components["schemas"]["EventCreate"];
         };
         /** SubmissionResponse */
@@ -4737,7 +4811,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PaginatedResponse_ClubResponse_"];
+                    "application/json": components["schemas"]["PaginatedResponse_ClubSubmissionResponse_"];
                 };
             };
             /** @description Validation Error */

@@ -34,7 +34,11 @@ def create_submission(
     _rl: None = Depends(_submission_create_limiter.dependency()),
 ):
     user: UserResponse | None = resolve_db_user(auth_user) if auth_user else None
-    return submission_service.create_submission(str(user.id) if user else None, data.event_data)
+    return submission_service.create_submission(
+        str(user.id) if user else None,
+        data.event_data,
+        submitted_by_email=str(data.submitted_by_email),
+    )
 
 
 @router.get("/", response_model=PaginatedResponse[SubmissionResponse])

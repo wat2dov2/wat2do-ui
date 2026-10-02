@@ -137,12 +137,12 @@ export function AdminClubsPage({
     }
   };
 
-  const handleSave = async (club: Club) => {
+  const handleSave = async (club: Club, submittedByEmail: string) => {
     try {
       if (editingClub) {
         await adminUpdateClub(club);
       } else {
-        await adminCreateClub(club);
+        await adminCreateClub(club, submittedByEmail);
       }
       await refreshClubQueries();
       closeModal();
@@ -319,7 +319,7 @@ export function AdminClubsPage({
                   <TableCell>{getSchoolName(club.school)}</TableCell>
                   <TableCell>
                     <span className="text-xs text-muted-foreground">
-                      {club.owner_email ?? "-"}
+                      {club.submitted_by_email ?? "-"}
                     </span>
                   </TableCell>
                   <TableCell>

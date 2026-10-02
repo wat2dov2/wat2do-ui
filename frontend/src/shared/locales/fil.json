@@ -84,7 +84,6 @@
   "navigation": {
     "events": "Mga Kaganapan",
     "create": "Magsumite ng event",
-    "loginRequiredToSubmit": "Tanging mga naka-log in na user lamang ang maaaring magsumite ng mga kaganapan o organisasyon.",
     "clubs": "Mga organisasyon",
     "positions": "Mga posisyon",
     "myEvents": "Aking mga event",

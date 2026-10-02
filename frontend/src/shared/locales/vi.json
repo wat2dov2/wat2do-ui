@@ -81,7 +81,6 @@
   "navigation": {
     "events": "Sự kiện",
     "create": "Gửi sự kiện",
-    "loginRequiredToSubmit": "Chỉ những người đã đăng nhập mới có thể gửi sự kiện hoặc tổ chức.",
     "clubs": "Tổ chức",
     "positions": "Vị trí",
     "myEvents": "Sự kiện của tôi",

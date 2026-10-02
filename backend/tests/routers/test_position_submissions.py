@@ -36,19 +36,33 @@ def submission(status="pending"):
     )
 
 
-def test_create_requires_authentication(client):
+def test_anonymous_creation_uses_position_resource(client, monkeypatch):
+    create = Mock(return_value=submission())
+    monkeypatch.setattr(submission_service, "create_submission", create)
     assert (
-        client.post("/position-submissions/", json={"position_data": POSITION}).status_code == 401
+        client.post(
+            "/position-submissions/",
+            json={"submitted_by_email": "submitter@example.com", "position_data": POSITION},
+        ).status_code
+        == 201
     )
+    assert create.call_args.args[0] is None
+    assert create.call_args.kwargs["submitted_by_email"] == "submitter@example.com"
 
 
 def test_authenticated_creation_uses_position_resource(authenticated_client, monkeypatch):
     create = Mock(return_value=submission())
     monkeypatch.setattr(submission_service, "create_submission", create)
-    response = authenticated_client.post("/position-submissions/", json={"position_data": POSITION})
+    response = authenticated_client.post(
+        "/position-submissions/",
+        json={"submitted_by_email": "submitter@example.com", "position_data": POSITION},
+    )
     assert response.status_code == 201
     assert response.json()["position_data"]["is_paid"] is None
-    assert create.call_args.kwargs == {"kind": "position"}
+    assert create.call_args.kwargs == {
+        "kind": "position",
+        "submitted_by_email": "submitter@example.com",
+    }
     assert create.call_args.args[0] is not None
 
 
@@ -65,7 +79,11 @@ def test_authenticated_creation_uses_position_resource(authenticated_client, mon
 )
 def test_rejects_invalid_or_ignored_fields(authenticated_client, changes):
     response = authenticated_client.post(
-        "/position-submissions/", json={"position_data": {**POSITION, **changes}}
+        "/position-submissions/",
+        json={
+            "submitted_by_email": "submitter@example.com",
+            "position_data": {**POSITION, **changes},
+        },
     )
     assert response.status_code == 422
 

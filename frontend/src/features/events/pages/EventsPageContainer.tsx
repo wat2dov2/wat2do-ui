@@ -3,7 +3,6 @@ import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { PriceFilter } from "@/features/search";
 import { IntegerFilter } from "@/shared/ui/integer-filter";
-import { toast } from "@/shared/hooks/use-toast";
 import { EventList } from "@/features/events/components/EventList";
 import { PageCountHeading } from "@/shared/ui/page-count-heading";
 import { SearchBar } from "@/features/search/components/SearchBar";
@@ -92,20 +91,9 @@ export function EventsPageContainer({
 
   const quickFilters = getEventQuickFilters({ profileCompleted, sportsGameAvailable: filters.sportsGameAvailable });
 
-  // Submitting an event requires an account, so gate before navigating.
   const handleSubmitEventClick = useCallback(() => {
-    if (!profileCompleted) {
-      toast({
-        description: t("navigation.loginRequiredToSubmit"),
-        action: {
-          label: t("events.signIn"),
-          onClick: () => router.push(ROUTES.LOGIN),
-        },
-      });
-      return;
-    }
     router.push(ROUTES.EVENT_SUBMIT);
-  }, [profileCompleted, router, t]);
+  }, [router]);
 
   return (
     <>

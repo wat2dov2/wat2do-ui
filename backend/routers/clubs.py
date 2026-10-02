@@ -3,16 +3,26 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, status
 
-from core.auth import get_admin_user, get_current_user, get_db_user, is_admin
+from core.auth import (
+    get_admin_user,
+    get_current_user,
+    get_db_user,
+    get_optional_user,
+    is_admin,
+    resolve_db_user,
+)
 from core.constants import (
     MAX_CLUB_TYPE_LENGTH,
     MAX_SCHOOL_LENGTH,
     MAX_SEARCH_QUERY_LENGTH,
     ROLE_ADMIN,
+    SUBMISSION_RATE_LIMIT_MAX_REQUESTS,
+    SUBMISSION_RATE_LIMIT_WINDOW_SECONDS,
 )
 from core.errors import CLUB_NOT_FOUND, NOT_AUTHORIZED
 from core.exceptions import AuthorizationError, NotFoundError, ValidationError, get_or_404
 from core.pagination import PaginatedResponse, PaginationParams, paginated_response
+from core.rate_limit import RateLimiter
 from schemas.claim import (
     ClubClaimCreate,
     ClubClaimResponse,
@@ -26,6 +36,7 @@ from schemas.club import (
     ClubMemberResponse,
     ClubResponse,
     ClubStatus,
+    ClubSubmissionResponse,
     ClubUpdate,
     DiscordIntegrationOptionsResponse,
     IntegrationPlatform,
@@ -40,6 +51,12 @@ from schemas.user import UserResponse
 from services import club_service
 
 router = APIRouter(prefix="/clubs", tags=["clubs"])
+
+
+_submission_limiter = RateLimiter(
+    max_requests=SUBMISSION_RATE_LIMIT_MAX_REQUESTS,
+    window_seconds=SUBMISSION_RATE_LIMIT_WINDOW_SECONDS,
+)
 
 
 INTEGRATION_NOT_FOUND = "Integration not found"
@@ -95,7 +112,7 @@ def list_clubs(
     return paginated_response(items, total, pagination)
 
 
-@router.get("/review", response_model=PaginatedResponse[ClubResponse])
+@router.get("/review", response_model=PaginatedResponse[ClubSubmissionResponse])
 def list_clubs_for_review(
     club_status: ClubStatus | None = Query(default=None),
     school: str | None = Query(default=None, max_length=MAX_SCHOOL_LENGTH),
@@ -218,11 +235,15 @@ def disconnect_platform_integration(
 @router.post("/", response_model=ClubResponse, status_code=status.HTTP_201_CREATED)
 def create_club(
     data: ClubCreate,
-    db_user: UserResponse = Depends(get_db_user),
+    auth_user: dict | None = Depends(get_optional_user),
+    _rl: None = Depends(_submission_limiter.dependency()),
 ):
-    """Anyone signed in may submit a club; only admins publish directly."""
+    """Visitors may submit a club; only authenticated admins publish directly."""
+    db_user = resolve_db_user(auth_user) if auth_user else None
     return club_service.create_club(
-        data, created_by=str(db_user.id), auto_approve=is_admin(db_user)
+        data,
+        created_by=str(db_user.id) if db_user else None,
+        auto_approve=is_admin(db_user) if db_user else False,
     )
 
 

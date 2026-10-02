@@ -81,7 +81,6 @@
   "navigation": {
     "events": "活动",
     "create": "提交活动",
-    "loginRequiredToSubmit": "只有登录用户才能提交活动或组织。",
     "clubs": "组织",
     "positions": "职位",
     "myEvents": "我的活动",

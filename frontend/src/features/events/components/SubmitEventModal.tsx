@@ -5,6 +5,7 @@ import React, {
   useState,
   type MutableRefObject,
 } from "react";
+import { useAuthState } from "@/features/auth";
 import { useTranslation } from "react-i18next";
 import {
   Drawer,
@@ -49,6 +50,7 @@ interface SubmitEventSharedProps {
   onClose?: () => void;
   onSubmit?: (
     event: EventFormData,
+    submittedByEmail: string,
   ) => SubmitEventResult | Promise<SubmitEventResult>;
   canCreateEvents: boolean;
   onBack?: () => void;
@@ -119,6 +121,8 @@ export function SubmitEventFlow({
 }: SubmitEventFlowProps) {
   const { t } = useTranslation();
   const { isDarkMode } = useDarkMode();
+  const { userEmail } = useAuthState();
+  const [submittedByEmail, setSubmittedByEmail] = useState(userEmail ?? "");
   const [submitResult, setSubmitResult] = useState<{
     createdEventId: number | null;
   } | null>(null);
@@ -236,7 +240,7 @@ export function SubmitEventFlow({
   const { isSubmitting, handleSubmit: submitEvent } = useSubmitEvent({
     isEditMode,
     editEventId,
-    onSubmit,
+    onSubmit: onSubmit ? (data) => onSubmit(data, submittedByEmail.trim()) : undefined,
     onUpdate,
     onClose,
     onSubmitted: handleSubmitted,
@@ -341,6 +345,8 @@ export function SubmitEventFlow({
         isEditMode={isEditMode}
         canCreateEvents={canCreateEvents}
         isSubmitting={isSubmitting}
+        submittedByEmail={submittedByEmail}
+        onEmailChange={setSubmittedByEmail}
         onSubmit={handleSubmit}
         eventForm={eventForm}
         isDarkMode={isDarkMode}

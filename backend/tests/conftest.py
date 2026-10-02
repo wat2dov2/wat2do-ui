@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 import pytest
 from fastapi.testclient import TestClient
 
-from core.auth import get_current_user
+from core.auth import get_current_user, get_optional_user
 from core.config import settings
 from core.constants import ROLE_ADMIN, ROLE_USER
 from main import app
@@ -107,27 +107,33 @@ def authenticated_client(monkeypatch):
     ``monkeypatch.setattr(...)`` — that will take precedence.
     """
     app.dependency_overrides[get_current_user] = lambda: FAKE_USER
+    app.dependency_overrides[get_optional_user] = lambda: FAKE_USER
     _install_db_user_mock(monkeypatch, make_db_user(FAKE_USER))
     client = TestClient(app)
     yield client
     app.dependency_overrides.pop(get_current_user, None)
+    app.dependency_overrides.pop(get_optional_user, None)
 
 
 @pytest.fixture
 def other_user_client(monkeypatch):
     """Client authenticated as a different (non-owner, non-admin) user."""
     app.dependency_overrides[get_current_user] = lambda: OTHER_USER
+    app.dependency_overrides[get_optional_user] = lambda: OTHER_USER
     _install_db_user_mock(monkeypatch, make_db_user(OTHER_USER))
     client = TestClient(app)
     yield client
     app.dependency_overrides.pop(get_current_user, None)
+    app.dependency_overrides.pop(get_optional_user, None)
 
 
 @pytest.fixture
 def admin_client(monkeypatch):
     """Client authenticated as an admin user."""
     app.dependency_overrides[get_current_user] = lambda: ADMIN_USER
+    app.dependency_overrides[get_optional_user] = lambda: ADMIN_USER
     _install_db_user_mock(monkeypatch, make_db_user(ADMIN_USER, role=ROLE_ADMIN))
     client = TestClient(app)
     yield client
     app.dependency_overrides.pop(get_current_user, None)
+    app.dependency_overrides.pop(get_optional_user, None)

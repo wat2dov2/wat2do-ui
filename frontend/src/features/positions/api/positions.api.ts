@@ -13,8 +13,8 @@ import { fetchDiscoverySnapshot, type DiscoverySnapshotMetadata } from "@/shared
 export { parsePositionImage } from "@/shared/services/uploadService";
 export const POSITION_TYPES: PositionType[] = ["executive", "committee", "volunteer", "staff", "internship", "general"];
 
-export function submitPosition(data: ApiPositionCreate): Promise<ApiPositionSubmissionResponse> {
-  return api.post<ApiPositionSubmissionResponse>("/position-submissions/", { position_data: data });
+export function submitPosition(data: ApiPositionCreate, submittedByEmail: string): Promise<ApiPositionSubmissionResponse> {
+  return api.post<ApiPositionSubmissionResponse>("/position-submissions/", { position_data: data, submitted_by_email: submittedByEmail.trim() });
 }
 
 export type PaginatedPositionsResponse = Omit<ApiPaginatedPositionResponse, "items"> & DiscoverySnapshotMetadata & {

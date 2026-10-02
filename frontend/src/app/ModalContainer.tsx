@@ -93,7 +93,7 @@ export function ModalContainer() {
           onOpenChange={setShowCommandPalette}
           setShowFilterDropdown={setShowFilterDropdown}
           onClearAllFilters={clearAllFilters}
-          canSubmitEvents={profileCompleted}
+          isAuthenticated={profileCompleted}
         />
       ) : null}
     </>

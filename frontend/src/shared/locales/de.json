@@ -84,7 +84,6 @@
   "navigation": {
     "events": "Veranstaltungen",
     "create": "Veranstaltung einreichen",
-    "loginRequiredToSubmit": "Nur angemeldete Benutzer können Veranstaltungen oder Organisationen einreichen.",
     "clubs": "Organisationen",
     "positions": "Positionen",
     "myEvents": "Meine Veranstaltungen",

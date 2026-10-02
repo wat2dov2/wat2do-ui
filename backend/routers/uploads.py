@@ -108,8 +108,7 @@ async def _replace_image(
 @router.post("/event-image", response_model=UploadResponse)
 async def upload_event_image_unsigned(
     file: UploadFile = File(...),
-    db_user=Depends(get_db_user),
-    _rl: None = Depends(_rate_limit_dep),
+    _rl: None = Depends(_upload_rate_limiter.ip_dependency()),
     _cl: None = Depends(_enforce_content_length(BUCKET_EVENT_IMAGES)),
 ):
     data, content_type = await _validated_upload(file, BUCKET_EVENT_IMAGES)

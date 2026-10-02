@@ -108,5 +108,5 @@ export async function parseEventImage(file: File, school: string): Promise<Event
 }
 
 export async function parsePositionImage(file: File, school: string): Promise<ApiPositionImageResponse> {
-  return requestFileUpload<ApiPositionImageResponse>("/ai/parse-position-image?school=" + encodeURIComponent(school), file, "AI parsing");
+  return requestFileUpload<ApiPositionImageResponse>("/ai/parse-position-image?school=" + encodeURIComponent(school), file, "AI parsing", "none");
 }

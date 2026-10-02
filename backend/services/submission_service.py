@@ -45,26 +45,11 @@ _ALLOWED_TRANSITIONS: dict[str, frozenset[str]] = {
 }
 
 
-def _fetch_user_email(user_id: str | None) -> str | None:
-    if user_id is None:
-        return None
-    try:
-        user_row = get_sb().table("users").select("email").eq("id", user_id).execute()
-        if user_row.data and isinstance(user_row.data, list) and len(user_row.data) > 0:
-            first_row = user_row.data[0]
-            if isinstance(first_row, dict):
-                email = first_row.get("email")
-                if isinstance(email, str):
-                    return email
-    except Exception as e:
-        log.warning("Failed to fetch user email for %s: %s", user_id, e)
-    return None
-
-
 def create_submission(
     user_id: str | None,
     event_data: EventCreate | PositionCreate | dict,
     *,
+    submitted_by_email: str,
     kind: SubmissionKind = "event",
 ):
     table, data_field, response_model = _resource(kind)
@@ -80,14 +65,14 @@ def create_submission(
     payload = {
         "id": str(uuid.uuid4()),
         "user_id": user_id,
+        "submitted_by_email": submitted_by_email,
         data_field: event_dict,
         "school_id": club.school_id,
         "status": SUBMISSION_PENDING,
     }
     r = get_sb().table(table).insert(payload).execute()
     if r.data:
-        email = _fetch_user_email(user_id)
-        return response_model.model_validate({**r.data[0], "submitted_by_email": email})
+        return response_model.model_validate(r.data[0])
     raise RuntimeError("Submission insert returned no row")
 
 
@@ -105,7 +90,7 @@ def get_submissions(
         rows, total = admin_query.load_page_rows(
             "submissions",
             table,
-            f"*, users!user_id(email), {school_service.SCHOOL_SLUG_EMBED}",
+            f"*, {school_service.SCHOOL_SLUG_EMBED}",
             offset=offset,
             limit=limit,
             search=search,
@@ -113,11 +98,7 @@ def get_submissions(
             status=status,
         )
     else:
-        q = (
-            get_sb()
-            .table(table)
-            .select(f"*, users!user_id(email), {school_service.SCHOOL_SLUG_EMBED}", count="exact")
-        )
+        q = get_sb().table(table).select(f"*, {school_service.SCHOOL_SLUG_EMBED}", count="exact")
         if search and search.strip():
             q = q.ilike(f"{data_field}->>title", f"%{sanitize_postgrest_value(search.strip())}%")
         if status:
@@ -150,10 +131,7 @@ def _submission_responses(rows: list[dict], kind: SubmissionKind):
             clubs_by_id = {str(club["id"]): club["club_name"] for club in clubs.data or []}
     items = []
     for row in rows:
-        email = None
-        if "users" in row and isinstance(row["users"], dict):
-            email = row["users"].get("email")
-        model_data = {**school_service.with_school_slug(row), "submitted_by_email": email}
+        model_data = school_service.with_school_slug(row)
         if kind == "event":
             model_data["club_name"] = clubs_by_id.get(str(row["event_data"].get("club_id")))
         items.append(response_model.model_validate(model_data))
@@ -165,7 +143,7 @@ def get_submission_by_id(submission_id: str, *, kind: SubmissionKind = "event"):
     r = (
         get_sb()
         .table(table)
-        .select(f"*, users!user_id(email), {school_service.SCHOOL_SLUG_EMBED}")
+        .select(f"*, {school_service.SCHOOL_SLUG_EMBED}")
         .eq("id", submission_id)
         .execute()
     )
@@ -230,8 +208,7 @@ def update_submission(
                 exc_info=True,
             )
     if r.data:
-        email = _fetch_user_email(r.data[0].get("user_id"))
-        return SubmissionResponse.model_validate({**r.data[0], "submitted_by_email": email})
+        return SubmissionResponse.model_validate(r.data[0])
     return None
 
 

@@ -81,8 +81,9 @@ function toEventSubmission(row: ApiSubmissionResponse): EventSubmission {
 
 // ── Club mutations ─────────────────────────────────────────
 
-export async function adminCreateClub(club: Club): Promise<Club> {
+export async function adminCreateClub(club: Club, submittedByEmail: string): Promise<Club> {
   return createClubAPI({
+    submitted_by_email: submittedByEmail,
     club_name: club.club_name,
     categories: club.categories,
     club_page: club.club_page,
@@ -224,7 +225,7 @@ export function getClubClaims(filters: AdminListFilters) {
 
 /** Clubs awaiting (or already through) admin review. */
 export function getClubSubmissions(filters: AdminListFilters) {
-  return getAdminPage<Club>("/clubs/review", filters, "club_status");
+  return getAdminPage<Club & Pick<components["schemas"]["ClubSubmissionResponse"], "submitted_by_email">>("/clubs/review", filters, "club_status");
 }
 
 export async function resolveClubReview(

@@ -13,6 +13,7 @@ import type { ApiPositionCreate } from "@/shared/generated";
 
 interface SubmissionState {
   data: ApiPositionCreate;
+  submittedByEmail: string;
   busy: boolean;
   error: string | null;
   submitted: boolean;
@@ -24,18 +25,18 @@ function reducer(state: SubmissionState, action: Action): SubmissionState {
 
 export function usePositionSubmission() {
   const { t } = useTranslation();
-  const { isAuthenticated } = useAuthState();
+  const { userEmail } = useAuthState();
   const schoolFilter = useEventsStore(state => state.schoolFilter);
   const school = resolveSchool(schoolFilter ?? getCurrentSchool());
   const queryClient = useQueryClient();
   const [state, dispatch] = useReducer(reducer, {
     data: { club_id: 0, title: "", description: "", position_type: "general", requirements: [], source_url: "", is_paid: null },
+    submittedByEmail: userEmail ?? "",
     busy: false, error: null, submitted: false,
   });
   const clubs = useQuery({
     ...clubDirectoryQueryOptions(school),
     select: (directory) => directory.items,
-    enabled: isAuthenticated,
   });
   const edit = (data: Partial<ApiPositionCreate>) => dispatch({ type: "edit", data });
   const upload = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -60,7 +61,7 @@ export function usePositionSubmission() {
     if (state.busy || !clubs.data?.some(club => club.id === state.data.club_id)) return;
     dispatch({ type: "state", value: { busy: true, error: null } });
     try {
-      await submitPosition({ ...state.data, requirements: state.data.requirements?.map(value => value.trim()).filter(Boolean) });
+      await submitPosition({ ...state.data, requirements: state.data.requirements?.map(value => value.trim()).filter(Boolean) }, state.submittedByEmail.trim());
       await queryClient.invalidateQueries({ queryKey: queryKeys.positionSubmissions.all });
       dispatch({ type: "state", value: { submitted: true } });
     } catch (error) {
@@ -69,5 +70,7 @@ export function usePositionSubmission() {
       dispatch({ type: "state", value: { busy: false } });
     }
   };
-  return { ...state, school, isAuthenticated, clubs, edit, upload, submit };
+  return { ...state, school, clubs, edit, upload, submit,
+    setEmail: (submittedByEmail: string) => dispatch({ type: "state", value: { submittedByEmail } }),
+  };
 }

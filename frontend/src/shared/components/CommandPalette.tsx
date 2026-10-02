@@ -22,7 +22,6 @@ import {
   CommandSeparator,
   CommandShortcut,
 } from "@/shared/ui/command";
-import { toast } from "@/shared/hooks/use-toast";
 import { settingsTabPath, SETTINGS_TABS, ROUTES } from "@/shared/constants/routes";
 import { focusSearchInput } from "@/shared/utils/searchInput";
 
@@ -31,7 +30,7 @@ interface CommandPaletteProps {
   onOpenChange: (open: boolean) => void;
   setShowFilterDropdown: (show: boolean) => void;
   onClearAllFilters: () => void;
-  canSubmitEvents: boolean;
+  isAuthenticated: boolean;
 }
 
 export function CommandPalette({
@@ -39,7 +38,7 @@ export function CommandPalette({
   onOpenChange,
   setShowFilterDropdown,
   onClearAllFilters,
-  canSubmitEvents,
+  isAuthenticated,
 }: CommandPaletteProps) {
   const { t } = useTranslation();
   const router = useRouter();
@@ -83,17 +82,6 @@ export function CommandPalette({
         <CommandGroup heading={t("common.actions")}>
           <CommandItem
             onSelect={() => {
-              if (!canSubmitEvents) {
-                toast({
-                  description: t("navigation.loginRequiredToSubmit"),
-                  action: {
-                    label: t("events.signIn"),
-                    onClick: () => router.push(ROUTES.LOGIN),
-                  },
-                });
-                onOpenChange(false);
-                return;
-              }
               router.push(ROUTES.EVENT_SUBMIT);
               onOpenChange(false);
             }}
@@ -116,7 +104,7 @@ export function CommandPalette({
         <CommandSeparator />
 
         <CommandGroup heading={t("commands.personal")}>
-          {canSubmitEvents ? (
+          {isAuthenticated ? (
             <CommandItem onSelect={() => onOpenChange(false)}>
               <Heart className="mr-2 size-4" />
               <span>{t("commands.goingEvents")}</span>
@@ -145,7 +133,7 @@ export function CommandPalette({
           >
             <User className="mr-2 size-4" />
             <span>
-              {canSubmitEvents
+              {isAuthenticated
                 ? t("commands.editProfile")
                 : t("commands.createProfile")}
             </span>

@@ -81,7 +81,6 @@
   "navigation": {
     "events": "이벤트",
     "create": "이벤트 제출",
-    "loginRequiredToSubmit": "이벤트나 조직을 제출할 수 있는 것은 로그인한 사용자만 가능합니다.",
     "clubs": "조직",
     "positions": "직책",
     "myEvents": "내 이벤트",

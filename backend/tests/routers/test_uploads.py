@@ -608,3 +608,21 @@ def test_delete_file_deletes_only_the_expected_s3_key():
         Bucket="wat2do-test-assets",
         Key="media/avatars/abc123.jpg",
     )
+
+
+def test_unsigned_event_image_accepts_anonymous_visitors(client, monkeypatch):
+    monkeypatch.setattr(
+        storage, "upload_file", MagicMock(return_value="https://example.com/img.png")
+    )
+    response = client.post(
+        "/uploads/event-image", files=_make_file("poster.png", _real_png(), "image/png")
+    )
+    assert response.status_code == 200
+    assert response.json()["url"] == "https://example.com/img.png"
+
+
+def test_replacing_existing_event_image_still_requires_auth(client):
+    response = client.post(
+        "/uploads/event-image/1", files=_make_file("poster.png", _real_png(), "image/png")
+    )
+    assert response.status_code == 401

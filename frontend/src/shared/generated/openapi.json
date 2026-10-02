@@ -66,11 +66,6 @@
         ],
         "summary": "Parse Position Image",
         "operationId": "parse_position_image_ai_parse_position_image_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "school",
@@ -617,7 +612,7 @@
           "clubs"
         ],
         "summary": "Create Club",
-        "description": "Anyone signed in may submit a club; only admins publish directly.",
+        "description": "Visitors may submit a club; only authenticated admins publish directly.",
         "operationId": "create_club_clubs__post",
         "security": [
           {
@@ -762,7 +757,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PaginatedResponse_ClubResponse_"
+                  "$ref": "#/components/schemas/PaginatedResponse_ClubSubmissionResponse_"
                 }
               }
             }
@@ -6154,12 +6149,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
+        }
       }
     },
     "/uploads/event-image/{event_id}": {
@@ -7629,6 +7619,11 @@
       },
       "ClubCreate": {
         "properties": {
+          "submitted_by_email": {
+            "type": "string",
+            "format": "email",
+            "title": "Submitted By Email"
+          },
           "club_name": {
             "type": "string",
             "maxLength": 200,
@@ -7718,6 +7713,7 @@
         "additionalProperties": false,
         "type": "object",
         "required": [
+          "submitted_by_email",
           "club_name"
         ],
         "title": "ClubCreate"
@@ -8122,6 +8118,152 @@
           "club_name"
         ],
         "title": "ClubResponse"
+      },
+      "ClubSubmissionResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "club_name": {
+            "type": "string",
+            "title": "Club Name"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "approved",
+              "rejected"
+            ],
+            "title": "Status",
+            "default": "approved"
+          },
+          "categories": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Categories"
+          },
+          "club_page": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Club Page"
+          },
+          "ig": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ig"
+          },
+          "discord": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Discord"
+          },
+          "club_type": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+            "title": "Club Type",
+            "default": "independent"
+          },
+          "logo_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Logo Url"
+          },
+          "created_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created By"
+          },
+          "school": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "School"
+          },
+          "owner_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Owner Email"
+          },
+          "event_count": {
+            "type": "integer",
+            "title": "Event Count",
+            "default": 0
+          },
+          "position_count": {
+            "type": "integer",
+            "title": "Position Count",
+            "default": 0
+          },
+          "submitted_by_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Submitted By Email"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "club_name"
+        ],
+        "title": "ClubSubmissionResponse"
       },
       "ClubUpdate": {
         "properties": {
@@ -10917,6 +11059,42 @@
         ],
         "title": "PaginatedResponse[ClubResponse]"
       },
+      "PaginatedResponse_ClubSubmissionResponse_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ClubSubmissionResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          },
+          "total_pages": {
+            "type": "integer",
+            "title": "Total Pages"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "page_size",
+          "total_pages"
+        ],
+        "title": "PaginatedResponse[ClubSubmissionResponse]"
+      },
       "PaginatedResponse_DiscoveryQueryResponse_": {
         "properties": {
           "items": {
@@ -12106,6 +12284,11 @@
       },
       "PositionSubmissionCreate": {
         "properties": {
+          "submitted_by_email": {
+            "type": "string",
+            "format": "email",
+            "title": "Submitted By Email"
+          },
           "position_data": {
             "$ref": "#/components/schemas/PositionCreate"
           }
@@ -12113,6 +12296,7 @@
         "additionalProperties": false,
         "type": "object",
         "required": [
+          "submitted_by_email",
           "position_data"
         ],
         "title": "PositionSubmissionCreate"
@@ -13748,6 +13932,11 @@
       },
       "SubmissionCreate": {
         "properties": {
+          "submitted_by_email": {
+            "type": "string",
+            "format": "email",
+            "title": "Submitted By Email"
+          },
           "event_data": {
             "$ref": "#/components/schemas/EventCreate"
           }
@@ -13755,6 +13944,7 @@
         "additionalProperties": false,
         "type": "object",
         "required": [
+          "submitted_by_email",
           "event_data"
         ],
         "title": "SubmissionCreate",

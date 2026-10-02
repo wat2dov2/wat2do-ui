@@ -1,11 +1,22 @@
 from datetime import datetime, timezone
 from unittest.mock import MagicMock
 
+import pytest
+
 from core.auth import get_optional_user
+from routers.submissions import _submission_create_limiter
 from schemas.submission import SubmissionResponse
 from schemas.user import UserResponse
 from services import event_service, submission_service, user_service
 from tests.conftest import FAKE_USER
+
+
+@pytest.fixture(autouse=True)
+def reset_submission_rate_limit():
+    _submission_create_limiter._requests.clear()
+    yield
+    _submission_create_limiter._requests.clear()
+
 
 FAKE_DB_USER = UserResponse(
     id="00000000-0000-0000-0000-000000000001",
@@ -50,7 +61,10 @@ def test_create_submission_anonymous(client, monkeypatch):
     mock_create = MagicMock(return_value=submission)
     monkeypatch.setattr(submission_service, "create_submission", mock_create)
 
-    resp = client.post("/submissions/", json={"event_data": _VALID_EVENT_DATA})
+    resp = client.post(
+        "/submissions/",
+        json={"submitted_by_email": "submitter@example.com", "event_data": _VALID_EVENT_DATA},
+    )
 
     assert resp.status_code == 201
     assert resp.json()["id"] == "sub-001"
@@ -70,7 +84,10 @@ def test_create_submission_authenticated(authenticated_client, monkeypatch):
 
     app.dependency_overrides[get_optional_user] = lambda: FAKE_USER
     try:
-        resp = authenticated_client.post("/submissions/", json={"event_data": _VALID_EVENT_DATA})
+        resp = authenticated_client.post(
+            "/submissions/",
+            json={"submitted_by_email": "submitter@example.com", "event_data": _VALID_EVENT_DATA},
+        )
     finally:
         app.dependency_overrides.pop(get_optional_user, None)
 
@@ -92,7 +109,10 @@ def test_create_submission_optional_auth_user_keeps_school_out_of_event_data(cli
 
     app.dependency_overrides[get_optional_user] = lambda: FAKE_USER
     try:
-        resp = client.post("/submissions/", json={"event_data": _VALID_EVENT_DATA})
+        resp = client.post(
+            "/submissions/",
+            json={"submitted_by_email": "submitter@example.com", "event_data": _VALID_EVENT_DATA},
+        )
     finally:
         app.dependency_overrides.pop(get_optional_user, None)
 
@@ -192,3 +212,31 @@ def test_submission_service_approval_publishes_event(monkeypatch):
     mock_create_event.assert_called_once()
     _, kwargs = mock_create_event.call_args
     assert kwargs["created_by"] == "33333333-3333-3333-3333-333333333333"
+
+
+@pytest.mark.parametrize(
+    "email", [None, "", "not-an-email", "person@example.com\r\nInjected: header"]
+)
+@pytest.mark.parametrize(
+    "path,payload",
+    [
+        ("/submissions/", {"event_data": _VALID_EVENT_DATA}),
+        (
+            "/position-submissions/",
+            {
+                "position_data": {
+                    "club_id": 7,
+                    "title": "Lead",
+                    "description": "Lead our team",
+                    "position_type": "committee",
+                    "source_url": "https://example.com/role",
+                }
+            },
+        ),
+        ("/clubs/", {"club_name": "Test Club", "club_type": "wusa"}),
+    ],
+)
+def test_public_submission_requires_valid_email(client, path, payload, email):
+    if email is not None:
+        payload = {**payload, "submitted_by_email": email}
+    assert client.post(path, json=payload).status_code == 422

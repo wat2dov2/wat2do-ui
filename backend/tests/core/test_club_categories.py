@@ -19,6 +19,7 @@ class TestClubCreateCategoryValidation:
     def test_rejects_invalid_categories(self):
         with pytest.raises(ValueError, match="categories must be from"):
             ClubCreate(
+                submitted_by_email="submitter@example.com",
                 club_name="Test Org",
                 club_type="wusa",
                 categories=["NotACategory"],
@@ -26,6 +27,7 @@ class TestClubCreateCategoryValidation:
 
     def test_accepts_canonical_categories(self):
         club = ClubCreate(
+            submitted_by_email="submitter@example.com",
             club_name="Test Org",
             club_type="wusa",
             categories=[CLUB_CATEGORIES[0]],
@@ -35,6 +37,7 @@ class TestClubCreateCategoryValidation:
 
 def test_club_type_normalizes_to_signature_slug():
     club = ClubCreate(
+        submitted_by_email="submitter@example.com",
         club_name="Test Org",
         club_type="  WUSA  ",
     )
@@ -45,6 +48,7 @@ def test_club_type_normalizes_to_signature_slug():
 def test_club_type_rejects_non_slug_values():
     with pytest.raises(ValueError):
         ClubCreate(
+            submitted_by_email="submitter@example.com",
             club_name="Test Org",
             club_type="Waterloo Association",
         )

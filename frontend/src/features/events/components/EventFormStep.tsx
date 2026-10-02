@@ -6,6 +6,7 @@ import { clubDirectoryQueryOptions } from "@/features/clubs";
 import { useQuery } from "@tanstack/react-query";
 import { useEventsStore } from "@/features/events/store/events.store";
 import { ArrowLeft } from "@/shared/ui/doodle-icons";
+import { FormInput } from "@/shared/ui/form-field";
 import { Button } from "@/shared/ui/button";
 import { LoadingButton } from "@/shared/ui/loading-button";
 import {
@@ -27,6 +28,8 @@ interface EventFormStepProps {
   isEditMode: boolean;
   canCreateEvents: boolean;
   isSubmitting: boolean;
+  submittedByEmail: string;
+  onEmailChange: (email: string) => void;
   onSubmit: () => void;
   eventForm: Pick<
     EventFormHookReturn,
@@ -66,6 +69,8 @@ export function EventFormStep({
   isEditMode,
   canCreateEvents,
   isSubmitting,
+  submittedByEmail,
+  onEmailChange,
   onSubmit,
   eventForm,
   isDarkMode,
@@ -184,13 +189,23 @@ export function EventFormStep({
           </div>
 
           <FieldGroup>
-            <form>
+            <form onSubmit={(event) => { event.preventDefault(); onSubmit(); }}>
+              {!isEditMode && !canCreateEvents ? (
+                <FormInput
+                  name="submitter-email"
+                  type="email"
+                  required
+                  label={t("contact.form.email")}
+                  placeholder={t("contact.form.emailPlaceholder")}
+                  value={submittedByEmail}
+                  onChange={value => onEmailChange(String(value))}
+                />
+              ) : null}
               <EventFormFields />
               {showSubmit ? (
                 <Field orientation="horizontal" className="mt-6">
                   <LoadingButton
-                    type="button"
-                    onMouseDown={onSubmit}
+                    type="submit"
                     disabled={!eventForm.isValid}
                     isLoading={isSubmitting}
                     loadingText={t("common.pleaseWait")}

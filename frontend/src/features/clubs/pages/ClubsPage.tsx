@@ -24,7 +24,6 @@ import { FilterBar } from "@/shared/layout/filter-bar";
 import { PageCountHeading } from "@/shared/ui/page-count-heading";
 import { useSavedClubsStore } from "@/features/clubs/store/savedClubs.store";
 import { SubmittedSearchInput } from "@/shared/ui/submitted-search-input";
-import { toast } from "@/shared/hooks/use-toast";
 import { clubPagePath, ROUTES } from "@/shared/constants/routes";
 import type { PaginatedClubsResponse } from "@/features/clubs/api/clubs.api";
 import { PageHeader, Stack } from "@/shared/layout";
@@ -113,16 +112,6 @@ export function ClubsPage({
             size="lg"
             className="shrink-0"
             onMouseDown={() => {
-              if (!authed) {
-                toast({
-                  description: t("navigation.loginRequiredToSubmit"),
-                  action: {
-                    label: t("events.signIn"),
-                    onClick: () => router.push(ROUTES.LOGIN),
-                  },
-                });
-                return;
-              }
               router.push(ROUTES.CLUB_CREATE);
             }}
           >

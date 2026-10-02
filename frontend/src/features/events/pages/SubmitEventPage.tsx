@@ -34,7 +34,7 @@ export function SubmitEventPage() {
   }, [router]);
 
   const submit = useCallback(
-    async (eventData: EventFormData) => {
+    async (eventData: EventFormData, submittedByEmail: string) => {
       if (eventData.club_id == null) {
         throw new Error(t("events.clubRequired"));
       }
@@ -42,7 +42,7 @@ export function SubmitEventPage() {
         const event = await createEventAPI(eventData);
         return { type: "event" as const, eventId: event.id };
       }
-      await submitEventForReview(eventData);
+      await submitEventForReview(eventData, submittedByEmail);
       return { type: "submission" as const };
     },
     [canCreateEvents, t],

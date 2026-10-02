@@ -2,7 +2,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, status
 
-from core.auth import get_admin_user, get_db_user
+from core.auth import get_admin_user, get_optional_user, resolve_db_user
 from core.constants import (
     MAX_SCHOOL_LENGTH,
     MAX_SEARCH_QUERY_LENGTH,
@@ -32,10 +32,16 @@ _limiter = RateLimiter(
 @router.post("/", response_model=PositionSubmissionResponse, status_code=status.HTTP_201_CREATED)
 def create_submission(
     data: PositionSubmissionCreate,
-    user: UserResponse = Depends(get_db_user),
+    auth_user: dict | None = Depends(get_optional_user),
     _rl: None = Depends(_limiter.dependency()),
 ):
-    return submission_service.create_submission(str(user.id), data.position_data, kind="position")
+    user = resolve_db_user(auth_user) if auth_user else None
+    return submission_service.create_submission(
+        str(user.id) if user else None,
+        data.position_data,
+        submitted_by_email=str(data.submitted_by_email),
+        kind="position",
+    )
 
 
 @router.get("/", response_model=PaginatedResponse[PositionSubmissionResponse])
