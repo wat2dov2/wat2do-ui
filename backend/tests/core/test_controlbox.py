@@ -66,7 +66,10 @@ def test_checked_in_controlbox_is_valid() -> None:
     assert controlbox.social_previews.asset_retention_days == 30
     assert str(controlbox.authentication.legacy_frontend_origins[0]) == "https://wat2do.ca/"
     assert controlbox.club_management.directory_page_size == 20
-    assert str(controlbox.contact.recipient_email) == "contact@wat2do.io"
+    assert [str(email) for email in controlbox.contact.recipient_emails] == [
+        "e22han@uwaterloo.ca",
+        "tqiu@uwaterloo.ca",
+    ]
     assert controlbox.contact.rate_limit.maximum_requests == 5
     assert (
         controlbox.contact.business_support.proposed_banner_text
@@ -478,6 +481,8 @@ def test_ecs_runtime_accepts_supported_fargate_sizes(cpu, memory_mib):
 @pytest.mark.parametrize(
     "feature,patch",
     [
+        ("contact", {"recipient_emails": []}),
+        ("contact", {"recipient_emails": ["not-an-email"]}),
         ("event_discovery", {"preview_event_count": 0}),
         ("event_discovery", {"preview_event_count": 101}),
         ("database", {"read_attempts": 0}),

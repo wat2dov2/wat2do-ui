@@ -6,7 +6,7 @@ from services.email_service import EmailMessage
 
 def _message() -> EmailMessage:
     return EmailMessage(
-        to="contact@wat2do.io",
+        to=["e22han@uwaterloo.ca", "tqiu@uwaterloo.ca"],
         reply_to="student@uwaterloo.ca",
         subject="[Wat2Do contact] New message",
         body_html="<p>Hello</p>",
@@ -69,7 +69,7 @@ def test_build_contact_email_escapes_html():
         )
     )
 
-    assert message.to == "contact@wat2do.io"
+    assert message.to == ["e22han@uwaterloo.ca", "tqiu@uwaterloo.ca"]
     assert message.reply_to == "student@uwaterloo.ca"
     assert "<script>" not in message.body_html
     assert "<strong>team</strong>" not in message.body_html

@@ -1,5 +1,5 @@
 {
-  "recipient_email": "contact@wat2do.io",
+  "recipient_emails": ["e22han@uwaterloo.ca", "tqiu@uwaterloo.ca"],
   "maximum_message_length": 5000,
   "business_support": {
     "business_name": 120,

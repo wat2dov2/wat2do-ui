@@ -502,7 +502,7 @@ class BusinessSupportLimits(_ControlModel):
 
 
 class ContactControl(_ControlModel):
-    recipient_email: EmailStr
+    recipient_emails: list[EmailStr] = Field(min_length=1)
     maximum_message_length: int = Field(gt=0, le=20_000)
     rate_limit: RateLimitControl
     business_support: BusinessSupportLimits

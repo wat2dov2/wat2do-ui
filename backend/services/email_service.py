@@ -34,7 +34,7 @@ _LEGACY_WAT2DO_URL = re.compile(
 
 @dataclass
 class EmailMessage:
-    to: str
+    to: str | list[str]
     subject: str
     body_html: str
     body_text: str

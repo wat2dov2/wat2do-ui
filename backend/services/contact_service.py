@@ -13,7 +13,7 @@ def build_contact_email(data: ContactCreate) -> EmailMessage:
     safe_message = "<br>".join(escape(data.message).splitlines())
 
     return EmailMessage(
-        to=str(controlbox.contact.recipient_email),
+        to=[str(email) for email in controlbox.contact.recipient_emails],
         reply_to=sender,
         subject="[Wat2Do contact] New message",
         body_html=(

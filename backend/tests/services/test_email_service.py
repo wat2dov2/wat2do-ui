@@ -91,7 +91,10 @@ def test_resend_dispatch_omits_empty_idempotency_key(monkeypatch):
     assert "Idempotency-Key" not in captured["headers"]
 
 
-def test_resend_dispatch_includes_reply_to(monkeypatch):
+@pytest.mark.parametrize(
+    "recipients", ["student@uwaterloo.ca", ["e22han@uwaterloo.ca", "tqiu@uwaterloo.ca"]]
+)
+def test_resend_dispatch_includes_reply_to(monkeypatch, recipients):
     monkeypatch.setattr(email_module.settings, "email_provider", "resend")
     monkeypatch.setattr(email_module.settings, "email_provider_api_key", "re_test")
     captured = {}
@@ -102,7 +105,8 @@ def test_resend_dispatch_includes_reply_to(monkeypatch):
 
     monkeypatch.setattr(email_module.httpx, "post", fake_post)
 
-    assert EmailService().send(_message(reply_to="sender@example.com")) is True
+    assert EmailService().send(_message(to=recipients, reply_to="sender@example.com")) is True
+    assert captured["json"]["to"] == recipients
     assert captured["json"]["reply_to"] == "sender@example.com"
 
 
