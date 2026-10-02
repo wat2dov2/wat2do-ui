@@ -284,7 +284,7 @@ export function InstagramCarouselDrawer({
                 slideIndex={index}
                 slideCount={slideCount}
                 event={eventId == null ? null : liveSlides[eventId] ?? slideEvents[eventId] ?? null}
-                stickerIds={eventId == null ? undefined : batch.sticker_selections?.[String(eventId)]}
+                stickerLabels={eventId == null ? undefined : batch.sticker_selections?.[String(eventId)]}
                 coverColors={coverColors}
                 cover={{
                   language: school?.language ?? "en",

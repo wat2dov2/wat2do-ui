@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
-import re
-from datetime import datetime, timedelta
+import textwrap
+from datetime import datetime
 from typing import Any
-from zoneinfo import ZoneInfo
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from core.controlbox import controlbox
 
@@ -17,7 +16,33 @@ _CONTROL = controlbox.instagram_publishing
 class CarouselPick(BaseModel):
     model_config = ConfigDict(extra="forbid")
     event_id: int
-    sticker_ids: list[str] = Field(min_length=1, max_length=_CONTROL.maximum_stickers_per_event)
+    sticker_labels: list[str] = Field(min_length=1, max_length=_CONTROL.maximum_stickers_per_event)
+
+    @field_validator("sticker_labels")
+    @classmethod
+    def validate_labels(cls, labels: list[str]) -> list[str]:
+        normalized = [" ".join(label.split()) for label in labels]
+        if len(set(label.casefold() for label in normalized)) != len(normalized):
+            raise ValueError("Every event sticker must highlight a different benefit or detail")
+        for label in normalized:
+            lines = textwrap.wrap(
+                label,
+                width=_CONTROL.sticker_line_character_limit,
+                break_long_words=False,
+                break_on_hyphens=False,
+            )
+            if (
+                not lines
+                or len(lines) > _CONTROL.sticker_maximum_lines
+                or any(len(line) > _CONTROL.sticker_line_character_limit for line in lines)
+            ):
+                raise ValueError("Sticker labels must fit two lines of at most 12 characters")
+            if any(
+                next((char for char in word if char.isalpha()), "A").islower()
+                for word in label.split()
+            ):
+                raise ValueError("Sticker words must start with capital letters")
+        return normalized
 
 
 class DraftSelection(BaseModel):
@@ -29,45 +54,9 @@ class DraftSelection(BaseModel):
     picks: list[CarouselPick] = Field(max_length=_CONTROL.maximum_event_slides)
 
 
-def eligible_sticker_ids(event: dict[str, Any], now: datetime) -> list[str]:
-    """Factual labels are checked when saving a draft and again at publish time."""
-    source = " ".join(
-        str(event.get(key) or "") for key in ("title", "description", "category", "food")
-    ).lower()
-    zone = ZoneInfo(event["tz"])
-    today = now.astimezone(zone).date()
-    start = datetime.fromisoformat(str(event["dtstart_utc"]).replace("Z", "+00:00"))
-    day = start.astimezone(zone).date()
-    facts = {
-        "any": True,
-        "free": event.get("price") == 0,
-        "free_food": bool(
-            re.search(
-                r"\bfree\s+(?:food|pizza|snacks|lunch|dinner|breakfast|refreshments)\b|repas gratuit",
-                source,
-            )
-        ),
-        "food": bool(event.get("food")),
-        "today": day == today,
-        "tomorrow": day == today + timedelta(days=1),
-        "weekend": day.weekday() >= 5 and 0 <= (day - today).days <= 6 - today.weekday(),
-    }
-    return [
-        sticker.id
-        for sticker in _CONTROL.sticker_catalog
-        if (
-            any(re.search(r"\b" + re.escape(word) + r"\b", source) for word in sticker.keywords)
-            if sticker.rule == "topic"
-            else facts.get(sticker.rule, False)
-        )
-    ]
-
-
-def validate_picks(
-    candidates: list[dict[str, Any]], picks: list[CarouselPick], now: datetime
-) -> None:
+def validate_picks(candidates: list[dict[str, Any]], picks: list[CarouselPick]) -> None:
     """Validate external editorial choices against this school's current candidates."""
-    allowed = {event["id"]: eligible_sticker_ids(event, now) for event in candidates}
+    allowed = {event["id"] for event in candidates}
     ids = [pick.event_id for pick in picks]
     if (
         len(ids) > _CONTROL.maximum_event_slides
@@ -76,8 +65,3 @@ def validate_picks(
         or bool(candidates) != bool(picks)
     ):
         raise ValueError("Draft choices must contain distinct eligible events")
-    for pick in picks:
-        if len(set(pick.sticker_ids)) != len(pick.sticker_ids) or not set(pick.sticker_ids) <= set(
-            allowed[pick.event_id]
-        ):
-            raise ValueError("Draft choices contain unsupported stickers")

@@ -528,17 +528,11 @@ class UploadsControl(_ControlModel):
         return self
 
 
-class InstagramStickerControl(_ControlModel):
-    id: str = Field(pattern=r"^[a-z0-9-]+$")
-    label: str = Field(min_length=1, max_length=40)
-    fr: str = Field(min_length=1, max_length=40)
-    rule: Literal["any", "topic", "free", "free_food", "food", "today", "tomorrow", "weekend"]
-    keywords: list[str]
-
-
 class InstagramPublishingControl(_ControlModel):
-    maximum_stickers_per_event: int = Field(ge=1, le=3)
-    sticker_catalog: list[InstagramStickerControl] = Field(min_length=100)
+    maximum_stickers_per_event: int = Field(ge=1, le=4)
+    sticker_line_character_limit: int = Field(ge=8, le=12)
+    sticker_maximum_lines: int = Field(ge=1, le=2)
+    sticker_shape_count: int = Field(ge=10, le=10)
 
     graph_api_version: str = Field(pattern=r"^v[0-9]+\.[0-9]+$")
     generation_timezone: str = Field(min_length=1)
@@ -556,9 +550,6 @@ class InstagramPublishingControl(_ControlModel):
 
     @model_validator(mode="after")
     def validate_token_windows(self) -> "InstagramPublishingControl":
-        ids = [sticker.id for sticker in self.sticker_catalog]
-        if len(ids) != len(set(ids)):
-            raise ValueError("Instagram sticker IDs must be unique")
         if self.token_refresh_lead_days >= self.token_lifetime_days:
             raise ValueError("instagram token refresh lead must be shorter than token lifetime")
         return self

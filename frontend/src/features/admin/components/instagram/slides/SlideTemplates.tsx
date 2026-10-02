@@ -76,11 +76,11 @@ function SlideAvatar({ src, author, size, renderPoster }: { src: string; author:
 
 /** One reusable, deliberately playful sticker silhouette, chosen by a stable seed. */
 function SlideSticker({ sticker, index }: { sticker: EventSlideModel["stickers"][number]; index: number }) {
-  const colors = ["#FFE45E", "#C5EDFF", "#FFB8D2", "#CFF5B2", "#DDD0FF"];
-  const shape = sticker.seed % 5;
+  const colors = ["#FFE45E", "#C5EDFF", "#FFB8D2", "#CFF5B2", "#DDD0FF", "#FFD4A8", "#B8EEE4", "#FFC8B8", "#E8EDAD", "#CDD9FF"];
+  const shape = sticker.shape;
   const fill = colors[sticker.seed % colors.length];
   const rotation = (sticker.seed % 19) - 9;
-  const positions = [{ left: 94, top: 1156 }, { left: 674, top: 1138 }, { left: 360, top: 1180 }];
+  const positions = [{ left: 94, top: 1120 }, { left: 674, top: 1110 }, { left: 150, top: 1226 }, { left: 590, top: 1226 }];
   const position = positions[index % positions.length];
   const star = Array.from({ length: 24 }, (_, i) => {
     const angle = i * Math.PI / 12;
@@ -93,10 +93,17 @@ function SlideSticker({ sticker, index }: { sticker: EventSlideModel["stickers"]
         : shape === 1 ? <polygon points={star} fill={fill} stroke="white" strokeWidth="6" />
         : shape === 2 ? <path d="M14 4H246V30Q220 54 246 78V104H14V78Q40 54 14 30Z" fill={fill} stroke="white" strokeWidth="6" />
         : shape === 3 ? <path d="M28 12Q82-3 130 10Q211-4 241 30Q266 73 220 95Q162 110 128 96Q56 115 18 83Q-6 40 28 12Z" fill={fill} stroke="white" strokeWidth="6" />
-        : <rect x="5" y="8" width="250" height="92" rx="10" fill={fill} stroke="white" strokeWidth="6" />}
+        : shape === 4 ? <rect x="5" y="8" width="250" height="92" rx="10" fill={fill} stroke="white" strokeWidth="6" />
+        : shape === 5 ? <ellipse cx="130" cy="54" rx="126" ry="50" fill={fill} stroke="white" strokeWidth="6" />
+        : shape === 6 ? <polygon points="22,5 238,5 255,54 238,103 22,103 5,54" fill={fill} stroke="white" strokeWidth="6" />
+        : shape === 7 ? <path d="M4 14L20 5L36 14L52 5L68 14L84 5L100 14L116 5L132 14L148 5L164 14L180 5L196 14L212 5L228 14L244 5L256 14V94L240 103L224 94L208 103L192 94L176 103L160 94L144 103L128 94L112 103L96 94L80 103L64 94L48 103L32 94L16 103L4 94Z" fill={fill} stroke="white" strokeWidth="6" />
+        : shape === 8 ? <path d="M24 5H256L236 103H4Z" fill={fill} stroke="white" strokeWidth="6" />
+        : <path d="M4 10H256V94H152L130 104L108 94H4Z" fill={fill} stroke="white" strokeWidth="6" />}
     </svg>
     {/* Keep the label above the positioned silhouette in both preview and artwork. */}
-    <div style={{ display: "flex", position: "relative", width: 212, justifyContent: "center", textAlign: "center", fontSize: sticker.label.length > 18 ? 26 : 30, lineHeight: 1.05, fontWeight: 700, color: LIGHT.foreground }}>{sticker.label}</div>
+    <div style={{ display: "flex", position: "relative", flexDirection: "column", width: 196, padding: "14px 8px", alignItems: "center", justifyContent: "center", textAlign: "center", fontSize: 26, lineHeight: 1.15, fontWeight: 700, color: LIGHT.foreground }}>
+      {sticker.lines.map((line, lineIndex) => <div key={lineIndex} style={{ display: "flex", whiteSpace: "nowrap" }}>{line}</div>)}
+    </div>
   </div>;
 }
 

@@ -29,7 +29,7 @@ interface CarouselSlidePreviewProps {
   slideCount: number;
   /** The slide's event, or `null` on the cover and on an unloadable slide. */
   event: Event | null;
-  stickerIds?: string[];
+  stickerLabels?: string[];
   cover: Omit<Parameters<typeof buildCoverSlideModel>[0], "colors">;
   coverColors: SchoolColors | null;
   /**
@@ -50,7 +50,7 @@ export function CarouselSlidePreview({
   slideIndex,
   slideCount,
   event,
-  stickerIds,
+  stickerLabels,
   cover,
   coverColors,
   publishedAssetUrl,
@@ -69,9 +69,9 @@ export function CarouselSlidePreview({
   const [previewWidth, setPreviewWidth] = useState(PREVIEW_WIDTH);
   const previewScale = previewWidth / SLIDE_WIDTH;
   const [modelResult, setModelResult] = useState<{
-    event: Event; language: typeof cover.language; school: typeof school; stickerIds: typeof stickerIds; model: EventSlideModel | null;
+    event: Event; language: typeof cover.language; school: typeof school; stickerLabels: typeof stickerLabels; model: EventSlideModel | null;
   } | null>(null);
-  const currentResult = modelResult?.event === event && modelResult?.language === cover.language && modelResult.school === school && modelResult.stickerIds === stickerIds ? modelResult : null;
+  const currentResult = modelResult?.event === event && modelResult?.language === cover.language && modelResult.school === school && modelResult.stickerLabels === stickerLabels ? modelResult : null;
   const slideModel = currentResult?.model;
   const modelError = currentResult && !slideModel;
   const renderPoster = ({ src, width, height, fallback }: SlidePosterProps) => (
@@ -90,12 +90,12 @@ export function CarouselSlidePreview({
     if (isCover || publishedAssetUrl || !event || !school) return;
     let active = true;
     // Publishing uses the first stored occurrence, including for recurring events.
-    buildEventSlideModel({ ...event, ...event.occurrences[0], id: event.id, sticker_ids: stickerIds, tz: getSchoolTimezone(event.school) }, cover.language, undefined, undefined, { school }).then(
-      model => { if (active) setModelResult({ event, language: cover.language, school, stickerIds, model }); },
-      () => { if (active) setModelResult({ event, language: cover.language, school, stickerIds, model: null }); },
+    buildEventSlideModel({ ...event, ...event.occurrences[0], id: event.id, sticker_labels: stickerLabels, tz: getSchoolTimezone(event.school) }, cover.language, undefined, undefined, { school }).then(
+      model => { if (active) setModelResult({ event, language: cover.language, school, stickerLabels, model }); },
+      () => { if (active) setModelResult({ event, language: cover.language, school, stickerLabels, model: null }); },
     );
     return () => { active = false; };
-  }, [event, cover.language, getSchoolTimezone, isCover, publishedAssetUrl, school, stickerIds]);
+  }, [event, cover.language, getSchoolTimezone, isCover, publishedAssetUrl, school, stickerLabels]);
 
   useEffect(() => {
     const node = previewRef.current;

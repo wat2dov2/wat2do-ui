@@ -56,8 +56,8 @@ from services.instagram_publishing.credentials import load_account_credentials
 from services.instagram_publishing.meta import MetaInstagramClient
 from services.instagram_publishing.rendering import render_cover_asset, render_event_asset
 from services.instagram_publishing.selection import (
+    CarouselPick,
     DraftSelection,
-    eligible_sticker_ids,
     validate_picks,
 )
 from services.school_context import resolve_school_timezone
@@ -107,10 +107,7 @@ def list_draft_candidates(now_utc: datetime | None = None) -> list[dict[str, Any
         packet.update(
             window_start=window_start.isoformat(),
             caption_intro=default_caption_intro(account_key, "events"),
-            events=[
-                {**event, "allowed_sticker_ids": eligible_sticker_ids(event, now)}
-                for event in events
-            ],
+            events=events,
         )
         packets.append(packet)
     return packets
@@ -158,6 +155,35 @@ def get_batch(batch_id: UUID | str) -> dict[str, Any]:
     batch = _with_batch_school(response.data[0])
     _hydrate_batch(batch)
     return batch
+
+
+def update_batch_stickers(
+    batch_id: UUID | str, version: int, picks: list[CarouselPick]
+) -> dict[str, Any]:
+    """Replace only editorial stickers on an existing draft using its version lock."""
+    batch = get_batch(batch_id)
+    _assert_version(batch, version)
+    _assert_editable(batch)
+    events = [{"id": item["event_id"]} for item in batch["items"]]
+    validate_picks(events, picks)
+    if {pick.event_id for pick in picks} != {event["id"] for event in events}:
+        raise ValidationError("Sticker review must cover every selected event")
+    selections = {str(pick.event_id): pick.sticker_labels for pick in picks}
+    response = (
+        get_sb()
+        .table(INSTAGRAM_PUBLISH_BATCHES)
+        .update({"sticker_selections": selections, "version": version + 1})
+        .eq("id", str(batch_id))
+        .eq("version", version)
+        .eq("status", batch["status"])
+        .execute()
+    )
+    if not response.data:
+        raise ConflictError(INSTAGRAM_PUBLISH_BATCH_VERSION_CONFLICT)
+    result = get_batch(batch_id)
+    if result.get("sticker_selections") != selections:
+        raise ConflictError(INSTAGRAM_PUBLISH_BATCH_VERSION_CONFLICT)
+    return result
 
 
 def update_batch(
@@ -351,7 +377,7 @@ def save_review_draft(selection: DraftSelection) -> dict[str, Any]:
         window_start=window_start,
         window_end=now,
     )
-    validate_picks(candidates, selection.picks, now)
+    validate_picks(candidates, selection.picks)
     by_id = {event["id"]: event for event in candidates}
     selected = [by_id[pick.event_id] for pick in selection.picks]
     school_id = school_service.get_school_id(account_key)
@@ -400,7 +426,7 @@ def save_review_draft(selection: DraftSelection) -> dict[str, Any]:
                     "status": INSTAGRAM_BATCH_READY_FOR_REVIEW,
                     "caption": build_caption(selected, account_key, selection.caption_intro),
                     "sticker_selections": {
-                        str(pick.event_id): pick.sticker_ids for pick in selection.picks
+                        str(pick.event_id): pick.sticker_labels for pick in selection.picks
                     },
                     "error_message": None,
                     "updated_at": _iso_now(),
@@ -589,16 +615,12 @@ def _publish_claimed_batch(
     user_id = batch["instagram_user_id"]
     batch_id = batch["id"]
     events = [_slide_payload(item["event"]) for item in items]
-    now = datetime.now(timezone.utc)
     for event in events:
         if str(event["id"]) not in batch.get("sticker_selections", {}):
             continue
-        allowed = eligible_sticker_ids(event, now)
-        event["sticker_ids"] = [
-            sticker
-            for sticker in batch.get("sticker_selections", {}).get(str(event["id"]), [])
-            if sticker in allowed
-        ][: _CONTROL.maximum_stickers_per_event]
+        event["sticker_labels"] = batch["sticker_selections"][str(event["id"])][
+            : _CONTROL.maximum_stickers_per_event
+        ]
 
     cover_url = render_cover_asset(
         events,
@@ -772,11 +794,9 @@ def _hydrate_batch(batch: dict[str, Any]) -> None:
     if editable:
         stored_stickers = batch.get("sticker_selections", {})
         batch["sticker_selections"] = {
-            str(item["event_id"]): [
-                sticker
-                for sticker in stored_stickers.get(str(item["event_id"]), [])
-                if sticker in eligible_sticker_ids(_slide_payload(item["event"]), now)
-            ][: _CONTROL.maximum_stickers_per_event]
+            str(item["event_id"]): stored_stickers[str(item["event_id"])][
+                : _CONTROL.maximum_stickers_per_event
+            ]
             for item in batch["items"]
             if str(item["event_id"]) in stored_stickers
         }

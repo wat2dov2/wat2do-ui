@@ -405,7 +405,7 @@ test.describe("Instagram raster preparation", () => {
     const payload = { kind: "event", school: "uwaterloo", event: {
       id: 42, club_id: 7, tz: "America/Toronto", category: "Arts & Culture", title: "Campus Film Night",
       club: "Film Club", source_image_url: posterUrl, description: "REMOVED FOOTER TEXT",
-      sticker_ids: ["movie-night", "bring-a-friend", "campus-pick"],
+      sticker_labels: ["Free Pizza", "Reg. Required", "Meet Friends", "Cash Prizes"],
     } };
     const response = await POST(request(payload));
     const output = Buffer.from(await response.arrayBuffer());
@@ -413,9 +413,10 @@ test.describe("Instagram raster preparation", () => {
     expect(Buffer.from(await again.arrayBuffer()).equals(output)).toBe(true);
     expect(fetched).toEqual([posterUrl, posterUrl]);
     const markup = renderToStaticMarkup(renderedSlide!);
-    expect(markup).toMatch(/<div style="[^"]*position:relative[^"]*">Movie night<\/div>/);
+    expect(markup).toContain("Reg.");
+    expect(markup).toContain("Required");
     expect(markup).not.toContain("REMOVED FOOTER TEXT");
-    for (const [left, top] of [[118, 1180], [698, 1162], [384, 1204]]) {
+    for (const [left, top] of [[126, 1134], [706, 1124], [182, 1240], [622, 1240]]) {
       const label = await sharp(output).extract({ left, top, width: 212, height: 60 }).removeAlpha().raw().toBuffer();
       let textPixels = 0;
       for (let index = 0; index < label.length; index += 3) {

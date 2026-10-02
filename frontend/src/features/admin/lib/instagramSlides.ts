@@ -37,7 +37,7 @@ export const SLIDE_POSTER_REGIONS = {
 /** Event fields a slide reads. Mirrors the backend's stored event snapshot. */
 export interface SlideEvent {
   id: number;
-  sticker_ids?: string[];
+  sticker_labels?: string[];
   club_id?: number | null;
   title?: string | null;
   description?: string | null;
@@ -73,7 +73,7 @@ export interface EventSlideModel {
   siteName: string;
   colors: SchoolColors;
   doodleIcons: string[];
-  stickers: { id: string; label: string; seed: number }[];
+  stickers: { id: string; label: string; lines: string[]; shape: number; seed: number }[];
   /** Event facts use the same localized labels as the website's cards. */
   badges: string[];
   imageSrc: string;
@@ -172,12 +172,19 @@ export async function buildEventSlideModel(
   const category = getClubCategoryConfig(categoryName);
   const siteName = getSchoolPublicUrl(event.school);
   const colors = context ? getSchoolColors(context.school) : { primary: "#FFD54A", secondary: "#171A16" };
-  const stickers = [...new Set(event.sticker_ids ?? [])].slice(0, instagramPublishing.maximum_stickers_per_event)
-    .flatMap(id => {
-      const sticker = instagramPublishing.sticker_catalog.find(entry => entry.id === id);
-      if (!sticker) return [];
-      const seed = [...`${event.id}:${id}`].reduce((hash, char) => (Math.imul(hash, 31) + char.charCodeAt(0)) >>> 0, 0);
-      return [{ id, label: language === "fr" ? sticker.fr : sticker.label, seed }];
+  const stickers = [...new Set(event.sticker_labels ?? [])].slice(0, instagramPublishing.maximum_stickers_per_event)
+    .map((label, index) => {
+      const seed = [...`${event.id}:${label}`].reduce((hash, char) => (Math.imul(hash, 31) + char.charCodeAt(0)) >>> 0, 0);
+      const lines: string[] = [];
+      for (const word of label.split(/\s+/)) {
+        const last = lines.at(-1);
+        if (last && [...`${last} ${word}`].length <= instagramPublishing.sticker_line_character_limit)
+          lines[lines.length - 1] = `${last} ${word}`;
+        else lines.push(word);
+      }
+      if (lines.length > instagramPublishing.sticker_maximum_lines || lines.some(line => [...line].length > instagramPublishing.sticker_line_character_limit))
+        throw new Error(`Event ${event.id} has a sticker that exceeds the artwork text bounds`);
+      return { id: String(index), label, lines, shape: (event.id + index) % instagramPublishing.sticker_shape_count, seed };
     });
   const handle = normalizeInstagramHandle(event.ig_handle) || normalizeInstagramHandle(event.club_ig);
   return {
@@ -235,10 +242,9 @@ export function buildCoverSlideModel({
     doodleIcons: getClubCategoryDoodleDataUris(colors.secondary, 42),
     dateLine: formatCoverDate(localDate, language),
     newEventCount,
-    // Selected events can predate both the batch date and its recent-event window.
     headline: batchKind === "employers_on_campus"
       ? (language === "fr" ? "EMPLOYEURS SUR LE CAMPUS" : "EMPLOYERS ON CAMPUS")
-      : (language === "fr" ? "ÉVÉNEMENTS À DÉCOUVRIR" : "EVENTS TO EXPLORE"),
+      : (language === "fr" ? "NOUVEAUX ÉVÉNEMENTS À DÉCOUVRIR" : "NEW EVENTS TO EXPLORE"),
     body: text(body, batchKind === "employers_on_campus"
       ? (language === "fr" ? `${eventCount} occasions de rencontrer des employeurs` : `${eventCount} opportunities to meet employers`)
       : defaultCoverBody(eventCount, language)),

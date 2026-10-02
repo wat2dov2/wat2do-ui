@@ -209,14 +209,20 @@ test("every supported Instagram category keeps its localized label and colour", 
 });
 
 
-test("Instagram artwork shares school colors and localizes stable sticker choices", async () => {
+test("Instagram artwork preserves original copy, bounded lines and distinct stable shapes", async () => {
   const context = { school: { name: "University of Alberta", primary_color: "#154734", secondary_color: "#FFDB05" } };
-  const input = { id: 1, category: "Business", tz: timeZone, school: "ualberta", sticker_ids: ["campus-pick", "free-food", "unknown"] };
+  const input = { id: 1, category: "Business", tz: timeZone, school: "ualberta", sticker_labels: ["Free Pizza", "Reg. Required", "Cash Prizes", "Meet Friends"] };
   const en = await buildEventSlideModel(input, "en", undefined, undefined, context);
-  const fr = await buildEventSlideModel(input, "fr", undefined, undefined, context);
+  const again = await buildEventSlideModel(input, "en", undefined, undefined, context);
   expect(en.colors).toEqual({ primary: "#154734", secondary: "#FFDB05" });
   expect(en.doodleIcons).toHaveLength(42);
-  expect(en.stickers.map(sticker => sticker.label)).toEqual(["Campus pick", "Free food"]);
-  expect(fr.stickers.map(sticker => sticker.label)).toEqual(["À découvrir", "Repas gratuit"]);
-  expect(en.stickers.map(sticker => sticker.seed)).toEqual(fr.stickers.map(sticker => sticker.seed));
+  expect(en.stickers.map(sticker => sticker.label)).toEqual(input.sticker_labels);
+  expect(en.stickers[1].lines).toEqual(["Reg.", "Required"]);
+  expect(new Set(en.stickers.map(sticker => sticker.shape)).size).toBe(4);
+  expect(again.stickers).toEqual(en.stickers);
+  for (const sticker of en.stickers) {
+    expect(sticker.lines.length).toBeLessThanOrEqual(2);
+    for (const line of sticker.lines) expect([...line].length).toBeLessThanOrEqual(12);
+  }
+  await expect(buildEventSlideModel({ ...input, sticker_labels: ["Registrations Required"] }, "en")).rejects.toThrow("artwork text bounds");
 });

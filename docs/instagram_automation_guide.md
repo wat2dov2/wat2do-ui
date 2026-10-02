@@ -312,19 +312,26 @@ The scheduled `run-cycle` exits nonzero while either app is missing, Automate la
 A daily Codex automation owns event selection, carousel order, sticker choices, caption introduction, and cover copy.
 It reads candidate packets through `backend/jobs/generate_instagram_posts.py candidates`, reviews the event data itself, and saves its choices with `save <selection.json>`.
 There is no embedded OpenAI API call or GitHub draft-generation workflow.
-The publishing controlbox retains factual sticker definitions, eligibility windows, and publishing limits.
-The service validates Codex's event IDs and sticker choices before writing a draft.
+The publishing controlbox retains artwork bounds, eligibility windows, and publishing limits; there is no preset sticker catalog.
+The service validates event IDs, distinct labels, capitalization, and text bounds before writing a draft.
 
 Sticker choices are saved in `instagram_publish_batches.sticker_selections` by event ID, so reordering a draft preserves them.
-Apply migration `20260929040000_instagram_sticker_selections.sql` before deploying this code.
-Existing drafts default to no stickers; new drafts receive Codex-selected stickers.
-Date-sensitive and factual labels are checked again when loading drafts and publishing them.
+Migration `20261002010000_instagram_sticker_copy.sql` converts retired preset IDs into readable labels without changing published images.
+Codex writes original sticker text in the school's configured language, aiming for three to four distinct benefits or practical details per event.
+Prioritize price, included or explicitly free food, prizes, learning, networking and entry requirements over generic hype.
+Use `Free` as the default price label unless the event states a cost, as requested by the human; this editorial default does not change the event's stored price.
+Use `Reg. Required` for required registration and capitalize each word, preserving acronyms.
+Each label must fit at most two lines of twelve characters each; abbreviate naturally rather than inventing or truncating facts.
+Do not invent perks to reach three stickers; record when the available event information supports fewer.
+Avoid relative dates that become stale while a draft waits; human review checks factual copy before publication.
 Manually added events have no stickers unless they were already selected for that draft.
 The admin still reviews the selected events and explicitly publishes the carousel.
 
 The event artwork and cover share school colors and the translucent doodle field.
 Event frames are inset on all four sides, and the former comment footer remains white with only the selected stickers.
-Sticker shape, tilt, and placement are deterministic per event and sticker, so preview and published images match.
+The ten sticker silhouettes and ten colors double the former visual variety.
+Shapes differ within each event slide, and tilt and placement remain deterministic so preview and published images match.
+Labels render as explicit padded lines within their silhouette.
 The renderer no longer requests maps or club hiring data.
 
 ### Daily publishing schedule
@@ -337,7 +344,7 @@ It calls `refresh-tokens` before reviewing candidates, so encrypted account toke
 Token-refresh failures are reported separately and do not prevent reviewing other healthy accounts.
 
 The command interface never selects events itself and never publishes them.
-Each selection JSON contains `account_key`, the candidate packet's timezone-aware `window_end`, `caption_intro`, `cover_body`, and ordered `picks` with `event_id` and `sticker_ids`.
+Each selection JSON contains `account_key`, the candidate packet's timezone-aware `window_end`, `caption_intro`, `cover_body`, and ordered `picks` with `event_id` and `sticker_labels`.
 Use an empty `picks` list only when the candidate packet contains no eligible events.
 The database's existing daily account key prevents replacing or duplicating an existing draft.
 Readback uses the same service as the admin review page.

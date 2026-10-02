@@ -1040,7 +1040,7 @@ def codex_draft(monkeypatch):
         window_end=now,
         caption_intro="Your next campus plans",
         cover_body="Film and conversation",
-        picks=[{"event_id": 17, "sticker_ids": ["movie-night"]}],
+        picks=[{"event_id": 17, "sticker_labels": ["Movie Night"]}],
     )
 
 
@@ -1051,7 +1051,8 @@ def test_codex_reads_candidates_without_writing(monkeypatch, codex_draft):
     assert packets[0]["account_key"] == "uwaterloo"
     assert packets[0]["status"] == "needs_review"
     assert packets[0]["requires_reauthorization"] is True
-    assert "movie-night" in packets[0]["events"][0]["allowed_sticker_ids"]
+    assert "allowed_sticker_labels" not in packets[0]["events"][0]
+    assert packets[0]["events"][0]["id"] == 17
     database.assert_not_called()
 
 
@@ -1072,8 +1073,63 @@ def test_codex_saves_choices_and_reads_back_admin_draft(monkeypatch, codex_draft
     assert batch["cover_body"] == codex_draft.cover_body
     assert batch["school_id"] == 1
     updates = [args[0] for name, args, _ in calls if name == "update"]
-    assert updates[-1]["sticker_selections"] == {"17": ["movie-night"]}
+    assert updates[-1]["sticker_selections"] == {"17": ["Movie Night"]}
     assert updates[-1]["status"] == "ready_for_review"
+
+
+def test_existing_draft_stickers_use_version_and_status_guards(monkeypatch):
+    from services.instagram_publishing.selection import CarouselPick
+
+    batch = {
+        "id": "draft-1",
+        "version": 4,
+        "status": "ready_for_review",
+        "items": [{"event_id": 17}],
+    }
+    labels = ["Free Pizza", "Reg. Required", "Cash Prizes"]
+    expected = {"17": labels}
+    monkeypatch.setattr(
+        service,
+        "get_batch",
+        Mock(side_effect=[batch, {**batch, "version": 5, "sticker_selections": expected}]),
+    )
+    query = Mock()
+    query.update.return_value = query
+    query.eq.return_value = query
+    query.execute.return_value.data = [{"id": "draft-1"}]
+    monkeypatch.setattr(service, "get_sb", lambda: SimpleNamespace(table=lambda _: query))
+    result = service.update_batch_stickers(
+        "draft-1", 4, [CarouselPick(event_id=17, sticker_labels=labels)]
+    )
+    query.update.assert_called_once_with({"sticker_selections": expected, "version": 5})
+    assert [call.args for call in query.eq.call_args_list] == [
+        ("id", "draft-1"),
+        ("version", 4),
+        ("status", "ready_for_review"),
+    ]
+    assert result["sticker_selections"] == expected
+
+
+def test_existing_sticker_review_cannot_overwrite_a_concurrent_edit(monkeypatch):
+    from core.exceptions import ConflictError
+    from services.instagram_publishing.selection import CarouselPick
+
+    batch = {
+        "id": "draft-1",
+        "version": 4,
+        "status": "ready_for_review",
+        "items": [{"event_id": 17}],
+    }
+    monkeypatch.setattr(service, "get_batch", lambda _: batch)
+    query = Mock()
+    query.update.return_value = query
+    query.eq.return_value = query
+    query.execute.return_value.data = []
+    monkeypatch.setattr(service, "get_sb", lambda: SimpleNamespace(table=lambda _: query))
+    with pytest.raises(ConflictError):
+        service.update_batch_stickers(
+            "draft-1", 4, [CarouselPick(event_id=17, sticker_labels=["Free"])]
+        )
 
 
 @pytest.mark.parametrize(

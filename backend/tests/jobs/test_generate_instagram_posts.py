@@ -34,7 +34,7 @@ def test_save_command_validates_external_choices(monkeypatch, tmp_path, capsys):
                 "window_end": "2026-09-28T14:00:00Z",
                 "caption_intro": "Today's plans",
                 "cover_body": "Campus picks",
-                "picks": [{"event_id": 17, "sticker_ids": ["campus-pick"]}],
+                "picks": [{"event_id": 17, "sticker_labels": ["Meet Friends"]}],
             }
         )
     )
