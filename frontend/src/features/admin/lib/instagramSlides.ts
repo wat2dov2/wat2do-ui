@@ -29,7 +29,7 @@ export const SLIDE_WIDTH = 1080;
 export const SLIDE_HEIGHT = 1350;
 /** Raster preparation and template layout use the same physical image bounds. */
 export const SLIDE_POSTER_REGIONS = {
-  event: { width: SLIDE_WIDTH - 128, height: 850 },
+  event: { width: SLIDE_WIDTH - 128, height: 960 },
   cover: { width: 220, height: 308 },
   avatar: { width: 88, height: 88 },
 } as const;
@@ -59,7 +59,7 @@ export interface SlideEvent {
   registration?: boolean | null;
 }
 
-export const SLIDE_STICKER_SIZE = { width: 228, height: 94 } as const;
+export const SLIDE_STICKER_SIZE = { width: 208, height: 90 } as const;
 
 export interface EventSlideModel {
   /** Localized event category, also used by the artwork review library. */
@@ -177,25 +177,21 @@ function stickerStyle(label: string): { shape: number; styleSeed: number } {
 }
 
 /** Fill the white footer before covering any event artwork. */
-function stickerPositions(eventId: number) {
-  const compositions = [
-    [[90, 1062], [414, 1062], [740, 1062], [550, 1178]],
-    [[90, 1178], [414, 1178], [740, 1178], [240, 1062]],
-    [[90, 1062], [414, 1062], [740, 1062], [180, 1178]],
-    [[90, 1178], [414, 1178], [740, 1178], [620, 1062]],
-  ];
+function stickerPositions(eventId: number, count: number) {
   let seed = Math.imul(eventId, 2654435761) >>> 0;
   const random = () => {
     seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
     return seed / 4294967296;
   };
-  const composition = compositions[Math.floor(random() * compositions.length)];
-  const positions = composition.map(([left, top]) => ({
-    left: left + Math.floor(random() * 7) - 3,
-    top: top + Math.floor(random() * 7) - 3,
-    rotation: Math.floor(random() * 9) - 4,
+  const gap = 24;
+  const rowWidth = count * SLIDE_STICKER_SIZE.width + Math.max(0, count - 1) * gap;
+  const rowLeft = (SLIDE_WIDTH - rowWidth) / 2;
+  const positions = Array.from({ length: count }, (_, index) => ({
+    left: rowLeft + index * (SLIDE_STICKER_SIZE.width + gap) + Math.floor(random() * 9) - 4,
+    top: 1173 + Math.floor(random() * 13) - 6,
+    rotation: Math.floor(random() * 11) - 5,
   }));
-  // Label order does not dictate which side or row gets a practical detail.
+  // Label order does not dictate which side gets a practical detail.
   for (let index = positions.length - 1; index > 0; index--) {
     const other = Math.floor(random() * (index + 1));
     [positions[index], positions[other]] = [positions[other], positions[index]];
@@ -220,20 +216,20 @@ export async function buildEventSlideModel(
   const category = getClubCategoryConfig(categoryName);
   const siteName = getSchoolPublicUrl(event.school);
   const colors = context ? getSchoolColors(context.school) : { primary: "#FFD54A", secondary: "#171A16" };
-  const positions = stickerPositions(event.id);
-  const stickers = [...new Set(event.sticker_labels ?? [])].slice(0, instagramPublishing.maximum_stickers_per_event)
-    .map((label, index) => {
-      const lines: string[] = [];
-      for (const word of label.split(/\s+/)) {
-        const last = lines.at(-1);
-        if (last && [...`${last} ${word}`].length <= instagramPublishing.sticker_line_character_limit)
-          lines[lines.length - 1] = `${last} ${word}`;
-        else lines.push(word);
-      }
-      if (lines.length > instagramPublishing.sticker_maximum_lines || lines.some(line => [...line].length > instagramPublishing.sticker_line_character_limit))
-        throw new Error(`Event ${event.id} has a sticker that exceeds the artwork text bounds`);
-      return { id: String(index), label, lines, ...stickerStyle(label), ...positions[index] };
-    });
+  const labels = [...new Set(event.sticker_labels ?? [])].slice(0, instagramPublishing.maximum_stickers_per_event);
+  const positions = stickerPositions(event.id, labels.length);
+  const stickers = labels.map((label, index) => {
+    const lines: string[] = [];
+    for (const word of label.split(/\s+/)) {
+      const last = lines.at(-1);
+      if (last && [...`${last} ${word}`].length <= instagramPublishing.sticker_line_character_limit)
+        lines[lines.length - 1] = `${last} ${word}`;
+      else lines.push(word);
+    }
+    if (lines.length > instagramPublishing.sticker_maximum_lines || lines.some(line => [...line].length > instagramPublishing.sticker_line_character_limit))
+      throw new Error(`Event ${event.id} has a sticker that exceeds the artwork text bounds`);
+    return { id: String(index), label, lines, ...stickerStyle(label), ...positions[index] };
+  });
   const handle = normalizeInstagramHandle(event.ig_handle) || normalizeInstagramHandle(event.club_ig);
   return {
     category: { label: translateCategory(categoryName, t), color: category.color },

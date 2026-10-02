@@ -99,7 +99,7 @@ function SlideSticker({ sticker }: { sticker: EventSlideModel["stickers"][number
         : <path d="M4 10H256V94H152L130 104L108 94H4Z" fill={fill} stroke="white" strokeWidth="6" />}
     </svg>
     {/* Keep the label above the positioned silhouette in both preview and artwork. */}
-    <div style={{ display: "flex", position: "relative", flexDirection: "column", width: 180, padding: "12px 8px", alignItems: "center", justifyContent: "center", textAlign: "center", fontSize: 24, lineHeight: 1.15, fontWeight: 700, color: LIGHT.foreground }}>
+    <div style={{ display: "flex", position: "relative", flexDirection: "column", width: 174, padding: "12px 8px", alignItems: "center", justifyContent: "center", textAlign: "center", fontSize: 23, lineHeight: 1.15, fontWeight: 700, color: LIGHT.foreground }}>
       {sticker.lines.map((line, lineIndex) => <div key={lineIndex} style={{ display: "flex", whiteSpace: "nowrap" }}>{line}</div>)}
     </div>
   </div>;
