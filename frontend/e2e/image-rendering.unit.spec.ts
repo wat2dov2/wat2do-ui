@@ -416,8 +416,12 @@ test.describe("Instagram raster preparation", () => {
     expect(markup).toContain("Reg.");
     expect(markup).toContain("Required");
     expect(markup).not.toContain("REMOVED FOOTER TEXT");
-    for (const [left, top] of [[126, 1134], [706, 1124], [182, 1240], [622, 1240]]) {
-      const label = await sharp(output).extract({ left, top, width: 212, height: 60 }).removeAlpha().raw().toBuffer();
+    const stickerMarkup = [...markup.matchAll(/left:([\d]+)px;top:([\d]+)px;width:260px;height:108px/g)];
+    expect(stickerMarkup).toHaveLength(4);
+    for (const position of stickerMarkup) {
+      const left = Number(position[1]) + 24;
+      const top = Number(position[2]) + 20;
+      const label = await sharp(output).extract({ left, top, width: 212, height: 68 }).removeAlpha().raw().toBuffer();
       let textPixels = 0;
       for (let index = 0; index < label.length; index += 3) {
         if ([0, 1, 2].every(channel => Math.abs(label[index + channel] - 23) <= 3)) textPixels++;
@@ -426,7 +430,6 @@ test.describe("Instagram raster preparation", () => {
     }
     const pixel = async (left: number, top: number) => [...await sharp(output).extract({ left, top, width: 1, height: 1 }).removeAlpha().raw().toBuffer()];
     expect(await pixel(540, 600)).toEqual([239, 80, 20]);
-    expect(await pixel(540, 1100)).toEqual([239, 80, 20]);
     expect(await pixel(980, 1240)).toEqual([255, 255, 255]);
     for (const [left, top] of [[10, 10], [1070, 600], [10, 600], [540, 1340]]) {
       expect(await pixel(left, top)).not.toEqual([255, 255, 255]);

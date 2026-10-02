@@ -226,3 +226,37 @@ test("Instagram artwork preserves original copy, bounded lines and distinct stab
   }
   await expect(buildEventSlideModel({ ...input, sticker_labels: ["Registrations Required"] }, "en")).rejects.toThrow("artwork text bounds");
 });
+
+
+test("Instagram sticker styles follow meaning while placement varies safely by event", async () => {
+  const base = { id: 1, category: "Business", tz: timeZone, school: "ualberta" };
+  for (const labels of [["Reg. Required", "RSVP Required", "Inscr. Req."], ["Free Pizza", "Free Food", "Food Included"], ["Free", "$5 Entry", "Price TBD"], ["Meet Friends", "Networking", "Meet People"], ["Bookmark Art", "bookmark art"]]) {
+    const styles = [];
+    for (const [index, label] of labels.entries()) {
+      const model = await buildEventSlideModel({ ...base, id: 31 + index, sticker_labels: [label] }, "en");
+      styles.push({ shape: model.stickers[0].shape, color: model.stickers[0].styleSeed });
+    }
+    expect(styles.every(style => JSON.stringify(style) === JSON.stringify(styles[0]))).toBe(true);
+  }
+  const placements = new Set<string>();
+  for (let id = 1; id <= 100; id++) {
+    const model = await buildEventSlideModel({ ...base, id, sticker_labels: ["Free", "Free Pizza", "Reg. Required", "Cash Prizes"] }, "en");
+    const bounds = model.stickers.map(sticker => {
+      const angle = Math.abs(sticker.rotation) * Math.PI / 180;
+      const width = 260 * Math.cos(angle) + 108 * Math.sin(angle);
+      const height = 108 * Math.cos(angle) + 260 * Math.sin(angle);
+      return { left: sticker.left + 130 - width / 2, top: sticker.top + 54 - height / 2, width, height };
+    });
+    placements.add(JSON.stringify(model.stickers.map(({ left, top, rotation }) => ({ left, top, rotation }))));
+    for (const [index, box] of bounds.entries()) {
+      expect(box.left).toBeGreaterThan(0);
+      expect(box.top).toBeGreaterThan(1000);
+      expect(box.left + box.width).toBeLessThan(1080);
+      expect(box.top + box.height).toBeLessThan(1350);
+      for (const other of bounds.slice(index + 1)) {
+        expect(box.left + box.width <= other.left || other.left + other.width <= box.left || box.top + box.height <= other.top || other.top + other.height <= box.top).toBe(true);
+      }
+    }
+  }
+  expect(placements.size).toBe(100);
+});

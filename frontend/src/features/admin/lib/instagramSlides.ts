@@ -73,7 +73,7 @@ export interface EventSlideModel {
   siteName: string;
   colors: SchoolColors;
   doodleIcons: string[];
-  stickers: { id: string; label: string; lines: string[]; shape: number; seed: number }[];
+  stickers: { id: string; label: string; lines: string[]; shape: number; styleSeed: number; left: number; top: number; rotation: number }[];
   /** Event facts use the same localized labels as the website's cards. */
   badges: string[];
   imageSrc: string;
@@ -155,6 +155,54 @@ function formatSlideDate(event: SlideEvent, locale: string): { dateLine: string;
   };
 }
 
+/** Semantic styles stay the same across schools, events and label ordering. */
+function stickerStyle(label: string): { shape: number; styleSeed: number } {
+  const normalized = label.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase().replace(/[^\p{L}\p{N}$]+/gu, " ").trim();
+  const families = [
+    { shape: 2, words: /\b(reg|registration|rsvp|inscr|inscription)\b/ },
+    { shape: 3, words: /\b(food|pizza|snacks?|meals?|breakfast|lunch|dinner|tea|coffee|drink|refreshments|bbq|repas|nourriture|cafe|collation|boisson)\b/ },
+    { shape: 0, words: /\b(free|gratuit|gratuite)\b|\$|\b(entry|admission|cost|price|paid|tickets?|tarif|prix|entree|billet)\b/ },
+    { shape: 1, words: /\b(prizes?|cash|awards?|gifts?|giveaways?|lots?|cadeaux|recompenses)\b/ },
+    { shape: 9, words: /\b(meet|friends?|networking|network|people|social|rencontre|reseautage|amis)\b/ },
+    { shape: 6, words: /\b(workshop|learn|skills?|training|prep|expert|atelier|formation)\b/ },
+    { shape: 7, words: /\b(games?|quiz|trivia|play|jeux|jeu)\b/ },
+    { shape: 5, words: /\b(welcome|open|everyone|bienvenue|tous)\b/ },
+    { shape: 8, words: /\b(show|music|live|performance|concert|spectacle|musique)\b/ },
+  ];
+  const family = families.find(({ words }) => words.test(normalized));
+  const hash = [...normalized].reduce((value, char) => (Math.imul(value, 31) + char.charCodeAt(0)) >>> 0, 0);
+  return { shape: family?.shape ?? hash % instagramPublishing.sticker_shape_count, styleSeed: family?.shape ?? hash };
+}
+
+/** Staggered compositions keep stickers clear of each other and the header. */
+function stickerPositions(eventId: number) {
+  const compositions = [
+    [[52, 1064], [372, 1050], [748, 1040], [588, 1210]],
+    [[66, 1210], [88, 1040], [400, 1086], [744, 1140]],
+    [[60, 1060], [408, 1210], [398, 1040], [750, 1090]],
+    [[52, 1140], [386, 1040], [720, 1210], [738, 1050]],
+    [[68, 1210], [370, 1210], [728, 1172], [276, 1040]],
+    [[70, 1040], [382, 1040], [724, 1080], [250, 1210]],
+  ];
+  let seed = Math.imul(eventId, 2654435761) >>> 0;
+  const random = () => {
+    seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+    return seed / 4294967296;
+  };
+  const composition = compositions[Math.floor(random() * compositions.length)];
+  const positions = composition.map(([left, top]) => ({
+    left: left + Math.floor(random() * 13) - 6,
+    top: top + Math.floor(random() * 13) - 6,
+    rotation: Math.floor(random() * 17) - 8,
+  }));
+  // Label order does not dictate which side or row gets a practical detail.
+  for (let index = positions.length - 1; index > 0; index--) {
+    const other = Math.floor(random() * (index + 1));
+    [positions[index], positions[other]] = [positions[other], positions[index]];
+  }
+  return positions;
+}
+
 export async function buildEventSlideModel(
   event: SlideEvent,
   language: School["language"],
@@ -172,9 +220,9 @@ export async function buildEventSlideModel(
   const category = getClubCategoryConfig(categoryName);
   const siteName = getSchoolPublicUrl(event.school);
   const colors = context ? getSchoolColors(context.school) : { primary: "#FFD54A", secondary: "#171A16" };
+  const positions = stickerPositions(event.id);
   const stickers = [...new Set(event.sticker_labels ?? [])].slice(0, instagramPublishing.maximum_stickers_per_event)
     .map((label, index) => {
-      const seed = [...`${event.id}:${label}`].reduce((hash, char) => (Math.imul(hash, 31) + char.charCodeAt(0)) >>> 0, 0);
       const lines: string[] = [];
       for (const word of label.split(/\s+/)) {
         const last = lines.at(-1);
@@ -184,7 +232,7 @@ export async function buildEventSlideModel(
       }
       if (lines.length > instagramPublishing.sticker_maximum_lines || lines.some(line => [...line].length > instagramPublishing.sticker_line_character_limit))
         throw new Error(`Event ${event.id} has a sticker that exceeds the artwork text bounds`);
-      return { id: String(index), label, lines, shape: (event.id + index) % instagramPublishing.sticker_shape_count, seed };
+      return { id: String(index), label, lines, ...stickerStyle(label), ...positions[index] };
     });
   const handle = normalizeInstagramHandle(event.ig_handle) || normalizeInstagramHandle(event.club_ig);
   return {

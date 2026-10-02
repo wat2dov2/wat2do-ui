@@ -330,7 +330,9 @@ The admin still reviews the selected events and explicitly publishes the carouse
 The event artwork and cover share school colors and the translucent doodle field.
 Event frames are inset on all four sides, and the former comment footer remains white with only the selected stickers.
 The ten sticker silhouettes and ten colors double the former visual variety.
-Shapes differ within each event slide, and tilt and placement remain deterministic so preview and published images match.
+Similar labels share a silhouette and color across events, including registration, food and entry cost.
+Other labels use their normalized text to choose a consistent style.
+Staggered compositions, shuffled positions and varied tilt avoid a fixed two-left/two-right arrangement while remaining deterministic so preview and published images match.
 Labels render as explicit padded lines within their silhouette.
 The renderer no longer requests maps or club hiring data.
 

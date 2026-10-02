@@ -74,20 +74,17 @@ function SlideAvatar({ src, author, size, renderPoster }: { src: string; author:
   </div>;
 }
 
-/** One reusable, deliberately playful sticker silhouette, chosen by a stable seed. */
-function SlideSticker({ sticker, index }: { sticker: EventSlideModel["stickers"][number]; index: number }) {
+/** One reusable, deliberately playful sticker silhouette, chosen by the label’s meaning. */
+function SlideSticker({ sticker }: { sticker: EventSlideModel["stickers"][number] }) {
   const colors = ["#FFE45E", "#C5EDFF", "#FFB8D2", "#CFF5B2", "#DDD0FF", "#FFD4A8", "#B8EEE4", "#FFC8B8", "#E8EDAD", "#CDD9FF"];
   const shape = sticker.shape;
-  const fill = colors[sticker.seed % colors.length];
-  const rotation = (sticker.seed % 19) - 9;
-  const positions = [{ left: 94, top: 1120 }, { left: 674, top: 1110 }, { left: 150, top: 1226 }, { left: 590, top: 1226 }];
-  const position = positions[index % positions.length];
+  const fill = colors[sticker.styleSeed % colors.length];
   const star = Array.from({ length: 24 }, (_, i) => {
     const angle = i * Math.PI / 12;
     const radius = i % 2 ? 0.84 : 1;
     return `${130 + Math.cos(angle) * 124 * radius},${54 + Math.sin(angle) * 48 * radius}`;
   }).join(" ");
-  return <div style={{ display: "flex", position: "absolute", left: position.left + (sticker.seed % 17) - 8, top: position.top + (sticker.seed % 13) - 6, width: 260, height: 108, alignItems: "center", justifyContent: "center", transform: `rotate(${rotation}deg)` }}>
+  return <div style={{ display: "flex", position: "absolute", left: sticker.left, top: sticker.top, width: 260, height: 108, alignItems: "center", justifyContent: "center", transform: `rotate(${sticker.rotation}deg)` }}>
     <svg width="260" height="108" viewBox="0 0 260 108" style={{ position: "absolute", left: 0, top: 0 }}>
       {shape === 0 ? <rect x="4" y="4" width="252" height="100" rx="50" fill={fill} stroke="white" strokeWidth="6" />
         : shape === 1 ? <polygon points={star} fill={fill} stroke="white" strokeWidth="6" />
@@ -129,7 +126,7 @@ export function EventSlideTemplate({ model, renderPoster = renderSlidePoster }: 
         </div>
         <div style={{ display: "flex", flex: 1, backgroundColor: LIGHT.surface }} />
       </div>
-      {model.stickers.map((sticker, index) => <SlideSticker key={sticker.id} sticker={sticker} index={index} />)}
+      {model.stickers.map(sticker => <SlideSticker key={sticker.id} sticker={sticker} />)}
     </div>
   );
 }
