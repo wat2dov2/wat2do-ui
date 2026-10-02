@@ -5,6 +5,7 @@ import { STORAGE_KEYS } from "../src/shared/constants/storageKeys";
 
 for (const path of ["/events/submit", "/clubs/new", "/positions/submit"]) {
   test(`signed-out visitors can open ${path} and must provide an email`, async ({ page, next }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
     await page.addInitScript(key => localStorage.setItem(key, "en"), STORAGE_KEYS.LANGUAGE);
     await mockApi(page, next, url => url.pathname === "/api/auth/refresh", async () => ({ status: 401, json: {} }));
     await mockApi(page, next, url => url.pathname === "/api/ai/parse-event-image", async () => ({ json: {
@@ -21,6 +22,26 @@ for (const path of ["/events/submit", "/clubs/new", "/positions/submit"]) {
     const email = page.getByRole("textbox", { name: "Email address" });
     await expect(email).toBeVisible();
     await expect(email).toHaveAttribute("required", "");
+    // Check actual mobile geometry after parsing, including nested field groups.
+    // Email and title used to touch because the spacing owner wrapped the form.
+    const layout = await page.locator("form").filter({ has: email }).evaluate(form => {
+      const controls = [...form.querySelectorAll<HTMLElement>(
+        '[data-slot="field"] > input, [data-slot="field"] > textarea, [data-slot="field"] > button',
+      )].filter(control => control.getBoundingClientRect().height > 0);
+      const fields = controls.map(control => control.parentElement!.getBoundingClientRect());
+      return {
+        overflowing: controls.some(control => {
+          const bounds = control.getBoundingClientRect();
+          return bounds.left < 0 || bounds.right > window.innerWidth;
+        }),
+        gaps: fields.slice(1).map((field, index) => field.top - fields[index].bottom),
+      };
+    });
+    expect(layout.overflowing).toBe(false);
+    // Section headings, images, and helper text may create larger gaps.
+    // Every consecutive field must still have the shared 20px minimum rhythm.
+    for (const gap of layout.gaps) expect(gap).toBeGreaterThanOrEqual(19);
+
     expect(await email.evaluate((input: HTMLInputElement) => input.checkValidity())).toBe(false);
     await email.fill("invalid");
     expect(await email.evaluate((input: HTMLInputElement) => input.checkValidity())).toBe(false);

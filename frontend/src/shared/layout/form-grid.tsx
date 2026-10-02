@@ -7,6 +7,7 @@ const columnClasses = {
   2: "md:grid-cols-2",
   3: "md:grid-cols-2 lg:grid-cols-3",
   4: "sm:grid-cols-2 xl:grid-cols-4",
+  withAction: "grid-cols-1 items-end sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]",
   split: "grid-cols-2 items-start [&>*]:min-w-0",
   gallery: "grid-cols-[repeat(auto-fit,minmax(min(100%,288px),1fr))] items-start",
   sidebar:
@@ -45,7 +46,7 @@ function FormGrid({
     <Component
       data-slot="form-grid"
       data-columns={columns}
-      className={cn("grid gap-5", responsiveColumns, className)}
+      className={cn("grid min-w-0 gap-5 [&>*]:min-w-0", responsiveColumns, className)}
       {...props}
     />
   )

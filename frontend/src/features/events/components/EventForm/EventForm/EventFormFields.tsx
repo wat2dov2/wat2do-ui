@@ -10,6 +10,7 @@ import {
   FieldSeparator,
   FieldSet,
 } from "@/shared/ui/field";
+import { FormGrid, Stack } from "@/shared/layout";
 import { Switch } from "@/shared/ui/switch";
 import { Button } from "@/shared/ui/button";
 import { useAppConstants } from "@/shared/hooks/useAppConstants";
@@ -76,7 +77,7 @@ export function EventFormFields() {
           />
 
           <Field>
-            <div className="flex items-center justify-between gap-3">
+            <Stack direction="horizontal" align="center" justify="between" wrap gap={3}>
               <FieldLabel>
                 {t("forms.occurrences")} <span className="text-destructive">*</span>
               </FieldLabel>
@@ -87,14 +88,11 @@ export function EventFormFields() {
                 <Plus className="size-4" />
                 {t("forms.addDate")}
               </Button>
-            </div>
+            </Stack>
             <FieldDescription>{formData.timeZone}</FieldDescription>
             <FieldGroup>
               {formData.occurrences.map((occurrence, index) => (
-                <div
-                  key={index}
-                  className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] gap-2 items-end"
-                >
+                <FormGrid key={index} columns="withAction">
                   <FormDateTimePicker
                     name={`occurrences.${index}.dtstart_local`}
                     label={t("forms.startDateTime")}
@@ -121,7 +119,7 @@ export function EventFormFields() {
                   >
                     <Trash2 className="size-4" />
                   </Button>
-                </div>
+                </FormGrid>
               ))}
             </FieldGroup>
           </Field>
@@ -164,7 +162,7 @@ export function EventFormFields() {
             labelIcon={<ExternalLink className="size-4" />}
           />
 
-          <FieldGroup className="grid grid-cols-1 sm:grid-cols-2">
+          <FormGrid>
             <FormSelect
               name="category"
               label={t("filters.category")}
@@ -187,7 +185,7 @@ export function EventFormFields() {
               labelIcon={<DollarSign className="size-4" />}
               inputClassName="text-secondary-foreground"
             />
-          </FieldGroup>
+          </FormGrid>
 
           <TagInput
             label={t("forms.foodProvided")}

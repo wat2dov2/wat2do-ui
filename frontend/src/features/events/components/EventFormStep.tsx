@@ -8,11 +8,9 @@ import { useEventsStore } from "@/features/events/store/events.store";
 import { ArrowLeft } from "@/shared/ui/doodle-icons";
 import { FormInput } from "@/shared/ui/form-field";
 import { Button } from "@/shared/ui/button";
+import { FormActions, FormLayout } from "@/shared/layout";
 import { LoadingButton } from "@/shared/ui/loading-button";
-import {
-  Field,
-  FieldGroup,
-} from "@/shared/ui/field";
+import { FieldGroup } from "@/shared/ui/field";
 import { EventFormPreview } from "@/features/events/components/EventForm/EventForm/EventFormPreview";
 import { EventFormFields } from "@/features/events/components/EventForm/EventForm/EventFormFields";
 import { EventFormProvider } from "@/features/events/components/EventForm/EventForm/EventFormContext";
@@ -161,9 +159,9 @@ export function EventFormStep({
     <EventFormProvider value={formContextValue}>
       <div className="flex min-h-0 flex-1 overflow-hidden">
         <div className="min-h-0 min-w-0 flex-1 overflow-y-auto px-4 pb-4 pt-5 sm:px-6 sm:pb-6 sm:pt-6">
-          <div className="mb-5 sm:mb-7">
-            <div className="flex flex-col items-end gap-3 sm:flex-row sm:justify-between sm:gap-4">
-              {showHeading ? (
+          {showHeading ? (
+            <div className="mb-5 sm:mb-7">
+              <div className="flex flex-col items-end gap-3 sm:flex-row sm:justify-between sm:gap-4">
                 <div className="flex min-h-9 min-w-0 flex-1 items-center gap-2 self-start pr-10 sm:pr-0">
                   {onBack && (
                     <Button
@@ -184,12 +182,12 @@ export function EventFormStep({
                         : t("events.submitEventForReview")}
                   </h2>
                 </div>
-              ) : null}
+              </div>
             </div>
-          </div>
+          ) : null}
 
-          <FieldGroup>
-            <form onSubmit={(event) => { event.preventDefault(); onSubmit(); }}>
+          <FormLayout onSubmit={(event) => { event.preventDefault(); onSubmit(); }}>
+            <FieldGroup>
               {!isEditMode && !canCreateEvents ? (
                 <FormInput
                   name="submitter-email"
@@ -203,7 +201,7 @@ export function EventFormStep({
               ) : null}
               <EventFormFields />
               {showSubmit ? (
-                <Field orientation="horizontal" className="mt-6">
+                <FormActions align="start">
                   <LoadingButton
                     type="submit"
                     disabled={!eventForm.isValid}
@@ -216,10 +214,10 @@ export function EventFormStep({
                         ? t("events.createEvent")
                         : t("events.submitForReview")}
                   </LoadingButton>
-                </Field>
+                </FormActions>
               ) : null}
-            </form>
-          </FieldGroup>
+            </FieldGroup>
+          </FormLayout>
         </div>
 
         {showPreview ? <EventFormPreview className="hidden lg:flex" /> : null}
