@@ -547,7 +547,7 @@ export interface paths {
          * Record Query
          * @description Persist anonymous or signed-in browsing telemetry sent separately from UI reads.
          *
-         *     Acknowledge only after persistence so the background client can safely retry.
+         *     Acknowledge after persistence or an account exclusion so the client can safely retry.
          */
         post: operations["record_query_discovery_queries__post"];
         delete?: never;

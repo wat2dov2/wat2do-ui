@@ -225,6 +225,27 @@ def _overwrite_event(
         and isinstance(old_org_id, int)
         and incoming_org_id != old_org_id
     ):
+        from services.scraper.dedup import confident_duplicate_id
+
+        if (
+            confident_duplicate_id(
+                event={
+                    **event_row,
+                    "school": school_slug,
+                    "occurrences": [occ.model_dump(mode="json") for occ in future_occurrences],
+                },
+                candidates=[old_event.model_dump(mode="json")],
+                club_id=incoming_org_id,
+                ig_handle=ig_handle,
+            )
+            == existing_id
+        ):
+            log.info(
+                "[%s] co-host repost matches event id=%s; retaining its owner",
+                ig_handle,
+                existing_id,
+            )
+            return "skipped"
         log.warning(
             "[%s] refusing cross-org overwrite id=%s (old_org=%s new_org=%s) for %r - inserting",
             ig_handle,

@@ -1,4 +1,8 @@
 {
+  "apify_memory_megabytes": 1024,
+  "pending_media_workers": 8,
+  "pending_media_memory_budget_megabytes": 8192,
+  "workflow_status_timeout_seconds": 30,
   "apify_timeout_seconds": 3600,
   "poll_interval_seconds": 5,
   "instagram_web_app_id": "936619743392459",

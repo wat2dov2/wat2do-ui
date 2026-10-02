@@ -28,6 +28,7 @@ from core.constants import (
     SCRAPING_APIFY_TIMEOUT_SECONDS,
     SCRAPING_POLL_INTERVAL_SECONDS,
 )
+from core.controlbox import controlbox
 from services.scraper.single_user import is_exact_post_url_target
 
 log = logging.getLogger(__name__)
@@ -142,7 +143,11 @@ class InstagramScraper:
             reraise=True,
         )
         def _start_actor_with_retry() -> object:
-            return client.actor(actor_id).start(run_input=run_input)
+            return client.actor(actor_id).start(
+                run_input=run_input,
+                memory_mbytes=controlbox.scraping.apify_memory_megabytes,
+                run_timeout=timedelta(seconds=timeout_seconds),
+            )
 
         try:
             run = _start_actor_with_retry()
@@ -179,7 +184,17 @@ class InstagramScraper:
             raise
         except Exception:
             log.error("Apify run polling failed")
+            try:
+                client.run(run_id).abort()
+            except Exception:
+                log.warning("Apify run abort failed")
             raise InstagramScraperError("poll") from None
+        except BaseException:
+            try:
+                client.run(run_id).abort()
+            except Exception:
+                log.warning("Apify run abort failed")
+            raise
 
         if completed_run is None or status != "SUCCEEDED":
             log.error("Apify run %s ended with status=%s", run_id, status)

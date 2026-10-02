@@ -429,6 +429,10 @@ class ReelTranscriptionControl(_ControlModel):
 
 
 class ScrapingControl(_ControlModel):
+    apify_memory_megabytes: Literal[128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768]
+    pending_media_workers: int = Field(gt=0)
+    pending_media_memory_budget_megabytes: int = Field(gt=0)
+    workflow_status_timeout_seconds: int = Field(gt=0)
     apify_timeout_seconds: int = Field(gt=0)
     poll_interval_seconds: int = Field(gt=0)
     instagram_web_app_id: str = Field(pattern=r"^[0-9]{10,20}$")
@@ -442,7 +446,12 @@ class ScrapingControl(_ControlModel):
     maximum_cross_club_candidates: int = Field(gt=0)
 
     @model_validator(mode="after")
-    def validate_candidate_limits(self) -> "ScrapingControl":
+    def validate_limits(self) -> "ScrapingControl":
+        if (
+            self.pending_media_workers * self.apify_memory_megabytes
+            > self.pending_media_memory_budget_megabytes
+        ):
+            raise ValueError("pending media workers exceed their Apify memory budget")
         if self.maximum_cross_club_candidates > self.maximum_candidates:
             raise ValueError("maximum_cross_club_candidates cannot exceed maximum_candidates")
         return self
@@ -733,6 +742,7 @@ class GoogleAnalyticsControl(_ControlModel):
 
 
 class DiscoveryQueriesControl(_ControlModel):
+    excluded_account_emails: tuple[EmailStr, ...]
     maximum_search_length: int = Field(gt=0)
     maximum_page_url_length: int = Field(gt=0)
     maximum_filters_bytes: int = Field(gt=0)

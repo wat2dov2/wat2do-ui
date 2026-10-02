@@ -755,6 +755,14 @@ def test_event_search_matches_description_and_food():
     assert event_query._matches_search(row, "concert") is False
 
 
+def test_event_search_matches_compact_club_names_and_handles():
+    row = {"title": "2nd BOT Session", "club": "Hip Hop, UW", "ig_handle": "uwhiphop"}
+    assert event_query._matches_search(row, "hiphop")
+    assert event_query._matches_search(row, "hip-hop")
+    assert event_query._matches_search(row, "uwhiphop")
+    assert not event_query._matches_search(row, "ballet")
+
+
 def test_load_events_page_default_date_uses_lightweight_candidate_scan(monkeypatch):
     """The unfiltered root feed avoids embedding full event rows for every candidate."""
     monkeypatch.setattr(event_query, "_count_lightweight_date_events", lambda **_: 2)

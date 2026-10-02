@@ -52,6 +52,7 @@ export function EventsPageContainer({
     eventStats,
     goingEventsReady,
     latestAddedEvent,
+    currentTimeMs,
 
     filters,
     orderedEvents,
@@ -103,6 +104,7 @@ export function EventsPageContainer({
             count={isLoading ? null : totalEvents}
             label={t("events.upcomingEventCount", { count: totalEvents })}
             latest={latestAddedEvent ? { item: latestAddedEvent, onSelect: handleLatestAddedEventSearch } : null}
+            currentTimeMs={currentTimeMs}
           />
           <Stack direction="horizontal" align="center" gap={2}>
             <div className="min-w-0 flex-1">

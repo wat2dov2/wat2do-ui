@@ -4,6 +4,7 @@ from uuid import uuid4
 import pytest
 from fastapi.testclient import TestClient
 
+from core.auth import get_optional_user
 from core.controlbox import controlbox
 from main import app
 from routers import discovery_queries
@@ -39,6 +40,32 @@ def test_anonymous_capture_preserves_query_and_filters(client, monkeypatch, surf
     assert response.status_code == 204
     assert response.content == b""
     assert record.call_args.args[0].model_dump(mode="json") == body
+    assert record.call_args.kwargs == {"email": None}
+
+
+@pytest.mark.parametrize("email", ["e22han@uwaterloo.ca", "other@uwaterloo.ca"])
+def test_capture_passes_authenticated_email_to_service(client, monkeypatch, email):
+    record = MagicMock()
+    monkeypatch.setattr(discovery_query_service, "record_query", record)
+    app.dependency_overrides[get_optional_user] = lambda: {"email": email}
+    try:
+        response = client.post("/discovery-queries/", json=payload())
+    finally:
+        app.dependency_overrides.pop(get_optional_user, None)
+    assert response.status_code == 204
+    assert record.call_args.kwargs == {"email": email}
+
+
+def test_excluded_account_capture_is_acknowledged_without_persistence(client, monkeypatch):
+    database = MagicMock()
+    monkeypatch.setattr(discovery_query_service, "get_sb", database)
+    app.dependency_overrides[get_optional_user] = lambda: {"email": "e22han@uwaterloo.ca"}
+    try:
+        response = client.post("/discovery-queries/", json=payload())
+    finally:
+        app.dependency_overrides.pop(get_optional_user, None)
+    assert response.status_code == 204
+    database.assert_not_called()
 
 
 @pytest.mark.parametrize(

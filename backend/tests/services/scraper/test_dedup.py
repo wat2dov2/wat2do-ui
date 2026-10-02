@@ -21,6 +21,43 @@ from services.scraper.dedup import (
 # ── Pure similarity helpers ───────────────────────────────────────────
 
 
+def test_cohosted_suturing_repost_reuses_original_event():
+    event = {
+        "title": "Suture Event",
+        "school": "uwaterloo",
+        "location": "STC 0020",
+        "club": "UWaterloo Healthcare Symposium",
+        "description": "In collaboration with UW Stem Cell Club",
+        "occurrences": [{"dtstart_utc": "2026-10-07T22:00:00Z"}],
+    }
+    candidate = {
+        "id": 30593,
+        "club_id": 6895,
+        "title": "Suturing Event",
+        "school": "uwaterloo",
+        "club": "UW Stem Cell Club (Formerly UW One Match)",
+        "location": "STC 0020",
+        "description": "In collaboration with UW Healthcare Symposium",
+        "occurrences": [{"dtstart_utc": "2026-10-07T22:00:00+00:00"}],
+    }
+    assert (
+        confident_duplicate_id(event=event, candidates=[candidate], club_id=77, ig_handle=None)
+        == 30593
+    )
+    for changes in [
+        {"school": "utsg"},
+        {"location": "STC 0010"},
+        {"description": "An unrelated workshop"},
+        {"occurrences": [{"dtstart_utc": "2026-10-08T22:00:00Z"}]},
+    ]:
+        assert (
+            confident_duplicate_id(
+                event={**event, **changes}, candidates=[candidate], club_id=77, ig_handle=None
+            )
+            is None
+        )
+
+
 def test_normalize_strips_non_alphanumeric():
     assert normalize("Hello, World! 123") == "helloworld123"
     assert normalize("") == ""

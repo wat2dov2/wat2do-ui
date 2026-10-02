@@ -239,6 +239,22 @@ def test_invalid_instagram_web_app_id_is_rejected(tmp_path: Path) -> None:
         load_controlbox(path)
 
 
+@pytest.mark.parametrize(
+    "field,value",
+    [
+        ("apify_memory_megabytes", 1000),
+        ("pending_media_workers", 0),
+        ("workflow_status_timeout_seconds", 0),
+        ("pending_media_workers", 16),
+        ("pending_media_memory_budget_megabytes", 0),
+    ],
+)
+def test_scrape_resource_controls_are_validated(tmp_path, field, value):
+    path = _write_control(tmp_path, "scraping", lambda payload: payload.update({field: value}))
+    with pytest.raises(ValidationError):
+        load_controlbox(path)
+
+
 def test_invalid_instagram_digest_endpoint_is_rejected(tmp_path: Path) -> None:
     path = _write_control(
         tmp_path,
@@ -374,7 +390,12 @@ def test_promoter_payout_day_must_exist_in_every_month(tmp_path: Path) -> None:
 
 @pytest.mark.parametrize(
     "field,value",
-    [("maximum_filters_bytes", 0), ("request_timeout_ms", 0), ("retry_delays_ms", [0])],
+    [
+        ("maximum_filters_bytes", 0),
+        ("request_timeout_ms", 0),
+        ("retry_delays_ms", [0]),
+        ("excluded_account_emails", ["not-an-email"]),
+    ],
 )
 def test_discovery_query_limits_are_validated(tmp_path, field, value):
     directory = _write_control(

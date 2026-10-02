@@ -1,5 +1,6 @@
 """Append-only discovery queries, independent of the listing read paths."""
 
+from core.controlbox import controlbox
 from core.database import get_sb
 from core.errors import DISCOVERY_QUERY_SCHOOL_NOT_FOUND
 from core.exceptions import ValidationError
@@ -10,7 +11,11 @@ from schemas.discovery_query import DiscoveryQueryCreate, DiscoveryQueryResponse
 from services import school_service
 
 
-def record_query(data: DiscoveryQueryCreate) -> None:
+def record_query(data: DiscoveryQueryCreate, *, email: str | None = None) -> None:
+    if email and email.casefold() in {
+        excluded.casefold() for excluded in controlbox.discovery_queries.excluded_account_emails
+    }:
+        return
     school = school_service.get_school(data.school)
     if school is None:
         raise ValidationError(DISCOVERY_QUERY_SCHOOL_NOT_FOUND)

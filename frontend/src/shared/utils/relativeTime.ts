@@ -3,6 +3,7 @@ const MS_PER_HOUR = 3_600_000;
 const MS_PER_DAY = 86_400_000;
 
 interface FormatRelativeTimeOptions {
+  now?: number;
   /** When true, never fall back to a calendar date - always "N minutes/hours/days ago". */
   alwaysAgo?: boolean;
   timeZone?: string;
@@ -20,14 +21,19 @@ export function formatRelativeTime(
 ): string {
   const d = typeof date === "string" ? new Date(date) : date;
   if (Number.isNaN(d.getTime())) {
-    return t ? t("common.justNow") : "just now";
+    return "";
   }
 
-  const diffMs = Date.now() - d.getTime();
+  const diffMs = (options?.now ?? Date.now()) - d.getTime();
   const diffMins = Math.floor(diffMs / MS_PER_MINUTE);
   const diffHours = Math.floor(diffMs / MS_PER_HOUR);
   const diffDays = Math.floor(diffMs / MS_PER_DAY);
   const maxRelativeDays = options?.alwaysAgo ? Number.POSITIVE_INFINITY : 7;
+
+  // A skewed client clock must not label an arrival in the future as "just now".
+  if (diffMs < 0) {
+    return d.toLocaleString(options?.locale, { timeZone: options?.timeZone ?? "UTC", timeZoneName: "short" });
+  }
 
   if (diffMins < 1) return t ? t("common.justNow") : "just now";
   if (diffMins < 60) {
@@ -56,7 +62,9 @@ export function formatRelativeTimeCompact(
   t?: (key: string, opts?: Record<string, unknown>) => string,
 ): string {
   const d = typeof date === "string" ? new Date(date) : date;
+  if (Number.isNaN(d.getTime())) return "";
   const diffMs = Date.now() - d.getTime();
+  if (diffMs < 0) return d.toLocaleString(undefined, { timeZone: "UTC", timeZoneName: "short" });
   const diffMins = Math.floor(diffMs / MS_PER_MINUTE);
   const diffHours = Math.floor(diffMs / MS_PER_HOUR);
   const diffDays = Math.floor(diffMs / MS_PER_DAY);

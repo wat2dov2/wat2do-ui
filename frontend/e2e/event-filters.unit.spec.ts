@@ -26,6 +26,15 @@ function visibleEvents() {
 }
 
 const originalNow = Date.now;
+test("compact club search finds Hip Hop events with spaces and punctuation", () => {
+  const hipHop = { ...events[0], club: "Hip Hop, UW", title: "2nd BOT Session" };
+  for (const searchQuery of ["hiphop", "hip-hop", "hip hop", "HIPHOP"]) {
+    const result = filterEvents([hipHop], {
+      ...useSearchStore.getState(), searchQuery, goingEventIds: [], campusSeasonOptions: [],
+    }, () => "America/Toronto");
+    expect(result.map(event => event.id)).toEqual([hipHop.id]);
+  }
+});
 test.beforeEach(() => {
   Date.now = () => Date.parse("2026-09-28T04:00:00Z");
   useSearchStore.getState().setFilterState(EMPTY_FILTER_STATE);

@@ -1,4 +1,5 @@
 {
+  "excluded_account_emails": ["e22han@uwaterloo.ca"],
   "maximum_search_length": 2048,
   "maximum_page_url_length": 8192,
   "maximum_filters_bytes": 16384,

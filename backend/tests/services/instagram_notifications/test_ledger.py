@@ -1,6 +1,31 @@
+from unittest.mock import MagicMock
+
 import pytest
 
 from services.instagram_notifications import ledger
+
+
+def test_recovery_releases_only_claims_from_confirmed_completed_runs(
+    fake_sb, patch_sb, monkeypatch
+):
+    patch_sb("services.instagram_notifications.ledger")
+    fake_sb.set_response(
+        data=[
+            {"id": "old-a", "claim_token": "token-a", "github_run_id": "123"},
+            {"id": "old-b", "claim_token": "token-b", "github_run_id": "123"},
+            {"id": "active", "claim_token": "token-c", "github_run_id": "456"},
+            {"id": "unknown", "claim_token": "token-d", "github_run_id": None},
+        ]
+    )
+    status = MagicMock(side_effect=lambda run_id: run_id == "123")
+    rollback = MagicMock(side_effect=[True, False])
+    monkeypatch.setattr(ledger, "rollback_media_claim", rollback)
+    assert ledger.recover_finished_media_claims(status) == 1
+    assert [call.args for call in status.call_args_list] == [("123",), ("456",)]
+    assert [call.kwargs for call in rollback.call_args_list] == [
+        {"media_row_id": "old-a", "claim_token": "token-a"},
+        {"media_row_id": "old-b", "claim_token": "token-b"},
+    ]
 
 
 def _record(**overrides):

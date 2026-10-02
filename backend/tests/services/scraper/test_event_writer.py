@@ -649,8 +649,9 @@ def test_write_event_overwrites_by_id(fake_sb, patch_sb, monkeypatch):
     assert len(occurrences) == 1
 
 
-def test_write_event_refuses_cross_org_overwrite(fake_sb, patch_sb, monkeypatch):
-    """Different club_id on both sides → insert instead of overwrite."""
+@pytest.mark.parametrize("cohost", [False, True])
+def test_write_event_refuses_cross_org_overwrite(fake_sb, patch_sb, monkeypatch, cohost):
+    """Preserve ownership and skip only a verified co-host duplicate."""
     from schemas.event import EventResponse
     from schemas.event_date import OccurrenceResponse
     from services.scraper.org_resolve import ResolvedClub
@@ -665,7 +666,9 @@ def test_write_event_refuses_cross_org_overwrite(fake_sb, patch_sb, monkeypatch)
             "club_id": 7,
             "title": "Tea Tasting",
             "location": "SLC",
-            "club": "UW Tea",
+            "club": "UW Tea Club",
+            "school": "uwaterloo",
+            "description": "In collaboration with Other Club" if cohost else None,
             "ig_handle": "uwtea",
             "cancelled": False,
             "added_at": datetime.now(timezone.utc),
@@ -703,7 +706,13 @@ def test_write_event_refuses_cross_org_overwrite(fake_sb, patch_sb, monkeypatch)
     fake_sb.queue_responses([[{"id": 99}]])  # insert fallback
 
     result = write_event(
-        _event(id=42),
+        _event(
+            id=42,
+            title="Tea Tasting",
+            location="SLC",
+            description="With UW Tea Club" if cohost else None,
+            occurrences=[{"dtstart_utc": future.isoformat()}],
+        ),
         ig_handle=None,
         source_url="https://directory.example/event",
         resolved_org=ResolvedClub(
@@ -712,9 +721,9 @@ def test_write_event_refuses_cross_org_overwrite(fake_sb, patch_sb, monkeypatch)
             ig_handle=None,
         ),
     )
-    assert result == "inserted"
+    assert result == ("skipped" if cohost else "inserted")
     assert fake_sb.update.call_count == 0
-    assert fake_sb.insert.call_count == 1
+    assert fake_sb.insert.call_count == (0 if cohost else 1)
 
 
 def test_write_event_preserves_ig_and_org_on_null_incoming(fake_sb, patch_sb, monkeypatch):

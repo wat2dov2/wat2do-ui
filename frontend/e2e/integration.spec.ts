@@ -1888,6 +1888,39 @@ test.describe("Events Page", () => {
     });
   }
 
+  test("finds an active Hip Hop event through compact club searches and ages the latest label", async ({ page, next }) => {
+    const now = Date.parse("2026-10-01T23:30:00Z");
+    await page.clock.install({ time: now });
+    const title = "2nd BOT Session";
+    const addedAt = new Date(now - 10_000).toISOString();
+    const snapshot = {
+      items: [{
+        id: 29831, title, club: "Hip Hop, UW", club_id: 6802, ig_handle: "uwhiphop",
+        school: "uwaterloo", location: "SLC Atrium", price: 0, food: [], registration: false,
+        category: "Career", added_at: addedAt,
+        occurrences: [{ id: 29831, event_id: 29831,
+          dtstart_utc: "2026-10-01T23:00:00Z", dtend_utc: "2026-10-02T02:00:00Z" }],
+      }],
+      total: 1, page: 1, page_size: 100, total_pages: 1,
+      latest_added_event: { title, added_at: addedAt },
+    };
+    await mockApi(page, next, url => apiPath(url) === "/events" ||
+      (apiPath(url) === "/discovery" && url.searchParams.get("resource") === "events"),
+    async () => ({ json: snapshot }));
+    await page.goto(`${BASE}/events`);
+    const card = page.getByRole("button", { name: `Event: ${title}`, exact: true });
+    const search = page.getByPlaceholder("Search events");
+    for (const query of ["hiphop", "hip-hop", "@uwhiphop"]) {
+      await search.fill(query);
+      await search.press("Enter");
+      await expect(card).toBeVisible();
+    }
+    const latest = page.locator('[data-slot="latest-added-item"]');
+    await expect(latest).toContainText(/just now/i);
+    await page.clock.fastForward(61_000);
+    await expect(latest).toContainText(/1 minute ago/i);
+  });
+
   for (const mode of ["calendar", "map"]) {
     test(`keeps UTSG mobile events visible with a saved ${mode} preference`, async ({ page, next }) => {
       await page.setViewportSize({ width: 390, height: 844 });
@@ -4140,6 +4173,10 @@ test("price dropdown preserves independent inclusive bounds and stays independen
   await filters.getByRole("button", { name: "Free", exact: true }).click();
   await expect(min).toHaveValue("");
   await expect(max).toHaveValue("0");
+  const freeOption = dropdown.getByRole("button", { name: "Free", exact: true });
+  await expect(freeOption).toHaveAttribute("aria-pressed", "true");
+  await expect(freeOption).toHaveAttribute("data-selected", "true");
+  await expect(freeOption.locator("svg")).toHaveCount(0);
   await dropdown.getByRole("button", { name: "Free", exact: true }).click();
   await expect(filters.getByRole("button", { name: "Any price", exact: true })).toHaveAttribute("aria-pressed", "false");
   await expect(filters.getByRole("button", { name: "Any price", exact: true })).toHaveAttribute("data-selected", "false");

@@ -95,7 +95,7 @@ def confident_duplicate_id(
     club_id: int | None,
     ig_handle: str | None,
 ) -> int | None:
-    """Return the strongest deterministic same-club duplicate match.
+    """Return the strongest deterministic same-club or explicit co-host match.
 
     Candidate gathering remains deliberately broad. This function owns only
     high-confidence identity: matching club and occurrence time, with either
@@ -200,7 +200,7 @@ def _confident_duplicate_score(
         ig_handle,
         candidate_club_id,
         candidate_ig_handle,
-    ):
+    ) and not _has_mutual_cohost_evidence(event, candidate):
         return None
 
     incoming_title = event.get("title") or ""
@@ -229,6 +229,31 @@ def _confident_duplicate_score(
         return None
 
     return (-title_score, -location_score)
+
+
+def _has_mutual_cohost_evidence(event: dict, candidate: dict) -> bool:
+    """Require both posts to name the other organizer, at the same school.
+
+    Co-host identity also requires matching occurrence start, title and venue
+    through the normal confidence checks. A shared venue or generic title
+    alone never permits a cross-club match.
+    """
+    if not event.get("school") or event.get("school") != candidate.get("school"):
+        return False
+    venue = normalize(event.get("location") or "")
+    if not venue or venue != normalize(candidate.get("location") or ""):
+        return False
+
+    def mentions_club(description: str | None, club: str | None) -> bool:
+        # Display names can include a former name that is absent from flyers.
+        name = re.sub(r"\([^)]*\)", "", _fold_text(club))
+        name = re.sub(r"^(uwaterloo|uw)\s+", "", name.strip())
+        words = re.findall(r"[a-z0-9]+", name)
+        return len(words) >= 2 and normalize(name) in normalize(description or "")
+
+    return mentions_club(event.get("description"), candidate.get("club")) and mentions_club(
+        candidate.get("description"), event.get("club")
+    )
 
 
 def _same_resolved_club(

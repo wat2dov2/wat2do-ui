@@ -3,9 +3,47 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Literal, Sequence
+from typing import Callable, Literal, Sequence
 
 from core.database import get_sb
+from core.pagination import fetch_all_pages
+from core.tables import INSTAGRAM_NOTIFICATION_MEDIA
+
+
+def recover_finished_media_claims(is_run_completed: Callable[[str], bool]) -> int:
+    """Release abandoned claims only after their owning workflow has completed.
+
+    Snapshot before changing rows so pagination cannot skip released claims.
+    Claim tokens protect against a worker that has already reclaimed the item.
+    """
+
+    def page(offset: int, page_size: int) -> list[dict]:
+        return (
+            get_sb()
+            .table(INSTAGRAM_NOTIFICATION_MEDIA)
+            .select("id,claim_token,github_run_id")
+            .eq("status", "processing")
+            .order("id")
+            .range(offset, offset + page_size - 1)
+            .execute()
+            .data
+            or []
+        )
+
+    rows = fetch_all_pages(page)
+    completed: dict[str, bool] = {}
+    recovered = 0
+    for row in rows:
+        run_id = row.get("github_run_id")
+        if not isinstance(run_id, str) or not run_id.isdecimal():
+            continue
+        if run_id not in completed:
+            completed[run_id] = is_run_completed(run_id)
+        if completed[run_id] and rollback_media_claim(
+            media_row_id=str(row["id"]), claim_token=str(row["claim_token"])
+        ):
+            recovered += 1
+    return recovered
 
 
 @dataclass(frozen=True)

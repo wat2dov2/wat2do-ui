@@ -3,8 +3,11 @@
 
 from __future__ import annotations
 
+import json
 import logging
 import os
+import signal
+import subprocess
 import sys
 from datetime import datetime, timedelta
 
@@ -14,6 +17,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+from core.controlbox import controlbox  # noqa: E402
 from core.logging import GitHubActionErrorHandler  # noqa: E402
 from jobs.scrape import run  # noqa: E402
 from services.instagram_notifications.ledger import (  # noqa: E402
@@ -21,6 +25,7 @@ from services.instagram_notifications.ledger import (  # noqa: E402
     claim_next_pending_media,
     mark_media_failed,
     mark_media_succeeded,
+    recover_finished_media_claims,
     rollback_media_claim,
 )
 
@@ -40,6 +45,18 @@ def _process_claim(claim: MediaClaim, *, cutoff_days: int) -> int:
         log.error("Exact Instagram media scrape raised an unexpected error.")
         status = 1
         failure_category = "scrape_exception"
+    except BaseException:
+        try:
+            released = rollback_media_claim(
+                media_row_id=claim.media_row_id, claim_token=claim.claim_token
+            )
+            if not released:
+                log.warning(
+                    "Interrupted media claim was not released; workflow recovery will verify it."
+                )
+        except Exception:
+            log.error("Interrupted media claim release failed; workflow recovery will verify it.")
+        raise
     else:
         failure_category = "scrape_error"
 
@@ -76,6 +93,25 @@ def _process_claim(claim: MediaClaim, *, cutoff_days: int) -> int:
     return 2 if status == 2 else (0 if status == 0 else 1)
 
 
+def _is_run_completed(run_id: str) -> bool:
+    try:
+        response = subprocess.run(
+            ["gh", "run", "view", run_id, "--json", "status"],
+            capture_output=True,
+            text=True,
+            timeout=controlbox.scraping.workflow_status_timeout_seconds,
+            check=True,
+        )
+        return json.loads(response.stdout).get("status") == "completed"
+    except (subprocess.SubprocessError, OSError, ValueError):
+        log.warning("Could not verify owning workflow status; retaining its media claims.")
+        return False
+
+
+def _terminate(_signum, _frame) -> None:
+    raise SystemExit(1)
+
+
 def main() -> int:
     logging.basicConfig(
         level=logging.INFO,
@@ -90,6 +126,9 @@ def main() -> int:
         return 1
 
     github_run_id = (os.getenv("GITHUB_RUN_ID") or "").strip() or None
+    if github_run_id:
+        recovered = recover_finished_media_claims(_is_run_completed)
+        log.info("Recovered %d media claim(s) from completed workflows.", recovered)
 
     start_time = datetime.now()
     max_runtime = timedelta(hours=5, minutes=30)
@@ -102,8 +141,6 @@ def main() -> int:
             log.warning(
                 "Reached 5.5 hour runtime limit. Triggering a new workflow run and exiting."
             )
-            import subprocess
-
             try:
                 subprocess.run(["gh", "workflow", "run", "scrape-pending-media.yml"], check=True)
             except Exception as e:
@@ -145,4 +182,5 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    signal.signal(signal.SIGTERM, _terminate)
     sys.exit(main())

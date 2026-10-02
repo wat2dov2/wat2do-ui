@@ -13,6 +13,7 @@ the response model.
 """
 
 import logging
+import re
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
@@ -585,9 +586,15 @@ def _matches_search(row: dict, search: str) -> bool:
         row.get("description") or "",
         row.get("location") or "",
         row.get("club") or "",
+        row.get("ig_handle") or "",
         *food_values,
     ]
-    return any(search in str(value).casefold() for value in haystacks)
+    compact_search = re.sub(r"[\W_]", "", search.casefold())
+    return any(
+        search in str(value).casefold()
+        or (compact_search and compact_search in re.sub(r"[\W_]", "", str(value).casefold()))
+        for value in haystacks
+    )
 
 
 def _matches_locations(row: dict, locations: list[str]) -> bool:

@@ -1,10 +1,44 @@
 """Tests for single-target scrape workflow exit semantics."""
 
 import logging
+from unittest.mock import MagicMock
 
 import pytest
 
-from jobs import scrape
+from jobs import scrape, scrape_pending_media
+from services.instagram_notifications.ledger import MediaClaim
+
+
+@pytest.mark.parametrize("interruption", [KeyboardInterrupt, SystemExit])
+@pytest.mark.parametrize("rollback_failure", [False, True])
+def test_interrupted_worker_releases_its_claim(monkeypatch, interruption, rollback_failure, caplog):
+    claim = MediaClaim("row", "https://www.instagram.com/p/ABC123/", "token", "1234")
+    monkeypatch.setattr(scrape_pending_media, "run", MagicMock(side_effect=interruption))
+    rollback = MagicMock(
+        return_value=True,
+        side_effect=RuntimeError("private-db-details") if rollback_failure else None,
+    )
+    monkeypatch.setattr(scrape_pending_media, "rollback_media_claim", rollback)
+    with pytest.raises(interruption):
+        scrape_pending_media._process_claim(claim, cutoff_days=1)
+    rollback.assert_called_once_with(media_row_id="row", claim_token="token")
+    assert "private-db-details" not in caplog.text
+
+
+@pytest.mark.parametrize("status", [0, 1, 2])
+def test_worker_uses_terminal_or_pending_state_for_scrape_result(monkeypatch, status):
+    claim = MediaClaim("row", "https://www.instagram.com/p/ABC123/", "token", "1234")
+    monkeypatch.setattr(scrape_pending_media, "run", lambda **kwargs: status)
+    success, failed, rollback = (MagicMock(return_value=True) for _ in range(3))
+    monkeypatch.setattr(scrape_pending_media, "mark_media_succeeded", success)
+    monkeypatch.setattr(scrape_pending_media, "mark_media_failed", failed)
+    monkeypatch.setattr(scrape_pending_media, "rollback_media_claim", rollback)
+    assert scrape_pending_media._process_claim(claim, cutoff_days=1) == status
+    assert [success.call_count, failed.call_count, rollback.call_count] == [
+        int(status == i) for i in range(3)
+    ]
+
+
 from services.scraper.instagram_scraper import InstagramScraperError
 
 

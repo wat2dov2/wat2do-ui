@@ -18,11 +18,26 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  configure:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      workers: ${{ steps.workers.outputs.workers }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read worker count from scrape controls
+        id: workers
+        run: |
+          workers="$(jq -c '[range(1; .pending_media_workers + 1)]' backend/controlbox/scraping.json)"
+          echo "workers=$workers" >> "$GITHUB_OUTPUT"
+
   scrape-pending:
+    needs: configure
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        worker: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+        worker: ${{ fromJSON(needs.configure.outputs.workers) }}
       fail-fast: false
     environment: production
     permissions:

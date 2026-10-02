@@ -1,12 +1,14 @@
 """Tests for the Apify Instagram scraper wrapper."""
 
 import logging
+from datetime import timedelta
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
 import pytest
 from tenacity import wait_none
 
+from core.controlbox import controlbox
 from services.scraper.instagram_scraper import (
     ACTOR_ID,
     PROFILE_ACTOR_ID,
@@ -124,7 +126,9 @@ def test_scrape_profiles_sends_all_identifiers_to_profile_actor(monkeypatch):
     ]
     client.actor.assert_called_once_with(PROFILE_ACTOR_ID)
     client.actor.return_value.start.assert_called_once_with(
-        run_input={"usernames": ["wat2do", "42"]}
+        run_input={"usernames": ["wat2do", "42"]},
+        memory_mbytes=controlbox.scraping.apify_memory_megabytes,
+        run_timeout=timedelta(seconds=controlbox.scraping.apify_timeout_seconds),
     )
 
 

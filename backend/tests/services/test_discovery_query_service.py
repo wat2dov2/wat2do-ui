@@ -44,6 +44,23 @@ def test_unknown_school_does_not_write(fake_sb, patch_sb, monkeypatch):
     fake_sb.upsert.assert_not_called()
 
 
+@pytest.mark.parametrize("email", ["e22han@uwaterloo.ca", "E22HAN@UWATERLOO.CA"])
+def test_excluded_account_queries_are_not_stored(fake_sb, patch_sb, email):
+    patch_sb("services.discovery_query_service")
+    discovery_query_service.record_query(query(), email=email)
+    fake_sb.table.assert_not_called()
+
+
+@pytest.mark.parametrize("email", [None, "other@uwaterloo.ca"])
+def test_other_visitors_queries_are_stored(fake_sb, patch_sb, monkeypatch, email):
+    patch_sb("services.discovery_query_service")
+    monkeypatch.setattr(
+        discovery_query_service.school_service, "get_school", lambda slug: SimpleNamespace(id=7)
+    )
+    discovery_query_service.record_query(query(), email=email)
+    fake_sb.upsert.assert_called_once()
+
+
 def test_write_failure_propagates_for_background_retry(fake_sb, patch_sb, monkeypatch):
     patch_sb("services.discovery_query_service")
     monkeypatch.setattr(

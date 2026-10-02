@@ -10,6 +10,22 @@ import { formatPositionDeadlineBadge } from "../src/features/positions/lib/posit
 import type { Event, Position } from "../src/shared/types";
 import { filterEvents } from "../src/features/search/api/searchService";
 import { EMPTY_FILTER_STATE } from "../src/features/search/api/filterService";
+import { formatRelativeTime, formatRelativeTimeCompact } from "../src/shared/utils/relativeTime";
+
+test("future and invalid catalog arrivals never display just now", () => {
+  const originalNow = Date.now;
+  Date.now = () => Date.parse("2026-10-02T03:18:00Z");
+  try {
+    const future = "2026-10-02T04:07:19Z";
+    expect(formatRelativeTime(future, undefined, { timeZone: "America/Toronto", locale: "en-US" })).toContain("12:07");
+    expect(formatRelativeTimeCompact(future)).not.toBe("just now");
+    expect(formatRelativeTime("invalid")).toBe("");
+    expect(formatRelativeTimeCompact("invalid")).toBe("");
+    expect(formatRelativeTime("2026-10-02T03:08:00Z")).toBe("10 minutes ago");
+  } finally {
+    Date.now = originalNow;
+  }
+});
 
 let buildEventSlideModel: typeof import("../src/features/admin/lib/instagramSlides").buildEventSlideModel;
 let getInstagramSlideLocale: typeof import("../src/features/admin/lib/instagramSlides").getInstagramSlideLocale;

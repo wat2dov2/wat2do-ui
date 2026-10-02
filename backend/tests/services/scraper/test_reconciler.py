@@ -216,6 +216,39 @@ def test_reconcile_events_strips_cross_org_ids(monkeypatch):
     assert result[0]["id"] is None
 
 
+def test_reconcile_retains_verified_cohost_id_even_if_model_requests_insert(monkeypatch):
+    event = {
+        "title": "Suture Event",
+        "school": "uwaterloo",
+        "location": "STC 0020",
+        "club": "UWaterloo Healthcare Symposium",
+        "description": "With UW Stem Cell Club",
+        "occurrences": [{"dtstart_utc": "2026-10-07T22:00:00Z"}],
+    }
+    candidate = {
+        "id": 30593,
+        "club_id": 6895,
+        "title": "Suturing Event",
+        "school": "uwaterloo",
+        "club": "UW Stem Cell Club (Formerly UW One Match)",
+        "location": "STC 0020",
+        "description": "With UW Healthcare Symposium",
+        "occurrences": event["occurrences"],
+    }
+    import json
+
+    _mock_client(monkeypatch, json.dumps([{**event, "id": None}]))
+    result = reconcile_events(
+        extracted_events=[event],
+        candidates_by_index=[[candidate]],
+        caption_text=event["description"],
+        school="uwaterloo",
+        resolved_club_ids=[77],
+        resolved_ig_handles=["uwhealthcaresymposium"],
+    )
+    assert result[0]["id"] == 30593
+
+
 def test_reconcile_events_allows_legacy_null_org_with_matching_ig(monkeypatch):
     """Scrape org_id + candidate null org_id but matching ig_handle may overwrite."""
     _mock_client(

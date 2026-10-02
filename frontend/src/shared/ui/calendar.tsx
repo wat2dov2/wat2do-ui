@@ -145,6 +145,7 @@ function CalendarDayButton({
 
   return (
     <Button
+      activation="click"
       ref={ref}
       variant="ghost"
       size="icon"

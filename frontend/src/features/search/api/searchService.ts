@@ -116,9 +116,12 @@ function occurrenceOverlapsDateRange(occurrence: Event["occurrences"][number], r
 }
 
 function matchesSearchQuery(event: Event, normalizedQuery: string): boolean {
-  return eventSearchHaystack(event).some((field) =>
-    field.toLowerCase().replace(/^@+/, "").includes(normalizedQuery),
-  );
+  const compactQuery = normalizedQuery.replace(/[^\p{L}\p{N}]/gu, "");
+  return eventSearchHaystack(event).some((field) => {
+    const value = normalizeSearchQuery(field);
+    return value.includes(normalizedQuery) ||
+      (compactQuery.length > 0 && value.replace(/[^\p{L}\p{N}]/gu, "").includes(compactQuery));
+  });
 }
 
 /** Keep the same matching sessions in cards, date sections, and later filters. */

@@ -208,6 +208,7 @@ def reconcile_events(
                 scrape_ig = resolved_ig_handles[i]
             validated.id = _guard_cross_org_id(
                 validated.id,
+                extracted_event={**extracted_events[i], "school": school},
                 candidates_by_id=candidates_by_id,
                 scrape_club_id=scrape_org_id,
                 scrape_ig_handle=scrape_ig,
@@ -257,6 +258,7 @@ def _confident_match_fallback(
 def _guard_cross_org_id(
     event_id: int | None,
     *,
+    extracted_event: dict,
     candidates_by_id: dict[int, dict],
     scrape_club_id: int | None,
     scrape_ig_handle: str | None,
@@ -274,6 +276,16 @@ def _guard_cross_org_id(
 
     if isinstance(scrape_club_id, int) and isinstance(cand_org, int):
         if scrape_club_id != cand_org:
+            if (
+                confident_duplicate_id(
+                    event=extracted_event,
+                    candidates=[candidate],
+                    club_id=scrape_club_id,
+                    ig_handle=scrape_ig_handle,
+                )
+                == event_id
+            ):
+                return event_id
             log.warning(
                 "Pass 2 cross-org id=%s stripped (scrape_org=%s cand_org=%s)",
                 event_id,
@@ -374,7 +386,7 @@ RULES:
 - Reuse a candidate id when it is the same logical event from the same club: the attendee activity and at least one occurrence must strongly match, and the caption must not indicate a distinct new occurrence. Compare each extracted `occurrences[].dtstart_utc` against each candidate `occurrences[].dtstart_utc`. This applies to a normal repost, reminder, secondary flyer, performer reveal, or ticket reminder even when it does not say "update".
 - Treat matching titles alone as insufficient. Insert when the candidate is absent, the activity is materially different, or the caption/date makes clear this is a distinct occurrence, session, edition, or new week. If no candidate `occurrences[].dtstart_utc` exactly matches an extracted occurrence after UTC normalization, id MUST be null, even for the same title, club, and location.
 - Same club_id + strong activity and occurrence match: prefer overwrite/link. Updated, moved, corrected, rescheduled, and cancelled posts also overwrite/link the matching candidate.
-- Different club_id: never overwrite; always insert (id=null).
+- Different club_id: never overwrite. Only reuse a deterministic confident_duplicate_id when both sources explicitly name each other's organizers and the school, activity, venue and occurrence match. The writer retains the original owner's event without overwriting it. Otherwise insert (id=null).
 - Only set "id" to a candidate id from the matching extracted event's provided candidates. Never link two merely similar recurring events just to avoid an insert.
 - If the caption says the event is cancelled / canceled, return the matched candidate object with "cancelled": true and keep other fields from the candidate unless the caption also corrects them. Cancel requires an id.
 - New overlapping fields from the extracted event win, including a shorter description.

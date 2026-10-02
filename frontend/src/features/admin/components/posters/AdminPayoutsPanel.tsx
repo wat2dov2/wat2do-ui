@@ -506,10 +506,10 @@ export function AdminPayoutsPanel() {
         ) : null}
 
         <Stack direction="horizontal" gap={2} justify="end">
-          <Button variant="outline" onClick={resetFilters}>
+          <Button activation="click" variant="outline" onClick={resetFilters}>
             {t("admin.posterPayouts.filters.reset")}
           </Button>
-          <Button onClick={applyFilters} disabled={amountRangeInvalid}>
+          <Button activation="click" onClick={applyFilters} disabled={amountRangeInvalid}>
             {t("admin.posterPayouts.filters.apply")}
           </Button>
         </Stack>

@@ -11,10 +11,12 @@ interface PageCountHeadingProps {
   count: number | null;
   label: string;
   level?: 1 | 2;
+  /** Reuse the feed's existing live clock for its arrival-age label. */
+  currentTimeMs?: number | null;
   latest?: { item: ApiLatestAddedItem; onSelect: () => void } | null;
 }
 
-export function PageCountHeading({ count, label, latest, level = 1 }: PageCountHeadingProps) {
+export function PageCountHeading({ count, label, latest, currentTimeMs, level = 1 }: PageCountHeadingProps) {
   const { t, i18n } = useTranslation();
   const Heading = level === 1 ? "h1" : "h2";
   return (
@@ -30,7 +32,7 @@ export function PageCountHeading({ count, label, latest, level = 1 }: PageCountH
           <Badge variant="new" size="sm" className="shrink-0">{t("events.new")}</Badge>
           <Button type="button" variant="link" size="inline" onClick={latest.onSelect} className="min-w-0 shrink text-left leading-tight sm:leading-normal">
             <span>
-              <Trans i18nKey="common.latestAddedItem" values={{ title: latest.item.title, time: formatRelativeTime(latest.item.added_at, t, { alwaysAgo: true }) }} components={{ addedPrefix: <span />, eventTitle: <span />, addedTime: <span /> }} />
+              <Trans i18nKey="common.latestAddedItem" values={{ title: latest.item.title, time: formatRelativeTime(latest.item.added_at, t, { alwaysAgo: true, locale: i18n.language, now: currentTimeMs ?? undefined }) }} components={{ addedPrefix: <span />, eventTitle: <span />, addedTime: <span /> }} />
             </span>
           </Button>
         </> : (

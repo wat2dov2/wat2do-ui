@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Query, Response, status
 
-from core.auth import get_admin_user
+from core.auth import AuthUser, get_admin_user, get_optional_user
 from core.constants import MAX_SCHOOL_LENGTH, MAX_SEARCH_QUERY_LENGTH
 from core.controlbox import controlbox
 from core.pagination import PaginatedResponse, PaginationParams, paginated_response
@@ -19,13 +19,14 @@ _limiter = RateLimiter(
 @router.post("/", status_code=status.HTTP_204_NO_CONTENT)
 def record_query(
     data: DiscoveryQueryCreate,
+    auth_user: AuthUser | None = Depends(get_optional_user),
     _rl: None = Depends(_limiter.ip_dependency()),
 ) -> Response:
     """Persist anonymous or signed-in browsing telemetry sent separately from UI reads.
 
-    Acknowledge only after persistence so the background client can safely retry.
+    Acknowledge after persistence or an account exclusion so the client can safely retry.
     """
-    discovery_query_service.record_query(data)
+    discovery_query_service.record_query(data, email=auth_user.get("email") if auth_user else None)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
