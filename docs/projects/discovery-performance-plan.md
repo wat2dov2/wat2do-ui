@@ -29,7 +29,9 @@ The refresh endpoint returns HTTP 202 only after recording the requested dirty r
 The endpoint no longer describes acceptance as completed warming.
 Its `after()` callback only expedites the durable work; a continuously running reconciliation loop owns recovery.
 Backend notifications are still sent after the database write, so notification delivery and mutation commit are not transactional.
-A periodic five-minute refresh repairs missed notifications and date/deadline transitions.
+A periodic hourly refresh repairs missed notifications and reconciles date/deadline transitions.
+Mutation invalidations bypass that age interval, while the frontend filters expired events and positions from cached data.
+The worker continues warming published snapshots independently of source rebuilds.
 During persistent upstream failure, valid published data remains usable for up to the configured one-day maximum age.
 These are explicit freshness limits, not a guarantee of current data during an unlimited outage.
 

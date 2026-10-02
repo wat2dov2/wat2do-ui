@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "storage_prefix": "media/discovery-cache",
-  "refresh_interval_seconds": 300,
+  "refresh_interval_seconds": 3600,
   "worker_interval_seconds": 15,
   "lease_seconds": 120,
   "request_timeout_seconds": 20,

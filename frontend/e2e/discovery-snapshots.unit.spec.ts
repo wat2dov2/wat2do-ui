@@ -181,11 +181,30 @@ test("failed payload upload never changes the published pointer", async () => {
   expect((await store.inspect("uwo", "events")).dirty).toBe(true);
 });
 
+test("unchanged snapshots rebuild hourly while invalidation refreshes immediately", async () => {
+  let now = 1000;
+  const store = new DiscoverySnapshotStore(new MemoryStorage(), () => now);
+  let builds = 0;
+  const build = async () => [++builds];
+  expect(await store.refresh("uwo", "events", build)).toBe(true);
+  now += 300_000;
+  expect(await store.refresh("uwo", "events", build)).toBe(false);
+  now += 3_299_999;
+  expect(await store.refresh("uwo", "events", build)).toBe(false);
+  expect(builds).toBe(1);
+  now += 1;
+  expect(await store.refresh("uwo", "events", build)).toBe(true);
+  now += 15_000;
+  await store.invalidate("uwo", "events");
+  expect(await store.refresh("uwo", "events", build)).toBe(true);
+  expect((await store.read("uwo", "events"))?.data).toEqual([3]);
+});
+
 test("refresh expiry preserves valid last-good data but readiness rejects over-age data", async () => {
   let now = 1000;
   const store = new DiscoverySnapshotStore(new MemoryStorage(), () => now);
   await store.refresh("uwo", "events", async () => []);
-  now += 600_000;
+  now += discoveryControls.refresh_interval_seconds * 1000;
   expect((await store.read("uwo", "events"))?.data).toEqual([]);
   expect((await store.inspect("uwo", "events")).ready).toBe(true);
   now += 86_400_000;
@@ -609,7 +628,7 @@ test("persisted usable snapshots admit a replacement task before stalled upstrea
     for (const resource of worker.discoveryResources)
       await workerStore.refresh(school, resource, async () => ({ items: [] }));
   }
-  workerNow += 600_000;
+  workerNow += discoveryControls.refresh_interval_seconds * 1000;
   let release!: () => void;
   let started!: () => void;
   const pending = new Promise<void>((resolve) => {

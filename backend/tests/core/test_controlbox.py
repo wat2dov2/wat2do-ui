@@ -479,7 +479,10 @@ def test_ecs_runtime_accepts_supported_fargate_sizes(cpu, memory_mib):
             "discovery_cache",
             {"generation_retention_days": 2, "maximum_snapshot_age_seconds": 172800},
         ),
-        ("discovery_cache", {"worker_interval_seconds": 301}),
+        (
+            "discovery_cache",
+            {"worker_interval_seconds": controlbox.discovery_cache.refresh_interval_seconds + 1},
+        ),
         ("discovery_cache", {"lease_seconds": 20, "request_timeout_seconds": 20}),
         ("discovery_cache", {"storage_prefix": "/media/discovery-cache"}),
         ("discovery_cache", {"storage_prefix": "media/../discovery-cache"}),
