@@ -327,6 +327,14 @@ Avoid relative dates that become stale while a draft waits; human review checks 
 Manually added events have no stickers unless they were already selected for that draft.
 The admin still reviews the selected events and explicitly publishes the carousel.
 
+Cover copy must describe the events actually selected for that carousel.
+Name two to four selected events or clearly identifiable activities using accurate titles, club names, subjects, companies or activity details where useful.
+For a single-event carousel, describe that event specifically.
+Use one or two compact sentences in the school's configured language, ideally 120-180 characters and never more than the 280-character cover limit.
+Avoid umbrella copy such as “useful workshops,” “career exploration,” “creative breaks” or “campus connection” that obscures what the events are.
+Do not repeat the headline, event count, school or date already rendered on the cover.
+Each named highlight and perk must be supported by a selected event's title and full description, with selected event IDs recorded in the editorial evidence.
+
 The event artwork and cover share school colors and the translucent doodle field.
 Event frames are inset on all four sides, and the former comment footer remains white with only the selected stickers.
 The ten sticker silhouettes and ten colors double the former visual variety.
