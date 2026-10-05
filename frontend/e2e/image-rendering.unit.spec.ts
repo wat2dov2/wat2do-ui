@@ -525,22 +525,31 @@ test.describe("Instagram raster preparation", () => {
     }))).rejects.toThrow("Slide image download failed: HTTP 404");
   });
 
-  test("cover preparation downloads repeated posters once and omits tiles beyond the carousel limit", async () => {
-    const poster = await sharp({ create: { width: 1600, height: 2000, channels: 3, background: "#ef5014" } }).webp().toBuffer();
-    const fetched: string[] = [];
-    globalThis.fetch = async url => {
-      fetched.push(String(url));
-      return new Response(poster, { headers: { "content-type": "image/webp" } });
-    };
-    const events = Array.from({ length: instagramPublishing.maximum_event_slides }, (_, index) => ({ id: index + 1, source_image_url: posterUrl }));
-    const response = await POST(request({ kind: "cover", school: "uwaterloo", local_date: "2026-09-26", events: [...events, { id: 99, source_image_url: "https://outside.example/unused.jpg" }] }));
-    expect(response.status).toBe(200);
-    expect(fetched).toEqual([posterUrl]);
-    expect(renderedSlide!.props.model.tiles).toHaveLength(instagramPublishing.maximum_event_slides);
-    const prepared = Buffer.from(renderedSlide!.props.model.tiles![0].split(",")[1], "base64");
-    const metadata = await sharp(prepared).metadata();
-    expect([metadata.width, metadata.height]).toEqual([220, 308]);
-  });
+  for (const body of ["Fresh campus plans worth a swipe.", "Find a new campus activity, meet other students and take a break from your usual routine."]) {
+    test(`cover preparation preserves ${body.length > 75 ? "long" : "short"} copy and downloads repeated posters once`, async () => {
+      const poster = await sharp({ create: { width: 1600, height: 2000, channels: 3, background: "#ef5014" } }).webp().toBuffer();
+      const fetched: string[] = [];
+      globalThis.fetch = async url => {
+        fetched.push(String(url));
+        return new Response(poster, { headers: { "content-type": "image/webp" } });
+      };
+      const events = Array.from({ length: instagramPublishing.maximum_event_slides }, (_, index) => ({ id: index + 1, source_image_url: posterUrl }));
+      const response = await POST(request({ kind: "cover", school: "uwaterloo", local_date: "2026-09-26", body, events: [...events, { id: 99, source_image_url: "https://outside.example/unused.jpg" }] }));
+      expect(response.status).toBe(200);
+      expect(fetched).toEqual([posterUrl]);
+      expect(renderedSlide!.props.model.tiles).toHaveLength(instagramPublishing.maximum_event_slides);
+      const prepared = Buffer.from(renderedSlide!.props.model.tiles![0].split(",")[1], "base64");
+      const metadata = await sharp(prepared).metadata();
+      expect([metadata.width, metadata.height]).toEqual([220, 308]);
+      const markup = renderToStaticMarkup(renderedSlide!);
+      expect(markup).toContain(body);
+      expect(markup).toContain("font-size:24px;font-weight:500;line-height:1.35");
+      const output = Buffer.from(await response.arrayBuffer());
+      const artifact = test.info().outputPath("cover-slide.png");
+      writeFileSync(artifact, output);
+      await test.info().attach("cover-slide", { path: artifact, contentType: "image/png" });
+    });
+  }
 });
 
 
