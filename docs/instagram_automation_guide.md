@@ -360,6 +360,12 @@ It reads candidate packets through `backend/jobs/generate_instagram_posts.py can
 There is no embedded OpenAI API call or GitHub draft-generation workflow.
 The publishing controlbox retains artwork bounds, eligibility windows, and publishing limits; there is no preset sticker catalog.
 The service validates event IDs, distinct labels, capitalization, and text bounds before writing a draft.
+Draft selection has no event-count quota.
+Keep every eligible event with visibly high-effort, appealing artwork or a genuinely compelling student experience.
+Exclude routine administrative meetings, generic information sessions and low-value listings unless the artwork or the activity clearly meets that bar.
+Review the actual poster before relying on artwork quality; an image URL alone is not evidence.
+Order retained events for engaging review, without filling slots or discarding good events to fit nine.
+The publishing limit applies only when the admin publishes the final carousel.
 
 Sticker choices are saved in `instagram_publish_batches.sticker_selections` by event ID, so reordering a draft preserves them.
 Migration `20261002010000_instagram_sticker_copy.sql` converts retired preset IDs into readable labels without changing published images.
@@ -403,7 +409,7 @@ Token-refresh failures are reported separately and do not prevent reviewing othe
 
 The command interface never selects events itself and never publishes them.
 Each selection JSON contains `account_key`, the candidate packet's timezone-aware `window_end`, `caption_intro`, `cover_body`, and ordered `picks` with `event_id` and `sticker_labels`.
-Use an empty `picks` list only when the candidate packet contains no eligible events.
+Use an empty `picks` list when no eligible event meets the editorial quality bar, and record the exclusions.
 The database's existing daily account key prevents replacing or duplicating an existing draft.
 Readback uses the same service as the admin review page.
 Failed or interrupted batches are reported for admin recovery and never treated as completed drafts.

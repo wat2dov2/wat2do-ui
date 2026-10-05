@@ -1,4 +1,4 @@
-"""Choose a bounded, factual carousel draft; publication still requires admin review."""
+"""Choose a factual carousel review draft; publication still requires admin review."""
 
 from __future__ import annotations
 
@@ -51,17 +51,12 @@ class DraftSelection(BaseModel):
     window_end: datetime
     caption_intro: str = Field(max_length=2200)
     cover_body: str = Field(max_length=280)
-    picks: list[CarouselPick] = Field(max_length=_CONTROL.maximum_event_slides)
+    picks: list[CarouselPick]
 
 
 def validate_picks(candidates: list[dict[str, Any]], picks: list[CarouselPick]) -> None:
     """Validate external editorial choices against this school's current candidates."""
     allowed = {event["id"] for event in candidates}
     ids = [pick.event_id for pick in picks]
-    if (
-        len(ids) > _CONTROL.maximum_event_slides
-        or len(set(ids)) != len(ids)
-        or any(event_id not in allowed for event_id in ids)
-        or bool(candidates) != bool(picks)
-    ):
+    if len(set(ids)) != len(ids) or any(event_id not in allowed for event_id in ids):
         raise ValueError("Draft choices must contain distinct eligible events")

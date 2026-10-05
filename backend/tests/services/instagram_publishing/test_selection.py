@@ -40,7 +40,7 @@ def test_four_distinct_stickers_and_whitespace_normalization():
     assert pick.sticker_labels == ["Free Pizza", "Reg. Required", "Cash Prizes", "$5 Entry"]
 
 
-@pytest.mark.parametrize("ids", [[999], [1, 1], []])
+@pytest.mark.parametrize("ids", [[999], [1, 1]])
 def test_invalid_event_selection_fails(ids):
     with pytest.raises(ValueError):
         selection.validate_picks(
@@ -52,3 +52,24 @@ def test_empty_pool_accepts_only_empty_choices():
     selection.validate_picks([], [])
     with pytest.raises(ValueError):
         selection.validate_picks([], [selection.CarouselPick(event_id=1, sticker_labels=["Free"])])
+
+
+def test_editorial_threshold_can_keep_more_than_publication_capacity():
+    candidates = [{"id": i} for i in range(1, 16)]
+    picks = [
+        selection.CarouselPick(event_id=event["id"], sticker_labels=["Free"])
+        for event in candidates
+    ]
+    selection.validate_picks(candidates, picks)
+    draft = selection.DraftSelection(
+        account_key="uwaterloo",
+        window_end="2026-10-04T13:00:00Z",
+        caption_intro="",
+        cover_body="",
+        picks=picks,
+    )
+    assert len(draft.picks) == 15
+
+
+def test_editorial_threshold_can_reject_the_entire_eligible_pool():
+    selection.validate_picks([{"id": 1}], [])
