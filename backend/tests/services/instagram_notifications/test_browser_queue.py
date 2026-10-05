@@ -420,3 +420,60 @@ print(json.dumps({'shared':shared, 'unique':unique, 'claimed':job.id if job else
         claimed_ids.append(job.id)
     assert set(claimed_ids) == expected_ids
     assert len(claimed_ids) == len(set(claimed_ids))
+
+
+def test_digest_preempts_retrieval_and_retrieval_preempts_engagement(queue):
+    engagement = _engagement(queue)
+    retrieval = queue.enqueue_retrieval(
+        school="ubc",
+        recipient_id=RECIPIENT_ID,
+        account_username=ACCOUNT_USERNAME,
+        url="https://www.instagram.com/p/AbC/",
+    )
+    digest = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "cache-first")
+    assert _complete_next(queue).id == digest
+    assert _complete_next(queue, allow_engagement=False).id == retrieval
+    assert _complete_next(queue).id == engagement
+
+
+def test_retrieval_recovery_and_refresh_preserve_other_history(queue):
+    job_id = queue.enqueue_retrieval(
+        school="ubc",
+        recipient_id=RECIPIENT_ID,
+        account_username=ACCOUNT_USERNAME,
+        url="https://www.instagram.com/Club.Name/",
+    )
+    assert queue.claim_next().id == job_id
+    queue.recover_interrupted()
+    assert queue.get(job_id).state == "pending"
+    assert queue.claim_next().id == job_id
+    queue.finish(job_id, result={"posts": []})
+    queue.refresh_retrieval(job_id)
+    assert queue.get(job_id).result is None
+    assert queue.get(job_id).attempts == 2
+    assert queue.get(job_id).payload["url"] == "https://www.instagram.com/club.name/"
+
+
+def test_old_queue_upgrade_keeps_jobs_settings_and_school_turns(queue):
+    job_id = _engagement(queue)
+    queue.set_setting("important", {"checkpoint": 7})
+    queue.claim_next()
+    queue.finish(job_id, result={"status": "succeeded"})
+    # Reproduce the deployed schema rather than starting with a new queue.
+    with sqlite3.connect(queue.database_path) as db:
+        db.execute("PRAGMA writable_schema=ON")
+        db.execute(
+            "UPDATE sqlite_master SET sql=replace(sql, \"'digest', 'retrieval', 'engagement'\", \"'digest', 'engagement'\") WHERE name='jobs'"
+        )
+        db.execute("PRAGMA writable_schema=OFF")
+    reopened = module.BrowserJobQueue(queue.state_directory)
+    assert reopened.get(job_id).state == "succeeded"
+    assert reopened.get_setting("important") == {"checkpoint": 7}
+    assert reopened.enqueue_retrieval(
+        school="ubc",
+        recipient_id=RECIPIENT_ID,
+        account_username=ACCOUNT_USERNAME,
+        url="https://www.instagram.com/p/AbC/",
+    )
+    with sqlite3.connect(queue.database_path) as db:
+        assert db.execute("SELECT COUNT(*) FROM school_turns").fetchone()[0] == 1

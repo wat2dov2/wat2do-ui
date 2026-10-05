@@ -97,6 +97,16 @@ def parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Execute queued jobs without polling published carousels",
     )
+    for name in ("ingestion-sync", "ingestion-import"):
+        commands.add_parser(
+            name, help="Queue notification retrievals or import verified browser results"
+        )
+    retrieve = commands.add_parser(
+        "retrieve", help="Queue a profile or post for browser extraction"
+    )
+    retrieve.add_argument("--school", required=True)
+    retrieve.add_argument("--url", required=True)
+    retrieve.add_argument("--cutoff-days", type=int, default=1)
     commands.add_parser("install", help="Install and start the macOS worker LaunchAgent")
     status = commands.add_parser("status", help="Show worker health and queue quantities by school")
     status.add_argument("--job-id", help="Inspect the full result of one job")
@@ -145,8 +155,43 @@ def main(argv: Sequence[str] | None = None) -> int:
         elif arguments.command in {"retry", "cancel"}:
             if queue.get(arguments.job_id) is None:
                 raise ValueError("Instagram browser job does not exist")
-            getattr(queue, arguments.command)(arguments.job_id)
+            if arguments.command == "retry" and queue.get(arguments.job_id).kind == "retrieval":
+                from services.instagram_notifications.notification_ingestion import (
+                    retry_retrieved_media,
+                )
+
+                retry_retrieved_media(queue, arguments.job_id)
+            else:
+                getattr(queue, arguments.command)(arguments.job_id)
             result = asdict(queue.get(arguments.job_id))
+        elif arguments.command in {"ingestion-sync", "ingestion-import"}:
+            from services.instagram_notifications.notification_ingestion import (
+                import_retrieved_media,
+                sync_notification_media,
+            )
+
+            operation = (
+                sync_notification_media
+                if arguments.command == "ingestion-sync"
+                else import_retrieved_media
+            )
+            result = operation(queue)
+        elif arguments.command == "retrieve":
+            from services import school_service
+            from services.instagram_notifications.browser_session import school_account_username
+
+            school = school_service.get_school(arguments.school)
+            if school is None or not school.recipient_id:
+                raise ValueError("School has no configured notification recipient")
+            job_id = queue.enqueue_retrieval(
+                school=school.slug,
+                recipient_id=school.recipient_id,
+                account_username=school_account_username(school.slug),
+                url=arguments.url,
+                cutoff_days=arguments.cutoff_days,
+            )
+            queue.set_setting(f"manual_retrieval:{job_id}", True)
+            result = {"job_id": job_id}
         elif arguments.command == "sync":
             from services.instagram_notifications.carousel_engagement import (
                 sync_published_carousels,

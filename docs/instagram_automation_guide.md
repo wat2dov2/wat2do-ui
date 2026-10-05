@@ -3,7 +3,7 @@
 The active collection path uses Android Instagram notifications.
 When Instagram collapses several posts into one digest, the GitHub processing job submits a high-priority job to the Mac's shared browser worker before recording notification media.
 The same worker likes, saves, and natively reposts the original event posts selected in newly published Instagram carousels.
-Both queues share one existing Brave Instagram tab, with credentials remaining inside the browser.
+Digest expansion, public post/profile retrieval, and engagement share one existing Brave Instagram tab, with credentials remaining inside the browser.
 
 ## Repair an existing poster or scraped video
 
@@ -92,7 +92,8 @@ Do not delete its database to clear an error: that also removes deduplication hi
 ### Queue priority and school ordering
 
 The worker checks the high-priority digest queue before every browser action.
-A digest arriving during a like, save, or repost waits for that one bounded operation to finish.
+A digest arriving during public post retrieval, a like, save, or repost waits for that one bounded operation to finish.
+Public post/profile retrieval comes after digests and before engagement.
 No account switch or click is interrupted halfway through to start another job.
 An exclusive browser lock covers each complete operation, and a separate worker lock prevents duplicate workers.
 The source collector runs separately so a slow database read does not hold up ready digest jobs.
@@ -101,6 +102,46 @@ Engagement work is grouped by school.
 Each school gets one action per round, with the largest pending quantity first among schools waiting for the same turn.
 Like, save, and native repost are separate jobs, so a digest can run between those actions on the same event.
 Failed or unsupported engagement jobs remain visible for operator inspection and are not automatically retried.
+
+### Notification retrieval without Apify
+
+The notification workflow records exact post URLs in the existing production media ledger.
+With `notification_media_provider` set to `browser` in `backend/controlbox/instagram_browser.json`, it does not dispatch the Apify scraper.
+The Mac's scheduled Codex run synchronizes pending URLs into the same durable local browser queue, then imports verified browser results.
+Public profiles and individual posts can also be queued manually:
+
+```sh
+cd backend
+python scripts/instagram_browser.py retrieve --school utsc --url https://www.instagram.com/example_club/ --cutoff-days 1
+python scripts/instagram_browser.py ingestion-sync
+python scripts/instagram_browser.py ingestion-import
+python scripts/instagram_browser.py status
+```
+
+Use actual club handles rather than the illustrative profile URL above.
+The installed worker processes one bounded browser retrieval at a time and checks for waiting digests before each one.
+It verifies the exact school account before and after its authenticated request, and only public captions, owners, timestamps, coauthors, tagged users, and media fields leave the browser.
+All carousel children and each video's corresponding poster are preserved.
+Missing or mismatched media fails retrieval rather than importing incomplete artwork.
+A profile job reviews at most `profile_post_limit` recent posts; it is not an exhaustive historical profile scrape.
+
+Retrieval does not claim production media while it waits for the browser.
+The importer takes a separate singleton lock, journals its claim token before claiming a specific pending ledger row, and calls the existing prefetched-post pipeline without the Apify adapter.
+The next run releases an interrupted claim using its exact journaled token.
+Event/position extraction, post deduplication, school routing, storage and discovery invalidation continue through the existing pipeline.
+A successful import finalizes the original notification media row.
+A failed import releases the row back to pending and refreshes expired public media details, with bounded retries and visible failures.
+After resolving a failure, `python scripts/instagram_browser.py retry --job-id <id>` resets only that retrieval target’s import retry budget.
+A login, challenge or suspended-account page pauses browser retrieval for human recovery.
+The Codex heartbeat reviews the queue every five minutes and stays quiet when nothing actionable changes.
+The importer never holds the browser lock while it runs AI extraction.
+The existing extraction pipeline still uses its configured AI provider; replacing Apify does not replace that provider.
+
+The Apify implementation remains available for explicit operator fallback.
+Select `media_provider=apify` when manually dispatching Process Notifications or Scrape Pending Media.
+Scrape Pending Media defaults to leaving work for the Mac schedule and never silently switches a browser failure to a paid provider.
+Keep the scheduled importer and worker on the same Mac user and shared state directory.
+Reload worker code only when its current job has finished, preserving the spool and pause state.
 
 ### Eligible event posts
 

@@ -380,3 +380,30 @@ def test_saved_entry_selection_still_verifies_active_recipient(recipient_matches
         with pytest.raises(browser.BrowserSessionError, match="does not match"):
             session.activate_account("41553815702", "wat2do.usask")
     assert not any("location" in source for source in fake.sources)
+
+
+def test_read_only_navigation_verifies_permalink_without_action_toolbar():
+    sources = []
+
+    def run(source, _timeout):
+        sources.append(source)
+        if "location.assign" in source:
+            return "navigating"
+        if "pathname.split" in source:
+            return "true"
+        if "const anchors =" in source:
+            return "wat2do.utsc"
+        if "activeRecipient" in source:
+            return "true"
+        raise AssertionError(source)
+
+    session = browser.BrowserInstagramSession(javascript_runner=run, sleep=lambda _: None)
+    assert session.navigate_post(
+        "https://www.instagram.com/p/POST/", "123", "wat2do.utsc", read_only=True
+    ).endswith("/POST/")
+    assert not any("ambiguous_post" in source for source in sources)
+    node = shutil.which("node")
+    if node:
+        for source in sources:
+            result = subprocess.run([node, "--check"], input=source, text=True, capture_output=True)
+            assert result.returncode == 0, result.stderr

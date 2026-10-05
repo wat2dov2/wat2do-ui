@@ -50,6 +50,15 @@ def execute_job(job: BrowserJob) -> dict:
                     job.payload["cache_ent_id"],
                 )
             )
+        if job.kind == "retrieval":
+            from services.instagram_notifications.browser_ingestion import BrowserInstagramRetriever
+
+            return BrowserInstagramRetriever(session).retrieve(
+                job.recipient_id,
+                job.account_username,
+                job.payload["url"],
+                cutoff_days=job.payload["cutoff_days"],
+            )
         executor = BrowserInstagramEngagementExecutor(session=session)
         operation = executor.inspect if job.payload.get("dry_run") else executor.execute
         return operation(
@@ -93,7 +102,9 @@ def process_next_job(queue: BrowserJobQueue, *, allow_engagement: bool = True) -
                     result = execute_job(job)
                 queue.finish(job.id, result=result)
             except (BrowserSessionError, TimeoutError) as exc:
-                if "cancellation could not be confirmed" in str(exc):
+                if "cancellation could not be confirmed" in str(
+                    exc
+                ) or "human account recovery" in str(exc):
                     queue.set_setting("paused", str(exc))
                 queue.finish(job.id, error=str(exc))
             except (KeyboardInterrupt, SystemExit):

@@ -257,3 +257,33 @@ def _optional_text(value: str | None) -> str | None:
         return None
     normalized = value.strip()
     return normalized or None
+
+
+def claim_pending_browser_media(*, media_row_id: str, claim_token: str) -> bool:
+    """Claim one retrieved row with a token journaled by the local importer first.
+
+    Conditional UPDATE is atomic against the existing RPC claimers. Persisting
+    the caller-generated token before this request covers a crash even when the
+    database committed but the client never received its response.
+    """
+    from datetime import datetime, timezone
+    from uuid import UUID
+
+    UUID(media_row_id)
+    UUID(claim_token)
+    response = (
+        get_sb()
+        .table(INSTAGRAM_NOTIFICATION_MEDIA)
+        .update(
+            {
+                "status": "processing",
+                "claim_token": claim_token,
+                "github_run_id": None,
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+            }
+        )
+        .eq("id", media_row_id)
+        .eq("status", "pending")
+        .execute()
+    )
+    return bool(response.data)

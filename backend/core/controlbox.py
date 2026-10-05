@@ -612,6 +612,10 @@ class EmulatorFarmControl(_ControlModel):
 
 
 class InstagramBrowserControl(_ControlModel):
+    notification_media_provider: Literal["browser", "apify"]
+    ingestion_batch_size: int = Field(gt=0, le=100)
+    ingestion_retry_limit: int = Field(gt=0, le=10)
+    profile_post_limit: int = Field(gt=0, le=50)
     school_username_overrides: dict[
         Annotated[str, Field(pattern=r"^[a-z0-9_]+$")],
         Annotated[str, Field(pattern=r"^wat2do\.[a-z0-9_]+$", max_length=30)],

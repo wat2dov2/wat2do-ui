@@ -26,6 +26,12 @@ on:
         description: 'School name'
         required: false
         type: string
+      media_provider:
+        description: 'Media retrieval provider (browser queue by default)'
+        required: false
+        type: choice
+        options: [browser, apify]
+        default: browser
       notification_payload:
         description: 'Raw JSON payload of the notification'
         required: false
@@ -36,12 +42,18 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       runner: ${{ steps.check.outputs.runner }}
+      media_provider: ${{ steps.check.outputs.media_provider }}
     steps:
+      - uses: actions/checkout@v4
       - id: check
         env:
+          MEDIA_PROVIDER: ${{ inputs.media_provider }}
+          POSTER_ID: ${{ inputs.poster_id }}
           NOTIFICATION_JSON: ${{ inputs.notification_payload || toJSON(github.event.client_payload.notification_dict) }}
         run: |
-          if echo "$NOTIFICATION_JSON" | grep -q "cache_ent_id"; then
+          provider="${MEDIA_PROVIDER:-$(jq -r '.notification_media_provider' backend/controlbox/instagram_browser.json)}"
+          echo "media_provider=$provider" >> "$GITHUB_OUTPUT"
+          if echo "$NOTIFICATION_JSON" | grep -q "cache_ent_id" || [[ -n "$POSTER_ID" && "$provider" == "browser" ]]; then
             echo 'runner=["self-hosted", "wat2do-macmini-browser"]' >> "$GITHUB_OUTPUT"
           else
             echo 'runner="ubuntu-latest"' >> "$GITHUB_OUTPUT"
@@ -153,6 +165,11 @@ jobs:
           if [[ "$NOTIFICATION_JSON" != "null" && -n "$NOTIFICATION_JSON" ]]; then
             echo "Processing raw notification payload..."
             .venv/bin/python jobs/process_notification.py
+          elif [[ "${{ needs.route.outputs.media_provider }}" == "browser" ]]; then
+            .venv/bin/python scripts/instagram_browser.py retrieve \
+              --school "$TARGET_SCHOOL" \
+              --url "https://www.instagram.com/$POSTER_ID/" \
+              --cutoff-days "$CUTOFF_DAYS"
           else
             test -n "$APIFY_API_TOKEN"
             echo "Processing standard poster_id..."
@@ -163,7 +180,7 @@ jobs:
           fi
 
       - name: Trigger background scraper
-        if: success() && steps.validate.outputs.skip != 'true' && steps.process.outputs.new_items > 0
-        run: gh workflow run scrape-pending-media.yml -f cutoff_days="$CUTOFF_DAYS"
+        if: success() && steps.validate.outputs.skip != 'true' && steps.process.outputs.new_items > 0 && needs.route.outputs.media_provider == 'apify'
+        run: gh workflow run scrape-pending-media.yml -f cutoff_days="$CUTOFF_DAYS" -f media_provider=apify
         env:
           GH_TOKEN: ${{ secrets.RUNNER_CHECK_TOKEN }}

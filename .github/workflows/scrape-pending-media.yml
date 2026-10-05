@@ -7,6 +7,12 @@ run-name: Scrape Pending Media
 on:
   workflow_dispatch:
     inputs:
+      media_provider:
+        description: 'Apify is an explicit fallback; browser work is handled by the Mac schedule'
+        required: false
+        type: choice
+        options: [browser, apify]
+        default: browser
       cutoff_days:
         description: 'Number of days to look back'
         required: false
@@ -24,15 +30,23 @@ jobs:
       contents: read
     outputs:
       workers: ${{ steps.workers.outputs.workers }}
+      media_provider: ${{ steps.workers.outputs.media_provider }}
     steps:
       - uses: actions/checkout@v4
       - name: Read worker count from scrape controls
         id: workers
+        env:
+          MEDIA_PROVIDER: ${{ inputs.media_provider || 'browser' }}
         run: |
+          echo "media_provider=$MEDIA_PROVIDER" >> "$GITHUB_OUTPUT"
+          if [[ "$MEDIA_PROVIDER" == "browser" ]]; then
+            echo "Pending media will be retrieved by the scheduled Mac browser worker."
+          fi
           workers="$(jq -c '[range(1; .pending_media_workers + 1)]' backend/controlbox/scraping.json)"
           echo "workers=$workers" >> "$GITHUB_OUTPUT"
 
   scrape-pending:
+    if: needs.configure.outputs.media_provider == 'apify'
     needs: configure
     runs-on: ubuntu-latest
     strategy:
@@ -101,7 +115,7 @@ jobs:
   refresh-previews:
     needs: scrape-pending
     # Terminal failures may still leave successfully imported events to capture.
-    if: ${{ always() && !cancelled() }}
+    if: ${{ always() && !cancelled() && needs.scrape-pending.result != 'skipped' }}
     runs-on: ubuntu-latest
     environment: production
     permissions:

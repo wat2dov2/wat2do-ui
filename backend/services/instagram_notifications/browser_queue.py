@@ -49,6 +49,7 @@ class BrowserJob:
     created_at: float
     result: dict[str, Any] | None
     error: str | None
+    attempts: int
 
 
 class BrowserJobQueue:
@@ -60,11 +61,11 @@ class BrowserJobQueue:
         self.database_path = self.state_directory / "jobs.sqlite3"
         with closing(self._connect()) as db, db:
             db.execute("PRAGMA journal_mode=WAL")
-            db.executescript("""
+            schema = """
                 CREATE TABLE IF NOT EXISTS jobs (
                     id TEXT PRIMARY KEY,
                     dedupe_key TEXT NOT NULL UNIQUE,
-                    kind TEXT NOT NULL CHECK(kind IN ('digest', 'engagement')),
+                    kind TEXT NOT NULL CHECK(kind IN ('digest', 'retrieval', 'engagement')),
                     school TEXT NOT NULL,
                     recipient_id TEXT NOT NULL,
                     account_username TEXT NOT NULL,
@@ -84,7 +85,19 @@ class BrowserJobQueue:
                     last_served INTEGER NOT NULL
                 );
                 CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);
-            """)
+            """
+            # SQLite cannot add values to a CHECK constraint in place.
+            # Rebuild atomically while preserving every job and its history.
+            db.execute("BEGIN IMMEDIATE")
+            existing = db.execute("SELECT sql FROM sqlite_master WHERE name='jobs'").fetchone()
+            if existing and "'retrieval'" not in existing[0]:
+                db.execute("ALTER TABLE jobs RENAME TO jobs_previous")
+                db.execute(schema.split(";")[0])
+                db.execute("INSERT INTO jobs SELECT * FROM jobs_previous")
+                db.execute("DROP TABLE jobs_previous")
+            for statement in schema.split(";"):
+                if statement.strip():
+                    db.execute(statement)
         self.database_path.chmod(0o600)
 
     def _connect(self) -> sqlite3.Connection:
@@ -109,6 +122,27 @@ class BrowserJobQueue:
             raise ValueError("Instagram cache ID is invalid")
         return self._enqueue(
             "digest", "", recipient_id, account_username, {"cache_ent_id": cache_ent_id}
+        )
+
+    def enqueue_retrieval(
+        self,
+        *,
+        school: str,
+        recipient_id: str,
+        account_username: str,
+        url: str,
+        cutoff_days: int = 1,
+    ) -> str:
+        from services.instagram_notifications.browser_ingestion import canonical_target_url
+
+        if not re.fullmatch(r"[a-z0-9-]{1,80}", school) or not 1 <= cutoff_days <= 1825:
+            raise ValueError("Instagram retrieval school or cutoff is invalid")
+        return self._enqueue(
+            "retrieval",
+            school,
+            recipient_id,
+            account_username,
+            {"url": canonical_target_url(url), "cutoff_days": cutoff_days},
         )
 
     def enqueue_engagement(
@@ -145,6 +179,8 @@ class BrowserJobQueue:
         identity = [kind, recipient_id, username]
         if kind == "digest":
             identity.append(payload["cache_ent_id"])
+        elif kind == "retrieval":
+            identity.extend([payload["url"], str(payload["cutoff_days"])])
         else:
             # p/ and reel/ can reference the same media. Dedupe by its shortcode.
             identity.extend([payload["post_url"].rstrip("/").split("/")[-1], payload["action"]])
@@ -199,6 +235,7 @@ class BrowserJobQueue:
                     "state",
                     "created_at",
                     "error",
+                    "attempts",
                 )
             },
             payload=json.loads(row["payload"]),
@@ -218,6 +255,10 @@ class BrowserJobQueue:
             row = db.execute(
                 "SELECT * FROM jobs WHERE state='pending' AND kind='digest' ORDER BY created_at,id LIMIT 1"
             ).fetchone()
+            if not row:
+                row = db.execute(
+                    "SELECT * FROM jobs WHERE state='pending' AND kind='retrieval' ORDER BY created_at,id LIMIT 1"
+                ).fetchone()
             if not row and allow_engagement:
                 # One action per school per round, largest current backlog first.
                 stored_round = db.execute(
@@ -278,7 +319,7 @@ class BrowserJobQueue:
         """Called only after obtaining the singleton worker and exclusive browser locks."""
         with closing(self._connect()) as db, db:
             db.execute(
-                "UPDATE jobs SET state='pending',started_at=NULL WHERE kind='digest' AND state='running'"
+                "UPDATE jobs SET state='pending',started_at=NULL WHERE kind IN ('digest','retrieval') AND state='running'"
             )
             db.execute(
                 "UPDATE jobs SET state='failed',finished_at=?,error='Worker interrupted; inspect browser state before retrying' WHERE kind='engagement' AND state='running'",
@@ -301,6 +342,23 @@ class BrowserJobQueue:
                 (time.time(), job_id),
             )
 
+    def refresh_retrieval(self, job_id: str) -> None:
+        """Refresh expired public media fields without touching engagement history."""
+        with closing(self._connect()) as db, db:
+            changed = db.execute(
+                "UPDATE jobs SET state='pending',created_at=?,result=NULL,error=NULL,started_at=NULL,finished_at=NULL WHERE id=? AND kind='retrieval' AND state IN ('succeeded','failed','cancelled')",
+                (time.time(), job_id),
+            ).rowcount
+        if not changed:
+            raise ValueError("Only completed retrieval jobs may be refreshed")
+
+    def retrieval_results(self) -> list[BrowserJob]:
+        with closing(self._connect()) as db:
+            rows = db.execute(
+                "SELECT * FROM jobs WHERE kind='retrieval' AND state='succeeded' ORDER BY created_at,id"
+            ).fetchall()
+        return [self._job(row) for row in rows]
+
     def status(self) -> dict[str, Any]:
         with closing(self._connect()) as db:
             groups = [
@@ -321,6 +379,9 @@ class BrowserJobQueue:
             "worker": self.get_setting("worker"),
             "paused": self.get_setting("paused", False),
             "source": self.get_setting("source_status"),
+            "notification_source": self.get_setting("notification_source_status"),
+            "notification_import": self.get_setting("notification_import_status"),
+            "notification_import_error": self.get_setting("notification_import_error"),
         }
 
 

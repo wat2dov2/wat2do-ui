@@ -15,5 +15,9 @@
     "like",
     "save",
     "repost"
-  ]
+  ],
+  "notification_media_provider": "browser",
+  "ingestion_batch_size": 10,
+  "profile_post_limit": 12,
+  "ingestion_retry_limit": 3
 }

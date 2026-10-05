@@ -224,3 +224,19 @@ def test_mark_media_failed_rejects_empty_category(fake_sb, patch_sb):
         )
 
     fake_sb.rpc.assert_not_called()
+
+
+def test_browser_claim_uses_journaled_token_and_pending_status_guard(fake_sb, patch_sb):
+    patch_sb("services.instagram_notifications.ledger")
+    row_id = "d6246624-50f7-4aa1-bf0a-0d14b604d5a7"
+    token = "196f8685-0164-4a2a-9349-d78dc2b6b346"
+    fake_sb.set_response(data=[{"id": row_id}])
+    assert ledger.claim_pending_browser_media(media_row_id=row_id, claim_token=token)
+    calls = fake_sb.table.return_value
+    payload = calls.update.call_args.args[0]
+    assert payload["claim_token"] == token
+    assert payload["status"] == "processing"
+    assert payload["github_run_id"] is None
+    assert calls.eq.call_args_list[-1].args == ("status", "pending")
+    fake_sb.set_response(data=[])
+    assert not ledger.claim_pending_browser_media(media_row_id=row_id, claim_token=token)
