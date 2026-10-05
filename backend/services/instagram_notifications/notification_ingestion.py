@@ -18,6 +18,7 @@ from core.database import get_sb
 from core.pagination import fetch_all_pages
 from core.tables import INSTAGRAM_NOTIFICATION_MEDIA, INSTAGRAM_NOTIFICATIONS
 from services import school_service
+from services.instagram_notifications.browser_ingestion import canonical_target_url
 from services.instagram_notifications.browser_queue import BrowserJobQueue
 from services.instagram_notifications.browser_session import school_account_username
 from services.instagram_notifications.ledger import (
@@ -61,6 +62,8 @@ def sync_notification_media(queue: BrowserJobQueue) -> dict[str, int]:
     stats = {"pending_media": 0, "queued": 0}
     for row in _pending_rows():
         school, recipient, username = _identity(row)
+        if queue.account_excluded(username):
+            continue
         job_id = queue.enqueue_retrieval(
             school=school,
             recipient_id=recipient,
@@ -98,6 +101,8 @@ def import_retrieved_media(queue: BrowserJobQueue) -> dict[str, int]:
             if stats["imported"] + stats["failed"] >= _CONTROL.ingestion_batch_size:
                 break
             school, recipient, username = _identity(row)
+            if queue.account_excluded(username):
+                continue
             job_id = queue.enqueue_retrieval(
                 school=school,
                 recipient_id=recipient,
@@ -108,8 +113,8 @@ def import_retrieved_media(queue: BrowserJobQueue) -> dict[str, int]:
             if not job or job.state != "succeeded" or not job.result:
                 stats["waiting"] += 1
                 continue
-            if job.result.get("account_username") != username:
-                raise ValueError("Retrieved media account does not match notification routing")
+            if job.result.get("target_url") != canonical_target_url(row["source_url"]):
+                raise ValueError("Retrieved media does not match notification target")
             attempts_key = f"notification_import_attempts:{row['id']}"
             attempts = queue.get_setting(attempts_key, 0)
             if attempts >= _CONTROL.ingestion_retry_limit:
@@ -164,7 +169,9 @@ def _import_posts(school: str, posts: list[dict], *, exact: bool) -> None:
 
 def _import_manual_targets(queue: BrowserJobQueue, stats: dict[str, int]) -> None:
     for job in queue.retrieval_results():
-        if not queue.get_setting(f"manual_retrieval:{job.id}"):
+        if queue.account_excluded(job.account_username) or not queue.get_setting(
+            f"manual_retrieval:{job.id}"
+        ):
             continue
         key = f"manual_imported:{job.id}"
         if (
@@ -172,8 +179,8 @@ def _import_manual_targets(queue: BrowserJobQueue, stats: dict[str, int]) -> Non
             or stats["imported"] + stats["failed"] >= _CONTROL.ingestion_batch_size
         ):
             continue
-        if not job.result or job.result.get("account_username") != job.account_username:
-            raise ValueError("Retrieved profile account does not match its job")
+        if not job.result or job.result.get("target_url") != job.payload["url"]:
+            raise ValueError("Retrieved profile does not match its job")
         attempts_key = f"manual_import_attempts:{job.id}"
         attempts = queue.get_setting(attempts_key, 0)
         if attempts >= _CONTROL.ingestion_retry_limit:

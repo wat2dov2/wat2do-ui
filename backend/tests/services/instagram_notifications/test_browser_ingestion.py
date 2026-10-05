@@ -45,15 +45,18 @@ def test_rejects_nonpublic_or_credentialed_targets(url):
 def test_verified_browser_result_preserves_carousel_video_and_coauthors():
     calls = []
     session = SimpleNamespace(
-        run=lambda *_: "/",
-        activate_account=lambda *_: ACCOUNT,
+        run=lambda source: (
+            "/p/AbC/" if source == "window.location.pathname" else calls.append(source)
+        ),
+        current_account_username=lambda: "wat2do.ca",
+        poll_until=lambda predicate: predicate(),
+        activate_account=lambda *_: pytest.fail("Retrieval must never switch accounts"),
         navigate_post=lambda *args, **kwargs: calls.append((args, kwargs)),
         query=lambda *_: {"state": "succeeded", "posts": [deepcopy(POST)]},
     )
-    result = module.BrowserInstagramRetriever(session).retrieve(
-        RECIPIENT, ACCOUNT, URL, cutoff_days=1
-    )
-    assert calls == [((URL, RECIPIENT, ACCOUNT), {"read_only": True})]
+    result = module.BrowserInstagramRetriever(session).retrieve(URL, cutoff_days=1)
+    assert result["account_username"] == "wat2do.ca"
+    assert any("location.assign" in source for source in calls)
     assert result["posts"][0] == POST
     assert module.media_id_from_url(URL) == str(27 * 64 + 2)
 
@@ -74,13 +77,15 @@ def test_incomplete_or_mismatched_media_fails(mutation):
     if mutation == "naive_time":
         post["timestamp"] = "2026-10-04T12:00:00"
     session = SimpleNamespace(
-        run=lambda *_: "/",
-        activate_account=lambda *_: ACCOUNT,
+        run=lambda *_: "/p/AbC/",
+        current_account_username=lambda: "wat2do.ca",
+        poll_until=lambda predicate: predicate(),
+        activate_account=lambda *_: pytest.fail("Retrieval must never switch accounts"),
         navigate_post=lambda *_, **__: None,
         query=lambda *_: {"state": "succeeded", "posts": [post]},
     )
     with pytest.raises(module.BrowserSessionError):
-        module.BrowserInstagramRetriever(session).retrieve(RECIPIENT, ACCOUNT, URL, cutoff_days=1)
+        module.BrowserInstagramRetriever(session).retrieve(URL, cutoff_days=1)
 
 
 @pytest.fixture
@@ -110,7 +115,7 @@ def test_pending_retrieval_does_not_claim_production_media(import_setup, monkeyp
 def test_import_uses_existing_pipeline_only_after_journaling_claim(import_setup, monkeypatch):
     queue, row, jid = import_setup
     queue.claim_next()
-    queue.finish(jid, result={"account_username": ACCOUNT, "posts": [POST]})
+    queue.finish(jid, result={"account_username": "wat2do.ca", "target_url": URL, "posts": [POST]})
 
     def claim(**args):
         assert queue.get_setting(bridge._JOURNAL) == args
@@ -134,7 +139,7 @@ def test_import_uses_existing_pipeline_only_after_journaling_claim(import_setup,
 def test_import_failure_rolls_back_and_refreshes_without_success(import_setup, monkeypatch):
     queue, _, jid = import_setup
     queue.claim_next()
-    queue.finish(jid, result={"account_username": ACCOUNT, "posts": [POST]})
+    queue.finish(jid, result={"account_username": "wat2do.ca", "target_url": URL, "posts": [POST]})
     monkeypatch.setattr(bridge, "claim_pending_browser_media", lambda **_: True)
     monkeypatch.setattr(
         bridge, "_import_posts", lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError())
@@ -152,7 +157,7 @@ def test_import_failure_rolls_back_and_refreshes_without_success(import_setup, m
 def test_commit_then_network_failure_keeps_recoverable_token(import_setup, monkeypatch):
     queue, _, jid = import_setup
     queue.claim_next()
-    queue.finish(jid, result={"account_username": ACCOUNT, "posts": [POST]})
+    queue.finish(jid, result={"account_username": "wat2do.ca", "target_url": URL, "posts": [POST]})
     monkeypatch.setattr(
         bridge, "claim_pending_browser_media", lambda **_: (_ for _ in ()).throw(OSError())
     )
@@ -172,7 +177,7 @@ def test_commit_then_network_failure_keeps_recoverable_token(import_setup, monke
 def test_import_claim_conflict_does_not_extract_or_finalize(import_setup, monkeypatch):
     queue, _, jid = import_setup
     queue.claim_next()
-    queue.finish(jid, result={"account_username": ACCOUNT, "posts": [POST]})
+    queue.finish(jid, result={"account_username": "wat2do.ca", "target_url": URL, "posts": [POST]})
     monkeypatch.setattr(bridge, "claim_pending_browser_media", lambda **_: False)
     monkeypatch.setattr(
         bridge, "_import_posts", lambda *_args, **_kwargs: pytest.fail("Claim lost")
@@ -188,8 +193,8 @@ def test_browser_projects_only_public_fields_and_keeps_all_carousel_children(mon
     node = shutil.which("node")
     if node is None:
         pytest.skip("Node.js unavailable")
-    monkeypatch.setattr(module, "_recipient_is_active_source", lambda _: '"true"')
-    source = module._query_source("/api/v1/media/1730/info/", RECIPIENT, profile=False)
+    monkeypatch.setattr(module, "_current_account_username_source", lambda: '"wat2do.ca"')
+    source = module._query_source("/api/v1/media/1730/info/", "wat2do.ca", profile=False)
     media = {
         "code": "AbC",
         "taken_at": 1791115200,
@@ -240,7 +245,7 @@ def test_suspended_account_stops_before_switch_or_fetch():
         activate_account=lambda *_: pytest.fail("Suspended browser requires a human"),
     )
     with pytest.raises(module.BrowserSessionError, match="human account recovery"):
-        module.BrowserInstagramRetriever(session).retrieve(RECIPIENT, ACCOUNT, URL, cutoff_days=1)
+        module.BrowserInstagramRetriever(session).retrieve(URL, cutoff_days=1)
 
 
 def test_explicit_retrieval_retry_resets_only_matching_media(import_setup, monkeypatch):
@@ -251,3 +256,76 @@ def test_explicit_retrieval_retry_resets_only_matching_media(import_setup, monke
     bridge.retry_retrieved_media(queue, jid)
     assert queue.get_setting(key) == 0
     assert queue.get_setting("notification_import_attempts:other") == 3
+
+
+def test_retrieval_rejects_account_change():
+    names = iter(["wat2do.ca", "wat2do.ca", "wat2do.sfu", "wat2do.sfu"])
+    session = SimpleNamespace(
+        run=lambda *_: "/p/AbC/",
+        current_account_username=lambda: next(names),
+        poll_until=lambda predicate: predicate(),
+        query=lambda *_: pytest.fail("Changed account must not fetch"),
+    )
+    with pytest.raises(module.BrowserSessionError, match="changed"):
+        module.BrowserInstagramRetriever(session).retrieve(URL, cutoff_days=1)
+
+
+def test_import_rejects_wrong_retrieved_target(import_setup, monkeypatch):
+    queue, _, jid = import_setup
+    queue.claim_next()
+    queue.finish(
+        jid,
+        result={
+            "account_username": "wat2do.ca",
+            "target_url": "https://www.instagram.com/p/Other/",
+            "posts": [POST],
+        },
+    )
+    monkeypatch.setattr(
+        bridge, "claim_pending_browser_media", lambda **_: pytest.fail("Wrong target")
+    )
+    with pytest.raises(ValueError, match="target"):
+        bridge.import_retrieved_media(queue)
+
+
+def test_excluded_account_remains_pending_while_other_retrieval_runs(tmp_path):
+    queue = BrowserJobQueue(tmp_path)
+    held = queue.enqueue_retrieval(
+        school="utsc", recipient_id=RECIPIENT, account_username="wat2do.utsc", url=URL
+    )
+    allowed = queue.enqueue_retrieval(
+        school="ubc", recipient_id=RECIPIENT, account_username=ACCOUNT, url=URL
+    )
+    queue.set_setting("excluded_accounts", ["wat2do.utsc"])
+    assert queue.claim_next().id == allowed
+    assert queue.get(held).state == "pending"
+    assert queue.claim_next() is None
+
+
+def test_excluded_notification_is_not_synced_or_imported(import_setup, monkeypatch):
+    queue, _, jid = import_setup
+    queue.set_setting("excluded_accounts", [ACCOUNT])
+    monkeypatch.setattr(bridge, "claim_pending_browser_media", lambda **_: pytest.fail("Excluded"))
+    assert bridge.sync_notification_media(queue)["queued"] == 0
+    assert bridge.import_retrieved_media(queue)["imported"] == 0
+    assert queue.get(jid).state == "pending"
+
+
+@pytest.mark.parametrize("kind", ["digest", "engagement"])
+def test_exclusions_apply_to_account_bound_jobs(tmp_path, kind):
+    queue = BrowserJobQueue(tmp_path)
+    if kind == "digest":
+        jid = queue.enqueue_digest(RECIPIENT, "wat2do.utsc", "example")
+    else:
+        jid = queue.enqueue_engagement(
+            school="utsc",
+            recipient_id=RECIPIENT,
+            account_username="wat2do.utsc",
+            post_url=URL,
+            action="like",
+        )
+    queue.set_setting("excluded_accounts", ["wat2do.utsc"])
+    assert queue.claim_next() is None
+    assert queue.get(jid).state == "pending"
+    queue.set_setting("excluded_accounts", [])
+    assert queue.claim_next().id == jid

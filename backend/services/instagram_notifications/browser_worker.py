@@ -54,8 +54,6 @@ def execute_job(job: BrowserJob) -> dict:
             from services.instagram_notifications.browser_ingestion import BrowserInstagramRetriever
 
             return BrowserInstagramRetriever(session).retrieve(
-                job.recipient_id,
-                job.account_username,
                 job.payload["url"],
                 cutoff_days=job.payload["cutoff_days"],
             )

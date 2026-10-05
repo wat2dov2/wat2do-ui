@@ -102,6 +102,8 @@ Engagement work is grouped by school.
 Each school gets one action per round, with the largest pending quantity first among schools waiting for the same turn.
 Like, save, and native repost are separate jobs, so a digest can run between those actions on the same event.
 Failed or unsupported engagement jobs remain visible for operator inspection and are not automatically retried.
+The durable queue’s `excluded_accounts` setting holds jobs for explicitly excluded school accounts across all job types without deleting or consuming them.
+Notification synchronization and imports respect the same exclusions.
 
 ### Notification retrieval without Apify
 
@@ -120,7 +122,10 @@ python scripts/instagram_browser.py status
 
 Use actual club handles rather than the illustrative profile URL above.
 The installed worker processes one bounded browser retrieval at a time and checks for waiting digests before each one.
-It verifies the exact school account before and after its authenticated request, and only public captions, owners, timestamps, coauthors, tagged users, and media fields leave the browser.
+Public post/profile retrieval reuses the currently logged-in account without switching to the notification school’s account.
+It verifies the active account remains unchanged throughout navigation and retrieval, and only public captions, owners, timestamps, coauthors, tagged users, and media fields leave the browser.
+The queued notification recipient determines school routing, independent of the browser account.
+Digest expansion and engagement still require the exact intended school account.
 All carousel children and each video's corresponding poster are preserved.
 Missing or mismatched media fails retrieval rather than importing incomplete artwork.
 A profile job reviews at most `profile_post_limit` recent posts; it is not an exhaustive historical profile scrape.

@@ -146,9 +146,7 @@ class BrowserInstagramSession:
             raise BrowserSessionError("Active Instagram browser account is invalid or ambiguous")
         return username.casefold()
 
-    def navigate_post(
-        self, post_url: str, recipient_id: str, username: str, *, read_only: bool = False
-    ) -> str:
+    def navigate_post(self, post_url: str, recipient_id: str, username: str) -> str:
         canonical_url = canonical_post_url(post_url)
         self.verify_account(recipient_id, username)
         try:
@@ -156,20 +154,9 @@ class BrowserInstagramSession:
         except BrowserSessionError as exc:
             raise BrowserSessionError(f"Instagram post navigation failed: {exc}") from None
         try:
-            if read_only:
-                path = urlsplit(canonical_url).path.strip("/")
-                self.poll_until(
-                    lambda: (
-                        self.run(
-                            f"window.location.pathname.split('/').filter(Boolean).join('/') === {json.dumps(path)} ? 'true' : 'false'"
-                        )
-                        == "true"
-                    )
-                )
-            else:
-                self.poll_until(
-                    lambda: self.run(f"({_post_context_source(canonical_url)}).status") == "ready"
-                )
+            self.poll_until(
+                lambda: self.run(f"({_post_context_source(canonical_url)}).status") == "ready"
+            )
         except _BrowserPageUnavailable:
             raise BrowserSessionError(
                 "Instagram post did not become ready for the intended permalink"

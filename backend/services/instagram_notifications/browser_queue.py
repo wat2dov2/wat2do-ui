@@ -117,6 +117,9 @@ class BrowserJobQueue:
                 (key, json.dumps(value)),
             )
 
+    def account_excluded(self, username: str) -> bool:
+        return username in self.get_setting("excluded_accounts", [])
+
     def enqueue_digest(self, recipient_id: str, account_username: str, cache_ent_id: str) -> str:
         if not re.fullmatch(r"[A-Za-z0-9._:-]{1,255}", cache_ent_id):
             raise ValueError("Instagram cache ID is invalid")
@@ -246,6 +249,10 @@ class BrowserJobQueue:
         self, *, now: float | None = None, allow_engagement: bool = True
     ) -> BrowserJob | None:
         now = time.time() if now is None else now
+        available_account = (
+            "account_username NOT IN (SELECT value FROM json_each(COALESCE("
+            "(SELECT value FROM settings WHERE key='excluded_accounts'),'[]')))"
+        )
         with closing(self._connect()) as db, db:
             db.execute("BEGIN IMMEDIATE")
             db.execute(
@@ -253,11 +260,15 @@ class BrowserJobQueue:
                 (now, now - CONTROL.result_timeout_seconds),
             )
             row = db.execute(
-                "SELECT * FROM jobs WHERE state='pending' AND kind='digest' ORDER BY created_at,id LIMIT 1"
+                "SELECT * FROM jobs WHERE state='pending' AND kind='digest' "
+                f"AND {available_account} "
+                "ORDER BY created_at,id LIMIT 1"
             ).fetchone()
             if not row:
                 row = db.execute(
-                    "SELECT * FROM jobs WHERE state='pending' AND kind='retrieval' ORDER BY created_at,id LIMIT 1"
+                    "SELECT * FROM jobs WHERE state='pending' AND kind='retrieval' "
+                    f"AND {available_account} "
+                    "ORDER BY created_at,id LIMIT 1"
                 ).fetchone()
             if not row and allow_engagement:
                 # One action per school per round, largest current backlog first.
@@ -265,10 +276,11 @@ class BrowserJobQueue:
                     "SELECT value FROM settings WHERE key='school_round'"
                 ).fetchone()
                 round_number = json.loads(stored_round[0]) if stored_round else 1
-                query = """
+                query = f"""
                     SELECT jobs.school, COUNT(*) AS quantity
                     FROM jobs LEFT JOIN school_turns turns ON turns.school=jobs.school
                     WHERE jobs.state='pending' AND jobs.kind='engagement'
+                        AND {available_account}
                         AND COALESCE(turns.last_served,0) < ?
                     GROUP BY jobs.school ORDER BY quantity DESC, MIN(jobs.created_at), jobs.school LIMIT 1
                 """
@@ -282,7 +294,8 @@ class BrowserJobQueue:
                 )
                 if school:
                     row = db.execute(
-                        "SELECT * FROM jobs WHERE state='pending' AND kind='engagement' AND school=? ORDER BY created_at,id LIMIT 1",
+                        "SELECT * FROM jobs WHERE state='pending' AND kind='engagement' AND school=? "
+                        f"AND {available_account} ORDER BY created_at,id LIMIT 1",
                         (school["school"],),
                     ).fetchone()
             if not row:

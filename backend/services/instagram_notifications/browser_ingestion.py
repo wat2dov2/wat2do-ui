@@ -16,8 +16,8 @@ from services.instagram_notifications.browser_session import (
     _REQUEST_KEY,
     BrowserInstagramSession,
     BrowserSessionError,
+    _current_account_username_source,
     _open_post_source,
-    _recipient_is_active_source,
     canonical_post_url,
 )
 
@@ -53,30 +53,34 @@ class BrowserInstagramRetriever:
     def __init__(self, session: BrowserInstagramSession) -> None:
         self.session = session
 
-    def retrieve(
-        self, recipient_id: str, account_username: str, url: str, *, cutoff_days: int
-    ) -> dict:
+    def retrieve(self, url: str, *, cutoff_days: int) -> dict:
         target = canonical_target_url(url)
         profile = _PROFILE_PATH.fullmatch(urlsplit(target).path)
         path = self.session.run("window.location.pathname")
         if path.startswith(("/accounts/suspended", "/accounts/login", "/challenge", "/checkpoint")):
             raise BrowserSessionError("Instagram browser requires human account recovery")
-        username = self.session.activate_account(recipient_id, account_username)
-        if profile:
-            self.session.verify_account(recipient_id, username)
-            self.session.run(_open_post_source(target))
-            self.session.poll_until(
-                lambda: (
-                    self.session.run("window.location.pathname") == urlsplit(target).path
-                    and self.session.current_account_username() is not None
-                )
+        self.session.poll_until(lambda: self.session.current_account_username() is not None)
+        username = self.session.current_account_username()
+        if username is None:
+            raise BrowserSessionError("Instagram browser requires human account recovery")
+        self.session.run(_open_post_source(target))
+        self.session.poll_until(
+            lambda: (
+                self.session.run("window.location.pathname").strip("/")
+                == urlsplit(target).path.strip("/")
+                and self.session.current_account_username() is not None
             )
-            self.session.verify_account(recipient_id, username)
-            endpoint = f"/api/v1/users/web_profile_info/?username={profile[1]}"
-        else:
-            self.session.navigate_post(target, recipient_id, username, read_only=True)
-            endpoint = f"/api/v1/media/{media_id_from_url(target)}/info/"
-        result = self.session.query(_query_source(endpoint, recipient_id, profile=bool(profile)))
+        )
+        if self.session.current_account_username() != username:
+            raise BrowserSessionError("Instagram browser account changed during retrieval")
+        endpoint = (
+            f"/api/v1/users/web_profile_info/?username={profile[1]}"
+            if profile
+            else f"/api/v1/media/{media_id_from_url(target)}/info/"
+        )
+        result = self.session.query(_query_source(endpoint, username, profile=bool(profile)))
+        if self.session.current_account_username() != username:
+            raise BrowserSessionError("Instagram browser account changed during retrieval")
         if result.get("state") != "succeeded":
             # Never persist server response text, request headers or browser internals.
             raise BrowserSessionError(
@@ -139,7 +143,7 @@ def _public_media_url(value: object) -> bool:
     )
 
 
-def _query_source(endpoint: str, recipient_id: str, *, profile: bool) -> str:
+def _query_source(endpoint: str, username: str, *, profile: bool) -> str:
     """Project only the fields the existing pipeline understands inside the tab."""
     return f"""
 (() => {{
@@ -148,13 +152,13 @@ def _query_source(endpoint: str, recipient_id: str, *, profile: bool) -> str:
  window[key] = request;
  (async () => {{
   try {{
-   if (({_recipient_is_active_source(recipient_id)}) !== "true") throw new Error();
+   if (({_current_account_username_source()}) !== {json.dumps(username)}) throw new Error();
    const response = await fetch({json.dumps(endpoint)}, {{credentials: "include",
      signal: request.controller.signal,
      headers: {{"x-ig-app-id": {json.dumps(controlbox.scraping.instagram_web_app_id)}}}}});
    if (!response.ok) throw new Error();
    const body = await response.json();
-   if (({_recipient_is_active_source(recipient_id)}) !== "true") throw new Error();
+   if (({_current_account_username_source()}) !== {json.dumps(username)}) throw new Error();
    const image = media => {{
      const candidates = media.image_versions2?.candidates || [];
      const best = [...candidates].sort((a,b) => b.width*b.height-a.width*a.height)[0];
