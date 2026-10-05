@@ -685,3 +685,13 @@ WHERE position.club_id = owner.id AND owner.club_name = 'UW Board Games Club'
 -- Explicit editorial and competition examples for discovery filters.
 UPDATE public.events SET featured = true, competition = true
 WHERE id = (SELECT id FROM public.events WHERE ingestion_source = 'seed' AND title LIKE '%Board Games%' ORDER BY id LIMIT 1);
+
+-- Offline music display fixture; this is not a live chart recommendation.
+UPDATE public.instagram_publish_batches
+SET suggested_song = jsonb_build_object(
+    'title', 'Example Song', 'artist', 'Example Artist',
+    'chart_name', 'Local preview fixture',
+    'chart_url', 'https://music.apple.com/ca/playlist/top-100-canada/pl.79bac9045a2540e0b195e983df8ba569',
+    'checked_on', CURRENT_DATE::text
+)
+WHERE account_key = 'uwaterloo' AND status = 'ready_for_review';

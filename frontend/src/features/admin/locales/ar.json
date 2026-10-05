@@ -351,7 +351,11 @@
       "coverSlide": "شريحة الغلاف",
       "coverBody": "نص جسم الغلاف",
       "slideOf": "الشريحة {{index}} من {{count}}",
-      "undoRemoveSlide": "التراجع عن إزالة الشريحة"
+      "undoRemoveSlide": "التراجع عن إزالة الشريحة",
+      "suggestedSong": "الأغنية المقترحة",
+      "songChart": "{{chart}} · تم التحقق في {{date}}",
+      "songInstructions": "ابحث عن هذا العنوان والفنان في Instagram عند النشر. لا تتم إضافة الموسيقى تلقائيًا.",
+      "noSuggestedSong": "لا توجد أغنية مقترحة محفوظة لهذه الدفعة."
     },
     "clubSubmissions": "طلبات الأندية",
     "noClubSubmissions": "لا توجد طلبات أندية",

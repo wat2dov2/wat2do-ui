@@ -663,3 +663,21 @@ def test_business_nomination_limits_must_be_positive(tmp_path: Path, field: str)
     )
     with pytest.raises(ValidationError):
         load_controlbox(directory)
+
+
+def test_instagram_music_chart_mappings_and_history():
+    music = controlbox.instagram_publishing
+    assert music.music_history_batch_count == 10
+    assert music.music_charts[music.music_chart_by_school["tmu"]].name == "Top 25: Toronto"
+    assert music.music_charts[music.music_chart_by_school["ulaval"]].name == "Top 25: Québec City"
+    assert music.music_charts[music.default_music_chart].name == "Top 100: Canada"
+
+
+def test_instagram_music_rejects_missing_chart_mapping(tmp_path):
+    directory = _write_control(
+        tmp_path,
+        "instagram_publishing",
+        lambda data: data["music_chart_by_school"].update(tmu="missing"),
+    )
+    with pytest.raises(ValidationError, match="music mappings"):
+        load_controlbox(directory)

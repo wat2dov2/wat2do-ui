@@ -10211,6 +10211,16 @@
             "title": "Cover Body",
             "default": ""
           },
+          "suggested_song": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/InstagramSongSuggestion"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "version": {
             "type": "integer",
             "title": "Version"
@@ -10379,6 +10389,16 @@
             "type": "string",
             "title": "Cover Body",
             "default": ""
+          },
+          "suggested_song": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/InstagramSongSuggestion"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "version": {
             "type": "integer",
@@ -10590,6 +10610,50 @@
           "updated_at"
         ],
         "title": "InstagramPublishItemResponse"
+      },
+      "InstagramSongSuggestion": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title"
+          },
+          "artist": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Artist"
+          },
+          "chart_name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Chart Name"
+          },
+          "chart_url": {
+            "type": "string",
+            "maxLength": 2083,
+            "minLength": 1,
+            "format": "uri",
+            "title": "Chart Url"
+          },
+          "checked_on": {
+            "type": "string",
+            "format": "date",
+            "title": "Checked On"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "title",
+          "artist",
+          "chart_name",
+          "chart_url",
+          "checked_on"
+        ],
+        "title": "InstagramSongSuggestion"
       },
       "InteractionBatch": {
         "properties": {

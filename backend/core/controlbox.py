@@ -537,7 +537,24 @@ class UploadsControl(_ControlModel):
         return self
 
 
+class InstagramMusicChartControl(_ControlModel):
+    name: str = Field(min_length=1)
+    url: HttpUrl
+
+
 class InstagramPublishingControl(_ControlModel):
+    music_history_batch_count: int = Field(gt=0)
+    music_charts: dict[str, InstagramMusicChartControl]
+    music_chart_by_school: dict[str, str]
+    default_music_chart: str
+
+    @model_validator(mode="after")
+    def validate_music_charts(self) -> "InstagramPublishingControl":
+        chart_keys = {self.default_music_chart, *self.music_chart_by_school.values()}
+        if not chart_keys <= self.music_charts.keys():
+            raise ValueError("instagram music mappings must reference configured charts")
+        return self
+
     maximum_stickers_per_event: int = Field(ge=1, le=4)
     sticker_line_character_limit: int = Field(ge=8, le=12)
     sticker_maximum_lines: int = Field(ge=1, le=2)

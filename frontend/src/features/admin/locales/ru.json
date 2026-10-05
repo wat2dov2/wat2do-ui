@@ -351,7 +351,11 @@
       "coverSlide": "Обложка слайда",
       "coverBody": "Текст основного слайда",
       "slideOf": "Слайд {{index}} из {{count}}",
-      "undoRemoveSlide": "Отменить удаление слайда"
+      "undoRemoveSlide": "Отменить удаление слайда",
+      "suggestedSong": "Рекомендуемая песня",
+      "songChart": "{{chart}} · Проверено {{date}}",
+      "songInstructions": "При публикации найдите это название и исполнителя в Instagram. Музыка не добавляется автоматически.",
+      "noSuggestedSong": "Для этой подборки рекомендация песни не сохранена."
     },
     "clubSubmissions": "Заявки клубов",
     "noClubSubmissions": "Нет заявок клубов",

@@ -1032,6 +1032,7 @@ def codex_draft(monkeypatch):
         ],
     )
     monkeypatch.setattr(service, "_daily_batch", lambda *_: None)
+    monkeypatch.setattr(service, "_recent_song_suggestions", lambda *_: [])
     monkeypatch.setattr(service, "_last_successful_cutoff", lambda *_: None)
     monkeypatch.setattr(service, "default_caption_intro", lambda *_: "Campus picks")
     monkeypatch.setattr(service, "_load_candidates", lambda **_: [event])
@@ -1040,6 +1041,13 @@ def codex_draft(monkeypatch):
         window_end=now,
         caption_intro="Your next campus plans",
         cover_body="Film and conversation",
+        suggested_song={
+            "title": "Example Song",
+            "artist": "Example Artist",
+            "chart_name": "Top 100: Canada",
+            "chart_url": str(service._CONTROL.music_charts["canada"].url),
+            "checked_on": "2026-09-28",
+        },
         picks=[{"event_id": 17, "sticker_labels": ["Movie Night"]}],
     )
 
@@ -1052,6 +1060,8 @@ def test_codex_reads_candidates_without_writing(monkeypatch, codex_draft):
     assert packets[0]["status"] == "needs_review"
     assert packets[0]["requires_reauthorization"] is True
     assert "allowed_sticker_labels" not in packets[0]["events"][0]
+    assert packets[0]["music_chart"]["name"] == "Top 100: Canada"
+    assert packets[0]["recent_songs"] == []
     assert packets[0]["events"][0]["id"] == 17
     database.assert_not_called()
 
@@ -1070,6 +1080,7 @@ def test_codex_saves_choices_and_reads_back_admin_draft(monkeypatch, codex_draft
     assert result["outcome"] == "saved"
     readback.assert_called_once_with("draft-1")
     batch = next(args[0] for name, args, _ in calls if name == "insert")
+    assert batch["suggested_song"] == codex_draft.suggested_song.model_dump(mode="json")
     assert batch["cover_body"] == codex_draft.cover_body
     assert batch["school_id"] == 1
     updates = [args[0] for name, args, _ in calls if name == "update"]
@@ -1199,3 +1210,30 @@ def test_codex_draft_save_never_reads_publishing_tokens(monkeypatch, codex_draft
     )
     assert service.save_review_draft(codex_draft)["outcome"] == "saved"
     credentials.assert_not_called()
+
+
+def test_recent_music_is_scoped_to_account_and_successful_prior_batches(monkeypatch):
+    calls = []
+    song = {"title": "A Song", "artist": "An Artist"}
+    monkeypatch.setattr(
+        service,
+        "get_sb",
+        lambda: SimpleNamespace(table=lambda _: _FakeQuery([{"suggested_song": song}], calls)),
+    )
+    now = datetime(2026, 10, 6, 13, tzinfo=timezone.utc)
+    assert service._recent_song_suggestions("uwaterloo", now) == [song]
+    assert ("eq", ("account_key", "uwaterloo"), {}) in calls
+    assert ("eq", ("batch_kind", "events"), {}) in calls
+    assert ("in_", ("status", ["ready_for_review", "published"]), {}) in calls
+    assert ("lt", ("window_end", now.isoformat()), {}) in calls
+    assert ("is_", ("suggested_song", "null"), {}) in calls
+    assert ("limit", (service._CONTROL.music_history_batch_count,), {}) in calls
+
+
+def test_song_cannot_claim_a_future_chart_check(monkeypatch, codex_draft):
+    codex_draft.suggested_song.checked_on = datetime(2026, 10, 1).date()
+    database = Mock()
+    monkeypatch.setattr(service, "get_sb", database)
+    with pytest.raises(service.ValidationError, match="future"):
+        service.save_review_draft(codex_draft)
+    database.assert_not_called()

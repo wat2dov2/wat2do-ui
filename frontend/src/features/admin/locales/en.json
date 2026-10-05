@@ -351,7 +351,11 @@
       "coverSlide": "Cover slide",
       "coverBody": "Cover body text",
       "slideOf": "Slide {{index}} of {{count}}",
-      "undoRemoveSlide": "Undo remove slide"
+      "undoRemoveSlide": "Undo remove slide",
+      "suggestedSong": "Suggested song",
+      "songChart": "{{chart}} · Checked {{date}}",
+      "songInstructions": "Search this title and artist in Instagram when posting. Music is not attached automatically.",
+      "noSuggestedSong": "No song suggestion saved for this batch."
     },
     "clubSubmissions": "Club submissions",
     "noClubSubmissions": "No club submissions",

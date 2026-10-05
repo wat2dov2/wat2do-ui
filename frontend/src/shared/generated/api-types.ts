@@ -2815,6 +2815,7 @@ export interface components {
              * @default
              */
             cover_body: string;
+            suggested_song?: components["schemas"]["InstagramSongSuggestion"] | null;
             /** Version */
             version: number;
             /** Error Message */
@@ -2898,6 +2899,7 @@ export interface components {
              * @default
              */
             cover_body: string;
+            suggested_song?: components["schemas"]["InstagramSongSuggestion"] | null;
             /** Version */
             version: number;
             /** Error Message */
@@ -2979,6 +2981,25 @@ export interface components {
              * Format: date-time
              */
             updated_at: string;
+        };
+        /** InstagramSongSuggestion */
+        InstagramSongSuggestion: {
+            /** Title */
+            title: string;
+            /** Artist */
+            artist: string;
+            /** Chart Name */
+            chart_name: string;
+            /**
+             * Chart Url
+             * Format: uri
+             */
+            chart_url: string;
+            /**
+             * Checked On
+             * Format: date
+             */
+            checked_on: string;
         };
         /**
          * InteractionBatch

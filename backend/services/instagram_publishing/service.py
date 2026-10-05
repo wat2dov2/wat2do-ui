@@ -77,6 +77,25 @@ def _with_batch_school(row: dict[str, Any]) -> dict[str, Any]:
     return school_service.with_school_slug(row)
 
 
+def _recent_song_suggestions(account_key: str, window_end: datetime) -> list[dict[str, Any]]:
+    """Previously saved recommendations for this account, newest first."""
+    response = (
+        get_sb()
+        .table(INSTAGRAM_PUBLISH_BATCHES)
+        .select("suggested_song")
+        .eq("account_key", account_key)
+        .eq("batch_kind", "events")
+        .in_("status", [INSTAGRAM_BATCH_READY_FOR_REVIEW, INSTAGRAM_BATCH_PUBLISHED])
+        .lt("window_end", window_end.isoformat())
+        .not_.is_("suggested_song", "null")
+        .order("window_end", desc=True)
+        .order("id")
+        .limit(_CONTROL.music_history_batch_count)
+        .execute()
+    )
+    return [row["suggested_song"] for row in response.data or []]
+
+
 def list_draft_candidates(now_utc: datetime | None = None) -> list[dict[str, Any]]:
     """Read candidate packets for Codex's daily editorial review, without writing drafts."""
     now = _aware_utc(now_utc or datetime.now(timezone.utc))
@@ -108,6 +127,10 @@ def list_draft_candidates(now_utc: datetime | None = None) -> list[dict[str, Any
             window_start=window_start.isoformat(),
             caption_intro=default_caption_intro(account_key, "events"),
             events=events,
+            music_chart=_CONTROL.music_charts[
+                _CONTROL.music_chart_by_school.get(account_key, _CONTROL.default_music_chart)
+            ].model_dump(mode="json"),
+            recent_songs=_recent_song_suggestions(account_key, now),
         )
         packets.append(packet)
     return packets
@@ -366,6 +389,8 @@ def save_review_draft(selection: DraftSelection) -> dict[str, Any]:
     if account is None:
         raise ValidationError("Instagram account is not enabled for publishing")
     local_date = now.astimezone(ZoneInfo(_CONTROL.generation_timezone)).date()
+    if selection.suggested_song and selection.suggested_song.checked_on > local_date:
+        raise ValidationError("Song chart check cannot be in the future")
     existing = _daily_batch(account_key, local_date)
     if existing:
         return {"outcome": "existing", "batch": get_batch(existing["id"])}
@@ -398,6 +423,11 @@ def save_review_draft(selection: DraftSelection) -> dict[str, Any]:
                 "status": INSTAGRAM_BATCH_GENERATING,
                 "caption_intro": selection.caption_intro,
                 "cover_body": selection.cover_body,
+                "suggested_song": (
+                    selection.suggested_song.model_dump(mode="json")
+                    if selection.suggested_song
+                    else None
+                ),
             }
         )
         .execute()

@@ -351,7 +351,11 @@
       "coverSlide": "Diapositive de couverture",
       "coverBody": "Texte principal de la couverture",
       "slideOf": "Diapositive {{index}} sur {{count}}",
-      "undoRemoveSlide": "Annuler le retrait de la diapositive"
+      "undoRemoveSlide": "Annuler le retrait de la diapositive",
+      "suggestedSong": "Chanson suggérée",
+      "songChart": "{{chart}} · Vérifié le {{date}}",
+      "songInstructions": "Recherchez ce titre et cet artiste dans Instagram lors de la publication. La musique n’est pas ajoutée automatiquement.",
+      "noSuggestedSong": "Aucune chanson suggérée enregistrée pour ce lot."
     },
     "clubSubmissions": "Soumissions de clubs",
     "noClubSubmissions": "Aucune soumission de club",

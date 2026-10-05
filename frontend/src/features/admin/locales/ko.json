@@ -351,7 +351,11 @@
       "coverSlide": "표지 슬라이드",
       "coverBody": "표지 본문 텍스트",
       "slideOf": "슬라이드 {{index}} / {{count}}",
-      "undoRemoveSlide": "슬라이드 삭제 취소"
+      "undoRemoveSlide": "슬라이드 삭제 취소",
+      "suggestedSong": "추천 노래",
+      "songChart": "{{chart}} · {{date}} 확인",
+      "songInstructions": "게시할 때 Instagram에서 이 제목과 아티스트를 검색하세요. 음악은 자동으로 추가되지 않습니다.",
+      "noSuggestedSong": "이 배치에 저장된 추천 노래가 없습니다."
     },
     "clubSubmissions": "동아리 제출",
     "noClubSubmissions": "동아리 제출 없음",

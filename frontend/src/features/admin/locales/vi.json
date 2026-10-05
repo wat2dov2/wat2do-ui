@@ -351,7 +351,11 @@
       "coverSlide": "Slide bìa",
       "coverBody": "Văn bản nội dung bìa",
       "slideOf": "Slide {{index}} của {{count}}",
-      "undoRemoveSlide": "Hoàn tác xóa trang chiếu"
+      "undoRemoveSlide": "Hoàn tác xóa trang chiếu",
+      "suggestedSong": "Bài hát gợi ý",
+      "songChart": "{{chart}} · Đã kiểm tra {{date}}",
+      "songInstructions": "Tìm tên bài hát và nghệ sĩ này trên Instagram khi đăng. Nhạc không được thêm tự động.",
+      "noSuggestedSong": "Chưa lưu bài hát gợi ý cho nhóm bài đăng này."
     },
     "clubSubmissions": "Đề xuất câu lạc bộ",
     "noClubSubmissions": "Chưa có đề xuất câu lạc bộ",

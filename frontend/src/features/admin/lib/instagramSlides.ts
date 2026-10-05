@@ -30,7 +30,7 @@ export const SLIDE_HEIGHT = 1350;
 /** Raster preparation and template layout use the same physical image bounds. */
 export const SLIDE_POSTER_REGIONS = {
   event: { width: SLIDE_WIDTH - 128, height: 960 },
-  cover: { width: 220, height: 308 },
+  cover: { width: 280, height: 392 },
   avatar: { width: 88, height: 88 },
 } as const;
 

@@ -351,7 +351,11 @@
       "coverSlide": "封面",
       "coverBody": "封面正文",
       "slideOf": "第 {{index}} 张，共 {{count}} 张",
-      "undoRemoveSlide": "撤销移除幻灯片"
+      "undoRemoveSlide": "撤销移除幻灯片",
+      "suggestedSong": "推荐歌曲",
+      "songChart": "{{chart}} · 核查日期 {{date}}",
+      "songInstructions": "发布时在 Instagram 搜索此歌曲名称和歌手。音乐不会自动添加。",
+      "noSuggestedSong": "此批次尚未保存推荐歌曲。"
     },
     "clubSubmissions": "社团提交",
     "noClubSubmissions": "暂无社团提交",

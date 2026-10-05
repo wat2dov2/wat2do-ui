@@ -351,7 +351,11 @@
       "coverSlide": "Diapositiva di copertina",
       "coverBody": "Testo del corpo copertina",
       "slideOf": "Diapositiva {{index}} di {{count}}",
-      "undoRemoveSlide": "Annulla rimozione diapositiva"
+      "undoRemoveSlide": "Annulla rimozione diapositiva",
+      "suggestedSong": "Brano suggerito",
+      "songChart": "{{chart}} · Verificato il {{date}}",
+      "songInstructions": "Cerca questo titolo e artista su Instagram quando pubblichi. La musica non viene aggiunta automaticamente.",
+      "noSuggestedSong": "Nessun brano suggerito salvato per questo gruppo."
     },
     "clubSubmissions": "Proposte di club",
     "noClubSubmissions": "Nessuna proposta di club",

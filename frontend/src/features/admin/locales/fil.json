@@ -351,7 +351,11 @@
       "coverSlide": "Slide ng pabalat",
       "coverBody": "Teksto ng katawan ng pabalat",
       "slideOf": "Slide {{index}} ng {{count}}",
-      "undoRemoveSlide": "Ibalik ang inalis na slide"
+      "undoRemoveSlide": "Ibalik ang inalis na slide",
+      "suggestedSong": "Iminungkahing kanta",
+      "songChart": "{{chart}} · Sinuri noong {{date}}",
+      "songInstructions": "Hanapin ang pamagat at artist na ito sa Instagram kapag nag-post. Hindi awtomatikong idinadagdag ang musika.",
+      "noSuggestedSong": "Walang naka-save na mungkahing kanta para sa batch na ito."
     },
     "clubSubmissions": "Mga pagsusumite ng club",
     "noClubSubmissions": "Walang pagsusumite ng club",

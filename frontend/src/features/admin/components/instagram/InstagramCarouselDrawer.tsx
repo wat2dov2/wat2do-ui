@@ -21,6 +21,7 @@ import { getApiErrorMessage } from "@/shared/services/apiClient";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 import { getSchoolColors } from "@/shared/lib/schoolBranding";
+import { InstagramSongSuggestion } from "./InstagramSongSuggestion";
 import { InstagramEventEditor } from "./InstagramEventEditor";
 import { fetchEventById, updateEventAPI } from "@/features/events/api/events.api";
 import type { ApiInstagramPublishBatchResponse } from "@/shared/generated";
@@ -301,6 +302,7 @@ export function InstagramCarouselDrawer({
               ))}
             </FormGrid>
             <Stack gap={6}>
+            <InstagramSongSuggestion song={batch.suggested_song} />
             {/*
               A published run is a record, so it has no editing surface at all -
               the slides above are the images that were posted, and the caption

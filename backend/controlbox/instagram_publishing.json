@@ -15,5 +15,58 @@
   "maximum_stickers_per_event": 4,
   "sticker_line_character_limit": 12,
   "sticker_maximum_lines": 2,
-  "sticker_shape_count": 10
+  "sticker_shape_count": 10,
+  "music_history_batch_count": 10,
+  "music_charts": {
+    "toronto": {
+      "name": "Top 25: Toronto",
+      "url": "https://music.apple.com/ca/playlist/top-25-toronto/pl.14144d2c98604927ac05f222f8bafeb1"
+    },
+    "montreal": {
+      "name": "Top 25: Montréal",
+      "url": "https://music.apple.com/ca/playlist/top-25-montr%C3%A9al/pl.e3cdac4d93b64b1091d6ea1185f738e5"
+    },
+    "vancouver": {
+      "name": "Top 25: Vancouver",
+      "url": "https://music.apple.com/ca/playlist/top-25-vancouver/pl.4c17ccf006634d67b09aaac56f22d200"
+    },
+    "calgary": {
+      "name": "Top 25: Calgary",
+      "url": "https://music.apple.com/ca/playlist/top-25-calgary/pl.fef64d04d26546139db3ec04442f8166"
+    },
+    "edmonton": {
+      "name": "Top 25: Edmonton",
+      "url": "https://music.apple.com/ca/playlist/top-25-edmonton/pl.56a5fa31251646a4bc63d6ddf5796b81"
+    },
+    "ottawa": {
+      "name": "Top 25: Ottawa",
+      "url": "https://music.apple.com/ca/playlist/top-25-ottawa/pl.92644cd959c34639be5c6819d2897c80"
+    },
+    "quebec-city": {
+      "name": "Top 25: Québec City",
+      "url": "https://music.apple.com/ca/playlist/top-25-qu%C3%A9bec-city/pl.16fd373e7ff04847bf7ed879ef463b63"
+    },
+    "canada": {
+      "name": "Top 100: Canada",
+      "url": "https://music.apple.com/ca/playlist/top-100-canada/pl.79bac9045a2540e0b195e983df8ba569"
+    }
+  },
+  "music_chart_by_school": {
+    "utsg": "toronto",
+    "utsc": "toronto",
+    "tmu": "toronto",
+    "yorku": "toronto",
+    "ocadu": "toronto",
+    "mcgill": "montreal",
+    "concordia": "montreal",
+    "udem": "montreal",
+    "ubc": "vancouver",
+    "sfu": "vancouver",
+    "ucalgary": "calgary",
+    "ualberta": "edmonton",
+    "ottawa": "ottawa",
+    "carleton": "ottawa",
+    "ulaval": "quebec-city"
+  },
+  "default_music_chart": "canada"
 }

@@ -540,7 +540,7 @@ test.describe("Instagram raster preparation", () => {
       expect(renderedSlide!.props.model.tiles).toHaveLength(instagramPublishing.maximum_event_slides);
       const prepared = Buffer.from(renderedSlide!.props.model.tiles![0].split(",")[1], "base64");
       const metadata = await sharp(prepared).metadata();
-      expect([metadata.width, metadata.height]).toEqual([220, 308]);
+      expect([metadata.width, metadata.height]).toEqual([280, 392]);
       const markup = renderToStaticMarkup(renderedSlide!);
       expect(markup).toContain(body);
       expect(markup).toContain("font-size:32px;font-weight:500;line-height:1.35");
@@ -692,3 +692,21 @@ for (const variant of ["card", "detail"]) {
     expect(html.includes("cursor-zoom-in")).toBe(variant === "detail");
   });
 }
+
+
+test("saved music recommendations show search copy and provenance without editing controls", () => {
+  const { InstagramSongSuggestion } = loadComponent("features/admin/components/instagram/InstagramSongSuggestion");
+  const html = render(InstagramSongSuggestion, { song: {
+    title: "Example Song", artist: "Example Artist", chart_name: "Top 25: Toronto",
+    chart_url: "https://music.apple.com/ca/playlist/top-25-toronto/pl.example", checked_on: "2026-10-05",
+  } });
+  expect(html).toContain("Example Song · Example Artist");
+  expect(html).toContain('href="https://music.apple.com/ca/playlist/top-25-toronto/pl.example"');
+  expect(html).toContain("admin.instagramPublishing.songInstructions");
+  expect(html).not.toMatch(/<(input|select|textarea|button)\b/);
+});
+
+test("older batches explicitly show when no music recommendation was saved", () => {
+  const { InstagramSongSuggestion } = loadComponent("features/admin/components/instagram/InstagramSongSuggestion");
+  expect(render(InstagramSongSuggestion, { song: null })).toContain("admin.instagramPublishing.noSuggestedSong");
+});

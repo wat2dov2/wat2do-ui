@@ -351,7 +351,11 @@
       "coverSlide": "封面幻燈片",
       "coverBody": "封面正文",
       "slideOf": "第 {{index}} 張幻燈片，共 {{count}} 張",
-      "undoRemoveSlide": "復原移除投影片"
+      "undoRemoveSlide": "復原移除投影片",
+      "suggestedSong": "建議歌曲",
+      "songChart": "{{chart}} · 核實日期 {{date}}",
+      "songInstructions": "發帖時喺 Instagram 搜尋呢個歌名同歌手。音樂唔會自動加入。",
+      "noSuggestedSong": "呢批帖子未有儲存建議歌曲。"
     },
     "clubSubmissions": "社團提交",
     "noClubSubmissions": "暫無社團提交",

@@ -73,3 +73,29 @@ def test_editorial_threshold_can_keep_more_than_publication_capacity():
 
 def test_editorial_threshold_can_reject_the_entire_eligible_pool():
     selection.validate_picks([{"id": 1}], [])
+
+
+@pytest.mark.parametrize(
+    "field,value",
+    [
+        ("title", " "),
+        ("artist", ""),
+        ("chart_url", "javascript:alert(1)"),
+        ("checked_on", "not-a-date"),
+    ],
+)
+def test_invalid_song_recommendations_are_rejected(field, value):
+    from pydantic import ValidationError
+
+    from schemas.instagram_publishing import InstagramSongSuggestion
+
+    song = dict(
+        title="Song",
+        artist="Artist",
+        chart_name="Toronto",
+        chart_url="https://music.apple.com/ca/",
+        checked_on="2026-10-05",
+    )
+    song[field] = value
+    with pytest.raises(ValidationError):
+        InstagramSongSuggestion.model_validate(song)

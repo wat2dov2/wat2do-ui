@@ -351,7 +351,11 @@
       "coverSlide": "Titel-Folie",
       "coverBody": "Text auf der Titelfolie",
       "slideOf": "Folie {{index}} von {{count}}",
-      "undoRemoveSlide": "Entfernen der Folie rückgängig machen"
+      "undoRemoveSlide": "Entfernen der Folie rückgängig machen",
+      "suggestedSong": "Vorgeschlagener Song",
+      "songChart": "{{chart}} · Geprüft am {{date}}",
+      "songInstructions": "Suche beim Posten auf Instagram nach diesem Titel und Künstler. Musik wird nicht automatisch hinzugefügt.",
+      "noSuggestedSong": "Für diesen Stapel ist kein Songvorschlag gespeichert."
     },
     "clubSubmissions": "Club-Einreichungen",
     "noClubSubmissions": "Keine Club-Einreichungen",

@@ -351,7 +351,11 @@
       "coverSlide": "کور سلائیڈ",
       "coverBody": "کور باڈی متن",
       "slideOf": "{{count}} میں سے سلائیڈ {{index}}",
-      "undoRemoveSlide": "سلائیڈ ہٹانا واپس کریں"
+      "undoRemoveSlide": "سلائیڈ ہٹانا واپس کریں",
+      "suggestedSong": "تجویز کردہ گانا",
+      "songChart": "{{chart}} · {{date}} کو جانچا گیا",
+      "songInstructions": "پوسٹ کرتے وقت Instagram پر یہ عنوان اور فنکار تلاش کریں۔ موسیقی خودکار طور پر شامل نہیں ہوتی۔",
+      "noSuggestedSong": "اس بیچ کے لیے کوئی تجویز کردہ گانا محفوظ نہیں ہے۔"
     },
     "clubSubmissions": "کلب کی درخواستیں",
     "noClubSubmissions": "کلب کی کوئی درخواست نہیں",

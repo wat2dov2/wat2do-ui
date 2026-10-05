@@ -9,6 +9,7 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from core.controlbox import controlbox
+from schemas.instagram_publishing import InstagramSongSuggestion
 
 _CONTROL = controlbox.instagram_publishing
 
@@ -51,6 +52,7 @@ class DraftSelection(BaseModel):
     window_end: datetime
     caption_intro: str = Field(max_length=2200)
     cover_body: str = Field(max_length=280)
+    suggested_song: InstagramSongSuggestion | None = None
     picks: list[CarouselPick]
 
 

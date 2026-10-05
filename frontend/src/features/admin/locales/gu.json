@@ -351,7 +351,11 @@
       "coverSlide": "કવર સ્લાઇડ",
       "coverBody": "કવર બોડી ટેક્સ્ટ",
       "slideOf": "સ્લાઇડ {{index}} માંથી {{count}}",
-      "undoRemoveSlide": "સ્લાઇડ દૂર કરવાનું પૂર્વવત્ કરો"
+      "undoRemoveSlide": "સ્લાઇડ દૂર કરવાનું પૂર્વવત્ કરો",
+      "suggestedSong": "સૂચવેલું ગીત",
+      "songChart": "{{chart}} · {{date}} ના રોજ તપાસ્યું",
+      "songInstructions": "પોસ્ટ કરતી વખતે Instagram પર આ શીર્ષક અને કલાકાર શોધો. સંગીત આપમેળે ઉમેરાતું નથી.",
+      "noSuggestedSong": "આ બેચ માટે કોઈ સૂચવેલું ગીત સાચવેલું નથી."
     },
     "clubSubmissions": "ક્લબ સબમિશન",
     "noClubSubmissions": "કોઈ ક્લબ સબમિશન નથી",

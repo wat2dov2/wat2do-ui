@@ -351,7 +351,11 @@
       "coverSlide": "कवर स्लाइड",
       "coverBody": "मुख्य पाठ को कवर करें",
       "slideOf": "{{count}} में से स्लाइड {{index}}",
-      "undoRemoveSlide": "स्लाइड हटाना पूर्ववत करें"
+      "undoRemoveSlide": "स्लाइड हटाना पूर्ववत करें",
+      "suggestedSong": "सुझाया गया गाना",
+      "songChart": "{{chart}} · {{date}} को जाँचा गया",
+      "songInstructions": "पोस्ट करते समय Instagram पर इस शीर्षक और कलाकार को खोजें। संगीत अपने आप नहीं जोड़ा जाता।",
+      "noSuggestedSong": "इस बैच के लिए कोई सुझाया गया गाना सहेजा नहीं गया है।"
     },
     "clubSubmissions": "क्लब सबमिशन",
     "noClubSubmissions": "कोई क्लब सबमिशन नहीं",

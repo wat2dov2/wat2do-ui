@@ -351,7 +351,11 @@
       "coverSlide": "Slide de capa",
       "coverBody": "Texto do corpo da capa",
       "slideOf": "Slide {{index}} de {{count}}",
-      "undoRemoveSlide": "Desfazer remoção do slide"
+      "undoRemoveSlide": "Desfazer remoção do slide",
+      "suggestedSong": "Música sugerida",
+      "songChart": "{{chart}} · Verificado em {{date}}",
+      "songInstructions": "Procure este título e artista no Instagram ao publicar. A música não é adicionada automaticamente.",
+      "noSuggestedSong": "Nenhuma música sugerida salva para este lote."
     },
     "clubSubmissions": "Submissões de clubes",
     "noClubSubmissions": "Nenhuma submissão de clube",

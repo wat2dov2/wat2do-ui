@@ -351,7 +351,11 @@
       "coverSlide": "اسلاید جلد",
       "coverBody": "متن بدنه جلد",
       "slideOf": "اسلاید {{index}} از {{count}}",
-      "undoRemoveSlide": "واگرد حذف اسلاید"
+      "undoRemoveSlide": "واگرد حذف اسلاید",
+      "suggestedSong": "آهنگ پیشنهادی",
+      "songChart": "{{chart}} · بررسی‌شده در {{date}}",
+      "songInstructions": "هنگام انتشار، این عنوان و هنرمند را در Instagram جستجو کنید. موسیقی خودکار اضافه نمی‌شود.",
+      "noSuggestedSong": "برای این مجموعه آهنگ پیشنهادی ذخیره نشده است."
     },
     "clubSubmissions": "درخواست‌های باشگاه",
     "noClubSubmissions": "هیچ درخواست باشگاهی وجود ندارد",

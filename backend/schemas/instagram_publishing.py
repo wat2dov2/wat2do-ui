@@ -2,7 +2,7 @@ from datetime import date, datetime
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl
 
 from core.constants import (
     INSTAGRAM_BATCH_EMPTY,
@@ -24,6 +24,16 @@ InstagramPublishBatchStatus = Literal[
     INSTAGRAM_BATCH_EMPTY,
     INSTAGRAM_BATCH_FAILED,
 ]
+
+
+class InstagramSongSuggestion(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    title: str = Field(min_length=1, max_length=200)
+    artist: str = Field(min_length=1, max_length=200)
+    chart_name: str = Field(min_length=1, max_length=200)
+    chart_url: HttpUrl
+    checked_on: date
 
 
 class InstagramPublishItemResponse(BaseModel):
@@ -61,6 +71,7 @@ class InstagramPublishBatchBaseResponse(BaseModel):
     caption: str
     caption_intro: str = ""
     cover_body: str = ""
+    suggested_song: InstagramSongSuggestion | None = None
     version: int
     error_message: str | None = None
     meta_media_id: str | None = None

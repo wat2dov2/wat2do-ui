@@ -138,7 +138,7 @@ const COVER_DOODLE_COLUMNS = 6;
 const COVER_DOODLE_CELL_SIZE = 210;
 const COVER_DOODLE_ICON_SIZE = 72;
 /** The poster fan sits on a fixed baseline so the copy above it never reflows. */
-const FAN_TOP = 800;
+const FAN_TOP = 760;
 const FAN_CARD_WIDTH = SLIDE_POSTER_REGIONS.cover.width;
 const FAN_CARD_HEIGHT = SLIDE_POSTER_REGIONS.cover.height;
 /** How far the outer cards may dip below the baseline as the fan curves. */
