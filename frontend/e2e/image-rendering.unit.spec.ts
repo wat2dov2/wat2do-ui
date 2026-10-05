@@ -543,7 +543,7 @@ test.describe("Instagram raster preparation", () => {
       expect([metadata.width, metadata.height]).toEqual([220, 308]);
       const markup = renderToStaticMarkup(renderedSlide!);
       expect(markup).toContain(body);
-      expect(markup).toContain("font-size:24px;font-weight:500;line-height:1.35");
+      expect(markup).toContain("font-size:32px;font-weight:500;line-height:1.35");
       const output = Buffer.from(await response.arrayBuffer());
       const artifact = test.info().outputPath("cover-slide.png");
       writeFileSync(artifact, output);

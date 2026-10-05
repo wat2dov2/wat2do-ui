@@ -343,7 +343,7 @@ export function CoverSlideTemplate({ model, renderPoster = renderSlidePoster }: 
         >
           {model.headline}
         </div>
-        <div style={{ display: "flex", marginTop: 28, fontSize: 24, fontWeight: 500, lineHeight: 1.35, maxWidth: COVER_CONTENT_WIDTH }}>
+        <div style={{ display: "flex", marginTop: 28, fontSize: 32, fontWeight: 500, lineHeight: 1.35, maxWidth: COVER_CONTENT_WIDTH }}>
           {model.body}
         </div>
       </div>
