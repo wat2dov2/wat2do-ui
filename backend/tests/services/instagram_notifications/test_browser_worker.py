@@ -36,7 +36,6 @@ def _engagement(queue, shortcode="Post1"):
         recipient_id=RECIPIENT_ID,
         account_username=ACCOUNT_USERNAME,
         post_url=f"https://www.instagram.com/p/{shortcode}/",
-        action="like",
     )
 
 
@@ -223,8 +222,9 @@ def test_execute_job_shares_pinned_session_and_cleans_up_after_success(
     def executor(*, session):
         calls.append(("engagement-session", session))
         return SimpleNamespace(
-            execute=lambda *args: calls.append("execute") or {"status": "succeeded"},
-            inspect=lambda *args: calls.append("inspect") or {"status": "ready"},
+            engage_post=lambda *args, inspect=False: (
+                calls.append("inspect" if inspect else "execute") or {"status": "succeeded"}
+            ),
         )
 
     monkeypatch.setattr(module, "BrowserInstagramDigestResolver", resolver)
@@ -254,11 +254,11 @@ def test_execute_job_cleans_up_on_every_interruption(queue, monkeypatch, error):
     session = SimpleNamespace(cancel_pending_request=lambda: calls.append("cleanup"))
     monkeypatch.setattr(module, "BrowserInstagramSession", lambda: session)
 
-    def fail(*_args):
+    def fail(*_args, **_kwargs):
         raise error()
 
     monkeypatch.setattr(
-        module, "BrowserInstagramEngagementExecutor", lambda **_: SimpleNamespace(execute=fail)
+        module, "BrowserInstagramEngagementExecutor", lambda **_: SimpleNamespace(engage_post=fail)
     )
 
     with pytest.raises(error):
@@ -273,7 +273,7 @@ def test_failed_cleanup_does_not_swallow_shutdown_interrupt(queue, monkeypatch):
             "Instagram browser request cancellation could not be confirmed"
         )
 
-    def interrupted(*_args):
+    def interrupted(*_args, **_kwargs):
         raise KeyboardInterrupt()
 
     monkeypatch.setattr(
@@ -284,7 +284,7 @@ def test_failed_cleanup_does_not_swallow_shutdown_interrupt(queue, monkeypatch):
     monkeypatch.setattr(
         module,
         "BrowserInstagramEngagementExecutor",
-        lambda **_: SimpleNamespace(execute=interrupted),
+        lambda **_: SimpleNamespace(engage_post=interrupted),
     )
 
     with pytest.raises(KeyboardInterrupt):

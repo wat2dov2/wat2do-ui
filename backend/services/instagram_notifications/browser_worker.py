@@ -58,12 +58,11 @@ def execute_job(job: BrowserJob) -> dict:
                 cutoff_days=job.payload["cutoff_days"],
             )
         executor = BrowserInstagramEngagementExecutor(session=session)
-        operation = executor.inspect if job.payload.get("dry_run") else executor.execute
-        return operation(
+        return executor.engage_post(
             job.recipient_id,
             job.account_username,
             job.payload["post_url"],
-            job.payload["action"],
+            inspect=bool(job.payload.get("dry_run")),
         )
     except (KeyboardInterrupt, SystemExit) as exc:
         interruption = exc

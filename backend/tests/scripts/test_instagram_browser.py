@@ -70,7 +70,8 @@ def test_inspect_only_enqueues_read_only_jobs_with_enabled_account(tmp_path, mon
     result = json.loads(capsys.readouterr().out)
     queue = BrowserJobQueue(tmp_path)
     jobs = [queue.get(job_id) for job_id in result["jobs"]]
-    assert {job.payload["action"] for job in jobs} == {"like", "repost"}
+    assert len(jobs) == 1
+    assert "action" not in jobs[0].payload
     assert all(job.payload["dry_run"] and job.state == "pending" for job in jobs)
     assert all(job.recipient_id == "123" and job.school == "ubc" for job in jobs)
 
@@ -90,7 +91,6 @@ def test_operator_can_pause_inspect_retry_and_cancel(tmp_path, capsys):
         recipient_id="123",
         account_username="ubc.wat2do.io",
         post_url="https://www.instagram.com/p/abc/",
-        action="save",
     )
     assert script.main(args + ["pause"]) == 0
     assert queue.get_setting("paused") is True

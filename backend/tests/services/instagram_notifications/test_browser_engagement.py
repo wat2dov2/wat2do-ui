@@ -233,9 +233,15 @@ class FakeSession:
 
 
 def _execute(session, action="like"):
-    return engagement.BrowserInstagramEngagementExecutor(session=session).execute(
-        "41553815702", "usask.wat2do.io", "https://instagram.com/p/TARGET123/?tracking=1", action
+    executor = engagement.BrowserInstagramEngagementExecutor(session=session)
+    recipient, username, url = (
+        "41553815702",
+        "usask.wat2do.io",
+        "https://www.instagram.com/p/TARGET123/",
     )
+    username, url = executor._prepare(recipient, username, url)
+    result = executor._state(recipient, username, url, action, click=True)
+    return executor._complete(recipient, username, url, action, result)
 
 
 def test_executor_clicks_once_and_waits_for_positive_confirmation():
@@ -271,7 +277,10 @@ def test_invalid_url_and_action_fail_before_touching_browser():
         ("https://instagram.com/p/A/", "delete"),
     ]:
         with pytest.raises(BrowserSessionError):
-            executor.execute("41553815702", "usask.wat2do.io", url, action)
+            if action == "delete":
+                executor._state("41553815702", "usask.wat2do.io", url, action, click=True)
+            else:
+                executor.engage_post("41553815702", "usask.wat2do.io", url)
     assert session.calls == []
 
 
@@ -332,3 +341,24 @@ def test_active_repost_badge_outside_toolbar_cannot_mark_post_reposted():
         "state": {"status": "clicked"},
         "clicks": ["repost"],
     }
+
+
+def test_post_job_navigates_once_and_completes_like_then_repost():
+    session = FakeSession(["clicked", "already_done", "clicked", "already_done"])
+    result = engagement.BrowserInstagramEngagementExecutor(session=session).engage_post(
+        "41553815702", "usask.wat2do.io", "https://www.instagram.com/p/TARGET123/"
+    )
+    assert result["status"] == "succeeded"
+    assert list(result["actions"]) == ["like", "repost"]
+    assert all(action["status"] == "succeeded" for action in result["actions"].values())
+    assert [call[0] for call in session.calls] == ["activate", "navigate"]
+
+
+def test_post_retry_preserves_completed_like_and_only_finishes_repost():
+    session = FakeSession(["already_done", "clicked", "already_done"])
+    result = engagement.BrowserInstagramEngagementExecutor(session=session).engage_post(
+        "41553815702", "usask.wat2do.io", "https://www.instagram.com/p/TARGET123/"
+    )
+    assert result["actions"]["like"]["status"] == "already_done"
+    assert result["actions"]["repost"]["status"] == "succeeded"
+    assert len(session.calls) == 2

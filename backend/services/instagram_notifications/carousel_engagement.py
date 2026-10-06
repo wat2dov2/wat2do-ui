@@ -118,22 +118,20 @@ def _enqueue_batch(
             stats["skipped"] += 1
             continue
         stats["posts"] += 1
-        for action in _CONTROL.actions:
-            try:
-                queue.enqueue_engagement(
-                    school=identity.school,
-                    recipient_id=identity.recipient_id,
-                    account_username=identity.account_username,
-                    post_url=post_url,
-                    action=action,
-                    event_id=int(item["event_id"]),
-                )
-            except ValueError:
-                # A publishing identity can be valid for Meta but unavailable
-                # to this browser. Its batch must not block other schools.
-                stats["skipped"] += 1
-                return False
-            stats["submitted"] += 1
+        try:
+            queue.enqueue_engagement(
+                school=identity.school,
+                recipient_id=identity.recipient_id,
+                account_username=identity.account_username,
+                post_url=post_url,
+                event_id=int(item["event_id"]),
+            )
+        except ValueError:
+            # A publishing identity can be valid for Meta but unavailable
+            # to this browser. Its batch must not block other schools.
+            stats["skipped"] += 1
+            return False
+        stats["submitted"] += 1
     return True
 
 
