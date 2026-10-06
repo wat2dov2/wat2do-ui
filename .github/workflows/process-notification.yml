@@ -19,7 +19,7 @@ on:
   workflow_dispatch:
     inputs:
       poster_id:
-        description: 'Instagram username to process'
+        description: 'Instagram username or exact post URL to process'
         required: false
         type: string
       school:
@@ -168,7 +168,7 @@ jobs:
           elif [[ "${{ needs.route.outputs.media_provider }}" == "browser" ]]; then
             .venv/bin/python scripts/instagram_browser.py retrieve \
               --school "$TARGET_SCHOOL" \
-              --url "https://www.instagram.com/$POSTER_ID/" \
+              --url "$POSTER_ID" \
               --cutoff-days "$CUTOFF_DAYS"
           else
             test -n "$APIFY_API_TOKEN"

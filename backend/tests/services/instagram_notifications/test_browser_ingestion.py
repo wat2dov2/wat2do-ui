@@ -329,3 +329,17 @@ def test_exclusions_apply_to_account_bound_jobs(tmp_path, kind):
     assert queue.get(jid).state == "pending"
     queue.set_setting("excluded_accounts", [])
     assert queue.claim_next().id == jid
+
+
+@pytest.mark.parametrize(
+    "target,expected",
+    [
+        ("https://www.instagram.com/p/DeHr2BlJhZ6/", "https://www.instagram.com/p/DeHr2BlJhZ6/"),
+        ("https://instagram.com/p/DeHr2BlJhZ6/", "https://www.instagram.com/p/DeHr2BlJhZ6/"),
+        ("Some.Club", "https://www.instagram.com/some.club/"),
+        (" @Some.Club ", "https://www.instagram.com/some.club/"),
+        ("https://www.instagram.com/Some.Club/", "https://www.instagram.com/some.club/"),
+    ],
+)
+def test_manual_targets_preserve_exact_posts_and_normalize_handles(target, expected):
+    assert module.canonical_target_url(target) == expected

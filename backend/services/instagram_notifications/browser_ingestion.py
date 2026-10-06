@@ -27,6 +27,11 @@ _RESERVED = {"p", "reel", "reels", "accounts", "explore", "direct", "stories"}
 
 
 def canonical_target_url(url: str) -> str:
+    """Normalize a manual username, profile URL or exact post URL once at ingestion."""
+    url = url.strip()
+    username = url.removeprefix("@")
+    if _PROFILE_PATH.fullmatch(f"/{username}/"):
+        url = f"https://www.instagram.com/{username}/"
     parsed = urlsplit(url)
     if parsed.hostname not in {"instagram.com", "www.instagram.com"} or parsed.scheme != "https":
         raise ValueError("Retrieval requires an HTTPS Instagram profile or post URL")
