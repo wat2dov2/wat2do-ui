@@ -669,7 +669,7 @@ class BrowserTabPool:
             primary.run('window.location.replace("https://www.instagram.com/"); "navigating"')
             primary.poll_until(lambda: primary.current_account_username() is not None)
         path = primary.run("window.location.pathname")
-        if path.startswith(("/accounts/", "/challenge", "/checkpoint")):
+        if path.startswith(("/accounts/login", "/accounts/suspended", "/challenge", "/checkpoint")):
             raise BrowserSessionError("Instagram browser requires human account recovery")
         if primary.current_account_username() is None:
             raise BrowserSessionError("Instagram browser requires human account recovery")

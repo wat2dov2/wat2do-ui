@@ -471,3 +471,42 @@ def test_parallel_challenge_pauses_queue_and_settles_each_tab(queue, monkeypatch
     assert "human account recovery" in queue.get_setting("paused")
     assert len(cleaned) == 2
     assert not module.process_next_job(queue)
+
+
+def test_parallel_login_redirect_that_clears_does_not_pause(queue, monkeypatch):
+    ids = [
+        queue.enqueue_retrieval(
+            school="ubc",
+            recipient_id=RECIPIENT_ID,
+            account_username=ACCOUNT_USERNAME,
+            url=f"https://www.instagram.com/p/Transient{i}/",
+        )
+        for i in range(2)
+    ]
+
+    def session():
+        paths = iter(["/accounts/login/", "/", "/"])
+
+        def poll(ready):
+            assert ready() is False
+            assert ready() is True
+
+        return SimpleNamespace(
+            run=lambda _: next(paths),
+            current_account_username=lambda: ACCOUNT_USERNAME,
+            poll_until=poll,
+            cancel_pending_request=lambda: None,
+        )
+
+    monkeypatch.setattr(module.time, "sleep", lambda _: None)
+    monkeypatch.setattr(
+        module,
+        "BrowserTabPool",
+        lambda _: SimpleNamespace(
+            prepare=lambda job, count: ([session() for _ in ids], ACCOUNT_USERNAME)
+        ),
+    )
+    monkeypatch.setattr(module, "execute_job", lambda job, **kw: {"target_url": job.payload["url"]})
+    assert module.process_next_job(queue)
+    assert all(queue.get(i).state == "succeeded" for i in ids)
+    assert not queue.get_setting("paused", False)

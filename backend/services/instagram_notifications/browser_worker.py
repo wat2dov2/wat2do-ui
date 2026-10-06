@@ -163,9 +163,17 @@ def _process_batch(queue: BrowserJobQueue, jobs: list[BrowserJob]) -> None:
     def execute(job, session, username):
         def ready():
             path = session.run("window.location.pathname")
-            if path.startswith(("/accounts/", "/challenge", "/checkpoint")):
+            if path.startswith(("/accounts/suspended", "/challenge", "/checkpoint")):
                 raise BrowserSessionError("Instagram browser requires human account recovery")
-            return session.current_account_username() is not None
+            if path.startswith("/accounts/login"):
+                # Recheck after the redirect settles before pausing the shared session.
+                time.sleep(2)
+                if not session.run("window.location.pathname").startswith("/accounts/login"):
+                    return False
+                raise BrowserSessionError("Instagram browser requires human account recovery")
+            return (
+                not path.startswith("/accounts/") and session.current_account_username() is not None
+            )
 
         try:
             session.poll_until(ready)
@@ -285,7 +293,8 @@ def run_worker(queue: BrowserJobQueue, *, once: bool = False, collect: bool = Tr
                             javascript_runner=_PinnedBraveJavascriptRunner(tab_id)
                         ).cancel_pending_request()
                     except BrowserSessionError as exc:
-                        queue.set_setting("paused", str(exc))
+                        if "pinned Instagram tab was closed" not in str(exc):
+                            queue.set_setting("paused", str(exc))
                 queue.recover_interrupted()
             if collect and not once:
                 collector = threading.Thread(
