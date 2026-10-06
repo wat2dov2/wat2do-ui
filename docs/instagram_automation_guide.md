@@ -3,7 +3,7 @@
 The active collection path uses Android Instagram notifications.
 When Instagram collapses several posts into one digest, the GitHub processing job submits a high-priority job to the Mac's shared browser worker before recording notification media.
 The same worker likes, saves, and natively reposts the original event posts selected in newly published Instagram carousels.
-Digest expansion, public post/profile retrieval, and engagement share one existing Brave Instagram tab, with credentials remaining inside the browser.
+Digest expansion, public post/profile retrieval, and engagement share one worker-owned pool of up to ten tabs in the existing Brave session, with credentials remaining inside the browser.
 
 ## Repair an existing poster or scraped video
 
@@ -63,9 +63,13 @@ Its local state stores recipient evidence plus one-way hashes of dispatched push
 ## Shared Brave browser worker
 
 Keep Brave running with the school accounts logged in and available under More > Switch accounts.
-Open one Instagram tab for the worker to reuse.
+Open one Instagram tab for the worker to use as its primary tab.
+The healthy worker maintains `parallel_tabs` Instagram tabs in that same window (ten by default), including when the queue is empty.
+It checks pool health on startup, before batches, and every `tab_health_interval_seconds` while idle.
+It persists their exact tab IDs and recreates closed worker tabs inside their registered existing window, even if every worker tab was closed.
+It never adopts another existing human tab, overwrites a tab moved to another site, or clears a recovery pause to maintain capacity.
 It pins that tab for each operation and fails if the tab closes or changes to another site.
-It never launches Brave, creates a tab, creates a separate browser profile, or logs into an account.
+It never launches Brave, creates a separate browser profile, or logs into an account.
 An authorized human completes login, two-factor prompts, and security challenges.
 In Brave, enable View > Developer > Allow JavaScript from Apple Events.
 This permission lets the worker switch accounts, verify the active username and recipient, resolve notification digests, and operate visible post controls in the authenticated tab.
@@ -92,7 +96,11 @@ Do not delete its database to clear an error: that also removes deduplication hi
 ### Queue priority and school ordering
 
 The worker checks the high-priority digest queue before every browser action.
-A digest arriving during public post retrieval, a like, save, or repost waits for that one bounded operation to finish.
+A digest arriving during retrieval waits for the active bounded batch to settle.
+The worker then prioritizes digests before starting another retrieval batch.
+Up to ten public post/profile jobs can run concurrently, each pinned to its own registered tab.
+Digest jobs can run concurrently only for the same recipient and account; account switches and engagement remain serialized.
+All pool tabs settle their pending requests before the primary tab switches accounts, and secondary tabs reload to verify the resulting identity before a digest query.
 Public post/profile retrieval comes after digests and before engagement.
 No account switch or click is interrupted halfway through to start another job.
 An exclusive browser lock covers each complete operation, and a separate worker lock prevents duplicate workers.
@@ -121,13 +129,17 @@ python scripts/instagram_browser.py status
 ```
 
 Use actual club handles rather than the illustrative profile URL above.
-The installed worker processes one bounded browser retrieval at a time and checks for waiting digests before each one.
+The installed worker processes bounded retrieval batches of up to `parallel_tabs` and checks for waiting digests before filling each batch.
 Public post/profile retrieval reuses the currently logged-in account without switching to the notification school’s account.
+All parallel tabs verify the same active account, while each notification retains its own school routing.
+A challenge or unconfirmed cancellation pauses further work; active tab requests finish cleanup before the worker releases its browser lock.
 It verifies the active account remains unchanged throughout navigation and retrieval, and only public captions, owners, timestamps, coauthors, tagged users, and media fields leave the browser.
 The queued notification recipient determines school routing, independent of the browser account.
 Digest expansion and engagement still require the exact intended school account.
 All carousel children and each video's corresponding poster are preserved.
 Missing or mismatched media fails retrieval rather than importing incomplete artwork.
+GitHub self-hosted runner capacity is separate from tab capacity.
+One registered Actions runner still executes one workflow job at a time; more tabs accelerate the shared retrieval backlog and compatible digest jobs already waiting in the queue.
 A profile job reviews at most `profile_post_limit` recent posts; it is not an exhaustive historical profile scrape.
 
 Retrieval does not claim production media while it waits for the browser.
@@ -190,7 +202,7 @@ For a foreground worker managed by the terminal instead of the installed service
 python scripts/instagram_browser.py worker
 ```
 
-`worker --once` processes at most one already queued job and does not collect source posts.
+`worker --once` processes one bounded queued batch and does not collect source posts.
 `worker --no-collect` runs the executor without periodic carousel collection.
 The worker requires an already running Brave tab and a macOS user session.
 It does not replace the Android notification dispatcher or GitHub runner.

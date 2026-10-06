@@ -477,3 +477,41 @@ def test_old_queue_upgrade_keeps_jobs_settings_and_school_turns(queue):
     )
     with sqlite3.connect(queue.database_path) as db:
         assert db.execute("SELECT COUNT(*) FROM school_turns").fetchone()[0] == 1
+
+
+def test_digest_companions_never_cross_accounts_or_include_excluded_targets(tmp_path):
+    q = module.BrowserJobQueue(tmp_path / "parallel")
+    first = q.enqueue_digest("123", "wat2do.ubc", "first")
+    same = q.enqueue_digest("123", "wat2do.ubc", "second")
+    other = q.enqueue_digest("456", "wat2do.utm", "third")
+    excluded = q.enqueue_digest("789", "wat2do.utsc", "fourth")
+    q.set_setting("excluded_accounts", ["wat2do.utsc"])
+    claimed = q.claim_next()
+    assert claimed.id == first
+    assert [job.id for job in q.claim_companions(claimed, limit=9)] == [same]
+    assert q.get(same).attempts == 1
+    assert q.get(other).state == q.get(excluded).state == "pending"
+
+
+def test_waiting_digest_and_pause_prevent_filling_retrieval_batch(tmp_path):
+    q = module.BrowserJobQueue(tmp_path / "parallel")
+    first = q.enqueue_retrieval(
+        school="ubc",
+        recipient_id="123",
+        account_username="wat2do.ubc",
+        url="https://www.instagram.com/p/First/",
+    )
+    second = q.enqueue_retrieval(
+        school="ubc",
+        recipient_id="123",
+        account_username="wat2do.ubc",
+        url="https://www.instagram.com/p/Second/",
+    )
+    claimed = q.claim_next()
+    assert claimed.id == first
+    digest = q.enqueue_digest("123", "wat2do.ubc", "digest")
+    assert q.claim_companions(claimed, limit=9) == []
+    q.cancel(digest)
+    q.set_setting("paused", "human recovery")
+    assert q.claim_companions(claimed, limit=9) == []
+    assert q.get(second).state == "pending"

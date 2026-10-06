@@ -18,6 +18,8 @@
   ],
   "notification_media_provider": "browser",
   "ingestion_batch_size": 10,
+  "parallel_tabs": 10,
+  "tab_health_interval_seconds": 10,
   "profile_post_limit": 12,
   "ingestion_retry_limit": 3
 }

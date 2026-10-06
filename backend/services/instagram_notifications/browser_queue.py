@@ -312,6 +312,47 @@ class BrowserJobQueue:
                 )
             return self._job(db.execute("SELECT * FROM jobs WHERE id=?", (row["id"],)).fetchone())
 
+    def claim_companions(self, first: BrowserJob, *, limit: int) -> list[BrowserJob]:
+        """Atomically claim a compatible batch; never parallelize account switches."""
+        if first.kind == "engagement" or limit <= 0:
+            return []
+        with closing(self._connect()) as db, db:
+            db.execute("BEGIN IMMEDIATE")
+            paused = db.execute("SELECT value FROM settings WHERE key='paused'").fetchone()
+            if paused and json.loads(paused[0]):
+                return []
+            if (
+                first.kind == "retrieval"
+                and db.execute(
+                    "SELECT 1 FROM jobs WHERE state='pending' AND kind='digest' AND account_username NOT IN (SELECT value FROM json_each(COALESCE((SELECT value FROM settings WHERE key='excluded_accounts'),'[]'))) LIMIT 1"
+                ).fetchone()
+            ):
+                return []
+            account_filter = (
+                "AND recipient_id=? AND account_username=?" if first.kind == "digest" else ""
+            )
+            arguments = [first.kind]
+            if first.kind == "digest":
+                arguments.extend([first.recipient_id, first.account_username])
+            arguments.append(limit)
+            rows = db.execute(
+                "SELECT * FROM jobs WHERE state='pending' AND kind=? "
+                "AND account_username NOT IN (SELECT value FROM json_each(COALESCE((SELECT value FROM settings WHERE key='excluded_accounts'),'[]'))) "
+                + account_filter
+                + " ORDER BY created_at,id LIMIT ?",
+                arguments,
+            ).fetchall()
+            now = time.time()
+            for row in rows:
+                db.execute(
+                    "UPDATE jobs SET state='running',started_at=?,attempts=attempts+1 WHERE id=?",
+                    (now, row["id"]),
+                )
+            return [
+                self._job(db.execute("SELECT * FROM jobs WHERE id=?", (row["id"],)).fetchone())
+                for row in rows
+            ]
+
     def finish(
         self, job_id: str, *, result: dict[str, Any] | None = None, error: str | None = None
     ) -> None:

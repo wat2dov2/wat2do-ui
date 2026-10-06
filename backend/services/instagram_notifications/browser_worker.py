@@ -7,6 +7,7 @@ import logging
 import signal
 import threading
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import contextmanager
 from dataclasses import asdict
 from typing import Iterator
@@ -17,6 +18,8 @@ from services.instagram_notifications.browser_queue import CONTROL, BrowserJob, 
 from services.instagram_notifications.browser_session import (
     BrowserInstagramSession,
     BrowserSessionError,
+    BrowserTabPool,
+    _PinnedBraveJavascriptRunner,
 )
 
 log = logging.getLogger(__name__)
@@ -38,8 +41,8 @@ def job_deadline() -> Iterator[None]:
         signal.signal(signal.SIGALRM, previous)
 
 
-def execute_job(job: BrowserJob) -> dict:
-    session = BrowserInstagramSession()
+def execute_job(job: BrowserJob, *, session: BrowserInstagramSession | None = None) -> dict:
+    session = session or BrowserInstagramSession()
     interruption: BaseException | None = None
     try:
         if job.kind == "digest":
@@ -95,14 +98,37 @@ def process_next_job(queue: BrowserJobQueue, *, allow_engagement: bool = True) -
             )
             if job is None:
                 return False
+            companions = queue.claim_companions(job, limit=CONTROL.parallel_tabs - 1)
+            if companions:
+                _process_batch(queue, [job, *companions])
+                return True
             try:
                 with job_deadline():
-                    result = execute_job(job)
+                    ids = queue.get_setting("browser_tab_ids", [])
+                    for tab_id in ids:
+                        BrowserInstagramSession(
+                            javascript_runner=_PinnedBraveJavascriptRunner(tab_id)
+                        ).cancel_pending_request()
+                    result = (
+                        execute_job(
+                            job,
+                            session=BrowserInstagramSession(
+                                javascript_runner=_PinnedBraveJavascriptRunner(ids[0])
+                            ),
+                        )
+                        if ids
+                        else execute_job(job)
+                    )
                 queue.finish(job.id, result=result)
             except (BrowserSessionError, TimeoutError) as exc:
-                if "cancellation could not be confirmed" in str(
-                    exc
-                ) or "human account recovery" in str(exc):
+                if any(
+                    reason in str(exc)
+                    for reason in (
+                        "cancellation could not be confirmed",
+                        "human account recovery",
+                        "human reauthorization",
+                    )
+                ):
                     queue.set_setting("paused", str(exc))
                 queue.finish(job.id, error=str(exc))
             except (KeyboardInterrupt, SystemExit):
@@ -125,6 +151,94 @@ def process_next_job(queue: BrowserJobQueue, *, allow_engagement: bool = True) -
             return True
         finally:
             fcntl.flock(browser_lock, fcntl.LOCK_UN)
+
+
+def _process_batch(queue: BrowserJobQueue, jobs: list[BrowserJob]) -> None:
+    """Drain the bounded tab batch before releasing ownership or switching accounts."""
+    unfinished = {job.id for job in jobs}
+
+    def execute(job, session, username):
+        def ready():
+            path = session.run("window.location.pathname")
+            if path.startswith(("/accounts/", "/challenge", "/checkpoint")):
+                raise BrowserSessionError("Instagram browser requires human account recovery")
+            return session.current_account_username() is not None
+
+        try:
+            session.poll_until(ready)
+            if session.current_account_username() != username:
+                raise BrowserSessionError("Instagram browser account changed during parallel work")
+            return execute_job(job, session=session)
+        finally:
+            session.cancel_pending_request()
+
+    def failed(job, exc):
+        if isinstance(exc, (BrowserSessionError, TimeoutError)):
+            error = str(exc)
+            if any(
+                reason in error
+                for reason in (
+                    "cancellation could not be confirmed",
+                    "human account recovery",
+                    "human reauthorization",
+                    "account changed",
+                )
+            ):
+                queue.set_setting("paused", error)
+        else:
+            error = f"Browser job failed ({type(exc).__name__}); inspect before retrying"
+            queue.set_setting("paused", error)
+        queue.finish(job.id, error=error)
+        unfinished.discard(job.id)
+
+    try:
+        with job_deadline():
+            sessions, username = BrowserTabPool(queue).prepare(jobs[0], len(jobs))
+            # Browser polling and requests are bounded by session deadlines.
+            # Executor shutdown drains cleanup before the process-wide lock is released.
+            with ThreadPoolExecutor(max_workers=CONTROL.parallel_tabs) as executor:
+                futures = {
+                    executor.submit(execute, job, session, username): job
+                    for job, session in zip(jobs, sessions, strict=True)
+                }
+                for future in as_completed(futures):
+                    job = futures[future]
+                    try:
+                        queue.finish(job.id, result=future.result())
+                        unfinished.discard(job.id)
+                    except Exception as exc:
+                        failed(job, exc)
+    except (KeyboardInterrupt, SystemExit):
+        queue.set_setting("paused", "Worker interrupted; inspect browser state before resuming")
+        for job in jobs:
+            if job.id in unfinished:
+                queue.finish(job.id, error="Worker stopped during job; inspect before retrying")
+        raise
+    except Exception as exc:
+        for job in jobs:
+            if job.id in unfinished:
+                failed(job, exc)
+
+
+def maintain_tab_pool(queue: BrowserJobQueue) -> None:
+    """Restore the configured idle tab count without changing an account or pause."""
+    if queue.get_setting("paused", False):
+        return
+    with open(BROWSER_LOCK_PATH, "a+") as browser_lock:
+        try:
+            fcntl.flock(browser_lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            return
+        try:
+            if not queue.get_setting("paused", False):
+                BrowserTabPool(queue).ensure_capacity()
+        except BrowserSessionError as exc:
+            queue.set_setting("paused", str(exc))
+        except Exception as exc:
+            queue.set_setting(
+                "paused",
+                f"Worker tab maintenance failed ({type(exc).__name__}); inspect before retrying",
+            )
 
 
 def _collect_carousels(queue: BrowserJobQueue, stopping: threading.Event) -> None:
@@ -161,6 +275,13 @@ def run_worker(queue: BrowserJobQueue, *, once: bool = False, collect: bool = Tr
         try:
             with open(BROWSER_LOCK_PATH, "a+") as browser_lock:
                 fcntl.flock(browser_lock, fcntl.LOCK_EX)
+                for tab_id in queue.get_setting("browser_tab_ids", []):
+                    try:
+                        BrowserInstagramSession(
+                            javascript_runner=_PinnedBraveJavascriptRunner(tab_id)
+                        ).cancel_pending_request()
+                    except BrowserSessionError as exc:
+                        queue.set_setting("paused", str(exc))
                 queue.recover_interrupted()
             if collect and not once:
                 collector = threading.Thread(
@@ -169,7 +290,11 @@ def run_worker(queue: BrowserJobQueue, *, once: bool = False, collect: bool = Tr
                     daemon=True,
                 )
                 collector.start()
+            next_tab_check = 0.0
             while True:
+                if time.monotonic() >= next_tab_check:
+                    maintain_tab_pool(queue)
+                    next_tab_check = time.monotonic() + CONTROL.tab_health_interval_seconds
                 queue.set_setting("worker", {"running": True, "heartbeat": time.time()})
                 worked = process_next_job(queue)
                 if once:

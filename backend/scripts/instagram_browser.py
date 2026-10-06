@@ -90,7 +90,7 @@ def parser() -> argparse.ArgumentParser:
     worker.add_argument(
         "--once",
         action="store_true",
-        help="Process at most one already queued job, without collecting",
+        help="Process one bounded queued batch, without collecting",
     )
     worker.add_argument(
         "--no-collect",

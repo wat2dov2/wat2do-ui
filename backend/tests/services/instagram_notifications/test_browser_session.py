@@ -380,3 +380,140 @@ def test_saved_entry_selection_still_verifies_active_recipient(recipient_matches
         with pytest.raises(browser.BrowserSessionError, match="does not match"):
             session.activate_account("41553815702", "wat2do.usask")
     assert not any("location" in source for source in fake.sources)
+
+
+def test_parallel_session_refuses_to_switch_to_another_account(monkeypatch):
+    session = browser.BrowserInstagramSession(
+        javascript_runner=lambda *args: "", allow_account_switch=False
+    )
+    monkeypatch.setattr(session, "poll_until", lambda predicate: None)
+    monkeypatch.setattr(session, "current_account_username", lambda: "wat2do.ubc")
+    monkeypatch.setattr(
+        session, "_switch_account", lambda _: pytest.fail("Tabs cannot switch accounts in parallel")
+    )
+    with pytest.raises(browser.BrowserSessionError, match="account changed"):
+        session._prepare_account("123", "wat2do.utm")
+
+
+def test_job_deadline_still_allows_confirmed_request_cancellation():
+    clock = [0.0]
+    calls = []
+
+    def run(source, timeout):
+        calls.append(source)
+        return "settled"
+
+    session = browser.BrowserInstagramSession(
+        javascript_runner=run, monotonic=lambda: clock[0], job_timeout_seconds=1
+    )
+    clock[0] = 2.0
+    with pytest.raises(TimeoutError, match="deadline"):
+        session.run("must not run")
+    session.cancel_pending_request()
+    assert len(calls) == 2
+    with pytest.raises(TimeoutError):
+        session.run("still expired")
+
+
+def test_pool_cancels_all_registered_tabs_before_switching_account(monkeypatch):
+    from types import SimpleNamespace
+
+    calls = []
+    settings = {"browser_tab_ids": ["1", "2"]}
+    queue = SimpleNamespace(
+        get_setting=lambda key, default=None: settings.get(key, default),
+        set_setting=lambda key, value: settings.update(
+            {key: list(value) if isinstance(value, list) else value}
+        ),
+    )
+
+    def session(**kw):
+        tab = kw["javascript_runner"]._tab_id
+        return SimpleNamespace(
+            cancel_pending_request=lambda: calls.append(("cancel", tab)),
+            activate_account=lambda *args: calls.append(("switch", tab)) or "wat2do.ubc",
+            run=lambda source: (
+                "/" if source == "window.location.pathname" else calls.append(("reload", tab))
+            ),
+        )
+
+    monkeypatch.setattr(browser, "BrowserInstagramSession", session)
+    monkeypatch.setattr(browser.BrowserTabPool, "ensure_capacity", lambda _: ["1", "2"])
+    sessions, username = browser.BrowserTabPool(queue).prepare(
+        SimpleNamespace(kind="digest", recipient_id="123", account_username="wat2do.ubc"), 2
+    )
+    assert calls == [("cancel", "1"), ("cancel", "2"), ("switch", "1"), ("reload", "2")]
+    assert len(sessions) == 2 and username == "wat2do.ubc"
+
+
+def test_pool_does_not_adopt_human_tabs_when_all_owned_tabs_are_closed(monkeypatch):
+    from types import SimpleNamespace
+
+    q = SimpleNamespace(
+        get_setting=lambda key, default=None: ["1", "2"] if key == "browser_tab_ids" else default
+    )
+    monkeypatch.setattr(
+        browser,
+        "_run_applescript",
+        lambda script, *args: (
+            ""
+            if script == browser._WORKER_TAB_INVENTORY_SCRIPT
+            else pytest.fail("No human tab adoption")
+        ),
+    )
+    with pytest.raises(browser.BrowserSessionError, match="No registered worker window"):
+        browser.BrowserTabPool(q).ensure_capacity()
+
+
+def test_pool_keeps_exactly_ten_tabs_and_repairs_only_closed_owned_tabs(monkeypatch):
+    from types import SimpleNamespace
+
+    settings = {"browser_tab_ids": ["1"]}
+    live = {"1"}
+    created = []
+
+    def applescript(script, args, timeout):
+        if script == browser._WORKER_WINDOW_SCRIPT:
+            return "99"
+        if script == browser._WORKER_TAB_INVENTORY_SCRIPT:
+            return "\n".join(tab_id for tab_id in args if tab_id in live)
+        assert script == browser._CREATE_WORKER_TAB_SCRIPT
+        tab_id = str(len(created) + 2)
+        created.append(tab_id)
+        live.add(tab_id)
+        return tab_id
+
+    q = SimpleNamespace(
+        get_setting=lambda key, default=None: settings.get(key, default),
+        set_setting=lambda key, value: settings.update(
+            {key: list(value) if isinstance(value, list) else value}
+        ),
+    )
+    monkeypatch.setattr(browser, "_run_applescript", applescript)
+    monkeypatch.setattr(
+        browser,
+        "BrowserInstagramSession",
+        lambda **kw: SimpleNamespace(
+            run=lambda _: "/",
+            current_account_username=lambda: "wat2do.ubc",
+            cancel_pending_request=lambda: None,
+            poll_until=lambda ready: ready(),
+        ),
+    )
+    pool = browser.BrowserTabPool(q)
+    first = pool.ensure_capacity()
+    assert len(first) == len(set(first)) == 10
+    assert len(created) == 9
+    assert pool.ensure_capacity() == first
+    assert len(created) == 9
+    live.remove("5")
+    repaired = pool.ensure_capacity()
+    assert len(repaired) == len(set(repaired)) == 10
+    assert "5" not in repaired and "11" in repaired
+    assert repaired == settings["browser_tab_ids"]
+    assert len(created) == 10
+    live.clear()
+    restored = pool.ensure_capacity()
+    assert len(restored) == len(set(restored)) == 10
+    assert len(created) == 20
+    assert settings["browser_window_id"] == "99"

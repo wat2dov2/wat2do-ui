@@ -17,6 +17,7 @@ ACCOUNT_USERNAME = "ubc.wat2do.io"
 
 @pytest.fixture(autouse=True)
 def isolated_browser(monkeypatch, tmp_path):
+    monkeypatch.setattr(module, "maintain_tab_pool", lambda _: None)
     monkeypatch.setattr(module, "BROWSER_LOCK_PATH", str(tmp_path / "browser.lock"))
     monkeypatch.setattr(
         module,
@@ -392,3 +393,81 @@ def test_blocked_collector_cannot_delay_a_digest_and_stops_on_shutdown(queue, mo
     assert queue.get(digest_id).state == "succeeded"
     assert finished.is_set()
     assert queue.get_setting("worker")["running"] is False
+
+
+def test_ten_retrievals_overlap_and_release_lock_only_after_cleanup(queue, monkeypatch):
+    ids = [
+        queue.enqueue_retrieval(
+            school="ubc",
+            recipient_id=RECIPIENT_ID,
+            account_username=ACCOUNT_USERNAME,
+            url=f"https://www.instagram.com/p/Post{i}/",
+        )
+        for i in range(11)
+    ]
+    barrier = threading.Barrier(10)
+    cleaned = []
+    sessions = [
+        SimpleNamespace(
+            run=lambda _: "/",
+            current_account_username=lambda: ACCOUNT_USERNAME,
+            poll_until=lambda ready: ready(),
+            cancel_pending_request=lambda i=i: cleaned.append(i),
+        )
+        for i in range(10)
+    ]
+    monkeypatch.setattr(
+        module,
+        "BrowserTabPool",
+        lambda _: SimpleNamespace(prepare=lambda job, count: (sessions[:count], ACCOUNT_USERNAME)),
+    )
+
+    def retrieve(job, *, session):
+        barrier.wait(timeout=5)
+        with open(module.BROWSER_LOCK_PATH, "a+") as probe:
+            with pytest.raises(BlockingIOError):
+                fcntl.flock(probe, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        return {"target_url": job.payload["url"]}
+
+    monkeypatch.setattr(module, "execute_job", retrieve)
+    assert module.process_next_job(queue)
+    assert sum(queue.get(job_id).state == "succeeded" for job_id in ids) == 10
+    assert sum(queue.get(job_id).state == "pending" for job_id in ids) == 1
+    assert sorted(cleaned) == list(range(10))
+    with open(module.BROWSER_LOCK_PATH, "a+") as probe:
+        fcntl.flock(probe, fcntl.LOCK_EX | fcntl.LOCK_NB)
+
+
+def test_parallel_challenge_pauses_queue_and_settles_each_tab(queue, monkeypatch):
+    ids = [
+        queue.enqueue_retrieval(
+            school="ubc",
+            recipient_id=RECIPIENT_ID,
+            account_username=ACCOUNT_USERNAME,
+            url=f"https://www.instagram.com/p/Challenge{i}/",
+        )
+        for i in range(2)
+    ]
+    cleaned = []
+    sessions = [
+        SimpleNamespace(
+            run=lambda _: "/challenge/",
+            current_account_username=lambda: ACCOUNT_USERNAME,
+            poll_until=lambda ready: ready(),
+            cancel_pending_request=lambda: cleaned.append(True),
+        )
+        for _ in ids
+    ]
+    monkeypatch.setattr(
+        module,
+        "BrowserTabPool",
+        lambda _: SimpleNamespace(prepare=lambda job, count: (sessions, ACCOUNT_USERNAME)),
+    )
+    monkeypatch.setattr(
+        module, "execute_job", lambda *args, **kw: pytest.fail("Challenge must block retrieval")
+    )
+    assert module.process_next_job(queue)
+    assert all(queue.get(job_id).state == "failed" for job_id in ids)
+    assert "human account recovery" in queue.get_setting("paused")
+    assert len(cleaned) == 2
+    assert not module.process_next_job(queue)

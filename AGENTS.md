@@ -49,9 +49,13 @@ accounts per device and scale horizontally by adding devices.
 When Instagram collapses a notification into "account posted and N others", the
 `process-notification` job may expand that notification's CacheEntID through one
 existing, human-authenticated browser tab before recording notification media.
-CacheEntID workflow jobs must run on the single browser-capable Mac runner so each
-job switches the browser to the notification's intended recipient account,
-completes that one query, and only then lets the next job use the browser.
+CacheEntID workflow jobs submit through the browser-capable Mac runner to the
+single installed worker.
+The worker owns a bounded pool of up to ten tabs in the existing Brave session.
+Only same-account digest requests and public retrievals may run in parallel.
+Account switches wait for every tab request to settle, verify the notification's
+intended recipient, and refresh each selected tab before querying.
+Engagement remains serialized.
 The browser's visible account switcher and active account identity are the source
 of truth for matching recipient IDs to logged-in usernames.
 
