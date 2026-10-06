@@ -342,3 +342,13 @@ def test_exclusions_apply_to_account_bound_jobs(tmp_path, kind):
 )
 def test_manual_targets_preserve_exact_posts_and_normalize_handles(target, expected):
     assert module.canonical_target_url(target) == expected
+
+
+def test_sync_enqueues_entire_backlog_not_one_source_page(tmp_path, monkeypatch):
+    queue = BrowserJobQueue(tmp_path)
+    rows = [{"source_url": f"https://www.instagram.com/p/Backlog{i}/"} for i in range(140)]
+    monkeypatch.setattr(bridge, "_pending_rows", lambda: rows)
+    monkeypatch.setattr(bridge, "_identity", lambda _: ("ubc", RECIPIENT, ACCOUNT))
+    assert bridge.sync_notification_media(queue) == {"pending_media": 140, "queued": 140}
+    assert bridge.sync_notification_media(queue) == {"pending_media": 140, "queued": 140}
+    assert sum(row["quantity"] for row in queue.status()["queues"]) == 140

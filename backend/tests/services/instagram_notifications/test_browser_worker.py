@@ -7,7 +7,7 @@ from types import SimpleNamespace
 import pytest
 
 from services.instagram_notifications import browser_worker as module
-from services.instagram_notifications import carousel_engagement
+from services.instagram_notifications import carousel_engagement, notification_ingestion
 from services.instagram_notifications.browser_digest import DigestResolution
 from services.instagram_notifications.browser_queue import BrowserJobQueue
 
@@ -17,6 +17,8 @@ ACCOUNT_USERNAME = "ubc.wat2do.io"
 
 @pytest.fixture(autouse=True)
 def isolated_browser(monkeypatch, tmp_path):
+    monkeypatch.setattr(module, "CONTROL", module.CONTROL.model_copy(update={"parallel_tabs": 10}))
+    monkeypatch.setattr(notification_ingestion, "sync_notification_media", lambda _: {})
     monkeypatch.setattr(module, "maintain_tab_pool", lambda _: None)
     monkeypatch.setattr(module, "BROWSER_LOCK_PATH", str(tmp_path / "browser.lock"))
     monkeypatch.setattr(
@@ -580,3 +582,65 @@ def test_transient_retrieval_timeout_retries_bounded_without_global_pause(queue,
     assert queue.get(job_id).attempts == module.CONTROL.ingestion_retry_limit
     assert queue.get(job_id).state == "failed"
     assert not queue.get_setting("paused", False)
+
+
+def test_stream_uses_idle_tabs_for_jobs_arriving_after_start(queue, monkeypatch):
+    first = queue.enqueue_retrieval(
+        school="ubc",
+        recipient_id=RECIPIENT_ID,
+        account_username=ACCOUNT_USERNAME,
+        url="https://www.instagram.com/p/First/",
+    )
+    arrived = threading.Event()
+    sessions = [
+        SimpleNamespace(
+            run=lambda _: "/",
+            current_account_username=lambda: ACCOUNT_USERNAME,
+            poll_until=lambda ready: ready(),
+            cancel_pending_request=lambda: None,
+        )
+        for _ in range(13)
+    ]
+    monkeypatch.setattr(
+        module,
+        "BrowserTabPool",
+        lambda _: SimpleNamespace(prepare=lambda *args: (sessions, ACCOUNT_USERNAME)),
+    )
+
+    def retrieve(job, **kwargs):
+        if job.id == first:
+            queue.enqueue_retrieval(
+                school="ubc",
+                recipient_id=RECIPIENT_ID,
+                account_username=ACCOUNT_USERNAME,
+                url="https://www.instagram.com/p/Arriving/",
+            )
+            assert arrived.wait(5), "Idle tab must start the arriving job before the first finishes"
+        else:
+            assert queue.get(first).state == "running"
+            arrived.set()
+        return {"target_url": job.payload["url"]}
+
+    monkeypatch.setattr(module, "execute_job", retrieve)
+    assert module.process_next_job(queue)
+    assert arrived.is_set()
+
+
+def test_collector_feeds_notifications_without_an_import(queue, monkeypatch):
+    stopping = threading.Event()
+    calls = []
+
+    def sync(current):
+        assert current is queue
+        calls.append("notifications")
+        return {"queued": 140}
+
+    def carousel(current):
+        calls.append("carousels")
+        stopping.set()
+        return {}
+
+    monkeypatch.setattr(notification_ingestion, "sync_notification_media", sync)
+    monkeypatch.setattr(carousel_engagement, "sync_published_carousels", carousel)
+    module._collect_carousels(queue, stopping)
+    assert calls == ["notifications", "carousels"]

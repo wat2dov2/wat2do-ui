@@ -51,7 +51,7 @@ When Instagram collapses a notification into "account posted and N others", the
 existing, human-authenticated browser tab before recording notification media.
 CacheEntID workflow jobs submit through the browser-capable Mac runner to the
 single installed worker.
-The worker owns a bounded pool of up to ten tabs in the existing Brave session.
+The worker owns a pool of all existing Instagram tabs, maintaining at least thirteen tabs in the existing Brave session.
 Only same-account digest requests and public retrievals may run in parallel.
 Account switches wait for every tab request to settle, verify the notification's
 intended recipient, and refresh each selected tab before querying.

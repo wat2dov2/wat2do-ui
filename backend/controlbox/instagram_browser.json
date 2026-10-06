@@ -5,7 +5,7 @@
   "worker_poll_interval_seconds": 0.5,
   "job_timeout_seconds": 120,
   "result_timeout_seconds": 300,
-  "source_poll_interval_seconds": 60,
+  "source_poll_interval_seconds": 10,
   "source_page_size": 100,
   "engagement_interval_seconds": 10,
   "school_username_overrides": {
@@ -17,7 +17,7 @@
   ],
   "notification_media_provider": "browser",
   "ingestion_batch_size": 10,
-  "parallel_tabs": 10,
+  "parallel_tabs": 13,
   "tab_health_interval_seconds": 10,
   "profile_post_limit": 12,
   "ingestion_retry_limit": 3

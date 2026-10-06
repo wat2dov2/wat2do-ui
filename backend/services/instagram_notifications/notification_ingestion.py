@@ -80,8 +80,6 @@ def sync_notification_media(queue: BrowserJobQueue) -> dict[str, int]:
             queue.refresh_retrieval(job.id)
         if job and job.state == "pending":
             stats["queued"] += 1
-        if stats["queued"] >= _CONTROL.source_page_size:
-            break
     queue.set_setting("notification_source_status", {"checked_at": time.time(), **stats})
     return stats
 

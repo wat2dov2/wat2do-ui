@@ -223,16 +223,33 @@ def _process_batch(queue: BrowserJobQueue, jobs: list[BrowserJob]) -> None:
 
     try:
         with job_deadline():
-            sessions, username = BrowserTabPool(queue).prepare(jobs[0], len(jobs))
+            sessions, username = BrowserTabPool(queue).prepare(
+                jobs[0], CONTROL.parallel_tabs if jobs[0].kind == "retrieval" else len(jobs)
+            )
         refill_until = time.monotonic() + CONTROL.job_timeout_seconds
         # Keep each completed slot busy while retaining digest priority and bounded ownership.
-        with ThreadPoolExecutor(max_workers=CONTROL.parallel_tabs) as executor:
+        with ThreadPoolExecutor(max_workers=len(sessions)) as executor:
+            idle_sessions = sessions[len(jobs) :]
             futures = {
                 executor.submit(execute, job, session, username): (job, session)
-                for job, session in zip(jobs, sessions, strict=True)
+                for job, session in zip(jobs, sessions[: len(jobs)], strict=True)
             }
             while futures:
-                completed, _ = wait(futures, return_when=FIRST_COMPLETED)
+                if jobs[0].kind == "retrieval" and time.monotonic() < refill_until:
+                    while idle_sessions:
+                        replacements = queue.claim_companions(jobs[0], limit=1)
+                        if not replacements:
+                            break
+                        replacement = replacements[0]
+                        session = idle_sessions.pop()
+                        jobs.append(replacement)
+                        unfinished.add(replacement.id)
+                        queue.record_diagnostic("running", replacement)
+                        futures[executor.submit(execute, replacement, session, username)] = (
+                            replacement,
+                            session,
+                        )
+                completed, _ = wait(futures, timeout=1, return_when=FIRST_COMPLETED)
                 for future in completed:
                     job, session = futures.pop(future)
                     try:
@@ -247,6 +264,7 @@ def _process_batch(queue: BrowserJobQueue, jobs: list[BrowserJob]) -> None:
                         continue
                     replacements = queue.claim_companions(jobs[0], limit=1)
                     if not replacements:
+                        idle_sessions.append(session)
                         continue
                     replacement = replacements[0]
                     jobs.append(replacement)
@@ -291,9 +309,11 @@ def maintain_tab_pool(queue: BrowserJobQueue) -> None:
 
 def _collect_carousels(queue: BrowserJobQueue, stopping: threading.Event) -> None:
     from services.instagram_notifications.carousel_engagement import sync_published_carousels
+    from services.instagram_notifications.notification_ingestion import sync_notification_media
 
     while not stopping.is_set():
         try:
+            sync_notification_media(queue)
             queue.publish_diagnostics()
             result = sync_published_carousels(queue)
             queue.set_setting("source_status", {"checked_at": time.time(), "result": result})

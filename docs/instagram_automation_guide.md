@@ -3,7 +3,7 @@
 The active collection path uses Android Instagram notifications.
 When Instagram collapses several posts into one digest, the GitHub processing job submits a high-priority job to the Mac's shared browser worker before recording notification media.
 The same worker likes and natively reposts the original event posts selected in newly published Instagram carousels.
-Digest expansion, public post/profile retrieval, and engagement share one worker-owned pool of up to ten tabs in the existing Brave session, with credentials remaining inside the browser.
+Digest expansion, public post/profile retrieval, and engagement share one worker-owned pool of all available tabs in the existing Brave session, with credentials remaining inside the browser.
 
 ## Repair an existing poster or scraped video
 
@@ -64,10 +64,10 @@ Its local state stores recipient evidence plus one-way hashes of dispatched push
 
 Keep Brave running with the school accounts logged in and available under More > Switch accounts.
 Open one Instagram tab for the worker to use as its primary tab.
-The healthy worker maintains `parallel_tabs` Instagram tabs in that same window (ten by default), including when the queue is empty.
+The healthy worker maintains `parallel_tabs` Instagram tabs in that same window (thirteen minimum by default), including when the queue is empty.
 It checks pool health on startup, before batches, and every `tab_health_interval_seconds` while idle.
 It persists their exact tab IDs and recreates closed worker tabs inside their registered existing window, even if every worker tab was closed.
-It never adopts another existing human tab, overwrites a tab moved to another site, or clears a recovery pause to maintain capacity.
+It adopts existing Instagram tabs under the authorized pool policy, but never overwrites a tab moved to another site, or clears a recovery pause to maintain capacity.
 It pins that tab for each operation and fails if the tab closes or changes to another site.
 It never launches Brave, creates a separate browser profile, or logs into an account.
 An authorized human completes login, two-factor prompts, and security challenges.
@@ -118,14 +118,15 @@ Notification synchronization and imports respect the same exclusions.
 
 The notification workflow records exact post URLs in the existing production media ledger.
 With `notification_media_provider` set to `browser` in `backend/controlbox/instagram_browser.json`, it does not dispatch the Apify scraper.
-The Mac's scheduled Codex run synchronizes pending URLs into the same durable local browser queue, then imports verified browser results.
+The worker's background collector synchronizes all eligible pending URLs every ten seconds, independently of the Codex schedule.
+Codex reviews retrieved data and applies saved reconciliation decisions through the guarded importer.
+Retrieval fills idle slots as new jobs arrive.
 Public profiles and individual posts can also be queued manually:
 
 ```sh
 cd backend
 python scripts/instagram_browser.py retrieve --school utsc --url https://www.instagram.com/example_club/ --cutoff-days 1
 python scripts/instagram_browser.py ingestion-sync
-python scripts/instagram_browser.py ingestion-import
 python scripts/instagram_browser.py status
 ```
 

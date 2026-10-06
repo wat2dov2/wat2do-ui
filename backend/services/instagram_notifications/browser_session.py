@@ -590,6 +590,26 @@ end run
 """.strip()
 
 
+_INSTAGRAM_TAB_INVENTORY_SCRIPT = """
+on run argv
+    if application "Brave Browser" is not running then
+        error "Brave is not running."
+    end if
+    set foundIds to ""
+    tell application "Brave Browser"
+        repeat with browserWindow in windows
+            repeat with browserTab in tabs of browserWindow
+                if URL of browserTab starts with "https://www.instagram.com/" then
+                    set foundIds to foundIds & ((id of browserTab) as text) & linefeed
+                end if
+            end repeat
+        end repeat
+    end tell
+    return foundIds
+end run
+""".strip()
+
+
 _WORKER_WINDOW_SCRIPT = """
 on run argv
     if application "Brave Browser" is not running then
@@ -612,7 +632,7 @@ end run
 class BrowserTabPool:
     """Worker-owned tabs in the existing Brave session, under the browser lock.
 
-    Persist each new tab immediately. Never adopt another existing human tab.
+    Persist each new tab immediately. Adopt existing Instagram tabs under human authorization.
     Repair closed worker tabs inside their registered existing window. Account switching happens only after
     every pool tab's previous asynchronous request has settled.
     """
@@ -624,7 +644,6 @@ class BrowserTabPool:
         ids = self.queue.get_setting("browser_tab_ids", [])
         if (
             not isinstance(ids, list)
-            or len(ids) > _CONTROL.parallel_tabs
             or any(
                 not isinstance(tab_id, str) or not tab_id.isascii() or not tab_id.isdigit()
                 for tab_id in ids
@@ -677,7 +696,12 @@ class BrowserTabPool:
             raise BrowserSessionError("Instagram browser requires human account recovery")
         if primary.current_account_username() is None:
             raise BrowserSessionError("Instagram browser requires human account recovery")
-        ids = survivors
+        available = _run_applescript(
+            _INSTAGRAM_TAB_INVENTORY_SCRIPT, (), _CONTROL.request_timeout_seconds
+        ).split()
+        if any(not tab.isascii() or not tab.isdigit() for tab in available):
+            raise BrowserSessionError("Brave returned an invalid Instagram tab inventory")
+        ids = list(dict.fromkeys([*survivors, *available]))
         self.queue.set_setting("browser_tab_ids", ids)
         while len(ids) < _CONTROL.parallel_tabs:
             tab_id = _run_applescript(
@@ -690,7 +714,7 @@ class BrowserTabPool:
         return ids
 
     def prepare(self, job, count: int) -> tuple[list[BrowserInstagramSession], str]:
-        if not 1 <= count <= _CONTROL.parallel_tabs:
+        if count < 1:
             raise ValueError("Worker tab batch exceeds its configured capacity")
         ids = self.ensure_capacity()
         sessions = [
@@ -706,6 +730,7 @@ class BrowserTabPool:
             username = primary.current_account_username()
             if username is None:
                 raise BrowserSessionError("Instagram browser requires human account recovery")
+        count = len(ids) if job.kind == "retrieval" else min(count, len(ids))
         selected = [
             BrowserInstagramSession(
                 javascript_runner=_PinnedBraveJavascriptRunner(tab_id),

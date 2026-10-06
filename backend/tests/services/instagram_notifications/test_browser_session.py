@@ -465,14 +465,34 @@ def test_pool_does_not_adopt_human_tabs_when_all_owned_tabs_are_closed(monkeypat
         browser.BrowserTabPool(q).ensure_capacity()
 
 
-def test_pool_keeps_exactly_ten_tabs_and_repairs_only_closed_owned_tabs(monkeypatch):
+def test_pool_adopts_all_instagram_tabs_and_repairs_to_minimum(monkeypatch):
     from types import SimpleNamespace
 
+    monkeypatch.setattr(
+        browser, "_CONTROL", browser._CONTROL.model_copy(update={"parallel_tabs": 10})
+    )
     settings = {"browser_tab_ids": ["1"]}
-    live = {"1"}
+    live = {
+        "1",
+        "101",
+        "102",
+        "103",
+        "104",
+        "105",
+        "106",
+        "107",
+        "108",
+        "109",
+        "110",
+        "111",
+        "112",
+        "113",
+    }
     created = []
 
     def applescript(script, args, timeout):
+        if script == browser._INSTAGRAM_TAB_INVENTORY_SCRIPT:
+            return "\n".join(sorted(live))
         if script == browser._WORKER_WINDOW_SCRIPT:
             return "99"
         if script == browser._WORKER_TAB_INVENTORY_SCRIPT:
@@ -502,18 +522,18 @@ def test_pool_keeps_exactly_ten_tabs_and_repairs_only_closed_owned_tabs(monkeypa
     )
     pool = browser.BrowserTabPool(q)
     first = pool.ensure_capacity()
-    assert len(first) == len(set(first)) == 10
-    assert len(created) == 9
+    assert len(first) == len(set(first)) == 14
+    assert len(created) == 0
     assert pool.ensure_capacity() == first
-    assert len(created) == 9
-    live.remove("5")
+    assert len(created) == 0
+    live.remove("105")
     repaired = pool.ensure_capacity()
-    assert len(repaired) == len(set(repaired)) == 10
-    assert "5" not in repaired and "11" in repaired
+    assert len(repaired) == len(set(repaired)) == 13
+    assert "105" not in repaired
     assert repaired == settings["browser_tab_ids"]
-    assert len(created) == 10
+    assert len(created) == 0
     live.clear()
     restored = pool.ensure_capacity()
     assert len(restored) == len(set(restored)) == 10
-    assert len(created) == 20
+    assert len(created) == 10
     assert settings["browser_window_id"] == "99"

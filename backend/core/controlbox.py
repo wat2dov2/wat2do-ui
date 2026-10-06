@@ -629,7 +629,7 @@ class EmulatorFarmControl(_ControlModel):
 
 
 class InstagramBrowserControl(_ControlModel):
-    parallel_tabs: int = Field(gt=0, le=10)
+    parallel_tabs: int = Field(gt=0, le=100)
     tab_health_interval_seconds: float = Field(ge=1, le=300)
     notification_media_provider: Literal["browser", "apify"]
     ingestion_batch_size: int = Field(gt=0, le=100)
