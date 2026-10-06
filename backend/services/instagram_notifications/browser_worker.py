@@ -297,6 +297,8 @@ def maintain_tab_pool(queue: BrowserJobQueue) -> None:
         try:
             if not queue.get_setting("paused", False):
                 BrowserTabPool(queue).ensure_capacity()
+        except TimeoutError:
+            log.warning("Tab maintenance deferred: account identity is temporarily unreadable")
         except BrowserSessionError as exc:
             queue.set_setting("paused", str(exc))
         except Exception as exc:

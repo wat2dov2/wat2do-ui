@@ -557,6 +557,7 @@ def test_public_pool_only_reloads_after_account_context_changes(monkeypatch):
             cancel_pending_request=lambda: None,
             current_account_username=lambda: current[0],
             run=lambda source: reloads.append(source),
+            poll_until=lambda ready: ready(),
         ),
     )
     pool = browser.BrowserTabPool(queue)
@@ -568,3 +569,30 @@ def test_public_pool_only_reloads_after_account_context_changes(monkeypatch):
     current[0] = "wat2do.ca"
     pool.prepare(job, 2)
     assert len(reloads) == 2
+
+
+def test_pool_waits_for_username_and_captures_the_readable_value():
+    from types import SimpleNamespace
+
+    readings = iter([None, None, "wat2do.sfu"])
+
+    def poll(ready):
+        for _ in range(3):
+            if ready():
+                return
+        pytest.fail("Expected a readable identity")
+
+    session = SimpleNamespace(current_account_username=lambda: next(readings), poll_until=poll)
+    assert browser.BrowserTabPool._ready_username(session) == "wat2do.sfu"
+
+
+def test_pool_unreadable_identity_is_transient_not_recovery():
+    from types import SimpleNamespace
+
+    def poll(ready):
+        assert not ready()
+        raise browser._BrowserPageUnavailable("timed out")
+
+    session = SimpleNamespace(current_account_username=lambda: None, poll_until=poll)
+    with pytest.raises(TimeoutError, match="temporarily unreadable"):
+        browser.BrowserTabPool._ready_username(session)

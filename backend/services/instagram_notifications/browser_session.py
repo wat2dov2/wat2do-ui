@@ -694,8 +694,7 @@ class BrowserTabPool:
         path = primary.run("window.location.pathname")
         if path.startswith(("/accounts/login", "/accounts/suspended", "/challenge", "/checkpoint")):
             raise BrowserSessionError("Instagram browser requires human account recovery")
-        if primary.current_account_username() is None:
-            raise BrowserSessionError("Instagram browser requires human account recovery")
+        self._ready_username(primary)
         available = _run_applescript(
             _INSTAGRAM_TAB_INVENTORY_SCRIPT, (), _CONTROL.request_timeout_seconds
         ).split()
@@ -713,6 +712,23 @@ class BrowserTabPool:
             self.queue.set_setting("browser_tab_ids", ids)
         return ids
 
+    @staticmethod
+    def _ready_username(session: BrowserInstagramSession) -> str:
+        username = None
+
+        def readable() -> bool:
+            nonlocal username
+            username = session.current_account_username()
+            return username is not None
+
+        try:
+            session.poll_until(readable)
+        except _BrowserPageUnavailable:
+            raise TimeoutError("Instagram account identity is temporarily unreadable") from None
+        if username is None:
+            raise TimeoutError("Instagram account identity is temporarily unreadable")
+        return username
+
     def prepare(self, job, count: int) -> tuple[list[BrowserInstagramSession], str]:
         if count < 1:
             raise ValueError("Worker tab batch exceeds its configured capacity")
@@ -727,9 +743,7 @@ class BrowserTabPool:
         if job.kind == "digest":
             username = primary.activate_account(job.recipient_id, job.account_username)
         else:
-            username = primary.current_account_username()
-            if username is None:
-                raise BrowserSessionError("Instagram browser requires human account recovery")
+            username = self._ready_username(primary)
         count = len(ids) if job.kind == "retrieval" else min(count, len(ids))
         selected = [
             BrowserInstagramSession(
