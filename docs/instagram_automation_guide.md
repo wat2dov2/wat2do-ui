@@ -107,8 +107,9 @@ An exclusive browser lock covers each complete operation, and a separate worker 
 The source collector runs separately so a slow database read does not hold up ready digest jobs.
 
 Engagement work is grouped by school.
-Each school gets one action per round, with the largest pending quantity first among schools waiting for the same turn.
-Like, save, and native repost are separate jobs, so a digest can run between those actions on the same event.
+The worker stays with the selected school while it has eligible queued posts, then selects the oldest waiting post from another school.
+One engagement job owns one school/account/post and performs the configured like and repost actions after a single navigation.
+Notification digests and media retrieval take priority between posts; they never interrupt an action or switch accounts halfway through a post.
 Failed or unsupported engagement jobs remain visible for operator inspection and are not automatically retried.
 The durable queue’s `excluded_accounts` setting holds jobs for explicitly excluded school accounts across all job types without deleting or consuming them.
 Notification synchronization and imports respect the same exclusions.
@@ -212,14 +213,13 @@ Inspect a post's native controls through the queue without liking, saving, or re
 ```sh
 python scripts/instagram_browser.py inspect \
   --school '<school_slug>' \
-  --url '<original_instagram_post_url>' \
-  --action repost
+  --url '<original_instagram_post_url>'
 python scripts/instagram_browser.py status --job-id '<job_id_from_inspect>'
 ```
 
 Inspection still switches the browser to the school's account and navigates to the post.
 The command returns queued job IDs immediately, so check each job's status after the worker has processed it.
-Omit `--action` to inspect all configured actions, or repeat `--action` to select several.
+Inspection uses one post job and checks all configured engagement actions without clicking.
 Inspection jobs do not suppress later real engagement on the same post.
 
 To collect eligible published selections immediately, run:

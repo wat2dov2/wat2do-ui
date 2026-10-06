@@ -27,7 +27,6 @@ from services.instagram_notifications.browser_session import (
 )
 
 CONTROL = controlbox.instagram_browser
-ENGAGEMENT_ACTIONS = frozenset({"like", "save", "repost"})
 
 
 def default_state_directory() -> Path:
@@ -80,10 +79,7 @@ class BrowserJobQueue:
                     attempts INTEGER NOT NULL DEFAULT 0
                 );
                 CREATE INDEX IF NOT EXISTS jobs_waiting ON jobs(state, kind, created_at);
-                CREATE TABLE IF NOT EXISTS school_turns (
-                    school TEXT PRIMARY KEY,
-                    last_served INTEGER NOT NULL
-                );
+
                 CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);
                 CREATE TABLE IF NOT EXISTS diagnostic_events (
                     id TEXT PRIMARY KEY, event TEXT NOT NULL, created_at REAL NOT NULL
@@ -199,12 +195,11 @@ class BrowserJobQueue:
         recipient_id: str,
         account_username: str,
         post_url: str,
-        action: str,
         event_id: int | None = None,
         dry_run: bool = False,
     ) -> str:
-        if not re.fullmatch(r"[a-z0-9-]{1,80}", school) or action not in ENGAGEMENT_ACTIONS:
-            raise ValueError("Instagram engagement school or action is invalid")
+        if not re.fullmatch(r"[a-z0-9-]{1,80}", school):
+            raise ValueError("Instagram engagement school is invalid")
         return self._enqueue(
             "engagement",
             school,
@@ -212,7 +207,6 @@ class BrowserJobQueue:
             account_username,
             {
                 "post_url": canonical_post_url(post_url),
-                "action": action,
                 "event_id": event_id,
                 "dry_run": dry_run,
             },
@@ -230,7 +224,7 @@ class BrowserJobQueue:
             identity.extend([payload["url"], str(payload["cutoff_days"])])
         else:
             # p/ and reel/ can reference the same media. Dedupe by its shortcode.
-            identity.extend([payload["post_url"].rstrip("/").split("/")[-1], payload["action"]])
+            identity.extend([payload["post_url"].rstrip("/").split("/")[-1]])
         if payload.get("dry_run"):
             identity.extend(["inspect", uuid.uuid4().hex])
         dedupe_key = hashlib.sha256(json.dumps(identity).encode()).hexdigest()
@@ -316,45 +310,28 @@ class BrowserJobQueue:
                     "ORDER BY created_at,id LIMIT 1"
                 ).fetchone()
             if not row and allow_engagement:
-                # One action per school per round, largest current backlog first.
-                stored_round = db.execute(
-                    "SELECT value FROM settings WHERE key='school_round'"
+                selected = self.get_setting("engagement_school")
+                row = db.execute(
+                    "SELECT * FROM jobs WHERE state='pending' AND kind='engagement' AND school=? "
+                    f"AND {available_account} ORDER BY created_at,id LIMIT 1",
+                    (selected,),
                 ).fetchone()
-                round_number = json.loads(stored_round[0]) if stored_round else 1
-                query = f"""
-                    SELECT jobs.school, COUNT(*) AS quantity
-                    FROM jobs LEFT JOIN school_turns turns ON turns.school=jobs.school
-                    WHERE jobs.state='pending' AND jobs.kind='engagement'
-                        AND {available_account}
-                        AND COALESCE(turns.last_served,0) < ?
-                    GROUP BY jobs.school ORDER BY quantity DESC, MIN(jobs.created_at), jobs.school LIMIT 1
-                """
-                school = db.execute(query, (round_number,)).fetchone()
-                if not school:
-                    round_number += 1
-                    school = db.execute(query, (round_number,)).fetchone()
-                db.execute(
-                    "INSERT INTO settings VALUES ('school_round',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
-                    (json.dumps(round_number),),
-                )
-                if school:
+                if not row:
                     row = db.execute(
-                        "SELECT * FROM jobs WHERE state='pending' AND kind='engagement' AND school=? "
+                        "SELECT * FROM jobs WHERE state='pending' AND kind='engagement' "
                         f"AND {available_account} ORDER BY created_at,id LIMIT 1",
-                        (school["school"],),
                     ).fetchone()
+                if row:
+                    db.execute(
+                        "INSERT INTO settings VALUES ('engagement_school',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+                        (json.dumps(row["school"]),),
+                    )
             if not row:
                 return None
             db.execute(
                 "UPDATE jobs SET state='running',started_at=?,attempts=attempts+1 WHERE id=?",
                 (now, row["id"]),
             )
-            if row["kind"] == "engagement":
-                turn = round_number
-                db.execute(
-                    "INSERT INTO school_turns VALUES (?,?) ON CONFLICT(school) DO UPDATE SET last_served=excluded.last_served",
-                    (row["school"], turn),
-                )
             return self._job(db.execute("SELECT * FROM jobs WHERE id=?", (row["id"],)).fetchone())
 
     def claim_companions(self, first: BrowserJob, *, limit: int) -> list[BrowserJob]:

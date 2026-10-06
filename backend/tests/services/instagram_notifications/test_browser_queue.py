@@ -19,13 +19,12 @@ def queue(tmp_path):
     return module.BrowserJobQueue(tmp_path / "browser")
 
 
-def _engagement(queue, shortcode="Post1", *, school="ubc", action="like", event_id=1):
+def _engagement(queue, shortcode="Post1", *, school="ubc", event_id=1):
     return queue.enqueue_engagement(
         school=school,
         recipient_id=RECIPIENT_ID,
         account_username=ACCOUNT_USERNAME,
         post_url=f"https://www.instagram.com/p/{shortcode}/",
-        action=action,
         event_id=event_id,
     )
 
@@ -78,28 +77,17 @@ def test_engagement_cooldown_still_allows_immediate_digest_work(queue):
     assert queue.get(engagement_id).state == "pending"
 
 
-def test_school_rounds_prevent_starvation_and_reorder_by_current_backlog(queue):
-    for index in range(4):
+def test_school_posts_stay_together_and_digest_preempts_between_posts(queue):
+    for index in range(3):
         _engagement(queue, f"Ubc{index}", school="ubc")
-    for index in range(2):
-        _engagement(queue, f"Sask{index}", school="usask")
-    _engagement(queue, "Waterloo", school="uwaterloo")
-
+    _engagement(queue, "Sask", school="usask")
     assert _complete_next(queue).school == "ubc"
-    # More UBC work arriving mid-round must not starve the other schools.
-    _engagement(queue, "UbcLate", school="ubc")
-    assert _complete_next(queue).school == "usask"
-    assert _complete_next(queue).school == "uwaterloo"
-
-    for index in range(6):
-        _engagement(queue, f"SaskNew{index}", school="usask")
-
-    # At the next round, USask's larger backlog wins even though UBC waited longer.
-    assert _complete_next(queue).school == "usask"
-    assert _complete_next(queue).school == "ubc"
+    digest = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "urgent")
+    assert _complete_next(queue).id == digest
+    assert [_complete_next(queue).school for _ in range(3)] == ["ubc", "ubc", "usask"]
 
 
-def test_school_round_progress_survives_worker_restart(queue):
+def test_selected_school_survives_worker_restart(queue):
     for school in ("ubc", "usask"):
         for index in range(2):
             _engagement(queue, f"{school}{index}", school=school)
@@ -108,17 +96,16 @@ def test_school_round_progress_survives_worker_restart(queue):
     reopened = module.BrowserJobQueue(queue.state_directory)
     second = _complete_next(reopened)
 
-    assert second.school != first.school
+    assert second.school == first.school
 
 
-def test_same_post_in_two_carousels_or_permalink_forms_has_one_job_per_action(queue):
+def test_same_post_in_two_carousels_or_permalink_forms_has_one_job_per_post(queue):
     first = _engagement(queue, "Shared", event_id=101)
     second = queue.enqueue_engagement(
         school="ubc",
         recipient_id=RECIPIENT_ID,
         account_username=f" {ACCOUNT_USERNAME.upper()} ",
         post_url="https://www.instagram.com/reel/Shared/?igsh=tracking",
-        action="like",
         event_id=202,
     )
     assert first == second
@@ -128,16 +115,7 @@ def test_same_post_in_two_carousels_or_permalink_forms_has_one_job_per_action(qu
     assert queue.get(first).state == "succeeded"
     assert queue.claim_next() is None
 
-    assert (
-        len(
-            {
-                first,
-                _engagement(queue, "Shared", action="save"),
-                _engagement(queue, "Shared", action="repost"),
-            }
-        )
-        == 3
-    )
+    assert _engagement(queue, "Shared") == first
 
 
 def test_same_event_post_is_distinct_for_each_school_account(queue):
@@ -147,7 +125,6 @@ def test_same_event_post_is_distinct_for_each_school_account(queue):
         recipient_id="41553815702",
         account_username="usask.wat2do.io",
         post_url="https://www.instagram.com/p/Shared/",
-        action="like",
         event_id=1,
     )
 
@@ -178,13 +155,13 @@ def test_recovery_requeues_reads_but_never_repeats_ambiguous_engagement(queue):
 
 @pytest.mark.parametrize("result", [None, {"status": "unsupported"}])
 def test_failed_or_unsupported_engagement_requires_explicit_retry(queue, result):
-    job_id = _engagement(queue, action="repost")
+    job_id = _engagement(queue)
     assert queue.claim_next().id == job_id
     queue.finish(
         job_id, result=result, error="Unconfirmed browser result" if result is None else None
     )
 
-    assert _engagement(queue, action="repost") == job_id
+    assert _engagement(queue) == job_id
     assert queue.claim_next() is None
     queue.retry(job_id)
     assert queue.claim_next().id == job_id
@@ -383,7 +360,7 @@ queue = BrowserJobQueue(Path(sys.argv[1]))
 def enqueue(shortcode):
     return queue.enqueue_engagement(school='ubc', recipient_id='12342599092',
         account_username='ubc.wat2do.io', post_url=f'https://www.instagram.com/p/{shortcode}/',
-        action='like')
+        )
 shared = enqueue('Shared')
 unique = enqueue('Child' + sys.argv[2])
 job = queue.claim_next()
@@ -454,7 +431,7 @@ def test_retrieval_recovery_and_refresh_preserve_other_history(queue):
     assert queue.get(job_id).payload["url"] == "https://www.instagram.com/club.name/"
 
 
-def test_old_queue_upgrade_keeps_jobs_settings_and_school_turns(queue):
+def test_old_queue_upgrade_keeps_jobs_settings_and_selected_school(queue):
     job_id = _engagement(queue)
     queue.set_setting("important", {"checkpoint": 7})
     queue.claim_next()
@@ -475,8 +452,7 @@ def test_old_queue_upgrade_keeps_jobs_settings_and_school_turns(queue):
         account_username=ACCOUNT_USERNAME,
         url="https://www.instagram.com/p/AbC/",
     )
-    with sqlite3.connect(queue.database_path) as db:
-        assert db.execute("SELECT COUNT(*) FROM school_turns").fetchone()[0] == 1
+    assert reopened.get_setting("engagement_school") == "ubc"
 
 
 def test_digest_companions_never_cross_accounts_or_include_excluded_targets(tmp_path):

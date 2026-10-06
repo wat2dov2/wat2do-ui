@@ -7,7 +7,6 @@ unsupported capability, never an excuse to guess whether clicking would undo it.
 from __future__ import annotations
 
 import json
-from typing import Literal
 
 from services.instagram_notifications.browser_session import (
     BrowserInstagramSession,
@@ -18,7 +17,6 @@ from services.instagram_notifications.browser_session import (
     canonical_post_url,
 )
 
-EngagementAction = Literal["like", "save", "repost"]
 _ACTIONS = frozenset({"like", "save", "repost"})
 
 
@@ -29,23 +27,36 @@ _REPOST_ACTIVE_PATH = "M16 6.001a1 1 0 0 0 .924-1.382.998.998 0 0 0-.217-.326l-3
 
 
 class BrowserInstagramEngagementExecutor:
-    """Perform one action per worker lock, verifying identity before any click."""
+    """Complete one post per worker lock, verifying identity before any click."""
 
     def __init__(self, *, session: BrowserInstagramSession | None = None) -> None:
         self._session = session or BrowserInstagramSession()
 
-    def inspect(
-        self, recipient_id: str, account_username: str, post_url: str, action: str
-    ) -> dict[str, str]:
-        """Navigate and inspect the control without clicking an engagement action."""
-        username, url = self._prepare(recipient_id, account_username, post_url, action)
-        return self._state(recipient_id, username, url, action, click=False)
+    def engage_post(
+        self, recipient_id: str, account_username: str, post_url: str, *, inspect: bool = False
+    ) -> dict:
+        """Open once and finish configured actions before releasing this post's lock."""
+        from core.controlbox import controlbox
 
-    def execute(
-        self, recipient_id: str, account_username: str, post_url: str, action: str
+        username, url = self._prepare(recipient_id, account_username, post_url)
+        actions = {}
+        for action in controlbox.instagram_browser.actions:
+            state = self._state(recipient_id, username, url, action, click=not inspect)
+            actions[action] = (
+                state if inspect else self._complete(recipient_id, username, url, action, state)
+            )
+        status = (
+            "unsupported"
+            if any(result["status"] == "unsupported" for result in actions.values())
+            else "ready"
+            if inspect
+            else "succeeded"
+        )
+        return {"status": status, "actions": actions}
+
+    def _complete(
+        self, recipient_id: str, username: str, url: str, action: str, result: dict[str, str]
     ) -> dict[str, str]:
-        username, url = self._prepare(recipient_id, account_username, post_url, action)
-        result = self._state(recipient_id, username, url, action, click=True)
         if result["status"] != "clicked":
             return result
 
@@ -64,11 +75,7 @@ class BrowserInstagramEngagementExecutor:
         self._session.poll_until(completed)
         return {"action": action, "status": "succeeded"}
 
-    def _prepare(
-        self, recipient_id: str, account_username: str, post_url: str, action: str
-    ) -> tuple[str, str]:
-        if action not in _ACTIONS:
-            raise BrowserSessionError("Instagram engagement action is invalid")
+    def _prepare(self, recipient_id: str, account_username: str, post_url: str) -> tuple[str, str]:
         url = canonical_post_url(post_url)
         username = self._session.activate_account(recipient_id, account_username)
         self._session.navigate_post(url, recipient_id, username)
@@ -77,6 +84,8 @@ class BrowserInstagramEngagementExecutor:
     def _state(
         self, recipient_id: str, username: str, post_url: str, action: str, *, click: bool
     ) -> dict[str, str]:
+        if action not in _ACTIONS:
+            raise BrowserSessionError("Instagram engagement action is invalid")
         raw = self._session.run(
             _engagement_source(recipient_id, username, post_url, action, click=click)
         )

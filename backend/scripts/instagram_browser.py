@@ -21,7 +21,6 @@ if str(BACKEND_DIRECTORY) not in sys.path:
 
 from services.instagram_notifications.browser_queue import (  # noqa: E402
     CONTROL,
-    ENGAGEMENT_ACTIONS,
     BrowserJobQueue,
 )
 from services.instagram_notifications.browser_session import BrowserSessionError  # noqa: E402
@@ -123,7 +122,6 @@ def parser() -> argparse.ArgumentParser:
     )
     inspect.add_argument("--school", required=True)
     inspect.add_argument("--url", required=True)
-    inspect.add_argument("--action", action="append", choices=sorted(ENGAGEMENT_ACTIONS))
     return result
 
 
@@ -202,7 +200,6 @@ def main(argv: Sequence[str] | None = None) -> int:
             from services.instagram_notifications.carousel_engagement import get_engagement_account
 
             identity = get_engagement_account(arguments.school)
-            actions = list(dict.fromkeys(arguments.action or CONTROL.actions))
             result = {
                 "jobs": [
                     queue.enqueue_engagement(
@@ -210,10 +207,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                         recipient_id=identity.recipient_id,
                         account_username=identity.account_username,
                         post_url=arguments.url,
-                        action=action,
                         dry_run=True,
                     )
-                    for action in actions
                 ]
             }
         print(json.dumps(result, indent=2, sort_keys=True))

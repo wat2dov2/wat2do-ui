@@ -322,7 +322,6 @@ def test_exclusions_apply_to_account_bound_jobs(tmp_path, kind):
             recipient_id=RECIPIENT,
             account_username="wat2do.utsc",
             post_url=URL,
-            action="like",
         )
     queue.set_setting("excluded_accounts", ["wat2do.utsc"])
     assert queue.claim_next() is None
