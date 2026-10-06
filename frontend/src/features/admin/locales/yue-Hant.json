@@ -376,6 +376,11 @@
       "submissions": "經營困難嘅本地商戶推薦",
       "description": "審核附近商戶嘅推薦。",
       "reviewHelp": "批准只會記錄審核決定，唔會發布橫幅。"
+    },
+    "clubSubmissionDetails": {
+      "records": "記錄詳情",
+      "clubId": "社團 ID：{{id}}",
+      "ownerId": "擁有人 ID：{{id}}"
     }
   }
 }

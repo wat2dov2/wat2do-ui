@@ -109,6 +109,10 @@ function createMouseDownPressHandlers({
   };
 }
 
+export function isNestedInteractiveTarget(event: ReactMouseEvent<HTMLElement>) {
+  return typeof Element !== "undefined" && event.target instanceof Element && event.target !== event.currentTarget && Boolean(event.target.closest(CARD_INTERACTIVE_SELECTOR));
+}
+
 /** Open cards/drawers on mouse down while skipping footer actions and nested controls. */
 export function useCardMouseDownActivate(
   onActivate: () => void,
@@ -125,7 +129,7 @@ export function useCardMouseDownActivate(
       if (footerSelector && event.target.closest(footerSelector)) {
         return;
       }
-      if (event.target.closest(CARD_INTERACTIVE_SELECTOR)) {
+      if (isNestedInteractiveTarget(event)) {
         return;
       }
       onActivate();

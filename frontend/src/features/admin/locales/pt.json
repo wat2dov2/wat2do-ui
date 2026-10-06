@@ -376,6 +376,11 @@
       "submissions": "Indicações de negócios locais em dificuldades",
       "description": "Analise as indicações de negócios próximos.",
       "reviewHelp": "A aprovação registra sua decisão. Ela não publica um banner."
+    },
+    "clubSubmissionDetails": {
+      "records": "Detalhes do registo",
+      "clubId": "ID do clube: {{id}}",
+      "ownerId": "ID do proprietário: {{id}}"
     }
   }
 }

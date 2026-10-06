@@ -376,6 +376,11 @@
       "submissions": "Mga mungkahi para sa nahihirapang lokal na negosyo",
       "description": "Suriin ang mga mungkahi para sa kalapit na negosyo.",
       "reviewHelp": "Itinatala ng pag-apruba ang desisyon mo. Hindi ito naglalathala ng banner."
+    },
+    "clubSubmissionDetails": {
+      "records": "Mga detalye ng tala",
+      "clubId": "ID ng club: {{id}}",
+      "ownerId": "ID ng may-ari: {{id}}"
     }
   }
 }

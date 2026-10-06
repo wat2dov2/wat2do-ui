@@ -376,6 +376,11 @@
       "submissions": "Struggling local business submissions",
       "description": "Review nearby business nominations.",
       "reviewHelp": "Approval records your review. It does not publish a banner."
+    },
+    "clubSubmissionDetails": {
+      "records": "Record details",
+      "clubId": "Club ID: {{id}}",
+      "ownerId": "Owner ID: {{id}}"
     }
   }
 }

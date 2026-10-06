@@ -223,9 +223,11 @@ export function getClubClaims(filters: AdminListFilters) {
   return getAdminPage<ClubClaim>("/clubs/claims", filters);
 }
 
+export type ClubSubmission = Club & Pick<components["schemas"]["ClubSubmissionResponse"], "submitted_by_email">;
+
 /** Clubs awaiting (or already through) admin review. */
 export function getClubSubmissions(filters: AdminListFilters) {
-  return getAdminPage<Club & Pick<components["schemas"]["ClubSubmissionResponse"], "submitted_by_email">>("/clubs/review", filters, "club_status");
+  return getAdminPage<ClubSubmission>("/clubs/review", filters, "club_status");
 }
 
 export async function resolveClubReview(

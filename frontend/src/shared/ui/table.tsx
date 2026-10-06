@@ -1,6 +1,7 @@
 import * as React from "react"
 
 import { cn } from "@/shared/lib/utils"
+import { createAdaptivePressHandlers, isNestedInteractiveTarget } from "@/shared/hooks/useMouseDownPress"
 import { Stack } from "@/shared/layout/stack"
 import { Pagination } from "@/shared/ui/Pagination"
 import { Skeleton } from "@/shared/ui/skeleton"
@@ -61,10 +62,32 @@ type TableRowProps = React.ComponentProps<"tr"> & {
   interactive?: boolean
 }
 
-function TableRow({ className, interactive, ...props }: TableRowProps) {
+function TableRow({ className, interactive, onClick, onMouseDown, onKeyDown, ...props }: TableRowProps) {
+  const activationHandlers: Pick<React.ComponentProps<"tr">, "onClick" | "onMouseDown"> = interactive ? createAdaptivePressHandlers({
+    onClick: event => { if (!isNestedInteractiveTarget(event)) onClick?.(event as React.MouseEvent<HTMLTableRowElement>); },
+    onMouseDown: event => onMouseDown?.(event as React.MouseEvent<HTMLTableRowElement>),
+  }) : { onClick, onMouseDown }
+  const handlers = interactive ? {
+    onMouseDown: (event: React.MouseEvent<HTMLTableRowElement>) => {
+      if (!isNestedInteractiveTarget(event)) activationHandlers.onMouseDown?.(event)
+    },
+    onClick: (event: React.MouseEvent<HTMLTableRowElement>) => {
+      if (!isNestedInteractiveTarget(event)) activationHandlers.onClick?.(event)
+    },
+  } : activationHandlers
+
   return (
     <tr
       data-slot="table-row"
+      tabIndex={interactive ? 0 : undefined}
+      onKeyDown={event => {
+        onKeyDown?.(event)
+        if (interactive && !event.defaultPrevented && event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) {
+          event.preventDefault()
+          event.currentTarget.click()
+        }
+      }}
+      {...handlers}
       className={cn(
         "hover:bg-surface-hover data-[state=selected]:bg-secondary border-b transition-colors",
         interactive && "cursor-pointer",

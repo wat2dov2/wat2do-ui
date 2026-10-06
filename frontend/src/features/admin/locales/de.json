@@ -376,6 +376,11 @@
       "submissions": "Vorschläge für lokale Unternehmen in Schwierigkeiten",
       "description": "Prüfe Vorschläge für Unternehmen in der Nähe.",
       "reviewHelp": "Die Genehmigung speichert deine Entscheidung. Sie veröffentlicht kein Banner."
+    },
+    "clubSubmissionDetails": {
+      "records": "Datensatzdetails",
+      "clubId": "Club-ID: {{id}}",
+      "ownerId": "Inhaber-ID: {{id}}"
     }
   }
 }

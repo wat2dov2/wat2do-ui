@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { runInNewContext } from "node:vm";
 import ts from "typescript";
-import { createAdaptivePressHandlers } from "../src/shared/hooks/useMouseDownPress";
+import { createAdaptivePressHandlers, isNestedInteractiveTarget } from "../src/shared/hooks/useMouseDownPress";
 
 // Inspect the real primitives using their JSX event props without a browser.
 const require = createRequire(import.meta.url);
@@ -17,7 +17,8 @@ function loadUI(name: string, disclosure?: { open: boolean; setOpen: (open: bool
   runInNewContext(outputText, {
     require: (id: string) => {
       if (id === "react" && disclosure) return { ...require("react"), useContext: () => disclosure };
-      if (id === "@/shared/hooks/useMouseDownPress") return { createAdaptivePressHandlers };
+      if (id === "@/shared/hooks/useMouseDownPress") return { createAdaptivePressHandlers, isNestedInteractiveTarget };
+      if (["@/shared/layout/stack", "@/shared/ui/Pagination", "@/shared/ui/skeleton"].includes(id)) return {};
       if (id === "@/shared/ui/doodle-icons") return { Check: () => null };
       if (id === "@/shared/ui/button") return { OUTLINE_CONTROL_STYLES: "" };
       if (id === "@/shared/ui/drawer" || id === "@/shared/hooks/useExclusiveDisclosure") return {};
@@ -196,4 +197,37 @@ test("deadline badges keep white text without inheriting the light warning foreg
   const render = (Badge as unknown as { render: (props: ComponentProps<typeof Badge>, ref: null) => { props: ComponentProps<"div"> } }).render;
   expect(render({ variant: "soon" }, null).props.style?.color).toBe("var(--color-white)");
   expect(render({ variant: "new" }, null).props.style?.color).toBe("var(--color-white)");
+});
+
+
+test("interactive table rows activate once and keyboard clicks open details", () => {
+  const { TableRow } = loadUI("table") as typeof import("../src/shared/ui/table");
+  const row = TableRow({ interactive: true, onClick: () => calls++ });
+  let calls = 0;
+  row.props.onMouseDown?.(event());
+  row.props.onClick?.(event());
+  expect(calls).toBe(1);
+  row.props.onClick?.(event(0, 0));
+  expect(calls).toBe(2);
+  expect(row.props.tabIndex).toBe(0);
+});
+
+test("interactive table rows ignore nested action controls", () => {
+  class FakeElement { closest() { return this; } }
+  const previous = Object.getOwnPropertyDescriptor(globalThis, "Element");
+  Object.defineProperty(globalThis, "Element", { value: FakeElement, configurable: true });
+  try {
+    const { TableRow } = loadUI("table") as typeof import("../src/shared/ui/table");
+    let calls = 0;
+    const row = TableRow({ interactive: true, onClick: () => calls++ });
+    row.props.onMouseDown?.(Object.assign(event(), { target: new FakeElement(), currentTarget: {} }));
+    expect(calls).toBe(0);
+    const nestedClick = Object.assign(event(), { target: new FakeElement(), currentTarget: {} });
+    row.props.onClick?.(nestedClick);
+    expect(calls).toBe(0);
+    expect(nestedClick.defaultPrevented).toBe(false);
+  } finally {
+    if (previous) Object.defineProperty(globalThis, "Element", previous);
+    else Reflect.deleteProperty(globalThis, "Element");
+  }
 });

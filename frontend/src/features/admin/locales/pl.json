@@ -376,6 +376,11 @@
       "submissions": "Zgłoszenia lokalnych firm w trudnej sytuacji",
       "description": "Przejrzyj zgłoszenia pobliskich firm.",
       "reviewHelp": "Zatwierdzenie zapisuje decyzję. Nie publikuje banera."
+    },
+    "clubSubmissionDetails": {
+      "records": "Szczegóły rekordu",
+      "clubId": "ID klubu: {{id}}",
+      "ownerId": "ID właściciela: {{id}}"
     }
   }
 }

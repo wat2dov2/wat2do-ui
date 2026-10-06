@@ -376,6 +376,11 @@
       "submissions": "Proposte di attività locali in difficoltà",
       "description": "Esamina le proposte di attività vicine.",
       "reviewHelp": "L’approvazione registra la tua decisione. Non pubblica un banner."
+    },
+    "clubSubmissionDetails": {
+      "records": "Dettagli del record",
+      "clubId": "ID del club: {{id}}",
+      "ownerId": "ID del proprietario: {{id}}"
     }
   }
 }

@@ -376,6 +376,11 @@
       "submissions": "经营困难的本地商家推荐",
       "description": "审核附近商家的推荐。",
       "reviewHelp": "批准仅记录审核决定，不会发布横幅。"
+    },
+    "clubSubmissionDetails": {
+      "records": "记录详情",
+      "clubId": "社团 ID：{{id}}",
+      "ownerId": "所有者 ID：{{id}}"
     }
   }
 }

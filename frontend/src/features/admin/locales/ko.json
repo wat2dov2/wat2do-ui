@@ -376,6 +376,11 @@
       "submissions": "어려움을 겪는 지역 가게 추천",
       "description": "근처 가게 추천을 검토하세요.",
       "reviewHelp": "승인은 검토 결과를 기록합니다. 배너를 게시하지는 않습니다."
+    },
+    "clubSubmissionDetails": {
+      "records": "기록 상세 정보",
+      "clubId": "동아리 ID: {{id}}",
+      "ownerId": "소유자 ID: {{id}}"
     }
   }
 }

@@ -1,3 +1,4 @@
+import { ClubSubmissionDetailsDrawer } from "@/features/admin/components/ClubSubmissionDetailsDrawer";
 import { ClaimDetailsDrawer } from "@/features/admin/components/ClaimDetailsDrawer";
 import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
@@ -102,6 +103,8 @@ export function AdminClubsPage({
   const claimsPagination = claimList.pagination;
   const [isDeleting, setIsDeleting] = useState(false);
   const clubTypeOptions = useMemo(() => getClubTypeFilterOptions(undefined), []);
+  const [selectedSubmissionId, setSelectedSubmissionId] = useState<number | null>(null);
+  const selectedSubmission = submissionList.items.find(club => club.id === selectedSubmissionId);
   const [selectedClaimId, setSelectedClaimId] = useState<string | null>(null);
   const selectedClaim = claimList.items.find(claim => claim.id === selectedClaimId);
   const [rejectClaimId, setRejectClaimId] = useState<string | null>(null);
@@ -310,7 +313,7 @@ export function AdminClubsPage({
               ]}
             >
               {submissionList.items.map((club) => (
-                <TableRow key={club.id}>
+                <TableRow key={club.id} interactive onClick={() => setSelectedSubmissionId(club.id)}>
                   <TableCell>
                     <div className="font-medium text-sm text-foreground">
                       {club.club_name}
@@ -566,6 +569,7 @@ export function AdminClubsPage({
         </>
       )}
 
+      {selectedSubmission && <ClubSubmissionDetailsDrawer submission={selectedSubmission} onClose={() => setSelectedSubmissionId(null)} />}
       {selectedClaim && <ClaimDetailsDrawer claim={selectedClaim} onClose={() => setSelectedClaimId(null)} />}
       <AdminDeleteDialog
         isOpen={deleteConfirmId !== null}

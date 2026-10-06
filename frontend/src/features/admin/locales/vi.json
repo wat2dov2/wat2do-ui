@@ -376,6 +376,11 @@
       "submissions": "Đề cử doanh nghiệp địa phương đang gặp khó khăn",
       "description": "Xem xét các đề cử doanh nghiệp gần trường.",
       "reviewHelp": "Phê duyệt ghi lại quyết định của bạn, không đăng biểu ngữ."
+    },
+    "clubSubmissionDetails": {
+      "records": "Chi tiết bản ghi",
+      "clubId": "ID câu lạc bộ: {{id}}",
+      "ownerId": "ID chủ sở hữu: {{id}}"
     }
   }
 }

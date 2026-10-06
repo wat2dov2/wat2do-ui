@@ -376,6 +376,11 @@
       "submissions": "Propositions de commerces locaux en difficulté",
       "description": "Examinez les propositions de commerces à proximité.",
       "reviewHelp": "L’approbation enregistre votre décision. Elle ne publie pas de bannière."
+    },
+    "clubSubmissionDetails": {
+      "records": "Détails du dossier",
+      "clubId": "Identifiant du club : {{id}}",
+      "ownerId": "Identifiant du propriétaire : {{id}}"
     }
   }
 }

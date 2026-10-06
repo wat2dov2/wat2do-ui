@@ -376,6 +376,11 @@
       "submissions": "Propuestas de negocios locales en dificultades",
       "description": "Revisa las propuestas de negocios cercanos.",
       "reviewHelp": "La aprobación registra tu decisión. No publica un anuncio."
+    },
+    "clubSubmissionDetails": {
+      "records": "Detalles del registro",
+      "clubId": "ID del club: {{id}}",
+      "ownerId": "ID del propietario: {{id}}"
     }
   }
 }
