@@ -595,6 +595,21 @@ WHERE NOT EXISTS (
       AND c.club_name = format('Demo %s %s Club %s', fixture.slug, kind.label, fixture.slot)
 );
 
+-- Directory fixtures remain visible as clubs but are excluded from submission review.
+-- Cover both NULL and whitespace-only submission email values.
+INSERT INTO public.clubs (
+    club_name, school_id, categories, club_type, status, submitted_by_email
+)
+SELECT format('Demo %s Directory %s Club', fixture.slug, kind.label),
+    fixture.school_id, '["Games & Recreation"]'::jsonb, 'independent', 'approved', kind.email
+FROM moderation_seed fixture
+CROSS JOIN (VALUES ('Missing email', NULL::text), ('Blank email', '   ')) AS kind(label, email)
+WHERE fixture.slot = 1 AND NOT EXISTS (
+    SELECT 1 FROM public.clubs c
+    WHERE c.school_id = fixture.school_id
+      AND c.club_name = format('Demo %s Directory %s Club', fixture.slug, kind.label)
+);
+
 INSERT INTO public.club_claims (id, club_id, user_id, executive_role, proof_url, created_at)
 SELECT md5('wat2do-local-claim-' || fixture.slug || '-' || fixture.slot)::uuid,
     club.id, fixture.user_id,
