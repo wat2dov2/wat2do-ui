@@ -695,3 +695,8 @@ SET suggested_song = jsonb_build_object(
     'checked_on', CURRENT_DATE::text
 )
 WHERE account_key = 'uwaterloo' AND status = 'ready_for_review';
+
+-- The existing ULaval draft exercises review before an Instagram account is connected.
+UPDATE public.instagram_publish_batches
+SET instagram_user_id = NULL
+WHERE account_key = 'ulaval' AND status = 'ready_for_review';

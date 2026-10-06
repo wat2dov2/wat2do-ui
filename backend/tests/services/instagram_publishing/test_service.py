@@ -1031,6 +1031,7 @@ def codex_draft(monkeypatch):
             }
         ],
     )
+    monkeypatch.setattr(service, "_draft_schools", lambda: [{"id": 1, "slug": "uwaterloo"}])
     monkeypatch.setattr(service, "_daily_batch", lambda *_: None)
     monkeypatch.setattr(service, "_recent_song_suggestions", lambda *_: [])
     monkeypatch.setattr(service, "_last_successful_cutoff", lambda *_: None)
@@ -1164,9 +1165,9 @@ def test_codex_rejects_other_school_choices_before_database_write(monkeypatch, c
     database.assert_not_called()
 
 
-def test_codex_does_not_create_drafts_for_disabled_accounts(monkeypatch, codex_draft):
-    monkeypatch.setattr(service, "_enabled_accounts", lambda: [])
-    with pytest.raises(service.ValidationError, match="not enabled"):
+def test_codex_rejects_unregistered_schools(monkeypatch, codex_draft):
+    monkeypatch.setattr(service.school_service, "get_school_id", lambda _: None)
+    with pytest.raises(service.ValidationError, match="not registered"):
         service.save_review_draft(codex_draft)
 
 
@@ -1236,4 +1237,70 @@ def test_song_cannot_claim_a_future_chart_check(monkeypatch, codex_draft):
     monkeypatch.setattr(service, "get_sb", database)
     with pytest.raises(service.ValidationError, match="future"):
         service.save_review_draft(codex_draft)
+    database.assert_not_called()
+
+
+def test_all_registered_schools_get_candidates_without_connected_accounts(monkeypatch, codex_draft):
+    monkeypatch.setattr(service, "_enabled_accounts", lambda: [])
+    monkeypatch.setattr(
+        service,
+        "_draft_schools",
+        lambda: [
+            {"id": 1, "slug": "uwaterloo"},
+            {"id": 2, "slug": "brocku"},
+        ],
+    )
+    packets = service.list_draft_candidates(codex_draft.window_end)
+    assert [packet["account_key"] for packet in packets] == ["uwaterloo", "brocku"]
+    assert all(packet["status"] == "needs_review" for packet in packets)
+    assert all(packet["publishing_connected"] is False for packet in packets)
+
+
+def test_unconnected_school_can_save_a_review_draft(monkeypatch, codex_draft):
+    monkeypatch.setattr(service, "_enabled_accounts", lambda: [])
+    calls = []
+    monkeypatch.setattr(
+        service,
+        "get_sb",
+        lambda: SimpleNamespace(
+            table=lambda _: _FakeQuery([{"id": "draft-1"}], calls),
+        ),
+    )
+    monkeypatch.setattr(service, "build_caption", lambda *_: "Caption")
+    monkeypatch.setattr(
+        service, "get_batch", lambda _: {"id": "draft-1", "status": "ready_for_review"}
+    )
+    assert service.save_review_draft(codex_draft)["outcome"] == "saved"
+    batch = next(args[0] for name, args, _ in calls if name == "insert")
+    assert batch["instagram_user_id"] is None
+    assert batch["school_id"] == 1
+
+
+def test_publishing_binds_a_newly_connected_identity_to_unconnected_draft(monkeypatch):
+    monkeypatch.setattr(service, "get_batch", lambda _: _batch([1], instagram_user_id=None))
+    monkeypatch.setattr(service, "_enabled_accounts", lambda: [{"account_key": "uwaterloo"}])
+    monkeypatch.setattr(
+        service, "load_account_credentials", lambda _: SimpleNamespace(instagram_user_id="12345")
+    )
+    calls = []
+    monkeypatch.setattr(
+        service,
+        "get_sb",
+        lambda: SimpleNamespace(
+            table=lambda _: _FakeQuery([{"instagram_user_id": "12345"}], calls),
+        ),
+    )
+    batch = service.claim_batch_for_publishing("batch-1", InstagramPublishBatchPublish(version=3))
+    assert batch["instagram_user_id"] == "12345"
+    update = next(args[0] for name, args, _ in calls if name == "update")
+    assert update["instagram_user_id"] == "12345"
+
+
+def test_unconnected_draft_cannot_publish(monkeypatch):
+    monkeypatch.setattr(service, "get_batch", lambda _: _batch([1], instagram_user_id=None))
+    monkeypatch.setattr(service, "_enabled_accounts", lambda: [])
+    database = Mock()
+    monkeypatch.setattr(service, "get_sb", database)
+    with pytest.raises(service.ValidationError, match="Connect and enable"):
+        service.claim_batch_for_publishing("batch-1", InstagramPublishBatchPublish(version=3))
     database.assert_not_called()

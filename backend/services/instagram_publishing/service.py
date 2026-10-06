@@ -41,6 +41,7 @@ from core.tables import (
     INSTAGRAM_PUBLISH_BATCHES,
     INSTAGRAM_PUBLISH_ITEMS,
     INSTAGRAM_PUBLISHING_ACCOUNTS,
+    SCHOOLS,
 )
 from schemas.event import EventSummaryResponse
 from schemas.instagram_publishing import (
@@ -96,17 +97,37 @@ def _recent_song_suggestions(account_key: str, window_end: datetime) -> list[dic
     return [row["suggested_song"] for row in response.data or []]
 
 
+def _draft_schools() -> list[dict[str, Any]]:
+    """Every registered school gets editorial drafts, regardless of account connection."""
+    return fetch_all_pages(
+        lambda offset, limit: (
+            (
+                get_sb()
+                .table(SCHOOLS)
+                .select("slug")
+                .order("slug")
+                .range(offset, offset + limit - 1)
+                .execute()
+            ).data
+            or []
+        )
+    )
+
+
 def list_draft_candidates(now_utc: datetime | None = None) -> list[dict[str, Any]]:
     """Read candidate packets for Codex's daily editorial review, without writing drafts."""
     now = _aware_utc(now_utc or datetime.now(timezone.utc))
     local_date = now.astimezone(ZoneInfo(_CONTROL.generation_timezone)).date()
     packets = []
-    for account in _enabled_accounts():
-        account_key = str(account["account_key"])
+    accounts = {row["account_key"]: row for row in _enabled_accounts()}
+    for school in _draft_schools():
+        account_key = str(school["slug"])
+        account = accounts.get(account_key)
         existing = _daily_batch(account_key, local_date)
         packet: dict[str, Any] = {
             "account_key": account_key,
-            "requires_reauthorization": bool(account.get("requires_reauthorization")),
+            "publishing_connected": account is not None,
+            "requires_reauthorization": bool(account and account.get("requires_reauthorization")),
             "local_date": local_date.isoformat(),
             "window_end": now.isoformat(),
             "batch_id": existing["id"] if existing else None,
@@ -277,9 +298,11 @@ def claim_batch_for_publishing(
 
     account_key = str(batch["account_key"])
     if not any(row["account_key"] == account_key for row in _enabled_accounts()):
-        raise ValidationError("Instagram publishing is disabled for this account")
+        raise ValidationError(
+            "Connect and enable an Instagram account for this school before publishing"
+        )
     credentials = load_account_credentials(account_key)
-    if credentials.instagram_user_id != batch["instagram_user_id"]:
+    if batch["instagram_user_id"] and credentials.instagram_user_id != batch["instagram_user_id"]:
         raise ValidationError("Instagram account credentials no longer match this batch")
 
     items = _ordered_items(batch)
@@ -296,6 +319,7 @@ def claim_batch_for_publishing(
         .update(
             {
                 "status": INSTAGRAM_BATCH_PUBLISHING,
+                "instagram_user_id": credentials.instagram_user_id,
                 "caption": batch["caption"],
                 "error_message": None,
                 "version": data.version + 1,
@@ -352,12 +376,7 @@ def publish_claimed_batch(batch: dict[str, Any]) -> None:
 
 
 def _enabled_accounts() -> list[dict[str, Any]]:
-    """Account keys the daily job runs, straight from the connected accounts.
-
-    An account exists once it has been connected, and its row says whether it
-    publishes - so an account that was never connected simply has no batches
-    generated for it, rather than generating batches nothing can publish.
-    """
+    """Enabled connected accounts for publication and safe draft account metadata."""
     response = (
         get_sb()
         .table(INSTAGRAM_PUBLISHING_ACCOUNTS)
@@ -386,8 +405,11 @@ def save_review_draft(selection: DraftSelection) -> dict[str, Any]:
         raise ValidationError("Draft window cannot end in the future")
     account_key = selection.account_key
     account = next((row for row in _enabled_accounts() if row["account_key"] == account_key), None)
-    if account is None:
-        raise ValidationError("Instagram account is not enabled for publishing")
+    school_id = school_service.get_school_id(account_key)
+    if school_id is None:
+        raise ValidationError("Instagram draft school is not registered")
+    if account and school_id != account["school_id"]:
+        raise ValidationError("Instagram publishing school does not match the account")
     local_date = now.astimezone(ZoneInfo(_CONTROL.generation_timezone)).date()
     if selection.suggested_song and selection.suggested_song.checked_on > local_date:
         raise ValidationError("Song chart check cannot be in the future")
@@ -405,9 +427,6 @@ def save_review_draft(selection: DraftSelection) -> dict[str, Any]:
     validate_picks(candidates, selection.picks)
     by_id = {event["id"]: event for event in candidates}
     selected = [by_id[pick.event_id] for pick in selection.picks]
-    school_id = school_service.get_school_id(account_key)
-    if school_id is None or school_id != account["school_id"]:
-        raise ValidationError("Instagram publishing school does not match the account")
     batch_response = (
         get_sb()
         .table(INSTAGRAM_PUBLISH_BATCHES)
@@ -415,7 +434,7 @@ def save_review_draft(selection: DraftSelection) -> dict[str, Any]:
             {
                 "account_key": account_key,
                 "batch_kind": "events",
-                "instagram_user_id": account["instagram_user_id"],
+                "instagram_user_id": account["instagram_user_id"] if account else None,
                 "school_id": school_id,
                 "local_date": local_date.isoformat(),
                 "window_start": window_start.isoformat(),

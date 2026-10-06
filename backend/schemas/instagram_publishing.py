@@ -61,7 +61,7 @@ class InstagramPublishBatchBaseResponse(BaseModel):
 
     id: UUID
     account_key: str
-    instagram_user_id: str
+    instagram_user_id: str | None = None
     batch_kind: InstagramPublishBatchKind = "events"
     school: str
     local_date: date

@@ -357,6 +357,11 @@ The scheduled `run-cycle` exits nonzero while either app is missing, Automate la
 
 A daily Codex automation owns event selection, carousel order, sticker choices, caption introduction, and cover copy.
 It reads candidate packets through `backend/jobs/generate_instagram_posts.py candidates`, reviews the event data itself, and saves its choices with `save <selection.json>`.
+Every registered school receives a candidate packet and may save a review draft, even before an Instagram publishing account is connected.
+The school directory is the generation roster; connected account `enabled` controls publication only.
+Unconnected drafts keep `instagram_user_id` null, never a fabricated account ID.
+When an account is connected later, the publishing claim validates its credentials and binds the identity atomically before any media is uploaded.
+Candidate packets expose `publishing_connected` so the agent can distinguish missing accounts from reauthorization failures without blocking editorial work.
 There is no embedded OpenAI API call or GitHub draft-generation workflow.
 The publishing controlbox retains artwork bounds, eligibility windows, and publishing limits; there is no preset sticker catalog.
 The service validates event IDs, distinct labels, capitalization, and text bounds before writing a draft.

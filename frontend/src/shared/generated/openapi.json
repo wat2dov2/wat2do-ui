@@ -10154,7 +10154,14 @@
             "title": "Account Key"
           },
           "instagram_user_id": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Instagram User Id"
           },
           "batch_kind": {
@@ -10307,7 +10314,6 @@
         "required": [
           "id",
           "account_key",
-          "instagram_user_id",
           "school",
           "local_date",
           "window_start",
@@ -10333,7 +10339,14 @@
             "title": "Account Key"
           },
           "instagram_user_id": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Instagram User Id"
           },
           "batch_kind": {
@@ -10474,7 +10487,6 @@
         "required": [
           "id",
           "account_key",
-          "instagram_user_id",
           "school",
           "local_date",
           "window_start",

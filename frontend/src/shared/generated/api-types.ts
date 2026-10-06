@@ -2774,7 +2774,7 @@ export interface components {
             /** Account Key */
             account_key: string;
             /** Instagram User Id */
-            instagram_user_id: string;
+            instagram_user_id?: string | null;
             /**
              * Batch Kind
              * @default events
@@ -2858,7 +2858,7 @@ export interface components {
             /** Account Key */
             account_key: string;
             /** Instagram User Id */
-            instagram_user_id: string;
+            instagram_user_id?: string | null;
             /**
              * Batch Kind
              * @default events
