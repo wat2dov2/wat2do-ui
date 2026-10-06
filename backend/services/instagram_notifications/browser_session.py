@@ -113,6 +113,10 @@ class BrowserInstagramSession:
         self._allow_account_switch = allow_account_switch
         self._deadline = monotonic() + job_timeout_seconds if job_timeout_seconds else None
 
+    def reset_job_deadline(self, timeout_seconds: float) -> None:
+        """Start a fresh bounded job on a settled reusable tab."""
+        self._deadline = self._monotonic() + timeout_seconds
+
     def run(self, source: str) -> str:
         timeout = _CONTROL.request_timeout_seconds
         if self._deadline is not None:

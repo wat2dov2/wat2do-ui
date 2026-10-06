@@ -423,7 +423,8 @@ def test_ten_retrievals_overlap_and_release_lock_only_after_cleanup(queue, monke
     )
 
     def retrieve(job, *, session):
-        barrier.wait(timeout=5)
+        if not job.payload["url"].endswith("/Post10/"):
+            barrier.wait(timeout=5)
         with open(module.BROWSER_LOCK_PATH, "a+") as probe:
             with pytest.raises(BlockingIOError):
                 fcntl.flock(probe, fcntl.LOCK_EX | fcntl.LOCK_NB)
@@ -431,9 +432,10 @@ def test_ten_retrievals_overlap_and_release_lock_only_after_cleanup(queue, monke
 
     monkeypatch.setattr(module, "execute_job", retrieve)
     assert module.process_next_job(queue)
-    assert sum(queue.get(job_id).state == "succeeded" for job_id in ids) == 10
-    assert sum(queue.get(job_id).state == "pending" for job_id in ids) == 1
-    assert sorted(cleaned) == list(range(10))
+    assert sum(queue.get(job_id).state == "succeeded" for job_id in ids) == 11
+    assert sum(queue.get(job_id).state == "pending" for job_id in ids) == 0
+    assert set(cleaned) == set(range(10))
+    assert len(cleaned) == 11
     with open(module.BROWSER_LOCK_PATH, "a+") as probe:
         fcntl.flock(probe, fcntl.LOCK_EX | fcntl.LOCK_NB)
 
@@ -510,3 +512,42 @@ def test_parallel_login_redirect_that_clears_does_not_pause(queue, monkeypatch):
     assert module.process_next_job(queue)
     assert all(queue.get(i).state == "succeeded" for i in ids)
     assert not queue.get_setting("paused", False)
+
+
+def test_fast_tab_refills_before_slow_tab_finishes(queue, monkeypatch):
+    ids = [
+        queue.enqueue_retrieval(
+            school="ubc",
+            recipient_id=RECIPIENT_ID,
+            account_username=ACCOUNT_USERNAME,
+            url=f"https://www.instagram.com/p/Stream{i}/",
+        )
+        for i in range(11)
+    ]
+    refilled = threading.Event()
+    sessions = [
+        SimpleNamespace(
+            run=lambda _: "/",
+            current_account_username=lambda: ACCOUNT_USERNAME,
+            poll_until=lambda ready: ready(),
+            cancel_pending_request=lambda: None,
+        )
+        for _ in range(10)
+    ]
+    monkeypatch.setattr(
+        module,
+        "BrowserTabPool",
+        lambda _: SimpleNamespace(prepare=lambda job, count: (sessions, ACCOUNT_USERNAME)),
+    )
+
+    def retrieve(job, **kwargs):
+        if job.id == ids[0]:
+            assert refilled.wait(5), "Fast tabs must refill while the first tab remains busy"
+        if job.id == ids[10]:
+            assert queue.get(ids[0]).state == "running"
+            refilled.set()
+        return {"target_url": job.payload["url"]}
+
+    monkeypatch.setattr(module, "execute_job", retrieve)
+    assert module.process_next_job(queue)
+    assert all(queue.get(i).state == "succeeded" for i in ids)

@@ -7,7 +7,7 @@ import logging
 import signal
 import threading
 import time
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 from contextlib import contextmanager
 from dataclasses import asdict
 from typing import Iterator
@@ -99,7 +99,7 @@ def process_next_job(queue: BrowserJobQueue, *, allow_engagement: bool = True) -
                 return False
             queue.record_diagnostic("running", job)
             companions = queue.claim_companions(job, limit=CONTROL.parallel_tabs - 1)
-            if companions:
+            if companions or job.kind == "retrieval":
                 _process_batch(queue, [job, *companions])
                 return True
             try:
@@ -161,6 +161,10 @@ def _process_batch(queue: BrowserJobQueue, jobs: list[BrowserJob]) -> None:
     unfinished = {job.id for job in jobs}
 
     def execute(job, session, username):
+        reset_deadline = getattr(session, "reset_job_deadline", None)
+        if reset_deadline is not None:
+            reset_deadline(CONTROL.job_timeout_seconds)
+
         def ready():
             path = session.run("window.location.pathname")
             if path.startswith(("/accounts/suspended", "/challenge", "/checkpoint")):
@@ -177,8 +181,6 @@ def _process_batch(queue: BrowserJobQueue, jobs: list[BrowserJob]) -> None:
 
         try:
             session.poll_until(ready)
-            if session.current_account_username() != username:
-                raise BrowserSessionError("Instagram browser account changed during parallel work")
             return execute_job(job, session=session)
         finally:
             session.cancel_pending_request()
@@ -205,20 +207,38 @@ def _process_batch(queue: BrowserJobQueue, jobs: list[BrowserJob]) -> None:
     try:
         with job_deadline():
             sessions, username = BrowserTabPool(queue).prepare(jobs[0], len(jobs))
-            # Browser polling and requests are bounded by session deadlines.
-            # Executor shutdown drains cleanup before the process-wide lock is released.
-            with ThreadPoolExecutor(max_workers=CONTROL.parallel_tabs) as executor:
-                futures = {
-                    executor.submit(execute, job, session, username): job
-                    for job, session in zip(jobs, sessions, strict=True)
-                }
-                for future in as_completed(futures):
-                    job = futures[future]
+        refill_until = time.monotonic() + CONTROL.job_timeout_seconds
+        # Keep each completed slot busy while retaining digest priority and bounded ownership.
+        with ThreadPoolExecutor(max_workers=CONTROL.parallel_tabs) as executor:
+            futures = {
+                executor.submit(execute, job, session, username): (job, session)
+                for job, session in zip(jobs, sessions, strict=True)
+            }
+            while futures:
+                completed, _ = wait(futures, return_when=FIRST_COMPLETED)
+                for future in completed:
+                    job, session = futures.pop(future)
                     try:
                         queue.finish(job.id, result=future.result())
                         unfinished.discard(job.id)
                     except Exception as exc:
                         failed(job, exc)
+                    finished = queue.get(job.id)
+                    if finished:
+                        queue.record_diagnostic(finished.state, finished)
+                    if jobs[0].kind != "retrieval" or time.monotonic() >= refill_until:
+                        continue
+                    replacements = queue.claim_companions(jobs[0], limit=1)
+                    if not replacements:
+                        continue
+                    replacement = replacements[0]
+                    jobs.append(replacement)
+                    unfinished.add(replacement.id)
+                    queue.record_diagnostic("running", replacement)
+                    futures[executor.submit(execute, replacement, session, username)] = (
+                        replacement,
+                        session,
+                    )
     except (KeyboardInterrupt, SystemExit):
         queue.set_setting("paused", "Worker interrupted; inspect browser state before resuming")
         for job in jobs:
