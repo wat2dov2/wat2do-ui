@@ -20,7 +20,8 @@
       "tabs": {
         "label": "Categorias de diagnóstico do aplicativo",
         "endpoints": "Endpoints",
-        "scraping": "Scraping"
+        "scraping": "Scraping",
+        "browser": "Browser worker"
       },
       "automateLogs": {
         "title": "Automatizar logs",
@@ -33,6 +34,16 @@
         "pageUrl": "URL da página",
         "empty": "Nenhuma consulta registrada ainda.",
         "emptySearch": "Sem texto de pesquisa"
+      },
+      "browserLogs": {
+        "title": "Browser worker logs",
+        "description": "Job lifecycle and pause events from the Mac browser worker. Logs sync approximately every minute and are retained for seven days.",
+        "placeholder": "No browser worker logs yet.",
+        "error": "Could not load diagnostics logs.",
+        "time": "Time",
+        "event": "Event",
+        "school": "School / account",
+        "details": "Job / URL / reason"
       }
     },
     "manageEvents": "Gerenciar Eventos",

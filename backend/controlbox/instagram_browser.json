@@ -13,7 +13,6 @@
   },
   "actions": [
     "like",
-    "save",
     "repost"
   ],
   "notification_media_provider": "browser",

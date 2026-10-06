@@ -20,7 +20,8 @@
       "tabs": {
         "label": "Категории диагностики приложения",
         "endpoints": "Конечные точки",
-        "scraping": "Скрапинг"
+        "scraping": "Скрапинг",
+        "browser": "Browser worker"
       },
       "automateLogs": {
         "title": "Журналы Automate",
@@ -33,6 +34,16 @@
         "pageUrl": "URL страницы",
         "empty": "Запросы ещё не записаны.",
         "emptySearch": "Без поискового текста"
+      },
+      "browserLogs": {
+        "title": "Browser worker logs",
+        "description": "Job lifecycle and pause events from the Mac browser worker. Logs sync approximately every minute and are retained for seven days.",
+        "placeholder": "No browser worker logs yet.",
+        "error": "Could not load diagnostics logs.",
+        "time": "Time",
+        "event": "Event",
+        "school": "School / account",
+        "details": "Job / URL / reason"
       }
     },
     "manageEvents": "Управление событиями",

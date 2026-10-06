@@ -20,7 +20,8 @@
       "tabs": {
         "label": "دسته‌های تشخیصی برنامه",
         "endpoints": "نقاط پایانی",
-        "scraping": "استخراج داده"
+        "scraping": "استخراج داده",
+        "browser": "Browser worker"
       },
       "automateLogs": {
         "title": "Automate گزارش‌ها",
@@ -33,6 +34,16 @@
         "pageUrl": "نشانی صفحه",
         "empty": "هنوز جستجویی ثبت نشده است.",
         "emptySearch": "بدون متن جستجو"
+      },
+      "browserLogs": {
+        "title": "Browser worker logs",
+        "description": "Job lifecycle and pause events from the Mac browser worker. Logs sync approximately every minute and are retained for seven days.",
+        "placeholder": "No browser worker logs yet.",
+        "error": "Could not load diagnostics logs.",
+        "time": "Time",
+        "event": "Event",
+        "school": "School / account",
+        "details": "Job / URL / reason"
       }
     },
     "manageEvents": "مدیریت رویدادها",

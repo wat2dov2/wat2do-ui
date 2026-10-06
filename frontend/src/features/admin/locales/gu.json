@@ -20,7 +20,8 @@
       "tabs": {
         "label": "એપ્લિકેશન ડાયગ્નોસ્ટિક શ્રેણીઓ",
         "endpoints": "એન્ડપોઇન્ટ્સ",
-        "scraping": "સ્ક્રેપિંગ"
+        "scraping": "સ્ક્રેપિંગ",
+        "browser": "Browser worker"
       },
       "automateLogs": {
         "title": "Automate લોગ્સ",
@@ -33,6 +34,16 @@
         "pageUrl": "પૃષ્ઠનું URL",
         "empty": "હજુ કોઈ શોધ નોંધાઈ નથી.",
         "emptySearch": "શોધ લખાણ નથી"
+      },
+      "browserLogs": {
+        "title": "Browser worker logs",
+        "description": "Job lifecycle and pause events from the Mac browser worker. Logs sync approximately every minute and are retained for seven days.",
+        "placeholder": "No browser worker logs yet.",
+        "error": "Could not load diagnostics logs.",
+        "time": "Time",
+        "event": "Event",
+        "school": "School / account",
+        "details": "Job / URL / reason"
       }
     },
     "manageEvents": "ઇવેન્ટનું સંચાલન કરો",

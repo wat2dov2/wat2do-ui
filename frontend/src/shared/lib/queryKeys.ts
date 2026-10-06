@@ -118,6 +118,6 @@ export const queryKeys = {
   },
   automateLogs: {
     all: ["automateLogs"] as const,
-    list: () => [...queryKeys.automateLogs.all, "list"] as const,
+    list: (senderId?: string) => [...queryKeys.automateLogs.all, "list", senderId] as const,
   },
 } as const;

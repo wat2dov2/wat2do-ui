@@ -98,6 +98,7 @@ def process_next_job(queue: BrowserJobQueue, *, allow_engagement: bool = True) -
             )
             if job is None:
                 return False
+            queue.record_diagnostic("running", job)
             companions = queue.claim_companions(job, limit=CONTROL.parallel_tabs - 1)
             if companions:
                 _process_batch(queue, [job, *companions])
@@ -144,6 +145,9 @@ def process_next_job(queue: BrowserJobQueue, *, allow_engagement: bool = True) -
                 queue.finish(job.id, error=error)
                 log.error("Browser job %s failed (%s)", job.id, type(exc).__name__)
             finally:
+                completed = queue.get(job.id)
+                if completed:
+                    queue.record_diagnostic(completed.state, completed)
                 if job.kind == "engagement" and not job.payload.get("dry_run"):
                     queue.set_setting(
                         "next_engagement_at", time.time() + CONTROL.engagement_interval_seconds
@@ -246,6 +250,7 @@ def _collect_carousels(queue: BrowserJobQueue, stopping: threading.Event) -> Non
 
     while not stopping.is_set():
         try:
+            queue.publish_diagnostics()
             result = sync_published_carousels(queue)
             queue.set_setting("source_status", {"checked_at": time.time(), "result": result})
         except Exception as exc:

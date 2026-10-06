@@ -515,3 +515,41 @@ def test_waiting_digest_and_pause_prevent_filling_retrieval_batch(tmp_path):
     q.set_setting("paused", "human recovery")
     assert q.claim_companions(claimed, limit=9) == []
     assert q.get(second).state == "pending"
+
+
+def test_diagnostics_preserve_unsent_events_and_allowlist_payload(queue, monkeypatch):
+    from services import automate_log_service
+
+    job_id = _engagement(queue)
+    job = queue.claim_next()
+    queue.record_diagnostic("running", job)
+    queue.finish(job_id, error="Matching Instagram browser account is unavailable")
+    queue.record_diagnostic("failed", queue.get(job_id))
+    queue.set_setting("paused", "Instagram browser requires human account recovery")
+    monkeypatch.setattr(automate_log_service, "create_automate_log", lambda **event: False)
+    queue.publish_diagnostics()
+    with queue._connect() as db:
+        assert db.execute("SELECT COUNT(*) FROM diagnostic_events").fetchone()[0] == 4
+    events = []
+    monkeypatch.setattr(
+        automate_log_service, "create_automate_log", lambda **event: events.append(event) or True
+    )
+    queue.publish_diagnostics()
+    assert [event["payload"]["state"] for event in events] == [
+        "queued",
+        "running",
+        "failed",
+        "paused",
+    ]
+    assert events[0]["payload"]["job_id"] == job_id
+    assert events[0]["sender_id"] == "instagram-browser-worker"
+    assert "recipient_id" not in events[0]["payload"]
+    assert "payload" not in events[0]["payload"]
+    with queue._connect() as db:
+        assert db.execute("SELECT COUNT(*) FROM diagnostic_events").fetchone()[0] == 0
+
+
+def test_deduplicated_queueing_does_not_duplicate_diagnostics(queue):
+    assert _engagement(queue) == _engagement(queue)
+    with queue._connect() as db:
+        assert db.execute("SELECT COUNT(*) FROM diagnostic_events").fetchone()[0] == 1

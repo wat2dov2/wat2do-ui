@@ -20,7 +20,8 @@
       "tabs": {
         "label": "ऐप डायग्नोस्टिक श्रेणियां",
         "endpoints": "अंतिमबिंदुओं",
-        "scraping": "स्क्रैपिंग"
+        "scraping": "स्क्रैपिंग",
+        "browser": "Browser worker"
       },
       "automateLogs": {
         "title": "Automate लॉग",
@@ -33,6 +34,16 @@
         "pageUrl": "पेज का URL",
         "empty": "अभी कोई खोज दर्ज नहीं हुई है।",
         "emptySearch": "कोई खोज पाठ नहीं"
+      },
+      "browserLogs": {
+        "title": "Browser worker logs",
+        "description": "Job lifecycle and pause events from the Mac browser worker. Logs sync approximately every minute and are retained for seven days.",
+        "placeholder": "No browser worker logs yet.",
+        "error": "Could not load diagnostics logs.",
+        "time": "Time",
+        "event": "Event",
+        "school": "School / account",
+        "details": "Job / URL / reason"
       }
     },
     "manageEvents": "इवेंट प्रबंधित करें",

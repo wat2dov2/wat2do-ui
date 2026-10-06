@@ -85,6 +85,9 @@ class BrowserJobQueue:
                     last_served INTEGER NOT NULL
                 );
                 CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+                CREATE TABLE IF NOT EXISTS diagnostic_events (
+                    id TEXT PRIMARY KEY, event TEXT NOT NULL, created_at REAL NOT NULL
+                );
             """
             # SQLite cannot add values to a CHECK constraint in place.
             # Rebuild atomically while preserving every job and its history.
@@ -111,11 +114,52 @@ class BrowserJobQueue:
         return json.loads(row[0]) if row else default
 
     def set_setting(self, key: str, value: Any) -> None:
+        previous = self.get_setting(key) if key == "paused" else None
         with closing(self._connect()) as db, db:
             db.execute(
                 "INSERT INTO settings VALUES (?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
                 (key, json.dumps(value)),
             )
+
+        if key == "paused" and previous != value:
+            self.record_diagnostic("paused" if value else "resumed")
+
+    def record_diagnostic(self, state: str, job: BrowserJob | None = None) -> None:
+        """Persist allowlisted diagnostics locally without delaying browser work on HTTP."""
+        event = {
+            "event": f"Browser worker: {state}",
+            "sender_id": "instagram-browser-worker",
+            "school": job.school if job else None,
+            "ig_account": job.account_username if job else None,
+            "post_url": (job.payload.get("url") or job.payload.get("post_url")) if job else None,
+            "payload": {
+                "state": state,
+                "job_id": job.id if job else None,
+                "kind": job.kind if job else None,
+                "reason": job.error if job else self.get_setting("paused", False),
+                "recorded_at": time.time(),
+            },
+        }
+        with closing(self._connect()) as db, db:
+            db.execute(
+                "INSERT INTO diagnostic_events VALUES (?,?,?)",
+                (uuid.uuid4().hex, json.dumps(event), time.time()),
+            )
+
+    def publish_diagnostics(self) -> None:
+        """Keep unsent events durable when production logging is unavailable."""
+        from services.automate_log_service import create_automate_log
+
+        with closing(self._connect()) as db:
+            events = db.execute(
+                "SELECT id,event FROM diagnostic_events ORDER BY created_at LIMIT ?",
+                (CONTROL.source_page_size,),
+            ).fetchall()
+        for event in events:
+            if not create_automate_log(**json.loads(event["event"])):
+                break
+            with closing(self._connect()) as db, db:
+                db.execute("DELETE FROM diagnostic_events WHERE id=?", (event["id"],))
 
     def account_excluded(self, username: str) -> bool:
         return username in self.get_setting("excluded_accounts", [])
@@ -217,6 +261,7 @@ class BrowserJobQueue:
                     time.time(),
                 ),
             )
+        self.record_diagnostic("queued", self.get(job_id))
         return job_id
 
     def get(self, job_id: str) -> BrowserJob | None:
@@ -388,6 +433,7 @@ class BrowserJobQueue:
             ).rowcount
         if not changed:
             raise ValueError("Only failed, unsupported, or cancelled jobs may be retried")
+        self.record_diagnostic("queued", self.get(job_id))
 
     def cancel(self, job_id: str) -> None:
         with closing(self._connect()) as db, db:
@@ -405,6 +451,7 @@ class BrowserJobQueue:
             ).rowcount
         if not changed:
             raise ValueError("Only completed retrieval jobs may be refreshed")
+        self.record_diagnostic("queued", self.get(job_id))
 
     def retrieval_results(self) -> list[BrowserJob]:
         with closing(self._connect()) as db:

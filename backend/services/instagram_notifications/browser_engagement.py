@@ -22,6 +22,12 @@ EngagementAction = Literal["like", "save", "repost"]
 _ACTIONS = frozenset({"like", "save", "repost"})
 
 
+# Observed native toolbar glyphs: Instagram preserves the Repost label in both states.
+# Unknown glyphs remain unsupported instead of risking toggling off a repost.
+_REPOST_INACTIVE_PATH = "M19.998 9.497a1 1 0 0 0-1 1v4.228a3.274 3.274 0 0 1-3.27 3.27h-5.313l1.791-1.787a1 1 0 0 0-1.412-1.416L7.29 18.287a1.004 1.004 0 0 0-.294.707v.001c0 .023.012.042.013.065a.923.923 0 0 0 .281.643l3.502 3.504a1 1 0 0 0 1.414-1.414l-1.797-1.798h5.318a5.276 5.276 0 0 0 5.27-5.27v-4.228a1 1 0 0 0-1-1Zm-6.41-3.496-1.795 1.795a1 1 0 1 0 1.414 1.414l3.5-3.5a1.003 1.003 0 0 0 0-1.417l-3.5-3.5a1 1 0 0 0-1.414 1.414l1.794 1.794H8.27A5.277 5.277 0 0 0 3 9.271V13.5a1 1 0 0 0 2 0V9.271a3.275 3.275 0 0 1 3.271-3.27Z"
+_REPOST_ACTIVE_PATH = "M16 6.001a1 1 0 0 0 .924-1.382.998.998 0 0 0-.217-.326l-3.5-3.5a1 1 0 1 0-1.414 1.414l1.794 1.794H8.27A5.277 5.277 0 0 0 3 9.271V13.5a1 1 0 1 0 2 0V9.271a3.275 3.275 0 0 1 3.271-3.27h7.73Zm3.998 3.496a1 1 0 0 0-1 1v4.228a3.274 3.274 0 0 1-3.27 3.27H7.996a1.001 1.001 0 0 0-.706 1.708l3.502 3.504a.997.997 0 0 0 1.414 0 1 1 0 0 0 0-1.414l-1.797-1.798h5.317a5.276 5.276 0 0 0 5.271-5.27v-4.228a1 1 0 0 0-1-1Zm-5.205-.51-3.905 3.906-1.681-1.681a1 1 0 1 0-1.414 1.414l2.388 2.388a1 1 0 0 0 1.414 0l4.612-4.614a1 1 0 1 0-1.414-1.414Z"
+
+
 class BrowserInstagramEngagementExecutor:
     """Perform one action per worker lock, verifying identity before any click."""
 
@@ -133,10 +139,16 @@ def _engagement_source(
   const pressed = control.getAttribute("aria-pressed");
   let done = label !== names[0];
   if (action === "repost" && label === "Repost") {{
-    // Instagram web currently may expose only "Repost", with no active state.
-    // Such a toggle cannot safely be retried; do not click it without a state.
-    if (pressed !== "true" && pressed !== "false") return result("unsupported");
-    done = pressed === "true";
+    if (pressed === "true" || pressed === "false") {{
+      done = pressed === "true";
+    }} else {{
+      const paths = [...(control.querySelector('svg[aria-label="Repost"]')?.querySelectorAll('path') || [])];
+      if (paths.length !== 1) return result("unsupported");
+      const glyph = paths[0].getAttribute("d");
+      if (glyph === {json.dumps(_REPOST_ACTIVE_PATH)}) done = true;
+      else if (glyph === {json.dumps(_REPOST_INACTIVE_PATH)}) done = false;
+      else return result("unsupported");
+    }}
   }} else if (pressed !== null && pressed !== String(done)) {{
     return fail("unknown_state");
   }}

@@ -300,3 +300,35 @@ def test_toolbar_without_target_permalink_is_not_guessed():
         "state": {"status": "failed", "reason": "ambiguous_post"},
         "clicks": [],
     }
+
+
+# Captured from the live post toolbar before and after the approved repost.
+_OBSERVED_REPOST_INACTIVE = "M19.998 9.497a1 1 0 0 0-1 1v4.228a3.274 3.274 0 0 1-3.27 3.27h-5.313l1.791-1.787a1 1 0 0 0-1.412-1.416L7.29 18.287a1.004 1.004 0 0 0-.294.707v.001c0 .023.012.042.013.065a.923.923 0 0 0 .281.643l3.502 3.504a1 1 0 0 0 1.414-1.414l-1.797-1.798h5.318a5.276 5.276 0 0 0 5.27-5.27v-4.228a1 1 0 0 0-1-1Zm-6.41-3.496-1.795 1.795a1 1 0 1 0 1.414 1.414l3.5-3.5a1.003 1.003 0 0 0 0-1.417l-3.5-3.5a1 1 0 0 0-1.414 1.414l1.794 1.794H8.27A5.277 5.277 0 0 0 3 9.271V13.5a1 1 0 0 0 2 0V9.271a3.275 3.275 0 0 1 3.271-3.27Z"
+_OBSERVED_REPOST_ACTIVE = "M16 6.001a1 1 0 0 0 .924-1.382.998.998 0 0 0-.217-.326l-3.5-3.5a1 1 0 1 0-1.414 1.414l1.794 1.794H8.27A5.277 5.277 0 0 0 3 9.271V13.5a1 1 0 1 0 2 0V9.271a3.275 3.275 0 0 1 3.271-3.27h7.73Zm3.998 3.496a1 1 0 0 0-1 1v4.228a3.274 3.274 0 0 1-3.27 3.27H7.996a1.001 1.001 0 0 0-.706 1.708l3.502 3.504a.997.997 0 0 0 1.414 0 1 1 0 0 0 0-1.414l-1.797-1.798h5.317a5.276 5.276 0 0 0 5.271-5.27v-4.228a1 1 0 0 0-1-1Zm-5.205-.51-3.905 3.906-1.681-1.681a1 1 0 1 0-1.414 1.414l2.388 2.388a1 1 0 0 0 1.414 0l4.612-4.614a1 1 0 1 0-1.414-1.414Z"
+
+
+@pytest.mark.parametrize(
+    "glyph,status,clicks",
+    [
+        (_OBSERVED_REPOST_INACTIVE, "clicked", ["repost"]),
+        (_OBSERVED_REPOST_ACTIVE, "already_done", []),
+        ("unknown-future-glyph", "unsupported", []),
+    ],
+)
+def test_live_native_repost_glyphs_without_pressed_state(glyph, status, clicks):
+    toolbar = _toolbar().replace(
+        "<title>Repost</title>", f'<title>Repost</title><path d="{glyph}"></path>'
+    )
+    assert _evaluate(_fixture(toolbar), "repost") == {"state": {"status": status}, "clicks": clicks}
+
+
+def test_active_repost_badge_outside_toolbar_cannot_mark_post_reposted():
+    toolbar = _toolbar().replace(
+        "<title>Repost</title>",
+        f'<title>Repost</title><path d="{_OBSERVED_REPOST_INACTIVE}"></path>',
+    )
+    badge = f'<div><svg aria-label="Repost"><path d="{_OBSERVED_REPOST_ACTIVE}"></path></svg></div>'
+    assert _evaluate(_fixture(toolbar, extra=badge), "repost") == {
+        "state": {"status": "clicked"},
+        "clicks": ["repost"],
+    }

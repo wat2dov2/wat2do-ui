@@ -94,9 +94,9 @@ def test_published_selection_enqueues_original_post_for_school_account_only(
 
     stats = carousel_engagement.sync_published_carousels(queue, now=NOW)
 
-    assert stats == {"batches": 1, "posts": 1, "submitted": 3, "skipped": 0}
+    assert stats == {"batches": 1, "posts": 1, "submitted": 2, "skipped": 0}
     jobs = _drain(queue)
-    assert {job.payload["action"] for job in jobs} == {"like", "save", "repost"}
+    assert {job.payload["action"] for job in jobs} == {"like", "repost"}
     for job in jobs:
         assert job.recipient_id == "76214170483"
         assert job.account_username == "waterloo.wat2do.io"
@@ -140,7 +140,7 @@ def test_non_instagram_sources_and_missing_sources_are_skipped(queue, fake_sb, p
 
     stats = carousel_engagement.sync_published_carousels(queue, now=NOW)
 
-    assert stats == {"batches": 1, "posts": 1, "submitted": 3, "skipped": 3}
+    assert stats == {"batches": 1, "posts": 1, "submitted": 2, "skipped": 3}
     assert {job.payload["post_url"] for job in _drain(queue)} == {
         "https://www.instagram.com/reel/REEL44/"
     }
@@ -183,8 +183,8 @@ def test_corrected_recipient_identity_is_retried_on_next_poll(queue, fake_sb, pa
 
     stats = carousel_engagement.sync_published_carousels(queue, now=NOW + timedelta(minutes=1))
 
-    assert stats == {"batches": 1, "posts": 1, "submitted": 3, "skipped": 0}
-    assert len(_drain(queue)) == 3
+    assert stats == {"batches": 1, "posts": 1, "submitted": 2, "skipped": 0}
+    assert len(_drain(queue)) == 2
 
 
 def test_get_engagement_account_resolves_public_identity_for_cli(fake_sb, patch_sb):
@@ -215,7 +215,7 @@ def test_completed_batch_is_not_reinterpreted_when_original_event_is_edited(
     patch_sb("services.instagram_notifications.carousel_engagement")
     fake_sb.queue_responses([[_account()], [_batch()], [_item()]])
     carousel_engagement.sync_published_carousels(queue, now=NOW)
-    assert len(_drain(queue)) == 3
+    assert len(_drain(queue)) == 2
     fake_sb.table.reset_mock()
     fake_sb.queue_responses([[_account()], [_batch()]])
 
@@ -251,9 +251,9 @@ def test_account_unavailable_to_browser_does_not_block_another_school(queue, fak
 
     stats = carousel_engagement.sync_published_carousels(queue, now=NOW)
 
-    assert stats == {"batches": 2, "posts": 1, "submitted": 3, "skipped": 1}
+    assert stats == {"batches": 2, "posts": 1, "submitted": 2, "skipped": 1}
     jobs = _drain(queue)
-    assert len(jobs) == 3
+    assert len(jobs) == 2
     assert {job.school for job in jobs} == {"queens"}
     assert {job.payload["post_url"] for job in jobs} == {"https://www.instagram.com/p/QUEENS/"}
     assert queue.get_setting(f"carousel_engagement_batch:{BATCH_ID}") is None
@@ -267,7 +267,7 @@ def test_partial_enqueue_failure_replays_without_duplicate_or_lost_actions(
     original_enqueue = queue.enqueue_engagement
 
     def fail_after_like(**kwargs):
-        if kwargs["action"] == "save":
+        if kwargs["action"] == "repost":
             raise RuntimeError("local queue temporarily unavailable")
         return original_enqueue(**kwargs)
 
@@ -281,8 +281,8 @@ def test_partial_enqueue_failure_replays_without_duplicate_or_lost_actions(
     carousel_engagement.sync_published_carousels(queue, now=NOW)
 
     jobs = _drain(queue)
-    assert len(jobs) == 3
-    assert {job.payload["action"] for job in jobs} == {"like", "save", "repost"}
+    assert len(jobs) == 2
+    assert {job.payload["action"] for job in jobs} == {"like", "repost"}
 
 
 def test_pagination_keeps_batches_with_identical_publication_timestamps(
@@ -309,8 +309,8 @@ def test_pagination_keeps_batches_with_identical_publication_timestamps(
 
     stats = carousel_engagement.sync_published_carousels(queue, now=NOW)
 
-    assert stats == {"batches": 3, "posts": 3, "submitted": 9, "skipped": 0}
-    assert len(_drain(queue)) == 9
+    assert stats == {"batches": 3, "posts": 3, "submitted": 6, "skipped": 0}
+    assert len(_drain(queue)) == 6
     fake_sb.or_.assert_called_once_with(
         "published_at.gt.2026-09-28T14:30:00+00:00,"
         "and(published_at.eq.2026-09-28T14:30:00+00:00,"
@@ -323,7 +323,7 @@ def test_late_publication_with_older_timestamp_is_discovered_on_next_poll(queue,
     patch_sb("services.instagram_notifications.carousel_engagement")
     fake_sb.queue_responses([[_account()], [_batch()], [_item()]])
     carousel_engagement.sync_published_carousels(queue, now=NOW)
-    assert len(_drain(queue)) == 3
+    assert len(_drain(queue)) == 2
     older_batch = _batch(
         id="00000000-0000-0000-0000-000000000002",
         published_at="2026-09-28T14:29:00+00:00",
@@ -334,7 +334,7 @@ def test_late_publication_with_older_timestamp_is_discovered_on_next_poll(queue,
 
     stats = carousel_engagement.sync_published_carousels(queue, now=NOW + timedelta(minutes=1))
 
-    assert stats == {"batches": 2, "posts": 1, "submitted": 3, "skipped": 1}
+    assert stats == {"batches": 2, "posts": 1, "submitted": 2, "skipped": 1}
     assert {job.payload["post_url"] for job in _drain(queue)} == {
         "https://www.instagram.com/p/LATE/"
     }

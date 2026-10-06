@@ -20,7 +20,8 @@
       "tabs": {
         "label": "Mga kategorya ng diagnostiko ng app",
         "endpoints": "Mga Endpoints",
-        "scraping": "Pag-scrape"
+        "scraping": "Pag-scrape",
+        "browser": "Browser worker"
       },
       "automateLogs": {
         "title": "Automate Mga log",
@@ -33,6 +34,16 @@
         "pageUrl": "URL ng pahina",
         "empty": "Wala pang naitalang paghahanap.",
         "emptySearch": "Walang teksto ng paghahanap"
+      },
+      "browserLogs": {
+        "title": "Browser worker logs",
+        "description": "Job lifecycle and pause events from the Mac browser worker. Logs sync approximately every minute and are retained for seven days.",
+        "placeholder": "No browser worker logs yet.",
+        "error": "Could not load diagnostics logs.",
+        "time": "Time",
+        "event": "Event",
+        "school": "School / account",
+        "details": "Job / URL / reason"
       }
     },
     "manageEvents": "Pamahalaan ang mga event",
