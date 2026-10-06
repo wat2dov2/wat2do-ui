@@ -96,8 +96,8 @@ Do not delete its database to clear an error: that also removes deduplication hi
 ### Queue priority and school ordering
 
 The worker checks the high-priority digest queue before every browser action.
-A digest arriving during retrieval waits for the active bounded batch to settle.
-The worker then prioritizes digests before starting another retrieval batch.
+A digest arriving during retrieval stops new retrieval claims and waits for active requests to settle.
+The worker then prioritizes digests before resuming retrieval.
 Up to ten public post/profile jobs can run concurrently, each pinned to its own registered tab.
 Digest jobs can run concurrently only for the same recipient and account; account switches and engagement remain serialized.
 All pool tabs settle their pending requests before the primary tab switches accounts, and secondary tabs reload to verify the resulting identity before a digest query.
@@ -120,7 +120,8 @@ The notification workflow records exact post URLs in the existing production med
 With `notification_media_provider` set to `browser` in `backend/controlbox/instagram_browser.json`, it does not dispatch the Apify scraper.
 The worker's background collector synchronizes all eligible pending URLs every ten seconds, independently of the Codex schedule.
 Codex reviews retrieved data and applies saved reconciliation decisions through the guarded importer.
-Retrieval fills idle slots as new jobs arrive.
+Retrieval fills idle slots as new jobs arrive and streams continuously until the queue empties, a digest takes priority, or the worker pauses.
+Each job retains its own timeout; the stream does not drain on a fixed timer.
 Public profiles and individual posts can also be queued manually:
 
 ```sh

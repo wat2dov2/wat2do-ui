@@ -741,6 +741,9 @@ class BrowserTabPool:
         ]
         # Start all reloads before waiting. Secondary tabs may retain stale DOM
         # identity after an account switch; reload them under the same lock.
-        for session in selected[1:]:
-            session.run('window.location.replace("https://www.instagram.com/"); "navigating"')
+        if job.kind == "digest" or self.queue.get_setting("retrieval_pool_account") != username:
+            for session in selected[1:]:
+                session.run('window.location.replace("https://www.instagram.com/"); "navigating"')
+        if job.kind == "retrieval":
+            self.queue.set_setting("retrieval_pool_account", username)
         return selected, username

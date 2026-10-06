@@ -644,3 +644,46 @@ def test_collector_feeds_notifications_without_an_import(queue, monkeypatch):
     monkeypatch.setattr(carousel_engagement, "sync_published_carousels", carousel)
     module._collect_carousels(queue, stopping)
     assert calls == ["notifications", "carousels"]
+
+
+def test_retrieval_stream_keeps_refilling_past_one_job_timeout(queue, monkeypatch):
+    import time
+
+    monkeypatch.setattr(
+        module, "CONTROL", module.CONTROL.model_copy(update={"job_timeout_seconds": 0.01})
+    )
+    first = queue.enqueue_retrieval(
+        school="ubc",
+        recipient_id=RECIPIENT_ID,
+        account_username=ACCOUNT_USERNAME,
+        url="https://www.instagram.com/p/LongStream/",
+    )
+    session = SimpleNamespace(
+        run=lambda _: "/",
+        current_account_username=lambda: ACCOUNT_USERNAME,
+        poll_until=lambda ready: ready(),
+        cancel_pending_request=lambda: None,
+    )
+    monkeypatch.setattr(
+        module,
+        "BrowserTabPool",
+        lambda _: SimpleNamespace(prepare=lambda *args: ([session], ACCOUNT_USERNAME)),
+    )
+    later = []
+
+    def retrieve(job, **kwargs):
+        if job.id == first:
+            later.append(
+                queue.enqueue_retrieval(
+                    school="ubc",
+                    recipient_id=RECIPIENT_ID,
+                    account_username=ACCOUNT_USERNAME,
+                    url="https://www.instagram.com/p/AfterTimer/",
+                )
+            )
+            time.sleep(0.02)
+        return {"target_url": job.payload["url"]}
+
+    monkeypatch.setattr(module, "execute_job", retrieve)
+    assert module.process_next_job(queue)
+    assert queue.get(later[0]).state == "succeeded"

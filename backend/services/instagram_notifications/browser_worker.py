@@ -226,8 +226,7 @@ def _process_batch(queue: BrowserJobQueue, jobs: list[BrowserJob]) -> None:
             sessions, username = BrowserTabPool(queue).prepare(
                 jobs[0], CONTROL.parallel_tabs if jobs[0].kind == "retrieval" else len(jobs)
             )
-        refill_until = time.monotonic() + CONTROL.job_timeout_seconds
-        # Keep each completed slot busy while retaining digest priority and bounded ownership.
+        # Keep slots busy until the queue empties, a digest arrives, or work is paused.
         with ThreadPoolExecutor(max_workers=len(sessions)) as executor:
             idle_sessions = sessions[len(jobs) :]
             futures = {
@@ -235,7 +234,7 @@ def _process_batch(queue: BrowserJobQueue, jobs: list[BrowserJob]) -> None:
                 for job, session in zip(jobs, sessions[: len(jobs)], strict=True)
             }
             while futures:
-                if jobs[0].kind == "retrieval" and time.monotonic() < refill_until:
+                if jobs[0].kind == "retrieval":
                     while idle_sessions:
                         replacements = queue.claim_companions(jobs[0], limit=1)
                         if not replacements:
@@ -260,7 +259,7 @@ def _process_batch(queue: BrowserJobQueue, jobs: list[BrowserJob]) -> None:
                     finished = queue.get(job.id)
                     if finished:
                         queue.record_diagnostic(finished.state, finished)
-                    if jobs[0].kind != "retrieval" or time.monotonic() >= refill_until:
+                    if jobs[0].kind != "retrieval":
                         continue
                     replacements = queue.claim_companions(jobs[0], limit=1)
                     if not replacements:

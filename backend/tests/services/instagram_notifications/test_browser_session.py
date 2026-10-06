@@ -537,3 +537,34 @@ def test_pool_adopts_all_instagram_tabs_and_repairs_to_minimum(monkeypatch):
     assert len(restored) == len(set(restored)) == 10
     assert len(created) == 10
     assert settings["browser_window_id"] == "99"
+
+
+def test_public_pool_only_reloads_after_account_context_changes(monkeypatch):
+    from types import SimpleNamespace
+
+    settings = {}
+    reloads = []
+    current = ["wat2do.ubc"]
+    queue = SimpleNamespace(
+        get_setting=lambda key, default=None: settings.get(key, default),
+        set_setting=lambda key, value: settings.update({key: value}),
+    )
+    monkeypatch.setattr(browser.BrowserTabPool, "ensure_capacity", lambda _: ["1", "2"])
+    monkeypatch.setattr(
+        browser,
+        "BrowserInstagramSession",
+        lambda **kw: SimpleNamespace(
+            cancel_pending_request=lambda: None,
+            current_account_username=lambda: current[0],
+            run=lambda source: reloads.append(source),
+        ),
+    )
+    pool = browser.BrowserTabPool(queue)
+    job = SimpleNamespace(kind="retrieval")
+    pool.prepare(job, 2)
+    assert len(reloads) == 1
+    pool.prepare(job, 2)
+    assert len(reloads) == 1
+    current[0] = "wat2do.ca"
+    pool.prepare(job, 2)
+    assert len(reloads) == 2
