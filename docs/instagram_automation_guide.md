@@ -64,7 +64,7 @@ Its local state stores recipient evidence plus one-way hashes of dispatched push
 
 Keep Brave running with the school accounts logged in and available under More > Switch accounts.
 Open one Instagram tab for the worker to use as its primary tab.
-The healthy worker maintains `parallel_tabs` Instagram tabs in that same window (thirteen minimum by default), including when the queue is empty.
+The healthy worker maintains `parallel_tabs` Instagram tabs in that same window (twenty minimum by default), including when the queue is empty.
 It checks pool health on startup, before batches, and every `tab_health_interval_seconds` while idle.
 It persists their exact tab IDs and recreates closed worker tabs inside their registered existing window, even if every worker tab was closed.
 It adopts existing Instagram tabs under the authorized pool policy, but never overwrites a tab moved to another site, or clears a recovery pause to maintain capacity.
