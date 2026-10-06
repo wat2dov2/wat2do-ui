@@ -70,7 +70,7 @@ def test_inspect_only_enqueues_read_only_jobs_with_enabled_account(tmp_path, mon
     result = json.loads(capsys.readouterr().out)
     queue = BrowserJobQueue(tmp_path)
     jobs = [queue.get(job_id) for job_id in result["jobs"]]
-    assert {job.payload["action"] for job in jobs} == {"like", "save", "repost"}
+    assert {job.payload["action"] for job in jobs} == {"like", "repost"}
     assert all(job.payload["dry_run"] and job.state == "pending" for job in jobs)
     assert all(job.recipient_id == "123" and job.school == "ubc" for job in jobs)
 

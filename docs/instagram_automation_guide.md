@@ -2,7 +2,7 @@
 
 The active collection path uses Android Instagram notifications.
 When Instagram collapses several posts into one digest, the GitHub processing job submits a high-priority job to the Mac's shared browser worker before recording notification media.
-The same worker likes, saves, and natively reposts the original event posts selected in newly published Instagram carousels.
+The same worker likes and natively reposts the original event posts selected in newly published Instagram carousels.
 Digest expansion, public post/profile retrieval, and engagement share one existing Brave Instagram tab, with credentials remaining inside the browser.
 
 ## Repair an existing poster or scraped video
@@ -217,7 +217,7 @@ python scripts/instagram_browser.py sync
 ```
 
 This only reads Supabase and appends work to the local queue.
-A running worker can execute the resulting like, save, and native repost jobs.
+A running worker can execute the resulting like and native repost jobs.
 There is no manual command to enqueue live engagement for arbitrary posts.
 
 Before manually logging into or fixing an account in the shared tab, pause new browser work and wait until `status` shows no running jobs:
