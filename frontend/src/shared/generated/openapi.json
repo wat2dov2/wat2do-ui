@@ -6971,6 +6971,22 @@
               "default": 50,
               "title": "Limit"
             }
+          },
+          {
+            "name": "sender_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sender Id"
+            }
           }
         ],
         "responses": {

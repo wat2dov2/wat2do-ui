@@ -20,7 +20,8 @@
       "tabs": {
         "label": "應用程式診斷類別",
         "endpoints": "端點",
-        "scraping": "爬蟲"
+        "scraping": "爬蟲",
+        "browser": "Browser worker"
       },
       "automateLogs": {
         "title": "Automate 日誌",
@@ -33,6 +34,16 @@
         "pageUrl": "頁面網址",
         "empty": "暫時未有搜尋記錄。",
         "emptySearch": "冇搜尋文字"
+      },
+      "browserLogs": {
+        "title": "Browser worker logs",
+        "description": "Job lifecycle and pause events from the Mac browser worker. Logs sync approximately every minute and are retained for seven days.",
+        "placeholder": "No browser worker logs yet.",
+        "error": "Could not load diagnostics logs.",
+        "time": "Time",
+        "event": "Event",
+        "school": "School / account",
+        "details": "Job / URL / reason"
       }
     },
     "manageEvents": "管理活動",

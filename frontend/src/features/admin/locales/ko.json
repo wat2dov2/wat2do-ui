@@ -20,7 +20,8 @@
       "tabs": {
         "label": "앱 진단 카테고리",
         "endpoints": "엔드포인트",
-        "scraping": "스크래핑"
+        "scraping": "스크래핑",
+        "browser": "Browser worker"
       },
       "automateLogs": {
         "title": "자동화 로그",
@@ -33,6 +34,16 @@
         "pageUrl": "페이지 URL",
         "empty": "아직 기록된 검색이 없습니다.",
         "emptySearch": "검색어 없음"
+      },
+      "browserLogs": {
+        "title": "Browser worker logs",
+        "description": "Job lifecycle and pause events from the Mac browser worker. Logs sync approximately every minute and are retained for seven days.",
+        "placeholder": "No browser worker logs yet.",
+        "error": "Could not load diagnostics logs.",
+        "time": "Time",
+        "event": "Event",
+        "school": "School / account",
+        "details": "Job / URL / reason"
       }
     },
     "manageEvents": "이벤트 관리",

@@ -64,10 +64,11 @@ async def receive_automate_log(
 @router.get("/automate/logs")
 async def get_automate_logs(
     limit: int = 50,
+    sender_id: str | None = None,
     _: dict = Depends(get_admin_user),
 ):
     try:
-        return fetch_logs(limit=limit)
+        return fetch_logs(limit=limit, sender_id=sender_id)
     except Exception as e:
         log.error("Failed to fetch automate logs: %s", e)
         raise HTTPException(status_code=500, detail="Failed to fetch logs")

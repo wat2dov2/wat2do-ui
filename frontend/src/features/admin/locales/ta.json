@@ -20,7 +20,8 @@
       "tabs": {
         "label": "ஆப் பிழைத் திறனாய்வு வகைகள்",
         "endpoints": "எண்ட்பாயிண்ட்கள்",
-        "scraping": "ஸ்க்ராப்பிங்"
+        "scraping": "ஸ்க்ராப்பிங்",
+        "browser": "Browser worker"
       },
       "automateLogs": {
         "title": "Automate பதிவுகள்",
@@ -33,6 +34,16 @@
         "pageUrl": "பக்க URL",
         "empty": "இன்னும் தேடல்கள் பதிவு செய்யப்படவில்லை.",
         "emptySearch": "தேடல் உரை இல்லை"
+      },
+      "browserLogs": {
+        "title": "Browser worker logs",
+        "description": "Job lifecycle and pause events from the Mac browser worker. Logs sync approximately every minute and are retained for seven days.",
+        "placeholder": "No browser worker logs yet.",
+        "error": "Could not load diagnostics logs.",
+        "time": "Time",
+        "event": "Event",
+        "school": "School / account",
+        "details": "Job / URL / reason"
       }
     },
     "manageEvents": "நிகழ்வுகளை நிர்வகிக்கவும்",

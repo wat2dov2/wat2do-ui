@@ -434,3 +434,14 @@ Readback uses the same service as the admin review page.
 Failed or interrupted batches are reported for admin recovery and never treated as completed drafts.
 Completed accounts and empty checkpoints are skipped on later runs.
 Publishing remains an explicit action in the admin page.
+
+### Browser worker diagnostics
+
+App Diagnostics has a Browser worker tab for structured queue, execution, completion, failure, pause, and resume events.
+Events are persisted in the local queue before the background collector forwards them to the existing `automate_logs` table.
+Failed uploads remain local for the next collector pass, without holding the browser lock during network writes.
+The admin-only log endpoint filters these events by `sender_id=instagram-browser-worker`.
+The tab polls every three seconds; the worker forwards events on its existing source collection interval.
+Production retains logs for seven days under the existing log retention policy.
+Only allowlisted job metadata is sent; raw worker output, notification payloads, cookies, and credentials are excluded.
+Existing local job history is not backfilled; lifecycle events begin when the updated worker runs.

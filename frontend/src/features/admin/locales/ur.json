@@ -20,7 +20,8 @@
       "tabs": {
         "label": "ایپ تشخیصی زمرے",
         "endpoints": "اینڈ پوائنٹس",
-        "scraping": "اسکریپنگ"
+        "scraping": "اسکریپنگ",
+        "browser": "Browser worker"
       },
       "automateLogs": {
         "title": "Automate لاگز",
@@ -33,6 +34,16 @@
         "pageUrl": "صفحے کا URL",
         "empty": "ابھی کوئی تلاش ریکارڈ نہیں ہوئی۔",
         "emptySearch": "تلاش کا متن نہیں"
+      },
+      "browserLogs": {
+        "title": "Browser worker logs",
+        "description": "Job lifecycle and pause events from the Mac browser worker. Logs sync approximately every minute and are retained for seven days.",
+        "placeholder": "No browser worker logs yet.",
+        "error": "Could not load diagnostics logs.",
+        "time": "Time",
+        "event": "Event",
+        "school": "School / account",
+        "details": "Job / URL / reason"
       }
     },
     "manageEvents": "ایونٹس کا نظم کریں",

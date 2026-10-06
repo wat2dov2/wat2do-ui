@@ -20,7 +20,8 @@
       "tabs": {
         "label": "Các loại chẩn đoán ứng dụng",
         "endpoints": "Các điểm cuối",
-        "scraping": "Thu thập dữ liệu"
+        "scraping": "Thu thập dữ liệu",
+        "browser": "Browser worker"
       },
       "automateLogs": {
         "title": "Automate Nhật ký",
@@ -33,6 +34,16 @@
         "pageUrl": "URL trang",
         "empty": "Chưa có truy vấn nào được ghi lại.",
         "emptySearch": "Không có nội dung tìm kiếm"
+      },
+      "browserLogs": {
+        "title": "Browser worker logs",
+        "description": "Job lifecycle and pause events from the Mac browser worker. Logs sync approximately every minute and are retained for seven days.",
+        "placeholder": "No browser worker logs yet.",
+        "error": "Could not load diagnostics logs.",
+        "time": "Time",
+        "event": "Event",
+        "school": "School / account",
+        "details": "Job / URL / reason"
       }
     },
     "manageEvents": "Quản lý sự kiện",

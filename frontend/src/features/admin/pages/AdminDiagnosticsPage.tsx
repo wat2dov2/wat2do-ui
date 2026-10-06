@@ -1,16 +1,6 @@
 import { useTranslation } from "react-i18next";
-import { formatInTimeZone } from "date-fns-tz";
-import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 import { AdminPageHeader } from "@/features/admin/components/shared/AdminPageHeader";
 import { Container, Stack } from "@/shared/layout";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/shared/ui/card";
-import { LoadingPage } from "@/shared/ui/loading-page";
 import { Settings } from "@/shared/ui/doodle-icons";
 import {
   Tabs,
@@ -19,16 +9,14 @@ import {
   TabsTrigger,
 } from "@/shared/ui/tabs";
 import { DiscoveryQueries } from "@/features/admin/components/DiscoveryQueries";
-import { useAutomateLogs } from "@/features/admin/api/automateLogsApi";
+import { DiagnosticsLogs } from "@/features/admin/components/DiagnosticsLogs";
 
 interface AdminDiagnosticsPageProps {
   onBack: () => void;
 }
 
 export function AdminDiagnosticsPage({ onBack }: AdminDiagnosticsPageProps) {
-  const { getSchoolTimezone } = useSchoolDirectory();
   const { t } = useTranslation();
-  const { data: logs = [], isLoading } = useAutomateLogs();
 
   return (
     <Container size="lg">
@@ -49,6 +37,9 @@ export function AdminDiagnosticsPage({ onBack }: AdminDiagnosticsPageProps) {
               <TabsTrigger value="endpoints">
                 {t("admin.diagnostics.tabs.endpoints")}
               </TabsTrigger>
+              <TabsTrigger value="browser">
+                {t("admin.diagnostics.tabs.browser")}
+              </TabsTrigger>
               <TabsTrigger value="scraping">
                 {t("admin.diagnostics.tabs.scraping")}
               </TabsTrigger>
@@ -58,40 +49,10 @@ export function AdminDiagnosticsPage({ onBack }: AdminDiagnosticsPageProps) {
             <TabsContent value="endpoints" />
 
             <TabsContent value="scraping">
-              <Card>
-                <CardHeader>
-                  <CardTitle>
-                    <h2>{t("admin.diagnostics.automateLogs.title")}</h2>
-                  </CardTitle>
-                  <CardDescription>
-                    {t("admin.diagnostics.automateLogs.description")}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {isLoading ? (
-                    <LoadingPage />
-                  ) : logs.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">
-                      {t("admin.diagnostics.automateLogs.placeholder")}
-                    </p>
-                  ) : (
-                    <pre className="whitespace-pre-wrap break-words rounded-xl border border-border bg-background p-4 font-mono text-sm text-muted-foreground">
-                      {logs.map((log) => {
-                        const timestamp = formatInTimeZone(log.created_at, getSchoolTimezone(log.school), "MM-dd HH:mm:ss zzz");
-                        const sender = log.sender_id ? `<${log.sender_id}>` : "<system>";
-                        const meta = [
-                          log.school && `School: ${log.school}`,
-                          log.ig_account && `IG: @${log.ig_account}`,
-                          log.post_url && `URL: ${log.post_url}`,
-                        ]
-                          .filter(Boolean)
-                          .join(" | ");
-                        return `[${timestamp}] ${sender} ${log.event}${meta ? ` | ${meta}` : ""}\n`;
-                      })}
-                    </pre>
-                  )}
-                </CardContent>
-              </Card>
+              <DiagnosticsLogs />
+            </TabsContent>
+            <TabsContent value="browser">
+              <DiagnosticsLogs browserWorker />
             </TabsContent>
           </Stack>
         </Tabs>

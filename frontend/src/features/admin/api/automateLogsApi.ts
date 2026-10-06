@@ -13,14 +13,14 @@ interface AutomateLog {
   payload: Record<string, unknown> | null;
 }
 
-async function fetchAutomateLogs(): Promise<AutomateLog[]> {
-  return api.get<AutomateLog[]>("/webhooks/automate/logs");
+async function fetchAutomateLogs(senderId?: string): Promise<AutomateLog[]> {
+  return api.get<AutomateLog[]>(`/webhooks/automate/logs${senderId ? `?sender_id=${encodeURIComponent(senderId)}` : ""}`);
 }
 
-export function useAutomateLogs() {
+export function useAutomateLogs(senderId?: string) {
   return useQuery({
-    queryKey: queryKeys.automateLogs.list(),
-    queryFn: fetchAutomateLogs,
+    queryKey: queryKeys.automateLogs.list(senderId),
+    queryFn: () => fetchAutomateLogs(senderId),
     refetchInterval: 3000,
   });
 }
