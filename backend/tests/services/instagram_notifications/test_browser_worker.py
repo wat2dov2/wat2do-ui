@@ -551,3 +551,32 @@ def test_fast_tab_refills_before_slow_tab_finishes(queue, monkeypatch):
     monkeypatch.setattr(module, "execute_job", retrieve)
     assert module.process_next_job(queue)
     assert all(queue.get(i).state == "succeeded" for i in ids)
+
+
+def test_transient_retrieval_timeout_retries_bounded_without_global_pause(queue, monkeypatch):
+    job_id = queue.enqueue_retrieval(
+        school="ubc",
+        recipient_id=RECIPIENT_ID,
+        account_username=ACCOUNT_USERNAME,
+        url="https://www.instagram.com/p/Retry/",
+    )
+    session = SimpleNamespace(
+        run=lambda _: "/",
+        current_account_username=lambda: ACCOUNT_USERNAME,
+        poll_until=lambda ready: ready(),
+        cancel_pending_request=lambda: None,
+    )
+    monkeypatch.setattr(
+        module,
+        "BrowserTabPool",
+        lambda _: SimpleNamespace(prepare=lambda job, count: ([session], ACCOUNT_USERNAME)),
+    )
+
+    def timeout(*args, **kwargs):
+        raise TimeoutError("temporary response timeout")
+
+    monkeypatch.setattr(module, "execute_job", timeout)
+    assert module.process_next_job(queue)
+    assert queue.get(job_id).attempts == module.CONTROL.ingestion_retry_limit
+    assert queue.get(job_id).state == "failed"
+    assert not queue.get_setting("paused", False)

@@ -175,9 +175,16 @@ def _process_batch(queue: BrowserJobQueue, jobs: list[BrowserJob]) -> None:
                 if not session.run("window.location.pathname").startswith("/accounts/login"):
                     return False
                 raise BrowserSessionError("Instagram browser requires human account recovery")
-            return (
-                not path.startswith("/accounts/") and session.current_account_username() is not None
-            )
+            active_username = session.current_account_username()
+            if active_username is None or path.startswith("/accounts/"):
+                return False
+            if active_username != username:
+                time.sleep(2)
+                confirmed = session.current_account_username()
+                if confirmed is None or confirmed == username:
+                    return False
+                raise BrowserSessionError("Instagram browser account changed during parallel work")
+            return True
 
         try:
             session.poll_until(ready)
@@ -202,6 +209,16 @@ def _process_batch(queue: BrowserJobQueue, jobs: list[BrowserJob]) -> None:
             error = f"Browser job failed ({type(exc).__name__}); inspect before retrying"
             queue.set_setting("paused", error)
         queue.finish(job.id, error=error)
+        if (
+            job.kind == "retrieval"
+            and job.attempts < CONTROL.ingestion_retry_limit
+            and not queue.get_setting("paused", False)
+            and (
+                isinstance(exc, TimeoutError)
+                or error == "Instagram public media retrieval failed; inspect login or retry"
+            )
+        ):
+            queue.retry(job.id)
         unfinished.discard(job.id)
 
     try:

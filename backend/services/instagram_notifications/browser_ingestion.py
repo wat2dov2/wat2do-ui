@@ -58,16 +58,27 @@ class BrowserInstagramRetriever:
     def __init__(self, session: BrowserInstagramSession) -> None:
         self.session = session
 
+    def _active_account(self) -> str:
+        # Capture the verified read itself instead of immediately rereading a loading DOM.
+        username = None
+
+        def ready():
+            nonlocal username
+            username = self.session.current_account_username()
+            return username is not None
+
+        self.session.poll_until(ready)
+        if username is None:
+            raise TimeoutError("Instagram account identity did not settle before the deadline")
+        return username
+
     def retrieve(self, url: str, *, cutoff_days: int) -> dict:
         target = canonical_target_url(url)
         profile = _PROFILE_PATH.fullmatch(urlsplit(target).path)
         path = self.session.run("window.location.pathname")
         if path.startswith(("/accounts/suspended", "/accounts/login", "/challenge", "/checkpoint")):
             raise BrowserSessionError("Instagram browser requires human account recovery")
-        self.session.poll_until(lambda: self.session.current_account_username() is not None)
-        username = self.session.current_account_username()
-        if username is None:
-            raise BrowserSessionError("Instagram browser requires human account recovery")
+        username = self._active_account()
         self.session.run(_open_post_source(target))
         self.session.poll_until(
             lambda: (
@@ -76,7 +87,7 @@ class BrowserInstagramRetriever:
                 and self.session.current_account_username() is not None
             )
         )
-        if self.session.current_account_username() != username:
+        if self._active_account() != username:
             raise BrowserSessionError("Instagram browser account changed during retrieval")
         endpoint = (
             f"/api/v1/users/web_profile_info/?username={profile[1]}"
@@ -84,7 +95,7 @@ class BrowserInstagramRetriever:
             else f"/api/v1/media/{media_id_from_url(target)}/info/"
         )
         result = self.session.query(_query_source(endpoint, username, profile=bool(profile)))
-        if self.session.current_account_username() != username:
+        if self._active_account() != username:
             raise BrowserSessionError("Instagram browser account changed during retrieval")
         if result.get("state") != "succeeded":
             # Never persist server response text, request headers or browser internals.
