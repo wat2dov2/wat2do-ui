@@ -272,7 +272,7 @@ def _build_prompt(
     return f"""
 Analyze the following Instagram caption and images. First classify the post, then extract every campus event and every open hiring position it clearly advertises.
 
-Campus context: {school}. Use this only as a fallback for ambiguous location and timezone information.
+Campus context: {school}. Use this to disambiguate an explicitly named campus venue and timezone, never to supply a missing venue.
 Explicit school, club, location, and timezone information in the caption or image takes precedence over campus context.
 Preserve the school and club names printed in the source, including in descriptions. Never rename a host to match campus context or substitute a similarly named club from another school.
 Current context: Today is {current_day}, {current_date}
@@ -413,6 +413,14 @@ POSITION RULES:
 - "deadline_at" is a UTC ISO 8601 timestamp ending in "Z" only when an application time is explicitly stated. Otherwise use null.
 - An application deadline is position metadata and must never be emitted as an event occurrence.
 
+LOCATION RULES:
+- Read the caption AND every relevant carousel image, including small print, venue labels, map pins, room numbers, and the last slide. A short caption does not make a location printed on the poster unavailable.
+- Extract the most specific attendee destination actually stated: venue or building plus room/floor, and street address and city/province when supplied. Preserve meaningful campus abbreviations and room numbers, including leading zeroes (e.g., "STC 0020", "SLC 3223", "DC Library"). Do not discard a room, venue name, or supplied address.
+- Use a location belonging to this event, not a sponsor's address, the host's office, another event in a roundup, or a registration website. School context alone, a club's usual meeting place, or an Instagram handle is not venue evidence.
+- An explicit moved/corrected venue overrides the older venue. Otherwise combine compatible details; do not discard a poster's precise room because the caption names only the building. Preserve date/session qualifiers when advertised occurrences use different venues.
+- For explicitly virtual events, use "Online" and include the platform when stated (e.g., "Online (Zoom)"). For hybrid events, retain the verified physical venue and online format. A registration link alone never means the event is online.
+- Preserve an explicit "TBA", "TBD", or "location shared after registration" notice. If no location or online format is evidenced, return an empty location string; never invent a venue or substitute the school name or "On campus".
+
 ADDITIONAL EVENT RULES:
 - Prioritize caption text; use image text if missing details.
 - Extract one object per logical event, even when the caption and several images repeat it. Combine all explicitly advertised occurrences, including expanded recurring dates, for that same activity into that object's occurrences array. Do not create event objects for its ticket, registration, check-in, application, campaign, or other administrative milestones.
@@ -420,7 +428,6 @@ ADDITIONAL EVENT RULES:
 - For "club": this is the club / society / faculty hosting the event. Prefer the most specific named entity from the caption or image (e.g., "UW Tea Club"); if none is named, use the Instagram handle as a fallback.
 - If year not found, infer the NEXT occurrence of that date relative to the post creation date ({post_date}). If end time < start time (e.g., 7pm-12am), set end to the next day.
 - When no explicit date is found but there are relative terms like "tonight", "tomorrow", interpret these relative to the POST CREATION DATE ({post_date}).
-- For location: Use the exact location as stated in the caption or image. If the location is a building or room on campus, use only that (e.g., "SLC 3223", "DC Library"). Include city/province if the event is off-campus and the address is provided.
 - For price: REGISTRATION COST ONLY. Prefer non-member / general admission price if multiple are listed. Free events are 0.0. Use null if price is not mentioned.
 - For food: Return an array. Use specific items when named (e.g., ["Pizza", "Bubble tea"]). Use ["Food"] for a generic food mention. Never return "Yes" or "Yes!" as a food label. Use [] when no food is mentioned.
 - For registration: only true if there is a clear instruction to register, RSVP, or sign up.

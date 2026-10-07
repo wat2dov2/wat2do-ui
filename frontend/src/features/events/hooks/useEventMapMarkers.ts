@@ -15,14 +15,15 @@ export function useEventMapMarkers(mapRef: React.RefObject<MapRef | null>, venue
   const [markers, setMarkers] = useState<EventMapMarker[]>([]);
   const generation = useRef(0);
   const refreshMarkers = useCallback(async () => {
+    const revision = ++generation.current;
     const map = mapRef.current;
     const source = map?.getSource("events") as GeoJSONSource | undefined;
     if (!map || !source || !map.isSourceLoaded("events")) return;
-    const revision = ++generation.current;
+    const eventsByVenue = new Map(venues.map(venue => [venue.coordinates.join(","), venue.events]));
     const seen = new Set<string>();
     const features = map.querySourceFeatures("events").filter(feature => {
       if (feature.geometry.type !== "Point") return false;
-      const id = feature.properties?.cluster ? `cluster:${feature.properties.cluster_id}` : `venue:${feature.properties?.index}`;
+      const id = feature.properties?.cluster ? `cluster:${feature.properties.cluster_id}` : `venue:${feature.properties?.venue}`;
       if (seen.has(id) || !map.getBounds()?.contains(feature.geometry.coordinates as [number, number])) return false;
       seen.add(id);
       return true;
@@ -30,15 +31,15 @@ export function useEventMapMarkers(mapRef: React.RefObject<MapRef | null>, venue
     const next = await Promise.all(features.map(async feature => {
       const properties = feature.properties ?? {};
       const coordinates = (feature.geometry as GeoJSON.Point).coordinates as [number, number];
-      const indices: number[] = properties.cluster ? await new Promise<number[]>(resolve => {
+      const venueIds: string[] = properties.cluster ? await new Promise<string[]>(resolve => {
         source.getClusterLeaves(properties.cluster_id, properties.point_count, 0, (error, leaves) => {
-          resolve(error ? [] : (leaves ?? []).map(leaf => Number(leaf.properties?.index)));
+          resolve(error ? [] : (leaves ?? []).map(leaf => String(leaf.properties?.venue)));
         });
-      }) : [Number(properties.index)];
+      }) : [String(properties.venue)];
       return {
-        id: properties.cluster ? `cluster:${properties.cluster_id}` : `venue:${properties.index}`,
+        id: properties.cluster ? `cluster:${properties.cluster_id}` : `venue:${properties.venue}`,
         coordinates,
-        events: indices.flatMap(index => venues[index]?.events ?? []),
+        events: venueIds.flatMap(id => eventsByVenue.get(id) ?? []),
       };
     }));
     if (revision === generation.current) setMarkers(next.filter(marker => marker.events.length));

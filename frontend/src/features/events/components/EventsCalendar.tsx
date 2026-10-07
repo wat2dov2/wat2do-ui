@@ -1,5 +1,5 @@
 import { useMemo, useState, type CSSProperties } from "react";
-import { Calendar, dateFnsLocalizer, type ToolbarProps, type View, type Formats } from "react-big-calendar";
+import { Calendar, dateFnsLocalizer, type ToolbarProps, type View, type Formats, type EventProps } from "react-big-calendar";
 import { format, getDay, startOfWeek } from "date-fns";
 import { enUS } from "date-fns/locale/en-US";
 import { fr } from "date-fns/locale/fr";
@@ -13,8 +13,10 @@ import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 import { controlBox } from "@/shared/config/controlBox";
 import { Stack } from "@/shared/layout/stack";
 import { Button } from "@/shared/ui/button";
+import { AvatarStack } from "@/shared/ui/avatar-stack";
 import { ChevronLeft, ChevronRight } from "@/shared/ui/doodle-icons";
 import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
+import { TruncatedText } from "@/shared/ui/truncated-text";
 import type { Event } from "@/shared/types";
 
 import { getClubCategoryConfig, clubCategoryInk } from "@/shared/data/clubCategoryStyles";
@@ -29,7 +31,6 @@ function CalendarToolbar({ label, onNavigate, onView, view }: ToolbarProps<Calen
         <Button variant="ghost" size="icon-sm" aria-label={t("events.views.previous")} onClick={() => onNavigate("PREV")}><ChevronLeft /></Button>
         <span className="font-semibold">{label}</span>
         <Button variant="ghost" size="icon-sm" aria-label={t("events.views.next")} onClick={() => onNavigate("NEXT")}><ChevronRight /></Button>
-        <Button variant="outline" size="sm" onClick={() => onNavigate("TODAY")}>{t("filters.today")}</Button>
       </Stack>
       <Tabs value={view} onValueChange={next => onView(next as View)}>
         <TabsList>
@@ -38,6 +39,22 @@ function CalendarToolbar({ label, onNavigate, onView, view }: ToolbarProps<Calen
           <TabsTrigger value="day">{t("events.views.day")}</TabsTrigger>
         </TabsList>
       </Tabs>
+    </Stack>
+  );
+}
+
+function CalendarEventContent({ event: item }: EventProps<CalendarEvent>) {
+  const { event } = item;
+  return (
+    <Stack gap={1} className="event-calendar-content" data-event-id={event.id}>
+      <TruncatedText text={item.title} className="event-calendar-title" />
+      <Stack direction="horizontal" align="center" gap={1}>
+        <AvatarStack size="sm" avatars={[
+          { name: event.club, src: event.club_logo_url ?? "" },
+          ...(event.cohosts ?? []).map(club => ({ name: club.club_name, src: club.logo_url ?? "" })),
+        ]} />
+        <TruncatedText text={event.club} />
+      </Stack>
     </Stack>
   );
 }
@@ -90,14 +107,13 @@ export function EventsCalendar({ events, school, onEventClick }: { events: Event
           scrollToTime={scrollToTime}
           startAccessor="start"
           endAccessor="end"
-          components={{ toolbar: CalendarToolbar }}
+          components={{ toolbar: CalendarToolbar, event: CalendarEventContent }}
           formats={formats}
           messages={{
-            today: t("filters.today"), previous: t("events.views.previous"), next: t("events.views.next"),
+            previous: t("events.views.previous"), next: t("events.views.next"),
             month: t("events.views.month"), week: t("events.views.week"), day: t("events.views.day"),
             allDay: t("events.views.allDay"), showMore: count => t("events.views.more", { count }),
           }}
-          popup
         />
       </div>
     </EventViewSurface>

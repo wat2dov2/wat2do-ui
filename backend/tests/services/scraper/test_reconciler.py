@@ -66,6 +66,12 @@ def test_reconcile_prompt_reuses_same_occurrence_reposts_but_not_new_occurrences
     assert "watch parties do not qualify" in prompt
     assert "Use null when official varsity participation is unconfirmed" in prompt
     assert "explicit new true or false replaces the old value" in prompt
+    assert "Preserve the candidate's verified location when a reminder omits it" in prompt
+    assert 'Fill a previously empty, TBA/TBD, or generic "On campus" location' in prompt
+    assert "this does not require moved/corrected wording" in prompt
+    assert "new text supplies only a broader version of the same venue" in prompt
+    assert "Replace a different previously confirmed venue only" in prompt
+    assert "source explicitly corrects or moves it" in prompt
     facts = {"employers_on_campus": True, "sports_game": None}
     event = ReconciledEvent.model_validate(facts)
     assert {name: getattr(event, name) for name in facts} == facts

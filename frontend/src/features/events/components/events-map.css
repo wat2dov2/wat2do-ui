@@ -1,8 +1,8 @@
 /* Map-owned poster and sheet composition, shared by every venue and cluster. */
 .event-map-marker[data-slot="button"] {
   position: relative;
-  width: 2.5rem;
-  height: 2.5rem;
+  width: 4rem;
+  height: 4rem;
   padding: 0;
   border: 2px solid var(--surface);
   border-radius: 0.75rem;
@@ -74,8 +74,8 @@
   border-radius: 0.5rem;
 }
 .event-map-row [data-slot="lazy-image"] {
-  width: 2.75rem;
-  height: 2.75rem;
+  width: 3.5rem;
+  height: 3.5rem;
   flex-shrink: 0;
   border-radius: 0.5rem;
 }

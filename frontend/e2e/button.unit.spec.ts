@@ -71,6 +71,19 @@ test("filter buttons wait for click and disabled buttons never activate", () => 
   expect(calls).toBe(1);
 });
 
+test("native click activation survives Mapbox preventing marker mouse down", () => {
+  let calls = 0;
+  const button = handlers({ activation: "click", onClick: () => calls++ });
+  const mouseDown = event();
+  mouseDown.preventDefault(); // Mapbox's Marker prevents this before React sees it.
+  button.onMouseDown?.(mouseDown);
+  expect(calls).toBe(0);
+  button.onClick?.(event());
+  expect(calls).toBe(1);
+  button.onClick?.(event(0, 0));
+  expect(calls).toBe(2);
+});
+
 test("links and submit buttons activate their native click once at mouse down", () => {
   for (const props of [{ asChild: true }, { type: "submit" as const }]) {
     let calls = 0;

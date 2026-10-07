@@ -1865,6 +1865,7 @@ test.describe("Events Page", () => {
     const startsAt = new Date(Date.now() + 3_600_000).toISOString();
     const event = {
       id: 9017, title: "Calendar cooking night", club: "Cooking Club", club_id: 1,
+      club_logo_url: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20'%3E%3Crect width='20' height='20' fill='purple'/%3E%3C/svg%3E",
       location: "Student Life Centre", price: 5, category: "Arts & Culture", school: "uwaterloo",
       added_at: new Date().toISOString(), food: [], registration: false,
       occurrences: [{ id: "calendar-occurrence", event_id: 9017, dtstart_utc: startsAt, dtend_utc: null }],
@@ -1889,9 +1890,24 @@ test.describe("Events Page", () => {
     await views.click();
     await page.getByRole("option", { name: "Calendar", exact: true }).click();
     await expect(page.locator(".rbc-calendar")).toBeVisible();
+    await expect(page.locator(".events-calendar").getByRole("button", { name: "Today", exact: true })).toHaveCount(0);
+    await page.getByRole("tab", { name: "Week", exact: true }).click();
+    const headers = page.locator(".rbc-time-header-cell .rbc-header");
+    await expect(headers).toHaveCount(7);
+    for (const header of await headers.all()) {
+      const cell = await header.boundingBox();
+      const label = await header.getByRole("columnheader").boundingBox();
+      expect(cell).not.toBeNull();
+      expect(label).not.toBeNull();
+      expect(Math.abs(label!.y + label!.height / 2 - cell!.y - cell!.height / 2)).toBeLessThan(2);
+      expect(label!.y - cell!.y).toBeGreaterThan(3);
+      expect(cell!.y + cell!.height - label!.y - label!.height).toBeGreaterThan(3);
+    }
     await page.getByRole("tab", { name: "Month", exact: true }).click();
     const calendarEvent = page.locator(".rbc-event").filter({ hasText: event.title }).first();
     await expect(calendarEvent).toHaveCSS("background-color", "rgb(255, 179, 194)");
+    await expect(calendarEvent).toContainText(event.club);
+    await expect(calendarEvent.getByRole("img", { name: event.club, exact: true })).toBeVisible();
     await calendarEvent.click();
     await expect(page.getByRole("dialog", { name: event.title, exact: true })).toBeVisible();
     await page.keyboard.press("Escape");
@@ -1900,6 +1916,101 @@ test.describe("Events Page", () => {
     await expect(filters.getByRole("button", { name: "≤ $10", exact: true })).toBeVisible();
     await expect(page.locator('article[data-event-id="9017"]')).toBeVisible();
     expect(mapRequests).toEqual([]);
+  });
+
+  test("map renders ready pins before a slow venue, opens drawers and zooms with an ordinary wheel", async ({ page, next }) => {
+    const startsAt = new Date(Date.now() + 3_600_000).toISOString();
+    const events = ["Map dinner", "Map talk", "Map workshop"].map((title, index) => ({
+      id: 9300 + index, title, club: "Campus Club", club_id: 1, school: "uwaterloo",
+      source_image_url: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Crect width='64' height='64' fill='purple'/%3E%3C/svg%3E",
+      location: index === 2 ? "Davis Centre" : "Student Life Centre", price: 0, category: "Social",
+      food: [], registration: false, added_at: new Date().toISOString(),
+      occurrences: [{ id: `map-${index}`, event_id: 9300 + index, dtstart_utc: startsAt, dtend_utc: null }],
+    }));
+    await mockApi(page, next, url => apiPath(url) === "/events" ||
+      (apiPath(url) === "/discovery" && url.searchParams.get("resource") === "events"),
+    async () => ({ json: { items: events, total: events.length, page: 1, page_size: events.length, total_pages: 1 } }));
+    await mockApi(page, next, url => /^\/events\/93\d{2}$/.test(apiPath(url) ?? ""),
+      async request => ({ json: events.find(event => event.id === Number(new URL(request.url).pathname.split("/").at(-1))) }));
+    let finishSlow!: () => void;
+    const slowVenue = new Promise<void>(resolve => { finishSlow = resolve; });
+    await page.route("https://api.mapbox.com/**", async route => {
+      const url = new URL(route.request().url());
+      if (url.pathname.includes("/searchbox/")) {
+        const venue = url.searchParams.get("q")!.split(",")[0];
+        if (venue === "Davis Centre") await slowVenue;
+        await route.fulfill({ json: { features: [{
+          geometry: { type: "Point", coordinates: [venue === "Davis Centre" ? -80.537 : -80.542, 43.47] },
+          properties: { feature_type: "poi", name: venue },
+        }] } });
+      } else if (url.pathname.includes("/styles/")) {
+        await route.fulfill({ json: { version: 8, sources: {}, layers: [
+          { id: "background", type: "background", paint: { "background-color": "#d7efcf" } },
+        ] } });
+      } else await route.fulfill({ json: {} });
+    });
+    try {
+      await page.goto(`${BASE}/events`);
+      await page.getByRole("combobox", { name: "Event view" }).click();
+      await page.getByRole("option", { name: "Map", exact: true }).click();
+      await expect(page.locator(".mapboxgl-canvas")).toBeVisible();
+      const cluster = page.getByRole("button", { name: "Map dinner, Map talk", exact: true });
+      await expect(cluster).toBeVisible();
+      await expect(cluster).toHaveCSS("width", "64px");
+      await cluster.click();
+      const sheet = page.getByRole("complementary", { name: "Select an event" });
+      await expect(sheet).toBeVisible();
+      await sheet.getByRole("button", { name: /Map dinner/ }).click();
+      await expect(page.getByRole("dialog", { name: "Map dinner", exact: true })).toBeVisible();
+      await page.keyboard.press("Escape");
+      await sheet.getByRole("button", { name: "Close", exact: true }).click();
+      finishSlow();
+      const single = page.getByRole("button", { name: "Map workshop", exact: true });
+      await expect(single).toBeVisible();
+      await single.click();
+      await expect(page.getByRole("dialog", { name: "Map workshop", exact: true })).toBeVisible();
+      await page.keyboard.press("Escape");
+      const separation = async () => Math.abs((await single.boundingBox())!.x - (await cluster.boundingBox())!.x);
+      const before = await separation();
+      const canvas = (await page.locator(".mapboxgl-canvas").boundingBox())!;
+      await page.mouse.move(canvas.x + canvas.width / 2, canvas.y + canvas.height / 2);
+      await page.mouse.wheel(0, -300);
+      await expect.poll(separation).toBeGreaterThan(before + 5);
+    } finally {
+      finishSlow();
+    }
+  });
+
+  test("calendar more events opens the selected day and keeps club identity and the event drawer", async ({ page, next }) => {
+    const current = new Date();
+    const startsAt = new Date(Date.UTC(current.getUTCFullYear(), current.getUTCMonth() + 1, 15, 22));
+    await page.clock.setFixedTime(new Date(startsAt.getTime() - 86_400_000));
+    const events = Array.from({ length: 12 }, (_, index) => ({
+      id: 9200 + index, title: `Overflow calendar event ${index + 1}`, club: "Campus Arts Club", club_id: 1,
+      location: "Student Life Centre", price: 0, category: "Arts & Culture", school: "uwaterloo",
+      food: [], registration: false, added_at: new Date().toISOString(),
+      occurrences: [{ id: `overflow-${index}`, event_id: 9200 + index, dtstart_utc: startsAt.toISOString(), dtend_utc: new Date(startsAt.getTime() + 7_200_000).toISOString() }],
+    }));
+    await mockApi(page, next, url => apiPath(url) === "/events" ||
+      (apiPath(url) === "/discovery" && url.searchParams.get("resource") === "events"),
+    async () => ({ json: { items: events, total: events.length, page: 1, page_size: events.length, total_pages: 1 } }));
+    await mockApi(page, next, url => /^\/events\/92\d{2}$/.test(apiPath(url) ?? ""),
+      async request => ({ json: events.find(event => event.id === Number(new URL(request.url).pathname.split("/").at(-1))) }));
+    await page.goto(`${BASE}/events`);
+    await page.getByRole("combobox", { name: "Event view" }).click();
+    await page.getByRole("option", { name: "Calendar", exact: true }).click();
+    await page.getByRole("tab", { name: "Month", exact: true }).click();
+    await page.locator(".rbc-show-more").first().click();
+    await expect(page.getByRole("tab", { name: "Day", exact: true })).toHaveAttribute("data-state", "active");
+    await expect(page.locator(".rbc-overlay")).toHaveCount(0);
+    const dayLabel = new Intl.DateTimeFormat("en", { weekday: "short", month: "short", day: "numeric", timeZone: "America/Toronto" }).format(startsAt);
+    await expect(page.locator(".events-calendar")).toContainText(dayLabel);
+    await expect(page.locator(".rbc-event")).toHaveCount(events.length);
+    const selectedEvent = events.at(-1)!;
+    const tile = page.locator(".rbc-event").filter({ hasText: selectedEvent.title });
+    await expect(tile).toContainText(selectedEvent.club);
+    await tile.click();
+    await expect(page.getByRole("dialog", { name: selectedEvent.title, exact: true })).toBeVisible();
   });
 
   for (const width of [390, 1024]) {

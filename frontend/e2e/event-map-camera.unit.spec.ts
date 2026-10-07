@@ -13,6 +13,8 @@ test("map camera survives feed refreshes, marker selection and closing the sheet
   } }).outputText;
   const require = createRequire(filename);
   const listing = { id: 1, title: "Cooking", club: "Cooking club", occurrences: [] } as unknown as Event;
+  const secondListing = { ...listing, id: 2, title: "Dinner" };
+  let markerEvents = [listing, secondListing];
   const states: unknown[] = [];
   const refs: { current: unknown }[] = [];
   let stateIndex = 0;
@@ -32,13 +34,13 @@ test("map camera survives feed refreshes, marker selection and closing the sheet
     };
     if (id === "react/jsx-runtime") return require(id);
     if (id === "react-map-gl/mapbox") return { __esModule: true, default: "Map", Source: "Source", Layer: "Layer", Marker: "Marker", NavigationControl: "NavigationControl" };
-    if (id.endsWith("useEventMap")) return { useEventMap: () => ({ query: { data: {}, isPending: false }, venues: [{ coordinates: [1, 2], events: [listing] }, { coordinates: [2, 3], events: [] }], center: [1, 2], mappedCount: 1, unmappedCount: 0 }) };
-    if (id.endsWith("useEventMapMarkers")) return { useEventMapMarkers: () => ({ markers: [{ id: "venue:0", coordinates: [1, 2], events: [listing] }], refreshMarkers() {} }) };
+    if (id.endsWith("useEventMap")) return { useEventMap: () => ({ query: { data: {}, isPending: false }, venues: [{ coordinates: [1, 2], events: markerEvents }, { coordinates: [2, 3], events: [] }], center: [1, 2], mappedCount: markerEvents.length, unmappedCount: 0 }) };
+    if (id.endsWith("useEventMapMarkers")) return { useEventMapMarkers: () => ({ markers: [{ id: "venue:0", coordinates: [1, 2], events: markerEvents }], refreshMarkers() {} }) };
     if (id.endsWith("eventMap.api")) return { MAPBOX_TOKEN: "test" };
     if (id.endsWith("useDarkMode")) return { useDarkMode: () => ({ isDarkMode: false }) };
     if (id.endsWith("useSchoolDirectory")) return { useSchoolDirectory: () => ({ getSchoolTimezone: () => "UTC" }) };
     if (id === "react-i18next") return { useTranslation: () => ({ t: (key: string) => key, i18n: { language: "en" } }) };
-    if (id.endsWith("controlBox")) return { controlBox: { eventDiscovery: { views: { map_initial_zoom: 14 } } } };
+    if (id.endsWith("controlBox")) return { controlBox: { eventDiscovery: { views: { map_initial_zoom: 14, map_style: "mapbox://styles/mapbox/streets-v12" } } } };
     if (id.endsWith("utils/date")) return { formatCardDate: () => "Today", formatCardTime: () => "6 PM" };
     return primitive;
   } });
@@ -50,11 +52,18 @@ test("map camera survives feed refreshes, marker selection and closing the sheet
   };
   let tree = render();
   const map = find(tree, node => node.type === "Map")!;
+  expect(map.props.mapStyle).toBe("mapbox://styles/mapbox/streets-v12");
+  expect(map.props.cooperativeGestures).not.toBe(true);
   refs[0].current = { fitBounds() { fits++; }, jumpTo() { fits++; } };
   (map.props.onLoad as () => void)();
   expect(fits).toBe(1);
   tree = render();
-  (find(tree, node => node.props.className === "event-map-marker")!.props.onClick as () => void)();
+  const marker = find(tree, node => node.props.className === "event-map-marker")!;
+  expect(marker.props.activation).toBe("click");
+  expect((marker.props.children as Node[])[0].props.width).toBe(64);
+  let stopped = false;
+  (marker.props.onClick as (event: object) => void)({ stopPropagation() { stopped = true; } });
+  expect(stopped).toBe(true);
   tree = render();
   expect(find(tree, node => node.type === "aside")).toBeDefined();
   (find(tree, node => node.props.className === "event-map-row")!.props.onClick as () => void)();
@@ -64,6 +73,12 @@ test("map camera survives feed refreshes, marker selection and closing the sheet
   (find(tree, node => node.props["aria-label"] === "common.close")!.props.onClick as () => void)();
   tree = render();
   expect(find(tree, node => node.type === "aside")).toBeUndefined();
+  expect(fits).toBe(1);
+  markerEvents = [listing];
+  tree = render();
+  (find(tree, node => node.props.className === "event-map-marker")!.props.onClick as (event: object) => void)({ stopPropagation() {} });
+  expect(openedEvents).toBe(2);
+  expect(find(render(), node => node.type === "aside")).toBeUndefined();
   expect(fits).toBe(1);
 });
 
@@ -79,15 +94,20 @@ test("visible thumbnail clusters contain all their events and deduplicate tile c
     useState: () => [markers, (value: typeof markers) => { markers = value; }],
     useRef: () => ({ current: 0 }), useEffect: () => {}, useCallback: (fn: unknown) => fn,
   }) });
-  const hook = exports.useEventMapMarkers({ current: {
+  const mapRef = { current: {
     isSourceLoaded: () => true, getBounds: () => ({ contains: () => true }),
     querySourceFeatures: () => [cluster, cluster],
     getSource: () => ({ getClusterLeaves: (_id: number, count: number, _offset: number, callback: (error: null, leaves: object[]) => void) => {
-      leafReads++; expect(count).toBe(2); callback(null, [{ properties: { index: 0 } }, { properties: { index: 1 } }]);
+      leafReads++; expect(count).toBe(2); callback(null, [{ properties: { venue: "1,2" } }, { properties: { venue: "2,3" } }]);
     } }),
-  } }, venues);
+  } };
+  const hook = exports.useEventMapMarkers(mapRef, venues);
   await hook.refreshMarkers();
   expect(leafReads).toBe(1);
   expect(markers).toHaveLength(1);
+  expect(markers[0].events.map(event => event.id)).toEqual([1, 2, 3]);
+  // Mapbox can still expose the previous source while newly located venues
+  // change their array order. Stable venue keys keep images/clicks correct.
+  await exports.useEventMapMarkers(mapRef, [...venues].reverse()).refreshMarkers();
   expect(markers[0].events.map(event => event.id)).toEqual([1, 2, 3]);
 });

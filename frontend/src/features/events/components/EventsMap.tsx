@@ -11,7 +11,6 @@ import { LazyImage } from "@/shared/ui/lazy-image";
 import { X } from "@/shared/ui/doodle-icons";
 import { formatCardDate, formatCardTime } from "@/shared/utils/date";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
-import { useDarkMode } from "@/shared/hooks/useDarkMode";
 import { controlBox } from "@/shared/config/controlBox";
 import { EmptyState } from "@/shared/feedback";
 import { Stack } from "@/shared/layout/stack";
@@ -22,7 +21,6 @@ import type { Event } from "@/shared/types";
 export function EventsMap({ events, school, onEventClick }: { events: Event[]; school: string; onEventClick: (event: Event) => void }) {
   const { t, i18n } = useTranslation();
   const { getSchoolTimezone } = useSchoolDirectory();
-  const { isDarkMode } = useDarkMode();
   const { query, venues, hasPhysicalLocations, center, mappedCount, unmappedCount } = useEventMap(events, school);
   const mapRef = useRef<MapRef>(null);
   const { markers, refreshMarkers } = useEventMapMarkers(mapRef, venues);
@@ -32,10 +30,10 @@ export function EventsMap({ events, school, onEventClick }: { events: Event[]; s
   const settings = controlBox.eventDiscovery.views;
   const data = useMemo(() => ({
     type: "FeatureCollection" as const,
-    features: venues.map((venue, index) => ({
+    features: venues.map(venue => ({
       type: "Feature" as const,
       geometry: { type: "Point" as const, coordinates: venue.coordinates },
-      properties: { index },
+      properties: { venue: venue.coordinates.join(",") },
     })),
   }), [venues]);
 
@@ -64,21 +62,24 @@ export function EventsMap({ events, school, onEventClick }: { events: Event[]; s
           ref={mapRef}
           mapboxAccessToken={MAPBOX_TOKEN}
           initialViewState={{ longitude: center[0], latitude: center[1], zoom: settings.map_initial_zoom }}
-          mapStyle={isDarkMode ? settings.map_dark_style : settings.map_light_style}
+          mapStyle={settings.map_style}
           onLoad={() => { fitVenues(); void refreshMarkers(); }}
           onMoveEnd={() => { void refreshMarkers(); }}
           onSourceData={event => { if (event.sourceId === "events" && event.isSourceLoaded) void refreshMarkers(); }}
           onError={() => setMapFailed(true)}
           cursor="pointer"
-          cooperativeGestures
         >
           <NavigationControl position="top-right" />
           <Source id="events" type="geojson" data={data} cluster clusterRadius={settings.map_cluster_radius} clusterMaxZoom={settings.map_cluster_max_zoom}>
             <Layer id="event-marker-source" type="circle" paint={{ "circle-radius": 0, "circle-opacity": 0 }} />
           </Source>
           {markers.map(marker => <Marker key={marker.id} longitude={marker.coordinates[0]} latitude={marker.coordinates[1]}>
-            <Button variant="ghost" size="icon" className="event-map-marker" aria-label={marker.events.map(event => event.title).join(", ")} onClick={() => setSelectedIds(marker.events.map(event => event.id))}>
-              <LazyImage src={marker.events.find(event => event.source_image_url)?.source_image_url ?? marker.events[0].club_logo_url} alt="" width={40} height={40} />
+            <Button activation="click" variant="ghost" size="icon" className="event-map-marker" aria-label={marker.events.map(event => event.title).join(", ")} onPointerDown={event => event.stopPropagation()} onClick={event => {
+              event.stopPropagation();
+              if (marker.events.length === 1) onEventClick(marker.events[0]);
+              else setSelectedIds(marker.events.map(event => event.id));
+            }}>
+              <LazyImage src={marker.events.find(event => event.source_image_url)?.source_image_url ?? marker.events[0].club_logo_url} alt="" width={64} height={64} loading="eager" />
               {marker.events.length > 1 ? <span className="event-map-marker-count">{marker.events.length}</span> : null}
             </Button>
           </Marker>)}
@@ -90,7 +91,7 @@ export function EventsMap({ events, school, onEventClick }: { events: Event[]; s
           </Stack>
           <Stack gap={2}>
             {selectedEvents.map(event => <Button key={event.id} variant="ghost" className="event-map-row" onClick={() => onEventClick(event)}>
-              <LazyImage src={event.source_image_url ?? event.club_logo_url} alt="" width={44} height={44} />
+              <LazyImage src={event.source_image_url ?? event.club_logo_url} alt="" width={56} height={56} />
               <span className="event-map-row-copy"><strong>{event.title}</strong><span>{`${formatCardDate(event, getSchoolTimezone(school), i18n.language)}, ${formatCardTime(event, getSchoolTimezone(school), i18n.language)}`}</span><span>{event.club}</span></span>
             </Button>)}
           </Stack>
@@ -99,6 +100,7 @@ export function EventsMap({ events, school, onEventClick }: { events: Event[]; s
       <Stack direction="horizontal" justify="between" align="center" wrap gap={2}>
       <p className="text-sm text-muted-foreground" role="status">
         {t("events.views.mapSummary", { count: mappedCount })}
+        {query.isFetching ? ` ${t("common.loading")}` : ""}
         {unmappedCount > 0 ? ` ${t("events.views.unmapped", { count: unmappedCount })}` : ""}
       </p>
       {query.data?.failedCount ? <Button size="sm" variant="outline" onClick={() => { void query.refetch(); }}>{t("common.tryAgain")}</Button> : null}

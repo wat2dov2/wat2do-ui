@@ -10,6 +10,7 @@ export interface EventMapLocations {
   center: MapCoordinates;
   locations: Record<string, MapCoordinates | null>;
   failedCount: number;
+  pendingCount: number;
 }
 
 interface MapboxSearchResponse {
@@ -19,13 +20,14 @@ interface MapboxSearchResponse {
 function venueName(location: string): string | null {
   const name = location.replace(/\b(?:room|rm\.?|suite|floor)\s*#?\s*[\w-]+/gi, "")
     .replace(/^(?!\d)(.*?)\s+\d{3,4}[a-z]?$/i, "$1")
+    .replace(/\s*\([A-Z][A-Z\d]{0,4}(?:\/[A-Z][A-Z\d]{0,4})*\)/g, "")
     .replace(/^[\s,;-]+|[\s,;-]+$/g, "").trim();
   return !name || /^(?:[a-z]{1,2}|tbd|tba|unknown|n\/a)$/i.test(name) ? null : name;
 }
 
 function matchesVenue(name: string, feature: MapboxSearchResponse["features"][number]): boolean {
   const words = (value: string) => value.toLocaleLowerCase().split(/[^\p{L}\p{N}]+/u).filter(Boolean);
-  const expected = words(name).filter(word => (word.length > 1 || /^\d+$/.test(word)) && !["the", "of", "at", "in"].includes(word));
+  const expected = words(name).filter(word => (word.length > 1 || /^\d+$/.test(word)) && !["the", "of", "at", "in", "and"].includes(word));
   // Short campus room/building codes have no reliable public lookup. An address
   // result is valid only for a venue that actually supplies a street number.
   if (!expected.length) return false;
@@ -66,17 +68,23 @@ function locationQuery(school: string, query: string, near: string, venue?: stri
 
 export function eventMapLocationsQuery(schoolSlug: string, school: SchoolSummary | undefined, locations: string[]) {
   const sortedLocations = [...new Set(locations)].sort();
-  return queryOptions({
-    queryKey: queryKeys.events.mapLocations(schoolSlug, sortedLocations),
+  const queryKey = queryKeys.events.mapLocations(schoolSlug, sortedLocations);
+  return queryOptions<EventMapLocations>({
+    queryKey,
     retry: false,
-    staleTime: Infinity,
+    staleTime: query => query.state.data?.pendingCount ? 0 : Infinity,
     queryFn: async ({ signal }): Promise<EventMapLocations> => {
       if (!school) throw new Error("School directory is unavailable");
       const client = getQueryClient();
       const context = school.city || school.name;
       const center = await client.fetchQuery(locationQuery(school.slug, `${school.name}, ${context}`, context));
       if (!center) throw new Error("School location could not be found");
-      const found: EventMapLocations = { center, locations: {}, failedCount: 0 };
+      signal.throwIfAborted();
+      const found: EventMapLocations = { center, locations: {}, failedCount: 0, pendingCount: sortedLocations.length };
+      // Keep React subscribed to the existing query while venues resolve. A slow
+      // venue must not hold the map, or already located events, behind a skeleton.
+      const publish = () => client.setQueryData<EventMapLocations>(queryKey, { ...found, locations: { ...found.locations } });
+      publish();
       let next = 0;
       // Repeated venues share one query. Bound concurrent lookups and stop scheduling
       // when this map unmounts or its school/filter selection changes.
@@ -88,14 +96,17 @@ export function eventMapLocationsQuery(schoolSlug: string, school: SchoolSummary
             const venue = venueName(location);
             if (!venue) {
               found.locations[location] = null;
-              continue;
+            } else {
+              found.locations[location] = await client.fetchQuery(locationQuery(school.slug, `${venue}, ${context}`, center.join(","), venue));
             }
-            found.locations[location] = await client.fetchQuery(locationQuery(school.slug, `${venue}, ${context}`, center.join(","), venue));
           } catch {
             signal.throwIfAborted();
             found.locations[location] = null;
             found.failedCount++;
           }
+          signal.throwIfAborted();
+          found.pendingCount--;
+          publish();
         }
       }));
       return found;

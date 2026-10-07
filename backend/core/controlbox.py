@@ -215,8 +215,7 @@ class EventViewsControl(_ControlModel):
     map_cluster_max_zoom: int = Field(ge=0, le=22)
     map_search_concurrency: int = Field(gt=0, le=10)
     map_search_timeout_seconds: int = Field(gt=0, le=60)
-    map_light_style: str = Field(pattern=r"^mapbox://styles/")
-    map_dark_style: str = Field(pattern=r"^mapbox://styles/")
+    map_style: str = Field(pattern=r"^mapbox://styles/")
 
 
 class EventDiscoveryControl(_ControlModel):

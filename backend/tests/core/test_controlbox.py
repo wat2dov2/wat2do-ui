@@ -716,7 +716,7 @@ def test_instagram_music_rejects_missing_chart_mapping(tmp_path):
         ("map_cluster_radius", 0),
         ("map_search_concurrency", 0),
         ("map_search_timeout_seconds", 0),
-        ("map_light_style", "https://invalid.example/style"),
+        ("map_style", "https://invalid.example/style"),
     ],
 )
 def test_event_view_controls_reject_invalid_configuration(tmp_path, field, value):

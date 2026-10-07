@@ -5,6 +5,8 @@ import { existsSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { runInNewContext } from "node:vm";
 import ts from "typescript";
+import { Calendar, type CalendarProps } from "react-big-calendar";
+import type { CalendarEvent } from "../src/features/events/lib/calendarEvents";
 import type { Event } from "../src/shared/types";
 
 type UIStoreModule = typeof import("../src/shared/store/ui.store");
@@ -13,8 +15,8 @@ const componentModules = new Map<string, object>();
 
 // Use the real React runtime, as in card-entrance.unit.spec.ts, without a browser.
 // Only the school/translation context and individual cards are fixtures.
-function loadComponent(path: string): object {
-  const cached = componentModules.get(path);
+function loadComponent(path: string, overrides?: Record<string, object>): object {
+  const cached = overrides ? undefined : componentModules.get(path);
   if (cached) return cached;
   const filename = new URL(`../src/${path}.tsx`, import.meta.url);
   const { outputText } = ts.transpileModule(readFileSync(filename, "utf8"), {
@@ -26,11 +28,13 @@ function loadComponent(path: string): object {
     },
   });
   const componentModule = { exports: {} };
-  componentModules.set(path, componentModule.exports);
+  if (!overrides) componentModules.set(path, componentModule.exports);
   const require = createRequire(filename);
   runInNewContext(outputText, {
     exports: componentModule.exports,
     require: (id: string) => {
+      if (overrides && id in overrides) return overrides[id];
+      if (id.endsWith(".css")) return {};
       if (id === "@/features/positions/hooks/usePositionStats") return { usePositionStats: () => ({ data: undefined }) };
       if (id === "next/navigation") return { useRouter: () => ({ replace() {}, push() {} }) };
       if (id.endsWith(".png")) return { src: "/logo.png", width: 57, height: 40 };
@@ -298,4 +302,86 @@ test("shared Select trigger supplies its disclosure chevron", () => {
   expect(html).toContain('data-slot="select-trigger"');
   expect(html.match(/<svg/g)).toHaveLength(1);
   expect(html).toContain('aria-hidden="true"');
+});
+
+test("calendar overflow uses the real month drilldown to change both the selected day and view", () => {
+  const states: unknown[] = [];
+  let stateIndex = 0;
+  const react = createRequire(import.meta.url)("react");
+  const { EventsCalendar } = loadComponent("features/events/components/EventsCalendar", {
+    react: {
+      ...react,
+      useMemo: (compute: () => unknown) => compute(),
+      useState: (initial: unknown) => {
+        const index = stateIndex++;
+        if (!(index in states)) states[index] = typeof initial === "function" ? initial() : initial;
+        return [states[index], (value: unknown) => { states[index] = value; }];
+      },
+    },
+  }) as typeof import("../src/features/events/components/EventsCalendar");
+  const render = () => {
+    stateIndex = 0;
+    const surface = EventsCalendar({ events: [event], school: "utsg", onEventClick: () => {} });
+    return surface.props.children.props.children.props as CalendarProps<CalendarEvent>;
+  };
+  let props = render();
+  props.onView!("month");
+  props = render();
+  type CalendarInstance = {
+    props: CalendarProps<CalendarEvent>;
+    getDrilldownView: (date: Date) => string;
+    handleDrillDown: (date: Date, view: string) => void;
+  };
+  const CalendarClass = (Calendar as unknown as {
+    ControlledComponent: { new(props: CalendarProps<CalendarEvent>): CalendarInstance; defaultProps: CalendarProps<CalendarEvent> };
+  }).ControlledComponent;
+  const calendar = new CalendarClass({ ...CalendarClass.defaultProps, ...props });
+  const Month = createRequire(import.meta.url)("react-big-calendar/lib/Month").default as new(props: object) => {
+    handleShowMore: (events: CalendarEvent[], date: Date, cell: object, slot: number, target: null) => void;
+  };
+  const month = new Month({
+    popup: calendar.props.popup,
+    doShowMoreDrillDown: calendar.props.doShowMoreDrillDown,
+    getDrilldownView: calendar.getDrilldownView,
+    onDrillDown: calendar.handleDrillDown,
+  });
+  const selectedDate = new Date(2026, 9, 20);
+  month.handleShowMore(props.events!, selectedDate, {}, 0, null);
+  props = render();
+  expect(props.date).toEqual(selectedDate);
+  expect(props.view).toBe("day");
+
+  const html = renderToStaticMarkup(createElement(props.components!.toolbar!, {
+    label: "October 2026", onNavigate: () => {}, onView: () => {}, view: "month", views: ["month", "week", "day"], date: selectedDate, localizer: props.localizer,
+  }));
+  expect(html).toContain("events.views.previous");
+  expect(html).toContain("events.views.next");
+  expect(html).not.toContain("filters.today");
+  expect(html).toContain("events.views.day");
+});
+
+test("calendar tiles retain host and cohost pictures and route selection to the shared event drawer", () => {
+  const require = createRequire(import.meta.url);
+  const react = require("react");
+  const selected: Event[] = [];
+  const listing: Event = {
+    ...event, club_logo_url: "https://example.com/host.png",
+    cohosts: [{ club_name: "Co-host Club", logo_url: "https://example.com/cohost.png" }],
+  } as Event;
+  const { EventsCalendar } = loadComponent("features/events/components/EventsCalendar", {
+    react: { ...react, useMemo: (compute: () => unknown) => compute(), useState: (initial: unknown) => [typeof initial === "function" ? initial() : initial, () => {}] },
+  }) as typeof import("../src/features/events/components/EventsCalendar");
+  const surface = EventsCalendar({ events: [listing], school: "utsg", onEventClick: item => selected.push(item) });
+  const props = surface.props.children.props.children.props as CalendarProps<CalendarEvent>;
+  const occurrence = props.events![0];
+  const { TooltipProvider } = loadComponent("shared/ui/tooltip") as typeof import("../src/shared/ui/tooltip");
+  const html = renderToStaticMarkup(createElement(TooltipProvider, null,
+    createElement(props.components!.event!, { event: occurrence, title: occurrence.title })));
+  expect(html).toContain(listing.title);
+  expect(html).toContain(listing.club);
+  expect(html).toContain('src="https://example.com/host.png"');
+  expect(html).toContain('src="https://example.com/cohost.png"');
+  expect(html).not.toContain("<button");
+  props.onSelectEvent!(occurrence, {} as React.SyntheticEvent<HTMLElement>);
+  expect(selected).toEqual([listing]);
 });

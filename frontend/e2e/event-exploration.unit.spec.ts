@@ -75,6 +75,35 @@ test("map lookups deduplicate venues and reuse session queries across filter cha
   expect(requests).toHaveLength(3);
 });
 
+test("map exposes the campus and ready venues while a slow lookup is still pending", async () => {
+  let finishSlow!: () => void;
+  const slow = new Promise<void>(resolve => { finishSlow = resolve; });
+  globalThis.fetch = async input => {
+    const name = new URL(String(input)).searchParams.get("q")!;
+    if (name.startsWith("Student Life Centre")) await slow;
+    return searchResponse([-80.54, 43.47]);
+  };
+  const query = eventMapLocationsQuery(school.slug, school, ["Davis Centre", "Student Life Centre"]);
+  const pending = getQueryClient().fetchQuery(query);
+  try {
+    await expect.poll(() => getQueryClient().getQueryData(query.queryKey)).toMatchObject({
+      center: [-80.54, 43.47], locations: { "Davis Centre": [-80.54, 43.47] }, pendingCount: 1,
+    });
+    const snapshot = getQueryClient().getQueryData(query.queryKey);
+    expect(getQueryClient().getQueryState(query.queryKey)?.fetchStatus).toBe("fetching");
+    finishSlow();
+    const result = await pending;
+    expect(result.pendingCount).toBe(0);
+    expect(getQueryClient().getQueryState(query.queryKey)?.fetchStatus).toBe("idle");
+    // Previously published query snapshots must not mutate behind React's back.
+    expect(snapshot).toMatchObject({ pendingCount: 1 });
+    expect(Reflect.get(snapshot as object, "locations")).not.toHaveProperty("Student Life Centre");
+  } finally {
+    finishSlow();
+    await pending;
+  }
+});
+
 test("map preserves located events when another venue lookup fails and rejects coarse pins", async () => {
   globalThis.fetch = async input => {
     const query = new URL(String(input)).searchParams.get("q")!;
@@ -117,4 +146,20 @@ test("map resolves room codes to buildings and rejects unrelated street matches"
   expect(result.locations["Wrong Venue"]).toBeNull();
   expect(requests).toContain("SLC, Waterloo");
   expect(requests.some(query => query.includes("2143") || query.includes("1302"))).toBe(false);
+});
+
+test("map searches full building names without requiring their printed abbreviation in the result", async () => {
+  const requests: string[] = [];
+  globalThis.fetch = async input => {
+    const query = new URL(String(input)).searchParams.get("q")!;
+    requests.push(query);
+    const name = query.startsWith("Science") ? "Science Teaching Complex" : query.startsWith("Mathematics") ? "Mathematics & Computer Building" : query.startsWith("Pearl") ? "Pearl Sullivan Engineering Building" : "University of Waterloo";
+    return searchResponse([-80.54, 43.47], "poi", name);
+  };
+  const query = eventMapLocationsQuery(school.slug, school, ["Science Teaching Complex (STC) 0020", "Mathematics and Computer (MC), room 2034", "Pearl Sullivan Engineering Building (PSE/E7), room 1200"]);
+  const result = await getQueryClient().fetchQuery(query);
+  expect(result.locations["Science Teaching Complex (STC) 0020"]).toEqual([-80.54, 43.47]);
+  expect(requests).toContain("Science Teaching Complex, Waterloo");
+  expect(result.locations["Mathematics and Computer (MC), room 2034"]).toEqual([-80.54, 43.47]);
+  expect(result.locations["Pearl Sullivan Engineering Building (PSE/E7), room 1200"]).toEqual([-80.54, 43.47]);
 });

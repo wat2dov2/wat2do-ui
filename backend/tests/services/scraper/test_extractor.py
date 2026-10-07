@@ -74,6 +74,11 @@ def test_extraction_attaches_source_fields_without_model_copying(monkeypatch, ca
     assert "Campus context: utsg." in prompt
     assert "takes precedence over campus context" in prompt
     assert "Never rename a host to match campus context" in prompt
+    assert "never to supply a missing venue" in prompt
+    assert "caption AND every relevant carousel image" in prompt
+    assert "including leading zeroes" in prompt
+    assert "registration link alone never means the event is online" in prompt
+    assert 'never invent a venue or substitute the school name or "On campus"' in prompt
     assert ('"description": string' in prompt) == (not caption or not caption.strip())
     assert '"school": string' not in prompt
     assert "https://example.com/image.jpg" not in prompt
@@ -250,6 +255,58 @@ def test_extraction_prompt_has_strict_event_and_position_eligibility_gates(monke
     assert '"Applications are open for our eight-week equity research training program"' in prompt
     assert '"Volunteers needed for our Welcome Week events; sign up below"' in prompt
     assert '"Try out for our varsity esports team"' in prompt
+
+
+@pytest.mark.live_llm
+@pytest.mark.skipif(not extractor.settings.openai_api_key, reason="OPENAI_API_KEY not configured")
+@pytest.mark.parametrize(
+    ("details", "required_location_parts"),
+    [
+        pytest.param(
+            "Venue: Science Teaching Complex (STC), room 0020.",
+            ["STC", "0020"],
+            id="campus-building-and-leading-zero-room",
+        ),
+        pytest.param(
+            "Venue: Uptown Hall, room 204, 123 King Street North, Waterloo, Ontario.",
+            ["Uptown Hall", "204", "123 King Street North", "Waterloo"],
+            id="off-campus-venue-room-and-address",
+        ),
+        pytest.param(
+            "This is an online event on Zoom. Registration is required.",
+            ["Online", "Zoom"],
+            id="explicit-online-platform",
+        ),
+        pytest.param(
+            "Register at https://example.com/register. The host office is in SLC 2101. "
+            "The venue for the event has not been provided.",
+            [],
+            id="host-office-and-registration-url-are-not-a-venue",
+        ),
+    ],
+)
+def test_live_extraction_uses_event_location_evidence(
+    monkeypatch, details, required_location_parts
+):
+    """Exercise venue completeness and unknown-location handling against the actual model."""
+    monkeypatch.setattr(extractor, "resolve_school_timezone", lambda _: "America/Toronto")
+    monkeypatch.setattr(extractor, "current_semester_end", lambda *args, **kwargs: None)
+    result = extractor.extract_post_content(
+        caption_text=(
+            "UW Tea Club invites you to our Tea Tasting on October 7, 2026, 6-7 PM. " + details
+        ),
+        image_urls=[],
+        post_created_at=datetime(2026, 10, 6, 12, tzinfo=ZoneInfo("America/Toronto")),
+        school="uwaterloo",
+    )
+
+    assert len(result.events) == 1
+    location = result.events[0]["location"]
+    if required_location_parts:
+        for part in required_location_parts:
+            assert part.casefold() in location.casefold()
+    else:
+        assert location == ""
 
 
 @pytest.mark.live_llm
