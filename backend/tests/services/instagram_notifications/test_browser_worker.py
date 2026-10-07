@@ -6,6 +6,7 @@ from concurrent.futures import ALL_COMPLETED
 from concurrent.futures import wait as wait_for_futures
 from dataclasses import replace
 from types import SimpleNamespace
+from urllib.parse import urlsplit
 
 import pytest
 
@@ -49,7 +50,7 @@ def isolated_browser(monkeypatch, tmp_path):
                 [
                     SimpleNamespace(
                         cancel_pending_request=lambda: None,
-                        read=lambda _: "/",
+                        current_page_path=lambda: "/",
                         current_account_username=lambda: ACCOUNT_USERNAME,
                         poll_until=lambda ready: ready(),
                     )
@@ -80,7 +81,10 @@ def _settling_executor(execute):
 
     def settled(job, *, session=None):
         try:
-            return execute(job, session=session)
+            result = execute(job, session=session)
+            if job.kind == "retrieval":
+                result = {**result, "account_username": session.current_account_username()}
+            return result
         finally:
             if session is not None:
                 session.cancel_pending_request()
@@ -574,7 +578,7 @@ def test_ten_retrievals_overlap_and_release_lock_only_after_cleanup(queue, monke
     cleaned = []
     sessions = [
         SimpleNamespace(
-            read=lambda _: "/",
+            current_page_path=lambda: "/",
             current_account_username=lambda: ACCOUNT_USERNAME,
             poll_until=lambda ready: ready(),
             cancel_pending_request=lambda i=i: cleaned.append(i),
@@ -593,7 +597,7 @@ def test_ten_retrievals_overlap_and_release_lock_only_after_cleanup(queue, monke
         with open(module.BROWSER_LOCK_PATH, "a+") as probe:
             with pytest.raises(BlockingIOError):
                 fcntl.flock(probe, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        return {"target_url": job.payload["url"]}
+        return {"target_url": job.payload["url"], "account_username": ACCOUNT_USERNAME}
 
     monkeypatch.setattr(module, "execute_job", _settling_executor(retrieve))
     assert module.process_next_job(queue)
@@ -605,7 +609,7 @@ def test_ten_retrievals_overlap_and_release_lock_only_after_cleanup(queue, monke
         fcntl.flock(probe, fcntl.LOCK_EX | fcntl.LOCK_NB)
 
 
-def test_parallel_challenge_pauses_queue_and_settles_each_tab(queue, monkeypatch):
+def test_parallel_native_challenge_guard_pauses_queue_and_settles_each_tab(queue, monkeypatch):
     ids = [
         queue.enqueue_retrieval(
             school="ubc",
@@ -616,12 +620,15 @@ def test_parallel_challenge_pauses_queue_and_settles_each_tab(queue, monkeypatch
         for i in range(2)
     ]
     cleaned = []
+
+    def guarded_navigation(*args, **kwargs):
+        raise module.BrowserSessionError("Instagram browser requires human account recovery")
+
     sessions = [
         SimpleNamespace(
-            read=lambda _: "/challenge/",
-            current_account_username=lambda: ACCOUNT_USERNAME,
-            poll_until=lambda ready: ready(),
             cancel_pending_request=lambda: cleaned.append(True),
+            navigate=guarded_navigation,
+            is_secondary_read_tab=False,
         )
         for _ in ids
     ]
@@ -630,9 +637,6 @@ def test_parallel_challenge_pauses_queue_and_settles_each_tab(queue, monkeypatch
         "BrowserTabPool",
         lambda _: SimpleNamespace(prepare=lambda job, count: (sessions, ACCOUNT_USERNAME)),
     )
-    monkeypatch.setattr(
-        module, "execute_job", lambda *args, **kw: pytest.fail("Challenge must block retrieval")
-    )
     assert module.process_next_job(queue)
     assert all(queue.get(job_id).state == "failed" for job_id in ids)
     assert "human account recovery" in queue.get_setting("paused")
@@ -640,26 +644,21 @@ def test_parallel_challenge_pauses_queue_and_settles_each_tab(queue, monkeypatch
     assert not module.process_next_job(queue)
 
 
-def test_parallel_login_redirect_that_clears_does_not_pause(queue, monkeypatch):
+def test_digest_loading_account_route_does_not_pause(queue, monkeypatch):
     ids = [
-        queue.enqueue_retrieval(
-            school="ubc",
-            recipient_id=RECIPIENT_ID,
-            account_username=ACCOUNT_USERNAME,
-            url=f"https://www.instagram.com/p/Transient{i}/",
-        )
+        queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, f"transient-login-{i}")
         for i in range(2)
     ]
 
     def session():
-        paths = iter(["/accounts/login/", "/", "/"])
+        paths = iter(["/accounts/", "/"])
 
         def poll(ready):
             assert ready() is False
             assert ready() is True
 
         return SimpleNamespace(
-            read=lambda _: next(paths),
+            current_page_path=lambda: next(paths),
             current_account_username=lambda: ACCOUNT_USERNAME,
             poll_until=poll,
             cancel_pending_request=lambda: None,
@@ -673,7 +672,7 @@ def test_parallel_login_redirect_that_clears_does_not_pause(queue, monkeypatch):
             prepare=lambda job, count: ([session() for _ in ids], ACCOUNT_USERNAME)
         ),
     )
-    monkeypatch.setattr(module, "execute_job", lambda job, **kw: {"target_url": job.payload["url"]})
+    monkeypatch.setattr(module, "execute_job", lambda job, **kw: {"status": "succeeded"})
     assert module.process_next_job(queue)
     assert all(queue.get(i).state == "succeeded" for i in ids)
     assert not queue.get_setting("paused", False)
@@ -692,7 +691,7 @@ def test_fast_tab_refills_before_slow_tab_finishes(queue, monkeypatch):
     refilled = threading.Event()
     sessions = [
         SimpleNamespace(
-            read=lambda _: "/",
+            current_page_path=lambda: "/",
             current_account_username=lambda: ACCOUNT_USERNAME,
             poll_until=lambda ready: ready(),
             cancel_pending_request=lambda: None,
@@ -711,11 +710,263 @@ def test_fast_tab_refills_before_slow_tab_finishes(queue, monkeypatch):
         if job.id == ids[10]:
             assert queue.get(ids[0]).state == "running"
             refilled.set()
-        return {"target_url": job.payload["url"]}
+        return {"target_url": job.payload["url"], "account_username": ACCOUNT_USERNAME}
 
     monkeypatch.setattr(module, "execute_job", retrieve)
     assert module.process_next_job(queue)
     assert all(queue.get(i).state == "succeeded" for i in ids)
+
+
+def test_blank_first_target_does_not_prevent_other_slots_visiting_their_own_targets(
+    queue, monkeypatch
+):
+    bad_url = "https://www.instagram.com/p/BlankFirst/"
+    good_url = "https://www.instagram.com/p/HealthySecond/"
+    ids = [
+        queue.enqueue_retrieval(
+            school="ubc",
+            recipient_id=RECIPIENT_ID,
+            account_username=ACCOUNT_USERNAME,
+            url=url,
+        )
+        for url in (bad_url, good_url)
+    ]
+    navigations = []
+    queries = []
+    sessions = []
+
+    for index in range(2):
+        state = SimpleNamespace(url=bad_url)
+
+        def navigate(url, *, reload=False, state=state, index=index):
+            navigations.append((index, url))
+            state.url = url
+
+        def poll(ready):
+            if not ready():
+                raise _BrowserPageUnavailable("The assigned target remains blank")
+
+        def query(source, state=state):
+            queries.append(state.url)
+            return {
+                "state": "succeeded",
+                "posts": [
+                    {
+                        "url": state.url,
+                        "ownerUsername": "club",
+                        "timestamp": "2026-10-07T12:00:00+00:00",
+                        "caption": "Event",
+                        "type": "Image",
+                        "coauthors": [],
+                        "displayUrl": "https://s.cdninstagram.com/fixture.jpg",
+                    }
+                ],
+            }
+
+        sessions.append(
+            SimpleNamespace(
+                navigate=navigate,
+                current_page_path=lambda state=state: urlsplit(state.url).path,
+                current_account_username=lambda state=state: (
+                    None if state.url == bad_url else ACCOUNT_USERNAME
+                ),
+                poll_until=poll,
+                query=query,
+                cancel_pending_request=lambda: None,
+                is_secondary_read_tab=False,
+            )
+        )
+
+    def prepare(job, count):
+        # Reproduce the old pool broadcast. A slot must reach its own target
+        # before waiting for that target's readiness, even after this stale page.
+        for session in sessions:
+            session.navigate(job.payload["url"], reload=True)
+        return sessions, ACCOUNT_USERNAME
+
+    monkeypatch.setattr(module, "BrowserTabPool", lambda _: SimpleNamespace(prepare=prepare))
+    assert module.process_next_job(queue)
+    assert queue.get(ids[1]).state == "succeeded"
+    assert queue.get(ids[1]).attempts == 1
+    assert queue.get(ids[0]).state == "failed"
+    assert queue.get(ids[0]).attempts == module.CONTROL.ingestion_retry_limit
+    assert good_url in queries
+    assert (1, good_url) in navigations
+    assert not queue.get_setting("paused", False)
+
+
+def test_retrieval_refill_reloads_its_exact_target_before_owned_readiness(queue, monkeypatch):
+    urls = [f"https://www.instagram.com/p/RefillTarget{index}/" for index in range(2)]
+    ids = [
+        queue.enqueue_retrieval(
+            school="ubc",
+            recipient_id=RECIPIENT_ID,
+            account_username=ACCOUNT_USERNAME,
+            url=urls[0],
+        )
+    ]
+    state = SimpleNamespace(url="https://www.instagram.com/p/Stale/")
+    navigations = []
+    queries = []
+
+    def navigate(url, *, reload):
+        navigations.append((url, reload))
+        state.url = url
+
+    def poll(ready):
+        assert ready(), "Readiness must inspect the assigned target rather than the stale tab"
+
+    def query(source):
+        queries.append(state.url)
+        if state.url == urls[0]:
+            ids.append(
+                queue.enqueue_retrieval(
+                    school="ubc",
+                    recipient_id=RECIPIENT_ID,
+                    account_username=ACCOUNT_USERNAME,
+                    url=urls[1],
+                )
+            )
+        return {
+            "state": "succeeded",
+            "posts": [
+                {
+                    "url": state.url,
+                    "ownerUsername": "club",
+                    "timestamp": "2026-10-07T12:00:00+00:00",
+                    "caption": "Event",
+                    "type": "Image",
+                    "coauthors": [],
+                    "displayUrl": "https://s.cdninstagram.com/fixture.jpg",
+                }
+            ],
+        }
+
+    session = SimpleNamespace(
+        navigate=navigate,
+        current_page_path=lambda: urlsplit(state.url).path,
+        current_account_username=lambda: ACCOUNT_USERNAME if state.url in urls else None,
+        poll_until=poll,
+        query=query,
+        cancel_pending_request=lambda: pytest.fail("Successful query owns settlement"),
+    )
+    monkeypatch.setattr(
+        module,
+        "BrowserTabPool",
+        lambda _: SimpleNamespace(prepare=lambda *args: ([session], ACCOUNT_USERNAME)),
+    )
+    assert module.process_next_job(queue)
+    assert navigations == [(url, True) for url in urls]
+    assert queries == urls
+    assert all(queue.get(job_id).state == "succeeded" for job_id in ids)
+    assert all(queue.get(job_id).attempts == 1 for job_id in ids)
+
+
+@pytest.mark.parametrize(
+    "result",
+    [
+        None,
+        {},
+        {"account_username": None},
+        {"account_username": []},
+        {"account_username": "untrusted response text"},
+        {"account_username": "wat2do.other"},
+    ],
+)
+def test_unverified_retrieval_identity_never_reaches_queue_results(queue, monkeypatch, result):
+    job_id = queue.enqueue_retrieval(
+        school="ubc",
+        recipient_id=RECIPIENT_ID,
+        account_username=ACCOUNT_USERNAME,
+        url="https://www.instagram.com/p/UnverifiedIdentity/",
+    )
+    queue.set_setting("retrieval_pool_account", ACCOUNT_USERNAME)
+    session = SimpleNamespace(
+        current_page_path=lambda: pytest.fail("Retrieval readiness belongs to its target owner")
+    )
+    monkeypatch.setattr(
+        module,
+        "BrowserTabPool",
+        lambda _: SimpleNamespace(prepare=lambda *args: ([session], ACCOUNT_USERNAME)),
+    )
+    monkeypatch.setattr(module, "execute_job", lambda *args, **kwargs: result)
+    assert module.process_next_job(queue)
+    assert queue.get(job_id).state == "pending"
+    assert queue.get(job_id).result is None
+    assert queue.get(job_id).attempts == 1
+    assert queue.get_setting("retrieval_pool_account") is None
+    assert not queue.get_setting("paused", False)
+
+
+def test_public_retrieval_keeps_a_verified_personal_account_context(queue, monkeypatch):
+    job_id = queue.enqueue_retrieval(
+        school="ubc",
+        recipient_id=RECIPIENT_ID,
+        account_username=ACCOUNT_USERNAME,
+        url="https://www.instagram.com/p/PersonalContext/",
+    )
+    session = SimpleNamespace()
+    monkeypatch.setattr(
+        module,
+        "BrowserTabPool",
+        lambda _: SimpleNamespace(prepare=lambda *args: ([session], "student.personal")),
+    )
+    monkeypatch.setattr(
+        module,
+        "execute_job",
+        lambda *args, **kwargs: {"account_username": "student.personal", "posts": []},
+    )
+    assert module.process_next_job(queue)
+    assert queue.get(job_id).state == "succeeded"
+
+
+@pytest.mark.parametrize(
+    "redirect", ["/accounts/login/", "/accounts/suspended/", "/challenge/", "/checkpoint/"]
+)
+def test_target_auth_redirect_pauses_before_any_media_query_or_publication(
+    queue, monkeypatch, redirect
+):
+    from services.instagram_notifications import browser_session
+
+    job_id = queue.enqueue_retrieval(
+        school="ubc",
+        recipient_id=RECIPIENT_ID,
+        account_username=ACCOUNT_USERNAME,
+        url="https://www.instagram.com/p/AuthRedirect/",
+    )
+    state = SimpleNamespace(path=f"/{ACCOUNT_USERNAME}/", navigated=[])
+    cancellations = []
+
+    def bridge(source, timeout):
+        if source == "window.location.pathname":
+            return state.path
+        if source == browser_session._cancel_request_source():
+            cancellations.append(True)
+            return "settled"
+        if source.startswith("delete window["):
+            return "cleared"
+        pytest.fail("An auth redirect must fail before public media queries")
+
+    session = browser_session.BrowserInstagramSession(
+        javascript_runner=bridge, sleep=lambda _: None, allow_account_switch=False
+    )
+
+    def navigate(url, *, reload):
+        state.navigated.append((url, reload))
+        state.path = redirect
+
+    monkeypatch.setattr(session, "navigate", navigate)
+    monkeypatch.setattr(
+        module,
+        "BrowserTabPool",
+        lambda _: SimpleNamespace(prepare=lambda *args: ([session], ACCOUNT_USERNAME)),
+    )
+    assert module.process_next_job(queue)
+    assert state.navigated == [(queue.get(job_id).payload["url"], True)]
+    assert queue.get(job_id).state == "failed"
+    assert queue.get(job_id).result is None
+    assert "human account recovery" in queue.get_setting("paused")
+    assert len(cancellations) == 1
 
 
 def test_transient_retrieval_timeout_retries_bounded_without_global_pause(queue, monkeypatch):
@@ -726,7 +977,7 @@ def test_transient_retrieval_timeout_retries_bounded_without_global_pause(queue,
         url="https://www.instagram.com/p/Retry/",
     )
     session = SimpleNamespace(
-        read=lambda _: "/",
+        current_page_path=lambda: "/",
         current_account_username=lambda: ACCOUNT_USERNAME,
         poll_until=lambda ready: ready(),
         cancel_pending_request=lambda: None,
@@ -757,7 +1008,7 @@ def test_stream_uses_idle_tabs_for_jobs_arriving_after_start(queue, monkeypatch)
     arrived = threading.Event()
     sessions = [
         SimpleNamespace(
-            read=lambda _: "/",
+            current_page_path=lambda: "/",
             current_account_username=lambda: ACCOUNT_USERNAME,
             poll_until=lambda ready: ready(),
             cancel_pending_request=lambda: None,
@@ -782,7 +1033,7 @@ def test_stream_uses_idle_tabs_for_jobs_arriving_after_start(queue, monkeypatch)
         else:
             assert queue.get(first).state == "running"
             arrived.set()
-        return {"target_url": job.payload["url"]}
+        return {"target_url": job.payload["url"], "account_username": ACCOUNT_USERNAME}
 
     monkeypatch.setattr(module, "execute_job", retrieve)
     assert module.process_next_job(queue)
@@ -825,7 +1076,7 @@ def test_retrieval_stream_keeps_refilling_past_one_job_timeout(queue, monkeypatc
         url="https://www.instagram.com/p/LongStream/",
     )
     session = SimpleNamespace(
-        read=lambda _: "/",
+        current_page_path=lambda: "/",
         current_account_username=lambda: ACCOUNT_USERNAME,
         poll_until=lambda ready: ready(),
         cancel_pending_request=lambda: None,
@@ -851,7 +1102,7 @@ def test_retrieval_stream_keeps_refilling_past_one_job_timeout(queue, monkeypatc
                 )
             )
             time.sleep(0.02)
-        return {"target_url": job.payload["url"]}
+        return {"target_url": job.payload["url"], "account_username": ACCOUNT_USERNAME}
 
     monkeypatch.setattr(module, "execute_job", retrieve)
     assert module.process_next_job(queue)
@@ -908,7 +1159,7 @@ def test_manual_account_switch_drains_before_bounded_retry(queue, monkeypatch, p
 
             sessions.append(
                 SimpleNamespace(
-                    read=lambda _: "/",
+                    current_page_path=lambda: "/",
                     current_account_username=current,
                     poll_until=lambda ready: ready(),
                     cancel_pending_request=lambda i=i: drained.set() if i == 1 else None,
@@ -925,7 +1176,7 @@ def test_manual_account_switch_drains_before_bounded_retry(queue, monkeypatch, p
     assert module.process_next_job(queue)
     assert queue.get(ids[0]).state == "pending"
     assert queue.get(ids[1]).state == ("pending" if persistent else "succeeded")
-    assert executions == ([] if persistent else [ids[1]])
+    assert executions == (ids if kind == "retrieval" else [] if persistent else [ids[1]])
     assert not queue.get_setting("paused", False)
     for _ in range(module.CONTROL.ingestion_retry_limit - 1 if persistent else 1):
         assert module.process_next_job(queue)
@@ -933,7 +1184,11 @@ def test_manual_account_switch_drains_before_bounded_retry(queue, monkeypatch, p
     assert job.state == ("failed" if persistent else "succeeded")
     if persistent:
         assert job.attempts == module.CONTROL.ingestion_retry_limit
-        assert "expected ubc.wat2do.io, found wat2do.uwaterloo" in job.error
+        assert (
+            "does not match the verified primary account"
+            if kind == "retrieval"
+            else "expected ubc.wat2do.io, found wat2do.uwaterloo"
+        ) in job.error
     assert not queue.get_setting("paused", False)
 
 
@@ -985,7 +1240,7 @@ def test_safe_read_failure_retries_without_pausing_or_exposing_final_failure(
     calls = []
     settlements = []
     session = SimpleNamespace(
-        read=lambda _: "/",
+        current_page_path=lambda: "/",
         current_account_username=lambda: ACCOUNT_USERNAME,
         poll_until=lambda ready: ready(),
         cancel_pending_request=lambda: settlements.append(True),
@@ -1000,7 +1255,7 @@ def test_safe_read_failure_retries_without_pausing_or_exposing_final_failure(
         calls.append(job.id)
         if len(calls) == 1:
             raise failure_type("Recoverable browser read failed")
-        return {"status": "succeeded"}
+        return {"status": "succeeded", "account_username": ACCOUNT_USERNAME}
 
     monkeypatch.setattr(module, "execute_job", _settling_executor(operation))
     assert module.process_next_job(queue)
@@ -1050,7 +1305,7 @@ def test_digest_mismatch_during_query_stays_running_until_other_tab_settles(queu
     def prepare(job, count):
         sessions = [
             SimpleNamespace(
-                read=lambda _: "/",
+                current_page_path=lambda: "/",
                 current_account_username=lambda: ACCOUNT_USERNAME,
                 poll_until=lambda ready: ready(),
                 cancel_pending_request=lambda i=i: settled.set() if i == 1 else None,
@@ -1094,7 +1349,7 @@ def test_aged_engagement_yields_stream_only_after_active_reads_settle(queue, mon
     later_ids = []
     cleaned = threading.Event()
     session = SimpleNamespace(
-        read=lambda _: "/",
+        current_page_path=lambda: "/",
         current_account_username=lambda: ACCOUNT_USERNAME,
         poll_until=lambda ready: ready(),
         cancel_pending_request=lambda: cleaned.set(),
@@ -1203,7 +1458,7 @@ def test_worker_heartbeat_continues_while_browser_preparation_blocks(queue, monk
             blocked()
             return [
                 SimpleNamespace(
-                    read=lambda _: "/",
+                    current_page_path=lambda: "/",
                     current_account_username=lambda: ACCOUNT_USERNAME,
                     poll_until=lambda ready: ready(),
                     cancel_pending_request=lambda: None,
@@ -1329,7 +1584,7 @@ def test_unconfirmed_secondary_retirement_preserves_cancellation_pause(queue, mo
         cancel_pending_request=cancel,
         retire_unresponsive_read_tab=retire,
         is_secondary_read_tab=True,
-        read=lambda _: "/",
+        current_page_path=lambda: "/",
         current_account_username=lambda: ACCOUNT_USERNAME,
         poll_until=lambda ready: ready(),
     )
@@ -1403,7 +1658,7 @@ def test_all_fourteen_reads_drain_before_deferred_cleanup_and_no_slots_refill(
 
     sessions = [
         SimpleNamespace(
-            read=lambda _: "/",
+            current_page_path=lambda: "/",
             current_account_username=lambda: ACCOUNT_USERNAME,
             poll_until=lambda ready: ready(),
             is_secondary_read_tab=True,
@@ -1433,7 +1688,7 @@ def test_all_fourteen_reads_drain_before_deferred_cleanup_and_no_slots_refill(
             )
             raise _BrowserPageUnavailable("The read operation did not finish")
         session.cancel_pending_request()
-        return {"status": "succeeded"}
+        return {"status": "succeeded", "account_username": ACCOUNT_USERNAME}
 
     monkeypatch.setattr(
         browser_ingestion,
@@ -1481,8 +1736,13 @@ def test_confirmed_auth_failure_survives_deferred_secondary_cleanup(
             completed_payload={"state": "failed", "reason": "auth_required"},
         )
 
+    def page_path():
+        if auth_source == "readiness":
+            raise module.BrowserSessionError("Instagram browser requires human account recovery")
+        return "/"
+
     session = SimpleNamespace(
-        read=lambda _: "/challenge/" if auth_source == "readiness" else "/",
+        current_page_path=page_path,
         current_account_username=lambda: ACCOUNT_USERNAME,
         poll_until=lambda ready: ready(),
         is_secondary_read_tab=True,
@@ -1550,7 +1810,7 @@ def test_interruption_settles_all_unobserved_secondary_cleanup_before_releasing_
 
     sessions = [
         SimpleNamespace(
-            read=lambda _: "/",
+            current_page_path=lambda: "/",
             current_account_username=lambda: ACCOUNT_USERNAME,
             poll_until=lambda ready, i=index: poll(i, ready),
             is_secondary_read_tab=True,
@@ -1564,13 +1824,16 @@ def test_interruption_settles_all_unobserved_secondary_cleanup_before_releasing_
         "BrowserTabPool",
         lambda _: SimpleNamespace(prepare=lambda *args: (sessions, ACCOUNT_USERNAME)),
     )
+
+    def failed_retrieval(session, *args, **kwargs):
+        session.poll_until(lambda: True)
+        raise _BrowserPageUnavailable("The read operation did not finish")
+
     monkeypatch.setattr(
         browser_ingestion,
         "BrowserInstagramRetriever",
-        lambda _: SimpleNamespace(
-            retrieve=lambda *args, **kwargs: (_ for _ in ()).throw(
-                _BrowserPageUnavailable("The read operation did not finish")
-            )
+        lambda session: SimpleNamespace(
+            retrieve=lambda *args, **kwargs: failed_retrieval(session, *args, **kwargs)
         ),
     )
 
@@ -1618,7 +1881,7 @@ def test_closed_secondary_stops_refills_and_drains_before_pool_repair(queue, mon
     monkeypatch.setattr(queue, "set_setting", set_setting)
     sessions = [
         SimpleNamespace(
-            read=lambda _: "/",
+            current_page_path=lambda: "/",
             current_account_username=lambda: ACCOUNT_USERNAME,
             poll_until=lambda ready: ready(),
             cancel_pending_request=lambda i=i: healthy_settled.set() if i == 1 else None,
@@ -1714,17 +1977,12 @@ def test_blocked_source_does_not_delay_other_source_pollers(queue, monkeypatch, 
 
 
 @pytest.mark.parametrize("failed_read", ["initial_path", "login_recheck"])
-def test_transient_pathname_read_recovers_without_spending_another_job_attempt(
+def test_digest_transient_pathname_read_recovers_without_spending_another_job_attempt(
     queue, monkeypatch, failed_read
 ):
     from services.instagram_notifications import browser_session
 
-    job_id = queue.enqueue_retrieval(
-        school="ubc",
-        recipient_id=RECIPIENT_ID,
-        account_username=ACCOUNT_USERNAME,
-        url="https://www.instagram.com/p/PathReadRetry/",
-    )
+    job_id = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "path-read-retry")
     pathname_reads = []
 
     def bridge(source, _timeout):
@@ -1766,5 +2024,5 @@ def test_transient_pathname_read_recovers_without_spending_another_job_attempt(
     assert queue.get(job_id).state == "succeeded"
     assert queue.get(job_id).attempts == 1
     assert executions == [job_id]
-    assert len(pathname_reads) == (2 if failed_read == "initial_path" else 4)
+    assert len(pathname_reads) == (2 if failed_read == "initial_path" else 3)
     assert not queue.get_setting("paused", False)

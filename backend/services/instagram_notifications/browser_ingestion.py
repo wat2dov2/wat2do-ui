@@ -77,14 +77,16 @@ class BrowserInstagramRetriever:
         profile = _PROFILE_PATH.fullmatch(urlsplit(target).path)
         # Native navigation works even when Instagram's home renderer is blank.
         # The native owner refuses to leave a login/challenge recovery page.
-        self.session.navigate(target)
-        self.session.poll_until(
-            lambda: (
-                self.session.read("window.location.pathname").strip("/")
-                == urlsplit(target).path.strip("/")
+        self.session.navigate(target, reload=True)
+
+        def ready():
+            path = self.session.current_page_path()
+            return (
+                path.strip("/") == urlsplit(target).path.strip("/")
                 and self.session.current_account_username() is not None
             )
-        )
+
+        self.session.poll_until(ready)
         username = self._active_account()
         endpoint = (
             f"/api/v1/users/web_profile_info/?username={profile[1]}"

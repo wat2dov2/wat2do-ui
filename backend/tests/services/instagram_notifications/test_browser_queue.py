@@ -555,15 +555,78 @@ def test_overdue_backlog_yields_retrieval_but_finishes_current_school_before_swi
     assert _complete_next(queue).id == remaining_read
 
 
-def test_safe_read_retry_never_exposes_a_terminal_failure_to_waiting_caller(queue):
-    job_id = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "read-retry")
+@pytest.mark.parametrize("kind", ["digest", "retrieval"])
+def test_safe_read_retry_preserves_diagnostic_reason_without_exposing_terminal_failure(queue, kind):
+    job_id = (
+        queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "read-retry")
+        if kind == "digest"
+        else queue.enqueue_retrieval(
+            school="ubc",
+            recipient_id=RECIPIENT_ID,
+            account_username=ACCOUNT_USERNAME,
+            url="https://www.instagram.com/p/ReadRetry/",
+        )
+    )
     queue.claim_next()
-    queue.finish(job_id, error="Transient bridge failure", requeue=True)
+    queue.finish(
+        job_id,
+        result={"private_details": "must-not-be-logged"},
+        error="Transient bridge failure",
+        requeue=True,
+    )
     job = queue.get(job_id)
     assert job.state == "pending"
     assert job.error is None
+    assert job.result is None
     assert job.attempts == 1
+    queue.record_diagnostic("pending", job)
+    with queue._connect() as db:
+        assert db.execute("SELECT started_at FROM jobs WHERE id=?", (job_id,)).fetchone()[0] is None
+        events = [
+            json.loads(row[0])
+            for row in db.execute("SELECT event FROM diagnostic_events ORDER BY created_at")
+        ]
+    assert [(event["payload"]["state"], event["payload"]["reason"]) for event in events] == [
+        ("queued", None),
+        ("retrying", "Transient bridge failure"),
+        ("pending", None),
+    ]
+    assert events[1]["payload"]["job_id"] == job_id
+    assert events[1]["payload"]["kind"] == kind
+    assert events[1]["ig_account"] == ACCOUNT_USERNAME
+    assert events[1]["post_url"] == (
+        "https://www.instagram.com/p/ReadRetry/" if kind == "retrieval" else None
+    )
+    assert set(events[1]["payload"]) == {"state", "job_id", "kind", "reason", "recorded_at"}
+    assert "must-not-be-logged" not in json.dumps(events[1])
     assert queue.claim_next().attempts == 2
+
+
+@pytest.mark.parametrize("state", ["missing", "pending", "succeeded", "failed", "cancelled"])
+def test_noop_safe_read_requeue_does_not_record_retry_diagnostics(queue, state):
+    job_id = (
+        "missing-read"
+        if state == "missing"
+        else queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "no-retry")
+    )
+    if state in {"succeeded", "failed"}:
+        assert queue.claim_next().id == job_id
+        queue.finish(job_id, error="Previous failure" if state == "failed" else None)
+    elif state == "cancelled":
+        queue.cancel(job_id)
+    with queue._connect() as db:
+        events = db.execute("SELECT event FROM diagnostic_events ORDER BY created_at").fetchall()
+    queue.finish(job_id, error="Transient bridge failure", requeue=True)
+    job = queue.get(job_id)
+    if state == "missing":
+        assert job is None
+    else:
+        assert job.state == state
+    with queue._connect() as db:
+        assert (
+            db.execute("SELECT event FROM diagnostic_events ORDER BY created_at").fetchall()
+            == events
+        )
 
 
 def test_automatic_retry_cannot_repeat_an_engagement(queue):
@@ -572,6 +635,8 @@ def test_automatic_retry_cannot_repeat_an_engagement(queue):
     with pytest.raises(ValueError, match="Engagement cannot"):
         queue.finish(job_id, error="Uncertain click", requeue=True)
     assert queue.get(job_id).state == "running"
+    with queue._connect() as db:
+        assert db.execute("SELECT COUNT(*) FROM diagnostic_events").fetchone()[0] == 1
 
 
 def test_paused_queue_does_not_claim_even_when_worker_observed_resume_earlier(queue):

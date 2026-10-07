@@ -409,6 +409,16 @@ class BrowserInstagramSession:
             monotonic=self._monotonic,
         ).strip()
 
+    def current_page_path(self) -> str:
+        """Allow a bounded account transition, then reject human recovery routes."""
+        path = self.read("window.location.pathname")
+        if path.startswith("/accounts/login"):
+            self._sleep(min(_CONTROL.account_transition_grace_seconds, self._remaining_timeout()))
+            path = self.read("window.location.pathname")
+        if path.startswith(("/accounts/login", "/accounts/suspended", "/challenge", "/checkpoint")):
+            raise BrowserSessionError("Instagram browser requires human account recovery")
+        return path
+
     def navigate(self, url: str, *, reload: bool = False) -> str:
         """Navigate through Brave's native URL setter without waiting on a renderer."""
         target = urlsplit(url)
@@ -1286,9 +1296,7 @@ class BrowserTabPool:
             javascript_runner=_PinnedBraveJavascriptRunner(survivors[0], window_id=window_id),
             job_timeout_seconds=_CONTROL.interaction_timeout_seconds,
         )
-        path = primary.read("window.location.pathname")
-        if path.startswith(("/accounts/login", "/accounts/suspended", "/challenge", "/checkpoint")):
-            raise BrowserSessionError("Instagram browser requires human account recovery")
+        path = primary.current_page_path()
         username = None if path == "/" else primary.current_account_username()
         if username is None:
             # Instagram's home endpoint can be a complete blank/error document
@@ -1431,16 +1439,12 @@ class BrowserTabPool:
         selected = secondary_sessions[:count]
         for session in selected:
             session.reset_job_deadline(_CONTROL.job_timeout_seconds)
-        # Start all reloads before waiting. Secondary tabs may retain stale DOM
-        # identity after an account switch; reload them under the same lock.
-        if job.kind == "digest" or self.queue.get_setting("retrieval_pool_account") != username:
+        # Digest requests need refreshed identity after their serialized switch.
+        # Public retrievals own navigation and readiness on each assigned target.
+        if job.kind == "digest":
             for session in selected:
-                target = (
-                    job.payload["url"]
-                    if job.kind == "retrieval"
-                    else _account_profile_url(username)
-                )
-                session.navigate(target, reload=True)
+                session.navigate(_account_profile_url(username), reload=True)
         if job.kind == "retrieval":
+            # Retain only a verified public-profile bootstrap hint for repairs.
             self.queue.set_setting("retrieval_pool_account", username)
         return selected, username

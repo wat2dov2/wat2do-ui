@@ -128,6 +128,7 @@ Queries prove their terminal result and settled request state in one atomic brow
 Only idempotent reads, inventory, and cleanup retry within `bridge_retry_limit`; uncertain engagement clicks are never replayed.
 Navigation uses the pinned tab's native URL setter, so blank or unresponsive page JavaScript cannot block the navigation needed to recover it.
 Retrieval tabs open their actual post/profile targets before readiness checks; digest preparation uses the verified account's public profile instead of relying on a blank home feed.
+Each retrieval reloads only its assigned target and verifies the batch account before publishing its result, so an unavailable first target cannot block unrelated slots.
 Primary initialization recovers a blank normal page through the existing public-profile bootstrap before checking the logged-in navigation identity.
 Login, suspension, and challenge routes retain their recovery hold; loading documents wait within the same readiness deadline.
 An unresponsive secondary read tab may be retired only by closing its exact registered document and verifying absence.
@@ -488,6 +489,7 @@ Publishing remains an explicit action in the admin page.
 
 App Diagnostics has a Browser worker tab for structured queue, execution, completion, failure, pause, and resume events.
 Events are persisted in the local queue before the background collector forwards them to the existing `automate_logs` table.
+Safe read retries retain their failure reason in a retrying event while clearing the pending job's error fields.
 Failed uploads remain local for the next collector pass, without holding the browser lock during network writes.
 The admin-only log endpoint filters these events by `sender_id=instagram-browser-worker`.
 The tab polls every three seconds; the worker forwards events on its existing source collection interval.

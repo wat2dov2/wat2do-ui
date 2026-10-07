@@ -3,6 +3,7 @@
   "viewport_warm_timeout_seconds": 3,
   "primary_minimum_viewport_width": 1024,
   "interaction_timeout_seconds": 30,
+  "account_transition_grace_seconds": 2,
   "secondary_cleanup_timeout_seconds": 5,
   "poll_interval_seconds": 0.25,
   "worker_poll_interval_seconds": 0.5,

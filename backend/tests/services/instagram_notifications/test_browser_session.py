@@ -4,15 +4,18 @@ import subprocess
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
+from copy import deepcopy
 from types import SimpleNamespace
 
 import pytest
 
 from services.instagram_notifications import browser_session as browser
+from services.instagram_notifications.browser_ingestion import BrowserInstagramRetriever
 from tests.services.instagram_notifications.test_browser_engagement import (
     _DOM_ADAPTER,
     _FixtureParser,
 )
+from tests.services.instagram_notifications.test_browser_ingestion import POST
 
 
 @pytest.mark.parametrize(
@@ -983,7 +986,7 @@ def test_pool_caps_instagram_tabs_and_repairs_closed_slots(monkeypatch):
         "BrowserInstagramSession",
         lambda **kw: SimpleNamespace(
             run=lambda _: "/",
-            read=lambda _: "/wat2do.ubc/",
+            current_page_path=lambda: "/wat2do.ubc/",
             current_account_username=lambda: "wat2do.ubc",
             cancel_pending_request=lambda: None,
             poll_until=lambda ready: ready(),
@@ -1008,7 +1011,7 @@ def test_pool_caps_instagram_tabs_and_repairs_closed_slots(monkeypatch):
     assert settings["browser_window_id"] == "99"
 
 
-def test_public_pool_only_reloads_after_account_context_changes(monkeypatch):
+def test_public_pool_records_verified_bootstrap_hint_without_navigating_targets(monkeypatch):
     from types import SimpleNamespace
 
     settings = {"browser_tab_ids": ["1", "2"]}
@@ -1037,12 +1040,64 @@ def test_public_pool_only_reloads_after_account_context_changes(monkeypatch):
         payload={"url": "https://www.instagram.com/p/TARGET/"},
     )
     pool.prepare(job, 2)
-    assert len(reloads) == 1
+    assert reloads == []
+    assert settings["retrieval_pool_account"] == "wat2do.ubc"
     pool.prepare(job, 2)
-    assert len(reloads) == 1
-    current[0] = "wat2do.ca"
+    assert reloads == []
+    current[0] = "student.personal"
     pool.prepare(job, 2)
-    assert len(reloads) == 2
+    assert reloads == []
+    assert settings["retrieval_pool_account"] == "student.personal"
+
+
+def test_fourteen_retrieval_slots_navigate_only_their_own_assigned_target(monkeypatch):
+    ids = [str(index) for index in range(1, 16)]
+    settings = {"browser_tab_ids": ids, "browser_window_id": "99"}
+    navigations = []
+    targets = [f"https://www.instagram.com/p/TARGET{index}/" for index in range(14)]
+
+    def make_session(**kwargs):
+        tab_id = kwargs["javascript_runner"]._tab_id
+        page = {"url": "https://www.instagram.com/wat2do.yorku/"}
+
+        def navigate(url, **options):
+            navigations.append((tab_id, url))
+            page["url"] = url
+
+        return SimpleNamespace(
+            tab_id=tab_id,
+            cancel_pending_request=lambda: None,
+            current_account_username=lambda: "wat2do.uwaterloo",
+            reset_job_deadline=lambda timeout: None,
+            navigate=navigate,
+            current_page_path=lambda: page["url"].split("instagram.com", 1)[1],
+            poll_until=lambda completed: (
+                completed() or pytest.fail("Target must precede readiness")
+            ),
+            query=lambda source: {
+                "state": "succeeded",
+                "posts": [{**deepcopy(POST), "url": page["url"]}],
+            },
+        )
+
+    monkeypatch.setattr(browser, "BrowserInstagramSession", make_session)
+    monkeypatch.setattr(browser.BrowserTabPool, "ensure_capacity", lambda _, **kwargs: ids)
+    queue = SimpleNamespace(
+        get_setting=lambda key, default=None: settings.get(key, default),
+        set_setting=lambda key, value: settings.update({key: value}),
+    )
+    sessions, username = browser.BrowserTabPool(queue).prepare(
+        SimpleNamespace(
+            kind="retrieval", account_username="wat2do.uwaterloo", payload={"url": targets[0]}
+        ),
+        15,
+    )
+    assert navigations == []
+    assert username == "wat2do.uwaterloo" and [session.tab_id for session in sessions] == ids[1:]
+    for session, target in zip(sessions, targets, strict=True):
+        result = BrowserInstagramRetriever(session).retrieve(target, cutoff_days=7)
+        assert result["target_url"] == target and result["posts"][0]["url"] == target
+    assert navigations == list(zip(ids[1:], targets, strict=True))
 
 
 def test_pool_waits_for_username_and_captures_the_readable_value():
@@ -1095,6 +1150,7 @@ def test_primary_public_bootstrap_recovers_blank_routes_and_preserves_auth_guard
     navigations = []
     page = {"path": path, "recovered": False}
     primary = SimpleNamespace()
+    current_page_path = browser.BrowserInstagramSession.current_page_path
 
     def navigate(url, *, reload):
         navigations.append((url, reload))
@@ -1104,6 +1160,9 @@ def test_primary_public_bootstrap_recovers_blank_routes_and_preserves_auth_guard
         assert kwargs["javascript_runner"]._tab_id == "1"
         assert kwargs["job_timeout_seconds"] == browser._CONTROL.interaction_timeout_seconds
         primary.read = lambda source: page["path"]
+        primary._sleep = lambda seconds: None
+        primary._remaining_timeout = lambda: browser._CONTROL.interaction_timeout_seconds
+        primary.current_page_path = lambda: current_page_path(primary)
         primary.current_account_username = lambda: actual_username if page["recovered"] else None
         primary.navigate = navigate
         primary.poll_until = lambda ready: ready() or pytest.fail("Recovery must precede readiness")
@@ -1190,6 +1249,92 @@ def test_readiness_does_not_swallow_auth_account_or_desktop_errors(error):
             sleep=lambda _: pytest.fail("Never retry this error")
         ).poll_until(completed)
     assert raised.value is error and calls == [True]
+
+
+@pytest.mark.parametrize("path", ["/", "/wat2do.uwaterloo/", "/p/PUBLIC/"])
+def test_current_page_path_returns_normal_routes_without_grace_or_mutation(path):
+    calls = []
+
+    def runner(source, timeout):
+        calls.append(source)
+        return path
+
+    session = browser.BrowserInstagramSession(
+        javascript_runner=runner, sleep=lambda _: pytest.fail("Normal routes need no grace")
+    )
+    assert session.current_page_path() == path
+    assert calls == ["window.location.pathname"]
+
+
+@pytest.mark.parametrize("path", ["/accounts/suspended/", "/challenge/", "/checkpoint/"])
+def test_current_page_path_rejects_human_recovery_routes_immediately(path):
+    calls = []
+
+    def runner(source, timeout):
+        calls.append(source)
+        return path
+
+    session = browser.BrowserInstagramSession(
+        javascript_runner=runner, sleep=lambda _: pytest.fail("Recovery must fail immediately")
+    )
+    with pytest.raises(browser.BrowserSessionError, match="human account recovery"):
+        session.current_page_path()
+    assert calls == ["window.location.pathname"]
+
+
+@pytest.mark.parametrize("settled_path", ["/wat2do.uwaterloo/", "/accounts/login/", "/checkpoint/"])
+def test_current_page_path_rechecks_transient_login_and_guards_the_fresh_route(settled_path):
+    readings = iter(["/accounts/login/", settled_path])
+    calls = []
+    now = [0.0]
+    sleeps = []
+
+    def runner(source, timeout):
+        calls.append(source)
+        return next(readings)
+
+    def sleep(seconds):
+        sleeps.append(seconds)
+        now[0] += seconds
+
+    session = browser.BrowserInstagramSession(
+        javascript_runner=runner,
+        monotonic=lambda: now[0],
+        sleep=sleep,
+        job_timeout_seconds=10,
+    )
+    if settled_path.startswith("/accounts/login") or settled_path.startswith("/checkpoint"):
+        with pytest.raises(browser.BrowserSessionError, match="human account recovery"):
+            session.current_page_path()
+    else:
+        assert session.current_page_path() == settled_path
+    assert sleeps == [browser._CONTROL.account_transition_grace_seconds]
+    assert calls == ["window.location.pathname"] * 2
+
+
+def test_current_page_path_login_grace_obeys_remaining_job_deadline():
+    now = [0.0]
+    calls = []
+    sleeps = []
+
+    def runner(source, timeout):
+        calls.append((source, timeout))
+        return "/accounts/login/"
+
+    def sleep(seconds):
+        sleeps.append(seconds)
+        now[0] += seconds
+
+    session = browser.BrowserInstagramSession(
+        javascript_runner=runner,
+        monotonic=lambda: now[0],
+        sleep=sleep,
+        job_timeout_seconds=0.25,
+    )
+    with pytest.raises(TimeoutError, match="job exceeded its deadline"):
+        session.current_page_path()
+    assert sleeps == [0.25]
+    assert now[0] == 0.25 and calls == [("window.location.pathname", 0.25)]
 
 
 def test_query_recovers_transient_cleanup_bridge_failure_without_repeating_request():
@@ -1306,7 +1451,7 @@ def test_pool_settles_excess_owned_tabs_and_keeps_reserved_primary(monkeypatch):
         lambda **kw: SimpleNamespace(
             cancel_pending_request=lambda: settled.append(kw["javascript_runner"]._tab_id),
             run=lambda _: "/",
-            read=lambda _: "/wat2do.ubc/",
+            current_page_path=lambda: "/wat2do.ubc/",
             current_account_username=lambda: "wat2do.ubc",
             poll_until=lambda ready: ready(),
         ),
@@ -1714,7 +1859,7 @@ def test_closed_primary_is_repaired_first_without_promoting_a_retrieval_tab(
         browser,
         "BrowserInstagramSession",
         lambda **kwargs: SimpleNamespace(
-            read=lambda source: f"/{bootstrap_username}/",
+            current_page_path=lambda: f"/{bootstrap_username}/",
             current_account_username=lambda: bootstrap_username,
             poll_until=lambda predicate: predicate(),
         ),

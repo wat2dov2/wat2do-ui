@@ -233,20 +233,12 @@ def _process_batch(
             reset_deadline(CONTROL.job_timeout_seconds)
 
         def ready():
-            path = session.read("window.location.pathname")
-            if path.startswith(("/accounts/suspended", "/challenge", "/checkpoint")):
-                raise BrowserSessionError("Instagram browser requires human account recovery")
-            if path.startswith("/accounts/login"):
-                # Recheck after the redirect settles before pausing the shared session.
-                time.sleep(2)
-                if not session.read("window.location.pathname").startswith("/accounts/login"):
-                    return False
-                raise BrowserSessionError("Instagram browser requires human account recovery")
+            path = session.current_page_path()
             active_username = session.current_account_username()
             if active_username is None or path.startswith("/accounts/"):
                 return False
             if active_username != username:
-                time.sleep(2)
+                time.sleep(CONTROL.account_transition_grace_seconds)
                 confirmed = session.current_account_username()
                 if confirmed is None or confirmed == username:
                     return False
@@ -258,13 +250,21 @@ def _process_batch(
             return True
 
         try:
-            try:
-                session.poll_until(ready)
-            except BaseException as exc:
-                _settle_job(job, session, operation_error=exc)
-                raise
+            if job.kind != "retrieval":
+                try:
+                    session.poll_until(ready)
+                except BaseException as exc:
+                    _settle_job(job, session, operation_error=exc)
+                    raise
             # Successful operations settle themselves; execute_job covers every failed exit.
-            return execute_job(job, session=session)
+            result = execute_job(job, session=session)
+            if job.kind == "retrieval" and (
+                not isinstance(result, dict) or result.get("account_username") != username
+            ):
+                raise BrowserAccountChanged(
+                    "Instagram retrieval account does not match the verified primary account"
+                )
+            return result
         except _BrowserReadCleanupPending as exc:
             with cleanup_lock:
                 cleanup_pending[job.id] = (job, session, exc)

@@ -15,7 +15,7 @@ import time
 import uuid
 from collections.abc import Callable
 from contextlib import closing
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any
 
@@ -430,13 +430,15 @@ class BrowserJobQueue:
             if result and result.get("status") == "unsupported"
             else "succeeded"
         )
+        retry_job: BrowserJob | None = None
         with closing(self._connect()) as db, db:
             if requeue:
-                job = db.execute("SELECT kind FROM jobs WHERE id=?", (job_id,)).fetchone()
-                if job and job["kind"] == "engagement":
+                row = db.execute("SELECT * FROM jobs WHERE id=?", (job_id,)).fetchone()
+                retry_job = self._job(row) if row else None
+                if retry_job and retry_job.kind == "engagement":
                     raise ValueError("Engagement cannot be automatically requeued")
             now = time.time()
-            db.execute(
+            changed = db.execute(
                 "UPDATE jobs SET state=?,result=?,error=?,finished_at=?,"
                 "started_at=CASE WHEN ? THEN NULL ELSE started_at END,"
                 "created_at=CASE WHEN ? THEN ? ELSE created_at END WHERE id=? AND state='running'",
@@ -450,6 +452,10 @@ class BrowserJobQueue:
                     now,
                     job_id,
                 ),
+            ).rowcount
+        if changed and retry_job is not None:
+            self.record_diagnostic(
+                "retrying", replace(retry_job, state="pending", result=None, error=error)
             )
 
     def recover_interrupted(self) -> None:

@@ -656,6 +656,7 @@ class InstagramBrowserControl(_ControlModel):
     viewport_warm_timeout_seconds: float = Field(gt=0, le=120)
     primary_minimum_viewport_width: int = Field(ge=1024, le=4096)
     interaction_timeout_seconds: float = Field(gt=0, le=120)
+    account_transition_grace_seconds: float = Field(gt=0, le=120)
     secondary_cleanup_timeout_seconds: float = Field(gt=0, le=120)
     poll_interval_seconds: float = Field(gt=0, le=5)
     worker_poll_interval_seconds: float = Field(gt=0, le=10)
@@ -675,6 +676,8 @@ class InstagramBrowserControl(_ControlModel):
             raise ValueError("Instagram browser result timeout must exceed job timeout")
         if self.secondary_cleanup_timeout_seconds > self.interaction_timeout_seconds:
             raise ValueError("Secondary cleanup timeout must not exceed interaction timeout")
+        if self.account_transition_grace_seconds > self.interaction_timeout_seconds:
+            raise ValueError("Account transition grace must not exceed interaction timeout")
         if self.viewport_warm_timeout_seconds > self.request_timeout_seconds:
             raise ValueError("Viewport warm timeout must not exceed browser request timeout")
         return self

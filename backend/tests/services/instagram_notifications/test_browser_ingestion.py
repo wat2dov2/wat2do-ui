@@ -45,18 +45,43 @@ def test_rejects_nonpublic_or_credentialed_targets(url):
 def test_verified_browser_result_preserves_carousel_video_and_coauthors():
     calls = []
     session = SimpleNamespace(
-        read=lambda source: "/p/AbC/",
+        current_page_path=lambda: "/p/AbC/",
         current_account_username=lambda: "wat2do.ca",
         poll_until=lambda predicate: predicate(),
         activate_account=lambda *_: pytest.fail("Retrieval must never switch accounts"),
-        navigate=lambda url: calls.append(url),
+        navigate=lambda url, *, reload: calls.append((url, reload)),
         query=lambda *_: {"state": "succeeded", "posts": [deepcopy(POST)]},
     )
     result = module.BrowserInstagramRetriever(session).retrieve(URL, cutoff_days=1)
     assert result["account_username"] == "wat2do.ca"
-    assert calls == [URL]
+    assert calls == [(URL, True)]
     assert result["posts"][0] == POST
     assert module.media_id_from_url(URL) == str(27 * 64 + 2)
+
+
+def test_same_target_reload_refreshes_cached_account_before_readiness_and_query():
+    state = SimpleNamespace(username="wat2do.previous")
+    calls = []
+
+    def navigate(url, *, reload):
+        calls.append((url, reload))
+        if reload:
+            state.username = ACCOUNT
+
+    def query(source):
+        assert state.username == ACCOUNT
+        return {"state": "succeeded", "posts": [deepcopy(POST)]}
+
+    session = SimpleNamespace(
+        navigate=navigate,
+        current_page_path=lambda: "/p/AbC/",
+        current_account_username=lambda: state.username,
+        poll_until=lambda ready: ready(),
+        query=query,
+    )
+    result = module.BrowserInstagramRetriever(session).retrieve(URL, cutoff_days=1)
+    assert calls == [(URL, True)]
+    assert result["account_username"] == ACCOUNT
 
 
 @pytest.mark.parametrize(
@@ -75,7 +100,7 @@ def test_incomplete_or_mismatched_media_fails(mutation):
     if mutation == "naive_time":
         post["timestamp"] = "2026-10-04T12:00:00"
     session = SimpleNamespace(
-        read=lambda *_: "/p/AbC/",
+        current_page_path=lambda: "/p/AbC/",
         current_account_username=lambda: "wat2do.ca",
         poll_until=lambda predicate: predicate(),
         activate_account=lambda *_: pytest.fail("Retrieval must never switch accounts"),
@@ -239,7 +264,7 @@ def test_browser_projects_only_public_fields_and_keeps_all_carousel_children(mon
 
 def test_suspended_account_stops_before_switch_or_fetch():
     session = SimpleNamespace(
-        navigate=lambda *_: (_ for _ in ()).throw(
+        navigate=lambda *_, **__: (_ for _ in ()).throw(
             module.BrowserSessionError("Instagram browser requires human account recovery")
         ),
         activate_account=lambda *_: pytest.fail("Suspended browser requires a human"),
@@ -261,8 +286,8 @@ def test_explicit_retrieval_retry_resets_only_matching_media(import_setup, monke
 def test_retrieval_rejects_account_change():
     names = iter(["wat2do.ca", "wat2do.ca", "wat2do.sfu", "wat2do.sfu"])
     session = SimpleNamespace(
-        read=lambda *_: "/p/AbC/",
-        navigate=lambda *_: None,
+        current_page_path=lambda: "/p/AbC/",
+        navigate=lambda *_, **__: None,
         current_account_username=lambda: next(names),
         poll_until=lambda predicate: predicate(),
         query=lambda *_: {"state": "succeeded", "posts": [deepcopy(POST)]},
