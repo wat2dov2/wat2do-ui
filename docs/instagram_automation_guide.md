@@ -124,11 +124,13 @@ An exclusive browser lock covers each complete operation, and a separate worker 
 The source collector runs separately so a slow database read does not hold up ready digest jobs.
 Notification collection, publishing collection, and diagnostic publication fail independently, so one source failure cannot suppress the other queues.
 Apple Event transport is serialized within each call deadline while asynchronous page requests remain parallel.
+Native event execution has a separate short timeout, so a stalled command cannot consume every waiting tab's transport budget.
 Queries prove their terminal result and settled request state in one atomic browser read before returning; successful operations do not repeat cancellation through the busy transport.
 Only idempotent reads, inventory, and cleanup retry within `bridge_retry_limit`; uncertain engagement clicks are never replayed.
 Navigation uses the pinned tab's native URL setter, so blank or unresponsive page JavaScript cannot block the navigation needed to recover it.
 Retrieval tabs open their actual post/profile targets before readiness checks; digest preparation uses the verified account's public profile instead of relying on a blank home feed.
 Each retrieval reloads only its assigned target and verifies the batch account before publishing its result, so an unavailable first target cannot block unrelated slots.
+Retrieval failures expose only fixed reason labels and valid HTTP status codes in diagnostics; response bodies and exception text stay inside the browser.
 Primary initialization recovers a blank normal page through the existing public-profile bootstrap before checking the logged-in navigation identity.
 Login, suspension, and challenge routes retain their recovery hold; loading documents wait within the same readiness deadline.
 An unresponsive secondary read tab may be retired only by closing its exact registered document and verifying absence.

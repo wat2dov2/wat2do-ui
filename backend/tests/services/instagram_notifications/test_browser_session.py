@@ -1557,13 +1557,19 @@ def test_applescript_transport_serializes_parallel_tabs_without_serializing_jobs
     assert maximum == 1
 
 
-def test_transport_lock_wait_consumes_the_same_call_budget(monkeypatch):
+@pytest.mark.parametrize(
+    ("call_budget", "lock_wait", "event_cap", "execution_budget"),
+    [(1, 0.4, 3, 0.6), (30, 0, 3, 3), (1, 0.4, 0.2, 0.2)],
+)
+def test_transport_lock_wait_and_event_cap_share_the_original_call_budget(
+    monkeypatch, call_budget, lock_wait, event_cap, execution_budget
+):
     clock = [0.0]
     seen = []
 
     def acquire(*, timeout):
         seen.append(("wait", timeout))
-        clock[0] += 0.4
+        clock[0] += lock_wait
         return True
 
     def run(arguments, **kwargs):
@@ -1573,12 +1579,61 @@ def test_transport_lock_wait_consumes_the_same_call_budget(monkeypatch):
     monkeypatch.setattr(browser.time, "monotonic", lambda: clock[0])
     monkeypatch.setattr(
         browser,
+        "_CONTROL",
+        browser._CONTROL.model_copy(update={"apple_event_timeout_seconds": event_cap}),
+    )
+    monkeypatch.setattr(
+        browser,
         "_APPLESCRIPT_LOCK",
         SimpleNamespace(acquire=acquire, release=lambda: seen.append(("release", None))),
     )
     monkeypatch.setattr(browser.subprocess, "run", run)
-    assert browser._run_applescript("read", (), 1) == "ready"
-    assert seen == [("wait", 1), ("execute", 0.6), ("release", None)]
+    assert browser._run_applescript("read", (), call_budget) == "ready"
+    assert seen == [
+        ("wait", call_budget),
+        ("execute", execution_budget),
+        ("release", None),
+    ]
+
+
+def test_stalled_native_event_releases_transport_before_thirteen_healthy_reads_expire(monkeypatch):
+    entered = threading.Event()
+    healthy_started = threading.Barrier(13)
+    events = []
+    event_cap = 0.03
+
+    def native(arguments, **kwargs):
+        tab_id = arguments[-1]
+        events.append((tab_id, kwargs["timeout"]))
+        if tab_id == "stalled":
+            entered.set()
+            # Honor the actual subprocess execution budget. An instantaneous
+            # mock timeout cannot expose a transport held through readiness.
+            time.sleep(kwargs["timeout"])
+            raise subprocess.TimeoutExpired("osascript", kwargs["timeout"])
+        return subprocess.CompletedProcess(arguments, 0, stdout="ready")
+
+    def healthy(tab_id):
+        healthy_started.wait(timeout=2)
+        return browser._run_applescript("read one pinned tab", (str(tab_id),), 0.2)
+
+    monkeypatch.setattr(browser, "_APPLESCRIPT_LOCK", threading.RLock())
+    monkeypatch.setattr(
+        browser,
+        "_CONTROL",
+        browser._CONTROL.model_copy(update={"apple_event_timeout_seconds": event_cap}),
+    )
+    monkeypatch.setattr(browser.subprocess, "run", native)
+    with ThreadPoolExecutor(max_workers=14) as executor:
+        stalled = executor.submit(browser._run_applescript, "read one pinned tab", ("stalled",), 1)
+        assert entered.wait(timeout=2)
+        futures = [executor.submit(healthy, tab_id) for tab_id in range(13)]
+        results = [future.result(timeout=2) for future in futures]
+        with pytest.raises(browser._BrowserAutomationTransient, match="timed out"):
+            stalled.result(timeout=2)
+    assert results == ["ready"] * 13
+    assert len(events) == 14 and len({tab_id for tab_id, _ in events}) == 14
+    assert all(0 < timeout <= event_cap for _, timeout in events)
 
 
 def test_transport_timeout_waiting_for_lock_never_sends_an_event(monkeypatch):

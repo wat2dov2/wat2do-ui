@@ -307,7 +307,6 @@ def _process_batch(
                         TimeoutError,
                     ),
                 )
-                or error == "Instagram public media retrieval failed; inspect login or retry"
             )
         )
         if isinstance(exc, (BrowserAccountChanged, _BrowserTabUnavailable)) and retryable:

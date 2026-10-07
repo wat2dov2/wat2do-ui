@@ -1,3 +1,6 @@
+import json
+import shutil
+import subprocess
 from copy import deepcopy
 from types import SimpleNamespace
 
@@ -209,10 +212,6 @@ def test_import_claim_conflict_does_not_extract_or_finalize(import_setup, monkey
 
 
 def test_browser_projects_only_public_fields_and_keeps_all_carousel_children(monkeypatch):
-    import json
-    import shutil
-    import subprocess
-
     node = shutil.which("node")
     if node is None:
         pytest.skip("Node.js unavailable")
@@ -260,6 +259,123 @@ def test_browser_projects_only_public_fields_and_keeps_all_carousel_children(mon
     assert post["coauthors"] == [{"username": "cohost"}]
     assert "private_internal_field" not in completed.stdout
     module._validate_post(post)
+
+
+@pytest.mark.parametrize(
+    "scenario,status,reason",
+    [
+        *(("http", status, "http_error") for status in (400, 401, 403, 429, 503)),
+        *(("http", status, "http_error") for status in (0, 600, 403.5, "do-not-export")),
+        ("json", 200, "invalid_json"),
+        ("media", 200, "invalid_media"),
+        ("projection", 200, "projection_failed"),
+        ("network", None, "request_failed"),
+        ("account_before", None, "account_changed"),
+        ("account_after", 200, "account_changed"),
+    ],
+)
+def test_browser_failure_projection_exports_only_fixed_reason_and_safe_http_status(
+    monkeypatch, scenario, status, reason
+):
+    node = shutil.which("node")
+    if node is None:
+        pytest.skip("Node.js unavailable")
+    identity = (
+        '"wat2do.other"'
+        if scenario == "account_before"
+        else '(++window.identityReads === 1 ? "wat2do.ca" : "wat2do.other")'
+        if scenario == "account_after"
+        else '"wat2do.ca"'
+    )
+    monkeypatch.setattr(module, "_current_account_username_source", lambda: identity)
+    source = module._query_source("/api/v1/media/1730/info/", "wat2do.ca", profile=False)
+    script = f"""
+globalThis.window = {{identityReads: 0}};
+let calls = 0;
+globalThis.fetch = async () => {{
+  calls += 1;
+  if ({json.dumps(scenario)} === "network") throw new Error("do-not-export");
+  return {{ok: {str(scenario != "http").lower()}, status: {json.dumps(status)}, json: async () => {{
+    if ({json.dumps(scenario)} === "json") throw new Error("do-not-export");
+    return {{items: {"null" if scenario == "media" else '[{code: "AbC", taken_at: "do-not-export", user: {username: "club"}}]'}}};
+  }}}};
+}};
+{source};
+setTimeout(() => console.log(JSON.stringify({{result: window.__wat2doInstagramBrowserRequest.result,
+  settled: window.__wat2doInstagramBrowserRequest.settled, calls}})), 0);
+"""
+    completed = subprocess.run(
+        [node, "-e", script], text=True, capture_output=True, check=True, timeout=5
+    )
+    result = json.loads(completed.stdout)
+    expected = {"state": "failed", "reason": reason}
+    if scenario == "http" and type(status) is int and 100 <= status <= 599:
+        expected["http_status"] = status
+    assert result["result"] == expected
+    assert result["settled"] is True
+    assert result["calls"] == (0 if scenario == "account_before" else 1)
+    assert "do-not-export" not in completed.stdout
+
+
+@pytest.mark.parametrize(
+    "reason,status,message",
+    [
+        ("account_changed", None, "account changed"),
+        ("http_error", 400, "HTTP 400"),
+        ("http_error", 401, "HTTP 401"),
+        ("http_error", 403, "HTTP 403"),
+        ("http_error", 429, "HTTP 429"),
+        ("invalid_json", 200, "not valid JSON"),
+        ("invalid_media", None, "media list"),
+        ("projection_failed", None, "projection failed"),
+        ("request_failed", None, "request failed"),
+        ("http_error", "do-not-export", "request was rejected"),
+        ("http_error", True, "request was rejected"),
+        ("http_error", 999, "request was rejected"),
+        (["do-not-export"], None, "retrieval failed"),
+    ],
+)
+def test_classified_public_response_failures_preserve_bounded_read_retry_type(
+    reason, status, message
+):
+    session = SimpleNamespace(
+        navigate=lambda *args, **kwargs: None,
+        current_page_path=lambda: "/p/AbC/",
+        current_account_username=lambda: ACCOUNT,
+        poll_until=lambda ready: ready(),
+        query=lambda source: {"state": "failed", "reason": reason, "http_status": status},
+    )
+    with pytest.raises(module._BrowserPageUnavailable, match=message) as raised:
+        module.BrowserInstagramRetriever(session).retrieve(URL, cutoff_days=1)
+    assert "do-not-export" not in str(raised.value)
+
+
+def test_retrieval_preserves_original_human_recovery_error_and_deferred_payload():
+    from services.instagram_notifications.browser_session import _BrowserReadCleanupPending
+
+    original = module.BrowserSessionError("Instagram browser requires human account recovery")
+    payload = {"state": "failed", "reason": "http_error", "http_status": 401}
+    pending = _BrowserReadCleanupPending(
+        "Instagram browser request cancellation could not be confirmed",
+        operation_error=original,
+        completed_payload=payload,
+    )
+
+    def query(source):
+        raise pending
+
+    session = SimpleNamespace(
+        navigate=lambda *args, **kwargs: None,
+        current_page_path=lambda: "/p/AbC/",
+        current_account_username=lambda: ACCOUNT,
+        poll_until=lambda ready: ready(),
+        query=query,
+    )
+    with pytest.raises(_BrowserReadCleanupPending) as raised:
+        module.BrowserInstagramRetriever(session).retrieve(URL, cutoff_days=1)
+    assert raised.value is pending
+    assert pending.operation_error is original
+    assert pending.completed_payload is payload
 
 
 def test_suspended_account_stops_before_switch_or_fetch():

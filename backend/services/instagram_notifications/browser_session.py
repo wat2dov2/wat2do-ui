@@ -736,7 +736,7 @@ def _run_applescript(script: str, arguments: tuple[str, ...], timeout_seconds: f
             capture_output=True,
             text=True,
             check=True,
-            timeout=remaining,
+            timeout=min(remaining, _CONTROL.apple_event_timeout_seconds),
         )
     except FileNotFoundError:
         raise BrowserSessionError("AppleScript is unavailable on this host") from None

@@ -1,5 +1,6 @@
 {
   "request_timeout_seconds": 30,
+  "apple_event_timeout_seconds": 3,
   "viewport_warm_timeout_seconds": 3,
   "primary_minimum_viewport_width": 1024,
   "interaction_timeout_seconds": 30,

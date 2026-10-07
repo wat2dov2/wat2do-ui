@@ -17,6 +17,7 @@ from services.instagram_notifications.browser_session import (
     BrowserAccountChanged,
     BrowserInstagramSession,
     BrowserSessionError,
+    _BrowserPageUnavailable,
     _current_account_username_source,
     canonical_post_url,
 )
@@ -98,8 +99,8 @@ class BrowserInstagramRetriever:
             raise BrowserAccountChanged("Instagram browser account changed during retrieval")
         if result.get("state") != "succeeded":
             # Never persist server response text, request headers or browser internals.
-            raise BrowserSessionError(
-                "Instagram public media retrieval failed; inspect login or retry"
+            raise _BrowserPageUnavailable(
+                _failure_message(result.get("reason"), result.get("http_status"))
             )
         posts = result.get("posts")
         if not isinstance(posts, list) or (not profile and len(posts) != 1):
@@ -115,6 +116,22 @@ class BrowserInstagramRetriever:
         elif media_id_from_url(checked[0]["url"]) != media_id_from_url(target):
             raise BrowserSessionError("Instagram retrieval returned a different media identity")
         return {"account_username": username, "posts": checked, "target_url": target}
+
+
+def _failure_message(reason: object, http_status: object) -> str:
+    messages = {
+        "account_changed": "Instagram browser account changed during public media retrieval",
+        "http_error": "Instagram public media request was rejected",
+        "invalid_json": "Instagram public media response was not valid JSON",
+        "invalid_media": "Instagram public media response did not contain a media list",
+        "projection_failed": "Instagram public media projection failed",
+        "request_failed": "Instagram public media request failed",
+    }
+    if reason == "http_error" and type(http_status) is int and 100 <= http_status <= 599:
+        return f"Instagram public media request failed with HTTP {http_status}"
+    return messages.get(
+        reason if isinstance(reason, str) else "", "Instagram public media retrieval failed"
+    )
 
 
 def _validate_post(post: object) -> dict:
@@ -166,13 +183,23 @@ def _query_source(endpoint: str, username: str, *, profile: bool) -> str:
  const request = {{controller: new AbortController(), settled: false, result: {{state: "pending"}}}};
  window[key] = request;
  (async () => {{
+  let reason = "request_failed";
+  let httpStatus = null;
   try {{
+   reason = "account_changed";
    if (({_current_account_username_source()}) !== {json.dumps(username)}) throw new Error();
+   reason = "request_failed";
    const response = await fetch({json.dumps(endpoint)}, {{credentials: "include",
      signal: request.controller.signal,
      headers: {{"x-ig-app-id": {json.dumps(controlbox.scraping.instagram_web_app_id)}}}}});
-   if (!response.ok) throw new Error();
+   if (!response.ok) {{
+    reason = "http_error";
+    if (Number.isInteger(response.status) && response.status >= 100 && response.status <= 599) httpStatus = response.status;
+    throw new Error();
+   }}
+   reason = "invalid_json";
    const body = await response.json();
+   reason = "account_changed";
    if (({_current_account_username_source()}) !== {json.dumps(username)}) throw new Error();
    const image = media => {{
      const candidates = media.image_versions2?.candidates || [];
@@ -193,10 +220,12 @@ def _query_source(endpoint: str, username: str, *, profile: bool) -> str:
        coauthors: coauthors.map(u => ({{username:u.username}})),
        taggedUsers: (media.usertags?.in || []).map(t => ({{username:t.user?.username}}))}};
    }};
+   reason = "invalid_media";
    const media = {"body.data?.user?.edge_owner_to_timeline_media?.edges?.map(e => e.node)" if profile else "body.items"};
    if (!Array.isArray(media)) throw new Error();
+   reason = "projection_failed";
    request.result = {{state: "succeeded", posts: media.slice(0,{_CONTROL.profile_post_limit if profile else 1}).map(project)}};
-  }} catch (_error) {{request.result = {{state: "failed"}};}}
+  }} catch (_error) {{request.result = {{state: "failed", reason, ...(httpStatus === null ? {{}} : {{http_status: httpStatus}})}};}}
   finally {{request.settled = true;}}
  }})();
  return "started";

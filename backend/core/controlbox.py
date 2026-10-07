@@ -659,6 +659,7 @@ class InstagramBrowserControl(_ControlModel):
     bootstrap_profile_school: str = Field(pattern=r"^[a-z0-9_]{1,23}$")
     bridge_retry_limit: int = Field(gt=0, le=10)
     request_timeout_seconds: float = Field(gt=0, le=120)
+    apple_event_timeout_seconds: float = Field(gt=0, le=120)
     viewport_warm_timeout_seconds: float = Field(gt=0, le=120)
     primary_minimum_viewport_width: int = Field(ge=1024, le=4096)
     interaction_timeout_seconds: float = Field(gt=0, le=120)
@@ -686,6 +687,8 @@ class InstagramBrowserControl(_ControlModel):
             raise ValueError("Account transition grace must not exceed interaction timeout")
         if self.viewport_warm_timeout_seconds > self.request_timeout_seconds:
             raise ValueError("Viewport warm timeout must not exceed browser request timeout")
+        if self.apple_event_timeout_seconds > self.request_timeout_seconds:
+            raise ValueError("Apple Event timeout must not exceed browser request timeout")
         return self
 
 
