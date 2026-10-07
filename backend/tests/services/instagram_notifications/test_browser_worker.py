@@ -687,3 +687,77 @@ def test_retrieval_stream_keeps_refilling_past_one_job_timeout(queue, monkeypatc
     monkeypatch.setattr(module, "execute_job", retrieve)
     assert module.process_next_job(queue)
     assert queue.get(later[0]).state == "succeeded"
+
+
+@pytest.mark.parametrize("persistent", [False, True])
+@pytest.mark.parametrize("kind", ["retrieval", "digest"])
+def test_manual_account_switch_drains_before_bounded_retry(queue, monkeypatch, persistent, kind):
+    ids = [
+        queue.enqueue_retrieval(
+            school="ubc",
+            recipient_id=RECIPIENT_ID,
+            account_username=ACCOUNT_USERNAME,
+            url=f"https://www.instagram.com/p/Changed{i}/",
+        )
+        if kind == "retrieval"
+        else queue.enqueue_digest(
+            RECIPIENT_ID,
+            ACCOUNT_USERNAME,
+            f"changed-cache-{i}",
+        )
+        for i in range(2)
+    ]
+    drained = threading.Event()
+    mismatched = threading.Event()
+    preparations = []
+    executions = []
+    original_retry = queue.retry
+
+    def retry(job_id):
+        assert drained.is_set(), "Account recovery must wait for every active tab"
+        original_retry(job_id)
+
+    monkeypatch.setattr(queue, "retry", retry)
+    monkeypatch.setattr(module.time, "sleep", lambda _: None)
+
+    def prepare(job, count):
+        preparations.append(job)
+        if len(preparations) > 1:
+            assert drained.is_set()
+            assert queue.get_setting("retrieval_pool_account") is None
+        sessions = []
+        for i in range(2):
+
+            def current(i=i):
+                if persistent or (i == 0 and len(preparations) == 1):
+                    mismatched.set()
+                    return "wat2do.uwaterloo"
+                if len(preparations) == 1:
+                    assert mismatched.wait(5)
+                return ACCOUNT_USERNAME
+
+            sessions.append(
+                SimpleNamespace(
+                    run=lambda _: "/",
+                    current_account_username=current,
+                    poll_until=lambda ready: ready(),
+                    cancel_pending_request=lambda i=i: drained.set() if i == 1 else None,
+                )
+            )
+        return sessions, ACCOUNT_USERNAME
+
+    monkeypatch.setattr(module, "BrowserTabPool", lambda _: SimpleNamespace(prepare=prepare))
+    monkeypatch.setattr(module, "execute_job", lambda job, **_: executions.append(job.id) or {})
+    assert module.process_next_job(queue)
+    assert queue.get(ids[0]).state == "pending"
+    assert queue.get(ids[1]).state == ("pending" if persistent else "succeeded")
+    assert executions == ([] if persistent else [ids[1]])
+    assert not queue.get_setting("paused", False)
+    for _ in range(module.CONTROL.ingestion_retry_limit - 1 if persistent else 1):
+        assert module.process_next_job(queue)
+    job = queue.get(ids[0])
+    assert job.state == ("failed" if persistent else "succeeded")
+    if persistent:
+        assert job.attempts == module.CONTROL.ingestion_retry_limit
+        assert "expected ubc.wat2do.io, found wat2do.uwaterloo" in job.error
+    assert not queue.get_setting("paused", False)

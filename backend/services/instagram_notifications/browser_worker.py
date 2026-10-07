@@ -16,6 +16,7 @@ from services.instagram_notifications.browser_digest import BrowserInstagramDige
 from services.instagram_notifications.browser_engagement import BrowserInstagramEngagementExecutor
 from services.instagram_notifications.browser_queue import CONTROL, BrowserJob, BrowserJobQueue
 from services.instagram_notifications.browser_session import (
+    BrowserAccountChanged,
     BrowserInstagramSession,
     BrowserSessionError,
     BrowserTabPool,
@@ -159,6 +160,8 @@ def process_next_job(queue: BrowserJobQueue, *, allow_engagement: bool = True) -
 def _process_batch(queue: BrowserJobQueue, jobs: list[BrowserJob]) -> None:
     """Drain the bounded tab batch before releasing ownership or switching accounts."""
     unfinished = {job.id for job in jobs}
+    account_changed = threading.Event()
+    account_retries: list[BrowserJob] = []
 
     def execute(job, session, username):
         reset_deadline = getattr(session, "reset_job_deadline", None)
@@ -183,7 +186,11 @@ def _process_batch(queue: BrowserJobQueue, jobs: list[BrowserJob]) -> None:
                 confirmed = session.current_account_username()
                 if confirmed is None or confirmed == username:
                     return False
-                raise BrowserSessionError("Instagram browser account changed during parallel work")
+                account_changed.set()
+                raise BrowserAccountChanged(
+                    f"Instagram browser account changed during parallel work: "
+                    f"expected {username}, found {confirmed}"
+                )
             return True
 
         try:
@@ -193,6 +200,11 @@ def _process_batch(queue: BrowserJobQueue, jobs: list[BrowserJob]) -> None:
             session.cancel_pending_request()
 
     def failed(job, exc):
+        if isinstance(exc, BrowserAccountChanged):
+            account_changed.set()
+            queue.set_setting("retrieval_pool_account", None)
+            if job.attempts < CONTROL.ingestion_retry_limit:
+                account_retries.append(job)
         if isinstance(exc, (BrowserSessionError, TimeoutError)):
             error = str(exc)
             if any(
@@ -201,7 +213,6 @@ def _process_batch(queue: BrowserJobQueue, jobs: list[BrowserJob]) -> None:
                     "cancellation could not be confirmed",
                     "human account recovery",
                     "human reauthorization",
-                    "account changed",
                 )
             ):
                 queue.set_setting("paused", error)
@@ -235,7 +246,7 @@ def _process_batch(queue: BrowserJobQueue, jobs: list[BrowserJob]) -> None:
             }
             while futures:
                 if jobs[0].kind == "retrieval":
-                    while idle_sessions:
+                    while idle_sessions and not account_changed.is_set():
                         replacements = queue.claim_companions(jobs[0], limit=1)
                         if not replacements:
                             break
@@ -259,7 +270,7 @@ def _process_batch(queue: BrowserJobQueue, jobs: list[BrowserJob]) -> None:
                     finished = queue.get(job.id)
                     if finished:
                         queue.record_diagnostic(finished.state, finished)
-                    if jobs[0].kind != "retrieval":
+                    if jobs[0].kind != "retrieval" or account_changed.is_set():
                         continue
                     replacements = queue.claim_companions(jobs[0], limit=1)
                     if not replacements:
@@ -283,6 +294,12 @@ def _process_batch(queue: BrowserJobQueue, jobs: list[BrowserJob]) -> None:
         for job in jobs:
             if job.id in unfinished:
                 failed(job, exc)
+
+    finally:
+        # Every future and its cancellation has settled before any retry can switch accounts.
+        if not queue.get_setting("paused", False):
+            for job in account_retries:
+                queue.retry(job.id)
 
 
 def maintain_tab_pool(queue: BrowserJobQueue) -> None:

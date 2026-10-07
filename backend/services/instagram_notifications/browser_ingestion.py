@@ -14,6 +14,7 @@ from urllib.parse import urlsplit
 from core.controlbox import controlbox
 from services.instagram_notifications.browser_session import (
     _REQUEST_KEY,
+    BrowserAccountChanged,
     BrowserInstagramSession,
     BrowserSessionError,
     _current_account_username_source,
@@ -88,7 +89,7 @@ class BrowserInstagramRetriever:
             )
         )
         if self._active_account() != username:
-            raise BrowserSessionError("Instagram browser account changed during retrieval")
+            raise BrowserAccountChanged("Instagram browser account changed during retrieval")
         endpoint = (
             f"/api/v1/users/web_profile_info/?username={profile[1]}"
             if profile
@@ -96,7 +97,7 @@ class BrowserInstagramRetriever:
         )
         result = self.session.query(_query_source(endpoint, username, profile=bool(profile)))
         if self._active_account() != username:
-            raise BrowserSessionError("Instagram browser account changed during retrieval")
+            raise BrowserAccountChanged("Instagram browser account changed during retrieval")
         if result.get("state") != "succeeded":
             # Never persist server response text, request headers or browser internals.
             raise BrowserSessionError(

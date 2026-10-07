@@ -71,6 +71,10 @@ class BrowserSessionError(RuntimeError):
     """A sanitized failure in the shared authenticated browser session."""
 
 
+class BrowserAccountChanged(BrowserSessionError):
+    """The shared login changed; drain all tabs before preparing another batch."""
+
+
 class _BrowserPageUnavailable(BrowserSessionError):
     """Recoverable page readiness or account-control failure."""
 
@@ -148,7 +152,7 @@ class BrowserInstagramSession:
             self.current_account_username() != username
             or self.run(_recipient_is_active_source(recipient_id)) != "true"
         ):
-            raise BrowserSessionError(
+            raise BrowserAccountChanged(
                 "Instagram browser account does not match the intended account"
             )
 
@@ -242,7 +246,9 @@ class BrowserInstagramSession:
         self.poll_until(lambda: self.current_account_username() is not None)
         if self.current_account_username() != username:
             if not self._allow_account_switch:
-                raise BrowserSessionError("Instagram browser account changed during parallel work")
+                raise BrowserAccountChanged(
+                    "Instagram browser account changed during parallel work"
+                )
             self._switch_account(username)
         self.verify_account(recipient_id, username)
         if self.run(_account_chooser_state_source()) == "ready":
