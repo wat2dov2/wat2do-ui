@@ -18,7 +18,7 @@ BACKEND_DIRECTORY = Path(__file__).resolve().parents[1]
 if str(BACKEND_DIRECTORY) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIRECTORY))
 
-from core.launch_agents import install_launch_agent  # noqa: E402
+from core.launch_agents import LaunchAgentRecoveryError, install_launch_agent  # noqa: E402
 from services.instagram_notifications.browser_queue import (  # noqa: E402
     CONTROL,
     BrowserJobQueue,
@@ -77,17 +77,26 @@ def _install_idle_worker(queue: BrowserJobQueue) -> dict[str, str]:
     destination = Path.home() / "Library/LaunchAgents" / f"{LAUNCH_AGENT_LABEL}.plist"
     previous_pause = queue.get_setting("paused", False)
     hold = "Browser worker installation in progress"
-    if not previous_pause:
-        queue.set_setting("paused", hold)
+    if not queue.compare_set_pause(previous_pause, hold):
+        raise RuntimeError("Browser worker pause changed during setup; inspect before retrying")
     try:
         if any(group["state"] == "running" for group in queue.status()["queues"]):
             raise RuntimeError("Wait for the current browser jobs to finish before installing")
         install_launch_agent(
-            destination, launch_agent_payload(queue), timeout=CONTROL.request_timeout_seconds
+            destination,
+            launch_agent_payload(queue),
+            timeout=CONTROL.request_timeout_seconds,
+            poll_interval_seconds=CONTROL.worker_poll_interval_seconds,
         )
+    except LaunchAgentRecoveryError:
+        queue.compare_set_pause(
+            hold,
+            previous_pause
+            or "Browser worker installation recovery is uncertain; inspect before resuming",
+        )
+        raise
     finally:
-        if not previous_pause:
-            queue.restore_pause(hold, previous_pause)
+        queue.compare_set_pause(hold, previous_pause)
     return {"installed": LAUNCH_AGENT_LABEL, "plist": str(destination)}
 
 
@@ -166,9 +175,10 @@ def main(argv: Sequence[str] | None = None) -> int:
             queue.set_setting("paused", arguments.command == "pause")
             result = {"paused": queue.get_setting("paused")}
         elif arguments.command in {"retry", "cancel"}:
-            if queue.get(arguments.job_id) is None:
+            job = queue.get(arguments.job_id)
+            if job is None:
                 raise ValueError("Instagram browser job does not exist")
-            if arguments.command == "retry" and queue.get(arguments.job_id).kind == "retrieval":
+            if arguments.command == "retry" and job.kind == "retrieval":
                 from services.instagram_notifications.notification_ingestion import (
                     retry_retrieved_media,
                 )
@@ -176,7 +186,10 @@ def main(argv: Sequence[str] | None = None) -> int:
                 retry_retrieved_media(queue, arguments.job_id)
             else:
                 getattr(queue, arguments.command)(arguments.job_id)
-            result = asdict(queue.get(arguments.job_id))
+            updated_job = queue.get(arguments.job_id)
+            if updated_job is None:
+                raise RuntimeError("Instagram browser job disappeared during the operation")
+            result = asdict(updated_job)
         elif arguments.command in {"ingestion-sync", "ingestion-import"}:
             from services.instagram_notifications.notification_ingestion import (
                 import_retrieved_media,

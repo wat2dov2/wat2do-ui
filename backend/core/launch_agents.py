@@ -6,8 +6,13 @@ import os
 import plistlib
 import subprocess
 import tempfile
+import time
 from pathlib import Path
 from typing import Any
+
+
+class LaunchAgentRecoveryError(RuntimeError):
+    """A service replacement could not confirm recovery of the previous agent."""
 
 
 def _stage(path: Path, payload: bytes) -> Path:
@@ -46,7 +51,21 @@ def _launchctl(arguments: list[str], timeout: float, *, check: bool = True) -> b
     return result.returncode == 0
 
 
-def install_launch_agent(path: Path, payload: dict[str, Any], *, timeout: float) -> None:
+def _wait_for_unload(service: str, *, timeout: float, poll_interval_seconds: float) -> None:
+    """Launchd may retain the stopped service entry after bootout returns."""
+    deadline = time.monotonic() + timeout
+    while (remaining := deadline - time.monotonic()) > 0:
+        if not _launchctl(["print", service], remaining, check=False):
+            return
+        remaining = deadline - time.monotonic()
+        if remaining > 0:
+            time.sleep(min(poll_interval_seconds, remaining))
+    raise RuntimeError("LaunchAgent unload timed out; service is still registered")
+
+
+def install_launch_agent(
+    path: Path, payload: dict[str, Any], *, timeout: float, poll_interval_seconds: float
+) -> None:
     """Validate storage first and restore the previous agent if replacement fails."""
     label = payload["Label"]
     domain = f"gui/{os.getuid()}"
@@ -63,22 +82,38 @@ def install_launch_agent(path: Path, payload: dict[str, Any], *, timeout: float)
         if loaded:
             stop_attempted = True
             _launchctl(["bootout", service], timeout)
+            _wait_for_unload(service, timeout=timeout, poll_interval_seconds=poll_interval_seconds)
         candidate.replace(path)
         replaced = True
         _launchctl(["bootstrap", domain, str(path)], timeout)
-    except (OSError, RuntimeError) as exc:
+    except (OSError, RuntimeError, KeyboardInterrupt, SystemExit) as exc:
+        recovery_error: OSError | RuntimeError | None = None
         try:
             if replaced:
                 _launchctl(["bootout", service], timeout, check=False)
+                _wait_for_unload(
+                    service, timeout=timeout, poll_interval_seconds=poll_interval_seconds
+                )
+            elif stop_attempted:
+                _wait_for_unload(
+                    service, timeout=timeout, poll_interval_seconds=poll_interval_seconds
+                )
+        except (OSError, RuntimeError) as recovery:
+            recovery_error = recovery
+        try:
+            # Preserve the old configuration even when launchd cannot settle.
+            if replaced:
                 if previous is None:
                     path.unlink(missing_ok=True)
                 else:
                     atomic_write(path, previous)
-            if stop_attempted and not _launchctl(["print", service], timeout, check=False):
+            if stop_attempted and recovery_error is None:
                 _launchctl(["bootstrap", domain, str(path)], timeout)
         except (OSError, RuntimeError) as recovery:
-            raise RuntimeError(
-                f"LaunchAgent replacement failed; previous service recovery also failed ({type(recovery).__name__})"
+            recovery_error = recovery
+        if recovery_error is not None:
+            raise LaunchAgentRecoveryError(
+                f"LaunchAgent replacement failed; previous service recovery remains uncertain ({type(recovery_error).__name__})"
             ) from exc
         raise
     finally:

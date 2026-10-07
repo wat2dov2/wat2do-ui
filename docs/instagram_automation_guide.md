@@ -254,6 +254,8 @@ The installed LaunchAgent is `io.wat2do.instagram-browser.worker`.
 Its stdout and stderr logs are stored with the queue state.
 Installation pauses admission and refuses replacement while jobs are running.
 It flushes the replacement configuration before stopping the service and restores the previous configuration and service if replacement fails.
+Replacement waits for launchd to finish unloading the previous service.
+If service recovery remains uncertain, the previous configuration is preserved and browser processing stays paused for inspection.
 Inspect service startup failures with:
 
 ```sh

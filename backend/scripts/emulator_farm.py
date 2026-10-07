@@ -1010,6 +1010,7 @@ def install_schedule(paths: FarmPaths) -> None:
             paths.launch_agent_path,
             launch_agent_payload(paths),
             timeout=CONTROL.command_timeout_seconds,
+            poll_interval_seconds=CONTROL.live_monitor_interval_seconds,
         )
     except RuntimeError as exc:
         raise FarmError(str(exc)) from exc

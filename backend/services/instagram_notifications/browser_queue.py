@@ -20,7 +20,7 @@ from contextlib import closing
 from dataclasses import dataclass, replace
 from functools import wraps
 from pathlib import Path
-from typing import Any, ParamSpec, TypeVar
+from typing import Any, ParamSpec, TypeVar, cast
 
 from core.controlbox import controlbox
 from schemas.school import validate_recipient_id
@@ -45,6 +45,7 @@ def _retry_storage(operation: Callable[_P, _R]) -> Callable[_P, _R]:
 
     @wraps(operation)
     def retry(*args: _P.args, **kwargs: _P.kwargs) -> _R:
+        queue = cast("BrowserJobQueue", args[0])
         for attempt in range(CONTROL.storage_retry_limit):
             try:
                 return operation(*args, **kwargs)
@@ -52,10 +53,10 @@ def _retry_storage(operation: Callable[_P, _R]) -> Callable[_P, _R]:
                 code = getattr(exc, "sqlite_errorcode", None)
                 code = code & 0xFF if type(code) is int else None
                 if code not in {sqlite3.SQLITE_FULL, sqlite3.SQLITE_BUSY, sqlite3.SQLITE_LOCKED}:
-                    args[0].storage_unavailable = True
+                    queue.storage_unavailable = True
                     raise
                 if attempt + 1 == CONTROL.storage_retry_limit:
-                    args[0].storage_unavailable = True
+                    queue.storage_unavailable = True
                     raise
                 time.sleep(CONTROL.storage_retry_interval_seconds)
         raise AssertionError("Validated storage retry limit must be positive")
@@ -174,16 +175,20 @@ class BrowserJobQueue:
             self.record_diagnostic("paused" if value else "resumed")
 
     @_retry_storage
-    def restore_pause(self, expected: Any, value: Any) -> bool:
-        """Release an owned setup hold only if no newer safety hold replaced it."""
+    def compare_set_pause(self, expected: Any, value: Any) -> bool:
+        """Acquire or release a pause only while its observed owner is unchanged."""
         if self._pending_pause and self._pending_pause != expected:
             return False
         with closing(self._connect()) as db, db:
             db.execute("BEGIN IMMEDIATE")
             row = db.execute("SELECT value FROM settings WHERE key='paused'").fetchone()
-            if row is None or json.loads(row[0]) != expected:
+            current = json.loads(row[0]) if row else False
+            if current != expected:
                 return False
-            db.execute("UPDATE settings SET value=? WHERE key='paused'", (json.dumps(value),))
+            db.execute(
+                "INSERT INTO settings VALUES ('paused',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+                (json.dumps(value),),
+            )
         if self._pending_pause == expected:
             self._pending_pause = None
         self.record_diagnostic("paused" if value else "resumed")

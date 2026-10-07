@@ -109,6 +109,84 @@ def test_install_cannot_erase_a_new_runtime_safety_pause(tmp_path, monkeypatch):
     assert queue.get_setting("paused") == "Instagram account requires reauthentication"
 
 
+@pytest.mark.parametrize("prior_pause", [False, "Instagram account requires reauthentication"])
+def test_install_preserves_a_recovery_pause_when_service_restoration_is_uncertain(
+    tmp_path, monkeypatch, prior_pause
+):
+    queue = BrowserJobQueue(tmp_path / "state")
+    queue.set_setting("paused", prior_pause)
+    monkeypatch.setattr(script.sys, "platform", "darwin")
+    monkeypatch.setattr(script.Path, "home", lambda: tmp_path)
+
+    def bootstrap(*_args, **_kwargs):
+        raise script.LaunchAgentRecoveryError("previous service recovery remains uncertain")
+
+    monkeypatch.setattr(script, "install_launch_agent", bootstrap)
+    with pytest.raises(script.LaunchAgentRecoveryError):
+        script.install(queue)
+    assert queue.get_setting("paused") == (
+        prior_pause or "Browser worker installation recovery is uncertain; inspect before resuming"
+    )
+
+
+def test_install_acquisition_cannot_replace_an_auth_hold_written_after_its_read(
+    tmp_path, monkeypatch
+):
+    queue = BrowserJobQueue(tmp_path / "state")
+    newer = BrowserJobQueue(queue.state_directory)
+    auth_hold = "Instagram account requires reauthentication"
+    compare = queue.compare_set_pause
+    monkeypatch.setattr(script.sys, "platform", "darwin")
+    monkeypatch.setattr(script.Path, "home", lambda: tmp_path)
+
+    def race(expected, value):
+        newer.set_setting("paused", auth_hold)
+        return compare(expected, value)
+
+    monkeypatch.setattr(queue, "compare_set_pause", race)
+
+    monkeypatch.setattr(
+        script,
+        "install_launch_agent",
+        lambda *_args, **_kwargs: pytest.fail("must preserve the newly acquired auth hold"),
+    )
+    with pytest.raises(RuntimeError, match="pause changed during setup"):
+        script.install(queue)
+    assert queue.get_setting("paused") == auth_hold
+
+
+def test_install_lost_acquisition_fails_before_service_changes_if_pause_is_false(
+    tmp_path, monkeypatch
+):
+    queue = BrowserJobQueue(tmp_path / "state")
+    monkeypatch.setattr(script.sys, "platform", "darwin")
+    monkeypatch.setattr(queue, "compare_set_pause", lambda *_args: False)
+    monkeypatch.setattr(
+        script,
+        "install_launch_agent",
+        lambda *_args, **_kwargs: pytest.fail("must not replace an unpaused worker"),
+    )
+    with pytest.raises(RuntimeError, match="pause changed during setup"):
+        script.install(queue)
+    assert queue.get_setting("paused", False) is False
+
+
+def test_install_exclusively_holds_admission_and_restores_an_existing_pause(tmp_path, monkeypatch):
+    queue = BrowserJobQueue(tmp_path / "state")
+    prior = "Browser storage recovery is pending"
+    queue.set_setting("paused", prior)
+    monkeypatch.setattr(script.sys, "platform", "darwin")
+    monkeypatch.setattr(script.Path, "home", lambda: tmp_path)
+
+    def bootstrap(*_args, **_kwargs):
+        assert queue.get_setting("paused") == "Browser worker installation in progress"
+        assert queue.compare_set_pause(prior, False) is False
+
+    monkeypatch.setattr(script, "install_launch_agent", bootstrap)
+    script.install(queue)
+    assert queue.get_setting("paused") == prior
+
+
 def test_inspect_only_enqueues_read_only_jobs_with_enabled_account(tmp_path, monkeypatch, capsys):
     monkeypatch.setattr(
         source,

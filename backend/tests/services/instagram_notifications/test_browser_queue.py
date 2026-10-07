@@ -955,7 +955,7 @@ def test_owned_setup_pause_restores_atomically_without_erasing_a_new_auth_hold(q
     newer = module.BrowserJobQueue(queue.state_directory)
     if changed:
         newer.set_setting("paused", "Instagram browser requires human account recovery")
-    assert queue.restore_pause(hold, False) is not changed
+    assert queue.compare_set_pause(hold, False) is not changed
     assert queue.get_setting("paused") == (
         "Instagram browser requires human account recovery" if changed else False
     )
@@ -972,9 +972,17 @@ def test_setup_pause_restore_keeps_a_new_auth_hold_that_could_not_be_written(que
     )
     with pytest.raises(sqlite3.OperationalError):
         queue.set_setting("paused", "Instagram browser requires human account recovery")
-    assert queue.restore_pause(hold, False) is False
+    assert queue.compare_set_pause(hold, False) is False
     queue.recover_interrupted()
     assert queue.get_setting("paused") == "Instagram browser requires human account recovery"
+
+
+def test_pause_can_be_acquired_atomically_before_a_setting_exists(queue):
+    hold = "Installer owns browser bootstrap"
+    assert queue.get_setting("paused", False) is False
+    assert queue.compare_set_pause(False, hold) is True
+    assert queue.get_setting("paused") == hold
+    assert queue.claim_next() is None
 
 
 def test_storage_recovery_persists_a_rate_limit_that_could_not_be_written(queue, monkeypatch):
