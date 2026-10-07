@@ -83,6 +83,13 @@ jobs:
       TARGET_SCHOOL: ${{ github.event_name == 'workflow_dispatch' && inputs.school || '' }}
       CUTOFF_DAYS: ${{ github.event_name == 'workflow_dispatch' && '1825' || github.event.client_payload.cutoff_days || '1' }}
       NOTIFICATION_JSON: ${{ inputs.notification_payload || toJSON(github.event.client_payload.notification_dict) }}
+      # This runner-owned runtime survives checkout's git clean without keeping
+      # one full environment for every requirements.lock revision.
+      NOTIFICATION_RUNTIME_ROOT: ${{ runner.tool_cache }}/wat2do-notification-${{ runner.os }}-${{ runner.arch }}
+      NOTIFICATION_RUNNER_NAME: ${{ runner.name }}
+      UV_CACHE_DIR: ${{ runner.tool_cache }}/wat2do-notification-${{ runner.os }}-${{ runner.arch }}/uv-cache
+      UV_PYTHON_INSTALL_DIR: ${{ runner.tool_cache }}/wat2do-notification-${{ runner.os }}-${{ runner.arch }}/python
+      TMPDIR: ${{ runner.temp }}
 
     steps:
       - uses: actions/checkout@v4
@@ -98,7 +105,6 @@ jobs:
           retention-days: 14
 
       - name: Validate job inputs
-        id: validate
         run: |
           test -n "$AWS_DEPLOY_ROLE_ARN"
           test -n "$FRONTEND_URL"
@@ -108,11 +114,8 @@ jobs:
           test -n "$OPENAI_API_KEY"
           test -n "$EVENT_FEED_REVALIDATION_SECRET"
           if [[ -z "$INTENDED_RECIPIENT_ID" && -z "$TARGET_SCHOOL" ]]; then
-            echo "Either intended_recipient_id or school must be provided." >&2
-            echo "Something is wrong!1!11!!1! Skipping remaining steps..." >&2
-            echo "Raw payload: $NOTIFICATION_JSON" >&2
-            echo "skip=true" >> "$GITHUB_OUTPUT"
-            exit 0
+            echo "::error::Notification routing is missing: provide intended_recipient_id or school, then rerun this notification." >&2
+            exit 1
           fi
           if [[ -n "$INTENDED_RECIPIENT_ID" ]] && ! [[ "$INTENDED_RECIPIENT_ID" =~ ^[1-9][0-9]{0,31}$ ]]; then
             echo "Invalid intended recipient ID format." >&2
@@ -124,63 +127,112 @@ jobs:
           fi
 
       - name: Configure AWS credentials with GitHub OIDC
-        if: steps.validate.outputs.skip != 'true'
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ env.AWS_DEPLOY_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Configure application storage
-        if: steps.validate.outputs.skip != 'true'
         run: |
           account_id="$(aws sts get-caller-identity --query Account --output text)"
           echo "STORAGE_BUCKET_NAME=wat2do-production-assets-$account_id" >> "$GITHUB_ENV"
           echo "STORAGE_PUBLIC_BASE_URL=https://wat2do.io/media" >> "$GITHUB_ENV"
 
+      - name: Check dependency setup capacity
+        id: dependencies
+        run: |
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          import shutil
+          from pathlib import Path
+
+          controls = json.loads(Path("backend/controlbox/notification_workflow.json").read_text())
+          minimum_mb = controls["minimum_free_disk_mb"]
+          # Runner identities can share tool_cache; their mutable environments cannot.
+          owner = hashlib.sha256(os.environ["NOTIFICATION_RUNNER_NAME"].encode()).hexdigest()
+          venv = Path(os.environ["NOTIFICATION_RUNTIME_ROOT"]) / owner / "venv-3.12"
+          for label, value in (
+              ("checkout", os.getcwd()),
+              ("dependency cache", os.environ["UV_CACHE_DIR"]),
+              ("Python runtime", venv),
+              ("temporary files", os.environ["TMPDIR"]),
+          ):
+              directory = Path(value)
+              while not directory.exists() and directory != directory.parent:
+                  directory = directory.parent
+              try:
+                  available_mb = shutil.disk_usage(directory).free // (1024 * 1024)
+              except OSError:
+                  raise SystemExit(f"::error::Cannot check disk capacity for {label}; repair runner filesystem access and rerun this notification.") from None
+              if available_mb < minimum_mb:
+                  raise SystemExit(f"::error::Insufficient disk space for {label}: {available_mb} MiB free; need {minimum_mb} MiB. Free runner disk space and rerun this notification; its media has not been processed.")
+              print(f"Dependency setup capacity: {label} has {available_mb} MiB free.")
+
+          with open(os.environ["GITHUB_ENV"], "a") as output:
+              output.write(f"NOTIFICATION_VENV={venv}\n")
+              output.write(f'UV_HTTP_TIMEOUT={controls["http_timeout_seconds"]}\n')
+              output.write(f'UV_HTTP_RETRIES={controls["http_retries"]}\n')
+          with open(os.environ["GITHUB_OUTPUT"], "a") as output:
+              output.write(f'setup_timeout_minutes={controls["setup_timeout_minutes"]}\n')
+              output.write(f'install_timeout_minutes={controls["install_timeout_minutes"]}\n')
+              output.write(f'process_timeout_minutes={controls["process_timeout_minutes"]}\n')
+          PY
+
       - name: Install uv
-        if: steps.validate.outputs.skip != 'true'
+        timeout-minutes: ${{ fromJSON(steps.dependencies.outputs.setup_timeout_minutes) }}
         uses: astral-sh/setup-uv@v3
         with:
           enable-cache: ${{ !contains(needs.route.outputs.runner, 'self-hosted') }}
           cache-dependency-glob: "backend/requirements.lock"
-        env:
-          UV_CACHE_DIR: ${{ runner.temp }}/.uv-cache
+          cache-local-path: ${{ env.UV_CACHE_DIR }}
 
       - name: Set up Python
-        if: steps.validate.outputs.skip != 'true'
+        timeout-minutes: ${{ fromJSON(steps.dependencies.outputs.setup_timeout_minutes) }}
         working-directory: backend
-        run: uv venv --python 3.12 .venv
+        run: |
+          if "$NOTIFICATION_VENV/bin/python" -c 'import sys; assert sys.version_info[:2] == (3, 12)' > /dev/null 2>&1; then
+            echo "Reusing the runner's notification Python environment."
+          elif ! uv venv --clear --python 3.12 "$NOTIFICATION_VENV"; then
+            echo "::error::Notification Python setup failed. Check runner disk capacity and Python download connectivity, then rerun this notification; its media has not been processed." >&2
+            exit 1
+          fi
 
       - name: Install dependencies
-        if: steps.validate.outputs.skip != 'true'
+        timeout-minutes: ${{ fromJSON(steps.dependencies.outputs.install_timeout_minutes) }}
         working-directory: backend
-        run: uv pip install --python .venv/bin/python -r requirements.lock
+        run: |
+          if ! uv pip sync --python "$NOTIFICATION_VENV/bin/python" requirements.lock; then
+            echo "::error::Notification dependency installation failed. Check runner disk capacity and package download connectivity, then rerun this notification; its media has not been processed." >&2
+            exit 1
+          fi
 
       - name: Process the Instagram account
         id: process
-        if: steps.validate.outputs.skip != 'true'
+        timeout-minutes: ${{ fromJSON(steps.dependencies.outputs.process_timeout_minutes) }}
         working-directory: backend
         run: |
           export EVENT_FEED_REVALIDATION_URL="${FRONTEND_URL%/}/api/revalidate-events"
           if [[ "$NOTIFICATION_JSON" != "null" && -n "$NOTIFICATION_JSON" ]]; then
             echo "Processing raw notification payload..."
-            .venv/bin/python jobs/process_notification.py
+            "$NOTIFICATION_VENV/bin/python" jobs/process_notification.py
           elif [[ "${{ needs.route.outputs.media_provider }}" == "browser" ]]; then
-            .venv/bin/python scripts/instagram_browser.py retrieve \
+            "$NOTIFICATION_VENV/bin/python" scripts/instagram_browser.py retrieve \
               --school "$TARGET_SCHOOL" \
               --url "$POSTER_ID" \
               --cutoff-days "$CUTOFF_DAYS"
           else
             test -n "$APIFY_API_TOKEN"
             echo "Processing standard poster_id..."
-            .venv/bin/python jobs/scrape.py \
+            "$NOTIFICATION_VENV/bin/python" jobs/scrape.py \
               --username "$POSTER_ID" \
               --cutoff-days "$CUTOFF_DAYS" \
               --dry-run false
           fi
 
       - name: Trigger background scraper
-        if: success() && steps.validate.outputs.skip != 'true' && steps.process.outputs.new_items > 0 && needs.route.outputs.media_provider == 'apify'
+        if: success() && steps.process.outputs.new_items > 0 && needs.route.outputs.media_provider == 'apify'
         run: gh workflow run scrape-pending-media.yml -f cutoff_days="$CUTOFF_DAYS" -f media_provider=apify
         env:
           GH_TOKEN: ${{ secrets.RUNNER_CHECK_TOKEN }}

@@ -1,11 +1,84 @@
+import fcntl
 import json
 import plistlib
+import subprocess
 from pathlib import Path
 
 import pytest
 
 from core.controlbox import EmulatorFarmNodeControl
 from scripts import emulator_farm as script
+
+
+def test_default_commands_are_bounded_without_dumping_command_output(monkeypatch):
+    def timeout(command, **kwargs):
+        assert kwargs["timeout"] == script.CONTROL.command_timeout_seconds
+        raise subprocess.TimeoutExpired(command, kwargs["timeout"], output="private metadata")
+
+    monkeypatch.setattr(script.subprocess, "run", timeout)
+    with pytest.raises(script.FarmError, match="Command timed out") as failure:
+        script._command(["adb", "devices"])
+    assert "private metadata" not in str(failure.value)
+
+
+@pytest.mark.parametrize(
+    "payload", ["{truncated", "[]", '{"fingerprint": 1}', '{"fingerprint": "bad-time"}']
+)
+def test_corrupt_dispatch_ledger_is_preserved_and_blocks_dispatch(tmp_path, monkeypatch, payload):
+    paths = _paths(tmp_path)
+    paths.state_directory.mkdir()
+    paths.dispatches.write_text(payload)
+    monkeypatch.setattr(
+        script,
+        "_dispatch_notification",
+        lambda *_args: pytest.fail("must not reset the dedupe ledger"),
+    )
+    with pytest.raises(script.FarmError, match="ledger"):
+        script.dispatch_notifications(paths, script.CONTROL.nodes, {})
+    assert paths.dispatches.read_text() == payload
+
+
+def test_parallel_dispatcher_cannot_read_and_write_the_same_ledger(tmp_path):
+    paths = _paths(tmp_path)
+    paths.state_directory.mkdir()
+    with (paths.state_directory / "dispatch.lock").open("a+") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        with pytest.raises(script.FarmError, match="still running"):
+            script.dispatch_notifications(paths, script.CONTROL.nodes, {})
+
+
+def test_failed_dispatch_does_not_block_another_school_or_record_failed_push(tmp_path, monkeypatch):
+    paths = _paths(tmp_path)
+    node = script.CONTROL.nodes[0]
+    observed = tuple(
+        script.NotificationEvidence(
+            recipient_id=recipient,
+            post_time_epoch_seconds=int(script.utc_now().timestamp()),
+            push_id=f"private-push-{recipient}",
+            push_category="post",
+            instagram_action="clips_home?media_id=123",
+            account_username="wat2do.account",
+        )
+        for recipient in ("11111111111", "22222222222")
+    )
+    calls = []
+    monkeypatch.setattr(script, "_resolve_tool", lambda *_args: Path("gh"))
+
+    def dispatch(_github, notification):
+        recipient = notification[script.CONTROL.recipient_id_key]
+        calls.append(recipient)
+        if recipient == "11111111111":
+            raise script.FarmError("GitHub is temporarily unavailable")
+
+    monkeypatch.setattr(script, "_dispatch_notification", dispatch)
+    result = script.dispatch_notifications(paths, (node,), {node.name: observed})
+    assert calls == ["11111111111", "22222222222"]
+    assert result["failed_count"] == 1
+    assert result["failed_recipient_ids"] == ["11111111111"]
+    assert result["dispatched_recipient_ids"] == ["22222222222"]
+    ledger = script._read_dispatch_ledger(paths)
+    assert script._notification_fingerprint(observed[0]) not in ledger
+    assert script._notification_fingerprint(observed[1]) in ledger
 
 
 def _paths(tmp_path: Path) -> script.FarmPaths:

@@ -1,0 +1,10 @@
+{
+  "runner_count": 3,
+  "runner_version": "2.338.0",
+  "download_timeout_seconds": 300,
+  "download_connect_timeout_seconds": 15,
+  "download_retry_limit": 3,
+  "setup_timeout_seconds": 300,
+  "log_retention_days": 7,
+  "log_page_size_megabytes": 8
+}

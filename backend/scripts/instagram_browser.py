@@ -4,10 +4,9 @@
 from __future__ import annotations
 
 import argparse
+import fcntl
 import json
 import logging
-import os
-import plistlib
 import sqlite3
 import subprocess
 import sys
@@ -19,6 +18,7 @@ BACKEND_DIRECTORY = Path(__file__).resolve().parents[1]
 if str(BACKEND_DIRECTORY) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIRECTORY))
 
+from core.launch_agents import install_launch_agent  # noqa: E402
 from services.instagram_notifications.browser_queue import (  # noqa: E402
     CONTROL,
     BrowserJobQueue,
@@ -56,24 +56,38 @@ def launch_agent_payload(queue: BrowserJobQueue) -> dict[str, Any]:
 def install(queue: BrowserJobQueue) -> dict[str, str]:
     if sys.platform != "darwin":
         raise ValueError("The Instagram browser worker requires macOS and an existing Brave tab")
-    destination = Path.home() / "Library/LaunchAgents" / f"{LAUNCH_AGENT_LABEL}.plist"
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    destination.write_bytes(plistlib.dumps(launch_agent_payload(queue), sort_keys=True))
-    destination.chmod(0o600)
-    domain = f"gui/{os.getuid()}"
-    commands = [
-        ["launchctl", "bootout", domain, str(destination)],
-        ["launchctl", "enable", f"{domain}/{LAUNCH_AGENT_LABEL}"],
-        ["launchctl", "bootstrap", domain, str(destination)],
-    ]
-    for index, command in enumerate(commands):
-        result = subprocess.run(
-            command, capture_output=True, text=True, timeout=CONTROL.request_timeout_seconds
-        )
-        if index and result.returncode:
+    with (
+        (queue.state_directory / "worker-install.lock").open("a+") as lock,
+        (queue.state_directory / "ingestion.lock").open("a+") as import_lock,
+    ):
+        try:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            raise RuntimeError("Another browser worker installation is still running") from None
+        try:
+            fcntl.flock(import_lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
             raise RuntimeError(
-                f"Could not {command[1]} Instagram browser LaunchAgent (exit {result.returncode})"
-            )
+                "Wait for the current browser media import before installing"
+            ) from None
+        return _install_idle_worker(queue)
+
+
+def _install_idle_worker(queue: BrowserJobQueue) -> dict[str, str]:
+    destination = Path.home() / "Library/LaunchAgents" / f"{LAUNCH_AGENT_LABEL}.plist"
+    previous_pause = queue.get_setting("paused", False)
+    hold = "Browser worker installation in progress"
+    if not previous_pause:
+        queue.set_setting("paused", hold)
+    try:
+        if any(group["state"] == "running" for group in queue.status()["queues"]):
+            raise RuntimeError("Wait for the current browser jobs to finish before installing")
+        install_launch_agent(
+            destination, launch_agent_payload(queue), timeout=CONTROL.request_timeout_seconds
+        )
+    finally:
+        if not previous_pause:
+            queue.restore_pause(hold, previous_pause)
     return {"installed": LAUNCH_AGENT_LABEL, "plist": str(destination)}
 
 
@@ -130,6 +144,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     logging.basicConfig(
         level=logging.WARNING, format="%(levelname)s %(name)s: %(message)s", force=True
     )
+    result: dict[str, Any]
     try:
         queue = BrowserJobQueue(arguments.state_directory)
         if arguments.command == "worker":

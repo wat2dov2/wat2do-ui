@@ -10,10 +10,10 @@ never persists notification bodies, titles, push identifiers, or media metadata.
 from __future__ import annotations
 
 import argparse
+import fcntl
 import hashlib
 import json
 import os
-import plistlib
 import re
 import shutil
 import subprocess
@@ -30,6 +30,7 @@ if str(BACKEND_DIRECTORY) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIRECTORY))
 
 from core.controlbox import EmulatorFarmNodeControl, controlbox  # noqa: E402
+from core.launch_agents import atomic_write, install_launch_agent  # noqa: E402
 from services.instagram_notifications.browser_digest import (  # noqa: E402
     BrowserDigestError,
     DigestResolution,
@@ -161,7 +162,7 @@ def _command(
             text=True,
             input=input_text,
             check=check,
-            timeout=timeout,
+            timeout=CONTROL.command_timeout_seconds if timeout is None else timeout,
         )
     except FileNotFoundError as exc:
         raise FarmError(f"Required command was not found: {rendered[0]}") from exc
@@ -699,24 +700,24 @@ def _read_evidence(paths: FarmPaths) -> dict[str, dict[str, str]]:
 
 
 def _write_json_atomic(path: Path, payload: Any) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_suffix(f"{path.suffix}.tmp")
-    temporary.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    temporary.replace(path)
+    atomic_write(path, (json.dumps(payload, indent=2, sort_keys=True) + "\n").encode("utf-8"))
 
 
 def _read_dispatch_ledger(paths: FarmPaths) -> dict[str, str]:
     try:
         payload = json.loads(paths.dispatches.read_text(encoding="utf-8"))
-    except (FileNotFoundError, json.JSONDecodeError):
+    except FileNotFoundError:
         return {}
-    if not isinstance(payload, dict):
-        return {}
-    return {
-        fingerprint: timestamp
+    except json.JSONDecodeError as exc:
+        raise FarmError(
+            "Dispatch ledger is invalid; restore it before dispatching notifications"
+        ) from exc
+    if not isinstance(payload, dict) or any(
+        not isinstance(fingerprint, str) or not isinstance(timestamp, str)
         for fingerprint, timestamp in payload.items()
-        if isinstance(fingerprint, str) and isinstance(timestamp, str)
-    }
+    ):
+        raise FarmError("Dispatch ledger is invalid; restore it before dispatching notifications")
+    return payload
 
 
 def _notification_dictionary(item: NotificationEvidence) -> dict[str, str] | None:
@@ -812,6 +813,20 @@ def dispatch_notifications(
     nodes: Sequence[EmulatorFarmNodeControl],
     evidence_by_node: dict[str, tuple[NotificationEvidence, ...]],
 ) -> dict[str, Any]:
+    paths.state_directory.mkdir(parents=True, exist_ok=True)
+    with (paths.state_directory / "dispatch.lock").open("a+") as lock:
+        try:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            raise FarmError("Another notification dispatch is still running") from None
+        return _dispatch_notifications(paths, nodes, evidence_by_node)
+
+
+def _dispatch_notifications(
+    paths: FarmPaths,
+    nodes: Sequence[EmulatorFarmNodeControl],
+    evidence_by_node: dict[str, tuple[NotificationEvidence, ...]],
+) -> dict[str, Any]:
     now = utc_now()
     candidates: dict[str, tuple[NotificationEvidence, dict[str, str]]] = {}
     incomplete_recipient_ids: set[str] = set()
@@ -842,16 +857,19 @@ def dispatch_notifications(
     for fingerprint, timestamp_text in tuple(ledger.items()):
         try:
             timestamp = datetime.fromisoformat(timestamp_text)
-        except ValueError:
-            del ledger[fingerprint]
-            continue
+        except ValueError as exc:
+            raise FarmError(
+                "Dispatch ledger contains an invalid timestamp; restore it before dispatching"
+            ) from exc
         if timestamp.tzinfo is None:
             timestamp = timestamp.replace(tzinfo=UTC)
         if (now - timestamp).total_seconds() > CONTROL.notification_evidence_max_age_seconds:
             del ledger[fingerprint]
 
     dispatched_recipient_ids: set[str] = set()
+    failed_recipient_ids: set[str] = set()
     dispatched_count = 0
+    failed_count = 0
     already_dispatched_count = 0
     github: Path | None = None
     for fingerprint, (item, notification) in candidates.items():
@@ -859,7 +877,12 @@ def dispatch_notifications(
             already_dispatched_count += 1
             continue
         github = github or _resolve_tool(paths, "gh")
-        _dispatch_notification(github, notification)
+        try:
+            _dispatch_notification(github, notification)
+        except FarmError:
+            failed_recipient_ids.add(item.recipient_id)
+            failed_count += 1
+            continue
         ledger[fingerprint] = now.isoformat()
         _write_json_atomic(paths.dispatches, ledger)
         dispatched_recipient_ids.add(item.recipient_id)
@@ -868,6 +891,8 @@ def dispatch_notifications(
     return {
         "dispatched_count": dispatched_count,
         "dispatched_recipient_ids": sorted(dispatched_recipient_ids),
+        "failed_count": failed_count,
+        "failed_recipient_ids": sorted(failed_recipient_ids),
         "already_dispatched_count": already_dispatched_count,
         "duplicate_observation_count": duplicate_count,
         "incomplete_recipient_ids": sorted(incomplete_recipient_ids),
@@ -979,13 +1004,15 @@ def launch_agent_payload(paths: FarmPaths) -> dict[str, Any]:
 
 
 def install_schedule(paths: FarmPaths) -> None:
-    paths.launch_agent_path.parent.mkdir(parents=True, exist_ok=True)
     paths.state_directory.mkdir(parents=True, exist_ok=True)
-    paths.launch_agent_path.write_bytes(plistlib.dumps(launch_agent_payload(paths), sort_keys=True))
-    domain = f"gui/{os.getuid()}"
-    _optional_command(["launchctl", "bootout", domain, str(paths.launch_agent_path)])
-    _command(["launchctl", "bootstrap", domain, str(paths.launch_agent_path)])
-    _command(["launchctl", "enable", f"{domain}/{LAUNCH_AGENT_LABEL}"])
+    try:
+        install_launch_agent(
+            paths.launch_agent_path,
+            launch_agent_payload(paths),
+            timeout=CONTROL.command_timeout_seconds,
+        )
+    except RuntimeError as exc:
+        raise FarmError(str(exc)) from exc
     print(f"Installed {LAUNCH_AGENT_LABEL} with a {CONTROL.check_interval_seconds}-second interval")
 
 
@@ -1054,7 +1081,7 @@ def run_cycle(
             observed_at=payload["checked_at"],
         )
     statuses = [asdict(node_status(paths, node)) for node in nodes]
-    payload["operational"] = all(
+    payload["operational"] = not payload["dispatch"].get("failed_count", 0) and all(
         status["boot_completed"]
         and status["instagram_installed"]
         and status["automate_installed"]
@@ -1272,6 +1299,9 @@ def main() -> int:
             raise FarmError(f"Unsupported command: {arguments.command}")
     except (BrowserDigestError, FarmError) as exc:
         print(f"error: {exc}", file=sys.stderr)
+        return 1
+    except (OSError, subprocess.SubprocessError) as exc:
+        print(f"error: Emulator farm operation failed ({type(exc).__name__})", file=sys.stderr)
         return 1
     return 0
 

@@ -21,6 +21,50 @@ def queue(tmp_path):
     return module.BrowserJobQueue(tmp_path / "browser")
 
 
+def _storage_failure(code=sqlite3.SQLITE_FULL):
+    error = sqlite3.OperationalError("private SQL and filesystem details")
+    error.sqlite_errorcode = code
+    return error
+
+
+def _fail_queue_transaction(queue, monkeypatch, *, statement, failures, at_commit=False):
+    """Exercise real transaction rollback while injecting an OS/SQLite write failure."""
+    connect = queue._connect
+    remaining = [failures]
+
+    class Connection:
+        def __init__(self):
+            self.db = connect()
+            self.matched = False
+
+        def __enter__(self):
+            self.db.__enter__()
+            return self
+
+        def __exit__(self, kind, error, traceback):
+            if kind is None and self.matched and at_commit and remaining[0]:
+                remaining[0] -= 1
+                self.db.rollback()
+                raise _storage_failure()
+            return self.db.__exit__(kind, error, traceback)
+
+        def execute(self, sql, *args):
+            if sql.startswith(statement):
+                self.matched = True
+                if not at_commit and remaining[0]:
+                    remaining[0] -= 1
+                    raise _storage_failure()
+            return self.db.execute(sql, *args)
+
+        def __getattr__(self, name):
+            return getattr(self.db, name)
+
+    monkeypatch.setattr(queue, "_connect", Connection)
+    sleeps = []
+    monkeypatch.setattr(module.time, "sleep", sleeps.append)
+    return remaining, sleeps
+
+
 def _engagement(queue, shortcode="Post1", *, school="ubc", event_id=1):
     return queue.enqueue_engagement(
         school=school,
@@ -759,6 +803,206 @@ def test_digest_wait_fails_promptly_and_cancels_unusable_pending_job(
 
     assert clock.elapsed == 0
     assert queue.get(job_id).state == "cancelled"
+
+
+def test_real_sqlite_busy_claim_waits_then_claims_exactly_once(queue, monkeypatch):
+    job_id = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "busy-claim")
+    monkeypatch.setattr(
+        module,
+        "CONTROL",
+        module.CONTROL.model_copy(update={"storage_busy_timeout_seconds": 0.01}),
+    )
+    waits = []
+    with sqlite3.connect(queue.database_path) as blocker:
+        blocker.execute("BEGIN IMMEDIATE")
+
+        def release_lock(interval):
+            waits.append(interval)
+            blocker.rollback()
+
+        monkeypatch.setattr(module.time, "sleep", release_lock)
+        claimed = queue.claim_next()
+
+    assert claimed.id == job_id
+    assert claimed.attempts == 1
+    assert waits == [module.CONTROL.storage_retry_interval_seconds]
+    assert queue.claim_next() is None
+
+
+@pytest.mark.parametrize("operation", ["claim", "refund", "completion"])
+def test_full_commit_retries_the_transaction_without_duplicating_claim_or_refund(
+    queue, monkeypatch, operation
+):
+    job_ids = [
+        queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, f"commit-full-{index}")
+        for index in range(3)
+    ]
+    first = queue.claim_next()
+    if operation != "claim":
+        queue.defer_for_rate_limit(first, "HTTP 429")
+    remaining, waits = _fail_queue_transaction(
+        queue,
+        monkeypatch,
+        statement="UPDATE jobs SET state=",
+        failures=1,
+        at_commit=True,
+    )
+    if operation == "claim":
+        companions = queue.claim_companions(first, limit=2)
+        assert {job.id for job in companions} == set(job_ids[1:])
+        assert all(job.attempts == 1 for job in companions)
+    elif operation == "refund":
+        queue.finish(first.id, error="HTTP 429", requeue=True, rate_limited_claim=first)
+        assert queue.get(first.id).state == "pending"
+        assert queue.get(first.id).attempts == 0
+    else:
+        queue.finish(first.id, result={"status": "succeeded", "items": ["saved"]})
+        assert queue.get(first.id).result == {"status": "succeeded", "items": ["saved"]}
+        assert queue.get(first.id).attempts == 1
+    assert remaining == [0]
+    assert waits == [module.CONTROL.storage_retry_interval_seconds]
+    assert not queue.storage_unavailable
+
+
+def test_full_diagnostics_cannot_mask_a_committed_job_or_admit_more_work(
+    queue, monkeypatch, caplog
+):
+    remaining, waits = _fail_queue_transaction(
+        queue,
+        monkeypatch,
+        statement="INSERT INTO diagnostic_events",
+        failures=module.CONTROL.storage_retry_limit,
+    )
+    job_id = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "diagnostic-full")
+    assert queue.get(job_id).state == "pending"
+    assert remaining == [0]
+    assert len(waits) == module.CONTROL.storage_retry_limit - 1
+    assert queue.storage_unavailable
+    assert queue.claim_next() is None
+    assert not queue.get_setting("paused", False)
+    assert "private SQL" not in caplog.text
+    queue.recover_interrupted()
+    assert queue.claim_next().id == job_id
+
+
+@pytest.mark.parametrize("operation", ["retry", "refresh"])
+def test_failed_diagnostic_read_does_not_repeat_committed_manual_transition(
+    queue, monkeypatch, operation
+):
+    job_id = queue.enqueue_retrieval(
+        school="ubc",
+        recipient_id=RECIPIENT_ID,
+        account_username=ACCOUNT_USERNAME,
+        url="https://www.instagram.com/p/DiagnosticRead/",
+    )
+    assert queue.claim_next().id == job_id
+    queue.finish(job_id, error="Read failed")
+    original_get = queue.get
+
+    def fail_read(*args):
+        raise _storage_failure()
+
+    monkeypatch.setattr(queue, "get", fail_read)
+    if operation == "retry":
+        queue.retry(job_id)
+    else:
+        queue.refresh_retrieval(job_id)
+    assert original_get(job_id).state == "pending"
+
+
+def test_failed_auth_pause_write_stays_in_memory_until_durable_recovery(queue, monkeypatch):
+    job_id = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "retain-auth-pause")
+    queue.claim_next()
+    reason = "Instagram browser requires human account recovery"
+    _fail_queue_transaction(
+        queue,
+        monkeypatch,
+        statement="INSERT INTO settings VALUES",
+        failures=module.CONTROL.storage_retry_limit,
+    )
+    with pytest.raises(sqlite3.OperationalError):
+        queue.set_setting("paused", reason)
+    assert queue.get_setting("paused") == reason
+    assert queue.claim_next() is None
+    queue.recover_interrupted()
+    reopened = module.BrowserJobQueue(queue.state_directory)
+    assert reopened.get_setting("paused") == reason
+    assert reopened.get(job_id).state == "pending"
+    assert reopened.claim_next() is None
+
+
+def test_corrupt_storage_fails_without_retrying_or_exposing_private_details(queue, monkeypatch):
+    calls = []
+    waits = []
+
+    def corrupt():
+        calls.append(True)
+        raise _storage_failure(sqlite3.SQLITE_CORRUPT)
+
+    monkeypatch.setattr(queue, "_connect", corrupt)
+    monkeypatch.setattr(module.time, "sleep", waits.append)
+    with pytest.raises(sqlite3.OperationalError):
+        queue.get_setting("worker")
+    assert calls == [True]
+    assert waits == []
+    assert queue.storage_unavailable
+
+
+@pytest.mark.parametrize("changed", [False, True])
+def test_owned_setup_pause_restores_atomically_without_erasing_a_new_auth_hold(queue, changed):
+    hold = "Installer owns browser bootstrap"
+    queue.set_setting("paused", hold)
+    newer = module.BrowserJobQueue(queue.state_directory)
+    if changed:
+        newer.set_setting("paused", "Instagram browser requires human account recovery")
+    assert queue.restore_pause(hold, False) is not changed
+    assert queue.get_setting("paused") == (
+        "Instagram browser requires human account recovery" if changed else False
+    )
+
+
+def test_setup_pause_restore_keeps_a_new_auth_hold_that_could_not_be_written(queue, monkeypatch):
+    hold = "Installer owns browser bootstrap"
+    queue.set_setting("paused", hold)
+    _fail_queue_transaction(
+        queue,
+        monkeypatch,
+        statement="INSERT INTO settings VALUES",
+        failures=module.CONTROL.storage_retry_limit,
+    )
+    with pytest.raises(sqlite3.OperationalError):
+        queue.set_setting("paused", "Instagram browser requires human account recovery")
+    assert queue.restore_pause(hold, False) is False
+    queue.recover_interrupted()
+    assert queue.get_setting("paused") == "Instagram browser requires human account recovery"
+
+
+def test_storage_recovery_persists_a_rate_limit_that_could_not_be_written(queue, monkeypatch):
+    clock = _clock(monkeypatch)
+    job_id = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "unstored-rate-limit")
+    active = queue.claim_next()
+    connect = queue._connect
+    attempts = []
+
+    def full_connections():
+        attempts.append(True)
+        raise _storage_failure()
+
+    monkeypatch.setattr(queue, "_connect", full_connections)
+    with pytest.raises(sqlite3.OperationalError):
+        queue.defer_for_rate_limit(active, "HTTP 429")
+    assert queue.is_rate_limited()
+    assert len(attempts) == module.CONTROL.storage_retry_limit
+    monkeypatch.setattr(queue, "_connect", connect)
+    clock.now += 10
+    queue.recover_interrupted()
+    assert queue.get(job_id).state == "pending"
+    assert queue.is_rate_limited()
+    assert queue.get_setting("browser_rate_limit_until") == (
+        clock.now + module.CONTROL.rate_limit_backoff_seconds
+    )
+    assert queue.claim_next() is None
+    assert not queue.get_setting("paused", False)
 
 
 def test_digest_wait_returns_exact_worker_result(queue, monkeypatch):

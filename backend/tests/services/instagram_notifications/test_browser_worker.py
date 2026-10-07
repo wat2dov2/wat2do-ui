@@ -69,6 +69,12 @@ def queue(tmp_path):
     return BrowserJobQueue(tmp_path / "queue")
 
 
+def _full_storage_error():
+    error = sqlite3.OperationalError("private SQL and filesystem details")
+    error.sqlite_errorcode = sqlite3.SQLITE_FULL
+    return error
+
+
 def _engagement(queue, shortcode="Post1"):
     return queue.enqueue_engagement(
         school="ubc",
@@ -119,6 +125,181 @@ def test_busy_browser_lock_prevents_claiming_any_job(queue, monkeypatch):
         assert module.process_next_job(queue) is False
 
     assert queue.get(job_id).state == "pending"
+
+
+@pytest.mark.parametrize("kind", ["digest", "engagement"])
+def test_known_full_storage_stops_a_claim_before_browser_execution(queue, monkeypatch, kind):
+    job_id = (
+        queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "stop-before-execution")
+        if kind == "digest"
+        else _engagement(queue)
+    )
+
+    def diagnostic(*args, **kwargs):
+        queue.storage_unavailable = True
+
+    monkeypatch.setattr(queue, "record_diagnostic", diagnostic)
+    monkeypatch.setattr(module, "execute_job", lambda *args, **kwargs: pytest.fail("Full storage"))
+    assert module.process_next_job(queue) is False
+    assert queue.get(job_id).state == "running"
+    assert queue.storage_unavailable
+
+
+@pytest.mark.parametrize("auth_failure", [False, True])
+def test_full_completion_drains_all_parallel_reads_and_preserves_other_auth_failures(
+    queue, monkeypatch, auth_failure
+):
+    job_ids = [
+        queue.enqueue_retrieval(
+            school="ubc",
+            recipient_id=RECIPIENT_ID,
+            account_username=ACCOUNT_USERNAME,
+            url=f"https://www.instagram.com/p/StorageDrain{index}/",
+        )
+        for index in range(2)
+    ]
+    full_seen = threading.Event()
+    drained = []
+    later = []
+    finish = queue.finish
+
+    def full_completion(job_id, **kwargs):
+        if job_id == job_ids[0] and kwargs.get("result"):
+            later.append(
+                queue.enqueue_retrieval(
+                    school="ubc",
+                    recipient_id=RECIPIENT_ID,
+                    account_username=ACCOUNT_USERNAME,
+                    url="https://www.instagram.com/p/DoNotRefillStorage/",
+                )
+            )
+            full_seen.set()
+            raise _full_storage_error()
+        return finish(job_id, **kwargs)
+
+    def operation(job, **kwargs):
+        if job.id == job_ids[1]:
+            assert full_seen.wait(5)
+            if auth_failure:
+                raise module.BrowserSessionError(
+                    "Instagram browser requires human account recovery"
+                )
+        drained.append(job.id)
+        return {"status": "succeeded"}
+
+    monkeypatch.setattr(queue, "finish", full_completion)
+    monkeypatch.setattr(module, "execute_job", _settling_executor(operation))
+    with pytest.raises(sqlite3.OperationalError):
+        module.process_next_job(queue)
+    assert job_ids[0] in drained
+    assert queue.get(job_ids[0]).state == "running"
+    assert queue.get(job_ids[1]).state == ("failed" if auth_failure else "succeeded")
+    assert queue.get(later[0]).state == "pending"
+    assert queue.get(later[0]).attempts == 0
+    monkeypatch.setattr(queue, "finish", finish)
+    module._recover_worker_queue(queue)
+    assert queue.get(job_ids[0]).state == "pending"
+    assert bool(queue.get_setting("paused", False)) == auth_failure
+    assert not queue.storage_unavailable
+
+
+def test_worker_waits_for_storage_then_retries_safe_read_without_an_operator_pause(
+    queue, monkeypatch, caplog
+):
+    job_id = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "worker-storage-recovery")
+    executions = []
+    finish = queue.finish
+    process = module.process_next_job
+    failed = [False]
+    recoveries = []
+    recover = module._recover_worker_queue
+    monkeypatch.setattr(
+        module,
+        "CONTROL",
+        module.CONTROL.model_copy(update={"storage_retry_interval_seconds": 0.01}),
+    )
+
+    def full_once(job_id, **kwargs):
+        if kwargs.get("result") and not failed[0]:
+            failed[0] = True
+            raise _full_storage_error()
+        return finish(job_id, **kwargs)
+
+    def execute(job, **kwargs):
+        executions.append(job.id)
+        return {"status": "succeeded"}
+
+    def process_then_stop(current):
+        if len(executions) == 2:
+            raise KeyboardInterrupt()
+        return process(current)
+
+    def checked_recovery(current):
+        recoveries.append(True)
+        return recover(current)
+
+    monkeypatch.setattr(queue, "finish", full_once)
+    monkeypatch.setattr(module, "execute_job", _settling_executor(execute))
+    monkeypatch.setattr(module, "process_next_job", process_then_stop)
+    monkeypatch.setattr(module, "_recover_worker_queue", checked_recovery)
+    module.run_worker(queue, collect=False)
+    assert executions == [job_id, job_id]
+    assert len(recoveries) == 2
+    assert queue.get(job_id).state == "succeeded"
+    assert queue.get(job_id).attempts == 2
+    assert not queue.get_setting("paused", False)
+    assert not queue.get_setting("worker")["running"]
+    assert "waiting for storage" in caplog.text
+    assert "private SQL" not in caplog.text
+
+
+def test_successful_engagement_with_unstored_completion_never_replays_automatically(
+    queue, monkeypatch
+):
+    job_id = _engagement(queue)
+    executions = []
+    finish = queue.finish
+
+    def full_completion(*args, **kwargs):
+        raise _full_storage_error()
+
+    monkeypatch.setattr(queue, "finish", full_completion)
+    monkeypatch.setattr(
+        module,
+        "execute_job",
+        lambda job, **kwargs: executions.append(job.id) or {"status": "succeeded"},
+    )
+    with pytest.raises(sqlite3.OperationalError):
+        module.process_next_job(queue)
+    monkeypatch.setattr(queue, "finish", finish)
+    module._recover_worker_queue(queue)
+    assert queue.get(job_id).state == "failed"
+    assert "completion could not be stored" in queue.get_setting("paused")
+    assert module.process_next_job(queue) is False
+    assert executions == [job_id]
+
+
+def test_shutdown_storage_failure_preserves_signal_cleanup_and_original_failure(
+    queue, monkeypatch, caplog
+):
+    setting = queue.set_setting
+    previous = signal.getsignal(signal.SIGTERM)
+
+    def full_shutdown(key, value):
+        if key == "worker" and not value["running"]:
+            raise _full_storage_error()
+        return setting(key, value)
+
+    monkeypatch.setattr(queue, "set_setting", full_shutdown)
+    monkeypatch.setattr(
+        module, "process_next_job", lambda _: (_ for _ in ()).throw(ValueError("safe"))
+    )
+    with pytest.raises(ValueError, match="safe"):
+        module.run_worker(queue, once=True, collect=False)
+    assert signal.getsignal(signal.SIGTERM) is previous
+    assert "Could not record browser worker shutdown" in caplog.text
+    assert "private SQL" not in caplog.text
+    assert not any(thread.name == "instagram-browser-heartbeat" for thread in threading.enumerate())
 
 
 def test_digest_overtakes_likes_during_engagement_cooldown(queue, monkeypatch):
@@ -307,12 +488,17 @@ def test_job_storage_errors_have_safe_actionable_diagnostics(
 
     monkeypatch.setattr(module, "execute_job", fail)
 
-    assert module.process_next_job(queue)
+    with pytest.raises(sqlite3.OperationalError):
+        module.process_next_job(queue)
 
-    assert queue.get(job_id).state == "failed"
-    assert queue.get(job_id).error == reason
-    assert queue.get_setting("paused") == reason
-    assert reason in caplog.text
+    assert queue.get(job_id).state == "running"
+    assert queue.storage_unavailable
+    assert module._storage_failure_reason(failure) == reason
+    assert bool(queue.get_setting("paused")) == (kind == "engagement")
+    module._recover_worker_queue(queue)
+    assert queue.get(job_id).state == ("failed" if kind == "engagement" else "pending")
+    assert bool(queue.get_setting("paused")) == (kind == "engagement")
+    assert not queue.storage_unavailable
     assert "private SQL payload" not in caplog.text
     assert not queue.is_rate_limited()
 

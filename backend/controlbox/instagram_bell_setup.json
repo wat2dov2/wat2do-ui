@@ -1,0 +1,20 @@
+{
+  "command_timeout_seconds": 30,
+  "dump_retry_limit": 2,
+  "max_consecutive_dump_failures": 3,
+  "verification_retry_limit": 2,
+  "stale_scroll_limit": 3,
+  "run_timeout_seconds": 3600,
+  "safe_y_min": 450,
+  "safe_y_max": 2150,
+  "bell_x_min": 700,
+  "tap_settle_seconds": 0.6,
+  "scroll_settle_seconds": 0.8,
+  "dump_retry_delay_seconds": 0.8,
+  "ui_poll_interval_seconds": 0.5,
+  "ui_wait_timeout_seconds": 5,
+  "menu_open_timeout_seconds": 3.5,
+  "selection_settle_seconds": 0.8,
+  "max_menu_close_attempts": 3,
+  "unavailable_ui_delay_seconds": 1.5
+}

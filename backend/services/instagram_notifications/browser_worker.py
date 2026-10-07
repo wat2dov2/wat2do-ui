@@ -185,6 +185,8 @@ def process_next_job(queue: BrowserJobQueue, *, allow_engagement: bool = True) -
             if job is None:
                 return False
             queue.record_diagnostic("running", job)
+            if queue.storage_unavailable:
+                return False
             companions = queue.claim_companions(
                 job,
                 limit=max(0, CONTROL.parallel_tabs - 2),
@@ -228,6 +230,18 @@ def process_next_job(queue: BrowserJobQueue, *, allow_engagement: bool = True) -
                 )
                 queue.finish(job.id, error="Worker stopped during job; inspect before retrying")
                 raise
+            except sqlite3.Error:
+                queue.storage_unavailable = True
+                if job.kind == "engagement" and not job.payload.get("dry_run"):
+                    try:
+                        queue.set_setting(
+                            "paused",
+                            "Engagement completion could not be stored; inspect browser state before resuming",
+                        )
+                    except sqlite3.Error:
+                        pass  # set_setting retains this safety hold until storage returns.
+                log.warning("Browser job %s is waiting for queue storage", job.id)
+                raise
             except Exception as exc:
                 # Never persist raw library exceptions that may include request credentials.
                 error = _storage_failure_reason(exc) or (
@@ -262,13 +276,30 @@ def _process_batch(
     cleanup_lock = threading.Lock()
     rate_limit_deferred: set[str] = set()
     interruption: BaseException | None = None
+    storage_error: sqlite3.Error | None = None
+    futures: dict = {}
+
+    def defer_storage(error):
+        nonlocal storage_error
+        if storage_error is None:
+            log.warning("Browser batch waiting for storage: %s", _storage_failure_reason(error))
+        storage_error = storage_error or error
+        queue.storage_unavailable = True
+        pool_changed.set()
+
+    def persist(operation, *args, **kwargs):
+        try:
+            return operation(*args, **kwargs)
+        except sqlite3.Error as exc:
+            defer_storage(exc)
+            return None
 
     def defer_rate_limit(job, error):
         # Announce the hold before failed-operation cleanup can block healthy completions.
         pool_changed.set()
         with cleanup_lock:
             if job.id not in rate_limit_deferred:
-                queue.defer_for_rate_limit(job, str(error))
+                persist(queue.defer_for_rate_limit, job, str(error))
                 rate_limit_deferred.add(job.id)
 
     def execute(job, session, username):
@@ -325,27 +356,33 @@ def _process_batch(
             raise
 
     def failed(job, exc):
+        if isinstance(exc, sqlite3.Error):
+            defer_storage(exc)
+            return
         if isinstance(exc, BrowserRateLimited):
             defer_rate_limit(job, exc)
         if isinstance(exc, (BrowserAccountChanged, _BrowserTabUnavailable)):
             pool_changed.set()
-            queue.set_setting("retrieval_pool_account", None)
+            persist(queue.set_setting, "retrieval_pool_account", None)
         if isinstance(exc, (BrowserSessionError, TimeoutError)):
             error = str(exc)
             if _requires_human_recovery(exc):
-                queue.set_setting("paused", error)
+                persist(queue.set_setting, "paused", error)
         else:
             error = _storage_failure_reason(exc) or (
                 f"Browser job failed ({type(exc).__name__}); inspect before retrying"
             )
             log.error("Browser job %s failed: %s", job.id, error)
-            queue.set_setting("paused", error)
+            persist(queue.set_setting, "paused", error)
         retryable = (
             job.kind in {"digest", "retrieval"}
             and (
                 isinstance(exc, BrowserRateLimited) or job.attempts < CONTROL.ingestion_retry_limit
             )
-            and (isinstance(exc, BrowserRateLimited) or not queue.get_setting("paused", False))
+            and (
+                isinstance(exc, BrowserRateLimited)
+                or not persist(queue.get_setting, "paused", False)
+            )
             and (
                 isinstance(
                     exc,
@@ -364,7 +401,8 @@ def _process_batch(
             # Keep the caller waiting until all requests have settled.
             pool_retries.append((job, error))
         else:
-            queue.finish(
+            persist(
+                queue.finish,
                 job.id,
                 error=error,
                 requeue=retryable,
@@ -399,6 +437,9 @@ def _process_batch(
                         jobs.append(replacement)
                         unfinished.add(replacement.id)
                         queue.record_diagnostic("running", replacement)
+                        if queue.storage_unavailable:
+                            pool_changed.set()
+                            break
                         futures[executor.submit(execute, replacement, session, username)] = (
                             replacement,
                             session,
@@ -410,11 +451,11 @@ def _process_batch(
                         queue.finish(job.id, result=future.result())
                         unfinished.discard(job.id)
                     except _BrowserReadCleanupPending:
-                        queue.set_setting("retrieval_pool_account", None)
+                        persist(queue.set_setting, "retrieval_pool_account", None)
                         unfinished.discard(job.id)
                     except Exception as exc:
                         failed(job, exc)
-                    finished = queue.get(job.id)
+                    finished = persist(queue.get, job.id)
                     if finished and finished.state != "running":
                         queue.record_diagnostic(finished.state, finished)
                     if jobs[0].kind != "retrieval" or pool_changed.is_set():
@@ -429,22 +470,48 @@ def _process_batch(
                     jobs.append(replacement)
                     unfinished.add(replacement.id)
                     queue.record_diagnostic("running", replacement)
+                    if queue.storage_unavailable:
+                        pool_changed.set()
+                        continue
                     futures[executor.submit(execute, replacement, session, username)] = (
                         replacement,
                         session,
                     )
     except (KeyboardInterrupt, SystemExit) as exc:
         interruption = exc
-        queue.set_setting("paused", "Worker interrupted; inspect browser state before resuming")
+        persist(
+            queue.set_setting,
+            "paused",
+            "Worker interrupted; inspect browser state before resuming",
+        )
         for job in jobs:
             if job.id in unfinished and job.id not in cleanup_pending:
-                queue.finish(job.id, error="Worker stopped during job; inspect before retrying")
+                persist(
+                    queue.finish,
+                    job.id,
+                    error="Worker stopped during job; inspect before retrying",
+                )
+    except sqlite3.Error as exc:
+        defer_storage(exc)
     except Exception as exc:
         for job in jobs:
             if job.id in unfinished and job.id not in cleanup_pending:
                 failed(job, exc)
 
     finally:
+        # Exiting the executor drains every active tab. Observe failures that a
+        # queue write interrupted, so auth and cancellation holds are never lost.
+        for future, (job, _session) in futures.items():
+            try:
+                result = future.result()
+            except _BrowserReadCleanupPending:
+                continue
+            except Exception as exc:
+                failed(job, exc)
+            except (KeyboardInterrupt, SystemExit) as exc:
+                interruption = interruption or exc
+            else:
+                persist(queue.finish, job.id, result=result)
         # Every future and its cancellation has settled before any retry can switch accounts.
         for job, session, pending in cleanup_pending.values():
             recovered_error: BaseException | None = None
@@ -468,8 +535,10 @@ def _process_batch(
                     break
                 except (KeyboardInterrupt, SystemExit) as exc:
                     interruption = interruption or exc
-                    queue.set_setting(
-                        "paused", "Worker interrupted; inspect browser state before resuming"
+                    persist(
+                        queue.set_setting,
+                        "paused",
+                        "Worker interrupted; inspect browser state before resuming",
                     )
                 except Exception as cleanup_error:
                     recovered_error = cleanup_error
@@ -480,23 +549,32 @@ def _process_batch(
                 )
             if isinstance(recovered_error, (KeyboardInterrupt, SystemExit)):
                 interruption = interruption or recovered_error
-                queue.set_setting(
-                    "paused", "Worker interrupted; inspect browser state before resuming"
+                persist(
+                    queue.set_setting,
+                    "paused",
+                    "Worker interrupted; inspect browser state before resuming",
                 )
                 recovered_error = BrowserSessionError(
                     "Worker stopped during job; inspect before retrying"
                 )
             failed(job, recovered_error)
-            finished = queue.get(job.id)
+            finished = persist(queue.get, job.id)
             if finished and finished.state != "running":
                 queue.record_diagnostic(finished.state, finished)
         for job, error in pool_retries:
-            queue.finish(job.id, error=error, requeue=not queue.get_setting("paused", False))
-            finished = queue.get(job.id)
+            persist(
+                queue.finish,
+                job.id,
+                error=error,
+                requeue=not persist(queue.get_setting, "paused", False),
+            )
+            finished = persist(queue.get, job.id)
             if finished:
                 queue.record_diagnostic(finished.state, finished)
         if interruption is not None:
             raise interruption
+        if storage_error is not None:
+            raise storage_error
 
 
 def maintain_tab_pool(queue: BrowserJobQueue) -> None:
@@ -519,6 +597,9 @@ def maintain_tab_pool(queue: BrowserJobQueue) -> None:
             )
         except BrowserSessionError as exc:
             queue.set_setting("paused", str(exc))
+        except sqlite3.Error:
+            queue.storage_unavailable = True
+            raise
         except Exception as exc:
             error = _storage_failure_reason(exc) or (
                 f"Worker tab maintenance failed ({type(exc).__name__}); inspect before retrying"
@@ -589,6 +670,19 @@ def _keep_worker_alive(queue: BrowserJobQueue, stopping: threading.Event) -> Non
             )
 
 
+def _recover_worker_queue(queue: BrowserJobQueue) -> None:
+    """Prove tab settlement and durable storage before any interrupted read can retry."""
+    with open(BROWSER_LOCK_PATH, "a+") as browser_lock:
+        fcntl.flock(browser_lock, fcntl.LOCK_EX)
+        try:
+            BrowserTabPool(queue).settle_registered_tabs()
+        except _BrowserTabUnavailable:
+            log.warning("Retired unavailable secondary tabs before worker recovery")
+        except BrowserSessionError as exc:
+            queue.set_setting("paused", str(exc))
+        queue.recover_interrupted()
+
+
 def run_worker(queue: BrowserJobQueue, *, once: bool = False, collect: bool = True) -> None:
     """Run the singleton; once processes existing queue work without collecting."""
     with (queue.state_directory / "worker.lock").open("a+") as worker_lock:
@@ -603,7 +697,6 @@ def run_worker(queue: BrowserJobQueue, *, once: bool = False, collect: bool = Tr
             signal.SIGTERM, lambda *_: (_ for _ in ()).throw(KeyboardInterrupt())
         )
         try:
-            queue.set_setting("worker", {"running": True, "heartbeat": time.time()})
             heartbeat = threading.Thread(
                 target=_keep_worker_alive,
                 args=(queue, stopping),
@@ -611,25 +704,34 @@ def run_worker(queue: BrowserJobQueue, *, once: bool = False, collect: bool = Tr
                 daemon=True,
             )
             heartbeat.start()
-            with open(BROWSER_LOCK_PATH, "a+") as browser_lock:
-                fcntl.flock(browser_lock, fcntl.LOCK_EX)
-                try:
-                    BrowserTabPool(queue).settle_registered_tabs()
-                except _BrowserTabUnavailable:
-                    log.warning("Retired unavailable secondary tabs before worker recovery")
-                except BrowserSessionError as exc:
-                    queue.set_setting("paused", str(exc))
-                queue.recover_interrupted()
-            if collect and not once:
-                collectors = _source_pollers(queue, stopping)
-                for collector in collectors:
-                    collector.start()
             next_tab_check = 0.0
+            needs_recovery = True
             while True:
-                if time.monotonic() >= next_tab_check:
-                    maintain_tab_pool(queue)
-                    next_tab_check = time.monotonic() + CONTROL.tab_health_interval_seconds
-                worked = process_next_job(queue)
+                try:
+                    if needs_recovery or queue.storage_unavailable:
+                        queue.set_setting("worker", {"running": True, "heartbeat": time.time()})
+                        _recover_worker_queue(queue)
+                        needs_recovery = False
+                        if collect and not once and not collectors:
+                            collectors = _source_pollers(queue, stopping)
+                            for collector in collectors:
+                                collector.start()
+                    if time.monotonic() >= next_tab_check:
+                        maintain_tab_pool(queue)
+                        next_tab_check = time.monotonic() + CONTROL.tab_health_interval_seconds
+                    worked = process_next_job(queue)
+                except sqlite3.Error as exc:
+                    # Storage pressure is an admission hold, never an auth pause.
+                    # Existing engagements recover as uncertain and require inspection.
+                    needs_recovery = True
+                    queue.storage_unavailable = True
+                    log.warning(
+                        "Browser worker waiting for storage: %s", _storage_failure_reason(exc)
+                    )
+                    if once:
+                        raise
+                    stopping.wait(CONTROL.storage_retry_interval_seconds)
+                    continue
                 if once:
                     break
                 if not worked:
@@ -643,6 +745,11 @@ def run_worker(queue: BrowserJobQueue, *, once: bool = False, collect: bool = Tr
                 for thread in [heartbeat, *collectors]:
                     if thread is not None and thread.ident is not None:
                         thread.join(timeout=max(0, shutdown_deadline - time.monotonic()))
-                queue.set_setting("worker", {"running": False, "heartbeat": time.time()})
+                try:
+                    queue.set_setting("worker", {"running": False, "heartbeat": time.time()})
+                except sqlite3.Error as exc:
+                    log.warning(
+                        "Could not record browser worker shutdown: %s", _storage_failure_reason(exc)
+                    )
             finally:
                 signal.signal(signal.SIGTERM, previous_term)

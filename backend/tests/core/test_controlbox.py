@@ -90,6 +90,7 @@ def test_checked_in_controlbox_is_valid() -> None:
     assert controlbox.emulator_farm.accounts_per_node == 3
     assert controlbox.emulator_farm.check_interval_seconds == 1800
     assert controlbox.emulator_farm.live_monitor_interval_seconds == 3
+    assert controlbox.emulator_farm.command_timeout_seconds == 30
     assert controlbox.emulator_farm.run_headlessly is False
     assert controlbox.emulator_farm.github_repository == "wat2dov2/wat2do-ui"
     assert controlbox.emulator_farm.github_event_type == "new_instagram_post"
@@ -289,6 +290,14 @@ def _append_emulator_node(
         (
             lambda payload: payload.update({"maximum_running_nodes": 4}),
             "maximum_running_nodes",
+        ),
+        (
+            lambda payload: payload.update({"command_timeout_seconds": 0}),
+            "command_timeout_seconds",
+        ),
+        (
+            lambda payload: payload.update({"command_timeout_seconds": 301}),
+            "command_timeout_seconds",
         ),
         (
             lambda payload: payload["nodes"][0].update({"port": 5555}),
@@ -601,6 +610,9 @@ def test_instagram_browser_controls_have_one_shared_timing_source():
     assert controlbox.instagram_browser.actions == ("like", "repost")
     assert controlbox.instagram_browser.parallel_tabs == 15
     assert controlbox.instagram_browser.bridge_retry_limit == 3
+    assert controlbox.instagram_browser.storage_busy_timeout_seconds == 2
+    assert controlbox.instagram_browser.storage_retry_limit == 3
+    assert controlbox.instagram_browser.storage_retry_interval_seconds == 1
     assert controlbox.instagram_browser.apple_event_timeout_seconds == 3
     assert controlbox.instagram_browser.navigation_interval_seconds == 1
     assert controlbox.instagram_browser.rate_limit_backoff_seconds == 120
@@ -660,6 +672,17 @@ def test_instagram_browser_controls_have_one_shared_timing_source():
         {"bridge_retry_limit": 0},
         {"parallel_tabs": 1},
         {"bridge_retry_limit": 11},
+        {"storage_busy_timeout_seconds": 0},
+        {"storage_busy_timeout_seconds": 11},
+        {"storage_retry_limit": 0},
+        {"storage_retry_limit": 11},
+        {"storage_retry_interval_seconds": 0},
+        {"storage_retry_interval_seconds": 31},
+        {
+            "storage_busy_timeout_seconds": 10,
+            "storage_retry_limit": 10,
+            "storage_retry_interval_seconds": 10,
+        },
         {"bootstrap_profile_school": "../uwaterloo"},
         {"bootstrap_profile_school": ""},
         {"bootstrap_profile_school": "a" * 24},
@@ -686,6 +709,72 @@ def test_instagram_browser_controls_reject_unsafe_worker_configuration(tmp_path,
         tmp_path,
         "instagram_browser",
         lambda payload: payload.update(patch),
+    )
+    with pytest.raises(ValidationError):
+        load_controlbox(directory)
+
+
+@pytest.mark.parametrize(
+    "patch",
+    [
+        {"minimum_free_disk_mb": 0},
+        {"minimum_free_disk_mb": 65537},
+        {"setup_timeout_minutes": 0},
+        {"install_timeout_minutes": 61},
+        {"process_timeout_minutes": 5},
+        {"process_timeout_minutes": 61},
+        {"http_timeout_seconds": 0},
+        {"http_retries": -1},
+        {"http_retries": 6},
+    ],
+)
+def test_notification_workflow_controls_reject_unsafe_setup(tmp_path, patch):
+    directory = _write_control(
+        tmp_path, "notification_workflow", lambda payload: payload.update(patch)
+    )
+    with pytest.raises(ValidationError):
+        load_controlbox(directory)
+
+
+@pytest.mark.parametrize(
+    "patch",
+    [
+        {"runner_count": 0},
+        {"runner_version": "latest"},
+        {"download_timeout_seconds": 0},
+        {"download_connect_timeout_seconds": 0},
+        {"download_timeout_seconds": 30, "download_connect_timeout_seconds": 60},
+        {"download_retry_limit": 6},
+        {"setup_timeout_seconds": 0},
+        {"setup_timeout_seconds": 1801},
+        {"log_retention_days": 0},
+        {"log_page_size_megabytes": 0},
+    ],
+)
+def test_runner_setup_controls_reject_unsafe_installation(tmp_path, patch):
+    directory = _write_control(tmp_path, "runner_setup", lambda payload: payload.update(patch))
+    with pytest.raises(ValidationError):
+        load_controlbox(directory)
+
+
+@pytest.mark.parametrize(
+    "patch",
+    [
+        {"command_timeout_seconds": 0},
+        {"dump_retry_limit": 6},
+        {"max_consecutive_dump_failures": 0},
+        {"verification_retry_limit": 0},
+        {"stale_scroll_limit": 0},
+        {"run_timeout_seconds": 30},
+        {"safe_y_max": 450},
+        {"tap_settle_seconds": 0},
+        {"ui_poll_interval_seconds": float("inf")},
+        {"max_menu_close_attempts": 0},
+    ],
+)
+def test_instagram_bell_setup_controls_reject_unsafe_automation(tmp_path, patch):
+    directory = _write_control(
+        tmp_path, "instagram_bell_setup", lambda payload: payload.update(patch)
     )
     with pytest.raises(ValidationError):
         load_controlbox(directory)

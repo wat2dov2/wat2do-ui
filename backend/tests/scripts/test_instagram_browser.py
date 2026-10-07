@@ -1,9 +1,11 @@
+import fcntl
 import json
 import plistlib
 from types import SimpleNamespace
 
 import pytest
 
+from core import launch_agents
 from scripts import instagram_browser as script
 from services.instagram_notifications import carousel_engagement as source
 from services.instagram_notifications.browser_queue import BrowserJobQueue
@@ -17,7 +19,9 @@ def test_install_uses_stable_checkout_and_shared_spool(tmp_path, monkeypatch):
     monkeypatch.setattr(
         script.subprocess,
         "run",
-        lambda command, **kwargs: calls.append(command) or SimpleNamespace(returncode=0),
+        lambda command, **kwargs: (
+            calls.append(command) or SimpleNamespace(returncode=3 if command[1] == "print" else 0)
+        ),
     )
     result = script.install(queue)
     payload = plistlib.loads(script.Path(result["plist"]).read_bytes())
@@ -30,7 +34,8 @@ def test_install_uses_stable_checkout_and_shared_spool(tmp_path, monkeypatch):
     ]
     assert payload["WorkingDirectory"] == str(script.BACKEND_DIRECTORY)
     assert payload["KeepAlive"] and payload["RunAtLoad"]
-    assert [call[1] for call in calls] == ["bootout", "enable", "bootstrap"]
+    assert [call[1] for call in calls] == ["print", "enable", "bootstrap"]
+    assert queue.get_setting("paused") is False
     assert "SUPABASE_SECRET_KEY" not in payload["EnvironmentVariables"]
 
 
@@ -41,10 +46,67 @@ def test_install_reports_failed_bootstrap(tmp_path, monkeypatch):
     monkeypatch.setattr(
         script.subprocess,
         "run",
-        lambda command, **kwargs: SimpleNamespace(returncode=7 if command[1] == "bootstrap" else 0),
+        lambda command, **kwargs: SimpleNamespace(
+            returncode=7 if command[1] == "bootstrap" else 3 if command[1] == "print" else 0
+        ),
     )
     with pytest.raises(RuntimeError, match="bootstrap"):
         script.install(queue)
+    assert queue.get_setting("paused") is False
+    assert not (tmp_path / "Library/LaunchAgents" / f"{script.LAUNCH_AGENT_LABEL}.plist").exists()
+
+
+def test_install_refuses_to_interrupt_running_browser_work(tmp_path, monkeypatch):
+    queue = BrowserJobQueue(tmp_path / "state")
+    queue.enqueue_engagement(
+        school="ubc",
+        recipient_id="123",
+        account_username="ubc.wat2do.io",
+        post_url="https://www.instagram.com/p/abc/",
+    )
+    queue.claim_next()
+    monkeypatch.setattr(script.sys, "platform", "darwin")
+    monkeypatch.setattr(
+        launch_agents.subprocess,
+        "run",
+        lambda *_args, **_kwargs: pytest.fail("must keep worker alive"),
+    )
+    with pytest.raises(RuntimeError, match="current browser jobs"):
+        script.install(queue)
+    assert queue.get_setting("paused") is False
+
+
+def test_concurrent_installs_cannot_overwrite_pause_ownership(tmp_path, monkeypatch):
+    queue = BrowserJobQueue(tmp_path / "state")
+    monkeypatch.setattr(script.sys, "platform", "darwin")
+    with (queue.state_directory / "worker-install.lock").open("a+") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        with pytest.raises(RuntimeError, match="installation is still running"):
+            script.install(queue)
+    assert queue.get_setting("paused", False) is False
+
+
+def test_install_refuses_to_interrupt_an_active_media_import(tmp_path, monkeypatch):
+    queue = BrowserJobQueue(tmp_path / "state")
+    monkeypatch.setattr(script.sys, "platform", "darwin")
+    with (queue.state_directory / "ingestion.lock").open("a+") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        with pytest.raises(RuntimeError, match="current browser media import"):
+            script.install(queue)
+    assert queue.get_setting("paused", False) is False
+
+
+def test_install_cannot_erase_a_new_runtime_safety_pause(tmp_path, monkeypatch):
+    queue = BrowserJobQueue(tmp_path / "state")
+    monkeypatch.setattr(script.sys, "platform", "darwin")
+    monkeypatch.setattr(script.Path, "home", lambda: tmp_path)
+
+    def bootstrap(*_args, **_kwargs):
+        queue.set_setting("paused", "Instagram account requires reauthentication")
+
+    monkeypatch.setattr(script, "install_launch_agent", bootstrap)
+    script.install(queue)
+    assert queue.get_setting("paused") == "Instagram account requires reauthentication"
 
 
 def test_inspect_only_enqueues_read_only_jobs_with_enabled_account(tmp_path, monkeypatch, capsys):

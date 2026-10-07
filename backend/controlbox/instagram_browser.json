@@ -32,5 +32,8 @@
   "tab_health_interval_seconds": 10,
   "profile_post_limit": 12,
   "ingestion_retry_limit": 3,
-  "bridge_retry_limit": 3
+  "bridge_retry_limit": 3,
+  "storage_busy_timeout_seconds": 2,
+  "storage_retry_limit": 3,
+  "storage_retry_interval_seconds": 1
 }

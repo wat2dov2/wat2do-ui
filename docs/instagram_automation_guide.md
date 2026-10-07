@@ -111,6 +111,17 @@ The CLI's global `--state-directory` option supports isolated diagnostics; chang
 The queue stores public identities, post URLs, actions, sanitized results, and scheduling state.
 Do not delete its database to clear an error: that also removes deduplication history and the activation watermark.
 
+The notification workflow checks free space before preparing Python or downloading dependencies.
+`backend/controlbox/notification_workflow.json` owns the disk reserve, setup and processing deadlines, and HTTP retry budget.
+Each runner reuses its own Python environment outside the disposable checkout and synchronizes it exactly to `requirements.lock`.
+The uv cache has one consistent location across setup and installation.
+A low-space failure identifies the affected filesystem role and free MiB without printing credentials or notification contents.
+Free disposable build or package caches, preserve the browser queue and dispatch ledger, and rerun the failed notification after storage is available.
+
+SQLite contention and temporary storage failures use the bounded storage controls in `instagram_browser.json`.
+Optional diagnostic publication cannot invalidate a committed queue transition.
+Storage recovery must preserve authentication holds, operator pauses, and uncertainty about engagement clicks.
+
 ### Queue priority and school ordering
 
 The worker checks the high-priority digest queue before every browser action.
@@ -241,6 +252,8 @@ python scripts/instagram_browser.py status
 
 The installed LaunchAgent is `io.wat2do.instagram-browser.worker`.
 Its stdout and stderr logs are stored with the queue state.
+Installation pauses admission and refuses replacement while jobs are running.
+It flushes the replacement configuration before stopping the service and restores the previous configuration and service if replacement fails.
 Inspect service startup failures with:
 
 ```sh
@@ -414,6 +427,22 @@ python scripts/emulator_farm.py check --json
 
 Use `python scripts/emulator_farm.py doctor` for host readiness and `python scripts/emulator_farm.py status --json` for AVD, package, notification-access, and routing status.
 The scheduled `run-cycle` exits nonzero while either app is missing, Automate lacks notification access, or GitHub dispatch fails, so `launchctl print gui/$(id -u)/io.wat2do.emulator-farm.check` exposes incomplete setup through its last exit code.
+
+Device and scheduler commands are bounded by `command_timeout_seconds` in `emulator_farm.json`, with separate explicit boot deadlines.
+Concurrent dispatchers cannot claim the same local dispatch ledger.
+Malformed dispatch history fails before forwarding notifications; restore the history rather than deleting it and replaying old notifications.
+
+`backend/scripts/setup_isolated_runners.sh` preserves existing runner registrations and checks their service installation.
+It downloads into a private staging directory, validates the archive against the official release checksum, and reports partial setup as a repair error.
+`backend/controlbox/runner_setup.json` owns the pinned runner release, command and download deadlines, retry limit, and diagnostic log retention.
+Fresh installations receive those log controls in the runner's `.env` file.
+Apply the same log controls to an existing runner's `.env` and restart its service only after its active workflow finishes.
+
+The manual bell setup script uses `instagram_bell_setup.json` for command deadlines, UI waits, verification attempts, and the overall run deadline.
+It uses the configured Android SDK path and requires an explicit device when multiple devices are connected.
+Temporary UI dumps are isolated per call.
+Repeated dump failures stop the run, and an account counts as successful only after the notification setting is verified as All.
+Unconfirmed changes are reported as failures for inspection rather than retried through blind taps.
 
 ## Carousel draft selection and artwork
 

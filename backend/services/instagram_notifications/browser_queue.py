@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 import math
 import os
 import re
@@ -17,8 +18,9 @@ import uuid
 from collections.abc import Callable
 from contextlib import closing
 from dataclasses import dataclass, replace
+from functools import wraps
 from pathlib import Path
-from typing import Any
+from typing import Any, ParamSpec, TypeVar
 
 from core.controlbox import controlbox
 from schemas.school import validate_recipient_id
@@ -29,10 +31,36 @@ from services.instagram_notifications.browser_session import (
 )
 
 CONTROL = controlbox.instagram_browser
+log = logging.getLogger(__name__)
+_P = ParamSpec("_P")
+_R = TypeVar("_R")
 _AVAILABLE_ACCOUNT_SQL = (
     "account_username NOT IN (SELECT value FROM json_each(COALESCE("
     "(SELECT value FROM settings WHERE key='excluded_accounts'),'[]')))"
 )
+
+
+def _retry_storage(operation: Callable[_P, _R]) -> Callable[_P, _R]:
+    """Retry a rolled-back queue transaction, never the browser operation it records."""
+
+    @wraps(operation)
+    def retry(*args: _P.args, **kwargs: _P.kwargs) -> _R:
+        for attempt in range(CONTROL.storage_retry_limit):
+            try:
+                return operation(*args, **kwargs)
+            except sqlite3.Error as exc:
+                code = getattr(exc, "sqlite_errorcode", None)
+                code = code & 0xFF if type(code) is int else None
+                if code not in {sqlite3.SQLITE_FULL, sqlite3.SQLITE_BUSY, sqlite3.SQLITE_LOCKED}:
+                    args[0].storage_unavailable = True
+                    raise
+                if attempt + 1 == CONTROL.storage_retry_limit:
+                    args[0].storage_unavailable = True
+                    raise
+                time.sleep(CONTROL.storage_retry_interval_seconds)
+        raise AssertionError("Validated storage retry limit must be positive")
+
+    return retry
 
 
 def default_state_directory() -> Path:
@@ -61,7 +89,11 @@ class BrowserJob:
 class BrowserJobQueue:
     """SQLite transactions provide cross-process admission and school rotation."""
 
+    @_retry_storage
     def __init__(self, state_directory: Path | None = None) -> None:
+        self.storage_unavailable = False
+        self._pending_pause: Any = None
+        self._pending_rate_limit = False
         self.state_directory = state_directory or default_state_directory()
         self.state_directory.mkdir(parents=True, exist_ok=True, mode=0o700)
         self.database_path = self.state_directory / "jobs.sqlite3"
@@ -107,59 +139,100 @@ class BrowserJobQueue:
         self.database_path.chmod(0o600)
 
     def _connect(self) -> sqlite3.Connection:
-        db = sqlite3.connect(self.database_path, timeout=CONTROL.request_timeout_seconds)
+        db = sqlite3.connect(self.database_path, timeout=CONTROL.storage_busy_timeout_seconds)
         db.row_factory = sqlite3.Row
         return db
 
+    @_retry_storage
     def get_setting(self, key: str, default: Any = None) -> Any:
+        if key == "paused" and self._pending_pause:
+            return self._pending_pause
         with closing(self._connect()) as db:
             row = db.execute("SELECT value FROM settings WHERE key=?", (key,)).fetchone()
         return json.loads(row[0]) if row else default
 
+    @_retry_storage
     def set_setting(self, key: str, value: Any) -> None:
-        previous = self.get_setting(key) if key == "paused" else None
+        if key == "paused" and value:
+            # A full disk must not erase an auth or uncertain-action safety hold.
+            try:
+                previous = self.get_setting(key)
+            finally:
+                self._pending_pause = value
+        else:
+            previous = self.get_setting(key) if key == "paused" else None
         with closing(self._connect()) as db, db:
             db.execute(
                 "INSERT INTO settings VALUES (?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
                 (key, json.dumps(value)),
             )
 
+        if key == "paused":
+            self._pending_pause = None
+
         if key == "paused" and previous != value:
             self.record_diagnostic("paused" if value else "resumed")
 
+    @_retry_storage
+    def restore_pause(self, expected: Any, value: Any) -> bool:
+        """Release an owned setup hold only if no newer safety hold replaced it."""
+        if self._pending_pause and self._pending_pause != expected:
+            return False
+        with closing(self._connect()) as db, db:
+            db.execute("BEGIN IMMEDIATE")
+            row = db.execute("SELECT value FROM settings WHERE key='paused'").fetchone()
+            if row is None or json.loads(row[0]) != expected:
+                return False
+            db.execute("UPDATE settings SET value=? WHERE key='paused'", (json.dumps(value),))
+        if self._pending_pause == expected:
+            self._pending_pause = None
+        self.record_diagnostic("paused" if value else "resumed")
+        return True
+
+    @_retry_storage
     def defer_for_rate_limit(self, job: BrowserJob | None, reason: str) -> None:
         """Hold all browser admission without changing a claim or its retry policy."""
         if not reason or not reason.strip():
             raise ValueError("A rate limit requires a diagnostic reason")
         limited_job = None
-        with closing(self._connect()) as db, db:
-            db.execute("BEGIN IMMEDIATE")
-            if job is not None:
-                row = db.execute(
-                    "SELECT * FROM jobs WHERE id=? AND state='running' AND attempts=? AND started_at=?",
-                    (job.id, job.attempts, job.started_at),
-                ).fetchone()
-                if row is None or job.state != "running":
-                    return
-                limited_job = self._job(row)
-            now = time.time()
-            deadline, backoff = self._rate_limit_state(db)
-            if backoff == 0:
-                backoff = CONTROL.rate_limit_backoff_seconds
-            elif now >= deadline:
-                backoff = min(backoff * 2, CONTROL.rate_limit_max_backoff_seconds)
-            deadline = max(deadline, now + backoff)
-            db.executemany(
-                "INSERT INTO settings VALUES (?,?) "
-                "ON CONFLICT(key) DO UPDATE SET value=excluded.value",
-                [
-                    ("browser_rate_limit_until", json.dumps(deadline)),
-                    ("browser_rate_limit_backoff_seconds", json.dumps(backoff)),
-                ],
-            )
+        try:
+            with closing(self._connect()) as db, db:
+                db.execute("BEGIN IMMEDIATE")
+                if job is not None:
+                    row = db.execute(
+                        "SELECT * FROM jobs WHERE id=? AND state='running' AND attempts=? AND started_at=?",
+                        (job.id, job.attempts, job.started_at),
+                    ).fetchone()
+                    if row is None or job.state != "running":
+                        return
+                    limited_job = self._job(row)
+                self._write_rate_limit_state(db, time.time())
+        except sqlite3.Error:
+            self._pending_rate_limit = True
+            raise
+        self._pending_rate_limit = False
         self.record_diagnostic("rate_limited", limited_job, reason=reason)
 
+    @classmethod
+    def _write_rate_limit_state(cls, db: sqlite3.Connection, now: float) -> None:
+        deadline, backoff = cls._rate_limit_state(db)
+        if backoff == 0:
+            backoff = CONTROL.rate_limit_backoff_seconds
+        elif now >= deadline:
+            backoff = min(backoff * 2, CONTROL.rate_limit_max_backoff_seconds)
+        deadline = max(deadline, now + backoff)
+        db.executemany(
+            "INSERT INTO settings VALUES (?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+            [
+                ("browser_rate_limit_until", json.dumps(deadline)),
+                ("browser_rate_limit_backoff_seconds", json.dumps(backoff)),
+            ],
+        )
+
+    @_retry_storage
     def is_rate_limited(self, now: float | None = None) -> bool:
+        if self._pending_rate_limit:
+            return True
         now = time.time() if now is None else now
         with closing(self._connect()) as db:
             return now < self._rate_limit_state(db)[0]
@@ -198,6 +271,16 @@ class BrowserJobQueue:
         self, state: str, job: BrowserJob | None = None, *, reason: str | None = None
     ) -> None:
         """Persist allowlisted diagnostics locally without delaying browser work on HTTP."""
+        try:
+            self._write_diagnostic(state, job, reason=reason)
+        except (OSError, sqlite3.Error):
+            # Diagnostic durability is secondary to the job transition already committed.
+            log.warning("Could not persist browser diagnostic (%s)", state)
+
+    @_retry_storage
+    def _write_diagnostic(
+        self, state: str, job: BrowserJob | None = None, *, reason: str | None = None
+    ) -> None:
         event = {
             "event": f"Browser worker: {state}",
             "sender_id": "instagram-browser-worker",
@@ -224,6 +307,12 @@ class BrowserJobQueue:
                 (uuid.uuid4().hex, json.dumps(event), time.time()),
             )
 
+    def _record_job_diagnostic(self, state: str, job_id: str) -> None:
+        try:
+            self.record_diagnostic(state, self.get(job_id))
+        except (OSError, sqlite3.Error):
+            log.warning("Could not read browser job for diagnostic (%s)", state)
+
     def publish_diagnostics(self, *, should_stop: Callable[[], bool] | None = None) -> None:
         """Keep unsent events durable when production logging is unavailable."""
         from services.automate_log_service import create_automate_log
@@ -244,6 +333,7 @@ class BrowserJobQueue:
     def account_excluded(self, username: str) -> bool:
         return username in self.get_setting("excluded_accounts", [])
 
+    @_retry_storage
     def peek_account_username(self) -> str | None:
         """Choose a public bootstrap profile without claiming or switching an account."""
         with closing(self._connect()) as db:
@@ -305,6 +395,7 @@ class BrowserJobQueue:
             },
         )
 
+    @_retry_storage
     def _enqueue(
         self, kind: str, school: str, recipient_id: str, username: str, payload: dict[str, Any]
     ) -> str:
@@ -348,9 +439,10 @@ class BrowserJobQueue:
                     time.time(),
                 ),
             )
-        self.record_diagnostic("queued", self.get(job_id))
+        self._record_job_diagnostic("queued", job_id)
         return job_id
 
+    @_retry_storage
     def get(self, job_id: str) -> BrowserJob | None:
         with closing(self._connect()) as db:
             row = db.execute("SELECT * FROM jobs WHERE id=?", (job_id,)).fetchone()
@@ -378,9 +470,12 @@ class BrowserJobQueue:
             result=json.loads(row["result"]) if row["result"] else None,
         )
 
+    @_retry_storage
     def claim_next(
         self, *, now: float | None = None, allow_engagement: bool = True
     ) -> BrowserJob | None:
+        if self.storage_unavailable:
+            return None
         now = time.time() if now is None else now
         with closing(self._connect()) as db, db:
             db.execute("BEGIN IMMEDIATE")
@@ -445,11 +540,12 @@ class BrowserJobQueue:
             (json.loads(selected[0]) if selected else None,),
         ).fetchone()
 
+    @_retry_storage
     def claim_companions(
         self, first: BrowserJob, *, limit: int, allow_engagement: bool = True
     ) -> list[BrowserJob]:
         """Atomically claim a compatible batch; never parallelize account switches."""
-        if first.kind == "engagement" or limit <= 0:
+        if self.storage_unavailable or first.kind == "engagement" or limit <= 0:
             return []
         with closing(self._connect()) as db, db:
             db.execute("BEGIN IMMEDIATE")
@@ -488,6 +584,7 @@ class BrowserJobQueue:
                 for row in rows
             ]
 
+    @_retry_storage
     def finish(
         self,
         job_id: str,
@@ -584,11 +681,20 @@ class BrowserJobQueue:
                 "retrying", replace(retry_job, state="pending", result=None, error=error)
             )
 
+    @_retry_storage
     def recover_interrupted(self) -> None:
         """Called only after obtaining the singleton worker and exclusive browser locks."""
         newly_paused = False
         with closing(self._connect()) as db, db:
             db.execute("BEGIN IMMEDIATE")
+            if self._pending_pause:
+                db.execute(
+                    "INSERT INTO settings VALUES ('paused',?) "
+                    "ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+                    (json.dumps(self._pending_pause),),
+                )
+            if self._pending_rate_limit:
+                self._write_rate_limit_state(db, time.time())
             uncertain_action = db.execute(
                 "SELECT 1 FROM jobs WHERE kind='engagement' AND state='running' "
                 "AND json_extract(payload,'$.dry_run') IS NOT 1 LIMIT 1"
@@ -612,9 +718,13 @@ class BrowserJobQueue:
                 "UPDATE jobs SET state='failed',finished_at=?,error='Worker interrupted; inspect browser state before retrying' WHERE kind='engagement' AND state='running'",
                 (time.time(),),
             )
+        self._pending_pause = None
+        self._pending_rate_limit = False
+        self.storage_unavailable = False
         if newly_paused:
             self.record_diagnostic("paused")
 
+    @_retry_storage
     def retry(self, job_id: str) -> None:
         with closing(self._connect()) as db, db:
             changed = db.execute(
@@ -623,8 +733,9 @@ class BrowserJobQueue:
             ).rowcount
         if not changed:
             raise ValueError("Only failed, unsupported, or cancelled jobs may be retried")
-        self.record_diagnostic("queued", self.get(job_id))
+        self._record_job_diagnostic("queued", job_id)
 
+    @_retry_storage
     def cancel(self, job_id: str) -> None:
         with closing(self._connect()) as db, db:
             db.execute(
@@ -632,6 +743,7 @@ class BrowserJobQueue:
                 (time.time(), job_id),
             )
 
+    @_retry_storage
     def refresh_retrieval(self, job_id: str) -> None:
         """Refresh expired public media fields without touching engagement history."""
         with closing(self._connect()) as db, db:
@@ -641,8 +753,9 @@ class BrowserJobQueue:
             ).rowcount
         if not changed:
             raise ValueError("Only completed retrieval jobs may be refreshed")
-        self.record_diagnostic("queued", self.get(job_id))
+        self._record_job_diagnostic("queued", job_id)
 
+    @_retry_storage
     def retrieval_results(self) -> list[BrowserJob]:
         with closing(self._connect()) as db:
             rows = db.execute(

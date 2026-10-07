@@ -615,6 +615,7 @@ class EmulatorFarmControl(_ControlModel):
     check_interval_seconds: int = Field(ge=300)
     live_monitor_interval_seconds: int = Field(ge=1, le=60)
     boot_timeout_seconds: int = Field(gt=0, le=900)
+    command_timeout_seconds: int = Field(ge=1, le=300)
     notification_evidence_max_age_seconds: int = Field(gt=0, le=604800)
     system_image: str = Field(min_length=1)
     device_profile: str = Field(pattern=r"^[a-z0-9_]+$")
@@ -658,6 +659,9 @@ class InstagramBrowserControl(_ControlModel):
     ]
     bootstrap_profile_school: str = Field(pattern=r"^[a-z0-9_]{1,23}$")
     bridge_retry_limit: int = Field(gt=0, le=10)
+    storage_busy_timeout_seconds: float = Field(gt=0, le=10, allow_inf_nan=False)
+    storage_retry_limit: int = Field(ge=1, le=10)
+    storage_retry_interval_seconds: float = Field(gt=0, le=30, allow_inf_nan=False)
     request_timeout_seconds: float = Field(gt=0, le=120)
     apple_event_timeout_seconds: float = Field(gt=0, le=120)
     navigation_interval_seconds: float = Field(gt=0, le=30)
@@ -704,6 +708,67 @@ class InstagramBrowserControl(_ControlModel):
             raise ValueError("Maximum rate limit backoff must include the initial backoff")
         if self.rate_limit_recovery_seconds < self.rate_limit_backoff_seconds:
             raise ValueError("Rate limit recovery must include the initial backoff")
+        if (
+            self.storage_busy_timeout_seconds * self.storage_retry_limit
+            + self.storage_retry_interval_seconds * (self.storage_retry_limit - 1)
+            >= self.job_timeout_seconds
+        ):
+            raise ValueError("Storage retry budget must fit inside the browser job timeout")
+        return self
+
+
+class NotificationWorkflowControl(_ControlModel):
+    minimum_free_disk_mb: int = Field(ge=512, le=65536)
+    setup_timeout_minutes: int = Field(ge=1, le=30)
+    install_timeout_minutes: int = Field(ge=1, le=60)
+    process_timeout_minutes: int = Field(ge=6, le=60)
+    http_timeout_seconds: int = Field(ge=1, le=120)
+    http_retries: int = Field(ge=0, le=5)
+
+
+class RunnerSetupControl(_ControlModel):
+    runner_count: int = Field(ge=1, le=10)
+    runner_version: str = Field(pattern=r"^[0-9]+\.[0-9]+\.[0-9]+$")
+    download_timeout_seconds: int = Field(ge=30, le=1800)
+    download_connect_timeout_seconds: int = Field(ge=1, le=60)
+    download_retry_limit: int = Field(ge=0, le=5)
+    setup_timeout_seconds: int = Field(ge=30, le=1800)
+    log_retention_days: int = Field(ge=1, le=30)
+    log_page_size_megabytes: int = Field(ge=1, le=64)
+
+    @model_validator(mode="after")
+    def validate_download_timeout(self) -> "RunnerSetupControl":
+        if self.download_connect_timeout_seconds > self.download_timeout_seconds:
+            raise ValueError("Runner connection timeout must fit the download timeout")
+        return self
+
+
+class InstagramBellSetupControl(_ControlModel):
+    command_timeout_seconds: float = Field(gt=0, le=120, allow_inf_nan=False)
+    dump_retry_limit: int = Field(ge=0, le=5)
+    max_consecutive_dump_failures: int = Field(ge=1, le=10)
+    verification_retry_limit: int = Field(ge=1, le=5)
+    stale_scroll_limit: int = Field(ge=1, le=10)
+    run_timeout_seconds: float = Field(gt=0, le=7200, allow_inf_nan=False)
+    safe_y_min: int = Field(ge=0, le=4096)
+    safe_y_max: int = Field(gt=0, le=8192)
+    bell_x_min: int = Field(ge=0, le=4096)
+    tap_settle_seconds: float = Field(gt=0, le=10, allow_inf_nan=False)
+    scroll_settle_seconds: float = Field(gt=0, le=10, allow_inf_nan=False)
+    dump_retry_delay_seconds: float = Field(gt=0, le=10, allow_inf_nan=False)
+    ui_poll_interval_seconds: float = Field(gt=0, le=5, allow_inf_nan=False)
+    ui_wait_timeout_seconds: float = Field(gt=0, le=30, allow_inf_nan=False)
+    menu_open_timeout_seconds: float = Field(gt=0, le=30, allow_inf_nan=False)
+    selection_settle_seconds: float = Field(gt=0, le=10, allow_inf_nan=False)
+    max_menu_close_attempts: int = Field(ge=1, le=10)
+    unavailable_ui_delay_seconds: float = Field(gt=0, le=10, allow_inf_nan=False)
+
+    @model_validator(mode="after")
+    def validate_deadlines_and_bounds(self) -> "InstagramBellSetupControl":
+        if self.safe_y_max <= self.safe_y_min:
+            raise ValueError("Bell setup safe_y_max must exceed safe_y_min")
+        if self.run_timeout_seconds <= self.command_timeout_seconds:
+            raise ValueError("Bell setup run timeout must exceed command timeout")
         return self
 
 
@@ -861,6 +926,9 @@ class ControlBox(_ControlModel):
     social_previews: SocialPreviewsControl
     emulator_farm: EmulatorFarmControl
     instagram_browser: InstagramBrowserControl
+    notification_workflow: NotificationWorkflowControl
+    runner_setup: RunnerSetupControl
+    instagram_bell_setup: InstagramBellSetupControl
     instagram_digest: InstagramDigestControl
     instagram_publishing: InstagramPublishingControl
     workflow_failure_alerts: WorkflowFailureAlertsControl

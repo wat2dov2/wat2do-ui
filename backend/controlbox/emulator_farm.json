@@ -4,6 +4,7 @@
   "check_interval_seconds": 1800,
   "live_monitor_interval_seconds": 3,
   "boot_timeout_seconds": 300,
+  "command_timeout_seconds": 30,
   "notification_evidence_max_age_seconds": 86400,
   "system_image": "system-images;android-35;google_apis_playstore;arm64-v8a",
   "device_profile": "pixel_6",
