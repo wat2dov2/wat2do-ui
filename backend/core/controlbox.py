@@ -655,6 +655,7 @@ class InstagramBrowserControl(_ControlModel):
     bridge_retry_limit: int = Field(gt=0, le=10)
     request_timeout_seconds: float = Field(gt=0, le=120)
     viewport_warm_timeout_seconds: float = Field(gt=0, le=120)
+    primary_minimum_viewport_width: int = Field(ge=1024, le=4096)
     interaction_timeout_seconds: float = Field(gt=0, le=120)
     secondary_cleanup_timeout_seconds: float = Field(gt=0, le=120)
     poll_interval_seconds: float = Field(gt=0, le=5)

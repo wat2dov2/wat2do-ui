@@ -74,8 +74,11 @@ It adopts existing Instagram tabs from that registered window up to the configur
 Tabs in other windows or moved to another site are preserved.
 A closed primary is recreated at the beginning of the registered window rather than silently promoting a retrieval tab.
 New or repaired tabs initialize their viewport before account-readiness checks, restoring the previous tab selection afterward.
+Primary account and engagement preparation refreshes the reserved tab's viewport, widens only its registered window to `primary_minimum_viewport_width` when needed, and verifies the desktop layout before reading controls.
+Logged-in identity comes from the visible Profile navigation control, including compact navigation, rather than a viewed organizer's avatar or its position on the screen.
 Each viewport activation, single sample, and restoration is bounded by `viewport_warm_timeout_seconds`; page waits release the shared transport.
 This initialization does not run on every steady-state retrieval.
+Disabled action controls receive bounded readiness polling before a single guarded click, and completion polling tolerates temporary disabled states without toggling the action again.
 Surplus closure first attempts request settlement; if cancellation cannot be confirmed, the worker closes that exact surplus document and verifies its tab ID is absent before continuing.
 This closure never applies to a retained primary tab or substitutes for cancellation before account switching.
 Pool maintenance never clears a recovery pause.

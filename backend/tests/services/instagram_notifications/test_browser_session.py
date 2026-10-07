@@ -9,6 +9,10 @@ from types import SimpleNamespace
 import pytest
 
 from services.instagram_notifications import browser_session as browser
+from tests.services.instagram_notifications.test_browser_engagement import (
+    _DOM_ADAPTER,
+    _FixtureParser,
+)
 
 
 @pytest.mark.parametrize(
@@ -31,6 +35,176 @@ def test_shared_generated_sources_parse(source):
         pytest.skip("Node.js unavailable")
     completed = subprocess.run([node, "--check"], input=source, text=True, capture_output=True)
     assert completed.returncode == 0, completed.stderr
+
+
+def _evaluate_account_identity(html, *, ready_state="complete"):
+    node = shutil.which("node")
+    if node is None:
+        pytest.skip("Node.js unavailable for offline DOM fixture tests")
+    parser = _FixtureParser()
+
+    def retain_text(data):
+        attributes = parser.stack[-1]["attrs"]
+        attributes["data-fixture-text"] = attributes.get("data-fixture-text", "") + data
+
+    parser.handle_data = retain_text
+    parser.feed(html)
+    script = (
+        _DOM_ADAPTER
+        + f"""
+      Object.defineProperty(Element.prototype, "textContent", {{get() {{
+        return (this.attrs["data-fixture-text"] || "") +
+          this.children.map(child => child.textContent).join("");
+      }}}});
+      const bounds = Element.prototype.getBoundingClientRect;
+      Element.prototype.getBoundingClientRect = function() {{
+        return {{...bounds.call(this), left: Number(this.attrs["data-left"] || 10)}};
+      }};
+      global.document = new Element({json.dumps(parser.root)});
+      document.readyState = {json.dumps(ready_state)};
+      console.log(JSON.stringify({browser._current_account_username_source()}));
+    """
+    )
+    completed = subprocess.run([node], input=script, text=True, capture_output=True)
+    assert completed.returncode == 0, completed.stderr
+    return json.loads(completed.stdout)
+
+
+@pytest.mark.parametrize("content_tag", ["main", "article", "section", "div"])
+def test_viewed_profile_avatar_is_unreadable_until_own_navigation_profile_loads(content_tag):
+    html = (
+        f"<{content_tag}><a href='/dalmackerel/'>"
+        '<img alt="dalmackerel\'s profile picture"></a>'
+        f"</{content_tag}>"
+    )
+    assert _evaluate_account_identity(html) == ""
+
+
+def test_logged_account_navigation_ignores_viewed_profile_owner_in_same_left_column():
+    html = (
+        "<nav><a href='/wat2do.uwaterloo/'>"
+        '<img alt="wat2do.uwaterloo\'s profile picture"></a></nav>'
+        "<main><a href='/dalmackerel/'>"
+        '<img alt="dalmackerel\'s profile picture"></a></main>'
+    )
+    assert _evaluate_account_identity(html) == "wat2do.uwaterloo"
+
+
+@pytest.mark.parametrize(
+    ("html", "expected"),
+    [
+        (
+            "<div role='navigation'><a href='/wat2do.uwaterloo/'>"
+            '<img alt="wat2do.uwaterloo\'s profile picture"></a></div>',
+            "wat2do.uwaterloo",
+        ),
+        (
+            "<nav><a href='/wat2do.uwaterloo/' data-hidden='true'>"
+            '<img alt="wat2do.uwaterloo\'s profile picture"></a></nav>'
+            "<main><a href='/dalmackerel/'>"
+            '<img alt="dalmackerel\'s profile picture"></a></main>',
+            "",
+        ),
+        (
+            "<nav><a href='/wat2do.uwaterloo/'>"
+            '<img alt="dalmackerel\'s profile picture"></a></nav>',
+            "",
+        ),
+        (
+            "<nav><a href='/wat2do.uwaterloo/'>"
+            '<img alt="wat2do.uwaterloo\'s profile picture"></a>'
+            "<a href='/wat2do.uwo/'>"
+            '<img alt="wat2do.uwo\'s profile picture"></a></nav>',
+            "!ambiguous",
+        ),
+        (
+            "<main><nav><a href='/dalmackerel/'>"
+            '<img alt="dalmackerel\'s profile picture"></a></nav></main>',
+            "",
+        ),
+        (
+            "<div role='dialog'><nav><a href='/dalmackerel/'>"
+            '<img alt="dalmackerel\'s profile picture"></a></nav></div>',
+            "",
+        ),
+    ],
+)
+def test_account_identity_requires_visible_owned_navigation_and_matching_avatar(html, expected):
+    assert _evaluate_account_identity(html) == expected
+
+
+@pytest.mark.parametrize(
+    "control",
+    [
+        "<a href='/wat2do.uwaterloo/' role='link'>"
+        '<img alt="wat2do.uwaterloo\'s profile picture"><span>Profile</span></a>',
+        "<a href='/wat2do.uwaterloo/' aria-label='Profile'>"
+        '<img alt="wat2do.uwaterloo\'s profile picture"></a>',
+        "<a href='/wat2do.uwaterloo/'>"
+        '<img alt="wat2do.uwaterloo\'s profile picture">'
+        "<svg aria-label='Profile'><title>Profile</title></svg></a>",
+    ],
+)
+def test_logged_identity_uses_explicit_profile_control_when_navigation_has_no_landmark(control):
+    html = "<div>" + control + "</div><main><a href='/dalmackerel/'>"
+    html += '<img alt="dalmackerel\'s profile picture"></a></main>'
+    assert _evaluate_account_identity(html) == "wat2do.uwaterloo"
+    assert _evaluate_account_identity(html, ready_state="loading") == ""
+
+
+def test_same_account_in_desktop_and_mobile_navigation_is_deduplicated():
+    link = "<a href='/wat2do.uwaterloo/'>"
+    link += '<img alt="wat2do.uwaterloo\'s profile picture"></a>'
+    assert (
+        _evaluate_account_identity(
+            "<nav>" + link + "</nav><div role='navigation'>" + link + "</div>"
+        )
+        == "wat2do.uwaterloo"
+    )
+
+
+def _compact_navigation_fixture(
+    *, include_profile=True, routes=("/", "/explore/", "/reels/", "/direct/inbox/")
+):
+    controls = "".join(f"<div><a href='{route}' role='link'></a></div>" for route in routes)
+    if include_profile:
+        # Live compact layout: unlabelled own avatar has DIV/SPAN/DIV/DIV
+        # ancestors before the shared route container at depth five.
+        controls += (
+            "<div><div><span><div><a href='/wat2do.uwaterloo/' role='link' data-left='608.25'>"
+            '<img alt="wat2do.uwaterloo\'s profile picture"></a></div></span></div></div>'
+        )
+    return "<div>" + controls + "</div>"
+
+
+def test_compact_unlabelled_profile_uses_bounded_actual_navigation_routes():
+    assert _evaluate_account_identity(_compact_navigation_fixture()) == "wat2do.uwaterloo"
+
+
+@pytest.mark.parametrize("include_profile", [False, True])
+def test_public_owner_in_loose_sibling_branch_cannot_borrow_page_navigation(include_profile):
+    html = "<div>" + _compact_navigation_fixture(include_profile=include_profile)
+    html += (
+        "<div><div><a href='/dalmackerel/'>"
+        '<img alt="dalmackerel\'s profile picture"></a></div></div></div>'
+    )
+    assert _evaluate_account_identity(html) == ("wat2do.uwaterloo" if include_profile else "")
+
+
+@pytest.mark.parametrize("missing_route", ["/", "/explore/", "/reels/", "/direct/inbox/"])
+def test_incomplete_compact_navigation_is_unreadable_during_hydration(missing_route):
+    routes = tuple(
+        route for route in ("/", "/explore/", "/reels/", "/direct/inbox/") if route != missing_route
+    )
+    assert _evaluate_account_identity(_compact_navigation_fixture(routes=routes)) == ""
+
+
+def test_unrelated_page_home_link_does_not_complete_partial_navigation():
+    html = "<div><a href='/'>page logo</a>"
+    html += (
+        _compact_navigation_fixture(routes=("/explore/", "/reels/", "/direct/inbox/")) + "</div>"
+    )
+    assert _evaluate_account_identity(html) == ""
 
 
 class AccountBrowser:
@@ -1347,8 +1521,9 @@ def test_all_fifteen_cold_tabs_warm_by_exact_id_and_restore_prior_active_tab(mon
 
     def run(script, arguments, timeout):
         if script == browser._ACTIVATE_TAB_SCRIPT:
-            tab_id, window_id = arguments
+            tab_id, window_id, minimum_width = arguments
             assert window_id == "99"
+            assert minimum_width == "0"
             previous = active[0]
             selected_indexes.append(visual_ids.index(tab_id) + 1)
             active[0] = tab_id
@@ -1382,7 +1557,7 @@ def test_zero_viewport_is_warmed_before_any_job_source_runs(monkeypatch):
 
     def run(script, arguments, timeout):
         if script == browser._ACTIVATE_TAB_SCRIPT:
-            assert arguments == ("42", "99")
+            assert arguments == ("42", "99", "0")
             active[0] = "42"
             ready[0] = True
             calls.append("activate")
@@ -1408,6 +1583,131 @@ def test_zero_viewport_is_warmed_before_any_job_source_runs(monkeypatch):
     assert active[0] == "1"
 
 
+@pytest.mark.parametrize("cached", [False, True])
+@pytest.mark.parametrize(("primary", "initial_width"), [(True, 717), (True, 1526), (False, 717)])
+def test_primary_warm_widens_only_registered_narrow_window_and_restores_selection(
+    monkeypatch, cached, primary, initial_width
+):
+    widths = {"99": initial_width, "88": 640}
+    active = ["2"]
+    resized = []
+
+    def run(script, arguments, timeout):
+        if script == browser._ACTIVATE_TAB_SCRIPT:
+            tab_id, window_id, requested_width = arguments
+            assert (tab_id, window_id) == ("42", "99")
+            minimum = int(requested_width)
+            assert minimum == (browser._CONTROL.primary_minimum_viewport_width if primary else 0)
+            if widths[window_id] < minimum:
+                widths[window_id] = minimum
+                resized.append(window_id)
+            active[0] = tab_id
+            return "2"
+        if script == browser._RESTORE_ACTIVE_TAB_SCRIPT:
+            assert arguments == ("42", "2", "99")
+            active[0] = "2"
+            return "restored"
+        assert script == browser._EXECUTE_TAB_SCRIPT
+        assert arguments == ("42", browser._VIEWPORT_SOURCE, "99")
+        return json.dumps({"width": widths["99"], "height": 1300})
+
+    monkeypatch.setattr(browser, "_run_applescript", run)
+    runner = browser._PinnedBraveJavascriptRunner("42", window_id="99")
+    runner._viewport_ready = cached
+    runner.warm_viewport(1, primary=primary)
+    assert widths == {
+        "99": max(initial_width, browser._CONTROL.primary_minimum_viewport_width)
+        if primary
+        else initial_width,
+        "88": 640,
+    }
+    assert resized == (["99"] if primary and initial_width < 1024 else [])
+    assert active[0] == "2" and runner._viewport_ready
+
+
+def test_primary_warm_reports_desktop_readiness_when_browser_viewport_stays_narrow(monkeypatch):
+    now = [0.0]
+    restored = []
+
+    def run(script, arguments, timeout):
+        if script == browser._ACTIVATE_TAB_SCRIPT:
+            return "2"
+        if script == browser._RESTORE_ACTIVE_TAB_SCRIPT:
+            restored.append(arguments)
+            return "restored"
+        assert script == browser._EXECUTE_TAB_SCRIPT
+        return '{"width":717,"height":1300}'
+
+    monkeypatch.setattr(browser, "_run_applescript", run)
+    monkeypatch.setattr(browser.time, "monotonic", lambda: now[0])
+    monkeypatch.setattr(browser.time, "sleep", lambda seconds: now.__setitem__(0, now[0] + seconds))
+    runner = browser._PinnedBraveJavascriptRunner("42", window_id="99")
+    with pytest.raises(browser._BrowserPageUnavailable, match="primary desktop viewport"):
+        runner.warm_viewport(0.2, primary=True)
+    assert restored == [("42", "2", "99")]
+    assert not runner._viewport_ready
+
+
+@pytest.mark.parametrize("allow_account_switch", [True, False])
+def test_primary_preparation_refreshes_cached_viewport_before_control_reads_and_restores_selection(
+    monkeypatch, allow_account_switch
+):
+    calls = []
+    active = "2"
+    viewport_width = 717
+
+    def run(script, arguments, timeout):
+        nonlocal active, viewport_width
+        if script == browser._ACTIVATE_TAB_SCRIPT:
+            assert arguments == ("42", "99", "1024")
+            calls.append("activate")
+            active = "42"
+            viewport_width = 1526
+            return "2"
+        if script == browser._RESTORE_ACTIVE_TAB_SCRIPT:
+            assert arguments == ("42", "2", "99")
+            assert active == "42"
+            calls.append("restore")
+            active = "2"
+            return "restored"
+        assert script == browser._EXECUTE_TAB_SCRIPT
+        source = arguments[1]
+        if source == browser._VIEWPORT_SOURCE:
+            calls.append("viewport")
+            return json.dumps({"width": viewport_width, "height": 1300})
+        if "request.controller.abort()" in source:
+            calls.append("cancel")
+            return "settled"
+        if source.startswith("delete window"):
+            calls.append("clear")
+            return "cleared"
+        assert source == browser._switch_button_state_source()
+        calls.append("controls")
+        return "ready" if viewport_width == 1526 else "pending"
+
+    monkeypatch.setattr(browser, "_run_applescript", run)
+    runner = browser._PinnedBraveJavascriptRunner("42", window_id="99")
+    runner._viewport_ready = True
+    session = browser.BrowserInstagramSession(
+        javascript_runner=runner, allow_account_switch=allow_account_switch
+    )
+
+    def prepare(recipient, username):
+        assert recipient == "41553815702" and username == "wat2do.uwaterloo"
+        assert active == "2"
+        assert session.read(browser._switch_button_state_source()) == (
+            "ready" if allow_account_switch else "pending"
+        )
+
+    monkeypatch.setattr(session, "_prepare_account", prepare)
+    assert session.activate_account("41553815702", "wat2do.uwaterloo") == "wat2do.uwaterloo"
+    assert calls == (
+        ["cancel", "clear", "activate", "viewport", "restore", "controls"]
+        if allow_account_switch
+        else ["cancel", "clear", "controls"]
+    )
+
+
 @pytest.mark.parametrize("cold_state", ["zero", "loading", "timeout"])
 def test_fourteen_navigation_reads_progress_while_cold_viewport_waits(monkeypatch, cold_state):
     cold_waiting = threading.Event()
@@ -1423,7 +1723,7 @@ def test_fourteen_navigation_reads_progress_while_cold_viewport_waits(monkeypatc
         if script == browser._NAVIGATE_TAB_SCRIPT:
             output = "navigating"
         elif script == browser._ACTIVATE_TAB_SCRIPT:
-            assert supplied == ["14", "99"]
+            assert supplied == ["14", "99", "0"]
             activations += 1
             output = "1"
         elif script == browser._RESTORE_ACTIVE_TAB_SCRIPT:

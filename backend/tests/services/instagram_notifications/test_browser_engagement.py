@@ -207,6 +207,17 @@ def test_hidden_duplicate_action_is_ignored():
     assert _evaluate(html, "like")["clicks"] == ["post-like"]
 
 
+@pytest.mark.parametrize("attribute", ['aria-disabled="true"', "disabled"])
+def test_disabled_action_is_not_ready_instead_of_a_human_block(attribute):
+    like = (
+        '<div role="button" id="post-like"><svg aria-label="Like"><title>Like</title></svg></div>'
+    )
+    disabled = f'<button id="post-like" {attribute}><svg aria-label="Like"><title>Like</title></svg></button>'
+    html = _fixture(_toolbar().replace(like, disabled))
+    assert _evaluate(html, "like", click=False) == {"state": {"status": "not_ready"}, "clicks": []}
+    assert _evaluate(html, "like")["clicks"] == []
+
+
 class FakeSession:
     def __init__(self, states):
         self.states = iter(states)
@@ -226,12 +237,14 @@ class FakeSession:
     def run(self, source):
         self.mutations.append(source)
         self.sources.append(source)
-        return json.dumps({"status": next(self.states)})
+        state = next(self.states)
+        return json.dumps(state if isinstance(state, dict) else {"status": state})
 
     def read(self, source):
         self.reads.append(source)
         self.sources.append(source)
-        return json.dumps({"status": next(self.states)})
+        state = next(self.states)
+        return json.dumps(state if isinstance(state, dict) else {"status": state})
 
     def poll_until(self, completed):
         for _ in range(3):
@@ -253,19 +266,27 @@ def _execute(session, action="like"):
 
 
 def test_executor_clicks_once_and_waits_for_positive_confirmation():
-    session = FakeSession(["clicked", "ready", "already_done"])
+    session = FakeSession(["ready", "clicked", "ready", "already_done"])
     assert _execute(session) == {"action": "like", "status": "succeeded"}
     assert session.calls == [
         ("activate", "41553815702", "usask.wat2do.io"),
         ("navigate", "https://www.instagram.com/p/TARGET123/", "41553815702", "usask.wat2do.io"),
     ]
-    assert len(session.mutations) == 1 and len(session.reads) == 2
+    assert len(session.mutations) == 1 and len(session.reads) == 3
     assert sum("if (!true)" in source for source in session.sources) == 1
-    assert sum("if (!false)" in source for source in session.sources) == 2
+    assert sum("if (!false)" in source for source in session.sources) == 3
+
+
+def test_completed_action_waits_through_disabled_hydration_without_another_click():
+    session = FakeSession(["ready", "clicked", "not_ready", "already_done"])
+    assert _execute(session) == {"action": "like", "status": "succeeded"}
+    assert len(session.mutations) == 1
+    assert len(session.reads) == 3
+    assert len(session.sources) == 4
 
 
 def test_verification_timeout_does_not_click_again():
-    session = FakeSession(["clicked", "ready", "ready", "ready"])
+    session = FakeSession(["ready", "clicked", "ready", "ready", "ready"])
     with pytest.raises(BrowserSessionError, match="timed out"):
         _execute(session)
     assert sum("if (!true)" in source for source in session.sources) == 1
@@ -381,7 +402,7 @@ def test_active_repost_badge_outside_toolbar_cannot_mark_post_reposted():
 
 
 def test_post_job_navigates_once_and_completes_like_then_repost():
-    session = FakeSession(["clicked", "already_done", "clicked", "already_done"])
+    session = FakeSession(["ready", "clicked", "already_done", "ready", "clicked", "already_done"])
     result = engagement.BrowserInstagramEngagementExecutor(session=session).engage_post(
         "41553815702", "usask.wat2do.io", "https://www.instagram.com/p/TARGET123/"
     )
@@ -391,8 +412,65 @@ def test_post_job_navigates_once_and_completes_like_then_repost():
     assert [call[0] for call in session.calls] == ["activate", "navigate"]
 
 
+def test_post_waits_for_each_disabled_control_before_its_single_click():
+    session = FakeSession(
+        [
+            {"status": "not_ready"},
+            "ready",
+            "clicked",
+            "already_done",
+            {"status": "not_ready"},
+            "ready",
+            "clicked",
+            "already_done",
+        ]
+    )
+    result = engagement.BrowserInstagramEngagementExecutor(session=session).engage_post(
+        "41553815702", "usask.wat2do.io", "https://www.instagram.com/p/TARGET123/"
+    )
+    assert result["status"] == "succeeded"
+    assert len(session.mutations) == 2
+    assert len(session.reads) == 6
+    assert [call[0] for call in session.calls] == ["activate", "navigate"]
+
+
+def test_permanently_disabled_action_times_out_without_a_click():
+    session = FakeSession(["not_ready", "not_ready", "not_ready"])
+    with pytest.raises(BrowserSessionError, match="timed out"):
+        _execute(session)
+    assert session.mutations == []
+    assert len(session.reads) == 3
+
+
+@pytest.mark.parametrize("reason", ["blocked", "wrong_account", "wrong_post"])
+def test_readiness_preserves_human_blocks_and_identity_failures(reason):
+    session = FakeSession([{"status": "failed", "reason": reason}])
+    with pytest.raises(BrowserSessionError, match=engagement._failure_message(reason)):
+        _execute(session)
+    assert session.mutations == []
+    assert len(session.reads) == 1
+
+
+def test_action_disabled_after_readiness_is_not_clicked_or_retried():
+    session = FakeSession(["ready", "not_ready"])
+    with pytest.raises(BrowserSessionError, match="not ready for engagement"):
+        _execute(session)
+    assert len(session.mutations) == 1
+    assert len(session.reads) == 1
+
+
+def test_inspection_waits_for_enabled_actions_without_mutation():
+    session = FakeSession(["not_ready", "ready", "not_ready", "ready"])
+    result = engagement.BrowserInstagramEngagementExecutor(session=session).engage_post(
+        "41553815702", "usask.wat2do.io", "https://www.instagram.com/p/TARGET123/", inspect=True
+    )
+    assert result["status"] == "ready"
+    assert session.mutations == []
+    assert len(session.reads) == 4
+
+
 def test_post_retry_preserves_completed_like_and_only_finishes_repost():
-    session = FakeSession(["already_done", "clicked", "already_done"])
+    session = FakeSession(["already_done", "ready", "clicked", "already_done"])
     result = engagement.BrowserInstagramEngagementExecutor(session=session).engage_post(
         "41553815702", "usask.wat2do.io", "https://www.instagram.com/p/TARGET123/"
     )

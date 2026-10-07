@@ -41,7 +41,11 @@ class BrowserInstagramEngagementExecutor:
         username, url = self._prepare(recipient_id, account_username, post_url)
         actions = {}
         for action in controlbox.instagram_browser.actions:
-            state = self._state(recipient_id, username, url, action, click=not inspect)
+            state = (
+                self._ready(recipient_id, username, url, action)
+                if inspect
+                else self._state(recipient_id, username, url, action, click=True)
+            )
             actions[action] = (
                 state if inspect else self._complete(recipient_id, username, url, action, state)
             )
@@ -86,6 +90,10 @@ class BrowserInstagramEngagementExecutor:
     ) -> dict[str, str]:
         if action not in _ACTIONS:
             raise BrowserSessionError("Instagram engagement action is invalid")
+        if click:
+            ready = self._ready(recipient_id, username, post_url, action)
+            if ready["status"] != "ready":
+                return ready
         source = _engagement_source(recipient_id, username, post_url, action, click=click)
         raw = self._session.run(source) if click else self._session.read(source)
         try:
@@ -95,14 +103,29 @@ class BrowserInstagramEngagementExecutor:
         if not isinstance(state, dict):
             raise BrowserSessionError("Instagram engagement returned invalid state")
         status = state.get("status")
-        if status not in {"ready", "clicked", "already_done", "unsupported"}:
+        if status not in {"ready", "not_ready", "clicked", "already_done", "unsupported"}:
             raise BrowserSessionError(_failure_message(state.get("reason")))
+        if status == "not_ready" and click:
+            raise BrowserSessionError(_failure_message("not_ready"))
         if status == "clicked" and not click:
             raise BrowserSessionError("Instagram engagement returned invalid state")
         result = {"action": action, "status": status}
         if status == "unsupported":
             result["reason"] = "Native repost is unavailable or has no explicit reversible state"
         return result
+
+    def _ready(
+        self, recipient_id: str, username: str, post_url: str, action: str
+    ) -> dict[str, str]:
+        state: dict[str, str] = {}
+
+        def enabled() -> bool:
+            nonlocal state
+            state = self._state(recipient_id, username, post_url, action, click=False)
+            return state["status"] != "not_ready"
+
+        self._session.poll_until(enabled)
+        return state
 
 
 def _failure_message(reason: object) -> str:
@@ -140,7 +163,7 @@ def _engagement_source(
   if (!controls.length && action === "repost") return result("unsupported");
   if (controls.length !== 1 || !visible(controls[0])) return fail("ambiguous_control");
   const control = controls[0];
-  if (control.getAttribute("aria-disabled") === "true" || control.disabled) return fail("blocked");
+  if (control.getAttribute("aria-disabled") === "true" || control.disabled) return result("not_ready");
   const actionLabels = [...new Set(labels(control).filter(name => names.includes(name)))];
   if (actionLabels.length !== 1) return fail("unknown_state");
   const label = actionLabels[0];

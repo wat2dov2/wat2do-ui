@@ -1,6 +1,7 @@
 {
   "request_timeout_seconds": 30,
   "viewport_warm_timeout_seconds": 3,
+  "primary_minimum_viewport_width": 1024,
   "interaction_timeout_seconds": 30,
   "secondary_cleanup_timeout_seconds": 5,
   "poll_interval_seconds": 0.25,

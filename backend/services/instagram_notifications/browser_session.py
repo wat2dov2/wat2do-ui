@@ -106,6 +106,7 @@ _ACTIVATE_TAB_SCRIPT = """
 on run argv
     set intendedTabId to item 1 of argv
     set intendedWindowId to item 2 of argv
+    set minimumWindowWidth to (item 3 of argv) as integer
     if application "Brave Browser" is not running then error "Brave is not running."
     tell application "Brave Browser"
         if not (exists window id intendedWindowId) then error "Worker browser window is closed."
@@ -115,6 +116,13 @@ on run argv
         repeat with tabIndex from 1 to count tabIds
             if ((item tabIndex of tabIds) as text) is intendedTabId then
                 if URL of tab id intendedTabId of browserWindow does not start with "https://www.instagram.com/" then error "Pinned Instagram tab changed site."
+                if minimumWindowWidth > 0 then
+                    set windowBounds to bounds of browserWindow
+                    if ((item 3 of windowBounds) - (item 1 of windowBounds)) < minimumWindowWidth then
+                        set item 3 of windowBounds to (item 1 of windowBounds) + minimumWindowWidth
+                        set bounds of browserWindow to windowBounds
+                    end if
+                end if
                 set active tab index of browserWindow to tabIndex
                 return previousTabId
             end if
@@ -228,7 +236,9 @@ class _PinnedBraveJavascriptRunner:
             self._verify_closed_document(exc, deadline)
             raise
 
-    def _viewport_is_ready(self, tab_id: str, window_id: str, deadline: float) -> bool:
+    def _viewport_is_ready(
+        self, tab_id: str, window_id: str, deadline: float, *, minimum_width: int = 0
+    ) -> bool:
         raw = self._execute_once(_VIEWPORT_SOURCE, tab_id, window_id, deadline)
         try:
             viewport = json.loads(raw)
@@ -244,15 +254,25 @@ class _PinnedBraveJavascriptRunner:
             or not isinstance(height, (int, float))
         ):
             raise BrowserSessionError("Instagram browser returned invalid viewport state")
-        return width > 0 and height > 0
+        return width > 0 and width >= minimum_width and height > 0
 
-    def warm_viewport(self, timeout_seconds: float) -> None:
-        """Initialize an exact tab's renderer once, restoring the prior active tab by ID."""
+    def warm_viewport(self, timeout_seconds: float, *, primary: bool = False) -> None:
+        """Prepare an exact renderer and primary UI width, restoring the prior active tab by ID."""
         deadline = time.monotonic() + timeout_seconds
         tab_id, window_id = self._pin(deadline)
+        minimum_width = _CONTROL.primary_minimum_viewport_width if primary else 0
         last_error: BrowserSessionError | None = None
         while True:
-            if not _APPLESCRIPT_LOCK.acquire(timeout=_bridge_time_left(deadline)):
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                if last_error:
+                    raise last_error
+                if primary:
+                    raise _BrowserPageUnavailable(
+                        "Instagram primary desktop viewport did not become ready"
+                    )
+                raise _BrowserPageUnavailable("Instagram browser viewport did not become ready")
+            if not _APPLESCRIPT_LOCK.acquire(timeout=remaining):
                 raise _BrowserAutomationTransient("Brave browser automation timed out")
             transaction_started = time.monotonic()
             transaction_deadline = transaction_started + min(
@@ -264,12 +284,15 @@ class _PinnedBraveJavascriptRunner:
             try:
                 previous_id = _run_applescript(
                     _ACTIVATE_TAB_SCRIPT,
-                    (tab_id, window_id),
+                    (tab_id, window_id, str(minimum_width)),
                     _bridge_time_left(sample_deadline),
                 ).strip()
                 if not previous_id.isascii() or not previous_id.isdigit():
                     raise BrowserSessionError("Brave returned an invalid active tab identity")
-                ready = self._viewport_is_ready(tab_id, window_id, sample_deadline)
+                ready = self._viewport_is_ready(
+                    tab_id, window_id, sample_deadline, minimum_width=minimum_width
+                )
+                last_error = None
             except (_BrowserAutomationTransient, _BrowserPageUnavailable) as exc:
                 last_error = exc
             finally:
@@ -286,13 +309,10 @@ class _PinnedBraveJavascriptRunner:
                 self._viewport_ready = True
                 return
             remaining = deadline - time.monotonic()
-            if remaining <= 0:
-                if last_error:
-                    raise last_error
-                raise _BrowserPageUnavailable("Instagram browser viewport did not become ready")
             # Activation, one sample and restoration are atomic. Page waits are
             # outside that transaction so other tabs can use the transport.
-            time.sleep(min(_CONTROL.poll_interval_seconds, remaining))
+            if remaining > 0:
+                time.sleep(min(_CONTROL.poll_interval_seconds, remaining))
 
     def navigate(self, url: str, timeout_seconds: float, *, reload: bool = False) -> str:
         deadline = time.monotonic() + timeout_seconds
@@ -433,6 +453,13 @@ class BrowserInstagramSession:
         except ValueError as exc:
             raise BrowserSessionError(str(exc)) from None
         self.cancel_pending_request()
+        if self._allow_account_switch and isinstance(
+            self._javascript_runner, _PinnedBraveJavascriptRunner
+        ):
+            # Background renderers may retain a positive mobile viewport after
+            # the existing window was resized. Refresh primary UI geometry
+            # before reading or clicking its account and engagement controls.
+            self._javascript_runner.warm_viewport(self._remaining_timeout(), primary=True)
         try:
             self._prepare_account(recipient_id, username)
         except _BrowserPageUnavailable:
@@ -834,14 +861,46 @@ def _current_account_username_source() -> str:
     return r"""
 (() => {
   if (document.readyState !== "complete") return "";
+  const profileLabel = element => [element.getAttribute("aria-label"),
+    element.getAttribute("title"), element.innerText || element.textContent || ""]
+    .some(value => (value || "").trim().toLowerCase() === "profile");
+  const compactNavigation = candidate => {
+    let scope = candidate.parentElement;
+    for (let depth = 1; scope && depth <= 8; depth++, scope = scope.parentElement) {
+      if (scope.matches('body,html,main,article,[role="main"],[role="dialog"]')) return false;
+      const links = [...scope.querySelectorAll("a[href]")];
+      const core = ["/explore/", "/reels/", "/direct/inbox/"]
+        .map(route => links.find(link => link.getAttribute("href") === route));
+      if (core.some(link => !link)) continue;
+      // Find the actual route container, rather than accepting a page wrapper
+      // that happens to contain both navigation and a viewed profile avatar.
+      let navigation = core[0].parentElement;
+      while (navigation !== scope && !core.every(link => navigation.contains(link))) {
+        navigation = navigation.parentElement;
+      }
+      if (navigation.contains(candidate) &&
+          !navigation.querySelector('main,article,[role="main"],[role="dialog"]') &&
+          [...navigation.querySelectorAll("a[href]")].some(link => link.getAttribute("href") === "/")) {
+        return true;
+      }
+    }
+    return false;
+  };
   const anchors = [...document.querySelectorAll("a[href]")].filter(candidate => {
+    // Viewed profile headers and post avatars do not identify the logged account.
+    // During navigation hydration, a public avatar may occupy the sidebar's old position.
+    if (candidate.closest('main,article,[role="main"],[role="dialog"],[aria-hidden="true"]')) return false;
     const image = candidate.querySelector("img[alt]");
-    const alt = image?.getAttribute("alt") || "";
+    const avatarUsername = (image?.getAttribute("alt") || "").match(/^([A-Za-z0-9._]{1,30})'s profile picture$/)?.[1];
+    const hrefUsername = (candidate.getAttribute("href") || "").match(/^\/([A-Za-z0-9._]{1,30})\/$/)?.[1];
+    if (!avatarUsername || !hrefUsername || avatarUsername.toLowerCase() !== hrefUsername.toLowerCase()) return false;
+    const ownedControl = candidate.closest('nav,[role="navigation"]') || profileLabel(candidate) ||
+      [...candidate.querySelectorAll('[aria-label],title')].some(profileLabel) || compactNavigation(candidate);
+    if (!ownedControl) return false;
     const bounds = candidate.getBoundingClientRect();
-    const href = candidate.getAttribute("href") || "";
-    return bounds.left >= 0 && bounds.left < 200 && bounds.width > 0 && bounds.height > 0 &&
-      alt.endsWith("'s profile picture") &&
-      /^\/[A-Za-z0-9._]+\/$/.test(href);
+    const style = getComputedStyle(candidate);
+    return bounds.width > 0 && bounds.height > 0 &&
+      style.display !== "none" && style.visibility !== "hidden";
   });
   const usernames = [...new Set(anchors.map(anchor =>
     anchor.getAttribute("href").split("/").filter(Boolean)[0].toLowerCase()))];
