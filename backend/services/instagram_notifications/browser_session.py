@@ -26,7 +26,15 @@ _WAT2DO_ACCOUNT_PATTERN = re.compile(
 )
 _POST_PATH = re.compile(r"^/(?:p|reel)/([A-Za-z0-9_-]+)/?$")
 _APPLESCRIPT_LOCK = threading.RLock()
+_NAVIGATION_LOCK = threading.Lock()
+_LAST_NAVIGATION_AT: float | None = None
 _VIEWPORT_SOURCE = "JSON.stringify({width: window.innerWidth, height: window.innerHeight})"
+_PAGE_RESPONSE_SOURCE = """JSON.stringify({
+ path: window.location.pathname,
+ rate_limited: document.readyState === "complete" &&
+  document.title === "www.instagram.com" &&
+  document.querySelector("#main-frame-error .error-code")?.textContent.trim() === "HTTP ERROR 429"
+})"""
 _SELECT_TAB_SCRIPT = """
 on run
     if application "Brave Browser" is not running then
@@ -187,6 +195,10 @@ class BrowserAccountChanged(BrowserSessionError):
     """The shared login changed; drain all tabs before preparing another batch."""
 
 
+class BrowserRateLimited(BrowserSessionError):
+    """Instagram returned a verified HTTP 429 response; defer shared browser work."""
+
+
 class _BrowserPageUnavailable(BrowserSessionError):
     """Recoverable page readiness or account-control failure."""
 
@@ -318,10 +330,8 @@ class _PinnedBraveJavascriptRunner:
         deadline = time.monotonic() + timeout_seconds
         tab_id, window_id = self._pin(deadline)
         try:
-            result = _run_applescript(
-                _NAVIGATE_TAB_SCRIPT,
-                (tab_id, url, window_id, json.dumps(reload)),
-                _bridge_time_left(deadline),
+            result = _dispatch_navigation(
+                _NAVIGATE_TAB_SCRIPT, (tab_id, url, window_id, json.dumps(reload)), deadline
             )
             if result.strip() == "navigating":
                 self._viewport_ready = False
@@ -409,12 +419,35 @@ class BrowserInstagramSession:
             monotonic=self._monotonic,
         ).strip()
 
-    def current_page_path(self) -> str:
+    def current_page_path(self, *, check_response: bool = False) -> str:
         """Allow a bounded account transition, then reject human recovery routes."""
-        path = self.read("window.location.pathname")
+
+        def read_path() -> str:
+            raw = self.read(_PAGE_RESPONSE_SOURCE if check_response else "window.location.pathname")
+            if not check_response:
+                return raw
+            try:
+                response = json.loads(raw)
+            except json.JSONDecodeError:
+                raise BrowserSessionError(
+                    "Instagram browser returned invalid page response"
+                ) from None
+            if (
+                not isinstance(response, dict)
+                or set(response) != {"path", "rate_limited"}
+                or not isinstance(response["path"], str)
+                or not response["path"].startswith("/")
+                or not isinstance(response["rate_limited"], bool)
+            ):
+                raise BrowserSessionError("Instagram browser returned invalid page response")
+            if response["rate_limited"]:
+                raise BrowserRateLimited("Instagram browser is rate limited (HTTP 429)")
+            return response["path"]
+
+        path = read_path()
         if path.startswith("/accounts/login"):
             self._sleep(min(_CONTROL.account_transition_grace_seconds, self._remaining_timeout()))
-            path = self.read("window.location.pathname")
+            path = read_path()
         if path.startswith(("/accounts/login", "/accounts/suspended", "/challenge", "/checkpoint")):
             raise BrowserSessionError("Instagram browser requires human account recovery")
         return path
@@ -474,7 +507,7 @@ class BrowserInstagramSession:
             self._prepare_account(recipient_id, username)
         except _BrowserPageUnavailable:
             self.navigate(_account_profile_url(username), reload=True)
-            self._prepare_account(recipient_id, username)
+            self._prepare_account(recipient_id, username, check_response=True)
         return username
 
     def verify_account(self, recipient_id: str, username: str) -> None:
@@ -502,9 +535,12 @@ class BrowserInstagramSession:
         except BrowserSessionError as exc:
             raise BrowserSessionError(f"Instagram post navigation failed: {exc}") from None
         try:
-            self.poll_until(
-                lambda: self.read(f"({_post_context_source(canonical_url)}).status") == "ready"
-            )
+
+            def ready() -> bool:
+                self.current_page_path(check_response=True)
+                return self.read(f"({_post_context_source(canonical_url)}).status") == "ready"
+
+            self.poll_until(ready)
         except _BrowserPageUnavailable:
             raise BrowserSessionError(
                 "Instagram post did not become ready for the intended permalink"
@@ -639,11 +675,15 @@ class BrowserInstagramSession:
         finally:
             self._deadline = job_deadline
 
-    def _prepare_account(self, recipient_id: str, username: str) -> None:
+    def _prepare_account(
+        self, recipient_id: str, username: str, *, check_response: bool = False
+    ) -> None:
         active_username = None
 
         def readable() -> bool:
             nonlocal active_username
+            if check_response:
+                self.current_page_path(check_response=True)
             active_username = self.current_account_username()
             return active_username is not None
 
@@ -677,7 +717,12 @@ class BrowserInstagramSession:
             raise BrowserSessionError("Matching Instagram browser account is ambiguous")
         if selected != "clicked":
             raise BrowserSessionError("Matching Instagram browser account is unavailable")
-        self.poll_until(lambda: self.current_account_username() == username)
+
+        def switched() -> bool:
+            self.current_page_path(check_response=True)
+            return self.current_account_username() == username
+
+        self.poll_until(switched)
 
 
 def school_account_username(school_slug: str) -> str:
@@ -721,6 +766,33 @@ def _bridge_time_left(deadline: float) -> float:
     if remaining <= 0:
         raise _BrowserAutomationTransient("Brave browser automation timed out")
     return remaining
+
+
+def _dispatch_navigation(script: str, arguments: tuple[str, ...], deadline: float) -> str:
+    """Pace all native page loads, including newly created worker tabs."""
+    global _LAST_NAVIGATION_AT
+    if not _NAVIGATION_LOCK.acquire(timeout=_bridge_time_left(deadline)):
+        raise _BrowserAutomationTransient("Brave browser automation timed out")
+    try:
+        if _LAST_NAVIGATION_AT is not None:
+            while True:
+                wait = _LAST_NAVIGATION_AT + _CONTROL.navigation_interval_seconds - time.monotonic()
+                if wait <= 0:
+                    break
+                # Page-load pacing never owns the transport while sleeping.
+                time.sleep(min(wait, _bridge_time_left(deadline)))
+        if not _APPLESCRIPT_LOCK.acquire(timeout=_bridge_time_left(deadline)):
+            raise _BrowserAutomationTransient("Brave browser automation timed out")
+        try:
+            _bridge_time_left(deadline)
+            # Record dispatch after transport acquisition, including an
+            # uncertain send. Native mutations are never replayed here.
+            _LAST_NAVIGATION_AT = time.monotonic()
+            return _run_applescript(script, arguments, _bridge_time_left(deadline))
+        finally:
+            _APPLESCRIPT_LOCK.release()
+    finally:
+        _NAVIGATION_LOCK.release()
 
 
 def _run_applescript(script: str, arguments: tuple[str, ...], timeout_seconds: float) -> str:
@@ -1339,10 +1411,10 @@ class BrowserTabPool:
     def _create_tab(cls, window_id: str, placement: str, initial_url: str) -> str:
         before = set(cls._instagram_tab_ids(window_id))
         try:
-            tab_id = _run_applescript(
+            tab_id = _dispatch_navigation(
                 _CREATE_WORKER_TAB_SCRIPT,
                 (window_id, placement, initial_url),
-                _CONTROL.request_timeout_seconds,
+                time.monotonic() + _CONTROL.request_timeout_seconds,
             ).strip()
         except _BrowserAutomationTransient:
             # A timed-out make command may already have created its document.
@@ -1405,6 +1477,7 @@ class BrowserTabPool:
 
         def readable() -> bool:
             nonlocal username
+            session.current_page_path(check_response=True)
             username = session.current_account_username()
             return username is not None
 

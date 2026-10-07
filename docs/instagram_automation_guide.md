@@ -125,6 +125,7 @@ The source collector runs separately so a slow database read does not hold up re
 Notification collection, publishing collection, and diagnostic publication fail independently, so one source failure cannot suppress the other queues.
 Apple Event transport is serialized within each call deadline while asynchronous page requests remain parallel.
 Native event execution has a separate short timeout, so a stalled command cannot consume every waiting tab's transport budget.
+Native navigation is spaced through its own gate, which waits outside the transport lock so other tabs can read and settle.
 Queries prove their terminal result and settled request state in one atomic browser read before returning; successful operations do not repeat cancellation through the busy transport.
 Only idempotent reads, inventory, and cleanup retry within `bridge_retry_limit`; uncertain engagement clicks are never replayed.
 Navigation uses the pinned tab's native URL setter, so blank or unresponsive page JavaScript cannot block the navigation needed to recover it.
@@ -160,6 +161,9 @@ The worker's background collector synchronizes all eligible pending URLs every t
 Codex reviews retrieved data and applies saved reconciliation decisions through the guarded importer.
 Retrieval fills all fourteen secondary slots as new jobs arrive and streams continuously until the queue empties, a digest takes priority, overdue engagement needs a turn, or the worker pauses.
 Each job retains its own timeout; the stream does not drain on a fixed timer.
+Confirmed HTTP 429 responses stop new browser claims, refills, and tab maintenance until the shared cooldown expires, while active requests settle and independent collectors continue.
+After settlement, confirmed rate-limited reads return to the queue without consuming their ordinary failure budget.
+Cooldown expiry resumes queue admission automatically and preserves genuine authentication pauses and manual engagement retry rules.
 Public profiles and individual posts can also be queued manually:
 
 ```sh

@@ -18,6 +18,18 @@ from tests.services.instagram_notifications.test_browser_engagement import (
 from tests.services.instagram_notifications.test_browser_ingestion import POST
 
 
+@pytest.fixture(autouse=True)
+def isolated_native_navigation_pacing(monkeypatch):
+    monkeypatch.setattr(browser, "_NAVIGATION_LOCK", threading.Lock())
+    monkeypatch.setattr(browser, "_LAST_NAVIGATION_AT", None)
+    # Tests unrelated to pacing must not wait on prior fake page loads.
+    monkeypatch.setattr(
+        browser,
+        "_CONTROL",
+        browser._CONTROL.model_copy(update={"navigation_interval_seconds": 0}),
+    )
+
+
 @pytest.mark.parametrize(
     "source",
     [
@@ -30,6 +42,7 @@ from tests.services.instagram_notifications.test_browser_ingestion import POST
         browser._recipient_is_active_source("41553815702"),
         browser._close_account_chooser_source(),
         browser._cancel_request_source(),
+        browser._PAGE_RESPONSE_SOURCE,
     ],
 )
 def test_shared_generated_sources_parse(source):
@@ -220,6 +233,8 @@ class AccountBrowser:
 
     def __call__(self, source, _timeout):
         self.sources.append(source)
+        if source == browser._PAGE_RESPONSE_SOURCE:
+            return json.dumps({"path": f"/{self.username}/", "rate_limited": False})
         if "request.controller.abort()" in source:
             return "settled"
         if source.startswith("delete window"):
@@ -651,6 +666,8 @@ def test_post_navigation_waits_for_delayed_profile_identity_but_rejects_wrong_ac
 
     def run(source, _timeout):
         nonlocal reads_after_navigation
+        if source == browser._PAGE_RESPONSE_SOURCE:
+            return json.dumps({"path": "/p/POST/", "rate_limited": False})
         if "const expected = new URL" in source:
             return "ready"
         if "const anchors =" in source:
@@ -708,6 +725,194 @@ def test_post_navigation_uses_native_url_setter_without_renderer_javascript(monk
         "navigating" if reload else "already_open"
     )
     assert calls[0][1] == ("42", "https://www.instagram.com/p/TARGET/", "99", json.dumps(reload))
+
+
+def test_fourteen_native_navigations_are_spaced_without_losing_exact_targets(monkeypatch):
+    sent = []
+    interval = 0.02
+    entered = threading.Barrier(14)
+
+    def native(arguments, **kwargs):
+        assert arguments[2] == browser._NAVIGATE_TAB_SCRIPT
+        sent.append((arguments[4], arguments[5], time.monotonic()))
+        return subprocess.CompletedProcess(arguments, 0, stdout="navigating")
+
+    def navigate(tab_id):
+        entered.wait(timeout=2)
+        runner = browser._PinnedBraveJavascriptRunner(str(tab_id), window_id="99")
+        return runner.navigate(f"https://www.instagram.com/p/POST{tab_id}/", 2, reload=True)
+
+    monkeypatch.setattr(
+        browser,
+        "_CONTROL",
+        browser._CONTROL.model_copy(update={"navigation_interval_seconds": interval}),
+    )
+    monkeypatch.setattr(browser.subprocess, "run", native)
+    with ThreadPoolExecutor(max_workers=14) as executor:
+        results = list(executor.map(navigate, range(14)))
+    assert results == ["navigating"] * 14
+    assert {(tab_id, url) for tab_id, url, _ in sent} == {
+        (str(tab_id), f"https://www.instagram.com/p/POST{tab_id}/") for tab_id in range(14)
+    }
+    assert all(after[2] - before[2] >= interval * 0.9 for before, after in zip(sent, sent[1:]))
+
+
+def test_tab_replacements_share_the_same_page_load_spacing_as_existing_navigation(monkeypatch):
+    now = [0.0]
+    sent = []
+    created = []
+
+    def native(script, arguments, timeout):
+        sent.append((script, now[0]))
+        if script == browser._CREATE_WORKER_TAB_SCRIPT:
+            tab_id = str(len(created) + 2)
+            created.append(tab_id)
+            return tab_id
+        assert script == browser._NAVIGATE_TAB_SCRIPT
+        return "navigating"
+
+    monkeypatch.setattr(
+        browser,
+        "_CONTROL",
+        browser._CONTROL.model_copy(update={"navigation_interval_seconds": 1}),
+    )
+    monkeypatch.setattr(browser.time, "monotonic", lambda: now[0])
+    monkeypatch.setattr(browser.time, "sleep", lambda seconds: now.__setitem__(0, now[0] + seconds))
+    monkeypatch.setattr(browser, "_run_applescript", native)
+    monkeypatch.setattr(browser.BrowserTabPool, "_instagram_tab_ids", lambda _: ["1", *created])
+    profile = "https://www.instagram.com/wat2do.uwaterloo/"
+    runner = browser._PinnedBraveJavascriptRunner("1", window_id="99")
+    assert runner.navigate(profile, 3) == "navigating"
+    for expected in ["2", "3", "4"]:
+        assert browser.BrowserTabPool._create_tab("99", "last", profile) == expected
+    assert runner.navigate("https://www.instagram.com/p/POST/", 3) == "navigating"
+    assert sent == [
+        (browser._NAVIGATE_TAB_SCRIPT, 0),
+        (browser._CREATE_WORKER_TAB_SCRIPT, 1),
+        (browser._CREATE_WORKER_TAB_SCRIPT, 2),
+        (browser._CREATE_WORKER_TAB_SCRIPT, 3),
+        (browser._NAVIGATE_TAB_SCRIPT, 4),
+    ]
+
+
+def test_navigation_spacing_wait_releases_transport_for_healthy_read(monkeypatch):
+    pacing = threading.Event()
+    read_done = threading.Event()
+    real_sleep = time.sleep
+    calls = []
+
+    def sleep(seconds):
+        pacing.set()
+        assert read_done.wait(timeout=2), "Navigation spacing blocked healthy transport reads"
+        real_sleep(seconds)
+
+    def native(arguments, **kwargs):
+        calls.append(arguments[2])
+        result = "navigating" if arguments[2] == browser._NAVIGATE_TAB_SCRIPT else "ready"
+        return subprocess.CompletedProcess(arguments, 0, stdout=result)
+
+    monkeypatch.setattr(
+        browser,
+        "_CONTROL",
+        browser._CONTROL.model_copy(update={"navigation_interval_seconds": 0.02}),
+    )
+    monkeypatch.setattr(browser, "_LAST_NAVIGATION_AT", time.monotonic())
+    monkeypatch.setattr(browser.time, "sleep", sleep)
+    monkeypatch.setattr(browser.subprocess, "run", native)
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        navigation = executor.submit(
+            browser._PinnedBraveJavascriptRunner("2", window_id="99").navigate,
+            "https://www.instagram.com/p/POST/",
+            2,
+        )
+        assert pacing.wait(timeout=2)
+        reader = browser._PinnedBraveJavascriptRunner("3", window_id="99")
+        reader._viewport_ready = True
+        assert reader("read healthy exact tab", 1) == "ready"
+        read_done.set()
+        assert navigation.result(timeout=2) == "navigating"
+    assert calls == [browser._EXECUTE_TAB_SCRIPT, browser._NAVIGATE_TAB_SCRIPT]
+
+
+def test_navigation_spacing_obeys_original_deadline_before_sending_mutation(monkeypatch):
+    now = [0.0]
+    sleeps = []
+
+    def sleep(seconds):
+        sleeps.append(seconds)
+        now[0] += seconds
+
+    monkeypatch.setattr(
+        browser,
+        "_CONTROL",
+        browser._CONTROL.model_copy(update={"navigation_interval_seconds": 1}),
+    )
+    monkeypatch.setattr(browser, "_LAST_NAVIGATION_AT", 0.0)
+    monkeypatch.setattr(browser.time, "monotonic", lambda: now[0])
+    monkeypatch.setattr(browser.time, "sleep", sleep)
+    monkeypatch.setattr(browser, "_run_applescript", lambda *args: pytest.fail("No native send"))
+    runner = browser._PinnedBraveJavascriptRunner("2", window_id="99")
+    with pytest.raises(browser._BrowserAutomationTransient, match="timed out"):
+        runner.navigate("https://www.instagram.com/p/POST/", 0.25)
+    assert now[0] == 0.25 and sleeps == [0.25]
+    assert browser._LAST_NAVIGATION_AT == 0.0
+    assert browser._NAVIGATION_LOCK.acquire(blocking=False)
+    browser._NAVIGATION_LOCK.release()
+
+
+@pytest.mark.parametrize("waiting_owner", ["navigation", "transport"])
+def test_navigation_gate_and_transport_waits_consume_one_budget_before_dispatch(
+    monkeypatch, waiting_owner
+):
+    now = [0.0]
+    calls = []
+
+    def lock(owner):
+        def acquire(*, timeout):
+            calls.append((owner, timeout))
+            if owner == waiting_owner:
+                now[0] += 0.4
+            return True
+
+        return SimpleNamespace(
+            acquire=acquire, release=lambda: calls.append((owner + " released", None))
+        )
+
+    def native(script, arguments, timeout):
+        assert script == browser._NAVIGATE_TAB_SCRIPT
+        calls.append(("sent", timeout))
+        assert browser._LAST_NAVIGATION_AT == now[0] == 0.4
+        return "navigating"
+
+    monkeypatch.setattr(browser.time, "monotonic", lambda: now[0])
+    monkeypatch.setattr(browser, "_NAVIGATION_LOCK", lock("navigation"))
+    monkeypatch.setattr(browser, "_APPLESCRIPT_LOCK", lock("transport"))
+    monkeypatch.setattr(browser, "_run_applescript", native)
+    runner = browser._PinnedBraveJavascriptRunner("2", window_id="99")
+    assert runner.navigate("https://www.instagram.com/p/POST/", 1) == "navigating"
+    assert calls == [
+        ("navigation", 1),
+        ("transport", 0.6 if waiting_owner == "navigation" else 1),
+        ("sent", 0.6),
+        ("transport released", None),
+        ("navigation released", None),
+    ]
+
+
+def test_uncertain_native_navigation_records_dispatch_but_is_never_repeated(monkeypatch):
+    calls = []
+
+    def run(*args):
+        calls.append(args)
+        raise browser._BrowserAutomationTransient("Brave browser automation timed out")
+
+    monkeypatch.setattr(browser, "_run_applescript", run)
+    runner = browser._PinnedBraveJavascriptRunner("2", window_id="99")
+    with pytest.raises(browser._BrowserAutomationTransient, match="timed out"):
+        runner.navigate("https://www.instagram.com/p/POST/", 1)
+    assert len(calls) == 1 and browser._LAST_NAVIGATION_AT is not None
+    assert browser._NAVIGATION_LOCK.acquire(blocking=False)
+    browser._NAVIGATION_LOCK.release()
 
 
 @pytest.mark.parametrize(
@@ -834,7 +1039,7 @@ def test_saved_entry_selection_still_verifies_active_recipient(recipient_matches
     else:
         with pytest.raises(browser.BrowserSessionError, match="does not match"):
             session.activate_account("41553815702", "wat2do.usask")
-    assert not any("location" in source for source in fake.sources)
+    assert sum('const username = "wat2do.usask"' in source for source in fake.sources) == 1
 
 
 def test_parallel_session_refuses_to_switch_to_another_account(monkeypatch):
@@ -986,7 +1191,7 @@ def test_pool_caps_instagram_tabs_and_repairs_closed_slots(monkeypatch):
         "BrowserInstagramSession",
         lambda **kw: SimpleNamespace(
             run=lambda _: "/",
-            current_page_path=lambda: "/wat2do.ubc/",
+            current_page_path=lambda **kwargs: "/wat2do.ubc/",
             current_account_username=lambda: "wat2do.ubc",
             cancel_pending_request=lambda: None,
             poll_until=lambda ready: ready(),
@@ -1027,6 +1232,7 @@ def test_public_pool_records_verified_bootstrap_hint_without_navigating_targets(
         "BrowserInstagramSession",
         lambda **kw: SimpleNamespace(
             cancel_pending_request=lambda: None,
+            current_page_path=lambda **kwargs: f"/{current[0]}/",
             current_account_username=lambda: current[0],
             navigate=lambda *args, **kwargs: reloads.append(args),
             reset_job_deadline=lambda timeout: None,
@@ -1070,7 +1276,7 @@ def test_fourteen_retrieval_slots_navigate_only_their_own_assigned_target(monkey
             current_account_username=lambda: "wat2do.uwaterloo",
             reset_job_deadline=lambda timeout: None,
             navigate=navigate,
-            current_page_path=lambda: page["url"].split("instagram.com", 1)[1],
+            current_page_path=lambda **kwargs: page["url"].split("instagram.com", 1)[1],
             poll_until=lambda completed: (
                 completed() or pytest.fail("Target must precede readiness")
             ),
@@ -1111,7 +1317,11 @@ def test_pool_waits_for_username_and_captures_the_readable_value():
                 return
         pytest.fail("Expected a readable identity")
 
-    session = SimpleNamespace(current_account_username=lambda: next(readings), poll_until=poll)
+    session = SimpleNamespace(
+        current_page_path=lambda **kwargs: "/wat2do.sfu/",
+        current_account_username=lambda: next(readings),
+        poll_until=poll,
+    )
     assert browser.BrowserTabPool._ready_username(session) == "wat2do.sfu"
 
 
@@ -1122,9 +1332,27 @@ def test_pool_unreadable_identity_is_transient_not_recovery():
         assert not ready()
         raise browser._BrowserPageUnavailable("timed out")
 
-    session = SimpleNamespace(current_account_username=lambda: None, poll_until=poll)
+    session = SimpleNamespace(
+        current_page_path=lambda **kwargs: "/wat2do.sfu/",
+        current_account_username=lambda: None,
+        poll_until=poll,
+    )
     with pytest.raises(TimeoutError, match="temporarily unreadable"):
         browser.BrowserTabPool._ready_username(session)
+
+
+def test_fresh_primary_bootstrap_429_propagates_before_polling_missing_identity():
+    calls = []
+
+    def runner(source, timeout):
+        calls.append(source)
+        assert source == browser._PAGE_RESPONSE_SOURCE
+        return json.dumps({"path": "/", "rate_limited": True})
+
+    session = browser.BrowserInstagramSession(javascript_runner=runner)
+    with pytest.raises(browser.BrowserRateLimited, match="HTTP 429"):
+        browser.BrowserTabPool._ready_username(session)
+    assert calls == [browser._PAGE_RESPONSE_SOURCE]
 
 
 @pytest.mark.parametrize(
@@ -1159,10 +1387,14 @@ def test_primary_public_bootstrap_recovers_blank_routes_and_preserves_auth_guard
     def session(**kwargs):
         assert kwargs["javascript_runner"]._tab_id == "1"
         assert kwargs["job_timeout_seconds"] == browser._CONTROL.interaction_timeout_seconds
-        primary.read = lambda source: page["path"]
+        primary.read = lambda source: (
+            json.dumps({"path": page["path"], "rate_limited": False})
+            if source == browser._PAGE_RESPONSE_SOURCE
+            else page["path"]
+        )
         primary._sleep = lambda seconds: None
         primary._remaining_timeout = lambda: browser._CONTROL.interaction_timeout_seconds
-        primary.current_page_path = lambda: current_page_path(primary)
+        primary.current_page_path = lambda **kwargs: current_page_path(primary, **kwargs)
         primary.current_account_username = lambda: actual_username if page["recovered"] else None
         primary.navigate = navigate
         primary.poll_until = lambda ready: ready() or pytest.fail("Recovery must precede readiness")
@@ -1337,6 +1569,96 @@ def test_current_page_path_login_grace_obeys_remaining_job_deadline():
     assert now[0] == 0.25 and calls == [("window.location.pathname", 0.25)]
 
 
+@pytest.mark.parametrize(
+    ("ready_state", "title", "error_code", "expected"),
+    [
+        ("complete", "www.instagram.com", "HTTP ERROR 429", True),
+        ("loading", "www.instagram.com", "HTTP ERROR 429", False),
+        ("complete", "Instagram", "HTTP ERROR 429", False),
+        ("complete", "www.instagram.com", "HTTP ERROR 500", False),
+        ("complete", "www.instagram.com", "429", False),
+        ("complete", "www.instagram.com", None, False),
+    ],
+)
+def test_page_response_only_recognizes_verified_complete_chromium_429(
+    ready_state, title, error_code, expected
+):
+    node = shutil.which("node")
+    if node is None:
+        pytest.skip("Node.js unavailable for offline document fixture")
+    script = f"""
+ const code = {json.dumps(error_code)};
+ global.window = {{location: {{pathname: "/"}}}};
+ global.document = {{
+  readyState: {json.dumps(ready_state)}, title: {json.dumps(title)},
+  body: {{innerText: "This Instagram caption says HTTP ERROR 429"}},
+  querySelector(selector) {{
+   if (selector !== "#main-frame-error .error-code") throw new Error("Unscoped selector");
+   return code === null ? null : {{textContent: code}};
+  }}
+ }};
+ console.log({browser._PAGE_RESPONSE_SOURCE});
+ """
+    completed = subprocess.run([node], input=script, text=True, capture_output=True)
+    assert completed.returncode == 0, completed.stderr
+    assert json.loads(completed.stdout) == {"path": "/", "rate_limited": expected}
+
+
+def test_post_response_429_raises_typed_error_before_context_read_or_action():
+    calls = []
+
+    def runner(source, timeout):
+        calls.append(source)
+        assert source == browser._PAGE_RESPONSE_SOURCE
+        return json.dumps({"path": "/", "rate_limited": True})
+
+    session = browser.BrowserInstagramSession(javascript_runner=runner)
+    session.verify_account = lambda *args: None
+    session.navigate = lambda *args: "navigating"
+    with pytest.raises(browser.BrowserRateLimited, match="HTTP 429"):
+        session.navigate_post("https://www.instagram.com/p/POST/", "123", "wat2do.uwaterloo")
+    assert calls == [browser._PAGE_RESPONSE_SOURCE]
+
+
+@pytest.mark.parametrize(
+    "response",
+    [None, {}, {"path": "/", "rate_limited": "true"}, {"path": None, "rate_limited": False}],
+)
+def test_page_response_rejects_malformed_state_without_claiming_rate_limit(response):
+    session = browser.BrowserInstagramSession(javascript_runner=lambda *args: json.dumps(response))
+    with pytest.raises(browser.BrowserSessionError, match="invalid page response") as raised:
+        session.current_page_path(check_response=True)
+    assert not isinstance(raised.value, browser.BrowserRateLimited)
+
+
+@pytest.mark.parametrize("settled_path", ["/p/POST/", "/checkpoint/"])
+def test_page_response_login_recheck_preserves_fresh_auth_route_guard(settled_path):
+    readings = iter(["/accounts/login/", settled_path])
+    session = browser.BrowserInstagramSession(
+        javascript_runner=lambda source, timeout: json.dumps(
+            {"path": next(readings), "rate_limited": False}
+        ),
+        sleep=lambda _: None,
+    )
+    if settled_path == "/checkpoint/":
+        with pytest.raises(browser.BrowserSessionError, match="human account recovery"):
+            session.current_page_path(check_response=True)
+    else:
+        assert session.current_page_path(check_response=True) == settled_path
+
+
+def test_bootstrap_path_can_recover_cached_429_without_restarting_cooldown():
+    calls = []
+
+    def runner(source, timeout):
+        calls.append(source)
+        assert source == "window.location.pathname"
+        return "/"
+
+    assert browser.BrowserInstagramSession(javascript_runner=runner).current_page_path() == "/"
+    assert calls == ["window.location.pathname"]
+
+
 def test_query_recovers_transient_cleanup_bridge_failure_without_repeating_request():
     started = False
     failures = 0
@@ -1451,7 +1773,7 @@ def test_pool_settles_excess_owned_tabs_and_keeps_reserved_primary(monkeypatch):
         lambda **kw: SimpleNamespace(
             cancel_pending_request=lambda: settled.append(kw["javascript_runner"]._tab_id),
             run=lambda _: "/",
-            current_page_path=lambda: "/wat2do.ubc/",
+            current_page_path=lambda **kwargs: "/wat2do.ubc/",
             current_account_username=lambda: "wat2do.ubc",
             poll_until=lambda ready: ready(),
         ),
@@ -1807,16 +2129,79 @@ def test_primary_page_recovery_uses_native_intended_profile_without_home(monkeyp
 
     session = browser.BrowserInstagramSession(javascript_runner=NavigationBrowser())
 
-    def prepare(recipient, username):
+    def prepare(recipient, username, *, check_response=False):
         preparations.append((recipient, username))
         if len(preparations) == 1:
+            assert not check_response
             raise browser._BrowserPageUnavailable("Temporary missing controls")
+        assert check_response
 
     monkeypatch.setattr(session, "_prepare_account", prepare)
     assert session.activate_account("41553815702", "usask.wat2do.io") == "usask.wat2do.io"
     assert navigations == [("https://www.instagram.com/usask.wat2do.io/", True)]
     assert len(preparations) == 2
     assert not any("location" in source for source in sources)
+
+
+def test_fresh_account_profile_fallback_429_stops_before_another_control_click(monkeypatch):
+    now = [0.0]
+    navigations = []
+    responses = []
+    recovered = False
+
+    class AccountRecoveryBrowser:
+        def __call__(self, source, timeout):
+            if source == browser._PAGE_RESPONSE_SOURCE:
+                responses.append(source)
+                return json.dumps({"path": "/", "rate_limited": True})
+            if "request.controller.abort()" in source:
+                return "settled"
+            if source.startswith("delete window"):
+                return "cleared"
+            assert source == browser._current_account_username_source()
+            assert not recovered
+            return ""
+
+        def navigate(self, url, timeout, *, reload=False):
+            nonlocal recovered
+            recovered = True
+            navigations.append((url, reload))
+            return "navigating"
+
+    monkeypatch.setattr(
+        browser,
+        "_CONTROL",
+        browser._CONTROL.model_copy(update={"interaction_timeout_seconds": 0.5}),
+    )
+    session = browser.BrowserInstagramSession(
+        javascript_runner=AccountRecoveryBrowser(),
+        monotonic=lambda: now[0],
+        sleep=lambda seconds: now.__setitem__(0, now[0] + seconds),
+    )
+    with pytest.raises(browser.BrowserRateLimited, match="HTTP 429"):
+        session.activate_account("41553815702", "wat2do.uwaterloo")
+    assert now[0] == 0.5
+    assert navigations == [("https://www.instagram.com/wat2do.uwaterloo/", True)]
+    assert responses == [browser._PAGE_RESPONSE_SOURCE]
+
+
+def test_new_429_after_one_account_switch_click_propagates_without_profile_reload():
+    class RateLimitedSwitch(AccountBrowser):
+        def __call__(self, source, timeout):
+            if source == browser._PAGE_RESPONSE_SOURCE:
+                self.sources.append(source)
+                return json.dumps({"path": "/", "rate_limited": True})
+            return super().__call__(source, timeout)
+
+        def navigate(self, *args, **kwargs):
+            pytest.fail("A fresh switch429 must not immediately reload another profile")
+
+    runner = RateLimitedSwitch(username="ulaval.wat2do.io", recipient=False)
+    session = browser.BrowserInstagramSession(javascript_runner=runner)
+    with pytest.raises(browser.BrowserRateLimited, match="HTTP 429"):
+        session.activate_account("41553815702", "usask.wat2do.io")
+    assert sum('const username = "usask.wat2do.io"' in source for source in runner.sources) == 1
+    assert runner.sources.count(browser._PAGE_RESPONSE_SOURCE) == 1
 
 
 def test_polling_caps_reads_to_interaction_deadline_and_restores_job_budget(monkeypatch):
@@ -1914,7 +2299,7 @@ def test_closed_primary_is_repaired_first_without_promoting_a_retrieval_tab(
         browser,
         "BrowserInstagramSession",
         lambda **kwargs: SimpleNamespace(
-            current_page_path=lambda: f"/{bootstrap_username}/",
+            current_page_path=lambda **kwargs: f"/{bootstrap_username}/",
             current_account_username=lambda: bootstrap_username,
             poll_until=lambda predicate: predicate(),
         ),

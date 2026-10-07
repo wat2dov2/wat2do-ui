@@ -2,7 +2,9 @@ import json
 import sqlite3
 import subprocess
 import sys
+import threading
 from concurrent.futures import ThreadPoolExecutor
+from dataclasses import replace
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -75,6 +77,239 @@ def test_engagement_cooldown_still_allows_immediate_digest_work(queue):
 
     assert _complete_next(queue, allow_engagement=False).id == digest_id
     assert queue.get(engagement_id).state == "pending"
+
+
+@pytest.mark.parametrize("kind", ["digest", "retrieval", "engagement"])
+def test_shared_rate_limit_holds_every_browser_kind_until_expiry(queue, monkeypatch, kind):
+    clock = _clock(monkeypatch)
+    first_id = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "rate-limit-active")
+    active = queue.claim_next()
+    pending_id = (
+        queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "rate-limit-next")
+        if kind == "digest"
+        else queue.enqueue_retrieval(
+            school="ubc",
+            recipient_id=RECIPIENT_ID,
+            account_username=ACCOUNT_USERNAME,
+            url="https://www.instagram.com/p/RateLimited/",
+        )
+        if kind == "retrieval"
+        else _engagement(queue, "RateLimited")
+    )
+
+    queue.defer_for_rate_limit(active, "Instagram public media request failed with HTTP 429")
+
+    assert queue.is_rate_limited()
+    assert queue.claim_next() is None
+    assert queue.claim_companions(active, limit=14) == []
+    assert queue.get(first_id).state == "running"
+    assert queue.get(pending_id).state == "pending"
+    assert queue.get(pending_id).attempts == 0
+    assert not queue.get_setting("paused", False)
+    clock.now += module.CONTROL.rate_limit_backoff_seconds
+    assert not queue.is_rate_limited()
+    assert queue.claim_next().id == pending_id
+
+
+def test_rate_limit_uses_existing_sanitized_diagnostics_without_changing_the_job(
+    queue, monkeypatch
+):
+    clock = _clock(monkeypatch)
+    job_id = queue.enqueue_retrieval(
+        school="ubc",
+        recipient_id=RECIPIENT_ID,
+        account_username=ACCOUNT_USERNAME,
+        url="https://www.instagram.com/p/RateDiagnostic/",
+    )
+    active = queue.claim_next()
+    untrusted_result = replace(
+        active,
+        result={"response_body": "must-not-be-logged"},
+        payload={**active.payload, "response_body": "must-not-be-logged"},
+    )
+    reason = "Instagram public media request failed with HTTP 429"
+
+    queue.defer_for_rate_limit(untrusted_result, reason)
+
+    assert queue.get(job_id) == active
+    assert queue.get_setting("browser_rate_limit_until") == (
+        clock.now + module.CONTROL.rate_limit_backoff_seconds
+    )
+    with queue._connect() as db:
+        events = [json.loads(row[0]) for row in db.execute("SELECT event FROM diagnostic_events")]
+    event = next(event for event in events if event["payload"]["state"] == "rate_limited")
+    assert event["payload"] == {
+        "state": "rate_limited",
+        "job_id": job_id,
+        "kind": "retrieval",
+        "reason": reason,
+        "recorded_at": clock.now,
+    }
+    assert event["school"] == "ubc"
+    assert event["ig_account"] == ACCOUNT_USERNAME
+    assert event["post_url"] == "https://www.instagram.com/p/RateDiagnostic/"
+    assert "must-not-be-logged" not in json.dumps(event)
+
+
+def test_rate_limit_expiry_does_not_clear_human_recovery_pause(queue, monkeypatch):
+    clock = _clock(monkeypatch)
+    queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "rate-limit-auth")
+    active = queue.claim_next()
+    queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "rate-limit-after-auth")
+    queue.set_setting("paused", "Instagram browser requires human account recovery")
+
+    queue.defer_for_rate_limit(active, "Instagram browser page returned HTTP 429")
+    clock.now += module.CONTROL.rate_limit_backoff_seconds
+
+    assert not queue.is_rate_limited()
+    assert queue.get_setting("paused") == "Instagram browser requires human account recovery"
+    assert queue.claim_next() is None
+    assert queue.claim_companions(active, limit=14) == []
+
+
+def test_rate_limited_maintenance_uses_the_same_cooldown_without_a_synthetic_job(
+    queue, monkeypatch
+):
+    clock = _clock(monkeypatch)
+    pending_id = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "rate-limit-maintenance")
+    reason = "Instagram browser page returned HTTP 429"
+
+    queue.defer_for_rate_limit(None, reason)
+
+    assert queue.is_rate_limited()
+    assert queue.claim_next() is None
+    assert queue.get(pending_id).state == "pending"
+    assert queue.get(pending_id).attempts == 0
+    assert not queue.get_setting("paused", False)
+    with queue._connect() as db:
+        events = [json.loads(row[0]) for row in db.execute("SELECT event FROM diagnostic_events")]
+    event = next(event for event in events if event["payload"]["state"] == "rate_limited")
+    assert event["payload"] == {
+        "state": "rate_limited",
+        "job_id": None,
+        "kind": None,
+        "reason": reason,
+        "recorded_at": clock.now,
+    }
+    assert event["school"] is None
+    assert event["ig_account"] is None
+    assert event["post_url"] is None
+    clock.now += module.CONTROL.rate_limit_backoff_seconds
+    assert queue.claim_next().id == pending_id
+
+
+@pytest.mark.parametrize("reason", ["", "   "])
+def test_rate_limit_requires_a_reason_before_writing_cooldown_or_diagnostics(queue, reason):
+    with pytest.raises(ValueError, match="diagnostic reason"):
+        queue.defer_for_rate_limit(None, reason)
+
+    assert not queue.is_rate_limited()
+    with queue._connect() as db:
+        assert db.execute("SELECT COUNT(*) FROM diagnostic_events").fetchone()[0] == 0
+
+
+def test_rate_limit_does_not_automatically_retry_uncertain_native_actions(queue, monkeypatch):
+    clock = _clock(monkeypatch)
+    job_id = _engagement(queue, "RateLimitNative")
+    active = queue.claim_next()
+    queue.defer_for_rate_limit(active, "Instagram browser page returned HTTP 429")
+    with pytest.raises(ValueError, match="Engagement cannot be automatically requeued"):
+        queue.finish(job_id, error="Instagram browser page returned HTTP 429", requeue=True)
+    queue.finish(job_id, error="Instagram browser page returned HTTP 429")
+
+    clock.now += module.CONTROL.rate_limit_backoff_seconds
+
+    assert not queue.is_rate_limited()
+    assert queue.claim_next() is None
+    assert queue.get(job_id).state == "failed"
+    assert queue.get(job_id).attempts == 1
+    queue.retry(job_id)
+    assert queue.claim_next().id == job_id
+    assert queue.get(job_id).attempts == 2
+
+
+@pytest.mark.parametrize(
+    "state",
+    ["missing", "pending", "succeeded", "failed", "cancelled", "stale_attempt", "stale_started_at"],
+)
+def test_rate_limit_for_an_inactive_claim_is_a_noop_without_ghost_diagnostics(
+    queue, monkeypatch, state
+):
+    _clock(monkeypatch)
+    queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "rate-limit-noop")
+    active = queue.claim_next()
+    if state == "missing":
+        active = replace(active, id="missing-rate-limit-job")
+    elif state == "stale_attempt":
+        active = replace(active, attempts=active.attempts - 1)
+    elif state == "stale_started_at":
+        active = replace(active, started_at=active.started_at - 1)
+    else:
+        with queue._connect() as db:
+            db.execute("UPDATE jobs SET state=? WHERE id=?", (state, active.id))
+    with queue._connect() as db:
+        before = db.execute("SELECT event FROM diagnostic_events ORDER BY created_at").fetchall()
+
+    queue.defer_for_rate_limit(active, "Instagram browser page returned HTTP 429")
+
+    assert not queue.is_rate_limited()
+    assert queue.get_setting("browser_rate_limit_until") is None
+    with queue._connect() as db:
+        assert (
+            db.execute("SELECT event FROM diagnostic_events ORDER BY created_at").fetchall()
+            == before
+        )
+
+
+def test_simultaneous_rate_limits_extend_one_shared_deadline_without_shortening_it(
+    queue, monkeypatch
+):
+    clock = _clock(monkeypatch)
+    for index in range(14):
+        queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, f"rate-limit-concurrent-{index}")
+    jobs = [queue.claim_next() for _ in range(14)]
+    local_clock = threading.local()
+    entered = threading.Barrier(14)
+    monkeypatch.setattr(
+        module,
+        "time",
+        SimpleNamespace(time=lambda: getattr(local_clock, "now", clock.now)),
+    )
+
+    def defer(index):
+        local_clock.now = clock.now + index
+        entered.wait(timeout=5)
+        queue.defer_for_rate_limit(jobs[index], "Instagram browser page returned HTTP 429")
+
+    with ThreadPoolExecutor(max_workers=14) as executor:
+        list(executor.map(defer, range(14)))
+    expected = clock.now + 13 + module.CONTROL.rate_limit_backoff_seconds
+    assert queue.get_setting("browser_rate_limit_until") == expected
+    queue.defer_for_rate_limit(jobs[0], "Instagram browser page returned HTTP 429")
+    assert queue.get_setting("browser_rate_limit_until") == expected
+    assert queue.is_rate_limited(now=expected - 0.01)
+    assert not queue.is_rate_limited(now=expected)
+    with queue._connect() as db:
+        events = [json.loads(row[0]) for row in db.execute("SELECT event FROM diagnostic_events")]
+    assert sum(event["payload"]["state"] == "rate_limited" for event in events) == 15
+
+
+@pytest.mark.parametrize("deadline", [True, "later", [], float("nan"), float("inf")])
+def test_invalid_rate_limit_deadline_cannot_admit_browser_work(queue, monkeypatch, deadline):
+    _clock(monkeypatch)
+    queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "rate-limit-invalid-active")
+    active = queue.claim_next()
+    pending_id = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "rate-limit-invalid-next")
+    queue.set_setting("browser_rate_limit_until", deadline)
+
+    with pytest.raises(ValueError, match="Browser rate limit timestamp is invalid"):
+        queue.is_rate_limited()
+    with pytest.raises(ValueError, match="Browser rate limit timestamp is invalid"):
+        queue.claim_next()
+    with pytest.raises(ValueError, match="Browser rate limit timestamp is invalid"):
+        queue.claim_companions(active, limit=14)
+    assert queue.get(pending_id).state == "pending"
+    assert queue.get(pending_id).attempts == 0
 
 
 def test_school_posts_stay_together_and_digest_preempts_between_posts(queue):
@@ -602,21 +837,188 @@ def test_safe_read_retry_preserves_diagnostic_reason_without_exposing_terminal_f
     assert queue.claim_next().attempts == 2
 
 
-@pytest.mark.parametrize("state", ["missing", "pending", "succeeded", "failed", "cancelled"])
-def test_noop_safe_read_requeue_does_not_record_retry_diagnostics(queue, state):
+@pytest.mark.parametrize("kind", ["digest", "retrieval"])
+def test_confirmed_rate_limit_preserves_last_read_attempt_budget_and_claim_diagnostics(
+    queue, monkeypatch, kind
+):
+    clock = _clock(monkeypatch)
     job_id = (
-        "missing-read"
-        if state == "missing"
-        else queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "no-retry")
+        queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "rate-limit-last-budget")
+        if kind == "digest"
+        else queue.enqueue_retrieval(
+            school="ubc",
+            recipient_id=RECIPIENT_ID,
+            account_username=ACCOUNT_USERNAME,
+            url="https://www.instagram.com/p/RateLastBudget/",
+        )
     )
+    with queue._connect() as db:
+        db.execute(
+            "UPDATE jobs SET attempts=? WHERE id=?",
+            (module.CONTROL.ingestion_retry_limit - 1, job_id),
+        )
+    active = queue.claim_next()
+    assert active.attempts == module.CONTROL.ingestion_retry_limit
+    queue.record_diagnostic("running", active)
+    reason = "Instagram public media request failed with HTTP 429"
+    queue.defer_for_rate_limit(active, reason)
+
+    queue.finish(job_id, error=reason, requeue=True, rate_limited_claim=active)
+
+    held = queue.get(job_id)
+    assert held.state == "pending"
+    assert held.attempts == module.CONTROL.ingestion_retry_limit - 1
+    assert held.error is None
+    assert queue.claim_next() is None
+    with queue._connect() as db:
+        events = [json.loads(row[0]) for row in db.execute("SELECT event FROM diagnostic_events")]
+        assert db.execute("SELECT started_at FROM jobs WHERE id=?", (job_id,)).fetchone()[0] is None
+    assert [(event["payload"]["state"], event["payload"]["reason"]) for event in events] == [
+        ("queued", None),
+        ("running", None),
+        ("rate_limited", reason),
+        ("retrying", reason),
+    ]
+    clock.now += module.CONTROL.rate_limit_backoff_seconds
+    retried = queue.claim_next()
+    assert retried.id == job_id
+    assert retried.attempts == module.CONTROL.ingestion_retry_limit
+    queue.finish(job_id, error="Instagram public media request failed with HTTP 400")
+    assert queue.get(job_id).state == "failed"
+    assert queue.get(job_id).attempts == module.CONTROL.ingestion_retry_limit
+
+
+@pytest.mark.parametrize("requeue,kind", [(False, "digest"), (True, "engagement")])
+def test_rate_limit_attempt_refund_requires_a_requeued_read(queue, requeue, kind):
+    job_id = (
+        queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "rate-limit-refund-guard")
+        if kind == "digest"
+        else _engagement(queue, "RateRefundNative")
+    )
+    active = queue.claim_next()
+    with queue._connect() as db:
+        events = db.execute("SELECT event FROM diagnostic_events").fetchall()
+
+    with pytest.raises(ValueError):
+        queue.finish(job_id, error="HTTP 429", requeue=requeue, rate_limited_claim=active)
+
+    assert queue.get(job_id) == active
+    with queue._connect() as db:
+        assert db.execute("SELECT event FROM diagnostic_events").fetchall() == events
+
+
+@pytest.mark.parametrize(
+    "error,result",
+    [(None, None), ("", None), ("   ", None), ("HTTP 429", {}), ("HTTP 429", {"status": "failed"})],
+)
+def test_rate_limit_attempt_refund_requires_nonempty_error_and_no_result(queue, error, result):
+    job_id = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "rate-limit-refund-result")
+    active = queue.claim_next()
+
+    with pytest.raises(ValueError, match="rate-limited claim refund"):
+        queue.finish(job_id, error=error, result=result, requeue=True, rate_limited_claim=active)
+
+    assert queue.get(job_id) == active
+
+
+@pytest.mark.parametrize(
+    "changes",
+    [
+        {"id": "other-job"},
+        {"kind": "engagement"},
+        {"state": "pending"},
+        {"started_at": None},
+        {"attempts": 0},
+    ],
+)
+def test_rate_limit_attempt_refund_requires_the_original_running_read_claim(queue, changes):
+    job_id = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "rate-limit-refund-identity")
+    active = queue.claim_next()
+
+    with pytest.raises(ValueError, match="rate-limited claim refund"):
+        queue.finish(
+            job_id,
+            error="HTTP 429",
+            requeue=True,
+            rate_limited_claim=replace(active, **changes),
+        )
+
+    assert queue.get(job_id) == active
+
+
+def test_simultaneous_rate_limited_completions_refund_only_one_claim(queue, monkeypatch):
+    _clock(monkeypatch)
+    job_id = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "rate-limit-refund-concurrent")
+    active = queue.claim_next()
+    queue.record_diagnostic("running", active)
+    queue.defer_for_rate_limit(active, "HTTP 429")
+
+    def finish(_index):
+        queue.finish(job_id, error="HTTP 429", requeue=True, rate_limited_claim=active)
+
+    with ThreadPoolExecutor(max_workers=14) as executor:
+        list(executor.map(finish, range(14)))
+
+    assert queue.get(job_id).state == "pending"
+    assert queue.get(job_id).attempts == 0
+    with queue._connect() as db:
+        states = [
+            json.loads(row[0])["payload"]["state"]
+            for row in db.execute("SELECT event FROM diagnostic_events")
+        ]
+    assert states == ["queued", "running", "rate_limited", "retrying"]
+
+
+def test_old_rate_limited_claim_cannot_refund_or_defer_a_new_claim_with_same_attempt_number(
+    queue, monkeypatch
+):
+    clock = _clock(monkeypatch)
+    job_id = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "rate-limit-refund-stale")
+    original = queue.claim_next()
+    queue.defer_for_rate_limit(original, "HTTP 429")
+    queue.finish(job_id, error="HTTP 429", requeue=True, rate_limited_claim=original)
+    clock.now += module.CONTROL.rate_limit_backoff_seconds
+    current = queue.claim_next()
+    assert current.attempts == original.attempts
+    assert current.started_at != original.started_at
+    with queue._connect() as db:
+        events = db.execute("SELECT event FROM diagnostic_events").fetchall()
+
+    queue.defer_for_rate_limit(original, "HTTP 429")
+    queue.finish(job_id, error="HTTP 429", requeue=True, rate_limited_claim=original)
+
+    assert queue.get(job_id) == current
+    assert not queue.is_rate_limited()
+    with queue._connect() as db:
+        assert db.execute("SELECT event FROM diagnostic_events").fetchall() == events
+    queue.defer_for_rate_limit(current, "HTTP 429")
+    queue.finish(job_id, error="HTTP 429", requeue=True, rate_limited_claim=current)
+    assert queue.get(job_id).attempts == 0
+
+
+@pytest.mark.parametrize("rate_limited", [False, True])
+@pytest.mark.parametrize("state", ["missing", "pending", "succeeded", "failed", "cancelled"])
+def test_noop_safe_read_requeue_does_not_record_retry_diagnostics(queue, state, rate_limited):
+    job_id = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "no-retry")
+    original = queue.claim_next()
+    assert original.id == job_id
+    if state == "missing":
+        job_id = "missing-read"
+        original = replace(original, id=job_id)
     if state in {"succeeded", "failed"}:
-        assert queue.claim_next().id == job_id
         queue.finish(job_id, error="Previous failure" if state == "failed" else None)
-    elif state == "cancelled":
-        queue.cancel(job_id)
+    elif state in {"pending", "cancelled"}:
+        queue.finish(job_id, error="Previous transient failure", requeue=True)
+        if state == "cancelled":
+            queue.cancel(job_id)
     with queue._connect() as db:
         events = db.execute("SELECT event FROM diagnostic_events ORDER BY created_at").fetchall()
-    queue.finish(job_id, error="Transient bridge failure", requeue=True)
+    queue.finish(
+        job_id,
+        error="Transient bridge failure",
+        requeue=True,
+        rate_limited_claim=original if rate_limited else None,
+    )
     job = queue.get(job_id)
     if state == "missing":
         assert job is None

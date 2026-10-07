@@ -14,6 +14,7 @@ from services.instagram_notifications.browser_session import (
     _REQUEST_KEY,
     BrowserAccountChanged,
     BrowserInstagramSession,
+    BrowserRateLimited,
     BrowserSessionError,
     JavascriptRunner,
     _BrowserAutomationTransient,
@@ -75,9 +76,24 @@ class BrowserInstagramDigestResolver:
                 and exc.completed_payload.get("reason") == "auth_required"
             ):
                 exc.operation_error = BrowserDigestError(_failure_message("auth_required"))
+            elif (
+                exc.completed_payload is not None
+                and exc.completed_payload.get("state") == "failed"
+                and (
+                    exc.operation_error is None
+                    or isinstance(
+                        exc.operation_error,
+                        (_BrowserPageUnavailable, _BrowserAutomationTransient, TimeoutError),
+                    )
+                )
+            ):
+                response_failure = _response_failure(exc.completed_payload.get("reason"))
+                if isinstance(response_failure, BrowserRateLimited):
+                    exc.operation_error = response_failure
             raise
         except (
             BrowserAccountChanged,
+            BrowserRateLimited,
             _BrowserAutomationTransient,
             _BrowserPageUnavailable,
             _BrowserTabUnavailable,
@@ -86,11 +102,7 @@ class BrowserInstagramDigestResolver:
         except BrowserSessionError as exc:
             raise BrowserDigestError(str(exc)) from None
         if payload.get("state") != "succeeded":
-            if payload.get("reason") == "account_changed":
-                raise BrowserAccountChanged(_failure_message("account_changed"))
-            if payload.get("reason") in ("temporarily_unavailable", "request_failed"):
-                raise _BrowserPageUnavailable(_failure_message(payload["reason"]))
-            raise BrowserDigestError(_failure_message(payload.get("reason")))
+            raise _response_failure(payload.get("reason"))
         raw_media_ids = payload.get("media_ids")
         page_count = payload.get("page_count")
         if (
@@ -241,7 +253,11 @@ def _digest_query_source(cache_ent_id: str, recipient_id: str) -> str:
           request.result = {{state: "failed", reason: "auth_required"}};
           return;
         }}
-        if (response.status === 429 || response.status >= 500) {{
+        if (response.status === 429) {{
+          request.result = {{state: "failed", reason: "rate_limited"}};
+          return;
+        }}
+        if (response.status >= 500) {{
           request.result = {{state: "failed", reason: "temporarily_unavailable"}};
           return;
         }}
@@ -309,6 +325,7 @@ def _failure_message(reason: object) -> str:
         "account_unavailable": "Matching Instagram browser account is unavailable",
         "account_directory_failed": "Instagram browser account directory is unavailable",
         "temporarily_unavailable": "Instagram digest is temporarily unavailable",
+        "rate_limited": "Instagram digest is rate limited (HTTP 429)",
         "query_rejected": "Instagram digest query was rejected",
         "page_limit": "Instagram digest did not reach its terminal page",
         "invalid_response": "Instagram digest returned an invalid response",
@@ -319,6 +336,17 @@ def _failure_message(reason: object) -> str:
         if isinstance(reason, str)
         else "Instagram browser automation failed"
     )
+
+
+def _response_failure(reason: object) -> BrowserSessionError:
+    message = _failure_message(reason)
+    if reason == "account_changed":
+        return BrowserAccountChanged(message)
+    if reason == "rate_limited":
+        return BrowserRateLimited(message)
+    if reason in ("temporarily_unavailable", "request_failed"):
+        return _BrowserPageUnavailable(message)
+    return BrowserDigestError(message)
 
 
 __all__ = (

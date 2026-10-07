@@ -18,6 +18,7 @@ from services.instagram_notifications.browser_queue import CONTROL, BrowserJob, 
 from services.instagram_notifications.browser_session import (
     BrowserAccountChanged,
     BrowserInstagramSession,
+    BrowserRateLimited,
     BrowserSessionError,
     BrowserTabPool,
     _BrowserAutomationTransient,
@@ -46,7 +47,12 @@ def job_deadline() -> Iterator[None]:
         signal.signal(signal.SIGALRM, previous)
 
 
-def execute_job(job: BrowserJob, *, session: BrowserInstagramSession | None = None) -> dict:
+def execute_job(
+    job: BrowserJob,
+    *,
+    session: BrowserInstagramSession | None = None,
+    on_rate_limit: Callable[[BrowserRateLimited], None] | None = None,
+) -> dict:
     session = session or BrowserInstagramSession()
     operation_error: BaseException | None = None
     try:
@@ -74,6 +80,9 @@ def execute_job(job: BrowserJob, *, session: BrowserInstagramSession | None = No
         )
     except BaseException as exc:
         operation_error = exc
+        rate_error = exc.operation_error if isinstance(exc, _BrowserReadCleanupPending) else exc
+        if isinstance(rate_error, BrowserRateLimited) and on_rate_limit is not None:
+            on_rate_limit(rate_error)
         if isinstance(exc, BrowserSessionError):
             deferred = _deferred_read_cleanup(job, session, exc)
             if deferred is not None:
@@ -178,6 +187,9 @@ def process_next_job(queue: BrowserJobQueue, *, allow_engagement: bool = True) -
                         else execute_job(job)
                     )
                 queue.finish(job.id, result=result)
+            except BrowserRateLimited as exc:
+                queue.defer_for_rate_limit(job, str(exc))
+                queue.finish(job.id, error=str(exc))
             except (BrowserSessionError, TimeoutError) as exc:
                 if any(
                     reason in str(exc)
@@ -225,7 +237,16 @@ def _process_batch(
         str, tuple[BrowserJob, BrowserInstagramSession, _BrowserReadCleanupPending]
     ] = {}
     cleanup_lock = threading.Lock()
+    rate_limit_deferred: set[str] = set()
     interruption: BaseException | None = None
+
+    def defer_rate_limit(job, error):
+        # Announce the hold before failed-operation cleanup can block healthy completions.
+        pool_changed.set()
+        with cleanup_lock:
+            if job.id not in rate_limit_deferred:
+                queue.defer_for_rate_limit(job, str(error))
+                rate_limit_deferred.add(job.id)
 
     def execute(job, session, username):
         reset_deadline = getattr(session, "reset_job_deadline", None)
@@ -233,7 +254,7 @@ def _process_batch(
             reset_deadline(CONTROL.job_timeout_seconds)
 
         def ready():
-            path = session.current_page_path()
+            path = session.current_page_path(check_response=True)
             active_username = session.current_account_username()
             if active_username is None or path.startswith("/accounts/"):
                 return False
@@ -254,10 +275,14 @@ def _process_batch(
                 try:
                     session.poll_until(ready)
                 except BaseException as exc:
+                    if isinstance(exc, BrowserRateLimited):
+                        defer_rate_limit(job, exc)
                     _settle_job(job, session, operation_error=exc)
                     raise
             # Successful operations settle themselves; execute_job covers every failed exit.
-            result = execute_job(job, session=session)
+            result = execute_job(
+                job, session=session, on_rate_limit=lambda error: defer_rate_limit(job, error)
+            )
             if job.kind == "retrieval" and (
                 not isinstance(result, dict) or result.get("account_username") != username
             ):
@@ -269,12 +294,16 @@ def _process_batch(
             with cleanup_lock:
                 cleanup_pending[job.id] = (job, session, exc)
             pool_changed.set()
+            if isinstance(exc.operation_error, BrowserRateLimited):
+                defer_rate_limit(job, exc.operation_error)
             raise
-        except (BrowserAccountChanged, _BrowserTabUnavailable):
+        except (BrowserAccountChanged, _BrowserTabUnavailable, BrowserRateLimited):
             pool_changed.set()
             raise
 
     def failed(job, exc):
+        if isinstance(exc, BrowserRateLimited):
+            defer_rate_limit(job, exc)
         if isinstance(exc, (BrowserAccountChanged, _BrowserTabUnavailable)):
             pool_changed.set()
             queue.set_setting("retrieval_pool_account", None)
@@ -294,13 +323,16 @@ def _process_batch(
             queue.set_setting("paused", error)
         retryable = (
             job.kind in {"digest", "retrieval"}
-            and job.attempts < CONTROL.ingestion_retry_limit
-            and not queue.get_setting("paused", False)
+            and (
+                isinstance(exc, BrowserRateLimited) or job.attempts < CONTROL.ingestion_retry_limit
+            )
+            and (isinstance(exc, BrowserRateLimited) or not queue.get_setting("paused", False))
             and (
                 isinstance(
                     exc,
                     (
                         BrowserAccountChanged,
+                        BrowserRateLimited,
                         _BrowserAutomationTransient,
                         _BrowserPageUnavailable,
                         _BrowserTabUnavailable,
@@ -313,7 +345,14 @@ def _process_batch(
             # Keep the caller waiting until all requests have settled.
             pool_retries.append((job, error))
         else:
-            queue.finish(job.id, error=error, requeue=retryable)
+            queue.finish(
+                job.id,
+                error=error,
+                requeue=retryable,
+                rate_limited_claim=job
+                if retryable and isinstance(exc, BrowserRateLimited)
+                else None,
+            )
         unfinished.discard(job.id)
 
     try:
@@ -443,7 +482,7 @@ def _process_batch(
 
 def maintain_tab_pool(queue: BrowserJobQueue) -> None:
     """Restore the configured idle tab count without changing an account or pause."""
-    if queue.get_setting("paused", False):
+    if queue.get_setting("paused", False) or queue.is_rate_limited():
         return
     with open(BROWSER_LOCK_PATH, "a+") as browser_lock:
         try:
@@ -451,8 +490,10 @@ def maintain_tab_pool(queue: BrowserJobQueue) -> None:
         except BlockingIOError:
             return
         try:
-            if not queue.get_setting("paused", False):
+            if not queue.get_setting("paused", False) and not queue.is_rate_limited():
                 BrowserTabPool(queue).ensure_capacity()
+        except BrowserRateLimited as exc:
+            queue.defer_for_rate_limit(None, str(exc))
         except (TimeoutError, _BrowserAutomationTransient):
             log.warning(
                 "Tab maintenance deferred: browser bridge or account identity is temporarily unavailable"

@@ -7,9 +7,11 @@ import pytest
 from services.instagram_notifications import browser_digest
 from services.instagram_notifications.browser_session import (
     BrowserAccountChanged,
+    BrowserRateLimited,
     BrowserSessionError,
     _BrowserAutomationTransient,
     _BrowserPageUnavailable,
+    _BrowserReadCleanupPending,
     _BrowserTabUnavailable,
 )
 
@@ -86,6 +88,7 @@ def test_session_error_keeps_digest_public_error_contract():
     "error_type",
     [
         BrowserAccountChanged,
+        BrowserRateLimited,
         _BrowserAutomationTransient,
         _BrowserPageUnavailable,
         _BrowserTabUnavailable,
@@ -109,6 +112,7 @@ def test_digest_preserves_recoverable_session_failure_type(error_type):
     "reason,error_type",
     [
         ("account_changed", BrowserAccountChanged),
+        ("rate_limited", BrowserRateLimited),
         ("temporarily_unavailable", _BrowserPageUnavailable),
         ("request_failed", _BrowserPageUnavailable),
     ],
@@ -119,6 +123,70 @@ def test_digest_response_uses_typed_recoverable_failure(reason, error_type):
         browser_digest.BrowserInstagramDigestResolver(session=session).resolve(
             "41553815702", "usask.wat2do.io", "cache-1"
         )
+
+
+@pytest.mark.parametrize(
+    "original",
+    [
+        None,
+        _BrowserPageUnavailable("Transient page failure"),
+        _BrowserAutomationTransient("Transient bridge failure"),
+        TimeoutError("Transient readiness timeout"),
+        BrowserSessionError("Instagram browser requires human account recovery"),
+        BrowserAccountChanged("The active account changed"),
+        KeyboardInterrupt(),
+    ],
+)
+def test_deferred_digest_429_keeps_original_human_account_and_interrupt_causes(original):
+    pending = _BrowserReadCleanupPending(
+        "Instagram browser request cancellation could not be confirmed",
+        operation_error=original,
+        completed_payload={"state": "failed", "reason": "rate_limited"},
+    )
+
+    class PendingSession(FakeSession):
+        def query(self, source):
+            raise pending
+
+    with pytest.raises(_BrowserReadCleanupPending) as raised:
+        browser_digest.BrowserInstagramDigestResolver(session=PendingSession()).resolve(
+            "41553815702", "usask.wat2do.io", "cache-1"
+        )
+    assert raised.value is pending
+    if original is None or isinstance(
+        original, (_BrowserPageUnavailable, _BrowserAutomationTransient, TimeoutError)
+    ):
+        assert isinstance(pending.operation_error, BrowserRateLimited)
+    else:
+        assert pending.operation_error is original
+
+
+@pytest.mark.parametrize(
+    "status,reason",
+    [(429, "rate_limited"), (503, "temporarily_unavailable"), (401, "auth_required")],
+)
+def test_digest_http_failure_has_one_safe_reason_and_terminal_settlement(status, reason):
+    node = shutil.which("node")
+    if node is None:
+        pytest.skip("Node.js unavailable")
+    from services.instagram_notifications import browser_session
+
+    source = browser_digest._digest_query_source("cache-1", "41553815702")
+    script = (
+        "global.window = {};"
+        'global.document = {cookie: "csrftoken=private; ds_user_id=41553815702"};'
+        f"global.fetch = async () => ({{status: {status}, ok: false}});"
+        + source
+        + ";setImmediate(() => {const request = window["
+        + json.dumps(browser_session._REQUEST_KEY)
+        + "]; console.log(JSON.stringify({result: request.result, settled: request.settled}));});"
+    )
+    completed = subprocess.run([node], input=script, text=True, capture_output=True)
+    assert completed.returncode == 0, completed.stderr
+    assert json.loads(completed.stdout) == {
+        "result": {"state": "failed", "reason": reason},
+        "settled": True,
+    }
 
 
 @pytest.mark.parametrize(

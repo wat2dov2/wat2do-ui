@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import os
 import re
 import sqlite3
@@ -51,6 +52,7 @@ class BrowserJob:
     payload: dict[str, Any]
     state: str
     created_at: float
+    started_at: float | None
     result: dict[str, Any] | None
     error: str | None
     attempts: int
@@ -125,7 +127,56 @@ class BrowserJobQueue:
         if key == "paused" and previous != value:
             self.record_diagnostic("paused" if value else "resumed")
 
-    def record_diagnostic(self, state: str, job: BrowserJob | None = None) -> None:
+    def defer_for_rate_limit(self, job: BrowserJob | None, reason: str) -> None:
+        """Hold all browser admission without changing a claim or its retry policy."""
+        if not reason or not reason.strip():
+            raise ValueError("A rate limit requires a diagnostic reason")
+        limited_job = None
+        with closing(self._connect()) as db, db:
+            db.execute("BEGIN IMMEDIATE")
+            if job is not None:
+                row = db.execute(
+                    "SELECT * FROM jobs WHERE id=? AND state='running' AND attempts=? AND started_at=?",
+                    (job.id, job.attempts, job.started_at),
+                ).fetchone()
+                if row is None or job.state != "running":
+                    return
+                limited_job = self._job(row)
+            deadline = max(
+                self._rate_limit_until(db), time.time() + CONTROL.rate_limit_backoff_seconds
+            )
+            db.execute(
+                "INSERT INTO settings VALUES ('browser_rate_limit_until',?) "
+                "ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+                (json.dumps(deadline),),
+            )
+        self.record_diagnostic("rate_limited", limited_job, reason=reason)
+
+    def is_rate_limited(self, now: float | None = None) -> bool:
+        now = time.time() if now is None else now
+        with closing(self._connect()) as db:
+            return now < self._rate_limit_until(db)
+
+    @staticmethod
+    def _rate_limit_until(db: sqlite3.Connection) -> float:
+        row = db.execute(
+            "SELECT value FROM settings WHERE key='browser_rate_limit_until'"
+        ).fetchone()
+        if row is None:
+            return 0
+        deadline = json.loads(row[0])
+        if type(deadline) not in (int, float) or not math.isfinite(deadline):
+            raise ValueError("Browser rate limit timestamp is invalid")
+        return deadline
+
+    @classmethod
+    def _claims_blocked(cls, db: sqlite3.Connection, now: float) -> bool:
+        paused = db.execute("SELECT value FROM settings WHERE key='paused'").fetchone()
+        return bool(paused and json.loads(paused[0])) or now < cls._rate_limit_until(db)
+
+    def record_diagnostic(
+        self, state: str, job: BrowserJob | None = None, *, reason: str | None = None
+    ) -> None:
         """Persist allowlisted diagnostics locally without delaying browser work on HTTP."""
         event = {
             "event": f"Browser worker: {state}",
@@ -137,7 +188,13 @@ class BrowserJobQueue:
                 "state": state,
                 "job_id": job.id if job else None,
                 "kind": job.kind if job else None,
-                "reason": job.error if job else self.get_setting("paused", False),
+                "reason": (
+                    reason
+                    if reason is not None
+                    else job.error
+                    if job
+                    else self.get_setting("paused", False)
+                ),
                 "recorded_at": time.time(),
             },
         }
@@ -292,6 +349,7 @@ class BrowserJobQueue:
                     "account_username",
                     "state",
                     "created_at",
+                    "started_at",
                     "error",
                     "attempts",
                 )
@@ -306,8 +364,7 @@ class BrowserJobQueue:
         now = time.time() if now is None else now
         with closing(self._connect()) as db, db:
             db.execute("BEGIN IMMEDIATE")
-            paused = db.execute("SELECT value FROM settings WHERE key='paused'").fetchone()
-            if paused and json.loads(paused[0]):
+            if self._claims_blocked(db, now):
                 return None
             db.execute(
                 "UPDATE jobs SET state='cancelled',finished_at=?,error='Digest caller deadline expired' WHERE kind='digest' AND state='pending' AND created_at<?",
@@ -376,10 +433,9 @@ class BrowserJobQueue:
             return []
         with closing(self._connect()) as db, db:
             db.execute("BEGIN IMMEDIATE")
-            paused = db.execute("SELECT value FROM settings WHERE key='paused'").fetchone()
-            if paused and json.loads(paused[0]):
-                return []
             now = time.time()
+            if self._claims_blocked(db, now):
+                return []
             if first.kind == "retrieval" and (
                 db.execute(
                     "SELECT 1 FROM jobs WHERE state='pending' AND kind='digest' "
@@ -419,8 +475,23 @@ class BrowserJobQueue:
         result: dict[str, Any] | None = None,
         error: str | None = None,
         requeue: bool = False,
+        rate_limited_claim: BrowserJob | None = None,
     ) -> None:
         """Complete a claim or atomically schedule a safe read retry."""
+        if rate_limited_claim is not None and (
+            not requeue
+            or not error
+            or not error.strip()
+            or result is not None
+            or rate_limited_claim.id != job_id
+            or rate_limited_claim.kind not in {"digest", "retrieval"}
+            or rate_limited_claim.state != "running"
+            or rate_limited_claim.started_at is None
+            or rate_limited_claim.attempts <= 0
+        ):
+            raise ValueError(
+                "A rate-limited claim refund requires a failed running safe read retry"
+            )
         state = (
             "pending"
             if requeue
@@ -432,16 +503,26 @@ class BrowserJobQueue:
         )
         retry_job: BrowserJob | None = None
         with closing(self._connect()) as db, db:
+            db.execute("BEGIN IMMEDIATE")
             if requeue:
                 row = db.execute("SELECT * FROM jobs WHERE id=?", (job_id,)).fetchone()
                 retry_job = self._job(row) if row else None
                 if retry_job and retry_job.kind == "engagement":
                     raise ValueError("Engagement cannot be automatically requeued")
+            if rate_limited_claim is not None and (
+                retry_job is None
+                or retry_job.state != "running"
+                or retry_job.attempts != rate_limited_claim.attempts
+                or retry_job.started_at != rate_limited_claim.started_at
+            ):
+                return
             now = time.time()
+            refund = rate_limited_claim is not None
             changed = db.execute(
                 "UPDATE jobs SET state=?,result=?,error=?,finished_at=?,"
                 "started_at=CASE WHEN ? THEN NULL ELSE started_at END,"
-                "created_at=CASE WHEN ? THEN ? ELSE created_at END WHERE id=? AND state='running'",
+                "created_at=CASE WHEN ? THEN ? ELSE created_at END,attempts=attempts-? "
+                "WHERE id=? AND state='running' AND attempts>=?",
                 (
                     state,
                     json.dumps(result) if result and not requeue else None,
@@ -450,7 +531,9 @@ class BrowserJobQueue:
                     requeue,
                     requeue,
                     now,
+                    refund,
                     job_id,
+                    refund,
                 ),
             ).rowcount
         if changed and retry_job is not None:

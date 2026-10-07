@@ -660,6 +660,8 @@ class InstagramBrowserControl(_ControlModel):
     bridge_retry_limit: int = Field(gt=0, le=10)
     request_timeout_seconds: float = Field(gt=0, le=120)
     apple_event_timeout_seconds: float = Field(gt=0, le=120)
+    navigation_interval_seconds: float = Field(gt=0, le=30)
+    rate_limit_backoff_seconds: float = Field(gt=0, le=3600)
     viewport_warm_timeout_seconds: float = Field(gt=0, le=120)
     primary_minimum_viewport_width: int = Field(ge=1024, le=4096)
     interaction_timeout_seconds: float = Field(gt=0, le=120)
@@ -689,6 +691,13 @@ class InstagramBrowserControl(_ControlModel):
             raise ValueError("Viewport warm timeout must not exceed browser request timeout")
         if self.apple_event_timeout_seconds > self.request_timeout_seconds:
             raise ValueError("Apple Event timeout must not exceed browser request timeout")
+        if (
+            self.navigation_interval_seconds * (self.parallel_tabs - 1)
+            >= self.request_timeout_seconds
+        ):
+            raise ValueError("Navigation spacing must fit the parallel tab request budget")
+        if self.rate_limit_backoff_seconds >= self.result_timeout_seconds:
+            raise ValueError("Rate limit backoff must be shorter than the result timeout")
         return self
 
 

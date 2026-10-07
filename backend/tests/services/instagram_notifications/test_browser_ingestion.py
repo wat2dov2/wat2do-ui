@@ -48,7 +48,7 @@ def test_rejects_nonpublic_or_credentialed_targets(url):
 def test_verified_browser_result_preserves_carousel_video_and_coauthors():
     calls = []
     session = SimpleNamespace(
-        current_page_path=lambda: "/p/AbC/",
+        current_page_path=lambda **kwargs: "/p/AbC/",
         current_account_username=lambda: "wat2do.ca",
         poll_until=lambda predicate: predicate(),
         activate_account=lambda *_: pytest.fail("Retrieval must never switch accounts"),
@@ -77,7 +77,7 @@ def test_same_target_reload_refreshes_cached_account_before_readiness_and_query(
 
     session = SimpleNamespace(
         navigate=navigate,
-        current_page_path=lambda: "/p/AbC/",
+        current_page_path=lambda **kwargs: "/p/AbC/",
         current_account_username=lambda: state.username,
         poll_until=lambda ready: ready(),
         query=query,
@@ -85,6 +85,57 @@ def test_same_target_reload_refreshes_cached_account_before_readiness_and_query(
     result = module.BrowserInstagramRetriever(session).retrieve(URL, cutoff_days=1)
     assert calls == [(URL, True)]
     assert result["account_username"] == ACCOUNT
+
+
+def test_verified_failed_429_is_not_lost_to_a_later_loading_identity():
+    queried = False
+
+    def username():
+        if queried:
+            raise TimeoutError("The post-query navigation identity is still loading")
+        return ACCOUNT
+
+    def query(source):
+        nonlocal queried
+        queried = True
+        return {"state": "failed", "reason": "http_error", "http_status": 429}
+
+    session = SimpleNamespace(
+        navigate=lambda *args, **kwargs: None,
+        current_page_path=lambda **kwargs: "/p/AbC/",
+        current_account_username=username,
+        poll_until=lambda ready: ready(),
+        query=query,
+    )
+    with pytest.raises(module.BrowserRateLimited, match="HTTP 429"):
+        module.BrowserInstagramRetriever(session).retrieve(URL, cutoff_days=1)
+
+
+@pytest.mark.parametrize("rate_limit_phase", ["before_query", "after_query"])
+def test_account_identity_wait_detects_a_fresh_native_429(rate_limit_phase):
+    path_reads = 0
+    queries = []
+
+    def path(*, check_response=False):
+        nonlocal path_reads
+        assert check_response
+        path_reads += 1
+        if path_reads == (2 if rate_limit_phase == "before_query" else 3):
+            raise module.BrowserRateLimited("Instagram browser is rate limited (HTTP 429)")
+        return "/p/AbC/"
+
+    session = SimpleNamespace(
+        navigate=lambda *args, **kwargs: None,
+        current_page_path=path,
+        current_account_username=lambda: ACCOUNT,
+        poll_until=lambda ready: ready(),
+        query=lambda source: (
+            queries.append(source) or {"state": "succeeded", "posts": [deepcopy(POST)]}
+        ),
+    )
+    with pytest.raises(module.BrowserRateLimited, match="HTTP 429"):
+        module.BrowserInstagramRetriever(session).retrieve(URL, cutoff_days=1)
+    assert len(queries) == int(rate_limit_phase == "after_query")
 
 
 @pytest.mark.parametrize(
@@ -103,7 +154,7 @@ def test_incomplete_or_mismatched_media_fails(mutation):
     if mutation == "naive_time":
         post["timestamp"] = "2026-10-04T12:00:00"
     session = SimpleNamespace(
-        current_page_path=lambda: "/p/AbC/",
+        current_page_path=lambda **kwargs: "/p/AbC/",
         current_account_username=lambda: "wat2do.ca",
         poll_until=lambda predicate: predicate(),
         activate_account=lambda *_: pytest.fail("Retrieval must never switch accounts"),
@@ -340,12 +391,17 @@ def test_classified_public_response_failures_preserve_bounded_read_retry_type(
 ):
     session = SimpleNamespace(
         navigate=lambda *args, **kwargs: None,
-        current_page_path=lambda: "/p/AbC/",
+        current_page_path=lambda **kwargs: "/p/AbC/",
         current_account_username=lambda: ACCOUNT,
         poll_until=lambda ready: ready(),
         query=lambda source: {"state": "failed", "reason": reason, "http_status": status},
     )
-    with pytest.raises(module._BrowserPageUnavailable, match=message) as raised:
+    error_type = (
+        module.BrowserRateLimited
+        if reason == "http_error" and type(status) is int and status == 429
+        else module._BrowserPageUnavailable
+    )
+    with pytest.raises(error_type, match=message) as raised:
         module.BrowserInstagramRetriever(session).retrieve(URL, cutoff_days=1)
     assert "do-not-export" not in str(raised.value)
 
@@ -366,7 +422,7 @@ def test_retrieval_preserves_original_human_recovery_error_and_deferred_payload(
 
     session = SimpleNamespace(
         navigate=lambda *args, **kwargs: None,
-        current_page_path=lambda: "/p/AbC/",
+        current_page_path=lambda **kwargs: "/p/AbC/",
         current_account_username=lambda: ACCOUNT,
         poll_until=lambda ready: ready(),
         query=query,
@@ -376,6 +432,79 @@ def test_retrieval_preserves_original_human_recovery_error_and_deferred_payload(
     assert raised.value is pending
     assert pending.operation_error is original
     assert pending.completed_payload is payload
+
+
+@pytest.mark.parametrize(
+    "original",
+    [
+        None,
+        module._BrowserPageUnavailable("Read timed out"),
+        module._BrowserAutomationTransient("Bridge timed out"),
+        TimeoutError(),
+        module.BrowserSessionError("Instagram browser requires human account recovery"),
+        module.BrowserAccountChanged("Account changed"),
+        module.BrowserSessionError("Invalid request state"),
+        KeyboardInterrupt(),
+    ],
+)
+def test_confirmed_deferred_429_preserves_human_account_and_interrupt_errors(original):
+    payload = {"state": "failed", "reason": "http_error", "http_status": 429}
+    pending = module._BrowserReadCleanupPending(
+        "Instagram browser request cancellation could not be confirmed",
+        operation_error=original,
+        completed_payload=payload,
+    )
+
+    def query(source):
+        raise pending
+
+    session = SimpleNamespace(
+        navigate=lambda *args, **kwargs: None,
+        current_page_path=lambda **kwargs: "/p/AbC/",
+        current_account_username=lambda: ACCOUNT,
+        poll_until=lambda ready: ready(),
+        query=query,
+    )
+    with pytest.raises(module._BrowserReadCleanupPending) as raised:
+        module.BrowserInstagramRetriever(session).retrieve(URL, cutoff_days=1)
+    assert raised.value is pending
+    promoted = original is None or isinstance(
+        original, (module._BrowserPageUnavailable, module._BrowserAutomationTransient, TimeoutError)
+    )
+    if promoted:
+        assert isinstance(pending.operation_error, module.BrowserRateLimited)
+        assert "HTTP 429" in str(pending.operation_error)
+    else:
+        assert pending.operation_error is original
+    assert pending.completed_payload is payload
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {"state": "failed", "reason": "http_error", "http_status": "429"},
+        {"state": "failed", "reason": "projection_failed", "http_status": 429},
+        {"state": "succeeded", "reason": "http_error", "http_status": 429},
+    ],
+)
+def test_deferred_payload_requires_the_exact_verified_429_contract(payload):
+    pending = module._BrowserReadCleanupPending(
+        "Instagram browser request cancellation could not be confirmed", completed_payload=payload
+    )
+
+    def query(source):
+        raise pending
+
+    session = SimpleNamespace(
+        navigate=lambda *args, **kwargs: None,
+        current_page_path=lambda **kwargs: "/p/AbC/",
+        current_account_username=lambda: ACCOUNT,
+        poll_until=lambda ready: ready(),
+        query=query,
+    )
+    with pytest.raises(module._BrowserReadCleanupPending):
+        module.BrowserInstagramRetriever(session).retrieve(URL, cutoff_days=1)
+    assert pending.operation_error is None
 
 
 def test_suspended_account_stops_before_switch_or_fetch():
@@ -402,7 +531,7 @@ def test_explicit_retrieval_retry_resets_only_matching_media(import_setup, monke
 def test_retrieval_rejects_account_change():
     names = iter(["wat2do.ca", "wat2do.ca", "wat2do.sfu", "wat2do.sfu"])
     session = SimpleNamespace(
-        current_page_path=lambda: "/p/AbC/",
+        current_page_path=lambda **kwargs: "/p/AbC/",
         navigate=lambda *_, **__: None,
         current_account_username=lambda: next(names),
         poll_until=lambda predicate: predicate(),

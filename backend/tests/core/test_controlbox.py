@@ -602,6 +602,8 @@ def test_instagram_browser_controls_have_one_shared_timing_source():
     assert controlbox.instagram_browser.parallel_tabs == 15
     assert controlbox.instagram_browser.bridge_retry_limit == 3
     assert controlbox.instagram_browser.apple_event_timeout_seconds == 3
+    assert controlbox.instagram_browser.navigation_interval_seconds == 1
+    assert controlbox.instagram_browser.rate_limit_backoff_seconds == 120
     assert controlbox.instagram_browser.viewport_warm_timeout_seconds == 3
     assert controlbox.instagram_browser.primary_minimum_viewport_width == 1024
     assert controlbox.instagram_browser.secondary_cleanup_timeout_seconds == 5
@@ -627,6 +629,12 @@ def test_instagram_browser_controls_have_one_shared_timing_source():
         {"apple_event_timeout_seconds": 0},
         {"apple_event_timeout_seconds": 31},
         {"apple_event_timeout_seconds": 121},
+        {"navigation_interval_seconds": 0},
+        {"navigation_interval_seconds": 3},
+        {"navigation_interval_seconds": 31},
+        {"rate_limit_backoff_seconds": 0},
+        {"rate_limit_backoff_seconds": 300},
+        {"rate_limit_backoff_seconds": 3601},
         {"viewport_warm_timeout_seconds": 0},
         {"viewport_warm_timeout_seconds": 31},
         {"viewport_warm_timeout_seconds": 121},

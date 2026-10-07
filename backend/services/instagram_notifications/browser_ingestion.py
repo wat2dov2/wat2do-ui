@@ -16,8 +16,11 @@ from services.instagram_notifications.browser_session import (
     _REQUEST_KEY,
     BrowserAccountChanged,
     BrowserInstagramSession,
+    BrowserRateLimited,
     BrowserSessionError,
+    _BrowserAutomationTransient,
     _BrowserPageUnavailable,
+    _BrowserReadCleanupPending,
     _current_account_username_source,
     canonical_post_url,
 )
@@ -65,6 +68,7 @@ class BrowserInstagramRetriever:
 
         def ready():
             nonlocal username
+            self.session.current_page_path(check_response=True)
             username = self.session.current_account_username()
             return username is not None
 
@@ -81,7 +85,7 @@ class BrowserInstagramRetriever:
         self.session.navigate(target, reload=True)
 
         def ready():
-            path = self.session.current_page_path()
+            path = self.session.current_page_path(check_response=True)
             return (
                 path.strip("/") == urlsplit(target).path.strip("/")
                 and self.session.current_account_username() is not None
@@ -94,14 +98,32 @@ class BrowserInstagramRetriever:
             if profile
             else f"/api/v1/media/{media_id_from_url(target)}/info/"
         )
-        result = self.session.query(_query_source(endpoint, username, profile=bool(profile)))
-        if self._active_account() != username:
-            raise BrowserAccountChanged("Instagram browser account changed during retrieval")
+        try:
+            result = self.session.query(_query_source(endpoint, username, profile=bool(profile)))
+        except _BrowserReadCleanupPending as exc:
+            payload = exc.completed_payload
+            if (
+                payload is not None
+                and payload.get("state") == "failed"
+                and (
+                    exc.operation_error is None
+                    or isinstance(
+                        exc.operation_error,
+                        (_BrowserPageUnavailable, _BrowserAutomationTransient, TimeoutError),
+                    )
+                )
+            ):
+                response_failure = _response_failure(
+                    payload.get("reason"), payload.get("http_status")
+                )
+                if isinstance(response_failure, BrowserRateLimited):
+                    exc.operation_error = response_failure
+            raise
         if result.get("state") != "succeeded":
             # Never persist server response text, request headers or browser internals.
-            raise _BrowserPageUnavailable(
-                _failure_message(result.get("reason"), result.get("http_status"))
-            )
+            raise _response_failure(result.get("reason"), result.get("http_status"))
+        if self._active_account() != username:
+            raise BrowserAccountChanged("Instagram browser account changed during retrieval")
         posts = result.get("posts")
         if not isinstance(posts, list) or (not profile and len(posts) != 1):
             raise BrowserSessionError("Instagram retrieval returned incomplete media details")
@@ -118,7 +140,7 @@ class BrowserInstagramRetriever:
         return {"account_username": username, "posts": checked, "target_url": target}
 
 
-def _failure_message(reason: object, http_status: object) -> str:
+def _response_failure(reason: object, http_status: object) -> BrowserSessionError:
     messages = {
         "account_changed": "Instagram browser account changed during public media retrieval",
         "http_error": "Instagram public media request was rejected",
@@ -128,9 +150,14 @@ def _failure_message(reason: object, http_status: object) -> str:
         "request_failed": "Instagram public media request failed",
     }
     if reason == "http_error" and type(http_status) is int and 100 <= http_status <= 599:
-        return f"Instagram public media request failed with HTTP {http_status}"
-    return messages.get(
-        reason if isinstance(reason, str) else "", "Instagram public media retrieval failed"
+        message = f"Instagram public media request failed with HTTP {http_status}"
+        return (
+            BrowserRateLimited(message) if http_status == 429 else _BrowserPageUnavailable(message)
+        )
+    return _BrowserPageUnavailable(
+        messages.get(
+            reason if isinstance(reason, str) else "", "Instagram public media retrieval failed"
+        )
     )
 
 
