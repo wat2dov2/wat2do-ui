@@ -1957,8 +1957,9 @@ test.describe("Events Page", () => {
       const cluster = page.getByRole("button", { name: "Map dinner, Map talk", exact: true });
       await expect(cluster).toBeVisible();
       await expect(cluster).toHaveCSS("width", "64px");
+      await expect(page.getByRole("combobox", { name: "Open an event", exact: true })).toHaveCount(0);
       await cluster.click();
-      const sheet = page.getByRole("complementary", { name: "Select an event" });
+      const sheet = page.getByRole("complementary", { name: "Open an event" });
       await expect(sheet).toBeVisible();
       await sheet.getByRole("button", { name: /Map dinner/ }).click();
       await expect(page.getByRole("dialog", { name: "Map dinner", exact: true })).toBeVisible();

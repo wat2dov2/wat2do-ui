@@ -14,7 +14,6 @@ import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 import { controlBox } from "@/shared/config/controlBox";
 import { EmptyState } from "@/shared/feedback";
 import { Stack } from "@/shared/layout/stack";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
 import { Button } from "@/shared/ui/button";
 import type { Event } from "@/shared/types";
 
@@ -98,23 +97,12 @@ export function EventsMap({ events, school, onEventClick }: { events: Event[]; s
         </aside> : null}
       </EventViewSurface>
       <Stack direction="horizontal" justify="between" align="center" wrap gap={2}>
-      <p className="text-sm text-muted-foreground" role="status">
-        {t("events.views.mapSummary", { count: mappedCount })}
-        {query.isFetching ? ` ${t("common.loading")}` : ""}
-        {unmappedCount > 0 ? ` ${t("events.views.unmapped", { count: unmappedCount })}` : ""}
-      </p>
-      {query.data?.failedCount ? <Button size="sm" variant="outline" onClick={() => { void query.refetch(); }}>{t("common.tryAgain")}</Button> : null}
-      {mappedCount > 0 ? <Select value="" onValueChange={value => {
-        const event = venues.flatMap(venue => venue.events).find(item => String(item.id) === value);
-        if (event) onEventClick(event);
-      }}>
-        <SelectTrigger size="sm" aria-label={t("events.views.selectEvent")}>
-          <SelectValue placeholder={t("events.views.selectEvent")} />
-        </SelectTrigger>
-        <SelectContent>
-          {venues.flatMap(venue => venue.events).map(event => <SelectItem key={event.id} value={String(event.id)}>{event.title}</SelectItem>)}
-        </SelectContent>
-      </Select> : null}
+        <p className="text-sm text-muted-foreground" role="status">
+          {t("events.views.mapSummary", { count: mappedCount })}
+          {query.isFetching ? ` ${t("common.loading")}` : ""}
+          {unmappedCount > 0 ? ` ${t("events.views.unmapped", { count: unmappedCount })}` : ""}
+        </p>
+        {query.data?.failedCount ? <Button size="sm" variant="outline" onClick={() => { void query.refetch(); }}>{t("common.tryAgain")}</Button> : null}
       </Stack>
     </Stack>
   );
