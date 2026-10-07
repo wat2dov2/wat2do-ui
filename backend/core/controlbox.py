@@ -212,10 +212,16 @@ class EventViewsControl(_ControlModel):
     calendar_scroll_hour: int = Field(ge=0, le=23)
     map_initial_zoom: int = Field(ge=0, le=22)
     map_cluster_radius: int = Field(gt=0, le=512)
+    map_marker_viewport_padding_px: int = Field(ge=0, le=256)
+    map_marker_preview_count: int = Field(ge=1, le=3)
     map_cluster_max_zoom: int = Field(ge=0, le=22)
     map_search_concurrency: int = Field(gt=0, le=10)
     map_search_timeout_seconds: int = Field(gt=0, le=60)
     map_style: str = Field(pattern=r"^mapbox://styles/")
+    map_venue_aliases: dict[
+        Annotated[str, Field(pattern=r"^[a-z][a-z0-9-]*$")],
+        dict[Annotated[str, Field(pattern=r"\S")], Annotated[str, Field(pattern=r"\S")]],
+    ]
 
 
 class EventDiscoveryControl(_ControlModel):

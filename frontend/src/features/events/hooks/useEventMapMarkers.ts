@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { GeoJSONSource } from "mapbox-gl";
 import type { MapRef } from "react-map-gl/mapbox";
 import type { EventMapVenue } from "@/features/events/hooks/useEventMap";
+import { controlBox } from "@/shared/config/controlBox";
 import type { Event } from "@/shared/types";
 
 interface EventMapMarker {
@@ -10,7 +11,7 @@ interface EventMapMarker {
   events: Event[];
 }
 
-/** Render only visible Mapbox clusters, retaining the source's single clustering path. */
+/** Keep thumbnail stacks that overlap the viewport, using Mapbox's single clustering path. */
 export function useEventMapMarkers(mapRef: React.RefObject<MapRef | null>, venues: EventMapVenue[]) {
   const [markers, setMarkers] = useState<EventMapMarker[]>([]);
   const generation = useRef(0);
@@ -21,10 +22,15 @@ export function useEventMapMarkers(mapRef: React.RefObject<MapRef | null>, venue
     if (!map || !source || !map.isSourceLoaded("events")) return;
     const eventsByVenue = new Map(venues.map(venue => [venue.coordinates.join(","), venue.events]));
     const seen = new Set<string>();
+    const canvas = map.getCanvas();
+    const padding = controlBox.eventDiscovery.views.map_marker_viewport_padding_px;
     const features = map.querySourceFeatures("events").filter(feature => {
       if (feature.geometry.type !== "Point") return false;
       const id = feature.properties?.cluster ? `cluster:${feature.properties.cluster_id}` : `venue:${feature.properties?.venue}`;
-      if (seen.has(id) || !map.getBounds()?.contains(feature.geometry.coordinates as [number, number])) return false;
+      if (seen.has(id)) return false;
+      const point = map.project(feature.geometry.coordinates as [number, number]);
+      if (point.x < -padding || point.x > canvas.clientWidth + padding ||
+          point.y < -padding || point.y > canvas.clientHeight + padding) return false;
       seen.add(id);
       return true;
     });

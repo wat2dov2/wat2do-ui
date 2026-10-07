@@ -1,4 +1,4 @@
-import { isVirtualLocation } from "@/shared/utils/event";
+import { getEventStreetAddress, isVirtualLocation } from "@/shared/utils/event";
 import { eventPagePath } from "@/features/events/lib/eventUrls";
 import { clubPagePath } from "@/shared/constants/routes";
 import { getSchoolCanonicalUrl } from "@/shared/lib/seo";
@@ -8,7 +8,6 @@ const RESTRICTED_ATTENDANCE_PATTERN =
   /\b(invitation only|invite only|members? only|private event|closed event)\b/i;
 const PUBLIC_ATTENDANCE_PATTERN =
   /\b(open to (?:all|everyone|the public)|everyone (?:is )?welcome|all students (?:are )?welcome|public event)\b/i;
-const STREET_ADDRESS_PATTERN = /^\d{1,6}\s+[A-Za-zÀ-ÖØ-öø-ÿ].+/;
 const REGION_AND_POSTAL_CODE_PATTERN = /^([A-Za-z]{2,})(?:\s+(.+))?$/;
 
 interface StructuredLocation {
@@ -59,14 +58,16 @@ function parseStructuredLocation(location: string): StructuredLocation | null {
     .split(",")
     .map((part) => part.trim())
     .filter(Boolean);
-  const streetIndex = parts.findIndex((part) => STREET_ADDRESS_PATTERN.test(part));
+  const streetAddress = getEventStreetAddress(location);
+  if (!streetAddress) return null;
+  const streetIndex = parts.findIndex((part) => part.startsWith(streetAddress));
   if (streetIndex < 0 || parts.length < streetIndex + 3) return null;
 
   const regionMatch = REGION_AND_POSTAL_CODE_PATTERN.exec(parts[streetIndex + 2]);
   if (!regionMatch) return null;
   return {
     placeName: parts.slice(0, streetIndex).join(", ") || parts[streetIndex],
-    streetAddress: parts[streetIndex],
+    streetAddress,
     addressLocality: parts[streetIndex + 1],
     addressRegion: regionMatch[1],
     ...(regionMatch[2] ? { postalCode: regionMatch[2] } : {}),

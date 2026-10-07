@@ -8,10 +8,18 @@
     "calendar_scroll_hour": 16,
     "map_initial_zoom": 14,
     "map_cluster_radius": 50,
+    "map_marker_viewport_padding_px": 80,
+    "map_marker_preview_count": 3,
     "map_cluster_max_zoom": 14,
     "map_search_concurrency": 4,
     "map_search_timeout_seconds": 10,
-    "map_style": "mapbox://styles/mapbox/streets-v12"
+    "map_style": "mapbox://styles/mapbox/streets-v12",
+    "map_venue_aliases": {
+      "uwaterloo": {
+        "J.G. Hagey Hall of the Humanities": "Hagey Hall",
+        "William G. Davis Computer Research Centre": "Davis Centre"
+      }
+    }
   },
   "campus_seasons": {
     "definitions": {

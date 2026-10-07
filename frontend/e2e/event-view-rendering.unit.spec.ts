@@ -187,6 +187,43 @@ test("server-rendered filter bars remain visibly disabled until controls can hyd
   expect(html).toContain("More filters");
 });
 
+test("the view selector keeps its label before hydration, like the day filter", () => {
+  const { EventViewSelect } = loadComponent("features/events/components/EventViewSelect") as typeof import("../src/features/events/components/EventViewSelect");
+  const { DateFilterSelect } = loadComponent("features/events/components/DateFilterSelect") as typeof import("../src/features/events/components/DateFilterSelect");
+  const view = renderToStaticMarkup(createElement(EventViewSelect, { value: "map", onChange() {} }));
+  const date = renderToStaticMarkup(createElement(DateFilterSelect, { school: "uwaterloo", value: "any", customDate: "", onChange() {} }));
+  expect(view).toContain("events.views.map</span>");
+  expect(date).toContain("events.dateFilter.any");
+  expect(view).not.toContain('data-slot="skeleton"');
+});
+
+test("map clusters fan real event posters with attendance borders and club avatars in the sheet", () => {
+  const posters = [
+    { ...event, id: 1, title: "New event", added_at: new Date().toISOString(), featured: false },
+    { ...event, id: 2, title: "Going event", added_at: new Date().toISOString(), featured: false },
+    { ...event, id: 3, title: "Featured event", added_at: "2026-01-01T00:00:00Z", featured: true },
+  ].map((item, index) => ({ ...item, source_image_url: `/poster-${index}.png`, club_logo_url: "/club.png", cohosts: [] }));
+  const children = ({ children }: { children?: React.ReactNode }) => createElement("div", null, children);
+  const require = createRequire(import.meta.url);
+  const { EventsMap } = loadComponent("features/events/components/EventsMap", {
+    react: { ...require("react"), useState: (initial: unknown) => [Array.isArray(initial) ? posters.map(item => item.id) : initial, () => {}] },
+    "react-map-gl/mapbox": { __esModule: true, default: children, Source: children, Layer: () => null, Marker: children, NavigationControl: () => null },
+    "@/features/events/api/eventMap.api": { MAPBOX_TOKEN: "test" },
+    "@/features/events/hooks/useEventMap": { useEventMap: () => ({ query: { data: {}, isPending: false }, center: [1, 2], venues: [{ coordinates: [1, 2], events: posters }], mappedCount: 3, unmappedCount: 0 }) },
+    "@/features/events/hooks/useEventMapMarkers": { useEventMapMarkers: () => ({ markers: [{ id: "cluster:1", coordinates: [1, 2], events: posters }], refreshMarkers() {} }) },
+    "@/features/events/hooks/useGoingEvents": { useGoingEvents: () => ({ data: [{ event_id: 2, occurrence_ids: ["future"] }] }) },
+  }) as typeof import("../src/features/events/components/EventsMap");
+  const html = renderToStaticMarkup(createElement(EventsMap, { events: posters, allEvents: posters, school: "uwaterloo", onEventClick() {} }));
+  expect(html).toContain('data-view="map"');
+  expect(html).toContain('class="event-map-poster-stack" data-count="3"');
+  expect(html.match(/class="event-map-poster" data-status="new"/g)).toHaveLength(2);
+  expect(html.match(/class="event-map-poster" data-status="going"/g)).toHaveLength(2);
+  expect(html.match(/class="event-map-poster" data-featured="true"/g)).toHaveLength(2);
+  expect(html.match(/data-slot="avatar-stack"/g)).toHaveLength(3);
+  for (let index = 0; index < 3; index++) expect(html).toContain(`poster-${index}.png`);
+  expect(html).not.toContain('data-slot="select-trigger"');
+});
+
 
 test("event and position loading cards include the same measured New badge placeholder", () => {
   const { EventCardSkeleton } = loadComponent("features/events/components/EventCardSkeleton") as typeof import("../src/features/events/components/EventCardSkeleton");
@@ -304,7 +341,7 @@ test("shared Select trigger supplies its disclosure chevron", () => {
   expect(html).toContain('aria-hidden="true"');
 });
 
-test("calendar overflow uses the real month drilldown to change both the selected day and view", () => {
+test("calendar measures host rows consistently and its generated overflow control opens the selected day", () => {
   const states: unknown[] = [];
   let stateIndex = 0;
   const react = createRequire(import.meta.url)("react");
@@ -331,11 +368,14 @@ test("calendar overflow uses the real month drilldown to change both the selecte
     props: CalendarProps<CalendarEvent>;
     getDrilldownView: (date: Date) => string;
     handleDrillDown: (date: Date, view: string) => void;
+    state: { context: Record<string, unknown> };
   };
   const CalendarClass = (Calendar as unknown as {
     ControlledComponent: { new(props: CalendarProps<CalendarEvent>): CalendarInstance; defaultProps: CalendarProps<CalendarEvent> };
   }).ControlledComponent;
-  const calendar = new CalendarClass({ ...CalendarClass.defaultProps, ...props });
+  const calendar = new CalendarClass({ ...CalendarClass.defaultProps, ...props, messages: {
+    ...props.messages, showMore: count => `+${count} more`,
+  } });
   const Month = createRequire(import.meta.url)("react-big-calendar/lib/Month").default as new(props: object) => {
     handleShowMore: (events: CalendarEvent[], date: Date, cell: object, slot: number, target: null) => void;
   };
@@ -346,7 +386,67 @@ test("calendar overflow uses the real month drilldown to change both the selecte
     onDrillDown: calendar.handleDrillDown,
   });
   const selectedDate = new Date(2026, 9, 20);
-  month.handleShowMore(props.events!, selectedDate, {}, 0, null);
+  const css = readFileSync(new URL("../src/features/events/components/events-calendar.css", import.meta.url), "utf8");
+  // Month's measurement tile has no custom renderer. The outer tile contract
+  // must size that empty probe and the real title/avatar body identically.
+  const tileHeightRem = css.match(/\.events-calendar \.rbc-month-view \.rbc-event\s*\{[^}]*?\bheight:\s*([\d.]+)rem/)?.[1];
+  const weekMinimumRem = css.match(/\.events-calendar \.rbc-month-row\s*\{[^}]*?min-height:\s*([\d.]+)rem/)?.[1];
+  expect(tileHeightRem).toBeDefined();
+  expect(weekMinimumRem).toBeDefined();
+  const tileHeight = Number(tileHeightRem) * 16;
+  expect(tileHeight).toBeGreaterThanOrEqual(45); // 15px title, 20px avatar, gap, padding and border.
+  const rowHeight = tileHeight + 1; // The library's segment reserves one bottom pixel.
+  const range = Array.from({ length: 7 }, (_, index) => new Date(2026, 9, 18 + index));
+  const occurrences = Array.from({ length: 12 }, (_, index) => ({
+    ...props.events![0], id: `overflow-${index}`,
+    start: new Date(2026, 9, 20, 18), end: new Date(2026, 9, 20, 20),
+  }));
+  type Metrics = { levels: unknown[][]; extra: unknown[]; getEventsForSlot: (slot: number) => CalendarEvent[] };
+  type ContentRow = {
+    props: Record<string, unknown>;
+    containerRef: { current: object };
+    headingRowRef: { current: object };
+    eventRowRef: { current: object };
+    getRowLimit: () => number;
+    renderDummy: () => React.ReactElement;
+    slotMetrics: (props: object) => Metrics;
+    handleShowMore: (slot: number, target: object) => void;
+  };
+  const require = createRequire(import.meta.url);
+  const DateContentRow = require("react-big-calendar/lib/DateContentRow").default as new(props: object) => ContentRow;
+  const EventEndingRow = require("react-big-calendar/lib/EventEndingRow").default as new(props: object) => {
+    renderShowMore: (segments: unknown[], slot: number) => React.ReactElement<{ children: string; onClick: (event: object) => void }>;
+  };
+  const documentElement = { contains: () => true, scrollTop: 0, scrollLeft: 0 };
+  const element = (height: number) => ({
+    ownerDocument: { documentElement },
+    getBoundingClientRect: () => ({ top: 0, left: 0, width: 700, height }),
+  });
+  for (const weekHeight of [Number(weekMinimumRem) * 16, 176]) {
+    const row = new DateContentRow({
+      ...calendar.props, ...calendar.state.context, range, events: occurrences, minRows: 0,
+      renderHeader: ({ date }: { date: Date }) => createElement("span", { key: date.toISOString() }, "20"),
+      onShowMore: month.handleShowMore,
+    });
+    row.containerRef.current = {
+      ...element(weekHeight), querySelectorAll: () => [{ children: range.map(() => element(weekHeight)) }],
+    };
+    row.headingRowRef.current = element(24);
+    row.eventRowRef.current = element(rowHeight);
+    expect(renderToStaticMarkup(row.renderDummy())).toContain('class="rbc-event"');
+    row.props = { ...row.props, maxRows: row.getRowLimit() };
+    const metrics = row.slotMetrics(row.props);
+    expect(metrics.extra.length).toBeGreaterThan(0);
+    expect(metrics.getEventsForSlot(3)).toHaveLength(occurrences.length);
+    // Reserve a full line for the ending row even in the smallest month cell.
+    expect(metrics.levels.length * rowHeight + 24).toBeLessThanOrEqual(weekHeight - 24);
+    const ending = new EventEndingRow({
+      ...row.props, segments: metrics.extra, slotMetrics: metrics, onShowMore: row.handleShowMore,
+    });
+    const button = ending.renderShowMore(metrics.extra, 3);
+    expect(button.props.children).toBe(`+${metrics.extra.length} more`);
+    button.props.onClick({ target: {}, preventDefault() {}, stopPropagation() {} });
+  }
   props = render();
   expect(props.date).toEqual(selectedDate);
   expect(props.view).toBe("day");

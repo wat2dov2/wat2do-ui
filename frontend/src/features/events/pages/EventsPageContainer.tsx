@@ -203,6 +203,7 @@ export function EventsPageContainer({
               view={view}
               school={initialSchool}
               events={orderedEvents}
+              allEvents={allEvents}
               onEventClick={handleEventClick}
               onClearFilters={filters.clearAllFilters}
               hasActiveFilters={filters.filterCount > 0 || filters.searchQuery.trim().length > 0}

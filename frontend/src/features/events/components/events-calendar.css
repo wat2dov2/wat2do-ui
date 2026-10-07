@@ -2,11 +2,29 @@
 .events-calendar {
   height: 100%;
   padding: 1rem;
+  overflow-y: auto;
 }
 .events-calendar .rbc-calendar {
   font: inherit;
   color: var(--foreground);
   gap: 0.75rem;
+}
+.events-calendar .rbc-calendar:has(> .rbc-month-view) {
+  height: auto;
+  min-height: 100%;
+}
+.events-calendar .rbc-month-view {
+  height: auto;
+  flex-basis: auto;
+}
+.events-calendar .rbc-month-row {
+  height: auto;
+  /* Keep one host row and the overflow button reachable in short calendars. */
+  min-height: 6.25rem;
+}
+/* The library measures an empty event before rendering the title and host row. */
+.events-calendar .rbc-month-view .rbc-event {
+  height: 3rem;
 }
 .events-calendar :is(.rbc-month-view, .rbc-time-view, .rbc-header, .rbc-month-row,
   .rbc-day-bg, .rbc-time-header-content, .rbc-time-content, .rbc-events-container,
@@ -20,7 +38,7 @@
   background: var(--muted);
 }
 .events-calendar .rbc-today {
-  background: color-mix(in oklab, var(--primary) 10%, var(--surface));
+  background: color-mix(in oklab, var(--primary) 5%, var(--surface));
 }
 .events-calendar :is(.rbc-event, .rbc-background-event) {
   background: var(--event-category-color);

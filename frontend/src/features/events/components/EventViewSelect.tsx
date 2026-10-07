@@ -10,7 +10,7 @@ export function EventViewSelect({ value, onChange }: { value: EventBrowseView; o
       if (view === "grid" || view === "map" || view === "calendar") onChange(view);
     }}>
       <SelectTrigger size="sm" data-activation="click" aria-label={t("events.views.label")}>
-        <SelectValue />
+        <SelectValue>{t(`events.views.${value}`)}</SelectValue>
       </SelectTrigger>
       <SelectContent>
         <SelectItem value="grid">{t("events.views.grid")}</SelectItem>

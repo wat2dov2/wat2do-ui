@@ -4,6 +4,7 @@
  */
 
 :root {
+  --badge-new: #5b9bff;
   /* Attendance badge: opaque green with white text in both themes. */
   --badge-going: #16a34a;
   --badge-going-foreground: #fff;

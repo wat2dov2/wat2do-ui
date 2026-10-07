@@ -7,7 +7,9 @@ import { useEventMap } from "@/features/events/hooks/useEventMap";
 import { MAPBOX_TOKEN } from "@/features/events/api/eventMap.api";
 import { EventViewSurface, EventViewSkeleton } from "@/features/events/components/EventViewSurface";
 import { useEventMapMarkers } from "@/features/events/hooks/useEventMapMarkers";
+import { useGoingEvents } from "@/features/events/hooks/useGoingEvents";
 import { LazyImage } from "@/shared/ui/lazy-image";
+import { AvatarStack } from "@/shared/ui/avatar-stack";
 import { X } from "@/shared/ui/doodle-icons";
 import { formatCardDate, formatCardTime } from "@/shared/utils/date";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
@@ -15,13 +17,35 @@ import { controlBox } from "@/shared/config/controlBox";
 import { EmptyState } from "@/shared/feedback";
 import { Stack } from "@/shared/layout/stack";
 import { Button } from "@/shared/ui/button";
+import { getEventImageStatus } from "@/shared/utils/event";
 import type { Event } from "@/shared/types";
 
-export function EventsMap({ events, school, onEventClick }: { events: Event[]; school: string; onEventClick: (event: Event) => void }) {
+function EventMapPoster({ event, isGoing }: { event: Event; isGoing: boolean }) {
+  return <span className="event-map-poster" data-status={getEventImageStatus(event, isGoing)} data-featured={event.featured || undefined}>
+    <LazyImage src={event.source_image_url ?? event.club_logo_url} alt="" width={64} height={64} loading="eager" />
+  </span>;
+}
+
+function EventMapMarker({ events, goingIds, onSelect }: { events: Event[]; goingIds: ReadonlySet<number>; onSelect: () => void }) {
+  return <Button activation="click" variant="ghost" size="icon" className="event-map-marker" aria-label={events.map(event => event.title).join(", ")} onPointerDown={event => event.stopPropagation()} onClick={event => {
+    event.stopPropagation();
+    onSelect();
+  }}>
+    <span className="event-map-poster-stack" data-count={Math.min(events.length, controlBox.eventDiscovery.views.map_marker_preview_count)}>
+      {events.slice(0, controlBox.eventDiscovery.views.map_marker_preview_count).map(event => <EventMapPoster key={event.id} event={event} isGoing={goingIds.has(event.id)} />)}
+    </span>
+    {events.length > 1 ? <span className="event-map-marker-count">{events.length}</span> : null}
+  </Button>;
+}
+
+export function EventsMap({ events, allEvents, school, onEventClick }: { events: Event[]; allEvents: Event[]; school: string; onEventClick: (event: Event) => void }) {
   const { t, i18n } = useTranslation();
   const { getSchoolTimezone } = useSchoolDirectory();
-  const { query, venues, hasPhysicalLocations, center, mappedCount, unmappedCount } = useEventMap(events, school);
+  const { query, venues, center, mappedCount, unmappedCount } = useEventMap(events, allEvents, school);
+  const { data: goingSelections = [] } = useGoingEvents();
+  const goingIds = useMemo(() => new Set(goingSelections.map(selection => selection.event_id)), [goingSelections]);
   const mapRef = useRef<MapRef>(null);
+  const mapLoaded = useRef(false);
   const { markers, refreshMarkers } = useEventMapMarkers(mapRef, venues);
   const [mapFailed, setMapFailed] = useState(false);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
@@ -50,22 +74,23 @@ export function EventsMap({ events, school, onEventClick }: { events: Event[]; s
   }, [center, venues, settings.map_initial_zoom]);
 
   if (!MAPBOX_TOKEN) return <EmptyState title={t("events.views.mapUnavailable")} description={t("events.views.mapUnavailableDescription")} />;
-  if (query.isError || mapFailed) return <EmptyState title={t("events.views.mapFailed")} action={<Button variant="outline" onClick={() => { setMapFailed(false); void query.refetch(); }}>{t("common.tryAgain")}</Button>} />;
-  if (query.isPending && hasPhysicalLocations) return <EventViewSkeleton />;
+  if ((query.isError && !center) || mapFailed) return <EmptyState title={t("events.views.mapFailed")} action={<Button variant="outline" onClick={() => { setMapFailed(false); void query.refetch(); }}>{t("common.tryAgain")}</Button>} />;
+  if (query.isPending && !center) return <EventViewSkeleton variant="map" />;
   if (!center) return <EmptyState title={t("events.views.noLocations")} description={t("events.views.noLocationsDescription")} />;
 
   return (
     <Stack gap={2}>
-      <EventViewSurface aria-label={t("events.views.map")}>
+      <EventViewSurface variant="map" aria-label={t("events.views.map")}>
         <Map
           ref={mapRef}
           mapboxAccessToken={MAPBOX_TOKEN}
           initialViewState={{ longitude: center[0], latitude: center[1], zoom: settings.map_initial_zoom }}
           mapStyle={settings.map_style}
-          onLoad={() => { fitVenues(); void refreshMarkers(); }}
+          onLoad={() => { mapLoaded.current = true; fitVenues(); void refreshMarkers(); }}
           onMoveEnd={() => { void refreshMarkers(); }}
+          onResize={() => { void refreshMarkers(); }}
           onSourceData={event => { if (event.sourceId === "events" && event.isSourceLoaded) void refreshMarkers(); }}
-          onError={() => setMapFailed(true)}
+          onError={() => { if (!mapLoaded.current) setMapFailed(true); }}
           cursor="pointer"
         >
           <NavigationControl position="top-right" />
@@ -73,14 +98,10 @@ export function EventsMap({ events, school, onEventClick }: { events: Event[]; s
             <Layer id="event-marker-source" type="circle" paint={{ "circle-radius": 0, "circle-opacity": 0 }} />
           </Source>
           {markers.map(marker => <Marker key={marker.id} longitude={marker.coordinates[0]} latitude={marker.coordinates[1]}>
-            <Button activation="click" variant="ghost" size="icon" className="event-map-marker" aria-label={marker.events.map(event => event.title).join(", ")} onPointerDown={event => event.stopPropagation()} onClick={event => {
-              event.stopPropagation();
+            <EventMapMarker events={marker.events} goingIds={goingIds} onSelect={() => {
               if (marker.events.length === 1) onEventClick(marker.events[0]);
               else setSelectedIds(marker.events.map(event => event.id));
-            }}>
-              <LazyImage src={marker.events.find(event => event.source_image_url)?.source_image_url ?? marker.events[0].club_logo_url} alt="" width={64} height={64} loading="eager" />
-              {marker.events.length > 1 ? <span className="event-map-marker-count">{marker.events.length}</span> : null}
-            </Button>
+            }} />
           </Marker>)}
         </Map>
         {selectedEvents.length ? <aside className="event-map-sheet" aria-label={t("events.views.selectEvent")}>
@@ -90,8 +111,15 @@ export function EventsMap({ events, school, onEventClick }: { events: Event[]; s
           </Stack>
           <Stack gap={2}>
             {selectedEvents.map(event => <Button key={event.id} variant="ghost" className="event-map-row" onClick={() => onEventClick(event)}>
-              <LazyImage src={event.source_image_url ?? event.club_logo_url} alt="" width={56} height={56} />
-              <span className="event-map-row-copy"><strong>{event.title}</strong><span>{`${formatCardDate(event, getSchoolTimezone(school), i18n.language)}, ${formatCardTime(event, getSchoolTimezone(school), i18n.language)}`}</span><span>{event.club}</span></span>
+              <EventMapPoster event={event} isGoing={goingIds.has(event.id)} />
+              <span className="event-map-row-copy">
+                <strong>{event.title}</strong>
+                <span>{`${formatCardDate(event, getSchoolTimezone(school), i18n.language)}, ${formatCardTime(event, getSchoolTimezone(school), i18n.language)}`}</span>
+                <span className="event-map-row-club"><AvatarStack size="sm" avatars={[
+                  { name: event.club, src: event.club_logo_url ?? "" },
+                  ...(event.cohosts ?? []).map(club => ({ name: club.club_name, src: club.logo_url ?? "" })),
+                ]} /><span>{event.club}</span></span>
+              </span>
             </Button>)}
           </Stack>
         </aside> : null}
@@ -102,7 +130,7 @@ export function EventsMap({ events, school, onEventClick }: { events: Event[]; s
           {query.isFetching ? ` ${t("common.loading")}` : ""}
           {unmappedCount > 0 ? ` ${t("events.views.unmapped", { count: unmappedCount })}` : ""}
         </p>
-        {query.data?.failedCount ? <Button size="sm" variant="outline" onClick={() => { void query.refetch(); }}>{t("common.tryAgain")}</Button> : null}
+        {query.data?.failedCount || query.isError ? <Button size="sm" variant="outline" onClick={() => { void query.refetch(); }}>{t("common.tryAgain")}</Button> : null}
       </Stack>
     </Stack>
   );

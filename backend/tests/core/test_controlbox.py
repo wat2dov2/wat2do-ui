@@ -718,9 +718,12 @@ def test_instagram_music_rejects_missing_chart_mapping(tmp_path):
         ("calendar_scroll_hour", 24),
         ("map_initial_zoom", 23),
         ("map_cluster_radius", 0),
+        ("map_marker_viewport_padding_px", -1),
+        ("map_marker_preview_count", 0),
         ("map_search_concurrency", 0),
         ("map_search_timeout_seconds", 0),
         ("map_style", "https://invalid.example/style"),
+        ("map_venue_aliases", {"uwaterloo": {"Davis Centre": " "}}),
     ],
 )
 def test_event_view_controls_reject_invalid_configuration(tmp_path, field, value):

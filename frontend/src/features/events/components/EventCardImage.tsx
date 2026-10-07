@@ -12,7 +12,8 @@ import {
 } from "@/shared/ui/dialog";
 import { ClubBadgeDropdown } from "@/features/clubs/components/ClubBadgeDropdown";
 import { useGoingEvents } from "@/features/events/hooks/useGoingEvents";
-import { isEventHappeningNow, wasAddedWithinLast24Hours } from "@/shared/utils/date";
+import { isEventHappeningNow } from "@/shared/utils/date";
+import { getEventImageStatus } from "@/shared/utils/event";
 import { cn } from "@/shared/lib/utils";
 import type { Event } from "@/shared/types";
 import { EVENT_CARD_IMAGE_HEIGHT } from "@/shared/constants/ui";
@@ -55,13 +56,13 @@ export function EventCardImage({
   const { surfaceRef, registerCorner, cutouts, box } = useEventImageCutouts();
 
   const isLive = useMemo(() => isEventHappeningNow(event), [event]);
-  const isNew = useMemo(() => wasAddedWithinLast24Hours(event), [event]);
 
   const { data: goingSelections } = useGoingEvents();
   const isGoing = useMemo(
     () => (goingSelections ?? []).some((selection) => selection.event_id === event.id),
     [goingSelections, event.id],
   );
+  const status = getEventImageStatus(event, isGoing);
 
   return (
     <>
@@ -111,10 +112,10 @@ export function EventCardImage({
           ) : null}
         </EventImageCutout>
 
-        {(isGoing || isNew) && (
+        {status && (
           <BadgeMask variant="top-left" cutout containerRef={registerCorner("top-left")}>
-            <Badge variant={isGoing ? "going" : "new"} size="md">
-              {t(isGoing ? "events.going" : "events.new")}
+            <Badge variant={status} size="md">
+              {t(`events.${status}`)}
             </Badge>
           </BadgeMask>
         )}

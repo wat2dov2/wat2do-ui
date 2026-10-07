@@ -1922,7 +1922,8 @@ test.describe("Events Page", () => {
     const startsAt = new Date(Date.now() + 3_600_000).toISOString();
     const events = ["Map dinner", "Map talk", "Map workshop"].map((title, index) => ({
       id: 9300 + index, title, club: "Campus Club", club_id: 1, school: "uwaterloo",
-      source_image_url: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Crect width='64' height='64' fill='purple'/%3E%3C/svg%3E",
+      source_image_url: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='128'%3E%3Crect width='64' height='128' fill='purple'/%3E%3C/svg%3E",
+      club_logo_url: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20'%3E%3Crect width='20' height='20' fill='green'/%3E%3C/svg%3E",
       location: index === 2 ? "Davis Centre" : "Student Life Centre", price: 0, category: "Social",
       food: [], registration: false, added_at: new Date().toISOString(),
       occurrences: [{ id: `map-${index}`, event_id: 9300 + index, dtstart_utc: startsAt, dtend_utc: null }],
@@ -1934,9 +1935,11 @@ test.describe("Events Page", () => {
       async request => ({ json: events.find(event => event.id === Number(new URL(request.url).pathname.split("/").at(-1))) }));
     let finishSlow!: () => void;
     const slowVenue = new Promise<void>(resolve => { finishSlow = resolve; });
+    let geocodeRequests = 0;
     await page.route("https://api.mapbox.com/**", async route => {
       const url = new URL(route.request().url());
       if (url.pathname.includes("/searchbox/")) {
+        geocodeRequests++;
         const venue = url.searchParams.get("q")!.split(",")[0];
         if (venue === "Davis Centre") await slowVenue;
         await route.fulfill({ json: { features: [{
@@ -1957,10 +1960,16 @@ test.describe("Events Page", () => {
       const cluster = page.getByRole("button", { name: "Map dinner, Map talk", exact: true });
       await expect(cluster).toBeVisible();
       await expect(cluster).toHaveCSS("width", "64px");
+      await expect(cluster.locator(".event-map-poster")).toHaveCount(2);
+      await expect(cluster.locator(".event-map-poster:first-child img")).toHaveCSS("height", "60px");
+      await expect(cluster.locator('.event-map-poster[data-status="new"]')).toHaveCount(2);
+      await cluster.hover();
+      await expect(cluster).not.toHaveCSS("transform", "none");
       await expect(page.getByRole("combobox", { name: "Open an event", exact: true })).toHaveCount(0);
       await cluster.click();
       const sheet = page.getByRole("complementary", { name: "Open an event" });
       await expect(sheet).toBeVisible();
+      await expect(sheet.getByRole("img", { name: "Campus Club", exact: true })).toHaveCount(2);
       await sheet.getByRole("button", { name: /Map dinner/ }).click();
       await expect(page.getByRole("dialog", { name: "Map dinner", exact: true })).toBeVisible();
       await page.keyboard.press("Escape");
@@ -1977,14 +1986,32 @@ test.describe("Events Page", () => {
       await page.mouse.move(canvas.x + canvas.width / 2, canvas.y + canvas.height / 2);
       await page.mouse.wheel(0, -300);
       await expect.poll(separation).toBeGreaterThan(before + 5);
+      const canvasHandle = await page.locator(".mapboxgl-canvas").elementHandle();
+      const requestsBeforeFiltering = geocodeRequests;
+      const search = page.getByPlaceholder("Search events", { exact: true });
+      await search.fill("No matching map event");
+      await expect(page.locator(".event-map-marker")).toHaveCount(0);
+      await expect(page.locator(".mapboxgl-canvas")).toBeVisible();
+      await search.fill("");
+      await expect(single).toBeVisible();
+      expect(await canvasHandle!.evaluate(canvas => canvas.isConnected)).toBe(true);
+      expect(geocodeRequests).toBe(requestsBeforeFiltering);
     } finally {
       finishSlow();
     }
   });
 
-  test("calendar more events opens the selected day and keeps club identity and the event drawer", async ({ page, next }) => {
+  for (const viewport of [{ width: 390, height: 520 }, { width: 1280, height: 900 }]) {
+  test(`calendar overflow stays visible and opens its day at ${viewport.width}x${viewport.height}`, async ({ page, next }) => {
+    await page.setViewportSize(viewport);
+    await page.emulateMedia({ colorScheme: "light" });
     const current = new Date();
-    const startsAt = new Date(Date.UTC(current.getUTCFullYear(), current.getUTCMonth() + 1, 15, 22));
+    const calendarMonth = new Date(Date.UTC(current.getUTCFullYear(), current.getUTCMonth() + 1, 1, 12));
+    // A six-week month reproduces clipping in the shortest supported viewport.
+    while (calendarMonth.getUTCDay() + new Date(Date.UTC(calendarMonth.getUTCFullYear(), calendarMonth.getUTCMonth() + 1, 0)).getUTCDate() <= 35) {
+      calendarMonth.setUTCMonth(calendarMonth.getUTCMonth() + 1);
+    }
+    const startsAt = new Date(Date.UTC(calendarMonth.getUTCFullYear(), calendarMonth.getUTCMonth(), 15, 22));
     await page.clock.setFixedTime(new Date(startsAt.getTime() - 86_400_000));
     const events = Array.from({ length: 12 }, (_, index) => ({
       id: 9200 + index, title: `Overflow calendar event ${index + 1}`, club: "Campus Arts Club", club_id: 1,
@@ -2001,7 +2028,38 @@ test.describe("Events Page", () => {
     await page.getByRole("combobox", { name: "Event view" }).click();
     await page.getByRole("option", { name: "Calendar", exact: true }).click();
     await page.getByRole("tab", { name: "Month", exact: true }).click();
-    await page.locator(".rbc-show-more").first().click();
+    await expect(page.locator(".rbc-month-row")).toHaveCount(6);
+    const more = page.locator(".rbc-show-more").first();
+    await expect(more).toBeVisible();
+    await expect(more).toHaveText(/^\+\d+ more$/);
+    await more.scrollIntoViewIfNeeded();
+    const overflowBox = await more.boundingBox();
+    const weekBox = await more.locator("xpath=ancestor::*[contains(@class, 'rbc-month-row')]").boundingBox();
+    const surfaceBox = await page.locator('[data-slot="event-view-surface"]').boundingBox();
+    expect(overflowBox).not.toBeNull();
+    expect(weekBox).not.toBeNull();
+    expect(surfaceBox).not.toBeNull();
+    expect(overflowBox!.y + overflowBox!.height).toBeLessThanOrEqual(weekBox!.y + weekBox!.height);
+    expect(overflowBox!.y + overflowBox!.height).toBeLessThanOrEqual(surfaceBox!.y + surfaceBox!.height);
+    const monthCards = more.locator("xpath=ancestor::*[contains(@class, 'rbc-month-row')]").locator(".rbc-event");
+    for (const card of await monthCards.all()) {
+      const cardBox = await card.boundingBox();
+      const contentBox = await card.locator(".event-calendar-content").boundingBox();
+      expect(contentBox!.y + contentBox!.height).toBeLessThanOrEqual(cardBox!.y + cardBox!.height);
+    }
+    const todayTone = await page.locator(".rbc-day-bg.rbc-today").evaluate(element => {
+      const canvas = document.createElement("canvas");
+      canvas.width = canvas.height = 1;
+      const context = canvas.getContext("2d")!;
+      context.fillStyle = getComputedStyle(element).backgroundColor;
+      context.fillRect(0, 0, 1, 1);
+      return [...context.getImageData(0, 0, 1, 1).data].slice(0, 3);
+    });
+    expect(Math.min(...todayTone)).toBeGreaterThan(235);
+    if (viewport.height === 520) {
+      await expect.poll(() => page.locator(".events-calendar").evaluate(element => element.scrollHeight > element.clientHeight)).toBe(true);
+    }
+    await more.click();
     await expect(page.getByRole("tab", { name: "Day", exact: true })).toHaveAttribute("data-state", "active");
     await expect(page.locator(".rbc-overlay")).toHaveCount(0);
     const dayLabel = new Intl.DateTimeFormat("en", { weekday: "short", month: "short", day: "numeric", timeZone: "America/Toronto" }).format(startsAt);
@@ -2013,6 +2071,7 @@ test.describe("Events Page", () => {
     await tile.click();
     await expect(page.getByRole("dialog", { name: selectedEvent.title, exact: true })).toBeVisible();
   });
+  }
 
   for (const width of [390, 1024]) {
     test(`desktop presses and mobile clicks activate cards and navigation at ${width}px`, async ({ page }) => {

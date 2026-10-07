@@ -1,10 +1,15 @@
 import type { Event, EventFormData, EventFormOccurrence } from "@/shared/types";
 import { getDefaultEventCategory } from "@/shared/data/eventCategories";
-import { toLocalDateTimeInput } from "@/shared/utils/date";
+import { toLocalDateTimeInput, wasAddedWithinLast24Hours } from "@/shared/utils/date";
 import type { TFunction } from "i18next";
 import type { CardBadge } from "@/shared/ui/event-card-content";
 import { Ticket, Utensils, X } from "@/shared/ui/doodle-icons";
 import { translateFood } from "@/shared/utils/foodTranslation";
+
+/** Attendance takes precedence over the newly added treatment on event artwork. */
+export function getEventImageStatus(event: Pick<Event, "added_at">, isGoing: boolean) {
+  return isGoing ? "going" : wasAddedWithinLast24Hours(event) ? "new" : undefined;
+}
 
 /** Shared badge content for cards, previews, and published artwork. */
 export function computeEventBadges(
@@ -97,6 +102,13 @@ export function translateCategory(category: string, t: (key: string) => string):
   const key = CATEGORY_TRANSLATION_KEYS[category];
   if (key) return t(key);
   return category;
+}
+
+/** Extract a supplied numbered street address without treating campus room numbers as addresses. */
+export function getEventStreetAddress(location: string): string | null {
+  const streetAddress = /^\d{1,6}(?:-\d{1,6})?\s+(?:(?:rue|chemin|boulevard|boul\.?|blvd\.?|avenue|ave\.?)\s+[\p{L}\p{N}.'’-]+(?:\s+[\p{L}\p{N}.'’-]+)*|[\p{L}\p{N}.'’-]+(?:\s+[\p{L}\p{N}.'’-]+)*\s+(?:street|st\.?|avenue|ave\.?|road|rd\.?|boulevard|blvd\.?|drive|dr\.?|lane|ln\.?|crescent|cres\.?|way|court|ct\.?|place|pl\.?|terrace|ter\.?|trail|trl\.?|highway|hwy\.?|parkway|pkwy\.?|circle|cir\.?|square|sq\.?|private|pvt\.?|prvt\.?)(?:\s+(?:northwest|northeast|southwest|southeast|north|south|east|west|nord|sud|est|ouest|nw|ne|sw|se|n|s|e|w|o))?)$/iu;
+  return location.split(/[,;|]|\s+\/\s+/).map(part => part.trim().replace(/\s*\([^)]*\)$/, ""))
+    .find(part => streetAddress.test(part)) ?? null;
 }
 
 /** True when a location string refers to an online / virtual venue. */
