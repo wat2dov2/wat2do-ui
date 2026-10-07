@@ -393,7 +393,11 @@ def test_secondary_uncertain_query_cleanup_preserves_result_and_original_error(
 ):
     started = False
     payload = {"state": "failed", "reason": "auth_required"}
-    original_error = browser.BrowserAccountChanged("Instagram browser account changed")
+    original_error = (
+        browser.BrowserAccountChanged("Instagram browser account changed")
+        if operation_fails
+        else browser._BrowserPageUnavailable("Request did not settle")
+    )
 
     def run(self, source, timeout):
         nonlocal started
@@ -409,7 +413,7 @@ def test_secondary_uncertain_query_cleanup_preserves_result_and_original_error(
         if "JSON.stringify" in source:
             if operation_fails:
                 raise original_error
-            return json.dumps(payload)
+            return json.dumps({"result": payload, "settled": False})
         raise AssertionError(source)
 
     monkeypatch.setattr(browser._PinnedBraveJavascriptRunner, "__call__", run)
@@ -417,11 +421,145 @@ def test_secondary_uncertain_query_cleanup_preserves_result_and_original_error(
         javascript_runner=browser._PinnedBraveJavascriptRunner("42", window_id="99"),
         allow_account_switch=False,
     )
+
+    def poll(completed):
+        if not completed():
+            raise original_error
+
+    monkeypatch.setattr(session, "poll_until", poll)
     with pytest.raises(browser._BrowserReadCleanupPending) as raised:
         session.query("start request")
     assert "cancellation could not be confirmed" in str(raised.value)
-    assert raised.value.operation_error is (original_error if operation_fails else None)
+    assert raised.value.operation_error is original_error
     assert raised.value.completed_payload == (None if operation_fails else payload)
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {"state": "succeeded", "posts": [{"url": "https://www.instagram.com/p/POST/"}]},
+        {"state": "failed", "reason": "auth_required"},
+    ],
+)
+def test_atomic_settlement_proof_preserves_terminal_result_under_cleanup_contention(payload):
+    started = False
+    cancellation_calls = []
+
+    def run(source, timeout):
+        nonlocal started
+        if "request.controller.abort()" in source:
+            cancellation_calls.append(started)
+            if started:
+                raise browser._BrowserAutomationTransient("Brave browser automation timed out")
+            return "settled"
+        if source.startswith("delete window"):
+            return "cleared"
+        if source == "start request":
+            started = True
+            return "started"
+        assert "JSON.stringify" in source
+        return json.dumps({"result": payload, "settled": True})
+
+    session = browser.BrowserInstagramSession(javascript_runner=run)
+    assert session.query("start request") == payload
+    assert cancellation_calls == [False]
+
+
+def test_query_waits_for_terminal_result_and_settlement_in_one_atomic_read():
+    payload = {"state": "succeeded", "media_ids": ["123"]}
+    states = iter(
+        [
+            None,
+            {"result": None, "settled": False},
+            {"result": {"state": "pending"}, "settled": True},
+            {"result": payload, "settled": False},
+            {"result": payload, "settled": True},
+        ]
+    )
+    sleeps = []
+    reads = []
+
+    def run(source, timeout):
+        if "request.controller.abort()" in source:
+            return "settled"
+        if source.startswith("delete window"):
+            return "cleared"
+        if source == "start request":
+            return "started"
+        reads.append(source)
+        return json.dumps(next(states))
+
+    session = browser.BrowserInstagramSession(javascript_runner=run, sleep=sleeps.append)
+    assert session.query("start request") == payload
+    assert len(reads) == 5 and len(sleeps) == 4
+    assert all("request.result" in source and "request.settled" in source for source in reads)
+
+
+@pytest.mark.parametrize(
+    "state",
+    [
+        [],
+        True,
+        {"state": "succeeded"},
+        {"result": {"state": "succeeded"}, "settled": "true"},
+        {"result": {"state": "succeeded"}, "settled": 1},
+        {"result": {"state": "succeeded"}, "settled": None},
+        {"result": [], "settled": True},
+        {"result": {"state": "unknown"}, "settled": True},
+        {"result": {}, "settled": True},
+        {"result": {"state": "succeeded"}, "settled": True, "extra": True},
+    ],
+)
+def test_invalid_atomic_request_state_cannot_skip_cleanup(state):
+    started = False
+    cancellations = []
+
+    def run(source, timeout):
+        nonlocal started
+        if "request.controller.abort()" in source:
+            cancellations.append(started)
+            return "settled"
+        if source.startswith("delete window"):
+            return "cleared"
+        if source == "start request":
+            started = True
+            return "started"
+        return json.dumps(state)
+
+    with pytest.raises(browser.BrowserSessionError, match="invalid request state"):
+        browser.BrowserInstagramSession(javascript_runner=run).query("start request")
+    assert cancellations == [False, True]
+
+
+def test_terminal_unsettled_result_timing_out_still_aborts_and_cleans_request():
+    now = [0.0]
+    started = False
+    cancellations = []
+    cleared = []
+
+    def run(source, timeout):
+        nonlocal started
+        if "request.controller.abort()" in source:
+            cancellations.append(started)
+            return "settled"
+        if source.startswith("delete window"):
+            cleared.append(source)
+            return "cleared"
+        if source == "start request":
+            started = True
+            return "started"
+        return json.dumps({"result": {"state": "succeeded"}, "settled": False})
+
+    session = browser.BrowserInstagramSession(
+        javascript_runner=run,
+        monotonic=lambda: now[0],
+        sleep=lambda seconds: now.__setitem__(0, now[0] + seconds),
+        job_timeout_seconds=1,
+    )
+    with pytest.raises(browser._BrowserPageUnavailable, match="timed out"):
+        session.query("start request")
+    assert cancellations == [False, True]
+    assert len(cleared) == 2
 
 
 def test_unconfirmed_cancellation_fails_before_switching_account():
@@ -845,7 +983,7 @@ def test_pool_caps_instagram_tabs_and_repairs_closed_slots(monkeypatch):
         "BrowserInstagramSession",
         lambda **kw: SimpleNamespace(
             run=lambda _: "/",
-            read=lambda _: "/",
+            read=lambda _: "/wat2do.ubc/",
             current_account_username=lambda: "wat2do.ubc",
             cancel_pending_request=lambda: None,
             poll_until=lambda ready: ready(),
@@ -934,6 +1072,126 @@ def test_pool_unreadable_identity_is_transient_not_recovery():
         browser.BrowserTabPool._ready_username(session)
 
 
+@pytest.mark.parametrize(
+    ("path", "actual_username"),
+    [
+        ("/", "wat2do.uwaterloo"),
+        ("/", "wat2do.yorku"),
+        ("/p/PUBLIC/", "wat2do.uwaterloo"),
+        ("/p/PUBLIC/", "wat2do.yorku"),
+        ("/", "student.personal"),
+        ("/accounts/login/", None),
+        ("/accounts/suspended/", None),
+        ("/challenge/", None),
+        ("/checkpoint/", None),
+    ],
+)
+def test_primary_public_bootstrap_recovers_blank_routes_and_preserves_auth_guards(
+    monkeypatch, path, actual_username
+):
+    settings = {"browser_tab_ids": ["1", "2"], "browser_window_id": "99", "paused": "existing"}
+    if actual_username == "student.personal":
+        settings["retrieval_pool_account"] = actual_username
+    navigations = []
+    page = {"path": path, "recovered": False}
+    primary = SimpleNamespace()
+
+    def navigate(url, *, reload):
+        navigations.append((url, reload))
+        page.update(path="/" + url.rstrip("/").split("/")[-1] + "/", recovered=True)
+
+    def session(**kwargs):
+        assert kwargs["javascript_runner"]._tab_id == "1"
+        assert kwargs["job_timeout_seconds"] == browser._CONTROL.interaction_timeout_seconds
+        primary.read = lambda source: page["path"]
+        primary.current_account_username = lambda: actual_username if page["recovered"] else None
+        primary.navigate = navigate
+        primary.poll_until = lambda ready: ready() or pytest.fail("Recovery must precede readiness")
+        primary.activate_account = lambda *args: pytest.fail("Recovery cannot change login")
+        return primary
+
+    def applescript(script, arguments, timeout):
+        assert script in {
+            browser._WORKER_TAB_INVENTORY_SCRIPT,
+            browser._INSTAGRAM_TAB_INVENTORY_SCRIPT,
+        }
+        return "1\n2"
+
+    monkeypatch.setattr(
+        browser, "_CONTROL", browser._CONTROL.model_copy(update={"parallel_tabs": 2})
+    )
+    monkeypatch.setattr(browser, "BrowserInstagramSession", session)
+    monkeypatch.setattr(browser, "_run_applescript", applescript)
+    queue = SimpleNamespace(
+        get_setting=lambda key, default=None: settings.get(key, default),
+        set_setting=lambda key, value: settings.update({key: value}),
+    )
+    pool = browser.BrowserTabPool(queue)
+    if actual_username:
+        bootstrap = None if actual_username == "student.personal" else "wat2do.uwaterloo"
+        assert pool.ensure_capacity(bootstrap_username=bootstrap) == ["1", "2"]
+        destination = actual_username if bootstrap is None else bootstrap
+        assert navigations == [(f"https://www.instagram.com/{destination}/", True)]
+        assert pool._ready_username(primary) == actual_username
+    else:
+        with pytest.raises(browser.BrowserSessionError, match="human account recovery"):
+            pool.ensure_capacity(bootstrap_username="wat2do.uwaterloo")
+        assert navigations == []
+    assert settings["paused"] == "existing"
+
+
+def test_readiness_waits_for_native_loading_then_reads_successfully():
+    calls = [0]
+    sleeps = []
+
+    def completed():
+        calls[0] += 1
+        if calls[0] < 3:
+            raise browser._BrowserPageUnavailable("The pinned Instagram tab is loading")
+        return True
+
+    browser.BrowserInstagramSession(sleep=sleeps.append).poll_until(completed)
+    assert calls[0] == 3 and len(sleeps) == 2
+
+
+def test_persistent_native_loading_obeys_readiness_deadline():
+    now = [0.0]
+
+    def loading():
+        raise browser._BrowserPageUnavailable("The pinned Instagram tab is loading")
+
+    session = browser.BrowserInstagramSession(
+        monotonic=lambda: now[0],
+        sleep=lambda seconds: now.__setitem__(0, now[0] + seconds),
+        job_timeout_seconds=1,
+    )
+    with pytest.raises(browser._BrowserPageUnavailable, match="automation timed out"):
+        session.poll_until(loading)
+    assert now[0] == 1
+
+
+@pytest.mark.parametrize(
+    "error",
+    [
+        browser.BrowserSessionError("Instagram browser requires human account recovery"),
+        browser.BrowserAccountChanged("Instagram account changed"),
+        browser._BrowserPageUnavailable("Instagram primary desktop viewport did not become ready"),
+    ],
+)
+def test_readiness_does_not_swallow_auth_account_or_desktop_errors(error):
+    calls = []
+
+    def completed():
+        calls.append(True)
+        raise error
+
+    with pytest.raises(type(error)) as raised:
+        browser.BrowserInstagramSession(
+            sleep=lambda _: pytest.fail("Never retry this error")
+        ).poll_until(completed)
+    assert raised.value is error and calls == [True]
+
+
 def test_query_recovers_transient_cleanup_bridge_failure_without_repeating_request():
     started = False
     failures = 0
@@ -957,11 +1215,12 @@ def test_query_recovers_transient_cleanup_bridge_failure_without_repeating_reque
             started = True
             return "started"
         if "JSON.stringify" in source:
-            return '{"state":"complete","media_ids":["123"]}'
+            return '{"result":{"state":"succeeded","media_ids":["123"]},"settled":true}'
         raise AssertionError(source)
 
     session = browser.BrowserInstagramSession(javascript_runner=run, sleep=sleeps.append)
     assert session.query("start request")["media_ids"] == ["123"]
+    session.cancel_pending_request()
     assert starts == 1
     assert failures == 2
     assert len(sleeps) == 2
@@ -1047,7 +1306,7 @@ def test_pool_settles_excess_owned_tabs_and_keeps_reserved_primary(monkeypatch):
         lambda **kw: SimpleNamespace(
             cancel_pending_request=lambda: settled.append(kw["javascript_runner"]._tab_id),
             run=lambda _: "/",
-            read=lambda _: "/",
+            read=lambda _: "/wat2do.ubc/",
             current_account_username=lambda: "wat2do.ubc",
             poll_until=lambda ready: ready(),
         ),
@@ -1055,6 +1314,7 @@ def test_pool_settles_excess_owned_tabs_and_keeps_reserved_primary(monkeypatch):
     q = SimpleNamespace(
         get_setting=lambda key, default=None: settings.get(key, default),
         set_setting=lambda key, value: settings.update({key: value}),
+        peek_account_username=lambda: "wat2do.ubc",
     )
     assert browser.BrowserTabPool(q).ensure_capacity() == [str(i) for i in range(1, 8)]
     assert closed == [str(i) for i in range(8, 21)] + ["999"]
@@ -1417,7 +1677,10 @@ def test_fifteen_tab_pool_reserves_primary_and_assigns_all_fourteen_secondary_ta
     assert all(call[2] == "https://www.instagram.com/wat2do.ubc/" for call in calls[16:])
 
 
-def test_closed_primary_is_repaired_first_without_promoting_a_retrieval_tab(monkeypatch):
+@pytest.mark.parametrize("bootstrap_username", ["wat2do.ubc", "student.personal"])
+def test_closed_primary_is_repaired_first_without_promoting_a_retrieval_tab(
+    monkeypatch, bootstrap_username
+):
     settings = {"browser_tab_ids": ["1", "2", "3"], "browser_window_id": "99"}
     live = {"2", "3"}
     created = []
@@ -1451,18 +1714,18 @@ def test_closed_primary_is_repaired_first_without_promoting_a_retrieval_tab(monk
         browser,
         "BrowserInstagramSession",
         lambda **kwargs: SimpleNamespace(
-            read=lambda source: "/",
-            current_account_username=lambda: "wat2do.ubc",
+            read=lambda source: f"/{bootstrap_username}/",
+            current_account_username=lambda: bootstrap_username,
             poll_until=lambda predicate: predicate(),
         ),
     )
     queue = SimpleNamespace(
         get_setting=lambda key, default=None: settings.get(key, default),
         set_setting=lambda key, value: settings.update({key: value}),
-        peek_account_username=lambda: "wat2do.ubc",
+        peek_account_username=lambda: bootstrap_username,
     )
     assert browser.BrowserTabPool(queue).ensure_capacity() == ["4", "2", "3"]
-    assert created == [("99", "first", "https://www.instagram.com/wat2do.ubc/")]
+    assert created == [("99", "first", f"https://www.instagram.com/{bootstrap_username}/")]
     assert settings["retrieval_pool_account"] is None
 
 

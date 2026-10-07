@@ -1,4 +1,5 @@
 import fcntl
+import json
 import signal
 import threading
 from concurrent.futures import ALL_COMPLETED
@@ -75,7 +76,7 @@ def _engagement(queue, shortcode="Post1"):
 
 
 def _settling_executor(execute):
-    """A stub operation retains execute_job's exact-tab settlement contract."""
+    """Stub operations prove settlement before returning, as query does."""
 
     def settled(job, *, session=None):
         try:
@@ -261,16 +262,21 @@ def test_known_account_failure_does_not_quarantine_other_notifications(queue, mo
 
 
 @pytest.mark.parametrize(
-    "kind,dry_run", [("digest", False), ("engagement", False), ("engagement", True)]
+    "kind,dry_run",
+    [("digest", False), ("retrieval", False), ("engagement", False), ("engagement", True)],
 )
-def test_execute_job_shares_pinned_session_and_cleans_up_after_success(
+def test_execute_job_shares_pinned_session_without_repeating_successful_operation_cleanup(
     queue,
     monkeypatch,
     kind,
     dry_run,
 ):
+    from services.instagram_notifications import browser_ingestion
+
     calls = []
-    session = SimpleNamespace(cancel_pending_request=lambda: calls.append("cleanup"))
+    session = SimpleNamespace(
+        cancel_pending_request=lambda: pytest.fail("Successful operations already own settlement")
+    )
     monkeypatch.setattr(module, "BrowserInstagramSession", lambda: session)
 
     def resolver(*, session):
@@ -289,9 +295,22 @@ def test_execute_job_shares_pinned_session_and_cleans_up_after_success(
 
     monkeypatch.setattr(module, "BrowserInstagramDigestResolver", resolver)
     monkeypatch.setattr(module, "BrowserInstagramEngagementExecutor", executor)
+
+    def retrieve(session):
+        calls.append(("retrieval-session", session))
+        return SimpleNamespace(retrieve=lambda *args, **kwargs: {"status": "succeeded"})
+
+    monkeypatch.setattr(browser_ingestion, "BrowserInstagramRetriever", retrieve)
     job_id = (
         queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "cache-session")
         if kind == "digest"
+        else queue.enqueue_retrieval(
+            school="ubc",
+            recipient_id=RECIPIENT_ID,
+            account_username=ACCOUNT_USERNAME,
+            url="https://www.instagram.com/p/OwnedSettlement/",
+        )
+        if kind == "retrieval"
         else _engagement(queue)
     )
     job = queue.get(job_id)
@@ -301,17 +320,86 @@ def test_execute_job_shares_pinned_session_and_cleans_up_after_success(
     result = module.execute_job(job)
 
     assert calls[0] == (f"{kind}-session", session)
-    assert calls[-1] == "cleanup"
     if kind == "digest":
         assert result["media_ids"] == ("123",)
-    else:
+    elif kind == "engagement":
         assert calls[1] == ("inspect" if dry_run else "execute")
 
 
-@pytest.mark.parametrize("error", [KeyboardInterrupt, TimeoutError, RuntimeError])
-def test_execute_job_cleans_up_on_every_interruption(queue, monkeypatch, error):
+@pytest.mark.parametrize("kind", ["digest", "retrieval"])
+def test_successful_query_settlement_proof_is_not_rechecked_by_worker(queue, monkeypatch, kind):
+    from services.instagram_notifications import browser_ingestion, browser_session
+
+    proof_seen = False
+    cancellations = []
+
+    def run(source, timeout):
+        nonlocal proof_seen
+        if source == browser_session._cancel_request_source():
+            cancellations.append(True)
+            if proof_seen:
+                raise module.BrowserSessionError(
+                    "Instagram browser request cancellation could not be confirmed"
+                )
+            return "settled"
+        if source == "start-query-fixture":
+            return "started"
+        if source.startswith("delete window["):
+            return "cleared"
+        assert "settled: request.settled" in source
+        proof_seen = True
+        return json.dumps(
+            {
+                "result": {"state": "succeeded", "media_ids": ["123"], "page_count": 1},
+                "settled": True,
+            }
+        )
+
+    session = browser_session.BrowserInstagramSession(javascript_runner=run, sleep=lambda _: None)
+
+    def resolve(*args):
+        payload = session.query("start-query-fixture")
+        return DigestResolution(
+            ACCOUNT_USERNAME, tuple(payload["media_ids"]), payload["page_count"]
+        )
+
+    monkeypatch.setattr(
+        module, "BrowserInstagramDigestResolver", lambda **kwargs: SimpleNamespace(resolve=resolve)
+    )
+    monkeypatch.setattr(
+        browser_ingestion,
+        "BrowserInstagramRetriever",
+        lambda _: SimpleNamespace(
+            retrieve=lambda *args, **kwargs: session.query("start-query-fixture")
+        ),
+    )
+    job_id = (
+        queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "query-owned-proof")
+        if kind == "digest"
+        else queue.enqueue_retrieval(
+            school="ubc",
+            recipient_id=RECIPIENT_ID,
+            account_username=ACCOUNT_USERNAME,
+            url="https://www.instagram.com/p/QueryOwnedProof/",
+        )
+    )
+    result = module.execute_job(queue.get(job_id), session=session)
+    assert proof_seen
+    assert len(cancellations) == 1
+    assert result["media_ids"] == (("123",) if kind == "digest" else ["123"])
+
+
+@pytest.mark.parametrize("kind", ["retrieval", "digest", "engagement"])
+@pytest.mark.parametrize(
+    "error", [KeyboardInterrupt, SystemExit, TimeoutError, RuntimeError, module.BrowserSessionError]
+)
+def test_execute_job_cleans_up_on_every_failed_exit(queue, monkeypatch, kind, error):
+    from services.instagram_notifications import browser_ingestion
+
     calls = []
-    session = SimpleNamespace(cancel_pending_request=lambda: calls.append("cleanup"))
+    session = SimpleNamespace(
+        cancel_pending_request=lambda: calls.append("cleanup"), is_secondary_read_tab=False
+    )
     monkeypatch.setattr(module, "BrowserInstagramSession", lambda: session)
 
     def fail(*_args, **_kwargs):
@@ -320,9 +408,27 @@ def test_execute_job_cleans_up_on_every_interruption(queue, monkeypatch, error):
     monkeypatch.setattr(
         module, "BrowserInstagramEngagementExecutor", lambda **_: SimpleNamespace(engage_post=fail)
     )
+    monkeypatch.setattr(
+        module, "BrowserInstagramDigestResolver", lambda **_: SimpleNamespace(resolve=fail)
+    )
+    monkeypatch.setattr(
+        browser_ingestion, "BrowserInstagramRetriever", lambda _: SimpleNamespace(retrieve=fail)
+    )
+    job_id = (
+        queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "failed-exit")
+        if kind == "digest"
+        else queue.enqueue_retrieval(
+            school="ubc",
+            recipient_id=RECIPIENT_ID,
+            account_username=ACCOUNT_USERNAME,
+            url="https://www.instagram.com/p/FailedExit/",
+        )
+        if kind == "retrieval"
+        else _engagement(queue)
+    )
 
     with pytest.raises(error):
-        module.execute_job(queue.get(_engagement(queue)))
+        module.execute_job(queue.get(job_id))
 
     assert calls == ["cleanup"]
 
@@ -1168,22 +1274,24 @@ def test_uncertain_cleanup_defers_only_secondary_reads(queue, monkeypatch, kind,
         retire_unresponsive_read_tab=lambda: retired.append(True),
         is_secondary_read_tab=secondary,
     )
+
+    def fail(*args, **kwargs):
+        raise _BrowserPageUnavailable("The read operation did not finish")
+
     monkeypatch.setattr(
         browser_ingestion,
         "BrowserInstagramRetriever",
-        lambda _: SimpleNamespace(retrieve=lambda *args, **kwargs: {}),
+        lambda _: SimpleNamespace(retrieve=fail),
     )
     monkeypatch.setattr(
         module,
         "BrowserInstagramDigestResolver",
-        lambda **kwargs: SimpleNamespace(
-            resolve=lambda *args: DigestResolution(ACCOUNT_USERNAME, (), 1)
-        ),
+        lambda **kwargs: SimpleNamespace(resolve=fail),
     )
     monkeypatch.setattr(
         module,
         "BrowserInstagramEngagementExecutor",
-        lambda **kwargs: SimpleNamespace(engage_post=lambda *args, **kwargs: {}),
+        lambda **kwargs: SimpleNamespace(engage_post=fail),
     )
     expected_error = (
         _BrowserReadCleanupPending
@@ -1225,10 +1333,14 @@ def test_unconfirmed_secondary_retirement_preserves_cancellation_pause(queue, mo
         current_account_username=lambda: ACCOUNT_USERNAME,
         poll_until=lambda ready: ready(),
     )
+
+    def fail(*args, **kwargs):
+        raise _BrowserPageUnavailable("The read operation did not finish")
+
     monkeypatch.setattr(
         browser_ingestion,
         "BrowserInstagramRetriever",
-        lambda _: SimpleNamespace(retrieve=lambda *args, **kwargs: {}),
+        lambda _: SimpleNamespace(retrieve=fail),
     )
     monkeypatch.setattr(
         module,
@@ -1319,6 +1431,8 @@ def test_all_fourteen_reads_drain_before_deferred_cleanup_and_no_slots_refill(
                     url="https://www.instagram.com/p/NoRefill/",
                 )
             )
+            raise _BrowserPageUnavailable("The read operation did not finish")
+        session.cancel_pending_request()
         return {"status": "succeeded"}
 
     monkeypatch.setattr(
@@ -1453,7 +1567,11 @@ def test_interruption_settles_all_unobserved_secondary_cleanup_before_releasing_
     monkeypatch.setattr(
         browser_ingestion,
         "BrowserInstagramRetriever",
-        lambda _: SimpleNamespace(retrieve=lambda *args, **kwargs: {"status": "succeeded"}),
+        lambda _: SimpleNamespace(
+            retrieve=lambda *args, **kwargs: (_ for _ in ()).throw(
+                _BrowserPageUnavailable("The read operation did not finish")
+            )
+        ),
     )
 
     def wait_then_interrupt(futures, **kwargs):

@@ -509,24 +509,48 @@ class BrowserInstagramSession:
         return canonical_url
 
     def query(self, source: str) -> dict[str, Any]:
-        """Wait for a browser request and stop it before returning on every path."""
+        """Read result and settlement together; cancel every exit without that proof."""
         self.cancel_pending_request()
         payload: dict[str, Any] | None = None
         operation_error: BaseException | None = None
+        completion_settled = False
 
         def completed() -> bool:
-            nonlocal payload
-            raw = self.read(f"JSON.stringify(window[{json.dumps(_REQUEST_KEY)}]?.result || null)")
+            nonlocal payload, completion_settled
+            raw = self.read(
+                f"""JSON.stringify((() => {{
+ const request = window[{json.dumps(_REQUEST_KEY)}];
+ return request ? {{result: request.result ?? null, settled: request.settled}} : null;
+}})())"""
+            )
             try:
                 value = json.loads(raw)
             except json.JSONDecodeError:
                 raise BrowserSessionError(
                     "Instagram browser returned invalid request state"
                 ) from None
-            if not isinstance(value, dict) or value.get("state") == "pending":
+            if value is None:
                 return False
-            payload = value
-            return True
+            if (
+                not isinstance(value, dict)
+                or set(value) != {"result", "settled"}
+                or not isinstance(value["settled"], bool)
+            ):
+                raise BrowserSessionError("Instagram browser returned invalid request state")
+            result = value["result"]
+            if result is None:
+                return False
+            if not isinstance(result, dict) or result.get("state") not in (
+                "pending",
+                "succeeded",
+                "failed",
+            ):
+                raise BrowserSessionError("Instagram browser returned invalid request state")
+            if result["state"] == "pending":
+                return False
+            payload = result
+            completion_settled = value["settled"]
+            return completion_settled
 
         try:
             self.run(source)
@@ -535,14 +559,15 @@ class BrowserInstagramSession:
             operation_error = exc
             raise
         finally:
-            try:
-                self.cancel_pending_request()
-            except BrowserSessionError as exc:
-                if self.is_secondary_read_tab:
-                    raise _BrowserReadCleanupPending(
-                        str(exc), operation_error=operation_error, completed_payload=payload
-                    ) from None
-                raise
+            if not completion_settled:
+                try:
+                    self.cancel_pending_request()
+                except BrowserSessionError as exc:
+                    if self.is_secondary_read_tab:
+                        raise _BrowserReadCleanupPending(
+                            str(exc), operation_error=operation_error, completed_payload=payload
+                        ) from None
+                    raise
         if payload is None:
             raise BrowserSessionError("Instagram browser returned no request result")
         return payload
@@ -591,8 +616,12 @@ class BrowserInstagramSession:
         self._deadline = min(deadline, job_deadline) if job_deadline is not None else deadline
         try:
             while self._monotonic() < self._deadline:
-                if completed():
-                    return
+                try:
+                    if completed():
+                        return
+                except _BrowserPageUnavailable as exc:
+                    if str(exc) != "The pinned Instagram tab is loading":
+                        raise
                 remaining = self._deadline - self._monotonic()
                 if remaining > 0:
                     self._sleep(min(_CONTROL.poll_interval_seconds, remaining))
@@ -672,7 +701,7 @@ def canonical_post_url(post_url: str) -> str:
 
 
 def _account_profile_url(username: str) -> str:
-    if not _USERNAME_PATTERN.fullmatch(username):
+    if not isinstance(username, str) or not _USERNAME_PATTERN.fullmatch(username):
         raise BrowserSessionError("Instagram browser profile username is invalid")
     return f"https://www.instagram.com/{username}/"
 
@@ -1235,14 +1264,14 @@ class BrowserTabPool:
                     "An owned Instagram tab moved outside the registered worker window"
                 )
         survivors = [tab_id for tab_id in ids if tab_id in live]
+        bootstrap_username = (
+            bootstrap_username
+            or self.queue.get_setting("retrieval_pool_account")
+            or self.queue.peek_account_username()
+            or school_account_username(_CONTROL.bootstrap_profile_school)
+        )
         if ids[0] not in live:
-            username = (
-                bootstrap_username
-                or self.queue.get_setting("retrieval_pool_account")
-                or self.queue.peek_account_username()
-                or school_account_username(_CONTROL.bootstrap_profile_school)
-            )
-            profile_url = _account_profile_url(validate_account_username(username))
+            profile_url = _account_profile_url(bootstrap_username)
             survivors.insert(0, self._create_tab(window_id, "first", profile_url))
             self.queue.set_setting("browser_tab_ids", survivors)
             self.queue.set_setting("retrieval_pool_account", None)
@@ -1254,12 +1283,18 @@ class BrowserTabPool:
             survivors.remove(tab_id)
             self.queue.set_setting("browser_tab_ids", survivors)
         primary = BrowserInstagramSession(
-            javascript_runner=_PinnedBraveJavascriptRunner(survivors[0], window_id=window_id)
+            javascript_runner=_PinnedBraveJavascriptRunner(survivors[0], window_id=window_id),
+            job_timeout_seconds=_CONTROL.interaction_timeout_seconds,
         )
         path = primary.read("window.location.pathname")
         if path.startswith(("/accounts/login", "/accounts/suspended", "/challenge", "/checkpoint")):
             raise BrowserSessionError("Instagram browser requires human account recovery")
-        username = self._ready_username(primary)
+        username = None if path == "/" else primary.current_account_username()
+        if username is None:
+            # Instagram's home endpoint can be a complete blank/error document
+            # while public profiles still expose valid authenticated navigation.
+            primary.navigate(_account_profile_url(bootstrap_username), reload=True)
+            username = self._ready_username(primary)
         profile_url = _account_profile_url(username)
         available = self._instagram_tab_ids(window_id)
         ids = list(dict.fromkeys([*survivors, *available]))[: _CONTROL.parallel_tabs]

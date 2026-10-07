@@ -81,9 +81,11 @@ def execute_job(job: BrowserJob, *, session: BrowserInstagramSession | None = No
                 raise deferred from None
         raise
     finally:
-        # Cover every exit, including interruption during navigation or after a click.
-        # Cleanup uses the exact same pinned tab as the operation it is settling.
-        _settle_job(job, session, operation_error=operation_error)
+        # Query returns only after its own settlement proof. Native engagement
+        # starts by settling the previous request and creates no worker fetch.
+        # Keep exact-tab cleanup for every failure, including navigation and clicks.
+        if operation_error is not None:
+            _settle_job(job, session, operation_error=operation_error)
 
 
 def _deferred_read_cleanup(
@@ -261,7 +263,7 @@ def _process_batch(
             except BaseException as exc:
                 _settle_job(job, session, operation_error=exc)
                 raise
-            # execute_job owns exact-tab cleanup for every operation exit.
+            # Successful operations settle themselves; execute_job covers every failed exit.
             return execute_job(job, session=session)
         except _BrowserReadCleanupPending as exc:
             with cleanup_lock:
