@@ -4,9 +4,9 @@ import { Skeleton } from "@/shared/ui/skeleton";
 
 type EventViewSurfaceProps = ComponentProps<"div"> & { variant?: "calendar" | "map" };
 
-/** Exploration views share one themed surface; the map has a taller viewport. */
+/** Exploration views share one themed surface; the map fills its flex viewport. */
 export function EventViewSurface({ variant = "calendar", ...props }: EventViewSurfaceProps) {
-  return <div data-slot="event-view-surface" data-view={variant} className={`relative w-full overflow-hidden rounded-xl border border-border bg-surface text-foreground ${variant === "map" ? "h-[min(85dvh,56rem)] min-h-[32rem]" : "h-[min(75vh,44rem)] min-h-96"}`} {...props} />;
+  return <div data-slot="event-view-surface" data-view={variant} className={`relative w-full overflow-hidden rounded-xl border border-border bg-surface text-foreground ${variant === "map" ? "min-h-0 flex-1" : "h-[min(75vh,44rem)] min-h-96"}`} {...props} />;
 }
 
 export function EventViewSkeleton({ variant }: Pick<EventViewSurfaceProps, "variant">) {

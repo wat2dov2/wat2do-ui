@@ -165,8 +165,17 @@
       "noLocations": "Brak lokalizacji na mapie",
       "noLocationsDescription": "Te wydarzenia są wirtualne lub ich lokalizacje są nieznane albo nie można ich odnaleźć.",
       "mapSummary": "Na mapie: {{count}}.",
-      "unmapped": "Bez lokalizacji na mapie: {{count}}.",
-      "selectEvent": "Otwórz wydarzenie"
+      "clusterAt": "{{count}} wydarzenie w {{location}}",
+      "clusterAt_one": "{{count}} wydarzenie w {{location}}",
+      "clusterAt_few": "{{count}} wydarzenia w {{location}}",
+      "clusterAt_many": "{{count}} wydarzeń w {{location}}",
+      "clusterAt_other": "{{count}} wydarzenia w {{location}}",
+      "clusterNear": "{{count}} wydarzenie w pobliżu {{location}}",
+      "clusterNear_one": "{{count}} wydarzenie w pobliżu {{location}}",
+      "clusterNear_few": "{{count}} wydarzenia w pobliżu {{location}}",
+      "clusterNear_many": "{{count}} wydarzeń w pobliżu {{location}}",
+      "clusterNear_other": "{{count}} wydarzenia w pobliżu {{location}}",
+      "unmapped": "Bez lokalizacji na mapie: {{count}}."
     }
   }
 }

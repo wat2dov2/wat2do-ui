@@ -99,6 +99,115 @@ const event: Event = {
   occurrences: [{ dtstart_utc: new Date(Date.now() + 86_400_000).toISOString(), dtend_utc: null }],
 } as Event;
 
+function goingSelection(fixture: Event, currentTimeMs: number, selectedIds: string[] = []) {
+  const filename = new URL("../src/features/events/hooks/useGoingEvents.ts", import.meta.url);
+  const source = ts.transpileModule(readFileSync(filename, "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText;
+  const exports = {} as typeof import("../src/features/events/hooks/useGoingEvents");
+  const require = createRequire(filename);
+  runInNewContext(source, { exports, require: (id: string) => {
+    if (id === "react") return { useEffect() {}, useMemo: (fn: () => unknown) => fn(), useState: () => [currentTimeMs, () => {}] };
+    if (id === "@tanstack/react-query") return { useQueryClient: () => ({}), useQuery: () => ({ data: [{ event_id: fixture.id, occurrence_ids: selectedIds }] }), useMutation: () => ({ isPending: false }) };
+    if (id === "react-i18next") return { useTranslation: () => ({ t: (key: string) => key }) };
+    if (id === "@/features/auth/hooks/useAuthState") return { useAuthState: () => ({ isAuthenticated: true }) };
+    if (id === "@/features/auth/api/auth.api") return { getUserId: () => "test-user" };
+    if (id === "@/shared/config/controlBox") return { controlBox: { clientCache: { liveEventDataStaleMs: 0 } } };
+    if (id === "@/shared/lib/queryKeys" || id === "@/shared/utils/date") return require(new URL(`../src/${id.slice(2)}`, import.meta.url).pathname);
+    return {};
+  } });
+  return exports.useGoingEventSelection(fixture, "uwaterloo");
+}
+
+test("Going excludes started sessions while recurring events retain their future dates", () => {
+  const now = Date.parse("2026-10-07T22:00:00Z");
+  const started = { id: "started", dtstart_utc: new Date(now - 60_000).toISOString(), dtend_utc: new Date(now + 3_600_000).toISOString() };
+  const future = { id: "future", dtstart_utc: new Date(now + 60_000).toISOString(), dtend_utc: null };
+  for (const occurrence of [started, { ...started, dtend_utc: null }, { ...started, dtstart_utc: new Date(now).toISOString() }, { ...started, dtstart_utc: "invalid" }]) {
+    const result = goingSelection({ ...event, occurrences: [occurrence] } as Event, now);
+    expect(result.selectableOccurrences).toHaveLength(0);
+    expect(result.isTimeUnavailable).toBe(true);
+  }
+  const recurring = goingSelection({ ...event, occurrences: [started, future] } as Event, now);
+  expect(recurring.selectableOccurrences.map(item => item.id)).toEqual(["future"]);
+  expect(recurring.isTimeUnavailable).toBe(false);
+  expect(goingSelection({ ...event, cancelled: true, occurrences: [future] } as Event, now).isTimeUnavailable).toBe(true);
+});
+
+test("started Going selections retain confirmation and cancellation until the session ends", () => {
+  const now = Date.parse("2026-10-07T22:00:00Z");
+  const occurrence = { id: "selected", dtstart_utc: new Date(now - 60_000).toISOString(), dtend_utc: new Date(now + 3_600_000).toISOString() };
+  const result = goingSelection({ ...event, occurrences: [occurrence] } as Event, now, ["selected"]);
+  expect(result.isActive).toBe(true);
+  expect(result.selectableOccurrences).toHaveLength(0);
+  expect(result.selectedSelectableIds).toHaveLength(0);
+  expect(goingSelection({ ...event, occurrences: [{ ...occurrence, dtend_utc: new Date(now - 1).toISOString() }] } as Event, now, ["selected"]).isActive).toBe(false);
+});
+
+test("the attendance clock updates at the start instant instead of waiting for the next minute", () => {
+  const now = Date.parse("2026-10-07T22:00:00Z");
+  const filename = new URL("../src/features/events/hooks/useGoingEvents.ts", import.meta.url);
+  const source = ts.transpileModule(readFileSync(filename, "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText;
+  const exports = {} as typeof import("../src/features/events/hooks/useGoingEvents");
+  const timers: { delay: number; callback: () => void }[] = [];
+  const updatedTimes: number[] = [];
+  const cleanups: (() => void)[] = [];
+  const cleared: number[] = [];
+  const contextDate = function(value: string) { return new Date(value); };
+  contextDate.now = () => now;
+  const runtime = { exports, Date: contextDate, window: {
+    setTimeout: (callback: () => void, delay: number) => { timers.push({ delay, callback }); return timers.length; },
+    setInterval: () => 99, clearTimeout: (id: number) => cleared.push(id), clearInterval() {},
+  }, require: (id: string) => id === "react" ? {
+    useState: () => [now, (value: number) => updatedTimes.push(value)],
+    useEffect: (fn: () => (() => void) | undefined) => { const cleanup = fn(); if (cleanup) cleanups.push(cleanup); },
+  } : {} };
+  runInNewContext(source, runtime);
+  exports.useCurrentTime([{ dtstart_utc: new Date(now + 1250).toISOString() }, { dtstart_utc: new Date(now + 60_000).toISOString() }]);
+  expect(timers.map(timer => timer.delay)).toEqual([0, 1250]);
+  timers[1].callback();
+  expect(updatedTimes).toEqual([now]);
+  cleanups.forEach(cleanup => cleanup());
+  expect(cleared).toEqual([1, 2]);
+});
+
+test("an open occurrence picker drops drafts that have started before confirmation", async () => {
+  const filename = new URL("../src/features/events/components/GoingOccurrencePickerContent.tsx", import.meta.url);
+  const source = ts.transpileModule(readFileSync(filename, "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX } }).outputText;
+  const exports = {} as typeof import("../src/features/events/components/GoingOccurrencePickerContent");
+  const require = createRequire(filename);
+  let stateIndex = 0;
+  runInNewContext(source, { exports, require: (id: string) => {
+    if (id === "react") return { useCallback: (fn: unknown) => fn, useState: () => [stateIndex++ === 0 ? ["started", "future"] : false, () => {}] };
+    if (id === "react/jsx-runtime") return require(id);
+    if (id === "react-i18next") return { useTranslation: () => ({ t: (key: string) => key, i18n: { language: "en" } }) };
+    if (id === "@/shared/utils/date") return { formatOccurrence: () => "Tomorrow" };
+    return new Proxy({}, { get: (_, key) => String(key) });
+  } });
+  interface Node { type: unknown; props: { children?: Node | Node[]; [key: string]: unknown } }
+  const find = (node: Node, type: string): Node | undefined => {
+    if (!node?.props) return undefined;
+    return node.type === type ? node : [node.props.children].flat(2).map(child => find(child as Node, type)).find(Boolean);
+  };
+  let submitted: string[] | null = null;
+  const render = (occurrences: Event["occurrences"]) => {
+    stateIndex = 0;
+    return exports.GoingOccurrencePickerContent({ timeZone: "America/Toronto", occurrences, selectedIds: [], isPending: false, onCancel() {}, onConfirm: async (ids) => { submitted = ids; } }) as Node;
+  };
+  const future = { id: "future", dtstart_utc: "2026-10-08T22:00:00Z", dtend_utc: null };
+  const tree = render([future] as Event["occurrences"]);
+  expect(find(tree, "MultiSelect")?.props.selected).toEqual(["future"]);
+  const actions = (tree.props.children as Node[])[2].props.children as Node[];
+  expect(actions[1].props.disabled).toBe(false);
+  (actions[1].props.onClick as () => void)();
+  await Promise.resolve();
+  expect(submitted).toEqual(["future"]);
+  const expired = render([]);
+  const expiredActions = (expired.props.children as Node[])[2].props.children as Node[];
+  expect(expiredActions[1].props.disabled).toBe(true);
+  submitted = null;
+  (expiredActions[1].props.onClick as () => void)();
+  expect(submitted).toBeNull();
+});
+
 for (const mode of ["calendar", "map"]) {
   for (const version of [1, undefined]) {
     test(`legacy ${mode} preference (${version === undefined ? "no version" : "version 1"}) cannot hide the event feed`, () => {

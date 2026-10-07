@@ -566,8 +566,15 @@ class BrowserJobQueue:
                     or (stored_job.kind == "engagement" and not stored_job.payload.get("dry_run"))
                 )
             ):
-                deadline, _backoff = self._rate_limit_state(db)
-                if stored_job.started_at is not None and deadline <= stored_job.started_at <= now:
+                deadline, backoff = self._rate_limit_state(db)
+                recovered_at = deadline + CONTROL.rate_limit_recovery_seconds
+                # One healthy route does not prove a recently limited route recovered.
+                # Keep escalation until a fresh verified job follows a quiet recovery window.
+                if (
+                    backoff
+                    and stored_job.started_at is not None
+                    and recovered_at <= stored_job.started_at <= now
+                ):
                     db.execute(
                         "INSERT INTO settings VALUES ('browser_rate_limit_backoff_seconds','0') "
                         "ON CONFLICT(key) DO UPDATE SET value=excluded.value"

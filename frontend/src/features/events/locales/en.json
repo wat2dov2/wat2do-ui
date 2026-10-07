@@ -151,8 +151,13 @@
       "noLocations": "No map locations available",
       "noLocationsDescription": "These events have virtual, missing, or unresolved locations.",
       "mapSummary": "On the map: {{count}}.",
-      "unmapped": "Without a map location: {{count}}.",
-      "selectEvent": "Open an event"
+      "clusterAt": "{{count}} event at {{location}}",
+      "clusterAt_one": "{{count}} event at {{location}}",
+      "clusterAt_other": "{{count}} events at {{location}}",
+      "clusterNear": "{{count}} event near {{location}}",
+      "clusterNear_one": "{{count}} event near {{location}}",
+      "clusterNear_other": "{{count}} events near {{location}}",
+      "unmapped": "Without a map location: {{count}}."
     }
   }
 }

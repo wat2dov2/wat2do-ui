@@ -78,7 +78,7 @@ function Stack({
         align && alignClasses[align],
         justify && justifyClasses[justify],
         wrap && "flex-wrap",
-        grow && "flex-1",
+        grow && "min-h-0 flex-1",
         className
       )}
       {...props}

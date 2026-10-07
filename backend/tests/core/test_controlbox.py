@@ -605,6 +605,7 @@ def test_instagram_browser_controls_have_one_shared_timing_source():
     assert controlbox.instagram_browser.navigation_interval_seconds == 1
     assert controlbox.instagram_browser.rate_limit_backoff_seconds == 120
     assert controlbox.instagram_browser.rate_limit_max_backoff_seconds == 1800
+    assert controlbox.instagram_browser.rate_limit_recovery_seconds == 900
     assert controlbox.instagram_browser.viewport_warm_timeout_seconds == 3
     assert controlbox.instagram_browser.primary_minimum_viewport_width == 1024
     assert controlbox.instagram_browser.secondary_cleanup_timeout_seconds == 5
@@ -639,6 +640,9 @@ def test_instagram_browser_controls_have_one_shared_timing_source():
         {"rate_limit_max_backoff_seconds": 0},
         {"rate_limit_max_backoff_seconds": 119},
         {"rate_limit_max_backoff_seconds": 3601},
+        {"rate_limit_recovery_seconds": 0},
+        {"rate_limit_recovery_seconds": 119},
+        {"rate_limit_recovery_seconds": 86401},
         {"viewport_warm_timeout_seconds": 0},
         {"viewport_warm_timeout_seconds": 31},
         {"viewport_warm_timeout_seconds": 121},

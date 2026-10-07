@@ -7,6 +7,7 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { Check } from "@/shared/ui/doodle-icons"
 import { cn } from "@/shared/lib/utils"
 import { createAdaptivePressHandlers } from "@/shared/hooks/useMouseDownPress"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/ui/tooltip"
 
 const OUTLINE_CONTROL_STYLES =
   "border border-border/60 bg-background text-foreground hover:bg-surface-hover active:bg-surface-active dark:border-secondary dark:bg-secondary dark:text-secondary-foreground dark:hover:bg-secondary-hover dark:active:bg-secondary-active"
@@ -70,6 +71,8 @@ const Button = React.forwardRef<
       selected?: boolean
       /** Selection may be conveyed by the label or icon instead of a check. */
       selectionIndicator?: "check" | "none"
+      /** Disabled native buttons need a separate hover and keyboard tooltip target. */
+      disabledReason?: string
       "data-slot"?: string
     }
 >(
@@ -87,6 +90,7 @@ const Button = React.forwardRef<
       onMouseDown,
       onPointerDown,
       disabled,
+      disabledReason,
       type = "button",
       "data-slot": dataSlot = "button",
       ...props
@@ -115,7 +119,7 @@ const Button = React.forwardRef<
     // paints a surface and keeps it.
     const elevation = variant === "ghost" || variant === "link" ? undefined : "control"
 
-    return (
+    const button = (
       <Comp
         ref={ref}
         data-slot={dataSlot}
@@ -138,6 +142,26 @@ const Button = React.forwardRef<
           children
         )}
       </Comp>
+    )
+
+    if (!disabled || !disabledReason) return button
+
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span
+            data-slot="disabled-button-trigger"
+            className="inline-flex has-[>button.w-full]:w-full"
+            role="group"
+            tabIndex={0}
+            aria-label={props["aria-label"] ?? (typeof children === "string" ? children : undefined)}
+            aria-disabled="true"
+          >
+            {button}
+          </span>
+        </TooltipTrigger>
+        <TooltipContent>{disabledReason}</TooltipContent>
+      </Tooltip>
     )
   },
 )

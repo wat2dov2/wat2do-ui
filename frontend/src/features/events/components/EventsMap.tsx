@@ -17,6 +17,9 @@ import { controlBox } from "@/shared/config/controlBox";
 import { EmptyState } from "@/shared/feedback";
 import { Stack } from "@/shared/layout/stack";
 import { Button } from "@/shared/ui/button";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/shared/ui/drawer";
+import { DrawerBody } from "@/shared/layout/drawer-body";
+import { useMobileClickActivation } from "@/shared/hooks/useMouseDownPress";
 import { getEventImageStatus } from "@/shared/utils/event";
 import type { Event } from "@/shared/types";
 
@@ -38,8 +41,25 @@ function EventMapMarker({ events, goingIds, onSelect }: { events: Event[]; going
   </Button>;
 }
 
+function EventMapSelection({ events, goingIds, timezone, language, onEventClick }: { events: Event[]; goingIds: ReadonlySet<number>; timezone: string; language: string; onEventClick: (event: Event) => void }) {
+  return <Stack gap={2}>
+    {events.map(event => <Button key={event.id} variant="ghost" className="event-map-row" onClick={() => onEventClick(event)}>
+      <EventMapPoster event={event} isGoing={goingIds.has(event.id)} />
+      <span className="event-map-row-copy">
+        <strong>{event.title}</strong>
+        <span>{`${formatCardDate(event, timezone, language)}, ${formatCardTime(event, timezone, language)}`}</span>
+        <span className="event-map-row-club"><AvatarStack size="sm" avatars={[
+          { name: event.club, src: event.club_logo_url ?? "" },
+          ...(event.cohosts ?? []).map(club => ({ name: club.club_name, src: club.logo_url ?? "" })),
+        ]} /><span>{event.club}</span></span>
+      </span>
+    </Button>)}
+  </Stack>;
+}
+
 export function EventsMap({ events, allEvents, school, onEventClick }: { events: Event[]; allEvents: Event[]; school: string; onEventClick: (event: Event) => void }) {
   const { t, i18n } = useTranslation();
+  const mobile = useMobileClickActivation();
   const { getSchoolTimezone } = useSchoolDirectory();
   const { query, venues, center, mappedCount, unmappedCount } = useEventMap(events, allEvents, school);
   const { data: goingSelections = [] } = useGoingEvents();
@@ -50,6 +70,12 @@ export function EventsMap({ events, allEvents, school, onEventClick }: { events:
   const [mapFailed, setMapFailed] = useState(false);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const selectedEvents = venues.flatMap(venue => venue.events).filter(event => selectedIds.includes(event.id));
+  const selectedLocation = selectedEvents[0]?.location?.trim() ?? "";
+  const selectedHeading = t(selectedEvents.every(event => event.location?.trim().toLocaleLowerCase() === selectedLocation.toLocaleLowerCase()) ? "events.views.clusterAt" : "events.views.clusterNear", { count: selectedEvents.length, location: selectedLocation });
+  const selection = selectedEvents.length ? <EventMapSelection events={selectedEvents} goingIds={goingIds} timezone={getSchoolTimezone(school)} language={i18n.language} onEventClick={event => {
+    if (mobile) setSelectedIds([]);
+    onEventClick(event);
+  }} /> : null;
   const settings = controlBox.eventDiscovery.views;
   const data = useMemo(() => ({
     type: "FeatureCollection" as const,
@@ -79,7 +105,7 @@ export function EventsMap({ events, allEvents, school, onEventClick }: { events:
   if (!center) return <EmptyState title={t("events.views.noLocations")} description={t("events.views.noLocationsDescription")} />;
 
   return (
-    <Stack gap={2}>
+    <Stack gap={2} grow>
       <EventViewSurface variant="map" aria-label={t("events.views.map")}>
         <Map
           ref={mapRef}
@@ -90,7 +116,13 @@ export function EventsMap({ events, allEvents, school, onEventClick }: { events:
           onMoveEnd={() => { void refreshMarkers(); }}
           onResize={() => { void refreshMarkers(); }}
           onSourceData={event => { if (event.sourceId === "events" && event.isSourceLoaded) void refreshMarkers(); }}
-          onError={() => { if (!mapLoaded.current) setMapFailed(true); }}
+          onError={event => {
+            // Source/tile errors may arrive before load. Keep that map alive so
+            // Mapbox can finish rendering; only initialization/style failures
+            // can replace the entire viewport with its retry state.
+            const error = event.error as { url?: string };
+            if (!mapLoaded.current && (event.target === null || error.url?.includes("/styles/v1/"))) setMapFailed(true);
+          }}
           cursor="pointer"
         >
           <NavigationControl position="top-right" />
@@ -104,26 +136,25 @@ export function EventsMap({ events, allEvents, school, onEventClick }: { events:
             }} />
           </Marker>)}
         </Map>
-        {selectedEvents.length ? <aside className="event-map-sheet" aria-label={t("events.views.selectEvent")}>
+        {selectedEvents.length && !mobile ? <aside className="event-map-sheet" aria-label={selectedHeading}>
           <Stack direction="horizontal" justify="between" align="center" gap={2}>
-            <strong>{t("events.views.mapSummary", { count: selectedEvents.length })}</strong>
+            <strong>{selectedHeading}</strong>
             <Button variant="ghost" size="icon-sm" aria-label={t("common.close")} onClick={() => setSelectedIds([])}><X /></Button>
           </Stack>
-          <Stack gap={2}>
-            {selectedEvents.map(event => <Button key={event.id} variant="ghost" className="event-map-row" onClick={() => onEventClick(event)}>
-              <EventMapPoster event={event} isGoing={goingIds.has(event.id)} />
-              <span className="event-map-row-copy">
-                <strong>{event.title}</strong>
-                <span>{`${formatCardDate(event, getSchoolTimezone(school), i18n.language)}, ${formatCardTime(event, getSchoolTimezone(school), i18n.language)}`}</span>
-                <span className="event-map-row-club"><AvatarStack size="sm" avatars={[
-                  { name: event.club, src: event.club_logo_url ?? "" },
-                  ...(event.cohosts ?? []).map(club => ({ name: club.club_name, src: club.logo_url ?? "" })),
-                ]} /><span>{event.club}</span></span>
-              </span>
-            </Button>)}
-          </Stack>
+          {selection}
         </aside> : null}
       </EventViewSurface>
+      {mobile ? <Drawer open={selectedEvents.length > 0} onOpenChange={open => { if (!open) setSelectedIds([]); }}>
+        <DrawerContent aria-describedby={undefined}>
+          <DrawerHeader>
+            <Stack direction="horizontal" justify="between" align="center" gap={2}>
+              <DrawerTitle>{selectedHeading}</DrawerTitle>
+              <Button variant="ghost" size="icon-sm" aria-label={t("common.close")} onClick={() => setSelectedIds([])}><X /></Button>
+            </Stack>
+          </DrawerHeader>
+          <DrawerBody>{selection}</DrawerBody>
+        </DrawerContent>
+      </Drawer> : null}
       <Stack direction="horizontal" justify="between" align="center" wrap gap={2}>
         <p className="text-sm text-muted-foreground" role="status">
           {t("events.views.mapSummary", { count: mappedCount })}

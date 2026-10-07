@@ -155,8 +155,13 @@
       "noLocations": "નકશા પર કોઈ સ્થળ ઉપલબ્ધ નથી",
       "noLocationsDescription": "આ કાર્યક્રમો ઓનલાઇન છે અથવા તેમનું સ્થળ આપેલું નથી કે મળ્યું નથી.",
       "mapSummary": "નકશા પર: {{count}}.",
-      "unmapped": "નકશા પર સ્થળ વગર: {{count}}.",
-      "selectEvent": "કાર્યક્રમ ખોલો"
+      "clusterAt": "{{location}} ખાતે {{count}} ઇવેન્ટ",
+      "clusterAt_one": "{{location}} ખાતે {{count}} ઇવેન્ટ",
+      "clusterAt_other": "{{location}} ખાતે {{count}} ઇવેન્ટ",
+      "clusterNear": "{{location}} નજીક {{count}} ઇવેન્ટ",
+      "clusterNear_one": "{{location}} નજીક {{count}} ઇવેન્ટ",
+      "clusterNear_other": "{{location}} નજીક {{count}} ઇવેન્ટ",
+      "unmapped": "નકશા પર સ્થળ વગર: {{count}}."
     }
   }
 }

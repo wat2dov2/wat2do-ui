@@ -350,6 +350,10 @@ def test_pins_existing_tab_and_never_rediscovers_after_navigation(monkeypatch):
         ("Executing JavaScript through AppleScript is turned off. secret", "Enable Brave View"),
         ("Brave is not running. secret", "Open Brave"),
         ("Pinned Instagram tab is closed. secret", "pinned Instagram tab was closed"),
+        (
+            "Brave must be foreground for worker viewport initialization. secret",
+            "Bring the registered Instagram window to the foreground briefly",
+        ),
     ],
 )
 def test_browser_errors_are_actionable_and_sanitized(monkeypatch, detail, expected):
@@ -2361,6 +2365,67 @@ def test_uncertain_creation_is_reconciled_without_replaying_make(monkeypatch, cr
     assert creates == [("99", "first", "https://www.instagram.com/wat2do.ubc/")]
 
 
+def test_ready_primary_viewport_never_selects_a_tab_or_resizes_a_window(monkeypatch):
+    samples = []
+
+    def run(script, arguments, timeout):
+        assert script == browser._EXECUTE_TAB_SCRIPT
+        assert arguments == ("42", browser._VIEWPORT_SOURCE, "99")
+        samples.append(arguments)
+        return '{"width":1526,"height":900}'
+
+    monkeypatch.setattr(browser, "_run_applescript", run)
+    runner = browser._PinnedBraveJavascriptRunner("42", window_id="99")
+    runner.warm_viewport(1, primary=True)
+    runner.warm_viewport(1, primary=True)
+    assert runner._viewport_ready
+    assert len(samples) == 2
+
+
+def test_native_foreground_guards_precede_tab_selection_and_creation():
+    for script, mutation in (
+        (browser._ACTIVATE_TAB_SCRIPT, "set active tab index"),
+        (browser._CREATE_WORKER_TAB_SCRIPT, "make new tab"),
+    ):
+        assert script.index("if not frontmost then") < script.index(mutation)
+    assert browser._RESTORE_ACTIVE_TAB_SCRIPT.index("if not frontmost then") < (
+        browser._RESTORE_ACTIVE_TAB_SCRIPT.index("set active tab index")
+    )
+    assert "activate application" not in browser._ACTIVATE_TAB_SCRIPT
+    assert 'tell application "System Events"' not in browser._ACTIVATE_TAB_SCRIPT
+    assert "frontmost" not in browser._NAVIGATE_TAB_SCRIPT
+    assert "frontmost" not in browser._EXECUTE_TAB_SCRIPT
+    for script, mutation in (
+        (browser._ACTIVATE_TAB_SCRIPT, "set active tab index"),
+        (browser._ACTIVATE_TAB_SCRIPT, "set bounds of browserWindow"),
+        (browser._RESTORE_ACTIVE_TAB_SCRIPT, "set active tab index"),
+    ):
+        before_mutation = script[: script.index(mutation)].rstrip().splitlines()
+        assert any("if not frontmost then" in line for line in before_mutation[-3:])
+        assert any("id of front window" in line for line in before_mutation[-3:])
+
+
+def test_cold_background_viewport_stops_before_any_job_source(monkeypatch):
+    calls = []
+
+    def run(script, arguments, timeout):
+        calls.append(script)
+        if script == browser._EXECUTE_TAB_SCRIPT:
+            assert arguments == ("42", browser._VIEWPORT_SOURCE, "99")
+            return '{"width":0,"height":0}'
+        assert script == browser._ACTIVATE_TAB_SCRIPT
+        raise browser.BrowserSessionError(
+            "Bring the registered Instagram window to the foreground briefly"
+        )
+
+    monkeypatch.setattr(browser, "_run_applescript", run)
+    runner = browser._PinnedBraveJavascriptRunner("42", window_id="99")
+    with pytest.raises(browser.BrowserSessionError, match="foreground briefly"):
+        runner("start readonly request", 1)
+    assert calls == [browser._EXECUTE_TAB_SCRIPT, browser._ACTIVATE_TAB_SCRIPT]
+    assert not runner._viewport_ready
+
+
 def test_all_fifteen_cold_tabs_warm_by_exact_id_and_restore_prior_active_tab(monkeypatch):
     visual_ids = [str(tab) for tab in range(15, 0, -1)]
     active = ["15"]
@@ -2380,7 +2445,9 @@ def test_all_fifteen_cold_tabs_warm_by_exact_id_and_restore_prior_active_tab(mon
         if script == browser._EXECUTE_TAB_SCRIPT:
             tab_id, source, window_id = arguments
             assert source == browser._VIEWPORT_SOURCE
-            assert tab_id == active[0] and tab_id in warmed
+            if tab_id not in warmed:
+                return '{"width":0,"height":0}'
+            assert tab_id == active[0]
             return '{"width":1592,"height":1300}'
         assert script == browser._RESTORE_ACTIVE_TAB_SCRIPT
         tab_id, previous_id, window_id = arguments
@@ -2550,7 +2617,7 @@ def test_primary_preparation_refreshes_cached_viewport_before_control_reads_and_
     monkeypatch.setattr(session, "_prepare_account", prepare)
     assert session.activate_account("41553815702", "wat2do.uwaterloo") == "wat2do.uwaterloo"
     assert calls == (
-        ["cancel", "clear", "activate", "viewport", "restore", "controls"]
+        ["cancel", "clear", "viewport", "activate", "viewport", "restore", "controls"]
         if allow_account_switch
         else ["cancel", "clear", "controls"]
     )

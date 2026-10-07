@@ -150,8 +150,11 @@
       "noLocations": "暂无地图位置",
       "noLocationsDescription": "这些活动在线上举办、缺少地点或地点无法定位。",
       "mapSummary": "地图上：{{count}} 项。",
-      "unmapped": "没有地图位置：{{count}} 项。",
-      "selectEvent": "打开活动"
+      "clusterAt": "{{location}} 有 {{count}} 个活动",
+      "clusterAt_other": "{{location}} 有 {{count}} 个活动",
+      "clusterNear": "{{location}} 附近有 {{count}} 个活动",
+      "clusterNear_other": "{{location}} 附近有 {{count}} 个活动",
+      "unmapped": "没有地图位置：{{count}} 项。"
     }
   }
 }

@@ -1,6 +1,7 @@
 import fcntl
 import json
 import signal
+import sqlite3
 import threading
 from concurrent.futures import ALL_COMPLETED
 from concurrent.futures import wait as wait_for_futures
@@ -257,6 +258,94 @@ def test_unexpected_exception_is_sanitized_and_requires_inspection(queue, monkey
     assert "private request credential details" not in caplog.text
 
 
+@pytest.mark.parametrize("kind", ["engagement", "digest", "retrieval"])
+@pytest.mark.parametrize(
+    "code,reason",
+    [
+        (sqlite3.SQLITE_FULL, "Browser queue storage is full; free disk space before resuming"),
+        (
+            sqlite3.SQLITE_BUSY,
+            "Browser queue storage is locked; inspect competing queue writers before resuming",
+        ),
+        (
+            sqlite3.SQLITE_LOCKED,
+            "Browser queue storage is locked; inspect competing queue writers before resuming",
+        ),
+        (
+            sqlite3.SQLITE_READONLY,
+            "Browser queue storage is read-only; restore write access before resuming",
+        ),
+        (sqlite3.SQLITE_IOERR, "Browser queue storage is unavailable; inspect before resuming"),
+        (
+            sqlite3.SQLITE_FULL | 256,
+            "Browser queue storage is full; free disk space before resuming",
+        ),
+        (None, "Browser queue storage is unavailable; inspect before resuming"),
+    ],
+)
+def test_job_storage_errors_have_safe_actionable_diagnostics(
+    queue, monkeypatch, caplog, kind, code, reason
+):
+    job_id = (
+        _engagement(queue)
+        if kind == "engagement"
+        else queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "storage-error")
+        if kind == "digest"
+        else queue.enqueue_retrieval(
+            school="ubc",
+            recipient_id=RECIPIENT_ID,
+            account_username=ACCOUNT_USERNAME,
+            url="https://www.instagram.com/p/StorageError/",
+        )
+    )
+    failure = sqlite3.OperationalError("private SQL payload and filesystem details")
+    if code is not None:
+        failure.sqlite_errorcode = code
+
+    def fail(*args, **kwargs):
+        raise failure
+
+    monkeypatch.setattr(module, "execute_job", fail)
+
+    assert module.process_next_job(queue)
+
+    assert queue.get(job_id).state == "failed"
+    assert queue.get(job_id).error == reason
+    assert queue.get_setting("paused") == reason
+    assert reason in caplog.text
+    assert "private SQL payload" not in caplog.text
+    assert not queue.is_rate_limited()
+
+
+@pytest.mark.parametrize("source", ["collector", "heartbeat"])
+def test_background_storage_failure_reports_full_disk_without_raw_details(
+    queue, monkeypatch, caplog, source
+):
+    failure = sqlite3.OperationalError("private filesystem details")
+    failure.sqlite_errorcode = sqlite3.SQLITE_FULL
+    reason = "Browser queue storage is full; free disk space before resuming"
+    if source == "collector":
+        stopping = threading.Event()
+
+        def fail():
+            stopping.set()
+            raise failure
+
+        module._poll_source(queue, "source_status", fail, stopping)
+        assert queue.get_setting("source_status")["error"] == reason
+    else:
+        waits = iter([False, True])
+
+        def fail(*args):
+            raise failure
+
+        monkeypatch.setattr(queue, "set_setting", fail)
+        module._keep_worker_alive(queue, SimpleNamespace(wait=lambda _: next(waits)))
+
+    assert reason in caplog.text
+    assert "private filesystem details" not in caplog.text
+
+
 def test_known_account_failure_does_not_quarantine_other_notifications(queue, monkeypatch):
     failed_id = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "cache-missing-account")
 
@@ -268,6 +357,63 @@ def test_known_account_failure_does_not_quarantine_other_notifications(queue, mo
 
     assert queue.get(failed_id).state == "failed"
     assert not queue.get_setting("paused", False)
+
+
+@pytest.mark.parametrize("kind", ["engagement", "digest", "retrieval"])
+@pytest.mark.parametrize("stage", ["preparation", "execution"])
+def test_foreground_initialization_failure_pauses_before_more_jobs_are_claimed(
+    queue, monkeypatch, kind, stage
+):
+    monkeypatch.setattr(module, "CONTROL", module.CONTROL.model_copy(update={"parallel_tabs": 2}))
+    reason = (
+        "Bring the registered Instagram window to the foreground briefly to initialize "
+        "its worker tabs, then resume the browser worker"
+    )
+    ids = [
+        _engagement(queue, f"Foreground{index}")
+        if kind == "engagement"
+        else queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, f"foreground-{index}")
+        if kind == "digest"
+        else queue.enqueue_retrieval(
+            school="ubc",
+            recipient_id=RECIPIENT_ID,
+            account_username=ACCOUNT_USERNAME,
+            url=f"https://www.instagram.com/p/Foreground{index}/",
+        )
+        for index in range(3)
+    ]
+
+    def fail(*args, **kwargs):
+        raise module.BrowserSessionError(reason)
+
+    if stage == "preparation":
+        monkeypatch.setattr(
+            module,
+            "BrowserTabPool",
+            lambda _: SimpleNamespace(settle_registered_tabs=fail, prepare=fail),
+        )
+        monkeypatch.setattr(
+            module,
+            "execute_job",
+            lambda *args, **kwargs: pytest.fail("Preparation must stop first"),
+        )
+    else:
+        monkeypatch.setattr(module, "execute_job", fail)
+
+    assert module.process_next_job(queue)
+
+    assert queue.get_setting("paused") == reason
+    assert queue.get(ids[0]).state == "failed"
+    assert queue.get(ids[0]).error == reason
+    # A streaming read may already occupy the second mocked slot before the
+    # first failure settles. The hold must preserve work not yet admitted.
+    assert queue.get(ids[-1]).state == "pending"
+    assert queue.get(ids[-1]).attempts == 0
+    queue.set_setting("next_engagement_at", 0)
+    assert not module.process_next_job(queue)
+    assert queue.get(ids[-1]).state == "pending"
+    assert queue.get(ids[-1]).attempts == 0
+    assert not queue.is_rate_limited()
 
 
 @pytest.mark.parametrize(

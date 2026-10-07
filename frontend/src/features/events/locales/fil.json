@@ -155,8 +155,13 @@
       "noLocations": "Walang lokasyon sa mapa",
       "noLocationsDescription": "Online ang mga event na ito o wala o hindi mahanap ang lokasyon.",
       "mapSummary": "Nasa mapa: {{count}}.",
-      "unmapped": "Walang lokasyon sa mapa: {{count}}.",
-      "selectEvent": "Magbukas ng event"
+      "clusterAt": "{{count}} kaganapan sa {{location}}",
+      "clusterAt_one": "{{count}} kaganapan sa {{location}}",
+      "clusterAt_other": "{{count}} kaganapan sa {{location}}",
+      "clusterNear": "{{count}} kaganapan malapit sa {{location}}",
+      "clusterNear_one": "{{count}} kaganapan malapit sa {{location}}",
+      "clusterNear_other": "{{count}} kaganapan malapit sa {{location}}",
+      "unmapped": "Walang lokasyon sa mapa: {{count}}."
     }
   }
 }

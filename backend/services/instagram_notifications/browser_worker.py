@@ -5,6 +5,7 @@ from __future__ import annotations
 import fcntl
 import logging
 import signal
+import sqlite3
 import threading
 import time
 from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
@@ -31,6 +32,33 @@ from services.instagram_notifications.browser_session import (
 log = logging.getLogger(__name__)
 # The old notification workflows use this same lock until their code is deployed.
 BROWSER_LOCK_PATH = "/tmp/wat2do_instagram_browser.lock"
+
+
+def _storage_failure_reason(error: BaseException) -> str | None:
+    """Classify queue failures by SQLite's code without exposing SQL or file paths."""
+    if not isinstance(error, sqlite3.Error):
+        return None
+    code = getattr(error, "sqlite_errorcode", None)
+    code = code & 0xFF if type(code) is int else None
+    if code == sqlite3.SQLITE_FULL:
+        return "Browser queue storage is full; free disk space before resuming"
+    if code in {sqlite3.SQLITE_BUSY, sqlite3.SQLITE_LOCKED}:
+        return "Browser queue storage is locked; inspect competing queue writers before resuming"
+    if code == sqlite3.SQLITE_READONLY:
+        return "Browser queue storage is read-only; restore write access before resuming"
+    return "Browser queue storage is unavailable; inspect before resuming"
+
+
+def _requires_human_recovery(error: BaseException) -> bool:
+    return any(
+        reason in str(error)
+        for reason in (
+            "cancellation could not be confirmed",
+            "human account recovery",
+            "human reauthorization",
+            "Bring the registered Instagram window to the foreground briefly",
+        )
+    )
 
 
 @contextmanager
@@ -191,14 +219,7 @@ def process_next_job(queue: BrowserJobQueue, *, allow_engagement: bool = True) -
                 queue.defer_for_rate_limit(job, str(exc))
                 queue.finish(job.id, error=str(exc))
             except (BrowserSessionError, TimeoutError) as exc:
-                if any(
-                    reason in str(exc)
-                    for reason in (
-                        "cancellation could not be confirmed",
-                        "human account recovery",
-                        "human reauthorization",
-                    )
-                ):
+                if _requires_human_recovery(exc):
                     queue.set_setting("paused", str(exc))
                 queue.finish(job.id, error=str(exc))
             except (KeyboardInterrupt, SystemExit):
@@ -209,10 +230,12 @@ def process_next_job(queue: BrowserJobQueue, *, allow_engagement: bool = True) -
                 raise
             except Exception as exc:
                 # Never persist raw library exceptions that may include request credentials.
-                error = f"Browser job failed ({type(exc).__name__}); inspect before retrying"
+                error = _storage_failure_reason(exc) or (
+                    f"Browser job failed ({type(exc).__name__}); inspect before retrying"
+                )
+                log.error("Browser job %s failed: %s", job.id, error)
                 queue.set_setting("paused", error)
                 queue.finish(job.id, error=error)
-                log.error("Browser job %s failed (%s)", job.id, type(exc).__name__)
             finally:
                 completed = queue.get(job.id)
                 if completed:
@@ -309,17 +332,13 @@ def _process_batch(
             queue.set_setting("retrieval_pool_account", None)
         if isinstance(exc, (BrowserSessionError, TimeoutError)):
             error = str(exc)
-            if any(
-                reason in error
-                for reason in (
-                    "cancellation could not be confirmed",
-                    "human account recovery",
-                    "human reauthorization",
-                )
-            ):
+            if _requires_human_recovery(exc):
                 queue.set_setting("paused", error)
         else:
-            error = f"Browser job failed ({type(exc).__name__}); inspect before retrying"
+            error = _storage_failure_reason(exc) or (
+                f"Browser job failed ({type(exc).__name__}); inspect before retrying"
+            )
+            log.error("Browser job %s failed: %s", job.id, error)
             queue.set_setting("paused", error)
         retryable = (
             job.kind in {"digest", "retrieval"}
@@ -501,9 +520,13 @@ def maintain_tab_pool(queue: BrowserJobQueue) -> None:
         except BrowserSessionError as exc:
             queue.set_setting("paused", str(exc))
         except Exception as exc:
+            error = _storage_failure_reason(exc) or (
+                f"Worker tab maintenance failed ({type(exc).__name__}); inspect before retrying"
+            )
+            log.error("%s", error)
             queue.set_setting(
                 "paused",
-                f"Worker tab maintenance failed ({type(exc).__name__}); inspect before retrying",
+                error,
             )
 
 
@@ -518,13 +541,15 @@ def _poll_source(
         try:
             collect()
         except Exception as exc:
+            error = _storage_failure_reason(exc) or type(exc).__name__
             try:
-                queue.set_setting(
-                    status_key, {"checked_at": time.time(), "error": type(exc).__name__}
+                queue.set_setting(status_key, {"checked_at": time.time(), "error": error})
+            except Exception as storage_error:
+                log.error(
+                    "Could not record browser source collection failure: %s",
+                    _storage_failure_reason(storage_error) or type(storage_error).__name__,
                 )
-            except Exception:
-                log.error("Could not record browser source collection failure")
-            log.error("Browser source %s failed (%s)", status_key, type(exc).__name__)
+            log.error("Browser source %s failed (%s)", status_key, error)
         stopping.wait(CONTROL.source_poll_interval_seconds)
 
 
@@ -558,7 +583,10 @@ def _keep_worker_alive(queue: BrowserJobQueue, stopping: threading.Event) -> Non
         try:
             queue.set_setting("worker", {"running": True, "heartbeat": time.time()})
         except Exception as exc:
-            log.error("Could not refresh browser worker heartbeat (%s)", type(exc).__name__)
+            log.error(
+                "Could not refresh browser worker heartbeat (%s)",
+                _storage_failure_reason(exc) or type(exc).__name__,
+            )
 
 
 def run_worker(queue: BrowserJobQueue, *, once: bool = False, collect: bool = True) -> None:

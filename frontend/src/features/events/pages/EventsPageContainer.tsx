@@ -101,7 +101,7 @@ export function EventsPageContainer({
 
   return (
     <>
-      <div className="space-y-2">
+      <Stack gap={2} data-page-layout={view === "map" ? "viewport" : undefined}>
         <PageHeader variant="listing">
           <PageCountHeading
             count={isLoading ? null : totalEvents}
@@ -189,7 +189,9 @@ export function EventsPageContainer({
                 </FilterBar>
         </PageHeader>
 
-        <main
+        <Stack
+          as="main"
+          grow={view === "map"}
           className="relative z-10 w-full"
           role="main"
           aria-label={t("search.ariaLabel")}
@@ -215,8 +217,8 @@ export function EventsPageContainer({
               }
             />
           )}
-        </main>
-      </div>
+        </Stack>
+      </Stack>
       {hasOpenedDetails ? (
         <EventDetailsModal
           eventId={selectedEventId}

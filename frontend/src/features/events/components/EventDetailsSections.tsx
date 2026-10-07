@@ -217,11 +217,14 @@ function EventRegistrationCard({
   const { profileCompleted, userEmail, userFullName, userAvatarUrl } = useAuthState();
   const going = useGoingEventSelection(event, school);
   const { getSchoolTimezone } = useSchoolDirectory();
-  const now = useCurrentTime();
+  const now = going.currentTimeMs;
   const [pickerOpen, setPickerOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const isGoingActive = profileCompleted && going.isActive;
   const displayName = userFullName || userEmail?.split("@")[0] || "";
+  const disabledReason = going.isTimeUnavailable
+    ? t("events.goingEvents.timeUnavailable")
+    : undefined;
 
   const nextSelectedOccurrence = going.selectableOccurrences.find((occurrence) =>
     going.selectedSelectableIds.includes(occurrence.id),
@@ -343,6 +346,7 @@ function EventRegistrationCard({
                 isSubmitDisabled={
                   going.selectableOccurrences.length === 0
                 }
+                submitDisabledReason={disabledReason}
                 onAuthenticated={startRegistration}
               />
             )}
@@ -356,9 +360,9 @@ function EventRegistrationCard({
             variant="primary"
             className="w-full"
             disabled={going.isPending || going.selectableOccurrences.length === 0}
+            disabledReason={disabledReason}
             onClick={() => void startRegistration()}
             aria-label={t("events.going")}
-            title={t("events.going")}
           >
             {t("events.going")}
           </Button>

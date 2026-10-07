@@ -2,7 +2,10 @@ from types import SimpleNamespace
 from uuid import UUID
 
 import pytest
+from postgrest.exceptions import APIError
 
+from core.errors import OCCURRENCE_NOT_SELECTABLE
+from core.exceptions import ValidationError
 from services import going_event_service
 
 USER_ID = "11111111-1111-1111-1111-111111111111"
@@ -58,6 +61,17 @@ def test_set_going_occurrences_uses_single_rpc(fake_sb, patch_sb):
             "p_occurrence_ids": [OCCURRENCE_1],
         },
     )
+
+
+@pytest.mark.parametrize("rpc_message", ["occurrence_not_selectable", "event_cancelled"])
+def test_set_going_occurrences_reports_time_unavailable(fake_sb, patch_sb, rpc_message):
+    patch_sb("services.going_event_service")
+    fake_sb.execute.side_effect = APIError(
+        {"code": "P0001", "message": rpc_message, "details": None, "hint": None}
+    )
+
+    with pytest.raises(ValidationError, match=OCCURRENCE_NOT_SELECTABLE):
+        going_event_service.set_going_occurrences(USER_ID, 42, [UUID(OCCURRENCE_1)])
 
 
 def test_get_going_counts_for_events_uses_distinct_user_rpc(fake_sb, patch_sb):

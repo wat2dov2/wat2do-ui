@@ -150,8 +150,11 @@
       "noLocations": "Không có địa điểm trên bản đồ",
       "noLocationsDescription": "Các sự kiện này trực tuyến hoặc thiếu địa điểm hay không tìm được vị trí.",
       "mapSummary": "Trên bản đồ: {{count}}.",
-      "unmapped": "Không có vị trí trên bản đồ: {{count}}.",
-      "selectEvent": "Mở sự kiện"
+      "clusterAt": "{{count}} sự kiện tại {{location}}",
+      "clusterAt_other": "{{count}} sự kiện tại {{location}}",
+      "clusterNear": "{{count}} sự kiện gần {{location}}",
+      "clusterNear_other": "{{count}} sự kiện gần {{location}}",
+      "unmapped": "Không có vị trí trên bản đồ: {{count}}."
     }
   }
 }

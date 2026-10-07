@@ -155,8 +155,13 @@
       "noLocations": "मानचित्र पर कोई स्थान उपलब्ध नहीं",
       "noLocationsDescription": "ये कार्यक्रम ऑनलाइन हैं या उनका स्थान नहीं दिया गया है या नहीं मिला।",
       "mapSummary": "मानचित्र पर: {{count}}।",
-      "unmapped": "मानचित्र पर स्थान के बिना: {{count}}।",
-      "selectEvent": "कार्यक्रम खोलें"
+      "clusterAt": "{{location}} पर {{count}} कार्यक्रम",
+      "clusterAt_one": "{{location}} पर {{count}} कार्यक्रम",
+      "clusterAt_other": "{{location}} पर {{count}} कार्यक्रम",
+      "clusterNear": "{{location}} के पास {{count}} कार्यक्रम",
+      "clusterNear_one": "{{location}} के पास {{count}} कार्यक्रम",
+      "clusterNear_other": "{{location}} के पास {{count}} कार्यक्रम",
+      "unmapped": "मानचित्र पर स्थान के बिना: {{count}}।"
     }
   }
 }

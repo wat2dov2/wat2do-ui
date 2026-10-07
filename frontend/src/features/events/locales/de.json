@@ -155,8 +155,13 @@
       "noLocations": "Keine Kartenstandorte verfügbar",
       "noLocationsDescription": "Diese Veranstaltungen sind online oder haben fehlende oder nicht auffindbare Standorte.",
       "mapSummary": "Auf der Karte: {{count}}.",
-      "unmapped": "Ohne Kartenstandort: {{count}}.",
-      "selectEvent": "Veranstaltung öffnen"
+      "clusterAt": "{{count}} Veranstaltung in {{location}}",
+      "clusterAt_one": "{{count}} Veranstaltung in {{location}}",
+      "clusterAt_other": "{{count}} Veranstaltungen in {{location}}",
+      "clusterNear": "{{count}} Veranstaltung in der Nähe von {{location}}",
+      "clusterNear_one": "{{count}} Veranstaltung in der Nähe von {{location}}",
+      "clusterNear_other": "{{count}} Veranstaltungen in der Nähe von {{location}}",
+      "unmapped": "Ohne Kartenstandort: {{count}}."
     }
   }
 }

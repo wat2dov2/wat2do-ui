@@ -12,7 +12,7 @@ test("map camera survives feed refreshes, marker selection, closing the sheet an
     module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true,
   } }).outputText;
   const require = createRequire(filename);
-  const listing = { id: 1, title: "Cooking", club: "Cooking club", occurrences: [] } as unknown as Event;
+  const listing = { id: 1, title: "Cooking", club: "Cooking club", location: "Student Life Centre", occurrences: [] } as unknown as Event;
   const secondListing = { ...listing, id: 2, title: "Dinner" };
   let markerEvents = [listing, secondListing];
   const states: unknown[] = [];
@@ -22,6 +22,7 @@ test("map camera survives feed refreshes, marker selection, closing the sheet an
   let fits = 0;
   let openedEvents = 0;
   let retries = 0;
+  let mobile = false;
   const exports = {} as { EventsMap: (props: object) => Node };
   interface Node { type: unknown; props: { children?: Node | Node[]; [key: string]: unknown } }
   const primitive = new Proxy({}, { get: (_, key) => String(key) });
@@ -41,7 +42,8 @@ test("map camera survives feed refreshes, marker selection, closing the sheet an
     if (id.endsWith("eventMap.api")) return { MAPBOX_TOKEN: "test" };
     if (id.endsWith("useDarkMode")) return { useDarkMode: () => ({ isDarkMode: false }) };
     if (id.endsWith("useSchoolDirectory")) return { useSchoolDirectory: () => ({ getSchoolTimezone: () => "UTC" }) };
-    if (id === "react-i18next") return { useTranslation: () => ({ t: (key: string) => key, i18n: { language: "en" } }) };
+    if (id.endsWith("useMouseDownPress")) return { useMobileClickActivation: () => mobile };
+    if (id === "react-i18next") return { useTranslation: () => ({ t: (key: string, args?: { count: number; location: string }) => args && key.includes("cluster") ? `${args.count} events ${key.endsWith("At") ? "at" : "near"} ${args.location}` : key, i18n: { language: "en" } }) };
     if (id.endsWith("controlBox")) return { controlBox: { eventDiscovery: { views: { map_initial_zoom: 14, map_style: "mapbox://styles/mapbox/streets-v12", map_marker_preview_count: 3 } } } };
     if (id.endsWith("utils/event")) return { getEventImageStatus: () => "default" };
     if (id.endsWith("utils/date")) return { formatCardDate: () => "Today", formatCardTime: () => "6 PM" };
@@ -58,8 +60,12 @@ test("map camera survives feed refreshes, marker selection, closing the sheet an
   let map = find(tree, node => node.type === "Map")!;
   expect(map.props.mapStyle).toBe("mapbox://styles/mapbox/streets-v12");
   expect(map.props.cooperativeGestures).not.toBe(true);
-  // A failed first load still exposes the existing retry action.
-  (map.props.onError as () => void)();
+  // Mapbox can report a missing source tile before its first load. That must
+  // not unmount Waterloo's canvas while other source tiles are still loading.
+  (map.props.onError as (event: object) => void)({ target: {}, error: { message: "Failed to fetch", url: "https://api.mapbox.com/v4/mapbox.mapbox-streets-v8/14/4526/5985.vector.pbf" } });
+  expect(find(render(), node => node.type === "Map")).toBeDefined();
+  // A genuine initialization failure still exposes the existing retry action.
+  (map.props.onError as (event: object) => void)({ target: null, error: new Error("Failed to initialize WebGL") });
   tree = render();
   expect(find(tree, node => node.type === "Map")).toBeUndefined();
   const failed = find(tree, node => node.type === "EmptyState")!;
@@ -73,7 +79,7 @@ test("map camera survives feed refreshes, marker selection, closing the sheet an
   expect(fits).toBe(1);
   // Individual resource failures after a successful load retain the canvas
   // and its existing camera instead of switching to a whole-map failure.
-  (map.props.onError as () => void)();
+  (map.props.onError as (event: object) => void)({ target: {}, error: { message: "Failed to fetch" } });
   tree = render();
   expect(find(tree, node => node.type === "Map")).toBeDefined();
   expect(find(tree, node => node.type === "EmptyState")).toBeUndefined();
@@ -86,18 +92,38 @@ test("map camera survives feed refreshes, marker selection, closing the sheet an
   expect(stopped).toBe(true);
   tree = render();
   expect(find(tree, node => node.type === "aside")).toBeDefined();
+  expect(find(tree, node => node.type === "aside")?.props["aria-label"]).toBe("2 events at Student Life Centre");
   (find(tree, node => node.props.className === "event-map-row")!.props.onClick as () => void)();
   expect(openedEvents).toBe(1);
   tree = render();
+  expect(find(tree, node => node.type === "aside")).toBeDefined();
   expect(fits).toBe(1);
   (find(tree, node => node.props["aria-label"] === "common.close")!.props.onClick as () => void)();
   tree = render();
   expect(find(tree, node => node.type === "aside")).toBeUndefined();
   expect(fits).toBe(1);
+  markerEvents = [listing, { ...secondListing, location: "Davis Centre" }];
+  (find(render(), node => node.props.className === "event-map-marker")!.props.onClick as (event: object) => void)({ stopPropagation() {} });
+  expect(find(render(), node => node.type === "aside")?.props["aria-label"]).toBe("2 events near Student Life Centre");
+  mobile = true;
+  tree = render();
+  expect(find(tree, node => node.type === "aside")).toBeUndefined();
+  let drawer = find(tree, node => node.type === "Drawer")!;
+  expect(drawer.props.open).toBe(true);
+  expect(find(drawer, node => node.type === "DrawerTitle")?.props.children).toBe("2 events near Student Life Centre");
+  (find(drawer, node => node.props.className === "event-map-row")!.props.onClick as () => void)();
+  expect(openedEvents).toBe(2);
+  expect(find(render(), node => node.type === "Drawer")?.props.open).toBe(false);
+  (find(render(), node => node.props.className === "event-map-marker")!.props.onClick as (event: object) => void)({ stopPropagation() {} });
+  drawer = find(render(), node => node.type === "Drawer")!;
+  expect(drawer.props.open).toBe(true);
+  (drawer.props.onOpenChange as (open: boolean) => void)(false);
+  expect(find(render(), node => node.type === "Drawer")?.props.open).toBe(false);
+  mobile = false;
   markerEvents = [listing];
   tree = render();
   (find(tree, node => node.props.className === "event-map-marker")!.props.onClick as (event: object) => void)({ stopPropagation() {} });
-  expect(openedEvents).toBe(2);
+  expect(openedEvents).toBe(3);
   expect(find(render(), node => node.type === "aside")).toBeUndefined();
   expect(fits).toBe(1);
   markerEvents = [];

@@ -155,8 +155,13 @@
       "noLocations": "نقشے پر کوئی مقام دستیاب نہیں",
       "noLocationsDescription": "یہ تقریبات آن لائن ہیں یا ان کے مقامات نامعلوم ہیں۔",
       "mapSummary": "نقشے پر: {{count}}۔",
-      "unmapped": "نقشے پر مقام کے بغیر: {{count}}۔",
-      "selectEvent": "تقریب کھولیں"
+      "clusterAt": "{{location}} پر {{count}} تقریب",
+      "clusterAt_one": "{{location}} پر {{count}} تقریب",
+      "clusterAt_other": "{{location}} پر {{count}} تقریبات",
+      "clusterNear": "{{location}} کے قریب {{count}} تقریب",
+      "clusterNear_one": "{{location}} کے قریب {{count}} تقریب",
+      "clusterNear_other": "{{location}} کے قریب {{count}} تقریبات",
+      "unmapped": "نقشے پر مقام کے بغیر: {{count}}۔"
     }
   }
 }

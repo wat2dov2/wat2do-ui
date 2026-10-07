@@ -160,8 +160,15 @@
       "noLocations": "Nenhum local disponível no mapa",
       "noLocationsDescription": "Estes eventos são virtuais ou têm locais ausentes ou não encontrados.",
       "mapSummary": "No mapa: {{count}}.",
-      "unmapped": "Sem local no mapa: {{count}}.",
-      "selectEvent": "Abrir um evento"
+      "clusterAt": "{{count}} evento em {{location}}",
+      "clusterAt_one": "{{count}} evento em {{location}}",
+      "clusterAt_many": "{{count}} eventos em {{location}}",
+      "clusterAt_other": "{{count}} eventos em {{location}}",
+      "clusterNear": "{{count}} evento perto de {{location}}",
+      "clusterNear_one": "{{count}} evento perto de {{location}}",
+      "clusterNear_many": "{{count}} eventos perto de {{location}}",
+      "clusterNear_other": "{{count}} eventos perto de {{location}}",
+      "unmapped": "Sem local no mapa: {{count}}."
     }
   }
 }

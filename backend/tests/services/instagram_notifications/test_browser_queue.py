@@ -339,14 +339,14 @@ def test_progressive_backoff_survives_restart_and_caps_without_changing_human_pa
 
 
 @pytest.mark.parametrize("kind", ["digest", "retrieval", "engagement", "inspection"])
-def test_fresh_success_after_expiry_resets_backoff_but_keeps_deadline(queue, monkeypatch, kind):
+def test_fresh_success_after_recovery_resets_backoff_but_keeps_deadline(queue, monkeypatch, kind):
     clock = _clock(monkeypatch)
     queue.defer_for_rate_limit(None, "HTTP 429")
     clock.now += module.CONTROL.rate_limit_backoff_seconds
     queue.defer_for_rate_limit(None, "HTTP 429")
     deadline = queue.get_setting("browser_rate_limit_until")
     backoff = queue.get_setting("browser_rate_limit_backoff_seconds")
-    clock.now = deadline
+    clock.now = deadline + module.CONTROL.rate_limit_recovery_seconds
     job_id = (
         queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "progressive-reset")
         if kind == "digest"
@@ -367,7 +367,7 @@ def test_fresh_success_after_expiry_resets_backoff_but_keeps_deadline(queue, mon
     )
     active = queue.claim_next()
     assert active.id == job_id
-    assert active.started_at == deadline
+    assert active.started_at == clock.now
 
     queue.finish(job_id, result={"status": "succeeded"})
 
@@ -379,6 +379,76 @@ def test_fresh_success_after_expiry_resets_backoff_but_keeps_deadline(queue, mon
     expected = backoff * 2 if kind == "inspection" else module.CONTROL.rate_limit_backoff_seconds
     assert queue.get_setting("browser_rate_limit_backoff_seconds") == expected
     assert queue.get_setting("browser_rate_limit_until") == clock.now + expected
+
+
+@pytest.mark.parametrize("kind", ["digest", "retrieval", "engagement"])
+def test_one_success_after_cooldown_does_not_reset_sustained_rate_limits(queue, monkeypatch, kind):
+    clock = _clock(monkeypatch)
+    queue.defer_for_rate_limit(None, "HTTP 429")
+    clock.now = queue.get_setting("browser_rate_limit_until")
+    job_id = (
+        queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "early-reset")
+        if kind == "digest"
+        else queue.enqueue_retrieval(
+            school="ubc",
+            recipient_id=RECIPIENT_ID,
+            account_username=ACCOUNT_USERNAME,
+            url="https://www.instagram.com/p/EarlyReset/",
+        )
+        if kind == "retrieval"
+        else _engagement(queue, "EarlyReset")
+    )
+    assert queue.claim_next().id == job_id
+
+    queue.finish(job_id, result={"status": "succeeded"})
+
+    assert queue.get_setting("browser_rate_limit_backoff_seconds") == (
+        module.CONTROL.rate_limit_backoff_seconds
+    )
+    queue.defer_for_rate_limit(None, "HTTP 429")
+    assert queue.get_setting("browser_rate_limit_backoff_seconds") == (
+        module.CONTROL.rate_limit_backoff_seconds * 2
+    )
+
+
+@pytest.mark.parametrize("starts_after_recovery", [False, True])
+def test_rate_limit_recovery_requires_a_fresh_job_after_the_quiet_window(
+    queue, monkeypatch, starts_after_recovery
+):
+    clock = _clock(monkeypatch)
+    queue.defer_for_rate_limit(None, "HTTP 429")
+    deadline = queue.get_setting("browser_rate_limit_until")
+    recovered_at = deadline + module.CONTROL.rate_limit_recovery_seconds
+    clock.now = recovered_at if starts_after_recovery else recovered_at - 0.01
+    job_id = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "recovery-boundary")
+    queue.claim_next()
+    clock.now = recovered_at + 1
+
+    queue.finish(job_id, result={"status": "succeeded"})
+
+    assert queue.get_setting("browser_rate_limit_backoff_seconds") == (
+        0 if starts_after_recovery else module.CONTROL.rate_limit_backoff_seconds
+    )
+
+
+def test_another_rate_limit_restarts_the_recovery_window(queue, monkeypatch):
+    clock = _clock(monkeypatch)
+    queue.defer_for_rate_limit(None, "HTTP 429")
+    original_recovery = (
+        queue.get_setting("browser_rate_limit_until") + module.CONTROL.rate_limit_recovery_seconds
+    )
+    clock.now = original_recovery - 1
+    queue.defer_for_rate_limit(None, "HTTP 429")
+    clock.now = queue.get_setting("browser_rate_limit_until")
+    assert clock.now > original_recovery
+    job_id = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "renewed-recovery")
+    queue.claim_next()
+
+    queue.finish(job_id, result={"status": "succeeded"})
+
+    assert queue.get_setting("browser_rate_limit_backoff_seconds") == (
+        module.CONTROL.rate_limit_backoff_seconds * 2
+    )
 
 
 @pytest.mark.parametrize("finish_after_expiry", [False, True])

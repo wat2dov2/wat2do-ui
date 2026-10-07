@@ -155,8 +155,13 @@
       "noLocations": "ਨਕਸ਼ੇ ਤੇ ਕੋਈ ਥਾਂ ਉਪਲਬਧ ਨਹੀਂ",
       "noLocationsDescription": "ਇਹ ਸਮਾਗਮ ਆਨਲਾਈਨ ਹਨ ਜਾਂ ਉਨ੍ਹਾਂ ਦੀ ਥਾਂ ਨਹੀਂ ਦਿੱਤੀ ਜਾਂ ਨਹੀਂ ਮਿਲੀ।",
       "mapSummary": "ਨਕਸ਼ੇ ਤੇ: {{count}}।",
-      "unmapped": "ਨਕਸ਼ੇ ਤੇ ਥਾਂ ਤੋਂ ਬਿਨਾਂ: {{count}}।",
-      "selectEvent": "ਸਮਾਗਮ ਖੋਲ੍ਹੋ"
+      "clusterAt": "{{location}} ਵਿਖੇ {{count}} ਸਮਾਗਮ",
+      "clusterAt_one": "{{location}} ਵਿਖੇ {{count}} ਸਮਾਗਮ",
+      "clusterAt_other": "{{location}} ਵਿਖੇ {{count}} ਸਮਾਗਮ",
+      "clusterNear": "{{location}} ਦੇ ਨੇੜੇ {{count}} ਸਮਾਗਮ",
+      "clusterNear_one": "{{location}} ਦੇ ਨੇੜੇ {{count}} ਸਮਾਗਮ",
+      "clusterNear_other": "{{location}} ਦੇ ਨੇੜੇ {{count}} ਸਮਾਗਮ",
+      "unmapped": "ਨਕਸ਼ੇ ਤੇ ਥਾਂ ਤੋਂ ਬਿਨਾਂ: {{count}}।"
     }
   }
 }

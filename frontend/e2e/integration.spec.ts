@@ -1918,7 +1918,9 @@ test.describe("Events Page", () => {
     expect(mapRequests).toEqual([]);
   });
 
-  test("map renders ready pins before a slow venue, opens drawers and zooms with an ordinary wheel", async ({ page, next }) => {
+  for (const viewport of [{ width: 1280, height: 900 }, { width: 390, height: 844 }]) {
+  test(`map fills its viewport, tolerates an initial tile failure and opens event drawers at ${viewport.width}x${viewport.height}`, async ({ page, next }) => {
+    await page.setViewportSize(viewport);
     const startsAt = new Date(Date.now() + 3_600_000).toISOString();
     const events = ["Map dinner", "Map talk", "Map workshop"].map((title, index) => ({
       id: 9300 + index, title, club: "Campus Club", club_id: 1, school: "uwaterloo",
@@ -1947,9 +1949,14 @@ test.describe("Events Page", () => {
           properties: { feature_type: "poi", name: venue },
         }] } });
       } else if (url.pathname.includes("/styles/")) {
-        await route.fulfill({ json: { version: 8, sources: {}, layers: [
+        await route.fulfill({ json: { version: 8, sources: {
+          unavailable: { type: "vector", tiles: ["https://api.mapbox.com/test/unavailable/{z}/{x}/{y}.pbf"] },
+        }, layers: [
           { id: "background", type: "background", paint: { "background-color": "#d7efcf" } },
+          { id: "unavailable", type: "circle", source: "unavailable", "source-layer": "points" },
         ] } });
+      } else if (url.pathname.includes("/test/unavailable/")) {
+        await route.fulfill({ status: 503, body: "Temporary tile failure" });
       } else await route.fulfill({ json: {} });
     });
     try {
@@ -1957,6 +1964,17 @@ test.describe("Events Page", () => {
       await page.getByRole("combobox", { name: "Event view" }).click();
       await page.getByRole("option", { name: "Map", exact: true }).click();
       await expect(page.locator(".mapboxgl-canvas")).toBeVisible();
+      await expect(page.getByText("Could not load the event map", { exact: true })).toHaveCount(0);
+      const scrollRoot = page.locator(".main-content-grid");
+      await expect.poll(() => scrollRoot.evaluate(element => element.scrollHeight - element.clientHeight)).toBeLessThanOrEqual(1);
+      const surface = page.locator('[data-slot="event-view-surface"][data-view="map"]');
+      const main = page.getByRole("main", { name: "Events list" });
+      await expect.poll(async () => {
+        const mapBox = (await surface.boundingBox())!;
+        const contentBox = (await main.boundingBox())!;
+        return Math.abs(contentBox.width - mapBox.width);
+      }).toBeLessThanOrEqual(1);
+      await expect.poll(async () => (await surface.boundingBox())!.height).toBeGreaterThan(viewport.height * 0.5);
       const cluster = page.getByRole("button", { name: "Map dinner, Map talk", exact: true });
       await expect(cluster).toBeVisible();
       await expect(cluster).toHaveCSS("width", "64px");
@@ -1967,13 +1985,19 @@ test.describe("Events Page", () => {
       await expect(cluster).not.toHaveCSS("transform", "none");
       await expect(page.getByRole("combobox", { name: "Open an event", exact: true })).toHaveCount(0);
       await cluster.click();
-      const sheet = page.getByRole("complementary", { name: "Open an event" });
+      const sheet = page.getByRole(viewport.width < 640 ? "dialog" : "complementary", { name: "2 events at Student Life Centre", exact: true });
       await expect(sheet).toBeVisible();
+      if (viewport.width < 640) {
+        await expect(sheet).toHaveAttribute("data-vaul-drawer-direction", "bottom");
+        const drawerBox = (await sheet.boundingBox())!;
+        expect(Math.abs(drawerBox.y + drawerBox.height - viewport.height)).toBeLessThanOrEqual(1);
+      }
       await expect(sheet.getByRole("img", { name: "Campus Club", exact: true })).toHaveCount(2);
       await sheet.getByRole("button", { name: /Map dinner/ }).click();
       await expect(page.getByRole("dialog", { name: "Map dinner", exact: true })).toBeVisible();
+      if (viewport.width < 640) await expect(sheet).toBeHidden();
       await page.keyboard.press("Escape");
-      await sheet.getByRole("button", { name: "Close", exact: true }).click();
+      if (viewport.width >= 640) await sheet.getByRole("button", { name: "Close", exact: true }).click();
       finishSlow();
       const single = page.getByRole("button", { name: "Map workshop", exact: true });
       await expect(single).toBeVisible();
@@ -2000,6 +2024,7 @@ test.describe("Events Page", () => {
       finishSlow();
     }
   });
+  }
 
   for (const viewport of [{ width: 390, height: 520 }, { width: 1280, height: 900 }]) {
   test(`calendar overflow stays visible and opens its day at ${viewport.width}x${viewport.height}`, async ({ page, next }) => {
@@ -3230,6 +3255,97 @@ test.describe("Events Page", () => {
     await expect(
       newBadge.locator("xpath=ancestor::div[contains(@class, 'absolute')][1]"),
     ).toHaveClass(/top-0.*left-0/);
+  });
+
+  for (const authenticated of [false, true]) {
+    test(`started event Going is disabled with a hover explanation ${authenticated ? "when signed in" : "before sign in"}`, async ({ page, next }) => {
+      if (authenticated) await seedAuthenticatedSession(page, next);
+      const now = new Date();
+      await page.clock.setFixedTime(now);
+      let writes = 0;
+      await mockApi(page, next, url => apiPath(url) === "/events/1", async () => ({ json: {
+        id: 1, club_id: 1, title: "Workshop in progress", school: "uwaterloo", club: "UW Tech Club",
+        description: "This workshop has begun", location: "SLC", price: 0, food: [], registration: true,
+        source_image_url: null, category: "Career", cancelled: false,
+        occurrences: [{ id: "started-session", event_id: 1, dtstart_utc: new Date(now.getTime() - 60_000).toISOString(), dtend_utc: new Date(now.getTime() + 3_600_000).toISOString() }],
+      } }));
+      await mockApi(page, next, url => apiPath(url) === "/going-events/1" || apiPath(url) === "/auth/send-otp", async () => {
+        writes++;
+        return { status: 400, json: { detail: "Must not register a started event" } };
+      });
+      for (const surface of ["drawer", "page"]) {
+        await page.goto(surface === "drawer" ? BASE : `${BASE}/events/1`);
+        if (surface === "drawer") await page.locator('article[data-event-id="1"]:visible').click();
+        const host = surface === "drawer" ? page.getByRole("dialog", { name: "Workshop in progress" }) : page;
+        if (!authenticated) await host.getByTestId("event-registration-auth").getByLabel("Email address").fill(TEST_EMAIL);
+        const goingButton = host.getByRole("button", { name: "Going", exact: true });
+        await expect(goingButton).toBeDisabled();
+        const tooltipTarget = host.locator('[data-slot="disabled-button-trigger"]');
+        await tooltipTarget.hover();
+        await expect(page.getByRole("tooltip")).toContainText("This event has already started or was cancelled");
+        await page.mouse.move(0, 0);
+        await tooltipTarget.focus();
+        await expect(page.getByRole("tooltip")).toContainText("This event has already started or was cancelled");
+        await page.keyboard.press("Enter");
+        expect(writes).toBe(0);
+      }
+    });
+  }
+
+  test("Going disables at the start instant while future recurring sessions remain available", async ({ page, next }) => {
+    await seedAuthenticatedSession(page, next);
+    const now = new Date();
+    await page.clock.install({ time: new Date(now.getTime() - 3_600_000) });
+    let submittedOccurrenceIds: string[] | null = null;
+    const started = { id: "started-session", event_id: 1, dtstart_utc: new Date(now.getTime() - 60_000).toISOString(), dtend_utc: new Date(now.getTime() + 3_600_000).toISOString() };
+    const future = { id: "future-session", event_id: 1, dtstart_utc: new Date(now.getTime() + 1500).toISOString(), dtend_utc: null };
+    const eventFixture = {
+      id: 1, club_id: 1, title: "Recurring Workshop", school: "uwaterloo", club: "UW Tech Club",
+      description: "One current and one future session", location: "SLC", price: 0, food: [], registration: true,
+      source_image_url: null, category: "Career", cancelled: false, occurrences: [started, future],
+    };
+    await mockApi(page, next, url => apiPath(url) === "/events/1", async () => ({ json: eventFixture }));
+    await mockApi(page, next, url => apiPath(url) === "/going-events/1", async (request) => {
+      submittedOccurrenceIds = ((await request.json()) as { occurrence_ids: string[] }).occurrence_ids;
+      return { json: { status: "going", event_id: 1, occurrence_ids: submittedOccurrenceIds, going_count: 1 } };
+    });
+    await page.goto(`${BASE}/events/1`);
+    await page.clock.pauseAt(now);
+    const goingButton = page.getByRole("button", { name: "Going", exact: true });
+    await expect(goingButton).toBeEnabled();
+    await page.clock.runFor(1500);
+    await expect(goingButton).toBeDisabled();
+    expect(submittedOccurrenceIds).toBeNull();
+    eventFixture.occurrences = [started, { ...future, dtstart_utc: new Date(now.getTime() + 86_400_000).toISOString() }];
+    await page.clock.resume();
+    await page.reload();
+    await expect(goingButton).toBeEnabled();
+    await goingButton.click();
+    await expect.poll(() => submittedOccurrenceIds).toEqual(["future-session"]);
+    await expect(page.getByText("Youre going!", { exact: true })).toBeVisible();
+  });
+
+  test("an existing Going registration can still be cancelled after its session starts", async ({ page, next }) => {
+    await seedAuthenticatedSession(page, next);
+    const now = Date.now();
+    let cancelled = false;
+    await mockApi(page, next, url => apiPath(url) === "/events/1", async () => ({ json: {
+      id: 1, club_id: 1, title: "Started Workshop", school: "uwaterloo", club: "UW Tech Club",
+      description: "Registered before the start", location: "SLC", price: 0, food: [], registration: true,
+      source_image_url: null, category: "Career", cancelled: false,
+      occurrences: [{ id: "selected-session", event_id: 1, dtstart_utc: new Date(now - 60_000).toISOString(), dtend_utc: new Date(now + 3_600_000).toISOString() }],
+    } }));
+    await mockApi(page, next, url => apiPath(url) === "/going-events", async () => ({ json: cancelled ? [] : [{ event_id: 1, occurrence_ids: ["selected-session"] }] }));
+    await mockApi(page, next, url => apiPath(url) === "/going-events/1", async (request) => {
+      expect(request.method).toBe("DELETE");
+      cancelled = true;
+      return { json: { status: "not_going", event_id: 1, occurrence_ids: [], going_count: 0 } };
+    });
+    await page.goto(`${BASE}/events/1`);
+    await expect(page.getByText("Youre going!", { exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "marking yourself not going.", exact: true }).click();
+    await expect.poll(() => cancelled).toBe(true);
+    await expect(page.getByRole("button", { name: "Going", exact: true })).toBeDisabled();
   });
 
   test("uses recurring-event controls above the event drawer", async ({ page, next }) => {

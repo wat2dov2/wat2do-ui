@@ -73,8 +73,10 @@ It persists their exact tab IDs and recreates closed worker tabs inside their re
 It adopts existing Instagram tabs from that registered window up to the configured total and closes surplus Instagram tabs under the human-authorized resize policy.
 Tabs in other windows or moved to another site are preserved.
 A closed primary is recreated at the beginning of the registered window rather than silently promoting a retrieval tab.
-New or repaired tabs initialize their viewport before account-readiness checks, restoring the previous tab selection afterward.
-Primary account and engagement preparation refreshes the reserved tab's viewport, widens only its registered window to `primary_minimum_viewport_width` when needed, and verifies the desktop layout before reading controls.
+Viewport preparation first checks the exact tab in the background and leaves tab selection and window bounds untouched when its renderer is ready.
+Cold or repaired tabs may initialize only while Brave and their registered window are already foreground, restoring the previous tab selection afterward without activating another app or window.
+When foreground initialization is required, pending jobs remain queued during the maintenance pause; bring that window forward briefly, resume the worker, and explicitly retry any failed job after inspecting it.
+Primary account and engagement preparation verifies the desktop layout before reading controls and widens only an already foreground registered window to `primary_minimum_viewport_width` when needed, including the difference between outer window bounds and the page viewport.
 Logged-in identity comes from the visible Profile navigation control, including compact navigation, rather than a viewed organizer's avatar or its position on the screen.
 Each viewport activation, single sample, and restoration is bounded by `viewport_warm_timeout_seconds`; page waits release the shared transport.
 This initialization does not run on every steady-state retrieval.
@@ -165,7 +167,9 @@ Confirmed HTTP 429 responses stop new browser claims, refills, and tab maintenan
 After settlement, confirmed rate-limited reads return to the queue without consuming their ordinary failure budget.
 Cooldown expiry resumes queue admission automatically and preserves genuine authentication pauses and manual engagement retry rules.
 Repeated rate limits increase the shared cooldown from two minutes up to thirty minutes, once per expired cooldown rather than once per parallel job.
-A verified successful job resets the next cooldown only after the active hold expires; digest callers retain their own deadlines throughout the hold.
+A fresh verified successful job resets the next cooldown only after fifteen minutes without another confirmed rate limit following the expired hold.
+One successful public read cannot immediately reset escalation while another browser route remains limited.
+Digest callers retain their own deadlines throughout the hold.
 Public profiles and individual posts can also be queued manually:
 
 ```sh

@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 import type { ComponentProps, MouseEvent } from "react";
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
+import type { ReactElement } from "react";
 import { runInNewContext } from "node:vm";
 import ts from "typescript";
 import { createAdaptivePressHandlers, isNestedInteractiveTarget } from "../src/shared/hooks/useMouseDownPress";
@@ -21,6 +22,7 @@ function loadUI(name: string, disclosure?: { open: boolean; setOpen: (open: bool
       if (["@/shared/layout/stack", "@/shared/ui/Pagination", "@/shared/ui/skeleton"].includes(id)) return {};
       if (id === "@/shared/ui/doodle-icons") return { Check: () => null };
       if (id === "@/shared/ui/button") return { OUTLINE_CONTROL_STYLES: "" };
+      if (id === "@/shared/ui/tooltip") return { Tooltip: "Tooltip", TooltipContent: "TooltipContent", TooltipTrigger: "TooltipTrigger" };
       if (id === "@/shared/ui/drawer" || id === "@/shared/hooks/useExclusiveDisclosure") return {};
       if (id === "@/shared/lib/utils") return { cn: (...values: unknown[]) => values.filter(Boolean).join(" ") };
       return require(id);
@@ -69,6 +71,29 @@ test("filter buttons wait for click and disabled buttons never activate", () => 
   disabled.onMouseDown?.(event());
   disabled.onClick?.(event(0, 0));
   expect(calls).toBe(1);
+});
+
+test("disabled buttons expose their reason on a hoverable keyboard target without enabling the action", () => {
+  let calls = 0;
+  const render = (Button as unknown as { render: (props: ComponentProps<typeof Button>, ref: null) => ReactElement }).render;
+  const tree = render({ disabled: true, disabledReason: "This event has already started", className: "w-full", children: "Going", onClick: () => calls++ }, null);
+  expect(tree.type).toBe("Tooltip");
+  const [trigger, content] = tree.props.children;
+  expect(content.props.children).toBe("This event has already started");
+  const target = trigger.props.children;
+  expect(target.type).toBe("span");
+  expect(target.props.role).toBe("group");
+  expect(target.props.tabIndex).toBe(0);
+  expect(target.props["aria-disabled"]).toBe("true");
+  expect(target.props["aria-label"]).toBe("Going");
+  expect(target.props.className).toContain("has-[>button.w-full]:w-full");
+  const button = target.props.children;
+  expect(button.props.disabled).toBe(true);
+  expect(button.props).not.toHaveProperty("disabledReason");
+  button.props.onMouseDown?.(event());
+  button.props.onClick?.(event(0, 0));
+  expect(calls).toBe(0);
+  expect(render({ disabled: false, disabledReason: "Unavailable", children: "Going" }, null).type).toBe("button");
 });
 
 test("native click activation survives Mapbox preventing marker mouse down", () => {

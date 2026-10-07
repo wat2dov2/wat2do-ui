@@ -155,8 +155,13 @@
       "noLocations": "வரைபட இடங்கள் இல்லை",
       "noLocationsDescription": "இந்த நிகழ்வுகள் இணையத்தில் நடைபெறுகின்றன அல்லது அவற்றின் இடங்கள் தெரியவில்லை.",
       "mapSummary": "வரைபடத்தில்: {{count}}.",
-      "unmapped": "வரைபட இடம் இல்லாதவை: {{count}}.",
-      "selectEvent": "நிகழ்வைத் திற"
+      "clusterAt": "{{location}} இல் {{count}} நிகழ்வு",
+      "clusterAt_one": "{{location}} இல் {{count}} நிகழ்வு",
+      "clusterAt_other": "{{location}} இல் {{count}} நிகழ்வுகள்",
+      "clusterNear": "{{location}} அருகே {{count}} நிகழ்வு",
+      "clusterNear_one": "{{location}} அருகே {{count}} நிகழ்வு",
+      "clusterNear_other": "{{location}} அருகே {{count}} நிகழ்வுகள்",
+      "unmapped": "வரைபட இடம் இல்லாதவை: {{count}}."
     }
   }
 }

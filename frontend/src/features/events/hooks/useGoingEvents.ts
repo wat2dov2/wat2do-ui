@@ -19,7 +19,7 @@ import { queryKeys } from "@/shared/lib/queryKeys";
 import { tracker } from "@/shared/services/trackingService";
 import { isApiError } from "@/shared/services/apiClient";
 import type { Event } from "@/shared/types";
-import { isActiveOrUpcomingOccurrence } from "@/shared/utils/date";
+import { isActiveOrUpcomingOccurrence, type Occurrence } from "@/shared/utils/date";
 
 type EventStatsMap = Record<string, EventStats>;
 
@@ -48,7 +48,7 @@ export function useGoingEventSelection(
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { data: selections = [] } = useGoingEvents();
-  const now = useCurrentTime();
+  const now = useCurrentTime(event.occurrences);
   const selectedIds = useMemo(
     () =>
       selections.find((selection) => selection.event_id === event.id)
@@ -58,7 +58,7 @@ export function useGoingEventSelection(
   const selectableOccurrences = useMemo(() => {
     if (event.cancelled || now === null) return [];
     return [...(event.occurrences ?? [])]
-      .filter((occurrence) => isActiveOrUpcomingOccurrence(occurrence, now))
+      .filter((occurrence) => new Date(occurrence.dtstart_utc).getTime() > now)
       .sort(
         (left, right) =>
           new Date(left.dtstart_utc).getTime() -
@@ -72,6 +72,12 @@ export function useGoingEventSelection(
   const selectedSelectableIds = useMemo(
     () => selectedIds.filter((id) => selectableIds.has(id)),
     [selectableIds, selectedIds],
+  );
+  const isActive = useMemo(
+    () => !event.cancelled && now !== null && (event.occurrences ?? []).some(
+      (occurrence) => selectedIds.includes(occurrence.id) && isActiveOrUpcomingOccurrence(occurrence, now),
+    ),
+    [event.cancelled, event.occurrences, now, selectedIds],
   );
 
   const mutation = useMutation({
@@ -164,7 +170,9 @@ export function useGoingEventSelection(
     selectedIds,
     selectedSelectableIds,
     selectableOccurrences,
-    isActive: selectedSelectableIds.length > 0,
+    isActive,
+    currentTimeMs: now,
+    isTimeUnavailable: now !== null && selectableOccurrences.length === 0,
     isPending: mutation.isPending,
     saveSelection: (occurrenceIds: string[]) =>
       mutation.mutateAsync({
@@ -175,7 +183,7 @@ export function useGoingEventSelection(
   };
 }
 
-export function useCurrentTime() {
+export function useCurrentTime(occurrences?: readonly Occurrence[]) {
   const [now, setNow] = useState<number | null>(null);
 
   useEffect(() => {
@@ -187,6 +195,18 @@ export function useCurrentTime() {
       window.clearInterval(interval);
     };
   }, []);
+
+  useEffect(() => {
+    if (!occurrences || now === null) return;
+    const nextStartMs = Math.min(...occurrences
+      .map((occurrence) => new Date(occurrence.dtstart_utc).getTime())
+      .filter((startMs) => startMs > now));
+    const delayMs = nextStartMs - Date.now();
+    // Minute ticks handle distant dates; timers cannot exceed a signed 32-bit delay.
+    if (!Number.isFinite(delayMs) || delayMs > 2_147_483_647) return;
+    const boundary = window.setTimeout(() => setNow(Date.now()), Math.max(0, delayMs));
+    return () => window.clearTimeout(boundary);
+  }, [now, occurrences]);
 
   return now;
 }

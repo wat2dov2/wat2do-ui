@@ -118,20 +118,32 @@ on run argv
     if application "Brave Browser" is not running then error "Brave is not running."
     tell application "Brave Browser"
         if not (exists window id intendedWindowId) then error "Worker browser window is closed."
+        if not frontmost then error "Brave must be foreground for worker viewport initialization."
+        if ((id of front window) as text) is not intendedWindowId then error "Brave must be foreground for worker viewport initialization."
         set browserWindow to window id intendedWindowId
         set previousTabId to (id of active tab of browserWindow) as text
         set tabIds to get id of every tab of browserWindow
         repeat with tabIndex from 1 to count tabIds
             if ((item tabIndex of tabIds) as text) is intendedTabId then
                 if URL of tab id intendedTabId of browserWindow does not start with "https://www.instagram.com/" then error "Pinned Instagram tab changed site."
+                if previousTabId is not intendedTabId then
+                    if not frontmost then error "Brave must be foreground for worker viewport initialization."
+                    if ((id of front window) as text) is not intendedWindowId then error "Brave must be foreground for worker viewport initialization."
+                    set active tab index of browserWindow to tabIndex
+                end if
                 if minimumWindowWidth > 0 then
                     set windowBounds to bounds of browserWindow
-                    if ((item 3 of windowBounds) - (item 1 of windowBounds)) < minimumWindowWidth then
-                        set item 3 of windowBounds to (item 1 of windowBounds) + minimumWindowWidth
+                    set windowWidth to (item 3 of windowBounds) - (item 1 of windowBounds)
+                    set viewportWidth to (execute tab id intendedTabId of browserWindow javascript "window.innerWidth") as integer
+                    set targetWidth to minimumWindowWidth
+                    if viewportWidth > 0 then set targetWidth to minimumWindowWidth + windowWidth - viewportWidth
+                    if windowWidth < targetWidth then
+                        set item 3 of windowBounds to (item 1 of windowBounds) + targetWidth
+                        if not frontmost then error "Brave must be foreground for worker viewport initialization."
+                        if ((id of front window) as text) is not intendedWindowId then error "Brave must be foreground for worker viewport initialization."
                         set bounds of browserWindow to windowBounds
                     end if
                 end if
-                set active tab index of browserWindow to tabIndex
                 return previousTabId
             end if
         end repeat
@@ -147,11 +159,17 @@ on run argv
     if application "Brave Browser" is not running then error "Brave is not running."
     tell application "Brave Browser"
         if not (exists window id intendedWindowId) then error "Worker browser window is closed."
+        if not frontmost then return "kept_active"
+        if ((id of front window) as text) is not intendedWindowId then return "kept_active"
+        if previousTabId is intendedTabId then return "kept_active"
         set browserWindow to window id intendedWindowId
         if ((id of active tab of browserWindow) as text) is not intendedTabId then return "kept_active"
         set tabIds to get id of every tab of browserWindow
         repeat with tabIndex from 1 to count tabIds
             if ((item tabIndex of tabIds) as text) is previousTabId then
+                if not frontmost then return "kept_active"
+                if ((id of front window) as text) is not intendedWindowId then return "kept_active"
+                if ((id of active tab of browserWindow) as text) is not intendedTabId then return "kept_active"
                 set active tab index of browserWindow to tabIndex
                 return "restored"
             end if
@@ -215,17 +233,7 @@ class _PinnedBraveJavascriptRunner:
         deadline = time.monotonic() + timeout_seconds
         tab_id, window_id = self._pin(deadline)
         if not self._viewport_ready:
-            probe_deadline = time.monotonic() + min(
-                _CONTROL.viewport_warm_timeout_seconds, _bridge_time_left(deadline)
-            )
-            try:
-                viewport_ready = self._viewport_is_ready(tab_id, window_id, probe_deadline)
-            except (_BrowserAutomationTransient, _BrowserPageUnavailable):
-                viewport_ready = False
-            if viewport_ready:
-                self._viewport_ready = True
-            else:
-                self.warm_viewport(_bridge_time_left(deadline))
+            self.warm_viewport(_bridge_time_left(deadline))
         return self._execute(source, tab_id, window_id, deadline)
 
     def _execute(self, source: str, tab_id: str, window_id: str, deadline: float) -> str:
@@ -269,10 +277,22 @@ class _PinnedBraveJavascriptRunner:
         return width > 0 and width >= minimum_width and height > 0
 
     def warm_viewport(self, timeout_seconds: float, *, primary: bool = False) -> None:
-        """Prepare an exact renderer and primary UI width, restoring the prior active tab by ID."""
+        """Read ready renderers in background; cold initialization cannot steal app focus."""
         deadline = time.monotonic() + timeout_seconds
         tab_id, window_id = self._pin(deadline)
         minimum_width = _CONTROL.primary_minimum_viewport_width if primary else 0
+        self._viewport_ready = False
+        probe_deadline = time.monotonic() + min(
+            _CONTROL.viewport_warm_timeout_seconds, _bridge_time_left(deadline)
+        )
+        try:
+            if self._viewport_is_ready(
+                tab_id, window_id, probe_deadline, minimum_width=minimum_width
+            ):
+                self._viewport_ready = True
+                return
+        except (_BrowserAutomationTransient, _BrowserPageUnavailable):
+            pass
         last_error: BrowserSessionError | None = None
         while True:
             remaining = deadline - time.monotonic()
@@ -827,6 +847,7 @@ def _run_applescript(script: str, arguments: tuple[str, ...], timeout_seconds: f
             "Pinned Instagram tab is loading": "The pinned Instagram tab is loading",
             "Worker browser window is closed": "The registered worker browser window was closed",
             "Instagram requires human account recovery": "Instagram browser requires human account recovery",
+            "Brave must be foreground for worker viewport initialization": "Bring the registered Instagram window to the foreground briefly to initialize its worker tabs, then resume the browser worker",
         }
         for detail_match, message in messages.items():
             if detail_match in detail:
@@ -1127,6 +1148,8 @@ on run argv
             error "Worker browser window is closed."
         end if
         set browserWindow to window id registeredWindowId
+        if not frontmost then error "Brave must be foreground for worker viewport initialization."
+        if ((id of front window) as text) is not registeredWindowId then error "Brave must be foreground for worker viewport initialization."
         if placement is "first" then
             set workerTab to make new tab at beginning of tabs of browserWindow with properties {URL:initialUrl}
         else

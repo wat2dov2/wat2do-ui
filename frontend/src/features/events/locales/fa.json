@@ -155,8 +155,13 @@
       "noLocations": "مکانی روی نقشه موجود نیست",
       "noLocationsDescription": "این رویدادها مجازی هستند یا مکانشان مشخص نیست یا پیدا نشده است.",
       "mapSummary": "روی نقشه: {{count}}.",
-      "unmapped": "بدون مکان روی نقشه: {{count}}.",
-      "selectEvent": "باز کردن رویداد"
+      "clusterAt": "{{count}} رویداد در {{location}}",
+      "clusterAt_one": "{{count}} رویداد در {{location}}",
+      "clusterAt_other": "{{count}} رویداد در {{location}}",
+      "clusterNear": "{{count}} رویداد نزدیک {{location}}",
+      "clusterNear_one": "{{count}} رویداد نزدیک {{location}}",
+      "clusterNear_other": "{{count}} رویداد نزدیک {{location}}",
+      "unmapped": "بدون مکان روی نقشه: {{count}}."
     }
   }
 }

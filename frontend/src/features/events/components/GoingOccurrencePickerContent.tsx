@@ -40,6 +40,7 @@ export function GoingOccurrencePickerContent({
   const [saveFailed, setSaveFailed] = useState(false);
 
   const occurrenceIds = occurrences.map((occurrence) => occurrence.id);
+  const selectedDraftIds = draftIds.filter((id) => occurrenceIds.includes(id));
 
   const getOccurrenceLabel = useCallback(
     (occurrenceId: string) => {
@@ -59,10 +60,10 @@ export function GoingOccurrencePickerContent({
   };
 
   const confirm = async () => {
-    if (draftIds.length === 0) return;
+    if (selectedDraftIds.length === 0) return;
     setSaveFailed(false);
     try {
-      await onConfirm(draftIds);
+      await onConfirm(selectedDraftIds);
     } catch {
       setSaveFailed(true);
     }
@@ -77,7 +78,7 @@ export function GoingOccurrencePickerContent({
         </FieldDescription>
         <MultiSelect
           options={occurrenceIds}
-          selected={draftIds}
+          selected={selectedDraftIds}
           onToggle={toggleOccurrence}
           getLabel={getOccurrenceLabel}
         />
@@ -98,7 +99,7 @@ export function GoingOccurrencePickerContent({
         <Button
           type="button"
           onClick={() => void confirm()}
-          disabled={isPending || draftIds.length === 0}
+          disabled={isPending || selectedDraftIds.length === 0}
           className="flex-1"
         >
           {isPending ? t("common.saving") : t("common.confirm")}

@@ -175,8 +175,21 @@
       "noLocations": "لا توجد مواقع متاحة على الخريطة",
       "noLocationsDescription": "هذه الفعاليات افتراضية أو مواقعها غير محددة أو لم يتم العثور عليها.",
       "mapSummary": "على الخريطة: {{count}}.",
-      "unmapped": "دون موقع على الخريطة: {{count}}.",
-      "selectEvent": "فتح فعالية"
+      "clusterAt": "{{count}} فعالية في {{location}}",
+      "clusterAt_zero": "{{count}} فعالية في {{location}}",
+      "clusterAt_one": "{{count}} فعالية في {{location}}",
+      "clusterAt_two": "{{count}} فعاليتان في {{location}}",
+      "clusterAt_few": "{{count}} فعاليات في {{location}}",
+      "clusterAt_many": "{{count}} فعالية في {{location}}",
+      "clusterAt_other": "{{count}} فعالية في {{location}}",
+      "clusterNear": "{{count}} فعالية قرب {{location}}",
+      "clusterNear_zero": "{{count}} فعالية قرب {{location}}",
+      "clusterNear_one": "{{count}} فعالية قرب {{location}}",
+      "clusterNear_two": "{{count}} فعاليتان قرب {{location}}",
+      "clusterNear_few": "{{count}} فعاليات قرب {{location}}",
+      "clusterNear_many": "{{count}} فعالية قرب {{location}}",
+      "clusterNear_other": "{{count}} فعالية قرب {{location}}",
+      "unmapped": "دون موقع على الخريطة: {{count}}."
     }
   }
 }

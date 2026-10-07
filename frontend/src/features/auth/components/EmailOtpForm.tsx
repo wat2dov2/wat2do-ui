@@ -47,6 +47,8 @@ interface EmailOtpFormProps extends Omit<ComponentProps<"form">, "onSubmit"> {
    * complete, and the emailed code would otherwise be a dead end.
    */
   isSubmitDisabled?: boolean;
+  /** Explain a host-owned requirement on the disabled submit control. */
+  submitDisabledReason?: string;
   requestFooter?: ReactNode;
   footer?: ReactNode;
   onAuthenticated: (
@@ -66,6 +68,7 @@ export function EmailOtpForm({
   isEmailLocked = false,
   focusOnMount = true,
   isSubmitDisabled = false,
+  submitDisabledReason,
   requestFooter,
   footer,
   onAuthenticated,
@@ -201,6 +204,7 @@ export function EmailOtpForm({
         <LoadingButton
           type="submit"
           disabled={!flow.isFormValid || isSubmitDisabled}
+          disabledReason={isSubmitDisabled ? submitDisabledReason : undefined}
           isLoading={isBusy}
           className="w-full"
         >
