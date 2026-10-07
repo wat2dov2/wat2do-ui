@@ -3258,71 +3258,141 @@ test.describe("Events Page", () => {
   });
 
   for (const authenticated of [false, true]) {
-    test(`started event Going is disabled with a hover explanation ${authenticated ? "when signed in" : "before sign in"}`, async ({ page, next }) => {
-      if (authenticated) await seedAuthenticatedSession(page, next);
-      const now = new Date();
-      await page.clock.setFixedTime(now);
-      let writes = 0;
-      await mockApi(page, next, url => apiPath(url) === "/events/1", async () => ({ json: {
-        id: 1, club_id: 1, title: "Workshop in progress", school: "uwaterloo", club: "UW Tech Club",
-        description: "This workshop has begun", location: "SLC", price: 0, food: [], registration: true,
-        source_image_url: null, category: "Career", cancelled: false,
-        occurrences: [{ id: "started-session", event_id: 1, dtstart_utc: new Date(now.getTime() - 60_000).toISOString(), dtend_utc: new Date(now.getTime() + 3_600_000).toISOString() }],
-      } }));
-      await mockApi(page, next, url => apiPath(url) === "/going-events/1" || apiPath(url) === "/auth/send-otp", async () => {
-        writes++;
-        return { status: 400, json: { detail: "Must not register a started event" } };
+    for (const recurring of [false, true]) {
+      test(`started ${recurring ? "recurring " : ""}event Going is disabled with a hover explanation ${authenticated ? "when signed in" : "before sign in"}`, async ({ page, next }) => {
+        if (authenticated) await seedAuthenticatedSession(page, next);
+        const now = new Date();
+        await page.clock.setFixedTime(now);
+        let writes = 0;
+        await mockApi(page, next, url => apiPath(url) === "/events/1", async () => ({ json: {
+          id: 1, club_id: 1, title: "Workshop in progress", school: "uwaterloo", club: "UW Tech Club",
+          description: "This workshop has begun", location: "SLC", price: 0, food: [], registration: true,
+          source_image_url: null, category: "Career", cancelled: false,
+          occurrences: [
+            { id: "started-session", event_id: 1, dtstart_utc: new Date(now.getTime() - 60_000).toISOString(), dtend_utc: new Date(now.getTime() + 3_600_000).toISOString() },
+            ...(recurring ? [{ id: "future-session", event_id: 1, dtstart_utc: new Date(now.getTime() + 86_400_000).toISOString(), dtend_utc: null }] : []),
+          ],
+        } }));
+        await mockApi(page, next, url => apiPath(url) === "/going-events/1" || apiPath(url) === "/auth/send-otp", async () => {
+          writes++;
+          return { status: 400, json: { detail: "Must not register a started event" } };
+        });
+        for (const surface of ["drawer", "page"]) {
+          await page.goto(surface === "drawer" ? BASE : `${BASE}/events/1`);
+          if (surface === "drawer") await page.locator('article[data-event-id="1"]:visible').click();
+          const host = surface === "drawer" ? page.getByRole("dialog", { name: "Workshop in progress" }) : page;
+          if (!authenticated) await host.getByTestId("event-registration-auth").getByLabel("Email address").fill(TEST_EMAIL);
+          const goingButton = host.getByRole("button", { name: "Going", exact: true });
+          await expect(goingButton).toBeDisabled();
+          const tooltipTarget = host.locator('[data-slot="disabled-button-trigger"]');
+          await tooltipTarget.hover();
+          await expect(page.getByRole("tooltip")).toContainText("This event has already started or was cancelled");
+          await page.mouse.move(0, 0);
+          await tooltipTarget.focus();
+          await expect(page.getByRole("tooltip")).toContainText("This event has already started or was cancelled");
+          await page.keyboard.press("Enter");
+          expect(writes).toBe(0);
+        }
       });
-      for (const surface of ["drawer", "page"]) {
-        await page.goto(surface === "drawer" ? BASE : `${BASE}/events/1`);
-        if (surface === "drawer") await page.locator('article[data-event-id="1"]:visible').click();
-        const host = surface === "drawer" ? page.getByRole("dialog", { name: "Workshop in progress" }) : page;
-        if (!authenticated) await host.getByTestId("event-registration-auth").getByLabel("Email address").fill(TEST_EMAIL);
-        const goingButton = host.getByRole("button", { name: "Going", exact: true });
-        await expect(goingButton).toBeDisabled();
-        const tooltipTarget = host.locator('[data-slot="disabled-button-trigger"]');
-        await tooltipTarget.hover();
-        await expect(page.getByRole("tooltip")).toContainText("This event has already started or was cancelled");
-        await page.mouse.move(0, 0);
-        await tooltipTarget.focus();
-        await expect(page.getByRole("tooltip")).toContainText("This event has already started or was cancelled");
-        await page.keyboard.press("Enter");
-        expect(writes).toBe(0);
-      }
+    }
+  }
+
+  for (const hasEndTime of [true, false]) {
+    test(`Going blocks future recurring registration while a session is live and reopens after ${hasEndTime ? "its end time" : "the no-end visibility window"}`, async ({ page, next }) => {
+      await seedAuthenticatedSession(page, next);
+      const now = new Date();
+      await page.clock.install({ time: new Date(now.getTime() - 3_600_000) });
+      let submittedOccurrenceIds: string[] | null = null;
+      const firstStartsAtMs = now.getTime() + 1500;
+      const firstEndsAtMs = hasEndTime ? now.getTime() + 3000 : firstStartsAtMs + eventDiscovery.event_without_end_visibility_minutes * 60_000;
+      const first = { id: "first-session", event_id: 1, dtstart_utc: new Date(firstStartsAtMs).toISOString(), dtend_utc: hasEndTime ? new Date(firstEndsAtMs).toISOString() : null };
+      const future = { id: "future-session", event_id: 1, dtstart_utc: new Date(now.getTime() + 2 * 86_400_000).toISOString(), dtend_utc: null };
+      const eventFixture = {
+        id: 1, club_id: 1, title: "Recurring Workshop", school: "uwaterloo", club: "UW Tech Club",
+        description: "One imminent and one later session", location: "SLC", price: 0, food: [], registration: true,
+        source_image_url: null, category: "Career", cancelled: false, occurrences: [first, future],
+      };
+      await mockApi(page, next, url => apiPath(url) === "/events/1", async () => ({ json: eventFixture }));
+      await mockApi(page, next, url => apiPath(url) === "/going-events/1", async (request) => {
+        submittedOccurrenceIds = ((await request.json()) as { occurrence_ids: string[] }).occurrence_ids;
+        return { json: { status: "going", event_id: 1, occurrence_ids: submittedOccurrenceIds, going_count: 1 } };
+      });
+      await page.goto(`${BASE}/events/1`);
+      await page.clock.pauseAt(now);
+      const goingButton = page.getByRole("button", { name: "Going", exact: true });
+      await expect(goingButton).toBeEnabled();
+      await page.clock.runFor(1500);
+      await expect(goingButton).toBeDisabled();
+      expect(submittedOccurrenceIds).toBeNull();
+      await page.clock.fastForward(firstEndsAtMs - firstStartsAtMs);
+      await expect(goingButton).toBeDisabled();
+      await page.clock.runFor(1);
+      await expect(goingButton).toBeEnabled();
+      // Resume normal timers for the registration mutation and drawer updates.
+      await page.clock.resume();
+      await goingButton.click();
+      await expect.poll(() => submittedOccurrenceIds).toEqual(["future-session"]);
+      await expect(page.getByText("Youre going!", { exact: true })).toBeVisible();
     });
   }
 
-  test("Going disables at the start instant while future recurring sessions remain available", async ({ page, next }) => {
-    await seedAuthenticatedSession(page, next);
+  test("OTP verification finishing after a recurring session starts cannot open its picker or register a later date", async ({ page, next }) => {
     const now = new Date();
     await page.clock.install({ time: new Date(now.getTime() - 3_600_000) });
-    let submittedOccurrenceIds: string[] | null = null;
-    const started = { id: "started-session", event_id: 1, dtstart_utc: new Date(now.getTime() - 60_000).toISOString(), dtend_utc: new Date(now.getTime() + 3_600_000).toISOString() };
-    const future = { id: "future-session", event_id: 1, dtstart_utc: new Date(now.getTime() + 1500).toISOString(), dtend_utc: null };
-    const eventFixture = {
-      id: 1, club_id: 1, title: "Recurring Workshop", school: "uwaterloo", club: "UW Tech Club",
-      description: "One current and one future session", location: "SLC", price: 0, food: [], registration: true,
-      source_image_url: null, category: "Career", cancelled: false, occurrences: [started, future],
-    };
-    await mockApi(page, next, url => apiPath(url) === "/events/1", async () => ({ json: eventFixture }));
-    await mockApi(page, next, url => apiPath(url) === "/going-events/1", async (request) => {
-      submittedOccurrenceIds = ((await request.json()) as { occurrence_ids: string[] }).occurrence_ids;
-      return { json: { status: "going", event_id: 1, occurrence_ids: submittedOccurrenceIds, going_count: 1 } };
+    let verificationStarted = false;
+    let finishVerification!: () => void;
+    const pendingVerification = new Promise<void>(resolve => { finishVerification = resolve; });
+    let goingWrites = 0;
+    await mockApi(page, next, url => apiPath(url) === "/auth/send-otp", () => ({ json: { message: "sent" } }));
+    await mockApi(page, next, url => apiPath(url) === "/auth/verify-otp", async () => {
+      verificationStarted = true;
+      await pendingVerification;
+      return { json: {
+        access_token: "recurring-registration-token", token_type: "bearer", expires_in: 3600,
+        user_id: "recurring-registration-user", school: "uwaterloo", onboarding_required: false,
+      } };
     });
-    await page.goto(`${BASE}/events/1`);
-    await page.clock.pauseAt(now);
-    const goingButton = page.getByRole("button", { name: "Going", exact: true });
-    await expect(goingButton).toBeEnabled();
-    await page.clock.runFor(1500);
-    await expect(goingButton).toBeDisabled();
-    expect(submittedOccurrenceIds).toBeNull();
-    eventFixture.occurrences = [started, { ...future, dtstart_utc: new Date(now.getTime() + 86_400_000).toISOString() }];
-    await page.clock.resume();
-    await page.reload();
-    await expect(goingButton).toBeEnabled();
-    await goingButton.click();
-    await expect.poll(() => submittedOccurrenceIds).toEqual(["future-session"]);
-    await expect(page.getByText("Youre going!", { exact: true })).toBeVisible();
+    await mockApi(page, next, url => apiPath(url) === "/users/me", () => ({ json: {
+      id: "recurring-registration-user", email: TEST_EMAIL, full_name: "Recurring Student",
+      avatar_url: null, faculty: null, school: "uwaterloo", interests: [], is_first_year: false,
+      role: "user", payout_email: null, promoter_tos_accepted_at: null, promoter_tos_version: null,
+    } }));
+    await mockApi(page, next, url => apiPath(url) === "/clubs/mine", () => ({ json: [] }));
+    await mockApi(page, next, url => apiPath(url) === "/events/1", () => ({ json: {
+      id: 1, club_id: 1, title: "Recurring OTP Workshop", school: "uwaterloo", club: "UW Tech Club",
+      description: "The first session begins while sign-in is pending", location: "SLC",
+      price: 0, food: [], registration: true, source_image_url: null, category: "Career", cancelled: false,
+      occurrences: [
+        { id: "first-session", event_id: 1, dtstart_utc: new Date(now.getTime() + 1500).toISOString(), dtend_utc: new Date(now.getTime() + 3_600_000).toISOString() },
+        { id: "future-session", event_id: 1, dtstart_utc: new Date(now.getTime() + 2 * 86_400_000).toISOString(), dtend_utc: null },
+      ],
+    } }));
+    await mockApi(page, next, url => apiPath(url) === "/going-events/1", async (request) => {
+      goingWrites++;
+      const body = (await request.json()) as { occurrence_ids: string[] };
+      return { json: { status: "going", event_id: 1, occurrence_ids: body.occurrence_ids, going_count: 1 } };
+    });
+    try {
+      await page.goto(`${BASE}/events/1`);
+      await page.clock.pauseAt(now);
+      const authForm = page.getByTestId("event-registration-auth");
+      await authForm.getByLabel("Email address").fill(TEST_EMAIL);
+      await authForm.getByRole("button", { name: "Going", exact: true }).click();
+      await authForm.getByLabel("Verification code").fill("123456");
+      await expect.poll(() => verificationStarted).toBe(true);
+      await page.clock.runFor(1500);
+      finishVerification();
+      await page.clock.resume();
+      await expect(authForm).toBeHidden();
+      await expect(page.getByRole("button", { name: "Going", exact: true })).toBeDisabled();
+      await page.locator('[data-slot="disabled-button-trigger"]').hover();
+      await expect(page.getByRole("tooltip")).toContainText("This event has already started or was cancelled");
+      await expect(page.getByText("Which time are you going?", { exact: true })).toHaveCount(0);
+      await expect(page.getByText("Youre going!", { exact: true })).toHaveCount(0);
+      expect(goingWrites).toBe(0);
+    } finally {
+      finishVerification();
+    }
   });
 
   test("an existing Going registration can still be cancelled after its session starts", async ({ page, next }) => {

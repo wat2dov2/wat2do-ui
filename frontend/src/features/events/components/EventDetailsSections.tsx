@@ -235,6 +235,7 @@ function EventRegistrationCard({
       : null;
 
   const startRegistration = async () => {
+    if (!going.canRegisterNow()) return;
     if (going.selectableOccurrences.length > 1) {
       setPickerOpen(true);
       return;

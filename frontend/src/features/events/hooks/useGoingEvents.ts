@@ -17,11 +17,17 @@ import { toast } from "@/shared/hooks/use-toast";
 import { controlBox } from "@/shared/config/controlBox";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import { tracker } from "@/shared/services/trackingService";
-import { isApiError } from "@/shared/services/apiClient";
+import { ApiError, isApiError } from "@/shared/services/apiClient";
 import type { Event } from "@/shared/types";
-import { isActiveOrUpcomingOccurrence, type Occurrence } from "@/shared/utils/date";
+import {
+  isActiveOrUpcomingOccurrence,
+  isEventHappeningNow,
+  occurrenceVisibleUntilMs,
+  type Occurrence,
+} from "@/shared/utils/date";
 
 type EventStatsMap = Record<string, EventStats>;
+const UNAVAILABLE_OCCURRENCE_ERROR = "One or more occurrences can no longer be selected";
 
 interface GoingMutationVariables {
   eventId: number;
@@ -56,7 +62,7 @@ export function useGoingEventSelection(
     [event.id, selections],
   );
   const selectableOccurrences = useMemo(() => {
-    if (event.cancelled || now === null) return [];
+    if (event.cancelled || now === null || isEventHappeningNow(event, new Date(now))) return [];
     return [...(event.occurrences ?? [])]
       .filter((occurrence) => new Date(occurrence.dtstart_utc).getTime() > now)
       .sort(
@@ -79,13 +85,16 @@ export function useGoingEventSelection(
     ),
     [event.cancelled, event.occurrences, now, selectedIds],
   );
+  // Async sign-in and optimistic mutation work can outlive a rendered clock tick.
+  const canRegisterNow = () => !event.cancelled && !isEventHappeningNow(event, new Date());
 
   const mutation = useMutation({
     mutationKey: queryKeys.goingEvents.all,
-    mutationFn: ({ eventId, occurrenceIds }: GoingMutationVariables) =>
-      occurrenceIds.length > 0
-        ? setGoingEventOccurrences(eventId, occurrenceIds)
-        : clearGoingEvent(eventId),
+    mutationFn: async ({ eventId, occurrenceIds }: GoingMutationVariables) => {
+      if (occurrenceIds.length === 0) return clearGoingEvent(eventId);
+      if (!canRegisterNow()) throw new ApiError(400, { detail: UNAVAILABLE_OCCURRENCE_ERROR });
+      return setGoingEventOccurrences(eventId, occurrenceIds);
+    },
     onMutate: async ({ eventId, occurrenceIds, userId: mutationUserId }) => {
       const queryKey = queryKeys.goingEvents.byUser(mutationUserId ?? "");
       const attendeesKey = queryKeys.events.attendees(eventId);
@@ -122,7 +131,7 @@ export function useGoingEventSelection(
         }
       }
       toast({
-        description: t(isApiError(error) && error.message === "One or more occurrences can no longer be selected"
+        description: t(isApiError(error) && error.message === UNAVAILABLE_OCCURRENCE_ERROR
           ? "events.goingEvents.timeUnavailable"
           : "events.goingEvents.saveFailed"),
         variant: "destructive",
@@ -173,6 +182,7 @@ export function useGoingEventSelection(
     isActive,
     currentTimeMs: now,
     isTimeUnavailable: now !== null && selectableOccurrences.length === 0,
+    canRegisterNow,
     isPending: mutation.isPending,
     saveSelection: (occurrenceIds: string[]) =>
       mutation.mutateAsync({
@@ -198,10 +208,15 @@ export function useCurrentTime(occurrences?: readonly Occurrence[]) {
 
   useEffect(() => {
     if (!occurrences || now === null) return;
-    const nextStartMs = Math.min(...occurrences
-      .map((occurrence) => new Date(occurrence.dtstart_utc).getTime())
-      .filter((startMs) => startMs > now));
-    const delayMs = nextStartMs - Date.now();
+    const nextBoundaryMs = Math.min(...occurrences
+      .flatMap((occurrence) => {
+        const visibleUntilMs = occurrenceVisibleUntilMs(occurrence);
+        const startMs = new Date(occurrence.dtstart_utc).getTime();
+        // Live events include their end instant, so reopen immediately afterward.
+        return visibleUntilMs === null ? [startMs] : [startMs, visibleUntilMs + 1];
+      })
+      .filter((boundaryMs) => boundaryMs > now));
+    const delayMs = nextBoundaryMs - Date.now();
     // Minute ticks handle distant dates; timers cannot exceed a signed 32-bit delay.
     if (!Number.isFinite(delayMs) || delayMs > 2_147_483_647) return;
     const boundary = window.setTimeout(() => setNow(Date.now()), Math.max(0, delayMs));

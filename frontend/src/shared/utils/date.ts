@@ -40,12 +40,11 @@ export interface Occurrence {
  * The moment an occurrence stops being visible in the feed.
  *
  * An occurrence with no end time stays visible for a fixed window after it
- * starts. This is the single definition of "still visible" - both the filter
- * that decides which events are counted and the date sectioning that decides
- * where they render read it, so the header count can never disagree with the
- * list. Returns `null` when the occurrence has no usable start.
+ * starts. The feed filter, date sections and attendance clock read this rule
+ * so counting, rendering and registration use the same end instant.
+ * Returns `null` when the occurrence has no usable start.
  */
-function occurrenceVisibleUntilMs(occurrence: Occurrence): number | null {
+export function occurrenceVisibleUntilMs(occurrence: Occurrence): number | null {
   const startTimeMs = new Date(occurrence.dtstart_utc).getTime();
   if (Number.isNaN(startTimeMs)) return null;
 

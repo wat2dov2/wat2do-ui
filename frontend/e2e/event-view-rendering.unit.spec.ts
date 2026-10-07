@@ -8,6 +8,7 @@ import ts from "typescript";
 import { Calendar, type CalendarProps } from "react-big-calendar";
 import type { CalendarEvent } from "../src/features/events/lib/calendarEvents";
 import type { Event } from "../src/shared/types";
+import { controlBox } from "../src/shared/config/controlBox";
 
 type UIStoreModule = typeof import("../src/shared/store/ui.store");
 type EventListModule = typeof import("../src/features/events/components/EventList");
@@ -99,25 +100,37 @@ const event: Event = {
   occurrences: [{ dtstart_utc: new Date(Date.now() + 86_400_000).toISOString(), dtend_utc: null }],
 } as Event;
 
-function goingSelection(fixture: Event, currentTimeMs: number, selectedIds: string[] = []) {
+function goingSelection(fixture: Event, currentTimeMs: number, selectedIds: string[] = [], clock?: {
+  now: () => number;
+  onSave: (occurrenceIds: string[]) => void;
+  onClear: () => void;
+}) {
   const filename = new URL("../src/features/events/hooks/useGoingEvents.ts", import.meta.url);
   const source = ts.transpileModule(readFileSync(filename, "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText;
   const exports = {} as typeof import("../src/features/events/hooks/useGoingEvents");
   const require = createRequire(filename);
-  runInNewContext(source, { exports, require: (id: string) => {
+  class FixtureDate extends Date {
+    constructor(value?: string | number) { super(value ?? clock?.now() ?? currentTimeMs); }
+    static now() { return clock?.now() ?? currentTimeMs; }
+  }
+  runInNewContext(source, { exports, Date: FixtureDate, require: (id: string) => {
     if (id === "react") return { useEffect() {}, useMemo: (fn: () => unknown) => fn(), useState: () => [currentTimeMs, () => {}] };
-    if (id === "@tanstack/react-query") return { useQueryClient: () => ({}), useQuery: () => ({ data: [{ event_id: fixture.id, occurrence_ids: selectedIds }] }), useMutation: () => ({ isPending: false }) };
+    if (id === "@tanstack/react-query") return { useQueryClient: () => ({}), useQuery: () => ({ data: [{ event_id: fixture.id, occurrence_ids: selectedIds }] }), useMutation: (options: { mutationFn: (variables: unknown) => Promise<unknown> }) => ({ isPending: false, mutateAsync: options.mutationFn }) };
+    if (id === "@/features/events/api/events.api") return {
+      setGoingEventOccurrences: async (_id: number, ids: string[]) => clock?.onSave(ids),
+      clearGoingEvent: async () => clock?.onClear(),
+    };
     if (id === "react-i18next") return { useTranslation: () => ({ t: (key: string) => key }) };
     if (id === "@/features/auth/hooks/useAuthState") return { useAuthState: () => ({ isAuthenticated: true }) };
     if (id === "@/features/auth/api/auth.api") return { getUserId: () => "test-user" };
     if (id === "@/shared/config/controlBox") return { controlBox: { clientCache: { liveEventDataStaleMs: 0 } } };
-    if (id === "@/shared/lib/queryKeys" || id === "@/shared/utils/date") return require(new URL(`../src/${id.slice(2)}`, import.meta.url).pathname);
+    if (id === "@/shared/lib/queryKeys" || id === "@/shared/utils/date" || id === "@/shared/services/apiClient") return require(new URL(`../src/${id.slice(2)}`, import.meta.url).pathname);
     return {};
   } });
   return exports.useGoingEventSelection(fixture, "uwaterloo");
 }
 
-test("Going excludes started sessions while recurring events retain their future dates", () => {
+test("Going is unavailable while any recurring session is live, even with future dates", () => {
   const now = Date.parse("2026-10-07T22:00:00Z");
   const started = { id: "started", dtstart_utc: new Date(now - 60_000).toISOString(), dtend_utc: new Date(now + 3_600_000).toISOString() };
   const future = { id: "future", dtstart_utc: new Date(now + 60_000).toISOString(), dtend_utc: null };
@@ -126,10 +139,40 @@ test("Going excludes started sessions while recurring events retain their future
     expect(result.selectableOccurrences).toHaveLength(0);
     expect(result.isTimeUnavailable).toBe(true);
   }
-  const recurring = goingSelection({ ...event, occurrences: [started, future] } as Event, now);
-  expect(recurring.selectableOccurrences.map(item => item.id)).toEqual(["future"]);
-  expect(recurring.isTimeUnavailable).toBe(false);
+  for (const live of [started, { ...started, dtend_utc: null }, { ...started, dtstart_utc: new Date(now).toISOString() }, { ...started, dtend_utc: new Date(now).toISOString() }]) {
+    const recurring = goingSelection({ ...event, occurrences: [future, live] } as Event, now);
+    expect(recurring.selectableOccurrences).toHaveLength(0);
+    expect(recurring.isTimeUnavailable).toBe(true);
+  }
+  for (const ended of [{ ...started, dtend_utc: new Date(now - 1).toISOString() }, { ...started, dtstart_utc: new Date(now - controlBox.eventDiscovery.eventWithoutEndVisibilityMs - 1).toISOString(), dtend_utc: null }]) {
+    const recurring = goingSelection({ ...event, occurrences: [ended, future] } as Event, now);
+    expect(recurring.selectableOccurrences.map(item => item.id)).toEqual(["future"]);
+    expect(recurring.isTimeUnavailable).toBe(false);
+  }
   expect(goingSelection({ ...event, cancelled: true, occurrences: [future] } as Event, now).isTimeUnavailable).toBe(true);
+});
+
+test("a Going callback captured before a recurring session starts cannot register while live", async () => {
+  const beforeStart = Date.parse("2026-10-07T22:00:00Z");
+  let now = beforeStart;
+  const saved: string[][] = [];
+  let clears = 0;
+  const selection = goingSelection({ ...event, occurrences: [
+    { id: "first", dtstart_utc: new Date(beforeStart + 1000).toISOString(), dtend_utc: new Date(beforeStart + 2000).toISOString() },
+    { id: "future", dtstart_utc: new Date(beforeStart + 86_400_000).toISOString(), dtend_utc: null },
+  ] } as Event, beforeStart, [], { now: () => now, onSave: ids => saved.push(ids), onClear: () => { clears++; } });
+  expect(selection.selectableOccurrences).toHaveLength(2);
+  expect(selection.canRegisterNow()).toBe(true);
+  now += 1000;
+  expect(selection.canRegisterNow()).toBe(false);
+  await expect(selection.saveSelection(["future"])).rejects.toThrow("One or more occurrences can no longer be selected");
+  expect(saved).toEqual([]);
+  await selection.saveSelection([]);
+  expect(clears).toBe(1);
+  now += 1001;
+  expect(selection.canRegisterNow()).toBe(true);
+  await selection.saveSelection(["future"]);
+  expect(saved).toEqual([["future"]]);
 });
 
 test("started Going selections retain confirmation and cancellation until the session ends", () => {
@@ -142,32 +185,40 @@ test("started Going selections retain confirmation and cancellation until the se
   expect(goingSelection({ ...event, occurrences: [{ ...occurrence, dtend_utc: new Date(now - 1).toISOString() }] } as Event, now, ["selected"]).isActive).toBe(false);
 });
 
-test("the attendance clock updates at the start instant instead of waiting for the next minute", () => {
-  const now = Date.parse("2026-10-07T22:00:00Z");
-  const filename = new URL("../src/features/events/hooks/useGoingEvents.ts", import.meta.url);
-  const source = ts.transpileModule(readFileSync(filename, "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText;
-  const exports = {} as typeof import("../src/features/events/hooks/useGoingEvents");
-  const timers: { delay: number; callback: () => void }[] = [];
-  const updatedTimes: number[] = [];
-  const cleanups: (() => void)[] = [];
-  const cleared: number[] = [];
-  const contextDate = function(value: string) { return new Date(value); };
-  contextDate.now = () => now;
-  const runtime = { exports, Date: contextDate, window: {
-    setTimeout: (callback: () => void, delay: number) => { timers.push({ delay, callback }); return timers.length; },
-    setInterval: () => 99, clearTimeout: (id: number) => cleared.push(id), clearInterval() {},
-  }, require: (id: string) => id === "react" ? {
-    useState: () => [now, (value: number) => updatedTimes.push(value)],
-    useEffect: (fn: () => (() => void) | undefined) => { const cleanup = fn(); if (cleanup) cleanups.push(cleanup); },
-  } : {} };
-  runInNewContext(source, runtime);
-  exports.useCurrentTime([{ dtstart_utc: new Date(now + 1250).toISOString() }, { dtstart_utc: new Date(now + 60_000).toISOString() }]);
-  expect(timers.map(timer => timer.delay)).toEqual([0, 1250]);
-  timers[1].callback();
-  expect(updatedTimes).toEqual([now]);
-  cleanups.forEach(cleanup => cleanup());
-  expect(cleared).toEqual([1, 2]);
-});
+for (const boundary of ["start", "end", "no-end expiry"] as const) {
+  test(`the attendance clock updates at the ${boundary} boundary instead of waiting for the next minute`, () => {
+    const now = Date.parse("2026-10-07T22:00:00Z");
+    const filename = new URL("../src/features/events/hooks/useGoingEvents.ts", import.meta.url);
+    const source = ts.transpileModule(readFileSync(filename, "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText;
+    const exports = {} as typeof import("../src/features/events/hooks/useGoingEvents");
+    const timers: { delay: number; callback: () => void }[] = [];
+    const updatedTimes: number[] = [];
+    const cleanups: (() => void)[] = [];
+    const cleared: number[] = [];
+    const contextDate = function(value: string) { return new Date(value); };
+    contextDate.now = () => now;
+    const require = createRequire(filename);
+    const runtime = { exports, Date: contextDate, window: {
+      setTimeout: (callback: () => void, delay: number) => { timers.push({ delay, callback }); return timers.length; },
+      setInterval: () => 99, clearTimeout: (id: number) => cleared.push(id), clearInterval() {},
+    }, require: (id: string) => id === "react" ? {
+      useState: () => [now, (value: number) => updatedTimes.push(value)],
+      useEffect: (fn: () => (() => void) | undefined) => { const cleanup = fn(); if (cleanup) cleanups.push(cleanup); },
+    } : id === "@/shared/utils/date" ? require(new URL("../src/shared/utils/date.ts", import.meta.url).pathname) : {} };
+    runInNewContext(source, runtime);
+    const occurrence = boundary === "start"
+      ? { dtstart_utc: new Date(now + 1250).toISOString() }
+      : boundary === "end"
+        ? { dtstart_utc: new Date(now - 60_000).toISOString(), dtend_utc: new Date(now + 750).toISOString() }
+        : { dtstart_utc: new Date(now - controlBox.eventDiscovery.eventWithoutEndVisibilityMs + 750).toISOString() };
+    exports.useCurrentTime([occurrence, { dtstart_utc: new Date(now + 60_000).toISOString() }]);
+    expect(timers.map(timer => timer.delay)).toEqual([0, boundary === "start" ? 1250 : 751]);
+    timers[1].callback();
+    expect(updatedTimes).toEqual([now]);
+    cleanups.forEach(cleanup => cleanup());
+    expect(cleared).toEqual([1, 2]);
+  });
+}
 
 test("an open occurrence picker drops drafts that have started before confirmation", async () => {
   const filename = new URL("../src/features/events/components/GoingOccurrencePickerContent.tsx", import.meta.url);
