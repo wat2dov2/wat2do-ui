@@ -3,6 +3,7 @@ import type { SchoolSummary } from "@/shared/api/schools.api";
 import { controlBox } from "@/shared/config/controlBox";
 import { getQueryClient } from "@/shared/lib/queryClient";
 import { queryKeys } from "@/shared/lib/queryKeys";
+import { isVirtualLocation } from "@/shared/utils/event";
 
 export const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? "";
 export type MapCoordinates = [longitude: number, latitude: number];
@@ -17,12 +18,17 @@ interface MapboxSearchResponse {
   features: { geometry: { type: string; coordinates: number[] }; properties: { feature_type: string; name?: string; full_address?: string } }[];
 }
 
-function venueName(location: string): string | null {
-  const name = location.replace(/\b(?:room|rm\.?|suite|floor)\s*#?\s*[\w-]+/gi, "")
-    .replace(/^(?!\d)(.*?)\s+\d{3,4}[a-z]?$/i, "$1")
-    .replace(/\s*\([A-Z][A-Z\d]{0,4}(?:\/[A-Z][A-Z\d]{0,4})*\)/g, "")
+export function venueName(location: string): string | null {
+  const physical = location.split(/\s*[;|]\s*|\s+\/\s+/)
+    .filter(part => part.trim() && !isVirtualLocation(part)).join(", ");
+  // The map searches the building, while the event retains rooms, subvenues,
+  // addresses and its online option. Those details aren't separate public POIs.
+  const building = physical.replace(/\b(?:room|rm\.?|suite|floor)\s*#?\s*[\w-]+/gi, "")
+    .replace(/^[\s,]+/, "").split(",")[0]
+    .replace(/\s*\([A-Z][A-Z\d]{0,4}(?:\/[A-Z][A-Z\d]{0,4})*\).*$/, "");
+  const name = building.replace(/^(?!\d)(.*?)\s+\d{3,4}[a-z]?$/i, "$1")
     .replace(/^[\s,;-]+|[\s,;-]+$/g, "").trim();
-  return !name || /^(?:[a-z]{1,2}|tbd|tba|unknown|n\/a)$/i.test(name) ? null : name;
+  return !name || /^(?:[a-z]{1,2}|tbd|tba|tbc|unknown|n\/a|hybrid|campus|on[-\s]?campus|in[-\s]?person)$/i.test(name) ? null : name;
 }
 
 function matchesVenue(name: string, feature: MapboxSearchResponse["features"][number]): boolean {

@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import type { Event } from "../src/shared/types";
 import type { SchoolSummary } from "../src/shared/api/schools.api";
 import { toCalendarEvents } from "../src/features/events/lib/calendarEvents";
-import { eventMapLocationsQuery } from "../src/features/events/api/eventMap.api";
+import { eventMapLocationsQuery, venueName } from "../src/features/events/api/eventMap.api";
 import { getQueryClient } from "../src/shared/lib/queryClient";
 import { controlBox } from "../src/shared/config/controlBox";
 
@@ -162,4 +162,25 @@ test("map searches full building names without requiring their printed abbreviat
   expect(requests).toContain("Science Teaching Complex, Waterloo");
   expect(result.locations["Mathematics and Computer (MC), room 2034"]).toEqual([-80.54, 43.47]);
   expect(result.locations["Pearl Sullivan Engineering Building (PSE/E7), room 1200"]).toEqual([-80.54, 43.47]);
+});
+
+test("hybrid events map their physical venue while online-only events never create a pin", async () => {
+  const requests: string[] = [];
+  globalThis.fetch = async input => {
+    requests.push(new URL(String(input)).searchParams.get("q")!);
+    return searchResponse([-80.54, 43.47], "poi", "University of Waterloo Student Life Centre");
+  };
+  expect(venueName("Online (Zoom)")).toBeNull();
+  expect(venueName("Hybrid")).toBeNull();
+  expect(venueName("On-Campus")).toBeNull();
+  expect(venueName("Pinnacle Hotel Harbourfront, 1133 W Hastings Street, Vancouver, BC / Online")).toBe("Pinnacle Hotel Harbourfront");
+  expect(venueName("Student Life Centre (SLC) Lower Atrium")).toBe("Student Life Centre");
+  expect(venueName("Room 2034, Student Life Centre")).toBe("Student Life Centre");
+  const locations = ["Online; Student Life Centre", "Student Life Centre / Online (Zoom)", "Online (Zoom)"];
+  const result = await getQueryClient().fetchQuery(eventMapLocationsQuery(school.slug, school, locations));
+  expect(result.locations[locations[0]]).toEqual([-80.54, 43.47]);
+  expect(result.locations[locations[1]]).toEqual([-80.54, 43.47]);
+  expect(result.locations[locations[2]]).toBeNull();
+  expect(requests).toHaveLength(2); // Campus and one shared physical venue.
+  expect(requests[1]).toBe("Student Life Centre, Waterloo");
 });

@@ -1,9 +1,8 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { eventMapLocationsQuery, MAPBOX_TOKEN, type MapCoordinates } from "@/features/events/api/eventMap.api";
+import { eventMapLocationsQuery, MAPBOX_TOKEN, venueName, type MapCoordinates } from "@/features/events/api/eventMap.api";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 import type { Event } from "@/shared/types";
-import { isVirtualLocation } from "@/shared/utils/event";
 
 export interface EventMapVenue {
   coordinates: MapCoordinates;
@@ -15,7 +14,7 @@ export function useEventMap(events: Event[], schoolSlug: string) {
   const school = schoolBySlug.get(schoolSlug);
   const locations = useMemo(() => events.flatMap(event => {
     const location = event.location?.trim();
-    return location && !isVirtualLocation(location) ? [location] : [];
+    return location && venueName(location) ? [location] : [];
   }), [events]);
   const query = useQuery({
     ...eventMapLocationsQuery(schoolSlug, school, locations),
