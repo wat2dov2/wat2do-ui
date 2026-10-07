@@ -84,6 +84,7 @@ function SelectTrigger({
       {...props}
     >
       {children}
+      <SelectPrimitive.Icon asChild><ChevronDown aria-hidden="true" className="size-4 shrink-0" /></SelectPrimitive.Icon>
     </SelectPrimitive.Trigger>
   )
 }

@@ -290,3 +290,12 @@ test("shared price fields expose translated min and max placeholders", () => {
   expect(html).toContain('placeholder="filters.min"');
   expect(html).toContain('placeholder="filters.max"');
 });
+
+test("shared Select trigger supplies its disclosure chevron", () => {
+  const { Select, SelectTrigger, SelectValue } = loadComponent("shared/ui/select") as typeof import("../src/shared/ui/select");
+  const html = renderToStaticMarkup(createElement(Select, { value: "grid" },
+    createElement(SelectTrigger, { "aria-label": "View" }, createElement(SelectValue, null, "Grid"))));
+  expect(html).toContain('data-slot="select-trigger"');
+  expect(html.match(/<svg/g)).toHaveLength(1);
+  expect(html).toContain('aria-hidden="true"');
+});

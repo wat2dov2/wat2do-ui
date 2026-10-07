@@ -11,7 +11,7 @@
     "map_cluster_max_zoom": 14,
     "map_search_concurrency": 4,
     "map_search_timeout_seconds": 10,
-    "map_light_style": "mapbox://styles/mapbox/light-v11",
+    "map_light_style": "mapbox://styles/mapbox/streets-v12",
     "map_dark_style": "mapbox://styles/mapbox/dark-v11"
   },
   "campus_seasons": {

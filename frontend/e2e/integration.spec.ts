@@ -1865,7 +1865,7 @@ test.describe("Events Page", () => {
     const startsAt = new Date(Date.now() + 3_600_000).toISOString();
     const event = {
       id: 9017, title: "Calendar cooking night", club: "Cooking Club", club_id: 1,
-      location: "Student Life Centre", price: 5, category: "Technology", school: "uwaterloo",
+      location: "Student Life Centre", price: 5, category: "Arts & Culture", school: "uwaterloo",
       added_at: new Date().toISOString(), food: [], registration: false,
       occurrences: [{ id: "calendar-occurrence", event_id: 9017, dtstart_utc: startsAt, dtend_utc: null }],
     };
@@ -1878,6 +1878,7 @@ test.describe("Events Page", () => {
     await page.goto(BASE);
     const views = page.getByRole("combobox", { name: "Event view" });
     await expect(views).toHaveText("Grid");
+    await expect(views.locator("svg")).toHaveCount(1);
     await expect(page.locator('article[data-event-id="9017"]')).toBeVisible();
     const filters = page.getByTestId("event-quick-filter-scroll");
     await filters.getByRole("button", { name: "Any price", exact: true }).click();
@@ -1889,7 +1890,9 @@ test.describe("Events Page", () => {
     await page.getByRole("option", { name: "Calendar", exact: true }).click();
     await expect(page.locator(".rbc-calendar")).toBeVisible();
     await page.getByRole("tab", { name: "Month", exact: true }).click();
-    await page.locator(".rbc-event").filter({ hasText: event.title }).first().click();
+    const calendarEvent = page.locator(".rbc-event").filter({ hasText: event.title }).first();
+    await expect(calendarEvent).toHaveCSS("background-color", "rgb(255, 179, 194)");
+    await calendarEvent.click();
     await expect(page.getByRole("dialog", { name: event.title, exact: true })).toBeVisible();
     await page.keyboard.press("Escape");
     await views.click();

@@ -1,25 +1,81 @@
-[data-slot="event-view-surface"] .mapboxgl-popup-content {
-  background: var(--surface-elevated);
-  color: var(--foreground);
-  border: 1px solid var(--border);
+/* Map-owned poster and sheet composition, shared by every venue and cluster. */
+.event-map-marker[data-slot="button"] {
+  position: relative;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  border: 2px solid var(--surface);
   border-radius: 0.75rem;
-  padding: 1.25rem 0.75rem 0.75rem;
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+  overflow: visible;
 }
-[data-slot="event-view-surface"] :is(.mapboxgl-popup-anchor-bottom, .mapboxgl-popup-anchor-bottom-left, .mapboxgl-popup-anchor-bottom-right) .mapboxgl-popup-tip {
-  border-top-color: var(--surface-elevated);
+.event-map-marker img,
+.event-map-row img {
+  border-radius: 0.5rem;
+  object-fit: cover;
 }
-[data-slot="event-view-surface"] :is(.mapboxgl-popup-anchor-top, .mapboxgl-popup-anchor-top-left, .mapboxgl-popup-anchor-top-right) .mapboxgl-popup-tip {
-  border-bottom-color: var(--surface-elevated);
+.event-map-marker-count {
+  position: absolute;
+  top: -0.5rem;
+  right: -0.5rem;
+  min-width: 1.125rem;
+  padding-inline: 0.25rem;
+  border-radius: 999px;
+  background: var(--foreground);
+  color: var(--surface);
+  font-size: 0.625rem;
+  line-height: 1.125rem;
 }
-[data-slot="event-view-surface"] .mapboxgl-popup-anchor-left .mapboxgl-popup-tip {
-  border-right-color: var(--surface-elevated);
-}
-[data-slot="event-view-surface"] .mapboxgl-popup-anchor-right .mapboxgl-popup-tip {
-  border-left-color: var(--surface-elevated);
-}
-[data-slot="event-view-surface"] .mapboxgl-popup-close-button {
+.event-map-sheet {
+  position: absolute;
+  inset-block: 0;
+  right: 0;
+  z-index: 2;
+  width: min(20rem, 85%);
+  overflow-y: auto;
+  padding: 0.75rem;
+  background: var(--surface);
   color: var(--foreground);
+  border-left: 1px solid var(--border);
+  box-shadow: var(--shadow-lg);
 }
-[data-slot="event-view-surface"] .mapboxgl-popup-close-button:hover {
-  background: var(--surface-hover);
+.event-map-row[data-slot="button"] {
+  width: 100%;
+  height: auto;
+  padding: 0.375rem;
+  justify-content: start;
+  align-items: start;
+  text-align: left;
+  white-space: normal;
+}
+.event-map-row-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  font-size: 0.75rem;
+  line-height: 1.25;
+}
+.event-map-row-copy strong {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+.event-map-row-copy > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--muted-foreground);
+}
+.event-map-marker [data-slot="lazy-image"] {
+  width: 100%;
+  height: 100%;
+  border-radius: 0.5rem;
+}
+.event-map-row [data-slot="lazy-image"] {
+  width: 2.75rem;
+  height: 2.75rem;
+  flex-shrink: 0;
+  border-radius: 0.5rem;
 }

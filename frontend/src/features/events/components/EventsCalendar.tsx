@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type CSSProperties } from "react";
 import { Calendar, dateFnsLocalizer, type ToolbarProps, type View, type Formats } from "react-big-calendar";
 import { format, getDay, startOfWeek } from "date-fns";
 import { enUS } from "date-fns/locale/en-US";
@@ -16,6 +16,8 @@ import { Button } from "@/shared/ui/button";
 import { ChevronLeft, ChevronRight } from "@/shared/ui/doodle-icons";
 import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import type { Event } from "@/shared/types";
+
+import { getClubCategoryConfig, clubCategoryInk } from "@/shared/data/clubCategoryStyles";
 
 const localizer = dateFnsLocalizer({ format, startOfWeek, getDay, locales: { en: enUS, fr } });
 
@@ -82,6 +84,7 @@ export function EventsCalendar({ events, school, onEventClick }: { events: Event
           views={["month", "week", "day"]}
           onNavigate={setDate}
           onView={setView}
+          eventPropGetter={item => ({ style: { "--event-category-color": getClubCategoryConfig(item.event.category).color, "--event-category-ink": clubCategoryInk } as CSSProperties })}
           onSelectEvent={item => onEventClick(item.event)}
           getNow={() => toZonedTime(new Date(), timeZone)}
           scrollToTime={scrollToTime}
