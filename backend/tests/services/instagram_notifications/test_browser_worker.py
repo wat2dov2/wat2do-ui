@@ -1,6 +1,8 @@
 import fcntl
 import signal
 import threading
+from concurrent.futures import ALL_COMPLETED
+from concurrent.futures import wait as wait_for_futures
 from dataclasses import replace
 from types import SimpleNamespace
 
@@ -10,6 +12,15 @@ from services.instagram_notifications import browser_worker as module
 from services.instagram_notifications import carousel_engagement, notification_ingestion
 from services.instagram_notifications.browser_digest import DigestResolution
 from services.instagram_notifications.browser_queue import BrowserJobQueue
+from services.instagram_notifications.browser_session import (
+    BrowserAccountChanged,
+    BrowserTabPool,
+    _BrowserAutomationTransient,
+    _BrowserPageUnavailable,
+    _BrowserReadCleanupPending,
+    _BrowserTabUnavailable,
+)
+from services.instagram_notifications.browser_worker import maintain_tab_pool
 
 RECIPIENT_ID = "12342599092"
 ACCOUNT_USERNAME = "ubc.wat2do.io"
@@ -27,6 +38,27 @@ def isolated_browser(monkeypatch, tmp_path):
         lambda: pytest.fail("Worker tests must never operate the browser"),
     )
 
+    monkeypatch.setattr(
+        module,
+        "BrowserTabPool",
+        lambda _: SimpleNamespace(
+            settle_registered_tabs=lambda: None,
+            ensure_capacity=lambda: [],
+            prepare=lambda job, count: (
+                [
+                    SimpleNamespace(
+                        cancel_pending_request=lambda: None,
+                        read=lambda _: "/",
+                        current_account_username=lambda: ACCOUNT_USERNAME,
+                        poll_until=lambda ready: ready(),
+                    )
+                    for _ in range(count)
+                ],
+                ACCOUNT_USERNAME,
+            ),
+        ),
+    )
+
 
 @pytest.fixture
 def queue(tmp_path):
@@ -40,6 +72,31 @@ def _engagement(queue, shortcode="Post1"):
         account_username=ACCOUNT_USERNAME,
         post_url=f"https://www.instagram.com/p/{shortcode}/",
     )
+
+
+def _settling_executor(execute):
+    """A stub operation retains execute_job's exact-tab settlement contract."""
+
+    def settled(job, *, session=None):
+        try:
+            return execute(job, session=session)
+        finally:
+            if session is not None:
+                session.cancel_pending_request()
+
+    return settled
+
+
+def _run_test_source_pollers(queue, stopping):
+    pollers = module._source_pollers(queue, stopping)
+    for poller in pollers:
+        poller.start()
+    try:
+        assert stopping.wait(5), "A test source must request shutdown"
+    finally:
+        stopping.set()
+        for poller in pollers:
+            poller.join(timeout=5)
 
 
 def test_busy_browser_lock_prevents_claiming_any_job(queue, monkeypatch):
@@ -60,7 +117,7 @@ def test_digest_overtakes_likes_during_engagement_cooldown(queue, monkeypatch):
     monkeypatch.setattr(module, "time", SimpleNamespace(time=lambda: now[0]))
     executed = []
 
-    def execute(job):
+    def execute(job, **kwargs):
         executed.append(job.id)
         return {"status": "succeeded"}
 
@@ -125,7 +182,7 @@ def test_timed_out_job_is_failed_once_and_releases_browser_for_digest(queue, mon
     assert not queue.get_setting("paused", False)
 
     digest_id = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "cache-after-timeout")
-    monkeypatch.setattr(module, "execute_job", lambda job: {"status": "succeeded"})
+    monkeypatch.setattr(module, "execute_job", lambda job, **kwargs: {"status": "succeeded"})
 
     assert module.process_next_job(queue) is True
     assert queue.get(digest_id).state == "succeeded"
@@ -193,7 +250,7 @@ def test_unexpected_exception_is_sanitized_and_requires_inspection(queue, monkey
 def test_known_account_failure_does_not_quarantine_other_notifications(queue, monkeypatch):
     failed_id = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "cache-missing-account")
 
-    def unavailable(_job):
+    def unavailable(_job, **kwargs):
         raise module.BrowserSessionError("Matching Instagram browser account is unavailable")
 
     monkeypatch.setattr(module, "execute_job", unavailable)
@@ -322,9 +379,7 @@ def test_once_recovers_under_browser_lock_and_never_starts_collection(queue, mon
         original_recovery()
 
     monkeypatch.setattr(queue, "recover_interrupted", recover)
-    monkeypatch.setattr(
-        module, "_collect_carousels", lambda *_: pytest.fail("Once must not collect")
-    )
+    monkeypatch.setattr(module, "_source_pollers", lambda *_: pytest.fail("Once must not collect"))
     prior_term = signal.getsignal(signal.SIGTERM)
 
     module.run_worker(queue, once=True, collect=True)
@@ -347,9 +402,11 @@ def test_collector_source_failure_is_sanitized_and_retried(queue, monkeypatch, c
         return {"submitted": 0}
 
     monkeypatch.setattr(carousel_engagement, "sync_published_carousels", sync)
-    monkeypatch.setattr(stopping, "wait", lambda _: stopping.is_set())
+    monkeypatch.setattr(
+        module, "CONTROL", module.CONTROL.model_copy(update={"source_poll_interval_seconds": 0.01})
+    )
 
-    module._collect_carousels(queue, stopping)
+    _run_test_source_pollers(queue, stopping)
 
     assert len(attempts) == 2
     assert queue.get_setting("source_status")["result"] == {"submitted": 0}
@@ -370,7 +427,7 @@ def test_blocked_collector_cannot_delay_a_digest_and_stops_on_shutdown(queue, mo
         finished.set()
         return {"submitted": 0}
 
-    def execute(job):
+    def execute(job, **kwargs):
         assert entered.is_set()
         assert not finished.is_set()
         calls.append(job.id)
@@ -411,7 +468,7 @@ def test_ten_retrievals_overlap_and_release_lock_only_after_cleanup(queue, monke
     cleaned = []
     sessions = [
         SimpleNamespace(
-            run=lambda _: "/",
+            read=lambda _: "/",
             current_account_username=lambda: ACCOUNT_USERNAME,
             poll_until=lambda ready: ready(),
             cancel_pending_request=lambda i=i: cleaned.append(i),
@@ -432,7 +489,7 @@ def test_ten_retrievals_overlap_and_release_lock_only_after_cleanup(queue, monke
                 fcntl.flock(probe, fcntl.LOCK_EX | fcntl.LOCK_NB)
         return {"target_url": job.payload["url"]}
 
-    monkeypatch.setattr(module, "execute_job", retrieve)
+    monkeypatch.setattr(module, "execute_job", _settling_executor(retrieve))
     assert module.process_next_job(queue)
     assert sum(queue.get(job_id).state == "succeeded" for job_id in ids) == 11
     assert sum(queue.get(job_id).state == "pending" for job_id in ids) == 0
@@ -455,7 +512,7 @@ def test_parallel_challenge_pauses_queue_and_settles_each_tab(queue, monkeypatch
     cleaned = []
     sessions = [
         SimpleNamespace(
-            run=lambda _: "/challenge/",
+            read=lambda _: "/challenge/",
             current_account_username=lambda: ACCOUNT_USERNAME,
             poll_until=lambda ready: ready(),
             cancel_pending_request=lambda: cleaned.append(True),
@@ -496,7 +553,7 @@ def test_parallel_login_redirect_that_clears_does_not_pause(queue, monkeypatch):
             assert ready() is True
 
         return SimpleNamespace(
-            run=lambda _: next(paths),
+            read=lambda _: next(paths),
             current_account_username=lambda: ACCOUNT_USERNAME,
             poll_until=poll,
             cancel_pending_request=lambda: None,
@@ -529,7 +586,7 @@ def test_fast_tab_refills_before_slow_tab_finishes(queue, monkeypatch):
     refilled = threading.Event()
     sessions = [
         SimpleNamespace(
-            run=lambda _: "/",
+            read=lambda _: "/",
             current_account_username=lambda: ACCOUNT_USERNAME,
             poll_until=lambda ready: ready(),
             cancel_pending_request=lambda: None,
@@ -563,7 +620,7 @@ def test_transient_retrieval_timeout_retries_bounded_without_global_pause(queue,
         url="https://www.instagram.com/p/Retry/",
     )
     session = SimpleNamespace(
-        run=lambda _: "/",
+        read=lambda _: "/",
         current_account_username=lambda: ACCOUNT_USERNAME,
         poll_until=lambda ready: ready(),
         cancel_pending_request=lambda: None,
@@ -594,7 +651,7 @@ def test_stream_uses_idle_tabs_for_jobs_arriving_after_start(queue, monkeypatch)
     arrived = threading.Event()
     sessions = [
         SimpleNamespace(
-            run=lambda _: "/",
+            read=lambda _: "/",
             current_account_username=lambda: ACCOUNT_USERNAME,
             poll_until=lambda ready: ready(),
             cancel_pending_request=lambda: None,
@@ -629,20 +686,23 @@ def test_stream_uses_idle_tabs_for_jobs_arriving_after_start(queue, monkeypatch)
 def test_collector_feeds_notifications_without_an_import(queue, monkeypatch):
     stopping = threading.Event()
     calls = []
+    notified = threading.Event()
 
     def sync(current):
         assert current is queue
         calls.append("notifications")
+        notified.set()
         return {"queued": 140}
 
     def carousel(current):
+        assert notified.wait(5)
         calls.append("carousels")
         stopping.set()
         return {}
 
     monkeypatch.setattr(notification_ingestion, "sync_notification_media", sync)
     monkeypatch.setattr(carousel_engagement, "sync_published_carousels", carousel)
-    module._collect_carousels(queue, stopping)
+    _run_test_source_pollers(queue, stopping)
     assert calls == ["notifications", "carousels"]
 
 
@@ -659,7 +719,7 @@ def test_retrieval_stream_keeps_refilling_past_one_job_timeout(queue, monkeypatc
         url="https://www.instagram.com/p/LongStream/",
     )
     session = SimpleNamespace(
-        run=lambda _: "/",
+        read=lambda _: "/",
         current_account_username=lambda: ACCOUNT_USERNAME,
         poll_until=lambda ready: ready(),
         cancel_pending_request=lambda: None,
@@ -667,7 +727,10 @@ def test_retrieval_stream_keeps_refilling_past_one_job_timeout(queue, monkeypatc
     monkeypatch.setattr(
         module,
         "BrowserTabPool",
-        lambda _: SimpleNamespace(prepare=lambda *args: ([session], ACCOUNT_USERNAME)),
+        lambda _: SimpleNamespace(
+            prepare=lambda *args: ([session], ACCOUNT_USERNAME),
+            settle_registered_tabs=lambda: None,
+        ),
     )
     later = []
 
@@ -711,13 +774,14 @@ def test_manual_account_switch_drains_before_bounded_retry(queue, monkeypatch, p
     mismatched = threading.Event()
     preparations = []
     executions = []
-    original_retry = queue.retry
+    original_finish = queue.finish
 
-    def retry(job_id):
-        assert drained.is_set(), "Account recovery must wait for every active tab"
-        original_retry(job_id)
+    def finish(job_id, **kwargs):
+        if kwargs.get("requeue"):
+            assert drained.is_set(), "Account recovery must wait for every active tab"
+        original_finish(job_id, **kwargs)
 
-    monkeypatch.setattr(queue, "retry", retry)
+    monkeypatch.setattr(queue, "finish", finish)
     monkeypatch.setattr(module.time, "sleep", lambda _: None)
 
     def prepare(job, count):
@@ -738,7 +802,7 @@ def test_manual_account_switch_drains_before_bounded_retry(queue, monkeypatch, p
 
             sessions.append(
                 SimpleNamespace(
-                    run=lambda _: "/",
+                    read=lambda _: "/",
                     current_account_username=current,
                     poll_until=lambda ready: ready(),
                     cancel_pending_request=lambda i=i: drained.set() if i == 1 else None,
@@ -747,7 +811,11 @@ def test_manual_account_switch_drains_before_bounded_retry(queue, monkeypatch, p
         return sessions, ACCOUNT_USERNAME
 
     monkeypatch.setattr(module, "BrowserTabPool", lambda _: SimpleNamespace(prepare=prepare))
-    monkeypatch.setattr(module, "execute_job", lambda job, **_: executions.append(job.id) or {})
+    monkeypatch.setattr(
+        module,
+        "execute_job",
+        _settling_executor(lambda job, **_: executions.append(job.id) or {}),
+    )
     assert module.process_next_job(queue)
     assert queue.get(ids[0]).state == "pending"
     assert queue.get(ids[1]).state == ("pending" if persistent else "succeeded")
@@ -760,4 +828,825 @@ def test_manual_account_switch_drains_before_bounded_retry(queue, monkeypatch, p
     if persistent:
         assert job.attempts == module.CONTROL.ingestion_retry_limit
         assert "expected ubc.wat2do.io, found wat2do.uwaterloo" in job.error
+    assert not queue.get_setting("paused", False)
+
+
+def test_transient_tab_inventory_failure_defers_maintenance_without_pausing(queue, monkeypatch):
+    from services.instagram_notifications.browser_session import _BrowserAutomationTransient
+
+    calls = 0
+
+    def capacity(self):
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            raise _BrowserAutomationTransient(
+                "Brave could not run Instagram browser automation (Apple Event -1719)"
+            )
+        return ["42"]
+
+    monkeypatch.setattr(module, "BrowserTabPool", BrowserTabPool)
+    monkeypatch.setattr(BrowserTabPool, "ensure_capacity", capacity)
+    maintain_tab_pool(queue)
+    assert not queue.get_setting("paused", False)
+    maintain_tab_pool(queue)
+    assert calls == 2
+    assert not queue.get_setting("paused", False)
+
+
+@pytest.mark.parametrize("kind", ["retrieval", "digest"])
+@pytest.mark.parametrize(
+    "failure_type",
+    [
+        _BrowserAutomationTransient,
+        _BrowserPageUnavailable,
+        TimeoutError,
+    ],
+)
+def test_safe_read_failure_retries_without_pausing_or_exposing_final_failure(
+    queue, monkeypatch, kind, failure_type
+):
+    job_id = (
+        queue.enqueue_retrieval(
+            school="ubc",
+            recipient_id=RECIPIENT_ID,
+            account_username=ACCOUNT_USERNAME,
+            url="https://www.instagram.com/p/Recoverable/",
+        )
+        if kind == "retrieval"
+        else queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "recoverable-cache")
+    )
+    calls = []
+    settlements = []
+    session = SimpleNamespace(
+        read=lambda _: "/",
+        current_account_username=lambda: ACCOUNT_USERNAME,
+        poll_until=lambda ready: ready(),
+        cancel_pending_request=lambda: settlements.append(True),
+    )
+    monkeypatch.setattr(
+        module,
+        "BrowserTabPool",
+        lambda _: SimpleNamespace(prepare=lambda *args: ([session], ACCOUNT_USERNAME)),
+    )
+
+    def operation(job, **_kwargs):
+        calls.append(job.id)
+        if len(calls) == 1:
+            raise failure_type("Recoverable browser read failed")
+        return {"status": "succeeded"}
+
+    monkeypatch.setattr(module, "execute_job", _settling_executor(operation))
+    assert module.process_next_job(queue)
+    if kind == "digest":
+        assert queue.get(job_id).state == "pending"
+        assert queue.get(job_id).error is None
+        assert module.process_next_job(queue)
+    assert queue.get(job_id).state == "succeeded"
+    assert queue.get(job_id).attempts == 2
+    assert len(settlements) == 2
+    assert not queue.get_setting("paused", False)
+
+
+@pytest.mark.parametrize("kind", ["retrieval", "digest"])
+def test_repeated_bridge_failure_has_a_finite_read_retry_budget(queue, monkeypatch, kind):
+    job_id = (
+        queue.enqueue_retrieval(
+            school="ubc",
+            recipient_id=RECIPIENT_ID,
+            account_username=ACCOUNT_USERNAME,
+            url="https://www.instagram.com/p/Budget/",
+        )
+        if kind == "retrieval"
+        else queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "budget-cache")
+    )
+
+    def failed(*args, **kwargs):
+        raise _BrowserAutomationTransient("Brave read bridge timed out")
+
+    monkeypatch.setattr(module, "execute_job", _settling_executor(failed))
+    for _ in range(module.CONTROL.ingestion_retry_limit):
+        if queue.get(job_id).state == "failed":
+            break
+        assert module.process_next_job(queue)
+    assert queue.get(job_id).state == "failed"
+    assert queue.get(job_id).attempts == module.CONTROL.ingestion_retry_limit
+    assert not queue.get_setting("paused", False)
+
+
+def test_digest_mismatch_during_query_stays_running_until_other_tab_settles(queue, monkeypatch):
+    first = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "mismatch-query")
+    second = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "slow-query")
+    mismatched = threading.Event()
+    settled = threading.Event()
+    session_ids = {}
+
+    def prepare(job, count):
+        sessions = [
+            SimpleNamespace(
+                read=lambda _: "/",
+                current_account_username=lambda: ACCOUNT_USERNAME,
+                poll_until=lambda ready: ready(),
+                cancel_pending_request=lambda i=i: settled.set() if i == 1 else None,
+            )
+            for i in range(2)
+        ]
+        session_ids.update({id(session): index for index, session in enumerate(sessions)})
+        return sessions, ACCOUNT_USERNAME
+
+    def operation(job, *, session):
+        if session_ids[id(session)] == 0:
+            mismatched.set()
+            raise BrowserAccountChanged("Instagram account changed during digest query")
+        assert mismatched.wait(5)
+        assert queue.get(first).state == "running"
+        assert queue.get(first).error is None
+        return {"status": "succeeded"}
+
+    monkeypatch.setattr(module, "BrowserTabPool", lambda _: SimpleNamespace(prepare=prepare))
+    monkeypatch.setattr(module, "execute_job", _settling_executor(operation))
+    assert module.process_next_job(queue)
+    assert settled.is_set()
+    assert queue.get(first).state == "pending"
+    assert queue.get(second).state == "succeeded"
+    assert queue.get_setting("retrieval_pool_account") is None
+    assert not queue.get_setting("paused", False)
+
+
+def test_aged_engagement_yields_stream_only_after_active_reads_settle(queue, monkeypatch):
+    from services.instagram_notifications import browser_queue as queue_module
+
+    now = [module.time.time()]
+    monkeypatch.setattr(queue_module, "time", SimpleNamespace(time=lambda: now[0]))
+    first = queue.enqueue_retrieval(
+        school="ubc",
+        recipient_id=RECIPIENT_ID,
+        account_username=ACCOUNT_USERNAME,
+        url="https://www.instagram.com/p/BeforeYield/",
+    )
+    engagement_ids = []
+    later_ids = []
+    cleaned = threading.Event()
+    session = SimpleNamespace(
+        read=lambda _: "/",
+        current_account_username=lambda: ACCOUNT_USERNAME,
+        poll_until=lambda ready: ready(),
+        cancel_pending_request=lambda: cleaned.set(),
+    )
+    monkeypatch.setattr(
+        module,
+        "BrowserTabPool",
+        lambda _: SimpleNamespace(
+            prepare=lambda *args: ([session], ACCOUNT_USERNAME),
+            settle_registered_tabs=lambda: None,
+        ),
+    )
+
+    def operation(job, **kwargs):
+        if job.id == first:
+            engagement_ids.append(_engagement(queue, "WaitingFeatured"))
+            later_ids.append(
+                queue.enqueue_retrieval(
+                    school="ubc",
+                    recipient_id=RECIPIENT_ID,
+                    account_username=ACCOUNT_USERNAME,
+                    url="https://www.instagram.com/p/AfterYield/",
+                )
+            )
+            now[0] += queue_module.CONTROL.engagement_max_wait_seconds
+        elif job.kind == "engagement":
+            assert cleaned.is_set()
+            assert queue.get(first).state == "succeeded"
+            assert queue.get(later_ids[0]).state == "pending"
+        return {"status": "succeeded"}
+
+    monkeypatch.setattr(module, "execute_job", _settling_executor(operation))
+    assert module.process_next_job(queue)
+    assert queue.get(later_ids[0]).state == "pending"
+    assert module.process_next_job(queue)
+    assert queue.get(engagement_ids[0]).state == "succeeded"
+    assert module.process_next_job(queue)
+    assert queue.get(later_ids[0]).state == "succeeded"
+
+
+@pytest.mark.parametrize("failed_source", ["notification", "diagnostics"])
+def test_source_failure_does_not_prevent_collecting_published_engagement(
+    queue, monkeypatch, caplog, failed_source
+):
+    stopping = threading.Event()
+    calls = []
+    failed = threading.Event()
+
+    def fail(*args, **kwargs):
+        failed.set()
+        raise ValueError("Private source credentials must stay sanitized")
+
+    def carousel(current):
+        assert current is queue
+        assert failed.wait(5)
+        calls.append("carousel")
+        stopping.set()
+        return {"submitted": 1}
+
+    if failed_source == "notification":
+        monkeypatch.setattr(notification_ingestion, "sync_notification_media", fail)
+    else:
+        monkeypatch.setattr(queue, "publish_diagnostics", fail)
+    monkeypatch.setattr(carousel_engagement, "sync_published_carousels", carousel)
+    _run_test_source_pollers(queue, stopping)
+    assert calls == ["carousel"]
+    assert queue.get_setting("source_status")["result"] == {"submitted": 1}
+    status_key = (
+        "notification_source_status" if failed_source == "notification" else "diagnostics_status"
+    )
+    assert queue.get_setting(status_key)["error"] == "ValueError"
+    assert "Private source credentials" not in caplog.text
+
+
+@pytest.mark.parametrize("stage", ["startup", "maintenance", "prepare"])
+def test_worker_heartbeat_continues_while_browser_preparation_blocks(queue, monkeypatch, stage):
+    entered = threading.Event()
+    release = threading.Event()
+    failures = []
+    monkeypatch.setattr(
+        module, "CONTROL", module.CONTROL.model_copy(update={"worker_poll_interval_seconds": 0.01})
+    )
+
+    def blocked():
+        entered.set()
+        assert release.wait(5)
+
+    if stage == "startup":
+        queue.set_setting("browser_tab_ids", ["42"])
+        monkeypatch.setattr(
+            module,
+            "BrowserTabPool",
+            lambda _: SimpleNamespace(settle_registered_tabs=blocked),
+        )
+        monkeypatch.setattr(
+            module,
+            "BrowserInstagramSession",
+            lambda **kwargs: SimpleNamespace(cancel_pending_request=blocked),
+        )
+    if stage == "maintenance":
+        monkeypatch.setattr(module, "maintain_tab_pool", lambda _: blocked())
+    if stage == "prepare":
+        queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "blocked-prepare")
+
+        def prepare(job, count):
+            blocked()
+            return [
+                SimpleNamespace(
+                    read=lambda _: "/",
+                    current_account_username=lambda: ACCOUNT_USERNAME,
+                    poll_until=lambda ready: ready(),
+                    cancel_pending_request=lambda: None,
+                )
+            ], ACCOUNT_USERNAME
+
+        monkeypatch.setattr(
+            module,
+            "BrowserTabPool",
+            lambda _: SimpleNamespace(prepare=prepare, settle_registered_tabs=lambda: None),
+        )
+    else:
+        _engagement(queue)
+    monkeypatch.setattr(module, "execute_job", lambda *args, **kwargs: {"status": "succeeded"})
+
+    def observe_heartbeat():
+        try:
+            assert entered.wait(5)
+            before = queue.get_setting("worker")
+            assert before["running"] is True
+            assert not release.wait(0.1)
+            after = queue.get_setting("worker")
+            assert after["running"] is True
+            assert after["heartbeat"] > before["heartbeat"]
+        except BaseException as exc:
+            failures.append(exc)
+        finally:
+            release.set()
+
+    observer = threading.Thread(target=observe_heartbeat)
+    observer.start()
+    try:
+        module.run_worker(queue, once=True, collect=False)
+    finally:
+        release.set()
+        observer.join(timeout=5)
+    assert failures == []
+    assert queue.get_setting("worker")["running"] is False
+    assert not any(thread.name == "instagram-browser-heartbeat" for thread in threading.enumerate())
+
+
+@pytest.mark.parametrize("kind", ["retrieval", "digest", "engagement"])
+@pytest.mark.parametrize("secondary", [False, True])
+def test_uncertain_cleanup_defers_only_secondary_reads(queue, monkeypatch, kind, secondary):
+    from services.instagram_notifications import browser_ingestion
+
+    job_id = (
+        queue.enqueue_retrieval(
+            school="ubc",
+            recipient_id=RECIPIENT_ID,
+            account_username=ACCOUNT_USERNAME,
+            url="https://www.instagram.com/p/Retire/",
+        )
+        if kind == "retrieval"
+        else queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "retire-cache")
+        if kind == "digest"
+        else _engagement(queue, "RetirePrimaryForbidden")
+    )
+    retired = []
+
+    def uncertain_cleanup():
+        raise module.BrowserSessionError(
+            "Instagram browser request cancellation could not be confirmed"
+        )
+
+    session = SimpleNamespace(
+        cancel_pending_request=uncertain_cleanup,
+        retire_unresponsive_read_tab=lambda: retired.append(True),
+        is_secondary_read_tab=secondary,
+    )
+    monkeypatch.setattr(
+        browser_ingestion,
+        "BrowserInstagramRetriever",
+        lambda _: SimpleNamespace(retrieve=lambda *args, **kwargs: {}),
+    )
+    monkeypatch.setattr(
+        module,
+        "BrowserInstagramDigestResolver",
+        lambda **kwargs: SimpleNamespace(
+            resolve=lambda *args: DigestResolution(ACCOUNT_USERNAME, (), 1)
+        ),
+    )
+    monkeypatch.setattr(
+        module,
+        "BrowserInstagramEngagementExecutor",
+        lambda **kwargs: SimpleNamespace(engage_post=lambda *args, **kwargs: {}),
+    )
+    expected_error = (
+        _BrowserReadCleanupPending
+        if secondary and kind != "engagement"
+        else module.BrowserSessionError
+    )
+    with pytest.raises(expected_error) as raised:
+        module.execute_job(queue.get(job_id), session=session)
+    assert isinstance(raised.value, _BrowserReadCleanupPending) == (
+        secondary and kind != "engagement"
+    )
+    assert retired == []
+
+
+def test_unconfirmed_secondary_retirement_preserves_cancellation_pause(queue, monkeypatch):
+    from services.instagram_notifications import browser_ingestion
+
+    job_id = queue.enqueue_retrieval(
+        school="ubc",
+        recipient_id=RECIPIENT_ID,
+        account_username=ACCOUNT_USERNAME,
+        url="https://www.instagram.com/p/UnconfirmedRetirement/",
+    )
+    cancellation_error = module.BrowserSessionError(
+        "Instagram browser request cancellation could not be confirmed"
+    )
+
+    def cancel():
+        raise cancellation_error
+
+    def retire():
+        raise module.BrowserSessionError("Exact tab closure could not be confirmed")
+
+    session = SimpleNamespace(
+        cancel_pending_request=cancel,
+        retire_unresponsive_read_tab=retire,
+        is_secondary_read_tab=True,
+        read=lambda _: "/",
+        current_account_username=lambda: ACCOUNT_USERNAME,
+        poll_until=lambda ready: ready(),
+    )
+    monkeypatch.setattr(
+        browser_ingestion,
+        "BrowserInstagramRetriever",
+        lambda _: SimpleNamespace(retrieve=lambda *args, **kwargs: {}),
+    )
+    monkeypatch.setattr(
+        module,
+        "BrowserTabPool",
+        lambda _: SimpleNamespace(prepare=lambda *args: ([session], ACCOUNT_USERNAME)),
+    )
+    assert module.process_next_job(queue)
+    assert queue.get(job_id).state == "failed"
+    assert queue.get_setting("paused") == str(cancellation_error)
+
+
+@pytest.mark.parametrize("retire", [False, True])
+def test_all_fourteen_reads_drain_before_deferred_cleanup_and_no_slots_refill(
+    queue, monkeypatch, retire
+):
+    from services.instagram_notifications import browser_ingestion
+
+    monkeypatch.setattr(module, "CONTROL", module.CONTROL.model_copy(update={"parallel_tabs": 15}))
+    job_ids = [
+        queue.enqueue_retrieval(
+            school="ubc",
+            recipient_id=RECIPIENT_ID,
+            account_username=ACCOUNT_USERNAME,
+            url=f"https://www.instagram.com/p/Drain{index}/",
+        )
+        for index in range(14)
+    ]
+    barrier = threading.Barrier(14)
+    healthy_settled = []
+    proof = []
+    extra = []
+    cancellation_count = 0
+    diagnostics = []
+    original_diagnostic = queue.record_diagnostic
+
+    def diagnostic(state, job=None):
+        diagnostics.append((state, job.id if job else None))
+        original_diagnostic(state, job)
+
+    monkeypatch.setattr(queue, "record_diagnostic", diagnostic)
+
+    def cancel_pending():
+        nonlocal cancellation_count
+        cancellation_count += 1
+        if cancellation_count == 1:
+            raise module.BrowserSessionError(
+                "Instagram browser request cancellation could not be confirmed"
+            )
+        assert len(healthy_settled) == 13
+        assert queue.get(job_ids[0]).state == "running"
+        proof.append("cancel")
+        if retire:
+            raise module.BrowserSessionError(
+                "Instagram browser request cancellation could not be confirmed"
+            )
+
+    def close_secondary():
+        assert len(healthy_settled) == 13
+        proof.append("retire")
+
+    sessions = [
+        SimpleNamespace(
+            read=lambda _: "/",
+            current_account_username=lambda: ACCOUNT_USERNAME,
+            poll_until=lambda ready: ready(),
+            is_secondary_read_tab=True,
+            cancel_pending_request=cancel_pending
+            if index == 0
+            else lambda i=index: healthy_settled.append(i),
+            retire_unresponsive_read_tab=close_secondary,
+        )
+        for index in range(14)
+    ]
+    monkeypatch.setattr(
+        module,
+        "BrowserTabPool",
+        lambda _: SimpleNamespace(prepare=lambda *args: (sessions, ACCOUNT_USERNAME)),
+    )
+
+    def retrieve(session, *_args, **_kwargs):
+        barrier.wait(timeout=5)
+        if session is sessions[0]:
+            extra.append(
+                queue.enqueue_retrieval(
+                    school="ubc",
+                    recipient_id=RECIPIENT_ID,
+                    account_username=ACCOUNT_USERNAME,
+                    url="https://www.instagram.com/p/NoRefill/",
+                )
+            )
+        return {"status": "succeeded"}
+
+    monkeypatch.setattr(
+        browser_ingestion,
+        "BrowserInstagramRetriever",
+        lambda session: SimpleNamespace(
+            retrieve=lambda *args, **kwargs: retrieve(session, *args, **kwargs)
+        ),
+    )
+    # Deliver healthy and deferred completions together to exercise the refill race.
+    monkeypatch.setattr(
+        module,
+        "wait",
+        lambda futures, **kwargs: wait_for_futures(futures, timeout=5, return_when=ALL_COMPLETED),
+    )
+    assert module.process_next_job(queue)
+    assert proof == (["cancel", "retire"] if retire else ["cancel"])
+    assert queue.get(job_ids[0]).state == "pending"
+    assert queue.get(job_ids[0]).attempts == 1
+    assert all(queue.get(job_id).state == "succeeded" for job_id in job_ids[1:])
+    assert queue.get(extra[0]).state == "pending"
+    assert queue.get(extra[0]).attempts == 0
+    assert ("pending", job_ids[0]) in diagnostics
+    assert not queue.get_setting("paused", False)
+
+
+@pytest.mark.parametrize("auth_source", ["readiness", "digest_payload"])
+def test_confirmed_auth_failure_survives_deferred_secondary_cleanup(
+    queue, monkeypatch, auth_source
+):
+    job_id = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "auth-with-contention")
+    cancel_count = 0
+    terminal = []
+
+    def cancel():
+        nonlocal cancel_count
+        cancel_count += 1
+        if auth_source == "readiness" and cancel_count == 1:
+            raise module.BrowserSessionError(
+                "Instagram browser request cancellation could not be confirmed"
+            )
+
+    def query(_source):
+        raise _BrowserReadCleanupPending(
+            "Instagram browser request cancellation could not be confirmed",
+            completed_payload={"state": "failed", "reason": "auth_required"},
+        )
+
+    session = SimpleNamespace(
+        read=lambda _: "/challenge/" if auth_source == "readiness" else "/",
+        current_account_username=lambda: ACCOUNT_USERNAME,
+        poll_until=lambda ready: ready(),
+        is_secondary_read_tab=True,
+        cancel_pending_request=cancel,
+        activate_account=lambda *args: ACCOUNT_USERNAME,
+        query=query,
+        retire_unresponsive_read_tab=lambda: pytest.fail("Settled request must not retire"),
+    )
+    monkeypatch.setattr(
+        module,
+        "BrowserTabPool",
+        lambda _: SimpleNamespace(prepare=lambda *args: ([session], ACCOUNT_USERNAME)),
+    )
+    original_diagnostic = queue.record_diagnostic
+
+    def diagnostic(state, job=None):
+        terminal.append((state, job.id if job else None))
+        original_diagnostic(state, job)
+
+    monkeypatch.setattr(queue, "record_diagnostic", diagnostic)
+    assert module.process_next_job(queue)
+    expected = "human account recovery" if auth_source == "readiness" else "human reauthorization"
+    assert expected in queue.get_setting("paused")
+    assert queue.get(job_id).state == "failed"
+    assert expected in queue.get(job_id).error
+    assert ("failed", job_id) in terminal
+    assert cancel_count == 2
+
+
+@pytest.mark.parametrize("interrupt_at", ["wait", "readiness", "settlement"])
+def test_interruption_settles_all_unobserved_secondary_cleanup_before_releasing_lock(
+    queue, monkeypatch, interrupt_at
+):
+    from services.instagram_notifications import browser_ingestion
+
+    job_ids = [
+        queue.enqueue_retrieval(
+            school="ubc",
+            recipient_id=RECIPIENT_ID,
+            account_username=ACCOUNT_USERNAME,
+            url=f"https://www.instagram.com/p/InterruptDrain{index}/",
+        )
+        for index in range(2)
+    ]
+    cancel_counts = [0, 0]
+    settled = []
+
+    def cancel(index):
+        cancel_counts[index] += 1
+        if cancel_counts[index] == 1:
+            raise module.BrowserSessionError(
+                "Instagram browser request cancellation could not be confirmed"
+            )
+        with open(module.BROWSER_LOCK_PATH, "a+") as lock:
+            with pytest.raises(BlockingIOError):
+                fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        if interrupt_at == "settlement" and index == 0 and cancel_counts[index] == 2:
+            raise KeyboardInterrupt()
+        settled.append(index)
+
+    def poll(index, ready):
+        if interrupt_at == "readiness" and index == 0:
+            raise KeyboardInterrupt()
+        return ready()
+
+    sessions = [
+        SimpleNamespace(
+            read=lambda _: "/",
+            current_account_username=lambda: ACCOUNT_USERNAME,
+            poll_until=lambda ready, i=index: poll(i, ready),
+            is_secondary_read_tab=True,
+            cancel_pending_request=lambda i=index: cancel(i),
+            retire_unresponsive_read_tab=lambda: pytest.fail("Settled request must not retire"),
+        )
+        for index in range(2)
+    ]
+    monkeypatch.setattr(
+        module,
+        "BrowserTabPool",
+        lambda _: SimpleNamespace(prepare=lambda *args: (sessions, ACCOUNT_USERNAME)),
+    )
+    monkeypatch.setattr(
+        browser_ingestion,
+        "BrowserInstagramRetriever",
+        lambda _: SimpleNamespace(retrieve=lambda *args, **kwargs: {"status": "succeeded"}),
+    )
+
+    def wait_then_interrupt(futures, **kwargs):
+        completed = wait_for_futures(futures, timeout=5, return_when=ALL_COMPLETED)
+        assert len(completed[0]) == 2
+        if interrupt_at == "wait":
+            raise KeyboardInterrupt()
+        return completed
+
+    monkeypatch.setattr(module, "wait", wait_then_interrupt)
+    with pytest.raises(KeyboardInterrupt):
+        module.process_next_job(queue)
+    assert sorted(settled) == [0, 1]
+    assert "inspect browser state" in queue.get_setting("paused")
+    assert all(queue.get(job_id).state == "failed" for job_id in job_ids)
+    with open(module.BROWSER_LOCK_PATH, "a+") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        fcntl.flock(lock, fcntl.LOCK_UN)
+
+
+def test_closed_secondary_stops_refills_and_drains_before_pool_repair(queue, monkeypatch):
+    first = queue.enqueue_retrieval(
+        school="ubc",
+        recipient_id=RECIPIENT_ID,
+        account_username=ACCOUNT_USERNAME,
+        url="https://www.instagram.com/p/ClosedTab/",
+    )
+    second = queue.enqueue_retrieval(
+        school="ubc",
+        recipient_id=RECIPIENT_ID,
+        account_username=ACCOUNT_USERNAME,
+        url="https://www.instagram.com/p/HealthyTab/",
+    )
+    pool_invalidated = threading.Event()
+    healthy_settled = threading.Event()
+    later = []
+    original_set = queue.set_setting
+
+    def set_setting(key, value):
+        original_set(key, value)
+        if key == "retrieval_pool_account" and value is None:
+            pool_invalidated.set()
+
+    monkeypatch.setattr(queue, "set_setting", set_setting)
+    sessions = [
+        SimpleNamespace(
+            read=lambda _: "/",
+            current_account_username=lambda: ACCOUNT_USERNAME,
+            poll_until=lambda ready: ready(),
+            cancel_pending_request=lambda i=i: healthy_settled.set() if i == 1 else None,
+        )
+        for i in range(2)
+    ]
+    monkeypatch.setattr(
+        module,
+        "BrowserTabPool",
+        lambda _: SimpleNamespace(prepare=lambda *args: (sessions, ACCOUNT_USERNAME)),
+    )
+
+    def operation(job, **kwargs):
+        if job.id == first:
+            later.append(
+                queue.enqueue_retrieval(
+                    school="ubc",
+                    recipient_id=RECIPIENT_ID,
+                    account_username=ACCOUNT_USERNAME,
+                    url="https://www.instagram.com/p/KeepPending/",
+                )
+            )
+            raise _BrowserTabUnavailable("The pinned Instagram tab was closed")
+        assert job.id == second, "A closed slot must not claim more queued reads"
+        assert pool_invalidated.wait(5)
+        assert queue.get(first).state == "running"
+        return {"status": "succeeded"}
+
+    monkeypatch.setattr(module, "execute_job", _settling_executor(operation))
+    assert module.process_next_job(queue)
+    assert healthy_settled.is_set()
+    assert queue.get(first).state == "pending"
+    assert queue.get(second).state == "succeeded"
+    assert queue.get(later[0]).state == "pending"
+    assert not queue.get_setting("paused", False)
+
+
+@pytest.mark.parametrize("blocked_source", ["notification", "diagnostics"])
+def test_blocked_source_does_not_delay_other_source_pollers(queue, monkeypatch, blocked_source):
+    stopping = threading.Event()
+    entered = threading.Event()
+    release = threading.Event()
+    notification_progress = threading.Event()
+    diagnostics_progress = threading.Event()
+    carousel_progress = threading.Event()
+
+    def blocked(*args, **kwargs):
+        entered.set()
+        assert release.wait(5)
+        return {}
+
+    def notifications(current):
+        assert current is queue
+        notification_progress.set()
+        return {}
+
+    def diagnostics(**kwargs):
+        diagnostics_progress.set()
+
+    def carousels(current):
+        assert current is queue
+        carousel_progress.set()
+        return {"submitted": 1}
+
+    monkeypatch.setattr(
+        notification_ingestion,
+        "sync_notification_media",
+        blocked if blocked_source == "notification" else notifications,
+    )
+    monkeypatch.setattr(
+        queue,
+        "publish_diagnostics",
+        blocked if blocked_source == "diagnostics" else diagnostics,
+    )
+    monkeypatch.setattr(carousel_engagement, "sync_published_carousels", carousels)
+    pollers = module._source_pollers(queue, stopping)
+    for poller in pollers:
+        poller.start()
+    try:
+        assert entered.wait(5)
+        assert carousel_progress.wait(5)
+        progress = (
+            diagnostics_progress if blocked_source == "notification" else notification_progress
+        )
+        assert progress.wait(5)
+        assert not release.is_set()
+    finally:
+        stopping.set()
+        release.set()
+        for poller in pollers:
+            poller.join(timeout=5)
+    assert all(not poller.is_alive() for poller in pollers)
+
+
+@pytest.mark.parametrize("failed_read", ["initial_path", "login_recheck"])
+def test_transient_pathname_read_recovers_without_spending_another_job_attempt(
+    queue, monkeypatch, failed_read
+):
+    from services.instagram_notifications import browser_session
+
+    job_id = queue.enqueue_retrieval(
+        school="ubc",
+        recipient_id=RECIPIENT_ID,
+        account_username=ACCOUNT_USERNAME,
+        url="https://www.instagram.com/p/PathReadRetry/",
+    )
+    pathname_reads = []
+
+    def bridge(source, _timeout):
+        if source == "window.location.pathname":
+            pathname_reads.append(source)
+            attempt = len(pathname_reads)
+            if failed_read == "login_recheck" and attempt == 1:
+                return "/accounts/login/"
+            if attempt == (1 if failed_read == "initial_path" else 2):
+                raise _BrowserAutomationTransient("Transient pathname bridge failure")
+            return "/"
+        if source == browser_session._current_account_username_source():
+            return ACCOUNT_USERNAME
+        if source == browser_session._cancel_request_source():
+            return "settled"
+        assert source.startswith("delete window[")
+        return "cleared"
+
+    session = browser_session.BrowserInstagramSession(
+        javascript_runner=bridge,
+        allow_account_switch=False,
+        sleep=lambda _: None,
+    )
+    monkeypatch.setattr(module.time, "sleep", lambda _: None)
+    monkeypatch.setattr(
+        module,
+        "BrowserTabPool",
+        lambda _: SimpleNamespace(prepare=lambda *args: ([session], ACCOUNT_USERNAME)),
+    )
+    executions = []
+    monkeypatch.setattr(
+        module,
+        "execute_job",
+        _settling_executor(
+            lambda job, **kwargs: executions.append(job.id) or {"status": "succeeded"}
+        ),
+    )
+    assert module.process_next_job(queue)
+    assert queue.get(job_id).state == "succeeded"
+    assert queue.get(job_id).attempts == 1
+    assert executions == [job_id]
+    assert len(pathname_reads) == (2 if failed_read == "initial_path" else 4)
     assert not queue.get_setting("paused", False)

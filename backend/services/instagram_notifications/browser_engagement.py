@@ -86,9 +86,8 @@ class BrowserInstagramEngagementExecutor:
     ) -> dict[str, str]:
         if action not in _ACTIONS:
             raise BrowserSessionError("Instagram engagement action is invalid")
-        raw = self._session.run(
-            _engagement_source(recipient_id, username, post_url, action, click=click)
-        )
+        source = _engagement_source(recipient_id, username, post_url, action, click=click)
+        raw = self._session.run(source) if click else self._session.read(source)
         try:
             state = json.loads(raw)
         except json.JSONDecodeError:

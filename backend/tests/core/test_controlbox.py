@@ -594,11 +594,19 @@ def test_campus_seasons_reject_invalid_configuration(tmp_path, mutate):
 
 
 def test_instagram_browser_controls_have_one_shared_timing_source():
-    assert controlbox.instagram_browser.school_username_overrides == {"uwaterloo": "wat2do.ca"}
+    assert controlbox.instagram_browser.school_switcher_username_overrides == {
+        "uwaterloo": "wat2do.ca"
+    }
+    assert controlbox.instagram_browser.bootstrap_profile_school == "uwaterloo"
     assert controlbox.instagram_browser.actions == ("like", "repost")
+    assert controlbox.instagram_browser.parallel_tabs == 15
+    assert controlbox.instagram_browser.bridge_retry_limit == 3
+    assert controlbox.instagram_browser.viewport_warm_timeout_seconds == 3
+    assert controlbox.instagram_browser.secondary_cleanup_timeout_seconds == 5
     assert controlbox.instagram_browser.job_timeout_seconds == 120
     assert controlbox.instagram_browser.result_timeout_seconds == 300
     assert controlbox.instagram_browser.engagement_interval_seconds == 10
+    assert controlbox.instagram_browser.engagement_max_wait_seconds == 30
     assert controlbox.instagram_browser.source_page_size == 100
     assert controlbox.instagram_browser.result_timeout_seconds > (
         controlbox.instagram_browser.job_timeout_seconds
@@ -613,9 +621,21 @@ def test_instagram_browser_controls_have_one_shared_timing_source():
     [
         {"request_timeout_seconds": 0},
         {"request_timeout_seconds": 121},
+        {"viewport_warm_timeout_seconds": 0},
+        {"viewport_warm_timeout_seconds": 31},
+        {"viewport_warm_timeout_seconds": 121},
         {"interaction_timeout_seconds": 0},
+        {"secondary_cleanup_timeout_seconds": 0},
+        {"secondary_cleanup_timeout_seconds": 31},
+        {"secondary_cleanup_timeout_seconds": 121},
         {"poll_interval_seconds": 0},
         {"worker_poll_interval_seconds": 0},
+        {"bridge_retry_limit": 0},
+        {"parallel_tabs": 1},
+        {"bridge_retry_limit": 11},
+        {"bootstrap_profile_school": "../uwaterloo"},
+        {"bootstrap_profile_school": ""},
+        {"bootstrap_profile_school": "a" * 24},
         {"job_timeout_seconds": 0},
         {"job_timeout_seconds": 301},
         {"result_timeout_seconds": 120},
@@ -623,12 +643,14 @@ def test_instagram_browser_controls_have_one_shared_timing_source():
         {"source_page_size": 0},
         {"source_page_size": 1001},
         {"engagement_interval_seconds": 0},
+        {"engagement_max_wait_seconds": 0},
+        {"engagement_max_wait_seconds": 3601},
         {"actions": []},
         {"actions": ["like", "like"]},
         {"actions": ["unlike"]},
-        {"school_username_overrides": {"uwaterloo": "someone_else"}},
-        {"school_username_overrides": {"../uwaterloo": "wat2do.ca"}},
-        {"school_username_overrides": {"uwaterloo": "wat2do." + "a" * 30}},
+        {"school_switcher_username_overrides": {"uwaterloo": "someone_else"}},
+        {"school_switcher_username_overrides": {"../uwaterloo": "wat2do.ca"}},
+        {"school_switcher_username_overrides": {"uwaterloo": "wat2do." + "a" * 30}},
         {"sessionid": "credentials-do-not-belong-in-controlbox"},
     ],
 )

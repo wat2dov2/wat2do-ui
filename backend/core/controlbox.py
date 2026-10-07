@@ -641,18 +641,22 @@ class EmulatorFarmControl(_ControlModel):
 
 
 class InstagramBrowserControl(_ControlModel):
-    parallel_tabs: int = Field(gt=0, le=100)
+    parallel_tabs: int = Field(ge=2, le=100)
     tab_health_interval_seconds: float = Field(ge=1, le=300)
     notification_media_provider: Literal["browser", "apify"]
     ingestion_batch_size: int = Field(gt=0, le=100)
     ingestion_retry_limit: int = Field(gt=0, le=10)
     profile_post_limit: int = Field(gt=0, le=50)
-    school_username_overrides: dict[
+    school_switcher_username_overrides: dict[
         Annotated[str, Field(pattern=r"^[a-z0-9_]+$")],
         Annotated[str, Field(pattern=r"^wat2do\.[a-z0-9_]+$", max_length=30)],
     ]
+    bootstrap_profile_school: str = Field(pattern=r"^[a-z0-9_]{1,23}$")
+    bridge_retry_limit: int = Field(gt=0, le=10)
     request_timeout_seconds: float = Field(gt=0, le=120)
+    viewport_warm_timeout_seconds: float = Field(gt=0, le=120)
     interaction_timeout_seconds: float = Field(gt=0, le=120)
+    secondary_cleanup_timeout_seconds: float = Field(gt=0, le=120)
     poll_interval_seconds: float = Field(gt=0, le=5)
     worker_poll_interval_seconds: float = Field(gt=0, le=10)
     job_timeout_seconds: float = Field(gt=0, le=300)
@@ -660,6 +664,7 @@ class InstagramBrowserControl(_ControlModel):
     source_poll_interval_seconds: float = Field(ge=10, le=3600)
     source_page_size: int = Field(gt=0, le=1000)
     engagement_interval_seconds: float = Field(ge=1, le=3600)
+    engagement_max_wait_seconds: float = Field(ge=1, le=3600)
     actions: tuple[Literal["like", "save", "repost"], ...] = Field(min_length=1, max_length=3)
 
     @model_validator(mode="after")
@@ -668,6 +673,10 @@ class InstagramBrowserControl(_ControlModel):
             raise ValueError("Instagram browser actions must be unique")
         if self.result_timeout_seconds <= self.job_timeout_seconds:
             raise ValueError("Instagram browser result timeout must exceed job timeout")
+        if self.secondary_cleanup_timeout_seconds > self.interaction_timeout_seconds:
+            raise ValueError("Secondary cleanup timeout must not exceed interaction timeout")
+        if self.viewport_warm_timeout_seconds > self.request_timeout_seconds:
+            raise ValueError("Viewport warm timeout must not exceed browser request timeout")
         return self
 
 

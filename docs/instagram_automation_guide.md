@@ -3,7 +3,7 @@
 The active collection path uses Android Instagram notifications.
 When Instagram collapses several posts into one digest, the GitHub processing job submits a high-priority job to the Mac's shared browser worker before recording notification media.
 The same worker likes and natively reposts the original event posts selected in newly published Instagram carousels.
-Digest expansion, public post/profile retrieval, and engagement share one worker-owned pool of all available tabs in the existing Brave session, with credentials remaining inside the browser.
+Digest expansion, public post/profile retrieval, and engagement share one worker-owned pool of fifteen tabs in one registered Brave window, with credentials remaining inside the browser.
 
 ## Repair an existing poster or scraped video
 
@@ -64,10 +64,21 @@ Its local state stores recipient evidence plus one-way hashes of dispatched push
 
 Keep Brave running with the school accounts logged in and available under More > Switch accounts.
 Open one Instagram tab for the worker to use as its primary tab.
-The healthy worker maintains `parallel_tabs` Instagram tabs in that same window (twenty minimum by default), including when the queue is empty.
+The first registered Instagram tab is reserved for account switching and serialized likes/reposts.
+Public post/profile retrieval and digest queries use secondary tabs only.
+Humans complete login and challenge recovery in the primary tab; the worker never logs in automatically.
+The healthy worker maintains `parallel_tabs` Instagram tabs in that same window (fifteen total by default), including when the queue is empty.
 It checks pool health on startup, before batches, and every `tab_health_interval_seconds` while idle.
 It persists their exact tab IDs and recreates closed worker tabs inside their registered existing window, even if every worker tab was closed.
-It adopts existing Instagram tabs under the authorized pool policy, but never overwrites a tab moved to another site, or clears a recovery pause to maintain capacity.
+It adopts existing Instagram tabs from that registered window up to the configured total and closes surplus Instagram tabs under the human-authorized resize policy.
+Tabs in other windows or moved to another site are preserved.
+A closed primary is recreated at the beginning of the registered window rather than silently promoting a retrieval tab.
+New or repaired tabs initialize their viewport before account-readiness checks, restoring the previous tab selection afterward.
+Each viewport activation, single sample, and restoration is bounded by `viewport_warm_timeout_seconds`; page waits release the shared transport.
+This initialization does not run on every steady-state retrieval.
+Surplus closure first attempts request settlement; if cancellation cannot be confirmed, the worker closes that exact surplus document and verifies its tab ID is absent before continuing.
+This closure never applies to a retained primary tab or substitutes for cancellation before account switching.
+Pool maintenance never clears a recovery pause.
 It pins that tab for each operation and fails if the tab closes or changes to another site.
 It never launches Brave, creates a separate browser profile, or logs into an account.
 An authorized human completes login, two-factor prompts, and security challenges.
@@ -78,10 +89,12 @@ Approve the `python3.12` prompt on its first browser job, or enable its Brave Br
 If the prompt times out, the worker pauses before further jobs; after granting permission, inspect the failed job, resume the worker, and explicitly retry that job.
 Browser cookie values, including `sessionid` and CSRF values, never leave the browser.
 
-The worker waits for account controls to load and retries once from `https://www.instagram.com/` when page readiness or an account switch gets stuck.
+The worker waits for account controls to load and retries once from the intended account’s public profile when page readiness or an account switch gets stuck.
 If recovery fails, a notification fails before its media ledger entry is created and can be rerun.
+Saved chooser labels may remain stale after an Instagram account rename.
+`school_switcher_username_overrides` contains only those observed chooser labels; the current username and recipient must still match exactly after switching.
 Every engagement action verifies both the intended account and post before clicking, then checks the resulting action state.
-An already liked, saved, or reposted post is left in that state.
+An already liked or reposted post is left in that state.
 Native reposting requires an explicit readable active/inactive state on Instagram's own control.
 If that control is absent or lacks a readable state, the job reports `unsupported` without clicking it or substituting a Story share.
 Other ambiguous controls fail without an engagement click.
@@ -98,18 +111,34 @@ Do not delete its database to clear an error: that also removes deduplication hi
 The worker checks the high-priority digest queue before every browser action.
 A digest arriving during retrieval stops new retrieval claims and waits for active requests to settle.
 The worker then prioritizes digests before resuming retrieval.
-Up to ten public post/profile jobs can run concurrently, each pinned to its own registered tab.
+Public post/profile jobs run concurrently on the registered secondary tabs, leaving the primary tab reserved.
+One independent worker heartbeat stays fresh throughout startup, pool maintenance, preparation, and continuous retrieval streams.
 Digest jobs can run concurrently only for the same recipient and account; account switches and engagement remain serialized.
 All pool tabs settle their pending requests before the primary tab switches accounts, and secondary tabs reload to verify the resulting identity before a digest query.
 Public post/profile retrieval comes after digests and before engagement.
 No account switch or click is interrupted halfway through to start another job.
 An exclusive browser lock covers each complete operation, and a separate worker lock prevents duplicate workers.
 The source collector runs separately so a slow database read does not hold up ready digest jobs.
+Notification collection, publishing collection, and diagnostic publication fail independently, so one source failure cannot suppress the other queues.
+Apple Event transport is serialized within each call deadline while asynchronous page requests remain parallel.
+Only idempotent reads, inventory, and cleanup retry within `bridge_retry_limit`; uncertain engagement clicks are never replayed.
+Navigation uses the pinned tab's native URL setter, so blank or unresponsive page JavaScript cannot block the navigation needed to recover it.
+Retrieval tabs open their actual post/profile targets before readiness checks; digest preparation uses the verified account's public profile instead of relying on a blank home feed.
+An unresponsive secondary read tab may be retired only by closing its exact registered document and verifying absence.
+A failed secondary cleanup stops new claims and defers settlement to the batch coordinator after all active futures drain.
+The coordinator confirms settlement or closes and verifies absence of that exact secondary document before repairing the slot and retrying within its read budget.
+Confirmed authentication recovery errors retain their pause even if cleanup also fails.
+Secondary cleanup uses `secondary_cleanup_timeout_seconds`, so one frozen read tab cannot hold every healthy slot for the primary cleanup deadline.
+Primary engagement and account-switch uncertainty still require verified recovery.
+Startup preserves an inspection pause for any interrupted real engagement; an interrupted read-only inspection does not create action uncertainty.
+Fresh public-data refreshes receive a fresh retry budget, and safe automatic retries are requeued atomically without exposing a terminal failure to waiting callers.
 
 Engagement work is grouped by school.
 The worker stays with the selected school while it has eligible queued posts, then selects the oldest waiting post from another school.
 One engagement job owns one school/account/post and performs the configured like and repost actions after a single navigation.
-Notification digests and media retrieval take priority between posts; they never interrupt an action or switch accounts halfway through a post.
+Notification digests take priority between posts.
+Retrieval yields after an eligible engagement reaches `engagement_max_wait_seconds`, allowing likes/reposts to progress even with a continuous retrieval backlog.
+Active requests settle before any account switch or engagement begins; no action is interrupted halfway through.
 Failed or unsupported engagement jobs remain visible for operator inspection and are not automatically retried.
 The durable queue’s `excluded_accounts` setting holds jobs for explicitly excluded school accounts across all job types without deleting or consuming them.
 Notification synchronization and imports respect the same exclusions.
@@ -120,7 +149,7 @@ The notification workflow records exact post URLs in the existing production med
 With `notification_media_provider` set to `browser` in `backend/controlbox/instagram_browser.json`, it does not dispatch the Apify scraper.
 The worker's background collector synchronizes all eligible pending URLs every ten seconds, independently of the Codex schedule.
 Codex reviews retrieved data and applies saved reconciliation decisions through the guarded importer.
-Retrieval fills idle slots as new jobs arrive and streams continuously until the queue empties, a digest takes priority, or the worker pauses.
+Retrieval fills all fourteen secondary slots as new jobs arrive and streams continuously until the queue empties, a digest takes priority, overdue engagement needs a turn, or the worker pauses.
 Each job retains its own timeout; the stream does not drain on a fixed timer.
 Public profiles and individual posts can also be queued manually:
 
@@ -132,10 +161,10 @@ python scripts/instagram_browser.py status
 ```
 
 Use actual club handles rather than the illustrative profile URL above.
-The installed worker processes bounded retrieval batches of up to `parallel_tabs` and checks for waiting digests before filling each batch.
+The installed worker reserves one primary tab and processes retrieval batches of up to `parallel_tabs - 1`, checking priority before every replacement claim.
 Public post/profile retrieval reuses the currently logged-in account without switching to the notification school’s account.
 All parallel tabs verify the same active account, while each notification retains its own school routing.
-A challenge or unconfirmed cancellation pauses further work; active tab requests finish cleanup before the worker releases its browser lock.
+A challenge, uncertain primary action, or unconfirmed secondary closure pauses further work after active requests drain.
 It verifies the active account remains unchanged throughout navigation and retrieval, and only public captions, owners, timestamps, coauthors, tagged users, and media fields leave the browser.
 The queued notification recipient determines school routing, independent of the browser account.
 Digest expansion and engagement still require the exact intended school account.
@@ -176,7 +205,7 @@ Only carousels published at or after that time are eligible, so installation doe
 Later polls scan published batches from that activation time in deterministic timestamp/id pages.
 This catches a batch whose final publication update arrives after another batch with a newer timestamp.
 Completed batch markers prevent a later edit to an event's source URL from queuing a different historical post.
-Queue deduplication by account, original post, and action makes an interrupted collection safe to repeat.
+Queue deduplication by account and original post makes an interrupted collection safe to repeat.
 The batch scan grows with the number of carousels published since activation; completed batches do not reload their event items.
 
 ### Worker operations

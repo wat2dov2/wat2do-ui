@@ -5,7 +5,13 @@ import subprocess
 import pytest
 
 from services.instagram_notifications import browser_digest
-from services.instagram_notifications.browser_session import BrowserSessionError
+from services.instagram_notifications.browser_session import (
+    BrowserAccountChanged,
+    BrowserSessionError,
+    _BrowserAutomationTransient,
+    _BrowserPageUnavailable,
+    _BrowserTabUnavailable,
+)
 
 
 def test_action_media_ids_and_merge_use_one_canonical_media_list() -> None:
@@ -72,6 +78,45 @@ def test_session_error_keeps_digest_public_error_contract():
 
     with pytest.raises(browser_digest.BrowserDigestError, match="account is unavailable"):
         browser_digest.BrowserInstagramDigestResolver(session=BrokenSession()).resolve(
+            "41553815702", "usask.wat2do.io", "cache-1"
+        )
+
+
+@pytest.mark.parametrize(
+    "error_type",
+    [
+        BrowserAccountChanged,
+        _BrowserAutomationTransient,
+        _BrowserPageUnavailable,
+        _BrowserTabUnavailable,
+    ],
+)
+def test_digest_preserves_recoverable_session_failure_type(error_type):
+    error = error_type("Recoverable browser failure")
+
+    class BrokenSession(FakeSession):
+        def query(self, _source):
+            raise error
+
+    with pytest.raises(error_type) as raised:
+        browser_digest.BrowserInstagramDigestResolver(session=BrokenSession()).resolve(
+            "41553815702", "usask.wat2do.io", "cache-1"
+        )
+    assert raised.value is error
+
+
+@pytest.mark.parametrize(
+    "reason,error_type",
+    [
+        ("account_changed", BrowserAccountChanged),
+        ("temporarily_unavailable", _BrowserPageUnavailable),
+        ("request_failed", _BrowserPageUnavailable),
+    ],
+)
+def test_digest_response_uses_typed_recoverable_failure(reason, error_type):
+    session = FakeSession({"state": "failed", "reason": reason})
+    with pytest.raises(error_type):
+        browser_digest.BrowserInstagramDigestResolver(session=session).resolve(
             "41553815702", "usask.wat2do.io", "cache-1"
         )
 

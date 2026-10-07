@@ -13,6 +13,7 @@ import re
 import sqlite3
 import time
 import uuid
+from collections.abc import Callable
 from contextlib import closing
 from dataclasses import dataclass
 from pathlib import Path
@@ -27,6 +28,10 @@ from services.instagram_notifications.browser_session import (
 )
 
 CONTROL = controlbox.instagram_browser
+_AVAILABLE_ACCOUNT_SQL = (
+    "account_username NOT IN (SELECT value FROM json_each(COALESCE("
+    "(SELECT value FROM settings WHERE key='excluded_accounts'),'[]')))"
+)
 
 
 def default_state_directory() -> Path:
@@ -142,7 +147,7 @@ class BrowserJobQueue:
                 (uuid.uuid4().hex, json.dumps(event), time.time()),
             )
 
-    def publish_diagnostics(self) -> None:
+    def publish_diagnostics(self, *, should_stop: Callable[[], bool] | None = None) -> None:
         """Keep unsent events durable when production logging is unavailable."""
         from services.automate_log_service import create_automate_log
 
@@ -152,6 +157,8 @@ class BrowserJobQueue:
                 (CONTROL.source_page_size,),
             ).fetchall()
         for event in events:
+            if should_stop is not None and should_stop():
+                break
             if not create_automate_log(**json.loads(event["event"])):
                 break
             with closing(self._connect()) as db, db:
@@ -159,6 +166,15 @@ class BrowserJobQueue:
 
     def account_excluded(self, username: str) -> bool:
         return username in self.get_setting("excluded_accounts", [])
+
+    def peek_account_username(self) -> str | None:
+        """Choose a public bootstrap profile without claiming or switching an account."""
+        with closing(self._connect()) as db:
+            row = db.execute(
+                "SELECT account_username FROM jobs WHERE state IN ('pending','running') "
+                f"AND {_AVAILABLE_ACCOUNT_SQL} ORDER BY created_at,id LIMIT 1"
+            ).fetchone()
+        return row["account_username"] if row else None
 
     def enqueue_digest(self, recipient_id: str, account_username: str, cache_ent_id: str) -> str:
         if not re.fullmatch(r"[A-Za-z0-9._:-]{1,255}", cache_ent_id):
@@ -237,7 +253,7 @@ class BrowserJobQueue:
                 # Digest retries are reads. Engagement retries always require an explicit retry.
                 if kind == "digest" and existing["state"] in {"failed", "cancelled"}:
                     db.execute(
-                        "UPDATE jobs SET state='pending',created_at=?,started_at=NULL,finished_at=NULL,error=NULL,result=NULL WHERE id=?",
+                        "UPDATE jobs SET state='pending',created_at=?,started_at=NULL,finished_at=NULL,error=NULL,result=NULL,attempts=0 WHERE id=?",
                         (time.time(), existing["id"]),
                     )
                 return existing["id"]
@@ -288,53 +304,73 @@ class BrowserJobQueue:
         self, *, now: float | None = None, allow_engagement: bool = True
     ) -> BrowserJob | None:
         now = time.time() if now is None else now
-        available_account = (
-            "account_username NOT IN (SELECT value FROM json_each(COALESCE("
-            "(SELECT value FROM settings WHERE key='excluded_accounts'),'[]')))"
-        )
         with closing(self._connect()) as db, db:
             db.execute("BEGIN IMMEDIATE")
+            paused = db.execute("SELECT value FROM settings WHERE key='paused'").fetchone()
+            if paused and json.loads(paused[0]):
+                return None
             db.execute(
                 "UPDATE jobs SET state='cancelled',finished_at=?,error='Digest caller deadline expired' WHERE kind='digest' AND state='pending' AND created_at<?",
                 (now, now - CONTROL.result_timeout_seconds),
             )
             row = db.execute(
                 "SELECT * FROM jobs WHERE state='pending' AND kind='digest' "
-                f"AND {available_account} "
+                f"AND {_AVAILABLE_ACCOUNT_SQL} "
                 "ORDER BY created_at,id LIMIT 1"
             ).fetchone()
+            if not row and allow_engagement:
+                row = self._select_engagement(db, now, require_waited=True)
             if not row:
                 row = db.execute(
                     "SELECT * FROM jobs WHERE state='pending' AND kind='retrieval' "
-                    f"AND {available_account} "
+                    f"AND {_AVAILABLE_ACCOUNT_SQL} "
                     "ORDER BY created_at,id LIMIT 1"
                 ).fetchone()
             if not row and allow_engagement:
-                selected = self.get_setting("engagement_school")
-                row = db.execute(
-                    "SELECT * FROM jobs WHERE state='pending' AND kind='engagement' AND school=? "
-                    f"AND {available_account} ORDER BY created_at,id LIMIT 1",
-                    (selected,),
-                ).fetchone()
-                if not row:
-                    row = db.execute(
-                        "SELECT * FROM jobs WHERE state='pending' AND kind='engagement' "
-                        f"AND {available_account} ORDER BY created_at,id LIMIT 1",
-                    ).fetchone()
-                if row:
-                    db.execute(
-                        "INSERT INTO settings VALUES ('engagement_school',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
-                        (json.dumps(row["school"]),),
-                    )
+                row = self._select_engagement(db, now)
             if not row:
                 return None
+            if row["kind"] == "engagement":
+                db.execute(
+                    "INSERT INTO settings VALUES ('engagement_school',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+                    (json.dumps(row["school"]),),
+                )
             db.execute(
                 "UPDATE jobs SET state='running',started_at=?,attempts=attempts+1 WHERE id=?",
                 (now, row["id"]),
             )
             return self._job(db.execute("SELECT * FROM jobs WHERE id=?", (row["id"],)).fetchone())
 
-    def claim_companions(self, first: BrowserJob, *, limit: int) -> list[BrowserJob]:
+    @staticmethod
+    def _select_engagement(
+        db: sqlite3.Connection, now: float, *, require_waited: bool = False
+    ) -> sqlite3.Row | None:
+        """An aged post triggers a yield; complete the selected school's posts together."""
+        cooldown = db.execute(
+            "SELECT value FROM settings WHERE key='next_engagement_at'"
+        ).fetchone()
+        if cooldown and now < json.loads(cooldown[0]):
+            return None
+        if (
+            require_waited
+            and not db.execute(
+                "SELECT 1 FROM jobs WHERE state='pending' AND kind='engagement' "
+                f"AND {_AVAILABLE_ACCOUNT_SQL} AND created_at<=? LIMIT 1",
+                (now - CONTROL.engagement_max_wait_seconds,),
+            ).fetchone()
+        ):
+            return None
+        selected = db.execute("SELECT value FROM settings WHERE key='engagement_school'").fetchone()
+        return db.execute(
+            "SELECT * FROM jobs WHERE state='pending' AND kind='engagement' "
+            f"AND {_AVAILABLE_ACCOUNT_SQL} "
+            "ORDER BY CASE WHEN school=? THEN 0 ELSE 1 END,created_at,id LIMIT 1",
+            (json.loads(selected[0]) if selected else None,),
+        ).fetchone()
+
+    def claim_companions(
+        self, first: BrowserJob, *, limit: int, allow_engagement: bool = True
+    ) -> list[BrowserJob]:
         """Atomically claim a compatible batch; never parallelize account switches."""
         if first.kind == "engagement" or limit <= 0:
             return []
@@ -343,28 +379,29 @@ class BrowserJobQueue:
             paused = db.execute("SELECT value FROM settings WHERE key='paused'").fetchone()
             if paused and json.loads(paused[0]):
                 return []
-            if (
-                first.kind == "retrieval"
-                and db.execute(
-                    "SELECT 1 FROM jobs WHERE state='pending' AND kind='digest' AND account_username NOT IN (SELECT value FROM json_each(COALESCE((SELECT value FROM settings WHERE key='excluded_accounts'),'[]'))) LIMIT 1"
+            now = time.time()
+            if first.kind == "retrieval" and (
+                db.execute(
+                    "SELECT 1 FROM jobs WHERE state='pending' AND kind='digest' "
+                    f"AND {_AVAILABLE_ACCOUNT_SQL} LIMIT 1"
                 ).fetchone()
+                or (allow_engagement and self._select_engagement(db, now, require_waited=True))
             ):
                 return []
             account_filter = (
                 "AND recipient_id=? AND account_username=?" if first.kind == "digest" else ""
             )
-            arguments = [first.kind]
+            arguments: list[str | int] = [first.kind]
             if first.kind == "digest":
                 arguments.extend([first.recipient_id, first.account_username])
             arguments.append(limit)
             rows = db.execute(
                 "SELECT * FROM jobs WHERE state='pending' AND kind=? "
-                "AND account_username NOT IN (SELECT value FROM json_each(COALESCE((SELECT value FROM settings WHERE key='excluded_accounts'),'[]'))) "
+                f"AND {_AVAILABLE_ACCOUNT_SQL} "
                 + account_filter
                 + " ORDER BY created_at,id LIMIT ?",
                 arguments,
             ).fetchall()
-            now = time.time()
             for row in rows:
                 db.execute(
                     "UPDATE jobs SET state='running',started_at=?,attempts=attempts+1 WHERE id=?",
@@ -376,24 +413,66 @@ class BrowserJobQueue:
             ]
 
     def finish(
-        self, job_id: str, *, result: dict[str, Any] | None = None, error: str | None = None
+        self,
+        job_id: str,
+        *,
+        result: dict[str, Any] | None = None,
+        error: str | None = None,
+        requeue: bool = False,
     ) -> None:
+        """Complete a claim or atomically schedule a safe read retry."""
         state = (
-            "failed"
+            "pending"
+            if requeue
+            else "failed"
             if error
             else "unsupported"
             if result and result.get("status") == "unsupported"
             else "succeeded"
         )
         with closing(self._connect()) as db, db:
+            if requeue:
+                job = db.execute("SELECT kind FROM jobs WHERE id=?", (job_id,)).fetchone()
+                if job and job["kind"] == "engagement":
+                    raise ValueError("Engagement cannot be automatically requeued")
+            now = time.time()
             db.execute(
-                "UPDATE jobs SET state=?,result=?,error=?,finished_at=? WHERE id=? AND state='running'",
-                (state, json.dumps(result) if result else None, error, time.time(), job_id),
+                "UPDATE jobs SET state=?,result=?,error=?,finished_at=?,"
+                "started_at=CASE WHEN ? THEN NULL ELSE started_at END,"
+                "created_at=CASE WHEN ? THEN ? ELSE created_at END WHERE id=? AND state='running'",
+                (
+                    state,
+                    json.dumps(result) if result and not requeue else None,
+                    error if not requeue else None,
+                    None if requeue else now,
+                    requeue,
+                    requeue,
+                    now,
+                    job_id,
+                ),
             )
 
     def recover_interrupted(self) -> None:
         """Called only after obtaining the singleton worker and exclusive browser locks."""
+        newly_paused = False
         with closing(self._connect()) as db, db:
+            db.execute("BEGIN IMMEDIATE")
+            uncertain_action = db.execute(
+                "SELECT 1 FROM jobs WHERE kind='engagement' AND state='running' "
+                "AND json_extract(payload,'$.dry_run') IS NOT 1 LIMIT 1"
+            ).fetchone()
+            paused = db.execute("SELECT value FROM settings WHERE key='paused'").fetchone()
+            if uncertain_action and not (paused and json.loads(paused[0])):
+                db.execute(
+                    "INSERT INTO settings VALUES ('paused',?) "
+                    "ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+                    (
+                        json.dumps(
+                            "Worker interrupted during engagement; inspect browser state before resuming"
+                        ),
+                    ),
+                )
+                newly_paused = True
             db.execute(
                 "UPDATE jobs SET state='pending',started_at=NULL WHERE kind IN ('digest','retrieval') AND state='running'"
             )
@@ -401,6 +480,8 @@ class BrowserJobQueue:
                 "UPDATE jobs SET state='failed',finished_at=?,error='Worker interrupted; inspect browser state before retrying' WHERE kind='engagement' AND state='running'",
                 (time.time(),),
             )
+        if newly_paused:
+            self.record_diagnostic("paused")
 
     def retry(self, job_id: str) -> None:
         with closing(self._connect()) as db, db:
@@ -423,7 +504,7 @@ class BrowserJobQueue:
         """Refresh expired public media fields without touching engagement history."""
         with closing(self._connect()) as db, db:
             changed = db.execute(
-                "UPDATE jobs SET state='pending',created_at=?,result=NULL,error=NULL,started_at=NULL,finished_at=NULL WHERE id=? AND kind='retrieval' AND state IN ('succeeded','failed','cancelled')",
+                "UPDATE jobs SET state='pending',created_at=?,result=NULL,error=NULL,started_at=NULL,finished_at=NULL,attempts=0 WHERE id=? AND kind='retrieval' AND state IN ('succeeded','failed','cancelled')",
                 (time.time(), job_id),
             ).rowcount
         if not changed:
@@ -501,16 +582,20 @@ class QueuedInstagramDigestResolver:
             if job and job.state in {"failed", "cancelled"}:
                 raise BrowserDigestError(job.error or "Instagram digest job was cancelled")
             worker = self.queue.get_setting("worker", {})
+            paused = self.queue.get_setting("paused", False)
             if (
-                self.queue.get_setting("paused", False)
+                paused
                 or not worker.get("running")
                 or time.time() - worker.get("heartbeat", 0)
                 > CONTROL.job_timeout_seconds + CONTROL.request_timeout_seconds
             ):
                 self.queue.cancel(job_id)
-                raise BrowserDigestError(
-                    "Instagram browser worker is unavailable or paused; start it on the Mac mini"
+                reason = (
+                    f"Instagram browser worker is paused: {paused}"
+                    if isinstance(paused, str) and paused
+                    else "Instagram browser worker is unavailable or paused; inspect it on the Mac mini"
                 )
+                raise BrowserDigestError(reason)
             time.sleep(CONTROL.worker_poll_interval_seconds)
         self.queue.cancel(job_id)
         raise BrowserDigestError("Instagram digest queue timed out; notification can be retried")

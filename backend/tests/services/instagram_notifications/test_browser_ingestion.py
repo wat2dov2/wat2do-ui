@@ -45,18 +45,16 @@ def test_rejects_nonpublic_or_credentialed_targets(url):
 def test_verified_browser_result_preserves_carousel_video_and_coauthors():
     calls = []
     session = SimpleNamespace(
-        run=lambda source: (
-            "/p/AbC/" if source == "window.location.pathname" else calls.append(source)
-        ),
+        read=lambda source: "/p/AbC/",
         current_account_username=lambda: "wat2do.ca",
         poll_until=lambda predicate: predicate(),
         activate_account=lambda *_: pytest.fail("Retrieval must never switch accounts"),
-        navigate_post=lambda *args, **kwargs: calls.append((args, kwargs)),
+        navigate=lambda url: calls.append(url),
         query=lambda *_: {"state": "succeeded", "posts": [deepcopy(POST)]},
     )
     result = module.BrowserInstagramRetriever(session).retrieve(URL, cutoff_days=1)
     assert result["account_username"] == "wat2do.ca"
-    assert any("location.assign" in source for source in calls)
+    assert calls == [URL]
     assert result["posts"][0] == POST
     assert module.media_id_from_url(URL) == str(27 * 64 + 2)
 
@@ -77,11 +75,11 @@ def test_incomplete_or_mismatched_media_fails(mutation):
     if mutation == "naive_time":
         post["timestamp"] = "2026-10-04T12:00:00"
     session = SimpleNamespace(
-        run=lambda *_: "/p/AbC/",
+        read=lambda *_: "/p/AbC/",
         current_account_username=lambda: "wat2do.ca",
         poll_until=lambda predicate: predicate(),
         activate_account=lambda *_: pytest.fail("Retrieval must never switch accounts"),
-        navigate_post=lambda *_, **__: None,
+        navigate=lambda *_, **__: None,
         query=lambda *_: {"state": "succeeded", "posts": [post]},
     )
     with pytest.raises(module.BrowserSessionError):
@@ -241,7 +239,9 @@ def test_browser_projects_only_public_fields_and_keeps_all_carousel_children(mon
 
 def test_suspended_account_stops_before_switch_or_fetch():
     session = SimpleNamespace(
-        run=lambda *_: "/accounts/suspended/",
+        navigate=lambda *_: (_ for _ in ()).throw(
+            module.BrowserSessionError("Instagram browser requires human account recovery")
+        ),
         activate_account=lambda *_: pytest.fail("Suspended browser requires a human"),
     )
     with pytest.raises(module.BrowserSessionError, match="human account recovery"):
@@ -261,10 +261,11 @@ def test_explicit_retrieval_retry_resets_only_matching_media(import_setup, monke
 def test_retrieval_rejects_account_change():
     names = iter(["wat2do.ca", "wat2do.ca", "wat2do.sfu", "wat2do.sfu"])
     session = SimpleNamespace(
-        run=lambda *_: "/p/AbC/",
+        read=lambda *_: "/p/AbC/",
+        navigate=lambda *_: None,
         current_account_username=lambda: next(names),
         poll_until=lambda predicate: predicate(),
-        query=lambda *_: pytest.fail("Changed account must not fetch"),
+        query=lambda *_: {"state": "succeeded", "posts": [deepcopy(POST)]},
     )
     with pytest.raises(module.BrowserSessionError, match="changed"):
         module.BrowserInstagramRetriever(session).retrieve(URL, cutoff_days=1)
@@ -352,3 +353,43 @@ def test_sync_enqueues_entire_backlog_not_one_source_page(tmp_path, monkeypatch)
     assert bridge.sync_notification_media(queue) == {"pending_media": 140, "queued": 140}
     assert bridge.sync_notification_media(queue) == {"pending_media": 140, "queued": 140}
     assert sum(row["quantity"] for row in queue.status()["queues"]) == 140
+
+
+def test_notification_collection_preserves_finite_read_failure_budget(import_setup):
+    queue, _, jid = import_setup
+    for attempt in range(1, bridge._CONTROL.ingestion_retry_limit + 1):
+        assert queue.claim_next().id == jid
+        assert queue.get(jid).attempts == attempt
+        queue.finish(jid, error="Permanent incomplete public media")
+        result = bridge.sync_notification_media(queue)
+        exhausted = attempt == bridge._CONTROL.ingestion_retry_limit
+        assert result["queued"] == (0 if exhausted else 1)
+        assert queue.get(jid).state == ("failed" if exhausted else "pending")
+        assert queue.get(jid).attempts == attempt
+    assert queue.claim_next() is None
+
+
+def test_refreshing_signed_media_never_resets_the_separate_import_failure_budget(
+    import_setup, monkeypatch
+):
+    queue, row, jid = import_setup
+    key = f"notification_import_attempts:{row['id']}"
+    claims = []
+    monkeypatch.setattr(
+        bridge, "claim_pending_browser_media", lambda **claim: claims.append(claim) or True
+    )
+    monkeypatch.setattr(bridge, "rollback_media_claim", lambda **_: True)
+    monkeypatch.setattr(
+        bridge, "_import_posts", lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError())
+    )
+    for attempt in range(1, bridge._CONTROL.ingestion_retry_limit + 1):
+        assert queue.claim_next().id == jid
+        queue.finish(jid, result={"account_username": ACCOUNT, "target_url": URL, "posts": [POST]})
+        assert bridge.import_retrieved_media(queue)["failed"] == 1
+        assert queue.get(jid).attempts == 0
+        assert queue.get_setting(key) == attempt
+    queue.claim_next()
+    queue.finish(jid, result={"account_username": ACCOUNT, "target_url": URL, "posts": [POST]})
+    assert bridge.import_retrieved_media(queue)["blocked"] == 1
+    assert len(claims) == bridge._CONTROL.ingestion_retry_limit
+    assert queue.get_setting(key) == bridge._CONTROL.ingestion_retry_limit

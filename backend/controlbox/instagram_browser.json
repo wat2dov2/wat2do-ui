@@ -1,6 +1,8 @@
 {
   "request_timeout_seconds": 30,
+  "viewport_warm_timeout_seconds": 3,
   "interaction_timeout_seconds": 30,
+  "secondary_cleanup_timeout_seconds": 5,
   "poll_interval_seconds": 0.25,
   "worker_poll_interval_seconds": 0.5,
   "job_timeout_seconds": 120,
@@ -8,7 +10,9 @@
   "source_poll_interval_seconds": 10,
   "source_page_size": 100,
   "engagement_interval_seconds": 10,
-  "school_username_overrides": {
+  "engagement_max_wait_seconds": 30,
+  "bootstrap_profile_school": "uwaterloo",
+  "school_switcher_username_overrides": {
     "uwaterloo": "wat2do.ca"
   },
   "actions": [
@@ -17,8 +21,9 @@
   ],
   "notification_media_provider": "browser",
   "ingestion_batch_size": 10,
-  "parallel_tabs": 20,
+  "parallel_tabs": 15,
   "tab_health_interval_seconds": 10,
   "profile_post_limit": 12,
-  "ingestion_retry_limit": 3
+  "ingestion_retry_limit": 3,
+  "bridge_retry_limit": 3
 }

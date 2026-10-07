@@ -18,7 +18,6 @@ from services.instagram_notifications.browser_session import (
     BrowserInstagramSession,
     BrowserSessionError,
     _current_account_username_source,
-    _open_post_source,
     canonical_post_url,
 )
 
@@ -76,20 +75,17 @@ class BrowserInstagramRetriever:
     def retrieve(self, url: str, *, cutoff_days: int) -> dict:
         target = canonical_target_url(url)
         profile = _PROFILE_PATH.fullmatch(urlsplit(target).path)
-        path = self.session.run("window.location.pathname")
-        if path.startswith(("/accounts/suspended", "/accounts/login", "/challenge", "/checkpoint")):
-            raise BrowserSessionError("Instagram browser requires human account recovery")
-        username = self._active_account()
-        self.session.run(_open_post_source(target))
+        # Native navigation works even when Instagram's home renderer is blank.
+        # The native owner refuses to leave a login/challenge recovery page.
+        self.session.navigate(target)
         self.session.poll_until(
             lambda: (
-                self.session.run("window.location.pathname").strip("/")
+                self.session.read("window.location.pathname").strip("/")
                 == urlsplit(target).path.strip("/")
                 and self.session.current_account_username() is not None
             )
         )
-        if self._active_account() != username:
-            raise BrowserAccountChanged("Instagram browser account changed during retrieval")
+        username = self._active_account()
         endpoint = (
             f"/api/v1/users/web_profile_info/?username={profile[1]}"
             if profile

@@ -77,8 +77,9 @@ def sync_notification_media(queue: BrowserJobQueue) -> dict[str, int]:
             and job.state in {"failed", "cancelled"}
             and job.attempts < _CONTROL.ingestion_retry_limit
         ):
-            queue.refresh_retrieval(job.id)
-        if job and job.state == "pending":
+            queue.retry(job.id)
+            stats["queued"] += 1
+        elif job and job.state == "pending":
             stats["queued"] += 1
     queue.set_setting("notification_source_status", {"checked_at": time.time(), **stats})
     return stats

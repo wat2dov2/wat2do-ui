@@ -146,11 +146,50 @@ def test_recovery_requeues_reads_but_never_repeats_ambiguous_engagement(queue):
     assert "inspect browser state" in reopened.get(engagement_id).error
     assert _engagement(reopened) == engagement_id
     assert reopened.get(engagement_id).state == "failed"
+    assert "inspect browser state" in reopened.get_setting("paused")
+    assert reopened.claim_next() is None
+    reopened.set_setting("paused", False)
     assert _complete_next(reopened).id == digest_id
     assert reopened.claim_next() is None
 
     reopened.retry(engagement_id)
     assert reopened.claim_next().id == engagement_id
+
+
+@pytest.mark.parametrize("dry_run", [False, True])
+def test_interrupted_engagement_preserves_existing_human_pause(queue, dry_run):
+    job_id = queue.enqueue_engagement(
+        school="ubc",
+        recipient_id=RECIPIENT_ID,
+        account_username=ACCOUNT_USERNAME,
+        post_url="https://www.instagram.com/p/InterruptedInspection/",
+        dry_run=dry_run,
+    )
+    assert queue.claim_next().id == job_id
+    queue.set_setting("paused", "Instagram requires human reauthorization")
+    reopened = module.BrowserJobQueue(queue.state_directory)
+    reopened.recover_interrupted()
+    assert reopened.get_setting("paused") == "Instagram requires human reauthorization"
+    assert reopened.get(job_id).state == "failed"
+
+
+def test_interrupted_dry_run_does_not_pause_safe_read_recovery(queue):
+    job_id = queue.enqueue_engagement(
+        school="ubc",
+        recipient_id=RECIPIENT_ID,
+        account_username=ACCOUNT_USERNAME,
+        post_url="https://www.instagram.com/p/ReadOnlyInspection/",
+        dry_run=True,
+    )
+    assert queue.claim_next().id == job_id
+    digest_id = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "safe-read-recovery")
+    assert queue.claim_next().id == digest_id
+    reopened = module.BrowserJobQueue(queue.state_directory)
+    reopened.recover_interrupted()
+    assert not reopened.get_setting("paused", False)
+    assert reopened.get(job_id).state == "failed"
+    assert reopened.get(digest_id).state == "pending"
+    assert reopened.claim_next().id == digest_id
 
 
 @pytest.mark.parametrize("result", [None, {"status": "unsupported"}])
@@ -413,6 +452,163 @@ def test_digest_preempts_retrieval_and_retrieval_preempts_engagement(queue):
     assert _complete_next(queue).id == engagement
 
 
+def test_aged_engagement_drains_retrieval_before_switching_but_digest_stays_first(
+    queue, monkeypatch
+):
+    clock = _clock(monkeypatch)
+    first = queue.enqueue_retrieval(
+        school="ubc",
+        recipient_id=RECIPIENT_ID,
+        account_username=ACCOUNT_USERNAME,
+        url="https://www.instagram.com/p/Running/",
+    )
+    running = queue.claim_next()
+    engagement = _engagement(queue)
+    remaining = queue.enqueue_retrieval(
+        school="ubc",
+        recipient_id=RECIPIENT_ID,
+        account_username=ACCOUNT_USERNAME,
+        url="https://www.instagram.com/p/Remaining/",
+    )
+    clock.now += module.CONTROL.engagement_max_wait_seconds
+    assert queue.claim_companions(running, limit=14) == []
+    assert queue.get(first).state == "running"
+    assert queue.get(remaining).state == "pending"
+    queue.finish(first, result={"posts": []})
+    digest = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "still-highest-priority")
+    assert _complete_next(queue).id == digest
+    assert _complete_next(queue).id == engagement
+    assert _complete_next(queue).id == remaining
+
+
+@pytest.mark.parametrize("reason", ["young", "cooldown", "excluded", "disabled"])
+def test_ineligible_engagement_does_not_interrupt_continuous_retrieval(queue, monkeypatch, reason):
+    clock = _clock(monkeypatch)
+    queue.enqueue_retrieval(
+        school="ubc",
+        recipient_id=RECIPIENT_ID,
+        account_username=ACCOUNT_USERNAME,
+        url="https://www.instagram.com/p/Running/",
+    )
+    first = queue.claim_next()
+    engagement = queue.enqueue_engagement(
+        school="uwo",
+        recipient_id="456",
+        account_username="wat2do.uwo",
+        post_url="https://www.instagram.com/p/Featured/",
+    )
+    remaining = queue.enqueue_retrieval(
+        school="ubc",
+        recipient_id=RECIPIENT_ID,
+        account_username=ACCOUNT_USERNAME,
+        url="https://www.instagram.com/p/Refill/",
+    )
+    if reason != "young":
+        clock.now += module.CONTROL.engagement_max_wait_seconds
+    if reason == "cooldown":
+        queue.set_setting("next_engagement_at", clock.now + 100)
+    if reason == "excluded":
+        queue.set_setting("excluded_accounts", ["wat2do.uwo"])
+    companions = queue.claim_companions(first, limit=14, allow_engagement=reason != "disabled")
+    assert [job.id for job in companions] == [remaining]
+    assert queue.get(engagement).state == "pending"
+
+
+def test_overdue_backlog_yields_retrieval_but_finishes_current_school_before_switching(
+    queue, monkeypatch
+):
+    clock = _clock(monkeypatch)
+    initial = _engagement(queue, "InitialUBC")
+    assert _complete_next(queue).id == initial
+    assert queue.get_setting("engagement_school") == "ubc"
+    clock.now += 1
+    older_other_school = queue.enqueue_engagement(
+        school="uwo",
+        recipient_id="456",
+        account_username="wat2do.uwo",
+        post_url="https://www.instagram.com/p/OlderUWO/",
+    )
+    clock.now += 1
+    second_current_school = _engagement(queue, "SecondUBC")
+    clock.now += 1
+    third_current_school = _engagement(queue, "ThirdUBC")
+    first_read = queue.enqueue_retrieval(
+        school="ubc",
+        recipient_id=RECIPIENT_ID,
+        account_username=ACCOUNT_USERNAME,
+        url="https://www.instagram.com/p/ActiveRetrieval/",
+    )
+    active = queue.claim_next()
+    assert active.id == first_read
+    remaining_read = queue.enqueue_retrieval(
+        school="ubc",
+        recipient_id=RECIPIENT_ID,
+        account_username=ACCOUNT_USERNAME,
+        url="https://www.instagram.com/p/RemainingRetrieval/",
+    )
+    clock.now += module.CONTROL.engagement_max_wait_seconds
+    assert queue.claim_companions(active, limit=14) == []
+    queue.finish(first_read, result={"posts": []})
+    assert _complete_next(queue).id == second_current_school
+    assert _complete_next(queue).id == third_current_school
+    assert _complete_next(queue).id == older_other_school
+    assert _complete_next(queue).id == remaining_read
+
+
+def test_safe_read_retry_never_exposes_a_terminal_failure_to_waiting_caller(queue):
+    job_id = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "read-retry")
+    queue.claim_next()
+    queue.finish(job_id, error="Transient bridge failure", requeue=True)
+    job = queue.get(job_id)
+    assert job.state == "pending"
+    assert job.error is None
+    assert job.attempts == 1
+    assert queue.claim_next().attempts == 2
+
+
+def test_automatic_retry_cannot_repeat_an_engagement(queue):
+    job_id = _engagement(queue)
+    queue.claim_next()
+    with pytest.raises(ValueError, match="Engagement cannot"):
+        queue.finish(job_id, error="Uncertain click", requeue=True)
+    assert queue.get(job_id).state == "running"
+
+
+def test_paused_queue_does_not_claim_even_when_worker_observed_resume_earlier(queue):
+    job_id = _engagement(queue)
+    queue.set_setting("paused", "Human account recovery")
+    assert queue.claim_next() is None
+    assert queue.get(job_id).state == "pending"
+
+
+def test_public_bootstrap_account_is_peeked_without_claiming_or_unexcluding_jobs(queue):
+    assert queue.peek_account_username() is None
+    excluded = _engagement(queue, "ExcludedProfile")
+    queue.set_setting("excluded_accounts", [ACCOUNT_USERNAME])
+    available = queue.enqueue_digest("456", "wat2do.uwo", "bootstrap-public-profile")
+    assert queue.peek_account_username() == "wat2do.uwo"
+    assert queue.get(excluded).state == queue.get(available).state == "pending"
+    assert queue.get(excluded).attempts == queue.get(available).attempts == 0
+
+
+def test_diagnostic_publishing_stops_between_http_calls_without_losing_unsent_events(
+    queue, monkeypatch
+):
+    from services import automate_log_service
+
+    queue.record_diagnostic("first")
+    queue.record_diagnostic("second")
+    calls = []
+    monkeypatch.setattr(
+        automate_log_service, "create_automate_log", lambda **event: calls.append(event) or True
+    )
+    queue.publish_diagnostics(should_stop=lambda: len(calls) >= 1)
+    assert len(calls) == 1
+    queue.publish_diagnostics()
+    assert len(calls) == 2
+    assert {event["payload"]["state"] for event in calls} == {"first", "second"}
+
+
 def test_retrieval_recovery_and_refresh_preserve_other_history(queue):
     job_id = queue.enqueue_retrieval(
         school="ubc",
@@ -423,11 +619,12 @@ def test_retrieval_recovery_and_refresh_preserve_other_history(queue):
     assert queue.claim_next().id == job_id
     queue.recover_interrupted()
     assert queue.get(job_id).state == "pending"
+    assert not queue.get_setting("paused", False)
     assert queue.claim_next().id == job_id
     queue.finish(job_id, result={"posts": []})
     queue.refresh_retrieval(job_id)
     assert queue.get(job_id).result is None
-    assert queue.get(job_id).attempts == 2
+    assert queue.get(job_id).attempts == 0
     assert queue.get(job_id).payload["url"] == "https://www.instagram.com/club.name/"
 
 
@@ -529,3 +726,17 @@ def test_deduplicated_queueing_does_not_duplicate_diagnostics(queue):
     assert _engagement(queue) == _engagement(queue)
     with queue._connect() as db:
         assert db.execute("SELECT COUNT(*) FROM diagnostic_events").fetchone()[0] == 1
+
+
+def test_digest_reports_recovery_pause_without_claiming_or_resuming(queue, monkeypatch):
+    clock = _clock(monkeypatch)
+    queue.set_setting("worker", {"running": True, "heartbeat": clock.now})
+    reason = "Instagram browser request cancellation could not be confirmed: Apple Event -600"
+    queue.set_setting("paused", reason)
+    with pytest.raises(module.BrowserDigestError, match="Apple Event -600"):
+        module.QueuedInstagramDigestResolver(queue).resolve(
+            RECIPIENT_ID, ACCOUNT_USERNAME, "paused-digest"
+        )
+    assert queue.get_setting("paused") == reason
+    assert queue.claim_next() is None
+    assert clock.elapsed == 0

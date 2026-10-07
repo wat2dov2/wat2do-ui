@@ -88,7 +88,7 @@ def _install_digest_resolver(monkeypatch, media_ids: tuple[str, ...]):
     [
         ("ubc", "ubc.wat2do.io", "wat2do.ubc"),
         ("utsc", "utsc.wat2do.io", "wat2do.utsc"),
-        ("uwaterloo", "wat2do.ca", "wat2do.ca"),
+        ("uwaterloo", "wat2do.ca", "wat2do.uwaterloo"),
     ],
 )
 def test_digest_uses_current_school_identity_after_account_rename(

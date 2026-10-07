@@ -12,9 +12,14 @@ from urllib.parse import parse_qsl, urlencode
 from core.controlbox import controlbox
 from services.instagram_notifications.browser_session import (
     _REQUEST_KEY,
+    BrowserAccountChanged,
     BrowserInstagramSession,
     BrowserSessionError,
     JavascriptRunner,
+    _BrowserAutomationTransient,
+    _BrowserPageUnavailable,
+    _BrowserReadCleanupPending,
+    _BrowserTabUnavailable,
     _recipient_is_active_source,
 )
 
@@ -63,9 +68,28 @@ class BrowserInstagramDigestResolver:
         try:
             username = self._session.activate_account(intended_recipient_id, account_username)
             payload = self._session.query(_digest_query_source(cache_id, intended_recipient_id))
+        except _BrowserReadCleanupPending as exc:
+            if (
+                exc.completed_payload is not None
+                and exc.completed_payload.get("state") == "failed"
+                and exc.completed_payload.get("reason") == "auth_required"
+            ):
+                exc.operation_error = BrowserDigestError(_failure_message("auth_required"))
+            raise
+        except (
+            BrowserAccountChanged,
+            _BrowserAutomationTransient,
+            _BrowserPageUnavailable,
+            _BrowserTabUnavailable,
+        ):
+            raise
         except BrowserSessionError as exc:
             raise BrowserDigestError(str(exc)) from None
         if payload.get("state") != "succeeded":
+            if payload.get("reason") == "account_changed":
+                raise BrowserAccountChanged(_failure_message("account_changed"))
+            if payload.get("reason") in ("temporarily_unavailable", "request_failed"):
+                raise _BrowserPageUnavailable(_failure_message(payload["reason"]))
             raise BrowserDigestError(_failure_message(payload.get("reason")))
         raw_media_ids = payload.get("media_ids")
         page_count = payload.get("page_count")

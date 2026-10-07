@@ -212,6 +212,8 @@ class FakeSession:
         self.states = iter(states)
         self.sources = []
         self.calls = []
+        self.reads = []
+        self.mutations = []
 
     def activate_account(self, recipient_id, username):
         self.calls.append(("activate", recipient_id, username))
@@ -222,6 +224,12 @@ class FakeSession:
         return url
 
     def run(self, source):
+        self.mutations.append(source)
+        self.sources.append(source)
+        return json.dumps({"status": next(self.states)})
+
+    def read(self, source):
+        self.reads.append(source)
         self.sources.append(source)
         return json.dumps({"status": next(self.states)})
 
@@ -251,6 +259,7 @@ def test_executor_clicks_once_and_waits_for_positive_confirmation():
         ("activate", "41553815702", "usask.wat2do.io"),
         ("navigate", "https://www.instagram.com/p/TARGET123/", "41553815702", "usask.wat2do.io"),
     ]
+    assert len(session.mutations) == 1 and len(session.reads) == 2
     assert sum("if (!true)" in source for source in session.sources) == 1
     assert sum("if (!false)" in source for source in session.sources) == 2
 
@@ -260,6 +269,34 @@ def test_verification_timeout_does_not_click_again():
     with pytest.raises(BrowserSessionError, match="timed out"):
         _execute(session)
     assert sum("if (!true)" in source for source in session.sources) == 1
+
+
+def test_action_confirmation_retries_bridge_reads_without_repeating_click():
+    from services.instagram_notifications.browser_session import (
+        BrowserInstagramSession,
+        _BrowserAutomationTransient,
+    )
+
+    reads = []
+
+    def run(source, timeout):
+        reads.append(source)
+        assert "if (!false)" in source
+        if len(reads) == 1:
+            raise _BrowserAutomationTransient("Apple Event -1719")
+        return json.dumps({"status": "already_done"})
+
+    session = BrowserInstagramSession(javascript_runner=run, sleep=lambda _: None)
+    executor = engagement.BrowserInstagramEngagementExecutor(session=session)
+    result = executor._complete(
+        "41553815702",
+        "usask.wat2do.io",
+        "https://www.instagram.com/p/TARGET123/",
+        "like",
+        {"action": "like", "status": "clicked"},
+    )
+    assert result == {"action": "like", "status": "succeeded"}
+    assert len(reads) == 2
 
 
 def test_unsupported_repost_is_reported_without_claiming_success():
