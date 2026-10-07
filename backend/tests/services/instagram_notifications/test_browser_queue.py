@@ -294,6 +294,197 @@ def test_simultaneous_rate_limits_extend_one_shared_deadline_without_shortening_
     assert sum(event["payload"]["state"] == "rate_limited" for event in events) == 15
 
 
+def test_fourteen_confirmed_rate_limits_after_expiry_increase_backoff_only_once(queue, monkeypatch):
+    clock = _clock(monkeypatch)
+    for index in range(14):
+        queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, f"progressive-rate-{index}")
+    original = [queue.claim_next() for _ in range(14)]
+    for job in original:
+        queue.defer_for_rate_limit(job, "HTTP 429")
+        queue.finish(job.id, error="HTTP 429", requeue=True, rate_limited_claim=job)
+    clock.now += module.CONTROL.rate_limit_backoff_seconds
+    fresh = [queue.claim_next() for _ in range(14)]
+
+    with ThreadPoolExecutor(max_workers=14) as executor:
+        list(executor.map(lambda job: queue.defer_for_rate_limit(job, "HTTP 429"), fresh))
+
+    expected = module.CONTROL.rate_limit_backoff_seconds * 2
+    assert queue.get_setting("browser_rate_limit_backoff_seconds") == expected
+    assert queue.get_setting("browser_rate_limit_until") == clock.now + expected
+    for job in fresh:
+        queue.finish(job.id, error="HTTP 429", requeue=True, rate_limited_claim=job)
+        assert queue.get(job.id).state == "pending"
+        assert queue.get(job.id).attempts == 0
+    assert not queue.get_setting("paused", False)
+
+
+def test_progressive_backoff_survives_restart_and_caps_without_changing_human_pause(
+    queue, monkeypatch
+):
+    clock = _clock(monkeypatch)
+    queue.set_setting("paused", "Instagram requires human account recovery")
+    expected = module.CONTROL.rate_limit_backoff_seconds
+    for _round in range(7):
+        queue.defer_for_rate_limit(None, "HTTP 429")
+        assert queue.get_setting("browser_rate_limit_backoff_seconds") == expected
+        assert queue.get_setting("browser_rate_limit_until") == clock.now + expected
+        queue = module.BrowserJobQueue(queue.state_directory)
+        assert queue.is_rate_limited()
+        assert queue.get_setting("paused") == "Instagram requires human account recovery"
+        clock.now += expected
+        expected = min(expected * 2, module.CONTROL.rate_limit_max_backoff_seconds)
+    assert queue.get_setting("browser_rate_limit_backoff_seconds") == (
+        module.CONTROL.rate_limit_max_backoff_seconds
+    )
+
+
+@pytest.mark.parametrize("kind", ["digest", "retrieval", "engagement", "inspection"])
+def test_fresh_success_after_expiry_resets_backoff_but_keeps_deadline(queue, monkeypatch, kind):
+    clock = _clock(monkeypatch)
+    queue.defer_for_rate_limit(None, "HTTP 429")
+    clock.now += module.CONTROL.rate_limit_backoff_seconds
+    queue.defer_for_rate_limit(None, "HTTP 429")
+    deadline = queue.get_setting("browser_rate_limit_until")
+    backoff = queue.get_setting("browser_rate_limit_backoff_seconds")
+    clock.now = deadline
+    job_id = (
+        queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "progressive-reset")
+        if kind == "digest"
+        else queue.enqueue_retrieval(
+            school="ubc",
+            recipient_id=RECIPIENT_ID,
+            account_username=ACCOUNT_USERNAME,
+            url="https://www.instagram.com/p/ProgressiveReset/",
+        )
+        if kind == "retrieval"
+        else queue.enqueue_engagement(
+            school="ubc",
+            recipient_id=RECIPIENT_ID,
+            account_username=ACCOUNT_USERNAME,
+            post_url="https://www.instagram.com/p/ProgressiveReset/",
+            dry_run=kind == "inspection",
+        )
+    )
+    active = queue.claim_next()
+    assert active.id == job_id
+    assert active.started_at == deadline
+
+    queue.finish(job_id, result={"status": "succeeded"})
+
+    assert queue.get_setting("browser_rate_limit_until") == deadline
+    assert queue.get_setting("browser_rate_limit_backoff_seconds") == (
+        backoff if kind == "inspection" else 0
+    )
+    queue.defer_for_rate_limit(None, "HTTP 429")
+    expected = backoff * 2 if kind == "inspection" else module.CONTROL.rate_limit_backoff_seconds
+    assert queue.get_setting("browser_rate_limit_backoff_seconds") == expected
+    assert queue.get_setting("browser_rate_limit_until") == clock.now + expected
+
+
+@pytest.mark.parametrize("finish_after_expiry", [False, True])
+def test_old_inflight_success_cannot_reset_active_or_expired_hold(
+    queue, monkeypatch, finish_after_expiry
+):
+    clock = _clock(monkeypatch)
+    job_id = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "progressive-old-response")
+    active = queue.claim_next()
+    queue.defer_for_rate_limit(None, "HTTP 429")
+    deadline = queue.get_setting("browser_rate_limit_until")
+    if finish_after_expiry:
+        clock.now = deadline
+
+    queue.finish(job_id, result={"status": "succeeded"})
+
+    assert active.started_at < deadline
+    assert queue.get_setting("browser_rate_limit_until") == deadline
+    assert queue.get_setting("browser_rate_limit_backoff_seconds") == (
+        module.CONTROL.rate_limit_backoff_seconds
+    )
+
+
+@pytest.mark.parametrize("state", ["failed", "unsupported", "cancelled", "stale"])
+def test_non_success_or_unchanged_finish_cannot_reset_progressive_backoff(
+    queue, monkeypatch, state
+):
+    clock = _clock(monkeypatch)
+    queue.defer_for_rate_limit(None, "HTTP 429")
+    clock.now += module.CONTROL.rate_limit_backoff_seconds
+    job_id = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, f"progressive-no-reset-{state}")
+    if state == "cancelled":
+        queue.cancel(job_id)
+    else:
+        queue.claim_next()
+        if state == "stale":
+            queue.defer_for_rate_limit(None, "HTTP 429")
+            queue.finish(job_id, result={"status": "succeeded"})
+            clock.now = queue.get_setting("browser_rate_limit_until")
+    deadline = queue.get_setting("browser_rate_limit_until")
+    backoff = queue.get_setting("browser_rate_limit_backoff_seconds")
+
+    queue.finish(
+        job_id,
+        error="HTTP 400" if state == "failed" else None,
+        result={"status": "unsupported" if state == "unsupported" else "succeeded"},
+    )
+
+    assert queue.get_setting("browser_rate_limit_until") == deadline
+    assert queue.get_setting("browser_rate_limit_backoff_seconds") == backoff
+
+
+def test_digest_expires_normally_when_progressive_hold_exceeds_caller_deadline(queue, monkeypatch):
+    clock = _clock(monkeypatch)
+    job_id = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "progressive-expired-caller")
+    queue.set_setting(
+        "browser_rate_limit_backoff_seconds", module.CONTROL.rate_limit_max_backoff_seconds
+    )
+    queue.set_setting("browser_rate_limit_until", clock.now)
+    queue.defer_for_rate_limit(None, "HTTP 429")
+    assert module.CONTROL.rate_limit_max_backoff_seconds > module.CONTROL.result_timeout_seconds
+    clock.now += module.CONTROL.result_timeout_seconds + 1
+    assert queue.claim_next() is None
+    assert queue.get(job_id).state == "pending"
+    clock.now = queue.get_setting("browser_rate_limit_until")
+
+    assert queue.claim_next() is None
+
+    expired = queue.get(job_id)
+    assert expired.state == "cancelled"
+    assert expired.error == "Digest caller deadline expired"
+    assert expired.attempts == 0
+
+
+@pytest.mark.parametrize(
+    "backoff",
+    [
+        False,
+        "later",
+        [],
+        float("nan"),
+        float("inf"),
+        -1,
+        1,
+        module.CONTROL.rate_limit_backoff_seconds - 1,
+        module.CONTROL.rate_limit_max_backoff_seconds + 1,
+    ],
+)
+def test_invalid_progressive_backoff_cannot_admit_or_extend_browser_work(
+    queue, monkeypatch, backoff
+):
+    _clock(monkeypatch)
+    job_id = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "progressive-invalid")
+    queue.set_setting("browser_rate_limit_backoff_seconds", backoff)
+
+    with pytest.raises(ValueError, match="Browser rate limit interval is invalid"):
+        queue.is_rate_limited()
+    with pytest.raises(ValueError, match="Browser rate limit interval is invalid"):
+        queue.claim_next()
+    with pytest.raises(ValueError, match="Browser rate limit interval is invalid"):
+        queue.defer_for_rate_limit(None, "HTTP 429")
+    assert queue.get(job_id).state == "pending"
+    assert queue.get(job_id).attempts == 0
+    assert queue.get_setting("browser_rate_limit_until") is None
+
+
 @pytest.mark.parametrize("deadline", [True, "later", [], float("nan"), float("inf")])
 def test_invalid_rate_limit_deadline_cannot_admit_browser_work(queue, monkeypatch, deadline):
     _clock(monkeypatch)
