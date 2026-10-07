@@ -136,6 +136,27 @@
     "upcomingEventCount_one": "ਆਉਣ ਵਾਲਾ ਇਵੈਂਟ",
     "clickCount_one": "{{count}} ਕਲਿੱਕ",
     "andOthersCount_one": "ਅਤੇ {{count}} ਹੋਰ",
-    "moreDatesCount_one": "+{{count}} ਮਿਤੀ"
+    "moreDatesCount_one": "+{{count}} ਮਿਤੀ",
+    "views": {
+      "label": "ਸਮਾਗਮ ਦ੍ਰਿਸ਼",
+      "grid": "ਗਰਿੱਡ",
+      "map": "ਨਕਸ਼ਾ",
+      "calendar": "ਕੈਲੰਡਰ",
+      "month": "ਮਹੀਨਾ",
+      "week": "ਹਫ਼ਤਾ",
+      "day": "ਦਿਨ",
+      "previous": "ਪਿਛਲਾ",
+      "next": "ਅਗਲਾ",
+      "allDay": "ਸਾਰਾ ਦਿਨ",
+      "more": "{{count}} ਹੋਰ",
+      "mapUnavailable": "ਨਕਸ਼ਾ ਅਸਥਾਈ ਤੌਰ ਤੇ ਉਪਲਬਧ ਨਹੀਂ",
+      "mapUnavailableDescription": "ਤੁਸੀਂ ਗਰਿੱਡ ਜਾਂ ਕੈਲੰਡਰ ਵਿੱਚ ਸਮਾਗਮ ਵੇਖ ਸਕਦੇ ਹੋ।",
+      "mapFailed": "ਸਮਾਗਮਾਂ ਦਾ ਨਕਸ਼ਾ ਲੋਡ ਨਹੀਂ ਹੋ ਸਕਿਆ",
+      "noLocations": "ਨਕਸ਼ੇ ਤੇ ਕੋਈ ਥਾਂ ਉਪਲਬਧ ਨਹੀਂ",
+      "noLocationsDescription": "ਇਹ ਸਮਾਗਮ ਆਨਲਾਈਨ ਹਨ ਜਾਂ ਉਨ੍ਹਾਂ ਦੀ ਥਾਂ ਨਹੀਂ ਦਿੱਤੀ ਜਾਂ ਨਹੀਂ ਮਿਲੀ।",
+      "mapSummary": "ਨਕਸ਼ੇ ਤੇ: {{count}}।",
+      "unmapped": "ਨਕਸ਼ੇ ਤੇ ਥਾਂ ਤੋਂ ਬਿਨਾਂ: {{count}}।",
+      "selectEvent": "ਸਮਾਗਮ ਖੋਲ੍ਹੋ"
+    }
   }
 }

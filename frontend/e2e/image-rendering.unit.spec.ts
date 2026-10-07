@@ -34,6 +34,15 @@ function loadComponent(path: string): Record<string, React.ComponentType<Record<
     process,
     fetch: (...args: Parameters<typeof fetch>) => globalThis.fetch(...args),
     require: (id: string) => {
+      if (id === "next/image") {
+        const image = require(id);
+        const { getImgProps } = require("next/dist/shared/lib/get-img-props");
+        const { prepareImageConfig } = require("next/dist/shared/lib/image-config");
+        const defaultLoader = require("next/dist/shared/lib/image-loader").default;
+        return { ...image, __esModule: true, getImageProps: (props: Parameters<typeof import("next/image").getImageProps>[0]) => ({
+          props: getImgProps(props, { defaultLoader, imgConf: prepareImageConfig(undefined, imageConfig) }).props,
+        }) };
+      }
       if (id === "@/app/client-providers") return { useRequestSchool: () => requestSchool };
       if (id === "@/features/events/hooks/useGoingEvents") return { useGoingEvents: () => ({ data: goingSelections }) };
       if (id === "@/features/clubs/components/ClubBadgeDropdown") return { ClubBadgeDropdown: () => null };
@@ -70,9 +79,8 @@ const imageConfig = {
   qualities: [imageDelivery.quality],
   remotePatterns: [{ protocol: "https", hostname: imageDelivery.optimized_remote_host, pathname: `${imageDelivery.optimized_remote_path}**` }],
 };
-// getImageProps reads the build-injected default rather than React context.
-// Mirror next.config for the browser-free component renderer as well.
-Object.assign(imageConfigDefault, imageConfig);
+// Public getImageProps captures build configuration at module load. The VM
+// loader supplies that configuration to the same Next image pipeline locally.
 const { EventImageCutout } = loadComponent("shared/ui/event-image-cutout");
 const { LazyImage } = loadComponent("shared/ui/lazy-image");
 const { AvatarStack } = loadComponent("shared/ui/avatar-stack");

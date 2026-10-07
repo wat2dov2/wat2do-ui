@@ -141,6 +141,27 @@
     "andOthersCount_one": "y {{count}} otro",
     "andOthersCount_many": "y {{count}} otros",
     "moreDatesCount_one": "+{{count}} fecha",
-    "moreDatesCount_many": "+{{count}} fechas"
+    "moreDatesCount_many": "+{{count}} fechas",
+    "views": {
+      "label": "Vista de eventos",
+      "grid": "Cuadrícula",
+      "map": "Mapa",
+      "calendar": "Calendario",
+      "month": "Mes",
+      "week": "Semana",
+      "day": "Día",
+      "previous": "Anterior",
+      "next": "Siguiente",
+      "allDay": "Todo el día",
+      "more": "+{{count}} más",
+      "mapUnavailable": "Mapa temporalmente no disponible",
+      "mapUnavailableDescription": "Puedes explorar eventos en la cuadrícula o el calendario.",
+      "mapFailed": "No se pudo cargar el mapa",
+      "noLocations": "No hay ubicaciones disponibles",
+      "noLocationsDescription": "Estos eventos tienen ubicaciones virtuales, ausentes o no encontradas.",
+      "mapSummary": "En el mapa: {{count}}.",
+      "unmapped": "Sin ubicación en el mapa: {{count}}.",
+      "selectEvent": "Abrir un evento"
+    }
   }
 }

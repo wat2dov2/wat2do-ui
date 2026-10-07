@@ -22,11 +22,11 @@ export function PriceRangeFields({ minPrice, maxPrice, setMinPrice, setMaxPrice 
     <FormGrid columns={2} collapse={false}>
       <Field>
         <FieldLabel htmlFor={`${id}-min`}>{t("filters.minimumPrice")}</FieldLabel>
-        <Input id={`${id}-min`} type="number" min="0" step="0.01" value={minPrice} onChange={event => setMinPrice(event.currentTarget.value)} />
+        <Input id={`${id}-min`} type="number" min="0" step="0.01" placeholder={t("filters.min")} value={minPrice} onChange={event => setMinPrice(event.currentTarget.value)} />
       </Field>
       <Field>
         <FieldLabel htmlFor={`${id}-max`}>{t("filters.max")}</FieldLabel>
-        <Input id={`${id}-max`} type="number" min="0" step="0.01" value={maxPrice} onChange={event => setMaxPrice(event.currentTarget.value)} />
+        <Input id={`${id}-max`} type="number" min="0" step="0.01" placeholder={t("filters.max")} value={maxPrice} onChange={event => setMaxPrice(event.currentTarget.value)} />
       </Field>
     </FormGrid>
   );

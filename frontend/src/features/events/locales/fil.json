@@ -136,6 +136,27 @@
     "upcomingEventCount_one": "paparating na kaganapan",
     "clickCount_one": "{{count}} pag-click",
     "andOthersCount_one": "at {{count}} iba pa",
-    "moreDatesCount_one": "+{{count}} petsa"
+    "moreDatesCount_one": "+{{count}} petsa",
+    "views": {
+      "label": "Tanaw ng mga event",
+      "grid": "Grid",
+      "map": "Mapa",
+      "calendar": "Kalendaryo",
+      "month": "Buwan",
+      "week": "Linggo",
+      "day": "Araw",
+      "previous": "Nakaraan",
+      "next": "Susunod",
+      "allDay": "Buong araw",
+      "more": "{{count}} pa",
+      "mapUnavailable": "Pansamantalang hindi available ang mapa",
+      "mapUnavailableDescription": "Maaari mo pa ring tingnan ang mga event sa grid o kalendaryo.",
+      "mapFailed": "Hindi ma-load ang mapa ng mga event",
+      "noLocations": "Walang lokasyon sa mapa",
+      "noLocationsDescription": "Online ang mga event na ito o wala o hindi mahanap ang lokasyon.",
+      "mapSummary": "Nasa mapa: {{count}}.",
+      "unmapped": "Walang lokasyon sa mapa: {{count}}.",
+      "selectEvent": "Magbukas ng event"
+    }
   }
 }

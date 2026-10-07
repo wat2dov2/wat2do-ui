@@ -35,6 +35,7 @@ export const controlBox = {
     initialRenderCount: eventDiscovery.initial_render_count,
     previewEventCount: eventDiscovery.preview_event_count,
     serverFeedPageSize: eventDiscovery.server_feed_page_size,
+    views: eventDiscovery.views,
   },
   clubManagement: {
     initialRenderCount: clubManagement.initial_render_count,

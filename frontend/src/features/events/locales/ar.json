@@ -156,6 +156,27 @@
     "upcomingEventCount_zero": "لا فعاليات قادمة",
     "upcomingEventCount_two": "فعاليتان قادمتان",
     "upcomingEventCount_few": "فعاليات قادمة",
-    "upcomingEventCount_many": "فعالية قادمة"
+    "upcomingEventCount_many": "فعالية قادمة",
+    "views": {
+      "label": "عرض الفعاليات",
+      "grid": "شبكة",
+      "map": "خريطة",
+      "calendar": "تقويم",
+      "month": "شهر",
+      "week": "أسبوع",
+      "day": "يوم",
+      "previous": "السابق",
+      "next": "التالي",
+      "allDay": "طوال اليوم",
+      "more": "{{count}} أخرى",
+      "mapUnavailable": "الخريطة غير متاحة مؤقتًا",
+      "mapUnavailableDescription": "يمكنك تصفح الفعاليات في عرض الشبكة أو التقويم.",
+      "mapFailed": "تعذر تحميل خريطة الفعاليات",
+      "noLocations": "لا توجد مواقع متاحة على الخريطة",
+      "noLocationsDescription": "هذه الفعاليات افتراضية أو مواقعها غير محددة أو لم يتم العثور عليها.",
+      "mapSummary": "على الخريطة: {{count}}.",
+      "unmapped": "دون موقع على الخريطة: {{count}}.",
+      "selectEvent": "فتح فعالية"
+    }
   }
 }

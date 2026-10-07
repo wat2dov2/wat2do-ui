@@ -1,0 +1,65 @@
+/* This feature owns third-party calendar appearance; pages only select the view. */
+.events-calendar {
+  height: 100%;
+  padding: 1rem;
+}
+.events-calendar .rbc-calendar {
+  font: inherit;
+  color: var(--foreground);
+  gap: 0.75rem;
+}
+.events-calendar :is(.rbc-month-view, .rbc-time-view, .rbc-header, .rbc-month-row,
+  .rbc-day-bg, .rbc-time-header-content, .rbc-time-content, .rbc-events-container,
+  .rbc-timeslot-group, .rbc-time-header, .rbc-day-slot .rbc-time-slot) {
+  border-color: var(--border);
+}
+.events-calendar :is(.rbc-header, .rbc-time-content, .rbc-time-header-content) {
+  min-width: 0;
+}
+.events-calendar .rbc-off-range-bg {
+  background: var(--muted);
+}
+.events-calendar .rbc-today {
+  background: color-mix(in oklab, var(--primary) 10%, var(--surface));
+}
+.events-calendar :is(.rbc-event, .rbc-background-event) {
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border: 1px solid var(--border);
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+}
+.events-calendar .rbc-event.rbc-selected {
+  background: var(--primary-hover);
+}
+.events-calendar :is(.rbc-event:focus, .rbc-button-link:focus-visible, .rbc-show-more:focus-visible) {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+.events-calendar .rbc-current-time-indicator {
+  background: var(--primary);
+}
+.events-calendar .rbc-show-more {
+  background: transparent;
+  color: var(--primary);
+}
+.events-calendar .rbc-overlay {
+  background: var(--surface-elevated);
+  color: var(--foreground);
+  border-color: var(--border);
+  border-radius: 0.75rem;
+  box-shadow: var(--shadow-lg);
+}
+.events-calendar .rbc-label {
+  padding-inline: 0.375rem;
+  font-size: 0.75rem;
+}
+.events-calendar .rbc-header {
+  padding-block: 0.375rem;
+}
+.events-calendar .rbc-time-content {
+  overflow-x: auto;
+}
+.events-calendar .rbc-time-view .rbc-event-label {
+  white-space: normal;
+}

@@ -1861,6 +1861,44 @@ test.describe("Discovery before hydration", () => {
 });
 
 test.describe("Events Page", () => {
+  test("Grid defaults, price placeholders and Calendar share filters and event drawers", async ({ page, next }) => {
+    const startsAt = new Date(Date.now() + 3_600_000).toISOString();
+    const event = {
+      id: 9017, title: "Calendar cooking night", club: "Cooking Club", club_id: 1,
+      location: "Student Life Centre", price: 5, category: "Technology", school: "uwaterloo",
+      added_at: new Date().toISOString(), food: [], registration: false,
+      occurrences: [{ id: "calendar-occurrence", event_id: 9017, dtstart_utc: startsAt, dtend_utc: null }],
+    };
+    await mockApi(page, next, url => apiPath(url) === "/events" ||
+      (apiPath(url) === "/discovery" && url.searchParams.get("resource") === "events"),
+    async () => ({ json: { items: [event], total: 1, page: 1, page_size: 1, total_pages: 1 } }));
+    await mockApi(page, next, url => apiPath(url) === "/events/9017", async () => ({ json: event }));
+    const mapRequests: string[] = [];
+    page.on("request", request => { if (request.url().startsWith("https://api.mapbox.com/")) mapRequests.push(request.url()); });
+    await page.goto(BASE);
+    const views = page.getByRole("combobox", { name: "Event view" });
+    await expect(views).toHaveText("Grid");
+    await expect(page.locator('article[data-event-id="9017"]')).toBeVisible();
+    const filters = page.getByTestId("event-quick-filter-scroll");
+    await filters.getByRole("button", { name: "Any price", exact: true }).click();
+    await expect(page.getByPlaceholder("Min", { exact: true })).toBeVisible();
+    await expect(page.getByPlaceholder("Max", { exact: true })).toBeVisible();
+    await page.getByPlaceholder("Max", { exact: true }).fill("10");
+    await page.keyboard.press("Escape");
+    await views.click();
+    await page.getByRole("option", { name: "Calendar", exact: true }).click();
+    await expect(page.locator(".rbc-calendar")).toBeVisible();
+    await page.getByRole("tab", { name: "Month", exact: true }).click();
+    await page.locator(".rbc-event").filter({ hasText: event.title }).first().click();
+    await expect(page.getByRole("dialog", { name: event.title, exact: true })).toBeVisible();
+    await page.keyboard.press("Escape");
+    await views.click();
+    await page.getByRole("option", { name: "Grid", exact: true }).click();
+    await expect(filters.getByRole("button", { name: "≤ $10", exact: true })).toBeVisible();
+    await expect(page.locator('article[data-event-id="9017"]')).toBeVisible();
+    expect(mapRequests).toEqual([]);
+  });
+
   for (const width of [390, 1024]) {
     test(`desktop presses and mobile clicks activate cards and navigation at ${width}px`, async ({ page }) => {
       await page.setViewportSize({ width, height: 844 });
@@ -3707,7 +3745,7 @@ test.describe("Events Page", () => {
     expect(feedRequests).toBe(initialRequests);
   });
 
-  test("event quick filters follow discovery priority and omit the format selector", async ({ page, next }) => {
+  test("event quick filters follow discovery priority and default to Grid", async ({ page, next }) => {
     await seedAuthenticatedSession(page, next);
     await page.goto(BASE);
     const filters = page.getByTestId("event-quick-filter-scroll");
@@ -3717,7 +3755,7 @@ test.describe("Events Page", () => {
     const indices = expected.map(label => labels.indexOf(label));
     expect(indices.every(index => index >= 0)).toBe(true);
     expect(indices).toEqual([...indices].sort((a, b) => a - b));
-    await expect(page.getByRole("combobox", { name: "Event format" })).toHaveCount(0);
+    await expect(filters.getByRole("combobox", { name: "Event view" })).toHaveText("Grid");
     await expect(filters.getByRole("button", { name: "Holidays", exact: true })).toHaveCount(0);
     await expect(filters.getByRole("button", { name: "Varsity games", exact: true })).toHaveCount(0);
     const logo = page.getByRole("banner").getByRole("link", { name: "Events", exact: true }).first();

@@ -136,6 +136,27 @@
     "upcomingEventCount_one": "رویداد آینده",
     "clickCount_one": "{{count}} کلیک",
     "andOthersCount_one": "و {{count}} نفر دیگر",
-    "moreDatesCount_one": "+{{count}} تاریخ"
+    "moreDatesCount_one": "+{{count}} تاریخ",
+    "views": {
+      "label": "نمای رویدادها",
+      "grid": "شبکه",
+      "map": "نقشه",
+      "calendar": "تقویم",
+      "month": "ماه",
+      "week": "هفته",
+      "day": "روز",
+      "previous": "قبلی",
+      "next": "بعدی",
+      "allDay": "تمام روز",
+      "more": "{{count}} مورد دیگر",
+      "mapUnavailable": "نقشه موقتاً در دسترس نیست",
+      "mapUnavailableDescription": "همچنان می‌توانید رویدادها را در شبکه یا تقویم مرور کنید.",
+      "mapFailed": "نقشه رویدادها بارگیری نشد",
+      "noLocations": "مکانی روی نقشه موجود نیست",
+      "noLocationsDescription": "این رویدادها مجازی هستند یا مکانشان مشخص نیست یا پیدا نشده است.",
+      "mapSummary": "روی نقشه: {{count}}.",
+      "unmapped": "بدون مکان روی نقشه: {{count}}.",
+      "selectEvent": "باز کردن رویداد"
+    }
   }
 }

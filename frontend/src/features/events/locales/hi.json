@@ -136,6 +136,27 @@
     "upcomingEventCount_one": "आगामी इवेंट",
     "clickCount_one": "{{count}} क्लिक",
     "andOthersCount_one": "और {{count}} अन्य",
-    "moreDatesCount_one": "+{{count}} दिनांक"
+    "moreDatesCount_one": "+{{count}} दिनांक",
+    "views": {
+      "label": "कार्यक्रम दृश्य",
+      "grid": "ग्रिड",
+      "map": "मानचित्र",
+      "calendar": "कैलेंडर",
+      "month": "महीना",
+      "week": "सप्ताह",
+      "day": "दिन",
+      "previous": "पिछला",
+      "next": "अगला",
+      "allDay": "पूरे दिन",
+      "more": "{{count}} और",
+      "mapUnavailable": "मानचित्र अभी उपलब्ध नहीं है",
+      "mapUnavailableDescription": "आप ग्रिड या कैलेंडर में कार्यक्रम देख सकते हैं।",
+      "mapFailed": "कार्यक्रम मानचित्र लोड नहीं हो सका",
+      "noLocations": "मानचित्र पर कोई स्थान उपलब्ध नहीं",
+      "noLocationsDescription": "ये कार्यक्रम ऑनलाइन हैं या उनका स्थान नहीं दिया गया है या नहीं मिला।",
+      "mapSummary": "मानचित्र पर: {{count}}।",
+      "unmapped": "मानचित्र पर स्थान के बिना: {{count}}।",
+      "selectEvent": "कार्यक्रम खोलें"
+    }
   }
 }

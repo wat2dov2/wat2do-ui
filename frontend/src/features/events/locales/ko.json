@@ -131,6 +131,27 @@
     "moreEvents": "더 많은 이벤트",
     "submitEvent": "이벤트 추가",
     "allEvents": "모든 이벤트",
-    "going": "참여 예정"
+    "going": "참여 예정",
+    "views": {
+      "label": "행사 보기",
+      "grid": "그리드",
+      "map": "지도",
+      "calendar": "달력",
+      "month": "월",
+      "week": "주",
+      "day": "일",
+      "previous": "이전",
+      "next": "다음",
+      "allDay": "종일",
+      "more": "{{count}}개 더 보기",
+      "mapUnavailable": "지도를 일시적으로 사용할 수 없습니다",
+      "mapUnavailableDescription": "그리드나 달력에서 행사를 계속 볼 수 있습니다.",
+      "mapFailed": "행사 지도를 불러오지 못했습니다",
+      "noLocations": "지도에 표시할 장소가 없습니다",
+      "noLocationsDescription": "이 행사는 온라인으로 진행되거나 장소가 없거나 찾을 수 없습니다.",
+      "mapSummary": "지도에 표시됨: {{count}}개.",
+      "unmapped": "지도 위치 없음: {{count}}개.",
+      "selectEvent": "행사 열기"
+    }
   }
 }

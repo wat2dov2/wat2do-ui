@@ -146,6 +146,27 @@
     "andOthersCount_many": "i {{count}} innych osób",
     "moreDatesCount_one": "+{{count}} data",
     "moreDatesCount_few": "+{{count}} daty",
-    "moreDatesCount_many": "+{{count}} dat"
+    "moreDatesCount_many": "+{{count}} dat",
+    "views": {
+      "label": "Widok wydarzeń",
+      "grid": "Siatka",
+      "map": "Mapa",
+      "calendar": "Kalendarz",
+      "month": "Miesiąc",
+      "week": "Tydzień",
+      "day": "Dzień",
+      "previous": "Poprzedni",
+      "next": "Następny",
+      "allDay": "Cały dzień",
+      "more": "+{{count}} więcej",
+      "mapUnavailable": "Mapa tymczasowo niedostępna",
+      "mapUnavailableDescription": "Możesz nadal przeglądać wydarzenia w siatce lub kalendarzu.",
+      "mapFailed": "Nie udało się wczytać mapy",
+      "noLocations": "Brak lokalizacji na mapie",
+      "noLocationsDescription": "Te wydarzenia są wirtualne lub ich lokalizacje są nieznane albo nie można ich odnaleźć.",
+      "mapSummary": "Na mapie: {{count}}.",
+      "unmapped": "Bez lokalizacji na mapie: {{count}}.",
+      "selectEvent": "Otwórz wydarzenie"
+    }
   }
 }

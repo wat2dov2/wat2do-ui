@@ -136,6 +136,27 @@
     "upcomingEventCount_one": "آنے والا ایونٹ",
     "clickCount_one": "{{count}} کلک",
     "andOthersCount_one": "اور {{count}} دیگر",
-    "moreDatesCount_one": "+{{count}} تاریخ"
+    "moreDatesCount_one": "+{{count}} تاریخ",
+    "views": {
+      "label": "تقریبات کا منظر",
+      "grid": "گرڈ",
+      "map": "نقشہ",
+      "calendar": "کیلنڈر",
+      "month": "مہینہ",
+      "week": "ہفتہ",
+      "day": "دن",
+      "previous": "پچھلا",
+      "next": "اگلا",
+      "allDay": "پورا دن",
+      "more": "مزید {{count}}",
+      "mapUnavailable": "نقشہ عارضی طور پر دستیاب نہیں",
+      "mapUnavailableDescription": "آپ گرڈ یا کیلنڈر میں تقریبات دیکھ سکتے ہیں۔",
+      "mapFailed": "تقریبات کا نقشہ لوڈ نہیں ہو سکا",
+      "noLocations": "نقشے پر کوئی مقام دستیاب نہیں",
+      "noLocationsDescription": "یہ تقریبات آن لائن ہیں یا ان کے مقامات نامعلوم ہیں۔",
+      "mapSummary": "نقشے پر: {{count}}۔",
+      "unmapped": "نقشے پر مقام کے بغیر: {{count}}۔",
+      "selectEvent": "تقریب کھولیں"
+    }
   }
 }

@@ -136,6 +136,27 @@
     "upcomingEventCount_one": "bevorstehende Veranstaltung",
     "clickCount_one": "{{count}} Klick",
     "andOthersCount_one": "und {{count}} andere",
-    "moreDatesCount_one": "+{{count}} Datum"
+    "moreDatesCount_one": "+{{count}} Datum",
+    "views": {
+      "label": "Veranstaltungsansicht",
+      "grid": "Raster",
+      "map": "Karte",
+      "calendar": "Kalender",
+      "month": "Monat",
+      "week": "Woche",
+      "day": "Tag",
+      "previous": "Zurück",
+      "next": "Weiter",
+      "allDay": "Ganztägig",
+      "more": "+{{count}} weitere",
+      "mapUnavailable": "Karte vorübergehend nicht verfügbar",
+      "mapUnavailableDescription": "Du kannst Veranstaltungen weiterhin im Raster oder Kalender ansehen.",
+      "mapFailed": "Die Veranstaltungskarte konnte nicht geladen werden",
+      "noLocations": "Keine Kartenstandorte verfügbar",
+      "noLocationsDescription": "Diese Veranstaltungen sind online oder haben fehlende oder nicht auffindbare Standorte.",
+      "mapSummary": "Auf der Karte: {{count}}.",
+      "unmapped": "Ohne Kartenstandort: {{count}}.",
+      "selectEvent": "Veranstaltung öffnen"
+    }
   }
 }

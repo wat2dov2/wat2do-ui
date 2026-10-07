@@ -3,7 +3,8 @@ import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { PriceFilter } from "@/features/search";
 import { IntegerFilter } from "@/shared/ui/integer-filter";
-import { EventList } from "@/features/events/components/EventList";
+import { EventsBrowseViews } from "@/features/events/components/EventsBrowseViews";
+import { EventViewSelect, type EventBrowseView } from "@/features/events/components/EventViewSelect";
 import { PageCountHeading } from "@/shared/ui/page-count-heading";
 import { SearchBar } from "@/features/search/components/SearchBar";
 import { MoreFiltersButton } from "@/features/search/components/MoreFiltersButton";
@@ -20,6 +21,7 @@ import { DateFilterSelect } from "@/features/events/components/DateFilterSelect"
 import { ROUTES } from "@/shared/constants/routes";
 import type { Event } from "@/shared/types";
 import { usePosterLandingConfirmation } from "@/features/qrcode/hooks/usePosterLandingConfirmation";
+import { EmptyState } from "@/shared/feedback";
 import { PageHeader, Stack } from "@/shared/layout";
 import type { PaginatedEventsResponse } from "@/features/events/api/events.api";
 import { EventDetailsModal } from "@/features/events/components/EventDetailsModal";
@@ -61,6 +63,7 @@ export function EventsPageContainer({
     initialSnapshot,
     initialSchool,
   });
+  const [view, setView] = useState<EventBrowseView>("grid");
   const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
   const [hasOpenedDetails, setHasOpenedDetails] = useState(false);
 
@@ -127,7 +130,7 @@ export function EventsPageContainer({
             </Button>
           </Stack>
 
-          <FilterBar appliedQueryKey={appliedQueryKey} disabled={isLoading || Boolean(error)} refreshKey={`${quickFilters.length}:${filters.categoryOptions.length}:${filters.campusSeasonOptions.map(season => season.id).join(",")}`} data-testid="event-quick-filter-scroll" trailing={<>
+          <FilterBar appliedQueryKey={`${view}:${appliedQueryKey}`} disabled={isLoading || Boolean(error)} refreshKey={`${view}:${quickFilters.length}:${filters.categoryOptions.length}:${filters.campusSeasonOptions.map(season => season.id).join(",")}`} data-testid="event-quick-filter-scroll" trailing={<>
               <MoreFiltersButton
                 open={showFilterDropdown}
                 onOpenChange={setShowFilterDropdown}
@@ -142,6 +145,7 @@ export function EventsPageContainer({
                 ) : null}
               </MoreFiltersButton>
             </>}>
+                <EventViewSelect value={view} onChange={setView} />
                 {quickFilters.map(config => {
                   switch (config.id) {
                     case "new":
@@ -191,20 +195,13 @@ export function EventsPageContainer({
           aria-label={t("search.ariaLabel")}
         >
           {error ? (
-            <div className="flex flex-col items-center justify-center py-16 gap-4">
-              <p className="text-destructive text-sm text-center max-w-md">
-                {error}
-              </p>
-              <button
-                type="button"
-                onMouseDown={() => refreshEvents()}
-                className="px-4 py-2 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary-hover transition-colors"
-              >
-                {t("common.tryAgain")}
-              </button>
-            </div>
+            <EmptyState title={error} action={
+              <Button variant="primary" onClick={refreshEvents}>{t("common.tryAgain")}</Button>
+            } />
           ) : (
-            <EventList
+            <EventsBrowseViews
+              view={view}
+              school={initialSchool}
               events={orderedEvents}
               onEventClick={handleEventClick}
               onClearFilters={filters.clearAllFilters}

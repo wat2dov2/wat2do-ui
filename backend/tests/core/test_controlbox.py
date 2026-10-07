@@ -681,3 +681,22 @@ def test_instagram_music_rejects_missing_chart_mapping(tmp_path):
     )
     with pytest.raises(ValidationError, match="music mappings"):
         load_controlbox(directory)
+
+
+@pytest.mark.parametrize(
+    "field,value",
+    [
+        ("calendar_scroll_hour", 24),
+        ("map_initial_zoom", 23),
+        ("map_cluster_radius", 0),
+        ("map_search_concurrency", 0),
+        ("map_search_timeout_seconds", 0),
+        ("map_light_style", "https://invalid.example/style"),
+    ],
+)
+def test_event_view_controls_reject_invalid_configuration(tmp_path, field, value):
+    directory = _write_control(
+        tmp_path, "event_discovery", lambda data: data["views"].update({field: value})
+    )
+    with pytest.raises(ValidationError):
+        load_controlbox(directory)

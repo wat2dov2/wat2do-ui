@@ -141,6 +141,27 @@
     "andOthersCount_one": "e {{count}} outro",
     "andOthersCount_many": "e {{count}} outros",
     "moreDatesCount_one": "+{{count}} data",
-    "moreDatesCount_many": "+{{count}} datas"
+    "moreDatesCount_many": "+{{count}} datas",
+    "views": {
+      "label": "Visualização de eventos",
+      "grid": "Grade",
+      "map": "Mapa",
+      "calendar": "Calendário",
+      "month": "Mês",
+      "week": "Semana",
+      "day": "Dia",
+      "previous": "Anterior",
+      "next": "Próximo",
+      "allDay": "Dia inteiro",
+      "more": "+{{count}} outros",
+      "mapUnavailable": "Mapa temporariamente indisponível",
+      "mapUnavailableDescription": "Você ainda pode ver eventos na grade ou no calendário.",
+      "mapFailed": "Não foi possível carregar o mapa",
+      "noLocations": "Nenhum local disponível no mapa",
+      "noLocationsDescription": "Estes eventos são virtuais ou têm locais ausentes ou não encontrados.",
+      "mapSummary": "No mapa: {{count}}.",
+      "unmapped": "Sem local no mapa: {{count}}.",
+      "selectEvent": "Abrir um evento"
+    }
   }
 }

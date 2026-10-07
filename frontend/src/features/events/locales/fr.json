@@ -141,6 +141,27 @@
     "andOthersCount_one": "et {{count}} autre",
     "andOthersCount_many": "et {{count}} autres",
     "moreDatesCount_one": "+{{count}} date",
-    "moreDatesCount_many": "+{{count}} dates"
+    "moreDatesCount_many": "+{{count}} dates",
+    "views": {
+      "label": "Vue des événements",
+      "grid": "Grille",
+      "map": "Carte",
+      "calendar": "Calendrier",
+      "month": "Mois",
+      "week": "Semaine",
+      "day": "Jour",
+      "previous": "Précédent",
+      "next": "Suivant",
+      "allDay": "Toute la journée",
+      "more": "+{{count}} autres",
+      "mapUnavailable": "Carte temporairement indisponible",
+      "mapUnavailableDescription": "Vous pouvez consulter les événements dans la grille ou le calendrier.",
+      "mapFailed": "Impossible de charger la carte",
+      "noLocations": "Aucun lieu disponible sur la carte",
+      "noLocationsDescription": "Les lieux de ces événements sont virtuels, absents ou introuvables.",
+      "mapSummary": "Sur la carte : {{count}}.",
+      "unmapped": "Sans lieu sur la carte : {{count}}.",
+      "selectEvent": "Ouvrir un événement"
+    }
   }
 }

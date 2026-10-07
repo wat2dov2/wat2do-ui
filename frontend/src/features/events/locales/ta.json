@@ -136,6 +136,27 @@
     "upcomingEventCount_one": "வரவிருக்கும் நிகழ்வு",
     "clickCount_one": "{{count}} கிளிக்",
     "andOthersCount_one": "மேலும் {{count}} பேர்",
-    "moreDatesCount_one": "+{{count}} நாள்"
+    "moreDatesCount_one": "+{{count}} நாள்",
+    "views": {
+      "label": "நிகழ்வு காட்சி",
+      "grid": "கட்டம்",
+      "map": "வரைபடம்",
+      "calendar": "நாட்காட்டி",
+      "month": "மாதம்",
+      "week": "வாரம்",
+      "day": "நாள்",
+      "previous": "முந்தையது",
+      "next": "அடுத்தது",
+      "allDay": "நாள் முழுவதும்",
+      "more": "மேலும் {{count}}",
+      "mapUnavailable": "வரைபடம் தற்காலிகமாக கிடைக்கவில்லை",
+      "mapUnavailableDescription": "கட்டம் அல்லது நாட்காட்டியில் நிகழ்வுகளைப் பார்க்கலாம்.",
+      "mapFailed": "நிகழ்வு வரைபடத்தை ஏற்ற முடியவில்லை",
+      "noLocations": "வரைபட இடங்கள் இல்லை",
+      "noLocationsDescription": "இந்த நிகழ்வுகள் இணையத்தில் நடைபெறுகின்றன அல்லது அவற்றின் இடங்கள் தெரியவில்லை.",
+      "mapSummary": "வரைபடத்தில்: {{count}}.",
+      "unmapped": "வரைபட இடம் இல்லாதவை: {{count}}.",
+      "selectEvent": "நிகழ்வைத் திற"
+    }
   }
 }

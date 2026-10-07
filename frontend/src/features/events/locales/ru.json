@@ -146,6 +146,27 @@
     "andOthersCount_many": "и ещё {{count}} человек",
     "moreDatesCount_one": "+{{count}} дата",
     "moreDatesCount_few": "+{{count}} даты",
-    "moreDatesCount_many": "+{{count}} дат"
+    "moreDatesCount_many": "+{{count}} дат",
+    "views": {
+      "label": "Вид событий",
+      "grid": "Сетка",
+      "map": "Карта",
+      "calendar": "Календарь",
+      "month": "Месяц",
+      "week": "Неделя",
+      "day": "День",
+      "previous": "Назад",
+      "next": "Вперёд",
+      "allDay": "Весь день",
+      "more": "Ещё {{count}}",
+      "mapUnavailable": "Карта временно недоступна",
+      "mapUnavailableDescription": "Вы можете просматривать события в сетке или календаре.",
+      "mapFailed": "Не удалось загрузить карту событий",
+      "noLocations": "Нет мест на карте",
+      "noLocationsDescription": "Эти события проходят онлайн, или их места не указаны либо не найдены.",
+      "mapSummary": "На карте: {{count}}.",
+      "unmapped": "Без места на карте: {{count}}.",
+      "selectEvent": "Открыть событие"
+    }
   }
 }

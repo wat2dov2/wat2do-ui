@@ -125,6 +125,7 @@ const nextConfig: NextConfig = {
       initial_render_count: eventDiscovery.initial_render_count,
       preview_event_count: eventDiscovery.preview_event_count,
       server_feed_page_size: eventDiscovery.server_feed_page_size,
+      views: eventDiscovery.views,
     }),
     NEXT_PUBLIC_INSTAGRAM_COVER_LOGO_SVG: instagramCoverLogoSvg,
     NEXT_PUBLIC_CLUB_CATEGORY_DOODLE_SVGS: JSON.stringify(

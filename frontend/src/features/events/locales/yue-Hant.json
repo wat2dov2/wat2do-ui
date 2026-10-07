@@ -131,6 +131,27 @@
     "moreEvents": "更多活動",
     "submitEvent": "新增活動",
     "allEvents": "所有活動",
-    "going": "會參加"
+    "going": "會參加",
+    "views": {
+      "label": "活動檢視",
+      "grid": "網格",
+      "map": "地圖",
+      "calendar": "日曆",
+      "month": "月",
+      "week": "週",
+      "day": "日",
+      "previous": "上一頁",
+      "next": "下一頁",
+      "allDay": "全日",
+      "more": "另有 {{count}} 項",
+      "mapUnavailable": "地圖暫時無法使用",
+      "mapUnavailableDescription": "你仍可用網格或日曆瀏覽活動。",
+      "mapFailed": "無法載入活動地圖",
+      "noLocations": "暫無地圖位置",
+      "noLocationsDescription": "這些活動在線上舉行、缺少地點或無法定位。",
+      "mapSummary": "地圖上：{{count}} 項。",
+      "unmapped": "沒有地圖位置：{{count}} 項。",
+      "selectEvent": "開啟活動"
+    }
   }
 }

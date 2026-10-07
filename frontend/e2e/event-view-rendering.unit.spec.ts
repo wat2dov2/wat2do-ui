@@ -280,3 +280,13 @@ for (const [minPrice, maxPrice, selected] of [["", "", false], ["", "0", true], 
     expect(html).toContain(`aria-pressed="${selected}"`);
   });
 }
+
+
+test("shared price fields expose translated min and max placeholders", () => {
+  const { PriceRangeFields } = loadComponent("features/search/components/PriceFilter") as typeof import("../src/features/search/components/PriceFilter");
+  const html = renderToStaticMarkup(createElement(PriceRangeFields, {
+    minPrice: "", maxPrice: "", setMinPrice: () => {}, setMaxPrice: () => {},
+  }));
+  expect(html).toContain('placeholder="filters.min"');
+  expect(html).toContain('placeholder="filters.max"');
+});

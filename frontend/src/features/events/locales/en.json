@@ -132,6 +132,27 @@
     "moreEvents": "More events",
     "submitEvent": "Add event",
     "allEvents": "All events",
-    "going": "Going"
+    "going": "Going",
+    "views": {
+      "label": "Event view",
+      "grid": "Grid",
+      "map": "Map",
+      "calendar": "Calendar",
+      "month": "Month",
+      "week": "Week",
+      "day": "Day",
+      "previous": "Previous",
+      "next": "Next",
+      "allDay": "All day",
+      "more": "+{{count}} more",
+      "mapUnavailable": "Map temporarily unavailable",
+      "mapUnavailableDescription": "You can still browse events in Grid or Calendar view.",
+      "mapFailed": "Could not load the event map",
+      "noLocations": "No map locations available",
+      "noLocationsDescription": "These events have virtual, missing, or unresolved locations.",
+      "mapSummary": "On the map: {{count}}.",
+      "unmapped": "Without a map location: {{count}}.",
+      "selectEvent": "Open an event"
+    }
   }
 }

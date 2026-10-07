@@ -208,6 +208,17 @@ class CampusSeasonsControl(_ControlModel):
         return self
 
 
+class EventViewsControl(_ControlModel):
+    calendar_scroll_hour: int = Field(ge=0, le=23)
+    map_initial_zoom: int = Field(ge=0, le=22)
+    map_cluster_radius: int = Field(gt=0, le=512)
+    map_cluster_max_zoom: int = Field(ge=0, le=22)
+    map_search_concurrency: int = Field(gt=0, le=10)
+    map_search_timeout_seconds: int = Field(gt=0, le=60)
+    map_light_style: str = Field(pattern=r"^mapbox://styles/")
+    map_dark_style: str = Field(pattern=r"^mapbox://styles/")
+
+
 class EventDiscoveryControl(_ControlModel):
     new_event_window_hours: int = Field(gt=0)
     event_without_end_visibility_minutes: int = Field(gt=0)
@@ -215,6 +226,7 @@ class EventDiscoveryControl(_ControlModel):
     preview_event_count: int = Field(gt=0, le=100)
     server_feed_page_size: int = Field(gt=0, le=100)
     campus_seasons: CampusSeasonsControl
+    views: EventViewsControl
 
 
 class DatabaseControl(_ControlModel):

@@ -136,6 +136,27 @@
     "upcomingEventCount_one": "આવનારી ઇવેન્ટ",
     "clickCount_one": "{{count}} ક્લિક",
     "andOthersCount_one": "અને {{count}} અન્ય",
-    "moreDatesCount_one": "+{{count}} તારીખ"
+    "moreDatesCount_one": "+{{count}} તારીખ",
+    "views": {
+      "label": "કાર્યક્રમ દૃશ્ય",
+      "grid": "ગ્રિડ",
+      "map": "નકશો",
+      "calendar": "કેલેન્ડર",
+      "month": "મહિનો",
+      "week": "અઠવાડિયું",
+      "day": "દિવસ",
+      "previous": "પાછલું",
+      "next": "આગળનું",
+      "allDay": "આખો દિવસ",
+      "more": "{{count}} વધુ",
+      "mapUnavailable": "નકશો અત્યારે ઉપલબ્ધ નથી",
+      "mapUnavailableDescription": "તમે ગ્રિડ અથવા કેલેન્ડરમાં કાર્યક્રમો જોઈ શકો છો.",
+      "mapFailed": "કાર્યક્રમોનો નકશો લોડ થઈ શક્યો નહીં",
+      "noLocations": "નકશા પર કોઈ સ્થળ ઉપલબ્ધ નથી",
+      "noLocationsDescription": "આ કાર્યક્રમો ઓનલાઇન છે અથવા તેમનું સ્થળ આપેલું નથી કે મળ્યું નથી.",
+      "mapSummary": "નકશા પર: {{count}}.",
+      "unmapped": "નકશા પર સ્થળ વગર: {{count}}.",
+      "selectEvent": "કાર્યક્રમ ખોલો"
+    }
   }
 }

@@ -131,6 +131,27 @@
     "moreEvents": "更多活动",
     "submitEvent": "添加活动",
     "allEvents": "所有活动",
-    "going": "参加"
+    "going": "参加",
+    "views": {
+      "label": "活动视图",
+      "grid": "网格",
+      "map": "地图",
+      "calendar": "日历",
+      "month": "月",
+      "week": "周",
+      "day": "日",
+      "previous": "上一页",
+      "next": "下一页",
+      "allDay": "全天",
+      "more": "另有 {{count}} 项",
+      "mapUnavailable": "地图暂时不可用",
+      "mapUnavailableDescription": "你仍可使用网格或日历浏览活动。",
+      "mapFailed": "无法加载活动地图",
+      "noLocations": "暂无地图位置",
+      "noLocationsDescription": "这些活动在线上举办、缺少地点或地点无法定位。",
+      "mapSummary": "地图上：{{count}} 项。",
+      "unmapped": "没有地图位置：{{count}} 项。",
+      "selectEvent": "打开活动"
+    }
   }
 }
