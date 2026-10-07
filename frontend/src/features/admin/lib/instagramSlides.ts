@@ -27,6 +27,9 @@ import instagramPublishing from "../../../../../backend/controlbox/instagram_pub
 
 export const SLIDE_WIDTH = 1080;
 export const SLIDE_HEIGHT = 1350;
+export const SLIDE_CARD_INSET = 32;
+export const SLIDE_EVENT_HEADER_HEIGHT = 132;
+export const SLIDE_EVENT_FOOTER_HEIGHT = 130;
 /** Raster preparation and template layout use the same physical image bounds. */
 export const SLIDE_POSTER_REGIONS = {
   event: { width: SLIDE_WIDTH - 128, height: 960 },
@@ -71,11 +74,12 @@ export interface EventSlideModel {
   /** Instagram handle, or the club name when no handle is known. */
   author: string;
   avatarSrc: string;
+  poster: { width: number; height: number };
   /** The school's public domain, also used in the artwork review library. */
   siteName: string;
   colors: SchoolColors;
   doodleIcons: string[];
-  stickers: { id: string; label: string; lines: string[]; shape: number; styleSeed: number; left: number; top: number; rotation: number }[];
+  stickers: { id: string; label: string; lines: string[]; shape: number; styleSeed: number; left: number; top: number; rotation: number; scale: number }[];
   /** Event facts use the same localized labels as the website's cards. */
   badges: string[];
   imageSrc: string;
@@ -177,19 +181,27 @@ function stickerStyle(label: string): { shape: number; styleSeed: number } {
 }
 
 /** Fill the white footer before covering any event artwork. */
-function stickerPositions(eventId: number, count: number) {
+function stickerPositions(eventId: number, count: number, poster: { width: number; height: number }) {
   let seed = Math.imul(eventId, 2654435761) >>> 0;
   const random = () => {
     seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
     return seed / 4294967296;
   };
-  const gap = 24;
-  const rowWidth = count * SLIDE_STICKER_SIZE.width + Math.max(0, count - 1) * gap;
+  const gap = Math.min(24, poster.width / Math.max(1, count * 4));
+  // Include the largest rotated footprint and jitter when fitting a narrow mock.
+  const radians = 5 * Math.PI / 180;
+  const rotatedWidth = SLIDE_STICKER_SIZE.width * Math.cos(radians) + SLIDE_STICKER_SIZE.height * Math.sin(radians);
+  const scale = count ? Math.min(1, Math.max(1, poster.width - 16 - (count - 1) * gap) / (count * rotatedWidth)) : 1;
+  const stickerWidth = SLIDE_STICKER_SIZE.width * scale;
+  const rowWidth = count * stickerWidth + Math.max(0, count - 1) * gap;
   const rowLeft = (SLIDE_WIDTH - rowWidth) / 2;
+  const cardHeight = SLIDE_EVENT_HEADER_HEIGHT + poster.height + SLIDE_EVENT_FOOTER_HEIGHT;
+  const footerTop = (SLIDE_HEIGHT - cardHeight) / 2 + SLIDE_EVENT_HEADER_HEIGHT + poster.height;
   const positions = Array.from({ length: count }, (_, index) => ({
-    left: rowLeft + index * (SLIDE_STICKER_SIZE.width + gap) + Math.floor(random() * 9) - 4,
-    top: 1173 + Math.floor(random() * 13) - 6,
+    left: rowLeft + index * (stickerWidth + gap) - (SLIDE_STICKER_SIZE.width - stickerWidth) / 2 + Math.floor(random() * 9) - 4,
+    top: footerTop + (SLIDE_EVENT_FOOTER_HEIGHT - SLIDE_STICKER_SIZE.height) / 2 + Math.floor(random() * 13) - 6,
     rotation: Math.floor(random() * 11) - 5,
+    scale,
   }));
   // Label order does not dictate which side gets a practical detail.
   for (let index = positions.length - 1; index > 0; index--) {
@@ -199,12 +211,19 @@ function stickerPositions(eventId: number, count: number) {
   return positions;
 }
 
+/** Fit the full poster inside the fixed image region, with room for card padding. */
+export function fitEventSlidePoster(width: number, height: number) {
+  const bounds = SLIDE_POSTER_REGIONS.event;
+  const scale = Math.min((bounds.width - SLIDE_CARD_INSET * 2) / width, bounds.height / height);
+  return { width: Math.round(width * scale), height: Math.round(height * scale) };
+}
+
 export async function buildEventSlideModel(
   event: SlideEvent,
   language: School["language"],
   imageSrc = event.source_image_url ?? "",
   avatarSrc = event.club_logo_url ?? "",
-  context?: { school: Pick<School, "name" | "primary_color" | "secondary_color"> },
+  context?: { school: Pick<School, "name" | "primary_color" | "secondary_color">; poster?: { width: number; height: number } },
 ): Promise<EventSlideModel> {
   if (!event.tz) throw new Error("School timezone is required for event slides");
   const categoryName = event.category?.trim() ?? "";
@@ -217,7 +236,8 @@ export async function buildEventSlideModel(
   const siteName = getSchoolPublicUrl(event.school);
   const colors = context ? getSchoolColors(context.school) : { primary: "#FFD54A", secondary: "#171A16" };
   const labels = [...new Set(event.sticker_labels ?? [])].slice(0, instagramPublishing.maximum_stickers_per_event);
-  const positions = stickerPositions(event.id, labels.length);
+  const poster = context?.poster ?? fitEventSlidePoster(4, 5);
+  const positions = stickerPositions(event.id, labels.length, poster);
   const stickers = labels.map((label, index) => {
     const lines: string[] = [];
     for (const word of label.split(/\s+/)) {
@@ -239,6 +259,7 @@ export async function buildEventSlideModel(
     location: text(event.location),
     author: handle || text(event.club, siteName),
     avatarSrc,
+    poster,
     siteName,
     colors,
     doodleIcons: getClubCategoryDoodleDataUris(colors.secondary, 42),

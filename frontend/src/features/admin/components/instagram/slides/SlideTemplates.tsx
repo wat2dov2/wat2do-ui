@@ -10,6 +10,9 @@
 
 import {
   SLIDE_HEIGHT,
+  SLIDE_CARD_INSET,
+  SLIDE_EVENT_HEADER_HEIGHT,
+  SLIDE_EVENT_FOOTER_HEIGHT,
   SLIDE_WIDTH,
   SLIDE_POSTER_REGIONS,
   SLIDE_STICKER_SIZE,
@@ -35,9 +38,6 @@ const slideFrame: React.CSSProperties = {
   fontFamily: "Satoshi",
   position: "relative",
 };
-
-const EVENT_HEADER_HEIGHT = 132;
-const EVENT_CONTENT_INSET = 32;
 
 /** The browser preview and Satori both support this exact ellipsis contract. */
 function clampText(lines: number): React.CSSProperties {
@@ -85,7 +85,7 @@ function SlideSticker({ sticker }: { sticker: EventSlideModel["stickers"][number
     const radius = i % 2 ? 0.84 : 1;
     return `${130 + Math.cos(angle) * 124 * radius},${54 + Math.sin(angle) * 48 * radius}`;
   }).join(" ");
-  return <div style={{ display: "flex", position: "absolute", left: sticker.left, top: sticker.top, ...SLIDE_STICKER_SIZE, alignItems: "center", justifyContent: "center", transform: `rotate(${sticker.rotation}deg)` }}>
+  return <div style={{ display: "flex", position: "absolute", left: sticker.left, top: sticker.top, ...SLIDE_STICKER_SIZE, alignItems: "center", justifyContent: "center", transform: `rotate(${sticker.rotation}deg) scale(${sticker.scale})` }}>
     <svg width={SLIDE_STICKER_SIZE.width} height={SLIDE_STICKER_SIZE.height} viewBox="0 0 260 108" style={{ position: "absolute", left: 0, top: 0 }}>
       {shape === 0 ? <rect x="4" y="4" width="252" height="100" rx="50" fill={fill} stroke="white" strokeWidth="6" />
         : shape === 1 ? <polygon points={star} fill={fill} stroke="white" strokeWidth="6" />
@@ -107,13 +107,14 @@ function SlideSticker({ sticker }: { sticker: EventSlideModel["stickers"][number
 
 /** Inset Instagram post on the cover's shared school-colored doodle backdrop. */
 export function EventSlideTemplate({ model, renderPoster = renderSlidePoster }: { model: EventSlideModel; renderPoster?: PosterRenderer }) {
-  const poster = SLIDE_POSTER_REGIONS.event;
+  const poster = model.poster;
+  const cardWidth = poster.width + SLIDE_CARD_INSET * 2;
   const schedule = [model.dateLine, model.timeLine].filter(Boolean).join(" · ");
   return (
-    <div style={{ ...slideFrame, backgroundColor: model.colors.primary, color: LIGHT.foreground, overflow: "hidden", padding: 64 }}>
+    <div style={{ ...slideFrame, backgroundColor: model.colors.primary, color: LIGHT.foreground, overflow: "hidden", padding: 64, alignItems: "center", justifyContent: "center" }}>
       <CoverDoodleField icons={model.doodleIcons} />
-      <div style={{ display: "flex", flexDirection: "column", position: "relative", width: poster.width, height: SLIDE_HEIGHT - 128, backgroundColor: LIGHT.surface, borderRadius: 28, overflow: "hidden" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 20, height: EVENT_HEADER_HEIGHT, padding: `12px ${EVENT_CONTENT_INSET}px`, flexShrink: 0 }}>
+      <div style={{ display: "flex", flexDirection: "column", position: "relative", width: cardWidth, height: SLIDE_EVENT_HEADER_HEIGHT + poster.height + SLIDE_EVENT_FOOTER_HEIGHT, flexShrink: 0, backgroundColor: LIGHT.surface, borderRadius: 28, overflow: "hidden" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 20, height: SLIDE_EVENT_HEADER_HEIGHT, padding: `12px ${SLIDE_CARD_INSET}px`, flexShrink: 0 }}>
           <SlideAvatar src={model.avatarSrc} author={model.author} size={SLIDE_POSTER_REGIONS.avatar.width} renderPoster={renderPoster} />
           <div style={{ display: "flex", flexDirection: "column", flex: 1, minWidth: 0, gap: 3 }}>
             <p style={{ ...clampText(1), fontSize: 32, fontWeight: 700, lineHeight: 1.2, maxHeight: 39 }}>{model.author}</p>
@@ -121,11 +122,11 @@ export function EventSlideTemplate({ model, renderPoster = renderSlidePoster }: 
             {schedule ? <p style={{ ...clampText(1), fontSize: 24, lineHeight: 1.2, maxHeight: 29, color: LIGHT.mutedForeground }}>{schedule}</p> : null}
           </div>
         </div>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", ...poster, flexShrink: 0, overflow: "hidden", backgroundColor: LIGHT.surface }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: cardWidth, height: poster.height, flexShrink: 0, overflow: "hidden", backgroundColor: LIGHT.surface }}>
           {model.imageSrc ? renderPoster({ src: model.imageSrc, ...poster })
-            : <p style={{ ...clampText(4), margin: EVENT_CONTENT_INSET * 2, fontSize: 64, fontWeight: 700, lineHeight: 1.15 }}>{model.title}</p>}
+            : <p style={{ ...clampText(4), margin: SLIDE_CARD_INSET * 2, fontSize: 64, fontWeight: 700, lineHeight: 1.15 }}>{model.title}</p>}
         </div>
-        <div style={{ display: "flex", flex: 1, backgroundColor: LIGHT.surface }} />
+        <div style={{ display: "flex", height: SLIDE_EVENT_FOOTER_HEIGHT, flexShrink: 0, backgroundColor: LIGHT.surface }} />
       </div>
       {model.stickers.map(sticker => <SlideSticker key={sticker.id} sticker={sticker} />)}
     </div>

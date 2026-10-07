@@ -16,6 +16,7 @@ type LazyImageProps = {
   className?: string;
   fallback?: ReactNode;
   fit?: "cover" | "contain";
+  onLoad?: (image: HTMLImageElement) => void;
 } & (
   | { sizes: string; width?: never; height?: never }
   | { width: number; height: number; sizes?: never }
@@ -43,6 +44,7 @@ function ImageContent({
   className,
   fallback,
   fit = "cover",
+  onLoad,
 }: LazyImageProps) {
   const [status, setStatus] = useState<"loading" | "loaded" | "error">("loading");
   const [videoFailed, setVideoFailed] = useState(false);
@@ -103,7 +105,7 @@ function ImageContent({
             loading={loading}
             fetchPriority={loading === "eager" ? "high" : undefined}
             decoding="async"
-            onLoad={() => setStatus("loaded")}
+            onLoad={event => { setStatus("loaded"); onLoad?.(event.currentTarget); }}
             onError={() => setStatus("error")}
             className={cn("relative", fit === "contain" ? "object-contain" : "object-cover")}
           />

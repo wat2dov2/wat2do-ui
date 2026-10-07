@@ -9,7 +9,7 @@ import sharp from "sharp";
 import imageDelivery from "../../backend/controlbox/image_delivery.json" with { type: "json" };
 import instagramPublishing from "../../backend/controlbox/instagram_publishing.json" with { type: "json" };
 
-let renderedSlide: ReactElement<{ model: { imageSrc?: string; avatarSrc?: string; description?: string; siteName?: string; tiles?: string[] } }> | undefined;
+let renderedSlide: ReactElement<{ model: { imageSrc?: string; avatarSrc?: string; description?: string; siteName?: string; tiles?: string[]; poster: { width: number; height: number } } }> | undefined;
 let requestSchool = "uwaterloo";
 let goingSelections: { event_id: number }[] = [];
 
@@ -50,6 +50,7 @@ function loadComponent(path: string): Record<string, React.ComponentType<Record<
       if (id.endsWith(".webp")) return { src: `/_next/static/media/${id.split("/").pop()}`, width: 1280, height: 960, blurDataURL: "data:image/webp;base64,UklGRg==" };
       if (id === "react-i18next") return { useTranslation: () => ({ t: (key: string) => key }) };
       if (id === "@/shared/layout") return loadComponent("shared/layout/stack");
+      if (id === "@/features/clubs/api/clubDirectory.server" || id === "@/features/events/api/eventFeed.server") throw new Error("Slide rendering must not request club activity");
       if (id === "@/shared/api/schools.server") return { getSchool: async () => ({ slug: "uwaterloo", name: "University of Waterloo", language: "en", primary_color: "#6b238e", secondary_color: "#ffd54f" }) };
       if (id === "@/features/admin/components/instagram/slides/SlideTemplates") return loadComponent(id.slice(2));
       if (id === "satori") {
@@ -314,7 +315,7 @@ test.describe("Instagram raster preparation", () => {
       const prepared = Buffer.from(renderedSlide!.props.model.imageSrc!.split(",")[1], "base64");
       const metadata = await sharp(prepared).metadata();
       expect(metadata.format).toBe("png");
-      expect([metadata.width, metadata.height]).toEqual([952, 960]);
+      expect([metadata.width, metadata.height]).toEqual([768, 960]);
       const output = Buffer.from(await response.arrayBuffer());
       const pixels = await sharp(output).extract({ left: 540, top: 400, width: 1, height: 1 }).removeAlpha().raw().toBuffer();
       for (const [channel, expected] of [240, 80, 20].entries()) expect(Math.abs(pixels[channel] - expected)).toBeLessThanOrEqual(3);
@@ -326,22 +327,18 @@ test.describe("Instagram raster preparation", () => {
 
   for (const { kind, width, height } of [
     { kind: "portrait", width: 1600, height: 2000 },
+    { kind: "tall-portrait", width: 900, height: 1600 },
     { kind: "landscape", width: 1800, height: 1200 },
   ]) {
-    test(`${kind} event artwork fills every image edge with a centered crop`, async () => {
+    test(`${kind} event artwork preserves all corners and proportions inside a mock with a fixed footer`, async () => {
       const corners = [
         { right: false, bottom: false, color: [220, 20, 30] },
         { right: true, bottom: false, color: [20, 160, 40] },
         { right: false, bottom: true, color: [30, 70, 210] },
         { right: true, bottom: true, color: [170, 30, 190] },
       ];
-      // The outer magenta strips should be cropped away, never stretched or
-      // letterboxed. Four quadrants expose a crop biased away from the center.
       const quadrants = corners.map(({ right, bottom, color }) => `<rect x="${right ? width / 2 : 0}" y="${bottom ? height / 2 : 0}" width="${width / 2}" height="${height / 2}" fill="rgb(${color.join(",")})"/>`).join("");
-      const strips = kind === "portrait"
-        ? `<rect width="${width}" height="100" fill="#ff00ff"/><rect y="${height - 100}" width="${width}" height="100" fill="#ff00ff"/>`
-        : `<rect width="100" height="${height}" fill="#ff00ff"/><rect x="${width - 100}" width="100" height="${height}" fill="#ff00ff"/>`;
-      const poster = await sharp(Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">${quadrants}${strips}</svg>`)).png().toBuffer();
+      const poster = await sharp(Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">${quadrants}</svg>`)).png().toBuffer();
       globalThis.fetch = async () => new Response(poster, { headers: { "content-type": "image/png" } });
       const response = await POST(request({
         kind: "event", school: "uwaterloo",
@@ -351,16 +348,27 @@ test.describe("Instagram raster preparation", () => {
       const prepared = Buffer.from(renderedSlide!.props.model.imageSrc!.split(",")[1], "base64");
       const metadata = await sharp(prepared).metadata();
       const output = Buffer.from(await response.arrayBuffer());
+      const fitted = renderedSlide!.props.model.poster;
+      expect(fitted.width).toBeLessThanOrEqual(888);
+      expect(fitted.height).toBeLessThanOrEqual(960);
+      expect(fitted.width / fitted.height).toBeCloseTo(width / height, 2);
+      const leftEdge = Math.round((1080 - fitted.width) / 2);
+      const cardTop = (1350 - (132 + fitted.height + 130)) / 2;
+      const topEdge = Math.round(cardTop + 132);
       for (const { right, bottom, color } of corners) {
-        for (const { left, top } of [
-          { left: right ? 950 : 1, top: bottom ? 958 : 1 },
-          { left: right ? 486 : 466, top: bottom ? 490 : 470 },
-        ]) {
-          const publishedPixel = await sharp(output).extract({ left: 64 + left, top: 196 + top, width: 1, height: 1 }).removeAlpha().raw().toBuffer();
-          expect([...publishedPixel]).toEqual(color);
-        }
+        const pixel = await sharp(output).extract({ left: leftEdge + (right ? fitted.width - 3 : 2), top: topEdge + (bottom ? fitted.height - 3 : 2), width: 1, height: 1 }).removeAlpha().raw().toBuffer();
+        expect([...pixel]).toEqual(color);
       }
-      expect([metadata.width, metadata.height]).toEqual([952, 960]);
+      const firstPosterPixel = await sharp(output).extract({ left: leftEdge + 2, top: Math.ceil(cardTop + 132) + 1, width: 1, height: 1 }).removeAlpha().raw().toBuffer();
+      expect([...firstPosterPixel]).toEqual(corners[0].color);
+      const firstFooterPixel = await sharp(output).extract({ left: 540, top: Math.ceil(cardTop + 132 + fitted.height) + 1, width: 1, height: 1 }).removeAlpha().raw().toBuffer();
+      expect([...firstFooterPixel]).toEqual([255, 255, 255]);
+      expect(metadata.width! / metadata.height!).toBeCloseTo(width / height, 2);
+      const html = renderToStaticMarkup(renderedSlide!);
+      expect(html).toContain(`width:${fitted.width + 64}px;height:${132 + fitted.height + 130}px`);
+      const artifact = test.info().outputPath(`${kind}-full-poster.png`);
+      writeFileSync(artifact, output);
+      await test.info().attach(`${kind}-full-poster`, { path: artifact, contentType: "image/png" });
     });
   }
 
@@ -411,11 +419,14 @@ test.describe("Instagram raster preparation", () => {
     const fetched: string[] = [];
     globalThis.fetch = async url => { fetched.push(String(url)); return new Response(poster, { headers: { "content-type": "image/png" } }); };
     const payload = { kind: "event", school: "uwaterloo", event: {
-      id: 42, club_id: 7, tz: "America/Toronto", category: "Arts & Culture", title: "Campus Film Night",
+      id: 42, club_id: 7, club_type: "wusa", tz: "America/Toronto", category: "Arts & Culture", title: "Campus Film Night",
       club: "Film Club", source_image_url: posterUrl, description: "REMOVED FOOTER TEXT",
       sticker_labels: ["Free Pizza", "Reg. Required", "Meet Friends", "Cash Prizes"],
     } };
     const response = await POST(request(payload));
+    expect(response.status).toBe(200);
+    expect(renderedSlide!.props.model).not.toHaveProperty("activityLines");
+    expect(renderedSlide!.props.model).not.toHaveProperty("unionLogoSrc");
     const output = Buffer.from(await response.arrayBuffer());
     const again = await POST(request(payload));
     expect(Buffer.from(await again.arrayBuffer()).equals(output)).toBe(true);
@@ -424,11 +435,11 @@ test.describe("Instagram raster preparation", () => {
     expect(markup).toContain("Reg.");
     expect(markup).toContain("Required");
     expect(markup).not.toContain("REMOVED FOOTER TEXT");
-    const stickerMarkup = [...markup.matchAll(/left:([\d]+)px;top:([\d]+)px;width:208px;height:90px/g)];
+    const stickerMarkup = [...markup.matchAll(/left:([\d.]+)px;top:([\d.]+)px;width:208px;height:90px/g)];
     expect(stickerMarkup).toHaveLength(4);
     for (const position of stickerMarkup) {
-      const left = Number(position[1]) + 24;
-      const top = Number(position[2]) + 20;
+      const left = Math.round(Number(position[1]) + 24);
+      const top = Math.round(Number(position[2]) + 20);
       const label = await sharp(output).extract({ left, top, width: 160, height: 54 }).removeAlpha().raw().toBuffer();
       let textPixels = 0;
       for (let index = 0; index < label.length; index += 3) {
@@ -438,7 +449,7 @@ test.describe("Instagram raster preparation", () => {
     }
     const pixel = async (left: number, top: number) => [...await sharp(output).extract({ left, top, width: 1, height: 1 }).removeAlpha().raw().toBuffer()];
     expect(await pixel(540, 600)).toEqual([239, 80, 20]);
-    expect(await pixel(980, 1240)).toEqual([255, 255, 255]);
+    expect(await pixel(540, 1160)).toEqual([255, 255, 255]);
     for (const [left, top] of [[10, 10], [1070, 600], [10, 600], [540, 1340]]) {
       expect(await pixel(left, top)).not.toEqual([255, 255, 255]);
     }

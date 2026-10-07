@@ -14,6 +14,7 @@ import {
   SLIDE_POSTER_REGIONS,
   buildCoverSlideModel,
   buildEventSlideModel,
+  fitEventSlidePoster,
   type SlideEvent,
 } from "@/features/admin/lib/instagramSlides";
 import { getSchool } from "@/shared/api/schools.server";
@@ -144,7 +145,7 @@ async function inlineImage(sourceUrl: string | null | undefined, kind: keyof typ
   // before embedding it so unsupported formats cannot publish as blank slides.
   const png = await sharp(bytes).autoOrient().resize({
     ...SLIDE_POSTER_REGIONS[kind],
-    fit: "cover",
+    fit: kind === "event" ? "inside" : "cover",
     withoutEnlargement: true,
   }).png().toBuffer();
   return `data:image/png;base64,${png.toString("base64")}`;
@@ -163,8 +164,10 @@ async function buildSlide(slide: SlideRequest): Promise<React.ReactElement> {
       // An unavailable optional club logo uses the template's initials.
       inlineImage(slide.event.club_logo_url, "avatar").catch(() => ""),
     ]);
+    const dimensions = imageSrc ? await sharp(Buffer.from(imageSrc.split(",")[1], "base64")).metadata() : null;
     const model = await buildEventSlideModel({ ...slide.event, school }, schoolRecord.language, imageSrc, avatarSrc, {
       school: schoolRecord,
+      poster: dimensions?.width && dimensions.height ? fitEventSlidePoster(dimensions.width, dimensions.height) : undefined,
     });
     return <EventSlideTemplate model={model} />;
   }

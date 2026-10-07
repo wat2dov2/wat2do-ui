@@ -254,25 +254,33 @@ test("Instagram sticker styles follow meaning while placement varies safely by e
     }
     expect(styles.every(style => JSON.stringify(style) === JSON.stringify(styles[0]))).toBe(true);
   }
-  const placements = new Set<string>();
-  for (let id = 1; id <= 100; id++) {
-    const model = await buildEventSlideModel({ ...base, id, sticker_labels: ["Free", "Free Pizza", "Reg. Required", "Cash Prizes"] }, "en");
-    const bounds = model.stickers.map(sticker => {
-      const angle = Math.abs(sticker.rotation) * Math.PI / 180;
-      const width = 208 * Math.cos(angle) + 90 * Math.sin(angle);
-      const height = 90 * Math.cos(angle) + 208 * Math.sin(angle);
-      return { left: sticker.left + 104 - width / 2, top: sticker.top + 45 - height / 2, width, height };
-    });
-    placements.add(JSON.stringify(model.stickers.map(({ left, top, rotation }) => ({ left, top, rotation }))));
-    for (const [index, box] of bounds.entries()) {
-      expect(box.left).toBeGreaterThan(64);
-      expect(box.top).toBeGreaterThan(1156);
-      expect(box.left + box.width).toBeLessThan(1016);
-      expect(box.top + box.height).toBeLessThan(1286);
-      for (const other of bounds.slice(index + 1)) {
-        expect(box.left + box.width <= other.left || other.left + other.width <= box.left || box.top + box.height <= other.top || other.top + other.height <= box.top).toBe(true);
+  for (const poster of [{ width: 768, height: 960 }, { width: 540, height: 960 }, { width: 888, height: 500 }]) {
+    for (const count of [1, 2, 3, 4]) {
+      const placements = new Set<string>();
+      for (let id = 1; id <= 100; id++) {
+        const context = { school: { name: "University of Alberta", primary_color: "#154734", secondary_color: "#FFDB05" }, poster };
+        const labels = ["Free", "Free Pizza", "Reg. Required", "Cash Prizes"].slice(0, count);
+        const model = await buildEventSlideModel({ ...base, id, sticker_labels: labels }, "en", undefined, undefined, context);
+        const footerTop = (1350 - (132 + poster.height + 130)) / 2 + 132 + poster.height;
+        const posterLeft = (1080 - poster.width) / 2;
+        const bounds = model.stickers.map(sticker => {
+          const angle = Math.abs(sticker.rotation) * Math.PI / 180;
+          const width = (208 * Math.cos(angle) + 90 * Math.sin(angle)) * sticker.scale;
+          const height = (90 * Math.cos(angle) + 208 * Math.sin(angle)) * sticker.scale;
+          return { left: sticker.left + 104 - width / 2, top: sticker.top + 45 - height / 2, width, height };
+        });
+        placements.add(JSON.stringify(model.stickers.map(({ left, top, rotation, scale }) => ({ left, top, rotation, scale }))));
+        for (const [index, box] of bounds.entries()) {
+          expect(box.left).toBeGreaterThan(posterLeft);
+          expect(box.top).toBeGreaterThan(footerTop);
+          expect(box.left + box.width).toBeLessThan(posterLeft + poster.width);
+          expect(box.top + box.height).toBeLessThan(footerTop + 130);
+          for (const other of bounds.slice(index + 1)) {
+            expect(box.left + box.width <= other.left || other.left + other.width <= box.left || box.top + box.height <= other.top || other.top + other.height <= box.top).toBe(true);
+          }
+        }
       }
+      expect(placements.size).toBeGreaterThanOrEqual(90);
     }
   }
-  expect(placements.size).toBe(100);
 });

@@ -11,6 +11,7 @@ import {
   SLIDE_WIDTH,
   buildCoverSlideModel,
   buildEventSlideModel,
+  fitEventSlidePoster,
   type EventSlideModel,
 } from "@/features/admin/lib/instagramSlides";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
@@ -64,14 +65,16 @@ export function CarouselSlidePreview({
   const { t } = useTranslation();
   const { getSchoolTimezone, schoolBySlug } = useSchoolDirectory();
   const school = schoolBySlug.get(event?.school ?? cover.school);
+  const [posterResult, setPosterResult] = useState<{ src: string; width: number; height: number } | null>(null);
+  const poster = posterResult?.src === event?.source_image_url ? posterResult : undefined;
   const isCover = slideIndex === COVER_INDEX;
   const previewRef = useRef<HTMLDivElement>(null);
   const [previewWidth, setPreviewWidth] = useState(PREVIEW_WIDTH);
   const previewScale = previewWidth / SLIDE_WIDTH;
   const [modelResult, setModelResult] = useState<{
-    event: Event; language: typeof cover.language; school: typeof school; stickerLabels: typeof stickerLabels; model: EventSlideModel | null;
+    event: Event; language: typeof cover.language; school: typeof school; poster: typeof poster; stickerLabels: typeof stickerLabels; model: EventSlideModel | null;
   } | null>(null);
-  const currentResult = modelResult?.event === event && modelResult?.language === cover.language && modelResult.school === school && modelResult.stickerLabels === stickerLabels ? modelResult : null;
+  const currentResult = modelResult?.event === event && modelResult?.language === cover.language && modelResult.school === school && modelResult.poster === poster && modelResult.stickerLabels === stickerLabels ? modelResult : null;
   const slideModel = currentResult?.model;
   const modelError = currentResult && !slideModel;
   const renderPoster = ({ src, width, height, fallback }: SlidePosterProps) => (
@@ -81,6 +84,8 @@ export function CarouselSlidePreview({
         alt=""
         sizes={`${Math.ceil(width * previewScale)}px`}
         fallback={fallback}
+        fit={src === event?.source_image_url ? "contain" : "cover"}
+        onLoad={image => { if (src === event?.source_image_url && (!poster || poster.width !== image.naturalWidth || poster.height !== image.naturalHeight)) setPosterResult({ src, width: image.naturalWidth, height: image.naturalHeight }); }}
         className="absolute inset-0"
       />
     </div>
@@ -90,12 +95,12 @@ export function CarouselSlidePreview({
     if (isCover || publishedAssetUrl || !event || !school) return;
     let active = true;
     // Publishing uses the first stored occurrence, including for recurring events.
-    buildEventSlideModel({ ...event, ...event.occurrences[0], id: event.id, sticker_labels: stickerLabels, tz: getSchoolTimezone(event.school) }, cover.language, undefined, undefined, { school }).then(
-      model => { if (active) setModelResult({ event, language: cover.language, school, stickerLabels, model }); },
-      () => { if (active) setModelResult({ event, language: cover.language, school, stickerLabels, model: null }); },
+    buildEventSlideModel({ ...event, ...event.occurrences[0], id: event.id, sticker_labels: stickerLabels, tz: getSchoolTimezone(event.school) }, cover.language, undefined, undefined, { school, poster: poster ? fitEventSlidePoster(poster.width, poster.height) : undefined }).then(
+      model => { if (active) setModelResult({ event, language: cover.language, school, poster, stickerLabels, model }); },
+      () => { if (active) setModelResult({ event, language: cover.language, school, poster, stickerLabels, model: null }); },
     );
     return () => { active = false; };
-  }, [event, cover.language, getSchoolTimezone, isCover, publishedAssetUrl, school, stickerLabels]);
+  }, [event, cover.language, getSchoolTimezone, isCover, publishedAssetUrl, school, poster, stickerLabels]);
 
   useEffect(() => {
     const node = previewRef.current;
