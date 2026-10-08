@@ -201,19 +201,30 @@ def test_hydrate_event_reuses_validated_occurrences_without_json_dump(monkeypatc
     assert event.occurrences[0].dtstart_utc == occurrence.dtstart_utc
 
 
-@pytest.mark.parametrize("model", [EventSummaryResponse, EventResponse, EventPublicResponse])
-@pytest.mark.parametrize("stored_featured", [False, True])
 @pytest.mark.parametrize(
-    "items,expected",
+    "model,items,expected",
     [
-        ([], False),
-        (
+        pytest.param(EventSummaryResponse, [], False, id="no-publication"),
+        pytest.param(
+            EventSummaryResponse,
             [{"published_at": None, "instagram_publish_batches": {"status": "ready_for_review"}}],
             False,
+            id="review-pending",
         ),
-        ([{"published_at": None, "instagram_publish_batches": {"status": "failed"}}], False),
-        ([{"published_at": None, "instagram_publish_batches": {"status": "publishing"}}], False),
-        (
+        pytest.param(
+            EventSummaryResponse,
+            [{"published_at": None, "instagram_publish_batches": {"status": "failed"}}],
+            False,
+            id="failed-unpublished",
+        ),
+        pytest.param(
+            EventSummaryResponse,
+            [{"published_at": None, "instagram_publish_batches": {"status": "publishing"}}],
+            False,
+            id="publishing-unconfirmed",
+        ),
+        pytest.param(
+            EventSummaryResponse,
             [
                 {
                     "published_at": "2026-09-28T12:00:00Z",
@@ -221,18 +232,36 @@ def test_hydrate_event_reuses_validated_occurrences_without_json_dump(monkeypatc
                 }
             ],
             True,
+            id="publication-survives-later-batch-failure",
         ),
-        ([{"published_at": None, "instagram_publish_batches": {"status": "published"}}], True),
-        ([{"published_at": None}, {"published_at": "2026-09-28T12:00:00Z"}], True),
+        pytest.param(
+            EventSummaryResponse,
+            [{"published_at": None, "instagram_publish_batches": {"status": "published"}}],
+            True,
+            id="published-batch",
+        ),
+        pytest.param(
+            EventSummaryResponse,
+            [{"published_at": None}, {"published_at": "2026-09-28T12:00:00Z"}],
+            True,
+            id="any-published-item",
+        ),
+        pytest.param(
+            EventResponse,
+            [{"published_at": "2026-09-28T12:00:00Z"}],
+            True,
+            id="detail-contract",
+        ),
+        pytest.param(EventPublicResponse, [], False, id="public-contract"),
     ],
 )
-def test_featured_requires_instagram_publication(model, stored_featured, items, expected):
+def test_featured_requires_instagram_publication(model, items, expected):
     event = event_query.hydrate_event(
         {
             "id": 29761,
             "title": "Campus night",
             "added_at": datetime(2026, 9, 30, tzinfo=timezone.utc),
-            "featured": stored_featured,
+            "featured": not expected,
             "instagram_publish_items": items,
         },
         [],

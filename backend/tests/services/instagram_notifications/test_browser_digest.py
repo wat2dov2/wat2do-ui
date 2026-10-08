@@ -206,17 +206,43 @@ def test_digest_rejects_bad_or_failed_results(payload):
         )
 
 
-def test_digest_javascript_checks_identity_per_page_and_cancels_fetches():
+def test_digest_stops_pagination_when_account_changes_after_first_page():
     node = shutil.which("node")
     if node is None:
         pytest.skip("Node.js unavailable")
+    from services.instagram_notifications import browser_session
+
     source = browser_digest._digest_query_source("cache-1", "41553815702")
-    completed = subprocess.run([node, "--check"], input=source, text=True, capture_output=True)
+    script = (
+        """
+      global.window = {};
+      global.document = {cookie: "csrftoken=fixture; ds_user_id=41553815702"};
+      let fetches = 0;
+      global.fetch = async () => {
+        fetches += 1;
+        return {status: 200, ok: true, json: async () => ({data: {
+          subscription_digest_feed: {
+            items: [{media: {get pk() {
+              document.cookie = "csrftoken=fixture; ds_user_id=999";
+              return "123";
+            }}}],
+            paging_info: {more_available: true, max_id: "page-2"}
+          }
+        }})};
+      };
+    """
+        + source
+        + ";setImmediate(() => {const request = window["
+        + json.dumps(browser_session._REQUEST_KEY)
+        + "]; console.log(JSON.stringify({result: request.result, settled: request.settled, fetches}));});"
+    )
+    completed = subprocess.run([node], input=script, text=True, capture_output=True, timeout=5)
     assert completed.returncode == 0, completed.stderr
-    assert "signal: request.controller.signal" in source
-    assert "request.settled = true" in source
-    assert source.count("activeRecipient") == 4
-    assert "account_changed" in source
+    assert json.loads(completed.stdout) == {
+        "result": {"state": "failed", "reason": "account_changed"},
+        "settled": True,
+        "fetches": 1,
+    }
 
 
 def test_digest_aborts_inflight_fetch_before_account_can_change():

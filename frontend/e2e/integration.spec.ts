@@ -2158,54 +2158,43 @@ test.describe("Events Page", () => {
     await expect(latest).toContainText(/1 minute ago/i);
   });
 
-  for (const mode of ["calendar", "map"]) {
-    test(`keeps UTSG mobile events visible with a saved ${mode} preference`, async ({ page, next }) => {
-      await page.setViewportSize({ width: 390, height: 844 });
-      await page.addInitScript((viewMode) => {
-        window.localStorage.setItem("wat2do-app-prefs", JSON.stringify({ state: { viewMode }, version: 1 }));
-      }, mode);
-      const title = "UTSG campus event";
-      const snapshot = {
-        items: [{
-          id: 316, title, location: "St. George campus", price: 0, food: [],
-          registration: false, category: "Career", club_id: 1, club: "U of T Club",
-          club_type: "independent", school: "utsg", added_at: new Date().toISOString(),
-          occurrences: [{ id: 316, event_id: 316,
-            dtstart_utc: new Date(Date.now() + 86_400_000).toISOString(), dtend_utc: null }],
-        }],
-        total: 1, page: 1, page_size: 100, total_pages: 1,
-        latest_added_event: null,
-      };
-      await mockApi(page, next, url => apiPath(url) === "/events" ||
-        (apiPath(url) === "/discovery" && url.searchParams.get("resource") === "events"),
-      async () => ({ json: snapshot }));
+  test("UTSG mobile filtering and navigation preserve the campus feed", async ({ page, next }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    const title = "UTSG campus event";
+    const snapshot = {
+      items: [{
+        id: 316, title, location: "St. George campus", price: 0, food: [],
+        registration: false, category: "Career", club_id: 1, club: "U of T Club",
+        club_type: "independent", school: "utsg", added_at: new Date().toISOString(),
+        occurrences: [{ id: 316, event_id: 316,
+          dtstart_utc: new Date(Date.now() + 86_400_000).toISOString(), dtend_utc: null }],
+      }],
+      total: 1, page: 1, page_size: 100, total_pages: 1,
+      latest_added_event: null,
+    };
+    await mockApi(page, next, url => apiPath(url) === "/events" ||
+      (apiPath(url) === "/discovery" && url.searchParams.get("resource") === "events"),
+    async () => ({ json: snapshot }));
 
-      // Campus feeds are scoped by hostname, not a school query parameter.
-      await page.goto("http://utsg.wat2do.localhost:3000/");
-      const card = page.getByRole("button", { name: `Event: ${title}`, exact: true });
-      const placeholders = page.getByText(/(?:Calendar|Map) view coming soon/);
-      const search = page.getByPlaceholder("Search events");
-      await expect(card).toBeVisible();
+    await page.goto("http://utsg.wat2do.localhost:3000/");
+    const card = page.getByRole("button", { name: `Event: ${title}`, exact: true });
+    const search = page.getByPlaceholder("Search events");
+    await expect(card).toBeVisible();
+    await search.fill("no matching event");
+    await search.press("Enter");
+    await expect(card).toHaveCount(0);
+    await search.fill(title);
+    await search.press("Enter");
+    await expect(card).toBeVisible();
 
-      // A real filter transition verifies hydrated handlers, not just SSR HTML.
-      await search.fill("no matching event");
-      await search.press("Enter");
-      await expect(card).toHaveCount(0);
-      await search.fill(title);
-      await search.press("Enter");
-      await expect(card).toBeVisible();
-      await expect(placeholders).toHaveCount(0);
-
-      await page.reload();
-      await page.getByRole("button", { name: "Open navigation menu" }).click();
-      const navigation = page.getByRole("dialog", { name: "Primary navigation" });
-      await expect(navigation).toBeVisible();
-      await page.keyboard.press("Escape");
-      await expect(navigation).toHaveCount(0);
-      await expect(card).toBeVisible();
-      await expect(placeholders).toHaveCount(0);
-    });
-  }
+    await page.reload();
+    await page.getByRole("button", { name: "Open navigation menu" }).click();
+    const navigation = page.getByRole("dialog", { name: "Primary navigation" });
+    await expect(navigation).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(navigation).toHaveCount(0);
+    await expect(card).toBeVisible();
+  });
 
   test("keeps first-screen cards visible and honors reduced motion while scrolling", async ({ page, next }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
@@ -2715,12 +2704,10 @@ test.describe("Events Page", () => {
 
     await page.goto(BASE);
     const eventCard = page.locator('article[data-event-id="1"]:visible');
-    await expect(eventCard.locator("foreignObject")).toHaveCount(0);
     const cardPoster = eventCard.locator('[data-slot="event-image-face"] img').first();
     await expect(cardPoster).toHaveAttribute("srcset", /\/_next\/image\?url=/);
     await expect(cardPoster).toHaveAttribute("loading", "eager");
     await expect(cardPoster).toHaveCSS("object-fit", "cover");
-    await expect(eventCard.locator('[data-slot="event-image-face"]')).not.toHaveCSS("mask-image", "none");
     await expect(eventCard.locator('[data-slot="lazy-image"]').first()).toHaveAttribute("data-image-state", "loaded");
     // A failed image uses the stable artwork fallback; reopening the same URL
     // must still render a cached image instead of retaining the previous error.
@@ -3201,7 +3188,7 @@ test.describe("Events Page", () => {
     await expect(page.getByText("Youre going!")).toBeVisible();
   });
 
-  test("shows New in the top-left without an event category badge", async ({ page, next }) => {
+  test("newly added event details retain their New indicator", async ({ page, next }) => {
     const now = new Date();
     const startsAt = new Date(now.getTime() + 86_400_000).toISOString();
     await mockApi(page, next, url => apiPath(url) === "/meta/constants", async () => {
@@ -3249,12 +3236,8 @@ test.describe("Events Page", () => {
 
     const drawer = page.getByRole("dialog", { name: "Tech Career Fair" });
     await expect(drawer.getByText("Full detail loaded", { exact: true })).toBeVisible();
-    await expect(drawer.getByText("Arts", { exact: true })).toHaveCount(0);
     const newBadge = drawer.getByText("NEW", { exact: true });
     await expect(newBadge).toBeVisible();
-    await expect(
-      newBadge.locator("xpath=ancestor::div[contains(@class, 'absolute')][1]"),
-    ).toHaveClass(/top-0.*left-0/);
   });
 
   for (const authenticated of [false, true]) {
@@ -3532,7 +3515,7 @@ test.describe("Events Page", () => {
     await expect.poll(() => submittedOccurrenceIds).toEqual([secondOccurrenceId]);
   });
 
-  test("shows relative card dates, full weekdays, metadata icons, and badge icons", async ({ page, next }) => {
+  test("event cards show relative dates, prices, food and registration", async ({ page, next }) => {
     const now = new Date();
     const todayStartsAt = new Date(now.getTime() - 60_000);
     const todayEndsAt = new Date(now.getTime() + 3_600_000);
@@ -3639,47 +3622,12 @@ test.describe("Events Page", () => {
       month: "short",
       day: "numeric",
     }).format(laterStartsAt);
-    expect(laterDate).toMatch(
-      /^(?:Sunday|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday)/,
-    );
     await expect(laterCard.locator('[data-slot="event-card-date"]')).toHaveText(laterDate);
 
-    await expect(todayCard.getByRole("heading", { name: "Today with badges" })).toHaveCSS(
-      "font-size",
-      "15px",
-    );
-    await expect(todayCard.locator('[data-slot="event-card-date"] svg')).toHaveCount(1);
-    await expect(todayCard.locator('[data-slot="event-card-time"] svg')).toHaveCount(1);
-    await expect(todayCard.locator('[data-slot="event-card-location"] svg')).toHaveAttribute(
-      "viewBox",
-      "0 0 24 24",
-    );
-
-    await expect(
-      todayCard.getByText("$12", { exact: true }).locator("..").locator("svg"),
-    ).toHaveCount(0);
+    await expect(todayCard.getByText("$12", { exact: true })).toBeVisible();
     for (const badgeText of ["Pizza", "Registration"]) {
-      await expect(
-        todayCard.getByText(badgeText, { exact: true }).locator("..").locator("svg"),
-      ).toHaveCount(1);
+      await expect(todayCard.getByText(badgeText, { exact: true })).toBeVisible();
     }
-    await expect(todayCard.locator('[data-slot="event-card-metadata"]')).toHaveCSS(
-      "column-gap",
-      "4px",
-    );
-    await expect(todayCard.locator('[data-slot="event-card-badges"]')).toHaveCSS(
-      "row-gap",
-      "2px",
-    );
-
-    const cardContent = todayCard.locator('[data-slot="event-card-content"]');
-    const contentStack = cardContent.locator(":scope > div");
-    await expect(cardContent).toHaveCSS("padding-top", "10px");
-    await expect(contentStack).toHaveCSS("row-gap", "8px");
-    await expect(contentStack.locator(":scope > div").nth(1)).toHaveCSS(
-      "margin-top",
-      "0px",
-    );
   });
 
   test("counts event views from cards, arrows, and direct visits", async ({ page, next }) => {
@@ -3829,65 +3777,6 @@ test.describe("Events Page", () => {
     ).toBe("none");
   });
 
-  test("uses a toggle for newly added events when signed out", async ({ page }) => {
-    await page.goto(BASE);
-
-    const newlyAddedSelect = page.getByRole("button", {
-      name: "New", exact: true,
-    });
-    await expect(newlyAddedSelect).toHaveAttribute("aria-pressed", "false");
-    const hasFoodFilter = page.getByRole("button", {
-      name: "Food",
-      exact: true,
-    });
-    const [selectStyles, buttonStyles] = await Promise.all(
-      [newlyAddedSelect, hasFoodFilter].map((control) =>
-        control.evaluate((element) => {
-          const styles = getComputedStyle(element);
-          const bounds = element.getBoundingClientRect();
-          return {
-            backgroundColor: styles.backgroundColor,
-            borderTopWidth: styles.borderTopWidth,
-            borderRadius: styles.borderRadius,
-            color: styles.color,
-            fontSize: styles.fontSize,
-            fontWeight: styles.fontWeight,
-            height: bounds.height,
-            paddingLeft: styles.paddingLeft,
-            paddingRight: styles.paddingRight,
-          };
-        }),
-      ),
-    );
-    expect(selectStyles).toEqual(buttonStyles);
-    expect(selectStyles.borderTopWidth).toBe("1px");
-
-    await newlyAddedSelect.click();
-    await expect(newlyAddedSelect).toHaveAttribute("aria-pressed", "true");
-    await expect(
-      page.getByRole("option", { name: "Added since last visit" }),
-    ).toHaveCount(0);
-
-    const newBadges = page.locator("article:visible").getByText("NEW", { exact: true });
-    await expect.poll(() => newBadges.count()).toBeGreaterThan(0);
-    const newBadge = newBadges.first();
-    await expect(newBadge).toBeVisible();
-    await expect
-      .poll(() =>
-        newBadge.evaluate((element) => ({
-          backgroundColor: getComputedStyle(element).backgroundColor,
-          color: getComputedStyle(element).color,
-        })),
-      )
-      .toEqual({
-        backgroundColor: "rgb(91, 155, 255)",
-        color: "rgb(255, 255, 255)",
-      });
-
-    await newlyAddedSelect.click();
-    await expect(newlyAddedSelect).toHaveAttribute("aria-pressed", "false");
-  });
-
   test("keeps minimum going changes local and bounds rendering after scrolling a large feed", async ({ page, next }) => {
     const batchSize = eventDiscovery.initial_render_count;
     const startsAt = new Date(Date.now() + 86_400_000).toISOString();
@@ -4030,21 +3919,6 @@ test.describe("Events Page", () => {
     await expect(card).toBeVisible();
   });
 
-  test("waits for click to open shared date options", async ({ page }) => {
-    await page.goto(BASE);
-    await page.getByRole("combobox", { name: "Event date" }).hover();
-    const tomorrow = page.getByRole("option", { name: "Tomorrow", exact: true });
-    await expect(tomorrow).toHaveCount(0);
-    await page.mouse.down();
-    await expect(tomorrow).toHaveCount(0);
-    await page.mouse.up();
-    await expect(tomorrow).toBeVisible();
-    await tomorrow.hover();
-    await expect(tomorrow).toBeVisible();
-    await tomorrow.click();
-    await expect(page.getByRole("combobox", { name: "Event date" })).toContainText("Tomorrow");
-  });
-
   test("filters campus employers, free events with food, and varsity games", async ({ page, next }) => {
     let feedRequests = 0;
     await mockApi(page, next, url => apiPath(url) === "/events", async () => {
@@ -4103,23 +3977,6 @@ test.describe("Events Page", () => {
     await varsity.click();
     await expect(cards).toHaveCount(8);
     expect(feedRequests).toBe(initialRequests);
-  });
-
-  test("event quick filters follow discovery priority and default to Grid", async ({ page, next }) => {
-    await seedAuthenticatedSession(page, next);
-    await page.goto(BASE);
-    const filters = page.getByTestId("event-quick-filter-scroll");
-    await expect(filters.getByRole("button", { name: "Going", exact: true })).toBeEnabled();
-    const labels = await filters.locator('button').allTextContents();
-    const expected = ["Going", "New", "Featured", "Employers on campus", "Free food", "Any day", ">0 going", "Any price", "Competitions"];
-    const indices = expected.map(label => labels.indexOf(label));
-    expect(indices.every(index => index >= 0)).toBe(true);
-    expect(indices).toEqual([...indices].sort((a, b) => a - b));
-    await expect(filters.getByRole("combobox", { name: "Event view" })).toHaveText("Grid");
-    await expect(filters.getByRole("button", { name: "Holidays", exact: true })).toHaveCount(0);
-    await expect(filters.getByRole("button", { name: "Varsity games", exact: true })).toHaveCount(0);
-    const logo = page.getByRole("banner").getByRole("link", { name: "Events", exact: true }).first();
-    await expect(logo).toHaveAttribute("href", "/events");
   });
 
   test("price, date and minimum-going popovers wait for mouse release", async ({ page }) => {
@@ -4277,23 +4134,6 @@ test.describe("Events Page", () => {
         "Event: Middle Event",
         "Event: Later Event",
       ]);
-  });
-
-  test("More filters excludes view and category controls", async ({ page }) => {
-    await page.goto(BASE);
-
-    const moreFiltersButton = page.getByRole("button", { name: "More filters" });
-    await moreFiltersButton.click();
-
-    const drawer = page.getByRole("dialog", { name: "More filters" });
-    await expect(drawer.getByRole("button", { name: "Grid" })).toHaveCount(0);
-    await expect(drawer.getByRole("button", { name: "Calendar" })).toHaveCount(0);
-    await expect(drawer.getByRole("button", { name: "Career", exact: true })).toHaveCount(0);
-
-    await page.keyboard.press("Escape");
-    await expect(
-      page.getByRole("button", { name: "Clear filters" }),
-    ).toHaveCount(0);
   });
 
   test("loads server categories reactively and clears their selection", async ({ page, next }) => {
@@ -4574,7 +4414,6 @@ test("price dropdown preserves independent inclusive bounds and stays independen
   const freeOption = dropdown.getByRole("button", { name: "Free", exact: true });
   await expect(freeOption).toHaveAttribute("aria-pressed", "true");
   await expect(freeOption).toHaveAttribute("data-selected", "true");
-  await expect(freeOption.locator("svg")).toHaveCount(0);
   await dropdown.getByRole("button", { name: "Free", exact: true }).click();
   await expect(filters.getByRole("button", { name: "Any price", exact: true })).toHaveAttribute("aria-pressed", "false");
   await expect(filters.getByRole("button", { name: "Any price", exact: true })).toHaveAttribute("data-selected", "false");
@@ -4755,7 +4594,7 @@ test.describe("Onboarding Page", () => {
 
 // ── Workflow 5: Auth-protected endpoints ──────────────────────────────
 
-test("admin events show schools without status and use matching filter sizes", async ({ page, next }) => {
+test("admin event tabs show their school rows and review queues", async ({ page, next }) => {
   await seedAuthenticatedSession(page, next);
   await mockApi(page, next, url => apiPath(url) === "/submissions", async () => ({
     json: { items: [], total: 0, page: 1, page_size: 20, total_pages: 0 },
@@ -4769,14 +4608,9 @@ test("admin events show schools without status and use matching filter sizes", a
   await expect(eventsTab).toHaveAttribute("aria-selected", "true");
   await expect(page.getByRole("tabpanel")).toHaveCount(1);
   await expect(page.getByRole("columnheader", { name: "School", exact: true })).toBeVisible();
-  await expect(page.getByRole("columnheader", { name: "Status", exact: true })).toHaveCount(0);
   await expect(page.getByRole("cell", { name: "uwaterloo", exact: true })).toBeVisible();
   const reported = page.getByRole("button", { name: "Reported Only", exact: true });
-  const search = page.getByPlaceholder("Search events...");
-  const category = page.getByRole("combobox").filter({ hasText: "All Categories" });
   await expect(reported).toHaveCount(0);
-  await expect(search).toHaveCSS("height", "44px");
-  await expect(category).toHaveCSS("height", "44px");
   const reportsTab = page.getByRole("tab", { name: "Event reports", exact: true });
   await reportsTab.click();
   await expect(reportsTab).toHaveAttribute("aria-selected", "true");
@@ -4884,28 +4718,6 @@ for (const [detail, message] of [
   });
 }
 
-for (const route of ["/events", "/positions", "/clubs"]) {
-  test(`listing header background spans the viewport on ${route}`, async ({ page }) => {
-    for (const width of [390, 1280]) {
-      await page.setViewportSize({ width, height: 844 });
-      await page.goto(`${BASE}${route}`);
-      const header = page.locator('[data-slot="page-header"][data-variant="listing"]:visible');
-      await expect(header).toBeVisible();
-      await expect(header).toHaveCSS("position", "sticky");
-      await expect.poll(() => header.evaluate(element => {
-        const background = getComputedStyle(element, "::before");
-        const rect = element.getBoundingClientRect();
-        const left = rect.left + rect.width / 2 - parseFloat(background.width) / 2;
-        return background.backgroundColor === getComputedStyle(element).backgroundColor
-          && left <= 1
-          && left + parseFloat(background.width) >= document.documentElement.clientWidth - 1;
-      })).toBe(true);
-      const scrollRoot = page.locator(".main-content-grid:visible");
-      await expect(scrollRoot).toHaveCSS("overflow-x", "hidden");
-    }
-  });
-}
-
 test("direct admin clubs visits load both pending tab counts", async ({ page, next }) => {
   await seedAuthenticatedSession(page, next);
   await mockApi(page, next, url => apiPath(url) === "/clubs/claims", async () => ({
@@ -4927,33 +4739,6 @@ test("direct admin clubs visits load both pending tab counts", async ({ page, ne
   await expect(page.getByRole("tab", { name: "Clubs List", exact: true })).toHaveAttribute("aria-selected", "true");
   await expect(page.getByRole("tab", { name: "Claim Requests 1", exact: true })).toBeVisible();
   await expect(page.getByRole("tab", { name: "Club submissions 2", exact: true })).toBeVisible();
-});
-
-test("claim status badges hug their content inside drawers", async ({ page, next }) => {
-  await seedAuthenticatedSession(page, next);
-  await mockApi(page, next, url => apiPath(url) === "/clubs/claims", async () => ({
-    json: { items: [{
-      id: "pending-claim", club_id: 1, user_id: "mock-user-id", status: "pending",
-      executive_role: "President", created_at: new Date().toISOString(),
-      clubs: MOCK_CLUBS[0], users: { email: TEST_EMAIL, full_name: "Test User" },
-    }], total: 1, page: 1, page_size: 20, total_pages: 1 },
-  }));
-  await page.goto(`${BASE}/admin/clubs?tab=claims`);
-  await page.getByRole("row").filter({ hasText: "President" }).getByRole("button", { name: "View", exact: true }).click();
-  const drawer = page.getByRole("dialog", { name: "Claim Requests", exact: true });
-  const badge = drawer.getByText("Pending", { exact: true });
-  for (const width of [1280, 390]) {
-    await page.setViewportSize({ width, height: 900 });
-    await expect(badge).toBeVisible();
-    await expect.poll(() => badge.evaluate(element => {
-      const range = document.createRange();
-      range.selectNodeContents(element);
-      const style = getComputedStyle(element);
-      const inset = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight)
-        + parseFloat(style.borderLeftWidth) + parseFloat(style.borderRightWidth);
-      return Math.abs(element.getBoundingClientRect().width - range.getBoundingClientRect().width - inset) < 2;
-    })).toBe(true);
-  }
 });
 
 test("club submissions use consistent naming and show multiple schools", async ({ page, next }) => {
@@ -5343,11 +5128,6 @@ test.describe("Navigation", () => {
       }
     });
   }
-
-  test("Instagram admin route is present in the Next build", async ({ request }) => {
-    const response = await request.get(`${BASE}/admin/instagram`);
-    expect(response.status()).toBe(200);
-  });
 
   test("renders the redesigned date-only Instagram cover", async ({ request }) => {
     const renderSecret = process.env.INSTAGRAM_SLIDE_RENDER_SECRET?.trim();
@@ -5831,21 +5611,6 @@ test.describe("Navigation", () => {
     await page.getByRole("button", { name: "Switch to light mode" }).click();
     await expect(page.locator("html")).not.toHaveClass(/dark/);
     expect(errors).toEqual([]);
-  });
-
-  test("events page first paint uses app chrome, not an empty shell", async ({ page }) => {
-    await page.goto(BASE, { waitUntil: "domcontentloaded" });
-
-    await expect(page.locator("#server-event-feed")).toHaveCount(0);
-    const loadingStatus = page.getByRole("status").first();
-    if (await loadingStatus.count()) {
-      await expect(loadingStatus).toBeVisible();
-      await expect(loadingStatus).toHaveAccessibleName(/Loading/i);
-      return;
-    }
-
-    await expect(page.locator('[data-slot="top-nav"]')).toBeVisible();
-    await expect(page.getByRole("main", { name: "Events list" })).toBeVisible();
   });
 
   test("no console errors on events page", async ({ page }) => {

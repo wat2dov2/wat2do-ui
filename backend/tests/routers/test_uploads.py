@@ -2,14 +2,13 @@ from datetime import datetime, timezone
 from io import BytesIO
 from unittest.mock import MagicMock
 
-import pytest
 from PIL import Image
 
 from schemas.club import ClubResponse
 from schemas.event import EventResponse
 from services import club_service, event_service
 from services.storage_service import StorageService, storage
-from tests.conftest import FAKE_USER, OTHER_USER
+from tests.conftest import FAKE_USER
 
 
 def _make_file(filename: str, content: bytes, content_type: str) -> dict:
@@ -198,8 +197,6 @@ def test_upload_event_image_non_owner_rejected(other_user_client, monkeypatch):
     event = _mock_event(created_by=FAKE_USER["id"])
     monkeypatch.setattr(event_service, "get_event", MagicMock(return_value=event))
 
-    from services import user_service
-
     files = _make_file("poster.png", _real_png(), "image/png")
     resp = other_user_client.post("/uploads/event-image/1", files=files)
     assert resp.status_code == 403
@@ -222,8 +219,6 @@ def test_upload_event_image_owner_allowed(authenticated_client, monkeypatch):
     monkeypatch.setattr(
         storage, "upload_file", MagicMock(return_value="https://example.com/img.png")
     )
-
-    from services import user_service
 
     files = _make_file("poster.png", _real_png(), "image/png")
     resp = authenticated_client.post("/uploads/event-image/1", files=files)
@@ -249,8 +244,6 @@ def test_upload_club_logo_non_owner_rejected(other_user_client, monkeypatch):
     club = _mock_club(created_by=FAKE_USER["id"])
     monkeypatch.setattr(club_service, "get_club", MagicMock(return_value=club))
 
-    from services import user_service
-
     files = _make_file("logo.png", _real_png(), "image/png")
     resp = other_user_client.post("/uploads/club-logo/1", files=files)
     assert resp.status_code == 403
@@ -264,8 +257,6 @@ def test_upload_club_logo_owner_allowed(authenticated_client, monkeypatch):
     monkeypatch.setattr(
         storage, "upload_file", MagicMock(return_value="https://example.com/logo.png")
     )
-
-    from services import user_service
 
     files = _make_file("logo.png", _real_png(), "image/png")
     resp = authenticated_client.post("/uploads/club-logo/1", files=files)
@@ -330,8 +321,6 @@ def test_svg_disguised_as_png_blocked_on_non_svg_bucket(authenticated_client, mo
 
     event = _mock_event(created_by=FAKE_USER["id"])
     monkeypatch.setattr(event_service, "get_event", MagicMock(return_value=event))
-
-    from services import user_service
 
     malicious_svg = b"<svg xmlns=\"http://www.w3.org/2000/svg\"><script>alert('xss')</script></svg>"
     # event-images bucket does NOT allow image/svg+xml
@@ -471,7 +460,6 @@ def test_upload_strips_exif_from_jpeg(authenticated_client, monkeypatch):
 
     # get_db_user dep returns the DB user — stub it directly since the
     # test fixture doesn't override it.
-    from schemas.user import UserResponse
 
     class _StubDbUser:
         id = FAKE_USER["id"]

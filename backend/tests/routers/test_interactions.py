@@ -3,31 +3,15 @@
 from unittest.mock import MagicMock
 
 import pytest
-from fastapi.testclient import TestClient
 
-from core.auth import get_optional_user
 from core.constants import MAX_INTERACTION_BATCH_SIZE
-from main import app
-from tests.conftest import FAKE_USER
+from tests.conftest import make_db_user
 
 # ── Helpers ────────────────────────────────────────────────────────────
 
 
 FAKE_DB_USER_ID = "00000000-0000-0000-0000-000000000001"
 OTHER_DB_USER_ID = "00000000-0000-0000-0000-000000000099"
-
-
-def _make_db_user(user_id=FAKE_DB_USER_ID, email=FAKE_USER["email"]):
-    from datetime import datetime, timezone
-
-    from schemas.user import UserResponse
-
-    return UserResponse(
-        id=user_id,
-        email=email,
-        created_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc),
-    )
 
 
 def _batch_payload(
@@ -48,20 +32,6 @@ def _batch_payload(
     if user_id is not None:
         payload["user_id"] = user_id
     return payload
-
-
-@pytest.fixture
-def client():
-    return TestClient(app)
-
-
-@pytest.fixture
-def authenticated_client():
-    """Client with Bearer auth returning FAKE_USER."""
-    app.dependency_overrides[get_optional_user] = lambda: FAKE_USER
-    c = TestClient(app)
-    yield c
-    app.dependency_overrides.pop(get_optional_user, None)
 
 
 @pytest.fixture(autouse=True)
@@ -159,7 +129,7 @@ def test_batch_202_with_bearer_auth(authenticated_client, monkeypatch):
     """Authenticated user via Bearer header records interactions."""
     from services import interaction_service, user_service
 
-    db_user = _make_db_user()
+    db_user = make_db_user(id=FAKE_DB_USER_ID)
     monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=db_user))
     monkeypatch.setattr(
         interaction_service, "check_duplicate_interactions", lambda **kw: kw["interactions"]
@@ -225,7 +195,7 @@ def test_batch_rejects_mismatched_user_id(authenticated_client, monkeypatch):
     """Authenticated user cannot submit interactions with a different user_id (403)."""
     from services import user_service
 
-    db_user = _make_db_user()
+    db_user = make_db_user(id=FAKE_DB_USER_ID)
     monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=db_user))
 
     resp = authenticated_client.post(
@@ -240,7 +210,7 @@ def test_batch_accepts_matching_user_id(authenticated_client, monkeypatch):
     """Authenticated user can submit interactions with their own user_id."""
     from services import interaction_service, user_service
 
-    db_user = _make_db_user()
+    db_user = make_db_user(id=FAKE_DB_USER_ID)
     monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=db_user))
     monkeypatch.setattr(
         interaction_service, "check_duplicate_interactions", lambda **kw: kw["interactions"]
@@ -261,7 +231,7 @@ def test_dedup_filters_duplicates_for_authenticated_user(authenticated_client, m
     """Authenticated requests pass through dedup; all-duplicate batch returns 0."""
     from services import interaction_service, user_service
 
-    db_user = _make_db_user()
+    db_user = make_db_user(id=FAKE_DB_USER_ID)
     monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=db_user))
     # Dedup returns empty list (all duplicates)
     monkeypatch.setattr(interaction_service, "check_duplicate_interactions", lambda **kw: [])
@@ -291,7 +261,7 @@ def test_rate_limit_triggers_429(authenticated_client, monkeypatch):
     from routers.interactions import _interaction_limiter
     from services import interaction_service, user_service
 
-    db_user = _make_db_user()
+    db_user = make_db_user(id=FAKE_DB_USER_ID)
     monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=db_user))
     monkeypatch.setattr(
         interaction_service, "check_duplicate_interactions", lambda **kw: kw["interactions"]

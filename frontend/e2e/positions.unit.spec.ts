@@ -30,3 +30,17 @@ test("four-month expiry clamps short months and keeps the same UTC instant acros
   const boundary = position("2026-02-28T12:00:00Z");
   expect(filterPositions([before, boundary], filters, instant)).toEqual([boundary]);
 });
+
+test("cached position search, role type and arrival filters compose without mutating the directory", () => {
+  const directory = [
+    { ...position("2026-08-01T12:00:00Z", "2026-09-01"), title: "Design Lead", description: "Lead student campaigns." },
+    { ...position("2026-08-02T12:00:00Z", "2026-09-05"), id: 2, title: "Operations Assistant", description: "Support room bookings.", position_type: "staff" as const },
+  ];
+  const filterTime = Date.parse("2026-08-02T18:00:00Z");
+  expect(filterPositions(directory, { ...filters, search: "DESIGN" }, filterTime).map(item => item.id)).toEqual([1]);
+  expect(filterPositions(directory, { ...filters, search: "room bookings" }, filterTime).map(item => item.id)).toEqual([2]);
+  expect(filterPositions(directory, { ...filters, positionType: "staff" }, filterTime).map(item => item.id)).toEqual([2]);
+  expect(filterPositions(directory, { ...filters, addedSince: "2026-08-01T18:00:00Z" }, filterTime).map(item => item.id)).toEqual([2]);
+  expect(filterPositions(directory, filters, Date.parse("2026-09-06T12:00:00Z"))).toEqual([]);
+  expect(directory.map(item => item.id)).toEqual([1, 2]);
+});

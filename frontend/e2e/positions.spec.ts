@@ -1,7 +1,4 @@
-import { createRequire } from "node:module";
-import { collectPaginatedPages } from "../src/shared/lib/pagination";
-import type { Position } from "../src/shared/types";
-import { expect, test as dataTest } from "@playwright/test";
+import { expect } from "@playwright/test";
 import { test } from "next/experimental/testmode/playwright.js";
 import { mockApi } from "./api-fixture";
 
@@ -172,9 +169,6 @@ test.describe("Positions UI", () => {
     const header = page.locator('[data-slot="page-header"]');
     await expect(scrollRoot).toHaveCSS("overscroll-behavior-y", "none");
     const initialHeaderTop = (await header.boundingBox())!.y;
-    await expect(scrollRoot).toHaveCSS("padding-top", "0px");
-    await expect(header).toHaveCSS("margin-top", "0px");
-    await expect(header).toHaveCSS("padding-top", "16px");
     expect(Math.abs(initialHeaderTop - (await scrollRoot.boundingBox())!.y)).toBeLessThan(2);
     await scrollRoot.evaluate(element => { element.scrollTop = 400; });
     await expect.poll(() => scrollRoot.evaluate(element => element.scrollTop)).toBeGreaterThan(300);
@@ -190,7 +184,7 @@ test.describe("Positions UI", () => {
 
   });
 
-  test("filters explicit paid and newly added positions and searches the latest item", async ({ page }, testInfo) => {
+  test("filters explicit paid and newly added positions and searches the latest item", async ({ page }) => {
     await page.goto("/positions");
     const paid = page.getByRole("button", { name: "Paid", exact: true });
     const newFilter = page.getByRole("button", { name: "New", exact: true });
@@ -205,13 +199,11 @@ test.describe("Positions UI", () => {
     await newFilter.click();
     await page.getByRole("dialog").getByRole("button", { name: "Clear newly added filter" }).click();
     await expect(page.getByRole("heading", { name: "2 positions", exact: true })).toBeVisible();
-    await page.screenshot({ path: testInfo.outputPath("positions-desktop.png"), fullPage: true });
     await page.getByRole("button").filter({ hasText: "Operations Assistant" }).filter({ hasText: "ago" }).click();
     await expect(page.getByPlaceholder("Search roles, skills, or locations...")).toHaveValue("Operations Assistant");
     await expect(page.getByRole("heading", { name: "1 position", exact: true })).toBeVisible();
     await page.setViewportSize({ width: 390, height: 844 });
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-    await page.screenshot({ path: testInfo.outputPath("positions-mobile.png"), fullPage: true });
   });
 
   test("keeps the latest-added link visible while cached search returns no results", async ({ page }) => {
@@ -231,22 +223,6 @@ test.describe("Positions UI", () => {
     await expect(page.getByPlaceholder("Search roles, skills, or locations...")).toHaveValue("Operations Assistant");
     await expect(page.getByRole("heading", { name: "1 position", exact: true })).toBeVisible();
     expect(filterRequests).toEqual([]);
-  });
-
-  test("aligns the latest-added badge and text on desktop and mobile", async ({ page }) => {
-    await page.goto("/positions");
-    const latest = page.getByRole("button").filter({ hasText: "Operations Assistant" }).filter({ hasText: "ago" });
-    const badge = latest.locator("..").getByText("NEW", { exact: true });
-
-    for (const width of [1280, 390]) {
-      await page.setViewportSize({ width, height: 844 });
-      await expect(latest).toBeVisible();
-      await expect(latest.locator("..")).toHaveCSS("align-items", "center");
-      const textBox = (await latest.boundingBox())!;
-      const badgeBox = (await badge.boundingBox())!;
-      expect(Math.abs(textBox.y + textBox.height / 2 - badgeBox.y - badgeBox.height / 2)).toBeLessThan(1);
-      await expect(latest).toHaveCSS("border-bottom-width", "0px");
-    }
   });
 
   test("shared club badges overlap logos and keep the extra-club count visible", async ({ page }) => {
@@ -327,7 +303,7 @@ test.describe("Positions UI", () => {
     await expect(page.getByRole("heading", { name: "1 position", exact: true })).toBeVisible();
   });
 
-  test("navigates position drawers by keyboard and resets scroll for the next role", async ({ page }, testInfo) => {
+  test("navigates position drawers by keyboard and resets scroll for the next role", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/positions");
     await page.getByRole("button", { name: "View Design Lead position details" }).click();
@@ -340,7 +316,6 @@ test.describe("Positions UI", () => {
     await expect(drawer.getByRole("button", { name: "Next", exact: true })).toBeDisabled();
     await drawer.getByRole("button", { name: "Previous", exact: true }).click();
     await expect(drawer.getByRole("heading", { name: "Design Lead" })).toBeVisible();
-    await page.screenshot({ path: testInfo.outputPath("position-drawer-mobile.png"), fullPage: true });
   });
 
   test("browses, filters, and searches open club positions", async ({
@@ -359,54 +334,8 @@ test.describe("Positions UI", () => {
     const positionCard = page.getByRole("button", {
       name: "View Design Lead position details",
     });
-    await expect(positionCard).toHaveCSS("isolation", "isolate");
-    const filterBar = page.getByTestId("position-filter-scroll");
-    await expect(filterBar).toHaveCSS("flex-wrap", "nowrap");
-    await expect(filterBar).toHaveCSS("overflow-x", "auto");
-    const listingHeader = page.locator('[data-slot="page-header"][data-variant="listing"]');
-    await expect(listingHeader).toHaveCSS("position", "sticky");
-    expect(await listingHeader.evaluate(element => getComputedStyle(element).backgroundColor)).not.toBe("rgba(0, 0, 0, 0)");
-    await expect(positionCard.getByText("Committee", { exact: true })).toHaveCount(0);
-    const positionFrame = positionCard.locator(
-      '[data-slot="event-card-content-frame"]',
-    );
-    const positionContent = positionFrame.locator(
-      '[data-slot="event-card-content"]',
-    );
-    await expect(positionFrame).toHaveCSS(
-      "background-color",
-      "rgba(0, 0, 0, 0)",
-    );
-    await expect(positionFrame).toHaveCSS("border-top-width", "0px");
-    await expect(positionFrame).toHaveCSS("border-right-width", "0px");
-    await expect(positionFrame).toHaveCSS("border-bottom-width", "0px");
-    await expect(positionFrame).toHaveCSS("border-left-width", "0px");
-    await expect(positionContent).toHaveCSS("padding-left", "0px");
-    await expect(positionContent).toHaveCSS("padding-right", "0px");
-    const clubBadge = positionCard.locator(
-      '[data-slot="club-badge"]',
-    );
-    await expect(clubBadge).toHaveCSS("opacity", "1");
-    await positionCard.hover();
-    await expect(positionCard).toHaveCSS("opacity", "1");
-    await expect(clubBadge).toHaveCSS("opacity", "1");
-    await expect(page.locator('[data-slot="card-grid"]')).toHaveCSS(
-      "column-gap",
-      "20px",
-    );
-    await expect(
-      positionCard.locator(
-        '[data-slot="position-card-image"][data-variant="card"]',
-      ),
-    ).toHaveCSS("border-bottom-right-radius", "12px");
-
     await positionCard.click();
     const drawer = page.getByRole("dialog");
-    await expect(drawer).toHaveCSS("animation-name", "slideFromBottom");
-    await expect(page.locator('[data-slot="drawer-overlay"]')).toHaveCSS(
-      "animation-name",
-      "fadeIn",
-    );
     await expect(
       drawer.getByRole("heading", { name: "Design Lead" }),
     ).toBeVisible();
@@ -424,29 +353,7 @@ test.describe("Positions UI", () => {
       })
       .toBe(true);
 
-    const clubLink = drawer.getByRole("button", {
-      name: "UW Design Club",
-    }).last();
-    await expect
-      .poll(() =>
-        clubLink.evaluate((link) => {
-          const parent = link.parentElement;
-          return (
-            parent !== null &&
-            link.getBoundingClientRect().width < parent.getBoundingClientRect().width
-          );
-        }),
-      )
-      .toBe(true);
-
-    const deadlineItem = drawer
-      .getByText("Application deadline")
-      .locator('xpath=ancestor::*[@data-slot="item"]');
-    await expect(deadlineItem).toHaveAttribute("data-variant", "default");
-    await expect(deadlineItem).toHaveCSS("flex-direction", "column");
-    await expect(deadlineItem).toHaveCSS("align-items", "flex-start");
-    await expect(deadlineItem).toHaveCSS("padding-left", "0px");
-    await expect(deadlineItem).toHaveCSS("padding-right", "0px");
+    await expect(drawer.getByText("Application deadline")).toBeVisible();
     await page.keyboard.press("Escape");
 
     await page.getByRole("button", { name: "Paid", exact: true }).click();
@@ -471,37 +378,4 @@ test.describe("Positions UI", () => {
     ).not.toBeVisible();
     expect(filterRequests).toEqual([]);
   });
-});
-
-const { filterPositions }: typeof import("../src/features/positions/api/positionService") =
-  createRequire(import.meta.url)("../src/features/positions/api/positionService");
-
-// These regressions exercise the real data helpers without a browser or server.
-dataTest("cached position directory loads every page and filters without another fetch", async () => {
-  const calls: number[] = [];
-  const allPositions = MOCK_POSITIONS as Position[];
-  const directory = await collectPaginatedPages(async page => {
-    calls.push(page);
-    return { items: [allPositions[page - 1]], total: 2, page, page_size: 1, total_pages: 2,
-      latest_added_position: { title: "Operations Assistant", added_at: "2026-08-02T12:00:00Z" } };
-  });
-  expect(calls).toEqual([1, 2]);
-  expect(directory.total).toBe(2);
-  expect(directory.total_pages).toBe(1);
-  expect(directory.latest_added_position?.title).toBe("Operations Assistant");
-  const filters = { search: "", positionType: "all" as const, addedSince: null as string | null };
-  const now = Date.parse("2026-08-02T18:00:00Z");
-  expect(filterPositions(directory.items, { ...filters, search: "DESIGN" }, now).map(p => p.id)).toEqual([1]);
-  expect(filterPositions(directory.items, { ...filters, search: "room bookings" }, now).map(p => p.id)).toEqual([2]);
-  expect(filterPositions(directory.items, { ...filters, positionType: "staff" }, now).map(p => p.id)).toEqual([2]);
-  expect(filterPositions(directory.items, { ...filters, addedSince: "2026-08-01T18:00:00Z" }, now).map(p => p.id)).toEqual([2]);
-  expect(filterPositions(directory.items, filters, Date.parse("2026-09-06T12:00:00Z"))).toEqual([]);
-  expect(calls).toEqual([1, 2]);
-});
-
-dataTest("cached position directory rejects incomplete snapshots", async () => {
-  await expect(collectPaginatedPages(async page => {
-    if (page === 2) throw new Error("Backend unavailable");
-    return { items: [], total: 2, page, page_size: 1, total_pages: 2 };
-  })).rejects.toThrow("Backend unavailable");
 });

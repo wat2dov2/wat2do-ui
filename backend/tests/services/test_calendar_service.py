@@ -130,22 +130,7 @@ def test_get_or_create_token_generates_when_row_missing(fake_sb, patch_sb):
     fake_sb.update.assert_called_once()
 
 
-def test_regenerate_token_always_writes_new(fake_sb, patch_sb):
-    """Regenerate never short-circuits — always rotates."""
-    patch_sb("services.calendar_service")
-    user_id = str(uuid4())
-    fake_sb.set_response(data=[{"id": user_id}])
-
-    token = calendar_service.regenerate_token(user_id)
-
-    assert token and len(token) > 20
-    fake_sb.update.assert_called_once()
-    update_payload = fake_sb.update.call_args[0][0]
-    assert update_payload == {"calendar_feed_token": token}
-
-
-def test_regenerate_token_produces_different_value_each_call(fake_sb, patch_sb):
-    """Two rotations back-to-back return different tokens."""
+def test_regenerate_token_persists_a_new_value_each_call(fake_sb, patch_sb):
     patch_sb("services.calendar_service")
     user_id = str(uuid4())
     fake_sb.set_response(data=[{"id": user_id}])
@@ -154,6 +139,13 @@ def test_regenerate_token_produces_different_value_each_call(fake_sb, patch_sb):
     t2 = calendar_service.regenerate_token(user_id)
 
     assert t1 != t2
+    assert len(t1) > 20
+    assert len(t2) > 20
+    assert [call.args[0] for call in fake_sb.update.call_args_list] == [
+        {"calendar_feed_token": t1},
+        {"calendar_feed_token": t2},
+    ]
+    assert [call.args for call in fake_sb.eq.call_args_list] == [("id", user_id)] * 2
 
 
 # ── get_user_id_by_token ────────────────────────────────────────────

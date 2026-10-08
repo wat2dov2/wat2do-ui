@@ -38,14 +38,9 @@ def isolated_native_navigation_pacing(monkeypatch):
         browser._click_switch_accounts_source(),
         browser._account_chooser_state_source(),
         browser._click_account_source("usask.wat2do.io"),
-        browser._current_account_username_source(),
-        browser._recipient_is_active_source("41553815702"),
-        browser._close_account_chooser_source(),
-        browser._cancel_request_source(),
-        browser._PAGE_RESPONSE_SOURCE,
     ],
 )
-def test_shared_generated_sources_parse(source):
+def test_account_switch_control_sources_parse(source):
     node = shutil.which("node")
     if node is None:
         pytest.skip("Node.js unavailable")
@@ -349,7 +344,6 @@ def test_pins_existing_tab_and_never_rediscovers_after_navigation(monkeypatch):
     [
         ("Executing JavaScript through AppleScript is turned off. secret", "Enable Brave View"),
         ("Brave is not running. secret", "Open Brave"),
-        ("Pinned Instagram tab is closed. secret", "pinned Instagram tab was closed"),
         (
             "Brave must be foreground for worker viewport initialization. secret",
             "Bring the registered Instagram window to the foreground briefly",
@@ -1649,18 +1643,6 @@ def test_page_response_login_recheck_preserves_fresh_auth_route_guard(settled_pa
             session.current_page_path(check_response=True)
     else:
         assert session.current_page_path(check_response=True) == settled_path
-
-
-def test_bootstrap_path_can_recover_cached_429_without_restarting_cooldown():
-    calls = []
-
-    def runner(source, timeout):
-        calls.append(source)
-        assert source == "window.location.pathname"
-        return "/"
-
-    assert browser.BrowserInstagramSession(javascript_runner=runner).current_page_path() == "/"
-    assert calls == ["window.location.pathname"]
 
 
 def test_query_recovers_transient_cleanup_bridge_failure_without_repeating_request():

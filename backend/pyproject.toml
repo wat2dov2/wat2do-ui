@@ -19,13 +19,6 @@ select = [
     "I",
 ]
 
-[tool.ruff.lint.per-file-ignores]
-"tests/**/*.py" = [
-    # Existing tests keep some imports/locals around for fixtures and patch targets.
-    "F401",
-    "F841",
-]
-
 [tool.mypy]
 python_version = "3.12"
 exclude = [

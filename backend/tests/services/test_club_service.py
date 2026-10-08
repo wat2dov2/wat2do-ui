@@ -229,16 +229,12 @@ def test_directory_minimum_uses_computed_count_before_paging(fake_sb, patch_sb):
 
 
 @pytest.mark.parametrize(
-    "categories",
+    "categories,search,expected_search",
     [
-        ["Arts & Culture"],
-        ["Business", "Technology"],
-        ['Arts, "Culture" (campus)', "Littérature\\théâtre"],
+        (["Arts & Culture"], "Campus Arts", "Campus Arts"),
+        (["Business", "Technology"], '  Campus, "Arts" (U.W.)  ', "Campus Arts UW"),
+        (['Arts, "Culture" (campus)', "Littérature\\théâtre"], "Campus Arts", "Campus Arts"),
     ],
-)
-@pytest.mark.parametrize(
-    ("search", "expected_search"),
-    [("Campus Arts", "Campus Arts"), ('  Campus, "Arts" (U.W.)  ', "Campus Arts UW")],
 )
 def test_directory_categories_use_jsonb_containment_with_search(
     monkeypatch, categories, search, expected_search
@@ -359,47 +355,32 @@ def test_lookup_club_by_school_and_name_empty_inputs():
     assert club_service.lookup_club_by_school_and_name("uwaterloo", "") is None
 
 
-@pytest.mark.parametrize(
-    "updates",
-    [
-        {"club_type": "wusa"},
-        {"logo_url": "https://wat2do.io/media/organization-logos/tea.jpg"},
-    ],
-)
-def test_update_club_revalidates_event_feed(monkeypatch, fake_sb, patch_sb, updates):
-    patch_sb("services.club_service")
-    row = {
-        "id": 7,
-        "club_name": "UW Tea Club",
-        "club_type": "independent",
-        "logo_url": None,
-        "school": "uwaterloo",
-    }
-    monkeypatch.setattr(club_service, "get_club", MagicMock(return_value=ClubResponse(**row)))
-    revalidate = MagicMock()
-    monkeypatch.setattr(
-        club_service.event_feed_revalidation_service, "revalidate_schools", revalidate
-    )
-    fake_sb.queue_responses([[{**row, **updates}]])
-
-    updated = club_service.update_club(7, ClubUpdate(**updates))
-
-    assert updated is not None
-    for field, value in updates.items():
-        assert getattr(updated, field) == value
-    revalidate.assert_called_once_with(
-        ["uwaterloo", "uwaterloo"], resources=("events", "positions", "clubs")
-    )
-
-
-@pytest.mark.parametrize("platform", ["discord", "slack", "telegram", "facebook"])
 @pytest.mark.parametrize("metadata", [None, {}, {"custom": "value"}])
-def test_integration_metadata_writes_preserve_empty_columns_and_extra(platform, metadata):
-    columns = club_service._metadata_to_columns(platform, metadata)
+def test_integration_metadata_writes_preserve_empty_columns_and_extra(metadata):
+    columns = club_service._metadata_to_columns("discord", metadata)
 
     assert set(columns) == club_service._METADATA_COLUMNS | {"extra"}
     assert all(columns[column] is None for column in club_service._METADATA_COLUMNS)
     assert columns["extra"] == (metadata or {})
+
+
+@pytest.mark.parametrize(
+    "platform,key",
+    [
+        ("discord", "server_id"),
+        ("slack", "workspace_id"),
+        ("telegram", "server_id"),
+        ("facebook", "server_id"),
+    ],
+)
+def test_integration_metadata_round_trips_platform_column_names(platform, key):
+    metadata = {key: "community", "custom": "retained"}
+
+    columns = club_service._metadata_to_columns(platform, metadata)
+
+    assert columns["server_id"] == "community"
+    assert columns["extra"] == {"custom": "retained"}
+    assert club_service._columns_to_metadata(platform, columns) == metadata
 
 
 def test_integration_metadata_alias_precedence_and_unknown_keys():
@@ -485,6 +466,11 @@ def test_create_club_refreshes_public_directory_only_when_approved(
     "updates,resources",
     [
         ({"categories": ["Arts & Culture"]}, ("clubs",)),
+        ({"club_type": "wusa"}, ("events", "positions", "clubs")),
+        (
+            {"logo_url": "https://wat2do.io/media/organization-logos/tea.jpg"},
+            ("events", "positions", "clubs"),
+        ),
         ({"club_name": "New club name"}, ("events", "positions", "clubs")),
         ({"club_page": "https://example.com/club"}, ("events", "positions", "clubs")),
         ({"ig": "updatedclub"}, ("events", "positions", "clubs")),
@@ -502,7 +488,9 @@ def test_club_update_refreshes_only_datasets_that_embed_changed_fields(
     refresh = MagicMock()
     monkeypatch.setattr(club_service.event_feed_revalidation_service, "revalidate_schools", refresh)
 
-    club_service.update_club(7, ClubUpdate(**updates))
+    updated = club_service.update_club(7, ClubUpdate(**updates))
+    assert updated is not None
+    assert updated.model_dump(include=set(updates)) == updates
     refresh.assert_called_once_with(
         ["uwaterloo", updates.get("school", "uwaterloo")], resources=resources
     )

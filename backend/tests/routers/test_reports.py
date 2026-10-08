@@ -5,7 +5,7 @@ from core.auth import get_optional_user
 from schemas.report import ReportResponse
 from schemas.user import UserResponse
 from services import report_service, user_service
-from tests.conftest import ADMIN_USER, FAKE_USER
+from tests.conftest import FAKE_USER
 
 FAKE_DB_USER = UserResponse(
     id="00000000-0000-0000-0000-000000000001",

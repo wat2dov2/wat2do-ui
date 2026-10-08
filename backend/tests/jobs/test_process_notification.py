@@ -7,7 +7,6 @@ import pytest
 
 from jobs import process_notification
 from services.instagram_notifications.browser_digest import DigestResolution
-from services.instagram_notifications.ledger import MediaClaim
 
 RECIPIENT_ID = "12342599092"
 PUSH_ID = "push-123"
@@ -39,14 +38,6 @@ def _install_school(monkeypatch) -> None:
         lambda recipient_id: (
             SimpleNamespace(id=7, slug="ubc") if recipient_id == RECIPIENT_ID else None
         ),
-    )
-
-
-def _claim_for(item, index: int) -> MediaClaim:
-    return MediaClaim(
-        media_row_id=f"media-row-{index}",
-        source_url=item.source_url,
-        claim_token=f"claim-{index}",
     )
 
 

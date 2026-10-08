@@ -270,30 +270,21 @@ def _execute(session, action="like"):
 
 
 def test_executor_clicks_once_and_waits_for_positive_confirmation():
-    session = FakeSession(["ready", "clicked", "ready", "already_done"])
+    session = FakeSession(["ready", "clicked", "ready", "not_ready", "already_done"])
     assert _execute(session) == {"action": "like", "status": "succeeded"}
     assert session.calls == [
         ("activate", "41553815702", "usask.wat2do.io"),
         ("navigate", "https://www.instagram.com/p/TARGET123/", "41553815702", "usask.wat2do.io"),
     ]
-    assert len(session.mutations) == 1 and len(session.reads) == 3
-    assert sum("if (!true)" in source for source in session.sources) == 1
-    assert sum("if (!false)" in source for source in session.sources) == 3
-
-
-def test_completed_action_waits_through_disabled_hydration_without_another_click():
-    session = FakeSession(["ready", "clicked", "not_ready", "already_done"])
-    assert _execute(session) == {"action": "like", "status": "succeeded"}
     assert len(session.mutations) == 1
-    assert len(session.reads) == 3
-    assert len(session.sources) == 4
+    assert len(session.reads) == 4
 
 
 def test_verification_timeout_does_not_click_again():
     session = FakeSession(["ready", "clicked", "ready", "ready", "ready"])
     with pytest.raises(BrowserEngagementUncertain, match="completion is uncertain"):
         _execute(session)
-    assert sum("if (!true)" in source for source in session.sources) == 1
+    assert len(session.mutations) == 1
 
 
 @pytest.mark.parametrize(

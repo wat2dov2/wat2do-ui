@@ -1,7 +1,5 @@
 from unittest.mock import MagicMock
 
-import pytest
-
 from schemas.club import ClubResponse
 from services import club_service
 

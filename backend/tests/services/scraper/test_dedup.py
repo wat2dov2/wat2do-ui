@@ -6,6 +6,7 @@ from unittest.mock import MagicMock
 import pytest
 from httpx import RemoteProtocolError
 
+from core.constants import SCRAPING_SAME_CLUB_TITLE_THRESHOLD
 from services.scraper.dedup import (
     _extract_shortcode,
     collapse_duplicate_extractions,
@@ -361,6 +362,10 @@ def test_find_candidates_returns_empty_without_occurrences_or_handle():
 def test_find_candidates_same_club(fake_sb, patch_sb):
     """Same IG handle + future event + similar title -> candidate list."""
     patch_sb("services.scraper.dedup")
+    assert (
+        title_similarity("Tea Tasting Night", "Tea Tasting Evening")
+        > SCRAPING_SAME_CLUB_TITLE_THRESHOLD
+    )
 
     future = (datetime.now(timezone.utc) + timedelta(days=7)).isoformat()
     fake_sb.queue_responses(
@@ -460,6 +465,9 @@ def test_find_candidates_same_day_substring_plus_location(fake_sb, patch_sb):
     )
     assert len(result) == 1
     assert result[0]["id"] == 17
+    day_start = datetime.fromisoformat(future).replace(hour=0, minute=0, second=0, microsecond=0)
+    fake_sb.gte.assert_called_once_with("dtstart_utc", day_start.isoformat())
+    fake_sb.lt.assert_called_once_with("dtstart_utc", (day_start + timedelta(days=1)).isoformat())
 
 
 def test_find_candidates_same_org_by_club_id(fake_sb, patch_sb):

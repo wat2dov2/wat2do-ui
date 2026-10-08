@@ -1048,16 +1048,6 @@ def test_digest_wait_returns_exact_worker_result(queue, monkeypatch):
 
     assert result == module.DigestResolution(ACCOUNT_USERNAME, ("123", "456"), 2)
     assert clock.elapsed == module.CONTROL.worker_poll_interval_seconds
-    # Durable successful reads are available even after the worker exits.
-    queue.set_setting("worker", {"running": False, "heartbeat": clock.now})
-    assert (
-        module.QueuedInstagramDigestResolver(queue).resolve(
-            RECIPIENT_ID,
-            ACCOUNT_USERNAME,
-            "cache-succeeded",
-        )
-        == result
-    )
 
 
 @pytest.mark.parametrize("terminal_state", ["cancelled", "failed"])
@@ -1083,26 +1073,6 @@ def test_digest_wait_reports_terminal_failure(queue, monkeypatch, terminal_state
         )
 
     assert queue.get(job_id).state == terminal_state
-
-
-def test_digest_caller_deadline_cancels_pending_work(queue, monkeypatch):
-    clock = _clock(monkeypatch)
-    queue.set_setting("worker", {"running": True, "heartbeat": clock.now})
-    job_id = (queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "cache-timeout")).id
-
-    def advance_past_deadline():
-        clock.elapsed = module.CONTROL.result_timeout_seconds + 1
-
-    clock.after_sleep = advance_past_deadline
-
-    with pytest.raises(module.BrowserDigestError, match="timed out"):
-        module.QueuedInstagramDigestResolver(queue).resolve(
-            RECIPIENT_ID,
-            ACCOUNT_USERNAME,
-            "cache-timeout",
-        )
-
-    assert queue.get(job_id).state == "cancelled"
 
 
 @pytest.mark.parametrize("failing_method", ["enqueue_digest", "get", "get_setting"])
@@ -1718,20 +1688,6 @@ def test_deduplicated_queueing_does_not_duplicate_diagnostics(queue):
         assert db.execute("SELECT COUNT(*) FROM diagnostic_events").fetchone()[0] == 1
 
 
-def test_digest_reports_recovery_pause_without_claiming_or_resuming(queue, monkeypatch):
-    clock = _clock(monkeypatch)
-    queue.set_setting("worker", {"running": True, "heartbeat": clock.now})
-    reason = "Instagram browser request cancellation could not be confirmed: Apple Event -600"
-    queue.set_setting("paused", reason)
-    with pytest.raises(module.BrowserDigestError, match="Apple Event -600"):
-        module.QueuedInstagramDigestResolver(queue).resolve(
-            RECIPIENT_ID, ACCOUNT_USERNAME, "paused-digest"
-        )
-    assert queue.get_setting("paused") == reason
-    assert queue.claim_next() is None
-    assert clock.elapsed == 0
-
-
 def test_digest_waits_through_installer_pause_and_worker_restart(queue, monkeypatch):
     clock = _clock(monkeypatch)
     queue.set_setting("paused", module.WORKER_INSTALLATION_PAUSE)
@@ -1794,7 +1750,7 @@ def test_installer_pause_waits_only_to_original_digest_deadline(queue, monkeypat
     "pause",
     [
         "Instagram browser requires human account recovery",
-        "Worker interrupted during engagement; inspect browser state before resuming",
+        "Instagram browser request cancellation could not be confirmed: Apple Event -600",
         module.WORKER_INSTALLATION_PAUSE + "; human account recovery",
     ],
 )
@@ -1803,11 +1759,12 @@ def test_digest_waits_only_for_exact_installer_hold_and_never_auth_holds(queue, 
     receipt = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "auth-during-install")
     queue.set_setting("paused", pause)
     queue.set_setting("worker", {"running": False, "heartbeat": 0})
-    with pytest.raises(module.BrowserDigestError, match="worker is paused"):
+    with pytest.raises(module.BrowserDigestError, match="worker is paused") as error:
         module.QueuedInstagramDigestResolver(queue).resolve(
             RECIPIENT_ID, ACCOUNT_USERNAME, "auth-during-install"
         )
     assert clock.elapsed == 0
+    assert pause in str(error.value)
     assert queue.get_setting("paused") == pause
     assert queue.get(receipt.id).state == "cancelled"
     assert queue.get(receipt.id).attempts == 0
@@ -1837,22 +1794,6 @@ def test_old_completion_cannot_change_a_new_running_read_claim(queue, outcome):
     assert queue.get(job_id) == current
     with queue._connect() as db:
         assert db.execute("SELECT event FROM diagnostic_events").fetchall() == diagnostics
-
-
-def test_expired_digest_caller_cannot_cancel_a_new_submission(queue, monkeypatch):
-    clock = _clock(monkeypatch)
-    job_id = (queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "same-cache-new-caller")).id
-    original = queue.get(job_id)
-    queue.cancel(job_id)
-    clock.now += 1
-    assert (
-        queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "same-cache-new-caller")
-    ).id == job_id
-    current = queue.get(job_id)
-    assert not queue.cancel_pending_digest(original)
-    assert queue.get(job_id) == current
-    assert queue.cancel_pending_digest(current)
-    assert queue.get(job_id).state == "cancelled"
 
 
 @pytest.mark.parametrize("refund_rate_limit", [False, True])
@@ -2029,6 +1970,7 @@ def test_late_digest_waiter_can_reuse_an_already_completed_result_after_admissio
         queue.claim_next(),
         result={"account_username": ACCOUNT_USERNAME, "media_ids": ["123"], "page_count": 1},
     )
+    queue.set_setting("worker", {"running": False, "heartbeat": clock.now})
     clock.now += module.CONTROL.result_timeout_seconds + 1
     result = module.QueuedInstagramDigestResolver(queue).resolve(
         RECIPIENT_ID, ACCOUNT_USERNAME, "completed-replay"

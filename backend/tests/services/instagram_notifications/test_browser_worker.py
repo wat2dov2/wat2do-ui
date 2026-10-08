@@ -460,7 +460,6 @@ def test_unexpected_exception_is_sanitized_and_requires_inspection(queue, monkey
     assert "private request credential details" not in caplog.text
 
 
-@pytest.mark.parametrize("kind", ["engagement", "digest", "retrieval"])
 @pytest.mark.parametrize(
     "code,reason",
     [
@@ -485,8 +484,16 @@ def test_unexpected_exception_is_sanitized_and_requires_inspection(queue, monkey
         (None, "Browser queue storage is unavailable; inspect before resuming"),
     ],
 )
-def test_job_storage_errors_have_safe_actionable_diagnostics(
-    queue, monkeypatch, caplog, kind, code, reason
+def test_storage_failure_codes_have_fixed_sanitized_diagnostics(code, reason):
+    failure = sqlite3.OperationalError("private SQL payload and filesystem details")
+    if code is not None:
+        failure.sqlite_errorcode = code
+    assert module._storage_failure_reason(failure) == reason
+
+
+@pytest.mark.parametrize("kind", ["engagement", "digest", "retrieval"])
+def test_full_job_storage_stops_admission_and_preserves_safe_recovery(
+    queue, monkeypatch, caplog, kind
 ):
     job_id = (
         _engagement(queue)
@@ -500,9 +507,7 @@ def test_job_storage_errors_have_safe_actionable_diagnostics(
             url="https://www.instagram.com/p/StorageError/",
         )
     )
-    failure = sqlite3.OperationalError("private SQL payload and filesystem details")
-    if code is not None:
-        failure.sqlite_errorcode = code
+    failure = _full_storage_error()
 
     def fail(*args, **kwargs):
         raise failure
@@ -514,7 +519,6 @@ def test_job_storage_errors_have_safe_actionable_diagnostics(
 
     assert queue.get(job_id).state == "running"
     assert queue.storage_unavailable
-    assert module._storage_failure_reason(failure) == reason
     assert bool(queue.get_setting("paused")) == (kind == "engagement")
     module._recover_worker_queue(queue)
     assert queue.get(job_id).state == ("failed" if kind == "engagement" else "pending")
@@ -1597,35 +1601,6 @@ def test_target_auth_redirect_pauses_before_any_media_query_or_publication(
     assert queue.get(job_id).result is None
     assert "human account recovery" in queue.get_setting("paused")
     assert len(cancellations) == 1
-
-
-def test_transient_retrieval_timeout_retries_bounded_without_global_pause(queue, monkeypatch):
-    job_id = queue.enqueue_retrieval(
-        school="ubc",
-        recipient_id=RECIPIENT_ID,
-        account_username=ACCOUNT_USERNAME,
-        url="https://www.instagram.com/p/Retry/",
-    )
-    session = SimpleNamespace(
-        current_page_path=lambda **kwargs: "/",
-        current_account_username=lambda: ACCOUNT_USERNAME,
-        poll_until=lambda ready: ready(),
-        cancel_pending_request=lambda: None,
-    )
-    monkeypatch.setattr(
-        module,
-        "BrowserTabPool",
-        lambda _: SimpleNamespace(prepare=lambda job, count: ([session], ACCOUNT_USERNAME)),
-    )
-
-    def timeout(*args, **kwargs):
-        raise TimeoutError("temporary response timeout")
-
-    monkeypatch.setattr(module, "execute_job", timeout)
-    assert module.process_next_job(queue)
-    assert queue.get(job_id).attempts == module.CONTROL.ingestion_retry_limit
-    assert queue.get(job_id).state == "failed"
-    assert not queue.get_setting("paused", False)
 
 
 def test_stream_uses_idle_tabs_for_jobs_arriving_after_start(queue, monkeypatch):

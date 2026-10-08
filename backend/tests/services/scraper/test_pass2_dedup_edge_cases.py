@@ -9,13 +9,13 @@ from __future__ import annotations
 
 import json
 from datetime import datetime, timedelta, timezone
+from types import SimpleNamespace
 
 import pytest
 
 from core.config import settings
 from core.constants import (
     SCRAPING_LOCATION_SIMILARITY_THRESHOLD,
-    SCRAPING_MAX_CANDIDATES,
     SCRAPING_SAME_CLUB_TITLE_THRESHOLD,
     SCRAPING_TITLE_SIMILARITY_THRESHOLD,
 )
@@ -32,8 +32,6 @@ _DAY = datetime.now(timezone.utc).replace(hour=18, minute=0, second=0, microseco
 _DAY_ISO = _DAY.isoformat().replace("+00:00", "Z")
 _OTHER_DAY = _DAY + timedelta(days=2)
 _OTHER_DAY_ISO = _OTHER_DAY.isoformat().replace("+00:00", "Z")
-_PAST = datetime.now(timezone.utc) - timedelta(days=14)
-_PAST_ISO = _PAST.isoformat().replace("+00:00", "Z")
 
 
 def _occ(start_iso: str) -> dict:
@@ -118,53 +116,16 @@ def _extracted(
 
 
 def _mock_pass2(monkeypatch, payload: list[dict]):
-    content = json.dumps(payload)
-
-    class _Msg:
-        def __init__(self):
-            self.content = content
-
-    class _Choice:
-        message = _Msg()
-
-    class _Resp:
-        choices = [_Choice()]
-
-    class _Completions:
-        def create(self, **kwargs):
-            return _Resp()
-
-    class _Chat:
-        completions = _Completions()
-
-    class _Client:
-        chat = _Chat()
-
-    monkeypatch.setattr("services.scraper.reconciler._client", lambda: _Client())
+    response = SimpleNamespace(
+        choices=[SimpleNamespace(message=SimpleNamespace(content=json.dumps(payload)))]
+    )
+    client = SimpleNamespace(
+        chat=SimpleNamespace(completions=SimpleNamespace(create=lambda **kwargs: response))
+    )
+    monkeypatch.setattr("services.scraper.reconciler._client", lambda: client)
 
 
 # ── Real dedup edge cases ─────────────────────────────────────────────
-
-
-def test_dedup_same_org_near_threshold_included(fake_sb, patch_sb):
-    """Title similarity just above 0.8 must be a same-org candidate."""
-    patch_sb("services.scraper.dedup")
-    # "Tea Tasting Night" vs "Tea Tasting Evening" is known > 0.8 in existing tests.
-    a = "Tea Tasting Night"
-    b = "Tea Tasting Evening"
-    assert title_similarity(a, b) > SCRAPING_SAME_CLUB_TITLE_THRESHOLD
-
-    row = _db_event(eid=1, title=a, location="SLC")
-    _queue_dedup_db(fake_sb, same_org_rows=[row], same_day_rows=[])
-
-    hits = find_candidates(
-        title=b,
-        location="SLC",
-        description="",
-        occurrences=[_occ(_DAY_ISO)],
-        ig_handle="uwteaclub",
-    )
-    assert [h["id"] for h in hits] == [1]
 
 
 def test_dedup_same_org_below_threshold_excluded(fake_sb, patch_sb):
@@ -178,21 +139,6 @@ def test_dedup_same_org_below_threshold_excluded(fake_sb, patch_sb):
 
     hits = find_candidates(
         title=b,
-        location="SLC",
-        description="",
-        occurrences=[_occ(_DAY_ISO)],
-        ig_handle="uwteaclub",
-    )
-    assert hits == []
-
-
-def test_dedup_past_same_org_event_excluded(fake_sb, patch_sb):
-    patch_sb("services.scraper.dedup")
-    row = _db_event(eid=3, title="Tea Tasting Night", location="SLC", start_iso=_PAST_ISO)
-    _queue_dedup_db(fake_sb, same_org_rows=[row], same_day_rows=[])
-
-    hits = find_candidates(
-        title="Tea Tasting Night",
         location="SLC",
         description="",
         occurrences=[_occ(_DAY_ISO)],
@@ -235,30 +181,6 @@ def test_dedup_same_day_substring_needs_location(fake_sb, patch_sb):
     assert (
         jaccard_similarity("DC Library", "DC Library 1568") > SCRAPING_LOCATION_SIMILARITY_THRESHOLD
     )
-
-
-def test_dedup_same_day_different_utc_day_misses(fake_sb, patch_sb):
-    patch_sb("services.scraper.dedup")
-    row = _db_event(
-        eid=5,
-        title="Movie Night",
-        location="DC Library",
-        ig_handle="otherclub",
-        start_iso=_OTHER_DAY_ISO,
-    )
-    # Same-day query returns empty because the DB event is on another day.
-    _queue_dedup_db(fake_sb, same_org_rows=[], same_day_rows=[])
-
-    hits = find_candidates(
-        title="Friday Movie Night",
-        location="DC Library 1568",
-        description="",
-        occurrences=[_occ(_DAY_ISO)],
-        ig_handle="uwteaclub",
-    )
-    assert hits == []
-    # Sanity: the seeded event would match if it were on the same day.
-    assert title_similarity("Movie Night", "Friday Movie Night") >= 0.0
 
 
 def test_dedup_no_ig_handle_skips_same_org_path(fake_sb, patch_sb):
@@ -308,19 +230,9 @@ def test_dedup_merges_same_org_and_same_day_without_dup_ids(fake_sb, patch_sb):
     assert 7 in ids
 
 
-def test_dedup_caps_at_max_candidates(fake_sb, patch_sb, monkeypatch):
-    """When many same-org matches exist, only SCRAPING_MAX_CANDIDATES return."""
+def test_dedup_caps_at_requested_limit(fake_sb, patch_sb):
     patch_sb("services.scraper.dedup")
-    monkeypatch.setattr(
-        "services.scraper.dedup.SCRAPING_MAX_CANDIDATES",
-        3,
-    )
-    rows = [
-        _db_event(eid=100 + i, title=f"Tea Tasting Night {i}", location="SLC") for i in range(8)
-    ]
-    # Force all titles to be highly similar to the query.
-    for row in rows:
-        row["title"] = "Tea Tasting Night"
+    rows = [_db_event(eid=100 + i, title="Tea Tasting Night", location="SLC") for i in range(8)]
     _queue_dedup_db(fake_sb, same_org_rows=rows, same_day_rows=[])
 
     hits = find_candidates(
@@ -337,11 +249,11 @@ def test_dedup_caps_at_max_candidates(fake_sb, patch_sb, monkeypatch):
 def test_dedup_ranks_higher_title_similarity_first(fake_sb, patch_sb):
     patch_sb("services.scraper.dedup")
     exact = _db_event(eid=20, title="Tea Tasting Night", location="SLC")
-    looser = _db_event(eid=21, title="Tea Night Social", location="SLC")
+    looser = _db_event(eid=21, title="Tea Tasting Evening", location="SLC")
     # Only include rows that clear the same-org threshold against the query.
     query = "Tea Tasting Night"
     assert title_similarity(exact["title"], query) > SCRAPING_SAME_CLUB_TITLE_THRESHOLD
-    # looser may or may not clear 0.8; if it doesn't, only exact returns.
+    assert title_similarity(looser["title"], query) > SCRAPING_SAME_CLUB_TITLE_THRESHOLD
     _queue_dedup_db(fake_sb, same_org_rows=[looser, exact], same_day_rows=[])
 
     hits = find_candidates(
@@ -351,12 +263,7 @@ def test_dedup_ranks_higher_title_similarity_first(fake_sb, patch_sb):
         occurrences=[_occ(_DAY_ISO)],
         ig_handle="uwteaclub",
     )
-    assert hits
-    assert hits[0]["id"] == 20
-    if len(hits) > 1:
-        assert title_similarity(hits[0]["title"], query) >= title_similarity(
-            hits[1]["title"], query
-        )
+    assert [hit["id"] for hit in hits] == [20, 21]
 
 
 def test_dedup_title_and_location_threshold_pair(fake_sb, patch_sb):

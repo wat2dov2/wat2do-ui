@@ -10,7 +10,7 @@ from core.pagination import LatestAddedItem
 from schemas.club import ClubResponse
 from schemas.event import EventResponse
 from services import admin_query, club_service, event_query, event_service
-from tests.conftest import ADMIN_USER, FAKE_USER, OTHER_USER
+from tests.conftest import ADMIN_USER, FAKE_USER
 
 
 def _mock_event(**overrides) -> EventResponse:
@@ -203,7 +203,6 @@ def test_update_event_owner_allowed(authenticated_client, monkeypatch):
     )
 
     # is_admin check must return False for the non-admin user
-    from services import user_service
 
     resp = authenticated_client.patch("/events/1", json={"title": "Updated"})
     assert resp.status_code == 200
@@ -213,8 +212,6 @@ def test_update_event_non_owner_rejected(other_user_client, monkeypatch):
     """Non-owner, non-admin user gets 403 on update."""
     event = _mock_event(created_by=FAKE_USER["id"])  # owned by FAKE_USER, not OTHER_USER
     monkeypatch.setattr(event_service, "get_event", MagicMock(return_value=event))
-
-    from services import user_service
 
     resp = other_user_client.patch("/events/1", json={"title": "Hacked"})
     assert resp.status_code == 403
@@ -252,8 +249,6 @@ def test_delete_event_non_owner_rejected(other_user_client, monkeypatch):
     event = _mock_event(created_by=FAKE_USER["id"])
     monkeypatch.setattr(event_service, "get_event", MagicMock(return_value=event))
 
-    from services import user_service
-
     resp = other_user_client.delete("/events/1")
     assert resp.status_code == 403
 
@@ -263,8 +258,6 @@ def test_delete_event_owner_allowed(authenticated_client, monkeypatch):
     event = _mock_event(created_by=FAKE_USER["id"])
     monkeypatch.setattr(event_service, "get_event", MagicMock(return_value=event))
     monkeypatch.setattr(event_service, "delete_event", MagicMock(return_value=True))
-
-    from services import user_service
 
     resp = authenticated_client.delete("/events/1")
     assert resp.status_code == 204
@@ -657,8 +650,6 @@ def test_update_past_event_rejected(authenticated_client, monkeypatch):
         ],
     )
     monkeypatch.setattr(event_service, "get_event", MagicMock(return_value=event))
-
-    from services import user_service
 
     # Drive the service call directly so we get the ValidationError
     try:

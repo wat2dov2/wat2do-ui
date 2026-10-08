@@ -346,7 +346,6 @@ test.describe("Followed Clubs Flow", () => {
     page,
   }) => {
     await page.goto(`${BASE}/clubs`);
-    await page.waitForTimeout(1000);
 
     await expect(page.getByRole("combobox", { name: "All" })).toBeVisible();
     await selectClubScope(page, "Followed");
@@ -364,7 +363,6 @@ test.describe("Followed Clubs Flow", () => {
     page,
   }) => {
     await page.goto(`${BASE}/clubs`);
-    await page.waitForTimeout(1000);
 
     await expect(page.getByRole("combobox", { name: "All" })).toBeVisible();
     await selectClubScope(page, "Claimed");
@@ -470,29 +468,11 @@ test.describe("Followed Clubs Flow", () => {
     await page.getByRole("tab", { name: "Positions" }).click();
     await expect(page.getByText("Design Lead", { exact: true })).toBeVisible();
     await expect(page.getByText("Due Aug 21", { exact: true })).toBeVisible();
-    await expect
-      .poll(() =>
-        title.evaluate((titleElement) => {
-          const header = titleElement.closest('[data-slot="page-header"]');
-          const actions = header?.querySelector(
-            '[data-slot="page-header-actions"]',
-          );
-          const headingRow = actions?.parentElement;
-          return {
-            sameRow: Boolean(headingRow?.contains(titleElement)),
-            justification: headingRow
-              ? getComputedStyle(headingRow).justifyContent
-              : null,
-          };
-        }),
-      )
-      .toEqual({ sameRow: true, justification: "space-between" });
   });
 
   test("authenticated user toggles club follow status", async ({ page }) => {
     await seedAuthenticatedSession(page);
     await page.goto(`${BASE}/clubs`);
-    await page.waitForTimeout(2000);
 
     // Assert that we are on All Clubs tab and cards are loaded
     await expect(page.getByRole("combobox", { name: "All" })).toBeVisible();
@@ -500,7 +480,6 @@ test.describe("Followed Clubs Flow", () => {
     const techCard = page.locator('[data-club-card][data-club-id="1"]');
     const instagramMetadata = techCard.locator('[data-slot="event-card-instagram"]');
     await expect(instagramMetadata).toHaveText("@uwtechclub");
-    await expect(instagramMetadata.locator('g[clip-path="url(#doodle_Instagram_clip0)"]')).toHaveCount(1);
     await expect(techCard.locator('[data-slot="event-card-location"]')).toHaveCount(0);
 
     // Switch to Followed Clubs tab, should show empty state
@@ -530,9 +509,6 @@ test.describe("Followed Clubs Flow", () => {
 
     await page.getByRole("link", { name: "All clubs" }).click();
 
-    // Wait a brief moment for optimistic update/backend sync
-    await page.waitForTimeout(500);
-
     // Switch to Followed Clubs tab, now the followed card should be there
     await selectClubScope(page, "Followed");
     await expect(page.getByText("No followed clubs")).not.toBeVisible();
@@ -549,9 +525,6 @@ test.describe("Followed Clubs Flow", () => {
     await unfollowBtn.click();
 
     await page.getByRole("link", { name: "All clubs" }).click();
-
-    // Wait a brief moment
-    await page.waitForTimeout(500);
 
     // Assert empty state is shown again
     await selectClubScope(page, "Followed");

@@ -1,18 +1,14 @@
 """Tests for the auth router (/auth/*)."""
 
 from types import SimpleNamespace
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
-from fastapi import HTTPException, status
-from fastapi.testclient import TestClient
 from supabase_auth.errors import AuthApiError
 
 from core.config import settings
 from core.errors import (
-    EMAIL_NOT_ALLOWED,
     INVALID_OR_EXPIRED_TOKEN,
-    NO_REFRESH_TOKEN,
     SESSION_REFRESH_FAILED,
 )
 from core.exceptions import AuthenticationError
@@ -21,8 +17,7 @@ from core.rate_limit import (
     send_otp_rate_limiter,
     verify_otp_rate_limiter,
 )
-from main import app
-from schemas.auth import MessageResponse, TokenResponse
+from schemas.auth import TokenResponse
 from services.auth_service import AuthResult, auth
 
 # ---------------------------------------------------------------------------
