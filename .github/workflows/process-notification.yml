@@ -83,16 +83,23 @@ jobs:
       TARGET_SCHOOL: ${{ github.event_name == 'workflow_dispatch' && inputs.school || '' }}
       CUTOFF_DAYS: ${{ github.event_name == 'workflow_dispatch' && '1825' || github.event.client_payload.cutoff_days || '1' }}
       NOTIFICATION_JSON: ${{ inputs.notification_payload || toJSON(github.event.client_payload.notification_dict) }}
-      # This runner-owned runtime survives checkout's git clean without keeping
-      # one full environment for every requirements.lock revision.
-      NOTIFICATION_RUNTIME_ROOT: ${{ runner.tool_cache }}/wat2do-notification-${{ runner.os }}-${{ runner.arch }}
-      NOTIFICATION_RUNNER_NAME: ${{ runner.name }}
-      UV_CACHE_DIR: ${{ runner.tool_cache }}/wat2do-notification-${{ runner.os }}-${{ runner.arch }}/uv-cache
-      UV_PYTHON_INSTALL_DIR: ${{ runner.tool_cache }}/wat2do-notification-${{ runner.os }}-${{ runner.arch }}/python
-      TMPDIR: ${{ runner.temp }}
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Prepare notification runtime
+        run: |
+          # Runner context is unavailable in job-level env. These default runner
+          # variables are available after the job has been assigned to a runner.
+          # The runtime survives checkout's git clean across lockfile revisions.
+          runtime_root="$RUNNER_TOOL_CACHE/wat2do-notification-$RUNNER_OS-$RUNNER_ARCH"
+          {
+            printf '%s\n' "NOTIFICATION_RUNTIME_ROOT=$runtime_root"
+            printf '%s\n' "NOTIFICATION_RUNNER_NAME=$RUNNER_NAME"
+            printf '%s\n' "UV_CACHE_DIR=$runtime_root/uv-cache"
+            printf '%s\n' "UV_PYTHON_INSTALL_DIR=$runtime_root/python"
+            printf '%s\n' "TMPDIR=$RUNNER_TEMP"
+          } >> "$GITHUB_ENV"
 
       - name: Expose notification payload
         run: echo "$NOTIFICATION_JSON" > notification_payload.json

@@ -26,6 +26,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Validate notification workflow expressions
+        run: bash scripts/check-notification-workflow.sh
+
       - name: Install uv
         uses: astral-sh/setup-uv@v3
         with:

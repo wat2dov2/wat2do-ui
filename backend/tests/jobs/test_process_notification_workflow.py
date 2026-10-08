@@ -1,4 +1,4 @@
-"""Exercise notification dependency setup without downloads or a live runner."""
+"""Exercise notification setup and its pinned GitHub expression validator."""
 
 import hashlib
 import json
@@ -136,6 +136,149 @@ def run_step(name):
     )
 
 
+@pytest.mark.parametrize("runner_os,runner_arch", [("macOS", "ARM64"), ("Linux", "X64")])
+def test_runtime_preparation_exports_runner_paths_before_dependency_setup(
+    runner, monkeypatch, runner_os, runner_arch
+):
+    tool_cache = runner / "tool cache"
+    for name, value in {
+        "RUNNER_TOOL_CACHE": tool_cache,
+        "RUNNER_OS": runner_os,
+        "RUNNER_ARCH": runner_arch,
+        "RUNNER_NAME": "runner with private name",
+        "RUNNER_TEMP": runner,
+    }.items():
+        monkeypatch.setenv(name, str(value))
+    result = run_step("Prepare notification runtime")
+    assert result.returncode == 0
+    runtime_root = tool_cache / f"wat2do-notification-{runner_os}-{runner_arch}"
+    settings = output_file("GITHUB_ENV")
+    assert settings == {
+        "NOTIFICATION_RUNTIME_ROOT": str(runtime_root),
+        "NOTIFICATION_RUNNER_NAME": "runner with private name",
+        "UV_CACHE_DIR": str(runtime_root / "uv-cache"),
+        "UV_PYTHON_INSTALL_DIR": str(runtime_root / "python"),
+        "TMPDIR": str(runner),
+    }
+    for name, value in settings.items():
+        monkeypatch.setenv(name, value)
+    monkeypatch.setattr(shutil, "disk_usage", lambda _: SimpleNamespace(free=4 * 1024**3))
+    preflight()
+    owner = hashlib.sha256(settings["NOTIFICATION_RUNNER_NAME"].encode()).hexdigest()
+    assert Path(output_file("GITHUB_ENV")["NOTIFICATION_VENV"]) == (
+        runtime_root / owner / "venv-3.12"
+    )
+    assert not result.stdout + result.stderr
+
+
+def check_workflow(content=None, *, offline=True):
+    result = subprocess.run(
+        ["bash", str(REPO_ROOT / "scripts/check-notification-workflow.sh")]
+        + (["--offline"] if offline else [])
+        + (["-"] if content else []),
+        input=content,
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=30,
+    )
+    if result.returncode == 69 and "cache is not provisioned" in result.stderr:
+        pytest.skip("Run the required pre-push/CI workflow gate to provision pinned actionlint")
+    return result
+
+
+def test_pinned_actionlint_accepts_notification_workflow():
+    result = check_workflow()
+    assert result.returncode == 0, result.stdout + result.stderr
+
+
+@pytest.mark.parametrize("context", ["runner", "steps", "job", "env"])
+def test_pinned_actionlint_rejects_contexts_unavailable_in_job_environment(context):
+    content = (
+        (REPO_ROOT / ".github/workflows/process-notification.yml")
+        .read_text()
+        .replace(
+            "\n    env:\n",
+            f"\n    env:\n      INVALID_BEFORE_RUNNER: ${{{{ {context}.value }}}}\n",
+            1,
+        )
+    )
+    result = check_workflow(content)
+    assert result.returncode != 0
+    assert f'context "{context}" is not allowed here' in result.stdout
+
+
+@pytest.fixture
+def fake_workflow_download(tmp_path, monkeypatch):
+    source = Path(os.getenv("XDG_CACHE_HOME", Path.home() / ".cache")) / "wat2do-workflow-tools"
+    cache_root = tmp_path / "cache"
+    commands = tmp_path / "commands"
+    commands.mkdir()
+    curl = commands / "curl"
+    curl.write_text(
+        "#!/bin/sh\n"
+        'while [ "$#" -gt 0 ]; do\n'
+        '  case "$1" in\n'
+        '    --output) output="$2"; shift 2 ;;\n'
+        '    https://*) archive="${1##*/}"; shift ;;\n'
+        "    *) shift ;;\n"
+        "  esac\n"
+        "done\n"
+        'printf "%s\\n" download >> "$CURL_LOG"\n'
+        'printf "%s" "invalid archive" > "$output"\n'
+        'if [ -n "${CURL_SOURCE:-}" ]; then cp "$CURL_SOURCE/$archive" "$output"; fi\n'
+        'exit "${CURL_RESULT:-0}"\n'
+    )
+    curl.chmod(0o755)
+    monkeypatch.setenv("PATH", f"{commands}{os.pathsep}{os.environ['PATH']}")
+    monkeypatch.setenv("XDG_CACHE_HOME", str(cache_root))
+    monkeypatch.setenv("CURL_LOG", str(tmp_path / "downloads"))
+    return source, cache_root / "wat2do-workflow-tools", tmp_path / "downloads"
+
+
+def test_pinned_actionlint_repairs_corrupt_cache_before_running_validator(
+    fake_workflow_download, monkeypatch
+):
+    source, cache, downloads = fake_workflow_download
+    if not source.exists() or not list(source.glob("*.tar.gz")):
+        pytest.skip("Run the required pre-push/CI workflow gate to provision pinned actionlint")
+    shutil.copytree(source, cache)
+    for archive in cache.glob("*.tar.gz"):
+        archive.write_bytes(b"corrupted cached download")
+    monkeypatch.setenv("CURL_SOURCE", str(source))
+    result = check_workflow(offline=False)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert downloads.read_text().splitlines() == ["download"]
+    assert any(
+        archive.read_bytes() == (source / archive.name).read_bytes()
+        for archive in cache.glob("*.tar.gz")
+    )
+
+
+@pytest.mark.parametrize("download_result", [0, 28])
+def test_failed_or_bad_download_never_publishes_unverified_validator(
+    fake_workflow_download, monkeypatch, download_result
+):
+    _, cache, downloads = fake_workflow_download
+    monkeypatch.setenv("CURL_RESULT", str(download_result))
+    result = check_workflow(offline=False)
+    assert result.returncode != 0
+    assert downloads.read_text().splitlines() == ["download"]
+    assert not list(cache.glob("*.tar.gz"))
+    if not download_result:
+        assert "Downloaded actionlint archive checksum mismatch" in result.stderr
+
+
+def test_offline_validator_requires_preprovisioned_cache_without_downloading(
+    fake_workflow_download,
+):
+    _, _, downloads = fake_workflow_download
+    with pytest.raises(pytest.skip.Exception, match="provision pinned actionlint"):
+        check_workflow()
+    assert not downloads.exists()
+
+
 def test_setup_reuses_its_persistent_python_and_syncs_exact_locked_dependencies(fake_uv):
     assert run_step("Set up Python").returncode == 0
     commands = Path(os.environ["UV_COMMAND_LOG"])
@@ -190,6 +333,7 @@ def test_setup_and_processing_steps_have_bounded_consistent_runtime():
             "${{ fromJSON(steps.dependencies.outputs." + timeout + ") }}"
         )
     assert STEPS["Install uv"]["with"]["cache-local-path"] == "${{ env.UV_CACHE_DIR }}"
-    assert "runner.tool_cache" in JOB["env"]["UV_CACHE_DIR"]
+    assert "UV_CACHE_DIR" not in JOB["env"]
+    assert JOB["steps"].index(STEPS["Prepare notification runtime"]) < preflight_index
     assert ".venv/bin/python" not in STEPS["Process the Instagram account"]["run"]
     assert "skip=true" not in STEPS["Validate job inputs"]["run"]

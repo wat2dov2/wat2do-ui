@@ -26,7 +26,16 @@ npx fallow
 
 ---
 
-## 2. Backend checks
+## 2. Workflow and backend checks
+
+From repo root, validate the notification and CI workflows with the same pinned actionlint release used in CI:
+
+```bash
+bash scripts/check-notification-workflow.sh
+```
+
+This checks GitHub expression contexts before a workflow can be rejected without starting jobs.
+The script downloads a small official release archive and verifies its pinned SHA256.
 
 From repo root:
 
@@ -159,6 +168,9 @@ Agent handoff after a successful push:
 ## Quick reference (copy-paste)
 
 ```bash
+# Workflow expression contexts
+bash scripts/check-notification-workflow.sh
+
 # Backend
 (cd backend && \
   ruff format --check . && \
