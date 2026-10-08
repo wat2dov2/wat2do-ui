@@ -202,6 +202,7 @@ Public profiles and individual posts can also be queued manually:
 cd backend
 python scripts/instagram_browser.py retrieve --school utsc --url https://www.instagram.com/example_club/ --cutoff-days 1
 python scripts/instagram_browser.py ingestion-sync
+python scripts/instagram_browser.py ingestion-ready
 python scripts/instagram_browser.py status
 ```
 
@@ -234,6 +235,17 @@ A failed import releases the row back to pending and refreshes expired public me
 After resolving a failure, `python scripts/instagram_browser.py retry --job-id <id>` resets only that retrieval target’s import retry budget.
 A login, challenge or suspended-account page pauses browser retrieval for human recovery.
 The Codex heartbeat reviews the queue every five minutes and stays quiet when nothing actionable changes.
+Use `ingestion-ready` for every new review packet instead of continuing a saved school-specific snapshot.
+It reads fresh pending production media and local retrieval results, returns at most `ingestion_batch_size` targets, and gives each ready school a turn before selecting a second target from that school.
+Each school independently alternates newer and older posts so neither side of its backlog waits indefinitely.
+Age ordering uses the verified post timestamp, falls back to ledger creation time when unavailable, and uses the ledger ID to break ties.
+The packet reports pending, ready, waiting, failed, held, blocked, excluded, cancelled, invalid, and selected counts by school.
+Only a saved `codex_review` with reviewer `Codex`, decision `unresolved`, and matching source URL and school holds a target; extraction preparations alone remain eligible.
+The command does not enqueue, claim, import, consume targets, or write progress.
+Review targets in their returned order and persist each target's `cursor_after` to the existing queue setting `notification_review_cursor` only after its Codex decision and required production readback are durable.
+An explicit unresolved decision advances reviewed progress while preserving its hold.
+If a target fails before a durable decision, retain the last committed cursor and request a fresh packet before advancing later cursor snapshots.
+The packet's `suggested_next_cursor` is safe to commit only after its entire returned prefix has been reviewed.
 The importer never holds the browser lock while it runs AI extraction.
 The existing extraction pipeline still uses its configured AI provider; replacing Apify does not replace that provider.
 

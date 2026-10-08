@@ -8,6 +8,7 @@ the validated defaults that matter when the model returns unexpected shapes.
 import json
 from datetime import datetime
 from types import SimpleNamespace
+from unittest.mock import Mock
 from zoneinfo import ZoneInfo
 
 import pytest
@@ -117,9 +118,43 @@ def test_parse_model_json_returns_none_on_garbage():
 
 
 def test_parse_model_json_handles_null_response():
-    """The prompt says ``return null`` when no event is in the post -
-    json.loads("null") returns None, and the caller drops it."""
+    """Null parses as None and is not a classified non-event response."""
     assert _parse_model_json("null") is None
+
+
+@pytest.mark.parametrize(
+    "failure", ["no_client", "provider", "invalid_json", "invalid_triage", "invalid_events"]
+)
+def test_extraction_failure_is_distinct_from_a_valid_non_event(monkeypatch, failure):
+    create = Mock()
+    if failure == "provider":
+        create.side_effect = TimeoutError("upstream-private-detail")
+    else:
+        content = {
+            "invalid_json": "not JSON",
+            "invalid_triage": '{"content_type":"unknown"}',
+            "invalid_events": '{"content_type":"event","events":false}',
+        }.get(failure, '{"content_type":"other"}')
+        create.return_value = SimpleNamespace(
+            choices=[SimpleNamespace(message=SimpleNamespace(content=content))]
+        )
+    client = SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=create)))
+    monkeypatch.setattr(extractor, "_client", lambda: None if failure == "no_client" else client)
+    monkeypatch.setattr(extractor, "resolve_school_timezone", lambda _: "America/Toronto")
+    monkeypatch.setattr(extractor, "current_semester_end", lambda *args, **kwargs: None)
+    monkeypatch.setattr(extractor, "campus_season_prompt", lambda _: "")
+
+    with pytest.raises(
+        extractor.PostExtractionError, match="^Instagram post extraction failed$"
+    ) as raised:
+        extractor.extract_post_content(
+            caption_text="Campus event",
+            image_urls=[],
+            post_created_at=None,
+            school="uwaterloo",
+        )
+    assert raised.value.__context__ is None
+    assert raised.value.__cause__ is None
 
 
 def test_extraction_prompt_uses_school_slug(monkeypatch):
@@ -134,7 +169,7 @@ def test_extraction_prompt_uses_school_slug(monkeypatch):
     class FakeCompletions:
         def create(self, **kwargs):
             calls.append(kwargs)
-            message = type("Message", (), {"content": "null"})()
+            message = type("Message", (), {"content": '{"content_type":"other"}'})()
             choice = type("Choice", (), {"message": message})()
             return type("Response", (), {"choices": [choice]})()
 
@@ -426,6 +461,7 @@ def test_clean_extracted_content_triages_hiring_positions():
             "content_type": "hiring",
             "events": [],
             "positions": [
+                {"title": "Invalid position", "position_type": "invalid"},
                 {
                     "title": "Design Lead",
                     "description": "Lead the club's visual design work.",
@@ -435,7 +471,7 @@ def test_clean_extracted_content_triages_hiring_positions():
                     "deadline_date": "2026-08-31",
                     "deadline_at": None,
                     "image_index": 1,
-                }
+                },
             ],
         }
     )

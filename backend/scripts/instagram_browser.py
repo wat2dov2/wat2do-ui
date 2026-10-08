@@ -198,9 +198,9 @@ def parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Execute queued jobs without polling published carousels",
     )
-    for name in ("ingestion-sync", "ingestion-import"):
+    for name in ("ingestion-sync", "ingestion-ready", "ingestion-import"):
         commands.add_parser(
-            name, help="Queue notification retrievals or import verified browser results"
+            name, help="Queue retrievals, preview fair review targets, or import verified results"
         )
     retrieve = commands.add_parser(
         "retrieve", help="Queue a profile or post for browser extraction"
@@ -275,17 +275,18 @@ def main(argv: Sequence[str] | None = None) -> int:
             if updated_job is None:
                 raise RuntimeError("Instagram browser job disappeared during the operation")
             result = asdict(updated_job)
-        elif arguments.command in {"ingestion-sync", "ingestion-import"}:
+        elif arguments.command in {"ingestion-sync", "ingestion-ready", "ingestion-import"}:
             from services.instagram_notifications.notification_ingestion import (
                 import_retrieved_media,
+                ready_review_targets,
                 sync_notification_media,
             )
 
-            operation = (
-                sync_notification_media
-                if arguments.command == "ingestion-sync"
-                else import_retrieved_media
-            )
+            operation = {
+                "ingestion-sync": sync_notification_media,
+                "ingestion-ready": ready_review_targets,
+                "ingestion-import": import_retrieved_media,
+            }[arguments.command]
             result = operation(queue)
         elif arguments.command == "retrieve":
             from services import school_service

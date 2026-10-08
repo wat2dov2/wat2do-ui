@@ -63,10 +63,16 @@ EVENT_DISCOVERY_RULES = "\n".join(
 )
 
 
+class PostExtractionError(RuntimeError):
+    """A provider or response failure that must not consume an imported post."""
+
+    def __init__(self) -> None:
+        super().__init__("Instagram post extraction failed")
+
+
 def _client() -> OpenAI | None:
     """Return a configured OpenAI client, or None if ``OPENAI_API_KEY`` is unset.
 
-    A None return causes extraction to log and return an empty result.
     Dry-run does not bypass extraction; it still needs a key to call the model.
     """
     if not settings.openai_api_key:
@@ -97,14 +103,18 @@ def extract_post_content(
         model: vision-capable OpenAI model. Defaults to
             ``settings.openai_extraction_model``.
 
-    Returns cleaned event and position dictionaries in one result. Returns an
-    empty result on any failure so the pipeline can keep processing the next
-    post.
+    Returns cleaned event and position dictionaries in one result. A valid
+    non-event post may be empty; provider and unusable-response failures raise
+    ``PostExtractionError`` so an importer can retry without consuming the post.
     """
-    client = _client()
+    client = None
+    try:
+        client = _client()
+    except Exception:
+        log.warning("OpenAI extraction client could not be configured")
     if client is None:
-        log.warning("OpenAI key not configured; skipping extraction for %s", school)
-        return ExtractedPostContent()
+        log.warning("OpenAI extraction client unavailable for %s", school)
+        raise PostExtractionError()
 
     tz_name = resolve_school_timezone(school)
     try:
@@ -155,33 +165,41 @@ def extract_post_content(
         {"role": "user", "content": user_content},
     ]
 
+    response = None
     try:
         response = client.chat.completions.create(
             model=model or settings.openai_extraction_model,
             messages=messages,
         )
-    except Exception as e:
-        log.exception("OpenAI extraction call failed: %s", e)
-        return ExtractedPostContent()
+    except Exception:
+        log.warning("OpenAI extraction call failed")
+    if response is None:
+        raise PostExtractionError() from None
 
-    raw = (response.choices[0].message.content or "").strip()
-    parsed = _parse_model_json(raw)
+    try:
+        raw = (response.choices[0].message.content or "").strip()
+        parsed = _parse_model_json(raw)
 
-    # These values belong to the source, not to model interpretation.
-    if isinstance(parsed, dict):
-        for key in ("events", "positions"):
-            for item in parsed.get(key) or []:
-                if not isinstance(item, dict):
-                    continue
-                if caption_text and caption_text.strip():
-                    item["description"] = (
-                        caption_text[:MAX_POSITION_DESCRIPTION_LENGTH]
-                        if key == "positions"
-                        else caption_text
-                    )
-                item["school"] = canonical_school_key(school)
+        # These values belong to the source, not to model interpretation.
+        if isinstance(parsed, dict):
+            for key in ("events", "positions"):
+                items = parsed.get(key)
+                for item in items if isinstance(items, list) else []:
+                    if not isinstance(item, dict):
+                        continue
+                    if caption_text and caption_text.strip():
+                        item["description"] = (
+                            caption_text[:MAX_POSITION_DESCRIPTION_LENGTH]
+                            if key == "positions"
+                            else caption_text
+                        )
+                    item["school"] = canonical_school_key(school)
 
-    return _clean_extracted_content(parsed)
+        return _clean_extracted_content(parsed)
+    except Exception:
+        log.warning("OpenAI extraction returned an unusable response")
+    # Keep upstream content out of exception context as well as the message.
+    raise PostExtractionError() from None
 
 
 def extract_events_from_post(
@@ -510,16 +528,20 @@ class ExtractedPostContent(BaseModel):
 
 def _clean_extracted_content(value: object) -> ExtractedPostContent:
     if not isinstance(value, dict):
-        return ExtractedPostContent()
+        raise ValueError("Extractor response must contain a classified post")
 
     content_type = value.get("content_type")
     if content_type not in {"event", "hiring", "event_and_hiring", "other"}:
-        log.warning("Extractor returned invalid content_type: %r", content_type)
-        return ExtractedPostContent()
+        raise ValueError("Extractor response has an invalid content type")
 
     events: list[dict] = []
+    raw_events = value.get("events")
+    if raw_events is None:
+        raw_events = []
     if content_type in {"event", "event_and_hiring"}:
-        for event in value.get("events") or []:
+        if not isinstance(raw_events, list):
+            raise ValueError("Extractor events must be a list")
+        for event in raw_events:
             if not isinstance(event, dict):
                 continue
             try:
@@ -528,14 +550,29 @@ def _clean_extracted_content(value: object) -> ExtractedPostContent:
                 continue
 
     positions: list[dict] = []
+    raw_positions = value.get("positions")
+    if raw_positions is None:
+        raw_positions = []
     if content_type in {"hiring", "event_and_hiring"}:
-        for position in value.get("positions") or []:
+        if not isinstance(raw_positions, list):
+            raise ValueError("Extractor positions must be a list")
+        for position in raw_positions:
             if not isinstance(position, dict):
                 continue
             try:
                 positions.append(_clean_position(position))
             except ValueError:
                 continue
+
+    if (
+        not events
+        and not positions
+        and (
+            (content_type in {"event", "event_and_hiring"} and raw_events)
+            or (content_type in {"hiring", "event_and_hiring"} and raw_positions)
+        )
+    ):
+        raise ValueError("Extractor response contains no usable advertised items")
 
     return ExtractedPostContent(
         content_type=content_type,

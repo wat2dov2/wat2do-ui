@@ -371,6 +371,24 @@ def test_import_reports_incomplete_outcomes_as_failure(tmp_path, monkeypatch, ca
     assert json.loads(capsys.readouterr().out) == {outcome: 1}
 
 
+def test_ingestion_ready_prints_review_targets_without_starting_work(tmp_path, monkeypatch, capsys):
+    from services.instagram_notifications import notification_ingestion
+
+    preview = {
+        "targets": [{"school": "mun", "job_id": "public-read"}],
+        "suggested_next_cursor": {"last_school": "mun", "next_newest": {"mun": False}},
+        "totals": {"ready": 136, "selected": 1},
+    }
+    monkeypatch.setattr(notification_ingestion, "ready_review_targets", lambda queue: preview)
+    monkeypatch.setattr(
+        script, "run_worker", lambda *_, **__: pytest.fail("Preview cannot start work")
+    )
+
+    assert script.main(["--state-directory", str(tmp_path), "ingestion-ready"]) == 0
+    assert json.loads(capsys.readouterr().out) == preview
+    assert BrowserJobQueue(tmp_path).get_setting(notification_ingestion._REVIEW_CURSOR) is None
+
+
 def test_resume_preserves_installer_owned_pause(tmp_path, capsys):
     queue = BrowserJobQueue(tmp_path)
     queue.set_setting("paused", script.WORKER_INSTALLATION_PAUSE)

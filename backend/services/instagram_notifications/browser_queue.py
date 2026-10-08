@@ -842,10 +842,12 @@ class BrowserJobQueue:
         )
 
     @_retry_storage
-    def retrieval_results(self) -> list[BrowserJob]:
+    def retrieval_results(self, *, succeeded_only: bool = True) -> list[BrowserJob]:
         with closing(self._connect()) as db:
             rows = db.execute(
-                "SELECT * FROM jobs WHERE kind='retrieval' AND state='succeeded' ORDER BY created_at,id"
+                "SELECT * FROM jobs WHERE kind='retrieval' "
+                + ("AND state='succeeded' " if succeeded_only else "")
+                + "ORDER BY created_at,id"
             ).fetchall()
         return [self._job(row) for row in rows]
 

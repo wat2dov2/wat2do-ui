@@ -3,6 +3,8 @@ import shutil
 import subprocess
 from copy import deepcopy
 from types import SimpleNamespace
+from unittest.mock import MagicMock
+from uuid import UUID
 
 import pytest
 
@@ -761,3 +763,249 @@ def test_refreshing_signed_media_never_resets_the_separate_import_failure_budget
     assert bridge.import_retrieved_media(queue)["blocked"] == 1
     assert len(claims) == bridge._CONTROL.ingestion_retry_limit
     assert queue.get_setting(key) == bridge._CONTROL.ingestion_retry_limit
+
+
+@pytest.fixture
+def review_backlog(tmp_path, monkeypatch):
+    queue = BrowserJobQueue(tmp_path)
+    rows = []
+    sequence = 0
+    monkeypatch.setattr(bridge, "_pending_rows", lambda: list(rows))
+    monkeypatch.setattr(
+        bridge,
+        "_identity",
+        lambda row: (
+            row["school"],
+            row["notification"]["intended_recipient_id"],
+            f"wat2do.{row['school']}",
+        ),
+    )
+
+    def add(school, *, state="succeeded", timestamp=POST["timestamp"]):
+        nonlocal sequence
+        sequence += 1
+        index = sequence
+        url = f"https://www.instagram.com/p/Review{index}/"
+        row = {
+            "id": str(UUID(int=index)),
+            "school": school,
+            "source_url": url,
+            "created_at": "2026-10-08T00:00:00Z",
+            "notification": {"intended_recipient_id": str(100 + ord(school[0]))},
+        }
+        rows.append(row)
+        job_id = queue.enqueue_retrieval(
+            school=school,
+            recipient_id=row["notification"]["intended_recipient_id"],
+            account_username=f"wat2do.{school}",
+            url=url,
+        )
+        if state in {"succeeded", "failed"}:
+            claim = queue.claim_next()
+            assert claim.id == job_id
+            if state == "failed":
+                queue.finish(claim, error="read failed")
+            else:
+                queue.finish(
+                    claim,
+                    result={
+                        "target_url": url,
+                        "posts": [{**deepcopy(POST), "url": url, "timestamp": timestamp}],
+                    },
+                )
+        elif state == "cancelled":
+            queue.cancel(job_id)
+        return row, job_id
+
+    return queue, rows, add
+
+
+def test_review_selection_rotates_schools_before_returning_to_large_backlog(review_backlog):
+    queue, _, add = review_backlog
+    for _ in range(20):
+        add("a")
+    add("b")
+    add("c")
+    queue.set_setting(bridge._REVIEW_CURSOR, {"last_school": "a", "next_newest": {}})
+
+    result = bridge.ready_review_targets(queue)
+
+    assert [target["school"] for target in result["targets"][:3]] == ["b", "c", "a"]
+    assert len(result["targets"]) == bridge._CONTROL.ingestion_batch_size
+    assert result["schools"]["a"]["ready"] == 20
+    assert result["totals"]["pending"] == 22
+
+
+def test_review_selection_does_not_claim_enqueue_or_advance_unreviewed_targets(
+    review_backlog, monkeypatch
+):
+    queue, rows, add = review_backlog
+    row, job_id = add("a")
+    for name in ("enqueue_retrieval", "claim_next", "set_setting"):
+        monkeypatch.setattr(queue, name, MagicMock(side_effect=AssertionError("Preview must read")))
+    monkeypatch.setattr(
+        bridge, "claim_pending_browser_media", MagicMock(side_effect=AssertionError())
+    )
+
+    first = bridge.ready_review_targets(queue)
+    newer_row, newer_job_id = deepcopy(row), job_id
+    newer_row["id"] = str(UUID(int=100))
+    rows.append(newer_row)
+    second = bridge.ready_review_targets(queue)
+
+    assert first["targets"][0]["row"] == row
+    assert first["targets"][0]["job_id"] == job_id
+    assert first["targets"][0]["posts"][0]["url"] == row["source_url"]
+    assert len(second["targets"]) == 2
+    assert second["targets"][0]["job_id"] == newer_job_id
+    assert queue.get_setting(bridge._REVIEW_CURSOR) is None
+    assert queue.get(job_id).state == "succeeded"
+    bridge.claim_pending_browser_media.assert_not_called()
+
+
+def test_review_cursor_alternates_age_per_school_even_across_even_batch_cycle(
+    review_backlog, monkeypatch
+):
+    queue, rows, add = review_backlog
+    monkeypatch.setattr(
+        bridge, "_CONTROL", SimpleNamespace(ingestion_batch_size=1, ingestion_retry_limit=3)
+    )
+    a_new, _ = add("a", timestamp="2026-10-07T12:00:00Z")
+    a_old, _ = add("a", timestamp="2026-10-03T12:00:00Z")
+    b_new, _ = add("b", timestamp="2026-10-07T12:00:00Z")
+    b_old, _ = add("b", timestamp="2026-10-03T12:00:00Z")
+
+    first = bridge.ready_review_targets(queue)
+    assert first["targets"][0]["row"] == a_new
+    queue.set_setting(bridge._REVIEW_CURSOR, first["targets"][0]["cursor_after"])
+    rows.remove(a_new)
+    second = bridge.ready_review_targets(queue)
+    assert second["targets"][0]["row"] == b_new
+    queue.set_setting(bridge._REVIEW_CURSOR, second["targets"][0]["cursor_after"])
+    rows.remove(b_new)
+    add("a", timestamp="2026-10-08T12:00:00Z")
+    add("b", timestamp="2026-10-08T12:00:00Z")
+
+    third = bridge.ready_review_targets(queue)
+    assert third["targets"][0]["row"] == a_old
+    queue.set_setting(bridge._REVIEW_CURSOR, third["targets"][0]["cursor_after"])
+    rows.remove(a_old)
+    assert bridge.ready_review_targets(queue)["targets"][0]["row"] == b_old
+
+
+def test_review_cursor_after_each_target_supports_partial_completed_batch(review_backlog):
+    queue, _, add = review_backlog
+    add("a")
+    add("b")
+    add("c")
+    result = bridge.ready_review_targets(queue)
+    first_cursor = result["targets"][0]["cursor_after"]
+    assert first_cursor == {"last_school": "a", "next_newest": {"a": False}}
+    assert result["suggested_next_cursor"]["last_school"] == "c"
+    queue.set_setting(bridge._REVIEW_CURSOR, first_cursor)
+
+    assert bridge.ready_review_targets(queue)["targets"][0]["school"] == "b"
+
+
+@pytest.mark.parametrize(
+    "review",
+    [
+        {"reviewer": "Codex", "decision": "unresolved", "school": "a", "source_url": "MATCH"},
+        {"reviewer": "Codex", "decision": "unresolved", "school": "b", "source_url": "MATCH"},
+        {"reviewer": "Codex", "decision": "unresolved", "school": "a", "source_url": URL},
+        {"reviewer": "extractor", "decision": "unresolved", "school": "a", "source_url": "MATCH"},
+        None,
+    ],
+)
+def test_only_exact_codex_unresolved_decisions_hold_review_targets(review_backlog, review):
+    queue, _, add = review_backlog
+    row, _ = add("a")
+    if review and review["source_url"] == "MATCH":
+        review = {**review, "source_url": row["source_url"]}
+    queue.set_setting(
+        f"notification_reviewed_target:{row['id']}", {"codex_review": review, "content": {}}
+    )
+
+    result = bridge.ready_review_targets(queue)
+
+    held = review == {
+        "reviewer": "Codex",
+        "decision": "unresolved",
+        "school": "a",
+        "source_url": row["source_url"],
+    }
+    assert result["totals"]["held"] == int(held)
+    assert len(result["targets"]) == int(not held)
+
+
+def test_review_backlog_reports_held_failed_waiting_blocked_and_excluded(review_backlog):
+    queue, _, add = review_backlog
+    held, _ = add("a")
+    queue.set_setting(
+        f"notification_reviewed_target:{held['id']}",
+        {
+            "codex_review": {
+                "reviewer": "Codex",
+                "decision": "unresolved",
+                "school": "a",
+                "source_url": held["source_url"],
+            }
+        },
+    )
+    blocked, _ = add("b")
+    queue.set_setting(
+        f"notification_import_attempts:{blocked['id']}", bridge._CONTROL.ingestion_retry_limit
+    )
+    add("c", state="failed")
+    add("d", state="cancelled")
+    add("e")
+    add("f", state="pending")
+    queue.set_setting("excluded_accounts", ["wat2do.e"])
+    assert {job.school for job in queue.retrieval_results()} == {"a", "b", "e"}
+    assert len(queue.retrieval_results(succeeded_only=False)) == 6
+
+    result = bridge.ready_review_targets(queue)
+
+    assert result["targets"] == []
+    assert result["totals"] == {
+        "pending": 6,
+        "ready": 0,
+        "waiting": 1,
+        "failed": 1,
+        "held": 1,
+        "blocked": 1,
+        "excluded": 1,
+        "cancelled": 1,
+        "invalid": 0,
+        "selected": 0,
+    }
+    assert result["schools"]["c"]["failed"] == 1
+    assert queue.get_setting(bridge._REVIEW_CURSOR) is None
+
+
+@pytest.mark.parametrize(
+    "cursor", ["corrupt", {"last_school": None, "next_newest": {"a": "false"}}]
+)
+def test_invalid_review_cursor_fails_without_resetting_progress(review_backlog, cursor):
+    queue, _, add = review_backlog
+    add("a")
+    queue.set_setting(bridge._REVIEW_CURSOR, cursor)
+    with pytest.raises(ValueError, match="review cursor is invalid"):
+        bridge.ready_review_targets(queue)
+    assert queue.get_setting(bridge._REVIEW_CURSOR) == cursor
+
+
+def test_review_selection_matches_recipient_and_verified_exact_post(review_backlog, monkeypatch):
+    queue, rows, add = review_backlog
+    row, job_id = add("a")
+    original_recipient = row["notification"]["intended_recipient_id"]
+    row["notification"]["intended_recipient_id"] = "99999"
+    assert bridge.ready_review_targets(queue)["totals"]["waiting"] == 1
+    row["notification"]["intended_recipient_id"] = original_recipient
+    job = queue.get(job_id)
+    job.result["posts"][0]["url"] = URL
+    monkeypatch.setattr(queue, "retrieval_results", lambda **_: [job])
+    invalid = bridge.ready_review_targets(queue)
+    assert invalid["totals"]["invalid"] == 1
+    assert invalid["targets"] == []
+    assert rows == [row]

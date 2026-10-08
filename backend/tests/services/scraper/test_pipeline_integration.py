@@ -21,10 +21,11 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, Mock
 from uuid import UUID
 
 from services.scraper import event_writer
+from services.scraper import extractor as extractor_module
 from services.scraper import pipeline as pipeline_module
 
 
@@ -78,6 +79,67 @@ def _extracted_event_with_three_occurrences() -> list[dict]:
             ],
         }
     ]
+
+
+def test_notification_provider_failure_preserves_pending_media(tmp_path, monkeypatch, caplog):
+    from services.instagram_notifications import notification_ingestion as bridge
+    from services.instagram_notifications.browser_queue import BrowserJobQueue
+
+    post = _apify_post()
+    row = {"id": "d6246624-50f7-4aa1-bf0a-0d14b604d5a7", "source_url": post["url"]}
+    queue = BrowserJobQueue(tmp_path)
+    recipient, account = "12342599092", "ubc.wat2do.io"
+    job_id = queue.enqueue_retrieval(
+        school="ubc", recipient_id=recipient, account_username=account, url=post["url"]
+    )
+    queue.finish(queue.claim_next(), result={"target_url": post["url"], "posts": [post]})
+    monkeypatch.setattr(bridge, "_pending_rows", lambda: [row])
+    monkeypatch.setattr(bridge, "_identity", lambda _: ("ubc", recipient, account))
+    ledger = {"status": "pending"}
+
+    def claim(**_):
+        ledger["status"] = "running"
+        return True
+
+    def rollback(**_):
+        ledger["status"] = "pending"
+        return True
+
+    monkeypatch.setattr(bridge, "claim_pending_browser_media", claim)
+    monkeypatch.setattr(bridge, "rollback_media_claim", rollback)
+    finalize_media = Mock(return_value=True)
+    monkeypatch.setattr(bridge, "mark_media_succeeded", finalize_media)
+    monkeypatch.setattr(pipeline_module, "existing_shortcodes", lambda _: set())
+    monkeypatch.setattr(pipeline_module, "upload_post_images", lambda urls: urls)
+    monkeypatch.setattr(
+        pipeline_module.workflow_run_service,
+        "create_workflow_run",
+        lambda _: SimpleNamespace(id="offline-run"),
+    )
+    finalize_pipeline = Mock()
+    monkeypatch.setattr(pipeline_module.workflow_run_service, "mark_finished", finalize_pipeline)
+    create = Mock(side_effect=TimeoutError("upstream-private-detail"))
+    monkeypatch.setattr(
+        extractor_module,
+        "_client",
+        lambda: SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=create))),
+    )
+    monkeypatch.setattr(extractor_module, "resolve_school_timezone", lambda _: "America/Toronto")
+    monkeypatch.setattr(extractor_module, "current_semester_end", lambda *args, **kwargs: None)
+    monkeypatch.setattr(extractor_module, "campus_season_prompt", lambda _: "")
+
+    result = bridge.import_retrieved_media(queue)
+
+    assert result["failed"] == 1 and result["imported"] == 0
+    assert ledger["status"] == "pending"
+    assert queue.get(job_id).state == "pending"
+    assert queue.get_setting(f"notification_import_attempts:{row['id']}") == 1
+    assert queue.get_setting(bridge._JOURNAL) is None
+    finalize_media.assert_not_called()
+    assert finalize_pipeline.call_args.kwargs["status"] == "error"
+    assert finalize_pipeline.call_args.kwargs["events_saved"] == 0
+    assert finalize_pipeline.call_args.kwargs["error_message"] == "Instagram post extraction failed"
+    assert "upstream-private-detail" not in caplog.text
 
 
 def test_pipeline_produces_one_event_row_per_logical_event(monkeypatch, fake_sb, patch_sb):
