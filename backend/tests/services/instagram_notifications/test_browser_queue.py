@@ -2121,3 +2121,32 @@ def test_manual_import_reset_changes_only_requested_markers_before_next_claim(qu
     assert claim.result is None
     assert all(not queue.get_setting(key) for key in keys)
     assert queue.get_setting(unrelated) == 3
+
+
+def test_status_distinguishes_rate_limit_hold_from_ready_admission(queue, monkeypatch):
+    now = [1000.0]
+    monkeypatch.setattr(module.time, "time", lambda: now[0])
+    job_id = queue.enqueue_retrieval(
+        school="ubc",
+        recipient_id=RECIPIENT_ID,
+        account_username=ACCOUNT_USERNAME,
+        url="https://www.instagram.com/p/VisibleCooldown/",
+    )
+    queue.defer_for_rate_limit(None, "Instagram rate limit")
+    hold = queue.status()["rate_limit"]
+
+    assert hold["remaining_seconds"] == module.CONTROL.rate_limit_backoff_seconds
+    assert hold["backoff_seconds"] == module.CONTROL.rate_limit_backoff_seconds
+    assert queue.claim_next() is None
+
+    now[0] = hold["retry_at"]
+    assert queue.status()["rate_limit"]["remaining_seconds"] == 0
+    assert queue.claim_next().id == job_id
+
+
+def test_status_reports_no_rate_limit_before_any_hold(queue):
+    assert queue.status()["rate_limit"] == {
+        "retry_at": None,
+        "remaining_seconds": 0,
+        "backoff_seconds": 0,
+    }

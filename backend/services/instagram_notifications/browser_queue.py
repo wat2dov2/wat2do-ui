@@ -863,11 +863,17 @@ class BrowserJobQueue:
                     "SELECT id,kind,school,state,error,finished_at FROM jobs WHERE state IN ('failed','unsupported') ORDER BY finished_at DESC LIMIT 20"
                 )
             ]
+        rate_limit_until = self.get_setting("browser_rate_limit_until", 0)
         return {
             "queues": groups,
             "recent_failures": recent,
             "worker": self.get_setting("worker"),
             "paused": self.get_setting("paused", False),
+            "rate_limit": {
+                "retry_at": rate_limit_until or None,
+                "remaining_seconds": max(0, rate_limit_until - time.time()),
+                "backoff_seconds": self.get_setting("browser_rate_limit_backoff_seconds", 0),
+            },
             "source": self.get_setting("source_status"),
             "notification_source": self.get_setting("notification_source_status"),
             "notification_import": self.get_setting("notification_import_status"),

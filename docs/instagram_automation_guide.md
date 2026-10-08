@@ -191,6 +191,7 @@ Each job retains its own timeout; the stream does not drain on a fixed timer.
 Confirmed HTTP 429 responses stop new browser claims, refills, and tab maintenance until the shared cooldown expires, while active requests settle and independent collectors continue.
 After settlement, confirmed rate-limited reads return to the queue without consuming their ordinary failure budget.
 Cooldown expiry resumes queue admission automatically and preserves genuine authentication pauses and manual engagement retry rules.
+The status output shows the rate-limit retry time, remaining seconds, and backoff separately from the worker heartbeat and safety pause.
 Repeated rate limits increase the shared cooldown from two minutes up to thirty minutes, once per expired cooldown rather than once per parallel job.
 A fresh verified successful job resets the next cooldown only after fifteen minutes without another confirmed rate limit following the expired hold.
 One successful public read cannot immediately reset escalation while another browser route remains limited.
