@@ -112,9 +112,13 @@ The queue stores public identities, post URLs, actions, sanitized results, and s
 Do not delete its database to clear an error: that also removes deduplication history and the activation watermark.
 
 The notification workflow checks free space before preparing Python or downloading dependencies.
-`backend/controlbox/notification_workflow.json` owns the disk reserve, setup and processing deadlines, and HTTP retry budget.
+`backend/controlbox/notification_workflow.json` owns the disk reserve, pinned uv release, cache cleanup deadline, setup and processing deadlines, and HTTP retry budget.
 Each runner reuses its own Python environment outside the disposable checkout and synchronizes it exactly to `requirements.lock`.
 The uv cache has one consistent location across setup and installation.
+Pinning uv prevents each new release from accumulating another tool binary on the persistent Mac runner.
+After uv setup, an always-run maintenance step uses `uv cache prune --ci` under uv's own cache lock and the configured cleanup deadline.
+It preserves installed environments and defers safely when another installation owns the cache or cleanup fails.
+Maintenance warnings cannot invalidate already committed notification media.
 A low-space failure identifies the affected filesystem role and free MiB without printing credentials or notification contents.
 Free disposable build or package caches, preserve the browser queue and dispatch ledger, and rerun the failed notification after storage is available.
 

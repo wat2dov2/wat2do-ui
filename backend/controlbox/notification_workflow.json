@@ -1,8 +1,10 @@
 {
+  "uv_version": "0.12.23",
   "minimum_free_disk_mb": 2048,
   "setup_timeout_minutes": 5,
   "install_timeout_minutes": 12,
   "process_timeout_minutes": 8,
   "http_timeout_seconds": 30,
-  "http_retries": 2
+  "http_retries": 2,
+  "cache_cleanup_timeout_seconds": 30
 }

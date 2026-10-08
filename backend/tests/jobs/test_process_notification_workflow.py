@@ -88,7 +88,12 @@ def test_preflight_exports_feature_controls_and_isolates_runner_environments(
     assert first["UV_HTTP_RETRIES"] == str(controlbox.notification_workflow.http_retries)
     assert output_file("GITHUB_OUTPUT") == {
         key: str(getattr(controlbox.notification_workflow, key))
-        for key in ("setup_timeout_minutes", "install_timeout_minutes", "process_timeout_minutes")
+        for key in (
+            "uv_version",
+            "setup_timeout_minutes",
+            "install_timeout_minutes",
+            "process_timeout_minutes",
+        )
     }
     monkeypatch.setenv("NOTIFICATION_RUNNER_NAME", "another runner")
     preflight()
@@ -140,11 +145,19 @@ def fake_uv(runner, monkeypatch):
         '  mkdir -p "$NOTIFICATION_VENV/bin"\n'
         '  cp "$FAKE_PYTHON" "$NOTIFICATION_VENV/bin/python"\n'
         "fi\n"
+        'if [ "$1 $2 $3" = "cache prune --ci" ]; then\n'
+        '  printf "%s\\n" "$UV_LOCK_TIMEOUT" >> "$UV_LOCK_LOG"\n'
+        '  if [ -n "${UV_PRUNE_SLEEP:-}" ]; then exec sleep "$UV_PRUNE_SLEEP"; fi\n'
+        '  printf "%s\\n" "PRIVATE_CACHE_STDOUT"\n'
+        '  printf "%s\\n" "PRIVATE_CACHE_STDERR" >&2\n'
+        '  if [ "${UV_EXIT_CODE:-0}" = "0" ]; then rm -rf "$UV_CACHE_DIR/reproducible-builds"; fi\n'
+        "fi\n"
         'exit "${UV_EXIT_CODE:-0}"\n'
     )
     uv.chmod(0o755)
     monkeypatch.setenv("PATH", f"{executable}{os.pathsep}{os.environ['PATH']}")
     monkeypatch.setenv("UV_COMMAND_LOG", str(runner / "uv-commands"))
+    monkeypatch.setenv("UV_LOCK_LOG", str(runner / "uv-lock-timeout"))
     monkeypatch.setenv("FAKE_PYTHON", str(python))
     monkeypatch.setenv("NOTIFICATION_VENV", str(runner / "tool-cache" / "runner-env"))
 
@@ -152,6 +165,7 @@ def fake_uv(runner, monkeypatch):
 def run_step(name):
     return subprocess.run(
         ["bash", "-e", "-c", STEPS[name]["run"]],
+        cwd=STEPS[name].get("working-directory", "."),
         capture_output=True,
         text=True,
         check=False,
@@ -288,6 +302,55 @@ def test_dependency_failure_is_terminal_and_actionable(fake_uv, monkeypatch):
     assert "PRIVATE_" not in result.stderr
 
 
+def test_cache_cleanup_only_prunes_reproducible_cache_and_preserves_environment(fake_uv, runner):
+    cache = Path(os.environ["UV_CACHE_DIR"]) / "reproducible-builds"
+    cache.mkdir(parents=True)
+    (cache / "unused-wheel").write_text("reproducible")
+    environment = Path(os.environ["NOTIFICATION_VENV"])
+    environment.mkdir(parents=True)
+    sentinel = environment / "keep-environment"
+    sentinel.write_text("installed packages")
+    evidence = runner / "evidence.json"
+    evidence.write_text('{"keep": "reviewed evidence"}')
+
+    result = run_step("Maintain notification dependency cache")
+
+    assert result.returncode == 0
+    assert Path(os.environ["UV_COMMAND_LOG"]).read_text().splitlines() == ["cache prune --ci"]
+    assert Path(os.environ["UV_LOCK_LOG"]).read_text().strip() == str(
+        controlbox.notification_workflow.cache_cleanup_timeout_seconds
+    )
+    assert not cache.exists()
+    assert sentinel.read_text() == "installed packages"
+    assert evidence.read_text() == '{"keep": "reviewed evidence"}'
+    assert "PRIVATE_" not in result.stdout + result.stderr
+
+
+def test_cache_cleanup_failure_warns_without_leaking_command_output(fake_uv, monkeypatch):
+    monkeypatch.setenv("UV_EXIT_CODE", "1")
+
+    result = run_step("Maintain notification dependency cache")
+
+    assert result.returncode == 0
+    assert "::warning::" in result.stdout + result.stderr
+    assert "PRIVATE_" not in result.stdout + result.stderr
+
+
+def test_cache_cleanup_timeout_is_bounded_and_preserves_job_success(fake_uv, runner, monkeypatch):
+    controls = runner / "backend" / "controlbox" / "notification_workflow.json"
+    settings = json.loads(controls.read_text())
+    settings["cache_cleanup_timeout_seconds"] = 1
+    controls.write_text(json.dumps(settings))
+    monkeypatch.setenv("UV_PRUNE_SLEEP", "2")
+
+    result = run_step("Maintain notification dependency cache")
+
+    assert result.returncode == 0
+    assert Path(os.environ["UV_LOCK_LOG"]).read_text().strip() == "1"
+    assert "::warning::" in result.stdout + result.stderr
+    assert "PRIVATE_" not in result.stdout + result.stderr
+
+
 def test_missing_routing_fails_without_logging_payload(runner, monkeypatch):
     for name in (
         "AWS_DEPLOY_ROLE_ARN",
@@ -320,3 +383,11 @@ def test_setup_and_processing_steps_have_bounded_consistent_runtime():
             "${{ fromJSON(steps.dependencies.outputs." + timeout + ") }}"
         )
     assert JOB["steps"].index(STEPS["Prepare notification runtime"]) < preflight_index
+    install_uv = STEPS["Install uv"]
+    assert install_uv["id"] == "uv"
+    assert install_uv["with"]["version"] == "${{ steps.dependencies.outputs.uv_version }}"
+    maintenance = STEPS["Maintain notification dependency cache"]
+    assert JOB["steps"][-1] == maintenance
+    assert maintenance["if"].removeprefix("${{").removesuffix("}}").strip() == (
+        "always() && steps.uv.outcome == 'success'"
+    )

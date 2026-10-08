@@ -723,6 +723,8 @@ def test_instagram_browser_controls_reject_unsafe_worker_configuration(tmp_path,
 @pytest.mark.parametrize(
     "patch",
     [
+        {"uv_version": "latest"},
+        {"uv_version": "0.12.23\nuv_version=latest"},
         {"minimum_free_disk_mb": 0},
         {"minimum_free_disk_mb": 65537},
         {"setup_timeout_minutes": 0},
@@ -732,6 +734,8 @@ def test_instagram_browser_controls_reject_unsafe_worker_configuration(tmp_path,
         {"http_timeout_seconds": 0},
         {"http_retries": -1},
         {"http_retries": 6},
+        {"cache_cleanup_timeout_seconds": 0},
+        {"cache_cleanup_timeout_seconds": 121},
     ],
 )
 def test_notification_workflow_controls_reject_unsafe_setup(tmp_path, patch):

@@ -720,12 +720,14 @@ class InstagramBrowserControl(_ControlModel):
 
 
 class NotificationWorkflowControl(_ControlModel):
+    uv_version: str = Field(pattern=r"^[0-9]+\.[0-9]+\.[0-9]+$")
     minimum_free_disk_mb: int = Field(ge=512, le=65536)
     setup_timeout_minutes: int = Field(ge=1, le=30)
     install_timeout_minutes: int = Field(ge=1, le=60)
     process_timeout_minutes: int = Field(ge=6, le=60)
     http_timeout_seconds: int = Field(ge=1, le=120)
     http_retries: int = Field(ge=0, le=5)
+    cache_cleanup_timeout_seconds: int = Field(ge=1, le=120)
 
 
 class RunnerSetupControl(_ControlModel):
