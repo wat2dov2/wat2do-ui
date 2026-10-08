@@ -130,7 +130,7 @@ def test_busy_browser_lock_prevents_claiming_any_job(queue, monkeypatch):
 @pytest.mark.parametrize("kind", ["digest", "engagement"])
 def test_known_full_storage_stops_a_claim_before_browser_execution(queue, monkeypatch, kind):
     job_id = (
-        queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "stop-before-execution")
+        (queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "stop-before-execution")).id
         if kind == "digest"
         else _engagement(queue)
     )
@@ -163,8 +163,8 @@ def test_full_completion_drains_all_parallel_reads_and_preserves_other_auth_fail
     later = []
     finish = queue.finish
 
-    def full_completion(job_id, **kwargs):
-        if job_id == job_ids[0] and kwargs.get("result"):
+    def full_completion(claim, **kwargs):
+        if claim.id == job_ids[0] and kwargs.get("result"):
             later.append(
                 queue.enqueue_retrieval(
                     school="ubc",
@@ -175,7 +175,7 @@ def test_full_completion_drains_all_parallel_reads_and_preserves_other_auth_fail
             )
             full_seen.set()
             raise _full_storage_error()
-        return finish(job_id, **kwargs)
+        return finish(claim, **kwargs)
 
     def operation(job, **kwargs):
         if job.id == job_ids[1]:
@@ -206,7 +206,7 @@ def test_full_completion_drains_all_parallel_reads_and_preserves_other_auth_fail
 def test_worker_waits_for_storage_then_retries_safe_read_without_an_operator_pause(
     queue, monkeypatch, caplog
 ):
-    job_id = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "worker-storage-recovery")
+    job_id = (queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "worker-storage-recovery")).id
     executions = []
     finish = queue.finish
     process = module.process_next_job
@@ -279,6 +279,27 @@ def test_successful_engagement_with_unstored_completion_never_replays_automatica
     assert executions == [job_id]
 
 
+@pytest.mark.parametrize("stage", ["dispatch", "completion"])
+def test_uncertain_engagement_pauses_all_work_without_automatic_replay(queue, monkeypatch, stage):
+    job_id = _engagement(queue)
+    later = _engagement(queue, "UncertainNextAction")
+    executions = []
+    reason = f"Instagram engagement {stage} is uncertain; inspect browser state before resuming"
+
+    def uncertain(job, **kwargs):
+        executions.append(job.id)
+        raise module.BrowserEngagementUncertain(reason)
+
+    monkeypatch.setattr(module, "execute_job", uncertain)
+    assert module.process_next_job(queue)
+    assert queue.get(job_id).state == "failed"
+    assert queue.get_setting("paused") == reason
+    assert not module.process_next_job(queue)
+    assert queue.get(later).state == "pending"
+    assert queue.get(later).attempts == 0
+    assert executions == [job_id]
+
+
 def test_shutdown_storage_failure_preserves_signal_cleanup_and_original_failure(
     queue, monkeypatch, caplog
 ):
@@ -321,7 +342,7 @@ def test_digest_overtakes_likes_during_engagement_cooldown(queue, monkeypatch):
         == now[0] + module.CONTROL.engagement_interval_seconds
     )
     assert module.process_next_job(queue) is False
-    digest = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "cache-priority")
+    digest = (queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "cache-priority")).id
     assert module.process_next_job(queue) is True
     assert executed == [first, digest]
     assert queue.get(second).state == "pending"
@@ -373,7 +394,7 @@ def test_timed_out_job_is_failed_once_and_releases_browser_for_digest(queue, mon
     assert queue.get_setting("next_engagement_at") > 0
     assert not queue.get_setting("paused", False)
 
-    digest_id = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "cache-after-timeout")
+    digest_id = (queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "cache-after-timeout")).id
     monkeypatch.setattr(module, "execute_job", lambda job, **kwargs: {"status": "succeeded"})
 
     assert module.process_next_job(queue) is True
@@ -392,7 +413,7 @@ def test_unconfirmed_cleanup_quarantines_all_browser_work(queue, monkeypatch):
     monkeypatch.setattr(module, "execute_job", unsafe_cleanup)
 
     assert module.process_next_job(queue) is True
-    digest_id = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "cache-quarantined")
+    digest_id = (queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "cache-quarantined")).id
 
     assert queue.get(job_id).state == "failed"
     assert "cancellation could not be confirmed" in queue.get_setting("paused")
@@ -470,7 +491,7 @@ def test_job_storage_errors_have_safe_actionable_diagnostics(
     job_id = (
         _engagement(queue)
         if kind == "engagement"
-        else queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "storage-error")
+        else (queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "storage-error")).id
         if kind == "digest"
         else queue.enqueue_retrieval(
             school="ubc",
@@ -533,7 +554,7 @@ def test_background_storage_failure_reports_full_disk_without_raw_details(
 
 
 def test_known_account_failure_does_not_quarantine_other_notifications(queue, monkeypatch):
-    failed_id = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "cache-missing-account")
+    failed_id = (queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "cache-missing-account")).id
 
     def unavailable(_job, **kwargs):
         raise module.BrowserSessionError("Matching Instagram browser account is unavailable")
@@ -558,7 +579,7 @@ def test_foreground_initialization_failure_pauses_before_more_jobs_are_claimed(
     ids = [
         _engagement(queue, f"Foreground{index}")
         if kind == "engagement"
-        else queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, f"foreground-{index}")
+        else (queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, f"foreground-{index}")).id
         if kind == "digest"
         else queue.enqueue_retrieval(
             school="ubc",
@@ -643,7 +664,7 @@ def test_execute_job_shares_pinned_session_without_repeating_successful_operatio
 
     monkeypatch.setattr(browser_ingestion, "BrowserInstagramRetriever", retrieve)
     job_id = (
-        queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "cache-session")
+        (queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "cache-session")).id
         if kind == "digest"
         else queue.enqueue_retrieval(
             school="ubc",
@@ -715,7 +736,7 @@ def test_successful_query_settlement_proof_is_not_rechecked_by_worker(queue, mon
         ),
     )
     job_id = (
-        queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "query-owned-proof")
+        (queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "query-owned-proof")).id
         if kind == "digest"
         else queue.enqueue_retrieval(
             school="ubc",
@@ -756,7 +777,7 @@ def test_execute_job_cleans_up_on_every_failed_exit(queue, monkeypatch, kind, er
         browser_ingestion, "BrowserInstagramRetriever", lambda _: SimpleNamespace(retrieve=fail)
     )
     job_id = (
-        queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "failed-exit")
+        (queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "failed-exit")).id
         if kind == "digest"
         else queue.enqueue_retrieval(
             school="ubc",
@@ -864,7 +885,7 @@ def test_blocked_collector_cannot_delay_a_digest_and_stops_on_shutdown(queue, mo
     entered = threading.Event()
     release = threading.Event()
     finished = threading.Event()
-    digest_id = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "cache-independent")
+    digest_id = (queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "cache-independent")).id
     original_process = module.process_next_job
     calls = []
 
@@ -993,7 +1014,7 @@ def test_native_rate_limit_holds_browser_without_a_human_pause_or_action_retry(q
     assert queue.get(job_id).attempts == 1
     assert queue.is_rate_limited()
     assert not queue.get_setting("paused", False)
-    digest_id = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "wait-for-rate-limit")
+    digest_id = (queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "wait-for-rate-limit")).id
     assert not module.process_next_job(queue)
     assert queue.get(digest_id).state == "pending"
     assert queue.get(job_id).state == "failed"
@@ -1114,7 +1135,7 @@ def test_settled_rate_limited_read_refunds_behind_an_independent_human_pause(
             url=f"https://www.instagram.com/p/PausedRateLimit{index}/",
         )
         if kind == "retrieval"
-        else queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, f"paused-rate-limit-{index}")
+        else (queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, f"paused-rate-limit-{index}")).id
         for index in range(2)
     ]
     barrier = threading.Barrier(2)
@@ -1181,11 +1202,11 @@ def test_last_budget_rate_limit_refunds_only_after_cleanup_then_real_failure_exh
             url="https://www.instagram.com/p/LastBudget429/",
         )
         if kind == "retrieval"
-        else queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "last-budget-429")
+        else (queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "last-budget-429")).id
     )
     for _ in range(module.CONTROL.ingestion_retry_limit - 1):
         claimed = queue.claim_next()
-        queue.finish(claimed.id, error="A previous ordinary read failure", requeue=True)
+        queue.finish(claimed, error="A previous ordinary read failure", requeue=True)
     attempts_during_cleanup = []
     session = SimpleNamespace(
         current_page_path=lambda **kwargs: "/",
@@ -1253,7 +1274,7 @@ def test_source_collectors_continue_while_browser_claims_are_rate_limited(queue,
 
 def test_digest_loading_account_route_does_not_pause(queue, monkeypatch):
     ids = [
-        queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, f"transient-login-{i}")
+        (queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, f"transient-login-{i}")).id
         for i in range(2)
     ]
 
@@ -1729,11 +1750,13 @@ def test_manual_account_switch_drains_before_bounded_retry(queue, monkeypatch, p
             url=f"https://www.instagram.com/p/Changed{i}/",
         )
         if kind == "retrieval"
-        else queue.enqueue_digest(
-            RECIPIENT_ID,
-            ACCOUNT_USERNAME,
-            f"changed-cache-{i}",
-        )
+        else (
+            queue.enqueue_digest(
+                RECIPIENT_ID,
+                ACCOUNT_USERNAME,
+                f"changed-cache-{i}",
+            )
+        ).id
         for i in range(2)
     ]
     drained = threading.Event()
@@ -1844,7 +1867,7 @@ def test_safe_read_failure_retries_without_pausing_or_exposing_final_failure(
             url="https://www.instagram.com/p/Recoverable/",
         )
         if kind == "retrieval"
-        else queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "recoverable-cache")
+        else (queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "recoverable-cache")).id
     )
     calls = []
     settlements = []
@@ -1888,7 +1911,7 @@ def test_repeated_bridge_failure_has_a_finite_read_retry_budget(queue, monkeypat
             url="https://www.instagram.com/p/Budget/",
         )
         if kind == "retrieval"
-        else queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "budget-cache")
+        else (queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "budget-cache")).id
     )
 
     def failed(*args, **kwargs):
@@ -1905,8 +1928,8 @@ def test_repeated_bridge_failure_has_a_finite_read_retry_budget(queue, monkeypat
 
 
 def test_digest_mismatch_during_query_stays_running_until_other_tab_settles(queue, monkeypatch):
-    first = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "mismatch-query")
-    second = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "slow-query")
+    first = (queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "mismatch-query")).id
+    second = (queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "slow-query")).id
     mismatched = threading.Event()
     settled = threading.Event()
     session_ids = {}
@@ -2061,7 +2084,7 @@ def test_worker_heartbeat_continues_while_browser_preparation_blocks(queue, monk
     if stage == "maintenance":
         monkeypatch.setattr(module, "maintain_tab_pool", lambda _: blocked())
     if stage == "prepare":
-        queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "blocked-prepare")
+        (queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "blocked-prepare")).id
 
         def prepare(job, count):
             blocked()
@@ -2122,7 +2145,7 @@ def test_uncertain_cleanup_defers_only_secondary_reads(queue, monkeypatch, kind,
             url="https://www.instagram.com/p/Retire/",
         )
         if kind == "retrieval"
-        else queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "retire-cache")
+        else (queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "retire-cache")).id
         if kind == "digest"
         else _engagement(queue, "RetirePrimaryForbidden")
     )
@@ -2335,7 +2358,7 @@ def test_all_fourteen_reads_drain_before_deferred_cleanup_and_no_slots_refill(
 def test_confirmed_auth_failure_survives_deferred_secondary_cleanup(
     queue, monkeypatch, auth_source
 ):
-    job_id = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "auth-with-contention")
+    job_id = (queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "auth-with-contention")).id
     cancel_count = 0
     terminal = []
 
@@ -2599,7 +2622,7 @@ def test_digest_transient_pathname_read_recovers_without_spending_another_job_at
 ):
     from services.instagram_notifications import browser_session
 
-    job_id = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "path-read-retry")
+    job_id = (queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "path-read-retry")).id
     pathname_reads = []
 
     def bridge(source, _timeout):

@@ -70,7 +70,7 @@ export function useGoingEventSelection(
           new Date(left.dtstart_utc).getTime() -
           new Date(right.dtstart_utc).getTime(),
       );
-  }, [event.cancelled, event.occurrences, now]);
+  }, [event, now]);
   const selectableIds = useMemo(
     () => new Set(selectableOccurrences.map((occurrence) => occurrence.id)),
     [selectableOccurrences],

@@ -121,6 +121,13 @@ Free disposable build or package caches, preserve the browser queue and dispatch
 SQLite contention and temporary storage failures use the bounded storage controls in `instagram_browser.json`.
 Optional diagnostic publication cannot invalidate a committed queue transition.
 Storage recovery must preserve authentication holds, operator pauses, and uncertainty about engagement clicks.
+The worker's operational log rotates within `worker_log_max_bytes` and `worker_log_backup_count`, including when it is supervised by launchd.
+If log storage fails, one sanitized warning identifies the continuous failure episode without repeatedly dumping tracebacks into launchd's stderr log.
+Keep scheduled tasks on the installed revision; never fast-forward or replace the live worker checkout during draft generation or import.
+Code and runtime updates belong to maintenance with the existing installation and import locks, an owned admission pause, no running jobs, and worker health readback.
+Digest callers wait through the installer's temporary pause within their original deadline, including while its service restarts.
+Other recovery and operator holds still return immediately for inspection.
+The resume command preserves an active installation hold or a safety reason written after the operator's status read.
 
 ### Queue priority and school ordering
 
@@ -134,6 +141,11 @@ All pool tabs settle their pending requests before the primary tab switches acco
 Public post/profile retrieval comes after digests and before engagement.
 No account switch or click is interrupted halfway through to start another job.
 An exclusive browser lock covers each complete operation, and a separate worker lock prevents duplicate workers.
+Every completion is conditional on the original running claim's attempt and start time.
+Late successes, failures, and retry callbacks cannot overwrite a newer claim or release its admission holds.
+Digest submissions return their receipt in the same transaction that admits the job.
+Duplicate waiters share the original pending submission's expiry rather than extending its lifetime; completed results can still be reused.
+An expired caller can cancel only its original pending submission, preserving a newer retry of the same digest.
 The source collector runs separately so a slow database read does not hold up ready digest jobs.
 Notification collection, publishing collection, and diagnostic publication fail independently, so one source failure cannot suppress the other queues.
 Apple Event transport is serialized within each call deadline while asynchronous page requests remain parallel.
@@ -163,6 +175,8 @@ Notification digests take priority between posts.
 Retrieval yields after an eligible engagement reaches `engagement_max_wait_seconds`, allowing likes/reposts to progress even with a continuous retrieval backlog.
 Active requests settle before any account switch or engagement begins; no action is interrupted halfway through.
 Failed or unsupported engagement jobs remain visible for operator inspection and are not automatically retried.
+An uncertain native click or unverified completion also pauses further browser admission for inspection.
+Conflicting repost states and action toolbars that borrow another post's permalink fail before clicking.
 The durable queue’s `excluded_accounts` setting holds jobs for explicitly excluded school accounts across all job types without deleting or consuming them.
 Notification synchronization and imports respect the same exclusions.
 
@@ -197,6 +211,12 @@ All parallel tabs verify the same active account, while each notification retain
 A challenge, uncertain primary action, or unconfirmed secondary closure pauses further work after active requests drain.
 It verifies the active account remains unchanged throughout navigation and retrieval, and only public captions, owners, timestamps, coauthors, tagged users, and media fields leave the browser.
 The queued notification recipient determines school routing, independent of the browser account.
+Concurrent collectors retry a failed read atomically within its budget and preserve explicitly cancelled jobs.
+Malformed notification identities or URLs remain pending for repair, while valid schools continue through collection and import.
+The source and import summaries expose an `invalid` count for these targets.
+An explicit retrieval retry resets its import markers and read budget in one transaction only while the target is still idle.
+The `ingestion-import` command reports nonzero exit status for failed, blocked, invalid, or busy outcomes; inspect its counts before treating a batch as complete.
+The `retrieve` command confirms queue admission; read `status --job-id` to establish the retrieval's outcome.
 Digest expansion and engagement still require the exact intended school account.
 All carousel children and each video's corresponding poster are preserved.
 Missing or mismatched media fails retrieval rather than importing incomplete artwork.

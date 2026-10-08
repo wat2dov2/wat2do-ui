@@ -186,6 +186,10 @@ class BrowserSessionError(RuntimeError):
     """A sanitized failure in the shared authenticated browser session."""
 
 
+class BrowserEngagementUncertain(BrowserSessionError):
+    """A native action may have executed without verified completion."""
+
+
 class _BrowserAutomationTransient(BrowserSessionError):
     """An unavailable Apple Event bridge; only proven idempotent operations may retry."""
 
@@ -1115,8 +1119,19 @@ def _post_context_source(post_url: str) -> str:
   const candidates = toolbars.map(toolbar => {{
     let post = toolbar.parentElement;
     while (post && post !== document.body) {{
-      const codes = [...post.querySelectorAll("a[href]")]
-        .filter(visible).map(anchor => shortcode(anchor.getAttribute("href"))).filter(Boolean);
+      // A sibling post cannot lend its permalink to this toolbar, even through
+      // an otherwise unmarked page wrapper.
+      if ([...post.querySelectorAll('article,main,[role="main"]')]
+          .filter(visible).some(container => !container.contains(toolbar))) return null;
+      const links = [...post.querySelectorAll("a[href]")].filter(visible)
+        .map(anchor => ({{anchor, code: shortcode(anchor.getAttribute("href"))}}))
+        .filter(link => link.code);
+      // A standalone MAIN may own its direct toolbar and direct timestamp.
+      // Do not borrow a timestamp from another branch of the whole page.
+      if (post.matches('main,[role="main"]') &&
+          (toolbar.parentElement !== post ||
+           links.some(link => link.anchor.parentElement !== post))) return null;
+      const codes = links.map(link => link.code);
       if (codes.length) {{
         return codes.every(code => code === expectedCode) ? {{post, toolbar}} : null;
       }}

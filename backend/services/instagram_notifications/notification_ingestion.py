@@ -20,7 +20,10 @@ from core.tables import INSTAGRAM_NOTIFICATION_MEDIA, INSTAGRAM_NOTIFICATIONS
 from services import school_service
 from services.instagram_notifications.browser_ingestion import canonical_target_url
 from services.instagram_notifications.browser_queue import BrowserJobQueue
-from services.instagram_notifications.browser_session import school_account_username
+from services.instagram_notifications.browser_session import (
+    BrowserSessionError,
+    school_account_username,
+)
 from services.instagram_notifications.ledger import (
     claim_pending_browser_media,
     mark_media_succeeded,
@@ -58,35 +61,43 @@ def _identity(row: dict) -> tuple[str, str, str]:
     return school.slug, recipient, school_account_username(school.slug)
 
 
+def _notification_retrieval(queue: BrowserJobQueue, row: dict) -> tuple[str, str] | None:
+    school, recipient, username = _identity(row)
+    if queue.account_excluded(username):
+        return None
+    job_id = queue.enqueue_retrieval(
+        school=school,
+        recipient_id=recipient,
+        account_username=username,
+        url=row["source_url"],
+    )
+    return school, job_id
+
+
 def sync_notification_media(queue: BrowserJobQueue) -> dict[str, int]:
-    stats = {"pending_media": 0, "queued": 0}
+    stats = {"pending_media": 0, "queued": 0, "invalid": 0}
     for row in _pending_rows():
-        school, recipient, username = _identity(row)
-        if queue.account_excluded(username):
+        try:
+            retrieval = _notification_retrieval(queue, row)
+        except (KeyError, TypeError, ValueError, BrowserSessionError):
+            # Leave invalid ledger rows pending for repair without starving other schools.
+            # Storage and network failures still propagate to the source health report.
+            stats["invalid"] += 1
             continue
-        job_id = queue.enqueue_retrieval(
-            school=school,
-            recipient_id=recipient,
-            account_username=username,
-            url=row["source_url"],
-        )
+        if retrieval is None:
+            continue
+        _, job_id = retrieval
         stats["pending_media"] += 1
+        queue.retry_failed_retrieval(job_id)
         job = queue.get(job_id)
-        if (
-            job
-            and job.state in {"failed", "cancelled"}
-            and job.attempts < _CONTROL.ingestion_retry_limit
-        ):
-            queue.retry(job.id)
-            stats["queued"] += 1
-        elif job and job.state == "pending":
+        if job and job.state == "pending":
             stats["queued"] += 1
     queue.set_setting("notification_source_status", {"checked_at": time.time(), **stats})
     return stats
 
 
 def import_retrieved_media(queue: BrowserJobQueue) -> dict[str, int]:
-    stats = {"imported": 0, "waiting": 0, "failed": 0, "recovered": 0, "blocked": 0}
+    stats = {"imported": 0, "waiting": 0, "failed": 0, "recovered": 0, "blocked": 0, "invalid": 0}
     with (queue.state_directory / "ingestion.lock").open("a+") as lock:
         try:
             fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
@@ -99,21 +110,21 @@ def import_retrieved_media(queue: BrowserJobQueue) -> dict[str, int]:
         for row in _pending_rows():
             if stats["imported"] + stats["failed"] >= _CONTROL.ingestion_batch_size:
                 break
-            school, recipient, username = _identity(row)
-            if queue.account_excluded(username):
+            try:
+                retrieval = _notification_retrieval(queue, row)
+            except (KeyError, TypeError, ValueError, BrowserSessionError):
+                stats["invalid"] += 1
                 continue
-            job_id = queue.enqueue_retrieval(
-                school=school,
-                recipient_id=recipient,
-                account_username=username,
-                url=row["source_url"],
-            )
+            if retrieval is None:
+                continue
+            school, job_id = retrieval
             job = queue.get(job_id)
             if not job or job.state != "succeeded" or not job.result:
                 stats["waiting"] += 1
                 continue
             if job.result.get("target_url") != canonical_target_url(row["source_url"]):
-                raise ValueError("Retrieved media does not match notification target")
+                stats["invalid"] += 1
+                continue
             attempts_key = f"notification_import_attempts:{row['id']}"
             attempts = queue.get_setting(attempts_key, 0)
             if attempts >= _CONTROL.ingestion_retry_limit:
@@ -179,7 +190,8 @@ def _import_manual_targets(queue: BrowserJobQueue, stats: dict[str, int]) -> Non
         ):
             continue
         if not job.result or job.result.get("target_url") != job.payload["url"]:
-            raise ValueError("Retrieved profile does not match its job")
+            stats["invalid"] += 1
+            continue
         attempts_key = f"manual_import_attempts:{job.id}"
         attempts = queue.get_setting(attempts_key, 0)
         if attempts >= _CONTROL.ingestion_retry_limit:
@@ -199,21 +211,23 @@ def _import_manual_targets(queue: BrowserJobQueue, stats: dict[str, int]) -> Non
 
 def retry_retrieved_media(queue: BrowserJobQueue, job_id: str) -> None:
     """Explicitly reset import retries for this public target, preserving other jobs."""
-    job = queue.get(job_id)
-    if job is None or job.kind != "retrieval" or job.state == "running":
-        raise ValueError("Only an idle retrieval job may be retried")
     with (queue.state_directory / "ingestion.lock").open("a+") as lock:
         try:
             fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError:
             raise RuntimeError("Wait for the current import before retrying") from None
-        if job.state != "pending":
-            queue.refresh_retrieval(job.id)
+        job = queue.get(job_id)
+        if job is None or job.kind != "retrieval" or job.state == "running":
+            raise ValueError("Only an idle retrieval job may be retried")
+        setting_keys = [f"manual_imported:{job.id}", f"manual_import_attempts:{job.id}"]
         for row in _pending_rows():
-            if (
-                row["source_url"] == job.payload["url"]
-                and row["notification"]["intended_recipient_id"] == job.recipient_id
-            ):
-                queue.set_setting(f"notification_import_attempts:{row['id']}", 0)
-        queue.set_setting(f"manual_imported:{job.id}", False)
-        queue.set_setting(f"manual_import_attempts:{job.id}", 0)
+            try:
+                matches = (
+                    canonical_target_url(row["source_url"]) == job.payload["url"]
+                    and row["notification"]["intended_recipient_id"] == job.recipient_id
+                )
+            except (KeyError, TypeError, ValueError, BrowserSessionError):
+                continue
+            if matches:
+                setting_keys.append(f"notification_import_attempts:{row['id']}")
+        queue.reset_retrieval_import(job.id, import_setting_keys=setting_keys)

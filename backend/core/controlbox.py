@@ -679,6 +679,8 @@ class InstagramBrowserControl(_ControlModel):
     result_timeout_seconds: float = Field(gt=0, le=1800)
     source_poll_interval_seconds: float = Field(ge=10, le=3600)
     source_page_size: int = Field(gt=0, le=1000)
+    worker_log_max_bytes: int = Field(ge=65536, le=67108864)
+    worker_log_backup_count: int = Field(ge=1, le=10)
     engagement_interval_seconds: float = Field(ge=1, le=3600)
     engagement_max_wait_seconds: float = Field(ge=1, le=3600)
     actions: tuple[Literal["like", "save", "repost"], ...] = Field(min_length=1, max_length=3)

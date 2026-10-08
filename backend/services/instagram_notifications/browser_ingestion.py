@@ -32,6 +32,8 @@ _RESERVED = {"p", "reel", "reels", "accounts", "explore", "direct", "stories"}
 
 def canonical_target_url(url: str) -> str:
     """Normalize a manual username, profile URL or exact post URL once at ingestion."""
+    if not isinstance(url, str):
+        raise ValueError("Retrieval requires an Instagram profile or post URL")
     url = url.strip()
     username = url.removeprefix("@")
     if _PROFILE_PATH.fullmatch(f"/{username}/"):

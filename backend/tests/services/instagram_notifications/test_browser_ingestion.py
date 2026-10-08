@@ -192,7 +192,9 @@ def test_pending_retrieval_does_not_claim_production_media(import_setup, monkeyp
 def test_import_uses_existing_pipeline_only_after_journaling_claim(import_setup, monkeypatch):
     queue, row, jid = import_setup
     queue.claim_next()
-    queue.finish(jid, result={"account_username": "wat2do.ca", "target_url": URL, "posts": [POST]})
+    queue.finish(
+        queue.get(jid), result={"account_username": "wat2do.ca", "target_url": URL, "posts": [POST]}
+    )
 
     def claim(**args):
         assert queue.get_setting(bridge._JOURNAL) == args
@@ -216,7 +218,9 @@ def test_import_uses_existing_pipeline_only_after_journaling_claim(import_setup,
 def test_import_failure_rolls_back_and_refreshes_without_success(import_setup, monkeypatch):
     queue, _, jid = import_setup
     queue.claim_next()
-    queue.finish(jid, result={"account_username": "wat2do.ca", "target_url": URL, "posts": [POST]})
+    queue.finish(
+        queue.get(jid), result={"account_username": "wat2do.ca", "target_url": URL, "posts": [POST]}
+    )
     monkeypatch.setattr(bridge, "claim_pending_browser_media", lambda **_: True)
     monkeypatch.setattr(
         bridge, "_import_posts", lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError())
@@ -234,7 +238,9 @@ def test_import_failure_rolls_back_and_refreshes_without_success(import_setup, m
 def test_commit_then_network_failure_keeps_recoverable_token(import_setup, monkeypatch):
     queue, _, jid = import_setup
     queue.claim_next()
-    queue.finish(jid, result={"account_username": "wat2do.ca", "target_url": URL, "posts": [POST]})
+    queue.finish(
+        queue.get(jid), result={"account_username": "wat2do.ca", "target_url": URL, "posts": [POST]}
+    )
     monkeypatch.setattr(
         bridge, "claim_pending_browser_media", lambda **_: (_ for _ in ()).throw(OSError())
     )
@@ -254,7 +260,9 @@ def test_commit_then_network_failure_keeps_recoverable_token(import_setup, monke
 def test_import_claim_conflict_does_not_extract_or_finalize(import_setup, monkeypatch):
     queue, _, jid = import_setup
     queue.claim_next()
-    queue.finish(jid, result={"account_username": "wat2do.ca", "target_url": URL, "posts": [POST]})
+    queue.finish(
+        queue.get(jid), result={"account_username": "wat2do.ca", "target_url": URL, "posts": [POST]}
+    )
     monkeypatch.setattr(bridge, "claim_pending_browser_media", lambda **_: False)
     monkeypatch.setattr(
         bridge, "_import_posts", lambda *_args, **_kwargs: pytest.fail("Claim lost")
@@ -545,7 +553,7 @@ def test_import_rejects_wrong_retrieved_target(import_setup, monkeypatch):
     queue, _, jid = import_setup
     queue.claim_next()
     queue.finish(
-        jid,
+        queue.get(jid),
         result={
             "account_username": "wat2do.ca",
             "target_url": "https://www.instagram.com/p/Other/",
@@ -555,8 +563,53 @@ def test_import_rejects_wrong_retrieved_target(import_setup, monkeypatch):
     monkeypatch.setattr(
         bridge, "claim_pending_browser_media", lambda **_: pytest.fail("Wrong target")
     )
-    with pytest.raises(ValueError, match="target"):
-        bridge.import_retrieved_media(queue)
+    assert bridge.import_retrieved_media(queue)["invalid"] == 1
+    assert queue.get(jid).state == "succeeded"
+
+
+def test_invalid_import_target_cannot_block_another_school(import_setup, monkeypatch):
+    queue, row, jid = import_setup
+    queue.finish(
+        queue.claim_next(),
+        result={"account_username": ACCOUNT, "target_url": URL, "posts": [POST]},
+    )
+    broken = {**row, "id": "615b6bca-4efd-41c6-8e69-0ff62f3aece2", "source_url": None}
+    monkeypatch.setattr(bridge, "_pending_rows", lambda: [broken, row])
+    imports = []
+    claims = []
+    monkeypatch.setattr(
+        bridge, "claim_pending_browser_media", lambda **claim: claims.append(claim) or True
+    )
+    monkeypatch.setattr(
+        bridge, "_import_posts", lambda *args, **kwargs: imports.append((args, kwargs))
+    )
+    monkeypatch.setattr(bridge, "mark_media_succeeded", lambda **_: True)
+
+    result = bridge.import_retrieved_media(queue)
+
+    assert result["imported"] == 1
+    assert result["invalid"] == 1
+    assert [claim["media_row_id"] for claim in claims] == [row["id"]]
+    assert len(imports) == 1
+    assert queue.get(jid).state == "succeeded"
+
+
+def test_manual_retry_cannot_reset_import_history_after_a_worker_claim(import_setup, monkeypatch):
+    queue, row, jid = import_setup
+    key = f"notification_import_attempts:{row['id']}"
+    queue.set_setting(key, 3)
+
+    def pending():
+        assert queue.claim_next().id == jid
+        return [row]
+
+    monkeypatch.setattr(bridge, "_pending_rows", pending)
+
+    with pytest.raises(ValueError, match="idle retrieval"):
+        bridge.retry_retrieved_media(queue, jid)
+
+    assert queue.get(jid).state == "running"
+    assert queue.get_setting(key) == 3
 
 
 def test_excluded_account_remains_pending_while_other_retrieval_runs(tmp_path):
@@ -586,7 +639,7 @@ def test_excluded_notification_is_not_synced_or_imported(import_setup, monkeypat
 def test_exclusions_apply_to_account_bound_jobs(tmp_path, kind):
     queue = BrowserJobQueue(tmp_path)
     if kind == "digest":
-        jid = queue.enqueue_digest(RECIPIENT, "wat2do.utsc", "example")
+        jid = queue.enqueue_digest(RECIPIENT, "wat2do.utsc", "example").id
     else:
         jid = queue.enqueue_engagement(
             school="utsc",
@@ -620,8 +673,16 @@ def test_sync_enqueues_entire_backlog_not_one_source_page(tmp_path, monkeypatch)
     rows = [{"source_url": f"https://www.instagram.com/p/Backlog{i}/"} for i in range(140)]
     monkeypatch.setattr(bridge, "_pending_rows", lambda: rows)
     monkeypatch.setattr(bridge, "_identity", lambda _: ("ubc", RECIPIENT, ACCOUNT))
-    assert bridge.sync_notification_media(queue) == {"pending_media": 140, "queued": 140}
-    assert bridge.sync_notification_media(queue) == {"pending_media": 140, "queued": 140}
+    assert bridge.sync_notification_media(queue) == {
+        "pending_media": 140,
+        "queued": 140,
+        "invalid": 0,
+    }
+    assert bridge.sync_notification_media(queue) == {
+        "pending_media": 140,
+        "queued": 140,
+        "invalid": 0,
+    }
     assert sum(row["quantity"] for row in queue.status()["queues"]) == 140
 
 
@@ -630,12 +691,45 @@ def test_notification_collection_preserves_finite_read_failure_budget(import_set
     for attempt in range(1, bridge._CONTROL.ingestion_retry_limit + 1):
         assert queue.claim_next().id == jid
         assert queue.get(jid).attempts == attempt
-        queue.finish(jid, error="Permanent incomplete public media")
+        queue.finish(queue.get(jid), error="Permanent incomplete public media")
         result = bridge.sync_notification_media(queue)
         exhausted = attempt == bridge._CONTROL.ingestion_retry_limit
         assert result["queued"] == (0 if exhausted else 1)
         assert queue.get(jid).state == ("failed" if exhausted else "pending")
         assert queue.get(jid).attempts == attempt
+    assert queue.claim_next() is None
+
+
+def test_notification_collection_preserves_an_operator_cancel(import_setup):
+    queue, _, jid = import_setup
+    queue.cancel(jid)
+
+    result = bridge.sync_notification_media(queue)
+
+    assert result["queued"] == 0
+    assert queue.get(jid).state == "cancelled"
+    assert queue.claim_next() is None
+
+
+@pytest.mark.parametrize("invalid", ["recipient", "url"])
+def test_invalid_notification_cannot_block_other_schools(import_setup, monkeypatch, invalid):
+    queue, row, jid = import_setup
+    broken = {**row, "source_url": "https://www.instagram.com/p/Broken/"}
+    if invalid == "url":
+        broken["source_url"] = None
+    monkeypatch.setattr(bridge, "_pending_rows", lambda: [broken, row])
+
+    def identity(target):
+        if target is broken and invalid == "recipient":
+            raise ValueError("Notification recipient has no configured school")
+        return "ubc", RECIPIENT, ACCOUNT
+
+    monkeypatch.setattr(bridge, "_identity", identity)
+
+    result = bridge.sync_notification_media(queue)
+
+    assert result == {"pending_media": 1, "queued": 1, "invalid": 1}
+    assert queue.claim_next().id == jid
     assert queue.claim_next() is None
 
 
@@ -654,12 +748,16 @@ def test_refreshing_signed_media_never_resets_the_separate_import_failure_budget
     )
     for attempt in range(1, bridge._CONTROL.ingestion_retry_limit + 1):
         assert queue.claim_next().id == jid
-        queue.finish(jid, result={"account_username": ACCOUNT, "target_url": URL, "posts": [POST]})
+        queue.finish(
+            queue.get(jid), result={"account_username": ACCOUNT, "target_url": URL, "posts": [POST]}
+        )
         assert bridge.import_retrieved_media(queue)["failed"] == 1
         assert queue.get(jid).attempts == 0
         assert queue.get_setting(key) == attempt
     queue.claim_next()
-    queue.finish(jid, result={"account_username": ACCOUNT, "target_url": URL, "posts": [POST]})
+    queue.finish(
+        queue.get(jid), result={"account_username": ACCOUNT, "target_url": URL, "posts": [POST]}
+    )
     assert bridge.import_retrieved_media(queue)["blocked"] == 1
     assert len(claims) == bridge._CONTROL.ingestion_retry_limit
     assert queue.get_setting(key) == bridge._CONTROL.ingestion_retry_limit

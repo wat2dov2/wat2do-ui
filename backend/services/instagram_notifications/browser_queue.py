@@ -31,6 +31,7 @@ from services.instagram_notifications.browser_session import (
 )
 
 CONTROL = controlbox.instagram_browser
+WORKER_INSTALLATION_PAUSE = "Browser worker installation in progress"
 log = logging.getLogger(__name__)
 _P = ParamSpec("_P")
 _R = TypeVar("_R")
@@ -348,7 +349,9 @@ class BrowserJobQueue:
             ).fetchone()
         return row["account_username"] if row else None
 
-    def enqueue_digest(self, recipient_id: str, account_username: str, cache_ent_id: str) -> str:
+    def enqueue_digest(
+        self, recipient_id: str, account_username: str, cache_ent_id: str
+    ) -> BrowserJob:
         if not re.fullmatch(r"[A-Za-z0-9._:-]{1,255}", cache_ent_id):
             raise ValueError("Instagram cache ID is invalid")
         return self._enqueue(
@@ -374,7 +377,7 @@ class BrowserJobQueue:
             recipient_id,
             account_username,
             {"url": canonical_target_url(url), "cutoff_days": cutoff_days},
-        )
+        ).id
 
     def enqueue_engagement(
         self,
@@ -398,12 +401,12 @@ class BrowserJobQueue:
                 "event_id": event_id,
                 "dry_run": dry_run,
             },
-        )
+        ).id
 
     @_retry_storage
     def _enqueue(
         self, kind: str, school: str, recipient_id: str, username: str, payload: dict[str, Any]
-    ) -> str:
+    ) -> BrowserJob:
         recipient_id = validate_recipient_id(recipient_id)
         username = validate_account_username(username)
         identity = [kind, recipient_id, username]
@@ -429,7 +432,9 @@ class BrowserJobQueue:
                         "UPDATE jobs SET state='pending',created_at=?,started_at=NULL,finished_at=NULL,error=NULL,result=NULL,attempts=0 WHERE id=?",
                         (time.time(), existing["id"]),
                     )
-                return existing["id"]
+                return self._job(
+                    db.execute("SELECT * FROM jobs WHERE id=?", (existing["id"],)).fetchone()
+                )
             job_id = uuid.uuid4().hex
             db.execute(
                 "INSERT INTO jobs(id,dedupe_key,kind,school,recipient_id,account_username,payload,created_at) VALUES (?,?,?,?,?,?,?,?)",
@@ -444,8 +449,9 @@ class BrowserJobQueue:
                     time.time(),
                 ),
             )
-        self._record_job_diagnostic("queued", job_id)
-        return job_id
+            submitted = self._job(db.execute("SELECT * FROM jobs WHERE id=?", (job_id,)).fetchone())
+        self.record_diagnostic("queued", submitted)
+        return submitted
 
     @_retry_storage
     def get(self, job_id: str) -> BrowserJob | None:
@@ -486,10 +492,7 @@ class BrowserJobQueue:
             db.execute("BEGIN IMMEDIATE")
             if self._claims_blocked(db, now):
                 return None
-            db.execute(
-                "UPDATE jobs SET state='cancelled',finished_at=?,error='Digest caller deadline expired' WHERE kind='digest' AND state='pending' AND created_at<?",
-                (now, now - CONTROL.result_timeout_seconds),
-            )
+            self._expire_pending_digests(db, now)
             row = db.execute(
                 "SELECT * FROM jobs WHERE state='pending' AND kind='digest' "
                 f"AND {_AVAILABLE_ACCOUNT_SQL} "
@@ -517,6 +520,14 @@ class BrowserJobQueue:
                 (now, row["id"]),
             )
             return self._job(db.execute("SELECT * FROM jobs WHERE id=?", (row["id"],)).fetchone())
+
+    @staticmethod
+    def _expire_pending_digests(db: sqlite3.Connection, now: float) -> None:
+        db.execute(
+            "UPDATE jobs SET state='cancelled',finished_at=?,error='Digest caller deadline expired' "
+            "WHERE kind='digest' AND state='pending' AND created_at<=?",
+            (now, now - CONTROL.result_timeout_seconds),
+        )
 
     @staticmethod
     def _select_engagement(
@@ -557,6 +568,7 @@ class BrowserJobQueue:
             now = time.time()
             if self._claims_blocked(db, now):
                 return []
+            self._expire_pending_digests(db, now)
             if first.kind == "retrieval" and (
                 db.execute(
                     "SELECT 1 FROM jobs WHERE state='pending' AND kind='digest' "
@@ -592,24 +604,25 @@ class BrowserJobQueue:
     @_retry_storage
     def finish(
         self,
-        job_id: str,
+        claim: BrowserJob,
         *,
         result: dict[str, Any] | None = None,
         error: str | None = None,
         requeue: bool = False,
-        rate_limited_claim: BrowserJob | None = None,
+        refund_rate_limit: bool = False,
     ) -> None:
         """Complete a claim or atomically schedule a safe read retry."""
-        if rate_limited_claim is not None and (
+        if not isinstance(claim, BrowserJob):
+            raise ValueError("Browser completion requires its original job claim")
+        if refund_rate_limit and (
             not requeue
             or not error
             or not error.strip()
             or result is not None
-            or rate_limited_claim.id != job_id
-            or rate_limited_claim.kind not in {"digest", "retrieval"}
-            or rate_limited_claim.state != "running"
-            or rate_limited_claim.started_at is None
-            or rate_limited_claim.attempts <= 0
+            or claim.kind not in {"digest", "retrieval"}
+            or claim.state != "running"
+            or claim.started_at is None
+            or claim.attempts <= 0
         ):
             raise ValueError(
                 "A rate-limited claim refund requires a failed running safe read retry"
@@ -626,26 +639,28 @@ class BrowserJobQueue:
         retry_job: BrowserJob | None = None
         with closing(self._connect()) as db, db:
             db.execute("BEGIN IMMEDIATE")
-            row = db.execute("SELECT * FROM jobs WHERE id=?", (job_id,)).fetchone()
+            row = db.execute("SELECT * FROM jobs WHERE id=?", (claim.id,)).fetchone()
             stored_job = self._job(row) if row else None
+            if (
+                stored_job is None
+                or stored_job.state != "running"
+                or claim.state != "running"
+                or stored_job.attempts != claim.attempts
+                or stored_job.started_at != claim.started_at
+            ):
+                return
             if requeue:
                 retry_job = stored_job
                 if retry_job and retry_job.kind == "engagement":
                     raise ValueError("Engagement cannot be automatically requeued")
-            if rate_limited_claim is not None and (
-                retry_job is None
-                or retry_job.state != "running"
-                or retry_job.attempts != rate_limited_claim.attempts
-                or retry_job.started_at != rate_limited_claim.started_at
-            ):
-                return
             now = time.time()
-            refund = rate_limited_claim is not None
+            refund = refund_rate_limit
             changed = db.execute(
                 "UPDATE jobs SET state=?,result=?,error=?,finished_at=?,"
                 "started_at=CASE WHEN ? THEN NULL ELSE started_at END,"
-                "created_at=CASE WHEN ? THEN ? ELSE created_at END,attempts=attempts-? "
-                "WHERE id=? AND state='running' AND attempts>=?",
+                "created_at=CASE WHEN ? AND kind!='digest' THEN ? ELSE created_at END,"
+                "attempts=attempts-? "
+                "WHERE id=? AND state='running' AND attempts=? AND started_at=?",
                 (
                     state,
                     json.dumps(result) if result and not requeue else None,
@@ -655,8 +670,9 @@ class BrowserJobQueue:
                     requeue,
                     now,
                     refund,
-                    job_id,
-                    refund,
+                    claim.id,
+                    claim.attempts,
+                    claim.started_at,
                 ),
             ).rowcount
             if (
@@ -741,6 +757,20 @@ class BrowserJobQueue:
         self._record_job_diagnostic("queued", job_id)
 
     @_retry_storage
+    def retry_failed_retrieval(self, job_id: str) -> bool:
+        """Let competing collectors retry an eligible failure once without reviving cancellations."""
+        with closing(self._connect()) as db, db:
+            changed = db.execute(
+                "UPDATE jobs SET state='pending',created_at=?,result=NULL,error=NULL,"
+                "started_at=NULL,finished_at=NULL WHERE id=? AND kind='retrieval' "
+                "AND state='failed' AND attempts<?",
+                (time.time(), job_id, CONTROL.ingestion_retry_limit),
+            ).rowcount
+        if changed:
+            self._record_job_diagnostic("queued", job_id)
+        return bool(changed)
+
+    @_retry_storage
     def cancel(self, job_id: str) -> None:
         with closing(self._connect()) as db, db:
             db.execute(
@@ -749,16 +779,67 @@ class BrowserJobQueue:
             )
 
     @_retry_storage
+    def cancel_pending_digest(self, expected: BrowserJob) -> bool:
+        """A timed-out caller cannot cancel a newer submission of the same digest."""
+        if expected.kind != "digest":
+            raise ValueError("Caller cancellation requires its original digest submission")
+        with closing(self._connect()) as db, db:
+            changed = db.execute(
+                "UPDATE jobs SET state='cancelled',finished_at=? WHERE id=? AND kind='digest' "
+                "AND state='pending' AND created_at=?",
+                (
+                    time.time(),
+                    expected.id,
+                    expected.created_at,
+                ),
+            ).rowcount
+        return bool(changed)
+
+    @_retry_storage
+    def reset_retrieval_import(self, job_id: str, *, import_setting_keys: list[str]) -> None:
+        """Refresh an idle target and reset only its explicit import markers atomically."""
+        allowed_manual = {f"manual_imported:{job_id}", f"manual_import_attempts:{job_id}"}
+        if any(
+            key not in allowed_manual
+            and not re.fullmatch(r"notification_import_attempts:[a-f0-9-]{36}", key)
+            for key in import_setting_keys
+        ):
+            raise ValueError("Only matching retrieval import markers may be reset")
+        with closing(self._connect()) as db, db:
+            db.execute("BEGIN IMMEDIATE")
+            changed = self._refresh_retrieval_state(db, job_id, allow_pending=True)
+            if not changed:
+                raise ValueError("Only an idle retrieval job may be retried")
+            db.executemany(
+                "INSERT INTO settings VALUES (?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+                [
+                    (key, json.dumps(False if key.startswith("manual_imported:") else 0))
+                    for key in import_setting_keys
+                ],
+            )
+        self._record_job_diagnostic("queued", job_id)
+
+    @_retry_storage
     def refresh_retrieval(self, job_id: str) -> None:
         """Refresh expired public media fields without touching engagement history."""
         with closing(self._connect()) as db, db:
-            changed = db.execute(
-                "UPDATE jobs SET state='pending',created_at=?,result=NULL,error=NULL,started_at=NULL,finished_at=NULL,attempts=0 WHERE id=? AND kind='retrieval' AND state IN ('succeeded','failed','cancelled')",
-                (time.time(), job_id),
-            ).rowcount
+            changed = self._refresh_retrieval_state(db, job_id, allow_pending=False)
         if not changed:
             raise ValueError("Only completed retrieval jobs may be refreshed")
         self._record_job_diagnostic("queued", job_id)
+
+    @staticmethod
+    def _refresh_retrieval_state(
+        db: sqlite3.Connection, job_id: str, *, allow_pending: bool
+    ) -> bool:
+        return bool(
+            db.execute(
+                "UPDATE jobs SET state='pending',created_at=?,result=NULL,error=NULL,"
+                "started_at=NULL,finished_at=NULL,attempts=0 WHERE id=? AND kind='retrieval' "
+                "AND (state IN ('succeeded','failed','cancelled') OR (? AND state='pending'))",
+                (time.time(), job_id, allow_pending),
+            ).rowcount
+        )
 
     @_retry_storage
     def retrieval_results(self) -> list[BrowserJob]:
@@ -815,13 +896,20 @@ class QueuedInstagramDigestResolver:
         self, intended_recipient_id: str, account_username: str, cache_ent_id: str
     ) -> DigestResolution:
         try:
-            job_id = self.queue.enqueue_digest(
+            submitted = self.queue.enqueue_digest(
                 intended_recipient_id, account_username, cache_ent_id
             )
         except (ValueError, sqlite3.Error) as exc:
             raise BrowserDigestError("Could not enqueue Instagram digest") from exc
-        deadline = time.monotonic() + CONTROL.result_timeout_seconds
-        while time.monotonic() < deadline:
+        job_id = submitted.id
+        # All waiters share the admission's expiry, matching claim_next. A late
+        # duplicate caller cannot extend a pending digest's lifetime for others.
+        remaining = min(
+            CONTROL.result_timeout_seconds,
+            max(0, submitted.created_at + CONTROL.result_timeout_seconds - time.time()),
+        )
+        deadline = time.monotonic() + remaining
+        while True:
             job = self.queue.get(job_id)
             if job and job.state == "succeeded" and job.result:
                 return DigestResolution(
@@ -831,15 +919,17 @@ class QueuedInstagramDigestResolver:
                 )
             if job and job.state in {"failed", "cancelled"}:
                 raise BrowserDigestError(job.error or "Instagram digest job was cancelled")
+            if time.monotonic() >= deadline:
+                break
             worker = self.queue.get_setting("worker", {})
             paused = self.queue.get_setting("paused", False)
-            if (
+            if paused != WORKER_INSTALLATION_PAUSE and (
                 paused
                 or not worker.get("running")
                 or time.time() - worker.get("heartbeat", 0)
                 > CONTROL.job_timeout_seconds + CONTROL.request_timeout_seconds
             ):
-                self.queue.cancel(job_id)
+                self.queue.cancel_pending_digest(submitted)
                 reason = (
                     f"Instagram browser worker is paused: {paused}"
                     if isinstance(paused, str) and paused
@@ -847,5 +937,5 @@ class QueuedInstagramDigestResolver:
                 )
                 raise BrowserDigestError(reason)
             time.sleep(CONTROL.worker_poll_interval_seconds)
-        self.queue.cancel(job_id)
+        self.queue.cancel_pending_digest(submitted)
         raise BrowserDigestError("Instagram digest queue timed out; notification can be retried")

@@ -58,7 +58,7 @@ def _drain(queue):
     jobs = []
     while job := queue.claim_next():
         jobs.append(job)
-        queue.finish(job.id, result={"status": "done"})
+        queue.finish(job, result={"status": "done"})
     return jobs
 
 

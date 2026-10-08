@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 
 from services.instagram_notifications.browser_session import (
+    BrowserEngagementUncertain,
     BrowserInstagramSession,
     BrowserSessionError,
     _current_account_username_source,
@@ -21,7 +22,7 @@ _ACTIONS = frozenset({"like", "save", "repost"})
 
 
 # Observed native toolbar glyphs: Instagram preserves the Repost label in both states.
-# Unknown glyphs remain unsupported instead of risking toggling off a repost.
+# Without explicit state, unknown glyphs remain unsupported instead of risking a toggle.
 _REPOST_INACTIVE_PATH = "M19.998 9.497a1 1 0 0 0-1 1v4.228a3.274 3.274 0 0 1-3.27 3.27h-5.313l1.791-1.787a1 1 0 0 0-1.412-1.416L7.29 18.287a1.004 1.004 0 0 0-.294.707v.001c0 .023.012.042.013.065a.923.923 0 0 0 .281.643l3.502 3.504a1 1 0 0 0 1.414-1.414l-1.797-1.798h5.318a5.276 5.276 0 0 0 5.27-5.27v-4.228a1 1 0 0 0-1-1Zm-6.41-3.496-1.795 1.795a1 1 0 1 0 1.414 1.414l3.5-3.5a1.003 1.003 0 0 0 0-1.417l-3.5-3.5a1 1 0 0 0-1.414 1.414l1.794 1.794H8.27A5.277 5.277 0 0 0 3 9.271V13.5a1 1 0 0 0 2 0V9.271a3.275 3.275 0 0 1 3.271-3.27Z"
 _REPOST_ACTIVE_PATH = "M16 6.001a1 1 0 0 0 .924-1.382.998.998 0 0 0-.217-.326l-3.5-3.5a1 1 0 1 0-1.414 1.414l1.794 1.794H8.27A5.277 5.277 0 0 0 3 9.271V13.5a1 1 0 1 0 2 0V9.271a3.275 3.275 0 0 1 3.271-3.27h7.73Zm3.998 3.496a1 1 0 0 0-1 1v4.228a3.274 3.274 0 0 1-3.27 3.27H7.996a1.001 1.001 0 0 0-.706 1.708l3.502 3.504a.997.997 0 0 0 1.414 0 1 1 0 0 0 0-1.414l-1.797-1.798h5.317a5.276 5.276 0 0 0 5.271-5.27v-4.228a1 1 0 0 0-1-1Zm-5.205-.51-3.905 3.906-1.681-1.681a1 1 0 1 0-1.414 1.414l2.388 2.388a1 1 0 0 0 1.414 0l4.612-4.614a1 1 0 1 0-1.414-1.414Z"
 
@@ -76,7 +77,12 @@ class BrowserInstagramEngagementExecutor:
 
         # Never click a second time. An uncertain completion requires inspection
         # on a manual retry, which can recognize an already completed action.
-        self._session.poll_until(completed)
+        try:
+            self._session.poll_until(completed)
+        except Exception:
+            raise BrowserEngagementUncertain(
+                "Instagram engagement completion is uncertain; inspect browser state before resuming"
+            ) from None
         return {"action": action, "status": "succeeded"}
 
     def _prepare(self, recipient_id: str, account_username: str, post_url: str) -> tuple[str, str]:
@@ -95,16 +101,40 @@ class BrowserInstagramEngagementExecutor:
             if ready["status"] != "ready":
                 return ready
         source = _engagement_source(recipient_id, username, post_url, action, click=click)
-        raw = self._session.run(source) if click else self._session.read(source)
+        if click:
+            try:
+                raw = self._session.run(source)
+            except Exception:
+                raise BrowserEngagementUncertain(
+                    "Instagram engagement dispatch is uncertain; inspect browser state before resuming"
+                ) from None
+        else:
+            raw = self._session.read(source)
+        response_error = BrowserEngagementUncertain if click else BrowserSessionError
+        invalid_state_message = (
+            "Instagram engagement dispatch is uncertain; inspect browser state before resuming"
+            if click
+            else "Instagram engagement returned invalid state"
+        )
         try:
             state = json.loads(raw)
-        except json.JSONDecodeError:
-            raise BrowserSessionError("Instagram engagement returned invalid state") from None
+        except (json.JSONDecodeError, TypeError):
+            raise response_error(invalid_state_message) from None
         if not isinstance(state, dict):
-            raise BrowserSessionError("Instagram engagement returned invalid state")
+            raise response_error(invalid_state_message)
         status = state.get("status")
-        if status not in {"ready", "not_ready", "clicked", "already_done", "unsupported"}:
+        if status == "failed":
             raise BrowserSessionError(_failure_message(state.get("reason")))
+        if not isinstance(status, str) or status not in {
+            "ready",
+            "not_ready",
+            "clicked",
+            "already_done",
+            "unsupported",
+        }:
+            raise response_error(invalid_state_message)
+        if status == "ready" and click:
+            raise BrowserEngagementUncertain(invalid_state_message)
         if status == "not_ready" and click:
             raise BrowserSessionError(_failure_message("not_ready"))
         if status == "clicked" and not click:
@@ -170,15 +200,17 @@ def _engagement_source(
   const pressed = control.getAttribute("aria-pressed");
   let done = label !== names[0];
   if (action === "repost" && label === "Repost") {{
+    if (pressed !== null && pressed !== "true" && pressed !== "false") return fail("unknown_state");
+    const paths = [...(control.querySelector('svg[aria-label="Repost"]')?.querySelectorAll('path') || [])];
+    const glyph = paths.length === 1 ? paths[0].getAttribute("d") : null;
+    const glyphDone = glyph === {json.dumps(_REPOST_ACTIVE_PATH)} ? true :
+      glyph === {json.dumps(_REPOST_INACTIVE_PATH)} ? false : null;
     if (pressed === "true" || pressed === "false") {{
       done = pressed === "true";
+      if (glyphDone !== null && glyphDone !== done) return fail("unknown_state");
     }} else {{
-      const paths = [...(control.querySelector('svg[aria-label="Repost"]')?.querySelectorAll('path') || [])];
-      if (paths.length !== 1) return result("unsupported");
-      const glyph = paths[0].getAttribute("d");
-      if (glyph === {json.dumps(_REPOST_ACTIVE_PATH)}) done = true;
-      else if (glyph === {json.dumps(_REPOST_INACTIVE_PATH)}) done = false;
-      else return result("unsupported");
+      if (glyphDone === null) return result("unsupported");
+      done = glyphDone;
     }}
   }} else if (pressed !== null && pressed !== String(done)) {{
     return fail("unknown_state");

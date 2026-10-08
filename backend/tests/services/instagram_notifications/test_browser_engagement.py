@@ -12,7 +12,11 @@ from html.parser import HTMLParser
 import pytest
 
 from services.instagram_notifications import browser_engagement as engagement
-from services.instagram_notifications.browser_session import BrowserSessionError
+from services.instagram_notifications.browser_session import (
+    BrowserEngagementUncertain,
+    BrowserSessionError,
+    _BrowserAutomationTransient,
+)
 
 
 class _FixtureParser(HTMLParser):
@@ -287,9 +291,59 @@ def test_completed_action_waits_through_disabled_hydration_without_another_click
 
 def test_verification_timeout_does_not_click_again():
     session = FakeSession(["ready", "clicked", "ready", "ready", "ready"])
-    with pytest.raises(BrowserSessionError, match="timed out"):
+    with pytest.raises(BrowserEngagementUncertain, match="completion is uncertain"):
         _execute(session)
     assert sum("if (!true)" in source for source in session.sources) == 1
+
+
+@pytest.mark.parametrize(
+    "failure",
+    [
+        _BrowserAutomationTransient("private bridge timeout"),
+        TimeoutError("private timeout"),
+        RuntimeError("private unexpected bridge failure"),
+    ],
+)
+def test_uncertain_click_dispatch_is_sanitized_and_never_replayed(failure, monkeypatch):
+    session = FakeSession(["ready"])
+
+    def dispatch(source):
+        session.mutations.append(source)
+        raise failure
+
+    monkeypatch.setattr(session, "run", dispatch)
+    with pytest.raises(BrowserEngagementUncertain, match="dispatch is uncertain") as error:
+        _execute(session)
+    assert "private" not in str(error.value)
+    assert len(session.mutations) == 1
+    assert len(session.reads) == 1
+
+
+@pytest.mark.parametrize("response", ["ready", {}, {"status": "unexpected"}])
+def test_unverified_mutation_response_cannot_be_reported_as_a_completed_action(response):
+    session = FakeSession(["ready", response])
+    with pytest.raises(BrowserEngagementUncertain):
+        _execute(session)
+    assert len(session.mutations) == 1
+
+
+@pytest.mark.parametrize(
+    "response",
+    ["unsupported", {"status": "failed", "reason": "wrong_account"}, {"status": "invalid"}],
+)
+def test_unavailable_post_click_confirmation_requires_inspection(response):
+    session = FakeSession(["ready", "clicked", response])
+    with pytest.raises(BrowserEngagementUncertain, match="completion is uncertain"):
+        _execute(session)
+    assert len(session.mutations) == 1
+
+
+def test_known_failed_pre_click_recheck_is_not_action_uncertainty():
+    session = FakeSession(["ready", {"status": "failed", "reason": "wrong_account"}])
+    with pytest.raises(BrowserSessionError, match="intended account") as error:
+        _execute(session)
+    assert not isinstance(error.value, BrowserEngagementUncertain)
+    assert len(session.mutations) == 1
 
 
 def test_action_confirmation_retries_bridge_reads_without_repeating_click():
@@ -325,6 +379,7 @@ def test_unsupported_repost_is_reported_without_claiming_success():
     result = _execute(session, "repost")
     assert result["status"] == "unsupported"
     assert "no explicit" in result["reason"]
+    assert session.mutations == []
 
 
 def test_invalid_url_and_action_fail_before_touching_browser():
@@ -351,6 +406,46 @@ def test_standalone_post_uses_author_prefixed_timestamp_without_article():
     )
     assert _evaluate(html, "like", click=False) == {"state": {"status": "ready"}, "clicks": []}
     assert _evaluate(html, "save", click=False) == {"state": {"status": "ready"}, "clicks": []}
+
+
+@pytest.mark.parametrize("tag", ["main", 'div role="main"'])
+def test_standalone_main_can_own_its_direct_toolbar_and_timestamp(tag):
+    closing = tag.split()[0]
+    html = (
+        "<nav><a href='/usask.wat2do.io/'><img alt=\"usask.wat2do.io's profile picture\"></a></nav>"
+        f"<{tag}><section>" + _toolbar() + "</section>"
+        f"<a href='/club/p/TARGET123/'>timestamp</a></{closing}>"
+    )
+    assert _evaluate(html, "like") == {"state": {"status": "clicked"}, "clicks": ["post-like"]}
+
+
+def test_hidden_sibling_post_does_not_block_a_directly_owned_standalone_toolbar():
+    html = (
+        "<nav><a href='/usask.wat2do.io/'><img alt=\"usask.wat2do.io's profile picture\"></a></nav>"
+        "<main><section>" + _toolbar() + "</section>"
+        "<a href='/club/p/TARGET123/'>timestamp</a>"
+        "<article aria-hidden='true'><a href='/p/OTHER/'>hidden other post</a></article></main>"
+    )
+    assert _evaluate(html, "like") == {"state": {"status": "clicked"}, "clicks": ["post-like"]}
+
+
+@pytest.mark.parametrize("wrapper", [False, True])
+@pytest.mark.parametrize("tag", ["main", 'div role="main"'])
+def test_toolbar_cannot_borrow_target_permalink_from_a_separate_post_subtree(tag, wrapper):
+    closing = tag.split()[0]
+    other_toolbar = _toolbar().replace('id="post-like"', 'id="wrong-post-like"')
+    siblings = (
+        "<div><section>" + other_toolbar + "</section></div>"
+        "<article><a href='/p/TARGET123/'>other subtree timestamp</a></article>"
+    )
+    html = (
+        "<nav><a href='/usask.wat2do.io/'><img alt=\"usask.wat2do.io's profile picture\"></a></nav>"
+        f"<{tag}>" + (f"<div>{siblings}</div>" if wrapper else siblings) + f"</{closing}>"
+    )
+    assert _evaluate(html, "like") == {
+        "state": {"status": "failed", "reason": "ambiguous_post"},
+        "clicks": [],
+    }
 
 
 def test_other_post_toolbar_is_excluded_by_its_own_permalink():
@@ -387,6 +482,51 @@ def test_live_native_repost_glyphs_without_pressed_state(glyph, status, clicks):
         "<title>Repost</title>", f'<title>Repost</title><path d="{glyph}"></path>'
     )
     assert _evaluate(_fixture(toolbar), "repost") == {"state": {"status": status}, "clicks": clicks}
+
+
+@pytest.mark.parametrize("click", [False, True])
+@pytest.mark.parametrize(
+    "pressed,glyph",
+    [("false", _OBSERVED_REPOST_ACTIVE), ("true", _OBSERVED_REPOST_INACTIVE)],
+    ids=["active-glyph", "inactive-glyph"],
+)
+def test_conflicting_repost_pressed_and_observed_glyph_states_never_click(pressed, glyph, click):
+    toolbar = _toolbar(pressed=pressed).replace(
+        "<title>Repost</title>", f'<title>Repost</title><path d="{glyph}"></path>'
+    )
+    assert _evaluate(_fixture(toolbar), "repost", click=click) == {
+        "state": {"status": "failed", "reason": "unknown_state"},
+        "clicks": [],
+    }
+
+
+@pytest.mark.parametrize(
+    "pressed,glyph,status,clicks",
+    [
+        ("false", _OBSERVED_REPOST_INACTIVE, "clicked", ["repost"]),
+        ("true", _OBSERVED_REPOST_ACTIVE, "already_done", []),
+    ],
+    ids=["inactive", "active"],
+)
+def test_consistent_native_repost_pressed_and_glyph_states_remain_supported(
+    pressed, glyph, status, clicks
+):
+    toolbar = _toolbar(pressed=pressed).replace(
+        "<title>Repost</title>", f'<title>Repost</title><path d="{glyph}"></path>'
+    )
+    assert _evaluate(_fixture(toolbar), "repost") == {"state": {"status": status}, "clicks": clicks}
+
+
+@pytest.mark.parametrize("pressed", ["mixed", "invalid"])
+def test_invalid_explicit_repost_state_cannot_fall_back_to_its_glyph(pressed):
+    toolbar = _toolbar(pressed=pressed).replace(
+        "<title>Repost</title>",
+        f'<title>Repost</title><path d="{_OBSERVED_REPOST_INACTIVE}"></path>',
+    )
+    assert _evaluate(_fixture(toolbar), "repost") == {
+        "state": {"status": "failed", "reason": "unknown_state"},
+        "clicks": [],
+    }
 
 
 def test_active_repost_badge_outside_toolbar_cannot_mark_post_reposted():

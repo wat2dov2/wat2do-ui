@@ -627,6 +627,8 @@ def test_instagram_browser_controls_have_one_shared_timing_source():
     assert controlbox.instagram_browser.engagement_interval_seconds == 10
     assert controlbox.instagram_browser.engagement_max_wait_seconds == 30
     assert controlbox.instagram_browser.source_page_size == 100
+    assert controlbox.instagram_browser.worker_log_max_bytes == 8388608
+    assert controlbox.instagram_browser.worker_log_backup_count == 3
     assert controlbox.instagram_browser.result_timeout_seconds > (
         controlbox.instagram_browser.job_timeout_seconds
     )
@@ -692,6 +694,10 @@ def test_instagram_browser_controls_have_one_shared_timing_source():
         {"source_poll_interval_seconds": 0},
         {"source_page_size": 0},
         {"source_page_size": 1001},
+        {"worker_log_max_bytes": 65535},
+        {"worker_log_max_bytes": 67108865},
+        {"worker_log_backup_count": 0},
+        {"worker_log_backup_count": 11},
         {"engagement_interval_seconds": 0},
         {"engagement_max_wait_seconds": 0},
         {"engagement_max_wait_seconds": 3601},

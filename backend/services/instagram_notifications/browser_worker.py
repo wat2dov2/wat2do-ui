@@ -18,6 +18,7 @@ from services.instagram_notifications.browser_engagement import BrowserInstagram
 from services.instagram_notifications.browser_queue import CONTROL, BrowserJob, BrowserJobQueue
 from services.instagram_notifications.browser_session import (
     BrowserAccountChanged,
+    BrowserEngagementUncertain,
     BrowserInstagramSession,
     BrowserRateLimited,
     BrowserSessionError,
@@ -50,7 +51,7 @@ def _storage_failure_reason(error: BaseException) -> str | None:
 
 
 def _requires_human_recovery(error: BaseException) -> bool:
-    return any(
+    return isinstance(error, BrowserEngagementUncertain) or any(
         reason in str(error)
         for reason in (
             "cancellation could not be confirmed",
@@ -216,19 +217,19 @@ def process_next_job(queue: BrowserJobQueue, *, allow_engagement: bool = True) -
                         if ids
                         else execute_job(job)
                     )
-                queue.finish(job.id, result=result)
+                queue.finish(job, result=result)
             except BrowserRateLimited as exc:
                 queue.defer_for_rate_limit(job, str(exc))
-                queue.finish(job.id, error=str(exc))
+                queue.finish(job, error=str(exc))
             except (BrowserSessionError, TimeoutError) as exc:
                 if _requires_human_recovery(exc):
                     queue.set_setting("paused", str(exc))
-                queue.finish(job.id, error=str(exc))
+                queue.finish(job, error=str(exc))
             except (KeyboardInterrupt, SystemExit):
                 queue.set_setting(
                     "paused", "Worker interrupted; inspect browser state before resuming"
                 )
-                queue.finish(job.id, error="Worker stopped during job; inspect before retrying")
+                queue.finish(job, error="Worker stopped during job; inspect before retrying")
                 raise
             except sqlite3.Error:
                 queue.storage_unavailable = True
@@ -249,7 +250,7 @@ def process_next_job(queue: BrowserJobQueue, *, allow_engagement: bool = True) -
                 )
                 log.error("Browser job %s failed: %s", job.id, error)
                 queue.set_setting("paused", error)
-                queue.finish(job.id, error=error)
+                queue.finish(job, error=error)
             finally:
                 completed = queue.get(job.id)
                 if completed:
@@ -403,12 +404,10 @@ def _process_batch(
         else:
             persist(
                 queue.finish,
-                job.id,
+                job,
                 error=error,
                 requeue=retryable,
-                rate_limited_claim=job
-                if retryable and isinstance(exc, BrowserRateLimited)
-                else None,
+                refund_rate_limit=retryable and isinstance(exc, BrowserRateLimited),
             )
         unfinished.discard(job.id)
 
@@ -448,7 +447,7 @@ def _process_batch(
                 for future in completed:
                     job, session = futures.pop(future)
                     try:
-                        queue.finish(job.id, result=future.result())
+                        queue.finish(job, result=future.result())
                         unfinished.discard(job.id)
                     except _BrowserReadCleanupPending:
                         persist(queue.set_setting, "retrieval_pool_account", None)
@@ -488,7 +487,7 @@ def _process_batch(
             if job.id in unfinished and job.id not in cleanup_pending:
                 persist(
                     queue.finish,
-                    job.id,
+                    job,
                     error="Worker stopped during job; inspect before retrying",
                 )
     except sqlite3.Error as exc:
@@ -511,7 +510,7 @@ def _process_batch(
             except (KeyboardInterrupt, SystemExit) as exc:
                 interruption = interruption or exc
             else:
-                persist(queue.finish, job.id, result=result)
+                persist(queue.finish, job, result=result)
         # Every future and its cancellation has settled before any retry can switch accounts.
         for job, session, pending in cleanup_pending.values():
             recovered_error: BaseException | None = None
@@ -564,7 +563,7 @@ def _process_batch(
         for job, error in pool_retries:
             persist(
                 queue.finish,
-                job.id,
+                job,
                 error=error,
                 requeue=not persist(queue.get_setting, "paused", False),
             )

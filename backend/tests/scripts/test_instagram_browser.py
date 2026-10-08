@@ -1,6 +1,10 @@
+import errno
 import fcntl
+import io
 import json
+import logging
 import plistlib
+import stat
 from types import SimpleNamespace
 
 import pytest
@@ -9,6 +13,113 @@ from core import launch_agents
 from scripts import instagram_browser as script
 from services.instagram_notifications import carousel_engagement as source
 from services.instagram_notifications.browser_queue import BrowserJobQueue
+
+
+def test_worker_logs_are_bounded_files_and_do_not_stream_to_launchd(tmp_path, monkeypatch, capsys):
+    legacy = tmp_path / "worker.stderr.log"
+    legacy.write_text("Existing launchd log is preserved.\n")
+
+    def worker(_queue, **_kwargs):
+        logging.getLogger("instagram.worker.test").warning("Verified worker diagnostic")
+
+    monkeypatch.setattr(script, "run_worker", worker)
+    assert script.main(["--state-directory", str(tmp_path), "worker", "--once"]) == 0
+    assert capsys.readouterr().err == ""
+    path = tmp_path / "worker.operations.log"
+    assert "Verified worker diagnostic" in path.read_text()
+    assert stat.S_IMODE(path.stat().st_mode) == 0o600
+    assert legacy.read_text() == "Existing launchd log is preserved.\n"
+    script.logging.basicConfig(level=logging.WARNING, force=True)
+
+
+def test_worker_log_rotation_bounds_utf8_bytes_and_backup_count(tmp_path):
+    handler = script._WorkerOperationalLogHandler(
+        tmp_path / "worker.operations.log", max_bytes=256, backup_count=3
+    )
+    handler.setFormatter(logging.Formatter("%(message)s"))
+    try:
+        for index in range(50):
+            handler.emit(logging.makeLogRecord({"msg": f"entry-{index:03}: " + "é" * 70}))
+        handler.emit(logging.makeLogRecord({"msg": "oversized:" + "é" * 300}))
+    finally:
+        handler.close()
+    files = list(tmp_path.glob("worker.operations.log*"))
+    assert len(files) == 4
+    assert all(path.stat().st_size <= 256 for path in files)
+    assert all(stat.S_IMODE(path.stat().st_mode) == 0o600 for path in files)
+    assert "[truncated]" in (tmp_path / "worker.operations.log").read_text()
+
+
+@pytest.mark.parametrize("error_code", [errno.ENOSPC, errno.EDQUOT, errno.EACCES])
+def test_worker_log_write_failure_warns_once_and_recovers_without_tracebacks(
+    tmp_path, monkeypatch, capsys, error_code
+):
+    class FailingStream(io.StringIO):
+        failed = True
+
+        def write(self, message):
+            if self.failed:
+                raise OSError(error_code, "private disk details")
+            return super().write(message)
+
+    stream = FailingStream()
+    handler = script._WorkerOperationalLogHandler(
+        tmp_path / "worker.operations.log", max_bytes=256, backup_count=3
+    )
+    monkeypatch.setattr(handler, "_open", lambda: stream)
+    record = logging.makeLogRecord({"msg": "private diagnostic content"})
+    try:
+        handler.emit(record)
+        handler.emit(record)
+        first = capsys.readouterr().err
+        assert first.count("Instagram worker operational log is unavailable") == 1
+        assert "Traceback" not in first
+        assert "private" not in first
+        stream.failed = False
+        handler.emit(record)
+        assert capsys.readouterr().err == ""
+        stream.failed = True
+        handler.emit(record)
+        handler.emit(record)
+        assert capsys.readouterr().err.count("Instagram worker operational log is unavailable") == 1
+    finally:
+        handler.close()
+
+
+def test_interactive_commands_keep_stream_logging(tmp_path, capsys):
+    assert script.main(["--state-directory", str(tmp_path), "pause"]) == 0
+    logging.getLogger("instagram.worker.test").warning("Interactive diagnostic")
+    assert "Interactive diagnostic" in capsys.readouterr().err
+    assert not (tmp_path / "worker.operations.log").exists()
+
+
+def test_failed_worker_log_does_not_crash_when_launchd_stderr_is_also_full(tmp_path, monkeypatch):
+    warning_attempts = []
+
+    def unavailable_file():
+        raise OSError(errno.ENOSPC, "private disk details")
+
+    class UnavailableStderr:
+        def write(self, message):
+            warning_attempts.append(message)
+            raise OSError(errno.ENOSPC, "private stderr details")
+
+        def flush(self):
+            raise AssertionError("An unsuccessful warning write must not flush")
+
+    handler = script._WorkerOperationalLogHandler(
+        tmp_path / "worker.operations.log", max_bytes=256, backup_count=3
+    )
+    monkeypatch.setattr(handler, "_open", unavailable_file)
+    monkeypatch.setattr(script.sys, "stderr", UnavailableStderr())
+    try:
+        for _ in range(3):
+            handler.emit(logging.makeLogRecord({"msg": "private diagnostic content"}))
+    finally:
+        handler.close()
+    assert warning_attempts == [
+        "Instagram worker operational log is unavailable; logging will retry.\n"
+    ]
 
 
 def test_install_uses_stable_checkout_and_shared_spool(tmp_path, monkeypatch):
@@ -248,3 +359,37 @@ def test_operator_can_pause_inspect_retry_and_cancel(tmp_path, capsys):
 def test_unknown_job_returns_failure(tmp_path, capsys):
     assert script.main(["--state-directory", str(tmp_path), "cancel", "--job-id", "missing"]) == 1
     assert "does not exist" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize("outcome", ["failed", "blocked", "invalid", "busy"])
+def test_import_reports_incomplete_outcomes_as_failure(tmp_path, monkeypatch, capsys, outcome):
+    from services.instagram_notifications import notification_ingestion
+
+    monkeypatch.setattr(notification_ingestion, "import_retrieved_media", lambda _: {outcome: 1})
+
+    assert script.main(["--state-directory", str(tmp_path), "ingestion-import"]) == 1
+    assert json.loads(capsys.readouterr().out) == {outcome: 1}
+
+
+def test_resume_preserves_installer_owned_pause(tmp_path, capsys):
+    queue = BrowserJobQueue(tmp_path)
+    queue.set_setting("paused", script.WORKER_INSTALLATION_PAUSE)
+
+    assert script.main(["--state-directory", str(tmp_path), "resume"]) == 1
+    assert queue.get_setting("paused") == script.WORKER_INSTALLATION_PAUSE
+    assert "installation before resuming" in capsys.readouterr().err
+
+
+def test_resume_cannot_erase_a_concurrent_safety_hold(tmp_path, monkeypatch, capsys):
+    original = BrowserJobQueue.compare_set_pause
+    hold = "Instagram requires human account recovery"
+
+    def acquire_safety_hold(queue, expected, value):
+        queue.set_setting("paused", hold)
+        return original(queue, expected, value)
+
+    monkeypatch.setattr(BrowserJobQueue, "compare_set_pause", acquire_safety_hold)
+
+    assert script.main(["--state-directory", str(tmp_path), "resume"]) == 1
+    assert BrowserJobQueue(tmp_path).get_setting("paused") == hold
+    assert "pause changed" in capsys.readouterr().err

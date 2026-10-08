@@ -7,6 +7,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
 from pathlib import Path
 from types import SimpleNamespace
+from uuid import uuid4
 
 import pytest
 
@@ -78,7 +79,7 @@ def _engagement(queue, shortcode="Post1", *, school="ubc", event_id=1):
 def _complete_next(queue, *, allow_engagement=True):
     job = queue.claim_next(allow_engagement=allow_engagement)
     if job is not None:
-        queue.finish(job.id, result={"status": "succeeded"})
+        queue.finish(job, result={"status": "succeeded"})
     return job
 
 
@@ -104,10 +105,10 @@ def test_new_digest_preempts_the_next_engagement_without_interrupting_running_jo
     running = queue.claim_next()
     assert running.id == first_id
 
-    digest_id = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "cache-priority")
+    digest_id = (queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "cache-priority")).id
 
     assert queue.get(first_id).state == "running"
-    queue.finish(first_id, result={"status": "succeeded"})
+    queue.finish(queue.get(first_id), result={"status": "succeeded"})
     assert _complete_next(queue).id == digest_id
     assert _complete_next(queue).id == second_id
     assert queue.claim_next() is None
@@ -117,7 +118,7 @@ def test_engagement_cooldown_still_allows_immediate_digest_work(queue):
     engagement_id = _engagement(queue)
     assert queue.claim_next(allow_engagement=False) is None
 
-    digest_id = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "cache-cooldown")
+    digest_id = (queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "cache-cooldown")).id
 
     assert _complete_next(queue, allow_engagement=False).id == digest_id
     assert queue.get(engagement_id).state == "pending"
@@ -126,10 +127,10 @@ def test_engagement_cooldown_still_allows_immediate_digest_work(queue):
 @pytest.mark.parametrize("kind", ["digest", "retrieval", "engagement"])
 def test_shared_rate_limit_holds_every_browser_kind_until_expiry(queue, monkeypatch, kind):
     clock = _clock(monkeypatch)
-    first_id = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "rate-limit-active")
+    first_id = (queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "rate-limit-active")).id
     active = queue.claim_next()
     pending_id = (
-        queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "rate-limit-next")
+        (queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "rate-limit-next")).id
         if kind == "digest"
         else queue.enqueue_retrieval(
             school="ubc",
@@ -197,9 +198,9 @@ def test_rate_limit_uses_existing_sanitized_diagnostics_without_changing_the_job
 
 def test_rate_limit_expiry_does_not_clear_human_recovery_pause(queue, monkeypatch):
     clock = _clock(monkeypatch)
-    queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "rate-limit-auth")
+    (queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "rate-limit-auth")).id
     active = queue.claim_next()
-    queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "rate-limit-after-auth")
+    (queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "rate-limit-after-auth")).id
     queue.set_setting("paused", "Instagram browser requires human account recovery")
 
     queue.defer_for_rate_limit(active, "Instagram browser page returned HTTP 429")
@@ -215,7 +216,7 @@ def test_rate_limited_maintenance_uses_the_same_cooldown_without_a_synthetic_job
     queue, monkeypatch
 ):
     clock = _clock(monkeypatch)
-    pending_id = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "rate-limit-maintenance")
+    pending_id = (queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "rate-limit-maintenance")).id
     reason = "Instagram browser page returned HTTP 429"
 
     queue.defer_for_rate_limit(None, reason)
@@ -258,8 +259,10 @@ def test_rate_limit_does_not_automatically_retry_uncertain_native_actions(queue,
     active = queue.claim_next()
     queue.defer_for_rate_limit(active, "Instagram browser page returned HTTP 429")
     with pytest.raises(ValueError, match="Engagement cannot be automatically requeued"):
-        queue.finish(job_id, error="Instagram browser page returned HTTP 429", requeue=True)
-    queue.finish(job_id, error="Instagram browser page returned HTTP 429")
+        queue.finish(
+            queue.get(job_id), error="Instagram browser page returned HTTP 429", requeue=True
+        )
+    queue.finish(queue.get(job_id), error="Instagram browser page returned HTTP 429")
 
     clock.now += module.CONTROL.rate_limit_backoff_seconds
 
@@ -280,7 +283,7 @@ def test_rate_limit_for_an_inactive_claim_is_a_noop_without_ghost_diagnostics(
     queue, monkeypatch, state
 ):
     _clock(monkeypatch)
-    queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "rate-limit-noop")
+    (queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "rate-limit-noop")).id
     active = queue.claim_next()
     if state == "missing":
         active = replace(active, id="missing-rate-limit-job")
@@ -310,7 +313,7 @@ def test_simultaneous_rate_limits_extend_one_shared_deadline_without_shortening_
 ):
     clock = _clock(monkeypatch)
     for index in range(14):
-        queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, f"rate-limit-concurrent-{index}")
+        (queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, f"rate-limit-concurrent-{index}")).id
     jobs = [queue.claim_next() for _ in range(14)]
     local_clock = threading.local()
     entered = threading.Barrier(14)
@@ -341,11 +344,11 @@ def test_simultaneous_rate_limits_extend_one_shared_deadline_without_shortening_
 def test_fourteen_confirmed_rate_limits_after_expiry_increase_backoff_only_once(queue, monkeypatch):
     clock = _clock(monkeypatch)
     for index in range(14):
-        queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, f"progressive-rate-{index}")
+        (queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, f"progressive-rate-{index}")).id
     original = [queue.claim_next() for _ in range(14)]
     for job in original:
         queue.defer_for_rate_limit(job, "HTTP 429")
-        queue.finish(job.id, error="HTTP 429", requeue=True, rate_limited_claim=job)
+        queue.finish(job, error="HTTP 429", requeue=True, refund_rate_limit=True)
     clock.now += module.CONTROL.rate_limit_backoff_seconds
     fresh = [queue.claim_next() for _ in range(14)]
 
@@ -356,7 +359,7 @@ def test_fourteen_confirmed_rate_limits_after_expiry_increase_backoff_only_once(
     assert queue.get_setting("browser_rate_limit_backoff_seconds") == expected
     assert queue.get_setting("browser_rate_limit_until") == clock.now + expected
     for job in fresh:
-        queue.finish(job.id, error="HTTP 429", requeue=True, rate_limited_claim=job)
+        queue.finish(job, error="HTTP 429", requeue=True, refund_rate_limit=True)
         assert queue.get(job.id).state == "pending"
         assert queue.get(job.id).attempts == 0
     assert not queue.get_setting("paused", False)
@@ -392,7 +395,7 @@ def test_fresh_success_after_recovery_resets_backoff_but_keeps_deadline(queue, m
     backoff = queue.get_setting("browser_rate_limit_backoff_seconds")
     clock.now = deadline + module.CONTROL.rate_limit_recovery_seconds
     job_id = (
-        queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "progressive-reset")
+        (queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "progressive-reset")).id
         if kind == "digest"
         else queue.enqueue_retrieval(
             school="ubc",
@@ -413,7 +416,7 @@ def test_fresh_success_after_recovery_resets_backoff_but_keeps_deadline(queue, m
     assert active.id == job_id
     assert active.started_at == clock.now
 
-    queue.finish(job_id, result={"status": "succeeded"})
+    queue.finish(queue.get(job_id), result={"status": "succeeded"})
 
     assert queue.get_setting("browser_rate_limit_until") == deadline
     assert queue.get_setting("browser_rate_limit_backoff_seconds") == (
@@ -431,7 +434,7 @@ def test_one_success_after_cooldown_does_not_reset_sustained_rate_limits(queue, 
     queue.defer_for_rate_limit(None, "HTTP 429")
     clock.now = queue.get_setting("browser_rate_limit_until")
     job_id = (
-        queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "early-reset")
+        (queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "early-reset")).id
         if kind == "digest"
         else queue.enqueue_retrieval(
             school="ubc",
@@ -444,7 +447,7 @@ def test_one_success_after_cooldown_does_not_reset_sustained_rate_limits(queue, 
     )
     assert queue.claim_next().id == job_id
 
-    queue.finish(job_id, result={"status": "succeeded"})
+    queue.finish(queue.get(job_id), result={"status": "succeeded"})
 
     assert queue.get_setting("browser_rate_limit_backoff_seconds") == (
         module.CONTROL.rate_limit_backoff_seconds
@@ -464,11 +467,11 @@ def test_rate_limit_recovery_requires_a_fresh_job_after_the_quiet_window(
     deadline = queue.get_setting("browser_rate_limit_until")
     recovered_at = deadline + module.CONTROL.rate_limit_recovery_seconds
     clock.now = recovered_at if starts_after_recovery else recovered_at - 0.01
-    job_id = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "recovery-boundary")
+    job_id = (queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "recovery-boundary")).id
     queue.claim_next()
     clock.now = recovered_at + 1
 
-    queue.finish(job_id, result={"status": "succeeded"})
+    queue.finish(queue.get(job_id), result={"status": "succeeded"})
 
     assert queue.get_setting("browser_rate_limit_backoff_seconds") == (
         0 if starts_after_recovery else module.CONTROL.rate_limit_backoff_seconds
@@ -485,10 +488,10 @@ def test_another_rate_limit_restarts_the_recovery_window(queue, monkeypatch):
     queue.defer_for_rate_limit(None, "HTTP 429")
     clock.now = queue.get_setting("browser_rate_limit_until")
     assert clock.now > original_recovery
-    job_id = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "renewed-recovery")
+    job_id = (queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "renewed-recovery")).id
     queue.claim_next()
 
-    queue.finish(job_id, result={"status": "succeeded"})
+    queue.finish(queue.get(job_id), result={"status": "succeeded"})
 
     assert queue.get_setting("browser_rate_limit_backoff_seconds") == (
         module.CONTROL.rate_limit_backoff_seconds * 2
@@ -500,14 +503,14 @@ def test_old_inflight_success_cannot_reset_active_or_expired_hold(
     queue, monkeypatch, finish_after_expiry
 ):
     clock = _clock(monkeypatch)
-    job_id = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "progressive-old-response")
+    job_id = (queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "progressive-old-response")).id
     active = queue.claim_next()
     queue.defer_for_rate_limit(None, "HTTP 429")
     deadline = queue.get_setting("browser_rate_limit_until")
     if finish_after_expiry:
         clock.now = deadline
 
-    queue.finish(job_id, result={"status": "succeeded"})
+    queue.finish(queue.get(job_id), result={"status": "succeeded"})
 
     assert active.started_at < deadline
     assert queue.get_setting("browser_rate_limit_until") == deadline
@@ -523,20 +526,22 @@ def test_non_success_or_unchanged_finish_cannot_reset_progressive_backoff(
     clock = _clock(monkeypatch)
     queue.defer_for_rate_limit(None, "HTTP 429")
     clock.now += module.CONTROL.rate_limit_backoff_seconds
-    job_id = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, f"progressive-no-reset-{state}")
+    job_id = (
+        queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, f"progressive-no-reset-{state}")
+    ).id
     if state == "cancelled":
         queue.cancel(job_id)
     else:
         queue.claim_next()
         if state == "stale":
             queue.defer_for_rate_limit(None, "HTTP 429")
-            queue.finish(job_id, result={"status": "succeeded"})
+            queue.finish(queue.get(job_id), result={"status": "succeeded"})
             clock.now = queue.get_setting("browser_rate_limit_until")
     deadline = queue.get_setting("browser_rate_limit_until")
     backoff = queue.get_setting("browser_rate_limit_backoff_seconds")
 
     queue.finish(
-        job_id,
+        queue.get(job_id),
         error="HTTP 400" if state == "failed" else None,
         result={"status": "unsupported" if state == "unsupported" else "succeeded"},
     )
@@ -547,7 +552,7 @@ def test_non_success_or_unchanged_finish_cannot_reset_progressive_backoff(
 
 def test_digest_expires_normally_when_progressive_hold_exceeds_caller_deadline(queue, monkeypatch):
     clock = _clock(monkeypatch)
-    job_id = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "progressive-expired-caller")
+    job_id = (queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "progressive-expired-caller")).id
     queue.set_setting(
         "browser_rate_limit_backoff_seconds", module.CONTROL.rate_limit_max_backoff_seconds
     )
@@ -585,7 +590,7 @@ def test_invalid_progressive_backoff_cannot_admit_or_extend_browser_work(
     queue, monkeypatch, backoff
 ):
     _clock(monkeypatch)
-    job_id = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "progressive-invalid")
+    job_id = (queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "progressive-invalid")).id
     queue.set_setting("browser_rate_limit_backoff_seconds", backoff)
 
     with pytest.raises(ValueError, match="Browser rate limit interval is invalid"):
@@ -602,9 +607,11 @@ def test_invalid_progressive_backoff_cannot_admit_or_extend_browser_work(
 @pytest.mark.parametrize("deadline", [True, "later", [], float("nan"), float("inf")])
 def test_invalid_rate_limit_deadline_cannot_admit_browser_work(queue, monkeypatch, deadline):
     _clock(monkeypatch)
-    queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "rate-limit-invalid-active")
+    (queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "rate-limit-invalid-active")).id
     active = queue.claim_next()
-    pending_id = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "rate-limit-invalid-next")
+    pending_id = (
+        queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "rate-limit-invalid-next")
+    ).id
     queue.set_setting("browser_rate_limit_until", deadline)
 
     with pytest.raises(ValueError, match="Browser rate limit timestamp is invalid"):
@@ -622,7 +629,7 @@ def test_school_posts_stay_together_and_digest_preempts_between_posts(queue):
         _engagement(queue, f"Ubc{index}", school="ubc")
     _engagement(queue, "Sask", school="usask")
     assert _complete_next(queue).school == "ubc"
-    digest = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "urgent")
+    digest = (queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "urgent")).id
     assert _complete_next(queue).id == digest
     assert [_complete_next(queue).school for _ in range(3)] == ["ubc", "ubc", "usask"]
 
@@ -650,7 +657,7 @@ def test_same_post_in_two_carousels_or_permalink_forms_has_one_job_per_post(queu
     )
     assert first == second
 
-    queue.finish(queue.claim_next().id, result={"status": "succeeded"})
+    queue.finish(queue.claim_next(), result={"status": "succeeded"})
     assert _engagement(queue, "Shared", event_id=303) == first
     assert queue.get(first).state == "succeeded"
     assert queue.claim_next() is None
@@ -675,7 +682,7 @@ def test_same_event_post_is_distinct_for_each_school_account(queue):
 def test_recovery_requeues_reads_but_never_repeats_ambiguous_engagement(queue):
     engagement_id = _engagement(queue)
     assert queue.claim_next().id == engagement_id
-    digest_id = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "cache-restart")
+    digest_id = (queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "cache-restart")).id
     assert queue.claim_next().id == digest_id
 
     reopened = module.BrowserJobQueue(queue.state_directory)
@@ -722,7 +729,7 @@ def test_interrupted_dry_run_does_not_pause_safe_read_recovery(queue):
         dry_run=True,
     )
     assert queue.claim_next().id == job_id
-    digest_id = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "safe-read-recovery")
+    digest_id = (queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "safe-read-recovery")).id
     assert queue.claim_next().id == digest_id
     reopened = module.BrowserJobQueue(queue.state_directory)
     reopened.recover_interrupted()
@@ -737,7 +744,9 @@ def test_failed_or_unsupported_engagement_requires_explicit_retry(queue, result)
     job_id = _engagement(queue)
     assert queue.claim_next().id == job_id
     queue.finish(
-        job_id, result=result, error="Unconfirmed browser result" if result is None else None
+        queue.get(job_id),
+        result=result,
+        error="Unconfirmed browser result" if result is None else None,
     )
 
     assert _engagement(queue) == job_id
@@ -754,7 +763,7 @@ def test_successful_or_running_engagement_cannot_be_retried_or_cancelled(queue):
     with pytest.raises(ValueError):
         queue.retry(job_id)
 
-    queue.finish(job_id, result={"status": "succeeded"})
+    queue.finish(queue.get(job_id), result={"status": "succeeded"})
 
     with pytest.raises(ValueError):
         queue.retry(job_id)
@@ -762,7 +771,7 @@ def test_successful_or_running_engagement_cannot_be_retried_or_cancelled(queue):
 
 
 def test_expired_digest_does_not_touch_the_browser_or_block_engagement(queue):
-    digest_id = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "cache-expired")
+    digest_id = (queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "cache-expired")).id
     engagement_id = _engagement(queue)
 
     next_job = queue.claim_next(
@@ -771,7 +780,7 @@ def test_expired_digest_does_not_touch_the_browser_or_block_engagement(queue):
 
     assert next_job.id == engagement_id
     assert queue.get(digest_id).state == "cancelled"
-    assert queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "cache-expired") == digest_id
+    assert (queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "cache-expired")).id == digest_id
     assert queue.get(digest_id).state == "pending"
 
 
@@ -792,7 +801,7 @@ def test_digest_wait_fails_promptly_and_cancels_unusable_pending_job(
         )
     if worker_state == "paused":
         queue.set_setting("paused", True)
-    job_id = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "cache-unavailable")
+    job_id = (queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "cache-unavailable")).id
 
     with pytest.raises(module.BrowserDigestError, match="unavailable or paused"):
         module.QueuedInstagramDigestResolver(queue).resolve(
@@ -806,7 +815,7 @@ def test_digest_wait_fails_promptly_and_cancels_unusable_pending_job(
 
 
 def test_real_sqlite_busy_claim_waits_then_claims_exactly_once(queue, monkeypatch):
-    job_id = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "busy-claim")
+    job_id = (queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "busy-claim")).id
     monkeypatch.setattr(
         module,
         "CONTROL",
@@ -834,7 +843,7 @@ def test_full_commit_retries_the_transaction_without_duplicating_claim_or_refund
     queue, monkeypatch, operation
 ):
     job_ids = [
-        queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, f"commit-full-{index}")
+        (queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, f"commit-full-{index}")).id
         for index in range(3)
     ]
     first = queue.claim_next()
@@ -852,11 +861,11 @@ def test_full_commit_retries_the_transaction_without_duplicating_claim_or_refund
         assert {job.id for job in companions} == set(job_ids[1:])
         assert all(job.attempts == 1 for job in companions)
     elif operation == "refund":
-        queue.finish(first.id, error="HTTP 429", requeue=True, rate_limited_claim=first)
+        queue.finish(first, error="HTTP 429", requeue=True, refund_rate_limit=True)
         assert queue.get(first.id).state == "pending"
         assert queue.get(first.id).attempts == 0
     else:
-        queue.finish(first.id, result={"status": "succeeded", "items": ["saved"]})
+        queue.finish(first, result={"status": "succeeded", "items": ["saved"]})
         assert queue.get(first.id).result == {"status": "succeeded", "items": ["saved"]}
         assert queue.get(first.id).attempts == 1
     assert remaining == [0]
@@ -873,7 +882,7 @@ def test_full_diagnostics_cannot_mask_a_committed_job_or_admit_more_work(
         statement="INSERT INTO diagnostic_events",
         failures=module.CONTROL.storage_retry_limit,
     )
-    job_id = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "diagnostic-full")
+    job_id = (queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "diagnostic-full")).id
     assert queue.get(job_id).state == "pending"
     assert remaining == [0]
     assert len(waits) == module.CONTROL.storage_retry_limit - 1
@@ -896,7 +905,7 @@ def test_failed_diagnostic_read_does_not_repeat_committed_manual_transition(
         url="https://www.instagram.com/p/DiagnosticRead/",
     )
     assert queue.claim_next().id == job_id
-    queue.finish(job_id, error="Read failed")
+    queue.finish(queue.get(job_id), error="Read failed")
     original_get = queue.get
 
     def fail_read(*args):
@@ -911,7 +920,7 @@ def test_failed_diagnostic_read_does_not_repeat_committed_manual_transition(
 
 
 def test_failed_auth_pause_write_stays_in_memory_until_durable_recovery(queue, monkeypatch):
-    job_id = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "retain-auth-pause")
+    job_id = (queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "retain-auth-pause")).id
     queue.claim_next()
     reason = "Instagram browser requires human account recovery"
     _fail_queue_transaction(
@@ -987,7 +996,7 @@ def test_pause_can_be_acquired_atomically_before_a_setting_exists(queue):
 
 def test_storage_recovery_persists_a_rate_limit_that_could_not_be_written(queue, monkeypatch):
     clock = _clock(monkeypatch)
-    job_id = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "unstored-rate-limit")
+    job_id = (queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "unstored-rate-limit")).id
     active = queue.claim_next()
     connect = queue._connect
     attempts = []
@@ -1021,7 +1030,7 @@ def test_digest_wait_returns_exact_worker_result(queue, monkeypatch):
         job = queue.claim_next()
         assert job.kind == "digest"
         queue.finish(
-            job.id,
+            job,
             result={
                 "account_username": ACCOUNT_USERNAME,
                 "media_ids": ["123", "456"],
@@ -1055,14 +1064,14 @@ def test_digest_wait_returns_exact_worker_result(queue, monkeypatch):
 def test_digest_wait_reports_terminal_failure(queue, monkeypatch, terminal_state):
     clock = _clock(monkeypatch)
     queue.set_setting("worker", {"running": True, "heartbeat": clock.now})
-    job_id = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "cache-failed")
+    job_id = (queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "cache-failed")).id
 
     def terminate_job():
         if terminal_state == "cancelled":
             queue.cancel(job_id)
         else:
             assert queue.claim_next().id == job_id
-            queue.finish(job_id, error="Instagram requires human reauthorization")
+            queue.finish(queue.get(job_id), error="Instagram requires human reauthorization")
 
     clock.after_sleep = terminate_job
 
@@ -1079,7 +1088,7 @@ def test_digest_wait_reports_terminal_failure(queue, monkeypatch, terminal_state
 def test_digest_caller_deadline_cancels_pending_work(queue, monkeypatch):
     clock = _clock(monkeypatch)
     queue.set_setting("worker", {"running": True, "heartbeat": clock.now})
-    job_id = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "cache-timeout")
+    job_id = (queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "cache-timeout")).id
 
     def advance_past_deadline():
         clock.elapsed = module.CONTROL.result_timeout_seconds + 1
@@ -1194,7 +1203,7 @@ def test_digest_preempts_retrieval_and_retrieval_preempts_engagement(queue):
         account_username=ACCOUNT_USERNAME,
         url="https://www.instagram.com/p/AbC/",
     )
-    digest = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "cache-first")
+    digest = (queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "cache-first")).id
     assert _complete_next(queue).id == digest
     assert _complete_next(queue, allow_engagement=False).id == retrieval
     assert _complete_next(queue).id == engagement
@@ -1222,8 +1231,8 @@ def test_aged_engagement_drains_retrieval_before_switching_but_digest_stays_firs
     assert queue.claim_companions(running, limit=14) == []
     assert queue.get(first).state == "running"
     assert queue.get(remaining).state == "pending"
-    queue.finish(first, result={"posts": []})
-    digest = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "still-highest-priority")
+    queue.finish(queue.get(first), result={"posts": []})
+    digest = (queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "still-highest-priority")).id
     assert _complete_next(queue).id == digest
     assert _complete_next(queue).id == engagement
     assert _complete_next(queue).id == remaining
@@ -1296,7 +1305,7 @@ def test_overdue_backlog_yields_retrieval_but_finishes_current_school_before_swi
     )
     clock.now += module.CONTROL.engagement_max_wait_seconds
     assert queue.claim_companions(active, limit=14) == []
-    queue.finish(first_read, result={"posts": []})
+    queue.finish(queue.get(first_read), result={"posts": []})
     assert _complete_next(queue).id == second_current_school
     assert _complete_next(queue).id == third_current_school
     assert _complete_next(queue).id == older_other_school
@@ -1306,7 +1315,7 @@ def test_overdue_backlog_yields_retrieval_but_finishes_current_school_before_swi
 @pytest.mark.parametrize("kind", ["digest", "retrieval"])
 def test_safe_read_retry_preserves_diagnostic_reason_without_exposing_terminal_failure(queue, kind):
     job_id = (
-        queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "read-retry")
+        (queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "read-retry")).id
         if kind == "digest"
         else queue.enqueue_retrieval(
             school="ubc",
@@ -1317,7 +1326,7 @@ def test_safe_read_retry_preserves_diagnostic_reason_without_exposing_terminal_f
     )
     queue.claim_next()
     queue.finish(
-        job_id,
+        queue.get(job_id),
         result={"private_details": "must-not-be-logged"},
         error="Transient bridge failure",
         requeue=True,
@@ -1356,7 +1365,7 @@ def test_confirmed_rate_limit_preserves_last_read_attempt_budget_and_claim_diagn
 ):
     clock = _clock(monkeypatch)
     job_id = (
-        queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "rate-limit-last-budget")
+        (queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "rate-limit-last-budget")).id
         if kind == "digest"
         else queue.enqueue_retrieval(
             school="ubc",
@@ -1376,7 +1385,7 @@ def test_confirmed_rate_limit_preserves_last_read_attempt_budget_and_claim_diagn
     reason = "Instagram public media request failed with HTTP 429"
     queue.defer_for_rate_limit(active, reason)
 
-    queue.finish(job_id, error=reason, requeue=True, rate_limited_claim=active)
+    queue.finish(active, error=reason, requeue=True, refund_rate_limit=True)
 
     held = queue.get(job_id)
     assert held.state == "pending"
@@ -1396,7 +1405,7 @@ def test_confirmed_rate_limit_preserves_last_read_attempt_budget_and_claim_diagn
     retried = queue.claim_next()
     assert retried.id == job_id
     assert retried.attempts == module.CONTROL.ingestion_retry_limit
-    queue.finish(job_id, error="Instagram public media request failed with HTTP 400")
+    queue.finish(queue.get(job_id), error="Instagram public media request failed with HTTP 400")
     assert queue.get(job_id).state == "failed"
     assert queue.get(job_id).attempts == module.CONTROL.ingestion_retry_limit
 
@@ -1404,7 +1413,7 @@ def test_confirmed_rate_limit_preserves_last_read_attempt_budget_and_claim_diagn
 @pytest.mark.parametrize("requeue,kind", [(False, "digest"), (True, "engagement")])
 def test_rate_limit_attempt_refund_requires_a_requeued_read(queue, requeue, kind):
     job_id = (
-        queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "rate-limit-refund-guard")
+        (queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "rate-limit-refund-guard")).id
         if kind == "digest"
         else _engagement(queue, "RateRefundNative")
     )
@@ -1413,7 +1422,7 @@ def test_rate_limit_attempt_refund_requires_a_requeued_read(queue, requeue, kind
         events = db.execute("SELECT event FROM diagnostic_events").fetchall()
 
     with pytest.raises(ValueError):
-        queue.finish(job_id, error="HTTP 429", requeue=requeue, rate_limited_claim=active)
+        queue.finish(active, error="HTTP 429", requeue=requeue, refund_rate_limit=True)
 
     assert queue.get(job_id) == active
     with queue._connect() as db:
@@ -1425,11 +1434,11 @@ def test_rate_limit_attempt_refund_requires_a_requeued_read(queue, requeue, kind
     [(None, None), ("", None), ("   ", None), ("HTTP 429", {}), ("HTTP 429", {"status": "failed"})],
 )
 def test_rate_limit_attempt_refund_requires_nonempty_error_and_no_result(queue, error, result):
-    job_id = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "rate-limit-refund-result")
+    job_id = (queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "rate-limit-refund-result")).id
     active = queue.claim_next()
 
     with pytest.raises(ValueError, match="rate-limited claim refund"):
-        queue.finish(job_id, error=error, result=result, requeue=True, rate_limited_claim=active)
+        queue.finish(active, error=error, result=result, requeue=True, refund_rate_limit=True)
 
     assert queue.get(job_id) == active
 
@@ -1437,7 +1446,6 @@ def test_rate_limit_attempt_refund_requires_nonempty_error_and_no_result(queue, 
 @pytest.mark.parametrize(
     "changes",
     [
-        {"id": "other-job"},
         {"kind": "engagement"},
         {"state": "pending"},
         {"started_at": None},
@@ -1445,15 +1453,15 @@ def test_rate_limit_attempt_refund_requires_nonempty_error_and_no_result(queue, 
     ],
 )
 def test_rate_limit_attempt_refund_requires_the_original_running_read_claim(queue, changes):
-    job_id = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "rate-limit-refund-identity")
+    job_id = (queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "rate-limit-refund-identity")).id
     active = queue.claim_next()
 
     with pytest.raises(ValueError, match="rate-limited claim refund"):
         queue.finish(
-            job_id,
+            replace(active, **changes),
             error="HTTP 429",
             requeue=True,
-            rate_limited_claim=replace(active, **changes),
+            refund_rate_limit=True,
         )
 
     assert queue.get(job_id) == active
@@ -1461,13 +1469,15 @@ def test_rate_limit_attempt_refund_requires_the_original_running_read_claim(queu
 
 def test_simultaneous_rate_limited_completions_refund_only_one_claim(queue, monkeypatch):
     _clock(monkeypatch)
-    job_id = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "rate-limit-refund-concurrent")
+    job_id = (
+        queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "rate-limit-refund-concurrent")
+    ).id
     active = queue.claim_next()
     queue.record_diagnostic("running", active)
     queue.defer_for_rate_limit(active, "HTTP 429")
 
     def finish(_index):
-        queue.finish(job_id, error="HTTP 429", requeue=True, rate_limited_claim=active)
+        queue.finish(active, error="HTTP 429", requeue=True, refund_rate_limit=True)
 
     with ThreadPoolExecutor(max_workers=14) as executor:
         list(executor.map(finish, range(14)))
@@ -1486,10 +1496,10 @@ def test_old_rate_limited_claim_cannot_refund_or_defer_a_new_claim_with_same_att
     queue, monkeypatch
 ):
     clock = _clock(monkeypatch)
-    job_id = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "rate-limit-refund-stale")
+    job_id = (queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "rate-limit-refund-stale")).id
     original = queue.claim_next()
     queue.defer_for_rate_limit(original, "HTTP 429")
-    queue.finish(job_id, error="HTTP 429", requeue=True, rate_limited_claim=original)
+    queue.finish(original, error="HTTP 429", requeue=True, refund_rate_limit=True)
     clock.now += module.CONTROL.rate_limit_backoff_seconds
     current = queue.claim_next()
     assert current.attempts == original.attempts
@@ -1498,39 +1508,39 @@ def test_old_rate_limited_claim_cannot_refund_or_defer_a_new_claim_with_same_att
         events = db.execute("SELECT event FROM diagnostic_events").fetchall()
 
     queue.defer_for_rate_limit(original, "HTTP 429")
-    queue.finish(job_id, error="HTTP 429", requeue=True, rate_limited_claim=original)
+    queue.finish(original, error="HTTP 429", requeue=True, refund_rate_limit=True)
 
     assert queue.get(job_id) == current
     assert not queue.is_rate_limited()
     with queue._connect() as db:
         assert db.execute("SELECT event FROM diagnostic_events").fetchall() == events
     queue.defer_for_rate_limit(current, "HTTP 429")
-    queue.finish(job_id, error="HTTP 429", requeue=True, rate_limited_claim=current)
+    queue.finish(current, error="HTTP 429", requeue=True, refund_rate_limit=True)
     assert queue.get(job_id).attempts == 0
 
 
 @pytest.mark.parametrize("rate_limited", [False, True])
 @pytest.mark.parametrize("state", ["missing", "pending", "succeeded", "failed", "cancelled"])
 def test_noop_safe_read_requeue_does_not_record_retry_diagnostics(queue, state, rate_limited):
-    job_id = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "no-retry")
+    job_id = (queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "no-retry")).id
     original = queue.claim_next()
     assert original.id == job_id
     if state == "missing":
         job_id = "missing-read"
         original = replace(original, id=job_id)
     if state in {"succeeded", "failed"}:
-        queue.finish(job_id, error="Previous failure" if state == "failed" else None)
+        queue.finish(queue.get(job_id), error="Previous failure" if state == "failed" else None)
     elif state in {"pending", "cancelled"}:
-        queue.finish(job_id, error="Previous transient failure", requeue=True)
+        queue.finish(queue.get(job_id), error="Previous transient failure", requeue=True)
         if state == "cancelled":
             queue.cancel(job_id)
     with queue._connect() as db:
         events = db.execute("SELECT event FROM diagnostic_events ORDER BY created_at").fetchall()
     queue.finish(
-        job_id,
+        original,
         error="Transient bridge failure",
         requeue=True,
-        rate_limited_claim=original if rate_limited else None,
+        refund_rate_limit=rate_limited,
     )
     job = queue.get(job_id)
     if state == "missing":
@@ -1548,7 +1558,7 @@ def test_automatic_retry_cannot_repeat_an_engagement(queue):
     job_id = _engagement(queue)
     queue.claim_next()
     with pytest.raises(ValueError, match="Engagement cannot"):
-        queue.finish(job_id, error="Uncertain click", requeue=True)
+        queue.finish(queue.get(job_id), error="Uncertain click", requeue=True)
     assert queue.get(job_id).state == "running"
     with queue._connect() as db:
         assert db.execute("SELECT COUNT(*) FROM diagnostic_events").fetchone()[0] == 1
@@ -1565,7 +1575,7 @@ def test_public_bootstrap_account_is_peeked_without_claiming_or_unexcluding_jobs
     assert queue.peek_account_username() is None
     excluded = _engagement(queue, "ExcludedProfile")
     queue.set_setting("excluded_accounts", [ACCOUNT_USERNAME])
-    available = queue.enqueue_digest("456", "wat2do.uwo", "bootstrap-public-profile")
+    available = (queue.enqueue_digest("456", "wat2do.uwo", "bootstrap-public-profile")).id
     assert queue.peek_account_username() == "wat2do.uwo"
     assert queue.get(excluded).state == queue.get(available).state == "pending"
     assert queue.get(excluded).attempts == queue.get(available).attempts == 0
@@ -1601,7 +1611,7 @@ def test_retrieval_recovery_and_refresh_preserve_other_history(queue):
     assert queue.get(job_id).state == "pending"
     assert not queue.get_setting("paused", False)
     assert queue.claim_next().id == job_id
-    queue.finish(job_id, result={"posts": []})
+    queue.finish(queue.get(job_id), result={"posts": []})
     queue.refresh_retrieval(job_id)
     assert queue.get(job_id).result is None
     assert queue.get(job_id).attempts == 0
@@ -1612,7 +1622,7 @@ def test_old_queue_upgrade_keeps_jobs_settings_and_selected_school(queue):
     job_id = _engagement(queue)
     queue.set_setting("important", {"checkpoint": 7})
     queue.claim_next()
-    queue.finish(job_id, result={"status": "succeeded"})
+    queue.finish(queue.get(job_id), result={"status": "succeeded"})
     # Reproduce the deployed schema rather than starting with a new queue.
     with sqlite3.connect(queue.database_path) as db:
         db.execute("PRAGMA writable_schema=ON")
@@ -1634,10 +1644,10 @@ def test_old_queue_upgrade_keeps_jobs_settings_and_selected_school(queue):
 
 def test_digest_companions_never_cross_accounts_or_include_excluded_targets(tmp_path):
     q = module.BrowserJobQueue(tmp_path / "parallel")
-    first = q.enqueue_digest("123", "wat2do.ubc", "first")
-    same = q.enqueue_digest("123", "wat2do.ubc", "second")
-    other = q.enqueue_digest("456", "wat2do.utm", "third")
-    excluded = q.enqueue_digest("789", "wat2do.utsc", "fourth")
+    first = (q.enqueue_digest("123", "wat2do.ubc", "first")).id
+    same = (q.enqueue_digest("123", "wat2do.ubc", "second")).id
+    other = (q.enqueue_digest("456", "wat2do.utm", "third")).id
+    excluded = (q.enqueue_digest("789", "wat2do.utsc", "fourth")).id
     q.set_setting("excluded_accounts", ["wat2do.utsc"])
     claimed = q.claim_next()
     assert claimed.id == first
@@ -1662,7 +1672,7 @@ def test_waiting_digest_and_pause_prevent_filling_retrieval_batch(tmp_path):
     )
     claimed = q.claim_next()
     assert claimed.id == first
-    digest = q.enqueue_digest("123", "wat2do.ubc", "digest")
+    digest = (q.enqueue_digest("123", "wat2do.ubc", "digest")).id
     assert q.claim_companions(claimed, limit=9) == []
     q.cancel(digest)
     q.set_setting("paused", "human recovery")
@@ -1676,7 +1686,7 @@ def test_diagnostics_preserve_unsent_events_and_allowlist_payload(queue, monkeyp
     job_id = _engagement(queue)
     job = queue.claim_next()
     queue.record_diagnostic("running", job)
-    queue.finish(job_id, error="Matching Instagram browser account is unavailable")
+    queue.finish(queue.get(job_id), error="Matching Instagram browser account is unavailable")
     queue.record_diagnostic("failed", queue.get(job_id))
     queue.set_setting("paused", "Instagram browser requires human account recovery")
     monkeypatch.setattr(automate_log_service, "create_automate_log", lambda **event: False)
@@ -1720,3 +1730,394 @@ def test_digest_reports_recovery_pause_without_claiming_or_resuming(queue, monke
     assert queue.get_setting("paused") == reason
     assert queue.claim_next() is None
     assert clock.elapsed == 0
+
+
+def test_digest_waits_through_installer_pause_and_worker_restart(queue, monkeypatch):
+    clock = _clock(monkeypatch)
+    queue.set_setting("paused", module.WORKER_INSTALLATION_PAUSE)
+    queue.set_setting("worker", {"running": True, "heartbeat": clock.now})
+    sleeps = []
+
+    def restart_worker():
+        assert queue.get_setting("paused") == module.WORKER_INSTALLATION_PAUSE
+        assert queue.claim_next() is None
+        sleeps.append(clock.elapsed)
+        if len(sleeps) == 1:
+            queue.set_setting("worker", {"running": False, "heartbeat": 0})
+            return
+        queue.set_setting("worker", {"running": True, "heartbeat": clock.now})
+        assert queue.compare_set_pause(module.WORKER_INSTALLATION_PAUSE, False)
+        queue.finish(
+            queue.claim_next(),
+            result={"account_username": ACCOUNT_USERNAME, "media_ids": ["123"], "page_count": 1},
+        )
+
+    clock.after_sleep = restart_worker
+    result = module.QueuedInstagramDigestResolver(queue).resolve(
+        RECIPIENT_ID, ACCOUNT_USERNAME, "install-restart"
+    )
+    assert result.media_ids == ("123",)
+    assert len(sleeps) == 2
+    assert clock.elapsed == 2 * module.CONTROL.worker_poll_interval_seconds
+    assert not queue.get_setting("paused", False)
+
+
+@pytest.mark.parametrize("replaced", [False, True])
+def test_installer_pause_waits_only_to_original_digest_deadline(queue, monkeypatch, replaced):
+    clock = _clock(monkeypatch)
+    receipt = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "install-expiry")
+    queue.set_setting("paused", module.WORKER_INSTALLATION_PAUSE)
+    queue.set_setting("worker", {"running": False, "heartbeat": 0})
+    newer = []
+
+    def replace_original_submission():
+        if replaced and not newer:
+            queue.cancel(receipt.id)
+            newer.append(queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "install-expiry"))
+
+    clock.after_sleep = replace_original_submission
+    with pytest.raises(module.BrowserDigestError, match="timed out"):
+        module.QueuedInstagramDigestResolver(queue).resolve(
+            RECIPIENT_ID, ACCOUNT_USERNAME, "install-expiry"
+        )
+    assert clock.elapsed == module.CONTROL.result_timeout_seconds
+    assert queue.get_setting("paused") == module.WORKER_INSTALLATION_PAUSE
+    assert queue.claim_next() is None
+    if replaced:
+        assert queue.get(receipt.id) == newer[0]
+        assert newer[0].state == "pending"
+    else:
+        assert queue.get(receipt.id).state == "cancelled"
+
+
+@pytest.mark.parametrize(
+    "pause",
+    [
+        "Instagram browser requires human account recovery",
+        "Worker interrupted during engagement; inspect browser state before resuming",
+        module.WORKER_INSTALLATION_PAUSE + "; human account recovery",
+    ],
+)
+def test_digest_waits_only_for_exact_installer_hold_and_never_auth_holds(queue, monkeypatch, pause):
+    clock = _clock(monkeypatch)
+    receipt = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "auth-during-install")
+    queue.set_setting("paused", pause)
+    queue.set_setting("worker", {"running": False, "heartbeat": 0})
+    with pytest.raises(module.BrowserDigestError, match="worker is paused"):
+        module.QueuedInstagramDigestResolver(queue).resolve(
+            RECIPIENT_ID, ACCOUNT_USERNAME, "auth-during-install"
+        )
+    assert clock.elapsed == 0
+    assert queue.get_setting("paused") == pause
+    assert queue.get(receipt.id).state == "cancelled"
+    assert queue.get(receipt.id).attempts == 0
+
+
+@pytest.mark.parametrize("outcome", ["success", "failure", "requeue", "missing"])
+def test_old_completion_cannot_change_a_new_running_read_claim(queue, outcome):
+    job_id = queue.enqueue_retrieval(
+        school="ubc",
+        recipient_id=RECIPIENT_ID,
+        account_username=ACCOUNT_USERNAME,
+        url="https://www.instagram.com/p/OriginalClaim/",
+    )
+    original = queue.claim_next(now=100)
+    queue.finish(original, error="Temporary read failure", requeue=True)
+    current = queue.claim_next(now=200)
+    if outcome == "missing":
+        original = replace(original, id="missing-claim")
+    with queue._connect() as db:
+        diagnostics = db.execute("SELECT event FROM diagnostic_events").fetchall()
+    queue.finish(
+        original,
+        result={"status": "succeeded", "from": "old claim"} if outcome == "success" else None,
+        error="Old read failed" if outcome != "success" else None,
+        requeue=outcome == "requeue",
+    )
+    assert queue.get(job_id) == current
+    with queue._connect() as db:
+        assert db.execute("SELECT event FROM diagnostic_events").fetchall() == diagnostics
+
+
+def test_expired_digest_caller_cannot_cancel_a_new_submission(queue, monkeypatch):
+    clock = _clock(monkeypatch)
+    job_id = (queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "same-cache-new-caller")).id
+    original = queue.get(job_id)
+    queue.cancel(job_id)
+    clock.now += 1
+    assert (
+        queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "same-cache-new-caller")
+    ).id == job_id
+    current = queue.get(job_id)
+    assert not queue.cancel_pending_digest(original)
+    assert queue.get(job_id) == current
+    assert queue.cancel_pending_digest(current)
+    assert queue.get(job_id).state == "cancelled"
+
+
+@pytest.mark.parametrize("refund_rate_limit", [False, True])
+def test_digest_caller_can_cancel_pending_retry_with_original_admission(
+    queue, monkeypatch, refund_rate_limit
+):
+    clock = _clock(monkeypatch)
+    receipt = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "retry-cancellation")
+    clock.now += 10
+    claim = queue.claim_next()
+    assert not queue.cancel_pending_digest(receipt)
+    clock.now += 30
+    queue.finish(
+        claim,
+        error="Temporary read failure",
+        requeue=True,
+        refund_rate_limit=refund_rate_limit,
+    )
+    retry = queue.get(receipt.id)
+    assert retry.created_at == receipt.created_at
+    assert retry.attempts == (0 if refund_rate_limit else 1)
+    assert retry.started_at is None
+    assert queue.cancel_pending_digest(receipt)
+    assert queue.get(receipt.id).state == "cancelled"
+
+
+@pytest.mark.parametrize("refund_rate_limit", [False, True])
+@pytest.mark.parametrize("deadline_offset", [0, 1])
+def test_automatic_digest_retry_expires_at_original_admission_deadline(
+    queue, monkeypatch, refund_rate_limit, deadline_offset
+):
+    clock = _clock(monkeypatch)
+    receipt = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "retry-expiry")
+    clock.now += 10
+    claim = queue.claim_next()
+    clock.now += 30
+    queue.finish(
+        claim,
+        error="Temporary read failure",
+        requeue=True,
+        refund_rate_limit=refund_rate_limit,
+    )
+    clock.now = receipt.created_at + module.CONTROL.result_timeout_seconds + deadline_offset
+    assert queue.claim_next() is None
+    expired = queue.get(receipt.id)
+    assert expired.created_at == receipt.created_at
+    assert expired.state == "cancelled"
+    assert expired.error == "Digest caller deadline expired"
+
+
+def test_rate_limit_cooldown_does_not_renew_digest_caller_lifetime(queue, monkeypatch):
+    clock = _clock(monkeypatch)
+    receipt = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "cooldown-expiry")
+    clock.now = receipt.created_at + module.CONTROL.result_timeout_seconds - 10
+    claim = queue.claim_next()
+    queue.defer_for_rate_limit(claim, "Instagram rate limit")
+    queue.finish(claim, error="Instagram rate limit", requeue=True, refund_rate_limit=True)
+    assert queue.claim_next() is None
+    clock.now = queue.get_setting("browser_rate_limit_until")
+    assert clock.now > receipt.created_at + module.CONTROL.result_timeout_seconds
+    assert queue.claim_next() is None
+    expired = queue.get(receipt.id)
+    assert expired.created_at == receipt.created_at
+    assert expired.state == "cancelled"
+    assert expired.attempts == 0
+    assert not queue.get_setting("paused", False)
+
+
+@pytest.mark.parametrize("terminal_state", ["failed", "cancelled"])
+def test_explicit_digest_resubmission_renews_admission_and_fences_original_caller(
+    queue, monkeypatch, terminal_state
+):
+    clock = _clock(monkeypatch)
+    receipt = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "new-admission")
+    if terminal_state == "failed":
+        queue.finish(queue.claim_next(), error="Read failure")
+    else:
+        queue.cancel(receipt.id)
+    clock.now += module.CONTROL.result_timeout_seconds + 1
+    current = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "new-admission")
+    assert current.id == receipt.id
+    assert current.created_at == clock.now
+    assert current.attempts == 0
+    assert not queue.cancel_pending_digest(receipt)
+    assert queue.get(current.id) == current
+    assert queue.claim_next().id == current.id
+
+
+def test_digest_companions_expire_old_admissions_before_claiming_fresh_work(queue, monkeypatch):
+    clock = _clock(monkeypatch)
+    first = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "first-running")
+    claim = queue.claim_next()
+    assert claim.id == first.id
+    clock.now += 1
+    expired = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "expired-companion")
+    clock.now = expired.created_at + module.CONTROL.result_timeout_seconds
+    fresh = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "fresh-companion")
+    assert [job.id for job in queue.claim_companions(claim, limit=9)] == [fresh.id]
+    assert queue.get(expired.id).state == "cancelled"
+
+
+def test_expired_digest_does_not_block_retrieval_batch_refill(queue, monkeypatch):
+    clock = _clock(monkeypatch)
+    first = queue.enqueue_retrieval(
+        school="ubc",
+        recipient_id=RECIPIENT_ID,
+        account_username=ACCOUNT_USERNAME,
+        url="https://www.instagram.com/p/FirstRefill/",
+    )
+    claim = queue.claim_next()
+    assert claim.id == first
+    expired = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "expired-before-refill")
+    clock.now = expired.created_at + module.CONTROL.result_timeout_seconds
+    fresh = queue.enqueue_retrieval(
+        school="ubc",
+        recipient_id=RECIPIENT_ID,
+        account_username=ACCOUNT_USERNAME,
+        url="https://www.instagram.com/p/SecondRefill/",
+    )
+    assert [job.id for job in queue.claim_companions(claim, limit=9)] == [fresh]
+    assert queue.get(expired.id).state == "cancelled"
+
+
+def test_digest_receipt_preserves_original_generation_during_submission_return_race(
+    queue, monkeypatch
+):
+    clock = _clock(monkeypatch)
+    enqueue = queue.enqueue_digest
+    newer = []
+
+    def submit_then_replace(*args):
+        receipt = enqueue(*args)
+        queue.cancel(receipt.id)
+        clock.now += 1
+        newer.append(enqueue(*args))
+        return receipt
+
+    monkeypatch.setattr(queue, "enqueue_digest", submit_then_replace)
+    with pytest.raises(module.BrowserDigestError, match="unavailable or paused"):
+        module.QueuedInstagramDigestResolver(queue).resolve(
+            RECIPIENT_ID, ACCOUNT_USERNAME, "replacement-after-submit"
+        )
+    assert queue.get(newer[0].id) == newer[0]
+    assert newer[0].state == "pending"
+
+
+def test_late_digest_waiter_shares_original_admission_expiry_instead_of_extending_it(
+    queue, monkeypatch
+):
+    clock = _clock(monkeypatch)
+    receipt = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "shared-pending-expiry")
+    clock.now += module.CONTROL.result_timeout_seconds - 10
+
+    def heartbeat():
+        queue.set_setting("worker", {"running": True, "heartbeat": clock.now})
+
+    heartbeat()
+    clock.after_sleep = heartbeat
+    with pytest.raises(module.BrowserDigestError, match="timed out"):
+        module.QueuedInstagramDigestResolver(queue).resolve(
+            RECIPIENT_ID, ACCOUNT_USERNAME, "shared-pending-expiry"
+        )
+    assert clock.elapsed == 10
+    assert queue.get(receipt.id).state == "cancelled"
+    assert clock.now == receipt.created_at + module.CONTROL.result_timeout_seconds
+
+
+def test_late_digest_waiter_can_reuse_an_already_completed_result_after_admission_expiry(
+    queue, monkeypatch
+):
+    clock = _clock(monkeypatch)
+    receipt = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "completed-replay")
+    queue.finish(
+        queue.claim_next(),
+        result={"account_username": ACCOUNT_USERNAME, "media_ids": ["123"], "page_count": 1},
+    )
+    clock.now += module.CONTROL.result_timeout_seconds + 1
+    result = module.QueuedInstagramDigestResolver(queue).resolve(
+        RECIPIENT_ID, ACCOUNT_USERNAME, "completed-replay"
+    )
+    assert result.media_ids == ("123",)
+    assert queue.get(receipt.id).state == "succeeded"
+    assert clock.elapsed == 0
+
+
+def test_competing_collectors_retry_a_failed_read_once_without_resetting_attempts(queue):
+    job_id = queue.enqueue_retrieval(
+        school="ubc",
+        recipient_id=RECIPIENT_ID,
+        account_username=ACCOUNT_USERNAME,
+        url="https://www.instagram.com/p/CollectorRetry/",
+    )
+    original = queue.claim_next()
+    queue.finish(original, error="Temporary read failure")
+    with ThreadPoolExecutor(max_workers=14) as executor:
+        changes = list(executor.map(lambda _: queue.retry_failed_retrieval(job_id), range(14)))
+    assert sum(changes) == 1
+    assert queue.get(job_id).state == "pending"
+    assert queue.get(job_id).attempts == original.attempts
+
+
+@pytest.mark.parametrize("state", ["pending", "cancelled", "succeeded", "exhausted", "engagement"])
+def test_collector_admission_preserves_cancellation_and_retry_budgets(queue, state):
+    job_id = (
+        _engagement(queue)
+        if state == "engagement"
+        else queue.enqueue_retrieval(
+            school="ubc",
+            recipient_id=RECIPIENT_ID,
+            account_username=ACCOUNT_USERNAME,
+            url="https://www.instagram.com/p/PreserveCollectorState/",
+        )
+    )
+    if state == "cancelled":
+        queue.cancel(job_id)
+    elif state != "pending":
+        for _ in range(module.CONTROL.ingestion_retry_limit if state == "exhausted" else 1):
+            claim = queue.claim_next()
+            queue.finish(claim, error=None if state == "succeeded" else "Read failure")
+            if (
+                state == "exhausted"
+                and queue.get(job_id).attempts < module.CONTROL.ingestion_retry_limit
+            ):
+                queue.retry(job_id)
+    before = queue.get(job_id)
+    assert not queue.retry_failed_retrieval(job_id)
+    assert queue.get(job_id) == before
+
+
+def test_manual_import_reset_rechecks_running_state_before_changing_retry_markers(queue):
+    job_id = queue.enqueue_retrieval(
+        school="ubc",
+        recipient_id=RECIPIENT_ID,
+        account_username=ACCOUNT_USERNAME,
+        url="https://www.instagram.com/p/ManualRetryAdmission/",
+    )
+    keys = [f"manual_imported:{job_id}", f"manual_import_attempts:{job_id}"]
+    queue.set_setting(keys[0], True)
+    queue.set_setting(keys[1], 3)
+    stale = queue.get(job_id)
+    assert stale.state == "pending"
+    claim = queue.claim_next()
+    with pytest.raises(ValueError, match="idle retrieval"):
+        queue.reset_retrieval_import(job_id, import_setting_keys=keys)
+    assert queue.get(job_id) == claim
+    assert queue.get_setting(keys[0]) is True
+    assert queue.get_setting(keys[1]) == 3
+
+
+def test_manual_import_reset_changes_only_requested_markers_before_next_claim(queue):
+    job_id = queue.enqueue_retrieval(
+        school="ubc",
+        recipient_id=RECIPIENT_ID,
+        account_username=ACCOUNT_USERNAME,
+        url="https://www.instagram.com/p/ManualRetryMarkers/",
+    )
+    queue.finish(queue.claim_next(), result={"posts": ["old signed media"]})
+    selected = f"notification_import_attempts:{uuid4()}"
+    unrelated = f"notification_import_attempts:{uuid4()}"
+    keys = [selected, f"manual_imported:{job_id}", f"manual_import_attempts:{job_id}"]
+    for key in [*keys, unrelated]:
+        queue.set_setting(key, 3)
+    queue.reset_retrieval_import(job_id, import_setting_keys=keys)
+    claim = queue.claim_next()
+    assert claim.attempts == 1
+    assert claim.result is None
+    assert all(not queue.get_setting(key) for key in keys)
+    assert queue.get_setting(unrelated) == 3

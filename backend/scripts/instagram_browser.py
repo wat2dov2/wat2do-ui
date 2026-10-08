@@ -7,10 +7,13 @@ import argparse
 import fcntl
 import json
 import logging
+import os
 import sqlite3
 import subprocess
 import sys
 from dataclasses import asdict
+from io import TextIOWrapper
+from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import Any, Sequence
 
@@ -21,12 +24,88 @@ if str(BACKEND_DIRECTORY) not in sys.path:
 from core.launch_agents import LaunchAgentRecoveryError, install_launch_agent  # noqa: E402
 from services.instagram_notifications.browser_queue import (  # noqa: E402
     CONTROL,
+    WORKER_INSTALLATION_PAUSE,
     BrowserJobQueue,
 )
 from services.instagram_notifications.browser_session import BrowserSessionError  # noqa: E402
 from services.instagram_notifications.browser_worker import run_worker  # noqa: E402
 
 LAUNCH_AGENT_LABEL = "io.wat2do.instagram-browser.worker"
+LOG_FORMAT = "%(levelname)s %(name)s: %(message)s"
+
+
+class _WorkerOperationalLogHandler(RotatingFileHandler):
+    """Bound worker logs without amplifying disk failures onto launchd stderr."""
+
+    def __init__(self, filename: Path, *, max_bytes: int, backup_count: int) -> None:
+        self._write_failed = False
+        self._failure_reported = False
+        super().__init__(
+            filename,
+            maxBytes=max_bytes,
+            backupCount=backup_count,
+            encoding="utf-8",
+            errors="backslashreplace",
+            delay=True,
+        )
+
+    def _open(self) -> TextIOWrapper:
+        descriptor = os.open(
+            self.baseFilename, os.O_CREAT | os.O_APPEND | os.O_WRONLY | os.O_NOFOLLOW, 0o600
+        )
+        try:
+            os.fchmod(descriptor, 0o600)
+            return os.fdopen(descriptor, "a", encoding="utf-8", errors="backslashreplace")
+        except BaseException:
+            os.close(descriptor)
+            raise
+
+    def format(self, record: logging.LogRecord) -> str:
+        rendered = super().format(record)
+        encoded = rendered.encode("utf-8", errors="backslashreplace")
+        limit = self.maxBytes - len(self.terminator.encode("utf-8"))
+        if len(encoded) <= limit:
+            return rendered
+        suffix = "[truncated]"
+        prefix = encoded[: limit - len(suffix)].decode("utf-8", errors="ignore")
+        return prefix + suffix
+
+    def shouldRollover(self, record: logging.LogRecord) -> bool:
+        stream = self.stream
+        if stream is None:
+            stream = self._open()
+            self.stream = stream
+        stream.seek(0, os.SEEK_END)
+        message = (self.format(record) + self.terminator).encode("utf-8", errors="backslashreplace")
+        return stream.tell() + len(message) > self.maxBytes
+
+    def emit(self, record: logging.LogRecord) -> None:
+        self._write_failed = False
+        super().emit(record)
+        if not self._write_failed:
+            self._failure_reported = False
+
+    def handleError(self, record: logging.LogRecord) -> None:
+        self._write_failed = True
+        if self._failure_reported:
+            return
+        self._failure_reported = True
+        try:
+            sys.stderr.write(
+                "Instagram worker operational log is unavailable; logging will retry.\n"
+            )
+            sys.stderr.flush()
+        except (OSError, ValueError):
+            pass
+
+
+def configure_worker_logging(state_directory: Path) -> None:
+    handler = _WorkerOperationalLogHandler(
+        state_directory / "worker.operations.log",
+        max_bytes=CONTROL.worker_log_max_bytes,
+        backup_count=CONTROL.worker_log_backup_count,
+    )
+    logging.basicConfig(level=logging.WARNING, format=LOG_FORMAT, handlers=[handler], force=True)
 
 
 def launch_agent_payload(queue: BrowserJobQueue) -> dict[str, Any]:
@@ -76,7 +155,7 @@ def install(queue: BrowserJobQueue) -> dict[str, str]:
 def _install_idle_worker(queue: BrowserJobQueue) -> dict[str, str]:
     destination = Path.home() / "Library/LaunchAgents" / f"{LAUNCH_AGENT_LABEL}.plist"
     previous_pause = queue.get_setting("paused", False)
-    hold = "Browser worker installation in progress"
+    hold = WORKER_INSTALLATION_PAUSE
     if not queue.compare_set_pause(previous_pause, hold):
         raise RuntimeError("Browser worker pause changed during setup; inspect before retrying")
     try:
@@ -150,13 +229,12 @@ def parser() -> argparse.ArgumentParser:
 
 def main(argv: Sequence[str] | None = None) -> int:
     arguments = parser().parse_args(argv)
-    logging.basicConfig(
-        level=logging.WARNING, format="%(levelname)s %(name)s: %(message)s", force=True
-    )
+    logging.basicConfig(level=logging.WARNING, format=LOG_FORMAT, force=True)
     result: dict[str, Any]
     try:
         queue = BrowserJobQueue(arguments.state_directory)
         if arguments.command == "worker":
+            configure_worker_logging(queue.state_directory)
             run_worker(
                 queue, once=arguments.once, collect=not arguments.no_collect and not arguments.once
             )
@@ -172,7 +250,14 @@ def main(argv: Sequence[str] | None = None) -> int:
             else:
                 result = queue.status()
         elif arguments.command in {"pause", "resume"}:
-            queue.set_setting("paused", arguments.command == "pause")
+            if arguments.command == "resume":
+                prior_pause = queue.get_setting("paused", False)
+                if prior_pause == WORKER_INSTALLATION_PAUSE:
+                    raise RuntimeError("Wait for browser worker installation before resuming")
+                if not queue.compare_set_pause(prior_pause, False):
+                    raise RuntimeError("Browser worker pause changed; inspect before resuming")
+            else:
+                queue.set_setting("paused", True)
             result = {"paused": queue.get_setting("paused")}
         elif arguments.command in {"retry", "cancel"}:
             job = queue.get(arguments.job_id)
@@ -240,6 +325,10 @@ def main(argv: Sequence[str] | None = None) -> int:
                 ]
             }
         print(json.dumps(result, indent=2, sort_keys=True))
+        if arguments.command == "ingestion-import" and any(
+            result.get(key, 0) for key in ("failed", "blocked", "invalid", "busy")
+        ):
+            return 1
         return 0
     except (ValueError, BrowserSessionError, RuntimeError) as exc:
         print(str(exc), file=sys.stderr)
