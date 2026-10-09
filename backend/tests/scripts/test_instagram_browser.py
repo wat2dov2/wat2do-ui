@@ -572,13 +572,27 @@ def test_review_storage_cli_migration_backs_up_evidence_and_preserves_jobs_throu
         connection.execute("VACUUM")
         assert connection.execute("PRAGMA auto_vacuum").fetchone()[0] == 0
     before = _maintenance_rows(state.queue)
+    inventory = BrowserJobQueue.inventory_review_artifacts
     maintenance = BrowserJobQueue.maintain_review_storage
+    inventory_results = []
     maintenance_results = []
+
+    def backed_up_inventory(queue):
+        archive = state.backup / "latest-before-review-compaction.sqlite3.gz"
+        assert archive.is_file(), "Physical inventory requires a verified durable backup"
+        assert queue.get_setting("paused") == "Review storage maintenance"
+        with (queue.state_directory / "ingestion.lock").open("a+") as competing_import:
+            with pytest.raises(BlockingIOError):
+                fcntl.flock(competing_import, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        result = inventory(queue)
+        inventory_results.append(result)
+        return result
 
     def backed_up_maintenance(queue, *, force=False, _ingestion_lock=None):
         archive = state.backup / "latest-before-review-compaction.sqlite3.gz"
         assert archive.is_file(), "Maintenance must start only after a verified durable backup"
         assert queue.get_setting(state.key) == state.target
+        assert len(inventory_results) == 1, "Physical inventory must finish before cleanup"
         assert _ingestion_lock is not None
         with (queue.state_directory / "ingestion.lock").open("a+") as competing_import:
             with pytest.raises(BlockingIOError):
@@ -587,6 +601,7 @@ def test_review_storage_cli_migration_backs_up_evidence_and_preserves_jobs_throu
         maintenance_results.append((force, result))
         return result
 
+    monkeypatch.setattr(BrowserJobQueue, "inventory_review_artifacts", backed_up_inventory)
     monkeypatch.setattr(BrowserJobQueue, "maintain_review_storage", backed_up_maintenance)
     arguments = [
         "--state-directory",
@@ -602,6 +617,7 @@ def test_review_storage_cli_migration_backs_up_evidence_and_preserves_jobs_throu
     ]
     assert script.main(arguments) == 0
     result = json.loads(capsys.readouterr().out)
+    assert inventory_results == [result["artifact_inventory"]]
     assert maintenance_results == [(True, result["review_storage"])]
     assert "deferred" not in result["review_storage"]
     assert result["settings"] == {"compacted": 1, "already_compact": 0, "changed": 0}
@@ -660,6 +676,52 @@ def test_review_storage_cli_migration_backs_up_evidence_and_preserves_jobs_throu
         )
         == state.pending
     )
+
+
+def test_review_storage_inventory_failure_stops_cleanup_and_vacuum(
+    review_maintenance, monkeypatch, capsys
+):
+    state = review_maintenance
+    with closing(state.queue._connect()) as connection:
+        connection.execute("PRAGMA auto_vacuum=NONE")
+        connection.execute("VACUUM")
+    before = _maintenance_rows(state.queue)
+
+    def unavailable_inventory(queue):
+        assert (state.backup / "latest-before-review-compaction.sqlite3.gz").is_file()
+        raise OSError("Artifact inventory is unavailable")
+
+    monkeypatch.setattr(BrowserJobQueue, "inventory_review_artifacts", unavailable_inventory)
+    monkeypatch.setattr(
+        BrowserJobQueue,
+        "maintain_review_storage",
+        lambda *_, **__: pytest.fail("Failed inventory must precede cleanup"),
+    )
+    assert (
+        script.main(
+            [
+                "--state-directory",
+                str(state.queue.state_directory),
+                "compact-review-storage",
+                "--backup-directory",
+                str(state.backup),
+                "--artifacts-directory",
+                str(state.artifacts),
+                "--vacuum",
+            ]
+        )
+        == 1
+    )
+    assert capsys.readouterr().err
+    assert _maintenance_rows(state.queue) == before
+    assert state.queue.get_setting("paused") == "Review storage maintenance"
+    assert state.queue.get_setting(state.key) == state.target
+    assert (
+        state.queue.review_artifact_bytes(state.artifacts / "notification-current.json")
+        == state.files["notification-current.json"]
+    )
+    with closing(state.queue._connect()) as connection:
+        assert connection.execute("PRAGMA auto_vacuum").fetchone()[0] == 0
 
 
 @pytest.mark.parametrize(

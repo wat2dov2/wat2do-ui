@@ -144,7 +144,8 @@ class BrowserJobQueue:
                 );
                 CREATE TABLE IF NOT EXISTS review_artifacts (
                     path TEXT PRIMARY KEY, reference TEXT NOT NULL,
-                    original_sha256 TEXT NOT NULL, original_bytes INTEGER NOT NULL
+                    original_sha256 TEXT NOT NULL, original_bytes INTEGER NOT NULL,
+                    published_reference TEXT
                 );
                 CREATE TABLE IF NOT EXISTS review_completions (
                     media_row_id TEXT PRIMARY KEY, receipt TEXT NOT NULL,
@@ -169,6 +170,10 @@ class BrowserJobQueue:
             for statement in schema.split(";"):
                 if statement.strip():
                     db.execute(statement)
+            if "published_reference" not in {
+                r["name"] for r in db.execute("PRAGMA table_info(review_artifacts)")
+            }:
+                db.execute("ALTER TABLE review_artifacts ADD COLUMN published_reference TEXT")
             db.execute(
                 "INSERT INTO settings VALUES ('delivery_generation',?) ON CONFLICT(key) DO NOTHING",
                 (json.dumps(str(uuid.uuid4())),),
@@ -352,16 +357,16 @@ class BrowserJobQueue:
             fcntl.flock(lock, fcntl.LOCK_SH)
             return self._review_artifact_bytes_locked(path)
 
-    def _review_artifact_bytes_locked(self, path: Path) -> bytes:
-        raw = Path(path).read_bytes()
-        if Path(path).suffix != ".json" or len(raw) > 4096:
-            return raw
+    @staticmethod
+    def _review_artifact_descriptor(raw: bytes) -> dict[str, Any] | None:
+        if len(raw) > 4096:
+            return None
         try:
             descriptor = json.loads(raw)
         except (ValueError, UnicodeDecodeError):
-            return raw
+            return None
         if not isinstance(descriptor, dict) or descriptor.get("format") != _ARTIFACT_FORMAT:
-            return raw
+            return None
         if (
             set(descriptor) != {"format", "review_snapshot", "original_sha256", "original_bytes"}
             or type(descriptor["original_bytes"]) is not int
@@ -370,8 +375,44 @@ class BrowserJobQueue:
             or not re.fullmatch(r"[a-f0-9]{64}", descriptor["original_sha256"])
         ):
             raise ReviewSnapshotError("Review checkpoint reference is invalid")
+        return descriptor
+
+    @staticmethod
+    def _completed_artifact_receipt(db: sqlite3.Connection, row: sqlite3.Row) -> dict:
+        owners = json.loads(row["media_row_ids"])
+        receipts = []
+        for rid in owners:
+            receipt = db.execute(
+                "SELECT receipt FROM review_completions WHERE media_row_id=?", (rid,)
+            ).fetchone()
+            if receipt is None:
+                raise ReviewSnapshotError("Completed review receipt is missing")
+            receipts.append(json.loads(receipt[0]))
+        return {
+            "format": "wat2do-completed-review-v1",
+            "batch": row["batch"],
+            "original_sha256": row["original_sha256"],
+            "completed_media": receipts,
+        }
+
+    def _review_artifact_bytes_locked(self, path: Path) -> bytes:
+        raw = Path(path).read_bytes()
+        descriptor = self._review_artifact_descriptor(raw) if Path(path).suffix == ".json" else None
+        if descriptor is None:
+            return raw
         with closing(self._connect()) as db:
             db.execute("BEGIN")
+            row = db.execute(
+                "SELECT published_reference FROM review_artifacts WHERE path=?",
+                (str(Path(path).absolute()),),
+            ).fetchone()
+            published = json.loads(row[0]) if row and row[0] is not None else None
+            if (
+                isinstance(published, dict)
+                and published.get("descriptor") == descriptor
+                and "completed_review_receipt" in published
+            ):
+                return (json.dumps(published["completed_review_receipt"]) + "\n").encode()
             text = decode_review_artifact(
                 ReviewSnapshotStore(db).get(descriptor["review_snapshot"])
             )
@@ -414,15 +455,35 @@ class BrowserJobQueue:
         ):
             return False
         digest = hashlib.sha256(raw).hexdigest()
+        # Foreground artifact writers have folder access. Capture the physical
+        # generation before taking SQLite's writer, including failed publications.
+        published = None
+        if path.exists():
+            with path.open("rb") as handle:
+                published = self._review_artifact_descriptor(handle.read(4097))
+        with closing(self._connect()) as db:
+            previous = db.execute(
+                "SELECT published_reference FROM review_artifacts WHERE path=?", (str(path),)
+            ).fetchone()
+            previous_publication = (
+                json.loads(previous[0]) if previous and previous[0] is not None else None
+            )
+            if (
+                isinstance(previous_publication, dict)
+                and previous_publication.get("descriptor") == published
+                and "completed_review_receipt" in previous_publication
+            ):
+                published = previous_publication
         with closing(self._connect()) as db, db:
             db.execute("BEGIN IMMEDIATE")
             reference = ReviewSnapshotStore(db).put(encode_review_artifact(text))
             db.execute(
-                "INSERT INTO review_artifacts VALUES (?,?,?,?) "
+                "INSERT INTO review_artifacts VALUES (?,?,?,?,?) "
                 "ON CONFLICT(path) DO UPDATE SET reference=excluded.reference, "
-                "original_sha256=excluded.original_sha256, original_bytes=excluded.original_bytes",
-                (str(path), json.dumps(reference), digest, len(raw)),
+                "original_sha256=excluded.original_sha256, original_bytes=excluded.original_bytes, published_reference=excluded.published_reference",
+                (str(path), json.dumps(reference), digest, len(raw), json.dumps(published)),
             )
+            db.execute("DELETE FROM review_artifact_retention WHERE path=?", (str(path),))
         descriptor = {
             "format": _ARTIFACT_FORMAT,
             "review_snapshot": reference,
@@ -430,7 +491,56 @@ class BrowserJobQueue:
             "original_bytes": len(raw),
         }
         atomic_write(path, (json.dumps(descriptor) + "\n").encode())
+        with closing(self._connect()) as db, db:
+            db.execute(
+                "UPDATE review_artifacts SET published_reference=? WHERE path=? AND reference=?",
+                (json.dumps(descriptor), str(path), json.dumps(reference)),
+            )
         return True
+
+    def inventory_review_artifacts(self) -> dict[str, int]:
+        """Capture physical generations during foreground, stopped maintenance.
+
+        The background worker never opens external review folders. Unknown legacy
+        generations remain pinned until this explicit, backed-up inventory runs.
+        """
+        with (self.state_directory / "review-artifacts.lock").open("a+") as lock:
+            fcntl.flock(lock, fcntl.LOCK_EX)
+            with closing(self._connect()) as db:
+                rows = db.execute(
+                    "SELECT path,reference,published_reference FROM review_artifacts"
+                ).fetchall()
+            captured = []
+            for row in rows:
+                path = Path(row["path"])
+                if path.is_symlink() or any(p.is_symlink() for p in path.parents):
+                    raise ReviewSnapshotError("Review checkpoint ownership is invalid")
+                with path.open("rb") as handle:
+                    descriptor = self._review_artifact_descriptor(handle.read(4097))
+                previous = (
+                    json.loads(row["published_reference"])
+                    if row["published_reference"] is not None
+                    else None
+                )
+                if (
+                    isinstance(previous, dict)
+                    and previous.get("descriptor") == descriptor
+                    and "completed_review_receipt" in previous
+                ):
+                    descriptor = previous
+                captured.append((json.dumps(descriptor), row["path"], row["reference"]))
+            with closing(self._connect()) as db, db:
+                db.execute("BEGIN IMMEDIATE")
+                for publication_json, path_text, reference in captured:
+                    if (
+                        db.execute(
+                            "UPDATE review_artifacts SET published_reference=? WHERE path=? AND reference=?",
+                            (publication_json, path_text, reference),
+                        ).rowcount
+                        != 1
+                    ):
+                        raise ReviewSnapshotError("Review inventory changed concurrently")
+            return {"inventoried": len(captured)}
 
     @staticmethod
     def _review_hash(value: Any) -> str:
@@ -799,21 +909,45 @@ class BrowserJobQueue:
                 value = json.loads(row[0])
                 if isinstance(value, dict) and "review_snapshot" in value:
                     roots.append(value["review_snapshot"])
-            for row in db.execute("SELECT path,reference FROM review_artifacts"):
+            for row in db.execute(
+                "SELECT a.*,r.retired_at,r.original_sha256 AS retirement_sha FROM review_artifacts a LEFT JOIN review_artifact_retention r ON r.path=a.path"
+            ):
                 if time.monotonic() >= deadline:
                     raise TimeoutError("Review storage maintenance deadline exceeded")
-                path = Path(row["path"])
-                if path.is_symlink() or any(p.is_symlink() for p in path.parents):
-                    raise ReviewSnapshotError("Review checkpoint ownership is invalid")
-                # Failed publication can leave a valid old descriptor at the path.
-                # Pin both the registered version and that actual on-disk version.
-                roots.append(json.loads(row["reference"]))
-                with path.open("rb") as handle:
-                    raw = handle.read(4097)
-                if len(raw) <= 4096:
-                    value = json.loads(raw)
-                    if isinstance(value, dict) and value.get("format") == _ARTIFACT_FORMAT:
-                        roots.append(value["review_snapshot"])
+                if row["published_reference"] is None:
+                    raise ReviewSnapshotError(
+                        "Review artifact inventory is required before collection"
+                    )
+                reference = json.loads(row["reference"])
+                published = json.loads(row["published_reference"])
+                expected = {
+                    "format": _ARTIFACT_FORMAT,
+                    "review_snapshot": reference,
+                    "original_sha256": row["original_sha256"],
+                    "original_bytes": row["original_bytes"],
+                }
+                retired = isinstance(published, dict) and set(published) == {
+                    "descriptor",
+                    "completed_review_receipt",
+                }
+                if retired:
+                    if (
+                        published["completed_review_receipt"].get("format")
+                        != "wat2do-completed-review-v1"
+                    ):
+                        raise ReviewSnapshotError("Review completion publication is invalid")
+                if not (
+                    retired
+                    and row["retired_at"] is not None
+                    and row["retirement_sha"] == row["original_sha256"]
+                    and published["descriptor"] == expected
+                ):
+                    roots.append(reference)
+                if published is not None and not retired:
+                    descriptor = self._review_artifact_descriptor(json.dumps(published).encode())
+                    if descriptor is None:
+                        raise ReviewSnapshotError("Review publication reference is invalid")
+                    roots.append(descriptor["review_snapshot"])
             db.set_progress_handler(lambda: int(time.monotonic() >= deadline), 100)
             deleted = ReviewSnapshotStore(db).collect(roots)
             db.set_progress_handler(None, 0)
@@ -851,6 +985,11 @@ class BrowserJobQueue:
                 return {"deferred": "active writer"}
             if self.get_setting("notification_browser_import_claim"):
                 return {"deferred": "active import claim"}
+            with closing(self._connect()) as db:
+                if db.execute(
+                    "SELECT 1 FROM review_artifacts WHERE published_reference IS NULL LIMIT 1"
+                ).fetchone():
+                    return {"deferred": "artifact inventory required"}
             stats["collected_snapshots"] += self._collect_review_snapshots_locked(deadline)
             cutoff = now - CONTROL.completed_review_retention_seconds
             with closing(self._connect()) as db, db:
@@ -949,38 +1088,41 @@ class BrowserJobQueue:
                 owners = json.loads(row["media_row_ids"])
                 if not owners or any(rid not in eligible for rid in owners):
                     continue
-                receipt = {
-                    "format": "wat2do-completed-review-v1",
-                    "batch": row["batch"],
-                    "original_sha256": row["original_sha256"],
-                    "completed_media": [json.loads(completed[rid]["receipt"]) for rid in owners],
-                }
-                path = Path(row["path"])
-                original = self._review_artifact_bytes_locked(path)
-                unchanged = hashlib.sha256(original).hexdigest() == row["original_sha256"]
-                already_published = json.loads(original) == receipt
-                if unchanged or already_published:
-                    if unchanged:
-                        # Completion receipts already live durably in SQLite. Publish
-                        # their compact checkpoint without allocating more snapshot
-                        # quota, then release the old content in the same registry.
-                        atomic_write(path, (json.dumps(receipt) + "\n").encode())
-                    with closing(self._connect()) as db, db:
-                        db.execute("BEGIN IMMEDIATE")
-                        db.execute("DELETE FROM review_artifacts WHERE path=?", (row["path"],))
-                        db.execute(
-                            "UPDATE review_artifact_retention SET retired_at=? WHERE path=? AND original_sha256=?",
-                            (now, row["path"], row["original_sha256"]),
-                        )
-                    stats["retired_artifacts"] += 1
-                else:
-                    # A checkpoint changed after sealing. Preserve its new evidence
-                    # and revoke only the outdated retirement permission.
-                    with closing(self._connect()) as db, db:
+                with closing(self._connect()) as db, db:
+                    db.execute("BEGIN IMMEDIATE")
+                    artifact = db.execute(
+                        "SELECT * FROM review_artifacts WHERE path=?", (row["path"],)
+                    ).fetchone()
+                    if artifact is None or artifact["original_sha256"] != row["original_sha256"]:
                         db.execute(
                             "DELETE FROM review_artifact_retention WHERE path=? AND original_sha256=?",
                             (row["path"], row["original_sha256"]),
                         )
+                        continue
+                    descriptor = {
+                        "format": _ARTIFACT_FORMAT,
+                        "review_snapshot": json.loads(artifact["reference"]),
+                        "original_sha256": artifact["original_sha256"],
+                        "original_bytes": artifact["original_bytes"],
+                    }
+                    if json.loads(artifact["published_reference"]) != descriptor:
+                        continue  # An unfinished publication must keep both generations.
+                    # Physical descriptors stay tiny and unchanged. Canonical readers
+                    # resolve this exact retired generation to its durable receipt.
+                    # No external folder access can hold the queue writer.
+                    published = {
+                        "descriptor": descriptor,
+                        "completed_review_receipt": self._completed_artifact_receipt(db, row),
+                    }
+                    db.execute(
+                        "UPDATE review_artifacts SET published_reference=? WHERE path=?",
+                        (json.dumps(published), row["path"]),
+                    )
+                    db.execute(
+                        "UPDATE review_artifact_retention SET retired_at=? WHERE path=? AND original_sha256=?",
+                        (now, row["path"], row["original_sha256"]),
+                    )
+                    stats["retired_artifacts"] += 1
             stats["collected_snapshots"] += self._collect_review_snapshots_locked(deadline)
             with closing(self._connect()) as db:
                 db.execute("PRAGMA incremental_vacuum(1000)").fetchall()

@@ -150,6 +150,7 @@ def compact_review_storage(
                 else:
                     stats["changed"] += 1
         result["artifacts"] = stats
+        result["artifact_inventory"] = queue.inventory_review_artifacts()
         result["review_storage"] = queue.maintain_review_storage(
             force=True, _ingestion_lock=import_lock
         )

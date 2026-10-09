@@ -150,6 +150,8 @@ Use `queue.read_review_artifact(path)` and `queue.review_artifact_bytes(path)` w
 These artifact helpers preserve the exact original JSON bytes for SHA256 checks and restore every raw guard field before claims or writes.
 All candidate equality checks, fresh readbacks, pending and held evidence, and uncertain recovery journals remain required.
 The worker runs local review-storage maintenance every 300 seconds, with a 30-second deadline and at most 100 completed targets/artifacts per pass, using the validated controls in `instagram_browser.json`.
+Automatic maintenance uses the database's verified publication index without opening external checkpoint files.
+Unknown legacy publication records defer cleanup until a stopped-worker inventory verifies them.
 Successful retrieval job results remain intact.
 `queue.record_review_completion(qa_path, input_paths=..., artifact_paths=...)` seals retention eligibility from independent Codex terminal QA, its seven SHA-bound inputs, exact source and school/recipient identities, successful claim finalization, and verified listing readbacks.
 A saved `import` decision or a successful retrieval alone cannot establish completed review work.
@@ -159,6 +161,8 @@ Current packets, pending or held sources, partial imports, active claims, uncert
 Mixed packets stay pinned until every owned source has a verified completion receipt.
 Maintenance reclaims superseded content-addressed nodes only after tracing surviving settings and artifact references, preserving shared data still needed by another review.
 The `compact-review-storage` CLI migrates existing settings and artifacts through compare-and-swap checks under the worker, installation, and import maintenance locks, with a private backup made first.
+After verifying its backup and compacting evidence, the CLI calls `queue.inventory_review_artifacts()` before forced maintenance or optional vacuum.
+Inventory owns the artifact publication lock and reads all physical descriptors before opening a SQLite write transaction.
 Migration preserves changes made after its source snapshot, leaves interrupted or unresolved evidence intact, and does not claim work, clear jobs, or reset retry budgets.
 Existing evidence is preserved; it is not disposable package-cache storage.
 Digest callers wait through the installer's temporary pause within their original deadline, including while its service restarts.

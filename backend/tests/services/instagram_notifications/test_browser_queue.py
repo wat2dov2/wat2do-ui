@@ -3053,7 +3053,9 @@ def test_maintenance_preserves_old_descriptor_after_failed_publication(
     assert queue.read_review_artifact(path) == new
 
 
-def test_maintenance_defers_active_import_and_preserves_corrupt_root(queue, tmp_path):
+def test_maintenance_defers_active_import_and_preserves_unavailable_published_artifact(
+    queue, tmp_path
+):
     packet = _completion_packet(queue, tmp_path)
     queue.set_setting("notification_browser_import_claim", {"media_row_id": packet[0]})
     assert queue.maintain_review_storage(force=True) == {"deferred": "active import claim"}
@@ -3065,8 +3067,9 @@ def test_maintenance_defers_active_import_and_preserves_corrupt_root(queue, tmp_
         before = db.execute(
             "SELECT digest,payload FROM review_snapshots ORDER BY digest"
         ).fetchall()
+    queue.maintain_review_storage(force=True)
     with pytest.raises(FileNotFoundError):
-        queue.maintain_review_storage(force=True)
+        queue.read_review_artifact(missing)
     with sqlite3.connect(queue.database_path) as db:
         assert (
             db.execute("SELECT digest,payload FROM review_snapshots ORDER BY digest").fetchall()
@@ -3349,59 +3352,220 @@ def test_mixed_verified_and_held_packet_keeps_all_shared_batch_checkpoints(queue
         )
 
 
-def test_interrupted_completed_artifact_publication_repairs_registry_on_next_maintenance(
+def test_interrupted_artifact_writer_preserves_both_publication_generations_until_retry(
+    queue, tmp_path, monkeypatch
+):
+    checkpoint = tmp_path / "notification-published.json"
+    old = '{"evidence": "Earlier source", "image_map": {"z": "z", "a": "a"}}\n'
+    fresh = '{"evidence": "Later source", "image_map": {"a": "a", "z": "z"}}\n'
+    queue.write_review_artifact(checkpoint, old)
+    prior_descriptor = json.loads(checkpoint.read_bytes())
+    with sqlite3.connect(queue.database_path) as db:
+        jobs = db.execute("SELECT * FROM jobs ORDER BY id").fetchall()
+    publish = module.atomic_write
+
+    def interrupted_after_publish(path, raw):
+        publish(path, raw)
+        raise OSError(errno.ENOSPC, "Synthetic failure after checkpoint publication")
+
+    with monkeypatch.context() as context:
+        context.setattr(module, "atomic_write", interrupted_after_publish)
+        with pytest.raises(OSError):
+            queue.write_review_artifact(
+                checkpoint, fresh, expected_sha256=hashlib.sha256(old.encode()).hexdigest()
+            )
+    durable = checkpoint.read_bytes()
+    new_descriptor = json.loads(durable)
+    assert new_descriptor != prior_descriptor
+    with queue._connect() as db:
+        row = db.execute(
+            "SELECT reference,published_reference FROM review_artifacts WHERE path=?",
+            (str(checkpoint),),
+        ).fetchone()
+        assert json.loads(row["published_reference"]) == prior_descriptor
+        assert json.loads(row["reference"]) == new_descriptor["review_snapshot"]
+
+    queue.maintain_review_storage(force=True)
+
+    assert checkpoint.read_bytes() == durable
+    assert queue.review_artifact_bytes(checkpoint) == fresh.encode()
+    with queue._connect() as db:
+        previous = review_module.ReviewSnapshotStore(db).get(prior_descriptor["review_snapshot"])
+        assert review_module.decode_review_artifact(previous) == old
+    assert queue.write_review_artifact(
+        checkpoint, fresh, expected_sha256=hashlib.sha256(fresh.encode()).hexdigest()
+    )
+    assert queue.maintain_review_storage(force=True)["collected_snapshots"] > 0
+    with queue._connect() as db:
+        row = db.execute(
+            "SELECT published_reference FROM review_artifacts WHERE path=?", (str(checkpoint),)
+        ).fetchone()
+        assert json.loads(row[0]) == json.loads(checkpoint.read_bytes())
+        with pytest.raises(review_module.ReviewSnapshotError):
+            review_module.ReviewSnapshotStore(db).get(prior_descriptor["review_snapshot"])
+    assert queue.review_artifact_bytes(checkpoint) == fresh.encode()
+    with sqlite3.connect(queue.database_path) as db:
+        assert db.execute("SELECT * FROM jobs ORDER BY id").fetchall() == jobs
+
+
+def test_automatic_review_maintenance_never_opens_or_republishes_external_artifacts(
+    queue, tmp_path, monkeypatch
+):
+    packets = [_completion_packet(queue, tmp_path, batch) for batch in (1, 2)]
+    held = _completion_packet(queue, tmp_path, 3, held=True)
+    for _, _, path, files, _ in [*packets, held]:
+        queue.record_review_completion(path, input_paths=files, artifact_paths=[])
+    _expire_review_retention(queue)
+    with sqlite3.connect(queue.database_path) as db:
+        jobs = db.execute("SELECT * FROM jobs ORDER BY id").fetchall()
+        paths = {Path(row[0]) for row in db.execute("SELECT path FROM review_artifacts")}
+    published = {path: path.read_bytes() for path in paths}
+    original_open = Path.open
+
+    def reject_artifact_open(path, *args, **kwargs):
+        if path in paths:
+            raise AssertionError("Automatic maintenance attempted external artifact I/O")
+        return original_open(path, *args, **kwargs)
+
+    def reject_artifact_publish(*_args, **_kwargs):
+        raise AssertionError("Automatic maintenance attempted external artifact publication")
+
+    with monkeypatch.context() as context:
+        context.setattr(Path, "open", reject_artifact_open)
+        context.setattr(module, "atomic_write", reject_artifact_publish)
+        stats = queue.maintain_review_storage(force=True)
+
+    assert stats["retired_targets"] == 1
+    assert stats["retired_artifacts"] == 9
+    assert stats["collected_snapshots"] > 0
+    assert all(path.read_bytes() == raw for path, raw in published.items())
+    assert queue.read_review_artifact(packets[0][2])["format"] == "wat2do-completed-review-v1"
+    for packet in [packets[1], held]:
+        assert queue.read_review_artifact(packet[2]) == packet[4]
+        for key, path in packet[3].items():
+            assert (
+                hashlib.sha256(queue.review_artifact_bytes(path)).hexdigest()
+                == packet[4]["input_sha256"][key]
+            )
+    # An external replacement must never be shadowed by the retired DB receipt.
+    packets[0][2].write_bytes(published[held[2]])
+    assert queue.read_review_artifact(packets[0][2]) == held[4]
+    with sqlite3.connect(queue.database_path) as db:
+        assert db.execute("SELECT * FROM jobs ORDER BY id").fetchall() == jobs
+
+
+def test_legacy_publication_inventory_pins_unknown_roots_without_holding_database_writer(
+    queue, tmp_path, monkeypatch
+):
+    path = tmp_path / "notification-legacy.json"
+    old, fresh = '{"evidence": "Original source"}\n', '{"evidence": "New source"}\n'
+    queue.write_review_artifact(path, old)
+    with monkeypatch.context() as context:
+        context.setattr(
+            module, "atomic_write", lambda *args: (_ for _ in ()).throw(OSError("publish failed"))
+        )
+        with pytest.raises(OSError):
+            queue.write_review_artifact(path, fresh)
+    with queue._connect() as db:
+        db.execute("UPDATE review_artifacts SET published_reference=NULL")
+        orphan = review_module.ReviewSnapshotStore(db).put({"orphan": "Unreferenced evidence"})
+        before = db.execute(
+            "SELECT digest,payload FROM review_snapshots ORDER BY digest"
+        ).fetchall()
+        db.commit()
+    original_open = Path.open
+
+    def reject_external_open(candidate, *args, **kwargs):
+        if candidate == path:
+            raise AssertionError("Legacy roots must defer without opening external artifacts")
+        return original_open(candidate, *args, **kwargs)
+
+    with monkeypatch.context() as context:
+        context.setattr(Path, "open", reject_external_open)
+        queue.maintain_review_storage(force=True)
+    with queue._connect() as db:
+        assert (
+            db.execute("SELECT digest,payload FROM review_snapshots ORDER BY digest").fetchall()
+            == before
+        )
+
+    def verify_inventory_has_no_database_writer(candidate, *args, **kwargs):
+        if candidate == path:
+            connection = sqlite3.connect(queue.database_path, timeout=0)
+            try:
+                connection.execute("BEGIN IMMEDIATE")
+                connection.rollback()
+            finally:
+                connection.close()
+        return original_open(candidate, *args, **kwargs)
+
+    with monkeypatch.context() as context:
+        context.setattr(Path, "open", verify_inventory_has_no_database_writer)
+        assert queue.inventory_review_artifacts() == {"inventoried": 1}
+    assert queue.maintain_review_storage(force=True)["collected_snapshots"] > 0
+    assert queue.review_artifact_bytes(path) == old.encode()
+    with queue._connect() as db:
+        registered = json.loads(db.execute("SELECT reference FROM review_artifacts").fetchone()[0])
+        assert (
+            review_module.decode_review_artifact(
+                review_module.ReviewSnapshotStore(db).get(registered)
+            )
+            == fresh
+        )
+        with pytest.raises(review_module.ReviewSnapshotError):
+            review_module.ReviewSnapshotStore(db).get(orphan)
+
+
+def test_retired_artifact_path_reuse_preserves_receipt_through_failed_publish_and_inventory(
     queue, tmp_path, monkeypatch
 ):
     packets = [_completion_packet(queue, tmp_path, batch) for batch in (1, 2)]
     for _, _, path, files, _ in packets:
         queue.record_review_completion(path, input_paths=files, artifact_paths=[])
     _expire_review_retention(queue)
-    with sqlite3.connect(queue.database_path) as db:
-        jobs = db.execute("SELECT * FROM jobs ORDER BY id").fetchall()
-    published = []
-    publish = module.atomic_write
-
-    def interrupted_after_publish(path, raw):
-        publish(path, raw)
-        published.append(path)
-        raise OSError(errno.ENOSPC, "Synthetic failure after checkpoint publication")
-
+    assert queue.maintain_review_storage(force=True)["retired_artifacts"] == 9
+    path = packets[0][2]
+    physical_descriptor = path.read_bytes()
+    receipt = queue.review_artifact_bytes(path)
+    assert json.loads(receipt)["format"] == "wat2do-completed-review-v1"
+    with queue._connect() as db:
+        with pytest.raises(review_module.ReviewSnapshotError):
+            review_module.ReviewSnapshotStore(db).get(
+                json.loads(physical_descriptor)["review_snapshot"]
+            )
+    fresh = '{"checkpoint": "Later verified work"}\n'
     with monkeypatch.context() as context:
-        context.setattr(module, "atomic_write", interrupted_after_publish)
+        context.setattr(
+            module, "atomic_write", lambda *args: (_ for _ in ()).throw(OSError("publish failed"))
+        )
         with pytest.raises(OSError):
-            queue.maintain_review_storage(force=True)
-    assert len(published) == 1
-    checkpoint = published[0]
-    durable = checkpoint.read_bytes()
-    receipt = queue.read_review_artifact(checkpoint)
-    assert receipt["format"] == "wat2do-completed-review-v1"
-    assert receipt["completed_media"][0]["media_row_id"] == packets[0][0]
-    with sqlite3.connect(queue.database_path) as db:
-        assert db.execute(
-            "SELECT 1 FROM review_artifacts WHERE path=?", (str(checkpoint),)
-        ).fetchone()
+            queue.write_review_artifact(
+                path, fresh, expected_sha256=hashlib.sha256(receipt).hexdigest()
+            )
+    queue.maintain_review_storage(force=True)
+    queue.inventory_review_artifacts()
+    assert path.read_bytes() == physical_descriptor
+    assert queue.review_artifact_bytes(path) == receipt
+    with queue._connect() as db:
         assert (
             db.execute(
-                "SELECT retired_at FROM review_artifact_retention WHERE path=?", (str(checkpoint),)
-            ).fetchone()[0]
+                "SELECT 1 FROM review_artifact_retention WHERE path=?", (str(path),)
+            ).fetchone()
             is None
         )
-
-    stats = queue.maintain_review_storage(force=True)
-
-    assert stats["retired_artifacts"] == 9
-    assert checkpoint.read_bytes() == durable
-    assert queue.read_review_artifact(checkpoint) == receipt
-    assert queue.read_review_artifact(packets[1][2]) == packets[1][4]
-    with sqlite3.connect(queue.database_path) as db:
-        assert (
-            db.execute("SELECT 1 FROM review_artifacts WHERE path=?", (str(checkpoint),)).fetchone()
-            is None
-        )
-        assert (
+        registered = json.loads(
             db.execute(
-                "SELECT retired_at FROM review_artifact_retention WHERE path=?", (str(checkpoint),)
+                "SELECT reference FROM review_artifacts WHERE path=?", (str(path),)
             ).fetchone()[0]
-            is not None
         )
-        assert db.execute("SELECT * FROM jobs ORDER BY id").fetchall() == jobs
+        assert (
+            review_module.decode_review_artifact(
+                review_module.ReviewSnapshotStore(db).get(registered)
+            )
+            == fresh
+        )
+    assert queue.write_review_artifact(
+        path, fresh, expected_sha256=hashlib.sha256(receipt).hexdigest()
+    )
+    queue.maintain_review_storage(force=True)
+    assert queue.review_artifact_bytes(path) == fresh.encode()
