@@ -1,6 +1,7 @@
 import base64
 import copy
 import errno
+import fcntl
 import gzip
 import hashlib
 import json
@@ -2781,7 +2782,9 @@ def test_review_snapshot_collection_requires_caller_transaction(review_store):
     assert connection.execute("SELECT count(*) FROM review_snapshots").fetchone()[0] == 0
 
 
-def _completion_packet(queue, tmp_path, batch=1, *, held=False, effects=False):
+def _completion_packet(
+    queue, tmp_path, batch=1, *, held=False, effects=False, position_update=False
+):
     rid, token, notification = str(uuid4()), str(uuid4()), str(uuid4())
     url = f"https://www.instagram.com/p/Storage{batch}/"
     jid = queue.enqueue_retrieval(
@@ -2811,7 +2814,6 @@ def _completion_packet(queue, tmp_path, batch=1, *, held=False, effects=False):
         },
         "candidate_context": ["large preserved baseline " + str(i) for i in range(1000)],
     }
-    queue.set_setting(module._REVIEW_PREFIX + rid, target)
     ledger = {
         "id": rid,
         "status": "pending" if held else "succeeded",
@@ -2849,16 +2851,50 @@ def _completion_packet(queue, tmp_path, batch=1, *, held=False, effects=False):
             "title": "Volunteer coordinator",
             "description": "Coordinate the student society volunteer team",
             "position_type": "volunteer",
+            "requirements": [],
+            "commitment": None,
+            "compensation": None,
+            "is_paid": None,
+            "location": None,
+            "contact_email": None,
             "deadline_date": "2026-10-20",
+            "deadline_at": None,
             "source_url": url,
             "source_image_url": "https://images.test/a",
+            "source_video_url": None,
         }
         events = [
             {"id": 100 + batch, "school_id": 1, "club_id": 10, "cohost_club_ids": [20], **event}
         ]
         positions = [
-            {"id": 200 + batch, "school_id": 1, "club_id": 10, "cohost_club_ids": [], **position}
+            {
+                "id": 200 + batch,
+                "school_id": 1,
+                "club_id": 10,
+                "cohost_club_ids": [],
+                "ingestion_source": "instagram_scraper",
+                "is_active": True,
+                "added_at": "2026-10-01T12:00:00+00:00",
+                "updated_at": "2026-10-08T12:00:00+00:00",
+                **position,
+            }
         ]
+        plan = {"index": 0, "action": "create", "existing_id": None}
+        if position_update:
+            positions[0]["source_url"] = "https://www.instagram.com/p/OriginalListing/"
+            position["source_url"] = positions[0]["source_url"]
+            position["id"] = positions[0]["id"]
+            baseline = copy.deepcopy(positions[0])
+            baseline["description"] = "The original application details"
+            baseline["deadline_date"] = "2026-10-10"
+            baseline["updated_at"] = "2026-10-01T12:00:00+00:00"
+            plan.update(
+                action="update",
+                existing_id=baseline["id"],
+                existing_position_snapshot=baseline,
+            )
+        target["codex_positions"] = [copy.deepcopy(position)]
+        target["codex_review"]["position_decisions"] = [plan]
         for kind, payload, row in (
             ("event", event, events[0]),
             ("position", position, positions[0]),
@@ -2872,6 +2908,9 @@ def _completion_packet(queue, tmp_path, batch=1, *, held=False, effects=False):
             }
             if kind == "position":
                 write["verified_position_row"] = row
+                if position_update:
+                    write["outcome"] = "updated"
+                    write["expected_position"] = copy.deepcopy(baseline)
             writes.append(write)
             bindings.append(
                 {
@@ -2879,15 +2918,16 @@ def _completion_packet(queue, tmp_path, batch=1, *, held=False, effects=False):
                     "kind": kind,
                     "approved_index": 0,
                     "native_id": row["id"],
-                    "action": "created",
-                    "native_outcome": "inserted",
+                    "action": plan["action"] if kind == "position" else "created",
+                    "native_outcome": write["outcome"],
                     "native_payload_sha256": module.BrowserJobQueue._review_hash(payload),
                     "full_native_row_sha256": module.BrowserJobQueue._review_hash(row),
                     "host_id": club["id"],
-                    "source_url": url,
+                    "source_url": row["source_url"],
                     "cohost_ids": row["cohost_club_ids"],
                 }
             )
+    queue.set_setting(module._REVIEW_PREFIX + rid, target)
     frozen = tmp_path / f"notification-frozen-drain{batch}.json"
     queue.write_review_artifact(frozen, json.dumps([target]))
     inputs = {
@@ -3275,10 +3315,13 @@ def test_pending_or_refreshed_source_generation_keeps_its_previous_full_review(
     assert queue.read_review_artifact(path) == qa
 
 
+@pytest.mark.parametrize("position_update", [False, True], ids=["create", "cross-post-update"])
 def test_completion_receipt_binds_real_event_and_position_writes_to_native_readbacks(
-    queue, tmp_path
+    queue, tmp_path, position_update
 ):
-    rid, target, path, files, qa = _completion_packet(queue, tmp_path, effects=True)
+    rid, target, path, files, qa = _completion_packet(
+        queue, tmp_path, effects=True, position_update=position_update
+    )
 
     stats = queue.record_review_completion(path, input_paths=files, artifact_paths=[])
 
@@ -3293,12 +3336,75 @@ def test_completion_receipt_binds_real_event_and_position_writes_to_native_readb
         (listing["kind"], listing["id"], listing["action"]) for listing in receipt["listings"]
     ] == [
         ("event", 101, "created"),
-        ("position", 201, "created"),
+        ("position", 201, "update" if position_update else "create"),
     ]
     assert [listing["sha256"] for listing in receipt["listings"]] == [
         binding["full_native_row_sha256"] for binding in qa["native_effect_bindings"]
     ]
     assert receipt["source_url"] == target["row"]["source_url"]
+    assert receipt["input_sha256"] == qa["input_sha256"]
+    assert set(receipt["input_sha256"]) == {
+        "approved",
+        "held",
+        "packet",
+        "journal",
+        "claims",
+        "full",
+        "freeze",
+    }
+    if position_update:
+        assert qa["native_effect_bindings"][1]["source_url"] != receipt["source_url"]
+    assert queue.get_setting(module._REVIEW_PREFIX + rid) == target
+
+
+@pytest.mark.parametrize(
+    "damage",
+    ["action", "id", "baseline", "mutable", "media", "timestamp", "unchanged_timestamp", "type"],
+)
+def test_completion_receipt_rejects_position_update_outside_frozen_approval(
+    queue, tmp_path, damage
+):
+    rid, target, path, files, qa = _completion_packet(
+        queue, tmp_path, effects=True, position_update=True
+    )
+    inputs = {key: queue.read_review_artifact(checkpoint) for key, checkpoint in files.items()}
+    write = inputs["journal"]["writes"][1]
+    row = inputs["full"][0]["positions"][0]
+    effect = qa["native_effect_bindings"][1]
+    if damage == "action":
+        effect["action"] = "create"
+    elif damage == "id":
+        write["position"]["id"] += 1
+    elif damage == "baseline":
+        write["expected_position"]["club_id"] += 1
+    elif damage == "mutable":
+        write["position"]["deadline_date"] = "2026-10-30"
+        row["deadline_date"] = write["position"]["deadline_date"]
+    elif damage == "media":
+        row["source_image_url"] = "https://images.test/unapproved"
+    elif damage == "timestamp":
+        row["updated_at"] = "2026-09-01T12:00:00+00:00"
+    elif damage == "unchanged_timestamp":
+        row["updated_at"] = write["expected_position"]["updated_at"]
+    else:
+        row["is_active"] = 1
+    write["verified_position_row"] = row
+    qa["per_source_readback"][0]["positions"] = [row]
+    effect["native_payload_sha256"] = module.BrowserJobQueue._review_hash(write["position"])
+    effect["full_native_row_sha256"] = module.BrowserJobQueue._review_hash(row)
+    for key in ("journal", "full"):
+        queue.write_review_artifact(files[key], json.dumps(inputs[key]))
+        qa["input_sha256"][key] = hashlib.sha256(
+            queue.review_artifact_bytes(files[key])
+        ).hexdigest()
+    queue.write_review_artifact(path, json.dumps(qa))
+
+    with pytest.raises(review_module.ReviewSnapshotError):
+        queue.record_review_completion(path, input_paths=files, artifact_paths=[])
+
+    with sqlite3.connect(queue.database_path) as db:
+        assert db.execute("SELECT count(*) FROM review_completions").fetchone()[0] == 0
+        assert db.execute("SELECT count(*) FROM review_artifact_retention").fetchone()[0] == 0
     assert queue.get_setting(module._REVIEW_PREFIX + rid) == target
 
 
@@ -3569,3 +3675,112 @@ def test_retired_artifact_path_reuse_preserves_receipt_through_failed_publish_an
     )
     queue.maintain_review_storage(force=True)
     assert queue.review_artifact_bytes(path) == fresh.encode()
+
+
+def test_maintenance_sqlite_budget_interrupt_is_deferred_after_rollback_and_lock_cleanup(
+    queue, monkeypatch
+):
+    from services.instagram_notifications.browser_worker import _poll_source
+
+    for version in range(100):
+        value = {
+            "codex_review": {"reviewer": "Codex", "decision": "unresolved"},
+            "evidence": {"description": (f"Original source {version} " * 600)},
+        }
+        queue.set_setting(module._REVIEW_PREFIX + "synthetic", value)
+    with sqlite3.connect(queue.database_path) as db:
+        snapshots = db.execute("SELECT * FROM review_snapshots ORDER BY digest").fetchall()
+    calls = 0
+
+    def expired():
+        nonlocal calls
+        calls += 1
+        return 0.0 if calls == 1 else module.CONTROL.review_maintenance_timeout_seconds + 1.0
+
+    stopping = threading.Event()
+    original_set = queue.set_setting
+
+    def publish_after_cleanup(key, result):
+        if key == "review_storage_status":
+            for name in ("ingestion.lock", "review-artifacts.lock"):
+                with (queue.state_directory / name).open("a+") as handle:
+                    fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            stopping.set()
+        return original_set(key, result)
+
+    monkeypatch.setattr(module.time, "monotonic", expired)
+    monkeypatch.setattr(queue, "set_setting", publish_after_cleanup)
+    _poll_source(
+        queue, "review_storage_status", lambda: queue.maintain_review_storage(force=True), stopping
+    )
+
+    status = queue.get_setting("review_storage_status")
+    assert "error" not in status
+    assert status["result"] == {
+        "retired_targets": 0,
+        "retired_artifacts": 0,
+        "collected_snapshots": 0,
+        "deferred": "deadline",
+    }
+    assert queue.get_setting(module._REVIEW_PREFIX + "synthetic") == value
+    assert queue.storage_unavailable is False
+    with sqlite3.connect(queue.database_path) as db:
+        assert db.execute("SELECT * FROM review_snapshots ORDER BY digest").fetchall() == snapshots
+        assert db.execute("PRAGMA integrity_check").fetchone()[0] == "ok"
+
+
+def test_maintenance_python_deadline_rolls_back_uncommitted_target_retirement(
+    queue, tmp_path, monkeypatch
+):
+    packets = [_completion_packet(queue, tmp_path, batch) for batch in (1, 2, 3)]
+    for _, _, path, files, _ in packets:
+        queue.record_review_completion(path, input_paths=files, artifact_paths=[])
+    _expire_review_retention(queue)
+    clock = SimpleNamespace(now=0.0)
+    original_get = review_module.ReviewSnapshotStore.get
+
+    def expire_after_first_target(store, reference):
+        value = original_get(store, reference)
+        if isinstance(value, dict) and value.get("row", {}).get("id") == packets[0][0]:
+            clock.now = module.CONTROL.review_maintenance_timeout_seconds + 1.0
+        return value
+
+    monkeypatch.setattr(module.time, "monotonic", lambda: clock.now)
+    monkeypatch.setattr(review_module.ReviewSnapshotStore, "get", expire_after_first_target)
+    result = queue.maintain_review_storage(force=True)
+
+    assert result["deferred"] == "deadline"
+    assert result["retired_targets"] == result["retired_artifacts"] == 0
+    for rid, target, _, _, _ in packets:
+        assert queue.get_setting(module._REVIEW_PREFIX + rid) == target
+    with sqlite3.connect(queue.database_path) as db:
+        assert (
+            db.execute(
+                "SELECT count(*) FROM review_artifact_retention WHERE retired_at IS NOT NULL"
+            ).fetchone()[0]
+            == 0
+        )
+        assert db.execute("PRAGMA integrity_check").fetchone()[0] == "ok"
+
+
+@pytest.mark.parametrize(
+    "code,expired", [(sqlite3.SQLITE_INTERRUPT, False), (sqlite3.SQLITE_FULL, True)]
+)
+def test_maintenance_never_masks_nonbudget_interrupt_or_real_storage_failure(
+    queue, monkeypatch, code, expired
+):
+    failure = sqlite3.OperationalError("private diagnostic must not become a deadline result")
+    failure.sqlite_errorcode = code
+    clock = SimpleNamespace(now=0.0)
+
+    def fail(_deadline):
+        if expired:
+            clock.now = module.CONTROL.review_maintenance_timeout_seconds + 1.0
+        raise failure
+
+    monkeypatch.setattr(module.time, "monotonic", lambda: clock.now)
+    monkeypatch.setattr(queue, "_collect_review_snapshots_locked", fail)
+    with pytest.raises(sqlite3.OperationalError) as error:
+        queue.maintain_review_storage(force=True)
+    assert error.value is failure
+    assert queue.get_setting("review_storage_status") is None

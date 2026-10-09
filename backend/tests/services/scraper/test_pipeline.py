@@ -201,6 +201,84 @@ def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+def test_reviewed_position_update_keeps_source_media_and_runs_only_at_source_school(monkeypatch):
+    original = {
+        "id": 5486,
+        "title": "Design Lead",
+        "description": "Applications extended; original duties retained.",
+        "club": "UW Design Club",
+        "position_type": "committee",
+        "source_url": "https://www.instagram.com/p/ORIGINAL/",
+        "source_image_url": "https://example.com/original.jpg",
+        "source_video_url": "https://example.com/original.mp4",
+    }
+    approved = dict(original)
+    written = []
+    resolved_calls = []
+    monkeypatch.setattr(
+        pipeline_module, "upload_post_images", lambda _urls: ["https://example.com/extension.jpg"]
+    )
+    monkeypatch.setattr(
+        pipeline_module, "upload_video_from_url", lambda _url: "https://example.com/extension.mp4"
+    )
+    monkeypatch.setattr(
+        pipeline_module,
+        "extract_post_content",
+        lambda **_kwargs: SimpleNamespace(events=[], positions=[original]),
+    )
+    monkeypatch.setattr(
+        pipeline_module,
+        "_lookup_club_by_ig",
+        lambda candidate: {"schools": {"slug": "uwindsor"}} if candidate == "coauthor" else None,
+    )
+    monkeypatch.setattr(
+        pipeline_module,
+        "resolve_club_for_scrape",
+        lambda **kwargs: (
+            resolved_calls.append(kwargs)
+            or ResolvedClub(
+                club_id=7,
+                club_name="UW Design Club",
+                ig_handle="uwdesign",
+            )
+        ),
+    )
+    monkeypatch.setattr(
+        pipeline_module,
+        "write_position",
+        lambda payload, **kwargs: written.append((payload, kwargs)) or "updated",
+    )
+    result = pipeline_module.ScrapeResult(ig_handle="uwdesign")
+
+    pipeline_module._process_one_post(
+        {
+            "url": "https://www.instagram.com/p/EXTENSION/",
+            "ownerUsername": "uwdesign",
+            "coauthors": [{"username": "coauthor"}],
+            "caption": "Applications extended.",
+            "timestamp": _now_iso(),
+            "displayUrl": "https://example.com/extension-source.jpg",
+            "videoUrl": "https://example.com/extension-source.mp4",
+            "type": "Video",
+        },
+        handle="uwdesign",
+        school="uwaterloo",
+        result=result,
+        dry_run=False,
+    )
+
+    assert len(written) == 1
+    payload, kwargs = written[0]
+    assert payload == {**approved, "school": "uwaterloo"}
+    assert kwargs["source_url"] == "https://www.instagram.com/p/EXTENSION/"
+    assert len(resolved_calls) == 1
+    assert resolved_calls[0]["school"] == "uwaterloo"
+    assert resolved_calls[0]["create_stub_if_missing"] is False
+    assert result.positions_extracted == 1
+    assert result.positions_saved == 1
+    assert result.positions_updated == 1
+
+
 def test_cross_school_copies_do_not_inherit_source_seasons_when_reconciliation_fails(monkeypatch):
     from services.scraper.pipeline import ScrapeResult
 

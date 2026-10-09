@@ -59,6 +59,7 @@ class ScrapeResult:
     events_duplicates: int = 0
     positions_extracted: int = 0
     positions_saved: int = 0
+    positions_updated: int = 0
     pinned_post_warning: bool = False
     status: str = WORKFLOW_RUN_SUCCESS
     error_message: str | None = None
@@ -253,7 +254,12 @@ def _process_one_post(
         events, uploaded=uploaded, videos=videos, fallback_video=fallback_video, school=school
     )
     _attach_source_metadata(
-        positions, uploaded=uploaded, videos=videos, fallback_video=fallback_video, school=school
+        positions,
+        uploaded=uploaded,
+        videos=videos,
+        fallback_video=fallback_video,
+        school=school,
+        preserve_existing_media=True,
     )
 
     if dry_run:
@@ -315,8 +321,12 @@ def _attach_source_metadata(
     videos: list[str | None],
     fallback_video: str | None,
     school: str,
+    preserve_existing_media: bool = False,
 ) -> None:
     for item in items:
+        if preserve_existing_media and item.get("id") is not None:
+            item["school"] = school
+            continue
         try:
             index = int(item.get("image_index") or 0)
         except (TypeError, ValueError):
@@ -443,12 +453,20 @@ def _process_positions_for_school(
     result: ScrapeResult,
 ) -> None:
     for original in positions:
+        # A reviewed ID is one existing row at the notification's source school.
+        # Cross-school coauthors may receive new roles, never copies of that ID.
+        if original.get("id") is not None and target_school != source_school:
+            continue
         position = {**original, "school": target_school}
         resolved = resolve_club_for_scrape(
             ig_handle=candidate_handles,
             school=target_school,
             club_name=(position.get("club") or "").strip() or None,
-            create_stub_if_missing=create_stub_if_missing and target_school == source_school,
+            create_stub_if_missing=(
+                create_stub_if_missing
+                and target_school == source_school
+                and original.get("id") is None
+            ),
         )
         outcome = write_position(
             position,
@@ -457,6 +475,9 @@ def _process_positions_for_school(
             resolved_org=resolved,
         )
         if outcome == "inserted":
+            result.positions_saved += 1
+        elif outcome == "updated":
+            result.positions_updated += 1
             result.positions_saved += 1
 
 

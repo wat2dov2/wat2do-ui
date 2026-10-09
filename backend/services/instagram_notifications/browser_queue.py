@@ -548,6 +548,98 @@ class BrowserJobQueue:
             json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode()
         ).hexdigest()
 
+    @staticmethod
+    def _validate_completed_position(
+        *,
+        target: dict[str, Any],
+        school_id: int,
+        effect: dict[str, Any],
+        write: dict[str, Any],
+        row: dict[str, Any],
+        write_count: int,
+    ) -> None:
+        """Bind a position outcome to its frozen approval and complete native row."""
+        index = effect["approved_index"]
+        plans = target["codex_review"].get("position_decisions")
+        approved = target.get("codex_positions")
+        if (
+            not isinstance(plans, list)
+            or not isinstance(approved, list)
+            or len(plans) != len(approved)
+            or len(plans) != write_count
+            or not isinstance(plans[index], dict)
+            or not isinstance(approved[index], dict)
+            or plans[index].get("index") != index
+            or type(plans[index].get("index")) is not int
+        ):
+            raise ReviewSnapshotError("Review completion position approval is invalid")
+        plan, payload = plans[index], write["position"]
+        action = plan.get("action")
+        if action == "create":
+            if (
+                effect.get("action") != "create"
+                or write.get("outcome") != "inserted"
+                or plan.get("existing_id") is not None
+                or plan.get("existing_position_snapshot") is not None
+                or approved[index].get("id") is not None
+                or payload.get("id") is not None
+                or write.get("expected_position") is not None
+            ):
+                raise ReviewSnapshotError("Review completion position create changed identity")
+        elif action == "update":
+            baseline = plan.get("existing_position_snapshot")
+            selected_id = plan.get("existing_id")
+            if (
+                effect.get("action") != "update"
+                or write.get("outcome") != "updated"
+                or type(selected_id) is not int
+                or selected_id < 1
+                or type(approved[index].get("id")) is not int
+                or approved[index]["id"] != selected_id
+                or type(payload.get("id")) is not int
+                or payload["id"] != selected_id
+                or row["id"] != selected_id
+                or not isinstance(baseline, dict)
+                or write.get("expected_position") != baseline
+                or type(baseline.get("id")) is not int
+                or baseline.get("id") != selected_id
+                or baseline.get("school_id") != school_id
+                or baseline.get("club_id") != row.get("club_id")
+            ):
+                raise ReviewSnapshotError("Review completion position update changed identity")
+            # Share writer normalization without loading its production
+            # dependencies when the browser worker starts.
+            from core.exceptions import ValidationError
+            from services.scraper.position_writer import (
+                normalize_position_update,
+            )
+
+            try:
+                normalized = normalize_position_update(approved[index], expected_position=baseline)
+                actual = normalize_position_update(payload, expected_position=baseline)
+                before = datetime.fromisoformat(baseline["updated_at"].replace("Z", "+00:00"))
+                after = datetime.fromisoformat(row["updated_at"].replace("Z", "+00:00"))
+                if before.tzinfo is None or after.tzinfo is None or after <= before:
+                    raise ValueError
+            except (
+                AttributeError,
+                KeyError,
+                TypeError,
+                ValueError,
+                ValidationError,
+            ):
+                raise ReviewSnapshotError("Review completion position update is invalid") from None
+            if BrowserJobQueue._review_hash(normalized) != BrowserJobQueue._review_hash(
+                actual
+            ) or BrowserJobQueue._review_hash(
+                {key: value for key, value in row.items() if key != "updated_at"}
+            ) != BrowserJobQueue._review_hash(
+                {key: value for key, value in normalized.items() if key != "updated_at"}
+            ):
+                raise ReviewSnapshotError("Review completion position update changed its approval")
+        else:
+            raise ReviewSnapshotError("Review completion position action is invalid")
+
     def record_review_completion(
         self,
         qa_path: Path,
@@ -832,6 +924,15 @@ class BrowserJobQueue:
                                 raise ReviewSnapshotError(
                                     "Review completion native payload or ownership changed"
                                 )
+                            if kind == "position":
+                                self._validate_completed_position(
+                                    target=target,
+                                    school_id=recipient["school_id"],
+                                    effect=effect,
+                                    write=write,
+                                    row=row,
+                                    write_count=len(writes),
+                                )
                             listings.append(
                                 {
                                     "kind": kind,
@@ -970,168 +1071,185 @@ class BrowserJobQueue:
             "retired_artifacts": 0,
             "collected_snapshots": 0,
         }
-        with (
-            (
-                nullcontext(_ingestion_lock)
-                if _ingestion_lock is not None
-                else (self.state_directory / "ingestion.lock").open("a+")
-            ) as ingestion,
-            (self.state_directory / "review-artifacts.lock").open("a+") as artifacts,
-        ):
-            try:
-                fcntl.flock(ingestion, fcntl.LOCK_EX | fcntl.LOCK_NB)
-                fcntl.flock(artifacts, fcntl.LOCK_EX | fcntl.LOCK_NB)
-            except BlockingIOError:
-                return {"deferred": "active writer"}
-            if self.get_setting("notification_browser_import_claim"):
-                return {"deferred": "active import claim"}
-            with closing(self._connect()) as db:
-                if db.execute(
-                    "SELECT 1 FROM review_artifacts WHERE published_reference IS NULL LIMIT 1"
-                ).fetchone():
-                    return {"deferred": "artifact inventory required"}
-            stats["collected_snapshots"] += self._collect_review_snapshots_locked(deadline)
-            cutoff = now - CONTROL.completed_review_retention_seconds
-            with closing(self._connect()) as db, db:
-                db.execute("BEGIN IMMEDIATE")
-                latest = db.execute(
-                    "SELECT a.batch FROM review_artifact_retention a WHERE NOT EXISTS "
-                    "(SELECT 1 FROM json_each(a.media_row_ids) owner LEFT JOIN review_completions c ON c.media_row_id=owner.value "
-                    "WHERE c.media_row_id IS NULL OR EXISTS (SELECT 1 FROM settings WHERE key='notification_review_reopened:'||owner.value AND value='true')) "
-                    "ORDER BY a.sealed_at DESC,a.batch DESC LIMIT 1"
-                ).fetchone()
-                latest_batch = latest[0] if latest else ""
-                completed = {
-                    row["media_row_id"]: row
-                    for row in db.execute("SELECT * FROM review_completions")
-                }
-                eligible = {
-                    rid: row
-                    for rid, row in completed.items()
-                    if row["completed_at"] <= cutoff
-                    and row["batch"] != latest_batch
-                    and not db.execute(
-                        "SELECT 1 FROM settings WHERE key=? AND value='true'",
-                        ("notification_review_reopened:" + rid,),
-                    ).fetchone()
-                }
-                # A later review or reopening revokes old retirement permission.
-                # Compare immutable root identities without expanding every baseline.
-                for rid, row in list(eligible.items()):
-                    marker = db.execute(
-                        "SELECT value FROM settings WHERE key=?", (_REVIEW_PREFIX + rid,)
-                    ).fetchone()
-                    value = json.loads(marker[0]) if marker else {}
-                    receipt = json.loads(row["receipt"])
-                    job = db.execute(
-                        "SELECT state,attempts,started_at,result FROM jobs WHERE id=?",
-                        (receipt["job_id"],),
-                    ).fetchone()
-                    same = (
-                        value.get("review_snapshot", {}).get("sha256")
-                        == receipt.get("review_snapshot_sha256")
-                        if "review_snapshot" in value
-                        else value.get("completed_review_receipt") == receipt
-                    )
-                    if (
-                        not same
-                        or value.get("codex_review", {}).get("decision") != "import"
-                        or job is None
-                        or job["state"] != "succeeded"
-                        or job["attempts"] != receipt["job_attempts"]
-                        or job["started_at"] != receipt["job_started_at"]
-                        or not job["result"]
-                        or hashlib.sha256(job["result"].encode()).hexdigest()
-                        != receipt["job_result_sha256"]
-                    ):
-                        del eligible[rid]
-                for rid, row in eligible.items():
-                    if stats["retired_targets"] >= CONTROL.review_maintenance_batch_size:
-                        break
-                    if time.monotonic() >= deadline:
-                        raise TimeoutError("Review storage maintenance deadline exceeded")
-                    marker = db.execute(
-                        "SELECT value FROM settings WHERE key=?", (_REVIEW_PREFIX + rid,)
-                    ).fetchone()
-                    value = json.loads(marker[0]) if marker else None
-                    if not isinstance(value, dict) or "review_snapshot" not in value:
-                        continue
-                    restored = ReviewSnapshotStore(db).get(value["review_snapshot"])
-                    if self._review_hash(restored) != row["review_sha256"]:
-                        continue
-                    compact = {
-                        "codex_review": value["codex_review"],
-                        "completed_review_receipt": json.loads(row["receipt"]),
-                    }
-                    db.execute(
-                        "UPDATE settings SET value=? WHERE key=? AND value=?",
-                        (json.dumps(compact), _REVIEW_PREFIX + rid, marker[0]),
-                    )
-                    stats["retired_targets"] += 1
-                candidates = db.execute(
-                    "SELECT * FROM review_artifact_retention a WHERE retired_at IS NULL AND sealed_at<=? AND batch!=? "
-                    "AND NOT EXISTS (SELECT 1 FROM json_each(a.media_row_ids) owner LEFT JOIN review_completions c ON c.media_row_id=owner.value "
-                    "WHERE c.media_row_id IS NULL OR c.completed_at>? OR c.batch=? OR EXISTS "
-                    "(SELECT 1 FROM settings WHERE key='notification_review_reopened:'||owner.value AND value='true')) "
-                    "ORDER BY sealed_at,path LIMIT ?",
-                    (
-                        cutoff,
-                        latest_batch,
-                        cutoff,
-                        latest_batch,
-                        max(0, CONTROL.review_maintenance_batch_size - stats["retired_targets"]),
-                    ),
-                ).fetchall()
-            for row in candidates:
-                if time.monotonic() >= deadline:
-                    raise TimeoutError("Review storage maintenance deadline exceeded")
-                owners = json.loads(row["media_row_ids"])
-                if not owners or any(rid not in eligible for rid in owners):
-                    continue
+        try:
+            with (
+                (
+                    nullcontext(_ingestion_lock)
+                    if _ingestion_lock is not None
+                    else (self.state_directory / "ingestion.lock").open("a+")
+                ) as ingestion,
+                (self.state_directory / "review-artifacts.lock").open("a+") as artifacts,
+            ):
+                try:
+                    fcntl.flock(ingestion, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                    fcntl.flock(artifacts, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                except BlockingIOError:
+                    return {"deferred": "active writer"}
+                if self.get_setting("notification_browser_import_claim"):
+                    return {"deferred": "active import claim"}
+                with closing(self._connect()) as db:
+                    if db.execute(
+                        "SELECT 1 FROM review_artifacts WHERE published_reference IS NULL LIMIT 1"
+                    ).fetchone():
+                        return {"deferred": "artifact inventory required"}
+                stats["collected_snapshots"] += self._collect_review_snapshots_locked(deadline)
+                cutoff = now - CONTROL.completed_review_retention_seconds
+                retired_targets = 0
                 with closing(self._connect()) as db, db:
                     db.execute("BEGIN IMMEDIATE")
-                    artifact = db.execute(
-                        "SELECT * FROM review_artifacts WHERE path=?", (row["path"],)
+                    latest = db.execute(
+                        "SELECT a.batch FROM review_artifact_retention a WHERE NOT EXISTS "
+                        "(SELECT 1 FROM json_each(a.media_row_ids) owner LEFT JOIN review_completions c ON c.media_row_id=owner.value "
+                        "WHERE c.media_row_id IS NULL OR EXISTS (SELECT 1 FROM settings WHERE key='notification_review_reopened:'||owner.value AND value='true')) "
+                        "ORDER BY a.sealed_at DESC,a.batch DESC LIMIT 1"
                     ).fetchone()
-                    if artifact is None or artifact["original_sha256"] != row["original_sha256"]:
-                        db.execute(
-                            "DELETE FROM review_artifact_retention WHERE path=? AND original_sha256=?",
-                            (row["path"], row["original_sha256"]),
+                    latest_batch = latest[0] if latest else ""
+                    completed = {
+                        row["media_row_id"]: row
+                        for row in db.execute("SELECT * FROM review_completions")
+                    }
+                    eligible = {
+                        rid: row
+                        for rid, row in completed.items()
+                        if row["completed_at"] <= cutoff
+                        and row["batch"] != latest_batch
+                        and not db.execute(
+                            "SELECT 1 FROM settings WHERE key=? AND value='true'",
+                            ("notification_review_reopened:" + rid,),
+                        ).fetchone()
+                    }
+                    # A later review or reopening revokes old retirement permission.
+                    # Compare immutable root identities without expanding every baseline.
+                    for rid, row in list(eligible.items()):
+                        marker = db.execute(
+                            "SELECT value FROM settings WHERE key=?", (_REVIEW_PREFIX + rid,)
+                        ).fetchone()
+                        value = json.loads(marker[0]) if marker else {}
+                        receipt = json.loads(row["receipt"])
+                        job = db.execute(
+                            "SELECT state,attempts,started_at,result FROM jobs WHERE id=?",
+                            (receipt["job_id"],),
+                        ).fetchone()
+                        same = (
+                            value.get("review_snapshot", {}).get("sha256")
+                            == receipt.get("review_snapshot_sha256")
+                            if "review_snapshot" in value
+                            else value.get("completed_review_receipt") == receipt
                         )
+                        if (
+                            not same
+                            or value.get("codex_review", {}).get("decision") != "import"
+                            or job is None
+                            or job["state"] != "succeeded"
+                            or job["attempts"] != receipt["job_attempts"]
+                            or job["started_at"] != receipt["job_started_at"]
+                            or not job["result"]
+                            or hashlib.sha256(job["result"].encode()).hexdigest()
+                            != receipt["job_result_sha256"]
+                        ):
+                            del eligible[rid]
+                    for rid, row in eligible.items():
+                        if retired_targets >= CONTROL.review_maintenance_batch_size:
+                            break
+                        if time.monotonic() >= deadline:
+                            raise TimeoutError("Review storage maintenance deadline exceeded")
+                        marker = db.execute(
+                            "SELECT value FROM settings WHERE key=?", (_REVIEW_PREFIX + rid,)
+                        ).fetchone()
+                        value = json.loads(marker[0]) if marker else None
+                        if not isinstance(value, dict) or "review_snapshot" not in value:
+                            continue
+                        restored = ReviewSnapshotStore(db).get(value["review_snapshot"])
+                        if self._review_hash(restored) != row["review_sha256"]:
+                            continue
+                        compact = {
+                            "codex_review": value["codex_review"],
+                            "completed_review_receipt": json.loads(row["receipt"]),
+                        }
+                        db.execute(
+                            "UPDATE settings SET value=? WHERE key=? AND value=?",
+                            (json.dumps(compact), _REVIEW_PREFIX + rid, marker[0]),
+                        )
+                        retired_targets += 1
+                    candidates = db.execute(
+                        "SELECT * FROM review_artifact_retention a WHERE retired_at IS NULL AND sealed_at<=? AND batch!=? "
+                        "AND NOT EXISTS (SELECT 1 FROM json_each(a.media_row_ids) owner LEFT JOIN review_completions c ON c.media_row_id=owner.value "
+                        "WHERE c.media_row_id IS NULL OR c.completed_at>? OR c.batch=? OR EXISTS "
+                        "(SELECT 1 FROM settings WHERE key='notification_review_reopened:'||owner.value AND value='true')) "
+                        "ORDER BY sealed_at,path LIMIT ?",
+                        (
+                            cutoff,
+                            latest_batch,
+                            cutoff,
+                            latest_batch,
+                            max(0, CONTROL.review_maintenance_batch_size - retired_targets),
+                        ),
+                    ).fetchall()
+                stats["retired_targets"] += retired_targets
+                for row in candidates:
+                    if time.monotonic() >= deadline:
+                        raise TimeoutError("Review storage maintenance deadline exceeded")
+                    owners = json.loads(row["media_row_ids"])
+                    if not owners or any(rid not in eligible for rid in owners):
                         continue
-                    descriptor = {
-                        "format": _ARTIFACT_FORMAT,
-                        "review_snapshot": json.loads(artifact["reference"]),
-                        "original_sha256": artifact["original_sha256"],
-                        "original_bytes": artifact["original_bytes"],
-                    }
-                    if json.loads(artifact["published_reference"]) != descriptor:
-                        continue  # An unfinished publication must keep both generations.
-                    # Physical descriptors stay tiny and unchanged. Canonical readers
-                    # resolve this exact retired generation to its durable receipt.
-                    # No external folder access can hold the queue writer.
-                    published = {
-                        "descriptor": descriptor,
-                        "completed_review_receipt": self._completed_artifact_receipt(db, row),
-                    }
-                    db.execute(
-                        "UPDATE review_artifacts SET published_reference=? WHERE path=?",
-                        (json.dumps(published), row["path"]),
-                    )
-                    db.execute(
-                        "UPDATE review_artifact_retention SET retired_at=? WHERE path=? AND original_sha256=?",
-                        (now, row["path"], row["original_sha256"]),
-                    )
+                    with closing(self._connect()) as db, db:
+                        db.execute("BEGIN IMMEDIATE")
+                        artifact = db.execute(
+                            "SELECT * FROM review_artifacts WHERE path=?", (row["path"],)
+                        ).fetchone()
+                        if (
+                            artifact is None
+                            or artifact["original_sha256"] != row["original_sha256"]
+                        ):
+                            db.execute(
+                                "DELETE FROM review_artifact_retention WHERE path=? AND original_sha256=?",
+                                (row["path"], row["original_sha256"]),
+                            )
+                            continue
+                        descriptor = {
+                            "format": _ARTIFACT_FORMAT,
+                            "review_snapshot": json.loads(artifact["reference"]),
+                            "original_sha256": artifact["original_sha256"],
+                            "original_bytes": artifact["original_bytes"],
+                        }
+                        if json.loads(artifact["published_reference"]) != descriptor:
+                            continue  # An unfinished publication must keep both generations.
+                        # Physical descriptors stay tiny and unchanged. Canonical readers
+                        # resolve this exact retired generation to its durable receipt.
+                        # No external folder access can hold the queue writer.
+                        published = {
+                            "descriptor": descriptor,
+                            "completed_review_receipt": self._completed_artifact_receipt(db, row),
+                        }
+                        db.execute(
+                            "UPDATE review_artifacts SET published_reference=? WHERE path=?",
+                            (json.dumps(published), row["path"]),
+                        )
+                        db.execute(
+                            "UPDATE review_artifact_retention SET retired_at=? WHERE path=? AND original_sha256=?",
+                            (now, row["path"], row["original_sha256"]),
+                        )
                     stats["retired_artifacts"] += 1
-            stats["collected_snapshots"] += self._collect_review_snapshots_locked(deadline)
-            with closing(self._connect()) as db:
-                db.execute("PRAGMA incremental_vacuum(1000)").fetchall()
-                db.execute("PRAGMA wal_checkpoint(PASSIVE)")
-                stats["snapshot_bytes"] = db.execute(
-                    "SELECT COALESCE(SUM(length(payload)),0) FROM review_snapshots"
-                ).fetchone()[0]
-                stats["free_pages"] = db.execute("PRAGMA freelist_count").fetchone()[0]
-            self.set_setting("review_storage_status", {"checked_at": now, "result": stats})
+                stats["collected_snapshots"] += self._collect_review_snapshots_locked(deadline)
+                with closing(self._connect()) as db:
+                    db.execute("PRAGMA incremental_vacuum(1000)").fetchall()
+                    db.execute("PRAGMA wal_checkpoint(PASSIVE)")
+                    stats["snapshot_bytes"] = db.execute(
+                        "SELECT COALESCE(SUM(length(payload)),0) FROM review_snapshots"
+                    ).fetchone()[0]
+                    stats["free_pages"] = db.execute("PRAGMA freelist_count").fetchone()[0]
+        except (TimeoutError, sqlite3.OperationalError) as exc:
+            code = getattr(exc, "sqlite_errorcode", None)
+            interrupted = type(code) is int and code & 0xFF == sqlite3.SQLITE_INTERRUPT
+            own_timeout = isinstance(exc, TimeoutError) and exc.args == (
+                "Review storage maintenance deadline exceeded",
+            )
+            if time.monotonic() < deadline or not (interrupted or own_timeout):
+                raise
+            stats["deferred"] = "deadline"
+        # Budget expiry rolls back its active transaction and releases owned locks
+        # before publishing a bounded non-error result for the worker collector.
+        self.set_setting("review_storage_status", {"checked_at": now, "result": stats})
         return stats
 
     @_retry_storage
