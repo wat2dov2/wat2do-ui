@@ -8,6 +8,7 @@ from pydantic import ValidationError
 from core.controlbox import (
     EcsRuntimeControl,
     GoogleAnalyticsControl,
+    InstagramBrowserControl,
     NotificationWorkflowControl,
     controlbox,
     load_controlbox,
@@ -704,6 +705,12 @@ def test_instagram_browser_controls_have_one_shared_timing_source():
         {"worker_log_max_bytes": 67108865},
         {"worker_log_backup_count": 0},
         {"worker_log_backup_count": 11},
+        {"review_snapshot_chunk_bytes": 1023},
+        {"review_snapshot_chunk_bytes": 65537},
+        {"review_snapshot_max_bytes": 1048575},
+        {"review_snapshot_max_bytes": 268435457},
+        {"review_snapshot_storage_max_mb": 63},
+        {"review_snapshot_storage_max_mb": 4097},
         {"engagement_interval_seconds": 0},
         {"engagement_max_wait_seconds": 0},
         {"engagement_max_wait_seconds": 3601},
@@ -724,6 +731,17 @@ def test_instagram_browser_controls_reject_unsafe_worker_configuration(tmp_path,
     )
     with pytest.raises(ValidationError):
         load_controlbox(directory)
+
+
+def test_review_snapshot_bounds_accept_largest_chunk_with_smallest_snapshot_limit():
+    values = controlbox.instagram_browser.model_dump()
+    values.update(
+        review_snapshot_chunk_bytes=65536,
+        review_snapshot_max_bytes=1048576,
+        review_snapshot_storage_max_mb=64,
+    )
+    configuration = InstagramBrowserControl.model_validate(values)
+    assert configuration.review_snapshot_chunk_bytes <= configuration.review_snapshot_max_bytes
 
 
 @pytest.mark.parametrize(

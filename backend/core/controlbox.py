@@ -681,12 +681,17 @@ class InstagramBrowserControl(_ControlModel):
     source_page_size: int = Field(gt=0, le=1000)
     worker_log_max_bytes: int = Field(ge=65536, le=67108864)
     worker_log_backup_count: int = Field(ge=1, le=10)
+    review_snapshot_chunk_bytes: int = Field(ge=1024, le=65536)
+    review_snapshot_max_bytes: int = Field(ge=1048576, le=268435456)
+    review_snapshot_storage_max_mb: int = Field(ge=64, le=4096)
     engagement_interval_seconds: float = Field(ge=1, le=3600)
     engagement_max_wait_seconds: float = Field(ge=1, le=3600)
     actions: tuple[Literal["like", "save", "repost"], ...] = Field(min_length=1, max_length=3)
 
     @model_validator(mode="after")
     def validate_worker(self) -> "InstagramBrowserControl":
+        if self.review_snapshot_chunk_bytes > self.review_snapshot_max_bytes:
+            raise ValueError("Review snapshot chunk size must not exceed the snapshot size limit")
         if len(self.actions) != len(set(self.actions)):
             raise ValueError("Instagram browser actions must be unique")
         if self.result_timeout_seconds <= self.job_timeout_seconds:

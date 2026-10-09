@@ -1,8 +1,14 @@
+import base64
+import errno
+import gzip
+import hashlib
 import json
+import random
 import sqlite3
 import subprocess
 import sys
 import threading
+import tracemalloc
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
 from pathlib import Path
@@ -12,6 +18,7 @@ from uuid import uuid4
 import pytest
 
 from services.instagram_notifications import browser_queue as module
+from services.instagram_notifications import browser_review as review_module
 
 RECIPIENT_ID = "12342599092"
 ACCOUNT_USERNAME = "ubc.wat2do.io"
@@ -2092,3 +2099,482 @@ def test_status_reports_no_rate_limit_before_any_hold(queue):
         "remaining_seconds": 0,
         "backoff_seconds": 0,
     }
+
+
+@pytest.fixture
+def review_store():
+    connection = sqlite3.connect(":memory:")
+    connection.execute(
+        "CREATE TABLE review_snapshots(digest TEXT PRIMARY KEY,payload BLOB NOT NULL)"
+    )
+    try:
+        yield connection, review_module.ReviewSnapshotStore(connection)
+    finally:
+        connection.close()
+
+
+def test_review_snapshots_preserve_artwork_order_types_and_independent_mutable_values(review_store):
+    connection, store = review_store
+    shared = {"description": "Verified source café " * 500, "candidate_ids": [3, 2, 1]}
+    target = {
+        "image_map": {"https://images.test/z": "uploaded-z", "https://images.test/a": "uploaded-a"},
+        "codex_review": {"reviewer": "Codex", "decision": "unresolved", "school": "ubc"},
+        "content": shared,
+        "history": [shared, {"ref": "literal user data", "version": True}],
+        "types": [True, False, None, 1, 1.0, "1", "雪"],
+    }
+    with connection:
+        reference = store.put(target)
+    restored = store.get(reference)
+    assert restored == target
+    assert list(restored) == list(target)
+    assert list(restored["image_map"].values()) == ["uploaded-z", "uploaded-a"]
+    assert [type(value) for value in restored["types"]] == [
+        type(value) for value in target["types"]
+    ]
+    restored["content"]["candidate_ids"].append(99)
+    assert restored["history"][0]["candidate_ids"] == [3, 2, 1]
+    assert store.get(reference) == target
+    before = connection.execute("SELECT count(*) FROM review_snapshots").fetchone()[0]
+    with connection:
+        assert store.put(target) == reference
+    assert connection.execute("SELECT count(*) FROM review_snapshots").fetchone()[0] == before
+
+
+def test_review_snapshot_artifact_text_preserves_original_whitespace_and_utf8_hash(review_store):
+    _, store = review_store
+    artifact = '{\n  "image_map": {"z": "café", "a": "雪"},\n  "source": "reviewed"\n}\n'
+    reference = store.put(artifact)
+    restored = store.get(reference)
+    assert restored == artifact
+    assert hashlib.sha256(restored.encode()).digest() == hashlib.sha256(artifact.encode()).digest()
+
+
+@pytest.mark.parametrize(
+    "damage",
+    ["missing_child", "changed_child", "extra_gzip_member", "invalid_format", "version", "digest"],
+)
+def test_review_snapshot_damage_fails_closed_without_disclosing_evidence(review_store, damage):
+    connection, store = review_store
+    reference = store.put({"snapshot": {"source": "PRIVATE_EVIDENCE " * 500}})
+    child = connection.execute(
+        "SELECT digest,payload FROM review_snapshots WHERE digest!=?", (reference["sha256"],)
+    ).fetchone()
+    assert child is not None
+    if damage == "missing_child":
+        connection.execute("DELETE FROM review_snapshots WHERE digest=?", (child[0],))
+    elif damage == "changed_child":
+        connection.execute(
+            "UPDATE review_snapshots SET payload=? WHERE digest=?",
+            (gzip.compress(b'"PRIVATE_TAMPERED_EVIDENCE"'), child[0]),
+        )
+    elif damage == "extra_gzip_member":
+        connection.execute(
+            "UPDATE review_snapshots SET payload=? WHERE digest=?",
+            (child[1] + gzip.compress(b"PRIVATE_EVIDENCE"), child[0]),
+        )
+    elif damage == "invalid_format":
+        payload = b'["unknown_format","PRIVATE_EVIDENCE"]'
+        digest = hashlib.sha256(payload).hexdigest()
+        connection.execute(
+            "INSERT INTO review_snapshots VALUES (?,?)", (digest, gzip.compress(payload))
+        )
+        reference = {"version": 1, "sha256": digest}
+    elif damage == "version":
+        reference = {**reference, "version": True}
+    else:
+        reference = {"version": 1, "sha256": "../../PRIVATE_EVIDENCE"}
+    with pytest.raises(review_module.ReviewSnapshotError) as error:
+        store.get(reference)
+    assert "PRIVATE_" not in str(error.value)
+    assert error.value.__cause__ is None
+    assert error.value.__context__ is None
+
+
+def test_review_snapshot_reuse_verifies_immutable_content_before_publication(review_store):
+    connection, store = review_store
+    reference = store.put({"decision": "unresolved"})
+    connection.execute(
+        "UPDATE review_snapshots SET payload=? WHERE digest=?",
+        (b"PRIVATE_CORRUPTED_BLOB", reference["sha256"]),
+    )
+    with pytest.raises(review_module.ReviewSnapshotError) as error:
+        store.put({"decision": "unresolved"})
+    assert "PRIVATE_" not in str(error.value)
+    assert error.value.__context__ is None
+
+
+def test_review_snapshot_quota_and_caller_rollback_preserve_previous_checkpoint(
+    review_store, monkeypatch
+):
+    connection, store = review_store
+    connection.execute("CREATE TABLE checkpoint(value TEXT NOT NULL)")
+    with connection:
+        previous = store.put({"decision": "unresolved", "evidence": "keep"})
+        connection.execute("INSERT INTO checkpoint VALUES (?)", (json.dumps(previous),))
+    count = connection.execute("SELECT count(*) FROM review_snapshots").fetchone()[0]
+    monkeypatch.setattr(
+        review_module,
+        "CONTROL",
+        review_module.CONTROL.model_copy(update={"review_snapshot_storage_max_mb": 1}),
+    )
+    large = base64.b64encode(random.Random(7).randbytes(2 * 1024 * 1024)).decode()
+    with pytest.raises(review_module.ReviewSnapshotError):
+        with connection:
+            reference = store.put({"old": "keep", "new": large})
+            connection.execute("UPDATE checkpoint SET value=?", (json.dumps(reference),))
+    assert connection.execute("SELECT count(*) FROM review_snapshots").fetchone()[0] == count
+    assert json.loads(connection.execute("SELECT value FROM checkpoint").fetchone()[0]) == previous
+    assert store.get(previous)["decision"] == "unresolved"
+    with pytest.raises(RuntimeError, match="caller failed"):
+        with connection:
+            store.put({"new": "otherwise valid"})
+            raise RuntimeError("caller failed")
+    assert connection.execute("SELECT count(*) FROM review_snapshots").fetchone()[0] == count
+
+
+def test_review_snapshot_bounds_repeated_reference_expansion(review_store, monkeypatch):
+    connection, store = review_store
+    child = json.dumps(["value", "x" * 1100], separators=(",", ":")).encode()
+    child_hash = hashlib.sha256(child).hexdigest()
+    root = json.dumps(["array", [["ref", child_hash]] * 4], separators=(",", ":")).encode()
+    root_hash = hashlib.sha256(root).hexdigest()
+    connection.executemany(
+        "INSERT INTO review_snapshots VALUES (?,?)",
+        [(child_hash, gzip.compress(child)), (root_hash, gzip.compress(root))],
+    )
+    monkeypatch.setattr(
+        review_module,
+        "CONTROL",
+        review_module.CONTROL.model_copy(update={"review_snapshot_max_bytes": 4096}),
+    )
+    with pytest.raises(review_module.ReviewSnapshotError):
+        store.get({"version": 1, "sha256": root_hash})
+    with pytest.raises(review_module.ReviewSnapshotError):
+        store.put("x" * 4097)
+    deep = None
+    for _ in range(65):
+        deep = [deep]
+    with pytest.raises(review_module.ReviewSnapshotError):
+        store.put(deep)
+    assert connection.execute("SELECT count(*) FROM review_snapshots").fetchone()[0] == 2
+
+
+@pytest.mark.parametrize(
+    ("indent", "compact", "ascii_only", "newline"),
+    [
+        (None, False, True, False),
+        (None, True, False, True),
+        (2, False, False, False),
+        (4, True, True, False),
+        ("\t", False, False, True),
+    ],
+)
+def test_review_artifact_native_recipes_reproduce_exact_text(indent, compact, ascii_only, newline):
+    value = {
+        "image_map": {"z": "café", "a": "雪"},
+        "numbers": [1, 1.0, -0.0, float("nan"), float("inf"), -float("inf")],
+        "literal": ["value", {"ref": "ordinary JSON"}],
+    }
+    text = json.dumps(
+        value,
+        indent=indent,
+        ensure_ascii=ascii_only,
+        separators=(",", ":") if compact else None,
+    ) + ("\n" if newline else "")
+    envelope = review_module.encode_review_artifact(text)
+    assert envelope["format"] == "json"
+    assert list(envelope["value"]["image_map"]) == ["z", "a"]
+    restored = review_module.decode_review_artifact(envelope)
+    assert restored == text
+    assert restored.encode() == text.encode()
+
+
+def test_review_artifact_recipes_share_snapshots_across_different_formatting(review_store):
+    connection, store = review_store
+    value = {"candidate_snapshot": [{"id": 1, "description": "Reviewed candidate " * 300}]}
+    first = json.dumps(value, indent=2) + "\n"
+    second = json.dumps(value, separators=(",", ":"))
+    first_reference = store.put(review_module.encode_review_artifact(first))
+    before = connection.execute("SELECT count(*) FROM review_snapshots").fetchone()[0]
+    second_reference = store.put(review_module.encode_review_artifact(second))
+    assert first_reference != second_reference
+    assert connection.execute("SELECT count(*) FROM review_snapshots").fetchone()[0] == before + 1
+    assert review_module.decode_review_artifact(store.get(first_reference)) == first
+    assert review_module.decode_review_artifact(store.get(second_reference)) == second
+
+
+@pytest.mark.parametrize("text", [json.dumps({"original": [1, 2]}, indent=3), '{ "n": 1e3 }\n\n'])
+def test_review_artifact_non_native_format_uses_lossless_raw_fallback(text):
+    envelope = review_module.encode_review_artifact(text)
+    assert envelope["format"] == "raw"
+    assert review_module.decode_review_artifact(envelope) == text
+
+
+def test_review_artifact_recipe_validation_and_expansion_remain_bounded(monkeypatch):
+    recipe = {
+        "ensure_ascii": False,
+        "indent": 4,
+        "separators": "default",
+        "trailing_newline": False,
+    }
+    envelope = {"version": 1, "format": "json", "value": "PRIVATE_EVIDENCE", "recipe": recipe}
+    with pytest.raises(review_module.ReviewSnapshotError) as error:
+        review_module.decode_review_artifact({**envelope, "recipe": {**recipe, "indent": 10**6}})
+    assert "PRIVATE_" not in str(error.value)
+    assert error.value.__context__ is None
+    value = ["x"] * 100
+    for _ in range(12):
+        value = [value]
+    monkeypatch.setattr(
+        review_module,
+        "CONTROL",
+        review_module.CONTROL.model_copy(update={"review_snapshot_max_bytes": 1024}),
+    )
+    assert len(json.dumps(value, separators=(",", ":"))) < 1024
+    with pytest.raises(review_module.ReviewSnapshotError) as error:
+        review_module.decode_review_artifact({**envelope, "value": value})
+    assert "PRIVATE_" not in str(error.value)
+    assert error.value.__context__ is None
+
+
+def test_review_snapshot_nested_values_do_not_retain_each_serialized_subtree(
+    review_store, monkeypatch
+):
+    _, store = review_store
+    value = "x" * (1024 * 1024)
+    for _ in range(40):
+        value = {"nested": value}
+    monkeypatch.setattr(
+        review_module,
+        "CONTROL",
+        review_module.CONTROL.model_copy(update={"review_snapshot_max_bytes": 2 * 1024 * 1024}),
+    )
+    tracemalloc.start()
+    try:
+        reference = store.put(value)
+        _, peak = tracemalloc.get_traced_memory()
+    finally:
+        tracemalloc.stop()
+    assert peak < 16 * 1024 * 1024
+    assert store.get(reference) == value
+
+
+def _held_review_target():
+    return {
+        "source_url": "https://www.instagram.com/p/HeldReviewSource/",
+        "image_map": {"https://images.test/z": "upload-z", "https://images.test/a": "upload-a"},
+        "content": {"caption": "Source café evidence " * 500, "candidate_ids": [3, 2, 1]},
+        "codex_review": {
+            "reviewer": "Codex",
+            "decision": "unresolved",
+            "school": "mun",
+            "source_url": "https://www.instagram.com/p/HeldReviewSource/",
+            "reason": "Recipient and source school need reconciliation",
+        },
+    }
+
+
+def test_queue_compacts_legacy_held_reviews_and_round_trips_new_ordered_values(queue):
+    key = "notification_reviewed_target:legacy-held"
+    target = _held_review_target()
+    with queue._connect() as connection:
+        connection.execute("INSERT INTO settings VALUES (?,?)", (key, json.dumps(target)))
+    assert queue.get_setting(key) == target
+
+    assert queue.compact_review_settings() == {"compacted": 1, "already_compact": 0, "changed": 0}
+    with queue._connect() as connection:
+        pointer = json.loads(
+            connection.execute("SELECT value FROM settings WHERE key=?", (key,)).fetchone()[0]
+        )
+    assert "content" not in pointer
+    assert pointer["codex_review"]["decision"] == "unresolved"
+    assert pointer["codex_review"]["school"] == "mun"
+    restored = queue.get_setting(key)
+    assert restored == target
+    assert list(restored) == list(target)
+    assert list(restored["image_map"].values()) == ["upload-z", "upload-a"]
+    assert restored["codex_review"]["reason"] == target["codex_review"]["reason"]
+
+    target["content"]["candidate_ids"].append(4)
+    queue.set_setting(key, target)
+    assert module.BrowserJobQueue(queue.state_directory).get_setting(key) == target
+    assert queue.compact_review_settings() == {"compacted": 0, "already_compact": 1, "changed": 0}
+
+
+def test_queue_review_migration_preserves_a_decision_changed_after_its_source_read(
+    queue, monkeypatch
+):
+    key = "notification_reviewed_target:concurrent-decision"
+    target = _held_review_target()
+    legacy_text = json.dumps(target)
+    with queue._connect() as connection:
+        connection.execute("INSERT INTO settings VALUES (?,?)", (key, legacy_text))
+    fresh = {**target, "codex_review": {**target["codex_review"], "reason": "New verified source"}}
+    writer = module.BrowserJobQueue(queue.state_directory)
+    decode = json.loads
+    changed = False
+
+    def another_reviewer_publishes(text, *args, **kwargs):
+        nonlocal changed
+        value = decode(text, *args, **kwargs)
+        if text == legacy_text and not changed:
+            changed = True
+            writer.set_setting(key, fresh)
+        return value
+
+    monkeypatch.setattr(module.json, "loads", another_reviewer_publishes)
+    assert queue.compact_review_settings() == {"compacted": 0, "already_compact": 0, "changed": 1}
+    assert changed
+    assert queue.get_setting(key) == fresh
+
+
+def test_queue_failed_review_checkpoint_commit_rolls_back_its_new_snapshot(queue, monkeypatch):
+    key = "notification_reviewed_target:durable-checkpoint"
+    target = _held_review_target()
+    queue.set_setting(key, target)
+    with queue._connect() as connection:
+        before = connection.execute(
+            "SELECT digest,payload FROM review_snapshots ORDER BY digest"
+        ).fetchall()
+    _fail_queue_transaction(
+        queue,
+        monkeypatch,
+        statement="INSERT INTO settings",
+        failures=module.CONTROL.storage_retry_limit,
+        at_commit=True,
+    )
+    fresh = {**target, "content": {"caption": "New source evidence " * 500}}
+    with pytest.raises(sqlite3.OperationalError):
+        queue.set_setting(key, fresh)
+    assert queue.get_setting(key) == target
+    with queue._connect() as connection:
+        assert (
+            connection.execute(
+                "SELECT digest,payload FROM review_snapshots ORDER BY digest"
+            ).fetchall()
+            == before
+        )
+
+
+def test_queue_review_storage_quota_rejects_new_pointer_but_reuses_existing_content(
+    queue, monkeypatch
+):
+    key = "notification_reviewed_target:bounded-storage"
+    target = _held_review_target()
+    queue.set_setting(key, target)
+    with queue._connect() as connection:
+        before = connection.execute(
+            "SELECT count(*),SUM(length(payload)) FROM review_snapshots"
+        ).fetchone()
+    monkeypatch.setattr(
+        review_module,
+        "CONTROL",
+        review_module.CONTROL.model_copy(update={"review_snapshot_storage_max_mb": 1}),
+    )
+    queue.set_setting(key, target)
+    queue.set_setting("notification_reviewed_target:same-evidence", target)
+    with queue._connect() as connection:
+        assert tuple(
+            connection.execute(
+                "SELECT count(*),SUM(length(payload)) FROM review_snapshots"
+            ).fetchone()
+        ) == tuple(before)
+    large = base64.b64encode(random.Random(11).randbytes(2 * 1024 * 1024)).decode()
+    with pytest.raises(review_module.ReviewSnapshotError):
+        queue.set_setting(key, {**target, "private_source": large})
+    assert queue.get_setting(key) == target
+    with queue._connect() as connection:
+        assert tuple(
+            connection.execute(
+                "SELECT count(*),SUM(length(payload)) FROM review_snapshots"
+            ).fetchone()
+        ) == tuple(before)
+
+
+def test_queue_artifact_publication_preserves_exact_bytes_hash_and_repeated_storage(
+    queue, tmp_path
+):
+    path = tmp_path / "notification-checkpoint.json"
+    text = (
+        '{\n  "image_map": {"z": "café", "a": "雪"},\n  "caption": '
+        + json.dumps("evidence " * 1000)
+        + "\n}\n"
+    )
+    original = text.encode()
+    path.write_bytes(original)
+    original_hash = hashlib.sha256(original).hexdigest()
+    assert queue.write_review_artifact(path, text, expected_sha256=original_hash)
+    descriptor = path.read_bytes()
+    assert len(descriptor) < len(original)
+    assert queue.review_artifact_bytes(path) == original
+    assert queue.read_review_artifact(path) == json.loads(text)
+    assert hashlib.sha256(queue.review_artifact_bytes(path)).hexdigest() == original_hash
+    with queue._connect() as connection:
+        before = tuple(
+            connection.execute(
+                "SELECT count(*),SUM(length(payload)) FROM review_snapshots"
+            ).fetchone()
+        )
+    assert queue.write_review_artifact(path, text, expected_sha256=original_hash)
+    assert path.read_bytes() == descriptor
+    with queue._connect() as connection:
+        assert (
+            tuple(
+                connection.execute(
+                    "SELECT count(*),SUM(length(payload)) FROM review_snapshots"
+                ).fetchone()
+            )
+            == before
+        )
+
+    fresh_text = '{"checkpoint": "new decision"}\n'
+    assert queue.write_review_artifact(path, fresh_text, expected_sha256=original_hash)
+    fresh_descriptor = path.read_bytes()
+    assert not queue.write_review_artifact(path, text, expected_sha256=original_hash)
+    assert path.read_bytes() == fresh_descriptor
+    assert queue.review_artifact_bytes(path) == fresh_text.encode()
+    assert (
+        module.BrowserJobQueue(queue.state_directory).review_artifact_bytes(path)
+        == fresh_text.encode()
+    )
+
+
+def test_queue_artifact_filesystem_failure_preserves_prior_checkpoint_until_retry(
+    queue, tmp_path, monkeypatch
+):
+    path = tmp_path / "notification-current.json"
+    original = '{"decision": "held", "source": "Original café"}\n'
+    fresh = '{"decision": "approved", "source": "Fresh source"}\n'
+    queue.write_review_artifact(path, original)
+    previous = path.read_bytes()
+    publish = module.atomic_write
+
+    def storage_full(*_args, **_kwargs):
+        raise OSError(errno.ENOSPC, "private filesystem details")
+
+    monkeypatch.setattr(module, "atomic_write", storage_full)
+    with pytest.raises(OSError) as error:
+        queue.write_review_artifact(
+            path, fresh, expected_sha256=hashlib.sha256(original.encode()).hexdigest()
+        )
+    assert error.value.errno == errno.ENOSPC
+    assert path.read_bytes() == previous
+    assert queue.review_artifact_bytes(path) == original.encode()
+    monkeypatch.setattr(module, "atomic_write", publish)
+    assert queue.write_review_artifact(
+        path, fresh, expected_sha256=hashlib.sha256(original.encode()).hexdigest()
+    )
+    assert queue.review_artifact_bytes(path) == fresh.encode()
+
+
+def test_queue_artifact_hash_damage_fails_closed_without_private_evidence(queue, tmp_path):
+    path = tmp_path / "notification-damaged.json"
+    queue.write_review_artifact(path, '{"source": "PRIVATE_SOURCE_EVIDENCE"}\n')
+    descriptor = json.loads(path.read_bytes())
+    descriptor["original_sha256"] = "0" * 64
+    path.write_text(json.dumps(descriptor))
+    with pytest.raises(review_module.ReviewSnapshotError) as error:
+        queue.read_review_artifact(path)
+    assert "PRIVATE_" not in str(error.value)
+    assert "integrity" in str(error.value)

@@ -142,9 +142,16 @@ Code and runtime updates belong to maintenance with the existing installation an
 
 The scheduled notification reviewer keeps one current packet/checkpoint and canonical full review artifacts per media identity and actual source revision.
 Reuse unchanged source and directory snapshots instead of multiplying full batch, held-inventory, refresh, and nested-history copies.
-Compact queue review settings retain the Codex decision identity plus the full artifact's absolute path and SHA256.
-Persist the full artifact before its pointer, verify its hash when loading, and materialize every required raw guard field before claims or writes.
+Full review targets are stored automatically as small inline pointers to compressed, content-addressed data in the queue's SQLite `review_snapshots` storage.
+`get_setting` restores the complete original value, preserving dictionary insertion order, array order, and image-map order for existing import guards.
+`instagram_browser.json` controls snapshot chunk size, maximum decoded snapshot bytes, and the retained compressed-storage budget.
+Snapshot-size or storage-budget exhaustion fails before a new pointer or checkpoint is published, preserving the previous checkpoint.
+Use `queue.read_review_artifact(path)` and `queue.review_artifact_bytes(path)` when loading compact artifact files, and `queue.write_review_artifact(path, text)` when storing the original JSON text.
+These artifact helpers preserve the exact original JSON bytes for SHA256 checks and restore every raw guard field before claims or writes.
 All candidate equality checks, fresh readbacks, pending and held evidence, and uncertain recovery journals remain required.
+There is no automatic snapshot garbage collection or deletion of successful retrievals to make room.
+The `compact-review-storage` CLI migrates existing settings and artifacts through compare-and-swap checks under the worker, installation, and import maintenance locks, with a private backup made first.
+Migration preserves changes made after its source snapshot, leaves interrupted or unresolved evidence intact, and does not claim work, clear jobs, or reset retry budgets.
 Existing evidence is preserved; it is not disposable package-cache storage.
 Digest callers wait through the installer's temporary pause within their original deadline, including while its service restarts.
 Other recovery and operator holds still return immediately for inspection.

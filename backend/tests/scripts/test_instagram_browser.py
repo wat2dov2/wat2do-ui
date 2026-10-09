@@ -1,12 +1,17 @@
 import errno
 import fcntl
+import gzip
+import hashlib
 import io
 import json
 import logging
 import os
 import plistlib
+import sqlite3
 import stat
+from contextlib import closing
 from datetime import datetime
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -484,3 +489,245 @@ def test_resume_cannot_erase_a_concurrent_safety_hold(tmp_path, monkeypatch, cap
     assert script.main(["--state-directory", str(tmp_path), "resume"]) == 1
     assert BrowserJobQueue(tmp_path).get_setting("paused") == hold
     assert "pause changed" in capsys.readouterr().err
+
+
+def _maintenance_rows(queue):
+    with closing(queue._connect()) as connection:
+        jobs = [tuple(row) for row in connection.execute("SELECT * FROM jobs ORDER BY id")]
+        settings = [
+            tuple(row)
+            for row in connection.execute(
+                "SELECT * FROM settings WHERE key NOT GLOB 'notification_reviewed_target:*' ORDER BY key"
+            )
+        ]
+    return jobs, settings
+
+
+@pytest.fixture
+def review_maintenance(tmp_path, monkeypatch):
+    queue = BrowserJobQueue(tmp_path / "state")
+    completed = queue.enqueue_retrieval(
+        school="mun",
+        recipient_id="123",
+        account_username="mun.wat2do.io",
+        url="https://www.instagram.com/p/ReviewedSource/",
+    )
+    queue.finish(queue.claim_next(), result={"posts": [{"caption": "Original retrieved evidence"}]})
+    failed = queue.enqueue_retrieval(
+        school="mun",
+        recipient_id="123",
+        account_username="mun.wat2do.io",
+        url="https://www.instagram.com/p/RetryEvidence/",
+    )
+    queue.finish(queue.claim_next(), error="Source unavailable")
+    pending = queue.enqueue_retrieval(
+        school="western",
+        recipient_id="456",
+        account_username="western.wat2do.io",
+        url="https://www.instagram.com/p/PendingSource/",
+    )
+    queue.set_setting("paused", "Review storage maintenance")
+    queue.set_setting(f"notification_import_attempts:{failed}", 2)
+    queue.set_setting(f"notification_imported:{completed}", True)
+    queue.set_setting("notification_review_cursor", {"last_school": "mun"})
+    target = {
+        "image_map": {"https://images.test/z": "upload-z", "https://images.test/a": "upload-a"},
+        "source": "Original café source " * 500,
+        "codex_review": {"reviewer": "Codex", "decision": "unresolved", "school": "mun"},
+    }
+    key = f"notification_reviewed_target:{completed}"
+    with closing(queue._connect()) as connection, connection:
+        connection.execute("INSERT INTO settings VALUES (?,?)", (key, json.dumps(target)))
+    artifacts = tmp_path / "artifacts"
+    artifacts.mkdir()
+    raw = (json.dumps(target, ensure_ascii=False, indent=2) + "\n").encode()
+    files = {
+        "notification-current.json": raw,
+        "notification-recovery-journal.json": raw,
+        "notification-small.json": b'{"summary": "Keep small checkpoint"}\n',
+        "source-evidence.json": raw,
+    }
+    for name, content in files.items():
+        (artifacts / name).write_bytes(content)
+    monkeypatch.setattr(
+        script.shutil, "disk_usage", lambda _path: SimpleNamespace(free=4 * 1024**3)
+    )
+    return SimpleNamespace(
+        queue=queue,
+        key=key,
+        target=target,
+        pending=pending,
+        backup=tmp_path / "backup",
+        artifacts=artifacts,
+        files=files,
+    )
+
+
+def test_review_storage_cli_migration_backs_up_evidence_and_preserves_jobs_through_vacuum(
+    review_maintenance, tmp_path, capsys
+):
+    state = review_maintenance
+    before = _maintenance_rows(state.queue)
+    arguments = [
+        "--state-directory",
+        str(state.queue.state_directory),
+        "compact-review-storage",
+        "--backup-directory",
+        str(state.backup),
+        "--artifacts-directory",
+        str(state.artifacts),
+        "--protect",
+        "*recovery-journal*",
+        "--vacuum",
+    ]
+    assert script.main(arguments) == 0
+    result = json.loads(capsys.readouterr().out)
+    assert result["settings"] == {"compacted": 1, "already_compact": 0, "changed": 0}
+    assert result["artifacts"] == {
+        "compacted": 1,
+        "already_compact": 0,
+        "protected": 1,
+        "changed": 0,
+    }
+    archive = Path(result["backup"])
+    assert stat.S_IMODE(archive.stat().st_mode) == 0o600
+    assert stat.S_IMODE(state.backup.stat().st_mode) == 0o700
+    snapshot = gzip.decompress(archive.read_bytes())
+    assert hashlib.sha256(snapshot).hexdigest() == result["uncompressed_sha256"]
+    restored_path = tmp_path / "restored.sqlite3"
+    restored_path.write_bytes(snapshot)
+    with closing(sqlite3.connect(restored_path)) as connection:
+        assert connection.execute("PRAGMA integrity_check").fetchone()[0] == "ok"
+        assert list(connection.execute("SELECT * FROM jobs ORDER BY id")) == before[0]
+        legacy = json.loads(
+            connection.execute("SELECT value FROM settings WHERE key=?", (state.key,)).fetchone()[0]
+        )
+        assert legacy == state.target
+        assert "review_snapshot" not in legacy
+    assert _maintenance_rows(state.queue) == before
+    assert state.queue.get(state.pending).state == "pending"
+    assert state.queue.get_setting(state.key) == state.target
+    assert list(state.queue.get_setting(state.key)["image_map"].values()) == [
+        "upload-z",
+        "upload-a",
+    ]
+    with closing(state.queue._connect()) as connection:
+        assert connection.execute("PRAGMA integrity_check").fetchone()[0] == "ok"
+    assert (
+        state.queue.review_artifact_bytes(state.artifacts / "notification-current.json")
+        == state.files["notification-current.json"]
+    )
+    assert (state.artifacts / "notification-current.json").read_bytes() != state.files[
+        "notification-current.json"
+    ]
+    for name in (
+        "notification-recovery-journal.json",
+        "notification-small.json",
+        "source-evidence.json",
+    ):
+        assert (state.artifacts / name).read_bytes() == state.files[name]
+    assert (
+        state.queue.enqueue_retrieval(
+            school="western",
+            recipient_id="456",
+            account_username="western.wat2do.io",
+            url="https://www.instagram.com/p/PendingSource/",
+        )
+        == state.pending
+    )
+
+
+@pytest.mark.parametrize(
+    "blocker", ["unpaused", "worker.lock", "worker-install.lock", "ingestion.lock"]
+)
+def test_review_storage_cli_refuses_before_backup_or_migration_when_not_owned(
+    review_maintenance, capsys, blocker
+):
+    state = review_maintenance
+    lock = None
+    if blocker == "unpaused":
+        state.queue.set_setting("paused", False)
+    else:
+        lock = (state.queue.state_directory / blocker).open("a+")
+        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    before = _maintenance_rows(state.queue)
+    try:
+        assert (
+            script.main(
+                [
+                    "--state-directory",
+                    str(state.queue.state_directory),
+                    "compact-review-storage",
+                    "--backup-directory",
+                    str(state.backup),
+                    "--artifacts-directory",
+                    str(state.artifacts),
+                ]
+            )
+            == 1
+        )
+    finally:
+        if lock is not None:
+            lock.close()
+    assert "Review compaction requires" in capsys.readouterr().err
+    assert not state.backup.exists()
+    assert _maintenance_rows(state.queue) == before
+    with closing(state.queue._connect()) as connection:
+        assert connection.execute("SELECT count(*) FROM review_snapshots").fetchone()[0] == 0
+    assert all((state.artifacts / name).read_bytes() == raw for name, raw in state.files.items())
+
+
+def test_review_storage_backup_capacity_failure_preserves_legacy_settings_and_artifacts(
+    review_maintenance, monkeypatch
+):
+    state = review_maintenance
+    before = _maintenance_rows(state.queue)
+    monkeypatch.setattr(script.shutil, "disk_usage", lambda _path: SimpleNamespace(free=0))
+    with pytest.raises(RuntimeError, match="existing evidence is unchanged"):
+        script.compact_review_storage(
+            state.queue, backup_directory=state.backup, artifacts_directory=state.artifacts
+        )
+    assert _maintenance_rows(state.queue) == before
+    assert state.queue.get_setting(state.key) == state.target
+    assert not list(state.backup.glob("*.gz"))
+    with closing(state.queue._connect()) as connection:
+        assert connection.execute("SELECT count(*) FROM review_snapshots").fetchone()[0] == 0
+        legacy = json.loads(
+            connection.execute("SELECT value FROM settings WHERE key=?", (state.key,)).fetchone()[0]
+        )
+        assert "review_snapshot" not in legacy
+    assert all((state.artifacts / name).read_bytes() == raw for name, raw in state.files.items())
+
+
+def test_review_storage_backup_capacity_includes_uncheckpointed_wal_pages(
+    review_maintenance, monkeypatch
+):
+    state = review_maintenance
+    with closing(state.queue._connect()) as writer:
+        writer.execute("PRAGMA wal_autocheckpoint=0")
+        writer.execute("INSERT INTO settings VALUES (?,?)", ("wal-evidence", "x" * (4 * 1024**2)))
+        writer.commit()
+        main_bytes = state.queue.database_path.stat().st_size
+        logical_bytes = (
+            writer.execute("PRAGMA page_count").fetchone()[0]
+            * writer.execute("PRAGMA page_size").fetchone()[0]
+        )
+        assert logical_bytes > main_bytes
+        reserve = script.controlbox.notification_workflow.minimum_free_disk_mb * 1024**2
+        free = reserve + main_bytes * 2 + 1
+        assert free < reserve + logical_bytes * 2
+        monkeypatch.setattr(script.shutil, "disk_usage", lambda _path: SimpleNamespace(free=free))
+        before = _maintenance_rows(state.queue)
+
+        with pytest.raises(RuntimeError, match="existing evidence is unchanged"):
+            script.compact_review_storage(
+                state.queue, backup_directory=state.backup, artifacts_directory=state.artifacts
+            )
+        assert _maintenance_rows(state.queue) == before
+        assert state.queue.get_setting(state.key) == state.target
+        assert not list(state.backup.glob("*.gz"))
+        with closing(state.queue._connect()) as connection:
+            assert connection.execute("SELECT count(*) FROM review_snapshots").fetchone()[0] == 0
+        assert all(
+            (state.artifacts / name).read_bytes() == raw for name, raw in state.files.items()
+        )

@@ -6,6 +6,7 @@ and wait for results; no cookies, tokens, or browser profiles enter this databas
 
 from __future__ import annotations
 
+import fcntl
 import hashlib
 import json
 import logging
@@ -23,8 +24,15 @@ from pathlib import Path
 from typing import Any, ParamSpec, TypeVar, cast
 
 from core.controlbox import controlbox
+from core.launch_agents import atomic_write
 from schemas.school import validate_recipient_id
 from services.instagram_notifications.browser_digest import BrowserDigestError, DigestResolution
+from services.instagram_notifications.browser_review import (
+    ReviewSnapshotError,
+    ReviewSnapshotStore,
+    decode_review_artifact,
+    encode_review_artifact,
+)
 from services.instagram_notifications.browser_session import (
     canonical_post_url,
     validate_account_username,
@@ -32,6 +40,8 @@ from services.instagram_notifications.browser_session import (
 
 CONTROL = controlbox.instagram_browser
 WORKER_INSTALLATION_PAUSE = "Browser worker installation in progress"
+_REVIEW_PREFIX = "notification_reviewed_target:"
+_ARTIFACT_FORMAT = "wat2do-instagram-review-v1"
 log = logging.getLogger(__name__)
 _P = ParamSpec("_P")
 _R = TypeVar("_R")
@@ -125,6 +135,13 @@ class BrowserJobQueue:
                 CREATE TABLE IF NOT EXISTS diagnostic_events (
                     id TEXT PRIMARY KEY, event TEXT NOT NULL, created_at REAL NOT NULL
                 );
+                CREATE TABLE IF NOT EXISTS review_snapshots (
+                    digest TEXT PRIMARY KEY, payload BLOB NOT NULL
+                );
+                CREATE TABLE IF NOT EXISTS review_artifacts (
+                    path TEXT PRIMARY KEY, reference TEXT NOT NULL,
+                    original_sha256 TEXT NOT NULL, original_bytes INTEGER NOT NULL
+                );
             """
             # SQLite cannot add values to a CHECK constraint in place.
             # Rebuild atomically while preserving every job and its history.
@@ -150,8 +167,38 @@ class BrowserJobQueue:
         if key == "paused" and self._pending_pause:
             return self._pending_pause
         with closing(self._connect()) as db:
+            db.execute("BEGIN")
             row = db.execute("SELECT value FROM settings WHERE key=?", (key,)).fetchone()
-        return json.loads(row[0]) if row else default
+            value = json.loads(row[0]) if row else default
+            if (
+                key.startswith(_REVIEW_PREFIX)
+                and isinstance(value, dict)
+                and "review_snapshot" in value
+            ):
+                restored = ReviewSnapshotStore(db).get(value["review_snapshot"])
+                if self._review_identity(restored) != value.get("codex_review"):
+                    raise ReviewSnapshotError("Review snapshot decision metadata is invalid")
+                return restored
+            return value
+
+    @staticmethod
+    def _review_identity(value: Any) -> dict:
+        decision = value.get("codex_review") if isinstance(value, dict) else None
+        return (
+            {
+                key: decision[key]
+                for key in ("reviewer", "decision", "school", "source_url")
+                if key in decision
+            }
+            if isinstance(decision, dict)
+            else {}
+        )
+
+    def _review_reference(self, db: sqlite3.Connection, value: Any) -> dict:
+        return {
+            "review_snapshot": ReviewSnapshotStore(db).put(value),
+            "codex_review": self._review_identity(value),
+        }
 
     @_retry_storage
     def set_setting(self, key: str, value: Any) -> None:
@@ -164,6 +211,11 @@ class BrowserJobQueue:
         else:
             previous = self.get_setting(key) if key == "paused" else None
         with closing(self._connect()) as db, db:
+            if key.startswith(_REVIEW_PREFIX) and isinstance(value, dict):
+                db.execute("BEGIN IMMEDIATE")
+                if "review_snapshot" in value:
+                    value = ReviewSnapshotStore(db).get(value["review_snapshot"])
+                value = self._review_reference(db, value)
             db.execute(
                 "INSERT INTO settings VALUES (?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
                 (key, json.dumps(value)),
@@ -174,6 +226,113 @@ class BrowserJobQueue:
 
         if key == "paused" and previous != value:
             self.record_diagnostic("paused" if value else "resumed")
+
+    @_retry_storage
+    def compact_review_settings(self) -> dict[str, int]:
+        """Losslessly migrate legacy review records; concurrent decisions win."""
+        with closing(self._connect()) as db:
+            keys = db.execute(
+                "SELECT key FROM settings WHERE key GLOB ? ORDER BY key", (_REVIEW_PREFIX + "*",)
+            ).fetchall()
+        stats = {"compacted": 0, "already_compact": 0, "changed": 0}
+        for (key,) in keys:
+            with closing(self._connect()) as db:
+                row = db.execute("SELECT value FROM settings WHERE key=?", (key,)).fetchone()
+            if row is None:
+                stats["changed"] += 1
+                continue
+            original = row[0]
+            value = json.loads(original)
+            if isinstance(value, dict) and "review_snapshot" in value:
+                stats["already_compact"] += 1
+                continue
+            with closing(self._connect()) as db, db:
+                db.execute("BEGIN IMMEDIATE")
+                current = db.execute("SELECT value FROM settings WHERE key=?", (key,)).fetchone()
+                if current is None or current[0] != original:
+                    stats["changed"] += 1
+                    continue
+                reference = self._review_reference(db, value)
+                changed = db.execute(
+                    "UPDATE settings SET value=? WHERE key=? AND value=?",
+                    (json.dumps(reference), key, original),
+                ).rowcount
+                stats["compacted"] += changed
+        return stats
+
+    def review_artifact_bytes(self, path: Path) -> bytes:
+        """Read original checkpoint bytes, including their original hash/order."""
+        raw = Path(path).read_bytes()
+        if Path(path).suffix != ".json" or len(raw) > 4096:
+            return raw
+        try:
+            descriptor = json.loads(raw)
+        except (ValueError, UnicodeDecodeError):
+            return raw
+        if not isinstance(descriptor, dict) or descriptor.get("format") != _ARTIFACT_FORMAT:
+            return raw
+        if (
+            set(descriptor) != {"format", "review_snapshot", "original_sha256", "original_bytes"}
+            or type(descriptor["original_bytes"]) is not int
+            or not 0 <= descriptor["original_bytes"] <= CONTROL.review_snapshot_max_bytes
+            or not isinstance(descriptor["original_sha256"], str)
+            or not re.fullmatch(r"[a-f0-9]{64}", descriptor["original_sha256"])
+        ):
+            raise ReviewSnapshotError("Review checkpoint reference is invalid")
+        with closing(self._connect()) as db:
+            db.execute("BEGIN")
+            text = decode_review_artifact(
+                ReviewSnapshotStore(db).get(descriptor["review_snapshot"])
+            )
+        original = text.encode("utf-8")
+        if (
+            len(original) != descriptor["original_bytes"]
+            or hashlib.sha256(original).hexdigest() != descriptor["original_sha256"]
+        ):
+            raise ReviewSnapshotError("Review checkpoint integrity check failed")
+        return original
+
+    def read_review_artifact(self, path: Path) -> Any:
+        return json.loads(self.review_artifact_bytes(path))
+
+    def write_review_artifact(
+        self, path: Path, text: str, *, expected_sha256: str | None = None
+    ) -> bool:
+        """Commit immutable content before atomically replacing a checkpoint."""
+        path = Path(path).absolute()
+        if path.suffix != ".json" or not isinstance(text, str):
+            raise ReviewSnapshotError("Review checkpoint must be UTF-8 JSON")
+        json.loads(text)
+        raw = text.encode("utf-8")
+        if len(raw) > CONTROL.review_snapshot_max_bytes:
+            raise ReviewSnapshotError("Review checkpoint exceeds its storage limit")
+        if path.is_symlink() or any(parent.is_symlink() for parent in path.parents):
+            raise ReviewSnapshotError("Review checkpoint ownership is invalid")
+        with (self.state_directory / "review-artifacts.lock").open("a+") as lock:
+            fcntl.flock(lock, fcntl.LOCK_EX)
+            if expected_sha256 is not None and (
+                not path.exists()
+                or hashlib.sha256(self.review_artifact_bytes(path)).hexdigest() != expected_sha256
+            ):
+                return False
+            digest = hashlib.sha256(raw).hexdigest()
+            with closing(self._connect()) as db, db:
+                db.execute("BEGIN IMMEDIATE")
+                reference = ReviewSnapshotStore(db).put(encode_review_artifact(text))
+                db.execute(
+                    "INSERT INTO review_artifacts VALUES (?,?,?,?) "
+                    "ON CONFLICT(path) DO UPDATE SET reference=excluded.reference, "
+                    "original_sha256=excluded.original_sha256, original_bytes=excluded.original_bytes",
+                    (str(path), json.dumps(reference), digest, len(raw)),
+                )
+            descriptor = {
+                "format": _ARTIFACT_FORMAT,
+                "review_snapshot": reference,
+                "original_sha256": digest,
+                "original_bytes": len(raw),
+            }
+            atomic_write(path, (json.dumps(descriptor) + "\n").encode())
+        return True
 
     @_retry_storage
     def compare_set_pause(self, expected: Any, value: Any) -> bool:

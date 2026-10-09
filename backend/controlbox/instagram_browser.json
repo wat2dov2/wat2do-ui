@@ -37,5 +37,8 @@
   "storage_retry_limit": 3,
   "storage_retry_interval_seconds": 1,
   "worker_log_max_bytes": 8388608,
-  "worker_log_backup_count": 3
+  "worker_log_backup_count": 3,
+  "review_snapshot_chunk_bytes": 4096,
+  "review_snapshot_max_bytes": 67108864,
+  "review_snapshot_storage_max_mb": 1024
 }
