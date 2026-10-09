@@ -268,6 +268,17 @@ Malformed notification identities or URLs remain pending for repair, while valid
 The source and import summaries expose an `invalid` count for these targets.
 An explicit retrieval retry resets its import markers and read budget in one transaction only while the target is still idle.
 The `ingestion-import` command reports nonzero exit status for failed, blocked, invalid, or busy outcomes; inspect its counts before treating a batch as complete.
+Historical failed cloud media require explicit recovery before they appear in the pending review backlog.
+Preview `python scripts/instagram_browser.py ingestion-recover-failed --media-id <media-row-uuid>` from the installed backend, repeat `--media-id` for at most `ingestion_batch_size` unique rows, and add `--apply` only for the intended bounded recovery.
+The preview durably saves each original full PostgREST media row, authoritative notification/school/recipient routing, and the historical Scrape Pending Media run's current terminal attempt and SHA in the private queue's canonical `notification-failed-recovery.json`.
+Apply freshly rechecks that proof and publishes an exact per-row intent before one service-role RPC compares the complete failed row and current routing atomically.
+The RPC changes only that ledger ID back to pending and clears its old claim, failure, workflow and delivery fields; it preserves the original ID, notification, media, source URL and creation time.
+Recovery queues the existing public retrieval and guarded Codex review path, without importing listings, rerunning the historical workflow, starting a paid actor, or resetting local retry budgets, exclusions, review holds or the review cursor.
+Its `reopened` count reports failed-to-pending transitions and `queued` reports distinct retrieval admissions; neither is a completed post review or native event/position import.
+Two ledger IDs for the same recipient and public source retain separate original evidence and delivery bindings while sharing one canonical retrieval job.
+An older succeeded ledger row for the same source does not prove that a later failed row received a valid review or import.
+After a lost response or interruption, the same canonical journal reconciles a fresh pending readback with the exact original identity; it never resends a recorded intent, even when another invocation selects a different subset or order.
+Changed row generations, running or changed owner attempts, routing changes, existing review evidence, exhausted budgets, excluded accounts, and unverified outcomes fail closed with nonzero exit status and preserved evidence for inspection.
 The `retrieve` command confirms queue admission; read `status --job-id` to establish the retrieval's outcome.
 Digest expansion and engagement still require the exact intended school account.
 All carousel children and each video's corresponding poster are preserved.

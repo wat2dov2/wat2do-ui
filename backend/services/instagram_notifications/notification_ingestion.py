@@ -10,9 +10,12 @@ from __future__ import annotations
 import fcntl
 import hashlib
 import json
+import re
+import subprocess
 import time
 from collections import Counter, defaultdict, deque
 from collections.abc import Sequence
+from contextlib import closing
 from copy import deepcopy
 from datetime import datetime, timezone
 from typing import Any
@@ -23,7 +26,7 @@ from core.controlbox import controlbox
 from core.database import get_sb
 from core.pagination import fetch_all_pages
 from core.sanitize import parse_iso_datetime
-from core.tables import INSTAGRAM_NOTIFICATION_MEDIA, INSTAGRAM_NOTIFICATIONS
+from core.tables import INSTAGRAM_NOTIFICATION_MEDIA, INSTAGRAM_NOTIFICATIONS, SCHOOLS
 from services import school_service
 from services.instagram_notifications.browser_ingestion import canonical_target_url
 from services.instagram_notifications.browser_queue import BrowserJobQueue
@@ -35,13 +38,25 @@ from services.instagram_notifications.ledger import (
     acknowledge_browser_delivery,
     claim_pending_browser_media,
     mark_media_succeeded,
+    retry_failed_media,
     rollback_media_claim,
+    validate_failed_media_retry,
 )
 from services.scraper.pipeline import run_pipeline
 
 _CONTROL = controlbox.instagram_browser
 _JOURNAL = "notification_browser_import_claim"
 _REVIEW_CURSOR = "notification_review_cursor"
+_FAILED_OWNER_REPOSITORY = controlbox.emulator_farm.github_repository
+_FAILED_RESET_FIELDS = {
+    "status",
+    "claim_token",
+    "failure_category",
+    "github_run_id",
+    "succeeded_at",
+    "browser_delivery_generation",
+    "updated_at",
+}
 _REVIEW_COUNTS = (
     "pending",
     "ready",
@@ -478,3 +493,432 @@ def retry_retrieved_media(queue: BrowserJobQueue, job_id: str) -> None:
             if matches:
                 setting_keys.append(f"notification_import_attempts:{row['id']}")
         queue.reset_retrieval_import(job.id, import_setting_keys=setting_keys)
+
+
+def _failed_media_owner(run_id: Any) -> dict[str, Any]:
+    """Verify the historical claimant, never rerun its old workflow."""
+    if not isinstance(run_id, str) or not re.fullmatch(r"[1-9][0-9]{0,49}", run_id):
+        raise ValueError("Failed media has no valid owning workflow")
+    try:
+        result = subprocess.run(
+            ["gh", "api", f"repos/{_FAILED_OWNER_REPOSITORY}/actions/runs/{run_id}"],
+            capture_output=True,
+            text=True,
+            check=True,
+            timeout=controlbox.scraping.workflow_status_timeout_seconds,
+        )
+        run = json.loads(result.stdout)
+        if (
+            type(run.get("id")) is not int
+            or str(run["id"]) != run_id
+            or run.get("repository", {}).get("full_name") != _FAILED_OWNER_REPOSITORY
+            or run.get("path") != ".github/workflows/scrape-pending-media.yml"
+            or run.get("status") != "completed"
+            or run.get("conclusion")
+            not in {
+                "success",
+                "failure",
+                "cancelled",
+                "timed_out",
+                "action_required",
+                "neutral",
+                "skipped",
+                "stale",
+                "startup_failure",
+            }
+            or type(run.get("run_attempt")) is not int
+            or run["run_attempt"] < 1
+            or not isinstance(run.get("head_sha"), str)
+            or re.fullmatch(r"[0-9a-f]{40}", run["head_sha"]) is None
+        ):
+            raise ValueError
+    except (OSError, subprocess.SubprocessError, ValueError, TypeError, AttributeError):
+        raise ValueError("Failed media owning workflow is not verified terminal") from None
+    return {
+        "repository": _FAILED_OWNER_REPOSITORY,
+        "id": run_id,
+        "path": run["path"],
+        "run_attempt": run["run_attempt"],
+        "head_sha": run["head_sha"],
+        "conclusion": run["conclusion"],
+        "checked_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+def _failed_media_rows(media_ids: Sequence[str]) -> dict[str, dict]:
+    try:
+        rows = (
+            get_sb()
+            .table(INSTAGRAM_NOTIFICATION_MEDIA)
+            .select("*")
+            .in_("id", list(media_ids))
+            .execute()
+            .data
+            or []
+        )
+        result = {row["id"]: row for row in rows}
+        if len(result) != len(rows) or set(result) != set(media_ids):
+            raise ValueError
+        return result
+    except Exception:
+        raise RuntimeError("Failed media recovery could not read its exact ledger rows") from None
+
+
+def _failed_media_routing(queue: BrowserJobQueue, row: dict) -> dict[str, Any]:
+    try:
+        notification = (
+            get_sb()
+            .table(INSTAGRAM_NOTIFICATIONS)
+            .select("id,school_id,intended_recipient_id")
+            .eq("id", row["notification_id"])
+            .single()
+            .execute()
+            .data
+        )
+        recipient = notification["intended_recipient_id"]
+        # The ordinary school helpers cache routing; a failed-row reset must read it fresh.
+        school = (
+            get_sb()
+            .table(SCHOOLS)
+            .select("id,slug,recipient_id")
+            .eq("id", notification["school_id"])
+            .single()
+            .execute()
+            .data
+        )
+        if (
+            notification["id"] != row["notification_id"]
+            or not isinstance(school, dict)
+            or type(notification["school_id"]) is not int
+            or type(school["id"]) is not int
+            or school["id"] <= 0
+            or school["id"] != notification["school_id"]
+            or not isinstance(school["slug"], str)
+            or school["recipient_id"] != recipient
+        ):
+            raise ValueError
+        username = school_account_username(school["slug"])
+        url = canonical_target_url(row["source_url"])
+    except Exception:
+        raise ValueError("Failed media current school and recipient routing is invalid") from None
+    if queue.account_excluded(username):
+        raise ValueError("Failed media account is excluded")
+    if queue.get_setting(f"notification_reviewed_target:{row['id']}"):
+        raise ValueError("Failed media has existing review evidence requiring inspection")
+    attempts = queue.get_setting(f"notification_import_attempts:{row['id']}", 0)
+    if type(attempts) is not int or not 0 <= attempts < _CONTROL.ingestion_retry_limit:
+        raise ValueError("Failed media import budget requires inspection")
+    with closing(queue._connect()) as db:
+        jobs = db.execute(
+            "SELECT id,state FROM jobs WHERE kind='retrieval' AND recipient_id=? "
+            "AND account_username=? AND json_extract(payload,'$.url')=?",
+            (recipient, username, url),
+        ).fetchall()
+    if any(job["state"] in {"failed", "cancelled", "unsupported"} for job in jobs):
+        raise ValueError("Failed media existing retrieval requires inspection")
+    return {
+        "notification_id": notification["id"],
+        "school_id": school["id"],
+        "school": school["slug"],
+        "intended_recipient_id": recipient,
+        "account_username": username,
+    }
+
+
+def _recovered_pending_matches(
+    queue: BrowserJobQueue, original: dict, current: dict, routing: dict
+) -> bool:
+    if (
+        set(current) != set(original)
+        or current.get("status") != "pending"
+        or any(
+            current.get(key) is not None
+            for key in ("claim_token", "failure_category", "github_run_id", "succeeded_at")
+        )
+    ):
+        return False
+    if BrowserJobQueue._review_hash(
+        {key: value for key, value in current.items() if key not in _FAILED_RESET_FIELDS}
+    ) != BrowserJobQueue._review_hash(
+        {key: value for key, value in original.items() if key not in _FAILED_RESET_FIELDS}
+    ):
+        return False
+    try:
+        before = datetime.fromisoformat(original["updated_at"].replace("Z", "+00:00"))
+        after = datetime.fromisoformat(current["updated_at"].replace("Z", "+00:00"))
+        if before.tzinfo is None or after.tzinfo is None or after <= before:
+            return False
+    except (AttributeError, KeyError, TypeError, ValueError):
+        return False
+    generation = current.get("browser_delivery_generation")
+    if generation is None:
+        return True
+    if generation != queue.delivery_generation:
+        return False
+    job = queue.get(queue.get_setting(f"notification_delivery:{original['id']}", ""))
+    return bool(
+        job
+        and job.kind == "retrieval"
+        and job.state in {"pending", "running", "succeeded"}
+        and job.school == routing["school"]
+        and job.recipient_id == routing["intended_recipient_id"]
+        and job.account_username == routing["account_username"]
+        and job.payload.get("url") == canonical_target_url(original["source_url"])
+    )
+
+
+def recover_failed_media(
+    queue: BrowserJobQueue,
+    media_ids: Sequence[str],
+    *,
+    apply: bool = False,
+) -> dict[str, Any]:
+    """Explicitly reopen only SHA-bound terminal rows into the existing review path."""
+    requested = tuple(media_ids)
+    try:
+        valid = all(
+            isinstance(rid, str) and str(UUID(rid)) == rid and UUID(rid).int > 0
+            for rid in requested
+        )
+    except ValueError:
+        valid = False
+    if (
+        not valid
+        or not requested
+        or len(set(requested)) != len(requested)
+        or len(requested) > _CONTROL.ingestion_batch_size
+    ):
+        raise ValueError(
+            "Failed media recovery requires unique canonical IDs within the batch limit"
+        )
+    path = queue.state_directory / "notification-failed-recovery.json"
+    stats: dict[str, Any] = {
+        "selected": len(requested),
+        "eligible": 0,
+        "reopened": 0,
+        "reconciled": 0,
+        "blocked": 0,
+        "queued": 0,
+        "apply": apply,
+        "evidence_path": str(path),
+        "rows": [],
+    }
+    with (queue.state_directory / "ingestion.lock").open("a+") as lock:
+        try:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            return {**stats, "busy": 1}
+        if queue.get_setting(_JOURNAL):
+            return {**stats, "busy": 1}
+        current = _failed_media_rows(requested)
+        publication = None
+        if path.exists():
+            original_bytes = queue.review_artifact_bytes(path)
+            publication = hashlib.sha256(original_bytes).hexdigest()
+            journal = json.loads(original_bytes)
+            if (
+                not isinstance(journal, dict)
+                or type(journal.get("version")) is not int
+                or journal["version"] != 1
+                or not isinstance(journal.get("rows"), dict)
+            ):
+                raise ValueError(
+                    "Failed media recovery evidence changed; preserve it for inspection"
+                )
+        else:
+            journal = {
+                "version": 1,
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "rows": {},
+            }
+        for rid in requested:
+            if rid not in journal["rows"]:
+                journal["rows"][rid] = {
+                    "original_media": deepcopy(current[rid]),
+                    "intent": None,
+                    "delivery_generation": queue.delivery_generation,
+                    "outcome": "preview",
+                }
+            entry = journal["rows"][rid]
+            if (
+                not isinstance(entry, dict)
+                or not isinstance(entry.get("original_media"), dict)
+                or entry["original_media"].get("id") != rid
+                or "intent" not in entry
+                or (
+                    entry["intent"] is not None
+                    and (
+                        not isinstance(entry["intent"], dict)
+                        or set(entry["intent"]) != {"started_at"}
+                        or not isinstance(entry["intent"]["started_at"], str)
+                        or parse_iso_datetime(entry["intent"]["started_at"]) is None
+                    )
+                )
+            ):
+                raise ValueError(
+                    "Failed media recovery evidence is invalid; preserve it for inspection"
+                )
+
+        def publish() -> None:
+            nonlocal publication
+            text = json.dumps(journal, ensure_ascii=False)
+            if not queue.write_review_artifact(path, text, expected_sha256=publication):
+                raise RuntimeError("Failed media recovery evidence changed during publication")
+            raw = text.encode("utf-8")
+            if queue.review_artifact_bytes(path) != raw:
+                raise RuntimeError("Failed media evidence publication could not be verified")
+            publication = hashlib.sha256(raw).hexdigest()
+
+        owners = {}
+        for rid in requested:
+            entry = journal["rows"][rid]
+            try:
+                original = entry["original_media"]
+                if original.get("id") != rid or original.get("status") != "failed":
+                    raise ValueError("Failed media original terminal identity is invalid")
+                if entry.get("delivery_generation") != queue.delivery_generation:
+                    raise ValueError("Failed media queue generation changed")
+                routing = _failed_media_routing(queue, current[rid])
+                validate_failed_media_retry(
+                    original,
+                    school_id=routing["school_id"],
+                    intended_recipient_id=routing["intended_recipient_id"],
+                )
+                if "routing" in entry and BrowserJobQueue._review_hash(
+                    entry["routing"]
+                ) != BrowserJobQueue._review_hash(routing):
+                    raise ValueError("Failed media original routing changed")
+                entry["routing"] = routing
+                run_id = original["github_run_id"]
+                if run_id not in owners:
+                    owners[run_id] = _failed_media_owner(run_id)
+                proof = owners[run_id]
+                prior = entry.get("owner_run")
+                if prior is not None and (
+                    not isinstance(prior, dict)
+                    or any(
+                        BrowserJobQueue._review_hash(prior.get(field))
+                        != BrowserJobQueue._review_hash(proof[field])
+                        for field in ("repository", "id", "path", "head_sha", "run_attempt")
+                    )
+                ):
+                    raise ValueError("Failed media owning workflow generation changed")
+                entry["owner_run"] = proof
+                if entry.get("intent") is None:
+                    if BrowserJobQueue._review_hash(original) != BrowserJobQueue._review_hash(
+                        current[rid]
+                    ):
+                        raise ValueError("Failed media original ledger generation changed")
+                elif not _recovered_pending_matches(queue, original, current[rid], routing):
+                    raise ValueError("Failed media attempted outcome is uncertain or advanced")
+            except (KeyError, TypeError, ValueError) as exc:
+                entry["blocked_reason"] = (
+                    str(exc) if isinstance(exc, ValueError) else "Failed media evidence is invalid"
+                )
+                stats["blocked"] += 1
+            else:
+                entry.pop("blocked_reason", None)
+                stats["eligible"] += 1
+        # This immutable original evidence must exist before any cloud reset.
+        publish()
+        jobs = set()
+        if apply and not stats["blocked"]:
+            for rid in requested:
+                entry = journal["rows"][rid]
+                original, routing = entry["original_media"], entry["routing"]
+                fresh = _failed_media_rows([rid])[rid]
+                if BrowserJobQueue._review_hash(
+                    _failed_media_routing(queue, fresh)
+                ) != BrowserJobQueue._review_hash(routing):
+                    raise RuntimeError("Failed media routing changed before recovery admission")
+                if entry.get("intent") is None and BrowserJobQueue._review_hash(
+                    original
+                ) != BrowserJobQueue._review_hash(fresh):
+                    raise RuntimeError("Failed media ledger changed before recovery admission")
+                if entry.get("intent") is None:
+                    validate_failed_media_retry(
+                        fresh,
+                        school_id=routing["school_id"],
+                        intended_recipient_id=routing["intended_recipient_id"],
+                    )
+                    proof = _failed_media_owner(original["github_run_id"])
+                    if any(
+                        BrowserJobQueue._review_hash(entry["owner_run"].get(field))
+                        != BrowserJobQueue._review_hash(proof[field])
+                        for field in ("repository", "id", "path", "head_sha", "run_attempt")
+                    ):
+                        raise RuntimeError(
+                            "Failed media owning workflow changed before recovery admission"
+                        )
+                    entry["owner_run"] = proof
+                    entry["intent"] = {"started_at": datetime.now(timezone.utc).isoformat()}
+                    publish()
+                    try:
+                        reset = retry_failed_media(
+                            fresh,
+                            school_id=routing["school_id"],
+                            intended_recipient_id=routing["intended_recipient_id"],
+                        )
+                    except Exception:
+                        entry["outcome"] = "unconfirmed"
+                    else:
+                        entry["outcome"] = "reset" if reset else "unconfirmed"
+                after = _failed_media_rows([rid])[rid]
+                entry["readback"] = deepcopy(after)
+                if not _recovered_pending_matches(queue, original, after, routing):
+                    entry["outcome"] = "inspection_required"
+                    stats["blocked"] += 1
+                    publish()
+                    break
+                stats["reopened" if entry["outcome"] == "reset" else "reconciled"] += 1
+                entry["outcome"] = "pending_verified"
+                if BrowserJobQueue._review_hash(
+                    _failed_media_routing(queue, after)
+                ) != BrowserJobQueue._review_hash(routing):
+                    raise RuntimeError("Failed media routing changed after recovery readback")
+                job_id = queue.enqueue_retrieval(
+                    school=routing["school"],
+                    recipient_id=routing["intended_recipient_id"],
+                    account_username=routing["account_username"],
+                    url=after["source_url"],
+                )
+                job = queue.get(job_id)
+                if (
+                    not job
+                    or job.kind != "retrieval"
+                    or job.state not in {"pending", "running", "succeeded"}
+                    or job.school != routing["school"]
+                    or job.recipient_id != routing["intended_recipient_id"]
+                    or job.account_username != routing["account_username"]
+                    or job.payload.get("url") != canonical_target_url(after["source_url"])
+                ):
+                    raise RuntimeError("Failed media retrieval routing changed during admission")
+                queue.set_setting(f"notification_delivery:{rid}", job_id)
+                entry["job_id"] = job_id
+                jobs.add(job_id)
+                publish()
+        stats["queued"] = len(jobs)
+        sources = set()
+        for rid in requested:
+            entry = journal["rows"][rid]
+            try:
+                sources.add(
+                    (
+                        entry["routing"]["intended_recipient_id"],
+                        canonical_target_url(entry["original_media"]["source_url"]),
+                    )
+                )
+            except (KeyError, TypeError, ValueError):
+                # Malformed blocked rows still retain their complete original evidence.
+                continue
+        stats["distinct_sources"] = len(sources)
+        stats["rows"] = [
+            {
+                "media_row_id": entry["original_media"]["id"],
+                "outcome": entry["outcome"],
+                "blocked_reason": entry.get("blocked_reason"),
+                "job_id": entry.get("job_id"),
+            }
+            for entry in (journal["rows"][rid] for rid in requested)
+        ]
+        return stats

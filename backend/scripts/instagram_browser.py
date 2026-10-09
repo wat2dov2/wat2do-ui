@@ -340,6 +340,12 @@ def parser() -> argparse.ArgumentParser:
                 action="append",
                 help="Stage one explicitly selected held media row for fresh review; repeat within the batch limit",
             )
+    recovery = commands.add_parser(
+        "ingestion-recover-failed",
+        help="Preview or explicitly reopen failed cloud media for guarded review",
+    )
+    recovery.add_argument("--media-id", action="append", required=True)
+    recovery.add_argument("--apply", action="store_true")
     retrieve = commands.add_parser(
         "retrieve", help="Queue a profile or post for browser extraction"
     )
@@ -446,6 +452,10 @@ def main(argv: Sequence[str] | None = None) -> int:
                 if arguments.command == "ingestion-ready" and arguments.held_media_id is not None
                 else operation(queue)
             )
+        elif arguments.command == "ingestion-recover-failed":
+            from services.instagram_notifications.notification_ingestion import recover_failed_media
+
+            result = recover_failed_media(queue, arguments.media_id, apply=arguments.apply)
         elif arguments.command == "retrieve":
             from services import school_service
             from services.instagram_notifications.browser_session import school_account_username
@@ -486,6 +496,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(json.dumps(result, indent=2, sort_keys=True))
         if arguments.command == "ingestion-import" and any(
             result.get(key, 0) for key in ("failed", "blocked", "invalid", "busy")
+        ):
+            return 1
+        if arguments.command == "ingestion-recover-failed" and any(
+            result.get(key, 0) for key in ("blocked", "busy")
         ):
             return 1
         return 0

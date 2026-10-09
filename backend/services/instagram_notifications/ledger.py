@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Any, Callable, Literal, Sequence
 from uuid import UUID
 
@@ -281,6 +283,107 @@ def rollback_media_claim(
             {
                 "p_media_row_id": media_row_id,
                 "p_claim_token": claim_token,
+            },
+        )
+        .execute()
+    )
+    return response.data is True
+
+
+def validate_failed_media_retry(
+    expected_media: dict[str, Any],
+    *,
+    school_id: int,
+    intended_recipient_id: str,
+) -> None:
+    """Validate a fresh failed row and its routing without recording an RPC intent."""
+    columns = {
+        "id",
+        "notification_id",
+        "media_id",
+        "source_url",
+        "status",
+        "claim_token",
+        "succeeded_at",
+        "failure_category",
+        "github_run_id",
+        "created_at",
+        "updated_at",
+        "browser_delivery_generation",
+    }
+    if type(school_id) is not int or school_id <= 0:
+        raise ValueError("Failed media retry requires a positive school ID")
+    if not isinstance(intended_recipient_id, str) or not re.fullmatch(
+        r"[1-9][0-9]{0,31}", intended_recipient_id
+    ):
+        raise ValueError("Failed media retry requires a valid recipient ID")
+    if not isinstance(expected_media, dict) or set(expected_media) != columns:
+        raise ValueError("Failed media retry requires the complete raw failed row")
+    invalid = "Failed media retry requires a valid failed workflow baseline"
+    if (
+        expected_media["status"] != "failed"
+        or expected_media["succeeded_at"] is not None
+        or not isinstance(expected_media["media_id"], str)
+        or not re.fullmatch(r"[1-9][0-9]{0,31}", expected_media["media_id"])
+        or not isinstance(expected_media["github_run_id"], str)
+        or not re.fullmatch(r"[1-9][0-9]{0,49}", expected_media["github_run_id"])
+        or not isinstance(expected_media["source_url"], str)
+        or not re.fullmatch(
+            r"https://(www\.)?instagram\.com/(p|reel|tv)/[A-Za-z0-9_-]+/?",
+            expected_media["source_url"],
+        )
+        or not isinstance(expected_media["failure_category"], str)
+        or not re.fullmatch(r"[a-z0-9][a-z0-9_.:-]{0,99}", expected_media["failure_category"])
+    ):
+        raise ValueError(invalid)
+    for key in ("id", "notification_id", "claim_token", "browser_delivery_generation"):
+        value = expected_media[key]
+        if key == "browser_delivery_generation" and value is None:
+            continue
+        try:
+            if not isinstance(value, str) or str(UUID(value)) != value or UUID(value).int == 0:
+                raise ValueError(invalid)
+        except (ValueError, AttributeError):
+            raise ValueError(invalid) from None
+    for key in ("created_at", "updated_at"):
+        value = expected_media[key]
+        try:
+            if (
+                not isinstance(value, str)
+                or not re.fullmatch(
+                    r"\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})",
+                    value,
+                )
+                or datetime.fromisoformat(value).utcoffset() is None
+            ):
+                raise ValueError(invalid)
+        except ValueError:
+            raise ValueError(invalid) from None
+
+
+def retry_failed_media(
+    expected_media: dict[str, Any],
+    *,
+    school_id: int,
+    intended_recipient_id: str,
+) -> bool:
+    """Reset one approved failed cloud claim using its fresh complete raw row.
+
+    The caller must durably preserve the original failure and prove its owning
+    workflow is terminal before calling. A lost response or a false result must
+    be reconciled by readback, never by sending this mutation again.
+    """
+    validate_failed_media_retry(
+        expected_media, school_id=school_id, intended_recipient_id=intended_recipient_id
+    )
+    response = (
+        get_sb()
+        .rpc(
+            "retry_failed_instagram_notification_media",
+            {
+                "p_expected_media": expected_media,
+                "p_school_id": school_id,
+                "p_intended_recipient_id": intended_recipient_id,
             },
         )
         .execute()

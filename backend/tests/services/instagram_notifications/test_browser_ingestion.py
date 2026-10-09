@@ -1279,3 +1279,402 @@ def test_explicit_held_review_requires_pending_exact_held_source_and_succeeded_r
     assert rows == [row]
     with queue._connect() as db:
         assert db.execute("SELECT key,value FROM settings ORDER BY key").fetchall() == before
+
+
+@pytest.fixture
+def failed_recovery(tmp_path, monkeypatch):
+    queue = BrowserJobQueue(tmp_path)
+    original = {
+        str(UUID(int=index)): {
+            "id": str(UUID(int=index)),
+            "notification_id": str(UUID(int=index + 10)),
+            "media_id": module.media_id_from_url(URL),
+            "source_url": URL,
+            "status": "failed",
+            "claim_token": str(UUID(int=index + 20)),
+            "succeeded_at": None,
+            "failure_category": "scrape_error",
+            "github_run_id": "123456789",
+            "created_at": "2026-09-11T12:00:00+00:00",
+            "updated_at": "2026-10-02T12:00:00+00:00",
+            "browser_delivery_generation": None,
+        }
+        for index in (1, 2)
+    }
+    current = deepcopy(original)
+    notifications = {
+        row["notification_id"]: {
+            "id": row["notification_id"],
+            "school_id": 1,
+            "intended_recipient_id": RECIPIENT,
+        }
+        for row in original.values()
+    }
+    client, media_query, notification_query, school_query = (
+        MagicMock(),
+        MagicMock(),
+        MagicMock(),
+        MagicMock(),
+    )
+    requested, notification_id = [], ""
+
+    def read_ids(column, ids):
+        nonlocal requested
+        assert column == "id"
+        requested = list(ids)
+        return media_query
+
+    def read_notification(column, value):
+        nonlocal notification_id
+        assert column == "id"
+        notification_id = value
+        return notification_query
+
+    client.table.side_effect = lambda table: {
+        bridge.INSTAGRAM_NOTIFICATION_MEDIA: media_query,
+        bridge.INSTAGRAM_NOTIFICATIONS: notification_query,
+        bridge.SCHOOLS: school_query,
+    }[table]
+    media_query.select.return_value = media_query
+    media_query.in_.side_effect = read_ids
+    media_query.execute.side_effect = lambda: SimpleNamespace(
+        data=[deepcopy(current[rid]) for rid in requested]
+    )
+    notification_query.select.return_value = notification_query
+    notification_query.eq.side_effect = read_notification
+    notification_query.single.return_value = notification_query
+    notification_query.execute.side_effect = lambda: SimpleNamespace(
+        data=deepcopy(notifications[notification_id])
+    )
+    monkeypatch.setattr(bridge, "get_sb", lambda: client)
+    school = {"id": 1, "slug": "ubc", "recipient_id": RECIPIENT}
+    school_query.select.return_value = school_query
+    school_query.eq.return_value = school_query
+    school_query.single.return_value = school_query
+    school_query.execute.side_effect = lambda: SimpleNamespace(data=deepcopy(school))
+    monkeypatch.setattr(
+        bridge.school_service,
+        "get_school_by_recipient_id",
+        lambda _: pytest.fail("Recovery must not use cached routing"),
+    )
+    proof = {
+        "repository": bridge._FAILED_OWNER_REPOSITORY,
+        "id": "123456789",
+        "path": ".github/workflows/scrape-pending-media.yml",
+        "run_attempt": 1,
+        "head_sha": "a" * 40,
+        "conclusion": "failure",
+        "checked_at": "2026-10-09T08:00:00+00:00",
+    }
+    owner = MagicMock(side_effect=lambda _: deepcopy(proof))
+    monkeypatch.setattr(bridge, "_failed_media_owner", owner)
+    path = tmp_path / "notification-failed-recovery.json"
+
+    def reset(expected, *, school_id, intended_recipient_id):
+        entry = queue.read_review_artifact(path)["rows"][expected["id"]]
+        assert entry["original_media"] == original[expected["id"]] == expected
+        assert entry["intent"]["started_at"]
+        assert entry["owner_run"] == proof
+        assert (school_id, intended_recipient_id) == (1, RECIPIENT)
+        current[expected["id"]].update(
+            status="pending",
+            claim_token=None,
+            succeeded_at=None,
+            failure_category=None,
+            github_run_id=None,
+            browser_delivery_generation=None,
+            updated_at="2026-10-09T08:00:01+00:00",
+        )
+        return True
+
+    rpc = MagicMock(side_effect=reset)
+    monkeypatch.setattr(bridge, "retry_failed_media", rpc)
+    return SimpleNamespace(
+        queue=queue,
+        original=original,
+        current=current,
+        notifications=notifications,
+        school=school,
+        client=client,
+        media_query=media_query,
+        proof=proof,
+        owner=owner,
+        path=path,
+        reset=reset,
+        rpc=rpc,
+    )
+
+
+def test_failed_cloud_recovery_preserves_all_original_rows_and_deduplicates_only_retrieval(
+    failed_recovery,
+):
+    state = failed_recovery
+    ids = list(state.original)
+    state.queue.set_setting("paused", "Human must inspect the browser")
+    state.queue.set_setting(bridge._REVIEW_CURSOR, {"last_school": "mun"})
+    state.queue.set_setting(f"notification_import_attempts:{ids[0]}", 1)
+    preview = bridge.recover_failed_media(state.queue, ids)
+    assert (preview["selected"], preview["eligible"], preview["distinct_sources"]) == (2, 2, 1)
+    assert state.rpc.call_count == 0
+    assert state.queue.status()["queues"] == []
+    assert state.path.stat().st_mode & 0o777 == 0o600
+    result = bridge.recover_failed_media(state.queue, list(reversed(ids)), apply=True)
+    assert (result["reopened"], result["queued"], result["blocked"]) == (2, 1, 0)
+    assert state.rpc.call_count == 2
+    jobs = {state.queue.get_setting(f"notification_delivery:{rid}") for rid in ids}
+    assert len(jobs) == 1
+    job = state.queue.get(jobs.pop())
+    assert (job.school, job.recipient_id, job.account_username, job.payload["url"]) == (
+        "ubc",
+        RECIPIENT,
+        bridge.school_account_username("ubc"),
+        URL,
+    )
+    assert state.queue.get_setting(f"manual_retrieval:{job.id}") is None
+    assert state.queue.get_setting("paused") == "Human must inspect the browser"
+    assert state.queue.get_setting(bridge._REVIEW_CURSOR) == {"last_school": "mun"}
+    assert state.queue.get_setting(f"notification_import_attempts:{ids[0]}") == 1
+    assert state.media_query.select.call_args_list and all(
+        call.args == ("*",) for call in state.media_query.select.call_args_list
+    )
+    saved = state.queue.read_review_artifact(state.path)
+    assert {rid: saved["rows"][rid]["original_media"] for rid in ids} == state.original
+
+
+@pytest.mark.parametrize("failure_phase", ["original", "intent", "cas"])
+def test_failed_cloud_recovery_never_mutates_without_verified_durable_evidence(
+    failed_recovery, monkeypatch, failure_phase
+):
+    state = failed_recovery
+    write = state.queue.write_review_artifact
+    calls = 0
+
+    def fail(path, text, **kwargs):
+        nonlocal calls
+        calls += 1
+        if failure_phase == "cas":
+            return False
+        if calls == (1 if failure_phase == "original" else 2):
+            raise OSError("Disk full")
+        return write(path, text, **kwargs)
+
+    monkeypatch.setattr(state.queue, "write_review_artifact", fail)
+    with pytest.raises((OSError, RuntimeError)):
+        bridge.recover_failed_media(state.queue, [next(iter(state.original))], apply=True)
+    assert state.rpc.call_count == 0
+    assert state.current == state.original
+
+
+@pytest.mark.parametrize(
+    "change", ["ledger", "routing", "owner_attempt", "hold", "budget", "excluded", "generation"]
+)
+def test_failed_cloud_recovery_rechecks_preview_policy_and_generation(failed_recovery, change):
+    state = failed_recovery
+    rid = next(iter(state.original))
+    bridge.recover_failed_media(state.queue, [rid])
+    if change == "ledger":
+        state.current[rid]["claim_token"] = str(UUID(int=500))
+    elif change == "routing":
+        state.notifications[state.original[rid]["notification_id"]]["school_id"] = 2
+    elif change == "owner_attempt":
+        state.proof["run_attempt"] = 2
+    elif change == "hold":
+        state.queue.set_setting(
+            f"notification_reviewed_target:{rid}", {"codex_review": {"decision": "unresolved"}}
+        )
+    elif change == "budget":
+        state.queue.set_setting(
+            f"notification_import_attempts:{rid}", bridge._CONTROL.ingestion_retry_limit
+        )
+    elif change == "excluded":
+        state.queue.set_setting("excluded_accounts", [bridge.school_account_username("ubc")])
+    elif change == "generation":
+        journal = state.queue.read_review_artifact(state.path)
+        journal["rows"][rid]["delivery_generation"] = str(UUID(int=500))
+        state.queue.write_review_artifact(state.path, json.dumps(journal))
+    assert bridge.recover_failed_media(state.queue, [rid], apply=True)["blocked"] == 1
+    assert state.rpc.call_count == 0
+    assert (
+        state.queue.read_review_artifact(state.path)["rows"][rid]["original_media"]
+        == state.original[rid]
+    )
+
+
+def test_failed_cloud_recovery_rechecks_owner_immediately_before_rpc(failed_recovery):
+    state = failed_recovery
+    proof = deepcopy(state.proof)
+    state.owner.side_effect = [
+        proof,
+        ValueError("Failed media owning workflow is not verified terminal"),
+    ]
+    with pytest.raises(ValueError, match="not verified terminal"):
+        bridge.recover_failed_media(state.queue, [next(iter(state.original))], apply=True)
+    assert state.rpc.call_count == 0
+    assert (
+        state.queue.read_review_artifact(state.path)["rows"][next(iter(state.original))]["intent"]
+        is None
+    )
+
+
+@pytest.mark.parametrize("committed", [False, True])
+def test_failed_cloud_recovery_never_resends_an_uncertain_intent_across_subsets(
+    failed_recovery, committed
+):
+    state = failed_recovery
+    ids = list(state.original)
+
+    def uncertain(*args, **kwargs):
+        if committed:
+            state.reset(*args, **kwargs)
+        raise TimeoutError("Private provider response")
+
+    state.rpc.side_effect = uncertain
+    result = bridge.recover_failed_media(state.queue, ids, apply=True)
+    assert result["blocked"] == (0 if committed else 1)
+    assert result["reconciled"] == (2 if committed else 0)
+    calls = state.rpc.call_count
+    resumed = bridge.recover_failed_media(state.queue, [ids[0]], apply=True)
+    assert resumed["blocked"] == (0 if committed else 1)
+    assert resumed["reconciled"] == int(committed)
+    assert state.rpc.call_count == calls
+    assert len(state.queue.read_review_artifact(state.path)["rows"]) == 2
+    assert "Private provider response" not in json.dumps(
+        state.queue.read_review_artifact(state.path)
+    )
+
+
+@pytest.mark.parametrize(
+    "advance", ["processing", "succeeded", "new_failed", "delivery", "missing_field"]
+)
+def test_failed_cloud_recovery_resume_rejects_advanced_or_incomplete_readback(
+    failed_recovery, advance
+):
+    state = failed_recovery
+    rid = next(iter(state.original))
+    bridge.recover_failed_media(state.queue, [rid], apply=True)
+    if advance == "new_failed":
+        state.current[rid] = {**state.original[rid], "claim_token": str(UUID(int=501))}
+    elif advance == "delivery":
+        state.current[rid]["browser_delivery_generation"] = str(UUID(int=501))
+    elif advance == "missing_field":
+        state.current[rid].pop("succeeded_at")
+    else:
+        state.current[rid]["status"] = advance
+    assert bridge.recover_failed_media(state.queue, [rid], apply=True)["blocked"] == 1
+    assert state.rpc.call_count == 1
+
+
+def test_failed_cloud_recovery_reconciles_interrupted_readback_without_resending(
+    failed_recovery, monkeypatch
+):
+    state = failed_recovery
+    rid = next(iter(state.original))
+    read = bridge._failed_media_rows
+    calls = 0
+
+    def interrupted(ids):
+        nonlocal calls
+        calls += 1
+        if calls == 3:
+            raise RuntimeError("Failed media recovery could not read its exact ledger rows")
+        return read(ids)
+
+    monkeypatch.setattr(bridge, "_failed_media_rows", interrupted)
+    with pytest.raises(RuntimeError, match="exact ledger rows"):
+        bridge.recover_failed_media(state.queue, [rid], apply=True)
+    assert state.queue.read_review_artifact(state.path)["rows"][rid]["intent"]
+    assert state.rpc.call_count == 1
+    result = bridge.recover_failed_media(state.queue, [rid], apply=True)
+    assert (result["reconciled"], result["queued"]) == (1, 1)
+    assert state.rpc.call_count == 1
+    other = next(key for key in state.original if key != rid)
+    assert state.current[other] == state.original[other]
+
+
+def test_failed_cloud_recovery_rejects_current_generation_with_wrong_delivery_identity(
+    failed_recovery,
+):
+    state = failed_recovery
+    rid = next(iter(state.original))
+    bridge.recover_failed_media(state.queue, [rid], apply=True)
+    wrong = state.queue.enqueue_retrieval(
+        school="utm", recipient_id="5001", account_username="wat2do.utm", url=URL
+    )
+    state.queue.set_setting(f"notification_delivery:{rid}", wrong)
+    state.current[rid]["browser_delivery_generation"] = state.queue.delivery_generation
+    assert bridge.recover_failed_media(state.queue, [rid], apply=True)["blocked"] == 1
+    assert state.rpc.call_count == 1
+    assert state.queue.get_setting(f"notification_delivery:{rid}") == wrong
+
+
+@pytest.mark.parametrize("damage", ["missing_claim", "source_url"])
+def test_failed_cloud_recovery_invalid_raw_baseline_never_publishes_an_intent(
+    failed_recovery, damage
+):
+    state = failed_recovery
+    rid = next(iter(state.original))
+    if damage == "missing_claim":
+        state.current[rid].pop("claim_token")
+    else:
+        state.current[rid]["source_url"] = "https://example.org/private"
+    assert bridge.recover_failed_media(state.queue, [rid])["blocked"] == 1
+    assert bridge.recover_failed_media(state.queue, [rid], apply=True)["blocked"] == 1
+    entry = state.queue.read_review_artifact(state.path)["rows"][rid]
+    assert entry["intent"] is None
+    assert entry["original_media"] == state.current[rid]
+    assert state.rpc.call_count == state.owner.call_count == 0
+    assert state.queue.status()["queues"] == []
+
+
+@pytest.mark.parametrize("invalid", ["empty", "duplicate", "noncanonical", "over_limit"])
+def test_failed_cloud_recovery_rejects_unbounded_or_ambiguous_ids_before_network(
+    failed_recovery, monkeypatch, invalid
+):
+    state = failed_recovery
+    ids = list(state.original)
+    requests = {
+        "empty": [],
+        "duplicate": [ids[0], ids[0]],
+        "noncanonical": ["not-a-uuid"],
+        "over_limit": ids,
+    }
+    monkeypatch.setattr(bridge, "_CONTROL", SimpleNamespace(ingestion_batch_size=1))
+    with pytest.raises(ValueError, match="unique canonical IDs"):
+        bridge.recover_failed_media(state.queue, requests[invalid], apply=True)
+    assert not state.client.table.called
+    assert state.rpc.call_count == 0
+    assert not state.path.exists()
+
+
+@pytest.mark.parametrize(
+    "damage", ["in_progress", "foreign_repo", "foreign_workflow", "missing_sha"]
+)
+def test_failed_cloud_owner_proof_requires_exact_terminal_repository_workflow(monkeypatch, damage):
+    run = {
+        "id": 123,
+        "repository": {"full_name": bridge._FAILED_OWNER_REPOSITORY},
+        "path": ".github/workflows/scrape-pending-media.yml",
+        "status": "completed",
+        "conclusion": "failure",
+        "run_attempt": 1,
+        "head_sha": "a" * 40,
+    }
+    if damage == "in_progress":
+        run["status"] = damage
+    elif damage == "foreign_repo":
+        run["repository"]["full_name"] = "other/repository"
+    elif damage == "foreign_workflow":
+        run["path"] = ".github/workflows/process-notification.yml"
+    else:
+        run.pop("head_sha")
+    calls = []
+
+    def gh(command, **kwargs):
+        calls.append((command, kwargs))
+        return SimpleNamespace(stdout=json.dumps(run))
+
+    monkeypatch.setattr(bridge.subprocess, "run", gh)
+    with pytest.raises(ValueError, match="not verified terminal"):
+        bridge._failed_media_owner("123")
+    assert calls[0][0] == ["gh", "api", "repos/wat2dov2/wat2do-ui/actions/runs/123"]
+    assert calls[0][1]["timeout"] == bridge.controlbox.scraping.workflow_status_timeout_seconds

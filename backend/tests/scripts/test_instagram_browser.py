@@ -489,6 +489,35 @@ def test_resume_preserves_installer_owned_pause(tmp_path, capsys):
     assert "installation before resuming" in capsys.readouterr().err
 
 
+@pytest.mark.parametrize(
+    "apply,outcome", [(False, {}), (True, {}), (True, {"blocked": 1}), (True, {"busy": 1})]
+)
+def test_failed_cloud_recovery_cli_forwards_only_explicit_ids_and_reports_incomplete_outcomes(
+    tmp_path, monkeypatch, capsys, apply, outcome
+):
+    from services.instagram_notifications import notification_ingestion
+
+    ids = ["00000000-0000-0000-0000-000000000002", "00000000-0000-0000-0000-000000000001"]
+    calls = []
+
+    def recover(queue, requested, **kwargs):
+        calls.append((queue.state_directory, requested, kwargs))
+        return outcome
+
+    monkeypatch.setattr(notification_ingestion, "recover_failed_media", recover)
+    monkeypatch.setattr(
+        script, "run_worker", lambda *_, **__: pytest.fail("Recovery cannot execute browser work")
+    )
+    arguments = ["--state-directory", str(tmp_path), "ingestion-recover-failed"]
+    for rid in ids:
+        arguments.extend(["--media-id", rid])
+    if apply:
+        arguments.append("--apply")
+    assert script.main(arguments) == int(bool(outcome))
+    assert json.loads(capsys.readouterr().out) == outcome
+    assert calls == [(tmp_path, ids, {"apply": apply})]
+
+
 def test_resume_cannot_erase_a_concurrent_safety_hold(tmp_path, monkeypatch, capsys):
     original = BrowserJobQueue.compare_set_pause
     hold = "Instagram requires human account recovery"
