@@ -331,9 +331,15 @@ def parser() -> argparse.ArgumentParser:
         help="Execute queued jobs without polling published carousels",
     )
     for name in ("ingestion-sync", "ingestion-ready", "ingestion-import"):
-        commands.add_parser(
+        ingestion_command = commands.add_parser(
             name, help="Queue retrievals, preview fair review targets, or import verified results"
         )
+        if name == "ingestion-ready":
+            ingestion_command.add_argument(
+                "--held-media-id",
+                action="append",
+                help="Stage one explicitly selected held media row for fresh review; repeat within the batch limit",
+            )
     retrieve = commands.add_parser(
         "retrieve", help="Queue a profile or post for browser extraction"
     )
@@ -435,7 +441,11 @@ def main(argv: Sequence[str] | None = None) -> int:
                 "ingestion-ready": ready_review_targets,
                 "ingestion-import": import_retrieved_media,
             }[arguments.command]
-            result = operation(queue)
+            result = (
+                ready_review_targets(queue, held_media_ids=arguments.held_media_id)
+                if arguments.command == "ingestion-ready" and arguments.held_media_id is not None
+                else operation(queue)
+            )
         elif arguments.command == "retrieve":
             from services import school_service
             from services.instagram_notifications.browser_session import school_account_username

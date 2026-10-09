@@ -169,6 +169,12 @@ Digest callers wait through the installer's temporary pause within their origina
 Other recovery and operator holds still return immediately for inspection.
 The resume command preserves an active installation hold or a safety reason written after the operator's status read.
 
+To stage a specific held post for fresh review, run `python scripts/instagram_browser.py ingestion-ready --held-media-id <media-row-uuid>` from the installed backend.
+Repeat `--held-media-id` within the configured batch limit to select additional held posts in that exact order.
+This preview requires complete current retrieval and matching school, recipient, source and prior review context; it preserves every unresolved marker and the ordinary review cursor.
+Stage reconsideration preparation in review artifacts, and keep the prior unresolved queue setting intact until fresh Codex approval and the existing native import guards are satisfied.
+The packet retains the prior decision and an order-sensitive `prior_held_review_sha256` of the untouched full target, encoded as compact UTF-8 JSON with `ensure_ascii=False`.
+
 ### Queue priority and school ordering
 
 The worker checks the high-priority digest queue before every browser action.

@@ -449,7 +449,10 @@ def test_import_reports_incomplete_outcomes_as_failure(tmp_path, monkeypatch, ca
     assert json.loads(capsys.readouterr().out) == {outcome: 1}
 
 
-def test_ingestion_ready_prints_review_targets_without_starting_work(tmp_path, monkeypatch, capsys):
+@pytest.mark.parametrize("explicit_held", [False, True])
+def test_ingestion_ready_prints_review_targets_without_starting_work(
+    tmp_path, monkeypatch, capsys, explicit_held
+):
     from services.instagram_notifications import notification_ingestion
 
     preview = {
@@ -457,12 +460,22 @@ def test_ingestion_ready_prints_review_targets_without_starting_work(tmp_path, m
         "suggested_next_cursor": {"last_school": "mun", "next_newest": {"mun": False}},
         "totals": {"ready": 136, "selected": 1},
     }
-    monkeypatch.setattr(notification_ingestion, "ready_review_targets", lambda queue: preview)
+    requested = ["00000000-0000-0000-0000-000000000002", "00000000-0000-0000-0000-000000000001"]
+
+    def select(queue, *, held_media_ids=None):
+        assert held_media_ids == (requested if explicit_held else None)
+        return preview
+
+    monkeypatch.setattr(notification_ingestion, "ready_review_targets", select)
     monkeypatch.setattr(
         script, "run_worker", lambda *_, **__: pytest.fail("Preview cannot start work")
     )
 
-    assert script.main(["--state-directory", str(tmp_path), "ingestion-ready"]) == 0
+    arguments = ["--state-directory", str(tmp_path), "ingestion-ready"]
+    if explicit_held:
+        for media_id in requested:
+            arguments.extend(["--held-media-id", media_id])
+    assert script.main(arguments) == 0
     assert json.loads(capsys.readouterr().out) == preview
     assert BrowserJobQueue(tmp_path).get_setting(notification_ingestion._REVIEW_CURSOR) is None
 

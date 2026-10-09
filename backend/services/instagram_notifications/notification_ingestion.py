@@ -8,11 +8,15 @@ interrupted imports on the next scheduled run under a singleton import lock.
 from __future__ import annotations
 
 import fcntl
+import hashlib
+import json
 import time
 from collections import Counter, defaultdict, deque
+from collections.abc import Sequence
+from copy import deepcopy
 from datetime import datetime, timezone
 from typing import Any
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from core.constants import WORKFLOW_RUN_ERROR
 from core.controlbox import controlbox
@@ -157,13 +161,30 @@ def _review_held(queue: BrowserJobQueue, row: dict, school: str) -> bool:
     )
 
 
-def ready_review_targets(queue: BrowserJobQueue) -> dict[str, Any]:
+def ready_review_targets(
+    queue: BrowserJobQueue, *, held_media_ids: Sequence[str] | None = None
+) -> dict[str, Any]:
     """Preview fresh, fair review targets without claiming or advancing progress.
 
     Commit a target's cursor_after only after its Codex decision and readback are
     durable. Each school alternates newest/oldest independently, including when
     the number of schools is an exact multiple of the configured batch size.
+
+    Explicit held IDs stage fresh review evidence without clearing an unresolved
+    decision or advancing the ordinary backlog cursor.
     """
+    requested = tuple(held_media_ids) if held_media_ids is not None else None
+    if requested is not None:
+        if not requested or len(requested) > _CONTROL.ingestion_batch_size:
+            raise ValueError("Held review requests must fit the configured batch size")
+        try:
+            valid_ids = all(isinstance(rid, str) and str(UUID(rid)) == rid for rid in requested)
+        except ValueError:
+            valid_ids = False
+        if not valid_ids:
+            raise ValueError("Held review requests require canonical media row IDs")
+        if len(set(requested)) != len(requested):
+            raise ValueError("Held review requests must not repeat media row IDs")
     cursor = _review_cursor(queue)
     jobs = {
         (job.school, job.recipient_id, job.account_username, job.payload["url"]): job
@@ -173,6 +194,7 @@ def ready_review_targets(queue: BrowserJobQueue) -> dict[str, Any]:
     counts: dict[str, Counter[str]] = defaultdict(Counter)
     ready: dict[str, deque[dict[str, Any]]] = defaultdict(deque)
     totals: Counter[str] = Counter()
+    held_targets: dict[str, dict[str, Any]] = {}
     for row in _pending_rows():
         school = "unknown"
         try:
@@ -199,6 +221,45 @@ def ready_review_targets(queue: BrowserJobQueue) -> dict[str, Any]:
                     state = "invalid"
                 elif _review_held(queue, row, school):
                     state = "held"
+                    if requested is not None and row["id"] in requested:
+                        saved = queue.get_setting(f"notification_reviewed_target:{row['id']}")
+                        if not isinstance(saved, dict):
+                            raise ValueError("Held review evidence no longer matches its target")
+                        decision = saved.get("codex_review", {})
+                        if (
+                            saved.get("school") != school
+                            or saved.get("job_id") != job.id
+                            or not isinstance(saved.get("row"), dict)
+                            or saved.get("row", {}).get("id") != row["id"]
+                            or saved["row"].get("source_url") != row["source_url"]
+                            or not isinstance(saved["row"].get("notification"), dict)
+                            or saved["row"].get("notification", {}).get("intended_recipient_id")
+                            != recipient
+                            or not isinstance(decision, dict)
+                            or decision.get("reviewer") != "Codex"
+                            or decision.get("decision") != "unresolved"
+                            or decision.get("school") != school
+                            or decision.get("source_url") != row["source_url"]
+                            or not isinstance(saved.get("posts"), list)
+                            or len(saved["posts"]) != 1
+                            or not isinstance(saved["posts"][0], dict)
+                            or canonical_target_url(saved["posts"][0].get("url", "")) != url
+                            or queue.get_setting(f"notification_import_attempts:{row['id']}", 0)
+                            >= _CONTROL.ingestion_retry_limit
+                        ):
+                            raise ValueError("Held review evidence no longer matches its target")
+                        held_targets[row["id"]] = {
+                            "row": row,
+                            "school": school,
+                            "job_id": job.id,
+                            "posts": deepcopy(job.result["posts"]),
+                            "codex_review": deepcopy(decision),
+                            "prior_held_review_sha256": hashlib.sha256(
+                                json.dumps(
+                                    saved, ensure_ascii=False, separators=(",", ":")
+                                ).encode()
+                            ).hexdigest(),
+                        }
                 elif (
                     queue.get_setting(f"notification_import_attempts:{row['id']}", 0)
                     >= _CONTROL.ingestion_retry_limit
@@ -221,6 +282,8 @@ def ready_review_targets(queue: BrowserJobQueue) -> dict[str, Any]:
         totals["pending"] += 1
         totals[state] += 1
 
+    if requested is not None and set(held_targets) != set(requested):
+        raise ValueError("Every requested media row must have a current, complete held review")
     for school, candidates in ready.items():
         ready[school] = deque(
             sorted(
@@ -247,7 +310,13 @@ def ready_review_targets(queue: BrowserJobQueue) -> dict[str, Any]:
     targets = []
     next_newest = dict(cursor["next_newest"])
     suggested = cursor
-    while len(targets) < _CONTROL.ingestion_batch_size and any(ready.values()):
+    if requested is not None:
+        targets = [held_targets[rid] for rid in requested]
+        for target in targets:
+            counts[target["school"]]["selected"] += 1
+    while (
+        requested is None and len(targets) < _CONTROL.ingestion_batch_size and any(ready.values())
+    ):
         for school in schools:
             if not ready[school]:
                 continue

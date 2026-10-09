@@ -1,3 +1,4 @@
+import hashlib
 import json
 import shutil
 import subprocess
@@ -1122,3 +1123,159 @@ def test_review_selection_matches_recipient_and_verified_exact_post(review_backl
     assert invalid["totals"]["invalid"] == 1
     assert invalid["targets"] == []
     assert rows == [row]
+
+
+def _save_full_held_review(queue, row, job_id):
+    saved = {
+        "row": deepcopy(row),
+        "school": row["school"],
+        "job_id": job_id,
+        "posts": deepcopy(queue.get(job_id).result["posts"]),
+        "content": {"events": [], "positions": []},
+        "image_map": {"z": "https://images.test/z", "a": "https://images.test/a"},
+        "candidate_baseline": {"preserved": ["source evidence" * 1000]},
+        "codex_review": {
+            "reviewer": "Codex",
+            "decision": "unresolved",
+            "school": row["school"],
+            "source_url": row["source_url"],
+            "evidence": ["A source-specific clock still needs verification"],
+        },
+    }
+    queue.set_setting(f"notification_reviewed_target:{row['id']}", saved)
+    return saved
+
+
+def test_explicit_held_review_stages_fresh_evidence_in_requested_order_without_writes(
+    review_backlog, monkeypatch
+):
+    queue, _, add = review_backlog
+    first, first_job = add("a")
+    second, second_job = add("b")
+    first_saved = _save_full_held_review(queue, first, first_job)
+    second_saved = _save_full_held_review(queue, second, second_job)
+    ready, _ = add("c")
+    cursor = {"last_school": "a", "next_newest": {"a": False}}
+    queue.set_setting(bridge._REVIEW_CURSOR, cursor)
+    queue.refresh_retrieval(first_job)
+    claim = queue.claim_next()
+    assert claim.id == first_job
+    fresh_post = {**POST, "url": first["source_url"], "caption": "New source clock evidence"}
+    queue.finish(claim, result={"target_url": first["source_url"], "posts": [fresh_post]})
+    assert [t["row"] for t in bridge.ready_review_targets(queue)["targets"]] == [ready]
+    with queue._connect() as db:
+        before = db.execute("SELECT key,value FROM settings ORDER BY key").fetchall()
+    jobs = queue.retrieval_results(succeeded_only=False)
+    for name in ("set_setting", "enqueue_retrieval", "claim_next"):
+        monkeypatch.setattr(queue, name, lambda *_args, **_kw: pytest.fail("Selection must read"))
+    monkeypatch.setattr(
+        bridge, "claim_pending_browser_media", lambda **_: pytest.fail("Selection cannot claim")
+    )
+
+    result = bridge.ready_review_targets(queue, held_media_ids=[second["id"], first["id"]])
+
+    assert [target["row"]["id"] for target in result["targets"]] == [second["id"], first["id"]]
+    assert result["targets"][1]["posts"] == [fresh_post]
+    for target, saved in zip(result["targets"], (second_saved, first_saved), strict=True):
+        assert target["codex_review"] == saved["codex_review"]
+        assert (
+            target["prior_held_review_sha256"]
+            == hashlib.sha256(
+                json.dumps(saved, ensure_ascii=False, separators=(",", ":")).encode()
+            ).hexdigest()
+        )
+        assert "cursor_after" not in target
+        assert "prior_held_review" not in target
+        assert queue.get_setting(f"notification_reviewed_target:{saved['row']['id']}") == saved
+    assert result["cursor"] == result["suggested_next_cursor"] == cursor
+    assert result["totals"]["ready"] == 1
+    assert result["totals"]["held"] == result["totals"]["selected"] == 2
+    assert queue.retrieval_results(succeeded_only=False) == jobs
+    with queue._connect() as db:
+        assert db.execute("SELECT key,value FROM settings ORDER BY key").fetchall() == before
+
+
+@pytest.mark.parametrize("invalid_request", ["empty", "malformed", "duplicate", "over_limit"])
+def test_explicit_held_review_rejects_invalid_admission_before_ledger_read(
+    review_backlog, monkeypatch, invalid_request
+):
+    queue, _, add = review_backlog
+    first, job_id = add("a")
+    _save_full_held_review(queue, first, job_id)
+    second, second_job = add("b")
+    _save_full_held_review(queue, second, second_job)
+    monkeypatch.setattr(
+        bridge, "_CONTROL", SimpleNamespace(ingestion_batch_size=1, ingestion_retry_limit=3)
+    )
+    requests = {
+        "empty": [],
+        "malformed": ["not-a-media-id"],
+        "duplicate": [first["id"], first["id"]],
+        "over_limit": [first["id"], second["id"]],
+    }
+    if invalid_request == "duplicate":
+        monkeypatch.setattr(
+            bridge, "_CONTROL", SimpleNamespace(ingestion_batch_size=2, ingestion_retry_limit=3)
+        )
+    monkeypatch.setattr(
+        bridge, "_pending_rows", lambda: pytest.fail("Invalid request cannot inspect the ledger")
+    )
+    with pytest.raises(ValueError, match="Held review requests"):
+        bridge.ready_review_targets(queue, held_media_ids=requests[invalid_request])
+
+
+@pytest.mark.parametrize(
+    "blocker",
+    [
+        "unknown",
+        "not_held",
+        "excluded",
+        "incomplete_result",
+        "running",
+        "recipient",
+        "school",
+        "source",
+        "held_context",
+        "exhausted_import",
+    ],
+)
+def test_explicit_held_review_requires_pending_exact_held_source_and_succeeded_read(
+    review_backlog, monkeypatch, blocker
+):
+    queue, rows, add = review_backlog
+    row, job_id = add("a")
+    saved = _save_full_held_review(queue, row, job_id)
+    requested_id = row["id"]
+    if blocker == "unknown":
+        requested_id = str(UUID(int=999))
+    elif blocker == "not_held":
+        saved["codex_review"]["decision"] = "import"
+    elif blocker == "excluded":
+        queue.set_setting("excluded_accounts", ["wat2do.a"])
+    elif blocker == "incomplete_result":
+        job = queue.get(job_id)
+        job.result["posts"] = []
+        monkeypatch.setattr(queue, "retrieval_results", lambda **_: [job])
+    elif blocker == "running":
+        queue.refresh_retrieval(job_id)
+        assert queue.claim_next().id == job_id
+    elif blocker == "recipient":
+        row["notification"]["intended_recipient_id"] = "99999"
+    elif blocker == "school":
+        row["school"] = "b"
+    elif blocker == "source":
+        row["source_url"] = URL
+    elif blocker == "held_context":
+        saved["row"]["id"] = str(UUID(int=999))
+    elif blocker == "exhausted_import":
+        queue.set_setting(f"notification_import_attempts:{row['id']}", 3)
+    queue.set_setting(f"notification_reviewed_target:{row['id']}", saved)
+    with queue._connect() as db:
+        before = db.execute("SELECT key,value FROM settings ORDER BY key").fetchall()
+
+    with pytest.raises(ValueError, match="current, complete held review"):
+        bridge.ready_review_targets(queue, held_media_ids=[requested_id])
+
+    assert rows == [row]
+    with queue._connect() as db:
+        assert db.execute("SELECT key,value FROM settings ORDER BY key").fetchall() == before
