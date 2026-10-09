@@ -148,45 +148,7 @@ jobs:
       - name: Check dependency setup capacity
         id: dependencies
         run: |
-          python3 - <<'PY'
-          import hashlib
-          import json
-          import os
-          import shutil
-          from pathlib import Path
-
-          controls = json.loads(Path("backend/controlbox/notification_workflow.json").read_text())
-          minimum_mb = controls["minimum_free_disk_mb"]
-          # Runner identities can share tool_cache; their mutable environments cannot.
-          owner = hashlib.sha256(os.environ["NOTIFICATION_RUNNER_NAME"].encode()).hexdigest()
-          venv = Path(os.environ["NOTIFICATION_RUNTIME_ROOT"]) / owner / "venv-3.12"
-          for label, value in (
-              ("checkout", os.getcwd()),
-              ("dependency cache", os.environ["UV_CACHE_DIR"]),
-              ("Python runtime", venv),
-              ("temporary files", os.environ["TMPDIR"]),
-          ):
-              directory = Path(value)
-              while not directory.exists() and directory != directory.parent:
-                  directory = directory.parent
-              try:
-                  available_mb = shutil.disk_usage(directory).free // (1024 * 1024)
-              except OSError:
-                  raise SystemExit(f"::error::Cannot check disk capacity for {label}; repair runner filesystem access and rerun this notification.") from None
-              if available_mb < minimum_mb:
-                  raise SystemExit(f"::error::Insufficient disk space for {label}: {available_mb} MiB free; need {minimum_mb} MiB. Free runner disk space and rerun this notification; its media has not been processed.")
-              print(f"Dependency setup capacity: {label} has {available_mb} MiB free.")
-
-          with open(os.environ["GITHUB_ENV"], "a") as output:
-              output.write(f"NOTIFICATION_VENV={venv}\n")
-              output.write(f'UV_HTTP_TIMEOUT={controls["http_timeout_seconds"]}\n')
-              output.write(f'UV_HTTP_RETRIES={controls["http_retries"]}\n')
-          with open(os.environ["GITHUB_OUTPUT"], "a") as output:
-              output.write(f'uv_version={controls["uv_version"]}\n')
-              output.write(f'setup_timeout_minutes={controls["setup_timeout_minutes"]}\n')
-              output.write(f'install_timeout_minutes={controls["install_timeout_minutes"]}\n')
-              output.write(f'process_timeout_minutes={controls["process_timeout_minutes"]}\n')
-          PY
+          python3 backend/scripts/notification_runtime.py prepare
 
       - name: Install uv
         id: uv
@@ -248,36 +210,7 @@ jobs:
           GH_TOKEN: ${{ secrets.RUNNER_CHECK_TOKEN }}
 
       - name: Maintain notification dependency cache
-        if: always() && steps.uv.outcome == 'success'
+        if: always()
         working-directory: backend
         run: |
-          python3 - <<'PY'
-          import json
-          import os
-          import shutil
-          import subprocess
-          from pathlib import Path
-
-          controls = json.loads(Path("controlbox/notification_workflow.json").read_text())
-          timeout = controls["cache_cleanup_timeout_seconds"]
-          executable = shutil.which("uv")
-          if executable is None:
-              print("::warning::Notification dependency cache cleanup deferred: uv is unavailable.")
-          else:
-              try:
-                  # uv owns its cache lock. Never remove shared cache files directly
-                  # or force cleanup while another runner is installing packages.
-                  subprocess.run(
-                      [executable, "cache", "prune", "--ci"],
-                      env={**os.environ, "UV_LOCK_TIMEOUT": str(timeout)},
-                      capture_output=True,
-                      check=True,
-                      timeout=timeout,
-                  )
-              except (OSError, subprocess.SubprocessError):
-                  # Maintenance cannot turn an already committed notification
-                  # into a failed run, and command output may contain private data.
-                  print("::warning::Notification dependency cache cleanup deferred; inspect cache access or active installs.")
-              else:
-                  print("Notification dependency cache maintenance completed.")
-          PY
+          python3 scripts/notification_runtime.py maintain

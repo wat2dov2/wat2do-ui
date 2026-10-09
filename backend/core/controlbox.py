@@ -722,12 +722,21 @@ class InstagramBrowserControl(_ControlModel):
 class NotificationWorkflowControl(_ControlModel):
     uv_version: str = Field(pattern=r"^[0-9]+\.[0-9]+\.[0-9]+$")
     minimum_free_disk_mb: int = Field(ge=512, le=65536)
+    cache_max_mb: int = Field(ge=64, le=8192)
+    cleanup_free_disk_mb: int = Field(ge=512, le=65536)
+    uv_tool_versions_to_keep: int = Field(ge=1, le=5)
     setup_timeout_minutes: int = Field(ge=1, le=30)
     install_timeout_minutes: int = Field(ge=1, le=60)
     process_timeout_minutes: int = Field(ge=6, le=60)
     http_timeout_seconds: int = Field(ge=1, le=120)
     http_retries: int = Field(ge=0, le=5)
     cache_cleanup_timeout_seconds: int = Field(ge=1, le=120)
+
+    @model_validator(mode="after")
+    def validate_cleanup_reserve(self) -> "NotificationWorkflowControl":
+        if self.cleanup_free_disk_mb < self.minimum_free_disk_mb:
+            raise ValueError("Cleanup free disk threshold must include the minimum disk reserve")
+        return self
 
 
 class RunnerSetupControl(_ControlModel):

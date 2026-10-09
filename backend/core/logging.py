@@ -1,11 +1,7 @@
-"""Process-wide logging configuration.
+"""Default logging for entrypoints that have not configured their own handlers.
 
-Runs at import time via ``basicConfig(force=True)`` so the project's
-formatter always wins - even when an upstream (uvicorn, gunicorn,
-pytest) has already added its own handler.  Without ``force=True``
-``basicConfig`` is a no-op on a pre-configured root logger, which
-causes log lines to appear without the expected prefix and breaks
-structured-log parsers downstream.
+Late service imports must preserve an entrypoint's logging destination and level,
+including the browser worker's bounded operational log.
 """
 
 import logging
@@ -13,7 +9,6 @@ import logging
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s %(message)s",
-    force=True,
 )
 
 logger = logging.getLogger(__name__)

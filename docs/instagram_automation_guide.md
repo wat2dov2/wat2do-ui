@@ -111,14 +111,23 @@ The CLI's global `--state-directory` option supports isolated diagnostics; chang
 The queue stores public identities, post URLs, actions, sanitized results, and scheduling state.
 Do not delete its database to clear an error: that also removes deduplication history and the activation watermark.
 
-The notification workflow checks free space before preparing Python or downloading dependencies.
-`backend/controlbox/notification_workflow.json` owns the disk reserve, pinned uv release, cache cleanup deadline, setup and processing deadlines, and HTTP retry budget.
+The notification workflow runs `backend/scripts/notification_runtime.py` maintenance before checking its disk reserve, preparing Python, or downloading dependencies.
+`backend/controlbox/notification_workflow.json` owns the disk reserve, pinned uv release, package-cache size cap, cleanup free-space threshold, retained uv tool-version count, cache cleanup deadline, setup and processing deadlines, and HTTP retry budget.
 Each runner reuses its own Python environment outside the disposable checkout and synchronizes it exactly to `requirements.lock`.
 The uv cache has one consistent location across setup and installation.
 Pinning uv prevents each new release from accumulating another tool binary on the persistent Mac runner.
-After uv setup, an always-run maintenance step uses `uv cache prune --ci` under uv's own cache lock and the configured cleanup deadline.
-It preserves installed environments and defers safely when another installation owns the cache or cleanup fails.
-Maintenance warnings cannot invalidate already committed notification media.
+Preflight uses an available uv executable to prune the package cache before a low-space guard can prevent setup.
+An always-run maintenance step repeats cleanup after the job, including after processing or setup failures when uv is available.
+Maintenance uses `uv cache prune --ci`, then native `uv cache clean` if the cache remains over `cache_max_mb` or available space remains below `cleanup_free_disk_mb`.
+The cleanup threshold must include `minimum_free_disk_mb`; a final free-space read still gates admission after maintenance.
+Both native cleanup commands respect uv's cache lock and the configured total cleanup deadline; never pass `--force` or remove cache entries directly.
+Installation explicitly uses `UV_LINK_MODE=copy`, so clearing the package cache preserves installed environments.
+Old uv tool versions are pruned only during an assigned GitHub Actions job when the current registered runner proves it owns a nonshared tool root.
+Retain the configured uv release and enough recent complete versions to satisfy the configured count, with selected and open executable versions exempt from cleanup.
+An unproven or shared tool root is preserved.
+Package-cache cleanup also defers when installed environments use cache symlinks or their package directories cannot be inspected completely.
+Maintenance defers safely when another installation owns the cache or cleanup fails.
+Post-job maintenance warnings cannot invalidate already committed notification media or extend beyond the configured cleanup deadline.
 A low-space failure identifies the affected filesystem role and free MiB without printing credentials or notification contents.
 Free disposable build or package caches, preserve the browser queue and dispatch ledger, and rerun the failed notification after storage is available.
 
@@ -126,9 +135,17 @@ SQLite contention and temporary storage failures use the bounded storage control
 Optional diagnostic publication cannot invalidate a committed queue transition.
 Storage recovery must preserve authentication holds, operator pauses, and uncertainty about engagement clicks.
 The worker's operational log rotates within `worker_log_max_bytes` and `worker_log_backup_count`, including when it is supervised by launchd.
+Late service imports preserve that entrypoint-owned handler and level instead of replacing it with an unbounded stderr stream.
 If log storage fails, one sanitized warning identifies the continuous failure episode without repeatedly dumping tracebacks into launchd's stderr log.
 Keep scheduled tasks on the installed revision; never fast-forward or replace the live worker checkout during draft generation or import.
 Code and runtime updates belong to maintenance with the existing installation and import locks, an owned admission pause, no running jobs, and worker health readback.
+
+The scheduled notification reviewer keeps one current packet/checkpoint and canonical full review artifacts per media identity and actual source revision.
+Reuse unchanged source and directory snapshots instead of multiplying full batch, held-inventory, refresh, and nested-history copies.
+Compact queue review settings retain the Codex decision identity plus the full artifact's absolute path and SHA256.
+Persist the full artifact before its pointer, verify its hash when loading, and materialize every required raw guard field before claims or writes.
+All candidate equality checks, fresh readbacks, pending and held evidence, and uncertain recovery journals remain required.
+Existing evidence is preserved; it is not disposable package-cache storage.
 Digest callers wait through the installer's temporary pause within their original deadline, including while its service restarts.
 Other recovery and operator holds still return immediately for inspection.
 The resume command preserves an active installation hold or a safety reason written after the operator's status read.

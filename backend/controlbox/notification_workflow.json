@@ -1,6 +1,9 @@
 {
   "uv_version": "0.12.23",
   "minimum_free_disk_mb": 2048,
+  "cache_max_mb": 512,
+  "cleanup_free_disk_mb": 4096,
+  "uv_tool_versions_to_keep": 2,
   "setup_timeout_minutes": 5,
   "install_timeout_minutes": 12,
   "process_timeout_minutes": 8,

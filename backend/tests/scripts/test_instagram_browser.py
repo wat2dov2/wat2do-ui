@@ -3,8 +3,10 @@ import fcntl
 import io
 import json
 import logging
+import os
 import plistlib
 import stat
+from datetime import datetime
 from types import SimpleNamespace
 
 import pytest
@@ -30,6 +32,77 @@ def test_worker_logs_are_bounded_files_and_do_not_stream_to_launchd(tmp_path, mo
     assert stat.S_IMODE(path.stat().st_mode) == 0o600
     assert legacy.read_text() == "Existing launchd log is preserved.\n"
     script.logging.basicConfig(level=logging.WARNING, force=True)
+
+
+def test_worker_log_rotation_survives_real_lazy_source_imports(tmp_path):
+    result = script.subprocess.run(
+        [
+            script.sys.executable,
+            "-c",
+            """
+import logging
+import socket
+from pathlib import Path
+from scripts.instagram_browser import configure_worker_logging
+
+def forbid_network(*args, **kwargs):
+    raise AssertionError("Lazy source imports must not access the network")
+
+socket.socket.connect = forbid_network
+configure_worker_logging(Path.cwd())
+root = logging.getLogger()
+handler = root.handlers[0]
+handler.maxBytes = 256
+from services.instagram_notifications import carousel_engagement, notification_ingestion
+assert root.handlers == [handler]
+assert root.level == logging.WARNING
+logging.getLogger("instagram.worker.test").info("Ignored informational diagnostic")
+for index in range(50):
+    logging.getLogger("instagram.worker.test").warning("Diagnostic %03d: %s", index, "x" * 70)
+handler.close()
+""",
+        ],
+        cwd=tmp_path,
+        env={
+            **os.environ,
+            "PYTHONPATH": str(script.BACKEND_DIRECTORY),
+            "ENVIRONMENT": "testing",
+            "SUPABASE_URL": "https://example.supabase.co",
+            "SUPABASE_KEY": "test-key",
+            "SUPABASE_SECRET_KEY": "test-service-role",
+            "DATABASE_URL": "",
+            "OPENAI_API_KEY": "",
+            "APIFY_API_TOKEN": "",
+        },
+        capture_output=True,
+        text=True,
+        timeout=10,
+    )
+    assert result.returncode == 0, result.stderr
+    assert result.stderr == ""
+    files = list(tmp_path.glob("worker.operations.log*"))
+    assert len(files) == 4
+    assert all(path.stat().st_size <= 256 for path in files)
+    assert all("Ignored informational diagnostic" not in path.read_text() for path in files)
+
+
+def test_default_application_logs_keep_timestamp_and_level_prefix(tmp_path):
+    result = script.subprocess.run(
+        [
+            script.sys.executable,
+            "-c",
+            "from core.logging import logger; logger.info('Application diagnostic')",
+        ],
+        cwd=tmp_path,
+        env={**os.environ, "PYTHONPATH": str(script.BACKEND_DIRECTORY)},
+        capture_output=True,
+        text=True,
+        timeout=10,
+    )
+    assert result.returncode == 0, result.stderr
+    prefix, message = result.stderr.strip().split(" INFO ", 1)
+    datetime.strptime(prefix, "%Y-%m-%d %H:%M:%S,%f")
+    assert message == "Application diagnostic"
 
 
 def test_worker_log_rotation_bounds_utf8_bytes_and_backup_count(tmp_path):

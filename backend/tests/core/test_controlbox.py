@@ -5,7 +5,13 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
-from core.controlbox import EcsRuntimeControl, GoogleAnalyticsControl, controlbox, load_controlbox
+from core.controlbox import (
+    EcsRuntimeControl,
+    GoogleAnalyticsControl,
+    NotificationWorkflowControl,
+    controlbox,
+    load_controlbox,
+)
 
 _SOURCE = Path(__file__).resolve().parents[2] / "controlbox"
 
@@ -727,6 +733,12 @@ def test_instagram_browser_controls_reject_unsafe_worker_configuration(tmp_path,
         {"uv_version": "0.12.23\nuv_version=latest"},
         {"minimum_free_disk_mb": 0},
         {"minimum_free_disk_mb": 65537},
+        {"cache_max_mb": 63},
+        {"cache_max_mb": 8193},
+        {"cleanup_free_disk_mb": 511},
+        {"cleanup_free_disk_mb": 65537},
+        {"uv_tool_versions_to_keep": 0},
+        {"uv_tool_versions_to_keep": 6},
         {"setup_timeout_minutes": 0},
         {"install_timeout_minutes": 61},
         {"process_timeout_minutes": 5},
@@ -744,6 +756,15 @@ def test_notification_workflow_controls_reject_unsafe_setup(tmp_path, patch):
     )
     with pytest.raises(ValidationError):
         load_controlbox(directory)
+
+
+def test_notification_cleanup_threshold_includes_admission_reserve():
+    values = controlbox.notification_workflow.model_dump()
+    values.update(minimum_free_disk_mb=4096, cleanup_free_disk_mb=2048)
+    with pytest.raises(ValidationError, match="must include the minimum disk reserve"):
+        NotificationWorkflowControl.model_validate(values)
+    values["cleanup_free_disk_mb"] = 4096
+    assert NotificationWorkflowControl.model_validate(values).cleanup_free_disk_mb == 4096
 
 
 @pytest.mark.parametrize(
