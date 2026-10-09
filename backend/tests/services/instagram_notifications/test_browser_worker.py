@@ -2116,7 +2116,7 @@ def test_aged_engagement_yields_stream_only_after_active_reads_settle(queue, mon
     assert queue.get(later_ids[0]).state == "succeeded"
 
 
-@pytest.mark.parametrize("failed_source", ["notification", "diagnostics"])
+@pytest.mark.parametrize("failed_source", ["notification", "diagnostics", "review_storage"])
 def test_source_failure_does_not_prevent_collecting_published_engagement(
     queue, monkeypatch, caplog, failed_source
 ):
@@ -2137,15 +2137,19 @@ def test_source_failure_does_not_prevent_collecting_published_engagement(
 
     if failed_source == "notification":
         monkeypatch.setattr(notification_ingestion, "sync_notification_media", fail)
-    else:
+    elif failed_source == "diagnostics":
         monkeypatch.setattr(queue, "publish_diagnostics", fail)
+    else:
+        monkeypatch.setattr(queue, "maintain_review_storage", fail)
     monkeypatch.setattr(carousel_engagement, "sync_published_carousels", carousel)
     _run_test_source_pollers(queue, stopping)
     assert calls == ["carousel"]
     assert queue.get_setting("source_status")["result"] == {"submitted": 1}
-    status_key = (
-        "notification_source_status" if failed_source == "notification" else "diagnostics_status"
-    )
+    status_key = {
+        "notification": "notification_source_status",
+        "diagnostics": "diagnostics_status",
+        "review_storage": "review_storage_status",
+    }[failed_source]
     assert queue.get_setting(status_key)["error"] == "ValueError"
     assert "Private source credentials" not in caplog.text
 
@@ -2205,9 +2209,16 @@ def test_worker_heartbeat_continues_while_browser_preparation_blocks(queue, monk
             assert entered.wait(5)
             before = queue.get_setting("worker")
             assert before["running"] is True
-            assert not release.wait(0.1)
-            after = queue.get_setting("worker")
-            assert after["running"] is True
+            after = before
+            deadline = module.time.monotonic() + 2
+            while after["heartbeat"] <= before["heartbeat"]:
+                remaining = deadline - module.time.monotonic()
+                assert remaining > 0, (
+                    "Worker heartbeat did not advance while preparation was blocked"
+                )
+                assert not release.wait(min(0.01, remaining))
+                after = queue.get_setting("worker")
+                assert after["running"] is True
             assert after["heartbeat"] > before["heartbeat"]
         except BaseException as exc:
             failures.append(exc)
@@ -2653,7 +2664,7 @@ def test_closed_secondary_stops_refills_and_drains_before_pool_repair(queue, mon
     assert not queue.get_setting("paused", False)
 
 
-@pytest.mark.parametrize("blocked_source", ["notification", "diagnostics"])
+@pytest.mark.parametrize("blocked_source", ["notification", "diagnostics", "review_storage"])
 def test_blocked_source_does_not_delay_other_source_pollers(queue, monkeypatch, blocked_source):
     stopping = threading.Event()
     entered = threading.Event()
@@ -2661,6 +2672,7 @@ def test_blocked_source_does_not_delay_other_source_pollers(queue, monkeypatch, 
     notification_progress = threading.Event()
     diagnostics_progress = threading.Event()
     carousel_progress = threading.Event()
+    maintenance_progress = threading.Event()
 
     def blocked(*args, **kwargs):
         entered.set()
@@ -2680,6 +2692,10 @@ def test_blocked_source_does_not_delay_other_source_pollers(queue, monkeypatch, 
         carousel_progress.set()
         return {"submitted": 1}
 
+    def maintenance():
+        maintenance_progress.set()
+        return {}
+
     monkeypatch.setattr(
         notification_ingestion,
         "sync_notification_media",
@@ -2691,16 +2707,23 @@ def test_blocked_source_does_not_delay_other_source_pollers(queue, monkeypatch, 
         blocked if blocked_source == "diagnostics" else diagnostics,
     )
     monkeypatch.setattr(carousel_engagement, "sync_published_carousels", carousels)
+    monkeypatch.setattr(
+        queue,
+        "maintain_review_storage",
+        blocked if blocked_source == "review_storage" else maintenance,
+    )
     pollers = module._source_pollers(queue, stopping)
     for poller in pollers:
         poller.start()
     try:
         assert entered.wait(5)
         assert carousel_progress.wait(5)
-        progress = (
-            diagnostics_progress if blocked_source == "notification" else notification_progress
-        )
-        assert progress.wait(5)
+        if blocked_source != "notification":
+            assert notification_progress.wait(5)
+        if blocked_source != "diagnostics":
+            assert diagnostics_progress.wait(5)
+        if blocked_source != "review_storage":
+            assert maintenance_progress.wait(5)
         assert not release.is_set()
     finally:
         stopping.set()

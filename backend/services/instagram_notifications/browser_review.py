@@ -8,6 +8,7 @@ import json
 import re
 import sqlite3
 import zlib
+from collections.abc import Iterable
 from typing import Any
 
 from core.controlbox import controlbox
@@ -39,15 +40,66 @@ def _json_value(data: bytes) -> Any:
     raise ReviewSnapshotError(_ERROR)
 
 
-def _check_depth(value: Any, depth: int = 0) -> None:
+def _check_depth(value: Any, depth: int = 0) -> int:
     if depth > _MAXIMUM_DEPTH:
         raise ReviewSnapshotError(_ERROR)
+    maximum = depth
     if isinstance(value, dict):
         for item in value.values():
-            _check_depth(item, depth + 1)
+            maximum = max(maximum, _check_depth(item, depth + 1))
     elif isinstance(value, list):
         for item in value:
-            _check_depth(item, depth + 1)
+            maximum = max(maximum, _check_depth(item, depth + 1))
+    return maximum
+
+
+def _snapshot_reference(reference: Any) -> str:
+    if (
+        not isinstance(reference, dict)
+        or set(reference) != {"version", "sha256"}
+        or type(reference["version"]) is not int
+        or reference["version"] != 1
+        or not isinstance(reference["sha256"], str)
+        or not _DIGEST.fullmatch(reference["sha256"])
+    ):
+        raise ReviewSnapshotError(_ERROR)
+    return str(reference["sha256"])
+
+
+def _snapshot_body(raw: bytes) -> tuple[str, Any]:
+    body = _json_value(raw)
+    if not isinstance(body, list) or len(body) != 2:
+        raise ReviewSnapshotError(_ERROR)
+    kind, items = body
+    if kind == "value":
+        return kind, items
+    if kind not in ("array", "object") or not isinstance(items, list):
+        raise ReviewSnapshotError(_ERROR)
+    keys: set[str] = set()
+    for item in items:
+        edge = item
+        if kind == "object":
+            if (
+                not isinstance(item, list)
+                or len(item) != 2
+                or not isinstance(item[0], str)
+                or item[0] in keys
+            ):
+                raise ReviewSnapshotError(_ERROR)
+            keys.add(item[0])
+            edge = item[1]
+        if (
+            not isinstance(edge, list)
+            or len(edge) != 2
+            or not (
+                edge[0] == "value"
+                or edge[0] == "ref"
+                and isinstance(edge[1], str)
+                and _DIGEST.fullmatch(edge[1])
+            )
+        ):
+            raise ReviewSnapshotError(_ERROR)
+    return str(kind), items
 
 
 def _artifact_text_bytes(text: str) -> int:
@@ -248,15 +300,7 @@ class ReviewSnapshotStore:
         return raw
 
     def get(self, reference: Any) -> Any:
-        if (
-            not isinstance(reference, dict)
-            or set(reference) != {"version", "sha256"}
-            or type(reference["version"]) is not int
-            or reference["version"] != 1
-            or not isinstance(reference["sha256"], str)
-            or not _DIGEST.fullmatch(reference["sha256"])
-        ):
-            raise ReviewSnapshotError(_ERROR)
+        root = _snapshot_reference(reference)
         remaining = CONTROL.review_snapshot_max_bytes
         raw_cache: dict[str, bytes] = {}
 
@@ -272,37 +316,78 @@ class ReviewSnapshotStore:
                 raise ReviewSnapshotError(_ERROR)
             # Cache immutable bytes only. json.loads creates fresh objects for
             # each reference, matching independent occurrences in legacy JSON.
-            body = _json_value(raw)
-            if not isinstance(body, list) or len(body) != 2:
-                raise ReviewSnapshotError(_ERROR)
-            kind, items = body
+            kind, items = _snapshot_body(raw)
             if kind == "value":
                 _check_depth(items, depth)
                 return items
-            if kind == "array" and isinstance(items, list):
+            if kind == "array":
                 return [expand(item, depth + 1) for item in items]
-            if kind == "object" and isinstance(items, list):
-                result: dict[str, Any] = {}
-                for item in items:
-                    if (
-                        not isinstance(item, list)
-                        or len(item) != 2
-                        or not isinstance(item[0], str)
-                        or item[0] in result
-                    ):
-                        raise ReviewSnapshotError(_ERROR)
-                    result[item[0]] = expand(item[1], depth + 1)
-                return result
-            raise ReviewSnapshotError(_ERROR)
+            return {item[0]: expand(item[1], depth + 1) for item in items}
 
         def expand(item: Any, depth: int) -> Any:
-            if not isinstance(item, list) or len(item) != 2:
-                raise ReviewSnapshotError(_ERROR)
             if item[0] == "value":
                 _check_depth(item[1], depth)
                 return item[1]
-            if item[0] == "ref" and isinstance(item[1], str):
-                return materialize(item[1], depth)
-            raise ReviewSnapshotError(_ERROR)
+            return materialize(item[1], depth)
 
-        return materialize(reference["sha256"], 0)
+        return materialize(root, 0)
+
+    def collect(self, roots: Iterable[Any]) -> int:
+        """Delete unreachable nodes only after every retained root validates.
+
+        The caller owns the complete root inventory and the write transaction.
+        Per-node summaries count repeated references without materializing their
+        values, while retaining the same expansion and depth limits as get().
+        """
+        if (
+            not self._connection.in_transaction
+            or not isinstance(roots, Iterable)
+            or isinstance(roots, (str, bytes, dict))
+        ):
+            raise ReviewSnapshotError(_ERROR)
+        self._connection.execute("UPDATE review_snapshots SET payload=payload WHERE 0")
+        summaries: dict[str, tuple[int, int]] = {}
+        visiting: set[str] = set()
+
+        def mark(digest: str, depth: int) -> tuple[int, int]:
+            if depth > _MAXIMUM_DEPTH or digest in visiting:
+                raise ReviewSnapshotError(_ERROR)
+            if digest in summaries:
+                size, height = summaries[digest]
+                if depth + height > _MAXIMUM_DEPTH:
+                    raise ReviewSnapshotError(_ERROR)
+                return size, height
+            visiting.add(digest)
+            raw = self._read_node(digest, CONTROL.review_snapshot_max_bytes)
+            size = len(raw)
+            kind, items = _snapshot_body(raw)
+            del raw
+            height = 0
+            if kind == "value":
+                height = _check_depth(items)
+            else:
+                for item in items:
+                    edge = item[1] if kind == "object" else item
+                    if edge[0] == "value":
+                        child_height = _check_depth(edge[1])
+                    else:
+                        child_size, child_height = mark(edge[1], depth + 1)
+                        size += child_size
+                        if size > CONTROL.review_snapshot_max_bytes:
+                            raise ReviewSnapshotError(_ERROR)
+                    height = max(height, child_height + 1)
+            if depth + height > _MAXIMUM_DEPTH:
+                raise ReviewSnapshotError(_ERROR)
+            visiting.remove(digest)
+            summaries[digest] = size, height
+            return size, height
+
+        for reference in roots:
+            mark(_snapshot_reference(reference), 0)
+
+        retained = json.dumps(list(summaries), separators=(",", ":"))
+        deleted = self._connection.execute(
+            "DELETE FROM review_snapshots WHERE digest NOT IN (SELECT value FROM json_each(?))",
+            (retained,),
+        )
+        return deleted.rowcount

@@ -149,7 +149,15 @@ Snapshot-size or storage-budget exhaustion fails before a new pointer or checkpo
 Use `queue.read_review_artifact(path)` and `queue.review_artifact_bytes(path)` when loading compact artifact files, and `queue.write_review_artifact(path, text)` when storing the original JSON text.
 These artifact helpers preserve the exact original JSON bytes for SHA256 checks and restore every raw guard field before claims or writes.
 All candidate equality checks, fresh readbacks, pending and held evidence, and uncertain recovery journals remain required.
-There is no automatic snapshot garbage collection or deletion of successful retrievals to make room.
+The worker runs local review-storage maintenance every 300 seconds, with a 30-second deadline and at most 100 completed targets/artifacts per pass, using the validated controls in `instagram_browser.json`.
+Successful retrieval job results remain intact.
+`queue.record_review_completion(qa_path, input_paths=..., artifact_paths=...)` seals retention eligibility from independent Codex terminal QA, its seven SHA-bound inputs, exact source and school/recipient identities, successful claim finalization, and verified listing readbacks.
+A saved `import` decision or a successful retrieval alone cannot establish completed review work.
+Completed reviews retain their full context for at least 24 hours after verified completion, and the latest completed batch keeps its full context.
+Older fully completed batch artifacts and review targets may be replaced with compact receipts containing their source identity, proof hashes, verified outcome, and affected listing IDs.
+Current packets, pending or held sources, partial imports, active claims, uncertain recovery evidence, and shared review contracts keep their full context.
+Mixed packets stay pinned until every owned source has a verified completion receipt.
+Maintenance reclaims superseded content-addressed nodes only after tracing surviving settings and artifact references, preserving shared data still needed by another review.
 The `compact-review-storage` CLI migrates existing settings and artifacts through compare-and-swap checks under the worker, installation, and import maintenance locks, with a private backup made first.
 Migration preserves changes made after its source snapshot, leaves interrupted or unresolved evidence intact, and does not claim work, clear jobs, or reset retry budgets.
 Existing evidence is preserved; it is not disposable package-cache storage.

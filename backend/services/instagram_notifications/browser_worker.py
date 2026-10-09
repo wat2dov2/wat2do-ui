@@ -651,6 +651,7 @@ def _source_pollers(queue: BrowserJobQueue, stopping: threading.Event) -> list[t
         ("notification_source_status", collect_notifications),
         ("diagnostics_status", lambda: queue.publish_diagnostics(should_stop=stopping.is_set)),
         ("source_status", collect_carousels),
+        ("review_storage_status", lambda: queue.maintain_review_storage()),
     )
     return [
         threading.Thread(

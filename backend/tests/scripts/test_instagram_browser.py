@@ -564,10 +564,30 @@ def review_maintenance(tmp_path, monkeypatch):
 
 
 def test_review_storage_cli_migration_backs_up_evidence_and_preserves_jobs_through_vacuum(
-    review_maintenance, tmp_path, capsys
+    review_maintenance, tmp_path, monkeypatch, capsys
 ):
     state = review_maintenance
+    with closing(state.queue._connect()) as connection:
+        connection.execute("PRAGMA auto_vacuum=NONE")
+        connection.execute("VACUUM")
+        assert connection.execute("PRAGMA auto_vacuum").fetchone()[0] == 0
     before = _maintenance_rows(state.queue)
+    maintenance = BrowserJobQueue.maintain_review_storage
+    maintenance_results = []
+
+    def backed_up_maintenance(queue, *, force=False, _ingestion_lock=None):
+        archive = state.backup / "latest-before-review-compaction.sqlite3.gz"
+        assert archive.is_file(), "Maintenance must start only after a verified durable backup"
+        assert queue.get_setting(state.key) == state.target
+        assert _ingestion_lock is not None
+        with (queue.state_directory / "ingestion.lock").open("a+") as competing_import:
+            with pytest.raises(BlockingIOError):
+                fcntl.flock(competing_import, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        result = maintenance(queue, force=force, _ingestion_lock=_ingestion_lock)
+        maintenance_results.append((force, result))
+        return result
+
+    monkeypatch.setattr(BrowserJobQueue, "maintain_review_storage", backed_up_maintenance)
     arguments = [
         "--state-directory",
         str(state.queue.state_directory),
@@ -582,6 +602,8 @@ def test_review_storage_cli_migration_backs_up_evidence_and_preserves_jobs_throu
     ]
     assert script.main(arguments) == 0
     result = json.loads(capsys.readouterr().out)
+    assert maintenance_results == [(True, result["review_storage"])]
+    assert "deferred" not in result["review_storage"]
     assert result["settings"] == {"compacted": 1, "already_compact": 0, "changed": 0}
     assert result["artifacts"] == {
         "compacted": 1,
@@ -604,7 +626,9 @@ def test_review_storage_cli_migration_backs_up_evidence_and_preserves_jobs_throu
         )
         assert legacy == state.target
         assert "review_snapshot" not in legacy
-    assert _maintenance_rows(state.queue) == before
+    jobs, settings = _maintenance_rows(state.queue)
+    assert jobs == before[0]
+    assert set(before[1]) <= set(settings)
     assert state.queue.get(state.pending).state == "pending"
     assert state.queue.get_setting(state.key) == state.target
     assert list(state.queue.get_setting(state.key)["image_map"].values()) == [
@@ -613,6 +637,7 @@ def test_review_storage_cli_migration_backs_up_evidence_and_preserves_jobs_throu
     ]
     with closing(state.queue._connect()) as connection:
         assert connection.execute("PRAGMA integrity_check").fetchone()[0] == "ok"
+        assert connection.execute("PRAGMA auto_vacuum").fetchone()[0] == 2
     assert (
         state.queue.review_artifact_bytes(state.artifacts / "notification-current.json")
         == state.files["notification-current.json"]
@@ -683,6 +708,11 @@ def test_review_storage_backup_capacity_failure_preserves_legacy_settings_and_ar
     state = review_maintenance
     before = _maintenance_rows(state.queue)
     monkeypatch.setattr(script.shutil, "disk_usage", lambda _path: SimpleNamespace(free=0))
+    monkeypatch.setattr(
+        state.queue,
+        "maintain_review_storage",
+        lambda **_: pytest.fail("Capacity refusal must precede maintenance"),
+    )
     with pytest.raises(RuntimeError, match="existing evidence is unchanged"):
         script.compact_review_storage(
             state.queue, backup_directory=state.backup, artifacts_directory=state.artifacts

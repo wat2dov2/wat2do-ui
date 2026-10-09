@@ -1,4 +1,5 @@
 import base64
+import copy
 import errno
 import gzip
 import hashlib
@@ -11,6 +12,7 @@ import threading
 import tracemalloc
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
+from datetime import datetime, timezone
 from pathlib import Path
 from types import SimpleNamespace
 from uuid import uuid4
@@ -2231,9 +2233,12 @@ def test_review_snapshot_artifact_text_preserves_original_whitespace_and_utf8_ha
 )
 def test_review_snapshot_damage_fails_closed_without_disclosing_evidence(review_store, damage):
     connection, store = review_store
+    superseded = store.put({"decision": "superseded"})
+    pinned = store.put({"decision": "held"})
     reference = store.put({"snapshot": {"source": "PRIVATE_EVIDENCE " * 500}})
     child = connection.execute(
-        "SELECT digest,payload FROM review_snapshots WHERE digest!=?", (reference["sha256"],)
+        "SELECT digest,payload FROM review_snapshots WHERE digest NOT IN (?,?,?)",
+        (reference["sha256"], superseded["sha256"], pinned["sha256"]),
     ).fetchone()
     assert child is not None
     if damage == "missing_child":
@@ -2264,6 +2269,17 @@ def test_review_snapshot_damage_fails_closed_without_disclosing_evidence(review_
     assert "PRIVATE_" not in str(error.value)
     assert error.value.__cause__ is None
     assert error.value.__context__ is None
+    before = connection.execute(
+        "SELECT digest,payload FROM review_snapshots ORDER BY digest"
+    ).fetchall()
+    with pytest.raises(review_module.ReviewSnapshotError) as error:
+        store.collect([pinned, reference])
+    assert "PRIVATE_" not in str(error.value)
+    assert error.value.__context__ is None
+    assert (
+        connection.execute("SELECT digest,payload FROM review_snapshots ORDER BY digest").fetchall()
+        == before
+    )
 
 
 def test_review_snapshot_reuse_verifies_immutable_content_before_publication(review_store):
@@ -2325,6 +2341,8 @@ def test_review_snapshot_bounds_repeated_reference_expansion(review_store, monke
     )
     with pytest.raises(review_module.ReviewSnapshotError):
         store.get({"version": 1, "sha256": root_hash})
+    with pytest.raises(review_module.ReviewSnapshotError):
+        store.collect([{"version": 1, "sha256": root_hash}])
     with pytest.raises(review_module.ReviewSnapshotError):
         store.put("x" * 4097)
     deep = None
@@ -2653,3 +2671,737 @@ def test_queue_artifact_hash_damage_fails_closed_without_private_evidence(queue,
         queue.read_review_artifact(path)
     assert "PRIVATE_" not in str(error.value)
     assert "integrity" in str(error.value)
+
+
+def test_review_snapshot_collection_preserves_shared_roots_and_caller_rollback(
+    review_store, monkeypatch
+):
+    connection, store = review_store
+    shared = {"source": "verified café " * 1000, "image_map": {"z": "z-image", "a": "a-image"}}
+    held = {"decision": "unresolved", "evidence": shared}
+    artifact = ["pinned artifact", shared, {"source": "artifact " * 1000}]
+    with connection:
+        held_ref = store.put(held)
+        artifact_ref = store.put(artifact)
+        old_ref = store.put({"superseded": shared, "old_only": "old evidence " * 1000})
+    before = connection.execute(
+        "SELECT digest,payload FROM review_snapshots ORDER BY digest"
+    ).fetchall()
+
+    def forbid_materialization(_reference):
+        raise AssertionError("Collection must inspect the graph without materializing snapshots")
+
+    with pytest.raises(RuntimeError, match="caller failed"):
+        with connection, monkeypatch.context() as patch:
+            connection.execute("BEGIN")
+            patch.setattr(store, "get", forbid_materialization)
+            assert store.collect([held_ref, artifact_ref, held_ref]) > 0
+            raise RuntimeError("caller failed")
+    assert (
+        connection.execute("SELECT digest,payload FROM review_snapshots ORDER BY digest").fetchall()
+        == before
+    )
+    assert store.get(old_ref)["old_only"].startswith("old evidence")
+
+    with connection:
+        connection.execute("BEGIN")
+        deleted = store.collect([held_ref, artifact_ref])
+    remaining = connection.execute("SELECT count(*) FROM review_snapshots").fetchone()[0]
+    assert deleted == len(before) - remaining > 0
+    assert store.get(held_ref) == held
+    assert store.get(artifact_ref) == artifact
+    assert list(store.get(held_ref)["evidence"]["image_map"]) == ["z", "a"]
+    with pytest.raises(review_module.ReviewSnapshotError):
+        store.get(old_ref)
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        ["object", [["same", ["value", 1]], ["same", ["value", 2]]]],
+        ["array", [["ref", {"PRIVATE_EVIDENCE": True}]]],
+        ["array", [["unsupported", "PRIVATE_EVIDENCE"]]],
+    ],
+)
+def test_review_snapshot_collection_rejects_malformed_graph_before_deleting(review_store, body):
+    connection, store = review_store
+    store.put({"unreachable": "preserve until roots validate"})
+    raw = json.dumps(body, separators=(",", ":")).encode()
+    digest = hashlib.sha256(raw).hexdigest()
+    connection.execute("INSERT INTO review_snapshots VALUES (?,?)", (digest, gzip.compress(raw)))
+    before = connection.execute(
+        "SELECT digest,payload FROM review_snapshots ORDER BY digest"
+    ).fetchall()
+    reference = {"version": 1, "sha256": digest}
+    with pytest.raises(review_module.ReviewSnapshotError) as error:
+        store.collect([reference])
+    assert "PRIVATE_" not in str(error.value)
+    assert error.value.__context__ is None
+    with pytest.raises(review_module.ReviewSnapshotError):
+        store.get(reference)
+    assert (
+        connection.execute("SELECT digest,payload FROM review_snapshots ORDER BY digest").fetchall()
+        == before
+    )
+
+
+def test_review_snapshot_collection_rejects_linked_depth_and_cycles(review_store, monkeypatch):
+    connection, store = review_store
+    raw = b'["value",null]'
+    for _ in range(66):
+        digest = hashlib.sha256(raw).hexdigest()
+        connection.execute(
+            "INSERT INTO review_snapshots VALUES (?,?)", (digest, gzip.compress(raw))
+        )
+        raw = json.dumps(["array", [["ref", digest]]], separators=(",", ":")).encode()
+    before = connection.execute("SELECT count(*) FROM review_snapshots").fetchone()[0]
+    with pytest.raises(review_module.ReviewSnapshotError):
+        store.collect([{"version": 1, "sha256": digest}])
+    assert connection.execute("SELECT count(*) FROM review_snapshots").fetchone()[0] == before
+
+    # Hash integrity is tested separately; inject a cycle at the verified-read
+    # boundary to exercise the collector's explicit recursion guard.
+    monkeypatch.setattr(store, "_read_node", lambda _digest, _maximum: raw)
+    with pytest.raises(review_module.ReviewSnapshotError):
+        store.collect([{"version": 1, "sha256": digest}])
+    assert connection.execute("SELECT count(*) FROM review_snapshots").fetchone()[0] == before
+
+
+def test_review_snapshot_collection_requires_caller_transaction(review_store):
+    connection, store = review_store
+    with connection:
+        reference = store.put({"decision": "held"})
+    with pytest.raises(review_module.ReviewSnapshotError):
+        store.collect([])
+    assert not connection.in_transaction
+    assert store.get(reference) == {"decision": "held"}
+    with connection:
+        connection.execute("BEGIN")
+        assert store.collect([]) == 1
+    assert connection.execute("SELECT count(*) FROM review_snapshots").fetchone()[0] == 0
+
+
+def _completion_packet(queue, tmp_path, batch=1, *, held=False, effects=False):
+    rid, token, notification = str(uuid4()), str(uuid4()), str(uuid4())
+    url = f"https://www.instagram.com/p/Storage{batch}/"
+    jid = queue.enqueue_retrieval(
+        school="ubc", recipient_id=RECIPIENT_ID, account_username=ACCOUNT_USERNAME, url=url
+    )
+    post = {"url": url, "caption": "A reviewed source"}
+    claim = queue.claim_next()
+    assert claim and claim.id == jid
+    queue.finish(claim, result={"posts": [post]})
+    decision = "held" if held else "event_and_position" if effects else "non_event"
+    target = {
+        "job_id": jid,
+        "school": "ubc",
+        "image_map": {"https://images.test/z": "upload-z", "https://images.test/a": "upload-a"},
+        "row": {
+            "id": rid,
+            "source_url": url,
+            "notification": {"school_id": 1, "intended_recipient_id": RECIPIENT_ID},
+        },
+        "posts": [post],
+        "codex_review": {
+            "reviewer": "Codex",
+            "decision": "unresolved" if held else "import",
+            "source_decision": decision,
+            "school": "ubc",
+            "source_url": url,
+        },
+        "candidate_context": ["large preserved baseline " + str(i) for i in range(1000)],
+    }
+    queue.set_setting(module._REVIEW_PREFIX + rid, target)
+    ledger = {
+        "id": rid,
+        "status": "pending" if held else "succeeded",
+        "claim_token": None if held else token,
+        "notification_id": notification,
+        "source_url": url,
+        "succeeded_at": None if held else "2026-10-08T12:00:00Z",
+    }
+    claims = (
+        []
+        if held
+        else [
+            {
+                "operation": operation,
+                "state": "existing_service_returned",
+                "result": True,
+                "claim": {"media_row_id": rid, "claim_token": token},
+            }
+            for operation in ("claim_pending_browser_media", "mark_media_succeeded")
+        ]
+    )
+    events, positions, writes, bindings = [], [], [], []
+    if effects:
+        club = {"id": 10, "school_id": 1, "name": "Student Society"}
+        event = {
+            "title": "Campus mixer",
+            "location": "Student Hall",
+            "source_url": url,
+            "source_image_url": "https://images.test/z",
+            "occurrences": [
+                {"dtstart_utc": "2026-10-10T18:00:00Z", "dtend_utc": "2026-10-10T20:00:00Z"}
+            ],
+        }
+        position = {
+            "title": "Volunteer coordinator",
+            "description": "Coordinate the student society volunteer team",
+            "position_type": "volunteer",
+            "deadline_date": "2026-10-20",
+            "source_url": url,
+            "source_image_url": "https://images.test/a",
+        }
+        events = [
+            {"id": 100 + batch, "school_id": 1, "club_id": 10, "cohost_club_ids": [20], **event}
+        ]
+        positions = [
+            {"id": 200 + batch, "school_id": 1, "club_id": 10, "cohost_club_ids": [], **position}
+        ]
+        for kind, payload, row in (
+            ("event", event, events[0]),
+            ("position", position, positions[0]),
+        ):
+            write = {
+                "media_row_id": rid,
+                "kind": kind,
+                "outcome": "inserted",
+                kind: payload,
+                "club": club,
+            }
+            if kind == "position":
+                write["verified_position_row"] = row
+            writes.append(write)
+            bindings.append(
+                {
+                    "media_row_id": rid,
+                    "kind": kind,
+                    "approved_index": 0,
+                    "native_id": row["id"],
+                    "action": "created",
+                    "native_outcome": "inserted",
+                    "native_payload_sha256": module.BrowserJobQueue._review_hash(payload),
+                    "full_native_row_sha256": module.BrowserJobQueue._review_hash(row),
+                    "host_id": club["id"],
+                    "source_url": url,
+                    "cohost_ids": row["cohost_club_ids"],
+                }
+            )
+    frozen = tmp_path / f"notification-frozen-drain{batch}.json"
+    queue.write_review_artifact(frozen, json.dumps([target]))
+    inputs = {
+        "approved": [] if held else [target],
+        "held": [target] if held else [],
+        "packet": {"targets": [target]},
+        "journal": {"writes": writes},
+        "claims": claims,
+        "full": [
+            {
+                "ledger": ledger,
+                "school": "ubc",
+                "decision": decision,
+                "recipient": {"school_id": 1},
+                "events": events,
+                "positions": positions,
+            }
+        ],
+        "freeze": {
+            "batch": f"drain{batch}",
+            "reviews": [
+                {
+                    "path": str(frozen),
+                    "sha256": hashlib.sha256(queue.review_artifact_bytes(frozen)).hexdigest(),
+                    "frozen": True,
+                    "final_handshake": True,
+                }
+            ],
+        },
+    }
+    files = {key: tmp_path / f"notification-{key}-drain{batch}apply.json" for key in inputs}
+    for key, path in files.items():
+        queue.write_review_artifact(path, json.dumps(inputs[key]))
+    qa = {
+        "reviewer": "Codex independent read-only terminal QA",
+        "checked_at": datetime.now(timezone.utc).isoformat(),
+        "drain": batch,
+        "parent_reported_actual_terminal_success": {
+            "native_exit_code": 0,
+            "full_exit_code": 0,
+            "native_session": 1,
+            "full_session": 2,
+        },
+        "all_packet_ledgers_school_source_recipient_exact_tokens_and_held_pending_verified": True,
+        "review_or_native_inconsistencies": [],
+        "input_sha256": {
+            key: hashlib.sha256(queue.review_artifact_bytes(path)).hexdigest()
+            for key, path in files.items()
+        },
+        "native_effect_bindings": bindings,
+        "per_source_readback": [
+            {
+                "media_row_id": rid,
+                "school": "ubc",
+                "source_decision": decision,
+                "native_ledger": ledger,
+                "recipient_readback": {
+                    "id": notification,
+                    "school_id": 1,
+                    "intended_recipient_id": RECIPIENT_ID,
+                },
+                "global_source_baseline_preserved": True,
+                "events": events,
+                "positions": positions,
+            }
+        ],
+    }
+    qa_path = tmp_path / f"notification-completion-drain{batch}.json"
+    queue.write_review_artifact(qa_path, json.dumps(qa))
+    return rid, target, qa_path, files, qa
+
+
+@pytest.mark.parametrize("damage", ["terminal", "hash", "token", "recipient", "listing", "marker"])
+def test_completion_proof_failure_never_records_retention(queue, tmp_path, damage):
+    rid, target, path, files, qa = _completion_packet(queue, tmp_path)
+    if damage == "terminal":
+        qa["parent_reported_actual_terminal_success"]["native_exit_code"] = 1
+    elif damage == "hash":
+        qa["input_sha256"]["approved"] = "0" * 64
+    elif damage == "token":
+        qa["per_source_readback"][0]["native_ledger"]["claim_token"] = str(uuid4())
+    elif damage == "recipient":
+        qa["per_source_readback"][0]["recipient_readback"]["school_id"] = 2
+    elif damage == "listing":
+        qa["per_source_readback"][0]["events"] = [{"id": 1, "school_id": 1}]
+    else:
+        altered = copy.deepcopy(target)
+        altered["candidate_context"].append("later unresolved evidence")
+        queue.set_setting(module._REVIEW_PREFIX + rid, altered)
+    queue.write_review_artifact(path, json.dumps(qa))
+    with pytest.raises(review_module.ReviewSnapshotError):
+        queue.record_review_completion(path, input_paths=files, artifact_paths=[])
+    with sqlite3.connect(queue.database_path) as db:
+        assert db.execute("SELECT count(*) FROM review_completions").fetchone()[0] == 0
+        assert db.execute("SELECT count(*) FROM review_artifact_retention").fetchone()[0] == 0
+    assert queue.get_setting(module._REVIEW_PREFIX + rid)["candidate_context"]
+
+
+def test_automatic_cleanup_retires_verified_history_keeps_latest_pending_and_jobs(
+    queue, tmp_path, monkeypatch
+):
+    packets = [_completion_packet(queue, tmp_path, batch) for batch in (1, 2)]
+    pending = _completion_packet(queue, tmp_path, 3, held=True)
+    for rid, target, path, files, qa in packets:
+        assert queue.record_review_completion(path, input_paths=files, artifact_paths=[]) == {
+            "completed": 1,
+            "held": 0,
+            "artifacts": 9,
+        }
+    rid, target, path, files, qa = pending
+    assert queue.record_review_completion(path, input_paths=files, artifact_paths=[])["held"] == 1
+    with sqlite3.connect(queue.database_path) as db:
+        jobs = db.execute("SELECT * FROM jobs ORDER BY id").fetchall()
+        db.execute(
+            "UPDATE review_completions SET completed_at=completed_at-?",
+            (module.CONTROL.completed_review_retention_seconds + 1,),
+        )
+        db.execute(
+            "UPDATE review_artifact_retention SET sealed_at=sealed_at-?",
+            (module.CONTROL.completed_review_retention_seconds + 1,),
+        )
+    stats = queue.maintain_review_storage(force=True)
+    assert stats["retired_targets"] == 1
+    assert stats["retired_artifacts"] == 9
+    assert stats["collected_snapshots"] > 0
+    first, latest = packets
+    assert (
+        queue.get_setting(module._REVIEW_PREFIX + first[0])["completed_review_receipt"]["job_id"]
+        == first[1]["job_id"]
+    )
+    assert queue.get_setting(module._REVIEW_PREFIX + latest[0]) == latest[1]
+    assert queue.get_setting(module._REVIEW_PREFIX + pending[0]) == pending[1]
+    assert queue.read_review_artifact(first[2])["format"] == "wat2do-completed-review-v1"
+    assert queue.read_review_artifact(latest[2]) == latest[4]
+    assert queue.maintain_review_storage() == {"deferred": "interval"}
+    with sqlite3.connect(queue.database_path) as db:
+        assert db.execute("SELECT * FROM jobs ORDER BY id").fetchall() == jobs
+        assert db.execute("PRAGMA auto_vacuum").fetchone()[0] == 2
+    # A new media delivery reopens only that source, even if an old receipt exists.
+    queue.set_setting(module._REVIEW_PREFIX + first[0], first[1])
+    queue.set_setting("notification_delivery:" + first[0], first[1]["job_id"])
+    assert queue.maintain_review_storage(force=True)["retired_targets"] == 0
+    assert queue.get_setting(module._REVIEW_PREFIX + first[0]) == first[1]
+
+
+def test_maintenance_preserves_old_descriptor_after_failed_publication(
+    queue, tmp_path, monkeypatch
+):
+    path = tmp_path / "notification-checkpoint.json"
+    old = {"evidence": "old " * 10000}
+    new = {"evidence": "new " * 10000}
+    queue.write_review_artifact(path, json.dumps(old))
+    with monkeypatch.context() as context:
+        context.setattr(
+            module, "atomic_write", lambda *args: (_ for _ in ()).throw(OSError("publish failed"))
+        )
+        with pytest.raises(OSError):
+            queue.write_review_artifact(path, json.dumps(new))
+    queue.maintain_review_storage(force=True)
+    assert queue.read_review_artifact(path) == old
+    queue.write_review_artifact(path, json.dumps(new))
+    assert queue.maintain_review_storage(force=True)["collected_snapshots"] > 0
+    assert queue.read_review_artifact(path) == new
+
+
+def test_maintenance_defers_active_import_and_preserves_corrupt_root(queue, tmp_path):
+    packet = _completion_packet(queue, tmp_path)
+    queue.set_setting("notification_browser_import_claim", {"media_row_id": packet[0]})
+    assert queue.maintain_review_storage(force=True) == {"deferred": "active import claim"}
+    queue.set_setting("notification_browser_import_claim", None)
+    missing = tmp_path / "notification-missing.json"
+    queue.write_review_artifact(missing, json.dumps({"evidence": "must stay" * 1000}))
+    missing.unlink()
+    with sqlite3.connect(queue.database_path) as db:
+        before = db.execute(
+            "SELECT digest,payload FROM review_snapshots ORDER BY digest"
+        ).fetchall()
+    with pytest.raises(FileNotFoundError):
+        queue.maintain_review_storage(force=True)
+    with sqlite3.connect(queue.database_path) as db:
+        assert (
+            db.execute("SELECT digest,payload FROM review_snapshots ORDER BY digest").fetchall()
+            == before
+        )
+
+
+def test_repeated_checkpoint_updates_are_collected_to_current_evidence(queue, tmp_path):
+    path = tmp_path / "notification-current.json"
+    for index in range(40):
+        queue.write_review_artifact(
+            path,
+            json.dumps({"batch": index, "evidence": [str(index) + str(n) for n in range(1000)]}),
+        )
+    with sqlite3.connect(queue.database_path) as db:
+        before = db.execute("SELECT count(*) FROM review_snapshots").fetchone()[0]
+    assert queue.maintain_review_storage(force=True)["collected_snapshots"] > 0
+    with sqlite3.connect(queue.database_path) as db:
+        after = db.execute("SELECT count(*) FROM review_snapshots").fetchone()[0]
+    assert after < before / 10
+    assert queue.read_review_artifact(path)["batch"] == 39
+
+
+def test_completed_source_reopened_as_held_keeps_its_full_batch_artifacts(queue, tmp_path):
+    packets = [_completion_packet(queue, tmp_path, batch) for batch in (1, 2)]
+    for _, _, path, files, _ in packets:
+        queue.record_review_completion(path, input_paths=files, artifact_paths=[])
+    rid, target, path, files, _ = packets[0]
+    frozen = Path(queue.read_review_artifact(files["freeze"])["reviews"][0]["path"])
+    originals = {
+        checkpoint: queue.review_artifact_bytes(checkpoint)
+        for checkpoint in [path, frozen, *files.values()]
+    }
+    held = copy.deepcopy(target)
+    held["codex_review"].update(
+        decision="unresolved",
+        source_decision="held",
+        reason="A new source discrepancy needs review",
+    )
+    queue.set_setting(module._REVIEW_PREFIX + rid, held)
+    with sqlite3.connect(queue.database_path) as db:
+        age = module.CONTROL.completed_review_retention_seconds + 1
+        db.execute("UPDATE review_completions SET completed_at=completed_at-?", (age,))
+        db.execute("UPDATE review_artifact_retention SET sealed_at=sealed_at-?", (age,))
+
+    stats = queue.maintain_review_storage(force=True)
+
+    assert stats["retired_targets"] == 0
+    assert stats["retired_artifacts"] == 0
+    assert queue.get_setting(module._REVIEW_PREFIX + rid) == held
+    assert all(
+        queue.review_artifact_bytes(checkpoint) == raw for checkpoint, raw in originals.items()
+    )
+
+
+def test_completion_sealing_rejects_artwork_order_changed_after_verification(queue, tmp_path):
+    rid, target, path, files, _ = _completion_packet(queue, tmp_path)
+    changed = copy.deepcopy(target)
+    changed["image_map"] = dict(reversed(list(changed["image_map"].items())))
+    assert changed == target
+    assert list(changed["image_map"]) != list(target["image_map"])
+    queue.set_setting(module._REVIEW_PREFIX + rid, changed)
+
+    with pytest.raises(review_module.ReviewSnapshotError):
+        queue.record_review_completion(path, input_paths=files, artifact_paths=[])
+
+    with sqlite3.connect(queue.database_path) as db:
+        assert db.execute("SELECT count(*) FROM review_completions").fetchone()[0] == 0
+        assert db.execute("SELECT count(*) FROM review_artifact_retention").fetchone()[0] == 0
+    assert list(queue.get_setting(module._REVIEW_PREFIX + rid)["image_map"].values()) == [
+        "upload-a",
+        "upload-z",
+    ]
+
+
+def test_completion_retention_preserves_artwork_order_changed_after_sealing(queue, tmp_path):
+    packets = [_completion_packet(queue, tmp_path, batch) for batch in (1, 2)]
+    for _, _, path, files, _ in packets:
+        queue.record_review_completion(path, input_paths=files, artifact_paths=[])
+    rid, target, path, _, qa = packets[0]
+    changed = copy.deepcopy(target)
+    changed["image_map"] = dict(reversed(list(changed["image_map"].items())))
+    queue.set_setting(module._REVIEW_PREFIX + rid, changed)
+    with sqlite3.connect(queue.database_path) as db:
+        age = module.CONTROL.completed_review_retention_seconds + 1
+        db.execute("UPDATE review_completions SET completed_at=completed_at-?", (age,))
+        db.execute("UPDATE review_artifact_retention SET sealed_at=sealed_at-?", (age,))
+
+    stats = queue.maintain_review_storage(force=True)
+
+    assert stats["retired_targets"] == 0
+    assert stats["retired_artifacts"] == 0
+    assert list(queue.get_setting(module._REVIEW_PREFIX + rid)["image_map"].values()) == [
+        "upload-a",
+        "upload-z",
+    ]
+    assert queue.read_review_artifact(path) == qa
+
+
+def _expire_review_retention(queue):
+    with sqlite3.connect(queue.database_path) as db:
+        age = module.CONTROL.completed_review_retention_seconds + 1
+        db.execute("UPDATE review_completions SET completed_at=completed_at-?", (age,))
+        db.execute("UPDATE review_artifact_retention SET sealed_at=sealed_at-?", (age,))
+
+
+def _fill_snapshot_quota(queue, maximum_bytes, *, pinned):
+    with sqlite3.connect(queue.database_path) as db:
+        stored = db.execute("SELECT SUM(length(payload)) FROM review_snapshots").fetchone()[0]
+        remaining = maximum_bytes - stored
+        low, high = 0, remaining
+        while low < high:
+            count = (low + high + 1) // 2
+            raw = json.dumps(["value", {"padding": "x" * count}], separators=(",", ":")).encode()
+            if len(gzip.compress(raw, compresslevel=0, mtime=0)) <= remaining:
+                low = count
+            else:
+                high = count - 1
+        raw = json.dumps(["value", {"padding": "x" * low}], separators=(",", ":")).encode()
+        digest = hashlib.sha256(raw).hexdigest()
+        payload = gzip.compress(raw, compresslevel=0, mtime=0)
+        db.execute("INSERT INTO review_snapshots VALUES (?,?)", (digest, payload))
+        if pinned:
+            db.execute(
+                "INSERT INTO settings VALUES (?,?)",
+                (
+                    "notification_reviewed_target:quota-pinned-evidence",
+                    json.dumps(
+                        {"review_snapshot": {"version": 1, "sha256": digest}, "codex_review": {}}
+                    ),
+                ),
+            )
+        assert maximum_bytes - stored - len(payload) < 8
+    return digest
+
+
+@pytest.mark.parametrize("pinned", [False, True], ids=["orphan-pressure", "live-root-pressure"])
+def test_completed_artifact_retirement_recovers_full_quota_without_losing_live_roots(
+    queue, tmp_path, monkeypatch, pinned
+):
+    packets = [_completion_packet(queue, tmp_path, batch) for batch in (1, 2)]
+    for _, _, path, files, _ in packets:
+        queue.record_review_completion(path, input_paths=files, artifact_paths=[])
+    _expire_review_retention(queue)
+    maximum_bytes = 1024**2
+    monkeypatch.setattr(
+        review_module,
+        "CONTROL",
+        review_module.CONTROL.model_copy(update={"review_snapshot_storage_max_mb": 1}),
+    )
+    digest = _fill_snapshot_quota(queue, maximum_bytes, pinned=pinned)
+    with sqlite3.connect(queue.database_path) as db:
+        jobs = db.execute("SELECT * FROM jobs ORDER BY id").fetchall()
+
+    stats = queue.maintain_review_storage(force=True)
+
+    assert stats["retired_targets"] == 1
+    assert stats["retired_artifacts"] == 9
+    assert stats["snapshot_bytes"] < maximum_bytes
+    assert queue.read_review_artifact(packets[0][2])["format"] == "wat2do-completed-review-v1"
+    assert queue.read_review_artifact(packets[1][2]) == packets[1][4]
+    assert queue.get_setting(module._REVIEW_PREFIX + packets[1][0]) == packets[1][1]
+    with sqlite3.connect(queue.database_path) as db:
+        assert (
+            bool(db.execute("SELECT 1 FROM review_snapshots WHERE digest=?", (digest,)).fetchone())
+            == pinned
+        )
+        assert db.execute("SELECT * FROM jobs ORDER BY id").fetchall() == jobs
+    if pinned:
+        assert queue.get_setting("notification_reviewed_target:quota-pinned-evidence")["padding"]
+
+
+@pytest.mark.parametrize("refresh_state", ["pending", "running", "new_success"])
+def test_pending_or_refreshed_source_generation_keeps_its_previous_full_review(
+    queue, tmp_path, refresh_state
+):
+    packets = [_completion_packet(queue, tmp_path, batch) for batch in (1, 2)]
+    for _, _, path, files, _ in packets:
+        queue.record_review_completion(path, input_paths=files, artifact_paths=[])
+    _expire_review_retention(queue)
+    rid, target, path, _, qa = packets[0]
+    queue.refresh_retrieval(target["job_id"])
+    if refresh_state != "pending":
+        claim = queue.claim_next()
+        assert claim.id == target["job_id"]
+        if refresh_state == "new_success":
+            queue.finish(
+                claim,
+                result={
+                    "posts": [
+                        {"url": target["row"]["source_url"], "caption": "Fresh unreviewed evidence"}
+                    ]
+                },
+            )
+    current = queue.get(target["job_id"])
+
+    stats = queue.maintain_review_storage(force=True)
+
+    assert stats["retired_targets"] == 0
+    assert stats["retired_artifacts"] == 0
+    assert queue.get(target["job_id"]) == current
+    assert queue.get_setting(module._REVIEW_PREFIX + rid) == target
+    assert queue.read_review_artifact(path) == qa
+
+
+def test_completion_receipt_binds_real_event_and_position_writes_to_native_readbacks(
+    queue, tmp_path
+):
+    rid, target, path, files, qa = _completion_packet(queue, tmp_path, effects=True)
+
+    stats = queue.record_review_completion(path, input_paths=files, artifact_paths=[])
+
+    assert stats == {"completed": 1, "held": 0, "artifacts": 9}
+    with sqlite3.connect(queue.database_path) as db:
+        receipt = json.loads(
+            db.execute(
+                "SELECT receipt FROM review_completions WHERE media_row_id=?", (rid,)
+            ).fetchone()[0]
+        )
+    assert [
+        (listing["kind"], listing["id"], listing["action"]) for listing in receipt["listings"]
+    ] == [
+        ("event", 101, "created"),
+        ("position", 201, "created"),
+    ]
+    assert [listing["sha256"] for listing in receipt["listings"]] == [
+        binding["full_native_row_sha256"] for binding in qa["native_effect_bindings"]
+    ]
+    assert receipt["source_url"] == target["row"]["source_url"]
+    assert queue.get_setting(module._REVIEW_PREFIX + rid) == target
+
+
+def test_mixed_verified_and_held_packet_keeps_all_shared_batch_checkpoints(queue, tmp_path):
+    approved = _completion_packet(queue, tmp_path, 1)
+    held = _completion_packet(queue, tmp_path, 99, held=True)
+    rid, target, path, files, qa = approved
+    inputs = {key: queue.read_review_artifact(checkpoint) for key, checkpoint in files.items()}
+    inputs["held"] = [held[1]]
+    inputs["packet"]["targets"].append(held[1])
+    inputs["full"].extend(queue.read_review_artifact(held[3]["full"]))
+    frozen = Path(inputs["freeze"]["reviews"][0]["path"])
+    queue.write_review_artifact(frozen, json.dumps([target, held[1]]))
+    inputs["freeze"]["reviews"][0]["sha256"] = hashlib.sha256(
+        queue.review_artifact_bytes(frozen)
+    ).hexdigest()
+    for key, checkpoint in files.items():
+        queue.write_review_artifact(checkpoint, json.dumps(inputs[key]))
+    qa["per_source_readback"].extend(held[4]["per_source_readback"])
+    qa["input_sha256"] = {
+        key: hashlib.sha256(queue.review_artifact_bytes(checkpoint)).hexdigest()
+        for key, checkpoint in files.items()
+    }
+    queue.write_review_artifact(path, json.dumps(qa))
+    assert queue.record_review_completion(path, input_paths=files, artifact_paths=[]) == {
+        "completed": 1,
+        "held": 1,
+        "artifacts": 9,
+    }
+    latest = _completion_packet(queue, tmp_path, 2)
+    queue.record_review_completion(latest[2], input_paths=latest[3], artifact_paths=[])
+    originals = {
+        checkpoint: queue.review_artifact_bytes(checkpoint)
+        for checkpoint in [path, frozen, *files.values()]
+    }
+    _expire_review_retention(queue)
+
+    stats = queue.maintain_review_storage(force=True)
+
+    assert stats["retired_artifacts"] == 0
+    assert queue.get_setting(module._REVIEW_PREFIX + held[0]) == held[1]
+    assert all(
+        queue.review_artifact_bytes(checkpoint) == raw for checkpoint, raw in originals.items()
+    )
+    with sqlite3.connect(queue.database_path) as db:
+        assert (
+            db.execute(
+                "SELECT 1 FROM review_completions WHERE media_row_id=?", (held[0],)
+            ).fetchone()
+            is None
+        )
+
+
+def test_interrupted_completed_artifact_publication_repairs_registry_on_next_maintenance(
+    queue, tmp_path, monkeypatch
+):
+    packets = [_completion_packet(queue, tmp_path, batch) for batch in (1, 2)]
+    for _, _, path, files, _ in packets:
+        queue.record_review_completion(path, input_paths=files, artifact_paths=[])
+    _expire_review_retention(queue)
+    with sqlite3.connect(queue.database_path) as db:
+        jobs = db.execute("SELECT * FROM jobs ORDER BY id").fetchall()
+    published = []
+    publish = module.atomic_write
+
+    def interrupted_after_publish(path, raw):
+        publish(path, raw)
+        published.append(path)
+        raise OSError(errno.ENOSPC, "Synthetic failure after checkpoint publication")
+
+    with monkeypatch.context() as context:
+        context.setattr(module, "atomic_write", interrupted_after_publish)
+        with pytest.raises(OSError):
+            queue.maintain_review_storage(force=True)
+    assert len(published) == 1
+    checkpoint = published[0]
+    durable = checkpoint.read_bytes()
+    receipt = queue.read_review_artifact(checkpoint)
+    assert receipt["format"] == "wat2do-completed-review-v1"
+    assert receipt["completed_media"][0]["media_row_id"] == packets[0][0]
+    with sqlite3.connect(queue.database_path) as db:
+        assert db.execute(
+            "SELECT 1 FROM review_artifacts WHERE path=?", (str(checkpoint),)
+        ).fetchone()
+        assert (
+            db.execute(
+                "SELECT retired_at FROM review_artifact_retention WHERE path=?", (str(checkpoint),)
+            ).fetchone()[0]
+            is None
+        )
+
+    stats = queue.maintain_review_storage(force=True)
+
+    assert stats["retired_artifacts"] == 9
+    assert checkpoint.read_bytes() == durable
+    assert queue.read_review_artifact(checkpoint) == receipt
+    assert queue.read_review_artifact(packets[1][2]) == packets[1][4]
+    with sqlite3.connect(queue.database_path) as db:
+        assert (
+            db.execute("SELECT 1 FROM review_artifacts WHERE path=?", (str(checkpoint),)).fetchone()
+            is None
+        )
+        assert (
+            db.execute(
+                "SELECT retired_at FROM review_artifact_retention WHERE path=?", (str(checkpoint),)
+            ).fetchone()[0]
+            is not None
+        )
+        assert db.execute("SELECT * FROM jobs ORDER BY id").fetchall() == jobs

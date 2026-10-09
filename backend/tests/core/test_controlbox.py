@@ -636,6 +636,10 @@ def test_instagram_browser_controls_have_one_shared_timing_source():
     assert controlbox.instagram_browser.source_page_size == 100
     assert controlbox.instagram_browser.worker_log_max_bytes == 8388608
     assert controlbox.instagram_browser.worker_log_backup_count == 3
+    assert controlbox.instagram_browser.review_maintenance_interval_seconds == 300
+    assert controlbox.instagram_browser.completed_review_retention_seconds == 86400
+    assert controlbox.instagram_browser.review_maintenance_timeout_seconds == 30
+    assert controlbox.instagram_browser.review_maintenance_batch_size == 100
     assert controlbox.instagram_browser.result_timeout_seconds > (
         controlbox.instagram_browser.job_timeout_seconds
     )
@@ -711,6 +715,10 @@ def test_instagram_browser_controls_have_one_shared_timing_source():
         {"review_snapshot_max_bytes": 268435457},
         {"review_snapshot_storage_max_mb": 63},
         {"review_snapshot_storage_max_mb": 4097},
+        {"review_maintenance_interval_seconds": 59},
+        {"completed_review_retention_seconds": 86399},
+        {"review_maintenance_timeout_seconds": 31},
+        {"review_maintenance_batch_size": 101},
         {"engagement_interval_seconds": 0},
         {"engagement_max_wait_seconds": 0},
         {"engagement_max_wait_seconds": 3601},

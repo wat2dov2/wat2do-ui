@@ -150,10 +150,14 @@ def compact_review_storage(
                 else:
                     stats["changed"] += 1
         result["artifacts"] = stats
+        result["review_storage"] = queue.maintain_review_storage(
+            force=True, _ingestion_lock=import_lock
+        )
         if vacuum:
             _require_review_storage_capacity(queue, queue.state_directory)
             with closing(queue._connect()) as db:
                 db.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+                db.execute("PRAGMA auto_vacuum=INCREMENTAL")
                 db.execute("VACUUM")
                 if db.execute("PRAGMA integrity_check").fetchone()[0] != "ok":
                     raise RuntimeError("Review database integrity verification failed")
