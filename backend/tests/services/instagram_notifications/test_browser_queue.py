@@ -37,6 +37,10 @@ def test_delivery_generation_survives_reopen_and_changes_for_a_recreated_queue(t
     first = module.BrowserJobQueue(directory)
     generation = first.delivery_generation
     assert str(module.uuid.UUID(generation)) == generation
+    with sqlite3.connect(first.database_path) as db:
+        assert db.execute("PRAGMA journal_mode").fetchone()[0] == "wal"
+        assert db.execute("PRAGMA auto_vacuum").fetchone()[0] == 2
+        assert db.execute("SELECT count(*) FROM jobs").fetchone()[0] == 0
     assert module.BrowserJobQueue(directory).delivery_generation == generation
     for path in directory.glob("jobs.sqlite3*"):
         path.unlink()
@@ -50,6 +54,109 @@ def test_concurrent_queue_initialization_shares_one_delivery_generation(tmp_path
             executor.map(lambda _: module.BrowserJobQueue(directory).delivery_generation, range(8))
         )
     assert len(set(generations)) == 1
+
+
+def test_current_queue_reopens_without_writer_admission_during_wal_maintenance(queue, monkeypatch):
+    queue.set_setting("paused", "Operator safety hold")
+    monkeypatch.setattr(
+        module,
+        "CONTROL",
+        module.CONTROL.model_copy(
+            update={"storage_busy_timeout_seconds": 0.01, "storage_retry_limit": 1}
+        ),
+    )
+    with sqlite3.connect(queue.database_path) as writer:
+        writer.execute("BEGIN IMMEDIATE")
+        writer.execute("UPDATE settings SET value='false' WHERE key='paused'")
+        reopened = module.BrowserJobQueue(queue.state_directory)
+        assert writer.in_transaction
+        assert reopened.delivery_generation == queue.delivery_generation
+        assert reopened.get_setting("paused") == "Operator safety hold"
+        assert not reopened.storage_unavailable
+        writer.rollback()
+
+
+@pytest.mark.parametrize(
+    "legacy_change",
+    [
+        "DROP INDEX jobs_waiting",
+        "DROP TABLE review_completions",
+        "ALTER TABLE review_artifacts DROP COLUMN published_reference",
+    ],
+)
+def test_incomplete_queue_requires_bounded_migration_then_reopens_under_writer(
+    queue, monkeypatch, legacy_change
+):
+    job_id = _engagement(queue, "MigrationHistory")
+    queue.set_setting("paused", "Operator safety hold")
+    with sqlite3.connect(queue.database_path) as db:
+        db.execute(legacy_change)
+    monkeypatch.setattr(
+        module,
+        "CONTROL",
+        module.CONTROL.model_copy(update={"storage_busy_timeout_seconds": 0.01}),
+    )
+    waits = []
+    with sqlite3.connect(queue.database_path) as writer:
+        writer.execute("BEGIN IMMEDIATE")
+
+        def release_writer(interval):
+            waits.append(interval)
+            writer.rollback()
+
+        monkeypatch.setattr(module.time, "sleep", release_writer)
+        reopened = module.BrowserJobQueue(queue.state_directory)
+        assert waits == [module.CONTROL.storage_retry_interval_seconds]
+        assert reopened.delivery_generation == queue.delivery_generation
+        assert reopened.get(job_id).state == "pending"
+        assert reopened.get_setting("paused") == "Operator safety hold"
+        # The repaired table/index/ALTER format must now qualify for the fast
+        # path, not force every future constructor back through migrations.
+        writer.execute("BEGIN IMMEDIATE")
+        again = module.BrowserJobQueue(queue.state_directory)
+        assert writer.in_transaction
+        assert waits == [module.CONTROL.storage_retry_interval_seconds]
+        assert again.delivery_generation == queue.delivery_generation
+        writer.rollback()
+
+
+@pytest.mark.parametrize("raw_generation", ['"not-a-uuid"', "not-json"])
+def test_current_queue_refuses_invalid_generation_without_reset_or_writer_admission(
+    queue, monkeypatch, raw_generation
+):
+    with sqlite3.connect(queue.database_path) as db:
+        db.execute("UPDATE settings SET value=? WHERE key='delivery_generation'", (raw_generation,))
+    monkeypatch.setattr(
+        module,
+        "CONTROL",
+        module.CONTROL.model_copy(
+            update={"storage_busy_timeout_seconds": 0.01, "storage_retry_limit": 1}
+        ),
+    )
+    with sqlite3.connect(queue.database_path) as writer:
+        writer.execute("BEGIN IMMEDIATE")
+        with pytest.raises(ValueError, match="Browser queue delivery generation is invalid"):
+            module.BrowserJobQueue(queue.state_directory)
+        assert writer.in_transaction
+        assert (
+            writer.execute("SELECT value FROM settings WHERE key='delivery_generation'").fetchone()[
+                0
+            ]
+            == raw_generation
+        )
+        writer.rollback()
+
+
+def test_missing_delivery_generation_uses_existing_initialization_without_losing_history(queue):
+    job_id = _engagement(queue, "MissingGeneration")
+    queue.set_setting("paused", "Operator safety hold")
+    with sqlite3.connect(queue.database_path) as db:
+        db.execute("DELETE FROM settings WHERE key='delivery_generation'")
+    reopened = module.BrowserJobQueue(queue.state_directory)
+    assert str(module.uuid.UUID(reopened.delivery_generation)) == reopened.delivery_generation
+    assert reopened.delivery_generation != queue.delivery_generation
+    assert reopened.get(job_id).state == "pending"
+    assert reopened.get_setting("paused") == "Operator safety hold"
 
 
 def test_local_retry_only_revives_delivered_notification_reads_with_budget(queue):
@@ -1669,7 +1776,10 @@ def test_retrieval_recovery_and_refresh_preserve_other_history(queue):
     assert queue.get(job_id).payload["url"] == "https://www.instagram.com/club.name/"
 
 
-def test_old_queue_upgrade_keeps_jobs_settings_and_selected_school(queue):
+@pytest.mark.parametrize(
+    "legacy_kinds", ["'digest', 'engagement'", "'digest', 'RETRIEVAL', 'engagement'"]
+)
+def test_old_queue_upgrade_keeps_jobs_settings_and_selected_school(queue, legacy_kinds):
     job_id = _engagement(queue)
     queue.set_setting("important", {"checkpoint": 7})
     queue.claim_next()
@@ -1678,7 +1788,8 @@ def test_old_queue_upgrade_keeps_jobs_settings_and_selected_school(queue):
     with sqlite3.connect(queue.database_path) as db:
         db.execute("PRAGMA writable_schema=ON")
         db.execute(
-            "UPDATE sqlite_master SET sql=replace(sql, \"'digest', 'retrieval', 'engagement'\", \"'digest', 'engagement'\") WHERE name='jobs'"
+            "UPDATE sqlite_master SET sql=replace(sql, ?, ?) WHERE name='jobs'",
+            ("'digest', 'retrieval', 'engagement'", legacy_kinds),
         )
         db.execute("PRAGMA writable_schema=OFF")
     reopened = module.BrowserJobQueue(queue.state_directory)

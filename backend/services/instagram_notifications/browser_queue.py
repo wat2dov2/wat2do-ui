@@ -52,6 +52,51 @@ _AVAILABLE_ACCOUNT_SQL = (
 )
 
 
+_QUEUE_SCHEMA = """
+    CREATE TABLE IF NOT EXISTS jobs (
+        id TEXT PRIMARY KEY,
+        dedupe_key TEXT NOT NULL UNIQUE,
+        kind TEXT NOT NULL CHECK(kind IN ('digest', 'retrieval', 'engagement')),
+        school TEXT NOT NULL,
+        recipient_id TEXT NOT NULL,
+        account_username TEXT NOT NULL,
+        payload TEXT NOT NULL,
+        state TEXT NOT NULL DEFAULT 'pending'
+            CHECK(state IN ('pending','running','succeeded','failed','cancelled','unsupported')),
+        created_at REAL NOT NULL,
+        started_at REAL,
+        finished_at REAL,
+        result TEXT,
+        error TEXT,
+        attempts INTEGER NOT NULL DEFAULT 0
+    );
+    CREATE INDEX IF NOT EXISTS jobs_waiting ON jobs(state, kind, created_at);
+
+    CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+    CREATE TABLE IF NOT EXISTS diagnostic_events (
+        id TEXT PRIMARY KEY, event TEXT NOT NULL, created_at REAL NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS review_snapshots (
+        digest TEXT PRIMARY KEY, payload BLOB NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS review_artifacts (
+        path TEXT PRIMARY KEY, reference TEXT NOT NULL,
+        original_sha256 TEXT NOT NULL, original_bytes INTEGER NOT NULL,
+        published_reference TEXT
+    );
+    CREATE TABLE IF NOT EXISTS review_completions (
+        media_row_id TEXT PRIMARY KEY, receipt TEXT NOT NULL,
+        review_sha256 TEXT NOT NULL, completed_at REAL NOT NULL,
+        batch TEXT NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS review_artifact_retention (
+        path TEXT PRIMARY KEY, media_row_ids TEXT NOT NULL,
+        original_sha256 TEXT NOT NULL, batch TEXT NOT NULL,
+        sealed_at REAL NOT NULL, retired_at REAL
+    );
+"""
+
+
 def _retry_storage(operation: Callable[_P, _R]) -> Callable[_P, _R]:
     """Retry a rolled-back queue transaction, never the browser operation it records."""
 
@@ -110,64 +155,26 @@ class BrowserJobQueue:
         self.state_directory = state_directory or default_state_directory()
         self.state_directory.mkdir(parents=True, exist_ok=True, mode=0o700)
         self.database_path = self.state_directory / "jobs.sqlite3"
+        generation = self._current_delivery_generation()
+        if generation is not None:
+            self._delivery_generation = generation
+            self.database_path.chmod(0o600)
+            return
         with closing(self._connect()) as db, db:
             # Existing databases enable this during stopped, backed-up compaction.
             if not db.execute("SELECT 1 FROM sqlite_master WHERE type='table'").fetchone():
                 db.execute("PRAGMA auto_vacuum=INCREMENTAL")
             db.execute("PRAGMA journal_mode=WAL")
-            schema = """
-                CREATE TABLE IF NOT EXISTS jobs (
-                    id TEXT PRIMARY KEY,
-                    dedupe_key TEXT NOT NULL UNIQUE,
-                    kind TEXT NOT NULL CHECK(kind IN ('digest', 'retrieval', 'engagement')),
-                    school TEXT NOT NULL,
-                    recipient_id TEXT NOT NULL,
-                    account_username TEXT NOT NULL,
-                    payload TEXT NOT NULL,
-                    state TEXT NOT NULL DEFAULT 'pending'
-                        CHECK(state IN ('pending','running','succeeded','failed','cancelled','unsupported')),
-                    created_at REAL NOT NULL,
-                    started_at REAL,
-                    finished_at REAL,
-                    result TEXT,
-                    error TEXT,
-                    attempts INTEGER NOT NULL DEFAULT 0
-                );
-                CREATE INDEX IF NOT EXISTS jobs_waiting ON jobs(state, kind, created_at);
-
-                CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);
-                CREATE TABLE IF NOT EXISTS diagnostic_events (
-                    id TEXT PRIMARY KEY, event TEXT NOT NULL, created_at REAL NOT NULL
-                );
-                CREATE TABLE IF NOT EXISTS review_snapshots (
-                    digest TEXT PRIMARY KEY, payload BLOB NOT NULL
-                );
-                CREATE TABLE IF NOT EXISTS review_artifacts (
-                    path TEXT PRIMARY KEY, reference TEXT NOT NULL,
-                    original_sha256 TEXT NOT NULL, original_bytes INTEGER NOT NULL,
-                    published_reference TEXT
-                );
-                CREATE TABLE IF NOT EXISTS review_completions (
-                    media_row_id TEXT PRIMARY KEY, receipt TEXT NOT NULL,
-                    review_sha256 TEXT NOT NULL, completed_at REAL NOT NULL,
-                    batch TEXT NOT NULL
-                );
-                CREATE TABLE IF NOT EXISTS review_artifact_retention (
-                    path TEXT PRIMARY KEY, media_row_ids TEXT NOT NULL,
-                    original_sha256 TEXT NOT NULL, batch TEXT NOT NULL,
-                    sealed_at REAL NOT NULL, retired_at REAL
-                );
-            """
             # SQLite cannot add values to a CHECK constraint in place.
             # Rebuild atomically while preserving every job and its history.
             db.execute("BEGIN IMMEDIATE")
             existing = db.execute("SELECT sql FROM sqlite_master WHERE name='jobs'").fetchone()
             if existing and "'retrieval'" not in existing[0]:
                 db.execute("ALTER TABLE jobs RENAME TO jobs_previous")
-                db.execute(schema.split(";")[0])
+                db.execute(_QUEUE_SCHEMA.split(";")[0])
                 db.execute("INSERT INTO jobs SELECT * FROM jobs_previous")
                 db.execute("DROP TABLE jobs_previous")
-            for statement in schema.split(";"):
+            for statement in _QUEUE_SCHEMA.split(";"):
                 if statement.strip():
                     db.execute(statement)
             if "published_reference" not in {
@@ -178,13 +185,11 @@ class BrowserJobQueue:
                 "INSERT INTO settings VALUES ('delivery_generation',?) ON CONFLICT(key) DO NOTHING",
                 (json.dumps(str(uuid.uuid4())),),
             )
-            generation = json.loads(
+            generation = self._validate_delivery_generation(
                 db.execute("SELECT value FROM settings WHERE key='delivery_generation'").fetchone()[
                     0
                 ]
             )
-            if not isinstance(generation, str) or str(uuid.UUID(generation)) != generation:
-                raise ValueError("Browser queue delivery generation is invalid")
         self._delivery_generation = generation
         self.database_path.chmod(0o600)
 
@@ -192,6 +197,64 @@ class BrowserJobQueue:
     def delivery_generation(self) -> str:
         """Identify the durable queue so a recreated database can recover cloud delivery."""
         return self._delivery_generation
+
+    @staticmethod
+    def _validate_delivery_generation(raw: str) -> str:
+        try:
+            generation = json.loads(raw)
+            if not isinstance(generation, str) or str(uuid.UUID(generation)) != generation:
+                raise ValueError
+        except (TypeError, ValueError, AttributeError):
+            raise ValueError("Browser queue delivery generation is invalid") from None
+        return generation
+
+    def _current_delivery_generation(self) -> str | None:
+        """Read current WAL queues without competing with maintenance's writer."""
+        if not self.database_path.is_file():
+            return None
+
+        def schema_tokens(sql: str) -> list[str]:
+            sql = re.sub(
+                r"^(CREATE\s+(?:TABLE|INDEX))\s+IF\s+NOT\s+EXISTS\b",
+                r"\1",
+                sql.strip(),
+                count=1,
+                flags=re.IGNORECASE,
+            )
+            return [
+                token if token.startswith("'") else token.casefold()
+                for token in re.findall(r"'(?:''|[^'])*'|\w+|[^\s]", sql)
+            ]
+
+        with closing(
+            sqlite3.connect(
+                self.database_path.absolute().as_uri() + "?mode=ro",
+                uri=True,
+                timeout=CONTROL.storage_busy_timeout_seconds,
+            )
+        ) as db:
+            db.execute("PRAGMA query_only=ON")
+            db.execute("BEGIN")
+            if db.execute("PRAGMA journal_mode").fetchone()[0] != "wal":
+                return None
+            definitions = {
+                (kind, name): sql
+                for kind, name, sql in db.execute(
+                    "SELECT type,name,sql FROM sqlite_master WHERE type IN ('table','index')"
+                )
+            }
+            for statement in _QUEUE_SCHEMA.split(";"):
+                if not statement.strip():
+                    continue
+                expected = re.match(r"CREATE (TABLE|INDEX) IF NOT EXISTS (\w+)", statement.strip())
+                assert expected is not None, "Canonical queue schema must declare named objects"
+                actual = definitions.get((expected[1].lower(), expected[2]))
+                if not actual or schema_tokens(actual) != schema_tokens(statement):
+                    return None
+            row = db.execute(
+                "SELECT value FROM settings WHERE key='delivery_generation'"
+            ).fetchone()
+            return self._validate_delivery_generation(row[0]) if row else None
 
     @_retry_storage
     def recorded_engagement_sources(
