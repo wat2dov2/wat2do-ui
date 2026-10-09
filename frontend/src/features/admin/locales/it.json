@@ -14,6 +14,7 @@
     "backToDashboard": "Torna alla dashboard dell'amministratore",
     "panelDescription": "Gestisci eventi, organizzazioni, poster e marketing",
     "diagnostics": {
+      "refreshLogs": "Aggiorna i log",
       "title": "Diagnostica dell'app",
       "cardDescription": "Ispeziona endpoint e flussi di lavoro di scraping",
       "description": "Ispeziona gli endpoint dell'applicazione e i flussi di lavoro di scraping.",

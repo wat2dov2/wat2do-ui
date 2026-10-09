@@ -14,6 +14,7 @@
     "backToDashboard": "관리자 대시보드로 돌아가기",
     "panelDescription": "이벤트, 조직, 포스터 및 마케팅 관리",
     "diagnostics": {
+      "refreshLogs": "로그 새로고침",
       "title": "앱 진단",
       "cardDescription": "엔드포인트 및 스크래핑 워크플로우 검사",
       "description": "애플리케이션 엔드포인트 및 스크래핑 워크플로우 검사",

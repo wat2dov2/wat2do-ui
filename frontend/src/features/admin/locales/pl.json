@@ -14,6 +14,7 @@
     "backToDashboard": "Powrót do panelu administracyjnego",
     "panelDescription": "Zarządzaj wydarzeniami, organizacjami, plakatami i marketingiem",
     "diagnostics": {
+      "refreshLogs": "Odśwież logi",
       "title": "Diagnostyka aplikacji",
       "cardDescription": "Sprawdź punkty końcowe i procesy scrapowania",
       "description": "Sprawdź punkty końcowe aplikacji i procesy scrapowania.",

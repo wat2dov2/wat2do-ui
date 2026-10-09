@@ -427,7 +427,7 @@ WITH scenarios(day_offset, status, error_message) AS (
     INSERT INTO public.instagram_publish_batches (
         account_key, instagram_user_id, school_id, local_date,
         window_start, window_end, status, caption, caption_intro, cover_body,
-        error_message
+        error_message, browser_delivery_generation, browser_delivery_sources
     )
     SELECT school.slug, 'local-seed-not-a-meta-account', school.id,
         (now() AT TIME ZONE school.timezone)::date - scenario.day_offset,
@@ -436,7 +436,7 @@ WITH scenarios(day_offset, status, error_message) AS (
         scenario.status,
         CASE WHEN school.slug = 'ulaval' THEN 'Aperçu local des événements à ULaval' ELSE intro.value END,
         CASE WHEN school.slug = 'ulaval' THEN 'Aperçu local des événements à ULaval' ELSE intro.value END,
-        '', scenario.error_message
+        '', scenario.error_message, NULL, NULL
     FROM public.schools school
     CROSS JOIN scenarios scenario
     CROSS JOIN (VALUES ('Fresh events at uwaterloo, added to Wat2Do in the last 24 hours 👀')) AS intro(value)
@@ -541,13 +541,14 @@ WHERE NOT EXISTS (SELECT 1 FROM public.event_dates d WHERE d.event_id = r.id);
 WITH new_batches AS (
     INSERT INTO public.instagram_publish_batches (
         account_key, instagram_user_id, school_id, local_date,
-        window_start, window_end, status, caption, caption_intro, cover_body
+        window_start, window_end, status, caption, caption_intro, cover_body,
+        browser_delivery_generation, browser_delivery_sources
     )
     SELECT school.slug, 'local-seed-not-a-meta-account', school.id,
         (now() AT TIME ZONE school.timezone)::date,
         now() - interval '1 day', now(), 'ready_for_review',
         'WAT-278 timezone regression', 'WAT-278 timezone regression',
-        'Both events should show Edmonton time: 6 PM and 11:30 PM on the same day.'
+        'Both events should show Edmonton time: 6 PM and 11:30 PM on the same day.', NULL, NULL
     FROM public.schools school
     WHERE school.slug = 'ualberta'
     ON CONFLICT (account_key, local_date, batch_kind) DO NOTHING

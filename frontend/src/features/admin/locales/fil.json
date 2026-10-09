@@ -14,6 +14,7 @@
     "backToDashboard": "Bumalik sa admin dashboard",
     "panelDescription": "Pamahalaan ang mga kaganapan, organisasyon, poster, at marketing",
     "diagnostics": {
+      "refreshLogs": "I-refresh ang mga log",
       "title": "Diagnostiko ng App",
       "cardDescription": "Suriin ang mga endpoints at workflows ng pag-scrape",
       "description": "Suriin ang mga endpoints ng aplikasyon at workflows ng pag-scrape.",

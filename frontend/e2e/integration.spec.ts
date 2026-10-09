@@ -1478,11 +1478,25 @@ test.describe("Admin diagnostics", () => {
     await expect(page).toHaveURL(`${BASE}/admin/events`);
   });
 
-  test("opens from the admin dashboard and shows Automate logs under scraping", async ({
+  test("diagnostics logs load once and refresh only when requested", async ({
     page, next,
   }) => {
     await seedAuthenticatedSession(page, next);
-    await mockApi(page, next, url => apiPath(url) === "/webhooks/automate/logs", async () => ({ json: [] }));
+    const logRequests: URLSearchParams[] = [];
+    await mockApi(page, next, url => apiPath(url) === "/webhooks/automate/logs", async request => {
+      const params = new URL(request.url).searchParams;
+      logRequests.push(params);
+      return { json: logRequests.length === 1 ? [] : [{
+        id: `log-${logRequests.length}`,
+        created_at: new Date().toISOString(),
+        event: params.get("sender_id") ? "Browser worker: queued" : "SCRAPE_COMPLETED",
+        sender_id: params.get("sender_id"),
+        school: "uwaterloo",
+        ig_account: "testclub",
+        post_url: null,
+        payload: { job_id: "job-1" },
+      }] };
+    });
     await seedQrData(page);
     await mockApi(page, next, url => apiPath(url) === "/submissions", async () => {
       return ({
@@ -1516,12 +1530,35 @@ test.describe("Admin diagnostics", () => {
     await expect(
       page.getByText("Automate log output will appear here."),
     ).toBeVisible();
+    const refreshLogs = page.getByRole("button", { name: "Refresh logs", exact: true });
+    await expect(refreshLogs).toBeEnabled();
+    expect(logRequests).toHaveLength(1);
+
+    await page.clock.install();
+    await page.clock.fastForward(6 * 60 * 1000);
+    await expect(refreshLogs).toBeEnabled();
+    expect(logRequests).toHaveLength(1);
 
     await endpointsTab.click();
     await expect(automateLogs).toBeHidden();
 
     await scrapingTab.click();
     await expect(automateLogs).toBeVisible();
+    await expect(refreshLogs).toBeEnabled();
+    expect(logRequests).toHaveLength(1);
+
+    await refreshLogs.click();
+    await expect(page.getByRole("cell", { name: "SCRAPE_COMPLETED", exact: true })).toBeVisible();
+    expect(logRequests).toHaveLength(2);
+
+    await page.getByRole("tab", { name: "Browser worker", exact: true }).click();
+    await expect(page.getByRole("cell", { name: "Browser worker: queued", exact: true })).toBeVisible();
+    expect(logRequests).toHaveLength(3);
+    expect(logRequests[2].get("sender_id")).toBe("instagram-browser-worker");
+
+    await scrapingTab.click();
+    await expect(page.getByRole("cell", { name: "SCRAPE_COMPLETED", exact: true })).toBeVisible();
+    expect(logRequests).toHaveLength(3);
   });
 });
 

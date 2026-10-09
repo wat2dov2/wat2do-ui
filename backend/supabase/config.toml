@@ -95,7 +95,7 @@ api_url = "http://127.0.0.1"
 openai_api_key = "env(OPENAI_API_KEY)"
 
 # Application email uses Resend through the backend.
-[local_smtp]
+[inbucket]
 enabled = false
 
 [storage]

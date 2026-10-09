@@ -29,6 +29,77 @@ def queue(tmp_path):
     return module.BrowserJobQueue(tmp_path / "browser")
 
 
+def test_delivery_generation_survives_reopen_and_changes_for_a_recreated_queue(tmp_path):
+    directory = tmp_path / "delivery"
+    first = module.BrowserJobQueue(directory)
+    generation = first.delivery_generation
+    assert str(module.uuid.UUID(generation)) == generation
+    assert module.BrowserJobQueue(directory).delivery_generation == generation
+    for path in directory.glob("jobs.sqlite3*"):
+        path.unlink()
+    assert module.BrowserJobQueue(directory).delivery_generation != generation
+
+
+def test_concurrent_queue_initialization_shares_one_delivery_generation(tmp_path):
+    directory = tmp_path / "delivery"
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        generations = list(
+            executor.map(lambda _: module.BrowserJobQueue(directory).delivery_generation, range(8))
+        )
+    assert len(set(generations)) == 1
+
+
+def test_local_retry_only_revives_delivered_notification_reads_with_budget(queue):
+    def retrieval(shortcode):
+        return queue.enqueue_retrieval(
+            school="ubc",
+            recipient_id=RECIPIENT_ID,
+            account_username=ACCOUNT_USERNAME,
+            url=f"https://www.instagram.com/p/{shortcode}/",
+        )
+
+    retryable = retrieval("Delivered")
+    exhausted = retrieval("Exhausted")
+    cancelled = retrieval("Cancelled")
+    manual = retrieval("Manual")
+    for job_id in (retryable, exhausted, cancelled):
+        queue.set_setting(f"notification_delivery:{uuid4()}", job_id)
+    with sqlite3.connect(queue.database_path) as db:
+        db.execute("UPDATE jobs SET state='failed',attempts=1")
+        db.execute(
+            "UPDATE jobs SET attempts=? WHERE id=?",
+            (module.CONTROL.ingestion_retry_limit, exhausted),
+        )
+        db.execute("UPDATE jobs SET state='cancelled' WHERE id=?", (cancelled,))
+    assert queue.retry_failed_notification_retrievals() == 1
+    assert queue.get(retryable).state == "pending"
+    assert queue.get(retryable).attempts == 1
+    assert queue.get(exhausted).state == "failed"
+    assert queue.get(cancelled).state == "cancelled"
+    assert queue.get(manual).state == "failed"
+    assert queue.retry_failed_notification_retrievals() == 0
+
+
+def test_recorded_engagement_sources_preserve_original_urls_and_reject_ambiguity(queue):
+    _engagement(queue, "Original", event_id=7)
+    expected = [{"post_url": "https://www.instagram.com/p/Original/", "event_id": 7}]
+    assert (
+        queue.recorded_engagement_sources(
+            recipient_id=RECIPIENT_ID, account_username=ACCOUNT_USERNAME, event_ids=[7]
+        )
+        == expected
+    )
+    with pytest.raises(ValueError, match="faithfully"):
+        queue.recorded_engagement_sources(
+            recipient_id=RECIPIENT_ID, account_username=ACCOUNT_USERNAME, event_ids=[7, 8]
+        )
+    _engagement(queue, "Changed", event_id=7)
+    with pytest.raises(ValueError, match="faithfully"):
+        queue.recorded_engagement_sources(
+            recipient_id=RECIPIENT_ID, account_username=ACCOUNT_USERNAME, event_ids=[7]
+        )
+
+
 def _storage_failure(code=sqlite3.SQLITE_FULL):
     error = sqlite3.OperationalError("private SQL and filesystem details")
     error.sqlite_errorcode = code
@@ -1996,8 +2067,11 @@ def test_competing_collectors_retry_a_failed_read_once_without_resetting_attempt
     )
     original = queue.claim_next()
     queue.finish(original, error="Temporary read failure")
+    queue.set_setting(f"notification_delivery:{uuid4()}", job_id)
     with ThreadPoolExecutor(max_workers=14) as executor:
-        changes = list(executor.map(lambda _: queue.retry_failed_retrieval(job_id), range(14)))
+        changes = list(
+            executor.map(lambda _: queue.retry_failed_notification_retrievals(), range(14))
+        )
     assert sum(changes) == 1
     assert queue.get(job_id).state == "pending"
     assert queue.get(job_id).attempts == original.attempts
@@ -2027,7 +2101,8 @@ def test_collector_admission_preserves_cancellation_and_retry_budgets(queue, sta
             ):
                 queue.retry(job_id)
     before = queue.get(job_id)
-    assert not queue.retry_failed_retrieval(job_id)
+    queue.set_setting(f"notification_delivery:{uuid4()}", job_id)
+    assert not queue.retry_failed_notification_retrievals()
     assert queue.get(job_id) == before
 
 

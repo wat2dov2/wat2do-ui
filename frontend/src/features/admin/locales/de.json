@@ -14,6 +14,7 @@
     "backToDashboard": "Zurück zum Admin-Dashboard",
     "panelDescription": "Veranstaltungen, Organisationen, Poster und Marketing verwalten",
     "diagnostics": {
+      "refreshLogs": "Protokolle aktualisieren",
       "title": "App-Diagnose",
       "cardDescription": "Endpunkte und Scraping-Workflows prüfen",
       "description": "Anwendungsendpunkte und Scraping-Workflows prüfen.",

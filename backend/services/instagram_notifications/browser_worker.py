@@ -641,8 +641,12 @@ def _source_pollers(queue: BrowserJobQueue, stopping: threading.Event) -> list[t
         result = sync_published_carousels(queue)
         queue.set_setting("source_status", {"checked_at": time.time(), "result": result})
 
+    def collect_notifications() -> None:
+        queue.retry_failed_notification_retrievals()
+        sync_notification_media(queue)
+
     sources = (
-        ("notification_source_status", lambda: sync_notification_media(queue)),
+        ("notification_source_status", collect_notifications),
         ("diagnostics_status", lambda: queue.publish_diagnostics(should_stop=stopping.is_set)),
         ("source_status", collect_carousels),
     )

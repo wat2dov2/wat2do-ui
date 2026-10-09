@@ -14,6 +14,7 @@
     "backToDashboard": "返回管理員儀表板",
     "panelDescription": "管理活動、組織、海報及市場推廣",
     "diagnostics": {
+      "refreshLogs": "更新日誌",
       "title": "應用程式診斷",
       "cardDescription": "檢查端點及爬蟲工作流程",
       "description": "檢查應用程式端點及爬蟲工作流程。",

@@ -14,6 +14,7 @@
     "backToDashboard": "Back to admin dashboard",
     "panelDescription": "Manage events, clubs, posters, and marketing",
     "diagnostics": {
+      "refreshLogs": "Refresh logs",
       "title": "App Diagnostics",
       "cardDescription": "Inspect endpoints and scraping workflows",
       "description": "Inspect application endpoints and scraping workflows.",

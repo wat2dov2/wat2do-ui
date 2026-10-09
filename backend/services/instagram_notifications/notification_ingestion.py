@@ -28,6 +28,7 @@ from services.instagram_notifications.browser_session import (
     school_account_username,
 )
 from services.instagram_notifications.ledger import (
+    acknowledge_browser_delivery,
     claim_pending_browser_media,
     mark_media_succeeded,
     rollback_media_claim,
@@ -51,9 +52,11 @@ _REVIEW_COUNTS = (
 )
 
 
-def _pending_rows() -> list[dict]:
+def _pending_rows(delivery_generation: str | None = None) -> list[dict]:
+    """Snapshot pending rows before acknowledgement can change page offsets."""
+
     def page(offset: int, page_size: int) -> list[dict]:
-        return (
+        query = (
             get_sb()
             .table(INSTAGRAM_NOTIFICATION_MEDIA)
             .select(
@@ -63,10 +66,13 @@ def _pending_rows() -> list[dict]:
             .order("created_at")
             .order("id")
             .range(offset, offset + page_size - 1)
-            .execute()
-            .data
-            or []
         )
+        if delivery_generation is not None:
+            query = query.or_(
+                "browser_delivery_generation.is.null,"
+                f"browser_delivery_generation.neq.{delivery_generation}"
+            )
+        return query.execute().data or []
 
     return fetch_all_pages(page)
 
@@ -94,7 +100,8 @@ def _notification_retrieval(queue: BrowserJobQueue, row: dict) -> tuple[str, str
 
 def sync_notification_media(queue: BrowserJobQueue) -> dict[str, int]:
     stats = {"pending_media": 0, "queued": 0, "invalid": 0}
-    for row in _pending_rows():
+    delivery_generation = queue.delivery_generation
+    for row in _pending_rows(delivery_generation):
         try:
             retrieval = _notification_retrieval(queue, row)
         except (KeyError, TypeError, ValueError, BrowserSessionError):
@@ -106,10 +113,17 @@ def sync_notification_media(queue: BrowserJobQueue) -> dict[str, int]:
             continue
         _, job_id = retrieval
         stats["pending_media"] += 1
-        queue.retry_failed_retrieval(job_id)
         job = queue.get(job_id)
-        if job and job.state == "pending":
+        if job is None:
+            raise RuntimeError("Notification retrieval disappeared before delivery acknowledgement")
+        if job.state == "pending":
             stats["queued"] += 1
+        queue.set_setting(f"notification_delivery:{row['id']}", job_id)
+        acknowledge_browser_delivery(
+            table=INSTAGRAM_NOTIFICATION_MEDIA,
+            row_id=row["id"],
+            delivery_generation=delivery_generation,
+        )
     queue.set_setting("notification_source_status", {"checked_at": time.time(), **stats})
     return stats
 

@@ -6,6 +6,7 @@ engagement, and only public account identity fields leave the database here.
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Iterator
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -30,18 +31,25 @@ from services.instagram_notifications.browser_session import (
     canonical_post_url,
     validate_account_username,
 )
+from services.instagram_notifications.ledger import (
+    acknowledge_browser_delivery,
+    freeze_browser_sources,
+    validate_browser_sources,
+)
 
 if TYPE_CHECKING:
     from services.instagram_notifications.browser_queue import BrowserJobQueue
 
 _CONTROL = controlbox.instagram_browser
 _ACTIVATION_SETTING = "carousel_engagement_activated_at"
+_SOURCE_REGISTRATION_SETTING = "carousel_engagement_source_registered"
 _ACCOUNT_COLUMNS = (
     "account_key,school_id,instagram_user_id,instagram_username,"
     f"school_record:{SCHOOLS}(slug,recipient_id)"
 )
-_BATCH_COLUMNS = "id,account_key,school_id,instagram_user_id,published_at"
+_BATCH_COLUMNS = "id,account_key,school_id,instagram_user_id,published_at,browser_delivery_sources"
 _ITEM_COLUMNS = f"id,event_id,event:{EVENTS}(source_url)"
+log = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -67,32 +75,72 @@ def sync_published_carousels(
 ) -> dict[str, int]:
     """Read published selections and submit their original posts to the queue.
 
-    Activation is durable, so installation never backfills old public posts.
-    Each poll rescans this bounded history using a timestamp/id keyset: publishing
-    assigns ``published_at`` before the final status update, so a durable high
-    watermark alone could miss a batch that finishes after a newer batch.
-    Completed batch markers freeze the original selection; queue deduplication
-    makes a replay safe if collection fails partway through a batch.
+    Cloud activation survives local queue recreation without historical backfill.
+    Only batches not delivered to this queue generation cross the network.
+    The timestamp/id keyset belongs to one poll, so publication that finishes
+    later with an older timestamp remains eligible on the next poll.
+    Frozen source selections survive interrupted enqueue, acknowledgement retries,
+    and queue recreation without following later edits to their events.
     """
     until = _utc(now or datetime.now(timezone.utc))
-    activated_at = queue.get_setting(_ACTIVATION_SETTING)
-    if activated_at is None:
-        activated_at = until.isoformat()
-        queue.set_setting(_ACTIVATION_SETTING, activated_at)
-    since = _utc(datetime.fromisoformat(str(activated_at))).isoformat()
+    since = _source_activation(queue, until)
+    delivery_generation = queue.delivery_generation
     stats = {"batches": 0, "posts": 0, "submitted": 0, "skipped": 0}
-    accounts = _enabled_accounts()
+    accounts = None
 
-    for batch in _published_batches(since=since, until=until.isoformat()):
+    for batch in _published_batches(
+        since=since, until=until.isoformat(), delivery_generation=delivery_generation
+    ):
         stats["batches"] += 1
         completion_setting = f"carousel_engagement_batch:{batch['id']}"
-        if queue.get_setting(completion_setting) is not None:
+        try:
+            completed = queue.get_setting(completion_setting) is not None
+            if completed and (
+                batch.get("browser_delivery_sources") is not None
+                or queue.get_setting(f"carousel_engagement_sources:{batch['id']}") is not None
+            ):
+                sources = _delivery_sources(queue, batch, None, stats)
+                stats["skipped"] += 1
+            else:
+                if accounts is None:
+                    accounts = _enabled_accounts()
+                account = accounts.get(str(batch["account_key"]))
+                sources = _enqueue_batch(queue, batch, account, stats)
+                if sources is None:
+                    continue
+                queue.set_setting(completion_setting, str(batch["published_at"]))
+        except ValueError:
+            # A missing or ambiguous original selection cannot authorize changed posts.
+            log.warning("Carousel %s has no faithful browser source selection", batch["id"])
             stats["skipped"] += 1
             continue
-        account = accounts.get(str(batch["account_key"]))
-        if _enqueue_batch(queue, batch, account, stats):
-            queue.set_setting(completion_setting, str(batch["published_at"]))
+        acknowledge_browser_delivery(
+            table=INSTAGRAM_PUBLISH_BATCHES,
+            row_id=str(batch["id"]),
+            delivery_generation=delivery_generation,
+            sources=sources,
+        )
     return stats
+
+
+def _source_activation(queue: BrowserJobQueue, now: datetime) -> str:
+    activated_at = queue.get_setting(_ACTIVATION_SETTING)
+    if queue.get_setting(_SOURCE_REGISTRATION_SETTING, False):
+        return _utc(datetime.fromisoformat(str(activated_at))).isoformat()
+    proposed = (
+        _utc(datetime.fromisoformat(str(activated_at))).isoformat()
+        if activated_at is not None
+        else now.isoformat()
+    )
+    response = (
+        get_sb().rpc("ensure_instagram_browser_source", {"p_activated_at": proposed}).execute()
+    )
+    if not isinstance(response.data, str):
+        raise RuntimeError("Instagram browser source returned no activation timestamp")
+    activated_at = _utc(datetime.fromisoformat(response.data)).isoformat()
+    queue.set_setting(_ACTIVATION_SETTING, activated_at)
+    queue.set_setting(_SOURCE_REGISTRATION_SETTING, True)
+    return activated_at
 
 
 def _enqueue_batch(
@@ -100,39 +148,79 @@ def _enqueue_batch(
     batch: dict[str, Any],
     account: dict[str, Any] | None,
     stats: dict[str, int],
-) -> bool:
+) -> list[dict[str, Any]] | None:
     if account is None or not _matches_publishing_account(batch, account):
         stats["skipped"] += 1
-        return False
+        return None
     try:
         identity = _account_identity(account)
     except ValueError:
         stats["skipped"] += 1
-        return False
+        return None
 
-    for item in _published_items(str(batch["id"])):
-        source_url = (item.get("event") or {}).get("source_url")
-        try:
-            post_url = canonical_post_url(source_url or "")
-        except BrowserSessionError:
-            stats["skipped"] += 1
-            continue
+    sources = _delivery_sources(queue, batch, identity, stats)
+    if queue.get_setting(f"carousel_engagement_batch:{batch['id']}") is not None:
+        stats["skipped"] += 1
+        return sources
+    for source in sources:
         stats["posts"] += 1
         try:
             queue.enqueue_engagement(
                 school=identity.school,
                 recipient_id=identity.recipient_id,
                 account_username=identity.account_username,
-                post_url=post_url,
-                event_id=int(item["event_id"]),
+                post_url=source["post_url"],
+                event_id=source["event_id"],
             )
         except ValueError:
             # A publishing identity can be valid for Meta but unavailable
             # to this browser. Its batch must not block other schools.
             stats["skipped"] += 1
-            return False
+            return None
         stats["submitted"] += 1
-    return True
+    return sources
+
+
+def _delivery_sources(
+    queue: BrowserJobQueue,
+    batch: dict[str, Any],
+    identity: EngagementAccount | None,
+    stats: dict[str, int],
+) -> list[dict[str, Any]]:
+    """Freeze one selection before the first enqueue and reuse it for every replay."""
+    setting = f"carousel_engagement_sources:{batch['id']}"
+    local = queue.get_setting(setting)
+    saved = batch.get("browser_delivery_sources")
+    if saved is not None:
+        sources = validate_browser_sources(saved)
+    else:
+        if local is not None:
+            candidate = validate_browser_sources(local)
+        elif queue.get_setting(f"carousel_engagement_batch:{batch['id']}") is not None:
+            if identity is None:
+                raise ValueError("Original carousel account identity is unavailable")
+            event_ids = [item["event_id"] for item in _published_items(str(batch["id"]))]
+            if not event_ids or any(type(event_id) is not int for event_id in event_ids):
+                raise ValueError("Original carousel event identity is unavailable")
+            candidate = queue.recorded_engagement_sources(
+                recipient_id=identity.recipient_id,
+                account_username=identity.account_username,
+                event_ids=event_ids,
+            )
+        else:
+            candidate = []
+            for item in _published_items(str(batch["id"])):
+                try:
+                    post_url = canonical_post_url((item.get("event") or {}).get("source_url") or "")
+                except BrowserSessionError:
+                    stats["skipped"] += 1
+                    continue
+                candidate.append({"post_url": post_url, "event_id": item.get("event_id")})
+        sources = freeze_browser_sources(batch_id=str(batch["id"]), sources=candidate)
+    if local is not None and sources != validate_browser_sources(local):
+        raise ValueError("Cloud and local carousel source selections disagree")
+    queue.set_setting(setting, sources)
+    return sources
 
 
 def _account_identity(account: dict[str, Any]) -> EngagementAccount:
@@ -164,8 +252,13 @@ def _enabled_accounts() -> dict[str, dict[str, Any]]:
     return {str(row["account_key"]): row for row in rows}
 
 
-def _published_batches(*, since: str, until: str) -> Iterator[dict[str, Any]]:
+def _published_batches(
+    *, since: str, until: str, delivery_generation: str
+) -> Iterator[dict[str, Any]]:
     after: tuple[str, str] | None = None
+    delivery_filter = (
+        f"browser_delivery_generation.is.null,browser_delivery_generation.neq.{delivery_generation}"
+    )
     while True:
         query = (
             get_sb()
@@ -178,12 +271,14 @@ def _published_batches(*, since: str, until: str) -> Iterator[dict[str, Any]]:
             .order("id")
             .limit(_CONTROL.source_page_size)
         )
+        filters = delivery_filter
         if after is not None:
             timestamp, batch_id = after
-            query = query.or_(
+            cursor_filter = (
                 f"published_at.gt.{timestamp},and(published_at.eq.{timestamp},id.gt.{batch_id})"
             )
-        rows = query.execute().data or []
+            filters = f"and(or({delivery_filter}),or({cursor_filter}))"
+        rows = query.or_(filters).execute().data or []
         for row in rows:
             yield row
         if len(rows) < _CONTROL.source_page_size:

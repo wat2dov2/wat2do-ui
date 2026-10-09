@@ -14,6 +14,7 @@
     "backToDashboard": "Volver al panel de administración",
     "panelDescription": "Gestionar eventos, organizaciones, carteles y marketing",
     "diagnostics": {
+      "refreshLogs": "Actualizar registros",
       "title": "Diagnóstico de la aplicación",
       "cardDescription": "Inspeccionar endpoints y flujos de trabajo de scraping",
       "description": "Inspeccionar los endpoints de la aplicación y los flujos de trabajo de scraping.",

@@ -14,6 +14,7 @@
     "backToDashboard": "Voltar ao painel de administração",
     "panelDescription": "Gerenciar eventos, organizações, cartazes e marketing",
     "diagnostics": {
+      "refreshLogs": "Atualizar registros",
       "title": "Diagnóstico do aplicativo",
       "cardDescription": "Inspecionar endpoints e fluxos de trabalho de scraping",
       "description": "Inspecionar endpoints do aplicativo e fluxos de trabalho de scraping.",

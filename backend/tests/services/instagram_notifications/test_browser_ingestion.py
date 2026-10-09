@@ -175,7 +175,8 @@ def import_setup(tmp_path, monkeypatch):
         "source_url": URL,
         "notification": {"intended_recipient_id": RECIPIENT},
     }
-    monkeypatch.setattr(bridge, "_pending_rows", lambda: [row])
+    monkeypatch.setattr(bridge, "_pending_rows", lambda delivery_generation=None: [row])
+    monkeypatch.setattr(bridge, "acknowledge_browser_delivery", MagicMock())
     monkeypatch.setattr(bridge, "_identity", lambda *_: ("ubc", RECIPIENT, ACCOUNT))
     jid = queue.enqueue_retrieval(
         school="ubc", recipient_id=RECIPIENT, account_username=ACCOUNT, url=URL
@@ -635,6 +636,7 @@ def test_excluded_notification_is_not_synced_or_imported(import_setup, monkeypat
     assert bridge.sync_notification_media(queue)["queued"] == 0
     assert bridge.import_retrieved_media(queue)["imported"] == 0
     assert queue.get(jid).state == "pending"
+    bridge.acknowledge_browser_delivery.assert_not_called()
 
 
 @pytest.mark.parametrize("kind", ["digest", "engagement"])
@@ -672,9 +674,13 @@ def test_manual_targets_preserve_exact_posts_and_normalize_handles(target, expec
 
 def test_sync_enqueues_entire_backlog_not_one_source_page(tmp_path, monkeypatch):
     queue = BrowserJobQueue(tmp_path)
-    rows = [{"source_url": f"https://www.instagram.com/p/Backlog{i}/"} for i in range(140)]
-    monkeypatch.setattr(bridge, "_pending_rows", lambda: rows)
+    rows = [
+        {"id": str(UUID(int=i + 1)), "source_url": f"https://www.instagram.com/p/Backlog{i}/"}
+        for i in range(140)
+    ]
+    monkeypatch.setattr(bridge, "_pending_rows", lambda delivery_generation=None: rows)
     monkeypatch.setattr(bridge, "_identity", lambda _: ("ubc", RECIPIENT, ACCOUNT))
+    monkeypatch.setattr(bridge, "acknowledge_browser_delivery", MagicMock())
     assert bridge.sync_notification_media(queue) == {
         "pending_media": 140,
         "queued": 140,
@@ -688,17 +694,14 @@ def test_sync_enqueues_entire_backlog_not_one_source_page(tmp_path, monkeypatch)
     assert sum(row["quantity"] for row in queue.status()["queues"]) == 140
 
 
-def test_notification_collection_preserves_finite_read_failure_budget(import_setup):
+def test_delivery_does_not_restart_failed_retrievals(import_setup):
     queue, _, jid = import_setup
-    for attempt in range(1, bridge._CONTROL.ingestion_retry_limit + 1):
-        assert queue.claim_next().id == jid
-        assert queue.get(jid).attempts == attempt
-        queue.finish(queue.get(jid), error="Permanent incomplete public media")
-        result = bridge.sync_notification_media(queue)
-        exhausted = attempt == bridge._CONTROL.ingestion_retry_limit
-        assert result["queued"] == (0 if exhausted else 1)
-        assert queue.get(jid).state == ("failed" if exhausted else "pending")
-        assert queue.get(jid).attempts == attempt
+    assert queue.claim_next().id == jid
+    queue.finish(queue.get(jid), error="Incomplete public media")
+
+    assert bridge.sync_notification_media(queue)["queued"] == 0
+    assert queue.get(jid).state == "failed"
+    assert queue.get(jid).attempts == 1
     assert queue.claim_next() is None
 
 
@@ -713,13 +716,118 @@ def test_notification_collection_preserves_an_operator_cancel(import_setup):
     assert queue.claim_next() is None
 
 
+def test_notification_delivery_is_acknowledged_after_local_enqueue(
+    tmp_path, monkeypatch, fake_sb, patch_sb
+):
+    queue = BrowserJobQueue(tmp_path)
+    row = {
+        "id": "d6246624-50f7-4aa1-bf0a-0d14b604d5a7",
+        "source_url": URL,
+        "created_at": "2026-10-08T00:00:00Z",
+        "notification": {"intended_recipient_id": RECIPIENT},
+    }
+    patch_sb("services.instagram_notifications.notification_ingestion")
+    patch_sb("services.instagram_notifications.ledger")
+    monkeypatch.setattr(bridge, "_identity", lambda _: ("ubc", RECIPIENT, ACCOUNT))
+    fake_sb.queue_responses([[row], []])
+
+    assert bridge.sync_notification_media(queue)["queued"] == 1
+
+    fake_sb.update.assert_called_once_with(
+        {"browser_delivery_generation": queue.delivery_generation}, returning="minimal"
+    )
+    fake_sb.or_.assert_called_once_with(
+        "browser_delivery_generation.is.null,"
+        f"browser_delivery_generation.neq.{queue.delivery_generation}"
+    )
+    job = queue.claim_next()
+    assert job.payload["url"] == URL
+    assert queue.get_setting(f"notification_delivery:{row['id']}") == job.id
+
+
+def test_notification_receipt_failure_prevents_cloud_acknowledgement(import_setup, monkeypatch):
+    queue, row, jid = import_setup
+    original_setting = queue.set_setting
+
+    def fail_receipt(key, value):
+        if key == f"notification_delivery:{row['id']}":
+            raise OSError("Local delivery receipt unavailable")
+        original_setting(key, value)
+
+    monkeypatch.setattr(queue, "set_setting", fail_receipt)
+
+    with pytest.raises(OSError, match="Local delivery receipt unavailable"):
+        bridge.sync_notification_media(queue)
+
+    bridge.acknowledge_browser_delivery.assert_not_called()
+    assert queue.get(jid).state == "pending"
+
+
+def test_notification_acknowledgement_failure_replays_without_duplicate_jobs(
+    tmp_path, monkeypatch, fake_sb, patch_sb
+):
+    queue = BrowserJobQueue(tmp_path)
+    row = {
+        "id": str(UUID(int=1)),
+        "source_url": URL,
+        "notification": {"intended_recipient_id": RECIPIENT},
+    }
+    patch_sb("services.instagram_notifications.notification_ingestion")
+    patch_sb("services.instagram_notifications.ledger")
+    monkeypatch.setattr(bridge, "_identity", lambda _: ("ubc", RECIPIENT, ACCOUNT))
+    fake_sb.execute.side_effect = [
+        SimpleNamespace(data=[row]),
+        RuntimeError("Cloud acknowledgement unavailable"),
+        SimpleNamespace(data=[row]),
+        SimpleNamespace(data=[]),
+    ]
+
+    with pytest.raises(RuntimeError, match="Cloud acknowledgement unavailable"):
+        bridge.sync_notification_media(queue)
+    job_id = queue.get_setting(f"notification_delivery:{row['id']}")
+    assert queue.get(job_id).state == "pending"
+
+    assert bridge.sync_notification_media(queue)["queued"] == 1
+    assert queue.claim_next().id == job_id
+    assert queue.claim_next() is None
+
+
+def test_notification_pages_are_snapshotted_before_receipts_change_the_query(
+    tmp_path, monkeypatch, fake_sb, patch_sb
+):
+    queue = BrowserJobQueue(tmp_path)
+    job_id = queue.enqueue_retrieval(
+        school="ubc", recipient_id=RECIPIENT, account_username=ACCOUNT, url=URL
+    )
+    rows = [{"id": str(UUID(int=index + 1))} for index in range(1001)]
+    patch_sb("services.instagram_notifications.notification_ingestion")
+    patch_sb("services.instagram_notifications.ledger")
+    monkeypatch.setattr(bridge, "_notification_retrieval", lambda *_: ("ubc", job_id))
+    fake_sb.queue_responses([rows[:1000], rows[1000:]])
+
+    def acknowledge_after_snapshot(*args, **kwargs):
+        assert fake_sb.select.call_count == 2
+        assert fake_sb.range.call_args_list[-1].args == (1000, 1999)
+        return fake_sb
+
+    fake_sb.update.side_effect = acknowledge_after_snapshot
+
+    assert bridge.sync_notification_media(queue) == {
+        "pending_media": 1001,
+        "queued": 1001,
+        "invalid": 0,
+    }
+    assert fake_sb.update.call_count == 1001
+    assert queue.get_setting(f"notification_delivery:{rows[-1]['id']}") == job_id
+
+
 @pytest.mark.parametrize("invalid", ["recipient", "url"])
 def test_invalid_notification_cannot_block_other_schools(import_setup, monkeypatch, invalid):
     queue, row, jid = import_setup
     broken = {**row, "source_url": "https://www.instagram.com/p/Broken/"}
     if invalid == "url":
         broken["source_url"] = None
-    monkeypatch.setattr(bridge, "_pending_rows", lambda: [broken, row])
+    monkeypatch.setattr(bridge, "_pending_rows", lambda delivery_generation=None: [broken, row])
 
     def identity(target):
         if target is broken and invalid == "recipient":
@@ -731,6 +839,11 @@ def test_invalid_notification_cannot_block_other_schools(import_setup, monkeypat
     result = bridge.sync_notification_media(queue)
 
     assert result == {"pending_media": 1, "queued": 1, "invalid": 1}
+    bridge.acknowledge_browser_delivery.assert_called_once_with(
+        table="instagram_notification_media",
+        row_id=row["id"],
+        delivery_generation=queue.delivery_generation,
+    )
     assert queue.claim_next().id == jid
     assert queue.claim_next() is None
 

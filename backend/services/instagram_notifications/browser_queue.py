@@ -155,7 +155,57 @@ class BrowserJobQueue:
             for statement in schema.split(";"):
                 if statement.strip():
                     db.execute(statement)
+            db.execute(
+                "INSERT INTO settings VALUES ('delivery_generation',?) ON CONFLICT(key) DO NOTHING",
+                (json.dumps(str(uuid.uuid4())),),
+            )
+            generation = json.loads(
+                db.execute("SELECT value FROM settings WHERE key='delivery_generation'").fetchone()[
+                    0
+                ]
+            )
+            if not isinstance(generation, str) or str(uuid.UUID(generation)) != generation:
+                raise ValueError("Browser queue delivery generation is invalid")
+        self._delivery_generation = generation
         self.database_path.chmod(0o600)
+
+    @property
+    def delivery_generation(self) -> str:
+        """Identify the durable queue so a recreated database can recover cloud delivery."""
+        return self._delivery_generation
+
+    @_retry_storage
+    def recorded_engagement_sources(
+        self, *, recipient_id: str, account_username: str, event_ids: list[int]
+    ) -> list[dict[str, Any]]:
+        """Recover an existing selection only when original jobs identify each source exactly."""
+        recipient_id = validate_recipient_id(recipient_id)
+        account_username = validate_account_username(account_username)
+        if any(type(event_id) is not int for event_id in event_ids) or len(set(event_ids)) != len(
+            event_ids
+        ):
+            raise ValueError("Engagement source event IDs must be unique integers")
+        if not event_ids:
+            return []
+        with closing(self._connect()) as db:
+            rows = db.execute(
+                "SELECT payload FROM jobs WHERE kind='engagement' AND recipient_id=? "
+                "AND account_username=? AND COALESCE(json_extract(payload,'$.dry_run'),0)=0 "
+                "AND json_extract(payload,'$.event_id') IN ("
+                + ",".join("?" for _ in event_ids)
+                + ")",
+                (recipient_id, account_username, *event_ids),
+            ).fetchall()
+        sources: dict[int, set[str]] = {event_id: set() for event_id in event_ids}
+        for row in rows:
+            payload = json.loads(row["payload"])
+            sources[payload["event_id"]].add(canonical_post_url(payload["post_url"]))
+        if any(len(urls) != 1 for urls in sources.values()):
+            raise ValueError("Original carousel sources cannot be recovered faithfully")
+        return [
+            {"post_url": next(iter(sources[event_id])), "event_id": event_id}
+            for event_id in event_ids
+        ]
 
     def _connect(self) -> sqlite3.Connection:
         db = sqlite3.connect(self.database_path, timeout=CONTROL.storage_busy_timeout_seconds)
@@ -916,18 +966,22 @@ class BrowserJobQueue:
         self._record_job_diagnostic("queued", job_id)
 
     @_retry_storage
-    def retry_failed_retrieval(self, job_id: str) -> bool:
-        """Let competing collectors retry an eligible failure once without reviving cancellations."""
+    def retry_failed_notification_retrievals(self) -> int:
+        """Retry delivered notification reads locally without another cloud backlog scan."""
         with closing(self._connect()) as db, db:
             changed = db.execute(
                 "UPDATE jobs SET state='pending',created_at=?,result=NULL,error=NULL,"
-                "started_at=NULL,finished_at=NULL WHERE id=? AND kind='retrieval' "
-                "AND state='failed' AND attempts<?",
-                (time.time(), job_id, CONTROL.ingestion_retry_limit),
-            ).rowcount
-        if changed:
+                "started_at=NULL,finished_at=NULL WHERE kind='retrieval' "
+                "AND state='failed' AND attempts<? "
+                "AND id IN (SELECT json_extract(value,'$') FROM settings "
+                "WHERE key GLOB 'notification_delivery:*') "
+                f"AND {_AVAILABLE_ACCOUNT_SQL} RETURNING id",
+                (time.time(), CONTROL.ingestion_retry_limit),
+            ).fetchall()
+        for row in changed:
+            job_id = row["id"]
             self._record_job_diagnostic("queued", job_id)
-        return bool(changed)
+        return len(changed)
 
     @_retry_storage
     def cancel(self, job_id: str) -> None:

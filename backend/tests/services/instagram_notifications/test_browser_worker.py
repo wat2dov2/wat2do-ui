@@ -862,6 +862,37 @@ def test_once_recovers_under_browser_lock_and_never_starts_collection(queue, mon
     assert signal.getsignal(signal.SIGTERM) is prior_term
 
 
+def test_delivered_notification_read_retries_locally_when_cloud_collection_fails(
+    queue, monkeypatch
+):
+    job_id = queue.enqueue_retrieval(
+        school="ubc",
+        recipient_id=RECIPIENT_ID,
+        account_username=ACCOUNT_USERNAME,
+        url="https://www.instagram.com/p/DeliveredRetry/",
+    )
+    queue.set_setting("notification_delivery:cloud-media-id", job_id)
+    queue.finish(queue.claim_next(), error="Read requires human recovery")
+    queue.set_setting("paused", "human account recovery")
+    stopping = threading.Event()
+
+    def unavailable(_):
+        assert queue.get(job_id).state == "pending"
+        stopping.set()
+        raise RuntimeError("Cloud unavailable")
+
+    monkeypatch.setattr(notification_ingestion, "sync_notification_media", unavailable)
+    module._source_pollers(queue, stopping)[0].run()
+    assert queue.get_setting("notification_source_status")["error"] == "RuntimeError"
+    assert queue.get_setting("paused") == "human account recovery"
+    queue.set_setting("paused", False)
+    resumed = queue.claim_next()
+    assert resumed.id == job_id
+    assert resumed.attempts == 2
+    queue.finish(resumed, result={"posts": []})
+    assert queue.get(job_id).state == "succeeded"
+
+
 def test_collector_source_failure_is_sanitized_and_retried(queue, monkeypatch, caplog):
     stopping = threading.Event()
     attempts = []

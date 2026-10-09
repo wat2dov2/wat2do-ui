@@ -14,6 +14,7 @@
     "backToDashboard": "Retour au tableau de bord administrateur",
     "panelDescription": "Gérer les événements, les organisations, les affiches et le marketing",
     "diagnostics": {
+      "refreshLogs": "Actualiser les journaux",
       "title": "Diagnostics de l'application",
       "cardDescription": "Inspecter les points de terminaison et les flux de travail de scraping",
       "description": "Inspecter les points de terminaison de l'application et les flux de travail de scraping.",

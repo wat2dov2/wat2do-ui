@@ -14,6 +14,7 @@
     "backToDashboard": "Quay lại bảng điều khiển quản trị",
     "panelDescription": "Quản lý sự kiện, tổ chức, poster và marketing",
     "diagnostics": {
+      "refreshLogs": "Làm mới nhật ký",
       "title": "Chẩn đoán ứng dụng",
       "cardDescription": "Kiểm tra các điểm cuối và quy trình thu thập dữ liệu",
       "description": "Kiểm tra các điểm cuối ứng dụng và quy trình thu thập dữ liệu.",

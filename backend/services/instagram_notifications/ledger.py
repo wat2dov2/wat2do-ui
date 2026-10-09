@@ -1,13 +1,86 @@
-"""Durable at-most-once claims for Instagram notification media."""
+"""Durable media claims and browser delivery receipts for Instagram sources."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Callable, Literal, Sequence
+from typing import Any, Callable, Literal, Sequence
+from uuid import UUID
 
+from core.constants import INSTAGRAM_BATCH_PUBLISHED
 from core.database import get_sb
 from core.pagination import fetch_all_pages
-from core.tables import INSTAGRAM_NOTIFICATION_MEDIA
+from core.tables import INSTAGRAM_NOTIFICATION_MEDIA, INSTAGRAM_PUBLISH_BATCHES
+from services.instagram_notifications.browser_session import BrowserSessionError, canonical_post_url
+
+
+def validate_browser_sources(value: Any) -> list[dict[str, Any]]:
+    """Validate the immutable public source selection carried by a delivery receipt."""
+    if not isinstance(value, list):
+        raise ValueError("Carousel delivery sources must be a list")
+    sources = []
+    for source in value:
+        if (
+            not isinstance(source, dict)
+            or set(source) != {"post_url", "event_id"}
+            or not isinstance(source["post_url"], str)
+            or source["event_id"] is not None
+            and (type(source["event_id"]) is not int or source["event_id"] <= 0)
+        ):
+            raise ValueError("Carousel delivery source is invalid")
+        try:
+            post_url = canonical_post_url(source["post_url"])
+        except BrowserSessionError:
+            raise ValueError("Carousel delivery post URL is invalid") from None
+        if post_url != source["post_url"]:
+            raise ValueError("Carousel delivery post URL is not canonical")
+        sources.append({"post_url": post_url, "event_id": source["event_id"]})
+    return sources
+
+
+def freeze_browser_sources(*, batch_id: str, sources: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Adopt the database's immutable winner before any local engagement is queued."""
+    response = (
+        get_sb()
+        .rpc(
+            "freeze_instagram_browser_sources",
+            {"p_batch_id": str(UUID(batch_id)), "p_sources": validate_browser_sources(sources)},
+        )
+        .execute()
+    )
+    return validate_browser_sources(response.data)
+
+
+def acknowledge_browser_delivery(
+    *,
+    table: str,
+    row_id: str,
+    delivery_generation: str,
+    sources: list[dict[str, Any]] | None = None,
+) -> None:
+    """Record delivery only after the source has committed to its local queue.
+
+    This receipt is independent of processing or engagement completion.
+    A recreated queue uses a new generation and discovers the source again.
+    """
+    status = {
+        INSTAGRAM_NOTIFICATION_MEDIA: "pending",
+        INSTAGRAM_PUBLISH_BATCHES: INSTAGRAM_BATCH_PUBLISHED,
+    }[table]
+    receipt: dict[str, Any] = {"browser_delivery_generation": str(UUID(delivery_generation))}
+    if table == INSTAGRAM_PUBLISH_BATCHES:
+        if sources is None:
+            raise ValueError("Published carousel delivery requires its frozen sources")
+        receipt["browser_delivery_sources"] = validate_browser_sources(sources)
+    elif sources is not None:
+        raise ValueError("Notification media delivery does not contain carousel sources")
+    (
+        get_sb()
+        .table(table)
+        .update(receipt, returning="minimal")
+        .eq("id", str(UUID(row_id)))
+        .eq("status", status)
+        .execute()
+    )
 
 
 def recover_finished_media_claims(is_run_completed: Callable[[str], bool]) -> int:

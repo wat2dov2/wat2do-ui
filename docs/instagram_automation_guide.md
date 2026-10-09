@@ -212,7 +212,10 @@ Notification synchronization and imports respect the same exclusions.
 
 The notification workflow records exact post URLs in the existing production media ledger.
 With `notification_media_provider` set to `browser` in `backend/controlbox/instagram_browser.json`, it does not dispatch the Apify scraper.
-The worker's background collector synchronizes all eligible pending URLs every ten seconds, independently of the Codex schedule.
+The worker's background collector checks for pending URLs not yet delivered to its durable queue every ten seconds, independently of the Codex schedule.
+Delivery acknowledgements are separate from import claims and are written only after the local enqueue and notification receipt commit.
+A persistent queue generation makes normal restarts skip delivered rows and makes a recreated database recover pending rows from the lost queue.
+Review and import still see all pending rows, including work already delivered to the browser queue.
 Codex reviews retrieved data and applies saved reconciliation decisions through the guarded importer.
 Retrieval fills all fourteen secondary slots as new jobs arrive and streams continuously until the queue empties, a digest takes priority, overdue engagement needs a turn, or the worker pauses.
 Each job retains its own timeout; the stream does not drain on a fixed timer.
@@ -241,7 +244,8 @@ All parallel tabs verify the same active account, while each notification retain
 A challenge, uncertain primary action, or unconfirmed secondary closure pauses further work after active requests drain.
 It verifies the active account remains unchanged throughout navigation and retrieval, and only public captions, owners, timestamps, coauthors, tagged users, and media fields leave the browser.
 The queued notification recipient determines school routing, independent of the browser account.
-Concurrent collectors retry a failed read atomically within its budget and preserve explicitly cancelled jobs.
+The notification collector retries delivered failed reads locally within their original budget, even when its cloud collection fails.
+Concurrent retry passes preserve explicitly cancelled jobs, exhausted attempts, excluded accounts, and manual retrieval jobs.
 Malformed notification identities or URLs remain pending for repair, while valid schools continue through collection and import.
 The source and import summaries expose an `invalid` count for these targets.
 An explicit retrieval retry resets its import markers and read budget in one transaction only while the target is still idle.
@@ -293,11 +297,17 @@ Missing or mismatched account configuration is skipped and checked again on a la
 
 The first collection saves its activation time locally.
 Only carousels published at or after that time are eligible, so installation does not engage a historical backlog.
-Later polls scan published batches from that activation time in deterministic timestamp/id pages.
+Activation is registered in the database once and restored if the local queue is recreated.
+Later polls select only batches not delivered to the current queue generation, in deterministic timestamp/id pages from the original activation time.
 This catches a batch whose final publication update arrives after another batch with a newer timestamp.
-Completed batch markers prevent a later edit to an event's source URL from queuing a different historical post.
+The selected original post URLs are frozen atomically in the database before the first enqueue, then saved locally.
+Concurrent collectors use the same immutable selection; the delivery generation is acknowledged only after all local enqueues commit.
+Recovered queues replay those saved sources even if the event's URL changes or its record is deleted.
+Existing completed batches without a source receipt use their original local engagement jobs only when every selected source can be recovered faithfully; otherwise that batch is skipped for repair while other batches continue.
 Queue deduplication by account and original post makes an interrupted collection safe to repeat.
-The batch scan grows with the number of carousels published since activation; completed batches do not reload their event items.
+Completed batches are acknowledged after all local enqueues commit, so their metadata is omitted from later cloud responses.
+An interrupted acknowledgement reuses the local completion marker without reloading event items.
+Apply the browser source delivery migration before installing this worker version; collection failures are surfaced until the required schema is available.
 
 ### Worker operations
 
@@ -596,7 +606,8 @@ Events are persisted in the local queue before the background collector forwards
 Safe read retries retain their failure reason in a retrying event while clearing the pending job's error fields.
 Failed uploads remain local for the next collector pass, without holding the browser lock during network writes.
 The admin-only log endpoint filters these events by `sender_id=instagram-browser-worker`.
-The tab polls every three seconds; the worker forwards events on its existing source collection interval.
+Both diagnostics log tabs load once and update only when the admin clicks Refresh logs.
+The worker forwards events on its existing source collection interval.
 Production retains logs for seven days under the existing log retention policy.
 Only allowlisted job metadata is sent; raw worker output, notification payloads, cookies, and credentials are excluded.
 Existing local job history is not backfilled; lifecycle events begin when the updated worker runs.

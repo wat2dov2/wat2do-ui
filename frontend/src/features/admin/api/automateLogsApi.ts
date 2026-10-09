@@ -21,6 +21,10 @@ export function useAutomateLogs(senderId?: string) {
   return useQuery({
     queryKey: queryKeys.automateLogs.list(senderId),
     queryFn: () => fetchAutomateLogs(senderId),
-    refetchInterval: 3000,
+    refetchInterval: false,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    retryOnMount: false,
   });
 }

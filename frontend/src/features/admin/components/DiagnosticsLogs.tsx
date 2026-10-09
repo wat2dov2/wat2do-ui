@@ -2,20 +2,26 @@ import { useTranslation } from "react-i18next";
 import { formatInTimeZone } from "date-fns-tz";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 import { useAutomateLogs } from "@/features/admin/api/automateLogsApi";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/shared/ui/card";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardAction } from "@/shared/ui/card";
+import { Button } from "@/shared/ui/button";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/shared/ui/table";
 import { LoadingPage } from "@/shared/ui/loading-page";
 
 export function DiagnosticsLogs({ browserWorker = false }: { browserWorker?: boolean }) {
   const { t } = useTranslation();
   const { getSchoolTimezone } = useSchoolDirectory();
-  const { data: logs = [], isLoading, isError } = useAutomateLogs(browserWorker ? "instagram-browser-worker" : undefined);
+  const { data: logs = [], isLoading, isError, isFetching, refetch } = useAutomateLogs(browserWorker ? "instagram-browser-worker" : undefined);
   const namespace = browserWorker ? "admin.diagnostics.browserLogs" : "admin.diagnostics.automateLogs";
   return (
     <Card>
       <CardHeader>
         <CardTitle><h2>{t(`${namespace}.title`)}</h2></CardTitle>
         <CardDescription>{t(`${namespace}.description`)}</CardDescription>
+        <CardAction>
+          <Button variant="outline" disabled={isFetching} aria-busy={isFetching} onClick={() => void refetch()}>
+            {t("admin.diagnostics.refreshLogs")}
+          </Button>
+        </CardAction>
       </CardHeader>
       <CardContent>
         {isLoading ? <LoadingPage /> : isError ? <p>{t("admin.diagnostics.browserLogs.error")}</p> : (
