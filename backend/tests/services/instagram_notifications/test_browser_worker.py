@@ -34,7 +34,7 @@ ACCOUNT_USERNAME = "ubc.wat2do.io"
 def isolated_browser(monkeypatch, tmp_path):
     monkeypatch.setattr(module, "CONTROL", module.CONTROL.model_copy(update={"parallel_tabs": 10}))
     monkeypatch.setattr(notification_ingestion, "sync_notification_media", lambda _: {})
-    monkeypatch.setattr(module, "maintain_tab_pool", lambda _: None)
+    monkeypatch.setattr(module, "maintain_tab_pool", lambda _: True)
     monkeypatch.setattr(module, "BROWSER_LOCK_PATH", str(tmp_path / "browser.lock"))
     monkeypatch.setattr(
         module,
@@ -547,10 +547,10 @@ def test_background_storage_failure_reports_full_disk_without_raw_details(
     else:
         waits = iter([False, True])
 
-        def fail(*args):
+        def fail_heartbeat(*args):
             raise failure
 
-        monkeypatch.setattr(queue, "set_setting", fail)
+        monkeypatch.setattr(queue, "set_setting", fail_heartbeat)
         module._keep_worker_alive(queue, SimpleNamespace(wait=lambda _: next(waits)))
 
     assert reason in caplog.text
@@ -1140,7 +1140,7 @@ def test_tab_maintenance_does_not_request_bootstrap_pages_during_cooldown(queue,
         "BrowserTabPool",
         lambda _: pytest.fail("Cooldown must suppress browser maintenance"),
     )
-    maintain_tab_pool(queue)
+    assert maintain_tab_pool(queue) is False
     assert queue.is_rate_limited()
     assert not queue.get_setting("paused", False)
 
@@ -1152,7 +1152,7 @@ def test_fresh_maintenance_429_uses_shared_cooldown_without_a_human_pause(queue,
     monkeypatch.setattr(
         module, "BrowserTabPool", lambda _: SimpleNamespace(ensure_capacity=unavailable)
     )
-    maintain_tab_pool(queue)
+    assert maintain_tab_pool(queue) is False
     assert queue.is_rate_limited()
     assert not queue.get_setting("paused", False)
 
@@ -1846,11 +1846,99 @@ def test_transient_tab_inventory_failure_defers_maintenance_without_pausing(queu
 
     monkeypatch.setattr(module, "BrowserTabPool", BrowserTabPool)
     monkeypatch.setattr(BrowserTabPool, "ensure_capacity", capacity)
-    maintain_tab_pool(queue)
+    assert maintain_tab_pool(queue) is False
     assert not queue.get_setting("paused", False)
-    maintain_tab_pool(queue)
+    assert maintain_tab_pool(queue) is True
     assert calls == 2
     assert not queue.get_setting("paused", False)
+
+
+@pytest.mark.parametrize("failure_type", [_BrowserAutomationTransient, TimeoutError])
+def test_worker_does_not_claim_during_deferred_tab_maintenance_and_resumes_when_ready(
+    queue, monkeypatch, failure_type
+):
+    job_id = _engagement(queue, "WaitForReadyPool")
+    checks = []
+    claims = []
+    executions = []
+    interval = 0.01
+    monkeypatch.setattr(
+        module,
+        "CONTROL",
+        module.CONTROL.model_copy(update={"worker_poll_interval_seconds": interval}),
+    )
+
+    def capacity():
+        checks.append(module.time.monotonic())
+        if len(checks) == 1:
+            raise failure_type("Browser tab initialization temporarily unavailable")
+        assert queue.get(job_id).state == "pending"
+        assert queue.get(job_id).attempts == 0
+        assert not queue.get_setting("paused", False)
+        return []
+
+    claim = queue.claim_next
+
+    def claim_only_ready(**kwargs):
+        assert len(checks) == 2, "Incomplete tab maintenance must not admit browser jobs"
+        claims.append(True)
+        return claim(**kwargs)
+
+    process = module.process_next_job
+
+    def stop_after_completion(current):
+        if executions:
+            raise KeyboardInterrupt()
+        return process(current)
+
+    monkeypatch.setattr(module, "maintain_tab_pool", maintain_tab_pool)
+    monkeypatch.setattr(
+        module,
+        "BrowserTabPool",
+        lambda _: SimpleNamespace(ensure_capacity=capacity, settle_registered_tabs=lambda: None),
+    )
+    monkeypatch.setattr(queue, "claim_next", claim_only_ready)
+    monkeypatch.setattr(module, "process_next_job", stop_after_completion)
+    monkeypatch.setattr(
+        module,
+        "execute_job",
+        lambda job, **kwargs: executions.append(job.id) or {"status": "succeeded"},
+    )
+    module.run_worker(queue, collect=False)
+
+    assert len(checks) == 2
+    assert checks[1] - checks[0] >= interval
+    assert claims == [True]
+    assert executions == [job_id]
+    assert queue.get(job_id).state == "succeeded"
+    assert queue.get(job_id).attempts == 1
+    assert not queue.get_setting("paused", False)
+    assert queue.get_setting("worker")["running"] is False
+
+
+def test_once_worker_exits_without_claiming_when_tab_maintenance_is_not_ready(queue, monkeypatch):
+    job_id = _engagement(queue, "OnceWaitForReadyPool")
+
+    def unavailable():
+        raise _BrowserAutomationTransient("Browser tab initialization temporarily unavailable")
+
+    monkeypatch.setattr(module, "maintain_tab_pool", maintain_tab_pool)
+    monkeypatch.setattr(
+        module,
+        "BrowserTabPool",
+        lambda _: SimpleNamespace(ensure_capacity=unavailable, settle_registered_tabs=lambda: None),
+    )
+    monkeypatch.setattr(
+        queue,
+        "claim_next",
+        lambda **_: pytest.fail("Once must leave work pending without a ready pool"),
+    )
+    module.run_worker(queue, once=True, collect=False)
+
+    assert queue.get(job_id).state == "pending"
+    assert queue.get(job_id).attempts == 0
+    assert not queue.get_setting("paused", False)
+    assert queue.get_setting("worker")["running"] is False
 
 
 @pytest.mark.parametrize("kind", ["retrieval", "digest"])

@@ -576,18 +576,19 @@ def _process_batch(
             raise storage_error
 
 
-def maintain_tab_pool(queue: BrowserJobQueue) -> None:
-    """Restore the configured idle tab count without changing an account or pause."""
+def maintain_tab_pool(queue: BrowserJobQueue) -> bool:
+    """Admit work only after restoring the configured pool without changing accounts."""
     if queue.get_setting("paused", False) or queue.is_rate_limited():
-        return
+        return False
     with open(BROWSER_LOCK_PATH, "a+") as browser_lock:
         try:
             fcntl.flock(browser_lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError:
-            return
+            return False
         try:
             if not queue.get_setting("paused", False) and not queue.is_rate_limited():
                 BrowserTabPool(queue).ensure_capacity()
+                return True
         except BrowserRateLimited as exc:
             queue.defer_for_rate_limit(None, str(exc))
         except (TimeoutError, _BrowserAutomationTransient):
@@ -608,6 +609,7 @@ def maintain_tab_pool(queue: BrowserJobQueue) -> None:
                 "paused",
                 error,
             )
+    return False
 
 
 def _poll_source(
@@ -708,10 +710,13 @@ def run_worker(queue: BrowserJobQueue, *, once: bool = False, collect: bool = Tr
             )
             heartbeat.start()
             next_tab_check = 0.0
+            tab_pool_ready = False
             needs_recovery = True
             while True:
                 try:
                     if needs_recovery or queue.storage_unavailable:
+                        tab_pool_ready = False
+                        next_tab_check = 0.0
                         queue.set_setting("worker", {"running": True, "heartbeat": time.time()})
                         _recover_worker_queue(queue)
                         needs_recovery = False
@@ -720,9 +725,13 @@ def run_worker(queue: BrowserJobQueue, *, once: bool = False, collect: bool = Tr
                             for collector in collectors:
                                 collector.start()
                     if time.monotonic() >= next_tab_check:
-                        maintain_tab_pool(queue)
-                        next_tab_check = time.monotonic() + CONTROL.tab_health_interval_seconds
-                    worked = process_next_job(queue)
+                        tab_pool_ready = maintain_tab_pool(queue)
+                        next_tab_check = time.monotonic() + (
+                            CONTROL.tab_health_interval_seconds
+                            if tab_pool_ready
+                            else CONTROL.worker_poll_interval_seconds
+                        )
+                    worked = process_next_job(queue) if tab_pool_ready else False
                 except sqlite3.Error as exc:
                     # Storage pressure is an admission hold, never an auth pause.
                     # Existing engagements recover as uncertain and require inspection.
