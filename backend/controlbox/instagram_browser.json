@@ -2,6 +2,7 @@
   "request_timeout_seconds": 30,
   "apple_event_timeout_seconds": 3,
   "navigation_interval_seconds": 1,
+  "retrieval_interval_seconds": 6,
   "rate_limit_backoff_seconds": 120,
   "rate_limit_max_backoff_seconds": 1800,
   "rate_limit_recovery_seconds": 900,

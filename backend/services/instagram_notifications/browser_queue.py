@@ -665,7 +665,7 @@ class BrowserJobQueue:
             ).fetchone()
             if not row and allow_engagement:
                 row = self._select_engagement(db, now, require_waited=True)
-            if not row:
+            if not row and self._retrieval_due(db, now):
                 row = db.execute(
                     "SELECT * FROM jobs WHERE state='pending' AND kind='retrieval' "
                     f"AND {_AVAILABLE_ACCOUNT_SQL} "
@@ -685,6 +685,12 @@ class BrowserJobQueue:
                 (now, row["id"]),
             )
             return self._job(db.execute("SELECT * FROM jobs WHERE id=?", (row["id"],)).fetchone())
+
+    @staticmethod
+    def _retrieval_due(db: sqlite3.Connection, now: float) -> bool:
+        """Space post retrievals so notification bursts queue instead of hitting 429s."""
+        (last,) = db.execute("SELECT max(started_at) FROM jobs WHERE kind='retrieval'").fetchone()
+        return last is None or now - last >= CONTROL.retrieval_interval_seconds
 
     @staticmethod
     def _expire_pending_digests(db: sqlite3.Connection, now: float) -> None:

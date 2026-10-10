@@ -607,6 +607,7 @@ class InstagramBrowserControl(_ControlModel):
     request_timeout_seconds: float = Field(gt=0, le=120)
     apple_event_timeout_seconds: float = Field(gt=0, le=120)
     navigation_interval_seconds: float = Field(gt=0, le=30)
+    retrieval_interval_seconds: float = Field(ge=0, le=300)
     rate_limit_backoff_seconds: float = Field(gt=0, le=3600)
     rate_limit_max_backoff_seconds: float = Field(gt=0, le=3600)
     rate_limit_recovery_seconds: float = Field(gt=0, le=86400)

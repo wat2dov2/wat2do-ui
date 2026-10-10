@@ -2305,3 +2305,25 @@ def test_status_reports_no_rate_limit_before_any_hold(queue):
         "remaining_seconds": 0,
         "backoff_seconds": 0,
     }
+
+
+def test_retrievals_start_no_closer_than_the_pacing_interval(queue, monkeypatch):
+    monkeypatch.setattr(
+        module, "CONTROL", module.CONTROL.model_copy(update={"retrieval_interval_seconds": 6})
+    )
+    ids = [
+        queue.enqueue_retrieval(
+            school="uwaterloo",
+            recipient_id=RECIPIENT_ID,
+            account_username=ACCOUNT_USERNAME,
+            url=f"https://www.instagram.com/p/PACED{index}/",
+        )
+        for index in range(2)
+    ]
+
+    assert queue.claim_next(now=1000.0).id == ids[0]
+    # A burst waits its turn instead of hitting Instagram back to back.
+    assert queue.claim_next(now=1005.0) is None
+    digest = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "cache-paced")
+    assert queue.claim_next(now=1005.0).id == digest.id
+    assert queue.claim_next(now=1006.0).id == ids[1]
