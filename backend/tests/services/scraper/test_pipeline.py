@@ -11,18 +11,15 @@ from unittest.mock import Mock
 
 import pytest
 
-from core.tables import EVENTS, POSITIONS
 from services.scraper import pipeline as pipeline_module
 from services.scraper.org_resolve import ResolvedClub
-from services.scraper.pipeline import _extract_image_urls
 
 _DIRECTORY_URL = "https://clubs.example.edu/events/123"
 
 
 @pytest.fixture(autouse=True)
 def nothing_imported(monkeypatch):
-    monkeypatch.setattr(pipeline_module, "existing_shortcodes", lambda _shortcodes: set())
-    monkeypatch.setattr(pipeline_module, "existing_urls", lambda _urls, **_kwargs: set())
+    monkeypatch.setattr(pipeline_module, "_already_imported", lambda _url: False)
 
 
 @pytest.fixture
@@ -60,36 +57,6 @@ def _directory_post() -> dict:
         "caption": "Spring Social\nApril 3, 6 PM",
         "images": ["https://clubs.example.edu/poster.jpg"],
     }
-
-
-def test_extract_image_urls_carousel_via_images_field():
-    post = {
-        "images": [
-            {"url": "https://cdn/a.jpg"},
-            {"url": "https://cdn/b.jpg"},
-        ],
-    }
-    assert _extract_image_urls(post) == ["https://cdn/a.jpg", "https://cdn/b.jpg"]
-
-
-def test_extract_image_urls_falls_back_to_child_posts():
-    post = {
-        "images": [],
-        "childPosts": [
-            {"displayUrl": "https://cdn/x.jpg"},
-            {"displayUrl": "https://cdn/y.jpg"},
-        ],
-    }
-    assert _extract_image_urls(post) == ["https://cdn/x.jpg", "https://cdn/y.jpg"]
-
-
-def test_extract_image_urls_falls_back_to_display_url():
-    post = {"displayUrl": "https://cdn/single.jpg"}
-    assert _extract_image_urls(post) == ["https://cdn/single.jpg"]
-
-
-def test_extract_image_urls_returns_empty_list_when_no_images():
-    assert _extract_image_urls({"caption": "no images"}) == []
 
 
 def test_process_post_extracts_normalized_caption_with_claude(monkeypatch):
@@ -155,44 +122,8 @@ def test_only_directory_images_may_come_from_any_domain(
     )
 
 
-@pytest.mark.parametrize(
-    ("url", "shortcodes", "event_urls", "position_urls", "expected"),
-    [
-        pytest.param("https://www.instagram.com/p/SEEN/", {"SEEN"}, set(), set(), True, id="seen"),
-        pytest.param("https://instagram.com/reel/NEW/", set(), set(), set(), False, id="new-reel"),
-        pytest.param(_DIRECTORY_URL, set(), {_DIRECTORY_URL}, set(), True, id="directory-event"),
-        pytest.param(_DIRECTORY_URL, set(), set(), {_DIRECTORY_URL}, True, id="directory-position"),
-        pytest.param(_DIRECTORY_URL, {"123"}, set(), set(), False, id="directory-new"),
-    ],
-)
-def test_already_imported_checks_the_source_identity(
-    monkeypatch, url, shortcodes, event_urls, position_urls, expected
-):
-    shortcode_lookups = []
-    url_lookups = []
-
-    def existing_shortcodes(requested):
-        shortcode_lookups.append(requested)
-        return requested & shortcodes
-
-    def existing_urls(requested, *, table=EVENTS):
-        url_lookups.append((requested, table))
-        return requested & (position_urls if table == POSITIONS else event_urls)
-
-    monkeypatch.setattr(pipeline_module, "existing_shortcodes", existing_shortcodes)
-    monkeypatch.setattr(pipeline_module, "existing_urls", existing_urls)
-
-    assert pipeline_module._already_imported(url) is expected
-    if "instagram.com" in url:
-        assert len(shortcode_lookups) == 1
-        assert url_lookups == []
-    else:
-        assert shortcode_lookups == []
-        assert url_lookups[0] == ({url}, EVENTS)
-
-
 def test_already_imported_source_is_not_uploaded_or_extracted(monkeypatch):
-    monkeypatch.setattr(pipeline_module, "existing_urls", lambda urls, **_: set(urls))
+    monkeypatch.setattr(pipeline_module, "_already_imported", lambda _url: True)
     upload = Mock()
     extract = Mock()
     monkeypatch.setattr(pipeline_module, "upload_post_images", upload)

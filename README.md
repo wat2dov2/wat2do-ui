@@ -161,7 +161,9 @@ Notifications and recommendation compute run on GitHub-hosted runners.
 Instagram notifications come from a physical Android phone running Automate, which triggers the `process-notification` workflow.
 The workflow records exact post URLs in the Supabase notification ledger, expanding collapsed digests through the Mac's logged-in Brave worker.
 The Brave worker retrieves each pending post, captures it into the local ingestion queue (`~/.local/state/wat2do/ingestion/queue.sqlite3`), and marks its ledger row succeeded.
-The same 5-minute queue processor then extracts events and positions with Claude Haiku through `claude -p` and saves them with the existing writers.
+The same 5-minute queue processor then hands each capture to a Claude Haiku agent (`claude -p`), which follows `backend/services/ingestion/prompt.md`.
+The agent inserts, updates, cancels or reschedules events and positions itself through `psql` with the `wat2do_ingest_agent` login, which can only write events, event dates and positions.
+Set its connection string as `INGEST_AGENT_DATABASE_URL` in `backend/.env`; the role is created by migration and its password is set out of band.
 Manual profile or post lookups use `cd backend && python scripts/instagram_browser.py retrieve --school <slug> --url <url>`.
 Profile-logo backfills and single-post media repairs remain separate Apify operator tools.
 For a read-only live retrieval check, run `cd backend && python scripts/probe_instagram_post.py --url https://www.instagram.com/p/SHORTCODE/`.

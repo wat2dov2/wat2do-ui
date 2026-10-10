@@ -19,7 +19,7 @@ def _item(url: str, **kwargs) -> QueueItem:
 
 def test_process_queue_reports_busy_when_another_run_holds_the_lock(queue, monkeypatch):
     process = Mock()
-    monkeypatch.setattr(module, "process_post", process)
+    monkeypatch.setattr(module, "ingest", process)
     queue.enqueue(_item("https://example.edu/events/1"))
     queue.state_directory.mkdir(parents=True, exist_ok=True)
 
@@ -36,12 +36,12 @@ def test_process_queue_completes_successes_and_releases_failures(queue, monkeypa
     queue.enqueue(_item("https://example.edu/events/broken"))
     processed = []
 
-    def process_post(post, *, school, publisher_ig):
+    def ingest(post, *, school, publisher_ig):
         processed.append((post["url"], school, publisher_ig))
         if post["url"].endswith("broken"):
             raise RuntimeError("extraction failed")
 
-    monkeypatch.setattr(module, "process_post", process_post)
+    monkeypatch.setattr(module, "ingest", ingest)
 
     assert module.process_queue(queue) == {"processed": 1, "failed": 1}
     assert processed == [
@@ -69,7 +69,7 @@ def test_process_queue_looks_up_publishers_once_and_only_for_directory_items(que
     publishers = {}
     monkeypatch.setattr(
         module,
-        "process_post",
+        "ingest",
         lambda post, *, school, publisher_ig: publishers.update({post["url"]: publisher_ig}),
     )
 
@@ -87,7 +87,7 @@ def test_instagram_only_queue_never_reads_directory_sources(queue, monkeypatch):
     queue.enqueue(_item("https://www.instagram.com/p/POST/"))
     list_sources = Mock()
     monkeypatch.setattr(module, "list_sources", list_sources)
-    monkeypatch.setattr(module, "process_post", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(module, "ingest", lambda *_args, **_kwargs: None)
 
     assert module.process_queue(queue) == {"processed": 1, "failed": 0}
     list_sources.assert_not_called()
@@ -101,9 +101,38 @@ def test_process_queue_stops_at_the_time_budget_and_prunes_first(queue, monkeypa
         module, "time", SimpleNamespace(monotonic=Mock(side_effect=[0.0, float("inf")]))
     )
     process = Mock()
-    monkeypatch.setattr(module, "process_post", process)
+    monkeypatch.setattr(module, "ingest", process)
 
     assert module.process_queue(queue) == {"processed": 0, "failed": 0}
     prune.assert_called_once_with()
     process.assert_not_called()
     assert queue.counts()["queued"] == 1
+
+
+def test_agent_failure_keeps_the_capture_queued_without_logging_it(queue, monkeypatch, caplog):
+    from services.ingestion import agent
+
+    post = {"url": "https://www.instagram.com/p/FAIL/", "caption": "Secret caption text"}
+    queue.enqueue(QueueItem(school="ubc", post=post))
+    monkeypatch.setattr(agent, "already_imported", lambda _url: False)
+    monkeypatch.setattr(
+        agent.school_service, "get_school", lambda slug: SimpleNamespace(slug=slug, id=1)
+    )
+    monkeypatch.setattr(
+        agent, "resolve_club_for_scrape", Mock(return_value=SimpleNamespace(club_id=None))
+    )
+    monkeypatch.setattr(agent, "_render", lambda *args, **kwargs: "prompt")
+    monkeypatch.setattr(agent.changes, "drain", lambda *, caption: None)
+    monkeypatch.setattr(agent.shutil, "which", lambda name: name)
+    monkeypatch.setattr(agent, "_agent_environment", lambda: {})
+    monkeypatch.setattr(
+        agent.subprocess,
+        "run",
+        lambda args, **kwargs: agent.subprocess.CompletedProcess(args, 1, stdout=""),
+    )
+
+    assert module.process_queue(queue) == {"processed": 0, "failed": 1}
+    # The capture waits for a later run instead of exhausting its attempts now.
+    assert queue.counts() == {"queued": 1, "checked": 0}
+    assert queue.claim() is None
+    assert "Secret caption text" not in caplog.text

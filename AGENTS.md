@@ -51,6 +51,8 @@ The workflow records exact post URLs in the Supabase notification ledger.
 The Mac's browser worker retrieves each post, captures it into the local
 ingestion queue, and only then marks its ledger row succeeded.
 The local ingestion processor owns extraction and database writes.
+It runs a Claude Haiku agent that follows `backend/services/ingestion/prompt.md` and writes only events, event dates and positions through the scoped `wat2do_ingest_agent` login.
+The earlier fixed pipeline (`services/scraper/pipeline.py`, `reconciler.py`, candidate matching in `dedup.py`, and the event and position writers) is vestigial and kept on purpose; do not delete it.
 
 When Instagram collapses a notification into "account posted and N others", the
 `process-notification` job may expand that notification's CacheEntID through one

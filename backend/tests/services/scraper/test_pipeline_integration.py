@@ -21,15 +21,12 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
-from unittest.mock import MagicMock, Mock
+from unittest.mock import MagicMock
 from uuid import UUID
 
 import pytest
 
-from services.ingestion.processor import process_queue
-from services.ingestion.queue import IngestionQueue, QueueItem
 from services.scraper import event_writer
-from services.scraper import extractor as extractor_module
 from services.scraper import pipeline as pipeline_module
 
 
@@ -91,31 +88,6 @@ def _extracted_event_with_three_occurrences() -> list[dict]:
             ],
         }
     ]
-
-
-def test_extraction_provider_failure_keeps_capture_queued(tmp_path, monkeypatch, caplog):
-    queue = IngestionQueue(tmp_path)
-    post = _instagram_post()
-    queue.enqueue(QueueItem(school="ubc", post=post))
-    monkeypatch.setattr(pipeline_module, "existing_shortcodes", lambda _: set())
-    monkeypatch.setattr(pipeline_module, "upload_post_images", lambda urls, **_: urls)
-    completion = Mock(return_value=None)
-    monkeypatch.setattr(pipeline_module, "claude_completion", completion)
-    write_event = Mock()
-    monkeypatch.setattr(pipeline_module, "write_event", write_event)
-    monkeypatch.setattr(extractor_module, "resolve_school_timezone", lambda _: "America/Toronto")
-    monkeypatch.setattr(extractor_module, "current_semester_end", lambda *args, **kwargs: None)
-    monkeypatch.setattr(extractor_module, "campus_season_prompt", lambda _: "")
-
-    result = process_queue(queue)
-
-    assert result == {"processed": 0, "failed": 1}
-    assert completion.call_args.args[2] == [post["displayUrl"]]
-    write_event.assert_not_called()
-    # The capture waits for a later run instead of exhausting its attempts now.
-    assert queue.counts() == {"queued": 1, "checked": 0}
-    assert queue.claim() is None
-    assert post["caption"] not in caplog.text
 
 
 @pytest.mark.parametrize(

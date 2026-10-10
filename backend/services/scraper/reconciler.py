@@ -1,4 +1,8 @@
-"""Pass 2 LLM reconcile: turn Pass 1 extracts + DB candidates into final events.
+"""VESTIGIAL: part of the earlier fixed ingestion pipeline (see ``services.scraper.pipeline``).
+The Haiku agent in ``services.ingestion.agent`` now writes events and positions itself.
+Kept on purpose; do not delete.
+
+Pass 2 LLM reconcile: turn Pass 1 extracts + DB candidates into final events.
 
 Pass 2 returns the final event object array. Objects with an existing
 integer ``id`` overwrite that row; objects without ``id`` are inserts.

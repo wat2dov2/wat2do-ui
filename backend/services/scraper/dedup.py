@@ -1,5 +1,9 @@
 """Candidate-event detection for the scraping pipeline.
 
+VESTIGIAL except ``existing_urls`` and ``existing_shortcodes``: candidate
+matching belonged to the earlier fixed pipeline (see ``services.scraper.pipeline``)
+and is kept on purpose; the Haiku agent now finds existing events itself.
+
 Thresholds live in the SCRAPING_* constants in ``core/constants.py``.
 
 ``find_candidates`` returns zero-or-more existing event rows that look

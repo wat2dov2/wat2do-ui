@@ -1,4 +1,12 @@
-"""Process one captured post or directory page into events and positions.
+"""VESTIGIAL: the fixed-pipeline ingestion path, kept on purpose but unused.
+
+The local ingestion processor now hands each source to the Haiku agent in
+``services.ingestion.agent``, which reads and writes the database itself.
+This module, with ``reconciler``, the candidate matching in ``dedup``,
+``event_writer`` and ``position_writer``, is the earlier rigid pipeline. It is
+kept as reference and as a fallback we may want again; do not delete it.
+
+Process one captured post or directory page into events and positions.
 
 Stages:
     1. Upload - push the source's images to application storage.
@@ -14,22 +22,20 @@ from __future__ import annotations
 
 import logging
 from typing import Literal
-from urllib.parse import urlsplit
 
 from core.sanitize import normalize_scraped_text, parse_iso_datetime
-from core.tables import POSITIONS
+from services.ingestion.agent import already_imported as _already_imported
+from services.ingestion.agent import image_urls as _extract_image_urls
+from services.ingestion.agent import is_instagram as _is_instagram
+from services.ingestion.agent import video_urls as _extract_video_urls
 from services.ingestion.claude_completion import claude_completion
 from services.scraper.dedup import (
-    _extract_shortcode,
     collapse_duplicate_extractions,
-    existing_shortcodes,
-    existing_urls,
     find_candidates,
 )
 from services.scraper.event_writer import _lookup_club_by_ig, write_event
 from services.scraper.extractor import extract_post_content
 from services.scraper.image_uploader import (
-    is_carousel_post,
     single_post_video_url,
     upload_post_images,
     upload_video_from_url,
@@ -130,18 +136,6 @@ def process_post(post: dict, *, school: str, publisher_ig: str | None = None) ->
             handle=handle,
             publisher_ig=publisher_ig,
         )
-
-
-def _is_instagram(source_url: str) -> bool:
-    host = (urlsplit(source_url).hostname or "").removeprefix("www.")
-    return host == "instagram.com"
-
-
-def _already_imported(source_url: str) -> bool:
-    shortcode = _extract_shortcode(source_url) if _is_instagram(source_url) else None
-    if shortcode is not None:
-        return bool(existing_shortcodes({shortcode}))
-    return bool(existing_urls({source_url}) or existing_urls({source_url}, table=POSITIONS))
 
 
 def _get_candidate_handles(post: dict, fallback_handle: str) -> list[str]:
@@ -357,46 +351,3 @@ def _publisher_club(publisher_ig: str, school: str) -> ResolvedClub | None:
 
 def _ingestion_source(source_url: str) -> Literal["instagram_scraper", "directory"]:
     return "instagram_scraper" if _is_instagram(source_url) else "directory"
-
-
-def _extract_image_urls(post: dict) -> list[str]:
-    """Pull image URLs from a retrieved Instagram post."""
-    images: list[str] = []
-
-    images_field = post.get("images")
-    if isinstance(images_field, list):
-        for entry in images_field:
-            url = (entry.get("url") if isinstance(entry, dict) else entry) or ""
-            if url:
-                images.append(url)
-
-    if not images:
-        children = post.get("childPosts")
-        if isinstance(children, list):
-            for child in children:
-                if isinstance(child, dict):
-                    url = child.get("displayUrl") or ""
-                    if url:
-                        images.append(url)
-
-    if not images:
-        single = post.get("displayUrl")
-        if single:
-            images.append(single)
-
-    return images
-
-
-def _extract_video_urls(post: dict) -> dict[str, str]:
-    """Associate each carousel video's poster with its downloadable source."""
-    videos: dict[str, str] = {}
-    children = post.get("childPosts")
-    records = (children if isinstance(children, list) else []) if is_carousel_post(post) else [post]
-    for record in records:
-        if not isinstance(record, dict):
-            continue
-        video = record.get("videoUrl")
-        poster = record.get("displayUrl") or ""
-        if isinstance(video, str) and video and isinstance(poster, str):
-            videos[poster] = video
-    return videos

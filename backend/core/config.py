@@ -22,6 +22,8 @@ class Settings(BaseSettings):
     supabase_key: str
     supabase_secret_key: str = ""
     database_url: str = ""
+    # Scoped login the local ingestion agent uses for events and positions.
+    ingest_agent_database_url: str = ""
     aws_region: str = "ca-central-1"
     storage_bucket_name: str = ""
     storage_public_base_url: str = ""

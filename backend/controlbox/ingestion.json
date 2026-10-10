@@ -6,7 +6,7 @@
   "claim_lease_seconds": 900,
   "max_attempts": 3,
   "checked_ttl_days": 14,
-  "model_timeout_seconds": 240,
+  "model_timeout_seconds": 420,
   "max_images_per_item": 6,
   "storage_busy_timeout_seconds": 30,
   "directory_max_listing_pages": 20,

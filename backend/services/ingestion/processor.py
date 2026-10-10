@@ -6,9 +6,9 @@ import fcntl
 import logging
 import time
 
+from services.ingestion.agent import ingest
 from services.ingestion.directory import list_sources
 from services.ingestion.queue import CONTROL, IngestionQueue
-from services.scraper.pipeline import process_post
 
 log = logging.getLogger(__name__)
 
@@ -32,7 +32,7 @@ def process_queue(queue: IngestionQueue) -> dict[str, int]:
                     if publishers is None:
                         publishers = {s.id: s.default_club_ig for s in list_sources()}
                     publisher_ig = publishers.get(item.directory_source_id)
-                process_post(item.post, school=item.school, publisher_ig=publisher_ig)
+                ingest(item.post, school=item.school, publisher_ig=publisher_ig)
             except Exception:
                 # Source content stays out of logs; the item is retried, then dropped.
                 log.exception("Ingestion item failed (attempt %d)", item.attempts)

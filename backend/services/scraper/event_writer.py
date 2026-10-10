@@ -1,4 +1,8 @@
-"""Insert or overwrite extracted events into ``events`` + ``event_dates``.
+"""VESTIGIAL: part of the earlier fixed ingestion pipeline (see ``services.scraper.pipeline``).
+The Haiku agent in ``services.ingestion.agent`` now writes events and positions itself.
+Kept on purpose; do not delete.
+
+Insert or overwrite extracted events into ``events`` + ``event_dates``.
 
 Pass 2 reconcile owns insert vs overwrite: objects with an existing
 integer ``id`` overwrite that row; objects without ``id`` insert.

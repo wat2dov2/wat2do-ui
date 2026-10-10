@@ -886,7 +886,7 @@ Do not provision a separate ECS jobs task definition, task role, or CloudWatch l
 
 Directory and Instagram ingestion share one local queue on the Mac.
 A LaunchAgent queues new pages from the official sources in `public.directory_sources` every 12 hours.
-Another LaunchAgent drains the queue every 5 minutes, extracting with Claude Haiku and writing through the existing database services.
+Another LaunchAgent drains the queue every 5 minutes with a Claude Haiku agent that writes events and positions directly through a scoped database login.
 The computer must remain on and signed in to Claude Code.
 
 ### 18.3 Notification dispatcher

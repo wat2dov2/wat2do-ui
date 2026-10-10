@@ -1,4 +1,8 @@
-"""Persist hiring positions extracted from Instagram posts."""
+"""VESTIGIAL: part of the earlier fixed ingestion pipeline (see ``services.scraper.pipeline``).
+The Haiku agent in ``services.ingestion.agent`` now writes events and positions itself.
+Kept on purpose; do not delete.
+
+Persist hiring positions extracted from Instagram posts."""
 
 from __future__ import annotations
 

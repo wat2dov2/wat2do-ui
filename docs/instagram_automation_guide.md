@@ -4,7 +4,7 @@ The active collection path uses Instagram notifications on a physical Android ph
 Automate triggers the GitHub `process-notification` workflow, which records each exact post URL in the Supabase notification ledger.
 When Instagram collapses several posts into one digest, the GitHub processing job submits a high-priority job to the Mac's shared browser worker before recording notification media.
 The Mac's Brave worker retrieves each pending post and captures it into the local ingestion queue at `~/.local/state/wat2do/ingestion/queue.sqlite3`, then marks its ledger row succeeded.
-Every five minutes a launchd processor, `backend/scripts/ingest.py process`, drains that queue with Claude Haiku through `claude -p` and saves events and positions through the existing writers.
+Every five minutes a launchd processor, `backend/scripts/ingest.py process`, drains that queue with a Claude Haiku agent through `claude -p`, which follows `backend/services/ingestion/prompt.md` and writes events and positions itself through a database login scoped to those tables.
 The same worker likes and natively reposts the original event posts selected in newly published Instagram carousels.
 Digest expansion, public post/profile retrieval, and engagement share one worker-owned pool of fifteen tabs in one registered Brave window, with credentials remaining inside the browser.
 
@@ -212,7 +212,7 @@ The next pass releases an interrupted claim using its exact journaled token.
 An unconfirmed success releases the claim back to pending.
 A retrieval whose result does not match its exact target is counted as `invalid` and stays pending until an operator retries it.
 Retrieval never claims production media while it waits for the browser, and capture never holds the browser lock.
-Extraction, deduplication, school routing, storage, and discovery invalidation happen later in the ingestion processor, which deletes each queue item after handling it.
+Extraction, matching against listed events, school routing, storage, and discovery invalidation happen later in the ingestion processor, which deletes each queue item after handling it.
 
 Public profiles and individual posts can also be queued manually:
 

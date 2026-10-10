@@ -1,4 +1,8 @@
-"""Extraction ``Completion`` backed by a headless, unsaved Claude Code session."""
+"""VESTIGIAL: part of the earlier fixed ingestion pipeline (see ``services.scraper.pipeline``).
+The Haiku agent in ``services.ingestion.agent`` now writes events and positions itself.
+Kept on purpose; do not delete.
+
+Extraction ``Completion`` backed by a headless, unsaved Claude Code session."""
 
 from __future__ import annotations
 
@@ -26,7 +30,7 @@ def claude_completion(system: str, prompt: str, image_urls: list[str]) -> str | 
     with tempfile.TemporaryDirectory(prefix="wat2do-ingestion-") as workdir:
         markers = []
         for index, url in enumerate(image_urls[: CONTROL.max_images_per_item]):
-            name = _download_image(url, Path(workdir), index)
+            name = download_image(url, Path(workdir), f"image-{index}")
             markers.append(f"Image {index}: ./{name}" if name else f"Image {index}: unavailable")
         text = "\n\n".join(
             [
@@ -75,7 +79,8 @@ def claude_completion(system: str, prompt: str, image_urls: list[str]) -> str | 
     return result.stdout
 
 
-def _download_image(url: str, directory: Path, index: int) -> str | None:
+def download_image(url: str, directory: Path, stem: str) -> str | None:
+    """Save one image for the model to view and return its file name."""
     try:
         response = httpx.get(url, timeout=CONTROL.fetch_timeout_seconds, follow_redirects=True)
         response.raise_for_status()
@@ -84,6 +89,6 @@ def _download_image(url: str, directory: Path, index: int) -> str | None:
     content_type = response.headers.get("content-type", "").split(";")[0].strip()
     if not content_type.startswith("image/"):
         return None
-    name = f"image-{index}{mimetypes.guess_extension(content_type) or '.jpg'}"
+    name = f"{stem}{mimetypes.guess_extension(content_type) or '.jpg'}"
     (directory / name).write_bytes(response.content)
     return name
