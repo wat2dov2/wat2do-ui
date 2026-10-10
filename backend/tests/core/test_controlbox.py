@@ -93,7 +93,7 @@ def test_checked_in_controlbox_is_valid() -> None:
     assert controlbox.positions.undated_visibility_months == 4
     assert controlbox.scraping.directory_minimum_image_dimension_pixels == 160
     assert controlbox.ingestion.model == "claude-haiku-5-5"
-    assert controlbox.ingestion.process_interval_seconds == 300
+    assert controlbox.ingestion.parallel_agents == 8
     assert controlbox.ingestion.directory_scrape_interval_seconds == 43200
     assert controlbox.ingestion.checked_ttl_days == 14
     assert controlbox.instagram_digest.operation_name == "SubscriptionDigestFeedQuery"

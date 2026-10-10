@@ -10,23 +10,24 @@ from services.ingestion.queue import IngestionQueue, QueueItem
 
 
 @pytest.mark.parametrize(
-    ("command", "label", "interval"),
+    ("command", "label", "schedule"),
     [
-        ("process", "io.wat2do.ingestion.process", script.CONTROL.process_interval_seconds),
+        ("process", "io.wat2do.ingestion.process", {"KeepAlive": True}),
         (
             "scrape-directories",
             "io.wat2do.ingestion.directories",
-            script.CONTROL.directory_scrape_interval_seconds,
+            {"StartInterval": script.CONTROL.directory_scrape_interval_seconds},
         ),
     ],
 )
-def test_launch_agent_payload_runs_one_command_on_its_interval_without_logs(
-    command, label, interval
-):
+def test_launch_agent_payload_runs_one_command_without_logs(command, label, schedule):
     payload = script.launch_agent_payload(command)
 
     assert payload["Label"] == label
-    assert payload["StartInterval"] == interval
+    # The processor stays running; only the directory scrape repeats on an interval.
+    assert {
+        key: payload[key] for key in ("KeepAlive", "StartInterval") if key in payload
+    } == schedule
     assert payload["ProgramArguments"] == [
         sys.executable,
         str(Path(script.__file__).resolve()),
@@ -67,27 +68,36 @@ def test_install_schedule_installs_both_agents(monkeypatch, tmp_path, capsys):
             {"timeout": script.CONTROL.launch_agent_timeout_seconds, "poll_interval_seconds": 1},
         ),
     ]
-    assert "io.wat2do.ingestion.process every" in capsys.readouterr().out
+    output = capsys.readouterr().out
+    assert "io.wat2do.ingestion.process (always on)" in output
+    assert "io.wat2do.ingestion.directories every 43200 seconds" in output
 
 
 @pytest.mark.parametrize(
-    ("command", "patched", "result"),
+    ("argv", "patched", "result", "options"),
     [
-        ("process", (processor, "process_queue"), {"processed": 2, "failed": 0}),
-        ("scrape-directories", (directory, "scrape_directories"), {"queued": 3}),
+        (["process"], (processor, "process_queue"), {"processed": 2}, {"wait_for_work": True}),
+        (
+            ["process", "--once"],
+            (processor, "process_queue"),
+            {"processed": 2},
+            {"wait_for_work": False},
+        ),
+        (["scrape-directories"], (directory, "scrape_directories"), {"queued": 3}, {}),
     ],
 )
 def test_main_runs_the_command_against_the_local_queue(
-    monkeypatch, tmp_path, capsys, command, patched, result
+    monkeypatch, tmp_path, capsys, argv, patched, result, options
 ):
     monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path))
-    queues = []
-    monkeypatch.setattr(*patched, lambda queue: queues.append(queue) or result)
-    monkeypatch.setattr(sys, "argv", ["ingest.py", command])
+    calls = []
+    monkeypatch.setattr(*patched, lambda queue, **kwargs: calls.append((queue, kwargs)) or result)
+    monkeypatch.setattr(sys, "argv", ["ingest.py", *argv])
 
     assert script.main() == 0
 
-    assert queues[0].state_directory == tmp_path / "wat2do/ingestion"
+    assert calls[0][0].state_directory == tmp_path / "wat2do/ingestion"
+    assert calls[0][1] == options
     assert json.loads(capsys.readouterr().out) == result
 
 

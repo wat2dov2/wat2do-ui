@@ -13,6 +13,7 @@ import math
 import os
 import re
 import sqlite3
+import threading
 import time
 import uuid
 from collections.abc import Callable
@@ -138,6 +139,8 @@ class BrowserJobQueue:
     @_retry_storage
     def __init__(self, state_directory: Path | None = None) -> None:
         self.storage_unavailable = False
+        # Set whenever a retrieval finishes, so its capture is handed off at once.
+        self.retrieval_finished = threading.Event()
         self._pending_pause: Any = None
         self._pending_rate_limit = False
         self.state_directory = state_directory or default_state_directory()
@@ -772,7 +775,6 @@ class BrowserJobQueue:
                 for row in rows
             ]
 
-    @_retry_storage
     def finish(
         self,
         claim: BrowserJob,
@@ -783,6 +785,29 @@ class BrowserJobQueue:
         refund_rate_limit: bool = False,
     ) -> None:
         """Complete a claim or atomically schedule a safe read retry."""
+        try:
+            self._finish(
+                claim,
+                result=result,
+                error=error,
+                requeue=requeue,
+                refund_rate_limit=refund_rate_limit,
+            )
+        finally:
+            if isinstance(claim, BrowserJob) and claim.kind == "retrieval":
+                # Hands the capture to the ingestion queue without a polling loop.
+                self.retrieval_finished.set()
+
+    @_retry_storage
+    def _finish(
+        self,
+        claim: BrowserJob,
+        *,
+        result: dict[str, Any] | None = None,
+        error: str | None = None,
+        requeue: bool = False,
+        refund_rate_limit: bool = False,
+    ) -> None:
         if not isinstance(claim, BrowserJob):
             raise ValueError("Browser completion requires its original job claim")
         if refund_rate_limit and (

@@ -2327,3 +2327,19 @@ def test_retrievals_start_no_closer_than_the_pacing_interval(queue, monkeypatch)
     digest = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "cache-paced")
     assert queue.claim_next(now=1005.0).id == digest.id
     assert queue.claim_next(now=1006.0).id == ids[1]
+
+
+def test_finishing_a_retrieval_signals_its_capture_hand_off(queue):
+    job_id = queue.enqueue_retrieval(
+        school="uwaterloo",
+        recipient_id=RECIPIENT_ID,
+        account_username=ACCOUNT_USERNAME,
+        url="https://www.instagram.com/p/HANDOFF/",
+    )
+    queue.retrieval_finished.clear()
+    job = queue.claim_next()
+    assert job.id == job_id and not queue.retrieval_finished.is_set()
+
+    queue.finish(job, result={"posts": []})
+
+    assert queue.retrieval_finished.is_set()

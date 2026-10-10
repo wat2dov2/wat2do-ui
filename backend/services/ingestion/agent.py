@@ -9,22 +9,26 @@ applies the side effects of what the agent changed.
 from __future__ import annotations
 
 import logging
+import mimetypes
 import os
 import shutil
 import subprocess
 import tempfile
+from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
+from uuid import uuid4
 from zoneinfo import ZoneInfo
 
 from core.config import settings
 from core.constants import EVENT_CATEGORIES
+from core.database import get_sb
 from core.sanitize import normalize_scraped_text, parse_iso_datetime
-from core.tables import POSITIONS
+from core.tables import EVENTS, POSITIONS
 from services import school_service
 from services.ingestion import changes
-from services.ingestion.claude_completion import CONTROL, download_image
+from services.ingestion.queue import CONTROL
 from services.school_context import (
     campus_season_prompt,
     current_semester_end,
@@ -33,9 +37,10 @@ from services.school_context import (
 from services.scraper.dedup import _extract_shortcode, existing_shortcodes, existing_urls
 from services.scraper.extractor import EVENT_DISCOVERY_RULES
 from services.scraper.image_uploader import (
+    fetch_image,
     is_carousel_post,
     single_post_video_url,
-    upload_post_images,
+    store_image,
     upload_video_from_url,
 )
 from services.scraper.org_resolve import resolve_club_for_scrape
@@ -48,6 +53,16 @@ class AgentError(RuntimeError):
     """The agent could not finish; the queued item is retried."""
 
 
+@dataclass(frozen=True)
+class _Image:
+    """One source image saved for the agent to view, kept until a row claims it."""
+
+    file: str
+    data: bytes
+    content_type: str
+    video_url: str | None
+
+
 def ingest(post: dict, *, school: str, publisher_ig: str | None = None) -> None:
     """Have the agent bring the database in line with one captured source."""
     source_url = post["url"]
@@ -56,22 +71,22 @@ def ingest(post: dict, *, school: str, publisher_ig: str | None = None) -> None:
     record = school_service.get_school(school)
     if record is None:
         raise AgentError("School is not registered")
-    media = _store_media(post, instagram=is_instagram(source_url))
-    owner = _owner_club(post, school=school, publisher_ig=publisher_ig, image_count=len(media))
     caption = normalize_scraped_text(post.get("caption") or post.get("text")) or ""
+    token = uuid4().hex[:12]
     with tempfile.TemporaryDirectory(prefix="wat2do-ingestion-") as workdir:
-        files = [
-            download_image(stored, Path(workdir), f"image-{index}")
-            for index, (stored, _) in enumerate(media[: CONTROL.max_images_per_item])
-        ]
+        images = _download_images(post, Path(workdir), instagram=is_instagram(source_url))
+        owner = _owner_club(
+            post, school=school, publisher_ig=publisher_ig, image_count=len(image_urls(post))
+        )
         prompt = _render(
-            post, school=record, caption=caption, media=media, files=files, owner=owner
+            post, school=record, caption=caption, images=images, token=token, owner=owner
         )
         # Allow for clock skew between this Mac and the database's added_at.
         started = datetime.now(UTC) - timedelta(minutes=5)
         try:
             _run(prompt, workdir)
         finally:
+            _store_chosen_posters(token, images)
             changes.stamp_new_rows(
                 source_url, caption=caption, posted_at=_posted_at(post), since=started
             )
@@ -134,23 +149,55 @@ def video_urls(post: dict) -> dict[str, str]:
     return videos
 
 
-def _store_media(post: dict, *, instagram: bool) -> list[tuple[str, str | None]]:
-    """Upload each poster, paired with its video, to application storage."""
-    sources = video_urls(post)
+def poster_reference(token: str, index: int) -> str:
+    """What the agent writes as a poster until its image is stored."""
+    return f"pending:{token}/image-{index}"
+
+
+def _download_images(post: dict, workdir: Path, *, instagram: bool) -> list[_Image]:
+    """Download each image once for the agent to view; nothing is stored yet."""
+    videos = video_urls(post)
     fallback = single_post_video_url(post)
-    stored_videos: dict[str, str | None] = {}
-    media: list[tuple[str, str | None]] = []
-    # One poster at a time keeps each carousel video attached to its slide
-    # even when storage validation rejects an earlier poster.
-    for url in image_urls(post):
-        stored = upload_post_images([url], allow_all_domains=not instagram)
-        if not stored:
+    images: list[_Image] = []
+    for url in image_urls(post)[: CONTROL.max_images_per_item]:
+        fetched = fetch_image(url, allow_all_domains=not instagram)
+        if fetched is None:
             continue
-        video = sources.get(url) or fallback
-        if video and video not in stored_videos:
-            stored_videos[video] = upload_video_from_url(video)
-        media.append((stored[0], stored_videos.get(video) if video else None))
-    return media
+        data, content_type = fetched
+        name = f"image-{len(images)}{mimetypes.guess_extension(content_type) or '.jpg'}"
+        (workdir / name).write_bytes(data)
+        images.append(_Image(name, data, content_type, videos.get(url) or fallback))
+    return images
+
+
+def _store_chosen_posters(token: str, images: list[_Image]) -> None:
+    """Store only the images the agent chose as posters and point their rows at them."""
+    prefix = poster_reference(token, 0).removesuffix("0")
+    stored: dict[str, dict[str, str | None]] = {}
+    for table in (EVENTS, POSITIONS):
+        rows = (
+            get_sb()
+            .table(table)
+            .select("source_image_url")
+            .like("source_image_url", f"{prefix}%")
+            .execute()
+            .data
+            or []
+        )
+        for reference in {row["source_image_url"] for row in rows}:
+            if reference not in stored:
+                index = reference.removeprefix(prefix)
+                image = images[int(index)] if index.isdigit() and int(index) < len(images) else None
+                stored[reference] = _store_poster(image)
+            get_sb().table(table).update(stored[reference]).eq(
+                "source_image_url", reference
+            ).execute()
+
+
+def _store_poster(image: _Image | None) -> dict[str, str | None]:
+    poster = store_image(image.data, image.content_type) if image else None
+    video = upload_video_from_url(image.video_url) if image and poster and image.video_url else None
+    return {"source_image_url": poster, **({"source_video_url": video} if video else {})}
 
 
 def _owner_club(post: dict, *, school: str, publisher_ig: str | None, image_count: int) -> str:
@@ -179,8 +226,8 @@ def _render(
     *,
     school,
     caption: str,
-    media: list[tuple[str, str | None]],
-    files: list[str | None],
+    images: list[_Image],
+    token: str,
     owner: str,
 ) -> str:
     timezone = ZoneInfo(resolve_school_timezone(school.slug))
@@ -205,10 +252,9 @@ def _render(
         "coauthors": ", ".join(f"@{h}" for h in candidate_handles(post)[1:]) or "none",
         "caption": caption or "(no text)",
         "images": "\n".join(
-            (f"- Image {index}: ./{name}" if name else f"- Image {index}: (could not be loaded)")
-            + f", stored as {stored}"
-            + (f", video stored as {video}" if video else "")
-            for index, ((stored, video), name) in enumerate(zip(media, files, strict=False))
+            f"- Image {index}: ./{image.file}, poster reference `{poster_reference(token, index)}`"
+            + (" (a video slide)" if image.video_url else "")
+            for index, image in enumerate(images)
         )
         or "(no images)",
         "categories": ", ".join(f"'{category}'" for category in EVENT_CATEGORIES),

@@ -105,10 +105,10 @@ psql -v ON_ERROR_STOP=1 <<'SQL'
 BEGIN;
 WITH e AS (
   INSERT INTO events (title, description, location, club, club_id, ig_handle, school_id, source_url,
-    source_image_url, source_video_url, ingestion_source, price, food, registration, category,
+    source_image_url, ingestion_source, price, food, registration, category,
     competition, employers_on_campus, free_food_on_campus, sports_game, campus_season_ids)
   VALUES ($t$Drop-In Jam$t$, $t$Weekly improv jam.$t$, $t$AL 113$t$, $t$Improv Club, UW$t$, 6805,
-    'uwimprovisation', {{school_id}}, '{{source_url}}', '<stored poster url>', NULL,
+    'uwimprovisation', {{school_id}}, '{{source_url}}', '<poster reference>',
     '{{ingestion_source}}', 0, '[]', false, 'Arts & Culture', NULL, NULL, NULL, NULL, NULL)
   RETURNING id
 )
@@ -137,8 +137,10 @@ Columns:
 - `cohost_club_ids`: `clubs.id` values of other registered co-hosting clubs at this school (default `'{}'`).
 - `school_id`: {{school_id}}, unless a co-hosting club belongs to another school (see below).
 - `source_url`: always exactly `{{source_url}}` for rows you create.
-- `source_image_url`, `source_video_url`: the stored URLs of the image that shows this event, from the image list above.
-  Never use any other image URL.
+- `source_image_url`: the poster reference of the image that shows this event, from the image list above, or NULL when no image fits.
+  The system stores that image (and its video, for a video slide) and replaces the reference.
+  On a listed event, set it only when this source has a clearly better poster.
+  Never write any other image URL, and never set `source_video_url`.
 - `price`: registration cost only, preferring the general admission or non-member price; 0 for free, NULL when not mentioned.
 - `food`: a JSON array such as `'["Pizza"]'`; `'["Food"]'` for a generic mention; `'[]'` when none.
 - `registration`: true only when attendees are clearly told to register, RSVP or sign up.
@@ -157,7 +159,7 @@ When a co-host club belongs to a different school, also create the event at that
 
 ## Writing positions
 
-Columns: `club_id` (required; a registered club at the school), `school_id`, `title` (at most 200 characters), `description` (one short sentence; replaced with the caption for new rows), `position_type` (`executive`, `committee`, `volunteer`, `staff`, `internship` or `general`), `requirements` (JSON array of explicit qualifications, `'[]'` when none), `commitment`, `compensation`, `location`, `contact_email`, `is_paid` (true only when explicitly paid, false when explicitly unpaid or volunteer, otherwise NULL), `deadline_date` (`YYYY-MM-DD`), `deadline_at` (only with an explicit time, as local time plus timezone), `source_url` = `'{{source_url}}'`, `source_image_url`, `source_video_url`, `ingestion_source` = `'{{ingestion_source}}'`, `is_active` = true.
+Columns: `club_id` (required; a registered club at the school), `school_id`, `title` (at most 200 characters), `description` (one short sentence; replaced with the caption for new rows), `position_type` (`executive`, `committee`, `volunteer`, `staff`, `internship` or `general`), `requirements` (JSON array of explicit qualifications, `'[]'` when none), `commitment`, `compensation`, `location`, `contact_email`, `is_paid` (true only when explicitly paid, false when explicitly unpaid or volunteer, otherwise NULL), `deadline_date` (`YYYY-MM-DD`), `deadline_at` (only with an explicit time, as local time plus timezone), `source_url` = `'{{source_url}}'`, `source_image_url` (a poster reference, as for events), `ingestion_source` = `'{{ingestion_source}}'`, `is_active` = true.
 When no registered club hosts a position, skip that position.
 
 ## What counts as an event

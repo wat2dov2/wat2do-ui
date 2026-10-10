@@ -621,6 +621,7 @@ class InstagramBrowserControl(_ControlModel):
     job_timeout_seconds: float = Field(gt=0, le=300)
     result_timeout_seconds: float = Field(gt=0, le=1800)
     source_poll_interval_seconds: float = Field(ge=10, le=3600)
+    realtime_reconnect_seconds: float = Field(gt=0, le=300)
     source_page_size: int = Field(gt=0, le=1000)
     worker_log_max_bytes: int = Field(ge=65536, le=67108864)
     worker_log_backup_count: int = Field(ge=1, le=10)
@@ -855,7 +856,6 @@ class PositionsControl(_ControlModel):
 
 class IngestionControl(_ControlModel):
     model: str = Field(pattern=r"^claude-[a-z0-9-]+$")
-    process_interval_seconds: int = Field(ge=60, le=3600)
     parallel_agents: int = Field(ge=1, le=16)
     directory_scrape_interval_seconds: int = Field(ge=3600, le=86400)
     claim_lease_seconds: int = Field(gt=0, le=86400)

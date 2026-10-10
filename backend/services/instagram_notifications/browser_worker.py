@@ -612,6 +612,22 @@ def maintain_tab_pool(queue: BrowserJobQueue) -> bool:
     return False
 
 
+def _collect(queue: BrowserJobQueue, status_key: str, collect: Callable[[], object]) -> None:
+    """Run one source collection, recording its failure without stopping the worker."""
+    try:
+        collect()
+    except Exception as exc:
+        error = _storage_failure_reason(exc) or type(exc).__name__
+        try:
+            queue.set_setting(status_key, {"checked_at": time.time(), "error": error})
+        except Exception as storage_error:
+            log.error(
+                "Could not record browser source collection failure: %s",
+                _storage_failure_reason(storage_error) or type(storage_error).__name__,
+            )
+        log.error("Browser source %s failed (%s)", status_key, error)
+
+
 def _poll_source(
     queue: BrowserJobQueue,
     status_key: str,
@@ -620,23 +636,30 @@ def _poll_source(
 ) -> None:
     """Each source progresses independently of another source's HTTP calls."""
     while not stopping.is_set():
-        try:
-            collect()
-        except Exception as exc:
-            error = _storage_failure_reason(exc) or type(exc).__name__
-            try:
-                queue.set_setting(status_key, {"checked_at": time.time(), "error": error})
-            except Exception as storage_error:
-                log.error(
-                    "Could not record browser source collection failure: %s",
-                    _storage_failure_reason(storage_error) or type(storage_error).__name__,
-                )
-            log.error("Browser source %s failed (%s)", status_key, error)
+        _collect(queue, status_key, collect)
         stopping.wait(CONTROL.source_poll_interval_seconds)
 
 
+def _on_signal(
+    queue: BrowserJobQueue,
+    status_key: str,
+    collect: Callable[[], object],
+    signal: threading.Event,
+    stopping: threading.Event,
+) -> None:
+    """Collect whenever ``signal`` fires; signals during a collection run it again."""
+    while not stopping.is_set():
+        # The timeout only lets shutdown be noticed; work never waits on it.
+        if not signal.wait(CONTROL.worker_poll_interval_seconds):
+            continue
+        signal.clear()
+        _collect(queue, status_key, collect)
+
+
 def _source_pollers(queue: BrowserJobQueue, stopping: threading.Event) -> list[threading.Thread]:
+    from core.tables import INSTAGRAM_NOTIFICATION_MEDIA
     from services.instagram_notifications.carousel_engagement import sync_published_carousels
+    from services.instagram_notifications.ledger_listener import listen_for_inserts
     from services.instagram_notifications.notification_ingestion import (
         enqueue_retrieved_media,
         sync_notification_media,
@@ -650,20 +673,49 @@ def _source_pollers(queue: BrowserJobQueue, stopping: threading.Event) -> list[t
         queue.retry_failed_notification_retrievals()
         sync_notification_media(queue)
 
-    sources = (
-        ("notification_source_status", collect_notifications),
-        ("notification_enqueue_status", lambda: enqueue_retrieved_media(queue)),
+    def hand_off_captures() -> None:
+        if enqueue_retrieved_media(queue).get("busy"):
+            # Another hand-off holds the lock; try again once it can finish.
+            stopping.wait(CONTROL.worker_poll_interval_seconds)
+            queue.retrieval_finished.set()
+
+    # Both start set: on startup the worker catches up on anything it missed.
+    new_notifications = threading.Event()
+    new_notifications.set()
+    queue.retrieval_finished.set()
+    polled = (
         ("diagnostics_status", lambda: queue.publish_diagnostics(should_stop=stopping.is_set)),
         ("source_status", collect_carousels),
     )
+    signalled = (
+        ("notification_source_status", collect_notifications, new_notifications),
+        ("notification_enqueue_status", hand_off_captures, queue.retrieval_finished),
+    )
     return [
+        *(
+            threading.Thread(
+                target=_on_signal,
+                args=(queue, status_key, collect, signal, stopping),
+                name=f"instagram-browser-{status_key}",
+                daemon=True,
+            )
+            for status_key, collect, signal in signalled
+        ),
+        *(
+            threading.Thread(
+                target=_poll_source,
+                args=(queue, status_key, collect, stopping),
+                name=f"instagram-browser-{status_key}",
+                daemon=True,
+            )
+            for status_key, collect in polled
+        ),
         threading.Thread(
-            target=_poll_source,
-            args=(queue, status_key, collect, stopping),
-            name=f"instagram-browser-{status_key}",
+            target=listen_for_inserts,
+            args=(INSTAGRAM_NOTIFICATION_MEDIA, new_notifications.set, stopping),
+            name="instagram-browser-ledger-listener",
             daemon=True,
-        )
-        for status_key, collect in sources
+        ),
     ]
 
 

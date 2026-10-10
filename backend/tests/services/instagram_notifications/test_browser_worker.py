@@ -3,6 +3,7 @@ import json
 import signal
 import sqlite3
 import threading
+import time
 from concurrent.futures import ALL_COMPLETED
 from concurrent.futures import wait as wait_for_futures
 from dataclasses import replace
@@ -12,7 +13,11 @@ from urllib.parse import urlsplit
 import pytest
 
 from services.instagram_notifications import browser_worker as module
-from services.instagram_notifications import carousel_engagement, notification_ingestion
+from services.instagram_notifications import (
+    carousel_engagement,
+    ledger_listener,
+    notification_ingestion,
+)
 from services.instagram_notifications.browser_digest import DigestResolution
 from services.instagram_notifications.browser_queue import BrowserJobQueue
 from services.instagram_notifications.browser_session import (
@@ -2785,3 +2790,47 @@ def test_digest_transient_pathname_read_recovers_without_spending_another_job_at
     assert executions == [job_id]
     assert len(pathname_reads) == (2 if failed_read == "initial_path" else 3)
     assert not queue.get_setting("paused", False)
+
+
+def test_notifications_and_captures_are_handled_on_signal_not_on_a_timer(queue, monkeypatch):
+    stopping = threading.Event()
+    calls = []
+    wake_ledger = []
+    monkeypatch.setattr(
+        notification_ingestion, "sync_notification_media", lambda _queue: calls.append("sync")
+    )
+    monkeypatch.setattr(
+        notification_ingestion,
+        "enqueue_retrieved_media",
+        lambda _queue: calls.append("handoff") or {"enqueued": 0},
+    )
+    monkeypatch.setattr(carousel_engagement, "sync_published_carousels", lambda _queue: {})
+    monkeypatch.setattr(
+        ledger_listener,
+        "listen_for_inserts",
+        lambda _table, on_insert, stop: wake_ledger.append(on_insert) or stop.wait(),
+    )
+    pollers = module._source_pollers(queue, stopping)
+    for poller in pollers:
+        poller.start()
+    try:
+        # Startup catches up once on each.
+        for _ in range(200):
+            if sorted(calls) == ["handoff", "sync"]:
+                break
+            time.sleep(0.01)
+        assert sorted(calls) == ["handoff", "sync"]
+        time.sleep(0.2)
+        assert sorted(calls) == ["handoff", "sync"], "Nothing reruns without a signal"
+        # A pushed ledger insert and a finished retrieval each run their step again.
+        wake_ledger[0]()
+        queue.retrieval_finished.set()
+        for _ in range(200):
+            if sorted(calls) == ["handoff", "handoff", "sync", "sync"]:
+                break
+            time.sleep(0.01)
+        assert sorted(calls) == ["handoff", "handoff", "sync", "sync"]
+    finally:
+        stopping.set()
+        for poller in pollers:
+            poller.join(timeout=5)

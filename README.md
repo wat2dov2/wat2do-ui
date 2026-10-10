@@ -155,14 +155,15 @@ Before switching registrar nameservers, inventory every current Vercel DNS recor
 The first ARM64 frontend and backend images, plus the x86-64 social-preview image, must be pushed to ECR by digest before the initial production apply.
 Once production exists, pushes to `main` use GitHub OIDC to build all three images, tag them with the full commit SHA, update the ECS task definition, and update the Lambda image.
 Official school event directories are listed in the `public.directory_sources` table.
-Every 12 hours a local LaunchAgent queues new directory event pages, and every 5 minutes another drains the local ingestion queue with Claude Haiku (`backend/scripts/ingest.py`).
-Each 5-minute run keeps going until the queue is empty, running `parallel_agents` Haiku agents at once (`backend/controlbox/ingestion.json`); a tick that finds a run still going does nothing, and posts from one club never run at the same time.
+Every 12 hours a local LaunchAgent queues new directory event pages, and an always-on processor turns queued captures into events and positions with Claude Haiku (`backend/scripts/ingest.py`).
+The processor runs up to `parallel_agents` Haiku agents at once (`backend/controlbox/ingestion.json`) and sleeps when the queue is empty; each newly queued item wakes it through a local socket, and posts from one club never run at the same time.
 Install both with `cd backend && .venv/bin/python scripts/ingest.py install-schedule`; the Mac must be on and signed in to Claude Code.
 Notifications and recommendation compute run on GitHub-hosted runners.
 Instagram notifications come from a physical Android phone running Automate, which triggers the `process-notification` workflow.
 The workflow records exact post URLs in the Supabase notification ledger, expanding collapsed digests through the Mac's logged-in Brave worker.
-The Brave worker retrieves each pending post, captures it into the local ingestion queue (`~/.local/state/wat2do/ingestion/queue.sqlite3`), and marks its ledger row succeeded.
-The same 5-minute queue processor then hands each capture to a Claude Haiku agent (`claude -p`), which follows `backend/services/ingestion/prompt.md`.
+Supabase Realtime pushes each new ledger row to the Brave worker, which opens the post as soon as a tab is free (retrievals start at least `retrieval_interval_seconds` apart), captures it into the local ingestion queue (`~/.local/state/wat2do/ingestion/queue.sqlite3`), and marks its ledger row succeeded.
+On startup the worker catches up on ledger rows that arrived while it was off.
+The processor then hands each capture to a Claude Haiku agent (`claude -p`), which follows `backend/services/ingestion/prompt.md`.
 The agent inserts, updates, cancels or reschedules events and positions itself through `psql` with the `wat2do_ingest_agent` login, which can only write events, event dates and positions.
 Set its connection string as `INGEST_AGENT_DATABASE_URL` in `backend/.env`; the role is created by migration and its password is set out of band.
 Manual profile or post lookups use `cd backend && python scripts/instagram_browser.py retrieve --school <slug> --url <url>`.

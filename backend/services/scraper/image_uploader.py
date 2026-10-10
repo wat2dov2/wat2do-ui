@@ -96,6 +96,12 @@ def upload_image_from_url(
     Returns the public Storage URL on success, ``None`` on failure.
     Failures are logged and never raised; the caller drops that image.
     """
+    fetched = fetch_image(url, allow_all_domains=allow_all_domains)
+    return store_image(*fetched, bucket=bucket) if fetched else None
+
+
+def fetch_image(url: str, *, allow_all_domains: bool = False) -> tuple[bytes, str] | None:
+    """Download one image with SSRF checks; ``(bytes, content_type)`` or None."""
     if not _is_safe_image_url(url, allow_all_domains=allow_all_domains):
         log.warning("Refusing to fetch image - URL not allowed by safety check")
         return None
@@ -128,14 +134,21 @@ def upload_image_from_url(
     content_type = resp.headers.get("content-type", "").split(";")[0].strip()
     if not content_type or "/" not in content_type:
         content_type = _CONTENT_TYPE_FALLBACK
-
-    try:
-        if allow_all_domains:
+    if allow_all_domains:
+        try:
             with Image.open(BytesIO(resp.content)) as image:
                 if min(image.size) < controlbox.scraping.directory_minimum_image_dimension_pixels:
                     log.info("Dropping undersized directory image")
                     return None
-        data = resp.content
+        except Exception as e:
+            log.warning("Image could not be decoded (%s)", type(e).__name__)
+            return None
+    return resp.content, content_type
+
+
+def store_image(data: bytes, content_type: str, *, bucket: str = BUCKET_EVENT_IMAGES) -> str | None:
+    """Validate fetched image bytes and push them to ``bucket``; None on failure."""
+    try:
         if bucket == BUCKET_EVENT_IMAGES and len(data) > storage.get_file_size_limit(bucket):
             data = prepare_image_rendition(
                 data,

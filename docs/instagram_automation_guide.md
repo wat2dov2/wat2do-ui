@@ -3,8 +3,9 @@
 The active collection path uses Instagram notifications on a physical Android phone running Automate.
 Automate triggers the GitHub `process-notification` workflow, which records each exact post URL in the Supabase notification ledger.
 When Instagram collapses several posts into one digest, the GitHub processing job submits a high-priority job to the Mac's shared browser worker before recording notification media.
-The Mac's Brave worker retrieves each pending post and captures it into the local ingestion queue at `~/.local/state/wat2do/ingestion/queue.sqlite3`, then marks its ledger row succeeded.
-Every five minutes a launchd processor, `backend/scripts/ingest.py process`, drains that queue with a Claude Haiku agent through `claude -p`, which follows `backend/services/ingestion/prompt.md` and writes events and positions itself through a database login scoped to those tables.
+Supabase Realtime pushes each new ledger row to the Mac's Brave worker, which retrieves the post right away and captures it into the local ingestion queue at `~/.local/state/wat2do/ingestion/queue.sqlite3`, then marks its ledger row succeeded.
+On startup the worker catches up on any ledger rows recorded while it was off.
+An always-on launchd processor, `backend/scripts/ingest.py process`, wakes as soon as a capture is queued and drains that queue with a Claude Haiku agent through `claude -p`, which follows `backend/services/ingestion/prompt.md` and writes events and positions itself through a database login scoped to those tables.
 The same worker likes and natively reposts the original event posts selected in newly published Instagram carousels.
 Digest expansion, public post/profile retrieval, and engagement share one worker-owned pool of fifteen tabs in one registered Brave window, with credentials remaining inside the browser.
 

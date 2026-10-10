@@ -11,6 +11,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import socket
 import sqlite3
 import time
 from collections.abc import Iterator
@@ -56,6 +57,8 @@ class IngestionQueue:
     def __init__(self, state_directory: Path | None = None) -> None:
         self.state_directory = state_directory or default_state_directory()
         self.database_path = self.state_directory / "queue.sqlite3"
+        # The running processor listens here; each new item wakes it.
+        self.wake_path = self.state_directory / "wake.sock"
 
     @contextmanager
     def _db(self) -> Iterator[sqlite3.Connection]:
@@ -105,7 +108,19 @@ class IngestionQueue:
                     time.time(),
                 ),
             )
-            return cursor.rowcount == 1
+        if cursor.rowcount != 1:
+            return False
+        self.wake_processor()
+        return True
+
+    def wake_processor(self) -> None:
+        """Tell a running processor there is new work; harmless when none runs."""
+        with socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM) as wake:
+            try:
+                wake.sendto(b"1", str(self.wake_path))
+            except OSError:
+                # No processor is listening; it drains the queue when it starts.
+                pass
 
     def claim(self) -> QueueItem | None:
         """Lease the oldest available item; an expired lease makes it claimable again."""

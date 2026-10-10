@@ -1,3 +1,4 @@
+import re
 import subprocess
 from datetime import UTC, datetime
 from pathlib import Path
@@ -31,12 +32,12 @@ def run(monkeypatch, tmp_path):
     monkeypatch.setattr(module, "resolve_school_timezone", lambda slug: "America/Toronto")
     monkeypatch.setattr(module, "current_semester_end", lambda slug, now: "2026-12-22")
     monkeypatch.setattr(module, "campus_season_prompt", lambda slug: "CAMPUS SEASONS")
+    monkeypatch.setattr(module, "fetch_image", lambda url, **_: (b"jpg", "image/jpeg"))
     monkeypatch.setattr(
         module,
-        "upload_post_images",
-        lambda urls, **_: [f"https://wat2do.io/media/{i}.jpg" for i, _ in enumerate(urls)],
+        "_store_chosen_posters",
+        lambda token, images: state.drains.append(("posters", len(images))),
     )
-    monkeypatch.setattr(module, "upload_video_from_url", lambda url: None)
 
     def resolve(**kwargs):
         state.resolved.append(kwargs)
@@ -44,11 +45,6 @@ def run(monkeypatch, tmp_path):
 
     monkeypatch.setattr(module, "resolve_club_for_scrape", resolve)
 
-    def download(url, directory, stem):
-        (directory / f"{stem}.jpg").write_bytes(b"jpg")
-        return f"{stem}.jpg"
-
-    monkeypatch.setattr(module, "download_image", download)
     monkeypatch.setattr(module.changes, "drain", lambda: state.drains.append("drain"))
     monkeypatch.setattr(
         module.changes,
@@ -89,7 +85,11 @@ def test_ingest_runs_haiku_with_psql_only_then_settles_its_changes(run):
     assert kwargs["timeout"] == module.CONTROL.model_timeout_seconds
     assert run.files == {"image-0.jpg"}
     # New rows from this source get its caption, then every change settles.
-    assert run.drains == [("stamp", _POST["url"], _POST["caption"], _POSTED), "drain"]
+    assert run.drains == [
+        ("posters", 1),
+        ("stamp", _POST["url"], _POST["caption"], _POSTED),
+        "drain",
+    ]
 
 
 def test_ingest_gives_the_agent_a_scoped_login_and_no_application_secrets(run, monkeypatch):
@@ -115,7 +115,9 @@ def test_ingest_renders_every_prompt_placeholder(run):
     assert "schools.id = 7" in prompt
     assert "Improv Club, UW (clubs.id = 6805, Instagram @uwimprovisation)" in prompt
     assert "Other accounts on the post: @yourwusa" in prompt
-    assert "Image 0: ./image-0.jpg, stored as https://wat2do.io/media/0.jpg" in prompt
+    assert re.search(
+        r"Image 0: \./image-0\.jpg, poster reference `pending:[0-9a-f]{12}/image-0`", prompt
+    )
     assert "local timezone America/Toronto" in prompt
     assert "Current semester ends: 2026-12-22" in prompt
     assert "set `last_source_posted_at = '2026-10-15T15:00:00+00:00'`" in prompt
@@ -144,7 +146,11 @@ def test_ingest_still_drains_when_the_agent_fails(run):
 
     with pytest.raises(module.AgentError, match="exit 1"):
         module.ingest(dict(_POST), school="uwaterloo")
-    assert run.drains == [("stamp", _POST["url"], _POST["caption"], _POSTED), "drain"]
+    assert run.drains == [
+        ("posters", 1),
+        ("stamp", _POST["url"], _POST["caption"], _POSTED),
+        "drain",
+    ]
 
 
 def test_ingest_skips_sources_already_listed(run, monkeypatch):
@@ -227,3 +233,66 @@ def test_already_imported_checks_the_source_identity(
     else:
         assert shortcode_lookups == []
         assert url_lookups[0] == ({url}, EVENTS)
+
+
+def test_only_the_posters_the_agent_chose_are_stored(monkeypatch):
+    stored = []
+    updates = []
+    rows = {
+        EVENTS: [
+            {"source_image_url": "pending:abc/image-1"},
+            {"source_image_url": "pending:abc/image-1"},
+        ],
+        POSITIONS: [{"source_image_url": "pending:abc/image-9"}],
+    }
+
+    class Query:
+        def __init__(self, table):
+            self.table, self.payload = table, None
+
+        def select(self, *_):
+            return self
+
+        def like(self, column, pattern):
+            assert (column, pattern) == ("source_image_url", "pending:abc/image-%")
+            return self
+
+        def update(self, payload):
+            self.payload = payload
+            return self
+
+        def eq(self, column, value):
+            updates.append((self.table, self.payload, value))
+            return self
+
+        def execute(self):
+            return SimpleNamespace(data=rows[self.table] if self.payload is None else [])
+
+    monkeypatch.setattr(module, "get_sb", lambda: SimpleNamespace(table=Query))
+    monkeypatch.setattr(
+        module,
+        "store_image",
+        lambda data, content_type: stored.append(data) or "https://wat2do.io/media/p.jpg",
+    )
+    monkeypatch.setattr(module, "upload_video_from_url", lambda url: f"stored:{url}")
+    images = [
+        module._Image("image-0.jpg", b"zero", "image/jpeg", None),
+        module._Image("image-1.jpg", b"one", "image/jpeg", "https://cdn/video.mp4"),
+    ]
+
+    module._store_chosen_posters("abc", images)
+
+    # Image 0 was never chosen, so it is never uploaded; image 1 is uploaded once.
+    assert stored == [b"one"]
+    assert updates == [
+        (
+            EVENTS,
+            {
+                "source_image_url": "https://wat2do.io/media/p.jpg",
+                "source_video_url": "stored:https://cdn/video.mp4",
+            },
+            "pending:abc/image-1",
+        ),
+        # A reference to an image that does not exist leaves no poster.
+        (POSITIONS, {"source_image_url": None}, "pending:abc/image-9"),
+    ]

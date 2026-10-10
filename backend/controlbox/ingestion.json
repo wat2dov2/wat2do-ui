@@ -1,6 +1,5 @@
 {
   "model": "claude-haiku-5-5",
-  "process_interval_seconds": 300,
   "parallel_agents": 8,
   "directory_scrape_interval_seconds": 43200,
   "claim_lease_seconds": 900,
