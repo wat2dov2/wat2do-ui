@@ -29,6 +29,7 @@
   "parallel_tabs": 15,
   "tab_health_interval_seconds": 10,
   "profile_post_limit": 12,
+  "capture_media_min_validity_seconds": 43200,
   "ingestion_retry_limit": 3,
   "bridge_retry_limit": 3,
   "storage_busy_timeout_seconds": 2,

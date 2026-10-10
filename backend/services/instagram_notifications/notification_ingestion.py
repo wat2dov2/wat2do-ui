@@ -11,8 +11,10 @@ from __future__ import annotations
 
 import fcntl
 import time
+from urllib.parse import parse_qs, urlsplit
 from uuid import uuid4
 
+from core.controlbox import controlbox
 from core.database import get_sb
 from core.pagination import fetch_all_pages
 from core.tables import INSTAGRAM_NOTIFICATION_MEDIA, INSTAGRAM_NOTIFICATIONS
@@ -32,6 +34,28 @@ from services.instagram_notifications.ledger import (
 )
 
 _JOURNAL = "notification_ledger_claim"
+_CONTROL = controlbox.instagram_browser
+
+
+def _media_urls(post: dict) -> list[str]:
+    urls = [post.get("displayUrl"), post.get("videoUrl"), *(post.get("images") or [])]
+    for child in post.get("childPosts") or []:
+        if isinstance(child, dict):
+            urls += [child.get("displayUrl"), child.get("videoUrl")]
+    return [url for url in urls if isinstance(url, str) and url]
+
+
+def _media_expiring(post: dict) -> bool:
+    """Instagram CDN links carry a hex ``oe`` expiry; captures must outlive the queue wait."""
+    deadline = time.time() + _CONTROL.capture_media_min_validity_seconds
+    for url in _media_urls(post):
+        expiry = parse_qs(urlsplit(url).query).get("oe")
+        try:
+            if expiry and int(expiry[0], 16) < deadline:
+                return True
+        except ValueError:
+            continue
+    return False
 
 
 def _pending_rows(delivery_generation: str | None = None) -> list[dict]:
@@ -127,7 +151,7 @@ def _exact_post(job: BrowserJob, target_url: str) -> dict | None:
 
 def enqueue_retrieved_media(queue: BrowserJobQueue) -> dict[str, int]:
     """Capture retrieved notification and manual targets, then settle their ledger rows."""
-    stats = {"enqueued": 0, "waiting": 0, "failed": 0, "recovered": 0, "invalid": 0}
+    stats = {"enqueued": 0, "waiting": 0, "failed": 0, "recovered": 0, "invalid": 0, "refreshed": 0}
     with (queue.state_directory / "ingestion.lock").open("a+") as lock:
         try:
             fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
@@ -155,6 +179,11 @@ def enqueue_retrieved_media(queue: BrowserJobQueue) -> dict[str, int]:
             post = _exact_post(job, target_url)
             if post is None:
                 stats["invalid"] += 1
+                continue
+            if _media_expiring(post):
+                # Signed media links expire; retrieve the post again for fresh artwork.
+                queue.retry_retrieval(job.id)
+                stats["refreshed"] += 1
                 continue
             ingestion.enqueue(QueueItem(school=school, post=post))
             claim = {"media_row_id": row["id"], "claim_token": str(uuid4())}
@@ -190,6 +219,10 @@ def _enqueue_manual_targets(
             posts, list
         ):
             stats["invalid"] += 1
+            continue
+        if any(_media_expiring(post) for post in posts):
+            queue.retry_retrieval(job.id)
+            stats["refreshed"] += 1
             continue
         for post in posts:
             ingestion.enqueue(QueueItem(school=job.school, post=post))

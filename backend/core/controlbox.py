@@ -594,6 +594,7 @@ class InstagramBrowserControl(_ControlModel):
     tab_health_interval_seconds: float = Field(ge=1, le=300)
     ingestion_retry_limit: int = Field(gt=0, le=10)
     profile_post_limit: int = Field(gt=0, le=50)
+    capture_media_min_validity_seconds: int = Field(ge=0, le=604800)
     school_switcher_username_overrides: dict[
         Annotated[str, Field(pattern=r"^[a-z0-9_]+$")],
         Annotated[str, Field(pattern=r"^wat2do\.[a-z0-9_]+$", max_length=30)],

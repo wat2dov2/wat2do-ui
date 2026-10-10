@@ -1,6 +1,7 @@
 import json
 import shutil
 import subprocess
+import time
 from copy import deepcopy
 from types import SimpleNamespace
 from unittest.mock import MagicMock
@@ -208,6 +209,20 @@ def test_pending_retrieval_does_not_claim_production_media(import_setup, monkeyp
         bridge, "claim_pending_browser_media", lambda **_: pytest.fail("Not retrieved")
     )
     assert bridge.enqueue_retrieved_media(queue)["waiting"] == 1
+    assert _captured() == []
+
+
+def test_capture_with_expiring_media_links_is_retrieved_again(import_setup, monkeypatch):
+    queue, _, jid = import_setup
+    expired = hex(int(time.time()) - 60)[2:]
+    stale = {**POST, "displayUrl": f"https://scontent.cdninstagram.com/a.jpg?oe={expired}"}
+    _retrieved(queue, jid, posts=[stale])
+    monkeypatch.setattr(
+        bridge, "claim_pending_browser_media", lambda **_: pytest.fail("Stale capture claimed")
+    )
+
+    assert bridge.enqueue_retrieved_media(queue)["refreshed"] == 1
+    assert queue.get(jid).state == "pending"
     assert _captured() == []
 
 
